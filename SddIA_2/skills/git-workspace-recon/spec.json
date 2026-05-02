@@ -1,0 +1,22 @@
+{
+  "spec_version": "1.0.0",
+  "skill_id": "git-workspace-recon",
+  "name": "Git Workspace Recon",
+  "description": "Inspección del workspace Git (rama, status porcelana, remotos, último commit) vía envelope JSON v2 o CLI.",
+  "implementation_path_ref": "paths.skillCapsules.git-workspace-recon",
+  "contract_ref": "paths.skillsDefinitionPath/skills-contract.json (Cúmulo)",
+  "owner": "tekton-developer",
+  "status": "Active",
+  "invocation": {
+    "schema_version": "2.0",
+    "entity_kind": "skill",
+    "stdin_or_env": "GESFER_CAPSULE_REQUEST"
+  },
+  "parameters": {
+    "workingDirectory": {
+      "type": "string",
+      "required": false,
+      "description": "Directorio del repositorio Git"
+    }
+  }
+}

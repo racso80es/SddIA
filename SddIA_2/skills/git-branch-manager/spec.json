@@ -1,0 +1,16 @@
+{
+  "spec_version": "1.0.0",
+  "skill_id": "git-branch-manager",
+  "name": "Git Branch Manager",
+  "description": "Crear rama nueva o cambiar a rama existente.",
+  "implementation_path_ref": "paths.skillCapsules.git-branch-manager",
+  "contract_ref": "paths.skillsDefinitionPath/skills-contract.json (Cúmulo)",
+  "owner": "tekton-developer",
+  "status": "Active",
+  "parameters": {
+    "branchName": { "type": "string", "required": true },
+    "create": { "type": "boolean", "required": false, "default": false },
+    "checkout": { "type": "boolean", "required": false, "default": true },
+    "workingDirectory": { "type": "string", "required": false }
+  }
+}

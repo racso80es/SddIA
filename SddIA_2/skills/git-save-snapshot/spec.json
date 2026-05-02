@@ -1,0 +1,18 @@
+{
+  "spec_version": "1.0.0",
+  "skill_id": "git-save-snapshot",
+  "name": "Git Save Snapshot",
+  "description": "Stage y commit con mensaje; soporta addAll o lista de files.",
+  "implementation_path_ref": "paths.skillCapsules.git-save-snapshot",
+  "contract_ref": "paths.skillsDefinitionPath/skills-contract.json (Cúmulo)",
+  "owner": "tekton-developer",
+  "status": "Active",
+  "parameters": {
+    "commitMessage": { "type": "string", "required": true },
+    "addAll": { "type": "boolean", "required": false },
+    "files": { "type": "array", "items": { "type": "string" }, "required": false },
+    "commitType": { "type": "string", "required": false, "default": "feat" },
+    "scope": { "type": "string", "required": false },
+    "workingDirectory": { "type": "string", "required": false }
+  }
+}

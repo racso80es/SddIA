@@ -1,0 +1,33 @@
+{
+  "toolId": "audit-funcional-frontend",
+  "version": "1.0.0",
+  "description": "Proceso documental para auditoría funcional del frontend: validar funcionalidades actuando como usuario administrativo. Objetivo máximo: reproducir acciones del usuario lo máximo posible (cliente visual, simulación ratón/teclado). Repetible.",
+  "implementation_type": "process",
+  "implementation_path_ref": null,
+  "contract_ref": "SddIA/tools/tools-contract.json",
+  "cumulo_ref": "SddIA/agents/cumulo.json",
+  "inputs": {
+    "api_admin_active": "Requisito: API Admin en puerto 5011.",
+    "credentials": "Requisito: Usuario admin válido.",
+    "env_vars": "Requisito: ADMIN_API_URL, AUTH_SECRET."
+  },
+  "output": {
+    "report_path": "paths.auditsPath (AUDITORIA_FUNCIONAL_FRONTEND_YYYY_MM_DD.md)",
+    "success_criterion": "Checklist completada, resultado global documentado.",
+    "phases": ["preparacion", "validacion_manual", "registro_hallazgos", "kaizen"],
+    "possible_results": {
+      "full_pass": "8/8 tests — API Admin activa y credenciales válidas.",
+      "partial_pass": "2/8 tests (1, 8) — API Admin no conectada o credenciales incorrectas; login no redirige.",
+      "no_pass": "0/8 tests — Frontend no responde (puerto 3001)."
+    },
+    "tests_without_api": [1, 8],
+    "tests_requiring_api": [2, 3, 4, 5, 6, 7]
+  },
+  "depends_on_tools": ["start-frontend"],
+  "kaizen_action": "Tras la auditoría: corregir hallazgos, registrar mejoras, actualizar proceso si procede.",
+  "env": ["Windows 11", "PowerShell 7+", "Node.js 20+", "API Admin activa"],
+  "provider_refs": {
+    "iota-wallet": "docs/architecture/providers/iota-wallet/",
+    "description": "Proveedores de billetera documentados como soporte para implementaciones futuras (integración dApps, autenticación wallet)."
+  }
+}

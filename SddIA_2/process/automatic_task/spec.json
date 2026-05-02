@@ -1,0 +1,25 @@
+{
+  "spec_version": "2.0.0",
+  "process_id": "automatic_task",
+  "name": "Automatic Task",
+  "description": "Backlog autónomo bajo paths.tasksPath (triaje, ACTIVE, DONE, Kaizen); delegación por defecto en proceso feature y paths.featurePath. Arsenal Táctico Git S+.",
+  "contract_ref": "paths.processPath/process-contract.md",
+  "principles_ref": "paths.principlesPath",
+  "persist_ref": "paths.tasksPath",
+  "related_skills": [
+    "git-workspace-recon",
+    "git-branch-manager",
+    "git-save-snapshot",
+    "git-sync-remote",
+    "git-tactical-retreat",
+    "git-create-pr",
+    "invoke-command"
+  ],
+  "phases": [
+    { "id": "0", "name": "Preparar entorno", "description": "git-workspace-recon; git-branch-manager antes de tocar cola." },
+    { "id": "1", "name": "Identificación y triaje", "description": "Candidatos en paths.tasksPath y KAIZEN/." },
+    { "id": "2", "name": "Activación y bloqueo", "description": "ACTIVE/; git-save-snapshot; git-sync-remote." },
+    { "id": "3", "name": "Ejecución", "description": "Proceso delegado (feature); git-save-snapshot; git-tactical-retreat si emergencia." },
+    { "id": "4", "name": "Finalización y archivo", "description": "DONE/; Evolution Log; git-sync-remote; git-create-pr." }
+  ]
+}

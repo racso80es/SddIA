@@ -1,0 +1,33 @@
+{
+  "spec_version": "2.0.0",
+  "process_id": "bug-fix",
+  "name": "Bug Fix",
+  "description": "Proceso de tarea para corrección de bugs: rama fix/<nombre_fix>, documentación en paths.fixPath/<nombre_fix>/. Alcance mínimo; Arsenal Táctico Git S+.",
+  "contract_ref": "paths.processPath/process-contract.json",
+  "persist_ref": "paths.fixPath/<nombre_fix>",
+  "paths": { "fixPath_ref": "paths.fixPath (Cúmulo)", "bugPath_ref": "paths.bugPath (Cúmulo)" },
+  "process_interface_compliance": "Solicita/genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, clarify.md, validacion.md); no ficheros .json separados. Norma: features-documentation-frontmatter.md.",
+  "triggers": ["Reporte de bug", "Fallo en CI o tests", "Solicitud de fix con bug-id o título"],
+  "skills": ["documentation", "filesystem-ops", "dotnet-development"],
+  "constraints": ["Rama fix/<nombre_fix>, nunca master.", "Documentación obligatoria en paths.fixPath/<nombre_fix>.", "Alcance mínimo: causa raíz; no refactor en la misma rama."],
+  "related_actions": ["spec", "clarify", "implementation", "execution", "validate", "finalize-process"],
+  "related_skills": [
+    "git-workspace-recon",
+    "git-branch-manager",
+    "git-save-snapshot",
+    "git-sync-remote",
+    "git-tactical-retreat",
+    "git-create-pr"
+  ],
+  "principles_ref": "paths.principlesPath",
+  "phases": [
+    { "id": "0", "name": "Preparar entorno", "description": "git-workspace-recon; git-branch-manager (rama fix/ desde master)." },
+    { "id": "1", "name": "Documentación con objetivos", "description": "objectives.md (YAML Frontmatter)." },
+    { "id": "2", "name": "Especificación", "description": "Acción spec → spec.md." },
+    { "id": "3", "name": "Clarificación", "description": "Acción clarify si aplica." },
+    { "id": "4", "name": "Implementación (doc)", "description": "Acción implementation." },
+    { "id": "5", "name": "Ejecución", "description": "Fix en código; git-save-snapshot; git-tactical-retreat si procede." },
+    { "id": "6", "name": "Validar", "description": "Acción validate; git-workspace-recon; validacion.md." },
+    { "id": "7", "name": "Finalizar", "description": "git-sync-remote; git-create-pr (objectives + validacion en PR)." }
+  ]
+}

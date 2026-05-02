@@ -1,0 +1,33 @@
+{
+  "contract_version": "1.0.0",
+  "scope": "paths.processPath (SddIA/process/)",
+  "description": "Contrato que todo proceso de tarea debe cumplir: definición en paths.processPath/<process-id>/ con spec.md y spec.json. Cumple process_interface (Cúmulo) para artefactos generados en la carpeta de la tarea.",
+  "definition_artefacts": [
+    {
+      "ext": ".md",
+      "naming": "spec.md",
+      "path": "paths.processPath/<process-id>/",
+      "purpose": "Especificación legible con YAML Frontmatter integrando todos los metadatos y configuración."
+    }
+  ],
+  "principles_validation": "Los procesos deben validar que las fases de diseño e implementación sean coherentes con paths.principlesPath (principles-contract). En spec.json puede declararse principles_ref: paths.principlesPath.",
+  "process_interface_ref": "Cúmulo (SddIA/agents/cumulo.json) → process_interface: un .md por acción con YAML Frontmatter en la carpeta de la tarea (paths.featurePath, paths.fixPath); no ficheros .json separados. Norma: SddIA/norms/features-documentation-frontmatter.md.",
+  "security_model": {
+    "required_token": "Karma2Token",
+    "token_ref": "SddIA/tokens/karma2-token/spec.json",
+    "description": "Todo proceso debe orquestarse bajo el contexto de un Karma2Token válido."
+  },
+  "constraints": [
+    "Cumplimiento obligatorio de Karma2Token para trazabilidad y seguridad.",
+    "process_id en kebab-case (feature, bug-fix, refactorization, create-tool, create-skill).",
+    "Rutas canónicas solo desde Cúmulo (paths.processPath, paths.featurePath, paths.fixPath, paths.actionsPath, paths.principlesPath).",
+    "Un proceso sin spec.md y YAML Frontmatter en spec.md en su carpeta no se considera completo.",
+    "Fases de diseño/implementación: validar principios según principles-contract."
+  ],
+  "consumers": [
+    "paths.actionsPath",
+    "SddIA/agents/*.json",
+    "SddIA/norms/interaction-triggers.md",
+    ".cursor/rules"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "spec_version": "2.0.0",
+  "process_id": "correccion-auditorias",
+  "name": "Corrección según Auditorías",
+  "description": "Proceso de tarea para corregir hallazgos reportados en auditorías (paths.auditsPath): análisis, priorización, ciclo en paths.featurePath; Arsenal Táctico Git S+.",
+  "contract_ref": "paths.processPath/process-contract.json",
+  "persist_ref": "paths.featurePath/<nombre_correccion>",
+  "input_ref": "paths.auditsPath",
+  "phases": [
+    { "id": "0", "name": "Análisis de auditorías", "description": "Revisar paths.auditsPath; git-workspace-recon." },
+    { "id": "1", "name": "Documentación de objetivos y rama", "description": "objectives.md; git-branch-manager (rama feat/correccion-*)." },
+    { "id": "2", "name": "Especificación", "description": "Acción spec → spec.md (YAML Frontmatter)." },
+    { "id": "3", "name": "Clarificación", "description": "Acción clarify si aplica." },
+    { "id": "4", "name": "Planificación", "description": "Acción planning." },
+    { "id": "5", "name": "Implementación (doc)", "description": "Acción implementation." },
+    { "id": "6", "name": "Ejecución", "description": "Correcciones; git-save-snapshot; git-tactical-retreat si procede." },
+    { "id": "7", "name": "Validar", "description": "Acción validate; git-workspace-recon; validacion.md." },
+    { "id": "8", "name": "Finalizar", "description": "git-sync-remote; git-create-pr; Evolution Logs." }
+  ],
+  "related_actions": ["spec", "clarify", "planning", "implementation", "execution", "validate", "finalize-process"],
+  "related_skills": [
+    "git-workspace-recon",
+    "git-branch-manager",
+    "git-save-snapshot",
+    "git-sync-remote",
+    "git-tactical-retreat",
+    "git-create-pr",
+    "documentation",
+    "security-audit"
+  ],
+  "principles_ref": "paths.principlesPath"
+}

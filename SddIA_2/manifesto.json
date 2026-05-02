@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "version": "3.0",
+    "last_updated": "2026-03-12",
+    "status": "Active",
+    "title": "Values Manifesto & Architectural Standard — GesFer.Admin.Front"
+  },
+  "principles": [
+    {
+      "name": "Racso's Sovereignty",
+      "description": "Final decision and strategic direction belong to Racso. Code and architecture serve this sovereignty."
+    },
+    {
+      "name": "Objective Proactivity",
+      "description": "Detect risks/inconsistencies early. Assert only what is verifiable. Leave evidence."
+    },
+    {
+      "name": "Technical Rigor",
+      "description": "Build must pass. Lint must pass. Tests must pass. Zero broken windows."
+    },
+    {
+      "name": "Sector Pragmatism",
+      "description": "Built for traditional sector reality (scrap yards). Utility in plant > Abstract perfection."
+    },
+    {
+      "name": "Frontend Architecture",
+      "description": "Strict separation of responsibilities: App (routing/pages), Components (UI/Shared/Layout), Lib (API clients/utils), Contexts (state)."
+    }
+  ],
+  "architecture_pillars": {
+    "App": {
+      "purpose": "Routing, pages, layouts (Next.js App Router).",
+      "path": "src/app/",
+      "rules": ["Server Components by default.", "Pages orchestrate components; no business logic in page files."]
+    },
+    "Components": {
+      "purpose": "Reusable UI primitives, shared composites, and layout structures.",
+      "path": "src/components/",
+      "rules": ["ui/ contains primitives (no business logic).", "shared/ contains composed components.", "layout/ contains page structure components.", "Must NOT import from src/app/."]
+    },
+    "Lib": {
+      "purpose": "API clients, configuration, utilities.",
+      "path": "src/lib/",
+      "rules": ["api/ centralizes all HTTP calls to external APIs.", "config.ts is the single source of environment-based configuration.", "utils/ contains pure utility functions."]
+    },
+    "Contexts": {
+      "purpose": "Global client-side state management.",
+      "path": "src/contexts/",
+      "rules": ["React Context for cross-component state.", "React Query for server-state cache."]
+    },
+    "Types": {
+      "purpose": "Shared TypeScript type definitions.",
+      "path": "src/types/",
+      "rules": ["Centralized types for API responses, domain models, and component props."]
+    }
+  },
+  "dependency_rules": {
+    "frontend": [
+      { "from": "src/components/", "to": "src/app/", "allowed": false, "reason": "Components cannot depend on pages." },
+      { "from": "src/lib/", "to": "src/app/", "allowed": false, "reason": "Lib cannot depend on pages." },
+      { "from": "src/lib/", "to": "src/components/", "allowed": false, "reason": "Lib is lower-level than components." },
+      { "from": "src/app/", "to": "src/components/", "allowed": true },
+      { "from": "src/app/", "to": "src/lib/", "allowed": true },
+      { "from": "src/components/", "to": "src/lib/", "allowed": true },
+      { "from": "**/*", "import": "@shared/", "allowed": false, "reason": "Legacy monorepo alias. Use @/ instead." },
+      { "from": "**/*", "import": "../../Shared/", "allowed": false, "reason": "Legacy monorepo path. All shared code is internal now." }
+    ]
+  }
+}

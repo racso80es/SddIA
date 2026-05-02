@@ -1,0 +1,19 @@
+{
+  "spec_version": "1.0.0",
+  "skill_id": "git-create-pr",
+  "name": "Git Create PR",
+  "description": "Push opcional y gh pr create.",
+  "implementation_path_ref": "paths.skillCapsules.git-create-pr",
+  "contract_ref": "paths.skillsDefinitionPath/skills-contract.json (Cúmulo)",
+  "owner": "tekton-developer",
+  "status": "Active",
+  "parameters": {
+    "pushFirst": { "type": "boolean", "required": false, "default": true },
+    "remote": { "type": "string", "required": false, "default": "origin" },
+    "head": { "type": "string", "required": false },
+    "base": { "type": "string", "required": false },
+    "title": { "type": "string", "required": false },
+    "body": { "type": "string", "required": false },
+    "workingDirectory": { "type": "string", "required": false }
+  }
+}

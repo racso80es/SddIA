@@ -1,0 +1,18 @@
+{
+  "spec_version": "1.0.0",
+  "skill_id": "git-tactical-retreat",
+  "name": "Git Tactical Retreat",
+  "description": "Operaciones destructivas de reset/limpieza con confirmación obligatoria.",
+  "implementation_path_ref": "paths.skillCapsules.git-tactical-retreat",
+  "contract_ref": "paths.skillsDefinitionPath/skills-contract.json (Cúmulo)",
+  "owner": "tekton-developer",
+  "status": "Active",
+  "parameters": {
+    "hardReset": { "type": "boolean", "required": false },
+    "discardWorkingTree": { "type": "boolean", "required": false },
+    "confirmDestructive": { "type": "boolean", "required": false, "description": "Obligatorio true si hardReset o discardWorkingTree" },
+    "targetRef": { "type": "string", "required": false, "default": "HEAD" },
+    "stashFirst": { "type": "boolean", "required": false, "default": true },
+    "workingDirectory": { "type": "string", "required": false }
+  }
+}

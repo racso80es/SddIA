@@ -1,0 +1,18 @@
+{
+  "spec_version": "1.0.0",
+  "skill_id": "git-sync-remote",
+  "name": "Git Sync Remote",
+  "description": "fetch, pull y push opcionales contra un remote.",
+  "implementation_path_ref": "paths.skillCapsules.git-sync-remote",
+  "contract_ref": "paths.skillsDefinitionPath/skills-contract.json (Cúmulo)",
+  "owner": "tekton-developer",
+  "status": "Active",
+  "parameters": {
+    "remote": { "type": "string", "required": false, "default": "origin" },
+    "fetch": { "type": "boolean", "required": false, "default": true },
+    "pull": { "type": "boolean", "required": false, "default": true },
+    "push": { "type": "boolean", "required": false, "default": false },
+    "branch": { "type": "string", "required": false },
+    "workingDirectory": { "type": "string", "required": false }
+  }
+}

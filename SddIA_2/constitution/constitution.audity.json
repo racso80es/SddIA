@@ -1,0 +1,15 @@
+{
+  "principle": "Ethical Governance & Audit",
+  "id": "CFG-AUD-004",
+  "purpose": "Immutable audit trail and ethical rule enforcement.",
+  "guidelines": [
+    "Cryptographic logging of critical actions (Immutable Audit).",
+    "Validation rules enforced by SddIA agents and norms.",
+    "Transparency: audit reports in paths.auditsPath (Cúmulo)."
+  ],
+  "status": "Active",
+  "implementation": {
+    "loggerPath": "N/A (GesFer.Admin.Front; frontend web). Audit via paths.auditsPath, SddIA/agents/auditor.",
+    "rulesPath": "SddIA/norms, SddIA/agents/auditor."
+  }
+}

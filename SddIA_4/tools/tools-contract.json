@@ -1,0 +1,129 @@
+{
+  "contract_version": "1.4.0",
+  "scope": "paths.toolsPath (Cúmulo)",
+  "description": "Contrato que toda herramienta (tool) en paths.toolsPath (Cúmulo) debe cumplir: salida JSON adecuada al fin de la herramienta y feedback estructurado.",
+  "default_implementation": {
+    "language": "rust",
+    "rationale": "Rendimiento, seguridad de memoria, portabilidad y distribución como binario. Las implementaciones por defecto de tools y de scripts de skills han de ser en Rust.",
+    "delivery": [
+      "Cada herramienta reside en una capsula paths.toolsPath (Cúmulo) /<tool-id>/ con manifest.json. Los ejecutables se construyen en paths.toolsRustPath (Cúmulo) y se copian a la ruta de la herramienta.",
+      "Ubicación del .exe: <capsula>/<tool_bin>.exe (en la ruta de la tool, junto al .bat). Launcher .bat invoca el .exe en la misma carpeta.",
+      "Config (.json), documentacion (.md) y manifest.json obligatorios en la capsula. Rutas canonicas: Cúmulo paths.toolCapsules."
+    ]
+  },
+  "implementation": {
+    "format": "Rust executable (.exe)",
+    "location_pattern": "scripts/tools/{tool-id}/{nombre}.exe",
+    "source_location": "scripts/tools-rs/src/{nombre}.rs",
+    "prohibited_formats": [
+      ".ps1",
+      ".bat",
+      ".sh"
+    ],
+    "standard": "Solo se deben generar ejecutables .exe compilados desde Rust. Los scripts PowerShell (.ps1) están prohibidos en nuevas implementaciones.",
+    "migration_note": "Las herramientas existentes con .ps1 deben migrar a .exe. Mientras no exista .exe, se mantiene temporalmente el .ps1 documentado como 'pendiente de migración'."
+  },
+  "output": {
+    "description": "Toda herramienta debe producir al finalizar un resultado en formato JSON, adecuado a su propósito.",
+    "default_behavior": "El ejecutable (.exe) emite el JSON por stdout por defecto. Los consumidores (bat, CI/CD, otras tools) reciben el resultado sin flags adicionales.",
+    "required_fields": {
+      "toolId": "Identificador de la herramienta (kebab-case, ej. start-frontend).",
+      "exitCode": "Código de salida numérico (0 = éxito, distinto de 0 = fallo).",
+      "success": "Booleano: true si la ejecución fue correcta.",
+      "timestamp": "ISO 8601 de finalización (UTC recomendado).",
+      "message": "Mensaje breve de resumen (humano y máquina).",
+      "feedback": "Array de entradas de feedback ordenadas cronológicamente."
+    },
+    "optional_fields": {
+      "data": "Objeto libre con datos específicos del fin de la herramienta (servicios levantados, URLs, errores por fase, etc.).",
+      "duration_ms": "Duración total de la ejecución en milisegundos."
+    },
+    "output_modes": [
+      "Por defecto: emitir el JSON por stdout al finalizar (para humanos, CI/CD y otras tools).",
+      "Opcional --quiet: suprimir salida por stdout (útil solo con --output-path).",
+      "Opcional --output-path: escribir el JSON en un fichero (además de o en lugar de stdout según implementación).",
+      "En cualquier caso, el resultado interno debe poder serializarse según este esquema."
+    ],
+    "output_codes_table": {
+      "description": "Cada herramienta debe documentar en su especificación (SddIA/tools/<tool-id>/) una tabla codificada de posibles salidas.",
+      "required_in_spec": true,
+      "table_schema": {
+        "columns": ["exitCode", "success", "message_resumen", "data_presente", "descripcion"],
+        "description": "Tabla que mapea cada exitCode posible a success, mensaje típico, presencia de data y descripción. Obligatoria en spec.md o output-salida-json.md de cada tool."
+      }
+    }
+  },
+  "feedback": {
+    "description": "Las herramientas deben mantener un feedback adecuado: trazabilidad de fases, niveles y mensajes.",
+    "rules": [
+      "Cada fase o paso significativo debe generar al menos una entrada en feedback.",
+      "En caso de error, debe existir una entrada con level 'error' que describa el fallo.",
+      "Las advertencias (recursos no disponibles, timeouts parciales) deben registrarse con level 'warning'."
+    ],
+    "entry_schema": {
+      "phase": "Identificador de la fase o paso (ej. docker, mysql, api, clients).",
+      "level": "info | warning | error.",
+      "message": "Texto breve y legible del evento.",
+      "timestamp": "ISO 8601 del momento del evento."
+    },
+    "optional_per_entry": {
+      "detail": "Texto adicional o código de error.",
+      "duration_ms": "Duración del paso en ms."
+    }
+  },
+  "required_artefacts_per_tool": [
+    {
+      "ext": ".rs",
+      "path": "paths.toolsRustPath (Cúmulo)/src/bin",
+      "purpose": "Implementación por defecto en Rust."
+    },
+    {
+      "ext": "binary",
+      "path": "paths.toolsPath (Cúmulo) /<tool-id>/<tool_bin>.exe",
+      "purpose": "Ejecutable Rust en la cápsula (copiado desde tools-rs/install.ps1). Ubicación: en <tool-id>/ (ruta de la tool, junto al .bat). OBLIGATORIO para nuevas herramientas."
+    },
+    {
+      "ext": ".bat",
+      "purpose": "Launcher en cápsula: invoca el binario (.exe) en la ruta de la tool."
+    },
+    {
+      "ext": ".json",
+      "naming": "manifest",
+      "purpose": "Manifest de la capsula: toolId, components, contract_ref (obligatorio en cada capsula)."
+    },
+    {
+      "ext": ".json",
+      "naming": "<tool-id>-config",
+      "purpose": "Configuración machine-readable."
+    },
+    {
+      "ext": ".md",
+      "naming": "<tool-id>.md",
+      "purpose": "Documentación. Idioma: es-ES."
+    },
+    {
+      "ext": ".md",
+      "naming": "output-salida-json | sección en spec.md",
+      "path": "paths.toolsDefinitionPath (Cúmulo)/<tool-id>/",
+      "purpose": "Tabla codificada de posibles salidas (exitCode, success, message, data, descripción). Obligatoria según output.output_codes_table."
+    }
+  ],
+  "security_model": {
+    "required_token": "Karma2Token",
+    "token_ref": "SddIA/tokens/karma2-token/spec.json",
+    "description": "Toda tool debe ejecutarse bajo el contexto de un Karma2Token válido."
+  },
+  "constraints": [
+    "Cumplimiento obligatorio de Karma2Token para trazabilidad y seguridad.",
+    "toolId en kebab-case.",
+    "El JSON de salida debe ser válido y codificado en UTF-8.",
+    "No escribir feedback sensible (contraseñas, tokens) en message ni en data.",
+    "exitCode 0 únicamente cuando success es true; en caso de fallo, success false y exitCode != 0."
+  ],
+  "consumers": [
+    "paths.actionsPath",
+    "SddIA/agents/*.json",
+    "paths.toolsPath",
+    "CI/CD"
+  ]
+}

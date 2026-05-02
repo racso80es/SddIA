@@ -1,0 +1,19 @@
+{
+  "spec_version": "1.0.0",
+  "skill_id": "git-close-cycle",
+  "name": "Git Close Cycle",
+  "description": "Checkout a main/master, pull origin HEAD, fetch --prune, eliminar rama de trabajo local (-d / -D).",
+  "implementation_path_ref": "paths.skillCapsules.git-close-cycle",
+  "contract_ref": "paths.skillsDefinitionPath/skills-contract.json (Cúmulo)",
+  "owner": "tekton-developer",
+  "status": "Active",
+  "parameters": {
+    "targetBranch": {
+      "type": "string",
+      "required": true,
+      "aliases": ["target_branch"]
+    },
+    "remote": { "type": "string", "required": false, "default": "origin" },
+    "workingDirectory": { "type": "string", "required": false }
+  }
+}

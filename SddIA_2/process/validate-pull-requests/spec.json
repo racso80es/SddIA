@@ -1,0 +1,111 @@
+{
+  "spec_version": "2.0.0",
+  "process_id": "validate-pull-requests",
+  "name": "Validación integral de Pull Requests (S+ Grade)",
+  "description": "Nodo de control que orquesta architect, qa-judge y security-engineer sobre la rama origen del PR; produce informe de consenso y semillas Kaizen en paths.tasksPath.",
+  "contract_ref": "paths.processPath/process-contract.json",
+  "principles_ref": "paths.principlesPath",
+  "persist_ref": "paths.featurePath/validate-pull-requests-<pr-slug>",
+  "kaizen_tasks_ref": "paths.tasksPath",
+  "tokens_ref": "paths.tokensPath",
+  "agents_ref": "paths.agentsPath",
+  "inputs": [
+    {
+      "name": "pr_path_or_id",
+      "type": "string",
+      "description": "Identificador o ruta parcial del Pull Request en el remoto (origin).",
+      "required": true
+    },
+    {
+      "name": "pr_branch_name",
+      "type": "string",
+      "description": "Nombre de la rama origen del PR (feature branch) cuyo estado debe analizarse.",
+      "required": true
+    },
+    {
+      "name": "code_diff",
+      "type": "string",
+      "description": "Diff o lista de archivos modificados, añadidos o eliminados en el PR.",
+      "required": true
+    },
+    {
+      "name": "document_context",
+      "type": "string",
+      "description": "Documentación SddIA, tickets o READMEs relevantes para el alcance del cambio.",
+      "required": false
+    },
+    {
+      "name": "tasks_path_cumulo",
+      "type": "path_ref",
+      "description": "Directorio destino para tareas Kaizen generadas; por defecto paths.tasksPath (Cúmulo).",
+      "required": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "objectives.md",
+      "type": "file",
+      "description": "Objetivos y alcance de la revisión (frontmatter YAML + Markdown)."
+    },
+    {
+      "name": "validacion.md",
+      "type": "file",
+      "description": "Informe de consenso multi-agente y veredicto (frontmatter YAML + Markdown); validación del ciclo."
+    },
+    {
+      "name": "[YYYYMMDD]-Refactor-[Tema].md",
+      "type": "file_pattern",
+      "description": "Semillas Kaizen opcionales; un fichero por tema bajo tasks_path_cumulo (típicamente paths.tasksPath)."
+    }
+  ],
+  "phases": [
+    {
+      "id": "0",
+      "name": "Preparar contexto y rama del PR",
+      "description": "git-workspace-recon; git-branch-manager (u equivalente) para alinear con la rama origen del PR. Verificar Karma2Token (paths.tokensPath). Confirmar análisis sobre el código propuesto en el PR, no la rama de integración destino."
+    },
+    {
+      "id": "1",
+      "name": "Escrutinio architect",
+      "description": "Alineación y estructura (Clean Architecture, separación de responsabilidades, modularidad, ecosistema de nombres). Agente paths.agentsPath/architect.json (System Architect)."
+    },
+    {
+      "id": "2",
+      "name": "Escrutinio qa-judge",
+      "description": "Necesidad, ausencia de alucinación (APIs/símbolos en la rama), estados frontera y rendimiento. Agente paths.agentsPath/qa-judge.json."
+    },
+    {
+      "id": "3",
+      "name": "Escrutinio security-engineer",
+      "description": "Inmunidad: exposición de datos, sanitización, vulnerabilidades. Hallazgos bloqueantes. Agente paths.agentsPath/security-engineer.json."
+    },
+    {
+      "id": "4",
+      "name": "Consenso e informe final",
+      "description": "Integrar dictámenes, aplicar criterios de veredicto y redactar validacion.md según formato de consenso del spec.md. git-save-snapshot si se versiona borrador en rama."
+    },
+    {
+      "id": "5",
+      "name": "Persistencia y Cúmulo Kaizen",
+      "description": "Persistir validacion.md bajo persist_ref; semillas Kaizen en tasks_path_cumulo. git-sync-remote; git-create-pr (objectives + validacion en cuerpo del PR). git-tactical-retreat solo ante emergencia con confirmación."
+    }
+  ],
+  "related_actions": ["spec", "validate"],
+  "related_skills": [
+    "git-workspace-recon",
+    "git-branch-manager",
+    "git-save-snapshot",
+    "git-sync-remote",
+    "git-tactical-retreat",
+    "git-create-pr"
+  ],
+  "related_agents": [
+    { "ref": "SddIA/agents/architect.json", "role": "architect" },
+    { "ref": "SddIA/agents/qa-judge.json", "role": "qa-judge" },
+    { "ref": "SddIA/agents/security-engineer.json", "role": "security-engineer" }
+  ],
+  "norms_ref": [
+    "SddIA/norms/git-via-skills-or-process.md",
+    "SddIA/norms/paths-via-cumulo.md"
+  ]
+}

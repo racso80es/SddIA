@@ -1,0 +1,15 @@
+{
+  "principle": "Operational Duality",
+  "id": "CFG-DUAL-002",
+  "purpose": "Separate Control (Boss) and Execution (Calm) processes.",
+  "guidelines": [
+    "Strict separation of strategic decisions (Boss) and autonomous execution (Calm).",
+    "Standardized and auditable communication between modes.",
+    "Support for distinct operational modes at SddIA agent level."
+  ],
+  "status": "Active",
+  "implementation": {
+    "ipcBridge": "N/A (GesFer.Admin.Front; frontend web, no IPC/Electron).",
+    "modesPath": "N/A at app level. Duality applies at SddIA agent/process orchestration level."
+  }
+}

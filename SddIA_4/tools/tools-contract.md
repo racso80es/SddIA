@@ -1,0 +1,100 @@
+# Contrato de herramientas (Cúmulo: paths.toolsPath / paths.toolCapsules)
+
+**Alcance:** Todas las entidades en **paths.toolsPath** y en cada **paths.toolCapsules[&lt;tool-id&gt;]** (Cúmulo, `SddIA/agents/cumulo.json`) que actúen como herramientas ejecutables. Listado de herramientas: **paths.toolsIndexPath** (índice en raíz de tools).
+
+**Desacoplamiento definición / implementación:** La **definición** (qué hace la herramienta, contrato, entradas/salidas) está en **paths.toolsDefinitionPath**/&lt;tool-id&gt;/ (SddIA/tools/&lt;tool-id&gt;/) en formato .md y .json. La **implementación** (scripts, config, ejecutables) está en **paths.toolCapsules[&lt;tool-id&gt;]** (scripts). La raíz del path de implementación la indica Cúmulo; en la definición (spec.json) debe indicarse **implementation_path_ref** (ej. `paths.toolCapsules.&lt;tool-id&gt;`) para resolver la ruta desde Cúmulo sin duplicar rutas literales.
+
+**Objetivo:** Unificar la salida en JSON adecuada al fin de cada herramienta y garantizar un **feedback adecuado** (trazable, por fases y niveles).
+
+---
+
+## 1. Salida JSON
+
+Toda herramienta debe producir un **resultado final en JSON** que cumpla al menos:
+
+| Campo      | Tipo     | Obligatorio | Descripción |
+|------------|----------|-------------|-------------|
+| `toolId`   | string   | Sí          | Identificador de la herramienta (kebab-case). |
+| `exitCode` | number   | Sí          | Código de salida (0 = éxito). |
+| `success`  | boolean  | Sí          | `true` si la ejecución fue correcta. |
+| `timestamp`| string   | Sí          | ISO 8601 de finalización. |
+| `message`  | string   | Sí          | Resumen breve del resultado. |
+| `feedback` | array    | Sí          | Lista ordenada de eventos de feedback. |
+| `data`     | object   | No          | Datos específicos del fin de la herramienta. |
+| `duration_ms` | number | No       | Duración total en milisegundos. |
+
+**Formas de entrega del JSON:**
+
+- **Por defecto:** el ejecutable (.exe) emite el JSON por stdout al finalizar. Los consumidores (bat, CI/CD, otras tools) reciben el resultado sin flags adicionales.
+- **Opcional --quiet:** suprimir salida por stdout (útil solo con `-OutputPath`).
+- **Fichero:** si la herramienta recibe `-OutputPath`, escribe el JSON en esa ruta (además de o en lugar de stdout según implementación).
+
+**Tabla de salidas codificadas:**
+
+Cada herramienta debe documentar en su especificación (SddIA/tools/&lt;tool-id&gt;/) una **tabla codificada** de posibles salidas. La tabla debe incluir al menos: `exitCode`, `success`, `message` (resumen típico), `data` (presente o no) y descripción. Puede estar en `spec.md` o en un fichero dedicado `output-salida-json.md`.
+
+---
+
+## 2. Feedback adecuado
+
+El array `feedback` es el registro de lo que fue ocurriendo durante la ejecución. Cada entrada debe tener:
+
+| Campo       | Tipo   | Descripción |
+|-------------|--------|-------------|
+| `phase`     | string | Fase o paso (ej. `docker`, `mysql`, `api`, `clients`). |
+| `level`     | string | `info` \| `warning` \| `error`. |
+| `message`   | string | Mensaje breve y legible. |
+| `timestamp` | string | ISO 8601 del evento. |
+| `detail`    | string | (Opcional) Detalle o código de error. |
+| `duration_ms` | number | (Opcional) Duración del paso en ms. |
+
+**Reglas:**
+
+1. **Trazabilidad:** Cada fase o paso significativo debe generar al menos una entrada en `feedback`.
+2. **Errores:** Si algo falla, debe existir una entrada con `level: "error"` que describa el fallo.
+3. **Advertencias:** Situaciones recuperables (timeouts parciales, recursos no encontrados pero opcionales) deben registrarse con `level: "warning"`.
+4. **Orden:** Las entradas deben ir en orden cronológico (primera ocurrencia primero).
+
+Así se mantiene un **feedback adecuado** tanto para humanos (mensajes claros) como para máquinas (fases, niveles, tiempos).
+
+---
+
+## 3. Implementación por defecto: Rust
+
+**Las implementaciones por defecto de las herramientas (y de los scripts de skills) han de ser en Rust.**
+
+- **Motivo:** rendimiento, seguridad de memoria, portabilidad y distribución como binario único.
+- **Entrega:** cada herramienta reside en una **cápsula** **paths.toolCapsules[&lt;tool-id&gt;]** (Cúmulo). Los ejecutables se construyen en paths.toolsRustPath (Cúmulo) y se copian a la **ruta de la herramienta**: `&lt;cápsula&gt;/&lt;tool_bin&gt;.exe` (junto al .bat). Opcional: wrapper `.bat` en **paths.toolsPath** que delegue a la cápsula.
+- **Launcher:** dentro de la cápsula, el `.bat` invoca el `.exe` en la misma carpeta; en caso contrario, fallback al script `.ps1` de la cápsula.
+- **Config** (`.json`), **documentación** (`.md`) y **manifest.json** (toolId, components, contract_ref) son obligatorios en la cápsula. **Rutas canónicas:** Cúmulo `SddIA/agents/cumulo.json` → **paths.toolsPath**, **paths.toolCapsules**. En documentación .md no usar rutas literales; referenciar vía Cúmulo.
+
+Referencia: agente Security Engineer (paths (Cúmulo) o agente Security Engineer).
+
+## 4. Artefactos por herramienta
+
+Cada herramienta reside en una **cápsula** **paths.toolCapsules[&lt;tool-id&gt;]** (Cúmulo) y debe contar con:
+
+- **Implementación Rust:** código en `scripts/tools-rs/src/bin/&lt;tool_bin&gt;.rs`; binario final en `&lt;cápsula&gt;/&lt;tool_bin&gt;.exe` (copiado tras `scripts/tools-rs/install.ps1`).
+- **Fallback:** script `.ps1` en la cápsula cuando no exista o no se compile el binario Rust.
+- **Launcher:** `.bat` en la cápsula que invoque el binario (.exe) en la ruta de la tool; si no existe .exe, invocar el `.ps1`. Opcional: wrapper `.bat` en **paths.toolsPath** que delegue a la cápsula.
+- **manifest.json:** toolId, components (launcher_bat, launcher_ps1, config, doc, bin), contract_ref.
+- **Configuración:** cuando sea parametrizable, un `.json` de configuración en la cápsula.
+- **Documentación:** un `.md` en la cápsula que describa uso, parámetros y formato de la salida JSON. Idioma: es-ES.
+- **Tabla de salidas codificadas:** en la definición (SddIA/tools/&lt;tool-id&gt;/) una tabla con columnas exitCode, success, message_resumen, data_presente, descripción. Puede estar en spec.md o en output-salida-json.md.
+
+---
+
+## 5. Restricciones
+
+- `toolId` en kebab-case.
+- JSON de salida válido y UTF-8.
+- No incluir datos sensibles (contraseñas, tokens) en `message`, `feedback` ni `data`.
+- Coherencia: `exitCode === 0` solo cuando `success === true`; en fallo, `success === false` y `exitCode !== 0`.
+
+---
+
+## 6. Consumidores
+
+El contrato permite que acciones, agentes, otros scripts y pipelines (CI/CD) consuman un resultado uniforme y un feedback estructurado de todas las herramientas en **paths.toolsPath** y en cada cápsula **paths.toolCapsules[&lt;tool-id&gt;]** (Cúmulo).
+
+**Referencia machine-readable:** `SddIA/tools/tools-contract.json`.

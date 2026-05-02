@@ -1,0 +1,16 @@
+{
+  "principle": "Architectural Foundation",
+  "id": "CFG-ARCH-001",
+  "purpose": "Establish scalable physical and logical structure.",
+  "guidelines": [
+    "Code hierarchy under src/ (app/, components/, lib/, contexts/, types/).",
+    "Composition-based component architecture with hooks for reusable logic.",
+    "Interface-first design via TypeScript types and centralized API clients."
+  ],
+  "status": "Active",
+  "implementation": {
+    "location": "src/ (GesFer.Admin.Front; Next.js 14 App Router)",
+    "componentModel": "React Server Components by default; 'use client' only when interactivity required.",
+    "contractsPath": "src/types/ and src/lib/api/ (HTTP clients for Admin API)."
+  }
+}
