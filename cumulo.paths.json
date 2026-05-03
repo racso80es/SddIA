@@ -1,0 +1,25 @@
+{
+    "version": "1.0.0",
+    "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
+    "core": {
+      "constitution": "SddIA/CONSTITUTION_CORE.md",
+      "manifest": "SddIA/sddia-core.manifest.json",
+      "pathsDefinition": "SddIA/cumulo.paths.json"
+    },
+    "directories": {
+      "norms": "SddIA/norms",
+      "agents": "SddIA/agents",
+      "actions": "SddIA/actions",
+      "process": "SddIA/process",
+      "skills": "SddIA/skills",
+      "tools": "SddIA/tools",
+      "evolution": "SddIA/evolution"
+    },
+    "contracts": {
+      "agents": "SddIA/agents/agents-contract.md",
+      "actions": "SddIA/actions/actions-contract.md",
+      "process": "SddIA/process/process-contract.md",
+      "skills": "SddIA/skills/skills-contract.md",
+      "tools": "SddIA/tools/tools-contract.md"
+    }
+  }
