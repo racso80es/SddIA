@@ -9,17 +9,17 @@ jurisdiction: "Core SddIA"
 Este documento rige los Procesos, los flujos de trabajo de más alto nivel que guían el ciclo de vida del desarrollo (ej. creación de features, refactorizaciones).
 
 ## 1. Identidad Atómica (Innegociable)
-Todo proceso habita en su capsula (carpeta) ubicada según directrices de cúmulo con nombre '{name}'
 Todo proceso debe poseer un documento de definición `{name}.md` que declare:
 * **`uuid`**: Identificador único universal (v4).
 * **`name`**: Nombre con aporte de contexto sobre la entidad.
 * **`version`**: Control de versiones semántico (SemVer).
-* **`contrato`**: Versión de contrato implementado.
+* **`contract`**: Versión de contrato implementado.
+* **`context`**: Listado de política de Seguridad de las que hace uso.
 * **`hash_signature`**: Firma criptográfica de la integridad de sus fases.
 
 ## 2. Consciencia Espacial (Obediencia al SSOT)
 Los procesos dictan el camino, no el destino físico.
-* Deben leer la ubicación de las Acciones que lo componen estrictamente desde `cumulo.paths.json`.
+* Deben leer la ubicación de las Acciones que lo componen estrictamente desde lo indicado por cumulo.
 * Deben instruir a los agentes basándose en la topología oficial de Cúmulo, nunca asumiendo estructuras de carpetas locales del usuario.
 
 ## 3. Interfaz de Interacción y Fases

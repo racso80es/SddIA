@@ -9,11 +9,13 @@ jurisdiction: "Core SddIA"
 Este documento rige la estructura, obligaciones y límites operativos de cualquier Agente (entidad de dominio) que opere dentro del ecosistema SddIA. Ningún agente podrá ser instanciado o reconocido por Cúmulo si viola las siguientes cláusulas.
 
 ## 1. Identidad Atómica (Innegociable)
-Todo agente habita en su capsula (carpeta) ubicada según directrices de cúmulo con nombre '{name}'
 Todo agente debe poseer un documento de definición (`{name}.md`) que declare obligatoriamente:
 * **`uuid`**: Identificador único universal (v4). Inmutable a lo largo de la vida del agente.
 * **`name`**: Nombre con aporte de contexto sobre la entidad.
 * **`version`**: Control de versiones semántico (SemVer).
+* **`contract`**: Versión de contrato implementado.
+* **`allowed_policies`**:` Array innegociable de Contextos de Ejecución a los que el agente tiene acceso.
+* **`inputs` / `outputs`**: Definición estandarizada de la interfaz de comunicación.
 * **`hash_signature`**: (Opcional en desarrollo, obligatorio en producción) Firma criptográfica que valida la integridad de sus instrucciones base.
 
 ## 2. Consciencia Espacial (Obediencia al SSOT)

@@ -13,7 +13,9 @@
       "process": "SddIA/process",
       "skills": "SddIA/skills",
       "tools": "SddIA/tools",
-      "evolution": "SddIA/evolution"
+      "evolution": "SddIA/evolution",
+      "tokens": "SddIA/tokens",
+      "documentation": "docs"
     },
     "contracts": {
       "agents": "SddIA/agents/agents-contract.md",
@@ -21,5 +23,9 @@
       "process": "SddIA/process/process-contract.md",
       "skills": "SddIA/skills/skills-contract.md",
       "tools": "SddIA/tools/tools-contract.md"
+    },
+    "execution_capsules": {
+      "skills": "scripts/skills/",
+      "tools": "scripts/tools/"
     }
   }

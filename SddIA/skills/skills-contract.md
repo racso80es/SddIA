@@ -9,16 +9,17 @@ jurisdiction: "Core SddIA"
 Este documento rige la creación de Skills: capacidades de ejecución universales y agnósticas al proyecto, diseñadas como cápsulas blindadas.
 
 ## 1. Identidad Atómica (Innegociable)
-Toda skill habita en su capsula (carpeta) ubicada según directrices de cúmulo con nombre '{name}'
 Toda skill debe poseer un `{name}.md` en su capsula de definición con:
 * **`uuid`**: Identificador único universal (v4).
 * **`name`**: Nombre con aporte de contexto sobre la entidad.
 * **`version`**: SemVer.
-* **`contrato`**: Versión de contrato implementado.
+* **`contract`**: Versión de contrato implementado.
 * **`hash_signature`**: Firma del binario o script ejecutable asociado, garantizando que el código no ha sido manipulado (vital para operaciones de sistema).
+* **`context`**: Atributo obligatorio que define la Política de Seguridad a la que pertenece esta herramienta (ej. `source-control`, `filesystem-ops`), leída desde la normativa de Cerbero.
+* ** `inputs` / `outputs`**: Esquema JSON estricto para I/O vía stdin/stdout.
 
 ## 2. Consciencia Espacial y Encapsulamiento
-* El path hacia el ejecutable del skill debe registrarse y leerse exclusivamente desde `cumulo.paths.json`.
+* El ejecutable de la entidad debe residir en lo indicado por cumulo en la clave 'execution_capsules'.'skills'/{name}/.
 * Los Skills tienen prohibido leer variables de entorno locales del usuario a menos que se inyecten explícitamente durante su ejecución, protegiendo la Táctica del Refugio.
 
 ## 3. Interfaz de Interacción (I/O JSON Estricto)
