@@ -1,7 +1,11 @@
 ---
-contract_version: "1.0.0"
+contract_version: "1.1.0"
 entity_type: "skill"
 jurisdiction: "Core SddIA"
+capabilities:
+  - "skill-schema-governance"
+  - "json-stdin-stdout-io"
+  - "execution-capsule-routing"
 ---
 
 # Contrato de Skills (S+ Grade)
@@ -16,6 +20,7 @@ Toda skill debe poseer un `{name}.md` en su capsula de definición con:
 * **`contract`**: Versión de contrato implementado.
 * **`hash_signature`**: Firma del binario o script ejecutable asociado, garantizando que el código no ha sido manipulado (vital para operaciones de sistema).
 * **`context`**: Atributo obligatorio que define la Política de Seguridad a la que pertenece esta herramienta (ej. `source-control`, `filesystem-ops`), leída desde la normativa de Cerbero.
+* **`capabilities`**: Array obligatorio de strings que etiqueta las operaciones atómicas que resuelve la cápsula (enrutamiento semántico; ej. `uuid-generation`, `file-write`).
 * ** `inputs` / `outputs`**: Esquema JSON estricto para I/O vía stdin/stdout.
 
 ## 2. Consciencia Espacial y Encapsulamiento

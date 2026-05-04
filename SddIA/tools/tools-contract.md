@@ -1,7 +1,10 @@
 ---
-contract_version: "1.0.0"
+contract_version: "1.1.0"
 entity_type: "tool"
 jurisdiction: "Dominio Local / Proyecto"
+capabilities:
+  - "tool-schema-governance"
+  - "local-domain-execution-routing"
 ---
 
 # Contrato de Tools (S+ Grade)
@@ -16,6 +19,7 @@ Aunque sean locales, las Tools heredan el rigor S+ Grade. Deben poseer un `{name
 * **`contract`**: Versión de contrato implementado.
 * **`domain_origin`**: Declaración del proyecto o contexto específico al que pertenecen.
 * **`context`**: Atributo obligatorio de Política de Seguridad (ej. `quality-assurance`, `ecosystem-evolution`).
+* **`capabilities`**: Array obligatorio de strings que etiqueta las operaciones atómicas que resuelve la tool (enrutamiento semántico).
 
 ## 2. Ejecución Local
 * El ejecutable de la entidad debe residir en lo indicado por cumulo en la clave 'execution_capsules'.'tools'/{name}/.

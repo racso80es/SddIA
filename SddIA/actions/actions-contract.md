@@ -1,7 +1,11 @@
 ---
-contract_version: "1.0.0"
+contract_version: "1.1.0"
 entity_type: "action"
 jurisdiction: "Core SddIA"
+capabilities:
+  - "action-schema-governance"
+  - "skill-tool-orchestration"
+  - "ssot-delegation-routing"
 ---
 
 # Contrato de Actions (S+ Grade)
@@ -16,6 +20,7 @@ Toda acción debe definirse mediante un archivo `{name}.md` que declare obligato
 * **`contract`**: Versión de contrato implementado.
 * **`hash_signature`**: (Opcional en desarrollo) Firma criptográfica que valida la integridad de su lógica orquestal.
 * **`context`**: Atributo obligatorio de Política de Seguridad (ej. `quality-assurance`, `ecosystem-evolution`).
+* **`capabilities`**: Array obligatorio de strings que etiqueta las operaciones atómicas u orquestaciones lógicas que expone la acción (enrutamiento semántico).
 
 ## 2. Consciencia Espacial (Obediencia al SSOT)
 Las acciones no ejecutan código directamente ni acceden al sistema operativo. 

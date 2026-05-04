@@ -1,7 +1,10 @@
 ---
-contract_version: "1.0.0"
+contract_version: "1.1.0"
 entity_type: "process"
 jurisdiction: "Core SddIA"
+capabilities:
+  - "process-schema-governance"
+  - "declarative-phase-routing"
 ---
 
 # Contrato de Process (S+ Grade)
@@ -15,7 +18,7 @@ Todo proceso debe poseer un documento de definición `{name}.md` que declare:
 * **`version`**: Control de versiones semántico (SemVer).
 * **`contract`**: Versión de contrato implementado.
 * **`context`**: Listado de política de Seguridad de las que hace uso.
-* **`hash_signature`**: Firma criptográfica de la integridad de sus fases.
+* **`hash_signature`**: Firma criptográfica de la integridad de sus fases (recomendado: `sha256:` + digest hexadecimal del JSON canónico UTF-8 del array `phases`, con `sort_keys=True` en serialización de cada objeto).
 
 ## 2. Consciencia Espacial (Obediencia al SSOT)
 Los procesos dictan el camino, no el destino físico.
@@ -25,7 +28,16 @@ Los procesos dictan el camino, no el destino físico.
 ## 3. Interfaz de Interacción y Fases
 La comunicación debe ser paramétrica. El `{name}.md` debe declarar:
 * **`inputs`**: Datos de inicio (ej. el spec de una nueva feature).
-* **`phases`**: Listado inmutable de las etapas que el agente debe transitar obligatoriamente, sin saltos lógicos.
+* **`phases`**: Array inmutable de objetos; cada elemento define una fase declarativa y el enrutamiento por capacidades (sin deducción libre del LLM). Estructura estricta:
+
+```yaml
+phases:
+  - name: "Nombre de fase"
+    intent: "Descripción de lo que se busca"
+    delegates_to: ["tipo:nombre-de-capsula"]  # ej. ["skill:cryptography-manager", "action:identity-manager"]
+```
+
+Donde `tipo` ∈ {`skill`, `tool`, `action`, `agent`} y `nombre-de-capsula` coincide con el `name` de la cápsula destino indexada bajo cumulo.
 * **`outputs`**: Los artefactos finales que certifican el cierre del proceso.
 
 ## 4. Física del Valor y Evolución (Bloque Latente)
