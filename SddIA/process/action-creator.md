@@ -4,7 +4,7 @@ name: "action-creator"
 version: "1.0.0"
 contract: "process-contract v1.1.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:04932d49bc36d828d54b701c2015c6be56a5001ed6ce5ed85218416fd3ee51ca"
+hash_signature: "sha256:d8c7fe050f33195bb373683e85bca0bd02b5ca4a70799473e1dcfa6c96b595ae"
 inputs:
   - "action_name": "Identificador kebab-case de la acción (`{name}` del archivo `{name}.md` en `cumulo.directories.actions`)"
   - "action_context": "Contexto RBAC Cerbero válido según `execution-contexts.md`"
@@ -23,6 +23,7 @@ phases:
   - name: "Forja del Artefacto"
     intent: "Generar uuid v4 y cabecera YAML (contract, context, capabilities, inputs, outputs, hash_signature si aplica) según actions-contract; cuerpo con orquestación bajo directories.actions."
     delegates_to:
+      - "skill:cryptography-manager"
       - "skill:filesystem-manager"
   - name: "Gobernanza"
     intent: "Crear o actualizar actions/index.md con columna Capabilities y fila idéntica a la cabecera de la acción creada."
@@ -46,9 +47,10 @@ Proceso maestro para instanciar nuevas acciones (orquestaciones lógicas) en el 
 
 ## Fase 2 — Forja del Artefacto
 
-1. Emitir identidad atómica (`uuid` v4), `contract` alineado a `actions-contract.md` (`cumulo.contracts.actions`) y `capabilities` obligatorio según contrato.
-2. Redactar `{paths.directories.actions}/{action_name}.md` con secciones de propósito, grafo o secuencia de orquestación y límites termodinámicos (`minteo_maximo`, `porcentaje_de_exito` si aplican).
-3. Documentar explícitamente el uso de skills/tools únicamente como cápsulas referenciadas desde topología cumulo.
+1. Emitir identidad atómica invocando `skill:cryptography-manager` con `{"operation":"GENERATE_UUID","target_payload":null}` por stdin; usar `data.result` como `uuid` v4. Si el contrato exige `hash_signature` sobre un bloque canónico, calcularlo exclusivamente con `GENERATE_SHA256` + `target_type` `STRING` y el payload exacto acordado. Prohibido UUID o digest por terminal ad hoc.
+2. Asignar `contract` alineado a `actions-contract.md` (`cumulo.contracts.actions`) y `capabilities` obligatorio según contrato.
+3. Redactar `{paths.directories.actions}/{action_name}.md` con secciones de propósito, grafo o secuencia de orquestación y límites termodinámicos (`minteo_maximo`, `porcentaje_de_exito` si aplican).
+4. Documentar explícitamente el uso de skills/tools únicamente como cápsulas referenciadas desde topología cumulo.
 
 ## Fase 3 — Gobernanza
 

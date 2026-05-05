@@ -49,10 +49,11 @@ Proceso maestro para estandarizar y automatizar la creación de nuevas skills (d
 
 ## Fase 2 — Forja del Markdown
 
-1. Emitir `uuid` v4 nuevo; asignar `contract` como `skills-contract v{skills_contract_version}`, `context` igual a `skill_context` validado y `capabilities` obligatorio según contrato.
-2. Calcular `hash_signature` según política declarada en el contrato de skills (integridad del artefacto ejecutable o, en modalidad LLM-Native, del bloque canónico acordado para la definición).
-3. Escribir `{paths.directories.skills}/{skill_name}.md` con secciones de propósito, ejecución/cápsula (`paths.execution_capsules.skills` si aplica) y límites termodinámicos coherentes con la descripción.
-4. No hardcodear rutas absolutas del host; resolver `directories.skills` y `contracts.skills` exclusivamente desde el SSOT de cumulo.
+1. Invocar `skill:cryptography-manager` (ruta vía `cumulo.paths.json` → `execution_capsules.skills`) con un único JSON por stdin: `{"operation":"GENERATE_UUID","target_payload":null}`; usar `data.result` como `uuid` v4 nuevo. Prohibido inventar UUID o usar runtime ad hoc.
+2. Calcular `hash_signature` según política declarada en el contrato de skills: materializar el bloque o bytes sujetos a integridad, invocar `skill:cryptography-manager` con `GENERATE_SHA256` (`target_type` `STRING` o `FILE_PATH` según corresponda) y asignar el prefijo `sha256:` + digest devuelto en `data.result`. Prohibido `hashlib` mental, calculadoras inline o `python -c` fuera de la cápsula.
+3. Asignar `contract` como `skills-contract v{skills_contract_version}`, `context` igual a `skill_context` validado y `capabilities` obligatorio según contrato.
+4. Escribir `{paths.directories.skills}/{skill_name}.md` con secciones de propósito, ejecución/cápsula (`paths.execution_capsules.skills` si aplica) y límites termodinámicos coherentes con la descripción.
+5. No hardcodear rutas absolutas del host; resolver `directories.skills` y `contracts.skills` exclusivamente desde el SSOT de cumulo.
 
 ## Fase 3 — Indexación
 

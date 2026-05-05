@@ -4,7 +4,7 @@ name: "process-creator"
 version: "1.0.0"
 contract: "process-contract v1.1.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:a758b9f638d4ae97faee34d86092e0d368bb27c8a20d1193fb9eb8af1332f8c3"
+hash_signature: "sha256:17e0e599a8b9e85bf2eff64de5bfd0455ca100b61246e561fea2f32ff0981083"
 inputs:
   - "process_name": "Identificador kebab-case del proceso (`{name}` del archivo `{name}.md`)"
   - "process_description": "Descripción operativa del propósito del proceso"
@@ -23,6 +23,7 @@ phases:
   - name: "Forja del archivo"
     intent: "Generar uuid v4; calcular hash_signature canónico del array phases (JSON UTF-8, sort_keys); redactar YAML y cuerpo conforme a process-contract; persistir bajo directories.process."
     delegates_to:
+      - "skill:cryptography-manager"
       - "skill:filesystem-manager"
   - name: "Auditoría y actualización del índice"
     intent: "Verificar process/index.md y fila Name|UUID|Versión|Context|Descripción alineada al YAML fuente."
@@ -46,8 +47,8 @@ Proceso maestro para instanciar nuevos procesos en el Core SddIA y mantener el �
 
 ## Fase 2 — Forja del archivo
 
-1. Generar `uuid` v4 nuevo para el proceso hijo (no reutilizar el de process-creator).
-2. Calcular `hash_signature` como `sha256:` + digest hexadecimal del JSON canónico UTF-8 del array `phases` (objetos con `name`, `intent`, `delegates_to`), serializado con claves ordenadas (`sort_keys=True`).
+1. Invocar `skill:cryptography-manager` (cápsula bajo `paths.execution_capsules.skills`) con un único JSON por stdin: `{"operation":"GENERATE_UUID","target_payload":null}`; tomar `data.result` como `uuid` v4 del proceso hijo (no reutilizar el de process-creator). Prohibido generar UUID por heurística o código ad hoc.
+2. Serializar el array `phases` acordado a JSON UTF-8 canónico (objetos con `name`, `intent`, `delegates_to`; `json.dumps(..., sort_keys=True, separators=(',', ':'), ensure_ascii=False)`). Invocar `skill:cryptography-manager` con `{"operation":"GENERATE_SHA256","target_type":"STRING","target_payload":"<cadena canónica>"}`; asignar `hash_signature` como `sha256:` + `data.result` (hex minúsculas). Prohibido calcular SHA-256 fuera de esta cápsula.
 3. Escribir `{paths.directories.process}/{process_name}.md` con cabecera YAML (uuid, name, version, contract, context, hash_signature, inputs, phases, outputs, métricas si aplican) y cuerpo que describa cada fase en prosa operativa.
 4. Leer rutas físicas solo vía `cumulo.paths.json` (`directories.process`, `contracts.process`, `directories.norms`).
 
