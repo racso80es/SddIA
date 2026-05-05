@@ -14,8 +14,8 @@ inputs:
   - "skill_version": "SemVer de la nueva skill (ej. 1.0.0)"
   - "skills_contract_version": "Versión del contrato skills a materializar (ej. 1.0.0 según `skills-contract.md`)"
 outputs:
-  - "artifact_skill_md": "Archivo `SddIA/skills/{skill_name}.md` con cabecera YAML conforme a `skills-contract.md`"
-  - "artifact_skills_index": "`SddIA/skills/index.md` actualizado con fila sincronizada a la cabecera YAML de la skill"
+  - "artifact_skill_md": "Archivo `{paths.directories.skills}/{skill_name}.md` con cabecera YAML conforme a `paths.contracts.skills`"
+  - "artifact_skills_index": "`{paths.directories.skills}/index.md` actualizado con fila sincronizada a la cabecera YAML de la skill"
 phases:
   - name: "Validación RBAC y topología"
     intent: "Verificar skill_context en execution-contexts; unicidad y kebab-case de skill_name bajo directories.skills; SemVer y esquemas I/O."
@@ -42,8 +42,8 @@ Proceso maestro para estandarizar y automatizar la creación de nuevas skills (d
 
 ## Fase 1 — Validación RBAC y topología
 
-1. Cargar `SddIA/norms/execution-contexts.md` desde la clave `directories.norms` de `cumulo.paths.json` y comprobar que `skill_context` coincide con un identificador de sección 2.x (`source-control`, `filesystem-ops`, `knowledge-management`, `quality-assurance`, `ecosystem-evolution`).
-2. Verificar que no exista `SddIA/skills/{skill_name}.md` y que `skill_name` cumpla kebab-case.
+1. Cargar `execution-contexts.md` desde `paths.directories.norms` y comprobar que `skill_context` coincide con un identificador de sección 2.x (`source-control`, `filesystem-ops`, `knowledge-management`, `quality-assurance`, `ecosystem-evolution`).
+2. Verificar que no exista `{paths.directories.skills}/{skill_name}.md` y que `skill_name` cumpla kebab-case.
 3. Validar `skill_version` y `skills_contract_version` frente a `skills-contract.md` vigente (`cumulo.contracts.skills`).
 4. Auditar que `skill_inputs_schema` y `skill_outputs_schema` cubren el contrato de I/O JSON estricto (stdin / stdout).
 
@@ -51,11 +51,11 @@ Proceso maestro para estandarizar y automatizar la creación de nuevas skills (d
 
 1. Emitir `uuid` v4 nuevo; asignar `contract` como `skills-contract v{skills_contract_version}`, `context` igual a `skill_context` validado y `capabilities` obligatorio según contrato.
 2. Calcular `hash_signature` según política declarada en el contrato de skills (integridad del artefacto ejecutable o, en modalidad LLM-Native, del bloque canónico acordado para la definición).
-3. Escribir `SddIA/skills/{skill_name}.md` con secciones de propósito, ejecución/cápsula (`execution_capsules.skills` si aplica) y límites termodinámicos coherentes con la descripción.
+3. Escribir `{paths.directories.skills}/{skill_name}.md` con secciones de propósito, ejecución/cápsula (`paths.execution_capsules.skills` si aplica) y límites termodinámicos coherentes con la descripción.
 4. No hardcodear rutas absolutas del host; resolver `directories.skills` y `contracts.skills` exclusivamente desde el SSOT de cumulo.
 
 ## Fase 3 — Indexación
 
-1. Abrir `SddIA/skills/index.md` y localizar la tabla de catálogo de definiciones (columna **Capabilities** obligatoria).
+1. Abrir `{paths.directories.skills}/index.md` y localizar la tabla de catálogo de definiciones (columna **Capabilities** obligatoria).
 2. Insertar o actualizar la fila asociada a `{skill_name}.md` copiando `uuid`, `name`, `version`, `contract`, `context` y `capabilities` desde el YAML fuente sin divergencia.
 3. Ejecutar verificación cruzada índice ↔ cabecera antes de cerrar la instancia del proceso.

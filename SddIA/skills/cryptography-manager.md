@@ -30,7 +30,7 @@ Esta skill **no** es LLM-Native. Su uso requiere invocar la cápsula homónima r
 
 Comando orientativo (desde la raíz del workspace):
 
-`python scripts/skills/cryptography-manager.py`
+`python {paths.execution_capsules.skills}/cryptography-manager.py`
 
 ## 3. Contrato I/O (stdin / stdout)
 * **Entrada:** JSON UTF-8 con `operation`, `target_type` (salvo `GENERATE_UUID`) y `target_payload` según el esquema del frontmatter.

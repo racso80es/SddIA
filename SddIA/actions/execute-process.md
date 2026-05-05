@@ -32,6 +32,6 @@ Orquestar de extremo a extremo la ejecución autónoma de un **proceso** del Cor
 4. **Ejecución y cierre:** Tras autorización, se emite la invocación estructurada (`skill_invocations` u homólogo para tools/actions hijas), se registra el resultado en `execution_report` y se avanza a la siguiente fase. Al completar la última fase sin abortos, `status_code: 0`.
 
 ## 3. Límites y referencias de agentes
-* **Tekton:** definición operativa en `SddIA/agents/tekton` — prohibición explícita de terminal nativa; obediencia a fases y topología inyectada.
-* **Cerbero:** `SddIA/agents/cerbero.md` — intercepción pura; bloqueo binario si el contexto de la cápsula no está permitido para la entidad solicitante.
-* **Contrato de acciones:** `actions-contract.md` — sin acceso directo al SO; solo delegación en skills/tools con ruteo cumulo.
+* **Tekton:** definición operativa bajo `paths.directories.agents` — prohibición explícita de terminal nativa; obediencia a fases y topología inyectada.
+* **Cerbero:** definición operativa bajo `paths.directories.agents` — intercepción pura; bloqueo binario si el contexto de la cápsula no está permitido para la entidad solicitante.
+* **Contrato de acciones:** `paths.contracts.actions` — sin acceso directo al SO; solo delegación en skills/tools con ruteo cumulo.

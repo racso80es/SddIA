@@ -12,11 +12,11 @@ Infraestructura de activos digitales, no repositorio de scripts. Framework para 
 
 | Entidad | Finalidad | Ubicación Core | Relación operativa |
 |---------|-----------|----------------|-------------------|
-| **Agent** | Orquestador de consciencia y responsable de una fase específica. | `SddIA/agents/` | Posee Skills y ejecuta Acciones dentro de un **Process**. |
-| **Process** | Roadmap lógico de alto nivel para un objetivo macro (p. ej. feature). | `SddIA/process/` | Orquesta el relevo (*handoff*) entre distintos **Agents**. |
-| **Action** | Paso atómico, indivisible y auditable de ejecución. | `SddIA/actions/` | Invoca **Skills** o **Tools** para el trabajo técnico. |
-| **Skill** | Capacidad técnica especializada definida por contrato. | `SddIA/skills/` | Ejecutada por **Cápsula** blindada (binario Rust). |
-| **Tool** | Capacidad de infraestructura o utilidad de dominio. | `SddIA/tools/` | Servicios base a las **Actions** vía **Cápsula**. |
+| **Agent** | Orquestador de consciencia y responsable de una fase específica. | `paths.directories.agents` | Posee Skills y ejecuta Acciones dentro de un **Process**. |
+| **Process** | Roadmap lógico de alto nivel para un objetivo macro (p. ej. feature). | `paths.directories.process` | Orquesta el relevo (*handoff*) entre distintos **Agents**. |
+| **Action** | Paso atómico, indivisible y auditable de ejecución. | `paths.directories.actions` | Invoca **Skills** o **Tools** para el trabajo técnico. |
+| **Skill** | Capacidad técnica especializada definida por contrato. | `paths.directories.skills` | Ejecutada por **Cápsula** blindada (binario Rust). |
+| **Tool** | Capacidad de infraestructura o utilidad de dominio. | `paths.directories.tools` | Servicios base a las **Actions** vía **Cápsula**. |
 
 Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asigna un **Agent** titular; el **Agent** descompone en **Actions**; las **Actions** consumen **Skills** y **Tools** materializados en cápsulas.
 
