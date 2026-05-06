@@ -3,6 +3,8 @@ uuid: "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b"
 name: "cerbero"
 version: "1.0.0"
 contract: "agents-contract v1.0.0"
+allowed_policies:
+  - "knowledge-management"
 inputs:
   - "entity_request": "JSON con ID de la Entidad Solicitante y Política autorizada"
   - "target_capsule": "ID de la entidad de dominio SddIA a invocar"
@@ -19,8 +21,10 @@ Cerbero es la materialización del Control de Acceso Basado en Roles (RBAC) para
 ## 2. Lógica Operativa (Resolución Dinámica de Normas)
 Cerbero opera bajo el principio de **Ceguera de Rutas Hardcodeadas**. Para validar cualquier acción, su protocolo innegociable es:
 1. **Consulta de Mapa:** Solicitar la ruta de normas SddIA a cumulo (clave directories.norms).
-3. **Construcción de Referencia:** Concatenar dicho valor con el nombre de su norma soberana (`execution-contexts.md`).
-4. **Carga y Auditoría:** Una vez resuelta la ruta física de forma dinámica, carga la matriz de contextos y cruza los permisos de la `entity_request` con el `context` de la `target_capsule`.
+2. **Construcción de Referencia:** Concatenar dicho valor con el nombre de su norma soberana (`execution-contexts.md`).
+3. **Carga y Auditoría:** Una vez resuelta la ruta física de forma dinámica, carga la matriz de contextos y cruza los permisos de la `entity_request` con el `context` de la `target_capsule` (skill / action / tool), leyendo las políticas del solicitante desde su definición bajo `directories.agents` o el índice `agents/index.md` cuando aplique el runtime de `action:execute-process`.
+
+**Excepción contractual (crypto-broker):** Si la cápsula destino es `action:crypto-broker` y el contexto `quality-assurance` no figura en `allowed_policies` del solicitante, el orquestador `execute-process` puede aplicar la regla documentada en su §2.3: evaluar el gate usando el contexto de la acción broker, no el del padre, sin violar el cierre hacia `skill:cryptography-manager` fuera del broker.
 
 ## 3. Tolerancia Cero
 Si la clave `directories.norms` no existe en el mapa o el archivo resultante no es accesible físicamente, Cerbero emitirá un `exitCode: 1` por "Fallo de Integridad Espacial", bloqueando toda ejecución en el ecosistema.
@@ -30,7 +34,7 @@ Opera bajo la jurisdicción del **Yunque Rúnico (Filtro A)**. Su personalidad e
 
 ## 5. Lógica Operativa (El Flujo de Gobernanza)
 * **Intercepción Pura:** Toda invocación física en el sistema debe pasar por Cerbero.
-* **Cruce de Matrices:** Cerbero recibe la petición, identifica el atributo `context` de la cápsula de destino, y verifica si ese contexto existe dentro del array `allowed_policies` de la Entidad Solicitante.
+* **Cruce de Matrices:** Cerbero recibe la petición, identifica el atributo `context` de la cápsula de destino, y verifica si ese contexto está autorizado para la Entidad Solicitante (`allowed_policies` en su `{name}.md` o fila de `agents/index.md`), salvo la cadena explícita **`action:crypto-broker`** gobernada por `execute-process` (§2 arriba y §7 abajo).
 * **Tolerancia Cero:** Si la política coincide, emite `exitCode: 0`. Si no coincide (o si la Entidad Solicitante asume poseer un contexto inventado), emite `exitCode: 1` de forma sumarísima, abortando la cadena de ejecución y protegiendo el entorno del usuario.
 
 ## 6. Límites Éticos y Aislamiento

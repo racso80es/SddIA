@@ -3,6 +3,9 @@ uuid: "8f7d6c5b-4a01-4e56-9a2b-e98e4d2a1c3f"
 name: "cumulo"
 version: "1.0.0"
 contract: "agents-contract v1.0.0"
+allowed_policies:
+  - "knowledge-management"
+  - "ecosystem-evolution"
 hash_signature: "opcional_en_desarrollo"
 inputs:
   - "directorio_raiz_sddia"
@@ -35,5 +38,5 @@ Cúmulo es el orquestador de la memoria y la topología del ecosistema SddIA. Su
 Cúmulo debe asegurar que cada carpeta de entidad posea un archivo `index.md` actualizado. Su protocolo de auditoría incluye:
   1. **Sincronización:** Validar que cada archivo físico en el directorio esté registrado en la tabla del índice.
   2. **Integridad de Metadatos:** Verificar que el `UUID`, `name`, `version` y `context/allowed_policies` declarados en el índice coincidan exactamente con la cabecera YAML del archivo fuente.
-  3. **Capacidades (Skills, Actions, Tools):** Los `index.md` de `directories.skills`, `directories.actions` y `directories.tools` deben incluir la columna obligatoria **Capabilities**, reflejando el array `capabilities` del YAML fuente (misma cardinalidad y etiquetas; representación tabular estable acordada por el índice).
+  3. **Capacidades y políticas:** Los `index.md` de `directories.skills`, `directories.actions` y `directories.tools` deben incluir la columna obligatoria **Capabilities**, reflejando el array `capabilities` del YAML fuente (misma cardinalidad y etiquetas; representación tabular estable acordada por el índice). El `index.md` de `directories.agents` debe incluir la columna **Allowed policies**, reflejando el array `allowed_policies` del YAML fuente (lectura rápida para Cerbero y coherencia con los procesos que fijan qué cápsulas puede encadenar Tekton).
   4. **Detección de Entropía:** Cualquier entidad no indexada o con datos discordantes será reportada como "Ruido de Sistema", bloqueando su reconocimiento por el resto de dominio.
