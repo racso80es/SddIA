@@ -20,6 +20,21 @@ Infraestructura de activos digitales, no repositorio de scripts. Framework para 
 
 Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asigna un **Agent** titular; el **Agent** descompone en **Actions**; las **Actions** consumen **Skills** y **Tools** materializados en cápsulas.
 
+## Agentes del Core (resumen)
+
+Catálogo canónico (UUID, `allowed_policies`, versiones): `{paths.directories.agents}` según `cumulo.paths.json`; tabla e índice en [SddIA/agents/index.md](SddIA/agents/index.md). Cada definición vive en `{name}.md` junto al contrato de familia `agents-contract.md`.
+
+| Agente | Rol (una línea) |
+|--------|------------------|
+| **Cerbero** | Peaje RBAC: autoriza o bloquea invocaciones según contexto y políticas. |
+| **Cúmulo** | SSOT: topología, índices y coherencia documental del Core. |
+| **Tekton** | Ejecución: materializa procesos delegando en cápsulas, sin terminal cruda. |
+| **Mayeuta** | Clarificación: estabiliza el *qué* y el *por qué*; no diseña procesos ni código. |
+| **Dedalo** | Planificación: norm pack + blueprint de **Process** alineado a contrato y RBAC del ejecutor. |
+| **Argos** | Verificación: orquesta linters/tests/SAST vía procesos; juicio por evidencia, no por “vibes”. |
+
+**Flujo típico:** Mayeuta → Dedalo → Tekton → Argos. Cerbero actúa en cada paso de delegación a cápsulas; Cúmulo gobierna rutas y catálogos.
+
 ## Orquestación multi-agente y relevo por artefactos
 La colaboración entre agentes (p. ej. Tekton y un agente de seguridad) no es mensajería efímera: es **línea de montaje** gobernada por el **Process**.
 
