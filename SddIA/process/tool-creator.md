@@ -2,9 +2,9 @@
 uuid: "c4355159-b6ea-4201-973a-a08db5ce8156"
 name: "tool-creator"
 version: "1.0.0"
-contract: "process-contract v1.1.0"
+contract: "process-contract v1.2.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:436b3763f3587e3dec57200bb8144c04bc6149e9bea026b1143b1abbbdb2cb46"
+hash_signature: "sha256:22b15bb2204ae9b1f5cbabc5734d646010108340b1ec95e620c44558850bac5e"
 inputs:
   - "tool_name": "Identificador kebab-case de la tool (`{name}` del archivo `{name}.md` bajo `cumulo.directories.tools`)"
   - "domain_origin": "Proyecto o contexto de dominio al que pertenece la tool (alineado a `domain_origin` del contrato de tools)"
@@ -30,12 +30,22 @@ phases:
   - name: "Forja del Contrato y Cápsula"
     intent: "Generar el archivo Markdown bajo contrato v1.0.0 y el script físico en el domain_origin."
     delegates_to:
-      - "skill:cryptography-manager"
-      - "skill:filesystem-write"
+      - "action:crypto-broker"
+      - "skill:filesystem-manager"
   - name: "Indexación"
     intent: "Actualizar el catálogo de Tools con la nueva entidad exponiendo sus capabilities."
     delegates_to:
-      - "skill:filesystem-write"
+      - "skill:filesystem-manager"
+phase_invocations:
+  - phase_name: "Forja del Contrato y Cápsula"
+    invocations:
+      - capsule: "action:crypto-broker"
+        stdin_json:
+          operation: "GENERATE_UUID"
+          target_payload: null
+        bind:
+          "data.result": "child_tool_uuid"
+        on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -58,7 +68,7 @@ Proceso maestro para instanciar herramientas de dominio (Tools) complejas en el 
 
 ## Fase 3 — Forja del Contrato y Cápsula
 
-1. Generar `uuid` v4 invocando `skill:cryptography-manager` con `{"operation":"GENERATE_UUID","target_payload":null}` por stdin; usar `data.result` en la cabecera YAML. Prohibido UUID por heurística o `python -c` u otros atajos de shell.
+1. Ejecutar `phase_invocations`: obtener `child_tool_uuid` vía `action:crypto-broker` (`GENERATE_UUID`); incluir en cabecera YAML de la tool.
 2. Completar metadatos de tool según `tools-contract.md` (`paths.contracts.tools`); alinear versión de contrato declarada (p. ej. materialización bajo especificación vigente; la fase prevé generación compatible con baseline v1.0.0 donde aplique).
 3. Redactar `{paths.directories.tools}/{tool_name}.md` con `capabilities`, `inputs`, `outputs` y vínculo a cápsula bajo `paths.execution_capsules.tools` si corresponde.
 4. Persistir script físico o esqueleto ejecutable en la ruta resuelta por cumulo, sin escritura fuera del SSOT.

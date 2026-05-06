@@ -35,3 +35,6 @@ Opera bajo la jurisdicción del **Yunque Rúnico (Filtro A)**. Su personalidad e
 
 ## 6. Límites Éticos y Aislamiento
 * Cerbero tiene prohibido modificar los permisos de los agentes o la norma de contextos. Su naturaleza es puramente de lectura y bloqueo (Read & Block).
+
+## 7. Delegación controlada hacia `quality-assurance` (crypto-broker)
+La skill `cryptography-manager` declara contexto `quality-assurance`. Los procesos de forja bajo `ecosystem-evolution` **no** deben figurar con `skill:cryptography-manager` en `delegates_to`: la invocación autorizada pasa por **`action:crypto-broker`**, cuyo `context` es `quality-assurance`. El runtime de `execute-process` evalúa Cerbero contra el contexto de la cápsula destino; cuando la cadena declara `action:crypto-broker`, la política aplicable es la del broker, no la ampliación arbitraria de `allowed_policies` del orquestador padre. Toda otra ruta hacia operaciones criptográficas se considera **violación de perímetro**.

@@ -2,9 +2,9 @@
 uuid: "b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d"
 name: "skill-creator"
 version: "1.0.0"
-contract: "process-contract v1.1.0"
+contract: "process-contract v1.2.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:c75699b4ce67f188b7921005bf08bdbc9ea12b01877b9716fa16d1cc2e469811"
+hash_signature: "sha256:b440cb791d2d5ea69a4c11c3f7dd9fe6ebcb1df3e1a512f4bdf18c3c7acefb45"
 inputs:
   - "skill_name": "Identificador kebab-case de la skill (`{name}` del archivo `{name}.md` en `cumulo.directories.skills`)"
   - "skill_context": "Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)"
@@ -25,13 +25,42 @@ phases:
   - name: "Forja del Markdown"
     intent: "Generar uuid v4 y hash_signature de integridad según política de skills; YAML (contract, context, capabilities, inputs, outputs) y cuerpo conforme a contracts.skills; rutas solo vía cumulo."
     delegates_to:
+      - "action:crypto-broker"
       - "skill:filesystem-manager"
-      - "skill:cryptography-manager"
   - name: "Indexación"
     intent: "Auditar skills/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la skill creada."
     delegates_to:
       - "agent:cumulo"
       - "skill:filesystem-manager"
+phase_invocations:
+  - phase_name: "Forja del Markdown"
+    invocations:
+      - capsule: "action:crypto-broker"
+        stdin_json:
+          operation: "GENERATE_UUID"
+          target_payload: null
+        bind:
+          "data.result": "child_skill_uuid"
+        on_error: abort
+      - capsule: "action:crypto-broker"
+        stdin_spec:
+          operation: "GENERATE_SHA256"
+          target_type: "STRING"
+          target_payload:
+            type: "canonical_json_utf8"
+            from_process_inputs:
+              - "skill_name"
+              - "skill_version"
+              - "skill_context"
+              - "skill_inputs_schema"
+              - "skill_outputs_schema"
+            json_dumps:
+              sort_keys: true
+              separators: [",", ":"]
+              ensure_ascii: false
+        bind:
+          "data.result": "child_skill_integrity_hex"
+        on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -49,11 +78,10 @@ Proceso maestro para estandarizar y automatizar la creación de nuevas skills (d
 
 ## Fase 2 — Forja del Markdown
 
-1. Invocar `skill:cryptography-manager` (ruta vía `cumulo.paths.json` → `execution_capsules.skills`) con un único JSON por stdin: `{"operation":"GENERATE_UUID","target_payload":null}`; usar `data.result` como `uuid` v4 nuevo. Prohibido inventar UUID o usar runtime ad hoc.
-2. Calcular `hash_signature` según política declarada en el contrato de skills: materializar el bloque o bytes sujetos a integridad, invocar `skill:cryptography-manager` con `GENERATE_SHA256` (`target_type` `STRING` o `FILE_PATH` según corresponda) y asignar el prefijo `sha256:` + digest devuelto en `data.result`. Prohibido `hashlib` mental, calculadoras inline o `python -c` fuera de la cápsula.
-3. Asignar `contract` como `skills-contract v{skills_contract_version}`, `context` igual a `skill_context` validado y `capabilities` obligatorio según contrato.
-4. Escribir `{paths.directories.skills}/{skill_name}.md` con secciones de propósito, ejecución/cápsula (`paths.execution_capsules.skills` si aplica) y límites termodinámicos coherentes con la descripción.
-5. No hardcodear rutas absolutas del host; resolver `directories.skills` y `contracts.skills` exclusivamente desde el SSOT de cumulo.
+1. Ejecutar `phase_invocations`: `child_skill_uuid` y `child_skill_integrity_hex` vía `action:crypto-broker`; asignar `hash_signature` como `sha256:` + hex cuando la política de skills lo exija sobre el sujeto canónico definido por las claves listadas.
+2. Asignar `contract` como `skills-contract v{skills_contract_version}`, `context` igual a `skill_context` validado y `capabilities` obligatorio según contrato.
+3. Escribir `{paths.directories.skills}/{skill_name}.md` con secciones de propósito, ejecución/cápsula (`paths.execution_capsules.skills` si aplica) y límites termodinámicos coherentes con la descripción.
+4. No hardcodear rutas absolutas del host; resolver `directories.skills` y `contracts.skills` exclusivamente desde el SSOT de cumulo.
 
 ## Fase 3 — Indexación
 

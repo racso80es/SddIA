@@ -2,9 +2,9 @@
 uuid: "7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4"
 name: "process-creator"
 version: "1.0.0"
-contract: "process-contract v1.1.0"
+contract: "process-contract v1.2.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:17e0e599a8b9e85bf2eff64de5bfd0455ca100b61246e561fea2f32ff0981083"
+hash_signature: "sha256:b0b74db50d849219c315cd934ec299750bb87791a17fd3abed89bfccf4652730"
 inputs:
   - "process_name": "Identificador kebab-case del proceso (`{name}` del archivo `{name}.md`)"
   - "process_description": "Descripción operativa del propósito del proceso"
@@ -23,13 +23,37 @@ phases:
   - name: "Forja del archivo"
     intent: "Generar uuid v4; calcular hash_signature canónico del array phases (JSON UTF-8, sort_keys); redactar YAML y cuerpo conforme a process-contract; persistir bajo directories.process."
     delegates_to:
-      - "skill:cryptography-manager"
+      - "action:crypto-broker"
       - "skill:filesystem-manager"
   - name: "Auditoría y actualización del índice"
     intent: "Verificar process/index.md y fila Name|UUID|Versión|Context|Descripción alineada al YAML fuente."
     delegates_to:
       - "agent:cumulo"
       - "skill:filesystem-manager"
+phase_invocations:
+  - phase_name: "Forja del archivo"
+    invocations:
+      - capsule: "action:crypto-broker"
+        stdin_json:
+          operation: "GENERATE_UUID"
+          target_payload: null
+        bind:
+          "data.result": "child_process_uuid"
+        on_error: abort
+      - capsule: "action:crypto-broker"
+        stdin_spec:
+          operation: "GENERATE_SHA256"
+          target_type: "STRING"
+          target_payload:
+            type: "canonical_json_utf8"
+            from_process_input: "process_phases"
+            json_dumps:
+              sort_keys: true
+              separators: [",", ":"]
+              ensure_ascii: false
+        bind:
+          "data.result": "child_phases_sha256_hex"
+        on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -47,10 +71,9 @@ Proceso maestro para instanciar nuevos procesos en el Core SddIA y mantener el �
 
 ## Fase 2 — Forja del archivo
 
-1. Invocar `skill:cryptography-manager` (cápsula bajo `paths.execution_capsules.skills`) con un único JSON por stdin: `{"operation":"GENERATE_UUID","target_payload":null}`; tomar `data.result` como `uuid` v4 del proceso hijo (no reutilizar el de process-creator). Prohibido generar UUID por heurística o código ad hoc.
-2. Serializar el array `phases` acordado a JSON UTF-8 canónico (objetos con `name`, `intent`, `delegates_to`; `json.dumps(..., sort_keys=True, separators=(',', ':'), ensure_ascii=False)`). Invocar `skill:cryptography-manager` con `{"operation":"GENERATE_SHA256","target_type":"STRING","target_payload":"<cadena canónica>"}`; asignar `hash_signature` como `sha256:` + `data.result` (hex minúsculas). Prohibido calcular SHA-256 fuera de esta cápsula.
-3. Escribir `{paths.directories.process}/{process_name}.md` con cabecera YAML (uuid, name, version, contract, context, hash_signature, inputs, phases, outputs, métricas si aplican) y cuerpo que describa cada fase en prosa operativa.
-4. Leer rutas físicas solo vía `cumulo.paths.json` (`directories.process`, `contracts.process`, `directories.norms`).
+1. Ejecutar `phase_invocations` de esta fase: `action:crypto-broker` emite UUID v4 (`child_process_uuid`) y digest SHA-256 del JSON canónico de `process_phases` (`child_phases_sha256_hex`). Prefijo de cabecera: `hash_signature: "sha256:" + child_phases_sha256_hex`. Prohibido UUID o digest fuera del broker + cápsula.
+2. Escribir `{paths.directories.process}/{process_name}.md` con cabecera YAML (uuid, name, version, contract, context, hash_signature, inputs, phases, outputs, métricas si aplican) y cuerpo que describa cada fase en prosa operativa.
+3. Leer rutas físicas solo vía `cumulo.paths.json` (`directories.process`, `contracts.process`, `directories.norms`).
 
 ## Fase 3 — Auditoría y actualización del índice
 

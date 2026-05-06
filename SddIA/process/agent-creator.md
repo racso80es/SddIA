@@ -2,9 +2,9 @@
 uuid: "e7d5087c-6d47-4890-9602-34962496b3bb"
 name: "agent-creator"
 version: "1.0.0"
-contract: "process-contract v1.1.0"
+contract: "process-contract v1.2.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:c55caadddcfa03813059ebc6d40a76f17bd150b49148699d6b1e68ddbb231fb9"
+hash_signature: "sha256:a6fb8f1b3567887f1fb21db92094236fef4873a64a28541845e0373a0ccf3b11"
 inputs:
   - "agent_name": "Identificador kebab-case del agente (`{name}` del archivo de definición bajo `cumulo.directories.agents`)"
   - "allowed_policies": "Array de contextos S+ Grade (identificadores de `execution-contexts.md`) que el agente puede solicitar ante Cerbero"
@@ -24,13 +24,23 @@ phases:
   - name: "Forja de Identidad"
     intent: "Generar uuid v4 y cabecera YAML (contract, allowed_policies, inputs, outputs, hash_signature si aplica) según agents-contract v1.0.0; cuerpo con agent_purpose bajo directories.agents; rutas solo vía cumulo."
     delegates_to:
-      - "skill:cryptography-manager"
+      - "action:crypto-broker"
       - "skill:filesystem-manager"
   - name: "Indexación de Soberanía"
     intent: "Actualizar el catálogo de Agentes exponiendo explícitamente sus allowed_policies para lectura rápida de Cerbero."
     delegates_to:
       - "agent:cumulo"
       - "skill:filesystem-manager"
+phase_invocations:
+  - phase_name: "Forja de Identidad"
+    invocations:
+      - capsule: "action:crypto-broker"
+        stdin_json:
+          operation: "GENERATE_UUID"
+          target_payload: null
+        bind:
+          "data.result": "child_agent_uuid"
+        on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -49,10 +59,9 @@ Proceso maestro para instanciar nuevas identidades operativas (Agentes) en el Co
 ## Fase 2 — Forja de Identidad
 
 1. Resolver rutas exclusivamente vía `cumulo.paths.json` (`directories.agents`, `contracts.agents`).
-2. Invocar `skill:cryptography-manager` (cápsula bajo `paths.execution_capsules.skills`) con `{"operation":"GENERATE_UUID","target_payload":null}` por stdin; usar `data.result` como `uuid` v4 del nuevo agente. Prohibido UUID por heurística o código ad hoc.
-3. Si `agents-contract` o la gobernanza del repositorio exigen `hash_signature` sobre un bloque canónico del agente, calcularlo exclusivamente con `GENERATE_SHA256` y `target_type` `STRING` o `FILE_PATH` según política; prefijo `sha256:` + `data.result`.
-4. Asignar `contract` como `agents-contract v1.0.0`, `version` SemVer, `allowed_policies` idéntico al validado en Fase 1, `inputs` / `outputs` según parámetros del proceso.
-5. Persistir `{paths.directories.agents}/{agent_name}.md` con cuerpo que documente `agent_purpose`, obediencia al SSOT (sin rutas hardcodeadas al host) y límites termodinámicos opcionales (`minteo_maximo`, `porcentaje_de_exito`) si aplican, mediante `skill:filesystem-manager` tras autorización Cerbero.
+2. Ejecutar `phase_invocations`: `child_agent_uuid` vía `action:crypto-broker`. Si `hash_signature` es obligatorio en producción, añadir invocación `GENERATE_SHA256` con sujeto canónico acordado (mismo broker).
+3. Asignar `contract` como `agents-contract v1.0.0`, `version` SemVer, `allowed_policies` idéntico al validado en Fase 1, `inputs` / `outputs` según parámetros del proceso.
+4. Persistir `{paths.directories.agents}/{agent_name}.md` con cuerpo que documente `agent_purpose`, obediencia al SSOT (sin rutas hardcodeadas al host) y límites termodinámicos opcionales (`minteo_maximo`, `porcentaje_de_exito`) si aplican, mediante `skill:filesystem-manager` tras autorización Cerbero.
 
 ## Fase 3 — Indexación de Soberanía
 

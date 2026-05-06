@@ -2,9 +2,9 @@
 uuid: "d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f"
 name: "action-creator"
 version: "1.0.0"
-contract: "process-contract v1.1.0"
+contract: "process-contract v1.2.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:d8c7fe050f33195bb373683e85bca0bd02b5ca4a70799473e1dcfa6c96b595ae"
+hash_signature: "sha256:7d4df949445c4b8e666add244d4e9a8dd3e57c8ad7fffbfb0a0df6a94e6d3d62"
 inputs:
   - "action_name": "Identificador kebab-case de la acción (`{name}` del archivo `{name}.md` en `cumulo.directories.actions`)"
   - "action_context": "Contexto RBAC Cerbero válido según `execution-contexts.md`"
@@ -23,13 +23,23 @@ phases:
   - name: "Forja del Artefacto"
     intent: "Generar uuid v4 y cabecera YAML (contract, context, capabilities, inputs, outputs, hash_signature si aplica) según actions-contract; cuerpo con orquestación bajo directories.actions."
     delegates_to:
-      - "skill:cryptography-manager"
+      - "action:crypto-broker"
       - "skill:filesystem-manager"
   - name: "Gobernanza"
     intent: "Crear o actualizar actions/index.md con columna Capabilities y fila idéntica a la cabecera de la acción creada."
     delegates_to:
       - "agent:cumulo"
       - "skill:filesystem-manager"
+phase_invocations:
+  - phase_name: "Forja del Artefacto"
+    invocations:
+      - capsule: "action:crypto-broker"
+        stdin_json:
+          operation: "GENERATE_UUID"
+          target_payload: null
+        bind:
+          "data.result": "child_action_uuid"
+        on_error: abort
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -47,7 +57,7 @@ Proceso maestro para instanciar nuevas acciones (orquestaciones lógicas) en el 
 
 ## Fase 2 — Forja del Artefacto
 
-1. Emitir identidad atómica invocando `skill:cryptography-manager` con `{"operation":"GENERATE_UUID","target_payload":null}` por stdin; usar `data.result` como `uuid` v4. Si el contrato exige `hash_signature` sobre un bloque canónico, calcularlo exclusivamente con `GENERATE_SHA256` + `target_type` `STRING` y el payload exacto acordado. Prohibido UUID o digest por terminal ad hoc.
+1. Ejecutar `phase_invocations`: obtener `child_action_uuid` vía `action:crypto-broker` (`GENERATE_UUID`). Si el contrato exige `hash_signature`, usar invocaciones adicionales documentadas en el contrato de acciones (mismo broker + `GENERATE_SHA256`).
 2. Asignar `contract` alineado a `actions-contract.md` (`cumulo.contracts.actions`) y `capabilities` obligatorio según contrato.
 3. Redactar `{paths.directories.actions}/{action_name}.md` con secciones de propósito, grafo o secuencia de orquestación y límites termodinámicos (`minteo_maximo`, `porcentaje_de_exito` si aplican).
 4. Documentar explícitamente el uso de skills/tools únicamente como cápsulas referenciadas desde topología cumulo.

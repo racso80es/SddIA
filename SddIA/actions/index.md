@@ -16,7 +16,8 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 
 | Name | UUID | Versión | Context | Descripción | Capabilities |
 |------|------|---------|---------|-------------|--------------|
-| execute-process | f1e2d3c4-b5a6-4789-b012-cdef34567890 | 1.0.0 | ecosystem-evolution | Orquestación maestra para que Tekton ejecute un proceso del Core con resolución SSOT, fases ordenadas y gate Cerbero antes de cada cápsula. | `process-load-ssot`, `phase-graph-resolution`, `cerbero-policy-gate`, `capsule-fanout-skills-tools` |
+| execute-process | f1e2d3c4-b5a6-4789-b012-cdef34567890 | 1.1.0 | ecosystem-evolution | Orquestación maestra para que Tekton ejecute un proceso del Core con resolución SSOT, fases ordenadas, `phase_invocations`, delegación a crypto-broker y gate Cerbero antes de cada cápsula. | `process-load-ssot`, `phase-graph-resolution`, `phase-invocation-binding`, `cerbero-policy-gate`, `capsule-fanout-skills-tools`, `crypto-broker-delegation` |
+| crypto-broker | 9b3259be-e7a0-4fb1-b5d9-620a46fbc18b | 1.0.0 | quality-assurance | Puerta RBAC hacia operaciones deterministas de `cryptography-manager` (UUID, SHA-256, validación de hash) sin exponer `quality-assurance` al orquestador de forja. | `cryptography-broker`, `delegate-cryptography-manager` |
 
 ## Archivos en carpeta no catalogados como acción
 
