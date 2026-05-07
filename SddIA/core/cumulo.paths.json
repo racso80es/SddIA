@@ -4,7 +4,7 @@
     "core": {
       "constitution": "SddIA/CONSTITUTION_CORE.md",
       "manifest": "SddIA/sddia-core.manifest.json",
-      "pathsDefinition": "SddIA/cumulo.paths.json"
+      "pathsDefinition": "SddIA/core/cumulo.paths.json"
     },
     "directories": {
       "norms": "SddIA/norms",
@@ -15,7 +15,15 @@
       "tools": "SddIA/tools",
       "evolution": "SddIA/evolution",
       "tokens": "SddIA/tokens",
-      "documentation": "docs"
+      "documentation": "docs",
+      "scripts_limbo": "SddIA/scripts/limbo"
+    },
+    "normative_documents": {
+      "git_operations": "SddIA/norms/git-operations.md",
+      "skills_portability": "SddIA/norms/skills-portability.md",
+      "pull_request_orchestration": "SddIA/norms/pull-request-orchestration.md",
+      "skill_io_git_manager_frozen": "SddIA/norms/skill-io-git-manager-frozen.md",
+      "skill_io_shell_executor_frozen": "SddIA/norms/skill-io-shell-executor-frozen.md"
     },
     "contracts": {
       "agents": "SddIA/agents/agents-contract.md",

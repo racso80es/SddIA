@@ -2,7 +2,7 @@
 index_version: "1.0.0"
 entity_family: "actions"
 maintained_by_agent: "cumulo"
-paths_ref: "cumulo.paths.json"
+paths_ref: "SddIA/core/cumulo.paths.json"
 directories_key: "actions"
 indexed_at: "2026-05-06"
 synchronization_note: "Cada fila debe coincidir con la cabecera YAML del archivo fuente indicado."

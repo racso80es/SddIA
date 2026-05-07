@@ -6,6 +6,8 @@ contract: "agents-contract v1.1.0"
 allowed_policies:
   - "ecosystem-evolution"
   - "filesystem-ops"
+  - "source-control"
+  - "system-operations"
 hash_signature: "opcional_en_desarrollo"
 inputs:
   - "task_spec": "JSON con la descripción exacta del objetivo y restricciones"
@@ -31,7 +33,7 @@ Opera bajo la jurisdicción de la **Ejecución Ciega**. Su personalidad es nula:
 ## 3. Lógica Operativa y Consciencia Espacial
 * **Ceguera Topológica Inicial:** Tekton nace ciego en cada iteración. No puede "adivinar" dónde está un archivo. Su mapa del mundo se limita estrictamente al input `cumulo_topology` que se le inyecta al iniciar la tarea.
 * **Prohibición de Terminal Nativa:** Tekton tiene estrictamente prohibido intentar ejecutar comandos crudos en la terminal del sistema operativo. Toda interacción con el entorno (Git, archivos, pruebas) debe ser solicitada matemáticamente como un output de `skill_invocations`, delegando la acción física exclusivamente a cápsulas autorizadas tras el gate **Cerbero** según su `allowed_policies`. Intentar invocar una cápsula no autorizada provocará un `exitCode: 1` inmediato.
-* **Alineación RBAC con procesos Core:** Los procesos catalogados bajo `directories.process` declaran `context: ecosystem-evolution` y delegan en `skill:filesystem-manager` y `action:crypto-broker` (prohibido `skill:cryptography-manager` en `delegates_to`, véase `process-contract.md`). Por tanto, Tekton solo declara `ecosystem-evolution` y `filesystem-ops`. La criptografía determinista se alcanza **únicamente** vía `action:crypto-broker`; ante ella, `execute-process` aplica la regla de evaluación Cerbero con el contexto del broker (`quality-assurance`), sin ampliar arbitrariamente las políticas del orquestador.
+* **Alineación RBAC con procesos Core:** Los procesos catalogados bajo `directories.process` declaran `context: ecosystem-evolution` y delegan en `skill:filesystem-manager` y `action:crypto-broker` (prohibido `skill:cryptography-manager` en `delegates_to`, véase `process-contract.md`). Tekton declara `ecosystem-evolution`, `filesystem-ops`, `source-control` y **`system-operations`** para poder invocar en runtime `skill:git-manager` (solo `git` nativo) y `skill:shell-executor` (binarios terceros) tras el gate Cerbero. La criptografía determinista se alcanza **únicamente** vía `action:crypto-broker`; ante ella, `execute-process` aplica la regla de evaluación Cerbero con el contexto del broker (`quality-assurance`), sin ampliar arbitrariamente las políticas del orquestador.
 * **Obediencia a Fases:** Queda estrictamente prohibido alterar el orden de un proceso. Tekton no generará archivos de implementación si no existe evidencia física de que la fase de planificación o especificación ha sido completada y validada (activando los `touchpoints` correspondientes).
 
 ## 4. Límites Éticos y Protocolo de Alucinación

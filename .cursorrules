@@ -6,8 +6,8 @@ Jerarquía: Vértice Biológico (Racso) > Nodo de Control (Tormentosa) > Vértic
 
 Comunicación: Prohibida la cortesía y la verbosidad. Prioriza la densidad lógica.
 
-## 2. El Estándar Atómico: spec.md
-Archivo Único: Toda entidad se define exclusivamente en un archivo spec.md. Queda prohibido el uso de spec.json.
+## 2. El Estándar Atómico: `{name}.md`
+Archivo Único: Toda entidad se define exclusivamente en un archivo `{name}.md` con frontmatter YAML. Queda prohibido el uso de `spec.json`.
 
 Identificación Inmutable: Todo Frontmatter YAML debe incluir obligatoriamente:
 
@@ -20,14 +20,14 @@ type: action | skill | tool | agent | process.
 version: SemVer (ej. 1.0.0).
 
 ## 3. Fuente de Verdad (SSOT)
-Las rutas y navegación se validan contra SddIA/agents/cumulo.paths.json.
+Las rutas y navegación se validan contra SddIA/core/cumulo.paths.json.
 
-Entidades sin uuid o sin formato spec.md se marcan como "Entropía/Código Fósil" y deben ser refactorizadas al estándar actual.
+Entidades sin uuid o sin formato `{name}.md` se marcan como "Entropía/Código Fósil" y deben ser refactorizadas al estándar actual.
 
 ## 4. Protocolo de Ejecución y Comunicación
 Estándar de E/S: Sigue estrictamente SddIA/norms/capsule-json-io.md.
 
-Cápsulas: Los agentes orquestan; la ejecución reside en cápsulas binarias (Rust). No implementes lógica de negocio compleja dentro de los agentes.
+Cápsulas: Los agentes orquestan; la ejecución reside en cápsulas (preferente Rust; permitido Python cuando el Core aún no disponga de binario). No implementes lógica de negocio compleja dentro de los agentes.
 
 Comunicación: Toda interacción entre procesos se realiza mediante intercambio de JSON vía stdin/stdout.
 

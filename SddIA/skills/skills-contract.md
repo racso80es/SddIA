@@ -35,3 +35,6 @@ Los Skills son el "martillo ciego" del sistema. Su comunicación es puramente ma
 ## 4. Física del Valor y Evolución (Bloque Latente)
 * `minteo_maximo`: Límite de licencias de uso o instalaciones.
 * `porcentaje_de_exito`: Eficiencia termodinámica del binario (ejecuciones correctas vs. fallos de sistema).
+
+## 5. Esquemas de entrada congelados (pre-forja)
+Las skills `git-manager` y `shell-executor` deben obedecer los mensajes de stdin definidos de forma **congelada** en normas bajo `directories.norms`, referenciadas desde `SddIA/core/cumulo.paths.json` → `normative_documents.skill_io_git_manager_frozen` y `normative_documents.skill_io_shell_executor_frozen`. Cerbero y Argos validan contra esos documentos antes de la invocación.

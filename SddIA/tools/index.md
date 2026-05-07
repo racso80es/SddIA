@@ -2,7 +2,7 @@
 index_version: "1.0.0"
 entity_family: "tools"
 maintained_by_agent: "cumulo"
-paths_ref: "cumulo.paths.json"
+paths_ref: "SddIA/core/cumulo.paths.json"
 directories_key: "tools"
 indexed_at: "2026-05-04"
 synchronization_note: "Cada fila debe coincidir con la cabecera YAML del archivo fuente indicado; columna Capabilities obligatoria."

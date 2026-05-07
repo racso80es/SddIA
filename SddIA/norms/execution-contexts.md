@@ -41,5 +41,10 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 * **Alcance:** Mutación de la arquitectura interna y sincronización de manifiestos.
 * **Cápsulas asociadas (Ejemplos):** `sddia-evolution-register`, `sync-core-manifest`.
 
+### 2.6. `system-operations`
+* **Dominio:** Ejecución de binarios y herramientas del SO / terceros.
+* **Alcance:** Invocación determinista de herramientas como `gh`, `npm`, `docker`, `python`, etc., con sanitización anti-inyección y whitelist. **Excluye** el binario `git` nativo (debe enrutarse por `git-manager`).
+* **Cápsulas asociadas (Ejemplos):** `shell-executor`.
+
 ---
 *Reporte de Integridad: Normativa forjada y registrada. Rutas actualizadas.*

@@ -1,10 +1,16 @@
 ---
+origin: "SddIA_1/skills/invoke-command/spec.md"
+limbo_reason: "Purga de entropía: invoke-command reemplazado por shell-executor (system-operations) y git-manager (source-control)."
+---
+
+This file was moved to Limbo to prevent confusing the Core. Original content preserved below.
+
+---
 command_file_routing:
   via_bat: Usar ruta absoluta al archivo (p. ej. --command-file con path absoluto) para que el exe resuelva bien desde cualquier directorio.
   via_exe_from_repo_root: Ejecutar el exe desde la raíz del repo; entonces las rutas relativas al archivo se resuelven correctamente.
-contract_ref: paths.skillsDefinitionPath/skills-contract.json (Cúmulo)
+contract_ref: paths.skillsDefinitionPath/skills-contract.md (Cúmulo)
 implementation_path_ref: paths.skillCapsules.invoke-command
-name: Interceptor de Ejecuciones de Sistema
 parameters:
   command:
     description: Comando a ejecutar (obligatorio si no se usa command_file). Acepta -Command/--command.
@@ -13,25 +19,26 @@ parameters:
     description: Ruta a archivo cuyo contenido es el comando. Evita inyección en terminal. Acepta --command-file/-CommandFile.
     required: false
   contexto:
-    default: GesFer.Admin.Front
+    default: GesFer
     required: false
   fase:
     default: Accion
     enum:
-      - Triaje
-      - Analisis
-      - Evaluacion
-      - Marcado
-      - Accion
+    - Triaje
+    - Analisis
+    - Evaluacion
+    - Marcado
+    - Accion
     required: false
 rules:
-  - 'MANDATORY: Cualquier comando de sistema que el agente deba ejecutar ha de invocarse a través de esta skill.'
-  - 'Interface: Command (obligatorio) o --command-file; Contexto (default GesFer); Fase (Triaje|Analisis|Evaluacion|Marcado|Accion). El exe acepta -Command/-Fase y --command-file.'
-  - 'Compliance: AC-001 validación sintáctica; registro en docs/diagnostics/{branch}/execution_history.json; alineación Protocolo Racso-Tormentosa.'
-scope_clarification: 'Aplica siempre que el agente ejecute cualquier comando de sistema: sin excepción para git, npm, pwsh. No hay excepciones.'
+- 'MANDATORY: Cualquier comando de sistema que el agente deba ejecutar ha de invocarse a través de esta skill.'
+- 'Interface: Command (obligatorio) o --command-file; Contexto (default GesFer); Fase (Triaje|Analisis|Evaluacion|Marcado|Accion). El exe acepta -Command/-Fase y --command-file.'
+- 'Compliance: AC-001 validación sintáctica; registro en docs/diagnostics/{branch}/execution_history.json; alineación Protocolo Racso-Tormentosa.'
+scope_clarification: 'Aplica siempre que el agente ejecute cualquier comando de sistema: sin excepción para git, dotnet, npm, pwsh. No hay excepciones.'
 skill_id: invoke-command
 usage_instruction: Cada vez que el agente deba ejecutar un comando, invocar la cápsula invoke-command (paths.skillCapsules.invoke-command). Prohibido ejecutar comandos directamente en el shell.
 ---
+
 # Skill: Invoke Command (Interceptor de ejecuciones de sistema)
 
 **skill_id:** `invoke-command`
@@ -42,15 +49,15 @@ Skill obligatoria para ejecutar comandos de sistema (git, dotnet, npm, pwsh, etc
 
 ## Alcance
 
-- **Entrada:** Command (obligatorio) o --command-file &lt;ruta&gt; (lee el comando desde archivo; evita inyección en terminal), Contexto (default GesFer.Admin.Front), Fase (Triaje | Analisis | Evaluacion | Marcado | Accion).
+- **Entrada:** Command (obligatorio) o --command-file <ruta> (lee el comando desde archivo; evita inyección en terminal), Contexto (default GesFer), Fase (Triaje | Analisis | Evaluacion | Marcado | Accion).
 - **Salida:** Ejecución del comando con registro en docs/diagnostics/{branch}/execution_history.json; cumplimiento AC-001 y Protocolo Racso-Tormentosa.
 
 ## Reglas
 
 - **MANDATORY:** Cualquier comando de sistema que el agente deba ejecutar ha de invocarse a través de esta skill.
-- **Interface:** Usar el script o el .bat con Command (obligatorio) o --command-file, Contexto (default GesFer.Admin.Front), Fase (Triaje|Analisis|Evaluacion|Marcado|Accion). El exe (Rust) acepta -Command/-Fase y --command-file.
+- **Interface:** Usar el script o el .bat con Command (obligatorio) o --command-file, Contexto (default GesFer), Fase (Triaje|Analisis|Evaluacion|Marcado|Accion). El exe (Rust) acepta -Command/-Fase y --command-file.
 - **Compliance:** AC-001 validación sintáctica; registro en docs/diagnostics/{branch}/execution_history.json; alineación Protocolo Racso-Tormentosa.
-- **Scope:** Aplica siempre que el agente ejecute cualquier comando de sistema: sin excepción para git (status, add, commit, push, pull, branch, checkout), npm, pwsh.
+- **Scope:** Aplica siempre que el agente ejecute cualquier comando de sistema: sin excepción para git (status, add, commit, push, pull, branch, checkout), dotnet, npm, pwsh.
 
 ## Implementación
 
@@ -69,16 +76,17 @@ Skill obligatoria para ejecutar comandos de sistema (git, dotnet, npm, pwsh, etc
 
 ```powershell
 # Mediante launcher
-.\scripts\skills\invoke-command\Invoke-Command.bat --command "git status" --fase Accion
-.\scripts\skills\invoke-command\Invoke-Command.bat --command-file "docs\features\<nombre>\commit_cmd.txt" --fase Accion
+.\scripts\skills\invoke-command\Invoke-Command.bat --command \"git status\" --fase Accion
+.\scripts\skills\invoke-command\Invoke-Command.bat --command-file \"docs\\features\\<nombre>\\commit_cmd.txt\" --fase Accion
 
 # Invocación directa del ejecutable
-& "scripts/skills/invoke-command/bin/invoke_command.exe" --command "git status" --fase Accion
+& \"scripts/skills/invoke-command/bin/invoke_command.exe\" --command \"git status\" --fase Accion
 ```
 
-**Rutas con --command-file:** (1) Con el .bat, usar **ruta absoluta** al archivo de comando (p. ej. `--command-file "c:\Proyectos\Repo\docs\features\X\commit_cmd.txt"`) para que el exe resuelva bien desde cualquier directorio. (2) Alternativa: ejecutar el exe directamente desde la **raíz del repo**; entonces las rutas relativas (p. ej. `docs\features\X\commit_cmd.txt`) se resuelven correctamente.
+**Rutas con --command-file:** (1) Con el .bat, usar **ruta absoluta** al archivo de comando (p. ej. `--command-file \"c:\\Proyectos\\Repo\\docs\\features\\X\\commit_cmd.txt\"`) para que el exe resuelva bien desde cualquier directororio. (2) Alternativa: ejecutar el exe directamente desde la **raíz del repo**; entonces las rutas relativas (p. ej. `docs\\features\\X\\commit_cmd.txt`) se resuelven correctamente.
 
 Prohibido ejecutar comandos directamente en el shell sin pasar por esta skill.
 
 ---
 *Definición en paths.skillsDefinitionPath/invoke-command/ (contrato paths.skillsDefinitionPath/skills-contract.md).*
+

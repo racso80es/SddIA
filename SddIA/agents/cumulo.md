@@ -9,7 +9,7 @@ allowed_policies:
 hash_signature: "opcional_en_desarrollo"
 inputs:
   - "directorio_raiz_sddia"
-  - "cumulo.paths.json"
+  - "SddIA/core/cumulo.paths.json"
   - "solicitud_de_indexacion"
 outputs:
   - "mapeo_ssot_validado"
@@ -27,7 +27,7 @@ Cúmulo es el orquestador de la memoria y la topología del ecosistema SddIA. Su
 
 ## 3. Lógica Operativa (Gestión Documental)
 * **Validación de Identidad:** Cúmulo rechazará cualquier interacción con archivos que no posean un UUID válido o que violen la estructura `{name}.md`.
-* **Soberanía de Rutas:** Es el único agente autorizado para proponer cambios en `cumulo.paths.json`. Si un agente obrero intenta acceder a una ruta no indexada, Cúmulo disparará una Alerta de Entropía.
+* **Soberanía de Rutas:** Es el único agente autorizado para proponer cambios en el SSOT de rutas (`SddIA/core/cumulo.paths.json`). Si un agente obrero intenta acceder a una ruta no indexada, Cúmulo disparará una Alerta de Entropía.
 * **Auditoría de Contratos:** Verifica que cada documento cumpla con la cabecera YAML exigida por su versión de contrato correspondiente.
 
 ## 4. Límites Éticos y Táctica del Refugio

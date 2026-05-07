@@ -15,14 +15,14 @@ Infraestructura de activos digitales, no repositorio de scripts. Framework para 
 | **Agent** | Orquestador de consciencia y responsable de una fase específica. | `paths.directories.agents` | Posee Skills y ejecuta Acciones dentro de un **Process**. |
 | **Process** | Roadmap lógico de alto nivel para un objetivo macro (p. ej. feature). | `paths.directories.process` | Orquesta el relevo (*handoff*) entre distintos **Agents**. |
 | **Action** | Paso atómico, indivisible y auditable de ejecución. | `paths.directories.actions` | Invoca **Skills** o **Tools** para el trabajo técnico. |
-| **Skill** | Capacidad técnica especializada definida por contrato. | `paths.directories.skills` | Ejecutada por **Cápsula** blindada (binario Rust). |
+| **Skill** | Capacidad técnica especializada definida por contrato. | `paths.directories.skills` | Ejecutada por **Cápsula** blindada (binario Rust o script Python bajo contrato). |
 | **Tool** | Capacidad de infraestructura o utilidad de dominio. | `paths.directories.tools` | Servicios base a las **Actions** vía **Cápsula**. |
 
 Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asigna un **Agent** titular; el **Agent** descompone en **Actions**; las **Actions** consumen **Skills** y **Tools** materializados en cápsulas.
 
 ## Agentes del Core (resumen)
 
-Catálogo canónico (UUID, `allowed_policies`, versiones): `{paths.directories.agents}` según `cumulo.paths.json`; tabla e índice en [SddIA/agents/index.md](SddIA/agents/index.md). Cada definición vive en `{name}.md` junto al contrato de familia `agents-contract.md`.
+Catálogo canónico (UUID, `allowed_policies`, versiones): `{paths.directories.agents}` según el SSOT [SddIA/core/cumulo.paths.json](SddIA/core/cumulo.paths.json) (`cumulo.paths.json`); tabla e índice en [SddIA/agents/index.md](SddIA/agents/index.md). Cada definición vive en `{name}.md` junto al contrato de familia `agents-contract.md`.
 
 | Agente | Rol (una línea) |
 |--------|------------------|
@@ -51,7 +51,7 @@ Sin carpeta de tarea materializada y artefactos versionables, no hay handoff vá
 ### En dicha ubicación ha de existir un indice (index.md) con los items correspondientes a las implementaciones de entidades existentes. El agente Cúmulo tiene la resposabilidad de la coherencia de datos indicado por cada implementacion.
 
 ## Cicatriz digital y estándar atómico
-**Toda** entidad enitdad de dominio SddIA nace con **Cicatriz Digital**: un `spec.md` único que incluye:
+**Toda** entidad de dominio SddIA nace con **Cicatriz Digital**: un único archivo de definición `{name}.md` que incluye:
 - Cabecera **YAML** obligatoria (contrato de la entidad).
 - **Versión SemVer** y **UUID v4 inmutable** asignado en creación (identidad estable para trazabilidad y catálogo).
 - Cuerpo en Markdown con propósito y límites del activo.
@@ -61,4 +61,4 @@ Ese paquete es el prerequisito para integración futura en la **Librería S+** y
 Definición de núcleo en este repositorio; especialización y secretos en instancia local. Sin lógica de negocio dispersa fuera de **Actions** orquestadas y **Cápsulas**.
 
 ## Estándar de ejecución
-Lógica crítica en **Cápsulas binarias** (Rust). Contrato de E/S: JSON por stdin/stdout según `SddIA/norms/capsule-json-io.md`. Los agentes orquestan; no sustituyen a la cápsula en cómputo ni en contrato de I/O.
+Lógica crítica en **Cápsulas** (preferente binario Rust; Python permitido cuando esté explicitado y bajo contrato). Contrato de E/S: JSON por stdin/stdout según `SddIA/norms/capsule-json-io.md`. Los agentes orquestan; no sustituyen a la cápsula en cómputo ni en contrato de I/O.
