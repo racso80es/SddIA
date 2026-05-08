@@ -82,7 +82,7 @@ def main() -> int:
             dt = ph.get("delegates_to") or []
             if "skill:cryptography-manager" in dt:
                 errors.append(
-                    f"{md.name}: phase {i} declares skill:cryptography-manager; use action:crypto-broker per process-contract v1.2.0"
+                    f"{md.name}: phase {i} declares skill:cryptography-manager; use action:crypto-broker per process-contract v1.2.0+"
                 )
 
         hs = data.get("hash_signature") or ""
@@ -98,21 +98,16 @@ def main() -> int:
                     f"{md.name}: hash_signature mismatch (file {expected[:16]}… vs computed {computed[:16]}…)"
                 )
 
-        contract = str(data.get("contract") or "")
-        if "v1.2.0" in contract or "1.2.0" in contract:
-            inv = data.get("phase_invocations") or []
-            phase_names = {p.get("name") for p in phases if isinstance(p, dict)}
-            for ph in phases:
-                if not isinstance(ph, dict):
-                    continue
-                if "action:crypto-broker" in (ph.get("delegates_to") or []):
-                    pname = ph.get("name")
-                    if not any(
-                        isinstance(b, dict) and b.get("phase_name") == pname for b in inv
-                    ):
-                        errors.append(
-                            f"{md.name}: phase {pname!r} delegates to crypto-broker but has no phase_invocations block"
-                        )
+        inv = data.get("phase_invocations") or []
+        for ph in phases:
+            if not isinstance(ph, dict):
+                continue
+            if "action:crypto-broker" in (ph.get("delegates_to") or []):
+                pname = ph.get("name")
+                if not any(isinstance(b, dict) and b.get("phase_name") == pname for b in inv):
+                    errors.append(
+                        f"{md.name}: phase {pname!r} delegates to crypto-broker but has no phase_invocations block"
+                    )
 
     if errors:
         print("verify-process-integrity: FAILED", file=sys.stderr)
