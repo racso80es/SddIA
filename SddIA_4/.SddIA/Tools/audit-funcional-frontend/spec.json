@@ -1,0 +1,16 @@
+{
+  "spec_version": "1.0.0",
+  "toolId": "audit-funcional-frontend",
+  "version": "1.0.0",
+  "uuid": "d7e3b2c1-0d04-4f00-9a00-000000000404",
+  "domain_origin": "SddIA_4",
+  "context": "quality-assurance",
+  "capabilities": ["manual-audit", "playwright-headed", "process"],
+  "contract_ref": "SddIA/tools/tools-contract.md",
+  "definition_path_ref": ".SddIA/Tools/audit-funcional-frontend",
+  "implementation_path_ref": null,
+  "implementation_type": "process",
+  "depends_on_tools": ["start-frontend"],
+  "inputs_summary": "Backend en NEXT_PUBLIC_API_URL, AUTH_SECRET, credenciales válidas",
+  "output_summary": "Informe markdown en docs/audits; escenarios 8/8 documentados en spec.md"
+}

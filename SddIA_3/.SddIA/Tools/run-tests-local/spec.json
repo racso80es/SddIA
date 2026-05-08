@@ -1,0 +1,16 @@
+{
+  "spec_version": "1.0.0",
+  "toolId": "run-tests-local",
+  "version": "1.0.0",
+  "uuid": "c7e3b2c1-0d03-4f00-9a00-000000000304",
+  "domain_origin": "SddIA_3",
+  "context": "quality-assurance",
+  "capabilities": ["dotnet-test", "orchestration"],
+  "contract_ref": "SddIA/tools/tools-contract.md",
+  "capsule_json_io_ref": "SddIA/norms/capsule-json-io.md",
+  "definition_path_ref": ".SddIA/Tools/run-tests-local",
+  "implementation_path_ref": ".SddIA/tool-capsules/run-tests-local",
+  "implementation_type": "executable",
+  "depends_on_tools": ["prepare-full-env", "invoke-mysql-seeds"],
+  "inputs_summary": "e2eBaseUrl default típ. http://localhost:5020 (Product), skipPrepare, skipSeeds, testScope, onlyTests"
+}

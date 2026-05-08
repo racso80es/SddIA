@@ -1,0 +1,18 @@
+{
+  "spec_version": "1.0.0",
+  "toolId": "run-test-e2e-local",
+  "version": "1.0.0",
+  "uuid": "a7e3b2c1-0d01-4f00-9a00-000000000105",
+  "domain_origin": "SddIA_1",
+  "context": "quality-assurance",
+  "capabilities": ["http-e2e", "api-admin"],
+  "contract_ref": "SddIA/tools/tools-contract.md",
+  "capsule_json_io_ref": "SddIA/norms/capsule-json-io.md",
+  "definition_path_ref": ".SddIA/Tools/run-test-e2e-local",
+  "implementation_path_ref": ".SddIA/tool-capsules/run-test-e2e-local",
+  "implementation_type": "executable",
+  "semantic_variant": "http-admin-api",
+  "description": "E2E HTTP directos contra API Admin (smoke, empresas, CRUD). Distinto del variant SddIA_3 (dotnet Product E2ETests).",
+  "depends_on_tools": [],
+  "inputs_summary": "baseUrl, runSmoke, runCompanyRead, runCompanyCrud, runUserCrud, credenciales vía env efímero únicamente"
+}

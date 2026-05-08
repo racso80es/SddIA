@@ -1,0 +1,17 @@
+{
+  "spec_version": "1.0.0",
+  "toolId": "postman-mcp-validation",
+  "version": "1.0.0",
+  "uuid": "a7e3b2c1-0d01-4f00-9a00-000000000106",
+  "domain_origin": "SddIA_1",
+  "context": "quality-assurance",
+  "capabilities": ["postman", "newman", "api-contract-validation"],
+  "contract_ref": "SddIA/tools/tools-contract.md",
+  "capsule_json_io_ref": "SddIA/norms/capsule-json-io.md",
+  "definition_path_ref": ".SddIA/Tools/postman-mcp-validation",
+  "implementation_path_ref": ".SddIA/tool-capsules/postman-mcp-validation",
+  "implementation_type": "executable",
+  "depends_on_tools": [],
+  "inputs_summary": "collectionPath, baseUrl (default típ. 5010), environmentPath, internalSecret vía env, outputPath, outputJson",
+  "mcp_ready_note": "Diseño compatible con exposición MCP futura; mismo envelope de salida."
+}

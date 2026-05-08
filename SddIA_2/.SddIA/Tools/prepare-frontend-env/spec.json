@@ -1,0 +1,16 @@
+{
+  "spec_version": "1.0.0",
+  "toolId": "prepare-frontend-env",
+  "version": "1.0.0",
+  "uuid": "b7e3b2c1-0d02-4f00-9a00-000000000201",
+  "domain_origin": "SddIA_2",
+  "context": "quality-assurance",
+  "capabilities": ["nodejs", "npm", "frontend-setup"],
+  "contract_ref": "SddIA/tools/tools-contract.md",
+  "capsule_json_io_ref": "SddIA/norms/capsule-json-io.md",
+  "definition_path_ref": ".SddIA/Tools/prepare-frontend-env",
+  "implementation_path_ref": ".SddIA/tool-capsules/prepare-frontend-env",
+  "implementation_type": "executable",
+  "depends_on_tools": [],
+  "inputs_summary": "outputPath, quiet | outputJson según cápsula"
+}

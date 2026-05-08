@@ -1,0 +1,16 @@
+{
+  "spec_version": "1.0.0",
+  "toolId": "prepare-full-env",
+  "version": "1.0.0",
+  "uuid": "c7e3b2c1-0d03-4f00-9a00-000000000302",
+  "domain_origin": "SddIA_3",
+  "context": "ecosystem-evolution",
+  "capabilities": ["docker", "local-infra", "optional-start-api"],
+  "contract_ref": "SddIA/tools/tools-contract.md",
+  "capsule_json_io_ref": "SddIA/norms/capsule-json-io.md",
+  "definition_path_ref": ".SddIA/Tools/prepare-full-env",
+  "implementation_path_ref": ".SddIA/tool-capsules/prepare-full-env",
+  "implementation_type": "executable",
+  "depends_on_tools": [],
+  "inputs_summary": "dockerOnly, noDocker, startApi (levantar Admin API además de Docker), configPath, outputPath, outputJson"
+}
