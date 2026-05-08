@@ -1,5 +1,5 @@
 ---
-contract_version: "1.1.0"
+contract_version: "1.2.0"
 entity_type: "action"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -27,10 +27,27 @@ Las acciones no ejecutan código directamente ni acceden al sistema operativo.
 * Operan exclusivamente invocando Skills o Tools.
 * Todo ruteo hacia esas cápsulas debe extraerse consultando a cumulo. El hardcodeo de rutas hacia dependencias es un fallo letal.
 
-## 3. Interfaz de Interacción
+## 2bis. Frontera con Procesos (Invariante Semántico)
+Las Acciones son servicios atómicos de infraestructura (validación RBAC, enrutamiento, criptografía, meta-orquestación). Queda **TERMINANTEMENTE PROHIBIDO** catalogar como acción cualquier flujo que corresponda a **fases de negocio o del ciclo de vida del producto**. Esas responsabilidades viven en los **Procesos** (`process-contract`) y son orquestadas por los **Agentes** (Mayeuta, Dedalo, Argos, Tekton). La meta-orquestación de Procesos es responsabilidad exclusiva de `action:execute-process`.
+
+**SSOT del glosario de términos/propósitos prohibidos como `action_name`** (lista exhaustiva de rechazo):
+
+`['planning', 'implementation', 'execution', 'clarify', 'spec', 'validate', 'difusion', 'finalize']`
+
+Cualquier alias, traducción o variante kebab-case con la misma intención semántica se considera intersección. La `process-creator` puede usar libremente estos términos como nombres de proceso; el bloqueo aplica únicamente al **catálogo de Acciones**.
+
+## 3. Interfaz de Interacción (I/O JSON Estricto)
 Toda acción debe declarar explícitamente en su `{name}.md`:
-* **`inputs`**: Esquema JSON de los datos requeridos para iniciar la orquestación (ej. contexto del repositorio, instrucciones de un agente).
-* **`outputs`**: Esquema JSON del resultado devuelto al finalizar, incluyendo estados de éxito o error.
+* **`inputs`**: Esquema JSON de los datos requeridos para iniciar la orquestación.
+* **`outputs`**: Esquema JSON del resultado.
+
+La cápsula ejecutora de la acción se comunica por `stdin`/`stdout` con un envelope canónico **idéntico al de Skills** (`skills-contract.md` § 3):
+
+```json
+{ "success": <boolean>, "exitCode": <integer>, "data": <object>, "error": <string> }
+```
+
+El campo de payload de éxito es **`data`** (no `result`). En fallo, `success: false`, `exitCode != 0`, `data: null` cuando proceda y `error` con causa textual.
 
 ## 4. Física del Valor y Evolución (Bloque Latente)
 El esquema permite la inclusión de métricas de termodinámica operativa:

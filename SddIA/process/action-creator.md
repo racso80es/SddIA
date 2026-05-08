@@ -16,7 +16,7 @@ outputs:
   - "artifact_actions_index": "`{paths.directories.actions}/index.md` creado o actualizado con fila sincronizada a la cabecera YAML de la acción"
 phases:
   - name: "Validación de Arquitectura"
-    intent: "Auditar action_context en execution-contexts; orquestación sin shell; delegación exclusiva skills/tools vía cumulo; unicidad kebab-case; inputs/outputs."
+    intent: "Auditar action_context en execution-contexts; orquestación sin shell; delegación exclusiva skills/tools vía cumulo; unicidad kebab-case; inputs/outputs; FILTRO ANTI-FASES (Cumulo bloquea action_name o propósito que intersequen con la lista exhaustiva del SSOT en actions-contract.md § 2bis). Cerbero queda exento de esta gobernanza semántica."
     delegates_to:
       - "agent:cumulo"
       - "agent:cerbero"
@@ -54,6 +54,7 @@ Proceso maestro para instanciar nuevas acciones (orquestaciones lógicas) en el 
 2. Auditar `orchestration_logic` para prohibir invocaciones directas a terminal, binarios arbitrarios del host o rutas hardcodeadas a dependencias; exigir delegación explícita a skills/tools con resolución SSOT.
 3. Comprobar unicidad y kebab-case de `action_name` bajo `cumulo.directories.actions`.
 4. Validar exhaustividad de `action_inputs` y `action_outputs` frente al contrato de acciones.
+5. **Falla Controlada (candado semántico vía Cumulo):** El proceso abortará inmediatamente si el `action_name` o su propósito intersecan con la lista exhaustiva de términos prohibidos del SSOT (`actions-contract.md § 2bis`). La gobernanza semántica corresponde a **Cumulo** (soberano del catálogo); **Cerbero** queda exento por ser su naturaleza pura intercepción RBAC contra `execution-contexts.md`. La intención debe redirigirse a `process-creator`.
 
 ## Fase 2 — Forja del Artefacto
 
