@@ -1,0 +1,12 @@
+{
+  "template_id": "process-splus-frontmatter",
+  "nature": "motor",
+  "name": "Process S+ frontmatter",
+  "description": "Plantilla mínima de frontmatter para procesos S+ Grade.",
+  "process_ref": "feature",
+  "input_sources": {},
+  "related_actions": ["spec", "clarify", "planning", "implementation", "execution", "validate", "finalize-process"],
+  "related_skills": ["git-save-snapshot", "git-sync-remote"],
+  "interested_agents": ["tekton", "cumulo"],
+  "contract_ref": "SddIA/templates/templates-contract.json"
+}

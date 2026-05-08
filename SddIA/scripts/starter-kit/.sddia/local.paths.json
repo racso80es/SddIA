@@ -4,7 +4,9 @@
     "local_norms": ".sddia/norms",
     "local_security": ".sddia/security",
     "local_constitution": ".sddia/constitution",
-    "local_principles": ".sddia/principles"
+    "local_principles": ".sddia/principles",
+    "local_patterns": ".sddia/patterns",
+    "local_templates": ".sddia/templates"
   },
   "files": {
     "interaction_triggers_override": ".sddia/interaction-triggers.override.json",

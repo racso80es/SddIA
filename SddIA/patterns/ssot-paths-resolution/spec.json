@@ -1,0 +1,10 @@
+{
+  "id": "b6a9ed14-3a0d-4f5b-8444-d1b867335daf",
+  "nature": "motor",
+  "title": "SSOT paths resolution",
+  "category": "Arquitectura SddIA",
+  "tags": ["ssot", "cumulo", "paths"],
+  "metadata": { "difficulty": "Basic", "status": "Published" },
+  "interested_agents": ["cumulo", "tekton"],
+  "contract_ref": "SddIA/patterns/patterns-contract.json"
+}

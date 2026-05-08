@@ -1,0 +1,68 @@
+{
+  "contract_version": "1.1.0",
+  "scope": "SddIA/patterns/",
+  "spatial_model": {
+    "motor_root": "SddIA/patterns/",
+    "local_root": ".sddia/patterns/",
+    "rule": "Patrones nature=motor en motor; nature=product en .sddia/patterns/. Misma pareja spec.md + spec.json; fusión de paths según Cúmulo."
+  },
+  "description": "Contrato que cada patrón debe cumplir. Metadatos en spec.json; cuerpo en spec.md.",
+  "required_files": [
+    {
+      "name": "spec.md",
+      "required": true,
+      "format": "markdown",
+      "language": "es-ES"
+    },
+    {
+      "name": "spec.json",
+      "required": true,
+      "format": "json"
+    }
+  ],
+  "security_model": {
+    "required_token": "Karma2Token",
+    "token_ref": "SddIA/tokens/karma2-token/spec.json",
+    "description": "La aplicación o modificación de un patrón del motor requiere contexto Karma2Token válido."
+  },
+  "json_schema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "UUID v4 del patrón"
+      },
+      "nature": {
+        "type": "string",
+        "enum": ["motor", "product"],
+        "description": "motor = Core; product = .sddia/patterns/"
+      },
+      "title": { "type": "string" },
+      "category": { "type": "string" },
+      "tags": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "metadata": {
+        "type": "object",
+        "properties": {
+          "difficulty": {
+            "type": "string",
+            "enum": ["Basic", "Intermediate", "Advanced"]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["Draft", "Published", "Deprecated"]
+          }
+        },
+        "required": ["difficulty", "status"]
+      },
+      "interested_agents": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "required": ["id", "title", "category", "tags", "metadata", "interested_agents"]
+  },
+  "folder_structure": "Motor: SddIA/patterns/<uuid>/. Local: .sddia/patterns/<uuid>/"
+}

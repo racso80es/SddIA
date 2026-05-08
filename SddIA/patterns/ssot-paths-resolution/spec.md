@@ -2,7 +2,8 @@
 uuid: "b6a9ed14-3a0d-4f5b-8444-d1b867335daf"
 name: "ssot-paths-resolution"
 version: "1.0.0"
-contract: "knowledge-contract v1.0.0"
+nature: "motor"
+contract: "patterns-contract v1.1.0"
 family: "pattern"
 ---
 

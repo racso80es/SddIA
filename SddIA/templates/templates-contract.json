@@ -1,0 +1,82 @@
+{
+  "contract_version": "1.1.0",
+  "scope": "SddIA/templates/",
+  "spatial_model": {
+    "motor_root": "SddIA/templates/",
+    "local_root": ".sddia/templates/",
+    "rule": "Plantillas nature=motor en motor; nature=product en .sddia/templates/. Misma estructura de carpeta por template_id."
+  },
+  "description": "Contrato de plantillas: spec.md + spec.json por template_id (kebab-case).",
+  "constraints": [
+    "template_id en kebab-case.",
+    "process_ref debe existir en el proceso path resuelto cuando apunte a proceso Core.",
+    "input_sources: rutas canónicas resolubles vía Cúmulo tras fusión de paths."
+  ],
+  "consumers": [
+    "paths.actionsPath",
+    "SddIA/agents/",
+    "paths.processPath",
+    ".cursor/rules"
+  ],
+  "required_files": [
+    {
+      "name": "spec.md",
+      "required": true,
+      "format": "markdown",
+      "language": "es-ES"
+    },
+    {
+      "name": "spec.json",
+      "required": true,
+      "format": "json"
+    }
+  ],
+  "security_model": {
+    "required_token": "Karma2Token",
+    "token_ref": "SddIA/tokens/karma2-token/spec.json",
+    "description": "Ejecución de plantilla del motor bajo Karma2Token válido."
+  },
+  "json_schema": {
+    "type": "object",
+    "properties": {
+      "template_id": { "type": "string", "description": "kebab-case" },
+      "nature": {
+        "type": "string",
+        "enum": ["motor", "product"]
+      },
+      "name": { "type": "string" },
+      "description": { "type": "string" },
+      "process_ref": { "type": "string" },
+      "input_sources": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      },
+      "config": { "type": "object" },
+      "related_actions": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "related_skills": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "interested_agents": {
+        "type": "array",
+        "items": { "type": "string" }
+      },
+      "contract_ref": {
+        "type": "string",
+        "description": "SddIA/templates/templates-contract.json"
+      }
+    },
+    "required": [
+      "template_id",
+      "name",
+      "description",
+      "process_ref",
+      "related_actions",
+      "contract_ref"
+    ]
+  },
+  "folder_structure": "Motor: SddIA/templates/<template-id>/. Local: .sddia/templates/<template-id>/"
+}

@@ -37,7 +37,9 @@
       "process": "SddIA/process/process-contract.md",
       "skills": "SddIA/skills/skills-contract.md",
       "tools": "SddIA/tools/tools-contract.md",
-      "knowledge": "SddIA/norms/knowledge-contract.md"
+      "knowledge": "SddIA/norms/knowledge-contract.md",
+      "patterns": "SddIA/patterns/patterns-contract.md",
+      "templates": "SddIA/templates/templates-contract.md"
     },
     "execution_capsules": {
       "skills": "scripts/skills/",

@@ -1,0 +1,10 @@
+{
+  "core_name": "sddia-engine",
+  "version": "5.0.0",
+  "architecture_mode": "dual-core-local",
+  "entry_points": {
+    "paths": "SddIA/core/cumulo.paths.json",
+    "constitution": "SddIA/CONSTITUTION_CORE.md"
+  },
+  "supported_contracts_version": "1.2.0"
+}
