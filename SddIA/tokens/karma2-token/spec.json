@@ -1,0 +1,43 @@
+{
+  "token_id": "karma2-token",
+  "name": "Karma2Token",
+  "version": "1.1.0",
+  "nature": "motor",
+  "description": "Contenedor conceptual de seguridad y contexto para items del ecosistema SddIA. Garantiza trazabilidad, autorización y cumplimiento de auditoría.",
+  "purpose": "Asegurar que cada ejecución tenga contexto de seguridad validado y trazable; permitir al auditor agregar y consultar interacciones entre entidades de modelo.",
+  "contract_ref": "SddIA/tokens/tokens-contract.json",
+  "token_definition": {
+    "fields": {
+      "identity": {
+        "issuer": { "type": "string", "description": "ID del Agente o Usuario que emite la orden (invoked_by en auditoría)." },
+        "subject": { "type": "string", "description": "ID del Item ejecutado (entity_id en auditoría)." },
+        "role": { "type": "string", "description": "Rol bajo el cual se ejecuta la acción." }
+      },
+      "context": {
+        "environment": { "type": "string", "enum": ["dev", "test", "prod", "local"] },
+        "session_id": { "type": "string", "format": "uuid" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "security": {
+        "hash": { "type": "string" },
+        "permissions": { "type": "array", "items": { "type": "string" } },
+        "audit_ref": { "type": "string" }
+      },
+      "lifecycle": {
+        "created_at": { "type": "string", "format": "date-time" },
+        "expires_at": { "type": "string", "format": "date-time" }
+      },
+      "interaction_audit": {
+        "entity_type": { "type": "string", "enum": ["skill", "tool", "action", "process"] },
+        "entity_id": { "type": "string" },
+        "invoked_by": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "validation_rules": [
+    "Debe estar firmado por un emisor válido (Agent ID registrado).",
+    "Debe tener referencia de auditoría válida en paths.auditsPath cuando aplique.",
+    "Para auditoría de interacciones: entity_type, entity_id, invoked_by y timestamp presentes."
+  ]
+}

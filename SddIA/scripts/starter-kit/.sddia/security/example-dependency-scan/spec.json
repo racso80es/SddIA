@@ -1,0 +1,18 @@
+{
+  "id": "00000000-0000-4000-8000-000000000001",
+  "title": "Ejemplo: escaneo de dependencias en CI",
+  "category": "Producto / Supply chain",
+  "tags": ["dependencies", "example", "ci"],
+  "metadata": { "status": "Draft", "severity": "High" },
+  "interested_agents": ["security-engineer", "tekton-developer"],
+  "nature": "product",
+  "controls": {
+    "standard": "OWASP Dependency Check / equivalente",
+    "requirement": "Fallar pipeline si hay CVE críticas sin excepción documentada.",
+    "rationale": "Plantilla; sustituir por política real del proyecto."
+  },
+  "enforcement": {
+    "ci_required": true,
+    "tools": [{ "name": "placeholder-scanner", "config_path": ".github/dependabot.yml" }]
+  }
+}

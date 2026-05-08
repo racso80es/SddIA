@@ -1,1 +1,2 @@
-SddIA/
+# Este repositorio versiona el Core bajo SddIA/. No ignorar SddIA/ aquí.
+# En proyectos consumidores (Vía C), el clone inyectado suele listarse en .gitignore.

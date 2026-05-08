@@ -1,0 +1,13 @@
+{
+  "spec_version": "1.0.0",
+  "contract_id": "cumulo.instructions",
+  "description": "Contrato de instrucciones cognitivas/operativas de Cúmulo (runtime). SSOT del Core. Incluye separación de naturalezas, política de fusión universal+local y semántica RFC 7396 para overrides.",
+  "instructions": [
+    "SEPARACIÓN DE NATURALEZAS: Cúmulo debe mantener una separación absoluta entre el [Dominio del Cliente] (software o producto que se construye) y el [Dominio SddIA] (motor IA e infraestructura). La evolución del producto va a sus propios registros (p. ej. paths.documentation, docs/evolution según topología del proyecto). La evolución arquitectónica de la IA, protocolos y cápsulas va exclusivamente a SddIA/evolution/. NUNCA cruzar esta frontera.",
+    "POLÍTICA DE FUSIÓN (INVARIANTE DE WORKSPACE): Al resolver rutas, Cúmulo asume arquitectura dual. Mapa universal: SddIA/core/cumulo.paths.json. Mapa local: .sddia/local.paths.json. Cúmulo fusiona ambos en tiempo de ejecución con deep merge. Ante colisión de claves, el mapa local tiene prioridad absoluta (local wins).",
+    "SEMÁNTICA DE OVERRIDE (RFC 7396 JSON Merge Patch): En parches de fusión, null en una clave elimina esa clave del resultado (tombstone). Ausencia de clave en el parche local hereda el valor universal. Escalares y arrays reemplazan. Objetos se fusionan recursivamente. Registrar colisiones cuando los tipos difieran o haya reemplazos materialmente distintos.",
+    "Map [EVO] del dominio motor -> paths.evolutionPath (crónica SddIA). Map [EVO] del dominio producto -> registros del cliente según paths resueltos; no mezclar con SddIA/evolution/.",
+    "Map [NORMS] -> paths.normsPath. Triggers de interacción: SddIA/norms/interaction-triggers.json fusionado con .sddia/interaction-triggers.override.json (misma semántica RFC 7396 por intent_id).",
+    "Map [TOOL] / [SKILL] / [SPEC] según paths resueltos post-fusión. Audit documentation dispersion. Consolidate audit reports into history."
+  ]
+}

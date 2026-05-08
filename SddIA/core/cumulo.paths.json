@@ -14,6 +14,7 @@
       "skills": "SddIA/skills",
       "tools": "SddIA/tools",
       "evolution": "SddIA/evolution",
+      "security": "SddIA/security",
       "tokens": "SddIA/tokens",
       "documentation": "docs",
       "scripts_limbo": "SddIA/scripts/limbo",
@@ -22,6 +23,8 @@
       "templates": "SddIA/templates"
     },
     "normative_documents": {
+      "interaction_triggers": "SddIA/norms/interaction-triggers.json",
+      "triage_nature_protocol": "SddIA/norms/triage-nature-protocol.md",
       "git_operations": "SddIA/norms/git-operations.md",
       "skills_portability": "SddIA/norms/skills-portability.md",
       "pull_request_orchestration": "SddIA/norms/pull-request-orchestration.md",

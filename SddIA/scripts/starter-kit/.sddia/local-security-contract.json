@@ -1,0 +1,68 @@
+{
+  "contract_version": "1.0.0",
+  "scope": ".sddia/security/",
+  "nature": "product",
+  "description": "Contrato de seguridad local del producto/cliente. Alineado con el modelo del Core (spec.md + spec.json por regla); Argos fusiona hallazgos de SddIA/security/ (motor) con .sddia/security/ (producto).",
+  "core_alignment_ref": "SddIA/security/security-contract.json",
+  "merge_policy": {
+    "precedence": "local_wins",
+    "null_semantics": "rfc7396_delete"
+  },
+  "required_files": [
+    {
+      "name": "spec.json",
+      "required": true,
+      "path": ".sddia/security/<rule-id>/spec.json"
+    },
+    {
+      "name": "spec.md",
+      "required": false,
+      "path": ".sddia/security/<rule-id>/spec.md"
+    }
+  ],
+  "json_schema": {
+    "type": "object",
+    "required": ["id", "title", "category", "tags", "metadata", "interested_agents", "nature"],
+    "properties": {
+      "id": { "type": "string", "description": "UUID v4 o rule-id estable." },
+      "title": { "type": "string" },
+      "category": { "type": "string" },
+      "tags": { "type": "array", "items": { "type": "string" } },
+      "metadata": {
+        "type": "object",
+        "required": ["status", "severity"],
+        "properties": {
+          "status": { "type": "string", "enum": ["Draft", "Published", "Deprecated"] },
+          "severity": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] }
+        }
+      },
+      "interested_agents": { "type": "array", "items": { "type": "string" } },
+      "nature": { "type": "string", "enum": ["product"] },
+      "controls": {
+        "type": "object",
+        "properties": {
+          "standard": { "type": "string", "description": "Ej. OWASP ASVS, CWE." },
+          "requirement": { "type": "string" },
+          "rationale": { "type": "string" }
+        }
+      },
+      "enforcement": {
+        "type": "object",
+        "properties": {
+          "ci_required": { "type": "boolean" },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "config_path": { "type": "string" },
+                "command": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

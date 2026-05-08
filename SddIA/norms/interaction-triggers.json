@@ -1,0 +1,94 @@
+{
+  "spec_version": "1.0.0",
+  "description": "Triggers Core (botones de fábrica). Se fusionan con .sddia/interaction-triggers.override.json: diccionario por intent_id, deep merge, local wins; null elimina clave (RFC 7396).",
+  "merge_policy": {
+    "key": "intent_id",
+    "strategy": "deep_merge",
+    "null_semantics": "rfc7396_delete",
+    "precedence": "local_wins"
+  },
+  "triggers": {
+    "intent.develop_fix_refactor": {
+      "intent_id": "intent.develop_fix_refactor",
+      "human_intents": [
+        "Desarrolla X",
+        "Corrige X",
+        "Refactoriza X",
+        "desarrolla",
+        "corrige",
+        "refactoriza"
+      ],
+      "enabled": true,
+      "routing": {
+        "type": "execute-process",
+        "action_ref": "SddIA/actions/crypto-broker.md",
+        "process_hint": "feature | bug-fix | refactorization",
+        "orchestration": {
+          "agents": ["mayeuta", "dedalo"],
+          "note": "Orquestación V5: Mayeuta → Dedalo → Tekton → Argos → delivery-close-cycle según proceso activo (feature.md, bug-fix.md, refactorization.md)."
+        },
+        "payload": {
+          "objective": "{user_text}",
+          "mode": "orchestrate"
+        }
+      }
+    },
+    "intent.close_cycle": {
+      "intent_id": "intent.close_cycle",
+      "human_intents": [
+        "Sube esto",
+        "Termina el ciclo",
+        "Cierra la tarea",
+        "Finaliza el proceso",
+        "subir",
+        "termina el ciclo"
+      ],
+      "enabled": true,
+      "routing": {
+        "type": "execute-process",
+        "process_id": "delivery-close-cycle",
+        "payload": {
+          "objective": "{user_text}",
+          "mode": "orchestrate",
+          "source_process": "{resolved_from_context}"
+        }
+      }
+    },
+    "intent.create_skill": {
+      "intent_id": "intent.create_skill",
+      "human_intents": [
+        "Crea una nueva skill",
+        "Nueva skill",
+        "Añade skill",
+        "crear skill"
+      ],
+      "enabled": true,
+      "routing": {
+        "type": "execute-process",
+        "process_id": "skill-creator",
+        "payload": {
+          "objective": "{user_text}",
+          "mode": "orchestrate"
+        }
+      }
+    },
+    "intent.create_tool": {
+      "intent_id": "intent.create_tool",
+      "human_intents": [
+        "Crea una nueva tool",
+        "Nueva herramienta",
+        "Añade tool",
+        "crear tool"
+      ],
+      "enabled": true,
+      "routing": {
+        "type": "execute-process",
+        "process_id": "tool-creator",
+        "payload": {
+          "objective": "{user_text}",
+          "mode": "orchestrate"
+        }
+      }
+    }
+  }
+}

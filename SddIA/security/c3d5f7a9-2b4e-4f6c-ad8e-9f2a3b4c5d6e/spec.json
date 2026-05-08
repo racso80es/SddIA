@@ -1,0 +1,10 @@
+{
+  "id": "c3d5f7a9-2b4e-4f6c-ad8e-9f2a3b4c5d6e",
+  "title": "Prevención de inyección en prompts y orquestación",
+  "category": "Motor / LLM",
+  "tags": ["prompt-injection", "orchestration", "motor"],
+  "metadata": { "difficulty": "Intermediate", "status": "Published" },
+  "interested_agents": ["security-engineer", "auditor", "architect"],
+  "nature": "motor",
+  "summary": "Instrucciones de kernel y triggers no deben ser sustituidas por contenido no confiable del usuario sin validación; separar Dominio Cliente y Dominio SddIA."
+}

@@ -1,0 +1,46 @@
+{
+  "contract_version": "1.0.0",
+  "scope": "SddIA/security/",
+  "nature": "motor",
+  "description": "Contrato de items de seguridad del motor SddIA (prevención de abuso, límites de ejecución, hardening de cápsulas). Distinto del escudo de producto en .sddia/security/.",
+  "required_files": [
+    {
+      "name": "spec.md",
+      "required": true,
+      "format": "markdown",
+      "language": "es-ES"
+    },
+    {
+      "name": "spec.json",
+      "required": true,
+      "format": "json"
+    }
+  ],
+  "security_model": {
+    "required_token": "Karma2Token",
+    "token_ref": "SddIA/tokens/karma2-token/spec.json",
+    "description": "La consulta o aplicación de un item de seguridad del motor requiere contexto Karma2Token válido según tokens-contract."
+  },
+  "json_schema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "string", "description": "UUID v4 del item" },
+      "title": { "type": "string" },
+      "category": { "type": "string" },
+      "tags": { "type": "array", "items": { "type": "string" } },
+      "metadata": {
+        "type": "object",
+        "properties": {
+          "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced"] },
+          "status": { "type": "string", "enum": ["Draft", "Published", "Deprecated"] }
+        },
+        "required": ["difficulty", "status"]
+      },
+      "interested_agents": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "required": ["id", "title", "category", "tags", "metadata", "interested_agents"]
+  }
+}

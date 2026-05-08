@@ -1,1 +1,13 @@
-{ "directories": { "local_tools": ".sddia/tools", "local_norms": ".sddia/norms" } }
+{
+  "directories": {
+    "local_tools": ".sddia/tools",
+    "local_norms": ".sddia/norms",
+    "local_security": ".sddia/security",
+    "local_constitution": ".sddia/constitution",
+    "local_principles": ".sddia/principles"
+  },
+  "files": {
+    "interaction_triggers_override": ".sddia/interaction-triggers.override.json",
+    "local_security_contract": ".sddia/local-security-contract.json"
+  }
+}

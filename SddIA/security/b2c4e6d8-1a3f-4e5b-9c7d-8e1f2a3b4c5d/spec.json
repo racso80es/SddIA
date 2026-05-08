@@ -1,0 +1,10 @@
+{
+  "id": "b2c4e6d8-1a3f-4e5b-9c7d-8e1f2a3b4c5d",
+  "title": "Límite de ejecución y aislamiento de cápsulas",
+  "category": "Motor / Ejecución",
+  "tags": ["capsules", "sandbox", "motor"],
+  "metadata": { "difficulty": "Advanced", "status": "Published" },
+  "interested_agents": ["tekton-developer", "security-engineer", "auditor"],
+  "nature": "motor",
+  "summary": "Las skills y tools ejecutables deben respetar el contrato de cápsula; no ejecutar fuera de paths resueltos por Cúmulo; rechazar rutas arbitrarias o shell injection."
+}

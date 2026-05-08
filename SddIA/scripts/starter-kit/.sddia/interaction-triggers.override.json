@@ -1,0 +1,17 @@
+{
+  "spec_version": "1.0.0",
+  "description": "Overrides locales de interaction-triggers (RFC 7396). Solo incluir intents a parchear; el resto hereda del Core.",
+  "merge_policy": {
+    "null_semantics": "rfc7396_delete",
+    "precedence": "local_wins"
+  },
+  "triggers": {
+    "intent.close_cycle": {
+      "routing": {
+        "payload": {
+          "require_tests": true
+        }
+      }
+    }
+  }
+}
