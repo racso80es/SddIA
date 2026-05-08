@@ -1,15 +1,16 @@
----
+﻿---
 entity_family: "principles"
-paths_ref: "SddIA/core/cumulo.paths.json → directories.principles"
+paths_ref: "SddIA/core/cumulo.paths.json â†’ directories.principles"
 contract_ref: "SddIA/norms/knowledge-contract.md"
 indexed_by: "agent:cumulo"
 catalog_version: "1.0.0"
 ---
 
-# Índice — Principles (Core SddIA)
+# Ãndice â€” Principles (Core SddIA)
 
-Catálogo vacío inicial bajo gobernanza `knowledge-contract`. Cada principio futuro residirá en `SddIA/principles/<norm_id>/spec.md` (forjado vía `norm-creator`). Los principios con `blocking_for_pr` participan en `pull-request-review` vía **agent:argos**.
+CatÃ¡logo vacÃ­o inicial bajo gobernanza `knowledge-contract`. Cada principio futuro residirÃ¡ en `SddIA/principles/<norm_id>/spec.md` (forjado vÃ­a `norm-creator`). Los principios con `blocking_for_pr` participan en `pull-request-review` vÃ­a **agent:argos**.
 
-| Name | UUID | Versión | blocking_for_pr | Descripción |
+| Name | UUID | VersiÃ³n | blocking_for_pr | DescripciÃ³n |
 |------|------|---------|-----------------|-------------|
-| — | — | — | — | *Sin entradas todavía.* |
+| â€” | â€” | â€” | â€” | *Sin entradas todavÃ­a.* |
+

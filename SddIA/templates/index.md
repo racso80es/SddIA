@@ -1,15 +1,16 @@
----
+﻿---
 entity_family: "templates"
-paths_ref: "SddIA/core/cumulo.paths.json → directories.templates"
+paths_ref: "SddIA/core/cumulo.paths.json â†’ directories.templates"
 contract_ref: "SddIA/norms/knowledge-contract.md"
 indexed_by: "agent:cumulo"
 catalog_version: "1.0.0"
 ---
 
-# Índice — Templates (Core SddIA)
+# Ãndice â€” Templates (Core SddIA)
 
-Catálogo vacío inicial bajo gobernanza `knowledge-contract`. Cada plantilla futura residirá en `SddIA/templates/<norm_id>/spec.md` (forjado vía `norm-creator`).
+CatÃ¡logo vacÃ­o inicial bajo gobernanza `knowledge-contract`. Cada plantilla futura residirÃ¡ en `SddIA/templates/<norm_id>/spec.md` (forjado vÃ­a `norm-creator`).
 
-| Name | UUID | Versión | Descripción |
+| Name | UUID | VersiÃ³n | DescripciÃ³n |
 |------|------|---------|-------------|
-| — | — | — | *Sin entradas todavía.* |
+| â€” | â€” | â€” | *Sin entradas todavÃ­a.* |
+
