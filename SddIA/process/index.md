@@ -2,10 +2,18 @@
 
 Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable catalogado en esta tabla).
 
-| Name | UUID | Versión | Context | Descripción |
-|------|------|---------|---------|-------------|
-| process-creator | 7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4 | 1.0.0 | ecosystem-evolution | Proceso maestro para instanciar nuevos procesos en el Core SddIA y mantener el índice del directorio `process`. |
-| skill-creator | b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d | 1.0.0 | ecosystem-evolution | Proceso maestro para estandarizar y automatizar la creación de nuevas skills (definición física y lógica) en el Core SddIA. |
-| action-creator | d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f | 1.0.0 | ecosystem-evolution | Proceso maestro para instanciar nuevas acciones (orquestaciones lógicas) en el Core SddIA y mantener el índice del directorio `actions`. |
-| tool-creator | c4355159-b6ea-4201-973a-a08db5ce8156 | 1.0.0 | ecosystem-evolution | Proceso maestro para instanciar herramientas de dominio (Tools) complejas en el Core SddIA y mantener el catálogo bajo `tools`. |
-| agent-creator | e7d5087c-6d47-4890-9602-34962496b3bb | 1.0.0 | ecosystem-evolution | Proceso maestro para instanciar nuevas identidades operativas (Agentes) en el Core SddIA y mantener el índice soberano bajo `agents`. |
+| Name | UUID | Versión | Context | Aliases | Descripción |
+|------|------|---------|---------|---------|-------------|
+| process-creator | 7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4 | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar nuevos procesos en el Core SddIA y mantener el índice del directorio `process`. |
+| skill-creator | b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d | 1.0.0 | ecosystem-evolution | — | Proceso maestro para estandarizar y automatizar la creación de nuevas skills (definición física y lógica) en el Core SddIA. |
+| action-creator | d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar nuevas acciones (orquestaciones lógicas) en el Core SddIA y mantener el índice del directorio `actions`. |
+| tool-creator | c4355159-b6ea-4201-973a-a08db5ce8156 | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar herramientas de dominio (Tools) complejas en el Core SddIA y mantener el catálogo bajo `tools`. |
+| agent-creator | e7d5087c-6d47-4890-9602-34962496b3bb | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar nuevas identidades operativas (Agentes) en el Core SddIA y mantener el índice soberano bajo `agents`. |
+| delivery-close-cycle | 5417c92c-da7f-4d46-b245-55cf1b17961a | 1.0.0 | ecosystem-evolution | — | Proceso paramétrico de **cierre de entrega** reutilizable desde `feature`, `bug-fix` y `refactorization`. Encadena snapshot git, evaluación condicional de impacto en el Core SddIA, sincronización remota con PR e higiene local. |
+| feature | 1b4fa69f-4299-47ca-b2ed-380f2263239c | 1.0.0 | ecosystem-evolution, filesystem-ops | — | Proceso V5 para desarrollo de **features**: cadena **Mayeuta → Dedalo → Tekton → Argos → delivery-close-cycle** (`source_process: feature`). Sustituye el linaje legacy basado en fases `spec/clarify/planning/...` purgadas. |
+| bug-fix | ac8d078c-9785-490b-9f43-ad310fe9df9d | 1.0.0 | ecosystem-evolution, filesystem-ops | — | Proceso V5 para **corrección de defectos** con **process_id canónico preservado** (`bug-fix`). Omite la fase pesada de requisitos cuando el triaje es directo; mantiene **Dedalo → Tekton → Argos → delivery-close-cycle** con `source_process: bug-fix`. |
+| refactorization | ae01e3ff-af68-4b94-90b3-97e5c03d75ee | 1.0.0 | ecosystem-evolution, filesystem-ops | — | Proceso V5 para **refactorización** con **process_id canónico preservado** (`refactorization`). Paralelo a `feature`, enfatiza cambios **sin nueva capacidad funcional** y cierra con **`delivery-close-cycle`** (`source_process: refactorization`). |
+| pull-request-review | 6d59f23b-df29-4be5-9bb9-29cede3474b9 | 1.0.0 | quality-assurance, source-control | — | Proceso V5 que **transmuta** el legacy `validate-pull-requests`. Los tres escrutinios históricos (`architect`, `qa-judge`, `security-engineer`) quedan **absorbidos** por **Dedalo** (arquitectura) y **Argos** (calidad + seguridad + veredicto). |
+| task-queue-manager | 608ae470-4db2-4ae6-8bb8-7aa5949c208a | 1.0.0 | ecosystem-evolution, filesystem-ops | automatic_task | Meta-orquestación de **cola de tareas** para el Core SddIA. Expone el alias canónico legacy **`automatic_task`** (`process-contract v1.3.0`) hacia el mismo archivo físico. |
+| sddia-difusion | de142ec3-4022-4ac1-bcf4-1b8490cabf9d | 1.0.0 | ecosystem-evolution | — | Proceso que cubre la **deuda** registrada al purgar la antigua acción de difusión: materializa la propagación controlada del Core SddIA hacia `.cursor/rules`, `.github` y homólogos, sin violar la frontera Acciones/Procesos. |
+| norm-creator | 5fd5b47b-f98e-40f7-913f-b3a7c3eedf56 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Proceso **creator** para la familia **knowledge**: forja `pattern`, `principle` o `template` bajo el SSOT ampliado (`cumulo.paths.json`), consumiendo explícitamente **`knowledge-contract.md`**. |

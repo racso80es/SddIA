@@ -2,7 +2,7 @@
 uuid: "e7d5087c-6d47-4890-9602-34962496b3bb"
 name: "agent-creator"
 version: "1.0.0"
-contract: "process-contract v1.2.0"
+contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
 hash_signature: "sha256:a6fb8f1b3567887f1fb21db92094236fef4873a64a28541845e0373a0ccf3b11"
 inputs:

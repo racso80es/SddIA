@@ -16,7 +16,10 @@
       "evolution": "SddIA/evolution",
       "tokens": "SddIA/tokens",
       "documentation": "docs",
-      "scripts_limbo": "SddIA/scripts/limbo"
+      "scripts_limbo": "SddIA/scripts/limbo",
+      "patterns": "SddIA/patterns",
+      "principles": "SddIA/principles",
+      "templates": "SddIA/templates"
     },
     "normative_documents": {
       "git_operations": "SddIA/norms/git-operations.md",
@@ -30,7 +33,8 @@
       "actions": "SddIA/actions/actions-contract.md",
       "process": "SddIA/process/process-contract.md",
       "skills": "SddIA/skills/skills-contract.md",
-      "tools": "SddIA/tools/tools-contract.md"
+      "tools": "SddIA/tools/tools-contract.md",
+      "knowledge": "SddIA/norms/knowledge-contract.md"
     },
     "execution_capsules": {
       "skills": "scripts/skills/",

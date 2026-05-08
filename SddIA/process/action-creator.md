@@ -2,7 +2,7 @@
 uuid: "d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f"
 name: "action-creator"
 version: "1.0.0"
-contract: "process-contract v1.2.0"
+contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
 hash_signature: "sha256:7d4df949445c4b8e666add244d4e9a8dd3e57c8ad7fffbfb0a0df6a94e6d3d62"
 inputs:

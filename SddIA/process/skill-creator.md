@@ -2,7 +2,7 @@
 uuid: "b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d"
 name: "skill-creator"
 version: "1.0.0"
-contract: "process-contract v1.2.0"
+contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
 hash_signature: "sha256:b440cb791d2d5ea69a4c11c3f7dd9fe6ebcb1df3e1a512f4bdf18c3c7acefb45"
 inputs:

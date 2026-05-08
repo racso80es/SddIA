@@ -2,7 +2,7 @@
 uuid: "c4355159-b6ea-4201-973a-a08db5ce8156"
 name: "tool-creator"
 version: "1.0.0"
-contract: "process-contract v1.2.0"
+contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
 hash_signature: "sha256:22b15bb2204ae9b1f5cbabc5734d646010108340b1ec95e620c44558850bac5e"
 inputs:
