@@ -1,8 +1,10 @@
 {
-  "contract_version": "1.0.0",
+  "contract_version": "1.1.0",
   "scope": "paths.tokensPath (SddIA/tokens/)",
   "nature": "motor",
-  "description": "Contrato que toda definición de token debe cumplir: definición en paths.tokensPath/<token-id>/ con spec.json (y opcional spec.md). Tokens consumidos por actions, skills, tools, process, patterns, principles para contexto de seguridad y trazabilidad.",
+  "description": "Contrato que toda definición de token debe cumplir: paths.tokensPath/<token-id>/spec.json obligatorio; especificación legible unificada en paths.tokensPath/TOKENS.md (SSOT narrativo del dominio) con catálogo en index.md. spec.md por token es opcional si la sección anclada en TOKENS.md cubre el token. Tokens consumidos por actions, skills, tools, process, patterns, principles para contexto de seguridad y trazabilidad.",
+  "ssot_documentation": "SddIA/tokens/TOKENS.md",
+  "catalog_index": "SddIA/tokens/index.md",
   "definition_artefacts": [
     {
       "ext": ".json",
@@ -15,7 +17,7 @@
       "naming": "spec.md",
       "path": "paths.tokensPath/<token-id>/",
       "required": false,
-      "purpose": "Especificación legible del token: propósito, campos, reglas de validación. es-ES."
+      "purpose": "Especificación legible opcional por token (es-ES). Puede omitirse si TOKENS.md incluye la sección anclada del token."
     }
   ],
   "constraints": [
@@ -31,8 +33,7 @@
     "paths.processPath",
     "paths.patternsPath",
     "paths.principlesPath",
-    "SddIA/agents/auditor/process-interaction.json",
-    "SddIA/agents/auditor/auditor.json",
+    "SddIA/scripts/limbo/archetypes/agents/auditor/",
     "SddIA/agents/security-engineer.json",
     "SddIA/security/"
   ],
@@ -42,6 +43,6 @@
     "entity_type_definition": "Tipo de entidad de modelo (implementa contrato de Token). Valores ej.: skill, tool, action, process.",
     "entity_type_enum": ["skill", "tool", "action", "process"],
     "interaction_log_ref": "paths.auditsPath (Cúmulo); paths.accessLogFile o subcarpeta interactions/; cada registro de token debe ser accesible por el auditor.",
-    "auditor_consumer": "El agente auditor (SddIA/agents/auditor/) es consumidor formal del contrato de Token: debe poder consultar y agregar datos de interacciones a partir de los registros asociados a cada token (invoked_by = identity.issuer, entity_id = identity.subject, entity_type, context.timestamp)."
+    "auditor_consumer": "El rol auditor (arquetipos bajo SddIA/scripts/limbo/archetypes/agents/auditor/) es consumidor formal del contrato de Token: debe poder consultar y agregar datos de interacciones a partir de los registros asociados a cada token (invoked_by = identity.issuer, entity_id = identity.subject, entity_type, context.timestamp)."
   }
 }

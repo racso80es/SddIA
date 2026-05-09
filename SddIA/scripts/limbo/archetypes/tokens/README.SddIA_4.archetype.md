@@ -1,9 +1,13 @@
-# Deprecado: Tokens
+# Deprecado: Tokens (arquetipo Limbo)
 
-Los tokens se han movido a **paths.tokensPath** (SddIA/tokens/) con la misma estructura que principios y patrones.
+Este README es **instantánea** del dominio tokens en Limbo; la normativa viva está en **paths.tokensPath** del Core.
 
-- **Ruta canónica:** Cúmulo → paths.tokensPath (SddIA/tokens/).
-- **Contrato:** SddIA/tokens/tokens-contract.json.
-- **Karma2Token:** SddIA/tokens/karma2-token/spec.json.
+- **Ruta canónica:** Cúmulo → `paths.tokensPath` (`SddIA/tokens/`); no usar rutas literales sin resolver vía `cumulo.paths.json`.
+- **SSOT legible (contrato + tokens):** [`TOKENS.md`](../../../../tokens/TOKENS.md)
+- **Índice / catálogo:** [`index.md`](../../../../tokens/index.md)
+- **Contrato machine-readable:** [`tokens-contract.json`](../../../../tokens/tokens-contract.json)
+- **Karma2Token (spec):** [`karma2-token/spec.json`](../../../../tokens/karma2-token/spec.json)
 
-No usar rutas literales; consultar Cúmulo (cumulo.paths.json).
+Si hay discrepancia entre este fichero y el Core, prevalecen **`SddIA/tokens/TOKENS.md`** y **`tokens-contract.json`**.
+
+Contexto Limbo: [`README.md`](../../README.md) del directorio `scripts/limbo/`.
