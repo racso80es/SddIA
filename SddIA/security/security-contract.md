@@ -6,7 +6,7 @@ scope: SddIA/security/
 security_model:
   description: Contexto Karma2Token obligatorio para operaciones sensibles del motor.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato de seguridad del motor (`SddIA/security/`)

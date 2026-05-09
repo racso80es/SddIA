@@ -43,7 +43,7 @@ La lista de `interested_agents` en `spec.json` debe basarse en la categoría del
 
 ## 3. Modelo de Seguridad (Karma2Token)
 
-Todos los items de seguridad operan bajo el contexto de `Karma2Token`. Cualquier acción de creación, lectura o aplicación de estos items debe estar firmada y validada según `SddIA/tokens/karma2-token/spec.json`.
+Todos los items de seguridad operan bajo el contexto de `Karma2Token`. Cualquier acción de creación, lectura o aplicación de estos items debe estar firmada y validada según `SddIA/tokens/karma2-token.md`.
 
 Los items de seguridad forman parte de las **entidades de dominio (ecosistema SddIA)**: son las que integran el ítem o contrato de Token. Han de respetar **estructura** (spec.md + spec.json en la carpeta del item) y **sincronidad** (paridad MD ↔ JSON). Norma: SddIA/norms/entidades-dominio-ecosistema-sddia.md.
 

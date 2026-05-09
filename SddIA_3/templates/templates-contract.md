@@ -69,7 +69,7 @@ scope: SddIA/templates/
 security_model:
   description: La ejecución de una plantilla requiere un contexto de Karma2Token válido.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato de Plantillas (SddIA/templates/)
@@ -127,7 +127,7 @@ El agente que ejecute la plantilla debe resolver estas referencias según la nor
 
 ## 4. Seguridad y trazabilidad
 
-- **Karma2Token:** Toda ejecución de una plantilla debe operar bajo el contexto de un Karma2Token válido (paths.tokensPath; spec en SddIA/tokens/karma2-token/spec.json).
+- **Karma2Token:** Toda ejecución de una plantilla debe operar bajo el contexto de un Karma2Token válido (paths.tokensPath; definición en SddIA/tokens/karma2-token.md).
 - **Consumidores:** paths.actionsPath, SddIA/agents, paths.processPath, .cursor/rules.
 
 ---

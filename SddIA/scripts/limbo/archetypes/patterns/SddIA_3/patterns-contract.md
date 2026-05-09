@@ -56,7 +56,7 @@ scope: SddIA/patterns/
 security_model:
   description: La aplicación o modificación de un patrón requiere un contexto de Karma2Token válido.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato de Patrones (SddIA/patterns/)

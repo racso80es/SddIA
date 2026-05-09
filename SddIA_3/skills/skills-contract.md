@@ -54,7 +54,7 @@ scope: SddIA/skills/
 security_model:
   description: Todo skill debe ser invocado bajo el contexto de un Karma2Token válido.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato de skills (Cúmulo: paths.skillsPath / paths.skillCapsules)

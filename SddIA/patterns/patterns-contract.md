@@ -9,7 +9,7 @@ json_schema:
 security_model:
   description: Aplicación o modificación de un patrón del motor bajo Karma2Token válido.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato de patrones (motor + espacio local)
