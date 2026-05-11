@@ -56,7 +56,7 @@
     {
       "id": "L8_SDDIA_EVOLUTION",
       "rule": "SddIA protocol traceability",
-      "description": "Any material change under ./SddIA/ must be recorded under paths.sddiaEvolutionPath with UUID v4 detail file and index update, per SddIA/norms/sddia-evolution-sync.md and evolution_contract.md. Registration via Rust skills capsule; not optional for agents.",
+      "description": "Any material change under ./SddIA/ must be recorded under directories.evolution with UUID v4 detail files and updates via normative_documents.evolution_log, per SddIA/norms/sddia-evolution-sync.md and normative_documents.evolution_contract. Registration via Rust skills capsule; not optional for agents.",
       "severity": "CRITICAL"
     },
     {

@@ -9,7 +9,7 @@ contract: "security-contract v1.0.0"
 # Límite de ejecución y aislamiento de cápsulas
 
 ## Objetivo
-Impedir que la orquestación invoque binarios o scripts fuera de las rutas canónicas resueltas tras la fusión `cumulo.paths.json` + `.sddia/local.paths.json`.
+Impedir que la orquestación invoque binarios o scripts fuera de las rutas canónicas resueltas tras la fusión `cumulo.paths.json` + `.SddIA/local.paths.json`.
 
 ## Reglas
 1. Toda invocación de skill/tool debe usar `paths.skillCapsules` / `paths.toolCapsules` (o equivalentes post-fusión).

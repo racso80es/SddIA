@@ -35,13 +35,13 @@ Aunque sean workspace-local, las Tools heredan el rigor S+ Grade. Cada Tool debe
 El **único puente** entre ambos es:
 
 - **`implementation_path_ref`** (en la definición): puntero abstracto a la implementación.
-- **Resolución por topología local** (Cúmulo): convierte `implementation_path_ref` en una ruta efectiva dentro del workspace (p. ej. `.<algo>/.sddia/tools/<name>/...`).
+- **Resolución por topología local** (Cúmulo): convierte `implementation_path_ref` en una ruta efectiva dentro del workspace (p. ej. `.<algo>/.SddIA/tools/<name>/...`).
 
 ## 3. Ejecución y ruteo (Workspace-local)
 
 - Las Tools se **invocan** a través de Cúmulo/Cerbero (no por comandos crudos directos sin auditoría).
 - Cúmulo mantiene un **índice/topología** de tools disponibles en el workspace y resuelve `implementation_path_ref` sin duplicar rutas literales en specs.
-- Ubicación sugerida (ejemplo no normativo): `.<workspace>/.sddia/tools/<name>/` o equivalente. La ubicación real depende del proyecto y su topología.
+- Ubicación sugerida (ejemplo no normativo): `.<workspace>/.SddIA/tools/<name>/` o equivalente. La ubicación real depende del proyecto y su topología.
 
 ## 4. Interfaz de Interacción
 

@@ -11,7 +11,7 @@
                          "process"
                      ],
     "contract_ref":  "SddIA/tools/tools-contract.md",
-    "definition_path_ref":  ".sddia/tools/audit-funcional-frontend",
+    "definition_path_ref":  ".SddIA/tools/audit-funcional-frontend",
     "implementation_path_ref":  "scripts/tools/audit-funcional-frontend",
     "implementation_type":  "process",
     "depends_on_tools":  [

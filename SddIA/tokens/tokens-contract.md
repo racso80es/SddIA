@@ -19,7 +19,7 @@ Este documento es el **único contrato de familia** del dominio **tokens** bajo 
 - **Ruta canónica:** `paths.tokensPath` → `SddIA/tokens/` (minúsculas).
 - **Naturaleza:** motor (Core inyectable).
 - **Propósito:** Toda definición de **token** que actúe como entidad de modelo con trazabilidad y contexto de seguridad debe cumplir este contrato y vivir como `{token-id}.md` en ese directorio.
-- **Resolución de rutas:** solo desde **Cúmulo** (`SddIA/core/cumulo.paths.json` + fusión con `.sddia/local.paths.json` cuando aplique).
+- **Resolución de rutas:** solo desde **Cúmulo** (`SddIA/core/cumulo.paths.json` + fusión con `.SddIA/local.paths.json` cuando aplique).
 
 ## 2. Identidad atómica por token (innegociable)
 

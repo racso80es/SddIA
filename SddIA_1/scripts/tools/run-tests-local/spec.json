@@ -11,7 +11,7 @@
                      ],
     "contract_ref":  "SddIA/tools/tools-contract.md",
     "capsule_json_io_ref":  "SddIA/norms/capsule-json-io.md",
-    "definition_path_ref":  ".sddia/tools/run-tests-local",
+    "definition_path_ref":  ".SddIA/tools/run-tests-local",
     "implementation_path_ref":  "scripts/tools/run-tests-local",
     "implementation_type":  "executable",
     "depends_on_tools":  [

@@ -8,7 +8,7 @@ catalog_version: "1.1.0"
 
 # Índice — Patterns (Core SddIA)
 
-Catálogo bajo `patterns-contract`. Patrones **motor** en `SddIA/patterns/<uuid>/`; patrones de **negocio** en `.sddia/patterns/<uuid>/` (véase bifurcación en el contrato).
+Catálogo bajo `patterns-contract`. Patrones **motor** en `SddIA/patterns/<uuid>/`; patrones de **negocio** en `.SddIA/patterns/<uuid>/` (véase bifurcación en el contrato).
 
 | Name | UUID | Versión | Naturaleza | Descripción |
 |------|------|---------|------------|-------------|

@@ -1,9 +1,9 @@
 ---
 contract_version: 1.1.0
 nature: motor
-description: Contrato maestro de patrones — Core (motor) vs espacio local (.sddia). Los patrones del motor viven bajo SddIA/patterns; los de dominio de negocio bajo .sddia/patterns.
-folder_structure: 'Patrón motor: SddIA/patterns/<uuid>/. Patrón producto: .sddia/patterns/<uuid>/ (misma forma de artefactos; resolución vía Cúmulo tras fusión de paths).'
-scope: 'SddIA/patterns/ y, por extensión normativa, .sddia/patterns/'
+description: Contrato maestro de patrones — Core (motor) vs espacio local (.SddIA). Los patrones del motor viven bajo SddIA/patterns; los de dominio de negocio bajo .SddIA/patterns.
+folder_structure: 'Patrón motor: SddIA/patterns/<uuid>/. Patrón producto: .SddIA/patterns/<uuid>/ (misma forma de artefactos; resolución vía Cúmulo tras fusión de paths).'
+scope: 'SddIA/patterns/ y, por extensión normativa, .SddIA/patterns/'
 json_schema:
   description: Esquema de spec.json por patrón; ver patterns-contract.json.
 security_model:
@@ -19,9 +19,9 @@ security_model:
 | Naturaleza | Ubicación canónica | Contenido |
 |------------|-------------------|-----------|
 | **Motor** (`nature: motor`) | `SddIA/patterns/<uuid>/` | Patrones de arquitectura y diseño **del ecosistema SddIA** (SSOT, orquestación, cápsulas, resolución de rutas, etc.). |
-| **Producto / negocio** (`nature: product`) | `.sddia/patterns/<uuid>/` | Patrones propios del **software o dominio del cliente** (DDD de aplicación, integraciones de producto, etc.). |
+| **Producto / negocio** (`nature: product`) | `.SddIA/patterns/<uuid>/` | Patrones propios del **software o dominio del cliente** (DDD de aplicación, integraciones de producto, etc.). |
 
-Cúmulo resuelve `directories.patterns` del Core y la clave local equivalente (p. ej. `local_patterns` en `.sddia/local.paths.json`) y **fusiona** mapas; en colisión de claves rige **local wins** (véase `SddIA/agents/cumulo.instructions.json`).
+Cúmulo resuelve `directories.patterns` del Core y la clave local equivalente (p. ej. `local_patterns` en `.SddIA/local.paths.json`) y **fusiona** mapas; en colisión de claves rige **local wins** (véase `SddIA/agents/cumulo.instructions.json`).
 
 ## Estructura por patrón (ambos espacios)
 

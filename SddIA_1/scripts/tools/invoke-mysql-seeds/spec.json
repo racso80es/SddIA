@@ -12,7 +12,7 @@
                      ],
     "contract_ref":  "SddIA/tools/tools-contract.md",
     "capsule_json_io_ref":  "SddIA/norms/capsule-json-io.md",
-    "definition_path_ref":  ".sddia/tools/invoke-mysql-seeds",
+    "definition_path_ref":  ".SddIA/tools/invoke-mysql-seeds",
     "implementation_path_ref":  "scripts/tools/invoke-mysql-seeds",
     "implementation_type":  "executable",
     "depends_on_tools":  [

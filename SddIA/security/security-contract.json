@@ -2,7 +2,7 @@
   "contract_version": "1.0.0",
   "scope": "SddIA/security/",
   "nature": "motor",
-  "description": "Contrato de items de seguridad del motor SddIA (prevención de abuso, límites de ejecución, hardening de cápsulas). Distinto del escudo de producto en .sddia/security/.",
+  "description": "Contrato de items de seguridad del motor SddIA (prevención de abuso, límites de ejecución, hardening de cápsulas). Distinto del escudo de producto en .SddIA/security/.",
   "required_files": [
     {
       "name": "spec.md",

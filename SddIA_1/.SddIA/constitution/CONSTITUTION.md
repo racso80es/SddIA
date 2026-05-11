@@ -1,6 +1,5 @@
 ---
 entity_type: local-constitution
-workspace_id: SddIA_1
 product: GesFer.Admin.Back
 jurisdiction: tactical
 federal_constitution_ref: SddIA/CONSTITUTION_CORE.md

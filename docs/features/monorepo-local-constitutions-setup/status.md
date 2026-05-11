@@ -1,20 +1,27 @@
 ---
 feature_name: monorepo-local-constitutions-setup
-status: in_progress
+status: completed
 updated: 2026-05-11
-branch_name: feat/monorepo-local-constitutions-setup
-pr: https://github.com/racso80es/SddIA/pull/1
+branch_name: main
 ---
 
 # Estado: forja constitucional global
+
+## Línea base
+
+- Rama operativa: `main` (sincronizada con `origin/main`).
+- Integración: PR #1 y PR #2 (`feat/monorepo-local-constitutions-setup`); cierre documental y starter-kit en commits posteriores sobre `main`.
+- Seguimiento de deuda transversal: `SddIA/evolution/f81e4b2a-6c0d-4a8f-9e31-2d7b8a4c1e00.md`.
 
 ## Completado
 
 ### Motor federal
 
 - `SddIA/CONSTITUTION_CORE.md` §6: bylaws tácticos bajo `.SddIA/constitution/`; el Core prevalece en colisión.
-- `SddIA/agents/cumulo.instructions.json`: mapa `.SddIA/local.paths.json` y cláusula de jerarquía federal.
-- Evolución motor: `SddIA/evolution/e1f2a3b4-c5d6-4789-e012-3456789abcde.md`.
+- `SddIA/agents/cumulo.instructions.json`: mapa `.SddIA/local.paths.json`, jerarquía federal y `[EVO]` motor (`directories.evolution`, `normative_documents.evolution_log`).
+- `SddIA/core/cumulo.paths.json`: `normative_documents.evolution_log` y `normative_documents.evolution_contract`.
+- Normas `paths-via-cumulo.md` y `sddia-evolution-sync.md` alineadas a claves `directories.*` / `normative_documents.*` (sin `paths.sddiaEvolution*` en Core).
+- Evolución motor: `SddIA/evolution/e1f2a3b4-c5d6-4789-e012-3456789abcde.md` (`hash_integrity` sellado).
 
 ### Laboratorios `SddIA_1`…`SddIA_4`
 
@@ -22,26 +29,26 @@ pr: https://github.com/racso80es/SddIA/pull/1
 - `.SddIA/constitution/` (`CONSTITUTION.md`, `constitution.json`, `README.md`).
 - `.SddIA/evolution/` (`README.md`, `Evolution_log.md`, entrada UUID de migración).
 - Purga en raíz: `CONSTITUTION.md`, `constitution.json`, `constitution/`.
-- Script reutilizable: `SddIA/scripts/migrate-local-constitutions-once.py`.
+- `constitution.json` (L8 motor / L9 local) alineado a claves Cúmulo actuales en `SddIA_1`, `SddIA_3` y `SddIA_4`; `SddIA_2` sin L8 explícita en JSON (solo L9 local).
+- Script one-shot: `scripts/migrate-local-constitutions-once.py`.
+
+### Rutas `.SddIA/` (Core y tools de laboratorio)
+
+- Contratos e índices del Core y `definition_path_ref` en cápsulas `scripts/tools/{name}/spec.json` usan `.SddIA/` como convención canónica.
+- Inventarios `.SddIA/tools/` (`index.md`, `README.md`) alineados en los cuatro laboratorios.
 
 ### Starter-kit (plantilla cliente)
 
-- Carpeta canónica renombrada a `SddIA/scripts/starter-kit/.SddIA/` (antes `.sddia/`).
-- `local.paths.json` alineado a laboratorios (`local_evolution`, `local_evolution_log`).
-- Plantilla `.SddIA/evolution/` (`README.md`, `Evolution_log.md`).
-- `constitution.json` con `L9_LOCAL_EVOLUTION` y `paths_ref` a `.SddIA/local.paths.json`.
-- `CONSTITUTION.md` con frontmatter YAML y cláusula de sumisión al Core federal.
-- `sddia-sync.ps1`: zonas sagradas `.SddIA/tools/`, `.SddIA/constitution/`, `.SddIA/evolution/`.
-- READMEs y `local-security-contract.json` actualizados a `.SddIA/`.
+- Plantilla bajo `SddIA/scripts/starter-kit/.SddIA/`.
+- `local.paths.json`, `constitution/`, `evolution/`, `sddia-sync.ps1` (zonas sagradas) y READMEs en convención `.SddIA/`.
+- `CONSTITUTION.md` con trazabilidad motor (`directories.evolution`) vs instancia (`directories.local_evolution`).
 
-## Pendiente / deuda
+### Integridad documental (motor)
 
-- Referencias legacy `.sddia/` en contratos Core, evolution `f81e4b2a`, tools de laboratorio y arquetipos Limbo.
-- Barrido global de duplicados (process, normas, limbo) fuera del alcance de esta feature.
-- `hash_integrity` en evolutions editados tras el cierre documental.
-- Decidir commit en la rama del PR o PR aparte para starter-kit y documentación de estado.
+- `hash_integrity` sellado en todos los ficheros de `SddIA/evolution/` (incl. `e1f2a3b4`, `80a6462c`, `51b4d573`, `ebdc4cb8`).
 
-## PR
+## Pendiente / deuda (fuera de esta feature)
 
-- Rama: `feat/monorepo-local-constitutions-setup`
-- PR: https://github.com/racso80es/SddIA/pull/1 (constitución + motor; starter-kit y `status.md` pueden requerir commit adicional).
+- Arquetipos Limbo y copias legacy en `SddIA_1`…`SddIA_4` (process, normas, actions) respecto al SSOT `SddIA/`.
+- Referencias `paths.sddiaEvolution*` y rutas `.sddia/` en Limbo y en scripts de migración mecánica (`migrate-local-tools-once.ps1`, `kernel-raw-execute.ps1`).
+- Barrido global de duplicados y gobernanza `spec.json` vs `{name}.md` (mapa en `f81e4b2a` §3–4).

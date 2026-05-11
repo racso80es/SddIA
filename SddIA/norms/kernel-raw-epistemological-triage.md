@@ -9,7 +9,7 @@ description: Directriz TEKTON de triaje legacy (SddIA_1..4) hacia Core V5, Start
 
 ## Parches normativos (determinismo)
 
-- **`nature` ausente (Pasos 2 y 3):** Si `spec.json` existe pero **no** define la clave `nature` o el valor es vacío/nulo, aplicar la **misma rama** que `nature: product` (primera aparición top-down → Starter Kit en la ruta que corresponda: `principles/`, `patterns/` o `security/` bajo `.sddia/`).
+- **`nature` ausente (Pasos 2 y 3):** Si `spec.json` existe pero **no** define la clave `nature` o el valor es vacío/nulo, aplicar la **misma rama** que `nature: product` (primera aparición top-down → Starter Kit en la ruta que corresponda: `principles/`, `patterns/` o `security/` bajo `.SddIA/`).
 - **`timeline_sealed` (Paso 6):** Entero no negativo = **número total de ficheros regulares** (conteo recursivo) bajo `SddIA/scripts/limbo/archetypes/evolution/` **después** de completar el Paso 4. Cada fichero cuenta una vez; no incluir solo directorios.
 
 ---
@@ -29,7 +29,7 @@ Asume la jurisdicción **TEKTON**.
 
 - Itera top-down moviendo la **primera aparición** de cada ítem:
   - **A `SddIA/norms/`:** `obediencia-procesos` (`.md` y `.json`), `capsule-json-io`, `commands-via-skills-or-tools`, `paths-via-cumulo`, `entidades-dominio-ecosistema-sddia`, `git-via-skills-or-process`, `agents-principles-contract`, `touchpoints-ia`, `sddia-evolution-sync`.
-  - **A `SddIA/scripts/starter-kit/.sddia/norms/`:** `features-documentation-pattern`, `pr-acceptance-protocol`, `openapi-contract-rest-frontend`, `nextjs-hydration-client-state`.
+  - **A `SddIA/scripts/starter-kit/.SddIA/norms/`:** `features-documentation-pattern`, `pr-acceptance-protocol`, `openapi-contract-rest-frontend`, `nextjs-hydration-client-state`.
   - **A `SddIA/scripts/limbo/archetypes/norms/`:** `features-documentation-frontmatter`, las bloqueadas del Paso 0, y el **100%** de los archivos remanentes en `SddIA_X/norms/`.
 
 ### PASO 2: Triaje de sabiduría (top-down)
@@ -38,7 +38,7 @@ Asume la jurisdicción **TEKTON**.
 - **Regla de colisión V5:** Si la carpeta (UUID o nombre) **ya existe** en `SddIA/principles/` o `SddIA/patterns/`, mueve la copia legacy al Limbo de inmediato.
 - Si no hay colisión, evalúa `spec.json`:
   - Si existe y `nature: motor` explícito → primera aparición a `SddIA/principles/` o `SddIA/patterns/`.
-  - Si `nature: product`, **`nature` ausente** (parche arriba), o **`spec.json` no existe** → primera aparición a `SddIA/scripts/starter-kit/.sddia/principles/` o `.../patterns/` según corresponda.
+  - Si `nature: product`, **`nature` ausente** (parche arriba), o **`spec.json` no existe** → primera aparición a `SddIA/scripts/starter-kit/.SddIA/principles/` o `.../patterns/` según corresponda.
   - **Limbo:** apariciones subsiguientes, contratos maestros legacy (`principles-contract`, `patterns-contract`) y `README.md` legacy.
 
 ### PASO 3: Triaje de seguridad (top-down)
@@ -47,7 +47,7 @@ Asume la jurisdicción **TEKTON**.
 - **Misma regla de colisión V5** respecto a `SddIA/security/`.
 - Evalúa `spec.json`:
   - Si `nature: motor` o `"context": "sddia-core"` → primera aparición a `SddIA/security/<uuid>/`.
-  - Si `nature: product`, **`nature` ausente**, o **`spec.json` no existe** → primera aparición a `SddIA/scripts/starter-kit/.sddia/security/<uuid>/`.
+  - Si `nature: product`, **`nature` ausente**, o **`spec.json` no existe** → primera aparición a `SddIA/scripts/starter-kit/.SddIA/security/<uuid>/`.
   - **Limbo:** duplicados y `security-contract` legacy (y bloqueos del Paso 0).
 
 ### PASO 4: Trazabilidad evolutiva
@@ -78,7 +78,7 @@ Asume la jurisdicción **TEKTON**.
 | **5** | Poda vacía bajo `SddIA_1..4`. | Sin árboles vacíos colgando. |
 | **6** | Conteo recursivo + JSON a stdout. | Parser acepta el JSON. |
 
-**Contadores `starter_kit_populated`:** Incrementar `norms_files_moved` por cada fichero colocado en Paso 1 bajo `.sddia/norms/`; `principles_folders_moved` / `patterns_folders_moved` por cada **carpeta** de entidad movida en Paso 2 al Starter Kit (primera aparición válida).
+**Contadores `starter_kit_populated`:** Incrementar `norms_files_moved` por cada fichero colocado en Paso 1 bajo `.SddIA/norms/`; `principles_folders_moved` / `patterns_folders_moved` por cada **carpeta** de entidad movida en Paso 2 al Starter Kit (primera aparición válida).
 
 **Orden:** No reordenar fases; el Paso 0 condiciona el 1; 4 antes de 5; 6 al final.
 

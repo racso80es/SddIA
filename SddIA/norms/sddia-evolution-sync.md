@@ -1,15 +1,15 @@
 # Norma — Sincronismo y trazabilidad SddIA (evolution)
 
-**Ámbito:** cambios en artefactos bajo `./SddIA/` (normas, procesos, acciones, agentes, skills definición, tokens, etc.), salvo que la herramienta de validación excluya rutas puntuales (p. ej. detalles en `paths.sddiaEvolutionPath` según versión del binario).
+**Ámbito:** cambios en artefactos bajo `./SddIA/` (normas, procesos, acciones, agentes, skills definición, tokens, etc.), salvo que la herramienta de validación excluya rutas puntuales (p. ej. detalles en `directories.evolution` según versión del binario).
 
-**Fuente de rutas:** únicamente claves `paths.*` del contrato Cúmulo (`SddIA/agents/cumulo.paths.json`). No usar rutas literales en documentación normativa.
+**Fuente de rutas:** claves del contrato Cúmulo (`SddIA/core/cumulo.paths.json` fusionado con `.SddIA/local.paths.json`). No usar rutas literales en documentación normativa.
 
 ## 1. Obligación de registro
 
 Toda **alta**, **baja** o **modificación** material bajo `./SddIA/` debe quedar reflejada en el protocolo evolution **en la misma intervención o en el mismo PR**:
 
-1. Fichero de detalle `{id_cambio}.md` con frontmatter conforme a `paths.sddiaEvolutionContractFile` (contrato v1.1).
-2. Entrada correspondiente en el índice `paths.sddiaEvolutionLogFile`.
+1. Fichero de detalle `{id_cambio}.md` con frontmatter conforme a `normative_documents.evolution_contract` (contrato v1.1).
+2. Entrada correspondiente en el índice `normative_documents.evolution_log`.
 
 **Identificador:** `id_cambio` = **UUID v4**; nombre de fichero = `{id_cambio}.md`.
 
@@ -23,7 +23,7 @@ Toda **alta**, **baja** o **modificación** material bajo `./SddIA/` debe quedar
 
 ## 2. Separación respecto a evolución de producto
 
-- **`paths.sddiaEvolutionPath`** — protocolo de trazabilidad del **ecosistema SddIA** en este repositorio.
+- **`directories.evolution`** — protocolo de trazabilidad del **ecosistema SddIA** en este repositorio.
 - **`paths.evolutionPath`** / `docs/evolution/` — evolución de **producto** (features, cierres). No son intercambiables.
 
 ## 3. Implementación
@@ -38,6 +38,6 @@ Los agentes y editores (Cursor, Jules, etc.) deben asumir esta norma como **inne
 
 ## 5. Referencias
 
-- Contrato: `SddIA/evolution/evolution_contract.md` (vista vía `paths.sddiaEvolutionContractFile`).
-- Cúmulo: `SddIA/agents/cumulo.json` → `pathsContract`.
+- Contrato: `normative_documents.evolution_contract`.
+- Cúmulo: `SddIA/core/cumulo.paths.json` + `.SddIA/local.paths.json`.
 - Touchpoints IA: `SddIA/norms/touchpoints-ia.md`.

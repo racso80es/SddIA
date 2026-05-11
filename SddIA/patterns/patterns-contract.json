@@ -3,8 +3,8 @@
   "scope": "SddIA/patterns/",
   "spatial_model": {
     "motor_root": "SddIA/patterns/",
-    "local_root": ".sddia/patterns/",
-    "rule": "Patrones nature=motor en motor; nature=product en .sddia/patterns/. Misma pareja spec.md + spec.json; fusión de paths según Cúmulo."
+    "local_root": ".SddIA/patterns/",
+    "rule": "Patrones nature=motor en motor; nature=product en .SddIA/patterns/. Misma pareja spec.md + spec.json; fusión de paths según Cúmulo."
   },
   "description": "Contrato que cada patrón debe cumplir. Metadatos en spec.json; cuerpo en spec.md.",
   "required_files": [
@@ -35,7 +35,7 @@
       "nature": {
         "type": "string",
         "enum": ["motor", "product"],
-        "description": "motor = Core; product = .sddia/patterns/"
+        "description": "motor = Core; product = .SddIA/patterns/"
       },
       "title": { "type": "string" },
       "category": { "type": "string" },
@@ -64,5 +64,5 @@
     },
     "required": ["id", "title", "category", "tags", "metadata", "interested_agents"]
   },
-  "folder_structure": "Motor: SddIA/patterns/<uuid>/. Local: .sddia/patterns/<uuid>/"
+  "folder_structure": "Motor: SddIA/patterns/<uuid>/. Local: .SddIA/patterns/<uuid>/"
 }

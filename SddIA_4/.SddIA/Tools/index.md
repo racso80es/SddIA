@@ -1,7 +1,7 @@
 ﻿---
 index_version: "1.0.0"
 workspace_origin: "SddIA_4"
-definition_root: ".sddia/tools"
+definition_root: ".SddIA/tools"
 delivery_root: "scripts/tools"
 contract_ref: "SddIA/tools/tools-contract.md"
 ---

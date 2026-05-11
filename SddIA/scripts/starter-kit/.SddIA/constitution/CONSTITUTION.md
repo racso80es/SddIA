@@ -33,4 +33,4 @@ Capas externas que sirven de puente entre el usuario y el Core de producto.
 ---
 
 ## 3. Trazabilidad SddIA (motor)
-Los cambios normativos o estructurales bajo `./SddIA/` (dependencia inyectada) deben seguir el protocolo de evolución del motor (`SddIA/evolution/`), independiente de la evolución de producto en `docs/evolution/` o rutas de documentación del cliente. Ver `SddIA/agents/cumulo.instructions.json` (separación de naturalezas).
+Los cambios normativos o estructurales bajo `./SddIA/` (dependencia inyectada) deben registrarse bajo `directories.evolution` y `normative_documents.evolution_log`, independiente de la evolución de instancia en `.SddIA/evolution/` (`directories.local_evolution`) o de producto en `docs/evolution/`. Ver `SddIA/agents/cumulo.instructions.json` (separación de naturalezas).

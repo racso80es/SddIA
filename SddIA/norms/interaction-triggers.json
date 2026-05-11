@@ -1,6 +1,6 @@
 {
   "spec_version": "1.0.0",
-  "description": "Triggers Core (botones de fábrica). Se fusionan con .sddia/interaction-triggers.override.json: diccionario por intent_id, deep merge, local wins; null elimina clave (RFC 7396).",
+  "description": "Triggers Core (botones de fábrica). Se fusionan con .SddIA/interaction-triggers.override.json: diccionario por intent_id, deep merge, local wins; null elimina clave (RFC 7396).",
   "merge_policy": {
     "key": "intent_id",
     "strategy": "deep_merge",

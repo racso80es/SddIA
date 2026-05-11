@@ -3,8 +3,8 @@
   "scope": "SddIA/templates/",
   "spatial_model": {
     "motor_root": "SddIA/templates/",
-    "local_root": ".sddia/templates/",
-    "rule": "Plantillas nature=motor en motor; nature=product en .sddia/templates/. Misma estructura de carpeta por template_id."
+    "local_root": ".SddIA/templates/",
+    "rule": "Plantillas nature=motor en motor; nature=product en .SddIA/templates/. Misma estructura de carpeta por template_id."
   },
   "description": "Contrato de plantillas: spec.md + spec.json por template_id (kebab-case).",
   "constraints": [
@@ -78,5 +78,5 @@
       "contract_ref"
     ]
   },
-  "folder_structure": "Motor: SddIA/templates/<template-id>/. Local: .sddia/templates/<template-id>/"
+  "folder_structure": "Motor: SddIA/templates/<template-id>/. Local: .SddIA/templates/<template-id>/"
 }

@@ -19,9 +19,9 @@ Queda **terminantemente prohibido** mutar, editar, parchear o “arreglar localm
 ### Vía C (Consumer Space) — Extensión Permitida
 La extensión y personalización del entorno se realiza en el **espacio del consumidor**, fuera de `SddIA/`, típicamente bajo:
 
-- `.sddia/local.paths.json` (rutas y topología local)
-- `.sddia/tools/` (herramientas locales)
-- `.sddia/norms/` (normativa local)
+- `.SddIA/local.paths.json` (rutas y topología local)
+- `.SddIA/tools/` (herramientas locales)
+- `.SddIA/norms/` (normativa local)
 
 ### Razón Operativa
 Este protocolo elimina el *drift* (divergencia silenciosa) y garantiza:

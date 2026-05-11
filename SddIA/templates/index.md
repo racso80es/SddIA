@@ -8,7 +8,7 @@ catalog_version: "1.1.0"
 
 # Índice — Templates (Core SddIA)
 
-Catálogo bajo `templates-contract`. Plantillas **motor** en `SddIA/templates/<template-id>/`; plantillas de **producto** en `.sddia/templates/<template-id>/`.
+Catálogo bajo `templates-contract`. Plantillas **motor** en `SddIA/templates/<template-id>/`; plantillas de **producto** en `.SddIA/templates/<template-id>/`.
 
 | template_id | Naturaleza | Descripción |
 |-------------|------------|-------------|

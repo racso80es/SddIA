@@ -4,13 +4,13 @@
 
 ## Principio
 
-En SddIA **no se escriben rutas de ficheros literales** (ej. `docs/features/`, `scripts/skills/`, `docs/audits/`). Toda ruta se obtiene del **contrato de paths** referenciado por Cúmulo: `SddIA/agents/cumulo.json` → `pathsContract` → `SddIA/agents/cumulo.paths.json` (clave `paths`). El ejecutor (p. ej. Tekton) o cualquier agente que necesite una ruta debe **consultar Cúmulo** (cargar el contrato indicado en `pathsContract`) para resolver paths.featurePath, paths.auditsPath, paths.skillCapsules[skill-id], etc. Las instrucciones de mapeo están en el **contrato de instructions**: `instructionsContract` → `SddIA/agents/cumulo.instructions.json`.
+En SddIA **no se escriben rutas de ficheros literales** (ej. `docs/features/`, `scripts/skills/`, `docs/audits/`). Toda ruta se obtiene del **contrato de paths** referenciado por Cúmulo: mapa universal `SddIA/core/cumulo.paths.json` fusionado con `.SddIA/local.paths.json` (local wins). El ejecutor (p. ej. Tekton) o cualquier agente que necesite una ruta debe **consultar Cúmulo** para resolver claves como `directories.evolution`, `normative_documents.evolution_log`, `paths.featurePath`, `paths.auditsPath`, `paths.skillCapsules[skill-id]`, etc. Las instrucciones de mapeo están en `SddIA/agents/cumulo.instructions.json`.
 
 ## Claves de paths (contrato cumulo.paths.json)
 
 - **Persistencia de tareas:** paths.featurePath, paths.fixPath, paths.logPath.
 - **Evolution y auditoría:** paths.evolutionPath, paths.evolutionLogFile, paths.auditsPath, paths.accessLogFile.
-- **Evolution del protocolo SddIA (distinto de evolución de producto en docs):** paths.sddiaEvolutionPath, paths.sddiaEvolutionLogFile, paths.sddiaEvolutionContractFile. No confundir con paths.evolutionPath / `docs/evolution/` (cierres de feature/producto).
+- **Evolution del protocolo SddIA (motor; distinto de producto):** `directories.evolution`, `normative_documents.evolution_log`, `normative_documents.evolution_contract`. Evolución de instancia local: `directories.local_evolution`, `files.local_evolution_log` (`.SddIA/local.paths.json`). No confundir con `paths.evolutionPath` / `docs/evolution/` (cierres de feature/producto).
 - **Técnico y operativo:** paths.architecturePath, paths.infrastructurePath, paths.debtPath, paths.tasksPath.
 - **SddIA:** paths.actionsPath, paths.processPath, paths.patternsPath, paths.principlesPath, paths.tokensPath, paths.normsPath.
 - **Skills y tools:** paths.skillsDefinitionPath, paths.skillCapsules[skill-id], paths.skillsRustPath; paths.toolsDefinitionPath, paths.toolCapsules[tool-id], paths.toolsRustPath.

@@ -13,6 +13,6 @@ security_model:
 
 **Alcance:** Políticas universales del runtime SddIA: límites de ejecución, prevención de inyección en orquestación, validación de entradas a cápsulas y hardening del Core.
 
-**No cubre:** Reglas OWASP, linters o escaneo de dependencias del repositorio cliente; esas viven en `.sddia/security/` bajo `local-security-contract.json`.
+**No cubre:** Reglas OWASP, linters o escaneo de dependencias del repositorio cliente; esas viven en `.SddIA/security/` bajo `local-security-contract.json`.
 
 **Estructura:** Un item por carpeta `SddIA/security/<uuid>/` con `spec.md` y `spec.json` conforme a `security-contract.json`.

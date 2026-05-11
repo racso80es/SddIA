@@ -10,6 +10,6 @@ nature: motor
 
 **Fuente machine-readable:** `SddIA/norms/interaction-triggers.json` (SSOT).
 
-**Overrides locales:** `.sddia/interaction-triggers.override.json` — fusión por `intent_id`, deep merge, prioridad local; `null` elimina clave (RFC 7396).
+**Overrides locales:** `.SddIA/interaction-triggers.override.json` — fusión por `intent_id`, deep merge, prioridad local; `null` elimina clave (RFC 7396).
 
 Consultar `SddIA/norms/triage-nature-protocol.md` para criterios de naturaleza y Limbo.

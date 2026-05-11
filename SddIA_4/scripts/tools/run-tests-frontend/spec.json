@@ -13,7 +13,7 @@
                      ],
     "contract_ref":  "SddIA/tools/tools-contract.md",
     "capsule_json_io_ref":  "SddIA/norms/capsule-json-io.md",
-    "definition_path_ref":  ".sddia/tools/run-tests-frontend",
+    "definition_path_ref":  ".SddIA/tools/run-tests-frontend",
     "implementation_path_ref":  "scripts/tools/run-tests-frontend",
     "implementation_type":  "executable",
     "depends_on_tools":  [

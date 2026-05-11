@@ -29,7 +29,9 @@
       "skills_portability": "SddIA/norms/skills-portability.md",
       "pull_request_orchestration": "SddIA/norms/pull-request-orchestration.md",
       "skill_io_git_manager_frozen": "SddIA/norms/skill-io-git-manager-frozen.md",
-      "skill_io_shell_executor_frozen": "SddIA/norms/skill-io-shell-executor-frozen.md"
+      "skill_io_shell_executor_frozen": "SddIA/norms/skill-io-shell-executor-frozen.md",
+      "evolution_log": "SddIA/evolution/Evolution_log.md",
+      "evolution_contract": "SddIA/evolution/evolution_contract.md"
     },
     "contracts": {
       "agents": "SddIA/agents/agents-contract.md",

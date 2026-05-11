@@ -11,7 +11,7 @@
                      ],
     "contract_ref":  "SddIA/tools/tools-contract.md",
     "capsule_json_io_ref":  "SddIA/norms/capsule-json-io.md",
-    "definition_path_ref":  ".sddia/tools/run-test-e2e-local",
+    "definition_path_ref":  ".SddIA/tools/run-test-e2e-local",
     "implementation_path_ref":  "scripts/tools/run-test-e2e-local",
     "implementation_type":  "executable",
     "semantic_variant":  "http-admin-api",

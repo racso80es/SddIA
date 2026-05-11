@@ -7,7 +7,7 @@
     "POLÍTICA DE FUSIÓN (INVARIANTE DE WORKSPACE): Al resolver rutas, Cúmulo asume arquitectura dual. Mapa universal: SddIA/core/cumulo.paths.json. Mapa local: .SddIA/local.paths.json. Cúmulo fusiona ambos en tiempo de ejecución con deep merge. Ante colisión de claves, el mapa local tiene prioridad absoluta (local wins).",
     "JERARQUÍA NORMATIVA (INVARIANTE FEDERAL): En la fusión de rutas (paths), el mapa local tiene precedencia. Sin embargo, en jerarquía normativa y ética, la Constitución Federal (SddIA/CONSTITUTION_CORE.md) prevalece y anula cualquier directriz local.",
     "SEMÁNTICA DE OVERRIDE (RFC 7396 JSON Merge Patch): En parches de fusión, null en una clave elimina esa clave del resultado (tombstone). Ausencia de clave en el parche local hereda el valor universal. Escalares y arrays reemplazan. Objetos se fusionan recursivamente. Registrar colisiones cuando los tipos difieran o haya reemplazos materialmente distintos.",
-    "Map [EVO] del dominio motor -> paths.evolutionPath (crónica SddIA). Map [EVO] del dominio producto -> registros del cliente según paths resueltos; no mezclar con SddIA/evolution/.",
+    "Map [EVO] del dominio motor -> directories.evolution (crónica SddIA; índice normative_documents.evolution_log). Map [EVO] del dominio producto -> registros del cliente según paths resueltos (p. ej. directories.local_evolution, files.local_evolution_log); no mezclar con SddIA/evolution/.",
     "Map [NORMS] -> paths.normsPath. Triggers de interacción: SddIA/norms/interaction-triggers.json fusionado con .SddIA/interaction-triggers.override.json (misma semántica RFC 7396 por intent_id).",
     "Map [TOOL] / [SKILL] / [SPEC] según paths resueltos post-fusión. Audit documentation dispersion. Consolidate audit reports into history."
   ]
