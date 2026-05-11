@@ -15,13 +15,13 @@ Se denominan **entidades de dominio** o **entidades del ecosistema SddIA** a aqu
 - **Patterns** (paths.patternsPath) — contrato: patterns-contract.md (required_token: Karma2Token).
 - **Principles** (paths.principlesPath) — contrato: principles-contract.md (required_token: Karma2Token).
 - **Templates** (paths.templatesPath) — contrato: templates-contract.md (required_token: Karma2Token).
-- **Tokens** (paths.tokensPath) — contrato: paths.tokensPath/tokens-contract.json (definición de los propios tokens).
+- **Tokens** (paths.tokensPath) — contrato: SddIA/tokens/tokens-contract.md (definición de los propios tokens).
 
 ## Obligaciones de estructura y sincronidad
 
 Todas las **entidades de dominio** han de:
 
-1. **Respetar la estructura canónica:** archivo `.md` con frontmatter YAML (metadatos) + cuerpo Markdown. Excepción: tokens (paths.tokensPath) pueden ser JSON-only por tokens-contract.
+1. **Respetar la estructura canónica:** archivo `.md` con frontmatter YAML (metadatos) + cuerpo Markdown. Los tokens bajo `paths.tokensPath` siguen `SddIA/tokens/tokens-contract.md` y un `<token-id>.md` por token catalogado (sin `spec.json` en el Core).
 2. **Validación:** esquema YAML nativo en acción validate. El check `sddia_frontmatter_valid` valida frontmatter YAML en `.md` de entidades.
 
 La validación puede realizarse mediante el check opcional `sddia_frontmatter_valid` (acción validate) cuando el diff toque paths.skillsDefinitionPath, paths.processPath, paths.featurePath, paths.fixPath u otras rutas de entidades de dominio. La acción sddia-difusion incluye entre sus criterios la validez del frontmatter en las definiciones que se difunden.
@@ -30,8 +30,8 @@ La validación puede realizarse mediante el check opcional `sddia_frontmatter_va
 
 ## Referencias
 
-- **Token (Karma2Token):** paths.tokensPath; SddIA/tokens/karma2-token/spec.json.
-- **Contrato de tokens:** paths.tokensPath/tokens-contract.json (Cúmulo).
+- **Token (Karma2Token):** paths.tokensPath; SddIA/tokens/karma2-token.md.
+- **Contrato de tokens:** SddIA/tokens/tokens-contract.md (Cúmulo).
 - **Frontmatter válido:** SddIA/actions/validate (optional_checks.sddia_frontmatter_valid); SddIA/actions/sddia-difusion (criterios de aceptación).
 
 ---

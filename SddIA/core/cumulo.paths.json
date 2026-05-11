@@ -39,7 +39,8 @@
       "tools": "SddIA/tools/tools-contract.md",
       "knowledge": "SddIA/norms/knowledge-contract.md",
       "patterns": "SddIA/patterns/patterns-contract.md",
-      "templates": "SddIA/templates/templates-contract.md"
+      "templates": "SddIA/templates/templates-contract.md",
+      "tokens": "SddIA/tokens/tokens-contract.md"
     },
     "execution_capsules": {
       "skills": "scripts/skills/",

@@ -24,7 +24,7 @@ scope: paths.actionsPath (SddIA/actions/)
 security_model:
   description: Toda acción debe ser invocada bajo el contexto de un Karma2Token válido.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato: Acciones del ciclo (actions)

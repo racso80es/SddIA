@@ -14,7 +14,7 @@
   "process_interface_ref": "Cúmulo (SddIA/agents/cumulo.json) → process_interface: un .md por acción con YAML Frontmatter en la carpeta de la tarea (paths.featurePath, paths.fixPath); no ficheros .json separados. Norma: SddIA/norms/features-documentation-frontmatter.md.",
   "security_model": {
     "required_token": "Karma2Token",
-    "token_ref": "SddIA/tokens/karma2-token/spec.json",
+    "token_ref": "SddIA/tokens/karma2-token.md",
     "description": "Todo proceso debe orquestarse bajo el contexto de un Karma2Token válido."
   },
   "constraints": [

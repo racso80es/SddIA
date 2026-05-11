@@ -15,7 +15,7 @@ consumers:
 security_model:
   description: Ejecución de plantilla del motor bajo Karma2Token válido.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato de plantillas (motor + espacio local)

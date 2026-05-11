@@ -15,14 +15,14 @@ Se denominan **entidades de dominio** o **entidades del ecosistema SddIA** a aqu
 - **Patterns** (paths.patternsPath) — contrato: patterns-contract.json (required_token: Karma2Token).
 - **Principles** (paths.principlesPath) — contrato: principles-contract.json (required_token: Karma2Token).
 - **Templates** (paths.templatesPath) — contrato: templates-contract (required_token: Karma2Token).
-- **Tokens** (paths.tokensPath) — contrato: paths.tokensPath/tokens-contract.json (definición de los propios tokens).
+- **Tokens** (paths.tokensPath) — contrato: SddIA/tokens/tokens-contract.md (definición de los propios tokens).
 
 ## Obligaciones de estructura
 
 Todas las **entidades de dominio** han de:
 
 1. **Respetar la estructura** definida en su contrato: la estructura canónica para las entidades es un único archivo `spec.md` en la carpeta de la entidad (paths según Cúmulo), con los metadatos requeridos por el contrato integrados en formato **YAML Frontmatter** en la parte superior del archivo.
-2. **Excepción de Tokens:** Las entidades de tipo Token (como `karma2-token`) pueden mantenerse en un formato de definición JSON puro (`spec.json`) si así lo requiere su especificación u operación.
+2. **Tokens (`paths.tokensPath`):** Cada token catalogado es un único `<token-id>.md` con YAML frontmatter según `SddIA/tokens/tokens-contract.md`. En el Core no se usan `spec.json` ni subcarpetas por token para la definición.
 
 La validación de esta estructura puede realizarse mediante la acción `validate`, asegurando que el documento `spec.md` contiene un bloque YAML Frontmatter bien formado y que los atributos en él corresponden con el esquema esperado por su contrato.
 
@@ -32,8 +32,8 @@ La **documentación de tarea** (output de las acciones spec, clarify, planning, 
 
 ## Referencias
 
-- **Token (Karma2Token):** paths.tokensPath; SddIA/tokens/karma2-token/spec.json.
-- **Contrato de tokens:** paths.tokensPath/tokens-contract.json (Cúmulo).
+- **Token (Karma2Token):** paths.tokensPath; SddIA/tokens/karma2-token.md.
+- **Contrato de tokens:** SddIA/tokens/tokens-contract.md (Cúmulo).
 - **Arquitectura Frontmatter:** paths.featurePath/refactorization-arquitectura-frontmatter/.
 - **Documentación de tarea:** SddIA/norms/features-documentation-frontmatter.md.
 

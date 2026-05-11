@@ -18,7 +18,7 @@ Aquí se conservan **instantáneas por generación** (`*.SddIA_N.archetype.*`) d
 
 | Ámbito | Canónico en Core (fuera de Limbo) |
 |--------|-------------------------------------|
-| Tokens | `SddIA/tokens/` — SSOT legible: [`TOKENS.md`](../../tokens/TOKENS.md); catálogo: [`index.md`](../../tokens/index.md); contrato JSON: [`tokens-contract.json`](../../tokens/tokens-contract.json); specs por token: `paths.tokensPath/<token-id>/spec.json`. |
+| Tokens | `SddIA/tokens/` — contrato de familia: [`tokens-contract.md`](../../tokens/tokens-contract.md); catálogo: [`index.md`](../../tokens/index.md); cada token: `paths.tokensPath/<token-id>.md` (p. ej. [`karma2-token.md`](../../tokens/karma2-token.md)). |
 | Agentes actuales | `SddIA/agents/` (V5); los arquetipos bajo `archetypes/agents/` documentan versiones heredadas u organización por rol (p. ej. auditor). |
 
-Al actualizar normativa del dominio tokens en el Core, los README de arquetipo bajo `archetypes/tokens/` pueden quedar desfasados; prevalece siempre **`SddIA/tokens/TOKENS.md`** y **`tokens-contract.json`**.
+Al actualizar normativa del dominio tokens en el Core, los README de arquetipo bajo `archetypes/tokens/` pueden quedar desfasados; prevalece siempre **`SddIA/tokens/tokens-contract.md`** y el **`index.md`** del dominio.

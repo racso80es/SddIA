@@ -24,7 +24,7 @@ scope: paths.processPath (SddIA/process/)
 security_model:
   description: Todo proceso debe orquestarse bajo el contexto de un Karma2Token válido.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato: Procesos de tarea (process)

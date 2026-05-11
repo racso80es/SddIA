@@ -33,7 +33,7 @@
   ],
   "security_model": {
     "required_token": "Karma2Token",
-    "token_ref": "SddIA/tokens/karma2-token/spec.json",
+    "token_ref": "SddIA/tokens/karma2-token.md",
     "description": "Ejecución de plantilla del motor bajo Karma2Token válido."
   },
   "json_schema": {

@@ -76,7 +76,7 @@ scope: paths.toolsPath (Cúmulo), paths.toolsDefinitionPath (SddIA/tools/)
 security_model:
   description: Toda tool debe ejecutarse bajo el contexto de un Karma2Token válido cuando el contrato lo exija.
   required_token: Karma2Token
-  token_ref: SddIA/tokens/karma2-token/spec.json
+  token_ref: SddIA/tokens/karma2-token.md
 ---
 
 # Contrato de herramientas (Cúmulo: paths.toolsPath / paths.toolCapsules)

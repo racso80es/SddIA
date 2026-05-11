@@ -1,0 +1,17 @@
+{
+  "directories": {
+    "local_tools": ".SddIA/tools",
+    "local_norms": ".SddIA/norms",
+    "local_security": ".SddIA/security",
+    "local_constitution": ".SddIA/constitution",
+    "local_principles": ".SddIA/principles",
+    "local_patterns": ".SddIA/patterns",
+    "local_templates": ".SddIA/templates",
+    "local_evolution": ".SddIA/evolution"
+  },
+  "files": {
+    "interaction_triggers_override": ".SddIA/interaction-triggers.override.json",
+    "local_security_contract": ".SddIA/local-security-contract.json",
+    "local_evolution_log": ".SddIA/evolution/Evolution_log.md"
+  }
+}

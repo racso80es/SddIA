@@ -22,7 +22,7 @@
   ],
   "security_model": {
     "required_token": "Karma2Token",
-    "token_ref": "SddIA/tokens/karma2-token/spec.json",
+    "token_ref": "SddIA/tokens/karma2-token.md",
     "description": "La aplicación o modificación de un patrón del motor requiere contexto Karma2Token válido."
   },
   "json_schema": {

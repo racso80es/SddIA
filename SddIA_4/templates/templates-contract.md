@@ -53,7 +53,7 @@ El agente que ejecute la plantilla debe resolver estas referencias según la nor
 
 ## 4. Seguridad y trazabilidad
 
-- **Karma2Token:** Toda ejecución de una plantilla debe operar bajo el contexto de un Karma2Token válido (paths.tokensPath; spec en SddIA/tokens/karma2-token/spec.json).
+- **Karma2Token:** Toda ejecución de una plantilla debe operar bajo el contexto de un Karma2Token válido (paths.tokensPath; definición en SddIA/tokens/karma2-token.md).
 - **Consumidores:** paths.actionsPath, SddIA/agents, paths.processPath, .cursor/rules.
 
 ---

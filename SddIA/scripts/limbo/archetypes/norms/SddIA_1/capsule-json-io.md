@@ -2,7 +2,7 @@
 norm_id: capsule-json-io
 contract_ref: SddIA/skills/skills-contract.md, SddIA/tools/tools-contract.md
 related:
-  - SddIA/tokens/karma2-token/spec.json
+  - SddIA/tokens/karma2-token.md
   - SddIA/norms/commands-via-skills-or-tools.md
 description: >-
   Envelope JSON único para invocación de skills y tools por agentes (stdin/stdout UTF-8).
@@ -33,7 +33,7 @@ schema_version: "2.0"
 | `schema_version` | string | Sí | Versión del envelope; valor actual: `"2.0"`. |
 | `entity_kind` | string | Sí | `"skill"` \| `"tool"`. |
 | `entity_id` | string | Sí | `skill_id` o `toolId` en **kebab-case** (debe coincidir con el binario invocado). |
-| `token` | string | Condicional | **Karma2Token** u objeto serializado según `SddIA/tokens/karma2-token/spec.json`. Obligatorio cuando el contrato de la entidad declare `security_model.required_token`. |
+| `token` | string | Condicional | **Karma2Token** u objeto serializado según `SddIA/tokens/karma2-token.md`. Obligatorio cuando el contrato de la entidad declare `security_model.required_token`. |
 
 ### 1.2 `request`
 
