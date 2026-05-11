@@ -1,4 +1,4 @@
-# Principios de producto (`.sddia/principles/`)
+# Principios de producto (`.SddIA/principles/`)
 
 Coloca aquí principios **nature: product** (DDD, SOLID del dominio cliente, convenciones del equipo).
 

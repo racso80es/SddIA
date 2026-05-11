@@ -9,3 +9,4 @@ status: implemented
 - `local.paths.json` y `.SddIA/evolution/` por laboratorio.
 - Cláusula de jerarquía federal en `cumulo.instructions.json` y §6 del Core.
 - Purga de `CONSTITUTION.md`, `constitution.json` y `constitution/` en raíz de cada lab.
+- Starter-kit alineado a `.SddIA/` (`local.paths.json`, constitución, evolución local, zonas sagradas en `sddia-sync.ps1`).

@@ -37,3 +37,10 @@ Instanciar constitución táctica bajo `.SddIA/constitution/` en cada laboratori
 - Cláusula de paradoja en `SddIA/agents/cumulo.instructions.json`.
 - Alineación de `CONSTITUTION_CORE.md` §6 a `.SddIA/constitution/`.
 - Registro en `SddIA/evolution/`.
+
+## Starter-kit
+
+- Plantilla bajo `SddIA/scripts/starter-kit/.SddIA/` (convención `.SddIA/`, no `.sddia/`).
+- Mismos mapas que laboratorio: `local.paths.json`, `constitution/`, `evolution/`.
+- `sddia-sync.ps1` excluye zonas sagradas de instancia al inyectar el motor.
+- Avance detallado: `status.md` en este directorio.

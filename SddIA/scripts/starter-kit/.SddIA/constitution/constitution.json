@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0.0",
-    "last_updated": "2026-02-04",
+    "last_updated": "2026-05-11",
     "standard": "OpenSpec",
     "nature": "product"
   },
@@ -44,7 +44,7 @@
     {
       "id": "L6_CONSULTATION",
       "rule": "Knowledge Lookup",
-      "description": "Consult Cúmulo: SddIA/core/cumulo.paths.json + SddIA/agents/cumulo.instructions.json for topology and cognitive policy.",
+      "description": "Consult SddIA/agents/cumulo.json for file paths/names.",
       "severity": "HIGH"
     },
     {
@@ -58,6 +58,12 @@
       "rule": "SddIA protocol traceability",
       "description": "Any material change under ./SddIA/ must be recorded under paths.sddiaEvolutionPath with UUID v4 detail file and index update, per SddIA/norms/sddia-evolution-sync.md and evolution_contract.md. Registration via Rust skills capsule; not optional for agents.",
       "severity": "CRITICAL"
+    },
+    {
+      "id": "L9_LOCAL_EVOLUTION",
+      "rule": "Local instance evolution",
+      "description": "Any material change under .SddIA/ (constitution, tools, norms, patterns, templates, security) must be recorded in .SddIA/evolution/ with UUID v4 detail file and Evolution_log.md update.",
+      "severity": "HIGH"
     }
   ],
   "configuration": {
@@ -68,7 +74,7 @@
     },
     "shell": "pwsh",
     "skills_tools_implementation": "rust",
-    "paths_ref": "Cumulo: SddIA/core/cumulo.paths.json + .sddia/local.paths.json (fusión; local wins).",
+    "paths_ref": "Cumulo: SddIA/core/cumulo.paths.json (universal) + .SddIA/local.paths.json (instancia).",
     "domain_entities_ref": "SddIA/norms/entidades-dominio-ecosistema-sddia.md (entities integrating Token contract; structure and synchronicity mandatory)."
   }
 }

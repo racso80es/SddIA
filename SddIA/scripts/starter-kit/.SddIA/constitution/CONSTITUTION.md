@@ -1,3 +1,15 @@
+---
+entity_type: local-constitution
+workspace_id: _client-repo_
+product: _product-name_
+jurisdiction: tactical
+federal_constitution_ref: SddIA/CONSTITUTION_CORE.md
+local_paths_ref: .SddIA/local.paths.json
+submission_clause: "Este documento rige las normativas tácticas locales del nodo. En caso de colisión de directrices, la Ley Suprema Federal (SddIA/CONSTITUTION_CORE.md) prevalece siempre."
+---
+
+> Este documento rige las normativas tácticas locales del nodo. En caso de colisión de directrices, la Ley Suprema Federal (SddIA/CONSTITUTION_CORE.md) prevalece siempre.
+
 # Constitución del proyecto (plantilla producto)
 
 > **nature: product** — Sustituir por la constitución real del repositorio cliente. Ejemplo basado en origen legacy SddIA_1.

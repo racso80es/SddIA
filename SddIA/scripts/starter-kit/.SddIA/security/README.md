@@ -1,0 +1,7 @@
+# Seguridad del producto (`.SddIA/security/`)
+
+Reglas específicas del repositorio cliente: OWASP, SAST/DAST, linters, políticas de dependencias, gates de CI.
+
+- **Contrato:** `.SddIA/local-security-contract.json`
+- **Estructura:** una carpeta por regla bajo `.SddIA/security/<rule-id>/` con `spec.json` (obligatorio) y `spec.md` (opcional).
+- **Argos:** evalúa entregas usando **motor** (`SddIA/security/`) + **producto** (este árbol).

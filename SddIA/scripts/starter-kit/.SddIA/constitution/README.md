@@ -1,4 +1,4 @@
-# Constitución del producto (`.sddia/constitution/`)
+# Constitución del producto (`.SddIA/constitution/`)
 
 Plantilla **nature: product** para el repositorio cliente. No forma parte del motor SddIA inyectado.
 

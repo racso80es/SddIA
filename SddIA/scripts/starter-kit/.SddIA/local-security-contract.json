@@ -1,8 +1,8 @@
 {
   "contract_version": "1.0.0",
-  "scope": ".sddia/security/",
+  "scope": ".SddIA/security/",
   "nature": "product",
-  "description": "Contrato de seguridad local del producto/cliente. Alineado con el modelo del Core (spec.md + spec.json por regla); Argos fusiona hallazgos de SddIA/security/ (motor) con .sddia/security/ (producto).",
+  "description": "Contrato de seguridad local del producto/cliente. Alineado con el modelo del Core (spec.md + spec.json por regla); Argos fusiona hallazgos de SddIA/security/ (motor) con .SddIA/security/ (producto).",
   "core_alignment_ref": "SddIA/security/security-contract.json",
   "merge_policy": {
     "precedence": "local_wins",
@@ -12,12 +12,12 @@
     {
       "name": "spec.json",
       "required": true,
-      "path": ".sddia/security/<rule-id>/spec.json"
+      "path": ".SddIA/security/<rule-id>/spec.json"
     },
     {
       "name": "spec.md",
       "required": false,
-      "path": ".sddia/security/<rule-id>/spec.md"
+      "path": ".SddIA/security/<rule-id>/spec.md"
     }
   ],
   "json_schema": {
