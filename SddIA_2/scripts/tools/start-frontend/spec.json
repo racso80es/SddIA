@@ -1,0 +1,24 @@
+﻿{
+    "spec_version":  "1.0.0",
+    "toolId":  "start-frontend",
+    "version":  "1.0.0",
+    "uuid":  "b7e3b2c1-0d02-4f00-9a00-000000000202",
+    "domain_origin":  "SddIA_2",
+    "context":  "quality-assurance",
+    "capabilities":  [
+                         "nextjs",
+                         "dev-server",
+                         "healthcheck"
+                     ],
+    "contract_ref":  "SddIA/tools/tools-contract.md",
+    "capsule_json_io_ref":  "SddIA/norms/capsule-json-io.md",
+    "definition_path_ref":  ".sddia/tools/start-frontend",
+    "implementation_path_ref":  "scripts/tools/start-frontend",
+    "implementation_type":  "executable",
+    "depends_on_tools":  [
+
+                         ],
+    "inputs_summary":  "port (default 3001), outputPath, outputJson, quiet; health HTTP 200 en URL base",
+    "project_profile":  "GesFer.Admin.Front",
+    "name":  "start-frontend"
+}

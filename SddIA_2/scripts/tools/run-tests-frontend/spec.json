@@ -1,0 +1,24 @@
+﻿{
+    "spec_version":  "1.0.0",
+    "toolId":  "run-tests-frontend",
+    "version":  "1.0.0",
+    "uuid":  "b7e3b2c1-0d02-4f00-9a00-000000000203",
+    "domain_origin":  "SddIA_2",
+    "context":  "quality-assurance",
+    "capabilities":  [
+                         "npm-scripts",
+                         "lint",
+                         "e2e",
+                         "frontend-tests"
+                     ],
+    "contract_ref":  "SddIA/tools/tools-contract.md",
+    "capsule_json_io_ref":  "SddIA/norms/capsule-json-io.md",
+    "definition_path_ref":  ".sddia/tools/run-tests-frontend",
+    "implementation_path_ref":  "scripts/tools/run-tests-frontend",
+    "implementation_type":  "executable",
+    "depends_on_tools":  [
+
+                         ],
+    "inputs_summary":  "testScope unit|e2e|build|lint|all, onlyTests, baseUrl default http://localhost:3001, outputPath, quiet",
+    "name":  "run-tests-frontend"
+}

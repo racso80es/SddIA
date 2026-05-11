@@ -69,7 +69,7 @@ Proceso maestro para instanciar herramientas de dominio (Tools) complejas en el 
 ## Fase 3 — Forja del Contrato y Cápsula
 
 1. Ejecutar `phase_invocations`: obtener `child_tool_uuid` vía `action:crypto-broker` (`GENERATE_UUID`); incluir en cabecera YAML de la tool.
-2. Completar metadatos de tool según `tools-contract.md` (`paths.contracts.tools`); alinear versión de contrato declarada (p. ej. materialización bajo especificación vigente; la fase prevé generación compatible con baseline v1.0.0 donde aplique).
+2. Completar metadatos de tool según `tools-contract.md` (`paths.contracts.tools`); alinear versión de contrato declarada (p. ej. materialización bajo especificación vigente; baseline actual **v1.2.0**, campo canónico **`name`**).
 3. Redactar `{paths.directories.tools}/{tool_name}.md` con `capabilities`, `inputs`, `outputs` y vínculo a cápsula bajo `paths.execution_capsules.tools` si corresponde.
 4. Persistir script físico o esqueleto ejecutable en la ruta resuelta por cumulo, sin escritura fuera del SSOT.
 

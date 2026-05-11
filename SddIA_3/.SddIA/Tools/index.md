@@ -1,14 +1,14 @@
----
+﻿---
 index_version: "1.0.0"
 workspace_origin: "SddIA_3"
-definition_root: ".SddIA/Tools"
-delivery_root: ".SddIA/tool-capsules"
+definition_root: ".sddia/tools"
+delivery_root: "scripts/tools"
 contract_ref: "SddIA/tools/tools-contract.md"
 ---
 
 # Índice de tools locales (SddIA_3)
 
-| toolId | Descripción breve |
+| name | Descripción breve |
 |--------|-------------------|
 | `prepare-full-env` | Infra Docker; opción de levantar Admin API (`StartApi`). |
 | `invoke-mysql-seeds` | Migraciones EF + seeds Admin. |
@@ -18,3 +18,4 @@ contract_ref: "SddIA/tools/tools-contract.md"
 | `postman-mcp-validation` | Validación Postman/Newman (base URL configurable). |
 
 Contrato de interfaz (Core): `SddIA/tools/tools-contract.md`.
+

@@ -1,0 +1,28 @@
+﻿{
+    "spec_version":  "1.0.0",
+    "toolId":  "run-test-e2e-local",
+    "version":  "1.0.0",
+    "uuid":  "c7e3b2c1-0d03-4f00-9a00-000000000305",
+    "domain_origin":  "SddIA_3",
+    "context":  "quality-assurance",
+    "capabilities":  [
+                         "dotnet-test",
+                         "e2e-orchestration",
+                         "product-api"
+                     ],
+    "contract_ref":  "SddIA/tools/tools-contract.md",
+    "capsule_json_io_ref":  "SddIA/norms/capsule-json-io.md",
+    "definition_path_ref":  ".sddia/tools/run-test-e2e-local",
+    "implementation_path_ref":  "scripts/tools/run-test-e2e-local",
+    "implementation_type":  "executable",
+    "semantic_variant":  "dotnet-product-e2etests",
+    "description":  "prepare/seeds opcional, probe Admin+Product health, dotnet test GesFer.Product.Back.E2ETests Category=E2E",
+    "depends_on_tools":  [
+                             "prepare-full-env",
+                             "invoke-mysql-seeds"
+                         ],
+    "test_project_glob":  "src/GesFer.Product.Back.E2ETests/GesFer.Product.Back.E2ETests.csproj",
+    "e2e_filter":  "Category=E2E",
+    "inputs_summary":  "adminApiUrl, productApiUrl, skipPrepare, skipSeeds, onlyTests, skipApiProbe, e2eInternalSecret solo por env",
+    "name":  "run-test-e2e-local"
+}

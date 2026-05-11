@@ -1,0 +1,24 @@
+﻿{
+    "spec_version":  "1.0.0",
+    "toolId":  "start-api",
+    "version":  "1.0.0",
+    "uuid":  "a7e3b2c1-0d01-4f00-9a00-000000000103",
+    "domain_origin":  "SddIA_1",
+    "context":  "quality-assurance",
+    "capabilities":  [
+                         "dotnet",
+                         "http-server",
+                         "healthcheck"
+                     ],
+    "contract_ref":  "SddIA/tools/tools-contract.md",
+    "capsule_json_io_ref":  "SddIA/norms/capsule-json-io.md",
+    "definition_path_ref":  ".sddia/tools/start-api",
+    "implementation_path_ref":  "scripts/tools/start-api",
+    "implementation_type":  "executable",
+    "depends_on_tools":  [
+                             "prepare-full-env",
+                             "invoke-mysql-seeds"
+                         ],
+    "inputs_summary":  "noBuild, profile, port, portBlocked, configPath, outputPath, outputJson; ver spec.md",
+    "name":  "start-api"
+}
