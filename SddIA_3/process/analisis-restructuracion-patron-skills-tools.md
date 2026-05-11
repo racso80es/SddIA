@@ -29,6 +29,12 @@
 
 - **Cúmulo:** paths.toolsDefinitionPath = ./SddIA/tools/; paths.toolCapsules[tool-id] = ./scripts/tools/<tool-id>/.
 
+### 1.2 bis Estado actual — tools locales en este workspace (post-migración)
+
+**Vigente (2026-05):** las tools de **producto** no viven en `SddIA/tools/` del motor; el inventario de **SddIA_3** está en **`.sddia/tools/`** (`index.md`, un `{name}.md` por tool, `README.md` sobre equivalencia de ruta en Windows). La **implementación documentada** está en **`scripts/tools/{name}/`** (`{name}.md` para consumidor, `spec.json` en cápsula). Identificador canónico **`name`** (contrato Core v1.2.0). SSOT: [SddIA/evolution/c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a.md](../../SddIA/evolution/c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a.md).
+
+La tabla **§1.2** anterior describe el patrón histórico de análisis Kaizen (carpeta por tool en el Core); no sustituye el modelo local anterior.
+
 ### 1.3 Contrato explícito (skills-contract.json resumido)
 
 - `contract_version`, `scope`, `description`

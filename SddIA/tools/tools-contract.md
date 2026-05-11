@@ -1,5 +1,5 @@
 ---
-contract_version: "1.1.0"
+contract_version: "1.2.0"
 entity_type: "tool"
 jurisdiction: "Core SddIA (Interfaz) / Workspace (Delivery)"
 capabilities:
@@ -18,7 +18,7 @@ El Core dicta únicamente la **Interfaz** y las **reglas de seguridad/observabil
 
 Aunque sean workspace-local, las Tools heredan el rigor S+ Grade. Cada Tool debe tener una **definición** (spec) con:
 
-- **`toolId`**: Identificador estable en kebab-case.
+- **`name`**: Identificador estable en kebab-case (alineado al resto de entidades de dominio SddIA). El sinónimo histórico **`toolId`** queda **deprecado** en specs y documentación nuevas.
 - **`uuid`**: Identificador único universal (v4) de la definición.
 - **`version`**: SemVer de la Tool.
 - **`contract_ref`**: Referencia a este contrato (ruta lógica).
@@ -35,13 +35,13 @@ Aunque sean workspace-local, las Tools heredan el rigor S+ Grade. Cada Tool debe
 El **único puente** entre ambos es:
 
 - **`implementation_path_ref`** (en la definición): puntero abstracto a la implementación.
-- **Resolución por topología local** (Cúmulo): convierte `implementation_path_ref` en una ruta efectiva dentro del workspace (p. ej. `.<algo>/.sddia/tools/<toolId>/...`).
+- **Resolución por topología local** (Cúmulo): convierte `implementation_path_ref` en una ruta efectiva dentro del workspace (p. ej. `.<algo>/.sddia/tools/<name>/...`).
 
 ## 3. Ejecución y ruteo (Workspace-local)
 
 - Las Tools se **invocan** a través de Cúmulo/Cerbero (no por comandos crudos directos sin auditoría).
 - Cúmulo mantiene un **índice/topología** de tools disponibles en el workspace y resuelve `implementation_path_ref` sin duplicar rutas literales en specs.
-- Ubicación sugerida (ejemplo no normativo): `.<workspace>/.sddia/tools/<toolId>/` o equivalente. La ubicación real depende del proyecto y su topología.
+- Ubicación sugerida (ejemplo no normativo): `.<workspace>/.sddia/tools/<name>/` o equivalente. La ubicación real depende del proyecto y su topología.
 
 ## 4. Interfaz de Interacción
 
@@ -49,6 +49,8 @@ Las Tools deben respetar un estándar de comunicación **machine-readable**:
 
 - **Entrada**: `request` (estructurado), idealmente por **stdin** o argumentos equivalentes (delivery decide).
 - **Salida**: un **único envelope JSON** (por stdout o canal equivalente) con:
+  - **`name`**: string — identificador kebab-case de la tool que emitió el resultado (**obligatorio** en implementaciones nuevas).
+  - **`toolId`**: *(deprecado)* — alias legado del identificador; si aparece, **debe coincidir** con `name`. Los emisores nuevos no deben usar este campo.
   - **`success`**: boolean.
   - **`exitCode`**: number (0 solo si `success=true`).
   - **`message`**: string breve (no sensible).
@@ -65,3 +67,8 @@ Las Tools deben respetar un estándar de comunicación **machine-readable**:
 ## 5. Física del Valor y Evolución (Bloque Latente)
 * `minteo_maximo`: Límite de uso definido por el arquitecto local.
 * `porcentaje_de_exito`: Métrica auditable del rendimiento de la herramienta en el entorno local.
+
+## 6. Historial normativo (extracto)
+
+- **v1.2.0** — Identidad atómica: campo canónico **`name`**; **`toolId`** deprecado en definiciones. Envelope de salida: **`name`** obligatorio en emisores nuevos; **`toolId`** solo como alias legado compatible. Alineado con [evolution c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a](../evolution/c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a.md) (tools locales).
+- **v1.1.0** — Baseline previo (`toolId` en identidad y textos).

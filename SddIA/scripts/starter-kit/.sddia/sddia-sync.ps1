@@ -1,4 +1,13 @@
 #requires -Version 5.1
+<#
+  Contrato de sincronización del motor SddIA (clone shallow en ./SddIA).
+
+  ZONA SAGRADA — NO TOCAR desde este script:
+    .sddia/tools/
+  Las definiciones normativas locales del cliente viven ahí (evolution c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a).
+  Este script solo elimina y reclona el árbol "SddIA/" bajo la raíz del repo; cualquier futura
+  copia/merge adicional DEBE excluir explícitamente .sddia/tools/
+#>
 $ErrorActionPreference = 'Stop'
 
 function Get-SddiaConfig {

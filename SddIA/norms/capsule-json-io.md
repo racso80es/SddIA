@@ -11,8 +11,8 @@ Un único objeto JSON (una línea recomendada; se acepta JSON multilínea en std
 |-------|------|-------------|
 | `meta` | object | Metadatos obligatorios. |
 | `meta.schemaVersion` | string | Debe ser `"2.0"`. (Alias aceptado en deserialización: `schema_version`.) |
-| `meta.entityKind` | string | `"skill"` para skills. (Alias: `entity_kind`.) |
-| `meta.entityId` | string | kebab-case; coincide con `skill_id`. (Alias: `entity_id`.) |
+| `meta.entityKind` | string | `"skill"` \| `"tool"`. (Alias: `entity_kind`.) |
+| `meta.entityId` | string | kebab-case; para skills coincide con `skill_id`; para tools coincide con **`name`** según `tools-contract.md` v1.2.0 (alias histórico `toolId` solo en payloads legados). (Alias: `entity_id`.) |
 | `meta.token` | object | Opcional; Karma2Token si el contrato lo exige. |
 | `request` | object | Cuerpo libre definido en `paths.skillsDefinitionPath/<skill-id>/spec.md`. |
 
@@ -44,4 +44,4 @@ Una sola línea JSON en stdout.
 Rust: `scripts/skills-rs/src/capsule_v2.rs` (Cúmulo: `paths.skillsRustPath`).
 
 ---
-*Norma SSOT de I/O JSON para cápsulas. Mantener alineado con `SddIA/skills/skills-contract.json`.*
+*Norma SSOT de I/O JSON para cápsulas. Mantener alineado con `SddIA/skills/skills-contract.json` y `SddIA/tools/tools-contract.md` (tools: `meta.entityId` = `name`, v1.2.0).*

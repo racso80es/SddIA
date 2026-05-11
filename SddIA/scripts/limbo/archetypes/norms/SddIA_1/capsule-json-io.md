@@ -32,7 +32,7 @@ schema_version: "2.0"
 |-------|------|-------------|-------------|
 | `schema_version` | string | Sí | Versión del envelope; valor actual: `"2.0"`. |
 | `entity_kind` | string | Sí | `"skill"` \| `"tool"`. |
-| `entity_id` | string | Sí | `skill_id` o `toolId` en **kebab-case** (debe coincidir con el binario invocado). |
+| `entity_id` | string | Sí | Para skill: `skill_id` en **kebab-case**. Para tool: **`name`** en **kebab-case** (`tools-contract.md` v1.2.0); `toolId` es sinónimo deprecado. |
 | `token` | string | Condicional | **Karma2Token** u objeto serializado según `SddIA/tokens/karma2-token.md`. Obligatorio cuando el contrato de la entidad declare `security_model.required_token`. |
 
 ### 1.2 `request`
