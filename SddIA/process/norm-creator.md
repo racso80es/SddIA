@@ -1,12 +1,12 @@
 ---
 uuid: "a132a6fc-52c8-4795-8c68-a2897d456588"
 name: "norm-creator"
-version: "1.1.0"
+version: "1.2.0"
 contract: "process-contract v1.3.0"
 context:
   - "ecosystem-evolution"
   - "knowledge-management"
-hash_signature: "sha256:741da9dad9c37c411d950d09b02923d84ad618867fd6aa234c6495a5bd68dc0e"
+hash_signature: "sha256:924276cd786aa74350a54671378eefb052f260251a6d16e53a3f578120754cc5"
 inputs:
   - "tactical_norm_name": "Identificador kebab-case del archivo (`{name}.md` bajo `directories.library_norms`)"
   - "tactical_norm_version": "SemVer de la norma (p. ej. 1.0.0)"
@@ -16,6 +16,7 @@ inputs:
   - "norms_contract_version": "Versión del contrato a materializar (p. ej. 1.0.0 según `norms-contract.md` vía `cumulo.contracts.library_norms`)"
 outputs:
   - "artifact_tactical_norm_md": "Archivo `{paths.directories.library_norms}/{tactical_norm_name}.md` con frontmatter y cuerpo conforme a `norms-contract.md`"
+  - "artifact_library_norms_index": "`{paths.directories.library_norms}/index.md` creado o actualizado con fila alineada a la cabecera YAML de la norma"
 phases:
   - name: "Triaje de Entrada (Aduana Lógica)"
     intent: "Recibir tactical_norm_friction; abortar si viola el Principio de Atomicidad (dominios contradictorios o multi-vector no atomizable)."
@@ -38,6 +39,11 @@ phases:
     delegates_to:
       - "skill:filesystem-manager"
       - "agent:cumulo"
+  - name: "Indexación"
+    intent: "Verificar library_norms/index.md e insertar o actualizar fila Archivo fuente|uuid|name|version|scope|category alineada al YAML fuente."
+    delegates_to:
+      - "agent:cumulo"
+      - "skill:filesystem-manager"
 phase_invocations:
   - phase_name: "Clasificación Semántica"
     invocations:
@@ -80,3 +86,10 @@ Proceso **creator** para la entidad **`tactical-norm`** (`Library_Norm`): orques
 1. Ensamblar frontmatter obligatorio: `uuid` = `tactical_norm_uuid`, `name` = `tactical_norm_name`, `version` = `tactical_norm_version`, `nature` = `tactical-norm`, `author`, `scope`, `category`, `dependencies` = `tactical_norm_dependencies`; alinear claves y tipos a la sección 1 de `norms-contract.md`.
 2. Escribir cuerpo Markdown con secciones **Directriz Core** y **Restricciones Duras (Aduana de Fricción)** según sección 2 del contrato.
 3. Persistir `{paths.directories.library_norms}/{tactical_norm_name}.md` usando solo rutas resueltas desde `SddIA/core/cumulo.paths.json` post-fusión universal+local.
+
+## Fase 5 — Indexación
+
+1. Abrir o crear `{paths.directories.library_norms}/index.md` conforme a la sección 3 de `norms-contract.md` (cabecera YAML de índice + tabla de catálogo).
+2. Insertar o actualizar la fila de `{tactical_norm_name}.md` copiando literalmente **uuid**, **name**, **version**, **scope** y **category** desde el frontmatter de la norma recién materializada.
+3. Excluir `norms-contract.md` de la tabla de definiciones.
+4. Verificación cruzada: cero divergencia entre fila del índice y cabecera YAML del `.md` fuente antes de cerrar la instancia del proceso.

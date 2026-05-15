@@ -1,12 +1,12 @@
 ---
 uuid: "dd9e13b2-fc07-40d2-95f5-b50ebd535a9e"
 name: "codex-creator"
-version: "1.0.0"
+version: "1.1.0"
 contract: "process-contract v1.3.0"
 context:
   - "ecosystem-evolution"
   - "knowledge-management"
-hash_signature: "sha256:e2a4480fc9dbd98d8afd1df4d529a53e5cd5bd6da20642358b52cfa58f8a987d"
+hash_signature: "sha256:5e893f9ac177f1fbf7d40c3e34ba95914d9d691693241b6db14eb8510af962e0"
 inputs:
   - "domain_codex_slug": "Identificador kebab-case del archivo (`{slug}.md` bajo `directories.library_codexes`)"
   - "domain_codex_name": "Nombre estratégico del paquete (campo `name` del frontmatter según `codex-contract.md`)"
@@ -18,6 +18,7 @@ inputs:
   - "domain_codex_certification_grade": "Opcional; por defecto `Pendiente` hasta auditoría Argos"
 outputs:
   - "artifact_domain_codex_md": "Archivo `{paths.directories.library_codexes}/{domain_codex_slug}.md` conforme a `codex-contract.md`"
+  - "artifact_library_codexes_index": "`{paths.directories.library_codexes}/index.md` creado o actualizado con fila alineada a la cabecera YAML del códice"
 phases:
   - name: "Selección y Triaje (Inventario)"
     intent: "Recibir tactical_norm_inventory y target_environment; verificar bajo directories.library_norms que cada norma existe y es válida bajo norms-contract."
@@ -39,6 +40,11 @@ phases:
     delegates_to:
       - "skill:filesystem-manager"
       - "agent:cumulo"
+  - name: "Indexación"
+    intent: "Verificar library_codexes/index.md e insertar o actualizar fila Archivo fuente|uuid|name|version|target_environment|certification_grade alineada al YAML fuente."
+    delegates_to:
+      - "agent:cumulo"
+      - "skill:filesystem-manager"
 phase_invocations:
   - phase_name: "Inyección de Identidad"
     invocations:
@@ -80,3 +86,10 @@ Proceso **creator** para la entidad **`domain-codex`** (`Library_Codex`): ensamb
 1. Frontmatter obligatorio: `uuid` = `domain_codex_uuid`, `name` = `domain_codex_name`, `version`, `nature` = `domain-codex`, `author`, `target_environment`, `certification_grade`, `composition` según §1 de `codex-contract.md`.
 2. Cuerpo con secciones **Estrategia de Dominio** e **Instrucciones de Prioridad** según §2 del contrato; un único flujo texto YAML+MD sin anexos externos.
 3. Escribir `{paths.directories.library_codexes}/{domain_codex_slug}.md` donde `domain_codex_slug` es kebab-case y coincide con el soberano de fichero.
+
+## Fase 5 — Indexación
+
+1. Abrir o crear `{paths.directories.library_codexes}/index.md` conforme a la sección 3 de `codex-contract.md` (cabecera YAML de índice + tabla de catálogo).
+2. Insertar o actualizar la fila de `{domain_codex_slug}.md` copiando literalmente **uuid**, **name**, **version**, **target_environment** y **certification_grade** desde el frontmatter del códice recién materializado.
+3. Excluir `codex-contract.md` de la tabla de definiciones.
+4. Verificación cruzada: cero divergencia entre fila del índice y cabecera YAML del `.md` fuente antes de cerrar la instancia del proceso.
