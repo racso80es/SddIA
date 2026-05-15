@@ -1,2 +1,14 @@
 # Este repositorio versiona el Core bajo SddIA/. No ignorar SddIA/ aquí.
 # En proyectos consumidores (Vía C), el clone inyectado suele listarse en .gitignore.
+
+# Secretos locales — cápsula iota-immutable-publisher (dotenv)
+SddIA/scripts/tools/iota-immutable-publisher/.env
+
+# Artefactos locales de build/debug IOTA
+SddIA/scripts/tools/iota-immutable-publisher/.iota-cli/
+SddIA/scripts/tools/iota-immutable-publisher/move/iota-framework/
+SddIA/scripts/tools/iota-immutable-publisher/move/sddia_anchor/build/
+SddIA/scripts/tools/iota-immutable-publisher/node_modules/
+SddIA/scripts/tools/iota-immutable-publisher/anchor-bytecode.json
+SddIA/scripts/tools/iota-immutable-publisher/anchor-build.err
+SddIA/scripts/tools/iota-immutable-publisher/anchor-build.log

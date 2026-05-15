@@ -1,0 +1,6 @@
+[package]
+name = "sddia_anchor"
+edition = "2024"
+
+[addresses]
+sddia_anchor = "0x0"

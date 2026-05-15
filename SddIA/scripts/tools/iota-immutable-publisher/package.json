@@ -1,0 +1,19 @@
+{
+  "name": "iota-immutable-publisher",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cápsula SddIA: anclaje inmutable en IOTA Testnet",
+  "main": "index.ts",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "dependencies": {
+    "@iota/iota-sdk": "^1.3.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}
