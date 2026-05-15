@@ -1,4 +1,4 @@
----
+﻿---
 action_id: execution
 contract_ref: actions-contract.json
 flow_steps:
@@ -33,7 +33,7 @@ La acción **execution** (ejecución) aplica al código los cambios definidos en
 
 ## Salidas
 
-- **Registro de ejecución:** execution.md en la carpeta de la tarea (Cúmulo) con YAML Frontmatter integrando metadatos (items_applied, status); no execution.json separado. Norma: SddIA/norms/features-documentation-frontmatter.md.
+- **Registro de ejecución:** execution.md en la carpeta de la tarea (Cúmulo) con YAML Frontmatter integrando metadatos (items_applied, status); no execution.json separado. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
   - Debe incluir: por cada ítem aplicado, id del ítem, ruta del archivo, acción realizada (Crear | Modificar | Eliminar), estado (OK | Error), mensaje opcional y timestamp.
   - En caso de error en un ítem: registro del fallo y decisión (detener o continuar según criterio del agente).
 

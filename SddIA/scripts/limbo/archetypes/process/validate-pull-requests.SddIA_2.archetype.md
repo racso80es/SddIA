@@ -1,4 +1,4 @@
----
+﻿---
 contract_ref: paths.processPath/process-contract.json
 description: >-
   Nodo de control que orquesta architect, qa-judge y security-engineer sobre la rama origen del PR;
@@ -64,7 +64,7 @@ process_id: validate-pull-requests
 process_interface_compliance: >-
   Artefactos en persist_ref: objectives.md y validacion.md con YAML Frontmatter + Markdown.
   Sin ficheros .json separados para la documentación de la revisión. Patrón:
-  SddIA/norms/features-documentation-frontmatter.md.
+  directories.library_norms/features-documentation-pattern.md (Cúmulo).
 related_actions:
   - spec
   - validate
@@ -89,7 +89,7 @@ spec_version: 2.0.0
 
 Este documento define el **proceso de tarea** para revisar un Pull Request con criterio **S+ Grade** (**spec_version 2.0.0**), con **Arsenal Táctico Git (S+)**: `git-workspace-recon`, `git-branch-manager`, `git-save-snapshot`, `git-sync-remote`, `git-tactical-retreat`, `git-create-pr`. Ubicación: paths.processPath/validate-pull-requests/ (Cúmulo). Rutas: **Cúmulo** (paths.featurePath, paths.tasksPath, paths.tokensPath).
 
-**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): genera en la carpeta de la tarea (Cúmulo) artefactos **`.md`** con frontmatter YAML + cuerpo Markdown (objectives.md, validacion.md). **No se usan ficheros `.json` separados** para la documentación de la revisión. Patrón: SddIA/norms/features-documentation-frontmatter.md.
+**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): genera en la carpeta de la tarea (Cúmulo) artefactos **`.md`** con frontmatter YAML + cuerpo Markdown (objectives.md, validacion.md). **No se usan ficheros `.json` separados** para la documentación de la revisión. Patrón: directories.library_norms/features-documentation-pattern.md (Cúmulo).
 
 ## Identidad y propósito
 

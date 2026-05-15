@@ -1,4 +1,4 @@
----
+﻿---
 contract_ref: paths.processPath/process-contract.json
 input_ref: paths.auditsPath
 name: Corrección según Auditorías
@@ -56,7 +56,7 @@ spec_version: 2.0.0
 
 Este documento define el **proceso de tarea** para la corrección de hallazgos derivados de auditorías (**spec_version 2.0.0**), con **Arsenal Táctico Git (S+)**: `git-workspace-recon`, `git-branch-manager`, `git-save-snapshot`, `git-sync-remote`, `git-tactical-retreat`, `git-create-pr`. Ubicación: paths.processPath/correccion-auditorias/ (Cúmulo). Entrada: paths.auditsPath. Persistencia: **Cúmulo** (paths.featurePath/<nombre_correccion>).
 
-**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): solicita/genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, clarify.md, plan.md, implementation.md, execution.md, validacion.md, finalize-process.md). No ficheros .json separados en esa carpeta de tarea. Norma: SddIA/norms/features-documentation-frontmatter.md.
+**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): solicita/genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, clarify.md, plan.md, implementation.md, execution.md, validacion.md, finalize-process.md). No ficheros .json separados en esa carpeta de tarea. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
 
 ## Propósito
 

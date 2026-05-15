@@ -1,4 +1,4 @@
-{
+﻿{
   "spec_version": "2.0.0",
   "process_id": "create-template",
   "name": "Create Template",
@@ -12,7 +12,7 @@
     "featurePath_ref": "paths.featurePath (Cúmulo)",
     "processPath_ref": "paths.processPath (Cúmulo)"
   },
-  "process_interface_compliance": "Genera en carpeta de la tarea un .md por acción con YAML Frontmatter; entregable: paths.templatesPath/<template-id>/. Norma: features-documentation-frontmatter.md.",
+  "process_interface_compliance": "Genera en carpeta de la tarea un .md por acción con YAML Frontmatter; entregable: paths.templatesPath/<template-id>/. Norma: features-documentation-pattern.md (directories.library_norms, Cúmulo).",
   "triggers": [
     "Crear nueva plantilla en paths.templatesPath",
     "Solicitud de creación de plantilla con template-id"

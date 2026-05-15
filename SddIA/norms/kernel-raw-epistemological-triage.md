@@ -29,8 +29,8 @@ Asume la jurisdicción **TEKTON**.
 
 - Itera top-down moviendo la **primera aparición** de cada ítem:
   - **A `SddIA/norms/`:** `obediencia-procesos` (`.md` y `.json`), `capsule-json-io`, `commands-via-skills-or-tools`, `paths-via-cumulo`, `entidades-dominio-ecosistema-sddia`, `git-via-skills-or-process`, `agents-principles-contract`, `touchpoints-ia`, `sddia-evolution-sync`.
-  - **A `SddIA/scripts/starter-kit/.SddIA/norms/`:** `features-documentation-pattern`, `pr-acceptance-protocol`, `openapi-contract-rest-frontend`, `nextjs-hydration-client-state`.
-  - **A `SddIA/scripts/limbo/archetypes/norms/`:** `features-documentation-frontmatter`, las bloqueadas del Paso 0, y el **100%** de los archivos remanentes en `SddIA_X/norms/`.
+  - **A `SddIA/library/norms/`:** `features-documentation-pattern`, `patterns-in-planning-implementation-execution`, `pr-acceptance-protocol`, `openapi-contract-rest-frontend`, `nextjs-hydration-client-state` (tactical-norm vía `norm-creator`; SSOT Librería).
+  - **A `SddIA/scripts/limbo/archetypes/norms/`:** solo las bloqueadas del Paso 0 y duplicados no resueltos; **no** replicar normas ya en `SddIA/norms/` ni `SddIA/library/norms/`.
 
 ### PASO 2: Triaje de sabiduría (top-down)
 

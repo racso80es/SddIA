@@ -1,4 +1,4 @@
-{
+﻿{
   "spec_version": "1.0.0",
   "agent_id": "cumulo",
   "name": "cumulo",
@@ -23,7 +23,7 @@
   "instructionsContract": "SddIA/agents/cumulo.instructions.json",
   "principlesContract": "SddIA/principles/principles-contract.json",
   "process_interface": {
-    "description": "Elementos de proceso deben cumplir esta interfaz. Documentación de tarea (paths.featurePath, paths.fixPath): un solo .md por acción con YAML Frontmatter integrando metadatos; no ficheros .json separados. Norma: SddIA/norms/features-documentation-frontmatter.md.",
+    "description": "Elementos de proceso deben cumplir esta interfaz. Documentación de tarea (paths.featurePath, paths.fixPath): un solo .md por acción con YAML Frontmatter integrando metadatos; no ficheros .json separados. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).",
     "required_artefacts": [
       {
         "ext": ".md",

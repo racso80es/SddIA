@@ -1,4 +1,4 @@
----
+﻿---
 contract_ref: paths.processPath/process-contract.json
 inputs:
   description: Descripción breve. Obligatorio.
@@ -36,7 +36,7 @@ phases:
     name: Finalizar
 process_doc_ref: paths.processPath/create-tool/
 process_id: create-tool
-process_interface_compliance: 'Genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, implementation.md, validacion.md); no ficheros .json separados. Entrega ejecutable: cápsula en paths.toolCapsules[<tool-id>]. Norma: features-documentation-frontmatter.md.'
+process_interface_compliance: 'Genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, implementation.md, validacion.md); no ficheros .json separados. Entrega ejecutable: cápsula en paths.toolCapsules[<tool-id>]. Norma: features-documentation-pattern.md (directories.library_norms, Cúmulo).'
 related_actions:
   - spec
   - implementation
@@ -59,7 +59,7 @@ triggers:
 
 Este documento define el **proceso de tarea** para crear una nueva herramienta (tool) en el proyecto. Está ubicado en paths.processPath/create-tool/ (Cúmulo). Las rutas de herramientas se obtienen de **Cúmulo** (paths.toolsPath, paths.toolCapsules, paths.toolsIndexPath).
 
-**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): la tarea de creación genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, implementation.md, validacion.md). No ficheros .json separados. El **resultado ejecutable** es la cápsula en **paths.toolCapsules[<tool-id>]** con todos los artefactos requeridos por el contrato de herramientas. Norma: SddIA/norms/features-documentation-frontmatter.md.
+**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): la tarea de creación genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, implementation.md, validacion.md). No ficheros .json separados. El **resultado ejecutable** es la cápsula en **paths.toolCapsules[<tool-id>]** con todos los artefactos requeridos por el contrato de herramientas. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
 
 ## Propósito
 

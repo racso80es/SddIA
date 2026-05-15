@@ -28,14 +28,13 @@ La validación de esta estructura puede realizarse mediante la acción `validate
 
 ## Documentación de tarea (paths.featurePath, paths.fixPath)
 
-La **documentación de tarea** (output de las acciones spec, clarify, planning, implementation, execution, validate, finalize-process) sigue el mismo patrón: **un solo .md por acción con YAML Frontmatter**; no ficheros .json separados. Norma específica: **SddIA/norms/features-documentation-frontmatter.md**.
+La **documentación de tarea** (output de las acciones spec, clarify, planning, implementation, execution, validate, finalize-process) sigue el mismo patrón que las entidades de dominio: **un solo `.md` por acción** (metadatos estructurados + cuerpo legible); no ficheros `.json` separados. Los agentes deben resolver y aplicar la norma táctica **`features-documentation-pattern`** vía Cúmulo (`directories.library_norms` → `features-documentation-pattern.md`).
 
 ## Referencias
 
 - **Token (Karma2Token):** paths.tokensPath; SddIA/tokens/karma2-token.md.
 - **Contrato de tokens:** SddIA/tokens/tokens-contract.md (Cúmulo).
-- **Arquitectura Frontmatter:** paths.featurePath/refactorization-arquitectura-frontmatter/.
-- **Documentación de tarea:** SddIA/norms/features-documentation-frontmatter.md.
+- **Documentación de tarea:** Cúmulo → `directories.library_norms` / `features-documentation-pattern.md` (`tactical-norm`).
 
 ---
-*Definición canónica de entidades de dominio para gobernanza SddIA. Ref: refactorization-arquitectura-frontmatter, features-documentation-frontmatter.*
+*Definición canónica de entidades de dominio para gobernanza SddIA.*

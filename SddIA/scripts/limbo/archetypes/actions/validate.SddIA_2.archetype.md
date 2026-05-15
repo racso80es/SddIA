@@ -1,4 +1,4 @@
----
+﻿---
 action_id: validate
 blocking_principles:
   - nomenclatura
@@ -40,7 +40,7 @@ La acción **validate** (validación) comprueba que la feature cumple los criter
 
 ## Salidas
 
-- **Informe de validación:** validacion.md en la carpeta de la tarea (Cúmulo) con YAML Frontmatter si existe; si no, paths.auditsPath + validacion-<rama>-<timestamp>.md. Norma: SddIA/norms/features-documentation-frontmatter.md.
+- **Informe de validación:** validacion.md en la carpeta de la tarea (Cúmulo) con YAML Frontmatter si existe; si no, paths.auditsPath + validacion-<rama>-<timestamp>.md. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
   - Estructura mínima (siempre):
     - **timestamp**, **branch**, **base_branch** (rama de referencia para el diff).
     - **git_changes:** resultado de la validación de cambios git (obligatorio en toda ejecución). Ver más abajo.

@@ -1,4 +1,4 @@
----
+﻿---
 contract_ref: paths.processPath/process-contract.json
 inputs:
   description: Descripción breve del fin concreto. Obligatorio.
@@ -28,7 +28,7 @@ phases:
     name: Finalizar
 process_doc_ref: paths.processPath/create-template/
 process_id: create-template
-process_interface_compliance: 'Genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, validacion.md); no ficheros .json separados. Entregable: carpeta en paths.templatesPath/<template-id>/ con spec.md (YAML Frontmatter). Norma: features-documentation-frontmatter.md.'
+process_interface_compliance: 'Genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, validacion.md); no ficheros .json separados. Entregable: carpeta en paths.templatesPath/<template-id>/ con spec.md (YAML Frontmatter). Norma: features-documentation-pattern.md (directories.library_norms, Cúmulo).'
 related_actions:
   - spec
   - validate
@@ -51,7 +51,7 @@ triggers:
 
 Este documento define el **proceso de tarea** para crear una nueva plantilla (template) (**spec_version 2.0.0**), con **Arsenal Táctico Git (S+)**: `git-workspace-recon`, `git-branch-manager`, `git-save-snapshot`, `git-sync-remote`, `git-tactical-retreat`, `git-create-pr`. Ubicación: paths.processPath/create-template/ (Cúmulo). Rutas: **Cúmulo** (paths.templatesPath).
 
-**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): la tarea de creación genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, validacion.md). No ficheros .json separados. El **resultado** es la carpeta en **paths.templatesPath/<template-id>/** con spec.md (YAML Frontmatter), cumpliendo SddIA/templates/templates-contract. Norma: SddIA/norms/features-documentation-frontmatter.md.
+**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): la tarea de creación genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, validacion.md). No ficheros .json separados. El **resultado** es la carpeta en **paths.templatesPath/<template-id>/** con spec.md (YAML Frontmatter), cumpliendo SddIA/templates/templates-contract. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
 
 ## Propósito
 

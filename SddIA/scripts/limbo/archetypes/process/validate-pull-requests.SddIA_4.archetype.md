@@ -1,4 +1,4 @@
----
+﻿---
 contract_ref: paths.processPath/process-contract.json
 description: >-
   Nodo de control que orquesta architect, qa-judge y security-engineer sobre la rama origen del PR;
@@ -104,7 +104,7 @@ Este documento define el **proceso de tarea** para revisar un Pull Request con c
 
 **Proyecto actual:** front de producto (p. ej. TypeScript/React bajo `src/`). Los dictámenes deben respetar la organización del código y dependencias ya definidas en el repositorio; no imponer stacks ajenos al monorepo salvo como semilla Kaizen.
 
-**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): genera en la carpeta de la tarea (Cúmulo) artefactos **`.md`** con frontmatter YAML + cuerpo Markdown (`objectives.md`, `validacion.md`). **No se usan ficheros `.json` separados** para la documentación de la revisión. Patrón: `SddIA/norms/features-documentation-frontmatter.md`.
+**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): genera en la carpeta de la tarea (Cúmulo) artefactos **`.md`** con frontmatter YAML + cuerpo Markdown (`objectives.md`, `validacion.md`). **No se usan ficheros `.json` separados** para la documentación de la revisión. Patrón: `directories.library_norms/features-documentation-pattern.md (Cúmulo)`.
 
 ## Identidad y propósito
 

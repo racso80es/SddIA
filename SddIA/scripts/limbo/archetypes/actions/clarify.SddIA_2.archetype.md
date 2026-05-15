@@ -1,4 +1,4 @@
----
+﻿---
 action_id: clarify
 contract_ref: actions-contract.json
 flow_steps:
@@ -36,7 +36,7 @@ Esta acción se implementa mediante documentación manual en la carpeta de la ta
 3.  **Determinación de Contexto:**
     *   Si la especificación pertenece a una Feature, se asegura que exista una carpeta dedicada en paths.featurePath (Cúmulo), e.g. paths.featurePath/<nombre_feature>/ (p. ej. docs/features/<nombre_feature>/ en este repo).
     *   Si no existe, se crea y se mueve el archivo original allí (migración automática); carpeta en paths.featurePath/<nombre_feature>/.
-4.  **Generación de Clarificaciones:** Se crea un archivo `clarify.md` en la carpeta de la tarea (Cúmulo) con YAML Frontmatter integrando metadatos (decisions, clarify_pending, etc.); no fichero clarify.json separado. Norma: SddIA/norms/features-documentation-frontmatter.md.
+4.  **Generación de Clarificaciones:** Se crea un archivo `clarify.md` en la carpeta de la tarea (Cúmulo) con YAML Frontmatter integrando metadatos (decisions, clarify_pending, etc.); no fichero clarify.json separado. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
 5.  **Escaneo de Seguridad:** Cada entrada del usuario es analizada por el `SecurityScanner` para prevenir inyecciones o fugas de datos sensibles.
 6.  **Persistencia:** El contenido de la clarificación se añade al archivo generado.
 7.  **Auditoría:** Todas las interacciones se registran en paths.auditsPath + paths.accessLogFile (Cúmulo).

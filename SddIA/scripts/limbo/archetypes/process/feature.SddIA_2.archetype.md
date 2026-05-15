@@ -1,4 +1,4 @@
----
+﻿---
 contract_ref: paths.processPath/process-contract.json
 name: Feature
 persist_ref: paths.featurePath/<nombre_feature>
@@ -55,7 +55,7 @@ spec_version: 2.0.0
 
 Este documento define el **proceso de tarea** para desarrollar una funcionalidad (**spec_version 2.0.0**), integrando el **Arsenal Táctico Git (grado S+)**: máquina de estados basada en `git-workspace-recon`, `git-branch-manager`, `git-save-snapshot`, `git-sync-remote`, `git-tactical-retreat`, `git-create-pr`, `git-close-cycle` y, cuando muta `./SddIA/`, `sddia_evolution_register` vía cápsula `sddia-evolution-register` (contrato en paths.skillsDefinitionPath y cápsulas en paths.skillCapsules, Cúmulo). Está ubicado en paths.processPath/feature/ (Cúmulo). Las acciones que orquesta están en paths.actionsPath (Cúmulo). La ruta de persistencia se obtiene de **Cúmulo** (paths.featurePath/<nombre_feature>).
 
-**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): solicita/genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, clarify.md, plan.md, implementation.md, execution.md, validacion.md, finalize-process.md). No ficheros .json separados. Norma: SddIA/norms/features-documentation-frontmatter.md.
+**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): solicita/genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, clarify.md, plan.md, implementation.md, execution.md, validacion.md, finalize-process.md). No ficheros .json separados. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
 
 ## Propósito
 

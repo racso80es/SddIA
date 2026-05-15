@@ -1,4 +1,4 @@
-{
+﻿{
   "spec_version": "2.0.0",
   "process_id": "create-tool",
   "name": "Create Tool",
@@ -14,7 +14,7 @@
     "featurePath_ref": "paths.featurePath (Cúmulo)",
     "toolCapsulesRef": "paths.toolCapsules"
   },
-  "process_interface_compliance": "Genera en carpeta de la tarea un .md por acción con YAML Frontmatter; entrega ejecutable: cápsula en paths.toolCapsules[<tool-id>]. Norma: features-documentation-frontmatter.md.",
+  "process_interface_compliance": "Genera en carpeta de la tarea un .md por acción con YAML Frontmatter; entrega ejecutable: cápsula en paths.toolCapsules[<tool-id>]. Norma: features-documentation-pattern.md (directories.library_norms, Cúmulo).",
   "triggers": ["Crear nueva herramienta en paths.toolsPath", "Solicitud de creación de herramienta con tool-id"],
   "inputs": { "tool_id": "kebab-case. Obligatorio.", "description": "Descripción breve. Obligatorio." },
   "related_actions": ["spec", "implementation", "validate", "finalize-process"],

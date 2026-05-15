@@ -1,4 +1,4 @@
----
+﻿---
 action_id: spec
 contract_ref: actions-contract.json
 flow_steps:
@@ -42,7 +42,7 @@ Esta acción se implementa mediante documentación manual en la carpeta de tarea
 4.  **Normalización OpenSpecs:** Aplicación de plantillas estándar para asegurar que el documento contenga las secciones obligatorias: Contexto, Arquitectura, Seguridad y Criterios de Aceptación.
 5.  **Escaneo de Seguridad Inicial:** El `SecurityScanner` evalúa si los requisitos propuestos introducen riesgos de diseño o vulnerabilidades teóricas.
 6.  **Persistencia:**
-    *   **Markdown (.md) con YAML Frontmatter:** Generado en `{Context}/spec.md`. Los metadatos (spec_id, title, scope, acceptance_criteria, etc.) se integran en el bloque YAML Frontmatter del .md; no se genera fichero .json separado. Norma: SddIA/norms/features-documentation-frontmatter.md.
+    *   **Markdown (.md) con YAML Frontmatter:** Generado en `{Context}/spec.md`. Los metadatos (spec_id, title, scope, acceptance_criteria, etc.) se integran en el bloque YAML Frontmatter del .md; no se genera fichero .json separado. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
 7.  **Auditoría:** Registro de la creación del documento en paths.auditsPath + paths.accessLogFile.
 
 ## Integración con Agentes

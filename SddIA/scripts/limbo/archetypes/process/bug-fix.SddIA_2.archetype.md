@@ -1,4 +1,4 @@
----
+﻿---
 constraints:
   - Rama fix/<nombre_fix>, nunca master.
   - Documentación obligatoria en paths.fixPath/<nombre_fix>.
@@ -36,7 +36,7 @@ phases:
     name: Finalizar
 principles_ref: paths.principlesPath
 process_id: bug-fix
-process_interface_compliance: Solicita/genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, clarify.md, validacion.md); no ficheros .json separados. Norma: features-documentation-frontmatter.md.
+process_interface_compliance: Solicita/genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, clarify.md, validacion.md); no ficheros .json separados. Norma: features-documentation-pattern.md (directories.library_norms, Cúmulo).
 related_actions:
   - spec
   - clarify
@@ -65,7 +65,7 @@ triggers:
 
 Este documento define el **proceso de tarea** para la corrección de un bug (**spec_version 2.0.0**), con **Arsenal Táctico Git (S+)**: `git-workspace-recon`, `git-branch-manager`, `git-save-snapshot`, `git-sync-remote`, `git-tactical-retreat`, `git-create-pr`. Ubicación: paths.processPath/bug-fix/ (Cúmulo). Persistencia: **Cúmulo** (paths.fixPath/<nombre_fix>).
 
-**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): solicita/genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, clarify.md, validacion.md). No ficheros .json separados. Norma: SddIA/norms/features-documentation-frontmatter.md.
+**Interfaz de proceso:** Cumple la interfaz en Cúmulo (`process_interface`): solicita/genera en la carpeta de la tarea (Cúmulo) un **`.md` por acción** con **YAML Frontmatter** (objectives.md, spec.md, clarify.md, validacion.md). No ficheros .json separados. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
 
 ## Propósito
 

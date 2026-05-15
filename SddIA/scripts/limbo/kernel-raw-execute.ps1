@@ -44,7 +44,7 @@ foreach ($n in @(4, 3, 2, 1)) {
         Ensure-Dir $destLimbo
 
         if ($stem -eq 'features-documentation-frontmatter') {
-            Move-Item -LiteralPath $f.FullName -Destination (Join-Path $destLimbo $f.Name) -Force
+            Remove-Item -LiteralPath $f.FullName -Force
             continue
         }
         if ($protected.ContainsKey($stem)) {

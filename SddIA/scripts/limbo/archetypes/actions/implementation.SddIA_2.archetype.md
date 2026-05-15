@@ -1,4 +1,4 @@
----
+﻿---
 action_id: implementation
 contract_ref: actions-contract.json
 flow_steps:
@@ -36,7 +36,7 @@ La acción **implementation** (implementación) no realiza cambios en el código
 ## Salida
 - **Documento de implementación** (único): nuevo archivo que consolida todos los touchpoints.
   - **Nombre:** `implementation.md` en la carpeta de la tarea (Cúmulo).
-  - **Formato:** YAML Frontmatter integrando metadatos (touchpoints, items); no implementation.json separado. Norma: SddIA/norms/features-documentation-frontmatter.md.
+  - **Formato:** YAML Frontmatter integrando metadatos (touchpoints, items); no implementation.json separado. Norma: directories.library_norms/features-documentation-pattern.md (Cúmulo).
   - **Estructura mínima del documento generado:**
     1. **Cabecera:** referencia al PLAN, SPEC, rama.
     2. **Ítems de implementación:** por cada cambio a realizar:

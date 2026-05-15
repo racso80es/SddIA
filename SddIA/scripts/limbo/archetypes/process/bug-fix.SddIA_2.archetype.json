@@ -1,4 +1,4 @@
-{
+﻿{
   "spec_version": "2.0.0",
   "process_id": "bug-fix",
   "name": "Bug Fix",
@@ -6,7 +6,7 @@
   "contract_ref": "paths.processPath/process-contract.json",
   "persist_ref": "paths.fixPath/<nombre_fix>",
   "paths": { "fixPath_ref": "paths.fixPath (Cúmulo)", "bugPath_ref": "paths.bugPath (Cúmulo)" },
-  "process_interface_compliance": "Solicita/genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, clarify.md, validacion.md); no ficheros .json separados. Norma: features-documentation-frontmatter.md.",
+  "process_interface_compliance": "Solicita/genera en carpeta de la tarea un .md por acción con YAML Frontmatter (objectives.md, spec.md, clarify.md, validacion.md); no ficheros .json separados. Norma: features-documentation-pattern.md (directories.library_norms, Cúmulo).",
   "triggers": ["Reporte de bug", "Fallo en CI o tests", "Solicitud de fix con bug-id o título"],
   "skills": ["documentation", "filesystem-ops", "dotnet-development"],
   "constraints": ["Rama fix/<nombre_fix>, nunca master.", "Documentación obligatoria en paths.fixPath/<nombre_fix>.", "Alcance mínimo: causa raíz; no refactor en la misma rama."],
