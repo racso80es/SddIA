@@ -1,7 +1,0 @@
-{
-  "spec_version": "1.0.0",
-  "process_id": "create-template",
-  "name": "Create Template",
-  "description": "Creación de plantilla",
-  "contract_ref": "paths.processPath/process-contract.md"
-}

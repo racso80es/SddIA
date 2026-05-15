@@ -1,3 +1,18 @@
+---
+uuid: "7c8be7da-d080-4ad0-b0b0-df43be376e46"
+name: "iota-immutable-publisher"
+version: "1.0.0"
+contract: "tools-contract v1.2.0"
+contract_ref: "SddIA/tools/tools-contract.md"
+domain_origin: "SddIA"
+context: "system-operations"
+capabilities:
+  - "iota-publish"
+  - "immutable-anchor"
+  - "capsule-json-io"
+implementation_path_ref: "scripts/tools/iota-immutable-publisher"
+---
+
 # iota-immutable-publisher
 
 **Descripción:** Cápsula de ejecución atómica para anclar un dato inmutable en la red IOTA Rebased (Testnet).

@@ -1,7 +1,0 @@
-{
-  "spec_version": "2.1.0",
-  "process_id": "feature",
-  "name": "Feature",
-  "description": "Desarrollo de una funcionalidad",
-  "contract_ref": "paths.processPath/process-contract.md"
-}

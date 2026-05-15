@@ -1,0 +1,29 @@
+name: sddia-index-qa
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
+      - "feat/**"
+      - "fix/**"
+
+permissions:
+  contents: read
+
+jobs:
+  verify-tools-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: verify-tools-index
+        run: python SddIA/scripts/qa/verify-tools-index.py
+      - name: verify-process-integrity
+        run: python SddIA/scripts/qa/verify-process-integrity.py

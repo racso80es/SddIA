@@ -33,7 +33,7 @@ Los procesos dictan el camino, no el destino físico.
 
 ## 3. Interfaz de Interacción y Fases
 La comunicación debe ser paramétrica. El `{name}.md` debe declarar:
-* **`inputs`**: Datos de inicio (ej. el spec de una nueva feature).
+* **`inputs`**: Datos de inicio (ej. el spec de una nueva feature). Los procesos forja que operan en más de un SSOT físico (p. ej. `tool-creator`) deben declarar un input discriminador con **enum estricto** documentado en su `{name}.md` (p. ej. `scope`: `core` | `local`) y tabular las rutas resueltas; prohibido inferir el ámbito sin ese input.
 * **`phases`**: Array inmutable de objetos; cada elemento define una fase declarativa y el enrutamiento por capacidades (sin deducción libre del LLM). Estructura estricta:
 
 ```yaml

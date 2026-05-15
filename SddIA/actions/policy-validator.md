@@ -14,7 +14,7 @@ inputs:
   - "allowed_policies": "(Opcional) Array de identificadores a contrastar con la matriz S+ de `execution-contexts.md` (secciones 2.x); obligatorio cuando el perfil incluye `AGENT_POLICIES`"
   - "tool_context": "(Opcional) Contexto RBAC Cerbero declarado para una tool; obligatorio cuando el perfil incluye `TOOL_DOMAIN`"
   - "domain_origin": "(Opcional) AcotaciÃ³n del dominio (p. ej. origen del proyecto) para trazabilidad en dictamen"
-  - "required_secrets": "(Opcional) Lista de nombres de variables de entorno requeridas; la acciÃ³n solo audita **declaraciÃ³n** (lista no vacÃ­a, sin duplicados obvios), no valores â€” la lectura del entorno queda en `skill:environment-reader` u otra cÃ¡psula"
+  - "required_secrets": "(Opcional) Lista de nombres de variables de entorno requeridas; la acción solo audita **declaración** (lista no vacía, sin duplicados obvios), no valores — el cruce empírico con el Vértice Biológico queda en `skill:shell-executor` o delegación explícita al operador humano"
 outputs:
   - "dictamen": "JSON agregado: `valid` (bool), `exitCode` (0 si todo conforme; 1 si bloqueo), `findings` (array de strings causales), `contexts_checked` (subset validado contra la normativa)"
   - "normative_ref": "Referencia estable al artefacto normativo resuelto vÃ­a SSOT (p. ej. clave `directories.norms` + `execution-contexts.md`)"
@@ -37,5 +37,5 @@ Emitir un **dictamen normativo** contrastando entradas de forja (agentes, tools)
 
 ## 3. LÃ­mites
 * No invoca `skill:cryptography-manager` ni opera criptografÃ­a; no sustituye a `action:crypto-broker`.
-* No lee valores secretos del entorno: solo validaciones declarativas acordadas; el cruce con el runtime del VÃ©rtice BiolÃ³gico es responsabilidad de `skill:environment-reader` (u otra cÃ¡psula) en la fase del proceso que corresponda.
+* No lee valores secretos del entorno: solo validaciones declarativas acordadas; el cruce con el runtime del Vértice Biológico es responsabilidad de `skill:shell-executor` (comandos acotados, sin volcar secretos) o del operador humano en la fase del proceso que corresponda.
 * No modifica normativas ni `allowed_policies` de terceros: solo lectura normativa y emisiÃ³n de dictamen.

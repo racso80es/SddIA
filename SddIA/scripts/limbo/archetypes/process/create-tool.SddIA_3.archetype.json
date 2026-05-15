@@ -1,7 +1,0 @@
-{
-  "spec_version": "1.0.0",
-  "process_id": "create-tool",
-  "name": "Create Tool",
-  "description": "Creación de herramienta",
-  "contract_ref": "paths.processPath/process-contract.md"
-}

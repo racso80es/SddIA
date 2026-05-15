@@ -15,7 +15,7 @@ status: "active"
 - **Skill:** suite Git táctica S+ Grade: paths.skillCapsules.git-workspace-recon, git-branch-manager, git-save-snapshot, git-sync-remote, git-tactical-retreat, git-create-pr. Contrato: paths.skillsDefinitionPath/\<skill-id\>/spec.json. **Nota:** `invoke-command` y terminal nativa **no** son canal válido para operaciones Git; ver **git-operations.md** (Ley de Hierro).
 - **Herramienta (tool):** definida en paths.toolsDefinitionPath, implementación en paths.toolCapsules[tool-id].
 - **Acción:** definida en paths.actionsPath (spec, planning, implementation, execution, validate, finalize-process, etc.). Las acciones pueden orquestar skills o herramientas que ejecuten git.
-- **Proceso:** definido en paths.processPath (feature, bug-fix, create-tool, create-principle, etc.). Los procesos invocan acciones y skills; la IA sigue el proceso en lugar de lanzar git por su cuenta.
+- **Proceso:** definido en paths.processPath (feature, bug-fix, tool-creator, create-principle, etc.). Los procesos invocan acciones y skills; la IA sigue el proceso en lugar de lanzar git por su cuenta.
 
 ## Justificación
 

@@ -1,7 +1,0 @@
-{
-  "spec_version": "1.0.0",
-  "process_id": "bug-fix",
-  "name": "Bug Fix",
-  "description": "Corrección de un bug",
-  "contract_ref": "paths.processPath/process-contract.md"
-}

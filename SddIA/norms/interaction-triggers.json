@@ -86,7 +86,11 @@
         "process_id": "tool-creator",
         "payload": {
           "objective": "{user_text}",
-          "mode": "orchestrate"
+          "mode": "orchestrate",
+          "scope": "core",
+          "tool_id": "",
+          "description": "{user_text}",
+          "interface": {}
         }
       }
     }
