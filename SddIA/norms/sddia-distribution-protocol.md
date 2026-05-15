@@ -19,9 +19,12 @@ Queda **terminantemente prohibido** mutar, editar, parchear o “arreglar localm
 ### Vía C (Consumer Space) — Extensión Permitida
 La extensión y personalización del entorno se realiza en el **espacio del consumidor**, fuera de `SddIA/`, típicamente bajo:
 
-- `.SddIA/local.paths.json` (rutas y topología local)
+- `.SddIA/local.paths.json` (rutas y topología local; fusión con `SddIA/core/cumulo.paths.json`)
 - `.SddIA/tools/` (herramientas locales)
-- `.SddIA/norms/` (normativa local)
+- `.SddIA/library/codexes/` (manifiesto del **Códice de Dominio** importado; simetría fractal con `SddIA/library/codexes/`)
+- `.SddIA/library/norms/` (normas atómicas indexadas por el Códice; simetría fractal con `SddIA/library/norms/`)
+
+La ruta legada `.SddIA/norms/` queda **obsoleta** para paquetes importados; solo puede usarse para extensiones locales futuras no cubiertas por `codex_sync`. Tras sincronizar un Códice, purgar `.md` residuales en `.SddIA/norms/`.
 
 ### Razón Operativa
 Este protocolo elimina el *drift* (divergencia silenciosa) y garantiza:

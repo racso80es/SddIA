@@ -11,7 +11,7 @@
         "a. Ante la solicitud de instalar un Códice, localizar y leer el manifiesto `.md` del Códice dentro del directorio canónico resuelto desde `directories.library_codexes` (clave en `SddIA/core/cumulo.paths.json`, aplicar fusión universal+local).",
         "b. Parsear el frontmatter YAML y extraer el array `composition` definido en `codex-contract.md`.",
         "c. Iterar cada entrada de `composition` y resolver cada `path` hacia el archivo `.md` de norma atómica relativo a `directories.library_norms` (o ruta relativa canónica declarada en el manifiesto), validando previamente contra `norms-contract.md`.",
-        "d. Orquestar el volcado físico de esos `.md` en el directorio local del proyecto destino (p. ej. `.SddIA/norms/`), purgando copias locales que entren en conflicto directo (misma identidad lógica: `uuid` o par `name`+`version` en frontmatter) con el paquete sincronizado."
+        "d. Orquestar el volcado físico del manifiesto del Códice en el directorio local resuelto desde `directories.library_codexes` (p. ej. `.SddIA/library/codexes/`) y de cada norma atómica en `directories.library_norms` (p. ej. `.SddIA/library/norms/`), purgando copias locales en esas rutas con conflicto directo (misma identidad lógica: `uuid` o par `name`+`version` en frontmatter) y eliminando residuos en la ruta legada `.SddIA/norms/` si existiera."
       ]
     }
   ],

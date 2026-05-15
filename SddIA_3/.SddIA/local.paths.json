@@ -7,11 +7,19 @@
     "local_principles": ".SddIA/principles",
     "local_patterns": ".SddIA/patterns",
     "local_templates": ".SddIA/templates",
-    "local_evolution": ".SddIA/evolution"
+    "local_evolution": ".SddIA/evolution",
+    "library_codexes": ".SddIA/library/codexes/",
+    "library_norms": ".SddIA/library/norms/"
+  },
+  "paths": {
+    "localLibraryCodexes": ".SddIA/library/codexes/",
+    "localLibraryNorms": ".SddIA/library/norms/"
   },
   "files": {
     "interaction_triggers_override": ".SddIA/interaction-triggers.override.json",
     "local_security_contract": ".SddIA/local-security-contract.json",
-    "local_evolution_log": ".SddIA/evolution/Evolution_log.md"
+    "local_evolution_log": ".SddIA/evolution/Evolution_log.md",
+    "featuresDocumentationPattern": ".SddIA/library/norms/features-documentation-pattern.md",
+    "features_documentation_pattern": ".SddIA/library/norms/features-documentation-pattern.md"
   }
 }
