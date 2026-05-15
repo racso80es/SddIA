@@ -20,7 +20,9 @@
       "scripts_limbo": "SddIA/scripts/limbo",
       "patterns": "SddIA/patterns",
       "principles": "SddIA/principles",
-      "templates": "SddIA/templates"
+      "templates": "SddIA/templates",
+      "library_norms": "SddIA/library/norms/",
+      "library_codexes": "SddIA/library/codexes/"
     },
     "normative_documents": {
       "interaction_triggers": "SddIA/norms/interaction-triggers.json",
@@ -42,7 +44,9 @@
       "knowledge": "SddIA/norms/knowledge-contract.md",
       "patterns": "SddIA/patterns/patterns-contract.md",
       "templates": "SddIA/templates/templates-contract.md",
-      "tokens": "SddIA/tokens/tokens-contract.md"
+      "tokens": "SddIA/tokens/tokens-contract.md",
+      "library_norms": "SddIA/library/norms/norms-contract.md",
+      "library_codexes": "SddIA/library/codexes/codex-contract.md"
     },
     "execution_capsules": {
       "skills": "scripts/skills/",

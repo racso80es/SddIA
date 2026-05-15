@@ -1,12 +1,7 @@
 # SddIA Core: industrialización de inteligencia descentralizada
 
-## Visión
-Infraestructura de activos digitales, no repositorio de scripts. Framework para materializar conocimiento técnico en entidades auditables, escalables y monetizables (**Librería S+**).
-
-## Arquitectura de vértices
-- **Vértice Biológico:** origen de intención y soberanía.
-- **Nodo de Control:** rigor operativo, filtros, validación.
-- **Vértice Productivo (Tekton):** ejecución técnica y cumplimiento de contratos entre agentes y cápsulas.
+## Librería SddIA
+Ecosistema de **activos técnicos tokenizables** (NFTs lógicos: definiciones versionadas, contratos y manifiestos con identidad estable) orientados a la **industrialización de la IA**: consumo reproducible, gobernanza explícita y trazabilidad entre núcleo canónico e instancias productivas.
 
 ## Ontología de Activos
 
@@ -17,6 +12,16 @@ Infraestructura de activos digitales, no repositorio de scripts. Framework para 
 | **Action** | Paso atómico, indivisible y auditable de ejecución. | `paths.directories.actions` | Invoca **Skills** o **Tools** para el trabajo técnico. |
 | **Skill** | Capacidad técnica especializada definida por contrato. | `paths.directories.skills` | Ejecutada por **Cápsula** blindada (binario Rust o script Python bajo contrato). |
 | **Tool** | Capacidad de infraestructura o utilidad de dominio. | `paths.directories.tools` | Servicios base a las **Actions** vía **Cápsula**. |
+| **Library_Codex** | Paquetes de normas orquestadas por dominio. | `paths.directories.library_codexes` | Agrupación de conocimiento técnico a cumplir por los **Agents**. |
+| **Library_Norm** | Reglas técnicas atómicas, patrones y prohibiciones de *code-smells*. | `paths.directories.library_norms` | Cantera de la **Librería** (`SddIA/library/norms/`). **No** confundir con la normativa operativa del Core (`SddIA/norms`). |
+| **Normativa de ejecución (Core)** | Contratos y normas de operación del núcleo (cápsulas, Git, triage, etc.). | `paths.directories.norms` | Árbol `SddIA/norms`; convive con la Librería; distinto alcance y clave SSOT que `library_norms`. |
+
+### Dos canales de normativa (anti-dualidad)
+
+| Canal | Clave en `cumulo.paths.json` | Ruta física (referencia) |
+|-------|------------------------------|--------------------------|
+| Operación del Core | `directories.norms` | `SddIA/norms` |
+| Librería — normas atómicas | `directories.library_norms` | `SddIA/library/norms/` |
 
 Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asigna un **Agent** titular; el **Agent** descompone en **Actions**; las **Actions** consumen **Skills** y **Tools** materializados en cápsulas.
 
@@ -44,18 +49,18 @@ La colaboración entre agentes (p. ej. Tekton y un agente de seguridad) no es me
 
 Sin carpeta de tarea materializada y artefactos versionables, no hay handoff válido bajo este modelo.
 
-## Estándar de entidades de dominio SddIA:
-**Toda** familia de entidades de dominio:
-### Dispone de su ubicación según indicaciones de agente cumulo ({entidades}).
-### En dicha ubicación ha de existir, al menos, un contrato para la implementación de entidades {entidades}_contract.md.
-### En dicha ubicación ha de existir un indice (index.md) con los items correspondientes a las implementaciones de entidades existentes. El agente Cúmulo tiene la resposabilidad de la coherencia de datos indicado por cada implementacion.
+## Estándar de entidades de dominio SddIA
+**Toda** familia de entidades de dominio debe cumplir el siguiente rigor arquitectónico:
+1. **Ubicación SSOT:** Dispone de su ubicación según las indicaciones del agente Cúmulo (`{paths.directories...}`).
+2. **Contrato Legal:** En dicha ubicación ha de existir, innegociablemente, un contrato para la implementación de entidades `{entidad}-contract.md`.
+3. **Índice de Trazabilidad:** En dicha ubicación ha de existir un índice (`index.md`) con los items correspondientes a las implementaciones de entidades existentes. El agente Cúmulo tiene la responsabilidad de la coherencia de datos indicados por cada implementación.
 
 ## Cicatriz digital y estándar atómico
 **Toda** entidad de dominio SddIA nace con **Cicatriz Digital**: un único archivo de definición `{name}.md` que incluye:
 - Cabecera **YAML** obligatoria (contrato de la entidad).
 - **Versión SemVer** y **UUID v4 inmutable** asignado en creación (identidad estable para trazabilidad y catálogo).
 - Cuerpo en Markdown con propósito y límites del activo.
-Ese paquete es el prerequisito para integración futura en la **Librería S+** y su modelo de activo direccionable (incl. capa NFT-ready del diseño).
+Ese paquete es el prerequisito para integración en la **Librería SddIA** y su modelo de activo direccionable (capa NFT-ready).
 
 ## Desacoplamiento Core / instancia
 Definición de núcleo en este repositorio; especialización y secretos en instancia local. Sin lógica de negocio dispersa fuera de **Actions** orquestadas y **Cápsulas**.
