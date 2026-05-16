@@ -20,7 +20,19 @@ jurisdiction: "dedalo"
 
 Queda **prohibido** enrutar `gh` a través de `git-manager`.
 
-## 3. Responsabilidades
+## 3. Merge / Aceptación (SSOT local)
+
+Toda fusión hacia la rama principal (`main`) en el entorno local del workspace debe orquestarse **estricta y exclusivamente** mediante el proceso **`SddIA/process/accept-pr.md`** (`process: accept-pr`), resuelto vía Cúmulo y ejecutado con `action:execute-process`.
+
+Queda **terminantemente prohibido**:
+
+* Ejecutar manualmente `git merge` (u homólogos imperativos de fusión) por parte de cualquier agente, operador humano o asistente, fuera del flujo declarado en `accept-pr`.
+* Sustituir `accept-pr` por invocaciones ad hoc de `skill:git-manager` con `operation_type: merge` sin pasar por las fases del proceso (Auditoría Genómica → Fusión Soberana → Sello Criptográfico de Fusión → Sincronización y Limpieza).
+* Considerar `gh pr merge` como vía canónica de consolidación local hacia `main` salvo evolución explícita de esta norma.
+
+La **Única Fuente de Verdad (SSOT)** para la consolidación de código en `main` es `accept-pr`.
+
+## 4. Responsabilidades
 
 | Rol | Responsabilidad |
 | :--- | :--- |
@@ -28,8 +40,9 @@ Queda **prohibido** enrutar `gh` a través de `git-manager`.
 | Tekton (u orquestador) | Ejecutar el Proceso invocando skills en el orden y contexto acordados. |
 | Cerbero / Argos | Auditar entradas contra esquemas congelados y políticas. |
 
-## 4. Referencias
+## 5. Referencias
 
 - `SddIA/norms/skill-io-git-manager-frozen.md`
 - `SddIA/norms/skill-io-shell-executor-frozen.md`
 - `SddIA/norms/git-operations.md`
+- `SddIA/process/accept-pr.md`
