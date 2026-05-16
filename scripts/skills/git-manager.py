@@ -13,9 +13,21 @@ from pathlib import Path
 from typing import Any, Mapping
 
 ALLOWED_OPS = frozenset(
-    {"status", "checkout", "commit", "push", "pull", "fetch", "branch_list"}
+    {
+        "status",
+        "checkout",
+        "commit",
+        "push",
+        "pull",
+        "fetch",
+        "branch_list",
+        "get_last_commit",
+        "merge",
+        "delete_branch",
+    }
 )
-UNSAFE_TOKEN = re.compile(r'[\n\r;|&$`<>()]')
+UNSAFE_TOKEN = re.compile(r"[\n\r;|&$`<>()]")
+COMMIT_HASH_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 
 
 def _emit(out: dict[str, Any]) -> None:
@@ -38,6 +50,13 @@ def _ok(data: dict[str, Any], git_exit: int) -> None:
         out["error"] = data.get("errorSummary") or "git exited with non-zero status"
     _emit(out)
     sys.exit(0 if success else 1)
+
+
+def _parse_commit_hash(raw: str, field: str) -> str:
+    value = raw.strip()
+    if not COMMIT_HASH_RE.fullmatch(value):
+        _fail(f"{field} is not a valid 40-character hexadecimal commit hash")
+    return value.lower()
 
 
 def _assert_safe_token(value: str, field: str) -> None:
@@ -134,6 +153,99 @@ def _handle(
                 "gitStdout": proc.stdout,
                 "gitStderr": proc.stderr,
                 "branches": lines,
+                "errorSummary": proc.stderr.strip() or None,
+            },
+            proc.returncode,
+        )
+
+    if op == "get_last_commit":
+        _payload_exact(payload, op, frozenset({"ref"}))
+        ref = payload["ref"]
+        if not isinstance(ref, str) or not ref.strip():
+            _fail("ref must be a non-empty string")
+        _assert_safe_token(ref, "ref")
+        proc = _run_git(repo, git, ["rev-parse", ref])
+        if proc.returncode != 0:
+            return (
+                {
+                    "gitStdout": proc.stdout,
+                    "gitStderr": proc.stderr,
+                    "errorSummary": proc.stderr.strip() or None,
+                },
+                proc.returncode,
+            )
+        commit_hash = _parse_commit_hash(proc.stdout, "commitHash")
+        return (
+            {
+                "gitStdout": proc.stdout,
+                "gitStderr": proc.stderr,
+                "commitHash": commit_hash,
+                "errorSummary": proc.stderr.strip() or None,
+            },
+            proc.returncode,
+        )
+
+    if op == "merge":
+        _payload_exact(payload, op, frozenset({"branch_name", "no_ff"}))
+        branch = payload["branch_name"]
+        no_ff = payload["no_ff"]
+        if not isinstance(branch, str) or not branch:
+            _fail("branch_name must be a non-empty string")
+        if not isinstance(no_ff, bool):
+            _fail("no_ff must be boolean")
+        _assert_safe_token(branch, "branch_name")
+        merge_args = ["merge"]
+        if no_ff:
+            merge_args.append("--no-ff")
+        merge_args.append(branch)
+        proc = _run_git(repo, git, merge_args)
+        if proc.returncode != 0:
+            return (
+                {
+                    "gitStdout": proc.stdout,
+                    "gitStderr": proc.stderr,
+                    "errorSummary": proc.stderr.strip() or None,
+                },
+                proc.returncode,
+            )
+        rev = _run_git(repo, git, ["rev-parse", "HEAD"])
+        if rev.returncode != 0:
+            return (
+                {
+                    "gitStdout": proc.stdout + rev.stdout,
+                    "gitStderr": proc.stderr + rev.stderr,
+                    "errorSummary": rev.stderr.strip() or "rev-parse HEAD failed after merge",
+                },
+                rev.returncode,
+            )
+        merge_commit_hash = _parse_commit_hash(rev.stdout, "mergeCommitHash")
+        return (
+            {
+                "gitStdout": proc.stdout + rev.stdout,
+                "gitStderr": proc.stderr + rev.stderr,
+                "mergeCommitHash": merge_commit_hash,
+                "errorSummary": proc.stderr.strip() or None,
+            },
+            proc.returncode,
+        )
+
+    if op == "delete_branch":
+        _payload_exact(payload, op, frozenset({"branch_name", "remote"}))
+        branch = payload["branch_name"]
+        remote = payload["remote"]
+        if not isinstance(branch, str) or not branch:
+            _fail("branch_name must be a non-empty string")
+        if not isinstance(remote, bool):
+            _fail("remote must be boolean")
+        _assert_safe_token(branch, "branch_name")
+        if remote:
+            proc = _run_git(repo, git, ["push", "origin", "--delete", branch])
+        else:
+            proc = _run_git(repo, git, ["branch", "-d", branch])
+        return (
+            {
+                "gitStdout": proc.stdout,
+                "gitStderr": proc.stderr,
                 "errorSummary": proc.stderr.strip() or None,
             },
             proc.returncode,
