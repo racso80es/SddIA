@@ -1,6 +1,12 @@
 # Este repositorio versiona el Core bajo SddIA/. No ignorar SddIA/ aquí.
 # En proyectos consumidores (Vía C), el clone inyectado suele listarse en .gitignore.
 
+# Cursor — logs de depuración locales
+.cursor/debug_*
+
+# Bus de eventos local (pending / processed / dead-letter)
+.SddIA/events/
+
 # Secretos locales — cápsula iota-immutable-publisher (dotenv)
 SddIA/scripts/tools/iota-immutable-publisher/.env
 
