@@ -33,6 +33,10 @@ phases:
     de repo consistente.'
   delegates_to:
   - skill:git-manager
+- name: Sello Criptográfico de Evento
+  intent: Emitir el evento de dominio PullRequest_Merged en el bus descentralizado local (.SddIA/events/pending/) para su posterior anclaje inmutable.
+  delegates_to:
+  - action:emit-pr-merged-event
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
