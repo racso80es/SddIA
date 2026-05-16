@@ -230,18 +230,22 @@ def _handle(
         )
 
     if op == "delete_branch":
-        _payload_exact(payload, op, frozenset({"branch_name", "remote"}))
+        _payload_exact(payload, op, frozenset({"branch_name", "remote", "force"}))
         branch = payload["branch_name"]
         remote = payload["remote"]
+        force = payload["force"]
         if not isinstance(branch, str) or not branch:
             _fail("branch_name must be a non-empty string")
         if not isinstance(remote, bool):
             _fail("remote must be boolean")
+        if not isinstance(force, bool):
+            _fail("force must be boolean")
         _assert_safe_token(branch, "branch_name")
         if remote:
             proc = _run_git(repo, git, ["push", "origin", "--delete", branch])
         else:
-            proc = _run_git(repo, git, ["branch", "-d", branch])
+            flag = "-D" if force else "-d"
+            proc = _run_git(repo, git, ["branch", flag, branch])
         return (
             {
                 "gitStdout": proc.stdout,
