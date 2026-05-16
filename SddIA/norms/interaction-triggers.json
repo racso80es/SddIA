@@ -33,6 +33,29 @@
         }
       }
     },
+    "intent.accept_pr": {
+      "intent_id": "intent.accept_pr",
+      "human_intents": [
+        "Acepta el PR",
+        "Aceptar pull request",
+        "Fusiona a main",
+        "Fusionar PR",
+        "Cierra el pull request",
+        "Cerrar PR",
+        "aceptar",
+        "fusionar",
+        "cerrar pr"
+      ],
+      "enabled": true,
+      "routing": {
+        "type": "execute-process",
+        "process_id": "accept-pr",
+        "payload": {
+          "objective": "{user_text}",
+          "mode": "orchestrate"
+        }
+      }
+    },
     "intent.close_cycle": {
       "intent_id": "intent.close_cycle",
       "human_intents": [
