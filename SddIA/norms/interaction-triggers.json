@@ -25,7 +25,7 @@
         "process_hint": "feature | bug-fix | refactorization",
         "orchestration": {
           "agents": ["mayeuta", "dedalo"],
-          "note": "Orquestación V5: Mayeuta → Dedalo → Tekton → Argos → delivery-close-cycle según proceso activo (feature.md, bug-fix.md, refactorization.md)."
+          "note": "Orquestación V5 según proceso activo (feature.md, bug-fix.md, refactorization.md): feature = Inicialización → Mayeuta → Dedalo → Tekton → Argos → delivery-close-cycle; bug-fix y refactorization = Mayeuta (si aplica) → Dedalo → Tekton → Argos → delivery-close-cycle."
         },
         "payload": {
           "objective": "{user_text}",
