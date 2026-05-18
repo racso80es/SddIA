@@ -12,7 +12,7 @@ capabilities:
   - "delegate-filesystem-manager"
   - "subscriber-fanout-orchestration"
 inputs:
-  - "event_file_path": "string; ruta relativa al workspace del JSON en .SddIA/events/pending/ (o ruta absoluta validada por Cúmulo)"
+  - "event_file_path": "string; ruta relativa al workspace del JSON en eda_bus.pending (cumulo.paths.json; fallback .SddIA/events/pending/)"
 outputs:
   - "success": "boolean"
   - "delivery_status": "object; mapa agente/suscriptor → success | failed según respuestas de delegación"
@@ -47,7 +47,7 @@ Gate **Cerbero** por `context` de cada cápsula. Rutas vía `cumulo.paths.json` 
 
 ### Paso 3 — Registro de suscripciones
 
-1. Resolver ruta canónica: `SddIA/core/event-subscriptions.json` (clave acordada en topología Core; no hardcodear rutas de host).
+1. Resolver ruta canónica: `cumulo.paths.json` → `eda_bus.subscriptions` (fallback `SddIA/core/event-subscriptions.json`).
 2. Invocar `READ_FILE` sobre ese artefacto; parsear JSON.
 3. Obtener `subscribers = registry[event_type]` (array).
 4. Si `subscribers` es vacío o ausente: registrar en `delivery_status` como no-op documentado; continuar al Paso 6 con destino `processed/` salvo política invocante.
@@ -79,8 +79,8 @@ Destino relativo al workspace:
 
 | Condición | `operation` | `target_path` destino |
 | :--- | :--- | :--- |
-| Todos los valores en `delivery_status` son `"success"` (o array de suscriptores vacío) | `MOVE_FILE` | `.SddIA/events/processed/<nombre_archivo>` |
-| Algún valor es `"failed"` | `MOVE_FILE` | `.SddIA/events/dead-letter/<nombre_archivo>` |
+| Todos los valores en `delivery_status` son `"success"` (o array de suscriptores vacío) | `MOVE_FILE` | `{eda_bus.processed}/<nombre_archivo>` |
+| Algún valor es `"failed"` | `MOVE_FILE` | `{eda_bus.dead_letter}/<nombre_archivo>` |
 
 - `destination_path` / parámetros según contrato `filesystem-manager` para `MOVE_FILE`.
 - Origen: ruta actual de `event_file_path` bajo `pending/`.

@@ -26,7 +26,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Extraer el hash de un merge recién ejecutado y emitir el evento **PullRequest_Merged** en `.SddIA/events/pending/` para su anclaje inmutable. No ejecuta merge, `gh`, anclaje DLT ni enrutamiento del bus; solo orquesta skills autorizadas vía topología Cúmulo.
+Extraer el hash de un merge recién ejecutado y emitir el evento **PullRequest_Merged** en `eda_bus.pending` (`cumulo.paths.json`) para su anclaje inmutable. No ejecuta merge, `gh`, anclaje DLT ni enrutamiento del bus; solo orquesta skills autorizadas vía topología Cúmulo.
 
 **Invariante:** `target_branch` del payload está **fijado a** `"main"`. El invocante debe haber dejado `HEAD` en `main` tras el merge soberano.
 
@@ -89,10 +89,10 @@ Gate **Cerbero** previo por `context` de cada cápsula. Rutas vía `cumulo.paths
 | Campo | Valor |
 | :--- | :--- |
 | `operation` | `WRITE_FILE` |
-| `target_path` | `.SddIA/events/pending/<event_id>.json` |
+| `target_path` | `{eda_bus.pending}/<event_id>.json` |
 | `content` | JSON UTF-8 del Paso 3 |
 
-- Si falta `.SddIA/events/pending/`, invocar antes `CREATE_DIR` en esa ruta.
+- Resolver `eda_bus.pending` desde `cumulo.paths.json`. Si falta el directorio, invocar antes `CREATE_DIR`.
 
 ### Paso 5 — Cierre (stdout)
 
