@@ -244,6 +244,61 @@ def _write_pending_event(repo: Path, event: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def _emit_pr_merged(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
+    merge_hash = inputs.get("merge_commit_hash") or inputs.get("hash_signature")
+    if not isinstance(merge_hash, str) or not merge_hash.strip():
+        raise ValueError("merge_commit_hash o hash_signature es obligatorio")
+
+    source_branch = inputs.get("source_branch")
+    if not isinstance(source_branch, str) or not source_branch.strip():
+        pr_url = inputs.get("pr_url", "")
+        if isinstance(pr_url, str) and "feature/" in pr_url:
+            source_branch = pr_url.rsplit("/", 1)[-1]
+        else:
+            source_branch = "feature/eda-bus-v1"
+
+    correlation_id = inputs.get("correlation_id")
+    if not isinstance(correlation_id, str) or not correlation_id.strip():
+        correlation_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+
+    event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    payload: dict[str, Any] = {
+        "source_branch": source_branch.strip(),
+        "target_branch": "main",
+        "merge_commit_hash": merge_hash.strip(),
+        "author": inputs.get("author", "integration-operator"),
+        "security_clearance": {
+            "auditor": "Argos",
+            "audit_event_reference": "TODO: pending_argos_eda_emission",
+            "policy_applied": "pr-acceptance-protocol",
+        },
+    }
+    if inputs.get("pr_url"):
+        payload["pr_url"] = inputs["pr_url"]
+    if inputs.get("repository_name"):
+        payload["repository_name"] = inputs["repository_name"]
+    if inputs.get("hash_signature"):
+        payload["hash_signature"] = inputs["hash_signature"]
+
+    event = {
+        "event_id": event_id,
+        "event_type": "PullRequest_Merged",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": inputs.get("emitter_agent", "emit-pr-merged-event"),
+        "correlation_id": correlation_id,
+        "payload": payload,
+        "delivery_state": {},
+    }
+    seal = _write_pending_event(repo, event)
+    return {
+        "success": True,
+        "event_id": seal["event_id"],
+        "target_path": seal["target_path"],
+        "event_type": "PullRequest_Merged",
+        "merge_commit_hash": merge_hash.strip(),
+    }
+
+
 def _emit_pr_presented(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
     branch = inputs.get("branch")
     status = inputs.get("status", "presented")
@@ -373,6 +428,9 @@ def _run_entity_manager(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
 def run_action(repo: Path, action_name: str, action_inputs: dict[str, Any]) -> dict[str, Any]:
     if action_name == "emit-pr-presented-event":
         data = _emit_pr_presented(repo, action_inputs)
+        return {"success": True, "status_code": 0, "data": data}
+    if action_name == "emit-pr-merged-event":
+        data = _emit_pr_merged(repo, action_inputs)
         return {"success": True, "status_code": 0, "data": data}
     raise NotImplementedError(f"accion sin handler fisico: {action_name}")
 
