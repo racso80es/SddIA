@@ -1,55 +1,62 @@
 {
-    "version": "1.0.0",
-    "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
-    "core": {
-      "constitution": "SddIA/CONSTITUTION_CORE.md",
-      "manifest": "SddIA/sddia-core.manifest.json",
-      "pathsDefinition": "SddIA/core/cumulo.paths.json"
-    },
-    "directories": {
-      "norms": "SddIA/norms",
-      "agents": "SddIA/agents",
-      "actions": "SddIA/actions",
-      "process": "SddIA/process",
-      "skills": "SddIA/skills",
-      "tools": "SddIA/tools",
-      "evolution": "SddIA/evolution",
-      "security": "SddIA/security",
-      "tokens": "SddIA/tokens",
-      "documentation": "docs",
-      "scripts_limbo": "SddIA/scripts/limbo",
-      "patterns": "SddIA/patterns",
-      "principles": "SddIA/principles",
-      "templates": "SddIA/templates",
-      "library_norms": "SddIA/library/norms/",
-      "library_codexes": "SddIA/library/codexes/"
-    },
-    "normative_documents": {
-      "interaction_triggers": "SddIA/norms/interaction-triggers.json",
-      "triage_nature_protocol": "SddIA/norms/triage-nature-protocol.md",
-      "git_operations": "SddIA/norms/git-operations.md",
-      "skills_portability": "SddIA/norms/skills-portability.md",
-      "pull_request_orchestration": "SddIA/norms/pull-request-orchestration.md",
-      "skill_io_git_manager_frozen": "SddIA/norms/skill-io-git-manager-frozen.md",
-      "skill_io_shell_executor_frozen": "SddIA/norms/skill-io-shell-executor-frozen.md",
-      "evolution_log": "SddIA/evolution/Evolution_log.md",
-      "evolution_contract": "SddIA/evolution/evolution_contract.md"
-    },
-    "contracts": {
-      "agents": "SddIA/agents/agents-contract.md",
-      "actions": "SddIA/actions/actions-contract.md",
-      "process": "SddIA/process/process-contract.md",
-      "skills": "SddIA/skills/skills-contract.md",
-      "tools": "SddIA/tools/tools-contract.md",
-      "knowledge": "SddIA/norms/knowledge-contract.md",
-      "patterns": "SddIA/patterns/patterns-contract.md",
-      "templates": "SddIA/templates/templates-contract.md",
-      "tokens": "SddIA/tokens/tokens-contract.md",
-      "library_norms": "SddIA/library/norms/norms-contract.md",
-      "library_codexes": "SddIA/library/codexes/codex-contract.md"
-    },
-    "execution_capsules": {
-      "skills": "scripts/skills/",
-      "tools": "scripts/tools/"
-    }
+  "version": "1.0.0",
+  "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
+  "core": {
+    "constitution": "SddIA/CONSTITUTION_CORE.md",
+    "manifest": "SddIA/sddia-core.manifest.json",
+    "pathsDefinition": "SddIA/core/cumulo.paths.json"
+  },
+  "directories": {
+    "norms": "SddIA/norms",
+    "agents": "SddIA/agents",
+    "actions": "SddIA/actions",
+    "process": "SddIA/process",
+    "skills": "SddIA/skills",
+    "tools": "SddIA/tools",
+    "evolution": "SddIA/evolution",
+    "security": "SddIA/security",
+    "tokens": "SddIA/tokens",
+    "documentation": "docs",
+    "scripts_limbo": "SddIA/scripts/limbo",
+    "patterns": "SddIA/patterns",
+    "principles": "SddIA/principles",
+    "templates": "SddIA/templates",
+    "library_norms": "SddIA/library/norms/",
+    "library_codexes": "SddIA/library/codexes/"
+  },
+  "normative_documents": {
+    "interaction_triggers": "SddIA/norms/interaction-triggers.json",
+    "triage_nature_protocol": "SddIA/norms/triage-nature-protocol.md",
+    "git_operations": "SddIA/norms/git-operations.md",
+    "skills_portability": "SddIA/norms/skills-portability.md",
+    "pull_request_orchestration": "SddIA/norms/pull-request-orchestration.md",
+    "skill_io_git_manager_frozen": "SddIA/norms/skill-io-git-manager-frozen.md",
+    "skill_io_shell_executor_frozen": "SddIA/norms/skill-io-shell-executor-frozen.md",
+    "evolution_log": "SddIA/evolution/Evolution_log.md",
+    "evolution_contract": "SddIA/evolution/evolution_contract.md",
+    "event_subscriptions": "SddIA/core/event-subscriptions.json"
+  },
+  "contracts": {
+    "agents": "SddIA/agents/agents-contract.md",
+    "actions": "SddIA/actions/actions-contract.md",
+    "process": "SddIA/process/process-contract.md",
+    "skills": "SddIA/skills/skills-contract.md",
+    "tools": "SddIA/tools/tools-contract.md",
+    "knowledge": "SddIA/norms/knowledge-contract.md",
+    "patterns": "SddIA/patterns/patterns-contract.md",
+    "templates": "SddIA/templates/templates-contract.md",
+    "tokens": "SddIA/tokens/tokens-contract.md",
+    "library_norms": "SddIA/library/norms/norms-contract.md",
+    "library_codexes": "SddIA/library/codexes/codex-contract.md"
+  },
+  "execution_capsules": {
+    "skills": "scripts/skills/",
+    "tools": "scripts/tools/"
+  },
+  "eda_bus": {
+    "pending": ".SddIA/events/pending",
+    "processed": ".SddIA/events/processed",
+    "dead_letter": ".SddIA/events/dead-letter",
+    "subscriptions": "SddIA/core/event-subscriptions.json"
   }
+}

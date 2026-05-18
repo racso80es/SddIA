@@ -46,5 +46,15 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 * **Alcance:** Invocación determinista de herramientas como `gh`, `npm`, `docker`, `python`, etc., con sanitización anti-inyección y whitelist. **Excluye** el binario `git` nativo (debe enrutarse por `git-manager`).
 * **Cápsulas asociadas (Ejemplos):** `shell-executor`.
 
+### 2.7. `event-routing`
+* **Jurisdicción:** Orquestación, triaje y movimiento de archivos en el bus de eventos asíncrono (EDA).
+* **Autorización:** Permisos estrictos de lectura en `.SddIA/events/pending/` y de escritura/movimiento hacia los directorios `processed/` o `dead-letter/`. Prohibida la mutación del genoma.
+* **Cápsulas asociadas:** `action:route-domain-event`.
+
+### 2.8. `dlt-auditing`
+* **Jurisdicción:** Anclaje criptográfico inmutable en redes descentralizadas (ej. IOTA Rebased).
+* **Autorización:** Permisos de solo-lectura sobre los hashes del genoma y capacidad de ejecución de la cápsula externa DLT.
+* **Cápsulas asociadas:** `action:emit-pr-merged-event`, `tool:iota-immutable-publisher`.
+
 ---
 *Reporte de Integridad: Normativa forjada y registrada. Rutas actualizadas.*
