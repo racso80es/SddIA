@@ -37,6 +37,28 @@ def _repo_root() -> Path:
     _fail("No se encontró raíz del workspace (SddIA/core/cumulo.paths.json)")
 
 
+def _load_eda_bus(repo: Path) -> dict[str, str]:
+    """Rutas del bus desde cumulo.paths.json (fallback literales)."""
+    defaults = {
+        "pending": ".SddIA/events/pending",
+        "processed": ".SddIA/events/processed",
+        "dead_letter": ".SddIA/events/dead-letter",
+        "subscriptions": "SddIA/core/event-subscriptions.json",
+    }
+    cfg_path = repo / "SddIA" / "core" / "cumulo.paths.json"
+    try:
+        import json as _json
+        cfg = _json.loads(cfg_path.read_text(encoding="utf-8"))
+        bus = cfg.get("eda_bus") or {}
+        out = dict(defaults)
+        for k in defaults:
+            if isinstance(bus.get(k), str) and bus[k]:
+                out[k] = bus[k]
+        return out
+    except (OSError, ValueError):
+        return defaults
+
+
 def _fail(msg: str) -> None:
     print(json.dumps({"success": False, "exitCode": 1, "error": msg}), file=sys.stderr)
     sys.exit(1)
@@ -107,15 +129,55 @@ def _dispatch_subscriber(
         ok, _ = _invoke_iota_publisher(repo, event)
         return agent, "success" if ok else "failed"
     action = subscriber.get("action")
+    if action == "sync-entity-index":
+        if os.environ.get("SDDIA_LAB_SIMULATE_SYNC_INDEX", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        ):
+            return agent, "success"
+        script = repo / "SddIA" / "scripts" / "qa" / "sync-entity-index.py"
+        if not script.is_file():
+            return agent, "failed"
+        payload = event.get("payload", {})
+        try:
+            proc = subprocess.run(
+                [sys.executable, str(script)],
+                input=json.dumps(payload, ensure_ascii=False),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                cwd=str(repo),
+                shell=False,
+            )
+        except OSError:
+            return agent, "failed"
+        stdout = (proc.stdout or "").strip()
+        if not stdout:
+            return agent, "failed"
+        last_line = stdout.splitlines()[-1]
+        try:
+            envelope = json.loads(last_line)
+        except json.JSONDecodeError:
+            return agent, "failed"
+        data = envelope.get("data") or {}
+        ok = bool(envelope.get("success")) and bool(data.get("success"))
+        return agent, "success" if ok else "failed"
     if action:
+        print(
+            f"[WATCHER] WARN: action sin script fisico: {action}",
+            file=sys.stderr,
+            flush=True,
+        )
         return agent, "failed"
     return agent, "failed"
 
 
 def route_domain_event(event_file_path: str) -> dict[str, Any]:
     repo = _repo_root()
-    processed = repo / ".SddIA" / "events" / "processed"
-    dead_letter = repo / ".SddIA" / "events" / "dead-letter"
+    bus = _load_eda_bus(repo)
+    processed = repo / bus["processed"]
+    dead_letter = repo / bus["dead_letter"]
     processed.mkdir(parents=True, exist_ok=True)
     dead_letter.mkdir(parents=True, exist_ok=True)
 
@@ -137,9 +199,9 @@ def route_domain_event(event_file_path: str) -> dict[str, Any]:
     if not isinstance(event_type, str) or not event_type:
         _fail("event_type missing")
 
-    subs_path = repo / "SddIA" / "core" / "event-subscriptions.json"
+    subs_path = repo / bus["subscriptions"]
     try:
-        registry = json.loads(subs_path.read_text(encoding="utf-8"))
+        registry = json.loads(subs_path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as e:
         _fail(f"cannot read event-subscriptions.json: {e}")
 
@@ -189,7 +251,8 @@ def _run_route_cli() -> None:
 
 def _run_watcher(*, once: bool = False) -> None:
     repo = _repo_root()
-    pending = repo / ".SddIA" / "events" / "pending"
+    bus = _load_eda_bus(repo)
+    pending = repo / bus["pending"]
     pending.mkdir(parents=True, exist_ok=True)
     script = Path(__file__).resolve()
     attempts: dict[str, int] = {}

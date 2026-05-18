@@ -1,16 +1,31 @@
 {
+  "PullRequest_Presented": [],
   "PullRequest_Merged": [
     {
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
-      "intent": "Anclar la prueba criptográfica del PR en el Tangle de IOTA Rebased."
+      "intent": "Anclaje DLT IOTA Rebased."
     }
   ],
-  "PullRequest_Presented": [
+  "Domain_Entity_Created": [
     {
-      "agent": "argos",
-      "action": "log-audit-intent",
-      "intent": "Registrar en el log de aduana local que un PR ha sido empaquetado y presentado, a la espera de auditoría genómica."
+      "agent": "cumulo",
+      "action": "sync-entity-index",
+      "intent": "Reconciliación idempotente del index.md."
+    }
+  ],
+  "Domain_Entity_Updated": [
+    {
+      "agent": "cumulo",
+      "action": "sync-entity-index",
+      "intent": "Reconciliación idempotente del index.md."
+    }
+  ],
+  "Domain_Entity_Deleted": [
+    {
+      "agent": "cumulo",
+      "action": "sync-entity-index",
+      "intent": "Reconciliación idempotente del index.md."
     }
   ]
 }
