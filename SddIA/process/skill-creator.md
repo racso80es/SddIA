@@ -16,6 +16,10 @@ inputs:
 outputs:
   - "artifact_skill_md": "Archivo `{paths.directories.skills}/{skill_name}.md` con cabecera YAML conforme a `paths.contracts.skills`"
   - "artifact_skills_index": "`{paths.directories.skills}/index.md` actualizado con fila sincronizada a la cabecera YAML de la skill"
+  - "handoff_entity_uuid": "UUID v4 de la skill forjada (`child_skill_uuid`); consumido por `entity-manager`"
+  - "handoff_hash_signature_new": "Sello `sha256:` + hex canónico post-forja; consumido por `entity-manager`"
+  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
+  - "handoff_version": "SemVer resultante (`skill_version`)"
 phases:
   - name: "Validación RBAC y topología"
     intent: "Verificar skill_context en execution-contexts; unicidad y kebab-case de skill_name bajo directories.skills; SemVer y esquemas I/O."
@@ -69,6 +73,8 @@ porcentaje_de_exito: null
 
 Proceso maestro para estandarizar y automatizar la creación de nuevas skills (definición física y lógica) en el Core SddIA.
 
+Invocable directamente o desde **`entity-manager`** (piloto v1). Tras indexación síncrona, el gestor emite `emit-domain-mutation` con `emitter_agent: entity-manager` usando los outputs de handoff declarados en cabecera YAML.
+
 ## Fase 1 — Validación RBAC y topología
 
 1. Cargar `execution-contexts.md` desde `paths.directories.norms` y comprobar que `skill_context` coincide con un identificador de sección 2.x (`source-control`, `filesystem-ops`, `knowledge-management`, `quality-assurance`, `ecosystem-evolution`).
@@ -88,3 +94,4 @@ Proceso maestro para estandarizar y automatizar la creación de nuevas skills (d
 1. Abrir `{paths.directories.skills}/index.md` y localizar la tabla de catálogo de definiciones (columna **Capabilities** obligatoria).
 2. Insertar o actualizar la fila asociada a `{skill_name}.md` copiando `uuid`, `name`, `version`, `contract`, `context` y `capabilities` desde el YAML fuente sin divergencia.
 3. Ejecutar verificación cruzada índice ↔ cabecera antes de cerrar la instancia del proceso.
+4. Si el invocante es `entity-manager`, propagar `handoff_entity_uuid` ← `child_skill_uuid`, `handoff_hash_signature_new` ← `sha256:` + `child_skill_integrity_hex`, `handoff_hash_signature_old` según operación, `handoff_version` ← `skill_version`.
