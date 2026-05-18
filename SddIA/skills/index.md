@@ -19,6 +19,8 @@ Contrato normativo de la familia: `skills-contract.md` (no constituye una skill 
 | `filesystem-manager.md` | `f4a5b6c7-d8e9-4f0a-1b2c-3d4e5f6a7b8c` | filesystem-manager | 1.0.0 | skills-contract v1.1.0 | filesystem-ops | `file-read`, `file-write`, `list-directory`, `delete-file`, `create-directory`, `move-file` |
 | `cryptography-manager.md` | `a1f2e3d4-c5b6-4789-a012-3456789abc0` | cryptography-manager | 1.0.0 | skills-contract v1.1.0 | quality-assurance | `sha256-generation`, `hash-validation`, `uuid-generation` |
 | `git-manager.md` | `4dac18fc-4cd1-4aa4-bdc3-faeb3bf762fc` | git-manager | 1.0.0 | skills-contract v1.1.0 | source-control | `git-read-state`, `git-branching`, `git-commit`, `git-sync-remote` |
+| `text-metrics.md` | `0c84d99b-aa67-4b27-abb6-7133867c5102` | text-metrics | 1.0.0 | skills-contract v1.1.0 | ecosystem-evolution | `text-metrics` |
+| `test-cli-skill.md` | `327be038-a5b8-42d4-87bf-9185d31e6602` | test-cli-skill | 1.0.0 | skills-contract v1.1.0 | ecosystem-evolution | `test_cli_skill` |
 | `shell-executor.md` | `93d23720-d79a-412f-a85d-ab9b2d9862bd` | shell-executor | 1.0.0 | skills-contract v1.1.0 | system-operations | `execute-external-binary`, `orchestrator-bridge` |
 
 ## Archivos en carpeta no catalogados como skill

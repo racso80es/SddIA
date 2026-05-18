@@ -28,6 +28,17 @@ POLL_SECONDS = 2
 MAX_ROUTE_ATTEMPTS = 3
 IOTA_TIMEOUT_SECONDS = int(os.environ.get("SDDIA_IOTA_TIMEOUT_SECONDS", "45"))
 
+_SUBPROCESS_UTF8 = {"text": True, "encoding": "utf-8", "errors": "replace"}
+
+
+def _run_subprocess(cmd: list[str], *, input_text: str | None = None, **kwargs: Any) -> subprocess.CompletedProcess[str]:
+    """subprocess.run con canal UTF-8 tolerante (Windows / demonios)."""
+    opts = {**_SUBPROCESS_UTF8, "capture_output": True, "check": False}
+    opts.update(kwargs)
+    if input_text is not None:
+        opts["input"] = input_text
+    return subprocess.run(cmd, **opts)
+
 
 def _repo_root() -> Path:
     here = Path(__file__).resolve()
@@ -95,12 +106,9 @@ def _invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str
         "payload": json.dumps(event, ensure_ascii=False),
     }
     try:
-        proc = subprocess.run(
+        proc = _run_subprocess(
             [npx, "tsx", str(entry)],
-            input=json.dumps(payload),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
+            input_text=json.dumps(payload),
             cwd=str(tool_dir),
             timeout=IOTA_TIMEOUT_SECONDS,
             shell=False,
@@ -141,12 +149,9 @@ def _dispatch_subscriber(
             return agent, "failed"
         payload = event.get("payload", {})
         try:
-            proc = subprocess.run(
+            proc = _run_subprocess(
                 [sys.executable, str(script)],
-                input=json.dumps(payload, ensure_ascii=False),
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
+                input_text=json.dumps(payload, ensure_ascii=False),
                 cwd=str(repo),
                 shell=False,
             )
@@ -278,16 +283,13 @@ def _run_watcher(*, once: bool = False) -> None:
             in_flight.add(key)
             attempts[key] = n + 1
 
-            proc = subprocess.run(
+            proc = _run_subprocess(
                 [
                     sys.executable,
                     str(script),
                     "--event-file-path",
                     rel,
                 ],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
                 shell=False,
             )
             in_flight.discard(key)
