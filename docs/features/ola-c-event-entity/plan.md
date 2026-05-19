@@ -22,7 +22,8 @@ Blueprint de proceso para Tekton. Entrada: `objectives.md`, `clarify.md`, `spec.
 | Topología README + Cúmulo + consumidores | ✅ | commits `291aa25`, `430c0a1` |
 | Planificación (Dedalo) | ✅ | este documento (v2 refinada) |
 | **Hito 1 — Enmienda + genoma base** | ✅ | Constitución §3.1, `events-contract`, `index`, `contracts.events` |
-| Forja genoma Event (Fases 2–5) | ⏳ | Fases 2–4 ✅; Fase 5 pendiente |
+| Forja genoma Event (Fases 2–5) | ✅ | Fase 5 validación ECST + plantilla Vía C |
+| Verificación Argos (Fase 6) | ⏳ | E2E bus, execution.md, PR final |
 | Verificación Argos | ⏳ | Fase 6 |
 
 **SSOT runtime (instancias generadas, no entidades):** `docs/events/{pending,processing,processed,dead-letter}` — **confirmado** (opción A, alineado con `clarify.md` D3/D6 y Cúmulo vigente). No usar `.docs/events/`.

@@ -21,7 +21,8 @@ Elevar **Evento** al rango de entidad de dominio de primer nivel en el ecosistem
 | **2 — event-creator** | `event-creator.md`, `process/index.md`, `interaction-triggers.json` | ✅ |
 | **3 — entity-manager** | Piloto `entity_class: event`, `execute-process.py` | ✅ |
 | **4 — Clases ECST** | 5 archivos forense + índice | ✅ |
-| **5–6 — Validación y cierre** | route-domain-event, Argos, PR | ⏳ |
+| **5 — Validación cruzada** | route-domain-event ECST, plantilla Vía C | ✅ |
+| **6 — Argos y cierre** | E2E bus, execution.md, PR | ⏳ |
 
 ## Alcance inicial completado (Hito 0)
 

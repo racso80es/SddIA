@@ -126,3 +126,4 @@ Variantes **Updated** y **Deleted** se documentan en sus Clases; heredan la dist
 - Las Clases **no** enrutan el bus ni anclan DLT directamente.
 - Los emisores (`emit-pr-merged-event`, `emit-domain-mutation`, …) **no** sustituyen la definición de Clase; deben conformarse a ella.
 - Argos puede rechazar instancias cuyo `payload` viole las tablas REQUIRED/FORBIDDEN de la Clase vigente.
+- **Validación en runtime (Fase 5):** `route-domain-event` (cápsula `event-watcher.py`) compara cada instancia contra la Clase catalogada antes del fan-out; violaciones → `dead-letter/` con `delivery_state.ecst_validation = failed`.

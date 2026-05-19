@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -179,6 +180,76 @@ def _dispatch_subscriber(
     return agent, "failed"
 
 
+def _parse_payload_fields(md_body: str, section: str) -> list[str]:
+    """Extrae nombres de campo de una sección ### REQUIRED|OPTIONAL|FORBIDDEN."""
+    pattern = rf"### {section}\s*\n((?:- .+\n?)*)"
+    match = re.search(pattern, md_body)
+    if not match:
+        return []
+    fields: list[str] = []
+    for line in match.group(1).splitlines():
+        field_match = re.search(r"`([^`]+)`", line)
+        if field_match and not field_match.group(1).startswith("*"):
+            fields.append(field_match.group(1))
+    return fields
+
+
+def _load_event_class_schemas(repo: Path) -> dict[str, dict[str, list[str]]]:
+    """Mapa event_type → {required, optional, forbidden} desde genoma SddIA/events/."""
+    events_dir = repo / "SddIA" / "events"
+    index_path = events_dir / "index.md"
+    if not index_path.is_file():
+        return {}
+    index_text = index_path.read_text(encoding="utf-8")
+    schemas: dict[str, dict[str, list[str]]] = {}
+    row_re = re.compile(
+        r"\|\s*`([^`]+\.md)`\s*\|[^|]+\|[^|]+\|\s*(\S+)\s*\|"
+    )
+    for row_match in row_re.finditer(index_text):
+        filename, event_type = row_match.group(1), row_match.group(2)
+        class_path = events_dir / filename
+        if not class_path.is_file():
+            continue
+        body = class_path.read_text(encoding="utf-8")
+        if body.startswith("---"):
+            parts = body.split("---", 2)
+            body = parts[2] if len(parts) >= 3 else body
+        schemas[event_type] = {
+            "required": _parse_payload_fields(body, "REQUIRED"),
+            "optional": _parse_payload_fields(body, "OPTIONAL"),
+            "forbidden": _parse_payload_fields(body, "FORBIDDEN"),
+        }
+    return schemas
+
+
+def _validate_ecst_instance(
+    event: dict[str, Any], schema: dict[str, list[str]] | None
+) -> tuple[bool, list[str]]:
+    """Valida instancia ECST frente a Clase catalogada (Fase 5 Ola C)."""
+    errors: list[str] = []
+    if schema is None:
+        return False, ["event_type not cataloged in SddIA/events/index.md"]
+
+    payload = event.get("payload")
+    if not isinstance(payload, dict):
+        return False, ["payload must be object"]
+
+    for field in schema.get("required", []):
+        if field not in payload or payload[field] is None:
+            errors.append(f"missing required payload.{field}")
+
+    for field in schema.get("forbidden", []):
+        if field not in payload:
+            continue
+        value = payload[field]
+        if field == "hash_signature":
+            errors.append(f"forbidden payload.{field}")
+        elif value is not None:
+            errors.append(f"forbidden payload.{field} (must be null if present)")
+
+    return not errors, errors
+
+
 def route_domain_event(event_file_path: str) -> dict[str, Any]:
     repo = _repo_root()
     bus = _load_eda_bus(repo)
@@ -204,6 +275,29 @@ def route_domain_event(event_file_path: str) -> dict[str, Any]:
     event_type = event.get("event_type")
     if not isinstance(event_type, str) or not event_type:
         _fail("event_type missing")
+
+    class_schemas = _load_event_class_schemas(repo)
+    schema = class_schemas.get(event_type)
+    ecst_ok, ecst_errors = _validate_ecst_instance(event, schema)
+    if not ecst_ok:
+        event["delivery_state"] = {
+            **event.get("delivery_state", {}),
+            "ecst_validation": "failed",
+            "ecst_errors": ecst_errors,
+        }
+        dest = dead_letter / event_path.name
+        dest.write_text(json.dumps(event, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        event_path.unlink()
+        return {
+            "success": False,
+            "exitCode": 1,
+            "data": {
+                "success": False,
+                "delivery_status": {"ecst_validation": "failed"},
+                "target_path": _rel_event_path(repo, dest),
+            },
+            "error": "; ".join(ecst_errors),
+        }
 
     subs_path = repo / bus["subscriptions"]
     try:

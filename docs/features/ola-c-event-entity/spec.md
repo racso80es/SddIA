@@ -178,6 +178,8 @@ docs/events/
 - [x] `event-creator` catalogado en `process/index.md`
 - [x] `entity-manager` acepta `entity_class: event`
 - [x] ≥5 clases ECST con tablas forenses REQUIRED/OPTIONAL/FORBIDDEN
+- [x] Validación cruzada instancia ↔ Clase en `route-domain-event` (Paso 2b)
+- [x] Plantilla Vía C `SddIA/templates/eda-instance-events/README.md`
 - [ ] `implementation.md`, `execution.md`, `validacion.md` completos
 
 ## 8. Roadmap Ola C+ (no bloqueante)

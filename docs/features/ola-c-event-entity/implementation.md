@@ -22,10 +22,18 @@ branch_name: feat/ola-c-event-entity
 - `PullRequest_Merged`: `merge_commit_hash` REQUIRED; `hash_signature` en payload FORBIDDEN
 - `Domain_Entity_Created`: `hash_signature_new` REQUIRED; `payload_schema_hash` OPTIONAL
 
-## Pendiente (Fase 5–6)
+## Pendiente (Fase 6)
 
-- Validación cruzada instancia ↔ Clase (`route-domain-event`)
-- Plantilla `.SddIA/events/` y cierre Argos
+- E2E bus Argos, `execution.md`, `validacion.md`, PR final
+
+## Fase 5 — Validación cruzada (completada)
+
+| Artefacto | Cambio |
+|-----------|--------|
+| `event-watcher.py` | Paso 2b: validación instancia ↔ Clase ECST antes de fan-out |
+| `route-domain-event.md` | Documentado Paso 2b (REQUIRED/FORBIDDEN) |
+| `events-contract.md` | §7 validación runtime en dead-letter |
+| `SddIA/templates/eda-instance-events/README.md` | Plantilla Vía C `.SddIA/events/` |
 
 ## Fase 4 — Clases ECST (completada)
 
