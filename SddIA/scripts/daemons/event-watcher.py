@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Despertador inerte: monitoriza .SddIA/events/pending/ y delega en route-domain-event.
+"""Despertador inerte: monitoriza .docs/events/pending/ y delega en route-domain-event.
 
 Variables de entorno:
   SDDIA_LAB_SIMULATE_IOTA=1     Simula éxito de iota-immutable-publisher (laboratorio).
@@ -9,7 +9,7 @@ Variables de entorno:
 Uso:
   python SddIA/scripts/daemons/event-watcher.py           # bucle continuo
   python SddIA/scripts/daemons/event-watcher.py --once  # un ciclo de sondeo
-  python SddIA/scripts/daemons/event-watcher.py --event-file-path .SddIA/events/pending/x.json
+  python SddIA/scripts/daemons/event-watcher.py --event-file-path .docs/events/processing/x.json
 """
 
 from __future__ import annotations
@@ -51,9 +51,10 @@ def _repo_root() -> Path:
 def _load_eda_bus(repo: Path) -> dict[str, str]:
     """Rutas del bus desde cumulo.paths.json (fallback literales)."""
     defaults = {
-        "pending": ".SddIA/events/pending",
-        "processed": ".SddIA/events/processed",
-        "dead_letter": ".SddIA/events/dead-letter",
+        "pending": ".docs/events/pending",
+        "processing": ".docs/events/processing",
+        "processed": ".docs/events/processed",
+        "dead_letter": ".docs/events/dead-letter",
         "subscriptions": "SddIA/core/event-subscriptions.json",
     }
     cfg_path = repo / "SddIA" / "core" / "cumulo.paths.json"
@@ -258,7 +259,9 @@ def _run_watcher(*, once: bool = False) -> None:
     repo = _repo_root()
     bus = _load_eda_bus(repo)
     pending = repo / bus["pending"]
+    processing = repo / bus["processing"]
     pending.mkdir(parents=True, exist_ok=True)
+    processing.mkdir(parents=True, exist_ok=True)
     script = Path(__file__).resolve()
     attempts: dict[str, int] = {}
     in_flight: set[str] = set()
@@ -278,8 +281,15 @@ def _run_watcher(*, once: bool = False) -> None:
                     )
                 continue
 
-            rel = _rel_event_path(repo, path)
-            print(f"[WATCHER] Detectado nuevo evento: {key}", flush=True)
+            processing_path = processing / key
+            try:
+                shutil.move(str(path), str(processing_path))
+            except OSError as e:
+                print(f"[WATCHER] No se pudo promover {key} a processing: {e}", flush=True)
+                continue
+
+            rel = _rel_event_path(repo, processing_path)
+            print(f"[WATCHER] Detectado nuevo evento: {key} (promovido a processing)", flush=True)
             in_flight.add(key)
             attempts[key] = n + 1
 
@@ -300,11 +310,11 @@ def _run_watcher(*, once: bool = False) -> None:
                     f"{(proc.stderr or proc.stdout or '').strip()}",
                     flush=True,
                 )
-            elif not path.is_file():
+            elif not processing_path.is_file():
                 attempts.pop(key, None)
             else:
                 print(
-                    f"[WATCHER] {key} sigue en pending tras enrutar (intento {attempts[key]})",
+                    f"[WATCHER] {key} sigue en processing tras enrutar (intento {attempts[key]})",
                     flush=True,
                 )
 

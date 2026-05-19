@@ -12,6 +12,7 @@ Ecosistema de **activos técnicos tokenizables** (NFTs lógicos: definiciones ve
 | **Action** | Paso atómico, indivisible y auditable de ejecución. | `paths.directories.actions` | Invoca **Skills** o **Tools** para el trabajo técnico. |
 | **Skill** | Capacidad técnica especializada definida por contrato. | `paths.directories.skills` | Ejecutada por **Cápsula** blindada (binario Rust o script Python bajo contrato). |
 | **Tool** | Capacidad de infraestructura o utilidad de dominio. | `paths.directories.tools` | Servicios base a las **Actions** vía **Cápsula**. |
+| **Event** | Contrato inmutable de comunicación asíncrona (Clase de Evento). | `paths.directories.events` | Definición versionada en `{name}.md`; instanciada en el bus runtime (`.docs/events/`). Coreografía pura entre **Process** / **Action** sin acoplamiento físico. |
 | **Library_Codex** | Paquetes de normas orquestadas por dominio. | `paths.directories.library_codexes` | Agrupación de conocimiento técnico a cumplir por los **Agents**. |
 | **Library_Norm** | Reglas técnicas atómicas, patrones y prohibiciones de *code-smells*. | `paths.directories.library_norms` | Cantera de la **Librería** (`SddIA/library/norms/`). **No** confundir con la normativa operativa del Core (`SddIA/norms`). |
 | **Normativa de ejecución (Core)** | Contratos y normas de operación del núcleo (cápsulas, Git, triage, etc.). | `paths.directories.norms` | Árbol `SddIA/norms`; convive con la Librería; distinto alcance y clave SSOT que `library_norms`. |
@@ -24,6 +25,16 @@ Ecosistema de **activos técnicos tokenizables** (NFTs lógicos: definiciones ve
 | Librería — normas atómicas | `directories.library_norms` | `SddIA/library/norms/` |
 
 Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asigna un **Agent** titular; el **Agent** descompone en **Actions**; las **Actions** consumen **Skills** y **Tools** materializados en cápsulas.
+
+### Eventos: genoma, runtime e instancia
+
+| Ruta | Rol | Contenido |
+|------|-----|-----------|
+| **`SddIA/events/`** | Genoma (Core) | Biblioteca de **Clases de Evento**: contratos funcionales versionados (`{name}.md`, `events-contract.md`, `index.md`). |
+| **`.docs/events/`** | Runtime (bus local) | Tránsito de **instancias volátiles** en colas `pending/`, `processing/`, `processed/` y `dead_letter/` (resuelto vía `eda_bus` en `cumulo.paths.json`). |
+| **`.SddIA/events/`** | Instancia (proyecto) | Zona de **personalización** por repositorio productivo (Vía C); overrides y configuración táctica. **No** es cola del bus federal. |
+
+Definición operativa de **Event**: *el contrato inmutable de comunicación asíncrona; señal con propósito (finalidad) que blinda la soberanía de las entidades conscientes, operando bajo coreografía pura y evitando el acoplamiento físico entre procesos.*
 
 ## Agentes del Core (resumen)
 

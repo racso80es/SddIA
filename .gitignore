@@ -4,7 +4,10 @@
 # Cursor — logs de depuración locales
 .cursor/debug_*
 
-# Bus de eventos local (pending / processed / dead-letter)
+# Bus de eventos runtime (pending / processing / processed / dead-letter)
+.docs/events/
+
+# Personalización de eventos por instancia (Vía C)
 .SddIA/events/
 
 # Secretos locales — cápsula iota-immutable-publisher (dotenv)

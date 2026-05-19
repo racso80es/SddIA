@@ -12,7 +12,7 @@ capabilities:
   - "delegate-filesystem-manager"
   - "subscriber-fanout-orchestration"
 inputs:
-  - "event_file_path": "string; ruta relativa al workspace del JSON en eda_bus.pending (cumulo.paths.json; fallback .SddIA/events/pending/)"
+  - "event_file_path": "string; ruta relativa al workspace del JSON en eda_bus.pending o eda_bus.processing (cumulo.paths.json; fallback .docs/events/pending/ o .docs/events/processing/)"
 outputs:
   - "success": "boolean"
   - "delivery_status": "object; mapa agente/suscriptor → success | failed según respuestas de delegación"
@@ -24,7 +24,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Leer un evento pendiente, despacharlo a sus suscriptores, mutar su estado de entrega y moverlo a `processed/` o `dead-letter/`. Consumidor asíncrono del Bus de Eventos local (Arquitectura V2).
+Leer un evento en cola (`pending/` o `processing/`), despacharlo a sus suscriptores, mutar su estado de entrega y moverlo a `processed/` o `dead-letter/`. Consumidor asíncrono del Bus de Eventos local (Arquitectura V2).
 
 ## 2. Orquestación
 

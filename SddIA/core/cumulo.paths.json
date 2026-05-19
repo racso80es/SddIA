@@ -22,7 +22,8 @@
     "principles": "SddIA/principles",
     "templates": "SddIA/templates",
     "library_norms": "SddIA/library/norms/",
-    "library_codexes": "SddIA/library/codexes/"
+    "library_codexes": "SddIA/library/codexes/",
+    "events": "SddIA/events"
   },
   "normative_documents": {
     "interaction_triggers": "SddIA/norms/interaction-triggers.json",
@@ -54,9 +55,13 @@
     "tools": "scripts/tools/"
   },
   "eda_bus": {
-    "pending": ".SddIA/events/pending",
-    "processed": ".SddIA/events/processed",
-    "dead_letter": ".SddIA/events/dead-letter",
+    "pending": ".docs/events/pending",
+    "processing": ".docs/events/processing",
+    "processed": ".docs/events/processed",
+    "dead_letter": ".docs/events/dead-letter",
     "subscriptions": "SddIA/core/event-subscriptions.json"
+  },
+  "eda_instance": {
+    "customization": ".SddIA/events"
   }
 }
