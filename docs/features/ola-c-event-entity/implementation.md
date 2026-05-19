@@ -22,10 +22,22 @@ branch_name: feat/ola-c-event-entity
 - `PullRequest_Merged`: `merge_commit_hash` REQUIRED; `hash_signature` en payload FORBIDDEN
 - `Domain_Entity_Created`: `hash_signature_new` REQUIRED; `payload_schema_hash` OPTIONAL
 
-## Pendiente (Fases 3–4)
+## Pendiente (Fase 5–6)
 
-- Piloto `entity-manager` para `entity_class: event`
-- Clases ECST (`pull-request-merged.md`, `domain-entity-*.md`)
+- Validación cruzada instancia ↔ Clase (`route-domain-event`)
+- Plantilla `.SddIA/events/` y cierre Argos
+
+## Fase 4 — Clases ECST (completada)
+
+| Archivo | `event_type` | Forense clave |
+|---------|--------------|---------------|
+| `pull-request-merged.md` | `PullRequest_Merged` | `merge_commit_hash` REQUIRED; `hash_signature` FORBIDDEN |
+| `pull-request-presented.md` | `PullRequest_Presented` | no-op (suscripción vacía) |
+| `domain-entity-created.md` | `Domain_Entity_Created` | `hash_signature_new` REQUIRED; `payload_schema_hash` OPTIONAL |
+| `domain-entity-updated.md` | `Domain_Entity_Updated` | old+new hashes REQUIRED |
+| `domain-entity-deleted.md` | `Domain_Entity_Deleted` | `hash_signature_old` REQUIRED; `hash_signature_new` FORBIDDEN |
+
+Forjadas vía `event-creator` (execute-process.py). Índice `events/index.md` con 5 filas sincronizadas.
 
 ## Fase 3 — entity-manager (completada)
 

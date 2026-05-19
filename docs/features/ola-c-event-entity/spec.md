@@ -177,7 +177,7 @@ docs/events/
 - [x] Hito 1: `CONSTITUTION_CORE.md` §3.1 + `events-contract.md` + `index.md` + `contracts.events`
 - [x] `event-creator` catalogado en `process/index.md`
 - [x] `entity-manager` acepta `entity_class: event`
-- [ ] ≥5 clases ECST con tablas forenses REQUIRED/OPTIONAL/FORBIDDEN
+- [x] ≥5 clases ECST con tablas forenses REQUIRED/OPTIONAL/FORBIDDEN
 - [ ] `implementation.md`, `execution.md`, `validacion.md` completos
 
 ## 8. Roadmap Ola C+ (no bloqueante)

@@ -20,7 +20,8 @@ Elevar **Evento** al rango de entidad de dominio de primer nivel en el ecosistem
 | **1 — Enmienda + genoma base** | `CONSTITUTION_CORE.md` §3.1, `events-contract.md`, `index.md`, `contracts.events` | ✅ |
 | **2 — event-creator** | `event-creator.md`, `process/index.md`, `interaction-triggers.json` | ✅ |
 | **3 — entity-manager** | Piloto `entity_class: event`, `execute-process.py` | ✅ |
-| **4–6 — Forja Tekton** | Clases ECST forense, validación, Argos | ⏳ |
+| **4 — Clases ECST** | 5 archivos forense + índice | ✅ |
+| **5–6 — Validación y cierre** | route-domain-event, Argos, PR | ⏳ |
 
 ## Alcance inicial completado (Hito 0)
 
