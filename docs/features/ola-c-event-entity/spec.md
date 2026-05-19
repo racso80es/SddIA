@@ -44,7 +44,7 @@ Ola C separa tres planos ontológicos y eleva **Event** a entidad de dominio de 
 | Ruta | `.SddIA/events/` (`eda_instance.customization`) |
 | Propósito | Overrides locales, suscripciones tácticas, configuración Vía C |
 | Versionado | No (`.gitignore`) |
-| Relación con bus | **No** es cola del bus; no confundir con `.docs/events/` |
+| Relación con bus | **No** es cola del bus; no confundir con `docs/events/` |
 
 ## 3. Topología SSOT (`cumulo.paths.json`)
 
@@ -56,10 +56,10 @@ Ola C separa tres planos ontológicos y eleva **Event** a entidad de dominio de 
     "events": "SddIA/events"
   },
   "eda_bus": {
-    "pending": ".docs/events/pending",
-    "processing": ".docs/events/processing",
-    "processed": ".docs/events/processed",
-    "dead_letter": ".docs/events/dead-letter",
+    "pending": "/docs/events/pending",
+    "processing": /docs/events/processing",
+    "processed": "docs/events/processed",
+    "dead_letter": "docs/events/dead-letter",
     "subscriptions": "SddIA/core/event-subscriptions.json"
   },
   "eda_instance": {
@@ -152,12 +152,22 @@ Actualizar literales `.SddIA/events/` → resolución vía `eda_bus.*` con nuevo
 
 ## 7. Verificación (Argos — criterios)
 
-- [ ] `cumulo.paths.json` válido JSON; claves `directories.events`, `eda_bus.*`, `eda_instance.customization` presentes.
-- [ ] README contiene fila Event y subsección de tres rutas.
-- [ ] Grep en consumidores activos: cero literales `.SddIA/events/pending` como fallback operativo (salvo evolution temp).
-- [ ] `event-watcher.py` crea y usa `processing/`.
-- [ ] `.gitignore` incluye `.docs/events/`.
-- [ ] Documentación feature completa bajo `persist_ref`.
+### Fase topológica (Ola C — commit `291aa25`)
+
+- [x] `cumulo.paths.json` válido JSON; claves `directories.events`, `eda_bus.*`, `eda_instance.customization` presentes.
+- [x] README contiene fila Event y subsección de tres rutas.
+- [x] Grep en consumidores activos: cero literales `.SddIA/events/pending` como fallback operativo (salvo evolution temp).
+- [x] `event-watcher.py` crea y usa `processing/`.
+- [x] `.gitignore` incluye `.docs/events/`.
+- [x] Documentación feature inicial bajo `persist_ref` (`objectives`, `clarify`, `spec`).
+
+### Fase genoma (Ola C+ — pendiente Tekton)
+
+- [ ] `events-contract.md` + `index.md` forjados.
+- [ ] `event-creator` catalogado en `process/index.md`.
+- [ ] `entity-manager` acepta `entity_class: event`.
+- [ ] ≥5 clases ECST en `SddIA/events/`.
+- [ ] `plan.md`, `implementation.md`, `execution.md`, `validacion.md` completos.
 
 ## 8. Roadmap Ola C+ (no bloqueante)
 

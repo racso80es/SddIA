@@ -44,7 +44,7 @@ Transcript de decisiones del Arquitecto (2026-05-19) para cerrar ambigüedades d
 | Rol | Ruta | Naturaleza |
 |-----|------|------------|
 | **Genoma — Clases de Evento** | `SddIA/events/` | Definiciones versionadas (`{name}.md`, contrato, índice). Versionado en repo. |
-| **Runtime — Instancias volátiles** | `.docs/events/{pending,processing,processed,dead-letter}` | Bus local de tránsito; **no** versionado (`.gitignore`). |
+| **Runtime — Instancias volátiles** | `docs/events/{pending,processing,processed,dead-letter}` | Bus local de tránsito; **no** versionado (`.gitignore`). |
 | **Instancia — Personalización** | `.SddIA/events/` | Overrides y configuración táctica por proyecto (Vía C); **no** cola del bus federal. |
 
 ### Cola `processing`
@@ -69,7 +69,7 @@ Transcript de decisiones del Arquitecto (2026-05-19) para cerrar ambigüedades d
 | Ruta | Acción |
 |------|--------|
 | `.SddIA/events/` | Mantener ignorado (personalización instancia). |
-| `.docs/events/` | **Añadir** a `.gitignore` (runtime volátil). |
+| `docs/events/` | **Añadir** a `.gitignore` (runtime volátil). |
 
 ---
 
@@ -80,10 +80,10 @@ Transcript de decisiones del Arquitecto (2026-05-19) para cerrar ambigüedades d
   "events": "SddIA/events"
 },
 "eda_bus": {
-  "pending": ".docs/events/pending",
-  "processing": ".docs/events/processing",
-  "processed": ".docs/events/processed",
-  "dead_letter": ".docs/events/dead-letter",
+  "pending": "docs/events/pending",
+  "processing": "docs/events/processing",
+  "processed": "docs/events/processed",
+  "dead_letter": "docs/events/dead-letter",
   "subscriptions": "SddIA/core/event-subscriptions.json"
 },
 "eda_instance": {
@@ -97,15 +97,15 @@ Transcript de decisiones del Arquitecto (2026-05-19) para cerrar ambigüedades d
 
 | Artefacto | Cambio |
 |-----------|--------|
-| `SddIA/scripts/qa/execute-process.py` | Fallback `eda_bus.pending` → `.docs/events/pending` |
+| `SddIA/scripts/qa/execute-process.py` | Fallback `eda_bus.pending` → `docs/events/pending` |
 | `SddIA/scripts/daemons/event-watcher.py` | Rutas SSOT + promoción `pending` → `processing` |
 | `SddIA/actions/emit-domain-mutation.md` | Literales y fallback |
 | `SddIA/actions/emit-pr-merged-event.md` | Ejemplo `target_path` |
 | `SddIA/actions/route-domain-event.md` | Input desde `pending` o `processing`; destinos vía SSOT |
-| `SddIA/norms/execution-contexts.md` | Autorización RBAC sobre `.docs/events/` |
+| `SddIA/norms/execution-contexts.md` | Autorización RBAC sobre `docs/events/` |
 | `SddIA/process/delivery-close-cycle.md` | Referencia al bus |
 | `SddIA/process/accept-pr.md` | `target_path` |
-| `.gitignore` | `.docs/events/` |
+| `.gitignore` | `docs/events/` |
 
 Los documentos bajo `SddIA/evolution/*-temp.md` **no** se mutan (borradores históricos no normativos).
 
@@ -114,10 +114,10 @@ Los documentos bajo `SddIA/evolution/*-temp.md` **no** se mutan (borradores hist
 ## D8 — Secuencia de ejecución acordada
 
 1. ✅ Rama `feat/ola-c-event-entity` (git-manager).
-2. ✅ **Este paquete documental** (`objectives`, `clarify`, `spec`).
-3. ⏳ Implementación topológica (README, cumulo, consumidores, `.gitignore`).
-4. ⏳ Commit vía git-manager.
-5. 🔜 Ola C+ : `events-contract.md`, índice, `event-creator`, integración `entity-manager`.
+2. ✅ Paquete documental inicial (`objectives`, `clarify`, `spec`).
+3. ✅ Implementación topológica (README, cumulo, consumidores, `.gitignore`) — commit `291aa25`.
+4. ✅ Planificación Dedalo (`plan.md`).
+5. ⏳ Tekton — Fases 1–6 del plan (genoma, `event-creator`, `entity-manager`, clases ECST, Argos).
 
 ---
 
@@ -125,4 +125,4 @@ Los documentos bajo `SddIA/evolution/*-temp.md` **no** se mutan (borradores hist
 
 - ~~`processing/` vs `processed/`~~ → Se adopta **ambas**: `processing` es cola de vuelo; `processed` es terminal de éxito.
 - ~~¿Constitución o README?~~ → **Solo README**.
-- ~~¿Ruta runtime?~~ → **`.docs/events/`** (prefijo oculto, análogo a `.SddIA/`).
+- ~~¿Ruta runtime?~~ → **`docs/events/`** (prefijo oculto, análogo a `.SddIA/`).
