@@ -26,6 +26,11 @@
       "agent": "cumulo",
       "action": "sync-entity-index",
       "intent": "Reconciliación idempotente del index.md."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA Rebased."
     }
   ]
 }
