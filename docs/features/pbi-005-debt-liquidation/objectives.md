@@ -17,8 +17,8 @@ Liquidar pasivos técnicos heredados de la **Ola A** validando el mecanismo dest
 
 | Hito | Faena | Estado |
 |------|-------|--------|
-| **1 — Validación de purga** | Prueba de humo sobre `test-cli-skill` vía `execute-process` → `entity-manager` (`lifecycle_operation: delete`). Verificar borrado del `.md`, purga de fila en `SddIA/skills/index.md`, evento en `docs/events/pending/`. | 🔄 En curso |
-| **1b — Expansión DLT** | Añadir suscriptor `cumulo` + `iota-immutable-publisher` en `Domain_Entity_Deleted` (`event-subscriptions.json`), simétrico a `PullRequest_Merged`. | 🔄 En curso |
+| **1 — Validación de purga** | Prueba de humo sobre `test-cli-skill` vía `execute-process` → `entity-manager` (`lifecycle_operation: delete`). Verificar borrado del `.md`, purga de fila en `SddIA/skills/index.md`, evento en `docs/events/pending/`. | ✅ |
+| **1b — Expansión DLT** | Añadir suscriptor `cumulo` + `iota-immutable-publisher` en `Domain_Entity_Deleted` (`event-subscriptions.json`), simétrico a `PullRequest_Merged`. | ✅ |
 | **2 — Motor de acciones** | `execute-action.py` universal; desacoplar `sync-entity-index.py` del acoplamiento rígido en daemon. | ⏳ Backlog |
 | **3 — Hooks Git** | Automatización `PullRequest_Presented` / `PullRequest_Merged` en `.git/hooks/`. | ⏳ Backlog |
 
