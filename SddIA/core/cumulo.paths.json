@@ -48,7 +48,8 @@
     "templates": "SddIA/templates/templates-contract.md",
     "tokens": "SddIA/tokens/tokens-contract.md",
     "library_norms": "SddIA/library/norms/norms-contract.md",
-    "library_codexes": "SddIA/library/codexes/codex-contract.md"
+    "library_codexes": "SddIA/library/codexes/codex-contract.md",
+    "events": "SddIA/events/events-contract.md"
   },
   "execution_capsules": {
     "skills": "scripts/skills/",

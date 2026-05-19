@@ -118,7 +118,7 @@ Los documentos bajo `SddIA/evolution/*-temp.md` **no** se mutan (borradores hist
 2. ✅ Paquete documental inicial (`objectives`, `clarify`, `spec`).
 3. ✅ Implementación topológica (README, cumulo, consumidores, `.gitignore`) — commits `291aa25`, `430c0a1`.
 4. ✅ Planificación Dedalo v2 (`plan.md` + laudo forense).
-5. ⏳ **Hito 1** — Constitución + `events-contract` + índice + `contracts.events` en Cúmulo.
+5. ✅ **Hito 1** — Constitución + `events-contract` + índice + `contracts.events` en Cúmulo.
 6. ⏳ Tekton — Fases 2–6 (`event-creator`, `entity-manager`, clases ECST, Argos).
 
 ---

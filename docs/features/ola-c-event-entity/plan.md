@@ -21,7 +21,7 @@ Blueprint de proceso para Tekton. Entrada: `objectives.md`, `clarify.md`, `spec.
 | Especificación (Dedalo) | ✅ | `spec.md` |
 | Topología README + Cúmulo + consumidores | ✅ | commits `291aa25`, `430c0a1` |
 | Planificación (Dedalo) | ✅ | este documento (v2 refinada) |
-| **Hito 1 — Enmienda + genoma base** | ⏳ | Constitución, `events-contract`, `index` |
+| **Hito 1 — Enmienda + genoma base** | ✅ | Constitución §3.1, `events-contract`, `index`, `contracts.events` |
 | Forja genoma Event (Fases 2–5) | ⏳ | `event-creator`, clases ECST, validación |
 | Verificación Argos | ⏳ | Fase 6 |
 
