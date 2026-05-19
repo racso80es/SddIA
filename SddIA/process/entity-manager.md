@@ -4,9 +4,9 @@ name: "entity-manager"
 version: "1.0.0"
 contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:5adacc0a536e9347c6283a7ff2ecd09572b577ce29bfa93195b6495cd5234bb8"
+hash_signature: "sha256:a2f46aff035e4b90c4ceb2952589ad7961de5597fcab3ceda7479fa4de1966c1"
 inputs:
-  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex"
+  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event"
   - "entity_name": "string; identificador kebab-case de la entidad"
   - "lifecycle_operation": "string; enum: create | update | delete"
   - "semantic_seed": "object|null; parámetros de forja para el creator hijo; ignorado en delete"
@@ -20,7 +20,7 @@ outputs:
   - "handoff_version": "Versión SemVer resultante"
 phases:
   - name: "Delegación al creator"
-    intent: "En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto v1: skill → skill-creator. Resto: abortar con mensaje hasta ampliación de mapeo."
+    intent: "En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto v1: skill → skill-creator; event → event-creator. Resto: abortar con mensaje hasta ampliación de mapeo."
     delegates_to:
       - "action:execute-process"
   - name: "Delete físico"
@@ -44,6 +44,7 @@ Proceso orquestador (**Gestor de Entidad**) que envuelve los `*-creator` del gen
 | `entity_class` | Proceso hijo | Estado v1 |
 |----------------|--------------|-----------|
 | `skill` | `skill-creator` | **Piloto** |
+| `event` | `event-creator` | **Piloto** |
 | `process` | `process-creator` | Pendiente |
 | `agent` | `agent-creator` | Pendiente |
 | `tool` | `tool-creator` | Pendiente |
@@ -59,7 +60,7 @@ Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domai
 
 1. Resolver `process_name` desde la tabla anterior.
 2. Si `entity_class` no está en piloto v1: `status_code: 1`, error documentado.
-3. Mapear `semantic_seed` → `process_inputs` del hijo (piloto `skill`):
+3. Mapear `semantic_seed` → `process_inputs` del hijo según tabla (piloto `skill` | `event`):
 
 | Campo `semantic_seed` | Input `skill-creator` |
 |-----------------------|-------------------------|
@@ -70,6 +71,19 @@ Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domai
 | `skill_outputs_schema` | obligatorio en semilla |
 | `skill_version` | default `1.0.0` |
 | `skills_contract_version` | desde contrato vigente |
+
+| Campo `semantic_seed` | Input `event-creator` |
+|-----------------------|-------------------------|
+| `event_name` o `entity_name` | `event_name` |
+| `event_type` | obligatorio (PascalCase_Snake) |
+| `event_context` | default `ecosystem-evolution` |
+| `event_description` | descripción de la Clase |
+| `payload_required` | array de campos ECST |
+| `payload_optional` | array |
+| `payload_forbidden` | array |
+| `emitter_agents` | array de emisores autorizados |
+| `event_version` | default `1.0.0` |
+| `events_contract_version` | desde `events-contract.md` |
 
 4. Invocar `action:execute-process` con `process_name` canónico y `process_inputs` mapeados.
 5. Extraer del `execution_report` / outputs del hijo: `handoff_entity_uuid`, `handoff_hash_signature_new`, `handoff_hash_signature_old`, `handoff_version`.

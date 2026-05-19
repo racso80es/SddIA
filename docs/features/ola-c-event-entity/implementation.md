@@ -27,7 +27,13 @@ branch_name: feat/ola-c-event-entity
 - Piloto `entity-manager` para `entity_class: event`
 - Clases ECST (`pull-request-merged.md`, `domain-entity-*.md`)
 
-## Fase 2 — event-creator (completada)
+## Fase 3 — entity-manager (completada)
+
+| Artefacto | Cambio |
+|-----------|--------|
+| `entity-manager.md` | Piloto `event` → `event-creator`; mapeo `semantic_seed`; hash recalculado |
+| `execute-process.py` | `_run_event_creator`, piloto `skill` + `event`, handler `event-creator` |
+| `emit-domain-mutation.md` | `entity_class` incluye `event` |
 
 | Artefacto | Estado |
 |-----------|--------|
