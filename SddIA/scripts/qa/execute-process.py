@@ -39,6 +39,7 @@ CREATOR_BY_CLASS: dict[str, str] = {
     "action": "action-creator",
     "norm": "norm-creator",
     "codex": "codex-creator",
+    "event": "event-creator",
 }
 
 DIR_BY_CLASS: dict[str, str] = {
@@ -49,9 +50,10 @@ DIR_BY_CLASS: dict[str, str] = {
     "action": "SddIA/actions",
     "norm": "SddIA/library/norms",
     "codex": "SddIA/library/codexes",
+    "event": "SddIA/events",
 }
 
-PILOT_ENTITY_CLASSES = frozenset({"skill"})
+PILOT_ENTITY_CLASSES = frozenset({"skill", "event"})
 
 
 def _repo_root() -> Path:
@@ -230,9 +232,163 @@ outputs:
     }
 
 
+def _run_event_creator(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
+    name = inputs.get("event_name") or inputs.get("entity_name")
+    if not isinstance(name, str) or not name:
+        raise ValueError("event_name requerido")
+    event_path = repo / "SddIA" / "events" / f"{name}.md"
+    if event_path.is_file() and inputs.get("lifecycle_operation", "create") == "create":
+        raise FileExistsError(f"Ya existe {event_path}")
+
+    event_type = inputs.get("event_type")
+    if not isinstance(event_type, str) or not event_type.strip():
+        raise ValueError("event_type requerido")
+    context = inputs.get("event_context", "ecosystem-evolution")
+    version = inputs.get("event_version", "1.0.0")
+    contract_ver = inputs.get("events_contract_version", "1.0.0")
+    desc = inputs.get("event_description", f"Clase de Evento {event_type}")
+    payload_required = inputs.get("payload_required", [])
+    payload_optional = inputs.get("payload_optional", [])
+    payload_forbidden = inputs.get("payload_forbidden", [])
+    emitters = inputs.get("emitter_agents", [])
+
+    event_uuid = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    canon = {
+        "event_name": name,
+        "event_type": event_type,
+        "event_version": version,
+        "event_context": context,
+        "payload_required": payload_required,
+        "payload_optional": payload_optional,
+        "payload_forbidden": payload_forbidden,
+    }
+    hex_sig = _crypto(
+        repo,
+        {
+            "operation": "GENERATE_SHA256",
+            "target_type": "STRING",
+            "target_payload": json.dumps(
+                canon, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            ),
+        },
+    )
+    hash_sig = f"sha256:{hex_sig}"
+    cap = name.replace("-", "_")[:32] or "event-cap"
+
+    req_lines = "\n".join(f"- `{f}`" for f in payload_required) or "- *(ninguno)*"
+    opt_lines = "\n".join(f"- `{f}`" for f in payload_optional) or "- *(ninguno)*"
+    forb_lines = "\n".join(f"- `{f}`" for f in payload_forbidden) or "- *(ninguno)*"
+    emitter_lines = "\n".join(f"- `{e}`" for e in emitters) or "- *(definir en forja completa)*"
+
+    body = f"""---
+uuid: "{event_uuid}"
+name: "{name}"
+version: "{version}"
+contract: "events-contract v{contract_ver}"
+event_type: "{event_type}"
+context: "{context}"
+capabilities:
+  - "{cap}"
+hash_signature: "{hash_sig}"
+---
+
+# Event: {event_type}
+
+{desc}
+
+## Payload ECST
+
+### REQUIRED
+{req_lines}
+
+### OPTIONAL
+{opt_lines}
+
+### FORBIDDEN
+{forb_lines}
+
+## Emisores autorizados
+
+{emitter_lines}
+
+## Suscripciones
+
+Ver `SddIA/core/event-subscriptions.json` → clave `{event_type}`.
+"""
+    event_path.parent.mkdir(parents=True, exist_ok=True)
+    event_path.write_text(body, encoding="utf-8")
+
+    index_path = repo / "SddIA" / "events" / "index.md"
+    row = (
+        f"| `{name}.md` | `{event_uuid}` | {name} | {event_type} | {version} | "
+        f"events-contract v{contract_ver} | {context} | `{cap}` |"
+    )
+    idx = index_path.read_text(encoding="utf-8")
+    marker = "| Archivo fuente | uuid | name | event_type |"
+    if name not in idx:
+        if marker in idx:
+            idx = idx.replace(
+                "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
+                "|----------------|------|------|------------|---------|----------|---------|--------------|\n",
+                "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
+                "|----------------|------|------|------------|---------|----------|---------|--------------|\n"
+                + row + "\n",
+                1,
+            )
+        else:
+            idx = idx.rstrip() + "\n" + row + "\n"
+        index_path.write_text(idx, encoding="utf-8")
+
+    return {
+        "artifact_event_md": str(event_path.relative_to(repo)).replace("\\", "/"),
+        "artifact_events_index": "SddIA/events/index.md",
+        "handoff_entity_uuid": event_uuid,
+        "handoff_hash_signature_new": hash_sig,
+        "handoff_hash_signature_old": None,
+        "handoff_version": version,
+    }
+
+
+def _creator_inputs(entity_class: str, entity_name: str, lifecycle: str, seed: dict[str, Any]) -> dict[str, Any]:
+    if entity_class == "skill":
+        return {
+            "skill_name": seed.get("skill_name", entity_name),
+            "skill_context": seed.get("skill_context", "ecosystem-evolution"),
+            "skill_description": seed.get("skill_description", ""),
+            "skill_inputs_schema": seed.get("skill_inputs_schema", []),
+            "skill_outputs_schema": seed.get("skill_outputs_schema", []),
+            "skill_version": seed.get("skill_version", "1.0.0"),
+            "skills_contract_version": seed.get("skills_contract_version", "1.1.0"),
+            "lifecycle_operation": lifecycle,
+        }
+    if entity_class == "event":
+        return {
+            "event_name": seed.get("event_name", entity_name),
+            "event_type": seed.get("event_type", ""),
+            "event_context": seed.get("event_context", "ecosystem-evolution"),
+            "event_description": seed.get("event_description", ""),
+            "payload_required": seed.get("payload_required", []),
+            "payload_optional": seed.get("payload_optional", []),
+            "payload_forbidden": seed.get("payload_forbidden", []),
+            "emitter_agents": seed.get("emitter_agents", []),
+            "event_version": seed.get("event_version", "1.0.0"),
+            "events_contract_version": seed.get("events_contract_version", "1.0.0"),
+            "lifecycle_operation": lifecycle,
+        }
+    raise NotImplementedError(f"mapeo semantic_seed no definido para entity_class={entity_class}")
+
+
+def _run_creator(repo: Path, entity_class: str, creator_inputs: dict[str, Any]) -> dict[str, Any]:
+    if entity_class == "skill":
+        return _run_skill_creator(repo, creator_inputs)
+    if entity_class == "event":
+        return _run_event_creator(repo, creator_inputs)
+    raise NotImplementedError(f"creator fisico no implementado para {entity_class}")
+
+
 def _write_pending_event(repo: Path, event: dict[str, Any]) -> dict[str, str]:
     cumulo = _load_cumulo(repo)
-    pending_rel = cumulo.get("eda_bus", {}).get("pending", ".SddIA/events/pending")
+    pending_rel = cumulo.get("eda_bus", {}).get("pending", "docs/events/pending")
     pending = repo / pending_rel
     pending.mkdir(parents=True, exist_ok=True)
     event_id = event["event_id"]
@@ -375,18 +531,9 @@ def _run_entity_manager(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
             )
         creator = CREATOR_BY_CLASS[entity_class]
         seed = dict(inputs.get("semantic_seed") or {})
-        creator_inputs = {
-            "skill_name": seed.get("skill_name", entity_name),
-            "skill_context": seed.get("skill_context", "ecosystem-evolution"),
-            "skill_description": seed.get("skill_description", ""),
-            "skill_inputs_schema": seed.get("skill_inputs_schema", []),
-            "skill_outputs_schema": seed.get("skill_outputs_schema", []),
-            "skill_version": seed.get("skill_version", "1.0.0"),
-            "skills_contract_version": seed.get("skills_contract_version", "1.1.0"),
-            "lifecycle_operation": lifecycle,
-        }
+        creator_inputs = _creator_inputs(entity_class, entity_name, lifecycle, seed)
         report.append({"phase_name": "Delegacion al creator", "status": "executed", "child": creator})
-        handoff = _run_skill_creator(repo, creator_inputs)
+        handoff = _run_creator(repo, entity_class, creator_inputs)
 
     elif lifecycle == "delete":
         rel_dir = DIR_BY_CLASS.get(entity_class)
@@ -444,6 +591,15 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
 
     if canonical == "skill-creator":
         data = _run_skill_creator(repo, process_inputs)
+        return {
+            "success": True,
+            "status_code": 0,
+            "data": data,
+            "execution_report": {"process_name": canonical, "phases": _simulate_phase_log(phases)},
+        }
+
+    if canonical == "event-creator":
+        data = _run_event_creator(repo, {**process_inputs, "lifecycle_operation": "create"})
         return {
             "success": True,
             "status_code": 0,

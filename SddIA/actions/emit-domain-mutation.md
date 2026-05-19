@@ -11,7 +11,7 @@ capabilities:
   - "delegate-crypto-broker"
   - "domain-event-type-translation"
 inputs:
-  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex"
+  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event"
   - "lifecycle_operation": "string; enum: create | update | delete (no usar operation_type: colisión con git-manager)"
   - "entity_uuid": "string; UUID v4 inmutable de la entidad afectada"
   - "entity_name": "string; nombre canónico (en delete: nombre al momento del borrado)"
@@ -33,7 +33,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Inyectar un evento de dominio **ECST** estandarizado en el bus local (`eda_bus.pending` en `cumulo.paths.json`, por defecto `.SddIA/events/pending/`) cuando una entidad estructural del genoma (Proceso, Agente, Skill, Tool, Norma, Acción o Códice) sufre una mutación en su ciclo de vida. Es el **Sello Universal** que garantiza la consciencia EDA del sistema sobre su propio genoma.
+Inyectar un evento de dominio **ECST** estandarizado en el bus local (`eda_bus.pending` en `cumulo.paths.json`, por defecto `docs/events/pending/`) cuando una entidad estructural del genoma (Proceso, Agente, Skill, Tool, Norma, Acción, Códice o **Evento/Clase ECST**) sufre una mutación en su ciclo de vida. Es el **Sello Universal** que garantiza la consciencia EDA del sistema sobre su propio genoma.
 
 No calcula SHA-256 de entidades, no interactúa con Git, no enruta el bus ni ancla en DLT; solo valida forma de inputs, mintea `event_id`, traduce `lifecycle_operation` → `event_type` y persiste vía cápsulas autorizadas (topología Cúmulo).
 
@@ -102,7 +102,7 @@ Construir JSON UTF-8. En raíz incluir `correlation_id` **solo** si el input no 
 
 ### Paso 5 — Persistencia (`skill:filesystem-manager`)
 
-1. Resolver `pending_dir` desde `cumulo.paths.json` → `eda_bus.pending` (fallback `.SddIA/events/pending`).
+1. Resolver `pending_dir` desde `cumulo.paths.json` → `eda_bus.pending` (fallback `docs/events/pending`).
 2. Si falta `pending_dir`, invocar `CREATE_DIR` en esa ruta.
 3. Escribir el JSON del Paso 4:
 

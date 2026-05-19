@@ -17,7 +17,7 @@ outputs:
 - verdict: aprobado | abortado
 - merge_commit_hash: Hash de 40 caracteres hex en main tras fusión soberana
 - event_id: UUID v4 del evento emitido en pending/
-- target_path: Ruta relativa del JSON en .SddIA/events/pending/
+- target_path: Ruta relativa del JSON en docs/events/pending/
 - closed_branch: Rama origen eliminada (local y remoto si aplica)
 phases:
 - name: Auditoría Genómica

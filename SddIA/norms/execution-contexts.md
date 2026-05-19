@@ -48,7 +48,7 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 
 ### 2.7. `event-routing`
 * **Jurisdicción:** Orquestación, triaje y movimiento de archivos en el bus de eventos asíncrono (EDA).
-* **Autorización:** Permisos estrictos de lectura en `.SddIA/events/pending/` y de escritura/movimiento hacia los directorios `processed/` o `dead-letter/`. Prohibida la mutación del genoma.
+* **Autorización:** Permisos estrictos de lectura en `docs/events/pending/` y `docs/events/processing/`; escritura/movimiento hacia `processing/`, `processed/` o `dead-letter/` (resuelto vía `eda_bus` en `cumulo.paths.json`). Prohibida la mutación del genoma (`SddIA/events/`).
 * **Cápsulas asociadas:** `action:route-domain-event`.
 
 ### 2.8. `dlt-auditing`

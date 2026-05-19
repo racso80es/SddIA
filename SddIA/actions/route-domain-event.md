@@ -12,7 +12,7 @@ capabilities:
   - "delegate-filesystem-manager"
   - "subscriber-fanout-orchestration"
 inputs:
-  - "event_file_path": "string; ruta relativa al workspace del JSON en eda_bus.pending (cumulo.paths.json; fallback .SddIA/events/pending/)"
+  - "event_file_path": "string; ruta relativa al workspace del JSON en eda_bus.pending o eda_bus.processing (cumulo.paths.json; fallback docs/events/pending/ o docs/events/processing/)"
 outputs:
   - "success": "boolean"
   - "delivery_status": "object; mapa agente/suscriptor → success | failed según respuestas de delegación"
@@ -24,7 +24,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Leer un evento pendiente, despacharlo a sus suscriptores, mutar su estado de entrega y moverlo a `processed/` o `dead-letter/`. Consumidor asíncrono del Bus de Eventos local (Arquitectura V2).
+Leer un evento en cola (`pending/` o `processing/`), despacharlo a sus suscriptores, mutar su estado de entrega y moverlo a `processed/` o `dead-letter/`. Consumidor asíncrono del Bus de Eventos local (Arquitectura V2).
 
 ## 2. Orquestación
 
@@ -44,6 +44,17 @@ Gate **Cerbero** por `context` de cada cápsula. Rutas vía `cumulo.paths.json` 
 
 - Extraer `event_type` (string obligatorio del contrato V2).
 - Si falta: `success: false`, `exitCode: 1`.
+
+### Paso 2b — Validación ECST (instancia ↔ Clase)
+
+1. Resolver catálogo desde `cumulo.paths.json` → `directories.events` + `events/index.md`.
+2. Comprobar que `event_type` existe en el índice de Clases ECST.
+3. Cargar la Clase `{name}.md` y leer tablas **REQUIRED**, **OPTIONAL** y **FORBIDDEN** del payload.
+4. Validar que `payload` contiene todos los campos **REQUIRED** (no nulos).
+5. Validar que ningún campo **FORBIDDEN** aparece con valor distinto de `null` (`hash_signature` en eventos Git: prohibido si la clave existe).
+6. Si la validación falla: registrar `delivery_state.ecst_validation = "failed"` y `ecst_errors[]`; mover a `{eda_bus.dead_letter}/` sin fan-out.
+
+*Implementación física:* `event-watcher.py` → `route_domain_event` (cápsula de esta acción).
 
 ### Paso 3 — Registro de suscripciones
 

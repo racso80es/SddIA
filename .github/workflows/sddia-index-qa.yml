@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install QA dependencies
+        run: pip install pyyaml
       - name: verify-tools-index
         run: python SddIA/scripts/qa/verify-tools-index.py
       - name: verify-process-integrity

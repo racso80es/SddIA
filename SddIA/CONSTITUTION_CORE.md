@@ -17,6 +17,20 @@ Las entidades de conocimiento técnico canónico bajo la Librería son **pilares
 | **`Library_Codex`** | Códice | Activo de **orquestación estratégica** y **distribución de conocimiento**: manifiesto que selecciona y ordena normas para un dominio o entorno concreto. |
 | **`Library_Norm`** | Norma | **Unidad atómica** de estándar técnico **innegociable**: regla, patrón o prohibición evaluable sin ambigüedad de alcance. |
 
+### 3.1 Taxonomía elemental del Genoma operativo (Core SddIA)
+
+Además de la Librería (§3), el genoma operativo del Core reconoce entidades de **comunicación asíncrona** y orquestación:
+
+| Entidad | Denominación operativa | Definición |
+|---------|------------------------|------------|
+| **`Event`** | Evento de Dominio | El **contrato inmutable** de comunicación asíncrona. Representa una señal con propósito (finalidad) que blinda la soberanía de las entidades conscientes, operando bajo el paradigma de **coreografía pura** y evitando el acoplamiento físico entre procesos. |
+
+**Distinción ontológica innegociable:**
+
+- **Clase de Evento** (genoma): definición versionada bajo `directories.events` (`SddIA/events/`), gobernada por `events-contract.md`.
+- **Instancia de Evento** (runtime): JSON ECST volátil en el bus local (`eda_bus` en `cumulo.paths.json`, colas bajo `docs/events/`).
+- **Personalización de instancia:** configuración táctica por proyecto bajo `.SddIA/events/`; **no** sustituye al bus federal.
+
 ## 4. Protocolos de Defensa y Validación
 Toda propuesta técnica debe superar el **Triaje Entrópico**:
 1. **Filtro C (Necesidad):** ¿Es relevante para la misión? Si es ruido irrelevante, se descarta.
