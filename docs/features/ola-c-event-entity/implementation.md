@@ -22,9 +22,15 @@ branch_name: feat/ola-c-event-entity
 - `PullRequest_Merged`: `merge_commit_hash` REQUIRED; `hash_signature` en payload FORBIDDEN
 - `Domain_Entity_Created`: `hash_signature_new` REQUIRED; `payload_schema_hash` OPTIONAL
 
-## Pendiente (Fase 6)
+## Fase 6 — Argos y cierre (completada)
 
-- E2E bus Argos, `execution.md`, `validacion.md`, PR final
+| Artefacto | Estado |
+|-----------|--------|
+| `execution.md` | ✅ registro de commits y comandos reproducibles |
+| `validacion.md` | ✅ checklist Fase 6 APTO |
+| E2E bus | ✅ `PullRequest_Presented` → `processed/` |
+
+Handoff: `delivery-close-cycle` + PR desde `feat/ola-c-event-entity`.
 
 ## Fase 5 — Validación cruzada (completada)
 
