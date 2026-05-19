@@ -10,21 +10,34 @@ agent_planificador: dedalo
 
 # Plan de implementación — Ola C: Genoma de Eventos
 
-Blueprint de proceso para Tekton. Entrada: `objectives.md`, `clarify.md`, `spec.md` y SSOT `cumulo.paths.json` (commit `291aa25`).
+Blueprint de proceso para Tekton. Entrada: `objectives.md`, `clarify.md`, `spec.md` y SSOT `cumulo.paths.json`.
 
 ## 0. Estado de la entrega
 
 | Bloque | Estado | Evidencia |
 |--------|--------|-----------|
 | Rama de trabajo | ✅ | `feat/ola-c-event-entity` |
-| Clarificación (Mayeuta) | ✅ | `clarify.md` D1–D8 |
+| Clarificación (Mayeuta) | ✅ | `clarify.md` D1–D10 |
 | Especificación (Dedalo) | ✅ | `spec.md` |
-| Topología README + Cúmulo + consumidores | ✅ | commit `291aa25` |
-| **Planificación (Dedalo)** | ✅ | este documento |
-| Forja genoma Event | ⏳ | Fases 1–5 |
+| Topología README + Cúmulo + consumidores | ✅ | commits `291aa25`, `430c0a1` |
+| Planificación (Dedalo) | ✅ | este documento (v2 refinada) |
+| **Hito 1 — Enmienda + genoma base** | ⏳ | Constitución, `events-contract`, `index` |
+| Forja genoma Event (Fases 2–5) | ⏳ | `event-creator`, clases ECST, validación |
 | Verificación Argos | ⏳ | Fase 6 |
 
-**SSOT de rutas runtime (instancias generadas, no entidades):** `docs/events/{pending,processing,processed,dead-letter}`.
+**SSOT runtime (instancias generadas, no entidades):** `docs/events/{pending,processing,processed,dead-letter}` — **confirmado** (opción A, alineado con `clarify.md` D3/D6 y Cúmulo vigente). No usar `.docs/events/`.
+
+---
+
+## 0.1 Resoluciones laudadas (Vértice Biológico + Tormentosa)
+
+| Tema | Resolución | Impacto en plan |
+|------|------------|-----------------|
+| Ruta bus runtime | **`docs/events/`** | Mantener Cúmulo, README, consumidores; sin migración a `.docs/` |
+| `PullRequest_Merged` | **Opción A:** `merge_commit_hash` REQUIRED (40 hex, `git rev-parse HEAD`) | Fase 4.1; **prohibido** `hash_signature` en payload de eventos Git |
+| `Domain_Entity_Created` | `hash_signature_new` REQUIRED; `payload_schema_hash` **OPTIONAL** (transición) | Fase 4.3; emisores Ola A no se rompen |
+| Doctrina federal | Enmienda **`CONSTITUTION_CORE.md`** §3.1 + README | **Hito 1** (revoca clarify D2 inicial “solo README”) |
+| Cicatriz Clase vs payload | `hash_signature` en frontmatter YAML = integridad del `.md` Clase; distinto de ancla Git | `events-contract.md` debe explicitarlo |
 
 ---
 
@@ -45,7 +58,27 @@ Completar la **Ola C+**: forjar el genoma de la entidad **Event** bajo `SddIA/ev
 
 ## 3. Fases de implementación (Tekton)
 
+### Hito 1 — Enmienda constitucional y visual (próximo paso)
+
+**Intent:** Legalizar **Evento de Dominio** en ley federal y forjar base del genoma.
+
+| # | Entregable | Detalle |
+|---|------------|---------|
+| H1.1 | `SddIA/CONSTITUTION_CORE.md` | §3.1 Taxonomía elemental del Genoma: fila **Event** con definición acordada |
+| H1.2 | `README.md` | Confirmar mapa tres rutas: `SddIA/events/` (clases), `docs/events/` (runtime), `.SddIA/events/` (instancia) |
+| H1.3 | `SddIA/events/events-contract.md` | Contrato familia v1.0.0: ECST, reglas forenses §0.1, Clase↔Instancia |
+| H1.4 | `SddIA/events/index.md` | Índice vacío con columnas obligatorias |
+| H1.5 | `cumulo.paths.json` | `contracts.events` → `SddIA/events/events-contract.md` |
+
+**Commit sugerido:** `docs(core): Hito 1 Ola C — Evento en Constitución, events-contract e índice genoma`
+
+**Criterio de salida:** Constitución + contrato + índice + clave Cúmulo; README coherente con `clarify.md` D3.
+
+---
+
 ### Fase 1 — Contrato legal e índice vacío
+
+> **Nota:** Subsumida en **Hito 1** (H1.3–H1.5). Mantener referencia para trazabilidad con blueprint original.
 
 **Intent:** Establecer la familia `Event` como entidad de dominio conforme al estándar README §52–56.
 
@@ -113,9 +146,9 @@ Completar la **Ola C+**: forjar el genoma de la entidad **Event** bajo `SddIA/ev
 
 ---
 
-### Fase 4 — Clases ECST canónicas (catálogo inicial)
+### Fase 4 — Clases ECST canónicas + aseguramiento forense
 
-**Intent:** Materializar definiciones para tipos ya operativos en Ola A.
+**Intent:** Materializar definiciones para tipos ya operativos en Ola A, con payload ECST blindado.
 
 | Orden | Archivo | `event_type` | Origen |
 |-------|---------|--------------|--------|
@@ -125,21 +158,43 @@ Completar la **Ola C+**: forjar el genoma de la entidad **Event** bajo `SddIA/ev
 | 4.4 | `domain-entity-updated.md` | `Domain_Entity_Updated` | idem |
 | 4.5 | `domain-entity-deleted.md` | `Domain_Entity_Deleted` | idem |
 
+#### 4.0 Reglas transversales (events-contract)
+
+- Toda Clase define: `payload_required[]`, `payload_optional[]`, `payload_forbidden[]`
+- Validación instancia vs Clase en Fase 5.2
+
+#### 4.1 `pull-request-merged.md` — forense DLT
+
+| Campo payload | Estatus | Regla |
+|---------------|---------|-------|
+| `merge_commit_hash` | **REQUIRED** | 40 hex; origen `git-manager` `get_last_commit` ref `HEAD` |
+| `hash_signature` | **FORBIDDEN** | Prohibido en payload Git (evitar contaminación semántica con sello de entidad) |
+| `source_branch`, `target_branch`, `author` | REQUIRED | Alineado a `emit-pr-merged-event.md` |
+| `security_clearance` | REQUIRED | Bloque auditoría Argos |
+
+#### 4.3 `domain-entity-created.md` — trazabilidad genómica
+
+| Campo payload | Estatus | Regla |
+|---------------|---------|-------|
+| `hash_signature_new` | **REQUIRED** | Sello post-forja del artefacto (`sha256:…`) |
+| `hash_signature_old` | **FORBIDDEN** en create | Debe ser `null` |
+| `payload_schema_hash` | **OPTIONAL** | Transición; huella del esquema normativo naciente cuando el emisor la calcule |
+| `entity_uuid`, `entity_class`, `entity_name`, `version` | REQUIRED | — |
+
+#### 4.4–4.5 Updated / Deleted
+
+- **Updated:** `hash_signature_old` + `hash_signature_new` REQUIRED; `payload_schema_hash` OPTIONAL (solo si cambia esquema).
+- **Deleted:** `hash_signature_old` REQUIRED; `hash_signature_new` = `null`.
+
 Cada clase incluye:
 
-- Frontmatter YAML (`uuid`, `name`, `version`, `contract`, `context: ecosystem-evolution`, `event_type`, `hash_signature`)
-- Sección **Payload ECST** (campos obligatorios/opcionales)
-- Sección **Emisores autorizados** (acción/proceso)
-- Sección **Suscripciones** (referencia a `event-subscriptions.json`)
+- Frontmatter YAML (`uuid`, `name`, `version`, `contract`, `context`, `event_type`, `hash_signature` del **archivo Clase**)
+- Sección **Payload ECST** con tablas REQUIRED/OPTIONAL/FORBIDDEN
+- Sección **Emisores autorizados** y **Suscripciones**
 
-**Delegates_to:**
+**Commit sugerido:** `feat(events): clases ECST iniciales con aseguramiento forense`
 
-- `process:event-creator` (preferente) o forja manual Tekton alineada al contrato
-- `agent:cumulo` — reconciliar `events/index.md` con `sync-entity-index` si aplica
-
-**Commit sugerido:** `feat(events): clases ECST iniciales PullRequest y Domain_Entity`
-
-**Criterio de salida:** `events/index.md` con 5 filas; `event_type` en JSON runtime coincide con catálogo.
+**Criterio de salida:** `events/index.md` con 5 filas; instancias Ola A compatibles con Clases (sin exigir `payload_schema_hash` aún).
 
 ---
 
@@ -149,8 +204,8 @@ Cada clase incluye:
 
 | # | Tarea | Detalle |
 |---|-------|---------|
-| 5.1 | Norma ECST | Añadir referencia en `events-contract.md` o norma puente bajo `SddIA/norms/` |
-| 5.2 | `route-domain-event.md` | Paso opcional: validar `event_type` existe en `events/index.md` |
+| 5.1 | Norma ECST / emisores | Reglas forenses en `events-contract`; deuda: alinear `emit-domain-mutation` cuando `payload_schema_hash` pase a REQUIRED |
+| 5.2 | `route-domain-event.md` | Validar `event_type` en índice + campos REQUIRED de la Clase ECST |
 | 5.3 | `.SddIA/events/` plantilla | README de instancia: overrides de suscripción, ejemplo `local.paths.json` (Vía C) |
 | 5.4 | Higiene documental | Verificar coherencia de `clarify.md`, `spec.md` y consumidores con `docs/events/` según Cúmulo |
 
@@ -239,10 +294,10 @@ Sin fases inválidas por cruce RBAC.
 
 ```mermaid
 flowchart TD
-  F0[Fase 0 Topología ✅] --> F1[Fase 1 Contrato + índice]
-  F1 --> F2[Fase 2 event-creator]
+  F0[Fase 0 Topología ✅] --> H1[Hito 1 Constitución + events-contract]
+  H1 --> F2[Fase 2 event-creator]
   F2 --> F3[Fase 3 entity-manager]
-  F3 --> F4[Fase 4 Clases ECST]
+  F3 --> F4[Fase 4 Clases ECST forense]
   F4 --> F5[Fase 5 Validación cruzada]
   F5 --> F6[Fase 6 Argos + delivery-close-cycle]
 ```

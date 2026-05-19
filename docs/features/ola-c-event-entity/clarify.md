@@ -26,7 +26,8 @@ Transcript de decisiones del Arquitecto (2026-05-19) para cerrar ambigüedades d
 
 | Pregunta | Decisión |
 |----------|----------|
-| ¿Enmienda a `CONSTITUTION_CORE.md`? | **No.** Mantener coherencia actual; la legalización ontológica de **Event** se documenta **solo en `README.md`**. |
+| ¿Enmienda a `CONSTITUTION_CORE.md`? | **Sí** (laudo Vértice Biológico + Tormentosa, Hito 1). §3.1 Genoma operativo con **Event**. Revoca decisión inicial “solo README”. |
+| ¿README? | **Sí** — mapa visual tres rutas (complemento operativo, no sustituto de Constitución). |
 | Definición de Event | *El contrato inmutable de comunicación asíncrona. Representa una señal con propósito (finalidad) que blinda la soberanía de las entidades conscientes, operando bajo el paradigma de coreografía pura y evitando el acoplamiento físico entre procesos.* |
 
 ---
@@ -115,14 +116,35 @@ Los documentos bajo `SddIA/evolution/*-temp.md` **no** se mutan (borradores hist
 
 1. ✅ Rama `feat/ola-c-event-entity` (git-manager).
 2. ✅ Paquete documental inicial (`objectives`, `clarify`, `spec`).
-3. ✅ Implementación topológica (README, cumulo, consumidores, `.gitignore`) — commit `291aa25`.
-4. ✅ Planificación Dedalo (`plan.md`).
-5. ⏳ Tekton — Fases 1–6 del plan (genoma, `event-creator`, `entity-manager`, clases ECST, Argos).
+3. ✅ Implementación topológica (README, cumulo, consumidores, `.gitignore`) — commits `291aa25`, `430c0a1`.
+4. ✅ Planificación Dedalo v2 (`plan.md` + laudo forense).
+5. ⏳ **Hito 1** — Constitución + `events-contract` + índice + `contracts.events` en Cúmulo.
+6. ⏳ Tekton — Fases 2–6 (`event-creator`, `entity-manager`, clases ECST, Argos).
+
+---
+
+## D9 — Aseguramiento forense ECST (laudo Dedalo)
+
+| Evento | Campo | Estatus |
+|--------|-------|---------|
+| `PullRequest_Merged` | `merge_commit_hash` | **REQUIRED** (40 hex, ancla DLT IOTA) |
+| `PullRequest_Merged` | `hash_signature` en payload | **PROHIBIDO** (Opción A — sin contaminación semántica) |
+| `Domain_Entity_Created` | `hash_signature_new` | **REQUIRED** |
+| `Domain_Entity_Created` | `payload_schema_hash` | **OPTIONAL** (transición; no romper emisores Ola A) |
+
+---
+
+## D10 — Ruta runtime (confirmación final)
+
+- **Canónica:** `docs/events/{pending,processing,processed,dead-letter}`.
+- **Descartada:** `.docs/events/` (no alinear Cúmulo ni consumidores a esta variante).
+- **Referencia SSOT:** `clarify.md` D3/D6 = `cumulo.paths.json` = README = consumidores activos.
 
 ---
 
 ## Preguntas cerradas (sin pendiente)
 
 - ~~`processing/` vs `processed/`~~ → Se adopta **ambas**: `processing` es cola de vuelo; `processed` es terminal de éxito.
-- ~~¿Constitución o README?~~ → **Solo README**.
+- ~~¿Constitución o README?~~ → **Ambos** (Hito 1); laudo posterior revoca “solo README”.
 - ~~¿Ruta runtime?~~ → **`docs/events/`** (instancias generadas; no confundir con `SddIA/events/` ni `.SddIA/events/`).
+- ~~¿`hash_signature` en payload Git?~~ → **No**; usar solo `merge_commit_hash`.

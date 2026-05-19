@@ -24,8 +24,8 @@ Ola C separa tres planos ontológicos y eleva **Event** a entidad de dominio de 
 | Definición | Contrato inmutable de comunicación asíncrona; señal con propósito que opera en coreografía pura sin acoplamiento físico entre procesos. |
 | Ubicación genoma | `SddIA/events/` (`directories.events`) |
 | Artefacto | `{event-name}.md` con Cicatriz Digital (UUID, SemVer, hash) |
-| Contrato futuro | `SddIA/events/events-contract.md` |
-| Índice futuro | `SddIA/events/index.md` |
+| Contrato familia | `SddIA/events/events-contract.md` v1.0.0 (Hito 1) |
+| Índice | `SddIA/events/index.md` |
 
 ### 2.2 Instancia de Evento (JSON runtime)
 
@@ -37,7 +37,18 @@ Ola C separa tres planos ontológicos y eleva **Event** a entidad de dominio de 
 | Emisión | Acciones `emit-domain-mutation`, `emit-pr-merged-event`, etc. |
 | Consumo | `event-watcher` + `route-domain-event` |
 
-### 2.3 Personalización de instancia (proyecto)
+### 2.3 Reglas forenses de payload (laudo Dedalo)
+
+| `event_type` | Campo | Estatus |
+|--------------|-------|---------|
+| `PullRequest_Merged` | `merge_commit_hash` | REQUIRED — 40 hex (`git rev-parse HEAD`); ancla DLT |
+| `PullRequest_Merged` | `hash_signature` en `payload` | **PROHIBIDO** |
+| `Domain_Entity_Created` | `hash_signature_new` | REQUIRED |
+| `Domain_Entity_Created` | `payload_schema_hash` | OPTIONAL (transición Ola A) |
+
+> `hash_signature` en frontmatter de una **Clase** ECST (`SddIA/events/*.md`) es la Cicatriz Digital del archivo; no confundir con ancla Git ni con `hash_signature_new` de instancia.
+
+### 2.4 Personalización de instancia (proyecto)
 
 | Atributo | Valor |
 |----------|-------|
@@ -163,11 +174,11 @@ docs/events/
 
 ### Fase genoma (Ola C+ — pendiente Tekton)
 
-- [ ] `events-contract.md` + `index.md` forjados.
-- [ ] `event-creator` catalogado en `process/index.md`.
-- [ ] `entity-manager` acepta `entity_class: event`.
-- [ ] ≥5 clases ECST en `SddIA/events/`.
-- [ ] `plan.md`, `implementation.md`, `execution.md`, `validacion.md` completos.
+- [ ] Hito 1: `CONSTITUTION_CORE.md` §3.1 + `events-contract.md` + `index.md` + `contracts.events`
+- [ ] `event-creator` catalogado en `process/index.md`
+- [ ] `entity-manager` acepta `entity_class: event`
+- [ ] ≥5 clases ECST con tablas forenses REQUIRED/OPTIONAL/FORBIDDEN
+- [ ] `implementation.md`, `execution.md`, `validacion.md` completos
 
 ## 8. Roadmap Ola C+ (no bloqueante)
 

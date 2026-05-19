@@ -12,23 +12,32 @@ persist_ref: docs/features/ola-c-event-entity
 
 Elevar **Evento** al rango de entidad de dominio de primer nivel en el ecosistema SddIA (Ola C), legalizando su ontología en el mapa cartográfico del Core, resegmentando el bus de eventos runtime frente a la capa de personalización por proyecto, y preparando el genoma (`SddIA/events/`) para contratos funcionales versionados.
 
-## Alcance de esta entrega (fase documental + topología)
+## Alcance por hitos
 
-1. **Documentación de feature:** `objectives.md`, `clarify.md`, `spec.md` bajo `persist_ref`.
-2. **README:** fila **Event** en ontología de activos; sección genoma vs runtime vs instancia (sin tocar `CONSTITUTION_CORE.md`).
-3. **Cúmulo (`cumulo.paths.json`):**
-   - `directories.events` → `SddIA/events` (Clases de Evento).
-   - `eda_bus` → bus runtime bajo `.docs/events/` con colas `pending`, `processing`, `processed`, `dead_letter`.
-   - `eda_instance.customization` → `.SddIA/events` (personalización por proyecto).
-4. **Consumidores:** actualizar fallbacks y referencias literales en acciones, watcher, `execute-process.py`, normas operativas y `.gitignore`.
-5. **Git:** rama `feat/ola-c-event-entity` vía `git-manager` (Opción B); commits vía cápsula.
+| Hito | Contenido | Estado |
+|------|-----------|--------|
+| **0 — Topología** | README, Cúmulo `eda_bus`, consumidores, `.gitignore` | ✅ |
+| **1 — Enmienda + genoma base** | `CONSTITUTION_CORE.md` §3.1, `events-contract.md`, `index.md`, `contracts.events` | ⏳ |
+| **2–6 — Forja Tekton** | `event-creator`, `entity-manager`, clases ECST forense, Argos | ⏳ |
 
-## Fuera de alcance (Ola C posterior)
+## Alcance inicial completado (Hito 0)
 
-- Forja de `events-contract.md`, `SddIA/events/index.md` y clases concretas (`PullRequest_Merged.md`, etc.).
-- Extensión de `entity-manager` / `event-creator` para `entity_class: event`.
-- Handler físico completo del proceso `feature` en `execute-process.py`.
-- Enmienda a `CONSTITUTION_CORE.md` (decisión explícita del Arquitecto: coherencia vía README únicamente).
+1. **Documentación de feature:** `objectives.md`, `clarify.md`, `spec.md`, `plan.md` bajo `persist_ref`.
+2. **README:** fila **Event** + sección genoma / runtime / instancia.
+3. **Cúmulo:** `directories.events`, `eda_bus` → `docs/events/`, `eda_instance.customization`.
+4. **Consumidores** del bus actualizados; Git vía `git-manager`.
+
+## Próximo alcance (Hito 1)
+
+- Enmienda **`SddIA/CONSTITUTION_CORE.md`** (Evento de Dominio).
+- Forja **`SddIA/events/events-contract.md`** e **`index.md`**.
+- Clave **`contracts.events`** en Cúmulo.
+
+## Fuera de alcance inmediato
+
+- Clases ECST concretas (`pull-request-merged.md`, …) → Fase 4 del plan.
+- `event-creator`, piloto `entity-manager` → Fases 2–3.
+- Endurecer `payload_schema_hash` a REQUIRED → post-transición Ola A.
 
 ## Ley aplicada
 
