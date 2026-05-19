@@ -144,10 +144,11 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 
 ## 4. Próximos pasos (backlog activo)
 
-1. **Hito 3 — Hooks Git:** `pre-push` / `post-merge` → emisión orgánica `PullRequest_*` vía `git-manager`.
-2. **Deuda laboratorio:** handler físico de `feature` en `execute-process.py` (ver TODO dedicado).
-3. **EDA universal:** emisión `Domain_Entity_*` para todas las clases en `entity-manager` (ver TODO arquitectura).
-4. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.
+1. **Acción `request-change-incorporation`:** abrir PR + emitir `PullRequest_Presented`; cablear en `delivery-close-cycle` y procesos de entrega (ver TODO arquitectura dedicado).
+2. **Hito 3 — Hooks Git:** `pre-push` / `post-merge` → pueden delegar en la acción anterior o emitir `PullRequest_*` vía `git-manager`.
+3. **Deuda laboratorio:** handler físico de `feature` en `execute-process.py` (ver TODO dedicado).
+4. **EDA universal:** emisión `Domain_Entity_*` para todas las clases en `entity-manager` (ver TODO arquitectura).
+5. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.
 
 ---
 
@@ -161,6 +162,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | Proceso merge | `SddIA/process/accept-pr.md` |
 | TODO EDA entidades | `docs/todos/[ARQUITECTURA] EDA — Eventos Domain_Entity para todas las entidades de dominio.md` |
 | TODO feature laboratorio | `docs/todos/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md` |
+| TODO PR + Presented | `docs/todos/[ARQUITECTURA] Acción request-change-incorporation — PR y evento PullRequest_Presented.md` |
 
 ---
 
