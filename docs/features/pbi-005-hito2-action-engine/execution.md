@@ -12,7 +12,10 @@ process: feature
 | Ref | Descripción |
 |-----|-------------|
 | `0cce8ba` | `execute-action.py`, `markdown-table-editor`, watcher, purga `sync-entity-index.py` |
-| *(cierre)* | Docs PBI/todos + merge a `main` vía `accept-pr` |
+| `abf3b89` | Docs PBI/todos, validación Hito 2, fix `verify-process-integrity` |
+| `dbf606b` | Merge `--no-ff` `feat/pbi-005-action-engine` → `main` (`accept-pr`) |
+
+**PR:** https://github.com/racso80es/SddIA/pull/7 (MERGED)
 
 ## Comandos SddIA (reproducibles)
 
@@ -41,6 +44,14 @@ python SddIA/scripts/daemons/event-watcher.py --once
 
 > Si la red IOTA no está disponible, el suscriptor DLT puede fallar y el evento ir a `dead-letter`; reintentar con testnet configurada o documentar excepción de laboratorio.
 
+## Eventos runtime
+
+| event_id | event_type | `delivery_state.cumulo` | Destino |
+|----------|------------|-------------------------|---------|
+| `aaf010d6-88e4-432b-b65e-1470d3923fb0` | `PullRequest_Merged` | Ver JSON en `processed/` | `docs/events/processed/` |
+
+Emisión: `execute-process.py --action emit-pr-merged-event`. Watcher: `--once` sin `SDDIA_LAB_SIMULATE_IOTA` (IOTA físico si red disponible).
+
 ## Handoff
 
-Hito 2 entregado en `main`. Hito 3 (hooks Git) permanece en backlog operativo Ola A.
+Hito 2 entregado en `main` (`dbf606b`). Hito 3 (hooks Git) permanece en backlog operativo Ola A.

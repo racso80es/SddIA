@@ -39,7 +39,10 @@ Este documento formaliza el **Product Backlog Item (PBI)** estratégico destinad
 | **Feature** | `pbi-005-hito2-action-engine` |
 | **Rama entrega** | `feat/pbi-005-action-engine` |
 | **Commit base** | `0cce8ba` — `execute-action.py`, `markdown-table-editor`, purga `sync-entity-index.py` |
-| **Proceso merge** | `accept-pr` vía `git-manager` + `emit-pr-merged-event` (cierre sesión 2026-05-19) |
+| **PR** | https://github.com/racso80es/SddIA/pull/7 — **MERGED** |
+| **Merge commit (`main`)** | `dbf606b98eec2603f48d509612a00fba169018de` |
+| **Proceso merge** | `accept-pr` vía `git-manager` + `emit-pr-merged-event` |
+| **Evento merge** | `aaf010d6-88e4-432b-b65e-1470d3923fb0` → `docs/events/processed/` |
 | **Documentación feature** | `docs/features/pbi-005-hito2-action-engine/` |
 
 ---

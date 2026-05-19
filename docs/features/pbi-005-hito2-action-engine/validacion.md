@@ -32,6 +32,12 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | Proceso `feature` simulado en laboratorio | `docs/todos/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md` |
 | `Domain_Entity_Created` en forja manual de tool | `docs/todos/[ARQUITECTURA] EDA — Eventos Domain_Entity...md` |
 
+## Post-merge (bus EDA)
+
+| event_id | `delivery_state.cumulo` | IOTA |
+|----------|-------------------------|------|
+| `aaf010d6-88e4-432b-b65e-1470d3923fb0` | `success` | Watcher sin `SDDIA_LAB_SIMULATE_IOTA` |
+
 ## Veredicto
 
-**APTO** — Hito 2 listo para merge soberano a `main`.
+**APTO** — Hito 2 fusionado en `main` (`dbf606b`).
