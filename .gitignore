@@ -5,7 +5,7 @@
 .cursor/debug_*
 
 # Bus de eventos runtime (pending / processing / processed / dead-letter)
-.docs/events/
+docs/events/
 
 # Personalización de eventos por instancia (Vía C)
 .SddIA/events/

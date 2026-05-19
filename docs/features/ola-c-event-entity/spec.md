@@ -32,7 +32,7 @@ Ola C separa tres planos ontológicos y eleva **Event** a entidad de dominio de 
 | Atributo | Valor |
 |----------|-------|
 | Formato | JSON ECST (Event Contract Standard Type) |
-| Ubicación | Colas bajo `.docs/events/` |
+| Ubicación | Colas bajo `docs/events/` |
 | Ciclo de vida | `pending` → `processing` → (`processed` \| `dead_letter`) |
 | Emisión | Acciones `emit-domain-mutation`, `emit-pr-merged-event`, etc. |
 | Consumo | `event-watcher` + `route-domain-event` |
@@ -56,8 +56,8 @@ Ola C separa tres planos ontológicos y eleva **Event** a entidad de dominio de 
     "events": "SddIA/events"
   },
   "eda_bus": {
-    "pending": "/docs/events/pending",
-    "processing": /docs/events/processing",
+    "pending": "docs/events/pending",
+    "processing": "docs/events/processing",
     "processed": "docs/events/processed",
     "dead_letter": "docs/events/dead-letter",
     "subscriptions": "SddIA/core/event-subscriptions.json"
@@ -87,7 +87,7 @@ SddIA/
     index.md                 ← (futuro)
     {event-name}.md          ← (futuro)
 
-.docs/
+docs/
   events/                    ← Runtime: instancias volátiles (gitignored)
     pending/
     processing/
@@ -104,7 +104,7 @@ SddIA/
 
 | Entidad | Finalidad | Ubicación Core | Relación operativa |
 |---------|-----------|----------------|-------------------|
-| **Event** | Contrato inmutable de comunicación asíncrona (Clase de Evento). | `paths.directories.events` | Publicado como definición `{name}.md`; instanciado en el bus runtime (`.docs/events/`). Coreografía pura entre **Process** / **Action** sin acoplamiento físico. |
+| **Event** | Contrato inmutable de comunicación asíncrona (Clase de Evento). | `paths.directories.events` | Publicado como definición `{name}.md`; instanciado en el bus runtime (`docs/events/`). Coreografía pura entre **Process** / **Action** sin acoplamiento físico. |
 
 ### 4.2 Nueva subsección «Eventos: genoma, runtime e instancia»
 
@@ -114,7 +114,7 @@ Tabla de tres rutas con definiciones de D3 en `clarify.md`.
 
 ### 5.1 `execute-process.py`
 
-- Función `_write_pending_event`: resolver `eda_bus.pending` desde Cúmulo; fallback `.docs/events/pending`.
+- Función `_write_pending_event`: resolver `eda_bus.pending` desde Cúmulo; fallback `docs/events/pending`.
 
 ### 5.2 `event-watcher.py`
 
@@ -131,14 +131,14 @@ Actualizar literales `.SddIA/events/` → resolución vía `eda_bus.*` con nuevo
 
 ### 5.4 `execution-contexts.md` (§ event-routing)
 
-- Lectura: `.docs/events/pending/` y `.docs/events/processing/`.
+- Lectura: `docs/events/pending/` y `docs/events/processing/`.
 - Escritura/movimiento: hacia `processing/`, `processed/`, `dead_letter/`.
 - Prohibida mutación del genoma (`SddIA/events/`).
 
 ### 5.5 `.gitignore`
 
 ```
-.docs/events/
+docs/events/
 .SddIA/events/
 ```
 
@@ -146,7 +146,7 @@ Actualizar literales `.SddIA/events/` → resolución vía `eda_bus.*` con nuevo
 
 | Escenario | Acción |
 |-----------|--------|
-| Eventos legacy en `.SddIA/events/pending/` | Operador mueve manualmente a `.docs/events/pending/` (fuera de alcance automatizado). |
+| Eventos legacy en `.SddIA/events/pending/` | Operador mueve manualmente a `docs/events/pending/` (fuera de alcance automatizado). |
 | Referencias en evolution temp | Sin cambio (no normativos). |
 | Laboratorios `SddIA_1…4` | Heredan topología vía sync de Core; `local.paths.json` puede override `eda_instance` en Vía C futura. |
 
@@ -158,7 +158,7 @@ Actualizar literales `.SddIA/events/` → resolución vía `eda_bus.*` con nuevo
 - [x] README contiene fila Event y subsección de tres rutas.
 - [x] Grep en consumidores activos: cero literales `.SddIA/events/pending` como fallback operativo (salvo evolution temp).
 - [x] `event-watcher.py` crea y usa `processing/`.
-- [x] `.gitignore` incluye `.docs/events/`.
+- [x] `.gitignore` incluye `docs/events/`.
 - [x] Documentación feature inicial bajo `persist_ref` (`objectives`, `clarify`, `spec`).
 
 ### Fase genoma (Ola C+ — pendiente Tekton)

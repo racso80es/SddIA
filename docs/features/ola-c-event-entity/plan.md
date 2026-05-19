@@ -24,8 +24,7 @@ Blueprint de proceso para Tekton. Entrada: `objectives.md`, `clarify.md`, `spec.
 | Forja genoma Event | ⏳ | Fases 1–5 |
 | Verificación Argos | ⏳ | Fase 6 |
 
-**SSOT de rutas runtime (vigente en Cúmulo):** `.docs/events/{pending,processing,processed,dead-letter}`.  
-**Nota de higiene:** `clarify.md` / `spec.md` contienen variantes `docs/events/` sin punto; Tekton debe alinear documentación al SSOT antes del cierre.
+**SSOT de rutas runtime (instancias generadas, no entidades):** `docs/events/{pending,processing,processed,dead-letter}`.
 
 ---
 
@@ -110,7 +109,7 @@ Completar la **Ola C+**: forjar el genoma de la entidad **Event** bajo `SddIA/ev
 
 **Commit sugerido:** `feat(entity-manager): piloto entity_class event`
 
-**Criterio de salida:** Invocación de prueba `entity-manager` + `event` + `create` genera `.md` + evento `Domain_Entity_Created` en `.docs/events/pending/`.
+**Criterio de salida:** Invocación de prueba `entity-manager` + `event` + `create` genera `.md` + evento `Domain_Entity_Created` en `docs/events/pending/`.
 
 ---
 
@@ -153,7 +152,7 @@ Cada clase incluye:
 | 5.1 | Norma ECST | Añadir referencia en `events-contract.md` o norma puente bajo `SddIA/norms/` |
 | 5.2 | `route-domain-event.md` | Paso opcional: validar `event_type` existe en `events/index.md` |
 | 5.3 | `.SddIA/events/` plantilla | README de instancia: overrides de suscripción, ejemplo `local.paths.json` (Vía C) |
-| 5.4 | Higiene documental | Unificar `clarify.md` / `spec.md` → rutas `.docs/events/` según Cúmulo |
+| 5.4 | Higiene documental | Verificar coherencia de `clarify.md`, `spec.md` y consumidores con `docs/events/` según Cúmulo |
 
 **Commit sugerido:** `feat(events): validación cruzada ECST y plantilla instancia`
 
@@ -232,10 +231,9 @@ Sin fases inválidas por cruce RBAC.
 
 | Riesgo | Mitigación |
 |--------|------------|
-| Drift `docs/events/` vs `.docs/events/` en docs | Fase 5.4 — SSOT Cúmulo manda |
+| Eventos legacy en `.SddIA/events/pending/` | Operador mueve manualmente a `docs/events/pending/`; script migración opcional |
 | `sync-entity-index` no cableado físicamente | Verificar acción antes de E2E Domain_Entity_* |
 | Piloto `execute-process` solo simula creators no-skill | Extender handler o forja manual documentada en `execution.md` |
-| Eventos legacy en `.SddIA/events/pending/` | Script migración opcional o runbook operador |
 
 ## 7. Orden de ejecución recomendado (Tekton)
 

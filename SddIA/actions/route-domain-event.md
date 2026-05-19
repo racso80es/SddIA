@@ -12,7 +12,7 @@ capabilities:
   - "delegate-filesystem-manager"
   - "subscriber-fanout-orchestration"
 inputs:
-  - "event_file_path": "string; ruta relativa al workspace del JSON en eda_bus.pending o eda_bus.processing (cumulo.paths.json; fallback .docs/events/pending/ o .docs/events/processing/)"
+  - "event_file_path": "string; ruta relativa al workspace del JSON en eda_bus.pending o eda_bus.processing (cumulo.paths.json; fallback docs/events/pending/ o docs/events/processing/)"
 outputs:
   - "success": "boolean"
   - "delivery_status": "object; mapa agente/suscriptor → success | failed según respuestas de delegación"

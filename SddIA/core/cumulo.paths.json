@@ -55,10 +55,10 @@
     "tools": "scripts/tools/"
   },
   "eda_bus": {
-    "pending": ".docs/events/pending",
-    "processing": ".docs/events/processing",
-    "processed": ".docs/events/processed",
-    "dead_letter": ".docs/events/dead-letter",
+    "pending": "docs/events/pending",
+    "processing": "docs/events/processing",
+    "processed": "docs/events/processed",
+    "dead_letter": "docs/events/dead-letter",
     "subscriptions": "SddIA/core/event-subscriptions.json"
   },
   "eda_instance": {

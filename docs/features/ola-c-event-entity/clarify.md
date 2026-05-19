@@ -125,4 +125,4 @@ Los documentos bajo `SddIA/evolution/*-temp.md` **no** se mutan (borradores hist
 
 - ~~`processing/` vs `processed/`~~ → Se adopta **ambas**: `processing` es cola de vuelo; `processed` es terminal de éxito.
 - ~~¿Constitución o README?~~ → **Solo README**.
-- ~~¿Ruta runtime?~~ → **`docs/events/`** (prefijo oculto, análogo a `.SddIA/`).
+- ~~¿Ruta runtime?~~ → **`docs/events/`** (instancias generadas; no confundir con `SddIA/events/` ni `.SddIA/events/`).

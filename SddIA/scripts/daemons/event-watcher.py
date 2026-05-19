@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Despertador inerte: monitoriza .docs/events/pending/ y delega en route-domain-event.
+"""Despertador inerte: monitoriza docs/events/pending/ y delega en route-domain-event.
 
 Variables de entorno:
   SDDIA_LAB_SIMULATE_IOTA=1     Simula éxito de iota-immutable-publisher (laboratorio).
@@ -9,7 +9,7 @@ Variables de entorno:
 Uso:
   python SddIA/scripts/daemons/event-watcher.py           # bucle continuo
   python SddIA/scripts/daemons/event-watcher.py --once  # un ciclo de sondeo
-  python SddIA/scripts/daemons/event-watcher.py --event-file-path .docs/events/processing/x.json
+  python SddIA/scripts/daemons/event-watcher.py --event-file-path docs/events/processing/x.json
 """
 
 from __future__ import annotations
@@ -51,10 +51,10 @@ def _repo_root() -> Path:
 def _load_eda_bus(repo: Path) -> dict[str, str]:
     """Rutas del bus desde cumulo.paths.json (fallback literales)."""
     defaults = {
-        "pending": ".docs/events/pending",
-        "processing": ".docs/events/processing",
-        "processed": ".docs/events/processed",
-        "dead_letter": ".docs/events/dead-letter",
+        "pending": "docs/events/pending",
+        "processing": "docs/events/processing",
+        "processed": "docs/events/processed",
+        "dead_letter": "docs/events/dead-letter",
         "subscriptions": "SddIA/core/event-subscriptions.json",
     }
     cfg_path = repo / "SddIA" / "core" / "cumulo.paths.json"

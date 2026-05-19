@@ -232,7 +232,7 @@ outputs:
 
 def _write_pending_event(repo: Path, event: dict[str, Any]) -> dict[str, str]:
     cumulo = _load_cumulo(repo)
-    pending_rel = cumulo.get("eda_bus", {}).get("pending", ".docs/events/pending")
+    pending_rel = cumulo.get("eda_bus", {}).get("pending", "docs/events/pending")
     pending = repo / pending_rel
     pending.mkdir(parents=True, exist_ok=True)
     event_id = event["event_id"]
