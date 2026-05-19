@@ -37,6 +37,8 @@ def _sha256_phases_via_capsule(phases: list) -> str:
         [sys.executable, str(CRYPTO_SCRIPT)],
         input=payload,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         cwd=str(REPO),
     )

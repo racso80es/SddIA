@@ -17,26 +17,21 @@ Liquidar pasivos técnicos heredados de la **Ola A** validando el mecanismo dest
 
 | Hito | Faena | Estado |
 |------|-------|--------|
-| **1 — Validación de purga** | Prueba de humo sobre `test-cli-skill` vía `execute-process` → `entity-manager` (`lifecycle_operation: delete`). Verificar borrado del `.md`, purga de fila en `SddIA/skills/index.md`, evento en `docs/events/pending/`. | ✅ |
-| **1b — Expansión DLT** | Añadir suscriptor `cumulo` + `iota-immutable-publisher` en `Domain_Entity_Deleted` (`event-subscriptions.json`), simétrico a `PullRequest_Merged`. | ✅ |
-| **2 — Motor de acciones** | `execute-action.py` universal; desacoplar `sync-entity-index.py` del acoplamiento rígido en daemon. | ⏳ Backlog |
+| **1 — Validación de purga** | Prueba de humo sobre `test-cli-skill` vía `execute-process` → `entity-manager` (`lifecycle_operation: delete`). | ✅ |
+| **1b — Expansión DLT** | Suscriptor `cumulo` + `iota-immutable-publisher` en `Domain_Entity_Deleted`. | ✅ |
+| **2 — Motor de acciones** | `execute-action.py`, `markdown-table-editor`, desacoplamiento watcher; purga `sync-entity-index.py`. | ✅ (rama `feat/pbi-005-action-engine`) |
 | **3 — Hooks Git** | Automatización `PullRequest_Presented` / `PullRequest_Merged` en `.git/hooks/`. | ⏳ Backlog |
 
 ## Fuera de alcance inmediato
 
-- Forja de `tool:markdown-table-editor` y refactor completo del watcher (Hito 2).
 - Instalación de hooks locales (Hito 3).
+- Emisión `Domain_Entity_Created` en forja manual de tools (ver TODO EDA entidades).
 
 ## Ley aplicada
 
-- Proceso `feature` v1.2.0 (`SddIA/process/feature.md`).
-- Norma `features-documentation-pattern` v1.0.0.
-- Git exclusivamente vía `git-manager` (`scripts/skills/git-manager.py`).
-- SSOT rutas: `SddIA/core/cumulo.paths.json` → `eda_bus.pending` = `docs/events/pending`.
+- Proceso `feature` v1.2.0; entrega Hito 2 documentada en `docs/features/pbi-005-hito2-action-engine/`.
+- Git vía `git-manager`; bus SSOT: `cumulo.paths.json` → `eda_bus.pending`.
 
-## Criterio de éxito (Hito 1)
+## Criterio de éxito (Hito 1 — cumplido)
 
-- `SddIA/skills/test-cli-skill.md` ausente en disco.
-- Fila de `test-cli-skill` purgada de `SddIA/skills/index.md`.
-- Instancia ECST `Domain_Entity_Deleted` sellada en `docs/events/pending/*.json`.
-- Genoma de suscripciones incluye anclaje DLT para `Domain_Entity_Deleted`.
+- `test-cli-skill` purgado; evento `Domain_Entity_Deleted` en bus; PR #6 fusionado.

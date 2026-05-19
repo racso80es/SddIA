@@ -17,6 +17,7 @@ Contrato normativo de la familia: `tools-contract.md` (no constituye una tool ca
 | Archivo fuente | uuid | name | version | contract | context | Capabilities |
 |----------------|------|------|---------|------------|---------|--------------|
 | `iota-immutable-publisher.md` | `7c8be7da-d080-4ad0-b0b0-df43be376e46` | iota-immutable-publisher | 1.0.0 | tools-contract v1.2.0 | system-operations | `iota-publish`, `immutable-anchor`, `capsule-json-io` |
+| `markdown-table-editor.md` | `b2c4e6f8-1a3d-4e5b-9c7d-8e1f2a3b4c5d` | markdown-table-editor | 1.0.0 | tools-contract v1.2.0 | ecosystem-evolution | `markdown-table-parse`, `markdown-table-row-upsert`, `markdown-table-row-delete`, `markdown-table-persist`, `capsule-json-io` |
 
 ## Archivos en carpeta no catalogados como tool
 

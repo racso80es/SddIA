@@ -40,8 +40,10 @@ python SddIA/scripts/daemons/event-watcher.py --once
 
 | Ítem | Notas |
 |------|-------|
-| Hito 2 — `execute-action.py` | Backlog PDF Ola A |
+| Hito 2 — `execute-action.py` | ✅ Entregado — ver `docs/features/pbi-005-hito2-action-engine/validacion.md` |
 | Hito 3 — Git hooks PR | Backlog PDF Ola A |
+| Handler físico `feature` en laboratorio | `docs/todos/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md` |
+| EDA en todas las entidades | `docs/todos/[ARQUITECTURA] EDA — Eventos Domain_Entity...md` |
 | `delivery_state` por suscriptor | Watcher colapsa mismo `agent` → una clave `cumulo` |
 | Recrear `test-cli-skill` | Solo si el laboratorio CLI lo requiere (`skill-creator`) |
 

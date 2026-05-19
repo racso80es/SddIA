@@ -139,21 +139,27 @@ def _dispatch_subscriber(
         ok, _ = _invoke_iota_publisher(repo, event)
         return agent, "success" if ok else "failed"
     action = subscriber.get("action")
-    if action == "sync-entity-index":
-        if os.environ.get("SDDIA_LAB_SIMULATE_SYNC_INDEX", "").strip().lower() in (
-            "1",
-            "true",
-            "yes",
-        ):
+    if isinstance(action, str) and action:
+        if action == "sync-entity-index" and os.environ.get(
+            "SDDIA_LAB_SIMULATE_SYNC_INDEX", ""
+        ).strip().lower() in ("1", "true", "yes"):
             return agent, "success"
-        script = repo / "SddIA" / "scripts" / "qa" / "sync-entity-index.py"
-        if not script.is_file():
+        runner = repo / "SddIA" / "scripts" / "qa" / "execute-action.py"
+        if not runner.is_file():
             return agent, "failed"
         payload = event.get("payload", {})
+        if not isinstance(payload, dict):
+            return agent, "failed"
         try:
             proc = _run_subprocess(
-                [sys.executable, str(script)],
-                input_text=json.dumps(payload, ensure_ascii=False),
+                [
+                    sys.executable,
+                    str(runner),
+                    "--action",
+                    action,
+                    "--inputs",
+                    json.dumps(payload, ensure_ascii=False),
+                ],
                 cwd=str(repo),
                 shell=False,
             )
@@ -168,15 +174,8 @@ def _dispatch_subscriber(
         except json.JSONDecodeError:
             return agent, "failed"
         data = envelope.get("data") or {}
-        ok = bool(envelope.get("success")) and bool(data.get("success"))
+        ok = bool(envelope.get("success")) and bool(data.get("success", True))
         return agent, "success" if ok else "failed"
-    if action:
-        print(
-            f"[WATCHER] WARN: action sin script fisico: {action}",
-            file=sys.stderr,
-            flush=True,
-        )
-        return agent, "failed"
     return agent, "failed"
 
 
