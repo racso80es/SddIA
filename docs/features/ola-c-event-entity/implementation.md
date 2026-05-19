@@ -22,7 +22,15 @@ branch_name: feat/ola-c-event-entity
 - `PullRequest_Merged`: `merge_commit_hash` REQUIRED; `hash_signature` en payload FORBIDDEN
 - `Domain_Entity_Created`: `hash_signature_new` REQUIRED; `payload_schema_hash` OPTIONAL
 
-## Pendiente (Fases 2–4)
+## Pendiente (Fases 3–4)
 
-- `event-creator`, piloto `entity-manager` para `entity_class: event`
+- Piloto `entity-manager` para `entity_class: event`
 - Clases ECST (`pull-request-merged.md`, `domain-entity-*.md`)
+
+## Fase 2 — event-creator (completada)
+
+| Artefacto | Estado |
+|-----------|--------|
+| `SddIA/process/event-creator.md` | ✅ v1.0.0, hash fases verificado |
+| `SddIA/process/index.md` | ✅ fila catalogada |
+| `SddIA/norms/interaction-triggers.json` | ✅ `intent.create_event` |

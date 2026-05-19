@@ -116,6 +116,25 @@
           "interface": {}
         }
       }
+    },
+    "intent.create_event": {
+      "intent_id": "intent.create_event",
+      "human_intents": [
+        "Crea una nueva clase de evento",
+        "Nueva clase ECST",
+        "Añade evento de dominio",
+        "crear evento",
+        "forjar evento"
+      ],
+      "enabled": true,
+      "routing": {
+        "type": "execute-process",
+        "process_id": "event-creator",
+        "payload": {
+          "objective": "{user_text}",
+          "mode": "orchestrate"
+        }
+      }
     }
   }
 }

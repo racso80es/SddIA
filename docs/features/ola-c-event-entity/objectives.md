@@ -18,7 +18,8 @@ Elevar **Evento** al rango de entidad de dominio de primer nivel en el ecosistem
 |------|-----------|--------|
 | **0 — Topología** | README, Cúmulo `eda_bus`, consumidores, `.gitignore` | ✅ |
 | **1 — Enmienda + genoma base** | `CONSTITUTION_CORE.md` §3.1, `events-contract.md`, `index.md`, `contracts.events` | ✅ |
-| **2–6 — Forja Tekton** | `event-creator`, `entity-manager`, clases ECST forense, Argos | ⏳ |
+| **2 — event-creator** | `event-creator.md`, `process/index.md`, `interaction-triggers.json` | ✅ |
+| **3–6 — Forja Tekton** | `entity-manager`, clases ECST forense, Argos | ⏳ |
 
 ## Alcance inicial completado (Hito 0)
 
