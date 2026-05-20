@@ -3,9 +3,8 @@ feature_name: eda-domain-entities-splus
 created: "2026-05-20"
 process: feature
 items_applied:
-  - Fase 0 código y norma
-  - Fase A forges + entity-manager lab
-  - audit-entity-eda-coverage.py esqueleto operativo
+  - Fase 0–B código, norma y validación
+  - Fase C backfill 40 entidades + acta Merkle
 ---
 
 # Ejecución — EDA Domain Entities S+
@@ -19,8 +18,9 @@ python SddIA/scripts/qa/execute-process.py --process entity-manager --inputs '{"
 # Auditoría huérfanas
 python SddIA/scripts/qa/audit-entity-eda-coverage.py --scan --json
 
-# Backfill (Fase C — no ejecutado en este ciclo)
-python SddIA/scripts/qa/audit-entity-eda-coverage.py --emit --skip-dlt --correlation-id eda-backfill-001
+# Fase C — Backfill (2026-05-20)
+python SddIA/scripts/qa/audit-entity-eda-coverage.py --emit --skip-dlt --correlation-id eda-backfill-fase-c-20260520 --json
+# PowerShell: $env:SDDIA_LAB_SIMULATE_IOTA="1"
 python SddIA/scripts/qa/audit-entity-eda-coverage.py --anchor-merkle docs/features/eda-domain-entities-splus/backfill-manifest.json
 
 # Fase B — E2E watcher

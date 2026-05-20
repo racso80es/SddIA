@@ -24,10 +24,10 @@ Blueprint para Tekton. Entrada: `objectives.md`, `clarify.md`, `spec.md`, TODO-E
 | **Fase 0 — Protocolo de Acero** | ✅ | Código + norma (Tekton) |
 | Fase A — Piloto 6 clases | ✅ | Forges + entity-manager 8 clases |
 | Fase B — E2E + Argos | ✅ | run-eda-e2e-lab + gate close-cycle |
-| Fase C — Backfill | ⏳ | `--scan` listo; emit/Merkle pendiente |
-| implementation / execution / validacion | ✅ | Post-Tekton inicial |
+| Fase C — Backfill | ✅ | 40 emits + Merkle acta (`eda-backfill-fase-c-20260520`) |
+| implementation / execution / validacion | ✅ | Post-Tekton |
 
-**Pausa táctica:** Fase 0 completada; Fase B/C pendientes de validación E2E.
+**Estado actual:** Fases 0–C cerradas en laboratorio (`orphan_count: 0`).
 
 ---
 
@@ -225,4 +225,4 @@ Tekton lee en solo lectura:
 
 Salidas obligatorias post-Tekton: `implementation.md`, `execution.md`, `validacion.md`.
 
-**Estado actual:** Fase B completada (E2E lab + aduana Argos); Fase C backfill pendiente.
+**Estado actual:** Fases 0–C cerradas en laboratorio (`orphan_count: 0`).

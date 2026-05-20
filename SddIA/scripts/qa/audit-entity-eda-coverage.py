@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -67,6 +68,51 @@ def _parse_index_uuids(index_path: Path) -> dict[str, str]:
     return out
 
 
+def _valid_sha256(value: Any) -> bool:
+    return isinstance(value, str) and value.startswith("sha256:") and len(value) > 15
+
+
+def _hash_from_artifact(repo: Path, artifact: Path) -> str:
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(repo / "SddIA" / "scripts" / "qa" / "execute-action.py"),
+            "--action",
+            "crypto-broker",
+            "--inputs",
+            json.dumps(
+                {
+                    "operation": "GENERATE_SHA256",
+                    "target_type": "STRING",
+                    "target_payload": artifact.read_text(encoding="utf-8"),
+                }
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=str(repo),
+        check=False,
+    )
+    line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
+    if line:
+        try:
+            body = json.loads(line)
+            digest = (body.get("data") or {}).get("result")
+            if isinstance(digest, str) and digest:
+                return digest if digest.startswith("sha256:") else f"sha256:{digest}"
+        except json.JSONDecodeError:
+            pass
+    digest = hashlib.sha256(artifact.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
+    return f"sha256:{digest}"
+
+
+def _resolve_hash_signature(repo: Path, artifact: Path, fm: dict[str, Any]) -> str:
+    hs = fm.get("hash_signature")
+    if _valid_sha256(hs):
+        return str(hs)
+    return _hash_from_artifact(repo, artifact)
+
+
 def scan_orphans(repo: Path) -> dict[str, Any]:
     orphans: list[dict[str, Any]] = []
     indexed: list[dict[str, Any]] = []
@@ -86,7 +132,7 @@ def scan_orphans(repo: Path) -> dict[str, Any]:
             entry["has_domain_entity_created"] = event is not None
             if artifact.is_file() and not event:
                 fm = parse_frontmatter(artifact)
-                entry["hash_signature"] = fm.get("hash_signature")
+                entry["hash_signature"] = _resolve_hash_signature(repo, artifact, fm)
                 orphans.append(entry)
             indexed.append(entry)
     return {
@@ -130,7 +176,10 @@ def anchor_merkle(repo: Path, manifest_path: Path) -> dict[str, Any]:
     tool_dir = repo / "SddIA" / "scripts" / "tools" / "iota-immutable-publisher"
     entry = tool_dir / "index.ts"
     digest = None
-    if entry.is_file():
+    simulate = os.environ.get("SDDIA_LAB_SIMULATE_IOTA", "").strip().lower() in ("1", "true", "yes")
+    if simulate:
+        digest = f"lab-simulated-{root[:16]}"
+    elif entry.is_file():
         payload = {
             "action": "publish_immutable_data",
             "network": "testnet",
@@ -153,6 +202,19 @@ def anchor_merkle(repo: Path, manifest_path: Path) -> dict[str, Any]:
     out_path = manifest_path.parent / f"merkle-acta-{manifest.get('correlation_id', 'batch')}.json"
     acta["transaction_digest"] = digest
     out_path.write_text(json.dumps(acta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    try:
+        acta_rel = str(out_path.resolve().relative_to(repo.resolve())).replace("\\", "/")
+    except ValueError:
+        acta_rel = str(out_path)
+    manifest_path.write_text(
+        json.dumps(
+            {**manifest, "merkle_anchored": bool(digest), "transaction_digest": digest, "merkle_acta_path": acta_rel},
+            indent=2,
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     return acta
 
 
@@ -170,13 +232,18 @@ def emit_orphans(
         uuid = fm.get("uuid") or orphan.get("entity_uuid")
         rel = orphan["artifact_path"].replace("\\", "/")
         origin = "local" if rel.startswith(".SddIA/") else "core"
+        hash_sig = orphan.get("hash_signature") or _resolve_hash_signature(repo, artifact, fm)
+        existing = find_existing_domain_event(repo, str(uuid), "create", "Domain_Entity_Created")
+        if existing:
+            results.append({**existing, "idempotent": True, "skip_dlt": skip_dlt})
+            continue
         payload = {
             "entity_class": orphan["entity_class"],
             "entity_name": orphan["entity_name"],
             "lifecycle_operation": "create",
             "entity_uuid": uuid,
             "version": fm.get("version"),
-            "hash_signature_new": fm.get("hash_signature"),
+            "hash_signature_new": hash_sig,
             "hash_signature_old": None,
             "origin_topology": origin,
             "emitter_agent": "cumulo-eda-backfill",
@@ -210,7 +277,10 @@ def main() -> int:
 
     repo = _repo_root()
     if args.anchor_merkle:
-        acta = anchor_merkle(repo, Path(args.anchor_merkle))
+        manifest_path = Path(args.anchor_merkle)
+        if not manifest_path.is_absolute():
+            manifest_path = repo / manifest_path
+        acta = anchor_merkle(repo, manifest_path)
         print(json.dumps(acta, indent=2, ensure_ascii=False))
         return 0 if acta.get("transaction_digest") else 1
 
@@ -226,12 +296,18 @@ def main() -> int:
     if args.emit:
         emits = emit_orphans(repo, report, skip_dlt=True, correlation_id=args.correlation_id)
         report["emits"] = emits
+        report["emit_count"] = len(emits)
+        report["emit_ok"] = sum(1 for e in emits if e.get("event_id") or e.get("idempotent"))
+        post = scan_orphans(repo)
+        report["orphan_count_after"] = post.get("orphan_count")
         manifest_path = repo / "docs" / "features" / "eda-domain-entities-splus" / "backfill-manifest.json"
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     if args.json or args.scan or args.emit:
         print(json.dumps(report, indent=2, ensure_ascii=False))
+        if args.emit:
+            return 0 if report.get("orphan_count_after", report.get("orphan_count", 1)) == 0 else 1
         return 0 if report.get("orphan_count", 0) == 0 else 1
 
     parser.print_help()

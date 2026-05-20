@@ -27,6 +27,9 @@ items:
   - id: FB-argos
     touchpoint: execute_process_capsules.py delivery-close-cycle gate
     status: done
+  - id: FC-backfill
+    touchpoint: audit-entity-eda-coverage.py --emit --anchor-merkle
+    status: done
 ---
 
 # Implementación — EDA Domain Entities S+
@@ -48,5 +51,6 @@ items:
 
 ## Pendiente post-implementación
 
-- Fase B: E2E watcher + sync-entity-index por clase.
-- Fase C: backfill `--emit --skip-dlt` + `--anchor-merkle` en lote real.
+- Test `origin_topology=local` (no muta índices core).
+- Merge PR `feat/eda-domain-entities-splus` → `main`.
+- IOTA testnet real en acta Merkle (sustituir `SDDIA_LAB_SIMULATE_IOTA` en CI/producción).
