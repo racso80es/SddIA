@@ -168,10 +168,13 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 
 ## 4. Próximos pasos (backlog activo)
 
-1. ~~**Orquestación fractal PR presentado**~~ ✅ Entregado PR #11 + evento `e2cbbb26-…` (ver `docs/todos/done/[ARQUITECTURA] Orquestación fractal PR presentado…`).
-2. **Hito 3 — Hooks Git:** `pre-push` / `post-merge` → pueden delegar en la acción anterior o emitir `PullRequest_*` vía `git-manager`.
-3. **EDA universal:** emisión `Domain_Entity_*` para todas las clases en `entity-manager` (ver TODO arquitectura).
-4. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.
+> **SSOT consolidado de pendientes:** [`docs/todos/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md`](%5BOPERATIVO%5D%20Backlog%20pendiente%20post-PR11%20%E2%80%94%20Hito%203,%20Ola%20C%20y%20laboratorio.md)
+
+1. ~~**Orquestación fractal PR presentado**~~ ✅ PR #11 (`docs/todos/done/… Orquestación fractal PR presentado…`).
+2. ~~**EDA universal `Domain_Entity_*`**~~ ✅ (`docs/todos/done/… EDA — Eventos Domain_Entity…`).
+3. **Hito 3 — Hooks Git (CA-3):** ver backlog consolidado § Prioridad 1.
+4. **Deuda Ola C shims CLI:** ver backlog consolidado § Prioridad 2.
+5. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.
 
 ---
 
