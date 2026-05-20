@@ -27,6 +27,14 @@ except ImportError:
     yaml = None  # type: ignore
 
 SCRIPT = Path(__file__).resolve()
+_QA_DIR = SCRIPT.parent
+if str(_QA_DIR) not in sys.path:
+    sys.path.insert(0, str(_QA_DIR))
+
+from eda_bus_utils import (  # noqa: E402
+    find_existing_domain_event,
+    resolve_origin_topology,
+)
 
 INDEX_MAP: dict[str, str] = {
     "process": "SddIA/process/index.md",
@@ -248,6 +256,21 @@ def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: di
     if not event_type:
         raise ValueError(f"lifecycle_operation no soportada: {lifecycle}")
 
+    origin_topology = inputs.get("origin_topology", "core")
+    if origin_topology not in ("core", "local"):
+        origin_topology = "core"
+
+    if entity_uuid and lifecycle != "delete":
+        existing = find_existing_domain_event(repo, entity_uuid, op, event_type)
+        if existing and existing.get("event_id"):
+            return {
+                "success": True,
+                "idempotent": True,
+                "event_type": event_type,
+                "event_id": existing["event_id"],
+                "target_path": existing.get("target_path"),
+            }
+
     event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
     event = {
         "event_id": event_id,
@@ -262,6 +285,7 @@ def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: di
             "version": inputs.get("version"),
             "hash_signature_new": inputs.get("hash_signature_new"),
             "hash_signature_old": inputs.get("hash_signature_old"),
+            "origin_topology": origin_topology,
             "changes_summary": inputs.get(
                 "changes_summary",
                 f"{op} {entity_class} {entity_name}",
@@ -284,6 +308,14 @@ def _run_sync_entity_index(repo: Path, inputs: dict[str, Any], action_def: dict[
             "success": True,
             "target_index_path": None,
             "message": "Indexación ignorada para norm.",
+        }
+
+    origin_topology = resolve_origin_topology(dict(inputs))
+    if origin_topology == "local":
+        return {
+            "success": True,
+            "target_index_path": None,
+            "message": "Indexación canónica omitida (origin_topology=local).",
         }
 
     rel_path = INDEX_MAP.get(str(entity_class))

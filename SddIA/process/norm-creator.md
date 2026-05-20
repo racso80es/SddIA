@@ -17,6 +17,10 @@ inputs:
 outputs:
   - "artifact_tactical_norm_md": "Archivo `{paths.directories.library_norms}/{tactical_norm_name}.md` con frontmatter y cuerpo conforme a `norms-contract.md`"
   - "artifact_library_norms_index": "`{paths.directories.library_norms}/index.md` creado o actualizado con fila alineada a la cabecera YAML de la norma"
+  - "handoff_entity_uuid": "UUID v4 de la norma forjada; consumido por `entity-manager`"
+  - "handoff_hash_signature_new": "Sello post-forja"
+  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
+  - "handoff_version": "SemVer resultante"
 phases:
   - name: "Triaje de Entrada (Aduana Lógica)"
     intent: "Recibir tactical_norm_friction; abortar si viola el Principio de Atomicidad (dominios contradictorios o multi-vector no atomizable)."
@@ -93,3 +97,7 @@ Proceso **creator** para la entidad **`tactical-norm`** (`Library_Norm`): orques
 2. Insertar o actualizar la fila de `{tactical_norm_name}.md` copiando literalmente **uuid**, **name**, **version**, **scope** y **category** desde el frontmatter de la norma recién materializada.
 3. Excluir `norms-contract.md` de la tabla de definiciones.
 4. Verificación cruzada: cero divergencia entre fila del índice y cabecera YAML del `.md` fuente antes de cerrar la instancia del proceso.
+
+## Handoff `entity-manager`
+
+Invocable desde **`entity-manager`** (piloto S+). Propagar handoff estándar al cierre de Fase 5; `origin_topology=core`.

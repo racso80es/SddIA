@@ -1,0 +1,9 @@
+{
+  "entity_class": "tool",
+  "entity_name": "eda-lab-smoke-may20",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "tool_name": "eda-lab-smoke-may20",
+    "execution_logic": "Smoke EDA S+ lab"
+  }
+}

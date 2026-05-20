@@ -20,6 +20,7 @@ inputs:
   - "hash_signature_old": "string|null; sello sha256:… ; obligatorio salvo create → null"
   - "changes_summary": "string; descripción breve del cambio; UTF-8; máx. 2048 caracteres"
   - "emitter_agent": "string; nombre o UUID del invocante indexado (ej. process-creator, cumulo)"
+  - "origin_topology": "string; enum: core | local; topología fractal del sello (default core si ausente)"
   - "correlation_id": "string|null; opcional; UUID v4 para sagas; omitir en raíz del evento si ausente"
 outputs:
   - "success": "boolean"
@@ -51,6 +52,7 @@ Gate **Cerbero** previo por `context` de cada cápsula. Rutas vía `cumulo.paths
 | `update` | `hash_signature_new` y `hash_signature_old` no nulos |
 | `delete` | `hash_signature_new` es `null`; `hash_signature_old` no nulo |
 | `correlation_id` | Si presente, formato UUID v4 |
+| `origin_topology` | Si presente: `core` o `local`; default `core` en lab |
 
 - Cualquier violación: `success: false`, `exitCode: 1`, `data: null`, `error` causal. No persistir archivo.
 
@@ -94,7 +96,8 @@ Construir JSON UTF-8. En raíz incluir `correlation_id` **solo** si el input no 
     "version": "<version|null>",
     "hash_signature_new": "<hash_signature_new|null>",
     "hash_signature_old": "<hash_signature_old|null>",
-    "changes_summary": "<changes_summary>"
+    "changes_summary": "<changes_summary>",
+    "origin_topology": "<core|local>"
   },
   "delivery_state": {}
 }
@@ -133,6 +136,8 @@ En fallo de validación, broker o escritura: `success: false`, `exitCode: 1`, `d
 ## 3. Límites
 
 * Sin terminal cruda; sin `route-domain-event`, `git-manager` ni `GENERATE_SHA256` sobre la entidad.
+* `origin_topology` es **REQUIRED** en la Clase ECST `Domain_Entity_*`; el handler lab inyecta default `core` si el invocante omite el campo.
+* Tras persistir en `pending/`, el watcher aplica filtro topológico (`applies_to_origin_topology`) antes del fan-out; DLT IOTA solo para `Domain_Entity_Created` con `origin_topology=core` y umbral satisfecho (véase `entity-manager` Fase 3).
 * `context: ecosystem-evolution` está registrado en `execution-contexts.md` §2.5.
 * Los tipos `Domain_Entity_*` deben existir en `event-subscriptions.json` antes de que el fan-out tenga efecto; hasta entonces el watcher puede mover eventos a `processed/` como no-op documentado en `route-domain-event`.
 * Invocación esperada al cierre de forja o mutación física del artefacto en procesos `*-creator` (deuda de cableado en cada proceso).

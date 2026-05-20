@@ -20,7 +20,7 @@ outputs:
   - "handoff_version": "Versión SemVer resultante"
 phases:
   - name: "Delegación al creator"
-    intent: "En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto v1: skill → skill-creator; event → event-creator. Resto: abortar con mensaje hasta ampliación de mapeo."
+    intent: "En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 8 clases (skill, event, process, agent, tool, action, norm, codex)."
     delegates_to:
       - "action:execute-process"
   - name: "Delete físico"
@@ -41,16 +41,16 @@ Proceso orquestador (**Gestor de Entidad**) que envuelve los `*-creator` del gen
 
 ## Tabla de delegación
 
-| `entity_class` | Proceso hijo | Estado v1 |
+| `entity_class` | Proceso hijo | Estado S+ |
 |----------------|--------------|-----------|
 | `skill` | `skill-creator` | **Piloto** |
 | `event` | `event-creator` | **Piloto** |
-| `process` | `process-creator` | Pendiente |
-| `agent` | `agent-creator` | Pendiente |
-| `tool` | `tool-creator` | Pendiente |
-| `action` | `action-creator` | Pendiente |
-| `norm` | `norm-creator` | Pendiente |
-| `codex` | `codex-creator` | Pendiente |
+| `process` | `process-creator` | **Piloto** |
+| `agent` | `agent-creator` | **Piloto** |
+| `tool` | `tool-creator` | **Piloto** |
+| `action` | `action-creator` | **Piloto** |
+| `norm` | `norm-creator` | **Piloto** |
+| `codex` | `codex-creator` | **Piloto** |
 
 Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domain_Entity_*`).
 
@@ -59,8 +59,9 @@ Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domai
 **Omitida** cuando `lifecycle_operation` es `delete`.
 
 1. Resolver `process_name` desde la tabla anterior.
-2. Si `entity_class` no está en piloto v1: `status_code: 1`, error documentado.
-3. Mapear `semantic_seed` → `process_inputs` del hijo según tabla (piloto `skill` | `event`):
+2. Si `entity_class` no está en la tabla: `status_code: 1`, error documentado.
+3. Resolver `origin_topology` desde `semantic_seed.scope` (`core` → `core`, `local` → `local`) o desde `semantic_seed.origin_topology` explícito. Propagar al handoff y a Fase 3.
+4. Mapear `semantic_seed` → `process_inputs` del hijo según tablas por clase:
 
 | Campo `semantic_seed` | Input `skill-creator` |
 |-----------------------|-------------------------|
@@ -85,10 +86,56 @@ Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domai
 | `event_version` | default `1.0.0` |
 | `events_contract_version` | desde `events-contract.md` |
 
-4. Invocar `action:execute-process` con `process_name` canónico y `process_inputs` mapeados.
-5. Extraer del `execution_report` / outputs del hijo: `handoff_entity_uuid`, `handoff_hash_signature_new`, `handoff_hash_signature_old`, `handoff_version`.
+| Campo `semantic_seed` | Input `tool-creator` |
+|-----------------------|----------------------|
+| `tool_name` o `entity_name` | `tool_name` |
+| `scope` | `core` \| `local` (default `core`) |
+| `domain_origin` | default `SddIA` |
+| `tool_context` | default `ecosystem-evolution` |
+| `required_secrets`, `dependencies`, `tool_outputs`, `execution_logic` | según contrato tools |
 
-Orden: forja + indexación síncrona del creator → sello en Fase 3.
+| Campo `semantic_seed` | Input `action-creator` |
+|-----------------------|------------------------|
+| `action_name` o `entity_name` | `action_name` |
+| `action_context` | default `ecosystem-evolution` |
+| `action_inputs`, `action_outputs`, `orchestration_logic` | según contrato actions |
+
+| Campo `semantic_seed` | Input `process-creator` |
+|-----------------------|-------------------------|
+| `process_name` o `entity_name` | `process_name` |
+| `process_description`, `process_context`, `process_phases` | según contrato process |
+| `process_contract_version` | default `1.3.0` |
+
+| Campo `semantic_seed` | Input `agent-creator` |
+|-----------------------|-----------------------|
+| `agent_name` o `entity_name` | `agent_name` |
+| `allowed_policies`, `agent_inputs`, `agent_outputs`, `agent_purpose` | según contrato agents |
+
+| Campo `semantic_seed` | Input `norm-creator` |
+|-----------------------|----------------------|
+| `tactical_norm_name` o `entity_name` | `tactical_norm_name` |
+| `tactical_norm_version`, `tactical_norm_friction`, `tactical_norm_author` | según contrato norms |
+| `norm_scope`, `norm_category` | opcionales |
+
+| Campo `semantic_seed` | Input `codex-creator` |
+|-----------------------|-----------------------|
+| `domain_codex_slug` o `entity_name` | `domain_codex_slug` |
+| `domain_codex_name`, `target_environment`, `tactical_norm_inventory` | según contrato codex |
+
+5. Invocar `action:execute-process` con `process_name` canónico y `process_inputs` mapeados.
+6. Extraer del `execution_report` / outputs del hijo: `handoff_entity_uuid`, `handoff_hash_signature_new`, `handoff_hash_signature_old`, `handoff_version`.
+
+Orden: forja + indexación síncrona del creator → sub-fase 2.5 → sello en Fase 3.
+
+## Fase 2.5 — Idempotencia (Protocolo Acero Pilar 3)
+
+Antes del sello universal:
+
+1. Si `lifecycle_operation` es `create`: comprobar en `eda_bus` si ya existe `Domain_Entity_Created` para `handoff_entity_uuid`. Si existe → omitir Fase 3; propagar `event_id` existente.
+2. Si forja idempotente detectó artefacto preexistente → mismo criterio (un sello por UUID).
+3. En `update`/`delete`: comprobar duplicado de mismo `lifecycle_operation` + `hash_signature_new`/`hash_signature_old` cuando aplique.
+
+Implementación lab: `execute_process_capsules.py` → `find_existing_domain_event`, `assert_idempotent_emit`.
 
 ## Fase 2 — Delete físico
 
@@ -114,8 +161,18 @@ Invocar `action:emit-domain-mutation`:
 | `hash_signature_old` | `handoff_hash_signature_old` |
 | `changes_summary` | `"{lifecycle_operation} {entity_class} {entity_name}"` (≤ 2048) |
 | `emitter_agent` | `entity-manager` |
+| `origin_topology` | resuelto en Fase 1 (`core` \| `local`) |
 
 Propagar `event_id` y `target_path` a outputs del proceso.
+
+### Mandato DLT (Pilar 2 — post-sello core)
+
+Tras persistir el JSON en `eda_bus.pending`:
+
+1. El **watcher** (`event-watcher.py` → `route-domain-event`) filtra suscriptores por `applies_to_origin_topology`.
+2. Solo eventos con `origin_topology=core` y `event_type=Domain_Entity_Created` disparan `iota-immutable-publisher` si el umbral DLT está satisfecho (`hash_signature_new` válido, no placeholder).
+3. Emisiones con `emitter_agent=cumulo-eda-backfill` omiten DLT por entidad (Fase C); el cierre exige `--anchor-merkle` con acta IOTA del lote.
+4. Eventos `origin_topology=local` no mutan índices canónicos bajo `SddIA/` (fan-out acotado por suscripción).
 
 ## Límites
 

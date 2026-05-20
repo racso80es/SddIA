@@ -19,6 +19,9 @@ from execute_process_core import (
     validate_process_inputs,
 )
 
+from execute_process_forges import FORGE_BY_ENTITY_CLASS
+from eda_bus_utils import find_existing_domain_event
+
 try:
     import yaml
 except ImportError:
@@ -50,7 +53,9 @@ DIR_BY_CLASS: dict[str, str] = {
     "event": "SddIA/events",
 }
 
-PILOT_ENTITY_CLASSES = frozenset({"skill", "event"})
+PILOT_ENTITY_CLASSES = frozenset({
+    "skill", "event", "process", "agent", "tool", "action", "norm", "codex",
+})
 
 # Cápsulas action:* con handler físico en execute-action.py
 CAPSULE_ACTION_REGISTRY: dict[str, str] = {
@@ -447,23 +452,52 @@ Ver `SddIA/core/event-subscriptions.json` → clave `{event_type}`.
 
 
 def materialize_forge_by_inputs(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
-    """Forja física según forma del contrato de inputs (agnóstico al nombre del proceso)."""
+    """Forja física según entity_class o forma del contrato de inputs."""
+    entity_class = inputs.get("entity_class")
+    if isinstance(entity_class, str) and entity_class in FORGE_BY_ENTITY_CLASS:
+        return FORGE_BY_ENTITY_CLASS[entity_class](repo, inputs)
     if inputs.get("skill_name") is not None or (
         inputs.get("skill_inputs_schema") is not None and inputs.get("skill_context") is not None
     ):
         return run_skill_forge(repo, inputs)
     if inputs.get("event_type") is not None or inputs.get("event_name") is not None:
         return run_event_forge(repo, {**inputs, "lifecycle_operation": inputs.get("lifecycle_operation", "create")})
+    if inputs.get("tool_name") is not None:
+        return FORGE_BY_ENTITY_CLASS["tool"](repo, inputs)
+    if inputs.get("action_name") is not None:
+        return FORGE_BY_ENTITY_CLASS["action"](repo, inputs)
+    if inputs.get("process_name") is not None:
+        return FORGE_BY_ENTITY_CLASS["process"](repo, inputs)
+    if inputs.get("agent_name") is not None:
+        return FORGE_BY_ENTITY_CLASS["agent"](repo, inputs)
+    if inputs.get("tactical_norm_name") is not None:
+        return FORGE_BY_ENTITY_CLASS["norm"](repo, inputs)
+    if inputs.get("domain_codex_slug") is not None:
+        return FORGE_BY_ENTITY_CLASS["codex"](repo, inputs)
     raise NotImplementedError(
-        "Forja física no disponible para esta forma de inputs; requiere skill_* o event_*"
+        "Forja física no disponible para esta forma de inputs"
     )
+
+
+def _base_creator_inputs(
+    entity_class: str, entity_name: str, lifecycle: str, seed: dict[str, Any]
+) -> dict[str, Any]:
+    scope = seed.get("scope", "core")
+    origin = "local" if scope == "local" else "core"
+    return {
+        "entity_class": entity_class,
+        "lifecycle_operation": lifecycle,
+        "origin_topology": seed.get("origin_topology", origin),
+    }
 
 
 def creator_inputs_from_entity(
     entity_class: str, entity_name: str, lifecycle: str, seed: dict[str, Any]
 ) -> dict[str, Any]:
+    base = _base_creator_inputs(entity_class, entity_name, lifecycle, seed)
     if entity_class == "skill":
         return {
+            **base,
             "skill_name": seed.get("skill_name", entity_name),
             "skill_context": seed.get("skill_context", "ecosystem-evolution"),
             "skill_description": seed.get("skill_description", ""),
@@ -471,10 +505,10 @@ def creator_inputs_from_entity(
             "skill_outputs_schema": seed.get("skill_outputs_schema", []),
             "skill_version": seed.get("skill_version", "1.0.0"),
             "skills_contract_version": seed.get("skills_contract_version", "1.1.0"),
-            "lifecycle_operation": lifecycle,
         }
     if entity_class == "event":
         return {
+            **base,
             "event_name": seed.get("event_name", entity_name),
             "event_type": seed.get("event_type", ""),
             "event_context": seed.get("event_context", "ecosystem-evolution"),
@@ -485,7 +519,75 @@ def creator_inputs_from_entity(
             "emitter_agents": seed.get("emitter_agents", []),
             "event_version": seed.get("event_version", "1.0.0"),
             "events_contract_version": seed.get("events_contract_version", "1.0.0"),
-            "lifecycle_operation": lifecycle,
+        }
+    if entity_class == "tool":
+        tname = seed.get("tool_name", entity_name)
+        return {
+            **base,
+            "tool_name": tname,
+            "tool_id": seed.get("tool_id", tname),
+            "scope": seed.get("scope", "core"),
+            "domain_origin": seed.get("domain_origin", "SddIA"),
+            "tool_context": seed.get("tool_context", "ecosystem-evolution"),
+            "required_secrets": seed.get("required_secrets", []),
+            "dependencies": seed.get("dependencies", []),
+            "tool_outputs": seed.get("tool_outputs", []),
+            "execution_logic": seed.get("execution_logic", f"Tool {entity_name}"),
+            "tools_contract_version": seed.get("tools_contract_version", "1.2.0"),
+        }
+    if entity_class == "action":
+        return {
+            **base,
+            "action_name": seed.get("action_name", entity_name),
+            "action_context": seed.get("action_context", "ecosystem-evolution"),
+            "action_inputs": seed.get("action_inputs", []),
+            "action_outputs": seed.get("action_outputs", []),
+            "orchestration_logic": seed.get("orchestration_logic", f"Acción {entity_name}"),
+            "actions_contract_version": seed.get("actions_contract_version", "1.2.0"),
+        }
+    if entity_class == "process":
+        return {
+            **base,
+            "process_name": seed.get("process_name", entity_name),
+            "process_description": seed.get("process_description", f"Proceso {entity_name}"),
+            "process_context": seed.get("process_context", "ecosystem-evolution"),
+            "process_phases": seed.get("process_phases", [{"name": "Fase inicial", "intent": "stub"}]),
+            "process_contract_version": seed.get("process_contract_version", "1.3.0"),
+            "process_aliases": seed.get("process_aliases", []),
+        }
+    if entity_class == "agent":
+        return {
+            **base,
+            "agent_name": seed.get("agent_name", entity_name),
+            "allowed_policies": seed.get("allowed_policies", ["ecosystem-evolution"]),
+            "agent_inputs": seed.get("agent_inputs", []),
+            "agent_outputs": seed.get("agent_outputs", []),
+            "agent_purpose": seed.get("agent_purpose", f"Agente {entity_name}"),
+            "agents_contract_version": seed.get("agents_contract_version", "1.0.0"),
+        }
+    if entity_class == "norm":
+        return {
+            **base,
+            "tactical_norm_name": seed.get("tactical_norm_name", entity_name),
+            "tactical_norm_version": seed.get("tactical_norm_version", "1.0.0"),
+            "tactical_norm_friction": seed.get("tactical_norm_friction", f"Norma {entity_name}"),
+            "tactical_norm_author": seed.get("tactical_norm_author", "laboratorio"),
+            "tactical_norm_dependencies": seed.get("tactical_norm_dependencies", []),
+            "norms_contract_version": seed.get("norms_contract_version", "1.0.0"),
+            "norm_scope": seed.get("norm_scope", "agnostic"),
+            "norm_category": seed.get("norm_category", "workflow"),
+        }
+    if entity_class == "codex":
+        return {
+            **base,
+            "domain_codex_slug": seed.get("domain_codex_slug", entity_name),
+            "domain_codex_name": seed.get("domain_codex_name", entity_name),
+            "domain_codex_version": seed.get("domain_codex_version", "1.0.0"),
+            "domain_codex_author": seed.get("domain_codex_author", "laboratorio"),
+            "target_environment": seed.get("target_environment", ["dev"]),
+            "tactical_norm_inventory": seed.get("tactical_norm_inventory", []),
+            "codex_contract_version": seed.get("codex_contract_version", "1.0.0"),
+            "domain_codex_certification_grade": seed.get("domain_codex_certification_grade", "Pendiente"),
         }
     raise NotImplementedError(f"mapeo semantic_seed no definido para entity_class={entity_class}")
 
@@ -504,13 +606,23 @@ def write_pending_event(repo: Path, event: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def emit_domain_mutation(repo: Path, payload: dict[str, Any]) -> dict[str, str]:
+def emit_domain_mutation(repo: Path, payload: dict[str, Any]) -> dict[str, Any]:
     op = payload["lifecycle_operation"]
     event_type = {
         "create": "Domain_Entity_Created",
         "update": "Domain_Entity_Updated",
         "delete": "Domain_Entity_Deleted",
     }[op]
+
+    entity_uuid = payload.get("entity_uuid")
+    if entity_uuid and op != "delete":
+        existing = find_existing_domain_event(repo, entity_uuid, op, event_type)
+        if existing and existing.get("event_id"):
+            return {"idempotent": True, **existing}
+
+    origin_topology = payload.get("origin_topology", "core")
+    if origin_topology not in ("core", "local"):
+        origin_topology = "core"
 
     event_id = crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
     event = {
@@ -521,11 +633,12 @@ def emit_domain_mutation(repo: Path, payload: dict[str, Any]) -> dict[str, str]:
         "payload": {
             "entity_class": payload["entity_class"],
             "lifecycle_operation": op,
-            "entity_uuid": payload["entity_uuid"],
+            "entity_uuid": entity_uuid,
             "entity_name": payload["entity_name"],
             "version": payload.get("version"),
             "hash_signature_new": payload.get("hash_signature_new"),
             "hash_signature_old": payload.get("hash_signature_old"),
+            "origin_topology": origin_topology,
             "changes_summary": payload.get(
                 "changes_summary",
                 f"{op} {payload['entity_class']} {payload['entity_name']}",
@@ -586,9 +699,20 @@ def capsule_action_execute_process(
     child_inputs = creator_inputs_from_entity(
         entity_class, str(entity_name), str(lifecycle), seed
     )
+    forge: dict[str, Any] = {}
+    try:
+        forge = materialize_forge_by_inputs(repo, child_inputs)
+        state["handoff"].update(forge)
+    except NotImplementedError:
+        pass
+    if forge.get("handoff_entity_uuid"):
+        return {"child_process": creator, "handoff": state["handoff"], "forge_only": True}
     data = invoke_subprocess_process(repo, creator, child_inputs)
-    state["handoff"].update(data)
-    return {"child_process": creator, "handoff": data}
+    if data.get("handoff"):
+        state["handoff"].update(data["handoff"])
+    else:
+        state["handoff"].update({k: v for k, v in data.items() if k.startswith("handoff_")})
+    return {"child_process": creator, "handoff": state["handoff"]}
 
 
 def capsule_filesystem_delete(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
@@ -625,6 +749,11 @@ def invoke_capsule_action(
 
 def capsule_emit_domain_mutation(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     handoff = state.get("handoff") or {}
+    seed = dict(inputs.get("semantic_seed") or {})
+    scope = seed.get("scope", "core")
+    origin_topology = handoff.get("origin_topology") or seed.get("origin_topology")
+    if not origin_topology:
+        origin_topology = "local" if scope == "local" else "core"
     action_inputs = {
         "entity_class": inputs.get("entity_class"),
         "entity_name": inputs.get("entity_name"),
@@ -633,6 +762,7 @@ def capsule_emit_domain_mutation(repo: Path, inputs: dict[str, Any], state: dict
         "version": handoff.get("handoff_version"),
         "hash_signature_new": handoff.get("handoff_hash_signature_new"),
         "hash_signature_old": handoff.get("handoff_hash_signature_old"),
+        "origin_topology": origin_topology,
         "emitter_agent": inputs.get("emitter_agent", "entity-manager"),
         "changes_summary": inputs.get(
             "changes_summary",

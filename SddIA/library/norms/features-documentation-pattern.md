@@ -35,3 +35,13 @@ La validación opcional `sddia_frontmatter_valid` aplica a los `.md` de tarea cu
 - Prohibido producir más de un archivo por acción de fase (un `.md` por acción, sin duplicados ni variantes JSON).
 - Prohibido almacenar en el cuerpo Markdown datos que deban ser machine-readable si pueden declararse en frontmatter según la tabla canónica.
 - Prohibido crear nuevas tareas que violen este patrón; la migración de legado es la única excepción temporal y debe cerrarse eliminando el `.json`.
+
+## Ruido de Sistema — Cobertura EDA genómica
+
+Cuando una feature muta entidades bajo `SddIA/` (skills, events, process, agents, tools, actions, norms, codexes):
+
+- Toda entidad indexada debe tener correlato `Domain_Entity_Created` en el bus local (`eda_bus`).
+- El gate **Aduana EDA genómica** en `delivery-close-cycle` invoca `audit-entity-eda-coverage.py --scan --json`.
+- **Ruido de Sistema (block):** `orphan_count > 0` — artefacto `.md` + fila en `index.md` sin evento ECST correlacionado por `entity_uuid`.
+- **Excepción:** backfill Fase C documentado en la feature (`--emit --skip-dlt` + cierre con `--anchor-merkle` y `transaction_digest` registrado).
+- Forja directa de `.md` sin pasar por `entity-manager` → huérfana EDA hasta backfill (caso histórico: placeholders forjados fuera del gestor).

@@ -18,6 +18,10 @@ outputs:
     a `paths.contracts.actions`
 - artifact_actions_index: '`{paths.directories.actions}/index.md` creado o actualizado
     con fila sincronizada a la cabecera YAML de la acción'
+- handoff_entity_uuid: UUID v4 de la acción forjada; consumido por entity-manager
+- handoff_hash_signature_new: Sello sha256 post-forja
+- handoff_hash_signature_old: Sello previo en update; null en create
+- handoff_version: SemVer resultante
 phases:
 - name: Validación de Arquitectura
   intent: Auditar action_context en execution-contexts; orquestación sin shell; delegación
@@ -79,3 +83,7 @@ Proceso maestro para instanciar nuevas acciones (orquestaciones lógicas) en el 
 1. Abrir o crear `{paths.directories.actions}/index.md` con tabla de catálogo exigida por Gobernanza de Índices del directorio (columna **Capabilities** obligatoria).
 2. Insertar o actualizar la fila asociada a `{action_name}.md` copiando metadatos (incl. `capabilities`) desde el YAML fuente sin divergencia.
 3. Cerrar con verificación cruzada índice ↔ cabecera.
+
+## Handoff `entity-manager`
+
+Invocable desde **`entity-manager`** (piloto S+). Propagar handoff estándar (`handoff_entity_uuid`, `handoff_hash_signature_new`, `handoff_hash_signature_old`, `handoff_version`) al cierre de Fase 3. Topología: `origin_topology=core` (acciones solo en catálogo Core).

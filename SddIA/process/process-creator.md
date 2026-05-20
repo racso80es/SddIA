@@ -15,6 +15,10 @@ inputs:
 outputs:
   - "artifact_process_md": "Archivo `{paths.directories.process}/{process_name}.md` generado con cabecera YAML conforme a contrato"
   - "artifact_process_index": "`{paths.directories.process}/index.md` actualizado con fila alineada a la cabecera del nuevo proceso"
+  - "handoff_entity_uuid": "UUID v4 del proceso forjado; consumido por `entity-manager`"
+  - "handoff_hash_signature_new": "Sello `sha256:` post-forja; consumido por `entity-manager`"
+  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
+  - "handoff_version": "SemVer resultante"
 phases:
   - name: "Validación de inputs"
     intent: "Comprobar unicidad y kebab-case de process_name, process_context en execution-contexts, SemVer y exhaustividad de inputs/phases/outputs."
@@ -82,3 +86,7 @@ Proceso maestro para instanciar nuevos procesos en el Core SddIA y mantener el �
 1. Abrir `{paths.directories.process}/index.md` y comprobar encabezados de tabla exigidos por Gobernanza de Índices.
 2. Insertar o actualizar la fila del proceso creado: **Name**, **UUID**, **Versión**, **Context**, **Aliases** (vacío o lista si procede), **Descripción** copiados literalmente del YAML y la descripción operativa.
 3. Verificación cruzada: cero divergencia entre fila del índice y cabecera del `.md` fuente.
+
+## Handoff `entity-manager`
+
+Invocable desde **`entity-manager`** (piloto S+). Propagar handoff estándar al cierre de Fase 3; `origin_topology=core`.

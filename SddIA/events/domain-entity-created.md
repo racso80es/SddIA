@@ -24,6 +24,7 @@ Mutación genómica create. hash_signature_new REQUIRED; payload_schema_hash OPT
 - `version`
 - `hash_signature_new`
 - `changes_summary`
+- `origin_topology`
 
 ### OPTIONAL
 - `payload_schema_hash`

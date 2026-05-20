@@ -63,6 +63,16 @@ Gate **Cerbero** por `context` de cada cápsula. Rutas vía `cumulo.paths.json` 
 3. Obtener `subscribers = registry[event_type]` (array).
 4. Si `subscribers` es vacío o ausente: registrar en `delivery_status` como no-op documentado; continuar al Paso 6 con destino `processed/` salvo política invocante.
 
+### Paso 3b — Filtro topológico fractal (Protocolo Acero Pilar 1)
+
+1. Leer `origin_topology` del `payload` del evento (`core` \| `local`; default `core` en instancias legacy sin campo).
+2. Para cada suscriptor, evaluar `applies_to_origin_topology` del registro en `event-subscriptions.json`.
+3. Si el array está ausente → suscriptor aplica a **ambas** topologías (compatibilidad legacy).
+4. Si `origin_topology` del evento no está en el array → **omitir** ese suscriptor (no registrar `failed`; no invocar cápsula).
+5. Ejemplos: `sync-entity-index` e `iota-immutable-publisher` en `Domain_Entity_*` declaran `["core"]`; eventos `local` no mutan `SddIA/*/index.md` ni anclan DLT por entidad.
+
+*Implementación física:* `event-watcher.py` → `subscriber_applies_to_topology` antes del fan-out.
+
 ### Paso 4 — Fan-out a suscriptores
 
 Para cada elemento `subscriber` del array:
