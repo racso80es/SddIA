@@ -265,7 +265,7 @@ Referencias obligatorias: `pull-request-orchestration.md`, `pr-acceptance-protoc
 | Objetivos | `docs/features/pbi-005-hito3-git-hooks/objectives.md` |
 | Clarificación | `docs/features/pbi-005-hito3-git-hooks/clarify.md` |
 | Backlog | `docs/todos/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md` |
-| PBI-005 | `docs/todos/[OPERATIVO] Planificación de Backlog… (Ola A).md` |
+| PBI-005 | `docs/todos/done/[OPERATIVO] Planificación de Backlog… (Ola A).md` v1.5.1 |
 | Blindaje IA | `docs/todos/TODO-BLINDAJE-IA-OBRERA.md` |
 | PR presentado (precedencia) | `docs/features/pr-presented-orchestration/` |
 | QA procesos | `SddIA/scripts/qa/verify-process-integrity.py` |

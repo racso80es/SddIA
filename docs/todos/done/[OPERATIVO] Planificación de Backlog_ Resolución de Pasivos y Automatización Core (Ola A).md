@@ -4,7 +4,8 @@ title: "[OPERATIVO] Planificación de Backlog — Resolución de Pasivos y Autom
 format: markdown
 version: "1.5.1"
 updated: "2026-05-20"
-status: "completado"
+status: "archivado"
+archived_to: docs/todos/done/
 feature_ref_hito3_ola_b: docs/features/pbi-005-hito3-ola-b
 supersedes_pdf: "[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).pdf"
 feature_ref: docs/features/pbi-005-debt-liquidation
@@ -203,7 +204,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 
 ## 4. Próximos pasos (backlog activo)
 
-> **SSOT consolidado de pendientes:** [`docs/todos/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md`](%5BOPERATIVO%5D%20Backlog%20pendiente%20post-PR11%20%E2%80%94%20Hito%203,%20Ola%20C%20y%20laboratorio.md)
+> **SSOT consolidado de pendientes post-PBI:** [`docs/todos/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md`](%5BOPERATIVO%5D%20Backlog%20pendiente%20post-PR11%20%E2%80%94%20Hito%203,%20Ola%20C%20y%20laboratorio.md) (Ola C shims, laboratorio, EDA producción).
 
 1. ~~**Orquestación fractal PR presentado**~~ ✅ PR #11 (`docs/todos/done/… Orquestación fractal PR presentado…`).
 2. ~~**EDA universal `Domain_Entity_*`**~~ ✅ (`docs/todos/done/… EDA — Eventos Domain_Entity…`).
@@ -222,7 +223,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | Feature Hito 2 | `docs/features/pbi-005-action-engine/` |
 | Feature Hito 3 Ola A | `docs/features/pbi-005-hito3-git-hooks/` |
 | Feature Hito 3 Ola B | `docs/features/pbi-005-hito3-ola-b/` |
-| Backlog consolidado | `docs/todos/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md` |
+| Backlog post-PBI | `docs/todos/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md` |
 | Manifiesto Hito 2 | `docs/todos/PBI-005-Hito2-TODO.md` |
 | Genoma suscripciones | `SddIA/core/event-subscriptions.json` |
 | Proceso merge | `SddIA/process/accept-pr.md` |

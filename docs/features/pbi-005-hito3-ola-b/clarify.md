@@ -199,7 +199,7 @@ Detalle técnico canónico: `spec.md` § 4–9.
 |-----------|------|
 | Ola A (cerrada) | `docs/features/pbi-005-hito3-git-hooks/` |
 | Orquestación PR presentado | `docs/features/pr-presented-orchestration/` |
-| PBI operativo | `docs/todos/[OPERATIVO] Planificación de Backlog… (Ola A).md` |
+| PBI operativo | `docs/todos/done/[OPERATIVO] Planificación de Backlog… (Ola A).md` v1.5.1 |
 | Backlog consolidado | `docs/todos/[OPERATIVO] Backlog pendiente post-PR11…` |
 | Norma PR | `SddIA/norms/pull-request-orchestration.md` |
 | Hooks existentes | `SddIA/scripts/qa/git-hooks/` |

@@ -23,8 +23,12 @@ Acción: Los prompts generados por *-creator (ej. tool-creator, action-creator) 
 
 Ejemplo de Prefijo: [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
 
-4. Fase C — La Aduana Física (Argos Gatekeeper)
+4. Fase C — La Aduana Física (Argos Gatekeeper) — **🟡 PARCIAL**
 
-Acción: La confianza ciega es una vulnerabilidad. Ampliar el audit-entity-eda-coverage.py para que se ejecute como un pre-commit hook o dentro del delivery-close-cycle.
+Acción: Ejecutar aduana EDA e integridad de procesos como gate de commit y ciclo PR.
 
-Condición de Bloqueo: Si Argos detecta que Cursor modificó un index.md o añadió un .md de entidad sin que exista un evento de creación reciente con el mismo hash en el bus EDA (docs/events/pending/), la ejecución aborta y el commit/PR queda bloqueado (Hard Fail).
+| Entrega | Estado | Evidencia |
+|---------|--------|-----------|
+| `pre-commit` — VPI + Existencia en Bus | ✅ | PR #12 — `pre_commit_gate.py` |
+| Hooks `pre-push` / `post-merge` | ✅ | PR #13 — Ola B CA-3 |
+| Norma `external-ai-constraints.md` | ⏳ | Fase A pendiente |

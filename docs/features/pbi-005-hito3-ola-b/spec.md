@@ -317,7 +317,7 @@ Referencias obligatorias: `pull-request-orchestration.md`, `accept-pr.md`, `deli
 | Clarificación | `docs/features/pbi-005-hito3-ola-b/clarify.md` |
 | Ola A | `docs/features/pbi-005-hito3-git-hooks/` |
 | PR presentado | `docs/features/pr-presented-orchestration/` |
-| PBI operativo | `docs/todos/[OPERATIVO] Planificación de Backlog… (Ola A).md` |
+| PBI operativo | `docs/todos/done/[OPERATIVO] Planificación de Backlog… (Ola A).md` v1.5.1 |
 | Backlog | `docs/todos/[OPERATIVO] Backlog pendiente post-PR11…` |
 | Hooks SSOT | `SddIA/scripts/qa/git-hooks/` |
 | Bus SSOT | `SddIA/core/cumulo.paths.json` |

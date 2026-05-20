@@ -9,7 +9,7 @@ hito: 3
 ola: B
 parent_feature: docs/features/pbi-005-hito3-git-hooks
 related_backlog:
-  - docs/todos/[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).md
+  - docs/todos/done/[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).md
   - docs/todos/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md
 ---
 
@@ -60,7 +60,7 @@ La **Ola A** (`pre-commit` Argos) está cerrada en `main` (PR #12, feature herma
 
 ## Ley aplicada
 
-- PBI-005 § CA-3 y DoD — `docs/todos/[OPERATIVO] Planificación de Backlog… (Ola A).md` v1.4.0.
+- PBI-005 § CA-3 y DoD — `docs/todos/done/[OPERATIVO] Planificación de Backlog… (Ola A).md` v1.5.1.
 - Backlog post-PR11 § Prioridad 1 Ola B (H3.1–H3.4).
 - Precedencia fractal: `docs/features/pr-presented-orchestration/` (presentación) y `SddIA/process/accept-pr.md` (fusión).
 - Ola A cerrada: `docs/features/pbi-005-hito3-git-hooks/` (`spec.md` § 7 como borrador heredado).

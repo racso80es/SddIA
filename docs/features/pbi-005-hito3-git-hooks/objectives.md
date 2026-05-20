@@ -9,7 +9,7 @@ hito: 3
 fase: 0
 related_backlog:
   - docs/todos/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md
-  - docs/todos/[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).md
+  - docs/todos/done/[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).md
 related_todo:
   - docs/todos/TODO-BLINDAJE-IA-OBRERA.md
 ---
@@ -49,7 +49,7 @@ Materializar la infraestructura de control **pre-commit** para blindar el reposi
 
 ## Ley aplicada
 
-- PBI-005 matriz «Automatización Git» y **CA-3** — `docs/todos/[OPERATIVO] Planificación de Backlog… (Ola A).md`.
+- PBI-005 matriz «Automatización Git» y **CA-3** — `docs/todos/done/[OPERATIVO] Planificación de Backlog… (Ola A).md` v1.5.1.
 - Backlog post-PR11 § Prioridad 1 (H3.1–H3.5).
 - `docs/todos/TODO-BLINDAJE-IA-OBRERA.md` Fase C (aduana física Argos).
 - Bus SSOT: `SddIA/core/cumulo.paths.json` → `eda_bus.pending`.
