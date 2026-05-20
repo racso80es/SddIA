@@ -137,7 +137,9 @@ def _load_process_def(repo: Path, process_name: str) -> tuple[str, dict[str, Any
     return fm.get("name") or path.stem, fm, phases
 
 
-def _simulate_phase_log(phases: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _simulate_phase_log(
+    phases: list[dict[str, Any]], *, status: str = "simulated"
+) -> list[dict[str, Any]]:
     report: list[dict[str, Any]] = []
     for ph in phases:
         if not isinstance(ph, dict):
@@ -145,11 +147,172 @@ def _simulate_phase_log(phases: list[dict[str, Any]]) -> list[dict[str, Any]]:
         report.append(
             {
                 "phase_name": ph.get("name"),
-                "status": "simulated",
+                "status": status,
                 "delegates_to": ph.get("delegates_to") or [],
             }
         )
     return report
+
+
+def _invoke_git_manager(
+    repo: Path, operation_type: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    git_script = repo / "scripts" / "skills" / "git-manager.py"
+    if not git_script.is_file():
+        raise FileNotFoundError(str(git_script))
+    req = {
+        "operation_type": operation_type,
+        "repository_path": str(repo.resolve()),
+        "operation_payload_json": payload,
+    }
+    proc = subprocess.run(
+        [sys.executable, str(git_script)],
+        input=json.dumps(req, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+    )
+    stdout = (proc.stdout or "").strip()
+    if not stdout:
+        raise RuntimeError(proc.stderr or "git-manager sin salida")
+    body = json.loads(stdout)
+    if not body.get("success"):
+        raise RuntimeError(body.get("error") or "git-manager failed")
+    return body.get("data") or {}
+
+
+def _feature_phase_report(
+    phases: list[dict[str, Any]], executed_name: str, *, git_steps: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    report: list[dict[str, Any]] = []
+    for ph in phases:
+        if not isinstance(ph, dict):
+            continue
+        name = ph.get("name")
+        if name == executed_name:
+            report.append(
+                {
+                    "phase_name": name,
+                    "status": "executed",
+                    "delegates_to": ph.get("delegates_to") or [],
+                    "git_steps": git_steps,
+                }
+            )
+        else:
+            report.append(
+                {
+                    "phase_name": name,
+                    "status": "simulated",
+                    "delegates_to": ph.get("delegates_to") or [],
+                }
+            )
+    return report
+
+
+def _run_feature(repo: Path, process_inputs: dict[str, Any], phases: list[dict[str, Any]]) -> dict[str, Any]:
+    feature_name = process_inputs.get("feature_name")
+    if not isinstance(feature_name, str) or not feature_name.strip():
+        raise ValueError("feature_name requerido")
+
+    branch_name = process_inputs.get("branch_name") or f"feat/{feature_name}"
+    base_branch = process_inputs.get("base_branch") or "main"
+    persist_ref = process_inputs.get("persist_ref") or f"docs/features/{feature_name}"
+    refined = process_inputs.get("refined_requirements") or process_inputs.get("description") or ""
+
+    if not isinstance(branch_name, str) or not branch_name.strip():
+        raise ValueError("branch_name invalido")
+    if not isinstance(base_branch, str) or not base_branch.strip():
+        raise ValueError("base_branch invalido")
+    if not isinstance(persist_ref, str) or not persist_ref.strip():
+        raise ValueError("persist_ref invalido")
+
+    git_steps: list[dict[str, Any]] = []
+    git_steps.append(
+        {
+            "op": "fetch",
+            "result": _invoke_git_manager(
+                repo, "fetch", {"remote": "origin", "prune": True}
+            ),
+        }
+    )
+    git_steps.append(
+        {
+            "op": "checkout_base",
+            "result": _invoke_git_manager(
+                repo,
+                "checkout",
+                {"branch_name": base_branch.strip(), "create_if_not_exists": False},
+            ),
+        }
+    )
+    git_steps.append(
+        {
+            "op": "pull_base",
+            "result": _invoke_git_manager(
+                repo,
+                "pull",
+                {"remote": "origin", "branch": base_branch.strip()},
+            ),
+        }
+    )
+    git_steps.append(
+        {
+            "op": "checkout_feature",
+            "result": _invoke_git_manager(
+                repo,
+                "checkout",
+                {"branch_name": branch_name.strip(), "create_if_not_exists": True},
+            ),
+        }
+    )
+
+    persist_dir = repo / persist_ref
+    persist_dir.mkdir(parents=True, exist_ok=True)
+    objectives_path = persist_dir / "objectives.md"
+    created = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    if not objectives_path.is_file():
+        summary = refined.strip() or f"Feature {feature_name}"
+        objectives_path.write_text(
+            f"""---
+feature_name: {feature_name}
+created: "{created}"
+process: feature
+branch_name: {branch_name.strip()}
+persist_ref: {persist_ref.strip()}
+pbi_ref: {process_inputs.get("pbi_ref", "PBI-005")}
+---
+
+# Objetivos — {feature_name}
+
+## Misión
+
+{summary}
+
+## Alcance (manifiesto)
+
+Ver `docs/todos/PBI-005-Hito2-TODO.md` — Asalto 1: motor de acciones, anatomía de capas Skills/Tools y desacoplamiento del watcher.
+
+## Ley aplicada
+
+- Proceso `feature` v1.2.0; Git exclusivamente vía `skill:git-manager`.
+- Jerarquía: Acción → Agente → Skill agrupadora → Tools atómicas.
+""",
+            encoding="utf-8",
+        )
+
+    phase_report = _feature_phase_report(
+        phases, "Inicialización de Espacio de Trabajo", git_steps=git_steps
+    )
+    return {
+        "feature_name": feature_name,
+        "branch_name": branch_name.strip(),
+        "persist_ref": persist_ref.strip(),
+        "objectives_path": str(objectives_path.relative_to(repo)).replace("\\", "/"),
+        "execution_report": {"process_name": "feature", "phases": phase_report},
+    }
 
 
 def _run_skill_creator(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
@@ -605,6 +768,15 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
             "status_code": 0,
             "data": data,
             "execution_report": {"process_name": canonical, "phases": _simulate_phase_log(phases)},
+        }
+
+    if canonical == "feature":
+        data = _run_feature(repo, process_inputs, phases)
+        return {
+            "success": True,
+            "status_code": 0,
+            "data": data,
+            "execution_report": data.get("execution_report"),
         }
 
     return {
