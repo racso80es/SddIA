@@ -6,7 +6,7 @@ contract: process-contract v1.3.0
 context:
 - quality-assurance
 - source-control
-hash_signature: sha256:660853a9c494625b0b10ae8579307a0d630d6476e7103bfdb33e87fd497ecac9
+hash_signature: sha256:6f3c12cad3fcbc77df5c06382f885d9379ef740259f61f9c76cba03dc07fdbe4
 inputs:
 - pr_id_or_path: Identificador o ruta lógica del PR
 - pr_branch: Rama asociada al PR

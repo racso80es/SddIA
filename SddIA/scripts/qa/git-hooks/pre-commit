@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# SddIA Argos pre-commit — fail-fast (Fase 1: bus completo). SSOT: SddIA/scripts/qa/git-hooks/
+set -eu
+if [ "${SDDIA_SKIP_HOOKS:-}" = "1" ]; then
+  exit 0
+fi
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
+  echo "SddIA pre-commit: not inside a git repository" >&2
+  exit 1
+}
+cd "$REPO_ROOT" || exit 1
+export PYTHONIOENCODING=utf-8
+PYTHON=${PYTHON:-python}
+GATE="$REPO_ROOT/SddIA/scripts/qa/git-hooks/pre_commit_gate.py"
+if [ ! -f "$GATE" ]; then
+  echo "SddIA pre-commit: missing $GATE" >&2
+  exit 1
+fi
+exec "$PYTHON" "$GATE"

@@ -68,7 +68,7 @@ def main() -> None:
         if tt == "STRING":
             if not isinstance(payload, str):
                 _fail("target_payload must be a string for GENERATE_SHA256+STRING")
-            digest = _sha256_bytes(payload.encode("utf-8"))
+            digest = _sha256_bytes(payload.encode("utf-8", errors="surrogatepass"))
             _ok(digest)
         if tt == "FILE_PATH":
             if not isinstance(payload, str):
