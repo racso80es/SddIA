@@ -19,6 +19,10 @@ outputs:
   - "artifact_tool_md": "Si `scope=core`: `{paths.directories.tools}/{tool_name}.md`. Si `scope=local`: `.SddIA/tools/{tool_name}.md`. Cabecera YAML conforme a `paths.contracts.tools`."
   - "artifact_tool_script": "Script físico bajo `{paths.execution_capsules.tools}` cuando `execution_logic` exija cápsula ejecutable"
   - "artifact_tools_index": "Si `scope=core`: `{paths.directories.tools}/index.md`. Si `scope=local`: `.SddIA/tools/index.md`. Fila de catálogo con columna **Capabilities** obligatoria."
+  - "handoff_entity_uuid": "UUID v4 de la tool forjada; consumido por `entity-manager`"
+  - "handoff_hash_signature_new": "Sello `sha256:` post-forja; consumido por `entity-manager`"
+  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
+  - "handoff_version": "SemVer resultante"
 scope_topology:
   core:
     definitions_root: "SddIA/tools/"
@@ -103,3 +107,7 @@ Cualquier otro valor de `scope` → abortar con `exitCode: 1`. No escribir fuera
 1. **Cúmulo** (obligatorio, previo a escritura): validar que `uuid`, `name`, `version`, `contract`, `context` y `capabilities` de la cabecera YAML coinciden con el contrato de tools, con kebab-case de `tool_name`, unicidad del fichero en `definitions_root` y coherencia con la tabla del `index_path` del `scope` activo. Si hay discordancia → **Ruido de Sistema**; abortar; **no** autorizar fila.
 2. Tras autorización explícita de Cúmulo: `skill:filesystem-manager` abre `index_path`, localiza la tabla (columna **Capabilities** obligatoria) e inserta o actualiza la fila de `{tool_name}.md` copiando metadatos desde el YAML fuente.
 3. **Cúmulo** verificación cruzada índice ↔ cabecera; cierre de instancia solo si sincronización exacta.
+
+## Handoff `entity-manager`
+
+Invocable directamente o desde **`entity-manager`** (piloto S+). Tras indexación síncrona, propagar `handoff_entity_uuid` ← `child_tool_uuid`, `handoff_hash_signature_new` ← sello canónico, `handoff_hash_signature_old` según operación, `handoff_version` ← versión YAML. El gestor emite `emit-domain-mutation` con `origin_topology` derivado de `scope` (`core` \| `local`).

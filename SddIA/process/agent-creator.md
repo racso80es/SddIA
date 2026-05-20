@@ -14,6 +14,10 @@ inputs:
 outputs:
   - "artifact_agent_md": "Archivo `{paths.directories.agents}/{agent_name}.md` con cabecera YAML conforme a `paths.contracts.agents` (incl. `allowed_policies`)"
   - "artifact_agents_index": "`{paths.directories.agents}/index.md` creado o actualizado con fila que expone `allowed_policies` para lectura rápida de Cerbero"
+  - "handoff_entity_uuid": "UUID v4 del agente forjado; consumido por `entity-manager`"
+  - "handoff_hash_signature_new": "Sello post-forja; consumido por `entity-manager`"
+  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
+  - "handoff_version": "SemVer resultante"
 phases:
   - name: "Auditoría de Gobernanza"
     intent: "Validar estrictamente que todas las políticas solicitadas en allowed_policies existen en la normativa vigente dictada por Cerbero."
@@ -68,3 +72,7 @@ Proceso maestro para instanciar nuevas identidades operativas (Agentes) en el Co
 1. Con `agent:cumulo`, auditar o crear `{paths.directories.agents}/index.md` con tabla de catálogo que incluya columna explícita **allowed_policies** (lectura rápida para Cerbero).
 2. Insertar o actualizar la fila del agente creado alineada a la cabecera YAML (`uuid`, `name`, `version`, `contract`, políticas).
 3. Ejecutar verificación cruzada índice ↔ `.md` fuente sin divergencia; persistir cambios vía `skill:filesystem-manager`.
+
+## Handoff `entity-manager`
+
+Invocable desde **`entity-manager`** (piloto S+). Propagar handoff estándar al cierre de Fase 3; `origin_topology=core`.

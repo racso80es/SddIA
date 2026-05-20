@@ -19,6 +19,10 @@ inputs:
 outputs:
   - "artifact_domain_codex_md": "Archivo `{paths.directories.library_codexes}/{domain_codex_slug}.md` conforme a `codex-contract.md`"
   - "artifact_library_codexes_index": "`{paths.directories.library_codexes}/index.md` creado o actualizado con fila alineada a la cabecera YAML del códice"
+  - "handoff_entity_uuid": "UUID v4 del códice forjado; consumido por `entity-manager`"
+  - "handoff_hash_signature_new": "Sello post-forja"
+  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
+  - "handoff_version": "SemVer resultante"
 phases:
   - name: "Selección y Triaje (Inventario)"
     intent: "Recibir tactical_norm_inventory y target_environment; verificar bajo directories.library_norms que cada norma existe y es válida bajo norms-contract."
@@ -93,3 +97,7 @@ Proceso **creator** para la entidad **`domain-codex`** (`Library_Codex`): ensamb
 2. Insertar o actualizar la fila de `{domain_codex_slug}.md` copiando literalmente **uuid**, **name**, **version**, **target_environment** y **certification_grade** desde el frontmatter del códice recién materializado.
 3. Excluir `codex-contract.md` de la tabla de definiciones.
 4. Verificación cruzada: cero divergencia entre fila del índice y cabecera YAML del `.md` fuente antes de cerrar la instancia del proceso.
+
+## Handoff `entity-manager`
+
+Invocable desde **`entity-manager`** (piloto S+). Propagar handoff estándar al cierre de Fase 5; `origin_topology=core`.

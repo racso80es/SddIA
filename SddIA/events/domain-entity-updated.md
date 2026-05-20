@@ -25,6 +25,7 @@ Mutación genómica update. hash_signature_old y hash_signature_new REQUIRED; pa
 - `hash_signature_old`
 - `hash_signature_new`
 - `changes_summary`
+- `origin_topology`
 
 ### OPTIONAL
 - `payload_schema_hash`

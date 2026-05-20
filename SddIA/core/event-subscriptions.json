@@ -17,36 +17,42 @@
     {
       "agent": "cumulo",
       "action": "sync-entity-index",
-      "intent": "Reconciliación idempotente del index.md."
+      "applies_to_origin_topology": ["core"],
+      "intent": "Reconciliación idempotente del index.md canónico."
     },
     {
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA Rebased."
+      "applies_to_origin_topology": ["core"],
+      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
   "Domain_Entity_Updated": [
     {
       "agent": "cumulo",
       "action": "sync-entity-index",
-      "intent": "Reconciliación idempotente del index.md."
+      "applies_to_origin_topology": ["core"],
+      "intent": "Reconciliación idempotente del index.md canónico."
     },
     {
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA Rebased."
+      "applies_to_origin_topology": ["core"],
+      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
   "Domain_Entity_Deleted": [
     {
       "agent": "cumulo",
       "action": "sync-entity-index",
-      "intent": "Reconciliación idempotente del index.md."
+      "applies_to_origin_topology": ["core"],
+      "intent": "Reconciliación idempotente del index.md canónico."
     },
     {
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA Rebased."
+      "applies_to_origin_topology": ["core"],
+      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ]
 }

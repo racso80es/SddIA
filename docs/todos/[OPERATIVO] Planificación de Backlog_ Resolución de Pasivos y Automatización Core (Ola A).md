@@ -8,6 +8,7 @@ status: "en_progreso"
 supersedes_pdf: "[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).pdf"
 feature_ref: docs/features/pbi-005-debt-liquidation
 feature_ref_hito2: docs/features/pbi-005-action-engine
+feature_ref_eda_splus: docs/features/eda-domain-entities-splus
 ---
 
 # [OPERATIVO] Planificación de Backlog: Resolución de Pasivos y Automatización Core (Ola A)
@@ -46,6 +47,16 @@ Este documento formaliza el **Product Backlog Item (PBI)** estratégico destinad
 | **Evento merge** | `d121213d-4950-4927-8aae-0a9b26d6e8fb` → `docs/events/processed/` |
 | **Documentación feature** | `docs/features/pbi-005-action-engine/` |
 | **Manifiesto hito** | `docs/todos/PBI-005-Hito2-TODO.md` — fases 1–6 ✅ |
+
+### Hito EDA S+ — Cobertura genómica universal (laboratorio, rama `feat/eda-domain-entities-splus`)
+
+| Campo | Valor |
+|-------|--------|
+| **Feature** | `eda-domain-entities-splus` |
+| **Documentación** | `docs/features/eda-domain-entities-splus/` |
+| **Backfill Fase C** | `backfill-manifest.json` — 40 `Domain_Entity_Created` retroactivos (`cumulo-eda-backfill`, `--skip-dlt`) |
+| **Acta Merkle** | `merkle-acta-eda-backfill-fase-c-20260520.json` — `transaction_digest` registrado (lab: `SDDIA_LAB_SIMULATE_IOTA=1`) |
+| **Aduana Argos** | `delivery-close-cycle` → `audit-entity-eda-coverage.py --scan`; `orphan_count: 0` post-backfill |
 
 ---
 

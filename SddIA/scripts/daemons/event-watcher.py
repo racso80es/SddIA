@@ -25,6 +25,19 @@ import time
 from pathlib import Path
 from typing import Any
 
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_QA_DIR = _SCRIPT_DIR.parent / "qa"
+if str(_QA_DIR) not in sys.path:
+    sys.path.insert(0, str(_QA_DIR))
+
+from eda_bus_utils import (  # noqa: E402
+    dlt_threshold_ok,
+    inject_domain_entity_topology_defaults,
+    is_backfill_emitter,
+    resolve_origin_topology,
+    subscriber_applies_to_topology,
+)
+
 POLL_SECONDS = 2
 MAX_ROUTE_ATTEMPTS = 3
 IOTA_TIMEOUT_SECONDS = int(os.environ.get("SDDIA_IOTA_TIMEOUT_SECONDS", "45"))
@@ -134,8 +147,23 @@ def _dispatch_subscriber(
     agent = subscriber.get("agent")
     if not isinstance(agent, str) or not agent:
         return "unknown", "failed"
+
+    payload = event.get("payload") or {}
+    origin_topology = resolve_origin_topology(payload if isinstance(payload, dict) else {})
+    if event.get("event_type", "").startswith("Domain_Entity_"):
+        if not subscriber_applies_to_topology(subscriber, origin_topology):
+            return agent, "skipped-topology"
+
     tool = subscriber.get("tool")
     if tool == "iota-immutable-publisher":
+        emitter = event.get("emitter_agent")
+        if is_backfill_emitter(emitter if isinstance(emitter, str) else None):
+            event.setdefault("delivery_state", {})["dlt"] = "skipped-backfill-v1"
+            return agent, "skipped-backfill"
+        ok_thresh, reason = dlt_threshold_ok(event)
+        if not ok_thresh:
+            event.setdefault("delivery_state", {})["dlt"] = f"skipped:{reason}"
+            return agent, "skipped-dlt-threshold"
         ok, _ = _invoke_iota_publisher(repo, event)
         return agent, "success" if ok else "failed"
     action = subscriber.get("action")
@@ -275,6 +303,8 @@ def route_domain_event(event_file_path: str) -> dict[str, Any]:
     if not isinstance(event_type, str) or not event_type:
         _fail("event_type missing")
 
+    inject_domain_entity_topology_defaults(event)
+
     class_schemas = _load_event_class_schemas(repo)
     schema = class_schemas.get(event_type)
     ecst_ok, ecst_errors = _validate_ecst_instance(event, schema)
@@ -315,8 +345,13 @@ def route_domain_event(event_file_path: str) -> dict[str, Any]:
             delivery_status[agent] = status
 
     event["delivery_state"] = {**event.get("delivery_state", {}), **delivery_status}
-    all_success = not delivery_status or all(v == "success" for v in delivery_status.values())
-    dest_dir = processed if all_success else dead_letter
+    skip_only = delivery_status and all(
+        v.startswith("skipped") for v in delivery_status.values()
+    )
+    all_success = not delivery_status or all(
+        v == "success" or v.startswith("skipped") for v in delivery_status.values()
+    )
+    dest_dir = processed if (all_success or skip_only) else dead_letter
     dest = dest_dir / event_path.name
     dest.write_text(json.dumps(event, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     event_path.unlink()

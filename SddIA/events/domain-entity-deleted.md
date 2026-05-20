@@ -23,6 +23,7 @@ Mutación genómica delete. hash_signature_old REQUIRED; hash_signature_new debe
 - `entity_name`
 - `hash_signature_old`
 - `changes_summary`
+- `origin_topology`
 
 ### OPTIONAL
 - `version`

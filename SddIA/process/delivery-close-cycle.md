@@ -24,6 +24,11 @@ phases:
     impacto y evolución del Core.
   delegates_to:
   - agent:argos
+- name: Aduana EDA genómica
+  intent: Invocar audit-entity-eda-coverage.py --scan --json; si orphan_count > 0, Argos
+    registra Ruido de Sistema (block) salvo excepción documentada de backfill Fase C en curso.
+  delegates_to:
+  - agent:argos
 - name: Sync remoto y PR
   intent: Publicar cambios y abrir/actualizar PR según normas de git y PR.
   delegates_to:
@@ -48,4 +53,5 @@ Proceso paramétrico de **cierre de entrega** reutilizable desde `feature`, `bug
 ## Notas operativas
 
 * La fase **Impacto SddIA condicional** debe evaluarse como no-op documentado cuando no aplique (`source_process != feature` o sin cambios bajo `SddIA/`), sin bloquear el resto del ciclo.
+* **Aduana EDA genómica:** ejecutar `python SddIA/scripts/qa/audit-entity-eda-coverage.py --scan --json`. Si `orphan_count > 0` (entidad indexada sin `Domain_Entity_Created` correlacionado), Argos emite **Ruido de Sistema** con veredicto `block` hasta backfill Fase C (`--emit --skip-dlt` + `--anchor-merkle` obligatorio al cierre). Excepción temporal: manifiesto `backfill-manifest.json` con `correlation_id` activo en la feature.
 * Todas las rutas y políticas se resuelven exclusivamente vía `cumulo.paths.json` y normas enlazadas (`git-operations`, `pull-request-orchestration`).
