@@ -36,5 +36,6 @@ Cerrar el hueco **PullRequest_Presented** en el ciclo de entrega sin violar SRP:
 |--------------|--------|
 | Clarificación | ✅ `clarify.md` |
 | Especificación | ✅ `spec.md` |
-| Implementación | ✅ genoma + handlers lab |
-| Validación | ⏳ watcher IOTA (smoke proceso OK) |
+| Implementación | ✅ genoma + handlers lab (7 fases) |
+| Gobernanza Fase 3 | ✅ hash, perfiles lab, PBI-005 CA-3 parcial |
+| Validación | ⏳ PR GitHub + watcher IOTA en CI/local |

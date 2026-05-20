@@ -18,7 +18,7 @@ global: laboratorio
 | Acción `emit-pr-presented-event` v1.1 | ✅ | inputs `pr_url`, `correlation_id` |
 | Handler proceso fases 4–6 | ✅ | `execute_process_capsules.py` |
 | Handler acción payload `pr_url` | ✅ | `execute-action.py` |
-| Smoke delivery-close-cycle (lab) | ✅ | `pr_url` + `event_id` en envelope; fases 4–6 executed |
+| Smoke delivery-close-cycle (lab) | ✅ | 7 fases `executed` (snapshot/higiene con skip lab) |
 | Payload ECST con `pr_url` | ✅ | `emitter_agent: delivery-close-cycle` |
 | Watcher → processed + IOTA | ⏳ | `event-watcher.py --once` tras evento en pending |
 
