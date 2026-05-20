@@ -7,7 +7,7 @@ context:
 - pr-lifecycle
 - source-control
 - filesystem-ops
-hash_signature: sha256:6b324b6381a78b2425a017d570068a97ffb1d7382bf17dd784dcfe563d55dbb4
+hash_signature: sha256:f449ec5d471e94cec9f3d23be449d10bcea062b43a8fc7610bd41593bdddd8ed
 inputs:
 - source_branch: Rama feature a fusionar hacia main (validada por git-operations antes de invocar)
 - author: Autor del merge para el evento PullRequest_Merged

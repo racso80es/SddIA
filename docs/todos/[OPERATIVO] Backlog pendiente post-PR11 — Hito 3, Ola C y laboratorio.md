@@ -36,6 +36,8 @@ related:
 
 ## Prioridad 1 — PBI-005 Hito 3 (CA-3): Hooks Git orgánicos
 
+> **Feature en curso (Ola A cerrada en lab):** [`docs/features/pbi-005-hito3-git-hooks/`](../features/pbi-005-hito3-git-hooks/) — `pre-commit` Argos materializado; Ola B (`pre-push` / `post-merge`) pendiente.
+
 **Objetivo:** Que operaciones Git rutinarias depositen eventos en el bus **sin** invocaciones CLI manuales ni runbooks ad hoc.
 
 | ID | Tarea | Criterio de hecho |
@@ -110,7 +112,7 @@ related:
 | D.1 | Actualizar PBI-005 operativo: marcar orquestación PR presentado ✅; enlazar este backlog |
 | D.2 | Eliminar duplicados obsoletos en `docs/todos/` si reaparecen (p. ej. copia de `request-change-incorporation` pre-`done/`) |
 | D.3 | Reexportar PDF operativo desde `.md` si se exige paridad binaria |
-| D.4 | Crear `docs/features/pbi-005-hito3-git-hooks/` al iniciar Hito 3 |
+| D.4 | Crear `docs/features/pbi-005-hito3-git-hooks/` al iniciar Hito 3 | ✅ Ola A documentada + `git-hooks/` |
 
 ---
 

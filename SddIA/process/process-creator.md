@@ -4,7 +4,7 @@ name: "process-creator"
 version: "1.0.0"
 contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:b0b74db50d849219c315cd934ec299750bb87791a17fd3abed89bfccf4652730"
+hash_signature: sha256:dac07bacb2f2089ffd3b80cfd58e85b564ab59f4ad0691309134f779d7b64c8f
 inputs:
   - "process_name": "Identificador kebab-case del proceso (`{name}` del archivo `{name}.md`)"
   - "process_description": "Descripción operativa del propósito del proceso"

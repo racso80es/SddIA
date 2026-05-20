@@ -4,7 +4,7 @@ name: "event-creator"
 version: "1.0.0"
 contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:6b18b7785378ba5f80219a1969dbe12c394b72cebafc7cc355cec81e7431a7df"
+hash_signature: sha256:a815aabf4818dbd15635b7947bb2f861a4f8dbbf85aa8d4f43287380933ba61d
 inputs:
   - "event_name": "Identificador kebab-case de la Clase (`{name}` del archivo `{name}.md` en `cumulo.directories.events`)"
   - "event_type": "Identificador ECST PascalCase_Snake (p. ej. PullRequest_Merged); único en catálogo"
