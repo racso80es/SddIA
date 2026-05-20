@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# SddIA post-merge Ola B — accept-pr tras merge local a main. SSOT: git-hooks/
+set -eu
+if [ "${SDDIA_SKIP_HOOKS:-}" = "1" ]; then
+  exit 0
+fi
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
+  echo "SddIA post-merge: not inside a git repository" >&2
+  exit 1
+}
+cd "$REPO_ROOT" || exit 1
+export PYTHONIOENCODING=utf-8
+PYTHON=${PYTHON:-python}
+GATE="$REPO_ROOT/SddIA/scripts/qa/git-hooks/post_merge_gate.py"
+if [ ! -f "$GATE" ]; then
+  echo "SddIA post-merge: missing $GATE" >&2
+  exit 1
+fi
+exec "$PYTHON" "$GATE"

@@ -296,6 +296,159 @@ def capsule_delivery_emit_presented(repo: Path, inputs: dict[str, Any], state: d
     return seal
 
 
+def _eda_bus_scan_dirs(repo: Path) -> list[Path]:
+    cumulo_path = repo / "SddIA" / "core" / "cumulo.paths.json"
+    cumulo = json.loads(cumulo_path.read_text(encoding="utf-8"))
+    eda = cumulo.get("eda_bus") or {}
+    dirs: list[Path] = []
+    for key in ("pending", "processing", "processed"):
+        rel = eda.get(key)
+        if isinstance(rel, str) and rel.strip():
+            p = repo / rel.strip()
+            if p.is_dir():
+                dirs.append(p)
+    return dirs
+
+
+def _scan_presented_for_branch(repo: Path, branch_name: str) -> bool:
+    target = branch_name.strip()
+    for bus_dir in _eda_bus_scan_dirs(repo):
+        for path in bus_dir.glob("*.json"):
+            try:
+                event = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if event.get("event_type") != "PullRequest_Presented":
+                continue
+            payload = event.get("payload") or {}
+            if payload.get("branch") == target:
+                return True
+    return False
+
+
+def capsule_accept_genomic_audit(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    source = inputs.get("source_branch")
+    if not isinstance(source, str) or not source.strip():
+        raise ValueError("source_branch es obligatorio para accept-pr")
+    source = source.strip()
+    presented = _scan_presented_for_branch(repo, source)
+    orphan = not presented
+    state["orphan_merge"] = orphan
+    state["source_branch"] = source
+    if orphan:
+        state.setdefault("handoff", {})["traceability_warning"] = (
+            "Merge Huérfano: sin PullRequest_Presented previo en bus local"
+        )
+    return {"orphan_merge": orphan, "presented_found": presented}
+
+
+def capsule_accept_merge_sovereign(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    source = state.get("source_branch") or inputs.get("source_branch")
+    if not isinstance(source, str) or not source.strip():
+        raise ValueError("source_branch es obligatorio para Fusión Soberana")
+    source = source.strip()
+
+    if inputs.get("merge_already_done") in (True, "true", "1", 1):
+        data = invoke_git_manager(repo, "get_last_commit", {"ref": "HEAD"})
+        merge_hash = data.get("commitHash") or data.get("commit_hash")
+        state["merge_commit_hash"] = merge_hash
+        return {"skipped": True, "reason": "merge_already_done", "merge_commit_hash": merge_hash}
+
+    invoke_git_manager(repo, "checkout", {"branch_name": "main", "create_if_not_exists": False})
+    merge_data = invoke_git_manager(
+        repo,
+        "merge",
+        {"branch_name": source, "no_ff": True},
+    )
+    merge_hash = merge_data.get("commitHash") or merge_data.get("commit_hash")
+    if not merge_hash:
+        head = invoke_git_manager(repo, "get_last_commit", {"ref": "HEAD"})
+        merge_hash = head.get("commitHash") or head.get("commit_hash")
+    state["merge_commit_hash"] = merge_hash
+    return {"merge_commit_hash": merge_hash, "source_branch": source}
+
+
+def capsule_accept_emit_merged(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    source = state.get("source_branch") or inputs.get("source_branch")
+    if not isinstance(source, str) or not source.strip():
+        raise ValueError("source_branch es obligatorio para sello Merged")
+    merge_hash = state.get("merge_commit_hash")
+    if not isinstance(merge_hash, str) or not merge_hash.strip():
+        raise ValueError("merge_commit_hash ausente antes del sello Merged")
+
+    correlation_id = inputs.get("correlation_id")
+    if not isinstance(correlation_id, str) or not correlation_id.strip():
+        correlation_id = crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+
+    action_inputs: dict[str, Any] = {
+        "source_branch": source.strip(),
+        "author": inputs.get("author", "integration-operator"),
+        "correlation_id": correlation_id,
+        "merge_commit_hash": merge_hash.strip(),
+        "emitter_agent": "accept-pr",
+    }
+    if state.get("orphan_merge"):
+        action_inputs["traceability_anomaly"] = "merge_huérfano"
+        action_inputs["traceability_note"] = (
+            "Fusión física sin PullRequest_Presented previo en bus local"
+        )
+
+    seal = invoke_capsule_action(repo, "emit-pr-merged-event", action_inputs)
+    state["handoff"].update(seal)
+    state["event_id"] = seal.get("event_id")
+    state["target_path"] = seal.get("target_path")
+    return seal
+
+
+def capsule_accept_sync_cleanup(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    if os.environ.get("SDDIA_LAB_SKIP_GIT_PUSH", "").strip().lower() in ("1", "true", "yes"):
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT_PUSH"}
+    source = state.get("source_branch") or inputs.get("source_branch")
+    push_data = invoke_git_manager(
+        repo,
+        "push",
+        {"remote": "origin", "branch": "main", "force": False},
+    )
+    closed: str | None = None
+    if isinstance(source, str) and source.strip():
+        try:
+            invoke_git_manager(
+                repo,
+                "delete_branch",
+                {"branch_name": source.strip(), "remote": "origin"},
+            )
+            closed = source.strip()
+        except RuntimeError:
+            closed = None
+    state["closed_branch"] = closed
+    return {"push": push_data, "closed_branch": closed}
+
+
+def execute_accept_pr_phase(
+    repo: Path,
+    phase_name: str | None,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if phase_name == "Auditoría Genómica":
+        result = capsule_accept_genomic_audit(repo, inputs, state)
+        return {"status": "executed", "handler": "accept-genomic-audit", **result}
+    if phase_name == "Fusión Soberana":
+        result = capsule_accept_merge_sovereign(repo, inputs, state)
+        return {"status": "executed", "handler": "accept-merge-sovereign", **result}
+    if phase_name == "Sello Criptográfico de Fusión":
+        result = capsule_accept_emit_merged(repo, inputs, state)
+        return {
+            "status": "executed",
+            "handler": "accept-emit-merged",
+            **{k: result[k] for k in ("event_id", "target_path", "event_type") if k in result},
+        }
+    if phase_name == "Sincronización y Limpieza":
+        result = capsule_accept_sync_cleanup(repo, inputs, state)
+        return {"status": "executed", "handler": "accept-sync-cleanup", **result}
+    return None
+
+
 def execute_delivery_close_phase(
     repo: Path,
     phase_name: str | None,
@@ -1111,6 +1264,12 @@ def execute_phase(
         dc = execute_delivery_close_phase(repo, str(phase_name) if phase_name else None, inputs, state)
         if dc is not None:
             entry.update(dc)
+            return entry
+
+    if process_def.get("name") == "accept-pr":
+        ap = execute_accept_pr_phase(repo, str(phase_name) if phase_name else None, inputs, state)
+        if ap is not None:
+            entry.update(ap)
             return entry
 
     pi = pi_index.get(str(phase_name))

@@ -83,7 +83,7 @@ La **Ola A** (`pre-commit` Argos) está cerrada en `main` (PR #12, feature herma
 | Inicialización Git | ✅ `execute-process.py --process feature` |
 | Clarificación (Mayeuta) | ✅ `clarify.md` + O1–O5 cerradas |
 | Especificación (Dedalo) | ✅ `spec.md` v1.0.0 |
-| Planificación | ⏳ |
-| Implementación Ola B | ⏳ |
-| Validación Argos | ⏳ |
+| Planificación | ✅ `plan.md` |
+| Implementación Ola B | ✅ hooks + cápsula accept-pr |
+| Validación Argos | ⏳ `validacion.md` H3.5 |
 | Cierre PBI-005 100 % | ⏳ |
