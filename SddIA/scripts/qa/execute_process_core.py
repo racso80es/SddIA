@@ -30,6 +30,9 @@ DEFAULTABLE_INPUTS = frozenset(
         "pbi_ref",
         "refined_requirements",
         "description",
+        "pr_title",
+        "pr_body",
+        "target_branch",
     }
 )
 

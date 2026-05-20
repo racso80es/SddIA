@@ -153,14 +153,22 @@ def _run_emit_pr_presented(repo: Path, inputs: dict[str, Any], action_def: dict[
         raise ValueError("branch es obligatorio (string)")
 
     event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
-    event = {
+    payload: dict[str, Any] = {"branch": branch.strip(), "status": status}
+    pr_url = inputs.get("pr_url")
+    if isinstance(pr_url, str) and pr_url.strip():
+        payload["pr_url"] = pr_url.strip()
+
+    event: dict[str, Any] = {
         "event_id": event_id,
         "event_type": "PullRequest_Presented",
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "emitter_agent": inputs.get("emitter_agent", "emit-pr-presented-event"),
-        "payload": {"branch": branch.strip(), "status": status},
+        "emitter_agent": inputs.get("emitter_agent", "delivery-close-cycle"),
+        "payload": payload,
         "delivery_state": {},
     }
+    correlation_id = inputs.get("correlation_id")
+    if isinstance(correlation_id, str) and correlation_id.strip():
+        event["correlation_id"] = correlation_id.strip()
     seal = _write_pending_event(repo, event)
     return {
         "success": True,
