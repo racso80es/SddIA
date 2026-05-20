@@ -1,0 +1,7 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/pr-presented-orchestration",
+  "branch_name": "feat/pr-presented-orchestration",
+  "pr_title": "feat(process): orquestacion fractal PR presentado (delivery-close-cycle v1.1)",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/11"
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -31,6 +32,7 @@ SCRIPT = Path(__file__).resolve()
 EXECUTE_PROCESS_CLI = SCRIPT.parent / "execute-process.py"
 EXECUTE_ACTION_CLI = SCRIPT.parent / "execute-action.py"
 AUDIT_EDA_CLI = SCRIPT.parent / "audit-entity-eda-coverage.py"
+_GH_PR_URL_RE = re.compile(r"https://github\.com/[^\s/]+/[^\s/]+/pull/\d+", re.I)
 
 CREATOR_BY_CLASS: dict[str, str] = {
     "skill": "skill-creator",
@@ -114,6 +116,212 @@ def invoke_git_manager(repo: Path, operation_type: str, payload: dict[str, Any])
     if not body.get("success"):
         raise RuntimeError(body.get("error") or "git-manager failed")
     return body.get("data") or {}
+
+
+def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> dict[str, Any]:
+    shell_script = repo / "scripts" / "skills" / "shell-executor.py"
+    if not shell_script.is_file():
+        raise FileNotFoundError(str(shell_script))
+    req = {
+        "executable": executable,
+        "arguments": arguments,
+        "working_directory": str(repo.resolve()),
+        "environment_vars": {},
+    }
+    proc = subprocess.run(
+        [sys.executable, str(shell_script)],
+        input=json.dumps(req, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+    )
+    stdout = (proc.stdout or "").strip()
+    if not stdout:
+        raise RuntimeError(proc.stderr or "shell-executor sin salida")
+    body = json.loads(stdout)
+    if not body.get("success"):
+        raise RuntimeError(body.get("error") or "shell-executor failed")
+    return body.get("data") or {}
+
+
+def _parse_gh_pr_url(stdout: str) -> str | None:
+    for line in reversed((stdout or "").splitlines()):
+        m = _GH_PR_URL_RE.search(line)
+        if m:
+            return m.group(0)
+    m = _GH_PR_URL_RE.search(stdout or "")
+    return m.group(0) if m else None
+
+
+def _delivery_pr_title(inputs: dict[str, Any]) -> str:
+    title = inputs.get("pr_title")
+    if isinstance(title, str) and title.strip():
+        return title.strip()
+    branch = inputs.get("branch_name")
+    if isinstance(branch, str) and branch.strip():
+        return f"feat: {branch.strip()}"
+    return "feat: delivery-close-cycle"
+
+
+def capsule_delivery_remote_push(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    branch = inputs.get("branch_name")
+    if not isinstance(branch, str) or not branch.strip():
+        raise ValueError("branch_name es obligatorio para Publicación remota")
+    if os.environ.get("SDDIA_LAB_SKIP_GIT_PUSH", "").strip().lower() in ("1", "true", "yes"):
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT_PUSH"}
+    data = invoke_git_manager(
+        repo,
+        "push",
+        {"remote": "origin", "branch": branch.strip(), "force": False},
+    )
+    state["delivery_push"] = data
+    return data
+
+
+def capsule_delivery_gh_pr(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    branch = inputs.get("branch_name")
+    if not isinstance(branch, str) or not branch.strip():
+        raise ValueError("branch_name es obligatorio para Apertura en forja")
+    branch = branch.strip()
+    target = inputs.get("target_branch", "main")
+    if not isinstance(target, str) or not target.strip():
+        target = "main"
+    else:
+        target = target.strip()
+
+    preset = inputs.get("pr_url")
+    if isinstance(preset, str) and preset.strip():
+        pr_url = preset.strip()
+        state["pr_url"] = pr_url
+        return {"pr_url": pr_url, "simulated": True, "source": "inputs.pr_url"}
+
+    if os.environ.get("SDDIA_LAB_SIMULATE_GH_PR", "").strip().lower() in ("1", "true", "yes"):
+        pr_url = f"https://github.com/lab-simulated/SddIA/pull/0-{branch.replace('/', '-')}"
+        state["pr_url"] = pr_url
+        return {"pr_url": pr_url, "simulated": True}
+
+    title = _delivery_pr_title(inputs)
+    body_text = inputs.get("pr_body")
+    args = [
+        "pr",
+        "create",
+        "--title",
+        title,
+        "--head",
+        branch,
+        "--base",
+        target,
+    ]
+    if isinstance(body_text, str) and body_text.strip():
+        args.extend(["--body", body_text.strip()])
+    else:
+        args.append("--fill")
+
+    data = invoke_shell_executor(repo, "gh", args)
+    stdout = str(data.get("stdout") or "")
+    pr_url = _parse_gh_pr_url(stdout)
+    if not pr_url:
+        view = invoke_shell_executor(
+            repo,
+            "gh",
+            ["pr", "view", branch, "--json", "url", "-q", ".url"],
+        )
+        pr_url = (view.get("stdout") or "").strip()
+    if not pr_url:
+        raise RuntimeError("no se pudo resolver pr_url desde gh")
+    state["pr_url"] = pr_url
+    return {"pr_url": pr_url, "gh_stdout": stdout[:500]}
+
+
+def capsule_delivery_snapshot_final(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    branch = inputs.get("branch_name")
+    if not isinstance(branch, str) or not branch.strip():
+        raise ValueError("branch_name es obligatorio para Snapshot final")
+    if os.environ.get("SDDIA_LAB_SKIP_SNAPSHOT", "").strip().lower() in ("1", "true", "yes"):
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_SNAPSHOT"}
+    data = invoke_git_manager(
+        repo,
+        "get_last_commit",
+        {"ref": branch.strip()},
+    )
+    commit_hash = data.get("commitHash") or data.get("commit_hash")
+    state["snapshot_commit_hash"] = commit_hash
+    return {"commit_hash": commit_hash, "branch": branch.strip()}
+
+
+def capsule_delivery_local_hygiene(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    if os.environ.get("SDDIA_LAB_SKIP_HIGIENE", "").strip().lower() in ("1", "true", "yes"):
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_HIGIENE"}
+    branch = inputs.get("branch_name")
+    closed: str | None = None
+    if isinstance(branch, str) and branch.strip() and os.environ.get(
+        "SDDIA_LAB_DELETE_FEATURE_BRANCH", ""
+    ).strip().lower() in ("1", "true", "yes"):
+        try:
+            invoke_git_manager(repo, "checkout", {"branch_name": "main", "create_if_not_exists": False})
+            invoke_git_manager(
+                repo,
+                "delete_branch",
+                {"branch_name": branch.strip(), "remote": "origin"},
+            )
+            closed = branch.strip()
+        except RuntimeError:
+            closed = None
+    state["closed_branch"] = closed
+    return {"closed_branch": closed, "note": "higiene parcial en laboratorio; delete requiere SDDIA_LAB_DELETE_FEATURE_BRANCH"}
+
+
+def capsule_delivery_emit_presented(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    branch = inputs.get("branch_name")
+    if not isinstance(branch, str) or not branch.strip():
+        raise ValueError("branch_name es obligatorio para Sello Presentación ECST")
+    action_inputs: dict[str, Any] = {
+        "branch": branch.strip(),
+        "status": inputs.get("status", "presented"),
+        "emitter_agent": "delivery-close-cycle",
+    }
+    pr_url = state.get("pr_url") or inputs.get("pr_url")
+    if isinstance(pr_url, str) and pr_url.strip():
+        action_inputs["pr_url"] = pr_url.strip()
+    corr = inputs.get("correlation_id")
+    if isinstance(corr, str) and corr.strip():
+        action_inputs["correlation_id"] = corr.strip()
+    seal = invoke_capsule_action(repo, "emit-pr-presented-event", action_inputs)
+    state["handoff"].update(seal)
+    state["event_id"] = seal.get("event_id")
+    state["target_path"] = seal.get("target_path")
+    return seal
+
+
+def execute_delivery_close_phase(
+    repo: Path,
+    phase_name: str | None,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if phase_name == "Snapshot final":
+        result = capsule_delivery_snapshot_final(repo, inputs, state)
+        return {"status": "executed", "handler": "delivery-snapshot-final", **result}
+    if phase_name == "Publicación remota":
+        result = capsule_delivery_remote_push(repo, inputs, state)
+        return {"status": "executed", "handler": "delivery-remote-push", **result}
+    if phase_name == "Apertura en forja":
+        result = capsule_delivery_gh_pr(repo, inputs, state)
+        return {"status": "executed", "handler": "delivery-gh-pr", **result}
+    if phase_name == "Sello Presentación ECST":
+        result = capsule_delivery_emit_presented(repo, inputs, state)
+        return {
+            "status": "executed",
+            "handler": "delivery-emit-pr-presented",
+            **{k: result[k] for k in ("event_id", "target_path", "event_type") if k in result},
+        }
+    if phase_name == "Higiene local":
+        result = capsule_delivery_local_hygiene(repo, inputs, state)
+        return {"status": "executed", "handler": "delivery-local-hygiene", **result}
+    return None
 
 
 def invoke_subprocess_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -> dict[str, Any]:
@@ -848,16 +1056,18 @@ def try_execute_registered_action_capsules(
         if action_name == "emit-pr-presented-event":
             branch = inputs.get("branch") or inputs.get("branch_name")
             if isinstance(branch, str) and branch.strip():
-                data = invoke_capsule_action(
-                    repo,
-                    action_name,
-                    {
-                        "branch": branch.strip(),
-                        "status": inputs.get("status", "presented"),
-                        "emitter_agent": inputs.get("emitter_agent", action_name),
-                    },
-                )
-                return data
+                action_inputs: dict[str, Any] = {
+                    "branch": branch.strip(),
+                    "status": inputs.get("status", "presented"),
+                    "emitter_agent": inputs.get("emitter_agent", "delivery-close-cycle"),
+                }
+                pr_url = inputs.get("pr_url")
+                if isinstance(pr_url, str) and pr_url.strip():
+                    action_inputs["pr_url"] = pr_url.strip()
+                corr = inputs.get("correlation_id")
+                if isinstance(corr, str) and corr.strip():
+                    action_inputs["correlation_id"] = corr.strip()
+                return invoke_capsule_action(repo, action_name, action_inputs)
         if action_name == "emit-pr-merged-event":
             if inputs.get("merge_commit_hash") or inputs.get("hash_signature"):
                 return invoke_capsule_action(repo, action_name, dict(inputs))
@@ -896,6 +1106,12 @@ def execute_phase(
         if gate.get("argos_noise"):
             entry["argos_noise"] = gate["argos_noise"]
         return entry
+
+    if process_def.get("name") == "delivery-close-cycle":
+        dc = execute_delivery_close_phase(repo, str(phase_name) if phase_name else None, inputs, state)
+        if dc is not None:
+            entry.update(dc)
+            return entry
 
     pi = pi_index.get(str(phase_name))
     if pi and pi.get("invocations"):
@@ -975,6 +1191,16 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         data["eda_audit"] = state["eda_audit"]
     if state.get("argos_verdict"):
         data["argos_verdict"] = state["argos_verdict"]
+    if state.get("pr_url"):
+        data["pr_url"] = state["pr_url"]
+    if state.get("event_id"):
+        data["event_id"] = state["event_id"]
+    if state.get("target_path"):
+        data["target_path"] = state["target_path"]
+    if state.get("closed_branch"):
+        data["closed_branch"] = state["closed_branch"]
+    if state.get("snapshot_commit_hash"):
+        data["snapshot_commit_hash"] = state["snapshot_commit_hash"]
 
     blocked = state.get("argos_verdict") == "block"
     return {

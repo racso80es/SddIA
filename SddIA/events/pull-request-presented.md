@@ -1,7 +1,7 @@
 ---
 uuid: "5e488ae6-7cb2-4a2c-9725-4a7d4ce239ea"
 name: "pull-request-presented"
-version: "1.0.0"
+version: "1.1.0"
 contract: "events-contract v1.0.0"
 event_type: "PullRequest_Presented"
 context: "ecosystem-evolution"
@@ -21,14 +21,14 @@ Clase ECST para presentación de PR en bus local. Suscripción no-op hasta audit
 - `status`
 
 ### OPTIONAL
-- *(ninguno)*
+- `pr_url`
 
 ### FORBIDDEN
 - *(ninguno)*
 
 ## Emisores autorizados
 
-- `emit-pr-presented-event`
+- `emit-pr-presented-event` (invocado por `delivery-close-cycle` con `emitter_agent` del proceso)
 
 ## Suscripciones
 

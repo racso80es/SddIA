@@ -37,7 +37,7 @@ Convertir `SddIA/scripts/qa/execute-process.py` de script piloto con ramas hardc
 - Intérprete completo de `stdin_spec` / todas las `phase_invocations` de creators.
 - Retirada de shims `--input-file` y `--action` (ver TODO Ola C).
 - Perfil laboratorio vs IDE en `SddIA/process/feature.md` (pendiente del TODO laboratorio histórico).
-- Acción `request-change-incorporation` (PR vía `gh`; distinto de `emit-pr-presented-event`).
+- Orquestación PR presentado: `delivery-close-cycle` v1.1 + `emit-pr-presented-event` (ver `docs/features/pr-presented-orchestration/`).
 
 ## Ley aplicada
 

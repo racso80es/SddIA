@@ -83,4 +83,4 @@ python SddIA/scripts/daemons/event-watcher.py --once
 
 ## Handoff
 
-Motor de procesos del laboratorio operativo como intérprete agnóstico en `main`. Pendiente: retirada de shims CLI (Ola C), documentación perfil laboratorio en `feature.md`, y acción `request-change-incorporation` para apertura formal de PR.
+Motor de procesos del laboratorio operativo como intérprete agnóstico en `main`. Pendiente: retirada de shims CLI (Ola C). Apertura formal de PR: `delivery-close-cycle` v1.1 + `emit-pr-presented-event` (`docs/features/pr-presented-orchestration/`).

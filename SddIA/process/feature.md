@@ -70,4 +70,15 @@ Todos los artefactos `.md` generados bajo esta directriz deberán incluir obliga
 
 La última fase invoca la acción `execute-process` apuntando al `process_name` canónico `delivery-close-cycle`, inyectando sus `process_inputs` correspondientes (`persist_ref`, `branch_name` y `source_process: feature`). Este subproceso asume el snapshot final, la evaluación de impacto en el Core SddIA y la apertura de la Pull Request, propagando el `pr_url` hacia los outputs de este proceso padre.
 
-*Nota de Arquitectura EDA:* La emisión del Sello Criptográfico (`PullRequest_Merged`) es un evento asíncrono gestionado por el bus de eventos de dominio post-fusión, estrictamente desvinculado de la apertura de este PR. La escritura eventual de `finalize-process.md` recae en la evolución del subproceso de cierre.
+*Nota de Arquitectura EDA:* El sello **`PullRequest_Presented`** lo emite el subproceso `delivery-close-cycle` vía `emit-pr-presented-event`. El sello **`PullRequest_Merged`** pertenece exclusivamente a `accept-pr` post-fusión. La escritura eventual de `finalize-process.md` recae en la evolución del subproceso de cierre.
+
+## Perfil laboratorio vs runtime IDE
+
+| Aspecto | Laboratorio (`execute-process.py`) | Runtime IDE completo |
+| :--- | :--- | :--- |
+| Fase 1 Inicialización | `workspace-init` físico (git-manager + `objectives.md` mínimo) | Igual + norma documental completa |
+| Fases 2–5 (Mayeuta…Argos) | `simulated` / agentes IDE | Agentes V5 con salidas en `persist_ref` |
+| Fase 6 Cierre | Delega en `delivery-close-cycle` con handlers físicos fases 4–6 (push/gh/sello) | Orquestador inyecta `pr_title`, `pr_body`; sin variables `SDDIA_LAB_*` |
+| Veredicto `success` | No implica Mayeuta/Tekton ejecutados; revisar `execution_report.phases[].status` | Contrato completo del proceso |
+
+Handoff documentado: `docs/features/pr-presented-orchestration/`.

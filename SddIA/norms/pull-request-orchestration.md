@@ -20,7 +20,23 @@ jurisdiction: "dedalo"
 
 Queda **prohibido** enrutar `gh` a través de `git-manager`.
 
-## 3. Merge / Aceptación (SSOT local)
+## 3. Presentación (cierre de entrega)
+
+La apertura de Pull Request hacia `main` se orquesta **exclusivamente** mediante el proceso **`SddIA/process/delivery-close-cycle.md`** (`process: delivery-close-cycle`), resuelto vía Cúmulo y ejecutado con `action:execute-process`.
+
+Secuencia canónica dentro del proceso:
+
+1. **Publicación remota:** `skill:git-manager` → `push` de `branch_name` a `origin`.
+2. **Apertura en forja:** `skill:shell-executor` → `gh pr create` (o resolución de PR existente vía `gh pr view`).
+3. **Sello ECST:** `action:emit-pr-presented-event` con `emitter_agent: delivery-close-cycle` y `pr_url` correlacionado cuando el contrato del evento lo admita.
+
+Queda **prohibido**:
+
+* Forjar una acción monolítica que combine apertura de PR y escritura en el bus (violación SRP).
+* Invocar `gh pr create` en terminal o runbooks sin pasar por `delivery-close-cycle` salvo excepción documentada en esta norma.
+* Enrutar `gh` a través de `git-manager`.
+
+## 4. Merge / Aceptación (SSOT local)
 
 Toda fusión hacia la rama principal (`main`) en el entorno local del workspace debe orquestarse **estricta y exclusivamente** mediante el proceso **`SddIA/process/accept-pr.md`** (`process: accept-pr`), resuelto vía Cúmulo y ejecutado con `action:execute-process`.
 
@@ -32,7 +48,7 @@ Queda **terminantemente prohibido**:
 
 La **Única Fuente de Verdad (SSOT)** para la consolidación de código en `main` es `accept-pr`.
 
-## 4. Responsabilidades
+## 5. Responsabilidades
 
 | Rol | Responsabilidad |
 | :--- | :--- |
@@ -40,8 +56,10 @@ La **Única Fuente de Verdad (SSOT)** para la consolidación de código en `main
 | Tekton (u orquestador) | Ejecutar el Proceso invocando skills en el orden y contexto acordados. |
 | Cerbero / Argos | Auditar entradas contra esquemas congelados y políticas. |
 
-## 5. Referencias
+## 6. Referencias
 
+- `SddIA/process/delivery-close-cycle.md`
+- `SddIA/actions/emit-pr-presented-event.md`
 - `SddIA/norms/skill-io-git-manager-frozen.md`
 - `SddIA/norms/skill-io-shell-executor-frozen.md`
 - `SddIA/norms/git-operations.md`
