@@ -74,5 +74,6 @@ Materializar la infraestructura de control **pre-commit** para blindar el reposi
 | Especificación | ✅ `spec.md` v1.1.0 (ADN D1–D12) |
 | Planificación | ✅ `plan.md` |
 | Ola A — `git-hooks/pre-commit` | ✅ APTO (`validacion.md`) |
-| Instalación `.git/hooks` | ⏳ operador (`install-hooks.ps1`) |
+| Instalación `.git/hooks` | ✅ (`install-hooks.ps1`; operador en clones) |
+| Cierre PR #12 + DLT | ✅ `main` @ `12119f7` |
 | Ola B (H3.1–H3.3) | ⏳ |

@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/pbi-005-hito3-git-hooks",
+  "branch_name": "feat/pbi-005-hito3-git-hooks",
+  "pr_title": "feat(qa): pre-commit Argos gate (PBI-005 Hito 3 Ola A)",
+  "target_branch": "main",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/12"
+}
