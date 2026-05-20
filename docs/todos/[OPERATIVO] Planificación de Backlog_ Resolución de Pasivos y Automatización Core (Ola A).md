@@ -168,7 +168,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 
 ## 4. Próximos pasos (backlog activo)
 
-1. **Orquestación fractal PR presentado:** `delivery-close-cycle` v1.1 (push + `gh` + sello) + `emit-pr-presented-event`; ver feature `docs/features/pr-presented-orchestration/`.
+1. ~~**Orquestación fractal PR presentado**~~ ✅ Entregado PR #11 + evento `e2cbbb26-…` (ver `docs/todos/done/[ARQUITECTURA] Orquestación fractal PR presentado…`).
 2. **Hito 3 — Hooks Git:** `pre-push` / `post-merge` → pueden delegar en la acción anterior o emitir `PullRequest_*` vía `git-manager`.
 3. **EDA universal:** emisión `Domain_Entity_*` para todas las clases en `entity-manager` (ver TODO arquitectura).
 4. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.
@@ -186,7 +186,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | Proceso merge | `SddIA/process/accept-pr.md` |
 | TODO EDA entidades | `docs/todos/[ARQUITECTURA] EDA — Eventos Domain_Entity para todas las entidades de dominio.md` |
 | TODO feature laboratorio | `docs/todos/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md` (**cerrado** PR #8) |
-| TODO PR + Presented | `docs/todos/[ARQUITECTURA] Acción request-change-incorporation — PR y evento PullRequest_Presented.md` |
+| TODO PR + Presented | `docs/todos/done/[ARQUITECTURA] Orquestación fractal PR presentado — delivery-close-cycle y PullRequest_Presented.md` |
 
 ---
 

@@ -22,7 +22,7 @@ Cerrar el hueco **PullRequest_Presented** en el ciclo de entrega sin violar SRP:
 | O3 | **Contrato** `delivery-close-cycle` v1.1+ | Fase PR = `shell-executor` + `gh`; fase sello = `emit-pr-presented-event`; sin `PullRequest_Merged` en este proceso |
 | O4 | **Norma** `pull-request-orchestration.md` | Presentación vía proceso; fusión vía `accept-pr` exclusivamente |
 | O5 | **Laboratorio** | Handler de proceso ejecuta la cadena A→B; smoke: `pr_url` + JSON en `docs/events/pending/` |
-| O6 | **Runbooks** | Guías en `docs/features/*/execution.md` sin `gh pr create` suelto (salvo excepción normativa) |
+| O6 | **Runbooks** | ✅ Sin `gh pr create` suelto en execution.md de features |
 
 ## No objetivos (esta feature)
 
@@ -38,4 +38,4 @@ Cerrar el hueco **PullRequest_Presented** en el ciclo de entrega sin violar SRP:
 | Especificación | ✅ `spec.md` |
 | Implementación | ✅ genoma + handlers lab (7 fases) |
 | Gobernanza Fase 3 | ✅ hash, perfiles lab, PBI-005 CA-3 parcial |
-| Validación | ⏳ PR GitHub + watcher IOTA en CI/local |
+| Validación | ✅ PR #11 + Presented en bus; merge vía `accept-pr` pendiente |

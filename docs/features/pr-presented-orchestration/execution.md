@@ -22,6 +22,15 @@ python SddIA/scripts/qa/event-watcher.py --once
 
 El JSON de smoke fija `pr_url` para la fase «Apertura en forja»; el sello usa `emitter_agent: delivery-close-cycle` y persiste `pr_url` en el payload ECST.
 
+## Producción — PR #11
+
+| Paso | Comando / resultado |
+|------|---------------------|
+| Push | `git push -u origin feat/pr-presented-orchestration` |
+| PR | `gh pr create` → https://github.com/racso80es/SddIA/pull/11 |
+| Sello | `execute-process.py --process delivery-close-cycle --inputs-file _delivery-close-pr11.json` |
+| Watcher | `event-watcher.py --once` → `processed/` + IOTA |
+
 ## Producción (operador)
 
 Orquestar vía proceso padre (`feature` → fase Cierre de entrega → `delivery-close-cycle`) sin `gh` suelto en runbooks. Push y `gh pr create` ocurren dentro del handler del proceso cuando no están activas las variables de simulación del laboratorio.

@@ -13,8 +13,11 @@ process: feature
 - [x] Handlers opcionales Snapshot + Higiene
 - [x] PBI-005 CA-3: vía presentación documentada (hooks Hito 3 siguen abiertos)
 - [x] Enlace TODO laboratorio → feature
-- [ ] PR GitHub real (`feat/pr-presented-orchestration` → `main` vía `accept-pr`)
+- [x] PR GitHub https://github.com/racso80es/SddIA/pull/11
+- [x] Sello `PullRequest_Presented` correlacionado (`e2cbbb26-e408-4784-97a9-80787d372ab8`)
+- [ ] Merge a `main` vía `accept-pr` (post-revisión)
 
 ## Post-merge
 
-- Mover TODO arquitectónico a `docs/todos/done/` cuando PR mergeado y DoD al 100 %.
+- [x] TODO arquitectónico en `docs/todos/done/`
+- [ ] `PullRequest_Merged` tras `accept-pr` en PR #11

@@ -3,7 +3,9 @@ feature_name: pr-presented-orchestration
 created: "2026-05-20"
 process: feature
 branch: feat/pr-presented-orchestration
-global: laboratorio
+pr_url: "https://github.com/racso80es/SddIA/pull/11"
+event_id: "e2cbbb26-e408-4784-97a9-80787d372ab8"
+global: apto
 ---
 
 # Validación — pr-presented-orchestration
@@ -15,13 +17,23 @@ global: laboratorio
 | Genoma `delivery-close-cycle` v1.1 sin `emit-pr-merged-event` | ✅ | `SddIA/process/delivery-close-cycle.md` |
 | Norma presentación vía proceso | ✅ | `pull-request-orchestration.md` §3 |
 | Evento `pr_url` OPTIONAL | ✅ | `pull-request-presented.md` v1.1 |
-| Acción `emit-pr-presented-event` v1.1 | ✅ | inputs `pr_url`, `correlation_id` |
-| Handler proceso fases 4–6 | ✅ | `execute_process_capsules.py` |
-| Handler acción payload `pr_url` | ✅ | `execute-action.py` |
-| Smoke delivery-close-cycle (lab) | ✅ | 7 fases `executed` (snapshot/higiene con skip lab) |
-| Payload ECST con `pr_url` | ✅ | `emitter_agent: delivery-close-cycle` |
-| Watcher → processed + IOTA | ⏳ | `event-watcher.py --once` tras evento en pending |
+| Handler proceso 7 fases | ✅ | `execute_process_capsules.py` |
+| Smoke lab | ✅ | `_smoke-close-cycle-presented.json` |
+| PR #11 + sello Presented | ✅ | `delivery-close-cycle` + `e2cbbb26-…` |
+| Watcher → processed + IOTA | ✅ | `delivery_state.cumulo: success` |
+| Push origin | ✅ | `feat/pr-presented-orchestration` |
+| Merge `main` | ⏳ | Pendiente `accept-pr` tras revisión PR #11 |
 
-## Comando de verificación
+## Comandos reproducibles
 
-Ver `execution.md`.
+```powershell
+# Sello Presented (PR ya abierto)
+python SddIA/scripts/qa/execute-process.py --process delivery-close-cycle --inputs-file docs/features/pr-presented-orchestration/_delivery-close-pr11.json
+
+$env:SDDIA_LAB_SIMULATE_IOTA = "1"
+python SddIA/scripts/daemons/event-watcher.py --once
+```
+
+## Veredicto
+
+**APTO** para revisión y fusión soberana (`accept-pr`). Presentación EDA cerrada; merge desacoplado según norma.
