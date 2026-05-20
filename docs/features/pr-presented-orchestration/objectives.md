@@ -38,4 +38,4 @@ Cerrar el hueco **PullRequest_Presented** en el ciclo de entrega sin violar SRP:
 | Especificación | ✅ `spec.md` |
 | Implementación | ✅ genoma + handlers lab (7 fases) |
 | Gobernanza Fase 3 | ✅ hash, perfiles lab, PBI-005 CA-3 parcial |
-| Validación | ✅ PR #11 + Presented en bus; merge vía `accept-pr` pendiente |
+| Validación | ✅ PR #11 MERGED + Presented y Merged en bus |

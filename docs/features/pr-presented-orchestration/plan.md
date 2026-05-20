@@ -15,9 +15,9 @@ process: feature
 - [x] Enlace TODO laboratorio → feature
 - [x] PR GitHub https://github.com/racso80es/SddIA/pull/11
 - [x] Sello `PullRequest_Presented` correlacionado (`e2cbbb26-e408-4784-97a9-80787d372ab8`)
-- [ ] Merge a `main` vía `accept-pr` (post-revisión)
+- [x] Merge a `main` vía `accept-pr` (`d53d956`)
 
 ## Post-merge
 
 - [x] TODO arquitectónico en `docs/todos/done/`
-- [ ] `PullRequest_Merged` tras `accept-pr` en PR #11
+- [x] `PullRequest_Merged` `5d4caf9f-0d74-449c-9af4-23957957ca3d`

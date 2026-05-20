@@ -36,7 +36,7 @@ related:
 - [x] Checklist integración v2 al 100 %
 - [x] PR con `PullRequest_Presented` correlacionado a `pr_url` (#11)
 - [x] Runbooks sin `gh pr create` suelto en `docs/features/*/execution.md`
-- [ ] Merge a `main` vía **`accept-pr`** (operador, post-revisión PR #11)
+- [x] Merge a `main` vía **`accept-pr`** — `d53d956` (PR #11 MERGED 2026-05-20)
 
 ## Post-cierre
 

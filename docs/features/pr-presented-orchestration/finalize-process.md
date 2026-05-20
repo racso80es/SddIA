@@ -15,7 +15,8 @@ process: feature
 | PR | https://github.com/racso80es/SddIA/pull/11 |
 | Rama | `feat/pr-presented-orchestration` |
 | Evento | `PullRequest_Presented` → `processed/` (`delivery_state.cumulo: success`) |
-| Merge | Pendiente vía **`accept-pr`** (no `gh pr merge`) |
+| Merge | ✅ `accept-pr` — `d53d956c29ebf3c750073ec2d5841b9676162bfa` (MERGED) |
+| Evento Merged | `5d4caf9f-0d74-449c-9af4-23957957ca3d` |
 
 ## Resumen
 

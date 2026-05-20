@@ -22,7 +22,7 @@ global: apto
 | PR #11 + sello Presented | ✅ | `delivery-close-cycle` + `e2cbbb26-…` |
 | Watcher → processed + IOTA | ✅ | `delivery_state.cumulo: success` |
 | Push origin | ✅ | `feat/pr-presented-orchestration` |
-| Merge `main` | ⏳ | Pendiente `accept-pr` tras revisión PR #11 |
+| Merge `main` | ✅ | `accept-pr` → `d53d956` + `PullRequest_Merged` `5d4caf9f-…` |
 
 ## Comandos reproducibles
 
