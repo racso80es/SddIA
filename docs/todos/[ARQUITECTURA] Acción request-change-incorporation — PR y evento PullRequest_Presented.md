@@ -38,7 +38,7 @@ Simetría deseada con el par existente:
 | Síntoma | Causa raíz |
 |---------|------------|
 | PR #7 sin evento `PullRequest_Presented` | `gh pr create` no integra el bus; no se invocó `emit-pr-presented-event` |
-| Handler de `emit-pr-presented-event` solo en `execute-process.py` | Acción **no catalogada** en `SddIA/actions/` |
+| Handler de `emit-pr-presented-event` solo en `execute-process.py` | **✅ Mitigado (PR #9):** catalogada en `SddIA/actions/emit-pr-presented-event.md` + `execute-action.py`; shim legacy en `execute-process.py` |
 | `delivery-close-cycle` documenta solo `PullRequest_Merged` | Falta fase explícita de presentación + sello ECST |
 
 ## Alcance de la acción (diseño objetivo)
@@ -153,9 +153,10 @@ Los hooks `pre-push` / `post-merge` del PBI-005 **pueden llamar** a esta acción
 
 ### Fase 2 — Cápsula física
 
-- [ ] Implementar handler en `execute-process.py` y/o `execute-action.py`
-- [ ] Payload de prueba en `tmp/` (patrón Hito 1/2)
-- [ ] Smoke: acción → `pending/` → watcher → `processed/`
+- [x] Handler `emit-pr-presented-event` en `execute-action.py` (+ shim deprecado en `execute-process.py`) — PR #9
+- [x] Payload de prueba `tmp/emit-pr-presented-refactor.json`
+- [x] Smoke: acción → `pending/` → watcher → `processed/` con IOTA (`docs/features/refactor-execute-process-engine/validacion.md`)
+- [ ] Handler de **`request-change-incorporation`** (apertura PR + sello; distinto de solo emitir evento)
 
 ### Fase 3 — Cableado de procesos
 

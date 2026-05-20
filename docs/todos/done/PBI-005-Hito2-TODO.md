@@ -2,11 +2,14 @@
 document_id: PBI-005-HITO2-TODO
 title: "[OPERATIVO] Objetivos TODO — Asalto 1: Motor de Acciones y Anatomía de Capas"
 format: markdown
-version: "1.0.0"
+version: "1.1.0"
 updated: "2026-05-20"
 status: "completado"
 pbi_ref: "PBI-005"
 feature_ref: "docs/features/pbi-005-action-engine"
+merge_ref: "caab46ed4fa116977813ab35150ee05ca0358ecb"
+pr_url: "https://github.com/racso80es/SddIA/pull/8"
+eda_event_merged: "d121213d-4950-4927-8aae-0a9b26d6e8fb"
 ---
 
 # [OPERATIVO] Objetivos TODO — Asalto 1: Motor de Acciones y Anatomía de Capas (PBI-005 Hito 2)
@@ -65,11 +68,37 @@ Para mitigar la proliferación descontrolada de micro-skills de infraestructura,
 * [x] **TODO 6.3:** Validar que el daemon se mantiene ciego, invoca a `execute-action.py`, y que el índice se actualiza perfectamente mediante la coreografía pura de capas.
 * [x] **TODO 6.4:** Redactar el informe definitivo de conformidad técnica en `docs/features/pbi-005-action-engine/validacion.md` con veredicto **APTO**.
 
+### ✅ FASE 7: Entrega y cierre operativo *(post-Argos)*
+
+* [x] **TODO 7.1:** Commits atómicos en `feat/pbi-005-action-engine` (`f717a5d`, `f02b795`, `89bb001`).
+* [x] **TODO 7.2:** Merge squash a `main` — PR #8 → `caab46e`.
+* [x] **TODO 7.3:** Emisión `PullRequest_Merged` (`d121213d-4950-4927-8aae-0a9b26d6e8fb`) y procesamiento vía `event-watcher.py --once`.
+* [x] **TODO 7.4:** Actualización del manifiesto PBI padre (`docs/todos/[OPERATIVO] Planificación de Backlog_…`) v1.3.0 y `execution.md` forense.
+
 ---
 
 ## 3. Definition of Done (DoD) - Criterios de Cierre
 
 Un ítem de esta matriz solo se considerará completado cuando cumpla con los tres pilares de acero de nuestra constitución:
-1.  **Ausencia de Alucinación:** El código nuevo no asume rutas físicas implícitas; lee el SSOT de rutas o recibe los paths parametrizados por contrato.
-2.  **Idempotencia Estricta:** Ejecutar la misma acción de sincronización o manipulación de tablas n veces consecutivas con el mismo payload no altera el estado del repositorio ni duplica las filas del catálogo.
-3.  **Trazabilidad Semántica:** Cada fase completada debe consolidarse en un commit atómico y limpio en la rama de la feature antes de solicitar el merge squash hacia `main`.
+
+| Pilar | Estado | Evidencia |
+|-------|--------|-----------|
+| **Ausencia de Alucinación** | ✅ | Rutas vía `cumulo.paths.json`; tools reciben `file_path` parametrizado |
+| **Idempotencia Estricta** | ✅ | `delete_row` / tránsitos bus / sufijos receipt documentados como no-op si destino existe |
+| **Trazabilidad Semántica** | ✅ | 3 commits feature + squash PR #8; forense en `docs/features/pbi-005-action-engine/` |
+
+**Veredicto DoD:** **CUMPLIDO** — Asalto 1 (Hito 2) cerrado en `main`.
+
+---
+
+## 4. Registro de cierre (2026-05-20)
+
+| Campo | Valor |
+|-------|--------|
+| **Rama entrega** | `feat/pbi-005-action-engine` (eliminada post-merge) |
+| **PR** | https://github.com/racso80es/SddIA/pull/8 — **MERGED** (squash) |
+| **Merge commit** | `caab46ed4fa116977813ab35150ee05ca0358ecb` |
+| **Cierre documental** | `43ac435` — manifiesto PBI v1.3.0 + EDA |
+| **Validación** | `docs/features/pbi-005-action-engine/validacion.md` — **APTO** |
+| **Handler feature laboratorio** | `execute-process.py` fase 1 viva (deuda TODO arquitectura cerrada) |
+| **Entrega previa relacionada** | PR #7 (`dbf606b`) — base motor + purga `sync-entity-index.py` |

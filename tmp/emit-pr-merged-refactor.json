@@ -1,0 +1,7 @@
+{
+  "source_branch": "feat/refactor-execute-process-engine",
+  "merge_commit_hash": "d2c9559aee9c5bf1bcff0e08e5a671ab9368d175",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/9",
+  "author": "integration-operator",
+  "correlation_id": "refactor-execute-process-engine-close"
+}

@@ -6,13 +6,18 @@ version: "1.0.0"
 created: "2026-05-19"
 status: "cerrado"
 priority: media
+superseded_by: docs/features/refactor-execute-process-engine/
 related:
   - SddIA/process/feature.md
   - SddIA/scripts/qa/execute-process.py
+  - SddIA/scripts/qa/execute_process_capsules.py
   - docs/features/pbi-005-hito2-action-engine/objectives.md
+  - docs/features/refactor-execute-process-engine/validacion.md
 ---
 
 # TODO: Handler físico de `feature` en `execute-process.py`
+
+> **Nota (2026-05-20):** El handler `if canonical == "feature"` fue **sustituido** por el handler genérico `workspace-init` del intérprete dinámico (PR #9). Ver manifiestos en `docs/features/refactor-execute-process-engine/`.
 
 ## Objetivo
 
@@ -37,7 +42,7 @@ Cerrar la brecha entre el contrato normativo del proceso **`feature`** (seis fas
 
 ## Tareas
 
-- [x] Añadir rama `if canonical == "feature":` en `SddIA/scripts/qa/execute-process.py`.
+- [x] Añadir rama `if canonical == "feature":` en `SddIA/scripts/qa/execute-process.py` *(sustituida por `workspace-init` en PR #9)*.
 - [x] Encapsular invocación `git-manager` (mismo patrón que `accept-pr` / docs `pbi-005-debt-liquidation/execution.md`).
 - [ ] Documentar en `SddIA/process/feature.md` el perfil **laboratorio** vs **runtime IDE completo**.
 - [x] Prueba: payload `feature-pbi005-hito2-init.json` deja rama + `objectives.md` sin pasos manuales.

@@ -57,7 +57,8 @@ Para evitar fugas de entropía y garantizar el cumplimiento del estándar **S+ G
 |--------------------|------------------------------------------|---------|------------|
 | **Validación de purga** (`delete operation`) | Prueba de humo sobre `test-cli-skill` vía puerta oficial `execute-process.py` → `entity-manager` (`lifecycle_operation: delete`). Verificar eliminación física del `.md` y purga de fila en catálogo (`SddIA/skills/index.md`) vía bus + `sync-entity-index`. | Medio / Validación | **✅ Completado** |
 | **Expansión DLT en delete** *(desglose Hito 1b)* | Suscriptor `cumulo` + `tool: iota-immutable-publisher` en `Domain_Entity_Deleted` (`SddIA/core/event-subscriptions.json`), simétrico a `PullRequest_Merged`. | Medio / Genoma EDA | **✅ Completado** |
-| **Motor de acciones** (`execute-action.py`) | Intérprete universal, `skill:bus-operator`, micro-tools EDA, `tool:markdown-table-editor`; watcher ciego; handler `feature` fase 1 en laboratorio. | Alto / Deuda técnica | **✅ Completado** (Hito 2, PR #7 + #8) |
+| **Motor de acciones** (`execute-action.py`) | Intérprete universal, `skill:bus-operator`, micro-tools EDA, `tool:markdown-table-editor`; watcher ciego; handlers EDA (`emit-pr-*`, `emit-domain-mutation`). | Alto / Deuda técnica | **✅ Completado** (Hito 2 PR #7–#8; ampliado PR #9) |
+| **Intérprete procesos** (`execute-process.py`) | Refactor Kaizen: core + cápsulas, validación contrato MD, `CAPSULE_ACTION_REGISTRY`; shims Ola C documentados. | Alto / Arquitectura | **✅ Completado** (PR #9, `docs/features/refactor-execute-process-engine/`) |
 | **Automatización Git** (hooks de integración) | Scripts en `.git/hooks/` (`pre-push` / `post-merge`) para emitir `PullRequest_Presented` y `PullRequest_Merged` al bus sin invocaciones CLI manuales. | Bajo / Automatización | **⏳ Pendiente** (Hito 3) |
 
 ### Evidencia Hito 1 (cerrado)
@@ -71,11 +72,18 @@ Para evitar fugas de entropía y garantizar el cumplimiento del estándar **S+ G
 
 - **`execute-action.py`:** puerta CLI; `sync-entity-index` → `agent:cumulo` → `skill:bus-operator` → `tool:markdown-table-editor`.
 - **`bus-operator`:** `SddIA/skills/bus-operator.md` + `scripts/skills/bus-operator.py`; micro-tools `read-event-subscriptions`, `manage-event-receipt`, `transit-event-payload`.
-- **`execute-process.py`:** handler físico proceso `feature` (fase 1 git-manager; fases 2–6 `simulated`).
+- **`execute-process.py`:** ~~handler `if feature`~~ → **intérprete dinámico agnóstico** (PR #9, `refactor-execute-process-engine`); `workspace-init` genérico; fases agente `simulated`.
 - **`markdown-table-editor`:** contrato + cápsula en `SddIA/scripts/tools/markdown-table-editor/`.
 - **Watcher:** `event-watcher.py` despacha vía `execute-action.py` (sin `sync-entity-index.py`).
 - **Purga:** `SddIA/scripts/qa/sync-entity-index.py` ausente.
 - **Validación:** `docs/features/pbi-005-action-engine/validacion.md` — **APTO**.
+
+### Evidencia refactor intérprete procesos (PR #9)
+
+- **`execute-process.py`:** intérprete dinámico (`execute_process_core` + `execute_process_capsules`); sin ramas por nombre de proceso.
+- **`execute-action.py`:** `emit-domain-mutation`, `emit-pr-presented-event`, `emit-pr-merged-event`.
+- **`event-subscriptions.json`:** IOTA en `PullRequest_Presented` restaurado (`18d80ea`).
+- **Validación:** `docs/features/refactor-execute-process-engine/validacion.md` — **APTO**.
 
 **Invocación canónica (acción índice):**
 

@@ -10,6 +10,11 @@ related:
   - SddIA/scripts/qa/execute-process.py
   - SddIA/scripts/qa/execute-action.py
   - docs/features/refactor-execute-process-engine/objectives.md
+  - docs/features/refactor-execute-process-engine/validacion.md
+  - docs/features/refactor-execute-process-engine/execution.md
+---
+
+**Entrega base completada:** intérprete dinámico y registry EDA en `main` (PR #9). Este TODO cubre la **fase 2** de limpieza de shims.
 ---
 
 # Deuda técnica: eliminación de capas de compatibilidad (Ola C)
@@ -40,7 +45,7 @@ Tras la refactorización del intérprete dinámico (`refactor-execute-process-en
 
 - [ ] Migrar tuberías que invocan `execute-process.py --action emit-pr-merged-event` (p. ej. `pbi-005-action-engine/execution.md`, `accept-pr`, TODO request-change-incorporation).
 - [ ] Eliminar `shim_execute_action()` y argumento `--action` del parser de procesos.
-- [ ] Verificar handlers físicos en `execute-action.py` (`emit-pr-*`, futuro `emit-domain-mutation`).
+- [x] Handlers físicos en `execute-action.py` verificados (`emit-pr-*`, `emit-domain-mutation`) — ver `refactor-execute-process-engine/validacion.md`.
 
 ## Criterio de cierre
 
