@@ -19,7 +19,7 @@ Liquidar pasivos técnicos heredados de la **Ola A** validando el mecanismo dest
 |------|-------|--------|
 | **1 — Validación de purga** | Prueba de humo sobre `test-cli-skill` vía `execute-process` → `entity-manager` (`lifecycle_operation: delete`). | ✅ |
 | **1b — Expansión DLT** | Suscriptor `cumulo` + `iota-immutable-publisher` en `Domain_Entity_Deleted`. | ✅ |
-| **2 — Motor de acciones** | `execute-action.py`, `markdown-table-editor`, desacoplamiento watcher; purga `sync-entity-index.py`. | ✅ (rama `feat/pbi-005-action-engine`) |
+| **2 — Motor de acciones** | `execute-action.py`, `bus-operator`, `markdown-table-editor`, handler `feature`; PR #8 `caab46e`. | ✅ |
 | **3 — Hooks Git** | Automatización `PullRequest_Presented` / `PullRequest_Merged` en `.git/hooks/`. | ⏳ Backlog |
 
 ## Fuera de alcance inmediato
@@ -29,7 +29,7 @@ Liquidar pasivos técnicos heredados de la **Ola A** validando el mecanismo dest
 
 ## Ley aplicada
 
-- Proceso `feature` v1.2.0; entrega Hito 2 documentada en `docs/features/pbi-005-hito2-action-engine/`.
+- Proceso `feature` v1.2.0; entrega Hito 2 documentada en `docs/features/pbi-005-action-engine/`.
 - Git vía `git-manager`; bus SSOT: `cumulo.paths.json` → `eda_bus.pending`.
 
 ## Criterio de éxito (Hito 1 — cumplido)

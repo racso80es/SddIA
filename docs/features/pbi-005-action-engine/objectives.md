@@ -23,6 +23,7 @@ Materializar el **motor universal de acciones** (`execute-action.py`), blindar l
 | 4 | `execute-action.py` enlazado a capas | ✅ |
 | 5 | Watcher → `execute-action` (sin import legacy) | ✅ (preexistente) |
 | 6 | Auditoría Argos / `validacion.md` | ✅ |
+| — | Merge PR #8 (`caab46e`) + cierre EDA | ✅ |
 
 ## Fuera de alcance
 

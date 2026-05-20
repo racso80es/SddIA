@@ -2,23 +2,23 @@
 document_id: PBI-005
 title: "[OPERATIVO] Planificación de Backlog — Resolución de Pasivos y Automatización Core (Ola A)"
 format: markdown
-version: "1.2.0"
-updated: "2026-05-19"
+version: "1.3.0"
+updated: "2026-05-20"
 status: "en_progreso"
 supersedes_pdf: "[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).pdf"
 feature_ref: docs/features/pbi-005-debt-liquidation
-feature_ref_hito2: docs/features/pbi-005-hito2-action-engine
+feature_ref_hito2: docs/features/pbi-005-action-engine
 ---
 
 # [OPERATIVO] Planificación de Backlog: Resolución de Pasivos y Automatización Core (Ola A)
 
-> **Nota de gobernanza (2026-05-19):** Esta copia **Markdown** es la versión operativa actualizada del PBI. Refleja **Hito 1** y **Hito 2** (motor de acciones) en rama de entrega / merge. El PDF homónimo en esta carpeta corresponde a la versión **1.0.0** previa; reexportar el PDF desde este `.md` cuando se requiera paridad física.
+> **Nota de gobernanza (2026-05-20):** Esta copia **Markdown** es la versión operativa actualizada del PBI. **Hitos 1 y 2 cerrados en `main`** (PR #6 y PR #8). El PDF homónimo en esta carpeta corresponde a la versión **1.0.0** previa; reexportar el PDF desde este `.md` cuando se requiera paridad física.
 
 Este documento formaliza el **Product Backlog Item (PBI)** estratégico destinado a liquidar los pasivos técnicos heredados de la **Ola A**, validar los mecanismos destructivos del genoma y automatizar la interacción física con el sistema de control de versiones **Git**. Su propósito es consolidar los cimientos de la infraestructura antes del despliegue masivo de la arquitectura coreográfica (**Ola C**).
 
 ---
 
-## Registro de ejecución (actualización 2026-05-19)
+## Registro de ejecución (actualización 2026-05-20)
 
 ### Hito 1 (cerrado en `main`)
 
@@ -32,18 +32,20 @@ Este documento formaliza el **Product Backlog Item (PBI)** estratégico destinad
 | **Proceso merge** | `accept-pr` vía `git-manager` + `emit-pr-merged-event` |
 | **Documentación feature** | `docs/features/pbi-005-debt-liquidation/` |
 
-### Hito 2 — Motor de acciones (entrega)
+### Hito 2 — Motor de acciones (cerrado en `main`)
 
 | Campo | Valor |
 |-------|--------|
 | **Feature** | `pbi-005-hito2-action-engine` |
-| **Rama entrega** | `feat/pbi-005-action-engine` |
-| **Commit base** | `0cce8ba` — `execute-action.py`, `markdown-table-editor`, purga `sync-entity-index.py` |
-| **PR** | https://github.com/racso80es/SddIA/pull/7 — **MERGED** |
-| **Merge commit (`main`)** | `dbf606b98eec2603f48d509612a00fba169018de` |
-| **Proceso merge** | `accept-pr` vía `git-manager` + `emit-pr-merged-event` |
-| **Evento merge** | `aaf010d6-88e4-432b-b65e-1470d3923fb0` → `docs/events/processed/` |
-| **Documentación feature** | `docs/features/pbi-005-hito2-action-engine/` |
+| **Rama entrega** | `feat/pbi-005-action-engine` (eliminada post-merge) |
+| **Entrega previa** | PR #7 — `0cce8ba` / `dbf606b` (`execute-action`, `markdown-table-editor`, purga legacy) |
+| **Consolidación capas** | PR #8 — squash `caab46e` (handler `feature`, `bus-operator`, micro-tools EDA, forense) |
+| **PR definitivo** | https://github.com/racso80es/SddIA/pull/8 — **MERGED** |
+| **Merge commit (`main`)** | `caab46ed4fa116977813ab35150ee05ca0358ecb` |
+| **Proceso merge** | `gh pr merge --squash` + `emit-pr-merged-event` + watcher |
+| **Evento merge** | `d121213d-4950-4927-8aae-0a9b26d6e8fb` → `docs/events/processed/` |
+| **Documentación feature** | `docs/features/pbi-005-action-engine/` |
+| **Manifiesto hito** | `docs/todos/PBI-005-Hito2-TODO.md` — fases 1–6 ✅ |
 
 ---
 
@@ -55,7 +57,7 @@ Para evitar fugas de entropía y garantizar el cumplimiento del estándar **S+ G
 |--------------------|------------------------------------------|---------|------------|
 | **Validación de purga** (`delete operation`) | Prueba de humo sobre `test-cli-skill` vía puerta oficial `execute-process.py` → `entity-manager` (`lifecycle_operation: delete`). Verificar eliminación física del `.md` y purga de fila en catálogo (`SddIA/skills/index.md`) vía bus + `sync-entity-index`. | Medio / Validación | **✅ Completado** |
 | **Expansión DLT en delete** *(desglose Hito 1b)* | Suscriptor `cumulo` + `tool: iota-immutable-publisher` en `Domain_Entity_Deleted` (`SddIA/core/event-subscriptions.json`), simétrico a `PullRequest_Merged`. | Medio / Genoma EDA | **✅ Completado** |
-| **Motor de acciones** (`execute-action.py`) | Desacoplar acoplamiento rígido de `sync-entity-index.py` en el daemon. Intérprete universal `execute-action.py` y `tool:markdown-table-editor` para soberanía de Cúmulo. | Alto / Deuda técnica | **✅ Completado** (Hito 2) |
+| **Motor de acciones** (`execute-action.py`) | Intérprete universal, `skill:bus-operator`, micro-tools EDA, `tool:markdown-table-editor`; watcher ciego; handler `feature` fase 1 en laboratorio. | Alto / Deuda técnica | **✅ Completado** (Hito 2, PR #7 + #8) |
 | **Automatización Git** (hooks de integración) | Scripts en `.git/hooks/` (`pre-push` / `post-merge`) para emitir `PullRequest_Presented` y `PullRequest_Merged` al bus sin invocaciones CLI manuales. | Bajo / Automatización | **⏳ Pendiente** (Hito 3) |
 
 ### Evidencia Hito 1 (cerrado)
@@ -67,10 +69,13 @@ Para evitar fugas de entropía y garantizar el cumplimiento del estándar **S+ G
 
 ### Evidencia Hito 2 (motor de acciones)
 
-- **`execute-action.py`:** puerta CLI `--action` / `--inputs` | `--input-file`; handler físico `sync-entity-index` → `markdown-table-editor`.
-- **`markdown-table-editor`:** `SddIA/tools/markdown-table-editor.md` + cápsula `SddIA/scripts/tools/markdown-table-editor/`.
-- **Watcher:** `event-watcher.py` despacha acciones vía `execute-action.py` (sin rama rígida a `sync-entity-index.py`).
-- **Purga:** `SddIA/scripts/qa/sync-entity-index.py` eliminado del repositorio.
+- **`execute-action.py`:** puerta CLI; `sync-entity-index` → `agent:cumulo` → `skill:bus-operator` → `tool:markdown-table-editor`.
+- **`bus-operator`:** `SddIA/skills/bus-operator.md` + `scripts/skills/bus-operator.py`; micro-tools `read-event-subscriptions`, `manage-event-receipt`, `transit-event-payload`.
+- **`execute-process.py`:** handler físico proceso `feature` (fase 1 git-manager; fases 2–6 `simulated`).
+- **`markdown-table-editor`:** contrato + cápsula en `SddIA/scripts/tools/markdown-table-editor/`.
+- **Watcher:** `event-watcher.py` despacha vía `execute-action.py` (sin `sync-entity-index.py`).
+- **Purga:** `SddIA/scripts/qa/sync-entity-index.py` ausente.
+- **Validación:** `docs/features/pbi-005-action-engine/validacion.md` — **APTO**.
 
 **Invocación canónica (acción índice):**
 
@@ -98,7 +103,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | **ID** | PBI-005 |
 | **Título** | [OPERATIVO] Liquidación de Pasivos de la Ola A y Automatización de la Capa de Enlace Git |
 | **Prioridad** | Alta (bloqueante para desarrollo iterativo estable) |
-| **Estado global** | **Parcialmente completado** — Hitos 1–2; **Hito 3** (hooks Git) en backlog |
+| **Estado global** | **Parcialmente completado** — Hitos 1–2 cerrados en `main`; **Hito 3** (hooks Git) en backlog |
 
 ### 2.1. Criterios de aceptación (CAs)
 
@@ -136,9 +141,9 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | **Idempotencia estricta** | 🟡 Validado en purga y motor de acciones |
 | **Preservación del historial** | ✅ `docs/events/processed/` intacto |
 | **CA-1 + CA-2 + CA-3** | 🟡 **CA-1 y CA-2** cumplidos; **CA-3** abierto |
-| **Entrega en `main` con trazabilidad** | ✅ Hito 1; Hito 2 en cierre de merge |
+| **Entrega en `main` con trazabilidad** | ✅ Hito 1 (PR #6); Hito 2 (PR #8, `caab46e`) |
 
-**Veredicto actual:** PBI-005 **no cerrado al 100%**; cierre total condicionado a **Hito 3** (hooks Git) y deuda de laboratorio documentada en `docs/todos/`.
+**Veredicto actual:** PBI-005 **no cerrado al 100%**; cierre total condicionado a **Hito 3** (hooks Git) y acción `request-change-incorporation`.
 
 ---
 
@@ -146,9 +151,8 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 
 1. **Acción `request-change-incorporation`:** abrir PR + emitir `PullRequest_Presented`; cablear en `delivery-close-cycle` y procesos de entrega (ver TODO arquitectura dedicado).
 2. **Hito 3 — Hooks Git:** `pre-push` / `post-merge` → pueden delegar en la acción anterior o emitir `PullRequest_*` vía `git-manager`.
-3. **Deuda laboratorio:** handler físico de `feature` en `execute-process.py` (ver TODO dedicado).
-4. **EDA universal:** emisión `Domain_Entity_*` para todas las clases en `entity-manager` (ver TODO arquitectura).
-5. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.
+3. **EDA universal:** emisión `Domain_Entity_*` para todas las clases en `entity-manager` (ver TODO arquitectura).
+4. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.
 
 ---
 
@@ -157,11 +161,12 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | Artefacto | Ruta |
 |-----------|------|
 | Feature Hito 1 | `docs/features/pbi-005-debt-liquidation/` |
-| Feature Hito 2 | `docs/features/pbi-005-hito2-action-engine/` |
+| Feature Hito 2 | `docs/features/pbi-005-action-engine/` |
+| Manifiesto Hito 2 | `docs/todos/PBI-005-Hito2-TODO.md` |
 | Genoma suscripciones | `SddIA/core/event-subscriptions.json` |
 | Proceso merge | `SddIA/process/accept-pr.md` |
 | TODO EDA entidades | `docs/todos/[ARQUITECTURA] EDA — Eventos Domain_Entity para todas las entidades de dominio.md` |
-| TODO feature laboratorio | `docs/todos/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md` |
+| TODO feature laboratorio | `docs/todos/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md` (**cerrado** PR #8) |
 | TODO PR + Presented | `docs/todos/[ARQUITECTURA] Acción request-change-incorporation — PR y evento PullRequest_Presented.md` |
 
 ---
@@ -172,4 +177,5 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 |---------|-------|--------|
 | 1.0.0 | (PDF origen) | Matriz inicial; tres faenas pendientes |
 | 1.1.0 | 2026-05-19 | Hito 1 + 1b completados; CA-1 cumplido; PR #6 |
-| 1.2.0 | 2026-05-19 | Hito 2 completado; CA-2 cumplido; referencias hito2 y TODOs de deuda |
+| 1.2.0 | 2026-05-19 | Hito 2 base (PR #7); CA-2 cumplido; referencias hito2 |
+| 1.3.0 | 2026-05-20 | Hito 2 consolidado (PR #8): bus-operator, handler feature, manifiesto TODO y forense APTO |

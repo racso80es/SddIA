@@ -4,7 +4,7 @@ title: "[OPERATIVO] Objetivos TODO — Asalto 1: Motor de Acciones y Anatomía d
 format: markdown
 version: "1.0.0"
 updated: "2026-05-20"
-status: "planificado"
+status: "completado"
 pbi_ref: "PBI-005"
 feature_ref: "docs/features/pbi-005-action-engine"
 ---
