@@ -21,6 +21,12 @@ items:
   - id: FA-governance
     touchpoint: entity-manager.md, *-creator.md (6 clases)
     status: done
+  - id: FB-e2e
+    touchpoint: run-eda-e2e-lab.py, event-watcher.py
+    status: done
+  - id: FB-argos
+    touchpoint: execute_process_capsules.py delivery-close-cycle gate
+    status: done
 ---
 
 # Implementación — EDA Domain Entities S+

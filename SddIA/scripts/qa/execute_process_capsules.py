@@ -30,6 +30,7 @@ except ImportError:
 SCRIPT = Path(__file__).resolve()
 EXECUTE_PROCESS_CLI = SCRIPT.parent / "execute-process.py"
 EXECUTE_ACTION_CLI = SCRIPT.parent / "execute-action.py"
+AUDIT_EDA_CLI = SCRIPT.parent / "audit-entity-eda-coverage.py"
 
 CREATOR_BY_CLASS: dict[str, str] = {
     "skill": "skill-creator",
@@ -747,6 +748,60 @@ def invoke_capsule_action(
     return body.get("data") or {}
 
 
+def run_eda_audit_scan(repo: Path) -> dict[str, Any]:
+    proc = subprocess.run(
+        [sys.executable, str(AUDIT_EDA_CLI), "--scan", "--json"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+    )
+    line = (proc.stdout or "").strip()
+    if not line:
+        raise RuntimeError(proc.stderr or "audit-entity-eda-coverage sin salida")
+    return json.loads(line)
+
+
+def _backfill_manifest_active(repo: Path, persist_ref: str | None) -> bool:
+    if not isinstance(persist_ref, str) or not persist_ref.strip():
+        return False
+    manifest = repo / persist_ref.strip() / "backfill-manifest.json"
+    if not manifest.is_file():
+        return False
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    return bool(data.get("correlation_id")) and not data.get("merkle_anchored")
+
+
+def capsule_eda_genomic_audit_gate(
+    repo: Path, inputs: dict[str, Any], state: dict[str, Any]
+) -> dict[str, Any]:
+    report = run_eda_audit_scan(repo)
+    orphan_count = int(report.get("orphan_count") or 0)
+    state["eda_audit"] = report
+    persist_ref = inputs.get("persist_ref")
+    if orphan_count > 0 and _backfill_manifest_active(repo, str(persist_ref) if persist_ref else None):
+        verdict = "warn"
+        noise = "backfill Fase C en curso"
+    elif orphan_count > 0:
+        verdict = "block"
+        noise = "Ruido de Sistema"
+        state["argos_verdict"] = "block"
+    else:
+        verdict = "pass"
+        noise = None
+    return {
+        "verdict": verdict,
+        "orphan_count": orphan_count,
+        "argos_noise": noise,
+        "scanned_at": report.get("scanned_at"),
+    }
+
+
 def capsule_emit_domain_mutation(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     handoff = state.get("handoff") or {}
     seed = dict(inputs.get("semantic_seed") or {})
@@ -832,6 +887,16 @@ def execute_phase(
         state["workspace"] = result
         return entry
 
+    if str(phase_name) == "Aduana EDA genómica":
+        gate = capsule_eda_genomic_audit_gate(repo, inputs, state)
+        entry["status"] = "executed" if gate["verdict"] != "block" else "blocked"
+        entry["handler"] = "eda-genomic-audit"
+        entry["argos_verdict"] = gate["verdict"]
+        entry["orphan_count"] = gate["orphan_count"]
+        if gate.get("argos_noise"):
+            entry["argos_noise"] = gate["argos_noise"]
+        return entry
+
     pi = pi_index.get(str(phase_name))
     if pi and pi.get("invocations"):
         inv_log = run_phase_invocations(repo, pi, inputs, state)
@@ -906,12 +971,18 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
     data: dict[str, Any] = {"process_name": canonical, "handoff": state.get("handoff")}
     if state.get("workspace"):
         data.update(state["workspace"])
+    if state.get("eda_audit"):
+        data["eda_audit"] = state["eda_audit"]
+    if state.get("argos_verdict"):
+        data["argos_verdict"] = state["argos_verdict"]
 
+    blocked = state.get("argos_verdict") == "block"
     return {
-        "success": True,
-        "status_code": 0,
+        "success": not blocked,
+        "status_code": 1 if blocked else 0,
         "data": data,
         "execution_report": {"process_name": canonical, "phases": phase_reports},
+        "error": "Argos: Ruido de Sistema (huérfanas EDA)" if blocked else None,
     }
 
 

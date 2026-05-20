@@ -12,6 +12,12 @@ checks:
   - name: audit --scan JSON
     result: pass
     evidence: orphan_count 40 (esperado pre-backfill Fase C)
+  - name: E2E tool pending to processed
+    result: pass
+    evidence: run-eda-e2e-lab.py, event 7dfa528e-cc36-4b29-81ea-e932577c1459
+  - name: delivery-close-cycle Argos block
+    result: pass
+    evidence: orphan_count 40, argos_verdict block
   - name: origin_topology local no muta index core
     result: pending
 git_changes: uncommitted

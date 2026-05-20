@@ -22,6 +22,12 @@ python SddIA/scripts/qa/audit-entity-eda-coverage.py --scan --json
 # Backfill (Fase C — no ejecutado en este ciclo)
 python SddIA/scripts/qa/audit-entity-eda-coverage.py --emit --skip-dlt --correlation-id eda-backfill-001
 python SddIA/scripts/qa/audit-entity-eda-coverage.py --anchor-merkle docs/features/eda-domain-entities-splus/backfill-manifest.json
+
+# Fase B — E2E watcher
+python SddIA/scripts/qa/run-eda-e2e-lab.py --entity-class tool --json
+
+# Fase B — Aduana Argos (debe block con huérfanas)
+python SddIA/scripts/qa/execute-process.py --process delivery-close-cycle --inputs-file docs/features/eda-domain-entities-splus/_smoke-close-cycle.json
 ```
 
 ## Rama
