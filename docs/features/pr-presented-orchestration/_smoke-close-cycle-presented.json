@@ -1,0 +1,7 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/pr-presented-orchestration",
+  "branch_name": "feat/pr-presented-orchestration",
+  "pr_title": "feat(pr-presented): orquestación fractal delivery-close-cycle",
+  "pr_url": "https://github.com/lab-simulated/SddIA/pull/0-feat-pr-presented-orchestration"
+}
