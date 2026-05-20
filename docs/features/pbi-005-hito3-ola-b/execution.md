@@ -43,8 +43,16 @@ python -c "import sys; sys.path.insert(0,'SddIA/scripts/qa/git-hooks'); import h
 # python SddIA/scripts/qa/execute-process.py --process accept-pr --inputs-file tmp/test-accept-pr.json
 ```
 
-## Pendiente cierre
+## Pendiente cierre producción
 
-- Smoke H3.5 con push/merge real y `event_ids` en `validacion.md`
-- PBI operativo v1.5.0 tras APTO Argos
-- PR vía `delivery-close-cycle` + merge `accept-pr`
+- [x] Push + PR #13 + Presented `c15a00f4-…`
+- [ ] `accept-pr` + `PullRequest_Merged` en `main`
+- [ ] PBI v1.5.0 estado «completado»
+
+### Comandos cierre
+
+```powershell
+python SddIA/scripts/qa/execute-process.py --process delivery-close-cycle --inputs-file docs/features/pbi-005-hito3-ola-b/_delivery-close-ola-b.json
+Remove-Item Env:SDDIA_LAB_SIMULATE_IOTA -ErrorAction SilentlyContinue
+python SddIA/scripts/daemons/event-watcher.py --once
+```

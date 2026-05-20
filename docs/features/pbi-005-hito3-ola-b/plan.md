@@ -53,8 +53,16 @@ phase: planning-ola-b
 | 5.2 | Registro smoke | `execution.md` | [x] |
 | 5.3 | Smoke H3.5 + checks V-B* | `validacion.md` | [x] |
 | 5.4 | PBI operativo v1.5.0 | manifiesto Ola A | [x] pre-merge |
+| 6 | `delivery-close-cycle` + PR | PR #13 | [x] |
 
-## Commits sugeridos
+## Cierre producción
+
+| Paso | Resultado |
+|------|-----------|
+| Push | `origin/feat/pbi-005-hito3-ola-b` |
+| PR | https://github.com/racso80es/SddIA/pull/13 |
+| `PullRequest_Presented` | `c15a00f4-2e38-4303-81be-561276cc30df` |
+| Merge | ⏳ `accept-pr` |
 
 1. `docs: plan pbi-005-hito3-ola-b`
 2. `feat(qa): git-hooks Ola B pre-push post-merge + instalador dinámico`

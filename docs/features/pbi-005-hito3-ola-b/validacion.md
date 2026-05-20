@@ -3,6 +3,8 @@ feature_name: pbi-005-hito3-ola-b
 created: "2026-05-20"
 process: feature
 branch: feat/pbi-005-hito3-ola-b
+pr_url: "https://github.com/racso80es/SddIA/pull/13"
+presented_event_id: "c15a00f4-2e38-4303-81be-561276cc30df"
 global: apto
 checks:
   V-B0: pass
@@ -90,9 +92,10 @@ powershell -ExecutionPolicy Bypass -File SddIA/scripts/qa/git-hooks/install-hook
 
 **APTO** (laboratorio) — hooks Ola B operativos; cápsula `accept-pr` resiliente; instalador O5 verificado. **Cierre PBI-005 al 100 %** condicionado a merge de esta rama en `main` vía `accept-pr` + sello PR real (`PullRequest_Presented` / `Merged` sin flags lab).
 
-## Pendiente post-APTO
+| V-P1 | PR #13 + `PullRequest_Presented` | ✅ | `c15a00f4-2e38-4303-81be-561276cc30df` → `processed/` DLT success |
+| V-P2 | `accept-pr` + `PullRequest_Merged` | ⏳ | post-revisión PR #13 |
 
-- [ ] `delivery-close-cycle` → PR GitHub desde `feat/pbi-005-hito3-ola-b`
+- [x] `delivery-close-cycle` → PR #13
 - [ ] `accept-pr` post-merge en `main`
-- [ ] PBI operativo v1.5.0 estado «completado» en `main`
-- [ ] `finalize-process.md` con `pr_url`
+- [ ] PBI operativo «completado» en `main`
+- [x] `finalize-process.md` con `pr_url`
