@@ -17,6 +17,7 @@ import argparse
 import json
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +39,127 @@ INDEX_MAP: dict[str, str] = {
 
 ACTION_AGENT: dict[str, str] = {
     "sync-entity-index": "cumulo",
+    "emit-pr-merged-event": "eda-bus",
+    "emit-pr-presented-event": "eda-bus",
+    "emit-domain-mutation": "eda-bus",
 }
+
+
+def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
+    crypto_script = repo / "scripts" / "skills" / "cryptography-manager.py"
+    proc = subprocess.run(
+        [sys.executable, str(crypto_script)],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+    )
+    out = json.loads(proc.stdout or "{}")
+    if not out.get("success"):
+        raise RuntimeError(out.get("error") or proc.stderr or "cryptography-manager failed")
+    return out["data"]["result"]
+
+
+def _load_cumulo(repo: Path) -> dict[str, Any]:
+    return json.loads((repo / "SddIA" / "core" / "cumulo.paths.json").read_text(encoding="utf-8"))
+
+
+def _write_pending_event(repo: Path, event: dict[str, Any]) -> dict[str, str]:
+    cumulo = _load_cumulo(repo)
+    pending_rel = cumulo.get("eda_bus", {}).get("pending", "docs/events/pending")
+    pending = repo / pending_rel
+    pending.mkdir(parents=True, exist_ok=True)
+    event_id = event["event_id"]
+    target = pending / f"{event_id}.json"
+    target.write_text(json.dumps(event, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return {
+        "event_id": event_id,
+        "target_path": str(target.relative_to(repo)).replace("\\", "/"),
+    }
+
+
+def _run_emit_pr_merged(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:
+    _ = action_def
+    merge_hash = inputs.get("merge_commit_hash") or inputs.get("hash_signature")
+    if not isinstance(merge_hash, str) or not merge_hash.strip():
+        raise ValueError("merge_commit_hash o hash_signature es obligatorio")
+
+    source_branch = inputs.get("source_branch")
+    if not isinstance(source_branch, str) or not source_branch.strip():
+        pr_url = inputs.get("pr_url", "")
+        if isinstance(pr_url, str) and "feature/" in pr_url:
+            source_branch = pr_url.rsplit("/", 1)[-1]
+        else:
+            source_branch = "feature/eda-bus-v1"
+
+    correlation_id = inputs.get("correlation_id")
+    if not isinstance(correlation_id, str) or not correlation_id.strip():
+        correlation_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+
+    event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    payload: dict[str, Any] = {
+        "source_branch": source_branch.strip(),
+        "target_branch": "main",
+        "merge_commit_hash": merge_hash.strip(),
+        "author": inputs.get("author", "integration-operator"),
+        "security_clearance": {
+            "auditor": "Argos",
+            "audit_event_reference": "TODO: pending_argos_eda_emission",
+            "policy_applied": "pr-acceptance-protocol",
+        },
+    }
+    if inputs.get("pr_url"):
+        payload["pr_url"] = inputs["pr_url"]
+    if inputs.get("repository_name"):
+        payload["repository_name"] = inputs["repository_name"]
+    if inputs.get("hash_signature"):
+        payload["hash_signature"] = inputs["hash_signature"]
+
+    event = {
+        "event_id": event_id,
+        "event_type": "PullRequest_Merged",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": inputs.get("emitter_agent", "emit-pr-merged-event"),
+        "correlation_id": correlation_id,
+        "payload": payload,
+        "delivery_state": {},
+    }
+    seal = _write_pending_event(repo, event)
+    return {
+        "success": True,
+        "event_id": seal["event_id"],
+        "target_path": seal["target_path"],
+        "event_type": "PullRequest_Merged",
+        "merge_commit_hash": merge_hash.strip(),
+    }
+
+
+def _run_emit_pr_presented(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:
+    _ = action_def
+    branch = inputs.get("branch")
+    status = inputs.get("status", "presented")
+    if not isinstance(branch, str) or not branch.strip():
+        raise ValueError("branch es obligatorio (string)")
+
+    event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    event = {
+        "event_id": event_id,
+        "event_type": "PullRequest_Presented",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": inputs.get("emitter_agent", "emit-pr-presented-event"),
+        "payload": {"branch": branch.strip(), "status": status},
+        "delivery_state": {},
+    }
+    seal = _write_pending_event(repo, event)
+    return {
+        "success": True,
+        "event_id": seal["event_id"],
+        "target_path": seal["target_path"],
+        "event_type": "PullRequest_Presented",
+    }
 
 
 def _repo_root() -> Path:
@@ -105,6 +226,51 @@ def _invoke_bus_operator(repo: Path, operation: str, operation_payload: dict[str
     if not body.get("success"):
         raise RuntimeError(body.get("error") or "bus-operator failed")
     return body.get("result") or {}
+
+
+def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:
+    _ = action_def
+    entity_class = inputs.get("entity_class")
+    entity_name = inputs.get("entity_name")
+    lifecycle = inputs.get("lifecycle_operation")
+    entity_uuid = inputs.get("entity_uuid")
+    if not all(isinstance(x, str) for x in (entity_class, entity_name, lifecycle)):
+        raise ValueError("entity_class, entity_name y lifecycle_operation son obligatorios")
+    if lifecycle != "delete" and not entity_uuid:
+        raise ValueError("entity_uuid obligatorio salvo delete")
+
+    op = lifecycle
+    event_type = {
+        "create": "Domain_Entity_Created",
+        "update": "Domain_Entity_Updated",
+        "delete": "Domain_Entity_Deleted",
+    }.get(op)
+    if not event_type:
+        raise ValueError(f"lifecycle_operation no soportada: {lifecycle}")
+
+    event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    event = {
+        "event_id": event_id,
+        "event_type": event_type,
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": inputs.get("emitter_agent", "entity-manager"),
+        "payload": {
+            "entity_class": entity_class,
+            "lifecycle_operation": op,
+            "entity_uuid": entity_uuid,
+            "entity_name": entity_name,
+            "version": inputs.get("version"),
+            "hash_signature_new": inputs.get("hash_signature_new"),
+            "hash_signature_old": inputs.get("hash_signature_old"),
+            "changes_summary": inputs.get(
+                "changes_summary",
+                f"{op} {entity_class} {entity_name}",
+            ),
+        },
+        "delivery_state": {},
+    }
+    seal = _write_pending_event(repo, event)
+    return {"success": True, "event_type": event_type, **seal}
 
 
 def _run_sync_entity_index(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:
@@ -183,6 +349,9 @@ def _run_sync_entity_index(repo: Path, inputs: dict[str, Any], action_def: dict[
 
 PHYSICAL_HANDLERS: dict[str, Any] = {
     "sync-entity-index": _run_sync_entity_index,
+    "emit-pr-merged-event": _run_emit_pr_merged,
+    "emit-pr-presented-event": _run_emit_pr_presented,
+    "emit-domain-mutation": _run_emit_domain_mutation,
 }
 
 
