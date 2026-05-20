@@ -1,188 +1,177 @@
 ---
-document_id: TODO-ACTION-REQUEST-CHANGE-INCORPORATION
-title: "[ARQUITECTURA] Acción request-change-incorporation — Solicitud de incorporación de cambios (PR + bus EDA)"
+document_id: TODO-PR-PRESENTED-FRACTAL-ORCHESTRATION
+title: "[ARQUITECTURA] Orquestación fractal PR presentado — proceso delivery-close-cycle + emit-pr-presented-event"
 format: markdown
-version: "1.0.0"
+version: "2.0.0"
 created: "2026-05-19"
-status: "pendiente"
+updated: "2026-05-20"
+status: "listo para PR"
 priority: alta
 blocks: "CA-3 parcial / cierre hueco PullRequest_Presented en ciclo de entrega"
+feature_ref: docs/features/pr-presented-orchestration
 related:
   - SddIA/events/pull-request-presented.md
+  - SddIA/actions/emit-pr-presented-event.md
   - SddIA/actions/emit-pr-merged-event.md
   - SddIA/process/delivery-close-cycle.md
-  - SddIA/process/feature.md
   - SddIA/process/accept-pr.md
+  - SddIA/process/feature.md
   - SddIA/norms/pull-request-orchestration.md
+  - docs/features/pr-presented-orchestration/spec.md
+  - docs/features/pr-presented-orchestration/clarify.md
   - docs/todos/[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).md
 ---
 
-# TODO: Acción `request-change-incorporation` (solicitud de incorporación de cambios)
+# TODO: Orquestación fractal PR presentado (evolución del impasse request-change-incorporation)
 
-## Objetivo
+> **Pivot 2026-05-20 (S+):** Se **aborta** la acción monolítica `request-change-incorporation`. La orquestación pertenece a **`delivery-close-cycle`**; el sello EDA permanece en **`emit-pr-presented-event`**. Feature activa: [`docs/features/pr-presented-orchestration/`](../features/pr-presented-orchestration/).
 
-Forjar y cablear una **acción atómica de dominio** — nombre canónico propuesto: **`request-change-incorporation`** — responsable de:
+## Objetivo (v2)
 
-1. **Abrir o actualizar** la Pull Request de incorporación de cambios hacia `main` (sustituyendo invocaciones ad hoc a `gh pr create` fuera del genoma).
-2. **Emitir** la instancia ECST **`PullRequest_Presented`** en `eda_bus.pending` (`cumulo.paths.json`), con payload conforme a `SddIA/events/pull-request-presented.md`.
+Cerrar el hueco **PullRequest_Presented** en el ciclo de entrega con **simetría fractal** respecto a la fusión:
 
-Simetría deseada con el par existente:
-
-| Momento del ciclo | Acción / sello | Clase de evento |
-|-------------------|----------------|------------------|
-| Presentación de PR | **`request-change-incorporation`** *(este TODO)* | `PullRequest_Presented` |
-| Fusión soberana (`accept-pr`) | `emit-pr-merged-event` | `PullRequest_Merged` |
+| Momento del ciclo | Orquestador | Hacer físico | Acción atómica (solo bus) | Clase ECST |
+|-------------------|-------------|--------------|---------------------------|------------|
+| **Presentación** | `delivery-close-cycle` | `git-manager` push + `shell-executor` + `gh pr create` | `emit-pr-presented-event` | `PullRequest_Presented` |
+| **Fusión** | `accept-pr` | `git-manager` merge + push + higiene | `emit-pr-merged-event` | `PullRequest_Merged` |
 
 ## Problema que cierra
 
-| Síntoma | Causa raíz |
-|---------|------------|
-| PR #7 sin evento `PullRequest_Presented` | `gh pr create` no integra el bus; no se invocó `emit-pr-presented-event` |
-| Handler de `emit-pr-presented-event` solo en `execute-process.py` | **✅ Mitigado (PR #9):** catalogada en `SddIA/actions/emit-pr-presented-event.md` + `execute-action.py`; shim legacy en `execute-process.py` |
-| `delivery-close-cycle` documenta solo `PullRequest_Merged` | Falta fase explícita de presentación + sello ECST |
+| Síntoma | Causa raíz | Resolución v2 |
+|---------|------------|---------------|
+| PR #7 sin evento `PullRequest_Presented` | `gh pr create` sin sello EDA | Proceso encadena paso B → `emit-pr-presented-event` |
+| Acción combinada PR+bus (propuesta v1) | Violación SRP / caja negra | **Descartada** |
+| `delivery-close-cycle` con fase `emit-pr-merged-event` | Cableado erróneo (merge ≠ presentación) | Sustituir por sello **Presented** |
+| Handler `emit-pr-presented-event` solo en lab | Mitigado PR #9 | Mantener; extender inputs si aplica `pr_url` |
 
-## Alcance de la acción (diseño objetivo)
+## Alcance v2 (no forjar request-change-incorporation)
 
-### Inputs propuestos
+### Paso A — Forja física (proceso, fase «Apertura en forja»)
 
-| Campo | Tipo | Obligatorio | Descripción |
-|-------|------|-------------|-------------|
-| `source_branch` | string | Sí | Rama feature a incorporar (ej. `feat/pbi-005-action-engine`) |
-| `target_branch` | string | No | Default `main` |
-| `title` | string | Sí | Título del PR |
-| `body` | string | No | Cuerpo Markdown (o ruta `body_file` resuelta por Cúmulo) |
-| `repository_path` | string | Sí | Raíz del workspace (inyectada por orquestador; validada por Cúmulo) |
-| `correlation_id` | string | No | UUID v4 para Sagas; generar vía `crypto-broker` si ausente |
-| `status` | string | No | Default `presented` (payload ECST) |
+- `skill:shell-executor` + `gh pr create` (prohibido en `git-manager`).
+- Capturar `pr_url` en outputs del proceso.
 
-### Outputs propuestos (envelope `actions-contract`)
+### Paso B — Registro ontológico (acción pura)
 
-| Campo | Descripción |
-|-------|-------------|
-| `success` | boolean |
-| `pr_url` | URL del PR creado o actualizado |
-| `event_id` | UUID de `PullRequest_Presented` |
-| `target_path` | Ruta relativa del JSON en `pending/` |
+- `action:emit-pr-presented-event` con `branch`, `status`, `emitter_agent: delivery-close-cycle`.
+- Opcional v1.1: input/output `pr_url` correlacionado en payload ECST.
 
-### Orquestación (pasos lógicos)
+### Precondición
 
-1. **Cerbero** — contexto `pr-lifecycle` / `ecosystem-evolution` según `execution-contexts.md`.
-2. **Precondición git** — rama `source_branch` publicada en `origin` (`skill:git-manager` → `push` si la política lo exige).
-3. **Apertura de PR** — delegación acordada en norma (`pull-request-orchestration.md`): típicamente `skill:shell-executor` + `gh pr create` / `gh pr view` ( **`gh` prohibido en `git-manager`** ).
-4. **Sello ECST** — construir `PullRequest_Presented` (`branch`, `status`; opcional `pr_url` si la Clase lo admite tras evolución).
-5. **Persistencia** — `skill:filesystem-manager` → `{eda_bus.pending}/<event_id>.json`.
-6. **Cierre** — stdout envelope; **sin** `route-domain-event` ni IOTA en esta acción (el watcher procesa `pending/`).
-
-> **Nota:** La acción puede **delegar internamente** en la semántica de `emit-pr-presented-event` o absorberla; si se absorbe, deprecar emisor duplicado en documentación y unificar handler físico en `execute-action.py`.
-
-### Capabilities propuestas (YAML)
-
-- `change-incorporation-request`
-- `pull-request-open-or-update`
-- `pr-presented-event-emission`
-- `event-bus-pending-write`
-- `delegate-git-manager`
-- `delegate-shell-executor`
-- `delegate-crypto-broker`
-- `delegate-filesystem-manager`
-
-### Contexto RBAC propuesto
-
-`pr-lifecycle` (alineado a `accept-pr` y `pull-request-orchestration.md`).
+- `skill:git-manager` → `push` de `branch_name` antes del paso A.
 
 ---
 
-## Integración obligatoria en flujos (checklist)
+## Avance de objetivos
 
-La acción **no cumple su propósito** hasta estar referenciada y ejecutable desde:
+| Objetivo | Estado | Evidencia |
+|----------|--------|-----------|
+| Clarificación S+ (abortar acción combinada) | ✅ | `docs/features/pr-presented-orchestration/clarify.md` D2–D5 |
+| Especificación técnica | ✅ | `docs/features/pr-presented-orchestration/spec.md` |
+| Objetivos feature formalizados | ✅ | `docs/features/pr-presented-orchestration/objectives.md` |
+| Handler `emit-pr-presented-event` en laboratorio | ✅ | PR #9 — `execute-action.py` |
+| Smoke presented → watcher | ✅ | `refactor-execute-process-engine/validacion.md` |
+| Genoma `delivery-close-cycle` v1.1 (fases A→B→C) | ✅ | `SddIA/process/delivery-close-cycle.md` |
+| Norma `pull-request-orchestration.md` | ✅ | §3 Presentación |
+| Quitar fase errónea `emit-pr-merged-event` del cierre | ✅ | Sustituido por Sello Presentación |
+| Handler proceso fases 4–6 | ✅ | `execute_process_capsules.py` |
+| Runbooks sin `gh` suelto | ✅ | `docs/features/pr-presented-orchestration/execution.md` |
+| `pr_url` en payload ECST (D6) | ✅ | evento/acción v1.1 + handler |
 
-### Procesos (fases `delegates_to`)
+---
 
-| Proceso | Fase / punto de inserción | Cambio |
-|---------|---------------------------|--------|
-| **`delivery-close-cycle`** | Fase «Sync remoto y PR» (antes o después de push) | Sustituir/documentar apertura de PR vía `action:request-change-incorporation`; propagar `pr_url` a outputs del proceso |
-| **`feature`** | Cierre → delegación a `delivery-close-cycle` | Verificar que `branch_name` y `persist_ref` llegan al subproceso |
-| **`bug-fix`** | Idem vía `delivery-close-cycle` | Mismo contrato de inputs |
-| **`refactorization`** | Idem | Mismo contrato |
+## Integración obligatoria (checklist v2)
+
+### Procesos
+
+| Proceso | Cambio | Estado |
+|---------|--------|--------|
+| **`delivery-close-cycle`** | Fases: push → `gh` → `emit-pr-presented-event`; outputs `pr_url`, `event_id` | ⏳ |
+| **`feature`** / **`bug-fix`** / **`refactorization`** | Handoff sin cambio de contrato; verificar `branch_name` | ⏳ revisión |
+| **`accept-pr`** | Sin cambio (par de fusión) | ✅ |
 
 ### Normas y contratos
 
-| Artefacto | Cambio |
-|-----------|--------|
-| `SddIA/norms/pull-request-orchestration.md` | Declarar `request-change-incorporation` como vía canónica de **presentación** de PR (complemento de `accept-pr` para **fusión**) |
-| `SddIA/events/pull-request-presented.md` | Añadir emisor autorizado `request-change-incorporation` (y/o mantener `emit-pr-presented-event` como alias interno) |
-| `SddIA/norms/execution-contexts.md` | Registrar cápsula asociada en el contexto `pr-lifecycle` |
+| Artefacto | Cambio | Estado |
+|-----------|--------|--------|
+| `pull-request-orchestration.md` | Presentación = proceso; no acción monolítica | ⏳ |
+| `pull-request-presented.md` | Emisor: solo `emit-pr-presented-event`; opcional `pr_url` | ⏳ |
+| `emit-pr-presented-event.md` | Inputs `pr_url`, `correlation_id` si v1.1 | ⏳ |
+| ~~`request-change-incorporation.md`~~ | **No forjar** | ✅ decidido |
 
-### Laboratorio (handlers físicos)
+### Laboratorio
 
-| Artefacto | Cambio |
-|-----------|--------|
-| `SddIA/scripts/qa/execute-process.py` | Handler `--action request-change-incorporation` (o vía `execute-action.py` si se unifica motor de acciones) |
-| `SddIA/scripts/qa/execute-action.py` | Registrar en `PHYSICAL_HANDLERS` tras forja |
-| `docs/features/*/execution.md` | Reemplazar ejemplos sueltos de `gh pr create` por invocación de la acción |
-
-### Catálogo Cúmulo
-
-| Artefacto | Cambio |
-|-----------|--------|
-| `SddIA/actions/request-change-incorporation.md` | Forja vía `action-creator` |
-| `SddIA/actions/index.md` | Fila con **Capabilities** sincronizadas |
-| `SddIA/core/event-subscriptions.json` | Sin cambio obligatorio (ya hay suscriptor IOTA en `PullRequest_Presented`) |
-
-### Relación con Hito 3 (hooks Git)
-
-Los hooks `pre-push` / `post-merge` del PBI-005 **pueden llamar** a esta acción en lugar de duplicar lógica; documentar precedencia: **proceso de entrega** = acción explícita; **hooks** = automatización opcional del mismo contrato.
+| Artefacto | Cambio | Estado |
+|-----------|--------|--------|
+| `execute_process_capsules.py` | `delivery-close-cycle` fases 4–6 | ⏳ |
+| `execute-action.py` | Payload `pr_url` opcional | ⏳ |
+| ~~Handler `request-change-incorporation`~~ | **Cancelado** | ✅ |
 
 ---
 
-## Criterios de aceptación
+## Criterios de aceptación (v2)
 
-1. Tras ejecutar la acción con rama publicada, existe **PR en remoto** (`pr_url` en salida) y JSON **`PullRequest_Presented`** en `docs/events/pending/`.
-2. `event-watcher.py --once` enruta el evento a `processed/` con `delivery_state.cumulo: success` (IOTA según entorno).
-3. Un flujo **`feature` → `delivery-close-cycle`** documentado invoca la acción sin `gh` directo en guías de ejecución.
-4. La acción está catalogada en `actions/index.md` con UUID y capabilities.
-5. Prueba reproducible documentada en `docs/features/.../execution.md` o script QA.
+1. Tras `delivery-close-cycle` con rama publicada: **PR remoto** (`pr_url`) y JSON **`PullRequest_Presented`** en `docs/events/pending/`.
+2. `event-watcher.py --once` enruta a `processed/` con IOTA según entorno.
+3. Flujo **`feature` → `delivery-close-cycle`** documentado; `gh` solo vía `shell-executor` dentro del proceso.
+4. **No existe** acción `request-change-incorporation` en catálogo.
+5. **No existe** fase `PullRequest_Merged` en `delivery-close-cycle`.
+6. Prueba reproducible en `docs/features/pr-presented-orchestration/validacion.md`.
 
-## Tareas (backlog de implementación)
+---
 
-### Fase 1 — Forja del genoma
+## Tareas (backlog)
 
-- [ ] Redactar semilla y ejecutar `action-creator` → `SddIA/actions/request-change-incorporation.md`
-- [ ] Actualizar `pull-request-presented.md` (emisores)
-- [ ] Sincronizar `actions/index.md`
+### Fase 0 — Especificación y clarificación ✅
 
-### Fase 2 — Cápsula física
+- [x] Síntesis S+ documentada (`clarify.md` D2)
+- [x] Spec técnica (`spec.md`)
+- [x] Objetivos feature (`objectives.md`)
+- [x] TODO pivot v2.0.0
 
-- [x] Handler `emit-pr-presented-event` en `execute-action.py` (+ shim deprecado en `execute-process.py`) — PR #9
-- [x] Payload de prueba `tmp/emit-pr-presented-refactor.json`
-- [x] Smoke: acción → `pending/` → watcher → `processed/` con IOTA (`docs/features/refactor-execute-process-engine/validacion.md`)
-- [ ] Handler de **`request-change-incorporation`** (apertura PR + sello; distinto de solo emitir evento)
+### Fase 1 — Genoma y normas ✅
 
-### Fase 3 — Cableado de procesos
+- [x] `delivery-close-cycle.md` v1.1.0 (7 fases; quitar `emit-pr-merged-event`)
+- [x] `pull-request-orchestration.md` — sección presentación
+- [x] `pull-request-presented.md` + `emit-pr-presented-event.md` v1.1 (pr_url opcional)
+- [x] Actualizar referencias en `refactor-execute-process-engine/objectives.md`
+- [ ] PBI-005 operativo (CA-3 wording)
 
-- [ ] Actualizar `delivery-close-cycle.md` (fase PR + outputs `pr_url`)
-- [ ] Revisar `feature.md` / `bug-fix.md` / `refactorization.md` (handoff a cierre)
-- [ ] Actualizar `pull-request-orchestration.md`
+### Fase 2 — Cápsula física (proceso) ✅
 
-### Fase 4 — Gobernanza y deuda
+- [x] Handler fases push / gh / emit en `execute_process_capsules.py`
+- [x] Extender `execute-action.py` (`pr_url`, `correlation_id` en payload)
+- [x] `_smoke-close-cycle-presented.json` + `validacion.md` + smoke lab OK
 
-- [ ] Decidir destino de `emit-pr-presented-event` (alias, absorción o acción independiente legacy)
-- [ ] Actualizar PBI-005 operativo (CA-3 / matriz hooks vs acción)
-- [ ] Enlazar desde `docs/todos/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md` si el handler de `feature` delega en `delivery-close-cycle`
+### Fase 3 — Gobernanza ✅
+
+- [x] PBI-005: CA-3 parcial — presentación vía `delivery-close-cycle` (hooks Hito 3 abiertos)
+- [x] Perfil laboratorio en `feature.md` + `delivery-close-cycle.md`
+- [x] Handlers opcionales Snapshot / Higiene + `hash_signature` verificado
+- [x] Enlace `docs/todos/done/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md`
+- [ ] PR merge a `main` + mover TODO a `done/`
+
+### Descartado (v1)
+
+- ~~Forja `request-change-incorporation`~~
+- ~~Handler acción combinada~~
+- ~~Absorción / deprecación de `emit-pr-presented-event`~~
+
+---
 
 ## Definición de hecho
 
-- [ ] Ningún runbook de feature en el repo usa `gh pr create` sin pasar por `request-change-incorporation` (salvo excepción documentada en norma).
-- [ ] Al menos un PR de laboratorio deja rastro `PullRequest_Presented` correlacionado con `pr_url`.
-- [ ] Checklist de integración en flujos (sección anterior) al 100 %.
+- [ ] Checklist integración v2 al 100 %
+- [ ] PR de laboratorio con `PullRequest_Presented` correlacionado a `pr_url`
+- [ ] Ningún runbook usa `gh pr create` fuera de `delivery-close-cycle` (salvo excepción normativa)
 
 ## Referencias
 
 | Artefacto | Ruta |
 |-----------|------|
+| Feature (spec/clarify) | `docs/features/pr-presented-orchestration/` |
 | Clase ECST | `SddIA/events/pull-request-presented.md` |
-| Sello merge (par) | `SddIA/actions/emit-pr-merged-event.md` |
+| Sello presentación | `SddIA/actions/emit-pr-presented-event.md` |
+| Sello fusión (par) | `SddIA/actions/emit-pr-merged-event.md` |
 | Proceso fusión | `SddIA/process/accept-pr.md` |
 | Cierre de entrega | `SddIA/process/delivery-close-cycle.md` |
-| Handler presented (lab) | `SddIA/scripts/qa/execute-process.py` → `_emit_pr_presented` |
-| PBI hooks (Hito 3) | `docs/todos/[OPERATIVO] Planificación de Backlog... (Ola A).md` |

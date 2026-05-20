@@ -146,7 +146,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 
 | Subcriterio | Estado | Notas |
 |-------------|--------|-------|
-| Git rutinario deposita eventos en bus sin CLI manual | ⏳ | Merge Hito 2 usa `accept-pr` + `emit-pr-merged-event` explícitos |
+| Git rutinario deposita eventos en bus sin CLI manual | 🟡 | **Presented:** `delivery-close-cycle` v1.1 + `emit-pr-presented-event` (lab OK). **Merged:** `accept-pr`. Hooks Hito 3 ⏳ |
 | Payloads con hashes reales del entorno | ✅ | Validado en merges soberanos |
 | Ruta `eda_bus.pending` | ✅ | SSOT `cumulo.paths.json` |
 
@@ -162,13 +162,13 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | **CA-1 + CA-2 + CA-3** | 🟡 **CA-1 y CA-2** cumplidos; **CA-3** abierto |
 | **Entrega en `main` con trazabilidad** | ✅ Hito 1 (PR #6); Hito 2 (PR #8, `caab46e`) |
 
-**Veredicto actual:** PBI-005 **no cerrado al 100%**; cierre total condicionado a **Hito 3** (hooks Git) y acción `request-change-incorporation`.
+**Veredicto actual:** PBI-005 **no cerrado al 100%**; cierre total condicionado a **Hito 3** (hooks Git) y orquestación `delivery-close-cycle` + `emit-pr-presented-event` (acción monolítica `request-change-incorporation` **abortada**).
 
 ---
 
 ## 4. Próximos pasos (backlog activo)
 
-1. **Acción `request-change-incorporation`:** abrir PR + emitir `PullRequest_Presented`; cablear en `delivery-close-cycle` y procesos de entrega (ver TODO arquitectura dedicado).
+1. **Orquestación fractal PR presentado:** `delivery-close-cycle` v1.1 (push + `gh` + sello) + `emit-pr-presented-event`; ver feature `docs/features/pr-presented-orchestration/`.
 2. **Hito 3 — Hooks Git:** `pre-push` / `post-merge` → pueden delegar en la acción anterior o emitir `PullRequest_*` vía `git-manager`.
 3. **EDA universal:** emisión `Domain_Entity_*` para todas las clases en `entity-manager` (ver TODO arquitectura).
 4. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.

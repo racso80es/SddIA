@@ -43,7 +43,7 @@ Tras la refactorización del intérprete dinámico (`refactor-execute-process-en
 
 ### Tareas
 
-- [ ] Migrar tuberías que invocan `execute-process.py --action emit-pr-merged-event` (p. ej. `pbi-005-action-engine/execution.md`, `accept-pr`, TODO request-change-incorporation).
+- [ ] Migrar tuberías que invocan `execute-process.py --action emit-pr-merged-event` (p. ej. `pbi-005-action-engine/execution.md`, `accept-pr`). Presentación PR: proceso `delivery-close-cycle` (no shim `--action` combinado).
 - [ ] Eliminar `shim_execute_action()` y argumento `--action` del parser de procesos.
 - [x] Handlers físicos en `execute-action.py` verificados (`emit-pr-*`, `emit-domain-mutation`) — ver `refactor-execute-process-engine/validacion.md`.
 

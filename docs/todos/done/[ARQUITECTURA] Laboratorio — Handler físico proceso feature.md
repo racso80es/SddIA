@@ -44,7 +44,7 @@ Cerrar la brecha entre el contrato normativo del proceso **`feature`** (seis fas
 
 - [x] Añadir rama `if canonical == "feature":` en `SddIA/scripts/qa/execute-process.py` *(sustituida por `workspace-init` en PR #9)*.
 - [x] Encapsular invocación `git-manager` (mismo patrón que `accept-pr` / docs `pbi-005-debt-liquidation/execution.md`).
-- [ ] Documentar en `SddIA/process/feature.md` el perfil **laboratorio** vs **runtime IDE completo**.
+- [x] Documentar en `SddIA/process/feature.md` el perfil **laboratorio** vs **runtime IDE completo** (2026-05-20, `pr-presented-orchestration`).
 - [x] Prueba: payload `feature-pbi005-hito2-init.json` deja rama + `objectives.md` sin pasos manuales.
 
 ## Referencias
