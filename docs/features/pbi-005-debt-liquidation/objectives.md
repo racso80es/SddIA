@@ -20,7 +20,8 @@ Liquidar pasivos técnicos heredados de la **Ola A** validando el mecanismo dest
 | **1 — Validación de purga** | Prueba de humo sobre `test-cli-skill` vía `execute-process` → `entity-manager` (`lifecycle_operation: delete`). | ✅ |
 | **1b — Expansión DLT** | Suscriptor `cumulo` + `iota-immutable-publisher` en `Domain_Entity_Deleted`. | ✅ |
 | **2 — Motor de acciones** | `execute-action.py`, `bus-operator`, `markdown-table-editor`, handler `feature`; PR #8 `caab46e`. | ✅ |
-| **3 — Hooks Git** | Automatización `PullRequest_Presented` / `PullRequest_Merged` en `.git/hooks/`. | ⏳ Backlog |
+| **3a — Hooks `pre-commit`** | Aduana Argos (`pre_commit_gate`). | ✅ PR #12 |
+| **3b — Hooks PR** | `pre-push` / `post-merge` (Ola B). | ⏳ Backlog |
 
 ## Fuera de alcance inmediato
 
