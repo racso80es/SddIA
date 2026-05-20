@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] Laboratorio — Handler físico del proceso feature"
 format: markdown
 version: "1.0.0"
 created: "2026-05-19"
-status: "pendiente"
+status: "cerrado"
 priority: media
 related:
   - SddIA/process/feature.md
@@ -37,10 +37,10 @@ Cerrar la brecha entre el contrato normativo del proceso **`feature`** (seis fas
 
 ## Tareas
 
-- [ ] Añadir rama `if canonical == "feature":` en `SddIA/scripts/qa/execute-process.py`.
-- [ ] Encapsular invocación `git-manager` (mismo patrón que `accept-pr` / docs `pbi-005-debt-liquidation/execution.md`).
+- [x] Añadir rama `if canonical == "feature":` en `SddIA/scripts/qa/execute-process.py`.
+- [x] Encapsular invocación `git-manager` (mismo patrón que `accept-pr` / docs `pbi-005-debt-liquidation/execution.md`).
 - [ ] Documentar en `SddIA/process/feature.md` el perfil **laboratorio** vs **runtime IDE completo**.
-- [ ] Prueba: payload `feature-pbi005-hito2-init.json` deja rama + `objectives.md` sin pasos manuales.
+- [x] Prueba: payload `feature-pbi005-hito2-init.json` deja rama + `objectives.md` sin pasos manuales.
 
 ## Referencias
 
