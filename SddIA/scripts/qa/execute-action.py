@@ -41,6 +41,7 @@ ACTION_AGENT: dict[str, str] = {
     "sync-entity-index": "cumulo",
     "emit-pr-merged-event": "eda-bus",
     "emit-pr-presented-event": "eda-bus",
+    "emit-domain-mutation": "eda-bus",
 }
 
 
@@ -227,6 +228,51 @@ def _invoke_bus_operator(repo: Path, operation: str, operation_payload: dict[str
     return body.get("result") or {}
 
 
+def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:
+    _ = action_def
+    entity_class = inputs.get("entity_class")
+    entity_name = inputs.get("entity_name")
+    lifecycle = inputs.get("lifecycle_operation")
+    entity_uuid = inputs.get("entity_uuid")
+    if not all(isinstance(x, str) for x in (entity_class, entity_name, lifecycle)):
+        raise ValueError("entity_class, entity_name y lifecycle_operation son obligatorios")
+    if lifecycle != "delete" and not entity_uuid:
+        raise ValueError("entity_uuid obligatorio salvo delete")
+
+    op = lifecycle
+    event_type = {
+        "create": "Domain_Entity_Created",
+        "update": "Domain_Entity_Updated",
+        "delete": "Domain_Entity_Deleted",
+    }.get(op)
+    if not event_type:
+        raise ValueError(f"lifecycle_operation no soportada: {lifecycle}")
+
+    event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    event = {
+        "event_id": event_id,
+        "event_type": event_type,
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": inputs.get("emitter_agent", "entity-manager"),
+        "payload": {
+            "entity_class": entity_class,
+            "lifecycle_operation": op,
+            "entity_uuid": entity_uuid,
+            "entity_name": entity_name,
+            "version": inputs.get("version"),
+            "hash_signature_new": inputs.get("hash_signature_new"),
+            "hash_signature_old": inputs.get("hash_signature_old"),
+            "changes_summary": inputs.get(
+                "changes_summary",
+                f"{op} {entity_class} {entity_name}",
+            ),
+        },
+        "delivery_state": {},
+    }
+    seal = _write_pending_event(repo, event)
+    return {"success": True, "event_type": event_type, **seal}
+
+
 def _run_sync_entity_index(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:
     _ = action_def
     entity_class = inputs.get("entity_class", "")
@@ -305,6 +351,7 @@ PHYSICAL_HANDLERS: dict[str, Any] = {
     "sync-entity-index": _run_sync_entity_index,
     "emit-pr-merged-event": _run_emit_pr_merged,
     "emit-pr-presented-event": _run_emit_pr_presented,
+    "emit-domain-mutation": _run_emit_domain_mutation,
 }
 
 

@@ -52,6 +52,13 @@ DIR_BY_CLASS: dict[str, str] = {
 
 PILOT_ENTITY_CLASSES = frozenset({"skill", "event"})
 
+# Cápsulas action:* con handler físico en execute-action.py
+CAPSULE_ACTION_REGISTRY: dict[str, str] = {
+    "action:emit-domain-mutation": "emit-domain-mutation",
+    "action:emit-pr-merged-event": "emit-pr-merged-event",
+    "action:emit-pr-presented-event": "emit-pr-presented-event",
+}
+
 
 def _load_cumulo(repo: Path) -> dict[str, Any]:
     return json.loads((repo / "SddIA" / "core" / "cumulo.paths.json").read_text(encoding="utf-8"))
@@ -607,26 +614,69 @@ def capsule_filesystem_delete(repo: Path, inputs: dict[str, Any], state: dict[st
     return {"deleted": str(artifact), **handoff}
 
 
-def capsule_emit_domain_mutation(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, str]:
+def invoke_capsule_action(
+    repo: Path, action_name: str, action_inputs: dict[str, Any]
+) -> dict[str, Any]:
+    body = shim_execute_action(repo, action_name, action_inputs)
+    if not body.get("success"):
+        raise RuntimeError(body.get("error") or f"acción {action_name} falló")
+    return body.get("data") or {}
+
+
+def capsule_emit_domain_mutation(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     handoff = state.get("handoff") or {}
-    entity_class = inputs.get("entity_class")
-    entity_name = inputs.get("entity_name")
-    lifecycle = inputs.get("lifecycle_operation")
-    seal = emit_domain_mutation(
-        repo,
-        {
-            "entity_class": entity_class,
-            "entity_name": entity_name,
-            "lifecycle_operation": lifecycle,
-            "entity_uuid": handoff.get("handoff_entity_uuid"),
-            "version": handoff.get("handoff_version"),
-            "hash_signature_new": handoff.get("handoff_hash_signature_new"),
-            "hash_signature_old": handoff.get("handoff_hash_signature_old"),
-            "emitter_agent": inputs.get("emitter_agent", "entity-manager"),
-        },
-    )
+    action_inputs = {
+        "entity_class": inputs.get("entity_class"),
+        "entity_name": inputs.get("entity_name"),
+        "lifecycle_operation": inputs.get("lifecycle_operation"),
+        "entity_uuid": handoff.get("handoff_entity_uuid"),
+        "version": handoff.get("handoff_version"),
+        "hash_signature_new": handoff.get("handoff_hash_signature_new"),
+        "hash_signature_old": handoff.get("handoff_hash_signature_old"),
+        "emitter_agent": inputs.get("emitter_agent", "entity-manager"),
+        "changes_summary": inputs.get(
+            "changes_summary",
+            f"{inputs.get('lifecycle_operation')} {inputs.get('entity_class')} {inputs.get('entity_name')}",
+        ),
+    }
+    seal = invoke_capsule_action(repo, "emit-domain-mutation", action_inputs)
     state["handoff"].update(seal)
     return seal
+
+
+def try_execute_registered_action_capsules(
+    repo: Path,
+    delegates: list[Any],
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if not isinstance(delegates, list):
+        return None
+    for capsule in delegates:
+        if not isinstance(capsule, str):
+            continue
+        action_name = CAPSULE_ACTION_REGISTRY.get(capsule)
+        if not action_name:
+            continue
+        if action_name == "emit-domain-mutation" and inputs.get("entity_class"):
+            return capsule_emit_domain_mutation(repo, inputs, state)
+        if action_name == "emit-pr-presented-event":
+            branch = inputs.get("branch") or inputs.get("branch_name")
+            if isinstance(branch, str) and branch.strip():
+                data = invoke_capsule_action(
+                    repo,
+                    action_name,
+                    {
+                        "branch": branch.strip(),
+                        "status": inputs.get("status", "presented"),
+                        "emitter_agent": inputs.get("emitter_agent", action_name),
+                    },
+                )
+                return data
+        if action_name == "emit-pr-merged-event":
+            if inputs.get("merge_commit_hash") or inputs.get("hash_signature"):
+                return invoke_capsule_action(repo, action_name, dict(inputs))
+    return None
 
 
 def execute_phase(
@@ -686,10 +736,12 @@ def execute_phase(
             entry["handler"] = "filesystem-delete"
             return entry
 
-        if "action:emit-domain-mutation" in delegates and inputs.get("entity_class"):
-            seal = capsule_emit_domain_mutation(repo, inputs, state)
+        action_result = try_execute_registered_action_capsules(repo, delegates, inputs, state)
+        if action_result is not None:
             entry["status"] = "executed"
-            entry.update(seal)
+            entry["action_capsule"] = action_result
+            if isinstance(action_result, dict):
+                entry.update({k: action_result[k] for k in ("event_id", "target_path", "event_type") if k in action_result})
             return entry
 
         if delegates_are_only_agents(delegates):
