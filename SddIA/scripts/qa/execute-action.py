@@ -125,6 +125,10 @@ def _run_emit_pr_merged(repo: Path, inputs: dict[str, Any], action_def: dict[str
         payload["repository_name"] = inputs["repository_name"]
     if inputs.get("hash_signature"):
         payload["hash_signature"] = inputs["hash_signature"]
+    if inputs.get("traceability_anomaly"):
+        payload["traceability_anomaly"] = inputs["traceability_anomaly"]
+    if inputs.get("traceability_note"):
+        payload["traceability_note"] = inputs["traceability_note"]
 
     event = {
         "event_id": event_id,

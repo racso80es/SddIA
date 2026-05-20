@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/pbi-005-hito3-ola-b",
+  "branch_name": "feat/pbi-005-hito3-ola-b",
+  "pr_title": "feat(qa): hooks Git Ola B pre-push/post-merge (PBI-005 CA-3)",
+  "target_branch": "main",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/13"
+}

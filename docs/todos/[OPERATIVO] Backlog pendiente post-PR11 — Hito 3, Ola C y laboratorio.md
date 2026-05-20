@@ -46,22 +46,19 @@ related:
 | H3.A2 | `SddIA/scripts/qa/git-hooks/pre-commit` | ✅ | `pre_commit_gate.py` — Existencia en Bus |
 | H3.A5 | `validacion.md` con `event_ids` (alcance Ola A) | ✅ | `0c9a8a63-…` Presented; `34cfbad5-…` Merged |
 
-### Ola B — Hooks ciclo PR — **⏳ ABIERTA**
+### Ola B — Hooks ciclo PR — **🟡 APTO lab (PR pendiente)**
 
-> Feature: [`docs/features/pbi-005-hito3-git-hooks/`](../features/pbi-005-hito3-git-hooks/) — `spec.md` § 7 (roadmap).
+> Feature: [`docs/features/pbi-005-hito3-ola-b/`](../features/pbi-005-hito3-ola-b/) — `validacion.md` V-B0–V-B8.
 
-**Objetivo:** Que operaciones Git rutinarias depositen eventos en el bus **sin** invocaciones CLI manuales ni runbooks ad hoc.
+| ID | Tarea | Estado | Evidencia |
+|----|-------|--------|-----------|
+| H3.1 | Contrato hooks | ✅ | `SddIA/evolution/git-hooks-ca3-ola-b-contract.md` |
+| H3.2 | `pre-push` → `delivery-close-cycle` | ✅ | `pre_push_gate.py`; Presented `e71a367b-…` |
+| H3.3 | `post-merge` → `accept-pr` | ✅ | `post_merge_gate.py`; Merged `e7812b3a-…` |
+| H3.4 | Sin `gh pr merge` en hooks | ✅ | grep + Argos V-B8 |
+| H3.5 | Smoke + `event_ids` | ✅ | `validacion.md` (lab) |
 
-| ID | Tarea | Criterio de hecho |
-|----|-------|-------------------|
-| H3.1 | Diseñar contrato de hooks (`pre-push`, `post-merge`) alineado a `pull-request-orchestration.md` | Documento en `SddIA/evolution/` o norma táctica |
-| H3.2 | `pre-push` → delegar en **`delivery-close-cycle`** | Tras push, JSON `PullRequest_Presented` en `eda_bus.pending` sin `execute-process` manual |
-| H3.3 | `post-merge` en `main` → delegar en **`accept-pr`** | Tras merge local, `PullRequest_Merged` sin `--action` suelto |
-| H3.4 | Prohibir `gh pr merge` en hooks; respetar SSOT `accept-pr` | Revisión Argos / `pr-acceptance-protocol.md` |
-
-**Bloquea:** cierre **CA-3** al 100 % y DoD PBI-005 («ausencia de alucinación causal» en hooks PR).
-
-**Referencia:** `docs/todos/[OPERATIVO] Planificación de Backlog… (Ola A).md` § CA-3.
+**Pendiente:** PR `feat/pbi-005-hito3-ola-b` → `main` para cierre CA-3 al 100 %.
 
 ---
 
@@ -131,7 +128,7 @@ related:
 
 | Bloque | Prioridad | Esfuerzo estimado | Desbloquea |
 |--------|-----------|-------------------|------------|
-| Hito 3 Ola B (hooks PR) | **P1** | Medio | PBI-005 100 % / CA-3 completo |
+| Hito 3 Ola B (hooks PR) | **P1** | Medio | PBI-005 100 % / CA-3 completo — **APTO lab; PR pendiente** |
 | Ola C shims CLI | **P2** | Medio | Deuda forense / CI |
 | Handlers `accept-pr` | **P3** | Alto | Cierre sin pasos manuales |
 | IOTA CI + hash procesos (E.3 cerrado) | **P4** | Bajo–Medio | Gobernanza genoma |
@@ -143,7 +140,8 @@ related:
 ## Definición de hecho global (este backlog)
 
 - [x] **Hito 3 Ola A** (`pre-commit`, PR #12, `validacion.md` con event_ids).
-- [ ] **H3.1–H3.4** (Ola B) y **CA-3** al 100 %.
+- [x] **H3.1–H3.5** (Ola B) — APTO lab; PR merge pendiente.
+- [ ] **CA-3** al 100 % en `main`.
 - [ ] **OC.1–OC.5** completos (TODO Ola C cerrado → `done/`).
 - [ ] **L.1** `accept-pr` ejecutable como proceso en laboratorio.
 - [ ] Al menos un runbook de merge usa solo `accept-pr` + watcher (sin `git-manager` suelto en guía).
