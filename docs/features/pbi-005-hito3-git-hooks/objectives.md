@@ -76,4 +76,4 @@ Materializar la infraestructura de control **pre-commit** para blindar el reposi
 | Ola A — `git-hooks/pre-commit` | ✅ APTO (`validacion.md`) |
 | Instalación `.git/hooks` | ✅ (`install-hooks.ps1`; operador en clones) |
 | Cierre PR #12 + DLT | ✅ `main` @ `12119f7` |
-| Ola B (H3.1–H3.3) | ⏳ |
+| Ola B (H3.1–H3.3) | ✅ `pbi-005-hito3-ola-b` PR #13 |

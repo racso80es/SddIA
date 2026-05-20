@@ -4,7 +4,8 @@ created: "2026-05-20"
 process: feature
 branch: feat/pbi-005-hito3-ola-b
 pr_url: "https://github.com/racso80es/SddIA/pull/13"
-presented_event_id: "c15a00f4-2e38-4303-81be-561276cc30df"
+merged_event_id: "a1cf6541-eb55-4cd2-a0a3-c77bcd12f9f3"
+merge_commit: "ed543c879c99251a5379b10098778669c23f5c23"
 global: apto
 checks:
   V-B0: pass
@@ -25,7 +26,7 @@ git_changes:
 
 # Validación — Ola B (hooks ciclo PR / CA-3)
 
-Perfil **laboratorio** (`SDDIA_LAB_SKIP_GIT_PUSH`, `SDDIA_LAB_SIMULATE_GH_PR`, `SDDIA_LAB_SIMULATE_IOTA=1` en watcher). Hooks físicos verificados; push/merge remoto real pendiente de PR.
+Perfil **laboratorio** + **producción** (PR #13). Smoke V-B* en lab; Presented/Merged producción sin flags `SDDIA_LAB_*` en watcher final.
 
 ## Checks spec § 9
 
@@ -87,15 +88,21 @@ powershell -ExecutionPolicy Bypass -File SddIA/scripts/qa/git-hooks/install-hook
 | `e71a367b-33f4-4c6e-9066-c42a43c4d550` | `PullRequest_Presented` | `processed/` | success | V-B1; rama `feat/pbi-005-hito3-ola-b` |
 | `e7812b3a-d320-4f14-991c-5fa75b80a683` | `PullRequest_Merged` | `processed/` | success | V-B5; `orphan_merge: false` |
 | `890b6a55-82f4-460e-b9d4-3ee2881f1666` | `PullRequest_Merged` | `processed/` | success | V-B6; `traceability_anomaly: merge_huérfano` |
+| `c15a00f4-2e38-4303-81be-561276cc30df` | `PullRequest_Presented` | `processed/` | success | PR #13 producción |
+| `a1cf6541-eb55-4cd2-a0a3-c77bcd12f9f3` | `PullRequest_Merged` | `processed/` | success | PR #13 `accept-pr` |
+
+## Cierre producción
+
+| V-P1 | PR #13 + `PullRequest_Presented` | ✅ | `c15a00f4-2e38-4303-81be-561276cc30df` → `processed/` DLT success |
+| V-P2 | `accept-pr` + `PullRequest_Merged` | ✅ | `a1cf6541-eb55-4cd2-a0a3-c77bcd12f9f3` → `processed/`; merge `ed543c8` |
+| V-P3 | Watcher DLT (sin `SDDIA_LAB_SIMULATE_IOTA`) | ✅ | `delivery_state.cumulo: success` |
+| V-P4 | Merge GitHub PR #13 | ✅ | `MERGED` @ `ed543c879c99251a5379b10098778669c23f5c23` |
+
+- [x] `delivery-close-cycle` → PR #13
+- [x] `accept-pr` → `main` @ `ed543c8`
+- [x] PBI operativo «completado» en `main`
+- [x] `finalize-process.md`
 
 ## Veredicto Ola B
 
-**APTO** (laboratorio) — hooks Ola B operativos; cápsula `accept-pr` resiliente; instalador O5 verificado. **Cierre PBI-005 al 100 %** condicionado a merge de esta rama en `main` vía `accept-pr` + sello PR real (`PullRequest_Presented` / `Merged` sin flags lab).
-
-| V-P1 | PR #13 + `PullRequest_Presented` | ✅ | `c15a00f4-2e38-4303-81be-561276cc30df` → `processed/` DLT success |
-| V-P2 | `accept-pr` + `PullRequest_Merged` | ⏳ | post-revisión PR #13 |
-
-- [x] `delivery-close-cycle` → PR #13
-- [ ] `accept-pr` post-merge en `main`
-- [ ] PBI operativo «completado» en `main`
-- [x] `finalize-process.md` con `pr_url`
+**APTO** — entregado en `main` vía ciclo SddIA (PR #13). **CA-3** y **PBI-005** cerrados al 100 %.

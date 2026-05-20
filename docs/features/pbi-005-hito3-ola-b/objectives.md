@@ -87,4 +87,4 @@ La **Ola A** (`pre-commit` Argos) está cerrada en `main` (PR #12, feature herma
 | Implementación Ola B | ✅ hooks + cápsula accept-pr |
 | Validación Argos | ✅ `validacion.md` APTO (lab) |
 | Cierre presentación PR | ✅ PR #13 + Presented `c15a00f4-…` |
-| Cierre PBI-005 100 % | ⏳ merge `accept-pr` en `main` |
+| Cierre PBI-005 100 % | ✅ merge `ed543c8` + Merged `a1cf6541-…` |

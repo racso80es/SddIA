@@ -62,7 +62,7 @@ phase: planning-ola-b
 | Push | `origin/feat/pbi-005-hito3-ola-b` |
 | PR | https://github.com/racso80es/SddIA/pull/13 |
 | `PullRequest_Presented` | `c15a00f4-2e38-4303-81be-561276cc30df` |
-| Merge | ⏳ `accept-pr` |
+| Merge | ✅ `accept-pr` → `ed543c8` |
 
 1. `docs: plan pbi-005-hito3-ola-b`
 2. `feat(qa): git-hooks Ola B pre-push post-merge + instalador dinámico`

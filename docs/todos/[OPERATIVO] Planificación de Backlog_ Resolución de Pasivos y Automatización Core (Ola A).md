@@ -2,9 +2,9 @@
 document_id: PBI-005
 title: "[OPERATIVO] Planificación de Backlog — Resolución de Pasivos y Automatización Core (Ola A)"
 format: markdown
-version: "1.5.0"
+version: "1.5.1"
 updated: "2026-05-20"
-status: "validacion_ola_b_pre_merge"
+status: "completado"
 feature_ref_hito3_ola_b: docs/features/pbi-005-hito3-ola-b
 supersedes_pdf: "[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).pdf"
 feature_ref: docs/features/pbi-005-debt-liquidation
@@ -15,7 +15,7 @@ feature_ref_eda_splus: docs/features/eda-domain-entities-splus
 
 # [OPERATIVO] Planificación de Backlog: Resolución de Pasivos y Automatización Core (Ola A)
 
-> **Nota de gobernanza (2026-05-20):** Hitos 1–2 y **Hito 3 Ola A** en `main`. **Hito 3 Ola B** implementada en rama `feat/pbi-005-hito3-ola-b` — `validacion.md` **APTO (lab)**; cierre PBI al 100 % pendiente de PR + merge en `main`.
+> **Nota de gobernanza (2026-05-20):** **PBI-005 cerrado al 100 %** en `main` — Hitos 1–2, Hito 3 Ola A (PR #12) y **Ola B** (PR #13, `ed543c8`).
 
 Este documento formaliza el **Product Backlog Item (PBI)** estratégico destinado a liquidar los pasivos técnicos heredados de la **Ola A**, validar los mecanismos destructivos del genoma y automatizar la interacción física con el sistema de control de versiones **Git**. Su propósito es consolidar los cimientos de la infraestructura antes del despliegue masivo de la arquitectura coreográfica (**Ola C**).
 
@@ -75,16 +75,19 @@ Este documento formaliza el **Product Backlog Item (PBI)** estratégico destinad
 | **Entregable** | `SddIA/scripts/qa/git-hooks/` (`pre-commit`, `pre_commit_gate.py`, `install-hooks.ps1`) |
 | **Documentación feature** | `docs/features/pbi-005-hito3-git-hooks/` |
 
-> **Ola B:** hooks `pre-push` / `post-merge` — feature `pbi-005-hito3-ola-b`, validación Argos APTO (lab); PR pendiente.
+> **Ola B cerrada:** PR #13 — `docs/features/pbi-005-hito3-ola-b/`.
 
-### Hito 3 — Ola B: Hooks ciclo PR (validación lab, pre-merge)
+### Hito 3 — Ola B: Hooks ciclo PR (cerrado en `main`)
 
 | Campo | Valor |
 |-------|--------|
 | **Feature** | `pbi-005-hito3-ola-b` |
-| **Rama entrega** | `feat/pbi-005-hito3-ola-b` |
-| **Validación** | `docs/features/pbi-005-hito3-ola-b/validacion.md` — **APTO (lab)** |
-| **Eventos smoke** | Presented `e71a367b-…`; Merged `e7812b3a-…`; huérfano `890b6a55-…` → `processed/` |
+| **Rama entrega** | `feat/pbi-005-hito3-ola-b` (eliminada post-merge) |
+| **PR** | https://github.com/racso80es/SddIA/pull/13 — **MERGED** |
+| **Merge commit (`main`)** | `ed543c879c99251a5379b10098778669c23f5c23` |
+| **Presentación** | `PullRequest_Presented` `c15a00f4-2e38-4303-81be-561276cc30df` |
+| **Fusión** | `accept-pr` → `PullRequest_Merged` `a1cf6541-eb55-4cd2-a0a3-c77bcd12f9f3` |
+| **DLT** | Watcher sin simulación — `delivery_state.cumulo: success` |
 | **Entregable** | `pre-push`, `post-merge`, `hook_common.py`, cápsula `accept-pr`, instalador O5 |
 | **Documentación** | `docs/features/pbi-005-hito3-ola-b/` |
 
@@ -101,7 +104,7 @@ Para evitar fugas de entropía y garantizar el cumplimiento del estándar **S+ G
 | **Motor de acciones** (`execute-action.py`) | Intérprete universal, `skill:bus-operator`, micro-tools EDA, `tool:markdown-table-editor`; watcher ciego; handlers EDA (`emit-pr-*`, `emit-domain-mutation`). | Alto / Deuda técnica | **✅ Completado** (Hito 2 PR #7–#8; ampliado PR #9) |
 | **Intérprete procesos** (`execute-process.py`) | Refactor Kaizen: core + cápsulas, validación contrato MD, `CAPSULE_ACTION_REGISTRY`; shims Ola C documentados. | Alto / Arquitectura | **✅ Completado** (PR #9, `docs/features/refactor-execute-process-engine/`) |
 | **Aduana Git `pre-commit`** (Hito 3 Ola A) | `SddIA/scripts/qa/git-hooks/` — `verify-process-integrity` + Existencia en Bus (`audit-entity-eda-coverage --scan`). | Medio / Blindaje IA | **✅ Completado** (PR #12) |
-| **Hooks ciclo PR** (Hito 3 Ola B) | `pre-push` → `delivery-close-cycle`; `post-merge` → `accept-pr`; O1–O5. | Bajo / Automatización | **🟡 APTO lab** — PR pendiente (`feat/pbi-005-hito3-ola-b`) |
+| **Hooks ciclo PR** (Hito 3 Ola B) | `pre-push` → `delivery-close-cycle`; `post-merge` → `accept-pr`; O1–O5. | Bajo / Automatización | **✅ Completado** (PR #13) |
 
 ### Evidencia Hito 1 (cerrado)
 
@@ -153,7 +156,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | **ID** | PBI-005 |
 | **Título** | [OPERATIVO] Liquidación de Pasivos de la Ola A y Automatización de la Capa de Enlace Git |
 | **Prioridad** | Alta (bloqueante para desarrollo iterativo estable) |
-| **Estado global** | **Validación Ola B APTO (lab)** — merge PR en `main` para cierre 100 % |
+| **Estado global** | **✅ Completado** — PR #13 merge `ed543c8`; CA-3 al 100 % |
 
 ### 2.1. Criterios de aceptación (CAs)
 
@@ -173,13 +176,13 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | `event-watcher.py` sin referencias rígidas a scripts | ✅ | Despacho genérico `execute-action.py` |
 | Canalización vía motor genérico de acciones | ✅ | `execute-action.py` operativo |
 
-#### CA-3: Enlace orgánico de ciclo de vida (Git Hooks) — **🟡 APTO lab (pre-merge)**
+#### CA-3: Enlace orgánico de ciclo de vida (Git Hooks) — **✅ CUMPLIDO**
 
 | Subcriterio | Estado | Notas |
 |-------------|--------|-------|
-| Aduana `pre-commit` (Ola A) | ✅ | PR #12 — `pre_commit_gate.py` |
-| Git rutinario deposita eventos sin CLI manual (Ola B) | 🟡 | Hooks implementados; smoke lab V-B1–V-B6 ✅; PR pendiente |
-| Payloads con hashes reales del entorno | ✅ | PR #12 + smoke Ola B |
+| Aduana `pre-commit` (Ola A) | ✅ | PR #12 |
+| Git rutinario deposita eventos sin CLI manual (Ola B) | ✅ | PR #13 — hooks + cápsula `accept-pr` |
+| Payloads con hashes reales del entorno | ✅ | Presented/Merged DLT success |
 | Ruta `eda_bus.pending` | ✅ | SSOT `cumulo.paths.json` |
 
 ---
@@ -188,13 +191,13 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 
 | Criterio DoD | Estado |
 |--------------|--------|
-| **Ausencia de alucinación causal** | 🟡 Hooks Ola B APTO lab; merge PR pendiente |
+| **Ausencia de alucinación causal** | ✅ Hooks Ola A + Ola B en `main` |
 | **Idempotencia estricta** | ✅ Purga, motor acciones, O1 pre-push |
 | **Preservación del historial** | ✅ `docs/events/processed/` intacto |
-| **CA-1 + CA-2 + CA-3** | 🟡 CA-1/2 ✅; CA-3 APTO lab — merge PR |
-| **Entrega en `main` con trazabilidad** | 🟡 Ola B en rama feature; Hitos 1–2 + Ola A en `main` |
+| **CA-1 + CA-2 + CA-3** | ✅ |
+| **Entrega en `main` con trazabilidad** | ✅ Hitos 1–3 incl. Ola B (PR #13, `ed543c8`) |
 
-**Veredicto actual:** PBI-005 **pre-cierre** — Ola B **APTO (lab)** en `feat/pbi-005-hito3-ola-b`; cierre 100 % tras PR + `accept-pr` en `main`.
+**Veredicto actual:** PBI-005 **cerrado al 100 %** en `main`.
 
 ---
 
@@ -205,7 +208,7 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 1. ~~**Orquestación fractal PR presentado**~~ ✅ PR #11 (`docs/todos/done/… Orquestación fractal PR presentado…`).
 2. ~~**EDA universal `Domain_Entity_*`**~~ ✅ (`docs/todos/done/… EDA — Eventos Domain_Entity…`).
 3. ~~**Hito 3 Ola A — `pre-commit` Argos**~~ ✅ PR #12 (`docs/features/pbi-005-hito3-git-hooks/`).
-4. ~~**Hito 3 Ola B — hooks PR (CA-3 resto)**~~ 🟡 APTO lab — PR pendiente (`docs/features/pbi-005-hito3-ola-b/`).
+4. ~~**Hito 3 Ola B — hooks PR (CA-3 resto)**~~ ✅ PR #13 (`docs/features/pbi-005-hito3-ola-b/`).
 5. **Deuda Ola C shims CLI:** ver backlog consolidado § Prioridad 2.
 6. **Reexportar PDF** desde este `.md` si se requiere paridad documental binaria.
 
@@ -239,3 +242,4 @@ python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-fil
 | 1.3.0 | 2026-05-20 | Hito 2 consolidado (PR #8): bus-operator, handler feature, manifiesto TODO y forense APTO |
 | 1.4.0 | 2026-05-20 | Hito 3 Ola A (PR #12): pre-commit Argos; CA-3 parcial; Ola B en backlog |
 | 1.5.0 | 2026-05-20 | Hito 3 Ola B: hooks pre-push/post-merge, validacion APTO lab; pre-merge PR |
+| 1.5.1 | 2026-05-20 | Ola B cerrada PR #13; PBI-005 completado; CA-3 al 100 % |

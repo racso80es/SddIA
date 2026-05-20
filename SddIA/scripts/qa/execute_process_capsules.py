@@ -404,11 +404,19 @@ def capsule_accept_sync_cleanup(repo: Path, inputs: dict[str, Any], state: dict[
     if os.environ.get("SDDIA_LAB_SKIP_GIT_PUSH", "").strip().lower() in ("1", "true", "yes"):
         return {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT_PUSH"}
     source = state.get("source_branch") or inputs.get("source_branch")
-    push_data = invoke_git_manager(
-        repo,
-        "push",
-        {"remote": "origin", "branch": "main", "force": False},
-    )
+    prev_skip = os.environ.get("SDDIA_SKIP_HOOKS")
+    os.environ["SDDIA_SKIP_HOOKS"] = "1"
+    try:
+        push_data = invoke_git_manager(
+            repo,
+            "push",
+            {"remote": "origin", "branch": "main", "force": False},
+        )
+    finally:
+        if prev_skip is None:
+            os.environ.pop("SDDIA_SKIP_HOOKS", None)
+        else:
+            os.environ["SDDIA_SKIP_HOOKS"] = prev_skip
     closed: str | None = None
     if isinstance(source, str) and source.strip():
         try:
