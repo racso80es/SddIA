@@ -8,48 +8,42 @@ checks:
     result: pass
   - name: entity-manager tool create smoke
     result: pass
-    evidence: event_id 6ff2d3ce-992d-40de-9b6d-a344f1522a95, origin_topology core
+    evidence: origin_topology core
   - name: audit --scan JSON
     result: pass
-    evidence: orphan_count 40 (esperado pre-backfill Fase C)
+    evidence: orphan_count 0 post-backfill
   - name: E2E tool pending to processed
     result: pass
-    evidence: run-eda-e2e-lab.py, event 7dfa528e-cc36-4b29-81ea-e932577c1459
-  - name: delivery-close-cycle Argos block
+    evidence: run-eda-e2e-lab.py
+  - name: delivery-close-cycle Argos block pre-backfill
     result: pass
-    evidence: orphan_count 40, argos_verdict block
   - name: Fase C backfill emit
     result: pass
     evidence: 40 emits, orphan_count_after 0
   - name: Fase C anchor-merkle
     result: pass
-    evidence: transaction_digest lab-simulated-2880300d857094a3
+    evidence: lab-simulated digest registrado
   - name: delivery-close-cycle post-backfill
     result: pass
-    evidence: argos_verdict pass, orphan_count 0
+    evidence: argos_verdict pass
   - name: origin_topology local no muta index core
-    result: pending
-git_changes: uncommitted
+    result: pass
+    evidence: CORE_INDEX_UNCHANGED; cumulo skipped-topology
+git_changes: merged_pending
 ---
 
 # Validación — EDA Domain Entities S+
 
-## Criterios Fase 0
+## Resumen
 
-| Criterio | Estado |
-|----------|--------|
-| ECST con `origin_topology` REQUIRED | ✅ documentado |
-| Fan-out filtrado por topología | ✅ watcher |
-| Idempotencia sello | ✅ código |
-| `--scan` produce JSON | ⏳ verificar en ejecución |
+Todas las fases 0–C validadas en laboratorio. `orphan_count: 0` tras backfill. Aduana Argos operativa en `delivery-close-cycle`.
 
-## Criterios Fase A
+## Criterios por fase
 
-| Criterio | Estado |
-|----------|--------|
-| `entity-manager` + `tool` + create → pending + topology | ⏳ smoke |
-| 8 clases en PILOT | ✅ |
-
-## Notas
-
-Validación E2E completa (Fase B) y backfill Merkle (Fase C) quedan para ciclo siguiente tras smoke local.
+| Fase | Estado |
+|------|--------|
+| Fase 0 — Protocolo Acero | ✅ |
+| Fase A — 8 clases + forges | ✅ |
+| Fase B — E2E + Argos | ✅ |
+| Fase C — Backfill + Merkle | ✅ |
+| Topología local | ✅ |

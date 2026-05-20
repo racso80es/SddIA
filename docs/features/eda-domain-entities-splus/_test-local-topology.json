@@ -1,0 +1,10 @@
+{
+  "entity_class": "tool",
+  "entity_name": "eda-local-topology-test",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "tool_name": "eda-local-topology-test",
+    "scope": "local",
+    "execution_logic": "Test origin_topology local"
+  }
+}
