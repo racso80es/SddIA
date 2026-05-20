@@ -1,5 +1,11 @@
 {
-  "PullRequest_Presented": [],
+  "PullRequest_Presented": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA Rebased."
+    }
+  ],
   "PullRequest_Merged": [
     {
       "agent": "cumulo",
@@ -12,6 +18,11 @@
       "agent": "cumulo",
       "action": "sync-entity-index",
       "intent": "Reconciliación idempotente del index.md."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA Rebased."
     }
   ],
   "Domain_Entity_Updated": [
@@ -19,6 +30,11 @@
       "agent": "cumulo",
       "action": "sync-entity-index",
       "intent": "Reconciliación idempotente del index.md."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA Rebased."
     }
   ],
   "Domain_Entity_Deleted": [
