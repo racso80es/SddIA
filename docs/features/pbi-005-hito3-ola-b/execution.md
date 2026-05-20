@@ -25,7 +25,7 @@ items_applied:
 | 2 | `hook_common.py` + gates + shells | ✅ |
 | 3 | Instalador dinámico O5 | ✅ |
 | 4 | Cápsula `accept-pr` + O4 | ✅ |
-| 5 | Smoke local (sin push remoto) | ⏳ validacion.md |
+| 5 | Smoke local (sin push remoto) | ✅ `validacion.md` V-B0–V-B8 |
 
 ## Comandos smoke local
 

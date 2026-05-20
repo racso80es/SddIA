@@ -1,0 +1,8 @@
+{
+  "source_process": "git-hook-pre-push",
+  "branch_name": "feat/pbi-005-hito3-ola-b",
+  "persist_ref": "docs/features/pbi-005-hito3-ola-b",
+  "pr_title": "feat: pbi-005-hito3-ola-b",
+  "pr_body": "Smoke validacion Ola B — PullRequest_Presented",
+  "target_branch": "main"
+}

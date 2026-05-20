@@ -51,8 +51,8 @@ phase: planning-ola-b
 |---|-------|-----------|--------|
 | 5.1 | Touchpoints | `implementation.md` | [x] |
 | 5.2 | Registro smoke | `execution.md` | [x] |
-| 5.3 | Smoke H3.5 + checks V-B* | `validacion.md` | [ ] |
-| 5.4 | PBI operativo v1.5.0 | manifiesto Ola A | [ ] |
+| 5.3 | Smoke H3.5 + checks V-B* | `validacion.md` | [x] |
+| 5.4 | PBI operativo v1.5.0 | manifiesto Ola A | [x] pre-merge |
 
 ## Commits sugeridos
 
