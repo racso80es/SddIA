@@ -83,18 +83,14 @@ def _load_action_def(repo: Path, action_name: str) -> dict[str, Any]:
     return fm if isinstance(fm, dict) else {"name": path.stem}
 
 
-def _invoke_markdown_table_editor(repo: Path, payload: dict[str, Any]) -> dict[str, Any]:
-    tool_script = (
-        repo
-        / "SddIA"
-        / "scripts"
-        / "tools"
-        / "markdown-table-editor"
-        / "markdown_table_editor.py"
-    )
+def _invoke_bus_operator(repo: Path, operation: str, operation_payload: dict[str, Any]) -> dict[str, Any]:
+    skill_script = repo / "scripts" / "skills" / "bus-operator.py"
+    if not skill_script.is_file():
+        raise FileNotFoundError(str(skill_script))
+    req = {"operation": operation, "operation_payload": operation_payload}
     proc = subprocess.run(
-        [sys.executable, str(tool_script)],
-        input=json.dumps(payload, ensure_ascii=False),
+        [sys.executable, str(skill_script)],
+        input=json.dumps(req, ensure_ascii=False),
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -104,11 +100,10 @@ def _invoke_markdown_table_editor(repo: Path, payload: dict[str, Any]) -> dict[s
     )
     stdout = (proc.stdout or "").strip()
     if not stdout:
-        raise RuntimeError(proc.stderr or "markdown-table-editor sin salida")
-    line = stdout.splitlines()[-1]
-    body = json.loads(line)
+        raise RuntimeError(proc.stderr or "bus-operator sin salida")
+    body = json.loads(stdout.splitlines()[-1])
     if not body.get("success"):
-        raise RuntimeError(body.get("error") or body.get("message") or "tool failed")
+        raise RuntimeError(body.get("error") or "bus-operator failed")
     return body.get("result") or {}
 
 
@@ -145,14 +140,13 @@ def _run_sync_entity_index(repo: Path, inputs: dict[str, Any], action_def: dict[
         }
 
     if lifecycle_operation == "delete":
-        result = _invoke_markdown_table_editor(
+        result = _invoke_bus_operator(
             repo,
+            "sync_entity_index",
             {
-                "file_path": rel_path,
-                "operation": "delete_row",
-                "key_column": "name",
-                "row_data": {"name": entity_name},
-                "match_token": entity_name,
+                "entity_class": entity_class,
+                "entity_name": entity_name,
+                "lifecycle_operation": lifecycle_operation,
             },
         )
         return {
@@ -164,14 +158,13 @@ def _run_sync_entity_index(repo: Path, inputs: dict[str, Any], action_def: dict[
         }
 
     if lifecycle_operation in ("create", "update"):
-        result = _invoke_markdown_table_editor(
+        result = _invoke_bus_operator(
             repo,
+            "sync_entity_index",
             {
-                "file_path": rel_path,
-                "operation": "row_exists",
-                "key_column": "name",
-                "row_data": {"name": entity_name},
-                "match_token": entity_name,
+                "entity_class": entity_class,
+                "entity_name": entity_name,
+                "lifecycle_operation": lifecycle_operation,
             },
         )
         exists = bool(result.get("exists"))
@@ -218,6 +211,7 @@ def run_action(repo: Path, action_name: str, action_inputs: dict[str, Any]) -> d
             **data,
             "action_name": canonical,
             "delegated_agent": agent,
+            "delegated_skill": "bus-operator" if canonical == "sync-entity-index" else None,
             "delegated_tool": "markdown-table-editor" if canonical == "sync-entity-index" else None,
         },
         "execution_report": {
