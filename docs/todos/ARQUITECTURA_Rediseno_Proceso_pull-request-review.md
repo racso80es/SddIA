@@ -66,9 +66,5 @@ El comportamiento del motor de aduana debe respetar de forma estricta el siguien
                       │
                       ▼
           [Evento: PullRequest_Merged]
-                      │
-                      ▼
-          ┌─────────────────────────┐
-          │  Anclaje Inmutable DLT  │
-          └─────────────────────────┘
+
 ```
