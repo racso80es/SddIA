@@ -36,7 +36,6 @@ Este proceso encarna el principio de **Gobernanza S+ Grade**, delegando la inspe
 - **[ ] Fusión Física del Repositorio:** Si todas las dimensiones reportan éxito rotundo, invocar la skill de control de código (`git-manager`) para consolidar el merge efectivo en la rama de integración.
 - **[ ] Transición y Emisión de Hecho Inmutable:**
   - Disparar de manera reactiva el evento de dominio `PullRequest_Merged`.
-  - Sincronizar el payload desnormalizado para que la cápsula ejecutable `iota-immutable-publisher` realice el anclaje criptográfico del hash genómico en la Testnet de IOTA Rebased, sellando definitivamente la Verdad Objetiva de la sesión.
 
 ---
 
