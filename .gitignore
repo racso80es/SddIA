@@ -25,3 +25,4 @@ SddIA/scripts/tools/iota-immutable-publisher/anchor-build.log
 /tmp
 /SddIA/scripts/qa/__pycache__
 /SddIA/scripts/qa/__pycache__
+/SddIA/scripts/qa/git-hooks/__pycache__
