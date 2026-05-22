@@ -69,9 +69,9 @@ flowchart LR
 |------|------------|-----------------|
 | 1 | Acciones/procesos emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | Escriben instancia ECST en `.events/pending/` |
 | 2 | `event-watcher.py` | Monitoriza `pending/`; delega en `execute-process --process route-domain-event` |
-| 3 | Proceso **`route-domain-event`** (`route_domain_event_core.py`) | Gate ECST; fan-out **async** a suscriptores (`event-subscriptions.json`); materializa cabeceras y testigos |
+| 3 | Proceso **`route-domain-event`** (`route_domain_event_core.py`) | Gate ECST; fan-out **async** a suscriptores; materializa cabeceras y testigos; **purga `pending/` al alcanzar consenso** (`try_sweep_event`) |
 | 4 | Suscriptores (actions, tools, processes) | Ejecutan trabajo de dominio; testigos promovidos con `result_status` |
-| 5 | `event-sweeper.py` | Purga `pending/` y cabeceras `processing/` tras consenso; alerta Kaizen si hay `dead-letter/` |
+| 5 | `event-sweeper.py` | Recolector stale: purga residual en `pending/`; alerta Kaizen si hay `dead-letter/` |
 
 **Invocación manual (laboratorio):**
 

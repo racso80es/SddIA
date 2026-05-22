@@ -553,6 +553,102 @@ def github_pr_merged(pr_url: str) -> bool:
     return data.get("state") == "MERGED"
 
 
+def processed_subscriber_names(
+    repo: Path, bus: dict[str, str], event_uuid: str
+) -> set[str]:
+    names: set[str] = set()
+    for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid):
+        suffix = path.name[len(event_uuid) + 1 : -5]
+        if suffix:
+            names.add(suffix)
+    return names
+
+
+def required_subscriber_ids_for_event(
+    registry: dict[str, Any], event_type: str, payload: dict[str, Any]
+) -> list[str]:
+    origin = resolve_origin_topology(payload)
+    ids: list[str] = []
+    for sub in registry.get(event_type) or []:
+        if isinstance(sub, dict) and subscriber_applies_to_topology(sub, origin):
+            ids.append(subscriber_id(sub))
+    if ids:
+        return ids
+    return required_subscriber_ids(registry, event_type)
+
+
+def try_sweep_event(
+    repo: Path,
+    bus: dict[str, str],
+    event_uuid: str,
+    registry: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Intenta purgar el padre en pending/ cuando hay consenso de suscriptores."""
+    base: dict[str, Any] = {"event_uuid": event_uuid, "purged": False}
+    pending_path = repo / bus["pending"] / f"{event_uuid}.json"
+    if not pending_path.is_file():
+        return {**base, "status": "absent"}
+
+    try:
+        event = json.loads(pending_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {**base, "status": "invalid-json"}
+
+    event_type = event.get("event_type")
+    if not isinstance(event_type, str) or not event_type:
+        return {**base, "status": "missing-event_type"}
+
+    payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+
+    dead = list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid)
+    if dead:
+        return {
+            **base,
+            "status": "kaizen",
+            "event_type": event_type,
+            "dead_letter_witnesses": [p.name for p in dead],
+        }
+
+    if registry is None:
+        subs_path = repo / bus["subscriptions"]
+        try:
+            registry = json.loads(subs_path.read_text(encoding="utf-8-sig"))
+        except (OSError, json.JSONDecodeError):
+            return {**base, "status": "invalid-registry", "event_type": event_type}
+
+    required = required_subscriber_ids_for_event(registry, event_type, payload)
+    if not required:
+        return {**base, "status": "no-subscribers", "event_type": event_type}
+
+    in_flight = in_flight_subscriber_names(repo, bus, event_uuid)
+    overlap = in_flight & set(required)
+    if overlap:
+        return {
+            **base,
+            "status": "in-flight",
+            "event_type": event_type,
+            "in_flight": sorted(overlap),
+        }
+
+    done = processed_subscriber_names(repo, bus, event_uuid)
+    if set(required).issubset(done):
+        archived = archive_event_after_sweep(repo, bus, event_uuid)
+        return {
+            **base,
+            "status": "purged",
+            "purged": True,
+            "event_type": event_type,
+            **archived,
+        }
+
+    return {
+        **base,
+        "status": "awaiting",
+        "event_type": event_type,
+        "pending_subscribers": sorted(set(required) - done),
+    }
+
+
 def archive_event_after_sweep(repo: Path, bus: dict[str, str], event_uuid: str) -> dict[str, int]:
     """Purgar pending, cabeceras processed/processing y testigos processed tras consenso."""
     counts = {"witnesses": 0, "headers": 0, "pending": 0}

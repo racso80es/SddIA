@@ -63,6 +63,59 @@ def _has_dead_letter_witnesses(repo: Path, bus: dict[str, str], event_uuid: str)
     return bool(list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid))
 
 
+def _extract_sweep_from_route_stdout(stdout: str) -> dict[str, Any] | None:
+    line = (stdout or "").strip()
+    if not line:
+        return None
+    try:
+        body = json.loads(line.splitlines()[-1])
+    except json.JSONDecodeError:
+        return None
+    data = body.get("data")
+    if isinstance(data, dict):
+        sweep = data.get("sweep")
+        if isinstance(sweep, dict):
+            return sweep
+    return None
+
+
+def _log_route_outcome(
+    repo: Path,
+    bus: dict[str, str],
+    key: str,
+    event_uuid: str,
+    proc: subprocess.CompletedProcess[str],
+) -> None:
+    if proc.returncode != 0:
+        print(
+            f"[WATCHER] route-domain-event falló ({key}): "
+            f"{(proc.stderr or proc.stdout or '').strip()}",
+            flush=True,
+        )
+        return
+    if _has_dead_letter_witnesses(repo, bus, event_uuid):
+        print(
+            f"[WATCHER] {key}: testigo dead-letter — padre permanece en pending (Kaizen)",
+            flush=True,
+        )
+        return
+
+    sweep = _extract_sweep_from_route_stdout(proc.stdout or "")
+    pending_path = repo / bus["pending"] / key
+    if sweep and sweep.get("status") == "purged":
+        print(f"[WATCHER] {key}: enrutado y purgado de pending", flush=True)
+    elif not pending_path.is_file():
+        print(f"[WATCHER] {key}: enrutado y purgado de pending", flush=True)
+    elif sweep and sweep.get("status") == "awaiting":
+        pending_subs = sweep.get("pending_subscribers") or []
+        print(
+            f"[WATCHER] {key}: enrutado — suscriptores pendientes: {pending_subs}",
+            flush=True,
+        )
+    else:
+        print(f"[WATCHER] {key}: enrutado — consenso pendiente (sweeper)", flush=True)
+
+
 def _invoke_route_process(repo: Path, rel_path: str) -> subprocess.CompletedProcess[str]:
     runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
     payload = json.dumps({"event_file_path": rel_path}, ensure_ascii=False)
@@ -116,20 +169,9 @@ def _run_watcher(*, once: bool = False) -> None:
             proc = _invoke_route_process(repo, rel)
             in_flight.discard(key)
 
-            if proc.returncode != 0:
-                print(
-                    f"[WATCHER] route-domain-event falló ({key}): "
-                    f"{(proc.stderr or proc.stdout or '').strip()}",
-                    flush=True,
-                )
-            elif _has_dead_letter_witnesses(repo, bus, event_uuid):
-                print(
-                    f"[WATCHER] {key}: testigo dead-letter — esperando sweeper/Kaizen",
-                    flush=True,
-                )
-            else:
+            if proc.returncode == 0 and not _has_dead_letter_witnesses(repo, bus, event_uuid):
                 attempts.pop(key, None)
-                print(f"[WATCHER] {key}: enrutado (padre permanece en pending)", flush=True)
+            _log_route_outcome(repo, bus, key, event_uuid, proc)
 
         time.sleep(POLL_SECONDS)
         if once:

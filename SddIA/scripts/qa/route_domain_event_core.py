@@ -33,6 +33,7 @@ from eda_bus_utils import (
     subscriber_applies_to_topology,
     subscriber_id,
     terminal_witness_exists,
+    try_sweep_event,
     write_processing_witness,
 )
 
@@ -552,4 +553,6 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
     }
     if not all_success and not skip_only:
         result["error"] = "one or more subscribers failed"
+
+    result["data"]["sweep"] = try_sweep_event(repo, bus, event_uuid, registry=registry)
     return result

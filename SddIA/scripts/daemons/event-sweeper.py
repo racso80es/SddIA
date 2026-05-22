@@ -17,14 +17,9 @@ if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
 from eda_bus_utils import (  # noqa: E402
-    archive_event_after_sweep,
     ensure_event_bus_topology,
-    in_flight_subscriber_names,
     list_witnesses,
-    required_subscriber_ids,
-    resolve_origin_topology,
-    subscriber_applies_to_topology,
-    subscriber_id,
+    try_sweep_event,
 )
 
 POLL_SECONDS = 5
@@ -42,26 +37,6 @@ def _repo_root() -> Path:
 def _load_registry(repo: Path, bus: dict[str, str]) -> dict[str, Any]:
     path = repo / bus["subscriptions"]
     return json.loads(path.read_text(encoding="utf-8-sig"))
-
-
-def _processed_subscriber_names(repo: Path, bus: dict[str, str], event_uuid: str) -> set[str]:
-    names: set[str] = set()
-    for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid):
-        suffix = path.name[len(event_uuid) + 1 : -5]
-        if suffix:
-            names.add(suffix)
-    return names
-
-
-def _required_for_event(
-    registry: dict[str, Any], event_type: str, payload: dict[str, Any]
-) -> list[str]:
-    origin = resolve_origin_topology(payload)
-    ids: list[str] = []
-    for sub in registry.get(event_type) or []:
-        if isinstance(sub, dict) and subscriber_applies_to_topology(sub, origin):
-            ids.append(subscriber_id(sub))
-    return ids
 
 
 def _emit_kaizen_alert(event_uuid: str, event_type: str, witnesses: list[Path]) -> None:
@@ -99,52 +74,51 @@ def sweep_once(repo: Path) -> dict[str, Any]:
 
     for parent_path in sorted(pending_dir.glob("*.json")):
         event_uuid = parent_path.stem
-        try:
-            event = json.loads(parent_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            report["skipped"].append({"event_uuid": event_uuid, "reason": "invalid-json"})
-            continue
+        result = try_sweep_event(repo, bus, event_uuid, registry=registry)
+        status = result.get("status")
 
-        event_type = event.get("event_type")
-        if not isinstance(event_type, str) or not event_type:
-            report["skipped"].append({"event_uuid": event_uuid, "reason": "missing-event_type"})
-            continue
-
-        payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
-
-        dead = list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid)
-        if dead:
-            _emit_kaizen_alert(event_uuid, event_type, dead)
-            report["kaizen_alerts"].append(event_uuid)
-            continue
-
-        required = _required_for_event(registry, event_type, payload)
-        if not required:
-            legacy = required_subscriber_ids(registry, event_type)
-            if not legacy:
-                report["skipped"].append({"event_uuid": event_uuid, "reason": "no-subscribers"})
-                continue
-            required = legacy
-
-        in_flight = in_flight_subscriber_names(repo, bus, event_uuid)
-        if in_flight & set(required):
-            report["skipped"].append(
+        if status == "purged":
+            report["purged"].append(
                 {
                     "event_uuid": event_uuid,
-                    "reason": "subscribers-in-flight",
-                    "in_flight": sorted(in_flight & set(required)),
+                    "witnesses": result.get("witnesses", 0),
+                    "headers": result.get("headers", 0),
+                    "pending": result.get("pending", 0),
                 }
             )
             continue
 
-        done = _processed_subscriber_names(repo, bus, event_uuid)
-        if set(required).issubset(done):
-            archived = archive_event_after_sweep(repo, bus, event_uuid)
-            report["purged"].append({"event_uuid": event_uuid, **archived})
-        else:
-            pending = sorted(set(required) - done)
+        if status == "kaizen":
+            dead = list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid)
+            _emit_kaizen_alert(
+                event_uuid,
+                str(result.get("event_type") or ""),
+                dead,
+            )
+            report["kaizen_alerts"].append(event_uuid)
+            continue
+
+        if status in ("invalid-json", "missing-event_type", "no-subscribers", "absent", "invalid-registry"):
+            report["skipped"].append({"event_uuid": event_uuid, "reason": status})
+            continue
+
+        if status == "in-flight":
             report["skipped"].append(
-                {"event_uuid": event_uuid, "reason": "awaiting-subscribers", "pending": pending}
+                {
+                    "event_uuid": event_uuid,
+                    "reason": "subscribers-in-flight",
+                    "in_flight": result.get("in_flight", []),
+                }
+            )
+            continue
+
+        if status == "awaiting":
+            report["skipped"].append(
+                {
+                    "event_uuid": event_uuid,
+                    "reason": "awaiting-subscribers",
+                    "pending": result.get("pending_subscribers", []),
+                }
             )
 
     return report
