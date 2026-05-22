@@ -34,6 +34,7 @@ from eda_bus_utils import (  # noqa: E402
     find_existing_domain_event,
     resolve_origin_topology,
 )
+from env_loader import load_hierarchical_env  # noqa: E402
 
 INDEX_MAP: dict[str, str] = {
     "process": "SddIA/process/index.md",
@@ -453,6 +454,7 @@ def main() -> None:
 
     try:
         repo = _repo_root()
+        load_hierarchical_env(repo)
         result = run_action(repo, args.action.strip(), action_inputs)
         business = (result.get("data") or {}).get("success", True)
         if result.get("success") and business is False:

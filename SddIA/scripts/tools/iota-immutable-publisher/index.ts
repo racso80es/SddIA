@@ -1,4 +1,3 @@
-import * as dotenv from "dotenv";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { decodeIotaPrivateKey } from "@iota/iota-sdk/cryptography";
@@ -7,9 +6,8 @@ import { Ed25519Keypair } from "@iota/iota-sdk/keypairs/ed25519";
 import { Transaction } from "@iota/iota-sdk/transactions";
 import { fromHex } from "@iota/iota-sdk/utils";
 
-dotenv.config({ path: path.join(__dirname, ".env") });
-
 const TOOL_NAME = "iota-immutable-publisher";
+const VAULT_HINT = ".SddIA/.dev/.env (Jerarquía de Bóvedas)";
 
 type AnchorPackageBytecode = {
   modules: string[];
@@ -143,7 +141,7 @@ function keypairFromEnvSecret(): Ed25519Keypair {
   const secret = process.env.IOTA_WALLET_SECRET;
   if (!secret || secret.trim().length === 0) {
     throw new Error(
-      "IOTA_WALLET_SECRET no definido; cargar exclusivamente vía dotenv (.env local)",
+      `IOTA_WALLET_SECRET no definido; cargar vía Jerarquía de Bóvedas (${VAULT_HINT})`,
     );
   }
   const trimmed = secret.trim();
@@ -210,7 +208,7 @@ async function publishImmutableData(
 
   let feedback = `Transacción inmutable publicada en testnet (${TOOL_NAME})`;
   if (!process.env.IOTA_ANCHOR_PACKAGE_ID?.trim()) {
-    feedback += `; paquete anchor publicado (${packageId}). Opcional: fijar IOTA_ANCHOR_PACKAGE_ID en .env`;
+    feedback += `; paquete anchor publicado (${packageId}). Opcional: fijar IOTA_ANCHOR_PACKAGE_ID en ${VAULT_HINT}`;
   }
 
   return {

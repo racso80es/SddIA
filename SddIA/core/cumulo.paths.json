@@ -64,5 +64,9 @@
   },
   "eda_instance": {
     "customization": ".SddIA/events"
+  },
+  "env_hierarchy": {
+    "global": ".dev/.env",
+    "instance": ".SddIA/.dev/.env"
   }
 }
