@@ -56,4 +56,4 @@ Erradicar la **Entropía Táctica** de IAs externas (Cursor, Jules, etc.) forzan
 | Especificación | ✅ `spec.md` |
 | Planificación | ✅ `plan.md` |
 | Implementación | ✅ genoma + touchpoints + creators |
-| Validación | ✅ `validacion.md` — pendiente PR |
+| Validación | ✅ PR #16 MERGED + ciclo Presented→Merged |
