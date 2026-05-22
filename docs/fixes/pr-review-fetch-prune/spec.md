@@ -45,7 +45,7 @@ Nuevas funciones:
 
 - `_workspace_task_name(inputs)` — resuelve slug desde `feature_name`, `fix_name` o `fix/*` / `feat/*`.
 - `_workspace_process_label(inputs, branch_name)` — `bug-fix` si rama `fix/` o `source_process: bug-fix`.
-- `is_workspace_init_phase(..., process_def)` — true para `bug-fix` con `branch_name` + `persist_ref`.
+- `is_workspace_init_phase(..., process_def)` — true solo si proceso ∈ `{feature, bug-fix, refactorization}` **y** fase `Inicialización de Espacio de Trabajo` (no intercepta `delivery-close-cycle`).
 
 ## 4. Criterios de aceptación
 

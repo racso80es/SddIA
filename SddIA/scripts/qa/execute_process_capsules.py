@@ -764,9 +764,13 @@ def is_workspace_init_phase(
     has_git = any(isinstance(d, str) and d == "skill:git-manager" for d in delegates)
     if not has_git:
         return False
+    process_name = (process_def or {}).get("name") if isinstance(process_def, dict) else None
+    if process_name not in ("feature", "bug-fix", "refactorization"):
+        return False
+    if phase.get("name") != "Inicialización de Espacio de Trabajo":
+        return False
     if _workspace_task_name(inputs):
         return True
-    process_name = (process_def or {}).get("name") if isinstance(process_def, dict) else None
     branch = inputs.get("branch_name")
     persist = inputs.get("persist_ref")
     if process_name == "bug-fix" and isinstance(branch, str) and branch.strip():
