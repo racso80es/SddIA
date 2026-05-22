@@ -1,6 +1,11 @@
 {
   "PullRequest_Presented": [
     {
+      "agent": "argos",
+      "process": "pull-request-review",
+      "intent": "Aduana de Fricción post-presentación; gate antes de accept-pr."
+    },
+    {
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
       "intent": "Anclaje DLT IOTA Rebased."

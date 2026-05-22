@@ -141,6 +141,15 @@ def _invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str
     return bool(body.get("success")), body.get("feedback", "ok")
 
 
+def _infer_persist_ref_from_branch(branch: str) -> str | None:
+    b = branch.strip()
+    if b.startswith("feat/"):
+        return f"docs/features/{b[5:]}"
+    if b.startswith("fix/"):
+        return f"docs/features/{b[4:]}"
+    return None
+
+
 def _dispatch_subscriber(
     repo: Path, subscriber: dict[str, Any], event: dict[str, Any]
 ) -> tuple[str, str]:
@@ -153,6 +162,56 @@ def _dispatch_subscriber(
     if event.get("event_type", "").startswith("Domain_Entity_"):
         if not subscriber_applies_to_topology(subscriber, origin_topology):
             return agent, "skipped-topology"
+
+    process_name = subscriber.get("process")
+    if isinstance(process_name, str) and process_name.strip():
+        runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
+        if not runner.is_file():
+            return agent, "failed"
+        if not isinstance(payload, dict):
+            return agent, "failed"
+        branch = payload.get("branch")
+        if not isinstance(branch, str) or not branch.strip():
+            return agent, "failed"
+        branch = branch.strip()
+        process_inputs: dict[str, Any] = {
+            "pr_branch": branch,
+            "pr_id_or_path": payload.get("pr_url") or branch,
+            "correlation_id": event.get("event_id") or "",
+            "author": "eda-bus-watcher",
+        }
+        pr_url = payload.get("pr_url")
+        if isinstance(pr_url, str) and pr_url.strip():
+            process_inputs["pr_url"] = pr_url.strip()
+        inferred = _infer_persist_ref_from_branch(branch)
+        if inferred:
+            process_inputs["persist_ref"] = inferred
+        os.environ.setdefault("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "1")
+        try:
+            proc = _run_subprocess(
+                [
+                    sys.executable,
+                    str(runner),
+                    "--process",
+                    process_name.strip(),
+                    "--inputs",
+                    json.dumps(process_inputs, ensure_ascii=False),
+                ],
+                cwd=str(repo),
+                shell=False,
+            )
+        except OSError:
+            return agent, "failed"
+        stdout = (proc.stdout or "").strip()
+        if not stdout:
+            return agent, "failed"
+        last_line = stdout.splitlines()[-1]
+        try:
+            envelope = json.loads(last_line)
+        except json.JSONDecodeError:
+            return agent, "failed"
+        ok = bool(envelope.get("success")) and envelope.get("status_code", 1) == 0
+        return agent, "success" if ok else "failed"
 
     tool = subscriber.get("tool")
     if tool == "iota-immutable-publisher":

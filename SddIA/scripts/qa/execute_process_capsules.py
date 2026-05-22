@@ -457,6 +457,216 @@ def execute_accept_pr_phase(
     return None
 
 
+_PR_REVIEW_REQUIRED_DOCS = ("objectives.md", "spec.md", "plan.md", "implementation.md")
+
+
+def _infer_persist_ref_from_branch(branch: str) -> str | None:
+    b = branch.strip()
+    if b.startswith("feat/"):
+        return f"docs/features/{b[5:]}"
+    if b.startswith("fix/"):
+        return f"docs/features/{b[4:]}"
+    return None
+
+
+def _validate_feature_documentation(repo: Path, persist_ref: str) -> list[str]:
+    base = repo / persist_ref.strip().replace("\\", "/")
+    errors: list[str] = []
+    if not base.is_dir():
+        return [f"persist_ref inexistente: {persist_ref}"]
+    for name in _PR_REVIEW_REQUIRED_DOCS:
+        path = base / name
+        if not path.is_file():
+            errors.append(f"ausente {name}")
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as e:
+            errors.append(f"{name}: lectura fallida ({e})")
+            continue
+        if not text.startswith("---"):
+            errors.append(f"{name}: frontmatter YAML obligatorio")
+    return errors
+
+
+def _normalize_pr_review_inputs(repo: Path, process_inputs: dict[str, Any]) -> None:
+    branch = process_inputs.get("pr_branch")
+    if not process_inputs.get("pr_id_or_path"):
+        process_inputs["pr_id_or_path"] = process_inputs.get("pr_url") or branch
+    if not process_inputs.get("correlation_id"):
+        process_inputs["correlation_id"] = crypto(
+            repo, {"operation": "GENERATE_UUID", "target_payload": None}
+        )
+    if not process_inputs.get("persist_ref") and isinstance(branch, str):
+        inferred = _infer_persist_ref_from_branch(branch)
+        if inferred:
+            process_inputs["persist_ref"] = inferred
+
+
+def capsule_pr_review_branch_prep(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    branch = inputs.get("pr_branch")
+    if not isinstance(branch, str) or not branch.strip():
+        raise ValueError("pr_branch es obligatorio para pull-request-review")
+    branch = branch.strip()
+    state["pr_branch"] = branch
+    if os.environ.get("SDDIA_LAB_SKIP_GIT_CHECKOUT", "").strip().lower() in ("1", "true", "yes"):
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT_CHECKOUT", "branch": branch}
+    invoke_git_manager(repo, "fetch", {"remote": "origin"})
+    invoke_git_manager(repo, "checkout", {"branch_name": branch, "create_if_not_exists": False})
+    return {"branch": branch}
+
+
+def capsule_pr_review_documental(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    persist_ref = inputs.get("persist_ref") or state.get("persist_ref")
+    if not isinstance(persist_ref, str) or not persist_ref.strip():
+        err = "persist_ref no resuelto para triaje documental"
+        state.setdefault("review_failures", []).append(err)
+        return {"passed": False, "errors": [err]}
+    persist_ref = persist_ref.strip()
+    state["persist_ref"] = persist_ref
+    if os.environ.get("SDDIA_LAB_PR_REVIEW_DOC_FAIL", "").strip().lower() in ("1", "true", "yes"):
+        err = "fallo simulado triaje documental (SDDIA_LAB_PR_REVIEW_DOC_FAIL)"
+        state.setdefault("review_failures", []).append(err)
+        return {"passed": False, "errors": [err]}
+    errors = _validate_feature_documentation(repo, persist_ref)
+    if errors:
+        state.setdefault("review_failures", []).extend(errors)
+    return {"passed": not errors, "errors": errors, "persist_ref": persist_ref}
+
+
+def capsule_pr_review_technical(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    if os.environ.get("SDDIA_LAB_PR_REVIEW_TECH_FAIL", "").strip().lower() in ("1", "true", "yes"):
+        err = "fallo simulado triaje técnico (SDDIA_LAB_PR_REVIEW_TECH_FAIL)"
+        state.setdefault("review_failures", []).append(err)
+        return {"passed": False, "errors": [err]}
+    integrity = repo / "SddIA" / "scripts" / "qa" / "verify-process-integrity.py"
+    if integrity.is_file():
+        proc = subprocess.run(
+            [sys.executable, str(integrity)],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            cwd=str(repo),
+            check=False,
+        )
+        if proc.returncode != 0:
+            err = "verify-process-integrity falló en triaje técnico"
+            state.setdefault("review_failures", []).append(err)
+            return {"passed": False, "errors": [err], "stderr": (proc.stderr or "")[-500:]}
+    return {"passed": True}
+
+
+def capsule_pr_review_rbac(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    if os.environ.get("SDDIA_LAB_PR_REVIEW_RBAC_FAIL", "").strip().lower() in ("1", "true", "yes"):
+        err = "Cerbero RBAC: permiso denegado (simulado)"
+        state.setdefault("review_failures", []).append(err)
+        return {"passed": False, "agent": "cerbero", "errors": [err]}
+    return {"passed": True, "agent": "cerbero", "note": "RBAC lab stub success"}
+
+
+def capsule_pr_review_verdict(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    failures = state.get("review_failures") or []
+    if failures:
+        state["verdict"] = "rechazado"
+        state["delivery_state"] = "failed"
+        state["argos_feedback"] = [
+            {"kind": "norm_collision", "detail": item} for item in failures
+        ]
+        return {
+            "verdict": "rechazado",
+            "delivery_state": "failed",
+            "failures": failures,
+        }
+    state["verdict"] = "aprobado"
+    state["delivery_state"] = "success"
+    return {"verdict": "aprobado", "delivery_state": "success"}
+
+
+def capsule_pr_review_kaizen(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    items: list[str] = list(state.get("kaizen_items") or [])
+    if os.environ.get("SDDIA_LAB_PR_REVIEW_KAIZEN", "").strip().lower() in ("1", "true", "yes"):
+        items.append("Deuda simulada laboratorio — optimizar handlers aduana PR review")
+    seeds: list[str] = []
+    branch = state.get("pr_branch") or inputs.get("pr_branch") or "unknown"
+    for idx, item in enumerate(items, start=1):
+        slug = re.sub(r"[^\w\-]+", "-", str(branch)).strip("-")[:48]
+        todo_name = f"[OPERATIVO] Kaizen PR review — {slug}.md"
+        if idx > 1:
+            todo_name = f"[OPERATIVO] Kaizen PR review — {slug} ({idx}).md"
+        todo_path = repo / "docs" / "todos" / todo_name
+        todo_path.parent.mkdir(parents=True, exist_ok=True)
+        body = (
+            f"# {todo_name}\n\n"
+            f"> Origen: pull-request-review / rama `{branch}`\n\n"
+            f"- [ ] {item}\n"
+        )
+        todo_path.write_text(body, encoding="utf-8")
+        seeds.append(todo_path.relative_to(repo).as_posix())
+    state["kaizen_seeds"] = seeds
+    return {"kaizen_seeds": seeds, "count": len(seeds)}
+
+
+def capsule_pr_review_handoff_accept(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    if state.get("verdict") != "aprobado":
+        return {"skipped": True, "reason": state.get("verdict", "sin veredicto")}
+    if os.environ.get("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "").strip().lower() in ("1", "true", "yes"):
+        state["accept_pr_handoff"] = True
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "simulated_handoff": True}
+    source = state.get("pr_branch") or inputs.get("pr_branch")
+    if not isinstance(source, str) or not source.strip():
+        raise ValueError("pr_branch ausente para handoff accept-pr")
+    child_inputs: dict[str, Any] = {
+        "source_branch": source.strip(),
+        "author": inputs.get("author", "pull-request-review-aduana"),
+        "correlation_id": inputs.get("correlation_id"),
+    }
+    if inputs.get("merge_already_done") in (True, "true", "1", 1):
+        child_inputs["merge_already_done"] = True
+    data = invoke_subprocess_process(repo, "accept-pr", child_inputs)
+    state["accept_pr_handoff"] = True
+    state["handoff"].update(data.get("handoff") or {})
+    if data.get("event_id"):
+        state["event_id"] = data["event_id"]
+    if data.get("target_path"):
+        state["target_path"] = data["target_path"]
+    return {"child_process": "accept-pr", "handoff": state.get("handoff"), **data}
+
+
+def execute_pull_request_review_phase(
+    repo: Path,
+    phase_name: str | None,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if phase_name == "Preparación de rama":
+        result = capsule_pr_review_branch_prep(repo, inputs, state)
+        return {"status": "executed", "handler": "pr-review-branch-prep", **result}
+    if phase_name == "Triaje documental":
+        result = capsule_pr_review_documental(repo, inputs, state)
+        st = "blocked" if not result.get("passed") else "executed"
+        return {"status": st, "handler": "pr-review-documental", **result}
+    if phase_name == "Triaje técnico":
+        result = capsule_pr_review_technical(repo, inputs, state)
+        st = "blocked" if not result.get("passed") else "executed"
+        return {"status": st, "handler": "pr-review-technical", **result}
+    if phase_name == "Certificación RBAC":
+        result = capsule_pr_review_rbac(repo, inputs, state)
+        st = "blocked" if not result.get("passed") else "executed"
+        return {"status": st, "handler": "pr-review-rbac", **result}
+    if phase_name == "Veredicto y bloqueo":
+        result = capsule_pr_review_verdict(repo, inputs, state)
+        st = "blocked" if result.get("verdict") == "rechazado" else "executed"
+        return {"status": st, "handler": "pr-review-verdict", **result}
+    if phase_name == "Cosecha Kaizen":
+        result = capsule_pr_review_kaizen(repo, inputs, state)
+        return {"status": "executed", "handler": "pr-review-kaizen", **result}
+    if phase_name == "Handoff materialización":
+        result = capsule_pr_review_handoff_accept(repo, inputs, state)
+        return {"status": "executed", "handler": "pr-review-handoff-accept", **result}
+    return None
+
+
 def execute_delivery_close_phase(
     repo: Path,
     phase_name: str | None,
@@ -1280,6 +1490,14 @@ def execute_phase(
             entry.update(ap)
             return entry
 
+    if process_def.get("name") == "pull-request-review":
+        prr = execute_pull_request_review_phase(
+            repo, str(phase_name) if phase_name else None, inputs, state
+        )
+        if prr is not None:
+            entry.update(prr)
+            return entry
+
     pi = pi_index.get(str(phase_name))
     if pi and pi.get("invocations"):
         inv_log = run_phase_invocations(repo, pi, inputs, state)
@@ -1338,6 +1556,8 @@ def execute_phase(
 
 def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -> dict[str, Any]:
     canonical, process_def, phases = load_process_def(repo, process_name)
+    if canonical == "pull-request-review":
+        _normalize_pr_review_inputs(repo, process_inputs)
     validate_process_inputs(process_def, process_inputs, canonical)
 
     state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
@@ -1368,14 +1588,31 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         data["closed_branch"] = state["closed_branch"]
     if state.get("snapshot_commit_hash"):
         data["snapshot_commit_hash"] = state["snapshot_commit_hash"]
+    if state.get("verdict"):
+        data["verdict"] = state["verdict"]
+    if state.get("delivery_state"):
+        data["delivery_state"] = state["delivery_state"]
+    if state.get("kaizen_seeds"):
+        data["kaizen_seeds"] = state["kaizen_seeds"]
+    if state.get("accept_pr_handoff"):
+        data["accept_pr_handoff"] = state["accept_pr_handoff"]
 
     blocked = state.get("argos_verdict") == "block"
+    if state.get("verdict") in ("rechazado", "requiere_cambios"):
+        blocked = True
+    err_msg = None
+    if state.get("argos_verdict") == "block":
+        err_msg = "Argos: Ruido de Sistema (huérfanas EDA)"
+    elif state.get("verdict") == "rechazado":
+        err_msg = "pull-request-review: aduana bloqueó materialización"
+    elif state.get("verdict") == "requiere_cambios":
+        err_msg = "pull-request-review: requiere cambios antes de merge"
     return {
         "success": not blocked,
         "status_code": 1 if blocked else 0,
         "data": data,
         "execution_report": {"process_name": canonical, "phases": phase_reports},
-        "error": "Argos: Ruido de Sistema (huérfanas EDA)" if blocked else None,
+        "error": err_msg,
     }
 
 

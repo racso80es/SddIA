@@ -1,0 +1,8 @@
+{
+  "pr_branch": "feat/pull-request-review-redesign",
+  "pr_id_or_path": "feat/pull-request-review-redesign",
+  "correlation_id": "smoke-pr-review-presented-20260522",
+  "persist_ref": "docs/features/pull-request-review-redesign",
+  "pr_url": "https://github.com/lab-simulated/SddIA/pull/0-pr-review-redesign",
+  "author": "validacion@sddia.local"
+}

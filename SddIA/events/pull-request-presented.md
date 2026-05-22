@@ -12,7 +12,7 @@ hash_signature: "sha256:d536a30b1d0c39ef7dbc4053775f6efa3ef673a63dcd03dbbd92700e
 
 # Event: PullRequest_Presented
 
-Clase ECST para presentación de PR en bus local. Suscripción no-op hasta auditoría Argos.
+Clase ECST para presentación de PR en bus local. Suscriptores: aduana **`pull-request-review`** (Argos) + anclaje DLT (Cúmulo/IOTA).
 
 ## Payload ECST
 
