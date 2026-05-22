@@ -517,6 +517,19 @@ def _normalize_pr_review_inputs(repo: Path, process_inputs: dict[str, Any]) -> N
             process_inputs["persist_ref"] = inferred
 
 
+def _sync_pr_review_worktree(repo: Path, branch: str) -> dict[str, Any]:
+    """Alinea worktree con origin/<branch> tras fetch (evita verify con fases obsoletas)."""
+    invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
+    remote_ref = f"origin/{branch}"
+    try:
+        invoke_git_manager(repo, "get_last_commit", {"ref": remote_ref})
+        invoke_shell_executor(repo, "git", ["checkout", "-B", branch, remote_ref])
+        return {"branch": branch, "synced_to": remote_ref, "mode": "origin-tracking"}
+    except RuntimeError:
+        invoke_git_manager(repo, "checkout", {"branch_name": branch, "create_if_not_exists": False})
+        return {"branch": branch, "mode": "local-checkout"}
+
+
 def capsule_pr_review_branch_prep(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     branch = inputs.get("pr_branch")
     if not isinstance(branch, str) or not branch.strip():
@@ -527,9 +540,9 @@ def capsule_pr_review_branch_prep(repo: Path, inputs: dict[str, Any], state: dic
         return {"skipped": True, "reason": "merge_already_done", "branch": branch}
     if os.environ.get("SDDIA_LAB_SKIP_GIT_CHECKOUT", "").strip().lower() in ("1", "true", "yes"):
         return {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT_CHECKOUT", "branch": branch}
-    invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
-    invoke_git_manager(repo, "checkout", {"branch_name": branch, "create_if_not_exists": False})
-    return {"branch": branch}
+    sync = _sync_pr_review_worktree(repo, branch)
+    state["pr_worktree_sync"] = sync
+    return sync
 
 
 def capsule_pr_review_documental(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
@@ -557,6 +570,8 @@ def capsule_pr_review_technical(repo: Path, inputs: dict[str, Any], state: dict[
         return {"passed": False, "errors": [err]}
     integrity = repo / "SddIA" / "scripts" / "qa" / "verify-process-integrity.py"
     if integrity.is_file():
+        vpi_env = os.environ.copy()
+        vpi_env["SDDIA_REPO_ROOT"] = str(repo.resolve())
         proc = subprocess.run(
             [sys.executable, str(integrity)],
             capture_output=True,
@@ -564,6 +579,7 @@ def capsule_pr_review_technical(repo: Path, inputs: dict[str, Any], state: dict[
             encoding="utf-8",
             errors="replace",
             cwd=str(repo),
+            env=vpi_env,
             check=False,
         )
         if proc.returncode != 0:

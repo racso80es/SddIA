@@ -8,6 +8,7 @@ Recálculo masivo de hash_signature: SddIA/scripts/qa/recalc-process-hash-signat
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -18,7 +19,18 @@ except ImportError:  # pragma: no cover
     sys.exit(2)
 
 SCRIPT = Path(__file__).resolve()
-REPO = SCRIPT.parents[3] if (SCRIPT.parents[2] / "tools").is_dir() else SCRIPT.parents[2]
+
+
+def _repo_root() -> Path:
+    override = os.environ.get("SDDIA_REPO_ROOT", "").strip()
+    if override:
+        return Path(override).resolve()
+    if (SCRIPT.parents[2] / "tools").is_dir():
+        return SCRIPT.parents[3]
+    return SCRIPT.parents[2]
+
+
+REPO = _repo_root()
 PROCESS_DIR = REPO / "SddIA" / "process"
 
 SKIP_NAMES = frozenset({"process-contract", "index"})
