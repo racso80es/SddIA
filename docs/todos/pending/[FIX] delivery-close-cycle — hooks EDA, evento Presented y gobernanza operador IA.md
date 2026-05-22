@@ -130,7 +130,7 @@ git push (feature)
 | Rama | `fix/delivery-close-hook-eda-governance` |
 | persist_ref | `docs/fixes/delivery-close-hook-eda-governance/` |
 | Argos | **APTO** — ver `validacion.md` |
-| Smoke Kintsugi | `9216ad24-…` → `cumulo` + `mayeuta` success |
+| Smoke push hook | `PullRequest_Presented` `01656c3a-…` emitido en push real (2026-05-22) |
 | Pendiente cierre | Push remoto → PR → `accept-pr` → mover PBI a `done/` |
 
 ---
@@ -153,7 +153,7 @@ git push (feature)
 ## 6. Criterio de cierre del PBI
 
 - [x] Argos **APTO** en `docs/fixes/delivery-close-hook-eda-governance/validacion.md`.
-- [ ] Smoke push hook remoto → `PullRequest_Presented` en `pending/` → `processed/` *(post-push rama fix)*.
+- [x] Smoke push hook remoto → `PullRequest_Presented` `01656c3a-c3e4-4564-8937-05d300013b68` (push `20c5ee5`, anti-recursión OK).
 - [x] PR #20 con eventos retroactivos registrados.
 - [x] Norma IA publicada (`obediencia-procesos.md` v1.1 + `pull-request-orchestration.md` §7).
 - [ ] Este TODO movido a `docs/todos/done/` *(tras merge del fix)*.
