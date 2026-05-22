@@ -2,6 +2,8 @@
 uuid: "9b314f74-44d3-43c4-b916-871a9fa43f45"
 name: "route-domain-event"
 version: "1.1.0"
+status: "deprecated"
+superseded_by: "process:route-domain-event"
 contract: "actions-contract v1.2.0"
 context: "event-routing"
 capabilities:
@@ -21,6 +23,9 @@ porcentaje_de_exito: null
 ---
 
 # Acción: route-domain-event
+
+> **DEPRECATED** — Sustituida por proceso **`route-domain-event`** (`SddIA/process/route-domain-event.md`).  
+> Shim lab: `execute-action.py` delega en `execute-process --process route-domain-event`.
 
 ## 1. Propósito
 

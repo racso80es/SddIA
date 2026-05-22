@@ -21,3 +21,4 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | accept-pr | bd81c878-5e1c-4fe5-b204-85c9136d8bc7 | 1.0.0 | pr-lifecycle, source-control, filesystem-ops | — | Aceptación local soberana: Argos → merge a main → emit-pr-merged-event → push main y limpieza de rama origen. |
 | entity-manager | 62f08bbd-e9ce-479d-8d1b-792684e1bd26 | 1.0.0 | ecosystem-evolution | — | Gestor de Entidad: fachada sobre *-creator (piloto skill + event) con sello universal emit-domain-mutation. |
 | event-creator | b28194d9-62a8-4cbc-9cbd-237e51e44333 | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar Clases de Evento ECST en `SddIA/events/` y mantener el índice del genoma. |
+| route-domain-event | c8e91f2a-4b6d-4e1a-9f03-2d7e5a684b10 | 1.0.0 | event-routing, ecosystem-evolution | — | Orquestador bus EDA V3+: fan-out suscriptores, topología simétrica, testigos y cabeceras por estado. |

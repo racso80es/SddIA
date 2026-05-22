@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Utilidades compartidas bus EDA: topología V3, testigos suscriptor, idempotencia."""
+"""Utilidades compartidas bus EDA: topología V3+ simétrica, testigos y cabeceras."""
 
 from __future__ import annotations
 
 import json
 import re
+import shutil
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,6 +38,18 @@ ECST_GATE_SUBSCRIBER = "ecst-gate"
 
 _DEFAULT_EVENT_BUS = ".events"
 
+# Alias de claves de carpeta testigo (legacy V3 → V3+)
+_WITNESS_KEY_ALIASES: dict[str, str] = {
+    "subscriber_processing": "processing_subscribers",
+    "subscriber_processed": "processed_subscribers",
+    "subscriber_dead_letter": "dead_letter_subscribers",
+    "processing": "processing_subscribers",
+    "processed": "processed_subscribers",
+    "dead_letter": "dead_letter_subscribers",
+}
+
+_HEADER_STATES = frozenset({"processing", "processed", "dead_letter"})
+
 
 def _iso_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -54,15 +67,22 @@ def _load_cumulo(repo: Path) -> dict[str, Any]:
     return json.loads(cfg_path.read_text(encoding="utf-8"))
 
 
+def _resolve_witness_key(state_key: str) -> str:
+    return _WITNESS_KEY_ALIASES.get(state_key, state_key)
+
+
 def load_eda_bus(repo: Path) -> dict[str, str]:
-    """Topología plana del bus V3 (padre + testigos suscriptor)."""
+    """Topología plana del bus V3+ (cabeceras por estado + subscribers anidados)."""
     event_bus = _normalize_rel(_DEFAULT_EVENT_BUS)
-    defaults = {
+    defaults: dict[str, str] = {
         "event_bus": event_bus,
         "pending": f"{event_bus}/pending",
-        "subscriber_processing": f"{event_bus}/subscribers/processing",
-        "subscriber_processed": f"{event_bus}/subscribers/processed",
-        "subscriber_dead_letter": f"{event_bus}/subscribers/dead-letter",
+        "processing": f"{event_bus}/processing",
+        "processing_subscribers": f"{event_bus}/processing/subscribers",
+        "processed": f"{event_bus}/processed",
+        "processed_subscribers": f"{event_bus}/processed/subscribers",
+        "dead_letter": f"{event_bus}/dead-letter",
+        "dead_letter_subscribers": f"{event_bus}/dead-letter/subscribers",
         "subscriptions": "SddIA/core/event-subscriptions.json",
     }
     try:
@@ -70,41 +90,70 @@ def load_eda_bus(repo: Path) -> dict[str, str]:
         if isinstance(cfg.get("event_bus"), str) and cfg["event_bus"].strip():
             event_bus = _normalize_rel(cfg["event_bus"].strip())
             defaults["event_bus"] = event_bus
+            defaults["pending"] = f"{event_bus}/pending"
+            defaults["processing"] = f"{event_bus}/processing"
+            defaults["processing_subscribers"] = f"{event_bus}/processing/subscribers"
+            defaults["processed"] = f"{event_bus}/processed"
+            defaults["processed_subscribers"] = f"{event_bus}/processed/subscribers"
+            defaults["dead_letter"] = f"{event_bus}/dead-letter"
+            defaults["dead_letter_subscribers"] = f"{event_bus}/dead-letter/subscribers"
+
         bus = cfg.get("eda_bus") or {}
         if isinstance(bus.get("pending"), str) and bus["pending"]:
             defaults["pending"] = _normalize_rel(bus["pending"])
+
+        # V3+ simétrico
+        for key in ("processing", "processed", "dead_letter"):
+            if isinstance(bus.get(key), str) and bus[key]:
+                defaults[key] = _normalize_rel(bus[key])
+                defaults[f"{key}_subscribers"] = _normalize_rel(
+                    f"{bus[key].rstrip('/')}/subscribers"
+                )
+
+        # Legacy V3 anidado subscribers.*
         subs = bus.get("subscribers") or {}
         if isinstance(subs, dict):
-            for key, flat_key in (
-                ("processing", "subscriber_processing"),
-                ("processed", "subscriber_processed"),
-                ("dead_letter", "subscriber_dead_letter"),
-            ):
-                if isinstance(subs.get(key), str) and subs[key]:
-                    defaults[flat_key] = _normalize_rel(subs[key])
+            legacy_map = (
+                ("processing", "processing_subscribers"),
+                ("processed", "processed_subscribers"),
+                ("dead_letter", "dead_letter_subscribers"),
+            )
+            for legacy_key, flat_key in legacy_map:
+                if isinstance(subs.get(legacy_key), str) and subs[legacy_key]:
+                    defaults[flat_key] = _normalize_rel(subs[legacy_key])
+
         if isinstance(bus.get("subscriptions"), str) and bus["subscriptions"]:
             defaults["subscriptions"] = bus["subscriptions"]
     except (OSError, ValueError):
         pass
 
-    # Alias planos para consumidores legacy que usan processing/processed/dead_letter
-    defaults["processing"] = defaults["subscriber_processing"]
-    defaults["processed"] = defaults["subscriber_processed"]
-    defaults["dead_letter"] = defaults["subscriber_dead_letter"]
+    # Alias legacy para consumidores no migrados
+    defaults["subscriber_processing"] = defaults["processing_subscribers"]
+    defaults["subscriber_processed"] = defaults["processed_subscribers"]
+    defaults["subscriber_dead_letter"] = defaults["dead_letter_subscribers"]
     return defaults
 
 
 def ensure_event_bus_topology(repo: Path) -> dict[str, str]:
-    """Crea idempotentemente pending/ y subscribers/{processing,processed,dead-letter}/."""
+    """Crea idempotentemente pending/, estados con cabecera y subscribers/."""
     bus = load_eda_bus(repo)
     for key in (
         "pending",
-        "subscriber_processing",
-        "subscriber_processed",
-        "subscriber_dead_letter",
+        "processing",
+        "processing_subscribers",
+        "processed",
+        "processed_subscribers",
+        "dead_letter",
+        "dead_letter_subscribers",
     ):
         (repo / bus[key]).mkdir(parents=True, exist_ok=True)
     return bus
+
+
+def header_path(bus: dict[str, str], state: str, event_uuid: str) -> Path:
+    if state not in _HEADER_STATES:
+        raise ValueError(f"estado cabecera inválido: {state}")
+    return Path(bus[state]) / f"{event_uuid}.json"
 
 
 def subscriber_id(subscriber: dict[str, Any]) -> str:
@@ -140,6 +189,61 @@ def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
             tmp.unlink(missing_ok=True)
 
 
+def _copy_header_atomic(source: Path, dest: Path) -> None:
+    if dest.is_file():
+        return
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, dest)
+
+
+def ensure_state_header(
+    repo: Path,
+    bus: dict[str, str],
+    state: str,
+    event_uuid: str,
+    source_path: Path,
+) -> Path:
+    """Réplica cabecera ECST en processing/processed/dead-letter si ausente."""
+    dest = repo / header_path(bus, state, event_uuid)
+    _copy_header_atomic(source_path, dest)
+    return dest
+
+
+def ensure_processing_header(
+    repo: Path,
+    bus: dict[str, str],
+    event_uuid: str,
+    pending_path: Path,
+) -> Path:
+    return ensure_state_header(repo, bus, "processing", event_uuid, pending_path)
+
+
+def list_witnesses(
+    repo: Path, bus: dict[str, str], state_key: str, event_uuid: str
+) -> list[Path]:
+    folder_key = _resolve_witness_key(state_key)
+    folder = repo / bus[folder_key]
+    if not folder.is_dir():
+        return []
+    return sorted(folder.glob(f"{event_uuid}.*.json"))
+
+
+def witness_exists(
+    repo: Path, bus: dict[str, str], state_key: str, event_uuid: str, subscriber_name: str
+) -> bool:
+    folder_key = _resolve_witness_key(state_key)
+    path = repo / bus[folder_key] / witness_filename(event_uuid, subscriber_name)
+    return path.is_file()
+
+
+def terminal_witness_exists(
+    repo: Path, bus: dict[str, str], event_uuid: str, subscriber_name: str
+) -> bool:
+    return witness_exists(
+        repo, bus, "processed_subscribers", event_uuid, subscriber_name
+    ) or witness_exists(repo, bus, "dead_letter_subscribers", event_uuid, subscriber_name)
+
+
 def write_processing_witness(
     repo: Path,
     bus: dict[str, str],
@@ -147,8 +251,13 @@ def write_processing_witness(
     event_uuid: str,
     subscriber_name: str,
     event_type: str,
+    dispatch_mode: str = "async",
 ) -> Path:
-    dest = repo / bus["subscriber_processing"] / witness_filename(event_uuid, subscriber_name)
+    dest = (
+        repo
+        / bus["processing_subscribers"]
+        / witness_filename(event_uuid, subscriber_name)
+    )
     _write_json_atomic(
         dest,
         {
@@ -157,9 +266,25 @@ def write_processing_witness(
             "state": "processing",
             "started_at": _iso_now(),
             "event_type": event_type,
+            "dispatch_mode": dispatch_mode,
         },
     )
     return dest
+
+
+def _delegation_meta(subscriber: dict[str, Any], exit_code: int) -> dict[str, Any]:
+    kind = "unknown"
+    target = "unknown"
+    if isinstance(subscriber.get("process"), str) and subscriber["process"].strip():
+        kind = "process"
+        target = subscriber["process"].strip()
+    elif isinstance(subscriber.get("action"), str) and subscriber["action"].strip():
+        kind = "action"
+        target = subscriber["action"].strip()
+    elif isinstance(subscriber.get("tool"), str) and subscriber["tool"].strip():
+        kind = "tool"
+        target = subscriber["tool"].strip()
+    return {"kind": kind, "target": target, "exit_code": exit_code}
 
 
 def promote_witness(
@@ -170,15 +295,19 @@ def promote_witness(
     subscriber_name: str,
     to_state: str,
     extra: dict[str, Any] | None = None,
+    pending_header: Path | None = None,
 ) -> Path:
-    from_key = "subscriber_processing"
-    to_key = "subscriber_processed" if to_state == "processed" else "subscriber_dead_letter"
+    from_key = "processing_subscribers"
+    to_key = (
+        "processed_subscribers" if to_state == "processed" else "dead_letter_subscribers"
+    )
+    header_state = "processed" if to_state == "processed" else "dead_letter"
     src = repo / bus[from_key] / witness_filename(event_uuid, subscriber_name)
     dest = repo / bus[to_key] / witness_filename(event_uuid, subscriber_name)
     if not src.is_file():
         raise FileNotFoundError(f"testigo processing ausente: {src}")
     body = json.loads(src.read_text(encoding="utf-8"))
-    body["state"] = to_state
+    body["state"] = "dead-letter" if to_state == "dead-letter" else "processed"
     now = _iso_now()
     if to_state == "processed":
         body["completed_at"] = now
@@ -190,14 +319,60 @@ def promote_witness(
     dest.parent.mkdir(parents=True, exist_ok=True)
     _write_json_atomic(dest, body)
     src.unlink(missing_ok=True)
+    if pending_header is not None and pending_header.is_file():
+        ensure_state_header(repo, bus, header_state, event_uuid, pending_header)
     return dest
 
 
-def list_witnesses(repo: Path, bus: dict[str, str], state_key: str, event_uuid: str) -> list[Path]:
-    folder = repo / bus[state_key]
-    if not folder.is_dir():
-        return []
-    return sorted(folder.glob(f"{event_uuid}.*.json"))
+def terminal_subscriber_names(
+    repo: Path, bus: dict[str, str], event_uuid: str
+) -> set[str]:
+    names: set[str] = set()
+    for key in ("processed_subscribers", "dead_letter_subscribers"):
+        for path in list_witnesses(repo, bus, key, event_uuid):
+            suffix = path.name[len(event_uuid) + 1 : -5]
+            if suffix:
+                names.add(suffix)
+    return names
+
+
+def in_flight_subscriber_names(
+    repo: Path, bus: dict[str, str], event_uuid: str
+) -> set[str]:
+    names: set[str] = set()
+    for path in list_witnesses(repo, bus, "processing_subscribers", event_uuid):
+        suffix = path.name[len(event_uuid) + 1 : -5]
+        if suffix:
+            names.add(suffix)
+    return names
+
+
+def maybe_purge_processing_header(
+    repo: Path,
+    bus: dict[str, str],
+    event_uuid: str,
+    registry: dict[str, Any],
+    event_type: str,
+    origin_topology: str,
+) -> bool:
+    """Elimina cabecera processing/ si todos los suscriptores aplicables están terminales."""
+    required: list[str] = []
+    for sub in registry.get(event_type) or []:
+        if isinstance(sub, dict) and subscriber_applies_to_topology(sub, origin_topology):
+            required.append(subscriber_id(sub))
+    if not required:
+        return False
+    terminals = terminal_subscriber_names(repo, bus, event_uuid)
+    in_flight = in_flight_subscriber_names(repo, bus, event_uuid)
+    if not set(required).issubset(terminals):
+        return False
+    if in_flight & set(required):
+        return False
+    header = repo / header_path(bus, "processing", event_uuid)
+    if header.is_file():
+        header.unlink(missing_ok=True)
+        return True
+    return False
 
 
 def required_subscriber_ids(registry: dict[str, Any], event_type: str) -> list[str]:
@@ -273,7 +448,7 @@ def _legacy_bus_dirs(repo: Path) -> list[Path]:
 
 
 def iter_bus_event_files(repo: Path) -> list[Path]:
-    """Instancias ECST padre: pending V3 + legacy docs/events."""
+    """Instancias ECST padre: pending V3+ + legacy docs/events."""
     bus = load_eda_bus(repo)
     files: list[Path] = []
     pending = repo / bus["pending"]
@@ -378,10 +553,24 @@ def github_pr_merged(pr_url: str) -> bool:
     return data.get("state") == "MERGED"
 
 
-def archive_processed_witnesses(repo: Path, bus: dict[str, str], event_uuid: str) -> int:
-    """Elimina testigos processed/ del evento tras purga del padre."""
-    removed = 0
-    for path in list_witnesses(repo, bus, "subscriber_processed", event_uuid):
+def archive_event_after_sweep(repo: Path, bus: dict[str, str], event_uuid: str) -> dict[str, int]:
+    """Purgar pending, cabeceras processed/processing y testigos processed tras consenso."""
+    counts = {"witnesses": 0, "headers": 0, "pending": 0}
+    pending = repo / bus["pending"] / f"{event_uuid}.json"
+    if pending.is_file():
+        pending.unlink(missing_ok=True)
+        counts["pending"] = 1
+    for state in ("processing", "processed"):
+        header = repo / header_path(bus, state, event_uuid)
+        if header.is_file():
+            header.unlink(missing_ok=True)
+            counts["headers"] += 1
+    for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid):
         path.unlink(missing_ok=True)
-        removed += 1
-    return removed
+        counts["witnesses"] += 1
+    return counts
+
+
+def archive_processed_witnesses(repo: Path, bus: dict[str, str], event_uuid: str) -> int:
+    """Compat legacy: delega en archive_event_after_sweep."""
+    return archive_event_after_sweep(repo, bus, event_uuid)["witnesses"]
