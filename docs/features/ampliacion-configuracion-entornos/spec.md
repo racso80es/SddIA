@@ -3,98 +3,127 @@ feature_name: ampliacion-configuracion-entornos
 created: "2026-05-22"
 process: feature
 base: main
-scope: runtime-config-hierarchy
+scope: ola-a-hito-0-vault-hierarchy
+updated: "2026-05-22"
 ---
 
-# Especificación técnica — Jerarquía de configuración de entornos
+# Especificación técnica — Jerarquía de Bóvedas
 
-## 1. Contexto
+## 1. Contexto estratégico
 
-Hoy los secretos IOTA viven en un `.env` ad hoc junto a la cápsula Node (`SddIA/scripts/tools/iota-immutable-publisher/.env`), ignorado por git pero acoplado físicamente al tool. No existe un contrato federal de dónde colocar configuración local vs compartida del workspace.
+La Ola A amplía su alcance operativo con la **Jerarquía de Bóvedas**: contrato federal de dónde residen secretos y configuración local vs global. Esta fase es **Hito 0** y precede a cualquier resolución de pasivo técnico pendiente.
 
-La arquitectura SddIA adopta dos planos:
+Estado actual: secretos IOTA en `.env` ad hoc junto a `iota-immutable-publisher/`, acoplados físicamente a la cápsula.
 
-| Plano | Ruta | Semántica |
-|-------|------|-----------|
-| Global repo | `.dev/.env` | Configuración compartida del clone (equipo, CI local, defaults) |
-| Instancia | `.SddIA/.dev/.env` | Overrides soberanos del proyecto (Vía C); prevalece sobre global |
+| Bóveda | Ruta | Semántica |
+|--------|------|-----------|
+| Global | `.dev/.env` | Configuración compartida del clone |
+| Instancia | `.SddIA/.dev/.env` | Overrides soberanos (Vía C); prevalece sobre global |
 
-## 2. Contrato del cargador
+## 2. Hito 0.1 — Contrato del cargador
 
 ### 2.1 Módulo `SddIA/scripts/qa/env_loader.py`
 
 | Función | Firma | Comportamiento |
 |---------|-------|----------------|
-| `parse_dotenv_file` | `(path: Path) → dict[str, str]` | Parseo línea a línea; soporta `#` comentarios; `export KEY=val` opcional |
-| `load_hierarchical_env` | `(repo: Path) → dict[str, str]` | Orquesta merge y aplicación |
-| `apply_env` | `(merged: dict[str, str]) → None` | `os.environ.setdefault(k, v)` por cada par |
+| `parse_dotenv_file` | `(path: Path) → dict[str, str]` | `KEY=VALUE`, comentarios `#`, `export` opcional |
+| `load_hierarchical_env` | `(repo_root: Path) → dict[str, str]` | Orquesta merge global → local |
+| `apply_env` | `(merged: dict[str, str]) → None` | `os.environ.setdefault(k, v)` |
 
-### 2.2 Algoritmo de merge
+### 2.2 Algoritmo
 
 ```
 merged = {}
-if exists(repo / ".dev" / ".env"):
-    merged.update(parse(repo / ".dev" / ".env"))
-if exists(repo / ".SddIA" / ".dev" / ".env"):
-    if both_exist:
+if exists(repo_root / ".dev" / ".env"):
+    merged.update(parse(global))
+if exists(repo_root / ".SddIA" / ".dev" / ".env"):
+    if global_exists and local_exists:
         log_stderr("[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env")
-    merged.update(parse(repo / ".SddIA" / ".dev" / ".env"))
-apply_env(merged)  # setdefault — respeta SO
+    merged.update(parse(local))   # local sobrescribe global en dict
+apply_env(merged)
 return merged
 ```
 
 ### 2.3 Invariantes
 
-- **I1:** Idempotente — invocar dos veces no cambia resultado.
-- **I2:** Agnóstico de claves — ningún `if key == "IOTA_*"` en el loader.
-- **I3:** Sin efectos en stdout — logs solo stderr.
-- **I4:** Fallo de parseo — excepción con ruta del fichero y línea (fail-fast).
+- **I1:** Idempotente.
+- **I2:** Agnóstico de claves.
+- **I3:** Logs solo stderr.
+- **I4:** Parseo fail-fast (ruta + línea).
 
-## 3. Integración en entrypoints
+## 3. Hito 0.2 — Integración entrypoints
 
-### 3.1 `execute-process.py`
-
-Insertar **inmediatamente después** de resolver `repo = repo_root()` y **antes** de `run_process` / `shim_execute_action`:
+### 3.1 `execute-process.py` (puerta CLI)
 
 ```python
-from env_loader import load_hierarchical_env
-load_hierarchical_env(repo)
+repo = repo_root()
+load_hierarchical_env(repo)   # antes de run_process / shim_execute_action
 ```
 
-### 3.2 `execute-action.py`
+### 3.2 `execute_process_capsules.py` (núcleo pre-cápsula) — **obligatorio**
 
-Misma llamada al inicio de `main()`, tras `repo_root()`.
+Al inicio de `run_process(repo, process_name, process_inputs)`:
 
-### 3.3 `event-watcher.py`
+```python
+load_hierarchical_env(repo)   # antes de load_process_def, fases, invocaciones
+```
 
-Tras resolver `REPO_ROOT`, antes del bucle de consumo.
+Garantiza env cuando el intérprete se usa como biblioteca o vía rutas indirectas.
 
-### 3.4 Subprocesos
+### 3.3 Entrypoints autónomos (complementarios)
 
-Los entrypoints que ya cargaron el entorno propagan variables vía `os.environ.copy()` existente en `execute_process_capsules.shim_execute_action` y lanzadores de cápsulas — **sin** re-invocar loader en hijos.
+| Archivo | Punto de inserción |
+|---------|-------------------|
+| `execute-action.py` | Inicio `main()`, tras `repo_root()` |
+| `event-watcher.py` | Tras `REPO_ROOT`, antes del bucle |
 
-## 4. Migración iota-immutable-publisher
+### 3.4 Propagación a subprocesos
 
-### 4.1 Cambios en `index.ts`
+- `shim_execute_action`, lanzadores skill/tool: `env = os.environ.copy()` — **sin** re-invocar loader.
+- Cápsula Node IOTA: hereda variables del proceso Python padre.
 
-- Eliminar líneas 1 y 10 (`import dotenv`, `dotenv.config(...)`).
-- Mensajes de error referencian `.SddIA/.dev/.env`.
+### 3.5 `iota-immutable-publisher/index.ts`
 
-### 4.2 Variables esperadas (sin cambio semántico)
+| Cambio | Detalle |
+|--------|---------|
+| Eliminar | `import dotenv`, `dotenv.config({ path: join(__dirname, ".env") })` |
+| Consumir | `process.env.IOTA_WALLET_SECRET`, `process.env.IOTA_ANCHOR_PACKAGE_ID` |
+| Errores | Referenciar `.SddIA/.dev/.env` |
 
-| Variable | Uso |
-|----------|-----|
-| `IOTA_WALLET_SECRET` | Clave privada / mnemonic |
-| `IOTA_ANCHOR_PACKAGE_ID` | Opcional; cache de package publicado |
-| `SDDIA_IOTA_TIMEOUT_SECONDS` | Leída por `event-watcher.py` (Python), no por cápsula |
+## 4. Hito 0.3 — Sanitización
 
-### 4.3 Deprecación
+### 4.1 Inventario a eliminar / deprecar
 
-Documentar en `implementation.md` que operadores deben **mover** contenido de `SddIA/scripts/tools/iota-immutable-publisher/.env` → `.SddIA/.dev/.env`. El fichero legacy puede borrarse localmente tras migración.
+| Ruta legacy | Acción |
+|-------------|--------|
+| `SddIA/scripts/tools/iota-immutable-publisher/.env` | Deprecar; operador migra a bóveda instancia |
+| Cualquier `dotenv.config` en `scripts/tools/` | Eliminar |
 
-## 5. Topología SSOT
+### 4.2 `.gitignore` (estado objetivo)
 
-Añadir a `SddIA/core/cumulo.paths.json`:
+```gitignore
+# Jerarquía de Bóvedas — secretos locales
+.dev/
+.SddIA/.dev/
+```
+
+Retirar entrada puntual:
+
+```gitignore
+# ELIMINAR:
+SddIA/scripts/tools/iota-immutable-publisher/.env
+```
+
+### 4.3 Verificación automatizable
+
+```bash
+rg 'dotenv\.config|path\.join\(__dirname,\s*["'']\.env' SddIA/scripts/tools/
+# expect: 0 matches operativos
+rg '^\.dev/|^\.SddIA/\.dev/' .gitignore
+# expect: both present
+```
+
+## 5. Topología SSOT (`cumulo.paths.json`)
 
 ```json
 "env_hierarchy": {
@@ -103,45 +132,42 @@ Añadir a `SddIA/core/cumulo.paths.json`:
 }
 ```
 
-## 6. `.gitignore`
+## 6. Plantilla starter-kit
 
-Reemplazar entrada específica de IOTA por:
-
-```
-# Configuración local jerárquica (secretos)
-.dev/
-.SddIA/.dev/
-```
-
-Mantener `node_modules/` y artefactos IOTA existentes.
-
-## 7. Plantilla starter-kit
-
-Archivo: `SddIA/scripts/starter-kit/.SddIA/.dev/.env.example`
+`SddIA/scripts/starter-kit/.SddIA/.dev/.env.example`:
 
 ```dotenv
-# Instancia local — prevalece sobre .dev/.env en la raíz del repo
-# IOTA_WALLET_SECRET=<hex-o-mnemonic>
+# Bóveda instancia — prevalece sobre .dev/.env
+# IOTA_WALLET_SECRET=
 # IOTA_ANCHOR_PACKAGE_ID=
 # SDDIA_LAB_SIMULATE_IOTA=0
 ```
 
-## 8. Criterios de aceptación (Argos)
+## 7. Criterios de aceptación (Argos)
 
-| ID | Check |
-|----|-------|
-| CA-1 | Unit smoke: merge local sobre global en dict intermedio |
-| CA-2 | SO env no sobrescrito por fichero |
-| CA-3 | Log exacto cuando ambos ficheros existen |
-| CA-4 | `execute-process.py --process …` arranca sin error sin ficheros |
-| CA-5 | IOTA cápsula funciona con secretos solo en `.SddIA/.dev/.env` |
-| CA-6 | Cúmulo + gitignore + tool.md alineados |
-| CA-7 | Cero referencias activas a `iota-immutable-publisher/.env` como SSOT |
+| ID | Check | Hito |
+|----|-------|------|
+| CA-1 | Merge local > global en dict | 0.1 |
+| CA-2 | SO no sobrescrito | 0.1 |
+| CA-3 | Log exacto con ambos ficheros | 0.1 |
+| CA-4 | `execute-process.py` sin bóvedas → OK | 0.2 |
+| CA-5 | `run_process()` carga env (capsules) | 0.2 |
+| CA-6 | IOTA funciona con bóveda instancia only | 0.2 |
+| CA-7 | Cero dotenv local en tools | 0.3 |
+| CA-8 | `.gitignore` bóvedas verificado | 0.3 |
+| CA-9 | Cúmulo `env_hierarchy` válido | 0.3 |
+
+## 8. Gate Ola A
+
+| Condición | Efecto |
+|-----------|--------|
+| CA-1…CA-9 APTO | Desbloquea pasivos técnicos Ola A restantes |
+| NO APTO | Bloqueo de hooks Hito 3, deuda CLI y faenas env-dependent |
 
 ## 9. Riesgos
 
 | Riesgo | Mitigación |
 |--------|------------|
-| Operadores con `.env` legacy IOTA | Nota migración en `execution.md` |
-| Daemon watcher ya en ejecución | Reinicio manual post-deploy |
-| Laboratorios Vía C sin `.SddIA/` | Solo global `.dev/.env` — válido |
+| `.env` legacy IOTA en operadores | Guía migración en `execution.md` |
+| Watcher en ejecución | Reinicio post-deploy |
+| Doble carga CLI + capsules | Idempotencia I1 |

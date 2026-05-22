@@ -5,41 +5,58 @@ process: feature
 branch_name: feat/ampliacion-configuracion-entornos
 persist_ref: docs/features/ampliacion-configuracion-entornos
 pbi_ref: docs/todos/pending/AmpliacionConfiguracionEntornos.md
+priority: ola-a-hito-0
+updated: "2026-05-22"
 ---
 
-# Objetivos — Ampliación configuración de entornos
+# Objetivos — Jerarquía de Bóvedas (configuración de entorno)
 
 ## Misión
 
-Introducir un **cargador jerárquico genérico** de variables de entorno en los entrypoints centrales del runtime SddIA, con precedencia **instancia local sobre global**, y migrar `iota-immutable-publisher` fuera del `.env` ad hoc en su directorio de cápsula.
+Establecer la **Jerarquía de Bóvedas** como infraestructura de configuración federal de SddIA: cargador jerárquico genérico, cableado en el núcleo de cápsulas, sanitización de `.env` dispersos y migración IOTA a la nueva topología.
 
-## Jerarquía objetivo
+## Mandato estratégico Ola A
 
-| Nivel | Ruta | Rol |
-|-------|------|-----|
-| Global (repo) | `./.dev/.env` | Valores compartidos del workspace |
-| Local (instancia) | `./.SddIA/.dev/.env` | Overrides por proyecto; **prevalece** sobre global |
+Esta fase es **Hito 0** de la Ola A ampliada. Debe ejecutarse **prioritariamente** antes de cualquier resolución de pasivo técnico restante (hooks, deuda CLI, laboratorio).
 
-El motor debe aplicarse **antes** de invocar cualquier cápsula de ejecución.
+## Jerarquía de Bóvedas
+
+| Nivel | Bóveda | Ruta | Rol |
+|-------|--------|------|-----|
+| Global | Bóveda repo | `./.dev/.env` | Valores compartidos del workspace |
+| Local | Bóveda instancia | `./.SddIA/.dev/.env` | Overrides soberanos; **prevalece** sobre global |
+
+Precedencia entre ficheros: **local > global**. Precedencia global del stack: **SO > bóvedas** (`setdefault`).
+
+El motor se aplica **antes de cualquier inicialización de cápsula** (CLI + `execute_process_capsules.run_process`).
+
+## Hitos de configuración
+
+| Hito | Contenido | Entregable |
+|------|-----------|------------|
+| **0.1** | Cargador jerárquico | `SddIA/scripts/qa/env_loader.py` — `load_hierarchical_env(repo_root)` |
+| **0.2** | Refactor entrypoints | `execute-process.py`, `execute_process_capsules.py`, IOTA `index.ts`; complemento: `execute-action.py`, `event-watcher.py` |
+| **0.3** | Sanitización | Eliminar `.env` dispersos en tools; `.dev/` y `.SddIA/.dev/` en `.gitignore` |
 
 ## Objetivos medibles
 
 | ID | Objetivo | Criterio |
 |----|----------|----------|
-| O1 | **Módulo reutilizable** | `env_loader.py` (o equivalente) con API `load_hierarchical_env(repo_root) → dict` aplicada a `os.environ` |
-| O2 | **Entrypoints cableados** | `execute-process.py`, `execute-action.py` y `event-watcher.py` cargan jerarquía al arranque |
-| O3 | **Log de gobernanza** | Si existen ambos archivos: `[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env` en stderr |
-| O4 | **Agnosticismo de claves** | Sin hardcode de nombres de variable; solo merge de pares `KEY=VALUE` |
-| O5 | **Migración IOTA** | `iota-immutable-publisher` deja de usar `dotenv` local en `__dirname`; secretos vía jerarquía |
-| O6 | **SSOT y gitignore** | Rutas registradas en Cúmulo; `.dev/` y `.SddIA/.dev/` ignoradas; plantillas `.env.example` en starter-kit |
-| O7 | **Precedencia OS** | Variables ya presentes en el entorno del SO **no** se sobrescriben por los ficheros (comportamiento dotenv estándar) |
+| O0 | **Prioridad Ola A** | Hitos 0.1–0.3 cerrados antes de retomar pasivos técnicos Ola A |
+| O1 | **Módulo reutilizable** | `load_hierarchical_env(repo_root) → dict` aplicado a `os.environ` |
+| O2 | **Doble ancla runtime** | `execute-process.py` **y** `run_process()` en `execute_process_capsules.py` invocan loader pre-cápsula |
+| O3 | **Log de gobernanza** | Ambos ficheros → `[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env` |
+| O4 | **Agnosticismo de claves** | Sin hardcode de variables; merge genérico `KEY=VALUE` |
+| O5 | **IOTA sin dotenv local** | `iota-immutable-publisher` consume env inyectado; cero `dotenv.config` en cápsula |
+| O6 | **SSOT bóvedas** | `env_hierarchy` en Cúmulo; plantillas `.env.example` en starter-kit |
+| O7 | **Precedencia OS** | Variables del SO no sobrescritas por ficheros |
+| O8 | **Sanitización** | Cero `.env` operativos bajo `SddIA/scripts/tools/`; gitignore verificado |
 
 ## Fuera de alcance
 
-- Gestores de secretos externos (Vault, 1Password, etc.).
-- Variables de frontends GesFer (`.env.local` en laboratorios Vía C) — convención aparte.
-- Retirada de shims CLI Ola C (`execute-process` / `execute-action`).
-- Hooks Git Hito 3 (feature paralela).
+- Gestores de secretos externos (Vault, 1Password).
+- `.env.local` de frontends GesFer (Vía C).
+- Retirada de shims CLI Ola C (feature aparte).
 
 ## Manifiesto operativo
 
@@ -49,9 +66,9 @@ Origen: `docs/todos/pending/AmpliacionConfiguracionEntornos.md`
 
 | Fase feature | Estado |
 |--------------|--------|
-| Clarificación | ✅ `clarify.md` |
-| Objetivos | ✅ este documento |
-| Especificación | ✅ `spec.md` |
-| Planificación | ✅ `plan.md` |
-| Implementación (Tekton) | ⏳ pendiente |
+| Clarificación | ✅ `clarify.md` (D1–D12) |
+| Objetivos | ✅ este documento v2 |
+| Especificación | ✅ `spec.md` v2 |
+| Planificación | ✅ `plan.md` v2 |
+| Hito 0.1–0.3 (Tekton) | ⏳ pendiente |
 | Verificación (Argos) | ⏳ pendiente |

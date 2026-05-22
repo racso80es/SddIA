@@ -2,12 +2,13 @@
 feature_name: ampliacion-configuracion-entornos
 created: "2026-05-22"
 process: feature
-purpose: Jerarquía .dev/.env global vs .SddIA/.dev/.env local
+purpose: Jerarquía de Bóvedas — .dev/.env global vs .SddIA/.dev/.env local
+updated: "2026-05-22"
 ---
 
-# Clarificación — Ampliación configuración de entornos
+# Clarificación — Jerarquía de Bóvedas
 
-Transcript de decisiones (2026-05-22) para cerrar ambigüedades del manifiesto `AmpliacionConfiguracionEntornos.md`.
+Transcript de decisiones (2026-05-22), ampliado con mandato estratégico Ola A.
 
 ---
 
@@ -16,98 +17,77 @@ Transcript de decisiones (2026-05-22) para cerrar ambigüedades del manifiesto `
 | Pregunta | Decisión |
 |----------|----------|
 | ¿Proceso de inicio? | **`feature`** v1.2.0 |
-| Rama propuesta | `feat/ampliacion-configuracion-entornos` |
+| Nombre operativo | **Jerarquía de Bóvedas** |
+| Rama | `feat/ampliacion-configuracion-entornos` ✅ |
 | `persist_ref` | `docs/features/ampliacion-configuracion-entornos` |
-| Entorno | **Producción (IDE)** — fases Mayeuta/Dedalo en Cursor; Tekton diferido |
 | Manifiesto | `docs/todos/pending/AmpliacionConfiguracionEntornos.md` |
 
 ---
 
-## D2 — Resolución de rutas
+## D2 — Resolución de rutas (bóvedas)
 
 | Pregunta | Decisión |
 |----------|----------|
-| ¿Ancla de `./`? | Raíz del workspace vía `repo_root()` (`SddIA/core/cumulo.paths.json` como marcador) |
-| Rutas canónicas | `{repo}/.dev/.env` y `{repo}/.SddIA/.dev/.env` |
-| ¿Crear directorios en runtime? | **No** — solo leer si existen; ausencia = skip silencioso (salvo log D4) |
+| ¿Ancla de `./`? | `repo_root()` — marcador `SddIA/core/cumulo.paths.json` |
+| Bóveda global | `{repo}/.dev/.env` |
+| Bóveda instancia | `{repo}/.SddIA/.dev/.env` |
+| ¿Crear directorios? | **No** — lectura condicional; ausencia = skip |
 
 ---
 
 ## D3 — Precedencia completa (stack)
 
-Orden de aplicación al arrancar un entrypoint:
-
-1. **Entorno del SO** (`os.environ` heredado) — máxima precedencia; **intocable** por ficheros.
-2. **`./.dev/.env`** — rellena claves ausentes en SO.
-3. **`./.SddIA/.dev/.env`** — rellena/sobrescribe claves del merge (1+2) en el diccionario intermedio; al volcar a `os.environ`, respeta regla dotenv: no pisa claves ya definidas en SO.
-
-> El manifiesto exige que (b) prevalezca sobre (a) **entre ficheros**. No altera la precedencia estándar SO > dotenv.
+1. **SO** (`os.environ` heredado) — intocable por ficheros.
+2. **`./.dev/.env`** — global; rellena dict intermedio.
+3. **`./.SddIA/.dev/.env`** — local; **sobrescribe** claves del merge (2) en dict intermedio.
+4. Volcado a `os.environ` vía `setdefault` — no pisa SO.
 
 ---
 
 ## D4 — Log de gobernanza
 
-| Condición | Mensaje exacto (stderr) |
-|-----------|-------------------------|
-| Existen **ambos** `.dev/.env` y `.SddIA/.dev/.env` | `[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env` |
-| Solo global | Sin log obligatorio |
-| Solo local | Sin log obligatorio |
-| Ninguno | Sin log |
-
-Formato: una línea; prefijo `[CONFIG]`; canal **stderr** (no rompe envelope JSON en stdout).
+| Condición | Mensaje (stderr) |
+|-----------|------------------|
+| Ambos ficheros existen | `[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env` |
+| Solo uno o ninguno | Sin log obligatorio |
 
 ---
 
-## D5 — Alcance de entrypoints
+## D5 — Alcance de entrypoints (refinado)
 
-| Entrypoint | ¿Carga jerarquía? | Motivo |
-|------------|-------------------|--------|
-| `execute-process.py` | **Sí** | Citado en manifiesto; padre de cápsulas |
-| `execute-action.py` | **Sí** | Invocado por watcher y shims; debe ver mismos secretos |
-| `event-watcher.py` | **Sí** | Daemon autónomo; dispara IOTA vía acciones |
-| Subprocesos Python hijos | **Heredan** `os.environ` ya cargado | Evita doble parseo |
-| `iota-immutable-publisher` (Node) | **No dotenv local** | Confía en `env` del padre |
+| Punto de carga | ¿Obligatorio? | Motivo |
+|----------------|---------------|--------|
+| `execute-process.py` | **Sí** | Puerta CLI citada en manifiesto estratégico |
+| `execute_process_capsules.run_process()` | **Sí** | Núcleo pre-cápsula; cubre imports directos del intérprete |
+| `execute-action.py` | Sí (complemento) | Watcher y shims autónomos |
+| `event-watcher.py` | Sí (complemento) | Daemon sin pasar por execute-process |
+| Subprocesos / cápsulas Node | Heredan env | Sin re-cargar; idempotencia D3 |
+| `iota-immutable-publisher` | Sin dotenv local | Env ya inyectado por padre |
 
-Descartado: cargar solo en `execute-process.py` — dejaría `event-watcher` e `execute-action` sin secretos IOTA en producción.
-
----
-
-## D6 — Ubicación del módulo
-
-| Opción | Decisión |
-|--------|----------|
-| Inline en `execute-process.py` | ❌ |
-| Función en `execute_process_core.py` | ❌ mezcla responsabilidades |
-| **`SddIA/scripts/qa/env_loader.py`** | ✅ importable por los tres entrypoints QA/daemon |
-
-API mínima:
-
-```python
-def load_hierarchical_env(repo: Path) -> dict[str, str]:
-    """Merge global → local; aplica a os.environ sin pisar SO; retorna claves cargadas desde ficheros."""
-```
-
-Parser: implementación propia mínima (`KEY=VALUE`, strip comillas, ignorar líneas vacías/`#`) — **sin** dependencia `python-dotenv` nueva.
+**Laudo:** la Tarea estratégica exige `execute-process.py` + `execute_process_capsules.py`. Los entrypoints autónomos se mantienen para cobertura operativa completa.
 
 ---
 
-## D7 — Migración iota-immutable-publisher
+## D6 — Módulo cargador
+
+| Decisión | Valor |
+|----------|-------|
+| Ubicación | `SddIA/scripts/qa/env_loader.py` |
+| API | `load_hierarchical_env(repo_root: Path) -> dict[str, str]` |
+| Parser | Propio; sin `python-dotenv` |
+
+---
+
+## D7 — Migración IOTA
 
 | Antes | Después |
 |-------|---------|
-| `dotenv.config({ path: path.join(__dirname, ".env") })` | **Eliminar** carga local |
-| `.env` en `scripts/tools/iota-immutable-publisher/` | **Deprecado** — migrar secretos a `.SddIA/.dev/.env` |
-| `.gitignore` línea 14 | Sustituir por `.SddIA/.dev/` y `.dev/` |
-
-Mantener dependencia `dotenv` en `package.json` solo si otra cápsula la requiere; en `index.ts` retirar import y llamada.
-
-Actualizar feedback de error para citar `.SddIA/.dev/.env` en lugar de `.env` local.
+| `dotenv.config(__dirname/.env)` | **Eliminado** |
+| Secretos en `scripts/tools/iota-immutable-publisher/.env` | Migrar a `.SddIA/.dev/.env` |
 
 ---
 
 ## D8 — Cúmulo SSOT
-
-Registrar en `cumulo.paths.json`:
 
 ```json
 "env_hierarchy": {
@@ -116,18 +96,15 @@ Registrar en `cumulo.paths.json`:
 }
 ```
 
-Coherente con `eda_instance.customization` bajo `.SddIA/`.
-
 ---
 
-## D9 — Plantillas y documentación
+## D9 — Plantillas y genoma
 
 | Artefacto | Acción |
 |-----------|--------|
-| `SddIA/scripts/starter-kit/.SddIA/.dev/.env.example` | Crear con `IOTA_WALLET_SECRET`, `IOTA_ANCHOR_PACKAGE_ID`, `SDDIA_IOTA_TIMEOUT_SECONDS` |
-| `.dev/.env.example` (repo root starter-kit) | Opcional — comentario de variables compartidas |
-| `SddIA/tools/iota-immutable-publisher.md` | Actualizar sección Security → rutas jerárquicas |
-| `SddIA/evolution/` | Entrada de evolución al merge |
+| `starter-kit/.SddIA/.dev/.env.example` | Crear |
+| `SddIA/tools/iota-immutable-publisher.md` | Security → Jerarquía de Bóvedas |
+| `SddIA/evolution/` | Entrada al merge |
 
 ---
 
@@ -135,14 +112,31 @@ Coherente con `eda_instance.customization` bajo `.SddIA/`.
 
 | Tema | Decisión |
 |------|----------|
-| Rama desde | `main` (producción) |
-| Commits | Atómicos: (1) módulo + entrypoints, (2) IOTA + gitignore + Cúmulo, (3) docs feature Tekton |
-| Merge | Vía `accept-pr` post-Argos APTO |
+| Merge | `accept-pr` post-Argos APTO |
+| Commits | Uno por hito 0.1 / 0.2 / 0.3 + docs |
 
-**Nota operativa:** al iniciar en IDE con rama activa distinta (`feat/pr-presented-orchestration`), el checkout a la rama feature queda **pendiente** hasta ventana limpia de git — no bloquea planificación.
+---
+
+## D11 — Prioridad estratégica Ola A (nuevo)
+
+| Pregunta | Decisión |
+|----------|----------|
+| ¿Posición en backlog Ola A? | **Hito 0** — Jerarquía de Bóvedas |
+| ¿Relación con pasivos técnicos? | Ejecutar **antes** de cualquier resolución de pasivo restante |
+| ¿Gate? | Argos APTO en 0.3 desbloquea hooks, deuda CLI residual y faenas laboratorio dependientes de env |
+
+---
+
+## D12 — Sanitización de sistema (Hito 0.3)
+
+| Acción | Detalle |
+|--------|---------|
+| Eliminar `.env` dispersos | Auditar `SddIA/scripts/tools/**`; retirar SSOT local IOTA |
+| `.gitignore` | Verificar `.dev/` y `.SddIA/.dev/`; retirar regla puntual `iota-immutable-publisher/.env` |
+| Verificación | Grep: cero `dotenv.config` en cápsulas tools post-merge |
 
 ---
 
 ## Preguntas abiertas
 
-Ninguna bloqueante para Tekton. La planificación puede continuar.
+Ninguna bloqueante. Tekton puede iniciar Hito 0.1.
