@@ -1,7 +1,7 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.0.0"
+version: "1.1.0"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
@@ -23,10 +23,44 @@ Cada fase del ciclo de tarea produce exclusivamente su `.md` canónico bajo la r
 | planning | plan.md | feature_name, created, phases | Plan de implementación |
 | implementation | implementation.md | feature_name, created, items | Touchpoints y propuestas |
 | execution | execution.md | feature_name, created, items_applied | Registro de ejecución |
-| validate | validacion.md | feature_name, branch, global, checks, git_changes | Informe de validación |
+| validate | validacion.md | feature_name, branch, global, checks, git_changes; post-merge: merged_pr, merge_commit, closed, pbi_archived | Informe de validación |
 | finalize-process | finalize-process.md (opc.) | feature_name, pr_url, timestamp | Resumen de cierre |
 
 La validación opcional `sddia_frontmatter_valid` aplica a los `.md` de tarea cuando el diff los toque. Las tareas existentes con `.json` deben migrarse consolidando el contenido en el frontmatter del `.md` correspondiente y eliminando el `.json`. Las nuevas documentaciones cumplen este patrón desde el inicio.
+
+## Validación en dos fases (`validacion.md`)
+
+`validacion.md` se completa en **dos momentos** del ciclo de tarea (features, fixes y refactorizations):
+
+### Fase A — Pre-merge (Argos)
+
+Emitida tras Tekton, **antes** de abrir o mergear el PR.
+
+| Campo | Obligatorio | Valor típico |
+|-------|-------------|--------------|
+| `global` | Sí | `APTO` \| `NO_APTO` |
+| `branch` | Sí | Rama de trabajo (`fix/*`, `feat/*`) |
+| `checks` | Sí | Mapa de criterios de aceptación |
+| `git_changes` | Sí | Lista de paths tocados |
+| `merged_pr` | Reservado | `null` o omitido |
+| `merge_commit` | Reservado | `null` o omitido |
+| `closed` | Reservado | `null` o omitido |
+| `pbi_archived` | Sí | `false` |
+
+### Fase B — Post-merge (cierre documental)
+
+Emitida **después** del merge en `main`. Obligatoria para declarar la tarea cerrada.
+
+| Campo | Obligatorio | Valor |
+|-------|-------------|-------|
+| `merged_pr` | Sí | Número o URL del PR mergeado |
+| `merge_commit` | Sí | OID del commit de merge en `main` |
+| `closed` | Sí | Fecha ISO del cierre |
+| `pbi_archived` | Sí | `true` cuando exista el PBI en `docs/todos/done/` |
+
+**Restricción:** Prohibido considerar cierre definitivo de la tarea si, con merge ya conocido, `pbi_archived: false` o faltan `merged_pr` / `merge_commit` en `validacion.md`.
+
+**Commit obligatorio:** Los cambios de Fase B (PBI archivado + frontmatter actualizado) deben commitearse y pushearse a `main` en el mismo acto de cierre. Ver `bug-fix` § Cierre documental post-merge.
 
 ## Restricciones Duras (Aduana de Fricción)
 
