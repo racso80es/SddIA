@@ -7,7 +7,6 @@ y tools asignadas (p. ej. markdown-table-editor para Cúmulo).
 
 Uso:
   python SddIA/scripts/qa/execute-action.py --action sync-entity-index --inputs '{"entity_class":"skill",...}'
-  python SddIA/scripts/qa/execute-action.py --action sync-entity-index --input-file payload.json
   echo '{"entity_class":"skill",...}' | python SddIA/scripts/qa/execute-action.py --action sync-entity-index
 """
 
@@ -439,13 +438,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="execute-action (laboratorio SddIA)")
     parser.add_argument("--action", required=True, help="Nombre canónico de la acción")
     parser.add_argument("--inputs", help="JSON de inputs de la acción")
-    parser.add_argument("--input-file", help="Ruta a JSON de inputs")
     args = parser.parse_args()
 
     try:
-        if args.input_file:
-            action_inputs = json.loads(Path(args.input_file).read_text(encoding="utf-8-sig"))
-        elif args.inputs:
+        if args.inputs:
             action_inputs = json.loads(args.inputs)
         else:
             stdin = sys.stdin.read()
