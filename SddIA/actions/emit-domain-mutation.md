@@ -34,7 +34,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Inyectar un evento de dominio **ECST** estandarizado en el bus local (`eda_bus.pending` en `cumulo.paths.json`, por defecto `docs/events/pending/`) cuando una entidad estructural del genoma (Proceso, Agente, Skill, Tool, Norma, Acción, Códice o **Evento/Clase ECST**) sufre una mutación en su ciclo de vida. Es el **Sello Universal** que garantiza la consciencia EDA del sistema sobre su propio genoma.
+Inyectar un evento de dominio **ECST** estandarizado en el bus local (`eda_bus.pending` en `cumulo.paths.json`, por defecto `.events/pending/`) cuando una entidad estructural del genoma sufre una mutación en su ciclo de vida. Es el **Sello Universal** que garantiza la consciencia EDA del sistema sobre su propio genoma.
 
 No calcula SHA-256 de entidades, no interactúa con Git, no enruta el bus ni ancla en DLT; solo valida forma de inputs, mintea `event_id`, traduce `lifecycle_operation` → `event_type` y persiste vía cápsulas autorizadas (topología Cúmulo).
 
@@ -105,9 +105,10 @@ Construir JSON UTF-8. En raíz incluir `correlation_id` **solo** si el input no 
 
 ### Paso 5 — Persistencia (`skill:filesystem-manager`)
 
-1. Resolver `pending_dir` desde `cumulo.paths.json` → `eda_bus.pending` (fallback `docs/events/pending`).
-2. Si falta `pending_dir`, invocar `CREATE_DIR` en esa ruta.
-3. Escribir el JSON del Paso 4:
+1. Resolver `pending_dir` desde `cumulo.paths.json` → `eda_bus.pending` (fallback `.events/pending`).
+2. Invocar bootstrap de topología (`ensure_event_bus_topology`) si el orquestador lo requiere.
+3. Si falta `pending_dir`, invocar `CREATE_DIR` en esa ruta.
+4. Escribir el JSON del Paso 4:
 
 | Campo | Valor |
 | :--- | :--- |

@@ -5,7 +5,7 @@ version: 1.1.0
 contract: process-contract v1.3.0
 context:
 - ecosystem-evolution
-hash_signature: sha256:4eb63e1cc76aef9b07f0ec90416fbacb73910246c093e0e8ec738544dfa04275
+hash_signature: sha256:bebaa3c536ff8a67dca9f61c841e594a4efcfd51593dd6badbc8549422232b60
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo

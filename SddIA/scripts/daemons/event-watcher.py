@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Despertador inerte: monitoriza docs/events/pending/ y delega en route-domain-event.
+"""Despertador inerte: monitoriza .events/pending/ y delega en route-domain-event.
+
+Ola C V3: el JSON padre permanece inmutable en pending/; la trazabilidad
+recae en testigos de suscriptor bajo .events/subscribers/.
 
 Variables de entorno:
   SDDIA_LAB_SIMULATE_IOTA=1     Simula éxito de iota-immutable-publisher (laboratorio).
@@ -8,8 +11,8 @@ Variables de entorno:
 
 Uso:
   python SddIA/scripts/daemons/event-watcher.py           # bucle continuo
-  python SddIA/scripts/daemons/event-watcher.py --once  # un ciclo de sondeo
-  python SddIA/scripts/daemons/event-watcher.py --event-file-path docs/events/processing/x.json
+  python SddIA/scripts/daemons/event-watcher.py --once    # un ciclo de sondeo
+  python SddIA/scripts/daemons/event-watcher.py --event-file-path .events/pending/x.json
 """
 
 from __future__ import annotations
@@ -22,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -31,13 +35,20 @@ if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
 from eda_bus_utils import (  # noqa: E402
+    ECST_GATE_SUBSCRIBER,
     dlt_threshold_ok,
+    ensure_event_bus_topology,
     github_pr_merged,
     infer_persist_ref_from_branch,
     inject_domain_entity_topology_defaults,
     is_backfill_emitter,
+    load_eda_bus,
+    list_witnesses,
+    promote_witness,
     resolve_origin_topology,
     subscriber_applies_to_topology,
+    subscriber_id,
+    write_processing_witness,
 )
 from env_loader import load_hierarchical_env  # noqa: E402
 
@@ -52,7 +63,6 @@ _SUBPROCESS_UTF8 = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
 
 def _run_subprocess(cmd: list[str], *, input_text: str | None = None, **kwargs: Any) -> subprocess.CompletedProcess[str]:
-    """subprocess.run con canal UTF-8 tolerante (Windows / demonios)."""
     opts = {**_SUBPROCESS_UTF8, "capture_output": True, "check": False}
     opts.update(kwargs)
     if input_text is not None:
@@ -66,29 +76,6 @@ def _repo_root() -> Path:
         if (parent / "SddIA" / "core" / "cumulo.paths.json").is_file():
             return parent
     _fail("No se encontró raíz del workspace (SddIA/core/cumulo.paths.json)")
-
-
-def _load_eda_bus(repo: Path) -> dict[str, str]:
-    """Rutas del bus desde cumulo.paths.json (fallback literales)."""
-    defaults = {
-        "pending": "docs/events/pending",
-        "processing": "docs/events/processing",
-        "processed": "docs/events/processed",
-        "dead_letter": "docs/events/dead-letter",
-        "subscriptions": "SddIA/core/event-subscriptions.json",
-    }
-    cfg_path = repo / "SddIA" / "core" / "cumulo.paths.json"
-    try:
-        import json as _json
-        cfg = _json.loads(cfg_path.read_text(encoding="utf-8"))
-        bus = cfg.get("eda_bus") or {}
-        out = dict(defaults)
-        for k in defaults:
-            if isinstance(bus.get(k), str) and bus[k]:
-                out[k] = bus[k]
-        return out
-    except (OSError, ValueError):
-        return defaults
 
 
 def _fail(msg: str) -> None:
@@ -149,27 +136,29 @@ def _invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str
 
 def _dispatch_subscriber(
     repo: Path, subscriber: dict[str, Any], event: dict[str, Any]
-) -> tuple[str, str]:
+) -> tuple[str, str, str | None]:
+    """Retorna (subscriber_id, status, error_trace)."""
+    sid = subscriber_id(subscriber)
     agent = subscriber.get("agent")
     if not isinstance(agent, str) or not agent:
-        return "unknown", "failed"
+        return sid, "failed", "missing agent"
 
     payload = event.get("payload") or {}
     origin_topology = resolve_origin_topology(payload if isinstance(payload, dict) else {})
     if event.get("event_type", "").startswith("Domain_Entity_"):
         if not subscriber_applies_to_topology(subscriber, origin_topology):
-            return agent, "skipped-topology"
+            return sid, "skipped-topology", None
 
     process_name = subscriber.get("process")
     if isinstance(process_name, str) and process_name.strip():
         runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
         if not runner.is_file():
-            return agent, "failed"
+            return sid, "failed", "execute-process.py not found"
         if not isinstance(payload, dict):
-            return agent, "failed"
+            return sid, "failed", "payload must be object"
         branch = payload.get("branch")
         if not isinstance(branch, str) or not branch.strip():
-            return agent, "failed"
+            return sid, "failed", "branch missing in payload"
         branch = branch.strip()
         process_inputs: dict[str, Any] = {
             "pr_branch": branch,
@@ -206,43 +195,45 @@ def _dispatch_subscriber(
                 cwd=str(repo),
                 shell=False,
             )
-        except OSError:
-            return agent, "failed"
+        except OSError as e:
+            return sid, "failed", str(e)
         stdout = (proc.stdout or "").strip()
         if not stdout:
-            return agent, "failed"
+            return sid, "failed", (proc.stderr or "empty stdout").strip()
         last_line = stdout.splitlines()[-1]
         try:
             envelope = json.loads(last_line)
         except json.JSONDecodeError:
-            return agent, "failed"
+            return sid, "failed", "invalid JSON from execute-process"
         ok = bool(envelope.get("success")) and envelope.get("status_code", 1) == 0
-        return agent, "success" if ok else "failed"
+        if ok:
+            return sid, "success", None
+        return sid, "failed", envelope.get("error") or envelope.get("message") or "process failed"
 
     tool = subscriber.get("tool")
     if tool == "iota-immutable-publisher":
         emitter = event.get("emitter_agent")
         if is_backfill_emitter(emitter if isinstance(emitter, str) else None):
-            event.setdefault("delivery_state", {})["dlt"] = "skipped-backfill-v1"
-            return agent, "skipped-backfill"
+            return sid, "skipped-backfill", None
         ok_thresh, reason = dlt_threshold_ok(event)
         if not ok_thresh:
-            event.setdefault("delivery_state", {})["dlt"] = f"skipped:{reason}"
-            return agent, "skipped-dlt-threshold"
-        ok, _ = _invoke_iota_publisher(repo, event)
-        return agent, "success" if ok else "failed"
+            return sid, "skipped-dlt-threshold", reason
+        ok, feedback = _invoke_iota_publisher(repo, event)
+        if ok:
+            return sid, "success", None
+        return sid, "failed", feedback
     action = subscriber.get("action")
     if isinstance(action, str) and action:
         if action == "sync-entity-index" and os.environ.get(
             "SDDIA_LAB_SIMULATE_SYNC_INDEX", ""
         ).strip().lower() in ("1", "true", "yes"):
-            return agent, "success"
+            return sid, "success", None
         runner = repo / "SddIA" / "scripts" / "qa" / "execute-action.py"
         if not runner.is_file():
-            return agent, "failed"
+            return sid, "failed", "execute-action.py not found"
         payload = event.get("payload", {})
         if not isinstance(payload, dict):
-            return agent, "failed"
+            return sid, "failed", "payload must be object"
         try:
             proc = _run_subprocess(
                 [
@@ -256,24 +247,25 @@ def _dispatch_subscriber(
                 cwd=str(repo),
                 shell=False,
             )
-        except OSError:
-            return agent, "failed"
+        except OSError as e:
+            return sid, "failed", str(e)
         stdout = (proc.stdout or "").strip()
         if not stdout:
-            return agent, "failed"
+            return sid, "failed", (proc.stderr or "empty stdout").strip()
         last_line = stdout.splitlines()[-1]
         try:
             envelope = json.loads(last_line)
         except json.JSONDecodeError:
-            return agent, "failed"
+            return sid, "failed", "invalid JSON from execute-action"
         data = envelope.get("data") or {}
         ok = bool(envelope.get("success")) and bool(data.get("success", True))
-        return agent, "success" if ok else "failed"
-    return agent, "failed"
+        if ok:
+            return sid, "success", None
+        return sid, "failed", envelope.get("error") or data.get("error") or "action failed"
+    return sid, "failed", "no process/action/tool configured"
 
 
 def _parse_payload_fields(md_body: str, section: str) -> list[str]:
-    """Extrae nombres de campo de una sección ### REQUIRED|OPTIONAL|FORBIDDEN."""
     pattern = rf"### {section}\s*\n((?:- .+\n?)*)"
     match = re.search(pattern, md_body)
     if not match:
@@ -287,7 +279,6 @@ def _parse_payload_fields(md_body: str, section: str) -> list[str]:
 
 
 def _load_event_class_schemas(repo: Path) -> dict[str, dict[str, list[str]]]:
-    """Mapa event_type → {required, optional, forbidden} desde genoma SddIA/events/."""
     events_dir = repo / "SddIA" / "events"
     index_path = events_dir / "index.md"
     if not index_path.is_file():
@@ -317,7 +308,6 @@ def _load_event_class_schemas(repo: Path) -> dict[str, dict[str, list[str]]]:
 def _validate_ecst_instance(
     event: dict[str, Any], schema: dict[str, list[str]] | None
 ) -> tuple[bool, list[str]]:
-    """Valida instancia ECST frente a Clase catalogada (Fase 5 Ola C)."""
     errors: list[str] = []
     if schema is None:
         return False, ["event_type not cataloged in SddIA/events/index.md"]
@@ -342,19 +332,16 @@ def _validate_ecst_instance(
     return not errors, errors
 
 
+def _status_is_terminal_ok(status: str) -> bool:
+    return status == "success" or status.startswith("skipped")
+
+
 def route_domain_event(event_file_path: str) -> dict[str, Any]:
     repo = _repo_root()
-    bus = _load_eda_bus(repo)
-    processed = repo / bus["processed"]
-    dead_letter = repo / bus["dead_letter"]
-    processed.mkdir(parents=True, exist_ok=True)
-    dead_letter.mkdir(parents=True, exist_ok=True)
+    bus = ensure_event_bus_topology(repo)
 
     raw_path = Path(event_file_path)
-    if not raw_path.is_absolute():
-        event_path = (repo / raw_path).resolve()
-    else:
-        event_path = raw_path.resolve()
+    event_path = (repo / raw_path).resolve() if not raw_path.is_absolute() else raw_path.resolve()
 
     if not event_path.is_file():
         _fail(f"event file not found: {event_path}")
@@ -365,8 +352,11 @@ def route_domain_event(event_file_path: str) -> dict[str, Any]:
         _fail(f"invalid event JSON: {e}")
 
     event_type = event.get("event_type")
+    event_uuid = event.get("event_id")
     if not isinstance(event_type, str) or not event_type:
         _fail("event_type missing")
+    if not isinstance(event_uuid, str) or not event_uuid:
+        _fail("event_id missing")
 
     inject_domain_entity_topology_defaults(event)
 
@@ -374,21 +364,28 @@ def route_domain_event(event_file_path: str) -> dict[str, Any]:
     schema = class_schemas.get(event_type)
     ecst_ok, ecst_errors = _validate_ecst_instance(event, schema)
     if not ecst_ok:
-        event["delivery_state"] = {
-            **event.get("delivery_state", {}),
-            "ecst_validation": "failed",
-            "ecst_errors": ecst_errors,
-        }
-        dest = dead_letter / event_path.name
-        dest.write_text(json.dumps(event, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        event_path.unlink()
+        write_processing_witness(
+            repo,
+            bus,
+            event_uuid=event_uuid,
+            subscriber_name=ECST_GATE_SUBSCRIBER,
+            event_type=event_type,
+        )
+        promote_witness(
+            repo,
+            bus,
+            event_uuid=event_uuid,
+            subscriber_name=ECST_GATE_SUBSCRIBER,
+            to_state="dead-letter",
+            extra={"error_trace": "; ".join(ecst_errors), "ecst_errors": ecst_errors},
+        )
         return {
             "success": False,
             "exitCode": 1,
             "data": {
                 "success": False,
-                "delivery_status": {"ecst_validation": "failed"},
-                "target_path": _rel_event_path(repo, dest),
+                "delivery_status": {ECST_GATE_SUBSCRIBER: "failed"},
+                "parent_path": _rel_event_path(repo, event_path),
             },
             "error": "; ".join(ecst_errors),
         }
@@ -406,33 +403,92 @@ def route_domain_event(event_file_path: str) -> dict[str, Any]:
         for sub in subscribers:
             if not isinstance(sub, dict):
                 continue
-            agent, status = _dispatch_subscriber(repo, sub, event)
-            delivery_status[agent] = status
+            sid = subscriber_id(sub)
+            try:
+                write_processing_witness(
+                    repo,
+                    bus,
+                    event_uuid=event_uuid,
+                    subscriber_name=sid,
+                    event_type=event_type,
+                )
+                _, status, err = _dispatch_subscriber(repo, sub, event)
+                delivery_status[sid] = status
+                if _status_is_terminal_ok(status):
+                    promote_witness(
+                        repo,
+                        bus,
+                        event_uuid=event_uuid,
+                        subscriber_name=sid,
+                        to_state="processed",
+                        extra={"result_status": status},
+                    )
+                else:
+                    promote_witness(
+                        repo,
+                        bus,
+                        event_uuid=event_uuid,
+                        subscriber_name=sid,
+                        to_state="dead-letter",
+                        extra={"error_trace": err or status},
+                    )
+            except Exception as exc:
+                delivery_status[sid] = "failed"
+                try:
+                    promote_witness(
+                        repo,
+                        bus,
+                        event_uuid=event_uuid,
+                        subscriber_name=sid,
+                        to_state="dead-letter",
+                        extra={"error_trace": traceback.format_exc()},
+                    )
+                except OSError:
+                    dead = repo / bus["subscriber_dead_letter"] / f"{event_uuid}.{sid}.json"
+                    _write_dead_letter_fallback(dead, event_uuid, sid, event_type, str(exc))
 
-    event["delivery_state"] = {**event.get("delivery_state", {}), **delivery_status}
     skip_only = delivery_status and all(
         v.startswith("skipped") for v in delivery_status.values()
     )
     all_success = not delivery_status or all(
-        v == "success" or v.startswith("skipped") for v in delivery_status.values()
+        _status_is_terminal_ok(v) for v in delivery_status.values()
     )
-    dest_dir = processed if (all_success or skip_only) else dead_letter
-    dest = dest_dir / event_path.name
-    dest.write_text(json.dumps(event, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    event_path.unlink()
 
     result = {
-        "success": all_success,
-        "exitCode": 0 if all_success else 1,
+        "success": all_success or skip_only,
+        "exitCode": 0 if (all_success or skip_only) else 1,
         "data": {
-            "success": all_success,
+            "success": all_success or skip_only,
             "delivery_status": delivery_status,
-            "target_path": _rel_event_path(repo, dest),
+            "parent_path": _rel_event_path(repo, event_path),
         },
     }
-    if not all_success:
+    if not all_success and not skip_only:
         result["error"] = "one or more subscribers failed"
     return result
+
+
+def _write_dead_letter_fallback(
+    path: Path, event_uuid: str, sid: str, event_type: str, error_trace: str
+) -> None:
+    from eda_bus_utils import _write_json_atomic, _iso_now
+
+    _write_json_atomic(
+        path,
+        {
+            "event_uuid": event_uuid,
+            "subscriber": sid,
+            "state": "dead-letter",
+            "started_at": _iso_now(),
+            "failed_at": _iso_now(),
+            "error_trace": error_trace,
+            "event_type": event_type,
+        },
+    )
+
+
+def _has_dead_letter_witnesses(repo: Path, bus: dict[str, str], event_uuid: str) -> bool:
+    return bool(list_witnesses(repo, bus, "subscriber_dead_letter", event_uuid))
 
 
 def _run_route_cli() -> None:
@@ -450,11 +506,8 @@ def _run_route_cli() -> None:
 
 def _run_watcher(*, once: bool = False) -> None:
     repo = _repo_root()
-    bus = _load_eda_bus(repo)
+    bus = ensure_event_bus_topology(repo)
     pending = repo / bus["pending"]
-    processing = repo / bus["processing"]
-    pending.mkdir(parents=True, exist_ok=True)
-    processing.mkdir(parents=True, exist_ok=True)
     script = Path(__file__).resolve()
     attempts: dict[str, int] = {}
     in_flight: set[str] = set()
@@ -463,26 +516,21 @@ def _run_watcher(*, once: bool = False) -> None:
     while True:
         for path in sorted(pending.glob("*.json")):
             key = path.name
+            event_uuid = path.stem
             if key in in_flight:
+                continue
+            if _has_dead_letter_witnesses(repo, bus, event_uuid):
                 continue
             n = attempts.get(key, 0)
             if n >= MAX_ROUTE_ATTEMPTS:
-                if path.is_file():
-                    print(
-                        f"[WATCHER] Skip {key}: max attempts ({MAX_ROUTE_ATTEMPTS})",
-                        flush=True,
-                    )
+                print(
+                    f"[WATCHER] Skip {key}: max attempts ({MAX_ROUTE_ATTEMPTS})",
+                    flush=True,
+                )
                 continue
 
-            processing_path = processing / key
-            try:
-                shutil.move(str(path), str(processing_path))
-            except OSError as e:
-                print(f"[WATCHER] No se pudo promover {key} a processing: {e}", flush=True)
-                continue
-
-            rel = _rel_event_path(repo, processing_path)
-            print(f"[WATCHER] Detectado nuevo evento: {key} (promovido a processing)", flush=True)
+            rel = _rel_event_path(repo, path)
+            print(f"[WATCHER] Detectado nuevo evento: {key}", flush=True)
             in_flight.add(key)
             attempts[key] = n + 1
 
@@ -503,13 +551,11 @@ def _run_watcher(*, once: bool = False) -> None:
                     f"{(proc.stderr or proc.stdout or '').strip()}",
                     flush=True,
                 )
-            elif not processing_path.is_file():
-                attempts.pop(key, None)
+            elif _has_dead_letter_witnesses(repo, bus, event_uuid):
+                print(f"[WATCHER] {key}: testigo dead-letter — esperando sweeper/Kaizen", flush=True)
             else:
-                print(
-                    f"[WATCHER] {key} sigue en processing tras enrutar (intento {attempts[key]})",
-                    flush=True,
-                )
+                attempts.pop(key, None)
+                print(f"[WATCHER] {key}: enrutado (padre permanece en pending)", flush=True)
 
         time.sleep(POLL_SECONDS)
         if once:

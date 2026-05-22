@@ -22,7 +22,7 @@ from execute_process_core import (
 )
 
 from execute_process_forges import FORGE_BY_ENTITY_CLASS
-from eda_bus_utils import find_existing_domain_event, infer_persist_ref_from_branch
+from eda_bus_utils import find_existing_domain_event, infer_persist_ref_from_branch, ensure_event_bus_topology, load_eda_bus
 
 try:
     import yaml
@@ -312,16 +312,16 @@ def capsule_delivery_emit_presented(repo: Path, inputs: dict[str, Any], state: d
 
 
 def _eda_bus_scan_dirs(repo: Path) -> list[Path]:
-    cumulo_path = repo / "SddIA" / "core" / "cumulo.paths.json"
-    cumulo = json.loads(cumulo_path.read_text(encoding="utf-8"))
-    eda = cumulo.get("eda_bus") or {}
+    bus = load_eda_bus(repo)
     dirs: list[Path] = []
-    for key in ("pending", "processing", "processed"):
-        rel = eda.get(key)
-        if isinstance(rel, str) and rel.strip():
-            p = repo / rel.strip()
-            if p.is_dir():
-                dirs.append(p)
+    for key in ("pending",):
+        p = repo / bus[key]
+        if p.is_dir():
+            dirs.append(p)
+    for legacy in ("docs/events/pending", "docs/events/processing", "docs/events/processed"):
+        p = repo / legacy
+        if p.is_dir() and p not in dirs:
+            dirs.append(p)
     return dirs
 
 
@@ -1252,10 +1252,8 @@ def creator_inputs_from_entity(
 
 
 def write_pending_event(repo: Path, event: dict[str, Any]) -> dict[str, str]:
-    cumulo = _load_cumulo(repo)
-    pending_rel = cumulo.get("eda_bus", {}).get("pending", "docs/events/pending")
-    pending = repo / pending_rel
-    pending.mkdir(parents=True, exist_ok=True)
+    bus = ensure_event_bus_topology(repo)
+    pending = repo / bus["pending"]
     event_id = event["event_id"]
     target = pending / f"{event_id}.json"
     target.write_text(json.dumps(event, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

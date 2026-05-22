@@ -8,7 +8,7 @@ aliases:
 context:
 - ecosystem-evolution
 - filesystem-ops
-hash_signature: sha256:5c13fa2e977fda21779ad7dd11721547bd0922866f3cd63ba39a9e48e1c46f16
+hash_signature: sha256:8242f460c0de8738ad77f20438a318fdfaa132ac2a62d1cb00e30fa14122f7c9
 inputs:
 - tasks_path: Raíz de cola de tareas resuelta vía Cumulo
 outputs:

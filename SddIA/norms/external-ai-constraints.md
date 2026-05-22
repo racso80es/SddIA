@@ -42,7 +42,7 @@ Bajo ninguna circunstancia puedes **crear, modificar o eliminar** archivos en lo
 | Cierre de entrega / apertura PR | `python SddIA/scripts/qa/execute-process.py --process delivery-close-cycle --inputs '{...}'` |
 | Forja por clase concreta | `execute-process.py --process {entity_class}-creator` solo vía cadena autorizada |
 
-Prohibido bypass del bus EDA (`docs/events/`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa.
+Prohibido bypass del bus EDA (`/.events/`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa.
 
 ## Prefijo creator (Fase B)
 

@@ -103,7 +103,7 @@ Gate **Cerbero** previo por `context` de cada cápsula. Rutas vía `cumulo.paths
   "data": {
     "success": true,
     "event_id": "<event_id>",
-    "target_path": "docs/events/pending/<event_id>.json"
+    "target_path": ".events/pending/<event_id>.json"
   }
 }
 ```

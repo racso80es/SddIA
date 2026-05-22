@@ -33,6 +33,7 @@ if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
 from eda_bus_utils import (  # noqa: E402
+    ensure_event_bus_topology,
     find_existing_domain_event,
     resolve_origin_topology,
 )
@@ -80,10 +81,8 @@ def _load_cumulo(repo: Path) -> dict[str, Any]:
 
 
 def _write_pending_event(repo: Path, event: dict[str, Any]) -> dict[str, str]:
-    cumulo = _load_cumulo(repo)
-    pending_rel = cumulo.get("eda_bus", {}).get("pending", "docs/events/pending")
-    pending = repo / pending_rel
-    pending.mkdir(parents=True, exist_ok=True)
+    bus = ensure_event_bus_topology(repo)
+    pending = repo / bus["pending"]
     event_id = event["event_id"]
     target = pending / f"{event_id}.json"
     target.write_text(json.dumps(event, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

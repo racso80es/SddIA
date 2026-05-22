@@ -10,6 +10,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_QA_DIR = _SCRIPT_DIR.parents[2] / "qa"
+if str(_QA_DIR) not in sys.path:
+    sys.path.insert(0, str(_QA_DIR))
+
+from eda_bus_utils import ensure_event_bus_topology, load_eda_bus  # noqa: E402
+
 TOOL_NAME = "transit-event-payload"
 VALID_BUCKETS = frozenset({"pending", "processing", "processed", "dead_letter"})
 
@@ -20,23 +27,6 @@ def _repo_root() -> Path:
         if (parent / "SddIA" / "core" / "cumulo.paths.json").is_file():
             return parent
     raise RuntimeError("No se encontró raíz del workspace")
-
-
-def _load_bus(repo: Path) -> dict[str, str]:
-    defaults = {
-        "pending": "docs/events/pending",
-        "processing": "docs/events/processing",
-        "processed": "docs/events/processed",
-        "dead_letter": "docs/events/dead-letter",
-    }
-    cfg_path = repo / "SddIA" / "core" / "cumulo.paths.json"
-    cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
-    bus = cfg.get("eda_bus") or {}
-    out = dict(defaults)
-    for key in defaults:
-        if isinstance(bus.get(key), str) and bus[key]:
-            out[key] = bus[key]
-    return out
 
 
 def _emit(envelope: dict[str, Any]) -> None:
@@ -67,7 +57,7 @@ def main() -> None:
         _fail(f"from_bucket y to_bucket deben ser uno de {sorted(VALID_BUCKETS)}")
 
     repo = _repo_root()
-    bus = _load_bus(repo)
+    bus = ensure_event_bus_topology(repo)
     source = (repo / bus[from_bucket] / file_name.strip()).resolve()
     dest_dir = (repo / bus[to_bucket]).resolve()
     dest = dest_dir / file_name.strip()
