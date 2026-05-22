@@ -43,9 +43,10 @@ python SddIA/scripts/qa/execute-process.py --process pull-request-review `
 | Rechazado (`SDDIA_LAB_PR_REVIEW_DOC_FAIL`) | `verdict: rechazado`, `status_code: 1` |
 | Kaizen (`SDDIA_LAB_PR_REVIEW_KAIZEN`) | TODO generado en `docs/todos/` |
 
-## E2E bus
+## E2E bus + cierre PR #15
 
 | Paso | Evidencia |
 |------|-----------|
-| `emit-pr-presented-event` | `62bcb6e1-f995-4edf-95d6-3745c7503303` |
-| `event-watcher --once` | `delivery_state.argos: success`, `cumulo: success` → `processed/` |
+| Presented (aduana) | `ec7cd211-e88e-416c-bcd3-e43995a0131b` |
+| Handoff `accept-pr` | `81e41e26ab9db9cc9dfb5787f89d31c056eec097` |
+| Merged | `395cb57d-4d0d-473a-bc6c-d287575e964b` → `processed/` |

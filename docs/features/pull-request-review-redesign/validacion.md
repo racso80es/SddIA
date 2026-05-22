@@ -31,15 +31,25 @@ git_changes:
 | V1 | Genoma v2.0.0 + `verify-process-integrity` | ✅ | hash `4408f797…` |
 | V2 | Smoke positivo → `verdict: aprobado` | ✅ | `_smoke-pr-review-presented.json` |
 | V3 | Violación simulada → `delivery_state: failed` | ✅ | `SDDIA_LAB_PR_REVIEW_DOC_FAIL` |
-| V4 | `PullRequest_Presented` → watcher → aduana | ✅ | evento `62bcb6e1-…` |
+| V4 | `PullRequest_Presented` → watcher → aduana | ✅ | `ec7cd211-…` (PR #15) |
 | V5 | Kaizen no bloqueante | ✅ | `SDDIA_LAB_PR_REVIEW_KAIZEN` |
-| V6 | Handoff → `accept-pr` (sin merge en aduana) | ✅ | default `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF=0`; cierre PR #15 |
+| V6 | Handoff → `accept-pr` (sin merge en aduana) | ✅ | default `SKIP=0`; merge `81e41e26` |
+| V7 | Cierre ciclo `PullRequest_Merged` | ✅ | `395cb57d-…` → `processed/` |
 
 ## Eventos bus (E2E)
 
 | event_id | event_type | Terminal | delivery_state |
 |----------|------------|----------|----------------|
-| `62bcb6e1-f995-4edf-95d6-3745c7503303` | `PullRequest_Presented` | `processed/` | `argos: success`, `cumulo: success` |
+| `ec7cd211-e88e-416c-bcd3-e43995a0131b` | `PullRequest_Presented` | `processed/` | `argos: success`, `cumulo: success` |
+| `395cb57d-4d0d-473a-bc6c-d287575e964b` | `PullRequest_Merged` | `processed/` | `cumulo: success` |
+
+## Cierre PR #15
+
+| Campo | Valor |
+|-------|-------|
+| Merge commit | `81e41e26ab9db9cc9dfb5787f89d31c056eec097` |
+| Correlación | `pr-15-close-cycle-20260522` |
+| Handoff | `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF=0` |
 
 ## Pendiente post-feature
 

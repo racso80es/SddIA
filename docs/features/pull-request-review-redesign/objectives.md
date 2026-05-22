@@ -42,4 +42,4 @@ Materializar el proceso **`pull-request-review`** como **Aduana de Fricción** r
 | Especificación | ✅ `spec.md` |
 | Plan | ✅ `plan.md` |
 | Implementación | ✅ genoma + handlers + bus |
-| Validación | ✅ smokes + E2E bus (ver `validacion.md`) |
+| Validación | ✅ PR #15 MERGED + ciclo Presented→Merged |
