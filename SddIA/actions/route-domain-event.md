@@ -80,7 +80,8 @@ Para cada elemento `subscriber` del array:
 | Campo suscriptor | Delegación |
 | :--- | :--- |
 | `agent` + `tool` | Invocar **agente** `agent` para ejecutar **tool** indexada (p. ej. `cumulo` → `iota-immutable-publisher`) pasando el objeto evento completo (o `payload` desnormalizado + metadatos `event_id`, `event_type`, `timestamp`). |
-| `agent` + `action` | Invocar **agente** `agent` para ejecutar **action** indexada (p. ej. `argos` → `log-audit-intent`) con el evento como contexto de entrada. |
+| `agent` + `action` | Invocar **agente** `agent` para ejecutar **action** indexada (p. ej. `cumulo` → `sync-entity-index`) con el evento como contexto de entrada. |
+| `agent` + `process` | Invocar **agente** orquestador para ejecutar **proceso** indexado (p. ej. `argos` → `pull-request-review`) vía `execute-process`; inputs mapeados desde payload ECST. |
 
 Reglas:
 

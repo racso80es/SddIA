@@ -33,6 +33,11 @@ DEFAULTABLE_INPUTS = frozenset(
         "pr_title",
         "pr_body",
         "target_branch",
+        "pr_id_or_path",
+        "pr_url",
+        "code_diff",
+        "tasks_path",
+        "document_context",
     }
 )
 
