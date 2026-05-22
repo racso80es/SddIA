@@ -32,6 +32,8 @@ if str(_QA_DIR) not in sys.path:
 
 from eda_bus_utils import (  # noqa: E402
     dlt_threshold_ok,
+    github_pr_merged,
+    infer_persist_ref_from_branch,
     inject_domain_entity_topology_defaults,
     is_backfill_emitter,
     resolve_origin_topology,
@@ -141,15 +143,6 @@ def _invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str
     return bool(body.get("success")), body.get("feedback", "ok")
 
 
-def _infer_persist_ref_from_branch(branch: str) -> str | None:
-    b = branch.strip()
-    if b.startswith("feat/"):
-        return f"docs/features/{b[5:]}"
-    if b.startswith("fix/"):
-        return f"docs/features/{b[4:]}"
-    return None
-
-
 def _dispatch_subscriber(
     repo: Path, subscriber: dict[str, Any], event: dict[str, Any]
 ) -> tuple[str, str]:
@@ -183,9 +176,18 @@ def _dispatch_subscriber(
         pr_url = payload.get("pr_url")
         if isinstance(pr_url, str) and pr_url.strip():
             process_inputs["pr_url"] = pr_url.strip()
-        inferred = _infer_persist_ref_from_branch(branch)
+            if github_pr_merged(pr_url):
+                process_inputs["merge_already_done"] = True
+        inferred = infer_persist_ref_from_branch(repo, branch)
         if inferred:
             process_inputs["persist_ref"] = inferred
+        if process_name.strip() == "pull-request-review":
+            process_inputs.setdefault("code_diff", "origin/main...HEAD")
+            process_inputs.setdefault("tasks_path", "docs/todos")
+            process_inputs.setdefault(
+                "document_context",
+                inferred or "docs/features/remove-cli-legacy-compat",
+            )
         os.environ.setdefault("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0")
         try:
             proc = _run_subprocess(

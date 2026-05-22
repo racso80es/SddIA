@@ -55,4 +55,22 @@ python SddIA/scripts/qa/verify-process-integrity.py
 | Triaje documental | OK (`spec`, `plan`, `implementation`, `objectives`) |
 | Triaje técnico | OK (`verify-process-integrity`) |
 | Handoff | `accept-pr` ejecutado (merge local `b44402bd`; huérfano sin Presented previo en bus) |
-| Evento | `PullRequest_Merged` pending `5f47474f-4699-4afa-aa89-750cc28bf4d8` |
+| Merge commit remoto | `b44402bdd404f51c976abbe83a3fe67ee835560e` (PR #14 MERGED) |
+
+## Trazabilidad EDA (producción, post-merge)
+
+| event_id | event_type | Terminal | `delivery_state` |
+|----------|------------|----------|------------------|
+| `980725c5-797d-46fa-98f7-13a2ee1234ea` | `PullRequest_Presented` | `processed/` | `argos: success`, `cumulo: success` |
+| `5f47474f-4699-4afa-aa89-750cc28bf4d8` | `PullRequest_Merged` | `processed/` | `cumulo: success` (merge huérfano inicial) |
+| `cd5d163e-fb20-451c-b112-8360ce28718f` | `PullRequest_Merged` | `processed/` | `cumulo: success` (retroactivo) |
+
+Comandos:
+
+```powershell
+$env:SDDIA_ENV='production'
+$env:PYTHONUTF8='1'
+# emit PullRequest_Presented + event-watcher --event-file-path docs/events/pending/<event_id>.json
+```
+
+Kaizen incluido en PR de evidencia: `infer_persist_ref_from_branch` (sufijo Jules) y handoff `merge_already_done` cuando `gh` reporta PR MERGED.
