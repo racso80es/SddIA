@@ -31,10 +31,56 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 | Ruta | Rol | Contenido |
 |------|-----|-----------|
 | **`SddIA/events/`** | Genoma (Core) | Biblioteca de **Clases de Evento**: contratos funcionales versionados (`{name}.md`, `events-contract.md`, `index.md`). |
-| **`/.events/`** | Runtime (bus local) | Tránsito de **instancias volátiles**: padre inmutable en `pending/`; testigos de suscriptor en `subscribers/{processing,processed,dead-letter}/` (resuelto vía `event_bus` + `eda_bus` en `cumulo.paths.json`). |
+| **`/.events/`** | Runtime (bus local) | Tránsito de **instancias volátiles** ECST bajo topología **V3+ simétrica** (SSOT `eda_bus` en `cumulo.paths.json`). |
 | **`.SddIA/events/`** | Instancia (proyecto) | Zona de **personalización** por repositorio productivo (Vía C); overrides y configuración táctica. **No** es cola del bus federal. |
 
 Definición operativa de **Event**: *el contrato inmutable de comunicación asíncrona; señal con propósito (finalidad) que blinda la soberanía de las entidades conscientes, operando bajo coreografía pura y evitando el acoplamiento físico entre procesos.* Contrato de familia: `SddIA/events/events-contract.md`. Índice de clases: `SddIA/events/index.md`.
+
+#### Topología del bus (V3+)
+
+Cada **estado** del bus contiene la **cabecera del evento** y una subcarpeta **`subscribers/`** con un testigo JSON por suscriptor:
+
+```
+.events/pending/                          ← entrada (padre inmutable hasta sweeper)
+.events/processing/
+.events/processing/subscribers/           ← testigos en vuelo
+.events/processed/
+.events/processed/subscribers/            ← testigos OK
+.events/dead-letter/
+.events/dead-letter/subscribers/          ← testigos KO (p. ej. ecst-gate)
+```
+
+Rutas resueltas vía `cumulo.paths.json` → `eda_bus.*`. El directorio `/.events/` está en `.gitignore`.
+
+#### Pipeline runtime (coreografía)
+
+```mermaid
+flowchart LR
+  EM[Emisor] --> P[pending]
+  P --> W[event-watcher]
+  W --> RDE[process route-domain-event]
+  RDE --> PROC[processing + testigos]
+  PROC --> OUT[processed / dead-letter]
+  OUT --> SW[event-sweeper]
+  SW --> PURGE[purga pending]
+```
+
+| Paso | Componente | Responsabilidad |
+|------|------------|-----------------|
+| 1 | Acciones/procesos emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | Escriben instancia ECST en `.events/pending/` |
+| 2 | `event-watcher.py` | Monitoriza `pending/`; delega en `execute-process --process route-domain-event` |
+| 3 | Proceso **`route-domain-event`** (`route_domain_event_core.py`) | Gate ECST; fan-out **async** a suscriptores (`event-subscriptions.json`); materializa cabeceras y testigos |
+| 4 | Suscriptores (actions, tools, processes) | Ejecutan trabajo de dominio; testigos promovidos con `result_status` |
+| 5 | `event-sweeper.py` | Purga `pending/` y cabeceras `processing/` tras consenso; alerta Kaizen si hay `dead-letter/` |
+
+**Invocación manual (laboratorio):**
+
+```bash
+python SddIA/scripts/qa/execute-process.py --process route-domain-event \
+  --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
+```
+
+Modo sync de regresión: `SDDIA_LAB_ROUTE_SYNC=1`. Plantilla Vía C: `SddIA/templates/eda-instance-events/README.md`. Feature de referencia: [refactor-topologia-eventos-ola-c-v3](docs/features/refactor-topologia-eventos-ola-c-v3/).
 
 ### Configuración: Jerarquía de Bóvedas
 

@@ -64,7 +64,7 @@ Proceso V5 **Aduana de Fricción** reactiva al estímulo **`PullRequest_Presente
 ## Disparo EDA
 
 1. `delivery-close-cycle` emite **`PullRequest_Presented`** en `eda_bus.pending`.
-2. `route-domain-event` / watcher despacha suscriptor **`pull-request-review`** (agente **Argos**).
+2. Proceso **`route-domain-event`** / watcher despacha suscriptor **`pull-request-review`** (agente **Argos**).
 3. La aduana evalúa; **`delivery_state: failed`** bloquea materialización downstream.
 
 ## Fases de triaje (Fase 1 TODO)

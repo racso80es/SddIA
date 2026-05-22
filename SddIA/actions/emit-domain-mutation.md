@@ -140,5 +140,5 @@ En fallo de validación, broker o escritura: `success: false`, `exitCode: 1`, `d
 * `origin_topology` es **REQUIRED** en la Clase ECST `Domain_Entity_*`; el handler lab inyecta default `core` si el invocante omite el campo.
 * Tras persistir en `pending/`, el watcher aplica filtro topológico (`applies_to_origin_topology`) antes del fan-out; DLT IOTA solo para `Domain_Entity_Created` con `origin_topology=core` y umbral satisfecho (véase `entity-manager` Fase 3).
 * `context: ecosystem-evolution` está registrado en `execution-contexts.md` §2.5.
-* Los tipos `Domain_Entity_*` deben existir en `event-subscriptions.json` antes de que el fan-out tenga efecto; hasta entonces el watcher puede mover eventos a `processed/` como no-op documentado en `route-domain-event`.
+* Los tipos `Domain_Entity_*` deben existir en `event-subscriptions.json` antes de que el fan-out tenga efecto; hasta entonces el watcher puede mover eventos a `processed/` como no-op documentado en el proceso `route-domain-event`.
 * Invocación esperada al cierre de forja o mutación física del artefacto en procesos `*-creator` (deuda de cableado en cada proceso).
