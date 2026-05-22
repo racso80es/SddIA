@@ -1392,7 +1392,29 @@ def capsule_filesystem_delete(repo: Path, inputs: dict[str, Any], state: dict[st
 def invoke_capsule_action(
     repo: Path, action_name: str, action_inputs: dict[str, Any]
 ) -> dict[str, Any]:
-    body = shim_execute_action(repo, action_name, action_inputs)
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(EXECUTE_ACTION_CLI),
+            "--action",
+            action_name,
+            "--inputs",
+            json.dumps(action_inputs, ensure_ascii=False),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+        env=env,
+    )
+    line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
+    if not line:
+        raise RuntimeError(proc.stderr or f"acción {action_name} sin salida")
+    body = json.loads(line)
     if not body.get("success"):
         raise RuntimeError(body.get("error") or f"acción {action_name} falló")
     return body.get("data") or {}
@@ -1685,29 +1707,3 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         "execution_report": {"process_name": canonical, "phases": phase_reports},
         "error": err_msg,
     }
-
-
-def shim_execute_action(repo: Path, action_name: str, action_inputs: dict[str, Any]) -> dict[str, Any]:
-    env = os.environ.copy()
-    env["PYTHONIOENCODING"] = "utf-8"
-    proc = subprocess.run(
-        [
-            sys.executable,
-            str(EXECUTE_ACTION_CLI),
-            "--action",
-            action_name,
-            "--inputs",
-            json.dumps(action_inputs, ensure_ascii=False),
-        ],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
-        env=env,
-    )
-    line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
-    if not line:
-        raise RuntimeError(proc.stderr or "execute-action sin salida")
-    return json.loads(line)

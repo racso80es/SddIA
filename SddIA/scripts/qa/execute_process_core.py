@@ -33,11 +33,6 @@ DEFAULTABLE_INPUTS = frozenset(
         "pr_title",
         "pr_body",
         "target_branch",
-        "pr_id_or_path",
-        "pr_url",
-        "code_diff",
-        "tasks_path",
-        "document_context",
     }
 )
 
@@ -68,20 +63,6 @@ def warn_stderr(message: str) -> None:
     except Exception:
         yellow = reset = ""
     sys.stderr.write(f"{yellow}WARNING: {message}{reset}\n")
-
-
-def warn_deprecated_input_file() -> None:
-    warn_stderr(
-        "--input-file está deprecado (Ola C). Use: "
-        'python SddIA/scripts/qa/execute-process.py --process <nombre> --inputs \'<json>\''
-    )
-
-
-def warn_deprecated_action_shim(action_name: str) -> None:
-    warn_stderr(
-        f"--action en execute-process.py está deprecado (Ola C). "
-        f"Redirija a: python SddIA/scripts/qa/execute-action.py --action {action_name} --inputs '<json>'"
-    )
 
 
 def parse_frontmatter(md_path: Path) -> dict[str, Any]:
@@ -179,19 +160,9 @@ def validate_process_inputs(
 
 
 def normalize_request(raw: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-    if "process_name" in raw:
-        name = raw["process_name"]
-        inputs = raw.get("process_inputs") or raw.get("inputs") or {}
-        if not isinstance(name, str):
-            raise ValueError("process_name debe ser string")
-        if not isinstance(inputs, dict):
-            raise ValueError("process_inputs debe ser objeto")
-        return name, inputs
-    if "entity_class" in raw and "entity_name" in raw:
-        return "entity-manager", raw
     raise ValueError(
-        "Entrada inválida: use --process <nombre> --inputs '<json>' "
-        "o envelope {\"process_name\", \"process_inputs\"}"
+        "Entrada inválida o formato legacy no soportado: use estrictamente "
+        "--process <nombre> --inputs '<json>'"
     )
 
 
