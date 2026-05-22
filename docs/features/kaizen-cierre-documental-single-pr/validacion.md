@@ -6,6 +6,9 @@ branch: feat/kaizen-cierre-documental-single-pr
 pr_url: https://github.com/racso80es/SddIA/pull/34
 global: APTO
 pbi_archived: true
+merged_pr: 34
+merge_commit: 833187e4515ac2aa4120342462eb63d0f7d84f04
+closed: "2026-05-22"
 checks:
   CA1-norm-v1.2.0: pass
   CA2-bug-fix-v1.4.0: pass
@@ -48,4 +51,4 @@ Gate local para `pbi_archived` + PBI en `done/`.
 
 ## Meta
 
-Este artefacto demuestra el patrón: PBI ya en `docs/todos/done/` en la rama del PR; no se requiere PR documental posterior.
+Cerrado con **un solo PR** (#34). Los campos `merged_pr` / `merge_commit` aquí son **auditoría opcional** (v1.2.0), no requisito para abrir un segundo PR documental.

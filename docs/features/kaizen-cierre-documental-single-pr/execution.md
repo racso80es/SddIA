@@ -25,10 +25,10 @@ process: feature
 | PBI → `docs/todos/done/` | OK |
 | `validacion.md` | APTO, `pbi_archived: true`, sin `merged_pr` |
 
-## Pendiente H6
+## Cierre (2026-05-22)
 
-```powershell
-python SddIA/scripts/qa/verify-process-integrity.py
-python SddIA/scripts/qa/verify-task-closure.py --path docs/features/kaizen-cierre-documental-single-pr/validacion.md
-python SddIA/scripts/qa/execute-process.py --process delivery-close-cycle --inputs-file tmp/delivery-close-kaizen-single-pr.json
-```
+| Paso | Resultado |
+|------|-----------|
+| PR #34 merge | `833187e4515ac2aa4120342462eb63d0f7d84f04` |
+| Sin PR `docs/cerrar-pbi-*` | Confirmado |
+| PBI `status: cerrado` | Actualizado en `main` post-merge (auditoría opcional) |

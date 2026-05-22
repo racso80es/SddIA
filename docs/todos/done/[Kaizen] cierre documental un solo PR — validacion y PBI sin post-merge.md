@@ -4,9 +4,12 @@ title: "[Kaizen] Cierre documental un solo PR — validacion y PBI sin post-merg
 format: markdown
 version: "1.0.0"
 created: "2026-05-22"
-status: listo_para_merge
+status: cerrado
 priority: alta
 process: feature
+merged_pr: 34
+merge_commit: 833187e4515ac2aa4120342462eb63d0f7d84f04
+closed: "2026-05-22"
 feature_ref_target: docs/features/kaizen-cierre-documental-single-pr
 related:
   - docs/features/kaizen-cierre-documental-post-merge/validacion.md
@@ -64,6 +67,7 @@ Done = un único PR mergeado en main
 
 ## 4. Criterio de cierre del PBI
 
-- [ ] Argos APTO en `docs/features/kaizen-cierre-documental-single-pr/validacion.md` (pre-merge, un PR).
-- [ ] Sin PR `docs/cerrar-pbi-*` posterior para esta feature.
-- [ ] Este TODO en `docs/todos/done/` en el **mismo** PR que la norma.
+- [x] Argos APTO en `docs/features/kaizen-cierre-documental-single-pr/validacion.md` (pre-merge, un PR).
+- [x] Sin PR `docs/cerrar-pbi-*` posterior para esta feature (demostrado con PR #34 único).
+- [x] Este TODO en `docs/todos/done/` en el **mismo** PR que la norma.
+- [x] Merge en `main`: PR #34 — `833187e4515ac2aa4120342462eb63d0f7d84f04`.
