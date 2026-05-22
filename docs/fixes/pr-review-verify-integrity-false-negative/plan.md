@@ -12,8 +12,8 @@ process: bug-fix
 |------|-------|--------|
 | H1 | Smoke + `clarify.md` causa raíz | [x] |
 | H2 | `_sync_pr_review_worktree` + `SDDIA_REPO_ROOT` | [x] |
-| H3 | Retroactivo dead-letter PR #23 | [ ] |
-| H4 | Smoke aduana completo + `validacion.md` Argos | [ ] |
+| H3 | Retroactivo dead-letter PR #23 / lote #29–#31 | [x] |
+| H4 | Smoke aduana completo + `validacion.md` Argos | [x] |
 
 ## Orden de ejecución
 
