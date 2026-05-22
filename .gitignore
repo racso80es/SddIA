@@ -12,7 +12,9 @@ docs/events/
 
 # Jerarquía de Bóvedas — secretos locales (no versionar)
 .dev/
+!.dev/.env.example
 .SddIA/.dev/
+!.SddIA/.dev/.env.example
 
 # Artefactos locales de build/debug IOTA
 SddIA/scripts/tools/iota-immutable-publisher/.iota-cli/
