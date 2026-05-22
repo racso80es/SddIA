@@ -169,7 +169,7 @@ Propagar `event_id` y `target_path` a outputs del proceso.
 
 Tras persistir el JSON en `eda_bus.pending`:
 
-1. El **watcher** (`event-watcher.py` → `route-domain-event`) filtra suscriptores por `applies_to_origin_topology`.
+1. El **watcher** (`event-watcher.py` → `execute-process --process route-domain-event`) filtra suscriptores por `applies_to_origin_topology`.
 2. Solo eventos con `origin_topology=core` y `event_type=Domain_Entity_Created` disparan `iota-immutable-publisher` si el umbral DLT está satisfecho (`hash_signature_new` válido, no placeholder).
 3. Emisiones con `emitter_agent=cumulo-eda-backfill` omiten DLT por entidad (Fase C); el cierre exige `--anchor-merkle` con acta IOTA del lote.
 4. Eventos `origin_topology=local` no mutan índices canónicos bajo `SddIA/` (fan-out acotado por suscripción).
@@ -177,5 +177,5 @@ Tras persistir el JSON en `eda_bus.pending`:
 ## Límites
 
 * No calcula hashes de entidades en create/update (delegado al creator hijo).
-* No enruta el bus (`route-domain-event` es asíncrono vía watcher).
+* No enruta el bus (el proceso `route-domain-event` es asíncrono vía watcher).
 * Tekton no materializa forja Core directamente; solo orquesta hijos vía `execute-process`.

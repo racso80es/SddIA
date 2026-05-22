@@ -55,5 +55,5 @@ Redirige rutas del bus en entornos de desarrollo sin mutar el genoma:
 
 - `SddIA/events/events-contract.md` — contrato ECST y aseguramiento forense
 - `SddIA/core/cumulo.paths.json` — `event_bus`, `eda_bus`, `eda_instance.customization`
-- `SddIA/actions/route-domain-event.md` — validación instancia ↔ Clase (Paso 2b)
+- `SddIA/process/route-domain-event.md` — validación instancia ↔ Clase (gate ECST) y fan-out
 - `SddIA/scripts/daemons/event-sweeper.py` — recolector post-consenso

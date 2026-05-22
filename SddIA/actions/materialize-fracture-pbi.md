@@ -50,4 +50,4 @@ Envelope con `success`, `target_path`, `message`.
 ## 3. Límites
 
 * No repara la fractura ni autoriza bypass.
-* No mueve archivos del bus (`route-domain-event`).
+* No mueve archivos del bus (proceso `route-domain-event`).

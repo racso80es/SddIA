@@ -49,7 +49,7 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 ### 2.7. `event-routing`
 * **Jurisdicción:** Orquestación, triaje y movimiento de archivos en el bus de eventos asíncrono (EDA).
 * **Autorización:** Permisos estrictos de lectura del padre en `.events/pending/`; escritura/movimiento de testigos en `.events/subscribers/{processing,processed,dead-letter}/` (resuelto vía `event_bus` + `eda_bus` en `cumulo.paths.json`). Prohibida la mutación del genoma (`SddIA/events/`) y del JSON padre tras emisión.
-* **Cápsulas asociadas:** `action:route-domain-event`.
+* **Cápsulas asociadas:** `process:route-domain-event` (orquestador vía `event-watcher.py` → `execute-process`).
 
 ### 2.8. `dlt-auditing`
 * **Jurisdicción:** Anclaje criptográfico inmutable en redes descentralizadas (ej. IOTA Rebased).

@@ -35,7 +35,7 @@ Acción canónica del Agente **Cúmulo** para reconciliación asíncrona de cat�
 | **Creator (síncrono)** | En `create`/`update`, la fase Indexación del `*-creator` escribe la fila en `index.md` |
 | **Esta acción (async)** | `create`/`update`: **auditoría** de idempotencia (fila presente); `delete`: **purga** de fila |
 
-No mueve archivos del bus (`route-domain-event`). En runtime del demonio, delega la lógica determinista en `SddIA/scripts/qa/execute-action.py --action sync-entity-index`, que orquesta `tool:markdown-table-editor`.
+No mueve archivos del bus (jurisdicción del proceso `route-domain-event`). En runtime del demonio, delega la lógica determinista en `SddIA/scripts/qa/execute-action.py --action sync-entity-index`, que orquesta `tool:markdown-table-editor`.
 
 ## 2. Orquestación
 
