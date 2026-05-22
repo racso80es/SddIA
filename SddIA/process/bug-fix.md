@@ -1,13 +1,13 @@
 ---
 uuid: ac8d078c-9785-490b-9f43-ad310fe9df9d
 name: bug-fix
-version: 1.3.0
+version: 1.4.0
 contract: process-contract v1.3.0
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:736995e788e520e8e2cdd1401ad65783e5603ea195972793530d05773d5a98e1
+hash_signature: sha256:d143033143044a5595d8946d4146c5eb2b04bd09ca32d1be82264f0b2dd2f8c3
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
@@ -36,14 +36,14 @@ phases:
   intent: 'Argos audita el fix. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).'
   delegates_to:
   - agent:argos
+- name: Cierre documental en rama
+  intent: 'Antes del merge: mover PBI a docs/todos/done/ en la rama del PR; validacion.md con pbi_archived true según features-documentation-pattern v1.2.0 (sin merged_pr obligatorio).'
+  delegates_to:
+  - skill:filesystem-manager
 - name: Cierre de entrega
   intent: 'Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process (bug-fix), persist_ref y branch_name.'
   delegates_to:
   - action:execute-process
-- name: Cierre documental post-merge
-  intent: 'Tras merge en main: actualizar validacion.md con merged_pr y merge_commit; archivar PBI en docs/todos/done/; commit atómico documental en main antes de declarar la tarea terminada.'
-  delegates_to:
-  - skill:filesystem-manager
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -72,29 +72,27 @@ La última fase invoca `execute-process` apuntando a `delivery-close-cycle` con 
 
 *Nota de Arquitectura EDA:* El Sello Criptográfico (`PullRequest_Merged`) es un evento asíncrono y desacoplado post-fusión. La escritura eventual de `finalize-process.md` queda supeditada a la evolución del subproceso de cierre.
 
-## Cierre documental post-merge (obligatorio)
+## Cierre documental en rama (obligatorio, pre-merge)
 
-**Merge en `main` no equivale a tarea terminada.** Tras la fusión del PR (vía `accept-pr` o merge en forja), el operador — humano o IA — debe ejecutar esta fase **antes** de dar el fix por cerrado:
+**Antes** de `delivery-close-cycle` y del merge en `main`, en la **misma rama** del fix:
 
 | Paso | Acción | Artefacto |
 |------|--------|-----------|
-| 1 | Rellenar metadatos post-merge en frontmatter | `{persist_ref}/validacion.md` → `merged_pr`, `merge_commit`, `closed`, `pbi_archived: true` |
-| 2 | Archivar PBI operativo | Mover de `docs/todos/pending/` → `docs/todos/done/` (conservar `document_id`) |
-| 3 | Commit atómico documental | Mensaje tipo `docs: cerrar PBI {fix_name} post-merge PR #{n}` |
-| 4 | Push a `main` | Cambios documentales visibles en remoto |
+| 1 | Archivar PBI | `docs/todos/pending/` → `docs/todos/done/` (conservar `document_id`) |
+| 2 | Cerrar validación Argos | `{persist_ref}/validacion.md` → `global: APTO`, `pbi_archived: true` |
+| 3 | Incluir en el PR único | Diff de código + documentación + PBI en `done/` |
 
 **Definición operativa de Done:**
 
 ```text
-Done = merge en main
-     + validacion.md con merged_pr y merge_commit
-     + PBI en docs/todos/done/
-     + commit documental pusheado
+Done = un único PR mergeado en main
+     + validacion.md APTO en ese PR (pbi_archived: true)
+     + PBI en docs/todos/done/ en esa misma rama
 ```
 
-Si el PBI o la actualización de `validacion.md` quedan solo en working tree local, el fix **permanece abierto** a efectos de gobernanza.
+Prohibido depender de un segundo PR `docs/cerrar-pbi-*` para campos que solo existen tras el merge (`merged_pr`, `merge_commit`). La trazabilidad del merge se obtiene de GitHub / git.
 
-*Referencia normativa:* `features-documentation-pattern` § Validación en dos fases; regla Cursor `task-closure-documental`.
+*Referencia normativa:* `features-documentation-pattern` v1.2.0 § Validación en fase única; regla Cursor `task-closure-documental`.
 
 ## Perfil laboratorio vs runtime IDE
 
@@ -102,8 +100,8 @@ Si el PBI o la actualización de `validacion.md` quedan solo en working tree loc
 | :--- | :--- | :--- |
 | Fase 1 Inicialización | `workspace-init` físico (git-manager + `objectives.md` mínimo) | Igual; `persist_ref` bajo `docs/fixes/` si rama `fix/` o `source_process: bug-fix` |
 | Fases 2–4 (Dedalo…Argos) | `simulated` / agentes IDE | Agentes V5; cascada mínima `spec.md` + `implementation.md` + `execution.md` + `validacion.md` |
-| Fase 5 Cierre | Delega en `delivery-close-cycle` con `source_process: bug-fix` | Orquestador inyecta `pr_title`, `pr_body` |
-| Fase 6 Cierre documental post-merge | Manual / operador IA tras merge; ver § Cierre documental post-merge | Commit `docs/todos/done/` + `validacion.md` post-merge |
+| Fase 5 Cierre documental en rama | Manual / operador IA en rama `fix/*` | PBI en `done/` + `validacion.md` pre-merge |
+| Fase 6 Cierre de entrega | Delega en `delivery-close-cycle` con `source_process: bug-fix` | Orquestador inyecta `pr_title`, `pr_body` |
 | Inputs workspace-init | `branch_name` + `persist_ref` + (`bug_summary` \| `fix_name`); no exige `feature_name` | Misma regla en handler `execute_process_capsules.py` |
 
 **Contrato git-manager fetch:** toda invocación `fetch` debe incluir `prune` (boolean) según `skill-io-git-manager-frozen.md` §3.7.

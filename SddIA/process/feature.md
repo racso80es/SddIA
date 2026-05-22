@@ -1,13 +1,13 @@
 ---
 uuid: 1b4fa69f-4299-47ca-b2ed-380f2263239c
 name: feature
-version: 1.2.0
+version: 1.3.0
 contract: process-contract v1.3.0
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:189d4fde0fcd0efc6cb2e7da052dd9cad86c07a159b70012c3ece87b0100caaf
+hash_signature: sha256:d16d940377a0e3ad5a48aec07361f9977c7cfdf73f66eb04516843a4c8f35684
 inputs:
 - feature_name: Nombre kebab-case o etiqueta humana de la feature
 - refined_requirements: Requisitos crudos o semi-refinados de entrada
@@ -41,6 +41,10 @@ phases:
   intent: 'Argos audita la entrega. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).'
   delegates_to:
   - agent:argos
+- name: Cierre documental en rama
+  intent: 'Antes del merge: mover PBI a docs/todos/done/ en la rama del PR; validacion.md con pbi_archived true según features-documentation-pattern v1.2.0 (sin merged_pr obligatorio).'
+  delegates_to:
+  - skill:filesystem-manager
 - name: Cierre de entrega
   intent: Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process, persist_ref y branch_name.
   delegates_to:
@@ -72,13 +76,18 @@ La última fase invoca la acción `execute-process` apuntando al `process_name` 
 
 *Nota de Arquitectura EDA:* El sello **`PullRequest_Presented`** lo emite el subproceso `delivery-close-cycle` vía `emit-pr-presented-event`. El sello **`PullRequest_Merged`** pertenece exclusivamente a `accept-pr` post-fusión. La escritura eventual de `finalize-process.md` recae en la evolución del subproceso de cierre.
 
+## Cierre documental en rama (obligatorio, pre-merge)
+
+Misma regla que `bug-fix` § Cierre documental en rama: PBI en `docs/todos/done/` y `validacion.md` con `pbi_archived: true` **en la rama del PR**, sin segundo PR documental a `main`. Ver `features-documentation-pattern` v1.2.0.
+
 ## Perfil laboratorio vs runtime IDE
 
 | Aspecto | Laboratorio (`execute-process.py`) | Runtime IDE completo |
 | :--- | :--- | :--- |
 | Fase 1 Inicialización | `workspace-init` físico (git-manager + `objectives.md` mínimo) | Igual + norma documental completa |
 | Fases 2–5 (Mayeuta…Argos) | `simulated` / agentes IDE | Agentes V5 con salidas en `persist_ref` |
-| Fase 6 Cierre | Delega en `delivery-close-cycle` con handlers físicos fases 4–6 (push/gh/sello) | Orquestador inyecta `pr_title`, `pr_body`; sin variables `SDDIA_LAB_*` |
+| Fase 6 Cierre documental en rama | Manual / operador IA en rama `feat/*` | PBI en `done/` + `validacion.md` pre-merge |
+| Fase 7 Cierre de entrega | Delega en `delivery-close-cycle` con handlers físicos (push/gh/sello) | Orquestador inyecta `pr_title`, `pr_body` |
 | Veredicto `success` | No implica Mayeuta/Tekton ejecutados; revisar `execution_report.phases[].status` | Contrato completo del proceso |
 
 Handoff documentado: `docs/features/pr-presented-orchestration/`.

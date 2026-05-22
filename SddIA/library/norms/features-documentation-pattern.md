@@ -1,7 +1,7 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.1.0"
+version: "1.2.0"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
@@ -23,44 +23,49 @@ Cada fase del ciclo de tarea produce exclusivamente su `.md` canónico bajo la r
 | planning | plan.md | feature_name, created, phases | Plan de implementación |
 | implementation | implementation.md | feature_name, created, items | Touchpoints y propuestas |
 | execution | execution.md | feature_name, created, items_applied | Registro de ejecución |
-| validate | validacion.md | feature_name, branch, global, checks, git_changes; post-merge: merged_pr, merge_commit, closed, pbi_archived | Informe de validación |
+| validate | validacion.md | feature_name, branch, global, checks, git_changes, pbi_archived; opc.: pr_url, merged_pr, merge_commit, closed | Informe de validación |
 | finalize-process | finalize-process.md (opc.) | feature_name, pr_url, timestamp | Resumen de cierre |
 
 La validación opcional `sddia_frontmatter_valid` aplica a los `.md` de tarea cuando el diff los toque. Las tareas existentes con `.json` deben migrarse consolidando el contenido en el frontmatter del `.md` correspondiente y eliminando el `.json`. Las nuevas documentaciones cumplen este patrón desde el inicio.
 
-## Validación en dos fases (`validacion.md`)
+## Validación en fase única — pre-merge (`validacion.md`)
 
-`validacion.md` se completa en **dos momentos** del ciclo de tarea (features, fixes y refactorizations):
-
-### Fase A — Pre-merge (Argos)
-
-Emitida tras Tekton, **antes** de abrir o mergear el PR.
+`validacion.md` se completa **una sola vez**, en la rama del PR, **antes** del merge en `main` (features, fixes y refactorizations). El merge en forja cierra la tarea; no se exige un segundo PR ni commit documental a `main`.
 
 | Campo | Obligatorio | Valor típico |
 |-------|-------------|--------------|
 | `global` | Sí | `APTO` \| `NO_APTO` |
-| `branch` | Sí | Rama de trabajo (`fix/*`, `feat/*`) |
+| `branch` | Sí | Rama de trabajo (`fix/*`, `feat/*`, `docs/*`) |
 | `checks` | Sí | Mapa de criterios de aceptación |
 | `git_changes` | Sí | Lista de paths tocados |
-| `merged_pr` | Reservado | `null` o omitido |
-| `merge_commit` | Reservado | `null` o omitido |
-| `closed` | Reservado | `null` o omitido |
-| `pbi_archived` | Sí | `false` |
+| `pbi_archived` | Sí | `true` — PBI ya en `docs/todos/done/` **en esta rama** |
+| `pr_url` | Recomendado | URL tras `delivery-close-cycle` (puede añadirse en el mismo PR antes del merge) |
+| `merged_pr` | No | Opcional auditoría; **no** gate de Done |
+| `merge_commit` | No | Inferible vía GitHub / `git log` |
+| `closed` | No | Opcional |
 
-### Fase B — Post-merge (cierre documental)
+**Definición de Done (documental):**
 
-Emitida **después** del merge en `main`. Obligatoria para declarar la tarea cerrada.
+```text
+Done = un único PR mergeado en main
+     + validacion.md APTO en el diff de ese PR (pbi_archived: true)
+     + PBI en docs/todos/done/ en esa misma rama
+```
 
-| Campo | Obligatorio | Valor |
-|-------|-------------|-------|
-| `merged_pr` | Sí | Número o URL del PR mergeado |
-| `merge_commit` | Sí | OID del commit de merge en `main` |
-| `closed` | Sí | Fecha ISO del cierre |
-| `pbi_archived` | Sí | `true` cuando exista el PBI en `docs/todos/done/` |
+**Restricciones:**
 
-**Restricción:** Prohibido considerar cierre definitivo de la tarea si, con merge ya conocido, `pbi_archived: false` o faltan `merged_pr` / `merge_commit` en `validacion.md`.
+- Prohibido exigir `merged_pr` / `merge_commit` obligatorios para declarar la tarea cerrada.
+- Prohibido abrir un PR `docs/cerrar-pbi-*` solo para rellenar campos post-merge (Kaizen 2026-05-22).
+- Prohibido `pbi_archived: true` si el PBI sigue solo en `docs/todos/pending/`.
 
-**Commit obligatorio:** Los cambios de Fase B (PBI archivado + frontmatter actualizado) deben commitearse y pushearse a `main` en el mismo acto de cierre. Ver `bug-fix` § Cierre documental post-merge.
+### Migración desde v1.1.0 (Fase B)
+
+Los artefactos históricos con `merged_pr` / `merge_commit` en `validacion.md` permanecen válidos como auditoría. Las tareas nuevas aplican v1.2.0 desde el merge de `kaizen-cierre-documental-single-pr`.
+
+### Trazabilidad de merge (fuera del frontmatter obligatorio)
+
+- Número de PR y OID de merge: GitHub API, `gh pr view`, o commit de merge en `main`.
+- No duplicar en `validacion.md` salvo necesidad de auditoría explícita del operador.
 
 ## Restricciones Duras (Aduana de Fricción)
 

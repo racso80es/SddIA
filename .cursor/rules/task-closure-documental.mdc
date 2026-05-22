@@ -1,36 +1,37 @@
 ---
-description: Cierre documental obligatorio tras merge — PBI en done/ y validacion.md post-merge
+description: Cierre documental en un solo PR — PBI en done/ y validacion.md pre-merge
 alwaysApply: true
 ---
 
-# Cierre documental post-merge
-
-**Merge en `main` ≠ tarea terminada.**
+# Cierre documental en rama (un PR)
 
 Al cerrar un `bug-fix`, `feature` o `refactorization`:
 
 ## Definición de Done
 
 ```text
-Done = merge en main
-     + validacion.md con merged_pr, merge_commit, closed, pbi_archived: true
-     + PBI movido a docs/todos/done/
-     + commit documental pusheado a main
+Done = un único PR mergeado en main
+     + validacion.md APTO en el diff de ese PR (pbi_archived: true)
+     + PBI en docs/todos/done/ en esa misma rama
 ```
 
-## Pasos obligatorios (post-merge)
+## Pasos obligatorios (pre-merge, en la rama del PR)
 
-1. Actualizar `{persist_ref}/validacion.md` — Fase B de `features-documentation-pattern`.
-2. Mover PBI de `docs/todos/pending/` → `docs/todos/done/` (mismo `document_id`).
-3. **Commitear y pushear** esos cambios documentales (excepción a la regla de no commitear proactivamente).
+1. Mover PBI de `docs/todos/pending/` → `docs/todos/done/` (mismo `document_id`).
+2. Completar `{persist_ref}/validacion.md` — `global: APTO`, `pbi_archived: true`, `branch` coherente.
+3. Incluir esos cambios en el **mismo PR** que el código (antes de merge).
 
 ## Prohibido
 
-- Declarar el fix/feature cerrado dejando PBI o `validacion.md` post-merge solo en working tree local.
-- Omitir `merged_pr` / `merge_commit` en `validacion.md` cuando el merge ya ocurrió.
+- Exigir `merged_pr` / `merge_commit` obligatorios en `validacion.md` para declarar Done.
+- Abrir un segundo PR `docs/cerrar-pbi-*` solo para documentación post-merge.
+- Push directo a `main` con cierre documental (bloqueado por pre-push; usar un PR único).
 
-## Ejemplo de commit
+## Opcional (auditoría)
 
-```text
-docs: cerrar PBI event-pending-sweeper post-merge PR #29
-```
+- `pr_url`, `merged_pr`, `merge_commit`, `closed` en frontmatter solo si aportan valor; no son gate.
+
+## Referencia
+
+- `features-documentation-pattern` v1.2.0
+- Procesos `bug-fix` v1.4.0 / `feature` v1.3.0 § Cierre documental en rama
