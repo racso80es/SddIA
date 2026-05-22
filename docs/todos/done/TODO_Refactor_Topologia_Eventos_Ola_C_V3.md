@@ -11,7 +11,9 @@ feature_ref: docs/features/refactor-topologia-eventos-ola-c-v3
 validacion_ref: docs/features/refactor-topologia-eventos-ola-c-v3/validacion.md
 branch: feat/refactor-topologia-eventos-ola-c-v3
 process: refactorization
-commit_ref: "98a33d3"
+commit_ref: "4054b77"
+pr_ref: "https://github.com/racso80es/SddIA/pull/25"
+merge_commit: "4054b77"
 ---
 
 # PBI Kaizen — Gestión de eventos emitidos (topología Ola C V3+)
@@ -20,7 +22,7 @@ commit_ref: "98a33d3"
 
 **Feature:** `docs/features/refactor-topologia-eventos-ola-c-v3/`  
 **Rama:** `feat/refactor-topologia-eventos-ola-c-v3`  
-**Commit principal:** `98a33d3`
+**Commit merge:** `4054b77` (PR #25)
 
 ---
 
