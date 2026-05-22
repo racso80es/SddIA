@@ -1,0 +1,36 @@
+---
+description: Cierre documental obligatorio tras merge — PBI en done/ y validacion.md post-merge
+alwaysApply: true
+---
+
+# Cierre documental post-merge
+
+**Merge en `main` ≠ tarea terminada.**
+
+Al cerrar un `bug-fix`, `feature` o `refactorization`:
+
+## Definición de Done
+
+```text
+Done = merge en main
+     + validacion.md con merged_pr, merge_commit, closed, pbi_archived: true
+     + PBI movido a docs/todos/done/
+     + commit documental pusheado a main
+```
+
+## Pasos obligatorios (post-merge)
+
+1. Actualizar `{persist_ref}/validacion.md` — Fase B de `features-documentation-pattern`.
+2. Mover PBI de `docs/todos/pending/` → `docs/todos/done/` (mismo `document_id`).
+3. **Commitear y pushear** esos cambios documentales (excepción a la regla de no commitear proactivamente).
+
+## Prohibido
+
+- Declarar el fix/feature cerrado dejando PBI o `validacion.md` post-merge solo en working tree local.
+- Omitir `merged_pr` / `merge_commit` en `validacion.md` cuando el merge ya ocurrió.
+
+## Ejemplo de commit
+
+```text
+docs: cerrar PBI event-pending-sweeper post-merge PR #29
+```

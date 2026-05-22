@@ -4,6 +4,9 @@ created: "2026-05-22"
 process: bug-fix
 branch: fix/event-pending-sweeper
 global: APTO
+merged_pr: 29
+merge_commit: 0ba2ac7e608db36321a51aefe4e9c1550a3d22c6
+closed: "2026-05-22"
 checks:
   CA1-emit-watcher-purge: pass
   CA2-dead-letter-kaizen: pass
