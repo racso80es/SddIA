@@ -156,9 +156,16 @@ def main() -> int:
     processing_header = repo / bus["processing"] / f"{event_id}.json"
     report["witnesses_processed"] = [p.name for p in witnesses]
     report["processing_header_created"] = processing_header.is_file()
+    sweep = route_result.get("data", {}).get("sweep") or {}
     report["parent_still_pending"] = pending.is_file()
+    report["sweep"] = sweep
+    report["parent_purged"] = not pending.is_file()
     report["dispatch_mode"] = route_result.get("data", {}).get("dispatch_mode")
-    report["success"] = bool(route_result.get("success")) and len(witnesses) > 0
+    report["success"] = (
+        bool(route_result.get("success"))
+        and not pending.is_file()
+        and sweep.get("status") == "purged"
+    )
 
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=False))

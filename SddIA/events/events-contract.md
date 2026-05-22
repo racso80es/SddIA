@@ -91,7 +91,8 @@ flowchart TB
 3. El orquestador materializa cabecera en `processing/` y testigos en `processing/subscribers/`.
 4. Fan-out **asíncrono** a suscriptores (`event-subscriptions.json`); promoción de testigos a `processed/subscribers/` o `dead-letter/subscribers/` con metadata de resultado.
 5. Réplicas de cabecera en `processed/` o `dead-letter/` según consenso por suscriptor; purga de `processing/` al cerrar todos.
-6. `event-sweeper.py` purga el padre en `pending/` cuando todos los suscriptores requeridos están terminales y no hay fan-out in-flight.
+6. Tras consenso de suscriptores, `route-domain-event` invoca `try_sweep_event()` para purgar el padre en `pending/` de forma inmediata.
+7. `event-sweeper.py` actúa como recolector periódico de eventos stale o no cerrados en el paso anterior; alerta Kaizen si hay `dead-letter/`.
 
 ## 5. Aseguramiento forense de payload (laudo Ola C)
 
