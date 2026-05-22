@@ -29,9 +29,9 @@ Blueprint para Tekton. Entradas: `objectives.md`, `clarify.md`, `spec.md`.
 | Clarificación (Mayeuta) | ✅ | `clarify.md` D1–D12 |
 | Especificación (Dedalo) | ✅ | `spec.md` v2 |
 | Planificación (Dedalo) | ✅ | este documento v2 |
-| **Hito 0.1** — Cargador jerárquico | ⏳ | `env_loader.py` |
-| **Hito 0.2** — Entrypoints + IOTA | ⏳ | `execute-process.py`, `execute_process_capsules.py`, `index.ts` |
-| **Hito 0.3** — Sanitización | ⏳ | `.gitignore`, grep `.env` dispersos |
+| **Hito 0.1** — Cargador jerárquico | ✅ | `env_loader.py` |
+| **Hito 0.2** — Entrypoints + IOTA | ✅ | commits `42b1a44`, `55f5f82` |
+| **Hito 0.3** — Sanitización | ✅ | `.gitignore`, Cúmulo, starter-kit |
 | Implementación documental | ⏳ | `implementation.md`, `execution.md` |
 | Verificación (Argos) | ⏳ | `validacion.md` |
 
