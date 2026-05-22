@@ -1,9 +1,0 @@
-{
-  "process_name": "feature",
-  "process_inputs": {
-    "feature_name": "refactor-execute-process-engine",
-    "description": "Refactorizacion de execute-process.py para convertirlo en un interprete dinamico y ciego basado en contratos MD",
-    "branch_name": "feat/refactor-execute-process-engine",
-    "refined_requirements": "Refactorizacion de execute-process.py para convertirlo en un interprete dinamico y ciego basado en contratos MD"
-  }
-}
