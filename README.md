@@ -64,7 +64,7 @@ Si existen **ambas** bóvedas, el runtime registra en stderr: `[CONFIG] Jerarqu�
 
 Las cápsulas (p. ej. `iota-immutable-publisher`) **consumen** `process.env` / `os.environ` ya inyectado; **prohibido** `dotenv` local en el directorio del tool.
 
-**Plantillas:** `SddIA/scripts/starter-kit/.SddIA/.dev/.env.example` (instancia). Copiar a `.SddIA/.dev/.env` en la raíz del workspace. Variables habituales: `IOTA_WALLET_SECRET`, `IOTA_ANCHOR_PACKAGE_ID`, `SDDIA_LAB_SIMULATE_IOTA`, `SDDIA_IOTA_TIMEOUT_SECONDS`.
+**Plantillas:** `.dev/.env.example` (global) y `SddIA/scripts/starter-kit/.SddIA/.dev/.env.example` (instancia). Copiar a `.dev/.env` y `.SddIA/.dev/.env` en la raíz del workspace. Variables habituales en instancia: `IOTA_WALLET_SECRET`, `IOTA_ANCHOR_PACKAGE_ID`; en global: `SDDIA_ENV`, flags `SDDIA_LAB_*`, `PYTHONUTF8`, `SDDIA_IOTA_TIMEOUT_SECONDS`.
 
 **Migración desde legacy:** mover contenido de `SddIA/scripts/tools/iota-immutable-publisher/.env` → `.SddIA/.dev/.env` y eliminar el fichero local de la cápsula.
 
