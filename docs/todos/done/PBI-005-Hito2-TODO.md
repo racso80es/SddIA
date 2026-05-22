@@ -73,7 +73,7 @@ Para mitigar la proliferación descontrolada de micro-skills de infraestructura,
 * [x] **TODO 7.1:** Commits atómicos en `feat/pbi-005-action-engine` (`f717a5d`, `f02b795`, `89bb001`).
 * [x] **TODO 7.2:** Merge squash a `main` — PR #8 → `caab46e`.
 * [x] **TODO 7.3:** Emisión `PullRequest_Merged` (`d121213d-4950-4927-8aae-0a9b26d6e8fb`) y procesamiento vía `event-watcher.py --once`.
-* [x] **TODO 7.4:** Actualización del manifiesto PBI padre (`docs/todos/[OPERATIVO] Planificación de Backlog_…`) v1.3.0 y `execution.md` forense.
+* [x] **TODO 7.4:** Actualización del manifiesto PBI padre (`docs/todos/pending/[OPERATIVO] Planificación de Backlog_…`) v1.3.0 y `execution.md` forense.
 
 ---
 
