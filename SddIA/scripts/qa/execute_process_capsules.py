@@ -458,6 +458,7 @@ def execute_accept_pr_phase(
 
 
 _PR_REVIEW_REQUIRED_DOCS = ("objectives.md", "spec.md", "plan.md", "implementation.md")
+_PR_REVIEW_REQUIRED_DOCS_FIX = ("objectives.md", "spec.md", "implementation.md")
 
 
 def _infer_persist_ref_from_branch(branch: str) -> str | None:
@@ -465,8 +466,15 @@ def _infer_persist_ref_from_branch(branch: str) -> str | None:
     if b.startswith("feat/"):
         return f"docs/features/{b[5:]}"
     if b.startswith("fix/"):
-        return f"docs/features/{b[4:]}"
+        return f"docs/fixes/{b[4:]}"
     return None
+
+
+def _pr_review_required_docs(persist_ref: str) -> tuple[str, ...]:
+    ref = persist_ref.strip().replace("\\", "/")
+    if ref.startswith("docs/fixes/"):
+        return _PR_REVIEW_REQUIRED_DOCS_FIX
+    return _PR_REVIEW_REQUIRED_DOCS
 
 
 def _validate_feature_documentation(repo: Path, persist_ref: str) -> list[str]:
@@ -474,7 +482,7 @@ def _validate_feature_documentation(repo: Path, persist_ref: str) -> list[str]:
     errors: list[str] = []
     if not base.is_dir():
         return [f"persist_ref inexistente: {persist_ref}"]
-    for name in _PR_REVIEW_REQUIRED_DOCS:
+    for name in _pr_review_required_docs(persist_ref):
         path = base / name
         if not path.is_file():
             errors.append(f"ausente {name}")
@@ -511,7 +519,7 @@ def capsule_pr_review_branch_prep(repo: Path, inputs: dict[str, Any], state: dic
     state["pr_branch"] = branch
     if os.environ.get("SDDIA_LAB_SKIP_GIT_CHECKOUT", "").strip().lower() in ("1", "true", "yes"):
         return {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT_CHECKOUT", "branch": branch}
-    invoke_git_manager(repo, "fetch", {"remote": "origin"})
+    invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
     invoke_git_manager(repo, "checkout", {"branch_name": branch, "create_if_not_exists": False})
     return {"branch": branch}
 
@@ -721,25 +729,84 @@ def invoke_subprocess_process(repo: Path, process_name: str, process_inputs: dic
     return body.get("data") or {}
 
 
-def is_workspace_init_phase(phase: dict[str, Any], inputs: dict[str, Any]) -> bool:
+def _workspace_task_name(inputs: dict[str, Any]) -> str | None:
+    for key in ("feature_name", "fix_name"):
+        value = inputs.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    branch = inputs.get("branch_name")
+    if isinstance(branch, str) and "/" in branch.strip():
+        prefix, slug = branch.strip().split("/", 1)
+        if prefix in ("feat", "fix") and slug.strip():
+            return slug.strip()
+    return None
+
+
+def _workspace_process_label(inputs: dict[str, Any], branch_name: str) -> str:
+    label = inputs.get("process_label")
+    if isinstance(label, str) and label.strip():
+        return label.strip()
+    if inputs.get("source_process") == "bug-fix":
+        return "bug-fix"
+    if branch_name.startswith("fix/"):
+        return "bug-fix"
+    return "feature"
+
+
+def is_workspace_init_phase(
+    phase: dict[str, Any],
+    inputs: dict[str, Any],
+    process_def: dict[str, Any] | None = None,
+) -> bool:
     delegates = phase.get("delegates_to") or []
     if not isinstance(delegates, list):
         return False
     has_git = any(isinstance(d, str) and d == "skill:git-manager" for d in delegates)
-    feature_name = inputs.get("feature_name")
-    return has_git and isinstance(feature_name, str) and bool(feature_name.strip())
+    if not has_git:
+        return False
+    if _workspace_task_name(inputs):
+        return True
+    process_name = (process_def or {}).get("name") if isinstance(process_def, dict) else None
+    branch = inputs.get("branch_name")
+    persist = inputs.get("persist_ref")
+    if process_name == "bug-fix" and isinstance(branch, str) and branch.strip():
+        if isinstance(persist, str) and persist.strip():
+            return True
+    return False
 
 
 def run_workspace_init(
     repo: Path,
     inputs: dict[str, Any],
 ) -> dict[str, Any]:
-    """Handler genérico: fase con git-manager + feature_name → rama + objectives.md."""
-    feature_name = str(inputs["feature_name"]).strip()
-    branch_name = inputs.get("branch_name") or f"feat/{feature_name}"
+    """Handler genérico: fase git-manager → rama + objectives.md (feature o bug-fix)."""
+    task_name = _workspace_task_name(inputs)
+    branch_name = inputs.get("branch_name")
+    if not isinstance(branch_name, str) or not branch_name.strip():
+        if task_name:
+            branch_name = f"feat/{task_name}"
+        else:
+            raise ValueError("branch_name inválido")
+    else:
+        branch_name = branch_name.strip()
+    process_label = _workspace_process_label(inputs, branch_name)
+    if not task_name:
+        if "/" in branch_name:
+            task_name = branch_name.split("/", 1)[1]
+        else:
+            task_name = branch_name
+    default_prefix = "fix" if process_label == "bug-fix" else "feat"
+    if not branch_name.startswith(f"{default_prefix}/"):
+        branch_name = f"{default_prefix}/{task_name}"
     base_branch = inputs.get("base_branch") or "main"
-    persist_ref = inputs.get("persist_ref") or f"docs/features/{feature_name}"
-    refined = inputs.get("refined_requirements") or inputs.get("description") or ""
+    default_docs = "docs/fixes" if process_label == "bug-fix" else "docs/features"
+    persist_ref = inputs.get("persist_ref") or f"{default_docs}/{task_name}"
+    refined = (
+        inputs.get("refined_requirements")
+        or inputs.get("bug_summary")
+        or inputs.get("description")
+        or ""
+    )
 
     if not isinstance(branch_name, str) or not branch_name.strip():
         raise ValueError("branch_name inválido")
@@ -795,19 +862,17 @@ def run_workspace_init(
     objectives_path = persist_dir / "objectives.md"
     created = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     if not objectives_path.is_file():
-        summary = refined.strip() if isinstance(refined, str) else f"Feature {feature_name}"
-        process_label = inputs.get("process_label") or "feature"
+        summary = refined.strip() if isinstance(refined, str) else f"{process_label} {task_name}"
         objectives_path.write_text(
             f"""---
-feature_name: {feature_name}
+feature_name: {task_name}
 created: "{created}"
 process: {process_label}
 branch_name: {branch_name.strip()}
 persist_ref: {persist_ref.strip()}
-pbi_ref: {inputs.get("pbi_ref", "PBI-005")}
 ---
 
-# Objetivos — {feature_name}
+# Objetivos — {task_name}
 
 ## Misión
 
@@ -826,7 +891,9 @@ Inicialización de contexto vía intérprete dinámico `execute-process.py` (lab
         )
 
     return {
-        "feature_name": feature_name,
+        "feature_name": task_name,
+        "task_name": task_name,
+        "process_label": process_label,
         "branch_name": branch_name.strip(),
         "persist_ref": persist_ref.strip(),
         "objectives_path": str(objectives_path.relative_to(repo)).replace("\\", "/"),
@@ -1460,7 +1527,7 @@ def execute_phase(
         "delegates_to": delegates,
     }
 
-    if is_workspace_init_phase(phase, inputs):
+    if is_workspace_init_phase(phase, inputs, process_def):
         result = run_workspace_init(repo, inputs)
         entry["status"] = "executed"
         entry["handler"] = "workspace-init"
