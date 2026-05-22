@@ -32,7 +32,7 @@ status: in_progress
 | `SDDIA_LAB_PR_REVIEW_TECH_FAIL` | Fuerza fallo triaje técnico |
 | `SDDIA_LAB_PR_REVIEW_RBAC_FAIL` | Fuerza fallo Cerbero |
 | `SDDIA_LAB_PR_REVIEW_KAIZEN` | Genera TODO Kaizen |
-| `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF` | Omite encadenar `accept-pr` (default watcher) |
+| `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF` | `0` = encadena `accept-pr` tras aduana (default watcher y lab); `1` = solo simular handoff |
 | `SDDIA_LAB_SIMULATE_IOTA` | IOTA simulado en watcher |
 
 ## Pendiente

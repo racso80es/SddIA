@@ -32,7 +32,7 @@ process: feature
 
 ```powershell
 $env:SDDIA_LAB_SKIP_GIT_CHECKOUT='1'
-$env:SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF='1'
+$env:SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF='0'   # default watcher; encadena accept-pr
 python SddIA/scripts/qa/execute-process.py --process pull-request-review `
   --inputs-file docs/features/pull-request-review-redesign/_smoke-pr-review-presented.json
 ```

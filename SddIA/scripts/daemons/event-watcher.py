@@ -186,7 +186,7 @@ def _dispatch_subscriber(
         inferred = _infer_persist_ref_from_branch(branch)
         if inferred:
             process_inputs["persist_ref"] = inferred
-        os.environ.setdefault("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "1")
+        os.environ.setdefault("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0")
         try:
             proc = _run_subprocess(
                 [

@@ -33,7 +33,7 @@ git_changes:
 | V3 | Violación simulada → `delivery_state: failed` | ✅ | `SDDIA_LAB_PR_REVIEW_DOC_FAIL` |
 | V4 | `PullRequest_Presented` → watcher → aduana | ✅ | evento `62bcb6e1-…` |
 | V5 | Kaizen no bloqueante | ✅ | `SDDIA_LAB_PR_REVIEW_KAIZEN` |
-| V6 | Handoff sin merge duplicado | ✅ | `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF` default watcher |
+| V6 | Handoff → `accept-pr` (sin merge en aduana) | ✅ | default `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF=0`; cierre PR #15 |
 
 ## Eventos bus (E2E)
 
