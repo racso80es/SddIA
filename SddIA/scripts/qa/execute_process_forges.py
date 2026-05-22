@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any, Callable
 
@@ -161,12 +162,54 @@ hash_signature: "{hash_sig}"
     }
 
 
+def _sha256_phases_integrity(phases: list[Any]) -> str:
+    """Alineado con verify-process-integrity / recalc-process-hash-signatures."""
+    import hashlib
+
+    canon = json.dumps(phases, separators=(",", ":"), ensure_ascii=False, sort_keys=True)
+    return f"sha256:{hashlib.sha256(canon.encode('utf-8')).hexdigest()}"
+
+
+def _refresh_process_hash(repo: Path, process_path: Path) -> tuple[str | None, str]:
+    fm = parse_frontmatter(process_path)
+    old_hash = fm.get("hash_signature")
+    phases = fm.get("phases")
+    if not isinstance(phases, list):
+        phases = [{"name": "Fase inicial", "intent": "update"}]
+    new_hash = _sha256_phases_integrity(phases)
+    text = process_path.read_text(encoding="utf-8")
+    if isinstance(old_hash, str) and old_hash in text:
+        text = text.replace(f"hash_signature: {old_hash}", f"hash_signature: {new_hash}", 1)
+    else:
+        text = re.sub(
+            r"^hash_signature:\s*.+$",
+            f"hash_signature: {new_hash}",
+            text,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    process_path.write_text(text, encoding="utf-8")
+    return (str(old_hash) if old_hash else None, new_hash)
+
+
 def run_process_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
     name = inputs.get("process_name") or inputs.get("entity_name")
     if not isinstance(name, str) or not name:
         raise ValueError("process_name requerido")
     process_path = repo / "SddIA" / "process" / f"{name}.md"
     lifecycle = inputs.get("lifecycle_operation", "create")
+
+    if lifecycle == "update" and process_path.is_file():
+        fm = parse_frontmatter(process_path)
+        old_hash, new_hash = _refresh_process_hash(repo, process_path)
+        version = str(fm.get("version") or inputs.get("process_version") or "1.0.0")
+        return {
+            "handoff_entity_uuid": fm.get("uuid"),
+            "handoff_hash_signature_new": new_hash,
+            "handoff_hash_signature_old": old_hash,
+            "handoff_version": version,
+        }
+
     skip = idempotent_forge_handoff(repo, process_path, lifecycle)
     if skip:
         return skip

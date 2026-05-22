@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Recolector inerte del bus EDA V3: purga padres completados y alerta dead-letter.
-
-Escanea .events/pending/ y cruza suscriptores requeridos (event-subscriptions.json)
-con testigos en subscribers/processed/ y subscribers/dead-letter/.
-
-Uso:
-  python SddIA/scripts/daemons/event-sweeper.py --once
-  python SddIA/scripts/daemons/event-sweeper.py          # bucle continuo
-"""
+"""Recolector inerte del bus EDA V3+: purga padres completados y alerta dead-letter."""
 
 from __future__ import annotations
 
@@ -25,10 +17,14 @@ if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
 from eda_bus_utils import (  # noqa: E402
-    archive_processed_witnesses,
+    archive_event_after_sweep,
     ensure_event_bus_topology,
+    in_flight_subscriber_names,
     list_witnesses,
     required_subscriber_ids,
+    resolve_origin_topology,
+    subscriber_applies_to_topology,
+    subscriber_id,
 )
 
 POLL_SECONDS = 5
@@ -50,12 +46,22 @@ def _load_registry(repo: Path, bus: dict[str, str]) -> dict[str, Any]:
 
 def _processed_subscriber_names(repo: Path, bus: dict[str, str], event_uuid: str) -> set[str]:
     names: set[str] = set()
-    for path in list_witnesses(repo, bus, "subscriber_processed", event_uuid):
-        # {uuid}.{subscriber}.json
+    for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid):
         suffix = path.name[len(event_uuid) + 1 : -5]
         if suffix:
             names.add(suffix)
     return names
+
+
+def _required_for_event(
+    registry: dict[str, Any], event_type: str, payload: dict[str, Any]
+) -> list[str]:
+    origin = resolve_origin_topology(payload)
+    ids: list[str] = []
+    for sub in registry.get(event_type) or []:
+        if isinstance(sub, dict) and subscriber_applies_to_topology(sub, origin):
+            ids.append(subscriber_id(sub))
+    return ids
 
 
 def _emit_kaizen_alert(event_uuid: str, event_type: str, witnesses: list[Path]) -> None:
@@ -86,11 +92,7 @@ def sweep_once(repo: Path) -> dict[str, Any]:
     bus = ensure_event_bus_topology(repo)
     pending_dir = repo / bus["pending"]
     registry = _load_registry(repo, bus)
-    report: dict[str, Any] = {
-        "purged": [],
-        "kaizen_alerts": [],
-        "skipped": [],
-    }
+    report: dict[str, Any] = {"purged": [], "kaizen_alerts": [], "skipped": []}
 
     if not pending_dir.is_dir():
         return report
@@ -108,22 +110,37 @@ def sweep_once(repo: Path) -> dict[str, Any]:
             report["skipped"].append({"event_uuid": event_uuid, "reason": "missing-event_type"})
             continue
 
-        dead = list_witnesses(repo, bus, "subscriber_dead_letter", event_uuid)
+        payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+
+        dead = list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid)
         if dead:
             _emit_kaizen_alert(event_uuid, event_type, dead)
             report["kaizen_alerts"].append(event_uuid)
             continue
 
-        required = required_subscriber_ids(registry, event_type)
+        required = _required_for_event(registry, event_type, payload)
         if not required:
-            report["skipped"].append({"event_uuid": event_uuid, "reason": "no-subscribers"})
+            legacy = required_subscriber_ids(registry, event_type)
+            if not legacy:
+                report["skipped"].append({"event_uuid": event_uuid, "reason": "no-subscribers"})
+                continue
+            required = legacy
+
+        in_flight = in_flight_subscriber_names(repo, bus, event_uuid)
+        if in_flight & set(required):
+            report["skipped"].append(
+                {
+                    "event_uuid": event_uuid,
+                    "reason": "subscribers-in-flight",
+                    "in_flight": sorted(in_flight & set(required)),
+                }
+            )
             continue
 
         done = _processed_subscriber_names(repo, bus, event_uuid)
         if set(required).issubset(done):
-            parent_path.unlink(missing_ok=True)
-            archived = archive_processed_witnesses(repo, bus, event_uuid)
-            report["purged"].append({"event_uuid": event_uuid, "witnesses_archived": archived})
+            archived = archive_event_after_sweep(repo, bus, event_uuid)
+            report["purged"].append({"event_uuid": event_uuid, **archived})
         else:
             pending = sorted(set(required) - done)
             report["skipped"].append(
@@ -134,9 +151,9 @@ def sweep_once(repo: Path) -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="event-sweeper — recolector bus EDA V3")
-    parser.add_argument("--once", action="store_true", help="Un solo ciclo de barrido")
-    parser.add_argument("--json", action="store_true", help="Imprimir informe JSON en stdout")
+    parser = argparse.ArgumentParser(description="event-sweeper — recolector bus EDA V3+")
+    parser.add_argument("--once", action="store_true")
+    parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
 
     repo = _repo_root()

@@ -152,9 +152,12 @@ def main() -> int:
     report["steps"].append({"route": route_result})
 
     event_id = event_id or Path(rel).stem
-    witnesses = list_witnesses(repo, bus, "subscriber_processed", event_id)
+    witnesses = list_witnesses(repo, bus, "processed_subscribers", event_id)
+    processing_header = repo / bus["processing"] / f"{event_id}.json"
     report["witnesses_processed"] = [p.name for p in witnesses]
+    report["processing_header_created"] = processing_header.is_file()
     report["parent_still_pending"] = pending.is_file()
+    report["dispatch_mode"] = route_result.get("data", {}).get("dispatch_mode")
     report["success"] = bool(route_result.get("success")) and len(witnesses) > 0
 
     if args.json:

@@ -58,11 +58,9 @@
   "event_bus": "./.events",
   "eda_bus": {
     "pending": "./.events/pending",
-    "subscribers": {
-      "processing": "./.events/subscribers/processing",
-      "processed": "./.events/subscribers/processed",
-      "dead_letter": "./.events/subscribers/dead-letter"
-    },
+    "processing": "./.events/processing",
+    "processed": "./.events/processed",
+    "dead_letter": "./.events/dead-letter",
     "subscriptions": "SddIA/core/event-subscriptions.json"
   },
   "eda_instance": {

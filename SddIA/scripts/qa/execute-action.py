@@ -55,6 +55,7 @@ ACTION_AGENT: dict[str, str] = {
     "emit-domain-mutation": "eda-bus",
     "materialize-fracture-pbi": "cumulo",
     "enrich-fracture-pbi-kaizen": "mayeuta",
+    "route-domain-event": "eda-bus",
 }
 
 
@@ -674,6 +675,41 @@ def _run_enrich_fracture_pbi_kaizen(
     }
 
 
+def _run_route_domain_event_shim(
+    repo: Path, inputs: dict[str, Any], _action_def: dict[str, Any]
+) -> dict[str, Any]:
+    rel = inputs.get("event_file_path")
+    if not isinstance(rel, str) or not rel.strip():
+        return {"success": False, "error": "event_file_path requerido"}
+    runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(runner),
+            "--process",
+            "route-domain-event",
+            "--inputs",
+            json.dumps({"event_file_path": rel.strip()}, ensure_ascii=False),
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+    )
+    line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
+    if not line:
+        return {"success": False, "error": proc.stderr or "execute-process sin salida"}
+    envelope = json.loads(line)
+    data = envelope.get("data") or {}
+    return {
+        "success": bool(envelope.get("success")) and envelope.get("status_code", 1) == 0,
+        **data,
+        "shim": "process:route-domain-event",
+    }
+
+
 PHYSICAL_HANDLERS: dict[str, Any] = {
     "sync-entity-index": _run_sync_entity_index,
     "emit-pr-merged-event": _run_emit_pr_merged,
@@ -681,6 +717,7 @@ PHYSICAL_HANDLERS: dict[str, Any] = {
     "emit-domain-mutation": _run_emit_domain_mutation,
     "materialize-fracture-pbi": _run_materialize_fracture_pbi,
     "enrich-fracture-pbi-kaizen": _run_enrich_fracture_pbi_kaizen,
+    "route-domain-event": _run_route_domain_event_shim,
 }
 
 

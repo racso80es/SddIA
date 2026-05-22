@@ -738,7 +738,7 @@ def invoke_subprocess_process(repo: Path, process_name: str, process_inputs: dic
 
 
 def _workspace_task_name(inputs: dict[str, Any]) -> str | None:
-    for key in ("feature_name", "fix_name"):
+    for key in ("feature_name", "fix_name", "refactor_name"):
         value = inputs.get(key)
         if isinstance(value, str) and value.strip():
             return value.strip()
@@ -750,11 +750,17 @@ def _workspace_task_name(inputs: dict[str, Any]) -> str | None:
     return None
 
 
-def _workspace_process_label(inputs: dict[str, Any], branch_name: str) -> str:
+def _workspace_process_label(
+    inputs: dict[str, Any],
+    branch_name: str,
+    process_name: str | None = None,
+) -> str:
     label = inputs.get("process_label")
     if isinstance(label, str) and label.strip():
         return label.strip()
-    if inputs.get("source_process") == "bug-fix":
+    if process_name == "refactorization" or inputs.get("source_process") == "refactorization":
+        return "refactorization"
+    if process_name == "bug-fix" or inputs.get("source_process") == "bug-fix":
         return "bug-fix"
     if branch_name.startswith("fix/"):
         return "bug-fix"
@@ -790,8 +796,9 @@ def is_workspace_init_phase(
 def run_workspace_init(
     repo: Path,
     inputs: dict[str, Any],
+    process_name: str | None = None,
 ) -> dict[str, Any]:
-    """Handler genérico: fase git-manager → rama + objectives.md (feature o bug-fix)."""
+    """Handler genérico: fase git-manager → rama + objectives.md (feature, bug-fix o refactorization)."""
     task_name = _workspace_task_name(inputs)
     branch_name = inputs.get("branch_name")
     if not isinstance(branch_name, str) or not branch_name.strip():
@@ -801,7 +808,7 @@ def run_workspace_init(
             raise ValueError("branch_name inválido")
     else:
         branch_name = branch_name.strip()
-    process_label = _workspace_process_label(inputs, branch_name)
+    process_label = _workspace_process_label(inputs, branch_name, process_name)
     if not task_name:
         if "/" in branch_name:
             task_name = branch_name.split("/", 1)[1]
@@ -815,6 +822,7 @@ def run_workspace_init(
     persist_ref = inputs.get("persist_ref") or f"{default_docs}/{task_name}"
     refined = (
         inputs.get("refined_requirements")
+        or inputs.get("refactor_goal")
         or inputs.get("bug_summary")
         or inputs.get("description")
         or ""
@@ -1560,7 +1568,8 @@ def execute_phase(
     }
 
     if is_workspace_init_phase(phase, inputs, process_def):
-        result = run_workspace_init(repo, inputs)
+        proc_name = process_def.get("name") if isinstance(process_def, dict) else None
+        result = run_workspace_init(repo, inputs, str(proc_name) if proc_name else None)
         entry["status"] = "executed"
         entry["handler"] = "workspace-init"
         entry.update({k: result[k] for k in ("git_steps", "objectives_path", "branch_name") if k in result})
@@ -1656,6 +1665,37 @@ def execute_phase(
 def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -> dict[str, Any]:
     load_hierarchical_env(repo)
     canonical, process_def, phases = load_process_def(repo, process_name)
+    if canonical == "route-domain-event":
+        from route_domain_event_core import route_domain_event
+
+        rel = process_inputs.get("event_file_path")
+        if not isinstance(rel, str) or not rel.strip():
+            return {
+                "success": False,
+                "status_code": 1,
+                "data": None,
+                "error": "event_file_path requerido",
+                "execution_report": {"process_name": canonical, "phases": []},
+            }
+        out = route_domain_event(repo, rel.strip())
+        ok = bool(out.get("success")) and out.get("exitCode", 1) == 0
+        return {
+            "success": ok,
+            "status_code": out.get("exitCode", 0 if ok else 1),
+            "data": out.get("data"),
+            "error": out.get("error"),
+            "execution_report": {
+                "process_name": canonical,
+                "phases": [
+                    {
+                        "phase_name": "Orquestación route-domain-event",
+                        "status": "executed",
+                        "handler": "route-domain-event-core",
+                        "dispatch_mode": (out.get("data") or {}).get("dispatch_mode"),
+                    }
+                ],
+            },
+        }
     if canonical == "pull-request-review":
         _normalize_pr_review_inputs(repo, process_inputs)
     validate_process_inputs(process_def, process_inputs, canonical)
