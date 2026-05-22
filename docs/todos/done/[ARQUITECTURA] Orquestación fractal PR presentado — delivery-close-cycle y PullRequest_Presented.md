@@ -16,6 +16,7 @@ related:
   - SddIA/actions/emit-pr-presented-event.md
   - SddIA/process/delivery-close-cycle.md
   - SddIA/process/accept-pr.md
+  - docs/todos/done/[ARQUITECTURA] Acción request-change-incorporation — PR y evento PullRequest_Presented.md
 ---
 
 # TODO: Orquestación fractal PR presentado — CERRADO

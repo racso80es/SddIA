@@ -12,9 +12,9 @@ status: entregado
 
 # PBI — Ola C V3: Genoma de Eventos y Coreografía Asíncrona
 
-Documento de seguimiento operativo del PBI de arquitectura. Complementa el PDF homónimo en esta carpeta con el estado **real** de implementación tras el merge en `main`.
+Documento de seguimiento operativo del PBI de arquitectura. Complementa el PDF homónimo en `docs/todos/` con el estado **real** de implementación tras el merge en `main`.
 
-**Trazabilidad feature:** [docs/features/ola-c-event-entity/](../features/ola-c-event-entity/)  
+**Trazabilidad feature:** [docs/features/ola-c-event-entity/](../../features/ola-c-event-entity/)  
 **PR cerrado:** [#5](https://github.com/racso80es/SddIA/pull/5) → merge `35cd940`
 
 ---

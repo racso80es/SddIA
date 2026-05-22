@@ -70,7 +70,7 @@ Garantizar que **toda** mutación de entidad catalogada en el genoma SddIA (`cre
 
 ### Deuda relacionada (laboratorio)
 
-- [ ] Handler físico del proceso `feature` — ver `docs/todos/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md`.
+- [x] Handler físico del proceso `feature` — cerrado; ver `docs/todos/done/[ARQUITECTURA] Laboratorio — Handler físico proceso feature.md` (sustituido por `workspace-init`, PR #9).
 
 ## Referencias
 
