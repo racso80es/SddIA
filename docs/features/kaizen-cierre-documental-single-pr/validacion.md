@@ -3,6 +3,7 @@ feature_name: kaizen-cierre-documental-single-pr
 created: "2026-05-22"
 process: feature
 branch: feat/kaizen-cierre-documental-single-pr
+pr_url: https://github.com/racso80es/SddIA/pull/34
 global: APTO
 pbi_archived: true
 checks:

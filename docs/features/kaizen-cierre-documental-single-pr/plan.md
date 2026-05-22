@@ -14,7 +14,7 @@ process: feature
 | H3 | `.cursor/rules/task-closure-documental.mdc` | [x] |
 | H4 | `verify-task-closure.py` | [x] |
 | H5 | `validacion.md` + PBI en `done/` en rama feature | [x] |
-| H6 | Un solo PR + `delivery-close-cycle` | [ ] |
+| H6 | Un solo PR + `delivery-close-cycle` | [x] |
 
 ## Orden Tekton
 
