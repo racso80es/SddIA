@@ -7,7 +7,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:731e82bccf22faaf44d97cf4688f1e83e817db45f3936d99a666dddaf89ad058
+hash_signature: sha256:189d4fde0fcd0efc6cb2e7da052dd9cad86c07a159b70012c3ece87b0100caaf
 inputs:
 - feature_name: Nombre kebab-case o etiqueta humana de la feature
 - refined_requirements: Requisitos crudos o semi-refinados de entrada
