@@ -65,6 +65,14 @@ porcentaje_de_exito: null
 
 # codex-creator
 
+## Directriz de ejecución obrera
+
+Antes de ejecutar fases de forja, el runtime IDE **debe** anteponer al contexto de Tekton el prefijo definido en `SddIA/norms/external-ai-constraints.md` § Prefijo creator:
+
+> [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
+
+Prohibido delegar forja manual en el agente cuando exista proceso creator aplicable.
+
 Proceso **creator** para la entidad **`domain-codex`** (`Library_Codex`): ensambla códices de dominio agrupando **Normas Atómicas** y fijando filosofía de ejecución para un entorno técnico concreto, innegociablemente alineado a **`codex-contract.md`** (`contracts.library_codexes`).
 
 ## Fase 1 — Selección y Triaje (Inventario)

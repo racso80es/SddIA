@@ -51,6 +51,14 @@ porcentaje_de_exito: null
 
 # agent-creator
 
+## Directriz de ejecución obrera
+
+Antes de ejecutar fases de forja, el runtime IDE **debe** anteponer al contexto de Tekton el prefijo definido en `SddIA/norms/external-ai-constraints.md` § Prefijo creator:
+
+> [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
+
+Prohibido delegar forja manual en el agente cuando exista proceso creator aplicable.
+
 Proceso maestro para instanciar nuevas identidades operativas (Agentes) en el Core SddIA, validar políticas contra la matriz Cerbero, materializar la definición bajo `agents-contract` y mantener el índice soberano del directorio `agents`.
 
 ## Fase 1 — Auditoría de Gobernanza

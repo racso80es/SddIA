@@ -1,6 +1,6 @@
 [ARQUITECTURA] Blindaje Ontológico — Restricciones Duras y Enrutamiento Forzado para IA Obrera (Cursor/Jules)
 
-0. Pendiente de analizar con CUrsor
+0. ✅ Analizado e implementado — feature `docs/features/ia-obrera-blindaje/` (Fases A + B)
 
 1. Objetivo:
 Erradicar la "Entropía Táctica" generada por IAs de asistencia externa. Garantizar que agentes como Cursor o Jules sean incapaces de mutar el genoma SddIA por su cuenta y se vean forzados, bajo estricta directriz, a invocar la cápsula execute-process.py para cualquier modificación de dominio.
@@ -23,7 +23,7 @@ Acción: Los prompts generados por *-creator (ej. tool-creator, action-creator) 
 
 Ejemplo de Prefijo: [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
 
-4. Fase C — La Aduana Física (Argos Gatekeeper) — **🟡 PARCIAL**
+4. Fase C — La Aduana Física (Argos Gatekeeper) — **✅ COMPLETA**
 
 Acción: Ejecutar aduana EDA e integridad de procesos como gate de commit y ciclo PR.
 
@@ -31,4 +31,4 @@ Acción: Ejecutar aduana EDA e integridad de procesos como gate de commit y cicl
 |---------|--------|-----------|
 | `pre-commit` — VPI + Existencia en Bus | ✅ | PR #12 — `pre_commit_gate.py` |
 | Hooks `pre-push` / `post-merge` | ✅ | PR #13 — Ola B CA-3 |
-| Norma `external-ai-constraints.md` | ⏳ | Fase A pendiente |
+| Norma `external-ai-constraints.md` | ✅ | Fase A — feature `ia-obrera-blindaje` |

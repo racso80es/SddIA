@@ -71,6 +71,14 @@ porcentaje_de_exito: null
 
 # skill-creator
 
+## Directriz de ejecución obrera
+
+Antes de ejecutar fases de forja, el runtime IDE **debe** anteponer al contexto de Tekton el prefijo definido en `SddIA/norms/external-ai-constraints.md` § Prefijo creator:
+
+> [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
+
+Prohibido delegar forja manual en el agente cuando exista proceso creator aplicable.
+
 Proceso maestro para estandarizar y automatizar la creación de nuevas skills (definición física y lógica) en el Core SddIA.
 
 Invocable directamente o desde **`entity-manager`** (piloto v1). Tras indexación síncrona, el gestor emite `emit-domain-mutation` con `emitter_agent: entity-manager` usando los outputs de handoff declarados en cabecera YAML.

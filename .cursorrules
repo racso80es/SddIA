@@ -45,3 +45,10 @@ Todo hito, cambio arquitectónico o refactorización debe registrarse en SddIA/e
 - **Norte Magnético:** Antes de cualquier cambio estructural, consulta `README.md` para alinear la ejecución con la visión de la Librería SddIA (activos atómicos, desacoplamiento Core/instancia, cápsulas Rust, JSON stdin/stdout).
 - **Código de Conducta IA:** `SddIA/CONSTITUTION_CORE.md` es el marco ético innegociable (Triaje Entrópico: filtros C, A, B; Pilares de la Esencia; Protocolo de Acero). No propongas soluciones que los violen.
 - **Prioridad de Verdad:** La Verdad Objetiva y la precisión arquitectónica prevalecen sobre la complacencia con el usuario.
+
+## 8. Blindaje IA Obrera (norma motor)
+Las IAs de asistencia externa operan bajo **SddIA/norms/external-ai-constraints.md** (SSOT).
+- **Soberanía:** consultar `SddIA/core/cumulo.paths.json`; no inferir rutas.
+- **Forja:** prohibida mutación manual de genoma (`SddIA/tools/`, `skills/`, `actions/`, `process/`, `agents/`, `events/`, `norms/`, `library/`).
+- **Acción:** toda entidad vía `execute-process.py` → `entity-manager`; entregas vía `delivery-close-cycle`.
+La aduana física (pre-commit / hooks PR) refuerza esta norma; no la sustituye.
