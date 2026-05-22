@@ -7,7 +7,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:3c2f6fd64dc559a2463d46bd371ef54417404cdab49480511e016aad7535a19c
+hash_signature: sha256:2bee0aa5aa6bb21cfc98226f40f329f5a6c73f81b14e9a140ea40b3deed3d7bb
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)

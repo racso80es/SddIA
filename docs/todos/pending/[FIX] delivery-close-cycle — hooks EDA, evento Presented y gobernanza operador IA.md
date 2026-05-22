@@ -4,7 +4,7 @@ title: "[FIX] delivery-close-cycle — hooks EDA, evento PullRequest_Presented y
 format: markdown
 version: "1.0.0"
 created: "2026-05-22"
-status: "abierto"
+status: "en-progreso"
 priority: alta
 process: bug-fix
 incident_ref: "PR #20 — ampliacion-configuracion-entornos (merge f0ef7bf sin bus EDA)"
@@ -20,6 +20,11 @@ related:
   - docs/features/pr-presented-orchestration/
   - docs/features/ampliacion-configuracion-entornos/validacion.md
   - docs/todos/pending/AmpliacionConfiguracionEntornos.md
+  - docs/fixes/delivery-close-hook-eda-governance/
+  - SddIA/events/system-fracture-detected.md
+  - SddIA/actions/materialize-fracture-pbi.md
+  - SddIA/actions/enrich-fracture-pbi-kaizen.md
+  - SddIA/norms/obediencia-procesos.md
 ---
 
 # [FIX] delivery-close-cycle — hooks EDA, evento Presented y gobernanza operador IA
@@ -33,8 +38,9 @@ Este documento **es** el PBI en `docs/todos/pending`. Debe iniciarse como **`bug
 | **O1** | **Corregir** `delivery-close-cycle` invocado desde hook `pre-push` | Push de feature no entra en bucle recursivo; proceso termina en ≤1 ciclo con sello `PullRequest_Presented` |
 | **O2** | **Restaurar** trazabilidad EDA del incidente PR #20 | `PullRequest_Presented` + `PullRequest_Merged` correlacionados con `feat/ampliacion-configuracion-entornos` / PR #20 en bus (`processed/`) |
 | **O3** | **Gobernanza operador IA** ante fallo del flujo SddIA | Regla explícita: prohibido `gh pr create` / `gh pr merge` / `SDDIA_SKIP_HOOKS` como cierre sin PBI previo en `docs/todos/pending/` |
-| **O4** | **Runbook de escalado** | Checklist: fallo hook → PBI → fix → retroactivo EDA → cierre canónico |
-| **O5** | **Idempotencia Ola B** | Re-push con PR abierto o evento Presented existente no duplica sello ni re-dispara ciclo infinito |
+| **O4** | **Kintsugi EDA + Autoconocimiento** | `System_Fracture_Detected`; fan-out Cúmulo (Qué) + Mayeuta (Por Qué); backfill Fase C |
+| **O5** | **Idempotencia Ola B** | Re-push con PR abierto/MERGED o evento Presented existente no duplica sello ni re-dispara ciclo infinito |
+| **O6** | **Runbook de escalado** | Checklist: fallo hook → fractura EDA → PBI Cúmulo → fix → retroactivo EDA → cierre canónico |
 
 ---
 
@@ -82,32 +88,54 @@ git push (feature)
 
 ### Hito 1 — Anti-recursión hook + delivery-close-cycle
 
-- [ ] Variable de guarda en hook/payload: `SDDIA_HOOK_DELIVERY_CLOSE=1` o `source: git-hook-pre-push` → **omitir** push si ya dentro de ciclo hook.
-- [ ] En `delivery-close-cycle` handler lab: si `git-hook-pre-push`, push con `SDDIA_SKIP_HOOKS=1` **solo** en subproceso hijo (documentado), no global.
-- [ ] Test smoke: un push de rama `fix/smoke-hook` genera **un** `PullRequest_Presented` sin bucle.
+- [x] Variable de guarda `SDDIA_HOOK_DELIVERY_CLOSE=1` en subproceso hook + skip temprano en `pre_push_gate`.
+- [x] En `delivery-close-cycle` handler lab: si `git-hook-pre-push`, push con `SDDIA_SKIP_HOOKS=1` **solo** en subproceso hijo (documentado en `delivery-close-cycle.md`).
+- [x] Smoke lab: guarda hook verificada; sello `PullRequest_Presented` sin recursión en `tmp/`.
 
 ### Hito 2 — Retroactivo PR #20
 
-- [ ] `emit-pr-presented-event` con `branch`, `pr_url`, `emitter_agent: delivery-close-cycle-retroactive`.
-- [ ] `accept-pr` o emisión `PullRequest_Merged` con `merge_commit_hash: f0ef7bf4bb9e28e67091d70a6fba6f8fadcbf280`.
-- [ ] `event-watcher --once` → `processed/` + evidencia en `docs/fixes/.../validacion.md`.
+- [x] `PullRequest_Presented` `868d1b8f-0171-4f8f-ab72-19382941523d` (`emitter_agent: retroactive-fix`).
+- [x] `PullRequest_Merged` `75b8e950-9366-4ce5-bf22-b4b56430736e` (`merge_commit_hash: f0ef7bf…`).
+- [x] `event-watcher --once` → `processed/` + evidencia en `docs/fixes/delivery-close-hook-eda-governance/validacion.md`.
 
-### Hito 3 — Gobernanza operador IA
+### Hito 3 — Gobernanza Universal (Prohibición de Bypass Físico)
 
-- [ ] Regla en `SddIA/norms/` o `SddIA/agents/` (Tekton/Mayeuta): **si el flujo SddIA falla**, la IA **debe** crear PBI en `docs/todos/pending/` antes de bypass manual.
-- [ ] Plantilla mínima PBI: incidente, objetivos O*, proceso (`bug-fix`|`feature`), `related`, criterio de cierre.
-- [ ] Prohibición explícita en runbook: `gh pr merge` hacia `main` sin `accept-pr` salvo PBI que lo documente como deuda temporal.
-- [ ] Actualizar skill/regla Cursor del operador (si aplica) con enlace a este PBI como precedente.
+- [x] `SddIA/norms/obediencia-procesos.md` v1.1 — Ley de Jurisdicción Delegada.
+- [x] Escalado vía `System_Fracture_Detected` o PBI antes de bypass manual.
+- [x] `pull-request-orchestration.md` §7 — cross-ref Kintsugi.
+- [ ] Actualizar skill/regla Cursor del operador con enlace a este PBI *(deuda post-merge)*.
 
-### Hito 4 — Robustez Ola B
+### Hito 4 — Evento Nativo de Fractura (Kintsugi EDA y Autoconocimiento)
 
-- [ ] Verificar `should_skip_pre_push_present` cuando PR ya MERGED (evitar re-presentación).
-- [ ] Extender `resolve_persist_ref` → `docs/fixes/{slug}` para ramas `fix/*`.
-- [ ] Documentar en README § Jerarquía de Bóvedas: `PYTHONUTF8=1` en bóveda global **no** sustituye flujo EDA.
+- [x] Contrato `SddIA/events/system-fracture-detected.md` — payload: `process_name`, `error_trace`, `agent_emitter`, `attempted_action`.
+- [x] `event-subscriptions.json` — suscripción **dual** (orden fan-out):
+  - **Cúmulo** (`materialize-fracture-pbi`) — Gestor de Deuda Técnica: el **Qué** ha fallado.
+  - **Mayeuta** (`enrich-fracture-pbi-kaizen`) — Auditor Kaizen: el **Por Qué** + propuesta evolutiva.
+- [x] Reacción Cúmulo: PBI mecánico en `docs/todos/pending/` categorizado `bug-fix`.
+- [x] Reacción Mayeuta: sección **Conclusión Analítica y Propuesta Evolutiva** en el PBI de Cúmulo.
+- [x] Backfill Fase C entidades Kintsugi (`orphan_count_after: 0`).
+
+### Hito 5 — Robustez Ola B
+
+- [x] `should_skip_pre_push_present` skip si PR `OPEN` o `MERGED`.
+- [x] `resolve_persist_ref` → `docs/fixes/{slug}` para ramas `fix/*`.
+- [x] README § Jerarquía de Bóvedas: `PYTHONUTF8=1` no sustituye flujo EDA.
 
 ---
 
-## 4. Proceso de inicio
+## 4. Estado de ejecución (2026-05-22)
+
+| Campo | Valor |
+|-------|--------|
+| Rama | `fix/delivery-close-hook-eda-governance` |
+| persist_ref | `docs/fixes/delivery-close-hook-eda-governance/` |
+| Argos | **APTO** — ver `validacion.md` |
+| Smoke Kintsugi | `9216ad24-…` → `cumulo` + `mayeuta` success |
+| Pendiente cierre | Push remoto → PR → `accept-pr` → mover PBI a `done/` |
+
+---
+
+## 5. Proceso de inicio
 
 ```json
 {
@@ -122,26 +150,36 @@ git push (feature)
 
 ---
 
-## 5. Criterio de cierre del PBI
+## 6. Criterio de cierre del PBI
 
-- [ ] Argos **APTO** en `docs/fixes/delivery-close-hook-eda-governance/validacion.md`.
-- [ ] Smoke push hook → `PullRequest_Presented` en `pending/` → `processed/`.
-- [ ] PR #20 con eventos retroactivos registrados.
-- [ ] Norma/regla IA publicada y referenciada desde README o `pull-request-orchestration.md`.
-- [ ] Este TODO movido a `docs/todos/done/`.
-
----
-
-## 6. Protocolo operador (mientras el fix está abierto)
-
-1. **No** usar `SDDIA_SKIP_HOOKS=1` salvo emergencia documentada en issue/PBI.
-2. Si hook falla → **parar** → crear/actualizar PBI en `docs/todos/pending/` (como este).
-3. Cierre PR: `delivery-close-cycle` (presentación) + `accept-pr` (fusión).
-4. Bypass temporal solo con checklist O2/O5 explícito en el PBI activo.
+- [x] Argos **APTO** en `docs/fixes/delivery-close-hook-eda-governance/validacion.md`.
+- [ ] Smoke push hook remoto → `PullRequest_Presented` en `pending/` → `processed/` *(post-push rama fix)*.
+- [x] PR #20 con eventos retroactivos registrados.
+- [x] Norma IA publicada (`obediencia-procesos.md` v1.1 + `pull-request-orchestration.md` §7).
+- [ ] Este TODO movido a `docs/todos/done/` *(tras merge del fix)*.
 
 ---
 
-## 7. Referencias
+## 7. Protocolo Operador (Modo "Kintsugi Ontológico")
+
+Marco innegociable ante fallos sistémicos — vigente mientras el fix está abierto y como precedente permanente:
+
+1. **Intercepción y Emisión:** Si la IA o el flujo encuentra un bloqueo (ej. hook en pánico), la ejecución se detiene de inmediato.
+2. **El Grito del Sistema:** El proceso fallido invoca `route-domain-event` emitiendo `System_Fracture_Detected.json` en el bus.
+3. **Delegación de Deuda (Cúmulo):** Materializa el PBI — el **Qué** ha fallado.
+4. **Autoconocimiento (Mayeuta):** Enriquece el PBI con causa raíz y **Conclusión Analítica y Propuesta Evolutiva** — el **Por Qué**.
+5. **Laudo Humano:** La IA se detiene y notifica al Vértice Biológico: *"El proceso ha colapsado. Evento de fractura emitido. Cúmulo ha documentado la deuda. Mayeuta ha enriquecido el diagnóstico. A la espera de instrucciones."*
+6. **No hay Bypass Silencioso:** El flujo no avanza hasta reparación o salto táctico explícito.
+
+**Reglas tácticas adicionales:**
+
+- **No** usar `SDDIA_SKIP_HOOKS=1` salvo emergencia documentada en PBI activo.
+- Cierre PR canónico: `delivery-close-cycle` (presentación) + `accept-pr` (fusión).
+- Bypass temporal solo con checklist O2/O5/O6 explícito en el PBI activo.
+
+---
+
+## 8. Referencias
 
 | Artefacto | Ruta |
 |-----------|------|
@@ -149,4 +187,6 @@ git push (feature)
 | Proceso cierre | `SddIA/process/delivery-close-cycle.md` |
 | Proceso merge | `SddIA/process/accept-pr.md` |
 | Hook pre-push | `SddIA/scripts/qa/git-hooks/pre_push_gate.py` |
+| Evento fractura | `SddIA/events/system-fracture-detected.md` |
+| Acciones Kintsugi | `materialize-fracture-pbi`, `enrich-fracture-pbi-kaizen` |
 | Feature incidente | `docs/features/ampliacion-configuracion-entornos/` |

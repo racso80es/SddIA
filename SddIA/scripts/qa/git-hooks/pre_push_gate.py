@@ -8,6 +8,7 @@ import sys
 
 from hook_common import (
     MAIN_GUARD_MSG,
+    in_delivery_close_cycle,
     is_delete_push,
     is_main_ref,
     parse_pre_push_stdin,
@@ -23,6 +24,10 @@ from hook_common import (
 def main() -> int:
     if skip_hooks():
         print("SddIA pre-push: SKIPPED (SDDIA_SKIP_HOOKS=1)", file=sys.stderr)
+        return 0
+
+    if in_delivery_close_cycle():
+        print("SddIA pre-push: SKIPPED (delivery-close-cycle guard)", file=sys.stderr)
         return 0
 
     stdin_text = sys.stdin.read()

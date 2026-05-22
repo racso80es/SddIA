@@ -24,6 +24,8 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 | route-domain-event | 9b314f74-44d3-43c4-b916-871a9fa43f45 | 1.0.0 | event-routing | Lee evento en eda_bus.pending, fan-out por eda_bus.subscriptions, actualiza delivery_state, mueve a processed/ o dead-letter/. | `domain-event-routing`, `subscription-registry-lookup`, `delivery-state-ledger`, `event-bus-lifecycle-move`, `delegate-filesystem-manager`, `subscriber-fanout-orchestration` |
 | emit-domain-mutation | 7e4a9c2b-1d3f-4a8e-9b6c-0f1e2d3a4b5c | 1.0.0 | ecosystem-evolution | Emite eventos ECST Domain_Entity_* en pending/ tras mutación de entidades estructurales del genoma; valida hashes por lifecycle_operation; mintea event_id vía crypto-broker. | `domain-mutation-emission`, `event-bus-pending-write`, `delegate-filesystem-manager`, `delegate-crypto-broker`, `domain-event-type-translation` |
 | sync-entity-index | a3f8c2e1-4b5d-6a7e-8f90-1a2b3c4d5e6f | 1.0.0 | ecosystem-evolution | Reconciliación asíncrona de index.md tras Domain_Entity_*: auditoría idempotente en create/update; purga de fila en delete. Cúmulo vía bus EDA. | `entity-index-reconciliation`, `delegate-filesystem-manager`, `cumulo-catalog-sync` |
+| materialize-fracture-pbi | b2c3d4e5-f6a7-4890-b123-4567890abcde | 1.0.0 | ecosystem-evolution | Materializa PBI bug-fix en docs/todos/pending/ ante System_Fracture_Detected (Kintsugi — el Qué). Cúmulo vía bus EDA. | `fracture-pbi-materialization`, `delegate-filesystem-manager`, `cumulo-debt-ledger` |
+| enrich-fracture-pbi-kaizen | c4d5e6f7-a8b9-4012-c345-678901234567 | 1.0.0 | knowledge-management | Enriquece PBI de fractura con causa raíz y propuesta evolutiva (Kintsugi — el Por Qué). Mayeuta vía bus EDA. | `fracture-root-cause-analysis`, `kaizen-evolution-proposal`, `delegate-filesystem-manager` |
 
 ## Archivos en carpeta no catalogados como acción
 
@@ -31,5 +33,5 @@ Ninguno. `actions-contract.md` es el contrato de familia, no una fila del catál
 
 ## Integridad (última pasada)
 
-- **Sincronización:** siete definiciones de acción con identidad atómica; reflejadas en sendas filas del catálogo.
+- **Sincronización:** nueve definiciones de acción con identidad atómica; reflejadas en sendas filas del catálogo.
 - **Metadatos:** valores de la tabla (incl. **Capabilities**) copiados desde el YAML de cada `{name}.md` al momento de indexación.

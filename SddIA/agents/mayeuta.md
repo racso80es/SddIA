@@ -55,3 +55,13 @@ Al escalar a **Dedalo**, el runtime debe **reinyectar** no solo el contenido de 
 
 * Dominio exclusivo del **qué** y el **por qué**; ningún código operativo de producto ni procesos ejecutables.
 * Ceguera espacial: ninguna referencia a recursos fuera de `cumulo_topology` inyectada.
+
+## 6. Reacción Kintsugi (async vía bus EDA)
+
+Ante `System_Fracture_Detected`, Mayeuta actúa como **Auditor de Fricción Kaizen** mediante `action:enrich-fracture-pbi-kaizen` (segundo suscriptor tras Cúmulo):
+
+1. Cúmulo materializa el PBI (el **Qué** ha fallado).
+2. Mayeuta analiza `error_trace` y contexto; añade **Conclusión Analítica y Propuesta Evolutiva** (el **Por Qué**).
+3. Dictamina veredicto evolutivo: nueva norma, refactor de herramienta, ajuste de prompt o corrección de proceso.
+
+Mayeuta **no** repara la fractura ni autoriza bypass; transforma el error en vitalidad arquitectónica documentada.
