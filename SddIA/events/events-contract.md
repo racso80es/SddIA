@@ -39,7 +39,7 @@ El cuerpo Markdown debe incluir, como mínimo:
 | Plano | Ubicación SSOT | Naturaleza | Versionado |
 |-------|----------------|------------|------------|
 | **Clase de Evento** | `SddIA/events/{name}.md` | Contrato funcional, genoma | Sí (Git) |
-| **Instancia ECST** | `docs/events/{pending,processing,processed,dead-letter}/` | JSON volátil, runtime | No (`.gitignore`) |
+| **Instancia ECST** | `.events/pending/` (padre inmutable) + `.events/subscribers/{processing,processed,dead-letter}/` (testigos) | JSON volátil, runtime | No (`/.events/` en `.gitignore`) |
 | **Personalización** | `.SddIA/events/` (`eda_instance.customization`) | Overrides Vía C | No |
 
 Toda ruta operativa se resuelve vía `cumulo.paths.json`. Prohibido hardcodear literales fuera del SSOT inyectado.
@@ -55,8 +55,7 @@ Toda instancia persistida en el bus debe ser JSON UTF-8 con la forma:
   "timestamp": "<ISO-8601 UTC>",
   "emitter_agent": "<string>",
   "correlation_id": "<uuid-v4|null omitido>",
-  "payload": { },
-  "delivery_state": { }
+  "payload": { }
 }
 ```
 
@@ -68,23 +67,29 @@ Toda instancia persistida en el bus debe ser JSON UTF-8 con la forma:
 | `emitter_agent` | Sí | Identificador del emisor indexado |
 | `correlation_id` | No | UUID v4; solo si aplica saga causal |
 | `payload` | Sí | Objeto; forma gobernada por la Clase |
-| `delivery_state` | Sí | Ledger de fan-out; objeto (puede estar vacío al nacer) |
+| `delivery_state` | No | **Legacy Ola A** — prohibido mutar tras emisión en V3; trazabilidad vía testigos de suscriptor |
 
-## 4. Ciclo de vida del bus
+## 4. Ciclo de vida del bus (Ola C V3)
 
-Resolución vía `eda_bus` en `cumulo.paths.json`:
+Resolución vía `event_bus` + `eda_bus` en `cumulo.paths.json`:
 
 ```mermaid
-flowchart LR
-  EM[Emisor] --> P[pending]
-  P --> X[processing]
-  X --> OK[processed]
-  X --> DL[dead_letter]
+flowchart TB
+  EM[Emisor] --> P["pending/ padre inmutable"]
+  P --> W[event-watcher + route-domain-event]
+  W --> SP["subscribers/processing/ testigo"]
+  SP --> OK["subscribers/processed/"]
+  SP --> DL["subscribers/dead-letter/"]
+  OK --> SW[event-sweeper.py]
+  SW -->|todos requeridos| PURGE[purga padre + archiva testigos]
+  DL --> KZ[alerta Kaizen — padre intacto]
 ```
 
-1. Emisores escriben en `eda_bus.pending`.
-2. El watcher promueve a `eda_bus.processing` antes de enrutar.
-3. `route-domain-event` mueve a `processed` o `dead_letter` según `delivery_state`.
+1. Emisores escriben el padre ECST en `eda_bus.pending` (`.events/pending/`).
+2. El padre **no se mueve ni muta** durante el fan-out.
+3. Cada suscriptor escribe un testigo `[event_id].[subscriber_id].json` en `subscribers/processing/` al iniciar.
+4. El middleware promueve el testigo a `processed/` (éxito) o `dead-letter/` (fallo con `error_trace`).
+5. `event-sweeper.py` purga el padre solo cuando todos los suscriptores requeridos están en `processed/`.
 
 ## 5. Aseguramiento forense de payload (laudo Ola C)
 
@@ -126,4 +131,4 @@ Variantes **Updated** y **Deleted** se documentan en sus Clases; heredan la dist
 - Las Clases **no** enrutan el bus ni anclan DLT directamente.
 - Los emisores (`emit-pr-merged-event`, `emit-domain-mutation`, …) **no** sustituyen la definición de Clase; deben conformarse a ella.
 - Argos puede rechazar instancias cuyo `payload` viole las tablas REQUIRED/FORBIDDEN de la Clase vigente.
-- **Validación en runtime (Fase 5):** `route-domain-event` (cápsula `event-watcher.py`) compara cada instancia contra la Clase catalogada antes del fan-out; violaciones → `dead-letter/` con `delivery_state.ecst_validation = failed`.
+- **Validación en runtime (Ola C V3):** `route-domain-event` compara cada instancia contra la Clase catalogada; violaciones → testigo `ecst-gate` en `subscribers/dead-letter/`; el padre permanece en `pending/`.

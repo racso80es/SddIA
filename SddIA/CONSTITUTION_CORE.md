@@ -28,7 +28,7 @@ Además de la Librería (§3), el genoma operativo del Core reconoce entidades d
 **Distinción ontológica innegociable:**
 
 - **Clase de Evento** (genoma): definición versionada bajo `directories.events` (`SddIA/events/`), gobernada por `events-contract.md`.
-- **Instancia de Evento** (runtime): JSON ECST volátil en el bus local (`eda_bus` en `cumulo.paths.json`, colas bajo `docs/events/`).
+- **Instancia de Evento** (runtime): JSON ECST volátil en el bus local (`event_bus` → `.events/` en `cumulo.paths.json`; padre inmutable en `pending/`; testigos en `subscribers/`).
 - **Personalización de instancia:** configuración táctica por proyecto bajo `.SddIA/events/`; **no** sustituye al bus federal.
 
 ## 4. Protocolos de Defensa y Validación

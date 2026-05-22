@@ -16,7 +16,7 @@ SCRIPT = Path(__file__).resolve()
 if str(SCRIPT.parent) not in sys.path:
     sys.path.insert(0, str(SCRIPT.parent))
 
-from eda_bus_utils import load_eda_bus
+from eda_bus_utils import ensure_event_bus_topology, list_witnesses, load_eda_bus
 
 EXECUTE_PROCESS = SCRIPT.parent / "execute-process.py"
 WATCHER = SCRIPT.parent.parent / "daemons" / "event-watcher.py"
@@ -117,11 +117,8 @@ def main() -> int:
     args = parser.parse_args()
 
     repo = _repo_root()
-    bus = load_eda_bus(repo)
+    bus = ensure_event_bus_topology(repo)
     pending_dir = repo / bus["pending"]
-    processed_dir = repo / bus["processed"]
-    pending_dir.mkdir(parents=True, exist_ok=True)
-    processed_dir.mkdir(parents=True, exist_ok=True)
 
     report: dict[str, Any] = {"steps": []}
 
@@ -154,9 +151,11 @@ def main() -> int:
     route_result = route_event(repo, rel)
     report["steps"].append({"route": route_result})
 
-    processed = processed_dir / f"{event_id or Path(rel).stem}.json"
-    report["processed_exists"] = processed.is_file()
-    report["success"] = bool(route_result.get("success")) and processed.is_file()
+    event_id = event_id or Path(rel).stem
+    witnesses = list_witnesses(repo, bus, "subscriber_processed", event_id)
+    report["witnesses_processed"] = [p.name for p in witnesses]
+    report["parent_still_pending"] = pending.is_file()
+    report["success"] = bool(route_result.get("success")) and len(witnesses) > 0
 
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=False))

@@ -4,7 +4,10 @@
 # Cursor — logs de depuración locales
 .cursor/debug_*
 
-# Bus de eventos runtime (pending / processing / processed / dead-letter)
+# Bus de eventos runtime Ola C V3 (padre inmutable + testigos suscriptor)
+/.events/
+
+# Legacy bus runtime (migración desde docs/events/)
 docs/events/
 
 # Personalización de eventos por instancia (Vía C)

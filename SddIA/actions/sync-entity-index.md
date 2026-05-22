@@ -89,7 +89,7 @@ Gate **Cerbero** por `context: ecosystem-evolution`. Rutas de índices vía `cum
 }
 ```
 
-En fallo de auditoría: `data.success: false`, `exitCode: 0` (el watcher marca `delivery_state` según `data.success`).
+En fallo de auditoría: `data.success: false`, `exitCode: 0` (el watcher promueve el testigo del suscriptor a `dead-letter/` según `data.success`).
 
 ## 3. Límites
 

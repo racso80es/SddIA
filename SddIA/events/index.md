@@ -32,4 +32,4 @@ Contrato normativo de la familia: `events-contract.md` (no constituye una Clase 
 ## Integridad (última pasada)
 
 - **Sincronización:** 6 Clases ECST catalogadas; cabeceras alineadas a filas del índice.
-- **SSOT rutas:** Clases → `SddIA/events/`; instancias → `docs/events/` (`eda_bus`); personalización → `.SddIA/events/`.
+- **SSOT rutas:** Clases → `SddIA/events/`; instancias padre → `.events/pending/` (`event_bus`); testigos → `.events/subscribers/`; personalización → `.SddIA/events/`.
