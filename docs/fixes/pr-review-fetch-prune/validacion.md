@@ -21,10 +21,14 @@ checks:
   - id: CA-6
     name: triaje documental fix sin plan.md
     status: pass
+  - id: CA-7
+    name: verify-process-integrity
+    status: pass
 git_changes:
   - SddIA/scripts/qa/execute_process_capsules.py
-  - SddIA/process/bug-fix.md
-  - docs/fixes/pr-review-fetch-prune/
+  - SddIA/scripts/qa/recalc-process-hash-signatures.py
+  - SddIA/scripts/qa/verify-process-integrity.py
+  - SddIA/process/
 ---
 
 # Validación — Fix fetch aduana PR
@@ -39,10 +43,11 @@ git_changes:
 | CA-4 | `bug-fix.md` § Perfil laboratorio | ✅ | diff genoma |
 | CA-5 | `fix/*` → `docs/fixes/*` inferencia | ✅ | `_infer_persist_ref_from_branch` |
 | CA-6 | Aduana doc fix sin `plan.md` | ✅ | triaje documental passed |
+| CA-7 | `verify-process-integrity` global | ✅ | 17 procesos recalculados |
 
 ## Nota VPI
 
-`verify-process-integrity` falla en **main** antes de este fix (drift global de `hash_signature` en procesos). No es regresión de esta entrega; backlog Kaizen aparte.
+`verify-process-integrity` ✅ tras recálculo canónico (`recalc-process-hash-signatures.py --write`, commits `fix(process): recalcular hash_signature`).
 
 ## Veredicto
 

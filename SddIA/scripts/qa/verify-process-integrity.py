@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Verificación de integridad de procesos SddIA (hash de fases, broker crypto, phase_invocations)."""
+"""Verificación de integridad de procesos SddIA (hash de fases, broker crypto, phase_invocations).
+
+Recálculo masivo de hash_signature: SddIA/scripts/qa/recalc-process-hash-signatures.py --write
+"""
 
 from __future__ import annotations
 
