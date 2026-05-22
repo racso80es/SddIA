@@ -148,3 +148,59 @@ def inject_domain_entity_topology_defaults(event: dict[str, Any]) -> None:
     payload = event.get("payload")
     if isinstance(payload, dict) and "origin_topology" not in payload:
         payload["origin_topology"] = "core"
+
+
+_BRANCH_NUMERIC_SUFFIX_RE = re.compile(r"^(?P<base>.+)-\d{10,}$")
+
+
+def infer_persist_ref_from_branch(repo: Path, branch: str) -> str | None:
+    """Resuelve persist_ref existente; ignora sufijo numérico tipo Jules en la rama."""
+    b = branch.strip()
+    candidates: list[str] = []
+    if b.startswith("feat/"):
+        slug = b[5:]
+        candidates.append(f"docs/features/{slug}")
+        m = _BRANCH_NUMERIC_SUFFIX_RE.match(slug)
+        if m:
+            candidates.append(f"docs/features/{m.group('base')}")
+    elif b.startswith("fix/"):
+        slug = b[4:]
+        candidates.append(f"docs/fixes/{slug}")
+        m = _BRANCH_NUMERIC_SUFFIX_RE.match(slug)
+        if m:
+            candidates.append(f"docs/fixes/{m.group('base')}")
+    seen: set[str] = set()
+    for ref in candidates:
+        if ref in seen:
+            continue
+        seen.add(ref)
+        if (repo / ref).is_dir():
+            return ref
+    return None
+
+
+def github_pr_merged(pr_url: str) -> bool:
+    """True si gh reporta el PR en estado MERGED (retroactivo / handoff)."""
+    import subprocess
+
+    url = pr_url.strip()
+    if not url:
+        return False
+    try:
+        proc = subprocess.run(
+            ["gh", "pr", "view", url, "--json", "state"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except OSError:
+        return False
+    if proc.returncode != 0 or not (proc.stdout or "").strip():
+        return False
+    try:
+        data = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return False
+    return data.get("state") == "MERGED"

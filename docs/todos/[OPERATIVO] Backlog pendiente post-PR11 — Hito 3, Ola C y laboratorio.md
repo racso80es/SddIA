@@ -13,7 +13,7 @@ related:
   - docs/todos/done/[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).md
   - docs/features/pbi-005-hito3-ola-b
   - docs/features/pbi-005-hito3-git-hooks
-  - docs/todos/[ARQUITECTURA] Deuda Ola C — Retirar compatibilidad CLI execute-process y execute-action.md
+  - docs/todos/done/[ARQUITECTURA] Deuda Ola C — Retirar compatibilidad CLI execute-process y execute-action.md
   - docs/todos/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md
   - SddIA/process/accept-pr.md
   - SddIA/process/delivery-close-cycle.md
@@ -36,6 +36,7 @@ related:
 | Laboratorio `feature` fase 1 (`workspace-init`) | `docs/todos/done/… Laboratorio — Handler físico proceso feature.md` |
 | Hito 3 **Ola A** — `pre-commit` Argos | PR #12 — `docs/features/pbi-005-hito3-git-hooks/` |
 | Hito 3 **Ola B** — hooks `pre-push` / `post-merge` | PR #13 — `docs/features/pbi-005-hito3-ola-b/` |
+| **Deuda Ola C — shims CLI** | PR #14 MERGED — `docs/todos/done/… Deuda Ola C — Retirar compatibilidad CLI…` |
 
 ### Trazabilidad PBI-005 Hito 3 (CA-3)
 
@@ -46,19 +47,14 @@ related:
 
 ---
 
-## Prioridad 1 — Deuda Ola C: retirada de shims CLI
+## ~~Prioridad 1 — Deuda Ola C: retirada de shims CLI~~ (CERRADO 2026-05-22)
 
-**Manifiesto detallado:** [`docs/todos/[ARQUITECTURA] Deuda Ola C — Retirar compatibilidad CLI execute-process y execute-action.md`](%5BARQUITECTURA%5D%20Deuda%20Ola%20C%20%E2%80%94%20Retirar%20compatibilidad%20CLI%20execute-process%20y%20execute-action.md)
+**Manifiesto:** [`docs/todos/done/[ARQUITECTURA] Deuda Ola C — Retirar compatibilidad CLI execute-process y execute-action.md`](done/%5BARQUITECTURA%5D%20Deuda%20Ola%20C%20%E2%80%94%20Retirar%20compatibilidad%20CLI%20execute-process%20y%20execute-action.md) — PR [#14](https://github.com/racso80es/SddIA/pull/14) en `main`; seguimiento Kaizen EDA en PR [#18](https://github.com/racso80es/SddIA/pull/18).
 
-| ID | Tarea | Archivos afectados (muestra) |
-|----|-------|------------------------------|
-| OC.1 | Inventariar `--input-file` y `--action` en repo | `docs/features/**/execution.md`, `execute-process.py` docstring |
-| OC.2 | Migrar a `--process` / `--inputs` y `execute-action.py` directo | `pbi-005-action-engine/execution.md`, `pbi-005-debt-liquidation/execution.md`, `refactor-execute-process-engine/execution.md`, `ola-c-event-entity/execution.md`, `pbi-005-hito3-ola-b/execution.md` |
-| OC.3 | Sustituir `execute-process.py --action emit-pr-merged-event` por **`accept-pr`** o `execute-action.py` | `pbi-005-hito2-action-engine/execution.md`, guías merge legacy |
-| OC.4 | Eliminar `warn_deprecated_input_file`, `shim_execute_action`, flag `--action` | `SddIA/scripts/qa/execute-process.py` |
-| OC.5 | Actualizar `SddIA/actions/execute-process.md` | Contrato canónico único |
-
-**Criterio de cierre:** Ningún `execution.md` ni script QA invoca rutas deprecadas; TODO Ola C → `docs/todos/done/`.
+| ID | Estado | Nota |
+|----|--------|------|
+| OC.1–OC.4 | ✅ | Runtime y `SddIA/scripts/**` canónicos |
+| OC.5 | ⏳ | `SddIA/actions/execute-process.md` — deuda residual no bloqueante |
 
 ---
 

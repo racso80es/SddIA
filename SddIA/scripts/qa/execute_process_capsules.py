@@ -21,7 +21,7 @@ from execute_process_core import (
 )
 
 from execute_process_forges import FORGE_BY_ENTITY_CLASS
-from eda_bus_utils import find_existing_domain_event
+from eda_bus_utils import find_existing_domain_event, infer_persist_ref_from_branch
 
 try:
     import yaml
@@ -461,15 +461,6 @@ _PR_REVIEW_REQUIRED_DOCS = ("objectives.md", "spec.md", "plan.md", "implementati
 _PR_REVIEW_REQUIRED_DOCS_FIX = ("objectives.md", "spec.md", "implementation.md")
 
 
-def _infer_persist_ref_from_branch(branch: str) -> str | None:
-    b = branch.strip()
-    if b.startswith("feat/"):
-        return f"docs/features/{b[5:]}"
-    if b.startswith("fix/"):
-        return f"docs/fixes/{b[4:]}"
-    return None
-
-
 def _pr_review_required_docs(persist_ref: str) -> tuple[str, ...]:
     ref = persist_ref.strip().replace("\\", "/")
     if ref.startswith("docs/fixes/"):
@@ -506,7 +497,7 @@ def _normalize_pr_review_inputs(repo: Path, process_inputs: dict[str, Any]) -> N
             repo, {"operation": "GENERATE_UUID", "target_payload": None}
         )
     if not process_inputs.get("persist_ref") and isinstance(branch, str):
-        inferred = _infer_persist_ref_from_branch(branch)
+        inferred = infer_persist_ref_from_branch(repo, branch)
         if inferred:
             process_inputs["persist_ref"] = inferred
 
@@ -517,6 +508,8 @@ def capsule_pr_review_branch_prep(repo: Path, inputs: dict[str, Any], state: dic
         raise ValueError("pr_branch es obligatorio para pull-request-review")
     branch = branch.strip()
     state["pr_branch"] = branch
+    if inputs.get("merge_already_done") in (True, "true", "1", 1):
+        return {"skipped": True, "reason": "merge_already_done", "branch": branch}
     if os.environ.get("SDDIA_LAB_SKIP_GIT_CHECKOUT", "").strip().lower() in ("1", "true", "yes"):
         return {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT_CHECKOUT", "branch": branch}
     invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
