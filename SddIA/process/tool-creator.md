@@ -4,7 +4,7 @@ name: "tool-creator"
 version: "1.1.0"
 contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
-hash_signature: sha256:223830a95dd61b1e200a29a51e09a7e854b9b6d1d557aa60bb1e6faa15b0e5db
+hash_signature: sha256:d93db300fd0598a158703f762b6c697f538a4c927c291c00c3caec8246f14ffb
 inputs:
   - "scope": "Enum estricto obligatorio: `core` | `local`. Resuelve el SSOT de definición e índice (simetría fractal)."
   - "tool_name": "Identificador kebab-case canónico de la tool (`{name}` del archivo `{tool_name}.md` bajo la raíz resuelta por `scope`)"

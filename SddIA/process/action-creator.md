@@ -4,7 +4,7 @@ name: action-creator
 version: 1.0.0
 contract: process-contract v1.3.0
 context: ecosystem-evolution
-hash_signature: sha256:02d26d391bb230934ecef247fc51a1ee9f2ed30b6498758f16d416acbd5b0e11
+hash_signature: sha256:b73c4b13849716087b4033ab1b49d4e43c27f79c4fbc51d0894a686217ca3c7f
 inputs:
 - action_name: Identificador kebab-case de la acción (`{name}` del archivo `{name}.md`
     en `cumulo.directories.actions`)

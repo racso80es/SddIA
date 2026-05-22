@@ -7,7 +7,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -20,37 +19,15 @@ except ImportError:  # pragma: no cover
 SCRIPT = Path(__file__).resolve()
 REPO = SCRIPT.parents[3] if (SCRIPT.parents[2] / "tools").is_dir() else SCRIPT.parents[2]
 PROCESS_DIR = REPO / "SddIA" / "process"
-CRYPTO_SCRIPT = REPO / "scripts" / "skills" / "cryptography-manager.py"
 SKIP_NAMES = frozenset({"process-contract", "index"})
 HASH_LINE_RE = re.compile(r"^(hash_signature:\s*)sha256:[0-9a-f]{64}\s*$", re.MULTILINE)
 
 
 def _sha256_phases(phases: list) -> str:
+    import hashlib
+
     canon = json.dumps(phases, separators=(",", ":"), ensure_ascii=False, sort_keys=True)
-    payload = json.dumps(
-        {
-            "operation": "GENERATE_SHA256",
-            "target_type": "STRING",
-            "target_payload": canon,
-        },
-        ensure_ascii=False,
-    )
-    r = subprocess.run(
-        [sys.executable, str(CRYPTO_SCRIPT)],
-        input=payload,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        capture_output=True,
-        cwd=str(REPO),
-        check=False,
-    )
-    if r.returncode != 0:
-        raise RuntimeError(r.stderr or r.stdout or "crypto failed")
-    out = json.loads(r.stdout)
-    if not out.get("success"):
-        raise RuntimeError(out.get("error", str(out)))
-    return str(out["data"]["result"])
+    return hashlib.sha256(canon.encode("utf-8")).hexdigest()
 
 
 def _load_frontmatter(md: Path) -> tuple[dict, str, str]:

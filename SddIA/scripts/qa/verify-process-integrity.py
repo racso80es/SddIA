@@ -8,7 +8,6 @@ Recálculo masivo de hash_signature: SddIA/scripts/qa/recalc-process-hash-signat
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from pathlib import Path
 
@@ -21,36 +20,15 @@ except ImportError:  # pragma: no cover
 SCRIPT = Path(__file__).resolve()
 REPO = SCRIPT.parents[3] if (SCRIPT.parents[2] / "tools").is_dir() else SCRIPT.parents[2]
 PROCESS_DIR = REPO / "SddIA" / "process"
-CRYPTO_SCRIPT = REPO / "scripts" / "skills" / "cryptography-manager.py"
 
 SKIP_NAMES = frozenset({"process-contract", "index"})
 
 
 def _sha256_phases_via_capsule(phases: list) -> str:
+    import hashlib
+
     canon = json.dumps(phases, separators=(",", ":"), ensure_ascii=False, sort_keys=True)
-    payload = json.dumps(
-        {
-            "operation": "GENERATE_SHA256",
-            "target_type": "STRING",
-            "target_payload": canon,
-        },
-        ensure_ascii=False,
-    )
-    r = subprocess.run(
-        [sys.executable, str(CRYPTO_SCRIPT)],
-        input=payload,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        capture_output=True,
-        cwd=str(REPO),
-    )
-    if r.returncode != 0:
-        raise RuntimeError(r.stderr or r.stdout)
-    out = json.loads(r.stdout)
-    if not out.get("success"):
-        raise RuntimeError(out.get("error", str(out)))
-    return out["data"]["result"]
+    return hashlib.sha256(canon.encode("utf-8")).hexdigest()
 
 
 def _load_frontmatter(md: Path) -> dict:

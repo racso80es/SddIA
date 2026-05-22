@@ -6,7 +6,7 @@ contract: "process-contract v1.3.0"
 context:
   - "ecosystem-evolution"
   - "knowledge-management"
-hash_signature: sha256:14d43919cdbb069cfd2bb21d1dd1f4574e5ab724fddc44a1c28718e40d05c913
+hash_signature: sha256:5e893f9ac177f1fbf7d40c3e34ba95914d9d691693241b6db14eb8510af962e0
 inputs:
   - "domain_codex_slug": "Identificador kebab-case del archivo (`{slug}.md` bajo `directories.library_codexes`)"
   - "domain_codex_name": "Nombre estratégico del paquete (campo `name` del frontmatter según `codex-contract.md`)"
