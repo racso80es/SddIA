@@ -21,8 +21,10 @@ SddIA/scripts/tools/iota-immutable-publisher/node_modules/
 SddIA/scripts/tools/iota-immutable-publisher/anchor-bytecode.json
 SddIA/scripts/tools/iota-immutable-publisher/anchor-build.err
 SddIA/scripts/tools/iota-immutable-publisher/anchor-build.log
-/SddIA/scripts/qa/__pycache__
+
+# Bytecode Python — no versionar
+__pycache__/
+*.py[cod]
+*$py.class
+
 /tmp
-/SddIA/scripts/qa/__pycache__
-/SddIA/scripts/qa/__pycache__
-/SddIA/scripts/qa/git-hooks/__pycache__
