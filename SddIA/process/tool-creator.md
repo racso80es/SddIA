@@ -69,6 +69,14 @@ porcentaje_de_exito: null
 
 # tool-creator
 
+## Directriz de ejecución obrera
+
+Antes de ejecutar fases de forja, el runtime IDE **debe** anteponer al contexto de Tekton el prefijo definido en `SddIA/norms/external-ai-constraints.md` § Prefijo creator:
+
+> [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
+
+Prohibido delegar forja manual en el agente cuando exista proceso creator aplicable.
+
 Proceso maestro para instanciar tools con **simetría fractal** (`scope`: catálogo Core o catálogo local del workspace).
 
 ## Resolución de rutas (`scope`)

@@ -76,6 +76,14 @@ porcentaje_de_exito: null
 
 # event-creator
 
+## Directriz de ejecución obrera
+
+Antes de ejecutar fases de forja, el runtime IDE **debe** anteponer al contexto de Tekton el prefijo definido en `SddIA/norms/external-ai-constraints.md` § Prefijo creator:
+
+> [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
+
+Prohibido delegar forja manual en el agente cuando exista proceso creator aplicable.
+
 Proceso maestro para instanciar nuevas **Clases de Evento** (genoma ECST) en `SddIA/events/` y mantener el índice del directorio `events`.
 
 Invocable directamente o desde **`entity-manager`** (cuando `entity_class: event` esté en piloto). Tras indexación síncrona, el gestor emite `emit-domain-mutation` con `emitter_agent: entity-manager` usando los outputs de handoff declarados en cabecera YAML.

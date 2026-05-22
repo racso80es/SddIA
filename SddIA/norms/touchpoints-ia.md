@@ -10,7 +10,7 @@ Acción que orquesta la revisión y actualización: **paths.actionsPath/sddia-di
 
 | Touchpoint | Ubicación | Descripción | Cómo mantener |
 |------------|-----------|-------------|----------------|
-| **Cursor** | `.cursor/rules/*.mdc` | Reglas que Cursor aplica al asistente (disparadores #Skill, #Action, #Process, subir; SSOT). | Al cambiar procesos, acciones o listados en SddIA, ejecutar la acción sddia-difusion y actualizar los .mdc. La regla `sddia-ssot.mdc` declara que SddIA prevalece. |
+| **Cursor** | `.cursor/rules/*.mdc` + `.cursorrules` | Reglas que Cursor aplica al asistente (disparadores #Skill, #Action, #Process, subir; SSOT). `.cursorrules` §8 difunde **Blindaje IA Obrera** (`external-ai-constraints.md`). | Al cambiar procesos, acciones o listados en SddIA, ejecutar la acción sddia-difusion y actualizar los .mdc. La regla `sddia-ssot.mdc` declara que SddIA prevalece. Tras cambios en blindaje, sincronizar `.cursorrules` §8 con la norma motor SSOT. |
 | **AGENTS.md** | Raíz del repo | Protocolo maestro del sistema multiagente. Referenciado por Cursor y por documentación. | Modificar solo según acuerdo con SddIA; no duplicar lógica en .cursor que contradiga AGENTS.md. |
 | **AGENTS.norms.md** | Raíz del repo | Tabla de disparadores; enlaza a SddIA/norms/interaction-triggers.md. | Mantener sincronizado con interaction-triggers.md cuando se añadan disparadores (ej. #Tool). |
 | **.github** | `.github/` | PR template, README (difusión). Workflows e issue templates si se añaden. | No duplicar normas; referenciar AGENTS.md y SddIA. PR template pide rama feat/fix, proceso y doc de tarea. Revisar con acción sddia-difusion. |
@@ -19,7 +19,7 @@ Acción que orquesta la revisión y actualización: **paths.actionsPath/sddia-di
 
 | Touchpoint | Ubicación | Descripción | Cómo mantener |
 |------------|-----------|-------------|----------------|
-| **Jules** | (configuración específica del gestor) | Si el proyecto usa Jules u otro asistente: prompt de sistema, reglas, contexto. | Documentar aquí o en docs/ dónde se configura Jules y cómo se inyectan las normas (p. ej. copia de AGENTS.md, o referencia a SddIA). Objetivo: mismo comportamiento que en Cursor (leyes, procesos, Cúmulo). |
+| **Jules / Windsurf** | Configuración del gestor; opcional `.windsurfrules` | Prompt de sistema, reglas, contexto. Mismo blindaje que Cursor: referenciar `SddIA/norms/external-ai-constraints.md` o copiar resumen de `.cursorrules` §8. | Al desplegar el gestor, inyectar DA-1..3 y prefijo creator; no duplicar norma completa. Si existe `.windsurfrules`, debe enlazar la norma SSOT, no contradecirla. |
 | **Otros IDEs/gestores** | Variable | Cualquier otro cliente que use el repo para asistencia IA. | Misma regla: SddIA es SSOT; documentar en esta tabla el touchpoint y el procedimiento de difusión. |
 
 ---
