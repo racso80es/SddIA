@@ -53,4 +53,4 @@ python SddIA/scripts/daemons/event-sweeper.py --once --json
 
 ## Veredicto
 
-**APTO** — Hitos K1–K5 implementados; documentación K6 cerrada. Pendiente: forja formal `entity-manager` del proceso (hash `pending-forge`) y cierre PR vía `delivery-close-cycle`.
+**APTO** — Hitos K1–K6 implementados; forja EDA `entity-manager` (`Domain_Entity_Created`, hash canónico). Cierre vía PR y merge a `main`.
