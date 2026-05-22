@@ -13,7 +13,7 @@ updated: "2026-05-22"
 
 La Ola A amplía su alcance operativo con la **Jerarquía de Bóvedas**: contrato federal de dónde residen secretos y configuración local vs global. Esta fase es **Hito 0** y precede a cualquier resolución de pasivo técnico pendiente.
 
-Estado actual: secretos IOTA en `.env` ad hoc junto a `iota-immutable-publisher/`, acoplados físicamente a la cápsula.
+Estado actual: secretos IOTA en `.env` ad hoc junto a `iota-immutable-publisher/` (**deprecado**). Mapa operativo: [README.md](../../../README.md) — *Jerarquía de Bóvedas*.
 
 | Bóveda | Ruta | Semántica |
 |--------|------|-----------|
@@ -156,6 +156,7 @@ rg '^\.dev/|^\.SddIA/\.dev/' .gitignore
 | CA-7 | Cero dotenv local en tools | 0.3 |
 | CA-8 | `.gitignore` bóvedas verificado | 0.3 |
 | CA-9 | Cúmulo `env_hierarchy` válido | 0.3 |
+| CA-10 | `README.md` documenta Jerarquía de Bóvedas y entrypoints | 0.3 |
 
 ## 8. Gate Ola A
 

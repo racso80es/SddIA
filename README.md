@@ -36,6 +36,40 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 
 Definición operativa de **Event**: *el contrato inmutable de comunicación asíncrona; señal con propósito (finalidad) que blinda la soberanía de las entidades conscientes, operando bajo coreografía pura y evitando el acoplamiento físico entre procesos.* Contrato de familia: `SddIA/events/events-contract.md`. Índice de clases: `SddIA/events/index.md`.
 
+### Configuración: Jerarquía de Bóvedas
+
+Secretos y variables de entorno del runtime se cargan desde **bóvedas locales** (no versionadas), no desde `.env` dispersos en subdirectorios de cápsulas. SSOT de rutas: clave `env_hierarchy` en [SddIA/core/cumulo.paths.json](SddIA/core/cumulo.paths.json).
+
+| Ruta | Bóveda | Rol | Contenido |
+|------|--------|-----|-----------|
+| **`.dev/.env`** | Global (repo) | Valores compartidos del clone | Defaults de equipo, CI local, variables comunes al workspace |
+| **`.SddIA/.dev/.env`** | Instancia (proyecto) | Overrides soberanos (Vía C) | Secretos y configuración táctica; **prevalece** sobre la bóveda global |
+
+**Precedencia al arrancar entrypoints:**
+
+1. **Entorno del SO** — máxima prioridad; los ficheros no sobrescriben variables ya definidas.
+2. **`.dev/.env`** — rellena el diccionario intermedio.
+3. **`.SddIA/.dev/.env`** — sobrescribe claves del paso anterior en el diccionario; se vuelca a `os.environ` con `setdefault`.
+
+Si existen **ambas** bóvedas, el runtime registra en stderr: `[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env`.
+
+**Entrypoints que cargan la jerarquía** (vía `SddIA/scripts/qa/env_loader.py`) **antes** de invocar cápsulas:
+
+| Entrypoint | Punto de carga |
+|------------|----------------|
+| `SddIA/scripts/qa/execute-process.py` | Tras resolver raíz del repo |
+| `SddIA/scripts/qa/execute_process_capsules.py` | Inicio de `run_process()` |
+| `SddIA/scripts/qa/execute-action.py` | Inicio de `main()` |
+| `SddIA/scripts/daemons/event-watcher.py` | Inicio de `main()` |
+
+Las cápsulas (p. ej. `iota-immutable-publisher`) **consumen** `process.env` / `os.environ` ya inyectado; **prohibido** `dotenv` local en el directorio del tool.
+
+**Plantillas:** `SddIA/scripts/starter-kit/.SddIA/.dev/.env.example` (instancia). Copiar a `.SddIA/.dev/.env` en la raíz del workspace. Variables habituales: `IOTA_WALLET_SECRET`, `IOTA_ANCHOR_PACKAGE_ID`, `SDDIA_LAB_SIMULATE_IOTA`, `SDDIA_IOTA_TIMEOUT_SECONDS`.
+
+**Migración desde legacy:** mover contenido de `SddIA/scripts/tools/iota-immutable-publisher/.env` → `.SddIA/.dev/.env` y eliminar el fichero local de la cápsula.
+
+Documentación de feature: [docs/features/ampliacion-configuracion-entornos/](docs/features/ampliacion-configuracion-entornos/).
+
 ## Agentes del Core (resumen)
 
 Catálogo canónico (UUID, `allowed_policies`, versiones): `{paths.directories.agents}` según el SSOT [SddIA/core/cumulo.paths.json](SddIA/core/cumulo.paths.json) (`cumulo.paths.json`); tabla e índice en [SddIA/agents/index.md](SddIA/agents/index.md). Cada definición vive en `{name}.md` junto al contrato de familia `agents-contract.md`.
@@ -74,7 +108,7 @@ Sin carpeta de tarea materializada y artefactos versionables, no hay handoff vá
 Ese paquete es el prerequisito para integración en la **Librería SddIA** y su modelo de activo direccionable (capa NFT-ready).
 
 ## Desacoplamiento Core / instancia
-Definición de núcleo en este repositorio; especialización y secretos en instancia local. Sin lógica de negocio dispersa fuera de **Actions** orquestadas y **Cápsulas**.
+Definición de núcleo en este repositorio; especialización, constitución táctica y **secretos** en instancia local bajo `.SddIA/` (constitución, eventos, **bóveda `.SddIA/.dev/.env`**). La bóveda global `.dev/.env` complementa valores compartidos del clone. Ver [Jerarquía de Bóvedas](#configuración-jerarquía-de-bóvedas). Sin lógica de negocio dispersa fuera de **Actions** orquestadas y **Cápsulas**; sin `.env` operativos en subdirectorios de tools.
 
 ## Estándar de ejecución
 Lógica crítica en **Cápsulas** (preferente binario Rust; Python permitido cuando esté explicitado y bajo contrato). Contrato de E/S: JSON por stdin/stdout según `SddIA/norms/capsule-json-io.md`. Los agentes orquestan; no sustituyen a la cápsula en cómputo ni en contrato de I/O.

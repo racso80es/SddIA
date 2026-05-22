@@ -103,6 +103,8 @@ Transcript de decisiones (2026-05-22), ampliado con mandato estratégico Ola A.
 | Artefacto | Acción |
 |-----------|--------|
 | `starter-kit/.SddIA/.dev/.env.example` | Crear |
+| `starter-kit/.dev/.env.example` | Plantilla bóveda global (opcional) |
+| `README.md` | Sección Jerarquía de Bóvedas — comportamiento esperado del proyecto |
 | `SddIA/tools/iota-immutable-publisher.md` | Security → Jerarquía de Bóvedas |
 | `SddIA/evolution/` | Entrada al merge |
 

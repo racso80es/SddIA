@@ -37,11 +37,17 @@ items:
 |------------|--------|
 | `.gitignore` | `.dev/`, `.SddIA/.dev/`; retirada regla puntual IOTA `.env` |
 | `cumulo.paths.json` | Clave `env_hierarchy` |
-| `starter-kit/.SddIA/.dev/.env.example` | Plantilla operador |
+| `starter-kit/.SddIA/.dev/.env.example` | Plantilla bóveda instancia |
+| `starter-kit/.dev/.env.example` | Plantilla bóveda global (opcional) |
+| `README.md` | Sección **Jerarquía de Bóvedas** — mapa operativo del repo |
 | `SddIA/tools/iota-immutable-publisher.md` | Security → Jerarquía de Bóvedas |
 
 ## Migración operador
 
 1. Copiar secretos de `SddIA/scripts/tools/iota-immutable-publisher/.env` → `.SddIA/.dev/.env`
 2. Borrar `.env` legacy local en la cápsula
-3. Opcional: variables compartidas del equipo en `.dev/.env` (raíz repo)
+3. Opcional: variables compartidas del equipo en `.dev/.env` (raíz repo); plantilla en `SddIA/scripts/starter-kit/.dev/.env.example`
+
+## Documentación pública
+
+Mapa operativo para operadores y laboratorios Vía C: [README.md](../../../README.md) — sección *Configuración: Jerarquía de Bóvedas*.

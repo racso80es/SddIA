@@ -48,7 +48,7 @@ El motor se aplica **antes de cualquier inicialización de cápsula** (CLI + `ex
 | O3 | **Log de gobernanza** | Ambos ficheros → `[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env` |
 | O4 | **Agnosticismo de claves** | Sin hardcode de variables; merge genérico `KEY=VALUE` |
 | O5 | **IOTA sin dotenv local** | `iota-immutable-publisher` consume env inyectado; cero `dotenv.config` en cápsula |
-| O6 | **SSOT bóvedas** | `env_hierarchy` en Cúmulo; plantillas `.env.example` en starter-kit |
+| O6 | **SSOT bóvedas** | `env_hierarchy` en Cúmulo; plantillas `.env.example` en starter-kit; **README.md** actualizado |
 | O7 | **Precedencia OS** | Variables del SO no sobrescritas por ficheros |
 | O8 | **Sanitización** | Cero `.env` operativos bajo `SddIA/scripts/tools/`; gitignore verificado |
 

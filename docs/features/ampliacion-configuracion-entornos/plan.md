@@ -111,8 +111,10 @@ def load_hierarchical_env(repo_root: Path) -> dict[str, str]:
 | 0.3.4 | Auditar repo: `rg '\.env' SddIA/scripts/tools/` — solo `.env.example` permitidos | Informe en `implementation.md` |
 | 0.3.5 | Registrar `env_hierarchy` en `SddIA/core/cumulo.paths.json` | JSON válido |
 | 0.3.6 | Plantilla `SddIA/scripts/starter-kit/.SddIA/.dev/.env.example` | Starter-kit alineado |
-| 0.3.7 | Actualizar `SddIA/tools/iota-immutable-publisher.md` — Security / Jerarquía de Bóvedas | Genoma tool |
-| 0.3.8 | Entrada en `SddIA/evolution/` | Trazabilidad federal |
+| 0.3.6b | Plantilla `SddIA/scripts/starter-kit/.dev/.env.example` (bóveda global) | Opcional |
+| 0.3.7 | Actualizar `README.md` — sección Jerarquía de Bóvedas | Mapa operativo repo |
+| 0.3.8 | Actualizar `SddIA/tools/iota-immutable-publisher.md` — Security | Genoma tool |
+| 0.3.9 | Entrada en `SddIA/evolution/` | Trazabilidad federal |
 
 **DoD Hito 0.3:** ningún `.env` operativo disperso bajo `scripts/tools/`; bóvedas en gitignore; operador migra secretos IOTA legacy → `.SddIA/.dev/.env`.
 
