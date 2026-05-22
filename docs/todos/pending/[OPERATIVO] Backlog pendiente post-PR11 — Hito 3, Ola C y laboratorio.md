@@ -14,7 +14,9 @@ related:
   - docs/features/pbi-005-hito3-ola-b
   - docs/features/pbi-005-hito3-git-hooks
   - docs/todos/done/[ARQUITECTURA] Deuda Ola C — Retirar compatibilidad CLI execute-process y execute-action.md
-  - docs/todos/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md
+  - docs/todos/done/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md
+  - docs/todos/pending/[FIX] delivery-close-cycle — hooks EDA, evento Presented y gobernanza operador IA.md
+  - docs/todos/pending/norma-paridad-documental.md
   - SddIA/process/accept-pr.md
   - SddIA/process/delivery-close-cycle.md
 ---
@@ -83,7 +85,7 @@ related:
 
 ## Prioridad 4 — Ola C V3 (visión largo plazo)
 
-**Manifiesto:** [`docs/todos/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md`](%5BARQUITECTURA%5D%20Especificaci%C3%B3n%20T%C3%A9cnica%20Avanzada_%20El%20Genoma%20de%20Eventos%20y%20Coreograf%C3%ADa%20As%C3%ADncrona%20(Ola%20C)%20V3.md)
+**Manifiesto:** [`docs/todos/done/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md`](../done/%5BARQUITECTURA%5D%20Especificaci%C3%B3n%20T%C3%A9cnica%20Avanzada_%20El%20Genoma%20de%20Eventos%20y%20Coreograf%C3%ADa%20As%C3%ADncrona%20(Ola%20C)%20V3.md)
 
 | Componente | Estado |
 |------------|--------|
@@ -98,7 +100,7 @@ related:
 | ID | Tarea | Estado |
 |----|-------|--------|
 | D.1 | PBI-005 operativo v1.5.1 completado | ✅ → `docs/todos/done/…` |
-| D.2 | Eliminar duplicados obsoletos en `docs/todos/` | ⏳ |
+| D.2 | Consolidar activos en `docs/todos/pending/` y `done/` | 🔄 En curso (PR Kaizen) |
 | D.3 | Reexportar PDF operativo desde `.md` | ⏳ |
 | D.4 | Feature Hito 3 Ola A + Ola B | ✅ PR #12 + PR #13 |
 | D.5 | Actualizar `TODO-BLINDAJE-IA-OBRERA` Fase C (pre-commit + hooks) | ⏳ |
@@ -109,7 +111,7 @@ related:
 
 | Bloque | Prioridad | Esfuerzo | Desbloquea |
 |--------|-----------|----------|------------|
-| Ola C shims CLI | **P1** | Medio | Deuda forense / CI |
+| ~~Ola C shims CLI~~ | ~~P1~~ | — | ✅ PR #14 |
 | Handlers lab (`accept-pr` completo) | **P2** | Medio | Runbooks sin pasos manuales |
 | IOTA CI + integridad genoma | **P3** | Bajo–Medio | Gobernanza EDA producción |
 | Ola C V3 coreografía | **P4** | Alto | Visión largo plazo |
