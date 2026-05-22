@@ -7,7 +7,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:5417bf69d8e1011536a3cb69edde6e8fd4314c6f5a4a128417329e84817f675b
+hash_signature: sha256:c11858282c97b4205cf8496fe1aa0a44d0ff3c044a0a82053844cdc77d1d3613
 inputs:
 - refactor_goal: Propósito central de la refactorización
 - refined_constraints: Restricciones de alcance complementarias y límites

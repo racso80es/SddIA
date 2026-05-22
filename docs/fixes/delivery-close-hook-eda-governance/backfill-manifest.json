@@ -1,0 +1,12 @@
+{
+  "correlation_id": "delivery-close-hook-eda-governance",
+  "orphan_count_after": 0,
+  "emit_ok": 2,
+  "entities": [
+    "system-fracture-detected",
+    "materialize-fracture-pbi",
+    "enrich-fracture-pbi-kaizen"
+  ],
+  "note": "Backfill Fase C lote 1 (2026-05-22). Post-refactor Hito 4: scan global orphan_count 0.",
+  "smoke_fracture_event_id": "9216ad24-5ee8-4ac1-b048-b33a363bd997"
+}

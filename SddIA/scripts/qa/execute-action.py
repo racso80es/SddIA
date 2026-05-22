@@ -13,7 +13,9 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -50,6 +52,8 @@ ACTION_AGENT: dict[str, str] = {
     "emit-pr-merged-event": "eda-bus",
     "emit-pr-presented-event": "eda-bus",
     "emit-domain-mutation": "eda-bus",
+    "materialize-fracture-pbi": "cumulo",
+    "enrich-fracture-pbi-kaizen": "mayeuta",
 }
 
 
@@ -391,11 +395,293 @@ def _run_sync_entity_index(repo: Path, inputs: dict[str, Any], action_def: dict[
     raise ValueError(f"lifecycle_operation no soportada: {lifecycle_operation}")
 
 
+def _slugify_process_name(name: str) -> str:
+    slug = re.sub(r"[^\w\-]+", "-", name.strip().lower())
+    slug = re.sub(r"-+", "-", slug).strip("-")
+    return slug[:48] or "fracture"
+
+
+def _fracture_trace_hash(error_trace: str) -> str:
+    return hashlib.sha256(error_trace.strip().encode("utf-8")).hexdigest()[:12]
+
+
+def _fracture_pbi_filename(process_name: str, error_trace: str) -> str:
+    slug = _slugify_process_name(process_name)
+    return f"[FIX] {slug} — fractura sistémica ({_fracture_trace_hash(error_trace)}).md"
+
+
+def _fracture_pbi_path(repo: Path, process_name: str, error_trace: str) -> Path:
+    return repo / "docs" / "todos" / "pending" / _fracture_pbi_filename(process_name, error_trace)
+
+
+def _analyze_fracture_kaizen(
+    process_name: str,
+    error_trace: str,
+    attempted_action: str,
+    agent_emitter: str,
+) -> tuple[str, str, str]:
+    """Diagnóstico determinista lab → (veredicto, causa raíz, propuesta markdown)."""
+    blob = f"{error_trace}\n{attempted_action}\n{process_name}".lower()
+    root_causes: list[str] = []
+    proposals: list[tuple[str, str]] = []
+
+    if any(token in blob for token in ("recurs", "pre-push", "hook", "delivery-close", "re-entrada")):
+        root_causes.append(
+            "Recursión o re-entrada en la cadena hook Git ↔ proceso de cierre (`delivery-close-cycle`)."
+        )
+        proposals.append(
+            (
+                "refactor_tool",
+                "Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE` y push interno con `SDDIA_SKIP_HOOKS=1` "
+                "acotado al subproceso `git-manager`.",
+            )
+        )
+    if any(token in blob for token in ("gh ", "gh pr", "git push", "git merge", "bypass", "skip_hooks", "curl ")):
+        root_causes.append(
+            "Violación de jurisdicción delegada: terminal raw usada para evadir cápsula o proceso oficial."
+        )
+        proposals.append(
+            (
+                "new_norm",
+                "Reforzar `SddIA/norms/obediencia-procesos.md` § Ley de Jurisdicción Delegada; "
+                "prohibir bypass silencioso ante fallo.",
+            )
+        )
+    if any(token in blob for token in ("orphan", "ruido de sistema", "eda genómica", "huérfan")):
+        root_causes.append(
+            "Entidad genómica indexada sin correlato `Domain_Entity_Created` en bus EDA."
+        )
+        proposals.append(
+            (
+                "refactor_tool",
+                "Ejecutar backfill Fase C (`audit-entity-eda-coverage --emit`) o integrar sello en `entity-manager` create.",
+            )
+        )
+    if any(token in blob for token in ("timeout", "block", "abort", "failed", "colaps")):
+        root_causes.append(
+            "Bloqueo operativo sin escalado Kintsugi previo al intento de recuperación manual."
+        )
+        proposals.append(
+            (
+                "prompt_adjustment",
+                "Ajustar instrucción operador IA: detener, emitir `System_Fracture_Detected`, "
+                "notificar al Vértice Biológico — no continuar entrega.",
+            )
+        )
+
+    if not root_causes:
+        root_causes.append(
+            f"Causa raíz no clasificada automáticamente para `{process_name}`; requiere laudo humano."
+        )
+        proposals.append(
+            (
+                "process_fix",
+                f"Auditar proceso `{process_name}`, acción `{attempted_action}` y emisor `{agent_emitter}`.",
+            )
+        )
+
+    verdict_priority = ("new_norm", "refactor_tool", "prompt_adjustment", "process_fix")
+    verdict = proposals[0][0]
+    for vp in verdict_priority:
+        if any(p[0] == vp for p in proposals):
+            verdict = vp
+            break
+
+    verdict_labels = {
+        "new_norm": "Nueva norma o endurecimiento normativo",
+        "refactor_tool": "Refactor de herramienta / cápsula / handler lab",
+        "prompt_adjustment": "Ajuste de prompt o regla operador IA",
+        "process_fix": "Corrección de proceso oficial",
+    }
+
+    proposal_md = "\n".join(f"- **{verdict_labels.get(p[0], p[0])}:** {p[1]}" for p in proposals)
+    root_md = "\n".join(f"- {c}" for c in root_causes)
+
+    section = f"""## Conclusión Analítica y Propuesta Evolutiva
+
+*(Síntesis Mayeuta — Kintsugi async)*
+
+### Diagnóstico de causa raíz
+
+{root_md}
+
+### Veredicto evolutivo
+
+**{verdict_labels.get(verdict, verdict)}** (`{verdict}`)
+
+### Propuestas
+
+{proposal_md}
+
+> Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar."""
+    return verdict, root_md, section
+
+
+def _upsert_fracture_kaizen_section(content: str, section: str) -> str:
+    marker = "## Conclusión Analítica y Propuesta Evolutiva"
+    placeholder = "_Pendiente de síntesis Mayeuta (Kintsugi async)._"
+    if marker in content:
+        before, _, after = content.partition(marker)
+        if after.strip().startswith(placeholder):
+            return before.rstrip() + "\n\n" + section + "\n"
+        return re.sub(
+            rf"{re.escape(marker)}[\s\S]*?(?=\n## |\Z)",
+            section + "\n",
+            content,
+            count=1,
+        )
+    return content.rstrip() + "\n\n" + section + "\n"
+
+
+def _run_materialize_fracture_pbi(
+    repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]
+) -> dict[str, Any]:
+    _ = action_def
+    process_name = inputs.get("process_name")
+    error_trace = inputs.get("error_trace")
+    agent_emitter = inputs.get("agent_emitter")
+    attempted_action = inputs.get("attempted_action")
+    for key, val in (
+        ("process_name", process_name),
+        ("error_trace", error_trace),
+        ("agent_emitter", agent_emitter),
+        ("attempted_action", attempted_action),
+    ):
+        if not isinstance(val, str) or not val.strip():
+            raise ValueError(f"{key} es obligatorio (string)")
+
+    trace_hash = _fracture_trace_hash(error_trace)
+    slug = _slugify_process_name(process_name)
+    filename = _fracture_pbi_filename(process_name, error_trace)
+    pending_dir = repo / "docs" / "todos" / "pending"
+    pending_dir.mkdir(parents=True, exist_ok=True)
+    target = pending_dir / filename
+    rel_path = str(target.relative_to(repo)).replace("\\", "/")
+
+    if target.is_file():
+        return {
+            "success": True,
+            "target_path": rel_path,
+            "message": "PBI ya existente (idempotente)",
+        }
+
+    persist_ref = inputs.get("persist_ref")
+    branch_name = inputs.get("branch_name")
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    related_lines = [
+        "  - SddIA/norms/obediencia-procesos.md",
+        "  - SddIA/events/system-fracture-detected.md",
+    ]
+    if isinstance(persist_ref, str) and persist_ref.strip():
+        related_lines.append(f"  - {persist_ref.strip()}")
+    if isinstance(branch_name, str) and branch_name.strip():
+        related_lines.append(f"  - branch: {branch_name.strip()}")
+
+    body = f"""---
+document_id: PBI-FIX-FRACTURE-{trace_hash}
+title: "[FIX] {process_name.strip()} — fractura sistémica"
+format: markdown
+version: "1.0.0"
+created: "{today}"
+status: "abierto"
+priority: alta
+process: bug-fix
+incident_ref: "System_Fracture_Detected — {trace_hash}"
+related:
+{chr(10).join(related_lines)}
+---
+
+# [FIX] {process_name.strip()} — fractura sistémica
+
+## Incidente (auto-generado por Cúmulo)
+
+| Campo | Valor |
+|-------|--------|
+| Proceso | `{process_name.strip()}` |
+| Emisor | `{agent_emitter.strip()}` |
+| Acción intentada | `{attempted_action.strip()}` |
+
+## Traza de error
+
+```
+{error_trace.strip()}
+```
+
+## Mandato
+
+Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `curl`) hasta cierre documentado.
+
+## Conclusión Analítica y Propuesta Evolutiva
+
+_Pendiente de síntesis Mayeuta (Kintsugi async)._
+
+## Criterio de cierre
+
+- [ ] Causa raíz resuelta
+- [ ] Argos APTO en `validacion.md` del fix
+- [ ] Este TODO movido a `docs/todos/done/`
+"""
+    target.write_text(body, encoding="utf-8")
+    return {
+        "success": True,
+        "target_path": rel_path,
+        "message": "PBI materializado",
+        "trace_hash": trace_hash,
+    }
+
+
+def _run_enrich_fracture_pbi_kaizen(
+    repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]
+) -> dict[str, Any]:
+    _ = action_def
+    process_name = inputs.get("process_name")
+    error_trace = inputs.get("error_trace")
+    agent_emitter = inputs.get("agent_emitter")
+    attempted_action = inputs.get("attempted_action")
+    for key, val in (
+        ("process_name", process_name),
+        ("error_trace", error_trace),
+        ("agent_emitter", agent_emitter),
+        ("attempted_action", attempted_action),
+    ):
+        if not isinstance(val, str) or not val.strip():
+            raise ValueError(f"{key} es obligatorio (string)")
+
+    cumulo_path = inputs.get("cumulo_pbi_path")
+    if isinstance(cumulo_path, str) and cumulo_path.strip():
+        target = repo / Path(cumulo_path.strip())
+    else:
+        target = _fracture_pbi_path(repo, process_name, error_trace)
+
+    if not target.is_file():
+        raise FileNotFoundError(
+            f"PBI de Cúmulo no encontrado: {target.relative_to(repo)} — ejecutar materialize-fracture-pbi antes"
+        )
+
+    verdict, _, section = _analyze_fracture_kaizen(
+        process_name.strip(),
+        error_trace.strip(),
+        attempted_action.strip(),
+        agent_emitter.strip(),
+    )
+    content = target.read_text(encoding="utf-8")
+    target.write_text(_upsert_fracture_kaizen_section(content, section), encoding="utf-8")
+    rel_path = str(target.relative_to(repo)).replace("\\", "/")
+    return {
+        "success": True,
+        "target_path": rel_path,
+        "message": "PBI enriquecido con síntesis Kaizen",
+        "evolution_verdict": verdict,
+    }
+
+
 PHYSICAL_HANDLERS: dict[str, Any] = {
     "sync-entity-index": _run_sync_entity_index,
     "emit-pr-merged-event": _run_emit_pr_merged,
     "emit-pr-presented-event": _run_emit_pr_presented,
     "emit-domain-mutation": _run_emit_domain_mutation,
+    "materialize-fracture-pbi": _run_materialize_fracture_pbi,
+    "enrich-fracture-pbi-kaizen": _run_enrich_fracture_pbi_kaizen,
 }
 
 

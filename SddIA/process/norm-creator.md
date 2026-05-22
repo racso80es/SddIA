@@ -6,7 +6,7 @@ contract: "process-contract v1.3.0"
 context:
   - "ecosystem-evolution"
   - "knowledge-management"
-hash_signature: sha256:924276cd786aa74350a54671378eefb052f260251a6d16e53a3f578120754cc5
+hash_signature: sha256:94c3782d893279fc823a8a633161146fcfa7ce5ad32ebca75c4e72a3335d2d9d
 inputs:
   - "tactical_norm_name": "Identificador kebab-case del archivo (`{name}.md` bajo `directories.library_norms`)"
   - "tactical_norm_version": "SemVer de la norma (p. ej. 1.0.0)"

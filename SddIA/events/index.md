@@ -22,6 +22,7 @@ Contrato normativo de la familia: `events-contract.md` (no constituye una Clase 
 | `domain-entity-created.md` | `1f518278-7a3d-4160-b757-a3661d263ec3` | domain-entity-created | Domain_Entity_Created | 1.0.0 | events-contract v1.0.0 | ecosystem-evolution | `domain_entity_created` |
 | `pull-request-presented.md` | `5e488ae6-7cb2-4a2c-9725-4a7d4ce239ea` | pull-request-presented | PullRequest_Presented | 1.0.0 | events-contract v1.0.0 | ecosystem-evolution | `pull_request_presented` |
 | `pull-request-merged.md` | `cfb8ce66-784e-4826-8a0a-a20c671e3a60` | pull-request-merged | PullRequest_Merged | 1.0.0 | events-contract v1.0.0 | dlt-auditing | `pull_request_merged` |
+| `system-fracture-detected.md` | `f8e3a1b2-c4d5-4e6f-9a0b-1c2d3e4f5a6b` | system-fracture-detected | System_Fracture_Detected | 1.0.0 | events-contract v1.0.0 | ecosystem-evolution | `system_fracture_detected` |
 
 ## Archivos en carpeta no catalogados como Clase
 
@@ -30,5 +31,5 @@ Contrato normativo de la familia: `events-contract.md` (no constituye una Clase 
 
 ## Integridad (última pasada)
 
-- **Sincronización:** 5 Clases ECST catalogadas (Fase 4 Ola C); cabeceras alineadas a filas del índice.
+- **Sincronización:** 6 Clases ECST catalogadas; cabeceras alineadas a filas del índice.
 - **SSOT rutas:** Clases → `SddIA/events/`; instancias → `docs/events/` (`eda_bus`); personalización → `.SddIA/events/`.

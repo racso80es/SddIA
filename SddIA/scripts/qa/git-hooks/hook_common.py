@@ -24,6 +24,7 @@ BRANCH_PREFIXES = ("feat/", "fix/", "refactor/", "hotfix/")
 MAIN_GUARD_MSG = (
     "Violación de Soberanía: main solo muta mediante el proceso accept-pr (PR merge). Push bloqueado."
 )
+HOOK_DELIVERY_CLOSE_ENV = "SDDIA_HOOK_DELIVERY_CLOSE"
 
 GIT_HOOK_NAMES = frozenset(
     {
@@ -62,6 +63,10 @@ INSTALLER_EXCLUDE_NAMES = frozenset({"install-hooks"})
 
 def skip_hooks() -> bool:
     return os.environ.get("SDDIA_SKIP_HOOKS") == "1"
+
+
+def in_delivery_close_cycle() -> bool:
+    return os.environ.get(HOOK_DELIVERY_CLOSE_ENV) == "1"
 
 
 def ref_to_branch(ref: str) -> str:
@@ -107,9 +112,10 @@ def resolve_persist_ref(branch_name: str) -> str | None:
     slug = branch_slug(branch_name)
     if not slug:
         return None
-    candidate = REPO / "docs" / "features" / slug
-    if candidate.is_dir():
-        return f"docs/features/{slug}"
+    for docs_kind in ("features", "fixes"):
+        candidate = REPO / "docs" / docs_kind / slug
+        if candidate.is_dir():
+            return f"docs/{docs_kind}/{slug}"
     return None
 
 
@@ -129,7 +135,7 @@ def scan_presented_for_branch(branch_name: str) -> bool:
     return False
 
 
-def gh_pr_open_for_branch(branch_name: str) -> bool:
+def _gh_pr_state_for_branch(branch_name: str) -> str | None:
     try:
         proc = subprocess.run(
             ["gh", "pr", "view", branch_name, "--json", "state", "-q", ".state"],
@@ -141,15 +147,24 @@ def gh_pr_open_for_branch(branch_name: str) -> bool:
             check=False,
         )
     except OSError:
-        return False
+        return None
     if proc.returncode != 0:
-        return False
+        return None
     state = (proc.stdout or "").strip().upper()
-    return state == "OPEN"
+    return state or None
+
+
+def gh_pr_open_for_branch(branch_name: str) -> bool:
+    return _gh_pr_state_for_branch(branch_name) == "OPEN"
+
+
+def gh_pr_merged_for_branch(branch_name: str) -> bool:
+    return _gh_pr_state_for_branch(branch_name) == "MERGED"
 
 
 def should_skip_pre_push_present(branch_name: str) -> bool:
-    if gh_pr_open_for_branch(branch_name):
+    state = _gh_pr_state_for_branch(branch_name)
+    if state in ("OPEN", "MERGED"):
         return True
     if scan_presented_for_branch(branch_name):
         return True
@@ -184,6 +199,8 @@ def write_inputs_payload(prefix: str, payload: dict[str, Any]) -> Path:
 
 def invoke_process(process_name: str, inputs: dict[str, Any]) -> int:
     payload_path = write_inputs_payload(f"hook-{process_name}", inputs)
+    env = os.environ.copy()
+    env[HOOK_DELIVERY_CLOSE_ENV] = "1"
     proc = subprocess.run(
         [sys.executable, str(EXECUTE_PROCESS), "--process", process_name, "--inputs-file", str(payload_path)],
         cwd=str(REPO),
@@ -192,6 +209,7 @@ def invoke_process(process_name: str, inputs: dict[str, Any]) -> int:
         encoding="utf-8",
         errors="replace",
         check=False,
+        env=env,
     )
     if proc.stdout:
         print(proc.stdout, file=sys.stderr, end="")

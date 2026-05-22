@@ -5,7 +5,7 @@ version: 1.1.0
 contract: process-contract v1.3.0
 context:
 - ecosystem-evolution
-hash_signature: sha256:bebaa3c536ff8a67dca9f61c841e594a4efcfd51593dd6badbc8549422232b60
+hash_signature: sha256:4eb63e1cc76aef9b07f0ec90416fbacb73910246c093e0e8ec738544dfa04275
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -104,4 +104,4 @@ Variables de entorno para cápsulas físicas sin efectos destructivos por defect
 | `SDDIA_LAB_SKIP_HIGIENE` | Omite checkout/delete en Higiene local |
 | `SDDIA_LAB_DELETE_FEATURE_BRANCH` | Si `1`, intenta borrar rama tras sello (solo lab explícito) |
 
-Fases con agentes Argos (Impacto, Aduana) permanecen `simulated` o gate dedicado según handler. Ver `docs/features/pr-presented-orchestration/execution.md`.
+**Anti-recursión hook (Ola B):** cuando `source_process == git-hook-pre-push`, la fase Publicación remota ejecuta push con `SDDIA_SKIP_HOOKS=1` **solo** en el subproceso `git-manager`. El hook pre-push omite re-entrada si `SDDIA_HOOK_DELIVERY_CLOSE=1` (inyectado por `invoke_process` del hook).

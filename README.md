@@ -53,6 +53,8 @@ Secretos y variables de entorno del runtime se cargan desde **bóvedas locales**
 
 Si existen **ambas** bóvedas, el runtime registra en stderr: `[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env`.
 
+> **Nota EDA:** `PYTHONUTF8=1` u otras variables en la bóveda global **no sustituyen** el flujo canónico de presentación/merge (`delivery-close-cycle` → `PullRequest_Presented` → `accept-pr` → `PullRequest_Merged`). Ver `SddIA/norms/pull-request-orchestration.md`.
+
 **Entrypoints que cargan la jerarquía** (vía `SddIA/scripts/qa/env_loader.py`) **antes** de invocar cápsulas:
 
 | Entrypoint | Punto de carga |

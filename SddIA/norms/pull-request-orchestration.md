@@ -64,3 +64,8 @@ La **Única Fuente de Verdad (SSOT)** para la consolidación de código en `main
 - `SddIA/norms/skill-io-shell-executor-frozen.md`
 - `SddIA/norms/git-operations.md`
 - `SddIA/process/accept-pr.md`
+- `SddIA/norms/obediencia-procesos.md` — Ley de Jurisdicción Delegada y protocolo Kintsugi ante fallo de flujo
+
+## 7. Escalado ante bypass (Kintsugi)
+
+Si el hook pre-push o `delivery-close-cycle` falla, queda **prohibido** usar `gh`/`git` raw para cerrar el PR. La IA debe escalar vía `System_Fracture_Detected` o PBI en `docs/todos/pending/` antes de cualquier bypass. Ver `SddIA/norms/obediencia-procesos.md` § Escalado ante fallo.

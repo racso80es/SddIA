@@ -4,7 +4,7 @@ name: "entity-manager"
 version: "1.0.0"
 contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
-hash_signature: sha256:0d5784440047ba18b0df605ecf27b5ec8fbe1ae72293bc553abc4210d9d2b857
+hash_signature: sha256:26d6e983d5adb682f18ff177a8c59b94e09f15027e347ce90d46a63a2362e632
 inputs:
   - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event"
   - "entity_name": "string; identificador kebab-case de la entidad"

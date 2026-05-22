@@ -91,7 +91,12 @@ def crypto(repo: Path, payload: dict[str, Any]) -> Any:
     return out["data"]["result"]
 
 
-def invoke_git_manager(repo: Path, operation_type: str, payload: dict[str, Any]) -> dict[str, Any]:
+def invoke_git_manager(
+    repo: Path,
+    operation_type: str,
+    payload: dict[str, Any],
+    extra_env: dict[str, str] | None = None,
+) -> dict[str, Any]:
     git_script = repo / "scripts" / "skills" / "git-manager.py"
     if not git_script.is_file():
         raise FileNotFoundError(str(git_script))
@@ -100,6 +105,9 @@ def invoke_git_manager(repo: Path, operation_type: str, payload: dict[str, Any])
         "repository_path": str(repo.resolve()),
         "operation_payload_json": payload,
     }
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
     proc = subprocess.run(
         [sys.executable, str(git_script)],
         input=json.dumps(req, ensure_ascii=False),
@@ -109,6 +117,7 @@ def invoke_git_manager(repo: Path, operation_type: str, payload: dict[str, Any])
         errors="replace",
         cwd=str(repo),
         check=False,
+        env=env,
     )
     stdout = (proc.stdout or "").strip()
     if not stdout:
@@ -173,10 +182,15 @@ def capsule_delivery_remote_push(repo: Path, inputs: dict[str, Any], state: dict
         raise ValueError("branch_name es obligatorio para Publicación remota")
     if os.environ.get("SDDIA_LAB_SKIP_GIT_PUSH", "").strip().lower() in ("1", "true", "yes"):
         return {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT_PUSH"}
+    # Push interno desde hook pre-push: skip hooks solo en subproceso git (no global).
+    push_env: dict[str, str] | None = None
+    if inputs.get("source_process") == "git-hook-pre-push":
+        push_env = {"SDDIA_SKIP_HOOKS": "1"}
     data = invoke_git_manager(
         repo,
         "push",
         {"remote": "origin", "branch": branch.strip(), "force": False},
+        extra_env=push_env,
     )
     state["delivery_push"] = data
     return data
