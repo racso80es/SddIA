@@ -5,7 +5,7 @@ version: 1.0.0
 contract: process-contract v1.3.0
 context:
 - ecosystem-evolution
-hash_signature: sha256:c19c0b7f31b41bb22f6db89a9992a0aa78dab0f9322ccd0034e604e3e8d52b5f
+hash_signature: sha256:ddcbbe126f7f2753c07307a24d55973cdeb8738b3a58a41700c7975908146805
 inputs:
 - core_root: Raíz del Core resuelta por Cumulo (directories / constitution)
 - target_repo: Repositorio o workspace destino de la difusión

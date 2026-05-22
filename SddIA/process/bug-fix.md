@@ -7,7 +7,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:2bee0aa5aa6bb21cfc98226f40f329f5a6c73f81b14e9a140ea40b3deed3d7bb
+hash_signature: sha256:3c2f6fd64dc559a2463d46bd371ef54417404cdab49480511e016aad7535a19c
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
@@ -67,3 +67,14 @@ Todos los artefactos `.md` incluirán el bloque de frontmatter de la norma, inye
 La última fase invoca `execute-process` apuntando a `delivery-close-cycle` con sus `process_inputs` inyectados (`source_process: bug-fix`, `persist_ref` y `branch_name`). El subproceso asume la propagación del `pr_url`.
 
 *Nota de Arquitectura EDA:* El Sello Criptográfico (`PullRequest_Merged`) es un evento asíncrono y desacoplado post-fusión. La escritura eventual de `finalize-process.md` queda supeditada a la evolución del subproceso de cierre.
+
+## Perfil laboratorio vs runtime IDE
+
+| Aspecto | Laboratorio (`execute-process.py`) | Runtime IDE completo |
+| :--- | :--- | :--- |
+| Fase 1 Inicialización | `workspace-init` físico (git-manager + `objectives.md` mínimo) | Igual; `persist_ref` bajo `docs/fixes/` si rama `fix/` o `source_process: bug-fix` |
+| Fases 2–4 (Dedalo…Argos) | `simulated` / agentes IDE | Agentes V5; cascada mínima `spec.md` + `implementation.md` + `execution.md` + `validacion.md` |
+| Fase 5 Cierre | Delega en `delivery-close-cycle` con `source_process: bug-fix` | Orquestador inyecta `pr_title`, `pr_body` |
+| Inputs workspace-init | `branch_name` + `persist_ref` + (`bug_summary` \| `fix_name`); no exige `feature_name` | Misma regla en handler `execute_process_capsules.py` |
+
+**Contrato git-manager fetch:** toda invocación `fetch` debe incluir `prune` (boolean) según `skill-io-git-manager-frozen.md` §3.7.

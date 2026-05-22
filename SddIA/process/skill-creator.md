@@ -4,7 +4,7 @@ name: "skill-creator"
 version: "1.0.0"
 contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
-hash_signature: sha256:47937582521c663aedd3fd66fd6d31e91b8494376561688b26df2c9d2834db9a
+hash_signature: sha256:b440cb791d2d5ea69a4c11c3f7dd9fe6ebcb1df3e1a512f4bdf18c3c7acefb45
 inputs:
   - "skill_name": "Identificador kebab-case de la skill (`{name}` del archivo `{name}.md` en `cumulo.directories.skills`)"
   - "skill_context": "Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)"
