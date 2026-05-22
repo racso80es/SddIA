@@ -2,8 +2,11 @@
 feature_name: delivery-close-hook-eda-governance
 created: "2026-05-22"
 process: bug-fix
-branch: fix/delivery-close-hook-eda-governance
+branch: main
 global: APTO
+merged_pr: 23
+merge_commit: 620d94c2c2a2fe50fd59e43f016d481c451aef2e
+closed: "2026-05-22"
 checks:
   CA-O1-hook-guard: pass
   CA-O1-push-subprocess-skip: pass
@@ -53,7 +56,9 @@ git_changes:
 | `PullRequest_Presented` | `868d1b8f-0171-4f8f-ab72-19382941523d` | `docs/events/processed/` | `argos: success`, `cumulo: success` |
 | `PullRequest_Merged` | `75b8e950-9366-4ce5-bf22-b4b56430736e` | `docs/events/processed/` | `cumulo: success` |
 
-Correlación: rama `feat/ampliacion-configuracion-entornos`, PR https://github.com/racso80es/SddIA/pull/20, merge `f0ef7bf4bb9e28e67091d70a6fba6f8fadcbf280`, `emitter_agent: retroactive-fix`.
+Correlación PR #20: rama `feat/ampliacion-configuracion-entornos`, https://github.com/racso80es/SddIA/pull/20, merge `f0ef7bf…`, `emitter_agent: retroactive-fix`.
+
+Correlación fix: PR https://github.com/racso80es/SddIA/pull/23 — merge `620d94c2c2a2fe50fd59e43f016d481c451aef2e`. `PullRequest_Merged` `a71e3699-06b6-483f-9cff-375a3603db55` → `processed/`.
 
 ## O3 — Gobernanza
 

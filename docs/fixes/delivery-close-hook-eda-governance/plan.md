@@ -49,11 +49,11 @@ version_plan: "1.0.0"
 | 4.5 | Backfill Fase C | `orphan_count_after: 0` |
 | 4.6 | Smoke fan-out dual | watcher → PBI enriquecido |
 
-## Fase 5 — Verificación y cierre — Argos ✅
+Fase 5 — Verificación y cierre — Argos ✅
 
 - [x] `validacion.md` con checks CA-* y event_ids
-- [ ] `delivery-close-cycle` en rama fix (presentación PR) — pendiente push remoto
-- [ ] Mover PBI a `docs/todos/done/` — tras merge del fix
+- [x] PR #23 mergeado vía `accept-pr` (`620d94c`)
+- [x] PBI movido a `docs/todos/done/`
 
 ## Orden de dependencias
 

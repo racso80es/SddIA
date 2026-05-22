@@ -4,7 +4,10 @@ title: "[FIX] delivery-close-cycle — hooks EDA, evento PullRequest_Presented y
 format: markdown
 version: "1.0.0"
 created: "2026-05-22"
-status: "en-progreso"
+status: "cerrado"
+closed: "2026-05-22"
+pr_ref: "https://github.com/racso80es/SddIA/pull/23"
+merge_commit: "620d94c2c2a2fe50fd59e43f016d481c451aef2e"
 priority: alta
 process: bug-fix
 incident_ref: "PR #20 — ampliacion-configuracion-entornos (merge f0ef7bf sin bus EDA)"
@@ -131,7 +134,10 @@ git push (feature)
 | persist_ref | `docs/fixes/delivery-close-hook-eda-governance/` |
 | Argos | **APTO** — ver `validacion.md` |
 | Smoke push hook | `PullRequest_Presented` `01656c3a-…` emitido en push real (2026-05-22) |
-| Pendiente cierre | Push remoto → PR → `accept-pr` → mover PBI a `done/` |
+| PR fix | https://github.com/racso80es/SddIA/pull/23 — **MERGED** `620d94c` |
+| Presented fix | `c2573529-ca49-4716-bbf9-ae77135be8fe` |
+| Merged fix | `a71e3699-06b6-483f-9cff-375a3603db55` → `processed/` |
+| Cierre | PBI movido a `docs/todos/done/` (2026-05-22) |
 
 ---
 
@@ -156,13 +162,13 @@ git push (feature)
 - [x] Smoke push hook remoto → `PullRequest_Presented` `01656c3a-c3e4-4564-8937-05d300013b68` (push `20c5ee5`, anti-recursión OK).
 - [x] PR #20 con eventos retroactivos registrados.
 - [x] Norma IA publicada (`obediencia-procesos.md` v1.1 + `pull-request-orchestration.md` §7).
-- [ ] Este TODO movido a `docs/todos/done/` *(tras merge del fix)*.
+- [x] Este TODO movido a `docs/todos/done/` (2026-05-22, post PR #23).
 
 ---
 
 ## 7. Protocolo Operador (Modo "Kintsugi Ontológico")
 
-Marco innegociable ante fallos sistémicos — vigente mientras el fix está abierto y como precedente permanente:
+Marco innegociable ante fallos sistémicos — precedente permanente post PR #23:
 
 1. **Intercepción y Emisión:** Si la IA o el flujo encuentra un bloqueo (ej. hook en pánico), la ejecución se detiene de inmediato.
 2. **El Grito del Sistema:** El proceso fallido invoca `route-domain-event` emitiendo `System_Fracture_Detected.json` en el bus.
