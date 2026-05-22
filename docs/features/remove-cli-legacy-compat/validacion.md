@@ -3,7 +3,7 @@ feature_name: remove-cli-legacy-compat
 created: "2026-05-22"
 process: feature
 branch: feat/remove-cli-legacy-compat-12759319319782396173
-pr_url: ""
+pr_url: "https://github.com/racso80es/SddIA/pull/14"
 global: true
 checks:
   A1: pass
@@ -44,6 +44,15 @@ python SddIA/scripts/qa/execute-process.py --process feature --inputs '{"feature
 python SddIA/scripts/qa/verify-process-integrity.py
 ```
 
-## Aduana PR
+## Aduana PR (#14)
 
-Tras push: `SDDIA_ENV=production`, `pull-request-review` con `persist_ref: docs/features/remove-cli-legacy-compat`.
+| Campo | Valor |
+|-------|-------|
+| Perfil | `SDDIA_ENV=production` |
+| Proceso | `pull-request-review` v2 |
+| Veredicto | `aprobado` |
+| `delivery_state` | `success` |
+| Triaje documental | OK (`spec`, `plan`, `implementation`, `objectives`) |
+| Triaje técnico | OK (`verify-process-integrity`) |
+| Handoff | `accept-pr` ejecutado (merge local `b44402bd`; huérfano sin Presented previo en bus) |
+| Evento | `PullRequest_Merged` pending `5f47474f-4699-4afa-aa89-750cc28bf4d8` |
