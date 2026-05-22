@@ -53,7 +53,16 @@ Estructura de la respuesta emitida por la cápsula.
 
 Directrices de seguridad y aislamiento de la herramienta.
 
-**Isolation Policy:** Obligatorio: Los secretos deben cargarse vía variables de entorno locales (dotenv). Estrictamente prohibido requerir o aceptar llaves privadas o mnemónicos en el JSON de entrada del payload.
+**Isolation Policy:** Obligatorio: Los secretos se cargan vía **Jerarquía de Bóvedas** (`.dev/.env` global, `.SddIA/.dev/.env` instancia) inyectada por el entrypoint Python antes de invocar la cápsula. Estrictamente prohibido requerir o aceptar llaves privadas o mnemónicos en el JSON de entrada del payload.
+
+### Vault hierarchy (SSOT)
+
+| Bóveda | Ruta |
+|--------|------|
+| Global | `.dev/.env` |
+| Instancia | `.SddIA/.dev/.env` (prevalece) |
+
+Referencia Cúmulo: `env_hierarchy` en `SddIA/core/cumulo.paths.json`.
 
 ### Secrets
 
@@ -73,7 +82,6 @@ Definición de las dependencias y el motor de ejecución.
 
 ```json
 [
-  "@iota/iota-sdk",
-  "dotenv"
+  "@iota/iota-sdk"
 ]
 ```

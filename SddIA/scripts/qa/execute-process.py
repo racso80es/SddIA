@@ -18,6 +18,7 @@ _QA_DIR = Path(__file__).resolve().parent
 if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
+from env_loader import load_hierarchical_env
 from execute_process_capsules import run_process
 from execute_process_core import (
     emit,
@@ -60,6 +61,7 @@ def main() -> None:
             process_name, process_inputs = normalize_request(raw)
 
         repo = repo_root()
+        load_hierarchical_env(repo)
         result = run_process(repo, process_name, process_inputs)
         emit(result, result.get("status_code", 0))
     except json.JSONDecodeError as e:

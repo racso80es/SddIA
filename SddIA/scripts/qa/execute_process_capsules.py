@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from env_loader import load_hierarchical_env
 from execute_process_core import (
     delegates_are_only_agents,
     load_process_def,
@@ -1641,6 +1642,7 @@ def execute_phase(
 
 
 def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -> dict[str, Any]:
+    load_hierarchical_env(repo)
     canonical, process_def, phases = load_process_def(repo, process_name)
     if canonical == "pull-request-review":
         _normalize_pr_review_inputs(repo, process_inputs)

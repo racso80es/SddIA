@@ -39,10 +39,14 @@ from eda_bus_utils import (  # noqa: E402
     resolve_origin_topology,
     subscriber_applies_to_topology,
 )
+from env_loader import load_hierarchical_env  # noqa: E402
 
 POLL_SECONDS = 2
 MAX_ROUTE_ATTEMPTS = 3
-IOTA_TIMEOUT_SECONDS = int(os.environ.get("SDDIA_IOTA_TIMEOUT_SECONDS", "45"))
+
+
+def _iota_timeout_seconds() -> int:
+    return int(os.environ.get("SDDIA_IOTA_TIMEOUT_SECONDS", "45"))
 
 _SUBPROCESS_UTF8 = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
@@ -127,7 +131,7 @@ def _invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str
             [npx, "tsx", str(entry)],
             input_text=json.dumps(payload),
             cwd=str(tool_dir),
-            timeout=IOTA_TIMEOUT_SECONDS,
+            timeout=_iota_timeout_seconds(),
             shell=False,
         )
     except subprocess.TimeoutExpired:
@@ -514,6 +518,7 @@ def _run_watcher(*, once: bool = False) -> None:
 
 
 def main() -> None:
+    load_hierarchical_env(_repo_root())
     if "--event-file-path" in sys.argv:
         _run_route_cli()
     else:
