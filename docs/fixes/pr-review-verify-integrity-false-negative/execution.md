@@ -22,6 +22,13 @@ $env:SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF = "1"
 python SddIA/scripts/qa/execute-process.py --process pull-request-review --inputs-file tmp/smoke-pr-review-verify-integrity.json
 ```
 
-## Hito 3 — dead-letter PR #23
+## Hito 3 — Retroactivo EDA (2026-05-22)
 
-Pendiente tras merge del fix: re-enrutar `docs/events/dead-letter/c2573529-ca49-4716-bbf9-ae77135be8fe.json`.
+- Lote `tmp/retroactive-eda-pr*.json` → `emit-pr-presented-event` / `emit-pr-merged-event`.
+- Manifest: `eda-retroactive-manifest.json`.
+- PR #29–#31 sin bus previo; PR #32 Presented `322e52b3` + retro `f7bc751c`.
+- Dead-letter histórico `c2573529` no recuperable en bus local.
+
+## Merge PR #32
+
+- https://github.com/racso80es/SddIA/pull/32 — `e7b0c7de989ffef7a9598d0dcaf0e308c09f0141`

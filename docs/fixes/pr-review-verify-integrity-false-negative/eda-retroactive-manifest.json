@@ -1,0 +1,39 @@
+{
+  "fix_name": "pr-review-verify-integrity-false-negative",
+  "merged_pr": 32,
+  "merge_commit": "e7b0c7de989ffef7a9598d0dcaf0e308c09f0141",
+  "emitter_agent": "retroactive-fix",
+  "events": [
+    {
+      "pr": 29,
+      "branch": "fix/event-pending-sweeper",
+      "presented_id": "39ab683b-4100-49be-a421-b5f56859351f",
+      "merged_id": "72937f9e-ec79-4c1a-a369-35e6d4bd309f",
+      "merge_commit": "0ba2ac7e608db36321a51aefe4e9c1550a3d22c6"
+    },
+    {
+      "pr": 30,
+      "branch": "feat/kaizen-cierre-documental-post-merge",
+      "presented_id": "19d44586-04ad-4c84-a025-f230139d0a4b",
+      "merged_id": "c5e37f58-9928-4955-8d85-1c8fde6f36c1",
+      "merge_commit": "4a3165d92bbd9f6bafe8672484bfa62d572053ba",
+      "route_presented_note": "route-domain-event fallo rama ya fusionada"
+    },
+    {
+      "pr": 31,
+      "branch": "docs/cerrar-pbi-kaizen-pr30",
+      "presented_id": "fe567363-cf3b-4490-945e-4f5e7a6ff458",
+      "merged_id": "6c811077-f9fc-418f-b1de-d451bf47fd0c",
+      "merge_commit": "735d6066c3bd1c2086a2534400b499007fa6a54a",
+      "route_presented_note": "route-domain-event fallo rama docs"
+    },
+    {
+      "pr": 32,
+      "branch": "fix/pr-review-verify-integrity-false-negative",
+      "presented_delivery_close": "322e52b3-9535-4214-8f80-10b6cb7e5ea1",
+      "presented_retroactive": "f7bc751c-3193-4c97-8598-90ad58a277e3",
+      "merged_id": "f23bcfe0-1f3a-4cb0-be5d-7ed7e447eb45",
+      "merge_commit": "e7b0c7de989ffef7a9598d0dcaf0e308c09f0141"
+    }
+  ]
+}
