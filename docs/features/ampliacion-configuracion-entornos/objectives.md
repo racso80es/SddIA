@@ -71,4 +71,4 @@ Origen: `docs/todos/pending/AmpliacionConfiguracionEntornos.md`
 | Especificación | ✅ `spec.md` v2 |
 | Planificación | ✅ `plan.md` v2 |
 | Hito 0.1–0.3 (Tekton) | ✅ implementado |
-| Verificación (Argos) | ⏳ pendiente |
+| Verificación (Argos) | ✅ `validacion.md` APTO |

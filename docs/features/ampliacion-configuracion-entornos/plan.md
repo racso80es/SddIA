@@ -33,7 +33,7 @@ Blueprint para Tekton. Entradas: `objectives.md`, `clarify.md`, `spec.md`.
 | **Hito 0.2** — Entrypoints + IOTA | ✅ | commits `42b1a44`, `55f5f82` |
 | **Hito 0.3** — Sanitización | ✅ | `.gitignore`, Cúmulo, starter-kit |
 | Implementación documental | ⏳ | `implementation.md`, `execution.md` |
-| Verificación (Argos) | ⏳ | `validacion.md` |
+| Verificación (Argos) | ✅ | `validacion.md` APTO |
 
 ---
 
