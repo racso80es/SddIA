@@ -4,20 +4,31 @@ title: "[ARQUITECTURA] Oráculo Sensor DLT y Activación de Validación de PR"
 format: markdown
 version: "2.0.0"
 created: "2026-05-22"
-status: pendiente
+status: completado
+closed: "2026-05-23"
 priority: arquitectura-eda
 feature_ref: docs/features/pull-request-automation-dlt
+validacion_ref: docs/features/pull-request-automation-dlt/validacion.md
 branch: feat/pull-request-automation-dlt
-pdf_ref: docs/todos/pending/SddIA_PBI_TODO_Activacion_Validacion_PR_v2.0.0.pdf
-bus_objetivo: .SddIA/events/PullRequest_Presented.json
+bus_objetivo: .events/pending/PullRequest_Presented.json
 anclaje_ssot: IOTA Rebased Testnet
 jurisdiccion: Yunque Operativo (Tormentosa)
+source_format: markdown
+migrated_from: docs/todos/pending/SddIA_PBI_TODO_Activacion_Validacion_PR_v2.0.0.pdf
 ---
 
 # [ARQUITECTURA] Oráculo Sensor DLT y Activación de Validación de PR
 
-**Estado:** Pendiente / Teórico — en espera de laudo empírico (H4).  
-**Feature activa:** `docs/features/pull-request-automation-dlt/` · rama `feat/pull-request-automation-dlt`.
+| Campo | Valor |
+|-------|-------|
+| **ID Feature** | `docs/features/pull-request-automation-dlt` |
+| **Fecha creación** | 2026-05-22 |
+| **Estatus** | ✅ Completado (2026-05-23) |
+| **Jurisdicción** | Yunque Operativo (Tormentosa) |
+| **Bus objetivo (runtime)** | `.events/pending/` (`cumulo.paths.json` → `eda_bus.pending`) |
+| **Anclaje SSOT** | IOTA Rebased Testnet |
+
+> **Nota migración:** transcripción canónica del PBI PDF v2.0.0. El bus operativo SSOT es `.events/pending/<event_id>.json`; la ruta conceptual `.SddIA/events/` es personalización de instancia EDA.
 
 ---
 
@@ -25,7 +36,7 @@ jurisdiccion: Yunque Operativo (Tormentosa)
 
 El ecosistema SddIA exige la convergencia absoluta de su Sistema Nervioso Orientado a Eventos (EDA) de Estado Cero. Actualmente, la intención de presentar un Pull Request (`PullRequest_Presented`) se materializa correctamente en el Libro Mayor Inmutable (DLT) cuando es detonada de forma local mediante el cliente (Cursor). Sin embargo, cuando un agente autónomo desacoplado espacialmente (Jules) interactúa de manera remota con la API del Leviatán (GitHub), el estímulo se disipa, provocando una **ceguera transaccional crítica** en la trinchera local.
 
-Este ítem define la reestructuración del mecanismo de captura sensorial para unificar emisión y recepción de intenciones. Al forzar que **toda detección pase obligatoriamente por la Testnet de IOTA Rebased**, se erradica el sesgo heurístico. El sistema local ya no vigilará ciegamente un sistema de archivos aislado; escuchará el anclaje criptográfico global firmado por una identidad autorizada, resolviendo el desacople temporal y espacial sin violar el aislamiento paramétrico.
+Este ítem del backlog (PBI) define la reestructuración del mecanismo de captura sensorial para unificar emisión y recepción de intenciones. Al forzar que **toda detección pase obligatoriamente por la Testnet de IOTA Rebased**, se erradica el sesgo heurístico. El sistema local ya no vigilará ciegamente un sistema de archivos aislado; escuchará el anclaje criptográfico global firmado por una identidad autorizada, resolviendo el desacople temporal y espacial sin violar el aislamiento paramétrico.
 
 **Dogma del Despertador Inerte aplicado a redes descentralizadas:** los scripts físicos locales y las acciones de GitHub carecen de jurisdicción lógica sobre el estado. Actúan exclusivamente como terminaciones nerviosas periféricas que traducen la mutación del entorno material (GitHub) en un anclaje inmutable en la Tangle, permitiendo que el motor determinista local despierte de forma simétrica ante un humano o un agente remoto.
 
@@ -56,18 +67,16 @@ Para resolver la imposibilidad física de que Jules firme transacciones DLT dire
 [Aduana pull-request-review] ──► Cerbero (RBAC) + Argos (Bloqueo Duro) ➔ S+ Grade
 ```
 
-> **Nota runtime:** bus canónico SSOT = `.events/pending/` (`cumulo.paths.json` → `eda_bus.pending`). La ruta conceptual `.SddIA/events/` es personalización de instancia EDA, no sustituto del bus operativo.
-
 ---
 
 ## 4. Especificación técnica del backlog atómico (TODO)
 
-| Hito | Objetivo técnico | Criterio de validación estricta (Filtro A) |
-|------|------------------|-------------------------------------------|
-| **H1** | Diseño del demonio sensor efímero `sddia-github-bridge` | `github_bridge_watcher.py`: listener inerte local en Python (polling ligero o webhook tunnel ngrok/relay). Agnóstico al autor del PR (Cursor o Jules). |
-| **H2** | Puente de firma aislada e inyección DLT | En `pull_request.opened`: demonio local extrae payload base, accede a `.SddIA/.dev/wallet.key`, compone estructura inmutable y ejecuta cápsula `iota-immutable-publisher` en Testnet. |
-| **H3** | Materialización idempotente en el bus | Suscriptor DLT local verifica confirmación en Tangle. Tras firma válida del Core, escribe payload en `.events/pending/<event_id>.json` con `transaction_digest` como `event_id` raíz — idempotencia f(x)=x. |
-| **H4** | Prueba de humo E2E desacoplada | Simular PR vía script externo sin privilegios locales (Simulación Jules). Verificar inyección reactiva en bus y arranque automatizado de las 7 fases de aduana `pull-request-review` con código de salida binario. |
+| Hito | Objetivo técnico | Criterio de validación estricta (Filtro A) | Entrega |
+|------|------------------|-------------------------------------------|---------|
+| **H1** | Demonio sensor efímero `sddia-github-bridge` | `github_bridge_watcher.py`: listener agnóstico al autor (Cursor o Jules) | ✅ |
+| **H2** | Puente firma aislada e inyección DLT | Solo demonio accede a `.SddIA/.dev/wallet.key`; invoca `iota-immutable-publisher` | ✅ |
+| **H3** | Materialización idempotente en el bus | `transaction_digest` como `event_id` en `.events/pending/` | ✅ |
+| **H4** | Prueba humo E2E desacoplada | Simulación Jules → aduana `pull-request-review` 7 fases | ✅ |
 
 ---
 
@@ -95,7 +104,7 @@ El archivo de intercambio inyectado en el bus local debe respetar la desnormaliz
 }
 ```
 
-**Evolución ECST requerida:** ampliar `pull-request-presented.md` v1.2+ con campos opcionales `repository`, `origin_agent`, `dlt_anchor_address`, `signer_identity_rbac` (ruta oráculo). Mantener compatibilidad con ruta local (`delivery-close-cycle` + UUID v4).
+**Implementación:** ECST evolucionado a v1.2.0 en `SddIA/events/pull-request-presented.md`; ruta oráculo marca `delivery_state.cumulo: success` al materializar (DLT ya anclado en H2).
 
 ---
 
@@ -103,28 +112,30 @@ El archivo de intercambio inyectado en el bus local debe respetar la desnormaliz
 
 | Vector de riesgo | Impacto estructural | Contramedida rúnica (Filtro B) |
 |------------------|---------------------|--------------------------------|
-| Caída de red IOTA Testnet | Bloqueo transaccional; incapacidad de generar chispazo de entrada en bus | **Fallback local controlado:** tras 3 reintentos, log en `.events/dead-letter/` con bandera `FALLBACK_LOCAL_SIGNATURE`. Requiere laudo del Vértice Biológico. |
-| Secuestro semántico del agente remoto | Payloads corruptos o URLs de PR falsificadas | **Validación ciega de oráculo:** contrastar intención contra API REST inmutable de GitHub antes de firmar hacia DLT. Si diff no coincide → descartar (Filtro A). |
-| Lectura de claves por subproceso | Inyección de comandos maliciosos en herramientas locales | **Aislamiento `.dev`:** `wallet.key` con permisos `chmod 400`. Solo demonio sensor compilado lee; IAs obreras en entornos limpios. |
+| Caída de red IOTA Testnet | Bloqueo transaccional; incapacidad de generar chispazo en bus | Fallback local: tras 3 reintentos, log en `.events/dead-letter/` con `FALLBACK_LOCAL_SIGNATURE`. Laudo Vértice Biológico. |
+| Secuestro semántico del agente remoto | Payloads corruptos o URLs falsificadas | Validación ciega: contrastar contra API REST GitHub antes de firmar (Filtro A) |
+| Lectura de claves por subproceso | Inyección maliciosa en herramientas locales | `wallet.key` chmod 400; solo demonio sensor lee; IAs en entornos limpios |
 
 ---
 
 ## 7. Protocolo de validación empírica
 
-Para pasar de Pendiente/Teórico al repositorio real, el laudo del Vértice Biológico exige:
+Laudo del Vértice Biológico (ejecutado 2026-05-23):
 
 1. Exportar `SDDIA_LAB_SIMULATE_REMOTE_PR=1`.
-2. Lanzar PR dummy en rama aislada desde interfaz externa simulando a Jules.
-3. Monitorear salida del daemon sensor y certificar publicación del bloque inmutable en explorador Tangle.
-4. Validar que `validacion.md` registre flujo completo con `delivery_state: success`.
+2. Lanzar PR dummy vía `simulate_remote_pr.py` (simulación Jules).
+3. Monitorizar `github_bridge_watcher.py --once` y digest IOTA (lab: `SDDIA_LAB_SIMULATE_IOTA=1`).
+4. Validar `validacion.md` con `global: APTO` y `delivery_state: success` en aduana directa.
+
+**Evidencia:** `docs/features/pull-request-automation-dlt/validacion.md`
 
 ---
 
-## 8. Precedencia en el ecosistema
+## 8. Cierre
 
-| Artefacto | Relación |
-|-----------|----------|
-| `pr-presented-orchestration` | Flujo **local** Cursor — no sustituir |
-| `pull-request-review-redesign` | Aduana reactiva — consumidor del evento |
-| `iota-immutable-publisher` | Cápsula de anclaje Testnet |
-| `ampliacion-configuracion-entornos` | Jerarquía bóvedas — secretos vía `.dev/.env` + `IOTA_WALLET_SECRET` |
+| Artefacto | Ubicación |
+|-----------|-----------|
+| Feature | `docs/features/pull-request-automation-dlt/` |
+| Validación | `validacion.md` (`pbi_archived: true`) |
+| PBI archivado | `docs/todos/done/Activacion_Validacion_PR_DLT.md` |
+| PDF origen | Retirado — sustituido por este Markdown |

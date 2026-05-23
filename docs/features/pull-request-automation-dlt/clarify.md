@@ -18,8 +18,7 @@ Transcript de decisiones (2026-05-23). Resuelve ambigüedades del PBI antes de b
 | ¿Proceso de inicio? | **`feature`** v1.3.0 |
 | Rama | `feat/pull-request-automation-dlt` |
 | `persist_ref` | `docs/features/pull-request-automation-dlt` |
-| Manifiesto PDF | `docs/todos/pending/SddIA_PBI_TODO_Activacion_Validacion_PR_v2.0.0.pdf` |
-| Manifiesto MD | `docs/todos/pending/Activacion_Validacion_PR_DLT.md` (v2.0.0 — transcripción operativa) |
+| Manifiesto | `docs/todos/done/Activacion_Validacion_PR_DLT.md` (v2.0.0 — migrado desde PDF) |
 | Bus SSOT runtime | `.events/pending/` (`cumulo.paths.json` → `eda_bus.pending`) |
 | Instancia EDA | `.SddIA/events/` — personalización; no sustituye bus operativo |
 | Estado PBI | Pendiente / Teórico — requiere laudo empírico (H4) para cerrar |
