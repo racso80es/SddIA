@@ -1,0 +1,11 @@
+{
+  "pr_branch": "feat/pull-request-automation-dlt",
+  "pr_id_or_path": "https://github.com/racso80es/SddIA/pull/lab-sim-final-e2e",
+  "correlation_id": "lab-sim-c872a0a12f964dd0b0f6aaf5",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/lab-sim-final-e2e",
+  "persist_ref": "docs/features/pull-request-automation-dlt",
+  "code_diff": "origin/main...HEAD",
+  "tasks_path": "docs/todos",
+  "document_context": "docs/features/pull-request-automation-dlt",
+  "author": "eda-bus-watcher"
+}
