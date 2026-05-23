@@ -67,7 +67,7 @@ def sweep_once(repo: Path) -> dict[str, Any]:
     bus = ensure_event_bus_topology(repo)
     pending_dir = repo / bus["pending"]
     registry = _load_registry(repo, bus)
-    report: dict[str, Any] = {"purged": [], "kaizen_alerts": [], "skipped": []}
+    report: dict[str, Any] = {"purged": [], "kaizen_alerts": [], "kaizen_finalized": [], "skipped": []}
 
     if not pending_dir.is_dir():
         return report
@@ -84,6 +84,16 @@ def sweep_once(repo: Path) -> dict[str, Any]:
                     "witnesses": result.get("witnesses", 0),
                     "headers": result.get("headers", 0),
                     "pending": result.get("pending", 0),
+                }
+            )
+            continue
+
+        if status == "kaizen-finalized":
+            report["kaizen_finalized"].append(
+                {
+                    "event_uuid": event_uuid,
+                    "pending": result.get("pending", 0),
+                    "headers": result.get("headers", 0),
                 }
             )
             continue
@@ -140,6 +150,8 @@ def main() -> None:
         else:
             if report["purged"]:
                 print(f"[SWEEPER] Purgados: {report['purged']}", flush=True)
+            if report["kaizen_finalized"]:
+                print(f"[SWEEPER] Kaizen terminalizados: {report['kaizen_finalized']}", flush=True)
             if report["kaizen_alerts"]:
                 print(f"[SWEEPER] Alertas Kaizen: {report['kaizen_alerts']}", flush=True)
 

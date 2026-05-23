@@ -93,15 +93,20 @@ def _log_route_outcome(
             flush=True,
         )
         return
+    sweep = _extract_sweep_from_route_stdout(proc.stdout or "")
+    pending_path = repo / bus["pending"] / key
+    if sweep and sweep.get("status") == "kaizen-finalized":
+        print(
+            f"[WATCHER] {key}: Kaizen terminalizado — padre retirado de pending",
+            flush=True,
+        )
+        return
     if _has_dead_letter_witnesses(repo, bus, event_uuid):
         print(
             f"[WATCHER] {key}: testigo dead-letter — padre permanece en pending (Kaizen)",
             flush=True,
         )
         return
-
-    sweep = _extract_sweep_from_route_stdout(proc.stdout or "")
-    pending_path = repo / bus["pending"] / key
     if sweep and sweep.get("status") == "purged":
         print(f"[WATCHER] {key}: enrutado y purgado de pending", flush=True)
     elif not pending_path.is_file():

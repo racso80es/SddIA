@@ -1,0 +1,26 @@
+{
+  "fix_name": "revision-gestion-eventos-kaizen",
+  "emitter_context": "retroactive-fix batch PR #32 + residual post-merge flow",
+  "kaizen_ref": "docs/features/kaizen-cierre-documental-single-pr/ (PR #34)",
+  "events": [
+    {
+      "event_id": "19d44586-04ad-4c84-a025-f230139d0a4b",
+      "event_type": "PullRequest_Presented",
+      "pr": 30,
+      "branch": "feat/kaizen-cierre-documental-post-merge",
+      "failed_subscriber": "argos.pull-request-review",
+      "error_trace": "pull-request-review: aduana bloqueó materialización",
+      "note": "Rama ya fusionada al re-enrutar retroactivo; flujo post-merge obsoleto"
+    },
+    {
+      "event_id": "fe567363-cf3b-4490-945e-4f5e7a6ff458",
+      "event_type": "PullRequest_Presented",
+      "pr": 31,
+      "branch": "docs/cerrar-pbi-kaizen-pr30",
+      "failed_subscriber": "argos.pull-request-review",
+      "error_trace": "pull-request-review: aduana bloqueó materialización",
+      "note": "Segundo PR documental post-merge; incompatible con kaizen single-PR"
+    }
+  ],
+  "procedure": "Tras desplegar kaizen-finalized: python SddIA/scripts/daemons/event-sweeper.py --once --json"
+}
