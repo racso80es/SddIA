@@ -198,6 +198,9 @@ def dispatch_subscriber(
         emitter = event.get("emitter_agent")
         if is_backfill_emitter(emitter if isinstance(emitter, str) else None):
             return sid, "skipped-backfill", None, 0
+        pl = event.get("payload")
+        if isinstance(pl, dict) and pl.get("dlt_anchor_address"):
+            return sid, "skipped-pre-anchored", None, 0
         ok_thresh, reason = dlt_threshold_ok(event)
         if not ok_thresh:
             return sid, "skipped-dlt-threshold", reason, 0
