@@ -3,7 +3,12 @@ feature_name: ampliacion-configuracion-entornos
 created: "2026-05-22"
 process: feature
 branch: feat/ampliacion-configuracion-entornos
+pr_url: https://github.com/racso80es/SddIA/pull/20
 global: APTO
+pbi_archived: true
+merged_pr: 20
+merge_commit: f0ef7bf
+closed: "2026-05-23"
 checks:
   CA-1: pass
   CA-2: pass
@@ -31,6 +36,7 @@ git_changes:
   - README.md
   - SddIA/tools/iota-immutable-publisher.md
   - docs/features/ampliacion-configuracion-entornos/
+  - docs/todos/done/AmpliacionConfiguracionEntornos.md
 ---
 
 # Validación — Jerarquía de Bóvedas (Argos)
@@ -65,6 +71,10 @@ Perfil: `SDDIA_ENV=production` (bóveda global `.dev/.env` + instancia `.SddIA/.
 ## Gate Ola A
 
 Hitos **0.1–0.3** APTO → desbloquea pasivos técnicos Ola A dependientes de env.
+
+## Cierre documental
+
+PBI `PBI-AMPLIACION-CONFIGURACION-ENTORNOS` archivado en `docs/todos/done/AmpliacionConfiguracionEntornos.md`; retirado de `pending/` (2026-05-23). PR #20 mergeado en `main`.
 
 ## Comandos reproducibles
 
