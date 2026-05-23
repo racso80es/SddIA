@@ -3,6 +3,6 @@
   "persist_ref": "docs/features/pull-request-automation-dlt",
   "branch_name": "feat/pull-request-automation-dlt",
   "pr_title": "feat(eda): oraculo sensor DLT — activacion validacion PR remota",
-  "pr_body": "## Summary\n\n- Oraculo sensor `github_bridge_watcher` para PRs remotos (Jules) via anclaje IOTA Testnet\n- Materializacion idempotente en `.events/pending/` con `event_id` = digest DLT\n- Guard `skipped-pre-anchored` en route-domain-event; ECST `pull-request-presented` v1.2\n- PBI migrado PDF → Markdown en `docs/todos/done/`\n\n## Test plan\n\n- [x] Smoke lab `SDDIA_LAB_SIMULATE_REMOTE_PR=1` + bridge + watcher\n- [x] Aduana 7 fases via `_smoke-pr-review-from-bridge.json`\n- [x] `verify-process-integrity: OK`\n- [x] `validacion.md` APTO + `pbi_archived: true`",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/36",
   "target_branch": "main"
 }

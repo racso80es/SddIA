@@ -94,7 +94,7 @@ Blueprint alineado al PBI v2.0.0 (H1–H4), `clarify.md` D1–D9 y `spec.md`.
 - [x] Tekton: `implementation.md` + `execution.md`.
 - [x] Argos: `validacion.md` con `global: APTO`, checks CA-1…CA-7.
 - [x] Mover PBI a `docs/todos/done/` + `pbi_archived: true` en rama PR.
-- [ ] `delivery-close-cycle` → PR único → merge vía `accept-pr`.
+- [x] `delivery-close-cycle` → PR #36 → merge vía `accept-pr`.
 
 ---
 

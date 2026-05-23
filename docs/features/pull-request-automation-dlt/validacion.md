@@ -3,6 +3,7 @@ feature_name: pull-request-automation-dlt
 created: "2026-05-23"
 process: feature
 branch: feat/pull-request-automation-dlt
+pr_url: https://github.com/racso80es/SddIA/pull/36
 global: APTO
 pbi_archived: true
 checks:

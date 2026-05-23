@@ -61,4 +61,5 @@ Cerrar la **ceguera transaccional** cuando un agente autónomo remoto (Jules) cr
 | Especificación | ✅ `spec.md` |
 | Planificación | ✅ `plan.md` |
 | Implementación | ✅ H1–H5 (Tekton) |
-| Validación | ✅ `validacion.md` APTO |
+| Validación | ✅ `validacion.md` APTO + PR #36 |
+| Cierre entrega | ✅ `delivery-close-cycle` + `finalize-process.md` |
