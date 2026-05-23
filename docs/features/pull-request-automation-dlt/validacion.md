@@ -83,4 +83,4 @@ Evidencia: materialización `.events/pending/lab-sim-c872a0a12f964dd0b0f6aaf5.js
 
 ## Cierre documental
 
-PBI `PBI-ACTIVACION-VALIDACION-PR-DLT` archivado en `docs/todos/done/Activacion_Validacion_PR_DLT.md`; retirado de `pending/` (2026-05-23).
+PBI `PBI-ACTIVACION-VALIDACION-PR-DLT` archivado en `docs/todos/done/Activacion_Validacion_PR_DLT.md` (Markdown canónico, PDF retirado); retirado de `pending/` (2026-05-23).

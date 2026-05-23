@@ -5,7 +5,6 @@ created: "2026-05-23"
 persist_ref: docs/features/pull-request-automation-dlt
 branch_name: feat/pull-request-automation-dlt
 related_todo: docs/todos/done/Activacion_Validacion_PR_DLT.md
-related_todo_pdf: docs/todos/pending/SddIA_PBI_TODO_Activacion_Validacion_PR_v2.0.0.pdf
 ---
 
 # Objetivos — Oráculo Sensor DLT y Activación Validación PR
@@ -44,8 +43,7 @@ Cerrar la **ceguera transaccional** cuando un agente autónomo remoto (Jules) cr
 
 ## Precedencia y ley aplicada
 
-- PBI MD: `docs/todos/done/Activacion_Validacion_PR_DLT.md` (v2.0.0)
-- PBI PDF: `docs/todos/pending/SddIA_PBI_TODO_Activacion_Validacion_PR_v2.0.0.pdf`
+- PBI: `docs/todos/done/Activacion_Validacion_PR_DLT.md` (v2.0.0, migrado desde PDF)
 - Evento: `SddIA/events/pull-request-presented.md` v1.1.0
 - Aduana: `SddIA/process/pull-request-review.md` v2
 - Orquestación local PR: `docs/features/pr-presented-orchestration/`
