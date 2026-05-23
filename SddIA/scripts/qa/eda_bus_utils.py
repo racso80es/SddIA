@@ -577,6 +577,31 @@ def required_subscriber_ids_for_event(
     return required_subscriber_ids(registry, event_type)
 
 
+def finalize_kaizen_terminal(
+    repo: Path,
+    bus: dict[str, str],
+    event_uuid: str,
+    pending_path: Path,
+    registry: dict[str, Any],
+    event_type: str,
+    origin_topology: str,
+) -> dict[str, int]:
+    """Retira padre de pending/ cuando Kaizen está terminal (DL + suscriptores cerrados)."""
+    counts = {"pending": 0, "headers": 0}
+    dead_header = repo / header_path(bus, "dead_letter", event_uuid)
+    if not dead_header.is_file() and pending_path.is_file():
+        ensure_state_header(repo, bus, "dead_letter", event_uuid, pending_path)
+        counts["headers"] += 1
+    if pending_path.is_file():
+        pending_path.unlink(missing_ok=True)
+        counts["pending"] = 1
+    if maybe_purge_processing_header(
+        repo, bus, event_uuid, registry, event_type, origin_topology
+    ):
+        counts["headers"] += 1
+    return counts
+
+
 def try_sweep_event(
     repo: Path,
     bus: dict[str, str],
@@ -600,15 +625,6 @@ def try_sweep_event(
 
     payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
 
-    dead = list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid)
-    if dead:
-        return {
-            **base,
-            "status": "kaizen",
-            "event_type": event_type,
-            "dead_letter_witnesses": [p.name for p in dead],
-        }
-
     if registry is None:
         subs_path = repo / bus["subscriptions"]
         try:
@@ -617,6 +633,35 @@ def try_sweep_event(
             return {**base, "status": "invalid-registry", "event_type": event_type}
 
     required = required_subscriber_ids_for_event(registry, event_type, payload)
+
+    dead = list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid)
+    if dead:
+        origin = resolve_origin_topology(payload)
+        in_flight = in_flight_subscriber_names(repo, bus, event_uuid)
+        terminals = terminal_subscriber_names(repo, bus, event_uuid)
+        if (
+            required
+            and set(required).issubset(terminals)
+            and not (in_flight & set(required))
+        ):
+            finalized = finalize_kaizen_terminal(
+                repo, bus, event_uuid, pending_path, registry, event_type, origin
+            )
+            return {
+                **base,
+                "status": "kaizen-finalized",
+                "purged": True,
+                "finalized": True,
+                "event_type": event_type,
+                "dead_letter_witnesses": [p.name for p in dead],
+                **finalized,
+            }
+        return {
+            **base,
+            "status": "kaizen",
+            "event_type": event_type,
+            "dead_letter_witnesses": [p.name for p in dead],
+        }
     if not required:
         return {**base, "status": "no-subscribers", "event_type": event_type}
 
