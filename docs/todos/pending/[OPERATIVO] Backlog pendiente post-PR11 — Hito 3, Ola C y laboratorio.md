@@ -15,6 +15,7 @@ related:
   - docs/features/pbi-005-hito3-git-hooks
   - docs/features/vanguardia-soberania-local
   - docs/features/laboratorio-handlers-l2-l3
+  - docs/features/e1-iota-ci
   - docs/todos/done/[ARQUITECTURA] Deuda Ola C — Retirar compatibilidad CLI execute-process y execute-action.md
   - docs/todos/done/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md
   - docs/todos/pending/[FIX] accept-pr — higiene silenciosa delete_branch tras merge.md
@@ -32,7 +33,7 @@ related:
 
 > **Contexto (2026-05-20):** **PBI-005 cerrado al 100 %** en `main` (PR #13, merge `ed543c8`, CA-3 completo). Orquestación fractal PR (PR #11), aduana `pre-commit` (PR #12) y hooks ciclo PR Ola B (PR #13) en producción. Este manifiesto agrupa la deuda **posterior al PBI** — no reabrir Hitos 1–3.
 
-> **Actualización (2026-05-24):** **Vanguardia Soberanía Local** en `main` (PR #37). **Laboratorio L.2–L.3** entregado en feature [`laboratorio-handlers-l2-l3`](../../features/laboratorio-handlers-l2-l3/): gate Impacto SddIA (fase 2 `delivery-close-cycle`), cápsulas `feature-pbi-archive` + `feature-delivery-close`. **Brechas abiertas:** L1-O5 runbooks, E.1 IOTA CI.
+> **Actualización (2026-05-24):** **E.1 IOTA CI** entregado en feature [`e1-iota-ci`](../../features/e1-iota-ci/): jobs `eda-iota-smoke-simulate` + `eda-iota-physical`. **Brecha abierta:** L1-O5 runbooks.
 
 ---
 
@@ -45,7 +46,7 @@ related:
 | **L.1 `accept-pr`** | 🟢 ~95 % | Cápsula 4 fases + Fase 4 estricta en `main`; runbooks legacy sin unificar |
 | **E.2 `emit-domain-mutation`** | ✅ 100 % | Aduana ECST pre-`pending/` en `execute-action.py` + cápsulas |
 | **L.2–L.3 laboratorio** | ✅ Entregado | Gate fase 2 DC + fases 6–7 `feature` físicas; agentes IDE 2–5 `simulated` |
-| **E.1 IOTA CI** | ⏳ | Solo simulación lab (`SDDIA_LAB_SIMULATE_IOTA=1`) |
+| **E.1 IOTA CI** | ✅ | Feature [`e1-iota-ci`](../../features/e1-iota-ci/) — job CI simulate + físico (secret) |
 | **Ola C V3 coreografía** | ⏳ | Sweeper, recibos, middleware — visión largo plazo |
 
 **Dependencia crítica:** puerta de entrada y handlers lab P2 sellados; pendiente L1-O5 documental y E.1 IOTA antes de cerrar backlog.
@@ -169,7 +170,7 @@ flowchart LR
 
 | ID | Tarea | Estado |
 |----|-------|--------|
-| E.1 | IOTA **físico** en CI/validación (sin solo `SDDIA_LAB_SIMULATE_IOTA=1`) | ⏳ |
+| E.1 | IOTA **físico** en CI/validación (sin solo `SDDIA_LAB_SIMULATE_IOTA=1`) | ✅ [`e1-iota-ci`](../../features/e1-iota-ci/) |
 | E.2 | Validación de esquema en `emit-domain-mutation` antes de `pending/` | ✅ PR #37 — `ecst_validation.py` |
 | E.3 | `verify-process-integrity.py` + gate `pre-commit` | ✅ PR #12 |
 | E.4 | Recalcular `hash_signature` tras cambio de `phases` en procesos | ✅ Disciplina PR #12+ |
@@ -223,7 +224,7 @@ flowchart LR
 - [x] **L.2** gate Impacto SddIA en `delivery-close-cycle` (lab).
 - [x] **L.3** handlers fases 6–7 en `feature` + `execution_report` honesto fases 2–5.
 - [ ] **L1-O5** runbooks sin `git-manager` suelto.
-- [ ] **E.1** IOTA físico en CI.
+- [x] **E.1** IOTA físico en CI (`run-iota-ci-smoke` + workflow).
 - [ ] Este archivo → `status: cerrado` o `docs/todos/done/` cuando L1-O5 + E.1 estén resueltos.
 
 ---
@@ -243,5 +244,6 @@ flowchart LR
 | FIX delete_branch (código cerrado; doc pendiente) | `docs/todos/pending/[FIX] accept-pr — higiene silenciosa delete_branch tras merge.md` |
 | Feature vanguardia | `docs/features/vanguardia-soberania-local/` |
 | Feature lab L.2–L.3 | `docs/features/laboratorio-handlers-l2-l3/` |
+| Feature E.1 IOTA CI | `docs/features/e1-iota-ci/` |
 | Contrato hooks CA-3 | `SddIA/evolution/git-hooks-ca3-ola-b-contract.md` |
 | Norma PR | `SddIA/norms/pull-request-orchestration.md` |

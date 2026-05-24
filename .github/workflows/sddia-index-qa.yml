@@ -29,3 +29,43 @@ jobs:
         run: python SddIA/scripts/qa/verify-tools-index.py
       - name: verify-process-integrity
         run: python SddIA/scripts/qa/verify-process-integrity.py
+
+  eda-iota-smoke-simulate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install QA dependencies
+        run: pip install pyyaml
+      - name: run-iota-ci-smoke (simulate)
+        run: python SddIA/scripts/qa/run-iota-ci-smoke.py --simulate --json
+
+  eda-iota-physical:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install QA dependencies
+        run: pip install pyyaml
+      - name: Install iota-immutable-publisher deps
+        working-directory: SddIA/scripts/tools/iota-immutable-publisher
+        run: npm ci
+      - name: run-iota-ci-smoke (physical)
+        env:
+          IOTA_WALLET_SECRET: ${{ secrets.IOTA_WALLET_SECRET }}
+        run: |
+          if [ -z "${IOTA_WALLET_SECRET}" ]; then
+            echo "IOTA_WALLET_SECRET no configurado — omitiendo anclaje físico Testnet"
+            exit 0
+          fi
+          python SddIA/scripts/qa/run-iota-ci-smoke.py --require-physical --json

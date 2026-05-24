@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import traceback
+import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -80,16 +81,19 @@ def _run_subprocess(cmd: list[str], *, input_text: str | None = None, **kwargs: 
     return subprocess.run(cmd, **opts)
 
 
-def _invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str, int]:
+def _invoke_iota_publisher(
+    repo: Path, event: dict[str, Any]
+) -> tuple[bool, str, int, str | None]:
     if os.environ.get("SDDIA_LAB_SIMULATE_IOTA", "").strip().lower() in ("1", "true", "yes"):
-        return True, "lab-simulated", 0
+        digest = f"lab-sim-{uuid.uuid4().hex[:24]}"
+        return True, "lab-simulated", 0, digest
     tool_dir = repo / "SddIA" / "scripts" / "tools" / "iota-immutable-publisher"
     entry = tool_dir / "index.ts"
     if not entry.is_file():
-        return False, "iota-immutable-publisher entry not found", 1
+        return False, "iota-immutable-publisher entry not found", 1, None
     npx = shutil.which("npx")
     if not npx:
-        return False, "npx not found on PATH", 1
+        return False, "npx not found on PATH", 1, None
     payload = {
         "action": "publish_immutable_data",
         "network": "testnet",
@@ -104,17 +108,27 @@ def _invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str
             shell=False,
         )
     except subprocess.TimeoutExpired:
-        return False, "iota-immutable-publisher timeout", 1
+        return False, "iota-immutable-publisher timeout", 1, None
     except OSError as e:
-        return False, str(e), 1
+        return False, str(e), 1, None
     if proc.returncode != 0:
-        return False, (proc.stderr or proc.stdout or "iota publish failed").strip(), proc.returncode
+        return (
+            False,
+            (proc.stderr or proc.stdout or "iota publish failed").strip(),
+            proc.returncode,
+            None,
+        )
     try:
         body = json.loads(proc.stdout.strip() or "{}")
     except json.JSONDecodeError:
-        return False, "invalid JSON from iota-immutable-publisher", 1
+        return False, "invalid JSON from iota-immutable-publisher", 1, None
     ok = bool(body.get("success"))
-    return ok, body.get("feedback", "ok"), 0 if ok else 1
+    digest = (body.get("result") or {}).get("transaction_digest")
+    if isinstance(digest, str) and digest.strip():
+        digest = digest.strip()
+    else:
+        digest = None
+    return ok, body.get("feedback", "ok"), 0 if ok else 1, digest
 
 
 def dispatch_subscriber(
@@ -205,8 +219,13 @@ def dispatch_subscriber(
         ok_thresh, reason = dlt_threshold_ok(event)
         if not ok_thresh:
             return sid, "skipped-dlt-threshold", reason, 0
-        ok, feedback, code = _invoke_iota_publisher(repo, event)
+        ok, feedback, code, digest = _invoke_iota_publisher(repo, event)
         if ok:
+            if digest:
+                ds = event.get("delivery_state")
+                if isinstance(ds, dict):
+                    ds["cumulo"] = "success"
+                    ds["transaction_digest"] = digest
             return sid, "success", None, code
         return sid, "failed", feedback, code
 
@@ -433,6 +452,7 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
 
     dispatch_mode = _dispatch_mode_label()
     delivery_status: dict[str, str] = {}
+    iota_digest: str | None = None
 
     if not subscribers:
         return {
@@ -461,16 +481,26 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
             dispatch_mode=dispatch_mode,
         )
 
+    def _capture_iota_digest() -> None:
+        nonlocal iota_digest
+        ds = event.get("delivery_state")
+        if isinstance(ds, dict):
+            raw = ds.get("transaction_digest")
+            if isinstance(raw, str) and raw.strip():
+                iota_digest = raw.strip()
+
     if _sync_dispatch_mode():
         for sub in subscribers:
             sid, status = run_one(sub)
             delivery_status[sid] = status
+            _capture_iota_digest()
     else:
         with ThreadPoolExecutor(max_workers=min(len(subscribers), 8)) as pool:
             futures = {pool.submit(run_one, sub): sub for sub in subscribers}
             for fut in as_completed(futures):
                 sid, status = fut.result()
                 delivery_status[sid] = status
+                _capture_iota_digest()
 
     skip_only = delivery_status and all(
         v.startswith("skipped") for v in delivery_status.values()
@@ -479,16 +509,19 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
         _status_is_terminal_ok(v) for v in delivery_status.values()
     )
 
+    result_data: dict[str, Any] = {
+        "success": all_success or skip_only,
+        "delivery_status": delivery_status,
+        "parent_path": _rel_event_path(repo, event_path),
+        "processing_header_path": _rel_event_path(repo, processing_header),
+        "dispatch_mode": dispatch_mode,
+    }
+    if iota_digest:
+        result_data["transaction_digest"] = iota_digest
     result: dict[str, Any] = {
         "success": all_success or skip_only,
         "exitCode": 0 if (all_success or skip_only) else 1,
-        "data": {
-            "success": all_success or skip_only,
-            "delivery_status": delivery_status,
-            "parent_path": _rel_event_path(repo, event_path),
-            "processing_header_path": _rel_event_path(repo, processing_header),
-            "dispatch_mode": dispatch_mode,
-        },
+        "data": result_data,
     }
     if not all_success and not skip_only:
         result["error"] = "one or more subscribers failed"

@@ -1,0 +1,11 @@
+{
+  "correlation_id": "iota-ci-smoke",
+  "payload": {
+    "source_branch": "feat/e1-iota-ci-smoke",
+    "target_branch": "main",
+    "merge_commit_hash": "0000000000000000000000000000000000000000",
+    "author": "iota-ci-smoke@sddia.local",
+    "security_clearance": "lab-smoke",
+    "repository_name": "SddIA"
+  }
+}
