@@ -1,0 +1,396 @@
+{
+  "correlation_id": "vanguardia-soberania-local",
+  "merkle_root": "sha256:021665f48f9bd584911686f1412756c6d4bbc2a2c89531f21ad86f9fe0e264ea",
+  "entity_count": 43,
+  "timestamp": "2026-05-24T16:54:51Z",
+  "entries": [
+    {
+      "entity_class": "skill",
+      "entity_name": "git-manager",
+      "entity_uuid": "4dac18fc-4cd1-4aa4-bdc3-faeb3bf762fc",
+      "artifact_path": "SddIA/skills/git-manager.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:e3c101d4bdfc8ee9d33b55393a4bb073069303987007946fa26806c7b34d6792"
+    },
+    {
+      "entity_class": "skill",
+      "entity_name": "text-metrics",
+      "entity_uuid": "0c84d99b-aa67-4b27-abb6-7133867c5102",
+      "artifact_path": "SddIA/skills/text-metrics.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:35655c727052107076e200512466d12ca1de115ba01a07d9b0e82fa25280aa1e"
+    },
+    {
+      "entity_class": "skill",
+      "entity_name": "shell-executor",
+      "entity_uuid": "93d23720-d79a-412f-a85d-ab9b2d9862bd",
+      "artifact_path": "SddIA/skills/shell-executor.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:f1e1478de696f477f7c66024d876cdb69d9eba270a3ed6a74e58e1ebab23a0ed"
+    },
+    {
+      "entity_class": "skill",
+      "entity_name": "bus-operator",
+      "entity_uuid": "c8e1f4a2-6b3d-4f9e-a1c0-2d7e8f9a0b1c",
+      "artifact_path": "SddIA/skills/bus-operator.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:pending-forge"
+    },
+    {
+      "entity_class": "event",
+      "entity_name": "domain-entity-deleted",
+      "entity_uuid": "a7c81b2f-b466-4b18-82c5-84ef0a5941b8",
+      "artifact_path": "SddIA/events/domain-entity-deleted.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:81e6ccf86cd911e48b1a40f585c42cbc733fbcbc32ff4204914e5e07b5097a4a"
+    },
+    {
+      "entity_class": "event",
+      "entity_name": "domain-entity-updated",
+      "entity_uuid": "65dcff67-d392-4ab1-9977-2e320d3c8c34",
+      "artifact_path": "SddIA/events/domain-entity-updated.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:ab9e37a0a1be908e9edd96e7e394622fe9aece8ea8452893320bf8851224883a"
+    },
+    {
+      "entity_class": "event",
+      "entity_name": "domain-entity-created",
+      "entity_uuid": "1f518278-7a3d-4160-b757-a3661d263ec3",
+      "artifact_path": "SddIA/events/domain-entity-created.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:7df0d2d33a8ac664cd3eeef5955e4ca538a03a48c25d830c4a254c74c489c67d"
+    },
+    {
+      "entity_class": "event",
+      "entity_name": "pull-request-presented",
+      "entity_uuid": "5e488ae6-7cb2-4a2c-9725-4a7d4ce239ea",
+      "artifact_path": "SddIA/events/pull-request-presented.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:8f3c2a1b9e4d7f6a5c0b8e2d1f4a3c6b7e8d9f0a1b2c3d4e5f6a7b8c9d0e1f2"
+    },
+    {
+      "entity_class": "event",
+      "entity_name": "pull-request-merged",
+      "entity_uuid": "cfb8ce66-784e-4826-8a0a-a20c671e3a60",
+      "artifact_path": "SddIA/events/pull-request-merged.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:fea0f07b140a90516e3a14b262043980bde33cb65d4c828ad7c7b04cfff52eae"
+    },
+    {
+      "entity_class": "event",
+      "entity_name": "system-fracture-detected",
+      "entity_uuid": "f8e3a1b2-c4d5-4e6f-9a0b-1c2d3e4f5a6b",
+      "artifact_path": "SddIA/events/system-fracture-detected.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:pending-anchor-on-merge"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "process-creator",
+      "entity_uuid": "7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4",
+      "artifact_path": "SddIA/process/process-creator.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:b0b74db50d849219c315cd934ec299750bb87791a17fd3abed89bfccf4652730"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "tool-creator",
+      "entity_uuid": "c4355159-b6ea-4201-973a-a08db5ce8156",
+      "artifact_path": "SddIA/process/tool-creator.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:d93db300fd0598a158703f762b6c697f538a4c927c291c00c3caec8246f14ffb"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "agent-creator",
+      "entity_uuid": "e7d5087c-6d47-4890-9602-34962496b3bb",
+      "artifact_path": "SddIA/process/agent-creator.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:a6fb8f1b3567887f1fb21db92094236fef4873a64a28541845e0373a0ccf3b11"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "delivery-close-cycle",
+      "entity_uuid": "5417c92c-da7f-4d46-b245-55cf1b17961a",
+      "artifact_path": "SddIA/process/delivery-close-cycle.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:bebaa3c536ff8a67dca9f61c841e594a4efcfd51593dd6badbc8549422232b60"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "feature",
+      "entity_uuid": "1b4fa69f-4299-47ca-b2ed-380f2263239c",
+      "artifact_path": "SddIA/process/feature.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:d16d940377a0e3ad5a48aec07361f9977c7cfdf73f66eb04516843a4c8f35684"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "bug-fix",
+      "entity_uuid": "ac8d078c-9785-490b-9f43-ad310fe9df9d",
+      "artifact_path": "SddIA/process/bug-fix.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:d143033143044a5595d8946d4146c5eb2b04bd09ca32d1be82264f0b2dd2f8c3"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "refactorization",
+      "entity_uuid": "ae01e3ff-af68-4b94-90b3-97e5c03d75ee",
+      "artifact_path": "SddIA/process/refactorization.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:5417bf69d8e1011536a3cb69edde6e8fd4314c6f5a4a128417329e84817f675b"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "pull-request-review",
+      "entity_uuid": "6d59f23b-df29-4be5-9bb9-29cede3474b9",
+      "artifact_path": "SddIA/process/pull-request-review.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:9aad0da52accbd3c2fd6b913b65f1f9f71d2b1b1a51df003944a56001b02886c"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "task-queue-manager",
+      "entity_uuid": "608ae470-4db2-4ae6-8bb8-7aa5949c208a",
+      "artifact_path": "SddIA/process/task-queue-manager.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:8242f460c0de8738ad77f20438a318fdfaa132ac2a62d1cb00e30fa14122f7c9"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "sddia-difusion",
+      "entity_uuid": "de142ec3-4022-4ac1-bcf4-1b8490cabf9d",
+      "artifact_path": "SddIA/process/sddia-difusion.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:ddcbbe126f7f2753c07307a24d55973cdeb8738b3a58a41700c7975908146805"
+    },
+    {
+      "entity_class": "process",
+      "entity_name": "event-creator",
+      "entity_uuid": "b28194d9-62a8-4cbc-9cbd-237e51e44333",
+      "artifact_path": "SddIA/process/event-creator.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:6b18b7785378ba5f80219a1969dbe12c394b72cebafc7cc355cec81e7431a7df"
+    },
+    {
+      "entity_class": "agent",
+      "entity_name": "cumulo",
+      "entity_uuid": "8f7d6c5b-4a01-4e56-9a2b-e98e4d2a1c3f",
+      "artifact_path": "SddIA/agents/cumulo.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:b97d07adaec0fedc9f7866b7d3e1e8e96300eee1690cdaf07b8a331569dc6ab7"
+    },
+    {
+      "entity_class": "agent",
+      "entity_name": "argos",
+      "entity_uuid": "bd3b1d76-3734-4fbb-b447-ad5e4a5e4907",
+      "artifact_path": "SddIA/agents/argos.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:1b32d2a85badfec0c3ab4ec6e609c759c4c35e9bf51aca98d0da1afc4fd18551"
+    },
+    {
+      "entity_class": "agent",
+      "entity_name": "dedalo",
+      "entity_uuid": "9e60e48e-43be-463d-999e-d3dbd83924af",
+      "artifact_path": "SddIA/agents/dedalo.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:e593ad386584b042c87bcb1d1aaa4daa126d20a5cf2b529c7af1d42858ad8813"
+    },
+    {
+      "entity_class": "agent",
+      "entity_name": "mayeuta",
+      "entity_uuid": "db1acdb5-23b9-490e-a339-dc511091e959",
+      "artifact_path": "SddIA/agents/mayeuta.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:1a9e713689ff2fd86855b77fdee8a01842e714138f7365b3c9da0c8124c26adb"
+    },
+    {
+      "entity_class": "tool",
+      "entity_name": "eda-lab-smoke-may20",
+      "entity_uuid": "96679492-4f06-4bbc-ae46-00100fb73c94",
+      "artifact_path": "SddIA/tools/eda-lab-smoke-may20.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:5451805d9ece7d306cb4da0fdf19985485347f0721da3f048b7ee4b5f7d8b771"
+    },
+    {
+      "entity_class": "tool",
+      "entity_name": "iota-immutable-publisher",
+      "entity_uuid": "7c8be7da-d080-4ad0-b0b0-df43be376e46",
+      "artifact_path": "SddIA/tools/iota-immutable-publisher.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:a208a40de2ead96a740e5ef5cd2d8f0252bcc055b0a2f6e242c44a8d9615195e"
+    },
+    {
+      "entity_class": "tool",
+      "entity_name": "markdown-table-editor",
+      "entity_uuid": "b2c4e6f8-1a3d-4e5b-9c7d-8e1f2a3b4c5d",
+      "artifact_path": "SddIA/tools/markdown-table-editor.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:f9fad0ef11c68a05276320d42195513fc237d1fbebea1e87cfb99de39b91ff11"
+    },
+    {
+      "entity_class": "action",
+      "entity_name": "execute-process",
+      "entity_uuid": "f1e2d3c4-b5a6-4789-b012-cdef34567890",
+      "artifact_path": "SddIA/actions/execute-process.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:46fbbd846cf98ecb825183ac1eb5ff03c23034cb07ad51fb5e327f51c892ff33"
+    },
+    {
+      "entity_class": "action",
+      "entity_name": "crypto-broker",
+      "entity_uuid": "9b3259be-e7a0-4fb1-b5d9-620a46fbc18b",
+      "artifact_path": "SddIA/actions/crypto-broker.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:4ec6ecab3f66a0964d2ba4887f2cccacf182f41e1c31cdad4f7ae10f66a81cb1"
+    },
+    {
+      "entity_class": "action",
+      "entity_name": "emit-pr-merged-event",
+      "entity_uuid": "c0d71f2b-c1c1-4c56-8f74-2f4f41b24c4f",
+      "artifact_path": "SddIA/actions/emit-pr-merged-event.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:86ff3d82a569b9b55dab4585c6614f742843deedc6b00643a1deaecb96beae85"
+    },
+    {
+      "entity_class": "action",
+      "entity_name": "emit-pr-presented-event",
+      "entity_uuid": "a1b2c3d4-e5f6-4789-a012-3456789abcde",
+      "artifact_path": "SddIA/actions/emit-pr-presented-event.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:6ebc01ba0441499189accaf45ab4afdbe8c5c96d180e3aea1ce78f0bd5c18728"
+    },
+    {
+      "entity_class": "action",
+      "entity_name": "emit-domain-mutation",
+      "entity_uuid": "7e4a9c2b-1d3f-4a8e-9b6c-0f1e2d3a4b5c",
+      "artifact_path": "SddIA/actions/emit-domain-mutation.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:657f9420cd31c5703889eec54ce986c77f1bd0137dfa9011468e4e0a1f4fbb39"
+    },
+    {
+      "entity_class": "action",
+      "entity_name": "materialize-fracture-pbi",
+      "entity_uuid": "b2c3d4e5-f6a7-4890-b123-4567890abcde",
+      "artifact_path": "SddIA/actions/materialize-fracture-pbi.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:f2dc583e6f5d4f03b783f99ad327c10c7eda6646cf979bb950df3b8a415dc806"
+    },
+    {
+      "entity_class": "norm",
+      "entity_name": "features-documentation-pattern",
+      "entity_uuid": "4c448c82-de41-460f-b24f-82a84fa5ed69",
+      "artifact_path": "SddIA/library/norms/features-documentation-pattern.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:aa04a283369db32edd1740ff04e430729314dba26d34e5b359f6d5475c5c0705"
+    },
+    {
+      "entity_class": "norm",
+      "entity_name": "patterns-in-planning-implementation-execution",
+      "entity_uuid": "1c6af49c-3091-4648-aa54-bbf6bcb90f82",
+      "artifact_path": "SddIA/library/norms/patterns-in-planning-implementation-execution.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:4b6ebbfe4b9271c8b31cf4902d645417e406980d68c39be7f06c29edb4fa1d49"
+    },
+    {
+      "entity_class": "norm",
+      "entity_name": "pr-acceptance-protocol",
+      "entity_uuid": "7c18fe07-9567-4f06-8d2b-a58e04608171",
+      "artifact_path": "SddIA/library/norms/pr-acceptance-protocol.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:631c2de0ccf860c5ed079209b62dfab6924799ef84a6d774cdbe530797f53a4a"
+    },
+    {
+      "entity_class": "norm",
+      "entity_name": "nextjs-hydration-client-state",
+      "entity_uuid": "86a2f359-8137-43e4-b5ff-61d235ef3cde",
+      "artifact_path": "SddIA/library/norms/nextjs-hydration-client-state.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:e60d6e7e53dd0992efc0d287afba9b761dcc5e42cbd6ff7332487427aacb0087"
+    },
+    {
+      "entity_class": "norm",
+      "entity_name": "openapi-contract-rest-frontend",
+      "entity_uuid": "e6ae3df7-9d47-4dd1-8051-025f9fd171c7",
+      "artifact_path": "SddIA/library/norms/openapi-contract-rest-frontend.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:4bc847846d66272305cf5f7e13a5a1e5239da1340f5c0b743cdf459d016bc3ac"
+    },
+    {
+      "entity_class": "norm",
+      "entity_name": "openapi-contract-rest-admin-frontend",
+      "entity_uuid": "c93387f0-d4c8-41ae-8d1a-12f2239d2710",
+      "artifact_path": "SddIA/library/norms/openapi-contract-rest-admin-frontend.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:0a84ed9bfc22deea6faf293423dcac318cead6ce196b15ac0f70adbcc35d8c2c"
+    },
+    {
+      "entity_class": "codex",
+      "entity_name": "codex-backend-admin-splus",
+      "entity_uuid": "04f0bc4e-ef1f-4431-a445-398f1820db07",
+      "artifact_path": "SddIA/library/codexes/codex-backend-admin-splus.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:6160c9e499970d163723d37da5220828dce58e52cebe8d5d123527264d3a1f86"
+    },
+    {
+      "entity_class": "codex",
+      "entity_name": "codex-frontend-admin-splus",
+      "entity_uuid": "30dc1742-aba2-4c30-8a3a-eea0e256194b",
+      "artifact_path": "SddIA/library/codexes/codex-frontend-admin-splus.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:46d2a7616032a2ff6e921106ae3b0cc35964b0c21e9682428fd5a4102358ce17"
+    },
+    {
+      "entity_class": "codex",
+      "entity_name": "codex-frontend-product-splus",
+      "entity_uuid": "0b681575-8d20-413c-bc0e-a5ef1a378f7b",
+      "artifact_path": "SddIA/library/codexes/codex-frontend-product-splus.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:55fd7703d2a85ec9113d6c81a6a90a7d2d4e5d7b5feddc35138f7a9c98f9042e"
+    }
+  ],
+  "transaction_digest": "lab-simulated-021665f48f9bd584"
+}

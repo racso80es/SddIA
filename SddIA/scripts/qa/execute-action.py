@@ -37,6 +37,7 @@ from eda_bus_utils import (  # noqa: E402
     find_existing_domain_event,
     resolve_origin_topology,
 )
+from ecst_validation import validate_domain_mutation_event  # noqa: E402
 from env_loader import load_hierarchical_env  # noqa: E402
 
 INDEX_MAP: dict[str, str] = {
@@ -308,6 +309,9 @@ def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: di
         },
         "delivery_state": {},
     }
+    ok, errors = validate_domain_mutation_event(repo, event)
+    if not ok:
+        raise ValueError("; ".join(errors))
     seal = _write_pending_event(repo, event)
     return {"success": True, "event_type": event_type, **seal}
 
