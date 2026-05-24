@@ -86,8 +86,15 @@ Misma regla que `bug-fix` § Cierre documental en rama: PBI en `docs/todos/done/
 | :--- | :--- | :--- |
 | Fase 1 Inicialización | `workspace-init` físico (git-manager + `objectives.md` mínimo) | Igual + norma documental completa |
 | Fases 2–5 (Mayeuta…Argos) | `simulated` / agentes IDE | Agentes V5 con salidas en `persist_ref` |
-| Fase 6 Cierre documental en rama | Manual / operador IA en rama `feat/*` | PBI en `done/` + `validacion.md` pre-merge |
-| Fase 7 Cierre de entrega | Delega en `delivery-close-cycle` con handlers físicos (push/gh/sello) | Orquestador inyecta `pr_title`, `pr_body` |
+| Fase 6 Cierre documental en rama | Handler `feature-pbi-archive`: move PBI si `validacion.md` APTO + `pbi_archived: true` | PBI en `done/` + `validacion.md` pre-merge |
+| Fase 7 Cierre de entrega | Subproceso `delivery-close-cycle` vía `feature-delivery-close` | Orquestador inyecta `pr_title`, `pr_body` |
 | Veredicto `success` | No implica Mayeuta/Tekton ejecutados; revisar `execution_report.phases[].status` | Contrato completo del proceso |
 
-Handoff documentado: `docs/features/pr-presented-orchestration/`.
+Variables lab adicionales (fases 6–7):
+
+| Variable | Efecto |
+| :--- | :--- |
+| `SDDIA_LAB_SKIP_PBI_ARCHIVE` | Omite move PBI en fase 6 |
+| `SDDIA_LAB_SKIP_DELIVERY_CLOSE` | Omite subproceso `delivery-close-cycle` en fase 7 |
+
+Handoff documentado: `docs/features/pr-presented-orchestration/`, `docs/features/laboratorio-handlers-l2-l3/`.

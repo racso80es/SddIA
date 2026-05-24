@@ -1,0 +1,9 @@
+{
+  "feature_name": "laboratorio-handlers-l2-l3",
+  "branch_name": "feat/laboratorio-handlers-l2-l3",
+  "persist_ref": "docs/features/laboratorio-handlers-l2-l3",
+  "base_branch": "main",
+  "related_todo": "docs/todos/pending/_smoke-lab-pbi-archive-test.md",
+  "pr_title": "feat(lab): handlers L.2-L.3",
+  "pr_url": "https://github.com/lab-simulated/SddIA/pull/0-feat-laboratorio-handlers-l2-l3"
+}
