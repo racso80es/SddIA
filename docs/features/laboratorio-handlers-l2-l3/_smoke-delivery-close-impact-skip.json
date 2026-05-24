@@ -1,0 +1,6 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/features/laboratorio-handlers-l2-l3",
+  "branch_name": "feat/laboratorio-handlers-l2-l3",
+  "target_branch": "main"
+}

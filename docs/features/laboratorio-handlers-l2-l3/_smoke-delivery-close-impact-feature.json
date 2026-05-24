@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/laboratorio-handlers-l2-l3",
+  "branch_name": "feat/laboratorio-handlers-l2-l3",
+  "target_branch": "main",
+  "pr_title": "feat(lab): handlers L.2-L.3",
+  "pr_url": "https://github.com/lab-simulated/SddIA/pull/0-feat-laboratorio-handlers-l2-l3"
+}

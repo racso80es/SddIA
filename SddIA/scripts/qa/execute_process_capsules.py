@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -738,12 +739,180 @@ def execute_pull_request_review_phase(
     return None
 
 
+def _git_diff_name_only(repo: Path, base_ref: str, head_ref: str) -> list[str]:
+    candidates = [
+        f"origin/{base_ref}...{head_ref}",
+        f"{base_ref}...{head_ref}",
+    ]
+    for ref_spec in candidates:
+        try:
+            data = invoke_shell_executor(repo, "git", ["diff", "--name-only", ref_spec])
+            stdout = str(data.get("stdout") or "")
+            return [ln.strip() for ln in stdout.splitlines() if ln.strip()]
+        except RuntimeError:
+            continue
+    return []
+
+
+def capsule_delivery_impact_assessment(
+    repo: Path, inputs: dict[str, Any], state: dict[str, Any]
+) -> dict[str, Any]:
+    if os.environ.get("SDDIA_LAB_SKIP_IMPACT_ASSESSMENT", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_IMPACT_ASSESSMENT"}
+    source = inputs.get("source_process")
+    if source != "feature":
+        return {"skipped": True, "reason": "source_process != feature"}
+    branch = inputs.get("branch_name")
+    if not isinstance(branch, str) or not branch.strip():
+        raise ValueError("branch_name es obligatorio para Impacto SddIA condicional")
+    branch = branch.strip()
+    target = inputs.get("target_branch", "main")
+    if not isinstance(target, str) or not target.strip():
+        target = "main"
+    else:
+        target = target.strip()
+    changed = _git_diff_name_only(repo, target, branch)
+    sddia_paths = [p for p in changed if p.replace("\\", "/").startswith("SddIA/")]
+    impact = "core_mutation" if sddia_paths else "none"
+    result = {"impact": impact, "sddia_paths": sddia_paths, "branch": branch, "base_ref": target}
+    state["sddia_impact"] = result
+    return result
+
+
+def _resolve_related_todo_path(repo: Path, inputs: dict[str, Any]) -> Path | None:
+    todo = inputs.get("related_todo")
+    if isinstance(todo, str) and todo.strip():
+        path = repo / todo.strip().replace("\\", "/")
+        if path.is_file():
+            return path
+    persist_ref = inputs.get("persist_ref")
+    if isinstance(persist_ref, str) and persist_ref.strip():
+        objectives = repo / persist_ref.strip().replace("\\", "/") / "objectives.md"
+        if objectives.is_file():
+            fm = parse_frontmatter(objectives)
+            related = fm.get("related_todo")
+            if isinstance(related, str) and related.strip():
+                path = repo / related.strip().replace("\\", "/")
+                if path.is_file():
+                    return path
+    return None
+
+
+def _validacion_allows_pbi_archive(repo: Path, persist_ref: str) -> tuple[bool, str]:
+    val_path = repo / persist_ref.replace("\\", "/") / "validacion.md"
+    if not val_path.is_file():
+        return False, "validacion.md ausente"
+    fm = parse_frontmatter(val_path)
+    global_v = str(fm.get("global", "")).strip().upper()
+    if global_v != "APTO":
+        return False, f"global={fm.get('global')}"
+    archived = fm.get("pbi_archived")
+    if archived not in (True, "true", "True", 1, "1"):
+        return False, "pbi_archived != true"
+    return True, "ok"
+
+
+def capsule_feature_pbi_archive(
+    repo: Path, inputs: dict[str, Any], state: dict[str, Any]
+) -> dict[str, Any]:
+    if os.environ.get("SDDIA_LAB_SKIP_PBI_ARCHIVE", "").strip().lower() in ("1", "true", "yes"):
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_PBI_ARCHIVE"}
+    persist_ref = inputs.get("persist_ref")
+    if not isinstance(persist_ref, str) or not persist_ref.strip():
+        return {"skipped": True, "reason": "persist_ref ausente"}
+    persist_ref = persist_ref.strip().replace("\\", "/")
+    ok, reason = _validacion_allows_pbi_archive(repo, persist_ref)
+    if not ok:
+        return {"skipped": True, "reason": reason}
+    pbi_path = _resolve_related_todo_path(repo, inputs)
+    if pbi_path is None:
+        return {"skipped": True, "reason": "related_todo no resuelto"}
+    rel = pbi_path.relative_to(repo).as_posix()
+    if rel.startswith("docs/todos/done/"):
+        dest_rel = rel
+        state["pbi_archived_path"] = dest_rel
+        return {"already_archived": True, "pbi_path": dest_rel}
+    if "docs/todos/pending/" not in rel.replace("\\", "/"):
+        return {"skipped": True, "reason": f"PBI fuera de pending/: {rel}"}
+    done_dir = repo / "docs" / "todos" / "done"
+    done_dir.mkdir(parents=True, exist_ok=True)
+    dest = done_dir / pbi_path.name
+    if dest.is_file():
+        dest_rel = dest.relative_to(repo).as_posix()
+        state["pbi_archived_path"] = dest_rel
+        return {"already_archived": True, "pbi_path": dest_rel}
+    shutil.move(str(pbi_path), str(dest))
+    dest_rel = dest.relative_to(repo).as_posix()
+    state["pbi_archived_path"] = dest_rel
+    return {"archived": True, "pbi_path": dest_rel}
+
+
+def capsule_feature_invoke_delivery_close(
+    repo: Path, inputs: dict[str, Any], state: dict[str, Any]
+) -> dict[str, Any]:
+    if os.environ.get("SDDIA_LAB_SKIP_DELIVERY_CLOSE", "").strip().lower() in ("1", "true", "yes"):
+        return {"skipped": True, "reason": "SDDIA_LAB_SKIP_DELIVERY_CLOSE"}
+    branch = inputs.get("branch_name") or (state.get("workspace") or {}).get("branch_name")
+    persist_ref = inputs.get("persist_ref") or (state.get("workspace") or {}).get("persist_ref")
+    if not isinstance(branch, str) or not branch.strip():
+        raise ValueError("branch_name es obligatorio para Cierre de entrega")
+    if not isinstance(persist_ref, str) or not persist_ref.strip():
+        raise ValueError("persist_ref es obligatorio para Cierre de entrega")
+    child_inputs: dict[str, Any] = {
+        "source_process": "feature",
+        "persist_ref": persist_ref.strip(),
+        "branch_name": branch.strip(),
+        "pr_title": _delivery_pr_title(inputs),
+        "target_branch": inputs.get("base_branch") or inputs.get("target_branch") or "main",
+    }
+    pr_body = inputs.get("pr_body")
+    if isinstance(pr_body, str) and pr_body.strip():
+        child_inputs["pr_body"] = pr_body.strip()
+    pr_url = inputs.get("pr_url")
+    if isinstance(pr_url, str) and pr_url.strip():
+        child_inputs["pr_url"] = pr_url.strip()
+    data = invoke_subprocess_process(repo, "delivery-close-cycle", child_inputs)
+    for key in ("pr_url", "event_id", "target_path", "closed_branch", "snapshot_commit_hash"):
+        if data.get(key) is not None:
+            state[key] = data[key]
+    state["delivery_close"] = data
+    return {
+        "child_process": "delivery-close-cycle",
+        **{k: data[k] for k in ("pr_url", "event_id", "target_path", "closed_branch") if k in data},
+    }
+
+
+def execute_feature_phase(
+    repo: Path,
+    phase_name: str | None,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if phase_name == "Cierre documental en rama":
+        result = capsule_feature_pbi_archive(repo, inputs, state)
+        status = "skipped" if result.get("skipped") else "executed"
+        return {"status": status, "handler": "feature-pbi-archive", **result}
+    if phase_name == "Cierre de entrega":
+        result = capsule_feature_invoke_delivery_close(repo, inputs, state)
+        status = "skipped" if result.get("skipped") else "executed"
+        return {"status": status, "handler": "feature-delivery-close", **result}
+    return None
+
+
 def execute_delivery_close_phase(
     repo: Path,
     phase_name: str | None,
     inputs: dict[str, Any],
     state: dict[str, Any],
 ) -> dict[str, Any] | None:
+    if phase_name == "Impacto SddIA condicional":
+        result = capsule_delivery_impact_assessment(repo, inputs, state)
+        status = "skipped" if result.get("skipped") else "executed"
+        return {"status": status, "handler": "delivery-impact-assessment", **result}
     if phase_name == "Snapshot final":
         result = capsule_delivery_snapshot_final(repo, inputs, state)
         return {"status": "executed", "handler": "delivery-snapshot-final", **result}
@@ -1656,6 +1825,12 @@ def execute_phase(
             entry.update(ap)
             return entry
 
+    if process_def.get("name") == "feature":
+        feat = execute_feature_phase(repo, str(phase_name) if phase_name else None, inputs, state)
+        if feat is not None:
+            entry.update(feat)
+            return entry
+
     if process_def.get("name") == "pull-request-review":
         prr = execute_pull_request_review_phase(
             repo, str(phase_name) if phase_name else None, inputs, state
@@ -1796,6 +1971,12 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         data["kaizen_seeds"] = state["kaizen_seeds"]
     if state.get("accept_pr_handoff"):
         data["accept_pr_handoff"] = state["accept_pr_handoff"]
+    if state.get("sddia_impact"):
+        data["sddia_impact"] = state["sddia_impact"]
+    if state.get("pbi_archived_path"):
+        data["pbi_archived_path"] = state["pbi_archived_path"]
+    if state.get("delivery_close"):
+        data["delivery_close"] = state["delivery_close"]
 
     blocked = state.get("argos_verdict") == "block"
     if state.get("verdict") in ("rechazado", "requiere_cambios"):

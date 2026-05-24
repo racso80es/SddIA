@@ -2,35 +2,37 @@
 document_id: TODO-BACKLOG-PENDIENTE-POST-PR11
 title: "[OPERATIVO] Backlog pendiente post-PR11 — Ola C, laboratorio e higiene"
 format: markdown
-version: "1.3.0"
+version: "1.5.0"
 created: "2026-05-20"
 updated: "2026-05-24"
 status: "abierto"
 priority: alta
-blocks: "Vanguardia L.1+E.2 / handlers laboratorio restantes / EDA producción"
+blocks: "L1-O5 runbooks / E.1 IOTA CI"
 supersedes: null
 related:
   - docs/todos/done/[OPERATIVO] Planificación de Backlog_ Resolución de Pasivos y Automatización Core (Ola A).md
   - docs/features/pbi-005-hito3-ola-b
   - docs/features/pbi-005-hito3-git-hooks
   - docs/features/vanguardia-soberania-local
+  - docs/features/laboratorio-handlers-l2-l3
   - docs/todos/done/[ARQUITECTURA] Deuda Ola C — Retirar compatibilidad CLI execute-process y execute-action.md
   - docs/todos/done/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md
   - docs/todos/pending/[FIX] accept-pr — higiene silenciosa delete_branch tras merge.md
-  - docs/todos/pending/[FIX] delivery-close-cycle — hooks EDA, evento Presented y gobernanza operador IA.md
+  - docs/todos/done/[FIX] delivery-close-cycle — hooks EDA, evento Presented y gobernanza operador IA.md
   - docs/todos/pending/norma-paridad-documental.md
   - docs/features/pull-request-review-redesign
   - docs/features/pull-request-automation-dlt
   - SddIA/process/accept-pr.md
   - SddIA/actions/emit-domain-mutation.md
   - SddIA/process/delivery-close-cycle.md
+  - SddIA/scripts/qa/ecst_validation.py
 ---
 
 # Backlog pendiente (consolidado)
 
 > **Contexto (2026-05-20):** **PBI-005 cerrado al 100 %** en `main` (PR #13, merge `ed543c8`, CA-3 completo). Orquestación fractal PR (PR #11), aduana `pre-commit` (PR #12) y hooks ciclo PR Ola B (PR #13) en producción. Este manifiesto agrupa la deuda **posterior al PBI** — no reabrir Hitos 1–3.
 
-> **Actualización (2026-05-24):** Tras PR #15 (`pull-request-review-redesign`) y PR #36 (`pull-request-automation-dlt`), la cadena Presented → Review → Accept opera en lab/producción parcial. La **puerta de entrada** sigue inestable: `accept-pr` traga fallos de `delete_branch` (FIX abierto, incidente PR #36) y `emit-domain-mutation` persiste ECST sin aduana de esquema pre-`pending/`. Se eleva **Vanguardia de Fricción — Soberanía Local (L.1 + E.2)** como frente activo → feature [`docs/features/vanguardia-soberania-local/`](../../features/vanguardia-soberania-local/).
+> **Actualización (2026-05-24):** **Vanguardia Soberanía Local** en `main` (PR #37). **Laboratorio L.2–L.3** entregado en feature [`laboratorio-handlers-l2-l3`](../../features/laboratorio-handlers-l2-l3/): gate Impacto SddIA (fase 2 `delivery-close-cycle`), cápsulas `feature-pbi-archive` + `feature-delivery-close`. **Brechas abiertas:** L1-O5 runbooks, E.1 IOTA CI.
 
 ---
 
@@ -39,14 +41,14 @@ related:
 | Bloque | Avance real | Brecha principal |
 |--------|-------------|------------------|
 | **PBI-005 / Ola C shims** | ✅ Cerrado | OC.5 residual (`execute-process.md` legacy) — no bloqueante |
-| **Cadena PR reactiva** | ✅ PR #11 + #15 + #36 | Handoff review→accept probado; higiene ramas no determinista |
-| **L.1 `accept-pr`** | 🟡 ~75 % | Cápsulas 4 fases en `execute_process_capsules.py`; Fase 4 silenciosa ante `delete_branch` |
-| **E.2 `emit-domain-mutation`** | 🔴 ~30 % | Validación de inputs básica; **sin** ECST vs Clase antes de disco |
-| **L.2–L.3 laboratorio** | 🟡 Parcial | Fases simuladas en `delivery-close-cycle` y `feature` |
+| **Cadena PR reactiva** | ✅ PR #11 + #15 + #36 + #37 | Handoff review→accept probado; higiene ramas auditable vía `hygiene_failure` |
+| **L.1 `accept-pr`** | 🟢 ~95 % | Cápsula 4 fases + Fase 4 estricta en `main`; runbooks legacy sin unificar |
+| **E.2 `emit-domain-mutation`** | ✅ 100 % | Aduana ECST pre-`pending/` en `execute-action.py` + cápsulas |
+| **L.2–L.3 laboratorio** | ✅ Entregado | Gate fase 2 DC + fases 6–7 `feature` físicas; agentes IDE 2–5 `simulated` |
 | **E.1 IOTA CI** | ⏳ | Solo simulación lab (`SDDIA_LAB_SIMULATE_IOTA=1`) |
 | **Ola C V3 coreografía** | ⏳ | Sweeper, recibos, middleware — visión largo plazo |
 
-**Dependencia crítica:** hasta sellar L.1 + E.2, el ciclo de vida del código opera sobre bases inestables (merge sin higiene garantizada + bus expuesto a mutaciones malformadas).
+**Dependencia crítica:** puerta de entrada y handlers lab P2 sellados; pendiente L1-O5 documental y E.1 IOTA antes de cerrar backlog.
 
 ---
 
@@ -62,6 +64,7 @@ related:
 | Hito 3 **Ola A** — `pre-commit` Argos | PR #12 — `docs/features/pbi-005-hito3-git-hooks/` |
 | Hito 3 **Ola B** — hooks `pre-push` / `post-merge` | PR #13 — `docs/features/pbi-005-hito3-ola-b/` |
 | **Deuda Ola C — shims CLI** | PR #14 MERGED — `docs/todos/done/… Deuda Ola C — Retirar compatibilidad CLI…` |
+| **Vanguardia L.1 + E.2** (código) | PR #37 — `docs/features/vanguardia-soberania-local/validacion.md` APTO |
 
 ### Trazabilidad PBI-005 Hito 3 (CA-3)
 
@@ -87,16 +90,16 @@ related:
 
 > **Objetivo innegociable:** sellar la **puerta de entrada** del sistema local antes de ampliar laboratorio o coreografía V3.
 
-Feature activa: [`docs/features/vanguardia-soberania-local/`](../../features/vanguardia-soberania-local/) — rama `feat/vanguardia-soberania-local`.
+Feature **entregada:** [`docs/features/vanguardia-soberania-local/`](../../features/vanguardia-soberania-local/) — PR [#37](https://github.com/racso80es/SddIA/pull/37) mergeado en `main` (`2d9fe64`).
 
 ### L.1 — `accept-pr`: cápsula física estricta
 
 | Aspecto | Estado actual | Objetivo vanguardia |
 |---------|---------------|---------------------|
 | Fases 1–3 (Auditoría → Merge → Sello) | ✅ Handlers lab | Mantener; smoke regresión |
-| Fase 4 (Push + higiene ramas) | 🟡 Push OK; `delete_branch` falla en silencio | Visibilidad auditable + delete local/remoto confirmado |
-| `git-manager` suelto en runbooks | ⏳ Guías legacy aún citan pasos manuales | Runbook único vía `execute-process --process accept-pr` |
-| Incidente PR #36 | Rama feature no borrada post-merge | Absorbido en FIX; criterio O3 smoke post-merge |
+| Fase 4 (Push + higiene ramas) | ✅ Push OK; `hygiene_failure` auditable | ✅ Entregado PR #37 |
+| `git-manager` suelto en runbooks | ⏳ Guías legacy en `docs/features/*/execution.md` históricos | Runbook único vía `execute-process --process accept-pr` |
+| Incidente PR #36 | ✅ Código corregido | Manifiesto FIX pendiente de mover a `done/` |
 
 **Criterios de cierre L.1:**
 
@@ -112,11 +115,11 @@ Feature activa: [`docs/features/vanguardia-soberania-local/`](../../features/van
 
 | Aspecto | Estado actual | Objetivo vanguardia |
 |---------|---------------|---------------------|
-| Paso 1 acción (inputs enum/hash) | ✅ Spec + `_run_emit_domain_mutation` | Mantener |
-| Ensamblaje ECST (Paso 4) | ✅ JSON estándar | Mantener |
-| Aduana pre-`pending/` | 🔴 Ausente | Validar instancia vs Clase catalogada **antes** de `WRITE_FILE` |
-| Reutilización | — | Extraer/adaptar `load_event_class_schemas` + `validate_ecst_instance` de `route_domain_event_core.py` |
-| Deuda Ola C V3 §2 | Documentada línea 50 | Cerrar en esta vanguardia, no postergar al sweeper |
+| Paso 1 acción (inputs enum/hash) | ✅ Spec + `_run_emit_domain_mutation` | ✅ Mantener |
+| Ensamblaje ECST (Paso 4) | ✅ JSON estándar | ✅ Mantener |
+| Aduana pre-`pending/` | ✅ `validate_domain_mutation_event` pre-`WRITE_FILE` | ✅ Entregado PR #37 |
+| Reutilización | ✅ `SddIA/scripts/qa/ecst_validation.py` | ✅ Router + emisores importan módulo compartido |
+| Deuda Ola C V3 §2 | ✅ Cerrada en vanguardia | — |
 
 **Criterios de cierre E.2:**
 
@@ -126,13 +129,13 @@ Feature activa: [`docs/features/vanguardia-soberania-local/`](../../features/van
 - [x] Smoke: evento válido pasa; payload con campo FORBIDDEN aborta.
 - [x] `emit-domain-mutation.md` § Orquestación documenta Paso 1b (aduana ECST).
 
-**Artefactos tocados:** `SddIA/scripts/qa/execute-action.py`, `SddIA/scripts/qa/execute_process_capsules.py` (`capsule_emit_domain_mutation`), módulo compartido de validación ECST, `SddIA/actions/emit-domain-mutation.md`.
+**Artefactos tocados:** `SddIA/scripts/qa/execute-action.py`, `SddIA/scripts/qa/execute_process_capsules.py` (`capsule_emit_domain_mutation`), `SddIA/scripts/qa/ecst_validation.py`, `SddIA/actions/emit-domain-mutation.md`.
 
 ### Orquestación del frente
 
 ```mermaid
 flowchart LR
-  subgraph vanguardia [Vanguardia Soberanía Local]
+  subgraph vanguardia [Vanguardia Soberanía Local — entregada]
     L1[L.1 accept-pr<br/>cápsula estricta]
     E2[E.2 emit-domain-mutation<br/>aduana ECST]
   end
@@ -144,7 +147,7 @@ flowchart LR
   Bus --> Route[route-domain-event]
 ```
 
-- **L.1** y **E.2** se ejecutan **en paralelo** (tracks independientes, mismo PR de feature si conviene revisión unificada).
+- **L.1** y **E.2** entregados en PR #37; residual **L1-O5** (runbooks documentales).
 - **Precedencia:** E.2 aduana **antes** de `pending/` evita que entropía contamine el bus; L.1 garantiza que `main` y ramas remotas queden higiénicas tras merge soberano.
 - **No reabrir:** hooks Hito 3, `pull-request-review`, DLT Oráculo — ya entregados; esta vanguardia **endurece** la base.
 
@@ -154,11 +157,11 @@ flowchart LR
 
 | ID | Proceso | Gap actual | Objetivo |
 |----|---------|------------|----------|
-| L.1 | **`accept-pr`** | ✅ | Feature `vanguardia-soberania-local` — `hygiene_failure` auditable |
-| L.2 | **`delivery-close-cycle`** | Fases 1–3 (`Snapshot`, Argos ×2) `simulated` | Handlers mínimos o gates documentados |
-| L.3 | **`feature`** | Fases 2–6 `simulated` | Perfil IDE fuera de alcance lab; `execution_report` honesto |
+| L.1 | **`accept-pr`** | ✅ Código; ⏳ L1-O5 runbooks | `hygiene_failure` auditable + guías unificadas |
+| L.2 | **`delivery-close-cycle`** | ✅ Gate fase 2 `delivery-impact-assessment` | Fases 1, 3–7 ya físicas (PR #11+) |
+| L.3 | **`feature`** | ✅ Fases 6–7 físicas; 2–5 `simulated` honesto | Feature `laboratorio-handlers-l2-l3` |
 
-**Nota:** Presentación PR (fases 4–6) y fusión vía cápsula `accept-pr` operativas desde PR #11 y PR #13.
+**Nota:** Presentación PR (fases 4–6) y fusión vía cápsula `accept-pr` operativas desde PR #11, PR #13 y PR #37.
 
 ---
 
@@ -167,7 +170,7 @@ flowchart LR
 | ID | Tarea | Estado |
 |----|-------|--------|
 | E.1 | IOTA **físico** en CI/validación (sin solo `SDDIA_LAB_SIMULATE_IOTA=1`) | ⏳ |
-| E.2 | Validación de esquema en `emit-domain-mutation` antes de `pending/` | ✅ | Feature `vanguardia-soberania-local` |
+| E.2 | Validación de esquema en `emit-domain-mutation` antes de `pending/` | ✅ PR #37 — `ecst_validation.py` |
 | E.3 | `verify-process-integrity.py` + gate `pre-commit` | ✅ PR #12 |
 | E.4 | Recalcular `hash_signature` tras cambio de `phases` en procesos | ✅ Disciplina PR #12+ |
 
@@ -190,7 +193,7 @@ flowchart LR
 | ID | Tarea | Estado |
 |----|-------|--------|
 | D.1 | PBI-005 operativo v1.5.1 completado | ✅ → `docs/todos/done/…` |
-| D.2 | Consolidar activos en `docs/todos/pending/` y `done/` | 🔄 En curso (PR Kaizen) |
+| D.2 | Consolidar activos en `docs/todos/pending/` y `done/` | 🔄 En curso — FIX `delete_branch` aún en `pending/` |
 | D.3 | Reexportar PDF operativo desde `.md` | ⏳ |
 | D.4 | Feature Hito 3 Ola A + Ola B | ✅ PR #12 + PR #13 |
 | D.5 | Actualizar `TODO-BLINDAJE-IA-OBRERA` Fase C (pre-commit + hooks) | ⏳ |
@@ -202,8 +205,9 @@ flowchart LR
 | Bloque | Prioridad | Esfuerzo | Desbloquea |
 |--------|-----------|----------|------------|
 | ~~Ola C shims CLI~~ | ~~—~~ | — | ✅ PR #14 |
-| **Vanguardia L.1 + E.2** | **P1** | Medio | Puerta de entrada sellada; base estable para lab/EDA |
-| Handlers lab (L.2–L.3 restantes) | **P2** | Medio | Runbooks sin fases `simulated` |
+| ~~Vanguardia L.1 + E.2 (código)~~ | ~~P1~~ | — | ✅ PR #37 |
+| **L1-O5 runbooks** | **P1 residual** | Bajo | Paridad operativa post-vanguardia |
+| ~~Handlers lab L.2–L.3~~ | ~~P2~~ | — | ✅ Feature `laboratorio-handlers-l2-l3` |
 | IOTA CI + integridad genoma (E.1) | **P3** | Bajo–Medio | Gobernanza EDA producción |
 | Ola C V3 coreografía | **P4** | Alto | Visión largo plazo |
 | Docs / PDF / blindaje | **P5** | Bajo | Paridad administrativa |
@@ -214,10 +218,13 @@ flowchart LR
 
 - [x] **PBI-005** y **CA-3** al 100 % (`main`, PR #13).
 - [x] **OC.1–OC.4** completos (OC.5 residual no bloqueante).
-- [x] **L.1** cápsula estricta + higiene ramas auditable (vanguardia P1).
-- [x] **E.2** aduana ECST en `emit-domain-mutation` pre-`pending/` (vanguardia P1).
+- [x] **L.1** cápsula estricta + higiene ramas auditable (vanguardia P1, PR #37).
+- [x] **E.2** aduana ECST en `emit-domain-mutation` pre-`pending/` (vanguardia P1, PR #37).
+- [x] **L.2** gate Impacto SddIA en `delivery-close-cycle` (lab).
+- [x] **L.3** handlers fases 6–7 en `feature` + `execution_report` honesto fases 2–5.
+- [ ] **L1-O5** runbooks sin `git-manager` suelto.
 - [ ] **E.1** IOTA físico en CI.
-- [ ] Este archivo → `status: cerrado` o `docs/todos/done/` cuando vanguardia P1 + P2–P3 estén resueltos.
+- [ ] Este archivo → `status: cerrado` o `docs/todos/done/` cuando L1-O5 + E.1 estén resueltos.
 
 ---
 
@@ -231,8 +238,10 @@ flowchart LR
 | Presentación PR | `SddIA/process/delivery-close-cycle.md` v1.1 |
 | Fusión PR | `SddIA/process/accept-pr.md` |
 | Sello genoma | `SddIA/actions/emit-domain-mutation.md` |
+| Validación ECST (compartida) | `SddIA/scripts/qa/ecst_validation.py` |
 | Validación ECST (router) | `SddIA/scripts/qa/route_domain_event_core.py` |
-| FIX delete_branch | `docs/todos/pending/[FIX] accept-pr — higiene silenciosa delete_branch tras merge.md` |
+| FIX delete_branch (código cerrado; doc pendiente) | `docs/todos/pending/[FIX] accept-pr — higiene silenciosa delete_branch tras merge.md` |
 | Feature vanguardia | `docs/features/vanguardia-soberania-local/` |
+| Feature lab L.2–L.3 | `docs/features/laboratorio-handlers-l2-l3/` |
 | Contrato hooks CA-3 | `SddIA/evolution/git-hooks-ca3-ola-b-contract.md` |
 | Norma PR | `SddIA/norms/pull-request-orchestration.md` |

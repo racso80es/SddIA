@@ -99,9 +99,14 @@ Variables de entorno para cápsulas físicas sin efectos destructivos por defect
 | Variable | Efecto |
 | :--- | :--- |
 | `SDDIA_LAB_SKIP_SNAPSHOT` | Omite `get_last_commit` en Snapshot final |
+| `SDDIA_LAB_SKIP_IMPACT_ASSESSMENT` | Omite gate Impacto SddIA (fase 2) |
 | `SDDIA_LAB_SKIP_GIT_PUSH` | Omite push en Publicación remota |
 | `SDDIA_LAB_SIMULATE_GH_PR` | Simula `pr_url` sin invocar `gh` |
 | `SDDIA_LAB_SKIP_HIGIENE` | Omite checkout/delete en Higiene local |
 | `SDDIA_LAB_DELETE_FEATURE_BRANCH` | Si `1`, intenta borrar rama tras sello (solo lab explícito) |
 
 **Anti-recursión hook (Ola B):** cuando `source_process == git-hook-pre-push`, la fase Publicación remota ejecuta push con `SDDIA_SKIP_HOOKS=1` **solo** en el subproceso `git-manager`. El hook pre-push omite re-entrada si `SDDIA_HOOK_DELIVERY_CLOSE=1` (inyectado por `invoke_process` del hook).
+
+### Fase Impacto SddIA condicional (perfil laboratorio)
+
+Handler `delivery-impact-assessment`: diff name-only contra `origin/<target_branch>`; filtra prefijo `SddIA/`. Solo evalúa si `source_process == feature`. No bloquea el ciclo en lab (Argos IDE fuera de alcance). Propaga `sddia_impact` en envelope del proceso.
