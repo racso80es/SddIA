@@ -23,6 +23,7 @@ from execute_process_core import (
 
 from execute_process_forges import FORGE_BY_ENTITY_CLASS
 from eda_bus_utils import find_existing_domain_event, infer_persist_ref_from_branch, ensure_event_bus_topology, load_eda_bus
+from ecst_validation import validate_domain_mutation_event
 
 try:
     import yaml
@@ -126,6 +127,48 @@ def invoke_git_manager(
     if not body.get("success"):
         raise RuntimeError(body.get("error") or "git-manager failed")
     return body.get("data") or {}
+
+
+def _try_delete_branch_op(repo: Path, branch: str, *, remote: bool) -> dict[str, Any]:
+    op_name = "delete_branch_remote" if remote else "delete_branch_local"
+    command = "git push origin --delete" if remote else "git branch -d"
+    try:
+        invoke_git_manager(
+            repo,
+            "delete_branch",
+            {"branch_name": branch, "remote": remote, "force": False},
+        )
+        return {"op": op_name, "command": command, "success": True}
+    except RuntimeError as exc:
+        return {"op": op_name, "command": command, "success": False, "error": str(exc)}
+
+
+def _delete_branch_hygiene(repo: Path, branch: str) -> tuple[str | None, dict[str, Any] | None]:
+    branch = branch.strip()
+    if not branch:
+        return None, None
+    local = _try_delete_branch_op(repo, branch, remote=False)
+    remote = _try_delete_branch_op(repo, branch, remote=True)
+    local_ok = local.get("success") is True
+    remote_ok = remote.get("success") is True
+    if local_ok and remote_ok:
+        return branch, None
+    return None, {
+        "survived_branch": branch,
+        "branch_deleted_local": local_ok,
+        "branch_deleted_remote": remote_ok,
+        "operations": [local, remote],
+    }
+
+
+def _apply_branch_hygiene_state(
+    state: dict[str, Any], closed: str | None, hygiene_failure: dict[str, Any] | None
+) -> None:
+    state["closed_branch"] = closed
+    if hygiene_failure is not None:
+        state["hygiene_failure"] = hygiene_failure
+    else:
+        state.pop("hygiene_failure", None)
 
 
 def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> dict[str, Any]:
@@ -275,18 +318,18 @@ def capsule_delivery_local_hygiene(repo: Path, inputs: dict[str, Any], state: di
     if isinstance(branch, str) and branch.strip() and os.environ.get(
         "SDDIA_LAB_DELETE_FEATURE_BRANCH", ""
     ).strip().lower() in ("1", "true", "yes"):
-        try:
-            invoke_git_manager(repo, "checkout", {"branch_name": "main", "create_if_not_exists": False})
-            invoke_git_manager(
-                repo,
-                "delete_branch",
-                {"branch_name": branch.strip(), "remote": "origin"},
-            )
-            closed = branch.strip()
-        except RuntimeError:
-            closed = None
-    state["closed_branch"] = closed
-    return {"closed_branch": closed, "note": "higiene parcial en laboratorio; delete requiere SDDIA_LAB_DELETE_FEATURE_BRANCH"}
+        invoke_git_manager(repo, "checkout", {"branch_name": "main", "create_if_not_exists": False})
+        closed, hygiene_failure = _delete_branch_hygiene(repo, branch.strip())
+    else:
+        closed, hygiene_failure = None, None
+    _apply_branch_hygiene_state(state, closed, hygiene_failure)
+    result: dict[str, Any] = {
+        "closed_branch": closed,
+        "note": "higiene parcial en laboratorio; delete requiere SDDIA_LAB_DELETE_FEATURE_BRANCH",
+    }
+    if hygiene_failure is not None:
+        result["hygiene_failure"] = hygiene_failure
+    return result
 
 
 def capsule_delivery_emit_presented(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
@@ -433,18 +476,14 @@ def capsule_accept_sync_cleanup(repo: Path, inputs: dict[str, Any], state: dict[
         else:
             os.environ["SDDIA_SKIP_HOOKS"] = prev_skip
     closed: str | None = None
+    hygiene_failure: dict[str, Any] | None = None
     if isinstance(source, str) and source.strip():
-        try:
-            invoke_git_manager(
-                repo,
-                "delete_branch",
-                {"branch_name": source.strip(), "remote": "origin"},
-            )
-            closed = source.strip()
-        except RuntimeError:
-            closed = None
-    state["closed_branch"] = closed
-    return {"push": push_data, "closed_branch": closed}
+        closed, hygiene_failure = _delete_branch_hygiene(repo, source.strip())
+    _apply_branch_hygiene_state(state, closed, hygiene_failure)
+    result: dict[str, Any] = {"push": push_data, "closed_branch": closed}
+    if hygiene_failure is not None:
+        result["hygiene_failure"] = hygiene_failure
+    return result
 
 
 def execute_accept_pr_phase(
@@ -1327,6 +1366,9 @@ def emit_domain_mutation(repo: Path, payload: dict[str, Any]) -> dict[str, Any]:
         },
         "delivery_state": {},
     }
+    ok, errors = validate_domain_mutation_event(repo, event)
+    if not ok:
+        raise ValueError("; ".join(errors))
     return write_pending_event(repo, event)
 
 
@@ -1740,8 +1782,10 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         data["event_id"] = state["event_id"]
     if state.get("target_path"):
         data["target_path"] = state["target_path"]
-    if state.get("closed_branch"):
+    if "closed_branch" in state:
         data["closed_branch"] = state["closed_branch"]
+    if state.get("hygiene_failure"):
+        data["hygiene_failure"] = state["hygiene_failure"]
     if state.get("snapshot_commit_hash"):
         data["snapshot_commit_hash"] = state["snapshot_commit_hash"]
     if state.get("verdict"):

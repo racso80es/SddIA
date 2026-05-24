@@ -1,0 +1,12 @@
+{
+  "entity_class": "tool",
+  "lifecycle_operation": "create",
+  "entity_uuid": "a0b1c2d3-e4f5-6789-abcd-ef0123456789",
+  "entity_name": "vanguardia-smoke-tool",
+  "version": "1.0.0",
+  "hash_signature_new": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+  "hash_signature_old": null,
+  "changes_summary": "Smoke E2 válido — vanguardia-soberania-local",
+  "emitter_agent": "vanguardia-smoke",
+  "origin_topology": "core"
+}

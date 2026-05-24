@@ -1,0 +1,12 @@
+{
+  "entity_class": "tool",
+  "lifecycle_operation": "create",
+  "entity_uuid": "b1c2d3e4-f5a6-7890-bcde-f01234567890",
+  "entity_name": "vanguardia-smoke-invalid",
+  "version": "1.0.0",
+  "hash_signature_new": "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+  "hash_signature_old": "sha256:0000000000000000000000000000000000000000000000000000000000000099",
+  "changes_summary": "Smoke E2 inválido — hash_signature_old forbidden en create",
+  "emitter_agent": "vanguardia-smoke",
+  "origin_topology": "core"
+}

@@ -56,6 +56,14 @@ Gate **Cerbero** previo por `context` de cada cápsula. Rutas vía `cumulo.paths
 
 - Cualquier violación: `success: false`, `exitCode: 1`, `data: null`, `error` causal. No persistir archivo.
 
+### Paso 1b — Aduana ECST (pre-`pending/`)
+
+Tras ensamblar el borrador ECST (Paso 4 lógico) y **antes** de `WRITE_FILE`:
+
+1. Resolver Clase en `SddIA/events/` vía `event_type`.
+2. Validar instancia contra tablas REQUIRED / OPTIONAL / FORBIDDEN de la Clase (`ecst_validation`).
+3. Violación → `success: false`, `exitCode: 1`, sin archivo en `pending/`.
+
 ### Paso 2 — Identidad del evento (`action:crypto-broker`)
 
 ```json

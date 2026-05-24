@@ -19,6 +19,7 @@ outputs:
 - event_id: UUID v4 del evento emitido en pending/
 - target_path: Ruta relativa del JSON padre en eda_bus.pending (`.events/pending/`)
 - closed_branch: Rama origen eliminada (local y remoto si aplica)
+- hygiene_failure: Detalle empírico si la rama sobrevivió tras intento de delete (Fase 4)
 phases:
 - name: Auditoría Genómica
   intent: Argos evalúa la rama origen. Si detecta fricción letal o vulnerabilidad, aborta
@@ -70,9 +71,22 @@ Invocar **`action:emit-pr-merged-event`** con:
 
 ## Fase 4 — Sincronización y Limpieza
 
-1. `skill:git-manager` → `push` (`remote: origin`, `branch: main`, `force: false`).
-2. Eliminar rama origen local: `git branch -d` vía secuencia acordada en evolución de `git-manager` o higiene documentada en `git-operations` (hasta existir `delete_branch` congelado).
-3. Eliminar rama origen remota: `push` con refdelete o `skill:shell-executor` + `gh` según `pull-request-orchestration.md` si la política del repo lo exige.
+1. `skill:git-manager` → `push` (`remote: origin`, `branch: main`, `force: false`). Si falla, abortar fase sin ejecutar delete.
+2. Eliminar rama origen **local**: `delete_branch` con `{ "branch_name": "<source_branch>", "remote": false, "force": false }` → `git branch -d`.
+3. Eliminar rama origen **remota**: `delete_branch` con `{ "branch_name": "<source_branch>", "remote": true, "force": false }` → `git push origin --delete`.
+4. `closed_branch` = nombre de rama **solo** si ambas operaciones (2 y 3) confirman éxito.
+5. Si alguna operación falla: `closed_branch: null` y nodo **`hygiene_failure`** en salida de fase y `execution_report` (prohibido fallo silencioso).
+
+### Contrato `hygiene_failure`
+
+| Campo | Descripción |
+| :--- | :--- |
+| `survived_branch` | Rama que no pudo eliminarse por completo |
+| `branch_deleted_local` | boolean |
+| `branch_deleted_remote` | boolean |
+| `operations[]` | `{ op, command, success, error? }` por operación |
+
+Merge y push exitosos con higiene fallida: proceso `verdict: aprobado`, `status_code: 0`, con `hygiene_failure` explícito.
 
 ## Notas
 
