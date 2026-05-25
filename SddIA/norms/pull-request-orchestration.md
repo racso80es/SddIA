@@ -64,6 +64,7 @@ La **Única Fuente de Verdad (SSOT)** para la consolidación de código en `main
 - `SddIA/norms/skill-io-shell-executor-frozen.md`
 - `SddIA/norms/git-operations.md`
 - `SddIA/process/accept-pr.md`
+- `docs/features/l1-o5-runbooks-paridad/runbook-accept-pr.md` — **runbook operativo SSOT** (merge/push main/delete vía `execute-process --process accept-pr`)
 - `SddIA/norms/obediencia-procesos.md` — Ley de Jurisdicción Delegada y protocolo Kintsugi ante fallo de flujo
 
 ## 7. Escalado ante bypass (Kintsugi)
