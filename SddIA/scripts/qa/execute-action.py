@@ -55,6 +55,7 @@ ACTION_AGENT: dict[str, str] = {
     "emit-pr-presented-event": "eda-bus",
     "emit-domain-mutation": "eda-bus",
     "materialize-fracture-pbi": "cumulo",
+    "materialize-kaizen-alert-doc": "cumulo",
     "enrich-fracture-pbi-kaizen": "mayeuta",
 }
 
@@ -633,6 +634,83 @@ _Pendiente de síntesis Mayeuta (Kintsugi async)._
     }
 
 
+def _kaizen_alert_doc_hash(review_id: str, implicated_files: list[Any]) -> str:
+    key = review_id + "".join(sorted(str(h) for h in implicated_files))
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:8]
+
+
+def _run_materialize_kaizen_alert_doc(
+    repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]
+) -> dict[str, Any]:
+    _ = action_def
+    review_id = inputs.get("review_id")
+    alert_justification = inputs.get("alert_justification")
+    implicated_files = inputs.get("implicated_files")
+    if not isinstance(review_id, str) or not review_id.strip():
+        raise ValueError("review_id es obligatorio (string)")
+    if not isinstance(alert_justification, str) or not alert_justification.strip():
+        raise ValueError("alert_justification es obligatorio (string)")
+    if not isinstance(implicated_files, list) or not implicated_files:
+        raise ValueError("implicated_files es obligatorio (array no vacío)")
+
+    files = [str(f) for f in implicated_files if str(f).strip()]
+    if not files:
+        raise ValueError("implicated_files no contiene rutas válidas")
+
+    hash8 = _kaizen_alert_doc_hash(review_id.strip(), files)
+    todo_name = f"PENDING_AUDIT_DOC_{hash8}.md"
+    pending_dir = repo / "docs" / "todos" / "pending"
+    pending_dir.mkdir(parents=True, exist_ok=True)
+    target = pending_dir / todo_name
+    rel_path = str(target.relative_to(repo)).replace("\\", "/")
+
+    if target.is_file():
+        return {
+            "success": True,
+            "target_path": rel_path,
+            "message": "TODO Kaizen ya existente (idempotente)",
+            "hash8": hash8,
+        }
+
+    persist_ref = inputs.get("persist_ref")
+    pr_branch = inputs.get("pr_branch")
+    alert_kind = inputs.get("alert_kind") or "doc_parity"
+    impacts_doc = inputs.get("impacts_doc")
+    hits_md = ", ".join(f"`{h}`" for h in files)
+    branch_cell = f"`{pr_branch}`" if isinstance(pr_branch, str) and pr_branch.strip() else "—"
+    persist_cell = f"`{persist_ref}`" if isinstance(persist_ref, str) and persist_ref.strip() else "—"
+    impacts_cell = f"`{impacts_doc}`" if impacts_doc is not None else "—"
+
+    body = f"""# {todo_name}
+
+> Origen: `Kaizen_Alert_Required` / sensor DIA / evento EDA v2
+
+**Alerta:** posible fuga de conocimiento documental.
+
+| Campo | Valor |
+|-------|-------|
+| `review_id` | `{review_id.strip()}` |
+| `alert_justification` | `{alert_justification.strip()}` |
+| `alert_kind` | `{alert_kind}` |
+| `persist_ref` | {persist_cell} |
+| `pr_branch` | {branch_cell} |
+| `impacts_doc` | {impacts_cell} |
+| `implicated_files` | {hits_md} |
+
+## Checklist DIA
+
+- [ ] Revisar `spec.md` § Impacto en Documentación
+- [ ] Actualizar README/manuales afectados o corregir `impacts_doc`
+"""
+    target.write_text(body, encoding="utf-8")
+    return {
+        "success": True,
+        "target_path": rel_path,
+        "message": "TODO Kaizen materializado",
+        "hash8": hash8,
+    }
+
+
 def _run_enrich_fracture_pbi_kaizen(
     repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]
 ) -> dict[str, Any]:
@@ -684,6 +762,7 @@ PHYSICAL_HANDLERS: dict[str, Any] = {
     "emit-pr-presented-event": _run_emit_pr_presented,
     "emit-domain-mutation": _run_emit_domain_mutation,
     "materialize-fracture-pbi": _run_materialize_fracture_pbi,
+    "materialize-kaizen-alert-doc": _run_materialize_kaizen_alert_doc,
     "enrich-fracture-pbi-kaizen": _run_enrich_fracture_pbi_kaizen,
 }
 

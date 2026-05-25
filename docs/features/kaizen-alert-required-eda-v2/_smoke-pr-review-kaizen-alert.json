@@ -1,0 +1,11 @@
+{
+  "pr_branch": "feat/kaizen-alert-required-eda-v2",
+  "pr_id_or_path": "feat/kaizen-alert-required-eda-v2",
+  "correlation_id": "smoke-kaizen-alert-eda-v2-20260525",
+  "persist_ref": "docs/features/kaizen-alert-required-eda-v2",
+  "pr_url": "https://github.com/lab-simulated/SddIA/pull/0-kaizen-alert-required-eda-v2",
+  "author": "validacion@sddia.local",
+  "code_diff": "lab-simulated-diff",
+  "tasks_path": "docs/todos/pending",
+  "document_context": {}
+}

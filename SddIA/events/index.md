@@ -23,6 +23,7 @@ Contrato normativo de la familia: `events-contract.md` (no constituye una Clase 
 | `pull-request-presented.md` | `5e488ae6-7cb2-4a2c-9725-4a7d4ce239ea` | pull-request-presented | PullRequest_Presented | 1.0.0 | events-contract v1.0.0 | ecosystem-evolution | `pull_request_presented` |
 | `pull-request-merged.md` | `cfb8ce66-784e-4826-8a0a-a20c671e3a60` | pull-request-merged | PullRequest_Merged | 1.0.0 | events-contract v1.0.0 | dlt-auditing | `pull_request_merged` |
 | `system-fracture-detected.md` | `f8e3a1b2-c4d5-4e6f-9a0b-1c2d3e4f5a6b` | system-fracture-detected | System_Fracture_Detected | 1.0.0 | events-contract v1.0.0 | ecosystem-evolution | `system_fracture_detected` |
+| `kaizen-alert-required.md` | `a9b8c7d6-e5f4-4321-a987-6543210fedcb` | kaizen-alert-required | Kaizen_Alert_Required | 1.0.0 | events-contract v1.0.0 | quality-assurance | `kaizen_alert_required`, `doc_parity_debt` |
 
 ## Archivos en carpeta no catalogados como Clase
 
@@ -31,5 +32,5 @@ Contrato normativo de la familia: `events-contract.md` (no constituye una Clase 
 
 ## Integridad (última pasada)
 
-- **Sincronización:** 6 Clases ECST catalogadas; cabeceras alineadas a filas del índice.
+- **Sincronización:** 7 Clases ECST catalogadas; cabeceras alineadas a filas del índice.
 - **SSOT rutas:** Clases → `SddIA/events/`; instancias padre → `.events/pending/` (`event_bus`); testigos → `.events/subscribers/`; personalización → `.SddIA/events/`.
