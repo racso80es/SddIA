@@ -8,13 +8,18 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from eda_bus_utils import (
     ensure_event_bus_topology,
     ensure_processing_header,
+    gh_executable,
+    github_pr_merged,
     list_witnesses,
     load_eda_bus,
     maybe_purge_processing_header,
+    parse_pr_number,
+    resolve_pull_request_lifecycle,
     terminal_witness_exists,
     write_processing_witness,
 )
@@ -181,6 +186,66 @@ class TestEdaBusV3Plus(unittest.TestCase):
 
         self.assertFalse(pending.is_file())
         self.assertFalse(processed.is_file())
+
+
+class TestPullRequestLifecycle(unittest.TestCase):
+    def test_parse_pr_number(self) -> None:
+        self.assertEqual(parse_pr_number("https://github.com/org/repo/pull/48"), 48)
+        self.assertIsNone(parse_pr_number("not-a-url"))
+
+    @patch("eda_bus_utils._gh_pr_state", return_value="MERGED")
+    @patch("eda_bus_utils._branch_exists_on_remote", return_value=False)
+    def test_lifecycle_gh_merged(self, _branch: object, _gh: object) -> None:
+        repo = _fake_repo()
+        out = resolve_pull_request_lifecycle(
+            repo,
+            branch="feat/x",
+            pr_url="https://github.com/org/repo/pull/1",
+        )
+        self.assertTrue(out["merged"])
+        self.assertEqual(out["source"], "gh")
+
+    @patch("eda_bus_utils._gh_pr_state", return_value=None)
+    @patch("eda_bus_utils._branch_exists_on_remote", return_value=False)
+    @patch("eda_bus_utils._merged_via_pull_ref", return_value=True)
+    def test_lifecycle_git_pull_ref_fallback(self, _pull: object, _branch: object, _gh: object) -> None:
+        repo = _fake_repo()
+        out = resolve_pull_request_lifecycle(
+            repo,
+            branch="feat/x",
+            pr_url="https://github.com/org/repo/pull/48",
+        )
+        self.assertTrue(out["merged"])
+        self.assertEqual(out["source"], "git-pull-ref")
+
+    @patch("eda_bus_utils._gh_pr_state", return_value="OPEN")
+    @patch("eda_bus_utils._branch_exists_on_remote", return_value=False)
+    def test_lifecycle_open_branch_absent(self, _branch: object, _gh: object) -> None:
+        repo = _fake_repo()
+        out = resolve_pull_request_lifecycle(
+            repo,
+            branch="feat/x",
+            pr_url="https://github.com/org/repo/pull/48",
+        )
+        self.assertIsNone(out["merged"])
+        self.assertFalse(out["branch_on_remote"])
+
+    @patch("eda_bus_utils._gh_pr_state", return_value="OPEN")
+    @patch("eda_bus_utils._branch_exists_on_remote", return_value=True)
+    def test_lifecycle_open_branch_present(self, _branch: object, _gh: object) -> None:
+        repo = _fake_repo()
+        out = resolve_pull_request_lifecycle(
+            repo,
+            branch="feat/x",
+            pr_url="https://github.com/org/repo/pull/48",
+        )
+        self.assertFalse(out["merged"])
+        self.assertTrue(out["branch_on_remote"])
+        self.assertEqual(out["source"], "branch-remote")
+
+    @patch("eda_bus_utils._gh_pr_state", return_value="MERGED")
+    def test_github_pr_merged_delegates_to_gh_state(self, _state: object) -> None:
+        self.assertTrue(github_pr_merged("https://github.com/org/repo/pull/1"))
 
 
 if __name__ == "__main__":

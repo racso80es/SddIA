@@ -25,6 +25,8 @@ UUID4_RE = re.compile(
     re.I,
 )
 
+_GH_PR_URL_RE = re.compile(r"github\.com/[^/]+/[^/]+/pull/(\d+)", re.I)
+
 DLT_PLACEHOLDER_HASHES = frozenset(
     {
         "sha256:pending-forge",
@@ -542,16 +544,48 @@ def infer_persist_ref_from_branch(repo: Path, branch: str) -> str | None:
     return None
 
 
-def github_pr_merged(pr_url: str) -> bool:
-    """True si gh reporta el PR en estado MERGED (retroactivo / handoff)."""
+def gh_executable() -> str | None:
+    """Ruta a gh; override opcional vía SDDIA_GH_EXECUTABLE."""
+    override = os.environ.get("SDDIA_GH_EXECUTABLE", "").strip()
+    if override:
+        p = Path(override)
+        return str(p.resolve()) if p.is_file() else None
+    return shutil.which("gh")
+
+
+def parse_pr_number(pr_url: str | None) -> int | None:
+    if not isinstance(pr_url, str) or not pr_url.strip():
+        return None
+    m = _GH_PR_URL_RE.search(pr_url.strip())
+    return int(m.group(1)) if m else None
+
+
+def _run_git(repo: Path, args: list[str]) -> tuple[int, str, str]:
     import subprocess
 
+    proc = subprocess.run(
+        ["git", *args],
+        cwd=str(repo.resolve()),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    return proc.returncode, (proc.stdout or "").strip(), (proc.stderr or "").strip()
+
+
+def _gh_pr_state(pr_url: str) -> str | None:
+    """Estado GitHub del PR (MERGED|OPEN|CLOSED|…) o None si gh indisponible."""
+    import subprocess
+
+    gh = gh_executable()
     url = pr_url.strip()
-    if not url:
-        return False
+    if not gh or not url:
+        return None
     try:
         proc = subprocess.run(
-            ["gh", "pr", "view", url, "--json", "state"],
+            [gh, "pr", "view", url, "--json", "state"],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -559,14 +593,113 @@ def github_pr_merged(pr_url: str) -> bool:
             check=False,
         )
     except OSError:
-        return False
+        return None
     if proc.returncode != 0 or not (proc.stdout or "").strip():
-        return False
+        return None
     try:
         data = json.loads(proc.stdout)
     except json.JSONDecodeError:
+        return None
+    state = data.get("state")
+    return state if isinstance(state, str) else None
+
+
+def github_pr_merged(pr_url: str) -> bool:
+    """True si gh reporta el PR en estado MERGED (retroactivo / handoff)."""
+    return _gh_pr_state(pr_url) == "MERGED"
+
+
+def _branch_exists_on_remote(repo: Path, branch: str, *, fetch: bool = True) -> bool:
+    if fetch:
+        _run_git(repo, ["fetch", "origin", "--prune"])
+    code, _, _ = _run_git(repo, ["rev-parse", "--verify", f"origin/{branch}"])
+    return code == 0
+
+
+def _merged_via_pull_ref(repo: Path, pr_number: int, target_branch: str = "main") -> bool:
+    remote_ref = f"refs/remotes/origin/.sddia/pr-{pr_number}-head"
+    fetch_spec = f"pull/{pr_number}/head:{remote_ref}"
+    code, _, _ = _run_git(repo, ["fetch", "origin", fetch_spec])
+    if code != 0:
         return False
-    return data.get("state") == "MERGED"
+    local_ref = f"origin/.sddia/pr-{pr_number}-head"
+    target = f"origin/{target_branch.strip() or 'main'}"
+    code_tgt, _, _ = _run_git(repo, ["rev-parse", "--verify", target])
+    if code_tgt != 0:
+        return False
+    code_anc, _, _ = _run_git(repo, ["merge-base", "--is-ancestor", local_ref, target])
+    return code_anc == 0
+
+
+def resolve_pull_request_lifecycle(
+    repo: Path,
+    *,
+    branch: str,
+    pr_url: str | None = None,
+    target_branch: str = "main",
+) -> dict[str, Any]:
+    """Resuelve merge y presencia remota antes de invocar pull-request-review."""
+    branch = branch.strip()
+    target = target_branch.strip() or "main"
+    diagnostics: list[str] = []
+    pr_number = parse_pr_number(pr_url)
+
+    if isinstance(pr_url, str) and pr_url.strip():
+        gh_state = _gh_pr_state(pr_url)
+        if gh_state == "MERGED":
+            diagnostics.append("gh:MERGED")
+            return {
+                "merged": True,
+                "source": "gh",
+                "branch_on_remote": _branch_exists_on_remote(repo, branch, fetch=False),
+                "pr_number": pr_number,
+                "diagnostics": diagnostics,
+            }
+        if gh_state == "OPEN":
+            diagnostics.append("gh:OPEN")
+        elif gh_state == "CLOSED":
+            diagnostics.append("gh:CLOSED")
+            return {
+                "merged": False,
+                "source": "gh",
+                "branch_on_remote": _branch_exists_on_remote(repo, branch, fetch=True),
+                "pr_number": pr_number,
+                "diagnostics": diagnostics,
+            }
+        elif gh_state is None:
+            diagnostics.append("gh:UNAVAILABLE" if not gh_executable() else "gh:ERROR")
+    else:
+        diagnostics.append("pr_url:absent")
+
+    branch_on_remote = _branch_exists_on_remote(repo, branch, fetch=True)
+    if branch_on_remote:
+        diagnostics.append("branch:remote-present")
+        return {
+            "merged": False,
+            "source": "branch-remote",
+            "branch_on_remote": True,
+            "pr_number": pr_number,
+            "diagnostics": diagnostics,
+        }
+
+    diagnostics.append("branch:remote-absent")
+    if pr_number is not None and _merged_via_pull_ref(repo, pr_number, target):
+        diagnostics.append("git-pull-ref:ancestor")
+        return {
+            "merged": True,
+            "source": "git-pull-ref",
+            "branch_on_remote": False,
+            "pr_number": pr_number,
+            "diagnostics": diagnostics,
+        }
+
+    return {
+        "merged": None,
+        "source": "unknown",
+        "branch_on_remote": False,
+        "pr_number": pr_number,
+        "diagnostics": diagnostics,
+    }
 
 
 def processed_subscriber_names(
