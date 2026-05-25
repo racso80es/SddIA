@@ -99,3 +99,5 @@ Cuando una feature muta entidades bajo `SddIA/` (skills, events, process, agents
 - **Ruido de Sistema (block):** `orphan_count > 0` — entidad indexada sin cobertura en SSOT.
 - **Excepción legacy:** backfill Fase C con manifiesto activo (`--emit --skip-dlt` + `--anchor-merkle`) mientras migra a SSOT.
 - Forja directa de `.md` sin pasar por `entity-manager` → huérfana EDA hasta `--backfill-coverage` o emit con sello.
+
+Referencia implementación: `docs/features/eda-coverage-ssot-bus-isolation/` (2026-05-25).
