@@ -5,6 +5,7 @@ process: feature
 branch: feat/norma-paridad-documental
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/46
 checks:
   DIA-CA1: pass
   DIA-CA2: pass
