@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -35,6 +36,7 @@ SCRIPT = Path(__file__).resolve()
 EXECUTE_PROCESS_CLI = SCRIPT.parent / "execute-process.py"
 EXECUTE_ACTION_CLI = SCRIPT.parent / "execute-action.py"
 AUDIT_EDA_CLI = SCRIPT.parent / "audit-entity-eda-coverage.py"
+AUDIT_DOC_PARITY_CLI = SCRIPT.parent / "audit-doc-parity.py"
 _GH_PR_URL_RE = re.compile(r"https://github\.com/[^\s/]+/[^\s/]+/pull/\d+", re.I)
 
 CREATOR_BY_CLASS: dict[str, str] = {
@@ -603,6 +605,78 @@ def capsule_pr_review_documental(repo: Path, inputs: dict[str, Any], state: dict
     return {"passed": not errors, "errors": errors, "persist_ref": persist_ref}
 
 
+def _dia_audit_hash(payload: dict[str, Any]) -> str:
+    persist = str(payload.get("persist_ref") or "")
+    hits = payload.get("monitored_hits") or []
+    key = persist + "|" + "|".join(sorted(str(h) for h in hits))
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:8]
+
+
+def _invoke_dia_audit(
+    repo: Path, inputs: dict[str, Any], state: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Sensor DIA — sin llamadas a agentes; alerta no bloqueante."""
+    if not AUDIT_DOC_PARITY_CLI.is_file():
+        return None
+    persist_ref = state.get("persist_ref") or inputs.get("persist_ref")
+    if not isinstance(persist_ref, str) or not persist_ref.strip():
+        return None
+    persist_ref = persist_ref.strip()
+    branch = state.get("pr_branch") or inputs.get("pr_branch") or "HEAD"
+    correlation = inputs.get("correlation_id") or state.get("correlation_id")
+    alert_file = ""
+    if isinstance(correlation, str) and correlation.strip():
+        alert_file = f".tmp/audit-doc-parity-{correlation.strip()[:36]}.json"
+    cmd = [
+        sys.executable,
+        str(AUDIT_DOC_PARITY_CLI),
+        "--persist-ref",
+        persist_ref,
+        "--base-ref",
+        str(inputs.get("base_ref") or "main"),
+        "--head-ref",
+        str(branch),
+        "--json",
+    ]
+    if alert_file:
+        cmd.extend(["--alert-file", alert_file])
+    if isinstance(correlation, str) and correlation.strip():
+        cmd.extend(["--correlation-hint", correlation.strip()])
+    env = os.environ.copy()
+    env["SDDIA_REPO_ROOT"] = str(repo.resolve())
+    proc = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        env=env,
+        check=False,
+    )
+    if proc.returncode == 2:
+        return {
+            "dia_error": (proc.stdout or proc.stderr or "")[-500:],
+            "dia_exit_code": 2,
+        }
+    try:
+        payload = json.loads(proc.stdout.strip() or "{}")
+    except json.JSONDecodeError:
+        return {"dia_error": "JSON inválido de audit-doc-parity", "dia_exit_code": proc.returncode}
+    if not isinstance(payload, dict):
+        return {"dia_error": "payload DIA no es objeto"}
+    if payload.get("alert_required"):
+        hits = payload.get("monitored_hits") or []
+        impacts = payload.get("impacts_doc")
+        msg = (
+            f"[DIA] Posible fuga de conocimiento: diff en {hits} "
+            f"con impacts_doc={impacts}. Revisar spec.md § Impacto en Documentación."
+        )
+        state.setdefault("kaizen_items", []).append(msg)
+        state["dia_audit"] = payload
+    return {"dia_audit": payload}
+
+
 def capsule_pr_review_technical(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     if os.environ.get("SDDIA_LAB_PR_REVIEW_TECH_FAIL", "").strip().lower() in ("1", "true", "yes"):
         err = "fallo simulado triaje técnico (SDDIA_LAB_PR_REVIEW_TECH_FAIL)"
@@ -626,7 +700,11 @@ def capsule_pr_review_technical(repo: Path, inputs: dict[str, Any], state: dict[
             err = "verify-process-integrity falló en triaje técnico"
             state.setdefault("review_failures", []).append(err)
             return {"passed": False, "errors": [err], "stderr": (proc.stderr or "")[-500:]}
-    return {"passed": True}
+    dia_result = _invoke_dia_audit(repo, inputs, state)
+    out: dict[str, Any] = {"passed": True}
+    if dia_result:
+        out["dia"] = dia_result
+    return out
 
 
 def capsule_pr_review_rbac(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
@@ -661,11 +739,39 @@ def capsule_pr_review_kaizen(repo: Path, inputs: dict[str, Any], state: dict[str
         items.append("Deuda simulada laboratorio — optimizar handlers aduana PR review")
     seeds: list[str] = []
     branch = state.get("pr_branch") or inputs.get("pr_branch") or "unknown"
-    for idx, item in enumerate(items, start=1):
+
+    dia_audit = state.get("dia_audit")
+    if isinstance(dia_audit, dict) and dia_audit.get("alert_required"):
+        hash8 = _dia_audit_hash(dia_audit)
+        todo_name = f"PENDING_AUDIT_DOC_{hash8}.md"
+        todo_path = repo / "docs" / "todos" / "pending" / todo_name
+        todo_path.parent.mkdir(parents=True, exist_ok=True)
+        hits = dia_audit.get("monitored_hits") or []
+        persist = dia_audit.get("persist_ref") or state.get("persist_ref") or "?"
+        body = (
+            f"# {todo_name}\n\n"
+            f"> Origen: pull-request-review / sensor DIA / rama `{branch}`\n\n"
+            f"**Alerta:** posible fuga de conocimiento documental.\n\n"
+            f"| Campo | Valor |\n|-------|-------|\n"
+            f"| `persist_ref` | `{persist}` |\n"
+            f"| `impacts_doc` | `{dia_audit.get('impacts_doc')}` |\n"
+            f"| `reason` | `{dia_audit.get('reason')}` |\n"
+            f"| `monitored_hits` | {', '.join(f'`{h}`' for h in hits)} |\n\n"
+            f"- [ ] Revisar `spec.md` § Impacto en Documentación\n"
+            f"- [ ] Actualizar README/manuales afectados o corregir `impacts_doc`\n"
+        )
+        todo_path.write_text(body, encoding="utf-8")
+        seeds.append(todo_path.relative_to(repo).as_posix())
+
+    generic_idx = 0
+    for item in items:
+        if str(item).startswith("[DIA]"):
+            continue
+        generic_idx += 1
         slug = re.sub(r"[^\w\-]+", "-", str(branch)).strip("-")[:48]
         todo_name = f"[OPERATIVO] Kaizen PR review — {slug}.md"
-        if idx > 1:
-            todo_name = f"[OPERATIVO] Kaizen PR review — {slug} ({idx}).md"
+        if generic_idx > 1:
+            todo_name = f"[OPERATIVO] Kaizen PR review — {slug} ({generic_idx}).md"
         todo_path = repo / "docs" / "todos" / todo_name
         todo_path.parent.mkdir(parents=True, exist_ok=True)
         body = (

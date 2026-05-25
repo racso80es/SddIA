@@ -13,3 +13,4 @@ Catálogo bajo `templates-contract`. Plantillas **motor** en `SddIA/templates/<t
 | template_id | Naturaleza | Descripción |
 |-------------|------------|-------------|
 | process-splus-frontmatter | motor | Plantilla de proceso S+ (ver carpeta). |
+| spec-template | motor | Plantilla `spec.md` con DIA (`impacts_doc` + § Impacto en Documentación). |

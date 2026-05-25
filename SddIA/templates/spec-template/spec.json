@@ -1,0 +1,12 @@
+{
+  "template_id": "spec-template",
+  "nature": "motor",
+  "name": "Spec template con DIA",
+  "description": "Plantilla de spec.md para features con Declaración de Impacto de Artefactos (impacts_doc + sección Impacto en Documentación).",
+  "process_ref": "feature",
+  "input_sources": {},
+  "related_actions": ["spec", "clarify", "planning", "implementation", "execution", "validate"],
+  "related_skills": [],
+  "interested_agents": ["dedalo", "tekton", "argos"],
+  "contract_ref": "SddIA/templates/templates-contract.json"
+}
