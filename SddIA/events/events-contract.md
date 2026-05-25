@@ -93,6 +93,7 @@ flowchart TB
 5. Réplicas de cabecera en `processed/` o `dead-letter/` según consenso por suscriptor; purga de `processing/` al cerrar todos.
 6. Tras consenso de suscriptores, `route-domain-event` invoca `try_sweep_event()` para purgar el padre en `pending/` de forma inmediata (éxito) o terminalizarlo en estado Kaizen cuando todos los suscriptores están cerrados pero existe testigo en `dead-letter/subscribers/` (`status: kaizen-finalized`).
 7. `event-sweeper.py` actúa como recolector periódico de eventos stale o no cerrados en el paso anterior; alerta Kaizen activa si hay `dead-letter/` con padre aún en `pending/`; eventos `kaizen-finalized` conservan cabecera y testigos DL sin copia en `pending/`.
+8. **`PullRequest_Presented` → `pull-request-review`:** antes del subprocess, `resolve_pull_request_lifecycle` (gh → rama remota → ref `pull/N/head`) activa `merge_already_done` si el PR ya está mergeado; evita dead-letter por checkout cuando la rama fue podada post-merge.
 
 ## 5. Aseguramiento forense de payload (laudo Ola C)
 

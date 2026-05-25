@@ -30,6 +30,7 @@ from eda_bus_utils import (
     list_witnesses,
     maybe_purge_processing_header,
     promote_witness,
+    resolve_pull_request_lifecycle,
     resolve_origin_topology,
     subscriber_applies_to_topology,
     subscriber_id,
@@ -166,8 +167,17 @@ def dispatch_subscriber(
         pr_url = payload.get("pr_url")
         if isinstance(pr_url, str) and pr_url.strip():
             process_inputs["pr_url"] = pr_url.strip()
-            if github_pr_merged(pr_url):
+        process_key = process_name.strip()
+        if process_key == "pull-request-review":
+            ok_precheck, precheck_err, lifecycle = _pull_request_review_precheck(
+                repo, branch=branch, pr_url=pr_url if isinstance(pr_url, str) else None, payload=payload
+            )
+            if not ok_precheck:
+                return sid, "failed", precheck_err, 1
+            if lifecycle.get("merged") is True:
                 process_inputs["merge_already_done"] = True
+        elif isinstance(pr_url, str) and pr_url.strip() and github_pr_merged(pr_url):
+            process_inputs["merge_already_done"] = True
         inferred = infer_persist_ref_from_branch(repo, branch)
         if inferred:
             process_inputs["persist_ref"] = inferred
@@ -275,6 +285,41 @@ def dispatch_subscriber(
 
 def _status_is_terminal_ok(status: str) -> bool:
     return status == "success" or status.startswith("skipped")
+
+
+def _pull_request_review_precheck(
+    repo: Path,
+    *,
+    branch: str,
+    pr_url: str | None,
+    payload: dict[str, Any],
+) -> tuple[bool, str | None, dict[str, Any]]:
+    """Resuelve ciclo de vida PR antes de subprocess pull-request-review."""
+    target = payload.get("target_branch", "main")
+    if not isinstance(target, str) or not target.strip():
+        target = "main"
+    lifecycle = resolve_pull_request_lifecycle(
+        repo,
+        branch=branch,
+        pr_url=pr_url.strip() if isinstance(pr_url, str) else None,
+        target_branch=target.strip(),
+    )
+    merged = lifecycle.get("merged")
+    on_remote = bool(lifecycle.get("branch_on_remote"))
+    if merged is True:
+        return True, None, lifecycle
+    if merged is False and not on_remote:
+        return False, (
+            "pull-request-review: rama ausente en origin y PR no mergeado "
+            f"(branch={branch}, pr={lifecycle.get('pr_number')})"
+        ), lifecycle
+    if merged is None and not on_remote:
+        diag = lifecycle.get("diagnostics") or []
+        return False, (
+            "pull-request-review: no se pudo resolver ciclo de vida del PR "
+            f"(branch={branch}; diagnostics={diag})"
+        ), lifecycle
+    return True, None, lifecycle
 
 
 def _write_dead_letter_fallback(
