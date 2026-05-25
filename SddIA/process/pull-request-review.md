@@ -1,13 +1,13 @@
 ---
 uuid: 6d59f23b-df29-4be5-9bb9-29cede3474b9
 name: pull-request-review
-version: 2.0.0
+version: 2.1.0
 contract: process-contract v1.3.0
 context:
 - quality-assurance
 - source-control
 - pr-lifecycle
-hash_signature: sha256:9aad0da52accbd3c2fd6b913b65f1f9f71d2b1b1a51df003944a56001b02886c
+hash_signature: sha256:c0d8d748e7260e13f1303220a76c3b46fb3cc011d8525c3c293e553f09e04833
 inputs:
 - pr_id_or_path: Identificador o ruta lógica del PR
 - pr_branch: Rama asociada al PR
@@ -34,7 +34,7 @@ phases:
   delegates_to:
   - agent:argos
 - name: Triaje técnico
-  intent: Ejecutar tests y auditoría estática vía cápsulas autorizadas; respeto de capsule-json-io.
+  intent: Ejecutar tests, auditoría estática y sensor DIA (audit-doc-parity.py) vía cápsulas autorizadas; alerta documental no bloqueante; respeto de capsule-json-io.
   delegates_to:
   - action:execute-process
 - name: Certificación RBAC
@@ -72,12 +72,25 @@ Proceso V5 **Aduana de Fricción** reactiva al estímulo **`PullRequest_Presente
 | Dimensión | Delegado | Criterio |
 |-----------|----------|----------|
 | Documental | Argos | Frontmatter + artefactos base en `persist_ref` |
-| Técnica | execute-process → cápsulas QA | Tests/SAST; contratos JSON |
+| Técnica | execute-process → cápsulas QA | Tests/SAST; contratos JSON; sensor DIA |
 | RBAC | Cerbero | Token firmante vs área genoma |
 
-## Bloqueo y Kaizen (Fases 2–3 TODO)
+### Paridad documental (DIA) — Triaje técnico
+
+Reglas **no bloqueantes** (fricción suave); el sensor no invoca agentes.
+
+| ID | Regla |
+|----|-------|
+| **DIA-1** | Invocar `SddIA/scripts/qa/audit-doc-parity.py` con `persist_ref`, refs git y salida JSON |
+| **DIA-2** | Si `alert_required: true`, propagar deuda a fase **Cosecha Kaizen**; **prohibido** `delivery_state: failed` por DIA |
+| **DIA-3** | El sensor no delega a Cúmulo; persistencia Kaizen vía fase **Cosecha Kaizen** (async) o evento `Kaizen_Alert_Required` (deuda EDA v2) |
+
+Prefijos monitorizados por defecto: `SddIA/core/`, `SddIA/process/`, `SddIA/scripts/qa/`, `README.md`.
+
+## Bloqueo y Kaizen (Fases 2–3)
 
 * **Filtro A / Cerbero fallido:** `verdict: rechazado`, `delivery_state: failed`; Argos mapea diff ↔ normas.
+* **Deuda DIA (paridad documental):** alerta Kaizen `PENDING_AUDIT_DOC_*` en `docs/todos/pending/`; flujo continúa (`delivery_state: success`).
 * **Deuda menor:** Cúmulo inyecta TODO en `docs/todos/` (`[ARQUITECTURA]` o `[OPERATIVO]`); flujo continúa.
 
 ## Materialización (Fase 4 TODO)

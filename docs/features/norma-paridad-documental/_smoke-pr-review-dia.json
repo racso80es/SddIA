@@ -1,0 +1,11 @@
+{
+  "pr_branch": "feat/norma-paridad-documental",
+  "pr_id_or_path": "feat/norma-paridad-documental",
+  "correlation_id": "smoke-dia-parity-20260525",
+  "persist_ref": "docs/features/norma-paridad-documental",
+  "pr_url": "https://github.com/lab-simulated/SddIA/pull/0-norma-paridad-documental",
+  "author": "validacion@sddia.local",
+  "code_diff": "lab-simulated-diff",
+  "tasks_path": "docs/todos/pending",
+  "document_context": {}
+}
