@@ -24,7 +24,7 @@ branch_name: fix/eda-orphan-debt-precommit
 | **Kaizen** | PBI correlación durable sin bus | [x] |
 | **F3** | Gates V1–V5 + `validacion.md` | [x] |
 | **F4** | Prevención doc + PBI `done/` | [x] |
-| **Cierre** | PR único + `delivery-close-cycle` | [ ] |
+| **Cierre** | PR #47 + `delivery-close-cycle` | [x] |
 
 ---
 

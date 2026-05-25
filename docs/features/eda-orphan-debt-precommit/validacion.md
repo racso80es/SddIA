@@ -3,6 +3,7 @@ feature_name: eda-orphan-debt-precommit
 created: "2026-05-25"
 process: bug-fix
 branch: fix/eda-orphan-debt-precommit
+pr_url: https://github.com/racso80es/SddIA/pull/47
 global: APTO
 pbi_archived: true
 checks:
