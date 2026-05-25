@@ -88,4 +88,4 @@ python SddIA/scripts/daemons/event-sweeper.py --once --json
 
 ## Backlog operativo
 
-Manifiesto `[OPERATIVO] Backlog pendiente post-PR11` — track **P4 Ola C V3** marcado consolidado; residual solo CI opcional (entregado) y cierre PR.
+Manifiesto `[OPERATIVO] Backlog pendiente post-PR11` v1.6.0 — track **P4** marcado ✅; **L1-O5** sigue abierto (único gate para archivar el manifiesto). `pbi_archived: false` hasta cierre L1-O5.
