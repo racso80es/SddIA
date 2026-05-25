@@ -37,6 +37,7 @@ from eda_bus_utils import (  # noqa: E402
     find_existing_domain_event,
     resolve_origin_topology,
 )
+from eda_coverage_utils import remove_entity_coverage, upsert_entity_coverage  # noqa: E402
 from ecst_validation import validate_domain_mutation_event  # noqa: E402
 from env_loader import load_hierarchical_env  # noqa: E402
 
@@ -279,6 +280,9 @@ def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: di
 
     if entity_uuid and lifecycle != "delete":
         existing = find_existing_domain_event(repo, entity_uuid, op, event_type)
+        hash_sig = inputs.get("hash_signature_new")
+        if isinstance(hash_sig, str) and hash_sig.startswith("sha256:"):
+            upsert_entity_coverage(repo, entity_uuid, event_type=event_type, last_hash=hash_sig)
         if existing and existing.get("event_id"):
             return {
                 "success": True,
@@ -287,6 +291,9 @@ def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: di
                 "event_id": existing["event_id"],
                 "target_path": existing.get("target_path"),
             }
+
+    if lifecycle == "delete" and entity_uuid:
+        remove_entity_coverage(repo, entity_uuid)
 
     event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
     event = {
@@ -313,6 +320,11 @@ def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: di
     ok, errors = validate_domain_mutation_event(repo, event)
     if not ok:
         raise ValueError("; ".join(errors))
+    hash_new = inputs.get("hash_signature_new")
+    if lifecycle != "delete" and entity_uuid:
+        if not isinstance(hash_new, str) or not hash_new.startswith("sha256:"):
+            raise ValueError("hash_signature_new (sha256:) obligatorio para upsert SSOT")
+        upsert_entity_coverage(repo, entity_uuid, event_type=event_type, last_hash=hash_new)
     seal = _write_pending_event(repo, event)
     return {"success": True, "event_type": event_type, **seal}
 

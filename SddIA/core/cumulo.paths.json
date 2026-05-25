@@ -56,6 +56,7 @@
     "tools": "scripts/tools/"
   },
   "event_bus": "./.events",
+  "eda_coverage": "SddIA/core/eda-coverage.json",
   "eda_bus": {
     "pending": "./.events/pending",
     "processing": "./.events/processing",

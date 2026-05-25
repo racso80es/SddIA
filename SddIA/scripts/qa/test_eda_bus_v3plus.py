@@ -103,7 +103,7 @@ class TestEdaBusV3Plus(unittest.TestCase):
         self.assertTrue(terminal_witness_exists(repo, bus, eid, "x"))
         self.assertEqual(len(list_witnesses(repo, bus, "processing_subscribers", eid)), 0)
 
-    def test_archive_retains_domain_entity_created_processed_header(self) -> None:
+    def test_archive_purges_domain_entity_created_processed_header(self) -> None:
         from eda_bus_utils import archive_event_after_sweep, header_path
 
         repo = _fake_repo()
@@ -122,8 +122,48 @@ class TestEdaBusV3Plus(unittest.TestCase):
         counts = archive_event_after_sweep(repo, bus, eid, event_type="Domain_Entity_Created")
 
         self.assertFalse(pending.is_file())
-        self.assertTrue(processed.is_file())
-        self.assertEqual(counts.get("retained"), 1)
+        self.assertFalse(processed.is_file())
+        self.assertEqual(counts.get("pending"), 1)
+
+    def test_load_eda_bus_respects_event_bus_path_env(self) -> None:
+        repo = _fake_repo()
+        os.environ["EVENT_BUS_PATH"] = ".tmp/custom_bus"
+        try:
+            bus = load_eda_bus(repo)
+            self.assertEqual(bus["event_bus"], ".tmp/custom_bus")
+            self.assertEqual(bus["pending"], ".tmp/custom_bus/pending")
+        finally:
+            os.environ.pop("EVENT_BUS_PATH", None)
+
+    def test_sweep_purges_when_no_applicable_subscribers(self) -> None:
+        from eda_bus_utils import applicable_subscriber_ids_for_event, try_sweep_event
+
+        repo = _fake_repo()
+        bus = ensure_event_bus_topology(repo)
+        subs = {
+            "Domain_Entity_Created": [
+                {"agent": "cumulo", "action": "sync-entity-index", "applies_to_origin_topology": ["core"]}
+            ]
+        }
+        (repo / "SddIA" / "core" / "event-subscriptions.json").write_text(
+            json.dumps(subs), encoding="utf-8"
+        )
+        eid = "ffffffff-1111-4222-8333-444444444444"
+        event = {
+            "event_id": eid,
+            "event_type": "Domain_Entity_Created",
+            "payload": {"origin_topology": "local", "entity_uuid": "aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee"},
+        }
+        pending = repo / bus["pending"] / f"{eid}.json"
+        pending.write_text(json.dumps(event), encoding="utf-8")
+        applicable = applicable_subscriber_ids_for_event(
+            subs, "Domain_Entity_Created", event["payload"]
+        )
+        self.assertEqual(applicable, [])
+        sweep = try_sweep_event(repo, bus, eid, registry=subs)
+        self.assertTrue(sweep.get("purged"))
+        self.assertEqual(sweep.get("status"), "purged")
+        self.assertFalse(pending.is_file())
 
     def test_archive_purges_non_domain_entity_processed_header(self) -> None:
         from eda_bus_utils import archive_event_after_sweep, header_path
