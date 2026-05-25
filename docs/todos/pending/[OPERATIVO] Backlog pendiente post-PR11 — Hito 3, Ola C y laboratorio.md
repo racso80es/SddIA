@@ -4,7 +4,7 @@ title: "[OPERATIVO] Backlog pendiente post-PR11 — Ola C, laboratorio e higiene
 format: markdown
 version: "1.5.0"
 created: "2026-05-20"
-updated: "2026-05-24"
+updated: "2026-05-25"
 status: "abierto"
 priority: alta
 blocks: "L1-O5 runbooks / E.1 IOTA CI"
@@ -47,7 +47,7 @@ related:
 | **E.2 `emit-domain-mutation`** | ✅ 100 % | Aduana ECST pre-`pending/` en `execute-action.py` + cápsulas |
 | **L.2–L.3 laboratorio** | ✅ Entregado | Gate fase 2 DC + fases 6–7 `feature` físicas; agentes IDE 2–5 `simulated` |
 | **E.1 IOTA CI** | ✅ | Feature [`e1-iota-ci`](../../features/e1-iota-ci/) — job CI simulate + físico (secret) |
-| **Ola C V3 coreografía** | ⏳ | Sweeper, recibos, middleware — visión largo plazo |
+| **Ola C V3 coreografía** | 🟡 ~90 % código en `main` | Cierre documental P4 — feature `ola-c-v3-coreografia` (triaje 2026-05-25) |
 
 **Dependencia crítica:** puerta de entrada y handlers lab P2 sellados; pendiente L1-O5 documental y E.1 IOTA antes de cerrar backlog.
 
@@ -177,15 +177,22 @@ flowchart LR
 
 ---
 
-## Prioridad 4 — Ola C V3 (visión largo plazo)
+## Prioridad 4 — Ola C V3 (coreografía — cierre documental)
 
 **Manifiesto:** [`docs/todos/done/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md`](../done/%5BARQUITECTURA%5D%20Especificaci%C3%B3n%20T%C3%A9cnica%20Avanzada_%20El%20Genoma%20de%20Eventos%20y%20Coreograf%C3%ADa%20As%C3%ADncrona%20(Ola%20C)%20V3.md)
 
-| Componente | Estado |
-|------------|--------|
-| `event-sweeper.py` + recibos `[UUID].[PURPOSE].notificado` | ⏳ |
-| Subcarpetas `receipts/` por estado | ⏳ |
-| Middleware `.procesado` / `.error` (sello recibo) | ⏳ — hoy `delivery_state` en JSON |
+**Feature activa:** [`docs/features/ola-c-v3-coreografia/`](../../features/ola-c-v3-coreografia/) — triaje 2026-05-25 en `clarify.md`.
+
+| Componente | Estado código (`main`) | Notas |
+|------------|:----------------------:|-------|
+| Padre inmutable en `.events/pending/` | ✅ | PR #24 + #25 |
+| Testigos `[UUID].[subscriber_id].json` + middleware promoción | ✅ | `eda_bus_utils.promote_witness` |
+| Topología V3+ simétrica (`processing/processed/dead-letter` + `subscribers/`) | ✅ | PR #25 |
+| `event-sweeper.py` + `try_sweep_event` (inline route) | ✅ | PR #24 + #29 |
+| Alerta Kaizen dead-letter | ✅ | stderr JSON `kaizen_eda_dead_letter` |
+| Recibos `[UUID].[PURPOSE].notificado` / `.procesado` | — | **Obsoleto** — sustituido por testigos JSON |
+| `delivery_state` en JSON padre | ⚠️ Legacy | Emisión `{}`; trazabilidad = testigos; no mutación padre |
+| Cierre documental P4 + `validacion.md` APTO | ⏳ | PR `feat/ola-c-v3-coreografia-cierre` |
 
 ---
 
@@ -210,7 +217,7 @@ flowchart LR
 | **L1-O5 runbooks** | **P1 residual** | Bajo | Paridad operativa post-vanguardia |
 | ~~Handlers lab L.2–L.3~~ | ~~P2~~ | — | ✅ Feature `laboratorio-handlers-l2-l3` |
 | IOTA CI + integridad genoma (E.1) | **P3** | Bajo–Medio | Gobernanza EDA producción |
-| Ola C V3 coreografía | **P4** | Alto | Visión largo plazo |
+| Ola C V3 coreografía | **P4** | Bajo (doc) | Cierre documental — código ~90 % en `main` |
 | Docs / PDF / blindaje | **P5** | Bajo | Paridad administrativa |
 
 ---
