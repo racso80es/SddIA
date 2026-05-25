@@ -59,3 +59,16 @@ def load_hierarchical_env(repo_root: Path) -> dict[str, str]:
 
     apply_env(merged)
     return merged
+
+
+def load_test_env_overlay(repo_root: Path) -> dict[str, str]:
+    """Carga .dev/.env.test (o .env.test.example) sobre el entorno actual."""
+    test_path = repo_root / ".dev" / ".env.test"
+    if not test_path.is_file():
+        test_path = repo_root / ".dev" / ".env.test.example"
+    if not test_path.is_file():
+        return {}
+    overlay = parse_dotenv_file(test_path)
+    for key, value in overlay.items():
+        os.environ[key] = value
+    return overlay

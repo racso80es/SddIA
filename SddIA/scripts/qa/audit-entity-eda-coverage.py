@@ -19,7 +19,8 @@ SCRIPT = Path(__file__).resolve()
 if str(SCRIPT.parent) not in sys.path:
     sys.path.insert(0, str(SCRIPT.parent))
 
-from eda_bus_utils import find_existing_domain_event, iter_bus_event_files, load_eda_bus
+from eda_bus_utils import find_existing_domain_event, load_eda_bus
+from eda_coverage_utils import is_entity_covered, remove_entity_coverage, upsert_entity_coverage
 from execute_process_core import parse_frontmatter
 
 ENTITY_DIRS: dict[str, str] = {
@@ -128,15 +129,16 @@ def scan_orphans(repo: Path) -> dict[str, Any]:
                 "artifact_path": str(artifact.relative_to(repo)).replace("\\", "/"),
                 "artifact_exists": artifact.is_file(),
             }
-            event = find_existing_domain_event(repo, uuid, "create", "Domain_Entity_Created")
-            entry["has_domain_entity_created"] = event is not None
-            if artifact.is_file() and not event:
+            cov = is_entity_covered(repo, uuid)
+            entry["is_covered_ssot"] = cov
+            if artifact.is_file() and not cov:
                 fm = parse_frontmatter(artifact)
                 entry["hash_signature"] = _resolve_hash_signature(repo, artifact, fm)
                 orphans.append(entry)
             indexed.append(entry)
     return {
         "scanned_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "scan_source": "eda-coverage.json",
         "orphan_count": len(orphans),
         "orphans": orphans,
         "indexed_entities": len(indexed),
@@ -264,6 +266,34 @@ def emit_orphans(
     return results
 
 
+def backfill_coverage(repo: Path) -> dict[str, Any]:
+    backfilled = 0
+    skipped = 0
+    indexed = 0
+    for entity_class, rel_dir in ENTITY_DIRS.items():
+        base = repo / rel_dir
+        index_map = _parse_index_uuids(base / "index.md")
+        indexed += len(index_map)
+        for name, uuid in index_map.items():
+            artifact = base / f"{name}.md"
+            if not artifact.is_file():
+                skipped += 1
+                continue
+            if is_entity_covered(repo, uuid):
+                skipped += 1
+                continue
+            fm = parse_frontmatter(artifact)
+            hash_sig = _resolve_hash_signature(repo, artifact, fm)
+            upsert_entity_coverage(
+                repo,
+                uuid,
+                event_type="Domain_Entity_Created",
+                last_hash=hash_sig,
+            )
+            backfilled += 1
+    return {"backfilled": backfilled, "skipped": skipped, "indexed_entities": indexed}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Auditoría cobertura EDA genómica")
     parser.add_argument("--scan", action="store_true", help="Escanear huérfanas")
@@ -272,10 +302,18 @@ def main() -> int:
     parser.add_argument("--skip-dlt", action="store_true", default=True, help="Omitir DLT por entidad (default)")
     parser.add_argument("--anchor-merkle", type=str, help="Ruta manifiesto JSON del lote")
     parser.add_argument("--correlation-id", type=str, help="ID lote auditable")
+    parser.add_argument("--backfill-coverage", action="store_true", help="Poblar eda-coverage.json desde índices")
     parser.add_argument("--dry-run", action="store_true", help="Mostrar payloads sin emitir")
     args = parser.parse_args()
 
     repo = _repo_root()
+    if args.backfill_coverage:
+        result = backfill_coverage(repo)
+        post = scan_orphans(repo)
+        result["orphan_count_after"] = post.get("orphan_count")
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0 if post.get("orphan_count", 1) == 0 else 1
+
     if args.anchor_merkle:
         manifest_path = Path(args.anchor_merkle)
         if not manifest_path.is_absolute():

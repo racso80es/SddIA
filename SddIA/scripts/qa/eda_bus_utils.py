@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import tempfile
@@ -71,10 +72,9 @@ def _resolve_witness_key(state_key: str) -> str:
     return _WITNESS_KEY_ALIASES.get(state_key, state_key)
 
 
-def load_eda_bus(repo: Path) -> dict[str, str]:
-    """Topología plana del bus V3+ (cabeceras por estado + subscribers anidados)."""
-    event_bus = _normalize_rel(_DEFAULT_EVENT_BUS)
-    defaults: dict[str, str] = {
+def _bus_defaults_from_root(event_bus: str) -> dict[str, str]:
+    event_bus = _normalize_rel(event_bus.rstrip("/"))
+    return {
         "event_bus": event_bus,
         "pending": f"{event_bus}/pending",
         "processing": f"{event_bus}/processing",
@@ -85,42 +85,44 @@ def load_eda_bus(repo: Path) -> dict[str, str]:
         "dead_letter_subscribers": f"{event_bus}/dead-letter/subscribers",
         "subscriptions": "SddIA/core/event-subscriptions.json",
     }
+
+
+def load_eda_bus(repo: Path) -> dict[str, str]:
+    """Topología plana del bus V3+ (cabeceras por estado + subscribers anidados)."""
+    env_bus = os.environ.get("EVENT_BUS_PATH", "").strip()
+    if env_bus:
+        defaults = _bus_defaults_from_root(env_bus)
+    else:
+        event_bus = _normalize_rel(_DEFAULT_EVENT_BUS)
+        defaults = _bus_defaults_from_root(event_bus)
     try:
         cfg = _load_cumulo(repo)
-        if isinstance(cfg.get("event_bus"), str) and cfg["event_bus"].strip():
+        if not env_bus and isinstance(cfg.get("event_bus"), str) and cfg["event_bus"].strip():
             event_bus = _normalize_rel(cfg["event_bus"].strip())
-            defaults["event_bus"] = event_bus
-            defaults["pending"] = f"{event_bus}/pending"
-            defaults["processing"] = f"{event_bus}/processing"
-            defaults["processing_subscribers"] = f"{event_bus}/processing/subscribers"
-            defaults["processed"] = f"{event_bus}/processed"
-            defaults["processed_subscribers"] = f"{event_bus}/processed/subscribers"
-            defaults["dead_letter"] = f"{event_bus}/dead-letter"
-            defaults["dead_letter_subscribers"] = f"{event_bus}/dead-letter/subscribers"
+            defaults = _bus_defaults_from_root(event_bus)
 
         bus = cfg.get("eda_bus") or {}
-        if isinstance(bus.get("pending"), str) and bus["pending"]:
-            defaults["pending"] = _normalize_rel(bus["pending"])
+        if not env_bus:
+            if isinstance(bus.get("pending"), str) and bus["pending"]:
+                defaults["pending"] = _normalize_rel(bus["pending"])
 
-        # V3+ simétrico
-        for key in ("processing", "processed", "dead_letter"):
-            if isinstance(bus.get(key), str) and bus[key]:
-                defaults[key] = _normalize_rel(bus[key])
-                defaults[f"{key}_subscribers"] = _normalize_rel(
-                    f"{bus[key].rstrip('/')}/subscribers"
+            for key in ("processing", "processed", "dead_letter"):
+                if isinstance(bus.get(key), str) and bus[key]:
+                    defaults[key] = _normalize_rel(bus[key])
+                    defaults[f"{key}_subscribers"] = _normalize_rel(
+                        f"{bus[key].rstrip('/')}/subscribers"
+                    )
+
+            subs = bus.get("subscribers") or {}
+            if isinstance(subs, dict):
+                legacy_map = (
+                    ("processing", "processing_subscribers"),
+                    ("processed", "processed_subscribers"),
+                    ("dead_letter", "dead_letter_subscribers"),
                 )
-
-        # Legacy V3 anidado subscribers.*
-        subs = bus.get("subscribers") or {}
-        if isinstance(subs, dict):
-            legacy_map = (
-                ("processing", "processing_subscribers"),
-                ("processed", "processed_subscribers"),
-                ("dead_letter", "dead_letter_subscribers"),
-            )
-            for legacy_key, flat_key in legacy_map:
-                if isinstance(subs.get(legacy_key), str) and subs[legacy_key]:
-                    defaults[flat_key] = _normalize_rel(subs[legacy_key])
+                for legacy_key, flat_key in legacy_map:
+                    if isinstance(subs.get(legacy_key), str) and subs[legacy_key]:
+                        defaults[flat_key] = _normalize_rel(subs[legacy_key])
 
         if isinstance(bus.get("subscriptions"), str) and bus["subscriptions"]:
             defaults["subscriptions"] = bus["subscriptions"]
@@ -578,6 +580,18 @@ def processed_subscriber_names(
     return names
 
 
+def applicable_subscriber_ids_for_event(
+    registry: dict[str, Any], event_type: str, payload: dict[str, Any]
+) -> list[str]:
+    """Suscriptores que aplican a origin_topology, sin fallback global."""
+    origin = resolve_origin_topology(payload)
+    return [
+        subscriber_id(sub)
+        for sub in registry.get(event_type) or []
+        if isinstance(sub, dict) and subscriber_applies_to_topology(sub, origin)
+    ]
+
+
 def required_subscriber_ids_for_event(
     registry: dict[str, Any], event_type: str, payload: dict[str, Any]
 ) -> list[str]:
@@ -646,7 +660,7 @@ def try_sweep_event(
         except (OSError, json.JSONDecodeError):
             return {**base, "status": "invalid-registry", "event_type": event_type}
 
-    required = required_subscriber_ids_for_event(registry, event_type, payload)
+    applicable = applicable_subscriber_ids_for_event(registry, event_type, payload)
 
     dead = list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid)
     if dead:
@@ -654,9 +668,9 @@ def try_sweep_event(
         in_flight = in_flight_subscriber_names(repo, bus, event_uuid)
         terminals = terminal_subscriber_names(repo, bus, event_uuid)
         if (
-            required
-            and set(required).issubset(terminals)
-            and not (in_flight & set(required))
+            applicable
+            and set(applicable).issubset(terminals)
+            and not (in_flight & set(applicable))
         ):
             finalized = finalize_kaizen_terminal(
                 repo, bus, event_uuid, pending_path, registry, event_type, origin
@@ -676,11 +690,18 @@ def try_sweep_event(
             "event_type": event_type,
             "dead_letter_witnesses": [p.name for p in dead],
         }
-    if not required:
-        return {**base, "status": "no-subscribers", "event_type": event_type}
+    if not applicable:
+        archived = archive_event_after_sweep(repo, bus, event_uuid, event_type=event_type)
+        return {
+            **base,
+            "status": "purged",
+            "purged": True,
+            "event_type": event_type,
+            **archived,
+        }
 
     in_flight = in_flight_subscriber_names(repo, bus, event_uuid)
-    overlap = in_flight & set(required)
+    overlap = in_flight & set(applicable)
     if overlap:
         return {
             **base,
@@ -690,7 +711,7 @@ def try_sweep_event(
         }
 
     done = processed_subscriber_names(repo, bus, event_uuid)
-    if set(required).issubset(done):
+    if set(applicable).issubset(done):
         archived = archive_event_after_sweep(repo, bus, event_uuid, event_type=event_type)
         return {
             **base,
@@ -704,7 +725,7 @@ def try_sweep_event(
         **base,
         "status": "awaiting",
         "event_type": event_type,
-        "pending_subscribers": sorted(set(required) - done),
+        "pending_subscribers": sorted(set(applicable) - done),
     }
 
 
@@ -715,8 +736,8 @@ def archive_event_after_sweep(
     *,
     event_type: str | None = None,
 ) -> dict[str, int]:
-    """Purgar pending, cabeceras processing y testigos; retener cabecera processed en Domain_Entity_Created (correlación genómica)."""
-    counts: dict[str, int] = {"witnesses": 0, "headers": 0, "pending": 0, "retained": 0}
+    """Purgar pending, cabeceras processing/processed y testigos (sweep vacío)."""
+    counts: dict[str, int] = {"witnesses": 0, "headers": 0, "pending": 0}
 
     if event_type is None:
         for state in ("processed", "processing"):
@@ -731,22 +752,11 @@ def archive_event_after_sweep(
                 event_type = body["event_type"]
                 break
 
-    retain_processed = event_type == "Domain_Entity_Created"
-
     pending = repo / bus["pending"] / f"{event_uuid}.json"
-    if retain_processed and pending.is_file():
-        processed_header = repo / header_path(bus, "processed", event_uuid)
-        if not processed_header.is_file():
-            ensure_state_header(repo, bus, "processed", event_uuid, pending)
     if pending.is_file():
         pending.unlink(missing_ok=True)
         counts["pending"] = 1
     for state in ("processing", "processed"):
-        if state == "processed" and retain_processed:
-            processed_header = repo / header_path(bus, "processed", event_uuid)
-            if processed_header.is_file():
-                counts["retained"] = 1
-            continue
         header = repo / header_path(bus, state, event_uuid)
         if header.is_file():
             header.unlink(missing_ok=True)

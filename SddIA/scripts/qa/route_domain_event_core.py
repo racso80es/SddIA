@@ -455,6 +455,7 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
     iota_digest: str | None = None
 
     if not subscribers:
+        sweep = try_sweep_event(repo, bus, event_uuid, registry=registry)
         return {
             "success": True,
             "exitCode": 0,
@@ -464,6 +465,7 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
                 "parent_path": _rel_event_path(repo, event_path),
                 "processing_header_path": _rel_event_path(repo, processing_header),
                 "dispatch_mode": dispatch_mode,
+                "sweep": sweep,
             },
         }
 

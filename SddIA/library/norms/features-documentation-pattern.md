@@ -91,9 +91,13 @@ Ver `SddIA/norms/git-operations.md` §3 y Kaizen `kaizen-higiene-ficheros-tempor
 
 Cuando una feature muta entidades bajo `SddIA/` (skills, events, process, agents, tools, actions, norms, codexes):
 
-- Toda entidad indexada debe tener correlato `Domain_Entity_Created` en el bus local (`eda_bus`).
-- La correlación audit (`find_existing_domain_event` / `--scan`) considera instancias en `pending/`, cabeceras `processing/` y `processed/`, más legacy `docs/events/` — no solo `pending/`.
+- Toda entidad indexada debe estar en el SSOT `SddIA/core/eda-coverage.json` (`coverage_matrix[entity_uuid].is_covered == true`).
+- El gate **Aduana EDA genómica** (`--scan`) consulta **solo** `eda-coverage.json`; el bus local (`eda_bus`) es transporte, no fuente de verdad para `orphan_count`.
+- `emit-domain-mutation` ejecuta upsert SSOT **antes** de escribir en `pending/`.
+- Backfill one-shot: `audit-entity-eda-coverage.py --backfill-coverage` (sin emitir al bus).
 - El gate **Aduana EDA genómica** en `delivery-close-cycle` invoca `audit-entity-eda-coverage.py --scan --json`.
-- **Ruido de Sistema (block):** `orphan_count > 0` — artefacto `.md` + fila en `index.md` sin evento ECST correlacionado por `entity_uuid`.
-- **Excepción:** backfill Fase C documentado en la feature (`--emit --skip-dlt` + cierre con `--anchor-merkle` y `transaction_digest` registrado).
-- Forja directa de `.md` sin pasar por `entity-manager` → huérfana EDA hasta backfill (caso histórico: placeholders forjados fuera del gestor).
+- **Ruido de Sistema (block):** `orphan_count > 0` — entidad indexada sin cobertura en SSOT.
+- **Excepción legacy:** backfill Fase C con manifiesto activo (`--emit --skip-dlt` + `--anchor-merkle`) mientras migra a SSOT.
+- Forja directa de `.md` sin pasar por `entity-manager` → huérfana EDA hasta `--backfill-coverage` o emit con sello.
+
+Referencia implementación: `docs/features/eda-coverage-ssot-bus-isolation/` (2026-05-25).

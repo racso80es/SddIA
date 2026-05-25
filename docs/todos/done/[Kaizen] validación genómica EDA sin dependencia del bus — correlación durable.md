@@ -4,11 +4,15 @@ title: "[Kaizen] Validación genómica EDA sin dependencia del bus — correlaci
 format: markdown
 version: "1.0.0"
 created: "2026-05-25"
-status: pendiente
+status: cerrado
 priority: alta
 process: feature
-branch_name: feat/eda-audit-durable-correlation
-feature_ref_target: docs/features/eda-audit-durable-correlation
+closed_via: PBI-KAIZEN-EDA-COVERAGE-SSOT-BUS-ISOLATION
+closed: "2026-05-25"
+superseded_by: PBI-KAIZEN-EDA-COVERAGE-SSOT-BUS-ISOLATION
+superseded_by_path: docs/todos/done/[Kaizen] EDA cobertura durable, aislamiento bus y smoke e2e — SSOT eda-coverage.md
+branch_name: feat/eda-coverage-ssot-bus-isolation
+feature_ref_target: docs/features/eda-coverage-ssot-bus-isolation
 upstream:
   - docs/todos/pending/[Kaizen] deuda EDA orphan_count — correlación processed y backfill pre-commit.md
   - docs/features/eda-orphan-debt-precommit/
@@ -24,7 +28,9 @@ blocks: "Cierre arquitectónico de aduana genómica desacoplada del ciclo de vid
 
 # [Kaizen] Validación genómica EDA sin dependencia del bus — correlación durable
 
-**Estatus:** Pendiente  
+> **Cerrado** vía consolidación e implementación en [`PBI-KAIZEN-EDA-COVERAGE-SSOT-BUS-ISOLATION`](../done/[Kaizen]%20EDA%20cobertura%20durable,%20aislamiento%20bus%20y%20smoke%20e2e%20—%20SSOT%20eda-coverage.md) (rama `feat/eda-coverage-ssot-bus-isolation`).
+
+**Estatus:** Cerrado (consolidado)  
 **Jurisdicción:** Yunque Operativo · Aduana Argos / pre-commit genómico  
 **Precedencia:** fix `eda-orphan-debt-precommit` (workaround F1 + retención cabeceras `Domain_Entity_Created`)
 
@@ -112,3 +118,77 @@ Prohibido declarar cerrada la deuda arquitectónica cuando solo exista el workar
 - Ejecución empírica: `docs/features/eda-orphan-debt-precommit/execution.md` § V4 / impasse
 - Norma Ruido de Sistema: `features-documentation-pattern` § Cobertura EDA genómica
 - Backfill Fase C: `eda-domain-entities-splus/spec.md` §6
+
+
+## 8. PROPUESTA A REFINAR
+[EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. PENALIZE CONJECTURE. NO EXPLANATIONS, ONLY CODE.]
+
+CONTEXTO ESTRATÉGICO:
+Ejecución del PBI: "Validación genómica EDA sin dependencia del bus — correlación durable".
+Misión: Desacoplar la auditoría (Aduana genómica) del canal de eventos efímero (.SddIA/events/), implementando un Índice de Cobertura Genómica inmutable (SSOT) alojado en la jurisdicción del Core.
+
+ARTEFACTOS Y MUTACIONES REQUERIDAS:
+
+1. NUEVO SSOT: `SddIA/core/eda-coverage.json`
+   - Crea este archivo inicial con la estructura de un Mapa Topológico de Estado (diccionario clave-valor, no un array cronológico).
+   - Estructura estricta requerida:
+     {
+       "coverage_matrix": {
+         "<entity_id>": {
+           "is_covered": true,
+           "last_emitted_event": "<event_type>",
+           "last_hash": "<hash>",
+           "correlation_timestamp": "<iso_8601_date>"
+         }
+       }
+     }
+
+2. MOTOR DE EMISIÓN: Acción `emit-domain-mutation` (y/o `sync-entity-index`)
+   - Modifica el flujo para que ejecute una Doble Fase Atómica:
+     * Fase A: Operación Upsert (crear o sobrescribir, nunca append) en `SddIA/core/eda-coverage.json` para el `entity_id` correspondiente con el hash del nuevo evento.
+     * Fase B: Inyección física de la chispa (archivo del evento) en `.SddIA/events/pending/`.
+
+3. ADUANA GENÓMICA: `audit-entity-eda-coverage.py` (ejecutado en pre-commit)
+   - ELIMINAR la dependencia tóxica de lectura física del bus: purgar `iter_bus_event_files()` o cualquier lectura hacia `.SddIA/events/processed/`.
+   - Implementar la validación escaneando ÚNICAMENTE el bloque de la entidad dentro de `SddIA/core/eda-coverage.json` para comprobar que `is_covered` es `true` y el hash está anclado.
+
+4. BARRENDERO: `event-sweeper.py` (o función `archive_event_after_sweep`)
+   - Eliminar el workaround actual que retiene cabeceras forzosamente.
+   - El barrido debe ser absoluto (Sweep vacío): el archivo se destruye/archiva sin dejar rastro en `processed/` para la aduana.
+
+RESTRICCIONES DURAS:
+- Mantenimiento estricto de nomenclatura internacional (inglés) para el código y el JSON.
+- No alteres la lógica de negocio ajena al ecosistema EDA.
+- Presenta únicamente las modificaciones de código (diffs o bloques completos reescritos).
+
+
+  [EXECUTE AS RAW KERNEL. NO EXPLANATIONS. ONLY CODE.]
+
+CONTEXTO: Desacoplamiento de Auditoría EDA y Aislamiento de Entornos.
+
+1. SSOT DE CORRELACIÓN (Durable):
+   - Implementa `SddIA/core/eda-coverage.json` con la estructura de Mapa Topológico (diccionario <entity_id>:<data>).
+   - Este archivo será la única fuente para la Aduana.
+
+2. PARAMETRIZACIÓN DE RUTA:
+   - Refactoriza todos los módulos que acceden a eventos (`emit-domain-mutation`, `event-sweeper`, `audit-entity-eda-coverage.py`) para que utilicen la variable de entorno `EVENT_BUS_PATH`.
+   - Por defecto (producción), esta variable es `./events/`.
+   - En el entorno de pruebas, esta variable será inyectada mediante la carga de `.env.test` apuntando a `./.tmp/events_test/`. El resto de parametros de test pueden ser una copia de .env.
+
+3. ADUANA GENÓMICA (`audit-entity-eda-coverage.py`):
+   - Eliminar obligatoriamente cualquier lectura a `./events/processed/`.
+   - Validación atómica: leer exclusivamente el `entity_id` en `SddIA/core/eda-coverage.json`. Si el hash coincide, el commit es válido.
+
+4. COMPORTAMIENTO DEL BUS (Sweeper):
+   - Configura el `event-sweeper` para realizar "Sweep Vacío" (borrado total de los archivos tras el procesamiento) en ambos entornos (producción y test). 
+   - Al no existir ya dependencia de retención para la auditoría, la limpieza debe ser absoluta.
+
+5. INTEGRACIÓN DE CONFIGURACIÓN:
+   - Asegura que el script de inicio (`run-eda-e2e-lab.py`) sea el responsable de cargar `.env.test` antes de invocar cualquier acción, aislando así el ecosistema de pruebas del flujo principal.
+
+6. ADECUACIONES POR PARAMETRIZACION DE LA RUTA.
+- Adecuar como corresponda a cumulo.
+- Adecuar como corresponda a readme.
+- Analiza el resto de posibles implicaciones sobre este cambio.
+
+

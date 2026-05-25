@@ -17,7 +17,8 @@ SCRIPT = Path(__file__).resolve()
 if str(SCRIPT.parent) not in sys.path:
     sys.path.insert(0, str(SCRIPT.parent))
 
-from eda_bus_utils import ensure_event_bus_topology, list_witnesses
+from eda_bus_utils import ensure_event_bus_topology, list_witnesses, load_eda_bus
+from env_loader import load_hierarchical_env, load_test_env_overlay
 from lab_teardown import cleanup_lab_entity_forge, cleanup_orphan_core_eda_e2e_tools
 from tmp_paths import keep_tmp
 
@@ -121,6 +122,8 @@ def main() -> int:
     args = parser.parse_args()
 
     repo = _repo_root()
+    load_hierarchical_env(repo)
+    load_test_env_overlay(repo)
     bus = ensure_event_bus_topology(repo)
 
     report: dict[str, Any] = {"steps": []}

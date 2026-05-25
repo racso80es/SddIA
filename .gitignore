@@ -16,6 +16,7 @@ docs/events/
 # Jerarquía de Bóvedas — secretos locales (no versionar)
 .dev/
 !.dev/.env.example
+!.dev/.env.test.example
 .SddIA/.dev/
 !.SddIA/.dev/.env.example
 
