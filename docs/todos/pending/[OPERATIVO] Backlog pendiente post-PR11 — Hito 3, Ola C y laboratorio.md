@@ -35,7 +35,7 @@ related:
 
 > **Contexto (2026-05-20):** **PBI-005 cerrado al 100 %** en `main` (PR #13, merge `ed543c8`, CA-3 completo). Orquestación fractal PR (PR #11), aduana `pre-commit` (PR #12) y hooks ciclo PR Ola B (PR #13) en producción. Este manifiesto agrupa la deuda **posterior al PBI** — no reabrir Hitos 1–3.
 
-> **Actualización (2026-05-25):** **P4 Ola C V3 coreografía** — runtime en `main` (PRs #24–#29); cierre documental en PR [#41](https://github.com/racso80es/SddIA/pull/41) (`validacion.md` APTO, job CI `eda-bus-e2e-smoke`). **Única brecha operativa:** L1-O5 runbooks.
+> **Actualización (2026-05-25):** **P4 Ola C V3 coreografía** — **MERGED** PR [#41](https://github.com/racso80es/SddIA/pull/41) (`713260c`). **Única brecha operativa:** L1-O5 runbooks.
 
 ---
 
@@ -49,7 +49,7 @@ related:
 | **E.2 `emit-domain-mutation`** | ✅ 100 % | Aduana ECST pre-`pending/` en `execute-action.py` + cápsulas |
 | **L.2–L.3 laboratorio** | ✅ Entregado | Gate fase 2 DC + fases 6–7 `feature` físicas; agentes IDE 2–5 `simulated` |
 | **E.1 IOTA CI** | ✅ | Feature [`e1-iota-ci`](../../features/e1-iota-ci/) — PR #40 |
-| **Ola C V3 coreografía (P4)** | ✅ | Runtime `main` + cierre doc PR [#41](https://github.com/racso80es/SddIA/pull/41) |
+| **Ola C V3 coreografía (P4)** | ✅ | PR [#41](https://github.com/racso80es/SddIA/pull/41) MERGED `713260c` |
 
 **Dependencia crítica restante:** **L1-O5** — runbooks operativos sin invocación suelta de `git-manager` (único gate para archivar este manifiesto).
 
@@ -69,7 +69,7 @@ related:
 | **Deuda Ola C — shims CLI** | PR #14 MERGED — `docs/todos/done/… Deuda Ola C — Retirar compatibilidad CLI…` |
 | **Vanguardia L.1 + E.2** (código) | PR #37 — `docs/features/vanguardia-soberania-local/validacion.md` APTO |
 | **E.1 IOTA CI** | PR #40 — `docs/features/e1-iota-ci/validacion.md` APTO |
-| **Ola C V3 coreografía (P4)** | PRs #24–#29 (runtime) + PR [#41](https://github.com/racso80es/SddIA/pull/41) (cierre doc) — `docs/features/ola-c-v3-coreografia/validacion.md` APTO |
+| **Ola C V3 coreografía (P4)** | PRs #24–#29 (runtime) + PR [#41](https://github.com/racso80es/SddIA/pull/41) MERGED `713260c` |
 
 ### Trazabilidad PBI-005 Hito 3 (CA-3)
 
