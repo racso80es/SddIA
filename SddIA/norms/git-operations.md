@@ -1,7 +1,7 @@
 ---
 uuid: "e5f6a7b8-c9d0-4123-e456-7890abcdef01"
 name: "git-operations"
-version: "1.1.0"
+version: "1.2.0"
 entity_type: "norm"
 jurisdiction: "cerbero"
 ---
@@ -36,6 +36,13 @@ Esta versión inicial establece el marco; Dédalo y Cúmulo completarán los det
 - Prohibido forja de laboratorio en catálogo Core (`SddIA/tools/`, etc.) sin cadena productiva y evento ECST.
 - Helper canónico: `SddIA/scripts/qa/tmp_paths.py` (`write_ephemeral_json`, `cleanup_path`).
 - Depuración local: `SDDIA_KEEP_TMP=1` conserva payloads y forges lab.
+
+## 3.1 Cobertura EDA genómica (pre-commit / aduana)
+
+- Forja productiva bajo `SddIA/` (skills, events, process, agents, tools, actions, norms, codexes) **solo** vía cadena `entity-manager` → `emit-domain-mutation` → bus.
+- Tras backfill Fase C (`--emit --skip-dlt` + `--anchor-merkle`), ejecutar `event-watcher --once` y validar `--scan` **antes** de commits que toquen genoma con hook activo.
+- Prohibido inferir cobertura EDA con eventos únicamente en `pending/`; el audit correlaciona cabeceras `processing/` y `processed/` (mitigación transitoria — ver PBI correlación durable sin bus).
+- Orden Tekton recomendado: fix correlación → backfill si aplica → watcher + scan → commit genoma.
 
 La ruta legacy `tmp/` (sin punto) queda deprecada; usar **`.tmp/`** en código nuevo. Ambas permanecen en `.gitignore` durante la migración.
 

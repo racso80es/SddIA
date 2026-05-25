@@ -1,0 +1,7 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/features/eda-orphan-debt-precommit",
+  "branch_name": "fix/eda-orphan-debt-precommit",
+  "pr_title": "fix(eda): correlación orphan_count pre-commit y backfill Fase C",
+  "pr_body": "Summary: correlacion EDA multi-estado, retencion cabeceras Domain_Entity_Created, backfill Merkle eda-backfill-precommit-20260525, Kaizen PBI correlacion durable sin bus. Tests: scan orphan 0, watcher plus scan orphan 0, verify-process-integrity OK, pre-commit gate pass."
+}
