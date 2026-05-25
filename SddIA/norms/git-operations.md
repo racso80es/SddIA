@@ -26,3 +26,5 @@ Esta versión inicial establece el marco; Dédalo y Cúmulo completarán los det
 
 - Entrada congelada de la skill: `SddIA/norms/skill-io-git-manager-frozen.md`
 - Mapa de rutas Core: `SddIA/core/cumulo.paths.json` → `directories.norms`
+- Orquestación PR y SSOT merge: `SddIA/norms/pull-request-orchestration.md` §4
+- Runbook operativo fusión local: `docs/features/l1-o5-runbooks-paridad/runbook-accept-pr.md`

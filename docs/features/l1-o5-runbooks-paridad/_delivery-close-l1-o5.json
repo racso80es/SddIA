@@ -1,0 +1,7 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/l1-o5-runbooks-paridad",
+  "branch_name": "feat/l1-o5-runbooks-paridad",
+  "pr_title": "docs(feature): L1-O5 runbooks paridad — cierre backlog post-PR11",
+  "target_branch": "main"
+}

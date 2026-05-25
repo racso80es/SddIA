@@ -48,17 +48,28 @@ powershell -ExecutionPolicy Bypass -File SddIA/scripts/qa/git-hooks/install-hook
 
 ### Comandos
 
+> **Runbook histórico (inmutable).** Los comandos `git-manager` directos para merge/push/delete
+> reflejan la entrega de esta feature en su fecha original. **Vía operativa vigente:**
+> [`runbook-accept-pr.md`](../../l1-o5-runbooks-paridad/runbook-accept-pr.md) vía
+> `execute-process --process accept-pr`.
+
 ```powershell
 python SddIA/scripts/qa/execute-process.py --process delivery-close-cycle --inputs-file docs/features/pbi-005-hito3-git-hooks/_delivery-close-hito3.json
 Remove-Item Env:SDDIA_LAB_SIMULATE_IOTA -ErrorAction SilentlyContinue
 python SddIA/scripts/daemons/event-watcher.py --once
+```
 
+<!-- runbook-historical -->
+
+```powershell
 Get-Content tmp/git-checkout-main-hito3.json -Raw | python scripts/skills/git-manager.py
 Get-Content tmp/git-merge-hito3.json -Raw | python scripts/skills/git-manager.py
 python SddIA/scripts/qa/execute-action.py --action emit-pr-merged-event --input-file tmp/emit-pr-merged-hito3.json
 Get-Content tmp/git-push-main-hito3.json -Raw | python scripts/skills/git-manager.py
 python SddIA/scripts/daemons/event-watcher.py --once
 ```
+
+<!-- /runbook-historical -->
 
 ## Pendiente Ola B
 

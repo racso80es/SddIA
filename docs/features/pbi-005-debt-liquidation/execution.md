@@ -28,6 +28,13 @@ python SddIA/scripts/qa/execute-process.py --input-file tmp/entity-delete-test-c
 
 ### Aceptación local (`accept-pr` — fases físicas)
 
+> **Runbook histórico (inmutable).** Los comandos `git-manager` directos para merge/push/delete
+> reflejan la entrega de esta feature en su fecha original. **Vía operativa vigente:**
+> [`runbook-accept-pr.md`](../../l1-o5-runbooks-paridad/runbook-accept-pr.md) vía
+> `execute-process --process accept-pr`.
+
+<!-- runbook-historical -->
+
 ```powershell
 # Fusión soberana (git-manager)
 Get-Content tmp\git-merge-pbi005.json -Raw | python scripts/skills/git-manager.py
@@ -38,6 +45,8 @@ python SddIA/scripts/qa/execute-process.py --action emit-pr-merged-event --input
 # Push main + limpieza de rama
 Get-Content tmp\git-push-main.json -Raw | python scripts/skills/git-manager.py
 ```
+
+<!-- /runbook-historical -->
 
 ### Bus EDA (watcher)
 
