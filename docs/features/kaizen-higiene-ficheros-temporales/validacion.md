@@ -3,6 +3,7 @@ feature_name: kaizen-higiene-ficheros-temporales
 created: "2026-05-25"
 process: feature
 branch: feat/kaizen-higiene-ficheros-temporales
+pr_url: https://github.com/racso80es/SddIA/pull/44
 global: APTO
 pbi_archived: true
 checks:

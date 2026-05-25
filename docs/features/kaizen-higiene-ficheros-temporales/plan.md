@@ -16,7 +16,7 @@ process: feature
 | H5 | `features-documentation-pattern` § inputs efímeros | [x] |
 | H6 | Barrido artefactos incidente | [x] |
 | H7 | `implementation.md` / `execution.md` / `validacion.md` + PBI `done/` | [x] |
-| H8 | Un solo PR + `delivery-close-cycle` | [ ] |
+| H8 | Un solo PR + `delivery-close-cycle` | [x] |
 
 ## Orden Tekton
 
