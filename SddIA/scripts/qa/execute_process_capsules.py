@@ -605,11 +605,54 @@ def capsule_pr_review_documental(repo: Path, inputs: dict[str, Any], state: dict
     return {"passed": not errors, "errors": errors, "persist_ref": persist_ref}
 
 
-def _dia_audit_hash(payload: dict[str, Any]) -> str:
-    persist = str(payload.get("persist_ref") or "")
-    hits = payload.get("monitored_hits") or []
-    key = persist + "|" + "|".join(sorted(str(h) for h in hits))
+def _kaizen_alert_hash(review_id: str, implicated_files: list[Any]) -> str:
+    key = review_id + "".join(sorted(str(h) for h in implicated_files))
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:8]
+
+
+def _emit_kaizen_alert_required(
+    repo: Path,
+    *,
+    review_id: str,
+    alert_justification: str,
+    implicated_files: list[str],
+    persist_ref: str | None = None,
+    pr_branch: str | None = None,
+    impacts_doc: Any = None,
+    alert_kind: str = "doc_parity",
+) -> dict[str, Any]:
+    event_id = crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    payload: dict[str, Any] = {
+        "review_id": review_id,
+        "alert_justification": alert_justification,
+        "implicated_files": implicated_files,
+        "alert_kind": alert_kind,
+    }
+    if isinstance(persist_ref, str) and persist_ref.strip():
+        payload["persist_ref"] = persist_ref.strip()
+    if isinstance(pr_branch, str) and pr_branch.strip():
+        payload["pr_branch"] = pr_branch.strip()
+    if impacts_doc is not None:
+        payload["impacts_doc"] = impacts_doc
+    event = {
+        "event_id": event_id,
+        "event_type": "Kaizen_Alert_Required",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": "pull-request-review",
+        "correlation_id": review_id,
+        "payload": payload,
+        "delivery_state": {},
+    }
+    ok, errors = validate_domain_mutation_event(repo, event)
+    if not ok:
+        return {"dia_event_error": "; ".join(errors)}
+    seal = write_pending_event(repo, event)
+    return {
+        "kaizen_alert_emitted": True,
+        "event_id": seal["event_id"],
+        "target_path": seal["target_path"],
+        "hash8": _kaizen_alert_hash(review_id, implicated_files),
+    }
 
 
 def _invoke_dia_audit(
@@ -667,13 +710,27 @@ def _invoke_dia_audit(
         return {"dia_error": "payload DIA no es objeto"}
     if payload.get("alert_required"):
         hits = payload.get("monitored_hits") or []
-        impacts = payload.get("impacts_doc")
-        msg = (
-            f"[DIA] Posible fuga de conocimiento: diff en {hits} "
-            f"con impacts_doc={impacts}. Revisar spec.md § Impacto en Documentación."
+        if not isinstance(hits, list):
+            hits = []
+        implicated = [str(h) for h in hits if str(h).strip()]
+        raw_corr = inputs.get("correlation_id") or state.get("correlation_id")
+        if isinstance(raw_corr, str) and raw_corr.strip():
+            review_id = raw_corr.strip()
+        else:
+            review_id = crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+        reason = str(payload.get("reason") or "doc_parity_alert")
+        persist_ref = payload.get("persist_ref") or state.get("persist_ref") or inputs.get("persist_ref")
+        branch = state.get("pr_branch") or inputs.get("pr_branch") or "HEAD"
+        emit_result = _emit_kaizen_alert_required(
+            repo,
+            review_id=review_id,
+            alert_justification=reason,
+            implicated_files=implicated,
+            persist_ref=str(persist_ref) if isinstance(persist_ref, str) else None,
+            pr_branch=str(branch) if isinstance(branch, str) else None,
+            impacts_doc=payload.get("impacts_doc"),
         )
-        state.setdefault("kaizen_items", []).append(msg)
-        state["dia_audit"] = payload
+        return {"dia_audit": payload, "kaizen_alert": emit_result}
     return {"dia_audit": payload}
 
 
@@ -740,33 +797,8 @@ def capsule_pr_review_kaizen(repo: Path, inputs: dict[str, Any], state: dict[str
     seeds: list[str] = []
     branch = state.get("pr_branch") or inputs.get("pr_branch") or "unknown"
 
-    dia_audit = state.get("dia_audit")
-    if isinstance(dia_audit, dict) and dia_audit.get("alert_required"):
-        hash8 = _dia_audit_hash(dia_audit)
-        todo_name = f"PENDING_AUDIT_DOC_{hash8}.md"
-        todo_path = repo / "docs" / "todos" / "pending" / todo_name
-        todo_path.parent.mkdir(parents=True, exist_ok=True)
-        hits = dia_audit.get("monitored_hits") or []
-        persist = dia_audit.get("persist_ref") or state.get("persist_ref") or "?"
-        body = (
-            f"# {todo_name}\n\n"
-            f"> Origen: pull-request-review / sensor DIA / rama `{branch}`\n\n"
-            f"**Alerta:** posible fuga de conocimiento documental.\n\n"
-            f"| Campo | Valor |\n|-------|-------|\n"
-            f"| `persist_ref` | `{persist}` |\n"
-            f"| `impacts_doc` | `{dia_audit.get('impacts_doc')}` |\n"
-            f"| `reason` | `{dia_audit.get('reason')}` |\n"
-            f"| `monitored_hits` | {', '.join(f'`{h}`' for h in hits)} |\n\n"
-            f"- [ ] Revisar `spec.md` § Impacto en Documentación\n"
-            f"- [ ] Actualizar README/manuales afectados o corregir `impacts_doc`\n"
-        )
-        todo_path.write_text(body, encoding="utf-8")
-        seeds.append(todo_path.relative_to(repo).as_posix())
-
     generic_idx = 0
     for item in items:
-        if str(item).startswith("[DIA]"):
-            continue
         generic_idx += 1
         slug = re.sub(r"[^\w\-]+", "-", str(branch)).strip("-")[:48]
         todo_name = f"[OPERATIVO] Kaizen PR review — {slug}.md"

@@ -1,13 +1,13 @@
 ---
 uuid: 6d59f23b-df29-4be5-9bb9-29cede3474b9
 name: pull-request-review
-version: 2.1.0
+version: 2.2.0
 contract: process-contract v1.3.0
 context:
 - quality-assurance
 - source-control
 - pr-lifecycle
-hash_signature: sha256:c0d8d748e7260e13f1303220a76c3b46fb3cc011d8525c3c293e553f09e04833
+hash_signature: sha256:64480577eb56061a1c2091958879f398e23cfb7b85f43b5e20378ff84a1f399e
 inputs:
 - pr_id_or_path: Identificador o ruta lógica del PR
 - pr_branch: Rama asociada al PR
@@ -46,7 +46,7 @@ phases:
   delegates_to:
   - agent:argos
 - name: Cosecha Kaizen
-  intent: Cúmulo persiste deuda no bloqueante en docs/todos/ sin interrumpir al operador.
+  intent: Cúmulo persiste deuda Kaizen genérica no documental en docs/todos/; la deuda DIA viaja exclusivamente por evento Kaizen_Alert_Required (EDA v2).
   delegates_to:
   - agent:cumulo
 - name: Handoff materialización
@@ -82,15 +82,15 @@ Reglas **no bloqueantes** (fricción suave); el sensor no invoca agentes.
 | ID | Regla |
 |----|-------|
 | **DIA-1** | Invocar `SddIA/scripts/qa/audit-doc-parity.py` con `persist_ref`, refs git y salida JSON |
-| **DIA-2** | Si `alert_required: true`, propagar deuda a fase **Cosecha Kaizen**; **prohibido** `delivery_state: failed` por DIA |
-| **DIA-3** | El sensor no delega a Cúmulo; persistencia Kaizen vía fase **Cosecha Kaizen** (async) o evento `Kaizen_Alert_Required` (deuda EDA v2) |
+| **DIA-2** | Si `alert_required: true`, depositar evento **`Kaizen_Alert_Required`** en `eda_bus.pending`; **prohibido** `delivery_state: failed` por DIA |
+| **DIA-3** | El sensor no delega a Cúmulo; persistencia Kaizen DIA **exclusivamente** vía evento `Kaizen_Alert_Required` → suscriptor `agent:cumulo` (`materialize-kaizen-alert-doc`) |
 
 Prefijos monitorizados por defecto: `SddIA/core/`, `SddIA/process/`, `SddIA/scripts/qa/`, `README.md`.
 
 ## Bloqueo y Kaizen (Fases 2–3)
 
 * **Filtro A / Cerbero fallido:** `verdict: rechazado`, `delivery_state: failed`; Argos mapea diff ↔ normas.
-* **Deuda DIA (paridad documental):** alerta Kaizen `PENDING_AUDIT_DOC_*` en `docs/todos/pending/`; flujo continúa (`delivery_state: success`).
+* **Deuda DIA (paridad documental):** evento `Kaizen_Alert_Required` → Cúmulo materializa `PENDING_AUDIT_DOC_*` en `docs/todos/pending/` de forma **asíncrona**; flujo continúa (`delivery_state: success`).
 * **Deuda menor:** Cúmulo inyecta TODO en `docs/todos/` (`[ARQUITECTURA]` o `[OPERATIVO]`); flujo continúa.
 
 ## Materialización (Fase 4 TODO)

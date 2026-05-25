@@ -1,0 +1,7 @@
+{
+  "feature_name": "kaizen-alert-required-eda-v2",
+  "branch_name": "feat/kaizen-alert-required-eda-v2",
+  "persist_ref": "docs/features/kaizen-alert-required-eda-v2",
+  "base_branch": "main",
+  "refined_requirements": "Cerrar deuda EDA v2: forjar evento Kaizen_Alert_Required, podar puente síncrono capsule_pr_review_kaizen, despertar reactivo Cúmulo como único materializador de cicatriz Kaizen documental."
+}

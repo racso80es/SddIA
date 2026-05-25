@@ -1,11 +1,53 @@
 {
-  "scanned_at": "2026-05-24T17:20:23Z",
-  "orphan_count": 0,
-  "orphans": [],
-  "indexed_entities": 46,
-  "correlation_id": "laboratorio-handlers-l2-l3",
-  "emits": [],
-  "emit_count": 0,
-  "emit_ok": 0,
+  "scanned_at": "2026-05-25T11:05:55Z",
+  "orphan_count": 2,
+  "orphans": [
+    {
+      "entity_class": "event",
+      "entity_name": "kaizen-alert-required",
+      "entity_uuid": "a9b8c7d6-e5f4-4321-a987-6543210fedcb",
+      "artifact_path": "SddIA/events/kaizen-alert-required.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:pending-anchor-on-merge"
+    },
+    {
+      "entity_class": "action",
+      "entity_name": "materialize-kaizen-alert-doc",
+      "entity_uuid": "d7e6f5a4-b3c2-4109-8765-43210abcdef0",
+      "artifact_path": "SddIA/actions/materialize-kaizen-alert-doc.md",
+      "artifact_exists": true,
+      "has_domain_entity_created": false,
+      "hash_signature": "sha256:9d85794268641feccc976f362317239694c7be8e58847f0afd80d313c71b0615"
+    }
+  ],
+  "indexed_entities": 48,
+  "correlation_id": "kaizen-alert-eda-v2-20260525",
+  "emits": [
+    {
+      "success": true,
+      "event_type": "Domain_Entity_Created",
+      "event_id": "370c053e-6e42-4c03-8685-be17167475d6",
+      "target_path": ".events/pending/370c053e-6e42-4c03-8685-be17167475d6.json",
+      "action_name": "emit-domain-mutation",
+      "delegated_agent": "eda-bus",
+      "delegated_skill": null,
+      "delegated_tool": null,
+      "skip_dlt": true
+    },
+    {
+      "success": true,
+      "event_type": "Domain_Entity_Created",
+      "event_id": "2de23e14-3799-4b57-a58f-d497b9153005",
+      "target_path": ".events/pending/2de23e14-3799-4b57-a58f-d497b9153005.json",
+      "action_name": "emit-domain-mutation",
+      "delegated_agent": "eda-bus",
+      "delegated_skill": null,
+      "delegated_tool": null,
+      "skip_dlt": true
+    }
+  ],
+  "emit_count": 2,
+  "emit_ok": 2,
   "orphan_count_after": 0
 }

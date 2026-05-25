@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] Kaizen_Alert_Required — bus reactivo y poda Cosecha Kai
 format: markdown
 version: "1.0.0"
 created: "2026-05-25"
-status: pendiente
+status: cerrado
 priority: alta
 process: feature
 branch_name: feat/kaizen-alert-required-eda-v2
@@ -26,7 +26,7 @@ blocks: "Cierre arquitectónico EDA de la deuda DIA v1 (puente síncrono kaizen_
 
 # [ARQUITECTURA] Kaizen_Alert_Required — bus reactivo y poda Cosecha Kaizen
 
-**Estatus:** Pendiente  
+**Estatus:** Cerrado (EDA v2 entregado en rama `feat/kaizen-alert-required-eda-v2`)
 **Jurisdicción:** Yunque Operativo (Tormentosa) · Sistema Nervioso EDA  
 **Precedencia:** PBI `PBI-NORMA-PARIDAD-DOCUMENTAL` cerrado (PR #46) — sensor `audit-doc-parity.py` y puente lab v1 entregados
 

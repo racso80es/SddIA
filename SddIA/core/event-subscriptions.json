@@ -71,5 +71,12 @@
       "action": "enrich-fracture-pbi-kaizen",
       "intent": "Auditor de Fricción Kaizen: diagnosticar causa raíz (el Por Qué) y enriquecer PBI con propuesta evolutiva."
     }
+  ],
+  "Kaizen_Alert_Required": [
+    {
+      "agent": "cumulo",
+      "action": "materialize-kaizen-alert-doc",
+      "intent": "Materializar cicatriz Kaizen documental en docs/todos/pending/ (único suscriptor legítimo)."
+    }
   ]
 }

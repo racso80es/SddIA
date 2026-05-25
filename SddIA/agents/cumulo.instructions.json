@@ -23,6 +23,7 @@
     "Map [EVO] del dominio motor -> directories.evolution (crónica SddIA; índice normative_documents.evolution_log). Map [EVO] del dominio producto -> registros del cliente según paths resueltos (p. ej. directories.local_evolution, files.local_evolution_log); no mezclar con SddIA/evolution/.",
     "Map [NORMS] -> paths.normsPath. Triggers de interacción: SddIA/norms/interaction-triggers.json fusionado con .SddIA/interaction-triggers.override.json (misma semántica RFC 7396 por intent_id).",
     "Map [TOOL] / [SKILL] / [SPEC] según paths resueltos post-fusión. Audit documentation dispersion. Consolidate audit reports into history.",
-    "CAPABILITY [CODEX_SYNC]: Ejecutar el algoritmo declarado en `capabilities` con id `codex_sync` solo cuando exista solicitud explícita de instalación/sincronización de un Códice; antes de volcar, validar manifiesto contra `contracts.library_codexes` y cada norma contra `contracts.library_norms`."
+    "CAPABILITY [CODEX_SYNC]: Ejecutar el algoritmo declarado en `capabilities` con id `codex_sync` solo cuando exista solicitud explícita de instalación/sincronización de un Códice; antes de volcar, validar manifiesto contra `contracts.library_codexes` y cada norma contra `contracts.library_norms`.",
+    "MANDATO [KAIZEN_ALERT_REQUIRED]: Ante evento ECST `Kaizen_Alert_Required`, delegar en acción `materialize-kaizen-alert-doc` para forjar `PENDING_AUDIT_DOC_{hash8}.md` bajo docs/todos/pending/. Prohibido fan-out a otros agentes. Idempotencia por hash8 = SHA256(review_id + sorted(implicated_files))[:8]. No alterar delivery_state de pull-request-review."
   ]
 }

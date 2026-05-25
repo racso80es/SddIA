@@ -4,4 +4,4 @@ En la persistencia DLT de un merge figura `TODO: pending_argos_eda_emission` (`e
 
 **Alcance fuera de `PBI-KAIZEN-ALERT-REQUIRED-EDA-V2`:** este PBI trata emisión DLT post-merge (Argos / auditoría), no el bus local `Kaizen_Alert_Required` de paridad documental.
 
-Referencia: `docs/todos/pending/kaizen-alert-required-eda-v2.md` §9.
+Referencia: `docs/todos/done/kaizen-alert-required-eda-v2.md` §9.

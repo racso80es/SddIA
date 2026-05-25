@@ -47,3 +47,16 @@ Cúmulo debe asegurar que cada carpeta de entidad posea un archivo `index.md` ac
   3. **Capacidades y políticas:** Los `index.md` de `directories.skills`, `directories.actions` y `directories.tools` deben incluir la columna obligatoria **Capabilities**, reflejando el array `capabilities` del YAML fuente (misma cardinalidad y etiquetas; representación tabular estable acordada por el índice). El `index.md` de `directories.agents` debe incluir la columna **Allowed policies**, reflejando el array `allowed_policies` del YAML fuente (lectura rápida para Cerbero y coherencia con los procesos que fijan qué cápsulas puede encadenar Tekton).
   4. **Detección de Entropía:** Cualquier entidad no indexada o con datos discordantes será reportada como "Ruido de Sistema", bloqueando su reconocimiento por el resto de dominio.
   5. **Mapa de Resolución de Identidad (procesos):** En runtime, Cúmulo deriva un mapa `{process_name_o_alias → ruta_física_del_md}` recorriendo los frontmatters de los `.md` catalogables bajo `directories.process` (excluyendo el contrato y documentación no ejecutable según convención del índice). El mapa es **estrictamente derivado** (no se versiona un fichero duplicado de punteros) para evitar *drift* respecto al YAML fuente. Si un mismo token aparece como `alias` de un proceso y choca con el `name` canónico de otro, **prevalece el canónico** y la colisión se registra como **Ruido de Sistema** (`process-contract v1.3.0` §1.1).
+
+## 6. Mandato reactivo EDA — `Kaizen_Alert_Required`
+
+Ante el evento de dominio **`Kaizen_Alert_Required`** (paridad documental DIA), Cúmulo es el **único suscriptor legítimo** en v1:
+
+| Mandato | Detalle |
+|---------|---------|
+| Materializar | TODO `PENDING_AUDIT_DOC_{hash8}.md` en `docs/todos/pending/` |
+| Acción | `materialize-kaizen-alert-doc` |
+| Idempotencia | `hash8 = SHA256(review_id + sorted(implicated_files))[:8]` |
+| No bloqueo | La materialización **no** altera `delivery_state` de la aduana emisora |
+
+Ver `SddIA/events/kaizen-alert-required.md` y `SddIA/core/event-subscriptions.json`.
