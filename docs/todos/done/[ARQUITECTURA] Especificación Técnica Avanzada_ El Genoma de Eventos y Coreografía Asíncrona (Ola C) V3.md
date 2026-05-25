@@ -19,6 +19,8 @@ Documento de seguimiento operativo del PBI de arquitectura. Complementa el PDF h
 
 ---
 
+> **Actualización 2026-05-25:** §4–§5 implementados en `main` (PRs #24–#29). Trazabilidad consolidada en [`docs/features/ola-c-v3-coreografia/`](../../features/ola-c-v3-coreografia/) y delta topológico V3+ en [`docs/features/refactor-topologia-eventos-ola-c-v3/`](../../features/refactor-topologia-eventos-ola-c-v3/). Runtime: `./.events/` con testigos atómicos y `event-sweeper.py`.
+
 ## Resumen ejecutivo
 
 | Ámbito PBI | Estado | Notas |
@@ -26,8 +28,8 @@ Documento de seguimiento operativo del PBI de arquitectura. Complementa el PDF h
 | §1 Principios fundacionales | ✅ Parcial | Watcher ciego + acciones desacopladas operativos; suscripción por finalidades vía `event-subscriptions.json` |
 | §2 Ontología Evento (Clase vs Instancia) | ✅ | Genoma `SddIA/events/`; instancias ECST en bus runtime |
 | §3 Impacto sistémico (Core) | ✅ | Constitución, README, entity-manager, índice |
-| §4 Topología fractal `.SddIA/events/` + receipts | ⚠️ Desviación | Runtime en `docs/events/` (laudo D10); sin subcarpetas `receipts/` |
-| §5 Ciclo coreografiado (receipts + sweeper) | ⏳ Pendiente | Fan-out síncrono actual; sin `event-sweeper.py` ni recibos atómicos |
+| §4 Topología fractal `.SddIA/events/` + receipts | ✅ Desviación documentada | Runtime `./.events/` V3+ simétrico; testigos en `*/subscribers/` |
+| §5 Ciclo coreografiado (receipts + sweeper) | ✅ | Testigos atómicos + `event-sweeper.py` + sweep inline (PR #24–#29) |
 | §6 Hoja de ruta / cierre | ✅ | Feature completa Fases 1–6; CI verde; merge en `main` |
 
 ---
@@ -92,8 +94,8 @@ El PBI V3 original cita runtime oculto en **`.SddIA/events/`**. La implementaci�
 | Cola `processing/` | ✅ | `docs/events/processing/` |
 | Terminal `processed/` | ✅ | `docs/events/processed/` |
 | Terminal `dead_letter/` | ✅ | `docs/events/dead-letter/` |
-| Subcarpetas `receipts/` por estado | ⏳ | No implementado — fuera de alcance Ola C entregada |
-| Anidación recibos hijos en fase padre | ⏳ | Pendiente (visión V3 §4–§5) |
+| Subcarpetas `receipts/` por estado | — | Sustituido por `{estado}/subscribers/` (V3+) |
+| Anidación recibos hijos en fase padre | ✅ | Testigos `[UUID].[subscriber_id].json` |
 
 ---
 
@@ -102,9 +104,9 @@ El PBI V3 original cita runtime oculto en **`.SddIA/events/`**. La implementaci�
 | Paso PBI V3 | Estado | Notas |
 |-------------|:------:|-------|
 | 1. Captura y aislamiento (watcher → processing) | ✅ | Operativo |
-| 2. Despliegue de finalidades + recibos `[UUID].[PURPOSE].notificado` | ⏳ | Fan-out directo; sin recibos atómicos |
-| 3. Sello del recibo (middleware `.procesado` / `.error`) | ⏳ | `delivery_state` en JSON del evento (ledger simplificado Ola A) |
-| 4. Recolección (`event-sweeper.py`, duplicación asimétrica) | ⏳ | No existe `event-sweeper.py` en repo |
+| 2. Despliegue de finalidades + testigos atómicos | ✅ | `[UUID].[subscriber_id].json` en `*/subscribers/` |
+| 3. Sello del recibo (middleware promoción) | ✅ | `promote_witness` processing → processed/dead-letter |
+| 4. Recolección (`event-sweeper.py` + sweep inline) | ✅ | `SddIA/scripts/daemons/event-sweeper.py`; `try_sweep_event` en route |
 
 **Entregado en Ola C:** enrutador monolítico (`route-domain-event` / `event-watcher.py`) con `delivery_state` por agente suscriptor e idempotencia parcial en reintentos.
 
@@ -143,9 +145,9 @@ El PBI V3 original cita runtime oculto en **`.SddIA/events/`**. La implementaci�
 
 | ID | Tarea | Prioridad |
 |----|-------|-----------|
-| C+1 | `event-sweeper.py` + subcarpetas `receipts/` según §4–§5 V3 | Media |
-| C+2 | Middleware de recibos `.procesado` / `.error` por finalidad | Media |
-| C+3 | Validación de payload en emisores antes de `WRITE_FILE` | Media |
+| C+1 | `event-sweeper.py` + testigos atómicos | ✅ PR #24–#29 |
+| C+2 | Middleware promoción testigos por finalidad | ✅ |
+| C+3 | Validación payload en emisores antes de `WRITE_FILE` | ✅ vanguardia PR #37 |
 | C+4 | `payload_schema_hash` REQUIRED en emisores genómicos | Baja |
 | C+5 | Fusión runtime de `event-subscriptions.local.json` (Vía C) | Baja |
 | C+6 | Indexar acción `emit-pr-presented-event` | Baja |

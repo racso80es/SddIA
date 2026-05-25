@@ -1,227 +1,222 @@
 ---
 feature_name: ola-c-v3-coreografia
 created: "2026-05-22"
+updated: "2026-05-25"
 process: feature
 base: main
-scope: eda-bus-subscriber-topology
+scope: eda-bus-subscriber-topology-v3plus
 supersedes_topology: docs/events/
 priority: P4
 manifest: docs/todos/done/[ARQUITECTURA] Especificación Técnica Avanzada_ El Genoma de Eventos y Coreografía Asíncrona (Ola C) V3.md
+related_refactor: docs/features/refactor-topologia-eventos-ola-c-v3/
+upstream_prs: [24, 25, 27, 29]
 ---
 
-# Especificación técnica — Ola C V3: Coreografía Asíncrona (Estado de Suscriptores)
+# Especificación técnica — Ola C V3+: Coreografía Asíncrona (Estado de Suscriptores)
+
+> **Estado (2026-05-25):** Código en `main` vía PRs #24–#29. Esta spec consolida la visión coreográfica V3 con la topología **simétrica V3+** entregada en `refactor-topologia-eventos-ola-c-v3`.
 
 ## 1. Contexto
 
 Ola C entregó genoma de Evento (`SddIA/events/`) y bus runtime monolítico bajo `docs/events/` con `delivery_state` embebido en el JSON padre (ledger simplificado Ola A).
 
-**Ola C V3** refactoriza la topología física del bus a `./.events/` (raíz del workspace), descarta el **Evento Padre Mutante** y externaliza la trazabilidad a una topología de **Estado de Suscriptores** con estados industriales: `processing`, `processed`, `dead-letter`.
+**Ola C V3/V3+** refactoriza la topología física del bus a `./.events/` (raíz del workspace), descarta el **Evento Padre Mutante** y externaliza la trazabilidad a:
 
-El JSON padre en `pending/` es **inmutable** durante todo el ciclo de vida coreografiado.
+1. **Padre inmutable** en `pending/[UUID].json`.
+2. **Cabeceras réplica** por estado (`processing/`, `processed/`, `dead-letter/`).
+3. **Testigos atómicos** por suscriptor bajo `{estado}/subscribers/`.
 
-## 2. Principios
+El JSON padre en `pending/` **no se modifica** durante el procesamiento. La recolección del padre es **diferida** (sweeper + sweep inline al cierre de route).
+
+## 2. Principios (dogma operativo)
 
 | Principio | Regla |
 |-----------|-------|
-| Inmutabilidad del padre | El evento ECST en `pending/[UUID].json` no se modifica tras la emisión |
-| Trazabilidad por suscriptor | Cada suscriptor escribe un testigo atómico `[UUID].[NOMBRE_SUSCRIPTOR].json` |
-| Desacoplamiento | El middleware mueve testigos entre carpetas de estado; el enrutador no muta el padre |
-| Recolección diferida | `event-sweeper.py` purga el padre solo cuando todos los suscriptores requeridos están en `processed/` |
-| Fallo asimétrico | Testigos en `dead-letter/` emiten alerta Kaizen; el padre permanece en `pending/` |
+| Inmutabilidad del padre | `pending/[UUID].json` no se muta tras emisión |
+| Trazabilidad por suscriptor | Testigo `[UUID].[subscriber_id].json` en `*/subscribers/` |
+| Desacoplamiento | Middleware (`promote_witness`) mueve testigos; route no muta padre |
+| Recolección diferida | `try_sweep_event` / `event-sweeper.py` purgan padre solo con consenso `processed/` |
+| Fallo asimétrico | Testigos en `dead-letter/subscribers/`; padre intacto hasta Kaizen terminal o sweep |
+| Ejecución táctica | Agente lee evento, ejecuta lógica, devuelve resultado al middleware; cero estado en padre |
 
 ## 3. Topología SSOT (`cumulo.paths.json`)
 
-### 3.1 Clave canónica del bus
+### 3.1 Esquema canónico (V3+)
 
 ```json
 {
   "event_bus": "./.events",
   "eda_bus": {
     "pending": "./.events/pending",
-    "subscribers": {
-      "processing": "./.events/subscribers/processing",
-      "processed": "./.events/subscribers/processed",
-      "dead_letter": "./.events/subscribers/dead-letter"
-    },
+    "processing": "./.events/processing",
+    "processed": "./.events/processed",
+    "dead_letter": "./.events/dead-letter",
     "subscriptions": "SddIA/core/event-subscriptions.json"
   }
 }
 ```
 
-> **Hito C3.1:** Registrar `"event_bus": "./.events"` como ruta raíz canónica. Las claves `eda_bus.*` resuelven relativas a `event_bus` o como rutas absolutas relativas al workspace.
+`load_eda_bus()` resuelve claves planas `{estado}_subscribers` → `{estado}/subscribers/`. Alias legacy `subscriber_*` redirigen a `*_subscribers` durante transición.
 
-### 3.2 Árbol físico (Hito C3.2)
+### 3.2 Árbol físico
 
 ```
 .events/                              ← gitignored (/.events/)
-  pending/                            ← Eventos ECST crudos (inmutables)
+  pending/
+    [UUID].json                       ← ECST crudo (inmutable hasta sweep)
+  processing/
+    [UUID].json                       ← cabecera réplica (copia del pending)
+    subscribers/
+      [UUID].[subscriber_id].json     ← bloqueo en vuelo
+  processed/
+    [UUID].json                       ← cabecera si no existía en este estado
+    subscribers/
+      [UUID].[subscriber_id].json     ← éxito confirmado
+  dead-letter/
     [UUID].json
-  subscribers/
-    processing/                       ← Bloqueos en vuelo
-      [UUID].[NOMBRE_SUSCRIPTOR].json
-    processed/                        ← Éxitos
-      [UUID].[NOMBRE_SUSCRIPTOR].json
-    dead-letter/                      ← Fallos S+ Grade
-      [UUID].[NOMBRE_SUSCRIPTOR].json
+    subscribers/
+      [UUID].[subscriber_id].json     ← fallo operativo / ECST
 ```
 
-### 3.3 Descarte explícito (Ola C → V3)
+### 3.3 Elementos obsoletos (no reimplementar)
 
-| Elemento obsoleto | Sustituto V3 |
-|-------------------|--------------|
-| `docs/events/processing/` (evento padre) | `./.events/subscribers/processing/` (testigo suscriptor) |
-| `docs/events/processed/` (evento padre) | `./.events/subscribers/processed/` (testigo suscriptor) |
-| `docs/events/dead-letter/` (evento padre) | `./.events/subscribers/dead-letter/` (testigo suscriptor) |
-| **Evento Padre Mutante** (`delivery_state` en JSON padre) | Testigos atómicos por suscriptor |
-| Recibos `[UUID].[PURPOSE].notificado` | Testigos `[UUID].[NOMBRE_SUSCRIPTOR].json` |
-| Subcarpetas `receipts/` anidadas en fase padre | Descartadas |
+| Elemento PDF / backlog original | Sustituto en runtime |
+|---------------------------------|----------------------|
+| `docs/events/` como bus | `./.events/` vía Cúmulo |
+| Recibos `[UUID].[PURPOSE].notificado` | Testigos `[UUID].[subscriber_id].json` |
+| Subcarpetas `receipts/` | `{estado}/subscribers/` |
+| Middleware `.procesado` / `.error` | Promoción JSON `state: processed \| dead-letter` |
+| **Evento Padre Mutante** (`delivery_state` en disco) | Testigos; `delivery_state` legacy solo en emisión (`{}`) y lectura in-memory IOTA |
 
-## 4. Contrato de notificación (Hito C3.3)
+## 4. Contrato de cabecera y testigos
 
-### 4.1 Inicio de procesamiento
+### 4.1 Entrada en processing
 
-Cuando un suscriptor (ej. `cumulo`, `argos`) inicia el procesamiento del evento `[UUID]`:
+Al iniciar enrutamiento de `[UUID]`:
 
-1. Escribe testigo en `./.events/subscribers/processing/[UUID].[NOMBRE_SUSCRIPTOR].json`
-2. El padre en `pending/[UUID].json` **no se toca**
+1. Leer `pending/[UUID].json`.
+2. Crear `processing/[UUID].json` (copia atómica) si ausente.
+3. Por cada suscriptor: `write_processing_witness` → `processing/subscribers/[UUID].[sid].json`.
+4. **No** modificar `pending/`.
 
-**Esquema mínimo del testigo (processing):**
+**Esquema testigo (processing):**
 
 ```json
 {
   "event_uuid": "[UUID]",
-  "subscriber": "[NOMBRE_SUSCRIPTOR]",
+  "subscriber": "[subscriber_id]",
   "state": "processing",
-  "started_at": "ISO-8601",
-  "event_type": "PullRequest_Merged"
+  "started_at": "ISO-8601 UTC",
+  "event_type": "Domain_Entity_Created",
+  "dispatch_mode": "sync|async"
 }
 ```
 
-### 4.2 Finalización con éxito
+`subscriber_id` = `{agent}.{process|action|tool}` (ej. `cumulo.sync-entity-index`).
 
-El middleware mueve el testigo:
+### 4.2 Promoción con éxito
 
-`subscribers/processing/[UUID].[NOMBRE_SUSCRIPTOR].json` → `subscribers/processed/[UUID].[NOMBRE_SUSCRIPTOR].json`
+`processing/subscribers/…` → `processed/subscribers/…`
 
-El testigo en `processed/` añade `completed_at` (ISO-8601). El padre permanece inmutable.
+- Añade `completed_at`, `result_status`, `delegation`.
+- Crea cabecera `processed/[UUID].json` si ausente (copia desde pending).
 
-### 4.3 Fallo del suscriptor
+### 4.3 Promoción con fallo
 
-El middleware mueve el testigo:
+`processing/subscribers/…` → `dead-letter/subscribers/…`
 
-`subscribers/processing/[UUID].[NOMBRE_SUSCRIPTOR].json` → `subscribers/dead-letter/[UUID].[NOMBRE_SUSCRIPTOR].json`
+- Añade `failed_at`, `error_trace`.
+- Crea cabecera `dead-letter/[UUID].json` si ausente.
+- Padre en `pending/` **permanece**.
 
-**Esquema mínimo del testigo (dead-letter):**
+### 4.4 Purga cabecera processing
 
-```json
-{
-  "event_uuid": "[UUID]",
-  "subscriber": "[NOMBRE_SUSCRIPTOR]",
-  "state": "dead-letter",
-  "started_at": "ISO-8601",
-  "failed_at": "ISO-8601",
-  "error_trace": "stack trace o mensaje S+ Grade",
-  "event_type": "PullRequest_Merged"
-}
+Tras promoción terminal, si todos los suscriptores requeridos están en `processed/subscribers/` o `dead-letter/subscribers/` y no hay in-flight: eliminar `processing/[UUID].json` (`maybe_purge_processing_header`).
+
+## 5. Orquestación
+
+| Actor | Rol |
+|-------|-----|
+| `event-watcher.py` | Monitoriza `pending/`; delega en proceso `route-domain-event` |
+| `route_domain_event_core.py` | ECST gate, fan-out sync/async, testigos, sweep inline |
+| `execute-process` + `route-domain-event.md` | Proceso SddIA orquestador (acción legacy retirada PR #27) |
+| `event-sweeper.py` | Daemon inerte; escanea `pending/`; alerta Kaizen; purga stale |
+
+### 5.1 Fan-out
+
+- **Default:** async (`ThreadPoolExecutor`, máx. 8 workers).
+- **Regresión CI:** `SDDIA_LAB_ROUTE_SYNC=1` fuerza secuencial.
+
+### 5.2 Recolección (doble vía)
+
+```
+PARA cada [UUID].json EN pending/:
+  required ← suscriptores aplicables (event-subscriptions + origin_topology)
+  dead     ← testigos en dead-letter/subscribers/
+  done     ← testigos en processed/subscribers/
+  in_flight← testigos en processing/subscribers/
+
+  SI dead Y todos required terminales:
+    Kaizen terminal → finalize_kaizen_terminal (retira pending, conserva DL)
+
+  SI dead Y suscriptores pendientes:
+    Alerta Kaizen (stderr JSON); NO purgar pending
+
+  SI required ⊆ done Y NOT in_flight:
+    archive_event_after_sweep → purga pending + cabeceras + testigos processed
 ```
 
-El padre en `pending/` **nunca** se modifica ni se mueve por fallo de suscriptor.
+**Sweep inline:** `route_domain_event` invoca `try_sweep_event` al cierre (PR #29). **Sweeper daemon:** recolector periódico para eventos stale (`POLL_SECONDS=5`).
 
-## 5. `event-sweeper.py` — El Recolector (Hito C3.4)
+## 6. Bootstrap
 
-Demonio inerte de limpieza. Ubicación destino: `SddIA/scripts/daemons/event-sweeper.py`.
+`ensure_event_bus_topology()` crea idempotentemente las 7 rutas (pending + 3 estados × cabecera + subscribers). Invocado al arranque de watcher, sweeper y route.
 
-### 5.1 Algoritmo
-
-```
-PARA cada [UUID].json EN ./.events/pending/:
-  required ← suscriptores de event-subscriptions.json para event_type del padre
-  done     ← archivos en subscribers/processed/ con prefijo [UUID].
-  failed   ← archivos en subscribers/dead-letter/ con prefijo [UUID].
-
-  SI failed NO vacío:
-    EMITIR alerta Kaizen (sin borrar padre ni testigos)
-    CONTINUAR
-
-  SI required ⊆ done (todos los suscriptores en processed/):
-    PURGAR pending/[UUID].json
-    ARCHIVAR testigos processed/[UUID].* (destino TBD: purge o archive/)
-```
-
-### 5.2 Reglas
-
-| Condición | Acción |
-|-----------|--------|
-| Todos los suscriptores requeridos en `processed/` | Purgar padre + archivar testigos |
-| Algún testigo en `dead-letter/` | Alerta Kaizen; **no** borrar padre |
-| Suscriptores pendientes (sin testigo en ningún estado terminal) | No-op; esperar |
-| Padre huérfano (sin suscriptores requeridos) | Log warning; no purgar automáticamente |
-
-### 5.3 Entrada de suscriptores requeridos
-
-Fuente: `SddIA/core/event-subscriptions.json` — mapa `event_type` → lista de suscriptores con `agent`/`action`/`intent`. El nombre del suscriptor en el testigo coincide con el identificador canónico del agente suscriptor (ej. `cumulo`, `argos`).
-
-## 6. Orquestador central — garantías de arranque (Hito C3.2)
-
-Al iniciar (`event-watcher.py`, `execute-process.py` o módulo bootstrap dedicado), el orquestador **debe** crear idempotentemente:
-
-- `./.events/pending/`
-- `./.events/subscribers/processing/`
-- `./.events/subscribers/processed/`
-- `./.events/subscribers/dead-letter/`
-
-Resolución de rutas exclusivamente vía `cumulo_topology` → `event_bus` + `eda_bus.*`.
-
-## 7. `.gitignore` (Hito C3.1)
-
-Añadir obligatoriamente en la raíz:
+## 7. `.gitignore`
 
 ```
 /.events/
 ```
 
-Mantener `docs/events/` en `.gitignore` durante la transición; retirar tras migración completa de consumidores.
+## 8. `delivery_state` — contrato legacy
 
-## 8. Consumidores afectados
+| Fase | Comportamiento |
+|------|----------------|
+| Emisión ECST | Campo opcional `{}` en plantillas; no es fuente de trazabilidad V3+ |
+| Route (IOTA) | Lectura **in-memory** de `delivery_state.transaction_digest` post-dispatch; no persiste en padre |
+| Verificación éxito bus | Criterio = testigos en `processed/subscribers/`, no `delivery_state` en JSON padre |
 
-| Componente | Cambio |
-|------------|--------|
-| `cumulo.paths.json` | `event_bus`, reestructuración `eda_bus` |
-| `eda_bus_utils.py` | Resolver `./.events/`; defaults actualizados |
-| `event-watcher.py` | Bootstrap topología; escribir testigos en lugar de mover padre |
-| `route-domain-event` / middleware | Mover testigos processing → processed/dead-letter |
-| `execute-process.py` | `_write_pending_event` → `./.events/pending/` |
-| `emit-domain-mutation`, `emit-pr-*` | Emisión a `./.events/pending/` |
-| `event-sweeper.py` | **Nuevo** — recolector |
-| `README.md` | Mapa de rutas actualizado |
-| Hooks / gates que leen bus | Actualizar resolución SSOT |
+Norma: `SddIA/events/events-contract.md` — prohibido mutar padre tras emisión.
 
-## 9. Migración desde `docs/events/`
+## 9. Consumidores
 
-| Escenario | Acción |
-|-----------|--------|
-| Eventos pendientes en `docs/events/pending/` | Migración manual o script one-shot a `./.events/pending/` |
-| Consumidores con fallback `docs/events/` | Actualizar a `./.events/` vía Cúmulo |
-| `delivery_state` en JSON legacy | Ignorar; no portar a V3 |
-| Laboratorios `SddIA_1…4` | Heredan topología vía sync Core |
+| Componente | Estado |
+|------------|:------:|
+| `cumulo.paths.json` | ✅ V3+ |
+| `eda_bus_utils.py` | ✅ SSOT testigos + sweep |
+| `route_domain_event_core.py` | ✅ Middleware + inline sweep |
+| `event-watcher.py` | ✅ Proceso route-domain-event |
+| `event-sweeper.py` | ✅ Daemon recolector |
+| `emit-domain-mutation`, `emit-pr-*` | ✅ Emisión a `pending/` |
+| `README.md`, `route-domain-event.md` | ✅ Documentados |
 
 ## 10. Verificación (Argos)
 
-- [ ] `cumulo.paths.json`: clave `event_bus` = `"./.events"`
-- [ ] `.gitignore`: entrada `/.events/`
-- [ ] Orquestador crea 4 carpetas al arranque
-- [ ] Suscriptor escribe testigo `processing/` sin mutar padre
-- [ ] Middleware promueve testigo a `processed/` o `dead-letter/` con `error_trace`
-- [ ] `event-sweeper.py`: purga padre cuando todos en `processed/`
-- [ ] `event-sweeper.py`: alerta Kaizen ante `dead-letter/` sin borrar padre
-- [ ] Grep: cero literales `docs/events/` como fallback operativo en consumidores activos
+- [x] `event_bus` = `"./.events"` en Cúmulo
+- [x] `.gitignore`: `/.events/`
+- [x] Bootstrap 7 rutas simétricas
+- [x] Testigo processing → processed/dead-letter sin mutar padre
+- [x] Sweeper + inline sweep purgan con consenso
+- [x] Alerta Kaizen ante dead-letter activo
+- [x] E2E lab + unit tests `test_eda_bus_v3plus`
+- [x] CI job `eda-bus-e2e-smoke` (simulate)
 
 ## 11. Trazabilidad
 
 | Artefacto | Ref |
 |-----------|-----|
-| Backlog P4 | `docs/todos/pending/[OPERATIVO] Backlog pendiente post-PR11…` § Prioridad 4 |
-| Manifiesto V3 | `docs/todos/done/[ARQUITECTURA] Especificación Técnica Avanzada… (Ola C) V3.md` |
-| Feature predecesora | `docs/features/ola-c-event-entity/` (genoma + Ola C entregada) |
-| SSOT rutas | `SddIA/core/cumulo.paths.json` |
+| Backlog P4 | `docs/todos/pending/[OPERATIVO] Backlog pendiente post-PR11…` |
+| Manifiesto V3 | `docs/todos/done/[ARQUITECTURA] … Ola C V3.md` |
+| Delta topológico V3+ | `docs/features/refactor-topologia-eventos-ola-c-v3/` |
+| Clarificación triaje | `docs/features/ola-c-v3-coreografia/clarify.md` |
 | Suscripciones | `SddIA/core/event-subscriptions.json` |
