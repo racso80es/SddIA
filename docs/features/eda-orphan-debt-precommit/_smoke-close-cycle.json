@@ -1,0 +1,7 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/features/eda-orphan-debt-precommit",
+  "branch_name": "fix/eda-orphan-debt-precommit",
+  "pr_title": "fix(eda): correlación orphan_count pre-commit y backfill Fase C",
+  "pr_body": "## Summary\n- Amplía correlación EDA (`iter_bus_event_files`) a cabeceras processing/processed.\n- Retiene cabeceras Domain_Entity_Created tras sweep (mitigación táctica).\n- Backfill Fase C + acta Merkle (`eda-backfill-precommit-20260525`).\n- PBI Kaizen derivado: validación genómica sin dependencia del bus.\n\n## Test plan\n- [x] audit-entity-eda-coverage --scan → orphan_count 0\n- [x] event-watcher --once + re-scan → orphan_count 0\n- [x] verify-process-integrity OK\n- [x] pre-commit gate sin SDDIA_SKIP_HOOKS"
+}

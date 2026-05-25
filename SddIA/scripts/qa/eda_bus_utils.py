@@ -448,17 +448,31 @@ def _legacy_bus_dirs(repo: Path) -> list[Path]:
 
 
 def iter_bus_event_files(repo: Path) -> list[Path]:
-    """Instancias ECST padre: pending V3+ + legacy docs/events."""
+    """Instancias ECST padre: pending, cabeceras processing/processed V3+, legacy docs/events."""
     bus = load_eda_bus(repo)
     files: list[Path] = []
-    pending = repo / bus["pending"]
-    if pending.is_dir():
-        files.extend(sorted(pending.glob("*.json")))
+    seen: set[Path] = set()
+
+    def _add_header_dir(dir_path: Path) -> None:
+        if not dir_path.is_dir():
+            return
+        for path in sorted(dir_path.glob("*.json")):
+            resolved = path.resolve()
+            if resolved not in seen:
+                seen.add(resolved)
+                files.append(path)
+
+    _add_header_dir(repo / bus["pending"])
+    for state in ("processing", "processed"):
+        _add_header_dir(repo / bus[state])
+
+    pending_resolved = (repo / bus["pending"]).resolve()
     for legacy_dir in _legacy_bus_dirs(repo):
-        if legacy_dir == pending:
+        if legacy_dir.resolve() == pending_resolved:
             continue
-        files.extend(sorted(legacy_dir.glob("*.json")))
-    return files
+        _add_header_dir(legacy_dir)
+
+    return sorted(files, key=lambda p: str(p.relative_to(repo)).replace("\\", "/"))
 
 
 def find_existing_domain_event(
@@ -677,7 +691,7 @@ def try_sweep_event(
 
     done = processed_subscriber_names(repo, bus, event_uuid)
     if set(required).issubset(done):
-        archived = archive_event_after_sweep(repo, bus, event_uuid)
+        archived = archive_event_after_sweep(repo, bus, event_uuid, event_type=event_type)
         return {
             **base,
             "status": "purged",
@@ -694,14 +708,45 @@ def try_sweep_event(
     }
 
 
-def archive_event_after_sweep(repo: Path, bus: dict[str, str], event_uuid: str) -> dict[str, int]:
-    """Purgar pending, cabeceras processed/processing y testigos processed tras consenso."""
-    counts = {"witnesses": 0, "headers": 0, "pending": 0}
+def archive_event_after_sweep(
+    repo: Path,
+    bus: dict[str, str],
+    event_uuid: str,
+    *,
+    event_type: str | None = None,
+) -> dict[str, int]:
+    """Purgar pending, cabeceras processing y testigos; retener cabecera processed en Domain_Entity_Created (correlación genómica)."""
+    counts: dict[str, int] = {"witnesses": 0, "headers": 0, "pending": 0, "retained": 0}
+
+    if event_type is None:
+        for state in ("processed", "processing"):
+            header = repo / header_path(bus, state, event_uuid)
+            if not header.is_file():
+                continue
+            try:
+                body = json.loads(header.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if isinstance(body.get("event_type"), str):
+                event_type = body["event_type"]
+                break
+
+    retain_processed = event_type == "Domain_Entity_Created"
+
     pending = repo / bus["pending"] / f"{event_uuid}.json"
+    if retain_processed and pending.is_file():
+        processed_header = repo / header_path(bus, "processed", event_uuid)
+        if not processed_header.is_file():
+            ensure_state_header(repo, bus, "processed", event_uuid, pending)
     if pending.is_file():
         pending.unlink(missing_ok=True)
         counts["pending"] = 1
     for state in ("processing", "processed"):
+        if state == "processed" and retain_processed:
+            processed_header = repo / header_path(bus, "processed", event_uuid)
+            if processed_header.is_file():
+                counts["retained"] = 1
+            continue
         header = repo / header_path(bus, state, event_uuid)
         if header.is_file():
             header.unlink(missing_ok=True)

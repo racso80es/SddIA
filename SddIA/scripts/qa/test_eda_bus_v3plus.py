@@ -103,6 +103,45 @@ class TestEdaBusV3Plus(unittest.TestCase):
         self.assertTrue(terminal_witness_exists(repo, bus, eid, "x"))
         self.assertEqual(len(list_witnesses(repo, bus, "processing_subscribers", eid)), 0)
 
+    def test_archive_retains_domain_entity_created_processed_header(self) -> None:
+        from eda_bus_utils import archive_event_after_sweep, header_path
+
+        repo = _fake_repo()
+        bus = ensure_event_bus_topology(repo)
+        eid = "dddddddd-eeee-4fff-aaaa-bbbbbbbbbbbb"
+        event = {
+            "event_id": eid,
+            "event_type": "Domain_Entity_Created",
+            "payload": {"entity_uuid": "aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee", "lifecycle_operation": "create"},
+        }
+        pending = repo / bus["pending"] / f"{eid}.json"
+        pending.write_text(json.dumps(event), encoding="utf-8")
+        processed = repo / header_path(bus, "processed", eid)
+        processed.write_text(json.dumps(event), encoding="utf-8")
+
+        counts = archive_event_after_sweep(repo, bus, eid, event_type="Domain_Entity_Created")
+
+        self.assertFalse(pending.is_file())
+        self.assertTrue(processed.is_file())
+        self.assertEqual(counts.get("retained"), 1)
+
+    def test_archive_purges_non_domain_entity_processed_header(self) -> None:
+        from eda_bus_utils import archive_event_after_sweep, header_path
+
+        repo = _fake_repo()
+        bus = ensure_event_bus_topology(repo)
+        eid = "eeeeeeee-ffff-4aaa-bbbb-cccccccccccc"
+        event = {"event_id": eid, "event_type": "PullRequest_Presented", "payload": {}}
+        pending = repo / bus["pending"] / f"{eid}.json"
+        pending.write_text(json.dumps(event), encoding="utf-8")
+        processed = repo / header_path(bus, "processed", eid)
+        processed.write_text(json.dumps(event), encoding="utf-8")
+
+        archive_event_after_sweep(repo, bus, eid, event_type="PullRequest_Presented")
+
+        self.assertFalse(pending.is_file())
+        self.assertFalse(processed.is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

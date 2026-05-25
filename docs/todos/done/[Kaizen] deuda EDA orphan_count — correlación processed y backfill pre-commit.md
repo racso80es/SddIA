@@ -18,7 +18,7 @@ related:
   - docs/features/eda-domain-entities-splus/backfill-manifest.json
   - docs/features/vanguardia-soberania-local/execution.md
   - docs/todos/done/[Kaizen] higiene ficheros temporales — .tmp fuera de control y limpieza post-uso.md
-incident_ref: "pre-commit BLOCKED Argos orphan_count=43; delivery-close aduana genómica inconsistente tras event-watcher"
+  - docs/todos/pending/[Kaizen] validación genómica EDA sin dependencia del bus — correlación durable.md "pre-commit BLOCKED Argos orphan_count=43; delivery-close aduana genómica inconsistente tras event-watcher"
 blocks: "Commits locales con hook pre-commit activo; delivery-close-cycle con mutaciones SddIA/"
 ---
 
