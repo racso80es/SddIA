@@ -5,6 +5,7 @@ process: bug-fix
 branch: fix/route-domain-event-pr-merged-resilience
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/50
 checks:
   RM-CA1: pass
   RM-CA2: pass
