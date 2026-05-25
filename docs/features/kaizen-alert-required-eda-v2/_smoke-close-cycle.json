@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/kaizen-alert-required-eda-v2",
+  "branch_name": "feat/kaizen-alert-required-eda-v2",
+  "pr_title": "feat(eda): Kaizen_Alert_Required EDA v2 y poda puente DIA",
+  "pr_body": "Cierra deuda EDA v2: evento Kaizen_Alert_Required, Cumulo materializa PENDING_AUDIT_DOC_*, poda puente sincrono v1. pull-request-review v2.2.0. validacion APTO, PBI archivado.",
+  "target_branch": "main"
+}

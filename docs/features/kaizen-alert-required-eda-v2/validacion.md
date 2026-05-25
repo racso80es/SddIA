@@ -5,6 +5,7 @@ process: feature
 branch: feat/kaizen-alert-required-eda-v2
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/48
 checks:
   KA-CA1: pass
   KA-CA2: pass
