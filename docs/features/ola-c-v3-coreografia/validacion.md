@@ -5,6 +5,9 @@ updated: "2026-05-25"
 process: feature
 branch: feat/ola-c-v3-coreografia-cierre
 pr_url: "https://github.com/racso80es/SddIA/pull/41"
+merged_pr: 41
+merge_commit: "713260c7a95d8695f8573853889ffee96a3ac4b0"
+closed: "2026-05-25"
 global: APTO
 pbi_archived: false
 checks:
@@ -34,7 +37,7 @@ upstream_evidence:
 
 # Validación — Ola C V3+ Coreografía (Argos)
 
-**Veredicto global: APTO**
+**Veredicto global: APTO** — merge [`713260c`](https://github.com/racso80es/SddIA/commit/713260c7a95d8695f8573853889ffee96a3ac4b0) vía PR [#41](https://github.com/racso80es/SddIA/pull/41).
 
 Iteración de **cierre documental** (2026-05-25). El runtime coreográfico fue entregado en PRs #24–#29; esta validación consolida evidencia reproducible y alinea normativa con topología V3+ simétrica.
 
