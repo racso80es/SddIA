@@ -9,16 +9,19 @@ import os
 import re
 import subprocess
 import sys
-import uuid
 from pathlib import Path
 from typing import Any
+
+if str(QA := Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(QA))
+
+from tmp_paths import cleanup_path, write_ephemeral_json
 
 SCRIPT = Path(__file__).resolve()
 REPO = SCRIPT.parents[4]
 QA = REPO / "SddIA" / "scripts" / "qa"
 CUMULO_PATH = REPO / "SddIA" / "core" / "cumulo.paths.json"
 EXECUTE_PROCESS = QA / "execute-process.py"
-TMP_DIR = REPO / "tmp"
 
 BRANCH_PREFIXES = ("feat/", "fix/", "refactor/", "hotfix/")
 MAIN_GUARD_MSG = (
@@ -191,31 +194,31 @@ def git_config(key: str, default: str = "") -> str:
 
 
 def write_inputs_payload(prefix: str, payload: dict[str, Any]) -> Path:
-    TMP_DIR.mkdir(parents=True, exist_ok=True)
-    path = TMP_DIR / f"{prefix}-{uuid.uuid4().hex[:12]}.json"
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    return path
+    return write_ephemeral_json(REPO, prefix, payload)
 
 
 def invoke_process(process_name: str, inputs: dict[str, Any]) -> int:
     payload_path = write_inputs_payload(f"hook-{process_name}", inputs)
     env = os.environ.copy()
     env[HOOK_DELIVERY_CLOSE_ENV] = "1"
-    proc = subprocess.run(
-        [sys.executable, str(EXECUTE_PROCESS), "--process", process_name, "--inputs-file", str(payload_path)],
-        cwd=str(REPO),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-        env=env,
-    )
-    if proc.stdout:
-        print(proc.stdout, file=sys.stderr, end="")
-    if proc.stderr:
-        print(proc.stderr, file=sys.stderr, end="")
-    return proc.returncode
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(EXECUTE_PROCESS), "--process", process_name, "--inputs-file", str(payload_path)],
+            cwd=str(REPO),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            env=env,
+        )
+        if proc.stdout:
+            print(proc.stdout, file=sys.stderr, end="")
+        if proc.stderr:
+            print(proc.stderr, file=sys.stderr, end="")
+        return proc.returncode
+    finally:
+        cleanup_path(payload_path)
 
 
 def parse_pre_push_stdin(text: str) -> list[dict[str, str]]:

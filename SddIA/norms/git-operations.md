@@ -1,7 +1,7 @@
 ---
 uuid: "e5f6a7b8-c9d0-4123-e456-7890abcdef01"
 name: "git-operations"
-version: "1.0.0"
+version: "1.1.0"
 entity_type: "norm"
 jurisdiction: "cerbero"
 ---
@@ -22,9 +22,27 @@ Esta versión inicial establece el marco; Dédalo y Cúmulo completarán los det
 - **Commits:** alineación con Conventional Commits u otra política acordada.
 - **Force push:** cuándo está permitido y bajo qué token/contexto.
 
-## 3. Referencias
+## 3. Artefactos efímeros y fixtures
+
+| Clase | Ubicación | Versionado | Ciclo de vida |
+|-------|-----------|------------|---------------|
+| **Input efímero** | `.tmp/<contexto>-<uuid>.json` | No (`.gitignore`) | Crear → consumir → borrar en `finally` |
+| **Fixture plantilla** | `docs/features/<feat>/_smoke-<escenario>.json` | Sí (PR de la feature) | Reutilizable; copiar a `.tmp/` para one-shot |
+| **Forge lab E2E** | `.SddIA/<dominio>/` con `scope: local` | No | Teardown post-smoke salvo depuración |
+
+**Reglas:**
+
+- Prohibido escribir inputs JSON one-shot (`_close-cycle-*`, `_delivery-close-*` ad hoc) bajo `docs/features/<persist_ref>/`.
+- Prohibido forja de laboratorio en catálogo Core (`SddIA/tools/`, etc.) sin cadena productiva y evento ECST.
+- Helper canónico: `SddIA/scripts/qa/tmp_paths.py` (`write_ephemeral_json`, `cleanup_path`).
+- Depuración local: `SDDIA_KEEP_TMP=1` conserva payloads y forges lab.
+
+La ruta legacy `tmp/` (sin punto) queda deprecada; usar **`.tmp/`** en código nuevo. Ambas permanecen en `.gitignore` durante la migración.
+
+## 4. Referencias
 
 - Entrada congelada de la skill: `SddIA/norms/skill-io-git-manager-frozen.md`
 - Mapa de rutas Core: `SddIA/core/cumulo.paths.json` → `directories.norms`
 - Orquestación PR y SSOT merge: `SddIA/norms/pull-request-orchestration.md` §4
 - Runbook operativo fusión local: `docs/features/l1-o5-runbooks-paridad/runbook-accept-pr.md`
+- Patrón documental: `SddIA/library/norms/features-documentation-pattern.md` § Artefactos efímeros
