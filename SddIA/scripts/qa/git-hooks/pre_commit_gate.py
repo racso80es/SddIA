@@ -16,6 +16,36 @@ QA = REPO / "SddIA" / "scripts" / "qa"
 VPI = QA / "verify-process-integrity.py"
 AUDIT = QA / "audit-entity-eda-coverage.py"
 
+# Rutas genómicas auditadas por audit-entity-eda-coverage (ENTITY_DIRS)
+_GENOME_PREFIXES = (
+    "SddIA/skills/",
+    "SddIA/events/",
+    "SddIA/process/",
+    "SddIA/agents/",
+    "SddIA/tools/",
+    "SddIA/actions/",
+    "SddIA/library/norms/",
+    "SddIA/library/codexes/",
+    ".SddIA/",
+)
+
+
+def _staged_paths() -> list[str]:
+    proc = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"],
+        cwd=str(REPO),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    return [line.strip().replace("\\", "/") for line in (proc.stdout or "").splitlines() if line.strip()]
+
+
+def _staged_touches_genome(staged: list[str]) -> bool:
+    return any(p.startswith(_GENOME_PREFIXES) for p in staged)
+
 
 def _run(cmd: list[str], *, isolate_stdio: bool = True) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
@@ -68,7 +98,8 @@ def main() -> int:
         return 1
 
     orphan_count = int(report.get("orphan_count") or 0)
-    if orphan_count > 0:
+    staged = _staged_paths()
+    if orphan_count > 0 and _staged_touches_genome(staged):
         print(f"SddIA pre-commit: BLOCKED — Argos orphan_count={orphan_count}", file=sys.stderr)
         for o in report.get("orphans") or []:
             ec = o.get("entity_class", "?")
