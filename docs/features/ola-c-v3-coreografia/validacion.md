@@ -4,6 +4,7 @@ created: "2026-05-22"
 updated: "2026-05-25"
 process: feature
 branch: feat/ola-c-v3-coreografia-cierre
+pr_url: "https://github.com/racso80es/SddIA/pull/41"
 global: APTO
 pbi_archived: false
 checks:
@@ -51,7 +52,7 @@ Iteración de **cierre documental** (2026-05-25). El runtime coreográfico fue e
 | C3-CA8 | E2E lab verde (simulate) | ✅ | Ver smoke 2026-05-25 abajo |
 | C3-CA9 | Unit tests V3+ | ✅ | 4/4 OK `test_eda_bus_v3plus` |
 | C3-CA10 | Spec alineada a V3+ | ✅ | `spec.md` actualizado 2026-05-25 |
-| C3-CA11 | CI job EDA bus smoke | ✅ | `eda-bus-e2e-smoke` en workflow |
+| C3-CA11 | CI job EDA bus smoke | ✅ | `eda-bus-e2e-smoke` SUCCESS en PR #41 |
 | — | `verify-process-integrity` | ✅ | job `verify-tools-index` |
 
 ## Comandos ejecutados (2026-05-25)
@@ -82,7 +83,7 @@ python SddIA/scripts/daemons/event-sweeper.py --once --json
 
 ## Nota operador
 
-- **PBI backlog P4:** actualizado a ~90 % código; cierre documental en este PR. `pbi_archived: false` hasta merge — L1-O5 sigue abierto en el manifiesto operativo.
+- **CI PR #41:** `verify-tools-index`, `eda-iota-smoke-simulate`, `eda-bus-e2e-smoke`, `eda-iota-physical` — SUCCESS.
 - **Daemon sweeper:** no requerido en flujos `--once` del watcher; sweep inline + sweeper periódico cubren el ciclo.
 - **Referencia topológica detallada:** `docs/features/refactor-topologia-eventos-ola-c-v3/validacion.md` (CA1–CA11, PR #25).
 

@@ -8,7 +8,7 @@ persist_ref: docs/features/ola-c-v3-coreografia
 related_todo: docs/todos/pending/[OPERATIVO] Backlog pendiente post-PR11 — Hito 3, Ola C y laboratorio.md
 tracks:
   - P4
-status: en_curso
+status: implementado
 supersedes_iteration: feat/ola-c-v3-coreografia
 upstream_prs:
   - 24
@@ -90,4 +90,4 @@ upstream_prs:
 | Especificación | ✅ `spec.md` V3+ |
 | Plan / Implementación | ✅ Doc + CI job |
 | Validación | ✅ `validacion.md` APTO |
-| Cierre PR | ⏳ |
+| Cierre PR | ✅ PR [#41](https://github.com/racso80es/SddIA/pull/41) |
