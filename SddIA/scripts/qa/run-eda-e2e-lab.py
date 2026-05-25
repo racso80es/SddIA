@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +17,9 @@ SCRIPT = Path(__file__).resolve()
 if str(SCRIPT.parent) not in sys.path:
     sys.path.insert(0, str(SCRIPT.parent))
 
-from eda_bus_utils import ensure_event_bus_topology, list_witnesses, load_eda_bus
+from eda_bus_utils import ensure_event_bus_topology, list_witnesses
+from lab_teardown import cleanup_lab_entity_forge, cleanup_orphan_core_eda_e2e_tools
+from tmp_paths import keep_tmp
 
 EXECUTE_PROCESS = SCRIPT.parent / "execute-process.py"
 WATCHER = SCRIPT.parent.parent / "daemons" / "event-watcher.py"
@@ -66,6 +69,7 @@ def create_entity(repo: Path, entity_class: str, entity_name: str) -> dict[str, 
         "lifecycle_operation": "create",
         "semantic_seed": {
             seed_key: entity_name,
+            "scope": "local",
             "execution_logic": f"E2E lab {entity_class}",
             "orchestration_logic": f"E2E lab {entity_class}",
             "process_description": f"E2E {entity_name}",
@@ -118,60 +122,80 @@ def main() -> int:
 
     repo = _repo_root()
     bus = ensure_event_bus_topology(repo)
-    pending_dir = repo / bus["pending"]
 
     report: dict[str, Any] = {"steps": []}
+    entity_class = args.entity_class
+    entity_name: str | None = args.entity_name
+    event_id: str | None = None
+    created_entity = False
+    exit_code = 1
+    rel: str | None = None
 
-    if args.event_file_path:
-        rel = args.event_file_path.replace("\\", "/")
-        event_id = Path(rel).stem
-    elif args.skip_create:
-        print("Indique --event-file-path o omita --skip-create", file=sys.stderr)
-        return 1
-    else:
-        import uuid
+    try:
+        if args.event_file_path:
+            rel = args.event_file_path.replace("\\", "/")
+            event_id = Path(rel).stem
+        elif args.skip_create:
+            report["error"] = "Indique --event-file-path o omita --skip-create"
+        else:
+            entity_name = entity_name or f"eda-e2e-{args.entity_class}-{uuid.uuid4().hex[:8]}"
+            create_data = create_entity(repo, args.entity_class, entity_name)
+            handoff = create_data.get("handoff") or {}
+            event_id = handoff.get("event_id")
+            rel = handoff.get("target_path")
+            if not rel or not event_id:
+                report["success"] = False
+                report["error"] = "entity-manager sin event_id"
+                report["data"] = create_data
+            else:
+                created_entity = True
+                report["steps"].append({"create": entity_name, "event_id": event_id})
+                report["entity_class"] = args.entity_class
+                report["entity_name"] = entity_name
 
-        entity_name = args.entity_name or f"eda-e2e-{args.entity_class}-{uuid.uuid4().hex[:8]}"
-        create_data = create_entity(repo, args.entity_class, entity_name)
-        handoff = create_data.get("handoff") or {}
-        event_id = handoff.get("event_id")
-        rel = handoff.get("target_path")
-        if not rel or not event_id:
-            print(json.dumps({"success": False, "error": "entity-manager sin event_id", "data": create_data}))
-            return 1
-        report["steps"].append({"create": entity_name, "event_id": event_id})
-        report["entity_class"] = args.entity_class
-        report["entity_name"] = entity_name
+        if rel and "error" not in report:
+            pending = repo / rel
+            if not pending.is_file():
+                report["success"] = False
+                report["error"] = f"pending no encontrado: {rel}"
+            else:
+                route_result = route_event(repo, rel)
+                report["steps"].append({"route": route_result})
 
-    pending = repo / rel
-    if not pending.is_file():
-        print(json.dumps({"success": False, "error": f"pending no encontrado: {rel}"}))
-        return 1
-
-    route_result = route_event(repo, rel)
-    report["steps"].append({"route": route_result})
-
-    event_id = event_id or Path(rel).stem
-    witnesses = list_witnesses(repo, bus, "processed_subscribers", event_id)
-    processing_header = repo / bus["processing"] / f"{event_id}.json"
-    report["witnesses_processed"] = [p.name for p in witnesses]
-    report["processing_header_created"] = processing_header.is_file()
-    sweep = route_result.get("data", {}).get("sweep") or {}
-    report["parent_still_pending"] = pending.is_file()
-    report["sweep"] = sweep
-    report["parent_purged"] = not pending.is_file()
-    report["dispatch_mode"] = route_result.get("data", {}).get("dispatch_mode")
-    report["success"] = (
-        bool(route_result.get("success"))
-        and not pending.is_file()
-        and sweep.get("status") == "purged"
-    )
+                event_id = event_id or Path(rel).stem
+                witnesses = list_witnesses(repo, bus, "processed_subscribers", event_id)
+                processing_header = repo / bus["processing"] / f"{event_id}.json"
+                report["witnesses_processed"] = [p.name for p in witnesses]
+                report["processing_header_created"] = processing_header.is_file()
+                sweep = route_result.get("data", {}).get("sweep") or {}
+                report["parent_still_pending"] = pending.is_file()
+                report["sweep"] = sweep
+                report["parent_purged"] = not pending.is_file()
+                report["dispatch_mode"] = route_result.get("data", {}).get("dispatch_mode")
+                report["success"] = (
+                    bool(route_result.get("success"))
+                    and not pending.is_file()
+                    and sweep.get("status") == "purged"
+                )
+                exit_code = 0 if report["success"] else 1
+    finally:
+        orphan_removed = cleanup_orphan_core_eda_e2e_tools(repo)
+        if orphan_removed:
+            report["orphan_core_removed"] = orphan_removed
+        if created_entity and entity_name and event_id:
+            report["cleanup"] = cleanup_lab_entity_forge(
+                repo,
+                entity_class=entity_class,
+                entity_name=entity_name,
+                event_id=event_id,
+            )
+        report["cleaned"] = not keep_tmp()
 
     if args.json:
         print(json.dumps(report, indent=2, ensure_ascii=False))
     else:
         print(json.dumps(report, ensure_ascii=False))
-    return 0 if report["success"] else 1
+    return exit_code
 
 
 if __name__ == "__main__":

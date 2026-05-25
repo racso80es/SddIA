@@ -1,7 +1,7 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.2.0"
+version: "1.2.1"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
@@ -74,6 +74,18 @@ Los artefactos históricos con `merged_pr` / `merge_commit` en `validacion.md` p
 - Prohibido producir más de un archivo por acción de fase (un `.md` por acción, sin duplicados ni variantes JSON).
 - Prohibido almacenar en el cuerpo Markdown datos que deban ser machine-readable si pueden declararse en frontmatter según la tabla canónica.
 - Prohibido crear nuevas tareas que violen este patrón; la migración de legado es la única excepción temporal y debe cerrarse eliminando el `.json`.
+
+## Artefactos efímeros (inputs runtime)
+
+Los `.md` de fase siguen siendo la fuente de verdad documental. Los **inputs JSON de runtime** (smokes one-shot, hooks, cierres ad hoc) **no** forman parte del patrón de fase:
+
+| Tipo | Convención | Versionado |
+|------|------------|------------|
+| Fixture plantilla | `_smoke-<escenario>.json` en `persist_ref` | Sí — plantilla reproducible en el PR de la feature |
+| Input operativo | `.tmp/<proceso>-<uuid>.json` vía `tmp_paths.write_ephemeral_json` | No — borrar tras `execute-process` |
+| Cierre ciclo ad hoc | Copiar plantilla a `.tmp/`; prohibido `_close-cycle-*.json` suelto en `persist_ref` | No |
+
+Ver `SddIA/norms/git-operations.md` §3 y Kaizen `kaizen-higiene-ficheros-temporales`.
 
 ## Ruido de Sistema — Cobertura EDA genómica
 
