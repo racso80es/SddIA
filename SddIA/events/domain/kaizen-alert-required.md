@@ -2,7 +2,8 @@
 uuid: "a9b8c7d6-e5f4-4321-a987-6543210fedcb"
 name: "kaizen-alert-required"
 version: "1.0.0"
-contract: "events-contract v1.0.0"
+contract: "events-contract v1.1.0"
+event_family: "domain"
 event_type: "Kaizen_Alert_Required"
 context: "quality-assurance"
 capabilities:

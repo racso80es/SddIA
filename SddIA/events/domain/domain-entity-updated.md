@@ -2,7 +2,8 @@
 uuid: "65dcff67-d392-4ab1-9977-2e320d3c8c34"
 name: "domain-entity-updated"
 version: "1.0.0"
-contract: "events-contract v1.0.0"
+contract: "events-contract v1.1.0"
+event_family: "domain"
 event_type: "Domain_Entity_Updated"
 context: "ecosystem-evolution"
 capabilities:

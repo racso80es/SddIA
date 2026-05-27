@@ -1,5 +1,5 @@
 ---
-contract_version: "1.0.0"
+contract_version: "1.1.0"
 entity_type: "event"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -7,6 +7,7 @@ capabilities:
   - "ecst-envelope-governance"
   - "class-instance-separation"
   - "eda-bus-routing"
+  - "event-family-trinity"
 ---
 
 # Contrato de Eventos (S+ Grade)
@@ -15,7 +16,7 @@ Este documento rige la familia **Event** (Clases de Evento) y el envelope **ECST
 
 ## 1. Identidad atómica de la Clase (innegociable)
 
-Toda Clase de Evento debe definirse mediante un archivo `{name}.md` bajo `directories.events` con cabecera YAML obligatoria:
+Toda Clase de Evento debe definirse mediante un archivo `{name}.md` bajo `directories.events/{event_family}/` con cabecera YAML obligatoria:
 
 | Campo | Obligatorio | Descripción |
 |-------|:-----------:|-------------|
@@ -23,6 +24,7 @@ Toda Clase de Evento debe definirse mediante un archivo `{name}.md` bajo `direct
 | `name` | Sí | Identificador kebab-case (nombre del archivo sin extensión) |
 | `version` | Sí | SemVer |
 | `contract` | Sí | `events-contract v{contract_version}` |
+| `event_family` | Sí | `telemetry` \| `orchestration` \| `domain` — debe coincidir con la subcarpeta física |
 | `event_type` | Sí | Identificador ECST en PascalCase_Snake (p. ej. `PullRequest_Merged`) |
 | `context` | Sí | Política RBAC Cerbero (`execution-contexts.md`) |
 | `hash_signature` | Sí | Cicatriz Digital del **archivo Clase** (`sha256:…`); no confundir con ancla Git ni con sellos de instancia |
@@ -38,7 +40,7 @@ El cuerpo Markdown debe incluir, como mínimo:
 
 | Plano | Ubicación SSOT | Naturaleza | Versionado |
 |-------|----------------|------------|------------|
-| **Clase de Evento** | `SddIA/events/{name}.md` | Contrato funcional, genoma | Sí (Git) |
+| **Clase de Evento** | `SddIA/events/{event_family}/{name}.md` | Contrato funcional, genoma | Sí (Git) |
 | **Instancia ECST** | `.events/{pending,processing,processed,dead-letter}/` + `{estado}/subscribers/` (testigos) | JSON volátil, runtime | No (`/.events/` en `.gitignore`) |
 | **Personalización** | `.SddIA/events/` (`eda_instance.customization`) | Overrides Vía C | No |
 
@@ -62,7 +64,7 @@ Toda instancia persistida en el bus debe ser JSON UTF-8 con la forma:
 | Campo raíz | Obligatorio | Regla |
 |------------|:-----------:|-------|
 | `event_id` | Sí | UUID v4; minteado en emisión |
-| `event_type` | Sí | Debe existir Clase catalogada en `events/index.md` |
+| `event_type` | Sí | Debe existir Clase catalogada en el Códice de su familia (`events/{family}/index.md`) |
 | `timestamp` | Sí | ISO-8601 UTC |
 | `emitter_agent` | Sí | Identificador del emisor indexado |
 | `correlation_id` | No | UUID v4; solo si aplica saga causal |
@@ -124,13 +126,27 @@ flowchart TB
 
 Variantes **Updated** y **Deleted** se documentan en sus Clases; heredan la distinción entre sello de artefacto y `payload_schema_hash` opcional.
 
-## 6. Índice y trazabilidad
+## 6. Trinidad de Estímulos (`event_family`)
 
-- **`events/index.md`:** tabla de Clases; columna **Capabilities** obligatoria; excluir `events-contract.md` del catálogo de definiciones.
-- Toda forja de Clase debe sincronizar índice vía Cúmulo o `event-creator` (cuando exista).
+| Familia | Naturaleza | Emisor autorizado | Destino runtime (Fase 3+) |
+|---------|------------|-------------------|---------------------------|
+| `telemetry` | Ruido físico — infraestructura | Solo CLI (Peaje Termodinámico) | `./.events/telemetry/` |
+| `orchestration` | Comunicación entre ED | CLI (éxito) o auditores | `./.events/orchestration/` |
+| `domain` | Verdad ontológica | Cúmulo, Cerbero, Radamanto | `./.events/domain/` + V3+ `pending/` (coexistencia) |
+
+**Regla de oro:** prohibido mezclar telemetría cruda con orquestación u ontología en la misma ruta de consumo.
+
+**Auditoría Argos:** Clase sin `event_family` válido o con discordancia carpeta/cabecera → incumplimiento contractual.
+
+**Instancia ECST:** el envelope JSON no incluye `event_family` en v1.1.0; la familia se infiere de la Clase al enrutar (Fase 3).
+
+## 7. Índice y trazabilidad
+
+- **`events/index.md`:** índice de familias; catálogo ECST en `events/{family}/index.md` (columna **Capabilities** obligatoria).
+- Toda forja de Clase debe sincronizar el Códice de la familia vía `event-creator`.
 - Mutaciones de Clase emiten `Domain_Entity_*` vía `emit-domain-mutation` cuando el flujo pase por `entity-manager`.
 
-## 7. Límites
+## 8. Límites
 
 - Las Clases **no** enrutan el bus ni anclan DLT directamente.
 - Los emisores (`emit-pr-merged-event`, `emit-domain-mutation`, …) **no** sustituyen la definición de Clase; deben conformarse a ella.

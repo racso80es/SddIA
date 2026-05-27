@@ -6,7 +6,7 @@ Este directorio **no** es cola del bus EDA. Almacena overrides locales de suscri
 
 | Plano | Ruta SSOT | Naturaleza |
 |-------|-----------|------------|
-| **Clase (genoma)** | `SddIA/events/{name}.md` | Contrato ECST versionado en Git |
+| **Clase (genoma)** | `SddIA/events/{telemetry,orchestration,domain}/{name}.md` | Contrato ECST versionado en Git (Trinidad de Estímulos) |
 | **Instancia (runtime)** | `.events/{pending,processing,processed,dead-letter}/` + `{estado}/subscribers/` (testigos) | JSON volátil del bus V3+ |
 | **Personalización (Vía C)** | `.SddIA/events/` | Overrides locales no versionados |
 
@@ -53,7 +53,8 @@ Redirige rutas del bus en entornos de desarrollo sin mutar el genoma:
 
 ## Referencias
 
-- `SddIA/events/events-contract.md` — contrato ECST y aseguramiento forense
+- `SddIA/events/events-contract.md` — contrato ECST v1.1.0 (`event_family`) y aseguramiento forense
+- `SddIA/events/index.md` — índice de familias; catálogo por `events/{family}/index.md`
 - `SddIA/core/cumulo.paths.json` — `event_bus`, `eda_bus`, `eda_instance.customization`
 - `SddIA/process/route-domain-event.md` — validación instancia ↔ Clase (gate ECST) y fan-out
 - `SddIA/scripts/daemons/event-sweeper.py` — recolector post-consenso

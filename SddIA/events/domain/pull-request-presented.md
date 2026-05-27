@@ -2,7 +2,8 @@
 uuid: "5e488ae6-7cb2-4a2c-9725-4a7d4ce239ea"
 name: "pull-request-presented"
 version: "1.2.0"
-contract: "events-contract v1.0.0"
+contract: "events-contract v1.1.0"
+event_family: "domain"
 event_type: "PullRequest_Presented"
 context: "ecosystem-evolution"
 capabilities:

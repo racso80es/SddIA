@@ -586,7 +586,7 @@ def _run_materialize_fracture_pbi(
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     related_lines = [
         "  - SddIA/norms/obediencia-procesos.md",
-        "  - SddIA/events/system-fracture-detected.md",
+        "  - SddIA/events/domain/system-fracture-detected.md",
     ]
     if isinstance(persist_ref, str) and persist_ref.strip():
         related_lines.append(f"  - {persist_ref.strip()}")

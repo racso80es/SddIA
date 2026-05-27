@@ -112,4 +112,4 @@ Tras merge de `feat/telemetria-reactiva-eda-fase1` con `validacion.md` APTO:
 
 ## Estado de este entregable
 
-**Planificación completada** (2026-05-27). Ejecución Tekton, `implementation.md`, `execution.md` y rama Git quedan para el siguiente ciclo operativo.
+**Ejecución completada** (2026-05-27). Pendiente: push + `delivery-close-cycle` (PR).

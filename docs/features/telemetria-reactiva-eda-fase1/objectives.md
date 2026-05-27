@@ -8,7 +8,7 @@ master_pbi_ref: docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unifi
 master_pbi_id: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 phase: 1
 pbi_archived_at_close: false
-status: planificacion
+status: validacion_apto
 depends_on:
   - docs/features/telemetria-reactiva-eda-fase0
 gate_ref: docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md
@@ -89,8 +89,9 @@ El PBI unificado permanece en `docs/todos/pending/` como plan de ruta. Esta feat
 
 | Fase proceso | Estado |
 |--------------|--------|
-| Inicialización (`workspace-init` / rama) | Pendiente operador |
+| Inicialización (`workspace-init` / rama) | ✅ `feat/telemetria-reactiva-eda-fase1` |
 | Estabilización (Mayeuta) | ✅ `objectives.md` + `clarify.md` |
 | Diseño (Dedalo) | ✅ `spec.md` + `plan.md` |
-| Ejecución (Tekton) | ⏸ Detenido — alcance usuario: solo planificación |
-| Verificación / cierre | Pendiente |
+| Ejecución (Tekton) | ✅ `implementation.md` + `execution.md` |
+| Verificación (Argos) | ✅ `validacion.md` APTO |
+| Cierre entrega (PR) | Pendiente `delivery-close-cycle` |
