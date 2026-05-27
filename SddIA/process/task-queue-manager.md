@@ -2,7 +2,8 @@
 uuid: 608ae470-4db2-4ae6-8bb8-7aa5949c208a
 name: task-queue-manager
 version: 1.0.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 aliases:
 - automatic_task
 context:
@@ -41,7 +42,7 @@ porcentaje_de_exito: null
 
 # task-queue-manager
 
-Meta-orquestación de **cola de tareas** para el Core SddIA. Expone el alias canónico legacy **`automatic_task`** (`process-contract v1.3.0`) hacia el mismo archivo físico.
+Meta-orquestación de **cola de tareas** para el Core SddIA. Expone el alias canónico legacy **`automatic_task`** (`process-contract v1.4.0`) hacia el mismo archivo físico.
 
 ## Identidad
 

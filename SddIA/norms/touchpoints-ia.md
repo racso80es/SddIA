@@ -27,7 +27,7 @@ Acción que orquesta la revisión y actualización: **paths.actionsPath/sddia-di
 ## Principios
 
 1. **Una sola fuente de verdad:** Las normas de comportamiento están en SddIA (y AGENTS.md); los touchpoints las difunden, no las reemplazan.
-2. **Rutas vía Cúmulo:** En reglas y documentación de comportamiento no usar rutas literales; referenciar paths.featurePath, paths.actionsPath, paths.skillCapsules, etc. (SddIA/norms/paths-via-cumulo.md).
+2. **Rutas vía Cúmulo:** En reglas y documentación de comportamiento no usar rutas literales; referenciar `paths.workspacesRoot`, `paths.featurePath`, `paths.actionsPath`, `paths.skillCapsules`, etc. (SddIA/norms/paths-via-cumulo.md). En orquestación multi-agente, operar solo bajo `workspace_path` inyectado por el CLI.
 3. **Revisión al cambiar SddIA:** Si se añade un proceso (p. ej. refactorization), una acción (p. ej. sddia-difusion) o un disparador, actualizar los touchpoints afectados (acción sddia-difusion).
 
 ---

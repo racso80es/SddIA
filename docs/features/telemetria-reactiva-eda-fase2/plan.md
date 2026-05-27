@@ -109,4 +109,4 @@ Tras merge de `feat/telemetria-reactiva-eda-fase2` con `validacion.md` APTO:
 
 ## Estado de este entregable
 
-**Planificación completada** (2026-05-27). **Ejecución (Tekton) detenida** a solicitud — pendiente revisión/aprobación de `objectives.md`, `clarify.md`, `spec.md` y este plan antes de forja.
+**Ejecución completada** (2026-05-27). Pendiente: push + `delivery-close-cycle` (PR).

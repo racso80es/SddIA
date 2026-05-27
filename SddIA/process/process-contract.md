@@ -1,5 +1,5 @@
 ---
-contract_version: "1.3.0"
+contract_version: "1.4.0"
 entity_type: "process"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -17,7 +17,8 @@ Todo proceso debe poseer un documento de definición `{name}.md` que declare:
 * **`uuid`**: Identificador único universal (v4).
 * **`name`**: Nombre con aporte de contexto sobre la entidad.
 * **`version`**: Control de versiones semántico (SemVer).
-* **`contract`**: Versión de contrato implementado (p. ej. `process-contract v1.3.0`).
+* **`contract`**: Versión de contrato implementado (p. ej. `process-contract v1.4.0`).
+* **`workspace_template`**: Plantilla relativa de territorio operativo impermanente (v1.4.0+). Placeholders: `{process_name}`, `{execution_id}`. Ejemplo: `".SddIA/workspaces/{process_name}/{execution_id}/"`.
 * **`context`**: Listado de política de Seguridad de las que hace uso.
 * **`aliases`** *(opcional, v1.3.0)*: array de strings en **kebab-case**, sin duplicados internos, sin colisión con el `name` canónico del proceso ni con `name` ni `aliases` de otros procesos catalogados bajo `directories.process`. Solo amplía la **resolución de identidad** al invocar un proceso; no altera la semántica de `inputs`, `outputs` ni `phases`.
 
@@ -82,7 +83,21 @@ phase_invocations:
 4. **`on_error`**: solo `abort` en Core v1.2.0+.
 5. **Canonicalización** para hashing: `canonical_json_utf8` usa `json.dumps` con los parámetros declarados en `json_dumps`. Si se usa `from_process_input`, el valor raíz es `process_inputs[nombre]`. Si se usa `from_process_inputs` (array de strings), el ejecutor construye un objeto `{k: process_inputs[k]}` para cada `k` presente, ordena las claves alfabéticamente y serializa ese objeto; encoding de salida **UTF-8 sin BOM**.
 
-## 4. Física del Valor y Evolución (Bloque Latente)
+## 4. Workspace operativo (v1.4.0)
+
+Todo proceso debe declarar **`workspace_template`** en el frontmatter YAML de `{name}.md`.
+
+| Regla | Descripción |
+|-------|-------------|
+| Instanciación | Solo el CLI (`execute-process`) materializa la carpeta antes de la primera fase |
+| Identificador | `execution_id` UUID v4 único por invocación |
+| Ceguera espacial | Agentes obreros mutan artefactos **solo** bajo `workspace_path` inyectado |
+| `persist_ref` | Ortogonal: documentación de tarea bajo `paths.featurePath` / `paths.fixPath`; no sustituye al workspace |
+| SSOT | Raíz base `paths.workspacesRoot` en `cumulo.paths.json` |
+
+Prohibido omitir `workspace_template` tras adoptar `process-contract v1.4.0`.
+
+## 5. Física del Valor y Evolución (Bloque Latente)
 Métricas operativas para el ciclo de vida del flujo:
 * `minteo_maximo`: Límite de ejecuciones de este proceso en la red.
 * `porcentaje_de_exito`: Variable que audita si las iteraciones del proceso alcanzan el cierre sin colapso entrópico.

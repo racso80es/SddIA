@@ -2,7 +2,8 @@
 uuid: "c4355159-b6ea-4201-973a-a08db5ce8156"
 name: "tool-creator"
 version: "1.1.0"
-contract: "process-contract v1.3.0"
+contract: "process-contract v1.4.0"
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
 hash_signature: sha256:d93db300fd0598a158703f762b6c697f538a4c927c291c00c3caec8246f14ffb
 inputs:

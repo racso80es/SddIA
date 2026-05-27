@@ -2,7 +2,8 @@
 uuid: d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f
 name: action-creator
 version: 1.0.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: ecosystem-evolution
 hash_signature: sha256:b73c4b13849716087b4033ab1b49d4e43c27f79c4fbc51d0894a686217ca3c7f
 inputs:

@@ -520,20 +520,24 @@ _BRANCH_NUMERIC_SUFFIX_RE = re.compile(r"^(?P<base>.+)-\d{10,}$")
 
 def infer_persist_ref_from_branch(repo: Path, branch: str) -> str | None:
     """Resuelve persist_ref existente; ignora sufijo numérico tipo Jules en la rama."""
+    from workspace_utils import resolve_documentation_features_path, resolve_documentation_fixes_path
+
+    features_prefix = resolve_documentation_features_path(repo)
+    fixes_prefix = resolve_documentation_fixes_path(repo)
     b = branch.strip()
     candidates: list[str] = []
     if b.startswith("feat/"):
         slug = b[5:]
-        candidates.append(f"docs/features/{slug}")
+        candidates.append(f"{features_prefix}/{slug}")
         m = _BRANCH_NUMERIC_SUFFIX_RE.match(slug)
         if m:
-            candidates.append(f"docs/features/{m.group('base')}")
+            candidates.append(f"{features_prefix}/{m.group('base')}")
     elif b.startswith("fix/"):
         slug = b[4:]
-        candidates.append(f"docs/fixes/{slug}")
+        candidates.append(f"{fixes_prefix}/{slug}")
         m = _BRANCH_NUMERIC_SUFFIX_RE.match(slug)
         if m:
-            candidates.append(f"docs/fixes/{m.group('base')}")
+            candidates.append(f"{fixes_prefix}/{m.group('base')}")
     seen: set[str] = set()
     for ref in candidates:
         if ref in seen:
