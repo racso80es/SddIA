@@ -5,6 +5,7 @@ process: feature
 branch: feat/telemetria-reactiva-eda-fase1
 global: APTO
 pbi_archived: false
+pr_url: https://github.com/racso80es/SddIA/pull/52
 checks:
   AC1.1: pass
   AC1.2: pass
