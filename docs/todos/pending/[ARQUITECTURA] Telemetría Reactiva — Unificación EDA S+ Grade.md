@@ -2,19 +2,20 @@
 document_id: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 title: "[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade"
 format: markdown
-version: "1.4.0"
+version: "1.5.0"
 created: "2026-05-26"
 refined: "2026-05-27"
 status: en_ejecucion
 priority: arquitectura-core
-active_phase: 4
-active_feature: docs/features/telemetria-reactiva-eda-fase4
+active_phase: 5
+active_feature: docs/features/telemetria-reactiva-eda-fase5
 impact_analysis: docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md
 phase_features:
   "0": docs/features/telemetria-reactiva-eda-fase0
   "1": docs/features/telemetria-reactiva-eda-fase1
   "2": docs/features/telemetria-reactiva-eda-fase2
   "3": docs/features/telemetria-reactiva-eda-fase3
+  "4": docs/features/telemetria-reactiva-eda-fase4
 consolidates:
   - docs/todos/tmp/Telemetría Reactiva SddIA_V2.md
   - docs/todos/tmp/Refactor_Familias_Eventos.md
@@ -29,19 +30,20 @@ consolidates:
 |-------|-------|
 | **ID** | `PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO` |
 | **Fecha creación** | 2026-05-26 |
-| **Estatus** | En ejecución — Fase 3 cerrada; Fase 4 pendiente (`telemetria-reactiva-eda-fase4`) |
-| **Versión PBI** | 1.4.0 (cierre Fase 3 + refinamiento D3.13 Protocolo de Acero — 2026-05-27) |
+| **Estatus** | En ejecución — Fase 4 cerrada; Fase 5 pendiente (`telemetria-reactiva-eda-fase5`) |
+| **Versión PBI** | 1.5.0 (cierre Fase 4 Radamanto + Self-Healing — 2026-05-27) |
 | **Feature Fase 0** | [`docs/features/telemetria-reactiva-eda-fase0/`](../../features/telemetria-reactiva-eda-fase0/) (gate cerrado) |
 | **Feature Fase 1** | [`docs/features/telemetria-reactiva-eda-fase1/`](../../features/telemetria-reactiva-eda-fase1/) (cerrada) |
 | **Feature Fase 2** | [`docs/features/telemetria-reactiva-eda-fase2/`](../../features/telemetria-reactiva-eda-fase2/) (cerrada) |
 | **Feature Fase 3** | [`docs/features/telemetria-reactiva-eda-fase3/`](../../features/telemetria-reactiva-eda-fase3/) (cerrada) |
+| **Feature Fase 4** | [`docs/features/telemetria-reactiva-eda-fase4/`](../../features/telemetria-reactiva-eda-fase4/) (cerrada) |
 | **Análisis de impacto** | [`impact-analysis.md`](../../features/telemetria-reactiva-eda-fase0/impact-analysis.md) |
 | **Prioridad** | Alta — bloqueante para la Física del Valor y la industrialización del ecosistema |
 | **Alcance** | Análisis de impacto transversal, genoma de eventos, workspaces dinámicos, Aduana Universal (CLI), Radamanto, cumplimiento termodinámico, documentación pública (`README.md`) |
 
 > **Nota de consolidación:** Este documento unifica cinco PBI interrelacionados. Los originales están archivados en `docs/todos/tmp/` con aviso de superseded; no ejecutar como ítems independientes. Toda ejecución debe seguir las fases numeradas de este documento.
 
-> **Gestión multi-feature:** Cada fase (0–6) se ejecuta en un **proceso `feature` independiente** con su propia rama y `persist_ref`. Este PBI permanece en `pending/` como plan de ruta hasta el Done global (§ Definition of Done). Fases 0–3 cerradas; **Fase 4 pendiente:** `telemetria-reactiva-eda-fase4` (convención).
+> **Gestión multi-feature:** Cada fase (0–6) se ejecuta en un **proceso `feature` independiente** con su propia rama y `persist_ref`. Este PBI permanece en `pending/` como plan de ruta hasta el Done global (§ Definition of Done). Fases 0–4 cerradas; **Fase 5 pendiente:** `telemetria-reactiva-eda-fase5` (convención).
 
 ### Estado de ejecución por fase
 
@@ -53,7 +55,7 @@ Evidencia operativa en `validacion.md` de cada feature; este PBI no archiva el �
 | **1** | ✅ Cerrada | [`telemetria-reactiva-eda-fase1`](../../features/telemetria-reactiva-eda-fase1/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase1/validacion.md) APTO (AC1.1–AC1.4) | [#52](https://github.com/racso80es/SddIA/pull/52) mergeado |
 | **2** | ✅ Cerrada | [`telemetria-reactiva-eda-fase2`](../../features/telemetria-reactiva-eda-fase2/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase2/validacion.md) APTO (AC2.1–AC2.3) | [#53](https://github.com/racso80es/SddIA/pull/53) mergeado |
 | **3** | ✅ Cerrada | [`telemetria-reactiva-eda-fase3`](../../features/telemetria-reactiva-eda-fase3/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase3/validacion.md) APTO (AC3.1–AC3.4, D3.13) | [#54](https://github.com/racso80es/SddIA/pull/54) |
-| **4** | ⏳ Pendiente | `telemetria-reactiva-eda-fase4` (convención) | — | — |
+| **4** | ✅ Cerrada | [`telemetria-reactiva-eda-fase4`](../../features/telemetria-reactiva-eda-fase4/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase4/validacion.md) APTO (AC4.1–AC4.6, T4.3–T4.4) | [#55](https://github.com/racso80es/SddIA/pull/55) |
 | **5** | ⏳ Pendiente | `telemetria-reactiva-eda-fase5` (convención) | — | — |
 | **6** | ⏳ Pendiente | `telemetria-reactiva-eda-fase6` (convención) | — | — |
 
@@ -589,7 +591,7 @@ Evitar deriva entre el genoma/runtime implementado y la primera impresión que r
 | **1** | Familias de eventos | ✅ Cerrada | Genoma fractal + `event_family` + `create-event` | Fundacional |
 | **2** | Workspaces dinámicos | ✅ Cerrada | `workspace_template` + inyección contexto + purga paths | Fundacional |
 | **3** | Aduana Universal | ✅ Cerrada | Peaje CLI + bus fractal + enrutadores + D3.13 fail-soft | Core |
-| **4** | Radamanto | ⏳ Pendiente | Agente + Self-Healing + sandbox + eventos dominio nuevos | Alto |
+| **4** | Radamanto | ✅ Cerrada | Agente + Self-Healing + sandbox + eventos dominio | Alto |
 | **5** | Tokens / cumplimiento | ⏳ Pendiente | Recibos opcionales + `Telemetry_Compliance_Breached` | Evolutivo |
 | **6** | Actualización `README.md` | ⏳ Pendiente | Documentación pública alineada al ecosistema implementado | Cierre |
 

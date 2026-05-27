@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "success_rate_min": 0.85,
+  "batch_min_events": 10,
+  "latency_ms_p95_threshold": 30000,
+  "redemption_success_count": 3,
+  "max_recovery_attempts": 3,
+  "abrupt_drop_min_samples": 3
+}

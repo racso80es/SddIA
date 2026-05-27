@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "agent": "radamanto",
+  "measurement_prohibited": true,
+  "dlt_exclusive_events": [
+    "Tool_Degraded",
+    "Status_Restored",
+    "Tool_Deprecated"
+  ],
+  "rules": {
+    "R4.1": "success_rate < success_rate_min → Tool_Degraded",
+    "R4.2": "avg_duration_ms > latency_ms_p95_threshold (≥5 samples) → Tool_Degraded",
+    "R4.3": "pending_redemption + structure_valid + consecutive_success_count >= redemption_success_count → Status_Restored (solo Radamanto)",
+    "R4.4": "recovery_attempts >= max_recovery_attempts → Tool_Deprecated"
+  },
+  "transitions": {
+    "healthy": ["degraded"],
+    "degraded": ["pending_redemption", "deprecated"],
+    "pending_redemption": ["healthy", "deprecated"],
+    "deprecated": []
+  },
+  "redemption_emitter": "radamanto-batch-only",
+  "argos_may_not_emit": ["Status_Restored", "Tool_Degraded", "Tool_Deprecated"]
+}

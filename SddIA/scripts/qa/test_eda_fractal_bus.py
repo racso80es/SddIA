@@ -27,7 +27,7 @@ def _fake_repo() -> Path:
     process_dir = root / "SddIA" / "process"
     process_dir.mkdir(parents=True)
     for name in (
-        "telemetry-batch-stub.md",
+        "radamanto-batch.md",
         "route-telemetry.md",
         "workspace-smoke.md",
     ):
@@ -53,9 +53,22 @@ def _fake_repo() -> Path:
             "domain_subscriptions": "SddIA/core/event-domain-subscriptions.json",
         },
         "paths": {"workspacesRoot": ".SddIA/workspaces/"},
+        "radamanto": {
+            "stats": ".SddIA/radamanto/stats.json",
+            "consumed": ".SddIA/radamanto/consumed.json",
+            "thresholds": "SddIA/agents/radamanto.thresholds.json",
+            "sandbox_root": ".SddIA/sandbox/",
+            "revoked_entities": ".SddIA/cerbero/revoked_entities.json",
+        },
     }
     (core / "cumulo.paths.json").write_text(json.dumps(cumulo), encoding="utf-8")
     repo_root = Path(__file__).resolve().parents[2]
+    agents = root / "SddIA" / "agents"
+    agents.mkdir(parents=True)
+    (agents / "radamanto.thresholds.json").write_text(
+        json.dumps({"batch_min_events": 10, "redemption_success_count": 3}),
+        encoding="utf-8",
+    )
     for fname in (
         "event-telemetry-subscriptions.json",
         "event-orchestration-subscriptions.json",
@@ -108,7 +121,7 @@ class TestEdaFractalBus(unittest.TestCase):
         orch_files = list(orch_dir.glob("*.json"))
         self.assertEqual(len(orch_files), 1)
 
-    def test_telemetry_route_and_stub_purge(self) -> None:
+    def test_telemetry_route_and_radamanto_purge(self) -> None:
         repo = _fake_repo()
         os.environ["SDDIA_LAB_ROUTE_SYNC"] = "1"
         try:

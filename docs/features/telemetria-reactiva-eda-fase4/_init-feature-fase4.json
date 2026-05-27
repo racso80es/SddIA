@@ -1,0 +1,13 @@
+{
+  "feature_name": "telemetria-reactiva-eda-fase4",
+  "branch_name": "feat/telemetria-reactiva-eda-fase4",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase4",
+  "base_branch": "main",
+  "refined_requirements": "Fase 4 S+ Grade — Agente Radamanto + bucle Self-Healing. Handoff DLT dual §4.0 (Cúmulo PR/ECST intacto; Radamanto Tool_*). Sustituir telemetry-batch-stub; umbrales deterministas; sandbox fix-tool-process. Cierre Self-Healing: Argos valida estructura del fix; SOLO Radamanto sella Status_Restored tras consolidar telemetría CLI (deuda métrica en cero, R4.3). Directriz Tekton: apertura vía _init-feature-fase4.json. Gate Fase 3 APTO.",
+  "tekton_control_directive": {
+    "approve_opening": "_init-feature-fase4.json",
+    "self_healing_closure": "argos_structure_valid_only; radamanto_status_restored_after_metric_zero"
+  },
+  "master_pbi_ref": "docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md",
+  "depends_on_feature": "docs/features/telemetria-reactiva-eda-fase3"
+}
