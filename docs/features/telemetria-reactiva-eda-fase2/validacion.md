@@ -5,6 +5,7 @@ process: feature
 branch: feat/telemetria-reactiva-eda-fase2
 global: APTO
 pbi_archived: false
+pr_url: https://github.com/racso80es/SddIA/pull/53
 checks:
   AC2.1: pass
   AC2.2: pass
@@ -52,4 +53,4 @@ git_changes:
 
 - PBI maestro permanece en `pending/` (`pbi_archived: false`).
 - Emisión ECST con `workspace_path` en envelope → Fase 3 (deuda explícita D2.7).
-- Pendiente: push + `delivery-close-cycle` (PR).
+- Pendiente: merge PR #53.
