@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "branch_name": "feat/telemetria-reactiva-eda-fase4",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase4",
+  "pr_title": "feat(telemetria-eda): Fase 4 Radamanto — Self-Healing y ventana dual DLT",
+  "pr_body": "## Summary\n- Agente Radamanto + radamanto-batch (sustituye telemetry-batch-stub)\n- Eventos dominio Tool_Degraded / Status_Restored / Tool_Deprecated\n- Bucle Self-Healing: Cerbero RBAC + fix-tool-process sandbox + Argos structure_valid\n- Redención exclusiva Radamanto (T4.3–T4.4); acta handoff DLT §4.0\n- SSOT cumulo.paths v1.3.0 + umbrales configurables\n\n## Test plan\n- [x] test_radamanto_self_healing (4/4)\n- [x] test_radamanto_dlt_tool_status (1/1)\n- [x] test_eda_fractal_bus (6/6)\n- [x] test_eda_bus_v3plus (14/14)\n\nPBI maestro permanece en pending (pbi_archived: false). Fase 5 siguiente.",
+  "target_branch": "main"
+}

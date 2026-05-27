@@ -13,6 +13,18 @@ phases:
 
 # Plan — Fase 4 · Radamanto + bucle Self-Healing
 
+> **Grado S+:** fase más densa del programa. La transición dual §4.0 está acotada para blindar CI (Cúmulo PR/ECST) sin frenar autonomía actuarial de Radamanto.
+
+## Directriz de Control Tekton (obligatoria)
+
+| # | Directriz | Verificación |
+|---|-----------|--------------|
+| **T4.1** | Aprobar apertura con `_init-feature-fase4.json` como SSOT de inputs del proceso `feature` | Gate Fase 3 + rama `feat/telemetria-reactiva-eda-fase4` |
+| **T4.2** | §4.0 acta DLT antes de sellado Radamanto en lab | `dlt-handoff-acta.md` presente |
+| **T4.3** | Argos valida **estructura** del fix; **no** emite `Status_Restored` ni sella DLT | Test: Argos solo escribe `argos_gate.json` |
+| **T4.4** | Redención: **solo Radamanto-batch** tras consolidar telemetría CLI (R4.3, deuda métrica en cero) | Test Self-Healing end-to-end |
+| **T4.5** | Cerbero rehabilita **solo** reactivo a `Status_Restored` dominio (D4.14) | Assert: sin evento Radamanto → RBAC sigue revocado |
+
 ## Secuencia de implementación
 
 | Paso | Actividad | Touchpoints principales | Salida / gate |
@@ -94,12 +106,14 @@ flowchart LR
 
 - [ ] Materialización `.SddIA/sandbox/{entity_id}/{attempt}/`
 - [ ] Handler rechaza writes fuera sandbox cuando `SDDIA_SANDBOX_STRICT=1`
-- [ ] Fase Argos en `fix-tool-process` documentada
+- [ ] Fase Argos: output `structure_valid` en `argos_gate.json` — **sin** emisión dominio
+- [ ] Estado `pending_redemption` en stats tras Argos OK; redención reservada a batch
 - [ ] Test `test_sandbox_blocks_production_write`
+- [ ] Test `test_argos_does_not_emit_status_restored`
 
 ### 4.F — Tests y cierre stub
 
-- [ ] `test_radamanto_self_healing.py`: degradación → revocación → fix → redención
+- [ ] `test_radamanto_self_healing.py`: degradación → revocación → fix → Argos `structure_valid` → telemetría × N → **Radamanto** `Status_Restored`
 - [ ] `test_radamanto_max_recovery_deprecated.py`: AC4.6 muerte definitiva
 - [ ] `test_radamanto_dlt_tool_status.py` con flag lab
 - [ ] Actualizar `test_eda_fractal_bus.py` (radamanto-batch)
@@ -126,7 +140,8 @@ flowchart LR
 | Scope creep Fase 5 tokens | Excluir `telemetry_receipt` explícito en spec §13 |
 | Cerbero runtime incompleto IDE | Handler lab `cerbero-governance-react` + check revoked en CLI |
 | Agregación sin `capsule_id` | Fallback `process_name`; documentar Kaizen enriquecimiento CLI |
-| Duplicación DLT en fan-out | Un solo witness Radamanto por evento Tool_* |
+| Argos dispara redención prematura | D4.13: Argos solo `structure_valid`; R4.3 + batch Radamanto único emisor `Status_Restored` |
+| Cerbero rehabilita sin Radamanto | D4.14: rehabilitación solo suscripta a `Status_Restored` dominio |
 
 ## Post-Fase 4
 
@@ -138,4 +153,4 @@ Tras merge de `feat/telemetria-reactiva-eda-fase4` con `validacion.md` APTO:
 
 ## Estado de este entregable
 
-**Planificación completada** (2026-05-27). **Detenido aquí** — pendiente fase Tekton (ejecución) tras revisión del plan.
+**Implementación y validación completadas** (2026-05-27). Tests: 25/25 OK. Pendiente: `delivery-close-cycle` (PR).

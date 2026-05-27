@@ -23,6 +23,8 @@ Estado actual (post Fases 1–3):
 
 Objetivo: materializar Radamanto como actuario determinista, cerrar bucle Self-Healing con sandbox estricto y handoff DLT D0.1 sin romper CI IOTA existente.
 
+> **Grado S+:** diseño más denso del programa; la ventana dual §4.0 blinda CI actual sin limitar autonomía actuarial de Radamanto.
+
 ## 2. Arquitectura objetivo
 
 ```text
@@ -95,6 +97,17 @@ Archivo `dlt-handoff-acta.md` en feature:
 - Mantener tests existentes con witness `cumulo.iota-immutable-publisher`.
 - Añadir `test_radamanto_dlt_tool_status.py` con `SDDIA_LAB_RADAMANTO_DLT=1`.
 - No retirar suscripciones Cúmulo en esta feature.
+- **Principio:** coexistencia paralela — Cúmulo sigue anclando PR/ECST mientras Radamanto opera autonomía sobre `Tool_*`; CI no se detiene.
+
+## 4.3 Directriz de Control Tekton
+
+| # | Directriz | Obligatorio |
+|---|-----------|:-----------:|
+| **T4.1** | Aprobar apertura de la feature Fase 4 con inputs canónicos de `_init-feature-fase4.json` | Sí |
+| **T4.2** | Ejecutar §4.0 (acta DLT) **antes** de cablear sellado Radamanto en producción lab | Sí |
+| **T4.3** | **Prohibido** que Argos o `fix-tool-process` emitan `Status_Restored` o invoquen `iota-immutable-publisher` para redención | Sí |
+| **T4.4** | Redención: Radamanto-batch consolida telemetría CLI; solo emite `Status_Restored` + DLT cuando R4.3 cumple (**deuda métrica en cero**) | Sí |
+| **T4.5** | Argos en sandbox: output `structure_valid` en estado local (`.SddIA/sandbox/.../argos_gate.json`); gate de materia, no actuario | Sí |
 
 ## 5. Proceso `radamanto-batch` — sustituto del stub
 
@@ -113,9 +126,10 @@ Archivo `dlt-handoff-acta.md` en feature:
 2. Idempotencia: skip si `asset_id` ya en `.SddIA/radamanto/consumed.json`.
 3. Actualizar `.SddIA/radamanto/stats.json` por clave `target_entity_id`.
 4. Evaluar reglas R4.1–R4.4 (`radamanto.thresholds.json`).
-5. Si acción requerida:
+5. Si acción requerida (degradación / redención / muerte):
    - Forjar instancia dominio vía `write_fractal_event(..., family="domain")`.
    - Invocar fan-out dominio (Cerbero + fix-tool + DLT Radamanto).
+   - **Redención (R4.3):** requiere `structure_valid: true` previo de Argos **y** telemetría CLI consolidada con deuda métrica en cero; **solo entonces** emitir `Status_Restored`.
 6. Purgar archivo telemetría fuente (mismo comportamiento stub).
 
 ### 5.3 Suscripción telemetría (reemplazo)
@@ -220,12 +234,14 @@ Actualizar `SddIA/events/domain/index.md` y `eda-coverage.json`.
 
 ### 9.1 Fases
 
-| Fase | Delegado | Intent |
-|------|----------|--------|
-| Preparación sandbox | `skill:filesystem-manager` | Materializar `.SddIA/sandbox/{entity_id}/{attempt}/` |
-| Diseño reparación | `agent:dedalo` | Blueprint en sandbox **solo** |
-| Ejecución reparación | `agent:tekton` | Mutación **solo** bajo sandbox |
-| Verificación | `agent:argos` | Gate calidad artefacto reparado |
+| Fase | Delegado | Intent | Emite dominio |
+|------|----------|--------|:-------------:|
+| Preparación sandbox | `skill:filesystem-manager` | Materializar `.SddIA/sandbox/{entity_id}/{attempt}/` | No |
+| Diseño reparación | `agent:dedalo` | Blueprint en sandbox **solo** | No |
+| Ejecución reparación | `agent:tekton` | Mutación **solo** bajo sandbox | No |
+| Verificación estructural | `agent:argos` | Gate materia/contrato del artefacto reparado | **No** — persiste `structure_valid` local |
+
+**Separación de jurisdicciones (D4.13):** la fase Argos **no** cierra el bucle Self-Healing. Tras `structure_valid: true`, el sandbox queda en estado `pending_redemption`; la redención la ejecuta **exclusivamente** `radamanto-batch` al consolidar telemetría CLI (R4.3).
 
 ### 9.2 Restricciones sandbox
 
@@ -250,9 +266,11 @@ Estado por entidad en `stats.json`:
   "entities": {
     "skill:filesystem-manager": {
       "samples": [...],
-      "status": "healthy|degraded|deprecated",
+      "status": "healthy|degraded|pending_redemption|deprecated",
       "recovery_attempts": 0,
-      "degraded_at": null
+      "degraded_at": null,
+      "structure_valid": false,
+      "consecutive_success_count": 0
     }
   }
 }
@@ -261,8 +279,9 @@ Estado por entidad en `stats.json`:
 Transiciones:
 
 - `healthy` + R4.1/R4.2 → `degraded`, incrementar `recovery_attempts`, emitir `Tool_Degraded`.
-- `degraded` + Argos OK + R4.3 → `healthy`, emitir `Status_Restored`.
-- `degraded` + fallo reparación + `recovery_attempts >= max` → `deprecated`, emitir `Tool_Deprecated`.
+- `degraded` → sandbox + Argos `structure_valid: true` → `pending_redemption` (**sin** `Status_Restored`).
+- `pending_redemption` + R4.3 (telemetría CLI consolidada, deuda métrica en cero) → `healthy`, **Radamanto** emite `Status_Restored` + DLT.
+- `degraded` | `pending_redemption` + fallo reparación/telemetría + `recovery_attempts >= max` → `deprecated`, emitir `Tool_Deprecated`.
 
 ## 11. Módulos código
 
@@ -280,7 +299,7 @@ Transiciones:
 | Script | Acción |
 |--------|--------|
 | `test_eda_fractal_bus.py` | Actualizar: stub → radamanto-batch; assert stats |
-| Nuevo `test_radamanto_self_healing.py` | Degradación sintética → revocación → sandbox → redención |
+| Nuevo `test_radamanto_self_healing.py` | Degradación → revocación → sandbox → Argos `structure_valid` → telemetría × N → **solo Radamanto** emite `Status_Restored` |
 | Nuevo `test_radamanto_dlt_tool_status.py` | Witness DLT Radamanto (lab flag) |
 | `test_eda_bus_v3plus.py` | Sin regresión Cúmulo DLT |
 | `run-iota-ci-smoke.py` | Ventana dual documentada |
@@ -300,6 +319,6 @@ Transiciones:
 | AC4.1 | `radamanto.md` + exclusividad DLT documentada y cableada |
 | AC4.2 | Contrato prohíbe medición; batch solo lee telemetría CLI |
 | AC4.3 | `radamanto.thresholds.json` + reglas R4.x en instructions |
-| AC4.4 | Suscripciones dominio Cerbero + fix-tool; test Self-Healing |
+| AC4.4 | Suscripciones dominio Cerbero + fix-tool; test Self-Healing con cierre Radamanto |
 | AC4.5 | Test sandbox: write producción rechazado |
 | AC4.6 | Test `max_recovery_attempts` → `Tool_Deprecated` |

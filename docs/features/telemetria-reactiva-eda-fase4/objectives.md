@@ -8,7 +8,7 @@ master_pbi_ref: docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unifi
 master_pbi_id: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 phase: 4
 pbi_archived_at_close: false
-status: planificacion
+status: validacion_apto
 depends_on:
   - docs/features/telemetria-reactiva-eda-fase1
   - docs/features/telemetria-reactiva-eda-fase2
@@ -17,6 +17,10 @@ gate_ref: docs/features/telemetria-reactiva-eda-fase3/validacion.md
 ---
 
 # Objetivos — Telemetría Reactiva EDA · Fase 4 (Radamanto + Self-Healing)
+
+## Calificación de densidad (Grado S+)
+
+La Fase 4 es el diseño **más denso y complejo hasta la fecha** del programa EDA: cruza actuario estadístico, handoff criptográfico dual, bucle Self-Healing multi-agente y sandbox operativo. La **transición dual criptográfica (§4.0 / D0.1)** está acotada para **blindar la integración continua actual** (witness Cúmulo en PR/ECST) **sin frenar la autonomía de Radamanto** sobre gobernanza de herramientas.
 
 ## Misión
 
@@ -58,6 +62,7 @@ El PBI unificado permanece en `docs/todos/pending/` como plan de ruta. Esta feat
 | **F4-O6** | **Suscripciones EDA** | Cerbero + `fix-tool-process` reaccionan a eventos de estatus; telemetría → Radamanto | AC4.4 |
 | **F4-O7** | **Sandbox estricto reparación** | Dédalo/Tekton sin escritura en `SddIA/tools/`, `SddIA/skills/` durante `fix-tool-process` | AC4.5 |
 | **F4-O8** | **Límite de redención** | `max_recovery_attempts` configurable; lógica `Tool_Deprecated` operativa | AC4.6 |
+| **F4-O9** | **Cierre Self-Healing desacoplado** | Argos valida **estructura** del fix en sandbox; **solo Radamanto** emite `Status_Restored` + sellado DLT tras consolidar métrica en cero (R4.3) | PBI §4 + D4.13 |
 
 ## Modelo de jurisdicción (Panteón)
 
@@ -66,9 +71,18 @@ CLI (Peaje)          →  ./.events/telemetry/  →  Radamanto (batch, solo lect
 Radamanto (DLT)      →  iota-immutable-publisher  (Tool_* / Status_Restored / Tool_Deprecated)
 Radamanto (dominio)  →  ./.events/domain/     →  Cerbero + fix-tool-process
 Cúmulo (DLT legacy)  →  PullRequest_* / Domain_Entity_*  (sin cambio hasta acta)
-Argos                →  pull-request-review + validación post-reparación (materia)
-Cerbero              →  RBAC revocación/rehabilitación ante eventos dominio
+Argos                →  pull-request-review + gate estructural del fix (sandbox); **no** sella redención
+Cerbero              →  RBAC revocación/rehabilitación ante eventos dominio (reactivo a Radamanto)
+Radamanto (cierre)   →  único emisor `Status_Restored` cuando telemetría CLI consolida deuda métrica en cero
 ```
+
+## Directriz de Control Tekton
+
+| Gate | Condición |
+|------|-----------|
+| **Apertura feature** | Aprobada con inputs de `_init-feature-fase4.json` (`feature_name`, `branch_name`, `persist_ref`, `depends_on_feature`, gate Fase 3) |
+| **Secuencia cierre Self-Healing** | **Prohibido** que `fix-tool-process` o Argos emitan `Status_Restored`. Argos → `structure_valid`; Radamanto-batch → consolidación R4.3 → `Status_Restored` + DLT |
+| **Handoff §4.0** | Ventana dual CI obligatoria; no retirar witness Cúmulo en PR/ECST durante Tekton |
 
 ## No objetivos (esta feature)
 
@@ -92,8 +106,8 @@ Cerbero              →  RBAC revocación/rehabilitación ante eventos dominio
 | `clarify.md` | ✅ |
 | `spec.md` | ✅ |
 | `plan.md` | ✅ |
-| `implementation.md` / `execution.md` | Pendiente (Tekton) |
-| `validacion.md` | Pendiente (Argos) |
+| `implementation.md` / `execution.md` | ✅ |
+| `validacion.md` | ✅ APTO; `pbi_archived: false` |
 
 ## Estado del proceso feature
 
@@ -102,6 +116,6 @@ Cerbero              →  RBAC revocación/rehabilitación ante eventos dominio
 | Inicialización (`workspace-init` / rama) | ✅ `feat/telemetria-reactiva-eda-fase4` |
 | Estabilización (Mayeuta) | ✅ `objectives.md` + `clarify.md` |
 | Diseño (Dedalo) | ✅ `spec.md` + `plan.md` |
-| Ejecución (Tekton) | ⏸ Detenido — pendiente aprobación plan |
-| Verificación (Argos) | Pendiente |
-| Cierre entrega (PR) | Pendiente |
+| Ejecución (Tekton) | ✅ `implementation.md` + código |
+| Verificación (Argos) | ✅ `validacion.md` APTO |
+| Cierre entrega (PR) | Pendiente `delivery-close-cycle` |

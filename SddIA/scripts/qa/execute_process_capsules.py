@@ -62,6 +62,9 @@ THERMODYNAMIC_EXEMPT = frozenset(
         "route-orchestration",
         "route-domain",
         "telemetry-batch-stub",
+        "radamanto-batch",
+        "cerbero-governance-react",
+        "fix-tool-process",
     }
 )
 
@@ -2206,6 +2209,36 @@ def run_thermodynamic_toll(
     return result
 
 
+def execute_radamanto_batch_phase(
+    repo: Path,
+    phase_name: str | None,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if phase_name != "Consumo batch Radamanto":
+        return None
+    rel = inputs.get("event_file_path")
+    if not isinstance(rel, str) or not rel.strip():
+        return {"status": "failed", "handler": "radamanto-batch", "error": "event_file_path ausente"}
+    from radamanto_batch_core import process_telemetry_file
+
+    result = process_telemetry_file(repo, rel.strip())
+    if not result.get("ok"):
+        return {
+            "status": "failed",
+            "handler": "radamanto-batch",
+            "error": result.get("error"),
+        }
+    state["radamanto_batch"] = result
+    return {
+        "status": "executed",
+        "handler": "radamanto-batch",
+        "entity_id": result.get("entity_id"),
+        "actions": result.get("actions"),
+        "purged": result.get("purged"),
+    }
+
+
 def execute_telemetry_batch_stub_phase(
     repo: Path,
     phase_name: str | None,
@@ -2239,6 +2272,28 @@ def execute_telemetry_batch_stub_phase(
 def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -> dict[str, Any]:
     load_hierarchical_env(repo)
     canonical, process_def, phases = load_process_def(repo, process_name)
+    if canonical == "radamanto-batch":
+        state = {"handoff": {}, "inputs": process_inputs}
+        phase_reports: list[dict[str, Any]] = []
+        for phase in phases:
+            if not isinstance(phase, dict):
+                continue
+            batch = execute_radamanto_batch_phase(
+                repo, phase.get("name"), process_inputs, state
+            )
+            if batch is not None:
+                phase_reports.append({"phase_name": phase.get("name"), **batch})
+            else:
+                phase_reports.append(
+                    {"phase_name": phase.get("name"), "status": "simulated", "delegates_to": phase.get("delegates_to")}
+                )
+        ok = all(r.get("status") == "executed" for r in phase_reports if r.get("handler") == "radamanto-batch")
+        return {
+            "success": ok,
+            "status_code": 0 if ok else 1,
+            "data": {"process_name": canonical, "radamanto_batch": state.get("radamanto_batch")},
+            "execution_report": {"process_name": canonical, "phases": phase_reports},
+        }
     if canonical == "telemetry-batch-stub":
         state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
         phase_reports: list[dict[str, Any]] = []

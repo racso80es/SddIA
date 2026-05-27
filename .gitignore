@@ -15,6 +15,9 @@ docs/events/
 
 # Workspaces operativos impermanentes (Fase 2 EDA)
 .SddIA/workspaces/
+.SddIA/radamanto/
+.SddIA/sandbox/
+.SddIA/cerbero/revoked_entities.json
 
 # Jerarquía de Bóvedas — secretos locales (no versionar)
 .dev/

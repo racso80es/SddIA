@@ -2,6 +2,8 @@
 uuid: "f1e2d3c4-b5a6-4789-8c0d-1e2f3a4b5c6d"
 name: telemetry-batch-stub
 version: "1.0.0"
+deprecated: true
+superseded_by: radamanto-batch
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:

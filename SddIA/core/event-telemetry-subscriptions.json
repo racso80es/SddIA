@@ -2,8 +2,8 @@
   "Raw_Execution_Finished": [
     {
       "agent": "radamanto",
-      "process": "telemetry-batch-stub",
-      "intent": "Consumo batch stub hasta Fase 4; purga post-lectura."
+      "process": "radamanto-batch",
+      "intent": "Acumulado estadístico batch; umbrales; emisión dominio + DLT."
     }
   ]
 }

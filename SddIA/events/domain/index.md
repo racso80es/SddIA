@@ -14,7 +14,7 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 
 | Campo | Valor |
 |-------|-------|
-| **Emisores autorizados** | Agentes Core: Cúmulo, Cerbero, Radamanto (futuro); acciones `emit-*` indexadas |
+| **Emisores autorizados** | Agentes Core: Cúmulo, Cerbero, **Radamanto** (Self-Healing); acciones `emit-*` indexadas |
 | **Consumidor runtime (Fase 3)** | `./.events/domain/` → `route-domain` + pipeline V3+ `pending/` (coexistencia D0.2) |
 
 ## Catálogo de Clases ECST
@@ -28,8 +28,11 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | `pull-request-merged.md` | `cfb8ce66-784e-4826-8a0a-a20c671e3a60` | pull-request-merged | PullRequest_Merged | 1.0.0 | events-contract v1.1.0 | dlt-auditing | `pull_request_merged` |
 | `system-fracture-detected.md` | `f8e3a1b2-c4d5-4e6f-9a0b-1c2d3e4f5a6b` | system-fracture-detected | System_Fracture_Detected | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `system_fracture_detected` |
 | `kaizen-alert-required.md` | `a9b8c7d6-e5f4-4321-a987-6543210fedcb` | kaizen-alert-required | Kaizen_Alert_Required | 1.0.0 | events-contract v1.1.0 | quality-assurance | `kaizen_alert_required`, `doc_parity_debt` |
+| `tool-degraded.md` | `7a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c5d` | tool-degraded | Tool_Degraded | 1.0.0 | events-contract v1.1.0 | quality-assurance | `tool_degraded`, `self_healing_trigger` |
+| `status-restored.md` | `8b2c3d4e-5f6a-4b7c-9d0e-1f2a3b4c5d6e` | status-restored | Status_Restored | 1.0.0 | events-contract v1.1.0 | quality-assurance | `status_restored`, `self_healing_redemption` |
+| `tool-deprecated.md` | `9c3d4e5f-6a7b-4c8d-0e1f-2a3b4c5d6e7f` | tool-deprecated | Tool_Deprecated | 1.0.0 | events-contract v1.1.0 | quality-assurance | `tool_deprecated`, `self_healing_death` |
 
 ## Integridad
 
-- **Clases:** 7 ECST en `SddIA/events/domain/`.
+- **Clases:** 10 ECST en `SddIA/events/domain/`.
 - **Regla de oro:** no mezclar telemetría cruda ni orquestación táctica en esta familia.

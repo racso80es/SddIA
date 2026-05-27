@@ -35,7 +35,9 @@ purpose: Decisiones Fase 4 y herencia Fases 0–3
 | D4.7 | ¿Proceso reparación? | Forjar **`fix-tool-process`** (proceso dedicado Self-Healing): fases Dédalo diseño + Tekton ejecución en sandbox; suscrito a `Tool_Degraded` |
 | D4.8 | ¿Sandbox físico? | Ruta `.SddIA/sandbox/{entity_id}/{recovery_attempt}/` — **único** destino writable para Dédalo/Tekton durante reparación; prohibido mutar `directories.tools` / `directories.skills` |
 | D4.9 | ¿Cerbero ante degradación? | Nuevo handler **`cerbero-governance-react`** (proceso lab) suscrito a dominio: mantiene lista revocación en `.SddIA/cerbero/revoked_entities.json`; Cerbero runtime consulta lista en gate existente |
-| D4.10 | ¿Redención? | Tras N telemetrías exitosas post-reparación (default **3**) sobre entidad en cuarentena → Radamanto emite `Status_Restored` + sellado DLT |
+| D4.10 | ¿Redención? | **Solo Radamanto** emite `Status_Restored` + sellado DLT cuando el batch consolida telemetría CLI post-fix y la **deuda métrica está en cero** (R4.3: ≥ `redemption_success_count` ejecuciones `exit_code=0` consecutivas). Argos **no** dispara redención |
+| D4.13 | ¿Rol Argos en cierre? | Argos valida **estructura/contrato** del artefacto reparado en sandbox (`structure_valid: true` en estado local). **Prohibido** emitir `Status_Restored`, invocar DLT o rehabilitar RBAC directamente |
+| D4.14 | ¿Cuándo rehabilita Cerbero? | **Exclusivamente** reactivo a evento dominio `Status_Restored` emitido por Radamanto — nunca ante veredicto Argos aislado |
 | D4.11 | ¿Muerte definitiva? | `max_recovery_attempts` default **3** por entidad; superado → `Tool_Deprecated` + revocación permanente Cerbero + sellado DLT obsolescencia |
 | D4.12 | ¿Ventana CI dual? | Actualizar smoke `e1-iota-ci` / `test_eda_bus_v3plus`: witness Cúmulo intacto + nuevo test Radamanto sellado herramienta con flag lab `SDDIA_LAB_RADAMANTO_DLT=1` |
 
@@ -45,7 +47,7 @@ purpose: Decisiones Fase 4 y herencia Fases 0–3
 |-------|-----------|--------|
 | **R4.1 Éxito** | `success_rate < 0.85` en ventana ≥ `batch_min_events` | Emitir `Tool_Degraded` |
 | **R4.2 Latencia** | `avg_duration_ms > latency_ms_p95_threshold` (default 30000) con ≥5 muestras | Emitir `Tool_Degraded` (motivo `latency`) |
-| **R4.3 Redención** | Entidad degradada + ≥ `redemption_success_count` (3) ejecuciones `exit_code=0` consecutivas | Emitir `Status_Restored` |
+| **R4.3 Redención** | Entidad `degraded` + `structure_valid: true` (Argos) + ≥ `redemption_success_count` (3) telemetrías CLI `exit_code=0` consecutivas consolidadas en batch (**deuda métrica en cero**) | **Radamanto** emite `Status_Restored` + DLT |
 | **R4.4 Muerte** | `recovery_attempts >= max_recovery_attempts` tras fallo Argos o telemetría post-fix | Emitir `Tool_Deprecated` |
 
 ## Payload telemetría enriquecido (Kaizen acotado Fase 4)
@@ -59,7 +61,18 @@ purpose: Decisiones Fase 4 y herencia Fases 0–3
 | `capsule_id` | CLI — última cápsula delegada en cadena | Recomendado (fallback agregación) |
 | `workspace_path` | Herencia F2 | Opcional |
 
-## Secuencia Self-Healing (referencia)
+## Transición dual criptográfica (§4.0 — D0.1)
+
+Ventana de coexistencia diseñada para **no frenar CI** ni la autonomía actuarial:
+
+| Jurisdicción | Eventos DLT | Suscriptor post-Fase 4 |
+|--------------|-------------|------------------------|
+| **Cúmulo** (legacy intacto) | `PullRequest_*`, `Domain_Entity_*` | Sin cambio — witness CI actual |
+| **Radamanto** (nuevo) | `Tool_Degraded`, `Status_Restored`, `Tool_Deprecated` | Exclusivo — batch + fan-out dominio |
+
+Tekton **no** retira suscripciones Cúmulo; añade paralelo Radamanto con smoke dual (`SDDIA_LAB_RADAMANTO_DLT=1`).
+
+## Secuencia Self-Healing (referencia — cierre corregido)
 
 ```mermaid
 sequenceDiagram
@@ -77,11 +90,14 @@ sequenceDiagram
     RB->>D: Tool_Degraded
     D->>C: revocar RBAC
     D->>FT: iniciar sandbox
-    FT->>A: artefacto reparado
-    CLI->>RB: telemetría OK × N
+    FT->>A: validar estructura fix (materia)
+    A->>FT: structure_valid (sin evento dominio)
+    Note over RB: Argos NO sella redención
+    CLI->>RB: telemetría OK × N (post-fix)
+    RB->>RB: consolidar métrica — deuda en cero (R4.3)
     RB->>DLT: Status_Restored
     RB->>D: Status_Restored
-    D->>C: rehabilitar
+    D->>C: rehabilitar RBAC
 ```
 
 ## Referencias

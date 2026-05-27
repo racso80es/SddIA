@@ -78,5 +78,46 @@
       "action": "materialize-kaizen-alert-doc",
       "intent": "Materializar cicatriz Kaizen documental en docs/todos/pending/ (único suscriptor legítimo)."
     }
+  ],
+  "Tool_Degraded": [
+    {
+      "agent": "cerbero",
+      "process": "cerbero-governance-react",
+      "intent": "Revocar RBAC entidad degradada."
+    },
+    {
+      "agent": "dedalo",
+      "process": "fix-tool-process",
+      "intent": "Iniciar reparación en sandbox."
+    },
+    {
+      "agent": "radamanto",
+      "tool": "iota-immutable-publisher",
+      "intent": "Sellar degradación en DLT (exclusividad Radamanto)."
+    }
+  ],
+  "Status_Restored": [
+    {
+      "agent": "cerbero",
+      "process": "cerbero-governance-react",
+      "intent": "Rehabilitar RBAC tras redención Radamanto."
+    },
+    {
+      "agent": "radamanto",
+      "tool": "iota-immutable-publisher",
+      "intent": "Sellar redención en DLT (exclusividad Radamanto)."
+    }
+  ],
+  "Tool_Deprecated": [
+    {
+      "agent": "cerbero",
+      "process": "cerbero-governance-react",
+      "intent": "Bloqueo permanente."
+    },
+    {
+      "agent": "radamanto",
+      "tool": "iota-immutable-publisher",
+      "intent": "Sellar obsolescencia en DLT."
+    }
   ]
 }

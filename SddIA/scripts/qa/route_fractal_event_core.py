@@ -23,23 +23,58 @@ def _dispatch_fractal_subscriber(
     repo: Path, subscriber: dict[str, Any], event: dict[str, Any], rel_path: str
 ) -> tuple[str, str, str | None, int]:
     process_name = subscriber.get("process")
-    if isinstance(process_name, str) and process_name.strip() == "telemetry-batch-stub":
-        process_inputs = {
-            "event_file_path": rel_path,
-            "correlation_id": event.get("event_id") or "",
-        }
-        try:
-            from execute_process_capsules import run_process
+    if isinstance(process_name, str):
+        key = process_name.strip()
+        if key == "radamanto-batch":
+            try:
+                from radamanto_batch_core import process_telemetry_file
 
-            envelope = run_process(repo, "telemetry-batch-stub", process_inputs)
-        except Exception as exc:
-            return subscriber_id(subscriber), "failed", str(exc), 1
-        exit_code = int(envelope.get("status_code", 1 if not envelope.get("success") else 0))
-        ok = bool(envelope.get("success")) and exit_code == 0
-        sid = subscriber_id(subscriber)
-        if ok:
-            return sid, "success", None, 0
-        return sid, "failed", envelope.get("error") or "telemetry-batch-stub failed", exit_code
+                result = process_telemetry_file(repo, rel_path)
+            except Exception as exc:
+                return subscriber_id(subscriber), "failed", str(exc), 1
+            sid = subscriber_id(subscriber)
+            if result.get("ok"):
+                return sid, "success", None, 0
+            return sid, "failed", result.get("error") or "radamanto-batch failed", 1
+        if key == "telemetry-batch-stub":
+            process_inputs = {
+                "event_file_path": rel_path,
+                "correlation_id": event.get("event_id") or "",
+            }
+            try:
+                from execute_process_capsules import run_process
+
+                envelope = run_process(repo, "telemetry-batch-stub", process_inputs)
+            except Exception as exc:
+                return subscriber_id(subscriber), "failed", str(exc), 1
+            exit_code = int(envelope.get("status_code", 1 if not envelope.get("success") else 0))
+            ok = bool(envelope.get("success")) and exit_code == 0
+            sid = subscriber_id(subscriber)
+            if ok:
+                return sid, "success", None, 0
+            return sid, "failed", envelope.get("error") or "telemetry-batch-stub failed", exit_code
+        if key == "cerbero-governance-react":
+            try:
+                from cerbero_governance_react_core import react_to_domain_event
+
+                result = react_to_domain_event(repo, event)
+            except Exception as exc:
+                return subscriber_id(subscriber), "failed", str(exc), 1
+            sid = subscriber_id(subscriber)
+            if result.get("ok"):
+                return sid, "success", None, 0
+            return sid, "failed", result.get("error") or "cerbero-governance-react failed", 1
+        if key == "fix-tool-process":
+            try:
+                from fix_tool_process_core import process_fix_tool
+
+                result = process_fix_tool(repo, rel_path)
+            except Exception as exc:
+                return subscriber_id(subscriber), "failed", str(exc), 1
+            sid = subscriber_id(subscriber)
+            if result.get("ok"):
+                return sid, "success", None, 0
+            return sid, "failed", result.get("error") or "fix-tool-process failed", 1
 
     return dispatch_subscriber(repo, subscriber, event)
 

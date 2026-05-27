@@ -1027,3 +1027,42 @@ def build_process_execution_completed_event(
         "payload": payload,
         "delivery_state": {},
     }
+
+
+def load_radamanto_config(repo: Path) -> dict[str, Any]:
+    """SSOT Radamanto: rutas locales + umbrales."""
+    defaults: dict[str, Any] = {
+        "stats": ".SddIA/radamanto/stats.json",
+        "consumed": ".SddIA/radamanto/consumed.json",
+        "thresholds": "SddIA/agents/radamanto.thresholds.json",
+        "sandbox_root": ".SddIA/sandbox/",
+        "revoked_entities": ".SddIA/cerbero/revoked_entities.json",
+    }
+    try:
+        cfg = _load_cumulo(repo)
+        block = cfg.get("radamanto") or {}
+        if isinstance(block, dict):
+            for key, value in block.items():
+                if isinstance(value, str) and value.strip():
+                    defaults[key] = _normalize_rel(value.strip())
+    except (OSError, ValueError):
+        pass
+    thresh_rel = defaults["thresholds"]
+    thresh_path = repo / thresh_rel if not Path(thresh_rel).is_absolute() else Path(thresh_rel)
+    thresholds: dict[str, Any] = {
+        "success_rate_min": 0.85,
+        "batch_min_events": 10,
+        "latency_ms_p95_threshold": 30000,
+        "redemption_success_count": 3,
+        "max_recovery_attempts": 3,
+        "abrupt_drop_min_samples": 3,
+    }
+    if thresh_path.is_file():
+        try:
+            loaded = json.loads(thresh_path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                thresholds.update(loaded)
+        except (OSError, json.JSONDecodeError):
+            pass
+    defaults["thresholds"] = thresholds
+    return defaults
