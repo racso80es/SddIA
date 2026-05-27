@@ -55,7 +55,7 @@ Evidencia operativa en `validacion.md` de cada feature; este PBI no archiva el �
 | **1** | ✅ Cerrada | [`telemetria-reactiva-eda-fase1`](../../features/telemetria-reactiva-eda-fase1/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase1/validacion.md) APTO (AC1.1–AC1.4) | [#52](https://github.com/racso80es/SddIA/pull/52) mergeado |
 | **2** | ✅ Cerrada | [`telemetria-reactiva-eda-fase2`](../../features/telemetria-reactiva-eda-fase2/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase2/validacion.md) APTO (AC2.1–AC2.3) | [#53](https://github.com/racso80es/SddIA/pull/53) mergeado |
 | **3** | ✅ Cerrada | [`telemetria-reactiva-eda-fase3`](../../features/telemetria-reactiva-eda-fase3/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase3/validacion.md) APTO (AC3.1–AC3.4, D3.13) | [#54](https://github.com/racso80es/SddIA/pull/54) |
-| **4** | ✅ Cerrada | [`telemetria-reactiva-eda-fase4`](../../features/telemetria-reactiva-eda-fase4/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase4/validacion.md) APTO (AC4.1–AC4.6, T4.3–T4.4) | PR Fase 4 |
+| **4** | ✅ Cerrada | [`telemetria-reactiva-eda-fase4`](../../features/telemetria-reactiva-eda-fase4/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase4/validacion.md) APTO (AC4.1–AC4.6, T4.3–T4.4) | [#55](https://github.com/racso80es/SddIA/pull/55) |
 | **5** | ⏳ Pendiente | `telemetria-reactiva-eda-fase5` (convención) | — | — |
 | **6** | ⏳ Pendiente | `telemetria-reactiva-eda-fase6` (convención) | — | — |
 
