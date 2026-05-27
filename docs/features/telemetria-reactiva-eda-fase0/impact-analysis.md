@@ -98,15 +98,9 @@ Barrido con `rg` sobre el workspace (ámbito principal `SddIA/`, `SddIA/scripts/
 
 ---
 
-## Refinamiento sugerido al PBI maestro (inline)
+## Refinamiento al PBI maestro
 
-Añadir o explicitar en el PBI unificado:
-
-1. **Fase 1.1** — Migración de tests `test_eda_bus_v3plus.py` y plantilla `eda-instance-events` tras crear subcarpetas.
-2. **Fase 2.B** — Declarar `paths.workspacesRoot` en `cumulo.paths.json` (hoy ausente `featurePath` efectivo en universal).
-3. **Fase 3.C** — Plan de migración de `event-watcher` a multi-bus sin romper `PullRequest_Presented` → `pull-request-review`.
-4. **Fase 4.0** — Acta de handoff DLT Cúmulo → Radamanto + actualización `e1-iota-ci` / `event-subscriptions.json`.
-5. **Fase 3 (nuevo evento)** — Definir esquema `Raw_Execution_Finished` en `create-event` **antes** de cablear CLI (depende Fase 1).
+**Estado:** incorporado en PBI v1.1.0 (2026-05-27) — § Fase 0 «Refinamiento post-barrido», subtareas 1.D, 1.E, 2.D (ampliada), 3.C.1, 4.0.
 
 ---
 
@@ -126,7 +120,7 @@ Añadir o explicitar en el PBI unificado:
 | AC0.2 | ✅ | H01–H13 bloqueantes con decisión D0.x o refinamiento |
 | AC0.3 | ✅ | Matriz `featurePath`/`fixPath` § dedicada |
 | AC0.4 | ✅ | § Jurisdicción DLT + D0.1 |
-| AC0.5 | ⏳ | Requiere revisión Mayeuta / `clarify.md` tras feedback del Vértice |
+| AC0.5 | ✅ | `clarify.md` + PBI v1.1.0 refinado (2026-05-27) |
 
 ---
 

@@ -89,7 +89,8 @@ El PBI unificado permanece en `docs/todos/pending/` como **plan de ruta y contro
 |--------------|--------|
 | Objetivos | ✅ Este documento |
 | Inicialización Git (`workspace-init`) | ✅ 2026-05-27 |
-| Clarificación (Mayeuta) | ⏳ |
+| Clarificación | ✅ `clarify.md` |
+| PBI refinado v1.1.0 | ✅ |
 | Especificación (Dedalo) | ⏳ |
 | Planificación | ⏳ |
 | Análisis / `impact-analysis.md` | ✅ 2026-05-27 |

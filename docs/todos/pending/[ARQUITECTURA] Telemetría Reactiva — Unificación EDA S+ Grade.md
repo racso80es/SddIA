@@ -2,12 +2,14 @@
 document_id: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 title: "[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade"
 format: markdown
-version: "1.0.0"
+version: "1.1.0"
 created: "2026-05-26"
+refined: "2026-05-27"
 status: en_ejecucion
 priority: arquitectura-core
 active_phase: 0
 active_feature: docs/features/telemetria-reactiva-eda-fase0
+impact_analysis: docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md
 consolidates:
   - docs/todos/tmp/Telemetría Reactiva SddIA_V2.md
   - docs/todos/tmp/Refactor_Familias_Eventos.md
@@ -22,8 +24,10 @@ consolidates:
 |-------|-------|
 | **ID** | `PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO` |
 | **Fecha creación** | 2026-05-26 |
-| **Estatus** | En ejecución — Fase 0 activa |
+| **Estatus** | En ejecución — Fase 0 en cierre documental |
+| **Versión PBI** | 1.1.0 (refinamiento post-barrido 2026-05-27) |
 | **Feature Fase 0** | [`docs/features/telemetria-reactiva-eda-fase0/`](../../features/telemetria-reactiva-eda-fase0/) |
+| **Análisis de impacto** | [`impact-analysis.md`](../../features/telemetria-reactiva-eda-fase0/impact-analysis.md) |
 | **Prioridad** | Alta — bloqueante para la Física del Valor y la industrialización del ecosistema |
 | **Alcance** | Análisis de impacto transversal, genoma de eventos, workspaces dinámicos, Aduana Universal (CLI), Radamanto, cumplimiento termodinámico, documentación pública (`README.md`) |
 
@@ -131,7 +135,20 @@ Evitar sorpresas en mitad de la forja: dependencias ocultas, procesos legacy aco
 
 #### 0.D Entregable documental
 
-- Redactar **`impact-analysis.md`** en la carpeta de feature del PR (p. ej. `docs/features/telemetria-reactiva-eda/impact-analysis.md`) con: resumen ejecutivo, tabla de hallazgos, decisiones tomadas y backlog residual explícito.
+- Redactar **`impact-analysis.md`** en la carpeta de feature del PR: [`docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md`](../../features/telemetria-reactiva-eda-fase0/impact-analysis.md) con: resumen ejecutivo, tabla de hallazgos, decisiones tomadas y backlog residual explícito.
+
+### Refinamiento post-barrido (v1.1.0 — 2026-05-27)
+
+Decisiones de diseño incorporadas desde Fase 0 (feature `telemetria-reactiva-eda-fase0`):
+
+| ID | Decisión | Implicación |
+|----|----------|-------------|
+| **D0.1** | Handoff DLT gradual Cúmulo → Radamanto | Fase 4.0: Cúmulo mantiene anclaje PR/ECST hasta acta CI; Radamanto sella gobernanza de herramientas |
+| **D0.2** | Coexistencia V3+ (`eda_bus.pending`) + bus fractal | No big-bang; dominio legacy sigue en pipeline V3+ en paralelo a `./.events/{telemetry,orchestration,domain}/` |
+| **D0.3** | `paths.workspacesRoot` en SSOT universal | Sustituye dependencia efectiva de `featurePath`/`fixPath` no declarados hoy en `cumulo.paths.json` |
+| **D0.4** | `event-watcher` evoluciona a multi-ruta | Sin apagar watcher monolítico hasta validar `PullRequest_Presented` → `pull-request-review` |
+| **D0.5** | Peaje Termodinámico en cápsulas CLI | Cronómetro + emisión solo CLI; extensión `execute_process_capsules` |
+| **D0.6** | PBI maestro permanece en `pending/` | Cierre documental por feature de fase; Done global tras Fases 0–6 |
 
 ### Criterios de aceptación — Fase 0
 
@@ -185,6 +202,16 @@ Establecer la taxonomía normativa sobre la que se construyen telemetría, orque
 - Enrutar el Workspace dinámico a la subcarpeta seleccionada (no a la raíz).
 - El agente lee el `index.md` de destino y deposita el `.schema.json` allí.
 
+#### 1.D Clase `Raw_Execution_Finished` (pre-requisito Fase 3)
+
+- Forjar vía `create-event` la Clase ECST `Raw_Execution_Finished` en `SddIA/events/telemetry/` **antes** de cablear el Peaje Termodinámico en CLI (depende de 1.A–1.C).
+- Payload mínimo: `asset_id`, `exit_code`, `duration_ms`, `process_name`; opcional `telemetry_receipt` (Fase 5).
+
+#### 1.E Regresión genoma y plantillas (post Fase 0)
+
+- Actualizar `SddIA/scripts/qa/test_eda_bus_v3plus.py` tras migración de subcarpetas.
+- Alinear `SddIA/templates/eda-instance-events/README.md` con topología fractal sin romper overrides Vía C.
+
 ### Criterios de aceptación — Fase 1
 
 - **AC1.1:** `SddIA/events/` contiene solo `events-contract.md` y tres subcarpetas; ningún esquema suelto en raíz.
@@ -222,11 +249,12 @@ Habilitar la inyección de contexto espacial que el CLI, los agentes obreros y l
 - Al despertar un agente, el Orquestador inyecta la coordenada absoluta del Workspace en el payload del evento táctico.
 - Tekton, Dédalo, Argos y demás ED mutan artefactos **únicamente** dentro de esa coordenada.
 
-#### 2.D Purga del SSOT de rutas (`SddIA/agents/cumulo.paths.json`)
+#### 2.D Purga del SSOT de rutas (`SddIA/core/cumulo.paths.json`)
 
-- Eliminar referencias estáticas a `features` / `fixes`.
-- Definir raíz universal: `.SddIA/workspaces/`.
+- Declarar en el mapa universal `paths.workspacesRoot: ".SddIA/workspaces/"` (hoy las normas citan `paths.featurePath` / `paths.fixPath` pero el universal no las define — hallazgo H16).
+- Deprecar progresivamente claves estáticas `featurePath` / `fixPath`; migrar scripts QA (`execute_process_capsules`, `eda_bus_utils`, `verify-task-closure`) a resolución Cúmulo + `workspace_template`.
 - Cúmulo indica la ruta base; el proceso aporta la parte parcial relativa.
+- Convivencia temporal: `directories.documentation: docs` + `persist_ref` en features en curso hasta migración completa.
 
 ### Criterios de aceptación — Fase 2
 
@@ -274,6 +302,11 @@ Colapsar `event-subscriptions.json` en tres configuraciones homólogas:
 - `event-domain-subscriptions.json` → `route-domain`
 
 Misma estructura contractual ED event; reutilización del motor de enrutamiento existente.
+
+#### 3.C.1 Migración `event-watcher` (coexistencia V3+)
+
+- Evolucionar `event-watcher.py` a observación multi-ruta (o watchers por familia) sin apagar el flujo `PullRequest_Presented` → `pull-request-review` sobre `eda_bus.pending`.
+- Mantener `route-domain-event` para eventos legacy en `pending/` hasta acta de retirada (decisión D0.2).
 
 #### 3.D Refactor de eventos de dominio existentes
 
@@ -351,6 +384,12 @@ sequenceDiagram
 - Si se supera el límite: emitir `Tool_Deprecated` (o `Tool_Burned`); Cerbero bloquea permanentemente; activo/NFT obsoleto o quemado en DLT.
 
 ### Tareas de forja
+
+#### 4.0 Handoff DLT Cúmulo → Radamanto (decisión D0.1)
+
+- Documentar acta de transición: Cúmulo conserva `iota-immutable-publisher` en `PullRequest_Merged` y `Domain_Entity_*` hasta cierre de feature Fase 4.
+- Radamanto asume sellado de estatus de herramientas (`Tool_Degraded`, `Status_Restored`, `Tool_Deprecated`).
+- Actualizar `event-subscriptions.json` (o split Fase 3.C), smoke `e1-iota-ci` y `route_domain_event_core.py` en ventana dual si aplica.
 
 #### 4.A Contrato del agente
 

@@ -32,11 +32,14 @@ Una invocación del intérprete **sin acotar fases** recorre hasta **Cierre de e
 - Matriz `featurePath`/`fixPath` y jurisdicción DLT (AC0.3, AC0.4)
 - Decisiones D0.1–D0.6 y refinamiento sugerido al PBI maestro
 
+## Refinamiento PBI (2026-05-27)
+
+- PBI maestro actualizado a **v1.1.0** (decisiones D0.1–D0.6, subtareas 1.D/1.E/3.C.1/4.0)
+- `clarify.md` — AC0.5 cerrado
+
 ## Pendiente
 
 | Fase feature | Siguiente paso |
 |--------------|----------------|
-| Clarificación | `clarify.md` — validar D0.x con Mayeuta (AC0.5) |
-| Especificación | `spec.md` — plantilla de hallazgo (opcional si impact-analysis basta) |
-| Validación | `validacion.md` (`pbi_archived: false`) |
-| PBI maestro | Incorporar refinamiento § inline en rama o commit documental |
+| Validación | `validacion.md` (`pbi_archived: false`) + PR |
+| Fase 1 | Nueva feature `telemetria-reactiva-eda-fase1` tras merge Fase 0 |
