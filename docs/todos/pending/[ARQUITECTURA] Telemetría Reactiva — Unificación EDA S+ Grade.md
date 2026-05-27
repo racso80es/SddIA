@@ -7,8 +7,8 @@ created: "2026-05-26"
 refined: "2026-05-27"
 status: en_ejecucion
 priority: arquitectura-core
-active_phase: 0
-active_feature: docs/features/telemetria-reactiva-eda-fase0
+active_phase: 1
+active_feature: docs/features/telemetria-reactiva-eda-fase1
 impact_analysis: docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md
 consolidates:
   - docs/todos/tmp/Telemetría Reactiva SddIA_V2.md
@@ -24,16 +24,17 @@ consolidates:
 |-------|-------|
 | **ID** | `PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO` |
 | **Fecha creación** | 2026-05-26 |
-| **Estatus** | En ejecución — Fase 0 en cierre documental |
+| **Estatus** | En ejecución — Fase 1 en planificación (`telemetria-reactiva-eda-fase1`) |
 | **Versión PBI** | 1.1.0 (refinamiento post-barrido 2026-05-27) |
-| **Feature Fase 0** | [`docs/features/telemetria-reactiva-eda-fase0/`](../../features/telemetria-reactiva-eda-fase0/) |
+| **Feature Fase 0** | [`docs/features/telemetria-reactiva-eda-fase0/`](../../features/telemetria-reactiva-eda-fase0/) (gate cerrado) |
+| **Feature Fase 1** | [`docs/features/telemetria-reactiva-eda-fase1/`](../../features/telemetria-reactiva-eda-fase1/) |
 | **Análisis de impacto** | [`impact-analysis.md`](../../features/telemetria-reactiva-eda-fase0/impact-analysis.md) |
 | **Prioridad** | Alta — bloqueante para la Física del Valor y la industrialización del ecosistema |
 | **Alcance** | Análisis de impacto transversal, genoma de eventos, workspaces dinámicos, Aduana Universal (CLI), Radamanto, cumplimiento termodinámico, documentación pública (`README.md`) |
 
 > **Nota de consolidación:** Este documento unifica cinco PBI interrelacionados. Los originales están archivados en `docs/todos/tmp/` con aviso de superseded; no ejecutar como ítems independientes. Toda ejecución debe seguir las fases numeradas de este documento.
 
-> **Gestión multi-feature:** Cada fase (0–6) se ejecuta en un **proceso `feature` independiente** con su propia rama y `persist_ref`. Este PBI permanece en `pending/` como plan de ruta hasta el Done global (§ Definition of Done). La Fase 0 activa: `docs/features/telemetria-reactiva-eda-fase0/`.
+> **Gestión multi-feature:** Cada fase (0–6) se ejecuta en un **proceso `feature` independiente** con su propia rama y `persist_ref`. Este PBI permanece en `pending/` como plan de ruta hasta el Done global (§ Definition of Done). Fase 0 cerrada (gate); **Fase 1 activa:** `docs/features/telemetria-reactiva-eda-fase1/`.
 
 ---
 
@@ -198,9 +199,11 @@ Establecer la taxonomía normativa sobre la que se construyen telemetría, orque
 
 #### 1.C Proceso `create-event`
 
-- Exigir `event_family` como input innegociable antes de la primera acción.
-- Enrutar el Workspace dinámico a la subcarpeta seleccionada (no a la raíz).
-- El agente lee el `index.md` de destino y deposita el `.schema.json` allí.
+- Añadir input `event_family` con **fallback obligatorio `domain`** si ausente o vacío (retrocompatibilidad absoluta: procesos legacy sin cambio de payload).
+- Telemetría y orquestación futuras inyectan familia explícita (p. ej. `"event_family": "telemetry"` para `Raw_Execution_Finished`).
+- Normalizar `effective_event_family` antes de la primera fase; enrutar Workspace a `{directories.events}/{effective_event_family}/` (no a la raíz).
+- El agente lee el `index.md` de destino y deposita el artefacto Clase allí.
+- **Kaizen (deuda):** `docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md` — refactorizar para exigir input explícito y retirar el default.
 
 #### 1.D Clase `Raw_Execution_Finished` (pre-requisito Fase 3)
 
