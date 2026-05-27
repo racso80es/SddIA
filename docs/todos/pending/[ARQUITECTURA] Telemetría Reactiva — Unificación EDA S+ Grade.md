@@ -2,7 +2,7 @@
 document_id: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 title: "[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-05-26"
 refined: "2026-05-27"
 status: en_ejecucion
@@ -10,6 +10,10 @@ priority: arquitectura-core
 active_phase: 2
 active_feature: docs/features/telemetria-reactiva-eda-fase2
 impact_analysis: docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md
+phase_features:
+  "0": docs/features/telemetria-reactiva-eda-fase0
+  "1": docs/features/telemetria-reactiva-eda-fase1
+  "2": docs/features/telemetria-reactiva-eda-fase2
 consolidates:
   - docs/todos/tmp/Telemetría Reactiva SddIA_V2.md
   - docs/todos/tmp/Refactor_Familias_Eventos.md
@@ -25,7 +29,7 @@ consolidates:
 | **ID** | `PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO` |
 | **Fecha creación** | 2026-05-26 |
 | **Estatus** | En ejecución — Fase 2 en planificación (`telemetria-reactiva-eda-fase2`) |
-| **Versión PBI** | 1.1.0 (refinamiento post-barrido 2026-05-27) |
+| **Versión PBI** | 1.2.0 (seguimiento de fases + refinamiento Fase 2 — 2026-05-27) |
 | **Feature Fase 0** | [`docs/features/telemetria-reactiva-eda-fase0/`](../../features/telemetria-reactiva-eda-fase0/) (gate cerrado) |
 | **Feature Fase 1** | [`docs/features/telemetria-reactiva-eda-fase1/`](../../features/telemetria-reactiva-eda-fase1/) (cerrada) |
 | **Feature Fase 2** | [`docs/features/telemetria-reactiva-eda-fase2/`](../../features/telemetria-reactiva-eda-fase2/) |
@@ -36,6 +40,22 @@ consolidates:
 > **Nota de consolidación:** Este documento unifica cinco PBI interrelacionados. Los originales están archivados en `docs/todos/tmp/` con aviso de superseded; no ejecutar como ítems independientes. Toda ejecución debe seguir las fases numeradas de este documento.
 
 > **Gestión multi-feature:** Cada fase (0–6) se ejecuta en un **proceso `feature` independiente** con su propia rama y `persist_ref`. Este PBI permanece en `pending/` como plan de ruta hasta el Done global (§ Definition of Done). Fases 0–1 cerradas; **Fase 2 activa:** `docs/features/telemetria-reactiva-eda-fase2/`.
+
+### Estado de ejecución por fase
+
+Evidencia operativa en `validacion.md` de cada feature; este PBI no archiva el ítem maestro hasta Done global (D0.6).
+
+| Fase | Estado | Feature (`persist_ref`) | Validación | PR |
+|------|--------|-------------------------|------------|-----|
+| **0** | ✅ Cerrada | [`telemetria-reactiva-eda-fase0`](../../features/telemetria-reactiva-eda-fase0/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase0/validacion.md) APTO (AC0.1–AC0.5) | [#51](https://github.com/racso80es/SddIA/pull/51) mergeado |
+| **1** | ✅ Cerrada | [`telemetria-reactiva-eda-fase1`](../../features/telemetria-reactiva-eda-fase1/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase1/validacion.md) APTO (AC1.1–AC1.4) | [#52](https://github.com/racso80es/SddIA/pull/52) mergeado |
+| **2** | 🔄 Activa (planificación) | [`telemetria-reactiva-eda-fase2`](../../features/telemetria-reactiva-eda-fase2/) | Pendiente Tekton / Argos | — (rama `feat/telemetria-reactiva-eda-fase2`) |
+| **3** | ⏳ Pendiente | `telemetria-reactiva-eda-fase3` (convención) | — | — |
+| **4** | ⏳ Pendiente | `telemetria-reactiva-eda-fase4` (convención) | — | — |
+| **5** | ⏳ Pendiente | `telemetria-reactiva-eda-fase5` (convención) | — | — |
+| **6** | ⏳ Pendiente | `telemetria-reactiva-eda-fase6` (convención) | — | — |
+
+**Entregables cerrados en `main` (Fase 1):** genoma fractal `SddIA/events/{telemetry,orchestration,domain}/`, `events-contract` v1.1.0 con `event_family`, `event-creator` enrutado, Clase `Raw_Execution_Finished` en `telemetry/`.
 
 ---
 
@@ -259,6 +279,25 @@ Habilitar la inyección de contexto espacial que el CLI, los agentes obreros y l
 - Deprecar progresivamente claves estáticas `featurePath` / `fixPath`; migrar scripts QA (`execute_process_capsules`, `eda_bus_utils`, `verify-task-closure`) a resolución Cúmulo + `workspace_template`.
 - Cúmulo indica la ruta base; el proceso aporta la parte parcial relativa.
 - Convivencia temporal: `directories.documentation: docs` + `persist_ref` en features en curso hasta migración completa.
+
+### Refinamiento post-planificación (v1.2.0 — 2026-05-27)
+
+Decisiones de diseño incorporadas desde Fase 2 (feature `telemetria-reactiva-eda-fase2`, planificación Mayeuta/Dedalo):
+
+| ID | Decisión | Implicación |
+|----|----------|-------------|
+| **D2.1** | `process-contract` v1.4.0 | Campo obligatorio `workspace_template` en frontmatter de cada `SddIA/process/{name}.md` |
+| **D2.2** | Placeholders canónicos | `{process_name}`, `{execution_id}` (UUID v4 CLI); resolución OS-agnóstica vía `pathlib`; sin expresiones arbitrarias en v1 |
+| **D2.3** | Ubicación de plantilla | Frontmatter del proceso (no `spec.json` paralelo); ausencia post-bump → bloqueante |
+| **D2.4** | Plantilla por defecto forja | `".SddIA/workspaces/{process_name}/{execution_id}/"` en `feature`, `bug-fix`, `refactorization` |
+| **D2.5** | Convivencia `persist_ref` | Documentación en `docs/features|fixes/...` ortogonal al workspace operativo bajo `.SddIA/workspaces/` |
+| **D2.6** | Deprecación `featurePath`/`fixPath` | Aliases deprecated en SSOT hacia `directories.documentation`; destino operativo = `workspacesRoot` |
+| **D2.7** | Inyección espacial | Campo `workspace_path` en contexto CLI/agente; envelope ECST formal → Fase 3 |
+| **D2.8** | Smoke AC2.1 | Proceso lab mínimo ejecutable sin depender de slug `docs/features/{slug}` |
+| **D2.9** | Purga workspaces | Sin GC automático en Fase 2; TTL/purge → Kaizen futuro |
+| **D2.10** | `.gitignore` | `.SddIA/workspaces/` no versionado |
+
+**Resolución compuesta (normativa):** `workspace_path = resolve(paths.workspacesRoot) + workspace_template.format(process_name, execution_id)`.
 
 ### Criterios de aceptación — Fase 2
 
@@ -535,15 +574,15 @@ Evitar deriva entre el genoma/runtime implementado y la primera impresión que r
 
 ## Resumen ejecutivo — orden de ejecución
 
-| Orden | Fase | Entregable clave | Esfuerzo relativo |
-|-------|------|------------------|-------------------|
-| **0** | Análisis de afectaciones | `impact-analysis.md` + refinamiento Fases 1–6 | Gate previo |
-| **1** | Familias de eventos | Genoma fractal + `event_family` + `create-event` | Fundacional |
-| **2** | Workspaces dinámicos | `workspace_template` + inyección contexto + purga paths | Fundacional |
-| **3** | Aduana Universal | CLI telemetría + 3 rutas runtime + 3 suscripciones + persistencia encapsulada | Core |
-| **4** | Radamanto | Agente + Self-Healing + sandbox + eventos dominio nuevos | Alto |
-| **5** | Tokens / cumplimiento | Recibos opcionales + `Telemetry_Compliance_Breached` | Evolutivo |
-| **6** | Actualización `README.md` | Documentación pública alineada al ecosistema implementado | Cierre |
+| Orden | Fase | Estado | Entregable clave | Esfuerzo relativo |
+|-------|------|--------|------------------|-------------------|
+| **0** | Análisis de afectaciones | ✅ Cerrada | `impact-analysis.md` + refinamiento Fases 1–6 | Gate previo |
+| **1** | Familias de eventos | ✅ Cerrada | Genoma fractal + `event_family` + `create-event` | Fundacional |
+| **2** | Workspaces dinámicos | 🔄 Activa | `workspace_template` + inyección contexto + purga paths | Fundacional |
+| **3** | Aduana Universal | ⏳ Pendiente | CLI telemetría + 3 rutas runtime + 3 suscripciones + persistencia encapsulada | Core |
+| **4** | Radamanto | ⏳ Pendiente | Agente + Self-Healing + sandbox + eventos dominio nuevos | Alto |
+| **5** | Tokens / cumplimiento | ⏳ Pendiente | Recibos opcionales + `Telemetry_Compliance_Breached` | Evolutivo |
+| **6** | Actualización `README.md` | ⏳ Pendiente | Documentación pública alineada al ecosistema implementado | Cierre |
 
 ---
 
