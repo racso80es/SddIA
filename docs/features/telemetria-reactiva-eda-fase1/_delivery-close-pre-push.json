@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "branch_name": "feat/telemetria-reactiva-eda-fase1",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase1",
+  "pr_title": "feat(telemetria-eda): Fase 1 Trinidad de Estimulos — genoma fractal",
+  "pr_body": "## Summary\n- Genoma fractal: SddIA/events/{telemetry,orchestration,domain}/ con Códices index.md\n- events-contract v1.1.0 + event_family obligatorio en Clases\n- event-creator: default domain (D1.9 retrocompat) + Raw_Execution_Finished en telemetry/\n- ecst_validation: rglob genoma fractal\n\n## Test plan\n- [x] unittest test_eda_bus_v3plus (14/14)\n- [x] load_event_class_schemas → 8 ECST\n- [x] eda-coverage --scan orphan_count 0\n\nPBI maestro permanece en pending (pbi_archived: false).",
+  "target_branch": "main"
+}
