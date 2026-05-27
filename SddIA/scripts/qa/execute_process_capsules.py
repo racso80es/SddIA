@@ -10,6 +10,8 @@ import re
 import shutil
 import subprocess
 import sys
+import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -24,7 +26,15 @@ from execute_process_core import (
 )
 
 from execute_process_forges import FORGE_BY_ENTITY_CLASS
-from eda_bus_utils import find_existing_domain_event, infer_persist_ref_from_branch, ensure_event_bus_topology, load_eda_bus
+from eda_bus_utils import (
+    build_process_execution_completed_event,
+    build_raw_execution_finished_event,
+    find_existing_domain_event,
+    infer_persist_ref_from_branch,
+    ensure_event_bus_topology,
+    load_eda_bus,
+    write_fractal_event,
+)
 from ecst_validation import validate_domain_mutation_event
 from workspace_utils import (
     bootstrap_process_workspace,
@@ -44,6 +54,22 @@ EXECUTE_ACTION_CLI = SCRIPT.parent / "execute-action.py"
 AUDIT_EDA_CLI = SCRIPT.parent / "audit-entity-eda-coverage.py"
 AUDIT_DOC_PARITY_CLI = SCRIPT.parent / "audit-doc-parity.py"
 _GH_PR_URL_RE = re.compile(r"https://github\.com/[^\s/]+/[^\s/]+/pull/\d+", re.I)
+
+THERMODYNAMIC_EXEMPT = frozenset(
+    {
+        "route-domain-event",
+        "route-telemetry",
+        "route-orchestration",
+        "route-domain",
+        "telemetry-batch-stub",
+    }
+)
+
+ROUTE_FRACTAL_HANDLERS: dict[str, str] = {
+    "route-telemetry": "route_telemetry_event",
+    "route-orchestration": "route_orchestration_event",
+    "route-domain": "route_domain_fractal_event",
+}
 
 CREATOR_BY_CLASS: dict[str, str] = {
     "skill": "skill-creator",
@@ -2079,9 +2105,162 @@ def execute_phase(
     return entry
 
 
+def _route_handler_result(canonical: str, out: dict[str, Any], handler: str) -> dict[str, Any]:
+    ok = bool(out.get("success")) and out.get("exitCode", 1) == 0
+    return {
+        "success": ok,
+        "status_code": out.get("exitCode", 0 if ok else 1),
+        "data": out.get("data"),
+        "error": out.get("error"),
+        "execution_report": {
+            "process_name": canonical,
+            "phases": [
+                {
+                    "phase_name": f"Orquestación {canonical}",
+                    "status": "executed" if ok else "failed",
+                    "handler": handler,
+                }
+            ],
+        },
+    }
+
+
+def run_thermodynamic_toll(
+    repo: Path,
+    process_name: str,
+    state: dict[str, Any],
+    process_inputs: dict[str, Any],
+    *,
+    exit_code: int,
+    duration_ms: int,
+    success: bool,
+) -> dict[str, Any]:
+    """Peaje Termodinámico: emite telemetría siempre; orquestación solo en éxito (fail-soft)."""
+    asset_id = state.get("asset_id")
+    if not isinstance(asset_id, str) or not asset_id.strip():
+        asset_id = str(uuid.uuid4())
+    execution_id = state.get("execution_id")
+    workspace_path = state.get("workspace_path")
+    if not isinstance(workspace_path, str):
+        ws = state.get("workspace") or {}
+        if isinstance(ws, dict):
+            workspace_path = ws.get("workspace_path")
+    persist_ref = process_inputs.get("persist_ref")
+    result: dict[str, Any] = {"asset_id": asset_id, "duration_ms": duration_ms, "exit_code": exit_code}
+    try:
+        telemetry_id = str(uuid.uuid4())
+        telemetry_event = build_raw_execution_finished_event(
+            event_id=telemetry_id,
+            asset_id=asset_id,
+            exit_code=exit_code,
+            duration_ms=duration_ms,
+            process_name=process_name,
+            execution_id=execution_id if isinstance(execution_id, str) else None,
+            workspace_path=workspace_path if isinstance(workspace_path, str) else None,
+        )
+        telemetry_seal = write_fractal_event(repo, telemetry_event, "telemetry")
+        result["telemetry"] = telemetry_seal
+    except Exception as exc:
+        result["telemetry_error"] = str(exc)
+    if success and isinstance(workspace_path, str) and workspace_path.strip():
+        try:
+            orch_id = str(uuid.uuid4())
+            phase_count = len(state.get("phase_reports") or [])
+            orchestration_event = build_process_execution_completed_event(
+                event_id=orch_id,
+                asset_id=asset_id,
+                process_name=process_name,
+                status="success",
+                workspace_path=workspace_path if isinstance(workspace_path, str) else None,
+                execution_id=execution_id if isinstance(execution_id, str) else None,
+                phase_count=phase_count if phase_count else None,
+                persist_ref=persist_ref if isinstance(persist_ref, str) else None,
+            )
+            orch_seal = write_fractal_event(repo, orchestration_event, "orchestration")
+            result["orchestration"] = orch_seal
+        except Exception as exc:
+            result["orchestration_error"] = str(exc)
+    return result
+
+
+def execute_telemetry_batch_stub_phase(
+    repo: Path,
+    phase_name: str | None,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if phase_name != "Consumo batch stub":
+        return None
+    rel = inputs.get("event_file_path")
+    if not isinstance(rel, str) or not rel.strip():
+        return {"status": "failed", "handler": "telemetry-batch-stub", "error": "event_file_path ausente"}
+    event_path = (repo / rel.strip()).resolve()
+    if not event_path.is_file():
+        return {"status": "failed", "handler": "telemetry-batch-stub", "error": f"no existe: {rel}"}
+    try:
+        body = json.loads(event_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"status": "failed", "handler": "telemetry-batch-stub", "error": str(exc)}
+    event_path.unlink(missing_ok=True)
+    state["telemetry_consumed"] = True
+    state["telemetry_event_id"] = body.get("event_id")
+    return {
+        "status": "executed",
+        "handler": "telemetry-batch-stub",
+        "event_id": body.get("event_id"),
+        "event_type": body.get("event_type"),
+        "purged": True,
+    }
+
+
 def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -> dict[str, Any]:
     load_hierarchical_env(repo)
     canonical, process_def, phases = load_process_def(repo, process_name)
+    if canonical == "telemetry-batch-stub":
+        state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
+        phase_reports: list[dict[str, Any]] = []
+        for phase in phases:
+            if not isinstance(phase, dict):
+                continue
+            stub = execute_telemetry_batch_stub_phase(
+                repo, phase.get("name"), process_inputs, state
+            )
+            if stub is not None:
+                phase_reports.append({"phase_name": phase.get("name"), **stub})
+            else:
+                phase_reports.append(
+                    {"phase_name": phase.get("name"), "status": "simulated", "delegates_to": phase.get("delegates_to")}
+                )
+        ok = all(r.get("status") == "executed" for r in phase_reports if r.get("handler") == "telemetry-batch-stub")
+        return {
+            "success": ok,
+            "status_code": 0 if ok else 1,
+            "data": {"process_name": canonical, "telemetry_consumed": state.get("telemetry_consumed")},
+            "execution_report": {"process_name": canonical, "phases": phase_reports},
+        }
+    if canonical in ROUTE_FRACTAL_HANDLERS:
+        from route_fractal_event_core import (
+            route_domain_fractal_event,
+            route_orchestration_event,
+            route_telemetry_event,
+        )
+
+        rel = process_inputs.get("event_file_path")
+        if not isinstance(rel, str) or not rel.strip():
+            return {
+                "success": False,
+                "status_code": 1,
+                "data": None,
+                "error": "event_file_path requerido",
+                "execution_report": {"process_name": canonical, "phases": []},
+            }
+        dispatch = {
+            "route-telemetry": route_telemetry_event,
+            "route-orchestration": route_orchestration_event,
+            "route-domain": route_domain_fractal_event,
+        }[canonical]
+        out = dispatch(repo, rel.strip())
+        return _route_handler_result(canonical, out, f"{canonical}-core")
     if canonical == "route-domain-event":
         from route_domain_event_core import route_domain_event
 
@@ -2118,6 +2297,10 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
     validate_process_inputs(process_def, process_inputs, canonical)
 
     state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
+    toll_start: float | None = None
+    if canonical not in THERMODYNAMIC_EXEMPT:
+        state["asset_id"] = str(uuid.uuid4())
+        toll_start = time.monotonic()
     try:
         ws_boot = bootstrap_process_workspace(repo, canonical, process_def, process_inputs, state)
         state["workspace_boot"] = ws_boot
@@ -2138,6 +2321,7 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         phase_reports.append(
             execute_phase(repo, phase, process_def, process_inputs, state, pi_index)
         )
+    state["phase_reports"] = phase_reports
 
     data: dict[str, Any] = {"process_name": canonical, "handoff": state.get("handoff")}
     if state.get("workspace_path"):
@@ -2187,10 +2371,28 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         err_msg = "pull-request-review: aduana bloqueó materialización"
     elif state.get("verdict") == "requiere_cambios":
         err_msg = "pull-request-review: requiere cambios antes de merge"
+    blocked_success = not blocked
+    status_code = 1 if blocked else 0
+    duration_ms = 0
+    if toll_start is not None:
+        duration_ms = max(0, int((time.monotonic() - toll_start) * 1000))
+    if canonical not in THERMODYNAMIC_EXEMPT and toll_start is not None:
+        try:
+            data["thermodynamic_toll"] = run_thermodynamic_toll(
+                repo,
+                canonical,
+                state,
+                process_inputs,
+                exit_code=status_code,
+                duration_ms=duration_ms,
+                success=blocked_success,
+            )
+        except Exception as exc:
+            data["thermodynamic_toll_error"] = str(exc)
     return {
-        "success": not blocked,
-        "status_code": 1 if blocked else 0,
+        "success": blocked_success,
+        "status_code": status_code,
         "data": data,
-        "execution_report": {"process_name": canonical, "phases": phase_reports},
         "error": err_msg,
+        "execution_report": {"process_name": canonical, "phases": phase_reports},
     }

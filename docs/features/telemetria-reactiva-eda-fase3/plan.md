@@ -129,4 +129,4 @@ Tras merge de `feat/telemetria-reactiva-eda-fase3` con `validacion.md` APTO:
 
 ## Estado de este entregable
 
-**Planificación completada** (2026-05-27). Pendiente: ejecución Tekton (fases 3.A–3.F).
+**Ejecución completada** (2026-05-27). Pendiente: push + `delivery-close-cycle` (PR).

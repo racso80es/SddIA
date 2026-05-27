@@ -8,7 +8,7 @@ master_pbi_ref: docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unifi
 master_pbi_id: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 phase: 3
 pbi_archived_at_close: false
-status: planificacion
+status: validacion_apto
 depends_on:
   - docs/features/telemetria-reactiva-eda-fase1
   - docs/features/telemetria-reactiva-eda-fase2
@@ -92,8 +92,8 @@ eda_bus.pending/ (V3+)      ↔    coexistencia legacy (D0.2)
 | `clarify.md` | ✅ |
 | `spec.md` | ✅ |
 | `plan.md` | ✅ |
-| `implementation.md` / `execution.md` | Pendiente (Tekton) |
-| `validacion.md` | Pendiente (Argos); `pbi_archived: false` |
+| `implementation.md` / `execution.md` | ✅ |
+| `validacion.md` | ✅ APTO; `pbi_archived: false` |
 
 ## Estado del proceso feature
 
@@ -102,6 +102,6 @@ eda_bus.pending/ (V3+)      ↔    coexistencia legacy (D0.2)
 | Inicialización (`workspace-init` / rama) | ✅ `feat/telemetria-reactiva-eda-fase3` |
 | Estabilización (Mayeuta) | ✅ `objectives.md` + `clarify.md` |
 | Diseño (Dedalo) | ✅ `spec.md` + `plan.md` |
-| Ejecución (Tekton) | ⏸ Detenido — pendiente de arranque |
-| Verificación (Argos) | Pendiente |
+| Ejecución (Tekton) | ✅ `implementation.md` + `execution.md` |
+| Verificación (Argos) | ✅ `validacion.md` APTO |
 | Cierre entrega (PR) | Pendiente `delivery-close-cycle` |

@@ -85,7 +85,7 @@ def _bus_defaults_from_root(event_bus: str) -> dict[str, str]:
         "processed_subscribers": f"{event_bus}/processed/subscribers",
         "dead_letter": f"{event_bus}/dead-letter",
         "dead_letter_subscribers": f"{event_bus}/dead-letter/subscribers",
-        "subscriptions": "SddIA/core/event-subscriptions.json",
+        "subscriptions": "SddIA/core/event-domain-subscriptions.json",
     }
 
 
@@ -907,3 +907,123 @@ def archive_event_after_sweep(
 def archive_processed_witnesses(repo: Path, bus: dict[str, str], event_uuid: str) -> int:
     """Compat legacy: delega en archive_event_after_sweep."""
     return archive_event_after_sweep(repo, bus, event_uuid)["witnesses"]
+
+
+_FRACTAL_FAMILIES = frozenset({"telemetry", "orchestration", "domain"})
+
+
+def load_eda_fractal(repo: Path) -> dict[str, str]:
+    """Rutas runtime fractales (Simetría Fractal genoma ↔ ./.events/{family}/)."""
+    defaults = {
+        "telemetry": "./.events/telemetry",
+        "orchestration": "./.events/orchestration",
+        "domain": "./.events/domain",
+        "telemetry_subscriptions": "SddIA/core/event-telemetry-subscriptions.json",
+        "orchestration_subscriptions": "SddIA/core/event-orchestration-subscriptions.json",
+        "domain_subscriptions": "SddIA/core/event-domain-subscriptions.json",
+    }
+    try:
+        cfg = _load_cumulo(repo)
+        fractal = cfg.get("eda_fractal") or {}
+        if isinstance(fractal, dict):
+            for key, value in fractal.items():
+                if isinstance(value, str) and value.strip():
+                    defaults[key] = _normalize_rel(value.strip())
+    except (OSError, ValueError):
+        pass
+    return defaults
+
+
+def ensure_fractal_bus_topology(repo: Path) -> dict[str, str]:
+    """Crea idempotentemente telemetry/, orchestration/, domain/ bajo .events/."""
+    fractal = load_eda_fractal(repo)
+    for key in ("telemetry", "orchestration", "domain"):
+        (repo / fractal[key]).mkdir(parents=True, exist_ok=True)
+    return fractal
+
+
+def write_fractal_event(repo: Path, event: dict[str, Any], family: str) -> dict[str, str]:
+    """Escribe instancia ECST en la ruta fractal de la familia indicada."""
+    if family not in _FRACTAL_FAMILIES:
+        raise ValueError(f"invalid event family: {family}")
+    fractal = ensure_fractal_bus_topology(repo)
+    event_id = event.get("event_id")
+    if not isinstance(event_id, str) or not event_id.strip():
+        raise ValueError("event_id required")
+    target = repo / fractal[family] / f"{event_id.strip()}.json"
+    _write_json_atomic(target, event)
+    return {
+        "event_id": event_id.strip(),
+        "target_path": str(target.relative_to(repo)).replace("\\", "/"),
+        "family": family,
+    }
+
+
+def _telemetry_timestamp() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def build_raw_execution_finished_event(
+    *,
+    event_id: str,
+    asset_id: str,
+    exit_code: int,
+    duration_ms: int,
+    process_name: str,
+    execution_id: str | None = None,
+    workspace_path: str | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "asset_id": asset_id,
+        "exit_code": int(exit_code),
+        "duration_ms": int(duration_ms),
+        "process_name": process_name,
+    }
+    if execution_id:
+        payload["execution_id"] = execution_id
+    if workspace_path:
+        payload["workspace_path"] = workspace_path
+    return {
+        "event_id": event_id,
+        "event_type": "Raw_Execution_Finished",
+        "event_family": "telemetry",
+        "timestamp": _telemetry_timestamp(),
+        "emitter_agent": "execute-process",
+        "payload": payload,
+        "delivery_state": {},
+    }
+
+
+def build_process_execution_completed_event(
+    *,
+    event_id: str,
+    asset_id: str,
+    process_name: str,
+    status: str,
+    workspace_path: str | None = None,
+    execution_id: str | None = None,
+    phase_count: int | None = None,
+    persist_ref: str | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "asset_id": asset_id,
+        "process_name": process_name,
+        "status": status,
+    }
+    if workspace_path:
+        payload["workspace_path"] = workspace_path
+    if execution_id:
+        payload["execution_id"] = execution_id
+    if phase_count is not None:
+        payload["phase_count"] = int(phase_count)
+    if persist_ref:
+        payload["persist_ref"] = persist_ref
+    return {
+        "event_id": event_id,
+        "event_type": "Process_Execution_Completed",
+        "event_family": "orchestration",
+        "timestamp": _telemetry_timestamp(),
+        "emitter_agent": "execute-process",
+        "payload": payload,
+        "delivery_state": {},
+    }

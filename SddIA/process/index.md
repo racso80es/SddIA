@@ -22,3 +22,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | entity-manager | 62f08bbd-e9ce-479d-8d1b-792684e1bd26 | 1.0.0 | ecosystem-evolution | — | Gestor de Entidad: fachada sobre *-creator (piloto skill + event) con sello universal emit-domain-mutation. |
 | event-creator | b28194d9-62a8-4cbc-9cbd-237e51e44333 | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar Clases de Evento ECST en `SddIA/events/` y mantener el índice del genoma. |
 | route-domain-event | c8e91f2a-4b6d-4e1a-9f03-2d7e5a684b10 | 1.0.0 | event-routing, ecosystem-evolution | — | Orquestador bus EDA V3+: fan-out suscriptores, topología simétrica, testigos y cabeceras por estado. |
+| route-telemetry | b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8 | 1.0.0 | event-routing, ecosystem-evolution | — | Enrutador bus fractal `./.events/telemetry/` → stub Radamanto (Fase 3). |
+| route-orchestration | c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9 | 1.0.0 | event-routing, ecosystem-evolution | — | Enrutador bus fractal `./.events/orchestration/`. |
+| route-domain | d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0 | 1.0.0 | event-routing, ecosystem-evolution | — | Enrutador bus fractal `./.events/domain/` (coexiste con V3+ pending). |
+| telemetry-batch-stub | f1e2d3c4-b5a6-4789-8c0d-1e2f3a4b5c6d | 1.0.0 | event-routing, quality-assurance | — | Stub consumo batch telemetría hasta agente Radamanto (Fase 4). |

@@ -7,12 +7,13 @@ Este directorio **no** es cola del bus EDA. Almacena overrides locales de suscri
 | Plano | Ruta SSOT | Naturaleza |
 |-------|-----------|------------|
 | **Clase (genoma)** | `SddIA/events/{telemetry,orchestration,domain}/{name}.md` | Contrato ECST versionado en Git (Trinidad de Estímulos) |
-| **Instancia (runtime)** | `.events/{pending,processing,processed,dead-letter}/` + `{estado}/subscribers/` (testigos) | JSON volátil del bus V3+ |
+| **Instancia (runtime V3+)** | `.events/{pending,processing,processed,dead-letter}/` + `{estado}/subscribers/` | JSON volátil del bus legacy |
+| **Instancia (runtime fractal)** | `.events/{telemetry,orchestration,domain}/` | JSON volátil por familia (Fase 3+) |
 | **Personalización (Vía C)** | `.SddIA/events/` | Overrides locales no versionados |
 
 ## Overrides de suscripción
 
-Copie `event-subscriptions.local.json` en este directorio para fusionar suscriptores adicionales o desactivar fan-out en laboratorio. El watcher resuelve primero el SSOT (`SddIA/core/event-subscriptions.json`); la fusión con overrides locales queda documentada como deuda si no está cableada.
+Copie `event-subscriptions.local.json` en este directorio para fusionar suscriptores adicionales o desactivar fan-out en laboratorio. El watcher resuelve SSOT (`SddIA/core/event-domain-subscriptions.json` para dominio V3+; `event-*-subscriptions.json` por familia fractal); la fusión con overrides locales queda documentada como deuda si no está cableada.
 
 Ejemplo mínimo (`event-subscriptions.local.json`):
 
