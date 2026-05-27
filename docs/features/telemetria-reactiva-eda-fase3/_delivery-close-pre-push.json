@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "branch_name": "feat/telemetria-reactiva-eda-fase3",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase3",
+  "pr_title": "feat(telemetria-eda): Fase 3 Aduana Universal — bus fractal y Peaje fail-soft D3.13",
+  "pr_body": "## Summary\n- Peaje Termodinámico: Raw_Execution_Finished en ./.events/telemetry/\n- Bus runtime fractal (eda_fractal SSOT v1.2.0) + split suscripciones\n- Enrutadores route-telemetry / route-orchestration / route-domain\n- event-watcher multi-ruta (coexistencia V3+ pending/)\n- Stub Radamanto (telemetry-batch-stub) + test_eda_fractal_bus (6/6)\n- D3.13 Protocolo de Acero: fail-soft E/S — negocio inmune a fallo telemetría\n\n## Test plan\n- [x] test_eda_fractal_bus (6/6 incl. D3.13)\n- [x] test_eda_bus_v3plus (14/14)\n- [x] workspace-smoke + thermodynamic_toll\n\nPBI maestro permanece en pending (pbi_archived: false). Fase 4 siguiente.",
+  "target_branch": "main"
+}
