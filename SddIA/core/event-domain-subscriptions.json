@@ -1,0 +1,82 @@
+{
+  "PullRequest_Presented": [
+    {
+      "agent": "argos",
+      "process": "pull-request-review",
+      "intent": "Aduana de Fricción post-presentación; gate antes de accept-pr."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA Rebased."
+    }
+  ],
+  "PullRequest_Merged": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA Rebased."
+    }
+  ],
+  "Domain_Entity_Created": [
+    {
+      "agent": "cumulo",
+      "action": "sync-entity-index",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Reconciliación idempotente del index.md canónico."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Anclaje DLT IOTA Rebased (solo core)."
+    }
+  ],
+  "Domain_Entity_Updated": [
+    {
+      "agent": "cumulo",
+      "action": "sync-entity-index",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Reconciliación idempotente del index.md canónico."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Anclaje DLT IOTA Rebased (solo core)."
+    }
+  ],
+  "Domain_Entity_Deleted": [
+    {
+      "agent": "cumulo",
+      "action": "sync-entity-index",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Reconciliación idempotente del index.md canónico."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Anclaje DLT IOTA Rebased (solo core)."
+    }
+  ],
+  "System_Fracture_Detected": [
+    {
+      "agent": "cumulo",
+      "action": "materialize-fracture-pbi",
+      "intent": "Gestor de Deuda Técnica: materializar PBI (el Qué ha fallado) en docs/todos/pending/."
+    },
+    {
+      "agent": "mayeuta",
+      "action": "enrich-fracture-pbi-kaizen",
+      "intent": "Auditor de Fricción Kaizen: diagnosticar causa raíz (el Por Qué) y enriquecer PBI con propuesta evolutiva."
+    }
+  ],
+  "Kaizen_Alert_Required": [
+    {
+      "agent": "cumulo",
+      "action": "materialize-kaizen-alert-doc",
+      "intent": "Materializar cicatriz Kaizen documental en docs/todos/pending/ (único suscriptor legítimo)."
+    }
+  ]
+}

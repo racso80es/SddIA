@@ -41,4 +41,4 @@ Telemetría física emitida por el CLI al finalizar el Peaje Termodinámico (cro
 
 ## Suscripciones
 
-Reservado Fase 3.C — `event-telemetry-subscriptions.json` → `route-telemetry` → Radamanto.
+Reservado Fase 3.C — `event-telemetry-subscriptions.json` → `route-telemetry` → Radamanto (stub `telemetry-batch-stub` en Fase 3).

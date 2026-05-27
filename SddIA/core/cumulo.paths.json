@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -35,7 +35,7 @@
     "skill_io_shell_executor_frozen": "SddIA/norms/skill-io-shell-executor-frozen.md",
     "evolution_log": "SddIA/evolution/Evolution_log.md",
     "evolution_contract": "SddIA/evolution/evolution_contract.md",
-    "event_subscriptions": "SddIA/core/event-subscriptions.json"
+    "event_subscriptions": "SddIA/core/event-domain-subscriptions.json"
   },
   "contracts": {
     "agents": "SddIA/agents/agents-contract.md",
@@ -62,7 +62,15 @@
     "processing": "./.events/processing",
     "processed": "./.events/processed",
     "dead_letter": "./.events/dead-letter",
-    "subscriptions": "SddIA/core/event-subscriptions.json"
+    "subscriptions": "SddIA/core/event-domain-subscriptions.json"
+  },
+  "eda_fractal": {
+    "telemetry": "./.events/telemetry",
+    "orchestration": "./.events/orchestration",
+    "domain": "./.events/domain",
+    "telemetry_subscriptions": "SddIA/core/event-telemetry-subscriptions.json",
+    "orchestration_subscriptions": "SddIA/core/event-orchestration-subscriptions.json",
+    "domain_subscriptions": "SddIA/core/event-domain-subscriptions.json"
   },
   "eda_instance": {
     "customization": ".SddIA/events"

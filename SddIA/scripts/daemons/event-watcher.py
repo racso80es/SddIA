@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -31,7 +32,7 @@ _QA_DIR = _SCRIPT_DIR.parent / "qa"
 if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
-from eda_bus_utils import ensure_event_bus_topology, list_witnesses, load_eda_bus
+from eda_bus_utils import ensure_event_bus_topology, list_witnesses, load_eda_bus, load_eda_fractal
 from env_loader import load_hierarchical_env
 from route_domain_event_core import route_domain_event
 
@@ -121,11 +122,11 @@ def _log_route_outcome(
         print(f"[WATCHER] {key}: enrutado — consenso pendiente (sweeper)", flush=True)
 
 
-def _invoke_route_process(repo: Path, rel_path: str) -> subprocess.CompletedProcess[str]:
+def _invoke_route_process(repo: Path, rel_path: str, process_name: str) -> subprocess.CompletedProcess[str]:
     runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
     payload = json.dumps({"event_file_path": rel_path}, ensure_ascii=False)
     return subprocess.run(
-        [sys.executable, str(runner), "--process", "route-domain-event", "--inputs", payload],
+        [sys.executable, str(runner), "--process", process_name, "--inputs", payload],
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -133,6 +134,29 @@ def _invoke_route_process(repo: Path, rel_path: str) -> subprocess.CompletedProc
         cwd=str(repo),
         check=False,
     )
+
+
+def _fractal_watch_enabled() -> bool:
+    return os.environ.get("SDDIA_LAB_WATCH_FRACTAL", "1").strip().lower() not in (
+        "0",
+        "false",
+        "no",
+    )
+
+
+def _watch_targets(repo: Path, bus: dict[str, str]) -> list[tuple[Path, str]]:
+    targets: list[tuple[Path, str]] = [(repo / bus["pending"], "route-domain-event")]
+    if not _fractal_watch_enabled():
+        return targets
+    fractal = load_eda_fractal(repo)
+    targets.extend(
+        [
+            (repo / fractal["telemetry"], "route-telemetry"),
+            (repo / fractal["orchestration"], "route-orchestration"),
+            (repo / fractal["domain"], "route-domain"),
+        ]
+    )
+    return targets
 
 
 def _run_route_cli() -> None:
@@ -148,35 +172,49 @@ def _run_route_cli() -> None:
 def _run_watcher(*, once: bool = False) -> None:
     repo = _repo_root()
     bus = ensure_event_bus_topology(repo)
-    pending = repo / bus["pending"]
     attempts: dict[str, int] = {}
     in_flight: set[str] = set()
 
-    print("[WATCHER] Iniciado. pending=", pending, flush=True)
+    print("[WATCHER] Iniciado. roots=", [str(t[0]) for t in _watch_targets(repo, bus)], flush=True)
     while True:
-        for path in sorted(pending.glob("*.json")):
-            key = path.name
-            event_uuid = path.stem
-            if key in in_flight:
+        for watch_dir, process_name in _watch_targets(repo, bus):
+            if not watch_dir.is_dir():
                 continue
-            if _has_dead_letter_witnesses(repo, bus, event_uuid):
-                continue
-            n = attempts.get(key, 0)
-            if n >= MAX_ROUTE_ATTEMPTS:
-                print(f"[WATCHER] Skip {key}: max attempts ({MAX_ROUTE_ATTEMPTS})", flush=True)
-                continue
+            for path in sorted(watch_dir.glob("*.json")):
+                key = f"{watch_dir.name}/{path.name}"
+                event_uuid = path.stem
+                if key in in_flight:
+                    continue
+                if process_name == "route-domain-event" and _has_dead_letter_witnesses(
+                    repo, bus, event_uuid
+                ):
+                    continue
+                n = attempts.get(key, 0)
+                if n >= MAX_ROUTE_ATTEMPTS:
+                    print(f"[WATCHER] Skip {key}: max attempts ({MAX_ROUTE_ATTEMPTS})", flush=True)
+                    continue
 
-            rel = _rel_event_path(repo, path)
-            print(f"[WATCHER] Detectado nuevo evento: {key}", flush=True)
-            in_flight.add(key)
-            attempts[key] = n + 1
+                rel = _rel_event_path(repo, path)
+                print(f"[WATCHER] Detectado nuevo evento: {key} → {process_name}", flush=True)
+                in_flight.add(key)
+                attempts[key] = n + 1
 
-            proc = _invoke_route_process(repo, rel)
-            in_flight.discard(key)
+                proc = _invoke_route_process(repo, rel, process_name)
+                in_flight.discard(key)
 
-            if proc.returncode == 0 and not _has_dead_letter_witnesses(repo, bus, event_uuid):
-                attempts.pop(key, None)
-            _log_route_outcome(repo, bus, key, event_uuid, proc)
+                if process_name == "route-domain-event":
+                    if proc.returncode == 0 and not _has_dead_letter_witnesses(repo, bus, event_uuid):
+                        attempts.pop(key, None)
+                    _log_route_outcome(repo, bus, path.name, event_uuid, proc)
+                elif proc.returncode == 0:
+                    attempts.pop(key, None)
+                    print(f"[WATCHER] {key}: enrutado ({process_name})", flush=True)
+                else:
+                    print(
+                        f"[WATCHER] {process_name} falló ({key}): "
+                        f"{(proc.stderr or proc.stdout or '').strip()}",
+                        flush=True,
+                    )
 
         time.sleep(POLL_SECONDS)
         if once:
