@@ -38,6 +38,7 @@ purpose: Decisiones Fase 3 y herencia Fases 0–2
 | D3.10 | ¿Watcher por familia? | Un watcher (`event-watcher.py`) con **tres watchers internos** o poll unificado sobre lista de rutas; cada JSON nuevo despacha al proceso enrutador según carpeta origen |
 | D3.11 | ¿Instancias dominio existentes? | Los 7 ECST en `domain/` ya cumplen `event_family: domain`; instancias nuevas en `./.events/domain/` usan mismo esquema payload; legacy sigue en `pending/` hasta migración voluntaria |
 | D3.12 | ¿Persistencia encapsulada? | Documentar en spec §3.F el flujo `filesystem-manager` + `capsule-json-io`; **sin** refactor masivo de agentes obreros — smoke en `execution.md` con delegación existente |
+| D3.13 | ¿Fractura latente E/S síncrona en Peaje? (Red Teaming) | **Aislamiento de Excepciones de E/S (Protocolo de Acero):** la escritura de `Raw_Execution_Finished` / orquestación es **fail-soft**. Fallo físico (permisos, disco lleno, concurrencia) → captura excepción, log stderr `[THERMODYNAMIC-TOLL-EMERGENCY]`, `telemetry_io_failed: true` en payload; **el veredicto del proceso de negocio no cambia**. El negocio jamás se detiene por la métrica |
 
 ## Payload Peaje Termodinámico (`Raw_Execution_Finished`)
 

@@ -65,6 +65,8 @@ THERMODYNAMIC_EXEMPT = frozenset(
     }
 )
 
+_THERMODYNAMIC_EMERGENCY_PREFIX = "[THERMODYNAMIC-TOLL-EMERGENCY]"
+
 ROUTE_FRACTAL_HANDLERS: dict[str, str] = {
     "route-telemetry": "route_telemetry_event",
     "route-orchestration": "route_orchestration_event",
@@ -2105,6 +2107,19 @@ def execute_phase(
     return entry
 
 
+def _log_thermodynamic_emergency(
+    process_name: str,
+    channel: str,
+    exc: BaseException,
+) -> None:
+    """Log de emergencia stderr — fail-soft; el hilo de negocio no debe depender de este canal."""
+    print(
+        f"{_THERMODYNAMIC_EMERGENCY_PREFIX} process={process_name} channel={channel}: {exc}",
+        file=sys.stderr,
+        flush=True,
+    )
+
+
 def _route_handler_result(canonical: str, out: dict[str, Any], handler: str) -> dict[str, Any]:
     ok = bool(out.get("success")) and out.get("exitCode", 1) == 0
     return {
@@ -2135,7 +2150,11 @@ def run_thermodynamic_toll(
     duration_ms: int,
     success: bool,
 ) -> dict[str, Any]:
-    """Peaje Termodinámico: emite telemetría siempre; orquestación solo en éxito (fail-soft)."""
+    """Peaje Termodinámico: observador pasivo — telemetría/orquestación fail-soft (D3.13).
+
+    Aislamiento de Excepciones de E/S: ningún fallo al escribir chispazos en ./.events/*
+    altera el veredicto del proceso de negocio principal.
+    """
     asset_id = state.get("asset_id")
     if not isinstance(asset_id, str) or not asset_id.strip():
         asset_id = str(uuid.uuid4())
@@ -2162,6 +2181,8 @@ def run_thermodynamic_toll(
         result["telemetry"] = telemetry_seal
     except Exception as exc:
         result["telemetry_error"] = str(exc)
+        result["telemetry_io_failed"] = True
+        _log_thermodynamic_emergency(process_name, "telemetry", exc)
     if success and isinstance(workspace_path, str) and workspace_path.strip():
         try:
             orch_id = str(uuid.uuid4())
@@ -2180,6 +2201,8 @@ def run_thermodynamic_toll(
             result["orchestration"] = orch_seal
         except Exception as exc:
             result["orchestration_error"] = str(exc)
+            result["orchestration_io_failed"] = True
+            _log_thermodynamic_emergency(process_name, "orchestration", exc)
     return result
 
 
@@ -2389,6 +2412,7 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
             )
         except Exception as exc:
             data["thermodynamic_toll_error"] = str(exc)
+            _log_thermodynamic_emergency(canonical, "toll-envelope", exc)
     return {
         "success": blocked_success,
         "status_code": status_code,

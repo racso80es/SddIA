@@ -8,6 +8,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from eda_bus_utils import (
     build_raw_execution_finished_event,
@@ -140,6 +141,19 @@ class TestEdaFractalBus(unittest.TestCase):
         self.assertEqual(len(list((repo / fractal["telemetry"]).glob("*.json"))), 1)
         self.assertEqual(len(list((repo / fractal["orchestration"]).glob("*.json"))), 0)
         self.assertEqual(len(list((repo / fractal["domain"]).glob("*.json"))), 0)
+
+    def test_thermodynamic_toll_io_fail_soft_preserves_business_success(self) -> None:
+        repo = _fake_repo()
+        with patch(
+            "execute_process_capsules.write_fractal_event",
+            side_effect=OSError(28, "No space left on device"),
+        ):
+            out = run_process(repo, "workspace-smoke", {})
+        self.assertTrue(out.get("success"), out)
+        toll = (out.get("data") or {}).get("thermodynamic_toll") or {}
+        self.assertTrue(toll.get("telemetry_io_failed"))
+        self.assertIn("telemetry_error", toll)
+        self.assertNotIn("telemetry", toll)
 
 
 if __name__ == "__main__":

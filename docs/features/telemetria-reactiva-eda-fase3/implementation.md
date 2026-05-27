@@ -11,7 +11,7 @@ items:
     proposal: "Clase ECST Process_Execution_Completed"
   - id: "3.A"
     touchpoint: "execute_process_capsules.py"
-    proposal: "Peaje Termodinámico: asset_id, cronómetro, Raw_Execution_Finished + orquestación post-éxito"
+    proposal: "Peaje Termodinámico fail-soft D3.13: log emergencia + veredicto negocio inmutable ante E/S"
   - id: "3.C"
     touchpoint: "event-*-subscriptions.json, route-*.md, route_fractal_event_core.py"
     proposal: "Split suscripciones + enrutadores fractales"

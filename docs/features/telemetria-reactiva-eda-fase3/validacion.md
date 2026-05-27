@@ -12,7 +12,7 @@ checks:
   AC3.4: pass
   test_eda_fractal_bus: pass
   test_eda_bus_v3plus: pass
-  workspace_smoke_toll: pass
+  thermodynamic_fail_soft_D3_13: pass
 git_changes:
   - SddIA/core/cumulo.paths.json
   - SddIA/core/event-domain-subscriptions.json
@@ -48,6 +48,7 @@ git_changes:
 | AC3.2 | Tres suscripciones + tres enrutadores operativos | ✅ | Core JSON + `route-telemetry/orchestration/domain` |
 | AC3.3 | Familias no contaminan rutas ajenas | ✅ | `test_no_telemetry_in_orchestration_path` |
 | AC3.4 | Suscripción telemetría cableada; Radamanto stub | ✅ | `event-telemetry-subscriptions.json` + stub purge test |
+| D3.13 | Fail-soft E/S Peaje — negocio inmune a fallo telemetría | ✅ | Test mock `OSError` + log `[THERMODYNAMIC-TOLL-EMERGENCY]` |
 
 ## Regresión
 

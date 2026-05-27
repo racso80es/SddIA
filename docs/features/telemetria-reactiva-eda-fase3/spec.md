@@ -107,7 +107,24 @@ Al final de `run_process()` / handler principal de `execute-process`, **siempre*
 
 - Solo CLI emite familia `telemetry` (regla de oro PBI § Fase 1).
 - `telemetry_receipt` opcional — **no parsear stdout** en Fase 3 (reservado Fase 5).
-- No bloquear ciclo de vida del CLI si falla escritura telemetría — log + testigo en `state` (fail-soft documentado).
+
+### 4.5 Aislamiento de Excepciones de E/S — Protocolo de Acero (D3.13)
+
+**Restricción dura:** el chispazo de telemetría **no es un punto de parada** para el hilo de negocio principal.
+
+El Peaje Termodinámico es un **observador pasivo** respecto a la latencia y al veredicto del proceso:
+
+| Escenario | Comportamiento obligatorio |
+|-----------|-------------------------|
+| Escritura `./.events/telemetry/` OK | Instancia ECST persistida; `thermodynamic_toll.telemetry` en respuesta CLI |
+| Fallo E/S (permisos, disco lleno, lock SO, mkdir) | Capturar excepción; **no** propagar; **no** alterar `success` / `status_code` del proceso |
+| Fallo orquestación post-éxito | Mismo fail-soft; el éxito de negocio ya decidido permanece |
+| Log de emergencia | stderr: `[THERMODYNAMIC-TOLL-EMERGENCY] process=… channel=telemetry\|orchestration\|toll-envelope: …` |
+| Trazabilidad en respuesta | `telemetry_io_failed: true` + `telemetry_error` (u homólogos orquestación) en `data.thermodynamic_toll` |
+
+Implementación: `run_thermodynamic_toll()` envuelve cada `write_fractal_event` en try/except; el envelope exterior en `run_process()` repite el aislamiento como última línea de defensa.
+
+**Prohibido:** convertir fallo de telemetría en error fatal del CLI, excepción no capturada, o cambio del veredicto Argos/PR-review por ausencia del chispazo.
 
 ## 5. Split suscripciones — §3.C
 

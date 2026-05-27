@@ -3,7 +3,7 @@
   "branch_name": "feat/telemetria-reactiva-eda-fase3",
   "persist_ref": "docs/features/telemetria-reactiva-eda-fase3",
   "base_branch": "main",
-  "refined_requirements": "Fase 3 del PBI PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO: Aduana Universal + topología runtime fractal. Peaje Termodinámico en CLI (cronómetro, Raw_Execution_Finished en ./.events/telemetry/), split suscripciones en tres archivos homólogos, procesos enrutadores route-telemetry / route-orchestration / route-domain, evolución event-watcher multi-ruta con coexistencia V3+ (D0.2), inyección workspace_path en envelope ECST, cableado suscripción telemetría hacia Radamanto (stub Fase 4). Gate Fases 1–2 cumplidos. PBI maestro permanece en pending.",
+  "refined_requirements": "Fase 3 del PBI PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO: Aduana Universal + topología runtime fractal. Peaje Termodinámico en CLI (cronómetro, Raw_Execution_Finished en ./.events/telemetry/) con Aislamiento de Excepciones de E/S fail-soft D3.13 (Protocolo de Acero). Split suscripciones, enrutadores route-telemetry/orchestration/domain, watcher multi-ruta coexistencia V3+ (D0.2), workspace_path en ECST, stub Radamanto. Gate Fases 1–2 cumplidos. PBI maestro en pending.",
   "master_pbi_ref": "docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md",
   "depends_on_feature": "docs/features/telemetria-reactiva-eda-fase2"
 }

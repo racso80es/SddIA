@@ -64,8 +64,9 @@ flowchart LR
 - [ ] `build_raw_execution_finished()` según Clase ECST
 - [ ] `write_fractal_event(..., family="telemetry")` al finalizar **siempre**
 - [ ] Si `success`: `write_fractal_event(Process_Execution_Completed, family="orchestration")`
-- [ ] Fail-soft si escritura bus falla (log, no abortar CLI)
+- [ ] **D3.13 — Aislamiento E/S (Protocolo de Acero):** fail-soft en telemetría y orquestación; log `[THERMODYNAMIC-TOLL-EMERGENCY]`; veredicto de negocio **inmutable** ante fallo de disco
 - [ ] Incluir `workspace_path`, `execution_id` en payload cuando disponibles
+- [ ] Test `test_thermodynamic_toll_io_fail_soft_preserves_business_success`
 
 ### 3.C — Split suscripciones y enrutadores
 
@@ -114,7 +115,7 @@ flowchart LR
 |--------|------------|
 | Romper pipeline V3+ / CI IOTA | No tocar lógica fan-out legacy; tests `test_eda_bus_v3plus` + `run-iota-ci-smoke` obligatorios |
 | Duplicación masiva en enrutadores | Extraer `route_event_core.py` compartido |
-| Peaje bloquea ejecución en error de disco | Fail-soft documentado (D3.9) |
+| Peaje bloquea ejecución en error de disco | **D3.13** Aislamiento E/S: fail-soft + log emergencia + test regresión; negocio inmune |
 | Orquestación sin Clase ECST | Paso 3.D′ antes de emisión |
 | Scope creep hacia Radamanto real | Stub explícito; AC3.4 = cableado only |
 | Confusión `route-domain` vs `route-domain-event` | Documentar: fractal vs legacy pending |
