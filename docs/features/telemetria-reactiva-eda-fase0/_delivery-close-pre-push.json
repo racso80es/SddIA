@@ -1,0 +1,8 @@
+{
+  "source_process": "git-hook-pre-push",
+  "branch_name": "feat/telemetria-reactiva-eda-fase0",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase0",
+  "pr_title": "feat(telemetria-eda): Fase 0 analisis de impacto EDA",
+  "pr_body": "Gate de arranque: impact-analysis, clarify, refinamiento PBI v1.1.0. PBI maestro permanece en pending.",
+  "target_branch": "main"
+}

@@ -94,4 +94,4 @@ El PBI unificado permanece en `docs/todos/pending/` como **plan de ruta y contro
 | Especificación (Dedalo) | ⏳ |
 | Planificación | ⏳ |
 | Análisis / `impact-analysis.md` | ✅ 2026-05-27 |
-| Validación Argos | ⏳ |
+| Validación Argos | ✅ `validacion.md` APTO |
