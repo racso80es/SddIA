@@ -1,0 +1,8 @@
+{
+  "feature_name": "telemetria-reactiva-eda-fase0",
+  "branch_name": "feat/telemetria-reactiva-eda-fase0",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase0",
+  "base_branch": "main",
+  "refined_requirements": "Fase 0 del PBI PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO: análisis de afectaciones transversal (gate de arranque). Entregable impact-analysis.md. PBI maestro permanece en pending como roadmap; no archivar al cerrar esta feature.",
+  "master_pbi_ref": "docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md"
+}
