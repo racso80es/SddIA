@@ -1,0 +1,9 @@
+{
+  "feature_name": "telemetria-reactiva-eda-fase4",
+  "branch_name": "feat/telemetria-reactiva-eda-fase4",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase4",
+  "base_branch": "main",
+  "refined_requirements": "Fase 4 del PBI PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO: Agente Radamanto (Certificador/Actuario) + bucle Self-Healing. Sustituir telemetry-batch-stub por consumidor batch real; acumulado estadístico desde Raw_Execution_Finished; umbrales deterministas configurables; exclusividad DLT sobre iota-immutable-publisher para Tool_Degraded/Status_Restored/Tool_Deprecated (handoff D0.1 — Cúmulo conserva PR/ECST). Eventos dominio nuevos; suscripciones Cerbero + fix-tool-process; sandbox estricto reparación; max_recovery_attempts. Gate Fase 3 APTO (Peaje + bus fractal). PBI maestro en pending.",
+  "master_pbi_ref": "docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md",
+  "depends_on_feature": "docs/features/telemetria-reactiva-eda-fase3"
+}
