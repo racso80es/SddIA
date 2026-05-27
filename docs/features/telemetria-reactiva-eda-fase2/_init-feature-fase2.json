@@ -1,0 +1,9 @@
+{
+  "feature_name": "telemetria-reactiva-eda-fase2",
+  "branch_name": "feat/telemetria-reactiva-eda-fase2",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase2",
+  "base_branch": "main",
+  "refined_requirements": "Fase 2 del PBI PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO: Workspaces dinámicos (anti-sesgo de origen). workspace_template en procesos, instanciación CLI, inyección de contexto espacial, paths.workspacesRoot en cumulo.paths.json y migración progresiva de featurePath/fixPath. Gate Fase 1 cumplido (genoma fractal AC1.x). PBI maestro permanece en pending.",
+  "master_pbi_ref": "docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md",
+  "depends_on_feature": "docs/features/telemetria-reactiva-eda-fase1"
+}

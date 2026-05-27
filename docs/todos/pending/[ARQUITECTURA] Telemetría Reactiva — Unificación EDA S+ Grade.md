@@ -7,8 +7,8 @@ created: "2026-05-26"
 refined: "2026-05-27"
 status: en_ejecucion
 priority: arquitectura-core
-active_phase: 1
-active_feature: docs/features/telemetria-reactiva-eda-fase1
+active_phase: 2
+active_feature: docs/features/telemetria-reactiva-eda-fase2
 impact_analysis: docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md
 consolidates:
   - docs/todos/tmp/Telemetría Reactiva SddIA_V2.md
@@ -24,17 +24,18 @@ consolidates:
 |-------|-------|
 | **ID** | `PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO` |
 | **Fecha creación** | 2026-05-26 |
-| **Estatus** | En ejecución — Fase 1 en planificación (`telemetria-reactiva-eda-fase1`) |
+| **Estatus** | En ejecución — Fase 2 en planificación (`telemetria-reactiva-eda-fase2`) |
 | **Versión PBI** | 1.1.0 (refinamiento post-barrido 2026-05-27) |
 | **Feature Fase 0** | [`docs/features/telemetria-reactiva-eda-fase0/`](../../features/telemetria-reactiva-eda-fase0/) (gate cerrado) |
-| **Feature Fase 1** | [`docs/features/telemetria-reactiva-eda-fase1/`](../../features/telemetria-reactiva-eda-fase1/) |
+| **Feature Fase 1** | [`docs/features/telemetria-reactiva-eda-fase1/`](../../features/telemetria-reactiva-eda-fase1/) (cerrada) |
+| **Feature Fase 2** | [`docs/features/telemetria-reactiva-eda-fase2/`](../../features/telemetria-reactiva-eda-fase2/) |
 | **Análisis de impacto** | [`impact-analysis.md`](../../features/telemetria-reactiva-eda-fase0/impact-analysis.md) |
 | **Prioridad** | Alta — bloqueante para la Física del Valor y la industrialización del ecosistema |
 | **Alcance** | Análisis de impacto transversal, genoma de eventos, workspaces dinámicos, Aduana Universal (CLI), Radamanto, cumplimiento termodinámico, documentación pública (`README.md`) |
 
 > **Nota de consolidación:** Este documento unifica cinco PBI interrelacionados. Los originales están archivados en `docs/todos/tmp/` con aviso de superseded; no ejecutar como ítems independientes. Toda ejecución debe seguir las fases numeradas de este documento.
 
-> **Gestión multi-feature:** Cada fase (0–6) se ejecuta en un **proceso `feature` independiente** con su propia rama y `persist_ref`. Este PBI permanece en `pending/` como plan de ruta hasta el Done global (§ Definition of Done). Fase 0 cerrada (gate); **Fase 1 activa:** `docs/features/telemetria-reactiva-eda-fase1/`.
+> **Gestión multi-feature:** Cada fase (0–6) se ejecuta en un **proceso `feature` independiente** con su propia rama y `persist_ref`. Este PBI permanece en `pending/` como plan de ruta hasta el Done global (§ Definition of Done). Fases 0–1 cerradas; **Fase 2 activa:** `docs/features/telemetria-reactiva-eda-fase2/`.
 
 ---
 
