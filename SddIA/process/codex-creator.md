@@ -2,7 +2,8 @@
 uuid: "dd9e13b2-fc07-40d2-95f5-b50ebd535a9e"
 name: "codex-creator"
 version: "1.1.0"
-contract: "process-contract v1.3.0"
+contract: "process-contract v1.4.0"
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
   - "ecosystem-evolution"
   - "knowledge-management"

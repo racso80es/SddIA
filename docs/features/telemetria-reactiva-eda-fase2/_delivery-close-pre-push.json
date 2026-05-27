@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "branch_name": "feat/telemetria-reactiva-eda-fase2",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase2",
+  "pr_title": "feat(telemetria-eda): Fase 2 workspaces dinamicos — process-contract v1.4.0",
+  "pr_body": "## Summary\n- process-contract v1.4.0: workspace_template obligatorio en procesos Core\n- CLI materializa .SddIA/workspaces/{process}/{execution_id}/ con UUID\n- cumulo.paths.json v1.1.0: paths.workspacesRoot + featurePath/fixPath\n- Migracion execute_process_capsules, eda_bus_utils, route_domain_event_core\n- Proceso workspace-smoke para AC2.1\n\n## Test plan\n- [x] workspace-smoke x2 (UUID distintos)\n- [x] test_eda_bus_v3plus (14/14)\n\nPBI maestro permanece en pending (pbi_archived: false).",
+  "target_branch": "main"
+}

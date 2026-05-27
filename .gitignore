@@ -13,6 +13,9 @@ docs/events/
 # Personalización de eventos por instancia (Vía C)
 .SddIA/events/
 
+# Workspaces operativos impermanentes (Fase 2 EDA)
+.SddIA/workspaces/
+
 # Jerarquía de Bóvedas — secretos locales (no versionar)
 .dev/
 !.dev/.env.example

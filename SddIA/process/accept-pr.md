@@ -2,7 +2,8 @@
 uuid: bd81c878-5e1c-4fe5-b204-85c9136d8bc7
 name: accept-pr
 version: 1.0.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - pr-lifecycle
 - source-control

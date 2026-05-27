@@ -2,7 +2,8 @@
 uuid: 1b4fa69f-4299-47ca-b2ed-380f2263239c
 name: feature
 version: 1.3.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops

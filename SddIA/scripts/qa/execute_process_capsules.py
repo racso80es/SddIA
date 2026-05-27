@@ -26,6 +26,12 @@ from execute_process_core import (
 from execute_process_forges import FORGE_BY_ENTITY_CLASS
 from eda_bus_utils import find_existing_domain_event, infer_persist_ref_from_branch, ensure_event_bus_topology, load_eda_bus
 from ecst_validation import validate_domain_mutation_event
+from workspace_utils import (
+    bootstrap_process_workspace,
+    resolve_documentation_features_path,
+    resolve_documentation_fixes_path,
+    sync_workspace_context,
+)
 
 try:
     import yaml
@@ -1180,7 +1186,10 @@ def run_workspace_init(
     if not branch_name.startswith(f"{default_prefix}/"):
         branch_name = f"{default_prefix}/{task_name}"
     base_branch = inputs.get("base_branch") or "main"
-    default_docs = "docs/fixes" if process_label == "bug-fix" else "docs/features"
+    if process_label == "bug-fix":
+        default_docs = resolve_documentation_fixes_path(repo)
+    else:
+        default_docs = resolve_documentation_features_path(repo)
     persist_ref = inputs.get("persist_ref") or f"{default_docs}/{task_name}"
     refined = (
         inputs.get("refined_requirements")
@@ -1917,6 +1926,34 @@ def try_execute_registered_action_capsules(
     return None
 
 
+def execute_workspace_smoke_phase(
+    repo: Path,
+    phase_name: str | None,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if phase_name != "Verificación de workspace":
+        return None
+    sync_workspace_context(inputs, state)
+    ws = inputs.get("workspace_path") or state.get("workspace_path")
+    if not isinstance(ws, str) or not ws.strip():
+        return {
+            "status": "failed",
+            "handler": "workspace-smoke",
+            "error": "workspace_path ausente",
+        }
+    marker = Path(ws.strip()) / ".workspace_ok"
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text("ok", encoding="utf-8")
+    state["workspace_verified"] = True
+    return {
+        "status": "executed",
+        "handler": "workspace-smoke",
+        "marker": str(marker),
+        "workspace_path": ws.strip(),
+    }
+
+
 def execute_phase(
     repo: Path,
     phase: dict[str, Any],
@@ -1931,6 +1968,7 @@ def execute_phase(
         "phase_name": phase_name,
         "delegates_to": delegates,
     }
+    sync_workspace_context(inputs, state)
 
     if is_workspace_init_phase(phase, inputs, process_def):
         proc_name = process_def.get("name") if isinstance(process_def, dict) else None
@@ -1975,6 +2013,14 @@ def execute_phase(
         )
         if prr is not None:
             entry.update(prr)
+            return entry
+
+    if process_def.get("name") == "workspace-smoke":
+        smoke = execute_workspace_smoke_phase(
+            repo, str(phase_name) if phase_name else None, inputs, state
+        )
+        if smoke is not None:
+            entry.update(smoke)
             return entry
 
     pi = pi_index.get(str(phase_name))
@@ -2072,6 +2118,17 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
     validate_process_inputs(process_def, process_inputs, canonical)
 
     state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
+    try:
+        ws_boot = bootstrap_process_workspace(repo, canonical, process_def, process_inputs, state)
+        state["workspace_boot"] = ws_boot
+    except ValueError as exc:
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": str(exc),
+            "execution_report": {"process_name": canonical, "phases": []},
+        }
     pi_index = phase_invocations_index(process_def)
     phase_reports: list[dict[str, Any]] = []
 
@@ -2083,6 +2140,10 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         )
 
     data: dict[str, Any] = {"process_name": canonical, "handoff": state.get("handoff")}
+    if state.get("workspace_path"):
+        data["workspace_path"] = state["workspace_path"]
+    if state.get("execution_id"):
+        data["execution_id"] = state["execution_id"]
     if state.get("workspace"):
         data.update(state["workspace"])
     if state.get("eda_audit"):

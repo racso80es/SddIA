@@ -2,7 +2,8 @@
 uuid: 6d59f23b-df29-4be5-9bb9-29cede3474b9
 name: pull-request-review
 version: 2.2.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - quality-assurance
 - source-control

@@ -184,10 +184,10 @@ def dispatch_subscriber(
         if process_name.strip() == "pull-request-review":
             process_inputs.setdefault("code_diff", "origin/main...HEAD")
             process_inputs.setdefault("tasks_path", "docs/todos")
-            process_inputs.setdefault(
-                "document_context",
-                inferred or "docs/features/remove-cli-legacy-compat",
-            )
+            if inferred:
+                process_inputs.setdefault("document_context", inferred)
+            elif isinstance(process_inputs.get("persist_ref"), str) and process_inputs["persist_ref"].strip():
+                process_inputs.setdefault("document_context", process_inputs["persist_ref"].strip())
         os.environ.setdefault("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0")
         try:
             proc = _run_subprocess(

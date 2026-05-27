@@ -8,7 +8,9 @@ En SddIA **no se escriben rutas de ficheros literales** (ej. `docs/features/`, `
 
 ## Claves de paths (contrato cumulo.paths.json)
 
-- **Persistencia de tareas:** paths.featurePath, paths.fixPath, paths.logPath.
+- **Workspace operativo:** `paths.workspacesRoot` (`.SddIA/workspaces/`). El CLI instancia `{workspace_template}` con `{process_name}` y `{execution_id}`; agentes operan solo bajo `workspace_path` inyectado.
+- **Persistencia de tareas (documental):** `paths.featurePath`, `paths.fixPath` (aliases hacia `{directories.documentation}/features|fixes`); conviven con workspace hasta migración narrativa completa (Fase 6).
+- **Persistencia legacy:** paths.logPath.
 - **Evolution y auditoría:** paths.evolutionPath, paths.evolutionLogFile, paths.auditsPath, paths.accessLogFile.
 - **Evolution del protocolo SddIA (motor; distinto de producto):** `directories.evolution`, `normative_documents.evolution_log`, `normative_documents.evolution_contract`. Evolución de instancia local: `directories.local_evolution`, `files.local_evolution_log` (`.SddIA/local.paths.json`). No confundir con `paths.evolutionPath` / `docs/evolution/` (cierres de feature/producto).
 - **Técnico y operativo:** paths.architecturePath, paths.infrastructurePath, paths.debtPath, paths.tasksPath.

@@ -2,7 +2,8 @@
 uuid: "7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4"
 name: "process-creator"
 version: "1.0.0"
-contract: "process-contract v1.3.0"
+contract: "process-contract v1.4.0"
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
 hash_signature: sha256:b0b74db50d849219c315cd934ec299750bb87791a17fd3abed89bfccf4652730
 inputs:
@@ -86,7 +87,7 @@ Proceso maestro para instanciar nuevos procesos en el Core SddIA y mantener el �
 ## Fase 2 — Forja del archivo
 
 1. Ejecutar `phase_invocations` de esta fase: `action:crypto-broker` emite UUID v4 (`child_process_uuid`) y digest SHA-256 del JSON canónico de `process_phases` (`child_phases_sha256_hex`). Prefijo de cabecera: `hash_signature: "sha256:" + child_phases_sha256_hex`. Prohibido UUID o digest fuera del broker + cápsula.
-2. Escribir `{paths.directories.process}/{process_name}.md` con cabecera YAML (uuid, name, version, contract, context, hash_signature, inputs, phases, outputs, métricas si aplican; si `process_aliases` es no vacío tras validación, persistir **`aliases`** en el YAML alineado a `process-contract v1.3.0`) y cuerpo que describa cada fase en prosa operativa.
+2. Escribir `{paths.directories.process}/{process_name}.md` con cabecera YAML (uuid, name, version, contract, context, hash_signature, inputs, phases, outputs, métricas si aplican; si `process_aliases` es no vacío tras validación, persistir **`aliases`** en el YAML alineado a `process-contract v1.4.0`) y cuerpo que describa cada fase en prosa operativa.
 3. Leer rutas físicas solo vía `cumulo.paths.json` (`directories.process`, `contracts.process`, `directories.norms`).
 
 ## Fase 3 — Auditoría y actualización del índice

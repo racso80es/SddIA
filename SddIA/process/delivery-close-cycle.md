@@ -2,7 +2,8 @@
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
 name: delivery-close-cycle
 version: 1.1.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 hash_signature: sha256:bebaa3c536ff8a67dca9f61c841e594a4efcfd51593dd6badbc8549422232b60

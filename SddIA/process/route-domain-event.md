@@ -2,7 +2,8 @@
 uuid: c8e91f2a-4b6d-4e1a-9f03-2d7e5a684b10
 name: route-domain-event
 version: 1.0.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - event-routing
 - ecosystem-evolution

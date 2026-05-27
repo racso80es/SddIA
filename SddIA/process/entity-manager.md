@@ -2,7 +2,8 @@
 uuid: "62f08bbd-e9ce-479d-8d1b-792684e1bd26"
 name: "entity-manager"
 version: "1.0.0"
-contract: "process-contract v1.3.0"
+contract: "process-contract v1.4.0"
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
 hash_signature: sha256:0d5784440047ba18b0df605ecf27b5ec8fbe1ae72293bc553abc4210d9d2b857
 inputs:

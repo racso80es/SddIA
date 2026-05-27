@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -70,5 +70,10 @@
   "env_hierarchy": {
     "global": ".dev/.env",
     "instance": ".SddIA/.dev/.env"
+  },
+  "paths": {
+    "workspacesRoot": ".SddIA/workspaces/",
+    "featurePath": "docs/features",
+    "fixPath": "docs/fixes"
   }
 }

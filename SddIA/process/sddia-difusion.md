@@ -2,7 +2,8 @@
 uuid: de142ec3-4022-4ac1-bcf4-1b8490cabf9d
 name: sddia-difusion
 version: 1.0.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 hash_signature: sha256:ddcbbe126f7f2753c07307a24d55973cdeb8738b3a58a41700c7975908146805

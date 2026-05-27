@@ -2,7 +2,8 @@
 uuid: ae01e3ff-af68-4b94-90b3-97e5c03d75ee
 name: refactorization
 version: 1.2.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops

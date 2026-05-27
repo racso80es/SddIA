@@ -2,7 +2,8 @@
 uuid: "a132a6fc-52c8-4795-8c68-a2897d456588"
 name: "norm-creator"
 version: "1.2.0"
-contract: "process-contract v1.3.0"
+contract: "process-contract v1.4.0"
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
   - "ecosystem-evolution"
   - "knowledge-management"

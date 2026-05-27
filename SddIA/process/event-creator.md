@@ -2,7 +2,8 @@
 uuid: "b28194d9-62a8-4cbc-9cbd-237e51e44333"
 name: "event-creator"
 version: "1.1.0"
-contract: "process-contract v1.3.0"
+contract: "process-contract v1.4.0"
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
 hash_signature: sha256:ff3baf158327892036d67b5166963ce5716c5271cb7f3b4ee854248402268999
 inputs:

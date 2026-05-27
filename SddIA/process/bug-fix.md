@@ -2,7 +2,8 @@
 uuid: ac8d078c-9785-490b-9f43-ad310fe9df9d
 name: bug-fix
 version: 1.4.0
-contract: process-contract v1.3.0
+contract: process-contract v1.4.0
+workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops

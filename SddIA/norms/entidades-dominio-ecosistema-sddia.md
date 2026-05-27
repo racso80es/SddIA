@@ -26,9 +26,11 @@ Todas las **entidades de dominio** han de:
 
 La validación de esta estructura puede realizarse mediante la acción `validate`, asegurando que el documento `spec.md` contiene un bloque YAML Frontmatter bien formado y que los atributos en él corresponden con el esquema esperado por su contrato.
 
-## Documentación de tarea (paths.featurePath, paths.fixPath)
+## Documentación de tarea (`paths.featurePath`, `paths.fixPath`) y workspace operativo
 
 La **documentación de tarea** (output de las acciones spec, clarify, planning, implementation, execution, validate, finalize-process) sigue el mismo patrón que las entidades de dominio: **un solo `.md` por acción** (metadatos estructurados + cuerpo legible); no ficheros `.json` separados. Los agentes deben resolver y aplicar la norma táctica **`features-documentation-pattern`** vía Cúmulo (`directories.library_norms` → `features-documentation-pattern.md`).
+
+El **territorio operativo** de mutación de artefactos durante una ejecución vive bajo `paths.workspacesRoot` + `workspace_template` del proceso (`process-contract v1.4.0`). Es ortogonal a `persist_ref` documental: Tekton, Dédalo y Argos limitan su visión al `workspace_path` inyectado por el CLI; prohibido asumir rutas absolutas del repositorio.
 
 ## Referencias
 
