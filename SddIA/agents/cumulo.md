@@ -59,4 +59,4 @@ Ante el evento de dominio **`Kaizen_Alert_Required`** (paridad documental DIA), 
 | Idempotencia | `hash8 = SHA256(review_id + sorted(implicated_files))[:8]` |
 | No bloqueo | La materialización **no** altera `delivery_state` de la aduana emisora |
 
-Ver `SddIA/events/kaizen-alert-required.md` y `SddIA/core/event-subscriptions.json`.
+Ver `SddIA/events/domain/kaizen-alert-required.md` y `SddIA/core/event-subscriptions.json`.

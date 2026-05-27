@@ -2,7 +2,8 @@
 uuid: "a7c81b2f-b466-4b18-82c5-84ef0a5941b8"
 name: "domain-entity-deleted"
 version: "1.0.0"
-contract: "events-contract v1.0.0"
+contract: "events-contract v1.1.0"
+event_family: "domain"
 event_type: "Domain_Entity_Deleted"
 context: "ecosystem-evolution"
 capabilities:

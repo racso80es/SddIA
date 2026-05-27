@@ -2,7 +2,8 @@
 uuid: "cfb8ce66-784e-4826-8a0a-a20c671e3a60"
 name: "pull-request-merged"
 version: "1.0.0"
-contract: "events-contract v1.0.0"
+contract: "events-contract v1.1.0"
+event_family: "domain"
 event_type: "PullRequest_Merged"
 context: "dlt-auditing"
 capabilities:

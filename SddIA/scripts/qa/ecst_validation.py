@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Validación ECST instancia vs Clase catalogada en SddIA/events/."""
+"""Validación ECST instancia vs Clase catalogada en SddIA/events/ (genoma fractal)."""
 
 from __future__ import annotations
 
@@ -21,23 +21,29 @@ def _parse_payload_fields(md_body: str, section: str) -> list[str]:
     return fields
 
 
+def _event_type_from_frontmatter(front: str) -> str | None:
+    match = re.search(r'^event_type:\s*["\']?([^"\'\n]+)', front, re.M)
+    return match.group(1).strip() if match else None
+
+
 def load_event_class_schemas(repo: Path) -> dict[str, dict[str, list[str]]]:
     events_dir = repo / "SddIA" / "events"
-    index_path = events_dir / "index.md"
-    if not index_path.is_file():
+    if not events_dir.is_dir():
         return {}
-    index_text = index_path.read_text(encoding="utf-8")
     schemas: dict[str, dict[str, list[str]]] = {}
-    row_re = re.compile(r"\|\s*`([^`]+\.md)`\s*\|[^|]+\|[^|]+\|\s*(\S+)\s*\|")
-    for row_match in row_re.finditer(index_text):
-        filename, event_type = row_match.group(1), row_match.group(2)
-        class_path = events_dir / filename
-        if not class_path.is_file():
+    for class_path in sorted(events_dir.rglob("*.md")):
+        if class_path.name in ("index.md", "events-contract.md"):
             continue
-        body = class_path.read_text(encoding="utf-8")
-        if body.startswith("---"):
-            parts = body.split("---", 2)
-            body = parts[2] if len(parts) >= 3 else body
+        text = class_path.read_text(encoding="utf-8-sig")
+        if not text.startswith("---"):
+            continue
+        parts = text.split("---", 2)
+        if len(parts) < 3:
+            continue
+        front, body = parts[1], parts[2]
+        event_type = _event_type_from_frontmatter(front)
+        if not event_type:
+            continue
         schemas[event_type] = {
             "required": _parse_payload_fields(body, "REQUIRED"),
             "optional": _parse_payload_fields(body, "OPTIONAL"),
@@ -51,7 +57,7 @@ def validate_ecst_instance(
 ) -> tuple[bool, list[str]]:
     errors: list[str] = []
     if schema is None:
-        return False, ["event_type not cataloged in SddIA/events/index.md"]
+        return False, ["event_type not cataloged in SddIA/events/ (genoma fractal)"]
 
     payload = event.get("payload")
     if not isinstance(payload, dict):

@@ -1,10 +1,10 @@
 ---
 uuid: "b28194d9-62a8-4cbc-9cbd-237e51e44333"
 name: "event-creator"
-version: "1.0.0"
+version: "1.1.0"
 contract: "process-contract v1.3.0"
 context: "ecosystem-evolution"
-hash_signature: sha256:6b18b7785378ba5f80219a1969dbe12c394b72cebafc7cc355cec81e7431a7df
+hash_signature: sha256:ff3baf158327892036d67b5166963ce5716c5271cb7f3b4ee854248402268999
 inputs:
   - "event_name": "Identificador kebab-case de la Clase (`{name}` del archivo `{name}.md` en `cumulo.directories.events`)"
   - "event_type": "Identificador ECST PascalCase_Snake (p. ej. PullRequest_Merged); único en catálogo"
@@ -15,17 +15,20 @@ inputs:
   - "payload_forbidden": "Array de campos prohibidos en `payload` (p. ej. hash_signature en eventos Git)"
   - "emitter_agents": "Array de identificadores de acciones/procesos autorizados a emitir instancias"
   - "event_version": "SemVer de la Clase (ej. 1.0.0)"
-  - "events_contract_version": "Versión del contrato events a materializar (ej. 1.0.0 según `events-contract.md`)"
+  - "events_contract_version": "Versión del contrato events a materializar (ej. 1.1.0 según `events-contract.md`)"
+  - "event_family": "Familia Trinidad: telemetry | orchestration | domain. Opcional en invocación; si ausente o vacío → default obligatorio `domain` (retrocompat). Ver Kaizen retirar default."
 outputs:
-  - "artifact_event_md": "Archivo `{paths.directories.events}/{event_name}.md` conforme a `paths.contracts.events`"
-  - "artifact_events_index": "`{paths.directories.events}/index.md` actualizado con fila sincronizada a la cabecera YAML"
+  - "artifact_event_md": "Archivo `{paths.directories.events}/{effective_event_family}/{event_name}.md`"
+  - "artifact_events_index": "`{paths.directories.events}/{effective_event_family}/index.md` actualizado con fila sincronizada a la cabecera YAML"
   - "handoff_entity_uuid": "UUID v4 de la Clase forjada; consumido por `entity-manager`"
   - "handoff_hash_signature_new": "Sello `sha256:` + hex canónico post-forja; consumido por `entity-manager`"
   - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
   - "handoff_version": "SemVer resultante (`event_version`)"
 phases:
+  - name: "Normalización de familia"
+    intent: "Calcular effective_event_family = event_family trim no vacío, si no domain. Registrar en contexto de fase."
   - name: "Validación de Arquitectura"
-    intent: "Verificar event_context en execution-contexts; unicidad de event_type y kebab-case de event_name bajo directories.events; coherencia payload_required/optional/forbidden con events-contract; SemVer."
+    intent: "Verificar effective_event_family en enum Trinidad; event_context en execution-contexts; unicidad de event_type frente al Códice de la familia; kebab-case de event_name; coherencia payload con events-contract v1.1.0; para telemetry rechazar emisores no-CLI."
     delegates_to:
       - "agent:cumulo"
       - "agent:cerbero"
@@ -35,7 +38,7 @@ phases:
       - "action:crypto-broker"
       - "skill:filesystem-manager"
   - name: "Gobernanza de Índice"
-    intent: "Auditar events/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la Clase creada."
+    intent: "Auditar events/{effective_event_family}/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la Clase creada."
     delegates_to:
       - "agent:cumulo"
       - "skill:filesystem-manager"
@@ -88,24 +91,32 @@ Proceso maestro para instanciar nuevas **Clases de Evento** (genoma ECST) en `Sd
 
 Invocable directamente o desde **`entity-manager`** (cuando `entity_class: event` esté en piloto). Tras indexación síncrona, el gestor emite `emit-domain-mutation` con `emitter_agent: entity-manager` usando los outputs de handoff declarados en cabecera YAML.
 
+## Fase 0 — Normalización de familia
+
+1. Leer `event_family` de `process_inputs`.
+2. Si está ausente, es solo espacios o cadena vacía → asignar `effective_event_family = "domain"`.
+3. En caso contrario → `effective_event_family = event_family.strip()` (minúsculas esperadas en contrato).
+
 ## Fase 1 — Validación de Arquitectura
 
-1. Cargar `execution-contexts.md` desde `paths.directories.norms` y comprobar que `event_context` es un identificador válido (p. ej. `ecosystem-evolution`, `dlt-auditing`, `event-routing`).
-2. Verificar que no exista `{paths.directories.events}/{event_name}.md` en create y que `event_name` cumpla kebab-case.
-3. Comprobar unicidad de `event_type` frente a `events/index.md` y coherencia con `events-contract.md` (`cumulo.contracts.events`).
-4. Auditar que `payload_required`, `payload_optional` y `payload_forbidden` no se solapen; respetar reglas forenses del contrato (p. ej. `merge_commit_hash` REQUIRED y `hash_signature` FORBIDDEN en eventos Git).
-5. Validar `event_version` y `events_contract_version` frente a `events-contract.md` vigente.
+1. Validar `effective_event_family` ∈ `{ telemetry, orchestration, domain }`.
+2. Cargar `execution-contexts.md` y comprobar `event_context` válido.
+3. Verificar que no exista `{paths.directories.events}/{effective_event_family}/{event_name}.md` en create; `event_name` kebab-case.
+4. Comprobar unicidad de `event_type` frente a `events/{effective_event_family}/index.md` y `events-contract.md` v1.1.0.
+5. Si `effective_event_family == telemetry`: `emitter_agents` solo procesos/cápsulas CLI indexados (sin agentes ED obreros).
+6. Auditar que `payload_required`, `payload_optional` y `payload_forbidden` no se solapen; respetar reglas forenses del contrato.
+7. Validar `event_version` y `events_contract_version` frente a `events-contract.md` vigente.
 
 ## Fase 2 — Forja del Artefacto
 
 1. Ejecutar `phase_invocations`: `child_event_uuid` y `child_event_integrity_hex` vía `action:crypto-broker`; asignar `hash_signature` como `sha256:` + hex sobre el sujeto canónico definido en `phase_invocations`.
-2. Asignar `contract` como `events-contract v{events_contract_version}`, `context` igual a `event_context` validado y `capabilities` obligatorio (mínimo una etiqueta de enrutamiento).
-3. Escribir `{paths.directories.events}/{event_name}.md` con secciones: **Payload ECST** (tablas REQUIRED/OPTIONAL/FORBIDDEN), **Emisores autorizados**, **Suscripciones** (referencia a `event-subscriptions.json`).
+2. Asignar `contract` como `events-contract v{events_contract_version}`, `event_family` igual a `effective_event_family`, `context` igual a `event_context` y `capabilities` obligatorio.
+3. Escribir `{paths.directories.events}/{effective_event_family}/{event_name}.md` con secciones: **Payload ECST**, **Emisores autorizados**, **Suscripciones**.
 4. No hardcodear rutas absolutas; resolver `directories.events` y `contracts.events` exclusivamente desde Cúmulo.
 
 ## Fase 3 — Gobernanza de Índice
 
-1. Abrir `{paths.directories.events}/index.md` y localizar la tabla de catálogo (columna **Capabilities** obligatoria).
+1. Abrir `{paths.directories.events}/{effective_event_family}/index.md` y localizar la tabla de catálogo (columna **Capabilities** obligatoria).
 2. Insertar o actualizar la fila asociada a `{event_name}.md` copiando `uuid`, `name`, `event_type`, `version`, `contract`, `context` y `capabilities` desde el YAML fuente.
 3. Excluir `events-contract.md` e `index.md` del catálogo de Clases.
 4. Si el invocante es `entity-manager`, propagar handoff según outputs de cabecera.

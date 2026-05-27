@@ -38,4 +38,4 @@ Ante colapso de un proceso oficial:
 5. **Notificar** al Vértice Biológico: *"El proceso ha colapsado. Evento de fractura emitido. Cúmulo ha documentado la deuda. Mayeuta ha enriquecido el diagnóstico. A la espera de instrucciones."*
 6. **No avanzar** hasta laudo humano o autorización explícita de salto táctico documentada en el PBI activo.
 
-Referencias: `SddIA/events/system-fracture-detected.md`, `docs/fixes/delivery-close-hook-eda-governance/`, PBI `[FIX] delivery-close-cycle`.
+Referencias: `SddIA/events/domain/system-fracture-detected.md`, `docs/fixes/delivery-close-hook-eda-governance/`, PBI `[FIX] delivery-close-cycle`.

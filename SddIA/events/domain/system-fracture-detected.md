@@ -2,7 +2,8 @@
 uuid: "f8e3a1b2-c4d5-4e6f-9a0b-1c2d3e4f5a6b"
 name: "system-fracture-detected"
 version: "1.0.0"
-contract: "events-contract v1.0.0"
+contract: "events-contract v1.1.0"
+event_family: "domain"
 event_type: "System_Fracture_Detected"
 context: "ecosystem-evolution"
 capabilities:

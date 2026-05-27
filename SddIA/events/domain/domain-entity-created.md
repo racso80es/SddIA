@@ -2,7 +2,8 @@
 uuid: "1f518278-7a3d-4160-b757-a3661d263ec3"
 name: "domain-entity-created"
 version: "1.0.0"
-contract: "events-contract v1.0.0"
+contract: "events-contract v1.1.0"
+event_family: "domain"
 event_type: "Domain_Entity_Created"
 context: "ecosystem-evolution"
 capabilities:

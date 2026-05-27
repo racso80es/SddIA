@@ -27,7 +27,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Emitir la instancia ECST **PullRequest_Presented** en `eda_bus.pending` conforme a `SddIA/events/pull-request-presented.md`. No abre PR en GitHub, no ejecuta `push` ni enruta el bus; solo mintea `event_id` y persiste el JSON en pending.
+Emitir la instancia ECST **PullRequest_Presented** en `eda_bus.pending` conforme a `SddIA/events/domain/pull-request-presented.md`. No abre PR en GitHub, no ejecuta `push` ni enruta el bus; solo mintea `event_id` y persiste el JSON en pending.
 
 **Invariante:** el invocante típico es el proceso **`delivery-close-cycle`** tras la fase «Apertura en forja»; debe pasar `emitter_agent: delivery-close-cycle` y `pr_url` cuando esté disponible.
 
