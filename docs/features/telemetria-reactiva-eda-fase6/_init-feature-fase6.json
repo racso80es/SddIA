@@ -1,0 +1,14 @@
+{
+  "feature_name": "telemetria-reactiva-eda-fase6",
+  "branch_name": "feat/telemetria-reactiva-eda-fase6",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase6",
+  "base_branch": "main",
+  "refined_requirements": "Fase 6 S+ Grade — Actualización README.md raíz. Documentar Trinidad de Estímulos (telemetry/orchestration/domain), bus fractal ./.events/*, coexistencia V3+ pending, workspaces dinámicos, Peaje Termodinámico, Radamanto vs Argos, Self-Healing, recibos termodinámicos y Telemetry_Compliance_Breached. Gate Fase 5 APTO (PR #56). Cierre global PBI: pbi_archived true al merge.",
+  "tekton_control_directive": {
+    "approve_opening": "_init-feature-fase6.json",
+    "scope_doc_only": "README.md raíz + PBI maestro; prohibido mutar genoma SddIA/events ni código runtime salvo enlaces rotos detectados en auditoría",
+    "global_done": "validacion.md pbi_archived true; mover PBI maestro a docs/todos/done/"
+  },
+  "master_pbi_ref": "docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md",
+  "depends_on_feature": "docs/features/telemetria-reactiva-eda-fase5"
+}
