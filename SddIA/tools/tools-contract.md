@@ -1,5 +1,5 @@
 ---
-contract_version: "1.2.0"
+contract_version: "1.3.0"
 entity_type: "tool"
 jurisdiction: "Core SddIA (Interfaz) / Workspace (Delivery)"
 capabilities:
@@ -68,7 +68,21 @@ Las Tools deben respetar un estándar de comunicación **machine-readable**:
 * `minteo_maximo`: Límite de uso definido por el arquitecto local.
 * `porcentaje_de_exito`: Métrica auditable del rendimiento de la herramienta en el entorno local.
 
-## 6. Historial normativo (extracto)
+## 6. Termodinámica declarativa
 
+Campos opcionales en frontmatter de `{name}.md` — paridad con `skills-contract.md` §6 y `actions-contract.md` §6:
+
+| Campo | Tipo | Default |
+|-------|------|---------|
+| `telemetry_provided` | boolean | `false` |
+| `telemetry_schema` | string[] | `["prompt_tokens", "completion_tokens"]` si `telemetry_provided: true` |
+
+Cuando `telemetry_provided: true`, la cápsula promete devolver `telemetry_receipt` válido en stdout; el fan-out `telemetry-compliance-audit` cruza recibo vs contrato.
+
+**Nota histórica:** v1.3.0 introduce termodinámica en tools para soportar el Arsenal de Entropía (`schema-corruptor`) y alinear el Peaje Termodinámico con skills/actions (programa Inmunidad / Caos S+ Grade).
+
+## 7. Historial normativo (extracto)
+
+- **v1.3.0** — §6 termodinámica declarativa (`telemetry_provided`, `telemetry_schema`).
 - **v1.2.0** — Identidad atómica: campo canónico **`name`**; **`toolId`** deprecado en definiciones. Envelope de salida: **`name`** obligatorio en emisores nuevos; **`toolId`** solo como alias legado compatible. Alineado con [evolution c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a](../evolution/c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a.md) (tools locales).
 - **v1.1.0** — Baseline previo (`toolId` en identidad y textos).

@@ -12,6 +12,7 @@ active_feature: null
 impact_analysis: docs/features/inmunidad-caos-fase0/impact-analysis.md
 phase_features:
   "0": docs/features/inmunidad-caos-fase0
+  "1": docs/features/inmunidad-caos-fase1
 depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 ---
 
@@ -36,7 +37,7 @@ depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 | Fase | Estado | Feature (`persist_ref`) | Validación |
 |------|--------|-------------------------|------------|
 | **0** | ✅ Cerrada | [`inmunidad-caos-fase0`](../../features/inmunidad-caos-fase0/) | [`validacion.md`](../../features/inmunidad-caos-fase0/validacion.md) APTO (AC0.1–AC0.5) |
-| **1** | ⏳ Pendiente | `inmunidad-caos-fase1` (prevista) | — |
+| **1** | ✅ Cerrada | [`inmunidad-caos-fase1`](../../features/inmunidad-caos-fase1/) | [`validacion.md`](../../features/inmunidad-caos-fase1/validacion.md) APTO (AC1.1–AC1.3) |
 | **2** | ⏳ Pendiente | `inmunidad-caos-fase2` (prevista) | — |
 | **3** | ⏳ Pendiente | `inmunidad-caos-fase3` (prevista) | — |
 | **4** | ⏳ Pendiente | `inmunidad-caos-fase4` (prevista) | — |
