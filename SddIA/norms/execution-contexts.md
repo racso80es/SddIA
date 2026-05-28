@@ -1,7 +1,7 @@
 ---
 uuid: "d8e9f0a1-b2c3-4d5e-6f7a-8b9c0d1e2f3a"
 name: "execution-contexts"
-version: "1.0.0"
+version: "1.1.0"
 entity_type: "norm"
 jurisdiction: "cerbero"
 ---
@@ -55,6 +55,12 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 * **Jurisdicción:** Anclaje criptográfico inmutable en redes descentralizadas (ej. IOTA Rebased).
 * **Autorización:** Permisos de solo-lectura sobre los hashes del genoma y capacidad de ejecución de la cápsula externa DLT.
 * **Cápsulas asociadas:** `action:emit-pr-merged-event`, `tool:iota-immutable-publisher`.
+
+### 2.9. `chaos-engineering`
+* **Dominio:** Ingeniería del Caos controlada e inocua.
+* **Alcance:** Tools ofensivas que estresan contratos del ecosistema; toda I/O acotada al `workspace_path` inyectado por el orquestador.
+* **Cápsulas asociadas:** `io-choke`, `schema-corruptor`, `sandbox-breacher`.
+* **Restricción:** Prohibida lectura o escritura fuera del `workspace_path` declarado en el payload de invocación.
 
 ---
 *Reporte de Integridad: Normativa forjada y registrada. Rutas actualizadas.*

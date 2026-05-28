@@ -1,0 +1,11 @@
+{
+  "feature_name": "inmunidad-caos-fase1",
+  "branch_name": "feat/inmunidad-caos-fase1",
+  "persist_ref": "docs/features/inmunidad-caos-fase1",
+  "base_branch": "main",
+  "refined_requirements": "Fase 1 PBI PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO: Arsenal de Entropía. Contexto chaos-engineering, tools-contract v1.3.0, assert_workspace_bound, forjar io-choke, schema-corruptor, sandbox-breacher. Gate Fase 0 cerrado (PR #58). PBI pending; pbi_archived false al cierre.",
+  "master_pbi_ref": "docs/todos/pending/PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO.md",
+  "master_pbi_id": "PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO",
+  "depends_on": "docs/features/inmunidad-caos-fase0",
+  "gate_ref": "docs/features/inmunidad-caos-fase0/impact-analysis.md"
+}
