@@ -8,11 +8,11 @@ Ecosistema de **activos técnicos tokenizables** (NFTs lógicos: definiciones ve
 | Entidad | Finalidad | Ubicación Core | Relación operativa |
 |---------|-----------|----------------|-------------------|
 | **Agent** | Orquestador de consciencia y responsable de una fase específica. | `paths.directories.agents` | Posee Skills y ejecuta Acciones dentro de un **Process**. |
-| **Process** | Roadmap lógico de alto nivel para un objetivo macro (p. ej. feature). | `paths.directories.process` | Orquesta el relevo (*handoff*) entre distintos **Agents**. |
+| **Process** | Roadmap lógico de alto nivel para un objetivo macro (p. ej. feature). | `paths.directories.process` | Orquesta el relevo (*handoff*) entre distintos **Agents**. Declara `workspace_template` obligatorio (process-contract v1.4.0); el CLI materializa el Workspace bajo `paths.workspacesRoot`. |
 | **Action** | Paso atómico, indivisible y auditable de ejecución. | `paths.directories.actions` | Invoca **Skills** o **Tools** para el trabajo técnico. |
 | **Skill** | Capacidad técnica especializada definida por contrato. | `paths.directories.skills` | Ejecutada por **Cápsula** blindada (binario Rust o script Python bajo contrato). |
 | **Tool** | Capacidad de infraestructura o utilidad de dominio. | `paths.directories.tools` | Servicios base a las **Actions** vía **Cápsula**. |
-| **Event** | Contrato inmutable de comunicación asíncrona (Clase de Evento). | `paths.directories.events` | Definición en `{name}.md` bajo [events-contract.md](SddIA/events/events-contract.md); instancia ECST en bus runtime (`/.events/` vía `event_bus` / `eda_bus`). Ver también [CONSTITUTION_CORE.md](SddIA/CONSTITUTION_CORE.md) §3.1. |
+| **Event** | Contrato inmutable ECST; clasificado por `event_family` (`telemetry`, `orchestration`, `domain`). | `paths.directories.events` — genoma fractal | Clase en `{name}.md` bajo [events-contract.md](SddIA/events/events-contract.md); instancia en bus fractal (`eda_fractal`) o pipeline V3+ (`eda_bus`) según familia. Índice agregador: [SddIA/events/index.md](SddIA/events/index.md). Ver [CONSTITUTION_CORE.md](SddIA/CONSTITUTION_CORE.md) §3.1. |
 | **Library_Codex** | Paquetes de normas orquestadas por dominio. | `paths.directories.library_codexes` | Agrupación de conocimiento técnico a cumplir por los **Agents**. |
 | **Library_Norm** | Reglas técnicas atómicas, patrones y prohibiciones de *code-smells*. | `paths.directories.library_norms` | Cantera de la **Librería** (`SddIA/library/norms/`). **No** confundir con la normativa operativa del Core (`SddIA/norms`). |
 | **Normativa de ejecución (Core)** | Contratos y normas de operación del núcleo (cápsulas, Git, triage, etc.). | `paths.directories.norms` | Árbol `SddIA/norms`; convive con la Librería; distinto alcance y clave SSOT que `library_norms`. |
@@ -30,15 +30,52 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 
 | Ruta | Rol | Contenido |
 |------|-----|-----------|
-| **`SddIA/events/`** | Genoma (Core) | Biblioteca de **Clases de Evento**: contratos funcionales versionados (`{name}.md`, `events-contract.md`, `index.md`). |
-| **`/.events/`** | Runtime (bus local) | Tránsito de **instancias volátiles** ECST bajo topología **V3+ simétrica** (SSOT `eda_bus` en `cumulo.paths.json`). |
-| **`.SddIA/events/`** | Instancia (proyecto) | Zona de **personalización** por repositorio productivo (Vía C); overrides y configuración táctica. **No** es cola del bus federal. |
+| **`SddIA/events/`** | Genoma (Core) | **Trinidad de Estímulos:** Clases ECST en `{telemetry,orchestration,domain}/`; contrato maestro [`events-contract.md`](SddIA/events/events-contract.md) e índice agregador [`index.md`](SddIA/events/index.md) en raíz. Códice por familia: [`telemetry/index.md`](SddIA/events/telemetry/index.md), [`orchestration/index.md`](SddIA/events/orchestration/index.md), [`domain/index.md`](SddIA/events/domain/index.md). |
+| **`/.events/`** | Runtime (bus local) | Instancias volátiles ECST: **bus fractal** (`eda_fractal`) y **pipeline dominio legacy V3+** (`eda_bus`) en coexistencia (D0.2). |
+| **`.SddIA/events/`** | Instancia (proyecto) | Personalización por repositorio productivo (Vía C). **No** es cola del bus federal. |
 
-Definición operativa de **Event**: *el contrato inmutable de comunicación asíncrona; señal con propósito (finalidad) que blinda la soberanía de las entidades conscientes, operando bajo coreografía pura y evitando el acoplamiento físico entre procesos.* Contrato de familia: `SddIA/events/events-contract.md`. Índice de clases: `SddIA/events/index.md`.
+Definición operativa de **Event**: *contrato inmutable de comunicación asíncrona; señal con propósito que opera bajo coreografía pura.* Toda Clase declara `event_family`: `{ telemetry, orchestration, domain }` (enum estricto en [`events-contract.md`](SddIA/events/events-contract.md)).
 
-#### Topología del bus (V3+)
+Programa de referencia: [Telemetría Reactiva EDA S+ Grade](docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md) (Fases 0–6).
 
-Cada **estado** del bus contiene la **cabecera del evento** y una subcarpeta **`subscribers/`** con un testigo JSON por suscriptor:
+#### Trinidad de Estímulos
+
+| Familia | Naturaleza | Emisor autorizado | Destino runtime |
+|---------|------------|-------------------|-----------------|
+| `telemetry` | Ruido físico (Nivel 1) | **Solo CLI** (Peaje Termodinámico) | `./.events/telemetry/` |
+| `orchestration` | Línea de montaje táctica | CLI (éxito) / auditores | `./.events/orchestration/` |
+| `domain` | Verdad ontológica (Nivel 3) | Agentes Core (Cúmulo, Cerbero, Radamanto, …) | `./.events/domain/` |
+
+> **Regla de oro:** no mezclar telemetría cruda con orquestación ni dominio en la misma ruta física.
+
+#### Genoma fractal (`SddIA/events/`)
+
+```
+SddIA/events/
+├── events-contract.md
+├── index.md
+├── telemetry/index.md      ← Códice de Familia
+├── orchestration/index.md
+└── domain/index.md
+```
+
+Simetría fractal: la topología del genoma refleja la del runtime bajo `./.events/{family}/`.
+
+#### Bus fractal runtime (`eda_fractal`)
+
+SSOT: [`cumulo.paths.json`](SddIA/core/cumulo.paths.json) → `eda_fractal.*`. Directorio `/.events/` en `.gitignore`.
+
+| Ruta | Propósito | Enrutador | Suscripciones |
+|------|-----------|-----------|---------------|
+| `./.events/telemetry/` | Alta frecuencia; purga post-consenso suscriptores | [`route-telemetry`](SddIA/process/route-telemetry.md) | [`event-telemetry-subscriptions.json`](SddIA/core/event-telemetry-subscriptions.json) |
+| `./.events/orchestration/` | Latencia mínima; línea de montaje | [`route-orchestration`](SddIA/process/route-orchestration.md) | [`event-orchestration-subscriptions.json`](SddIA/core/event-orchestration-subscriptions.json) |
+| `./.events/domain/` | Gobernanza; Cerbero / Cúmulo / procesos reactivos | [`route-domain`](SddIA/process/route-domain.md) | [`event-domain-subscriptions.json`](SddIA/core/event-domain-subscriptions.json) |
+
+Telemetría con **fan-out** (p. ej. `radamanto-batch` + `telemetry-compliance-audit`): cada consumidor sella `delivery_state`; la purga física del JSON pertenece solo a la infraestructura (`route-telemetry` o `event-sweeper`).
+
+#### Pipeline dominio legacy (V3+)
+
+Coexistencia gradual (D0.2): eventos dominio legacy y flujos como `PullRequest_Presented` → `pull-request-review` siguen el pipeline monolítico sobre `eda_bus.*`:
 
 ```
 .events/pending/                          ← entrada (padre inmutable hasta sweeper)
@@ -49,10 +86,6 @@ Cada **estado** del bus contiene la **cabecera del evento** y una subcarpeta **`
 .events/dead-letter/
 .events/dead-letter/subscribers/          ← testigos KO (p. ej. ecst-gate)
 ```
-
-Rutas resueltas vía `cumulo.paths.json` → `eda_bus.*`. El directorio `/.events/` está en `.gitignore`.
-
-#### Pipeline runtime (coreografía)
 
 ```mermaid
 flowchart LR
@@ -67,11 +100,11 @@ flowchart LR
 
 | Paso | Componente | Responsabilidad |
 |------|------------|-----------------|
-| 1 | Acciones/procesos emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | Escriben instancia ECST en `.events/pending/` |
-| 2 | `event-watcher.py` | Monitoriza `pending/`; delega en `execute-process --process route-domain-event` |
-| 3 | Proceso **`route-domain-event`** (`route_domain_event_core.py`) | Gate ECST; fan-out **async** a suscriptores; materializa cabeceras y testigos; **purga `pending/` al alcanzar consenso** (`try_sweep_event`) |
-| 4 | Suscriptores (actions, tools, processes) | Ejecutan trabajo de dominio; testigos promovidos con `result_status` |
-| 5 | `event-sweeper.py` | Recolector stale: purga residual en `pending/`; alerta Kaizen si hay `dead-letter/` |
+| 1 | Emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | Escriben ECST en `.events/pending/` |
+| 2 | `event-watcher.py` | Monitoriza `pending/`; delega en `route-domain-event` |
+| 3 | **`route-domain-event`** | Gate ECST; fan-out async; purga `pending/` al consenso |
+| 4 | Suscriptores | Trabajo de dominio; testigos con `result_status` |
+| 5 | `event-sweeper.py` | Purga residual; alerta Kaizen si hay `dead-letter/` |
 
 **Invocación manual (laboratorio):**
 
@@ -80,7 +113,7 @@ python SddIA/scripts/qa/execute-process.py --process route-domain-event \
   --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
 ```
 
-Modo sync de regresión: `SDDIA_LAB_ROUTE_SYNC=1`. Plantilla Vía C: `SddIA/templates/eda-instance-events/README.md`. Feature de referencia: [refactor-topologia-eventos-ola-c-v3](docs/features/refactor-topologia-eventos-ola-c-v3/).
+Modo sync: `SDDIA_LAB_ROUTE_SYNC=1`. Plantilla Vía C: [`SddIA/templates/eda-instance-events/README.md`](SddIA/templates/eda-instance-events/README.md). Features: [refactor-topologia-eventos-ola-c-v3](docs/features/refactor-topologia-eventos-ola-c-v3/), [telemetria-reactiva-eda-fase3](docs/features/telemetria-reactiva-eda-fase3/).
 
 ### Configuración: Jerarquía de Bóvedas
 
@@ -130,18 +163,44 @@ Catálogo canónico (UUID, `allowed_policies`, versiones): `{paths.directories.a
 | **Tekton** | Ejecución: materializa procesos delegando en cápsulas, sin terminal cruda. |
 | **Mayeuta** | Clarificación: estabiliza el *qué* y el *por qué*; no diseña procesos ni código. |
 | **Dedalo** | Planificación: norm pack + blueprint de **Process** alineado a contrato y RBAC del ejecutor. |
-| **Argos** | Verificación: orquesta linters/tests/SAST vía procesos; juicio por evidencia, no por “vibes”. |
+| **Argos** | Verificación: inspector de la **materia** (artefactos, calidad estructural, tests); juicio por evidencia. |
+| **Radamanto** | Actuario de **confianza**: batching de telemetría CLI, umbrales deterministas, sellado DLT de estatus de herramientas. Ver [`radamanto.md`](SddIA/agents/radamanto.md). |
 
-**Flujo típico:** Mayeuta → Dedalo → Tekton → Argos. Cerbero actúa en cada paso de delegación a cápsulas; Cúmulo gobierna rutas y catálogos.
+**Flujo típico:** Mayeuta → Dedalo → Tekton → Argos. Cerbero actúa en cada delegación a cápsulas (Peaje RBAC); Cúmulo gobierna rutas y catálogos.
+
+**Argos vs Radamanto:** Argos audita código y artefactos concretos; Radamanto acumula estadística agregada de telemetría y gobierna estatus macroscópico (`Tool_Degraded`, `Status_Restored`, `Tool_Deprecated`) vía DLT. Radamanto **no** evalúa diffs ni mide por sí mismo.
+
+**Self-Healing (alto nivel):** telemetría degradada → Radamanto emite `Tool_Degraded` → Cerbero revoca RBAC → Tekton/Dédalo reparan en sandbox → Argos valida estructura → telemetría exitosa → Radamanto `Status_Restored` → Cerbero rehabilita. Tras `max_recovery_attempts` → `Tool_Deprecated`. Detalle: [telemetria-reactiva-eda-fase4](docs/features/telemetria-reactiva-eda-fase4/).
 
 ## Orquestación multi-agente y relevo por artefactos
-La colaboración entre agentes (p. ej. Tekton y un agente de seguridad) no es mensajería efímera: es **línea de montaje** gobernada por el **Process**.
+
+La colaboración entre agentes no es mensajería efímera: es **línea de montaje** gobernada por el **Process**.
 
 1. El **Process** fija qué **Agent** tiene el mando en cada fase.
-2. El traspaso de estado e información usa la **Carpeta de Tarea** referenciada por `persist_ref` (persistencia explícita, no contexto volátil).
-3. El agente emisor deposita **artefactos** (código, informes, validaciones, binarios de prueba). El agente receptor **audita** esos artefactos antes de asumir la fase siguiente.
+2. Al arrancar, el **CLI** parsea `workspace_template` del proceso, genera `execution_id` (UUID) y materializa el **Workspace dinámico** bajo `paths.workspacesRoot` (SSOT: `.SddIA/workspaces/{process_name}/{execution_id}/`).
+3. La coordenada absoluta se inyecta en el payload táctico (`workspace_path`); las Entidades de Dominio operan con **Ceguera Espacial** (no conocen rutas del repositorio).
+4. El traspaso documental usa `persist_ref` en `docs/features/` o `docs/fixes/` — **ortogonal** al workspace operativo. Los aliases `featurePath` / `fixPath` apuntan a documentación, no al territorio de ejecución.
+5. Las ED **no escriben en disco directamente**: invocan `filesystem-manager` vía `capsule-json-io` (stdin/stdout JSON) sobre el Workspace inyectado.
+6. El agente emisor deposita **artefactos** en el Workspace; el receptor los **audita** antes de asumir la fase siguiente.
 
-Sin carpeta de tarea materializada y artefactos versionables, no hay handoff válido bajo este modelo.
+Sin Workspace materializado y artefactos versionables, no hay handoff válido bajo este modelo. Detalle: [telemetria-reactiva-eda-fase2](docs/features/telemetria-reactiva-eda-fase2/).
+
+## Aduana Universal (CLI)
+
+Toda ejecución transita por el CLI (`execute-process`, `execute_process_capsules`). El **Peaje Termodinámico** (distinto del Peaje RBAC de Cerbero) intercepta cada invocación:
+
+| Paso | Acción |
+|------|--------|
+| 1 | Cronómetro antes de ejecutar la cápsula |
+| 2 | Al finalizar: capturar `exit_code`, `duration_ms`, `asset_id` |
+| 3 | Emitir `Raw_Execution_Finished` (familia `telemetry`) en `./.events/telemetry/` |
+| 4 | En éxito: emitir además evento de orquestación según blueprint del proceso |
+
+**Fail-soft (D3.13):** fallo E/S al escribir telemetría no detiene el hilo de negocio.
+
+**Recibos termodinámicos (opcionales):** si la cápsula devuelve `telemetry_receipt` en stdout JSON, el CLI lo anexa al payload telemetría. Omisión **no** falla la ejecución de negocio. Contratos ED declaran `telemetry_provided` / `telemetry_schema` en skills y actions.
+
+**Auditoría de cumplimiento:** el proceso [`telemetry-compliance-audit`](SddIA/process/telemetry-compliance-audit.md) cruza recibo vs contrato ED; incumplimiento → `Telemetry_Compliance_Breached` en `./.events/domain/`. Gobernanza reactiva post-breach: pendiente (Kaizen). Detalle: [telemetria-reactiva-eda-fase5](docs/features/telemetria-reactiva-eda-fase5/).
 
 ## Estándar de entidades de dominio SddIA
 **Toda** familia de entidades de dominio debe cumplir el siguiente rigor arquitectónico:
@@ -157,7 +216,7 @@ Sin carpeta de tarea materializada y artefactos versionables, no hay handoff vá
 Ese paquete es el prerequisito para integración en la **Librería SddIA** y su modelo de activo direccionable (capa NFT-ready).
 
 ## Desacoplamiento Core / instancia
-Definición de núcleo en este repositorio; especialización, constitución táctica y **secretos** en instancia local bajo `.SddIA/` (constitución, eventos, **bóveda `.SddIA/.dev/.env`**). La bóveda global `.dev/.env` complementa valores compartidos del clone. Ver [Jerarquía de Bóvedas](#configuración-jerarquía-de-bóvedas). Sin lógica de negocio dispersa fuera de **Actions** orquestadas y **Cápsulas**; sin `.env` operativos en subdirectorios de tools.
+Definición de núcleo en este repositorio; especialización, constitución táctica y **secretos** en instancia local bajo `.SddIA/` (constitución, eventos, **workspaces** en `.SddIA/workspaces/`, **bóveda `.SddIA/.dev/.env`**). SSOT rutas: [`cumulo.paths.json`](SddIA/core/cumulo.paths.json) (`paths.workspacesRoot`, `eda_fractal`, `eda_bus`). La bóveda global `.dev/.env` complementa valores compartidos del clone. Ver [Jerarquía de Bóvedas](#configuración-jerarquía-de-bóvedas). Sin lógica de negocio dispersa fuera de **Actions** orquestadas y **Cápsulas**; sin `.env` operativos en subdirectorios de tools.
 
 ## Estándar de ejecución
 Lógica crítica en **Cápsulas** (preferente binario Rust; Python permitido cuando esté explicitado y bajo contrato). Contrato de E/S: JSON por stdin/stdout según `SddIA/norms/capsule-json-io.md`. Los agentes orquestan; no sustituyen a la cápsula en cómputo ni en contrato de I/O.
