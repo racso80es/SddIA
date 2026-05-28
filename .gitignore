@@ -17,6 +17,7 @@ docs/events/
 .SddIA/workspaces/
 .SddIA/radamanto/
 .SddIA/sandbox/
+.SddIA/telemetry-compliance/
 .SddIA/cerbero/revoked_entities.json
 
 # Jerarquía de Bóvedas — secretos locales (no versionar)

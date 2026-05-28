@@ -70,6 +70,8 @@ THERMODYNAMIC_EXEMPT = frozenset(
 
 _THERMODYNAMIC_EMERGENCY_PREFIX = "[THERMODYNAMIC-TOLL-EMERGENCY]"
 
+_ACTIVE_CAPSULE_CAPTURE_STATE: dict[str, Any] | None = None
+
 ROUTE_FRACTAL_HANDLERS: dict[str, str] = {
     "route-telemetry": "route_telemetry_event",
     "route-orchestration": "route_orchestration_event",
@@ -1834,6 +1836,9 @@ def invoke_capsule_action(
     if not line:
         raise RuntimeError(proc.stderr or f"acción {action_name} sin salida")
     body = json.loads(line)
+    if _ACTIVE_CAPSULE_CAPTURE_STATE is not None:
+        _ACTIVE_CAPSULE_CAPTURE_STATE["last_capsule_id"] = action_name
+        _ACTIVE_CAPSULE_CAPTURE_STATE["last_capsule_envelope"] = body
     if not body.get("success"):
         raise RuntimeError(body.get("error") or f"acción {action_name} falló")
     return body.get("data") or {}
@@ -2143,6 +2148,28 @@ def _route_handler_result(canonical: str, out: dict[str, Any], handler: str) -> 
     }
 
 
+def extract_telemetry_receipt(envelope: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(envelope, dict):
+        return None
+    try:
+        direct = envelope.get("telemetry_receipt")
+        if isinstance(direct, dict) and direct:
+            return direct
+        data = envelope.get("data")
+        if isinstance(data, dict):
+            nested = data.get("telemetry_receipt")
+            if isinstance(nested, dict) and nested:
+                return nested
+        result = envelope.get("result")
+        if isinstance(result, dict):
+            nested = result.get("telemetry_receipt")
+            if isinstance(nested, dict) and nested:
+                return nested
+    except (TypeError, AttributeError):
+        return None
+    return None
+
+
 def run_thermodynamic_toll(
     repo: Path,
     process_name: str,
@@ -2169,6 +2196,13 @@ def run_thermodynamic_toll(
             workspace_path = ws.get("workspace_path")
     persist_ref = process_inputs.get("persist_ref")
     result: dict[str, Any] = {"asset_id": asset_id, "duration_ms": duration_ms, "exit_code": exit_code}
+    capsule_id = state.get("last_capsule_id")
+    receipt: dict[str, Any] | None = None
+    try:
+        receipt = extract_telemetry_receipt(state.get("last_capsule_envelope"))
+    except Exception as exc:
+        result["receipt_parse_error"] = str(exc)
+        _log_thermodynamic_emergency(process_name, "receipt-parse", exc)
     try:
         telemetry_id = str(uuid.uuid4())
         telemetry_event = build_raw_execution_finished_event(
@@ -2179,6 +2213,8 @@ def run_thermodynamic_toll(
             process_name=process_name,
             execution_id=execution_id if isinstance(execution_id, str) else None,
             workspace_path=workspace_path if isinstance(workspace_path, str) else None,
+            capsule_id=capsule_id if isinstance(capsule_id, str) else None,
+            telemetry_receipt=receipt,
         )
         telemetry_seal = write_fractal_event(repo, telemetry_event, "telemetry")
         result["telemetry"] = telemetry_seal
@@ -2239,6 +2275,39 @@ def execute_radamanto_batch_phase(
     }
 
 
+def execute_telemetry_compliance_audit_phase(
+    repo: Path,
+    phase_name: str | None,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any] | None:
+    if phase_name != "Auditoría cumplimiento termodinámico":
+        return None
+    rel = inputs.get("event_file_path")
+    if not isinstance(rel, str) or not rel.strip():
+        return {
+            "status": "failed",
+            "handler": "telemetry-compliance-audit",
+            "error": "event_file_path ausente",
+        }
+    from telemetry_compliance_audit_core import audit_telemetry_compliance
+
+    result = audit_telemetry_compliance(repo, rel.strip())
+    if not result.get("ok"):
+        return {
+            "status": "failed",
+            "handler": "telemetry-compliance-audit",
+            "error": result.get("error"),
+        }
+    state["telemetry_compliance_audit"] = result
+    return {
+        "status": "executed",
+        "handler": "telemetry-compliance-audit",
+        "audit_status": result.get("status"),
+        "breach": result.get("breach"),
+    }
+
+
 def execute_telemetry_batch_stub_phase(
     repo: Path,
     phase_name: str | None,
@@ -2292,6 +2361,35 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
             "success": ok,
             "status_code": 0 if ok else 1,
             "data": {"process_name": canonical, "radamanto_batch": state.get("radamanto_batch")},
+            "execution_report": {"process_name": canonical, "phases": phase_reports},
+        }
+    if canonical == "telemetry-compliance-audit":
+        state = {"handoff": {}, "inputs": process_inputs}
+        phase_reports: list[dict[str, Any]] = []
+        for phase in phases:
+            if not isinstance(phase, dict):
+                continue
+            audit = execute_telemetry_compliance_audit_phase(
+                repo, phase.get("name"), process_inputs, state
+            )
+            if audit is not None:
+                phase_reports.append({"phase_name": phase.get("name"), **audit})
+            else:
+                phase_reports.append(
+                    {"phase_name": phase.get("name"), "status": "simulated", "delegates_to": phase.get("delegates_to")}
+                )
+        ok = all(
+            r.get("status") == "executed"
+            for r in phase_reports
+            if r.get("handler") == "telemetry-compliance-audit"
+        )
+        return {
+            "success": ok,
+            "status_code": 0 if ok else 1,
+            "data": {
+                "process_name": canonical,
+                "telemetry_compliance_audit": state.get("telemetry_compliance_audit"),
+            },
             "execution_report": {"process_name": canonical, "phases": phase_reports},
         }
     if canonical == "telemetry-batch-stub":
@@ -2375,103 +2473,108 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
     validate_process_inputs(process_def, process_inputs, canonical)
 
     state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
+    global _ACTIVE_CAPSULE_CAPTURE_STATE
+    _ACTIVE_CAPSULE_CAPTURE_STATE = state
     toll_start: float | None = None
-    if canonical not in THERMODYNAMIC_EXEMPT:
-        state["asset_id"] = str(uuid.uuid4())
-        toll_start = time.monotonic()
     try:
-        ws_boot = bootstrap_process_workspace(repo, canonical, process_def, process_inputs, state)
-        state["workspace_boot"] = ws_boot
-    except ValueError as exc:
-        return {
-            "success": False,
-            "status_code": 1,
-            "data": None,
-            "error": str(exc),
-            "execution_report": {"process_name": canonical, "phases": []},
-        }
-    pi_index = phase_invocations_index(process_def)
-    phase_reports: list[dict[str, Any]] = []
-
-    for phase in phases:
-        if not isinstance(phase, dict):
-            continue
-        phase_reports.append(
-            execute_phase(repo, phase, process_def, process_inputs, state, pi_index)
-        )
-    state["phase_reports"] = phase_reports
-
-    data: dict[str, Any] = {"process_name": canonical, "handoff": state.get("handoff")}
-    if state.get("workspace_path"):
-        data["workspace_path"] = state["workspace_path"]
-    if state.get("execution_id"):
-        data["execution_id"] = state["execution_id"]
-    if state.get("workspace"):
-        data.update(state["workspace"])
-    if state.get("eda_audit"):
-        data["eda_audit"] = state["eda_audit"]
-    if state.get("argos_verdict"):
-        data["argos_verdict"] = state["argos_verdict"]
-    if state.get("pr_url"):
-        data["pr_url"] = state["pr_url"]
-    if state.get("event_id"):
-        data["event_id"] = state["event_id"]
-    if state.get("target_path"):
-        data["target_path"] = state["target_path"]
-    if "closed_branch" in state:
-        data["closed_branch"] = state["closed_branch"]
-    if state.get("hygiene_failure"):
-        data["hygiene_failure"] = state["hygiene_failure"]
-    if state.get("snapshot_commit_hash"):
-        data["snapshot_commit_hash"] = state["snapshot_commit_hash"]
-    if state.get("verdict"):
-        data["verdict"] = state["verdict"]
-    if state.get("delivery_state"):
-        data["delivery_state"] = state["delivery_state"]
-    if state.get("kaizen_seeds"):
-        data["kaizen_seeds"] = state["kaizen_seeds"]
-    if state.get("accept_pr_handoff"):
-        data["accept_pr_handoff"] = state["accept_pr_handoff"]
-    if state.get("sddia_impact"):
-        data["sddia_impact"] = state["sddia_impact"]
-    if state.get("pbi_archived_path"):
-        data["pbi_archived_path"] = state["pbi_archived_path"]
-    if state.get("delivery_close"):
-        data["delivery_close"] = state["delivery_close"]
-
-    blocked = state.get("argos_verdict") == "block"
-    if state.get("verdict") in ("rechazado", "requiere_cambios"):
-        blocked = True
-    err_msg = None
-    if state.get("argos_verdict") == "block":
-        err_msg = "Argos: Ruido de Sistema (huérfanas EDA)"
-    elif state.get("verdict") == "rechazado":
-        err_msg = "pull-request-review: aduana bloqueó materialización"
-    elif state.get("verdict") == "requiere_cambios":
-        err_msg = "pull-request-review: requiere cambios antes de merge"
-    blocked_success = not blocked
-    status_code = 1 if blocked else 0
-    duration_ms = 0
-    if toll_start is not None:
-        duration_ms = max(0, int((time.monotonic() - toll_start) * 1000))
-    if canonical not in THERMODYNAMIC_EXEMPT and toll_start is not None:
+        if canonical not in THERMODYNAMIC_EXEMPT:
+            state["asset_id"] = str(uuid.uuid4())
+            toll_start = time.monotonic()
         try:
-            data["thermodynamic_toll"] = run_thermodynamic_toll(
-                repo,
-                canonical,
-                state,
-                process_inputs,
-                exit_code=status_code,
-                duration_ms=duration_ms,
-                success=blocked_success,
+            ws_boot = bootstrap_process_workspace(repo, canonical, process_def, process_inputs, state)
+            state["workspace_boot"] = ws_boot
+        except ValueError as exc:
+            return {
+                "success": False,
+                "status_code": 1,
+                "data": None,
+                "error": str(exc),
+                "execution_report": {"process_name": canonical, "phases": []},
+            }
+        pi_index = phase_invocations_index(process_def)
+        phase_reports: list[dict[str, Any]] = []
+
+        for phase in phases:
+            if not isinstance(phase, dict):
+                continue
+            phase_reports.append(
+                execute_phase(repo, phase, process_def, process_inputs, state, pi_index)
             )
-        except Exception as exc:
-            data["thermodynamic_toll_error"] = str(exc)
-            _log_thermodynamic_emergency(canonical, "toll-envelope", exc)
-    return {
-        "success": blocked_success,
-        "status_code": status_code,
-        "data": data,
-        "error": err_msg,
-        "execution_report": {"process_name": canonical, "phases": phase_reports},
-    }
+        state["phase_reports"] = phase_reports
+
+        data: dict[str, Any] = {"process_name": canonical, "handoff": state.get("handoff")}
+        if state.get("workspace_path"):
+            data["workspace_path"] = state["workspace_path"]
+        if state.get("execution_id"):
+            data["execution_id"] = state["execution_id"]
+        if state.get("workspace"):
+            data.update(state["workspace"])
+        if state.get("eda_audit"):
+            data["eda_audit"] = state["eda_audit"]
+        if state.get("argos_verdict"):
+            data["argos_verdict"] = state["argos_verdict"]
+        if state.get("pr_url"):
+            data["pr_url"] = state["pr_url"]
+        if state.get("event_id"):
+            data["event_id"] = state["event_id"]
+        if state.get("target_path"):
+            data["target_path"] = state["target_path"]
+        if "closed_branch" in state:
+            data["closed_branch"] = state["closed_branch"]
+        if state.get("hygiene_failure"):
+            data["hygiene_failure"] = state["hygiene_failure"]
+        if state.get("snapshot_commit_hash"):
+            data["snapshot_commit_hash"] = state["snapshot_commit_hash"]
+        if state.get("verdict"):
+            data["verdict"] = state["verdict"]
+        if state.get("delivery_state"):
+            data["delivery_state"] = state["delivery_state"]
+        if state.get("kaizen_seeds"):
+            data["kaizen_seeds"] = state["kaizen_seeds"]
+        if state.get("accept_pr_handoff"):
+            data["accept_pr_handoff"] = state["accept_pr_handoff"]
+        if state.get("sddia_impact"):
+            data["sddia_impact"] = state["sddia_impact"]
+        if state.get("pbi_archived_path"):
+            data["pbi_archived_path"] = state["pbi_archived_path"]
+        if state.get("delivery_close"):
+            data["delivery_close"] = state["delivery_close"]
+
+        blocked = state.get("argos_verdict") == "block"
+        if state.get("verdict") in ("rechazado", "requiere_cambios"):
+            blocked = True
+        err_msg = None
+        if state.get("argos_verdict") == "block":
+            err_msg = "Argos: Ruido de Sistema (huérfanas EDA)"
+        elif state.get("verdict") == "rechazado":
+            err_msg = "pull-request-review: aduana bloqueó materialización"
+        elif state.get("verdict") == "requiere_cambios":
+            err_msg = "pull-request-review: requiere cambios antes de merge"
+        blocked_success = not blocked
+        status_code = 1 if blocked else 0
+        duration_ms = 0
+        if toll_start is not None:
+            duration_ms = max(0, int((time.monotonic() - toll_start) * 1000))
+        if canonical not in THERMODYNAMIC_EXEMPT and toll_start is not None:
+            try:
+                data["thermodynamic_toll"] = run_thermodynamic_toll(
+                    repo,
+                    canonical,
+                    state,
+                    process_inputs,
+                    exit_code=status_code,
+                    duration_ms=duration_ms,
+                    success=blocked_success,
+                )
+            except Exception as exc:
+                data["thermodynamic_toll_error"] = str(exc)
+                _log_thermodynamic_emergency(canonical, "toll-envelope", exc)
+        return {
+            "success": blocked_success,
+            "status_code": status_code,
+            "data": data,
+            "error": err_msg,
+            "execution_report": {"process_name": canonical, "phases": phase_reports},
+        }
+    finally:
+        _ACTIVE_CAPSULE_CAPTURE_STATE = None

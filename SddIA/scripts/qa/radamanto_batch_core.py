@@ -10,9 +10,11 @@ from pathlib import Path
 from typing import Any
 
 from eda_bus_utils import (
+    RADAMANTO_BATCH_SUBSCRIBER_KEY,
     _iso_now,
     _write_json_atomic,
     load_radamanto_config,
+    stamp_fractal_delivery_state,
     write_fractal_event,
 )
 
@@ -160,7 +162,9 @@ def process_telemetry_file(repo: Path, rel_path: str) -> dict[str, Any]:
         return {"ok": False, "error": "asset_id requerido"}
 
     if asset_id in load_consumed(repo):
-        event_path.unlink(missing_ok=True)
+        stamp_fractal_delivery_state(
+            repo, event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "skipped"
+        )
         return {"ok": True, "skipped": "duplicate_asset_id", "asset_id": asset_id}
 
     entity_id = target_entity_from_payload(payload)
@@ -232,14 +236,16 @@ def process_telemetry_file(repo: Path, rel_path: str) -> dict[str, Any]:
             bucket["samples"] = samples[-int(thresholds.get("redemption_success_count", 3)) :]
             save_stats(repo, stats)
             mark_consumed(repo, asset_id)
-            event_path.unlink(missing_ok=True)
+            stamp_fractal_delivery_state(
+                repo, event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "success"
+            )
             return {
                 "ok": True,
                 "asset_id": asset_id,
                 "entity_id": entity_id,
                 "status": bucket.get("status"),
                 "actions": actions,
-                "purged": True,
+                "purged": False,
             }
 
     if status == "healthy":
@@ -287,7 +293,9 @@ def process_telemetry_file(repo: Path, rel_path: str) -> dict[str, Any]:
         pass  # disk already has latest status from incremental saves
     save_stats(repo, stats)
     mark_consumed(repo, asset_id)
-    event_path.unlink(missing_ok=True)
+    stamp_fractal_delivery_state(
+        repo, event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "success"
+    )
 
     return {
         "ok": True,
@@ -295,5 +303,5 @@ def process_telemetry_file(repo: Path, rel_path: str) -> dict[str, Any]:
         "entity_id": entity_id,
         "status": bucket.get("status"),
         "actions": actions,
-        "purged": True,
+        "purged": False,
     }

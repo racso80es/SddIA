@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from eda_bus_utils import load_eda_fractal, subscriber_id
+from eda_bus_utils import load_eda_fractal, maybe_purge_fractal_telemetry_when_terminal, subscriber_id
 from route_domain_event_core import dispatch_subscriber
 
 
@@ -36,6 +36,17 @@ def _dispatch_fractal_subscriber(
             if result.get("ok"):
                 return sid, "success", None, 0
             return sid, "failed", result.get("error") or "radamanto-batch failed", 1
+        if key == "telemetry-compliance-audit":
+            try:
+                from telemetry_compliance_audit_core import audit_telemetry_compliance
+
+                result = audit_telemetry_compliance(repo, rel_path)
+            except Exception as exc:
+                return subscriber_id(subscriber), "failed", str(exc), 1
+            sid = subscriber_id(subscriber)
+            if result.get("ok"):
+                return sid, "success", None, 0
+            return sid, "failed", result.get("error") or "telemetry-compliance-audit failed", 1
         if key == "telemetry-batch-stub":
             process_inputs = {
                 "event_file_path": rel_path,
@@ -160,6 +171,13 @@ def route_fractal_event(
     if all_ok and purge_after and event_path.is_file():
         event_path.unlink(missing_ok=True)
 
+    is_telemetry_bus = "telemetry" in subscriptions_rel.replace("\\", "/")
+    purged_telemetry = False
+    if all_ok and is_telemetry_bus and event_path.is_file():
+        purged_telemetry = maybe_purge_fractal_telemetry_when_terminal(
+            repo, event_path, registry, event_type
+        )
+
     return {
         "success": all_ok,
         "exitCode": 0 if all_ok else 1,
@@ -167,7 +185,7 @@ def route_fractal_event(
             "success": all_ok,
             "delivery_status": delivery_status,
             "parent_path": rel_path,
-            "purged": purge_after and all_ok,
+            "purged": (purge_after and all_ok) or purged_telemetry,
             "skip_ecst_gate": skip_ecst_gate,
         },
         "error": None if all_ok else "one or more subscribers failed",

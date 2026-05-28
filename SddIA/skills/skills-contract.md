@@ -1,5 +1,5 @@
 ---
-contract_version: "1.1.0"
+contract_version: "1.2.0"
 entity_type: "skill"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -38,3 +38,14 @@ Los Skills son el "martillo ciego" del sistema. Su comunicación es puramente ma
 
 ## 5. Esquemas de entrada congelados (pre-forja)
 Las skills `git-manager` y `shell-executor` deben obedecer los mensajes de stdin definidos de forma **congelada** en normas bajo `directories.norms`, referenciadas desde `SddIA/core/cumulo.paths.json` → `normative_documents.skill_io_git_manager_frozen` y `normative_documents.skill_io_shell_executor_frozen`. Cerbero y Argos validan contra esos documentos antes de la invocación.
+
+## 6. Termodinámica declarativa (Fase 5)
+
+Campos opcionales en frontmatter de `{name}.md`:
+
+| Campo | Tipo | Default | Descripción |
+|-------|------|---------|-------------|
+| `telemetry_provided` | boolean | `false` (implícito) | La cápsula promete devolver `telemetry_receipt` en stdout |
+| `telemetry_schema` | string[] | `["prompt_tokens", "completion_tokens"]` si `telemetry_provided: true` | Claves obligatorias en el recibo |
+
+Ausencia de ambos campos → la ED no entra en auditoría de cumplimiento termodinámico.

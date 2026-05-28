@@ -1,0 +1,15 @@
+{
+  "feature_name": "telemetria-reactiva-eda-fase5",
+  "branch_name": "feat/telemetria-reactiva-eda-fase5",
+  "persist_ref": "docs/features/telemetria-reactiva-eda-fase5",
+  "base_branch": "main",
+  "refined_requirements": "Fase 5 S+ Grade — Cumplimiento termodinámico (recibos de tokens). Extender contratos ED (telemetry_provided/telemetry_schema); Peaje CLI fail-soft con extracción telemetry_receipt desde stdout cápsula; auditoría asíncrona cruce recibo vs contrato; evento dominio Telemetry_Compliance_Breached. Gate Fase 4 APTO (Radamanto + Self-Healing). PBI maestro en pending. Gobernanza reactiva post-breach → placeholder (§5.D).",
+  "tekton_control_directive": {
+    "approve_opening": "_init-feature-fase5.json",
+    "fail_soft_toll": "omit_receipt_never_fail_business_exit",
+    "compliance_emitter": "telemetry-compliance-audit_not_radamanto_batch",
+    "fan_out_immunity_T5_6": "consumers_stamp_delivery_state_only; no_os_remove_on_source; purge_route_telemetry_or_event_sweeper"
+  },
+  "master_pbi_ref": "docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md",
+  "depends_on_feature": "docs/features/telemetria-reactiva-eda-fase4"
+}

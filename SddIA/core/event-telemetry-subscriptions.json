@@ -4,6 +4,11 @@
       "agent": "radamanto",
       "process": "radamanto-batch",
       "intent": "Acumulado estadístico batch; umbrales; emisión dominio + DLT."
+    },
+    {
+      "agent": "argos",
+      "process": "telemetry-compliance-audit",
+      "intent": "Cruce recibo vs contrato ED; emisión dominio breach; sello delivery_state."
     }
   ]
 }

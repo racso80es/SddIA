@@ -1,5 +1,5 @@
 ---
-contract_version: "1.2.0"
+contract_version: "1.3.0"
 entity_type: "action"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -53,3 +53,12 @@ El campo de payload de éxito es **`data`** (no `result`). En fallo, `success: f
 El esquema permite la inclusión de métricas de termodinámica operativa:
 * `minteo_maximo`: Límite de veces que esta orquestación puede ser invocada o instanciada.
 * `porcentaje_de_exito`: Variable auditable basada en cuántas veces la acción completó su ejecución sin devolver errores fatales.
+
+## 6. Termodinámica declarativa (Fase 5)
+
+Campos opcionales en frontmatter de `{name}.md` — misma semántica que `skills-contract.md` §6:
+
+| Campo | Tipo | Default |
+|-------|------|---------|
+| `telemetry_provided` | boolean | `false` |
+| `telemetry_schema` | string[] | schema mínimo canónico si `true` |
