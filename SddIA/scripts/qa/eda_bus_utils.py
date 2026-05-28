@@ -972,6 +972,8 @@ def build_raw_execution_finished_event(
     process_name: str,
     execution_id: str | None = None,
     workspace_path: str | None = None,
+    capsule_id: str | None = None,
+    telemetry_receipt: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "asset_id": asset_id,
@@ -983,6 +985,10 @@ def build_raw_execution_finished_event(
         payload["execution_id"] = execution_id
     if workspace_path:
         payload["workspace_path"] = workspace_path
+    if isinstance(capsule_id, str) and capsule_id.strip():
+        payload["capsule_id"] = capsule_id.strip()
+    if isinstance(telemetry_receipt, dict) and telemetry_receipt:
+        payload["telemetry_receipt"] = telemetry_receipt
     return {
         "event_id": event_id,
         "event_type": "Raw_Execution_Finished",
@@ -1066,3 +1072,151 @@ def load_radamanto_config(repo: Path) -> dict[str, Any]:
             pass
     defaults["thresholds"] = thresholds
     return defaults
+
+
+DEFAULT_TELEMETRY_SCHEMA = ["prompt_tokens", "completion_tokens"]
+
+RADAMANTO_BATCH_SUBSCRIBER_KEY = "radamanto.radamanto-batch"
+COMPLIANCE_SUBSCRIBER_KEY = "argos.telemetry-compliance-audit"
+
+
+def _parse_ed_frontmatter(repo: Path, rel_path: str) -> dict[str, Any]:
+    path = repo / rel_path
+    if not path.is_file():
+        return {}
+    try:
+        from execute_process_core import parse_frontmatter
+
+        return parse_frontmatter(path)
+    except (ImportError, OSError):
+        return {}
+
+
+def resolve_ed_telemetry_contract(
+    repo: Path, capsule_id: str | None
+) -> dict[str, Any]:
+    if not isinstance(capsule_id, str) or not capsule_id.strip():
+        return {"telemetry_provided": False, "telemetry_schema": None, "entity_kind": None}
+    cid = capsule_id.strip()
+    for kind, subdir in (("skill", "skills"), ("action", "actions")):
+        rel = f"SddIA/{subdir}/{cid}.md"
+        fm = _parse_ed_frontmatter(repo, rel)
+        if not fm:
+            continue
+        provided = bool(fm.get("telemetry_provided", False))
+        schema = fm.get("telemetry_schema")
+        if provided and not schema:
+            schema = list(DEFAULT_TELEMETRY_SCHEMA)
+        elif isinstance(schema, list):
+            schema = [str(x) for x in schema]
+        else:
+            schema = None
+        return {
+            "telemetry_provided": provided,
+            "telemetry_schema": schema,
+            "entity_kind": kind,
+        }
+    return {"telemetry_provided": False, "telemetry_schema": None, "entity_kind": None}
+
+
+def receipt_satisfies_schema(receipt: dict[str, Any], schema: list[str]) -> bool:
+    if not isinstance(receipt, dict):
+        return False
+    for key in schema:
+        val = receipt.get(key)
+        if not isinstance(val, (int, float)) or val < 0:
+            return False
+    return True
+
+
+def stamp_fractal_delivery_state(
+    repo: Path,
+    event_path: Path,
+    subscriber_key: str,
+    status: str,
+) -> None:
+    if not event_path.is_file():
+        return
+    try:
+        body = json.loads(event_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    ds = body.get("delivery_state")
+    if not isinstance(ds, dict):
+        ds = {}
+        body["delivery_state"] = ds
+    ds[subscriber_key] = status
+    _write_json_atomic(event_path, body)
+
+
+def delivery_stamp_terminal_ok(status: str) -> bool:
+    return status == "success" or status == "skipped" or status.startswith("skipped")
+
+
+def maybe_purge_fractal_telemetry_when_terminal(
+    repo: Path,
+    event_path: Path,
+    registry: dict[str, Any],
+    event_type: str,
+) -> bool:
+    required = required_subscriber_ids(registry, event_type)
+    if not required or not event_path.is_file():
+        return False
+    try:
+        body = json.loads(event_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+    ds = body.get("delivery_state")
+    if not isinstance(ds, dict):
+        return False
+    for sid in required:
+        st = ds.get(sid)
+        if not isinstance(st, str) or not delivery_stamp_terminal_ok(st):
+            return False
+    event_path.unlink(missing_ok=True)
+    return True
+
+
+def load_telemetry_compliance_config(repo: Path) -> dict[str, str]:
+    defaults: dict[str, str] = {
+        "emitted_registry": ".SddIA/telemetry-compliance/emitted.json",
+    }
+    try:
+        cfg = _load_cumulo(repo)
+        block = cfg.get("telemetry_compliance") or {}
+        if isinstance(block, dict):
+            for key, value in block.items():
+                if isinstance(value, str) and value.strip():
+                    defaults[key] = _normalize_rel(value.strip())
+    except (OSError, ValueError):
+        pass
+    return defaults
+
+
+def build_telemetry_compliance_breached_event(
+    *,
+    asset_id: str,
+    capsule_id: str,
+    process_name: str,
+    breach_reason: str,
+    expected_schema: list[str] | None = None,
+) -> dict[str, Any]:
+    import uuid
+
+    payload: dict[str, Any] = {
+        "asset_id": asset_id,
+        "capsule_id": capsule_id,
+        "breach_reason": breach_reason,
+        "process_name": process_name,
+    }
+    if expected_schema:
+        payload["expected_schema"] = expected_schema
+    return {
+        "event_id": str(uuid.uuid4()),
+        "event_type": "Telemetry_Compliance_Breached",
+        "event_family": "domain",
+        "timestamp": _telemetry_timestamp(),
+        "emitter_agent": "telemetry-compliance-audit",
+        "payload": payload,
+        "delivery_state": {},
+    }

@@ -16,6 +16,7 @@ phase_features:
   "2": docs/features/telemetria-reactiva-eda-fase2
   "3": docs/features/telemetria-reactiva-eda-fase3
   "4": docs/features/telemetria-reactiva-eda-fase4
+  "5": docs/features/telemetria-reactiva-eda-fase5
 consolidates:
   - docs/todos/tmp/Telemetría Reactiva SddIA_V2.md
   - docs/todos/tmp/Refactor_Familias_Eventos.md
@@ -30,13 +31,14 @@ consolidates:
 |-------|-------|
 | **ID** | `PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO` |
 | **Fecha creación** | 2026-05-26 |
-| **Estatus** | En ejecución — Fase 4 cerrada; Fase 5 pendiente (`telemetria-reactiva-eda-fase5`) |
+| **Estatus** | En ejecución — Fase 5 en planificación (`telemetria-reactiva-eda-fase5`) |
 | **Versión PBI** | 1.5.0 (cierre Fase 4 Radamanto + Self-Healing — 2026-05-27) |
 | **Feature Fase 0** | [`docs/features/telemetria-reactiva-eda-fase0/`](../../features/telemetria-reactiva-eda-fase0/) (gate cerrado) |
 | **Feature Fase 1** | [`docs/features/telemetria-reactiva-eda-fase1/`](../../features/telemetria-reactiva-eda-fase1/) (cerrada) |
 | **Feature Fase 2** | [`docs/features/telemetria-reactiva-eda-fase2/`](../../features/telemetria-reactiva-eda-fase2/) (cerrada) |
 | **Feature Fase 3** | [`docs/features/telemetria-reactiva-eda-fase3/`](../../features/telemetria-reactiva-eda-fase3/) (cerrada) |
 | **Feature Fase 4** | [`docs/features/telemetria-reactiva-eda-fase4/`](../../features/telemetria-reactiva-eda-fase4/) (cerrada) |
+| **Feature Fase 5** | [`docs/features/telemetria-reactiva-eda-fase5/`](../../features/telemetria-reactiva-eda-fase5/) (planificación) |
 | **Análisis de impacto** | [`impact-analysis.md`](../../features/telemetria-reactiva-eda-fase0/impact-analysis.md) |
 | **Prioridad** | Alta — bloqueante para la Física del Valor y la industrialización del ecosistema |
 | **Alcance** | Análisis de impacto transversal, genoma de eventos, workspaces dinámicos, Aduana Universal (CLI), Radamanto, cumplimiento termodinámico, documentación pública (`README.md`) |
@@ -56,7 +58,7 @@ Evidencia operativa en `validacion.md` de cada feature; este PBI no archiva el �
 | **2** | ✅ Cerrada | [`telemetria-reactiva-eda-fase2`](../../features/telemetria-reactiva-eda-fase2/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase2/validacion.md) APTO (AC2.1–AC2.3) | [#53](https://github.com/racso80es/SddIA/pull/53) mergeado |
 | **3** | ✅ Cerrada | [`telemetria-reactiva-eda-fase3`](../../features/telemetria-reactiva-eda-fase3/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase3/validacion.md) APTO (AC3.1–AC3.4, D3.13) | [#54](https://github.com/racso80es/SddIA/pull/54) |
 | **4** | ✅ Cerrada | [`telemetria-reactiva-eda-fase4`](../../features/telemetria-reactiva-eda-fase4/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase4/validacion.md) APTO (AC4.1–AC4.6, T4.3–T4.4) | [#55](https://github.com/racso80es/SddIA/pull/55) |
-| **5** | ⏳ Pendiente | `telemetria-reactiva-eda-fase5` (convención) | — | — |
+| **5** | 🔧 Implementada | [`telemetria-reactiva-eda-fase5`](../../features/telemetria-reactiva-eda-fase5/) | [`validacion.md`](../../features/telemetria-reactiva-eda-fase5/validacion.md) APTO (AC5.1–AC5.3, T5.6) | — |
 | **6** | ⏳ Pendiente | `telemetria-reactiva-eda-fase6` (convención) | — | — |
 
 **Entregables cerrados en `main` (Fase 1):** genoma fractal `SddIA/events/{telemetry,orchestration,domain}/`, `events-contract` v1.1.0 con `event_family`, `event-creator` enrutado, Clase `Raw_Execution_Finished` en `telemetry/`.

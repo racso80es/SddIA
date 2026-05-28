@@ -27,7 +27,10 @@ Telemetría física emitida por el CLI al finalizar el Peaje Termodinámico (cro
 
 ### OPTIONAL
 
-- `telemetry_receipt`
+- `telemetry_receipt` — objeto JSON (`prompt_tokens`, `completion_tokens`, …) extraído de stdout cápsula
+- `capsule_id` — skill/action invocada (resolución contrato ED)
+- `execution_id`
+- `workspace_path`
 
 ### FORBIDDEN
 

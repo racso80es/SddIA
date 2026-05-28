@@ -1,5 +1,5 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -90,5 +90,8 @@
     "thresholds": "SddIA/agents/radamanto.thresholds.json",
     "sandbox_root": ".SddIA/sandbox/",
     "revoked_entities": ".SddIA/cerbero/revoked_entities.json"
+  },
+  "telemetry_compliance": {
+    "emitted_registry": ".SddIA/telemetry-compliance/emitted.json"
   }
 }

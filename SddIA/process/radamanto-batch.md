@@ -8,14 +8,14 @@ context:
 - event-routing
 - quality-assurance
 - ecosystem-evolution
-hash_signature: sha256:7889e65a2cb0d68d12a2a9e1e907b190d4fa1ccc430b3f3eb2595e330b04e936
+hash_signature: sha256:f8976358bbe08cbbe09ecb241cd21104608fac4a18b16b7cb39d57a039d58ab6
 inputs:
 - event_file_path: Ruta relativa al JSON de telemetría en ./.events/telemetry/
 outputs:
 - batch_result: Stats actualizados y acciones dominio emitidas
 phases:
 - name: Consumo batch Radamanto
-  intent: Acumular telemetría CLI, evaluar umbrales, emitir dominio + DLT; purgar fuente.
+  intent: Acumular telemetría CLI, evaluar umbrales, emitir dominio + DLT; sellar delivery_state (T5.6).
   delegates_to:
   - agent:radamanto
 minteo_maximo: null

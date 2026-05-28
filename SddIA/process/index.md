@@ -27,5 +27,6 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | route-domain | d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0 | 1.0.0 | event-routing, ecosystem-evolution | — | Enrutador bus fractal `./.events/domain/` (coexiste con V3+ pending). |
 | telemetry-batch-stub | f1e2d3c4-b5a6-4789-8c0d-1e2f3a4b5c6d | 1.0.0 | event-routing, quality-assurance | — | **Deprecated** — sustituido por `radamanto-batch` (Fase 4). |
 | radamanto-batch | 2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d | 1.0.0 | event-routing, quality-assurance, ecosystem-evolution | — | Consumidor batch Radamanto; único emisor `Status_Restored`. |
+| telemetry-compliance-audit | b3c4d5e6-f7a8-4901-b2c3-d4e5f6a7b8c9 | 1.0.0 | event-routing, quality-assurance | — | Auditoría cumplimiento termodinámico; fan-out telemetría (Fase 5). |
 | cerbero-governance-react | 3b4c5d6e-7f8a-4b9c-0d1e-2f3a4b5c6d7e | 1.0.0 | event-routing, knowledge-management | — | RBAC reactivo Self-Healing. |
 | fix-tool-process | 4c5d6e7f-8a9b-4c0d-1e2f-3a4b5c6d7e8f | 1.0.0 | ecosystem-evolution, filesystem-ops, quality-assurance | — | Reparación sandbox; Argos `structure_valid` sin redención. |

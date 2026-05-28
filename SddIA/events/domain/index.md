@@ -31,8 +31,9 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | `tool-degraded.md` | `7a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c5d` | tool-degraded | Tool_Degraded | 1.0.0 | events-contract v1.1.0 | quality-assurance | `tool_degraded`, `self_healing_trigger` |
 | `status-restored.md` | `8b2c3d4e-5f6a-4b7c-9d0e-1f2a3b4c5d6e` | status-restored | Status_Restored | 1.0.0 | events-contract v1.1.0 | quality-assurance | `status_restored`, `self_healing_redemption` |
 | `tool-deprecated.md` | `9c3d4e5f-6a7b-4c8d-0e1f-2a3b4c5d6e7f` | tool-deprecated | Tool_Deprecated | 1.0.0 | events-contract v1.1.0 | quality-assurance | `tool_deprecated`, `self_healing_death` |
+| `telemetry-compliance-breached.md` | `a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e` | telemetry-compliance-breached | Telemetry_Compliance_Breached | 1.0.0 | events-contract v1.1.0 | quality-assurance | `telemetry_compliance_breached`, `contract_audit_alert` |
 
 ## Integridad
 
-- **Clases:** 10 ECST en `SddIA/events/domain/`.
+- **Clases:** 11 ECST en `SddIA/events/domain/`.
 - **Regla de oro:** no mezclar telemetría cruda ni orquestación táctica en esta familia.

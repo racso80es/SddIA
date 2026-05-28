@@ -28,6 +28,7 @@ def _fake_repo() -> Path:
     process_dir.mkdir(parents=True)
     for name in (
         "radamanto-batch.md",
+        "telemetry-compliance-audit.md",
         "route-telemetry.md",
         "workspace-smoke.md",
     ):
@@ -59,6 +60,9 @@ def _fake_repo() -> Path:
             "thresholds": "SddIA/agents/radamanto.thresholds.json",
             "sandbox_root": ".SddIA/sandbox/",
             "revoked_entities": ".SddIA/cerbero/revoked_entities.json",
+        },
+        "telemetry_compliance": {
+            "emitted_registry": ".SddIA/telemetry-compliance/emitted.json",
         },
     }
     (core / "cumulo.paths.json").write_text(json.dumps(cumulo), encoding="utf-8")
