@@ -1,0 +1,9 @@
+{
+  "feature_name": "inmunidad-caos-fase0",
+  "branch_name": "feat/inmunidad-caos-fase0",
+  "persist_ref": "docs/features/inmunidad-caos-fase0",
+  "base_branch": "main",
+  "refined_requirements": "Fase 0 del PBI PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO: análisis de implicaciones no detectadas (gate de arranque). Entregable impact-analysis.md. Evaluar impacto de ED Suite, tools ofensivas, procesos audit atómicos, execute-suite, eventos System_Immunity_Certified y axiomas de inocuidad del caos sobre genoma post-Telemetría Reactiva. PBI maestro permanece en pending; no archivar al cerrar esta feature.",
+  "master_pbi_ref": "docs/todos/pending/PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO.md",
+  "master_pbi_id": "PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO"
+}
