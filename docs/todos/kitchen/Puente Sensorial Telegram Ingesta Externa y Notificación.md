@@ -41,5 +41,5 @@ Se divide estrictamente en dos capas para separar la física de la lógica:
 
 # Referencias
 https://core.telegram.org/bots/api
-TELEGRAM_BOT_TOKEN = 8986124684:AAF40p1FTJ6xngIyc6mMLlBOiErOmKiFuPM
-TELEGRAM_ALLOWED_CHAT_ID = 077000983
+TELEGRAM_BOT_TOKEN = { A indicar}
+TELEGRAM_ALLOWED_CHAT_ID = {A Indicar}
