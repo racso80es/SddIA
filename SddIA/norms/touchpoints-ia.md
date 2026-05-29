@@ -28,7 +28,7 @@ Acción que orquesta la revisión y actualización: **paths.actionsPath/sddia-di
 
 1. **Una sola fuente de verdad:** Las normas de comportamiento están en SddIA (y AGENTS.md); los touchpoints las difunden, no las reemplazan.
 2. **Rutas vía Cúmulo:** En reglas y documentación de comportamiento no usar rutas literales; referenciar `paths.workspacesRoot`, `paths.featurePath`, `paths.actionsPath`, `paths.skillCapsules`, etc. (SddIA/norms/paths-via-cumulo.md). En orquestación multi-agente, operar solo bajo `workspace_path` inyectado por el CLI; eventos tácticos ECST incluyen esa coordenada en payload (`Process_Execution_Completed`, orquestación Fase 3+).
-3. **Inocuidad del Caos (`chaos-engineering`):** Toda tool con `context: chaos-engineering` debe invocar `assert_workspace_bound` (`SddIA/scripts/qa/chaos_workspace_utils.py`) **antes** de cualquier lectura o escritura en filesystem. Prohibido I/O fuera del `workspace_path` inyectado.
+3. **Inocuidad del Caos (`chaos-engineering`):** Contexto RBAC definido en `execution-contexts.md` §2.9. Toda tool con `context: chaos-engineering` debe invocar `assert_workspace_bound` (`SddIA/scripts/qa/chaos_workspace_utils.py`) **antes** de cualquier lectura o escritura en filesystem. Prohibido I/O fuera del `workspace_path` inyectado. Las **campañas de Caos** se declaran como ED **Suite** bajo `paths.directories.suites` y se orquestan vía `process:execute-suite` — no improvisar scripts de stress fuera del patrón Suite.
 4. **Revisión al cambiar SddIA:** Si se añade un proceso (p. ej. refactorization), una acción (p. ej. sddia-difusion) o un disparador, actualizar los touchpoints afectados (acción sddia-difusion).
 
 ---
