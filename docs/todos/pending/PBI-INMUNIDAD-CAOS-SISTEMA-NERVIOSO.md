@@ -2,17 +2,18 @@
 document_id: PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO
 title: "[ARQUITECTURA] Auditoría de Inmunidad, Caos S+ Grade y ED Suite"
 format: markdown
-version: "2.2.0"
+version: "2.3.0"
 created: "2026-05-28"
-refined: "2026-05-28"
+refined: "2026-05-29"
 status: pendiente
 priority: arquitectura-core
-active_phase: null
-active_feature: null
+active_phase: 2
+active_feature: docs/features/inmunidad-caos-fase2
 impact_analysis: docs/features/inmunidad-caos-fase0/impact-analysis.md
 phase_features:
   "0": docs/features/inmunidad-caos-fase0
   "1": docs/features/inmunidad-caos-fase1
+  "2": docs/features/inmunidad-caos-fase2
 depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 ---
 
@@ -25,7 +26,8 @@ depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 | **Estatus** | Pendiente |
 | **Prioridad** | Alta — Validación empírica del ecosistema reactivo y forja de nueva ED |
 | **Alcance** | Creación de la Entidad de Dominio `Suite`, tools ofensivas, procesos de diagnóstico atómicos, orquestador de suites y sellado de resiliencia DLT |
-| **Versión PBI** | 2.2.0 (gate Fase 0 cerrado — complemento análisis) |
+| **Versión PBI** | 2.3.0 (Fase 2 en planificación) |
+| **Feature activa** | [`docs/features/inmunidad-caos-fase2/`](../../features/inmunidad-caos-fase2/) |
 | **Feature Fase 0** | [`docs/features/inmunidad-caos-fase0/`](../../features/inmunidad-caos-fase0/) (cerrada) |
 | **Análisis de impacto** | [`impact-analysis.md`](../../features/inmunidad-caos-fase0/impact-analysis.md) |
 | **Depende de** | Telemetría Reactiva Done (`PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO`) |
@@ -38,7 +40,7 @@ depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 |------|--------|-------------------------|------------|
 | **0** | ✅ Cerrada | [`inmunidad-caos-fase0`](../../features/inmunidad-caos-fase0/) | [`validacion.md`](../../features/inmunidad-caos-fase0/validacion.md) APTO (AC0.1–AC0.5) |
 | **1** | ✅ Cerrada | [`inmunidad-caos-fase1`](../../features/inmunidad-caos-fase1/) | [`validacion.md`](../../features/inmunidad-caos-fase1/validacion.md) APTO (AC1.1–AC1.3) |
-| **2** | ⏳ Pendiente | `inmunidad-caos-fase2` (prevista) | — |
+| **2** | ✅ Lista para PR | [`inmunidad-caos-fase2`](../../features/inmunidad-caos-fase2/) | [`validacion.md`](../../features/inmunidad-caos-fase2/validacion.md) APTO (AC2.1–AC2.3) |
 | **3** | ⏳ Pendiente | `inmunidad-caos-fase3` (prevista) | — |
 | **4** | ⏳ Pendiente | `inmunidad-caos-fase4` (prevista) | — |
 | **5** | ⏳ Pendiente | `inmunidad-caos-fase5` (prevista) | — |
@@ -238,6 +240,8 @@ Decisiones de diseño incorporadas desde Fase 0 (feature `inmunidad-caos-fase0`)
 ## Fase 2 — Los Nodos de Diagnóstico (Procesos Atómicos)
 
 **Origen:** PBI § Fase 2 · **Prioridad:** Alta · **Depende de:** Fase 1 · **Bloquea:** Fase 3
+
+**Feature:** [`docs/features/inmunidad-caos-fase2/`](../../features/inmunidad-caos-fase2/) (lista para PR)
 
 **Objetivo:** Procesos de auditoría **atómicos** (1 vector = 1 proceso): workspace propio, un ataque, Argos certifica reacción.
 

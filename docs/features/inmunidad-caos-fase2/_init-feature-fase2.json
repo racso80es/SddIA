@@ -1,0 +1,11 @@
+{
+  "feature_name": "inmunidad-caos-fase2",
+  "branch_name": "feat/inmunidad-caos-fase2",
+  "persist_ref": "docs/features/inmunidad-caos-fase2",
+  "base_branch": "main",
+  "refined_requirements": "Fase 2 PBI PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO: Nodos de diagnóstico (procesos audit atómicos). Forjar audit-thermodynamic-toll-failsoft, audit-telemetry-compliance-breach, audit-sandbox-isolation-rbac con workspace_template, handlers lab execute-process y smoke Argos. Gate Fase 1 cerrado (Arsenal Entropía). PBI pending; pbi_archived false al cierre.",
+  "master_pbi_ref": "docs/todos/pending/PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO.md",
+  "master_pbi_id": "PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO",
+  "depends_on": "docs/features/inmunidad-caos-fase1",
+  "gate_ref": "docs/features/inmunidad-caos-fase1/validacion.md"
+}

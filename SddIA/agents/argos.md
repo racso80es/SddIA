@@ -7,6 +7,7 @@ allowed_policies:
   - "quality-assurance"
   - "filesystem-ops"
   - "source-control"
+  - "event-routing"
 hash_signature: "opcional_en_desarrollo"
 inputs:
   - "target_artifacts_refs"

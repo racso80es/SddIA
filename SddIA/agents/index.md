@@ -18,8 +18,8 @@ Contrato normativo de la familia: `agents-contract.md` (no constituye un agente 
 |----------------|------|------|---------|----------|------------------|
 | `cerbero.md` | `e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b` | cerbero | 1.0.0 | agents-contract v1.0.0 | `knowledge-management` |
 | `cumulo.md` | `8f7d6c5b-4a01-4e56-9a2b-e98e4d2a1c3f` | cumulo | 1.0.0 | agents-contract v1.0.0 | `knowledge-management`, `ecosystem-evolution` |
-| `tekton.md` | `b3a4c5d6-7e8f-9a0b-1c2d-3e4f5a6b7c8d` | tekton | 1.1.0 | agents-contract v1.1.0 | `ecosystem-evolution`, `filesystem-ops`, `source-control`, `system-operations` |
-| `argos.md` | `bd3b1d76-3734-4fbb-b447-ad5e4a5e4907` | argos | 1.0.0 | agents-contract v1.0.0 | `quality-assurance`, `filesystem-ops`, `source-control` |
+| `tekton.md` | `b3a4c5d6-7e8f-9a0b-1c2d-3e4f5a6b7c8d` | tekton | 1.1.0 | agents-contract v1.1.0 | `ecosystem-evolution`, `filesystem-ops`, `source-control`, `system-operations`, `chaos-engineering` |
+| `argos.md` | `bd3b1d76-3734-4fbb-b447-ad5e4a5e4907` | argos | 1.0.0 | agents-contract v1.0.0 | `quality-assurance`, `filesystem-ops`, `source-control`, `event-routing` |
 | `dedalo.md` | `9e60e48e-43be-463d-999e-d3dbd83924af` | dedalo | 1.0.0 | agents-contract v1.0.0 | `ecosystem-evolution`, `knowledge-management`, `filesystem-ops` |
 | `mayeuta.md` | `db1acdb5-23b9-490e-a339-dc511091e959` | mayeuta | 1.0.0 | agents-contract v1.0.0 | `knowledge-management`, `filesystem-ops` |
 | `radamanto.md` | `4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a` | radamanto | 1.0.0 | agents-contract v1.0.0 | `quality-assurance`, `ecosystem-evolution` |
