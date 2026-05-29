@@ -1,6 +1,6 @@
 ---
 family: domain
-index_version: "1.1.0"
+index_version: "1.2.0"
 maintained_by_agent: cumulo
 indexed_at: "2026-05-29"
 synchronization_note: "Cada fila debe coincidir con la cabecera YAML del archivo en esta carpeta."
@@ -34,8 +34,10 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | `telemetry-compliance-breached.md` | `a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e` | telemetry-compliance-breached | Telemetry_Compliance_Breached | 1.0.0 | events-contract v1.1.0 | quality-assurance | `telemetry_compliance_breached`, `contract_audit_alert` |
 | `suite-execution-requested.md` | `b3c4d5e6-f7a8-4b9c-8d0e-1f2a3b4c5d6f` | suite-execution-requested | Suite_Execution_Requested | 1.0.0 | events-contract v1.1.0 | chaos-engineering | `suite_execution_requested`, `chaos_campaign_stimulus` |
 | `system-immunity-certified.md` | `c4d5e6f7-a8b9-4c0d-9e1f-2a3b4c5d6e7f` | system-immunity-certified | System_Immunity_Certified | 1.0.0 | events-contract v1.1.0 | quality-assurance | `system_immunity_certified`, `chaos_immunity_dlt` |
+| `manual-task-requested.md` | `a6b7c8d9-e0f1-4a2b-c3d4-e5f6a7b8c9d0` | manual-task-requested | Manual_Task_Requested | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `manual_task_requested` |
+| `kaizen-idea-captured.md` | `b7c8d9e0-f1a2-4b3c-d4e5-f6a7b8c9d0e1` | kaizen-idea-captured | Kaizen_Idea_Captured | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `kaizen_idea_captured` |
 
 ## Integridad
 
-- **Clases:** 13 ECST en `SddIA/events/domain/`.
+- **Clases:** 15 ECST en `SddIA/events/domain/`.
 - **Regla de oro:** no mezclar telemetría cruda ni orquestación táctica en esta familia.

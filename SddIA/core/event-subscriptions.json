@@ -9,6 +9,11 @@
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
       "intent": "Anclaje DLT IOTA Rebased."
+    },
+    {
+      "agent": "argos",
+      "tool": "send-telegram-notification",
+      "intent": "Notificación humana táctica en Telegram (Táctica del Refugio)."
     }
   ],
   "PullRequest_Merged": [
@@ -70,6 +75,11 @@
       "agent": "mayeuta",
       "action": "enrich-fracture-pbi-kaizen",
       "intent": "Auditor de Fricción Kaizen: diagnosticar causa raíz (el Por Qué) y enriquecer PBI con propuesta evolutiva."
+    },
+    {
+      "agent": "argos",
+      "tool": "send-telegram-notification",
+      "intent": "Alerta fractura en Telegram al Vértice Biológico."
     }
   ],
   "Kaizen_Alert_Required": [

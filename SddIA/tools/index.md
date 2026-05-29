@@ -4,7 +4,7 @@ entity_family: "tools"
 maintained_by_agent: "cumulo"
 paths_ref: "SddIA/core/cumulo.paths.json"
 directories_key: "tools"
-indexed_at: "2026-05-28"
+indexed_at: "2026-05-29"
 synchronization_note: "Cada fila debe coincidir con la cabecera YAML del archivo fuente indicado; columna Capabilities obligatoria."
 ---
 
@@ -22,6 +22,7 @@ Contrato normativo de la familia: `tools-contract.md` (no constituye una tool ca
 | `io-choke.md` | `a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e` | io-choke | 1.0.0 | tools-contract v1.3.0 | chaos-engineering | `io-choke`, `chaos-io-stress`, `capsule-json-io` |
 | `schema-corruptor.md` | `b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6f` | schema-corruptor | 1.0.0 | tools-contract v1.3.0 | chaos-engineering | `schema-corruptor`, `chaos-telemetry-stress`, `capsule-json-io` |
 | `sandbox-breacher.md` | `c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f` | sandbox-breacher | 1.0.0 | tools-contract v1.3.0 | chaos-engineering | `sandbox-breacher`, `chaos-sandbox-stress`, `capsule-json-io` |
+| `send-telegram-notification.md` | `e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8` | send-telegram-notification | 1.0.0 | tools-contract v1.2.0 | ecosystem-evolution | `send-telegram-notification`, `telegram-send-message`, `capsule-json-io` |
 
 ## Archivos en carpeta no catalogados como tool
 

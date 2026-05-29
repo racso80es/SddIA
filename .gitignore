@@ -26,6 +26,7 @@ docs/events/
 !.dev/.env.test.example
 .SddIA/.dev/
 !.SddIA/.dev/.env.example
+.SddIA/daemons/state/
 
 # Artefactos locales de build/debug IOTA
 SddIA/scripts/tools/iota-immutable-publisher/.iota-cli/

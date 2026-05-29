@@ -3123,6 +3123,36 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         }[canonical]
         out = dispatch(repo, rel.strip())
         return _route_handler_result(canonical, out, f"{canonical}-core")
+    if canonical == "telegram-gateway":
+        from telegram_gateway_core import run_telegram_gateway
+
+        text = process_inputs.get("text")
+        if not isinstance(text, str):
+            return {
+                "success": False,
+                "status_code": 1,
+                "error": "text requerido",
+                "execution_report": {"process_name": canonical, "phases": []},
+            }
+        out = run_telegram_gateway(repo, text)
+        ok = bool(out.get("ok"))
+        return {
+            "success": ok,
+            "status_code": 0 if ok else 1,
+            "data": out,
+            "execution_report": {
+                "process_name": canonical,
+                "phases": [
+                    {
+                        "phase_name": "Transmutación e inyección",
+                        "status": "executed",
+                        "handler": "telegram-gateway-core",
+                        "emitted": out.get("emitted"),
+                        "event_type": out.get("event_type"),
+                    }
+                ],
+            },
+        }
     if canonical == "route-domain-event":
         from route_domain_event_core import route_domain_event
 

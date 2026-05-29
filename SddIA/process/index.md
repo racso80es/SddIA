@@ -36,3 +36,4 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | audit-sandbox-isolation-rbac | 242d937d-a0da-4d36-ab89-c0fbbc18c868 | 1.0.0 | chaos-engineering, quality-assurance | — | Audit Caos: `sandbox-breacher` + bloqueo Inocuidad workspace. |
 | suite-creator | f3a1b2c3-d4e5-46f7-8901-234567890abc | 1.0.0 | ecosystem-evolution | — | Creator de **Suite** (ED Caos): validación, materialización e indexación bajo `suites/`. |
 | execute-suite | a1b2c3d4-e5f6-4789-a012-3456789abcde | 1.0.0 | chaos-engineering, quality-assurance, ecosystem-evolution | — | Orquestador de Suites: sub-workspaces aislados por nodo + manifiesto Argos. |
+| telegram-gateway | f5a6b7c8-d9e0-4f1a-b2c3-d4e5f6a7b8c9 | 1.0.0 | ecosystem-evolution, external-ingest | — | Aduana texto Telegram → eventos domain (`Manual_Task_Requested`, `Kaizen_Idea_Captured`). |

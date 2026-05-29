@@ -219,6 +219,21 @@ def dispatch_subscriber(
         return sid, "failed", envelope.get("error") or envelope.get("message") or "process failed", exit_code
 
     tool = subscriber.get("tool")
+    if tool == "send-telegram-notification":
+        from telegram_notify_core import (
+            build_telegram_message_from_event,
+            invoke_send_telegram_notification,
+        )
+
+        message = build_telegram_message_from_event(event)
+        if not message:
+            return sid, "skipped-empty-message", None, 0
+        ok, body = invoke_send_telegram_notification(repo, message)
+        if ok:
+            return sid, "success", None, 0
+        err = body.get("error") or "send-telegram-notification failed"
+        return sid, "failed", str(err), 1
+
     if tool == "iota-immutable-publisher":
         emitter = event.get("emitter_agent")
         if is_backfill_emitter(emitter if isinstance(emitter, str) else None):
