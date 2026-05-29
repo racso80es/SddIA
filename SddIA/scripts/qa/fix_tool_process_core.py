@@ -76,13 +76,21 @@ def process_fix_tool(repo: Path, rel_path: str) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError) as exc:
         return {"ok": False, "error": str(exc)}
 
-    if event.get("event_type") != "Tool_Degraded":
-        return {"ok": False, "error": "solo Tool_Degraded inicia fix-tool-process"}
+    if event.get("event_type") != "Domain_Entity_Degraded":
+        return {"ok": False, "error": "solo Domain_Entity_Degraded inicia fix-tool-process"}
 
     payload = event.get("payload") or {}
     if not isinstance(payload, dict):
         return {"ok": False, "error": "payload invalido"}
-    entity_id = str(payload.get("target_entity_id") or "unknown")
+    entity_id = str(payload.get("entity_id") or payload.get("target_entity_id") or "unknown")
+    entity_type = str(payload.get("entity_type") or "tool")
+    if entity_type not in ("tool", "skill"):
+        return {
+            "ok": True,
+            "skipped": True,
+            "reason": f"entity_type={entity_type} fuera de alcance fix-tool-process",
+            "entity_id": entity_id,
+        }
     attempt = int(payload.get("recovery_attempt") or 1)
 
     sandbox = materialize_sandbox(repo, entity_id, attempt)

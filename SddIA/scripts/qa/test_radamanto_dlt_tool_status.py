@@ -59,9 +59,10 @@ class TestRadamantoDlt(unittest.TestCase):
         os.environ["SDDIA_LAB_SIMULATE_IOTA"] = "1"
         try:
             ev = build_domain_event(
-                "Tool_Degraded",
+                "Domain_Entity_Degraded",
                 {
-                    "target_entity_id": "skill:dlt-test",
+                    "entity_type": "skill",
+                    "entity_id": "skill:dlt-test",
                     "reason": "lab",
                     "success_rate": 0.5,
                     "recovery_attempt": 1,

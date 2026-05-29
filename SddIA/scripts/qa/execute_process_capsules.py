@@ -1738,6 +1738,8 @@ def emit_domain_mutation(repo: Path, payload: dict[str, Any]) -> dict[str, Any]:
         "emitter_agent": payload.get("emitter_agent", "entity-manager"),
         "payload": {
             "entity_class": payload["entity_class"],
+            "entity_type": payload["entity_class"],
+            "entity_id": entity_uuid,
             "lifecycle_operation": op,
             "entity_uuid": entity_uuid,
             "entity_name": payload["entity_name"],

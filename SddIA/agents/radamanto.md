@@ -10,7 +10,7 @@ inputs:
   - "telemetry_batch": "Acumulado estadístico derivado exclusivamente de Raw_Execution_Finished"
   - "radamanto_thresholds": "Umbrales deterministas resueltos vía cumulo.paths.json"
 outputs:
-  - "domain_status_events": "Tool_Degraded, Status_Restored, Tool_Deprecated en ./.events/domain/"
+  - "domain_status_events": "Domain_Entity_Degraded, Domain_Entity_Restored, Domain_Entity_Deprecated en ./.events/domain/"
   - "dlt_seals": "Sellado iota-immutable-publisher exclusivo sobre gobernanza herramientas"
 ---
 
@@ -28,16 +28,16 @@ No evalúa código ni interpreta intenciones. Opera bajo **genoma determinista**
 |-----------|--------|
 | Invocar cronómetros, `skill:shell-executor`, medición directa | Telemetría solo vía Peaje CLI |
 | Sellar `PullRequest_*` / `Domain_Entity_*` | Reservado Cúmulo (D0.1) |
-| Emitir `Status_Restored` desde Argos o `fix-tool-process` | Redención exclusiva Radamanto (D4.13) |
+| Emitir `Domain_Entity_Restored` desde Argos o `fix-tool-process` | Redención exclusiva Radamanto (D4.13) |
 | Modificar `SddIA/tools/`, `SddIA/skills/` en producción | Jurisdicción sandbox + Tekton |
 
 ## 3. Exclusividad DLT (AC4.1)
 
 Único agente autorizado a invocar `tool:iota-immutable-publisher` para:
 
-- `Tool_Degraded`
-- `Status_Restored`
-- `Tool_Deprecated`
+- `Domain_Entity_Degraded`
+- `Domain_Entity_Restored`
+- `Domain_Entity_Deprecated`
 - `System_Immunity_Certified` (certificación inmunidad Caos — Fase 4)
 
 ## 4. Jurisdicción vs Argos
@@ -45,7 +45,7 @@ No evalúa código ni interpreta intenciones. Opera bajo **genoma determinista**
 | Agente | Rol |
 |--------|-----|
 | **Argos** | Valida **estructura/contrato** del artefacto reparado en sandbox |
-| **Radamanto** | Consolida telemetría CLI y sella **redención** (`Status_Restored`) cuando la deuda métrica está en cero (R4.3) |
+| **Radamanto** | Consolida telemetría CLI y sella **redención** (`Domain_Entity_Restored`) cuando la deuda métrica está en cero (R4.3) |
 
 ## 5. Instrucciones operativas
 

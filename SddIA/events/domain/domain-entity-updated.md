@@ -1,7 +1,7 @@
 ---
 uuid: "65dcff67-d392-4ab1-9977-2e320d3c8c34"
 name: "domain-entity-updated"
-version: "1.0.0"
+version: "1.1.0"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "Domain_Entity_Updated"
@@ -19,6 +19,8 @@ Mutación genómica update. hash_signature_old y hash_signature_new REQUIRED; pa
 
 ### REQUIRED
 - `entity_class`
+- `entity_type`
+- `entity_id`
 - `lifecycle_operation`
 - `entity_uuid`
 - `entity_name`

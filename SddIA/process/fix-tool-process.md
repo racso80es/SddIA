@@ -10,7 +10,7 @@ context:
 - quality-assurance
 hash_signature: sha256:b3571c3033c572f4d25a4440ed36d9f59b5e21e6c5b95d4b99caed5eca90a2b0
 inputs:
-- event_file_path: Ruta relativa al JSON Tool_Degraded
+- event_file_path: Ruta relativa al JSON Domain_Entity_Degraded
 - target_entity_id: Entidad degradada
 - recovery_attempt: Contador de intento
 outputs:

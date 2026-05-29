@@ -1,7 +1,7 @@
 ---
 uuid: "1f518278-7a3d-4160-b757-a3661d263ec3"
 name: "domain-entity-created"
-version: "1.0.0"
+version: "1.1.0"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "Domain_Entity_Created"
@@ -19,6 +19,8 @@ Mutación genómica create. hash_signature_new REQUIRED; payload_schema_hash OPT
 
 ### REQUIRED
 - `entity_class`
+- `entity_type`
+- `entity_id`
 - `lifecycle_operation`
 - `entity_uuid`
 - `entity_name`

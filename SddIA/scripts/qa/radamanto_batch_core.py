@@ -80,6 +80,28 @@ def target_entity_from_payload(payload: dict[str, Any]) -> str:
     return "unknown-entity"
 
 
+_VALID_ENTITY_TYPES = frozenset(
+    {"process", "agent", "skill", "tool", "action", "norm", "codex", "event"}
+)
+
+
+def entity_type_from_id(entity_id: str) -> str:
+    if ":" in entity_id:
+        prefix = entity_id.split(":", 1)[0].strip().lower()
+        if prefix in _VALID_ENTITY_TYPES:
+            return prefix
+    return "tool"
+
+
+def governance_payload(entity_id: str, **fields: Any) -> dict[str, Any]:
+    payload = {
+        "entity_type": entity_type_from_id(entity_id),
+        "entity_id": entity_id,
+        **fields,
+    }
+    return payload
+
+
 def _entity_bucket(stats: dict[str, Any], entity_id: str) -> dict[str, Any]:
     entities = stats.setdefault("entities", {})
     if entity_id not in entities or not isinstance(entities[entity_id], dict):
@@ -202,14 +224,14 @@ def process_telemetry_file(repo: Path, rel_path: str) -> dict[str, Any]:
                 bucket["status"] = "deprecated"
                 save_stats(repo, stats)
                 ev = build_domain_event(
-                    "Tool_Deprecated",
-                    {
-                        "target_entity_id": entity_id,
-                        "recovery_attempts": attempts,
-                        "reason": "max_recovery_attempts_exceeded",
-                    },
+                    "Domain_Entity_Deprecated",
+                    governance_payload(
+                        entity_id,
+                        recovery_attempts=attempts,
+                        reason="max_recovery_attempts_exceeded",
+                    ),
                 )
-                actions.append({"type": "Tool_Deprecated", "result": emit_domain_and_route(repo, ev)})
+                actions.append({"type": "Domain_Entity_Deprecated", "result": emit_domain_and_route(repo, ev)})
                 _reload_bucket()
 
     if status == "pending_redemption" and bucket.get("structure_valid"):
@@ -222,14 +244,14 @@ def process_telemetry_file(repo: Path, rel_path: str) -> dict[str, Any]:
             bucket["degraded_at"] = None
             save_stats(repo, stats)
             ev = build_domain_event(
-                "Status_Restored",
-                {
-                    "target_entity_id": entity_id,
-                    "success_rate": round(rate, 4),
-                    "consecutive_success_count": need,
-                },
+                "Domain_Entity_Restored",
+                governance_payload(
+                    entity_id,
+                    success_rate=round(rate, 4),
+                    consecutive_success_count=need,
+                ),
             )
-            actions.append({"type": "Status_Restored", "result": emit_domain_and_route(repo, ev)})
+            actions.append({"type": "Domain_Entity_Restored", "result": emit_domain_and_route(repo, ev)})
             _reload_bucket()
             stats = load_stats(repo)
             bucket = _entity_bucket(stats, entity_id)
@@ -274,16 +296,16 @@ def process_telemetry_file(repo: Path, rel_path: str) -> dict[str, Any]:
             bucket["consecutive_success_count"] = 0
             save_stats(repo, stats)
             ev = build_domain_event(
-                "Tool_Degraded",
-                {
-                    "target_entity_id": entity_id,
-                    "reason": reason,
-                    "success_rate": round(rate, 4),
-                    "recovery_attempt": attempts,
-                    "avg_duration_ms": round(avg_ms, 2),
-                },
+                "Domain_Entity_Degraded",
+                governance_payload(
+                    entity_id,
+                    reason=reason,
+                    success_rate=round(rate, 4),
+                    recovery_attempt=attempts,
+                    avg_duration_ms=round(avg_ms, 2),
+                ),
             )
-            actions.append({"type": "Tool_Degraded", "result": emit_domain_and_route(repo, ev)})
+            actions.append({"type": "Domain_Entity_Degraded", "result": emit_domain_and_route(repo, ev)})
             _reload_bucket()
 
     stats = load_stats(repo)
