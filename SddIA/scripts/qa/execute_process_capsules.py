@@ -1430,11 +1430,42 @@ outputs:
     }
 
 
+_EVENT_FAMILIES = frozenset({"telemetry", "orchestration", "domain"})
+
+
+def resolve_event_family_required(inputs: dict[str, Any]) -> str:
+    raw = inputs.get("event_family")
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError("event_family es obligatorio (telemetry | orchestration | domain)")
+    family = raw.strip().lower()
+    if family not in _EVENT_FAMILIES:
+        raise ValueError(f"event_family inválido: {raw!r}")
+    return family
+
+
+def _append_fractal_event_index_row(index_path: Path, row: str, event_name: str) -> None:
+    idx = index_path.read_text(encoding="utf-8")
+    if event_name in idx:
+        return
+    marker = "| Archivo fuente | uuid | name | event_type |"
+    header = (
+        "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
+        "|----------------|------|------|------------|---------|----------|---------|--------------|\n"
+    )
+    if marker in idx and header in idx:
+        idx = idx.replace(header, header + row + "\n", 1)
+    else:
+        idx = idx.rstrip() + "\n" + row + "\n"
+    index_path.write_text(idx, encoding="utf-8")
+
+
 def run_event_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
     name = inputs.get("event_name") or inputs.get("entity_name")
     if not isinstance(name, str) or not name:
         raise ValueError("event_name requerido")
-    event_path = repo / "SddIA" / "events" / f"{name}.md"
+    event_family = resolve_event_family_required(inputs)
+    events_root = repo / "SddIA" / "events"
+    event_path = events_root / event_family / f"{name}.md"
     if event_path.is_file() and inputs.get("lifecycle_operation", "create") == "create":
         raise FileExistsError(f"Ya existe {event_path}")
 
@@ -1443,7 +1474,7 @@ def run_event_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("event_type requerido")
     context = inputs.get("event_context", "ecosystem-evolution")
     version = inputs.get("event_version", "1.0.0")
-    contract_ver = inputs.get("events_contract_version", "1.0.0")
+    contract_ver = inputs.get("events_contract_version", "1.1.0")
     desc = inputs.get("event_description", f"Clase de Evento {event_type}")
     payload_required = inputs.get("payload_required", [])
     payload_optional = inputs.get("payload_optional", [])
@@ -1483,6 +1514,7 @@ uuid: "{event_uuid}"
 name: "{name}"
 version: "{version}"
 contract: "events-contract v{contract_ver}"
+event_family: "{event_family}"
 event_type: "{event_type}"
 context: "{context}"
 capabilities:
@@ -1516,30 +1548,19 @@ Ver `SddIA/core/event-subscriptions.json` → clave `{event_type}`.
     event_path.parent.mkdir(parents=True, exist_ok=True)
     event_path.write_text(body, encoding="utf-8")
 
-    index_path = repo / "SddIA" / "events" / "index.md"
+    index_path = events_root / event_family / "index.md"
+    if not index_path.is_file():
+        raise FileNotFoundError(f"Índice de familia no encontrado: {index_path}")
     row = (
         f"| `{name}.md` | `{event_uuid}` | {name} | {event_type} | {version} | "
         f"events-contract v{contract_ver} | {context} | `{cap}` |"
     )
-    idx = index_path.read_text(encoding="utf-8")
-    marker = "| Archivo fuente | uuid | name | event_type |"
-    if name not in idx:
-        if marker in idx:
-            idx = idx.replace(
-                "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
-                "|----------------|------|------|------------|---------|----------|---------|--------------|\n",
-                "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
-                "|----------------|------|------|------------|---------|----------|---------|--------------|\n"
-                + row + "\n",
-                1,
-            )
-        else:
-            idx = idx.rstrip() + "\n" + row + "\n"
-        index_path.write_text(idx, encoding="utf-8")
+    _append_fractal_event_index_row(index_path, row, name)
 
+    rel_index = str(index_path.relative_to(repo)).replace("\\", "/")
     return {
         "artifact_event_md": str(event_path.relative_to(repo)).replace("\\", "/"),
-        "artifact_events_index": "SddIA/events/index.md",
+        "artifact_events_index": rel_index,
         "handoff_entity_uuid": event_uuid,
         "handoff_hash_signature_new": hash_sig,
         "handoff_hash_signature_old": None,
@@ -1609,6 +1630,7 @@ def creator_inputs_from_entity(
             **base,
             "event_name": seed.get("event_name", entity_name),
             "event_type": seed.get("event_type", ""),
+            "event_family": seed.get("event_family", ""),
             "event_context": seed.get("event_context", "ecosystem-evolution"),
             "event_description": seed.get("event_description", ""),
             "payload_required": seed.get("payload_required", []),
@@ -1616,7 +1638,7 @@ def creator_inputs_from_entity(
             "payload_forbidden": seed.get("payload_forbidden", []),
             "emitter_agents": seed.get("emitter_agents", []),
             "event_version": seed.get("event_version", "1.0.0"),
-            "events_contract_version": seed.get("events_contract_version", "1.0.0"),
+            "events_contract_version": seed.get("events_contract_version", "1.1.0"),
         }
     if entity_class == "tool":
         tname = seed.get("tool_name", entity_name)

@@ -9,12 +9,12 @@ process: refactorization
 | Hito | Entregable | Estado |
 |------|------------|--------|
 | H0 | PBI + `_init-feature.json` + `objectives.md` + `clarify.md` + rama | [x] |
-| H1 | `spec.md` — contrato runtime + inventario O2 | [ ] |
-| H2 | `event-creator.md` — input obligatorio, sin default | [ ] |
-| H3 | `run_event_forge` + `creator_inputs_from_entity` alineados fractal | [ ] |
-| H4 | Migración seeds/smokes documentados | [ ] |
-| H5 | Actualización docs Fase 1 (D1.9 cerrado) | [ ] |
-| H6 | `implementation.md` / `execution.md` / `validacion.md` + PBI `done/` | [ ] |
+| H1 | `spec.md` — contrato runtime + inventario O2 | [x] |
+| H2 | `event-creator.md` — input obligatorio, sin default | [x] |
+| H3 | `run_event_forge` + `creator_inputs_from_entity` alineados fractal | [x] |
+| H4 | Migración seeds/smokes documentados | [x] |
+| H5 | Actualización docs Fase 1 (D1.9 cerrado) | [x] |
+| H6 | `implementation.md` / `execution.md` / `validacion.md` + PBI `done/` | [x] |
 | H7 | Un solo PR + `delivery-close-cycle` | [ ] |
 
 ## Orden Tekton (borrador)

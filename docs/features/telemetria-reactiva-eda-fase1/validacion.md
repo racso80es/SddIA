@@ -55,4 +55,4 @@ git_changes:
 
 ## Kaizen vinculado
 
-- Retirar default `domain`: `docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md`
+- Retirar default `domain`: cerrado en `docs/features/kaizen-event-creator-event-family-explicit/` (PBI en `done/`)

@@ -4,7 +4,7 @@ title: "[Kaizen] event-creator — eliminar default event_family domain"
 format: markdown
 version: "1.0.0"
 created: "2026-05-27"
-status: en_curso
+status: cerrado
 priority: media
 process: refactorization
 persist_ref: docs/features/kaizen-event-creator-event-family-explicit
@@ -13,8 +13,9 @@ related:
   - docs/features/kaizen-event-creator-event-family-explicit/
   - SddIA/process/event-creator.md
   - docs/features/telemetria-reactiva-eda-fase1/
-  - docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md
+  - docs/todos/done/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md
 introduced_by: docs/features/telemetria-reactiva-eda-fase1/clarify.md (D1.9)
+closed_by: docs/features/kaizen-event-creator-event-family-explicit/validacion.md
 ---
 
 # [Kaizen] event-creator — eliminar default `event_family: domain`
@@ -59,3 +60,4 @@ Ejecutar tras merge de Fase 3 (Aduana Universal) o cuando el barrido muestre que
 
 - Decisión origen: `docs/features/telemetria-reactiva-eda-fase1/clarify.md` — **D1.9**
 - Especificación: `docs/features/telemetria-reactiva-eda-fase1/spec.md` — §6.1
+- Cierre: `docs/features/kaizen-event-creator-event-family-explicit/validacion.md`

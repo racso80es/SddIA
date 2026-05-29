@@ -79,6 +79,7 @@ Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domai
 |-----------------------|-------------------------|
 | `event_name` o `entity_name` | `event_name` |
 | `event_type` | obligatorio (PascalCase_Snake) |
+| `event_family` | obligatorio (`telemetry` \| `orchestration` \| `domain`) |
 | `event_context` | default `ecosystem-evolution` |
 | `event_description` | descripción de la Clase |
 | `payload_required` | array de campos ECST |

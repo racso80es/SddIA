@@ -1,11 +1,11 @@
 ---
 uuid: "b28194d9-62a8-4cbc-9cbd-237e51e44333"
 name: "event-creator"
-version: "1.1.0"
+version: "1.2.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:ff3baf158327892036d67b5166963ce5716c5271cb7f3b4ee854248402268999
+hash_signature: sha256:d647d664ddcdadc762316854b564622e01603af7910f6c544c957b9fca3dae94
 inputs:
   - "event_name": "Identificador kebab-case de la Clase (`{name}` del archivo `{name}.md` en `cumulo.directories.events`)"
   - "event_type": "Identificador ECST PascalCase_Snake (p. ej. PullRequest_Merged); único en catálogo"
@@ -17,7 +17,7 @@ inputs:
   - "emitter_agents": "Array de identificadores de acciones/procesos autorizados a emitir instancias"
   - "event_version": "SemVer de la Clase (ej. 1.0.0)"
   - "events_contract_version": "Versión del contrato events a materializar (ej. 1.1.0 según `events-contract.md`)"
-  - "event_family": "Familia Trinidad: telemetry | orchestration | domain. Opcional en invocación; si ausente o vacío → default obligatorio `domain` (retrocompat). Ver Kaizen retirar default."
+  - "event_family": "Familia Trinidad obligatoria: telemetry | orchestration | domain. Ausente o vacío → error en Validación de Arquitectura (sin fallback)."
 outputs:
   - "artifact_event_md": "Archivo `{paths.directories.events}/{effective_event_family}/{event_name}.md`"
   - "artifact_events_index": "`{paths.directories.events}/{effective_event_family}/index.md` actualizado con fila sincronizada a la cabecera YAML"
@@ -26,8 +26,8 @@ outputs:
   - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
   - "handoff_version": "SemVer resultante (`event_version`)"
 phases:
-  - name: "Normalización de familia"
-    intent: "Calcular effective_event_family = event_family trim no vacío, si no domain. Registrar en contexto de fase."
+  - name: "Validación de familia"
+    intent: "Exigir event_family presente y no vacío tras trim; rechazar valores fuera del enum Trinidad. Registrar effective_event_family en contexto de fase."
   - name: "Validación de Arquitectura"
     intent: "Verificar effective_event_family en enum Trinidad; event_context en execution-contexts; unicidad de event_type frente al Códice de la familia; kebab-case de event_name; coherencia payload con events-contract v1.1.0; para telemetry rechazar emisores no-CLI."
     delegates_to:
@@ -92,11 +92,12 @@ Proceso maestro para instanciar nuevas **Clases de Evento** (genoma ECST) en `Sd
 
 Invocable directamente o desde **`entity-manager`** (cuando `entity_class: event` esté en piloto). Tras indexación síncrona, el gestor emite `emit-domain-mutation` con `emitter_agent: entity-manager` usando los outputs de handoff declarados en cabecera YAML.
 
-## Fase 0 — Normalización de familia
+## Fase 0 — Validación de familia
 
 1. Leer `event_family` de `process_inputs`.
-2. Si está ausente, es solo espacios o cadena vacía → asignar `effective_event_family = "domain"`.
-3. En caso contrario → `effective_event_family = event_family.strip()` (minúsculas esperadas en contrato).
+2. Si está ausente, es solo espacios o cadena vacía → **abortar** con error de validación (input obligatorio).
+3. En caso contrario → `effective_event_family = event_family.strip().lower()`.
+4. Validar `effective_event_family` ∈ `{ telemetry, orchestration, domain }`.
 
 ## Fase 1 — Validación de Arquitectura
 

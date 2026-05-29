@@ -30,7 +30,7 @@ Fase 0 cerró con `impact-analysis.md` y PBI v1.1.0 refinado. AC0.1–AC0.5 cump
 | D1.6 | ¿Referencias en `event-subscriptions.json`? | **Fuera de alcance** Fase 1 — Fase 3.C; rutas de `event_type` no cambian en suscripciones |
 | D1.7 | ¿EDA coverage / `emit-domain-mutation`? | Tras mover Clases: `entity-manager` o backfill `--backfill-coverage` si paths de artefacto cambian en SSOT |
 | D1.8 | ¿Argos y familia? | Validación documental: Clase sin `event_family` en cabecera → `NO_APTO` en auditoría de genoma (norma en contrato § auditoría) |
-| D1.9 | ¿`event_family` obligatorio en runtime del proceso? | **Retrocompatibilidad:** input opcional en invocación; si ausente o vacío → fallback **obligatorio** `domain`. Telemetría nueva inyecta `"event_family": "telemetry"` explícito. Kaizen futuro elimina default: `docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md` |
+| D1.9 | ¿`event_family` obligatorio en runtime del proceso? | **Cerrado (Kaizen 2026-05-29):** input **obligatorio** en invocación; sin fallback. Ver `docs/features/kaizen-event-creator-event-family-explicit/`. Histórico Fase 1: retrocompat con default `domain` hasta merge del Kaizen. |
 
 ## Payload `Raw_Execution_Finished` (§1.D)
 
@@ -48,4 +48,4 @@ Fase 0 cerró con `impact-analysis.md` y PBI v1.1.0 refinado. AC0.1–AC0.5 cump
 
 - Gate: `docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md` (H01–H03, H21, H23)
 - PBI: `docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md` § Fase 1
-- Kaizen (retirar default): `docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md`
+- Kaizen (default retirado): `docs/features/kaizen-event-creator-event-family-explicit/` — mergeado en rama del Kaizen; PBI archivado al cierre.

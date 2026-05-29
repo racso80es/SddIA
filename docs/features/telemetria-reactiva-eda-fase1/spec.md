@@ -137,33 +137,32 @@ Capabilities sugeridas: `raw_execution_finished`, `thermodynamic_toll`.
 
 ## 6. Proceso `event-creator` (create-event)
 
-### 6.1 Input `event_family` con fallback `domain` (D1.9)
+### 6.1 Input `event_family` obligatorio (D1.9 — cerrado por Kaizen)
+
+> **Estado:** default `domain` **retirado** en `event-creator` v1.2.0 (`kaizen-event-creator-event-family-explicit`). El bloque siguiente documenta el comportamiento histórico de Fase 1.
 
 ```yaml
 - "event_family":
     description: "Familia Trinidad: telemetry | orchestration | domain"
-    required: false
-    default: "domain"
+    required: true
 ```
 
-**Normalización en runtime (antes de la primera fase):**
+**Normalización en runtime (v1.2.0+):**
 
 ```text
-effective_event_family = process_inputs.event_family
+effective_event_family = process_inputs.event_family.strip().lower()
   if present and non-empty after trim
-  else "domain"
+  else ERROR (input obligatorio)
 ```
 
-| Invocación | Comportamiento |
-|------------|----------------|
-| Sin `event_family` (procesos legacy) | Equivalente a hoy: forja bajo `domain/` |
-| `"event_family": "domain"` | Explícito dominio |
-| `"event_family": "telemetry"` | `Raw_Execution_Finished` y futuras Clases de Peaje Termodinámico |
-| `"event_family": "orchestration"` | Reservado Fase 3 |
+| Invocación | Comportamiento (v1.2.0+) |
+|------------|--------------------------|
+| Sin `event_family` | **Error** de validación |
+| `"event_family": "domain"` | Forja bajo `domain/` |
+| `"event_family": "telemetry"` | Forja bajo `telemetry/` |
+| `"event_family": "orchestration"` | Forja bajo `orchestration/` |
 
-**Retrocompatibilidad absoluta:** ningún proceso antiguo requiere cambio de payload; se asume dominio ontológico (7 ECST migradas, `entity-manager`, PR/ECST).
-
-**Deuda Kaizen:** eliminar `default: domain` y exigir input explícito — `docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md`.
+**Histórico Fase 1 (v1.1.0):** fallback `domain` para retrocompat — eliminado por Kaizen `PBI-KAIZEN-EVENT-CREATOR-EVENT-FAMILY-EXPLICIT`.
 
 Validación fase «Validación de Arquitectura» (sobre `effective_event_family`):
 
@@ -171,7 +170,7 @@ Validación fase «Validación de Arquitectura» (sobre `effective_event_family`
 - Coherencia con `event_context` / RBAC (Cerbero).
 - Para `telemetry`: rechazar si `emitter_agents` incluye agentes ED no-CLI.
 
-> **Contrato de Clase vs. proceso:** en el **artefacto** `{name}.md`, `event_family` sigue siendo **obligatorio** en cabecera (§3). El fallback aplica solo al **input del proceso** `event-creator`.
+> **Contrato de Clase vs. proceso:** en el **artefacto** `{name}.md`, `event_family` sigue siendo **obligatorio** en cabecera (§3). Desde v1.2.0 también es **obligatorio** en el input del proceso `event-creator`.
 
 ### 6.2 Resolución de ruta de forja
 
