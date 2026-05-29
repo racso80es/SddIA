@@ -113,6 +113,17 @@ def sync_workspace_context(process_inputs: dict[str, Any], state: dict[str, Any]
             process_inputs[key] = value
 
 
+def materialize_child_workspace(
+    orchestrator_workspace: Path,
+    node_index: int,
+    process_name: str,
+    execution_id: str,
+) -> Path:
+    rel = orchestrator_workspace / "nodes" / f"{node_index:02d}-{process_name}" / execution_id
+    rel.mkdir(parents=True, exist_ok=True)
+    return rel.resolve()
+
+
 def bootstrap_process_workspace(
     repo: Path,
     process_name: str,
@@ -122,8 +133,14 @@ def bootstrap_process_workspace(
 ) -> dict[str, Any]:
     execution_id = new_execution_id(process_inputs)
     template = load_workspace_template(process_def)
-    workspace_path = materialize_workspace(repo, process_name, template, execution_id)
-    ws_str = str(workspace_path)
+    existing_ws = process_inputs.get("workspace_path")
+    if isinstance(existing_ws, str) and existing_ws.strip():
+        ws_path = Path(existing_ws).resolve()
+        ws_path.mkdir(parents=True, exist_ok=True)
+        ws_str = str(ws_path)
+    else:
+        workspace_path = materialize_workspace(repo, process_name, template, execution_id)
+        ws_str = str(workspace_path)
     state["execution_id"] = execution_id
     state["workspace_path"] = ws_str
     process_inputs["execution_id"] = execution_id

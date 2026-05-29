@@ -12,6 +12,7 @@ Se denominan **entidades de dominio** o **entidades del ecosistema SddIA** a aqu
 - **Tools** (paths.toolsDefinitionPath, paths.toolCapsules) — contrato: paths.toolsDefinitionPath/tools-contract.json (required_token: Karma2Token).
 - **Actions** (paths.actionsPath) — contrato: actions-contract.json (required_token: Karma2Token).
 - **Process** (paths.processPath) — contrato: paths.processPath/process-contract.json (required_token: Karma2Token).
+- **Suites** (paths.directories.suites) — contrato: `SddIA/suites/suites-contract.md` (required_token: Karma2Token).
 - **Patterns** (paths.patternsPath) — contrato: patterns-contract.json (required_token: Karma2Token).
 - **Principles** (paths.principlesPath) — contrato: principles-contract.json (required_token: Karma2Token).
 - **Templates** (paths.templatesPath) — contrato: templates-contract (required_token: Karma2Token).

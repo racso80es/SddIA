@@ -34,3 +34,5 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | audit-thermodynamic-toll-failsoft | 2e8cd8cd-e0cd-4b0e-ae78-09150ab9c266 | 1.0.0 | chaos-engineering, quality-assurance | — | Audit Caos: `io-choke` + fail-soft Peaje Termodinámico (D3.13). |
 | audit-telemetry-compliance-breach | fd2f075c-5d01-4b54-8b26-67678417e22b | 1.0.0 | chaos-engineering, quality-assurance, event-routing | — | Audit Caos: `schema-corruptor` → `Telemetry_Compliance_Breached`. |
 | audit-sandbox-isolation-rbac | 242d937d-a0da-4d36-ab89-c0fbbc18c868 | 1.0.0 | chaos-engineering, quality-assurance | — | Audit Caos: `sandbox-breacher` + bloqueo Inocuidad workspace. |
+| suite-creator | f3a1b2c3-d4e5-46f7-8901-234567890abc | 1.0.0 | ecosystem-evolution | — | Creator de **Suite** (ED Caos): validación, materialización e indexación bajo `suites/`. |
+| execute-suite | a1b2c3d4-e5f6-4789-a012-3456789abcde | 1.0.0 | chaos-engineering, quality-assurance, ecosystem-evolution | — | Orquestador de Suites: sub-workspaces aislados por nodo + manifiesto Argos. |

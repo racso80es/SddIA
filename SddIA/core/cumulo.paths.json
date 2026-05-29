@@ -23,7 +23,8 @@
     "templates": "SddIA/templates",
     "library_norms": "SddIA/library/norms/",
     "library_codexes": "SddIA/library/codexes/",
-    "events": "SddIA/events"
+    "events": "SddIA/events",
+    "suites": "SddIA/suites"
   },
   "normative_documents": {
     "interaction_triggers": "SddIA/norms/interaction-triggers.json",
@@ -49,7 +50,8 @@
     "tokens": "SddIA/tokens/tokens-contract.md",
     "library_norms": "SddIA/library/norms/norms-contract.md",
     "library_codexes": "SddIA/library/codexes/codex-contract.md",
-    "events": "SddIA/events/events-contract.md"
+    "events": "SddIA/events/events-contract.md",
+    "suites": "SddIA/suites/suites-contract.md"
   },
   "execution_capsules": {
     "skills": "scripts/skills/",

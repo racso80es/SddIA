@@ -1,0 +1,11 @@
+{
+  "feature_name": "inmunidad-caos-fase3",
+  "branch_name": "feat/inmunidad-caos-fase3",
+  "persist_ref": "docs/features/inmunidad-caos-fase3",
+  "base_branch": "main",
+  "refined_requirements": "Fase 3 PBI PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO: Genoma ED Suite + orquestador execute-suite. Forjar suite-creator, suites-contract, extensión entity-manager/sync-entity-index/cumulo.paths, proceso execute-suite con sub-workspaces aislados por atomic_node, survival-manifest Argos e instancia core-full-stress (3 procesos Fase 2). Gate Fase 2 cerrado (Nodos Diagnóstico). PBI pending; pbi_archived false al cierre.",
+  "master_pbi_ref": "docs/todos/pending/PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO.md",
+  "master_pbi_id": "PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO",
+  "depends_on": "docs/features/inmunidad-caos-fase2",
+  "gate_ref": "docs/features/inmunidad-caos-fase2/validacion.md"
+}

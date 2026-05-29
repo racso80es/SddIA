@@ -435,6 +435,7 @@ def dlt_threshold_ok(event: dict[str, Any]) -> tuple[bool, str]:
         "norm",
         "codex",
         "event",
+        "suite",
     }
     if entity_class not in allowed:
         return False, "invalid-entity-class"
