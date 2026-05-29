@@ -1,0 +1,12 @@
+{
+  "feature_name": "kaizen-event-creator-event-family-explicit",
+  "branch_name": "feat/refactorization-kaizen-event-creator-event-family-explicit",
+  "persist_ref": "docs/features/kaizen-event-creator-event-family-explicit",
+  "base_branch": "main",
+  "refactor_goal": "Eliminar fallback event_family → domain en event-creator (D1.9) y alinear runtime run_event_forge / entity-manager con genoma fractal; exigir familia explícita en contrato y validación.",
+  "refined_constraints": "Sin cambio de taxonomía Trinidad ni rutas runtime ya definidas en Fases 1–3. Fuera de alcance: event_family en envelope de instancia ECST (deuda Fase 3).",
+  "pbi_ref": "docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md",
+  "document_id": "PBI-KAIZEN-EVENT-CREATOR-EVENT-FAMILY-EXPLICIT",
+  "depends_on_feature": "docs/features/telemetria-reactiva-eda-fase3",
+  "origin_decision": "docs/features/telemetria-reactiva-eda-fase1/clarify.md (D1.9)"
+}

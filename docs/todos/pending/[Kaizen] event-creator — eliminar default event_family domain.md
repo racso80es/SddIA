@@ -4,10 +4,13 @@ title: "[Kaizen] event-creator — eliminar default event_family domain"
 format: markdown
 version: "1.0.0"
 created: "2026-05-27"
-status: pendiente
+status: en_curso
 priority: media
 process: refactorization
+persist_ref: docs/features/kaizen-event-creator-event-family-explicit
+branch_name: feat/refactorization-kaizen-event-creator-event-family-explicit
 related:
+  - docs/features/kaizen-event-creator-event-family-explicit/
   - SddIA/process/event-creator.md
   - docs/features/telemetria-reactiva-eda-fase1/
   - docs/todos/pending/[ARQUITECTURA] Telemetría Reactiva — Unificación EDA S+ Grade.md
