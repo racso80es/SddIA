@@ -38,6 +38,7 @@ No evalúa código ni interpreta intenciones. Opera bajo **genoma determinista**
 - `Tool_Degraded`
 - `Status_Restored`
 - `Tool_Deprecated`
+- `System_Immunity_Certified` (certificación inmunidad Caos — Fase 4)
 
 ## 4. Jurisdicción vs Argos
 

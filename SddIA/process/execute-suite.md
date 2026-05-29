@@ -8,7 +8,7 @@ context:
 - chaos-engineering
 - quality-assurance
 - ecosystem-evolution
-hash_signature: sha256:64c697cf966ef458d5e7d4bc063ad0e1b2587ec90476cde53adfb87128429167
+hash_signature: sha256:3d833ab2553a38280bf243ff55552060f8dd44c55eef1ca77290e60fbdad1660
 inputs:
 - suite_id: Identificador kebab-case de la Suite (required)
 - execution_strategy: Override opcional fail_fast | run_all
@@ -29,10 +29,14 @@ phases:
   intent: Argos escribe survival-manifest.md en workspace orquestador.
   delegates_to:
   - agent:argos
+- name: Certificación inmunidad
+  intent: Tras éxito global y manifiesto, emitir System_Immunity_Certified en bus domain.
+  delegates_to:
+  - agent:radamanto
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
 # execute-suite
 
-Orquestador de **Suites Caos** (Fase 3): resuelve `suite_id`, ejecuta nodos atómicos con sub-workspaces aislados y compila `survival-manifest.md` (D0.7).
+Orquestador de **Suites Caos** (Fase 3–4): resuelve `suite_id`, ejecuta nodos atómicos con sub-workspaces aislados, compila `survival-manifest.md` (D0.7) y, si la campaña es exitosa, emite `System_Immunity_Certified` (Fase 4).

@@ -36,6 +36,7 @@ from eda_bus_utils import (  # noqa: E402
     ensure_event_bus_topology,
     find_existing_domain_event,
     resolve_origin_topology,
+    write_fractal_event,
 )
 from eda_coverage_utils import remove_entity_coverage, upsert_entity_coverage  # noqa: E402
 from ecst_validation import validate_domain_mutation_event  # noqa: E402
@@ -55,6 +56,7 @@ ACTION_AGENT: dict[str, str] = {
     "sync-entity-index": "cumulo",
     "emit-pr-merged-event": "eda-bus",
     "emit-pr-presented-event": "eda-bus",
+    "emit-suite-execution-requested": "eda-bus",
     "emit-domain-mutation": "eda-bus",
     "materialize-fracture-pbi": "cumulo",
     "materialize-kaizen-alert-doc": "cumulo",
@@ -153,6 +155,47 @@ def _run_emit_pr_merged(repo: Path, inputs: dict[str, Any], action_def: dict[str
         "target_path": seal["target_path"],
         "event_type": "PullRequest_Merged",
         "merge_commit_hash": merge_hash.strip(),
+    }
+
+
+def _run_emit_suite_execution_requested(
+    repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]
+) -> dict[str, Any]:
+    _ = action_def
+    suite_id = inputs.get("suite_id")
+    if not isinstance(suite_id, str) or not suite_id.strip():
+        raise ValueError("suite_id es obligatorio (string)")
+    suite_path = repo / "SddIA" / "suites" / f"{suite_id.strip()}.md"
+    if not suite_path.is_file():
+        raise ValueError(f"Suite no encontrada: {suite_id.strip()}")
+
+    event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    payload: dict[str, Any] = {"suite_id": suite_id.strip()}
+    asset_id = inputs.get("asset_id")
+    if isinstance(asset_id, str) and asset_id.strip():
+        payload["asset_id"] = asset_id.strip()
+    strategy = inputs.get("execution_strategy")
+    if isinstance(strategy, str) and strategy in ("fail_fast", "run_all"):
+        payload["execution_strategy"] = strategy
+
+    event: dict[str, Any] = {
+        "event_id": event_id,
+        "event_type": "Suite_Execution_Requested",
+        "event_family": "domain",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": "emit-suite-execution-requested",
+        "payload": payload,
+        "delivery_state": {},
+    }
+    correlation_id = inputs.get("correlation_id")
+    if isinstance(correlation_id, str) and correlation_id.strip():
+        event["correlation_id"] = correlation_id.strip()
+    seal = write_fractal_event(repo, event, "domain")
+    return {
+        "success": True,
+        "event_id": seal["event_id"],
+        "target_path": seal["target_path"],
+        "event_type": "Suite_Execution_Requested",
     }
 
 
@@ -773,6 +816,7 @@ PHYSICAL_HANDLERS: dict[str, Any] = {
     "sync-entity-index": _run_sync_entity_index,
     "emit-pr-merged-event": _run_emit_pr_merged,
     "emit-pr-presented-event": _run_emit_pr_presented,
+    "emit-suite-execution-requested": _run_emit_suite_execution_requested,
     "emit-domain-mutation": _run_emit_domain_mutation,
     "materialize-fracture-pbi": _run_materialize_fracture_pbi,
     "materialize-kaizen-alert-doc": _run_materialize_kaizen_alert_doc,

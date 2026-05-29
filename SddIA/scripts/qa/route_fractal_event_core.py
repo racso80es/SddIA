@@ -86,6 +86,32 @@ def _dispatch_fractal_subscriber(
             if result.get("ok"):
                 return sid, "success", None, 0
             return sid, "failed", result.get("error") or "fix-tool-process failed", 1
+        if key == "execute-suite":
+            pl = event.get("payload")
+            if not isinstance(pl, dict):
+                return subscriber_id(subscriber), "failed", "payload must be object", 1
+            suite_id = pl.get("suite_id")
+            if not isinstance(suite_id, str) or not suite_id.strip():
+                return subscriber_id(subscriber), "failed", "suite_id missing in payload", 1
+            process_inputs: dict[str, Any] = {"suite_id": suite_id.strip()}
+            strategy = pl.get("execution_strategy")
+            if isinstance(strategy, str) and strategy in ("fail_fast", "run_all"):
+                process_inputs["execution_strategy"] = strategy
+            asset_id = pl.get("asset_id")
+            if isinstance(asset_id, str) and asset_id.strip():
+                process_inputs["asset_id"] = asset_id.strip()
+            try:
+                from execute_process_capsules import run_process
+
+                envelope = run_process(repo, "execute-suite", process_inputs)
+            except Exception as exc:
+                return subscriber_id(subscriber), "failed", str(exc), 1
+            exit_code = int(envelope.get("status_code", 1 if not envelope.get("success") else 0))
+            ok = bool(envelope.get("success")) and exit_code == 0
+            sid = subscriber_id(subscriber)
+            if ok:
+                return sid, "success", None, 0
+            return sid, "failed", envelope.get("error") or "execute-suite failed", exit_code
 
     return dispatch_subscriber(repo, subscriber, event)
 

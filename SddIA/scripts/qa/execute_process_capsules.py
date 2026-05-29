@@ -2221,6 +2221,52 @@ def load_suite_spec(repo: Path, suite_id: str) -> dict[str, Any]:
     return spec
 
 
+def emit_system_immunity_certified(
+    repo: Path,
+    *,
+    suite_id: str,
+    survival_manifest_path: str,
+    orchestrator_execution_id: str,
+    node_reports: list[dict[str, Any]],
+    asset_id: str | None = None,
+) -> dict[str, Any]:
+    manifest_path = repo / survival_manifest_path
+    hash_sig: str | None = None
+    if manifest_path.is_file():
+        digest = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+        hash_sig = f"sha256:{digest}"
+    nodes_passed = sum(1 for n in node_reports if n.get("verdict") == "pass")
+    nodes_total = len(node_reports)
+    payload: dict[str, Any] = {
+        "suite_id": suite_id,
+        "survival_manifest_path": survival_manifest_path,
+        "orchestrator_execution_id": orchestrator_execution_id,
+        "nodes_passed": nodes_passed,
+        "nodes_total": nodes_total,
+    }
+    if isinstance(asset_id, str) and asset_id.strip():
+        payload["asset_id"] = asset_id.strip()
+    if hash_sig:
+        payload["hash_signature_manifest"] = hash_sig
+    event_id = str(uuid.uuid4())
+    event = {
+        "event_id": event_id,
+        "event_type": "System_Immunity_Certified",
+        "event_family": "domain",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": "execute-suite",
+        "payload": payload,
+        "delivery_state": {},
+    }
+    seal = write_fractal_event(repo, event, "domain")
+    route_out: dict[str, Any] | None = None
+    if os.environ.get("SDDIA_LAB_ROUTE_SYNC", "").strip().lower() in ("1", "true", "yes"):
+        from route_fractal_event_core import route_domain_fractal_event
+
+        route_out = route_domain_fractal_event(repo, seal["target_path"])
+    return {"event_id": event_id, "seal": seal, "route": route_out}
+
+
 def compile_survival_manifest(
     repo: Path,
     orchestrator_ws: Path,
@@ -2410,6 +2456,30 @@ def run_execute_suite(
         "workspace_path": str(orchestrator_ws),
         "execution_id": state.get("execution_id"),
     }
+
+    if all_pass:
+        asset_id = suite_spec.get("uuid")
+        if not isinstance(asset_id, str):
+            asset_id = process_inputs.get("asset_id")
+        immunity = emit_system_immunity_certified(
+            repo,
+            suite_id=suite_id.strip(),
+            survival_manifest_path=manifest_rel,
+            orchestrator_execution_id=str(state.get("execution_id", "")),
+            node_reports=node_reports,
+            asset_id=asset_id if isinstance(asset_id, str) else None,
+        )
+        phase_reports.append(
+            {
+                "phase_name": "Certificación inmunidad",
+                "status": "executed",
+                "handler": "emit-system-immunity-certified",
+                "immunity_event_id": immunity.get("event_id"),
+                "immunity_event_path": (immunity.get("seal") or {}).get("target_path"),
+            }
+        )
+        data["immunity_event_id"] = immunity.get("event_id")
+        data["immunity_event_path"] = (immunity.get("seal") or {}).get("target_path")
 
     return {
         "success": all_pass,

@@ -5,7 +5,8 @@
   "dlt_exclusive_events": [
     "Tool_Degraded",
     "Status_Restored",
-    "Tool_Deprecated"
+    "Tool_Deprecated",
+    "System_Immunity_Certified"
   ],
   "rules": {
     "R4.1": "success_rate < success_rate_min → Tool_Degraded",
