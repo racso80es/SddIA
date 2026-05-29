@@ -119,6 +119,8 @@ DIR_BY_CLASS: dict[str, str] = {
     "suite": "SddIA/suites",
 }
 
+TRINITY_EVENT_FAMILIES = frozenset({"telemetry", "orchestration", "domain"})
+
 PILOT_ENTITY_CLASSES = frozenset({
     "skill", "event", "process", "agent", "tool", "action", "norm", "codex", "suite",
 })
@@ -1430,11 +1432,36 @@ outputs:
     }
 
 
+def resolve_effective_event_family(inputs: dict[str, Any]) -> str:
+    """Familia Trinidad obligatoria en invocación (sin fallback domain)."""
+    raw = inputs.get("event_family")
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError("event_family requerido (telemetry | orchestration | domain)")
+    effective = raw.strip().lower()
+    if effective not in TRINITY_EVENT_FAMILIES:
+        raise ValueError(
+            f"event_family inválido: {raw!r}; debe ser telemetry, orchestration o domain"
+        )
+    return effective
+
+
+def _event_family_subscriptions_note(family: str, event_type: str) -> str:
+    registry = {
+        "domain": "event-domain-subscriptions.json",
+        "telemetry": "event-telemetry-subscriptions.json",
+        "orchestration": "event-orchestration-subscriptions.json",
+    }
+    rel = registry.get(family, "event-subscriptions.json")
+    return f"Ver `SddIA/core/{rel}` → clave `{event_type}`."
+
+
 def run_event_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
     name = inputs.get("event_name") or inputs.get("entity_name")
     if not isinstance(name, str) or not name:
         raise ValueError("event_name requerido")
-    event_path = repo / "SddIA" / "events" / f"{name}.md"
+    effective_family = resolve_effective_event_family(inputs)
+    events_root = repo / "SddIA" / "events" / effective_family
+    event_path = events_root / f"{name}.md"
     if event_path.is_file() and inputs.get("lifecycle_operation", "create") == "create":
         raise FileExistsError(f"Ya existe {event_path}")
 
@@ -1443,7 +1470,7 @@ def run_event_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("event_type requerido")
     context = inputs.get("event_context", "ecosystem-evolution")
     version = inputs.get("event_version", "1.0.0")
-    contract_ver = inputs.get("events_contract_version", "1.0.0")
+    contract_ver = inputs.get("events_contract_version", "1.1.0")
     desc = inputs.get("event_description", f"Clase de Evento {event_type}")
     payload_required = inputs.get("payload_required", [])
     payload_optional = inputs.get("payload_optional", [])
@@ -1454,6 +1481,7 @@ def run_event_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
     canon = {
         "event_name": name,
         "event_type": event_type,
+        "event_family": effective_family,
         "event_version": version,
         "event_context": context,
         "payload_required": payload_required,
@@ -1478,11 +1506,13 @@ def run_event_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
     forb_lines = "\n".join(f"- `{f}`" for f in payload_forbidden) or "- *(ninguno)*"
     emitter_lines = "\n".join(f"- `{e}`" for e in emitters) or "- *(definir en forja completa)*"
 
+    subs_note = _event_family_subscriptions_note(effective_family, event_type)
     body = f"""---
 uuid: "{event_uuid}"
 name: "{name}"
 version: "{version}"
 contract: "events-contract v{contract_ver}"
+event_family: "{effective_family}"
 event_type: "{event_type}"
 context: "{context}"
 capabilities:
@@ -1511,35 +1541,37 @@ hash_signature: "{hash_sig}"
 
 ## Suscripciones
 
-Ver `SddIA/core/event-subscriptions.json` → clave `{event_type}`.
+{subs_note}
 """
     event_path.parent.mkdir(parents=True, exist_ok=True)
     event_path.write_text(body, encoding="utf-8")
 
-    index_path = repo / "SddIA" / "events" / "index.md"
+    index_path = events_root / "index.md"
     row = (
         f"| `{name}.md` | `{event_uuid}` | {name} | {event_type} | {version} | "
         f"events-contract v{contract_ver} | {context} | `{cap}` |"
     )
-    idx = index_path.read_text(encoding="utf-8")
-    marker = "| Archivo fuente | uuid | name | event_type |"
-    if name not in idx:
-        if marker in idx:
-            idx = idx.replace(
-                "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
-                "|----------------|------|------|------------|---------|----------|---------|--------------|\n",
-                "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
-                "|----------------|------|------|------------|---------|----------|---------|--------------|\n"
-                + row + "\n",
-                1,
-            )
-        else:
-            idx = idx.rstrip() + "\n" + row + "\n"
-        index_path.write_text(idx, encoding="utf-8")
+    if index_path.is_file():
+        idx = index_path.read_text(encoding="utf-8")
+        marker = "| Archivo fuente | uuid | name | event_type |"
+        if name not in idx:
+            if marker in idx:
+                idx = idx.replace(
+                    "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
+                    "|----------------|------|------|------------|---------|----------|---------|--------------|\n",
+                    "| Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |\n"
+                    "|----------------|------|------|------------|---------|----------|---------|--------------|\n"
+                    + row + "\n",
+                    1,
+                )
+            else:
+                idx = idx.rstrip() + "\n" + row + "\n"
+            index_path.write_text(idx, encoding="utf-8")
 
+    rel_index = str(index_path.relative_to(repo)).replace("\\", "/")
     return {
         "artifact_event_md": str(event_path.relative_to(repo)).replace("\\", "/"),
-        "artifact_events_index": "SddIA/events/index.md",
+        "artifact_events_index": rel_index,
         "handoff_entity_uuid": event_uuid,
         "handoff_hash_signature_new": hash_sig,
         "handoff_hash_signature_old": None,
@@ -1605,7 +1637,7 @@ def creator_inputs_from_entity(
             "skills_contract_version": seed.get("skills_contract_version", "1.1.0"),
         }
     if entity_class == "event":
-        return {
+        out: dict[str, Any] = {
             **base,
             "event_name": seed.get("event_name", entity_name),
             "event_type": seed.get("event_type", ""),
@@ -1616,8 +1648,11 @@ def creator_inputs_from_entity(
             "payload_forbidden": seed.get("payload_forbidden", []),
             "emitter_agents": seed.get("emitter_agents", []),
             "event_version": seed.get("event_version", "1.0.0"),
-            "events_contract_version": seed.get("events_contract_version", "1.0.0"),
+            "events_contract_version": seed.get("events_contract_version", "1.1.0"),
         }
+        if "event_family" in seed:
+            out["event_family"] = seed["event_family"]
+        return out
     if entity_class == "tool":
         tname = seed.get("tool_name", entity_name)
         return {

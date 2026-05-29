@@ -69,7 +69,7 @@ flowchart LR
 - [ ] Output path `{directories.events}/{effective_event_family}/{event_name}.md`
 - [ ] Actualizar índice de familia en fase «Gobernanza de Índice»
 - [ ] Smoke en `execution.md`: forja sin `event_family` → `domain/`; forja con `telemetry` → `telemetry/`
-- [ ] Enlazar Kaizen: `docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md`
+- [x] Kaizen D1.9 cerrado: `docs/todos/done/[Kaizen] event-creator — eliminar default event_family domain.md`
 
 ### 1.D — Raw_Execution_Finished
 

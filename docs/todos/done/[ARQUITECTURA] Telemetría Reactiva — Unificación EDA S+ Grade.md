@@ -233,7 +233,7 @@ Establecer la taxonomía normativa sobre la que se construyen telemetría, orque
 - Telemetría y orquestación futuras inyectan familia explícita (p. ej. `"event_family": "telemetry"` para `Raw_Execution_Finished`).
 - Normalizar `effective_event_family` antes de la primera fase; enrutar Workspace a `{directories.events}/{effective_event_family}/` (no a la raíz).
 - El agente lee el `index.md` de destino y deposita el artefacto Clase allí.
-- **Kaizen (deuda):** `docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md` — refactorizar para exigir input explícito y retirar el default.
+- **Kaizen D1.9:** ✅ `docs/todos/done/[Kaizen] event-creator — eliminar default event_family domain.md` — `event-creator` v1.2.0.
 
 #### 1.D Clase `Raw_Execution_Finished` (pre-requisito Fase 3)
 

@@ -32,7 +32,7 @@ python SddIA/scripts/qa/verify-process-integrity.py
 ### Forja vía entity-manager (piloto event)
 
 ```powershell
-'{"entity_class":"event","entity_name":"test-event","lifecycle_operation":"create","semantic_seed":{"event_name":"test-event","event_type":"Test_Event","payload_required":[],"payload_optional":[],"payload_forbidden":[]}}' | python SddIA/scripts/qa/execute-process.py
+'{"entity_class":"event","entity_name":"test-event","lifecycle_operation":"create","semantic_seed":{"event_name":"test-event","event_family":"domain","event_type":"Test_Event","payload_required":[],"payload_optional":[],"payload_forbidden":[]}}' | python SddIA/scripts/qa/execute-process.py
 ```
 
 *(Requiere `event_type` único; usar solo en laboratorio.)*
