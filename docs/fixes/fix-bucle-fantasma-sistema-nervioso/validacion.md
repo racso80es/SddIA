@@ -3,8 +3,9 @@ feature_name: fix-bucle-fantasma-sistema-nervioso
 created: "2026-05-29"
 process: bug-fix
 branch: fix/bucle-fantasma-sistema-nervioso
-global: PENDIENTE
-pbi_archived: false
+global: APTO
+pbi_archived: true
+closed: "2026-05-29"
 index_prefix: "[ARQUITECTURA]"
 checks:
   CA1-watcher-no-concurrent-duplicate: pass
@@ -20,11 +21,12 @@ git_changes:
   - SddIA/scripts/qa/purge_stale_events.py
   - SddIA/scripts/qa/test_bucle_fantasma_bus.py
   - docs/fixes/fix-bucle-fantasma-sistema-nervioso/
+  - docs/todos/done/PBI-FIX-BUCLE-FANTASMA-SISTEMA-NERVIOSO.md
 ---
 
 # Validación — [ARQUITECTURA] fix-bucle-fantasma-sistema-nervioso
 
-**Veredicto global: PENDIENTE** (implementación y unittest OK; falta PR merge y cierre Argos formal).
+**Veredicto global: APTO**
 
 ## Criterios de aceptación (spec.md)
 
@@ -48,13 +50,13 @@ git_changes:
 | O5 Purga zona cero (lab) | ✅ |
 | O6 No regresión sweeper | ✅ |
 | O7 UX logs watcher | ✅ |
-| O8 Prefijo [ARQUITECTURA] en PR | ⏳ |
+| O8 Prefijo [ARQUITECTURA] en PR | ✅ |
 
 ## Cierre documental (pre-merge)
 
 | Paso | Estado |
 |------|--------|
-| PBI → `docs/todos/done/` | ⏳ |
-| `pbi_archived: true` en este archivo | ⏳ |
-| `implementation.md` / `execution.md` completos | ⏳ |
-| PR único mergeado en `main` | ⏳ |
+| PBI → `docs/todos/done/` | ✅ |
+| `pbi_archived: true` en este archivo | ✅ |
+| `implementation.md` / `execution.md` completos | ✅ |
+| PR único mergeado en `main` | ⏳ (tras merge) |

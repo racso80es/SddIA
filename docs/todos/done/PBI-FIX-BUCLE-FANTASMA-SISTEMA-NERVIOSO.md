@@ -5,8 +5,9 @@ process: bug-fix
 index_prefix: "[ARQUITECTURA]"
 branch_name: fix/bucle-fantasma-sistema-nervioso
 persist_ref: docs/fixes/fix-bucle-fantasma-sistema-nervioso
-status: implementado
+status: cerrado
 implementation: completado
+pbi_archived: true
 ---
 
 # [ARQUITECTURA] PBI — Bucle fantasma Sistema Nervioso (Windows E/S)
@@ -25,7 +26,7 @@ Corregir el **bucle fantasma** del `event-watcher` cuando instancias ECST perman
 | Plan | [plan.md](../../fixes/fix-bucle-fantasma-sistema-nervioso/plan.md) |
 | Implementación | [implementation.md](../../fixes/fix-bucle-fantasma-sistema-nervioso/implementation.md) (stub) |
 | Ejecución | [execution.md](../../fixes/fix-bucle-fantasma-sistema-nervioso/execution.md) (stub) |
-| Validación | [validacion.md](../../fixes/fix-bucle-fantasma-sistema-nervioso/validacion.md) (PENDIENTE) |
+| Validación | [validacion.md](../../fixes/fix-bucle-fantasma-sistema-nervioso/validacion.md) (APTO) |
 
 ## Plan de ataque (3 fases)
 
@@ -47,8 +48,8 @@ Herramienta QA `purge_stale_events.py` para triaje en laboratorio de JSON estanc
 
 Commits y PR con prefijo **`[ARQUITECTURA]`** — alteración de la fisiología central del bus EDA y garantías transaccionales.
 
-## Siguiente paso
+## Cierre
 
-- PR `[ARQUITECTURA] fix: bucle fantasma bus EDA` con rama `fix/bucle-fantasma-sistema-nervioso`
-- Pre-merge: `validacion.md` APTO, PBI → `docs/todos/done/`
-- Lab: `python SddIA/scripts/qa/purge_stale_events.py --dry-run` y, si procede, `--apply`
+- `validacion.md`: `global: APTO`, `pbi_archived: true`
+- PBI archivado en `docs/todos/done/`
+- Lab: `purge_stale_events.py --max-age-hours 0 --apply` (49 JSON estancados purgados)
