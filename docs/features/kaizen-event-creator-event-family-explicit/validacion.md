@@ -3,6 +3,7 @@ feature_name: kaizen-event-creator-event-family-explicit
 created: "2026-05-29"
 process: refactorization
 branch: feat/refactorization-kaizen-event-creator-event-family-explicit
+pr_url: https://github.com/racso80es/SddIA/pull/65
 global: APTO
 pbi_archived: true
 checks:

@@ -15,7 +15,7 @@ process: refactorization
 | H4 | Migración seeds/smokes documentados | [x] |
 | H5 | Actualización docs Fase 1 (D1.9 cerrado) | [x] |
 | H6 | `implementation.md` / `execution.md` / `validacion.md` + PBI `done/` | [x] |
-| H7 | Un solo PR + `delivery-close-cycle` | [ ] |
+| H7 | Un solo PR + `delivery-close-cycle` | [x] |
 
 ## Orden Tekton (borrador)
 

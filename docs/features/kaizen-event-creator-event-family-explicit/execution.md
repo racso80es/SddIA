@@ -23,7 +23,11 @@ python SddIA/scripts/qa/recalc-process-hash-signatures.py SddIA/process/event-cr
 python SddIA/scripts/qa/verify-process-integrity.py
 ```
 
-## Forja sin familia (debe fallar)
+## Cierre
+
+- PR: https://github.com/racso80es/SddIA/pull/65
+- Rama publicada: `feat/refactorization-kaizen-event-creator-event-family-explicit`
+
 
 ```powershell
 python SddIA/scripts/qa/execute-process.py --process entity-manager --inputs "{\"entity_class\":\"event\",\"entity_name\":\"neg-test\",\"lifecycle_operation\":\"create\",\"semantic_seed\":{\"event_name\":\"neg-test\",\"event_type\":\"Neg_Test\",\"payload_required\":[]}}"
