@@ -2,13 +2,14 @@
 document_id: PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO
 title: "[ARQUITECTURA] Auditoría de Inmunidad, Caos S+ Grade y ED Suite"
 format: markdown
-version: "2.5.0"
+version: "2.7.0"
 created: "2026-05-28"
 refined: "2026-05-29"
-status: pendiente
+status: done
 priority: arquitectura-core
-active_phase: 4
-active_feature: docs/features/inmunidad-caos-fase4
+closed: "2026-05-29"
+active_phase: null
+active_feature: docs/features/inmunidad-caos-fase5
 impact_analysis: docs/features/inmunidad-caos-fase0/impact-analysis.md
 phase_features:
   "0": docs/features/inmunidad-caos-fase0
@@ -16,6 +17,7 @@ phase_features:
   "2": docs/features/inmunidad-caos-fase2
   "3": docs/features/inmunidad-caos-fase3
   "4": docs/features/inmunidad-caos-fase4
+  "5": docs/features/inmunidad-caos-fase5
 depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 ---
 
@@ -25,16 +27,16 @@ depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 |-------|-------|
 | **ID** | `PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO` |
 | **Fecha creación** | 2026-05-28 |
-| **Estatus** | Pendiente |
+| **Estatus** | ✅ Done global — Fase 5 cerrada (`inmunidad-caos-fase5`) |
 | **Prioridad** | Alta — Validación empírica del ecosistema reactivo y forja de nueva ED |
 | **Alcance** | Creación de la Entidad de Dominio `Suite`, tools ofensivas, procesos de diagnóstico atómicos, orquestador de suites y sellado de resiliencia DLT |
-| **Versión PBI** | 2.5.0 (Fase 4 en planificación) |
-| **Feature activa** | [`docs/features/inmunidad-caos-fase4/`](../../features/inmunidad-caos-fase4/) |
+| **Versión PBI** | 2.7.0 (Done global — README + cierre programa 2026-05-29) |
+| **Feature Fase 5** | [`docs/features/inmunidad-caos-fase5/`](../../features/inmunidad-caos-fase5/) (cerrada — Done global) |
 | **Feature Fase 0** | [`docs/features/inmunidad-caos-fase0/`](../../features/inmunidad-caos-fase0/) (cerrada) |
 | **Análisis de impacto** | [`impact-analysis.md`](../../features/inmunidad-caos-fase0/impact-analysis.md) |
 | **Depende de** | Telemetría Reactiva Done (`PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO`) |
 
-> **Gestión multi-feature:** Cada fase se ejecuta en una feature independiente (`inmunidad-caos-fase{N}`). El PBI permanece en `pending/` hasta Done global; Fase 0 no archiva el PBI (`pbi_archived: false`).
+> **Gestión multi-feature:** Cada fase se ejecutó en una feature independiente (`inmunidad-caos-fase{N}`). Done global declarado en Fase 5 con `pbi_archived: true`.
 
 ### Estado de ejecución por fase
 
@@ -43,9 +45,9 @@ depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 | **0** | ✅ Cerrada | [`inmunidad-caos-fase0`](../../features/inmunidad-caos-fase0/) | [`validacion.md`](../../features/inmunidad-caos-fase0/validacion.md) APTO (AC0.1–AC0.5) |
 | **1** | ✅ Cerrada | [`inmunidad-caos-fase1`](../../features/inmunidad-caos-fase1/) | [`validacion.md`](../../features/inmunidad-caos-fase1/validacion.md) APTO (AC1.1–AC1.3) |
 | **2** | ✅ Cerrada | [`inmunidad-caos-fase2`](../../features/inmunidad-caos-fase2/) | [`validacion.md`](../../features/inmunidad-caos-fase2/validacion.md) APTO (AC2.1–AC2.3) |
-| **3** | ✅ Lista para PR | [`inmunidad-caos-fase3`](../../features/inmunidad-caos-fase3/) | [`validacion.md`](../../features/inmunidad-caos-fase3/validacion.md) APTO (AC3.1–AC3.3) |
-| **4** | ✅ Lista para PR | [`inmunidad-caos-fase4`](../../features/inmunidad-caos-fase4/) | [`validacion.md`](../../features/inmunidad-caos-fase4/validacion.md) APTO (AC4.1–AC4.3) |
-| **5** | ⏳ Pendiente | `inmunidad-caos-fase5` (prevista) | — |
+| **3** | ✅ Cerrada | [`inmunidad-caos-fase3`](../../features/inmunidad-caos-fase3/) | [`validacion.md`](../../features/inmunidad-caos-fase3/validacion.md) APTO (AC3.1–AC3.3) |
+| **4** | ✅ Cerrada | [`inmunidad-caos-fase4`](../../features/inmunidad-caos-fase4/) | [`validacion.md`](../../features/inmunidad-caos-fase4/validacion.md) APTO (AC4.1–AC4.3) |
+| **5** | ✅ Cerrada | [`inmunidad-caos-fase5`](../../features/inmunidad-caos-fase5/) | [`validacion.md`](../../features/inmunidad-caos-fase5/validacion.md) APTO (AC5.1–AC5.2) |
 
 ## 0. Contexto global y axiomas
 
@@ -243,7 +245,7 @@ Decisiones de diseño incorporadas desde Fase 0 (feature `inmunidad-caos-fase0`)
 
 **Origen:** PBI § Fase 2 · **Prioridad:** Alta · **Depende de:** Fase 1 · **Bloquea:** Fase 3
 
-**Feature:** [`docs/features/inmunidad-caos-fase2/`](../../features/inmunidad-caos-fase2/) (lista para PR)
+**Feature:** [`docs/features/inmunidad-caos-fase2/`](../../features/inmunidad-caos-fase2/)
 
 **Objetivo:** Procesos de auditoría **atómicos** (1 vector = 1 proceso): workspace propio, un ataque, Argos certifica reacción.
 
@@ -273,7 +275,7 @@ Decisiones de diseño incorporadas desde Fase 0 (feature `inmunidad-caos-fase0`)
 
 **Origen:** PBI § Fase 3 · **Prioridad:** Alta · **Depende de:** Fase 2 · **Bloquea:** Fase 4
 
-**Feature:** [`docs/features/inmunidad-caos-fase3/`](../../features/inmunidad-caos-fase3/) (lista para PR)
+**Feature:** [`docs/features/inmunidad-caos-fase3/`](../../features/inmunidad-caos-fase3/)
 
 **Objetivo:** ED `Suite` + orquestador `execute-suite`.
 
@@ -316,7 +318,7 @@ Decisiones de diseño incorporadas desde Fase 0 (feature `inmunidad-caos-fase0`)
 
 **Origen:** PBI § Fase 4 · **Prioridad:** Alta · **Depende de:** Fase 3 · **Bloquea:** Fase 5
 
-**Feature:** [`docs/features/inmunidad-caos-fase4/`](../../features/inmunidad-caos-fase4/) (lista para PR)
+**Feature:** [`docs/features/inmunidad-caos-fase4/`](../../features/inmunidad-caos-fase4/)
 
 **Objetivo:** Conectar EDA con orquestador y certificar resiliencia en DLT.
 
@@ -348,6 +350,8 @@ Decisiones de diseño incorporadas desde Fase 0 (feature `inmunidad-caos-fase0`)
 ## Fase 5 — Documentación README.md y afectaciones documentales
 
 **Origen:** PBI § Fase 5 · **Prioridad:** Alta (cierre) · **Depende de:** Fase 4
+
+**Feature:** [`docs/features/inmunidad-caos-fase5/`](../../features/inmunidad-caos-fase5/) (cerrada — Done global)
 
 **Objetivo:** Documentación pública del patrón Suite / Caos / Inmunidad.
 

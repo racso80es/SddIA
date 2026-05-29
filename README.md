@@ -12,6 +12,7 @@ Ecosistema de **activos técnicos tokenizables** (NFTs lógicos: definiciones ve
 | **Action** | Paso atómico, indivisible y auditable de ejecución. | `paths.directories.actions` | Invoca **Skills** o **Tools** para el trabajo técnico. |
 | **Skill** | Capacidad técnica especializada definida por contrato. | `paths.directories.skills` | Ejecutada por **Cápsula** blindada (binario Rust o script Python bajo contrato). |
 | **Tool** | Capacidad de infraestructura o utilidad de dominio. | `paths.directories.tools` | Servicios base a las **Actions** vía **Cápsula**. |
+| **Suite** | Campaña de Caos declarativa: orquestación de procesos audit con estrategia y tolerancias a fallos. | `paths.directories.suites` | Consumida por `execute-suite`; estímulo vía ECST `Suite_Execution_Requested`. Contrato: [suites-contract.md](SddIA/suites/suites-contract.md). |
 | **Event** | Contrato inmutable ECST; clasificado por `event_family` (`telemetry`, `orchestration`, `domain`). | `paths.directories.events` — genoma fractal | Clase en `{name}.md` bajo [events-contract.md](SddIA/events/events-contract.md); instancia en bus fractal (`eda_fractal`) o pipeline V3+ (`eda_bus`) según familia. Índice agregador: [SddIA/events/index.md](SddIA/events/index.md). Ver [CONSTITUTION_CORE.md](SddIA/CONSTITUTION_CORE.md) §3.1. |
 | **Library_Codex** | Paquetes de normas orquestadas por dominio. | `paths.directories.library_codexes` | Agrupación de conocimiento técnico a cumplir por los **Agents**. |
 | **Library_Norm** | Reglas técnicas atómicas, patrones y prohibiciones de *code-smells*. | `paths.directories.library_norms` | Cantera de la **Librería** (`SddIA/library/norms/`). **No** confundir con la normativa operativa del Core (`SddIA/norms`). |
@@ -36,7 +37,7 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 
 Definición operativa de **Event**: *contrato inmutable de comunicación asíncrona; señal con propósito que opera bajo coreografía pura.* Toda Clase declara `event_family`: `{ telemetry, orchestration, domain }` (enum estricto en [`events-contract.md`](SddIA/events/events-contract.md)).
 
-Programa de referencia: [Telemetría Reactiva EDA S+ Grade](docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md) (Fases 0–6).
+Programas de referencia: [Telemetría Reactiva EDA S+ Grade](docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md) (Fases 0–6); [Inmunidad, Caos S+ Grade y ED Suite](docs/features/inmunidad-caos-fase0/impact-analysis.md) (Fases 0–5).
 
 #### Trinidad de Estímulos
 
@@ -164,11 +165,11 @@ Catálogo canónico (UUID, `allowed_policies`, versiones): `{paths.directories.a
 | **Mayeuta** | Clarificación: estabiliza el *qué* y el *por qué*; no diseña procesos ni código. |
 | **Dedalo** | Planificación: norm pack + blueprint de **Process** alineado a contrato y RBAC del ejecutor. |
 | **Argos** | Verificación: inspector de la **materia** (artefactos, calidad estructural, tests); juicio por evidencia. |
-| **Radamanto** | Actuario de **confianza**: batching de telemetría CLI, umbrales deterministas, sellado DLT de estatus de herramientas. Ver [`radamanto.md`](SddIA/agents/radamanto.md). |
+| **Radamanto** | Actuario de **confianza**: batching de telemetría CLI, umbrales deterministas, sellado DLT de estatus de herramientas y **certificación de inmunidad** Caos. Ver [`radamanto.md`](SddIA/agents/radamanto.md). |
 
 **Flujo típico:** Mayeuta → Dedalo → Tekton → Argos. Cerbero actúa en cada delegación a cápsulas (Peaje RBAC); Cúmulo gobierna rutas y catálogos.
 
-**Argos vs Radamanto:** Argos audita código y artefactos concretos; Radamanto acumula estadística agregada de telemetría y gobierna estatus macroscópico (`Tool_Degraded`, `Status_Restored`, `Tool_Deprecated`) vía DLT. Radamanto **no** evalúa diffs ni mide por sí mismo.
+**Argos vs Radamanto:** Argos audita código y artefactos concretos; Radamanto acumula estadística agregada de telemetría y gobierna estatus macroscópico vía DLT: eventos `Tool_*` / `Status_*` (Self-Healing) y **`System_Immunity_Certified`** (campañas Suite exitosas). Radamanto **no** evalúa diffs ni mide por sí mismo. Cúmulo mantiene DLT sobre PR/ECST; **no** sella inmunidad Caos.
 
 **Self-Healing (alto nivel):** telemetría degradada → Radamanto emite `Tool_Degraded` → Cerbero revoca RBAC → Tekton/Dédalo reparan en sandbox → Argos valida estructura → telemetría exitosa → Radamanto `Status_Restored` → Cerbero rehabilita. Tras `max_recovery_attempts` → `Tool_Deprecated`. Detalle: [telemetria-reactiva-eda-fase4](docs/features/telemetria-reactiva-eda-fase4/).
 
@@ -201,6 +202,70 @@ Toda ejecución transita por el CLI (`execute-process`, `execute_process_capsule
 **Recibos termodinámicos (opcionales):** si la cápsula devuelve `telemetry_receipt` en stdout JSON, el CLI lo anexa al payload telemetría. Omisión **no** falla la ejecución de negocio. Contratos ED declaran `telemetry_provided` / `telemetry_schema` en skills y actions.
 
 **Auditoría de cumplimiento:** el proceso [`telemetry-compliance-audit`](SddIA/process/telemetry-compliance-audit.md) cruza recibo vs contrato ED; incumplimiento → `Telemetry_Compliance_Breached` en `./.events/domain/`. Gobernanza reactiva post-breach: pendiente (Kaizen). Detalle: [telemetria-reactiva-eda-fase5](docs/features/telemetria-reactiva-eda-fase5/).
+
+## Ingeniería del Caos (Patrón Suite)
+
+Validación empírica de resiliencia del ecosistema reactivo mediante **campañas de Caos** orquestadas como Entidad de Dominio **Suite** — no scripts ad-hoc. Programa: [impact-analysis.md](docs/features/inmunidad-caos-fase0/impact-analysis.md) (Fases 0–5).
+
+### Axiomas
+
+| Axioma | Enunciado |
+|--------|-----------|
+| **Inocuidad del Caos** | Tools ofensivas operan **solo** dentro del `workspace_path` inyectado; `assert_workspace_bound` obligatorio antes de I/O |
+| **Identidad Ontológica** | Una campaña de Caos es una ED **Suite** auditable (Cerbero, Cúmulo, DLT) |
+| **Atomicidad Diagnóstica** | Un proceso audit = un vector de ataque; los nodos de una Suite invocan procesos distintos |
+
+### ED Suite y orquestador
+
+| Elemento | Referencia |
+|----------|------------|
+| Genoma | [`SddIA/suites/`](SddIA/suites/) — contrato [`suites-contract.md`](SddIA/suites/suites-contract.md) |
+| Payload | `execution_strategy` (`fail_fast` \| `run_all`), `atomic_nodes[]` (proceso, `expected_exit_code`, `timeout_ms`) |
+| Orquestador | Proceso [`execute-suite`](SddIA/process/execute-suite.md) — sub-workspaces aislados por nodo |
+| Instancia referencia | [`core-full-stress.md`](SddIA/suites/core-full-stress.md) (tres procesos audit Fase 2) |
+| Manifiesto Argos | `{workspace_path}/survival-manifest.md` tras nodos exitosos |
+
+**Arsenal atómico (tools ofensivas):** [`io-choke`](SddIA/tools/io-choke.md), [`schema-corruptor`](SddIA/tools/schema-corruptor.md), [`sandbox-breacher`](SddIA/tools/sandbox-breacher.md) — catálogo [`tools/index.md`](SddIA/tools/index.md). Contexto RBAC: `chaos-engineering`.
+
+**Nodos de diagnóstico (procesos audit):** `audit-thermodynamic-toll-failsoft`, `audit-telemetry-compliance-breach`, `audit-sandbox-isolation-rbac` — catálogo [`process/index.md`](SddIA/process/index.md).
+
+### Flujo EDA reactivo
+
+```mermaid
+sequenceDiagram
+  participant A as emit-suite-execution-requested
+  participant P as pending/domain
+  participant E as execute-suite
+  participant M as survival-manifest
+  participant I as System_Immunity_Certified
+  participant Rad as Radamanto DLT
+
+  A->>P: Suite_Execution_Requested
+  P->>E: fan-out Tekton
+  E->>M: Argos compile
+  E->>P: System_Immunity_Certified
+  P->>Rad: iota-immutable-publisher
+```
+
+| Paso | Artefacto |
+|------|-----------|
+| Estímulo | Acción [`emit-suite-execution-requested`](SddIA/actions/emit-suite-execution-requested.md) |
+| Suscripción | `Suite_Execution_Requested` → `process:execute-suite` |
+| Certificación | Solo si campaña `all_pass` y manifiesto existe |
+| Clases ECST | [`domain/index.md`](SddIA/events/domain/index.md) |
+
+### Certificación DLT (inmunidad)
+
+Tras campaña exitosa, el orquestador emite `System_Immunity_Certified` en el bus domain. **Radamanto** (no Cúmulo) suscribe el witness DLT vía `iota-immutable-publisher`. Matriz jurisdicción: [dlt-immunity-acta.md](docs/features/inmunidad-caos-fase4/dlt-immunity-acta.md).
+
+**Laboratorio (estímulo E2E):**
+
+```bash
+python SddIA/scripts/qa/execute-action.py --action emit-suite-execution-requested \
+  --inputs '{"suite_id":"core-full-stress"}'
+```
+
+Flags lab documentados en [inmunidad-caos-fase4](docs/features/inmunidad-caos-fase4/execution.md) (`SDDIA_LAB_ROUTE_SYNC`, `SDDIA_LAB_SIMULATE_IOTA`).
 
 ## Estándar de entidades de dominio SddIA
 **Toda** familia de entidades de dominio debe cumplir el siguiente rigor arquitectónico:

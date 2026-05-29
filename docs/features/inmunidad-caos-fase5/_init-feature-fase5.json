@@ -1,0 +1,11 @@
+{
+  "feature_name": "inmunidad-caos-fase5",
+  "branch_name": "feat/inmunidad-caos-fase5",
+  "persist_ref": "docs/features/inmunidad-caos-fase5",
+  "base_branch": "main",
+  "refined_requirements": "Fase 5 PBI PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO: Documentación pública y Done global. README raíz — sección Ingeniería del Caos (axiomas, ED Suite, flujo EDA, certificación DLT Radamanto); touchpoints paths-via-cumulo y touchpoints-ia con suites/ y chaos-engineering; archivar PBI maestro en docs/todos/done/ con pbi_archived true. Gate Fase 4 APTO (ECST + DLT inmunidad). Doc-only salvo enlaces rotos.",
+  "master_pbi_ref": "docs/todos/pending/PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO.md",
+  "master_pbi_id": "PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO",
+  "depends_on": "docs/features/inmunidad-caos-fase4",
+  "gate_ref": "docs/features/inmunidad-caos-fase4/validacion.md"
+}
