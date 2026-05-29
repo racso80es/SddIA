@@ -1,0 +1,18 @@
+{
+  "description": "AC7 — Táctica del Refugio: mensaje con MarkdownV2 inválido debe entregar en plain tras 400 parsing",
+  "tool": "send-telegram-notification",
+  "input": {
+    "message": "Alerta Argos: PR #42 _rama_sin_escapar *asterisco_suelto",
+    "parse_mode": "MarkdownV2"
+  },
+  "expect": {
+    "success": true,
+    "attempt": 2,
+    "degraded_plain_fallback": true
+  },
+  "mock_first_response": {
+    "ok": false,
+    "error_code": 400,
+    "description": "Bad Request: can't parse entities: Character '_' is reserved and must be escaped with the preceding '\\'"
+  }
+}

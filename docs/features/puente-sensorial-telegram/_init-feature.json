@@ -1,0 +1,7 @@
+{
+  "feature_name": "puente-sensorial-telegram",
+  "branch_name": "feat/puente-sensorial-telegram",
+  "persist_ref": "docs/features/puente-sensorial-telegram",
+  "base_branch": "main",
+  "refined_requirements": "Integración bidireccional SddIA↔Telegram: tool send-telegram-notification (eferente ciego), daemon telegram-watcher long-polling con filtro TELEGRAM_ALLOWED_CHAT_ID, proceso telegram-gateway que transmuta texto a eventos de dominio (Manual_Task_Requested, Kaizen_Idea_Captured) en .events/pending/. Ceguera espacial, idempotencia update_id, sin tokens IA en intrusos."
+}
