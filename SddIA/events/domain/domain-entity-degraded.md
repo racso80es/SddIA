@@ -1,26 +1,27 @@
 ---
 uuid: "7a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c5d"
-name: "tool-degraded"
+name: "domain-entity-degraded"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
 event_family: "domain"
-event_type: "Tool_Degraded"
+event_type: "Domain_Entity_Degraded"
 context: "quality-assurance"
 capabilities:
-  - "tool_degraded"
+  - "domain_entity_degraded"
   - "self_healing_trigger"
 hash_signature: "sha256:pending-anchor-on-merge"
 ---
 
-# Event: Tool_Degraded
+# Event: Domain_Entity_Degraded
 
-Degradación de estatus S+ Grade de una herramienta/skill. Emisor exclusivo: **Radamanto**. Dispara revocación RBAC (Cerbero) e instanciación de reparación (`fix-tool-process`).
+Degradación de estatus S+ Grade de una entidad de dominio. Emisor exclusivo: **Radamanto**. Dispara revocación RBAC (Cerbero) e instanciación de reparación (`fix-tool-process` cuando `entity_type=tool`).
 
 ## Payload ECST
 
 ### REQUIRED
 
-- `target_entity_id`
+- `entity_type`
+- `entity_id`
 - `reason`
 - `success_rate`
 - `recovery_attempt`
@@ -33,6 +34,7 @@ Degradación de estatus S+ Grade de una herramienta/skill. Emisor exclusivo: **R
 
 - `branch`
 - `pr_url`
+- `target_entity_id`
 
 ## Emisores autorizados
 
@@ -40,4 +42,4 @@ Degradación de estatus S+ Grade de una herramienta/skill. Emisor exclusivo: **R
 
 ## Suscripciones
 
-Ver `event-domain-subscriptions.json` → `Tool_Degraded`.
+Ver `event-domain-subscriptions.json` → `Domain_Entity_Degraded`.

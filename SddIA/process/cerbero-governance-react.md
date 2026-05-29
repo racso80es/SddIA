@@ -10,7 +10,7 @@ context:
 hash_signature: sha256:74455f32d07f5047ccc8aec1b522a8b368dc31767a338c04eafa1be17a68b90e
 inputs:
 - event_file_path: Ruta relativa al JSON dominio en ./.events/domain/
-- event_type: Tipo ECST (Tool_Degraded, Status_Restored, Tool_Deprecated)
+- event_type: Tipo ECST (Domain_Entity_Degraded, Domain_Entity_Restored, Domain_Entity_Deprecated)
 outputs:
 - governance_result: Estado revocación actualizado
 phases:
@@ -24,4 +24,4 @@ porcentaje_de_exito: null
 
 # cerbero-governance-react
 
-Handler lab reactivo a eventos Self-Healing. Rehabilita **solo** ante `Status_Restored` emitido por Radamanto (D4.14).
+Handler lab reactivo a eventos Self-Healing agnósticos. Rehabilita **solo** ante `Domain_Entity_Restored` emitido por Radamanto (D4.14).

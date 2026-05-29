@@ -111,8 +111,8 @@ class TestRadamantoSelfHealing(unittest.TestCase):
             types = []
             for p in domain_files:
                 types.append(json.loads(p.read_text(encoding="utf-8")).get("event_type"))
-            self.assertIn("Tool_Degraded", types)
-            self.assertIn("Status_Restored", types)
+            self.assertIn("Domain_Entity_Degraded", types)
+            self.assertIn("Domain_Entity_Restored", types)
         finally:
             os.environ.pop("SDDIA_LAB_ROUTE_SYNC", None)
             os.environ.pop("SDDIA_LAB_SIMULATE_IOTA", None)
@@ -120,9 +120,10 @@ class TestRadamantoSelfHealing(unittest.TestCase):
     def test_argos_does_not_emit_status_restored(self) -> None:
         repo = _fake_repo()
         ev = build_domain_event(
-            "Tool_Degraded",
+            "Domain_Entity_Degraded",
             {
-                "target_entity_id": "skill:x",
+                "entity_type": "skill",
+                "entity_id": "skill:x",
                 "reason": "test",
                 "success_rate": 0.5,
                 "recovery_attempt": 1,
@@ -167,7 +168,7 @@ class TestRadamantoMaxRecovery(unittest.TestCase):
             result = process_telemetry_file(repo, rel)
             self.assertTrue(result.get("ok"))
             action_types = [a.get("type") for a in result.get("actions") or []]
-            self.assertIn("Tool_Deprecated", action_types)
+            self.assertIn("Domain_Entity_Deprecated", action_types)
             revoked = load_revoked(repo)
             self.assertIn(entity, revoked.get("permanent", {}))
         finally:

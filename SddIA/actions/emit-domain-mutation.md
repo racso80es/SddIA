@@ -1,7 +1,7 @@
 ---
 uuid: "7e4a9c2b-1d3f-4a8e-9b6c-0f1e2d3a4b5c"
 name: "emit-domain-mutation"
-version: "1.0.0"
+version: "1.1.0"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -98,6 +98,8 @@ Construir JSON UTF-8. En raíz incluir `correlation_id` **solo** si el input no 
   "emitter_agent": "<emitter_agent>",
   "payload": {
     "entity_class": "<entity_class>",
+    "entity_type": "<entity_class>",
+    "entity_id": "<entity_uuid>",
     "lifecycle_operation": "<lifecycle_operation>",
     "entity_uuid": "<entity_uuid>",
     "entity_name": "<entity_name>",
@@ -121,7 +123,7 @@ Construir JSON UTF-8. En raíz incluir `correlation_id` **solo** si el input no 
 | Campo | Valor |
 | :--- | :--- |
 | `operation` | `WRITE_FILE` |
-| `target_path` | `{eda_bus.pending}/<event_id>.json` |
+| `target_path` | `{eda_bus.pending}/<event_id>.json` (UUID; sin prefijo semántico legado) |
 | `content` | JSON UTF-8 del Paso 4 |
 
 - Abortar si `exitCode != 0`.

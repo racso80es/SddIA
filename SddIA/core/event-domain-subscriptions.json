@@ -79,16 +79,16 @@
       "intent": "Materializar cicatriz Kaizen documental en docs/todos/pending/ (único suscriptor legítimo)."
     }
   ],
-  "Tool_Degraded": [
+  "Domain_Entity_Degraded": [
     {
       "agent": "cerbero",
       "process": "cerbero-governance-react",
-      "intent": "Revocar RBAC entidad degradada."
+      "intent": "Revocar RBAC entidad degradada (filtra entity_type en payload)."
     },
     {
       "agent": "dedalo",
       "process": "fix-tool-process",
-      "intent": "Iniciar reparación en sandbox."
+      "intent": "Reparación sandbox para entity_type tool/skill."
     },
     {
       "agent": "radamanto",
@@ -96,7 +96,7 @@
       "intent": "Sellar degradación en DLT (exclusividad Radamanto)."
     }
   ],
-  "Status_Restored": [
+  "Domain_Entity_Restored": [
     {
       "agent": "cerbero",
       "process": "cerbero-governance-react",
@@ -108,7 +108,7 @@
       "intent": "Sellar redención en DLT (exclusividad Radamanto)."
     }
   ],
-  "Tool_Deprecated": [
+  "Domain_Entity_Deprecated": [
     {
       "agent": "cerbero",
       "process": "cerbero-governance-react",

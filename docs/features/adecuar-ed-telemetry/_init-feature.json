@@ -1,0 +1,20 @@
+{
+  "feature_name": "adecuar-ed-telemetry",
+  "branch_name": "feat/adecuar-ed-telemetry",
+  "persist_ref": "docs/features/adecuar-ed-telemetry",
+  "base_branch": "main",
+  "refined_requirements": "PBI Enrutamiento Semántico Agnóstico: generalizar eventos de entidad de dominio bajo taxonomía Domain_Entity_{Acción}. Fases A–D: purgar suscripciones acopladas a tools (event-domain-subscriptions.json), densificar payload domain-entity-* con entity_type/entity_id, alinear emit-domain-mutation y nomenclatura pending/, erradicar contratos fósiles tool-degraded/tool-deprecated en SddIA/events/domain/. Recuperar Ceguera Espacial del bus EDA.",
+  "pbi_ref": "docs/todos/pending/event_domain_subscriptions_Adecuar_ED_Telemetry.md",
+  "document_id": "PBI-ADECUAR-ED-TELEMETRY",
+  "depends_on_features": [
+    "docs/features/eda-domain-entities-splus",
+    "docs/features/telemetria-reactiva-eda-fase4"
+  ],
+  "related_artifacts": [
+    "SddIA/core/event-domain-subscriptions.json",
+    "SddIA/events/domain/",
+    "SddIA/actions/emit-domain-mutation.md",
+    "SddIA/scripts/qa/radamanto_batch_core.py",
+    "SddIA/scripts/qa/cerbero_governance_react_core.py"
+  ]
+}

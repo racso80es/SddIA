@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Cerbero reacción RBAC ante eventos Self-Healing (Fase 4)."""
+"""Cerbero reacción RBAC ante eventos Self-Healing (Fase 4+ agnóstico)."""
 
 from __future__ import annotations
 
@@ -42,37 +42,45 @@ def is_entity_revoked(repo: Path, entity_id: str) -> bool:
     return entity_id in data.get("revoked", {})
 
 
+def _resolve_entity_id(payload: dict[str, Any]) -> str | None:
+    eid = payload.get("entity_id") or payload.get("target_entity_id")
+    if isinstance(eid, str) and eid.strip():
+        return eid.strip()
+    return None
+
+
 def react_to_domain_event(repo: Path, event: dict[str, Any]) -> dict[str, Any]:
     event_type = event.get("event_type")
     payload = event.get("payload") or {}
     if not isinstance(payload, dict):
         return {"ok": False, "error": "payload invalido"}
-    entity_id = payload.get("target_entity_id")
-    if not isinstance(entity_id, str) or not entity_id.strip():
-        return {"ok": False, "error": "target_entity_id requerido"}
-    entity_id = entity_id.strip()
+    entity_id = _resolve_entity_id(payload)
+    if not entity_id:
+        return {"ok": False, "error": "entity_id requerido"}
     data = load_revoked(repo)
 
-    if event_type == "Tool_Degraded":
+    if event_type == "Domain_Entity_Degraded":
         data["revoked"][entity_id] = {
             "since": event.get("timestamp"),
             "reason": payload.get("reason"),
+            "entity_type": payload.get("entity_type"),
         }
         save_revoked(repo, data)
         return {"ok": True, "action": "revoked", "entity_id": entity_id}
 
-    if event_type == "Status_Restored":
+    if event_type == "Domain_Entity_Restored":
         if event.get("emitter_agent") != "radamanto":
-            return {"ok": False, "error": "Status_Restored solo desde radamanto"}
+            return {"ok": False, "error": "Domain_Entity_Restored solo desde radamanto"}
         data["revoked"].pop(entity_id, None)
         save_revoked(repo, data)
         return {"ok": True, "action": "restored", "entity_id": entity_id}
 
-    if event_type == "Tool_Deprecated":
+    if event_type == "Domain_Entity_Deprecated":
         data["revoked"].pop(entity_id, None)
         data["permanent"][entity_id] = {
             "since": event.get("timestamp"),
             "reason": payload.get("reason"),
+            "entity_type": payload.get("entity_type"),
         }
         save_revoked(repo, data)
         return {"ok": True, "action": "permanent_block", "entity_id": entity_id}
