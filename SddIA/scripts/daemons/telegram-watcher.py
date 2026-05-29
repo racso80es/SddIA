@@ -24,7 +24,8 @@ if str(_QA_DIR) not in sys.path:
 from env_loader import load_hierarchical_env
 
 POLL_TIMEOUT = 30
-STATE_REL = ".SddIA/daemons/state/telegram-watcher.json"
+STATE_REL = ".SddIA/.state/telegram_last_id"
+_LEGACY_STATE_REL = ".SddIA/daemons/state/telegram-watcher.json"
 
 
 def _repo_root() -> Path:
@@ -39,26 +40,33 @@ def _state_path(repo: Path) -> Path:
     return repo / STATE_REL
 
 
-def _load_state(repo: Path) -> dict[str, Any]:
+def _load_last_update_id(repo: Path) -> int:
     path = _state_path(repo)
-    if not path.is_file():
-        return {"last_update_id": 0}
-    try:
-        body = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {"last_update_id": 0}
-    if not isinstance(body, dict):
-        return {"last_update_id": 0}
-    return body
+    if path.is_file():
+        try:
+            raw = path.read_text(encoding="utf-8").strip()
+            if raw.isdigit():
+                return max(0, int(raw))
+            body = json.loads(raw)
+            if isinstance(body, dict) and isinstance(body.get("last_update_id"), int):
+                return max(0, body["last_update_id"])
+        except (OSError, json.JSONDecodeError, ValueError):
+            pass
+    legacy = repo / _LEGACY_STATE_REL
+    if legacy.is_file():
+        try:
+            body = json.loads(legacy.read_text(encoding="utf-8"))
+            if isinstance(body, dict) and isinstance(body.get("last_update_id"), int):
+                return max(0, body["last_update_id"])
+        except (OSError, json.JSONDecodeError):
+            pass
+    return 0
 
 
-def _save_state(repo: Path, last_update_id: int) -> None:
+def _save_last_update_id(repo: Path, last_update_id: int) -> None:
     path = _state_path(repo)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps({"last_update_id": int(last_update_id)}, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    path.write_text(str(int(last_update_id)), encoding="utf-8")
 
 
 def _require_env() -> tuple[str, str]:
@@ -115,7 +123,6 @@ def _chat_id(update: dict[str, Any]) -> str | None:
 
 def _invoke_gateway(repo: Path, text: str, *, dry_run: bool) -> int:
     if dry_run:
-        print(f"[telegram-watcher] dry-run gateway text={text[:80]!r}", flush=True)
         return 0
     runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
     payload = json.dumps({"text": text}, ensure_ascii=False)
@@ -128,10 +135,8 @@ def _invoke_gateway(repo: Path, text: str, *, dry_run: bool) -> int:
         cwd=str(repo),
         check=False,
     )
-    if proc.stdout:
-        print(proc.stdout.strip(), flush=True)
-    if proc.returncode != 0:
-        print(proc.stderr or "[telegram-watcher] gateway falló", file=sys.stderr, flush=True)
+    if proc.returncode != 0 and proc.stderr:
+        print(proc.stderr.strip(), file=sys.stderr, flush=True)
     return proc.returncode
 
 
@@ -142,9 +147,7 @@ def _process_updates(
     *,
     dry_run: bool,
 ) -> int:
-    max_id = _load_state(repo).get("last_update_id", 0)
-    if not isinstance(max_id, int):
-        max_id = 0
+    max_id = _load_last_update_id(repo)
     for upd in updates:
         if not isinstance(upd, dict):
             continue
@@ -153,22 +156,19 @@ def _process_updates(
             max_id = max(max_id, uid)
         chat = _chat_id(upd)
         if chat != allowed_chat:
-            if chat:
-                print(f"[telegram-watcher] intruso chat_id={chat} descartado", file=sys.stderr, flush=True)
             continue
         text = _extract_text(upd)
         if text is None:
             continue
         _invoke_gateway(repo, text, dry_run=dry_run)
-    if updates:
-        _save_state(repo, max_id)
+    if updates and max_id > 0:
+        _save_last_update_id(repo, max_id)
     return max_id
 
 
 def run_once(repo: Path, *, dry_run: bool = False) -> None:
     token, allowed = _require_env()
-    state = _load_state(repo)
-    last = int(state.get("last_update_id") or 0)
+    last = _load_last_update_id(repo)
     offset = last + 1 if last else 0
     updates = _get_updates(token, offset)
     _process_updates(repo, updates, allowed, dry_run=dry_run)

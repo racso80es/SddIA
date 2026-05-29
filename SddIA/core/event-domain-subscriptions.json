@@ -143,5 +143,7 @@
       "tool": "iota-immutable-publisher",
       "intent": "Sellar certificación de inmunidad en DLT (exclusividad Radamanto, D0.4)."
     }
-  ]
+  ],
+  "Manual_Task_Requested": [],
+  "Kaizen_Idea_Captured": []
 }

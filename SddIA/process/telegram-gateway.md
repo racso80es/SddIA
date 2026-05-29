@@ -7,7 +7,7 @@ workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - external-ingest
-hash_signature: sha256:dfc96b8124946dc7d2c6a5717dc4ba2415bb1f584577ced38850f1915f457c22
+hash_signature: sha256:7cd05f9cb5d25cac5321fbf7a17a464964dea69e7513ae578234708cfc22afd1
 inputs:
 - text: Texto plano recibido del centinela telegram-watcher
 outputs:
@@ -18,7 +18,7 @@ phases:
 - name: TransmutaciÃ³n e inyecciÃ³n
   intent: "Regex MVP (TODO prefix â†’ Kaizen_Idea_Captured; resto Manual_Task_Requested) y write_fractal_event domain."
   delegates_to:
-  - agent:telegram-gateway
+  - tool:telegram-gateway
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -37,6 +37,6 @@ Aduana cognitiva del canal aferente Telegram. Recibe texto limpio desde Capa 0; 
 
 | PatrÃ³n | event_type |
 |--------|------------|
-| `^\s*TODO:\s*(.+)$` (i) | `Kaizen_Idea_Captured` |
+| `^\s*TODO:\s*(.+)$` o `^\s*IDEA:\s*(.+)$` (i) | `Kaizen_Idea_Captured` |
 | texto no vacÃ­o | `Manual_Task_Requested` |
 | vacÃ­o | no emite |
