@@ -37,6 +37,16 @@ python SddIA/scripts/qa/audit-entity-eda-coverage.py --scan --json
 2. Smoke real: `python SddIA/scripts/tools/send-telegram-notification/main.py` con JSON message.
 3. Arrancar `python SddIA/scripts/daemons/telegram-watcher.py` (o `--once` en lab).
 
+## Post-merge (Fases B/C alineación)
+
+| Cambio | Path |
+|--------|------|
+| Cápsula transmutación | `SddIA/scripts/tools/telegram-gateway/transmute.py`, `main.py` |
+| Estado idempotencia | `.SddIA/.state/telegram_last_id` |
+| Suscripciones vacías | `Manual_Task_Requested`, `Kaizen_Idea_Captured` en `event-domain-subscriptions.json` |
+| Patrones | `TODO:` y `IDEA:` → `Kaizen_Idea_Captured` |
+| Capa 0 | Intrusiones descartadas sin log |
+
 ## Deuda explícita
 
 - Contrato ED Centinela (kitchen) no implementado; watcher mínimo alineado al PBI.

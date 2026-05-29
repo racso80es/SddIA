@@ -34,6 +34,13 @@ class TestTransmute(unittest.TestCase):
         self.assertEqual(t[0], "Kaizen_Idea_Captured")
         self.assertEqual(t[1]["idea_text"], "Revisar auditorías")
 
+    def test_idea_kaizen(self):
+        t = transmute_telegram_text("IDEA: captura kaizen")
+        self.assertIsNotNone(t)
+        assert t is not None
+        self.assertEqual(t[0], "Kaizen_Idea_Captured")
+        self.assertEqual(t[1]["idea_text"], "captura kaizen")
+
     def test_manual_task(self):
         t = transmute_telegram_text("Hacer backup")
         self.assertIsNotNone(t)

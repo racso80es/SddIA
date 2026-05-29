@@ -13,7 +13,7 @@ hash_signature: "sha256:pending-anchor-on-merge"
 
 # Event: Kaizen_Idea_Captured
 
-Idea Kaizen capturada vía patrón `TODO:` en Telegram.
+Idea Kaizen capturada vía patrón `TODO:` o `IDEA:` en Telegram.
 
 ## Payload ECST
 
