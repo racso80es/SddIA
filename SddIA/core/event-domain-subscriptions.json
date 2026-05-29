@@ -119,5 +119,19 @@
       "tool": "iota-immutable-publisher",
       "intent": "Sellar obsolescencia en DLT."
     }
+  ],
+  "Suite_Execution_Requested": [
+    {
+      "agent": "tekton",
+      "process": "execute-suite",
+      "intent": "Orquestación reactiva de campaña Suite tras estímulo ECST."
+    }
+  ],
+  "System_Immunity_Certified": [
+    {
+      "agent": "radamanto",
+      "tool": "iota-immutable-publisher",
+      "intent": "Sellar certificación de inmunidad en DLT (exclusividad Radamanto, D0.4)."
+    }
   ]
 }

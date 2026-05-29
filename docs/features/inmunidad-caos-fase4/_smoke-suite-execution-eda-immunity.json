@@ -1,0 +1,13 @@
+{
+  "suite_id": "core-full-stress",
+  "lab_flags": {
+    "SDDIA_LAB_ROUTE_SYNC": "1",
+    "SDDIA_LAB_SIMULATE_IOTA": "1"
+  },
+  "steps": [
+    "emit-suite-execution-requested",
+    "route-domain (watcher --once o route_domain_fractal_event)",
+    "verificar System_Immunity_Certified en .events/domain/",
+    "verificar witness radamanto en delivery_status"
+  ]
+}

@@ -32,8 +32,10 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | `status-restored.md` | `8b2c3d4e-5f6a-4b7c-9d0e-1f2a3b4c5d6e` | status-restored | Status_Restored | 1.0.0 | events-contract v1.1.0 | quality-assurance | `status_restored`, `self_healing_redemption` |
 | `tool-deprecated.md` | `9c3d4e5f-6a7b-4c8d-0e1f-2a3b4c5d6e7f` | tool-deprecated | Tool_Deprecated | 1.0.0 | events-contract v1.1.0 | quality-assurance | `tool_deprecated`, `self_healing_death` |
 | `telemetry-compliance-breached.md` | `a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5e` | telemetry-compliance-breached | Telemetry_Compliance_Breached | 1.0.0 | events-contract v1.1.0 | quality-assurance | `telemetry_compliance_breached`, `contract_audit_alert` |
+| `suite-execution-requested.md` | `b3c4d5e6-f7a8-4b9c-8d0e-1f2a3b4c5d6f` | suite-execution-requested | Suite_Execution_Requested | 1.0.0 | events-contract v1.1.0 | chaos-engineering | `suite_execution_requested`, `chaos_campaign_stimulus` |
+| `system-immunity-certified.md` | `c4d5e6f7-a8b9-4c0d-9e1f-2a3b4c5d6e7f` | system-immunity-certified | System_Immunity_Certified | 1.0.0 | events-contract v1.1.0 | quality-assurance | `system_immunity_certified`, `chaos_immunity_dlt` |
 
 ## Integridad
 
-- **Clases:** 11 ECST en `SddIA/events/domain/`.
+- **Clases:** 13 ECST en `SddIA/events/domain/`.
 - **Regla de oro:** no mezclar telemetría cruda ni orquestación táctica en esta familia.

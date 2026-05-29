@@ -8,7 +8,7 @@ master_pbi_ref: docs/todos/pending/PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO.md
 master_pbi_id: PBI-INMUNIDAD-CAOS-SISTEMA-NERVIOSO
 phase: 4
 pbi_archived_at_close: false
-status: planificacion
+status: validacion_apto
 depends_on:
   - docs/features/inmunidad-caos-fase3
 gate_ref: docs/features/inmunidad-caos-fase3/validacion.md
@@ -30,7 +30,7 @@ El PBI maestro permanece en `docs/todos/pending/`. Esta feature **no** archiva e
 | 1 | `inmunidad-caos-fase1` | ✅ Cerrada — Arsenal Entropía |
 | 2 | `inmunidad-caos-fase2` | ✅ Cerrada — Nodos Diagnóstico |
 | 3 | `inmunidad-caos-fase3` | ✅ APTO — Genoma Suite + `execute-suite` |
-| **4** | **`inmunidad-caos-fase4` (esta)** | Planificación |
+| **4** | **`inmunidad-caos-fase4` (esta)** | ✅ APTO — lista para PR |
 | 5 | `inmunidad-caos-fase5` (futura) | README y Done global |
 
 ## Contexto heredado (Fase 3)
@@ -80,8 +80,8 @@ El PBI maestro permanece en `docs/todos/pending/`. Esta feature **no** archiva e
 | `clarify.md` | ✅ |
 | `spec.md` | ✅ |
 | `plan.md` | ✅ |
-| `implementation.md` / `execution.md` | ⏳ Tras aprobación planificación |
-| `validacion.md` | ⏳ Argos post-Tekton |
+| `implementation.md` / `execution.md` | ✅ |
+| `validacion.md` | ✅ APTO; `pbi_archived: false` |
 
 ## Estado del proceso feature
 
@@ -90,6 +90,6 @@ El PBI maestro permanece en `docs/todos/pending/`. Esta feature **no** archiva e
 | Inicialización (`workspace-init` / rama) | ⏳ `feat/inmunidad-caos-fase4` |
 | Estabilización (Mayeuta) | ✅ `objectives.md` + `clarify.md` |
 | Diseño (Dedalo) | ✅ `spec.md` + `plan.md` |
-| Ejecución (Tekton) | ⏳ Pendiente |
-| Verificación (Argos) | ⏳ Pendiente |
-| Cierre entrega (PR) | ⏳ Pendiente |
+| Ejecución (Tekton) | ✅ |
+| Verificación (Argos) | ✅ `validacion.md` APTO |
+| Cierre entrega (PR) | ⏳ |

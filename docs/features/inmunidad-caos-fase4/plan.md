@@ -53,40 +53,40 @@ flowchart LR
 
 ### 4.A — Clases ECST
 
-- [ ] `suite-execution-requested.md` con payload § spec
-- [ ] `system-immunity-certified.md` con payload § spec
-- [ ] Dos filas en `events/domain/index.md`
-- [ ] Contador integridad actualizado (13 clases)
+- [x] `suite-execution-requested.md` con payload § spec
+- [x] `system-immunity-certified.md` con payload § spec
+- [x] Dos filas en `events/domain/index.md`
+- [x] Contador integridad actualizado (13 clases)
 
 ### 4.B — Estímulo y suscripciones
 
-- [ ] `emit-suite-execution-requested.md` con uuid, contextos, fases
-- [ ] Fila en `actions/index.md`
-- [ ] Handler acción escribe padre en `pending/`
-- [ ] `Suite_Execution_Requested` → `tekton` + `execute-suite`
-- [ ] `System_Immunity_Certified` → `radamanto` + `iota-immutable-publisher`
-- [ ] Verificar **no** se modifican entradas Cúmulo PR/ECST (D4.7)
+- [x] `emit-suite-execution-requested.md` con uuid, contextos, fases
+- [x] Fila en `actions/index.md`
+- [x] Handler acción escribe en `./.events/domain/`
+- [x] `Suite_Execution_Requested` → `tekton` + `execute-suite`
+- [x] `System_Immunity_Certified` → `radamanto` + `iota-immutable-publisher`
+- [x] Verificar **no** se modifican entradas Cúmulo PR/ECST (D4.7)
 
 ### 4.C — Certificación y Radamanto
 
-- [ ] Fase **Certificación inmunidad** en `execute-suite.md`
-- [ ] Emisión solo si `all_pass` y manifiesto existe
-- [ ] `execution_report` documenta fase certificación
-- [ ] `radamanto.md` §3 incluye `System_Immunity_Certified`
-- [ ] Fan-out DLT witness en lab (`SDDIA_LAB_SIMULATE_IOTA`)
+- [x] Fase **Certificación inmunidad** en `execute-suite.md`
+- [x] Emisión solo si `all_pass` y manifiesto existe
+- [x] `execution_report` documenta fase certificación
+- [x] `radamanto.md` §3 incluye `System_Immunity_Certified`
+- [x] Fan-out DLT witness en lab (`SDDIA_LAB_SIMULATE_IOTA`)
 
 ### 4.D — Regresión y smoke
 
-- [ ] `test_chaos_immunity_eda.py` verde (≥5 tests)
-- [ ] `test_execute_suite.py` sigue verde (regresión Fase 3)
-- [ ] `test_chaos_audit_processes.py` sigue verde (regresión Fase 2)
-- [ ] `_smoke-suite-execution-eda-immunity.json` en persist_ref
-- [ ] `eda-coverage.json` — ECST + acción + suscripciones
-- [ ] `eda_bus_utils` / route: mapeo `suite_id` en fan-out si necesario
+- [x] `test_chaos_immunity_eda.py` verde (6 tests)
+- [x] `test_execute_suite.py` sigue verde (regresión Fase 3)
+- [x] `test_chaos_audit_processes.py` sigue verde (regresión Fase 2)
+- [x] `_smoke-suite-execution-eda-immunity.json` en persist_ref
+- [x] `eda-coverage.json` — ECST + acción + suscripciones
+- [x] `route_fractal_event_core`: mapeo `suite_id` en fan-out
 
 ### 4.E — Acta
 
-- [ ] `dlt-immunity-acta.md` con matriz jurisdicción ampliada
+- [x] `dlt-immunity-acta.md` con matriz jurisdicción ampliada
 
 ## Criterios de aceptación (PBI)
 
@@ -116,4 +116,4 @@ Tras merge de `feat/inmunidad-caos-fase4` con `validacion.md` APTO:
 
 ## Estado de este entregable
 
-**Planificación completada** (2026-05-29). Pendiente: **Ejecución Tekton** (`implementation.md`, `execution.md`, código genoma).
+**Implementación y validación completadas** (2026-05-29). Pendiente: **PR** `feat/inmunidad-caos-fase4`.

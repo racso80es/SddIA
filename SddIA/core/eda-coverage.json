@@ -366,6 +366,24 @@
       "last_emitted_event": "Domain_Entity_Created",
       "last_hash": "sha256:7c4bc74058ccbe78e202d2c3cd44f68fbb8d5b934c1bcdd11b89f116b7d221b1",
       "correlation_timestamp": "2026-05-29T12:00:00+00:00"
+    },
+    "b3c4d5e6-f7a8-4b9c-8d0e-1f2a3b4c5d6f": {
+      "is_covered": true,
+      "last_emitted_event": "Suite_Execution_Requested",
+      "last_hash": "sha256:pending-anchor-on-merge",
+      "correlation_timestamp": "2026-05-29T12:00:00+00:00"
+    },
+    "c4d5e6f7-a8b9-4c0d-9e1f-2a3b4c5d6e7f": {
+      "is_covered": true,
+      "last_emitted_event": "System_Immunity_Certified",
+      "last_hash": "sha256:pending-anchor-on-merge",
+      "correlation_timestamp": "2026-05-29T12:00:00+00:00"
+    },
+    "d5e6f7a8-b9c0-4d1e-8f2a-3b4c5d6e7f8a": {
+      "is_covered": true,
+      "last_emitted_event": "Suite_Execution_Requested",
+      "last_hash": "sha256:pending-anchor-on-merge",
+      "correlation_timestamp": "2026-05-29T12:00:00+00:00"
     }
   }
 }

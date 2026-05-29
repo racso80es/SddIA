@@ -44,7 +44,7 @@ depends_on_program: PBI-TELEMETRIA-REACTIVA-EDA-UNIFICADO
 | **1** | ✅ Cerrada | [`inmunidad-caos-fase1`](../../features/inmunidad-caos-fase1/) | [`validacion.md`](../../features/inmunidad-caos-fase1/validacion.md) APTO (AC1.1–AC1.3) |
 | **2** | ✅ Cerrada | [`inmunidad-caos-fase2`](../../features/inmunidad-caos-fase2/) | [`validacion.md`](../../features/inmunidad-caos-fase2/validacion.md) APTO (AC2.1–AC2.3) |
 | **3** | ✅ Lista para PR | [`inmunidad-caos-fase3`](../../features/inmunidad-caos-fase3/) | [`validacion.md`](../../features/inmunidad-caos-fase3/validacion.md) APTO (AC3.1–AC3.3) |
-| **4** | 📋 En planificación | [`inmunidad-caos-fase4`](../../features/inmunidad-caos-fase4/) | — |
+| **4** | ✅ Lista para PR | [`inmunidad-caos-fase4`](../../features/inmunidad-caos-fase4/) | [`validacion.md`](../../features/inmunidad-caos-fase4/validacion.md) APTO (AC4.1–AC4.3) |
 | **5** | ⏳ Pendiente | `inmunidad-caos-fase5` (prevista) | — |
 
 ## 0. Contexto global y axiomas
@@ -316,7 +316,7 @@ Decisiones de diseño incorporadas desde Fase 0 (feature `inmunidad-caos-fase0`)
 
 **Origen:** PBI § Fase 4 · **Prioridad:** Alta · **Depende de:** Fase 3 · **Bloquea:** Fase 5
 
-**Feature:** [`docs/features/inmunidad-caos-fase4/`](../../features/inmunidad-caos-fase4/) (planificación)
+**Feature:** [`docs/features/inmunidad-caos-fase4/`](../../features/inmunidad-caos-fase4/) (lista para PR)
 
 **Objetivo:** Conectar EDA con orquestador y certificar resiliencia en DLT.
 
