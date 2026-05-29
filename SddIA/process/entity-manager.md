@@ -5,9 +5,9 @@ version: "1.0.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:0d5784440047ba18b0df605ecf27b5ec8fbe1ae72293bc553abc4210d9d2b857
+hash_signature: sha256:ce6a81a1b44f6340a89d392aef23d4f89a83613dee3a920e1bb856811ecf20e6
 inputs:
-  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event"
+  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event | suite"
   - "entity_name": "string; identificador kebab-case de la entidad"
   - "lifecycle_operation": "string; enum: create | update | delete"
   - "semantic_seed": "object|null; parámetros de forja para el creator hijo; ignorado en delete"
@@ -21,7 +21,7 @@ outputs:
   - "handoff_version": "Versión SemVer resultante"
 phases:
   - name: "Delegación al creator"
-    intent: "En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 8 clases (skill, event, process, agent, tool, action, norm, codex)."
+    intent: "En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 9 clases (skill, event, process, agent, tool, action, norm, codex, suite)."
     delegates_to:
       - "action:execute-process"
   - name: "Delete físico"
@@ -52,6 +52,7 @@ Proceso orquestador (**Gestor de Entidad**) que envuelve los `*-creator` del gen
 | `action` | `action-creator` | **Piloto** |
 | `norm` | `norm-creator` | **Piloto** |
 | `codex` | `codex-creator` | **Piloto** |
+| `suite` | `suite-creator` | **Piloto** |
 
 Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domain_Entity_*`).
 
@@ -122,6 +123,15 @@ Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domai
 |-----------------------|-----------------------|
 | `domain_codex_slug` o `entity_name` | `domain_codex_slug` |
 | `domain_codex_name`, `target_environment`, `tactical_norm_inventory` | según contrato codex |
+
+| Campo `semantic_seed` | Input `suite-creator` |
+|-----------------------|-------------------------|
+| `suite_name` o `entity_name` | `suite_name` |
+| `suite_context` | default `chaos-engineering` |
+| `execution_strategy` | `fail_fast` \| `run_all` (obligatorio) |
+| `atomic_nodes` | array obligatorio |
+| `suite_version` | default `1.0.0` |
+| `suites_contract_version` | default `1.0.0` |
 
 5. Invocar `action:execute-process` con `process_name` canónico y `process_inputs` mapeados.
 6. Extraer del `execution_report` / outputs del hijo: `handoff_entity_uuid`, `handoff_hash_signature_new`, `handoff_hash_signature_old`, `handoff_version`.

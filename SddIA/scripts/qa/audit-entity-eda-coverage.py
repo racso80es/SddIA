@@ -32,6 +32,7 @@ ENTITY_DIRS: dict[str, str] = {
     "action": "SddIA/actions",
     "norm": "SddIA/library/norms",
     "codex": "SddIA/library/codexes",
+    "suite": "SddIA/suites",
 }
 
 

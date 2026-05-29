@@ -388,6 +388,79 @@ Estrategia de dominio para {env_str}.
     }
 
 
+def run_suite_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
+    name = inputs.get("suite_name") or inputs.get("entity_name")
+    if not isinstance(name, str) or not name:
+        raise ValueError("suite_name requerido")
+    suite_path = repo / "SddIA" / "suites" / f"{name}.md"
+    lifecycle = inputs.get("lifecycle_operation", "create")
+    skip = idempotent_forge_handoff(repo, suite_path, lifecycle)
+    if skip:
+        return skip
+
+    strategy = inputs.get("execution_strategy", "run_all")
+    if strategy not in ("fail_fast", "run_all"):
+        raise ValueError("execution_strategy debe ser fail_fast o run_all")
+    atomic_nodes = inputs.get("atomic_nodes")
+    if not isinstance(atomic_nodes, list) or not atomic_nodes:
+        raise ValueError("atomic_nodes no vacío requerido")
+
+    context = inputs.get("suite_context", "chaos-engineering")
+    version = inputs.get("suite_version", "1.0.0")
+    contract_ver = inputs.get("suites_contract_version", "1.0.0")
+    suite_uuid = _uuid(repo)
+    hash_sig = _sha256_canon(
+        repo,
+        {
+            "atomic_nodes": atomic_nodes,
+            "execution_strategy": strategy,
+            "version": version,
+        },
+    )
+
+    nodes_yaml = "\n".join(
+        f"- process_name: {n.get('process_name')}\n"
+        f"  expected_exit_code: {n.get('expected_exit_code', 0)}\n"
+        f"  timeout_ms: {n.get('timeout_ms', 120000)}"
+        for n in atomic_nodes
+        if isinstance(n, dict) and n.get("process_name")
+    )
+    ctx_list = context if isinstance(context, list) else [context]
+    ctx_yaml = "\n".join(f"- {c}" for c in ctx_list)
+
+    body = f"""---
+uuid: "{suite_uuid}"
+name: {name}
+version: "{version}"
+contract: suites-contract v{contract_ver}
+context:
+{ctx_yaml}
+hash_signature: {hash_sig}
+execution_strategy: {strategy}
+atomic_nodes:
+{nodes_yaml}
+---
+
+# {name}
+
+Suite forjada por suite-creator (laboratorio SddIA).
+"""
+    suite_path.parent.mkdir(parents=True, exist_ok=True)
+    suite_path.write_text(body, encoding="utf-8")
+    node_count = len([n for n in atomic_nodes if isinstance(n, dict) and n.get("process_name")])
+    row = (
+        f"| `{name}.md` | `{suite_uuid}` | {name} | {version} | {strategy} | {node_count} | "
+        f"Suite forjada ({name}). |"
+    )
+    _append_row(repo / "SddIA" / "suites" / "index.md", row, name)
+    return {
+        "handoff_entity_uuid": suite_uuid,
+        "handoff_hash_signature_new": hash_sig,
+        "handoff_hash_signature_old": None,
+        "handoff_version": version,
+    }
+
+
 FORGE_BY_ENTITY_CLASS: dict[str, Callable[[Path, dict[str, Any]], dict[str, Any]]] = {
     "tool": run_tool_forge,
     "action": run_action_forge,
@@ -395,4 +468,5 @@ FORGE_BY_ENTITY_CLASS: dict[str, Callable[[Path, dict[str, Any]], dict[str, Any]
     "agent": run_agent_forge,
     "norm": run_norm_forge,
     "codex": run_codex_forge,
+    "suite": run_suite_forge,
 }

@@ -1,0 +1,13 @@
+{
+  "process": "execute-suite",
+  "description": "Smoke plantilla — orquestador core-full-stress (Fase 3 Caos)",
+  "inputs": {
+    "suite_id": "core-full-stress"
+  },
+  "expected": {
+    "success": true,
+    "status_code": 0,
+    "data_keys": ["survival_manifest_path", "nodes_executed", "execution_strategy"],
+    "execution_report_nodes_min": 3
+  }
+}

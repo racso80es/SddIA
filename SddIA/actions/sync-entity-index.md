@@ -9,7 +9,7 @@ capabilities:
   - "delegate-filesystem-manager"
   - "cumulo-catalog-sync"
 inputs:
-  - "entity_class": "string; enum: process | agent | skill | tool | action | codex (norm → no-op)"
+  - "entity_class": "string; enum: process | agent | skill | tool | action | codex | suite (norm → no-op)"
   - "entity_name": "string; nombre canónico de la entidad"
   - "lifecycle_operation": "string; enum: create | update | delete"
   - "entity_uuid": "string; UUID v4 de la entidad (informativo en auditoría)"
@@ -58,6 +58,7 @@ Gate **Cerbero** por `context: ecosystem-evolution`. Rutas de índices vía `cum
 | `tool` | `SddIA/tools/index.md` |
 | `action` | `SddIA/actions/index.md` |
 | `codex` | `SddIA/library/codexes/index.md` |
+| `suite` | `SddIA/suites/index.md` |
 
 ### Paso 3 — Operación por `lifecycle_operation`
 

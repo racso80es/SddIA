@@ -38,6 +38,7 @@ from eda_bus_utils import (
 from ecst_validation import validate_domain_mutation_event
 from workspace_utils import (
     bootstrap_process_workspace,
+    materialize_child_workspace,
     resolve_documentation_features_path,
     resolve_documentation_fixes_path,
     sync_workspace_context,
@@ -103,6 +104,7 @@ CREATOR_BY_CLASS: dict[str, str] = {
     "norm": "norm-creator",
     "codex": "codex-creator",
     "event": "event-creator",
+    "suite": "suite-creator",
 }
 
 DIR_BY_CLASS: dict[str, str] = {
@@ -114,10 +116,11 @@ DIR_BY_CLASS: dict[str, str] = {
     "norm": "SddIA/library/norms",
     "codex": "SddIA/library/codexes",
     "event": "SddIA/events",
+    "suite": "SddIA/suites",
 }
 
 PILOT_ENTITY_CLASSES = frozenset({
-    "skill", "event", "process", "agent", "tool", "action", "norm", "codex",
+    "skill", "event", "process", "agent", "tool", "action", "norm", "codex", "suite",
 })
 
 # Cápsulas action:* con handler físico en execute-action.py
@@ -1129,6 +1132,15 @@ def execute_delivery_close_phase(
 
 
 def invoke_subprocess_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -> dict[str, Any]:
+    body = invoke_subprocess_process_full(repo, process_name, process_inputs)
+    if not body.get("success"):
+        raise RuntimeError(body.get("error") or f"subproceso {process_name} falló")
+    return body.get("data") or {}
+
+
+def invoke_subprocess_process_full(
+    repo: Path, process_name: str, process_inputs: dict[str, Any]
+) -> dict[str, Any]:
     proc = subprocess.run(
         [
             sys.executable,
@@ -1148,10 +1160,7 @@ def invoke_subprocess_process(repo: Path, process_name: str, process_inputs: dic
     line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
     if not line:
         raise RuntimeError(proc.stderr or f"subproceso {process_name} sin salida")
-    body = json.loads(line)
-    if not body.get("success"):
-        raise RuntimeError(body.get("error") or f"subproceso {process_name} falló")
-    return body.get("data") or {}
+    return json.loads(line)
 
 
 def _workspace_task_name(inputs: dict[str, Any]) -> str | None:
@@ -1561,6 +1570,8 @@ def materialize_forge_by_inputs(repo: Path, inputs: dict[str, Any]) -> dict[str,
         return FORGE_BY_ENTITY_CLASS["norm"](repo, inputs)
     if inputs.get("domain_codex_slug") is not None:
         return FORGE_BY_ENTITY_CLASS["codex"](repo, inputs)
+    if inputs.get("suite_name") is not None or inputs.get("atomic_nodes") is not None:
+        return FORGE_BY_ENTITY_CLASS["suite"](repo, inputs)
     raise NotImplementedError(
         "Forja física no disponible para esta forma de inputs"
     )
@@ -1675,6 +1686,16 @@ def creator_inputs_from_entity(
             "tactical_norm_inventory": seed.get("tactical_norm_inventory", []),
             "codex_contract_version": seed.get("codex_contract_version", "1.0.0"),
             "domain_codex_certification_grade": seed.get("domain_codex_certification_grade", "Pendiente"),
+        }
+    if entity_class == "suite":
+        return {
+            **base,
+            "suite_name": seed.get("suite_name", entity_name),
+            "suite_context": seed.get("suite_context", "chaos-engineering"),
+            "execution_strategy": seed.get("execution_strategy", "run_all"),
+            "atomic_nodes": seed.get("atomic_nodes", []),
+            "suite_version": seed.get("suite_version", "1.0.0"),
+            "suites_contract_version": seed.get("suites_contract_version", "1.0.0"),
         }
     raise NotImplementedError(f"mapeo semantic_seed no definido para entity_class={entity_class}")
 
@@ -2183,6 +2204,225 @@ def _chaos_argos_certify(
         "status": "failed",
         "handler": "chaos-audit-argos",
         "error": f"proceso caos desconocido: {process_name}",
+    }
+
+
+def load_suite_spec(repo: Path, suite_id: str) -> dict[str, Any]:
+    suite_path = repo / "SddIA" / "suites" / f"{suite_id}.md"
+    if not suite_path.is_file():
+        raise FileNotFoundError(f"Suite no encontrada: {suite_id}")
+    spec = parse_frontmatter(suite_path)
+    nodes = spec.get("atomic_nodes")
+    if not isinstance(nodes, list) or not nodes:
+        raise ValueError(f"atomic_nodes inválido en Suite {suite_id}")
+    strategy = spec.get("execution_strategy", "run_all")
+    if strategy not in ("fail_fast", "run_all"):
+        raise ValueError(f"execution_strategy inválida: {strategy}")
+    return spec
+
+
+def compile_survival_manifest(
+    repo: Path,
+    orchestrator_ws: Path,
+    suite_id: str,
+    orchestrator_execution_id: str,
+    execution_strategy: str,
+    node_reports: list[dict[str, Any]],
+) -> Path:
+    manifest_path = orchestrator_ws / "survival-manifest.md"
+    compiled_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    lines = [
+        f"# Survival Manifest — {suite_id}",
+        "",
+        "| Campo | Valor |",
+        "|-------|-------|",
+        f"| suite_id | {suite_id} |",
+        f"| orchestrator_execution_id | {orchestrator_execution_id} |",
+        f"| execution_strategy | {execution_strategy} |",
+        f"| compiled_at | {compiled_at} |",
+        "",
+        "## Nodos",
+        "",
+        "| # | process_name | execution_id | workspace_path | expected | actual | verdict |",
+        "|---|--------------|--------------|----------------|----------|--------|---------|",
+    ]
+    for report in node_reports:
+        ws_rel = report.get("workspace_path", "")
+        if isinstance(ws_rel, str) and ws_rel:
+            try:
+                ws_rel = str(Path(ws_rel).resolve().relative_to(repo.resolve())).replace("\\", "/")
+            except ValueError:
+                pass
+        lines.append(
+            f"| {report.get('index', '')} | {report.get('process_name', '')} | "
+            f"{report.get('execution_id', '')} | {ws_rel} | "
+            f"{report.get('expected_exit_code', '')} | {report.get('actual_exit_code', '')} | "
+            f"{report.get('verdict', '')} |"
+        )
+    manifest_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return manifest_path
+
+
+def run_execute_suite(
+    repo: Path,
+    canonical: str,
+    process_def: dict[str, Any],
+    phases: list[dict[str, Any]],
+    process_inputs: dict[str, Any],
+) -> dict[str, Any]:
+    suite_id = process_inputs.get("suite_id")
+    if not isinstance(suite_id, str) or not suite_id.strip():
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": "suite_id requerido",
+            "execution_report": {"process_name": canonical, "phases": [], "nodes": []},
+        }
+
+    state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
+    try:
+        ws_boot = bootstrap_process_workspace(repo, canonical, process_def, process_inputs, state)
+        state["workspace_boot"] = ws_boot
+    except ValueError as exc:
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": str(exc),
+            "execution_report": {"process_name": canonical, "phases": [], "nodes": []},
+        }
+
+    phase_reports: list[dict[str, Any]] = []
+    try:
+        suite_spec = load_suite_spec(repo, suite_id.strip())
+    except (FileNotFoundError, ValueError) as exc:
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": str(exc),
+            "execution_report": {"process_name": canonical, "phases": [], "nodes": []},
+        }
+
+    strategy_override = process_inputs.get("execution_strategy")
+    execution_strategy = (
+        strategy_override
+        if isinstance(strategy_override, str) and strategy_override in ("fail_fast", "run_all")
+        else str(suite_spec.get("execution_strategy", "run_all"))
+    )
+    atomic_nodes = suite_spec.get("atomic_nodes") or []
+    orchestrator_ws = Path(str(state["workspace_path"])).resolve()
+
+    phase_reports.append(
+        {
+            "phase_name": "Resolución Suite",
+            "status": "executed",
+            "handler": "load-suite-spec",
+            "suite_id": suite_id.strip(),
+            "node_count": len(atomic_nodes),
+        }
+    )
+
+    node_reports: list[dict[str, Any]] = []
+    abort = False
+    for index, node in enumerate(atomic_nodes):
+        if abort:
+            break
+        if not isinstance(node, dict):
+            continue
+        process_name = node.get("process_name")
+        if not isinstance(process_name, str) or not process_name.strip():
+            continue
+        expected_exit = int(node.get("expected_exit_code", 0))
+        child_execution_id = str(uuid.uuid4())
+        child_ws = materialize_child_workspace(
+            orchestrator_ws, index, process_name.strip(), child_execution_id
+        )
+        child_inputs: dict[str, Any] = {
+            "workspace_path": str(child_ws),
+            "execution_id": child_execution_id,
+            "parent_execution_id": state.get("execution_id"),
+            "parent_suite_id": suite_id.strip(),
+        }
+        started = time.monotonic()
+        child_error: str | None = None
+        try:
+            child_body = invoke_subprocess_process_full(repo, process_name.strip(), child_inputs)
+            actual_exit = int(child_body.get("status_code", 1 if not child_body.get("success") else 0))
+            if not child_body.get("success"):
+                child_error = str(child_body.get("error") or "subproceso falló")
+        except RuntimeError as exc:
+            actual_exit = 1
+            child_error = str(exc)
+        duration_ms = max(0, int((time.monotonic() - started) * 1000))
+        verdict = "pass" if actual_exit == expected_exit else "fail"
+        report = {
+            "index": index,
+            "process_name": process_name.strip(),
+            "execution_id": child_execution_id,
+            "workspace_path": str(child_ws),
+            "expected_exit_code": expected_exit,
+            "actual_exit_code": actual_exit,
+            "duration_ms": duration_ms,
+            "verdict": verdict,
+        }
+        if child_error:
+            report["error"] = child_error
+        node_reports.append(report)
+        if execution_strategy == "fail_fast" and verdict != "pass":
+            abort = True
+
+    phase_reports.append(
+        {
+            "phase_name": "Orquestación nodos",
+            "status": "executed",
+            "handler": "execute-suite-orchestrator",
+            "nodes_executed": len(node_reports),
+        }
+    )
+
+    manifest_path = compile_survival_manifest(
+        repo,
+        orchestrator_ws,
+        suite_id.strip(),
+        str(state.get("execution_id", "")),
+        execution_strategy,
+        node_reports,
+    )
+    manifest_rel = str(manifest_path.relative_to(repo)).replace("\\", "/")
+    phase_reports.append(
+        {
+            "phase_name": "Compilación manifiesto",
+            "status": "executed",
+            "handler": "compile-survival-manifest",
+            "survival_manifest_path": manifest_rel,
+        }
+    )
+
+    all_pass = bool(node_reports) and all(n.get("verdict") == "pass" for n in node_reports)
+    data: dict[str, Any] = {
+        "process_name": canonical,
+        "suite_id": suite_id.strip(),
+        "execution_strategy": execution_strategy,
+        "survival_manifest_path": manifest_rel,
+        "nodes_executed": len(node_reports),
+        "workspace_path": str(orchestrator_ws),
+        "execution_id": state.get("execution_id"),
+    }
+
+    return {
+        "success": all_pass,
+        "status_code": 0 if all_pass else 1,
+        "data": data,
+        "error": None if all_pass else "execute-suite: uno o más nodos fallaron",
+        "execution_report": {
+            "process_name": canonical,
+            "suite_id": suite_id.strip(),
+            "execution_strategy": execution_strategy,
+            "nodes": node_reports,
+            "phases": phase_reports,
+        },
     }
 
 
@@ -2809,6 +3049,8 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         }
     if canonical in CHAOS_AUDIT_PROCESSES:
         return run_chaos_audit_process(repo, canonical, process_def, phases, process_inputs)
+    if canonical == "execute-suite":
+        return run_execute_suite(repo, canonical, process_def, phases, process_inputs)
     if canonical == "pull-request-review":
         _normalize_pr_review_inputs(repo, process_inputs)
     validate_process_inputs(process_def, process_inputs, canonical)

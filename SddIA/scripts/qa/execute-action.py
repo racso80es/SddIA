@@ -48,6 +48,7 @@ INDEX_MAP: dict[str, str] = {
     "tool": "SddIA/tools/index.md",
     "action": "SddIA/actions/index.md",
     "codex": "SddIA/library/codexes/index.md",
+    "suite": "SddIA/suites/index.md",
 }
 
 ACTION_AGENT: dict[str, str] = {
