@@ -169,47 +169,116 @@ def _run_route_cli() -> None:
     sys.exit(0 if out.get("exitCode") == 0 else 1)
 
 
+def _prune_routed_ok_pending_absent(
+    routed_ok_pending_absent: set[str],
+    watch_targets: list[tuple[Path, str]],
+) -> None:
+    """Retira UUIDs del set D3 cuando el archivo ya no está en ninguna cola vigilada."""
+    still_present: set[str] = set()
+    for watch_dir, _ in watch_targets:
+        if not watch_dir.is_dir():
+            continue
+        for path in watch_dir.glob("*.json"):
+            still_present.add(path.stem)
+    routed_ok_pending_absent.intersection_update(still_present)
+
+
+def _watcher_skip_reason(
+    *,
+    event_uuid: str,
+    key: str,
+    process_name: str,
+    path: Path,
+    processing_uuids: set[str],
+    routed_ok_pending_absent: set[str],
+    repo: Path,
+    bus: dict[str, str],
+    attempts: dict[str, int],
+) -> str | None:
+    if event_uuid in processing_uuids:
+        return f"in-flight uuid={event_uuid}"
+    if event_uuid in routed_ok_pending_absent and path.is_file():
+        return f"routed-ok pending file uuid={event_uuid}"
+    if process_name == "route-domain-event" and _has_dead_letter_witnesses(
+        repo, bus, event_uuid
+    ):
+        return "dead-letter kaizen"
+    if attempts.get(key, 0) >= MAX_ROUTE_ATTEMPTS:
+        return f"max attempts ({MAX_ROUTE_ATTEMPTS})"
+    return None
+
+
 def _run_watcher(*, once: bool = False) -> None:
     repo = _repo_root()
     bus = ensure_event_bus_topology(repo)
     attempts: dict[str, int] = {}
-    in_flight: set[str] = set()
+    processing_uuids: set[str] = set()
+    routed_ok_pending_absent: set[str] = set()
+    targets = _watch_targets(repo, bus)
 
-    print("[WATCHER] Iniciado. roots=", [str(t[0]) for t in _watch_targets(repo, bus)], flush=True)
+    print("[WATCHER] Iniciado. roots=", [str(t[0]) for t in targets], flush=True)
     while True:
-        for watch_dir, process_name in _watch_targets(repo, bus):
+        _prune_routed_ok_pending_absent(routed_ok_pending_absent, targets)
+        for watch_dir, process_name in targets:
             if not watch_dir.is_dir():
                 continue
             for path in sorted(watch_dir.glob("*.json")):
                 key = f"{watch_dir.name}/{path.name}"
                 event_uuid = path.stem
-                if key in in_flight:
-                    continue
-                if process_name == "route-domain-event" and _has_dead_letter_witnesses(
-                    repo, bus, event_uuid
-                ):
-                    continue
-                n = attempts.get(key, 0)
-                if n >= MAX_ROUTE_ATTEMPTS:
-                    print(f"[WATCHER] Skip {key}: max attempts ({MAX_ROUTE_ATTEMPTS})", flush=True)
+                skip = _watcher_skip_reason(
+                    event_uuid=event_uuid,
+                    key=key,
+                    process_name=process_name,
+                    path=path,
+                    processing_uuids=processing_uuids,
+                    routed_ok_pending_absent=routed_ok_pending_absent,
+                    repo=repo,
+                    bus=bus,
+                    attempts=attempts,
+                )
+                if skip:
+                    if skip.startswith("in-flight"):
+                        print(f"[WATCHER] skip {skip}", flush=True)
+                    elif skip.startswith("routed-ok"):
+                        print(f"[WATCHER] skip {skip}", flush=True)
+                    elif skip.startswith("max attempts"):
+                        print(f"[WATCHER] Skip {key}: {skip}", flush=True)
                     continue
 
                 rel = _rel_event_path(repo, path)
                 print(f"[WATCHER] Detectado nuevo evento: {key} → {process_name}", flush=True)
-                in_flight.add(key)
-                attempts[key] = n + 1
+                processing_uuids.add(event_uuid)
+                attempts[key] = attempts.get(key, 0) + 1
 
                 proc = _invoke_route_process(repo, rel, process_name)
-                in_flight.discard(key)
+                processing_uuids.discard(event_uuid)
+
+                if proc.returncode == 0:
+                    if path.is_file():
+                        routed_ok_pending_absent.add(event_uuid)
+                    else:
+                        routed_ok_pending_absent.discard(event_uuid)
+                        attempts.pop(key, None)
 
                 if process_name == "route-domain-event":
-                    if proc.returncode == 0 and not _has_dead_letter_witnesses(repo, bus, event_uuid):
-                        attempts.pop(key, None)
+                    if proc.returncode == 0 and not _has_dead_letter_witnesses(
+                        repo, bus, event_uuid
+                    ):
+                        if not path.is_file():
+                            attempts.pop(key, None)
                     _log_route_outcome(repo, bus, path.name, event_uuid, proc)
                 elif proc.returncode == 0:
-                    attempts.pop(key, None)
-                    print(f"[WATCHER] {key}: enrutado ({process_name})", flush=True)
+                    if not path.is_file():
+                        attempts.pop(key, None)
+                    purged_note = ""
+                    if path.is_file():
+                        purged_note = " (archivo persiste — D3 activo)"
+                    print(
+                        f"[WATCHER] {key}: enrutado ({process_name}){purged_note}",
+                        flush=True,
+                    )
                 else:
+                    routed_ok_pending_absent.discard(event_uuid)
                     print(
                         f"[WATCHER] {process_name} falló ({key}): "
                         f"{(proc.stderr or proc.stdout or '').strip()}",

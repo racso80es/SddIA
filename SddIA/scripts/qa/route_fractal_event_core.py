@@ -8,7 +8,12 @@ import os
 from pathlib import Path
 from typing import Any
 
-from eda_bus_utils import load_eda_fractal, maybe_purge_fractal_telemetry_when_terminal, subscriber_id
+from eda_bus_utils import (
+    load_eda_fractal,
+    maybe_purge_fractal_telemetry_when_terminal,
+    safe_remove_path,
+    subscriber_id,
+)
 from route_domain_event_core import dispatch_subscriber
 
 
@@ -166,8 +171,11 @@ def route_fractal_event(
     all_ok = True
 
     if not subscribers:
+        purged_empty = False
+        purge_failed_empty = False
         if purge_after:
-            event_path.unlink(missing_ok=True)
+            purged_empty = safe_remove_path(event_path)
+            purge_failed_empty = not purged_empty and event_path.is_file()
         return {
             "success": True,
             "exitCode": 0,
@@ -175,7 +183,8 @@ def route_fractal_event(
                 "success": True,
                 "delivery_status": {},
                 "parent_path": rel_path,
-                "purged": purge_after,
+                "purged": purged_empty,
+                "purge_failed": purge_failed_empty,
                 "skip_ecst_gate": skip_ecst_gate,
             },
         }
@@ -194,8 +203,9 @@ def route_fractal_event(
             if status not in ("success", "skipped-topology", "skipped-backfill", "skipped-pre-anchored", "skipped-dlt-threshold"):
                 all_ok = False
 
+    purged_purge_after = False
     if all_ok and purge_after and event_path.is_file():
-        event_path.unlink(missing_ok=True)
+        purged_purge_after = safe_remove_path(event_path)
 
     is_telemetry_bus = "telemetry" in subscriptions_rel.replace("\\", "/")
     purged_telemetry = False
@@ -204,6 +214,13 @@ def route_fractal_event(
             repo, event_path, registry, event_type
         )
 
+    purged = purged_purge_after or purged_telemetry
+    purge_failed = bool(
+        all_ok
+        and event_path.is_file()
+        and ((purge_after and not purged_purge_after) or (is_telemetry_bus and not purged_telemetry))
+    )
+
     return {
         "success": all_ok,
         "exitCode": 0 if all_ok else 1,
@@ -211,7 +228,8 @@ def route_fractal_event(
             "success": all_ok,
             "delivery_status": delivery_status,
             "parent_path": rel_path,
-            "purged": (purge_after and all_ok) or purged_telemetry,
+            "purged": purged,
+            "purge_failed": purge_failed,
             "skip_ecst_gate": skip_ecst_gate,
         },
         "error": None if all_ok else "one or more subscribers failed",

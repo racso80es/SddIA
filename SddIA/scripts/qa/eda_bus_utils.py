@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -175,6 +176,24 @@ def subscriber_id(subscriber: dict[str, Any]) -> str:
 
 def witness_filename(event_uuid: str, subscriber_name: str) -> str:
     return f"{event_uuid}.{subscriber_name}.json"
+
+
+def safe_remove_path(path: Path, *, retries: int = 3, delay_s: float = 0.05) -> bool:
+    """Elimina un archivo con reintentos (absorción latencia E/S Windows)."""
+    if not path.is_file():
+        return True
+    last_err: OSError | None = None
+    for attempt in range(max(1, retries)):
+        try:
+            path.unlink()
+            return True
+        except (PermissionError, OSError) as exc:
+            last_err = exc if isinstance(exc, OSError) else OSError(exc)
+            if attempt + 1 < retries:
+                time.sleep(delay_s)
+    if last_err is not None:
+        return False
+    return not path.is_file()
 
 
 def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
@@ -758,8 +777,7 @@ def finalize_kaizen_terminal(
     if not dead_header.is_file() and pending_path.is_file():
         ensure_state_header(repo, bus, "dead_letter", event_uuid, pending_path)
         counts["headers"] += 1
-    if pending_path.is_file():
-        pending_path.unlink(missing_ok=True)
+    if pending_path.is_file() and safe_remove_path(pending_path):
         counts["pending"] = 1
     if maybe_purge_processing_header(
         repo, bus, event_uuid, registry, event_type, origin_topology
@@ -892,16 +910,15 @@ def archive_event_after_sweep(
 
     pending = repo / bus["pending"] / f"{event_uuid}.json"
     if pending.is_file():
-        pending.unlink(missing_ok=True)
-        counts["pending"] = 1
+        if safe_remove_path(pending):
+            counts["pending"] = 1
     for state in ("processing", "processed"):
         header = repo / header_path(bus, state, event_uuid)
-        if header.is_file():
-            header.unlink(missing_ok=True)
+        if header.is_file() and safe_remove_path(header):
             counts["headers"] += 1
     for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid):
-        path.unlink(missing_ok=True)
-        counts["witnesses"] += 1
+        if safe_remove_path(path):
+            counts["witnesses"] += 1
     return counts
 
 
@@ -1174,8 +1191,7 @@ def maybe_purge_fractal_telemetry_when_terminal(
         st = ds.get(sid)
         if not isinstance(st, str) or not delivery_stamp_terminal_ok(st):
             return False
-    event_path.unlink(missing_ok=True)
-    return True
+    return safe_remove_path(event_path)
 
 
 def load_telemetry_compliance_config(repo: Path) -> dict[str, str]:
