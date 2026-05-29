@@ -347,6 +347,8 @@ def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: di
         "emitter_agent": inputs.get("emitter_agent", "entity-manager"),
         "payload": {
             "entity_class": entity_class,
+            "entity_type": entity_class,
+            "entity_id": entity_uuid,
             "lifecycle_operation": op,
             "entity_uuid": entity_uuid,
             "entity_name": entity_name,
