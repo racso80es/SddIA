@@ -1098,7 +1098,7 @@ def resolve_ed_telemetry_contract(
     if not isinstance(capsule_id, str) or not capsule_id.strip():
         return {"telemetry_provided": False, "telemetry_schema": None, "entity_kind": None}
     cid = capsule_id.strip()
-    for kind, subdir in (("skill", "skills"), ("action", "actions")):
+    for kind, subdir in (("skill", "skills"), ("action", "actions"), ("tool", "tools")):
         rel = f"SddIA/{subdir}/{cid}.md"
         fm = _parse_ed_frontmatter(repo, rel)
         if not fm:

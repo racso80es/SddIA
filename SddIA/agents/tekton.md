@@ -8,6 +8,7 @@ allowed_policies:
   - "filesystem-ops"
   - "source-control"
   - "system-operations"
+  - "chaos-engineering"
 hash_signature: "opcional_en_desarrollo"
 inputs:
   - "task_spec": "JSON con la descripción exacta del objetivo y restricciones"

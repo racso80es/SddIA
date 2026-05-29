@@ -30,3 +30,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | telemetry-compliance-audit | b3c4d5e6-f7a8-4901-b2c3-d4e5f6a7b8c9 | 1.0.0 | event-routing, quality-assurance | — | Auditoría cumplimiento termodinámico; fan-out telemetría (Fase 5). |
 | cerbero-governance-react | 3b4c5d6e-7f8a-4b9c-0d1e-2f3a4b5c6d7e | 1.0.0 | event-routing, knowledge-management | — | RBAC reactivo Self-Healing. |
 | fix-tool-process | 4c5d6e7f-8a9b-4c0d-1e2f-3a4b5c6d7e8f | 1.0.0 | ecosystem-evolution, filesystem-ops, quality-assurance | — | Reparación sandbox; Argos `structure_valid` sin redención. |
+| workspace-smoke | c4e8a1b2-3f5d-4a9c-8e7b-2d1f0a9b6c3e | 1.0.0 | quality-assurance | — | Smoke laboratorio: instanciación workspace dinámico (Telemetría Fase 2). |
+| audit-thermodynamic-toll-failsoft | 2e8cd8cd-e0cd-4b0e-ae78-09150ab9c266 | 1.0.0 | chaos-engineering, quality-assurance | — | Audit Caos: `io-choke` + fail-soft Peaje Termodinámico (D3.13). |
+| audit-telemetry-compliance-breach | fd2f075c-5d01-4b54-8b26-67678417e22b | 1.0.0 | chaos-engineering, quality-assurance, event-routing | — | Audit Caos: `schema-corruptor` → `Telemetry_Compliance_Breached`. |
+| audit-sandbox-isolation-rbac | 242d937d-a0da-4d36-ab89-c0fbbc18c868 | 1.0.0 | chaos-engineering, quality-assurance | — | Audit Caos: `sandbox-breacher` + bloqueo Inocuidad workspace. |

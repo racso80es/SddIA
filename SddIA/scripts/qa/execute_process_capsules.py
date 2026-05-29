@@ -68,6 +68,22 @@ THERMODYNAMIC_EXEMPT = frozenset(
     }
 )
 
+CHAOS_AUDIT_PROCESSES = frozenset(
+    {
+        "audit-thermodynamic-toll-failsoft",
+        "audit-telemetry-compliance-breach",
+        "audit-sandbox-isolation-rbac",
+    }
+)
+
+CHAOS_OFFENSIVE_TOOLS = frozenset({"io-choke", "schema-corruptor", "sandbox-breacher"})
+
+CHAOS_TOOL_SCRIPTS: dict[str, Path] = {
+    "io-choke": SCRIPT.parent.parent / "tools" / "io-choke" / "io_choke.py",
+    "schema-corruptor": SCRIPT.parent.parent / "tools" / "schema-corruptor" / "schema_corruptor.py",
+    "sandbox-breacher": SCRIPT.parent.parent / "tools" / "sandbox-breacher" / "sandbox_breacher.py",
+}
+
 _THERMODYNAMIC_EMERGENCY_PREFIX = "[THERMODYNAMIC-TOLL-EMERGENCY]"
 
 _ACTIVE_CAPSULE_CAPTURE_STATE: dict[str, Any] | None = None
@@ -1962,6 +1978,320 @@ def try_execute_registered_action_capsules(
     return None
 
 
+def invoke_chaos_tool_capsule(
+    repo: Path,
+    tool_name: str,
+    payload: dict[str, Any],
+) -> tuple[int, dict[str, Any]]:
+    script = CHAOS_TOOL_SCRIPTS.get(tool_name)
+    if script is None or not script.is_file():
+        raise FileNotFoundError(f"cápsula caos no encontrada: {tool_name}")
+    proc = subprocess.run(
+        [sys.executable, str(script)],
+        input=json.dumps(payload, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        cwd=str(repo),
+        check=False,
+    )
+    line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
+    body: dict[str, Any] = {}
+    if line:
+        try:
+            parsed = json.loads(line)
+            if isinstance(parsed, dict):
+                body = parsed
+        except json.JSONDecodeError:
+            body = {"parse_error": line[:200]}
+    return proc.returncode, body
+
+
+def _chaos_workspace_path(inputs: dict[str, Any], state: dict[str, Any]) -> str:
+    sync_workspace_context(inputs, state)
+    ws = inputs.get("workspace_path") or state.get("workspace_path")
+    if not isinstance(ws, str) or not ws.strip():
+        raise ValueError("workspace_path ausente")
+    return ws.strip()
+
+
+def _chaos_stimulus_thermodynamic(
+    repo: Path,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any]:
+    ws = _chaos_workspace_path(inputs, state)
+    code, body = invoke_chaos_tool_capsule(
+        repo,
+        "io-choke",
+        {"workspace_path": ws, "target_file": ".telemetry-stress-target"},
+    )
+    state["last_capsule_id"] = "io-choke"
+    state["last_capsule_envelope"] = body
+    state["chaos_stimulus"] = {"tool": "io-choke", "exit_code": code, "envelope": body}
+    state["chaos_simulate_telemetry_io_fail"] = True
+    ok = code == 0 and bool(body.get("success")) and bool((body.get("result") or {}).get("io_choked"))
+    if not ok:
+        return {
+            "status": "failed",
+            "handler": "chaos-audit-stimulus",
+            "tool": "io-choke",
+            "exit_code": code,
+            "envelope": body,
+        }
+    return {
+        "status": "executed",
+        "handler": "chaos-audit-stimulus",
+        "tool": "io-choke",
+        "io_choked": True,
+    }
+
+
+def _chaos_stimulus_compliance(
+    repo: Path,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any]:
+    _chaos_workspace_path(inputs, state)
+    code, body = invoke_chaos_tool_capsule(
+        repo,
+        "schema-corruptor",
+        {"corruption_mode": "empty"},
+    )
+    state["last_capsule_id"] = "schema-corruptor"
+    state["last_capsule_envelope"] = body
+    state["chaos_stimulus"] = {"tool": "schema-corruptor", "exit_code": code, "envelope": body}
+    ok = code == 0 and bool(body.get("success")) and "telemetry_receipt" not in body
+    if not ok:
+        return {
+            "status": "failed",
+            "handler": "chaos-audit-stimulus",
+            "tool": "schema-corruptor",
+            "exit_code": code,
+            "envelope": body,
+        }
+    return {
+        "status": "executed",
+        "handler": "chaos-audit-stimulus",
+        "tool": "schema-corruptor",
+        "corruption_mode": "empty",
+    }
+
+
+def _chaos_stimulus_sandbox(
+    repo: Path,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+) -> dict[str, Any]:
+    ws = _chaos_workspace_path(inputs, state)
+    escape = "../breach-marker.txt"
+    code, body = invoke_chaos_tool_capsule(
+        repo,
+        "sandbox-breacher",
+        {"workspace_path": ws, "escape_target": escape},
+    )
+    state["last_capsule_id"] = "sandbox-breacher"
+    state["last_capsule_envelope"] = body
+    state["chaos_stimulus"] = {"tool": "sandbox-breacher", "exit_code": code, "envelope": body}
+    escape_path = (Path(ws).resolve().parent / "breach-marker.txt").resolve()
+    blocked = (
+        code == 1
+        and not body.get("success")
+        and body.get("exitCode") == 1
+        and not escape_path.is_file()
+    )
+    if not blocked:
+        return {
+            "status": "failed",
+            "handler": "chaos-audit-stimulus",
+            "tool": "sandbox-breacher",
+            "exit_code": code,
+            "envelope": body,
+            "escape_exists": escape_path.is_file(),
+        }
+    return {
+        "status": "executed",
+        "handler": "chaos-audit-stimulus",
+        "tool": "sandbox-breacher",
+        "breach_blocked": True,
+    }
+
+
+def _find_telemetry_compliance_breach(repo: Path) -> str | None:
+    from eda_bus_utils import load_eda_fractal
+
+    fractal = load_eda_fractal(repo)
+    domain_dir = repo / fractal["domain"]
+    if not domain_dir.is_dir():
+        return None
+    for path in sorted(domain_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+        try:
+            body = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if body.get("event_type") == "Telemetry_Compliance_Breached":
+            try:
+                return str(path.relative_to(repo)).replace("\\", "/")
+            except ValueError:
+                return str(path)
+    return None
+
+
+def _chaos_argos_certify(
+    repo: Path,
+    process_name: str,
+    state: dict[str, Any],
+    toll: dict[str, Any] | None,
+) -> dict[str, Any]:
+    if process_name == "audit-thermodynamic-toll-failsoft":
+        ok = bool(toll and toll.get("telemetry_io_failed"))
+        if ok:
+            state["toll_failsoft_verified"] = True
+        return {
+            "phase_name": "Certificación Argos",
+            "status": "executed" if ok else "failed",
+            "handler": "chaos-audit-argos",
+            "toll_failsoft_verified": ok,
+            "telemetry_io_failed": bool(toll and toll.get("telemetry_io_failed")),
+        }
+    if process_name == "audit-telemetry-compliance-breach":
+        breach_path = _find_telemetry_compliance_breach(repo)
+        ok = breach_path is not None
+        if ok:
+            state["breach_event_path"] = breach_path
+        audit = state.get("compliance_audit") or {}
+        return {
+            "phase_name": "Certificación Argos",
+            "status": "executed" if ok else "failed",
+            "handler": "chaos-audit-argos",
+            "breach_event_path": breach_path,
+            "compliance_status": audit.get("status"),
+        }
+    if process_name == "audit-sandbox-isolation-rbac":
+        stimulus = state.get("chaos_stimulus") or {}
+        ok = bool(stimulus.get("envelope", {}).get("result", {}).get("breach_blocked"))
+        if ok:
+            state["isolation_verified"] = True
+        return {
+            "phase_name": "Certificación Argos",
+            "status": "executed" if ok else "failed",
+            "handler": "chaos-audit-argos",
+            "isolation_verified": ok,
+        }
+    return {
+        "phase_name": "Certificación Argos",
+        "status": "failed",
+        "handler": "chaos-audit-argos",
+        "error": f"proceso caos desconocido: {process_name}",
+    }
+
+
+def run_chaos_audit_process(
+    repo: Path,
+    canonical: str,
+    process_def: dict[str, Any],
+    phases: list[dict[str, Any]],
+    process_inputs: dict[str, Any],
+) -> dict[str, Any]:
+    from telemetry_compliance_audit_core import audit_telemetry_compliance
+
+    state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
+    state["asset_id"] = str(uuid.uuid4())
+    toll_start = time.monotonic()
+    try:
+        ws_boot = bootstrap_process_workspace(repo, canonical, process_def, process_inputs, state)
+        state["workspace_boot"] = ws_boot
+    except ValueError as exc:
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": str(exc),
+            "execution_report": {"process_name": canonical, "phases": []},
+        }
+
+    phase_reports: list[dict[str, Any]] = []
+    stimulus_handlers = {
+        "Estímulo asfixia E/S": _chaos_stimulus_thermodynamic,
+        "Estímulo alucinación recibo": _chaos_stimulus_compliance,
+        "Estímulo intento de fuga": _chaos_stimulus_sandbox,
+    }
+
+    for phase in phases:
+        if not isinstance(phase, dict):
+            continue
+        phase_name = str(phase.get("name") or "")
+        if phase_name == "Certificación Argos":
+            continue
+        handler = stimulus_handlers.get(phase_name)
+        if handler is None:
+            phase_reports.append(
+                {
+                    "phase_name": phase_name,
+                    "status": "simulated",
+                    "delegates_to": phase.get("delegates_to"),
+                }
+            )
+            continue
+        result = handler(repo, process_inputs, state)
+        phase_reports.append({"phase_name": phase_name, **result})
+        if result.get("status") != "executed":
+            return {
+                "success": False,
+                "status_code": 1,
+                "data": {"process_name": canonical, "workspace_path": state.get("workspace_path")},
+                "error": f"estímulo caos falló: {phase_name}",
+                "execution_report": {"process_name": canonical, "phases": phase_reports},
+            }
+
+    duration_ms = max(0, int((time.monotonic() - toll_start) * 1000))
+    toll: dict[str, Any] | None = None
+    if canonical != "audit-sandbox-isolation-rbac":
+        toll = run_thermodynamic_toll(
+            repo,
+            canonical,
+            state,
+            process_inputs,
+            exit_code=0,
+            duration_ms=duration_ms,
+            success=True,
+        )
+        if canonical == "audit-telemetry-compliance-breach":
+            telemetry = toll.get("telemetry") or {}
+            rel = telemetry.get("target_path")
+            if isinstance(rel, str) and rel.strip():
+                state["compliance_audit"] = audit_telemetry_compliance(repo, rel.strip())
+
+    argos_report = _chaos_argos_certify(repo, canonical, state, toll)
+    phase_reports.append(argos_report)
+
+    ok = argos_report.get("status") == "executed"
+    data: dict[str, Any] = {
+        "process_name": canonical,
+        "handoff": state.get("handoff"),
+    }
+    if state.get("workspace_path"):
+        data["workspace_path"] = state["workspace_path"]
+    if state.get("execution_id"):
+        data["execution_id"] = state["execution_id"]
+    if toll:
+        data["thermodynamic_toll"] = toll
+    if state.get("toll_failsoft_verified"):
+        data["toll_failsoft_verified"] = True
+    if state.get("breach_event_path"):
+        data["breach_event_path"] = state["breach_event_path"]
+    if state.get("isolation_verified"):
+        data["isolation_verified"] = True
+
+    return {
+        "success": ok,
+        "status_code": 0 if ok else 1,
+        "data": data,
+        "error": None if ok else "Argos: certificación caos fallida",
+        "execution_report": {"process_name": canonical, "phases": phase_reports},
+    }
+
+
 def execute_workspace_smoke_phase(
     repo: Path,
     phase_name: str | None,
@@ -2203,25 +2533,34 @@ def run_thermodynamic_toll(
     except Exception as exc:
         result["receipt_parse_error"] = str(exc)
         _log_thermodynamic_emergency(process_name, "receipt-parse", exc)
-    try:
-        telemetry_id = str(uuid.uuid4())
-        telemetry_event = build_raw_execution_finished_event(
-            event_id=telemetry_id,
-            asset_id=asset_id,
-            exit_code=exit_code,
-            duration_ms=duration_ms,
-            process_name=process_name,
-            execution_id=execution_id if isinstance(execution_id, str) else None,
-            workspace_path=workspace_path if isinstance(workspace_path, str) else None,
-            capsule_id=capsule_id if isinstance(capsule_id, str) else None,
-            telemetry_receipt=receipt,
-        )
-        telemetry_seal = write_fractal_event(repo, telemetry_event, "telemetry")
-        result["telemetry"] = telemetry_seal
-    except Exception as exc:
-        result["telemetry_error"] = str(exc)
+    if state.get("chaos_simulate_telemetry_io_fail"):
         result["telemetry_io_failed"] = True
-        _log_thermodynamic_emergency(process_name, "telemetry", exc)
+        result["telemetry_error"] = "chaos lab: simulated telemetry I/O failure"
+        _log_thermodynamic_emergency(
+            process_name,
+            "telemetry",
+            OSError(28, "chaos lab simulated telemetry I/O failure"),
+        )
+    else:
+        try:
+            telemetry_id = str(uuid.uuid4())
+            telemetry_event = build_raw_execution_finished_event(
+                event_id=telemetry_id,
+                asset_id=asset_id,
+                exit_code=exit_code,
+                duration_ms=duration_ms,
+                process_name=process_name,
+                execution_id=execution_id if isinstance(execution_id, str) else None,
+                workspace_path=workspace_path if isinstance(workspace_path, str) else None,
+                capsule_id=capsule_id if isinstance(capsule_id, str) else None,
+                telemetry_receipt=receipt,
+            )
+            telemetry_seal = write_fractal_event(repo, telemetry_event, "telemetry")
+            result["telemetry"] = telemetry_seal
+        except Exception as exc:
+            result["telemetry_error"] = str(exc)
+            result["telemetry_io_failed"] = True
+            _log_thermodynamic_emergency(process_name, "telemetry", exc)
     if success and isinstance(workspace_path, str) and workspace_path.strip():
         try:
             orch_id = str(uuid.uuid4())
@@ -2468,6 +2807,8 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
                 ],
             },
         }
+    if canonical in CHAOS_AUDIT_PROCESSES:
+        return run_chaos_audit_process(repo, canonical, process_def, phases, process_inputs)
     if canonical == "pull-request-review":
         _normalize_pr_review_inputs(repo, process_inputs)
     validate_process_inputs(process_def, process_inputs, canonical)
