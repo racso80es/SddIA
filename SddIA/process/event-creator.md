@@ -1,14 +1,15 @@
 ---
 uuid: "b28194d9-62a8-4cbc-9cbd-237e51e44333"
 name: "event-creator"
-version: "1.1.0"
+version: "1.2.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:ff3baf158327892036d67b5166963ce5716c5271cb7f3b4ee854248402268999
+hash_signature: sha256:9e537522414f796d25a713825f5678bc0474008cae8a61add056d03147206e60
 inputs:
   - "event_name": "Identificador kebab-case de la Clase (`{name}` del archivo `{name}.md` en `cumulo.directories.events`)"
   - "event_type": "Identificador ECST PascalCase_Snake (p. ej. PullRequest_Merged); único en catálogo"
+  - "event_family": "Familia Trinidad obligatoria: telemetry | orchestration | domain (sin fallback)"
   - "event_context": "Contexto RBAC Cerbero válido según `execution-contexts.md`"
   - "event_description": "Descripción operativa y propósito de la Clase de Evento"
   - "payload_required": "Array de nombres de campos obligatorios en `payload` de instancia ECST"
@@ -17,7 +18,6 @@ inputs:
   - "emitter_agents": "Array de identificadores de acciones/procesos autorizados a emitir instancias"
   - "event_version": "SemVer de la Clase (ej. 1.0.0)"
   - "events_contract_version": "Versión del contrato events a materializar (ej. 1.1.0 según `events-contract.md`)"
-  - "event_family": "Familia Trinidad: telemetry | orchestration | domain. Opcional en invocación; si ausente o vacío → default obligatorio `domain` (retrocompat). Ver Kaizen retirar default."
 outputs:
   - "artifact_event_md": "Archivo `{paths.directories.events}/{effective_event_family}/{event_name}.md`"
   - "artifact_events_index": "`{paths.directories.events}/{effective_event_family}/index.md` actualizado con fila sincronizada a la cabecera YAML"
@@ -26,15 +26,13 @@ outputs:
   - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
   - "handoff_version": "SemVer resultante (`event_version`)"
 phases:
-  - name: "Normalización de familia"
-    intent: "Calcular effective_event_family = event_family trim no vacío, si no domain. Registrar en contexto de fase."
   - name: "Validación de Arquitectura"
-    intent: "Verificar effective_event_family en enum Trinidad; event_context en execution-contexts; unicidad de event_type frente al Códice de la familia; kebab-case de event_name; coherencia payload con events-contract v1.1.0; para telemetry rechazar emisores no-CLI."
+    intent: "Exigir event_family explícito; validar enum Trinidad; event_context en execution-contexts; unicidad de event_type; kebab-case; coherencia payload events-contract v1.1.0; telemetry sin emisores ED no-CLI."
     delegates_to:
       - "agent:cumulo"
       - "agent:cerbero"
   - name: "Forja del Artefacto"
-    intent: "Generar uuid v4 y hash_signature de integridad; YAML (contract, context, event_type, capabilities) y cuerpo con Payload ECST REQUIRED/OPTIONAL/FORBIDDEN, emisores y suscripciones; rutas solo vía cumulo."
+    intent: "Generar uuid v4 y hash_signature de integridad; YAML (contract, context, event_type, event_family, capabilities) y cuerpo con Payload ECST REQUIRED/OPTIONAL/FORBIDDEN, emisores y suscripciones; rutas solo vía cumulo."
     delegates_to:
       - "action:crypto-broker"
       - "skill:filesystem-manager"
@@ -62,6 +60,7 @@ phase_invocations:
             from_process_inputs:
               - "event_name"
               - "event_type"
+              - "event_family"
               - "event_version"
               - "event_context"
               - "payload_required"
@@ -92,21 +91,17 @@ Proceso maestro para instanciar nuevas **Clases de Evento** (genoma ECST) en `Sd
 
 Invocable directamente o desde **`entity-manager`** (cuando `entity_class: event` esté en piloto). Tras indexación síncrona, el gestor emite `emit-domain-mutation` con `emitter_agent: entity-manager` usando los outputs de handoff declarados en cabecera YAML.
 
-## Fase 0 — Normalización de familia
-
-1. Leer `event_family` de `process_inputs`.
-2. Si está ausente, es solo espacios o cadena vacía → asignar `effective_event_family = "domain"`.
-3. En caso contrario → `effective_event_family = event_family.strip()` (minúsculas esperadas en contrato).
-
 ## Fase 1 — Validación de Arquitectura
 
-1. Validar `effective_event_family` ∈ `{ telemetry, orchestration, domain }`.
-2. Cargar `execution-contexts.md` y comprobar `event_context` válido.
-3. Verificar que no exista `{paths.directories.events}/{effective_event_family}/{event_name}.md` en create; `event_name` kebab-case.
-4. Comprobar unicidad de `event_type` frente a `events/{effective_event_family}/index.md` y `events-contract.md` v1.1.0.
-5. Si `effective_event_family == telemetry`: `emitter_agents` solo procesos/cápsulas CLI indexados (sin agentes ED obreros).
-6. Auditar que `payload_required`, `payload_optional` y `payload_forbidden` no se solapen; respetar reglas forenses del contrato.
-7. Validar `event_version` y `events_contract_version` frente a `events-contract.md` vigente.
+1. Leer `event_family` de `process_inputs`. Si está ausente, es solo espacios o cadena vacía → **abortar** con error de validación (no hay fallback `domain`).
+2. `effective_event_family = event_family.strip().lower()`.
+3. Validar `effective_event_family` ∈ `{ telemetry, orchestration, domain }`.
+4. Cargar `execution-contexts.md` y comprobar `event_context` válido.
+5. Verificar que no exista `{paths.directories.events}/{effective_event_family}/{event_name}.md` en create; `event_name` kebab-case.
+6. Comprobar unicidad de `event_type` frente a `events/{effective_event_family}/index.md` y `events-contract.md` v1.1.0.
+7. Si `effective_event_family == telemetry`: `emitter_agents` solo procesos/cápsulas CLI indexados (sin agentes ED obreros).
+8. Auditar que `payload_required`, `payload_optional` y `payload_forbidden` no se solapen; respetar reglas forenses del contrato.
+9. Validar `event_version` y `events_contract_version` frente a `events-contract.md` vigente.
 
 ## Fase 2 — Forja del Artefacto
 

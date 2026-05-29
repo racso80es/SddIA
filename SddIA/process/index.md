@@ -20,7 +20,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | codex-creator | dd9e13b2-fc07-40d2-95f5-b50ebd535a9e | 1.1.0 | ecosystem-evolution, knowledge-management | — | Creator de **`domain-codex`** (`Library_Codex`): inventario de normas, identidad, estrategia, materialización e **indexación** de `library_codexes/index.md` según **`codex-contract.md`**. |
 | accept-pr | bd81c878-5e1c-4fe5-b204-85c9136d8bc7 | 1.0.0 | pr-lifecycle, source-control, filesystem-ops | — | Aceptación local soberana: Argos → merge a main → emit-pr-merged-event → push main y limpieza de rama origen. |
 | entity-manager | 62f08bbd-e9ce-479d-8d1b-792684e1bd26 | 1.0.0 | ecosystem-evolution | — | Gestor de Entidad: fachada sobre *-creator (piloto skill + event) con sello universal emit-domain-mutation. |
-| event-creator | b28194d9-62a8-4cbc-9cbd-237e51e44333 | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar Clases de Evento ECST en `SddIA/events/` y mantener el índice del genoma. |
+| event-creator | b28194d9-62a8-4cbc-9cbd-237e51e44333 | 1.2.0 | ecosystem-evolution | — | Proceso maestro para instanciar Clases de Evento ECST en `SddIA/events/` y mantener el índice del genoma. |
 | route-domain-event | c8e91f2a-4b6d-4e1a-9f03-2d7e5a684b10 | 1.0.0 | event-routing, ecosystem-evolution | — | Orquestador bus EDA V3+: fan-out suscriptores, topología simétrica, testigos y cabeceras por estado. |
 | route-telemetry | b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8 | 1.0.0 | event-routing, ecosystem-evolution | — | Enrutador bus fractal `./.events/telemetry/` → Radamanto (`radamanto-batch`). |
 | route-orchestration | c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9 | 1.0.0 | event-routing, ecosystem-evolution | — | Enrutador bus fractal `./.events/orchestration/`. |

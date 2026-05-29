@@ -36,7 +36,7 @@ git_changes:
 | AC1.1 | Raíz solo contrato + índice + 3 carpetas | ✅ | `SddIA/events/` sin `.md` sueltos de Clase |
 | AC1.2 | `index.md` por familia con jurisdicción | ✅ | `telemetry/`, `orchestration/`, `domain/` |
 | AC1.3 | Contrato obliga trinidad | ✅ | `events-contract.md` v1.1.0 |
-| AC1.4 | `create-event` enruta por familia | ✅ | `event-creator` v1.1.0 + default `domain` (D1.9) |
+| AC1.4 | `create-event` enruta por familia | ✅ | `event-creator` v1.1.0 (Fase 1); fallback retirado en v1.2.0 (Kaizen) |
 
 ## PBI maestro
 
@@ -55,4 +55,4 @@ git_changes:
 
 ## Kaizen vinculado
 
-- Retirar default `domain`: `docs/todos/pending/[Kaizen] event-creator — eliminar default event_family domain.md`
+- Retirar default `domain`: ✅ cerrado — `docs/features/kaizen-event-creator-event-family-explicit/`

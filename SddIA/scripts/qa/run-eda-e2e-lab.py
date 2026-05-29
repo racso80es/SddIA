@@ -86,6 +86,7 @@ def create_entity(repo: Path, entity_class: str, entity_name: str) -> dict[str, 
     }
     if entity_class == "event":
         payload["semantic_seed"]["event_type"] = "E2E_" + entity_name.replace("-", "_").title()
+        payload["semantic_seed"]["event_family"] = "domain"
     body = _run_json(
         [sys.executable, str(EXECUTE_PROCESS), "--process", "entity-manager", "--inputs", json.dumps(payload)]
     )
