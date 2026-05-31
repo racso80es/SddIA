@@ -1,35 +1,41 @@
-Pendiente de refinar — ver PBI dedicado.
+[ARQUITECTURA] PBI: Emisión EDA Nativa y Trazabilidad en Argos (PullRequest_Audited)
+1. Fase de Triaje (Origen de la Fricción Estructural)
+El agente Argos opera actualmente en un silo reactivo frágil. Audita el código, pero su veredicto muere en el aislamiento local o depende de una orquestación síncrona manual. La presencia del fósil TODO: pending_argos_eda_emission es una brecha documentada en la arquitectura. El ecosistema exige que el laudo de auditoría sea un evento inmutable depositado en el bus, garantizando la trazabilidad de seguridad sin que Argos necesite saber quién reaccionará a su dictamen.
 
-PBI: Integración de Emisión EDA en Agente Argos (Argos_Eda_Emision)
-1. Contexto Arquitectónico
-En el ecosistema SddIA, el paradigma reactivo (EDA) establece que los agentes no invocan lógica secuencialmente, sino que emiten eventos inmutables al Bus. Actualmente, el agente Argos (nuestro Auditor de código y artefactos) evalúa el código, pero carece de la integración final con el "Sistema Nervioso de Eventos" para emitir de forma nativa el evento PullRequest_Audited.
-Existe una deuda técnica documentada: el marcador TODO: pending_argos_eda_emission dentro de la carga útil (payload) del security clearance. Esto ha permitido mantener la arquitectura válida teóricamente, pero requiere su materialización física.
+2. Objetivo Táctico
+Dotar a Argos del mecanismo físico para inyectar el evento PullRequest_Audited (o equivalente bajo la taxonomía de dominio) en el bus de eventos, asegurando el cumplimiento estricto del Patrón Event-Carried State Transfer y la generación matemática de su audit_event_reference.
 
-2. Objetivo
-Implementar la capacidad de emisión de eventos de dominio en el agente Argos, reemplazando la deuda técnica actual por la generación y enrutamiento real del evento, asegurando la generación del audit_event_reference correspondiente.
+3. Directrices de Acción (El Engranaje Operativo)
+Tékton ejecutará las siguientes fases operando bajo la premisa de Raw Kernel, priorizando la invariabilidad del orquestador:
 
-3. Requerimientos de Ejecución (El Engranaje)
+Vector A: Erradicación Fósil
 
-Erradicación de Deuda Técnica: Localizar y purgar el marcador TODO: pending_argos_eda_emission en los esquemas de payload de Argos.
+Artefacto: Esquemas de payload de salida de Argos y contratos asociados en SddIA/agents/argos.md o equivalentes.
 
-Forja del Evento: Estructurar el evento PullRequest_Audited asegurando que contenga toda la información desnormalizada necesaria (Patrón Event-Carried State Transfer). El evento debe contener el identificador unívoco de auditoría (audit_event_reference).
+Acción: Aniquilar el string TODO: pending_argos_eda_emission. Reemplazarlo por la definición estructural del bloque de auditoría final.
 
-Emisión al Bus: Conectar la salida de Argos para que el evento se deposite correctamente en el ecosistema (a través de la acción/proceso route-domain-event o depositándolo directamente en el directorio .SddIA/events/domain/ según indique el contrato de eventos).
+Vector B: Forja del Payload Desnormalizado
 
-Ceguera Espacial Obligatoria: Argos debe limitarse única y exclusivamente a emitir el evento de auditoría. Bajo ninguna circunstancia debe contener lógica de enrutamiento sobre qué agente (ej. Cúmulo, Cerbero) reaccionará a dicho evento.
+Artefacto: Contrato de evento de auditoría en SddIA/events/domain/.
 
-4. Restricciones de Sistema (Reglas de Acero para la IA)
+Acción: El evento emitido debe contener el contexto absoluto para evitar consultas de estado a posteriori. Obligatorio inyectar:
+
+audit_event_reference: UUID o Hash canónico unívoco de la ejecución de la auditoría.
+
+target_entity_id: Identificador (branch, PR, o path) del artefacto evaluado.
+
+resolution: Veredicto dicotómico estricto (PASS / REJECT / FLAG).
+
+Trazabilidad de reglas violadas (si aplica).
+
+Vector C: Ignición Física hacia el Bus
+
+Artefacto: La cápsula de ejecución o script que invoca a Argos (ej. un execute-process).
+
+Acción: Modificar el flujo de salida para que el JSON resultante de Argos se canalice directamente mediante el puente de emisión (ej. emit-domain-mutation). El chispazo eléctrico debe materializarse físicamente en la topología volátil (.SddIA/events/pending/), respetando la frontera Genoma vs. Runtime.
+
+4. Reglas de Acero (Filtro A y B Inyectados para la IA Obrera)
 
 [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. PENALIZE CONJECTURE. NO EXPLANATIONS, ONLY CODE.]
 
-Cero Alucinaciones: Cíñete estrictamente a la topología de archivos y contratos existentes en SddIA/events/. No inventes rutas, ni patrones de diseño externos.
-
-Ley de Jurisdicción Dividida: Respeta las definiciones del SSOT (Única Fuente de Verdad) dictadas por Cúmulo y no dupliques definiciones de estado.
-
-5. Criterios de Aceptación (Aduana de Fricción)
-
-El payload de salida de Argos genera un evento bien formado con su audit_event_reference.
-
-El string TODO: pending_argos_eda_emission desaparece por completo del código fuente.
-
-El evento se deposita exitosamente en el flujo EDA local y respeta el esquema definido en SddIA/events/events-contract.md.
+Ceguera Espacial Absoluta: Argos tiene terminantemente prohibido invocar o mencionar a Cúmulo, Cerbero, o interactuar con APIs externas para notificar su estado. Su jurisdicción termina en el milisegundo en que deposita el archivo JSON bien formado en el directorio de eventos. La propagación y la telemetría son problemas exclusivos del enrutador EDA.
