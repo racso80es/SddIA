@@ -11,11 +11,13 @@ checks:
   O3-fase1-docs: pass
   O4-resolve_effective_event_family: pass
   test_eda_fractal_bus: pass
+  test_event_forge_fractal: pass
 git_changes:
   - SddIA/process/event-creator.md
   - SddIA/process/entity-manager.md
   - SddIA/scripts/qa/execute_process_capsules.py
   - SddIA/scripts/qa/run-eda-e2e-lab.py
+  - SddIA/scripts/qa/test_event_forge_fractal.py
   - docs/features/telemetria-reactiva-eda-fase1/spec.md
   - docs/features/telemetria-reactiva-eda-fase1/clarify.md
   - docs/features/telemetria-reactiva-eda-fase1/validacion.md
@@ -49,6 +51,7 @@ git_changes:
 |-------|-----------|
 | `resolve_effective_event_family` | OK (missing → ValueError) |
 | `unittest test_eda_fractal_bus` | 6/6 OK |
+| `unittest test_event_forge_fractal` | 4/4 OK |
 
 ## PBI
 
