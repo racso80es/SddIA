@@ -15,9 +15,10 @@ inputs:
   - "active_norm_pack"
   - "acceptance_criteria"
 outputs:
-  - "audit_report_md"
-  - "approval_status"
-  - "correction_blueprint_md"
+  - "audit_event_reference"
+  - "target_entity_id"
+  - "resolution"
+  - "violated_rules"
 ---
 
 # Agente Argos: Orquestador de Verificación y Juez de Artefactos
