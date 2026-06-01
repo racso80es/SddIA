@@ -84,7 +84,7 @@ def process_fix_tool(repo: Path, rel_path: str) -> dict[str, Any]:
         return {"ok": False, "error": "payload invalido"}
     entity_id = str(payload.get("entity_id") or payload.get("target_entity_id") or "unknown")
     entity_type = str(payload.get("entity_type") or "tool")
-    if entity_type not in ("tool", "skill"):
+    if entity_type != "tool":
         return {
             "ok": True,
             "skipped": True,
