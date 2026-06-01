@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -590,3 +591,44 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
 
     result["data"]["sweep"] = try_sweep_event(repo, bus, event_uuid, registry=registry)
     return result
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--event")
+    parser.add_argument("--target")
+    parser.add_argument("--blocking", action="store_true")
+    args = parser.parse_args()
+
+    if args.blocking:
+        repo = _repo_root()
+        subs_path = repo / "SddIA" / "core" / "event-domain-subscriptions.json"
+        if not subs_path.is_file():
+            print(f"File not found: {subs_path}", file=sys.stderr)
+            sys.exit(1)
+
+        with open(subs_path, "r", encoding="utf-8") as f:
+            registry = json.load(f)
+
+        subs = registry.get(args.event, [])
+        target_sub = next((sub for sub in subs if sub.get("agent") == args.target), None)
+
+        if not target_sub:
+            print(f"Target agent {args.target} for event {args.event} not found.", file=sys.stderr)
+            sys.exit(1)
+
+        process_name = target_sub.get("process")
+        action = target_sub.get("action")
+        tool = target_sub.get("tool")
+
+        cmd = ""
+        if process_name:
+            runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
+            cmd = f"{sys.executable} {runner} --process {process_name}"
+        elif action:
+            runner = repo / "SddIA" / "scripts" / "qa" / "execute-action.py"
+            cmd = f"{sys.executable} {runner} --action {action}"
+        elif tool:
+            cmd = f"echo 'Tool {tool} execution not physically mapped for sync blocking call'"
+
+        proc = subprocess.run(cmd, shell=True, check=False)
+        sys.exit(proc.returncode)
