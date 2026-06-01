@@ -46,3 +46,16 @@ Para materializar este dogma, la IA Obrera (Jules) ejecutará como primera misi�
 2. **Cristalización:** Compilar la cápsula bajo el target `wasm32-wasi`.
 3. **Contrato de E/S:** El binario no interactuará con el entorno. Recibirá un payload JSON puro a través de la entrada estándar (`stdin`), aplicará una lógica básica, y devolverá un JSON de respuesta por la salida estándar (`stdout`).
 4. **Validación:** Proveer el comando exacto para ejecutar el módulo `.wasm` mediante el motor anfitrión para certificar la permeabilidad del puente físico.
+
+## 5. Prevención y Contención: Blindaje de la Arquitectura SddIA
+Para neutralizar la paradoja del *Raw Kernel* y garantizar que la IA Obrera (Jules) no eluda la topología ni el marco de trabajo documental, se establece una maniobra de pinza táctica (Prevención + Restricción):
+
+### 5.1. Vector 1: El Transpilador de Intenciones (Prevención Cognitiva)
+Se forjará una *Skill* intermediaria que procesará la instrucción del Vértice Biológico antes de que alcance el núcleo de ejecución de Jules. Esta herramienta mantendrá una Ceguera Espacial absoluta sobre el contexto de negocio, enfocándose estrictamente en:
+* **Optimización Termodinámica:** Transcribir el caos orgánico del lenguaje humano a un código de instrucciones IA hiper-eficiente. Mapeará intenciones a ficheros físicos exactos, extirpará la verbosidad que no aporta valor y definirá formatos de salida estrictos.
+* **Enrutamiento Estructural:** Condicionar el comportamiento de la IA inyectándole el contexto del ecosistema SddIA. Forzará a la IA a verificar o instanciar procesos vivos (como la topología `feature`) antes de aplicar modificaciones atómicas en el código.
+
+### 5.2. Vector 2: La Aduana Física (Restricción Síncrona Bloqueante)
+Se materializa una barrera táctil de última línea empleando ganchos de control de versiones locales (*Git Hooks*) gobernados a través de **Husky**.
+* **Interceptación Física:** Toda intención de consolidación en el repositorio (`git commit` o `git push`) iniciada por Jules será interceptada, suspendiendo el hilo del Sistema Operativo.
+* **El Veredicto de Argos:** La interceptación invocará al motor local de SddIA en modo síncrono. Si la IA Obrera aplicó mutaciones sin la cobertura documental requerida o violando los contratos, el proceso devolverá un código de salida de error (`exit > 0`). El entorno rechazará la operación, protegiendo la integridad del repositorio y anulando físicamente la entropía táctica.
