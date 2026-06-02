@@ -41,4 +41,4 @@ Capacidad cognitiva del dominio para gobernar el ciclo de vida del bus de evento
 
 ## Cápsula física
 
-`scripts/skills/bus-operator.py` — un JSON por stdin (`operation`, `operation_payload`).
+`SddIA/skills/bus-operator/bus-operator.wasm` — un JSON por stdin (`operation`, `operation_payload`).

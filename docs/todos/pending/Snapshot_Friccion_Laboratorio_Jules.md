@@ -32,7 +32,6 @@ El Yunque Rúnico establece que no podemos continuar inyectando lógica de domin
 2. **Ajuste del Protocolo Atómico:** Refinar los códices. La inyección de directrices atómicas (`Raw Kernel`) debe acoplarse sistemáticamente a la obligación de inicializar un entorno de feature validado antes de aplicar el bisturí sobre el código base.
 
 ## 4. Evolución de la Matriz Física: El Dogma WASI (Rust)
-En PR feat/wasi-poc-ignition-9366362475876501103
 Para erradicar definitivamente la entropía ambiental (como la falla documentada de dependencias en Python) y blindar la infraestructura, se decreta una alteración estructural en la forja de herramientas operativas (Skills, Tools y Centinelas).
 
 ### 4.1. El Artefacto Universal (Agnosticismo y Cero Dependencias)
@@ -49,7 +48,7 @@ Para materializar este dogma, la IA Obrera (Jules) ejecutará como primera misi�
 4. **Validación:** Proveer el comando exacto para ejecutar el módulo `.wasm` mediante el motor anfitrión para certificar la permeabilidad del puente físico.
 
 ## 5. Prevención y Contención: Blindaje de la Arquitectura SddIA
-En PR feat-husky-pre-push-blocking-route-8716941346700891712
+EN PR feat-husky-pre-push-blocking-route-8716941346700891712
 Para neutralizar la paradoja del *Raw Kernel* y garantizar que la IA Obrera (Jules) no eluda la topología ni el marco de trabajo documental, se establece una maniobra de pinza táctica (Prevención + Restricción):
 
 ### 5.1. Vector 1: El Transpilador de Intenciones (Prevención Cognitiva)

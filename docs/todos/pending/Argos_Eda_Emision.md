@@ -1,5 +1,4 @@
 [ARQUITECTURA] PBI: Emisión EDA Nativa y Trazabilidad en Argos (PullRequest_Audited)
-En PR feature/argos-domain-event-audited-8966834805803533351
 1. Fase de Triaje (Origen de la Fricción Estructural)
 El agente Argos opera actualmente en un silo reactivo frágil. Audita el código, pero su veredicto muere en el aislamiento local o depende de una orquestación síncrona manual. La presencia del fósil TODO: pending_argos_eda_emission es una brecha documentada en la arquitectura. El ecosistema exige que el laudo de auditoría sea un evento inmutable depositado en el bus, garantizando la trazabilidad de seguridad sin que Argos necesite saber quién reaccionará a su dictamen.
 

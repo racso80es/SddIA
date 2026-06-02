@@ -65,9 +65,9 @@ ACTION_AGENT: dict[str, str] = {
 
 
 def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
-    crypto_script = repo / "scripts" / "skills" / "cryptography-manager.py"
+    crypto_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
     proc = subprocess.run(
-        [sys.executable, str(crypto_script)],
+        ["wasmtime", "run", "--dir=/", str(crypto_script)],
         input=json.dumps(payload),
         capture_output=True,
         text=True,
