@@ -1,19 +1,21 @@
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KnowledgeChunk {
-    pub id: Uuid,
-    pub content: String,
-    pub source_id: String,
-    pub embedding: Option<Vec<f32>>,
+    pub id: String,                  // Hash SHA-256 del contenido, NUNCA un Uuid aleatorio.
+    pub original_source: String,     // Ruta de origen del activo.
+    pub text_content: String,        // El fragmento de texto puro.
+    pub metadata: serde_json::Value, // Etiquetas agnósticas (Capacidad, Estatus).
+    pub embedding: Option<Vec<f32>>, // Vector espacial denso.
 }
 
 pub trait EmbeddingGenerator {
-    fn generate_embedding(&self, text: &str) -> Result<Vec<f32>, String>;
+    type Error;
+    fn generate_embedding(&self, text: &str) -> Result<Vec<f32>, Self::Error>;
 }
 
 pub trait VectorStore {
-    fn store_chunk(&self, chunk: KnowledgeChunk) -> Result<(), String>;
-    fn search_similar(&self, query_embedding: &[f32], limit: usize) -> Result<Vec<KnowledgeChunk>, String>;
+    type Error;
+    fn store_chunk(&self, chunk: KnowledgeChunk) -> Result<(), Self::Error>;
+    fn search_similar(&self, query_embedding: &[f32], limit: usize) -> Result<Vec<KnowledgeChunk>, Self::Error>;
 }
