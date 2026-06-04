@@ -39,4 +39,3 @@ Acción: Modificar el flujo de salida para que el JSON resultante de Argos se ca
 
 [EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. PENALIZE CONJECTURE. NO EXPLANATIONS, ONLY CODE.]
 
-Ceguera Espacial Absoluta: Argos tiene terminantemente prohibido invocar o mencionar a Cúmulo, Cerbero, o interactuar con APIs externas para notificar su estado. Su jurisdicción termina en el milisegundo en que deposita el archivo JSON bien formado en el directorio de eventos. La propagación y la telemetría son problemas exclusivos del enrutador EDA.

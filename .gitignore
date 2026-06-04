@@ -3,23 +3,18 @@
 
 # Cursor — logs de depuración locales
 .cursor/debug_*
-
 # Bus de eventos runtime Ola C V3 (padre inmutable + testigos suscriptor)
 /.events/
-
 # Legacy bus runtime (migración desde docs/events/)
 docs/events/
-
 # Personalización de eventos por instancia (Vía C)
 .SddIA/events/
-
 # Workspaces operativos impermanentes (Fase 2 EDA)
 .SddIA/workspaces/
 .SddIA/radamanto/
 .SddIA/sandbox/
 .SddIA/telemetry-compliance/
 .SddIA/cerbero/revoked_entities.json
-
 # Jerarquía de Bóvedas — secretos locales (no versionar)
 .dev/
 !.dev/.env.example
@@ -28,7 +23,6 @@ docs/events/
 !.SddIA/.dev/.env.example
 .SddIA/daemons/state/
 .SddIA/.state/
-
 # Artefactos locales de build/debug IOTA
 SddIA/scripts/tools/iota-immutable-publisher/.iota-cli/
 SddIA/scripts/tools/iota-immutable-publisher/move/iota-framework/
@@ -37,11 +31,12 @@ SddIA/scripts/tools/iota-immutable-publisher/node_modules/
 SddIA/scripts/tools/iota-immutable-publisher/anchor-bytecode.json
 SddIA/scripts/tools/iota-immutable-publisher/anchor-build.err
 SddIA/scripts/tools/iota-immutable-publisher/anchor-build.log
-
 # Bytecode Python — no versionar
 __pycache__/
 *.py[cod]
 *$py.class
-
 /tmp
 /.tmp
+.venv/
+.SddIA/vector_store/
+target/
