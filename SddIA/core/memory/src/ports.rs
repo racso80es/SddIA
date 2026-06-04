@@ -15,3 +15,10 @@ pub trait ThoughtGraphRepository {
     /// Performs a semantic search to find spatially close thoughts (K-Nearest Neighbors)
     fn search_similar_thoughts(&self, query_embedding: &[f32], limit: usize) -> Result<Vec<ThoughtNode>, Self::Error>;
 }
+
+use crate::models::evolution_node::EvolutionEvent;
+
+pub trait EvolutionStore {
+    type Error;
+    fn store_event(&self, event: EvolutionEvent) -> Result<(), Self::Error>;
+}
