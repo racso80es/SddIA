@@ -50,7 +50,6 @@ Para materializar este dogma, la IA Obrera (Jules) ejecutará como primera misi�
 
 ## 5. Prevención y Contención: Blindaje de la Arquitectura SddIA
 En PR feat-husky-pre-push-blocking-route-8716941346700891712
-Para neutralizar la paradoja del *Raw Kernel* y garantizar que la IA Obrera (Jules) no eluda la topología ni el marco de trabajo documental, se establece una maniobra de pinza táctica (Prevención + Restricción):
 
 ### 5.1. Vector 1: El Transpilador de Intenciones (Prevención Cognitiva)
 Se forjará una *Skill* intermediaria que procesará la instrucción del Vértice Biológico antes de que alcance el núcleo de ejecución de Jules. Esta herramienta mantendrá una Ceguera Espacial absoluta sobre el contexto de negocio, enfocándose estrictamente en:
