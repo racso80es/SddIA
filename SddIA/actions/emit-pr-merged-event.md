@@ -14,6 +14,7 @@ inputs:
   - "source_branch": "string; rama de origen fusionada"
   - "author": "string; autor del merge"
   - "correlation_id": "string; UUID v4 de correlación causal (Sagas)"
+  - "audit_event_reference": "string; referencia PullRequest_Audited (opcional; resuelta vía bus si ausente)"
 outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
@@ -76,7 +77,7 @@ Gate **Cerbero** previo por `context` de cada cápsula. Rutas vía `cumulo.paths
     "author": "<author>",
     "security_clearance": {
       "auditor": "Argos",
-      "audit_event_reference": "TODO: pending_argos_eda_emission",
+      "audit_event_reference": "<audit_event_reference>",
       "policy_applied": "pr-acceptance-protocol"
     }
   },

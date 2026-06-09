@@ -1,6 +1,0 @@
-{
-  "audit_event_reference": "123e4567-e89b-12d3-a456-426614174000",
-  "target_entity_id": "feature/mock-branch",
-  "resolution": "REJECT",
-  "violated_rules": ["Rule-001: Missing documentation"]
-}

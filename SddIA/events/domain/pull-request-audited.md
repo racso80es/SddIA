@@ -1,29 +1,43 @@
 ---
-uuid: b21e89f7-66a8-4235-950c-d9c9efbd6359
-name: pull-request-audited
-version: 1.0.0
-contract: events-contract v1.2.0
-category: domain
-domain_type: PullRequest_Audited
-origin_topology: core
-description: Emitido cuando Argos finaliza la auditoría determinista de una Pull Request (o su pre-integración).
-payload_schema:
-  audit_event_reference: Must be documented as a strictly unique UUID or Canonical Hash.
-  target_entity_id: Identifier of the evaluated artifact (branch, PR, or path).
-  resolution: Strict dichotomous enum allowing only [PASS, REJECT, FLAG].
-  violated_rules: Array of strings for traceability (if applicable).
+uuid: "b21e89f7-66a8-4235-950c-d9c9efbd6359"
+name: "pull-request-audited"
+version: "1.0.0"
+contract: "events-contract v1.2.0"
+event_family: "domain"
+event_type: "PullRequest_Audited"
+context: "quality-assurance"
+capabilities:
+  - "pull_request_audited"
+  - "argos_verdict_ecst"
+hash_signature: "sha256:b12f541439b490b282cef9c8fcf338c685c18f2a24bc5ec122f14c3a208876dd"
 ---
 
-# PullRequest_Audited (Domain Event)
+# Event: PullRequest_Audited
 
-## 1. Definición Ontológica
-Este evento certifica que el Agente Argos ha finalizado su labor de escrutinio determinista sobre los artefactos bajo auditoría vinculados a un flujo de integración (PR o rama candidata).
+Clase ECST emitida cuando **Argos** finaliza el escrutinio determinista de una Pull Request o rama candidata. Patrón Event-Carried State Transfer: el payload contiene el veredicto completo sin consultas posteriores.
 
-## 2. Invariantes
-- La resolución debe ser estrictamente `PASS`, `REJECT`, o `FLAG`.
-- Cualquier otro estado invalida la emisión del evento.
-- `audit_event_reference` debe ser un identificador único que correlacione la ejecución específica de Argos.
+## Payload ECST
 
-## 3. Condiciones de Emisión
-- Argos ejecuta sus validaciones y consolida los resultados.
-- Invocado internamente como consecuencia termodinámica de un ciclo de evaluación de Argos.
+### REQUIRED
+- `audit_event_reference` — UUID o hash canónico unívoco de la ejecución de auditoría
+- `target_entity_id` — identificador del artefacto evaluado (branch, PR o path)
+- `resolution` — enum estricto: `PASS` | `REJECT` | `FLAG`
+
+### OPTIONAL
+- `violated_rules` — array de strings con trazabilidad normativa (si aplica)
+
+### FORBIDDEN
+- Cualquier valor de `resolution` fuera de `PASS`, `REJECT`, `FLAG`
+
+## Invariantes
+
+- `audit_event_reference` correlaciona la ejecución específica de Argos (típicamente `correlation_id` de la aduana).
+- Argos deposita el evento y termina jurisdicción (Ceguera Espacial).
+
+## Emisores autorizados
+
+- `emit-pr-audited-event` (invocado desde `pull-request-review` / fase Veredicto con `emitter_agent: argos`)
+
+## Suscripciones
+
+Ver `SddIA/core/event-subscriptions.json` → clave `PullRequest_Audited`.
