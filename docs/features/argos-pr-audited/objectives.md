@@ -6,6 +6,6 @@ created: 2026-05-31T08:00:00Z
 
 # Objectives
 
-1. Create a new domain event contract `pull-request-audited` with properties `audit_event_reference`, `target_entity_id`, `resolution`, and `violated_rules`.
-2. Refactor `argos` agent output schema to match these outputs exactly.
-3. Provide a deterministic mock artifact `mock-argos-output.json` with a test execution CLI action in `.dev/test-argos-emission.sh`.
+1. Forjar contrato ECST `pull-request-audited` (`PullRequest_Audited`) con payload desnormalizado.
+2. Integrar emisión en aduana `pull-request-review` vía `emit-pr-audited-event`.
+3. Erradicar fósil `TODO: pending_argos_eda_emission` en cadena merge DLT (`emit-pr-merged-event`).

@@ -6,9 +6,8 @@ created: 2026-05-31T08:00:00Z
 
 # Specification
 
-- Target File 1: `SddIA/events/domain/pull-request-audited.md`
-  - Required payload schema defining 4 fields strictly.
-- Target File 2: `SddIA/agents/argos.md`
-  - Needs its `outputs` refactored to use the newly defined 4 fields instead of the previous 3 fields.
-- Target Script: `.dev/test-argos-emission.sh`
-  - Automatically emit the PR audited domain mutation action based on a mock argos JSON payload `mock-argos-output.json`.
+- **Evento:** `SddIA/events/domain/pull-request-audited.md` — ECST `PullRequest_Audited`, payload `audit_event_reference`, `target_entity_id`, `resolution`, `violated_rules`.
+- **Acción:** `SddIA/actions/emit-pr-audited-event.md` — persistencia en `eda_bus.pending`.
+- **Aduana:** `execute_process_capsules.py` — fase Veredicto invoca `emit-pr-audited-event`.
+- **Merge DLT:** `emit-pr-merged-event` — `security_clearance.audit_event_reference` desde input o bus correlacionado.
+- **Argos:** `SddIA/agents/argos.md` — `outputs` alineados con bucle operativo §2.
