@@ -21,7 +21,8 @@ Comunicación táctica entre Entidades de Dominio (Nivel 2): chispas de línea d
 | Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |
 |----------------|------|------|------------|---------|----------|---------|--------------|
 | process-execution-completed.md | a8f3c2e1-9b4d-4a7c-8e6f-1d2b3c4d5e6f | process-execution-completed | Process_Execution_Completed | 1.0.0 | events-contract v1.1.0 | system-operations | process_execution_completed, orchestration_handoff |
+| local-qa-requested.md | e7f1a2b3-c4d5-4e6f-9a0b-8c7d6e5f4a3b | local-qa-requested | Local_QA_Requested | 1.0.0 | events-contract v1.1.0 | local-quality-gate | local_qa_requested, pre_push_blocking |
 
 ## Integridad
 
-- Carpeta y Códice materializados; catálogo vacío hasta forja explícita.
+- 2 clases ECST catalogadas en `SddIA/events/orchestration/`.

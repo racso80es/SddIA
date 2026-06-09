@@ -1,4 +1,19 @@
-#!/bin/sh
-
-python SddIA/scripts/qa/route_domain_event_core.py --event Local_QA_Requested --target argos --blocking
-exit $?
+#!/usr/bin/env sh
+# SddIA pre-push Ola B — O1 idempotencia, O2 persist_ref, O3 guarda main. SSOT: git-hooks/
+set -eu
+if [ "${SDDIA_SKIP_HOOKS:-}" = "1" ]; then
+  exit 0
+fi
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
+  echo "SddIA pre-push: not inside a git repository" >&2
+  exit 1
+}
+cd "$REPO_ROOT" || exit 1
+export PYTHONIOENCODING=utf-8
+PYTHON=${PYTHON:-python3}
+GATE="$REPO_ROOT/SddIA/scripts/qa/git-hooks/pre_push_gate.py"
+if [ ! -f "$GATE" ]; then
+  echo "SddIA pre-push: missing $GATE" >&2
+  exit 1
+fi
+exec "$PYTHON" "$GATE"

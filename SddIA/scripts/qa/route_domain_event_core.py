@@ -594,41 +594,45 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--event")
-    parser.add_argument("--target")
+    parser.add_argument("--event", required=True)
     parser.add_argument("--blocking", action="store_true")
     args = parser.parse_args()
 
+    _repo = _repo_root()
+
     if args.blocking:
-        repo = _repo_root()
-        subs_path = repo / "SddIA" / "core" / "event-domain-subscriptions.json"
-        if not subs_path.is_file():
-            print(f"File not found: {subs_path}", file=sys.stderr)
-            sys.exit(1)
+        os.environ["SDDIA_LAB_ROUTE_SYNC"] = "1"
 
-        with open(subs_path, "r", encoding="utf-8") as f:
-            registry = json.load(f)
+    try:
+        _branch_proc = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(_repo),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        _branch = _branch_proc.stdout.strip() or "unknown"
+    except OSError:
+        _branch = "unknown"
 
-        subs = registry.get(args.event, [])
-        target_sub = next((sub for sub in subs if sub.get("agent") == args.target), None)
+    from datetime import datetime, timezone as _tz
 
-        if not target_sub:
-            print(f"Target agent {args.target} for event {args.event} not found.", file=sys.stderr)
-            sys.exit(1)
+    _bus = ensure_event_bus_topology(_repo)
+    _event_uuid = str(uuid.uuid4())
+    _event = {
+        "event_id": _event_uuid,
+        "event_type": args.event,
+        "timestamp": datetime.now(_tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": "git-hook-pre-push",
+        "payload": {"branch": _branch},
+        "delivery_state": {},
+    }
+    _pending_dir = _repo / _bus["pending"]
+    _event_path = _pending_dir / f"{_event_uuid}.json"
+    _write_json_atomic(_event_path, _event)
 
-        process_name = target_sub.get("process")
-        action = target_sub.get("action")
-        tool = target_sub.get("tool")
-
-        cmd = ""
-        if process_name:
-            runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
-            cmd = f"{sys.executable} {runner} --process {process_name}"
-        elif action:
-            runner = repo / "SddIA" / "scripts" / "qa" / "execute-action.py"
-            cmd = f"{sys.executable} {runner} --action {action}"
-        elif tool:
-            cmd = f"echo 'Tool {tool} execution not physically mapped for sync blocking call'"
-
-        proc = subprocess.run(cmd, shell=True, check=False)
-        sys.exit(proc.returncode)
+    _rel = _rel_event_path(_repo, _event_path)
+    _result = route_domain_event(_repo, _rel)
+    sys.exit(_result.get("exitCode", 0 if _result.get("success") else 1))
