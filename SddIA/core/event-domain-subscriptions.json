@@ -144,6 +144,13 @@
       "intent": "Sellar certificación de inmunidad en DLT (exclusividad Radamanto, D0.4)."
     }
   ],
+  "Local_QA_Requested": [
+    {
+      "agent": "argos",
+      "process": "pull-request-review",
+      "intent": "Aduana síncrona local pre-push: Argos verifica cobertura documental y QA antes de permitir el push."
+    }
+  ],
   "Manual_Task_Requested": [],
   "Kaizen_Idea_Captured": []
 }
