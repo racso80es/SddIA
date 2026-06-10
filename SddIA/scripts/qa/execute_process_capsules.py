@@ -156,6 +156,37 @@ def crypto(repo: Path, payload: dict[str, Any]) -> Any:
     return out.get("result")
 
 
+def _invoke_git_manager_native(
+    repo: Path, operation_type: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Fallback laboratorio: git-manager.py cuando WASI no puede ejecutar git."""
+    py_script = repo / "scripts" / "skills" / "git-manager.py"
+    if not py_script.is_file():
+        raise FileNotFoundError(str(py_script))
+    req = {
+        "operation_type": operation_type,
+        "repository_path": str(repo.resolve()),
+        "operation_payload_json": payload,
+    }
+    proc = subprocess.run(
+        [sys.executable, str(py_script)],
+        input=json.dumps(req, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+    )
+    line = (proc.stdout or "").strip()
+    if not line:
+        raise RuntimeError(proc.stderr or "git-manager.py sin salida")
+    body = json.loads(line)
+    if not body.get("success"):
+        raise RuntimeError(body.get("error") or "git-manager.py failed")
+    return body.get("data") or {}
+
+
 def invoke_git_manager(
     repo: Path,
     operation_type: str,
@@ -174,7 +205,7 @@ def invoke_git_manager(
     if extra_env:
         env.update(extra_env)
     proc = subprocess.run(
-        ["wasmtime", "run", "--dir=/", str(git_script)],
+        ["wasmtime", "run", "--dir=.", str(git_script)],
         input=json.dumps(req, ensure_ascii=False),
         capture_output=True,
         text=True,
@@ -187,11 +218,11 @@ def invoke_git_manager(
     stdout = (proc.stdout or "").strip()
 
     if "failed to execute git" in (proc.stderr or "") or "operation not supported" in (proc.stderr or "") or "failed to execute git" in stdout or "operation not supported" in stdout:
-        return {"data": {"gitStdout": "", "gitStderr": "", "commitHash": "1234567890123456789012345678901234567890", "errorSummary": None}}
+        return _invoke_git_manager_native(repo, operation_type, payload)
 
     if not stdout:
         if "operation not supported" in (proc.stderr or ""):
-            return {"data": {"gitStdout": "", "gitStderr": "", "commitHash": "1234567890123456789012345678901234567890"}}
+            return _invoke_git_manager_native(repo, operation_type, payload)
         raise RuntimeError(proc.stderr or "git-manager sin salida")
     body = json.loads(stdout)
     if not body.get("success"):
