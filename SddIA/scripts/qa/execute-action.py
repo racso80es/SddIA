@@ -81,7 +81,9 @@ def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
     out = json.loads(proc.stdout or "{}")
     if not out.get("success"):
         raise RuntimeError(out.get("error") or proc.stderr or "cryptography-manager failed")
-    return out["data"]["result"]
+    if isinstance(out.get("data"), dict) and "result" in out["data"]:
+        return out["data"]["result"]
+    return out.get("result")
 
 
 def _load_cumulo(repo: Path) -> dict[str, Any]:

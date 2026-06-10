@@ -141,7 +141,7 @@ def _load_cumulo(repo: Path) -> dict[str, Any]:
 def crypto(repo: Path, payload: dict[str, Any]) -> Any:
     crypto_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
     proc = subprocess.run(
-        ["/usr/local/bin/wasmtime", "run", "--dir=/", str(crypto_script)],
+        ["wasmtime", "run", "--dir=/", str(crypto_script)],
         input=json.dumps(payload),
         capture_output=True,
         text=True,
@@ -488,7 +488,11 @@ def capsule_accept_merge_sovereign(repo: Path, inputs: dict[str, Any], state: di
         "merge",
         {"branch_name": source, "no_ff": True},
     )
-    merge_hash = merge_data.get("commitHash") or merge_data.get("commit_hash")
+    merge_hash = (
+        merge_data.get("commitHash")
+        or merge_data.get("commit_hash")
+        or merge_data.get("mergeCommitHash")
+    )
     if not merge_hash:
         head = invoke_git_manager(repo, "get_last_commit", {"ref": "HEAD"})
         merge_hash = head.get("commitHash") or head.get("commit_hash")
