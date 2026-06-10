@@ -67,9 +67,9 @@ ACTION_AGENT: dict[str, str] = {
 
 
 def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
-    crypto_script = repo / "scripts" / "skills" / "cryptography-manager.py"
+    crypto_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
     proc = subprocess.run(
-        [sys.executable, str(crypto_script)],
+        ["wasmtime", "run", "--dir=/", str(crypto_script)],
         input=json.dumps(payload),
         capture_output=True,
         text=True,
@@ -81,7 +81,9 @@ def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
     out = json.loads(proc.stdout or "{}")
     if not out.get("success"):
         raise RuntimeError(out.get("error") or proc.stderr or "cryptography-manager failed")
-    return out["data"]["result"]
+    if isinstance(out.get("data"), dict) and "result" in out["data"]:
+        return out["data"]["result"]
+    return out.get("result")
 
 
 def _load_cumulo(repo: Path) -> dict[str, Any]:
