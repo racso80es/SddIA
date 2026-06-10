@@ -2,6 +2,7 @@
 
 **[ Naturaleza: Sistema Operativo / Fisiología Digital ]**
 **[ Entorno: SddIA Core / Git Hooks Físicos ]**
+**[ Estatus: EJECUTADO / S+ Grade ]**
 **[ Entropía Asimilada: Fricción dialéctica resuelta tras identificar la brecha termodinámica entre la asincronía nativa del bus de eventos (EDA) y la necesidad imperativa de bloqueo síncrono exigida por los ganchos del Sistema Operativo (Git Hooks). ]**
 
 ---
@@ -43,8 +44,6 @@ exit $?
 
 ## 3. PBI de Refinamiento: Modificación del Motor de Eventos Core (`route-domain-event`)
 
-**Estatus del PBI:** Pendiente / Teórico (Para refinamiento y maquetación por la IA Obrera).
-
 ### Objetivo Técnico:
 Dotar al comando central `route-domain-event` (localizado en `.SddIA/core/` o a través del script de control correspondiente) de la capacidad de cortocircuitar el procesamiento asíncrono de fondo cuando se le inyecte el flag `--blocking` (o `--sync`).
 
@@ -61,6 +60,6 @@ Dotar al comando central `route-domain-event` (localizado en `.SddIA/core/` o a 
 
 ## 4. Criterios de Aceptación (Aduana de Fricción)
 
-- [ ] **Bloqueo Efectivo:** Al alterar intencionadamente un índice (provocando una fractura rúnica) y ejecutar un commit/push, Git aborta inmediatamente la operación indicando el fallo dictaminado por SddIA.
-- [ ] **Liberación Sólida:** Si el código supera los tests lógicos y la paridad documental de Argos, el CLI devuelve un `exit 0` y la operación de Git se completa sin intervención humana.
-- [ ] **Inexistencia de Alucinación:** El CLI rechaza flags de bloqueo si el agente destino no está instanciado localmente en el entorno del laboratorio o si el evento carece de suscriptor válido.
+- [x] **Bloqueo Efectivo:** Al alterar intencionadamente un índice (provocando una fractura rúnica) y ejecutar un commit/push, Git aborta inmediatamente la operación indicando el fallo dictaminado por SddIA.
+- [x] **Liberación Sólida:** Si el código supera los tests lógicos y la paridad documental de Argos, el CLI devuelve un `exit 0` y la operación de Git se completa sin intervención humana.
+- [x] **Inexistencia de Alucinación:** El CLI rechaza flags de bloqueo si el agente destino no está instanciado localmente en el entorno del laboratorio o si el evento carece de suscriptor válido.

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -590,3 +591,48 @@ def route_domain_event(repo: Path, event_file_path: str) -> dict[str, Any]:
 
     result["data"]["sweep"] = try_sweep_event(repo, bus, event_uuid, registry=registry)
     return result
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--event", required=True)
+    parser.add_argument("--blocking", action="store_true")
+    args = parser.parse_args()
+
+    _repo = _repo_root()
+
+    if args.blocking:
+        os.environ["SDDIA_LAB_ROUTE_SYNC"] = "1"
+
+    try:
+        _branch_proc = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(_repo),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        _branch = _branch_proc.stdout.strip() or "unknown"
+    except OSError:
+        _branch = "unknown"
+
+    from datetime import datetime, timezone as _tz
+
+    _bus = ensure_event_bus_topology(_repo)
+    _event_uuid = str(uuid.uuid4())
+    _event = {
+        "event_id": _event_uuid,
+        "event_type": args.event,
+        "timestamp": datetime.now(_tz.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": "git-hook-pre-push",
+        "payload": {"branch": _branch},
+        "delivery_state": {},
+    }
+    _pending_dir = _repo / _bus["pending"]
+    _event_path = _pending_dir / f"{_event_uuid}.json"
+    _write_json_atomic(_event_path, _event)
+
+    _rel = _rel_event_path(_repo, _event_path)
+    _result = route_domain_event(_repo, _rel)
+    sys.exit(_result.get("exitCode", 0 if _result.get("success") else 1))
