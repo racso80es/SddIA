@@ -10,11 +10,13 @@ persist_ref: docs/features/fix-tool-process-entity-type-scope
 
 ## Misión
 
-
+Acotar `fix-tool-process` al gate estricto `entity_type == "tool"` y cerrar la deuda Kaizen de compatibilidad legacy con `"skill"`.
 
 ## Alcance (manifiesto)
 
-Inicialización de contexto vía intérprete dinámico `execute-process.py` (laboratorio).
+- `fix_tool_process_core.py` — validación central
+- `test_radamanto_self_healing.py` — regresión Self-Healing
+- PBI Kaizen → historial completado
 
 ## Ley aplicada
 

@@ -4,7 +4,7 @@ title: "[Kaizen] fix-tool-process — acotar entity_type a tool (eliminar compat
 format: markdown
 version: "1.0.0"
 created: "2026-05-29"
-status: pendiente
+status: completado
 priority: media
 process: refactorization
 related:
