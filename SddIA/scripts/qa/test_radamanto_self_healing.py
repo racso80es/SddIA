@@ -91,7 +91,7 @@ def _emit_telemetry(repo: Path, entity: str, exit_code: int) -> str:
 class TestRadamantoSelfHealing(unittest.TestCase):
     def test_full_self_healing_cycle(self) -> None:
         repo = _fake_repo(batch_min=3, redemption=2)
-        entity = "skill:lab-test"
+        entity = "tool:lab-test"
         os.environ["SDDIA_LAB_ROUTE_SYNC"] = "1"
         os.environ["SDDIA_LAB_SIMULATE_IOTA"] = "1"
         try:
@@ -122,8 +122,8 @@ class TestRadamantoSelfHealing(unittest.TestCase):
         ev = build_domain_event(
             "Domain_Entity_Degraded",
             {
-                "entity_type": "skill",
-                "entity_id": "skill:x",
+                "entity_type": "tool",
+                "entity_id": "tool:x",
                 "reason": "test",
                 "success_rate": 0.5,
                 "recovery_attempt": 1,
@@ -139,7 +139,7 @@ class TestRadamantoSelfHealing(unittest.TestCase):
 
     def test_sandbox_blocks_production_write(self) -> None:
         repo = _fake_repo()
-        sandbox = repo / ".SddIA" / "sandbox" / "skill_x" / "1"
+        sandbox = repo / ".SddIA" / "sandbox" / "tool_x" / "1"
         sandbox.mkdir(parents=True)
         prod = repo / "SddIA" / "tools" / "blocked.md"
         prod.parent.mkdir(parents=True)
@@ -151,7 +151,7 @@ class TestRadamantoSelfHealing(unittest.TestCase):
 class TestRadamantoMaxRecovery(unittest.TestCase):
     def test_deprecated_after_max_attempts(self) -> None:
         repo = _fake_repo(batch_min=3, redemption=2)
-        entity = "skill:doomed"
+        entity = "tool:doomed"
         os.environ["SDDIA_LAB_ROUTE_SYNC"] = "1"
         try:
             for _ in range(3):
