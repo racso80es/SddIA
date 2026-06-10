@@ -35,6 +35,7 @@ if str(_QA_DIR) not in sys.path:
 from eda_bus_utils import (  # noqa: E402
     ensure_event_bus_topology,
     find_existing_domain_event,
+    iter_bus_event_files,
     resolve_origin_topology,
     write_fractal_event,
 )
@@ -55,6 +56,7 @@ INDEX_MAP: dict[str, str] = {
 ACTION_AGENT: dict[str, str] = {
     "sync-entity-index": "cumulo",
     "emit-pr-merged-event": "eda-bus",
+    "emit-pr-audited-event": "eda-bus",
     "emit-pr-presented-event": "eda-bus",
     "emit-suite-execution-requested": "eda-bus",
     "emit-domain-mutation": "eda-bus",
@@ -98,6 +100,84 @@ def _write_pending_event(repo: Path, event: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def _resolve_audit_event_reference(repo: Path, inputs: dict[str, Any]) -> str:
+    explicit = inputs.get("audit_event_reference")
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit.strip()
+    correlation_id = inputs.get("correlation_id")
+    if isinstance(correlation_id, str) and correlation_id.strip():
+        for path in iter_bus_event_files(repo):
+            try:
+                body = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if body.get("event_type") != "PullRequest_Audited":
+                continue
+            if body.get("correlation_id") != correlation_id.strip():
+                continue
+            payload = body.get("payload") or {}
+            if isinstance(payload, dict):
+                ref = payload.get("audit_event_reference")
+                if isinstance(ref, str) and ref.strip():
+                    return ref.strip()
+            event_id = body.get("event_id")
+            if isinstance(event_id, str) and event_id.strip():
+                return event_id.strip()
+        return correlation_id.strip()
+    return _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+
+
+def _run_emit_pr_audited(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:
+    _ = action_def
+    target_entity_id = inputs.get("target_entity_id")
+    resolution = inputs.get("resolution")
+    if not isinstance(target_entity_id, str) or not target_entity_id.strip():
+        raise ValueError("target_entity_id es obligatorio (string)")
+    if not isinstance(resolution, str) or resolution.strip() not in ("PASS", "REJECT", "FLAG"):
+        raise ValueError("resolution debe ser PASS, REJECT o FLAG")
+
+    audit_event_reference = inputs.get("audit_event_reference")
+    if not isinstance(audit_event_reference, str) or not audit_event_reference.strip():
+        correlation_id = inputs.get("correlation_id")
+        if isinstance(correlation_id, str) and correlation_id.strip():
+            audit_event_reference = correlation_id.strip()
+        else:
+            audit_event_reference = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+
+    violated_rules = inputs.get("violated_rules") or []
+    if not isinstance(violated_rules, list):
+        violated_rules = [str(violated_rules)]
+
+    event_id = _crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    payload: dict[str, Any] = {
+        "audit_event_reference": audit_event_reference.strip(),
+        "target_entity_id": target_entity_id.strip(),
+        "resolution": resolution.strip(),
+        "violated_rules": [str(v) for v in violated_rules if str(v).strip()],
+    }
+    event: dict[str, Any] = {
+        "event_id": event_id,
+        "event_type": "PullRequest_Audited",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": inputs.get("emitter_agent", "argos"),
+        "payload": payload,
+        "delivery_state": {},
+    }
+    correlation_id = inputs.get("correlation_id")
+    if isinstance(correlation_id, str) and correlation_id.strip():
+        event["correlation_id"] = correlation_id.strip()
+    elif audit_event_reference.strip():
+        event["correlation_id"] = audit_event_reference.strip()
+    seal = _write_pending_event(repo, event)
+    return {
+        "success": True,
+        "event_id": seal["event_id"],
+        "target_path": seal["target_path"],
+        "event_type": "PullRequest_Audited",
+        "audit_event_reference": audit_event_reference.strip(),
+    }
+
+
 def _run_emit_pr_merged(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:
     _ = action_def
     merge_hash = inputs.get("merge_commit_hash") or inputs.get("hash_signature")
@@ -124,7 +204,7 @@ def _run_emit_pr_merged(repo: Path, inputs: dict[str, Any], action_def: dict[str
         "author": inputs.get("author", "integration-operator"),
         "security_clearance": {
             "auditor": "Argos",
-            "audit_event_reference": "TODO: pending_argos_eda_emission",
+            "audit_event_reference": _resolve_audit_event_reference(repo, inputs),
             "policy_applied": "pr-acceptance-protocol",
         },
     }
@@ -817,6 +897,7 @@ def _run_enrich_fracture_pbi_kaizen(
 PHYSICAL_HANDLERS: dict[str, Any] = {
     "sync-entity-index": _run_sync_entity_index,
     "emit-pr-merged-event": _run_emit_pr_merged,
+    "emit-pr-audited-event": _run_emit_pr_audited,
     "emit-pr-presented-event": _run_emit_pr_presented,
     "emit-suite-execution-requested": _run_emit_suite_execution_requested,
     "emit-domain-mutation": _run_emit_domain_mutation,

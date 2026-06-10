@@ -129,6 +129,7 @@ PILOT_ENTITY_CLASSES = frozenset({
 CAPSULE_ACTION_REGISTRY: dict[str, str] = {
     "action:emit-domain-mutation": "emit-domain-mutation",
     "action:emit-pr-merged-event": "emit-pr-merged-event",
+    "action:emit-pr-audited-event": "emit-pr-audited-event",
     "action:emit-pr-presented-event": "emit-pr-presented-event",
 }
 
@@ -514,6 +515,9 @@ def capsule_accept_emit_merged(repo: Path, inputs: dict[str, Any], state: dict[s
         "merge_commit_hash": merge_hash.strip(),
         "emitter_agent": "accept-pr",
     }
+    audit_ref = state.get("audit_event_reference") or inputs.get("audit_event_reference")
+    if isinstance(audit_ref, str) and audit_ref.strip():
+        action_inputs["audit_event_reference"] = audit_ref.strip()
     if state.get("orphan_merge"):
         action_inputs["traceability_anomaly"] = "merge_huérfano"
         action_inputs["traceability_note"] = (
@@ -838,6 +842,34 @@ def capsule_pr_review_rbac(repo: Path, inputs: dict[str, Any], state: dict[str, 
     return {"passed": True, "agent": "cerbero", "note": "RBAC lab stub success"}
 
 
+def _emit_pull_request_audited(
+    repo: Path,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+    *,
+    verdict: str,
+    failures: list[Any],
+) -> dict[str, Any]:
+    branch = state.get("pr_branch") or inputs.get("pr_branch") or "unknown"
+    correlation_id = inputs.get("correlation_id") or state.get("correlation_id")
+    if not isinstance(correlation_id, str) or not correlation_id.strip():
+        correlation_id = crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    resolution = "PASS" if verdict == "aprobado" else "REJECT"
+    action_inputs: dict[str, Any] = {
+        "target_entity_id": str(branch),
+        "resolution": resolution,
+        "violated_rules": [str(item) for item in failures if str(item).strip()],
+        "audit_event_reference": correlation_id.strip(),
+        "correlation_id": correlation_id.strip(),
+        "emitter_agent": "argos",
+    }
+    seal = invoke_capsule_action(repo, "emit-pr-audited-event", action_inputs)
+    state["audit_event_reference"] = seal.get("audit_event_reference") or correlation_id.strip()
+    state["pull_request_audited_event_id"] = seal.get("event_id")
+    state["pull_request_audited_target_path"] = seal.get("target_path")
+    return seal
+
+
 def capsule_pr_review_verdict(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     failures = state.get("review_failures") or []
     if failures:
@@ -846,14 +878,25 @@ def capsule_pr_review_verdict(repo: Path, inputs: dict[str, Any], state: dict[st
         state["argos_feedback"] = [
             {"kind": "norm_collision", "detail": item} for item in failures
         ]
+        audited = _emit_pull_request_audited(
+            repo, inputs, state, verdict="rechazado", failures=failures
+        )
         return {
             "verdict": "rechazado",
             "delivery_state": "failed",
             "failures": failures,
+            "pull_request_audited": audited,
         }
     state["verdict"] = "aprobado"
     state["delivery_state"] = "success"
-    return {"verdict": "aprobado", "delivery_state": "success"}
+    audited = _emit_pull_request_audited(
+        repo, inputs, state, verdict="aprobado", failures=[]
+    )
+    return {
+        "verdict": "aprobado",
+        "delivery_state": "success",
+        "pull_request_audited": audited,
+    }
 
 
 def capsule_pr_review_kaizen(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
@@ -897,6 +940,9 @@ def capsule_pr_review_handoff_accept(repo: Path, inputs: dict[str, Any], state: 
         "author": inputs.get("author", "pull-request-review-aduana"),
         "correlation_id": inputs.get("correlation_id"),
     }
+    audit_ref = state.get("audit_event_reference")
+    if isinstance(audit_ref, str) and audit_ref.strip():
+        child_inputs["audit_event_reference"] = audit_ref.strip()
     if inputs.get("merge_already_done") in (True, "true", "1", 1):
         child_inputs["merge_already_done"] = True
     data = invoke_subprocess_process(repo, "accept-pr", child_inputs)

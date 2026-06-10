@@ -14,7 +14,9 @@ Proof of concept for WASI tool compilation and IO sandbox validation
 
 ## Alcance (manifiesto)
 
-Inicialización de contexto vía intérprete dinámico `execute-process.py` (laboratorio).
+- Cápsula Rust `wasi-poc` compilable a `wasm32-wasip1`.
+- Ejecución vía Wasmtime con envelope `capsule-json-io` v2.0.
+- Scripts `build-wasi.sh` / `run-wasi.sh` como puente mínimo.
 
 ## Ley aplicada
 
