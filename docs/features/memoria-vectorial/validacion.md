@@ -5,7 +5,8 @@ process: feature
 branch_name: feat/memoria-vectorial
 persist_ref: docs/features/memoria-vectorial
 global: APTO
-pbi_archived: false
+pbi_archived: true
+pbi_ref: docs/todos/done/OPERATIVO_Especificacion_Funcional_Memoria_Vectorial.md
 checks:
   MV-CA1: pass
   MV-CA2: pass

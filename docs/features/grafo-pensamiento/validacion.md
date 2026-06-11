@@ -5,7 +5,8 @@ process: feature
 branch_name: feat/grafo-pensamiento
 persist_ref: docs/features/grafo-pensamiento
 global: APTO
-pbi_archived: false
+pbi_archived: true
+pbi_ref: docs/todos/done/Grafo de Pensamiento.md
 checks:
   GP-CA1: pass
   GP-CA2: pass
