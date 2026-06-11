@@ -28,6 +28,42 @@ ALLOWED_OPS = frozenset(
 )
 UNSAFE_TOKEN = re.compile(r"[\n\r;|&$`<>()]")
 COMMIT_HASH_RE = re.compile(r"^[0-9a-fA-F]{40}$")
+OFFLINE_REMOTE_OPS = frozenset({"fetch", "pull", "push"})
+OFFLINE_GIT_MARKERS = (
+    "could not read username",
+    "could not read password",
+    "could not resolve host",
+    "connection refused",
+    "network is unreachable",
+    "unable to access",
+    "authentication failed",
+    "remote error",
+    "failed to connect",
+    "no such host is known",
+    "name or service not known",
+    "repository not found",
+    "terminal prompts disabled",
+)
+
+
+def _is_offline_git_failure(stderr: str, stdout: str) -> bool:
+    blob = f"{stderr}\n{stdout}".lower()
+    return any(marker in blob for marker in OFFLINE_GIT_MARKERS)
+
+
+def _offline_git_data(proc: subprocess.CompletedProcess[str]) -> dict[str, Any]:
+    summary = (proc.stderr or proc.stdout or "").strip() or "remote unavailable — local mode"
+    return {
+        "gitStdout": proc.stdout,
+        "gitStderr": proc.stderr,
+        "errorSummary": summary,
+        "offline": True,
+    }
+
+
+def _emit_offline(data: dict[str, Any]) -> None:
+    _emit({"success": False, "exitCode": 0, "data": data})
+    sys.exit(0)
 
 
 def _emit(out: dict[str, Any]) -> None:
@@ -324,6 +360,8 @@ def _handle(
         if force:
             args.insert(1, "--force")
         proc = _run_git(repo, git, args)
+        if proc.returncode != 0 and _is_offline_git_failure(proc.stderr, proc.stdout):
+            _emit_offline(_offline_git_data(proc))
         return (
             {
                 "gitStdout": proc.stdout,
@@ -344,6 +382,8 @@ def _handle(
         _assert_safe_token(remote, "remote")
         _assert_safe_token(branch, "branch")
         proc = _run_git(repo, git, ["pull", remote, branch])
+        if proc.returncode != 0 and _is_offline_git_failure(proc.stderr, proc.stdout):
+            _emit_offline(_offline_git_data(proc))
         return (
             {
                 "gitStdout": proc.stdout,
@@ -366,6 +406,8 @@ def _handle(
         if prune:
             args.append("--prune")
         proc = _run_git(repo, git, args)
+        if proc.returncode != 0 and _is_offline_git_failure(proc.stderr, proc.stdout):
+            _emit_offline(_offline_git_data(proc))
         return (
             {
                 "gitStdout": proc.stdout,
