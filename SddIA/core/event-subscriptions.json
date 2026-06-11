@@ -16,6 +16,13 @@
       "intent": "Notificación humana táctica en Telegram (Táctica del Refugio)."
     }
   ],
+  "PullRequest_Audited": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT trazabilidad auditoría Argos."
+    }
+  ],
   "PullRequest_Merged": [
     {
       "agent": "cumulo",

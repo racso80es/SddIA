@@ -1,0 +1,12 @@
+[package]
+name = "telegram-gateway"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.44"
+regex = "1.12.3"
+sddia-io = { path = "../../sddia-io" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.23.2", features = ["v4"] }

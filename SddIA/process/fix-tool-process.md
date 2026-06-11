@@ -31,3 +31,5 @@ porcentaje_de_exito: null
 # fix-tool-process
 
 Reparación Self-Healing en sandbox estricto. Argos valida materia; **no** sella redención (D4.13).
+
+**Nota de Compatibilidad (Gate Estricto):** Este proceso opera única y exclusivamente con entidades cuyo `entity_type` sea `"tool"`. Cualquier otro tipo (incluyendo `"skill"`) será rechazado/ignorado y resultará en un "skip".

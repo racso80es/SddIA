@@ -80,9 +80,9 @@ CHAOS_AUDIT_PROCESSES = frozenset(
 CHAOS_OFFENSIVE_TOOLS = frozenset({"io-choke", "schema-corruptor", "sandbox-breacher"})
 
 CHAOS_TOOL_SCRIPTS: dict[str, Path] = {
-    "io-choke": SCRIPT.parent.parent / "tools" / "io-choke" / "io_choke.py",
-    "schema-corruptor": SCRIPT.parent.parent / "tools" / "schema-corruptor" / "schema_corruptor.py",
-    "sandbox-breacher": SCRIPT.parent.parent / "tools" / "sandbox-breacher" / "sandbox_breacher.py",
+    "io-choke": SCRIPT.parent.parent.parent / "tools" / "io-choke" / "io-choke.wasm",
+    "schema-corruptor": SCRIPT.parent.parent.parent / "tools" / "schema-corruptor" / "schema-corruptor.wasm",
+    "sandbox-breacher": SCRIPT.parent.parent.parent / "tools" / "sandbox-breacher" / "sandbox-breacher.wasm",
 }
 
 _THERMODYNAMIC_EMERGENCY_PREFIX = "[THERMODYNAMIC-TOLL-EMERGENCY]"
@@ -129,6 +129,7 @@ PILOT_ENTITY_CLASSES = frozenset({
 CAPSULE_ACTION_REGISTRY: dict[str, str] = {
     "action:emit-domain-mutation": "emit-domain-mutation",
     "action:emit-pr-merged-event": "emit-pr-merged-event",
+    "action:emit-pr-audited-event": "emit-pr-audited-event",
     "action:emit-pr-presented-event": "emit-pr-presented-event",
 }
 
@@ -138,9 +139,9 @@ def _load_cumulo(repo: Path) -> dict[str, Any]:
 
 
 def crypto(repo: Path, payload: dict[str, Any]) -> Any:
-    crypto_script = repo / "scripts" / "skills" / "cryptography-manager.py"
+    crypto_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
     proc = subprocess.run(
-        [sys.executable, str(crypto_script)],
+        ["wasmtime", "run", "--dir=/", str(crypto_script)],
         input=json.dumps(payload),
         capture_output=True,
         text=True,
@@ -152,7 +153,38 @@ def crypto(repo: Path, payload: dict[str, Any]) -> Any:
     out = json.loads(proc.stdout or "{}")
     if not out.get("success"):
         raise RuntimeError(out.get("error") or proc.stderr or "cryptography-manager failed")
-    return out["data"]["result"]
+    return out.get("result")
+
+
+def _invoke_git_manager_native(
+    repo: Path, operation_type: str, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Fallback laboratorio: git-manager.py cuando WASI no puede ejecutar git."""
+    py_script = repo / "scripts" / "skills" / "git-manager.py"
+    if not py_script.is_file():
+        raise FileNotFoundError(str(py_script))
+    req = {
+        "operation_type": operation_type,
+        "repository_path": str(repo.resolve()),
+        "operation_payload_json": payload,
+    }
+    proc = subprocess.run(
+        [sys.executable, str(py_script)],
+        input=json.dumps(req, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+    )
+    line = (proc.stdout or "").strip()
+    if not line:
+        raise RuntimeError(proc.stderr or "git-manager.py sin salida")
+    body = json.loads(line)
+    if not body.get("success"):
+        raise RuntimeError(body.get("error") or "git-manager.py failed")
+    return body.get("data") or {}
 
 
 def invoke_git_manager(
@@ -161,7 +193,7 @@ def invoke_git_manager(
     payload: dict[str, Any],
     extra_env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    git_script = repo / "scripts" / "skills" / "git-manager.py"
+    git_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "git-manager.wasm"
     if not git_script.is_file():
         raise FileNotFoundError(str(git_script))
     req = {
@@ -173,7 +205,7 @@ def invoke_git_manager(
     if extra_env:
         env.update(extra_env)
     proc = subprocess.run(
-        [sys.executable, str(git_script)],
+        ["wasmtime", "run", "--dir=.", str(git_script)],
         input=json.dumps(req, ensure_ascii=False),
         capture_output=True,
         text=True,
@@ -184,7 +216,13 @@ def invoke_git_manager(
         env=env,
     )
     stdout = (proc.stdout or "").strip()
+
+    if "failed to execute git" in (proc.stderr or "") or "operation not supported" in (proc.stderr or "") or "failed to execute git" in stdout or "operation not supported" in stdout:
+        return _invoke_git_manager_native(repo, operation_type, payload)
+
     if not stdout:
+        if "operation not supported" in (proc.stderr or ""):
+            return _invoke_git_manager_native(repo, operation_type, payload)
         raise RuntimeError(proc.stderr or "git-manager sin salida")
     body = json.loads(stdout)
     if not body.get("success"):
@@ -235,7 +273,7 @@ def _apply_branch_hygiene_state(
 
 
 def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> dict[str, Any]:
-    shell_script = repo / "scripts" / "skills" / "shell-executor.py"
+    shell_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "shell-executor.wasm"
     if not shell_script.is_file():
         raise FileNotFoundError(str(shell_script))
     req = {
@@ -245,7 +283,7 @@ def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> 
         "environment_vars": {},
     }
     proc = subprocess.run(
-        [sys.executable, str(shell_script)],
+        ["wasmtime", "run", "--dir=.", str(shell_script)],
         input=json.dumps(req, ensure_ascii=False),
         capture_output=True,
         text=True,
@@ -481,7 +519,11 @@ def capsule_accept_merge_sovereign(repo: Path, inputs: dict[str, Any], state: di
         "merge",
         {"branch_name": source, "no_ff": True},
     )
-    merge_hash = merge_data.get("commitHash") or merge_data.get("commit_hash")
+    merge_hash = (
+        merge_data.get("commitHash")
+        or merge_data.get("commit_hash")
+        or merge_data.get("mergeCommitHash")
+    )
     if not merge_hash:
         head = invoke_git_manager(repo, "get_last_commit", {"ref": "HEAD"})
         merge_hash = head.get("commitHash") or head.get("commit_hash")
@@ -508,6 +550,9 @@ def capsule_accept_emit_merged(repo: Path, inputs: dict[str, Any], state: dict[s
         "merge_commit_hash": merge_hash.strip(),
         "emitter_agent": "accept-pr",
     }
+    audit_ref = state.get("audit_event_reference") or inputs.get("audit_event_reference")
+    if isinstance(audit_ref, str) and audit_ref.strip():
+        action_inputs["audit_event_reference"] = audit_ref.strip()
     if state.get("orphan_merge"):
         action_inputs["traceability_anomaly"] = "merge_huérfano"
         action_inputs["traceability_note"] = (
@@ -625,7 +670,7 @@ def _sync_pr_review_worktree(repo: Path, branch: str) -> dict[str, Any]:
     remote_ref = f"origin/{branch}"
     try:
         invoke_git_manager(repo, "get_last_commit", {"ref": remote_ref})
-        invoke_shell_executor(repo, "git", ["checkout", "-B", branch, remote_ref])
+        invoke_git_manager(repo, "checkout", {"branch_name": branch, "create_if_not_exists": True})
         return {"branch": branch, "synced_to": remote_ref, "mode": "origin-tracking"}
     except RuntimeError:
         invoke_git_manager(repo, "checkout", {"branch_name": branch, "create_if_not_exists": False})
@@ -832,6 +877,34 @@ def capsule_pr_review_rbac(repo: Path, inputs: dict[str, Any], state: dict[str, 
     return {"passed": True, "agent": "cerbero", "note": "RBAC lab stub success"}
 
 
+def _emit_pull_request_audited(
+    repo: Path,
+    inputs: dict[str, Any],
+    state: dict[str, Any],
+    *,
+    verdict: str,
+    failures: list[Any],
+) -> dict[str, Any]:
+    branch = state.get("pr_branch") or inputs.get("pr_branch") or "unknown"
+    correlation_id = inputs.get("correlation_id") or state.get("correlation_id")
+    if not isinstance(correlation_id, str) or not correlation_id.strip():
+        correlation_id = crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})
+    resolution = "PASS" if verdict == "aprobado" else "REJECT"
+    action_inputs: dict[str, Any] = {
+        "target_entity_id": str(branch),
+        "resolution": resolution,
+        "violated_rules": [str(item) for item in failures if str(item).strip()],
+        "audit_event_reference": correlation_id.strip(),
+        "correlation_id": correlation_id.strip(),
+        "emitter_agent": "argos",
+    }
+    seal = invoke_capsule_action(repo, "emit-pr-audited-event", action_inputs)
+    state["audit_event_reference"] = seal.get("audit_event_reference") or correlation_id.strip()
+    state["pull_request_audited_event_id"] = seal.get("event_id")
+    state["pull_request_audited_target_path"] = seal.get("target_path")
+    return seal
+
+
 def capsule_pr_review_verdict(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     failures = state.get("review_failures") or []
     if failures:
@@ -840,14 +913,25 @@ def capsule_pr_review_verdict(repo: Path, inputs: dict[str, Any], state: dict[st
         state["argos_feedback"] = [
             {"kind": "norm_collision", "detail": item} for item in failures
         ]
+        audited = _emit_pull_request_audited(
+            repo, inputs, state, verdict="rechazado", failures=failures
+        )
         return {
             "verdict": "rechazado",
             "delivery_state": "failed",
             "failures": failures,
+            "pull_request_audited": audited,
         }
     state["verdict"] = "aprobado"
     state["delivery_state"] = "success"
-    return {"verdict": "aprobado", "delivery_state": "success"}
+    audited = _emit_pull_request_audited(
+        repo, inputs, state, verdict="aprobado", failures=[]
+    )
+    return {
+        "verdict": "aprobado",
+        "delivery_state": "success",
+        "pull_request_audited": audited,
+    }
 
 
 def capsule_pr_review_kaizen(repo: Path, inputs: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
@@ -891,6 +975,9 @@ def capsule_pr_review_handoff_accept(repo: Path, inputs: dict[str, Any], state: 
         "author": inputs.get("author", "pull-request-review-aduana"),
         "correlation_id": inputs.get("correlation_id"),
     }
+    audit_ref = state.get("audit_event_reference")
+    if isinstance(audit_ref, str) and audit_ref.strip():
+        child_inputs["audit_event_reference"] = audit_ref.strip()
     if inputs.get("merge_already_done") in (True, "true", "1", 1):
         child_inputs["merge_already_done"] = True
     data = invoke_subprocess_process(repo, "accept-pr", child_inputs)
@@ -2045,7 +2132,7 @@ def invoke_chaos_tool_capsule(
     if script is None or not script.is_file():
         raise FileNotFoundError(f"cápsula caos no encontrada: {tool_name}")
     proc = subprocess.run(
-        [sys.executable, str(script)],
+        ["wasmtime", "run", "--dir=.", str(script)],
         input=json.dumps(payload, ensure_ascii=False),
         capture_output=True,
         text=True,
