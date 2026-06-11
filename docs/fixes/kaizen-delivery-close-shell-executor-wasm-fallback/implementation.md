@@ -12,7 +12,7 @@ persist_ref: docs/fixes/kaizen-delivery-close-shell-executor-wasm-fallback
 
 | Archivo | Cambio |
 |---------|--------|
-| `SddIA/scripts/qa/execute_process_capsules.py` | Fallback nativo en `invoke_shell_executor`; `_git_diff_name_only` usa `git-manager` |
+| `SddIA/scripts/qa/execute_process_capsules.py` | Fallback nativo en `invoke_shell_executor`; `_git_diff_name_only` usa `git-manager`; `capsule_delivery_gh_pr` parsea URL en stderr si PR ya existe |
 | `scripts/skills/shell-executor.py` | Nueva cápsula Python (allowlist, anti-git, subprocess sin shell) |
 | `scripts/skills/git-manager.py` | Operación `diff_name_only` |
 

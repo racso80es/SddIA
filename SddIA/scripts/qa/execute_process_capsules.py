@@ -296,9 +296,17 @@ def _apply_branch_hygiene_state(
 
 def _shell_executor_data_from_body(body: dict[str, Any]) -> dict[str, Any]:
     data = body.get("data") or {}
+    if not isinstance(data, dict):
+        data = {}
     if body.get("success"):
-        return data if isinstance(data, dict) else {}
-    raise RuntimeError(body.get("error") or "shell-executor failed")
+        return data
+    err = str(body.get("error") or "shell-executor failed")
+    if data:
+        enriched = dict(data)
+        enriched["_shell_exit_code"] = body.get("exitCode")
+        enriched["_shell_error"] = err
+        return enriched
+    raise RuntimeError(err)
 
 
 def _shell_executor_should_fallback(stderr: str, stdout: str, error: str | None) -> bool:
@@ -380,7 +388,7 @@ def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> 
         err = str(body.get("error") or "")
         if _shell_executor_should_fallback(stderr, stdout, err):
             return _invoke_shell_executor_native(repo, executable, arguments, working_directory=wd)
-        raise RuntimeError(err or "shell-executor failed")
+        return _shell_executor_data_from_body(body)
     return body.get("data") or {}
 
 
@@ -464,7 +472,8 @@ def capsule_delivery_gh_pr(repo: Path, inputs: dict[str, Any], state: dict[str, 
 
     data = invoke_shell_executor(repo, "gh", args)
     stdout = str(data.get("stdout") or "")
-    pr_url = _parse_gh_pr_url(stdout)
+    stderr = str(data.get("stderr") or "")
+    pr_url = _parse_gh_pr_url(stdout) or _parse_gh_pr_url(stderr)
     if not pr_url:
         view = invoke_shell_executor(
             repo,

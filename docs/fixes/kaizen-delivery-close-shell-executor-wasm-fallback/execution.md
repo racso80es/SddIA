@@ -26,6 +26,6 @@ python3 SddIA/scripts/qa/execute-process.py --process bug-fix --inputs '{
 | Inicialización de Espacio de Trabajo | workspace-init | executed |
 | Diseño del fix | agent:dedalo | simulated (spec.md manual) |
 | Ejecución | agent:tekton | simulated (código + implementation.md) |
-| Verificación | agent:argos | pendiente smoke |
-| Cierre documental en rama | filesystem-manager | pendiente pre-merge |
-| Cierre de entrega | delivery-close-cycle | pendiente smoke |
+| Verificación | agent:argos | executed — `validacion.md` APTO |
+| Cierre documental en rama | filesystem-manager | executed — PBI en `docs/todos/done/` |
+| Cierre de entrega | delivery-close-cycle | executed — PR #88 |
