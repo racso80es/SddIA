@@ -173,6 +173,15 @@ def crypto(repo: Path, payload: dict[str, Any]) -> Any:
     return _parse_crypto_envelope(out)
 
 
+def _git_manager_data_from_body(body: dict[str, Any]) -> dict[str, Any]:
+    data = body.get("data") or {}
+    if body.get("success"):
+        return data if isinstance(data, dict) else {}
+    if isinstance(data, dict) and data.get("offline"):
+        return data
+    raise RuntimeError(body.get("error") or "git-manager failed")
+
+
 def _invoke_git_manager_native(
     repo: Path, operation_type: str, payload: dict[str, Any]
 ) -> dict[str, Any]:
@@ -199,9 +208,7 @@ def _invoke_git_manager_native(
     if not line:
         raise RuntimeError(proc.stderr or "git-manager.py sin salida")
     body = json.loads(line)
-    if not body.get("success"):
-        raise RuntimeError(body.get("error") or "git-manager.py failed")
-    return body.get("data") or {}
+    return _git_manager_data_from_body(body)
 
 
 def invoke_git_manager(
@@ -242,9 +249,7 @@ def invoke_git_manager(
             return _invoke_git_manager_native(repo, operation_type, payload)
         raise RuntimeError(proc.stderr or "git-manager sin salida")
     body = json.loads(stdout)
-    if not body.get("success"):
-        raise RuntimeError(body.get("error") or "git-manager failed")
-    return body.get("data") or {}
+    return _git_manager_data_from_body(body)
 
 
 def _try_delete_branch_op(repo: Path, branch: str, *, remote: bool) -> dict[str, Any]:
@@ -1370,47 +1375,54 @@ def run_workspace_init(
     if not isinstance(persist_ref, str) or not persist_ref.strip():
         raise ValueError("persist_ref inválido")
 
-    git_steps: list[dict[str, Any]] = [
-        {"op": "fetch", "result": invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})},
-        {
-            "op": "checkout_base",
-            "result": invoke_git_manager(
-                repo,
-                "checkout",
-                {"branch_name": base_branch.strip(), "create_if_not_exists": False},
-            ),
-        },
-        {
-            "op": "pull_base",
-            "result": invoke_git_manager(
-                repo,
-                "pull",
-                {"remote": "origin", "branch": base_branch.strip()},
-            ),
-        },
-    ]
+    git_steps: list[dict[str, Any]] = []
+
+    def _record_git_step(op: str, result: dict[str, Any]) -> None:
+        entry: dict[str, Any] = {"op": op, "result": result}
+        if result.get("offline"):
+            entry["offline"] = True
+        git_steps.append(entry)
+
+    fetch_result = invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
+    _record_git_step("fetch", fetch_result)
+
+    checkout_base = invoke_git_manager(
+        repo,
+        "checkout",
+        {"branch_name": base_branch.strip(), "create_if_not_exists": False},
+    )
+    _record_git_step("checkout_base", checkout_base)
+
+    if not fetch_result.get("offline"):
+        pull_result = invoke_git_manager(
+            repo,
+            "pull",
+            {"remote": "origin", "branch": base_branch.strip()},
+        )
+        _record_git_step("pull_base", pull_result)
+    else:
+        _record_git_step(
+            "pull_base",
+            {
+                "skipped": True,
+                "reason": "offline_fetch",
+                "offline": True,
+            },
+        )
     try:
-        git_steps.append(
-            {
-                "op": "checkout_feature",
-                "result": invoke_git_manager(
-                    repo,
-                    "checkout",
-                    {"branch_name": branch_name.strip(), "create_if_not_exists": True},
-                ),
-            }
+        checkout_feature = invoke_git_manager(
+            repo,
+            "checkout",
+            {"branch_name": branch_name.strip(), "create_if_not_exists": True},
         )
+        _record_git_step("checkout_feature", checkout_feature)
     except RuntimeError:
-        git_steps.append(
-            {
-                "op": "checkout_feature_existing",
-                "result": invoke_git_manager(
-                    repo,
-                    "checkout",
-                    {"branch_name": branch_name.strip(), "create_if_not_exists": False},
-                ),
-            }
+        checkout_feature = invoke_git_manager(
+            repo,
+            "checkout",
+            {"branch_name": branch_name.strip(), "create_if_not_exists": False},
         )
+        _record_git_step("checkout_feature_existing", checkout_feature)
 
     persist_dir = repo / persist_ref
     persist_dir.mkdir(parents=True, exist_ok=True)

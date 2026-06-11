@@ -56,4 +56,5 @@ Las IAs de asistencia externa operan bajo **SddIA/norms/external-ai-constraints.
 - **Soberanía:** consultar `SddIA/core/cumulo.paths.json`; no inferir rutas.
 - **Forja:** prohibida mutación manual de genoma (`SddIA/tools/`, `skills/`, `actions/`, `process/`, `agents/`, `events/`, `norms/`, `library/`).
 - **Acción:** toda entidad vía `execute-process.py` → `entity-manager`; entregas vía `delivery-close-cycle`.
+- **Raw Kernel (DA-4):** con prefijo RAW activo, verificar topología `docs/features/` o instanciar `feature` antes de mutar genoma.
 La aduana física (pre-commit / hooks PR) refuerza esta norma; no la sustituye.

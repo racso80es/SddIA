@@ -2,7 +2,7 @@
 
 **Tipo:** Norma motor / Comportamiento IA  
 **UUID:** 95b5ac3a-061f-458d-bfb6-69f91a1c1731  
-**Versión:** 1.0.0  
+**Versión:** 1.1.0  
 **Seguridad:** Karma2Token  
 **Dependencias normativas:** `obediencia-procesos.md`, `paths-via-cumulo.md`, `touchpoints-ia.md`
 
@@ -44,12 +44,18 @@ Bajo ninguna circunstancia puedes **crear, modificar o eliminar** archivos en lo
 
 Prohibido bypass del bus EDA (`/.events/`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa.
 
+### DA-4 — Acoplamiento Raw Kernel ↔ ciclo feature
+
+Cuando el runtime inyecte el prefijo **Raw Kernel** (§ Prefijo creator), la IA obrera **debe** comprobar topología documental activa (`docs/features/{name}/objectives.md` con rama coherente) o invocar `execute-process.py --process feature` **antes** de mutar genoma (`directories.tools`, `skills`, `actions`, `process`, `agents`, `events`, `norms` en Cúmulo) o escribir bajo un `persist_ref` ajeno al ciclo autorizado.
+
+Prohibido aplicar el bisturí sobre el código base bajo Raw Kernel sin cobertura documental de feature o fix equivalente.
+
 ## Prefijo creator (Fase B)
 
 Los procesos `*-creator` exigen que el runtime IDE anteponga este prefijo literal al contexto de Tekton **antes** de cualquier fase de forja:
 
 ```
-[EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI.]
+[EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. DO NOT BYPASS EDA BUS. USE SddIA CLI. VERIFY FEATURE TOPOLOGY BEFORE GENOME MUTATION.]
 ```
 
 Referencia: sección homónima en cada `SddIA/process/*-creator.md` bajo **Directriz de ejecución obrera**.

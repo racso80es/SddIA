@@ -408,6 +408,12 @@
       "last_emitted_event": "Domain_Entity_Created",
       "last_hash": "sha256:dc37269dbdbd8376d04a6720b682aae51b864cbcaf9cd10a1046bdb9769796fa",
       "correlation_timestamp": "2026-06-11T06:11:43+00:00"
+    },
+    "4f0edfe0-4380-442b-962d-9e98f8ecf956": {
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:3b708c27681bcbc3f525c077dac546da7f07237d0988a8b2306a52809555efb6",
+      "correlation_timestamp": "2026-06-11T16:05:34+00:00"
     }
   }
 }
