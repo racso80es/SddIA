@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import json
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -66,11 +67,19 @@ ACTION_AGENT: dict[str, str] = {
 }
 
 
-def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
-    crypto_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
+def _parse_crypto_envelope(out: dict[str, Any]) -> Any:
+    if isinstance(out.get("data"), dict) and "result" in out["data"]:
+        return out["data"]["result"]
+    return out.get("result")
+
+
+def _invoke_crypto_native(repo: Path, payload: dict[str, Any]) -> Any:
+    py_script = repo / "scripts" / "skills" / "cryptography-manager.py"
+    if not py_script.is_file():
+        raise FileNotFoundError(str(py_script))
     proc = subprocess.run(
-        ["wasmtime", "run", "--dir=/", str(crypto_script)],
-        input=json.dumps(payload),
+        [sys.executable, str(py_script)],
+        input=json.dumps(payload, ensure_ascii=False),
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -78,12 +87,41 @@ def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
         cwd=str(repo),
         check=False,
     )
+    line = (proc.stdout or "").strip()
+    if not line:
+        raise RuntimeError(proc.stderr or "cryptography-manager.py sin salida")
+    out = json.loads(line)
+    if not out.get("success"):
+        raise RuntimeError(out.get("error") or "cryptography-manager.py failed")
+    return _parse_crypto_envelope(out)
+
+
+def _crypto_wasm_ready(repo: Path) -> bool:
+    wasm = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
+    return wasm.is_file() and shutil.which("wasmtime") is not None
+
+
+def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
+    if not _crypto_wasm_ready(repo):
+        return _invoke_crypto_native(repo, payload)
+    crypto_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
+    try:
+        proc = subprocess.run(
+            ["wasmtime", "run", "--dir=/", str(crypto_script)],
+            input=json.dumps(payload),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            cwd=str(repo),
+            check=False,
+        )
+    except FileNotFoundError:
+        return _invoke_crypto_native(repo, payload)
     out = json.loads(proc.stdout or "{}")
     if not out.get("success"):
         raise RuntimeError(out.get("error") or proc.stderr or "cryptography-manager failed")
-    if isinstance(out.get("data"), dict) and "result" in out["data"]:
-        return out["data"]["result"]
-    return out.get("result")
+    return _parse_crypto_envelope(out)
 
 
 def _load_cumulo(repo: Path) -> dict[str, Any]:
