@@ -294,14 +294,77 @@ def _apply_branch_hygiene_state(
         state.pop("hygiene_failure", None)
 
 
-def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> dict[str, Any]:
-    shell_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "shell-executor.wasm"
-    if not shell_script.is_file():
-        raise FileNotFoundError(str(shell_script))
+def _shell_executor_data_from_body(body: dict[str, Any]) -> dict[str, Any]:
+    data = body.get("data") or {}
+    if not isinstance(data, dict):
+        data = {}
+    if body.get("success"):
+        return data
+    err = str(body.get("error") or "shell-executor failed")
+    if data:
+        enriched = dict(data)
+        enriched["_shell_exit_code"] = body.get("exitCode")
+        enriched["_shell_error"] = err
+        return enriched
+    raise RuntimeError(err)
+
+
+def _shell_executor_should_fallback(stderr: str, stdout: str, error: str | None) -> bool:
+    blob = f"{stderr}\n{stdout}\n{error or ''}".lower()
+    markers = (
+        "working_directory invalid",
+        "executable not found on path",
+        "failed to execute",
+        "no such file or directory (os error 44)",
+    )
+    return any(marker in blob for marker in markers)
+
+
+def _invoke_shell_executor_native(
+    repo: Path,
+    executable: str,
+    arguments: list[str],
+    *,
+    working_directory: str | None = None,
+    environment_vars: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Fallback laboratorio: shell-executor.py cuando WASI no puede canonicalize cwd."""
+    py_script = repo / "scripts" / "skills" / "shell-executor.py"
+    if not py_script.is_file():
+        raise FileNotFoundError(str(py_script))
     req = {
         "executable": executable,
         "arguments": arguments,
-        "working_directory": str(repo.resolve()),
+        "working_directory": working_directory or str(repo.resolve()),
+        "environment_vars": environment_vars or {},
+    }
+    proc = subprocess.run(
+        [sys.executable, str(py_script)],
+        input=json.dumps(req, ensure_ascii=False),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        cwd=str(repo),
+        check=False,
+    )
+    line = (proc.stdout or "").strip()
+    if not line:
+        raise RuntimeError(proc.stderr or "shell-executor.py sin salida")
+    body = json.loads(line)
+    return _shell_executor_data_from_body(body)
+
+
+def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> dict[str, Any]:
+    shell_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "shell-executor.wasm"
+    wd = str(repo.resolve())
+    if not shell_script.is_file() or shutil.which("wasmtime") is None:
+        return _invoke_shell_executor_native(repo, executable, arguments, working_directory=wd)
+
+    req = {
+        "executable": executable,
+        "arguments": arguments,
+        "working_directory": wd,
         "environment_vars": {},
     }
     proc = subprocess.run(
@@ -314,12 +377,18 @@ def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> 
         cwd=str(repo),
         check=False,
     )
+    stderr = proc.stderr or ""
     stdout = (proc.stdout or "").strip()
     if not stdout:
-        raise RuntimeError(proc.stderr or "shell-executor sin salida")
+        if _shell_executor_should_fallback(stderr, "", None):
+            return _invoke_shell_executor_native(repo, executable, arguments, working_directory=wd)
+        raise RuntimeError(stderr or "shell-executor sin salida")
     body = json.loads(stdout)
     if not body.get("success"):
-        raise RuntimeError(body.get("error") or "shell-executor failed")
+        err = str(body.get("error") or "")
+        if _shell_executor_should_fallback(stderr, stdout, err):
+            return _invoke_shell_executor_native(repo, executable, arguments, working_directory=wd)
+        return _shell_executor_data_from_body(body)
     return body.get("data") or {}
 
 
@@ -403,7 +472,8 @@ def capsule_delivery_gh_pr(repo: Path, inputs: dict[str, Any], state: dict[str, 
 
     data = invoke_shell_executor(repo, "gh", args)
     stdout = str(data.get("stdout") or "")
-    pr_url = _parse_gh_pr_url(stdout)
+    stderr = str(data.get("stderr") or "")
+    pr_url = _parse_gh_pr_url(stdout) or _parse_gh_pr_url(stderr)
     if not pr_url:
         view = invoke_shell_executor(
             repo,
@@ -1053,8 +1123,11 @@ def _git_diff_name_only(repo: Path, base_ref: str, head_ref: str) -> list[str]:
     ]
     for ref_spec in candidates:
         try:
-            data = invoke_shell_executor(repo, "git", ["diff", "--name-only", ref_spec])
-            stdout = str(data.get("stdout") or "")
+            data = invoke_git_manager(repo, "diff_name_only", {"ref_spec": ref_spec})
+            files = data.get("files")
+            if isinstance(files, list) and files:
+                return [str(f).strip() for f in files if str(f).strip()]
+            stdout = str(data.get("gitStdout") or "")
             return [ln.strip() for ln in stdout.splitlines() if ln.strip()]
         except RuntimeError:
             continue

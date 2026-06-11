@@ -24,6 +24,7 @@ ALLOWED_OPS = frozenset(
         "get_last_commit",
         "merge",
         "delete_branch",
+        "diff_name_only",
     }
 )
 UNSAFE_TOKEN = re.compile(r"[\n\r;|&$`<>()]")
@@ -412,6 +413,24 @@ def _handle(
             {
                 "gitStdout": proc.stdout,
                 "gitStderr": proc.stderr,
+                "errorSummary": proc.stderr.strip() or None,
+            },
+            proc.returncode,
+        )
+
+    if op == "diff_name_only":
+        _payload_exact(payload, op, frozenset({"ref_spec"}))
+        ref_spec = payload["ref_spec"]
+        if not isinstance(ref_spec, str) or not ref_spec.strip():
+            _fail("ref_spec must be a non-empty string")
+        _assert_safe_token(ref_spec.strip(), "ref_spec")
+        proc = _run_git(repo, git, ["diff", "--name-only", ref_spec.strip()])
+        files = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+        return (
+            {
+                "gitStdout": proc.stdout,
+                "gitStderr": proc.stderr,
+                "files": files,
                 "errorSummary": proc.stderr.strip() or None,
             },
             proc.returncode,
