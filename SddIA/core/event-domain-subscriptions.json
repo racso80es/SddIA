@@ -152,5 +152,19 @@
     }
   ],
   "Manual_Task_Requested": [],
-  "Kaizen_Idea_Captured": []
+  "Kaizen_Idea_Captured": [],
+  "Thought_Persisted": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje traza grafo de pensamiento en DLT."
+    }
+  ],
+  "Vector_Memory_Indexed": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje índice vectorial epigenético en DLT."
+    }
+  ]
 }
