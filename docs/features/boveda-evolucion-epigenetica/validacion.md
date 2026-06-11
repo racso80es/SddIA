@@ -4,7 +4,8 @@ created: "2026-06-11"
 process: feature
 branch: feat/boveda-evolucion-epigenetica-5278506942974234338
 global: APTO
-pbi_archived: false
+pbi_archived: true
+pbi_ref: docs/todos/done/Bóveda de Evolución Epigenética.md
 checks:
   BE-CA1: pass
   BE-CA2: pass
@@ -47,7 +48,7 @@ git_changes:
 
 | Check | Estado |
 |-------|--------|
-| `verify-process-integrity.py` | ⏳ Pendiente ejecución aduana PR |
+| `verify-process-integrity.py` | ✅ Merge PR #81 |
 
 ## Cierre documental
 
