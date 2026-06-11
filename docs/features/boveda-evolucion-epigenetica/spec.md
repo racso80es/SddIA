@@ -2,6 +2,7 @@
 feature_name: boveda-evolucion-epigenetica
 created: "2024-06-04"
 process: feature
+impacts_doc: true
 ---
 
 # Especificación Técnica — Bóveda de Evolución Epigenética
@@ -41,3 +42,14 @@ El subsistema "Bóveda de Evolución Epigenética" constará de los siguientes d
 ## 3. Consideraciones No Funcionales
 - La implementación futura requerirá que la lógica base sea compatible con la transición a Rust WASI (wasm32-wasip1), utilizando los bindings nativos correspondientes sin depender de wrappers Python.
 - Los secretos o configuraciones para los modelos nativos, de ser necesarios, deberán ser gestionados estrictamente vía `.env`, nunca en los payloads de los eventos.
+
+### Impacto en Documentación
+
+- `docs/features/boveda-evolucion-epigenetica/` — spec, plan, implementation, objectives, validacion
+- `docs/features/memoria-vectorial/` — paridad documental coalescente
+- `docs/features/grafo-pensamiento/` — spec, validacion
+- `SddIA/events/domain/thought-persisted.md` — evento ECST grafo
+- `SddIA/events/domain/vector-memory-indexed.md` — evento ECST bóveda
+- `SddIA/core/event-subscriptions.json` — suscripciones EDA
+- `SddIA/core/event-domain-subscriptions.json` — suscripciones dominio
+- `.gitignore` — exclusión `.SddIA/vector_store/`

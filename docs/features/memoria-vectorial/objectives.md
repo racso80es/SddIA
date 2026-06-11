@@ -3,7 +3,7 @@ feature_name: memoria-vectorial
 created: "2026-06-03"
 process: feature
 branch_name: feat/memoria-vectorial
-persist_ref: {}
+persist_ref: docs/features/memoria-vectorial
 ---
 
 # Objetivos — memoria-vectorial
