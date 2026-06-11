@@ -23,4 +23,20 @@ Se forjó el nuevo adaptador en `SddIA/infrastructure/adapters/lancedb_evolution
 
 ## 3. Aduana Semántica y Proxy
 
-Se diseñó la integración para la inferencia semántica local (All-MiniLM-L6-v2) a fin de extraer los vectores densos de cada evento antes de su persistencia, preservando la inmutabilidad de los datos. Se han establecido los cimientos para el Proxy de Captura Pasiva encargado de leer los eventos emitidos hacia `.SddIA/events/`.
+- **`inference_binding.rs`**: integración para inferencia semántica local (All-MiniLM-L6-v2) y extracción de vectores densos previos a persistencia.
+- **`evolution_proxy.rs`**: `EvolutionProxyService` — proxy de captura pasiva; triaje de polaridad vía metadata `success`; delega en `EvolutionStore`.
+
+## 4. Matriz de archivos core (`SddIA/core/memory/`)
+
+| Archivo | Rol |
+|---------|-----|
+| `src/models/evolution_node.rs` | `EvolutionEvent`, `SpatialPolarity`, id SHA-256 |
+| `src/ports.rs` | Trait `EvolutionStore` |
+| `src/services/evolution_proxy.rs` | Captura pasiva y triaje |
+| `src/services/inference_binding.rs` | Binding semántico |
+| `src/models/mod.rs` | Reexportes modelos |
+| `src/services/mod.rs` | Reexportes servicios |
+| `src/lib.rs` | API pública crate |
+| `Cargo.toml` / `Cargo.lock` | Dependencias (`sha2`, `serde`, …) |
+
+> Archivos coalescentes del grafo (`thought_node.rs`, `thought_triage.rs`) documentados en `docs/features/grafo-pensamiento/` y `docs/features/memoria-vectorial/`.
