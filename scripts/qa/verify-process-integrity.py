@@ -18,12 +18,17 @@ except ImportError:  # pragma: no cover
 
 REPO = Path(__file__).resolve().parents[2]
 PROCESS_DIR = REPO / "SddIA" / "process"
-CRYPTO_SCRIPT = REPO / "scripts" / "skills" / "cryptography-manager.py"
+CRYPTO_WASM = REPO / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
 
 SKIP_NAMES = frozenset({"process-contract", "index"})
 
 
 def _sha256_phases_via_capsule(phases: list) -> str:
+    if not CRYPTO_WASM.is_file():
+        raise RuntimeError(
+            f"cryptography-manager.wasm not found at {CRYPTO_WASM}. "
+            "Run: cd SddIA && cargo build --target wasm32-wasip1"
+        )
     canon = json.dumps(phases, separators=(",", ":"), ensure_ascii=False, sort_keys=True)
     payload = json.dumps(
         {
@@ -34,7 +39,7 @@ def _sha256_phases_via_capsule(phases: list) -> str:
         ensure_ascii=False,
     )
     r = subprocess.run(
-        [sys.executable, str(CRYPTO_SCRIPT)],
+        ["wasmtime", "run", "--dir=/", str(CRYPTO_WASM)],
         input=payload,
         text=True,
         capture_output=True,
@@ -45,7 +50,10 @@ def _sha256_phases_via_capsule(phases: list) -> str:
     out = json.loads(r.stdout)
     if not out.get("success"):
         raise RuntimeError(out.get("error", str(out)))
-    return out["data"]["result"]
+    # envelope: result directo o anidado en data.result
+    if isinstance(out.get("data"), dict) and "result" in out["data"]:
+        return out["data"]["result"]
+    return out["result"]
 
 
 def _load_frontmatter(md: Path) -> dict:

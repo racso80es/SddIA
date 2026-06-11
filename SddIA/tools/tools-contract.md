@@ -1,10 +1,11 @@
 ---
-contract_version: "1.3.0"
+contract_version: "1.4.0"
 entity_type: "tool"
 jurisdiction: "Core SddIA (Interfaz) / Workspace (Delivery)"
 capabilities:
   - "tool-schema-governance"
   - "local-domain-execution-routing"
+execution_substrate: "rust-wasi"
 ---
 
 # Contrato de Tools (S+ Grade) — Kernel Raw (Interfaz agnóstica)
@@ -81,8 +82,17 @@ Cuando `telemetry_provided: true`, la cápsula promete devolver `telemetry_recei
 
 **Nota histórica:** v1.3.0 introduce termodinámica en tools para soportar el Arsenal de Entropía (`schema-corruptor`) y alinear el Peaje Termodinámico con skills/actions (programa Inmunidad / Caos S+ Grade).
 
-## 7. Historial normativo (extracto)
+## 7. Sustrato de Delivery recomendado
 
+El sustrato canónico para nuevas tools en este workspace es **Rust compilado a `wasm32-wasip1`**, ejecutado vía `wasmtime`. Garantiza portabilidad, sandboxing y paridad con el ecosistema de skills.
+
+- El artefacto es un `.wasm`; el orquestador lo invoca con `wasmtime run --dir=. {tool}.wasm`.
+- Tools Python existentes que no usen subprocess son candidatas a migración inmediata.
+- Tools que requieran subprocess (ej. invocación de `wasmtime` a otros módulos) están bloqueadas por limitación WASI hasta adopción de `wasi:cli` experimental.
+
+## 8. Historial normativo (extracto)
+
+- **v1.4.0** — §7 sustrato Rust/WASI canónico; `execution_substrate: rust-wasi` en frontmatter.
 - **v1.3.0** — §6 termodinámica declarativa (`telemetry_provided`, `telemetry_schema`).
-- **v1.2.0** — Identidad atómica: campo canónico **`name`**; **`toolId`** deprecado en definiciones. Envelope de salida: **`name`** obligatorio en emisores nuevos; **`toolId`** solo como alias legado compatible. Alineado con [evolution c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a](../evolution/c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a.md) (tools locales).
+- **v1.2.0** — Identidad atómica: campo canónico **`name`**; **`toolId`** deprecado en definiciones.
 - **v1.1.0** — Baseline previo (`toolId` en identidad y textos).

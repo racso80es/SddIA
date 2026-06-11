@@ -1,0 +1,7 @@
+{
+  "feature_name": "migracion-rust-wasi",
+  "branch_name": "feat/migracion-rust-wasi-certificacion",
+  "persist_ref": "docs/features/migracion-rust-wasi",
+  "base_branch": "main",
+  "refined_requirements": "Certificar y cerrar la migración de cápsulas ejecutables (skills/tools) a Rust/WASI. Estado actual en main: workspace Cargo unificado (SddIA/Cargo.toml), crate sddia-io, 4 skills y 12 tools en Rust, build wasm32-wasip1 exitoso, CI wasi-runtime-smoke (PR #84). Pendiente: eliminar fallbacks Python (scripts/skills/*.py), purgar requirements.txt si no aplica, actualizar README y contratos (skills-contract, tools-contract) declarando Rust/WASI como sustrato único, completar clarify.md y validacion.md APTO, cerrar PBI OPERATIVO-PBI-Migracion-Rust-WASI en docs/todos/done/ en la misma rama del PR."
+}

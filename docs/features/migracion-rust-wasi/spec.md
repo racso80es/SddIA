@@ -1,22 +1,52 @@
 ---
 feature_name: migracion-rust-wasi
-created: "2026-06-01"
+created: "2026-06-11"
 process: feature
-branch_name: feat/migracion-rust-wasi-12481127328253895075
+branch_name: feat/migracion-rust-wasi-certificacion
 persist_ref: docs/features/migracion-rust-wasi
 ---
 
-# [ESPECIFICACIÓN] Migración de Cápsulas Rust a WASI
+# Especificación — Certificación migración Rust/WASI
 
-## 1. Naturaleza y Propósito
-El objetivo de este PBI es transmutar las 12 cápsulas Rust existentes en el ecosistema (tools y skills) para que compilen y operen nativamente bajo el estándar WebAssembly System Interface (WASI). Esta migración materializa la Ley de Aislamiento Físico y asegura la portabilidad absoluta del motor de ejecución.
+## 1. Propósito
 
-## 2. Fronteras del Dominio
-- **Alcance Físico:** Modificación de las cadenas de construcción (scripts `build` y `run`), archivos `Cargo.toml` y configuraciones locales (`.cargo/config.toml`) para toda la topología bajo `skills/` y `tools/`.
-- **Contrato I/O:** Todas las cápsulas deben seguir respetando estrictamente el protocolo `capsule-json-io.md` (comunicación exclusiva por stdin/stdout).
-- **Aduana:** La migración debe superar los tests de integridad del proceso y compilar sin fallos fatales en el entorno unificado (`cargo build --workspace`).
+Completar la migración de cápsulas ejecutables (skills y tools) declarada en el PBI `OPERATIVO-PBI-Migracion-Rust-WASI`. La forja Rust ya está en `main`; esta feature certifica paridad funcional, elimina legado Python y actualiza la normativa.
 
-## 3. Criterios de Aceptación (S+ Grade)
-1. El target de compilación por defecto para todas las cápsulas muta a `wasm32-wasip1`.
-2. Los scripts de invocación (`.sh` / `.bat`) levantan las cápsulas utilizando el runtime `wasmtime` en lugar de invocar binarios nativos.
-3. El proceso de revisión de PR supera íntegramente los controles de la Aduana Universal (`pull-request-review`).
+## 2. Fronteras
+
+| In scope | Out of scope |
+|----------|--------------|
+| Poda `scripts/skills/*.py` | Reescritura de cápsulas ya migradas |
+| Fallback removal en `execute_process_capsules.py` | Migración de `execute-process.py` a Rust |
+| Contratos + README | Adapters LanceDB (`infrastructure/adapters/`) |
+| `validacion.md` + cierre PBI | Transpilador de Intenciones (PBI Snapshot) |
+
+## 3. Arquitectura de ejecución
+
+```text
+Orquestador (execute-process.py)
+    └── wasmtime run --dir=. SddIA/target/wasm32-wasip1/debug/{capsule}.wasm
+            └── stdin/stdout JSON (capsule-json-io v2)
+```
+
+**Skills:** `bus-operator`, `cryptography-manager`, `git-manager`, `shell-executor`  
+**Tools:** 12 crates bajo `SddIA/tools/*` + `wasi-poc`
+
+## 4. Criterios de aceptación (S+ Grade)
+
+| ID | Criterio | Verificación |
+|----|----------|--------------|
+| CA-1 | Ninguna skill/tool requiere intérprete Python | Grep + smoke sin fallback |
+| CA-2 | `cargo build --workspace --target wasm32-wasip1` exit 0 | CI + local |
+| CA-3 | Contratos declaran Rust/WASI único | Diff en `*-contract.md`, README |
+| CA-4 | Envelope JSON en error (no panic stdout) | Revisión `sddia-io` + smokes |
+| CA-5 | CI `wasi-runtime-smoke` + `eda-bus-e2e-smoke` verdes | GitHub Actions |
+| CA-6 | Ciclo documental completo bajo `persist_ref` | Argos / validacion.md APTO |
+| CA-7 | PBI archivado en `docs/todos/done/` | Mismo PR |
+
+## 5. Dependencias
+
+- PoC: `docs/features/wasi-poc-ignition/` (APTO, PR #74)
+- CI: `docs/features/ci-wasi-runtime-validation/` (APTO, PR #84)
+- Norma I/O: `SddIA/norms/capsule-json-io.md`
+- Workspace: `SddIA/Cargo.toml`, `SddIA/sddia-io/`
