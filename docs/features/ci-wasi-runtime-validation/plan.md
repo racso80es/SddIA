@@ -10,23 +10,23 @@ persist_ref: docs/features/ci-wasi-runtime-validation
 
 ## Fase 1 — Infraestructura CI
 
-- [ ] Añadir job `wasi-runtime-smoke` en `sddia-index-qa.yml`
-- [ ] Rust toolchain + target `wasm32-wasip1`
-- [ ] Instalación `wasmtime` + exposición en `GITHUB_PATH`
-- [ ] Cache Cargo (`SddIA/Cargo.lock` como clave)
+- [x] Añadir job `wasi-runtime-smoke` en `sddia-index-qa.yml`
+- [x] Rust toolchain + target `wasm32-wasip1`
+- [x] Instalación `wasmtime` + exposición en `GITHUB_PATH`
+- [x] Cache Cargo (`SddIA/Cargo.lock` como clave)
 
 ## Fase 2 — Smoke script
 
-- [ ] Crear `SddIA/scripts/qa/run-wasi-ci-smoke.py`
-- [ ] Verificar artefactos mínimos post-build
-- [ ] Invocar `wasi-poc` vía `run-wasi.sh`
+- [x] Crear `SddIA/scripts/qa/run-wasi-ci-smoke.py`
+- [x] Verificar artefactos mínimos post-build
+- [x] Invocar `wasi-poc` vía wasmtime (workspace debug)
 
 ## Fase 3 — Enforcement WASI
 
-- [ ] Implementar `SDDIA_CI_REQUIRE_WASI` en `crypto()` / `_crypto()`
-- [ ] Integrar `run-eda-e2e-lab.py` bajo flag en smoke script
+- [x] Implementar `SDDIA_CI_REQUIRE_WASI` en `crypto()` / `_crypto()`
+- [x] Integrar `run-eda-e2e-lab.py` bajo flag en smoke script
 
 ## Fase 4 — Cierre
 
-- [ ] `validacion.md` APTO + `pbi_archived: true`
-- [ ] Mover PBI pending → done en mismo PR
+- [x] `validacion.md` APTO + `pbi_archived: true`
+- [x] Mover PBI pending → done en mismo PR
