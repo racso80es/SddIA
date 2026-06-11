@@ -1,1 +1,0 @@
-6. **Código C# pendiente:** Registrar como tarea pendiente (TODO) la resolución de las dependencias compartidas (ej. referencias a `GesFer.Shared.Back.Domain.csproj` y clases base como `BaseEntity`) para que la compilación funcione correctamente en el nuevo proyecto aislado.
