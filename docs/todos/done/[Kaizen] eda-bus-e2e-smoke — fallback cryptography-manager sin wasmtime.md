@@ -44,3 +44,18 @@ Fallback nativo a `scripts/skills/cryptography-manager.py` en `execute_process_c
 | KZ-CA2 | Sin regresión con wasmtime | ✅ |
 | KZ-CA3 | CI `eda-bus-e2e-smoke` SUCCESS | ✅ |
 | KZ-CA4 | Paridad documental | ✅ |
+
+---
+
+## 5. Fase 2 — Deuda heredada (pendiente)
+
+El fallback restaura CI pero **no valida** la ruta WASI en el runner. Deuda explícita tras cierre PR #83:
+
+| Campo | Valor |
+|-------|-------|
+| **PBI continuación** | [`PBI-KAIZEN-CI-WASI-RUNTIME-BUILD`](../pending/[Kaizen]%20CI%20WASI%20—%20wasmtime%20y%20build%20workspace%20en%20runner.md) |
+| **Alcance** | Instalar `wasmtime` + `cargo build --workspace --target wasm32-wasip1` en GitHub Actions |
+| **Job nuevo** | `wasi-runtime-smoke` con `SDDIA_CI_REQUIRE_WASI=1` |
+| **Estatus** | ✅ Done — PR #84 |
+
+El job `eda-bus-e2e-smoke` debe **conservar** el fallback (resiliencia); el nuevo job certifica ejecución física WASM.

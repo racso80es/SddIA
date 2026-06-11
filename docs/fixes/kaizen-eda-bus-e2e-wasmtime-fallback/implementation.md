@@ -31,3 +31,7 @@ PATH="/usr/bin:/bin" \
   python3 SddIA/scripts/qa/run-eda-e2e-lab.py --entity-class tool --json
 # → "success": true
 ```
+
+## Fase 2 (pendiente)
+
+Instalar `wasmtime` + build workspace en CI — ver `PBI-KAIZEN-CI-WASI-RUNTIME-BUILD` y `docs/features/ci-wasi-runtime-validation/`.

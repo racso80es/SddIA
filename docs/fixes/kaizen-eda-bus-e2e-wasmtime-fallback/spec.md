@@ -25,7 +25,11 @@ persist_ref: docs/fixes/kaizen-eda-bus-e2e-wasmtime-fallback
 2. En caso contrario → `scripts/skills/cryptography-manager.py` vía stdin/stdout JSON.
 3. Parseo unificado de envelope (`result` plano o `data.result`).
 
-## No objetivos
+## No objetivos (Fase 1 — cerrada)
 
-- Instalar Rust/wasmtime en CI (deuda futura migración WASI completa).
+- Instalar Rust/wasmtime en CI → **delegado a Fase 2:** [`PBI-KAIZEN-CI-WASI-RUNTIME-BUILD`](../../../todos/pending/[Kaizen]%20CI%20WASI%20—%20wasmtime%20y%20build%20workspace%20en%20runner.md)
 - Alterar contrato ECST ni flujo EDA del lab.
+
+## Fase 2 — continuación
+
+Ver PBI pendiente `PBI-KAIZEN-CI-WASI-RUNTIME-BUILD` y feature objetivo `docs/features/ci-wasi-runtime-validation/`.

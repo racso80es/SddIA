@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -96,13 +97,30 @@ def _invoke_crypto_native(repo: Path, payload: dict[str, Any]) -> Any:
     return _parse_crypto_envelope(out)
 
 
+def _ci_require_wasi() -> bool:
+    return os.environ.get("SDDIA_CI_REQUIRE_WASI", "").strip().lower() in ("1", "true", "yes")
+
+
 def _crypto_wasm_ready(repo: Path) -> bool:
     wasm = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
     return wasm.is_file() and shutil.which("wasmtime") is not None
 
 
+def _raise_if_wasi_required(repo: Path) -> None:
+    if not _ci_require_wasi():
+        return
+    wasm = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
+    if not wasm.is_file():
+        raise RuntimeError(
+            "WASI path required (SDDIA_CI_REQUIRE_WASI) but cryptography-manager.wasm is missing"
+        )
+    if shutil.which("wasmtime") is None:
+        raise RuntimeError("WASI path required (SDDIA_CI_REQUIRE_WASI) but wasmtime is not in PATH")
+
+
 def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
     if not _crypto_wasm_ready(repo):
+        _raise_if_wasi_required(repo)
         return _invoke_crypto_native(repo, payload)
     crypto_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
     try:
@@ -117,6 +135,7 @@ def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
             check=False,
         )
     except FileNotFoundError:
+        _raise_if_wasi_required(repo)
         return _invoke_crypto_native(repo, payload)
     out = json.loads(proc.stdout or "{}")
     if not out.get("success"):
