@@ -21,6 +21,8 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 
 | Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |
 |----------------|------|------|------------|---------|----------|---------|--------------|
+| `vector-memory-indexed.md` | `5fc8293d-d853-4b20-8387-b039c9eb5438` | vector-memory-indexed | Vector_Memory_Indexed | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `vector_memory_indexed` |
+| `thought-persisted.md` | `612a8b69-23fc-48d0-950e-28722ab084b9` | thought-persisted | Thought_Persisted | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `thought_persisted` |
 | `domain-entity-deleted.md` | `a7c81b2f-b466-4b18-82c5-84ef0a5941b8` | domain-entity-deleted | Domain_Entity_Deleted | 1.1.0 | events-contract v1.1.0 | ecosystem-evolution | `domain_entity_deleted` |
 | `domain-entity-updated.md` | `65dcff67-d392-4ab1-9977-2e320d3c8c34` | domain-entity-updated | Domain_Entity_Updated | 1.1.0 | events-contract v1.1.0 | ecosystem-evolution | `domain_entity_updated` |
 | `domain-entity-created.md` | `1f518278-7a3d-4160-b757-a3661d263ec3` | domain-entity-created | Domain_Entity_Created | 1.1.0 | events-contract v1.1.0 | ecosystem-evolution | `domain_entity_created` |
@@ -40,5 +42,5 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 
 ## Integridad
 
-- **Clases:** 16 ECST en `SddIA/events/domain/`.
+- **Clases:** 18 ECST en `SddIA/events/domain/`.
 - **Regla de oro:** no mezclar telemetría cruda ni orquestación táctica en esta familia.
