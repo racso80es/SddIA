@@ -29,3 +29,7 @@ git_changes:
 | KZ-CA2 | Smoke con wasmtime (regresión) | ✅ | PATH completo → `success: true` |
 | KZ-CA3 | CI `eda-bus-e2e-smoke` | ✅ | PR #83 — SUCCESS |
 | KZ-CA4 | Paridad documental | ✅ | spec/objectives/implementation/validacion |
+
+## Fase 2 — continuación
+
+Deuda WASI en CI documentada en [`PBI-KAIZEN-CI-WASI-RUNTIME-BUILD`](../../../todos/pending/[Kaizen]%20CI%20WASI%20—%20wasmtime%20y%20build%20workspace%20en%20runner.md) → feature `docs/features/ci-wasi-runtime-validation/`.
