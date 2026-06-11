@@ -6,6 +6,7 @@ branch: feat/migracion-rust-wasi-certificacion
 global: APTO
 pbi_archived: true
 pbi_ref: docs/todos/done/OPERATIVO-PBI-Migracion-Rust-WASI.md
+pr_url: https://github.com/racso80es/SddIA/pull/85
 checks:
   CA-1: pass
   CA-2: pass

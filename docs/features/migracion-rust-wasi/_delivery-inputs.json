@@ -1,0 +1,6 @@
+{
+  "branch_name": "feat/migracion-rust-wasi-certificacion",
+  "persist_ref": "docs/features/migracion-rust-wasi",
+  "source_process": "feature",
+  "pr_title": "feat(wasi): certificacion migracion Rust/WASI — poda Python, contratos y validacion"
+}
