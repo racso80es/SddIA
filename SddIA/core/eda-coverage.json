@@ -196,8 +196,8 @@
     "a1b2c3d4-e5f6-4789-a012-3456789abcde": {
       "is_covered": true,
       "last_emitted_event": "Domain_Entity_Created",
-      "last_hash": "sha256:6ebc01ba0441499189accaf45ab4afdbe8c5c96d180e3aea1ce78f0bd5c18728",
-      "correlation_timestamp": "2026-05-25T17:39:08+00:00"
+      "last_hash": "sha256:64c697cf966ef458d5e7d4bc063ad0e1b2587ec90476cde53adfb87128429167",
+      "correlation_timestamp": "2026-05-29T12:00:00+00:00"
     },
     "7e4a9c2b-1d3f-4a8e-9b6c-0f1e2d3a4b5c": {
       "is_covered": true,
@@ -349,12 +349,6 @@
       "last_hash": "sha256:b932cc22e3839cf704638d3e57b9b476cc4375784ed89a0f5303810c74b994ba",
       "correlation_timestamp": "2026-05-29T12:00:00+00:00"
     },
-    "a1b2c3d4-e5f6-4789-a012-3456789abcde": {
-      "is_covered": true,
-      "last_emitted_event": "Domain_Entity_Created",
-      "last_hash": "sha256:64c697cf966ef458d5e7d4bc063ad0e1b2587ec90476cde53adfb87128429167",
-      "correlation_timestamp": "2026-05-29T12:00:00+00:00"
-    },
     "b2c3d4e5-f6a7-4890-b123-456789abcdef": {
       "is_covered": true,
       "last_emitted_event": "Domain_Entity_Created",
@@ -408,6 +402,12 @@
       "last_emitted_event": "Kaizen_Idea_Captured",
       "last_hash": "sha256:pending-anchor-on-merge",
       "correlation_timestamp": "2026-05-29T18:00:00+00:00"
+    },
+    "161f1930-9e59-4525-89fa-5cb8fbbf80e6": {
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:dc37269dbdbd8376d04a6720b682aae51b864cbcaf9cd10a1046bdb9769796fa",
+      "correlation_timestamp": "2026-06-11T06:11:43+00:00"
     }
   }
 }

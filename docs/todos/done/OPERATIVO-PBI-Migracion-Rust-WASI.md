@@ -1,3 +1,17 @@
+---
+document_id: PBI-MIGRACION-RUST-WASI
+title: "[OPERATIVO] PBI: Migración de Cápsulas Ejecutables (Skills/Tools) a Rust (WASI)"
+format: markdown
+version: "1.0.0"
+created: "2026-05-01"
+status: done
+priority: alta
+process: feature
+closed: "2026-06-11"
+branch_name: feat/migracion-rust-wasi-certificacion
+feature_ref: docs/features/migracion-rust-wasi
+---
+
 # [OPERATIVO] PBI: Migración de Cápsulas Ejecutables (Skills/Tools) a Rust (WASI)
 
 ## 1. Contexto Arquitectónico (Estado S+ Grade)

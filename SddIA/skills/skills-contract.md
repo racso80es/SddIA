@@ -1,11 +1,12 @@
 ---
-contract_version: "1.2.0"
+contract_version: "1.3.0"
 entity_type: "skill"
 jurisdiction: "Core SddIA"
 capabilities:
   - "skill-schema-governance"
   - "json-stdin-stdout-io"
   - "execution-capsule-routing"
+execution_substrate: "rust-wasi"
 ---
 
 # Contrato de Skills (S+ Grade)
@@ -32,7 +33,15 @@ Los Skills son el "martillo ciego" del sistema. Su comunicación es puramente ma
 * **`inputs`**: Deben recibir instrucciones exclusivamente mediante `stdin` en formato JSON estructurado.
 * **`outputs`**: Deben emitir resultados exclusivamente mediante `stdout` en formato JSON (incluyendo `success`, `exitCode`, `data` o `error`).
 
-## 4. Física del Valor y Evolución (Bloque Latente)
+## 4. Sustrato de Ejecución (Innegociable desde v1.3.0)
+
+El sustrato canónico para todas las cápsulas skill es **Rust compilado a `wasm32-wasip1`**, ejecutado mediante el runtime `wasmtime`.
+
+- **Prohibido** entregar nuevas skills como scripts Python o cualquier otro intérprete.
+- El artefacto de despliegue es un binario `.wasm`; el orquestador lo invoca vía `wasmtime run`.
+- **Excepción temporal documentada:** `git-manager` y `bus-operator` mantienen fallback Python en el laboratorio hasta que WASI soporte subprocess spawning sin flag experimental. Ver `docs/features/migracion-rust-wasi/clarify.md` §D8.
+
+## 5. Física del Valor y Evolución (Bloque Latente)
 * `minteo_maximo`: Límite de licencias de uso o instalaciones.
 * `porcentaje_de_exito`: Eficiencia termodinámica del binario (ejecuciones correctas vs. fallos de sistema).
 
