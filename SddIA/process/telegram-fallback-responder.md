@@ -7,7 +7,7 @@ workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - external-ingest
-hash_signature: sha256:pending-anchor-on-merge
+hash_signature: sha256:aa025ef2f104dca174c495a3c384aab437ec255389c47ddaab6d9f8f8e4c48fe
 inputs:
 - text: Texto del mensaje Telegram (payload.text)
 - chat_id: Chat destino para respuesta eferente
