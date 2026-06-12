@@ -77,9 +77,14 @@ def invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str,
     entry = tool_dir / "index.ts"
     if not entry.is_file():
         return False, "iota-immutable-publisher entry not found", None, None
+    local_ts_node = tool_dir / "node_modules" / ".bin" / "ts-node"
     npx = shutil.which("npx")
-    if not npx:
-        return False, "npx not found on PATH", None, None
+    if local_ts_node.is_file():
+        runner_cmd: list[str] = [str(local_ts_node), str(entry)]
+    elif npx:
+        runner_cmd = [npx, "ts-node", str(entry)]
+    else:
+        return False, "npx not found on PATH (ejecute npm install en iota-immutable-publisher)", None, None
 
     payload = {
         "action": "publish_immutable_data",
@@ -88,7 +93,7 @@ def invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str,
     }
     try:
         proc = _run_subprocess(
-            [npx, "tsx", str(entry)],
+            runner_cmd,
             input_text=json.dumps(payload),
             cwd=str(tool_dir),
             timeout=_iota_timeout_seconds(),

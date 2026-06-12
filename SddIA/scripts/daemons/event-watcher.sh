@@ -22,6 +22,14 @@ fi
 
 export PYTHONUTF8=1
 
+# Node local del workspace (IOTA Testnet real vía ts-node)
+for _node_bin in "$REPO_ROOT"/.tools/node-v*-linux-x64/bin; do
+  if [[ -x "$_node_bin/node" ]]; then
+    export PATH="$_node_bin:$PATH"
+    break
+  fi
+done
+
 echo "[SH] Deteniendo instancias previas de event-watcher.py..."
 pkill -f '[e]vent-watcher\.py' 2>/dev/null || true
 sleep 1
@@ -29,7 +37,7 @@ sleep 1
 echo "[SH] Iniciando Despertador Inerte (event-watcher)..."
 echo "[SH] Repo: $REPO_ROOT"
 echo "[SH] Modo: bucle continuo (use --once para un solo ciclo)"
-echo "[SH] Lab IOTA simulado: export SDDIA_LAB_SIMULATE_IOTA=1"
+echo "[SH] IOTA Testnet: SDDIA_LAB_SIMULATE_IOTA=0 en bóveda (.dev/.env + .SddIA/.dev/.env)"
 echo "[SH] Bóvedas: .dev/.env + .SddIA/.dev/.env (carga automática en Python)"
 
 _run_in_terminal() {

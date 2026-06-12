@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -183,18 +184,30 @@ def anchor_merkle(repo: Path, manifest_path: Path) -> dict[str, Any]:
     if simulate:
         digest = f"lab-simulated-{root[:16]}"
     elif entry.is_file():
+        local_ts_node = tool_dir / "node_modules" / ".bin" / "ts-node"
+        npx = shutil.which("npx")
+        if local_ts_node.is_file():
+            runner_cmd = [str(local_ts_node), str(entry)]
+        elif npx:
+            runner_cmd = [npx, "ts-node", str(entry)]
+        else:
+            runner_cmd = []
         payload = {
             "action": "publish_immutable_data",
             "network": "testnet",
             "payload": json.dumps(acta, ensure_ascii=False),
         }
-        proc = subprocess.run(
-            ["npx", "tsx", str(entry)],
-            input=json.dumps(payload),
-            capture_output=True,
-            text=True,
-            cwd=str(tool_dir),
-            check=False,
+        proc = (
+            subprocess.run(
+                runner_cmd,
+                input=json.dumps(payload),
+                capture_output=True,
+                text=True,
+                cwd=str(tool_dir),
+                check=False,
+            )
+            if runner_cmd
+            else subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr="npx not found")
         )
         if proc.returncode == 0:
             try:

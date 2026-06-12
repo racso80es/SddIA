@@ -4,6 +4,10 @@
 # Cursor — logs de depuración locales
 .cursor/debug_*
 
+# Node.js local del workspace (IOTA toolchain)
+.tools/
+.venv/
+
 # Bus de eventos runtime Ola C V3 (padre inmutable + testigos suscriptor)
 /.events/
 

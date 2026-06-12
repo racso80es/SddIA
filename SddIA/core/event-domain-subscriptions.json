@@ -156,10 +156,27 @@
       "agent": "mayeuta",
       "process": "telegram-fallback-responder",
       "intent": "Red de seguridad sensorial: Triaje inverso para entropía no estructurada."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA del estímulo sensorial Telegram."
     }
   ],
-  "Manual_Task_Requested": [],
-  "Kaizen_Idea_Captured": [],
+  "Manual_Task_Requested": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA de tarea manual capturada desde canal externo."
+    }
+  ],
+  "Kaizen_Idea_Captured": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA de idea Kaizen capturada vía patrón TODO:/IDEA:."
+    }
+  ],
   "Thought_Persisted": [
     {
       "agent": "cumulo",

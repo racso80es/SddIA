@@ -36,10 +36,21 @@ def parse_dotenv_file(path: Path) -> dict[str, str]:
     return result
 
 
+_VAULT_PRECEDENCE_KEYS = frozenset(
+    {
+        "SDDIA_LAB_SIMULATE_IOTA",
+        "SDDIA_IOTA_TIMEOUT_SECONDS",
+    }
+)
+
+
 def apply_env(merged: dict[str, str]) -> None:
-    """Aplica pares al entorno sin sobrescribir variables ya definidas en el SO."""
+    """Aplica bóveda al entorno; flags IOTA en _VAULT_PRECEDENCE_KEYS prevalecen sobre el SO."""
     for key, value in merged.items():
         os.environ.setdefault(key, value)
+    for key in _VAULT_PRECEDENCE_KEYS:
+        if key in merged:
+            os.environ[key] = merged[key]
 
 
 def load_hierarchical_env(repo_root: Path) -> dict[str, str]:
