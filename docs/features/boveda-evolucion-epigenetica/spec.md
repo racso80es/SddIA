@@ -48,7 +48,15 @@ El subsistema "Bóveda de Evolución Epigenética" constará de los siguientes d
 - `docs/features/boveda-evolucion-epigenetica/` — spec, plan, implementation, objectives, validacion
 - `docs/features/memoria-vectorial/` — paridad documental coalescente
 - `docs/features/grafo-pensamiento/` — spec, validacion
-- `SddIA/events/domain/thought-persisted.md` — evento ECST grafo
+- `SddIA/core/memory/` — dominio hexagonal bóveda (crate `sddia-memory`)
+  - `src/models/evolution_node.rs` — `EvolutionEvent`, `SpatialPolarity`, hash SHA-256
+  - `src/ports.rs` — puerto `EvolutionStore`
+  - `src/services/evolution_proxy.rs` — `EvolutionProxyService` (captura pasiva)
+  - `src/services/inference_binding.rs` — binding Aduana Semántica
+  - `src/models/mod.rs`, `src/services/mod.rs`, `src/lib.rs` — reexportes módulo
+  - `Cargo.toml`, `Cargo.lock` — dependencias crate
+- `SddIA/infrastructure/adapters/lancedb_evolution_repo/` — adaptador LanceDB `evolution/`
+- `SddIA/events/domain/thought-persisted.md` — evento ECST grafo (coalescencia grafo)
 - `SddIA/events/domain/vector-memory-indexed.md` — evento ECST bóveda
 - `SddIA/core/event-subscriptions.json` — suscripciones EDA
 - `SddIA/core/event-domain-subscriptions.json` — suscripciones dominio
