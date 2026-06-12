@@ -4,11 +4,13 @@ title: "[Kaizen] EDA domain — suscriptores IOTA, launcher bus-operator e invoc
 format: markdown
 version: "1.0.0"
 created: "2026-06-12"
-status: pending
+status: done
 priority: alta
 process: bug-fix
+closed: "2026-06-12"
 branch_name: fix/kaizen-eda-domain-iota-routing
 feature_ref: docs/fixes/kaizen-eda-domain-iota-routing
+origin: docs/todos/pending/Kaizen_eda-domain-iota-routing.md
 ---
 
 # [Kaizen] EDA domain — suscriptores IOTA, launcher bus-operator e invocación Testnet real
@@ -16,7 +18,7 @@ feature_ref: docs/fixes/kaizen-eda-domain-iota-routing
 | Campo | Valor |
 |-------|-------|
 | **ID** | `PBI-KAIZEN-EDA-DOMAIN-IOTA-ROUTING` |
-| **Estatus** | Pendiente |
+| **Estatus** | ✅ Done (pre-merge) |
 | **Fix** | [`docs/fixes/kaizen-eda-domain-iota-routing/`](../../fixes/kaizen-eda-domain-iota-routing/) |
 
 ## 1. Incidente
