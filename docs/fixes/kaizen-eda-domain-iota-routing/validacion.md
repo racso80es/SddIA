@@ -7,6 +7,7 @@ persist_ref: docs/fixes/kaizen-eda-domain-iota-routing
 global: APTO
 pbi_archived: true
 branch: fix/kaizen-eda-domain-iota-routing
+pr_url: https://github.com/racso80es/SddIA/pull/91
 ---
 
 # Validación — kaizen EDA domain IOTA routing
