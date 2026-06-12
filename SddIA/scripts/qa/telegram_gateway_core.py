@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -14,7 +15,7 @@ if str(_TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(_TOOL_DIR))
 
 from eda_bus_utils import write_fractal_event
-from transmute import transmute_text
+from transmute import build_telegram_message_received, transmute_text
 
 
 def transmute_telegram_text(text: str) -> tuple[str, dict[str, Any]] | None:
@@ -68,11 +69,21 @@ def run_telegram_gateway(repo: Path, text: str) -> dict[str, Any]:
         event = transmute_text(text)
     if event is None:
         return {"ok": True, "emitted": False, "reason": "empty_text"}
+    sensorial_id: str | None = None
+    chat_id = os.environ.get("TELEGRAM_ALLOWED_CHAT_ID", "").strip()
+    if chat_id:
+        sensorial = build_telegram_message_received(text, chat_id)
+        sensorial_seal = write_fractal_event(repo, sensorial, "domain")
+        sensorial_id = sensorial.get("event_id") if isinstance(sensorial.get("event_id"), str) else None
+    else:
+        sensorial_seal = None
     seal = write_fractal_event(repo, event, "domain")
     return {
         "ok": True,
         "emitted": True,
         "event_type": event.get("event_type"),
         "event_id": event.get("event_id"),
+        "telegram_message_received_id": sensorial_id,
         "seal": seal,
+        "sensorial_seal": sensorial_seal,
     }

@@ -1,0 +1,9 @@
+{
+  "feature_name": "telegram-fallback-responder",
+  "branch_name": "feat/telegram-fallback-responder",
+  "persist_ref": "docs/features/telegram-fallback-responder",
+  "base_branch": "main",
+  "master_pbi_ref": "docs/todos/pending/PBI-TG-001- Implementación del Suscriptor de Triaje Inverso (Telegram Fallback Responder).md",
+  "master_pbi_id": "PBI-TG-001",
+  "refined_requirements": "PBI-TG-001: Red de seguridad sensorial EDA para Telegram. Forjar proceso telegram-fallback-responder (Filtro C → Mayeuta síntesis orgánica → send-telegram-notification). Registrar suscripción en event-domain-subscriptions.json ante TelegramMessage_Received. Ceguera espacial: prohibido mutar telegram-watcher.py/.bat/.sh. Cierre documental en un PR con PBI en done/."
+}

@@ -151,6 +151,13 @@
       "intent": "Aduana síncrona local pre-push: Argos verifica cobertura documental y QA antes de permitir el push."
     }
   ],
+  "TelegramMessage_Received": [
+    {
+      "agent": "mayeuta",
+      "process": "telegram-fallback-responder",
+      "intent": "Red de seguridad sensorial: Triaje inverso para entropía no estructurada."
+    }
+  ],
   "Manual_Task_Requested": [],
   "Kaizen_Idea_Captured": [],
   "Thought_Persisted": [

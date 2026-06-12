@@ -403,6 +403,18 @@
       "last_hash": "sha256:pending-anchor-on-merge",
       "correlation_timestamp": "2026-05-29T18:00:00+00:00"
     },
+    "c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f": {
+      "is_covered": true,
+      "last_emitted_event": "TelegramMessage_Received",
+      "last_hash": "sha256:pending-anchor-on-merge",
+      "correlation_timestamp": "2026-06-11T18:00:00+00:00"
+    },
+    "e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6": {
+      "is_covered": true,
+      "last_emitted_event": "TelegramMessage_Received",
+      "last_hash": "sha256:pending-anchor-on-merge",
+      "correlation_timestamp": "2026-06-11T18:00:00+00:00"
+    },
     "161f1930-9e59-4525-89fa-5cb8fbbf80e6": {
       "is_covered": true,
       "last_emitted_event": "Domain_Entity_Created",
