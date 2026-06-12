@@ -5,7 +5,8 @@
 Ola C V3+: topología simétrica; orquestación vía execute-process (proceso SddIA).
 
 Variables de entorno:
-  SDDIA_LAB_SIMULATE_IOTA=1           Simula iota-immutable-publisher.
+  SDDIA_LAB_SIMULATE_IOTA=0           Anclaje IOTA Testnet real (default bóveda producción).
+  SDDIA_LAB_SIMULATE_IOTA=1           Simula iota-immutable-publisher (solo lab/CI).
   SDDIA_LAB_SIMULATE_SYNC_INDEX=1     Simula sync-entity-index.
   SDDIA_LAB_ROUTE_SYNC=1              Fan-out secuencial (regresión CI).
   SDDIA_IOTA_TIMEOUT_SECONDS=N        Timeout IOTA (default 45).

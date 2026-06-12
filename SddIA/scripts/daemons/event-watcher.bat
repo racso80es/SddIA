@@ -31,7 +31,7 @@ ping -n 2 127.0.0.1 >nul
 echo [BAT] Iniciando Despertador Inerte (event-watcher)...
 echo [BAT] Repo: %REPO_ROOT%
 echo [BAT] Modo: bucle continuo ^(use --once para un solo ciclo^)
-echo [BAT] Lab IOTA simulado: set SDDIA_LAB_SIMULATE_IOTA=1
+echo [BAT] IOTA Testnet: SDDIA_LAB_SIMULATE_IOTA=0 en boveda ^(.dev/.env + .SddIA/.dev/.env^)
 echo [BAT] Bovedas: .dev/.env + .SddIA/.dev/.env ^(carga automatica en Python^)
 
 cd /d "%REPO_ROOT%"
