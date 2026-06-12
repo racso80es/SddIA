@@ -17,6 +17,24 @@ def _iso_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def build_telegram_message_received(text: str, chat_id: str) -> dict[str, Any]:
+    raw = text if isinstance(text, str) else ""
+    return {
+        "event_id": str(uuid.uuid4()),
+        "event_type": "TelegramMessage_Received",
+        "event_family": "domain",
+        "timestamp": _iso_now(),
+        "emitter_agent": _EMITTER,
+        "payload": {
+            "text": raw,
+            "chat_id": str(chat_id),
+            "source": "telegram",
+            "raw_text": raw,
+        },
+        "delivery_state": {},
+    }
+
+
 def transmute_text(text: str) -> dict[str, Any] | None:
     raw = text if isinstance(text, str) else ""
     stripped = raw.strip()

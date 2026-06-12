@@ -3342,6 +3342,51 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
                 ],
             },
         }
+    if canonical == "telegram-fallback-responder":
+        from telegram_fallback_responder_core import run_telegram_fallback_responder
+
+        text = process_inputs.get("text")
+        if not isinstance(text, str):
+            return {
+                "success": False,
+                "status_code": 1,
+                "error": "text requerido",
+                "execution_report": {"process_name": canonical, "phases": []},
+            }
+        chat_id = process_inputs.get("chat_id")
+        out = run_telegram_fallback_responder(
+            repo,
+            text,
+            chat_id if isinstance(chat_id, str) else None,
+        )
+        ok = bool(out.get("ok"))
+        return {
+            "success": ok,
+            "status_code": 0 if ok else 1,
+            "data": out,
+            "execution_report": {
+                "process_name": canonical,
+                "phases": [
+                    {
+                        "phase_name": "Filtro C",
+                        "status": "executed",
+                        "handler": "telegram-fallback-responder-core",
+                        "filtered": out.get("filtered"),
+                    },
+                    {
+                        "phase_name": "Síntesis",
+                        "status": "executed" if not out.get("filtered") else "skipped",
+                        "handler": "telegram-fallback-responder-core",
+                    },
+                    {
+                        "phase_name": "Materialización",
+                        "status": "executed" if out.get("notified") else ("skipped" if out.get("filtered") else "failed"),
+                        "handler": "telegram-fallback-responder-core",
+                        "notified": out.get("notified"),
+                    },
+                ],
+            },
+        }
     if canonical == "route-domain-event":
         from route_domain_event_core import route_domain_event
 

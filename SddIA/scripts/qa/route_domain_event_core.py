@@ -155,6 +155,43 @@ def dispatch_subscriber(
             return sid, "failed", "execute-process.py not found", 1
         if not isinstance(payload, dict):
             return sid, "failed", "payload must be object", 1
+        process_key = process_name.strip()
+        if process_key == "telegram-fallback-responder":
+            text = payload.get("text")
+            if not isinstance(text, str) or not text.strip():
+                return sid, "skipped-empty-text", None, 0
+            chat_id = payload.get("chat_id")
+            process_inputs: dict[str, Any] = {"text": text.strip()}
+            if isinstance(chat_id, str) and chat_id.strip():
+                process_inputs["chat_id"] = chat_id.strip()
+            try:
+                proc = _run_subprocess(
+                    [
+                        sys.executable,
+                        str(runner),
+                        "--process",
+                        process_key,
+                        "--inputs",
+                        json.dumps(process_inputs, ensure_ascii=False),
+                    ],
+                    cwd=str(repo),
+                    shell=False,
+                )
+            except OSError as e:
+                return sid, "failed", str(e), 1
+            stdout = (proc.stdout or "").strip()
+            if not stdout:
+                return sid, "failed", (proc.stderr or "empty stdout").strip(), proc.returncode or 1
+            last_line = stdout.splitlines()[-1]
+            try:
+                envelope = json.loads(last_line)
+            except json.JSONDecodeError:
+                return sid, "failed", "invalid JSON from execute-process", 1
+            exit_code = int(envelope.get("status_code", 1 if not envelope.get("success") else 0))
+            ok = bool(envelope.get("success")) and exit_code == 0
+            if ok:
+                return sid, "success", None, 0
+            return sid, "failed", envelope.get("error") or envelope.get("message") or "process failed", exit_code
         branch = payload.get("branch")
         if not isinstance(branch, str) or not branch.strip():
             return sid, "failed", "branch missing in payload", 1
