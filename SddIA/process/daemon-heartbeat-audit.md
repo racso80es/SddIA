@@ -7,7 +7,7 @@ workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
   - "quality-assurance"
   - "event-routing"
-hash_signature: sha256:2de405115997cd6a25d16cede67a3a0cd303c47a941a053cf969779cea2e1236
+hash_signature: sha256:dde581369442cc46609cd6878a474bc737ab5dce4847ac7bde8fe19f6992d1d6
 inputs:
   - "event_file_path": "Opcional; ruta relativa al JSON Daemon_Heartbeat en ./.events/telemetry/"
   - "sweep": "Opcional boolean; si true y sin event_file_path, audita staleness de todos los Centinelas con lock vivo"

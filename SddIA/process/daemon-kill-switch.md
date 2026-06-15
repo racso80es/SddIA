@@ -7,7 +7,7 @@ workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
   - "system-operations"
   - "ecosystem-evolution"
-hash_signature: sha256:1a50df9c5c859f9f7ecd34ecdf13c7cc5586536fb89b810053023895a45a2f62
+hash_signature: sha256:25189d3400e4e7d62d1d08fc8b495f2df057220b5d7e49903e9aa28877a28417
 inputs:
   - "kill_grace_seconds": "Opcional; segundos SIGTERM→SIGKILL por Centinela (default `10`)"
   - "cumulo_topology": "Topología SSOT inyectada"

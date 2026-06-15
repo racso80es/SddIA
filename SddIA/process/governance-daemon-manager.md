@@ -7,7 +7,7 @@ workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
   - "system-operations"
   - "ecosystem-evolution"
-hash_signature: sha256:95eae8a0e5408605d1c788f7e7529068099f8d0d02d94e43b7e32f3c1b53d719
+hash_signature: sha256:8421824f1e4e2d5def6615f0c0a2b661ddc11b9ad2488e90d61e7046807f23dc
 inputs:
   - "operation": "Enum estricto: `start` | `status` | `kill` — directriz física OS a ejecutar"
   - "daemon_id": "Identificador kebab-case del Centinela (`name` en `{daemon_id}.md`; debe existir en `SddIA/daemons/index.md`)"

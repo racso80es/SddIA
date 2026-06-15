@@ -5,7 +5,7 @@ version: "1.0.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:8867ff4e483c780e4d6d1d6b40e1cc05d9a049d78f61e5fc0e75f12e7a69e5cf
+hash_signature: sha256:ac5164ffcd8f3dafa4837e13574ae2ff51a8214743606b6ea078a513b88c64d5
 inputs:
   - "daemon_name": "Identificador kebab-case del Centinela (`{name}` del archivo `{name}.md` en `cumulo.directories.daemons`)"
   - "daemon_context": "Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)"
