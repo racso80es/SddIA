@@ -10,7 +10,7 @@ capabilities:
   - "send-telegram-notification"
   - "telegram-send-message"
   - "capsule-json-io"
-implementation_path_ref: "scripts/tools/send-telegram-notification"
+implementation_path_ref: "SddIA/tools/send-telegram-notification"
 ---
 
 # send-telegram-notification

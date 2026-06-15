@@ -94,7 +94,7 @@ context: "{context}"
 capabilities:
   - "{cap}"
 hash_signature: "{hash_sig}"
-implementation_path_ref: "scripts/tools/{name}"
+implementation_path_ref: "SddIA/tools/{name}"
 ---
 
 # {name}

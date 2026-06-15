@@ -17,6 +17,18 @@ from pathlib import Path
 from typing import Any
 
 from env_loader import load_hierarchical_env
+from capsule_resolve import (
+    git_manager_should_fallback_native,
+    invoke_skill_subprocess,
+    invoke_tool_capsule_json,
+    parse_skill_stdout,
+    resolve_skill_capsule,
+    resolve_skill_wasm,
+    shell_executor_should_fallback_native,
+    unwrap_crypto_result,
+    unwrap_git_manager_body,
+    unwrap_shell_executor_body,
+)
 from execute_process_core import (
     delegates_are_only_agents,
     load_process_def,
@@ -79,12 +91,6 @@ CHAOS_AUDIT_PROCESSES = frozenset(
 
 CHAOS_OFFENSIVE_TOOLS = frozenset({"io-choke", "schema-corruptor", "sandbox-breacher"})
 
-CHAOS_TOOL_SCRIPTS: dict[str, Path] = {
-    "io-choke": SCRIPT.parent.parent.parent / "tools" / "io-choke" / "io-choke.wasm",
-    "schema-corruptor": SCRIPT.parent.parent.parent / "tools" / "schema-corruptor" / "schema-corruptor.wasm",
-    "sandbox-breacher": SCRIPT.parent.parent.parent / "tools" / "sandbox-breacher" / "sandbox-breacher.wasm",
-}
-
 _THERMODYNAMIC_EMERGENCY_PREFIX = "[THERMODYNAMIC-TOLL-EMERGENCY]"
 
 _ACTIVE_CAPSULE_CAPTURE_STATE: dict[str, Any] | None = None
@@ -138,77 +144,23 @@ def _load_cumulo(repo: Path) -> dict[str, Any]:
     return json.loads((repo / "SddIA" / "core" / "cumulo.paths.json").read_text(encoding="utf-8"))
 
 
-def _parse_crypto_envelope(out: dict[str, Any]) -> Any:
-    if isinstance(out.get("data"), dict) and "result" in out["data"]:
-        return out["data"]["result"]
-    return out.get("result")
-
-
-def _crypto_wasm_path(repo: Path) -> Path:
-    return repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
-
-
 def crypto(repo: Path, payload: dict[str, Any]) -> Any:
-    wasm = _crypto_wasm_path(repo)
-    if not wasm.is_file():
+    wasm = resolve_skill_wasm(repo, "cryptography-manager")
+    if wasm is None:
         raise RuntimeError(
-            f"cryptography-manager.wasm not found at {wasm}. "
+            "cryptography-manager.wasm not found under SddIA/target/wasm32-wasip1. "
             "Run: cd SddIA && cargo build --target wasm32-wasip1"
         )
-    if shutil.which("wasmtime") is None:
-        raise RuntimeError("wasmtime not in PATH; install wasmtime to run WASI capsules")
-    proc = subprocess.run(
-        ["wasmtime", "run", "--dir=/", str(wasm)],
-        input=json.dumps(payload),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
+    stdout, stderr, _ = invoke_skill_subprocess(
+        repo,
+        "wasm",
+        wasm,
+        json.dumps(payload, ensure_ascii=False),
+        wasm_dir="/",
     )
-    out = json.loads(proc.stdout or "{}")
-    if not out.get("success"):
-        raise RuntimeError(out.get("error") or proc.stderr or "cryptography-manager failed")
-    return _parse_crypto_envelope(out)
-
-
-def _git_manager_data_from_body(body: dict[str, Any]) -> dict[str, Any]:
-    data = body.get("data") or {}
-    if body.get("success"):
-        return data if isinstance(data, dict) else {}
-    if isinstance(data, dict) and data.get("offline"):
-        return data
-    raise RuntimeError(body.get("error") or "git-manager failed")
-
-
-def _invoke_git_manager_native(
-    repo: Path, operation_type: str, payload: dict[str, Any]
-) -> dict[str, Any]:
-    """Fallback laboratorio: git-manager.py cuando WASI no puede ejecutar git."""
-    py_script = repo / "scripts" / "skills" / "git-manager.py"
-    if not py_script.is_file():
-        raise FileNotFoundError(str(py_script))
-    req = {
-        "operation_type": operation_type,
-        "repository_path": str(repo.resolve()),
-        "operation_payload_json": payload,
-    }
-    proc = subprocess.run(
-        [sys.executable, str(py_script)],
-        input=json.dumps(req, ensure_ascii=False),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
-    )
-    line = (proc.stdout or "").strip()
-    if not line:
-        raise RuntimeError(proc.stderr or "git-manager.py sin salida")
-    body = json.loads(line)
-    return _git_manager_data_from_body(body)
+    if not stdout:
+        raise RuntimeError(stderr or "cryptography-manager sin salida")
+    return unwrap_crypto_result(parse_skill_stdout(stdout))
 
 
 def invoke_git_manager(
@@ -217,39 +169,53 @@ def invoke_git_manager(
     payload: dict[str, Any],
     extra_env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    git_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "git-manager.wasm"
-    if not git_script.is_file():
-        raise FileNotFoundError(str(git_script))
     req = {
         "operation_type": operation_type,
         "repository_path": str(repo.resolve()),
         "operation_payload_json": payload,
     }
-    env = os.environ.copy()
-    if extra_env:
-        env.update(extra_env)
-    proc = subprocess.run(
-        ["wasmtime", "run", "--dir=.", str(git_script)],
-        input=json.dumps(req, ensure_ascii=False),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
-        env=env,
-    )
-    stdout = (proc.stdout or "").strip()
+    stdin_payload = json.dumps(req, ensure_ascii=False)
 
-    if "failed to execute git" in (proc.stderr or "") or "operation not supported" in (proc.stderr or "") or "failed to execute git" in stdout or "operation not supported" in stdout:
-        return _invoke_git_manager_native(repo, operation_type, payload)
+    def _run(kind: str, path: Path) -> dict[str, Any]:
+        stdout, stderr, _ = invoke_skill_subprocess(
+            repo,
+            kind,
+            path,
+            stdin_payload,
+            wasm_dir=".",
+            extra_env=extra_env,
+        )
+        if not stdout:
+            raise RuntimeError(stderr or "git-manager sin salida")
+        return unwrap_git_manager_body(parse_skill_stdout(stdout))
 
-    if not stdout:
-        if "operation not supported" in (proc.stderr or ""):
-            return _invoke_git_manager_native(repo, operation_type, payload)
-        raise RuntimeError(proc.stderr or "git-manager sin salida")
-    body = json.loads(stdout)
-    return _git_manager_data_from_body(body)
+    try:
+        kind, path = resolve_skill_capsule(repo, "git-manager", prefer_wasm=True)
+    except FileNotFoundError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+    if kind == "wasm":
+        stdout, stderr, _ = invoke_skill_subprocess(
+            repo,
+            "wasm",
+            path,
+            stdin_payload,
+            wasm_dir=".",
+            extra_env=extra_env,
+        )
+        if git_manager_should_fallback_native(stderr, stdout):
+            native = resolve_skill_capsule(repo, "git-manager", prefer_wasm=False)
+            if native[0] == "native":
+                return _run("native", native[1])
+        if not stdout:
+            if git_manager_should_fallback_native(stderr, ""):
+                native = resolve_skill_capsule(repo, "git-manager", prefer_wasm=False)
+                if native[0] == "native":
+                    return _run("native", native[1])
+            raise RuntimeError(stderr or "git-manager sin salida")
+        return unwrap_git_manager_body(parse_skill_stdout(stdout))
+
+    return _run("native", path)
 
 
 def _try_delete_branch_op(repo: Path, branch: str, *, remote: bool) -> dict[str, Any]:
@@ -294,102 +260,49 @@ def _apply_branch_hygiene_state(
         state.pop("hygiene_failure", None)
 
 
-def _shell_executor_data_from_body(body: dict[str, Any]) -> dict[str, Any]:
-    data = body.get("data") or {}
-    if not isinstance(data, dict):
-        data = {}
-    if body.get("success"):
-        return data
-    err = str(body.get("error") or "shell-executor failed")
-    if data:
-        enriched = dict(data)
-        enriched["_shell_exit_code"] = body.get("exitCode")
-        enriched["_shell_error"] = err
-        return enriched
-    raise RuntimeError(err)
-
-
-def _shell_executor_should_fallback(stderr: str, stdout: str, error: str | None) -> bool:
-    blob = f"{stderr}\n{stdout}\n{error or ''}".lower()
-    markers = (
-        "working_directory invalid",
-        "executable not found on path",
-        "failed to execute",
-        "no such file or directory (os error 44)",
-    )
-    return any(marker in blob for marker in markers)
-
-
-def _invoke_shell_executor_native(
-    repo: Path,
-    executable: str,
-    arguments: list[str],
-    *,
-    working_directory: str | None = None,
-    environment_vars: dict[str, str] | None = None,
-) -> dict[str, Any]:
-    """Fallback laboratorio: shell-executor.py cuando WASI no puede canonicalize cwd."""
-    py_script = repo / "scripts" / "skills" / "shell-executor.py"
-    if not py_script.is_file():
-        raise FileNotFoundError(str(py_script))
-    req = {
-        "executable": executable,
-        "arguments": arguments,
-        "working_directory": working_directory or str(repo.resolve()),
-        "environment_vars": environment_vars or {},
-    }
-    proc = subprocess.run(
-        [sys.executable, str(py_script)],
-        input=json.dumps(req, ensure_ascii=False),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
-    )
-    line = (proc.stdout or "").strip()
-    if not line:
-        raise RuntimeError(proc.stderr or "shell-executor.py sin salida")
-    body = json.loads(line)
-    return _shell_executor_data_from_body(body)
-
-
 def invoke_shell_executor(repo: Path, executable: str, arguments: list[str]) -> dict[str, Any]:
-    shell_script = repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "shell-executor.wasm"
     wd = str(repo.resolve())
-    if not shell_script.is_file() or shutil.which("wasmtime") is None:
-        return _invoke_shell_executor_native(repo, executable, arguments, working_directory=wd)
-
     req = {
         "executable": executable,
         "arguments": arguments,
         "working_directory": wd,
         "environment_vars": {},
     }
-    proc = subprocess.run(
-        ["wasmtime", "run", "--dir=.", str(shell_script)],
-        input=json.dumps(req, ensure_ascii=False),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
-    )
-    stderr = proc.stderr or ""
-    stdout = (proc.stdout or "").strip()
-    if not stdout:
-        if _shell_executor_should_fallback(stderr, "", None):
-            return _invoke_shell_executor_native(repo, executable, arguments, working_directory=wd)
-        raise RuntimeError(stderr or "shell-executor sin salida")
-    body = json.loads(stdout)
-    if not body.get("success"):
-        err = str(body.get("error") or "")
-        if _shell_executor_should_fallback(stderr, stdout, err):
-            return _invoke_shell_executor_native(repo, executable, arguments, working_directory=wd)
-        return _shell_executor_data_from_body(body)
-    return body.get("data") or {}
+    stdin_payload = json.dumps(req, ensure_ascii=False)
+
+    def _run(kind: str, path: Path) -> dict[str, Any]:
+        stdout, stderr, _ = invoke_skill_subprocess(
+            repo,
+            kind,
+            path,
+            stdin_payload,
+            wasm_dir=".",
+        )
+        if not stdout:
+            raise RuntimeError(stderr or "shell-executor sin salida")
+        body = parse_skill_stdout(stdout)
+        if not body.get("success"):
+            err = str(body.get("error") or "")
+            if shell_executor_should_fallback_native(stderr, stdout, err):
+                raise RuntimeError("shell-executor wasm fallback marker")
+            return unwrap_shell_executor_body(body)
+        return unwrap_shell_executor_body(body)
+
+    try:
+        kind, path = resolve_skill_capsule(repo, "shell-executor", prefer_wasm=True)
+    except FileNotFoundError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+    if kind == "wasm":
+        try:
+            return _run("wasm", path)
+        except RuntimeError:
+            native = resolve_skill_capsule(repo, "shell-executor", prefer_wasm=False)
+            if native[0] == "native":
+                return _run("native", native[1])
+            raise
+
+    return _run("native", path)
 
 
 def _parse_gh_pr_url(stdout: str) -> str | None:
@@ -2230,28 +2143,9 @@ def invoke_chaos_tool_capsule(
     tool_name: str,
     payload: dict[str, Any],
 ) -> tuple[int, dict[str, Any]]:
-    script = CHAOS_TOOL_SCRIPTS.get(tool_name)
-    if script is None or not script.is_file():
-        raise FileNotFoundError(f"cápsula caos no encontrada: {tool_name}")
-    proc = subprocess.run(
-        ["wasmtime", "run", "--dir=.", str(script)],
-        input=json.dumps(payload, ensure_ascii=False),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        cwd=str(repo),
-        check=False,
-    )
-    line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
-    body: dict[str, Any] = {}
-    if line:
-        try:
-            parsed = json.loads(line)
-            if isinstance(parsed, dict):
-                body = parsed
-        except json.JSONDecodeError:
-            body = {"parse_error": line[:200]}
-    return proc.returncode, body
+    if tool_name not in CHAOS_OFFENSIVE_TOOLS:
+        raise FileNotFoundError(f"cápsula caos no registrada: {tool_name}")
+    return invoke_tool_capsule_json(repo, tool_name, payload, prefer_wasm=True)
 
 
 def _chaos_workspace_path(inputs: dict[str, Any], state: dict[str, Any]) -> str:
@@ -2260,6 +2154,13 @@ def _chaos_workspace_path(inputs: dict[str, Any], state: dict[str, Any]) -> str:
     if not isinstance(ws, str) or not ws.strip():
         raise ValueError("workspace_path ausente")
     return ws.strip()
+
+
+def _tool_envelope_field(body: dict[str, Any], field: str) -> Any:
+    result = body.get("result")
+    if isinstance(result, dict) and field in result:
+        return result.get(field)
+    return body.get(field)
 
 
 def _chaos_stimulus_thermodynamic(
@@ -2277,7 +2178,7 @@ def _chaos_stimulus_thermodynamic(
     state["last_capsule_envelope"] = body
     state["chaos_stimulus"] = {"tool": "io-choke", "exit_code": code, "envelope": body}
     state["chaos_simulate_telemetry_io_fail"] = True
-    ok = code == 0 and bool(body.get("success")) and bool((body.get("result") or {}).get("io_choked"))
+    ok = code == 0 and bool(body.get("success")) and bool(_tool_envelope_field(body, "io_choked"))
     if not ok:
         return {
             "status": "failed",
@@ -2344,7 +2245,7 @@ def _chaos_stimulus_sandbox(
     blocked = (
         code == 1
         and not body.get("success")
-        and body.get("exitCode") == 1
+        and bool(_tool_envelope_field(body, "breach_blocked"))
         and not escape_path.is_file()
     )
     if not blocked:
@@ -2416,7 +2317,8 @@ def _chaos_argos_certify(
         }
     if process_name == "audit-sandbox-isolation-rbac":
         stimulus = state.get("chaos_stimulus") or {}
-        ok = bool(stimulus.get("envelope", {}).get("result", {}).get("breach_blocked"))
+        env = stimulus.get("envelope") if isinstance(stimulus.get("envelope"), dict) else {}
+        ok = bool(_tool_envelope_field(env, "breach_blocked"))
         if ok:
             state["isolation_verified"] = True
         return {

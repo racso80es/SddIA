@@ -203,12 +203,29 @@ def run_governance_daemon_manager(repo: Path, inputs: dict[str, Any]) -> dict[st
         return {"success": False, "exitCode": 1, "error": str(exc)}
 
     entry = repo / spec["entrypoint"]
-    if not entry.is_file():
-        return {
-            "success": False,
-            "exitCode": 1,
-            "error": f"entrypoint no encontrado: {spec['entrypoint']}",
-        }
+    runtime = spec["runtime"]
+    if runtime == "native-rust":
+        from capsule_resolve import resolve_daemon_capsule
+
+        try:
+            bin_path = resolve_daemon_capsule(repo, daemon_id)
+            launch_cmd: list[str] = [str(bin_path)]
+        except FileNotFoundError:
+            if not entry.is_file():
+                return {
+                    "success": False,
+                    "exitCode": 1,
+                    "error": f"entrypoint no encontrado: {spec['entrypoint']}",
+                }
+            launch_cmd = [str(entry)]
+    else:
+        if not entry.is_file():
+            return {
+                "success": False,
+                "exitCode": 1,
+                "error": f"entrypoint no encontrado: {spec['entrypoint']}",
+            }
+        launch_cmd = [runtime, str(entry)]
 
     lock_rel = str(_lock_path(repo, daemon_id).relative_to(repo)).replace("\\", "/")
     os_result: dict[str, Any] = {
@@ -229,7 +246,7 @@ def run_governance_daemon_manager(repo: Path, inputs: dict[str, Any]) -> dict[st
             if existing:
                 _remove_lock(repo, daemon_id)
             proc = subprocess.Popen(
-                [spec["runtime"], str(entry)],
+                launch_cmd,
                 cwd=str(repo),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,

@@ -1,33 +1,48 @@
 use sddia_io::{emit_error, emit_success, read_stdin_json};
 use serde_json::{json, Value};
-use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn get_repo_root() -> Result<PathBuf, String> {
-    let current_exe = env::current_exe().map_err(|e| format!("Failed to get current exe: {}", e))?;
-    let mut current_dir = current_exe.parent().unwrap_or(Path::new(""));
+    let mut current_dir = std::env::current_dir().map_err(|e| format!("Failed to get current dir: {}", e))?;
     loop {
         if current_dir.join("SddIA/core/cumulo.paths.json").is_file() {
-            return Ok(current_dir.to_path_buf());
+            return Ok(current_dir);
         }
         if let Some(parent) = current_dir.parent() {
-            current_dir = parent;
+            current_dir = parent.to_path_buf();
         } else {
             return Err("No se encontró raíz del workspace".to_string());
         }
     }
 }
 
+fn tool_wasm_path(repo: &Path, tool_key: &str) -> Result<PathBuf, String> {
+    let allowed = [
+        "read-event-subscriptions",
+        "manage-event-receipt",
+        "transit-event-payload",
+        "markdown-table-editor",
+    ];
+    if !allowed.contains(&tool_key) {
+        return Err(format!("tool no mapeada: {}", tool_key));
+    }
+    let release = repo.join(format!("SddIA/target/wasm32-wasip1/release/{}.wasm", tool_key));
+    if release.is_file() {
+        return Ok(release);
+    }
+    let debug = repo.join(format!("SddIA/target/wasm32-wasip1/debug/{}.wasm", tool_key));
+    if debug.is_file() {
+        return Ok(debug);
+    }
+    Err(format!(
+        "cápsula WASM inexistente para {} (build: cd SddIA && cargo build --target wasm32-wasip1)",
+        tool_key
+    ))
+}
+
 fn invoke_tool(repo: &Path, tool_key: &str, payload: &Value) -> Result<Value, String> {
-    let rel = match tool_key {
-        "read-event-subscriptions" => "SddIA/tools/read-event-subscriptions/read-event-subscriptions.wasm",
-        "manage-event-receipt" => "SddIA/tools/manage-event-receipt/manage-event-receipt.wasm",
-        "transit-event-payload" => "SddIA/tools/transit-event-payload/transit-event-payload.wasm",
-        "markdown-table-editor" => "SddIA/tools/markdown-table-editor/markdown-table-editor.wasm",
-        _ => return Err(format!("tool no mapeada: {}", tool_key)),
-    };
-    let script = repo.join(rel);
+    let script = tool_wasm_path(repo, tool_key)?;
 
     let payload_str = serde_json::to_string(payload).unwrap_or_default();
 

@@ -56,9 +56,9 @@
     "daemons": "SddIA/daemons/daemons-contract.md"
   },
   "execution_capsules": {
-    "skills": "scripts/skills/",
-    "tools": "scripts/tools/",
-    "daemons": "SddIA/scripts/daemons/"
+    "skills": "SddIA/skills/",
+    "tools": "SddIA/tools/",
+    "daemons": "SddIA/daemons/"
   },
   "daemons_instance": {
     "status": ".SddIA/daemons/status",

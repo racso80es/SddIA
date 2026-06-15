@@ -83,7 +83,7 @@ class TestSafeRemovePath(unittest.TestCase):
 
 class TestWatcherIdempotency(unittest.TestCase):
     def test_skip_in_flight_and_routed_ok(self) -> None:
-        daemon_dir = Path(__file__).resolve().parents[1] / "daemons"
+        daemon_dir = Path(__file__).resolve().parents[1] / "limbo" / "daemons"
         sys.path.insert(0, str(daemon_dir.parent / "qa"))
         import importlib.util
 

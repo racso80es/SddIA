@@ -10,7 +10,7 @@ capabilities:
   - "io-choke"
   - "chaos-io-stress"
   - "capsule-json-io"
-implementation_path_ref: "scripts/tools/io-choke"
+implementation_path_ref: "SddIA/tools/io-choke"
 ---
 
 # io-choke

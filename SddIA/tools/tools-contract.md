@@ -1,5 +1,5 @@
 ---
-contract_version: "1.4.0"
+contract_version: "1.5.0"
 entity_type: "tool"
 jurisdiction: "Core SddIA (Interfaz) / Workspace (Delivery)"
 capabilities:
@@ -36,15 +36,22 @@ Aunque sean workspace-local, las Tools heredan el rigor S+ Grade. Cada Tool debe
 El **único puente** entre ambos es:
 
 - **`implementation_path_ref`** (en la definición): puntero abstracto a la implementación.
-- **Resolución por topología local** (Cúmulo): convierte `implementation_path_ref` en una ruta efectiva dentro del workspace (p. ej. `.<algo>/.SddIA/tools/<name>/...`).
+- **Resolución por topología local** (Cúmulo): convierte `implementation_path_ref` en una ruta efectiva dentro del workspace (p. ej. `SddIA/tools/{name}/` + artefacto en `SddIA/target/`).
 
-## 3. Ejecución y ruteo (Workspace-local)
+## 3. Consciencia espacial y encapsulamiento (Kaizen)
+
+* El crate de la tool reside bajo `cumulo.execution_capsules.tools` → `SddIA/tools/{name}/`.
+* El artefacto ejecutable se resuelve en `SddIA/target/` (`wasm32-wasip1/release|debug/{name}.wasm` o binario nativo `{name}`).
+* Prohibido `SddIA/scripts/tools/` como ruta operativa canónica (legacy retirado a `SddIA/scripts/limbo/tools/`).
+* El runtime laboratorio usa `capsule_resolve.resolve_tool_capsule()` — paridad con skills.
+
+## 4. Ejecución y ruteo (Workspace-local)
 
 - Las Tools se **invocan** a través de Cúmulo/Cerbero (no por comandos crudos directos sin auditoría).
 - Cúmulo mantiene un **índice/topología** de tools disponibles en el workspace y resuelve `implementation_path_ref` sin duplicar rutas literales en specs.
 - Ubicación sugerida (ejemplo no normativo): `.<workspace>/.SddIA/tools/<name>/` o equivalente. La ubicación real depende del proyecto y su topología.
 
-## 4. Interfaz de Interacción
+## 5. Interfaz de Interacción
 
 Las Tools deben respetar un estándar de comunicación **machine-readable**:
 
@@ -65,11 +72,11 @@ Las Tools deben respetar un estándar de comunicación **machine-readable**:
 - Los secretos/tokens **no** deben aparecer en `message`, `feedback`, `result` ni `error`.
 - La inyección de secretos debe ocurrir vía **entorno efímero** o mecanismos equivalentes del workspace (delivery), con borrado/expiración.
 
-## 5. Física del Valor y Evolución (Bloque Latente)
+## 6. Física del Valor y Evolución (Bloque Latente)
 * `minteo_maximo`: Límite de uso definido por el arquitecto local.
 * `porcentaje_de_exito`: Métrica auditable del rendimiento de la herramienta en el entorno local.
 
-## 6. Termodinámica declarativa
+## 7. Termodinámica declarativa
 
 Campos opcionales en frontmatter de `{name}.md` — paridad con `skills-contract.md` §6 y `actions-contract.md` §6:
 
@@ -82,7 +89,7 @@ Cuando `telemetry_provided: true`, la cápsula promete devolver `telemetry_recei
 
 **Nota histórica:** v1.3.0 introduce termodinámica en tools para soportar el Arsenal de Entropía (`schema-corruptor`) y alinear el Peaje Termodinámico con skills/actions (programa Inmunidad / Caos S+ Grade).
 
-## 7. Sustrato de Delivery recomendado
+## 8. Sustrato de Delivery recomendado
 
 El sustrato canónico para nuevas tools en este workspace es **Rust compilado a `wasm32-wasip1`**, ejecutado vía `wasmtime`. Garantiza portabilidad, sandboxing y paridad con el ecosistema de skills.
 
@@ -90,9 +97,10 @@ El sustrato canónico para nuevas tools en este workspace es **Rust compilado a 
 - Tools Python existentes que no usen subprocess son candidatas a migración inmediata.
 - Tools que requieran subprocess (ej. invocación de `wasmtime` a otros módulos) están bloqueadas por limitación WASI hasta adopción de `wasi:cli` experimental.
 
-## 8. Historial normativo (extracto)
+## 9. Historial normativo (extracto)
 
-- **v1.4.0** — §7 sustrato Rust/WASI canónico; `execution_substrate: rust-wasi` en frontmatter.
+- **v1.5.0** — §3 paths Rust `SddIA/tools/` + `SddIA/target/`; retiro `scripts/tools/` operativo.
+- **v1.4.0** — §8 sustrato Rust/WASI canónico; `execution_substrate: rust-wasi` en frontmatter.
 - **v1.3.0** — §6 termodinámica declarativa (`telemetry_provided`, `telemetry_schema`).
 - **v1.2.0** — Identidad atómica: campo canónico **`name`**; **`toolId`** deprecado en definiciones.
 - **v1.1.0** — Baseline previo (`toolId` en identidad y textos).

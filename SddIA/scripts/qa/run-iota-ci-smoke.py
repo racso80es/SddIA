@@ -29,7 +29,22 @@ if str(SCRIPT.parent) not in sys.path:
 from eda_bus_utils import ensure_event_bus_topology, list_witnesses, load_eda_bus
 from env_loader import load_hierarchical_env
 
-WATCHER = SCRIPT.parent.parent / "daemons" / "event-watcher.py"
+
+def _resolve_watcher(repo: Path) -> list[str]:
+    from capsule_resolve import resolve_daemon_capsule
+
+    try:
+        return [str(resolve_daemon_capsule(repo, "event-watcher"))]
+    except FileNotFoundError:
+        sh = repo / "SddIA" / "daemons" / "event-watcher.sh"
+        if sh.is_file():
+            return [str(sh)]
+        legacy = repo / "SddIA" / "scripts" / "limbo" / "daemons" / "event-watcher.py"
+        if legacy.is_file():
+            return [sys.executable, str(legacy)]
+        raise
+
+
 IOTA_SUBSCRIBER = "cumulo.iota-immutable-publisher"
 FIXTURE_REL = "docs/features/e1-iota-ci/_smoke-iota-ci-merged.json"
 
@@ -96,7 +111,7 @@ def _write_pending(repo: Path, event: dict[str, Any]) -> Path:
 
 def _route_event(repo: Path, rel_path: str, env: dict[str, str]) -> dict[str, Any]:
     proc = subprocess.run(
-        [sys.executable, str(WATCHER), "--event-file-path", rel_path],
+        _resolve_watcher(repo) + ["--event-file-path", rel_path],
         capture_output=True,
         text=True,
         encoding="utf-8",

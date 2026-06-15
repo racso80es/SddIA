@@ -10,7 +10,7 @@ capabilities:
   - "sandbox-breacher"
   - "chaos-sandbox-stress"
   - "capsule-json-io"
-implementation_path_ref: "scripts/tools/sandbox-breacher"
+implementation_path_ref: "SddIA/tools/sandbox-breacher"
 ---
 
 # sandbox-breacher

@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
-_TOOL_DIR = Path(__file__).resolve().parents[1] / "tools" / "telegram-gateway"
+from capsule_resolve import invoke_tool_capsule_json
+
+_TOOL_DIR = Path(__file__).resolve().parents[1] / "limbo" / "tools" / "telegram-gateway"
 if str(_TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(_TOOL_DIR))
 
@@ -33,28 +34,9 @@ def transmute_telegram_text(text: str) -> tuple[str, dict[str, Any]] | None:
 
 
 def _invoke_tool_capsule(repo: Path, text: str) -> dict[str, Any]:
-    script = repo / "SddIA" / "scripts" / "tools" / "telegram-gateway" / "main.py"
-    proc = subprocess.run(
-        [sys.executable, str(script)],
-        input=json.dumps({"text": text}, ensure_ascii=False),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
-    )
-    line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
-    if not line:
-        return {"success": False, "error": proc.stderr or "sin salida cápsula"}
-    try:
-        body = json.loads(line)
-    except json.JSONDecodeError:
-        return {"success": False, "error": "JSON inválido cápsula"}
+    _rc, body = invoke_tool_capsule_json(repo, "telegram-gateway", {"text": text})
     if not isinstance(body, dict):
         return {"success": False, "error": "envelope no objeto"}
-    if proc.returncode != 0 and not body.get("success"):
-        return body
     return body
 
 

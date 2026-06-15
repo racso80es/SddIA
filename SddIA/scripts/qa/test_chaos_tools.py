@@ -1,34 +1,25 @@
 # -*- coding: utf-8 -*-
-"""Tests Arsenal de Entropía — Fase 1."""
+"""Tests Arsenal de Entropía — Fase 1 (cápsulas Rust WASI vía capsule_resolve)."""
 
 from __future__ import annotations
 
-import json
-import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
+_QA = Path(__file__).resolve().parent
+if str(_QA) not in sys.path:
+    sys.path.insert(0, str(_QA))
+
+from capsule_resolve import invoke_tool_capsule_json
 from chaos_workspace_utils import assert_workspace_bound
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-TOOLS = Path(__file__).resolve().parents[1] / "tools"
 
 
-def _run_capsule(script: Path, payload: dict) -> tuple[int, dict]:
-    proc = subprocess.run(
-        [sys.executable, str(script)],
-        input=json.dumps(payload),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        cwd=str(REPO_ROOT),
-        check=False,
-    )
-    line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
-    body = json.loads(line) if line else {}
-    return proc.returncode, body
+def _run_capsule(tool_name: str, payload: dict) -> tuple[int, dict]:
+    return invoke_tool_capsule_json(REPO_ROOT, tool_name, payload, prefer_wasm=True)
 
 
 class TestAssertWorkspaceBound(unittest.TestCase):
@@ -51,32 +42,27 @@ class TestAssertWorkspaceBound(unittest.TestCase):
 
 class TestIoChoke(unittest.TestCase):
     def test_chokes_write(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT) as tmp:
             ws = Path(tmp).resolve()
             code, body = _run_capsule(
-                TOOLS / "io-choke" / "io_choke.py",
+                "io-choke",
                 {"workspace_path": str(ws), "target_file": "choke.txt"},
             )
             self.assertEqual(code, 0)
             self.assertTrue(body.get("success"))
-            self.assertTrue(body.get("result", {}).get("io_choked"))
+            io_choked = (body.get("result") or {}).get("io_choked") or body.get("io_choked")
+            self.assertTrue(io_choked)
 
 
 class TestSchemaCorruptor(unittest.TestCase):
     def test_empty_mode_no_valid_receipt(self) -> None:
-        code, body = _run_capsule(
-            TOOLS / "schema-corruptor" / "schema_corruptor.py",
-            {"corruption_mode": "empty"},
-        )
+        code, body = _run_capsule("schema-corruptor", {"corruption_mode": "empty"})
         self.assertEqual(code, 0)
         self.assertTrue(body.get("success"))
         self.assertNotIn("telemetry_receipt", body)
 
     def test_partial_mode_incomplete_receipt(self) -> None:
-        code, body = _run_capsule(
-            TOOLS / "schema-corruptor" / "schema_corruptor.py",
-            {"corruption_mode": "partial"},
-        )
+        code, body = _run_capsule("schema-corruptor", {"corruption_mode": "partial"})
         self.assertEqual(code, 0)
         receipt = body.get("telemetry_receipt")
         self.assertIsInstance(receipt, dict)
@@ -85,26 +71,30 @@ class TestSchemaCorruptor(unittest.TestCase):
 
 class TestSandboxBreacher(unittest.TestCase):
     def test_blocks_escape(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT) as tmp:
             ws = Path(tmp).resolve()
             code, body = _run_capsule(
-                TOOLS / "sandbox-breacher" / "sandbox_breacher.py",
+                "sandbox-breacher",
                 {"workspace_path": str(ws), "escape_target": "../breach-marker.txt"},
             )
             self.assertEqual(code, 1)
             self.assertFalse(body.get("success"))
-            self.assertTrue(body.get("result", {}).get("breach_blocked"))
+            blocked = (body.get("result") or {}).get("breach_blocked") or body.get("breach_blocked")
+            self.assertTrue(blocked)
 
     def test_allows_inside_workspace(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=REPO_ROOT) as tmp:
             ws = Path(tmp).resolve()
             code, body = _run_capsule(
-                TOOLS / "sandbox-breacher" / "sandbox_breacher.py",
+                "sandbox-breacher",
                 {"workspace_path": str(ws), "escape_target": "inside.txt"},
             )
             self.assertEqual(code, 0)
             self.assertTrue(body.get("success"))
-            self.assertFalse(body.get("result", {}).get("breach_blocked"))
+            blocked = (body.get("result") or {}).get("breach_blocked")
+            if blocked is None:
+                blocked = body.get("breach_blocked")
+            self.assertFalse(blocked)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,512 @@
+use crate::eda_bus::{ensure_event_bus_topology, header_path, load_registry, EdBusPaths};
+use serde_json::{json, Value};
+use std::collections::HashSet;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::thread;
+use std::time::Duration;
+
+pub const POLL_SECONDS: u64 = 5;
+
+#[derive(Debug, Clone, Default)]
+pub struct SweepReport {
+    pub purged: Vec<Value>,
+    pub kaizen_alerts: Vec<String>,
+    pub kaizen_finalized: Vec<Value>,
+    pub skipped: Vec<Value>,
+}
+
+pub fn sweep_once(repo: &Path) -> Result<SweepReport, String> {
+    let bus = ensure_event_bus_topology(repo)?;
+    let registry = load_registry(&bus).ok();
+    let mut report = SweepReport::default();
+
+    if !bus.pending.is_dir() {
+        return Ok(report);
+    }
+
+    let mut entries: Vec<PathBuf> = fs::read_dir(&bus.pending)
+        .map_err(|e| format!("read pending: {e}"))?
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
+        .collect();
+    entries.sort();
+
+    for parent_path in entries {
+        let event_uuid = parent_path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
+        let result = try_sweep_event(repo, &bus, &event_uuid, registry.as_ref())?;
+        match result.get("status").and_then(|v| v.as_str()) {
+            Some("purged") => report.purged.push(json!({
+                "event_uuid": event_uuid,
+                "witnesses": result.get("witnesses").unwrap_or(&json!(0)),
+                "headers": result.get("headers").unwrap_or(&json!(0)),
+                "pending": result.get("pending").unwrap_or(&json!(0)),
+            })),
+            Some("kaizen-finalized") => report.kaizen_finalized.push(json!({
+                "event_uuid": event_uuid,
+                "pending": result.get("pending").unwrap_or(&json!(0)),
+                "headers": result.get("headers").unwrap_or(&json!(0)),
+            })),
+            Some("kaizen") => {
+                let dead = list_witnesses(repo, &bus, "dead_letter_subscribers", &event_uuid);
+                emit_kaizen_alert(
+                    &event_uuid,
+                    result.get("event_type").and_then(|v| v.as_str()).unwrap_or(""),
+                    &dead,
+                );
+                report.kaizen_alerts.push(event_uuid);
+            }
+            Some(status)
+                if matches!(
+                    status,
+                    "invalid-json"
+                        | "missing-event_type"
+                        | "no-subscribers"
+                        | "absent"
+                        | "invalid-registry"
+                ) =>
+            {
+                report.skipped.push(json!({
+                    "event_uuid": event_uuid,
+                    "reason": status,
+                }));
+            }
+            Some("in-flight") => report.skipped.push(json!({
+                "event_uuid": event_uuid,
+                "reason": "subscribers-in-flight",
+                "in_flight": result.get("in_flight").cloned().unwrap_or(json!([])),
+            })),
+            Some("awaiting") => report.skipped.push(json!({
+                "event_uuid": event_uuid,
+                "reason": "awaiting-subscribers",
+                "pending": result.get("pending_subscribers").cloned().unwrap_or(json!([])),
+            })),
+            _ => {}
+        }
+    }
+    Ok(report)
+}
+
+pub fn try_sweep_event(
+    repo: &Path,
+    bus: &EdBusPaths,
+    event_uuid: &str,
+    registry: Option<&Value>,
+) -> Result<Value, String> {
+    let mut base = json!({"event_uuid": event_uuid, "purged": false});
+    let pending_path = bus.pending.join(format!("{event_uuid}.json"));
+    if !pending_path.is_file() {
+        base["status"] = json!("absent");
+        return Ok(base);
+    }
+
+    let event: Value = match fs::read_to_string(&pending_path) {
+        Ok(raw) => serde_json::from_str(&raw).map_err(|_| "invalid-json")?,
+        Err(_) => {
+            base["status"] = json!("invalid-json");
+            return Ok(base);
+        }
+    };
+
+    let event_type = event.get("event_type").and_then(|v| v.as_str());
+    let Some(event_type) = event_type.filter(|s| !s.is_empty()) else {
+        base["status"] = json!("missing-event_type");
+        return Ok(base);
+    };
+
+    let payload = event
+        .get("payload")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    let payload_val = Value::Object(payload.clone());
+
+    let registry_val = match registry {
+        Some(r) => r.clone(),
+        None => match load_registry(bus) {
+            Ok(r) => r,
+            Err(_) => {
+                base["status"] = json!("invalid-registry");
+                base["event_type"] = json!(event_type);
+                return Ok(base);
+            }
+        },
+    };
+
+    let applicable = applicable_subscriber_ids(&registry_val, event_type, &payload_val);
+    let dead = list_witnesses(repo, bus, "dead_letter_subscribers", event_uuid);
+
+    if !dead.is_empty() {
+        let origin = resolve_origin_topology(&payload_val);
+        let in_flight = in_flight_subscriber_names(repo, bus, event_uuid);
+        let terminals = terminal_subscriber_names(repo, bus, event_uuid);
+        let applicable_set: HashSet<_> = applicable.iter().cloned().collect();
+        if !applicable.is_empty()
+            && applicable_set.is_subset(&terminals)
+            && in_flight.intersection(&applicable_set).next().is_none()
+        {
+            let finalized = finalize_kaizen_terminal(
+                repo,
+                bus,
+                event_uuid,
+                &pending_path,
+                &registry_val,
+                event_type,
+                &origin,
+            )?;
+            base["status"] = json!("kaizen-finalized");
+            base["purged"] = json!(true);
+            base["finalized"] = json!(true);
+            base["event_type"] = json!(event_type);
+            base["dead_letter_witnesses"] = json!(dead.iter().map(|p| p.file_name().map(|n| n.to_string_lossy().into_owned())).collect::<Vec<_>>());
+            if let Some(obj) = finalized.as_object() {
+                for (k, v) in obj {
+                    base[k] = v.clone();
+                }
+            }
+            return Ok(base);
+        }
+        base["status"] = json!("kaizen");
+        base["event_type"] = json!(event_type);
+        base["dead_letter_witnesses"] = json!(dead.iter().map(|p| p.file_name().map(|n| n.to_string_lossy().into_owned())).collect::<Vec<_>>());
+        return Ok(base);
+    }
+
+    if applicable.is_empty() {
+        let archived = archive_event_after_sweep(repo, bus, event_uuid, Some(event_type))?;
+        base["status"] = json!("purged");
+        base["purged"] = json!(true);
+        base["event_type"] = json!(event_type);
+        merge_counts(&mut base, &archived);
+        return Ok(base);
+    }
+
+    let in_flight = in_flight_subscriber_names(repo, bus, event_uuid);
+    let overlap: Vec<_> = in_flight
+        .intersection(&applicable.iter().cloned().collect())
+        .cloned()
+        .collect();
+    if !overlap.is_empty() {
+        base["status"] = json!("in-flight");
+        base["event_type"] = json!(event_type);
+        base["in_flight"] = json!(overlap);
+        return Ok(base);
+    }
+
+    let done = processed_subscriber_names(repo, bus, event_uuid);
+    let applicable_set: HashSet<_> = applicable.iter().cloned().collect();
+    if applicable_set.is_subset(&done) {
+        let archived = archive_event_after_sweep(repo, bus, event_uuid, Some(event_type))?;
+        base["status"] = json!("purged");
+        base["purged"] = json!(true);
+        base["event_type"] = json!(event_type);
+        merge_counts(&mut base, &archived);
+        return Ok(base);
+    }
+
+    let pending_subs: Vec<_> = applicable_set.difference(&done).cloned().collect();
+    base["status"] = json!("awaiting");
+    base["event_type"] = json!(event_type);
+    base["pending_subscribers"] = json!(pending_subs);
+    Ok(base)
+}
+
+fn merge_counts(base: &mut Value, archived: &Value) {
+    for key in ["witnesses", "headers", "pending"] {
+        if let Some(v) = archived.get(key) {
+            base[key] = v.clone();
+        }
+    }
+}
+
+fn resolve_origin_topology(payload: &Value) -> String {
+    payload
+        .get("origin_topology")
+        .and_then(|v| v.as_str())
+        .filter(|s| matches!(*s, "core" | "local"))
+        .unwrap_or("core")
+        .to_string()
+}
+
+fn subscriber_applies(subscriber: &Value, origin_topology: &str) -> bool {
+    let applies = subscriber
+        .get("applies_to_origin_topology")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str())
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_else(|| vec!["core".into()]);
+    if applies.is_empty() {
+        return origin_topology == "core";
+    }
+    applies.iter().any(|s| s == origin_topology)
+}
+
+fn subscriber_id(subscriber: &Value) -> String {
+    let agent = subscriber
+        .get("agent")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if agent.is_empty() {
+        return "unknown".into();
+    }
+    for key in ["process", "action", "tool"] {
+        if let Some(val) = subscriber.get(key).and_then(|v| v.as_str()) {
+            let val = val.trim();
+            if !val.is_empty() {
+                return format!("{agent}.{val}");
+            }
+        }
+    }
+    agent.to_string()
+}
+
+fn applicable_subscriber_ids(registry: &Value, event_type: &str, payload: &Value) -> Vec<String> {
+    let origin = resolve_origin_topology(payload);
+    registry
+        .get(event_type)
+        .and_then(|v| v.as_array())
+        .map(|subs| {
+            subs.iter()
+                .filter(|s| subscriber_applies(s, &origin))
+                .map(subscriber_id)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn witness_folder<'a>(bus: &'a EdBusPaths, state_key: &str) -> &'a Path {
+    match state_key {
+        "processed_subscribers" => &bus.processed_subscribers,
+        "dead_letter_subscribers" => &bus.dead_letter_subscribers,
+        "processing_subscribers" => &bus.processing_subscribers,
+        _ => &bus.processed_subscribers,
+    }
+}
+
+pub fn list_witnesses(repo: &Path, bus: &EdBusPaths, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
+    let folder = witness_folder(bus, state_key);
+    let _ = repo;
+    if !folder.is_dir() {
+        return vec![];
+    }
+    let prefix = format!("{event_uuid}.");
+    let Ok(entries) = fs::read_dir(folder) else {
+        return vec![];
+    };
+    let mut paths: Vec<PathBuf> = entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .map(|n| n.to_string_lossy().starts_with(&prefix))
+                .unwrap_or(false)
+        })
+        .collect();
+    paths.sort();
+    paths
+}
+
+fn witness_suffix(path: &Path, event_uuid: &str) -> Option<String> {
+    let name = path.file_name()?.to_string_lossy();
+    let prefix = format!("{event_uuid}.");
+    if !name.starts_with(&prefix) || !name.ends_with(".json") {
+        return None;
+    }
+    let mid = &name[prefix.len()..name.len() - 5];
+    if mid.is_empty() {
+        None
+    } else {
+        Some(mid.to_string())
+    }
+}
+
+fn terminal_subscriber_names(repo: &Path, bus: &EdBusPaths, event_uuid: &str) -> HashSet<String> {
+    let mut names = HashSet::new();
+    for key in ["processed_subscribers", "dead_letter_subscribers"] {
+        for path in list_witnesses(repo, bus, key, event_uuid) {
+            if let Some(s) = witness_suffix(&path, event_uuid) {
+                names.insert(s);
+            }
+        }
+    }
+    names
+}
+
+fn in_flight_subscriber_names(repo: &Path, bus: &EdBusPaths, event_uuid: &str) -> HashSet<String> {
+    list_witnesses(repo, bus, "processing_subscribers", event_uuid)
+        .into_iter()
+        .filter_map(|p| witness_suffix(&p, event_uuid))
+        .collect()
+}
+
+fn processed_subscriber_names(repo: &Path, bus: &EdBusPaths, event_uuid: &str) -> HashSet<String> {
+    list_witnesses(repo, bus, "processed_subscribers", event_uuid)
+        .into_iter()
+        .filter_map(|p| witness_suffix(&p, event_uuid))
+        .collect()
+}
+
+fn safe_remove_path(path: &Path) -> bool {
+    if !path.is_file() {
+        return true;
+    }
+    for attempt in 0..3 {
+        match fs::remove_file(path) {
+            Ok(()) => return true,
+            Err(_) if attempt < 2 => thread::sleep(Duration::from_millis(50)),
+            Err(_) => return !path.is_file(),
+        }
+    }
+    !path.is_file()
+}
+
+fn ensure_state_header(bus: &EdBusPaths, state: &str, event_uuid: &str, source: &Path) -> Result<(), String> {
+    let dest = header_path(bus, state, event_uuid);
+    if dest.is_file() {
+        return Ok(());
+    }
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("mkdir header: {e}"))?;
+    }
+    fs::copy(source, &dest).map_err(|e| format!("copy header: {e}"))?;
+    Ok(())
+}
+
+fn maybe_purge_processing_header(
+    repo: &Path,
+    bus: &EdBusPaths,
+    event_uuid: &str,
+    registry: &Value,
+    event_type: &str,
+    origin_topology: &str,
+) -> bool {
+    let required: Vec<String> = registry
+        .get(event_type)
+        .and_then(|v| v.as_array())
+        .map(|subs| {
+            subs.iter()
+                .filter(|s| subscriber_applies(s, origin_topology))
+                .map(subscriber_id)
+                .collect()
+        })
+        .unwrap_or_default();
+    if required.is_empty() {
+        return false;
+    }
+    let terminals = terminal_subscriber_names(repo, bus, event_uuid);
+    let in_flight = in_flight_subscriber_names(repo, bus, event_uuid);
+    let req_set: HashSet<_> = required.iter().cloned().collect();
+    if !req_set.is_subset(&terminals) {
+        return false;
+    }
+    if !in_flight.intersection(&req_set).collect::<Vec<_>>().is_empty() {
+        return false;
+    }
+    let header = header_path(bus, "processing", event_uuid);
+    if header.is_file() {
+        return safe_remove_path(&header);
+    }
+    false
+}
+
+fn finalize_kaizen_terminal(
+    repo: &Path,
+    bus: &EdBusPaths,
+    event_uuid: &str,
+    pending_path: &Path,
+    registry: &Value,
+    event_type: &str,
+    origin_topology: &str,
+) -> Result<Value, String> {
+    let mut counts = json!({"pending": 0, "headers": 0});
+    let dead_header = header_path(bus, "dead_letter", event_uuid);
+    if !dead_header.is_file() && pending_path.is_file() {
+        ensure_state_header(bus, "dead_letter", event_uuid, pending_path)?;
+        counts["headers"] = json!(1);
+    }
+    if pending_path.is_file() && safe_remove_path(pending_path) {
+        counts["pending"] = json!(1);
+    }
+    if maybe_purge_processing_header(repo, bus, event_uuid, registry, event_type, origin_topology) {
+        counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
+    }
+    Ok(counts)
+}
+
+pub fn archive_event_after_sweep(
+    repo: &Path,
+    bus: &EdBusPaths,
+    event_uuid: &str,
+    event_type: Option<&str>,
+) -> Result<Value, String> {
+    let _ = repo;
+    let mut counts = json!({"witnesses": 0, "headers": 0, "pending": 0});
+    let mut resolved_type = event_type.map(|s| s.to_string());
+
+    if resolved_type.is_none() {
+        for state in ["processed", "processing"] {
+            let header = header_path(bus, state, event_uuid);
+            if !header.is_file() {
+                continue;
+            }
+            if let Ok(raw) = fs::read_to_string(&header) {
+                if let Ok(body) = serde_json::from_str::<Value>(&raw) {
+                    if let Some(et) = body.get("event_type").and_then(|v| v.as_str()) {
+                        resolved_type = Some(et.to_string());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    let pending = bus.pending.join(format!("{event_uuid}.json"));
+    if pending.is_file() && safe_remove_path(&pending) {
+        counts["pending"] = json!(1);
+    }
+    for state in ["processing", "processed"] {
+        let header = header_path(bus, state, event_uuid);
+        if header.is_file() && safe_remove_path(&header) {
+            counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
+        }
+    }
+    for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid) {
+        if safe_remove_path(&path) {
+            counts["witnesses"] = json!(counts["witnesses"].as_i64().unwrap_or(0) + 1);
+        }
+    }
+    let _ = resolved_type;
+    Ok(counts)
+}
+
+fn emit_kaizen_alert(event_uuid: &str, event_type: &str, witnesses: &[PathBuf]) {
+    let mut details = Vec::new();
+    for path in witnesses {
+        let mut entry = json!({"witness": path.file_name().map(|n| n.to_string_lossy().into_owned())});
+        if let Ok(raw) = fs::read_to_string(path) {
+            if let Ok(body) = serde_json::from_str::<Value>(&raw) {
+                entry["subscriber"] = body.get("subscriber").cloned().unwrap_or(Value::Null);
+                entry["error_trace"] = body.get("error_trace").cloned().unwrap_or(Value::Null);
+            }
+        }
+        details.push(entry);
+    }
+    let alert = json!({
+        "alert_type": "kaizen_eda_dead_letter",
+        "event_uuid": event_uuid,
+        "event_type": event_type,
+        "message": "Testigo en dead-letter — padre NO purgado",
+        "witnesses": details,
+    });
+    eprintln!("{}", serde_json::to_string(&alert).unwrap_or_default());
+}

@@ -170,6 +170,8 @@ def anchor_merkle(repo: Path, manifest_path: Path) -> dict[str, Any]:
         if o.get("entity_uuid")
     ]
     root = _merkle_root(leaves)
+    from iota_tool_invoke import invoke_iota_immutable_publisher
+
     acta = {
         "correlation_id": manifest.get("correlation_id"),
         "merkle_root": f"sha256:{root}",
@@ -177,44 +179,10 @@ def anchor_merkle(repo: Path, manifest_path: Path) -> dict[str, Any]:
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "entries": orphans,
     }
-    tool_dir = repo / "SddIA" / "scripts" / "tools" / "iota-immutable-publisher"
-    entry = tool_dir / "index.ts"
     digest = None
-    simulate = os.environ.get("SDDIA_LAB_SIMULATE_IOTA", "").strip().lower() in ("1", "true", "yes")
-    if simulate:
-        digest = f"lab-simulated-{root[:16]}"
-    elif entry.is_file():
-        local_ts_node = tool_dir / "node_modules" / ".bin" / "ts-node"
-        npx = shutil.which("npx")
-        if local_ts_node.is_file():
-            runner_cmd = [str(local_ts_node), str(entry)]
-        elif npx:
-            runner_cmd = [npx, "ts-node", str(entry)]
-        else:
-            runner_cmd = []
-        payload = {
-            "action": "publish_immutable_data",
-            "network": "testnet",
-            "payload": json.dumps(acta, ensure_ascii=False),
-        }
-        proc = (
-            subprocess.run(
-                runner_cmd,
-                input=json.dumps(payload),
-                capture_output=True,
-                text=True,
-                cwd=str(tool_dir),
-                check=False,
-            )
-            if runner_cmd
-            else subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr="npx not found")
-        )
-        if proc.returncode == 0:
-            try:
-                body = json.loads(proc.stdout.strip() or "{}")
-                digest = (body.get("result") or {}).get("transaction_digest")
-            except json.JSONDecodeError:
-                pass
+    ok, _feedback, _rc, digest = invoke_iota_immutable_publisher(repo, acta)
+    if not ok:
+        digest = None
     out_path = manifest_path.parent / f"merkle-acta-{manifest.get('correlation_id', 'batch')}.json"
     acta["transaction_digest"] = digest
     out_path.write_text(json.dumps(acta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

@@ -111,7 +111,9 @@ jobs:
           SDDIA_LAB_ROUTE_SYNC: "1"
         run: python SddIA/scripts/qa/run-eda-e2e-lab.py --entity-class tool --json
       - name: event-sweeper --once (idempotent)
-        run: python SddIA/scripts/daemons/event-sweeper.py --once --json
+        run: |
+          cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build --release -p event-sweeper
+          target/release/event-sweeper --once --json
 
   eda-iota-physical:
     runs-on: ubuntu-latest
