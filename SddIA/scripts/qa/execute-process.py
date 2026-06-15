@@ -62,6 +62,12 @@ def main() -> None:
 
         repo = repo_root()
         load_hierarchical_env(repo)
+        try:
+            from daemon_kill_switch_core import register_kill_switch_hooks
+
+            register_kill_switch_hooks(repo)
+        except ImportError:
+            pass
         result = run_process(repo, process_name, process_inputs)
         emit(result, result.get("status_code", 0))
     except json.JSONDecodeError as e:

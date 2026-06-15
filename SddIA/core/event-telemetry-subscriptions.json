@@ -10,5 +10,12 @@
       "process": "telemetry-compliance-audit",
       "intent": "Cruce recibo vs contrato ED; emisión dominio breach; sello delivery_state."
     }
+  ],
+  "Daemon_Heartbeat": [
+    {
+      "agent": "argos",
+      "process": "daemon-heartbeat-audit",
+      "intent": "Triaje latido térmico Centinelas; System_Fracture_Detected tras 3 ciclos omitidos."
+    }
   ]
 }

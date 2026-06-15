@@ -24,7 +24,8 @@
     "library_norms": "SddIA/library/norms/",
     "library_codexes": "SddIA/library/codexes/",
     "events": "SddIA/events",
-    "suites": "SddIA/suites"
+    "suites": "SddIA/suites",
+    "daemons": "SddIA/daemons"
   },
   "normative_documents": {
     "interaction_triggers": "SddIA/norms/interaction-triggers.json",
@@ -51,11 +52,17 @@
     "library_norms": "SddIA/library/norms/norms-contract.md",
     "library_codexes": "SddIA/library/codexes/codex-contract.md",
     "events": "SddIA/events/events-contract.md",
-    "suites": "SddIA/suites/suites-contract.md"
+    "suites": "SddIA/suites/suites-contract.md",
+    "daemons": "SddIA/daemons/daemons-contract.md"
   },
   "execution_capsules": {
     "skills": "scripts/skills/",
-    "tools": "scripts/tools/"
+    "tools": "scripts/tools/",
+    "daemons": "SddIA/scripts/daemons/"
+  },
+  "daemons_instance": {
+    "status": ".SddIA/daemons/status",
+    "state": ".SddIA/daemons/state"
   },
   "event_bus": "./.events",
   "eda_coverage": "SddIA/core/eda-coverage.json",

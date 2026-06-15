@@ -25,6 +25,7 @@ _QA_DIR = _SCRIPT_DIR.parent / "qa"
 if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
+from daemon_centinel_runtime import centinela_runtime
 from dlt_bus_materializer import (
     build_bus_event,
     compose_pre_anchor_event,
@@ -183,7 +184,13 @@ def fetch_lab_simulation(repo: Path) -> list[dict[str, Any]]:
     return []
 
 
-def process_pr(repo: Path, pr: dict[str, Any], state: dict[str, Any]) -> bool:
+def process_pr(
+    repo: Path,
+    pr: dict[str, Any],
+    state: dict[str, Any],
+    *,
+    centinela: Any | None = None,
+) -> bool:
     pr_url = pr.get("pr_url") or ""
     if not pr_url:
         return False
@@ -192,6 +199,8 @@ def process_pr(repo: Path, pr: dict[str, Any], state: dict[str, Any]) -> bool:
         return False
 
     print(f"[GITHUB-BRIDGE] Procesando PR remoto: {pr_url}", flush=True)
+    if centinela is not None:
+        centinela.note_stimulus()
     load_wallet_secret(repo)
     pre_event = compose_pre_anchor_event(pr)
     digest, object_id, err = publish_with_retries(repo, pre_event)
@@ -212,7 +221,7 @@ def process_pr(repo: Path, pr: dict[str, Any], state: dict[str, Any]) -> bool:
     return True
 
 
-def run_cycle(repo: Path) -> int:
+def run_cycle(repo: Path, *, centinela: Any | None = None) -> int:
     state = _load_state(repo)
     repository = os.environ.get("SDDIA_GITHUB_REPOSITORY", DEFAULT_REPO).strip()
 
@@ -230,8 +239,10 @@ def run_cycle(repo: Path) -> int:
 
     handled = 0
     for pr in candidates:
-        if process_pr(repo, pr, state):
+        if process_pr(repo, pr, state, centinela=centinela):
             handled += 1
+    if centinela is not None:
+        centinela.tick()
     return 0 if handled >= 0 else 1
 
 
@@ -242,14 +253,22 @@ def main() -> None:
 
     repo = _repo_root()
     load_hierarchical_env(repo)
+    centinela = centinela_runtime(repo, "github-bridge-watcher")
+    centinela.bootstrap()
 
     if args.once:
-        sys.exit(run_cycle(repo))
+        code = run_cycle(repo, centinela=centinela)
+        centinela.shutdown()
+        sys.exit(code)
 
     print(f"[GITHUB-BRIDGE] Iniciado (poll={_poll_seconds()}s)", flush=True)
-    while True:
-        run_cycle(repo)
-        time.sleep(_poll_seconds())
+    try:
+        while True:
+            run_cycle(repo, centinela=centinela)
+            time.sleep(_poll_seconds())
+    except KeyboardInterrupt:
+        centinela.shutdown()
+        print("[GITHUB-BRIDGE] detenido", flush=True)
 
 
 if __name__ == "__main__":
