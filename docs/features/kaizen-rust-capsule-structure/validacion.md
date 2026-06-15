@@ -3,6 +3,7 @@ feature_name: kaizen-rust-capsule-structure
 created: "2026-06-15"
 process: refactorization
 branch: feat/kaizen-rust-capsule-structure
+pr_url: https://github.com/racso80es/SddIA/pull/93
 global: APTO
 pbi_archived: true
 pbi_ref: docs/todos/done/kaicen Estructura de Cápsulas Rust.md
@@ -71,4 +72,4 @@ python3 -m unittest test_chaos_immunity_eda  # SddIA/scripts/qa
 ## Cierre documental
 
 - PBI archivado en `docs/todos/done/` (mismo `document_id`).
-- Pendiente **K7**: `delivery-close-cycle` + PR único en rama `feat/kaizen-rust-capsule-structure`.
+- **K7** cerrado: `delivery-close-cycle` → PR [#93](https://github.com/racso80es/SddIA/pull/93) (pendiente merge).

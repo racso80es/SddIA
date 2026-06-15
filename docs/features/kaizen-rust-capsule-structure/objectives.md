@@ -7,11 +7,12 @@ persist_ref: docs/features/kaizen-rust-capsule-structure
 pbi_ref: docs/todos/done/kaicen Estructura de Cápsulas Rust.md
 priority: kaizen-arquitectura
 updated: "2026-06-15"
-status: k6_apto_k7_pendiente
-pause_after: k6-certification
-next_wave: k7-delivery-close-cycle
+status: k7_pr_presentado
+pause_after: k7-delivery-close-cycle
+next_wave: post-merge-debt-backlog
 handoff: docs/features/kaizen-rust-capsule-structure/status.md
 debt_ref: plan.md#backlog-de-deuda-técnica-post-k6
+pr_url: https://github.com/racso80es/SddIA/pull/93
 ---
 
 # Objetivos — Kaizen Estructura de Cápsulas Rust
@@ -39,7 +40,7 @@ Erradicar entropía Python en la capa operativa `SddIA/scripts/` (tools, skills,
 | **Ola 2 — Tools** | `scripts/tools/` → `SddIA/tools/` | ✅ TL-CA* |
 | **Ola 3 — Daemons** | `scripts/daemons/` → `SddIA/daemons/` | ✅ DM-CA* |
 | **K6** | Poda + certificación EDA | ✅ `validacion.md` APTO |
-| **K7** | Cierre PR | ⏳ `delivery-close-cycle` |
+| **K7** | Cierre PR | ✅ PR [#93](https://github.com/racso80es/SddIA/pull/93) |
 
 **Orden de consolidación:** Skills → Tools → Daemons (`clarify.md` §D8) — **completado**.
 
@@ -69,7 +70,7 @@ Ver [`plan.md` §Backlog de deuda técnica](./plan.md#backlog-de-deuda-técnica-
 
 - Git exclusivamente vía `skill:git-manager`.
 - Forja genoma vía `entity-manager` / `*-creator`.
-- Cierre: un PR + `validacion.md` APTO + PBI en `docs/todos/done/` — **K7 pendiente**.
+- Cierre: un PR + `validacion.md` APTO + PBI en `docs/todos/done/` — **K7 ✅ PR #93**.
 
 ## Fases (runtime IDE)
 
@@ -79,6 +80,6 @@ Ver [`plan.md` §Backlog de deuda técnica](./plan.md#backlog-de-deuda-técnica-
 | Diseño de refactor | Dedalo | ✅ |
 | Ejecución Ola 1–3 + K6 | Tekton | ✅ |
 | Verificación | Argos | ✅ `validacion.md` |
-| Cierre | delivery-close-cycle | ⏳ **retomar** |
+| Cierre | delivery-close-cycle | ✅ PR #93 |
 
 Handoff: [`status.md`](./status.md).

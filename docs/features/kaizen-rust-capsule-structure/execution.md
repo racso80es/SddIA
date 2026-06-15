@@ -14,9 +14,11 @@ items_applied:
   - tekton-ola-3-telegram-watcher-p2
   - tekton-ola-3-github-bridge-watcher-p3
   - tekton-k6-certification
-pause_after: k6-certification
-next_wave: k7-delivery-close-cycle
+  - tekton-k7-delivery-close-cycle
+pause_after: k7-delivery-close-cycle
+next_wave: post-merge-debt-backlog
 handoff: docs/features/kaizen-rust-capsule-structure/status.md
+pr_url: https://github.com/racso80es/SddIA/pull/93
 debt_ref: plan.md#backlog-de-deuda-técnica-post-k6
 ---
 
@@ -26,12 +28,12 @@ debt_ref: plan.md#backlog-de-deuda-técnica-post-k6
 
 | Campo | Valor |
 |-------|-------|
-| **Último hito cerrado** | K6 — `validacion.md` APTO |
-| **Siguiente hito** | K7 — `delivery-close-cycle` + PR |
-| **Retomar en** | [`status.md`](./status.md) |
+| **Último hito cerrado** | K7 — PR [#93](https://github.com/racso80es/SddIA/pull/93) |
+| **Siguiente hito** | Post-merge — backlog DEBT-K* |
+| **Retomar en** | [`status.md`](./status.md) §Tras merge |
 | **Deuda planificada** | [`plan.md` §Backlog](./plan.md#backlog-de-deuda-técnica-post-k6) |
 
-El código y la documentación de certificación están en la rama `feat/kaizen-rust-capsule-structure`. **No hay trabajo de implementación pendiente** en este feature salvo el cierre de entrega (K7).
+K7 completado. Pendiente merge del PR; deuda técnica DEBT-K1…K9 abordada como features/fix independientes.
 
 ## Comando de arranque al retomar
 
@@ -70,7 +72,7 @@ Orquestación EDA (`execute-process.py`) permanece en Python — DEBT-K1, spec �
 | Ola 2 Tools | Tekton | ✅ |
 | Ola 3 Daemons | Tekton | ✅ |
 | K6 + Argos | Tekton + Argos | ✅ |
-| **Cierre PR** | delivery-close-cycle | ⏳ |
+| **Cierre PR** | delivery-close-cycle | ✅ PR #93 |
 
 ## Deuda post-entrega
 

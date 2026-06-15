@@ -13,7 +13,7 @@ consolidation_order: skills, tools, daemons
 
 Blueprint Tekton. Entrada: `objectives.md`, `clarify.md`, `spec.md`, SSOT `cumulo.paths.json`.
 
-> **Retomar ejecución:** [`status.md`](./status.md) (K6 ✅ — K7 PR pendiente).
+> **Estado:** K7 ✅ — PR [#93](https://github.com/racso80es/SddIA/pull/93). Tras merge: backlog DEBT-K* en [`status.md`](./status.md).
 
 ## 0. Estado de la entrega
 
@@ -28,7 +28,7 @@ Blueprint Tekton. Entrada: `objectives.md`, `clarify.md`, `spec.md`, SSOT `cumul
 | **Ola 2 — Tools** | ✅ | SSOT + runtime + poda `limbo/tools/` |
 | **Ola 3 — Daemons** | ✅ | 4 centinelas Rust; DM-CA* verificación en K6 |
 | **K6 — Poda + E2E** | ✅ | `validacion.md` APTO |
-| **K7 — Cierre PR** | ⏳ | `delivery-close-cycle` |
+| **K7 — Cierre PR** | ✅ | PR [#93](https://github.com/racso80es/SddIA/pull/93) |
 | Verificación Argos | ✅ | `validacion.md` |
 | **Backlog deuda** | 📋 | §Backlog deuda técnica (no bloquea K7) |
 
@@ -296,7 +296,7 @@ refactor(skills): Ola 1 — SSOT + runtime
 refactor(tools): Ola 2 — SSOT + runtime
 feat(daemons): Ola 3 — centinelas Rust
 docs(kaizen): K6 — validación + poda
-docs(kaizen): K7 — delivery-close-cycle  # pendiente
+docs(kaizen): K7 — delivery-close-cycle PR #93  # ✅
 ```
 
 ## Post-merge — backlog deuda

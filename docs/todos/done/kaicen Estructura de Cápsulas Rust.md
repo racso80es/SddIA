@@ -10,6 +10,8 @@ process: refactorization
 branch_name: feat/kaizen-rust-capsule-structure
 feature_ref: docs/features/kaizen-rust-capsule-structure
 validacion_ref: docs/features/kaizen-rust-capsule-structure/validacion.md
+pr_url: https://github.com/racso80es/SddIA/pull/93
+closed: "2026-06-15"
 ---
 
 # PBI-KAIZEN: Erradicación de Entropía Python y Transición a Estructura de Cápsulas Rust
@@ -17,7 +19,7 @@ validacion_ref: docs/features/kaizen-rust-capsule-structure/validacion.md
 | Campo | Valor |
 |-------|-------|
 | **ID** | `PBI-KAIZEN-RUST-CAPSULE-STRUCTURE` |
-| **Estatus** | ✅ K6 APTO — K7 PR pendiente |
+| **Estatus** | ✅ K7 — PR [#93](https://github.com/racso80es/SddIA/pull/93) presentado |
 | **Validación** | [`validacion.md`](../../features/kaizen-rust-capsule-structure/validacion.md) |
 | **Handoff** | [`status.md`](../../features/kaizen-rust-capsule-structure/status.md) |
 | **Deuda** | [`plan.md` §Backlog](../../features/kaizen-rust-capsule-structure/plan.md#backlog-de-deuda-técnica-post-k6) |
@@ -32,10 +34,11 @@ validacion_ref: docs/features/kaizen-rust-capsule-structure/validacion.md
 | Ola 2 | Tools Rust en `SddIA/tools/` |
 | Ola 3 | 4 centinelas Rust en `SddIA/daemons/` |
 | K6 | `validacion.md` global APTO |
+| K7 | PR [#93](https://github.com/racso80es/SddIA/pull/93) |
 
 Legacy podado en `SddIA/scripts/limbo/{skills,tools,daemons}/`.
 
-**Pendiente:** K7 `delivery-close-cycle` + PR. Deuda técnica DEBT-K1…K9 en `plan.md` (no bloquea K7).
+**Post-merge:** backlog DEBT-K1…K9 en `plan.md` (features independientes).
 
 ## 1. Clarificación (Clarify)
 

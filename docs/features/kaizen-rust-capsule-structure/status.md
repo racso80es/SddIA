@@ -6,15 +6,16 @@ process: refactorization
 branch_name: feat/kaizen-rust-capsule-structure
 persist_ref: docs/features/kaizen-rust-capsule-structure
 pbi_ref: docs/todos/done/kaicen Estructura de Cápsulas Rust.md
-pause_after: k6-certification
-next_wave: k7-delivery-close-cycle
+pause_after: k7-delivery-close-cycle
+next_wave: post-merge-debt-backlog
 handoff_agent: tekton
 debt_ref: plan.md#backlog-de-deuda-técnica-post-k6
+pr_url: https://github.com/racso80es/SddIA/pull/93
 ---
 
 # Status — Kaizen Cápsulas Rust (handoff)
 
-**Punto único de retomada.** Pausa post-K6; siguiente hito **K7** (PR único).
+**K7 cerrado.** PR presentado; pendiente merge a `main`. Tras merge: backlog DEBT-K* en [`plan.md`](./plan.md#backlog-de-deuda-técnica-post-k6).
 
 ## Situación del proceso (2026-06-15)
 
@@ -23,8 +24,9 @@ debt_ref: plan.md#backlog-de-deuda-técnica-post-k6
 | **Rama** | `feat/kaizen-rust-capsule-structure` |
 | **PBI** | `docs/todos/done/kaicen Estructura de Cápsulas Rust.md` |
 | **Validación** | [`validacion.md`](./validacion.md) — `global: APTO`, `pbi_archived: true` |
-| **Código** | Olas 1–3 en workspace (sin merge a `main`) |
-| **Único pendiente feature** | K7 — `delivery-close-cycle` + PR |
+| **PR** | [#93](https://github.com/racso80es/SddIA/pull/93) |
+| **Código** | Olas 1–3 en rama; pendiente merge a `main` |
+| **Pendiente post-merge** | Backlog DEBT-K1…K9 (features independientes) |
 
 ### Progreso por fase
 
@@ -34,7 +36,7 @@ Ola 1 Skills     ✅
 Ola 2 Tools      ✅
 Ola 3 Daemons    ✅  (4 centinelas Rust)
 K6 certificación ✅  (E2E, chaos, heartbeat, governance)
-K7 cierre PR     ⏳  ← RETOMAR AQUÍ
+K7 cierre PR     ✅  PR #93 presentado
 ```
 
 ### Gates cerrados
@@ -94,23 +96,22 @@ Backlog formal en [`plan.md` §Backlog](./plan.md#backlog-de-deuda-técnica-post
 
 ---
 
-## Para retomar (checklist K7)
+## K7 — Cierre de entrega (2026-06-15)
 
-1. Leer **este archivo** + [`execution.md`](./execution.md).
-2. `git status` / diff vs `main` en rama `feat/kaizen-rust-capsule-structure`.
-3. Build smoke rápido (opcional): §Build en `execution.md`.
-4. Invocar cierre:
+| Check | Resultado |
+|-------|-----------|
+| Commit consolidado | `8e611bc` |
+| `delivery-close-cycle` | ✅ |
+| EDA aduana `orphan_count` | 0 |
+| `PullRequest_Presented` | ✅ `f6e77cb3-2264-4ce2-912c-ae33429a0884` |
+| PR | [#93](https://github.com/racso80es/SddIA/pull/93) |
 
-```bash
-python3 SddIA/scripts/qa/execute-process.py \
-  --process delivery-close-cycle \
-  --inputs '{"source_process":"refactorization","feature_ref":"docs/features/kaizen-rust-capsule-structure"}'
-```
+### Tras merge
 
-5. **PR único** incluyendo: código Rust, genoma daemons, docs feature, `validacion.md`, PBI en `done/`.
-6. Tras merge: abrir backlog DEBT-K* según prioridad en `plan.md`.
+1. Abrir backlog DEBT-K* por prioridad en [`plan.md`](./plan.md#backlog-de-deuda-técnica-post-k6).
+2. DEBT-K2/K3/K9 (IOTA) → DEBT-K4/K6 (runtime) → DEBT-K8 (docs).
 
-### Build mínimo al retomar
+### Build mínimo (referencia)
 
 ```bash
 cd SddIA && export CARGO_TARGET_DIR="$PWD/target"

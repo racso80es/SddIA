@@ -92,4 +92,4 @@ Backlog detallado: [`plan.md` §Backlog de deuda técnica](./plan.md#backlog-de-
 
 ## Siguiente paso
 
-**K7** — `delivery-close-cycle` + PR único. Ver [`status.md`](./status.md) §K7.
+**Post-merge** — backlog DEBT-K* por prioridad. Ver [`status.md`](./status.md) §Tras merge.
