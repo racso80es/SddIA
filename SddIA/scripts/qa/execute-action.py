@@ -44,6 +44,14 @@ from eda_bus_utils import (  # noqa: E402
 from eda_coverage_utils import remove_entity_coverage, upsert_entity_coverage  # noqa: E402
 from ecst_validation import validate_domain_mutation_event  # noqa: E402
 from env_loader import load_hierarchical_env  # noqa: E402
+from capsule_resolve import (
+    invoke_skill_subprocess,
+    parse_skill_stdout,
+    resolve_skill_capsule,
+    resolve_skill_wasm,
+    unwrap_bus_operator_body,
+    unwrap_crypto_result,
+)
 
 INDEX_MAP: dict[str, str] = {
     "process": "SddIA/process/index.md",
@@ -68,39 +76,23 @@ ACTION_AGENT: dict[str, str] = {
 }
 
 
-def _parse_crypto_envelope(out: dict[str, Any]) -> Any:
-    if isinstance(out.get("data"), dict) and "result" in out["data"]:
-        return out["data"]["result"]
-    return out.get("result")
-
-
-def _crypto_wasm_path(repo: Path) -> Path:
-    return repo / "SddIA" / "target" / "wasm32-wasip1" / "debug" / "cryptography-manager.wasm"
-
-
 def _crypto(repo: Path, payload: dict[str, Any]) -> Any:
-    wasm = _crypto_wasm_path(repo)
-    if not wasm.is_file():
+    wasm = resolve_skill_wasm(repo, "cryptography-manager")
+    if wasm is None:
         raise RuntimeError(
-            f"cryptography-manager.wasm not found at {wasm}. "
+            "cryptography-manager.wasm not found under SddIA/target/wasm32-wasip1. "
             "Run: cd SddIA && cargo build --target wasm32-wasip1"
         )
-    if shutil.which("wasmtime") is None:
-        raise RuntimeError("wasmtime not in PATH; install wasmtime to run WASI capsules")
-    proc = subprocess.run(
-        ["wasmtime", "run", "--dir=/", str(wasm)],
-        input=json.dumps(payload),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
+    stdout, stderr, _ = invoke_skill_subprocess(
+        repo,
+        "wasm",
+        wasm,
+        json.dumps(payload, ensure_ascii=False),
+        wasm_dir="/",
     )
-    out = json.loads(proc.stdout or "{}")
-    if not out.get("success"):
-        raise RuntimeError(out.get("error") or proc.stderr or "cryptography-manager failed")
-    return _parse_crypto_envelope(out)
+    if not stdout:
+        raise RuntimeError(stderr or "cryptography-manager sin salida")
+    return unwrap_crypto_result(parse_skill_stdout(stdout))
 
 
 def _load_cumulo(repo: Path) -> dict[str, Any]:
@@ -374,27 +366,27 @@ def _load_action_def(repo: Path, action_name: str) -> dict[str, Any]:
 
 
 def _invoke_bus_operator(repo: Path, operation: str, operation_payload: dict[str, Any]) -> dict[str, Any]:
-    skill_script = repo / "scripts" / "skills" / "bus-operator.py"
-    if not skill_script.is_file():
-        raise FileNotFoundError(str(skill_script))
     req = {"operation": operation, "operation_payload": operation_payload}
-    proc = subprocess.run(
-        [sys.executable, str(skill_script)],
-        input=json.dumps(req, ensure_ascii=False),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        cwd=str(repo),
-        check=False,
-    )
-    stdout = (proc.stdout or "").strip()
-    if not stdout:
-        raise RuntimeError(proc.stderr or "bus-operator sin salida")
-    body = json.loads(stdout.splitlines()[-1])
-    if not body.get("success"):
-        raise RuntimeError(body.get("error") or "bus-operator failed")
-    return body.get("result") or {}
+    stdin_payload = json.dumps(req, ensure_ascii=False)
+
+    def _run(kind: str, path: Path) -> dict[str, Any]:
+        stdout, stderr, _ = invoke_skill_subprocess(
+            repo,
+            kind,
+            path,
+            stdin_payload,
+            wasm_dir=".",
+        )
+        if not stdout:
+            raise RuntimeError(stderr or "bus-operator sin salida")
+        return unwrap_bus_operator_body(parse_skill_stdout(stdout))
+
+    try:
+        kind, path = resolve_skill_capsule(repo, "bus-operator", prefer_wasm=False)
+    except FileNotFoundError as exc:
+        raise RuntimeError(str(exc)) from exc
+
+    return _run(kind, path)
 
 
 def _run_emit_domain_mutation(repo: Path, inputs: dict[str, Any], action_def: dict[str, Any]) -> dict[str, Any]:

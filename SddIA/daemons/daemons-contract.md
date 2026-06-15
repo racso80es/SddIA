@@ -49,7 +49,7 @@ El Centinela es **lógica y espacialmente ciego** respecto al dominio SddIA; sol
 ## 3. Consciencia Espacial (Obediencia al SSOT)
 
 * Las definiciones catalogadas residen en `cumulo.directories.daemons` → `SddIA/daemons/{name}.md`.
-* Los artefactos de delivery residen bajo `cumulo.execution_capsules.daemons` (ej. `scripts/daemons/`) o ruta resuelta por `execution.entrypoint` relativa al workspace.
+* Los artefactos de delivery residen bajo `cumulo.execution_capsules.daemons` → `SddIA/daemons/{name}/` (objetivo Kaizen) o ruta resuelta por `execution.entrypoint` relativa al workspace.
 * Estado runtime (locks, PIDs) bajo `cumulo.daemons_instance.status` → `.SddIA/daemons/status/` (fuera de Git).
 * Prohibido hardcodear rutas absolutas del host; resolver exclusivamente vía topología inyectada.
 

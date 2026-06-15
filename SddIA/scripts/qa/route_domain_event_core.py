@@ -86,56 +86,9 @@ def _run_subprocess(cmd: list[str], *, input_text: str | None = None, **kwargs: 
 def _invoke_iota_publisher(
     repo: Path, event: dict[str, Any]
 ) -> tuple[bool, str, int, str | None]:
-    if os.environ.get("SDDIA_LAB_SIMULATE_IOTA", "").strip().lower() in ("1", "true", "yes"):
-        digest = f"lab-sim-{uuid.uuid4().hex[:24]}"
-        return True, "lab-simulated", 0, digest
-    tool_dir = repo / "SddIA" / "scripts" / "tools" / "iota-immutable-publisher"
-    entry = tool_dir / "index.ts"
-    if not entry.is_file():
-        return False, "iota-immutable-publisher entry not found", 1, None
-    local_ts_node = tool_dir / "node_modules" / ".bin" / "ts-node"
-    npx = shutil.which("npx")
-    if local_ts_node.is_file():
-        runner_cmd: list[str] = [str(local_ts_node), str(entry)]
-    elif npx:
-        runner_cmd = [npx, "ts-node", str(entry)]
-    else:
-        return False, "npx not found on PATH (ejecute npm install en iota-immutable-publisher)", 1, None
-    payload = {
-        "action": "publish_immutable_data",
-        "network": "testnet",
-        "payload": json.dumps(event, ensure_ascii=False),
-    }
-    try:
-        proc = _run_subprocess(
-            runner_cmd,
-            input_text=json.dumps(payload),
-            cwd=str(tool_dir),
-            timeout=_iota_timeout_seconds(),
-            shell=False,
-        )
-    except subprocess.TimeoutExpired:
-        return False, "iota-immutable-publisher timeout", 1, None
-    except OSError as e:
-        return False, str(e), 1, None
-    if proc.returncode != 0:
-        return (
-            False,
-            (proc.stderr or proc.stdout or "iota publish failed").strip(),
-            proc.returncode,
-            None,
-        )
-    try:
-        body = json.loads(proc.stdout.strip() or "{}")
-    except json.JSONDecodeError:
-        return False, "invalid JSON from iota-immutable-publisher", 1, None
-    ok = bool(body.get("success"))
-    digest = (body.get("result") or {}).get("transaction_digest")
-    if isinstance(digest, str) and digest.strip():
-        digest = digest.strip()
-    else:
-        digest = None
-    return ok, body.get("feedback", "ok"), 0 if ok else 1, digest
+    from iota_tool_invoke import invoke_iota_immutable_publisher
+
+    return invoke_iota_immutable_publisher(repo, event, timeout_seconds=_iota_timeout_seconds())
 
 
 def dispatch_subscriber(

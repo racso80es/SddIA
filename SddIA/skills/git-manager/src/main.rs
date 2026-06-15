@@ -257,6 +257,22 @@ fn handle(op: &str, repo: &Path, payload: &Value) -> (Value, i32) {
             let err_summary = if stderr.trim().is_empty() { Value::Null } else { json!(stderr.trim()) };
             (json!({ "gitStdout": stdout, "gitStderr": stderr, "errorSummary": err_summary }), code)
         }
+        "diff_name_only" => {
+            payload_exact(payload, op, &["ref_spec"]);
+            let ref_spec = payload.get("ref_spec").and_then(|v| v.as_str()).unwrap_or_else(|| fail("ref_spec must be a string"));
+            if ref_spec.is_empty() { fail("ref_spec must be a non-empty string"); }
+            assert_safe_token(ref_spec, "ref_spec");
+
+            let (stdout, stderr, code) = run_git(repo, &["diff", "--name-only", ref_spec]);
+            let files: Vec<String> = stdout
+                .lines()
+                .map(|ln| ln.trim())
+                .filter(|ln| !ln.is_empty())
+                .map(|ln| ln.to_string())
+                .collect();
+            let err_summary = if stderr.trim().is_empty() { Value::Null } else { json!(stderr.trim()) };
+            (json!({ "gitStdout": stdout, "gitStderr": stderr, "files": files, "errorSummary": err_summary }), code)
+        }
         _ => fail(&format!("unsupported operation_type: {}", op)),
     }
 }
@@ -270,7 +286,7 @@ fn main() {
 
     let allowed_ops = vec![
         "status", "checkout", "commit", "push", "pull", "fetch",
-        "branch_list", "get_last_commit", "merge", "delete_branch"
+        "branch_list", "get_last_commit", "merge", "delete_branch", "diff_name_only"
     ];
     if !allowed_ops.contains(&op) {
         fail(&format!("operation_type must be one of {:?}", allowed_ops));

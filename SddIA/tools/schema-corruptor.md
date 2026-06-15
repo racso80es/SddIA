@@ -14,7 +14,7 @@ capabilities:
   - "schema-corruptor"
   - "chaos-telemetry-stress"
   - "capsule-json-io"
-implementation_path_ref: "scripts/tools/schema-corruptor"
+implementation_path_ref: "SddIA/tools/schema-corruptor"
 ---
 
 # schema-corruptor

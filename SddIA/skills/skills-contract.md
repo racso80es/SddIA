@@ -1,5 +1,5 @@
 ---
-contract_version: "1.3.0"
+contract_version: "1.4.0"
 entity_type: "skill"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -25,7 +25,8 @@ Toda skill debe poseer un `{name}.md` en su capsula de definición con:
 * ** `inputs` / `outputs`**: Esquema JSON estricto para I/O vía stdin/stdout.
 
 ## 2. Consciencia Espacial y Encapsulamiento
-* El ejecutable de la entidad debe residir en lo indicado por cumulo en la clave 'execution_capsules'.'skills'/{name}/.
+* El ejecutable de la entidad reside bajo `cumulo.execution_capsules.skills` → `SddIA/skills/{name}/` con artefacto compilado en `SddIA/target/` (WASI `wasm32-wasip1` o nativo `release|debug`).
+* Prohibido `scripts/skills/` como ruta operativa canónica (legacy retirado en Kaizen `kaizen-rust-capsule-structure`).
 * Los Skills tienen prohibido leer variables de entorno locales del usuario a menos que se inyecten explícitamente durante su ejecución, protegiendo la Táctica del Refugio.
 
 ## 3. Interfaz de Interacción (I/O JSON Estricto)
@@ -39,7 +40,7 @@ El sustrato canónico para todas las cápsulas skill es **Rust compilado a `wasm
 
 - **Prohibido** entregar nuevas skills como scripts Python o cualquier otro intérprete.
 - El artefacto de despliegue es un binario `.wasm`; el orquestador lo invoca vía `wasmtime run`.
-- **Excepción temporal documentada:** `git-manager` y `bus-operator` mantienen fallback Python en el laboratorio hasta que WASI soporte subprocess spawning sin flag experimental. Ver `docs/features/migracion-rust-wasi/clarify.md` §D8.
+- **Excepción WASI → nativo:** si `wasmtime` + WASI no pueden completar la operación (ej. subprocess `git`), el orquestador usa el binario nativo `SddIA/target/{release|debug}/{name}`. **Prohibido** fallback a scripts Python.
 
 ## 5. Física del Valor y Evolución (Bloque Latente)
 * `minteo_maximo`: Límite de licencias de uso o instalaciones.

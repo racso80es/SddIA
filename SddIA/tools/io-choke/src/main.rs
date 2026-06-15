@@ -1,18 +1,16 @@
 use sddia_io::{emit_error, emit_success, read_stdin_json};
 use serde_json::json;
-use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 fn get_repo_root() -> Result<PathBuf, String> {
-    let current_exe = env::current_exe().map_err(|e| format!("Failed to get current exe: {}", e))?;
-    let mut current_dir = current_exe.parent().unwrap_or(Path::new(""));
+    let mut current_dir = std::env::current_dir().map_err(|e| format!("Failed to get current dir: {}", e))?;
     loop {
         if current_dir.join("SddIA/core/cumulo.paths.json").is_file() {
-            return Ok(current_dir.to_path_buf());
+            return Ok(current_dir);
         }
         if let Some(parent) = current_dir.parent() {
-            current_dir = parent;
+            current_dir = parent.to_path_buf();
         } else {
             return Err("No se encontró raíz del workspace".to_string());
         }

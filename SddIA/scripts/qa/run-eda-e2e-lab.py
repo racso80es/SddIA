@@ -22,8 +22,22 @@ from env_loader import load_hierarchical_env, load_test_env_overlay
 from lab_teardown import cleanup_lab_entity_forge, cleanup_orphan_core_eda_e2e_tools
 from tmp_paths import keep_tmp
 
+def resolve_watcher(repo: Path) -> list[str]:
+    from capsule_resolve import resolve_daemon_capsule
+
+    try:
+        return [str(resolve_daemon_capsule(repo, "event-watcher"))]
+    except FileNotFoundError:
+        sh = repo / "SddIA" / "daemons" / "event-watcher.sh"
+        if sh.is_file():
+            return [str(sh)]
+        legacy = repo / "SddIA" / "scripts" / "limbo" / "daemons" / "event-watcher.py"
+        if legacy.is_file():
+            return [sys.executable, str(legacy)]
+        raise
+
+
 EXECUTE_PROCESS = SCRIPT.parent / "execute-process.py"
-WATCHER = SCRIPT.parent.parent / "daemons" / "event-watcher.py"
 
 
 def _repo_root() -> Path:
@@ -98,7 +112,7 @@ def route_event(repo: Path, rel_path: str) -> dict[str, Any]:
     env.setdefault("SDDIA_LAB_SIMULATE_IOTA", "1")
     env.setdefault("SDDIA_LAB_SIMULATE_SYNC_INDEX", "1")
     proc = subprocess.run(
-        [sys.executable, str(WATCHER), "--event-file-path", rel_path],
+        resolve_watcher(repo) + ["--event-file-path", rel_path],
         capture_output=True,
         text=True,
         encoding="utf-8",

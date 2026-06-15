@@ -1,0 +1,12 @@
+[package]
+name = "event-watcher"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "event-watcher"
+path = "src/main.rs"
+
+[dependencies]
+sddia-daemon-runtime = { path = "../../sddia-daemon-runtime" }
+serde_json = "1.0"

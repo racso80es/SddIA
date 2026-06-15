@@ -69,60 +69,14 @@ def compose_pre_anchor_event(pr: dict[str, Any]) -> dict[str, Any]:
 
 def invoke_iota_publisher(repo: Path, event: dict[str, Any]) -> tuple[bool, str, str | None, str | None]:
     """Publica en IOTA; retorna (ok, feedback, transaction_digest, object_id)."""
-    if os.environ.get("SDDIA_LAB_SIMULATE_IOTA", "").strip().lower() in ("1", "true", "yes"):
-        digest = f"lab-sim-{uuid.uuid4().hex[:24]}"
-        return True, "lab-simulated", digest, None
+    from iota_tool_invoke import invoke_iota_immutable_publisher
 
-    tool_dir = repo / "SddIA" / "scripts" / "tools" / "iota-immutable-publisher"
-    entry = tool_dir / "index.ts"
-    if not entry.is_file():
-        return False, "iota-immutable-publisher entry not found", None, None
-    local_ts_node = tool_dir / "node_modules" / ".bin" / "ts-node"
-    npx = shutil.which("npx")
-    if local_ts_node.is_file():
-        runner_cmd: list[str] = [str(local_ts_node), str(entry)]
-    elif npx:
-        runner_cmd = [npx, "ts-node", str(entry)]
-    else:
-        return False, "npx not found on PATH (ejecute npm install en iota-immutable-publisher)", None, None
-
-    payload = {
-        "action": "publish_immutable_data",
-        "network": "testnet",
-        "payload": json.dumps(event, ensure_ascii=False),
-    }
-    try:
-        proc = _run_subprocess(
-            runner_cmd,
-            input_text=json.dumps(payload),
-            cwd=str(tool_dir),
-            timeout=_iota_timeout_seconds(),
-            shell=False,
-        )
-    except subprocess.TimeoutExpired:
-        return False, "iota-immutable-publisher timeout", None, None
-    except OSError as e:
-        return False, str(e), None, None
-
-    if proc.returncode != 0:
-        return False, (proc.stderr or proc.stdout or "iota publish failed").strip(), None, None
-
-    try:
-        body = json.loads(proc.stdout.strip() or "{}")
-    except json.JSONDecodeError:
-        return False, "invalid JSON from iota-immutable-publisher", None, None
-
-    if not body.get("success"):
-        return False, body.get("feedback", "iota publish failed"), None, None
-
-    result = body.get("result") or {}
-    digest = result.get("transaction_digest")
-    object_id = result.get("object_id")
-    if not isinstance(digest, str) or not digest.strip():
-        return False, "missing transaction_digest", None, None
-    return True, body.get("feedback", "ok"), digest.strip(), (
-        object_id.strip() if isinstance(object_id, str) and object_id.strip() else None
+    ok, feedback, _rc, digest = invoke_iota_immutable_publisher(
+        repo, event, timeout_seconds=_iota_timeout_seconds()
     )
+    if not ok:
+        return False, feedback, None, None
+    return True, feedback, digest, None
 
 
 def publish_with_retries(repo: Path, event: dict[str, Any]) -> tuple[str | None, str | None, str | None]:

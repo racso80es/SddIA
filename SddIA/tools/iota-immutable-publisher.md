@@ -10,7 +10,7 @@ capabilities:
   - "iota-publish"
   - "immutable-anchor"
   - "capsule-json-io"
-implementation_path_ref: "scripts/tools/iota-immutable-publisher"
+implementation_path_ref: "SddIA/tools/iota-immutable-publisher"
 ---
 
 # iota-immutable-publisher

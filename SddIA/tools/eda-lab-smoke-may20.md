@@ -8,7 +8,7 @@ context: "ecosystem-evolution"
 capabilities:
   - "eda_lab_smoke_may20"
 hash_signature: "sha256:5451805d9ece7d306cb4da0fdf19985485347f0721da3f048b7ee4b5f7d8b771"
-implementation_path_ref: "scripts/tools/eda-lab-smoke-may20"
+implementation_path_ref: "SddIA/tools/eda-lab-smoke-may20"
 ---
 
 # eda-lab-smoke-may20

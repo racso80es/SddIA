@@ -12,7 +12,7 @@ capabilities:
   - "markdown-table-row-delete"
   - "markdown-table-persist"
   - "capsule-json-io"
-implementation_path_ref: "scripts/tools/markdown-table-editor"
+implementation_path_ref: "SddIA/tools/markdown-table-editor"
 ---
 
 # markdown-table-editor

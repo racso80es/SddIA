@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
-"""Cápsula scripts/tools/telegram-gateway — stdout ECST."""
+"""Cápsula telegram-gateway Rust — stdout ECST."""
 
 from __future__ import annotations
 
-import json
-import subprocess
 import sys
 import unittest
 from pathlib import Path
 
 _QA = Path(__file__).resolve().parent
+if str(_QA) not in sys.path:
+    sys.path.insert(0, str(_QA))
+
+from capsule_resolve import invoke_tool_capsule_json
 
 
 def _repo() -> Path:
@@ -22,17 +24,9 @@ def _repo() -> Path:
 class TestToolCapsule(unittest.TestCase):
     def test_idea_pattern(self) -> None:
         repo = _repo()
-        script = repo / "SddIA" / "scripts" / "tools" / "telegram-gateway" / "main.py"
-        proc = subprocess.run(
-            [sys.executable, str(script)],
-            input=json.dumps({"text": "IDEA: refactor Argos"}),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            cwd=str(repo),
-            check=False,
+        _code, body = invoke_tool_capsule_json(
+            repo, "telegram-gateway", {"text": "IDEA: refactor Argos"}
         )
-        body = json.loads(proc.stdout.strip().splitlines()[-1])
         self.assertTrue(body.get("success"))
         self.assertTrue(body.get("emitted"))
         ev = body.get("event") or {}
