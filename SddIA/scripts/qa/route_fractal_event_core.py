@@ -52,6 +52,17 @@ def _dispatch_fractal_subscriber(
             if result.get("ok"):
                 return sid, "success", None, 0
             return sid, "failed", result.get("error") or "telemetry-compliance-audit failed", 1
+        if key == "daemon-heartbeat-audit":
+            try:
+                from daemon_heartbeat_audit_core import audit_telemetry_file
+
+                result = audit_telemetry_file(repo, rel_path)
+            except Exception as exc:
+                return subscriber_id(subscriber), "failed", str(exc), 1
+            sid = subscriber_id(subscriber)
+            if result.get("ok"):
+                return sid, "success", None, 0
+            return sid, "failed", result.get("error") or "daemon-heartbeat-audit failed", 1
         if key == "telemetry-batch-stub":
             process_inputs = {
                 "event_file_path": rel_path,

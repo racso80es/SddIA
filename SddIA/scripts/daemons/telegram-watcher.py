@@ -21,6 +21,7 @@ _QA_DIR = _SCRIPT_DIR.parent / "qa"
 if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
+from daemon_centinel_runtime import centinela_runtime
 from env_loader import load_hierarchical_env
 
 POLL_TIMEOUT = 30
@@ -146,6 +147,7 @@ def _process_updates(
     allowed_chat: str,
     *,
     dry_run: bool,
+    centinela: Any | None = None,
 ) -> int:
     max_id = _load_last_update_id(repo)
     for upd in updates:
@@ -160,26 +162,36 @@ def _process_updates(
         text = _extract_text(upd)
         if text is None:
             continue
+        if centinela is not None:
+            centinela.note_stimulus()
         _invoke_gateway(repo, text, dry_run=dry_run)
     if updates and max_id > 0:
         _save_last_update_id(repo, max_id)
     return max_id
 
 
-def run_once(repo: Path, *, dry_run: bool = False) -> None:
+def run_once(repo: Path, *, dry_run: bool = False, centinela: Any | None = None) -> None:
     token, allowed = _require_env()
     last = _load_last_update_id(repo)
     offset = last + 1 if last else 0
     updates = _get_updates(token, offset)
-    _process_updates(repo, updates, allowed, dry_run=dry_run)
+    _process_updates(repo, updates, allowed, dry_run=dry_run, centinela=centinela)
+    if centinela is not None:
+        centinela.tick()
 
 
 def run_loop(repo: Path, *, dry_run: bool = False) -> None:
     _require_env()
+    centinela = centinela_runtime(repo, "telegram-watcher")
+    centinela.bootstrap()
     print("[telegram-watcher] bucle iniciado", flush=True)
-    while True:
-        run_once(repo, dry_run=dry_run)
-        time.sleep(1)
+    try:
+        while True:
+            run_once(repo, dry_run=dry_run, centinela=centinela)
+            time.sleep(1)
+    except KeyboardInterrupt:
+        centinela.shutdown()
+        print("[telegram-watcher] detenido", flush=True)
 
 
 def main() -> None:
@@ -190,7 +202,10 @@ def main() -> None:
     repo = _repo_root()
     load_hierarchical_env(repo)
     if args.once:
-        run_once(repo, dry_run=args.dry_run)
+        centinela = centinela_runtime(repo, "telegram-watcher")
+        centinela.bootstrap()
+        run_once(repo, dry_run=args.dry_run, centinela=centinela)
+        centinela.shutdown()
     else:
         run_loop(repo, dry_run=args.dry_run)
 

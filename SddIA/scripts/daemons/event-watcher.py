@@ -34,6 +34,7 @@ if str(_QA_DIR) not in sys.path:
     sys.path.insert(0, str(_QA_DIR))
 
 from eda_bus_utils import ensure_event_bus_topology, list_witnesses, load_eda_bus, load_eda_fractal
+from daemon_centinel_runtime import centinela_runtime
 from env_loader import load_hierarchical_env
 from route_domain_event_core import route_domain_event
 
@@ -211,6 +212,8 @@ def _watcher_skip_reason(
 
 def _run_watcher(*, once: bool = False) -> None:
     repo = _repo_root()
+    centinela = centinela_runtime(repo, "event-watcher")
+    centinela.bootstrap()
     bus = ensure_event_bus_topology(repo)
     attempts: dict[str, int] = {}
     processing_uuids: set[str] = set()
@@ -248,6 +251,7 @@ def _run_watcher(*, once: bool = False) -> None:
 
                 rel = _rel_event_path(repo, path)
                 print(f"[WATCHER] Detectado nuevo evento: {key} → {process_name}", flush=True)
+                centinela.note_stimulus()
                 processing_uuids.add(event_uuid)
                 attempts[key] = attempts.get(key, 0) + 1
 
@@ -286,6 +290,7 @@ def _run_watcher(*, once: bool = False) -> None:
                         flush=True,
                     )
 
+        centinela.tick()
         time.sleep(POLL_SECONDS)
         if once:
             print("[WATCHER] Ciclo único (--once). Fin.", flush=True)
@@ -300,6 +305,7 @@ def main() -> None:
         try:
             _run_watcher(once="--once" in sys.argv)
         except KeyboardInterrupt:
+            centinela.shutdown()
             print("[WATCHER] Detenido.", flush=True)
             sys.exit(0)
 

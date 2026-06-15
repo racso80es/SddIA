@@ -43,3 +43,7 @@ Si el `active_norm_pack` no define cápsulas de verificación aplicables, si la 
 
 * No ejecutar terminal ni comandos crudos del SO salvo a través de cápsulas y procesos autorizados bajo Cerbero.
 * No ampliar arbitrariamente el conjunto de cápsulas más allá de lo resoluble desde Cúmulo y el norm pack activo.
+
+## 5. Centinelas — latido térmico (CEN-05)
+
+Argos suscribe `Daemon_Heartbeat` vía proceso **`daemon-heartbeat-audit`** (`event-telemetry-subscriptions.json`). Si un Centinela con lock/PID vivo omite **3 ciclos consecutivos** de heartbeat, el auditor emite **`System_Fracture_Detected`** en `eda_bus.pending` (protocolo Kintsugi). Sweep manual: `execute-process --process daemon-heartbeat-audit --inputs '{"sweep":true}'`.

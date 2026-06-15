@@ -3418,6 +3418,73 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
                 ],
             },
         }
+    if canonical == "governance-daemon-manager":
+        from governance_daemon_manager_core import run_governance_daemon_manager
+
+        if not isinstance(process_inputs.get("repository_path"), str):
+            process_inputs = {**process_inputs, "repository_path": str(repo)}
+        out = run_governance_daemon_manager(repo, process_inputs)
+        ok = bool(out.get("success"))
+        return {
+            "success": ok,
+            "status_code": out.get("exitCode", 0 if ok else 1),
+            "data": out.get("data"),
+            "error": out.get("error"),
+            "execution_report": {
+                "process_name": canonical,
+                "phases": [
+                    {
+                        "phase_name": "Actuación OS",
+                        "status": "executed" if ok else "failed",
+                        "handler": "governance-daemon-manager-core",
+                    }
+                ],
+            },
+        }
+    if canonical == "daemon-kill-switch":
+        from daemon_kill_switch_core import run_daemon_kill_switch
+
+        if not isinstance(process_inputs.get("repository_path"), str):
+            process_inputs = {**process_inputs, "repository_path": str(repo)}
+        out = run_daemon_kill_switch(repo, process_inputs)
+        ok = bool(out.get("success"))
+        return {
+            "success": ok,
+            "status_code": out.get("exitCode", 0 if ok else 1),
+            "data": out.get("data"),
+            "error": out.get("error"),
+            "execution_report": {
+                "process_name": canonical,
+                "phases": [
+                    {
+                        "phase_name": "Purga global",
+                        "status": "executed" if ok else "failed",
+                        "handler": "daemon-kill-switch-core",
+                    }
+                ],
+            },
+        }
+    if canonical == "daemon-heartbeat-audit":
+        from daemon_heartbeat_audit_core import run_daemon_heartbeat_audit
+
+        out = run_daemon_heartbeat_audit(repo, process_inputs)
+        ok = bool(out.get("success"))
+        return {
+            "success": ok,
+            "status_code": out.get("exitCode", 0 if ok else 1),
+            "data": out.get("data"),
+            "error": out.get("error"),
+            "execution_report": {
+                "process_name": canonical,
+                "phases": [
+                    {
+                        "phase_name": "Auditoría staleness",
+                        "status": "executed" if ok else "failed",
+                        "handler": "daemon-heartbeat-audit-core",
+                    }
+                ],
+            },
+        }
     if canonical in CHAOS_AUDIT_PROCESSES:
         return run_chaos_audit_process(repo, canonical, process_def, phases, process_inputs)
     if canonical == "execute-suite":

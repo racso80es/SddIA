@@ -4,6 +4,13 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
+| daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.0.0 | quality-assurance | — | Triaje Argos: latido térmico Centinelas; System_Fracture_Det |
+| daemon-kill-switch | b0de6585-11fc-4b3c-8b19-ad6b727d820e | 1.0.0 | system-operations | — | Kill-Switch global: purga SIGTERM/SIGKILL de todos los Centi |
+| governance-daemon-manager | 5a89793a-ba98-4b4f-9287-43c087e312df | 1.0.0 | system-operations | — | Actuador OS puro: start, status, kill de Centinelas indexado |
+| daemon-creator | c172f130-532f-4714-be4e-fcd80b84a5dc | 1.0.0 | ecosystem-evolution | — | Proceso maestro para estandarizar y automatizar la creación de nuevos Centinelas (daemons) en el Core SddIA. |
+| governance-daemon-manager | 5a89793a-ba98-4b4f-9287-43c087e312df | 1.0.0 | system-operations, ecosystem-evolution | — | Actuador OS puro: start, status, kill de Centinelas indexados bajo directories.daemons. |
+| daemon-kill-switch | b0de6585-11fc-4b3c-8b19-ad6b727d820e | 1.0.0 | system-operations, ecosystem-evolution | — | Kill-Switch global: purga SIGTERM/SIGKILL de todos los Centinelas al apagar el Core. |
+| daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.0.0 | quality-assurance, event-routing | — | Triaje Argos: latido térmico Centinelas; System_Fracture_Detected tras 3 ciclos omitidos. |
 | process-creator | 7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4 | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar nuevos procesos en el Core SddIA y mantener el índice del directorio `process`. |
 | skill-creator | b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d | 1.0.0 | ecosystem-evolution | — | Proceso maestro para estandarizar y automatizar la creación de nuevas skills (definición física y lógica) en el Core SddIA. |
 | action-creator | d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar nuevas acciones (orquestaciones lógicas) en el Core SddIA y mantener el índice del directorio `actions`. |

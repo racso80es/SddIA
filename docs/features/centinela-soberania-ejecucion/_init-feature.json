@@ -1,0 +1,7 @@
+{
+  "feature_name": "centinela-soberania-ejecucion",
+  "branch_name": "feat/centinela-soberania-ejecucion",
+  "persist_ref": "docs/features/centinela-soberania-ejecucion",
+  "base_branch": "main",
+  "refined_requirements": "CEN-01: Contrato Base Centinelas (daemons-contract.md), estructura SddIA/daemons/, proceso daemon-creator. Obligaciones termodinámicas Daemon_Heartbeat, bloque execution (entrypoint, runtime, heartbeat_interval_seconds). Referencia: docs/todos/kitchen/ED Centinela Soberanía de Ejecución y Autogestión SddIA.md"
+}
