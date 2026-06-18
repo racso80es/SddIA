@@ -170,7 +170,7 @@ El porte nativo de `emit-domain-mutation` (`engine::domain_mutation` + `ecst_val
 | `materialize-kaizen-alert-doc` | 🔶 bridge Python | materializa doc Kaizen |
 | `materialize-fracture-pbi` | 🔶 bridge Python | materializa PBI de fractura |
 | `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquece PBI de fractura |
-| `policy-validator` | 🔶 bridge Python | validación de políticas |
+| `policy-validator` | ✅ nativo | `engine::policy_validator` → SSOT `execution-contexts.md` |
 | `crypto-broker` | ✅ nativo | `engine::crypto_broker` → `cryptography-manager` |
 
 **Criterio de cierre:** portar las acciones 🔶 a `engine::actions` (o cápsula nativa); retirar `invoke_action_python_bridge` cuando el inventario quede vacío; grep sin `execute-action.py` desde el crate.
