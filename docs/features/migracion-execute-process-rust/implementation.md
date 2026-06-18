@@ -283,7 +283,8 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 | `emit-domain-mutation` | ✅ nativo (`engine::domain_mutation` + ECST + coverage) |
 | `emit-suite-execution-requested` | ✅ nativo (`engine::suite_execution_requested`) |
 | `policy-validator` | ✅ nativo (`engine::policy_validator`) |
-| `sync-entity-index`, `materialize-*`, `enrich-fracture-pbi-kaizen` | 🔶 bridge Python |
+| `sync-entity-index` | ✅ nativo (`engine::sync_entity_index`) |
+| `materialize-*`, `enrich-fracture-pbi-kaizen` | 🔶 bridge Python |
 | `crypto-broker` | ✅ nativo (`engine::crypto_broker`) |
 
 **Deudas de ecosistema (fuera del handler):** cableado `*-creator`, fan-out `Domain_Entity_*`, Cerbero runtime. Detalle en PBI §6.bis (D-P5.1-R).

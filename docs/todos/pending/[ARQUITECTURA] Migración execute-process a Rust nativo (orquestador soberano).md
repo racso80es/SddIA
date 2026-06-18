@@ -126,7 +126,7 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 > | `emit-pr-audited-event` | ✅ nativo | `engine::actions::emit_pr_audited` |
 > | `emit-domain-mutation` | ✅ nativo | `engine::domain_mutation` + `ecst_validation` + `eda_coverage` |
 > | `emit-suite-execution-requested` | ✅ nativo | `engine::suite_execution_requested` |
-> | `sync-entity-index` | 🔶 bridge Python | muta índices (genoma) |
+> | `sync-entity-index` | ✅ nativo | `engine::sync_entity_index` → `markdown-table-editor` |
 > | `materialize-kaizen-alert-doc` | 🔶 bridge Python | materializa doc |
 > | `materialize-fracture-pbi` | 🔶 bridge Python | materializa PBI |
 > | `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquecimiento PBI |
@@ -166,7 +166,7 @@ El porte nativo de `emit-domain-mutation` (`engine::domain_mutation` + `ecst_val
 | Acción | Estado | Notas |
 |--------|--------|-------|
 | `emit-suite-execution-requested` | ✅ nativo | `engine::suite_execution_requested` → bus fractal domain |
-| `sync-entity-index` | 🔶 bridge Python | muta `index.md` (genoma) |
+| `sync-entity-index` | ✅ nativo | `engine::sync_entity_index` → `markdown-table-editor` |
 | `materialize-kaizen-alert-doc` | 🔶 bridge Python | materializa doc Kaizen |
 | `materialize-fracture-pbi` | 🔶 bridge Python | materializa PBI de fractura |
 | `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquece PBI de fractura |
