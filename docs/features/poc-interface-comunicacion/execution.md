@@ -65,7 +65,20 @@ curl -s -X POST http://127.0.0.1:8765/api/interact \
 3. Prompt → **Forjar** → respuesta síntesis Mayeuta (≤2 líneas)
 4. `SDDIA_CLIENT_PORT` / `SDDIA_CLIENT_TIMEOUT_SECONDS` opcionales en bóveda
 
-## Deuda residual
+## Prueba funcional navegador (2026-06-18)
+
+Script: `_browser-func-test-kalma2.py` (Playwright headless).
+
+| Paso | Resultado |
+|------|-----------|
+| Abrir `http://127.0.0.1:8765` | Título «Kalma2 — Cliente SddIA» |
+| Prompt cierre (commit/PR/merge #94) | Enviado vía UI |
+| Respuesta motor | Síntesis Mayeuta con «Tormentosa/Aiúa» — **success** |
+
+```bash
+.venv/bin/python docs/features/poc-interface-comunicacion/_browser-func-test-kalma2.py
+```
+
 
 - Síntesis **lab determinista** (sin LLM externo).
 - Puente en instancia; promoción a genoma pendiente.
