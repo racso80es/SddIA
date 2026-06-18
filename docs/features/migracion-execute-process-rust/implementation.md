@@ -155,7 +155,8 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | Handler nativo `telegram-fallback-responder` (P4 parcial) | ✅ | golden OK |
 | Handler nativo `telegram-gateway` (P4 parcial) | ✅ | tool + emisión domain; golden OK |
 | Motor genérico P1–P3 (`executor`, `workspace_init`, `thermodynamic`) | ✅ | Smoke + golden `feature` con `SDDIA_LAB_SKIP_GIT` |
-| Handlers satélite P4 restantes | 🔶 | Bridge `_execute_process_handler_bridge.py` |
+| Handlers satélite P4 | 🔶 | Solo `route-domain-event` en bridge |
+| `engine/daemons` | ✅ | locks, PIDs, bus pending, orchestration |
 | Cápsulas P5 (`engine::capsules`) | 🔶 | `git-manager` + resolución telegram tool; fases genéricas skill/tool aún simuladas |
 | Delegación motor legacy | ✅ | Puente transitorio para procesos no portados |
 | Golden harness P8/P9 | 🔶 | 4 casos verdes; pendiente `route-domain-event`, `entity-manager`, `delivery-close-cycle` |
@@ -225,7 +226,7 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 ### 7.1 P4 — Handlers satélite nativos
 
-**Estado actual:** `telegram-fallback-responder` y `telegram-gateway` portados a nativo. Resto delegado a `_execute_process_handler_bridge.py`. Constante `HANDLER_BRIDGE` en `engine/mod.rs` enumera los `canonical` aún desviados.
+**Estado actual:** todos los handlers satélite portados a nativo **excepto** `route-domain-event` (bridge residual). Constante `HANDLER_BRIDGE` en `engine/mod.rs` enumera los `canonical` aún desviados.
 
 **Objetivo:** portar cada handler a `engine::handlers::*` (Rust puro), retirándolo de `HANDLER_BRIDGE` solo cuando su golden (P9) esté verde.
 
@@ -234,9 +235,9 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 | `route-domain-event` | `route_domain_event_core.py` | carga ECST, validación de esquema, fan-out a subscribers, dispatch a `--process`/`--action` | re-entra al orquestador (binario) y `execute-action.py` |
 | `telegram-fallback-responder` | core telegram | ✅ nativo (`handlers/telegram_fallback.rs`) | tool `send-telegram-notification` (native/wasm/limbo) |
 | `telegram-gateway` | core telegram | ✅ nativo (`handlers/telegram_gateway.rs`) | tool + `engine/fractal` |
-| `daemon-kill-switch` | core daemons | toggle de `status/*.lock` + señal | FS only |
-| `governance-daemon-manager` | core daemons | arranque/parada/estado de daemons | `std::process::Command` a lanzadores |
-| `daemon-heartbeat-audit` | core daemons | lectura de `status/*` + ventana de latido | FS only |
+| `daemon-kill-switch` | core daemons | ✅ nativo | vía `governance_daemon` + fractal |
+| `governance-daemon-manager` | core daemons | ✅ nativo | start/status/kill OS |
+| `daemon-heartbeat-audit` | core daemons | ✅ nativo | sweep + telemetry file |
 
 **Orden sugerido:** primero los FS-only (`daemon-kill-switch`, `daemon-heartbeat-audit`, `telegram-fallback-responder`), luego `telegram-gateway`, y por último `route-domain-event` (el más acoplado, depende de reentrada al binario y de ECST).
 
@@ -285,7 +286,7 @@ wasmtime run --dir=. [--env K=V]… <capsule>.wasm  < stdin(JSON)  > stdout(JSON
 
 ### 7.4 P9 — Ampliar golden harness
 
-**Estado actual:** `golden_orchestrator_parity.py` verde para 6 casos: `kalma2-interact`, `feature`, `telegram-fallback-responder` (×2), `telegram-gateway` (×2).
+**Estado actual:** `golden_orchestrator_parity.py` verde para **9 casos** (incl. daemon-heartbeat, governance status, kill-switch).
 
 **Objetivo:** ampliar `CASES` y la normalización a los procesos núcleo:
 

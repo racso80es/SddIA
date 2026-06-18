@@ -60,7 +60,12 @@ def normalize(obj: Any) -> Any:
             "dispatch_mode",
             "seal",
             "sensorial_seal",
-            "telegram_message_received_id",
+            "orchestration_event_id",
+            "orchestration_event_path",
+            "purge_report",
+            "stale_locks_removed",
+            "fractures_emitted",
+            "os_result",
         }
         out = {}
         for k, v in obj.items():
@@ -172,6 +177,13 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str]]] = [
         {"text": ""},
         {},
     ),
+    ("daemon-heartbeat-audit", {}, {}),
+    (
+        "governance-daemon-manager",
+        {"operation": "status", "daemon_id": "event-watcher"},
+        {},
+    ),
+    ("daemon-kill-switch", {}, {}),
 ]
 
 

@@ -1,4 +1,5 @@
 pub mod capsules;
+pub mod daemons;
 pub mod delegate_handler;
 pub mod delegate_python;
 pub mod executor;
@@ -13,12 +14,7 @@ use crate::envelope::OrchestratorEnvelope;
 use serde_json::Value;
 use std::path::Path;
 
-const HANDLER_BRIDGE: &[&str] = &[
-    "route-domain-event",
-    "daemon-kill-switch",
-    "governance-daemon-manager",
-    "daemon-heartbeat-audit",
-];
+const HANDLER_BRIDGE: &[&str] = &["route-domain-event"];
 
 /// Punto de entrada del motor.
 pub fn run_process(
@@ -38,6 +34,18 @@ pub fn run_process(
 
     if canonical == "telegram-gateway" {
         return handlers::telegram_gateway::run(repo, process_inputs);
+    }
+
+    if canonical == "governance-daemon-manager" {
+        return handlers::governance_daemon::run(repo, process_inputs);
+    }
+
+    if canonical == "daemon-kill-switch" {
+        return handlers::daemon_kill_switch::run(repo, process_inputs);
+    }
+
+    if canonical == "daemon-heartbeat-audit" {
+        return handlers::daemon_heartbeat::run(repo, process_inputs);
     }
 
     if HANDLER_BRIDGE.contains(&canonical.as_str()) {
