@@ -6,7 +6,7 @@ contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - quality-assurance
-hash_signature: sha256:placeholder-capsule-invoke-smoke-golden-p5
+hash_signature: sha256:47871ee0fe1c4cc6994a91505415785df5fa1681d9ecc8b1a8f93711ae194d5b
 inputs: []
 outputs:
 - capsule_invoked: Indica que io-choke respondió con éxito en el workspace inyectado
