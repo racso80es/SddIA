@@ -125,10 +125,14 @@ def _chat_id(update: dict[str, Any]) -> str | None:
 def _invoke_gateway(repo: Path, text: str, *, dry_run: bool) -> int:
     if dry_run:
         return 0
-    runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
     payload = json.dumps({"text": text}, ensure_ascii=False)
+    from orchestrator_resolve import resolve_orchestrator_cmd
+
     proc = subprocess.run(
-        [sys.executable, str(runner), "--process", "telegram-gateway", "--inputs", payload],
+        resolve_orchestrator_cmd(
+            repo,
+            ["--process", "telegram-gateway", "--inputs", payload],
+        ),
         capture_output=True,
         text=True,
         encoding="utf-8",

@@ -4,25 +4,16 @@
 set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
-ORCH_BIN="${SDDIA_EXECUTE_PROCESS_BIN:-}"
+QA="$REPO_ROOT/SddIA/scripts/qa"
+export PYTHONPATH="$QA${PYTHONPATH:+:$PYTHONPATH}"
 
-# Binario nativo Rust (preferente si existe)
-if [ -z "$ORCH_BIN" ] && [ -x "$REPO_ROOT/SddIA/target/debug/execute-process" ]; then
-  ORCH_BIN="$REPO_ROOT/SddIA/target/debug/execute-process"
-fi
-if [ -z "$ORCH_BIN" ] && [ -x "$REPO_ROOT/SddIA/target/release/execute-process" ]; then
-  ORCH_BIN="$REPO_ROOT/SddIA/target/release/execute-process"
-fi
-
-if [ -n "$ORCH_BIN" ]; then
-  exec "$ORCH_BIN" "$@"
-fi
-
-# Fallback Python (legacy) — requiere PyYAML en el intérprete activo
-VENV_DIR=".venv"
+# Bootstrap venv para fallback Python (PyYAML en execute-process.py)
+VENV_DIR="$REPO_ROOT/.venv"
 if [ ! -d "$VENV_DIR" ]; then
     python3 -m venv "$VENV_DIR"
 fi
+# shellcheck source=/dev/null
 source "$VENV_DIR/bin/activate"
-pip install -r requirements.txt -q
-python SddIA/scripts/qa/execute-process.py "$@"
+pip install -r "$REPO_ROOT/requirements.txt" -q 2>/dev/null || true
+
+exec python3 "$QA/orchestrator_resolve.py" "$@"

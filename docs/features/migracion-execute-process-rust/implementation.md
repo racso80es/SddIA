@@ -313,7 +313,27 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 **Criterio de cierre (P9):** ✅ cumplido — harness 14/14; habilita P10–P17 (touchpoints + poda condicional).
 
-### 7.5 P12 — Lanzadores de daemons
+### 7.5 P10–P13 — Touchpoints de producción (switch SSOT)
+
+**Estado actual:** ✅ **cerrado.** Todos los touchpoints productivos resuelven el orquestador vía `orchestrator_resolve` (binario Rust preferente, fallback `execute-process.py`).
+
+| Touchpoint | Mecanismo |
+|------------|-----------|
+| `sddia-run.sh` | `exec python3 orchestrator_resolve.py "$@"` |
+| `hook_common.py` → hooks Git | `resolve_orchestrator_cmd` |
+| `execute_process_capsules.invoke_subprocess_process_full` | `resolve_orchestrator_cmd` |
+| `route_domain_event_core.py` | `resolve_orchestrator_cmd` |
+| `.SddIA/client/sddia-client-bridge.py` | `resolve_orchestrator_cmd` |
+| `run-eda-e2e-lab.py` | `resolve_orchestrator_cmd` |
+| `event-watcher` / `telegram-watcher` (Rust) | `execute_process_bin()` + fallback `.py` |
+| Limbo `scripts/limbo/daemons/*` | `resolve_orchestrator_cmd` |
+| `SddIA/scripts/daemons/*` | N/A — no invocan orquestador |
+
+**Auditoría CI:** `SddIA/scripts/qa/touchpoint_orchestrator_audit.py`.
+
+**Criterio de cierre:** ✅ audit verde; ningún touchpoint productivo hardcodea `python … execute-process.py` sin pasar por SSOT.
+
+### 7.6 P12 — Lanzadores de daemons
 
 **Estado actual:** grep en `SddIA/scripts/daemons/` sin referencias a `execute-process.py`. Lanzadores delegan en binarios de centinelas vía `_exec_daemon.sh` / `_exec_daemon.py`.
 
@@ -325,7 +345,7 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 **Gate:** ninguno técnico; depende de P9 para el switch definitivo.
 
-### 7.6 P15/P17 — DA-3 y poda
+### 7.7 P15/P17 — DA-3 y poda
 
 **P15 — Norma DA-3 (genoma):**
 - Actualizar `SddIA/norms/external-ai-constraints.md` para declarar la **vía canónica de invocación** del orquestador (binario nativo preferente, `.py` como fallback transitorio, `orchestrator_resolve` como SSOT).

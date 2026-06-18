@@ -24,6 +24,7 @@ from tmp_paths import keep_tmp
 
 from orchestrator_resolve import resolve_orchestrator_cmd
 
+
 def resolve_watcher(repo: Path) -> list[str]:
     from capsule_resolve import resolve_daemon_capsule
 
@@ -37,9 +38,6 @@ def resolve_watcher(repo: Path) -> list[str]:
         if legacy.is_file():
             return [sys.executable, str(legacy)]
         raise
-
-
-EXECUTE_PROCESS = SCRIPT.parent / "execute-process.py"  # legacy ref; usar resolve_orchestrator_cmd
 
 
 def _repo_root() -> Path:

@@ -32,3 +32,19 @@ def resolve_orchestrator_executable(repo: Path) -> Path:
     """Ruta al ejecutable orquestador (binario o script Python)."""
     cmd = resolve_orchestrator_cmd(repo, [])
     return Path(cmd[0])
+
+
+def _find_repo_from_script() -> Path:
+    here = Path(__file__).resolve()
+    for parent in here.parents:
+        if (parent / "SddIA" / "core" / "cumulo.paths.json").is_file():
+            return parent
+    raise RuntimeError("No se encontró raíz del repo (cumulo.paths.json)")
+
+
+if __name__ == "__main__":
+    import os
+
+    repo = _find_repo_from_script()
+    cmd = resolve_orchestrator_cmd(repo, sys.argv[1:])
+    os.execvp(cmd[0], cmd)

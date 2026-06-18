@@ -38,6 +38,7 @@ from execute_process_core import (
 )
 
 from execute_process_forges import FORGE_BY_ENTITY_CLASS, try_native_forge
+from orchestrator_resolve import resolve_orchestrator_cmd
 from eda_bus_utils import (
     build_process_execution_completed_event,
     build_raw_execution_finished_event,
@@ -62,7 +63,6 @@ except ImportError:
     yaml = None  # type: ignore
 
 SCRIPT = Path(__file__).resolve()
-EXECUTE_PROCESS_CLI = SCRIPT.parent / "execute-process.py"
 EXECUTE_ACTION_CLI = SCRIPT.parent / "execute-action.py"
 AUDIT_EDA_CLI = SCRIPT.parent / "audit-entity-eda-coverage.py"
 AUDIT_DOC_PARITY_CLI = SCRIPT.parent / "audit-doc-parity.py"
@@ -1239,14 +1239,15 @@ def invoke_subprocess_process_full(
     repo: Path, process_name: str, process_inputs: dict[str, Any]
 ) -> dict[str, Any]:
     proc = subprocess.run(
-        [
-            sys.executable,
-            str(EXECUTE_PROCESS_CLI),
-            "--process",
-            process_name,
-            "--inputs",
-            json.dumps(process_inputs, ensure_ascii=False),
-        ],
+        resolve_orchestrator_cmd(
+            repo,
+            [
+                "--process",
+                process_name,
+                "--inputs",
+                json.dumps(process_inputs, ensure_ascii=False),
+            ],
+        ),
         capture_output=True,
         text=True,
         encoding="utf-8",

@@ -105,13 +105,15 @@ Resultados (2026-06-18):
 | `SDDIA_LAB_SKIP_GIT` (Rust + Python workspace_init) | ✅ |
 | Core EDA `route-domain-event` | 🔶 `_execute_process_route_bridge.py` (deuda porte Rust) |
 | Lanzadores `SddIA/scripts/daemons/*` | ✅ N/A — no invocan `execute-process.py` (grep verificado) |
+| Touchpoints P10–P13 (`sddia-run`, hooks, bridges, lab, limbo) | ✅ `orchestrator_resolve` SSOT |
+| `touchpoint_orchestrator_audit.py` | ✅ audit P10–P13 |
 
 ## 4. Deuda técnica explícita
 
 1. **Core EDA route:** entry nativo en Rust; lógica ECST/fan-out sigue en `route_domain_event_core.py` vía `_execute_process_route_bridge.py`.
 2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers` siguen en `_execute_process_engine_bridge.py`.
 3. **`execute-action.py` (D-P6T.1):** ✅ inventario `PHYSICAL_HANDLERS` portado a Rust (`try_run_native`). El script permanece como bridge de fallback/simulación hasta P17; ya no hay acciones físicas exclusivas de Python.
-4. **Touchpoints pendientes:** lanzadores `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` (P12).
+4. **Touchpoints:** ✅ P10–P13 cerrados (`orchestrator_resolve` en producción; audit `touchpoint_orchestrator_audit.py`).
 5. **Golden harness:** ✅ **14/14** (`entity-manager` P9 cerrado).
 6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (clarify D6).
 
@@ -132,6 +134,7 @@ Especificación accionable detallada de los pendientes gated en `implementation.
 | P5 | Cápsulas `wasmtime` nativas + deudas §6.bis | ✅ actions nativas, SSOT, golden capsule-invoke-smoke |
 | P9 | Ampliar golden a `entity-manager` | ✅ **14/14** — gate maestro habilita P10–P17 |
 | P6/P7 | Forjas Rust (`forges::factory`) | ✅ nativo + `forge_parity.py` |
+| P10–P13 | Touchpoints producción → `orchestrator_resolve` | ✅ audit verde |
 | P12 | Lanzadores `SddIA/scripts/daemons/*.{sh,bat}` | ✅ N/A verificado (sin referencias a `.py`) |
 | P15 | DA-3 vía canónica en `external-ai-constraints.md` | `entity-manager` (genoma) |
 | P17 | Retirar `.py` + bridges | gate duro: P9 + P4 + P5 + P6/P7 + E2E + CA-7/CA-8 verdes |

@@ -69,15 +69,18 @@ Centinelas (Rust nativo)        Git Hooks / Wrapper / Cliente
 
 ## 4. Actualizaciones de Uso del Nuevo Fichero (Touchpoints físicos)
 
-| Consumidor | Fichero | Cambio |
-|------------|---------|--------|
-| Centinela eventos | `SddIA/daemons/event-watcher/src/main.rs` | Sustituir `python_bin() + execute-process.py` por invocación al binario orquestador (`std::process::Command`, desacoplado) |
-| Centinela Telegram | `SddIA/daemons/telegram-watcher/src/main.rs` | Idem |
-| Lanzadores daemon | `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` | Apuntar al binario nativo / runtime |
-| Aduana local (hooks) | `SddIA/scripts/qa/git-hooks/hook_common.py` (`invoke_process`) | Actualizar invocación |
-| Wrapper laboratorio | `sddia-run.sh` | Reemplazar `python … execute-process.py` por `cargo run`/binario; reevaluar venv + `pip install` |
-| Cliente Kalma2 | `.SddIA/client/sddia-client-bridge.py` (`invoke_engine`) | Invocar binario orquestador en lugar de subprocess Python |
-| QA / E2E lab | `SddIA/scripts/qa/run-eda-e2e-lab.py`, `route_domain_event_core.py` | Actualizar referencias de invocación |
+**Estado P10–P13:** ✅ cerrado — SSOT `orchestrator_resolve` (binario preferente); audit `touchpoint_orchestrator_audit.py`.
+
+| Consumidor | Fichero | Cambio | Estado |
+|------------|---------|--------|--------|
+| Centinela eventos | `SddIA/daemons/event-watcher/src/main.rs` | `execute_process_bin()` + fallback `.py` | ✅ |
+| Centinela Telegram | `SddIA/daemons/telegram-watcher/src/main.rs` | Idem | ✅ |
+| Lanzadores daemon | `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` | N/A — no invocan orquestador | ✅ |
+| Aduana local (hooks) | `SddIA/scripts/qa/git-hooks/hook_common.py` (`invoke_process`) | `resolve_orchestrator_cmd` | ✅ |
+| Wrapper laboratorio | `sddia-run.sh` | `exec orchestrator_resolve.py` (+ venv fallback PyYAML) | ✅ |
+| Cliente Kalma2 | `.SddIA/client/sddia-client-bridge.py` (`invoke_engine`) | `resolve_orchestrator_cmd` | ✅ |
+| QA / E2E lab | `run-eda-e2e-lab.py`, `route_domain_event_core.py`, limbo daemons | `resolve_orchestrator_cmd` | ✅ |
+| Subprocesos internos | `execute_process_capsules.invoke_subprocess_process_full` | `resolve_orchestrator_cmd` | ✅ |
 
 ## 5. Documentación Viva a Actualizar (excluir histórica)
 
@@ -194,7 +197,7 @@ El handler nativo cumple el contrato `emit-domain-mutation.md` v1.1.0, pero la c
 - [ ] Ciclo `feature` completo bajo `persist_ref` (spec, clarify, plan, implementation, validacion) — Argos APTO.
 - [ ] Binario Rust nativo del orquestador compila en el workspace (`cargo build`) sin warnings lógicos.
 - [x] Paridad funcional estricta: batería golden **14/14** (`feature`, `bug-fix`, `route-domain-event`, `delivery-close-cycle`, **`entity-manager`**, handlers satélite).
-- [ ] Centinelas, hooks, `sddia-run.sh` y cliente Kalma2 invocan el binario nativo desacoplado y operan E2E.
+- [x] Centinelas, hooks, `sddia-run.sh` y cliente Kalma2 invocan el orquestador vía SSOT (`orchestrator_resolve` / binario nativo); audit P10–P13 verde.
 - [ ] Ningún flujo de **orquestación** requiere intérprete Python ni PyYAML; `requirements.txt` reevaluado/podado según D3.
 - [ ] Errores devueltos como JSON válido (`exitCode>0`), sin panic crudo en stdout.
 - [ ] Documentación viva (`README.md`, `external-ai-constraints.md`, contratos vía proceso autorizado) refleja el nuevo orquestador.

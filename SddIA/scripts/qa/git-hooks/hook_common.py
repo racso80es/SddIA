@@ -22,7 +22,6 @@ SCRIPT = Path(__file__).resolve()
 REPO = SCRIPT.parents[4]
 QA = REPO / "SddIA" / "scripts" / "qa"
 CUMULO_PATH = REPO / "SddIA" / "core" / "cumulo.paths.json"
-EXECUTE_PROCESS = QA / "execute-process.py"
 
 BRANCH_PREFIXES = ("feat/", "fix/", "refactor/", "hotfix/")
 MAIN_GUARD_MSG = (
