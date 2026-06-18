@@ -130,7 +130,7 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 > | `materialize-kaizen-alert-doc` | 🔶 bridge Python | materializa doc |
 > | `materialize-fracture-pbi` | 🔶 bridge Python | materializa PBI |
 > | `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquecimiento PBI |
-> | `policy-validator` | 🔶 bridge Python | validación de políticas |
+> | `policy-validator` | ✅ nativo | `engine::policy_validator` |
 > | `crypto-broker` | ✅ nativo | `engine::crypto_broker` → `cryptography-manager` |
 >
 > **Artefactos `emit-domain-mutation` nativo:**

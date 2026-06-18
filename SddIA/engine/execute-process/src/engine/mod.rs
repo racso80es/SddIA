@@ -14,6 +14,7 @@ pub mod executor;
 pub mod fractal;
 pub mod handlers;
 pub mod phase_capsules;
+pub mod policy_validator;
 pub mod suite_execution_requested;
 pub mod thermodynamic;
 pub mod workspace;
