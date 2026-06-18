@@ -155,6 +155,40 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 
 **Criterio de cierre cumplido:** test unitario `loads_compiled_capsule_roots_from_cumulo`; paridad Rust↔Python en resolución de artefactos.
 
+## 6.ter Deudas Residuales tras porte `emit-domain-mutation`
+
+El porte nativo de `emit-domain-mutation` (`engine::domain_mutation` + `ecst_validation` + `eda_bus` + `eda_coverage`) cerró el Sello Universal EDA en Rust. Quedan dos frentes de deuda explícita.
+
+### D-P6T.1 — `execute-action.py` aún es fallback de acciones no portadas
+
+`engine::actions::try_run_native` cubre `emit-pr-*` y `emit-domain-mutation`. El resto del catálogo `SddIA/actions/` **sigue resolviéndose vía bridge `execute-action.py`** (subprocess Python), deliberadamente como red de seguridad:
+
+| Acción | Estado | Notas |
+|--------|--------|-------|
+| `emit-suite-execution-requested` | 🔶 bridge Python | emisión de evento de suite |
+| `sync-entity-index` | 🔶 bridge Python | muta `index.md` (genoma) |
+| `materialize-kaizen-alert-doc` | 🔶 bridge Python | materializa doc Kaizen |
+| `materialize-fracture-pbi` | 🔶 bridge Python | materializa PBI de fractura |
+| `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquece PBI de fractura |
+| `policy-validator` | 🔶 bridge Python | validación de políticas |
+| `crypto-broker` | 🔶 bridge Python | cápsula `cryptography-manager` nativa solo parcial (UUID) |
+
+**Criterio de cierre:** portar las acciones 🔶 a `engine::actions` (o cápsula nativa); retirar `invoke_action_python_bridge` cuando el inventario quede vacío; grep sin `execute-action.py` desde el crate.
+
+**Gate:** P17 (poda). Mantener el bridge mientras exista cualquier acción 🔶.
+
+### D-P6T.2 — Deudas de ecosistema fuera del handler `emit-domain-mutation`
+
+El handler nativo cumple el contrato `emit-domain-mutation.md` v1.1.0, pero la consciencia EDA del genoma **no es efectiva end-to-end** hasta resolver el cableado de ecosistema:
+
+- **Cableado en `*-creator`:** los procesos de forja (`process-creator`, `tool-creator`, `skill-creator`, …) no invocan `emit-domain-mutation` tras la mutación física del artefacto. Sin esta llamada, las creaciones/updates no sellan evento de dominio.
+- **Fan-out `Domain_Entity_*`:** los tipos `Domain_Entity_{Created,Updated,Deleted}` requieren suscriptores efectivos en `event-domain-subscriptions.json`; mientras no existan, `route-domain-event` documenta no-op y mueve a `processed/`.
+- **Cerbero runtime:** el gate RBAC por `context: ecosystem-evolution` está declarado en `execution-contexts.md` pero su aplicación efectiva en el runtime del orquestador (no solo en el contrato) sigue pendiente.
+
+**Criterio de cierre:** invocadores `*-creator` emiten el sello tras forja; suscripciones `Domain_Entity_*` con fan-out real; gate Cerbero aplicado en runtime. Cada sub-deuda puede cerrarse en hito independiente (no bloquea el porte del handler).
+
+**Gate:** ninguno técnico sobre el handler (ya nativo y testeado); depende de procesos de forja y topología de suscripciones.
+
 ## 7. Criterios de Aceptación (Protocolo de Acero)
 
 - [ ] Ciclo `feature` completo bajo `persist_ref` (spec, clarify, plan, implementation, validacion) — Argos APTO.
@@ -165,4 +199,5 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 - [ ] Errores devueltos como JSON válido (`exitCode>0`), sin panic crudo en stdout.
 - [ ] Documentación viva (`README.md`, `external-ai-constraints.md`, contratos vía proceso autorizado) refleja el nuevo orquestador.
 - [x] **Deudas P5 liquidadas (§6.bis):** (a) `invoke_action` nativo sin `execute-action.py` [D-P5.1]; (b) golden de fase `skill:`/`tool:` `executed` con cápsula presente [D-P5.2]; (c) resolución de artefactos de cápsula desde SSOT única (Rust↔Python) [D-P5.3].
+- [ ] **Deudas post-`emit-domain-mutation` (§6.ter):** (a) portar acciones 🔶 restantes y retirar `invoke_action_python_bridge` [D-P6T.1]; (b) cableado `*-creator`, fan-out `Domain_Entity_*` y Cerbero runtime [D-P6T.2].
 - [ ] Este TODO movido a `docs/todos/done/` en el mismo PR (cierre documental en rama).
