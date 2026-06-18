@@ -256,7 +256,10 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 **Criterio de cierre:** ✅ golden `delivery-close-cycle` (12/12); fases git-manager/shell-executor/action vía cápsulas nativas con skips lab.
 
-**Deuda residual:** fases genéricas `feature`/`bug-fix` con skill:/tool: sin cápsula compilada siguen `simulated` (paridad Python).
+**Deuda residual (detallada en PBI §6.bis):**
+- **D-P5.1** — `invoke_action` aún hace *spawn* de `execute-action.py`; portar acciones `emit-*` a cápsula directa (gate: cápsula `action:*` compilada).
+- **D-P5.2** — fases `feature`/`bug-fix` con skill:/tool: sin cápsula compilada siguen `simulated` (paridad Python); falta golden de fase `executed` con cápsula presente.
+- **D-P5.3** — resolución de artefactos vía rutas cableadas `SddIA/target`; `cumulo.paths.json` no declara `compiled_capsules` (SSOT a unificar Rust↔Python vía proceso autorizado).
 
 ### 7.3 P6/P7 — Forjas Rust (`forges::factory`)
 
