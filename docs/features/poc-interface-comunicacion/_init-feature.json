@@ -1,0 +1,7 @@
+{
+  "feature_name": "poc-interface-comunicacion",
+  "branch_name": "feat/poc-interface-comunicacion",
+  "persist_ref": "docs/features/poc-interface-comunicacion",
+  "base_branch": "main",
+  "refined_requirements": "PoC cliente interactivo desacoplado de Cursor: UI mínima (prompt + botón + respuesta) en HTML/JS vanilla; puente HTTP local Python con POST /api/interact; invocación directa al motor SddIA sin Cerbero; carga bóvedas; estado cero en cliente; bind localhost."
+}
