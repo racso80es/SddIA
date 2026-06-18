@@ -275,7 +275,7 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 **Deuda residual explícita (D-P5.1-R) — `execute-action.py` permanece como fallback:**
 
-`engine::actions::try_run_native` porta `emit-pr-*` y **`emit-domain-mutation`**. El resto del catálogo `SddIA/actions/` sigue resolviéndose por el bridge `execute-action.py` (subprocess Python), **deliberadamente** como red de seguridad hasta P17.
+`engine::actions::try_run_native` porta **todo el inventario `PHYSICAL_HANDLERS`** (emit-*, domain-mutation, sync, materialización Kintsugi, policy, crypto). El bridge `execute-action.py` sigue disponible como red de seguridad hasta P17; acciones sin handler físico devuelven `simulated`.
 
 | Acción | Estado Rust |
 |--------|-------------|
@@ -286,7 +286,7 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 | `sync-entity-index` | ✅ nativo (`engine::sync_entity_index`) |
 | `materialize-fracture-pbi` | ✅ nativo (`engine::materialize_fracture_pbi`) |
 | `materialize-kaizen-alert-doc` | ✅ nativo (`engine::materialize_kaizen_alert_doc`) |
-| `enrich-fracture-pbi-kaizen` | 🔶 bridge Python |
+| `enrich-fracture-pbi-kaizen` | ✅ nativo (`engine::enrich_fracture_pbi_kaizen`) |
 | `crypto-broker` | ✅ nativo (`engine::crypto_broker`) |
 
 **Deudas de ecosistema (fuera del handler):** cableado `*-creator`, fan-out `Domain_Entity_*`, Cerbero runtime. Detalle en PBI §6.bis (D-P5.1-R).

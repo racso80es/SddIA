@@ -12,6 +12,7 @@ pub mod eda_coverage;
 pub mod ecst_validation;
 pub mod executor;
 pub mod fractal;
+pub mod enrich_fracture_pbi_kaizen;
 pub mod materialize_fracture_pbi;
 pub mod materialize_kaizen_alert_doc;
 pub mod handlers;

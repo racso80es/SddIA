@@ -129,7 +129,7 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 > | `sync-entity-index` | ✅ nativo | `engine::sync_entity_index` → `markdown-table-editor` |
 > | `materialize-kaizen-alert-doc` | ✅ nativo | `engine::materialize_kaizen_alert_doc` → `PENDING_AUDIT_DOC_*` |
 > | `materialize-fracture-pbi` | ✅ nativo | `engine::materialize_fracture_pbi` → PBI en `docs/todos/pending/` |
-> | `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquecimiento PBI |
+> | `enrich-fracture-pbi-kaizen` | ✅ nativo | `engine::enrich_fracture_pbi_kaizen` |
 > | `policy-validator` | ✅ nativo | `engine::policy_validator` |
 > | `crypto-broker` | ✅ nativo | `engine::crypto_broker` → `cryptography-manager` |
 >
@@ -141,7 +141,7 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 >
 > **Deudas de ecosistema ajenas al handler (siguen abiertas):** cableado de invocadores en `*-creator`, suscripciones `Domain_Entity_*` con fan-out efectivo, contexto RBAC Cerbero en runtime. El handler cumple contrato `emit-domain-mutation.md` v1.1.0; tests unitarios `emit_domain_mutation_*` verdes.
 >
-> **Gate residual P17:** portar acciones de materialización/sync restantes; retirar `invoke_action_python_bridge` cuando el inventario 🔶 quede vacío.
+> **Gate residual P17:** retirar `invoke_action_python_bridge` y podar `execute-action.py` cuando P9 (golden `entity-manager`) y demás gates estén verdes.
 
 ### D-P5.2 — Fases `feature`/`bug-fix` con `skill:`/`tool:` caen a `simulated`
 
@@ -169,7 +169,7 @@ El porte nativo de `emit-domain-mutation` (`engine::domain_mutation` + `ecst_val
 | `sync-entity-index` | ✅ nativo | `engine::sync_entity_index` → `markdown-table-editor` |
 | `materialize-fracture-pbi` | ✅ nativo | `engine::materialize_fracture_pbi` |
 | `materialize-kaizen-alert-doc` | ✅ nativo | `engine::materialize_kaizen_alert_doc` |
-| `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquece PBI de fractura |
+| `enrich-fracture-pbi-kaizen` | ✅ nativo | `engine::enrich_fracture_pbi_kaizen` |
 | `policy-validator` | ✅ nativo | `engine::policy_validator` → SSOT `execution-contexts.md` |
 | `crypto-broker` | ✅ nativo | `engine::crypto_broker` → `cryptography-manager` |
 
