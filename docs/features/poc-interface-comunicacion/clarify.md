@@ -229,7 +229,7 @@ Content-Type: application/json
 | AC0.2 | `persist_ref` con `_init-feature.json` | ✅ |
 | AC0.3 | `objectives.md` con trazabilidad PBI | ✅ |
 | AC0.4 | `clarify.md` con mapa de ficheros y preguntas Q1–Q4 | ✅ |
-| AC0.5 | Rama `feat/poc-interface-comunicacion` creada | ⏸ Pendiente operador |
+| AC0.5 | Rama `feat/poc-interface-comunicacion` creada | ✅ |
 | AC0.6 | Cierre Q1–Q4 ratificado | ✅ 2026-06-18 |
 
 ---
