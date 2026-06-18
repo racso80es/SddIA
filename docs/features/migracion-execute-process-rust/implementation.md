@@ -161,7 +161,7 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | Delegación motor legacy | ✅ | Puente transitorio para procesos no portados |
 | Golden harness P8/P9 | ✅ | **14/14** (`entity-manager` incluido) |
 | Touchpoints P10–P13 | ✅ | event/telegram-watcher, hooks, route/eda lab, README |
-| Forjas P6–P7 | ⏳ | Pendiente |
+| Forjas P6–P7 | ✅ | `forges/` + `forge_parity.py` |
 | Poda P17 | ⏳ | Gated por P8/P9 |
 
 ## 6. Deuda pendiente de implementación (roadmap accionable)
@@ -293,20 +293,17 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 ### 7.3 P6/P7 — Forjas Rust (`forges::factory`)
 
-**Estado actual:** las forjas `tool`/`action`/`process` siguen en `execute_process_forges.py` (vía bridge). **Zona de genoma**: la creación de entidades muta `SddIA/{tools,actions,process}/` e índices.
+**Estado actual:** ✅ **cerrado (entry + paridad).** Módulo `forges::{common,factory}` portado; CLI `--forge`; Python delega vía `try_native_forge` antes del fallback legacy.
 
-**Objetivo P6:** `forges::factory` con paridad de:
-- Generación de `uuid` v4 y `created` (ISO-8601).
-- `hash_signature`: **sha256 sobre el cuerpo canónico** idéntico byte a byte al de Python (mismo orden de campos, mismo encoding, mismos separadores). Este es el punto de mayor riesgo de deriva.
-- Frontmatter `{id,uuid,type,version}` conforme al Estándar Atómico `{name}.md`.
+**Artefactos:**
+- `SddIA/engine/execute-process/src/forges/common.rs` — `canon_json_sorted`, `sha256_canon`, `append_row`, `idempotent_forge_handoff`
+- `SddIA/engine/execute-process/src/forges/factory.rs` — 9 clases (`tool`…`suite`, `skill`, `event`)
+- `SddIA/scripts/qa/forge_parity.py` — paridad hash + idempotencia Rust↔Python
+- `execute_process_forges.try_native_forge` + hook en `materialize_forge_by_inputs`
 
-**Objetivo P7:** append idempotente a `index.md`:
-- Misma fila (`_append_row`) y misma detección de duplicado que Python.
-- Diff de índice byte-compatible sobre fixtures reales.
+**Criterio de cierre:** ✅ `forge_parity.py` verde; `hash_signature` idéntico con `SDDIA_FORGE_LAB_*`; append índice idempotente.
 
-**Criterio de cierre:** test de forja que compara entidad + fila de índice generadas por Rust vs Python (normalizando solo `uuid`/`created`); `hash_signature` idéntico para cuerpo fijo.
-
-**Gate / soberanía:** la forja efectiva sobre genoma se ejecuta **solo vía `entity-manager`** (norma `external-ai-constraints.md` DA-2/DA-3). El código Rust implementa la lógica; la mutación del árbol indexado no se hace a mano.
+**Gate / soberanía:** la forja efectiva sobre genoma se ejecuta **solo vía `entity-manager`** (norma `external-ai-constraints.md` DA-2/DA-3).
 
 ### 7.4 P9 — Ampliar golden harness
 

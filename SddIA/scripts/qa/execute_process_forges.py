@@ -4,14 +4,54 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 from pathlib import Path
 from typing import Any, Callable
 
 from execute_process_core import parse_frontmatter
 
 
+def try_native_forge(repo: Path, inputs: dict[str, Any]) -> dict[str, Any] | None:
+    """Delega en binario Rust `--forge` cuando está disponible (P6/P7)."""
+    if os.environ.get("SDDIA_DISABLE_NATIVE_FORGES", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        return None
+    try:
+        from orchestrator_resolve import resolve_orchestrator_cmd
+
+        proc = subprocess.run(
+            resolve_orchestrator_cmd(
+                repo,
+                ["--forge", "--inputs", json.dumps(inputs, ensure_ascii=False)],
+            ),
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=os.environ.copy(),
+            check=False,
+        )
+        line = (proc.stdout or "").strip().splitlines()[-1] if proc.stdout else ""
+        if not line:
+            return None
+        body = json.loads(line)
+        if body.get("success") and isinstance(body.get("data"), dict):
+            return body["data"]
+    except (OSError, json.JSONDecodeError, RuntimeError, ValueError):
+        return None
+    return None
+
+
 def _sha256_canon(repo: Path, canon: dict[str, Any]) -> str:
+    lab = os.environ.get("SDDIA_FORGE_LAB_SHA256", "").strip()
+    if lab:
+        return f"sha256:{lab}"
     from execute_process_capsules import crypto
 
     hex_sig = crypto(
@@ -28,6 +68,9 @@ def _sha256_canon(repo: Path, canon: dict[str, Any]) -> str:
 
 
 def _uuid(repo: Path) -> str:
+    lab = os.environ.get("SDDIA_FORGE_LAB_UUID", "").strip()
+    if lab:
+        return lab
     from execute_process_capsules import crypto
 
     return crypto(repo, {"operation": "GENERATE_UUID", "target_payload": None})

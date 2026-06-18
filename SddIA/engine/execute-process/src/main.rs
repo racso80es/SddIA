@@ -3,6 +3,7 @@ use execute_process::core::repo::find_repo_root;
 use execute_process::core::resolver::normalize_request;
 use execute_process::envelope::{emit, OrchestratorEnvelope};
 use execute_process::engine::run_process;
+use execute_process::forges::materialize_by_inputs;
 use serde_json::Value;
 use std::env;
 use std::fs;
@@ -23,9 +24,10 @@ fn parse_inputs_arg(raw: Option<&str>) -> Result<Value, String> {
     serde_json::from_str(&stdin).map_err(|e| format!("JSON inválido: {e}"))
 }
 
-fn parse_args() -> Result<(String, Value), String> {
+fn parse_args() -> Result<(Option<String>, bool, Value), String> {
     let args: Vec<String> = env::args().collect();
     let mut process_name: Option<String> = None;
+    let mut forge_mode = false;
     let mut inputs_raw: Option<String> = None;
     let mut inputs_file: Option<String> = None;
     let mut i = 1;
@@ -34,6 +36,9 @@ fn parse_args() -> Result<(String, Value), String> {
             "--process" => {
                 i += 1;
                 process_name = Some(args.get(i).ok_or("--process requiere valor")?.clone());
+            }
+            "--forge" => {
+                forge_mode = true;
             }
             "--inputs" => {
                 i += 1;
@@ -56,24 +61,44 @@ fn parse_args() -> Result<(String, Value), String> {
         parse_inputs_arg(inputs_raw.as_deref())?
     };
 
+    if forge_mode {
+        if !process_inputs.is_object() {
+            return Err("--inputs debe ser objeto JSON".into());
+        }
+        return Ok((None, true, process_inputs));
+    }
+
     if let Some(name) = process_name {
         if !process_inputs.is_object() {
             return Err("--inputs debe ser objeto JSON".into());
         }
-        return Ok((name.trim().to_string(), process_inputs));
+        return Ok((Some(name.trim().to_string()), false, process_inputs));
     }
 
     if process_inputs.is_object() && !process_inputs.as_object().unwrap().is_empty() {
-        normalize_request(&process_inputs)
+        let (name, inputs) = normalize_request(&process_inputs)?;
+        Ok((Some(name), false, inputs))
     } else {
-        Err("Indique --process y --inputs (--inputs-file o stdin JSON)".into())
+        Err("Indique --process y --inputs, --forge --inputs, o stdin JSON".into())
     }
 }
 
 fn run_main() -> Result<OrchestratorEnvelope, String> {
-    let (process_name, process_inputs) = parse_args()?;
+    let (process_name, forge_mode, process_inputs) = parse_args()?;
     let repo = find_repo_root()?;
     load_hierarchical_env(&repo)?;
+    if forge_mode {
+        let data = materialize_by_inputs(&repo, &process_inputs)?;
+        return Ok(OrchestratorEnvelope {
+            success: true,
+            status_code: 0,
+            data: Some(data),
+            error: None,
+            execution_report: None,
+            exit_code: 0,
+        });
+    }
+    let process_name = process_name.ok_or("process_name requerido")?;
     run_process(&repo, &process_name, &process_inputs)
 }
 

@@ -37,7 +37,7 @@ from execute_process_core import (
     validate_process_inputs,
 )
 
-from execute_process_forges import FORGE_BY_ENTITY_CLASS
+from execute_process_forges import FORGE_BY_ENTITY_CLASS, try_native_forge
 from eda_bus_utils import (
     build_process_execution_completed_event,
     build_raw_execution_finished_event,
@@ -1688,6 +1688,9 @@ hash_signature: "{hash_sig}"
 
 def materialize_forge_by_inputs(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
     """Forja física según entity_class o forma del contrato de inputs."""
+    native = try_native_forge(repo, inputs)
+    if native is not None:
+        return native
     entity_class = inputs.get("entity_class")
     if isinstance(entity_class, str) and entity_class in FORGE_BY_ENTITY_CLASS:
         return FORGE_BY_ENTITY_CLASS[entity_class](repo, inputs)

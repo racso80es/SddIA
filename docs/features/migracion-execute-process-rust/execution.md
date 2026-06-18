@@ -51,6 +51,9 @@ Registro de la forja física (Fases A–C parcial + touchpoints E parcial).
 | — | `SddIA/scripts/qa/_execute_process_feature_phase_bridge.py` | creado (fases feature PBI/delivery) |
 | — | `SddIA/scripts/qa/orchestrator_resolve.py` | creado (SSOT binario vs `.py`) |
 | — | `SddIA/scripts/qa/golden_orchestrator_parity.py` | creado (P8 harness inicial) |
+| — | `SddIA/engine/execute-process/src/forges/` | creado (P6/P7 forjas nativas) |
+| — | `SddIA/scripts/qa/forge_parity.py` | creado (P6/P7 paridad hash) |
+| — | `execute-process --forge` | CLI forja nativa |
 | T5 | `sddia-run.sh` | actualizado (binario nativo preferente) |
 | T6 | `.SddIA/client/sddia-client-bridge.py` | actualizado |
 | T1 | `SddIA/daemons/event-watcher/src/main.rs` | actualizado |
@@ -83,7 +86,8 @@ Resultados (2026-06-18):
 | Check | Resultado |
 |-------|-----------|
 | `cargo build -p execute-process` | ✅ |
-| `cargo test -p execute-process` | ✅ 39 tests |
+| `cargo test -p execute-process` | ✅ 43 tests |
+| `forge_parity.py` (P6/P7 hash + idempotencia) | ✅ |
 | Smoke `kalma2-interact` nativo | ✅ envelope JSON válido |
 | Smoke `feature` nativo (P1–P3, skips lab) | ✅ 7 fases, `success:true` |
 | Golden `kalma2-interact` Rust vs Python | ✅ |
@@ -127,7 +131,7 @@ Especificación accionable detallada de los pendientes gated en `implementation.
 | P4 | Handlers satélite nativos | ✅ entry nativo; core EDA route en bridge |
 | P5 | Cápsulas `wasmtime` nativas + deudas §6.bis | ✅ actions nativas, SSOT, golden capsule-invoke-smoke |
 | P9 | Ampliar golden a `entity-manager` | ✅ **14/14** — gate maestro habilita P10–P17 |
-| P6/P7 | Forjas Rust (`hash_signature` sha256 paridad + índice idempotente) | vía `entity-manager` (DA-2/DA-3) |
+| P6/P7 | Forjas Rust (`forges::factory`) | ✅ nativo + `forge_parity.py` |
 | P12 | Lanzadores `SddIA/scripts/daemons/*.{sh,bat}` | ✅ N/A verificado (sin referencias a `.py`) |
 | P15 | DA-3 vía canónica en `external-ai-constraints.md` | `entity-manager` (genoma) |
 | P17 | Retirar `.py` + bridges | gate duro: P9 + P4 + P5 + P6/P7 + E2E + CA-7/CA-8 verdes |
