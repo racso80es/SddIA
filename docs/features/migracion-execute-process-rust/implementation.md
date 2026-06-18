@@ -152,7 +152,8 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | `core::{parser,resolver,env,env_parse,repo}` | ✅ | Paridad YAML + bóvedas + resolución |
 | `envelope::OrchestratorEnvelope` | ✅ | Esquema rico byte-compatible |
 | Handler nativo `kalma2-interact` | ✅ | Sin PyYAML; smoke + golden OK |
-| Handler nativo `telegram-fallback-responder` (P4 parcial) | ✅ | Filtro C + Síntesis + Materialización; golden OK |
+| Handler nativo `telegram-fallback-responder` (P4 parcial) | ✅ | golden OK |
+| Handler nativo `telegram-gateway` (P4 parcial) | ✅ | tool + emisión domain; golden OK |
 | Motor genérico P1–P3 (`executor`, `workspace_init`, `thermodynamic`) | ✅ | Smoke + golden `feature` con `SDDIA_LAB_SKIP_GIT` |
 | Handlers satélite P4 restantes | 🔶 | Bridge `_execute_process_handler_bridge.py` |
 | Cápsulas P5 (`engine::capsules`) | 🔶 | `git-manager` + resolución telegram tool; fases genéricas skill/tool aún simuladas |
@@ -224,7 +225,7 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 ### 7.1 P4 — Handlers satélite nativos
 
-**Estado actual:** `telegram-fallback-responder` portado a `engine::handlers::telegram_fallback` (nativo). Resto delegado a `_execute_process_handler_bridge.py`. Constante `HANDLER_BRIDGE` en `engine/mod.rs` enumera los `canonical` aún desviados.
+**Estado actual:** `telegram-fallback-responder` y `telegram-gateway` portados a nativo. Resto delegado a `_execute_process_handler_bridge.py`. Constante `HANDLER_BRIDGE` en `engine/mod.rs` enumera los `canonical` aún desviados.
 
 **Objetivo:** portar cada handler a `engine::handlers::*` (Rust puro), retirándolo de `HANDLER_BRIDGE` solo cuando su golden (P9) esté verde.
 
@@ -232,7 +233,7 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 |-----------|---------------|-----------------|-------------|
 | `route-domain-event` | `route_domain_event_core.py` | carga ECST, validación de esquema, fan-out a subscribers, dispatch a `--process`/`--action` | re-entra al orquestador (binario) y `execute-action.py` |
 | `telegram-fallback-responder` | core telegram | ✅ nativo (`handlers/telegram_fallback.rs`) | tool `send-telegram-notification` (native/wasm/limbo) |
-| `telegram-gateway` | core telegram | normalización update → evento de dominio | emisión a `./.events/pending` |
+| `telegram-gateway` | core telegram | ✅ nativo (`handlers/telegram_gateway.rs`) | tool + `engine/fractal` |
 | `daemon-kill-switch` | core daemons | toggle de `status/*.lock` + señal | FS only |
 | `governance-daemon-manager` | core daemons | arranque/parada/estado de daemons | `std::process::Command` a lanzadores |
 | `daemon-heartbeat-audit` | core daemons | lectura de `status/*` + ventana de latido | FS only |
@@ -284,7 +285,7 @@ wasmtime run --dir=. [--env K=V]… <capsule>.wasm  < stdin(JSON)  > stdout(JSON
 
 ### 7.4 P9 — Ampliar golden harness
 
-**Estado actual:** `golden_orchestrator_parity.py` verde para `kalma2-interact`, `feature` (con `SDDIA_LAB_SKIP_GIT` + skips cierre), y `telegram-fallback-responder` (filtro C + chat_id ausente). Comparación: `success` + firma de fases + `data` normalizado.
+**Estado actual:** `golden_orchestrator_parity.py` verde para 6 casos: `kalma2-interact`, `feature`, `telegram-fallback-responder` (×2), `telegram-gateway` (×2).
 
 **Objetivo:** ampliar `CASES` y la normalización a los procesos núcleo:
 

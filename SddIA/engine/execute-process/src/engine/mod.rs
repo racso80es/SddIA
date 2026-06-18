@@ -2,6 +2,7 @@ pub mod capsules;
 pub mod delegate_handler;
 pub mod delegate_python;
 pub mod executor;
+pub mod fractal;
 pub mod handlers;
 pub mod thermodynamic;
 pub mod workspace;
@@ -14,7 +15,6 @@ use std::path::Path;
 
 const HANDLER_BRIDGE: &[&str] = &[
     "route-domain-event",
-    "telegram-gateway",
     "daemon-kill-switch",
     "governance-daemon-manager",
     "daemon-heartbeat-audit",
@@ -34,6 +34,10 @@ pub fn run_process(
 
     if canonical == "telegram-fallback-responder" {
         return handlers::telegram_fallback::run(repo, process_inputs);
+    }
+
+    if canonical == "telegram-gateway" {
+        return handlers::telegram_gateway::run(repo, process_inputs);
     }
 
     if HANDLER_BRIDGE.contains(&canonical.as_str()) {

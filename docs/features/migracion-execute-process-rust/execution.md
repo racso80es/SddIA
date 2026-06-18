@@ -17,7 +17,7 @@ Registro de la forja física (Fases A–C parcial + touchpoints E parcial).
 |------|--------|------------|
 | **A** Andamiaje | ✅ | Crate `SddIA/engine/execute-process/`, miembro `engine/*` en workspace |
 | **B** Core | ✅ | `core::{parser,resolver,env,env_parse,repo}`, `envelope::OrchestratorEnvelope` |
-| **C** Engine (parcial) | ✅ | `kalma2-interact` + `telegram-fallback-responder` nativos; motor genérico P1–P3; resto vía bridges |
+| **C** Engine (parcial) | ✅ | `kalma2-interact`, `telegram-fallback-responder`, `telegram-gateway` nativos; motor genérico P1–P3; daemons vía bridge |
 | **D** Forges | ⏳ | Pendiente — sigue en bridge Python |
 | **E** Touchpoints | ✅ | Kalma2, wrappers, watchers, hooks, EDA/route lab, README |
 | **F** Poda | ⏳ | Gate P9 parcial (4 casos); `.py` fallback activo |
@@ -75,7 +75,9 @@ Resultados (2026-06-18):
 | Golden `kalma2-interact` Rust vs Python | ✅ |
 | Golden `feature` (skips lab + `SDDIA_LAB_SKIP_GIT`) | ✅ |
 | Golden `telegram-fallback-responder` (filtro + chat_id ausente) | ✅ |
-| Handler nativo `telegram-fallback-responder` | ✅ sacado de `HANDLER_BRIDGE` |
+| Golden `telegram-gateway` (TODO + empty text) | ✅ |
+| Handler nativo `telegram-gateway` | ✅ sacado de `HANDLER_BRIDGE` |
+| Módulo `engine/fractal` + `invoke_tool` | ✅ reutilizado por gateway y thermodynamic |
 | `SDDIA_LAB_SKIP_GIT` (Rust + Python workspace_init) | ✅ |
 | Handlers satélite restantes | 🔶 vía `_execute_process_handler_bridge.py` |
 | Lanzadores `SddIA/scripts/daemons/*` | ✅ N/A — no invocan `execute-process.py` (grep verificado) |

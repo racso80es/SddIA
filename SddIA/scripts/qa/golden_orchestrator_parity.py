@@ -58,6 +58,9 @@ def normalize(obj: Any) -> Any:
             "tool_result",
             "response_preview",
             "dispatch_mode",
+            "seal",
+            "sensorial_seal",
+            "telegram_message_received_id",
         }
         out = {}
         for k, v in obj.items():
@@ -158,6 +161,16 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str]]] = [
         "telegram-fallback-responder",
         {"text": "golden parity ping"},
         {"TELEGRAM_ALLOWED_CHAT_ID": ""},
+    ),
+    (
+        "telegram-gateway",
+        {"text": "TODO: golden parity"},
+        {"TELEGRAM_ALLOWED_CHAT_ID": ""},
+    ),
+    (
+        "telegram-gateway",
+        {"text": ""},
+        {},
     ),
 ]
 

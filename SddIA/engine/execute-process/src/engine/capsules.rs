@@ -116,6 +116,27 @@ fn unwrap_git_manager_body(body: &Value) -> Result<Value, String> {
         .to_string())
 }
 
+fn unwrap_tool_body(body: &Value) -> Value {
+    if let Some(result) = body.get("result") {
+        return result.clone();
+    }
+    body.clone()
+}
+
+pub fn invoke_tool(repo: &Path, tool_name: &str, payload: &Value) -> Result<Value, String> {
+    let stdin_payload = serde_json::to_string(payload).map_err(|e| e.to_string())?;
+    let (kind, path) = resolve_skill(repo, tool_name, true)?;
+    let (stdout, stderr, _code) = invoke_capsule(repo, &kind, &path, &stdin_payload)?;
+    if stdout.is_empty() {
+        return Err(if stderr.is_empty() {
+            format!("tool '{tool_name}' sin salida")
+        } else {
+            stderr
+        });
+    }
+    Ok(unwrap_tool_body(&parse_capsule_stdout(&stdout)?))
+}
+
 pub fn invoke_git_manager(
     repo: &Path,
     operation_type: &str,
