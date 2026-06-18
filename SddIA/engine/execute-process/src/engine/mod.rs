@@ -1,6 +1,5 @@
 pub mod capsules;
 pub mod daemons;
-pub mod delegate_handler;
 pub mod delegate_python;
 pub mod executor;
 pub mod fractal;
@@ -13,8 +12,6 @@ use crate::core::resolver::load_process_def;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::Value;
 use std::path::Path;
-
-const HANDLER_BRIDGE: &[&str] = &["route-domain-event"];
 
 /// Punto de entrada del motor.
 pub fn run_process(
@@ -48,8 +45,8 @@ pub fn run_process(
         return handlers::daemon_heartbeat::run(repo, process_inputs);
     }
 
-    if HANDLER_BRIDGE.contains(&canonical.as_str()) {
-        return delegate_handler::run_handler(repo, &canonical, process_inputs);
+    if canonical == "route-domain-event" {
+        return handlers::route_domain::run(repo, process_inputs);
     }
 
     if executor::handles(&canonical) {

@@ -155,11 +155,11 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | Handler nativo `telegram-fallback-responder` (P4 parcial) | ✅ | golden OK |
 | Handler nativo `telegram-gateway` (P4 parcial) | ✅ | tool + emisión domain; golden OK |
 | Motor genérico P1–P3 (`executor`, `workspace_init`, `thermodynamic`) | ✅ | Smoke + golden `feature` con `SDDIA_LAB_SKIP_GIT` |
-| Handlers satélite P4 | 🔶 | Solo `route-domain-event` en bridge |
+| Handlers satélite P4 | ✅ | Entry nativo `route-domain-event`; core EDA vía `_execute_process_route_bridge.py` |
 | `engine/daemons` | ✅ | locks, PIDs, bus pending, orchestration |
 | Cápsulas P5 (`engine::capsules`) | 🔶 | `git-manager` + resolución telegram tool; fases genéricas skill/tool aún simuladas |
 | Delegación motor legacy | ✅ | Puente transitorio para procesos no portados |
-| Golden harness P8/P9 | 🔶 | 4 casos verdes; pendiente `route-domain-event`, `entity-manager`, `delivery-close-cycle` |
+| Golden harness P8/P9 | 🔶 | 10 casos verdes; pendiente `bug-fix`, `entity-manager`, `delivery-close-cycle` |
 | Touchpoints P10–P13 | ✅ | event/telegram-watcher, hooks, route/eda lab, README |
 | Forjas P6–P7 | ⏳ | Pendiente |
 | Poda P17 | ⏳ | Gated por P8/P9 |
@@ -175,7 +175,7 @@ Items concretos para completar la migración tras el hito actual. Cada uno es un
 | P1 | Portar `run_workspace_init` (git-manager + `objectives.md`) a `engine::executor` | `feature`/`bug-fix` crean rama + objectives sin bridge | `execute_process_capsules.run_workspace_init` |
 | P2 | Portar bucle genérico `execute_phase` + `is_workspace_init_phase` | Fases `executed`/`simulated`/`skipped` con paridad de envelope | `execute_process_capsules.execute_phase` |
 | P3 | Portar Peaje Termodinámico (`run_thermodynamic_toll`) | Emite `Raw_Execution_Finished` + orquestación; fail-soft D3.13 | `run_thermodynamic_toll` |
-| P4 | Portar handlers satélite restantes (`route-domain-event`, `telegram-fallback-responder`, kill-switch, `governance-daemon-manager`, `daemon-heartbeat-audit`) | Cada `canonical` resuelto nativo; bridge solo para no portados | dispatch en `run_process` |
+| P4 | Portar handlers satélite restantes | ✅ entry nativo; core EDA route en bridge | `delegate_handler` / `_execute_process_handler_bridge.py` |
 | P5 | Invocación de cápsulas `wasmtime` nativa (`engine::capsules`) | `wasmtime run --dir=.` vía `std::process::Command` con paridad de I/O | rama capsule en `run_process` |
 
 ### 6.2 Forjas físicas (Fase D)
@@ -226,26 +226,24 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 ### 7.1 P4 — Handlers satélite nativos
 
-**Estado actual:** todos los handlers satélite portados a nativo **excepto** `route-domain-event` (bridge residual). Constante `HANDLER_BRIDGE` en `engine/mod.rs` enumera los `canonical` aún desviados.
+**Estado actual:** ✅ **cerrado (entry nativo).** Todos los handlers satélite resuelven en `run_process` vía `engine::handlers::*`. `HANDLER_BRIDGE` / `delegate_handler` eliminados de `mod.rs`. `route-domain-event` delega el núcleo EDA (~600 líneas ECST/fan-out) a `_execute_process_route_bridge.py` → `route_domain_event_core.py` (deuda explícita de porte Rust).
 
-**Objetivo:** portar cada handler a `engine::handlers::*` (Rust puro), retirándolo de `HANDLER_BRIDGE` solo cuando su golden (P9) esté verde.
+**Objetivo cumplido (entry):** cada `canonical` en routing directo; golden P9 verde por handler portado.
 
-| Canonical | Origen Python | Núcleo a portar | Subprocesos |
-|-----------|---------------|-----------------|-------------|
-| `route-domain-event` | `route_domain_event_core.py` | carga ECST, validación de esquema, fan-out a subscribers, dispatch a `--process`/`--action` | re-entra al orquestador (binario) y `execute-action.py` |
-| `telegram-fallback-responder` | core telegram | ✅ nativo (`handlers/telegram_fallback.rs`) | tool `send-telegram-notification` (native/wasm/limbo) |
-| `telegram-gateway` | core telegram | ✅ nativo (`handlers/telegram_gateway.rs`) | tool + `engine/fractal` |
-| `daemon-kill-switch` | core daemons | ✅ nativo | vía `governance_daemon` + fractal |
-| `governance-daemon-manager` | core daemons | ✅ nativo | start/status/kill OS |
-| `daemon-heartbeat-audit` | core daemons | ✅ nativo | sweep + telemetry file |
+| Canonical | Origen Python | Núcleo | Estado |
+|-----------|---------------|--------|--------|
+| `route-domain-event` | `route_domain_event_core.py` | ECST, fan-out, dispatch | ✅ entry `handlers/route_domain.rs` + bridge EDA |
+| `telegram-fallback-responder` | core telegram | tool + filtros | ✅ nativo |
+| `telegram-gateway` | core telegram | tool + fractal | ✅ nativo |
+| `daemon-kill-switch` | core daemons | governance + fractal | ✅ nativo |
+| `governance-daemon-manager` | core daemons | start/status/kill OS | ✅ nativo |
+| `daemon-heartbeat-audit` | core daemons | sweep + telemetry | ✅ nativo |
 
-**Orden sugerido:** primero los FS-only (`daemon-kill-switch`, `daemon-heartbeat-audit`, `telegram-fallback-responder`), luego `telegram-gateway`, y por último `route-domain-event` (el más acoplado, depende de reentrada al binario y de ECST).
+**Deuda post-P4:** portar `route_domain_event_core` + subset `eda_bus_utils` a Rust (o extender `sddia-daemon-runtime`).
 
-**Contrato:** envelope idéntico al bridge actual (mismos campos `data`/`execution_report`). Reentradas al orquestador usan `orchestrator_resolve`/binario, nunca `python … execute-process.py`.
+**Criterio de cierre entry:** ✅ cada `canonical` en `run_process` sin `delegate_handler`; golden P9 verde (`route-domain-event` con fixture ECST + fixtures aislados py/rust).
 
-**Criterio de cierre:** cada `canonical` resuelto en `run_process` sin pasar por `delegate_handler`; su entrada eliminada de `HANDLER_BRIDGE`; golden P9 verde para ese handler.
-
-**Gate:** no retirar del bridge sin golden verde del handler concreto.
+**Gate poda bridge EDA:** porte full nativo del core route **no** bloquea P5/P9 ampliado; sí bloquea retirada de `_execute_process_route_bridge.py` en P17.
 
 ### 7.2 P5 — Cápsulas `wasmtime` nativas
 

@@ -3352,7 +3352,7 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
                 "phases": [
                     {
                         "phase_name": "Orquestación route-domain-event",
-                        "status": "executed",
+                        "status": "executed" if ok else "failed",
                         "handler": "route-domain-event-core",
                         "dispatch_mode": (out.get("data") or {}).get("dispatch_mode"),
                     }

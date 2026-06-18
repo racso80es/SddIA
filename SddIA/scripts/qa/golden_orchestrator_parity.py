@@ -10,6 +10,8 @@ import os
 import re
 import subprocess
 import sys
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -66,6 +68,10 @@ def normalize(obj: Any) -> Any:
             "stale_locks_removed",
             "fractures_emitted",
             "os_result",
+            "parent_path",
+            "processing_header_path",
+            "sweep",
+            "delivery_status",
         }
         out = {}
         for k, v in obj.items():
@@ -146,8 +152,35 @@ def run_orchestrator(
     return json.loads(line)
 
 
-CASES: list[tuple[str, dict[str, Any], dict[str, str]]] = [
-    ("kalma2-interact", {"prompt": "golden parity ping"}, {}),
+LAB_ROUTE_ENV = {"SDDIA_LAB_ROUTE_SYNC": "1"}
+
+
+def write_route_fixture(repo: Path) -> str:
+    """Evento Daemon_Heartbeat ECST válido (sin fan-out en event-subscriptions.json)."""
+    pending = repo / ".events" / "pending"
+    pending.mkdir(parents=True, exist_ok=True)
+    event_id = str(uuid.uuid4())
+    event = {
+        "event_id": event_id,
+        "event_type": "Daemon_Heartbeat",
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "emitter_agent": "golden-orchestrator-parity",
+        "payload": {
+            "daemon_name": "event-watcher",
+            "daemon_uuid": str(uuid.uuid4()),
+            "pid": os.getpid(),
+            "uptime_seconds": 42,
+            "status": "alive",
+        },
+        "delivery_state": {},
+    }
+    rel = f".events/pending/{event_id}.json"
+    (repo / rel).write_text(json.dumps(event, ensure_ascii=False, indent=2), encoding="utf-8")
+    return rel
+
+
+CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
+    ("kalma2-interact", {"prompt": "golden parity ping"}, {}, False),
     (
         "feature",
         {
@@ -156,34 +189,41 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str]]] = [
             "document_context": "docs/features/migracion-execute-process-rust",
         },
         LAB_FEATURE_ENV,
+        False,
     ),
     (
         "telegram-fallback-responder",
         {"text": "/start"},
         {},
+        False,
     ),
     (
         "telegram-fallback-responder",
         {"text": "golden parity ping"},
         {"TELEGRAM_ALLOWED_CHAT_ID": ""},
+        False,
     ),
     (
         "telegram-gateway",
         {"text": "TODO: golden parity"},
         {"TELEGRAM_ALLOWED_CHAT_ID": ""},
+        False,
     ),
     (
         "telegram-gateway",
         {"text": ""},
         {},
+        False,
     ),
-    ("daemon-heartbeat-audit", {}, {}),
+    ("daemon-heartbeat-audit", {}, {}, False),
     (
         "governance-daemon-manager",
         {"operation": "status", "daemon_id": "event-watcher"},
         {},
+        False,
     ),
-    ("daemon-kill-switch", {}, {}),
+    ("daemon-kill-switch", {}, {}, False),
+    ("route-domain-event", {}, {**LAB_ROUTE_ENV}, True),
 ]
 
 
@@ -198,14 +238,28 @@ def main() -> int:
     if args.process:
         inputs = json.loads(args.inputs or "{}")
         overlay = LAB_FEATURE_ENV if args.process in ("feature", "bug-fix") else {}
-        cases = [(args.process, inputs, overlay)]
+        if args.process == "route-domain-event":
+            overlay = {**LAB_ROUTE_ENV}
+        cases = [(args.process, inputs, overlay, args.process == "route-domain-event")]
 
     failed = 0
-    for process, inputs, env_overlay in cases:
+    for process, inputs, env_overlay, needs_route_fixture in cases:
         label = process if len(cases) == len(CASES) else f"{process} custom"
+        fixture_rels: list[str] = []
         try:
-            py_body = run_orchestrator(repo, False, process, inputs, env_overlay)
-            rust_body = run_orchestrator(repo, True, process, inputs, env_overlay)
+            case_env = dict(env_overlay)
+            if needs_route_fixture:
+                case_env.update(LAB_ROUTE_ENV)
+                py_fixture = write_route_fixture(repo)
+                rust_fixture = write_route_fixture(repo)
+                fixture_rels = [py_fixture, rust_fixture]
+                py_inputs = {"event_file_path": py_fixture}
+                rust_inputs = {"event_file_path": rust_fixture}
+            else:
+                py_inputs = dict(inputs)
+                rust_inputs = dict(inputs)
+            py_body = run_orchestrator(repo, False, process, py_inputs, case_env)
+            rust_body = run_orchestrator(repo, True, process, rust_inputs, case_env)
             nr_data = normalize(rust_body.get("data"))
             np_data = normalize(py_body.get("data"))
             same_success = rust_body.get("success") == py_body.get("success")
@@ -226,6 +280,12 @@ def main() -> int:
         except Exception as exc:
             failed += 1
             print(f"ERR {label}: {exc}")
+        finally:
+            for fixture_rel in fixture_rels:
+                try:
+                    (repo / fixture_rel).unlink(missing_ok=True)
+                except OSError:
+                    pass
 
     return 1 if failed else 0
 
