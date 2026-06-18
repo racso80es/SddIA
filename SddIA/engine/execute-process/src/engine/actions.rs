@@ -206,6 +206,8 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
         "emit-suite-execution-requested" => super::suite_execution_requested::run(repo, inputs)?,
         "policy-validator" => super::policy_validator::run(repo, inputs)?,
         "sync-entity-index" => super::sync_entity_index::run(repo, inputs)?,
+        "materialize-fracture-pbi" => super::materialize_fracture_pbi::run(repo, inputs)?,
+        "materialize-kaizen-alert-doc" => super::materialize_kaizen_alert_doc::run(repo, inputs)?,
         _ => return Ok(None),
     };
     Ok(Some(data))

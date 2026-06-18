@@ -284,7 +284,9 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 | `emit-suite-execution-requested` | ✅ nativo (`engine::suite_execution_requested`) |
 | `policy-validator` | ✅ nativo (`engine::policy_validator`) |
 | `sync-entity-index` | ✅ nativo (`engine::sync_entity_index`) |
-| `materialize-*`, `enrich-fracture-pbi-kaizen` | 🔶 bridge Python |
+| `materialize-fracture-pbi` | ✅ nativo (`engine::materialize_fracture_pbi`) |
+| `materialize-kaizen-alert-doc` | ✅ nativo (`engine::materialize_kaizen_alert_doc`) |
+| `enrich-fracture-pbi-kaizen` | 🔶 bridge Python |
 | `crypto-broker` | ✅ nativo (`engine::crypto_broker`) |
 
 **Deudas de ecosistema (fuera del handler):** cableado `*-creator`, fan-out `Domain_Entity_*`, Cerbero runtime. Detalle en PBI §6.bis (D-P5.1-R).

@@ -38,7 +38,8 @@ Registro de la forja física (Fases A–C parcial + touchpoints E parcial).
 | — | `SddIA/engine/execute-process/src/engine/delivery_close.rs` | creado (P5 delivery-close nativo) |
 | — | `SddIA/engine/execute-process/src/engine/phase_capsules.rs` | creado (P5 handlers fase + try_invoke) |
 | — | `SddIA/engine/execute-process/src/engine/capsule_paths.rs` | creado (D-P5.3 SSOT `compiled_capsules`) |
-| — | `SddIA/engine/execute-process/src/engine/actions.rs` | creado (D-P5.1 acciones `emit-pr-*` nativas) |
+| — | `SddIA/engine/execute-process/src/engine/materialize_fracture_pbi.rs` | creado (D-P6T.1 nativo) |
+| — | `SddIA/engine/execute-process/src/engine/materialize_kaizen_alert_doc.rs` | creado (D-P6T.1 nativo) |
 | — | `SddIA/engine/execute-process/src/engine/domain_mutation.rs` | creado (`emit-domain-mutation` nativo) |
 | — | `SddIA/engine/execute-process/src/engine/ecst_validation.rs` | creado (aduana ECST) |
 | — | `SddIA/engine/execute-process/src/engine/eda_bus.rs` | creado (idempotencia bus) |
@@ -81,7 +82,7 @@ Resultados (2026-06-18):
 | Check | Resultado |
 |-------|-----------|
 | `cargo build -p execute-process` | ✅ |
-| `cargo test -p execute-process` | ✅ 27 tests |
+| `cargo test -p execute-process` | ✅ 34 tests |
 | Smoke `kalma2-interact` nativo | ✅ envelope JSON válido |
 | Smoke `feature` nativo (P1–P3, skips lab) | ✅ 7 fases, `success:true` |
 | Golden `kalma2-interact` Rust vs Python | ✅ |
@@ -104,7 +105,7 @@ Resultados (2026-06-18):
 
 1. **Core EDA route:** entry nativo en Rust; lógica ECST/fan-out sigue en `route_domain_event_core.py` vía `_execute_process_route_bridge.py`.
 2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers` siguen en `_execute_process_engine_bridge.py`.
-3. **`execute-action.py` (D-P6T.1):** bridge residual. Nativas: `emit-pr-*`, `emit-domain-mutation`, `crypto-broker`, `emit-suite-execution-requested`, `policy-validator`, **`sync-entity-index`**. Siguen en Python: `materialize-*`, `enrich-fracture-pbi-kaizen`.
+3. **`execute-action.py` (D-P6T.1):** bridge residual. Nativas: `emit-pr-*`, `emit-domain-mutation`, `crypto-broker`, `emit-suite-execution-requested`, `policy-validator`, `sync-entity-index`, `materialize-fracture-pbi`, **`materialize-kaizen-alert-doc`**. Siguen en Python: `enrich-fracture-pbi-kaizen`.
 4. **Touchpoints pendientes:** lanzadores `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` (P12).
 5. **Golden harness:** 13 casos verdes; pendiente `entity-manager` (P9).
 6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (clarify D6).
