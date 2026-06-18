@@ -4,9 +4,9 @@ created: "2026-06-18"
 process: feature
 branch_name: feat/poc-interface-comunicacion
 persist_ref: docs/features/poc-interface-comunicacion
-pbi_ref: docs/todos/pending/PBI_PoC_Interface_Comuniccion.md
+pbi_ref: docs/todos/done/PBI_PoC_Interface_Comuniccion.md
 document_id: PBI-POC-INTERFACE-COMUNICACION
-status: implementation
+status: validacion_apto
 related:
   - SddIA/agents/mayeuta.md
   - SddIA/norms/capsule-json-io.md

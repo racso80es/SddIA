@@ -4,7 +4,7 @@ created: "2026-06-18"
 process: feature
 purpose: Estabilización de requisitos — PBI-POC-INTERFACE-COMUNICACION (Q1–Q4 ratificadas por operador)
 version_clarify: "1.1.0"
-pbi_ref: docs/todos/pending/PBI_PoC_Interface_Comuniccion.md
+pbi_ref: docs/todos/done/PBI_PoC_Interface_Comuniccion.md
 document_id: PBI-POC-INTERFACE-COMUNICACION
 ---
 
