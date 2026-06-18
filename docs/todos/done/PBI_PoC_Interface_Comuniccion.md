@@ -42,7 +42,7 @@ Primera versión de **cliente interactivo** para operar SddIA **sin depender del
 |------|------------|------|
 | **Material (frontend)** | HTML5, CSS, Vanilla JS | `interfaces/kalma2/` |
 | **Puente físico (backend)** | Python `http.server` stdlib | `.SddIA/client/sddia-client-bridge.py` |
-| **Motor (Ola 1)** | Stub eco en `invoke_engine()` | Deuda W3: `kalma2-interact` |
+| **Motor (W3)** | Proceso `kalma2-interact` + síntesis Mayeuta lab | ✅ |
 
 ```text
 [Navegador] ──POST /api/interact──► [sddia-client-bridge.py]
@@ -84,11 +84,11 @@ Primera versión de **cliente interactivo** para operar SddIA **sin depender del
 | **AC5** | Smoke prompt → salida visible | ✅ |
 | **AC6** | Cierre documental PR | ✅ |
 
-## 6. Deuda post-PoC (W3)
+## 6. Deuda post-PoC
 
-- Proceso genoma `kalma2-interact` vía `entity-manager`.
-- Sustituir eco en `invoke_engine()` por subprocess real.
+- Síntesis Mayeuta **lab** (determinista); integración LLM real en evolución posterior.
 - Evaluar promoción del puente a `SddIA/scripts/clients/`.
+- Cerbero/RBAC en feature posterior.
 
 ## 7. Referencias
 

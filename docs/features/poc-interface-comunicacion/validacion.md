@@ -13,12 +13,18 @@ checks:
   AC4_doble_envio: "APTO — app.js deshabilita botón durante fetch"
   AC5_smoke_termico: "APTO — eco visible; servidor estable tras petición"
   AC6_cierre_documental: "APTO — PBI en done/ + validacion.md en rama"
-  O7_motor_real: "DEUDA — invoke_engine eco PoC; W3 kalma2-interact pendiente"
+  O7_motor_real: "APTO — proceso kalma2-interact vía execute-process; puente integrado"
 git_changes:
   - .SddIA/client/sddia-client-bridge.py
   - interfaces/kalma2/index.html
   - interfaces/kalma2/app.js
   - interfaces/kalma2/style.css
+  - SddIA/process/kalma2-interact.md
+  - SddIA/process/index.md
+  - SddIA/core/eda-coverage.json
+  - SddIA/scripts/qa/kalma2_interact_core.py
+  - SddIA/scripts/qa/test_kalma2_interact.py
+  - SddIA/scripts/qa/execute_process_capsules.py
   - docs/features/poc-interface-comunicacion/
   - docs/todos/done/PBI_PoC_Interface_Comuniccion.md
 ---
@@ -37,8 +43,8 @@ Argos laboratorio: entrega **APTO** para **Ola W1 PoC** en rama `feat/poc-interf
 
 ## Deuda aceptada (PoC)
 
-- Motor `invoke_engine()` en modo **eco** — sustitución por proceso `kalma2-interact` (W3) queda fuera de este PR.
 - Sin Cerbero/RBAC — bind `127.0.0.1` exclusivo.
+- Síntesis Mayeuta **lab determinista** (sin LLM externo); evolución conversacional real queda para feature posterior.
 
 ## Operador post-merge
 

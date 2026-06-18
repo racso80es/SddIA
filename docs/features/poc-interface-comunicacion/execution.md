@@ -9,6 +9,9 @@ items_applied:
   - T3-app-js
   - T4-style-css
   - T6-smoke-fixture
+  - T7-process-kalma2-interact
+  - T8-kalma2-interact-core
+  - T9-bridge-motor-integration
 ---
 
 # Ejecución — PoC Interface Comunicación (Kalma2)
@@ -23,39 +26,47 @@ items_applied:
 | T4 | `interfaces/kalma2/style.css` | creado |
 | T6 | `docs/features/poc-interface-comunicacion/_smoke-kalma2-interact.json` | creado |
 
+## Ola W3 aplicada (2026-06-18)
+
+| ID | Artefacto | Operación |
+|----|-----------|-----------|
+| T7 | `SddIA/process/kalma2-interact.md` | forjado vía `entity-manager` |
+| T8 | `SddIA/scripts/qa/kalma2_interact_core.py` | creado |
+| T9 | `.SddIA/client/sddia-client-bridge.py` | `invoke_engine` → `execute-process kalma2-interact` |
+
 ## Comandos verificados
 
 ```bash
-# Arrancar puente (localhost:8765)
+python3 -m unittest SddIA.scripts.qa.test_kalma2_interact -v
+
 python3 .SddIA/client/sddia-client-bridge.py
 
-# Smoke API (otra terminal)
 curl -s -X POST http://127.0.0.1:8765/api/interact \
   -H 'Content-Type: application/json' \
   -d @docs/features/poc-interface-comunicacion/_smoke-kalma2-interact.json
 
-# UI en navegador
-# http://127.0.0.1:8765/
+# UI → http://127.0.0.1:8765/
 ```
 
 ## Resultados smoke (2026-06-18)
 
 | AC | Evidencia |
 |----|-----------|
-| AC2 | `POST /api/interact` → `{"success": true, "response": "[eco PoC] ping de prueba kalma2", ...}` |
-| AC3 | Log `[CONFIG] Jerarquía detectada` — bóvedas cargadas al arranque |
-| AC5 | Eco visible en respuesta JSON; hilo servidor estable tras petición |
-| AC1 | `GET /` → HTTP 200 (index.html servido) |
+| AC2 | `POST /api/interact` → `success: true` |
+| AC3 | Bóvedas cargadas al arranque |
+| AC5 | Respuesta Mayeuta lab (`Tormentosa/Aiúa`) en JSON |
+| AC1 | `GET /` → HTTP 200 |
+| O7 | 3 tests `test_kalma2_interact` OK |
 
 ## Operador
 
 1. Levantar puente: `python3 .SddIA/client/sddia-client-bridge.py`
-2. Abrir `http://127.0.0.1:8765/` en navegador.
-3. Escribir prompt → **Forjar** → ver respuesta eco en panel inferior.
-4. Puerto alternativo: `SDDIA_CLIENT_PORT=9000` en bóveda o entorno.
+2. Abrir `http://127.0.0.1:8765/`
+3. Prompt → **Forjar** → respuesta síntesis Mayeuta (≤2 líneas)
+4. `SDDIA_CLIENT_PORT` / `SDDIA_CLIENT_TIMEOUT_SECONDS` opcionales en bóveda
 
-## Deuda explícita (W3)
+## Deuda residual
 
-- `invoke_engine()` aún es **stub eco**; motor real `kalma2-interact` requiere forja genoma vía `entity-manager`.
-- Puente en instancia (`.SddIA/client/`); promoción a genoma pendiente de estabilización.
-- Sin Cerbero/RBAC — solo bind `127.0.0.1`.
+- Síntesis **lab determinista** (sin LLM externo).
+- Puente en instancia; promoción a genoma pendiente.
+- Sin Cerbero/RBAC — bind `127.0.0.1`.

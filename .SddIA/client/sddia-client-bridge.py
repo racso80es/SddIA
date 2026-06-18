@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,8 +25,51 @@ except Exception as exc:
 
 
 def invoke_engine(prompt: str) -> dict:
-    """Ola 1: eco determinista. Ola 2: subprocess execute-process kalma2-interact."""
-    return {"success": True, "response": f"[eco PoC] {prompt}"}
+    """Invoca execute-process kalma2-interact (motor genoma W3)."""
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "SddIA" / "scripts" / "qa" / "execute-process.py"),
+        "--process",
+        "kalma2-interact",
+        "--inputs",
+        json.dumps({"prompt": prompt}, ensure_ascii=False),
+    ]
+    timeout = int(os.environ.get("SDDIA_CLIENT_TIMEOUT_SECONDS", "120"))
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            cwd=str(REPO_ROOT),
+            env=os.environ.copy(),
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired:
+        return {"success": False, "message": "timeout motor", "exit_code": 1}
+
+    lines = [ln for ln in (proc.stdout or "").splitlines() if ln.strip()]
+    if not lines:
+        err = (proc.stderr or "").strip() or "sin salida del motor"
+        return {"success": False, "message": err, "exit_code": proc.returncode or 1}
+
+    try:
+        body = json.loads(lines[-1])
+    except json.JSONDecodeError as exc:
+        return {"success": False, "message": f"JSON inválido del motor: {exc}", "exit_code": 1}
+
+    if not body.get("success"):
+        return {
+            "success": False,
+            "message": body.get("error") or "motor falló",
+            "exit_code": int(body.get("exitCode") or body.get("status_code") or 1),
+        }
+
+    data = body.get("data") or {}
+    response = data.get("response")
+    if not isinstance(response, str):
+        return {"success": False, "message": "response ausente en data", "exit_code": 1}
+
+    return {"success": True, "response": response}
 
 
 class Handler(BaseHTTPRequestHandler):
