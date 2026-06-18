@@ -108,11 +108,40 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 
 ### D-P5.1 — `invoke_action` aún vía `execute-action.py` (subprocess Python)
 
-**Estado:** ✅ **cerrado.** `engine::actions` implementa handlers nativos para `emit-pr-presented-event`, `emit-pr-merged-event` y `emit-pr-audited-event`. `invoke_action` intenta: nativo → cápsula wasm/native → bridge `execute-action.py` (solo red de seguridad para acciones no portadas, p. ej. `emit-domain-mutation`).
+**Estado:** ✅ **cerrado.** `engine::actions` implementa handlers nativos para `emit-pr-presented-event`, `emit-pr-merged-event`, `emit-pr-audited-event` y **`emit-domain-mutation`** (`engine::domain_mutation`). `invoke_action` intenta: nativo → cápsula wasm/native → bridge `execute-action.py` (solo red de seguridad para acciones no portadas).
 
 **Criterio de cierre cumplido:** fase «Sello Presentación ECST» de `delivery-close-cycle` con `status:executed` sin *spawn* de `execute-action.py`; golden `delivery-close-cycle` verde.
 
-**Deuda residual explícita:** `emit-domain-mutation` sigue en bridge Python (complejo, ECST).
+> [!IMPORTANT]
+> **Deuda residual explícita (D-P5.1-R) — `execute-action.py` permanece como fallback para acciones no portadas.**
+>
+> `engine::actions::try_run_native` cubre el camino caliente EDA/cierre: `emit-pr-*` y **`emit-domain-mutation`** (Sello Universal). El resto del catálogo `SddIA/actions/` **sigue ejecutándose vía bridge `execute-action.py`** (subprocess Python). Esto es **intencional** (red de seguridad), no un olvido, pero **mantiene vivo un consumidor del runtime Python** y bloquea la retirada del intérprete (P17).
+>
+> **Inventario de acciones (estado de portado):**
+>
+> | Acción | Estado Rust | Notas |
+> |--------|-------------|-------|
+> | `emit-pr-presented-event` | ✅ nativo | `engine::actions::emit_pr_presented` |
+> | `emit-pr-merged-event` | ✅ nativo | `engine::actions::emit_pr_merged` |
+> | `emit-pr-audited-event` | ✅ nativo | `engine::actions::emit_pr_audited` |
+> | `emit-domain-mutation` | ✅ nativo | `engine::domain_mutation` + `ecst_validation` + `eda_coverage` |
+> | `emit-suite-execution-requested` | 🔶 bridge Python | sin portar |
+> | `sync-entity-index` | 🔶 bridge Python | muta índices (genoma) |
+> | `materialize-kaizen-alert-doc` | 🔶 bridge Python | materializa doc |
+> | `materialize-fracture-pbi` | 🔶 bridge Python | materializa PBI |
+> | `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquecimiento PBI |
+> | `policy-validator` | 🔶 bridge Python | validación de políticas |
+> | `crypto-broker` | 🔶 bridge Python | cápsula `cryptography-manager` nativa parcial (UUID) |
+>
+> **Artefactos `emit-domain-mutation` nativo:**
+> - `engine/domain_mutation.rs` — validación inputs, ensamblaje ECST, idempotencia, persistencia `pending/`
+> - `engine/ecst_validation.rs` — aduana ECST (REQUIRED/OPTIONAL/FORBIDDEN desde `SddIA/events/`)
+> - `engine/eda_bus.rs` — `find_existing_domain_event` (idempotencia)
+> - `engine/eda_coverage.rs` — upsert/remove `eda-coverage.json` (SSOT correlación)
+>
+> **Deudas de ecosistema ajenas al handler (siguen abiertas):** cableado de invocadores en `*-creator`, suscripciones `Domain_Entity_*` con fan-out efectivo, contexto RBAC Cerbero en runtime. El handler cumple contrato `emit-domain-mutation.md` v1.1.0; tests unitarios `emit_domain_mutation_*` verdes.
+>
+> **Gate residual P17:** portar acciones de materialización/sync restantes; retirar `invoke_action_python_bridge` cuando el inventario 🔶 quede vacío.
 
 ### D-P5.2 — Fases `feature`/`bug-fix` con `skill:`/`tool:` caen a `simulated`
 

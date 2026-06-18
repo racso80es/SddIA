@@ -201,6 +201,7 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
         "emit-pr-presented-event" => emit_pr_presented(repo, inputs)?,
         "emit-pr-merged-event" => emit_pr_merged(repo, inputs)?,
         "emit-pr-audited-event" => emit_pr_audited(repo, inputs)?,
+        "emit-domain-mutation" => super::domain_mutation::run(repo, inputs)?,
         _ => return Ok(None),
     };
     Ok(Some(data))

@@ -251,7 +251,10 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 **Artefactos:**
 - `engine/capsule_paths.rs` — SSOT `compiled_capsules` desde `cumulo.paths.json` (D-P5.3)
-- `engine/actions.rs` — handlers nativos `emit-pr-*` (D-P5.1)
+- `engine/actions.rs` — handlers `emit-pr-*` + dispatch `try_run_native`
+- `engine/domain_mutation.rs` — **`emit-domain-mutation` nativo** (Sello Universal EDA)
+- `engine/ecst_validation.rs` — aduana ECST pre-`pending/`
+- `engine/eda_bus.rs` / `engine/eda_coverage.rs` — idempotencia + SSOT correlación
 - `engine/capsule_invoke_smoke.rs` + `process/capsule-invoke-smoke.md` — golden fase `tool:` ejecutada (D-P5.2)
 - `engine/capsules.rs` — `invoke_capsule_json`, `invoke_git_manager`, `invoke_shell_executor`, `invoke_action` (nativo → cápsula → bridge Python)
 - `engine/phase_capsules.rs` — handlers fase delivery + `try_invoke_delegates`
@@ -266,10 +269,21 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 | `tool:*` | `invoke_capsule_json` vía SSOT | `simulated` |
 | `agent:*` | — | `simulated` (`agentes IDE`) |
 | `action:emit-pr-*` | `engine::actions` nativo | bridge `execute-action.py` |
+| `action:emit-domain-mutation` | `engine::domain_mutation` nativo | bridge `execute-action.py` |
 
 **Criterio de cierre:** ✅ golden **13/13** (`delivery-close-cycle`, `capsule-invoke-smoke`); fases git-manager/shell-executor/action vía cápsulas/acciones nativas con skips lab.
 
-**Deuda residual explícita:** `emit-domain-mutation` y acciones no portadas siguen en bridge `execute-action.py` (red de seguridad, no retirar hasta P17).
+**Deuda residual explícita (D-P5.1-R) — `execute-action.py` permanece como fallback:**
+
+`engine::actions::try_run_native` porta `emit-pr-*` y **`emit-domain-mutation`**. El resto del catálogo `SddIA/actions/` sigue resolviéndose por el bridge `execute-action.py` (subprocess Python), **deliberadamente** como red de seguridad hasta P17.
+
+| Acción | Estado Rust |
+|--------|-------------|
+| `emit-pr-presented-event` / `emit-pr-merged-event` / `emit-pr-audited-event` | ✅ nativo (`engine::actions`) |
+| `emit-domain-mutation` | ✅ nativo (`engine::domain_mutation` + ECST + coverage) |
+| `emit-suite-execution-requested`, `sync-entity-index`, `materialize-*`, `enrich-fracture-pbi-kaizen`, `policy-validator`, `crypto-broker` | 🔶 bridge Python |
+
+**Deudas de ecosistema (fuera del handler):** cableado `*-creator`, fan-out `Domain_Entity_*`, Cerbero runtime. Detalle en PBI §6.bis (D-P5.1-R).
 
 ### 7.3 P6/P7 — Forjas Rust (`forges::factory`)
 

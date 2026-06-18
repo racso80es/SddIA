@@ -39,6 +39,10 @@ Registro de la forja física (Fases A–C parcial + touchpoints E parcial).
 | — | `SddIA/engine/execute-process/src/engine/phase_capsules.rs` | creado (P5 handlers fase + try_invoke) |
 | — | `SddIA/engine/execute-process/src/engine/capsule_paths.rs` | creado (D-P5.3 SSOT `compiled_capsules`) |
 | — | `SddIA/engine/execute-process/src/engine/actions.rs` | creado (D-P5.1 acciones `emit-pr-*` nativas) |
+| — | `SddIA/engine/execute-process/src/engine/domain_mutation.rs` | creado (`emit-domain-mutation` nativo) |
+| — | `SddIA/engine/execute-process/src/engine/ecst_validation.rs` | creado (aduana ECST) |
+| — | `SddIA/engine/execute-process/src/engine/eda_bus.rs` | creado (idempotencia bus) |
+| — | `SddIA/engine/execute-process/src/engine/eda_coverage.rs` | creado (SSOT eda-coverage) |
 | — | `SddIA/engine/execute-process/src/engine/capsule_invoke_smoke.rs` | creado (D-P5.2 golden fase tool) |
 | — | `SddIA/process/capsule-invoke-smoke.md` | creado (proceso lab golden) |
 | — | `SddIA/core/cumulo.paths.json` | actualizado (`compiled_capsules`) |
@@ -77,7 +81,7 @@ Resultados (2026-06-18):
 | Check | Resultado |
 |-------|-----------|
 | `cargo build -p execute-process` | ✅ |
-| `cargo test -p execute-process` | ✅ 12 tests |
+| `cargo test -p execute-process` | ✅ 16 tests |
 | Smoke `kalma2-interact` nativo | ✅ envelope JSON válido |
 | Smoke `feature` nativo (P1–P3, skips lab) | ✅ 7 fases, `success:true` |
 | Golden `kalma2-interact` Rust vs Python | ✅ |
@@ -90,6 +94,7 @@ Resultados (2026-06-18):
 | Golden `delivery-close-cycle` (skips lab P5) | ✅ |
 | Golden `capsule-invoke-smoke` (fase `tool:io-choke` ejecutada, D-P5.2) | ✅ |
 | Golden harness total | ✅ **13/13** |
+| `emit-domain-mutation` nativo (tests unitarios ECST + pending) | ✅ |
 | `HANDLER_BRIDGE` | ✅ eliminado — routing directo en `run_process` |
 | `SDDIA_LAB_SKIP_GIT` (Rust + Python workspace_init) | ✅ |
 | Core EDA `route-domain-event` | 🔶 `_execute_process_route_bridge.py` (deuda porte Rust) |
@@ -99,7 +104,7 @@ Resultados (2026-06-18):
 
 1. **Core EDA route:** entry nativo en Rust; lógica ECST/fan-out sigue en `route_domain_event_core.py` vía `_execute_process_route_bridge.py`.
 2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers` siguen en `_execute_process_engine_bridge.py`.
-3. **`execute-action.py`:** bridge residual solo para `emit-domain-mutation` y acciones no portadas (D-P5.1 cerrado para `emit-pr-*`).
+3. **`execute-action.py` (D-P5.1-R):** bridge residual para acciones no portadas. Nativas: `emit-pr-*`, **`emit-domain-mutation`**. Siguen en Python: `emit-suite-execution-requested`, `sync-entity-index`, `materialize-*`, `enrich-fracture-pbi-kaizen`, `policy-validator`, `crypto-broker`. **No retirar hasta P17.** Detalle y gate en PBI §6.bis (D-P5.1-R).
 4. **Touchpoints pendientes:** lanzadores `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` (P12).
 5. **Golden harness:** 13 casos verdes; pendiente `entity-manager` (P9).
 6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (clarify D6).
