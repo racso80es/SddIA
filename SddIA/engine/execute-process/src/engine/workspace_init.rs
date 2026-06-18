@@ -47,6 +47,12 @@ fn workspace_process_label(inputs: &Value, branch_name: &str, process_name: &str
     "feature".into()
 }
 
+fn env_truthy(key: &str) -> bool {
+    std::env::var(key)
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+        .unwrap_or(false)
+}
+
 pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, String> {
     let cfg = load_paths_config(repo)?;
     let task_name = workspace_task_name(inputs);
@@ -106,42 +112,49 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
 
     let mut git_steps: Vec<Value> = Vec::new();
 
-    let fetch = invoke_git_manager(repo, "fetch", &json!({"remote": "origin", "prune": true}))?;
-    git_steps.push(json!({"op": "fetch", "result": fetch}));
-
-    let checkout_base = invoke_git_manager(
-        repo,
-        "checkout",
-        &json!({"branch_name": base_branch, "create_if_not_exists": false}),
-    )?;
-    git_steps.push(json!({"op": "checkout_base", "result": checkout_base}));
-
-    let offline = fetch.get("offline").and_then(|v| v.as_bool()) == Some(true);
-    if !offline {
-        let pull = invoke_git_manager(
-            repo,
-            "pull",
-            &json!({"remote": "origin", "branch": base_branch}),
-        )?;
-        git_steps.push(json!({"op": "pull_base", "result": pull}));
+    if env_truthy("SDDIA_LAB_SKIP_GIT") {
+        git_steps.push(json!({
+            "op": "git",
+            "result": {"skipped": true, "reason": "SDDIA_LAB_SKIP_GIT"},
+        }));
     } else {
-        git_steps.push(json!({"op": "pull_base", "result": {"skipped": true, "reason": "offline_fetch", "offline": true}}));
-    }
+        let fetch = invoke_git_manager(repo, "fetch", &json!({"remote": "origin", "prune": true}))?;
+        git_steps.push(json!({"op": "fetch", "result": fetch}));
 
-    let checkout_feature = invoke_git_manager(
-        repo,
-        "checkout",
-        &json!({"branch_name": branch_name, "create_if_not_exists": true}),
-    );
-    match checkout_feature {
-        Ok(r) => git_steps.push(json!({"op": "checkout_feature", "result": r})),
-        Err(_) => {
-            let r = invoke_git_manager(
+        let checkout_base = invoke_git_manager(
+            repo,
+            "checkout",
+            &json!({"branch_name": base_branch, "create_if_not_exists": false}),
+        )?;
+        git_steps.push(json!({"op": "checkout_base", "result": checkout_base}));
+
+        let offline = fetch.get("offline").and_then(|v| v.as_bool()) == Some(true);
+        if !offline {
+            let pull = invoke_git_manager(
                 repo,
-                "checkout",
-                &json!({"branch_name": branch_name, "create_if_not_exists": false}),
+                "pull",
+                &json!({"remote": "origin", "branch": base_branch}),
             )?;
-            git_steps.push(json!({"op": "checkout_feature_existing", "result": r}));
+            git_steps.push(json!({"op": "pull_base", "result": pull}));
+        } else {
+            git_steps.push(json!({"op": "pull_base", "result": {"skipped": true, "reason": "offline_fetch", "offline": true}}));
+        }
+
+        let checkout_feature = invoke_git_manager(
+            repo,
+            "checkout",
+            &json!({"branch_name": branch_name, "create_if_not_exists": true}),
+        );
+        match checkout_feature {
+            Ok(r) => git_steps.push(json!({"op": "checkout_feature", "result": r})),
+            Err(_) => {
+                let r = invoke_git_manager(
+                    repo,
+                    "checkout",
+                    &json!({"branch_name": branch_name, "create_if_not_exists": false}),
+                )?;
+                git_steps.push(json!({"op": "checkout_feature_existing", "result": r}));
+            }
         }
     }
 

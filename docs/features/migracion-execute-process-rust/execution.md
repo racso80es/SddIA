@@ -17,10 +17,10 @@ Registro de la forja física (Fases A–C parcial + touchpoints E parcial).
 |------|--------|------------|
 | **A** Andamiaje | ✅ | Crate `SddIA/engine/execute-process/`, miembro `engine/*` en workspace |
 | **B** Core | ✅ | `core::{parser,resolver,env,env_parse,repo}`, `envelope::OrchestratorEnvelope` |
-| **C** Engine (parcial) | ✅ | `kalma2-interact` nativo; motor genérico `feature`/`bug-fix`/`refactorization` (P1–P3); handlers satélite vía `_execute_process_handler_bridge.py` |
+| **C** Engine (parcial) | ✅ | `kalma2-interact` + `telegram-fallback-responder` nativos; motor genérico P1–P3; resto vía bridges |
 | **D** Forges | ⏳ | Pendiente — sigue en bridge Python |
-| **E** Touchpoints | 🔶 | Kalma2, `sddia-run.sh`, `event-watcher`, `telegram-watcher`, `hook_common.py`, `route_domain_event_core.py`, `run-eda-e2e-lab.py`; lanzadores `.sh/.bat` pendientes |
-| **F** Poda | ⏳ | `execute-process.py` se mantiene como fallback (gate P8/P9) |
+| **E** Touchpoints | ✅ | Kalma2, wrappers, watchers, hooks, EDA/route lab, README |
+| **F** Poda | ⏳ | Gate P9 parcial (4 casos); `.py` fallback activo |
 
 ## 2. Artefactos forjados
 
@@ -72,9 +72,13 @@ Resultados (2026-06-18):
 | `cargo test -p execute-process` | ✅ 7 tests |
 | Smoke `kalma2-interact` nativo | ✅ envelope JSON válido |
 | Smoke `feature` nativo (P1–P3, skips lab) | ✅ 7 fases, `success:true` |
-| Golden `kalma2-interact` Rust vs Python | ✅ `golden_orchestrator_parity.py` |
-| Handlers satélite (`route-domain-event`, etc.) | 🔶 vía `_execute_process_handler_bridge.py` |
-| Procesos no portados | 🔶 delegan a `_execute_process_engine_bridge.py` |
+| Golden `kalma2-interact` Rust vs Python | ✅ |
+| Golden `feature` (skips lab + `SDDIA_LAB_SKIP_GIT`) | ✅ |
+| Golden `telegram-fallback-responder` (filtro + chat_id ausente) | ✅ |
+| Handler nativo `telegram-fallback-responder` | ✅ sacado de `HANDLER_BRIDGE` |
+| `SDDIA_LAB_SKIP_GIT` (Rust + Python workspace_init) | ✅ |
+| Handlers satélite restantes | 🔶 vía `_execute_process_handler_bridge.py` |
+| Lanzadores `SddIA/scripts/daemons/*` | ✅ N/A — no invocan `execute-process.py` (grep verificado) |
 
 ## 4. Deuda técnica explícita
 
@@ -94,4 +98,16 @@ Resultados (2026-06-18):
 
 ## 6. Próximo hito
 
-Ampliar golden (P9) a procesos complejos; porte nativo handlers satélite (P4) y cápsulas wasmtime (P5); forjas P6/P7; touchpoints P12; poda P17 gated.
+Especificación accionable detallada de los pendientes gated en `implementation.md` §7:
+
+| ID | Pendiente | Gate |
+|----|-----------|------|
+| P4 | Handlers satélite nativos (sacar de `HANDLER_BRIDGE`) | golden por handler |
+| P5 | Cápsulas `wasmtime` nativas (`engine::capsules`) | target `wasm32-wasip1` |
+| P6/P7 | Forjas Rust (`hash_signature` sha256 paridad + índice idempotente) | vía `entity-manager` (DA-2/DA-3) |
+| P9 | Ampliar golden a `feature`, `bug-fix`, `route-domain-event`, `entity-manager`, `delivery-close-cycle` | **gate maestro** que habilita P10–P17 |
+| P12 | Lanzadores `SddIA/scripts/daemons/*.{sh,bat}` | ✅ N/A verificado (sin referencias a `.py`) |
+| P15 | DA-3 vía canónica en `external-ai-constraints.md` | `entity-manager` (genoma) |
+| P17 | Retirar `.py` + bridges | gate duro: P9 + P4 + P5 + P6/P7 + E2E + CA-7/CA-8 verdes |
+
+Orden y gating completos en `implementation.md` §6.6 y §7.6.

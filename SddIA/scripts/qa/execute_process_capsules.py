@@ -1369,46 +1369,51 @@ def run_workspace_init(
             entry["offline"] = True
         git_steps.append(entry)
 
-    fetch_result = invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
-    _record_git_step("fetch", fetch_result)
-
-    checkout_base = invoke_git_manager(
-        repo,
-        "checkout",
-        {"branch_name": base_branch.strip(), "create_if_not_exists": False},
-    )
-    _record_git_step("checkout_base", checkout_base)
-
-    if not fetch_result.get("offline"):
-        pull_result = invoke_git_manager(
-            repo,
-            "pull",
-            {"remote": "origin", "branch": base_branch.strip()},
+    if os.environ.get("SDDIA_LAB_SKIP_GIT", "").strip().lower() in ("1", "true", "yes"):
+        git_steps.append(
+            {"op": "git", "result": {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT"}}
         )
-        _record_git_step("pull_base", pull_result)
     else:
-        _record_git_step(
-            "pull_base",
-            {
-                "skipped": True,
-                "reason": "offline_fetch",
-                "offline": True,
-            },
-        )
-    try:
-        checkout_feature = invoke_git_manager(
+        fetch_result = invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
+        _record_git_step("fetch", fetch_result)
+
+        checkout_base = invoke_git_manager(
             repo,
             "checkout",
-            {"branch_name": branch_name.strip(), "create_if_not_exists": True},
+            {"branch_name": base_branch.strip(), "create_if_not_exists": False},
         )
-        _record_git_step("checkout_feature", checkout_feature)
-    except RuntimeError:
-        checkout_feature = invoke_git_manager(
-            repo,
-            "checkout",
-            {"branch_name": branch_name.strip(), "create_if_not_exists": False},
-        )
-        _record_git_step("checkout_feature_existing", checkout_feature)
+        _record_git_step("checkout_base", checkout_base)
+
+        if not fetch_result.get("offline"):
+            pull_result = invoke_git_manager(
+                repo,
+                "pull",
+                {"remote": "origin", "branch": base_branch.strip()},
+            )
+            _record_git_step("pull_base", pull_result)
+        else:
+            _record_git_step(
+                "pull_base",
+                {
+                    "skipped": True,
+                    "reason": "offline_fetch",
+                    "offline": True,
+                },
+            )
+        try:
+            checkout_feature = invoke_git_manager(
+                repo,
+                "checkout",
+                {"branch_name": branch_name.strip(), "create_if_not_exists": True},
+            )
+            _record_git_step("checkout_feature", checkout_feature)
+        except RuntimeError:
+            checkout_feature = invoke_git_manager(
+                repo,
+                "checkout",
+                {"branch_name": branch_name.strip(), "create_if_not_exists": False},
+            )
+            _record_git_step("checkout_feature_existing", checkout_feature)
 
     persist_dir = repo / persist_ref
     persist_dir.mkdir(parents=True, exist_ok=True)

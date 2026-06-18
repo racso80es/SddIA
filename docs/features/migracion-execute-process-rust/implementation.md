@@ -152,11 +152,13 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | `core::{parser,resolver,env,env_parse,repo}` | ✅ | Paridad YAML + bóvedas + resolución |
 | `envelope::OrchestratorEnvelope` | ✅ | Esquema rico byte-compatible |
 | Handler nativo `kalma2-interact` | ✅ | Sin PyYAML; smoke + golden OK |
-| Motor genérico P1–P3 (`executor`, `workspace_init`, `thermodynamic`) | ✅ | Smoke `feature` 7 fases nativo |
-| Handlers satélite P4 | 🔶 | Bridge `_execute_process_handler_bridge.py` |
+| Handler nativo `telegram-fallback-responder` (P4 parcial) | ✅ | Filtro C + Síntesis + Materialización; golden OK |
+| Motor genérico P1–P3 (`executor`, `workspace_init`, `thermodynamic`) | ✅ | Smoke + golden `feature` con `SDDIA_LAB_SKIP_GIT` |
+| Handlers satélite P4 restantes | 🔶 | Bridge `_execute_process_handler_bridge.py` |
+| Cápsulas P5 (`engine::capsules`) | 🔶 | `git-manager` + resolución telegram tool; fases genéricas skill/tool aún simuladas |
 | Delegación motor legacy | ✅ | Puente transitorio para procesos no portados |
-| Golden harness P8 | 🔶 | `golden_orchestrator_parity.py` (`kalma2-interact`) |
-| Touchpoints P10–P13 | 🔶 | event/telegram-watcher, hooks, route/eda lab, README |
+| Golden harness P8/P9 | 🔶 | 4 casos verdes; pendiente `route-domain-event`, `entity-manager`, `delivery-close-cycle` |
+| Touchpoints P10–P13 | ✅ | event/telegram-watcher, hooks, route/eda lab, README |
 | Forjas P6–P7 | ⏳ | Pendiente |
 | Poda P17 | ⏳ | Gated por P8/P9 |
 
@@ -216,7 +218,128 @@ P6,P7     (forjas)       ─┘
 
 **Gate de poda (P16/P17):** prohibido retirar el `.py` antes de que P8/P9 (golden) y los smokes E2E de touchpoints estén verdes. Hasta entonces, el bridge Python es la red de seguridad.
 
-## 7. Cierre del ciclo (fase posterior)
+## 7. Especificación accionable de pendientes gated
 
-- `execution.md`: se actualiza con cada hito de §6 (forja efectiva, resultados golden/smokes).
+Detalle técnico de los items aún no portados a nativo. Cada bloque es una unidad de trabajo cerrada con artefactos, contrato, criterio de cierre y gate. **Ninguno habilita la poda**: el bridge Python sigue siendo la red de seguridad hasta P8/P9 verdes.
+
+### 7.1 P4 — Handlers satélite nativos
+
+**Estado actual:** `telegram-fallback-responder` portado a `engine::handlers::telegram_fallback` (nativo). Resto delegado a `_execute_process_handler_bridge.py`. Constante `HANDLER_BRIDGE` en `engine/mod.rs` enumera los `canonical` aún desviados.
+
+**Objetivo:** portar cada handler a `engine::handlers::*` (Rust puro), retirándolo de `HANDLER_BRIDGE` solo cuando su golden (P9) esté verde.
+
+| Canonical | Origen Python | Núcleo a portar | Subprocesos |
+|-----------|---------------|-----------------|-------------|
+| `route-domain-event` | `route_domain_event_core.py` | carga ECST, validación de esquema, fan-out a subscribers, dispatch a `--process`/`--action` | re-entra al orquestador (binario) y `execute-action.py` |
+| `telegram-fallback-responder` | core telegram | ✅ nativo (`handlers/telegram_fallback.rs`) | tool `send-telegram-notification` (native/wasm/limbo) |
+| `telegram-gateway` | core telegram | normalización update → evento de dominio | emisión a `./.events/pending` |
+| `daemon-kill-switch` | core daemons | toggle de `status/*.lock` + señal | FS only |
+| `governance-daemon-manager` | core daemons | arranque/parada/estado de daemons | `std::process::Command` a lanzadores |
+| `daemon-heartbeat-audit` | core daemons | lectura de `status/*` + ventana de latido | FS only |
+
+**Orden sugerido:** primero los FS-only (`daemon-kill-switch`, `daemon-heartbeat-audit`, `telegram-fallback-responder`), luego `telegram-gateway`, y por último `route-domain-event` (el más acoplado, depende de reentrada al binario y de ECST).
+
+**Contrato:** envelope idéntico al bridge actual (mismos campos `data`/`execution_report`). Reentradas al orquestador usan `orchestrator_resolve`/binario, nunca `python … execute-process.py`.
+
+**Criterio de cierre:** cada `canonical` resuelto en `run_process` sin pasar por `delegate_handler`; su entrada eliminada de `HANDLER_BRIDGE`; golden P9 verde para ese handler.
+
+**Gate:** no retirar del bridge sin golden verde del handler concreto.
+
+### 7.2 P5 — Cápsulas `wasmtime` nativas
+
+**Estado actual:** `engine::capsules` resuelve e invoca `git-manager` (workspace_init) y herramientas nativas/wasm/limbo (`send-telegram-notification`). Fases genéricas con delegados `skill:`/`tool:` en `executor` siguen en `simulated`.
+
+**Objetivo:** invocar cápsulas con `std::process::Command` replicando la línea Python:
+
+```text
+wasmtime run --dir=. [--env K=V]… <capsule>.wasm  < stdin(JSON)  > stdout(JSON)
+```
+
+**Requisitos de paridad:**
+- Resolución de ruta `.wasm` vía `cumulo.paths.json` / `capsule_resolve` (no rutas cableadas).
+- Passthrough de bóvedas como `--env` con la misma precedencia que `core::env`.
+- I/O conforme a `SddIA/norms/capsule-json-io.md`: JSON por stdin, última línea JSON por stdout, `exit_code` propagado.
+- Mapeo de error de `wasmtime` (binario ausente, trap, non-zero) → entrada de fase `status:"failed"` + envelope `success:false` (fail-soft, sin panic).
+
+**Criterio de cierre:** una fase con delegado `skill:`/`tool:` ejecuta la cápsula nativa y produce el mismo `phase_report` que el bridge; smoke `run-eda-e2e-lab` con eventos en `./.events/{telemetry,orchestration}`.
+
+**Gate:** depende de target `wasm32-wasip1` operativo (ya provisto por `migracion-rust-wasi`).
+
+### 7.3 P6/P7 — Forjas Rust (`forges::factory`)
+
+**Estado actual:** las forjas `tool`/`action`/`process` siguen en `execute_process_forges.py` (vía bridge). **Zona de genoma**: la creación de entidades muta `SddIA/{tools,actions,process}/` e índices.
+
+**Objetivo P6:** `forges::factory` con paridad de:
+- Generación de `uuid` v4 y `created` (ISO-8601).
+- `hash_signature`: **sha256 sobre el cuerpo canónico** idéntico byte a byte al de Python (mismo orden de campos, mismo encoding, mismos separadores). Este es el punto de mayor riesgo de deriva.
+- Frontmatter `{id,uuid,type,version}` conforme al Estándar Atómico `{name}.md`.
+
+**Objetivo P7:** append idempotente a `index.md`:
+- Misma fila (`_append_row`) y misma detección de duplicado que Python.
+- Diff de índice byte-compatible sobre fixtures reales.
+
+**Criterio de cierre:** test de forja que compara entidad + fila de índice generadas por Rust vs Python (normalizando solo `uuid`/`created`); `hash_signature` idéntico para cuerpo fijo.
+
+**Gate / soberanía:** la forja efectiva sobre genoma se ejecuta **solo vía `entity-manager`** (norma `external-ai-constraints.md` DA-2/DA-3). El código Rust implementa la lógica; la mutación del árbol indexado no se hace a mano.
+
+### 7.4 P9 — Ampliar golden harness
+
+**Estado actual:** `golden_orchestrator_parity.py` verde para `kalma2-interact`, `feature` (con `SDDIA_LAB_SKIP_GIT` + skips cierre), y `telegram-fallback-responder` (filtro C + chat_id ausente). Comparación: `success` + firma de fases + `data` normalizado.
+
+**Objetivo:** ampliar `CASES` y la normalización a los procesos núcleo:
+
+| Caso | Inputs (lab) | Flags de aislamiento |
+|------|--------------|----------------------|
+| `feature` | `{feature_name, persist_ref, document_context}` | `SDDIA_LAB_SKIP_PBI_ARCHIVE=1`, `SDDIA_LAB_SKIP_DELIVERY_CLOSE=1`, `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF=1` |
+| `bug-fix` | análogo a feature | mismos skips lab |
+| `route-domain-event` | `{event_file_path}` con evento ECST de fixture | `SDDIA_LAB_SIMULATE_*` según subscriber |
+| `entity-manager` | `{operation, …}` de fixture no-mutante | dry-run / simulación |
+| `delivery-close-cycle` | fixture de cierre | skips lab |
+
+**Trabajo técnico:**
+- Extender `normalize()` con campos no-deterministas adicionales que afloren (rutas con UUID, `branch_name` derivado, `workspace_path`, hashes).
+- Comparar `success` + `status_code` + estructura de `execution_report.phases` (nombres y `status`), no solo `data`.
+- Fixtures reproducibles bajo `tmp/` con teardown (patrón `lab_teardown`).
+
+**Criterio de cierre (P9):** `golden_orchestrator_parity.py` verde para los 5 casos en CI (`cargo test` + harness). Este es el **gate maestro** que habilita P10–P17.
+
+### 7.5 P12 — Lanzadores de daemons
+
+**Estado actual:** grep en `SddIA/scripts/daemons/` sin referencias a `execute-process.py`. Lanzadores delegan en binarios de centinelas vía `_exec_daemon.sh` / `_exec_daemon.py`.
+
+**Objetivo:** auditar y, si existen, reapuntar:
+- `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh`.
+- Cualquier lanzador que invoque el orquestador debe usar `orchestrator_resolve` (Python) o el patrón binario+fallback (Rust/shell).
+
+**Criterio de cierre:** ningún lanzador de daemon invoca `python … execute-process.py` directamente; todos pasan por la resolución SSOT. Si no hay lanzadores afectados, se documenta como **N/A verificado** (el grep actual lo sugiere).
+
+**Gate:** ninguno técnico; depende de P9 para el switch definitivo.
+
+### 7.6 P15/P17 — DA-3 y poda
+
+**P15 — Norma DA-3 (genoma):**
+- Actualizar `SddIA/norms/external-ai-constraints.md` para declarar la **vía canónica de invocación** del orquestador (binario nativo preferente, `.py` como fallback transitorio, `orchestrator_resolve` como SSOT).
+- **Vía obligatoria:** `entity-manager` / proceso autorizado (DA-2). Prohibida la mutación manual de la norma.
+
+**P17 — Poda del legacy:**
+- Retirar `execute-process.py`, `execute_process_*.py` y los bridges (`_execute_process_engine_bridge.py`, `_execute_process_handler_bridge.py`, `_execute_process_feature_phase_bridge.py`).
+- Auditar y podar `requirements.txt` (PyYAML) solo tras grep limpio de consumidores residuales (P16).
+
+**Gate duro (innegociable):**
+
+```text
+P17 (poda) ⟸ requiere TODO lo siguiente verde:
+  • P9 golden (5 casos) en CI
+  • P4 handlers nativos (sin HANDLER_BRIDGE)
+  • P5 cápsulas nativas
+  • P6/P7 forjas nativas
+  • Smokes E2E de touchpoints (centinelas, hooks, sddia-run, Kalma2)
+  • CA-7 + CA-8 (sin PyYAML en orquestación)
+```
+
+Hasta cumplirse, los bridges Python permanecen como red de seguridad y el `.py` convive como fallback inerte.
+
+## 8. Cierre del ciclo (fase posterior)
+
+- `execution.md`: se actualiza con cada hito de §6/§7 (forja efectiva, resultados golden/smokes).
 - `validacion.md`: auditoría Argos (CA-1…CA-9), `git_changes`, `global: APTO`, `pbi_archived: true`.

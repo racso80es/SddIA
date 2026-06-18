@@ -1,14 +1,6 @@
+use super::mayeuta::synthesize_mayeuta_response;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
-
-/// Síntesis Mayeuta lab (paridad `telegram_fallback_responder_core.synthesize_mayeuta_response`).
-fn synthesize_mayeuta_response(text: &str) -> String {
-    let snippet: String = text.trim().chars().take(120).collect();
-    format!(
-        "[Tormentosa/Aiúa] Recibo el estímulo: «{snippet}».\n\
-         Lo asimilo como fricción arquitectónica — ¿es señal o ruido?"
-    )
-}
 
 pub fn run(process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
     let prompt = process_inputs

@@ -14,7 +14,6 @@ use std::path::Path;
 
 const HANDLER_BRIDGE: &[&str] = &[
     "route-domain-event",
-    "telegram-fallback-responder",
     "telegram-gateway",
     "daemon-kill-switch",
     "governance-daemon-manager",
@@ -31,6 +30,10 @@ pub fn run_process(
 
     if canonical == "kalma2-interact" {
         return handlers::kalma2::run(process_inputs);
+    }
+
+    if canonical == "telegram-fallback-responder" {
+        return handlers::telegram_fallback::run(repo, process_inputs);
     }
 
     if HANDLER_BRIDGE.contains(&canonical.as_str()) {
