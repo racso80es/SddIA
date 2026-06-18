@@ -16,6 +16,25 @@ fn python_bin() -> String {
     env::var("PYTHON").unwrap_or_else(|_| "python3".into())
 }
 
+fn execute_process_bin(repo: &Path) -> PathBuf {
+    if let Ok(p) = env::var("SDDIA_EXECUTE_PROCESS_BIN") {
+        if !p.trim().is_empty() {
+            return PathBuf::from(p);
+        }
+    }
+    for rel in ["SddIA/target/debug/execute-process", "SddIA/target/release/execute-process"] {
+        let candidate = repo.join(rel);
+        if candidate.is_file() {
+            return candidate;
+        }
+    }
+    repo.join("SddIA/target/debug/execute-process")
+}
+
+fn orchestrator_is_python(path: &Path) -> bool {
+    path.extension().and_then(|e| e.to_str()) == Some("py")
+}
+
 fn rel_event_path(repo: &Path, event_path: &Path) -> String {
     event_path
         .canonicalize()
@@ -67,11 +86,16 @@ fn has_dead_letter_witnesses(
 }
 
 fn invoke_route_process(repo: &Path, rel_path: &str, process_name: &str) -> Output {
-    let runner = repo.join("SddIA/scripts/qa/execute-process.py");
+    let runner = execute_process_bin(repo);
     let payload = json!({ "event_file_path": rel_path }).to_string();
-    Command::new(python_bin())
-        .arg(&runner)
-        .args(["--process", process_name, "--inputs", &payload])
+    let mut cmd = if orchestrator_is_python(&runner) {
+        let mut c = Command::new(python_bin());
+        c.arg(&runner);
+        c
+    } else {
+        Command::new(&runner)
+    };
+    cmd.args(["--process", process_name, "--inputs", &payload])
         .current_dir(repo)
         .output()
         .unwrap_or_else(|e| {
@@ -175,13 +199,20 @@ fn watcher_skip_reason(
 }
 
 fn run_route_cli(repo: &Path, event_file_path: &str) -> i32 {
-    let runner = repo.join("SddIA/scripts/qa/execute-process.py");
+    let runner = execute_process_bin(repo);
     let payload = json!({ "event_file_path": event_file_path }).to_string();
-    let out = Command::new(python_bin())
-        .arg(&runner)
-        .args(["--process", "route-domain-event", "--inputs", &payload])
-        .current_dir(repo)
-        .output();
+    let out = if orchestrator_is_python(&runner) {
+        Command::new(python_bin())
+            .arg(&runner)
+            .args(["--process", "route-domain-event", "--inputs", &payload])
+            .current_dir(repo)
+            .output()
+    } else {
+        Command::new(&runner)
+            .args(["--process", "route-domain-event", "--inputs", &payload])
+            .current_dir(repo)
+            .output()
+    };
     match out {
         Ok(o) => {
             print!("{}", String::from_utf8_lossy(&o.stdout));

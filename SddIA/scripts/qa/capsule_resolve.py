@@ -12,22 +12,47 @@ from typing import Any
 
 
 def sddia_target_dir(repo: Path) -> Path:
-    return repo / "SddIA" / "target"
+    native, _wasm, _profiles = load_compiled_capsule_roots(repo)
+    return native
+
+
+def load_compiled_capsule_roots(repo: Path) -> tuple[Path, Path, list[str]]:
+    cumulo_path = repo / "SddIA" / "core" / "cumulo.paths.json"
+    native_default = repo / "SddIA" / "target"
+    wasm_default = repo / "SddIA" / "target" / "wasm32-wasip1"
+    profiles_default = ["release", "debug"]
+    if not cumulo_path.is_file():
+        return native_default, wasm_default, profiles_default
+    try:
+        cumulo = json.loads(cumulo_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return native_default, wasm_default, profiles_default
+    cc = cumulo.get("compiled_capsules") or {}
+    native_rel = cc.get("native_root", "SddIA/target")
+    wasm_rel = cc.get("wasm_root", "SddIA/target/wasm32-wasip1")
+    profiles = cc.get("profiles") or profiles_default
+    if not isinstance(profiles, list) or not profiles:
+        profiles = profiles_default
+    return (
+        repo / str(native_rel).lstrip("./"),
+        repo / str(wasm_rel).lstrip("./"),
+        [str(p) for p in profiles],
+    )
 
 
 def resolve_capsule_wasm(repo: Path, name: str) -> Path | None:
-    base = sddia_target_dir(repo) / "wasm32-wasip1"
-    for profile in ("release", "debug"):
-        path = base / profile / f"{name}.wasm"
+    _native, wasm_root, profiles = load_compiled_capsule_roots(repo)
+    for profile in profiles:
+        path = wasm_root / profile / f"{name}.wasm"
         if path.is_file():
             return path
     return None
 
 
 def resolve_capsule_native(repo: Path, name: str) -> Path | None:
-    base = sddia_target_dir(repo)
-    for profile in ("release", "debug"):
-        path = base / profile / name
+    native_root, _wasm, profiles = load_compiled_capsule_roots(repo)
+    for profile in profiles:
+        path = native_root / profile / name
         if path.is_file():
             return path
     return None
@@ -339,7 +364,36 @@ def invoke_tool_capsule_json(
     return rc, body
 
 
+def _orchestrator_profile(repo: Path, native_root: Path) -> str | None:
+    override = os.environ.get("SDDIA_EXECUTE_PROCESS_BIN", "").strip()
+    if override:
+        op = Path(override)
+        if op.is_file():
+            try:
+                rel = op.resolve().relative_to(native_root.resolve())
+                if rel.parts:
+                    return rel.parts[0]
+            except ValueError:
+                pass
+    for profile in load_compiled_capsule_roots(repo)[2]:
+        if (native_root / profile / "execute-process").is_file():
+            return profile
+    return None
+
+
 def resolve_daemon_native(repo: Path, name: str) -> Path | None:
+    """Resuelve daemon nativo emparejado con orquestador del mismo profile."""
+    native_root, _wasm, profiles = load_compiled_capsule_roots(repo)
+    paired = _orchestrator_profile(repo, native_root)
+    if paired:
+        daemon = native_root / paired / name
+        if daemon.is_file():
+            return daemon
+    for profile in profiles:
+        daemon = native_root / profile / name
+        orchestrator = native_root / profile / "execute-process"
+        if daemon.is_file() and orchestrator.is_file():
+            return daemon
     return resolve_capsule_native(repo, name)
 
 

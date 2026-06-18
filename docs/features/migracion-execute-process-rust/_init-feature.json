@@ -1,0 +1,7 @@
+{
+  "feature_name": "migracion-execute-process-rust",
+  "branch_name": "feat/migracion-execute-process-rust",
+  "persist_ref": "docs/features/migracion-execute-process-rust",
+  "base_branch": "main",
+  "refined_requirements": "Reescritura íntegra del orquestador execute-process.py (CLI + core + capsules + forges + cores satélite) a un binario Rust NATIVO (no WASI, por subprocess spawning: wasmtime, git, execute-action). Paridad funcional estricta con el intérprete dinámico certificado (refactor-execute-process-engine, PR #9). Integración en el Cargo Workspace SddIA/Cargo.toml reutilizando sddia-io. Orquestador permanece como binario independiente DESACOPLADO: centinelas (event-watcher, telegram-watcher), git-hooks, sddia-run.sh y cliente Kalma2 lo invocan vía std::process::Command sin enlazarlo como librería. Contrato I/O JSON stdin/stdout (capsule-json-io) inmutable. Liquida la deuda PyYAML residual de orquestación. PBI: docs/todos/pending/[ARQUITECTURA] Migración execute-process a Rust nativo (orquestador soberano).md (document_id PBI-MIGRACION-EXECUTE-PROCESS-RUST)."
+}

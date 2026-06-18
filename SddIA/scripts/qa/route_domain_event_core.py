@@ -40,6 +40,7 @@ from eda_bus_utils import (
     write_processing_witness,
 )
 from ecst_validation import load_event_class_schemas, validate_ecst_instance
+from orchestrator_resolve import resolve_orchestrator_cmd, resolve_orchestrator_executable
 
 _SUBPROCESS_UTF8 = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
@@ -108,9 +109,8 @@ def dispatch_subscriber(
 
     process_name = subscriber.get("process")
     if isinstance(process_name, str) and process_name.strip():
-        runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
-        if not runner.is_file():
-            return sid, "failed", "execute-process.py not found", 1
+        if not resolve_orchestrator_executable(repo).is_file():
+            return sid, "failed", "orquestador execute-process no encontrado", 1
         if not isinstance(payload, dict):
             return sid, "failed", "payload must be object", 1
         process_key = process_name.strip()
@@ -124,14 +124,15 @@ def dispatch_subscriber(
                 process_inputs["chat_id"] = chat_id.strip()
             try:
                 proc = _run_subprocess(
-                    [
-                        sys.executable,
-                        str(runner),
-                        "--process",
-                        process_key,
-                        "--inputs",
-                        json.dumps(process_inputs, ensure_ascii=False),
-                    ],
+                    resolve_orchestrator_cmd(
+                        repo,
+                        [
+                            "--process",
+                            process_key,
+                            "--inputs",
+                            json.dumps(process_inputs, ensure_ascii=False),
+                        ],
+                    ),
                     cwd=str(repo),
                     shell=False,
                 )
@@ -187,14 +188,15 @@ def dispatch_subscriber(
         os.environ.setdefault("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0")
         try:
             proc = _run_subprocess(
-                [
-                    sys.executable,
-                    str(runner),
-                    "--process",
-                    process_name.strip(),
-                    "--inputs",
-                    json.dumps(process_inputs, ensure_ascii=False),
-                ],
+                resolve_orchestrator_cmd(
+                    repo,
+                    [
+                        "--process",
+                        process_name.strip(),
+                        "--inputs",
+                        json.dumps(process_inputs, ensure_ascii=False),
+                    ],
+                ),
                 cwd=str(repo),
                 shell=False,
             )

@@ -26,14 +26,17 @@ except Exception as exc:
 
 def invoke_engine(prompt: str) -> dict:
     """Invoca execute-process kalma2-interact (motor genoma W3)."""
-    cmd = [
-        sys.executable,
-        str(REPO_ROOT / "SddIA" / "scripts" / "qa" / "execute-process.py"),
-        "--process",
-        "kalma2-interact",
-        "--inputs",
-        json.dumps({"prompt": prompt}, ensure_ascii=False),
-    ]
+    from orchestrator_resolve import resolve_orchestrator_cmd
+
+    cmd = resolve_orchestrator_cmd(
+        REPO_ROOT,
+        [
+            "--process",
+            "kalma2-interact",
+            "--inputs",
+            json.dumps({"prompt": prompt}, ensure_ascii=False),
+        ],
+    )
     timeout = int(os.environ.get("SDDIA_CLIENT_TIMEOUT_SECONDS", "120"))
     try:
         proc = subprocess.run(

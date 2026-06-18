@@ -2,13 +2,13 @@
 
 **Tipo:** Norma motor / Comportamiento IA  
 **UUID:** 95b5ac3a-061f-458d-bfb6-69f91a1c1731  
-**Versión:** 1.1.0  
+**Versión:** 1.3.0  
 **Seguridad:** Karma2Token  
 **Dependencias normativas:** `obediencia-procesos.md`, `paths-via-cumulo.md`, `touchpoints-ia.md`
 
 ## Propósito
 
-Erradicar la **Entropía Táctica** generada por IAs de asistencia externa. Garantizar que agentes como Cursor o Jules sean incapaces de mutar el genoma SddIA por su cuenta y se vean forzados, bajo estricta directriz, a invocar la cápsula `execute-process.py` para cualquier modificación de dominio indexada.
+Erradicar la **Entropía Táctica** generada por IAs de asistencia externa. Garantizar que agentes como Cursor o Jules sean incapaces de mutar el genoma SddIA por su cuenta y se vean forzados, bajo estricta directriz, a invocar el **orquestador** (`execute-process` binario Rust nativo) para cualquier modificación de dominio indexada.
 
 ## Directrices de Acero
 
@@ -36,17 +36,20 @@ Bajo ninguna circunstancia puedes **crear, modificar o eliminar** archivos en lo
 
 ### DA-3 — Única Vía de Acción
 
+**Resolución del orquestador (SSOT):** toda invocación al motor de procesos debe usar el binario Rust nativo. SSOT de resolución: `SddIA/scripts/qa/orchestrator_resolve.py` (`resolve_orchestrator_cmd`). Wrapper de entrada: `./sddia-run.sh`. Override: `SDDIA_EXECUTE_PROCESS_BIN`. Si el binario no está compilado, la resolución falla explícitamente (compilar: `cd SddIA && cargo build -p execute-process`).
+
 | Intención | Invocación obligatoria |
 |-----------|------------------------|
-| Crear / actualizar entidad de dominio | `python SddIA/scripts/qa/execute-process.py --process entity-manager --inputs '{...}'` |
-| Cierre de entrega / apertura PR | `python SddIA/scripts/qa/execute-process.py --process delivery-close-cycle --inputs '{...}'` |
-| Forja por clase concreta | `execute-process.py --process {entity_class}-creator` solo vía cadena autorizada |
+| Crear / actualizar entidad de dominio | `./sddia-run.sh --process entity-manager --inputs '{...}'` |
+| Cierre de entrega / apertura PR | `./sddia-run.sh --process delivery-close-cycle --inputs '{...}'` |
+| Forja por clase concreta | `{entity_class}-creator` solo vía cadena autorizada (`entity-manager`) |
+| Invocación directa (lab / CI) | `SddIA/target/debug/execute-process --process …` o `python3 SddIA/scripts/qa/orchestrator_resolve.py --process …` |
 
-Prohibido bypass del bus EDA (`/.events/`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa.
+Prohibido bypass del bus EDA (`/.events/`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa. Prohibido hardcodear `python … execute-process.py` o invocar el orquestador sin pasar por `orchestrator_resolve` / binario nativo.
 
 ### DA-4 — Acoplamiento Raw Kernel ↔ ciclo feature
 
-Cuando el runtime inyecte el prefijo **Raw Kernel** (§ Prefijo creator), la IA obrera **debe** comprobar topología documental activa (`docs/features/{name}/objectives.md` con rama coherente) o invocar `execute-process.py --process feature` **antes** de mutar genoma (`directories.tools`, `skills`, `actions`, `process`, `agents`, `events`, `norms` en Cúmulo) o escribir bajo un `persist_ref` ajeno al ciclo autorizado.
+Cuando el runtime inyecte el prefijo **Raw Kernel** (§ Prefijo creator), la IA obrera **debe** comprobar topología documental activa (`docs/features/{name}/objectives.md` con rama coherente) o invocar `./sddia-run.sh --process feature` **antes** de mutar genoma (`directories.tools`, `skills`, `actions`, `process`, `agents`, `events`, `norms` en Cúmulo) o escribir bajo un `persist_ref` ajeno al ciclo autorizado.
 
 Prohibido aplicar el bisturí sobre el código base bajo Raw Kernel sin cobertura documental de feature o fix equivalente.
 

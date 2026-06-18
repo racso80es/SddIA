@@ -37,7 +37,8 @@ from execute_process_core import (
     validate_process_inputs,
 )
 
-from execute_process_forges import FORGE_BY_ENTITY_CLASS
+from execute_process_forges import FORGE_BY_ENTITY_CLASS, try_native_forge
+from orchestrator_resolve import resolve_orchestrator_cmd
 from eda_bus_utils import (
     build_process_execution_completed_event,
     build_raw_execution_finished_event,
@@ -62,7 +63,6 @@ except ImportError:
     yaml = None  # type: ignore
 
 SCRIPT = Path(__file__).resolve()
-EXECUTE_PROCESS_CLI = SCRIPT.parent / "execute-process.py"
 EXECUTE_ACTION_CLI = SCRIPT.parent / "execute-action.py"
 AUDIT_EDA_CLI = SCRIPT.parent / "audit-entity-eda-coverage.py"
 AUDIT_DOC_PARITY_CLI = SCRIPT.parent / "audit-doc-parity.py"
@@ -1239,14 +1239,15 @@ def invoke_subprocess_process_full(
     repo: Path, process_name: str, process_inputs: dict[str, Any]
 ) -> dict[str, Any]:
     proc = subprocess.run(
-        [
-            sys.executable,
-            str(EXECUTE_PROCESS_CLI),
-            "--process",
-            process_name,
-            "--inputs",
-            json.dumps(process_inputs, ensure_ascii=False),
-        ],
+        resolve_orchestrator_cmd(
+            repo,
+            [
+                "--process",
+                process_name,
+                "--inputs",
+                json.dumps(process_inputs, ensure_ascii=False),
+            ],
+        ),
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -1369,46 +1370,51 @@ def run_workspace_init(
             entry["offline"] = True
         git_steps.append(entry)
 
-    fetch_result = invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
-    _record_git_step("fetch", fetch_result)
-
-    checkout_base = invoke_git_manager(
-        repo,
-        "checkout",
-        {"branch_name": base_branch.strip(), "create_if_not_exists": False},
-    )
-    _record_git_step("checkout_base", checkout_base)
-
-    if not fetch_result.get("offline"):
-        pull_result = invoke_git_manager(
-            repo,
-            "pull",
-            {"remote": "origin", "branch": base_branch.strip()},
+    if os.environ.get("SDDIA_LAB_SKIP_GIT", "").strip().lower() in ("1", "true", "yes"):
+        git_steps.append(
+            {"op": "git", "result": {"skipped": True, "reason": "SDDIA_LAB_SKIP_GIT"}}
         )
-        _record_git_step("pull_base", pull_result)
     else:
-        _record_git_step(
-            "pull_base",
-            {
-                "skipped": True,
-                "reason": "offline_fetch",
-                "offline": True,
-            },
-        )
-    try:
-        checkout_feature = invoke_git_manager(
+        fetch_result = invoke_git_manager(repo, "fetch", {"remote": "origin", "prune": True})
+        _record_git_step("fetch", fetch_result)
+
+        checkout_base = invoke_git_manager(
             repo,
             "checkout",
-            {"branch_name": branch_name.strip(), "create_if_not_exists": True},
+            {"branch_name": base_branch.strip(), "create_if_not_exists": False},
         )
-        _record_git_step("checkout_feature", checkout_feature)
-    except RuntimeError:
-        checkout_feature = invoke_git_manager(
-            repo,
-            "checkout",
-            {"branch_name": branch_name.strip(), "create_if_not_exists": False},
-        )
-        _record_git_step("checkout_feature_existing", checkout_feature)
+        _record_git_step("checkout_base", checkout_base)
+
+        if not fetch_result.get("offline"):
+            pull_result = invoke_git_manager(
+                repo,
+                "pull",
+                {"remote": "origin", "branch": base_branch.strip()},
+            )
+            _record_git_step("pull_base", pull_result)
+        else:
+            _record_git_step(
+                "pull_base",
+                {
+                    "skipped": True,
+                    "reason": "offline_fetch",
+                    "offline": True,
+                },
+            )
+        try:
+            checkout_feature = invoke_git_manager(
+                repo,
+                "checkout",
+                {"branch_name": branch_name.strip(), "create_if_not_exists": True},
+            )
+            _record_git_step("checkout_feature", checkout_feature)
+        except RuntimeError:
+            checkout_feature = invoke_git_manager(
+                repo,
+                "checkout",
+                {"branch_name": branch_name.strip(), "create_if_not_exists": False},
+            )
+            _record_git_step("checkout_feature_existing", checkout_feature)
 
     persist_dir = repo / persist_ref
     persist_dir.mkdir(parents=True, exist_ok=True)
@@ -1683,6 +1689,9 @@ hash_signature: "{hash_sig}"
 
 def materialize_forge_by_inputs(repo: Path, inputs: dict[str, Any]) -> dict[str, Any]:
     """Forja física según entity_class o forma del contrato de inputs."""
+    native = try_native_forge(repo, inputs)
+    if native is not None:
+        return native
     entity_class = inputs.get("entity_class")
     if isinstance(entity_class, str) and entity_class in FORGE_BY_ENTITY_CLASS:
         return FORGE_BY_ENTITY_CLASS[entity_class](repo, inputs)
@@ -1989,6 +1998,20 @@ def capsule_filesystem_delete(repo: Path, inputs: dict[str, Any], state: dict[st
 def invoke_capsule_action(
     repo: Path, action_name: str, action_inputs: dict[str, Any]
 ) -> dict[str, Any]:
+    try:
+        rc, body = invoke_tool_capsule_json(repo, action_name, action_inputs, prefer_wasm=True)
+        if body.get("success") is not False and rc == 0:
+            data = body.get("data")
+            if isinstance(data, dict):
+                return data
+            inner = body.get("result")
+            if isinstance(inner, dict):
+                return inner
+    except FileNotFoundError:
+        pass
+    except RuntimeError:
+        pass
+
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     proc = subprocess.run(
@@ -2624,6 +2647,75 @@ def run_execute_suite(
     }
 
 
+def run_capsule_invoke_smoke(
+    repo: Path,
+    canonical: str,
+    process_def: dict[str, Any],
+    phases: list[dict[str, Any]],
+    process_inputs: dict[str, Any],
+) -> dict[str, Any]:
+    state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
+    try:
+        ws_boot = bootstrap_process_workspace(repo, canonical, process_def, process_inputs, state)
+        state["workspace_boot"] = ws_boot
+    except ValueError as exc:
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": str(exc),
+            "execution_report": {"process_name": canonical, "phases": []},
+        }
+    workspace_path = process_inputs.get("workspace_path") or state.get("workspace_path")
+    if not isinstance(workspace_path, str) or not workspace_path.strip():
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": "workspace_path ausente tras bootstrap",
+            "execution_report": {"process_name": canonical, "phases": []},
+        }
+    tool_payload = {
+        "workspace_path": workspace_path.strip(),
+        "target_file": ".capsule-smoke-target",
+    }
+    phase_reports: list[dict[str, Any]] = []
+    success = True
+    for phase in phases:
+        if not isinstance(phase, dict):
+            continue
+        phase_name = phase.get("name")
+        delegates = phase.get("delegates_to") or []
+        entry: dict[str, Any] = {"phase_name": phase_name, "delegates_to": delegates}
+        if phase_name == "Invocación io-choke":
+            try:
+                rc, body = invoke_chaos_tool_capsule(repo, "io-choke", tool_payload)
+                ok = rc == 0 and body.get("success") is not False
+                entry["status"] = "executed" if ok else "failed"
+                entry["handler"] = "capsule-tool-io-choke"
+                entry["capsule_result"] = body
+                if not ok:
+                    success = False
+            except Exception as exc:  # noqa: BLE001
+                entry["status"] = "failed"
+                entry["handler"] = "capsule-tool-io-choke"
+                entry["error"] = str(exc)
+                success = False
+        else:
+            entry["status"] = "simulated"
+        phase_reports.append(entry)
+    return {
+        "success": success,
+        "status_code": 0 if success else 1,
+        "data": {
+            "process_name": canonical,
+            "workspace_path": workspace_path.strip(),
+            "capsule_invoked": success,
+        },
+        "execution_report": {"process_name": canonical, "phases": phase_reports},
+    }
+
+
 def run_chaos_audit_process(
     repo: Path,
     canonical: str,
@@ -2805,7 +2897,7 @@ def execute_phase(
             entry.update(ap)
             return entry
 
-    if process_def.get("name") == "feature":
+    if process_def.get("name") in ("feature", "bug-fix"):
         feat = execute_feature_phase(repo, str(phase_name) if phase_name else None, inputs, state)
         if feat is not None:
             entry.update(feat)
@@ -3347,7 +3439,7 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
                 "phases": [
                     {
                         "phase_name": "Orquestación route-domain-event",
-                        "status": "executed",
+                        "status": "executed" if ok else "failed",
                         "handler": "route-domain-event-core",
                         "dispatch_mode": (out.get("data") or {}).get("dispatch_mode"),
                     }
@@ -3423,6 +3515,8 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         }
     if canonical in CHAOS_AUDIT_PROCESSES:
         return run_chaos_audit_process(repo, canonical, process_def, phases, process_inputs)
+    if canonical == "capsule-invoke-smoke":
+        return run_capsule_invoke_smoke(repo, canonical, process_def, phases, process_inputs)
     if canonical == "execute-suite":
         return run_execute_suite(repo, canonical, process_def, phases, process_inputs)
     if canonical == "pull-request-review":

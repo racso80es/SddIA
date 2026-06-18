@@ -22,6 +22,9 @@ from env_loader import load_hierarchical_env, load_test_env_overlay
 from lab_teardown import cleanup_lab_entity_forge, cleanup_orphan_core_eda_e2e_tools
 from tmp_paths import keep_tmp
 
+from orchestrator_resolve import resolve_orchestrator_cmd
+
+
 def resolve_watcher(repo: Path) -> list[str]:
     from capsule_resolve import resolve_daemon_capsule
 
@@ -35,9 +38,6 @@ def resolve_watcher(repo: Path) -> list[str]:
         if legacy.is_file():
             return [sys.executable, str(legacy)]
         raise
-
-
-EXECUTE_PROCESS = SCRIPT.parent / "execute-process.py"
 
 
 def _repo_root() -> Path:
@@ -102,7 +102,10 @@ def create_entity(repo: Path, entity_class: str, entity_name: str) -> dict[str, 
         payload["semantic_seed"]["event_type"] = "E2E_" + entity_name.replace("-", "_").title()
         payload["semantic_seed"]["event_family"] = "domain"
     body = _run_json(
-        [sys.executable, str(EXECUTE_PROCESS), "--process", "entity-manager", "--inputs", json.dumps(payload)]
+        resolve_orchestrator_cmd(
+            repo,
+            ["--process", "entity-manager", "--inputs", json.dumps(payload)],
+        )
     )
     return body.get("data") or {}
 
@@ -111,6 +114,7 @@ def route_event(repo: Path, rel_path: str) -> dict[str, Any]:
     env = os.environ.copy()
     env.setdefault("SDDIA_LAB_SIMULATE_IOTA", "1")
     env.setdefault("SDDIA_LAB_SIMULATE_SYNC_INDEX", "1")
+    env.setdefault("SDDIA_LAB_ROUTE_SYNC", "1")
     proc = subprocess.run(
         resolve_watcher(repo) + ["--event-file-path", rel_path],
         capture_output=True,
@@ -139,6 +143,8 @@ def main() -> int:
     repo = _repo_root()
     load_hierarchical_env(repo)
     load_test_env_overlay(repo)
+    # entity-manager + event-watcher comparten `.events/` canónico; overlay de bus rompe purge.
+    os.environ.pop("EVENT_BUS_PATH", None)
     bus = ensure_event_bus_topology(repo)
 
     report: dict[str, Any] = {"steps": []}

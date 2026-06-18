@@ -60,6 +60,11 @@
     "tools": "SddIA/tools/",
     "daemons": "SddIA/daemons/"
   },
+  "compiled_capsules": {
+    "native_root": "SddIA/target",
+    "wasm_root": "SddIA/target/wasm32-wasip1",
+    "profiles": ["release", "debug"]
+  },
   "daemons_instance": {
     "status": ".SddIA/daemons/status",
     "state": ".SddIA/daemons/state"

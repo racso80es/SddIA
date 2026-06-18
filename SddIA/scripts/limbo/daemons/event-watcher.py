@@ -125,10 +125,14 @@ def _log_route_outcome(
 
 
 def _invoke_route_process(repo: Path, rel_path: str, process_name: str) -> subprocess.CompletedProcess[str]:
-    runner = repo / "SddIA" / "scripts" / "qa" / "execute-process.py"
     payload = json.dumps({"event_file_path": rel_path}, ensure_ascii=False)
+    from orchestrator_resolve import resolve_orchestrator_cmd
+
     return subprocess.run(
-        [sys.executable, str(runner), "--process", process_name, "--inputs", payload],
+        resolve_orchestrator_cmd(
+            repo,
+            ["--process", process_name, "--inputs", payload],
+        ),
         capture_output=True,
         text=True,
         encoding="utf-8",
