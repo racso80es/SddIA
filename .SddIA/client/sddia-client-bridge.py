@@ -24,34 +24,18 @@ except Exception as exc:
     sys.stderr.write(f"[kalma2] bóveda no cargada: {exc}\n")
 
 
-def _resolve_orchestrator_cmd(extra_args: list[str]) -> list[str]:
-    """Preferir binario Rust nativo; fallback a execute-process.py."""
-    override = os.environ.get("SDDIA_EXECUTE_PROCESS_BIN", "").strip()
-    if override:
-        return [override, *extra_args]
-    for rel in (
-        "SddIA/target/debug/execute-process",
-        "SddIA/target/release/execute-process",
-    ):
-        candidate = REPO_ROOT / rel
-        if candidate.is_file() and os.access(candidate, os.X_OK):
-            return [str(candidate), *extra_args]
-    return [
-        sys.executable,
-        str(REPO_ROOT / "SddIA" / "scripts" / "qa" / "execute-process.py"),
-        *extra_args,
-    ]
-
-
 def invoke_engine(prompt: str) -> dict:
     """Invoca execute-process kalma2-interact (motor genoma W3)."""
-    cmd = _resolve_orchestrator_cmd(
+    from orchestrator_resolve import resolve_orchestrator_cmd
+
+    cmd = resolve_orchestrator_cmd(
+        REPO_ROOT,
         [
             "--process",
             "kalma2-interact",
             "--inputs",
             json.dumps({"prompt": prompt}, ensure_ascii=False),
-        ]
+        ],
     )
     timeout = int(os.environ.get("SDDIA_CLIENT_TIMEOUT_SECONDS", "120"))
     try:

@@ -142,7 +142,81 @@ Añadir `"engine/*"` a `members`. Comparte `target/` del workspace.
 - **Coexistencia:** el `.py` orquestador se retira solo tras CA-7 verde (smokes E2E con el binario).
 - **Envelope:** `OrchestratorEnvelope` propio (no `SddiaResponse`); paridad byte-compatible verificada por golden tests del `plan.md` Fase A.
 
-## 5. Pendiente para fase de Ejecución
+## 5. Estado real de implementación (hito A–C parcial)
 
-- `execution.md`: forja efectiva del crate, `cargo build`/`cargo test`, resultados de golden tests y smokes.
+Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md`):
+
+| Componente | Estado | Nota |
+|------------|--------|------|
+| Crate `execute-process` + workspace `engine/*` | ✅ | `cargo build`/`cargo test` verdes (7 tests) |
+| `core::{parser,resolver,env,env_parse,repo}` | ✅ | Paridad YAML + bóvedas + resolución |
+| `envelope::OrchestratorEnvelope` | ✅ | Esquema rico byte-compatible |
+| Handler nativo `kalma2-interact` | ✅ | Sin PyYAML; smoke + golden OK |
+| Motor genérico P1–P3 (`executor`, `workspace_init`, `thermodynamic`) | ✅ | Smoke `feature` 7 fases nativo |
+| Handlers satélite P4 | 🔶 | Bridge `_execute_process_handler_bridge.py` |
+| Delegación motor legacy | ✅ | Puente transitorio para procesos no portados |
+| Golden harness P8 | 🔶 | `golden_orchestrator_parity.py` (`kalma2-interact`) |
+| Touchpoints P10–P13 | 🔶 | event/telegram-watcher, hooks, route/eda lab, README |
+| Forjas P6–P7 | ⏳ | Pendiente |
+| Poda P17 | ⏳ | Gated por P8/P9 |
+
+## 6. Deuda pendiente de implementación (roadmap accionable)
+
+Items concretos para completar la migración tras el hito actual. Cada uno es una unidad de trabajo verificable.
+
+### 6.1 Motor genérico nativo (Fase C — cierre)
+
+| ID | Tarea | Criterio de cierre | Sustituye |
+|----|-------|--------------------|-----------|
+| P1 | Portar `run_workspace_init` (git-manager + `objectives.md`) a `engine::executor` | `feature`/`bug-fix` crean rama + objectives sin bridge | `execute_process_capsules.run_workspace_init` |
+| P2 | Portar bucle genérico `execute_phase` + `is_workspace_init_phase` | Fases `executed`/`simulated`/`skipped` con paridad de envelope | `execute_process_capsules.execute_phase` |
+| P3 | Portar Peaje Termodinámico (`run_thermodynamic_toll`) | Emite `Raw_Execution_Finished` + orquestación; fail-soft D3.13 | `run_thermodynamic_toll` |
+| P4 | Portar handlers satélite restantes (`route-domain-event`, `telegram-fallback-responder`, kill-switch, `governance-daemon-manager`, `daemon-heartbeat-audit`) | Cada `canonical` resuelto nativo; bridge solo para no portados | dispatch en `run_process` |
+| P5 | Invocación de cápsulas `wasmtime` nativa (`engine::capsules`) | `wasmtime run --dir=.` vía `std::process::Command` con paridad de I/O | rama capsule en `run_process` |
+
+### 6.2 Forjas físicas (Fase D)
+
+| ID | Tarea | Criterio de cierre |
+|----|-------|--------------------|
+| P6 | `forges::factory` para `tool`/`action`/`process` | UUID + `hash_signature` sha256 canónico idéntico a Python |
+| P7 | Append idempotente a `index.md` | Diff de índice byte-compatible con `_append_row` |
+
+### 6.3 Red de paridad (Fase A — pendiente)
+
+| ID | Tarea | Criterio de cierre |
+|----|-------|--------------------|
+| P8 | Golden harness: N casos reales Python→referencia | Script reproducible que normaliza no-deterministas (UUID, timestamps, `duration_ms`) |
+| P9 | Suite golden en CI | `cargo test` + comparación envelope verde para `feature`, `bug-fix`, `route-domain-event`, `delivery-close-cycle`, `entity-manager` |
+
+### 6.4 Touchpoints restantes (Fase E — cierre)
+
+| ID | Fichero | Cambio |
+|----|---------|--------|
+| P10 | `SddIA/daemons/telegram-watcher/src/main.rs` | Invocación binario (patrón `event-watcher`) |
+| P11 | `SddIA/scripts/qa/git-hooks/hook_common.py` (`invoke_process`) | Binario en lugar de `python … execute-process.py` |
+| P12 | `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` | Apuntar a binario nativo |
+| P13 | `SddIA/scripts/qa/run-eda-e2e-lab.py`, `route_domain_event_core.py` | Actualizar referencias |
+
+### 6.5 Documentación viva y poda (Fase F)
+
+| ID | Tarea | Vía |
+|----|-------|-----|
+| P14 | `README.md` §«Aduana Universal (CLI)» → binario nativo | escritura directa |
+| P15 | `external-ai-constraints.md` DA-3 (vía canónica) | `entity-manager` / proceso autorizado (DA-2) |
+| P16 | Auditar consumidores residuales de PyYAML; podar `requirements.txt` si procede | condicional clarify D6 |
+| P17 | Retirar `execute-process.py`, `execute_process_*.py` y bridge tras CA-7 verde | solo con golden + smokes E2E en verde |
+
+### 6.6 Orden recomendado y gating
+
+```text
+P1→P2→P3  (motor base)  ─┐
+P4, P5    (handlers+wasm) ├─► P8,P9 (golden) ─► P10..P13 (touchpoints) ─► P14..P17 (docs+poda)
+P6,P7     (forjas)       ─┘
+```
+
+**Gate de poda (P16/P17):** prohibido retirar el `.py` antes de que P8/P9 (golden) y los smokes E2E de touchpoints estén verdes. Hasta entonces, el bridge Python es la red de seguridad.
+
+## 7. Cierre del ciclo (fase posterior)
+
+- `execution.md`: se actualiza con cada hito de §6 (forja efectiva, resultados golden/smokes).
 - `validacion.md`: auditoría Argos (CA-1…CA-9), `git_changes`, `global: APTO`, `pbi_archived: true`.

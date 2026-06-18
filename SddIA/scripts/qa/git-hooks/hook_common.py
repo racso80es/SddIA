@@ -16,6 +16,7 @@ if str(QA := Path(__file__).resolve().parents[1]) not in sys.path:
     sys.path.insert(0, str(QA))
 
 from tmp_paths import cleanup_path, write_ephemeral_json
+from orchestrator_resolve import resolve_orchestrator_cmd
 
 SCRIPT = Path(__file__).resolve()
 REPO = SCRIPT.parents[4]
@@ -201,9 +202,13 @@ def invoke_process(process_name: str, inputs: dict[str, Any]) -> int:
     payload_path = write_inputs_payload(f"hook-{process_name}", inputs)
     env = os.environ.copy()
     env[HOOK_DELIVERY_CLOSE_ENV] = "1"
+    cmd = resolve_orchestrator_cmd(
+        REPO,
+        ["--process", process_name, "--inputs-file", str(payload_path)],
+    )
     try:
         proc = subprocess.run(
-            [sys.executable, str(EXECUTE_PROCESS), "--process", process_name, "--inputs-file", str(payload_path)],
+            cmd,
             cwd=str(REPO),
             capture_output=True,
             text=True,
