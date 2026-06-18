@@ -1,7 +1,7 @@
 //! Utilidades del bus EDA (paridad parcial `eda_bus_utils.py`).
 
 use super::workspace::load_paths_config;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -118,4 +118,73 @@ pub fn find_existing_domain_event(
         }
     }
     Ok(None)
+}
+
+const FRACTAL_FAMILIES: &[&str] = &["telemetry", "orchestration", "domain"];
+
+pub fn load_eda_fractal(repo: &Path) -> Result<std::collections::HashMap<String, String>, String> {
+    let cfg = load_paths_config(repo)?;
+    let mut defaults = std::collections::HashMap::from([
+        ("telemetry".to_string(), "./.events/telemetry".to_string()),
+        (
+            "orchestration".to_string(),
+            "./.events/orchestration".to_string(),
+        ),
+        ("domain".to_string(), "./.events/domain".to_string()),
+    ]);
+    if let Some(fractal) = cfg.get("eda_fractal").and_then(|v| v.as_object()) {
+        for (key, value) in fractal {
+            if let Some(rel) = value.as_str() {
+                if !rel.trim().is_empty() {
+                    defaults.insert(key.clone(), normalize_rel(rel));
+                }
+            }
+        }
+    }
+    Ok(defaults)
+}
+
+fn ensure_fractal_bus_topology(
+    repo: &Path,
+) -> Result<std::collections::HashMap<String, String>, String> {
+    let fractal = load_eda_fractal(repo)?;
+    for key in FRACTAL_FAMILIES {
+        if let Some(rel) = fractal.get(*key) {
+            let dir = resolve_bus_path(repo, rel);
+            fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(fractal)
+}
+
+pub fn write_fractal_event(
+    repo: &Path,
+    event: &Value,
+    family: &str,
+) -> Result<Value, String> {
+    if !FRACTAL_FAMILIES.contains(&family) {
+        return Err(format!("invalid event family: {family}"));
+    }
+    let fractal = ensure_fractal_bus_topology(repo)?;
+    let rel = fractal
+        .get(family)
+        .ok_or_else(|| format!("fractal family not configured: {family}"))?;
+    let event_id = event
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or("event_id required")?;
+    let target = resolve_bus_path(repo, rel).join(format!("{event_id}.json"));
+    let text = serde_json::to_string_pretty(event).map_err(|e| e.to_string())?;
+    fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
+    Ok(json!({
+        "event_id": event_id,
+        "target_path": target
+            .strip_prefix(repo)
+            .unwrap_or(&target)
+            .to_string_lossy()
+            .replace('\\', "/"),
+        "family": family,
+    }))
 }

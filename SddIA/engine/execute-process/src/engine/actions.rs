@@ -203,6 +203,7 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
         "emit-pr-audited-event" => emit_pr_audited(repo, inputs)?,
         "emit-domain-mutation" => super::domain_mutation::run(repo, inputs)?,
         "crypto-broker" => super::crypto_broker::run(repo, inputs)?,
+        "emit-suite-execution-requested" => super::suite_execution_requested::run(repo, inputs)?,
         _ => return Ok(None),
     };
     Ok(Some(data))

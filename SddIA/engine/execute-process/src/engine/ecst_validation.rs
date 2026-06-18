@@ -138,10 +138,7 @@ pub fn validate_ecst_instance(event: &Value, schema: Option<&EventClassSchema>) 
     (errors.is_empty(), errors)
 }
 
-pub fn validate_domain_mutation_event(
-    repo: &Path,
-    event: &Value,
-) -> Result<(), String> {
+pub fn validate_ecst_event(repo: &Path, event: &Value) -> Result<(), String> {
     let event_type = event
         .get("event_type")
         .and_then(|v| v.as_str())
@@ -155,6 +152,13 @@ pub fn validate_domain_mutation_event(
         return Err(errors.join("; "));
     }
     Ok(())
+}
+
+pub fn validate_domain_mutation_event(
+    repo: &Path,
+    event: &Value,
+) -> Result<(), String> {
+    validate_ecst_event(repo, event)
 }
 
 #[cfg(test)]
