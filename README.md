@@ -110,16 +110,20 @@ flowchart LR
 **Invocación manual (laboratorio):**
 
 ```bash
-# Binario nativo (preferente, tras cargo build -p execute-process)
+# Wrapper canónico (resuelve binario nativo o fallback Python vía SSOT)
+./sddia-run.sh --process route-domain-event \
+  --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
+
+# Binario nativo directo (tras cargo build -p execute-process)
 SddIA/target/debug/execute-process --process route-domain-event \
   --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
 
-# Fallback Python legacy
-python SddIA/scripts/qa/execute-process.py --process route-domain-event \
+# Resolución SSOT explícita (Python)
+python3 SddIA/scripts/qa/orchestrator_resolve.py --process route-domain-event \
   --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
 ```
 
-Override: `SDDIA_EXECUTE_PROCESS_BIN=/ruta/al/binario`. Wrapper: `./sddia-run.sh --process …`.
+**Resolución del orquestador:** SSOT en `SddIA/scripts/qa/orchestrator_resolve.py` — binario Rust preferente (`SddIA/target/{debug,release}/execute-process`), fallback transitorio `execute-process.py`. Override: `SDDIA_EXECUTE_PROCESS_BIN=/ruta/al/binario`.
 
 Modo sync: `SDDIA_LAB_ROUTE_SYNC=1`. Plantilla Vía C: [`SddIA/templates/eda-instance-events/README.md`](SddIA/templates/eda-instance-events/README.md). Features: [refactor-topologia-eventos-ola-c-v3](docs/features/refactor-topologia-eventos-ola-c-v3/), [telemetria-reactiva-eda-fase3](docs/features/telemetria-reactiva-eda-fase3/).
 
@@ -146,8 +150,10 @@ Si existen **ambas** bóvedas, el runtime registra en stderr: `[CONFIG] Jerarqu�
 
 | Entrypoint | Punto de carga |
 |------------|----------------|
-| `SddIA/target/debug/execute-process` (binario nativo, preferente) | Tras resolver raíz + bóvedas en `main` |
-| `SddIA/scripts/qa/execute-process.py` (fallback legacy) | Tras resolver raíz del repo |
+| `./sddia-run.sh` | Wrapper canónico → `orchestrator_resolve.py` (binario preferente) |
+| `SddIA/scripts/qa/orchestrator_resolve.py` | SSOT de resolución del ejecutable orquestador |
+| `SddIA/target/debug/execute-process` (binario nativo) | Tras resolver raíz + bóvedas en `main` |
+| `SddIA/scripts/qa/execute-process.py` (fallback transitorio) | Solo vía `orchestrator_resolve` o `./sddia-run.sh` |
 | `SddIA/scripts/qa/execute_process_capsules.py` | Inicio de `run_process()` |
 | `SddIA/scripts/qa/execute-action.py` | Inicio de `main()` |
 | `SddIA/scripts/daemons/event-watcher.py` | Inicio de `main()` |
@@ -196,7 +202,7 @@ Sin Workspace materializado y artefactos versionables, no hay handoff válido ba
 
 ## Aduana Universal (CLI)
 
-Toda ejecución transita por el CLI (`execute-process`, `execute_process_capsules`). El **Peaje Termodinámico** (distinto del Peaje RBAC de Cerbero) intercepta cada invocación:
+Toda ejecución transita por el **orquestador** (`execute-process` binario Rust nativo; fallback transitorio `execute-process.py` vía `orchestrator_resolve`). Wrapper de entrada: `./sddia-run.sh`. El **Peaje Termodinámico** (distinto del Peaje RBAC de Cerbero) intercepta cada invocación:
 
 | Paso | Acción |
 |------|--------|

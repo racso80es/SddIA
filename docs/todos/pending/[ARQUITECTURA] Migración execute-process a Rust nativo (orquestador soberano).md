@@ -88,8 +88,8 @@ Solo documentos **operativos vigentes** (no `docs/todos/done/`, no `SddIA/evolut
 
 | Documento | Cambio |
 |-----------|--------|
-| `README.md` | §«Aduana Universal (CLI)» y ejemplos `python SddIA/scripts/qa/execute-process.py …` → invocación binario nativo |
-| `SddIA/norms/external-ai-constraints.md` | DA-3: vía canónica de invocación del orquestador (tabla de invocaciones obligatorias) |
+| `README.md` | §«Aduana Universal (CLI)» y ejemplos → `./sddia-run.sh` / `orchestrator_resolve` / binario nativo | ✅ P14 |
+| `SddIA/norms/external-ai-constraints.md` | DA-3: vía canónica de invocación del orquestador (v1.2.0) | ✅ P15 |
 | `SddIA/norms/capsule-json-io.md` | Confirmar contrato I/O del orquestador nativo (reuso, sin ruptura) |
 | Contratos de proceso que citan el CLI | `SddIA/process/feature.md`, `bug-fix.md`, `delivery-close-cycle.md`, `route-domain-event.md` (vía proceso autorizado — **no** bisturí directo sobre genoma) |
 | Skill dependiente | `SddIA/skills/intent-transpiler.md` (referencias de ejecución) |
@@ -200,7 +200,7 @@ El handler nativo cumple el contrato `emit-domain-mutation.md` v1.1.0, pero la c
 - [x] Centinelas, hooks, `sddia-run.sh` y cliente Kalma2 invocan el orquestador vía SSOT (`orchestrator_resolve` / binario nativo); audit P10–P13 verde.
 - [ ] Ningún flujo de **orquestación** requiere intérprete Python ni PyYAML; `requirements.txt` reevaluado/podado según D3.
 - [ ] Errores devueltos como JSON válido (`exitCode>0`), sin panic crudo en stdout.
-- [ ] Documentación viva (`README.md`, `external-ai-constraints.md`, contratos vía proceso autorizado) refleja el nuevo orquestador.
+- [x] Documentación viva (`README.md`, `external-ai-constraints.md` v1.2.0) refleja el orquestador nativo y SSOT `orchestrator_resolve`.
 - [x] **Deudas P5 liquidadas (§6.bis):** (a) `invoke_action` nativo sin `execute-action.py` [D-P5.1]; (b) golden de fase `skill:`/`tool:` `executed` con cápsula presente [D-P5.2]; (c) resolución de artefactos de cápsula desde SSOT única (Rust↔Python) [D-P5.3].
 - [x] **Deudas post-`emit-domain-mutation` (§6.ter):** (a) portar acciones 🔶 restantes y retirar `invoke_action_python_bridge` [D-P6T.1 ✅]; (b) cableado `*-creator`, fan-out `Domain_Entity_*` y Cerbero runtime [D-P6T.2].
 - [ ] Este TODO movido a `docs/todos/done/` en el mismo PR (cierre documental en rama).

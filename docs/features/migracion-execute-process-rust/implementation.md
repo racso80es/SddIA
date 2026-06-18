@@ -345,13 +345,17 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 **Gate:** ninguno técnico; depende de P9 para el switch definitivo.
 
-### 7.7 P15/P17 — DA-3 y poda
+### 7.7 P14 — README (documentación viva)
 
-**P15 — Norma DA-3 (genoma):**
-- Actualizar `SddIA/norms/external-ai-constraints.md` para declarar la **vía canónica de invocación** del orquestador (binario nativo preferente, `.py` como fallback transitorio, `orchestrator_resolve` como SSOT).
-- **Vía obligatoria:** `entity-manager` / proceso autorizado (DA-2). Prohibida la mutación manual de la norma.
+**Estado actual:** ✅ **cerrado.** §EDA, entrypoints de bóvedas y §Aduana Universal reflejan `orchestrator_resolve`, `./sddia-run.sh` y binario nativo preferente.
 
-**P17 — Poda del legacy:**
+### 7.8 P15 — Norma DA-3 (`external-ai-constraints.md`)
+
+**Estado actual:** ✅ **cerrado (v1.2.0).** DA-3 declara SSOT `orchestrator_resolve`, wrapper `./sddia-run.sh`, binario preferente y prohibición de hardcodear `python … execute-process.py` en touchpoints productivos.
+
+**Nota soberanía:** norma motor en `directories.norms` — actualizada en el ciclo feature autorizado (precedente `snapshot-friccion-laboratorio-jules`); `norm-creator` aplica solo a `library_norms`.
+
+### 7.9 P17 — Poda del legacy
 - Retirar `execute-process.py`, `execute_process_*.py` y los bridges (`_execute_process_engine_bridge.py`, `_execute_process_handler_bridge.py`, `_execute_process_feature_phase_bridge.py`).
 - Auditar y podar `requirements.txt` (PyYAML) solo tras grep limpio de consumidores residuales (P16).
 

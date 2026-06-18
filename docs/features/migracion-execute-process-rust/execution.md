@@ -107,6 +107,8 @@ Resultados (2026-06-18):
 | Lanzadores `SddIA/scripts/daemons/*` | ✅ N/A — no invocan `execute-process.py` (grep verificado) |
 | Touchpoints P10–P13 (`sddia-run`, hooks, bridges, lab, limbo) | ✅ `orchestrator_resolve` SSOT |
 | `touchpoint_orchestrator_audit.py` | ✅ audit P10–P13 |
+| P14 `README.md` (Aduana Universal / entrypoints) | ✅ |
+| P15 `external-ai-constraints.md` v1.2.0 (DA-3 orquestador) | ✅ |
 
 ## 4. Deuda técnica explícita
 
@@ -135,8 +137,9 @@ Especificación accionable detallada de los pendientes gated en `implementation.
 | P9 | Ampliar golden a `entity-manager` | ✅ **14/14** — gate maestro habilita P10–P17 |
 | P6/P7 | Forjas Rust (`forges::factory`) | ✅ nativo + `forge_parity.py` |
 | P10–P13 | Touchpoints producción → `orchestrator_resolve` | ✅ audit verde |
+| P14 | `README.md` — invocación orquestador | ✅ |
+| P15 | `external-ai-constraints.md` DA-3 v1.2.0 | ✅ |
 | P12 | Lanzadores `SddIA/scripts/daemons/*.{sh,bat}` | ✅ N/A verificado (sin referencias a `.py`) |
-| P15 | DA-3 vía canónica en `external-ai-constraints.md` | `entity-manager` (genoma) |
 | P17 | Retirar `.py` + bridges | gate duro: P9 + P4 + P5 + P6/P7 + E2E + CA-7/CA-8 verdes |
 
 Orden y gating completos en `implementation.md` §6.6 y §7.6.
