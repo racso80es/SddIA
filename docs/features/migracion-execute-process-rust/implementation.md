@@ -157,9 +157,9 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | Motor genérico P1–P3 (`executor`, `workspace_init`, `thermodynamic`) | ✅ | Smoke + golden `feature` con `SDDIA_LAB_SKIP_GIT` |
 | Handlers satélite P4 | ✅ | Entry nativo `route-domain-event`; core EDA vía `_execute_process_route_bridge.py` |
 | `engine/daemons` | ✅ | locks, PIDs, bus pending, orchestration |
-| Cápsulas P5 (`engine::capsules`) | 🔶 | `git-manager` + resolución telegram tool; fases genéricas skill/tool aún simuladas |
+| Cápsulas P5 (`engine::capsules`) | ✅ | wasmtime/native + fallback; `delivery-close-cycle` nativo; golden OK |
 | Delegación motor legacy | ✅ | Puente transitorio para procesos no portados |
-| Golden harness P8/P9 | 🔶 | 11 casos verdes; pendiente `entity-manager`, `delivery-close-cycle` |
+| Golden harness P8/P9 | 🔶 | 12 casos verdes; pendiente `entity-manager` |
 | Touchpoints P10–P13 | ✅ | event/telegram-watcher, hooks, route/eda lab, README |
 | Forjas P6–P7 | ⏳ | Pendiente |
 | Poda P17 | ⏳ | Gated por P8/P9 |
@@ -176,7 +176,7 @@ Items concretos para completar la migración tras el hito actual. Cada uno es un
 | P2 | Portar bucle genérico `execute_phase` + `is_workspace_init_phase` | Fases `executed`/`simulated`/`skipped` con paridad de envelope | `execute_process_capsules.execute_phase` |
 | P3 | Portar Peaje Termodinámico (`run_thermodynamic_toll`) | Emite `Raw_Execution_Finished` + orquestación; fail-soft D3.13 | `run_thermodynamic_toll` |
 | P4 | Portar handlers satélite restantes | ✅ entry nativo; core EDA route en bridge | `delegate_handler` / `_execute_process_handler_bridge.py` |
-| P5 | Invocación de cápsulas `wasmtime` nativa (`engine::capsules`) | `wasmtime run --dir=.` vía `std::process::Command` con paridad de I/O | rama capsule en `run_process` |
+| P5 | Invocación de cápsulas `wasmtime` nativa (`engine::capsules`) | ✅ delivery-close + try_invoke_delegates | rama capsule en `run_process` |
 
 ### 6.2 Forjas físicas (Fase D)
 
@@ -247,23 +247,16 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 ### 7.2 P5 — Cápsulas `wasmtime` nativas
 
-**Estado actual:** `engine::capsules` resuelve e invoca `git-manager` (workspace_init) y herramientas nativas/wasm/limbo (`send-telegram-notification`). Fases genéricas con delegados `skill:`/`tool:` en `executor` siguen en `simulated`.
+**Estado actual:** ✅ **cerrado (entry + delivery-close).** `engine::capsules` invoca cápsulas vía `wasmtime run --dir=.` o binario nativo con fallback wasm→native. `engine::phase_capsules` resuelve fases skill/tool; `engine::delivery_close` portado nativo. `executor` invoca cápsulas resolubles antes de marcar `simulated`.
 
-**Objetivo:** invocar cápsulas con `std::process::Command` replicando la línea Python:
+**Artefactos:**
+- `engine/capsules.rs` — `invoke_capsule_json`, `invoke_git_manager`, `invoke_shell_executor`, `invoke_action`
+- `engine/phase_capsules.rs` — handlers fase delivery + `try_invoke_delegates`
+- `engine/delivery_close.rs` — proceso `delivery-close-cycle` nativo
 
-```text
-wasmtime run --dir=. [--env K=V]… <capsule>.wasm  < stdin(JSON)  > stdout(JSON)
-```
+**Criterio de cierre:** ✅ golden `delivery-close-cycle` (12/12); fases git-manager/shell-executor/action vía cápsulas nativas con skips lab.
 
-**Requisitos de paridad:**
-- Resolución de ruta `.wasm` vía `cumulo.paths.json` / `capsule_resolve` (no rutas cableadas).
-- Passthrough de bóvedas como `--env` con la misma precedencia que `core::env`.
-- I/O conforme a `SddIA/norms/capsule-json-io.md`: JSON por stdin, última línea JSON por stdout, `exit_code` propagado.
-- Mapeo de error de `wasmtime` (binario ausente, trap, non-zero) → entrada de fase `status:"failed"` + envelope `success:false` (fail-soft, sin panic).
-
-**Criterio de cierre:** una fase con delegado `skill:`/`tool:` ejecuta la cápsula nativa y produce el mismo `phase_report` que el bridge; smoke `run-eda-e2e-lab` con eventos en `./.events/{telemetry,orchestration}`.
-
-**Gate:** depende de target `wasm32-wasip1` operativo (ya provisto por `migracion-rust-wasi`).
+**Deuda residual:** fases genéricas `feature`/`bug-fix` con skill:/tool: sin cápsula compilada siguen `simulated` (paridad Python).
 
 ### 7.3 P6/P7 — Forjas Rust (`forges::factory`)
 

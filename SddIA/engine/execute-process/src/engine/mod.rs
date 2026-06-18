@@ -1,9 +1,11 @@
 pub mod capsules;
 pub mod daemons;
 pub mod delegate_python;
+pub mod delivery_close;
 pub mod executor;
 pub mod fractal;
 pub mod handlers;
+pub mod phase_capsules;
 pub mod thermodynamic;
 pub mod workspace;
 pub mod workspace_init;
@@ -47,6 +49,10 @@ pub fn run_process(
 
     if canonical == "route-domain-event" {
         return handlers::route_domain::run(repo, process_inputs);
+    }
+
+    if canonical == "delivery-close-cycle" {
+        return delivery_close::run(repo, &canonical, &process_def, &phases, process_inputs);
     }
 
     if executor::handles(&canonical) {

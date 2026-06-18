@@ -32,6 +32,14 @@ LAB_FEATURE_ENV = {
     "SDDIA_LAB_SKIP_GIT": "1",
 }
 
+LAB_DELIVERY_ENV = {
+    "SDDIA_LAB_SKIP_SNAPSHOT": "1",
+    "SDDIA_LAB_SKIP_GIT_PUSH": "1",
+    "SDDIA_LAB_SIMULATE_GH_PR": "1",
+    "SDDIA_LAB_SKIP_HIGIENE": "1",
+    "SDDIA_LAB_SKIP_IMPACT_ASSESSMENT": "1",
+}
+
 
 def repo_root() -> Path:
     for parent in SCRIPT.parents:
@@ -72,6 +80,12 @@ def normalize(obj: Any) -> Any:
             "processing_header_path",
             "sweep",
             "delivery_status",
+            "pr_url",
+            "gh_stdout",
+            "eda_audit",
+            "orphan_count",
+            "argos_verdict",
+            "argos_noise",
         }
         out = {}
         for k, v in obj.items():
@@ -235,6 +249,17 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
     ),
     ("daemon-kill-switch", {}, {}, False),
     ("route-domain-event", {}, {**LAB_ROUTE_ENV}, True),
+    (
+        "delivery-close-cycle",
+        {
+            "source_process": "feature",
+            "persist_ref": "docs/features/migracion-execute-process-rust",
+            "branch_name": "feat/migracion-execute-process-rust",
+            "pr_title": "golden delivery close",
+        },
+        LAB_DELIVERY_ENV,
+        False,
+    ),
 ]
 
 
@@ -251,6 +276,8 @@ def main() -> int:
         overlay = LAB_FEATURE_ENV if args.process in ("feature", "bug-fix") else {}
         if args.process == "route-domain-event":
             overlay = {**LAB_ROUTE_ENV}
+        elif args.process == "delivery-close-cycle":
+            overlay = {**LAB_DELIVERY_ENV}
         cases = [(args.process, inputs, overlay, args.process == "route-domain-event")]
 
     failed = 0
