@@ -3,6 +3,7 @@ feature_name: poc-interface-comunicacion
 branch: feat/poc-interface-comunicacion
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/94
 created: "2026-06-18"
 process: feature
 checks:
