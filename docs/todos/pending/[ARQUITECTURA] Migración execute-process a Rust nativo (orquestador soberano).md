@@ -197,7 +197,7 @@ El handler nativo cumple el contrato `emit-domain-mutation.md` v1.1.0, pero la c
 - [ ] Ciclo `feature` completo bajo `persist_ref` (spec, clarify, plan, implementation, validacion) — Argos APTO.
 - [ ] Binario Rust nativo del orquestador compila en el workspace (`cargo build`) sin warnings lógicos.
 - [x] Paridad funcional estricta: batería golden **14/14** (`feature`, `bug-fix`, `route-domain-event`, `delivery-close-cycle`, **`entity-manager`**, handlers satélite).
-- [x] Centinelas, hooks, `sddia-run.sh` y cliente Kalma2 invocan el orquestador vía SSOT (`orchestrator_resolve` / binario nativo); audit P10–P13 verde.
+- [x] Centinelas, hooks, `sddia-run.sh` y cliente Kalma2 invocan el orquestador vía SSOT (`orchestrator_resolve` / binario nativo); audit P10–P13 verde; smokes E2E **8/8**.
 - [ ] Ningún flujo de **orquestación** requiere intérprete Python ni PyYAML; `requirements.txt` reevaluado/podado según D3.
 - [ ] Errores devueltos como JSON válido (`exitCode>0`), sin panic crudo en stdout.
 - [x] Documentación viva (`README.md`, `external-ai-constraints.md` v1.2.0) refleja el orquestador nativo y SSOT `orchestrator_resolve`.

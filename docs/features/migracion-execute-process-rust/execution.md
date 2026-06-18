@@ -109,6 +109,8 @@ Resultados (2026-06-18):
 | `touchpoint_orchestrator_audit.py` | ✅ audit P10–P13 |
 | P14 `README.md` (Aduana Universal / entrypoints) | ✅ |
 | P15 `external-ai-constraints.md` v1.2.0 (DA-3 orquestador) | ✅ |
+| Smokes E2E CA-7 (`orchestrator_touchpoint_e2e_smoke.py`) | ✅ **8/8** |
+| CA-8 parcial (binario nativo sin Python/PyYAML) | ✅ smoke `native-without-python` |
 
 ## 4. Deuda técnica explícita
 

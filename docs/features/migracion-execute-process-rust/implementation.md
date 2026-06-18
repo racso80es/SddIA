@@ -355,7 +355,24 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 **Nota soberanía:** norma motor en `directories.norms` — actualizada en el ciclo feature autorizado (precedente `snapshot-friccion-laboratorio-jules`); `norm-creator` aplica solo a `library_norms`.
 
-### 7.9 P17 — Poda del legacy
+### 7.9 Smokes E2E — CA-7 / CA-8
+
+**Estado actual:** ✅ **cerrado.** Harness `orchestrator_touchpoint_e2e_smoke.py` — **8/8** touchpoints verdes (2026-06-18).
+
+| Smoke | Touchpoint |
+|-------|------------|
+| `ssot-native-binary` | `orchestrator_resolve` → binario |
+| `orchestrator-resolve-cli` | CLI entrypoint |
+| `sddia-run-sh` | wrapper shell |
+| `kalma2-bridge` | `.SddIA/client/sddia-client-bridge.py` |
+| `hook-common` | `git-hooks/hook_common.invoke_process` |
+| `event-watcher-bin` | cápsula centinela resuelta |
+| `native-without-python` | CA-8 — binario con `PATH` mínimo |
+| `eda-e2e-lab` | cadena entity-manager → watcher → route |
+
+**Batería complementaria:** `golden_orchestrator_parity.py` 14/14, `forge_parity.py` OK, `cargo test -p execute-process --lib` 43/43.
+
+### 7.10 P17 — Poda del legacy
 - Retirar `execute-process.py`, `execute_process_*.py` y los bridges (`_execute_process_engine_bridge.py`, `_execute_process_handler_bridge.py`, `_execute_process_feature_phase_bridge.py`).
 - Auditar y podar `requirements.txt` (PyYAML) solo tras grep limpio de consumidores residuales (P16).
 
