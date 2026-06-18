@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kalma2 — Cliente SddIA</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <h1>Kalma2</h1>
+      <p class="tagline">Cliente interactivo PoC — desacoplado de Cursor</p>
+    </header>
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt" rows="8" placeholder="Indica tu intención…"></textarea>
+    <div class="actions">
+      <button type="button" id="send">Forjar</button>
+    </div>
+    <label for="output">Respuesta</label>
+    <textarea id="output" rows="12" readonly placeholder="La salida aparecerá aquí…"></textarea>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
