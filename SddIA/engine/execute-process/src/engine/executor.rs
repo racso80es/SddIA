@@ -132,7 +132,7 @@ fn execute_phase(
         }
     }
 
-    if process_name == "feature" {
+    if process_name == "feature" || process_name == "bug-fix" {
         if matches!(
             phase_name,
             "Cierre documental en rama" | "Cierre de entrega"

@@ -20,7 +20,7 @@ Registro de la forja física (Fases A–C parcial + touchpoints E parcial).
 | **C** Engine (parcial) | ✅ | Handlers satélite nativos (entry `route-domain-event` + core EDA bridge); motor genérico P1–P3 |
 | **D** Forges | ⏳ | Pendiente — sigue en bridge Python |
 | **E** Touchpoints | ✅ | Kalma2, wrappers, watchers, hooks, EDA/route lab, README |
-| **F** Poda | ⏳ | Gate P9 parcial (10 casos); `.py` fallback activo |
+| **F** Poda | ⏳ | Gate P9 parcial (11 casos); `.py` fallback activo |
 
 ## 2. Artefactos forjados
 
@@ -76,6 +76,7 @@ Resultados (2026-06-18):
 | Smoke `feature` nativo (P1–P3, skips lab) | ✅ 7 fases, `success:true` |
 | Golden `kalma2-interact` Rust vs Python | ✅ |
 | Golden `feature` (skips lab + `SDDIA_LAB_SKIP_GIT`) | ✅ |
+| Golden `bug-fix` (skips lab + `SDDIA_LAB_SKIP_GIT`) | ✅ |
 | Golden `telegram-fallback-responder` (filtro + chat_id ausente) | ✅ |
 | Golden `telegram-gateway` (TODO + empty text) | ✅ |
 | Golden daemon handlers (heartbeat, governance status, kill-switch) | ✅ |
@@ -91,7 +92,7 @@ Resultados (2026-06-18):
 2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers` siguen en `_execute_process_engine_bridge.py`.
 3. **`execute-action.py`:** permanece Python subprocess (deuda separada).
 4. **Touchpoints pendientes:** lanzadores `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` (P12).
-5. **Golden harness:** 10 casos verdes; pendiente `bug-fix`, `entity-manager`, `delivery-close-cycle` (P9).
+5. **Golden harness:** 11 casos verdes; pendiente `entity-manager`, `delivery-close-cycle` (P9).
 6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (clarify D6).
 
 ## 5. Variables de entorno
@@ -109,7 +110,7 @@ Especificación accionable detallada de los pendientes gated en `implementation.
 |----|-----------|------|
 | P4 | Handlers satélite nativos | ✅ entry nativo; core EDA route en bridge |
 | P5 | Cápsulas `wasmtime` nativas (`engine::capsules`) | target `wasm32-wasip1` |
-| P9 | Ampliar golden a `bug-fix`, `entity-manager`, `delivery-close-cycle` | **gate maestro** que habilita P10–P17 |
+| P9 | Ampliar golden a `entity-manager`, `delivery-close-cycle` | **gate maestro** que habilita P10–P17 |
 | P6/P7 | Forjas Rust (`hash_signature` sha256 paridad + índice idempotente) | vía `entity-manager` (DA-2/DA-3) |
 | P12 | Lanzadores `SddIA/scripts/daemons/*.{sh,bat}` | ✅ N/A verificado (sin referencias a `.py`) |
 | P15 | DA-3 vía canónica en `external-ai-constraints.md` | `entity-manager` (genoma) |

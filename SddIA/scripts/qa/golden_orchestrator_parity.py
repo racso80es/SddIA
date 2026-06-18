@@ -192,6 +192,17 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
         False,
     ),
     (
+        "bug-fix",
+        {
+            "bug_summary": "golden parity bug-fix smoke",
+            "branch_name": "fix/golden-parity-bug-fix",
+            "persist_ref": "docs/fixes/golden-parity-bug-fix",
+            "document_context": "docs/fixes/golden-parity-bug-fix",
+        },
+        LAB_FEATURE_ENV,
+        False,
+    ),
+    (
         "telegram-fallback-responder",
         {"text": "/start"},
         {},

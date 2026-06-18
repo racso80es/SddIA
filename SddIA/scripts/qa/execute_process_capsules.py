@@ -2810,7 +2810,7 @@ def execute_phase(
             entry.update(ap)
             return entry
 
-    if process_def.get("name") == "feature":
+    if process_def.get("name") in ("feature", "bug-fix"):
         feat = execute_feature_phase(repo, str(phase_name) if phase_name else None, inputs, state)
         if feat is not None:
             entry.update(feat)

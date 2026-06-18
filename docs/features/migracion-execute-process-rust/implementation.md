@@ -159,7 +159,7 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | `engine/daemons` | ✅ | locks, PIDs, bus pending, orchestration |
 | Cápsulas P5 (`engine::capsules`) | 🔶 | `git-manager` + resolución telegram tool; fases genéricas skill/tool aún simuladas |
 | Delegación motor legacy | ✅ | Puente transitorio para procesos no portados |
-| Golden harness P8/P9 | 🔶 | 10 casos verdes; pendiente `bug-fix`, `entity-manager`, `delivery-close-cycle` |
+| Golden harness P8/P9 | 🔶 | 11 casos verdes; pendiente `entity-manager`, `delivery-close-cycle` |
 | Touchpoints P10–P13 | ✅ | event/telegram-watcher, hooks, route/eda lab, README |
 | Forjas P6–P7 | ⏳ | Pendiente |
 | Poda P17 | ⏳ | Gated por P8/P9 |
@@ -284,14 +284,14 @@ wasmtime run --dir=. [--env K=V]… <capsule>.wasm  < stdin(JSON)  > stdout(JSON
 
 ### 7.4 P9 — Ampliar golden harness
 
-**Estado actual:** `golden_orchestrator_parity.py` verde para **9 casos** (incl. daemon-heartbeat, governance status, kill-switch).
+**Estado actual:** `golden_orchestrator_parity.py` verde para **11 casos** (incl. `feature`, `bug-fix`, daemon handlers, `route-domain-event`).
 
 **Objetivo:** ampliar `CASES` y la normalización a los procesos núcleo:
 
 | Caso | Inputs (lab) | Flags de aislamiento |
 |------|--------------|----------------------|
 | `feature` | `{feature_name, persist_ref, document_context}` | `SDDIA_LAB_SKIP_PBI_ARCHIVE=1`, `SDDIA_LAB_SKIP_DELIVERY_CLOSE=1`, `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF=1` |
-| `bug-fix` | análogo a feature | mismos skips lab |
+| `bug-fix` | `{bug_summary, branch_name, persist_ref}` | mismos skips lab que `feature` |
 | `route-domain-event` | `{event_file_path}` con evento ECST de fixture | `SDDIA_LAB_SIMULATE_*` según subscriber |
 | `entity-manager` | `{operation, …}` de fixture no-mutante | dry-run / simulación |
 | `delivery-close-cycle` | fixture de cierre | skips lab |
@@ -301,7 +301,7 @@ wasmtime run --dir=. [--env K=V]… <capsule>.wasm  < stdin(JSON)  > stdout(JSON
 - Comparar `success` + `status_code` + estructura de `execution_report.phases` (nombres y `status`), no solo `data`.
 - Fixtures reproducibles bajo `tmp/` con teardown (patrón `lab_teardown`).
 
-**Criterio de cierre (P9):** `golden_orchestrator_parity.py` verde para los 5 casos en CI (`cargo test` + harness). Este es el **gate maestro** que habilita P10–P17.
+**Criterio de cierre (P9):** `golden_orchestrator_parity.py` verde para los casos restantes (`entity-manager`, `delivery-close-cycle`) en CI (`cargo test` + harness). Este es el **gate maestro** que habilita P10–P17.
 
 ### 7.5 P12 — Lanzadores de daemons
 
