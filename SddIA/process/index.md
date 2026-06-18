@@ -4,6 +4,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
+| kalma2-interact | acdb6c88-f0d9-4e10-9d2f-7e4b5401a892 | 1.0.0 | ecosystem-evolution | — | Proceso PoC Kalma2: síntesis Mayeuta lab ante prompt del cli |
 | daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.0.0 | quality-assurance | — | Triaje Argos: latido térmico Centinelas; System_Fracture_Det |
 | daemon-kill-switch | b0de6585-11fc-4b3c-8b19-ad6b727d820e | 1.0.0 | system-operations | — | Kill-Switch global: purga SIGTERM/SIGKILL de todos los Centi |
 | governance-daemon-manager | 5a89793a-ba98-4b4f-9287-43c087e312df | 1.0.0 | system-operations | — | Actuador OS puro: start, status, kill de Centinelas indexado |

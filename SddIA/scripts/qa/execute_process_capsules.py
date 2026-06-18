@@ -3244,6 +3244,40 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
                 ],
             },
         }
+    if canonical == "kalma2-interact":
+        from kalma2_interact_core import run_kalma2_interact
+
+        prompt = process_inputs.get("prompt")
+        if not isinstance(prompt, str):
+            return {
+                "success": False,
+                "status_code": 1,
+                "error": "prompt requerido",
+                "execution_report": {"process_name": canonical, "phases": []},
+            }
+        out = run_kalma2_interact(repo, prompt)
+        ok = bool(out.get("ok"))
+        return {
+            "success": ok,
+            "status_code": 0 if ok else 1,
+            "data": out,
+            "execution_report": {
+                "process_name": canonical,
+                "phases": [
+                    {
+                        "phase_name": "Síntesis",
+                        "status": "executed" if ok else "failed",
+                        "handler": "kalma2-interact-core",
+                    },
+                    {
+                        "phase_name": "Respuesta",
+                        "status": "executed" if ok else "failed",
+                        "handler": "kalma2-interact-core",
+                        "response_preview": (out.get("response") or "")[:80] if ok else None,
+                    },
+                ],
+            },
+        }
     if canonical == "telegram-fallback-responder":
         from telegram_fallback_responder_core import run_telegram_fallback_responder
 

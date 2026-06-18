@@ -289,11 +289,11 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
             }
         }
         centinela.tick(&top)?;
-        thread::sleep(Duration::from_secs(POLL_SECONDS));
         if once {
             println!("[WATCHER] Ciclo único (--once). Fin.");
             break;
         }
+        thread::sleep(Duration::from_secs(POLL_SECONDS));
     }
     centinela.shutdown();
     Ok(())

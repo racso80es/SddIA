@@ -10,9 +10,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
+
+_TRUTHY = {"1", "true", "yes", "on"}
+
+
+def _engine_kill_switch_armed() -> bool:
+    """El kill-switch global (CEN-03) solo debe armarse en el proceso supervisor
+    de larga vida del motor SddIA, nunca en invocaciones one-shot de
+    `execute-process.py` (que los Centinelas spawnean para enrutar eventos).
+    De lo contrario, la salida normal de cada worker purgaría a todos los
+    Centinelas vivos. Opt-in explícito vía SDDIA_ENGINE_KILL_SWITCH.
+    """
+    return os.environ.get("SDDIA_ENGINE_KILL_SWITCH", "").strip().lower() in _TRUTHY
 
 _QA_DIR = Path(__file__).resolve().parent
 if str(_QA_DIR) not in sys.path:
@@ -62,12 +75,13 @@ def main() -> None:
 
         repo = repo_root()
         load_hierarchical_env(repo)
-        try:
-            from daemon_kill_switch_core import register_kill_switch_hooks
+        if _engine_kill_switch_armed():
+            try:
+                from daemon_kill_switch_core import register_kill_switch_hooks
 
-            register_kill_switch_hooks(repo)
-        except ImportError:
-            pass
+                register_kill_switch_hooks(repo)
+            except ImportError:
+                pass
         result = run_process(repo, process_name, process_inputs)
         emit(result, result.get("status_code", 0))
     except json.JSONDecodeError as e:
