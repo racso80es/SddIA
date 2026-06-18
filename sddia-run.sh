@@ -3,17 +3,26 @@
 # Abortar en caso de error
 set -e
 
-# Nombre del entorno virtual
-VENV_DIR=".venv"
+REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
+ORCH_BIN="${SDDIA_EXECUTE_PROCESS_BIN:-}"
 
-# Verificar si el entorno virtual no existe para crearlo
+# Binario nativo Rust (preferente si existe)
+if [ -z "$ORCH_BIN" ] && [ -x "$REPO_ROOT/SddIA/target/debug/execute-process" ]; then
+  ORCH_BIN="$REPO_ROOT/SddIA/target/debug/execute-process"
+fi
+if [ -z "$ORCH_BIN" ] && [ -x "$REPO_ROOT/SddIA/target/release/execute-process" ]; then
+  ORCH_BIN="$REPO_ROOT/SddIA/target/release/execute-process"
+fi
+
+if [ -n "$ORCH_BIN" ]; then
+  exec "$ORCH_BIN" "$@"
+fi
+
+# Fallback Python (legacy) — requiere PyYAML en el intérprete activo
+VENV_DIR=".venv"
 if [ ! -d "$VENV_DIR" ]; then
     python3 -m venv "$VENV_DIR"
 fi
-
-# Activar el entorno virtual e instalar/actualizar dependencias de forma silenciosa
 source "$VENV_DIR/bin/activate"
 pip install -r requirements.txt -q
-
-# Ejecutar el script principal de SddIA con los parámetros pasados al wrapper
 python SddIA/scripts/qa/execute-process.py "$@"
