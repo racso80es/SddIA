@@ -193,11 +193,11 @@ El handler nativo cumple el contrato `emit-domain-mutation.md` v1.1.0, pero la c
 
 - [ ] Ciclo `feature` completo bajo `persist_ref` (spec, clarify, plan, implementation, validacion) — Argos APTO.
 - [ ] Binario Rust nativo del orquestador compila en el workspace (`cargo build`) sin warnings lógicos.
-- [ ] Paridad funcional estricta: batería de procesos (`feature`, `bug-fix`, `route-domain-event`, `delivery-close-cycle`, `entity-manager`) produce el mismo envelope que la versión Python.
+- [x] Paridad funcional estricta: batería golden **14/14** (`feature`, `bug-fix`, `route-domain-event`, `delivery-close-cycle`, **`entity-manager`**, handlers satélite).
 - [ ] Centinelas, hooks, `sddia-run.sh` y cliente Kalma2 invocan el binario nativo desacoplado y operan E2E.
 - [ ] Ningún flujo de **orquestación** requiere intérprete Python ni PyYAML; `requirements.txt` reevaluado/podado según D3.
 - [ ] Errores devueltos como JSON válido (`exitCode>0`), sin panic crudo en stdout.
 - [ ] Documentación viva (`README.md`, `external-ai-constraints.md`, contratos vía proceso autorizado) refleja el nuevo orquestador.
 - [x] **Deudas P5 liquidadas (§6.bis):** (a) `invoke_action` nativo sin `execute-action.py` [D-P5.1]; (b) golden de fase `skill:`/`tool:` `executed` con cápsula presente [D-P5.2]; (c) resolución de artefactos de cápsula desde SSOT única (Rust↔Python) [D-P5.3].
-- [ ] **Deudas post-`emit-domain-mutation` (§6.ter):** (a) portar acciones 🔶 restantes y retirar `invoke_action_python_bridge` [D-P6T.1]; (b) cableado `*-creator`, fan-out `Domain_Entity_*` y Cerbero runtime [D-P6T.2].
+- [x] **Deudas post-`emit-domain-mutation` (§6.ter):** (a) portar acciones 🔶 restantes y retirar `invoke_action_python_bridge` [D-P6T.1 ✅]; (b) cableado `*-creator`, fan-out `Domain_Entity_*` y Cerbero runtime [D-P6T.2].
 - [ ] Este TODO movido a `docs/todos/done/` en el mismo PR (cierre documental en rama).

@@ -159,7 +159,7 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | `engine/daemons` | ✅ | locks, PIDs, bus pending, orchestration |
 | Cápsulas P5 (`engine::capsules`) | ✅ | wasmtime/native + fallback; `delivery-close-cycle` nativo; golden OK |
 | Delegación motor legacy | ✅ | Puente transitorio para procesos no portados |
-| Golden harness P8/P9 | 🔶 | 12 casos verdes; pendiente `entity-manager` |
+| Golden harness P8/P9 | ✅ | **14/14** (`entity-manager` incluido) |
 | Touchpoints P10–P13 | ✅ | event/telegram-watcher, hooks, route/eda lab, README |
 | Forjas P6–P7 | ⏳ | Pendiente |
 | Poda P17 | ⏳ | Gated por P8/P9 |
@@ -310,24 +310,11 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 ### 7.4 P9 — Ampliar golden harness
 
-**Estado actual:** `golden_orchestrator_parity.py` verde para **11 casos** (incl. `feature`, `bug-fix`, daemon handlers, `route-domain-event`).
+**Estado actual:** ✅ **cerrado.** `golden_orchestrator_parity.py` verde para **14 casos** (incl. `feature`, `bug-fix`, daemon handlers, `route-domain-event`, `delivery-close-cycle`, **`entity-manager`**).
 
-**Objetivo:** ampliar `CASES` y la normalización a los procesos núcleo:
+**Caso `entity-manager` (lab):** forge local `tool` bajo `.SddIA/tools/` con `scope: local`; teardown vía `cleanup_entity_manager_lab` (pre/post caso).
 
-| Caso | Inputs (lab) | Flags de aislamiento |
-|------|--------------|----------------------|
-| `feature` | `{feature_name, persist_ref, document_context}` | `SDDIA_LAB_SKIP_PBI_ARCHIVE=1`, `SDDIA_LAB_SKIP_DELIVERY_CLOSE=1`, `SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF=1` |
-| `bug-fix` | `{bug_summary, branch_name, persist_ref}` | mismos skips lab que `feature` |
-| `route-domain-event` | `{event_file_path}` con evento ECST de fixture | `SDDIA_LAB_SIMULATE_*` según subscriber |
-| `entity-manager` | `{operation, …}` de fixture no-mutante | dry-run / simulación |
-| `delivery-close-cycle` | fixture de cierre | skips lab |
-
-**Trabajo técnico:**
-- Extender `normalize()` con campos no-deterministas adicionales que afloren (rutas con UUID, `branch_name` derivado, `workspace_path`, hashes).
-- Comparar `success` + `status_code` + estructura de `execution_report.phases` (nombres y `status`), no solo `data`.
-- Fixtures reproducibles bajo `tmp/` con teardown (patrón `lab_teardown`).
-
-**Criterio de cierre (P9):** `golden_orchestrator_parity.py` verde para los casos restantes (`entity-manager`, `delivery-close-cycle`) en CI (`cargo test` + harness). Este es el **gate maestro** que habilita P10–P17.
+**Criterio de cierre (P9):** ✅ cumplido — harness 14/14; habilita P10–P17 (touchpoints + poda condicional).
 
 ### 7.5 P12 — Lanzadores de daemons
 
@@ -355,7 +342,7 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 ```text
 P17 (poda) ⟸ requiere TODO lo siguiente verde:
-  • P9 golden (5 casos) en CI
+  • P9 golden (14 casos) en CI
   • P4 handlers nativos (sin HANDLER_BRIDGE)
   • P5 cápsulas nativas
   • P6/P7 forjas nativas

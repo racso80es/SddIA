@@ -95,7 +95,7 @@ Resultados (2026-06-18):
 | Golden `route-domain-event` (`SDDIA_LAB_ROUTE_SYNC`, fixture ECST) | ✅ |
 | Golden `delivery-close-cycle` (skips lab P5) | ✅ |
 | Golden `capsule-invoke-smoke` (fase `tool:io-choke` ejecutada, D-P5.2) | ✅ |
-| Golden harness total | ✅ **13/13** |
+| Golden harness total | ✅ **14/14** (incl. **`entity-manager`**) |
 | `emit-domain-mutation` nativo (tests unitarios ECST + pending) | ✅ |
 | `HANDLER_BRIDGE` | ✅ eliminado — routing directo en `run_process` |
 | `SDDIA_LAB_SKIP_GIT` (Rust + Python workspace_init) | ✅ |
@@ -108,7 +108,7 @@ Resultados (2026-06-18):
 2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers` siguen en `_execute_process_engine_bridge.py`.
 3. **`execute-action.py` (D-P6T.1):** ✅ inventario `PHYSICAL_HANDLERS` portado a Rust (`try_run_native`). El script permanece como bridge de fallback/simulación hasta P17; ya no hay acciones físicas exclusivas de Python.
 4. **Touchpoints pendientes:** lanzadores `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` (P12).
-5. **Golden harness:** 13 casos verdes; pendiente `entity-manager` (P9).
+5. **Golden harness:** ✅ **14/14** (`entity-manager` P9 cerrado).
 6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (clarify D6).
 
 ## 5. Variables de entorno
@@ -126,7 +126,7 @@ Especificación accionable detallada de los pendientes gated en `implementation.
 |----|-----------|------|
 | P4 | Handlers satélite nativos | ✅ entry nativo; core EDA route en bridge |
 | P5 | Cápsulas `wasmtime` nativas + deudas §6.bis | ✅ actions nativas, SSOT, golden capsule-invoke-smoke |
-| P9 | Ampliar golden a `entity-manager` | **gate maestro** que habilita P10–P17 |
+| P9 | Ampliar golden a `entity-manager` | ✅ **14/14** — gate maestro habilita P10–P17 |
 | P6/P7 | Forjas Rust (`hash_signature` sha256 paridad + índice idempotente) | vía `entity-manager` (DA-2/DA-3) |
 | P12 | Lanzadores `SddIA/scripts/daemons/*.{sh,bat}` | ✅ N/A verificado (sin referencias a `.py`) |
 | P15 | DA-3 vía canónica en `external-ai-constraints.md` | `entity-manager` (genoma) |

@@ -170,6 +170,34 @@ def run_orchestrator(
 
 LAB_ROUTE_ENV = {"SDDIA_LAB_ROUTE_SYNC": "1"}
 
+ENTITY_MANAGER_LAB_NAME = "golden-orchestrator-parity-em"
+
+ENTITY_MANAGER_INPUTS: dict[str, Any] = {
+    "entity_class": "tool",
+    "entity_name": ENTITY_MANAGER_LAB_NAME,
+    "lifecycle_operation": "create",
+    "semantic_seed": {
+        "tool_name": ENTITY_MANAGER_LAB_NAME,
+        "scope": "local",
+        "execution_logic": "golden P9 entity-manager smoke",
+        "tool_outputs": [],
+        "required_secrets": [],
+        "dependencies": [],
+    },
+}
+
+
+def cleanup_entity_manager_lab(repo: Path) -> None:
+    """Teardown forge local + fila índice (P9 entity-manager)."""
+    from lab_teardown import cleanup_lab_entity_forge
+
+    cleanup_lab_entity_forge(
+        repo,
+        entity_class="tool",
+        entity_name=ENTITY_MANAGER_LAB_NAME,
+        event_id=None,
+    )
+
 
 def write_route_fixture(repo: Path) -> str:
     """Evento Daemon_Heartbeat ECST válido (sin fan-out en event-subscriptions.json)."""
@@ -195,8 +223,8 @@ def write_route_fixture(repo: Path) -> str:
     return rel
 
 
-CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
-    ("kalma2-interact", {"prompt": "golden parity ping"}, {}, False),
+CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool]] = [
+    ("kalma2-interact", {"prompt": "golden parity ping"}, {}, False, False),
     (
         "feature",
         {
@@ -205,6 +233,7 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
             "document_context": "docs/features/migracion-execute-process-rust",
         },
         LAB_FEATURE_ENV,
+        False,
         False,
     ),
     (
@@ -217,11 +246,13 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
         },
         LAB_FEATURE_ENV,
         False,
+        False,
     ),
     (
         "telegram-fallback-responder",
         {"text": "/start"},
         {},
+        False,
         False,
     ),
     (
@@ -229,11 +260,13 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
         {"text": "golden parity ping"},
         {"TELEGRAM_ALLOWED_CHAT_ID": ""},
         False,
+        False,
     ),
     (
         "telegram-gateway",
         {"text": "TODO: golden parity"},
         {"TELEGRAM_ALLOWED_CHAT_ID": ""},
+        False,
         False,
     ),
     (
@@ -241,16 +274,18 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
         {"text": ""},
         {},
         False,
+        False,
     ),
-    ("daemon-heartbeat-audit", {}, {}, False),
+    ("daemon-heartbeat-audit", {}, {}, False, False),
     (
         "governance-daemon-manager",
         {"operation": "status", "daemon_id": "event-watcher"},
         {},
         False,
+        False,
     ),
-    ("daemon-kill-switch", {}, {}, False),
-    ("route-domain-event", {}, {**LAB_ROUTE_ENV}, True),
+    ("daemon-kill-switch", {}, {}, False, False),
+    ("route-domain-event", {}, {**LAB_ROUTE_ENV}, True, False),
     (
         "delivery-close-cycle",
         {
@@ -261,8 +296,10 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
         },
         LAB_DELIVERY_ENV,
         False,
+        False,
     ),
-    ("capsule-invoke-smoke", {}, {}, False),
+    ("capsule-invoke-smoke", {}, {}, False, False),
+    ("entity-manager", ENTITY_MANAGER_INPUTS, {}, False, True),
 ]
 
 
@@ -277,17 +314,28 @@ def main() -> int:
     if args.process:
         inputs = json.loads(args.inputs or "{}")
         overlay = LAB_FEATURE_ENV if args.process in ("feature", "bug-fix") else {}
+        needs_entity_cleanup = args.process == "entity-manager"
         if args.process == "route-domain-event":
             overlay = {**LAB_ROUTE_ENV}
         elif args.process == "delivery-close-cycle":
             overlay = {**LAB_DELIVERY_ENV}
-        cases = [(args.process, inputs, overlay, args.process == "route-domain-event")]
+        cases = [
+            (
+                args.process,
+                inputs,
+                overlay,
+                args.process == "route-domain-event",
+                needs_entity_cleanup,
+            )
+        ]
 
     failed = 0
-    for process, inputs, env_overlay, needs_route_fixture in cases:
+    for process, inputs, env_overlay, needs_route_fixture, needs_entity_cleanup in cases:
         label = process if len(cases) == len(CASES) else f"{process} custom"
         fixture_rels: list[str] = []
         try:
+            if needs_entity_cleanup:
+                cleanup_entity_manager_lab(repo)
             case_env = dict(env_overlay)
             if needs_route_fixture:
                 case_env.update(LAB_ROUTE_ENV)
@@ -322,6 +370,8 @@ def main() -> int:
             failed += 1
             print(f"ERR {label}: {exc}")
         finally:
+            if needs_entity_cleanup:
+                cleanup_entity_manager_lab(repo)
             for fixture_rel in fixture_rels:
                 try:
                     (repo / fixture_rel).unlink(missing_ok=True)
