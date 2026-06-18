@@ -5,6 +5,7 @@ pub mod capsules;
 pub mod daemons;
 pub mod delegate_python;
 pub mod delivery_close;
+pub mod crypto_broker;
 pub mod domain_mutation;
 pub mod eda_bus;
 pub mod eda_coverage;

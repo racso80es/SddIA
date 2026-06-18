@@ -131,7 +131,7 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 > | `materialize-fracture-pbi` | 🔶 bridge Python | materializa PBI |
 > | `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquecimiento PBI |
 > | `policy-validator` | 🔶 bridge Python | validación de políticas |
-> | `crypto-broker` | 🔶 bridge Python | cápsula `cryptography-manager` nativa parcial (UUID) |
+> | `crypto-broker` | ✅ nativo | `engine::crypto_broker` → `cryptography-manager` |
 >
 > **Artefactos `emit-domain-mutation` nativo:**
 > - `engine/domain_mutation.rs` — validación inputs, ensamblaje ECST, idempotencia, persistencia `pending/`
@@ -171,7 +171,7 @@ El porte nativo de `emit-domain-mutation` (`engine::domain_mutation` + `ecst_val
 | `materialize-fracture-pbi` | 🔶 bridge Python | materializa PBI de fractura |
 | `enrich-fracture-pbi-kaizen` | 🔶 bridge Python | enriquece PBI de fractura |
 | `policy-validator` | 🔶 bridge Python | validación de políticas |
-| `crypto-broker` | 🔶 bridge Python | cápsula `cryptography-manager` nativa solo parcial (UUID) |
+| `crypto-broker` | ✅ nativo | `engine::crypto_broker` → `cryptography-manager` |
 
 **Criterio de cierre:** portar las acciones 🔶 a `engine::actions` (o cápsula nativa); retirar `invoke_action_python_bridge` cuando el inventario quede vacío; grep sin `execute-action.py` desde el crate.
 

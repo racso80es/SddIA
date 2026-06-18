@@ -281,7 +281,8 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 |--------|-------------|
 | `emit-pr-presented-event` / `emit-pr-merged-event` / `emit-pr-audited-event` | ✅ nativo (`engine::actions`) |
 | `emit-domain-mutation` | ✅ nativo (`engine::domain_mutation` + ECST + coverage) |
-| `emit-suite-execution-requested`, `sync-entity-index`, `materialize-*`, `enrich-fracture-pbi-kaizen`, `policy-validator`, `crypto-broker` | 🔶 bridge Python |
+| `emit-suite-execution-requested`, `sync-entity-index`, `materialize-*`, `enrich-fracture-pbi-kaizen`, `policy-validator` | 🔶 bridge Python |
+| `crypto-broker` | ✅ nativo (`engine::crypto_broker`) |
 
 **Deudas de ecosistema (fuera del handler):** cableado `*-creator`, fan-out `Domain_Entity_*`, Cerbero runtime. Detalle en PBI §6.bis (D-P5.1-R).
 

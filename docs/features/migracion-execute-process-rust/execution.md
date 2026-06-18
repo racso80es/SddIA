@@ -104,7 +104,7 @@ Resultados (2026-06-18):
 
 1. **Core EDA route:** entry nativo en Rust; lógica ECST/fan-out sigue en `route_domain_event_core.py` vía `_execute_process_route_bridge.py`.
 2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers` siguen en `_execute_process_engine_bridge.py`.
-3. **`execute-action.py` (D-P5.1-R):** bridge residual para acciones no portadas. Nativas: `emit-pr-*`, **`emit-domain-mutation`**. Siguen en Python: `emit-suite-execution-requested`, `sync-entity-index`, `materialize-*`, `enrich-fracture-pbi-kaizen`, `policy-validator`, `crypto-broker`. **No retirar hasta P17.** Detalle y gate en PBI §6.bis (D-P5.1-R).
+3. **`execute-action.py` (D-P6T.1):** bridge residual. Nativas: `emit-pr-*`, `emit-domain-mutation`, **`crypto-broker`**. Siguen en Python: `emit-suite-execution-requested`, `sync-entity-index`, `materialize-*`, `enrich-fracture-pbi-kaizen`, `policy-validator`.
 4. **Touchpoints pendientes:** lanzadores `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` (P12).
 5. **Golden harness:** 13 casos verdes; pendiente `entity-manager` (P9).
 6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (clarify D6).
