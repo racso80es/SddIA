@@ -399,8 +399,19 @@ fn delegate_prefix(d: &str) -> Option<(&str, &str)> {
     None
 }
 
+fn build_capsule_payload(kind: &str, name: &str, inputs: &Value) -> Value {
+    if kind == "tool" && name == "io-choke" {
+        return json!({
+            "workspace_path": inputs.get("workspace_path"),
+            "target_file": inputs.get("target_file").unwrap_or(&json!(".capsule-smoke-target")),
+        });
+    }
+    inputs.clone()
+}
+
 /// Intenta invocar delegados skill:/tool: con cápsula resoluble (P5).
 pub fn try_invoke_delegates(repo: &Path, delegates: &[Value], inputs: &Value) -> Option<Value> {
+    let mut capsule_missing = false;
     let mut last_err: Option<String> = None;
     for d in delegates {
         let s = d.as_str()?;
@@ -410,7 +421,8 @@ pub fn try_invoke_delegates(repo: &Path, delegates: &[Value], inputs: &Value) ->
         let Some((kind, name)) = delegate_prefix(s) else {
             continue;
         };
-        match invoke_tool(repo, name, inputs) {
+        let payload = build_capsule_payload(kind, name, inputs);
+        match invoke_tool(repo, name, &payload) {
             Ok(body) => {
                 return Some(json!({
                     "status": "executed",
@@ -418,17 +430,23 @@ pub fn try_invoke_delegates(repo: &Path, delegates: &[Value], inputs: &Value) ->
                     "capsule_result": body,
                 }));
             }
-            Err(e) if e.contains("no encontrada") => continue,
+            Err(e) if e.contains("no encontrada") => {
+                capsule_missing = true;
+            }
             Err(e) => {
                 last_err = Some(e);
             }
         }
     }
-    last_err.map(|e| {
-        json!({
+    if let Some(e) = last_err {
+        return Some(json!({
             "status": "failed",
             "handler": "capsule-invoke",
             "error": e,
-        })
-    })
+        }));
+    }
+    if capsule_missing {
+        return None;
+    }
+    None
 }

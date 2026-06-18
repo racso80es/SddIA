@@ -1,9 +1,13 @@
 //! Invocación de cápsulas skill/tool vía wasmtime o binario nativo (P5).
 
+use super::actions;
+use super::capsule_paths;
 use serde_json::{json, Value};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+
+pub use capsule_paths::{resolve_capsule_native, resolve_capsule_wasm};
 
 const WASM_NATIVE_FALLBACK_MARKERS: &[&str] = &[
     "function not implemented",
@@ -30,32 +34,6 @@ pub struct CapsuleInvokeResult {
     pub body: Value,
 }
 
-fn target_dir(repo: &Path) -> PathBuf {
-    repo.join("SddIA/target")
-}
-
-pub fn resolve_capsule_wasm(repo: &Path, name: &str) -> Option<PathBuf> {
-    let base = target_dir(repo).join("wasm32-wasip1");
-    for profile in ["release", "debug"] {
-        let p = base.join(profile).join(format!("{name}.wasm"));
-        if p.is_file() {
-            return Some(p);
-        }
-    }
-    None
-}
-
-pub fn resolve_capsule_native(repo: &Path, name: &str) -> Option<PathBuf> {
-    let base = target_dir(repo);
-    for profile in ["release", "debug"] {
-        let p = base.join(profile).join(name);
-        if p.is_file() {
-            return Some(p);
-        }
-    }
-    None
-}
-
 fn has_wasmtime() -> bool {
     Command::new("wasmtime")
         .arg("--version")
@@ -70,8 +48,8 @@ fn resolve_capsule(
     prefer_wasm: bool,
     entity_label: &str,
 ) -> Result<(String, PathBuf), String> {
-    let wasm = resolve_capsule_wasm(repo, name);
-    let native = resolve_capsule_native(repo, name);
+    let wasm = capsule_paths::resolve_capsule_wasm(repo, name);
+    let native = capsule_paths::resolve_capsule_native(repo, name);
     if prefer_wasm {
         if let Some(w) = wasm.as_ref() {
             if has_wasmtime() {
@@ -245,8 +223,8 @@ pub fn invoke_capsule_json(
     let result = finalize_capsule_body(body, rc);
 
     if prefer_wasm
-        && kind == "wasm"
-        && resolve_capsule_native(repo, name).is_some()
+        && kind.as_str() == "wasm"
+        && capsule_paths::resolve_capsule_native(repo, name).is_some()
         && (result.body.get("success") != Some(&json!(true)) || result.exit_code != 0)
     {
         let err_blob = format!(
@@ -328,18 +306,18 @@ pub fn invoke_git_manager(
     }
 
     let (kind, path) = resolve_capsule(repo, "git-manager", true, "skill")?;
-    if kind == "wasm" {
+    if kind.as_str() == "wasm" {
         let (stdout, stderr, _) =
             invoke_capsule_subprocess(repo, "wasm", &path, &stdin_payload)?;
         if blob_contains_markers(&format!("{stderr}\n{stdout}"), GIT_MANAGER_NATIVE_FALLBACK_MARKERS)
         {
-            if let Some(native) = resolve_capsule_native(repo, "git-manager") {
+            if let Some(native) = capsule_paths::resolve_capsule_native(repo, "git-manager") {
                 return run_git(repo, "native", &native, &stdin_payload);
             }
         }
         if stdout.is_empty() {
             if blob_contains_markers(&stderr, GIT_MANAGER_NATIVE_FALLBACK_MARKERS) {
-                if let Some(native) = resolve_capsule_native(repo, "git-manager") {
+                if let Some(native) = capsule_paths::resolve_capsule_native(repo, "git-manager") {
                     return run_git(repo, "native", &native, &stdin_payload);
                 }
             }
@@ -398,11 +376,11 @@ pub fn invoke_shell_executor(
     }
 
     let (kind, path) = resolve_capsule(repo, "shell-executor", true, "skill")?;
-    if kind == "wasm" {
+    if kind.as_str() == "wasm" {
         match run_shell(repo, "wasm", &path, &stdin_payload) {
             Ok(v) => return Ok(v),
             Err(_) => {
-                if let Some(native) = resolve_capsule_native(repo, "shell-executor") {
+                if let Some(native) = capsule_paths::resolve_capsule_native(repo, "shell-executor") {
                     return run_shell(repo, "native", &native, &stdin_payload);
                 }
             }
@@ -412,6 +390,23 @@ pub fn invoke_shell_executor(
 }
 
 pub fn invoke_action(repo: &Path, action_name: &str, action_inputs: &Value) -> Result<Value, String> {
+    if let Some(data) = actions::try_run_native(repo, action_name, action_inputs)? {
+        return Ok(data);
+    }
+    if let Ok(result) = invoke_capsule_json(repo, action_name, action_inputs, true) {
+        if result.exit_code == 0 && result.body.get("success") != Some(&json!(false)) {
+            let inner = result.body.get("data").cloned().unwrap_or(result.body);
+            return Ok(inner);
+        }
+    }
+    invoke_action_python_bridge(repo, action_name, action_inputs)
+}
+
+fn invoke_action_python_bridge(
+    repo: &Path,
+    action_name: &str,
+    action_inputs: &Value,
+) -> Result<Value, String> {
     let script = repo.join("SddIA/scripts/qa/execute-action.py");
     if !script.is_file() {
         return Err(format!("execute-action ausente: {}", script.display()));

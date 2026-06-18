@@ -20,7 +20,7 @@ Registro de la forja física (Fases A–C parcial + touchpoints E parcial).
 | **C** Engine (parcial) | ✅ | Handlers satélite nativos (entry `route-domain-event` + core EDA bridge); motor genérico P1–P3 |
 | **D** Forges | ⏳ | Pendiente — sigue en bridge Python |
 | **E** Touchpoints | ✅ | Kalma2, wrappers, watchers, hooks, EDA/route lab, README |
-| **F** Poda | ⏳ | Gate P9 parcial (12 casos); `.py` fallback activo |
+| **F** Poda | ⏳ | Gate P9 parcial (13 casos); `.py` fallback activo |
 
 ## 2. Artefactos forjados
 
@@ -37,6 +37,11 @@ Registro de la forja física (Fases A–C parcial + touchpoints E parcial).
 | — | `SddIA/scripts/qa/_execute_process_route_bridge.py` | creado (core EDA Python para P4) |
 | — | `SddIA/engine/execute-process/src/engine/delivery_close.rs` | creado (P5 delivery-close nativo) |
 | — | `SddIA/engine/execute-process/src/engine/phase_capsules.rs` | creado (P5 handlers fase + try_invoke) |
+| — | `SddIA/engine/execute-process/src/engine/capsule_paths.rs` | creado (D-P5.3 SSOT `compiled_capsules`) |
+| — | `SddIA/engine/execute-process/src/engine/actions.rs` | creado (D-P5.1 acciones `emit-pr-*` nativas) |
+| — | `SddIA/engine/execute-process/src/engine/capsule_invoke_smoke.rs` | creado (D-P5.2 golden fase tool) |
+| — | `SddIA/process/capsule-invoke-smoke.md` | creado (proceso lab golden) |
+| — | `SddIA/core/cumulo.paths.json` | actualizado (`compiled_capsules`) |
 | — | `SddIA/scripts/qa/_execute_process_feature_phase_bridge.py` | creado (fases feature PBI/delivery) |
 | — | `SddIA/scripts/qa/orchestrator_resolve.py` | creado (SSOT binario vs `.py`) |
 | — | `SddIA/scripts/qa/golden_orchestrator_parity.py` | creado (P8 harness inicial) |
@@ -72,7 +77,7 @@ Resultados (2026-06-18):
 | Check | Resultado |
 |-------|-----------|
 | `cargo build -p execute-process` | ✅ |
-| `cargo test -p execute-process` | ✅ 11 tests |
+| `cargo test -p execute-process` | ✅ 12 tests |
 | Smoke `kalma2-interact` nativo | ✅ envelope JSON válido |
 | Smoke `feature` nativo (P1–P3, skips lab) | ✅ 7 fases, `success:true` |
 | Golden `kalma2-interact` Rust vs Python | ✅ |
@@ -83,6 +88,8 @@ Resultados (2026-06-18):
 | Golden daemon handlers (heartbeat, governance status, kill-switch) | ✅ |
 | Golden `route-domain-event` (`SDDIA_LAB_ROUTE_SYNC`, fixture ECST) | ✅ |
 | Golden `delivery-close-cycle` (skips lab P5) | ✅ |
+| Golden `capsule-invoke-smoke` (fase `tool:io-choke` ejecutada, D-P5.2) | ✅ |
+| Golden harness total | ✅ **13/13** |
 | `HANDLER_BRIDGE` | ✅ eliminado — routing directo en `run_process` |
 | `SDDIA_LAB_SKIP_GIT` (Rust + Python workspace_init) | ✅ |
 | Core EDA `route-domain-event` | 🔶 `_execute_process_route_bridge.py` (deuda porte Rust) |
@@ -92,9 +99,9 @@ Resultados (2026-06-18):
 
 1. **Core EDA route:** entry nativo en Rust; lógica ECST/fan-out sigue en `route_domain_event_core.py` vía `_execute_process_route_bridge.py`.
 2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers` siguen en `_execute_process_engine_bridge.py`.
-3. **`execute-action.py`:** permanece Python subprocess (deuda separada).
+3. **`execute-action.py`:** bridge residual solo para `emit-domain-mutation` y acciones no portadas (D-P5.1 cerrado para `emit-pr-*`).
 4. **Touchpoints pendientes:** lanzadores `SddIA/scripts/daemons/*.{sh,bat}`, `_exec_daemon.py`, `_launch.sh` (P12).
-5. **Golden harness:** 12 casos verdes; pendiente `entity-manager` (P9).
+5. **Golden harness:** 13 casos verdes; pendiente `entity-manager` (P9).
 6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (clarify D6).
 
 ## 5. Variables de entorno
@@ -111,7 +118,7 @@ Especificación accionable detallada de los pendientes gated en `implementation.
 | ID | Pendiente | Gate |
 |----|-----------|------|
 | P4 | Handlers satélite nativos | ✅ entry nativo; core EDA route en bridge |
-| P5 | Cápsulas `wasmtime` nativas | ✅ delivery-close + try_invoke_delegates |
+| P5 | Cápsulas `wasmtime` nativas + deudas §6.bis | ✅ actions nativas, SSOT, golden capsule-invoke-smoke |
 | P9 | Ampliar golden a `entity-manager` | **gate maestro** que habilita P10–P17 |
 | P6/P7 | Forjas Rust (`hash_signature` sha256 paridad + índice idempotente) | vía `entity-manager` (DA-2/DA-3) |
 | P12 | Lanzadores `SddIA/scripts/daemons/*.{sh,bat}` | ✅ N/A verificado (sin referencias a `.py`) |

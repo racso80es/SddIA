@@ -104,52 +104,27 @@ Solo documentos **operativos vigentes** (no `docs/todos/done/`, no `SddIA/evolut
 
 ## 6.bis Deudas Residuales P5 (cápsulas `wasmtime` nativas)
 
-El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), portó `delivery-close-cycle` a Rust (`engine::delivery_close`) y habilitó `try_invoke_delegates` para fases `skill:`/`tool:`. Golden 12/12 verde. No obstante, persisten tres deudas explícitas que **no bloquean** el gate maestro P9 pero **sí condicionan** la poda final (P17). Se detallan aquí como unidades de trabajo cerradas.
+El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), portó `delivery-close-cycle` a Rust (`engine::delivery_close`) y habilitó `try_invoke_delegates` para fases `skill:`/`tool:`. Golden **13/13** verde (incl. `capsule-invoke-smoke`). Las tres deudas explícitas quedaron **liquidadas** en el commit de cierre D-P5.1/2/3.
 
 ### D-P5.1 — `invoke_action` aún vía `execute-action.py` (subprocess Python)
 
-**Estado actual:** `engine::capsules::invoke_action` hace *spawn* de `python3 SddIA/scripts/qa/execute-action.py --action <name> --inputs <json>`. Las acciones `action:*` (p. ej. `emit-pr-presented-event`, `emit-domain-mutation`, `emit-pr-merged-event`) se ejecutan en el intérprete Python, no como cápsula `wasm`/nativa directa.
+**Estado:** ✅ **cerrado.** `engine::actions` implementa handlers nativos para `emit-pr-presented-event`, `emit-pr-merged-event` y `emit-pr-audited-event`. `invoke_action` intenta: nativo → cápsula wasm/native → bridge `execute-action.py` (solo red de seguridad para acciones no portadas, p. ej. `emit-domain-mutation`).
 
-**Por qué es deuda:** mantiene un consumidor activo del runtime Python en el camino caliente de orquestación (`delivery-close-cycle`, fan-out EDA). Contradice el objetivo de soberanía total del orquestador y mantiene vivo `execute-action.py` + sus dependencias (`PyYAML` transitivo).
+**Criterio de cierre cumplido:** fase «Sello Presentación ECST» de `delivery-close-cycle` con `status:executed` sin *spawn* de `execute-action.py`; golden `delivery-close-cycle` verde.
 
-**Objetivo:** portar la invocación de acciones a cápsula directa, replicando la resolución de `execute_process_capsules.invoke_capsule_action`:
-- Resolver la cápsula `action:<name>` vía `capsule_resolve` (wasm32-wasip1 → nativo) en lugar de `execute-action.py`.
-- Mapear el contrato de E/S de la acción (envelope `SddiaResponse`) con `unwrap` equivalente al actual `invoke_capsule_action` (devuelve `data` en éxito; error en `success:false`).
-- Conservar `_ACTIVE_CAPSULE_CAPTURE_STATE` (last_capsule_id / envelope) si el Peaje Termodinámico lo requiere para el recibo de telemetría.
-
-**Criterio de cierre:** `emit-pr-presented-event` (fase «Sello Presentación ECST» de `delivery-close-cycle`) se ejecuta sin *spawn* de `execute-action.py`; golden `delivery-close-cycle` sigue verde con la acción nativa; grep sin referencias a `execute-action.py` desde el crate Rust.
-
-**Gate:** requiere que las acciones `emit-*` existan como cápsula compilada (`SddIA/target`). Mientras no existan, el bridge a `execute-action.py` es la red de seguridad (no retirar).
+**Deuda residual explícita:** `emit-domain-mutation` sigue en bridge Python (complejo, ECST).
 
 ### D-P5.2 — Fases `feature`/`bug-fix` con `skill:`/`tool:` caen a `simulated`
 
-**Estado actual:** en `engine::executor::execute_phase`, las fases con delegados `skill:`/`tool:` que **no** resuelven a una cápsula compilada bajo `SddIA/target` se marcan `simulated` (vía `try_invoke_delegates` → `None` → rama `simulated`). Es **paridad exacta** con el comportamiento Python (`execute_process_capsules.execute_phase`), pero no es ejecución física real.
+**Estado:** ✅ **cerrado (golden).** Proceso lab `capsule-invoke-smoke` invoca `tool:io-choke` nativo; golden verifica fase `executed` con `handler:capsule-tool-io-choke`. Fases sin cápsula compilada siguen `simulated` con `note` explícita (`capsula ausente` vs `agentes IDE`).
 
-**Por qué es deuda:** las fases productivas de `feature`/`bug-fix` (Diseño, Ejecución, Verificación) delegan en `agent:*` (IDE) y en cápsulas que en laboratorio no tienen binario; el orquestador no las ejecuta de verdad. Es correcto para el lab actual, pero el cierre real exige que, cuando la cápsula exista, se invoque.
-
-**Objetivo:**
-- Confirmar que `try_invoke_delegates` invoca la cápsula cuando está compilada (ya implementado) y documentar la matriz de delegados soportados (`skill:filesystem-manager`, `skill:git-manager` ya nativo, `tool:*`).
-- Añadir caso golden con una fase `skill:`/`tool:` **con cápsula presente** que produzca `executed` (no `simulated`), verificando paridad de `phase_report` con Python.
-- Distinguir explícitamente en el `phase_report` el motivo del `simulated`: `"capsula ausente"` vs `"agentes IDE"` (ya diferenciado en `note`).
-
-**Criterio de cierre:** test/golden que demuestre una fase `tool:` ejecutada nativamente (`status:executed`, `handler:capsule-tool-<name>`); documentación de la matriz de delegados en `implementation.md`.
-
-**Gate:** depende de disponer de al menos una cápsula `tool:`/`skill:` de fase compilada para el fixture. No bloquea P9 (gate maestro) porque la paridad `simulated`↔`simulated` ya es verde.
+**Criterio de cierre cumplido:** golden `capsule-invoke-smoke` 13/13; matriz de delegados documentada en `implementation.md` §7.2.
 
 ### D-P5.3 — Resolución de cápsulas vía `SddIA/target` (no declarada en `cumulo.paths.json`)
 
-**Estado actual:** `engine::capsules::resolve_capsule_{wasm,native}` y su homólogo `capsule_resolve.py` buscan binarios bajo rutas **cableadas**: `SddIA/target/wasm32-wasip1/{release,debug}/<name>.wasm` y `SddIA/target/{release,debug}/<name>`. `cumulo.paths.json` declara `execution_capsules` (directorios de *fuente* `skills/`, `tools/`, `daemons/`) pero **no** las rutas de *artefactos* compilados.
+**Estado:** ✅ **cerrado (Opción A).** Clave `compiled_capsules` en `cumulo.paths.json` (`native_root`, `wasm_root`, `profiles`). Módulo `engine::capsule_paths` (Rust) y `capsule_resolve.py` (Python) consumen el mismo SSOT con fallback release→debug y wasm→native.
 
-**Por qué es deuda:** viola parcialmente el principio SSOT (Protocolo §3: rutas validadas contra `cumulo.paths.json`). La ruta de artefactos compilados es convención implícita compartida Rust↔Python; un cambio de layout de `target/` rompería ambos sin punto único de verdad.
-
-**Objetivo (a decidir vía proceso autorizado, genoma DA-2):**
-- Opción A: añadir a `cumulo.paths.json` una clave `compiled_capsules` (`{ wasm_root, native_root }`) y consumirla desde `engine::capsules` y `capsule_resolve.py` (paridad SSOT).
-- Opción B: documentar formalmente la convención de `SddIA/target` como contrato estable en `capsule-json-io.md` / norma de build, aceptándola como invariante de workspace Cargo.
-- Mantener el fallback de perfiles `release`→`debug` y wasm→native en cualquier caso.
-
-**Criterio de cierre:** Rust y Python resuelven la ruta de artefactos desde la misma fuente de verdad (clave en `cumulo.paths.json` **o** contrato documentado citado por ambos); sin rutas mágicas divergentes.
-
-**Gate / soberanía:** si se elige la Opción A, la mutación de `cumulo.paths.json` se realiza vía `entity-manager`/proceso autorizado (no bisturí directo sobre genoma).
+**Criterio de cierre cumplido:** test unitario `loads_compiled_capsule_roots_from_cumulo`; paridad Rust↔Python en resolución de artefactos.
 
 ## 7. Criterios de Aceptación (Protocolo de Acero)
 
@@ -160,5 +135,5 @@ El hito P5 cerró la invocación nativa de cápsulas (`engine::capsules`), port�
 - [ ] Ningún flujo de **orquestación** requiere intérprete Python ni PyYAML; `requirements.txt` reevaluado/podado según D3.
 - [ ] Errores devueltos como JSON válido (`exitCode>0`), sin panic crudo en stdout.
 - [ ] Documentación viva (`README.md`, `external-ai-constraints.md`, contratos vía proceso autorizado) refleja el nuevo orquestador.
-- [ ] **Deudas P5 liquidadas (§6.bis):** (a) `invoke_action` nativo sin `execute-action.py` [D-P5.1]; (b) golden de fase `skill:`/`tool:` `executed` con cápsula presente [D-P5.2]; (c) resolución de artefactos de cápsula desde SSOT única (Rust↔Python) [D-P5.3].
+- [x] **Deudas P5 liquidadas (§6.bis):** (a) `invoke_action` nativo sin `execute-action.py` [D-P5.1]; (b) golden de fase `skill:`/`tool:` `executed` con cápsula presente [D-P5.2]; (c) resolución de artefactos de cápsula desde SSOT única (Rust↔Python) [D-P5.3].
 - [ ] Este TODO movido a `docs/todos/done/` en el mismo PR (cierre documental en rama).

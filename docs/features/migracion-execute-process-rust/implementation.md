@@ -247,19 +247,29 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 
 ### 7.2 P5 — Cápsulas `wasmtime` nativas
 
-**Estado actual:** ✅ **cerrado (entry + delivery-close).** `engine::capsules` invoca cápsulas vía `wasmtime run --dir=.` o binario nativo con fallback wasm→native. `engine::phase_capsules` resuelve fases skill/tool; `engine::delivery_close` portado nativo. `executor` invoca cápsulas resolubles antes de marcar `simulated`.
+**Estado actual:** ✅ **cerrado (entry + delivery-close + deudas §6.bis).** `engine::capsules` invoca cápsulas vía `wasmtime run --dir=.` o binario nativo con fallback wasm→native. `engine::phase_capsules` resuelve fases skill/tool; `engine::delivery_close` portado nativo. `executor` invoca cápsulas resolubles antes de marcar `simulated`.
 
 **Artefactos:**
-- `engine/capsules.rs` — `invoke_capsule_json`, `invoke_git_manager`, `invoke_shell_executor`, `invoke_action`
+- `engine/capsule_paths.rs` — SSOT `compiled_capsules` desde `cumulo.paths.json` (D-P5.3)
+- `engine/actions.rs` — handlers nativos `emit-pr-*` (D-P5.1)
+- `engine/capsule_invoke_smoke.rs` + `process/capsule-invoke-smoke.md` — golden fase `tool:` ejecutada (D-P5.2)
+- `engine/capsules.rs` — `invoke_capsule_json`, `invoke_git_manager`, `invoke_shell_executor`, `invoke_action` (nativo → cápsula → bridge Python)
 - `engine/phase_capsules.rs` — handlers fase delivery + `try_invoke_delegates`
 - `engine/delivery_close.rs` — proceso `delivery-close-cycle` nativo
 
-**Criterio de cierre:** ✅ golden `delivery-close-cycle` (12/12); fases git-manager/shell-executor/action vía cápsulas nativas con skips lab.
+**Matriz de delegados (fases):**
 
-**Deuda residual (detallada en PBI §6.bis):**
-- **D-P5.1** — `invoke_action` aún hace *spawn* de `execute-action.py`; portar acciones `emit-*` a cápsula directa (gate: cápsula `action:*` compilada).
-- **D-P5.2** — fases `feature`/`bug-fix` con skill:/tool: sin cápsula compilada siguen `simulated` (paridad Python); falta golden de fase `executed` con cápsula presente.
-- **D-P5.3** — resolución de artefactos vía rutas cableadas `SddIA/target`; `cumulo.paths.json` no declara `compiled_capsules` (SSOT a unificar Rust↔Python vía proceso autorizado).
+| Delegado | Resolución | Sin artefacto |
+|----------|------------|---------------|
+| `skill:git-manager` | nativo directo | `simulated` (`capsula ausente`) |
+| `skill:shell-executor` | nativo directo | `simulated` |
+| `tool:*` | `invoke_capsule_json` vía SSOT | `simulated` |
+| `agent:*` | — | `simulated` (`agentes IDE`) |
+| `action:emit-pr-*` | `engine::actions` nativo | bridge `execute-action.py` |
+
+**Criterio de cierre:** ✅ golden **13/13** (`delivery-close-cycle`, `capsule-invoke-smoke`); fases git-manager/shell-executor/action vía cápsulas/acciones nativas con skips lab.
+
+**Deuda residual explícita:** `emit-domain-mutation` y acciones no portadas siguen en bridge `execute-action.py` (red de seguridad, no retirar hasta P17).
 
 ### 7.3 P6/P7 — Forjas Rust (`forges::factory`)
 

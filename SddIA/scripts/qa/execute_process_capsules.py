@@ -1994,6 +1994,20 @@ def capsule_filesystem_delete(repo: Path, inputs: dict[str, Any], state: dict[st
 def invoke_capsule_action(
     repo: Path, action_name: str, action_inputs: dict[str, Any]
 ) -> dict[str, Any]:
+    try:
+        rc, body = invoke_tool_capsule_json(repo, action_name, action_inputs, prefer_wasm=True)
+        if body.get("success") is not False and rc == 0:
+            data = body.get("data")
+            if isinstance(data, dict):
+                return data
+            inner = body.get("result")
+            if isinstance(inner, dict):
+                return inner
+    except FileNotFoundError:
+        pass
+    except RuntimeError:
+        pass
+
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     proc = subprocess.run(
@@ -2626,6 +2640,75 @@ def run_execute_suite(
             "nodes": node_reports,
             "phases": phase_reports,
         },
+    }
+
+
+def run_capsule_invoke_smoke(
+    repo: Path,
+    canonical: str,
+    process_def: dict[str, Any],
+    phases: list[dict[str, Any]],
+    process_inputs: dict[str, Any],
+) -> dict[str, Any]:
+    state: dict[str, Any] = {"handoff": {}, "inputs": process_inputs}
+    try:
+        ws_boot = bootstrap_process_workspace(repo, canonical, process_def, process_inputs, state)
+        state["workspace_boot"] = ws_boot
+    except ValueError as exc:
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": str(exc),
+            "execution_report": {"process_name": canonical, "phases": []},
+        }
+    workspace_path = process_inputs.get("workspace_path") or state.get("workspace_path")
+    if not isinstance(workspace_path, str) or not workspace_path.strip():
+        return {
+            "success": False,
+            "status_code": 1,
+            "data": None,
+            "error": "workspace_path ausente tras bootstrap",
+            "execution_report": {"process_name": canonical, "phases": []},
+        }
+    tool_payload = {
+        "workspace_path": workspace_path.strip(),
+        "target_file": ".capsule-smoke-target",
+    }
+    phase_reports: list[dict[str, Any]] = []
+    success = True
+    for phase in phases:
+        if not isinstance(phase, dict):
+            continue
+        phase_name = phase.get("name")
+        delegates = phase.get("delegates_to") or []
+        entry: dict[str, Any] = {"phase_name": phase_name, "delegates_to": delegates}
+        if phase_name == "Invocación io-choke":
+            try:
+                rc, body = invoke_chaos_tool_capsule(repo, "io-choke", tool_payload)
+                ok = rc == 0 and body.get("success") is not False
+                entry["status"] = "executed" if ok else "failed"
+                entry["handler"] = "capsule-tool-io-choke"
+                entry["capsule_result"] = body
+                if not ok:
+                    success = False
+            except Exception as exc:  # noqa: BLE001
+                entry["status"] = "failed"
+                entry["handler"] = "capsule-tool-io-choke"
+                entry["error"] = str(exc)
+                success = False
+        else:
+            entry["status"] = "simulated"
+        phase_reports.append(entry)
+    return {
+        "success": success,
+        "status_code": 0 if success else 1,
+        "data": {
+            "process_name": canonical,
+            "workspace_path": workspace_path.strip(),
+            "capsule_invoked": success,
+        },
+        "execution_report": {"process_name": canonical, "phases": phase_reports},
     }
 
 
@@ -3428,6 +3511,8 @@ def run_process(repo: Path, process_name: str, process_inputs: dict[str, Any]) -
         }
     if canonical in CHAOS_AUDIT_PROCESSES:
         return run_chaos_audit_process(repo, canonical, process_def, phases, process_inputs)
+    if canonical == "capsule-invoke-smoke":
+        return run_capsule_invoke_smoke(repo, canonical, process_def, phases, process_inputs)
     if canonical == "execute-suite":
         return run_execute_suite(repo, canonical, process_def, phases, process_inputs)
     if canonical == "pull-request-review":

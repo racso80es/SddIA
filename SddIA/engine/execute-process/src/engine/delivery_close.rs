@@ -98,11 +98,11 @@ fn execute_phase(
 
     if delegates.iter().any(|d| {
         d.as_str()
-            .map(|s| s.starts_with("skill:") || s.starts_with("tool:") || s.starts_with("action:"))
+            .map(|s| s.starts_with("skill:") || s.starts_with("tool:"))
             .unwrap_or(false)
     }) {
         entry["status"] = json!("simulated");
-        entry["note"] = json!("cápsulas sin handler físico registrado");
+        entry["note"] = json!("cápsula ausente en compiled_capsules (SSOT SddIA/target)");
         return entry;
     }
 

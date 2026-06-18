@@ -86,6 +86,8 @@ def normalize(obj: Any) -> Any:
             "orphan_count",
             "argos_verdict",
             "argos_noise",
+            "capsule_result",
+            "capsule_invoked",
         }
         out = {}
         for k, v in obj.items():
@@ -260,6 +262,7 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool]] = [
         LAB_DELIVERY_ENV,
         False,
     ),
+    ("capsule-invoke-smoke", {}, {}, False),
 ]
 
 
