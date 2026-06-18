@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Resolución SSOT del ejecutable orquestador (binario Rust preferente, fallback Python)."""
+"""Resolución SSOT del ejecutable orquestador (binario Rust nativo obligatorio)."""
 
 from __future__ import annotations
 
@@ -21,15 +21,13 @@ def resolve_orchestrator_cmd(repo: Path, extra_args: list[str]) -> list[str]:
         candidate = repo / rel
         if candidate.is_file() and os.access(candidate, os.X_OK):
             return [str(candidate), *extra_args]
-    return [
-        sys.executable,
-        str(repo / "SddIA" / "scripts" / "qa" / "execute-process.py"),
-        *extra_args,
-    ]
+    raise FileNotFoundError(
+        "binario execute-process no encontrado. Compilar: cd SddIA && cargo build -p execute-process"
+    )
 
 
 def resolve_orchestrator_executable(repo: Path) -> Path:
-    """Ruta al ejecutable orquestador (binario o script Python)."""
+    """Ruta al ejecutable orquestador (binario nativo)."""
     cmd = resolve_orchestrator_cmd(repo, [])
     return Path(cmd[0])
 

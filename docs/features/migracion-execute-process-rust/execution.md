@@ -110,16 +110,19 @@ Resultados (2026-06-18):
 | P14 `README.md` (Aduana Universal / entrypoints) | ✅ |
 | P15 `external-ai-constraints.md` v1.2.0 (DA-3 orquestador) | ✅ |
 | Smokes E2E CA-7 (`orchestrator_touchpoint_e2e_smoke.py`) | ✅ **8/8** |
-| CA-8 parcial (binario nativo sin Python/PyYAML) | ✅ smoke `native-without-python` |
+| CA-8 parcial (binario nativo sin Python/PyYAML en orquestación) | ✅ smoke `native-without-python`; entrypoint binario-only |
+| P17 poda (`execute-process.py`, bridges engine/handler/feature_phase) | ✅ |
+| Bridge residual `_execute_process_capsules_bridge.py` | 🔶 creators/telemetry/accept-pr no portados |
+| Bridge residual `_execute_process_route_bridge.py` | 🔶 core EDA route en Python |
 
 ## 4. Deuda técnica explícita
 
 1. **Core EDA route:** entry nativo en Rust; lógica ECST/fan-out sigue en `route_domain_event_core.py` vía `_execute_process_route_bridge.py`.
-2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers` siguen en `_execute_process_engine_bridge.py`.
-3. **`execute-action.py` (D-P6T.1):** ✅ inventario `PHYSICAL_HANDLERS` portado a Rust (`try_run_native`). El script permanece como bridge de fallback/simulación hasta P17; ya no hay acciones físicas exclusivas de Python.
-4. **Touchpoints:** ✅ P10–P13 cerrados (`orchestrator_resolve` en producción; audit `touchpoint_orchestrator_audit.py`).
-5. **Golden harness:** ✅ **14/14** (`entity-manager` P9 cerrado).
-6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (clarify D6).
+2. **Motor legacy residual:** procesos no cubiertos por `executor`/`handlers`/`entity_manager` delegan a `_execute_process_capsules_bridge.py` → `execute_process_capsules.py`.
+3. **`execute-action.py` (D-P6T.1):** ✅ inventario `PHYSICAL_HANDLERS` portado a Rust (`try_run_native`). El script permanece como fallback de cápsulas no compiladas.
+4. **Touchpoints:** ✅ P10–P13 cerrados (`orchestrator_resolve` binario-only; audit `touchpoint_orchestrator_audit.py`).
+5. **Golden harness:** ✅ **14/14** (`entity-manager` nativo P17).
+6. **`requirements.txt`:** mantener mientras bridges + scripts QA consuman PyYAML (P16; fuera del entrypoint orquestador).
 
 ## 5. Variables de entorno
 

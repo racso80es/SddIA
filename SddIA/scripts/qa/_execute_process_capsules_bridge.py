@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Bridge interno: motor Python invocado desde binario Rust `execute-process`.
+"""Bridge interno residual: procesos no portados a Rust (creators, telemetry, accept-pr, …).
 
 Lee JSON stdin: {"process": "<name>", "inputs": {...}}
-Emite envelope JSON (última línea stdout) — paridad execute-process.py.
+Emite envelope JSON (última línea stdout).
 """
 
 from __future__ import annotations

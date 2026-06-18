@@ -399,45 +399,9 @@ pub fn invoke_action(repo: &Path, action_name: &str, action_inputs: &Value) -> R
             return Ok(inner);
         }
     }
-    invoke_action_python_bridge(repo, action_name, action_inputs)
-}
-
-fn invoke_action_python_bridge(
-    repo: &Path,
-    action_name: &str,
-    action_inputs: &Value,
-) -> Result<Value, String> {
-    let script = repo.join("SddIA/scripts/qa/execute-action.py");
-    if !script.is_file() {
-        return Err(format!("execute-action ausente: {}", script.display()));
-    }
-    let py = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-    let payload = serde_json::to_string(action_inputs).map_err(|e| e.to_string())?;
-    let output = Command::new(&py)
-        .args([
-            script.to_string_lossy().as_ref(),
-            "--action",
-            action_name,
-            "--inputs",
-            &payload,
-        ])
-        .current_dir(repo)
-        .output()
-        .map_err(|e| e.to_string())?;
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let line = stdout.lines().last().unwrap_or("").trim();
-    if line.is_empty() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-    let body: Value = serde_json::from_str(line).map_err(|e| format!("JSON action: {e}"))?;
-    if body.get("success") != Some(&json!(true)) {
-        return Err(body
-            .get("error")
-            .and_then(|v| v.as_str())
-            .unwrap_or("action failed")
-            .to_string());
-    }
-    Ok(body.get("data").cloned().unwrap_or(json!({})))
+    Err(format!(
+        "acción '{action_name}' sin handler nativo ni cápsula resuelta"
+    ))
 }
 
 #[cfg(test)]

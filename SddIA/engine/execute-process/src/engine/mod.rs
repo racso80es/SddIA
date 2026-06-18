@@ -3,8 +3,10 @@ pub mod capsule_invoke_smoke;
 pub mod capsule_paths;
 pub mod capsules;
 pub mod daemons;
+pub mod entity_manager;
 pub mod delegate_python;
 pub mod delivery_close;
+pub mod invoke_orchestrator;
 pub mod crypto_broker;
 pub mod domain_mutation;
 pub mod eda_bus;
@@ -71,6 +73,10 @@ pub fn run_process(
 
     if canonical == "capsule-invoke-smoke" {
         return capsule_invoke_smoke::run(repo, &canonical, &process_def, &phases, process_inputs);
+    }
+
+    if canonical == "entity-manager" {
+        return entity_manager::run(repo, &process_def, &phases, process_inputs);
     }
 
     if executor::handles(&canonical) {

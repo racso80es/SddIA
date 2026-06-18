@@ -6,9 +6,7 @@ use super::workspace_init::{is_workspace_init_phase, run as run_workspace_init};
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
-use std::io::Write;
 use std::path::Path;
-use std::process::{Command, Stdio};
 use std::time::Instant;
 use uuid::Uuid;
 
@@ -39,50 +37,6 @@ fn workspace_template(process_def: &ProcessDef) -> Result<String, String> {
         .map(str::to_string)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| "workspace_template ausente en definición del proceso".into())
-}
-
-fn invoke_feature_phase_bridge(
-    repo: &Path,
-    process_name: &str,
-    phase_name: &str,
-    inputs: &Value,
-    state: &mut Value,
-) -> Result<Option<Value>, String> {
-    let bridge = repo.join("SddIA/scripts/qa/_execute_process_feature_phase_bridge.py");
-    if !bridge.is_file() {
-        return Ok(None);
-    }
-    let payload = json!({
-        "process": process_name,
-        "phase_name": phase_name,
-        "inputs": inputs,
-        "state": state,
-    });
-    let py = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-    let mut child = Command::new(&py)
-        .arg(&bridge)
-        .current_dir(repo)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(serde_json::to_string(&payload).unwrap().as_bytes())
-            .map_err(|e| e.to_string())?;
-    }
-    let out = child.wait_with_output().map_err(|e| e.to_string())?;
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    let line = stdout.lines().last().unwrap_or("").trim();
-    if line.is_empty() {
-        return Ok(None);
-    }
-    let body: Value = serde_json::from_str(line).map_err(|e| e.to_string())?;
-    if let Some(st) = body.get("state") {
-        *state = st.clone();
-    }
-    Ok(body.get("phase").cloned())
 }
 
 fn execute_phase(
@@ -151,20 +105,24 @@ fn execute_phase(
                 entry["reason"] = json!("SDDIA_LAB_SKIP_DELIVERY_CLOSE");
                 return entry;
             }
-            if let Ok(Some(phase_result)) =
-                invoke_feature_phase_bridge(repo, process_name, phase_name, inputs, state)
+            if let Some(phase_result) =
+                super::phase_capsules::execute_feature_phase(repo, phase_name, inputs, state)
             {
-                if let Some(obj) = phase_result.as_object() {
-                    for (k, v) in obj {
-                        entry[k.clone()] = v.clone();
+                match phase_result {
+                    Ok(phase_entry) => {
+                        if let Some(obj) = phase_entry.as_object() {
+                            for (k, v) in obj {
+                                entry[k.clone()] = v.clone();
+                            }
+                        }
+                        if entry.get("status").is_none() {
+                            entry["status"] = json!("executed");
+                        }
                     }
-                }
-                if entry.get("status").is_none() {
-                    entry["status"] = json!(if phase_result.get("skipped") == Some(&json!(true)) {
-                        "skipped"
-                    } else {
-                        "executed"
-                    });
+                    Err(e) => {
+                        entry["status"] = json!("failed");
+                        entry["error"] = json!(e);
+                    }
                 }
                 return entry;
             }

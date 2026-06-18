@@ -135,22 +135,14 @@ def run_orchestrator(
     env = dict(os.environ)
     env.update(env_overlay)
     inputs_json = json.dumps(inputs, ensure_ascii=False)
-    if use_rust:
-        bin_path = repo / "SddIA/target/debug/execute-process"
-        if not bin_path.is_file():
-            bin_path = repo / "SddIA/target/release/execute-process"
-        if not bin_path.is_file():
-            raise FileNotFoundError("binario execute-process no compilado")
-        cmd = [str(bin_path), "--process", process, "--inputs", inputs_json]
-    else:
-        cmd = [
-            sys.executable,
-            str(repo / "SddIA/scripts/qa/execute-process.py"),
-            "--process",
-            process,
-            "--inputs",
-            inputs_json,
-        ]
+    if not use_rust:
+        raise RuntimeError("modo Python retirado (P17); usar binario Rust")
+    bin_path = repo / "SddIA/target/debug/execute-process"
+    if not bin_path.is_file():
+        bin_path = repo / "SddIA/target/release/execute-process"
+    if not bin_path.is_file():
+        raise FileNotFoundError("binario execute-process no compilado")
+    cmd = [str(bin_path), "--process", process, "--inputs", inputs_json]
 
     proc = subprocess.run(
         cmd,
@@ -223,8 +215,8 @@ def write_route_fixture(repo: Path) -> str:
     return rel
 
 
-CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool]] = [
-    ("kalma2-interact", {"prompt": "golden parity ping"}, {}, False, False),
+CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool, bool]] = [
+    ("kalma2-interact", {"prompt": "golden parity ping"}, {}, False, False, True),
     (
         "feature",
         {
@@ -235,6 +227,7 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool]] = [
         LAB_FEATURE_ENV,
         False,
         False,
+        True,
     ),
     (
         "bug-fix",
@@ -247,6 +240,7 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool]] = [
         LAB_FEATURE_ENV,
         False,
         False,
+        True,
     ),
     (
         "telegram-fallback-responder",
@@ -254,11 +248,13 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool]] = [
         {},
         False,
         False,
+        True,
     ),
     (
         "telegram-fallback-responder",
         {"text": "golden parity ping"},
         {"TELEGRAM_ALLOWED_CHAT_ID": ""},
+        False,
         False,
         False,
     ),
@@ -268,6 +264,7 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool]] = [
         {"TELEGRAM_ALLOWED_CHAT_ID": ""},
         False,
         False,
+        True,
     ),
     (
         "telegram-gateway",
@@ -275,17 +272,19 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool]] = [
         {},
         False,
         False,
+        True,
     ),
-    ("daemon-heartbeat-audit", {}, {}, False, False),
+    ("daemon-heartbeat-audit", {}, {}, False, False, True),
     (
         "governance-daemon-manager",
         {"operation": "status", "daemon_id": "event-watcher"},
         {},
         False,
         False,
+        True,
     ),
-    ("daemon-kill-switch", {}, {}, False, False),
-    ("route-domain-event", {}, {**LAB_ROUTE_ENV}, True, False),
+    ("daemon-kill-switch", {}, {}, False, False, True),
+    ("route-domain-event", {}, {**LAB_ROUTE_ENV}, True, False, True),
     (
         "delivery-close-cycle",
         {
@@ -297,9 +296,10 @@ CASES: list[tuple[str, dict[str, Any], dict[str, str], bool, bool]] = [
         LAB_DELIVERY_ENV,
         False,
         False,
+        True,
     ),
-    ("capsule-invoke-smoke", {}, {}, False, False),
-    ("entity-manager", ENTITY_MANAGER_INPUTS, {}, False, True),
+    ("capsule-invoke-smoke", {}, {}, False, False, True),
+    ("entity-manager", ENTITY_MANAGER_INPUTS, {}, False, True, True),
 ]
 
 
@@ -315,6 +315,7 @@ def main() -> int:
         inputs = json.loads(args.inputs or "{}")
         overlay = LAB_FEATURE_ENV if args.process in ("feature", "bug-fix") else {}
         needs_entity_cleanup = args.process == "entity-manager"
+        expect_success = True
         if args.process == "route-domain-event":
             overlay = {**LAB_ROUTE_ENV}
         elif args.process == "delivery-close-cycle":
@@ -326,46 +327,41 @@ def main() -> int:
                 overlay,
                 args.process == "route-domain-event",
                 needs_entity_cleanup,
+                expect_success,
             )
         ]
 
     failed = 0
-    for process, inputs, env_overlay, needs_route_fixture, needs_entity_cleanup in cases:
+    for (
+        process,
+        inputs,
+        env_overlay,
+        needs_route_fixture,
+        needs_entity_cleanup,
+        expect_success,
+    ) in cases:
         label = process if len(cases) == len(CASES) else f"{process} custom"
         fixture_rels: list[str] = []
         try:
             if needs_entity_cleanup:
                 cleanup_entity_manager_lab(repo)
             case_env = dict(env_overlay)
+            case_inputs = dict(inputs)
             if needs_route_fixture:
                 case_env.update(LAB_ROUTE_ENV)
-                py_fixture = write_route_fixture(repo)
-                rust_fixture = write_route_fixture(repo)
-                fixture_rels = [py_fixture, rust_fixture]
-                py_inputs = {"event_file_path": py_fixture}
-                rust_inputs = {"event_file_path": rust_fixture}
-            else:
-                py_inputs = dict(inputs)
-                rust_inputs = dict(inputs)
-            py_body = run_orchestrator(repo, False, process, py_inputs, case_env)
-            rust_body = run_orchestrator(repo, True, process, rust_inputs, case_env)
-            nr_data = normalize(rust_body.get("data"))
-            np_data = normalize(py_body.get("data"))
-            same_success = rust_body.get("success") == py_body.get("success")
-            same_phases = phase_signature(rust_body) == phase_signature(py_body)
-            if same_success and same_phases and nr_data == np_data:
+                fixture = write_route_fixture(repo)
+                fixture_rels = [fixture]
+                case_inputs = {"event_file_path": fixture}
+            body = run_orchestrator(repo, True, process, case_inputs, case_env)
+            ok = bool(body.get("success"))
+            if ok == expect_success:
                 print(f"OK  {label}")
             else:
                 failed += 1
-                print(f"FAIL {label}")
-                if not same_success:
-                    print(f"  success rust={rust_body.get('success')} py={py_body.get('success')}")
-                if not same_phases:
-                    print(f"  phases rust={phase_signature(rust_body)}")
-                    print(f"  phases py  ={phase_signature(py_body)}")
-                if nr_data != np_data:
-                    print("  data rust:", json.dumps(nr_data, ensure_ascii=False)[:240])
-                    print("  data py  :", json.dumps(np_data, ensure_ascii=False)[:240])
+                want = "success" if expect_success else "failure"
+                print(f"FAIL {label}: expected {want}, got success={ok}")
+                print(f"  error: {body.get('error')}")
+                print(f"  phases: {phase_signature(body)}")
         except Exception as exc:
             failed += 1
             print(f"ERR {label}: {exc}")

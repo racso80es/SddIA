@@ -26,7 +26,7 @@ fn execute_process_bin(repo: &Path) -> PathBuf {
             return candidate;
         }
     }
-    repo.join("SddIA/scripts/qa/execute-process.py")
+    repo.join("SddIA/target/debug/execute-process")
 }
 
 fn orchestrator_is_python(path: &Path) -> bool {

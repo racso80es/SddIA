@@ -450,3 +450,237 @@ pub fn try_invoke_delegates(repo: &Path, delegates: &[Value], inputs: &Value) ->
     }
     None
 }
+
+fn delivery_pr_title_feature(inputs: &Value) -> String {
+    if let Some(title) = str_field(inputs, "pr_title") {
+        return title;
+    }
+    if let Some(branch) = str_field(inputs, "branch_name") {
+        return format!("feat: {branch}");
+    }
+    "feat: delivery-close-cycle".into()
+}
+
+pub fn capsule_feature_pbi_archive(
+    repo: &Path,
+    inputs: &Value,
+    state: &mut Value,
+) -> Result<Value, String> {
+    if env_truthy("SDDIA_LAB_SKIP_PBI_ARCHIVE") {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "skipped": true,
+            "reason": "SDDIA_LAB_SKIP_PBI_ARCHIVE",
+        }));
+    }
+    let Some(persist_ref) = str_field(inputs, "persist_ref") else {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "skipped": true,
+            "reason": "persist_ref ausente",
+        }));
+    };
+    let val_path = repo.join(&persist_ref).join("validacion.md");
+    if !val_path.is_file() {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "skipped": true,
+            "reason": "validacion.md ausente",
+        }));
+    }
+    let fm = crate::core::parser::parse_frontmatter(&val_path)?;
+    let global_v = fm
+        .get("global")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_uppercase();
+    if global_v != "APTO" {
+        let g = fm.get("global").and_then(|v| v.as_str()).unwrap_or("?");
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "skipped": true,
+            "reason": format!("global={g}"),
+        }));
+    }
+    let archived = fm.get("pbi_archived");
+    let ok_archived = matches!(archived, Some(v) if v.as_bool() == Some(true))
+        || archived
+            .and_then(|v| v.as_str())
+            .map(|s| matches!(s.to_lowercase().as_str(), "true" | "1"))
+            .unwrap_or(false);
+    if !ok_archived {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "skipped": true,
+            "reason": "pbi_archived != true",
+        }));
+    }
+    let pbi_path = if let Some(todo) = str_field(inputs, "related_todo") {
+        let p = repo.join(todo.replace('\\', "/"));
+        if p.is_file() { Some(p) } else { None }
+    } else {
+        let objectives = repo.join(&persist_ref).join("objectives.md");
+        if objectives.is_file() {
+            let ofm = crate::core::parser::parse_frontmatter(&objectives)?;
+            if let Some(rel) = ofm.get("related_todo").and_then(|v| v.as_str()) {
+                let p = repo.join(rel.replace('\\', "/"));
+                if p.is_file() { Some(p) } else { None }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    };
+    let Some(pbi_path) = pbi_path else {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "skipped": true,
+            "reason": "related_todo no resuelto",
+        }));
+    };
+    let rel = pbi_path
+        .strip_prefix(repo)
+        .unwrap_or(&pbi_path)
+        .to_string_lossy()
+        .replace('\\', "/");
+    if rel.starts_with("docs/todos/done/") {
+        if let Some(obj) = state.as_object_mut() {
+            obj.insert("pbi_archived_path".into(), json!(rel));
+        }
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "already_archived": true,
+            "pbi_path": rel,
+        }));
+    }
+    if !rel.contains("docs/todos/pending/") {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "skipped": true,
+            "reason": format!("PBI fuera de pending/: {rel}"),
+        }));
+    }
+    let done_dir = repo.join("docs/todos/done");
+    std::fs::create_dir_all(&done_dir).map_err(|e| e.to_string())?;
+    let dest = done_dir.join(pbi_path.file_name().ok_or("nombre PBI inválido")?);
+    if dest.is_file() {
+        let dest_rel = dest
+            .strip_prefix(repo)
+            .unwrap_or(&dest)
+            .to_string_lossy()
+            .replace('\\', "/");
+        if let Some(obj) = state.as_object_mut() {
+            obj.insert("pbi_archived_path".into(), json!(dest_rel));
+        }
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-pbi-archive",
+            "already_archived": true,
+            "pbi_path": dest_rel,
+        }));
+    }
+    std::fs::rename(&pbi_path, &dest).map_err(|e| e.to_string())?;
+    let dest_rel = dest
+        .strip_prefix(repo)
+        .unwrap_or(&dest)
+        .to_string_lossy()
+        .replace('\\', "/");
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("pbi_archived_path".into(), json!(dest_rel));
+    }
+    Ok(json!({
+        "status": "executed",
+        "handler": "feature-pbi-archive",
+        "archived": true,
+        "pbi_path": dest_rel,
+    }))
+}
+
+pub fn capsule_feature_invoke_delivery_close(
+    repo: &Path,
+    inputs: &Value,
+    state: &mut Value,
+) -> Result<Value, String> {
+    if env_truthy("SDDIA_LAB_SKIP_DELIVERY_CLOSE") {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-delivery-close",
+            "skipped": true,
+            "reason": "SDDIA_LAB_SKIP_DELIVERY_CLOSE",
+        }));
+    }
+    let branch = str_field(inputs, "branch_name").or_else(|| {
+        state
+            .get("workspace")
+            .and_then(|w| w.get("branch_name"))
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+    });
+    let persist_ref = str_field(inputs, "persist_ref").or_else(|| {
+        state
+            .get("workspace")
+            .and_then(|w| w.get("persist_ref"))
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+    });
+    let branch = branch.ok_or("branch_name es obligatorio para Cierre de entrega")?;
+    let persist_ref = persist_ref.ok_or("persist_ref es obligatorio para Cierre de entrega")?;
+    let mut child_inputs = json!({
+        "source_process": "feature",
+        "persist_ref": persist_ref,
+        "branch_name": branch,
+        "pr_title": delivery_pr_title_feature(inputs),
+        "target_branch": inputs.get("target_branch").or(inputs.get("base_branch")).unwrap_or(&json!("main")),
+    });
+    if let Some(body) = str_field(inputs, "pr_body") {
+        child_inputs["pr_body"] = json!(body);
+    }
+    if let Some(url) = str_field(inputs, "pr_url") {
+        child_inputs["pr_url"] = json!(url);
+    }
+    let data =
+        super::invoke_orchestrator::invoke_process(repo, "delivery-close-cycle", &child_inputs)?;
+    if let Some(obj) = state.as_object_mut() {
+        for key in [
+            "pr_url",
+            "event_id",
+            "target_path",
+            "closed_branch",
+            "snapshot_commit_hash",
+        ] {
+            if let Some(v) = data.get(key) {
+                obj.insert(key.into(), v.clone());
+            }
+        }
+        obj.insert("delivery_close".into(), data.clone());
+    }
+    Ok(json!({
+        "status": "executed",
+        "handler": "feature-delivery-close",
+        "child_process": "delivery-close-cycle",
+        "delivery_close": data,
+    }))
+}
+
+pub fn execute_feature_phase(
+    repo: &Path,
+    phase_name: &str,
+    inputs: &Value,
+    state: &mut Value,
+) -> Option<Result<Value, String>> {
+    match phase_name {
+        "Cierre documental en rama" => Some(capsule_feature_pbi_archive(repo, inputs, state)),
+        "Cierre de entrega" => Some(capsule_feature_invoke_delivery_close(repo, inputs, state)),
+        _ => None,
+    }
+}

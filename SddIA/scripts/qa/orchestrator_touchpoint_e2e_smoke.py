@@ -191,8 +191,11 @@ def smoke_native_without_pyyaml() -> None:
 def smoke_eda_e2e_lab() -> None:
     script = QA / "run-eda-e2e-lab.py"
     env = os.environ.copy()
+    # Cadena watcher → route requiere bus canónico `.events/` (no overlay EVENT_BUS_PATH).
+    env.pop("EVENT_BUS_PATH", None)
     env.setdefault("SDDIA_LAB_SIMULATE_IOTA", "1")
     env.setdefault("SDDIA_LAB_SIMULATE_SYNC_INDEX", "1")
+    env.setdefault("SDDIA_LAB_ROUTE_SYNC", "1")
     proc = subprocess.run(
         [sys.executable, str(script), "--entity-class", "tool", "--json"],
         capture_output=True,

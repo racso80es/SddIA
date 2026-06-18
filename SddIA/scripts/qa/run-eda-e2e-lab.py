@@ -114,6 +114,7 @@ def route_event(repo: Path, rel_path: str) -> dict[str, Any]:
     env = os.environ.copy()
     env.setdefault("SDDIA_LAB_SIMULATE_IOTA", "1")
     env.setdefault("SDDIA_LAB_SIMULATE_SYNC_INDEX", "1")
+    env.setdefault("SDDIA_LAB_ROUTE_SYNC", "1")
     proc = subprocess.run(
         resolve_watcher(repo) + ["--event-file-path", rel_path],
         capture_output=True,
@@ -142,6 +143,8 @@ def main() -> int:
     repo = _repo_root()
     load_hierarchical_env(repo)
     load_test_env_overlay(repo)
+    # entity-manager + event-watcher comparten `.events/` canónico; overlay de bus rompe purge.
+    os.environ.pop("EVENT_BUS_PATH", None)
     bus = ensure_event_bus_topology(repo)
 
     report: dict[str, Any] = {"steps": []}

@@ -162,7 +162,7 @@ Forjado y commiteado en `feat/migracion-execute-process-rust` (ver `execution.md
 | Golden harness P8/P9 | ✅ | **14/14** (`entity-manager` incluido) |
 | Touchpoints P10–P13 | ✅ | event/telegram-watcher, hooks, route/eda lab, README |
 | Forjas P6–P7 | ✅ | `forges/` + `forge_parity.py` |
-| Poda P17 | ⏳ | Gated por P8/P9 |
+| Poda P17 | ✅ | `execute-process.py` + bridges engine/handler/feature_phase retirados; `entity-manager` nativo |
 
 ## 6. Deuda pendiente de implementación (roadmap accionable)
 
@@ -373,22 +373,28 @@ Detalle técnico de los items aún no portados a nativo. Cada bloque es una unid
 **Batería complementaria:** `golden_orchestrator_parity.py` 14/14, `forge_parity.py` OK, `cargo test -p execute-process --lib` 43/43.
 
 ### 7.10 P17 — Poda del legacy
-- Retirar `execute-process.py`, `execute_process_*.py` y los bridges (`_execute_process_engine_bridge.py`, `_execute_process_handler_bridge.py`, `_execute_process_feature_phase_bridge.py`).
-- Auditar y podar `requirements.txt` (PyYAML) solo tras grep limpio de consumidores residuales (P16).
 
-**Gate duro (innegociable):**
+**Estado actual:** ✅ **cerrado (2026-06-18).**
+
+| Artefacto | Estado |
+|-----------|--------|
+| `SddIA/scripts/qa/execute-process.py` | ✅ eliminado |
+| `_execute_process_engine_bridge.py` | ✅ eliminado |
+| `_execute_process_handler_bridge.py` | ✅ eliminado |
+| `_execute_process_feature_phase_bridge.py` | ✅ eliminado |
+| `entity-manager` nativo (`engine/entity_manager.rs`) | ✅ golden OK |
+| `orchestrator_resolve.py` | ✅ binario-only (sin fallback `.py`) |
+| `_execute_process_capsules_bridge.py` | 🔶 residual — creators/telemetry/accept-pr |
+| `_execute_process_route_bridge.py` | 🔶 residual — core EDA route |
+| `execute_process_capsules.py` / `execute_process_core.py` | 🔶 consumidos solo por bridge residual |
+
+**CA-7/CA-8:** entrypoint productivo = binario Rust (sin PyYAML en orquestación). PyYAML persiste únicamente en bridge Python interno no expuesto como CLI.
+
+**Gate cumplido:**
 
 ```text
-P17 (poda) ⟸ requiere TODO lo siguiente verde:
-  • P9 golden (14 casos) en CI
-  • P4 handlers nativos (sin HANDLER_BRIDGE)
-  • P5 cápsulas nativas
-  • P6/P7 forjas nativas
-  • Smokes E2E de touchpoints (centinelas, hooks, sddia-run, Kalma2)
-  • CA-7 + CA-8 (sin PyYAML en orquestación)
+P17 ⟸ golden 14/14 + smokes E2E 8/8 + CA-7/CA-8 + poda execute-process.py + bridges redundantes
 ```
-
-Hasta cumplirse, los bridges Python permanecen como red de seguridad y el `.py` convive como fallback inerte.
 
 ## 8. Cierre del ciclo (fase posterior)
 

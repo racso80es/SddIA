@@ -123,7 +123,7 @@ python3 SddIA/scripts/qa/orchestrator_resolve.py --process route-domain-event \
   --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
 ```
 
-**Resolución del orquestador:** SSOT en `SddIA/scripts/qa/orchestrator_resolve.py` — binario Rust preferente (`SddIA/target/{debug,release}/execute-process`), fallback transitorio `execute-process.py`. Override: `SDDIA_EXECUTE_PROCESS_BIN=/ruta/al/binario`.
+**Resolución del orquestador:** SSOT en `SddIA/scripts/qa/orchestrator_resolve.py` — binario Rust obligatorio (`SddIA/target/{debug,release}/execute-process`). Override: `SDDIA_EXECUTE_PROCESS_BIN=/ruta/al/binario`. Compilar: `cd SddIA && cargo build -p execute-process`.
 
 Modo sync: `SDDIA_LAB_ROUTE_SYNC=1`. Plantilla Vía C: [`SddIA/templates/eda-instance-events/README.md`](SddIA/templates/eda-instance-events/README.md). Features: [refactor-topologia-eventos-ola-c-v3](docs/features/refactor-topologia-eventos-ola-c-v3/), [telemetria-reactiva-eda-fase3](docs/features/telemetria-reactiva-eda-fase3/).
 
@@ -153,7 +153,7 @@ Si existen **ambas** bóvedas, el runtime registra en stderr: `[CONFIG] Jerarqu�
 | `./sddia-run.sh` | Wrapper canónico → `orchestrator_resolve.py` (binario preferente) |
 | `SddIA/scripts/qa/orchestrator_resolve.py` | SSOT de resolución del ejecutable orquestador |
 | `SddIA/target/debug/execute-process` (binario nativo) | Tras resolver raíz + bóvedas en `main` |
-| `SddIA/scripts/qa/execute-process.py` (fallback transitorio) | Solo vía `orchestrator_resolve` o `./sddia-run.sh` |
+| `SddIA/scripts/qa/_execute_process_capsules_bridge.py` | Bridge interno residual (creators/telemetry no portados; no es entrypoint) |
 | `SddIA/scripts/qa/execute_process_capsules.py` | Inicio de `run_process()` |
 | `SddIA/scripts/qa/execute-action.py` | Inicio de `main()` |
 | `SddIA/scripts/daemons/event-watcher.py` | Inicio de `main()` |
@@ -202,7 +202,7 @@ Sin Workspace materializado y artefactos versionables, no hay handoff válido ba
 
 ## Aduana Universal (CLI)
 
-Toda ejecución transita por el **orquestador** (`execute-process` binario Rust nativo; fallback transitorio `execute-process.py` vía `orchestrator_resolve`). Wrapper de entrada: `./sddia-run.sh`. El **Peaje Termodinámico** (distinto del Peaje RBAC de Cerbero) intercepta cada invocación:
+Toda ejecución transita por el **orquestador** (`execute-process` binario Rust nativo vía `orchestrator_resolve`). Wrapper de entrada: `./sddia-run.sh`. El **Peaje Termodinámico** (distinto del Peaje RBAC de Cerbero) intercepta cada invocación:
 
 | Paso | Acción |
 |------|--------|

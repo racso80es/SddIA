@@ -364,7 +364,36 @@ def invoke_tool_capsule_json(
     return rc, body
 
 
+def _orchestrator_profile(repo: Path, native_root: Path) -> str | None:
+    override = os.environ.get("SDDIA_EXECUTE_PROCESS_BIN", "").strip()
+    if override:
+        op = Path(override)
+        if op.is_file():
+            try:
+                rel = op.resolve().relative_to(native_root.resolve())
+                if rel.parts:
+                    return rel.parts[0]
+            except ValueError:
+                pass
+    for profile in load_compiled_capsule_roots(repo)[2]:
+        if (native_root / profile / "execute-process").is_file():
+            return profile
+    return None
+
+
 def resolve_daemon_native(repo: Path, name: str) -> Path | None:
+    """Resuelve daemon nativo emparejado con orquestador del mismo profile."""
+    native_root, _wasm, profiles = load_compiled_capsule_roots(repo)
+    paired = _orchestrator_profile(repo, native_root)
+    if paired:
+        daemon = native_root / paired / name
+        if daemon.is_file():
+            return daemon
+    for profile in profiles:
+        daemon = native_root / profile / name
+        orchestrator = native_root / profile / "execute-process"
+        if daemon.is_file() and orchestrator.is_file():
+            return daemon
     return resolve_capsule_native(repo, name)
 
 
