@@ -2,9 +2,12 @@
 
 use super::mayeuta::{filter_c_should_abort, synthesize_mayeuta_response};
 use super::super::capsules::invoke_capsule_json;
+use super::super::fractal::{load_fractal_dirs, write_fractal_event};
 use crate::envelope::OrchestratorEnvelope;
+use chrono::Utc;
 use serde_json::{json, Value};
 use std::path::Path;
+use uuid::Uuid;
 
 const CONFIDENCE_THRESHOLD: f64 = 0.7;
 
@@ -74,15 +77,59 @@ fn extract_pbi_ref(prompt: &str, process_inputs: &Value) -> Option<String> {
         .map(str::to_string)
 }
 
-fn envelope_response(response: &str, extra_phases: Value) -> OrchestratorEnvelope {
+fn iso_now() -> String {
+    Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+}
+
+fn build_kalma2_process_event(
+    process: &str,
+    pbi_ref: Option<&str>,
+    raw_text: &str,
+) -> Value {
+    let mut payload = json!({
+        "process": process,
+        "raw_text": raw_text,
+    });
+    if let Some(p) = pbi_ref.filter(|s| !s.is_empty()) {
+        payload["pbi_ref"] = json!(p);
+    }
+    json!({
+        "event_id": Uuid::new_v4().to_string(),
+        "event_type": "Kalma2_Process_Requested",
+        "event_family": "domain",
+        "timestamp": iso_now(),
+        "emitter_agent": "kalma2-interact",
+        "payload": payload,
+        "delivery_state": {},
+    })
+}
+
+fn ack_enqueued(process: &str, event_id: &str) -> String {
+    format!(
+        "[Tormentosa/Aiúa] Tarea encolada: proceso «{process}» (evento {event_id}). \
+         El Sistema Nervioso la procesará en segundo plano."
+    )
+}
+
+fn envelope_response_with_data(
+    response: &str,
+    data_extra: Value,
+    extra_phases: Value,
+) -> OrchestratorEnvelope {
+    let mut data = json!({
+        "ok": true,
+        "response": response,
+        "error": null,
+    });
+    if let Some(obj) = data_extra.as_object() {
+        for (k, v) in obj {
+            data[k] = v.clone();
+        }
+    }
     OrchestratorEnvelope {
         success: true,
         status_code: 0,
-        data: Some(json!({
-            "ok": true,
-            "response": response,
-            "error": null,
-        })),
+        data: Some(data),
         error: None,
         execution_report: Some(json!({
             "process_name": "kalma2-interact",
@@ -90,6 +137,10 @@ fn envelope_response(response: &str, extra_phases: Value) -> OrchestratorEnvelop
         })),
         exit_code: 0,
     }
+}
+
+fn envelope_response(response: &str, extra_phases: Value) -> OrchestratorEnvelope {
+    envelope_response_with_data(response, json!({}), extra_phases)
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
@@ -152,14 +203,24 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
                 }]),
             ));
         }
-        // Fase E: emisión evento Kalma2_Process_Requested
-        let _pbi = extract_pbi_ref(prompt, &nested_inputs);
-        let ack = format!(
-            "[Tormentosa/Aiúa] Intención «{process_name}» reconocida (confianza {confidence:.2}). \
-             Enrutamiento EDA se activará en la siguiente fase."
-        );
-        return Ok(envelope_response(
+        let pbi_ref = extract_pbi_ref(prompt, &nested_inputs);
+        let event = build_kalma2_process_event(&process_name, pbi_ref.as_deref(), prompt);
+        let event_id = event
+            .get("event_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let (_, _, domain_dir) = load_fractal_dirs(repo);
+        let seal = write_fractal_event(repo, &event, &domain_dir)?;
+        let ack = ack_enqueued(&process_name, &event_id);
+        return Ok(envelope_response_with_data(
             &ack,
+            json!({
+                "emitted": true,
+                "event_type": "Kalma2_Process_Requested",
+                "event_id": event_id,
+                "seal": seal,
+            }),
             json!([{
                 "phase_name": "Clasificación",
                 "status": "executed",
@@ -169,8 +230,10 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
                 "confidence": confidence,
             }, {
                 "phase_name": "Enrutamiento",
-                "status": "deferred",
+                "status": "executed",
                 "handler": "kalma2-interact-core",
+                "emitted": true,
+                "event_type": "Kalma2_Process_Requested",
             }]),
         ));
     }
@@ -221,7 +284,11 @@ mod tests {
         .unwrap();
         assert!(env.success);
         let resp = env.data.as_ref().unwrap()["response"].as_str().unwrap();
-        assert!(resp.contains("bug-fix") || resp.contains("Intención"));
+        assert!(resp.contains("encolada") || resp.contains("Tarea"));
+        assert_eq!(
+            env.data.as_ref().unwrap().get("emitted").and_then(|v| v.as_bool()),
+            Some(true)
+        );
     }
 
     #[test]
