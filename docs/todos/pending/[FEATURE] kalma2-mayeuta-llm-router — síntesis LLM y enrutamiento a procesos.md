@@ -18,7 +18,7 @@ uuid: c58db5d4-0521-4798-8344-dd490aed91d0
 | Campo | Valor |
 |-------|-------|
 | **ID** | `PBI-FEATURE-KALMA2-MAYEUTA-LLM-ROUTER` |
-| **Estatus** | 📐 Pre-implementación — documentación entregada |
+| **Estatus** | 🔨 Forja física completada — pendiente PR |
 | **Feature** | [`docs/features/kalma2-mayeuta-llm-router/`](../../features/kalma2-mayeuta-llm-router/) |
 | **Rama** | `feat/kalma2-mayeuta-llm-router` |
 
@@ -39,15 +39,27 @@ Adecuar `synthesize_mayeuta_response` para usar un LLM real (CLI de Cursor) y, c
 
 ## Pendiente (forja física — fase tekton)
 
-| Fase | Entregable |
-|------|------------|
-| A | Skill `mayeuta-llm` (andamiaje, C1) |
-| B | Transductor CLI Cursor (`std::process::Command`) + SYNTHESIZE + fallback (C3) |
-| C | CLASSIFY_INTENT + umbral |
-| D | Handler kalma2 con Skill + degradación (paridad telegram intacta) |
-| E | Allowlist + emisión evento `Kalma2_Process_Requested` (asíncrono, C2) |
-| E2 | Cierre lazo EDA (P1–P3, O14): evento dedicado + suscriptor `process` + rama dispatcher |
-| F | Cerbero/contexto subproceso + smokes + validacion |
+| Fase | Entregable | Estado |
+|------|------------|--------|
+| A | Skill `mayeuta-llm` (andamiaje, C1) | ✅ |
+| B | Transductor CLI Cursor + SYNTHESIZE + fallback (C3) | ✅ |
+| C | CLASSIFY_INTENT + umbral + heurística | ✅ |
+| D | Handler kalma2 con Skill + degradación | ✅ |
+| E | Allowlist + emisión `Kalma2_Process_Requested` (C2) | ✅ |
+| E2 | Cierre lazo EDA (P1–P3, O14) | ✅ |
+| F | Cerbero/contexto + smokes + validacion.md | ✅ |
+| — | PR + merge + PBI → done/ | ⏳ |
+
+## Deudas técnicas (registro)
+
+| ID | Deuda | Impacto |
+|----|-------|---------|
+| D1 | `SDDIA_LLM_CLI_TIMEOUT_SECS` documentado pero no implementado en mayeuta-llm (wait bloqueante) | Riesgo de bloqueo UI si CLI cuelga |
+| D2 | Skill `mayeuta-llm` solo binario nativo; sin artefacto WASI | Paridad WASM pendiente |
+| D3 | `task-queue-manager` no tiene rama nativa Kalma2; despacho vía inputs genéricos (`process`, `pbi_ref`) | Triaje puede requerir ampliación dedicada |
+| D4 | `hash_signature` pending-forge en `mayeuta-llm.md` y `kalma2-process-requested.md` | Gate Cerbero post-merge |
+| D5 | Validación E2E con Cursor CLI real no ejecutada en CI (solo echo mock + heurística) | Calidad inferencia en prod |
+| D6 | Gate Cerbero `local-subprocess` declarado pero no verificado en pipeline CI | O13 parcial |
 
 ## Cierre del lazo EDA (O14 — 3 puntos verificados)
 

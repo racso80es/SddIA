@@ -1,7 +1,7 @@
 ---
 uuid: "acdb6c88-f0d9-4e10-9d2f-7e4b5401a892"
 name: kalma2-interact
-version: "1.0.0"
+version: "1.1.0"
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -10,21 +10,32 @@ hash_signature: sha256:a6fa47b152b369b63da8c00e9923035c91d7cd20fd542ee6f292eefa6
 inputs:
 - prompt: Texto del operador desde el cliente Kalma2
 outputs:
-- response: Respuesta sintética Mayeuta (lab) para la UI
+- response: Respuesta Mayeuta (LLM o fallback determinista)
+- emitted: (opcional) true si se encoló proceso vía EDA
 phases:
-- name: Síntesis
-  intent: Transmutar prompt en respuesta orgánica breve vía síntesis Mayeuta (laboratorio, ≤2 líneas).
+- name: Triaje-C
+  intent: "Filtrar comandos reservados (/ ! TODO: IDEA:) antes de LLM."
   delegates_to:
   - agent:mayeuta
-- name: Respuesta
-  intent: Devolver response al invocador (puente HTTP o CLI execute-process).
+- name: Clasificación
+  intent: CLASSIFY_INTENT vía skill mayeuta-llm (CLI Cursor o heurística).
+  delegates_to:
+  - skill:mayeuta-llm
+- name: Enrutamiento
+  intent: Procesos allowlisted → evento Kalma2_Process_Requested (asíncrono) + acuse.
+  delegates_to:
+  - agent:mayeuta
+- name: Síntesis
+  intent: SYNTHESIZE vía mayeuta-llm con degradación a síntesis determinista.
+  delegates_to:
+  - skill:mayeuta-llm
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
 
 # kalma2-interact
 
-Proceso PoC **Kalma2**: recibe `prompt` del cliente web desacoplado y materializa `response` mediante síntesis Mayeuta de laboratorio (determinista, alineada al patrón `telegram-fallback-responder`).
+Proceso **Kalma2**: recibe `prompt` del cliente web y materializa `response` mediante skill `mayeuta-llm` (CLI local) con fallback determinista compartido (`synthesize_mayeuta_response`).
 
 ## Contrato
 
@@ -34,12 +45,13 @@ Proceso PoC **Kalma2**: recibe `prompt` del cliente web desacoplado y materializ
 
 | Output | Descripción |
 |--------|-------------|
-| `response` | Texto ≤2 líneas (Tormentosa/Aiúa) |
+| `response` | Texto para la UI |
+| `emitted` | `true` si se escribió evento `Kalma2_Process_Requested` |
 
-## Fase 1 — Síntesis
+## Allowlist (enrutamiento asíncrono)
 
-Reutiliza plantilla Mayeuta lab (`synthesize_mayeuta_response`) — sin LLM externo en PoC.
+`bug-fix`, `feature`, `refactorization`, `task-queue-manager`
 
-## Fase 2 — Respuesta
+## Configuración instancia
 
-Retorna JSON con `response` en `data` para consumo del puente `.SddIA/client/sddia-client-bridge.py`.
+`SDDIA_LLM_CLI_COMMAND` en `.dev/.env` (ver `.dev/.env.example`).
