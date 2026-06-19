@@ -4,7 +4,7 @@ title: "[FEATURE] kalma2-mayeuta-llm-router — síntesis LLM y enrutamiento a p
 format: markdown
 version: "1.0.0"
 created: "2026-06-19"
-status: pending
+status: done
 priority: alta
 process: feature
 branch_name: feat/kalma2-mayeuta-llm-router

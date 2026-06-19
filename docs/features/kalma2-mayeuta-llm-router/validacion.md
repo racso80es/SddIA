@@ -2,7 +2,7 @@
 feature_name: kalma2-mayeuta-llm-router
 branch: feat/kalma2-mayeuta-llm-router
 global: APTO
-pbi_archived: false
+pbi_archived: true
 created: "2026-06-19"
 process: feature
 checks:
@@ -51,9 +51,16 @@ ev={'event_id':'x','event_type':'Kalma2_Process_Requested','payload':{'process':
 print(validate_ecst_instance(ev, s['Kalma2_Process_Requested']))"
 ```
 
+## Pruebas en caliente (2026-06-19)
+
+| ID | Escenario | Resultado |
+|----|-----------|-----------|
+| T1–T8 | execute-process + sddia-run + ECST + route-domain | OK |
+| T9–T10 | kalma2-bridge POST /api/interact (chat + fix PBI) | OK — `emitted: true` |
+
 ## Deuda aceptada
 
-Ver PBI `docs/todos/pending/[FEATURE] kalma2-mayeuta-llm-router…` sección Deudas.
+Ver PBI `docs/todos/done/[FEATURE] kalma2-mayeuta-llm-router…` sección Deudas.
 
 ## Operador post-merge
 
