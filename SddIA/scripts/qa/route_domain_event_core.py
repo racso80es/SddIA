@@ -44,6 +44,10 @@ from orchestrator_resolve import resolve_orchestrator_cmd, resolve_orchestrator_
 
 _SUBPROCESS_UTF8 = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
+ALLOWLIST_KALMA2 = frozenset(
+    {"bug-fix", "feature", "refactorization", "task-queue-manager"}
+)
+
 
 def _repo_root() -> Path:
     here = Path(__file__).resolve()
@@ -114,6 +118,54 @@ def dispatch_subscriber(
         if not isinstance(payload, dict):
             return sid, "failed", "payload must be object", 1
         process_key = process_name.strip()
+
+        if event.get("event_type") == "Kalma2_Process_Requested":
+            proc = (payload.get("process") or "").strip()
+            if proc not in ALLOWLIST_KALMA2:
+                return sid, "failed", f"proceso no permitido: {proc}", 1
+            process_inputs: dict[str, Any] = {
+                "correlation_id": event.get("event_id") or "",
+                "process": proc,
+            }
+            if isinstance(payload.get("pbi_ref"), str) and payload["pbi_ref"].strip():
+                process_inputs["pbi_ref"] = payload["pbi_ref"].strip()
+            if isinstance(payload.get("raw_text"), str) and payload["raw_text"].strip():
+                process_inputs["task_text"] = payload["raw_text"].strip()
+            extra = payload.get("process_inputs")
+            if isinstance(extra, dict):
+                for k, v in extra.items():
+                    if k not in process_inputs:
+                        process_inputs[k] = v
+            try:
+                proc = _run_subprocess(
+                    resolve_orchestrator_cmd(
+                        repo,
+                        [
+                            "--process",
+                            process_key,
+                            "--inputs",
+                            json.dumps(process_inputs, ensure_ascii=False),
+                        ],
+                    ),
+                    cwd=str(repo),
+                    shell=False,
+                )
+            except OSError as e:
+                return sid, "failed", str(e), 1
+            stdout = (proc.stdout or "").strip()
+            if not stdout:
+                return sid, "failed", (proc.stderr or "empty stdout").strip(), proc.returncode or 1
+            last_line = stdout.splitlines()[-1]
+            try:
+                envelope = json.loads(last_line)
+            except json.JSONDecodeError:
+                return sid, "failed", "invalid JSON from execute-process", 1
+            exit_code = int(envelope.get("status_code", 1 if not envelope.get("success") else 0))
+            ok = bool(envelope.get("success")) and exit_code == 0
+            if ok:
+                return sid, "success", None, 0
+            return sid, "failed", envelope.get("error") or envelope.get("message") or "process failed", exit_code
+
         if process_key == "telegram-fallback-responder":
             text = payload.get("text")
             if not isinstance(text, str) or not text.strip():

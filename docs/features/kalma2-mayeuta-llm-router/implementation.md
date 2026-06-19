@@ -5,7 +5,7 @@ process: feature
 branch_name: feat/kalma2-mayeuta-llm-router
 uuid: def280fd-73a3-42fe-b485-3258f1e5e426
 status: pre-implementation
-note: "Diseño pre-implementación. NO materializado. Forja física diferida a fase tekton."
+note: "Forja física completada (fases A–F). Pendiente PR + cierre documental."
 ---
 
 # Implementación (diseño pre-implementación) — kalma2-mayeuta-llm-router

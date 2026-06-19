@@ -40,7 +40,7 @@ pub fn run_process(
     let (canonical, process_def, phases) = load_process_def(repo, process_name)?;
 
     if canonical == "kalma2-interact" {
-        return handlers::kalma2::run(process_inputs);
+        return handlers::kalma2::run(repo, process_inputs);
     }
 
     if canonical == "telegram-fallback-responder" {

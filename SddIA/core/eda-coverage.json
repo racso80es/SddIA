@@ -397,6 +397,18 @@
       "last_hash": "sha256:pending-anchor-on-merge",
       "correlation_timestamp": "2026-05-29T18:00:00+00:00"
     },
+    "458c34a8-9ad5-4a40-88c4-0be1e5d9598e": {
+      "is_covered": true,
+      "last_emitted_event": "Kalma2_Process_Requested",
+      "last_hash": "sha256:pending-anchor-on-merge",
+      "correlation_timestamp": "2026-06-19T18:00:00+00:00"
+    },
+    "80c96e96-3e03-4af4-bed3-0af46d3fcf7f": {
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:pending-forge-on-merge",
+      "correlation_timestamp": "2026-06-19T18:00:00+00:00"
+    },
     "b7c8d9e0-f1a2-4b3c-d4e5-f6a7b8c9d0e1": {
       "is_covered": true,
       "last_emitted_event": "Kaizen_Idea_Captured",
