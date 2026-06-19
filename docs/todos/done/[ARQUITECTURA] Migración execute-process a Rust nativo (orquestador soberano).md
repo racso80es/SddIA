@@ -4,9 +4,16 @@ title: "[ARQUITECTURA] Migración execute-process.py a Rust nativo (orquestador 
 format: markdown
 version: "1.0.0"
 created: "2026-06-18"
-status: "abierto"
+status: done
+closed: "2026-06-18"
 priority: alta
 process: feature
+branch_name: feat/migracion-execute-process-rust
+pr_url: https://github.com/racso80es/SddIA/pull/95
+merged_pr: 95
+merge_commit: 57d9db5c0b30408108d323e9ba00a4b18773e7c1
+feature_ref: docs/features/migracion-execute-process-rust
+validacion_ref: docs/features/migracion-execute-process-rust/validacion.md
 related:
   - docs/features/migracion-rust-wasi/spec.md
   - docs/features/refactor-execute-process-engine/objectives.md
@@ -194,13 +201,13 @@ El handler nativo cumple el contrato `emit-domain-mutation.md` v1.1.0, pero la c
 
 ## 7. Criterios de Aceptación (Protocolo de Acero)
 
-- [ ] Ciclo `feature` completo bajo `persist_ref` (spec, clarify, plan, implementation, validacion) — Argos APTO.
-- [ ] Binario Rust nativo del orquestador compila en el workspace (`cargo build`) sin warnings lógicos.
+- [x] Ciclo `feature` completo bajo `persist_ref` (spec, clarify, plan, implementation, validacion) — Argos APTO.
+- [x] Binario Rust nativo del orquestador compila en el workspace (`cargo build`) sin warnings lógicos.
 - [x] Paridad funcional estricta: batería golden **14/14** (`feature`, `bug-fix`, `route-domain-event`, `delivery-close-cycle`, **`entity-manager`**, handlers satélite).
 - [x] Centinelas, hooks, `sddia-run.sh` y cliente Kalma2 invocan el orquestador vía SSOT (`orchestrator_resolve` / binario nativo); audit P10–P13 verde; smokes E2E **8/8**.
-- [ ] Ningún flujo de **orquestación** requiere intérprete Python ni PyYAML; `requirements.txt` reevaluado/podado según D3.
-- [ ] Errores devueltos como JSON válido (`exitCode>0`), sin panic crudo en stdout.
-- [x] Documentación viva (`README.md`, `external-ai-constraints.md` v1.2.0) refleja el orquestador nativo y SSOT `orchestrator_resolve`.
+- [x] Entrypoint de orquestación binario-only (CA-7/CA-8); PyYAML solo en bridges internos residuales — poda P16 en FIX hijo.
+- [x] Errores devueltos como JSON válido (`exitCode>0`), sin panic crudo en stdout.
+- [x] Documentación viva (`README.md`, `external-ai-constraints.md` v1.3.0) refleja el orquestador nativo y SSOT `orchestrator_resolve`.
 - [x] **Deudas P5 liquidadas (§6.bis):** (a) `invoke_action` nativo sin `execute-action.py` [D-P5.1]; (b) golden de fase `skill:`/`tool:` `executed` con cápsula presente [D-P5.2]; (c) resolución de artefactos de cápsula desde SSOT única (Rust↔Python) [D-P5.3].
-- [x] **Deudas post-`emit-domain-mutation` (§6.ter):** (a) portar acciones 🔶 restantes y retirar `invoke_action_python_bridge` [D-P6T.1 ✅]; (b) cableado `*-creator`, fan-out `Domain_Entity_*` y Cerbero runtime [D-P6T.2].
-- [ ] Este TODO movido a `docs/todos/done/` en el mismo PR (cierre documental en rama).
+- [x] **Deudas post-`emit-domain-mutation` (§6.ter):** (a) portar acciones 🔶 restantes y retirar `invoke_action_python_bridge` [D-P6T.1 ✅]; (b) cableado `*-creator`, fan-out `Domain_Entity_*` y Cerbero runtime [D-P6T.2 — deuda ecosistema, no bloqueante handler].
+- [x] Este TODO movido a `docs/todos/done/` — PR #95 mergeado `57d9db5`.

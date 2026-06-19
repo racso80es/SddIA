@@ -6,7 +6,7 @@ branch_name: feat/migracion-execute-process-rust
 persist_ref: docs/features/migracion-execute-process-rust
 pbi_ref: docs/todos/pending/[ARQUITECTURA] Migración execute-process a Rust nativo (orquestador soberano).md
 document_id: PBI-MIGRACION-EXECUTE-PROCESS-RUST
-status: design
+status: done
 related:
   - docs/features/migracion-rust-wasi/spec.md
   - docs/features/refactor-execute-process-engine/objectives.md
