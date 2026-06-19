@@ -40,8 +40,9 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | `kaizen-idea-captured.md` | `b7c8d9e0-f1a2-4b3c-d4e5-f6a7b8c9d0e1` | kaizen-idea-captured | Kaizen_Idea_Captured | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `kaizen_idea_captured` |
 | `telegram-message-received.md` | `e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6` | telegram-message-received | TelegramMessage_Received | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `telegram_message_received` |
 | `pull-request-audited.md` | `b21e89f7-66a8-4235-950c-d9c9efbd6359` | pull-request-audited | PullRequest_Audited | 1.0.0 | events-contract v1.2.0 | quality-assurance | `pull_request_audited`, `argos_verdict_ecst` |
+| `kalma2-process-requested.md` | `458c34a8-9ad5-4a40-88c4-0be1e5d9598e` | kalma2-process-requested | Kalma2_Process_Requested | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `kalma2_process_requested` |
 
 ## Integridad
 
-- **Clases:** 19 ECST en `SddIA/events/domain/`.
+- **Clases:** 20 ECST en `SddIA/events/domain/`.
 - **Regla de oro:** no mezclar telemetría cruda ni orquestación táctica en esta familia.

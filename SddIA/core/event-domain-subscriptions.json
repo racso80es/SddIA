@@ -170,6 +170,18 @@
       "intent": "Anclaje DLT IOTA de tarea manual capturada desde canal externo."
     }
   ],
+  "Kalma2_Process_Requested": [
+    {
+      "agent": "tekton",
+      "process": "task-queue-manager",
+      "intent": "Triaje soberano + despacho del proceso solicitado desde Kalma2."
+    },
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA de la solicitud de proceso desde Kalma2."
+    }
+  ],
   "Kaizen_Idea_Captured": [
     {
       "agent": "cumulo",
