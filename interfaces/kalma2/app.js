@@ -16,7 +16,8 @@ async function enviar() {
       body: JSON.stringify({ prompt }),
     });
     const data = await r.json();
-    out.value = data.success ? data.response : `[error] ${data.message}`;
+    const text = data.response ?? data.data?.response;
+    out.value = data.success && text ? text : `[error] ${data.message ?? data.error ?? "motor falló"}`;
   } catch (e) {
     out.value = `[fallo red] ${e}`;
   } finally {

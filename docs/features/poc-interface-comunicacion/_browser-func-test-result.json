@@ -1,0 +1,11 @@
+{
+  "prompt": "Confirma el cierre de la feature poc-interface-comunicacion: commit en rama feat/poc-interface-comunicacion, PR #94 y merge a main.",
+  "steps": [
+    {
+      "goto": "http://127.0.0.1:8765",
+      "title": "Kalma2 — Cliente SddIA"
+    }
+  ],
+  "output": "[Tormentosa/Aiúa] Recibo el estímulo: «Confirma el cierre de la feature poc-interface-comunicacion: commit en rama feat/poc-interface-comunicacion, PR #94 y me».\nLo asimilo como fricción arquitectónica — ¿es señal o ruido?",
+  "success": true
+}
