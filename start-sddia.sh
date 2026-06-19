@@ -12,7 +12,6 @@ KALMA_PORT="${SDDIA_CLIENT_PORT:-8765}"
 KALMA_HOST="127.0.0.1"
 KALMA_URL="http://${KALMA_HOST}:${KALMA_PORT}"
 DAEMON_LAUNCHER_DIR="SddIA/scripts/daemons"
-BRIDGE=".SddIA/client/sddia-client-bridge.py"
 DAEMON_NAMES=(event-watcher event-sweeper telegram-watcher github-bridge-watcher)
 OPTIONAL_DAEMONS=(telegram-watcher github-bridge-watcher)
 CLEANUP_DONE=0
@@ -37,7 +36,7 @@ cleanup() {
         pkill -x "$daemon" 2>/dev/null || true
     done
 
-    pkill -f "sddia-client-bridge.py" 2>/dev/null || true
+    pkill -x kalma2-bridge 2>/dev/null || true
 
     echo "[SddIA] Ecosistema detenido de forma segura."
     exit "$exit_code"
@@ -60,6 +59,21 @@ _wait_http() {
     done
 
     echo "  -> [ERROR] ${label} no respondió en ${url} tras ${attempts} intentos."
+    return 1
+}
+
+_resolve_bridge_bin() {
+    if [[ -n "${SDDIA_KALMA2_BRIDGE_BIN:-}" && -x "${SDDIA_KALMA2_BRIDGE_BIN}" ]]; then
+        echo "${SDDIA_KALMA2_BRIDGE_BIN}"
+        return 0
+    fi
+    local rel
+    for rel in SddIA/target/debug/kalma2-bridge SddIA/target/release/kalma2-bridge; do
+        if [[ -x "$rel" ]]; then
+            echo "$REPO_ROOT/$rel"
+            return 0
+        fi
+    done
     return 1
 }
 
@@ -109,25 +123,27 @@ if [[ "$DAEMONS_OK" -lt 2 ]]; then
     cleanup 1
 fi
 
-# 2. Kalma2 (puente HTTP local)
-echo "[SddIA] Levantando el puente de Kalma2..."
+# 2. Kalma2 (puente HTTP nativo Rust)
+echo "[SddIA] Levantando el puente de Kalma2 (kalma2-bridge)..."
 
-if [[ ! -f "$BRIDGE" ]]; then
-    echo "  -> [ERROR] Puente no encontrado: ${BRIDGE}"
+BRIDGE_BIN="$(_resolve_bridge_bin || true)"
+if [[ -z "$BRIDGE_BIN" ]]; then
+    echo "  -> [ERROR] kalma2-bridge no encontrado. Compilar: cd SddIA && cargo build -p kalma2-bridge"
     cleanup 1
 fi
 
-python3 "$BRIDGE" &
+export SDDIA_REPO_ROOT="$REPO_ROOT"
+"$BRIDGE_BIN" &
 KALMA_PID=$!
 sleep 0.5
 
 if ! kill -0 "$KALMA_PID" 2>/dev/null; then
-    echo "  -> [ERROR] sddia-client-bridge.py terminó al arrancar."
+    echo "  -> [ERROR] kalma2-bridge terminó al arrancar."
     cleanup 1
 fi
 
 if ! _wait_http "${KALMA_URL}/" "Kalma2" 30 0.5; then
-    echo "  -> [ERROR] Kalma2 no alcanzable; revise bundle UI (interfaces/kalma2) y dependencias Python."
+    echo "  -> [ERROR] Kalma2 no alcanzable; revise bundle UI (interfaces/kalma2)."
     cleanup 1
 fi
 

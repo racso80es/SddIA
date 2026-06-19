@@ -7,4 +7,5 @@ members = [
     "skills/*",
     "tools/*",
     "daemons/*",
+    "interfaces/*",
 ]

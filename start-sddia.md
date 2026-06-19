@@ -2,12 +2,12 @@
 id: start-sddia
 uuid: d5aae800-06b0-4acc-b0fc-476d8e241eb1
 type: process
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Ignición del ecosistema SddIA (`start-sddia.sh`)
 
-Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA) y el puente **Kalma2** (interfaz HTTP). Vive en la raíz del repositorio como artefacto de **instancia**; no muta el genoma (`SddIA/`).
+Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
 
 ## Objetivo
 
@@ -15,14 +15,15 @@ Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema
 |------------|-----|------------------|
 | **Centinelas obligatorios** | Bus EDA y barrido de pendientes | `SddIA/scripts/daemons/event-watcher.sh`, `event-sweeper.sh` |
 | **Centinelas opcionales** | Telegram y GitHub bridge | `SddIA/scripts/daemons/telegram-watcher.sh`, `github-bridge-watcher.sh` |
-| **Kalma2** | UI + `POST /api/interact` | `.SddIA/client/sddia-client-bridge.py` |
+| **Kalma2** | UI + `POST /api/interact` | `SddIA/target/{debug,release}/kalma2-bridge` |
 
 ## Separación genoma / instancia
 
-- **Genoma** (`SddIA/`): definiciones, lanzadores canónicos (`SddIA/scripts/daemons/`), entrypoints Rust (`SddIA/daemons/*.sh`), binarios en `SddIA/target/release/`.
-- **Instancia** (`.SddIA/`): puente cliente Kalma2, locks, estado y logs de demonios (`.SddIA/daemons/{status,state,logs}`).
+- **Genoma** (`SddIA/`): centinelas, orquestador `execute-process`, crate `kalma2-bridge` en `SddIA/interfaces/kalma2-bridge/`.
+- **Instancia** (`.SddIA/`): locks, estado y logs de demonios (`.SddIA/daemons/{status,state,logs}`).
+- **Bundle UI** (`interfaces/kalma2/`): estáticos servidos por el bridge.
 
-SSOT de rutas: `SddIA/core/cumulo.paths.json` (`directories.daemons`, `daemons_instance`).
+SSOT de rutas: `SddIA/core/cumulo.paths.json`.
 
 ## Secuencia de ignición
 
@@ -33,77 +34,72 @@ flowchart TD
     C --> D{event-watcher + event-sweeper OK?}
     D -->|no| X[cleanup + exit 1]
     D -->|sí| E[Centinelas opcionales]
-    E --> F[sddia-client-bridge.py]
+    E --> F[kalma2-bridge]
     F --> G{HTTP GET / responde?}
     G -->|no| X
     G -->|sí| H[wait — ecosistema operativo]
     H --> I[SIGINT/SIGTERM]
-    I --> J[cleanup: jobs + pkill centinelas + bridge]
+    I --> J[cleanup: jobs + pkill centinelas + kalma2-bridge]
 ```
 
-1. Ancla el directorio de trabajo en la raíz del repo.
-2. Lanza cada centinela vía `SddIA/scripts/daemons/<name>.sh` → `_run_daemon.sh` → `_exec_daemon.sh` → binario Rust nativo.
-3. Verifica que el proceso sigue vivo (`kill -0` o `pgrep -x`).
-4. Arranca el puente Kalma2 y espera respuesta HTTP en `http://127.0.0.1:8765/` (configurable con `SDDIA_CLIENT_PORT`).
-5. Bloquea con `wait` hasta Ctrl+C o señal de terminación.
+1. Ancla `REPO_ROOT`.
+2. Lanza centinelas vía `SddIA/scripts/daemons/<name>.sh`.
+3. Resuelve y arranca `kalma2-bridge` (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
+4. Health check HTTP en `http://127.0.0.1:8765/`.
+5. `wait` hasta señal de terminación.
 
 ## Uso
 
 ```bash
-cd /ruta/al/repo/SddIA
-chmod +x start-sddia.sh   # una sola vez si hace falta
+cd SddIA && cargo build -p kalma2-bridge -p execute-process
 ./start-sddia.sh
 ```
 
-Variables de entorno relevantes:
+Variables de entorno:
 
 | Variable | Default | Efecto |
 |----------|---------|--------|
-| `SDDIA_CLIENT_PORT` | `8765` | Puerto HTTP de Kalma2 |
-| `SDDIA_CLIENT_TIMEOUT_SECONDS` | `120` | Timeout del motor en el bridge |
-
-Bóvedas cargadas por centinelas y bridge: `.dev/.env`, `.SddIA/.dev/.env` (vía `env_loader`).
+| `SDDIA_CLIENT_PORT` | `8765` | Puerto HTTP Kalma2 |
+| `SDDIA_CLIENT_TIMEOUT_SECONDS` | `120` | Timeout subproceso orquestador |
+| `SDDIA_KALMA2_BRIDGE_BIN` | autodetect | Override binario bridge |
+| `SDDIA_EXECUTE_PROCESS_BIN` | autodetect | Override orquestador (bridge) |
+| `SDDIA_REPO_ROOT` | autodetect | Raíz repo (bridge) |
 
 ## Apagado limpio
 
-`Ctrl+C` o `SIGTERM` ejecutan `cleanup`:
-
-- `kill` de jobs en background del script.
-- `pkill -x` por nombre de cada centinela (`event-watcher`, `event-sweeper`, `telegram-watcher`, `github-bridge-watcher`).
-- `pkill -f sddia-client-bridge.py`.
+- `kill` jobs en background.
+- `pkill -x` centinelas + `kalma2-bridge`.
 
 ## Requisitos previos
 
-- **Binarios Rust** compilados: `cd SddIA && cargo build -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher` (o build release en `SddIA/target/release/`).
-- **Python 3** con acceso a `SddIA/scripts/qa/env_loader.py` y `orchestrator_resolve.py`.
-- **Bundle UI** presente en `interfaces/kalma2/`.
-- **curl** disponible para la comprobación de salud del puente.
+```bash
+cd SddIA && cargo build -p kalma2-bridge -p execute-process \
+  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher
+```
+
+- Bundle UI en `interfaces/kalma2/`.
+- `curl` para health check.
 
 ## Diagnóstico
 
 | Síntoma | Acción |
 |---------|--------|
-| `[AVISO] *.sh no encontrado` | Comprobar que exista `SddIA/scripts/daemons/` (no `.SddIA/scripts/`). |
-| Centinela no arranca | Revisar `.SddIA/daemons/logs/<name>.log` y locks en `.SddIA/daemons/status/`. |
-| Kalma2 no responde | Verificar `interfaces/kalma2/index.html` y stderr del bridge al arrancar. |
-| Permisos en `.SddIA/daemons/` | Ajustar propietario si locks/logs son `root` y el operador es otro usuario. |
+| `kalma2-bridge no encontrado` | `cargo build -p kalma2-bridge` |
+| `orquestador no encontrado` (POST) | `cargo build -p execute-process` |
+| Centinela no arranca | `.SddIA/daemons/logs/<name>.log` |
 
 ## Verificación rápida
 
-Tras `./start-sddia.sh`, comprobar:
-
 ```bash
 pgrep -x event-watcher && pgrep -x event-sweeper
+pgrep -x kalma2-bridge
 curl -sf -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8765/
+curl -sf -XPOST http://127.0.0.1:8765/api/interact -H 'Content-Type: application/json' -d '{"prompt":"hola"}'
 ```
-
-Resultado esperado: procesos de centinelas obligatorios presentes y HTTP `200` en Kalma2.
-
-**Validación en caliente (2026-06-19):** los cuatro centinelas arrancaron (`4/4`), Kalma2 respondió `GET /` con HTTP 200, y `SIGTERM` al script ejecutó cleanup con apagado de centinelas y puente.
 
 ## Referencias
 
-- Kalma2 (UI y contrato HTTP): `interfaces/kalma2/README.MD`
-- Catálogo de centinelas: `SddIA/daemons/index.md`
-- Contrato de familia: `SddIA/daemons/daemons-contract.md`
-- Proceso `kalma2-interact`: `SddIA/process/kalma2-interact.md`
+- Feature bridge Rust: `docs/features/kalma2-bridge-rust/`
+- Kalma2 UI: `interfaces/kalma2/README.MD`
+- Proceso motor: `SddIA/process/kalma2-interact.md`
+- CLI orquestador: `./sddia-run.sh --process kalma2-interact --inputs '{"prompt":"..."}'`
