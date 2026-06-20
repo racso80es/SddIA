@@ -4,7 +4,7 @@ title: "[FIX] telegram-watcher — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-06-18"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 incident_ref: "System_Fracture_Detected — 67a56998121e"
@@ -35,10 +35,12 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ## Conclusión Analítica y Propuesta Evolutiva
 
-_Pendiente de síntesis Mayeuta (Kintsugi async)._
+**Causa raíz:** bloqueo síncrono de `getUpdates` (timeout=30s) sin emitir `Daemon_Heartbeat` intermedio; intervalo heartbeat=30s → `missed_cycles ≥ 3` con PID vivo. Agravante: HTTP 409 por instancia duplicada/webhook.
+
+**Corrección:** hilo keepalive (`tick` cada 10s), `POLL_TIMEOUT=25`, `deleteWebhook` en bootstrap, backoff ante 409.
 
 ## Criterio de cierre
 
-- [ ] Causa raíz resuelta
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/`
+- [x] Causa raíz resuelta
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/`
