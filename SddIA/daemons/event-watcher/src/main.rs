@@ -1,5 +1,5 @@
 use sddia_daemon_runtime::{
-    ensure_bus_dirs, find_repo_root, load_bus_topology, DaemonRuntime,
+    ensure_bus_dirs, find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
 };
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
@@ -7,10 +7,26 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+use std::sync::{Arc, Mutex};
 use std::{thread, time::Duration};
 
 const POLL_SECONDS: u64 = 2;
 const MAX_ROUTE_ATTEMPTS: u32 = 3;
+const HEARTBEAT_TICK_SECONDS: u64 = 10;
+
+fn spawn_heartbeat_worker(
+    centinela: Arc<Mutex<DaemonRuntime>>,
+    top: BusTopology,
+) -> thread::JoinHandle<()> {
+    thread::spawn(move || loop {
+        if let Ok(mut rt) = centinela.lock() {
+            if let Err(e) = rt.tick(&top) {
+                eprintln!("[WATCHER] heartbeat keepalive: {e}");
+            }
+        }
+        thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+    })
+}
 
 fn python_bin() -> String {
     env::var("PYTHON").unwrap_or_else(|_| "python3".into())
@@ -230,14 +246,27 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
     ensure_bus_dirs(&top)?;
     let mut centinela = DaemonRuntime::new(repo.clone(), "event-watcher");
     centinela.bootstrap(&top)?;
+    let shared = Arc::new(Mutex::new(centinela));
+    let _hb = if once {
+        None
+    } else {
+        Some(spawn_heartbeat_worker(Arc::clone(&shared), top.clone()))
+    };
     let mut attempts: HashMap<String, u32> = HashMap::new();
     let mut processing: HashSet<String> = HashSet::new();
     let mut routed_ok: HashSet<String> = HashSet::new();
     let targets = watch_targets(&repo, &top);
-    println!(
-        "[WATCHER] Iniciado. roots= {:?}",
-        targets.iter().map(|(p, _)| p.display().to_string()).collect::<Vec<_>>()
-    );
+    if once {
+        println!(
+            "[WATCHER] Iniciado. roots= {:?}",
+            targets.iter().map(|(p, _)| p.display().to_string()).collect::<Vec<_>>()
+        );
+    } else {
+        println!(
+            "[WATCHER] Iniciado (keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s). roots= {:?}",
+            targets.iter().map(|(p, _)| p.display().to_string()).collect::<Vec<_>>()
+        );
+    }
     loop {
         prune_routed_ok(&mut routed_ok, &targets);
         for (watch_dir, process_name) in &targets {
@@ -277,7 +306,9 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 }
                 let rel = rel_event_path(&repo, &path);
                 println!("[WATCHER] Detectado nuevo evento: {key} → {process_name}");
-                centinela.note_stimulus();
+                if let Ok(mut rt) = shared.lock() {
+                    rt.note_stimulus();
+                }
                 processing.insert(event_uuid.clone());
                 *attempts.entry(key.clone()).or_insert(0) += 1;
                 let out = invoke_route_process(&repo, &rel, process_name);
@@ -319,14 +350,21 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 }
             }
         }
-        centinela.tick(&top)?;
+        {
+            let mut rt = shared
+                .lock()
+                .map_err(|_| "lock poisoned".to_string())?;
+            rt.tick(&top)?;
+        }
         if once {
             println!("[WATCHER] Ciclo único (--once). Fin.");
             break;
         }
         thread::sleep(Duration::from_secs(POLL_SECONDS));
     }
-    centinela.shutdown();
+    if let Ok(mut rt) = shared.lock() {
+        rt.shutdown();
+    }
     Ok(())
 }
 
