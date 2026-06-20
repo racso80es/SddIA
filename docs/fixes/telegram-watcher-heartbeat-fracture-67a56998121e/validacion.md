@@ -16,6 +16,8 @@ git_changes:
   - SddIA/daemons/telegram-watcher/src/main.rs
   - docs/fixes/telegram-watcher-heartbeat-fracture-67a56998121e/
   - docs/todos/done/[FIX] telegram-watcher — fractura sistémica (67a56998121e).md
+  - docs/todos/done/[FIX] telegram-watcher — fractura sistémica (a50853644802).md
+  - docs/todos/done/[FIX] telegram-watcher — fractura sistémica (871991ff1ed3).md
 ---
 
 # Validación — telegram-watcher heartbeat fracture
@@ -35,6 +37,8 @@ git_changes:
 ## Causa raíz cerrada
 
 Bloqueo síncrono de `getUpdates` (30s) sin latido intermedio → `missed_cycles ≥ 3` con PID vivo. Corregido con hilo keepalive desacoplado del long-poll.
+
+**PBIs consolidados:** `67a56998121e`, `a50853644802`, `871991ff1ed3` (mismo incidente, distinta magnitud temporal).
 
 ## Cierre documental
 

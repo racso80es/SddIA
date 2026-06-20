@@ -4,13 +4,14 @@ title: "[FIX] telegram-watcher — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-06-16"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 incident_ref: "System_Fracture_Detected — 871991ff1ed3"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
+  - docs/fixes/telegram-watcher-heartbeat-fracture-67a56998121e/validacion.md
 ---
 
 # [FIX] telegram-watcher — fractura sistémica
@@ -35,18 +36,12 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ## Conclusión Analítica y Propuesta Evolutiva
 
-*(Síntesis Mayeuta — Kintsugi async)*
+**Duplicado de incidente** — misma causa raíz que `a50853644802` y `67a56998121e`: bloqueo síncrono de `getUpdates` sin heartbeat intermedio; agravante HTTP 409 (instancia duplicada/webhook).
 
-### Diagnóstico de causa raíz
+**Resolución:** consolidada en `docs/fixes/telegram-watcher-heartbeat-fracture-67a56998121e/` (PR #98).
 
-- Causa raíz no clasificada automáticamente para `telegram-watcher`; requiere laudo humano.
+## Criterio de cierre
 
-### Veredicto evolutivo
-
-**Corrección de proceso oficial** (`process_fix`)
-
-### Propuestas
-
-- **Corrección de proceso oficial:** Auditar proceso `telegram-watcher`, acción `daemon-heartbeat-audit` y emisor `argos`.
-
-> Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar.
+- [x] Causa raíz resuelta
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/`
