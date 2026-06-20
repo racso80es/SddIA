@@ -1,15 +1,31 @@
-use sddia_daemon_runtime::{find_repo_root, load_bus_topology, DaemonRuntime};
+use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use std::sync::{Arc, Mutex};
 use std::{thread, time::Duration};
 
 const DEFAULT_REPO: &str = "racso80es/SddIA";
 const STATE_REL: &str = ".SddIA/.dev/github_bridge_state.json";
 const SIMULATION_REL: &str = ".SddIA/.dev/remote_pr_simulation.json";
+const HEARTBEAT_TICK_SECONDS: u64 = 10;
+
+fn spawn_heartbeat_worker(
+    centinela: Arc<Mutex<DaemonRuntime>>,
+    top: BusTopology,
+) -> thread::JoinHandle<()> {
+    thread::spawn(move || loop {
+        if let Ok(mut rt) = centinela.lock() {
+            if let Err(e) = rt.tick(&top) {
+                eprintln!("[GITHUB-BRIDGE] heartbeat keepalive: {e}");
+            }
+        }
+        thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+    })
+}
 
 fn python_bin() -> String {
     env::var("PYTHON").unwrap_or_else(|_| "python3".into())
@@ -212,7 +228,11 @@ fn invoke_process_pr(repo: &Path, pr: &Value) -> bool {
     }
 }
 
-fn run_cycle(repo: &Path, centinela: &mut DaemonRuntime, top: &sddia_daemon_runtime::BusTopology) -> i32 {
+fn run_cycle(
+    repo: &Path,
+    shared: &Arc<Mutex<DaemonRuntime>>,
+    top: &sddia_daemon_runtime::BusTopology,
+) -> i32 {
     let state = load_state(repo);
     let repository = env::var("SDDIA_GITHUB_REPOSITORY")
         .unwrap_or_else(|_| DEFAULT_REPO.into())
@@ -234,7 +254,9 @@ fn run_cycle(repo: &Path, centinela: &mut DaemonRuntime, top: &sddia_daemon_runt
     };
 
     if candidates.is_empty() {
-        let _ = centinela.tick(top);
+        if let Ok(mut rt) = shared.lock() {
+            let _ = rt.tick(top);
+        }
         return 0;
     }
 
@@ -244,10 +266,14 @@ fn run_cycle(repo: &Path, centinela: &mut DaemonRuntime, top: &sddia_daemon_runt
             continue;
         }
         if invoke_process_pr(repo, &pr) {
-            centinela.note_stimulus();
+            if let Ok(mut rt) = shared.lock() {
+                rt.note_stimulus();
+            }
         }
     }
-    let _ = centinela.tick(top);
+    if let Ok(mut rt) = shared.lock() {
+        let _ = rt.tick(top);
+    }
     0
 }
 
@@ -269,16 +295,23 @@ fn main() {
         eprintln!("[GITHUB-BRIDGE] {e}");
         std::process::exit(1);
     }
+    let shared = Arc::new(Mutex::new(centinela));
 
     if once {
-        let code = run_cycle(&repo, &mut centinela, &top);
-        centinela.shutdown();
+        let code = run_cycle(&repo, &shared, &top);
+        if let Ok(mut rt) = shared.lock() {
+            rt.shutdown();
+        }
         std::process::exit(code);
     }
 
-    println!("[GITHUB-BRIDGE] Iniciado (poll={}s)", poll_seconds());
+    let _hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
+    println!(
+        "[GITHUB-BRIDGE] Iniciado (poll={}s, keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)",
+        poll_seconds()
+    );
     loop {
-        run_cycle(&repo, &mut centinela, &top);
+        run_cycle(&repo, &shared, &top);
         thread::sleep(Duration::from_secs(poll_seconds()));
     }
 }

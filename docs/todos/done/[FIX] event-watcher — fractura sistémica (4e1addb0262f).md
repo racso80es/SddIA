@@ -1,16 +1,17 @@
 ---
-document_id: PBI-FIX-FRACTURE-a02b2fa22d2b
+document_id: PBI-FIX-FRACTURE-4e1addb0262f
 title: "[FIX] event-watcher — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-06-16"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
-incident_ref: "System_Fracture_Detected — a02b2fa22d2b"
+incident_ref: "System_Fracture_Detected — 4e1addb0262f"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
+  - docs/fixes/centinelas-heartbeat-fracture/validacion.md
 ---
 
 # [FIX] event-watcher — fractura sistémica
@@ -26,7 +27,7 @@ related:
 ## Traza de error
 
 ```
-Centinela event-watcher omitió 3 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-06-16T08:38:22Z
+Centinela event-watcher omitió 320 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-06-16T05:56:02Z
 ```
 
 ## Mandato
@@ -35,10 +36,12 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ## Conclusión Analítica y Propuesta Evolutiva
 
-_Pendiente de síntesis Mayeuta (Kintsugi async)._
+**Duplicado de incidente** — misma causa raíz que `a142ad1d25b3`: inanición de heartbeat durante `invoke_route_process` y barrido multi-directorio.
+
+**Resolución:** consolidada en `docs/fixes/centinelas-heartbeat-fracture/` (PR consolidado).
 
 ## Criterio de cierre
 
-- [ ] Causa raíz resuelta
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/`
+- [x] Causa raíz resuelta
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/`
