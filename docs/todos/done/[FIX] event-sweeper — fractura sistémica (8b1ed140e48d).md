@@ -4,13 +4,14 @@ title: "[FIX] event-sweeper — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-06-18"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 incident_ref: "System_Fracture_Detected — 8b1ed140e48d"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
+  - docs/fixes/event-sweeper-heartbeat-fracture-8b1ed140e48d/validacion.md
 ---
 
 # [FIX] event-sweeper — fractura sistémica
@@ -35,10 +36,12 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ## Conclusión Analítica y Propuesta Evolutiva
 
-_Pendiente de síntesis Mayeuta (Kintsugi async)._
+**Causa raíz:** `sweep_once` bloquea el hilo principal sin emitir `Daemon_Heartbeat` intermedio (intervalo 30s).
+
+**Corrección:** hilo keepalive (`tick` cada 10s) en modo continuo. Distinto de `event-pending-sweeper` (lógica de purga).
 
 ## Criterio de cierre
 
-- [ ] Causa raíz resuelta
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/`
+- [x] Causa raíz resuelta
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/`

@@ -1,7 +1,10 @@
 use sddia_daemon_runtime::eda_sweep::{sweep_once, POLL_SECONDS, SweepReport};
-use sddia_daemon_runtime::{find_repo_root, load_bus_topology, DaemonRuntime};
+use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
 use std::env;
+use std::sync::{Arc, Mutex};
 use std::{thread, time::Duration};
+
+const HEARTBEAT_TICK_SECONDS: u64 = 10;
 
 fn print_report(report: &SweepReport, json: bool) {
     if json {
@@ -27,22 +30,55 @@ fn print_report(report: &SweepReport, json: bool) {
     }
 }
 
+fn spawn_heartbeat_worker(
+    centinela: Arc<Mutex<DaemonRuntime>>,
+    top: BusTopology,
+) -> thread::JoinHandle<()> {
+    thread::spawn(move || loop {
+        if let Ok(mut rt) = centinela.lock() {
+            if let Err(e) = rt.tick(&top) {
+                eprintln!("[SWEEPER] heartbeat keepalive: {e}");
+            }
+        }
+        thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+    })
+}
+
 fn run_sweeper(repo: std::path::PathBuf, once: bool, json: bool) -> Result<(), String> {
     let top = load_bus_topology(&repo);
     let mut centinela = DaemonRuntime::new(repo.clone(), "event-sweeper");
     centinela.bootstrap(&top)?;
-    println!("[SWEEPER] Iniciado.");
+    let shared = Arc::new(Mutex::new(centinela));
+    let _hb = if once {
+        None
+    } else {
+        Some(spawn_heartbeat_worker(Arc::clone(&shared), top.clone()))
+    };
+    if once {
+        println!("[SWEEPER] Iniciado.");
+    } else {
+        println!(
+            "[SWEEPER] Iniciado (keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)."
+        );
+    }
     loop {
         let report = sweep_once(&repo)?;
         print_report(&report, json);
-        centinela.tick(&top)?;
+        {
+            let mut centinela = shared
+                .lock()
+                .map_err(|_| "lock poisoned".to_string())?;
+            centinela.tick(&top)?;
+        }
         if once {
             println!("[SWEEPER] Ciclo único (--once). Fin.");
             break;
         }
         thread::sleep(Duration::from_secs(POLL_SECONDS));
     }
-    centinela.shutdown();
+    if let Ok(mut centinela) = shared.lock() {
+        centinela.shutdown();
+    }
     Ok(())
 }
 
