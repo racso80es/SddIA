@@ -1,12 +1,16 @@
-use sddia_daemon_runtime::{find_repo_root, load_bus_topology, DaemonRuntime};
+use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
 use serde_json::Value;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::{Arc, Mutex};
 use std::{thread, time::Duration};
 
-const POLL_TIMEOUT: u64 = 30;
+/// Margen bajo el intervalo de heartbeat (30s) para no bloquear el hilo principal en el límite.
+const POLL_TIMEOUT: u64 = 25;
+const HEARTBEAT_TICK_SECONDS: u64 = 10;
+const CONFLICT_BACKOFF_SECONDS: u64 = 5;
 const STATE_REL: &str = ".SddIA/.state/telegram_last_id";
 const LEGACY_STATE_REL: &str = ".SddIA/daemons/state/telegram-watcher.json";
 
@@ -88,6 +92,20 @@ fn require_env() -> Result<(String, String), i32> {
     Ok((token, chat_id))
 }
 
+fn delete_webhook(token: &str) {
+    let url = format!("https://api.telegram.org/bot{token}/deleteWebhook?drop_pending_updates=false");
+    let agent = ureq::agent();
+    match agent.get(&url).timeout(Duration::from_secs(15)).call() {
+        Ok(resp) => {
+            let body: Value = resp.into_json().unwrap_or(Value::Null);
+            if body.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+                eprintln!("[telegram-watcher] deleteWebhook: respuesta no ok");
+            }
+        }
+        Err(e) => eprintln!("[telegram-watcher] deleteWebhook error: {e}"),
+    }
+}
+
 fn get_updates(token: &str, offset: i64) -> Vec<Value> {
     let url = format!(
         "https://api.telegram.org/bot{token}/getUpdates?timeout={POLL_TIMEOUT}&offset={offset}"
@@ -108,11 +126,32 @@ fn get_updates(token: &str, offset: i64) -> Vec<Value> {
                 .cloned()
                 .unwrap_or_default()
         }
+        Err(ureq::Error::Status(409, _)) => {
+            eprintln!(
+                "[telegram-watcher] getUpdates conflict (409): otra instancia o webhook activo; backoff {CONFLICT_BACKOFF_SECONDS}s"
+            );
+            thread::sleep(Duration::from_secs(CONFLICT_BACKOFF_SECONDS));
+            vec![]
+        }
         Err(e) => {
             eprintln!("[telegram-watcher] getUpdates error: {e}");
             vec![]
         }
     }
+}
+
+fn spawn_heartbeat_worker(
+    centinela: Arc<Mutex<DaemonRuntime>>,
+    top: BusTopology,
+) -> thread::JoinHandle<()> {
+    thread::spawn(move || loop {
+        if let Ok(mut rt) = centinela.lock() {
+            if let Err(e) = rt.tick(&top) {
+                eprintln!("[telegram-watcher] heartbeat keepalive: {e}");
+            }
+        }
+        thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+    })
 }
 
 fn extract_text(update: &Value) -> Option<String> {
@@ -227,16 +266,24 @@ fn run_once(
 }
 
 fn run_loop(repo: PathBuf, dry_run: bool) -> Result<(), i32> {
-    require_env()?;
+    let (token, _) = require_env()?;
+    delete_webhook(&token);
     let top = load_bus_topology(&repo);
     let mut centinela = DaemonRuntime::new(repo.clone(), "telegram-watcher");
     centinela.bootstrap(&top).map_err(|e| {
         eprintln!("[telegram-watcher] {e}");
         1
     })?;
-    println!("[telegram-watcher] bucle iniciado");
+    let shared = Arc::new(Mutex::new(centinela));
+    let _hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
+    println!("[telegram-watcher] bucle iniciado (keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)");
     loop {
+        let mut centinela = shared.lock().map_err(|_| {
+            eprintln!("[telegram-watcher] lock poisoned");
+            1
+        })?;
         run_once(&repo, &top, dry_run, &mut centinela)?;
+        drop(centinela);
         thread::sleep(Duration::from_secs(1));
     }
 }
