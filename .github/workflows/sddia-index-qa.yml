@@ -87,8 +87,11 @@ jobs:
             wasi-${{ runner.os }}-
       - name: Build WASI workspace
         run: cd SddIA && cargo build --workspace --target wasm32-wasip1
-      - name: Build execute-process (native)
-        run: cd SddIA && cargo build -p execute-process
+      - name: Build nativos (centinelas + orquestador)
+        run: |
+          cd SddIA
+          cargo build -p event-watcher
+          cargo build -p execute-process
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -122,8 +125,11 @@ jobs:
             wasi-${{ runner.os }}-
       - name: Build WASI workspace
         run: cd SddIA && cargo build --workspace --target wasm32-wasip1
-      - name: Build execute-process (native)
-        run: cd SddIA && cargo build -p execute-process
+      - name: Build nativos (centinelas + orquestador)
+        run: |
+          cd SddIA
+          cargo build -p event-watcher
+          cargo build -p execute-process
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
