@@ -1,9 +1,8 @@
 //! Invocación recursiva al binario orquestador (subprocesos internos).
 
 use serde_json::Value;
-use std::io::Write;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 pub fn resolve_orchestrator_bin(repo: &Path) -> Result<std::path::PathBuf, String> {
     if let Ok(p) = std::env::var("SDDIA_EXECUTE_PROCESS_BIN") {
@@ -67,38 +66,4 @@ pub fn invoke_process_full(repo: &Path, process_name: &str, inputs: &Value) -> R
         return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
     }
     serde_json::from_str(line).map_err(|e| format!("JSON envelope: {e}"))
-}
-
-/// Invoca bridge Python legacy (solo procesos residuales no portados).
-pub fn invoke_capsules_bridge(repo: &Path, process_name: &str, inputs: &Value) -> Result<Value, String> {
-    let bridge = repo.join("SddIA/scripts/qa/_execute_process_capsules_bridge.py");
-    if !bridge.is_file() {
-        return Err(format!("bridge capsules ausente: {}", bridge.display()));
-    }
-    let payload = serde_json::json!({
-        "process": process_name,
-        "inputs": inputs,
-    });
-    let py = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-    let mut child = Command::new(&py)
-        .arg(&bridge)
-        .current_dir(repo)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("spawn capsules bridge: {e}"))?;
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(serde_json::to_string(&payload).unwrap().as_bytes())
-            .map_err(|e| e.to_string())?;
-    }
-    let output = child.wait_with_output().map_err(|e| e.to_string())?;
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let line = stdout.lines().filter(|l| !l.trim().is_empty()).last().unwrap_or("");
-    if line.is_empty() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-    let body: Value = serde_json::from_str(line).map_err(|e| format!("JSON bridge: {e}"))?;
-    Ok(body)
 }

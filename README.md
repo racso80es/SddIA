@@ -152,9 +152,8 @@ Si existen **ambas** bóvedas, el runtime registra en stderr: `[CONFIG] Jerarqu�
 |------------|----------------|
 | `./sddia-run.sh` | Wrapper canónico → `orchestrator_resolve.py` (binario preferente) |
 | `SddIA/scripts/qa/orchestrator_resolve.py` | SSOT de resolución del ejecutable orquestador |
-| `SddIA/target/debug/execute-process` (binario nativo) | Tras resolver raíz + bóvedas en `main` |
-| `SddIA/scripts/qa/_execute_process_capsules_bridge.py` | Bridge interno residual (creators/telemetry no portados; no es entrypoint) |
-| `SddIA/scripts/qa/execute_process_capsules.py` | Inicio de `run_process()` |
+| `SddIA/target/debug/execute-process` (binario nativo) | Tras resolver raíz + bóvedas en `main`; motor residual Rust (`residual_runner`) |
+| `SddIA/scripts/qa/execute_process_capsules.py` | Legacy interno EDA (`route_fractal_event_core`); no es entrypoint CLI |
 | `SddIA/scripts/qa/execute-action.py` | Inicio de `main()` |
 | `SddIA/scripts/daemons/event-watcher.py` | Inicio de `main()` |
 | `SddIA/scripts/daemons/event-sweeper.py` | Inicio de `main()` |

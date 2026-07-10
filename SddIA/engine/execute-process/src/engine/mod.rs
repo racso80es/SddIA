@@ -3,9 +3,11 @@ pub mod capsule_invoke_smoke;
 pub mod capsule_paths;
 pub mod capsules;
 pub mod daemons;
+pub mod accept_pr;
 pub mod entity_manager;
-pub mod delegate_python;
 pub mod delivery_close;
+pub mod python_core;
+pub mod residual_runner;
 pub mod invoke_orchestrator;
 pub mod crypto_broker;
 pub mod domain_mutation;
@@ -83,5 +85,5 @@ pub fn run_process(
         return executor::run_generic(repo, &canonical, &process_def, &phases, process_inputs);
     }
 
-    delegate_python::run_process(repo, process_name, process_inputs)
+    residual_runner::run(repo, &canonical, &process_def, &phases, process_inputs)
 }
