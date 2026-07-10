@@ -2,9 +2,10 @@
 feature_name: p16-pyyaml-poda
 created: "2026-07-10"
 process: bug-fix
-branch: fix/p16-pyyaml-poda
+branch: fix/p16-pyyaml-poda-rust
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/103
 checks:
   CA1-route-bridge-eliminado: pass
   CA2-grep-qa-limpio: pass
