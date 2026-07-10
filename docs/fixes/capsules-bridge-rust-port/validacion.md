@@ -5,7 +5,10 @@ process: bug-fix
 branch: fix/capsules-bridge-rust-port
 global: APTO
 pbi_archived: true
+merged_pr: true
 pr_url: https://github.com/racso80es/SddIA/pull/102
+merge_commit: 8d682d7
+closed: "2026-07-10"
 checks:
   CA1-delegate-bridge-eliminados: pass
   CA2-golden-14-14: pass
