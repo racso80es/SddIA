@@ -9,12 +9,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:  # pragma: no cover
-    print("Requires PyYAML: pip install pyyaml", file=sys.stderr)
-    sys.exit(2)
+# Wrapper legacy: delega en SddIA/scripts/qa/
+_QA = Path(__file__).resolve().parents[1] / "SddIA" / "scripts" / "qa"
+if str(_QA) not in sys.path:
+    sys.path.insert(0, str(_QA))
 
+from execute_process_core import parse_frontmatter  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 PROCESS_DIR = REPO / "SddIA" / "process"
@@ -50,18 +50,16 @@ def _sha256_phases_via_capsule(phases: list) -> str:
     out = json.loads(r.stdout)
     if not out.get("success"):
         raise RuntimeError(out.get("error", str(out)))
-    # envelope: result directo o anidado en data.result
     if isinstance(out.get("data"), dict) and "result" in out["data"]:
         return out["data"]["result"]
     return out["result"]
 
 
 def _load_frontmatter(md: Path) -> dict:
-    text = md.read_text(encoding="utf-8")
-    parts = text.split("---", 2)
-    if len(parts) < 3:
+    data = parse_frontmatter(md)
+    if not data:
         raise ValueError(f"no frontmatter: {md}")
-    return yaml.safe_load(parts[1])
+    return data
 
 
 def main() -> int:

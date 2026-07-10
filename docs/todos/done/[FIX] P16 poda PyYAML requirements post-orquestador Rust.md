@@ -4,20 +4,20 @@ title: "[FIX] P16 poda PyYAML requirements post-orquestador Rust"
 format: markdown
 version: "1.0.0"
 created: "2026-06-18"
-status: "abierto"
+status: "cerrado"
 priority: baja
 process: bug-fix
 related:
   - docs/features/migracion-execute-process-rust/implementation.md
+  - docs/fixes/p16-pyyaml-poda/execution.md
   - docs/fixes/capsules-bridge-rust-port/execution.md
-  - requirements.txt
 ---
 
 # [FIX] P16 — Poda PyYAML en `requirements.txt`
 
 ## Contexto
 
-CA-8 cumple para el **entrypoint** orquestador (binario Rust, sin PyYAML en CLI). Tras PR #102, el bridge `_execute_process_capsules_bridge.py` está eliminado; `execute_process_capsules.py` persiste solo en fan-out EDA interno (`route_fractal_event_core`). Scripts QA de integridad/auditoría siguen consumiendo PyYAML.
+CA-8 cumple para el **entrypoint** orquestador (binario Rust, sin PyYAML en CLI). Tras PR #102, capsules bridge eliminado; tras este fix, route bridge wrapper eliminado y scripts QA migrados a parser Rust (`--parse-frontmatter`).
 
 ## Objetivo
 
@@ -36,7 +36,7 @@ Condicional P16 (clarify D6):
 | Gate | Estado |
 |------|--------|
 | Capsules bridge (`_execute_process_capsules_bridge.py`) | ✅ cerrado — PR #102 |
-| Route bridge (`_execute_process_route_bridge.py`) | 🔶 pendiente |
-| `grep` limpio en touchpoints productivos QA | 🔶 7 importaciones directas activas |
+| Route bridge (`_execute_process_route_bridge.py`) | ✅ cerrado — `python_core::invoke_route_domain_event` |
+| `grep` limpio en touchpoints productivos QA | ✅ 0 importaciones directas |
 
-Poda total de `requirements.txt` sigue bloqueada hasta route bridge + grep limpio.
+Poda de `requirements.txt` aplicada (ver `docs/fixes/p16-pyyaml-poda/execution.md`).

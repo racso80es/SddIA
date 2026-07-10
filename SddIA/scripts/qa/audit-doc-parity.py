@@ -12,10 +12,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-try:
-    import yaml
-except ImportError:  # pragma: no cover
-    yaml = None  # type: ignore
+from frontmatter_rust import parse_frontmatter_text
 
 SCRIPT = Path(__file__).resolve()
 DIA_HEADING = "### Impacto en Documentación"
@@ -37,13 +34,7 @@ def _repo_root(explicit: str | None) -> Path:
 
 
 def _parse_frontmatter(text: str) -> dict[str, Any]:
-    if yaml is None:
-        return {}
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return {}
-    data = yaml.safe_load(parts[1])
-    return data if isinstance(data, dict) else {}
+    return parse_frontmatter_text(text)
 
 
 def _dia_section_nonempty(body: str) -> bool:
@@ -207,11 +198,6 @@ def main() -> int:
         help="ID correlación (opcional, no invoca agentes)",
     )
     args = parser.parse_args()
-
-    if yaml is None:
-        err = {"success": False, "error": "PyYAML requerido", "alert_required": False}
-        print(json.dumps(err, ensure_ascii=False))
-        return 2
 
     repo = _repo_root(args.repo_root or None)
     if not (repo / "SddIA").is_dir():

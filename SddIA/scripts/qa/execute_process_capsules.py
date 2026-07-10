@@ -57,11 +57,6 @@ from workspace_utils import (
     sync_workspace_context,
 )
 
-try:
-    import yaml
-except ImportError:
-    yaml = None  # type: ignore
-
 SCRIPT = Path(__file__).resolve()
 EXECUTE_ACTION_CLI = SCRIPT.parent / "execute-action.py"
 AUDIT_EDA_CLI = SCRIPT.parent / "audit-entity-eda-coverage.py"

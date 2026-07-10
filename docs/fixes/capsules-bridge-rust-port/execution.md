@@ -39,4 +39,4 @@ items_applied:
 
 ## Impacto en P16 (PyYAML)
 
-El orquestador **ya no** invoca subprocess Python vía capsules bridge. Gate P16 parcialmente desbloqueado (capsules ✅); poda de `requirements.txt` queda condicionada a route bridge + eliminación de importaciones QA residuales (ver `docs/todos/pending/[FIX] P16 poda PyYAML requirements post-orquestador Rust.md`).
+El orquestador **ya no** invoca subprocess Python vía capsules bridge ni route bridge wrapper. Gate P16 cerrado (ver `docs/fixes/p16-pyyaml-poda/execution.md`).

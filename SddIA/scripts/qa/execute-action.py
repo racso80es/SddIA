@@ -24,10 +24,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-try:
-    import yaml
-except ImportError:
-    yaml = None  # type: ignore
+from execute_process_core import parse_frontmatter
 
 SCRIPT = Path(__file__).resolve()
 _QA_DIR = SCRIPT.parent
@@ -343,14 +340,12 @@ def _resolve_action_path(repo: Path, action_name: str) -> Path:
     direct = actions_dir / f"{action_name}.md"
     if direct.is_file():
         return direct
-    if yaml is None:
-        raise RuntimeError("PyYAML requerido para resolver aliases de acción")
     for md in actions_dir.glob("*.md"):
         if md.stem in ("index", "actions-contract"):
             continue
         try:
-            fm = yaml.safe_load(md.read_text(encoding="utf-8").split("---", 2)[1])
-        except (IndexError, yaml.YAMLError):
+            fm = parse_frontmatter(md)
+        except Exception:
             continue
         if isinstance(fm, dict) and fm.get("name") == action_name:
             return md
@@ -359,9 +354,7 @@ def _resolve_action_path(repo: Path, action_name: str) -> Path:
 
 def _load_action_def(repo: Path, action_name: str) -> dict[str, Any]:
     path = _resolve_action_path(repo, action_name)
-    if yaml is None:
-        return {"name": path.stem}
-    fm = yaml.safe_load(path.read_text(encoding="utf-8").split("---", 2)[1])
+    fm = parse_frontmatter(path)
     return fm if isinstance(fm, dict) else {"name": path.stem}
 
 

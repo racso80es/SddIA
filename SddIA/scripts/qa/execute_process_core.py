@@ -9,10 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-try:
-    import yaml
-except ImportError:
-    yaml = None  # type: ignore
+from frontmatter_rust import parse_frontmatter_path
 
 SCRIPT = Path(__file__).resolve()
 
@@ -66,12 +63,10 @@ def warn_stderr(message: str) -> None:
 
 
 def parse_frontmatter(md_path: Path) -> dict[str, Any]:
-    text = md_path.read_text(encoding="utf-8")
-    parts = text.split("---", 2)
-    if len(parts) < 3 or yaml is None:
+    try:
+        return parse_frontmatter_path(md_path)
+    except Exception:
         return {}
-    data = yaml.safe_load(parts[1])
-    return data if isinstance(data, dict) else {}
 
 
 def resolve_process_path(repo: Path, process_name: str) -> Path:
@@ -79,14 +74,12 @@ def resolve_process_path(repo: Path, process_name: str) -> Path:
     direct = process_dir / f"{process_name}.md"
     if direct.is_file():
         return direct
-    if yaml is None:
-        raise RuntimeError("PyYAML requerido para resolver aliases de proceso")
     for md in process_dir.glob("*.md"):
         if md.stem in ("index", "process-contract"):
             continue
         try:
-            fm = yaml.safe_load(md.read_text(encoding="utf-8").split("---", 2)[1])
-        except (IndexError, yaml.YAMLError):
+            fm = parse_frontmatter_path(md)
+        except Exception:
             continue
         if not isinstance(fm, dict):
             continue
@@ -100,9 +93,7 @@ def resolve_process_path(repo: Path, process_name: str) -> Path:
 
 def load_process_def(repo: Path, process_name: str) -> tuple[str, dict[str, Any], list[dict[str, Any]]]:
     path = resolve_process_path(repo, process_name)
-    if yaml is None:
-        raise RuntimeError("PyYAML requerido")
-    fm = yaml.safe_load(path.read_text(encoding="utf-8").split("---", 2)[1])
+    fm = parse_frontmatter_path(path)
     if not isinstance(fm, dict):
         raise ValueError(f"Frontmatter inválido en {path}")
     phases = fm.get("phases") or []
