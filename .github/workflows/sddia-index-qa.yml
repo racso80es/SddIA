@@ -44,6 +44,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            SddIA/target
+          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          restore-keys: |
+            native-${{ runner.os }}-
+      - name: Build centinelas + orquestador (smoke EDA)
+        run: |
+          cd SddIA
+          cargo build -p event-watcher
+          cargo build -p execute-process
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -137,8 +152,13 @@ jobs:
         with:
           node-version: "22"
       - name: Install iota-immutable-publisher deps
-        working-directory: SddIA/scripts/tools/iota-immutable-publisher
-        run: npm ci
+        run: |
+          PUB=SddIA/scripts/tools/iota-immutable-publisher
+          if [ ! -d "$PUB" ]; then
+            echo "iota-immutable-publisher ausente — omitiendo job físico"
+            exit 0
+          fi
+          cd "$PUB" && npm ci
       - name: run-iota-ci-smoke (physical)
         env:
           IOTA_WALLET_SECRET: ${{ secrets.IOTA_WALLET_SECRET }}
