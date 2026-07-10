@@ -7,6 +7,7 @@ created: "2026-06-18"
 closed: "2026-07-10"
 status: "cerrado"
 pr_url: https://github.com/racso80es/SddIA/pull/102
+merge_commit: 8d682d7
 priority: media
 process: bug-fix
 related:
