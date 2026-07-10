@@ -9,14 +9,15 @@ priority: baja
 process: bug-fix
 related:
   - docs/features/migracion-execute-process-rust/implementation.md
-  - SddIA/scripts/qa/requirements.txt
+  - docs/fixes/capsules-bridge-rust-port/execution.md
+  - requirements.txt
 ---
 
 # [FIX] P16 — Poda PyYAML en `requirements.txt`
 
 ## Contexto
 
-CA-8 cumple para el **entrypoint** orquestador (binario Rust, sin PyYAML en CLI). Scripts QA residuales (`execute_process_capsules.py`, audit, route core) pueden seguir consumiendo PyYAML hasta cerrar bridges P17+.
+CA-8 cumple para el **entrypoint** orquestador (binario Rust, sin PyYAML en CLI). Tras PR #102, el bridge `_execute_process_capsules_bridge.py` está eliminado; `execute_process_capsules.py` persiste solo en fan-out EDA interno (`route_fractal_event_core`). Scripts QA de integridad/auditoría siguen consumiendo PyYAML.
 
 ## Objetivo
 
@@ -30,4 +31,12 @@ Auditar consumidores de PyYAML en `SddIA/scripts/qa/`; podar `requirements.txt` 
 
 ## Gate
 
-Condicional P16 (clarify D6); ejecutar tras cierre route bridge + capsules bridge.
+Condicional P16 (clarify D6):
+
+| Gate | Estado |
+|------|--------|
+| Capsules bridge (`_execute_process_capsules_bridge.py`) | ✅ cerrado — PR #102 |
+| Route bridge (`_execute_process_route_bridge.py`) | 🔶 pendiente |
+| `grep` limpio en touchpoints productivos QA | 🔶 7 importaciones directas activas |
+
+Poda total de `requirements.txt` sigue bloqueada hasta route bridge + grep limpio.

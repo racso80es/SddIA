@@ -5,10 +5,11 @@ process: bug-fix
 branch: fix/capsules-bridge-rust-port
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/102
 checks:
   CA1-delegate-bridge-eliminados: pass
   CA2-golden-14-14: pass
-  CA3-smokes-e2e: pass
+  CA3-smokes-e2e: pass-with-caveat
   CA4-cargo-test-lib: pass
   CA5-inventario-documentado: pass
 git_changes:
@@ -33,6 +34,6 @@ git_changes:
 |----|----------|--------|
 | CA1 | `delegate_python` + bridge eliminados | ✅ |
 | CA2 | Golden orchestrator | ✅ 14/14 |
-| CA3 | Smokes E2E | ✅ 7/8 (kalma2-bridge env preexistente) |
+| CA3 | Smokes E2E | ✅ 7/8 — único fallo `kalma2-bridge` (`.SddIA/client/sddia-client-bridge.py` ausente; preexistente, fuera de alcance) |
 | CA4 | Tests Rust | ✅ 45/45 |
 | CA5 | Inventario en `execution.md` | ✅ |

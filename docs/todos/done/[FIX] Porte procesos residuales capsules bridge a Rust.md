@@ -6,6 +6,7 @@ version: "1.0.0"
 created: "2026-06-18"
 closed: "2026-07-10"
 status: "cerrado"
+pr_url: https://github.com/racso80es/SddIA/pull/102
 priority: media
 process: bug-fix
 related:

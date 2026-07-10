@@ -36,3 +36,7 @@ items_applied:
 - `execute_process_capsules.py` permanece para fan-out interno EDA (`route_fractal_event_core` import directo).
 - Cores Python en `python_core.rs` para radamanto/telemetry/route-fractal hasta porte full nativo.
 - `daemon-creator`: forja simulada hasta handler dedicado.
+
+## Impacto en P16 (PyYAML)
+
+El orquestador **ya no** invoca subprocess Python vía capsules bridge. Gate P16 parcialmente desbloqueado (capsules ✅); poda de `requirements.txt` queda condicionada a route bridge + eliminación de importaciones QA residuales (ver `docs/todos/pending/[FIX] P16 poda PyYAML requirements post-orquestador Rust.md`).
