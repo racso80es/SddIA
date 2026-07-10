@@ -164,7 +164,15 @@ pub fn pid_alive(pid: u32) -> bool {
     if pid == 0 {
         return false;
     }
-    unsafe { libc::kill(pid as i32, 0) == 0 }
+    #[cfg(not(target_family = "wasm"))]
+    {
+        unsafe { libc::kill(pid as i32, 0) == 0 }
+    }
+    #[cfg(target_family = "wasm")]
+    {
+        let _ = pid;
+        false
+    }
 }
 
 fn parse_daemon_spec(repo: &Path, daemon_name: &str) -> (String, u64) {

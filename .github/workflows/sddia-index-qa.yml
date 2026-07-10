@@ -20,11 +20,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            SddIA/target
+          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          restore-keys: |
+            native-${{ runner.os }}-
+      - name: Build execute-process (frontmatter parser QA)
+        run: cd SddIA && cargo build -p execute-process
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install QA dependencies
-        run: pip install pyyaml
       - name: verify-tools-index
         run: python SddIA/scripts/qa/verify-tools-index.py
       - name: verify-process-integrity
@@ -34,11 +44,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            SddIA/target
+          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          restore-keys: |
+            native-${{ runner.os }}-
+      - name: Build centinelas + orquestador (smoke EDA)
+        run: |
+          cd SddIA
+          cargo build -p event-watcher
+          cargo build -p execute-process
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install QA dependencies
-        run: pip install pyyaml
       - name: run-iota-ci-smoke (simulate)
         run: python SddIA/scripts/qa/run-iota-ci-smoke.py --simulate --json
 
@@ -64,11 +87,14 @@ jobs:
             wasi-${{ runner.os }}-
       - name: Build WASI workspace
         run: cd SddIA && cargo build --workspace --target wasm32-wasip1
+      - name: Build nativos (centinelas + orquestador)
+        run: |
+          cd SddIA
+          cargo build -p event-watcher
+          cargo build -p execute-process
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install QA dependencies
-        run: pip install pyyaml
       - name: WASI CI smoke
         env:
           SDDIA_CI_REQUIRE_WASI: "1"
@@ -99,11 +125,14 @@ jobs:
             wasi-${{ runner.os }}-
       - name: Build WASI workspace
         run: cd SddIA && cargo build --workspace --target wasm32-wasip1
+      - name: Build nativos (centinelas + orquestador)
+        run: |
+          cd SddIA
+          cargo build -p event-watcher
+          cargo build -p execute-process
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install QA dependencies
-        run: pip install pyyaml
       - name: EDA E2E lab (simulate)
         env:
           SDDIA_LAB_SIMULATE_IOTA: "1"
@@ -128,11 +157,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Install QA dependencies
-        run: pip install pyyaml
       - name: Install iota-immutable-publisher deps
-        working-directory: SddIA/scripts/tools/iota-immutable-publisher
-        run: npm ci
+        run: |
+          PUB=SddIA/scripts/tools/iota-immutable-publisher
+          if [ ! -d "$PUB" ]; then
+            echo "iota-immutable-publisher ausente — omitiendo job físico"
+            exit 0
+          fi
+          cd "$PUB" && npm ci
       - name: run-iota-ci-smoke (physical)
         env:
           IOTA_WALLET_SECRET: ${{ secrets.IOTA_WALLET_SECRET }}

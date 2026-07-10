@@ -12,11 +12,7 @@ import os
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:  # pragma: no cover
-    print("Requires PyYAML: pip install pyyaml", file=sys.stderr)
-    sys.exit(2)
+from execute_process_core import parse_frontmatter
 
 SCRIPT = Path(__file__).resolve()
 
@@ -44,11 +40,10 @@ def _sha256_phases_via_capsule(phases: list) -> str:
 
 
 def _load_frontmatter(md: Path) -> dict:
-    text = md.read_text(encoding="utf-8")
-    parts = text.split("---", 2)
-    if len(parts) < 3:
+    data = parse_frontmatter(md)
+    if not data:
         raise ValueError(f"no frontmatter: {md}")
-    return yaml.safe_load(parts[1])
+    return data
 
 
 def main() -> int:

@@ -28,7 +28,6 @@ ALLOWLIST = {
     REPO / "SddIA" / "scripts" / "qa" / "orchestrator_resolve.py",
     REPO / "SddIA" / "scripts" / "qa" / "golden_orchestrator_parity.py",
     REPO / "SddIA" / "scripts" / "qa" / "execute_process_capsules.py",
-    REPO / "SddIA" / "scripts" / "qa" / "_execute_process_capsules_bridge.py",
 }
 
 FORBIDDEN = re.compile(

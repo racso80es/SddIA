@@ -6,7 +6,7 @@ contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
-hash_signature: sha256:a6fa47b152b369b63da8c00e9923035c91d7cd20fd542ee6f292eefa6a50ac42
+hash_signature: sha256:405f34ec7453e8669d7f6a5aef84097c0e5a1d773d5ba286e7897a9a4d9458e1
 inputs:
 - prompt: Texto del operador desde el cliente Kalma2
 outputs:

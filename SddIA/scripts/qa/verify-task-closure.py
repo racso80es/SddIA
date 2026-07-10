@@ -10,11 +10,7 @@ import re
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:  # pragma: no cover
-    print("Requires PyYAML: pip install pyyaml", file=sys.stderr)
-    sys.exit(2)
+from execute_process_core import parse_frontmatter
 
 SCRIPT = Path(__file__).resolve()
 
@@ -34,13 +30,10 @@ WORK_BRANCH_RE = re.compile(r"^(feat|fix|refactor|docs)/")
 
 def _load_frontmatter(md: Path) -> dict | None:
     try:
-        text = md.read_text(encoding="utf-8")
+        md.read_text(encoding="utf-8")
     except OSError as e:
         return {"_error": str(e)}
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return None
-    data = yaml.safe_load(parts[1])
+    data = parse_frontmatter(md)
     return data if isinstance(data, dict) else None
 
 

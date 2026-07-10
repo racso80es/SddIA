@@ -10,11 +10,7 @@ import re
 import sys
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:  # pragma: no cover
-    print("Requires PyYAML: pip install pyyaml", file=sys.stderr)
-    sys.exit(2)
+from execute_process_core import parse_frontmatter
 
 SCRIPT = Path(__file__).resolve()
 REPO = SCRIPT.parents[3] if (SCRIPT.parents[2] / "tools").is_dir() else SCRIPT.parents[2]
@@ -35,7 +31,8 @@ def _load_frontmatter(md: Path) -> tuple[dict, str, str]:
     parts = text.split("---", 2)
     if len(parts) < 3:
         raise ValueError(f"no frontmatter: {md}")
-    return yaml.safe_load(parts[1]), parts[0], parts[2]
+    data = parse_frontmatter(md)
+    return data, parts[0], parts[2]
 
 
 def recalc_file(md: Path, write: bool) -> dict[str, str] | None:

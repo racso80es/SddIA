@@ -40,7 +40,7 @@ checks:
 | Item | Estado | PBI hijo |
 |------|--------|----------|
 | `_execute_process_route_bridge.py` | 🔶 | `[FIX] Porte route-domain-event core a Rust` |
-| `_execute_process_capsules_bridge.py` | 🔶 | `[FIX] Porte procesos residuales capsules bridge a Rust` |
+| `_execute_process_capsules_bridge.py` | ✅ | `[FIX] Porte procesos residuales capsules bridge a Rust` — PR #102; `residual_runner.rs` |
 | PyYAML en `requirements.txt` (scripts QA) | 🔶 | `[FIX] P16 poda PyYAML requirements post-orquestador Rust` |
 | Cableado ecosistema `Domain_Entity_*` (D-P6T.2) | 🔶 | Hitos forja/suscripciones fuera de alcance orquestador |
 
