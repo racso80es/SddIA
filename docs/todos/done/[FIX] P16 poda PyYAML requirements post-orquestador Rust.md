@@ -4,12 +4,14 @@ title: "[FIX] P16 poda PyYAML requirements post-orquestador Rust"
 format: markdown
 version: "1.0.0"
 created: "2026-06-18"
-status: "abierto"
+closed: "2026-07-10"
+status: "cerrado"
 priority: baja
 process: bug-fix
 related:
   - docs/features/migracion-execute-process-rust/implementation.md
-  - SddIA/scripts/qa/requirements.txt
+  - docs/fixes/p16-pyyaml-poda/execution.md
+  - requirements.txt
 ---
 
 # [FIX] P16 — Poda PyYAML en `requirements.txt`
@@ -31,3 +33,7 @@ Auditar consumidores de PyYAML en `SddIA/scripts/qa/`; podar `requirements.txt` 
 ## Gate
 
 Condicional P16 (clarify D6); ejecutar tras cierre route bridge + capsules bridge.
+
+## Resolución
+
+Auditoría completada. Poda total **diferida** — 7 consumidores directos + bridges activos. `requirements.txt` mantenido con justificación en `docs/fixes/p16-pyyaml-poda/execution.md`. Golden 14/14 + smoke `native-without-python` OK.
