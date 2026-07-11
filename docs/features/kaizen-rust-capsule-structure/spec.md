@@ -271,3 +271,31 @@ Forja vía `daemon-creator` / `entity-manager`: `event-sweeper.md` + fila en `in
 | TL-CA* | Tools consolidados | Ola 2 |
 | DM-CA* | Daemons consolidados | Ola 3 |
 | DOC | `validacion.md` APTO + PBI en `done/` | Cierre |
+
+### Impacto en Documentación
+
+- `docs/features/kaizen-rust-capsule-structure/` — spec, plan, implementation, execution, objectives, clarify, status, validacion
+- `SddIA/core/cumulo.paths.json` — `execution_capsules` skills/tools/daemons → `SddIA/{skills,tools,daemons}/`
+- `SddIA/core/eda-coverage.json` — cobertura EDA centinelas y cápsulas migradas
+- `SddIA/skills/` — cápsulas Rust/WASI (bus-operator, git-manager, shell-executor, cryptography-manager)
+- `SddIA/tools/` — cápsulas Rust/WASI (io-choke, markdown-table-editor, manage-event-receipt, read-event-subscriptions, sandbox-breacher, schema-corruptor, send-telegram-notification, telegram-gateway, transit-event-payload, iota-immutable-publisher)
+- `SddIA/daemons/` — centinelas Rust (event-watcher, event-sweeper, telegram-watcher, github-bridge-watcher) + `sddia-daemon-runtime`
+- `SddIA/daemons/*.md` — frontmatter `execution.runtime: native-rust`, entrypoints release
+- `SddIA/skills/skills-contract.md` — §2 consciencia espacial, §4 sustrato WASI/nativo
+- `SddIA/tools/tools-contract.md` — §3/§7 `implementation_path_ref` → `SddIA/tools/`
+- `SddIA/daemons/daemons-contract.md` — §3 artefactos, §4 entrypoint nativo-rust
+- `SddIA/scripts/qa/capsule_resolve.py` — resolución skills/tools/daemons Cúmulo
+- `SddIA/scripts/qa/execute_process_capsules.py` — invocadores lab sin fallback Python operativo
+- `SddIA/scripts/qa/execute_process_forges.py` — forja nativa entidades
+- `SddIA/scripts/qa/execute-action.py` — delegación acciones vía cápsulas Rust
+- `SddIA/scripts/qa/route_domain_event_core.py` — routing dominio EDA
+- `SddIA/scripts/qa/governance_daemon_manager_core.py` — arranque `native-rust`
+- `SddIA/scripts/qa/github_bridge_process_pr.py` — DLT/IOTA github-bridge
+- `SddIA/scripts/qa/iota_tool_invoke.py` — invocación tool IOTA Rust
+- `SddIA/scripts/qa/telegram_gateway_core.py` — gateway Telegram vía cápsula Rust
+- `SddIA/scripts/qa/dlt_bus_materializer.py` — materialización bus DLT
+- `SddIA/scripts/qa/audit-entity-eda-coverage.py` — auditoría cobertura EDA
+- `SddIA/scripts/qa/run-eda-e2e-lab.py`, `run-iota-ci-smoke.py` — smoke lab con watcher Rust
+- `SddIA/scripts/qa/test_bucle_fantasma_bus.py`, `test_chaos_tools.py`, `test_telegram_tool_capsule.py` — regresión cápsulas
+- `SddIA/scripts/limbo/` — poda legacy Python (skills, tools, daemons)
+- `README.md` — rutas operativas cápsulas (deuda DEBT-K8 backlog post-K6)
