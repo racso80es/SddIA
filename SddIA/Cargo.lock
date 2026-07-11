@@ -114,6 +114,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link",
 ]
@@ -240,6 +241,18 @@ checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
  "windows-sys",
+]
+
+[[package]]
+name = "event-bus-audit"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "regex",
+ "sddia-io",
+ "serde",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]

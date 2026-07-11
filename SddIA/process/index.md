@@ -4,6 +4,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
+| event-bus-audit | 8d577a50-055a-40b9-b7e2-93e2d2415796 | 1.0.0 | quality-assurance | — | Auditoría empírica on-demand del bus EDA: escaneo ./.events, |
 | kalma2-interact | acdb6c88-f0d9-4e10-9d2f-7e4b5401a892 | 1.0.0 | ecosystem-evolution | — | Proceso PoC Kalma2: síntesis Mayeuta lab ante prompt del cli |
 | daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.0.0 | quality-assurance | — | Triaje Argos: latido térmico Centinelas; System_Fracture_Det |
 | daemon-kill-switch | b0de6585-11fc-4b3c-8b19-ad6b727d820e | 1.0.0 | system-operations | — | Kill-Switch global: purga SIGTERM/SIGKILL de todos los Centi |
@@ -46,3 +47,4 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | execute-suite | a1b2c3d4-e5f6-4789-a012-3456789abcde | 1.0.0 | chaos-engineering, quality-assurance, ecosystem-evolution | — | Orquestador de Suites: sub-workspaces aislados por nodo + manifiesto Argos. |
 | telegram-gateway | f5a6b7c8-d9e0-4f1a-b2c3-d4e5f6a7b8c9 | 1.0.0 | ecosystem-evolution, external-ingest | — | Aduana texto Telegram → eventos domain (`TelegramMessage_Received`, `Manual_Task_Requested`, `Kaizen_Idea_Captured`). |
 | telegram-fallback-responder | c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f | 1.0.0 | ecosystem-evolution, external-ingest | — | Triaje inverso Telegram: Filtro C → Mayeuta → `send-telegram-notification`. |
+
