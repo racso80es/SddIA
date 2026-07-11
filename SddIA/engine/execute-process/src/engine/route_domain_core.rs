@@ -12,6 +12,7 @@ use super::eda_bus_topology::{
     write_processing_witness, ECST_GATE_SUBSCRIBER, EventBusTopology,
 };
 use super::invoke_orchestrator::{invoke_process_full, resolve_orchestrator_bin};
+use chrono::Utc;
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 use std::fs;
@@ -44,6 +45,176 @@ fn dispatch_mode_label() -> &'static str {
     } else {
         "async"
     }
+}
+
+pub fn input_truthy(inputs: &Value, key: &str) -> bool {
+    inputs.get(key).map_or(false, |v| {
+        v.as_bool().unwrap_or_else(|| {
+            v.as_str()
+                .map(|s| matches!(s.trim().to_lowercase().as_str(), "1" | "true" | "yes"))
+                .unwrap_or(false)
+        })
+    })
+}
+
+/// Activa `SDDIA_LAB_ROUTE_SYNC=1` durante el scope (modo `--blocking`).
+pub struct SyncRouteGuard {
+    previous: Option<String>,
+}
+
+impl SyncRouteGuard {
+    pub fn activate() -> Self {
+        let previous = std::env::var("SDDIA_LAB_ROUTE_SYNC").ok();
+        std::env::set_var("SDDIA_LAB_ROUTE_SYNC", "1");
+        Self { previous }
+    }
+}
+
+impl Drop for SyncRouteGuard {
+    fn drop(&mut self) {
+        match &self.previous {
+            Some(v) => std::env::set_var("SDDIA_LAB_ROUTE_SYNC", v),
+            None => std::env::remove_var("SDDIA_LAB_ROUTE_SYNC"),
+        }
+    }
+}
+
+pub fn git_abbrev_ref_head(repo: &Path) -> String {
+    Command::new("git")
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .current_dir(repo)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "unknown".into())
+}
+
+pub fn subscribers_for_event_type(repo: &Path, event_type: &str) -> Result<Vec<Value>, String> {
+    let bus = ensure_event_bus_topology(repo)?;
+    let subs_path = repo.join(&bus.subscriptions);
+    let text = fs::read_to_string(&subs_path)
+        .map_err(|e| format!("cannot read event-subscriptions.json: {e}"))?;
+    let trimmed = text.strip_prefix('\u{feff}').unwrap_or(&text);
+    let registry: Value = serde_json::from_str(trimmed)
+        .map_err(|e| format!("cannot read event-subscriptions.json: {e}"))?;
+    Ok(registry
+        .get(event_type)
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default())
+}
+
+pub fn materialize_pending_domain_event(
+    repo: &Path,
+    event_type: &str,
+    emitter_agent: &str,
+    payload: Value,
+) -> Result<String, String> {
+    let bus = ensure_event_bus_topology(repo)?;
+    let event_uuid = Uuid::new_v4().to_string();
+    let event = json!({
+        "event_id": event_uuid,
+        "event_type": event_type,
+        "timestamp": Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+        "emitter_agent": emitter_agent,
+        "payload": payload,
+        "delivery_state": {},
+    });
+    let pending_dir = repo.join(&bus.pending);
+    fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
+    let event_path = pending_dir.join(format!("{event_uuid}.json"));
+    write_json_atomic(&event_path, &event)?;
+    Ok(rel_event_path(repo, &event_path))
+}
+
+fn validate_blocking_subscribers(
+    repo: &Path,
+    event_type: &str,
+    target_agent: Option<&str>,
+) -> Result<(), String> {
+    let subscribers = subscribers_for_event_type(repo, event_type)?;
+    if subscribers.is_empty() {
+        return Err(format!(
+            "blocking: event_type '{event_type}' sin suscriptor válido en event-domain-subscriptions.json"
+        ));
+    }
+    if let Some(target) = target_agent.map(str::trim).filter(|s| !s.is_empty()) {
+        let has_agent = subscribers.iter().any(|sub| {
+            sub.get("agent")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                == Some(target)
+        });
+        if !has_agent {
+            return Err(format!(
+                "blocking: agente destino '{target}' no suscripto a '{event_type}'"
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Resuelve `event_file_path` desde inputs del orquestador (modo blocking / CLI hook).
+pub fn resolve_route_event_path(
+    repo: &Path,
+    process_inputs: &Value,
+    blocking: bool,
+) -> Result<String, String> {
+    if let Some(rel) = process_inputs
+        .get("event_file_path")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        return Ok(rel.to_string());
+    }
+
+    let event_type = process_inputs
+        .get("event_type")
+        .or_else(|| process_inputs.get("event"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or("event_file_path o event_type requerido")?;
+
+    if blocking {
+        let target = process_inputs
+            .get("target")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        validate_blocking_subscribers(repo, event_type, target)?;
+    }
+
+    let emitter = process_inputs
+        .get("emitter_agent")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("git-hook-pre-push");
+
+    let mut payload = process_inputs
+        .get("payload")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    if !payload.is_object() {
+        payload = json!({});
+    }
+    if let Some(obj) = payload.as_object_mut() {
+        if !obj.contains_key("branch") {
+            obj.insert("branch".into(), json!(git_abbrev_ref_head(repo)));
+        }
+    }
+
+    materialize_pending_domain_event(repo, event_type, emitter, payload)
+}
+
+pub fn is_local_qa_event(event: &Value) -> bool {
+    event.get("event_type").and_then(|v| v.as_str()) == Some("Local_QA_Requested")
+        || event.get("emitter_agent").and_then(|v| v.as_str()) == Some("git-hook-pre-push")
 }
 
 fn iota_timeout_seconds() -> u64 {
@@ -411,13 +582,17 @@ fn dispatch_subscriber(
         }
 
         if process_key == "pull-request-review" {
-            let (ok, err, lifecycle) =
-                pull_request_review_precheck(repo, branch, pr_url, &payload);
-            if !ok {
-                return (sid, "failed".into(), err, 1);
-            }
-            if lifecycle.get("merged") == Some(&json!(true)) {
-                process_inputs.insert("merge_already_done".into(), json!(true));
+            if !is_local_qa_event(event) {
+                let (ok, err, lifecycle) =
+                    pull_request_review_precheck(repo, branch, pr_url, &payload);
+                if !ok {
+                    return (sid, "failed".into(), err, 1);
+                }
+                if lifecycle.get("merged") == Some(&json!(true)) {
+                    process_inputs.insert("merge_already_done".into(), json!(true));
+                }
+            } else {
+                process_inputs.insert("local_qa".into(), json!(true));
             }
         } else if let Some(url) = pr_url.map(str::trim).filter(|s| !s.is_empty()) {
             if github_pr_merged(url) {
@@ -952,4 +1127,56 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str) -> Value {
     }
 
     result
+}
+
+#[cfg(test)]
+mod blocking_tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn repo_root() -> PathBuf {
+        let mut here = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        here.pop();
+        here.pop();
+        here.pop();
+        here
+    }
+
+    #[test]
+    fn sync_route_guard_sets_and_restores_env() {
+        std::env::remove_var("SDDIA_LAB_ROUTE_SYNC");
+        {
+            let _g = SyncRouteGuard::activate();
+            assert_eq!(
+                std::env::var("SDDIA_LAB_ROUTE_SYNC").unwrap_or_default(),
+                "1"
+            );
+        }
+        assert!(std::env::var("SDDIA_LAB_ROUTE_SYNC").is_err());
+    }
+
+    #[test]
+    fn validate_blocking_rejects_unknown_event() {
+        let repo = repo_root();
+        let err = validate_blocking_subscribers(&repo, "Evento_Inexistente_XYZ", None)
+            .expect_err("must fail");
+        assert!(err.contains("sin suscriptor"));
+    }
+
+    #[test]
+    fn validate_blocking_rejects_wrong_target_agent() {
+        let repo = repo_root();
+        let err = validate_blocking_subscribers(&repo, "Local_QA_Requested", Some("agente-fantasma"))
+            .expect_err("must fail");
+        assert!(err.contains("agente destino"));
+    }
+
+    #[test]
+    fn local_qa_event_detection() {
+        let ev = json!({
+            "event_type": "Local_QA_Requested",
+            "emitter_agent": "git-hook-pre-push",
+        });
+        assert!(is_local_qa_event(&ev));
+    }
 }
