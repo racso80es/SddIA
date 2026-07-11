@@ -15,6 +15,8 @@ const WASM_NATIVE_FALLBACK_MARKERS: &[&str] = &[
     "failed to get current exe",
     "read-only",
     "no se pudo marcar read-only",
+    "wasi environment cannot establish outbound",
+    "outbound http connections",
 ];
 
 const GIT_MANAGER_NATIVE_FALLBACK_MARKERS: &[&str] = &[

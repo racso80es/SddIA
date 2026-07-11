@@ -630,6 +630,16 @@ fn parse_pr_number(pr_url: Option<&str>) -> Option<u64> {
         .and_then(|m| m.as_str().parse().ok())
 }
 
+pub fn is_lab_simulated_pr_url(pr_url: Option<&str>) -> bool {
+    let Some(url) = pr_url.map(str::trim).filter(|s| !s.is_empty()) else {
+        return false;
+    };
+    if url.to_ascii_lowercase().contains("lab-simulated") {
+        return true;
+    }
+    matches!(parse_pr_number(Some(url)), Some(0))
+}
+
 fn run_git(repo: &Path, args: &[&str]) -> (i32, String, String) {
     let output = Command::new("git")
         .args(args)

@@ -584,6 +584,17 @@ def parse_pr_number(pr_url: str | None) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def is_lab_simulated_pr_url(pr_url: str | None) -> bool:
+    """URL de laboratorio (host lab-simulated o PR #0 sintético)."""
+    if not isinstance(pr_url, str) or not pr_url.strip():
+        return False
+    url = pr_url.strip()
+    if "lab-simulated" in url.lower():
+        return True
+    pr_number = parse_pr_number(url)
+    return pr_number == 0
+
+
 def _run_git(repo: Path, args: list[str]) -> tuple[int, str, str]:
     import subprocess
 
