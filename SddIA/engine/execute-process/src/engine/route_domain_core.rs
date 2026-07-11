@@ -19,6 +19,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use uuid::Uuid;
 
 const ALLOWLIST_KALMA2: &[&str] = &["bug-fix", "feature", "refactorization", "task-queue-manager"];
 
@@ -109,7 +110,22 @@ fn invoke_send_telegram_notification(repo: &Path, message: &str) -> Result<(bool
     }
 }
 
+fn simulate_iota_enabled() -> bool {
+    matches!(
+        std::env::var("SDDIA_LAB_SIMULATE_IOTA")
+            .unwrap_or_default()
+            .trim()
+            .to_lowercase()
+            .as_str(),
+        "1" | "true" | "yes"
+    )
+}
+
 fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Option<String>) {
+    if simulate_iota_enabled() {
+        let digest = format!("lab-sim-{}", &Uuid::new_v4().simple().to_string()[..24]);
+        return (true, "lab-simulated".into(), 0, Some(digest));
+    }
     let payload = json!({
         "action": "publish_immutable_data",
         "network": "testnet",
