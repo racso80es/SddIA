@@ -3,6 +3,7 @@ feature_name: local-qa-blocking-rust-port
 created: "2026-07-11"
 process: bug-fix
 branch: fix/local-qa-blocking-rust-port
+pr_url: https://github.com/racso80es/SddIA/pull/107
 global: APTO
 pbi_archived: true
 checks:
