@@ -18,7 +18,13 @@ fn parse_payload_fields(body: &str, section: &str) -> Vec<String> {
         return Vec::new();
     };
     let rest = &body[start + marker.len()..];
-    let end = rest.find("\n### ").unwrap_or(rest.len());
+    let mut end = rest.len();
+    if let Some(pos) = rest.find("\n### ") {
+        end = end.min(pos);
+    }
+    if let Some(pos) = rest.find("\n## ") {
+        end = end.min(pos);
+    }
     let block = &rest[..end];
     let mut fields = Vec::new();
     for line in block.lines() {
@@ -174,6 +180,27 @@ mod tests {
         let schema = schemas.get("Domain_Entity_Created").expect("schema");
         assert!(schema.required.contains(&"origin_topology".to_string()));
         assert!(schema.forbidden.contains(&"hash_signature_old".to_string()));
+    }
+
+    #[test]
+    fn pull_request_audited_forbidden_excludes_invariantes_prose() {
+        let repo = find_repo_root().unwrap();
+        let schemas = load_event_class_schemas(&repo);
+        let schema = schemas.get("PullRequest_Audited").expect("schema");
+        assert!(schema.required.contains(&"resolution".to_string()));
+        assert!(!schema.forbidden.contains(&"audit_event_reference".to_string()));
+        assert!(!schema.forbidden.contains(&"resolution".to_string()));
+        let event = json!({
+            "event_type": "PullRequest_Audited",
+            "payload": {
+                "audit_event_reference": "fdc91d90-7bbd-4192-bd0c-8a5b1f5f9edc",
+                "target_entity_id": "feat/telegram-fallback-responder",
+                "resolution": "PASS",
+                "violated_rules": []
+            }
+        });
+        let (ok, errors) = validate_ecst_instance(&event, Some(schema));
+        assert!(ok, "{errors:?}");
     }
 
     #[test]

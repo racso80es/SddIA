@@ -91,6 +91,7 @@ def invoke_iota_immutable_publisher(
         return True, "lab-simulated", 0, digest
 
     payload = _iota_payload(event)
+    native_error: str | None = None
     try:
         _rc, body = invoke_tool_capsule_json(
             repo,
@@ -100,22 +101,39 @@ def invoke_iota_immutable_publisher(
         )
         if isinstance(body, dict) and body.get("success"):
             return _parse_iota_body(body)
+        if isinstance(body, dict):
+            native_error = str(
+                body.get("error")
+                or body.get("message")
+                or body.get("feedback")
+                or "iota rust capsule failed"
+            )
     except FileNotFoundError:
-        pass
+        native_error = "iota-immutable-publisher native capsule not found"
+
+    tool_dir = _iota_legacy_dir(repo)
+    local_ts_node = tool_dir / "node_modules" / ".bin" / "ts-node"
+    npx = shutil.which("npx")
+    node = shutil.which("node")
+    has_ts_toolchain = local_ts_node.is_file() or (bool(npx) and bool(node))
+
+    if not has_ts_toolchain:
+        return (
+            False,
+            native_error
+            or "iota-immutable-publisher unavailable (no native success, no node toolchain)",
+            1,
+            None,
+        )
 
     if timeout_seconds is not None:
-        tool_dir = _iota_legacy_dir(repo)
         entry = tool_dir / "index.ts"
         if not entry.is_file():
             return False, "iota-immutable-publisher entry not found", 1, None
-        local_ts_node = tool_dir / "node_modules" / ".bin" / "ts-node"
-        npx = shutil.which("npx")
         if local_ts_node.is_file():
             runner_cmd = [str(local_ts_node), str(entry)]
-        elif npx:
-            runner_cmd = [npx, "ts-node", str(entry)]
         else:
-            return False, "npx not found on PATH (ejecute npm install en iota-immutable-publisher)", 1, None
+            runner_cmd = [npx, "ts-node", str(entry)]
         try:
             proc = subprocess.run(
                 runner_cmd,

@@ -1,12 +1,12 @@
 //! Núcleo orquestador `route-domain-event` nativo (paridad `route_domain_event_core.py`).
 
 use super::actions;
-use super::capsules::{invoke_capsule_json, invoke_tool};
+use super::capsules::invoke_capsule_json;
 use super::ecst_validation::{load_event_class_schemas, validate_ecst_instance};
 use super::eda_bus_topology::{
     delegation_meta, dlt_threshold_ok, ensure_event_bus_topology, ensure_processing_header,
     github_pr_merged, inject_domain_entity_topology_defaults, infer_persist_ref_from_branch,
-    is_backfill_emitter, maybe_purge_processing_header, promote_witness, rel_event_path,
+    is_backfill_emitter, is_lab_simulated_pr_url, maybe_purge_processing_header, promote_witness, rel_event_path,
     resolve_origin_topology, resolve_pull_request_lifecycle, subscriber_applies_to_topology,
     subscriber_id, terminal_witness_exists, try_sweep_event, write_json_atomic,
     write_processing_witness, ECST_GATE_SUBSCRIBER, EventBusTopology,
@@ -275,8 +275,20 @@ fn build_telegram_message_from_event(event: &Value) -> Option<String> {
 
 fn invoke_send_telegram_notification(repo: &Path, message: &str) -> Result<(bool, Value), String> {
     let req = json!({"message": message});
-    match invoke_tool(repo, "send-telegram-notification", &req) {
-        Ok(body) => Ok((true, body)),
+    match invoke_capsule_json(repo, "send-telegram-notification", &req, false) {
+        Ok(result)
+            if result.exit_code == 0 && result.body.get("success") == Some(&json!(true)) =>
+        {
+            Ok((true, result.body))
+        }
+        Ok(result) => {
+            let err = result
+                .body
+                .get("error")
+                .and_then(|v| v.as_str())
+                .unwrap_or("send-telegram-notification failed");
+            Ok((false, json!({"error": err})))
+        }
         Err(e) => Ok((false, json!({"error": e}))),
     }
 }
@@ -304,7 +316,9 @@ fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Opti
     });
     let _timeout = iota_timeout_seconds();
     let repo = repo.to_path_buf();
-    let handle = thread::spawn(move || invoke_capsule_json(&repo, "iota-immutable-publisher", &payload, true));
+    let handle = thread::spawn(move || {
+        invoke_capsule_json(&repo, "iota-immutable-publisher", &payload, false)
+    });
     let result = match handle.join() {
         Ok(Ok(r)) => r,
         Ok(Err(e)) => {
@@ -411,6 +425,21 @@ fn pull_request_review_precheck(
         );
     }
     if merged.is_none() && !on_remote {
+        if is_lab_simulated_pr_url(pr_url) {
+            let mut lifecycle_obj = lifecycle.clone();
+            if let Some(obj) = lifecycle_obj.as_object_mut() {
+                obj.insert("lab_simulated".into(), json!(true));
+                let diag = obj
+                    .entry("diagnostics")
+                    .or_insert_with(|| json!([]));
+                if let Some(arr) = diag.as_array_mut() {
+                    if !arr.iter().any(|v| v.as_str() == Some("lab:simulated-url")) {
+                        arr.push(json!("lab:simulated-url"));
+                    }
+                }
+            }
+            return (true, None, lifecycle_obj);
+        }
         let diag = lifecycle.get("diagnostics").cloned().unwrap_or(json!([]));
         return (
             false,
@@ -586,6 +615,9 @@ fn dispatch_subscriber(
                 let (ok, err, lifecycle) =
                     pull_request_review_precheck(repo, branch, pr_url, &payload);
                 if !ok {
+                    if is_lab_simulated_pr_url(pr_url) {
+                        return (sid, "skipped-lab-simulated".into(), None, 0);
+                    }
                     return (sid, "failed".into(), err, 1);
                 }
                 if lifecycle.get("merged") == Some(&json!(true)) {

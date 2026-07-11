@@ -8,14 +8,34 @@ from pathlib import Path
 from typing import Any
 
 
+def _section_block(md_body: str, section: str) -> str:
+    marker = f"### {section}"
+    start = md_body.find(marker)
+    if start == -1:
+        return ""
+    rest = md_body[start + len(marker) :]
+    end = len(rest)
+    for sep in ("\n### ", "\n## "):
+        pos = rest.find(sep)
+        if pos != -1:
+            end = min(end, pos)
+    return rest[:end]
+
+
 def _parse_payload_fields(md_body: str, section: str) -> list[str]:
-    pattern = rf"### {section}\s*\n((?:- .+\n?)*)"
-    match = re.search(pattern, md_body)
-    if not match:
+    block = _section_block(md_body, section)
+    if not block:
         return []
     fields: list[str] = []
-    for line in match.group(1).splitlines():
-        field_match = re.search(r"`([^`]+)`", line)
+    for line in block.splitlines():
+        trimmed = line.strip()
+        if section == "FORBIDDEN":
+            # Paridad ecst_validation.rs: solo líneas estrictas `- \`campo\``.
+            if not trimmed.startswith("- `"):
+                continue
+            field_match = re.match(r"- `([^`]+)`", trimmed)
+        else:
+            field_match = re.search(r"`([^`]+)`", line)
         if field_match and not field_match.group(1).startswith("*"):
             fields.append(field_match.group(1))
     return fields

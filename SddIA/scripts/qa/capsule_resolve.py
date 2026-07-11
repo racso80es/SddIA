@@ -304,6 +304,8 @@ _WASM_NATIVE_FALLBACK_MARKERS = (
     "failed to get current exe",
     "read-only",
     "no se pudo marcar read-only",
+    "wasi environment cannot establish outbound",
+    "outbound http connections",
 )
 
 

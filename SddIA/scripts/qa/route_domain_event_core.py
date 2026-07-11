@@ -28,6 +28,7 @@ from eda_bus_utils import (
     inject_domain_entity_topology_defaults,
     infer_persist_ref_from_branch,
     is_backfill_emitter,
+    is_lab_simulated_pr_url,
     list_witnesses,
     maybe_purge_processing_header,
     promote_witness,
@@ -227,6 +228,8 @@ def dispatch_subscriber(
                     repo, branch=branch, pr_url=pr_url if isinstance(pr_url, str) else None, payload=payload
                 )
                 if not ok_precheck:
+                    if is_lab_simulated_pr_url(pr_url if isinstance(pr_url, str) else None):
+                        return sid, "skipped-lab-simulated", None, 0
                     return sid, "failed", precheck_err, 1
                 if lifecycle.get("merged") is True:
                     process_inputs["merge_already_done"] = True
@@ -386,6 +389,14 @@ def _pull_request_review_precheck(
             f"(branch={branch}, pr={lifecycle.get('pr_number')})"
         ), lifecycle
     if merged is None and not on_remote:
+        if is_lab_simulated_pr_url(pr_url):
+            lifecycle = dict(lifecycle)
+            lifecycle["lab_simulated"] = True
+            diagnostics = list(lifecycle.get("diagnostics") or [])
+            if "lab:simulated-url" not in diagnostics:
+                diagnostics.append("lab:simulated-url")
+            lifecycle["diagnostics"] = diagnostics
+            return True, None, lifecycle
         diag = lifecycle.get("diagnostics") or []
         return False, (
             "pull-request-review: no se pudo resolver ciclo de vida del PR "

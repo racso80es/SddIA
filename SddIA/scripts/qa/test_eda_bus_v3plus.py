@@ -15,6 +15,7 @@ from eda_bus_utils import (
     ensure_processing_header,
     gh_executable,
     github_pr_merged,
+    is_lab_simulated_pr_url,
     list_witnesses,
     load_eda_bus,
     maybe_purge_processing_header,
@@ -192,6 +193,16 @@ class TestPullRequestLifecycle(unittest.TestCase):
     def test_parse_pr_number(self) -> None:
         self.assertEqual(parse_pr_number("https://github.com/org/repo/pull/48"), 48)
         self.assertIsNone(parse_pr_number("not-a-url"))
+
+    def test_is_lab_simulated_pr_url(self) -> None:
+        self.assertTrue(
+            is_lab_simulated_pr_url(
+                "https://github.com/lab-simulated/SddIA/pull/0-feat-x"
+            )
+        )
+        self.assertTrue(is_lab_simulated_pr_url("https://github.com/org/repo/pull/0"))
+        self.assertFalse(is_lab_simulated_pr_url("https://github.com/org/repo/pull/48"))
+        self.assertFalse(is_lab_simulated_pr_url(None))
 
     @patch("eda_bus_utils._gh_pr_state", return_value="MERGED")
     @patch("eda_bus_utils._branch_exists_on_remote", return_value=False)
