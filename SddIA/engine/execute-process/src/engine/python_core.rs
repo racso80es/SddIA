@@ -1,5 +1,5 @@
 //! Invocación puntual de módulos Python core (EDA fan-out residual).
-//! No sustituye al bridge capsules; solo cores aislados hasta porte full nativo.
+//! `route-domain-event` portado a Rust nativo (`route_domain_core.rs`).
 
 use serde_json::{json, Value};
 use std::path::Path;
@@ -7,31 +7,6 @@ use std::process::Command;
 
 fn python_bin() -> String {
     std::env::var("PYTHON").unwrap_or_else(|_| "python3".into())
-}
-
-pub fn invoke_route_domain_event(repo: &Path, event_rel: &str) -> Result<Value, String> {
-    let code = format!(
-        r#"
-import json, sys
-from pathlib import Path
-repo = Path({repo:?}).resolve()
-rel = sys.argv[1]
-from route_domain_event_core import route_domain_event
-out = route_domain_event(repo, rel)
-print(json.dumps(out, ensure_ascii=False))
-"#,
-        repo = repo.display().to_string(),
-    );
-    let qa = repo.join("SddIA/scripts/qa");
-    let output = Command::new(python_bin())
-        .arg("-c")
-        .arg(&code)
-        .arg(event_rel)
-        .current_dir(&qa)
-        .env("PYTHONPATH", &qa)
-        .output()
-        .map_err(|e| format!("spawn route domain core: {e}"))?;
-    parse_json_stdout(&output.stdout, &output.stderr)
 }
 
 pub fn invoke_route_fractal(

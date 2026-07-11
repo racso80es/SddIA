@@ -4,7 +4,7 @@ title: "[FIX] Porte route-domain-event core a Rust (eliminar route bridge)"
 format: markdown
 version: "1.0.0"
 created: "2026-06-18"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 related:
