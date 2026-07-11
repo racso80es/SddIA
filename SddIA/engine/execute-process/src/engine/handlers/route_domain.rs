@@ -1,7 +1,7 @@
-//! Handler `route-domain-event` (P4) — entry nativo; core EDA vía `python_core`.
+//! Handler `route-domain-event` (P4) — core EDA nativo Rust.
 
 use crate::envelope::OrchestratorEnvelope;
-use crate::engine::python_core::invoke_route_domain_event;
+use crate::engine::route_domain_core::route_domain_event;
 use serde_json::{json, Value};
 use std::path::Path;
 
@@ -13,7 +13,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         .filter(|s| !s.is_empty())
         .ok_or("event_file_path requerido")?;
 
-    let out = invoke_route_domain_event(repo, event_rel)?;
+    let out = route_domain_event(repo, event_rel);
     let ok = out.get("success").and_then(|v| v.as_bool()).unwrap_or(false)
         && out.get("exitCode").and_then(|v| v.as_i64()).unwrap_or(1) == 0;
     let status_code = out
@@ -39,7 +39,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             "phases": [{
                 "phase_name": "Orquestación route-domain-event",
                 "status": if ok { "executed" } else { "failed" },
-                "handler": "route-domain-event-core",
+                "handler": "route-domain-event-core-rust",
                 "dispatch_mode": dispatch_mode,
             }],
         })),
