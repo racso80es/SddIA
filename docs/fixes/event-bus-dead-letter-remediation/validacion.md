@@ -7,6 +7,7 @@ persist_ref: docs/fixes/event-bus-dead-letter-remediation
 global: APTO
 pbi_archived: true
 branch: fix/event-bus-dead-letter-remediation
+pr_url: https://github.com/racso80es/SddIA/pull/109
 ---
 
 # Validación — Remediación dead-letters bus de eventos
