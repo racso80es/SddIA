@@ -57,6 +57,21 @@ def main() -> int:
 
     exit_code = 0
     for branch in branches_to_present:
+        qa_payload = {
+            "event_type": "Local_QA_Requested",
+            "blocking": True,
+            "emitter_agent": "git-hook-pre-push",
+            "payload": {"branch": branch},
+        }
+        qa_code = invoke_process("route-domain-event", qa_payload)
+        if qa_code != 0:
+            print(
+                f"SddIA pre-push: BLOCKED — Local_QA_Requested failed for {branch}",
+                file=sys.stderr,
+            )
+            exit_code = qa_code
+            continue
+
         persist_ref = resolve_persist_ref(branch)
         slug = branch_slug(branch)
         payload: dict = {

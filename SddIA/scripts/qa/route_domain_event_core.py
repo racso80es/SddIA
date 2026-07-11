@@ -218,13 +218,20 @@ def dispatch_subscriber(
             process_inputs["pr_url"] = pr_url.strip()
         process_key = process_name.strip()
         if process_key == "pull-request-review":
-            ok_precheck, precheck_err, lifecycle = _pull_request_review_precheck(
-                repo, branch=branch, pr_url=pr_url if isinstance(pr_url, str) else None, payload=payload
+            is_local_qa = (
+                event.get("event_type") == "Local_QA_Requested"
+                or event.get("emitter_agent") == "git-hook-pre-push"
             )
-            if not ok_precheck:
-                return sid, "failed", precheck_err, 1
-            if lifecycle.get("merged") is True:
-                process_inputs["merge_already_done"] = True
+            if not is_local_qa:
+                ok_precheck, precheck_err, lifecycle = _pull_request_review_precheck(
+                    repo, branch=branch, pr_url=pr_url if isinstance(pr_url, str) else None, payload=payload
+                )
+                if not ok_precheck:
+                    return sid, "failed", precheck_err, 1
+                if lifecycle.get("merged") is True:
+                    process_inputs["merge_already_done"] = True
+            else:
+                process_inputs["local_qa"] = True
         elif isinstance(pr_url, str) and pr_url.strip() and github_pr_merged(pr_url):
             process_inputs["merge_already_done"] = True
         inferred = infer_persist_ref_from_branch(repo, branch)

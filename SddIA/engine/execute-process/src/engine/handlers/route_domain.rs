@@ -1,19 +1,23 @@
 //! Handler `route-domain-event` (P4) — core EDA nativo Rust.
 
 use crate::envelope::OrchestratorEnvelope;
-use crate::engine::route_domain_core::route_domain_event;
+use crate::engine::route_domain_core::{
+    input_truthy, resolve_route_event_path, route_domain_event, SyncRouteGuard,
+};
 use serde_json::{json, Value};
 use std::path::Path;
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
-    let event_rel = process_inputs
-        .get("event_file_path")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or("event_file_path requerido")?;
+    let blocking =
+        input_truthy(process_inputs, "blocking") || input_truthy(process_inputs, "sync");
+    let event_rel = resolve_route_event_path(repo, process_inputs, blocking)?;
+    let _sync_guard = if blocking {
+        Some(SyncRouteGuard::activate())
+    } else {
+        None
+    };
 
-    let out = route_domain_event(repo, event_rel);
+    let out = route_domain_event(repo, &event_rel);
     let ok = out.get("success").and_then(|v| v.as_bool()).unwrap_or(false)
         && out.get("exitCode").and_then(|v| v.as_i64()).unwrap_or(1) == 0;
     let status_code = out
@@ -41,6 +45,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
                 "status": if ok { "executed" } else { "failed" },
                 "handler": "route-domain-event-core-rust",
                 "dispatch_mode": dispatch_mode,
+                "blocking": blocking,
             }],
         })),
         exit_code: status_code,
