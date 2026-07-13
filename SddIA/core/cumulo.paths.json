@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -17,7 +17,6 @@
     "security": "SddIA/security",
     "tokens": "SddIA/tokens",
     "documentation": "docs",
-    "scripts_limbo": "SddIA/scripts/limbo",
     "patterns": "SddIA/patterns",
     "principles": "SddIA/principles",
     "templates": "SddIA/templates",

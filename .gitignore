@@ -38,7 +38,6 @@ SddIA/scripts/tools/iota-immutable-publisher/.iota-cli/
 SddIA/scripts/tools/iota-immutable-publisher/move/iota-framework/
 SddIA/scripts/tools/iota-immutable-publisher/move/sddia_anchor/build/
 SddIA/scripts/tools/iota-immutable-publisher/node_modules/
-SddIA/scripts/limbo/tools/iota-immutable-publisher/node_modules/
 SddIA/scripts/tools/iota-immutable-publisher/anchor-bytecode.json
 SddIA/scripts/tools/iota-immutable-publisher/anchor-build.err
 SddIA/scripts/tools/iota-immutable-publisher/anchor-build.log
