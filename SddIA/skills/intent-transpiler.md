@@ -40,7 +40,7 @@ Skill intermediaria de **prevención cognitiva** (PBI Snapshot Fricción Jules):
 ## Límites
 
 - No muta genoma ni disco; solo produce directiva estructurada.
-- No sustituye `execute-process.py` ni `entity-manager`.
+- No sustituye el orquestador nativo `execute-process` ni `entity-manager`.
 - Si `persist_ref` no existe, `required_process: feature` y `structured_directive` debe ordenar inicialización de feature antes de mutaciones.
 
 ## Referencias

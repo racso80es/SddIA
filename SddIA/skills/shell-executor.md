@@ -34,9 +34,11 @@ El esquema de entrada y sus contramedidas antinyección se rigen por la norma co
 La skill debe abortar inmediatamente con `exitCode != 0` si `executable` es exactamente `git` o `git.exe`, o si el basename de su ruta resuelta evalúa a `git` / `git.exe`. Su uso debe enrutarse obligatoriamente por `git-manager`.
 
 ## 4. Motor de ejecución (cápsula física)
-Cápsula **`shell-executor.py`** resuelta vía `cumulo.paths.json` → `execution_capsules.skills` → `shell-executor.py`. Un único objeto JSON por **stdin**; respuesta JSON en **stdout** (`success`, `exitCode`, `data`, `error` si fallo). Invocación orientativa desde la raíz del workspace:
+Cápsula nativa **`shell-executor`** resuelta vía `cumulo.paths.json` → `compiled_capsules` → `SddIA/target/{release|debug}/shell-executor` (preferente WASM en `compiled_capsules.wasm_root`). Un único objeto JSON por **stdin**; respuesta JSON en **stdout** (`success`, `exitCode`, `data`, `error` si fallo).
 
-`python {paths.execution_capsules.skills}/shell-executor.py`
+Invocación orientativa: `./sddia-run.sh --tool shell-executor`
 
-Implementación: `subprocess` **sin** `shell=True`, con `arguments` como array; sanitización estricta por token; **bloqueo anti-git** por nombre y por basename de ruta resuelta; allowlist local + capa de whitelist por Cerbero previa a invocación.
+Invocación directa (tras `cargo build -p shell-executor`): `SddIA/target/debug/shell-executor`
+
+Implementación: crate Rust `SddIA/skills/shell-executor/` — sanitización estricta por token; **bloqueo anti-git** por nombre y basename de ruta resuelta; allowlist local + whitelist Cerbero previa a invocación.
 

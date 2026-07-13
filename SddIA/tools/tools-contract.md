@@ -42,7 +42,7 @@ El **único puente** entre ambos es:
 
 * El crate de la tool reside bajo `cumulo.execution_capsules.tools` → `SddIA/tools/{name}/`.
 * El artefacto ejecutable se resuelve en `SddIA/target/` (`wasm32-wasip1/release|debug/{name}.wasm` o binario nativo `{name}`).
-* Prohibido `SddIA/scripts/tools/` como ruta operativa canónica (legacy retirado a `SddIA/scripts/limbo/tools/`).
+* Prohibido `SddIA/scripts/tools/` como ruta operativa canónica; las cápsulas residen en `SddIA/tools/{name}/` y se resuelven vía `compiled_capsules` en Cúmulo.
 * El runtime laboratorio usa `capsule_resolve.resolve_tool_capsule()` — paridad con skills.
 
 ## 4. Ejecución y ruteo (Workspace-local)

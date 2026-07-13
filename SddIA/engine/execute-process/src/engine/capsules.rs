@@ -208,8 +208,27 @@ pub fn invoke_capsule_json(
     payload: &Value,
     prefer_wasm: bool,
 ) -> Result<CapsuleInvokeResult, String> {
+    invoke_capsule_json_labeled(repo, name, payload, prefer_wasm, "skill")
+}
+
+pub fn invoke_tool_capsule_json(
+    repo: &Path,
+    name: &str,
+    payload: &Value,
+    prefer_wasm: bool,
+) -> Result<CapsuleInvokeResult, String> {
+    invoke_capsule_json_labeled(repo, name, payload, prefer_wasm, "tool")
+}
+
+fn invoke_capsule_json_labeled(
+    repo: &Path,
+    name: &str,
+    payload: &Value,
+    prefer_wasm: bool,
+    entity_label: &str,
+) -> Result<CapsuleInvokeResult, String> {
     let stdin_payload = serde_json::to_string(payload).map_err(|e| e.to_string())?;
-    let (kind, path) = resolve_capsule(repo, name, prefer_wasm, "skill")?;
+    let (kind, path) = resolve_capsule(repo, name, prefer_wasm, entity_label)?;
     let (stdout, stderr, rc) = invoke_capsule_subprocess(repo, &kind, &path, &stdin_payload)?;
     let mut body = if stdout.is_empty() {
         json!({
@@ -235,7 +254,7 @@ pub fn invoke_capsule_json(
             result.body.get("message").and_then(|v| v.as_str()).unwrap_or("")
         );
         if blob_contains_markers(&err_blob, WASM_NATIVE_FALLBACK_MARKERS) {
-            return invoke_capsule_json(repo, name, payload, false);
+            return invoke_capsule_json_labeled(repo, name, payload, false, entity_label);
         }
     }
     Ok(result)
@@ -266,7 +285,7 @@ fn unwrap_tool_envelope(body: Value) -> Value {
 }
 
 pub fn invoke_tool(repo: &Path, tool_name: &str, payload: &Value) -> Result<Value, String> {
-    let result = invoke_capsule_json(repo, tool_name, payload, true)?;
+    let result = invoke_tool_capsule_json(repo, tool_name, payload, true)?;
     if result.exit_code != 0 || result.body.get("success") == Some(&json!(false)) {
         return Err(result
             .body

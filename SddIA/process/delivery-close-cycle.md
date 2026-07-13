@@ -6,7 +6,7 @@ contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
-hash_signature: sha256:bebaa3c536ff8a67dca9f61c841e594a4efcfd51593dd6badbc8549422232b60
+hash_signature: sha256:31bd1f3876e28fcf0803dc80344e4c0c5885e9cc6f34e542022a80cce8bd8fbf
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -31,7 +31,7 @@ phases:
   delegates_to:
   - agent:argos
 - name: Aduana EDA genómica
-  intent: Invocar audit-entity-eda-coverage.py --scan --json; si orphan_count > 0, Argos
+  intent: Invocar `sddia-qa audit-eda-coverage --scan --json`; si orphan_count > 0, Argos
     registra Ruido de Sistema (block) salvo excepción documentada de backfill Fase C en curso.
   delegates_to:
   - agent:argos
@@ -90,10 +90,10 @@ Salidas propagadas al envelope del proceso: `event_id`, `target_path`, `pr_url`.
 ## Notas operativas
 
 * La fase **Impacto SddIA condicional** debe evaluarse como no-op documentado cuando no aplique (`source_process != feature` o sin cambios bajo `SddIA/`), sin bloquear el resto del ciclo.
-* **Aduana EDA genómica:** ejecutar `python SddIA/scripts/qa/audit-entity-eda-coverage.py --scan --json`. Si `orphan_count > 0` (entidad indexada sin `Domain_Entity_Created` correlacionado), Argos emite **Ruido de Sistema** con veredicto `block` hasta backfill Fase C (`--emit --skip-dlt` + `--anchor-merkle` obligatorio al cierre). Excepción temporal: manifiesto `backfill-manifest.json` con `correlation_id` activo en la feature.
+* **Aduana EDA genómica:** ejecutar `SddIA/target/debug/sddia-qa audit-eda-coverage --scan --json` (o `./sddia-run.sh --audit-eda-coverage --scan --json`). Si `orphan_count > 0` (entidad indexada sin `Domain_Entity_Created` correlacionado), Argos emite **Ruido de Sistema** con veredicto `block` hasta backfill Fase C (`--emit --skip-dlt` + `--anchor-merkle` obligatorio al cierre). Excepción temporal: manifiesto `backfill-manifest.json` con `correlation_id` activo en la feature.
 * Todas las rutas y políticas se resuelven exclusivamente vía `cumulo.paths.json` y normas enlazadas (`git-operations`, `pull-request-orchestration`).
 
-## Perfil laboratorio (`execute-process.py`)
+## Perfil laboratorio (`execute-process` nativo)
 
 Variables de entorno para cápsulas físicas sin efectos destructivos por defecto:
 

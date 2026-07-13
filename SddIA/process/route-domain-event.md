@@ -56,11 +56,11 @@ Proceso orquestador del bus EDA local (**Ola C V3+**). Sustituye la acción hom�
 
 ## Implementación física
 
-Handler laboratorio: `route_domain_event_core.route_domain_event()` invocado desde `execute-process.py`.
+Handler laboratorio: `route_domain_event_core::route_domain_event()` invocado desde el binario `execute-process`.
 
 Watcher: delega en `execute-process --process route-domain-event`.
 
 ## Límites
 
 * No emite eventos de dominio; no ancla DLT directamente.
-* Sweeper (`event-sweeper.py`) purga `pending/` tras consenso en `processed/subscribers/`.
+* Sweeper (`event-sweeper`, binario Rust) purga `pending/` tras consenso en `processed/subscribers/`.

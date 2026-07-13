@@ -14,35 +14,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 ENTRY="$REPO_ROOT/SddIA/daemons/${DAEMON}.sh"
 
-_resolve_python() {
-  if command -v python3 >/dev/null 2>&1; then
-    echo python3
-  elif command -v python >/dev/null 2>&1; then
-    echo python
-  else
-    echo "[ERROR] Python 3 requerido para cargar bóveda (.dev/.env)." >&2
-    return 1
-  fi
-}
-
-_load_vault() {
-  local python
-  python="$(_resolve_python)" || return 1
-  # shellcheck disable=SC2046
-  eval "$("$python" - "$REPO_ROOT" <<'PY'
-import shlex
-import sys
-from pathlib import Path
-
-repo = Path(sys.argv[1])
-sys.path.insert(0, str(repo / "SddIA" / "scripts" / "qa"))
-from env_loader import load_hierarchical_env
-
-for key, value in load_hierarchical_env(repo).items():
-    print(f"export {key}={shlex.quote(value)}")
-PY
-)"
-}
+# shellcheck source=../common/sddia_shell_lib.sh
+source "$SCRIPT_DIR/../common/sddia_shell_lib.sh"
 
 _setup_node_path() {
   local node_bin
@@ -59,8 +32,7 @@ if [[ ! -f "$ENTRY" ]]; then
   exit 1
 fi
 
-export PYTHONUTF8=1
-_load_vault
+_sddia_load_vault "$REPO_ROOT"
 _setup_node_path
 cd "$REPO_ROOT"
 exec "$ENTRY" "$@"

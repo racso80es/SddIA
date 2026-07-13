@@ -22,4 +22,4 @@ telemetry_schema:
 
 # github-bridge-watcher
 
-Oráculo sensor DLT: detecta PRs remotos (GitHub API o fixture lab), delega anclaje IOTA en `github_bridge_process_pr.py`, materializa `PullRequest_Presented`. Binario Rust en `SddIA/target/{release|debug}/github-bridge-watcher`; launcher `SddIA/daemons/github-bridge-watcher.sh`. Emite `Daemon_Heartbeat` cada 60s.
+Oráculo sensor DLT: detecta PRs remotos (GitHub API o fixture lab), delega anclaje IOTA en handler nativo `github_bridge::process_pr`, materializa `PullRequest_Presented`. Binario Rust en `SddIA/target/{release|debug}/github-bridge-watcher`; launcher `SddIA/daemons/github-bridge-watcher.sh`. Emite `Daemon_Heartbeat` cada 60s.

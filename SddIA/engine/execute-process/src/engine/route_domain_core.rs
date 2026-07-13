@@ -24,10 +24,6 @@ use uuid::Uuid;
 
 const ALLOWLIST_KALMA2: &[&str] = &["bug-fix", "feature", "refactorization", "task-queue-manager"];
 
-fn python_bin() -> String {
-    std::env::var("PYTHON").unwrap_or_else(|_| "python3".into())
-}
-
 fn sync_dispatch_mode() -> bool {
     matches!(
         std::env::var("SDDIA_LAB_ROUTE_SYNC")
@@ -345,55 +341,22 @@ fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Opti
 }
 
 fn invoke_execute_action(repo: &Path, action: &str, payload: &Value) -> Result<(bool, String, i32), String> {
-    let runner = repo.join("SddIA/scripts/qa/execute-action.py");
-    if !runner.is_file() {
-        return Ok((false, "execute-action.py not found".into(), 1));
+    match super::capsules::invoke_action(repo, action, payload) {
+        Ok(data) => {
+            let ok = data.get("success").and_then(|v| v.as_bool()).unwrap_or(true);
+            let exit_code = data
+                .get("exitCode")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(if ok { 0 } else { 1 }) as i32;
+            let err = data
+                .get("error")
+                .and_then(|v| v.as_str())
+                .unwrap_or("action failed")
+                .to_string();
+            Ok((ok, err, exit_code))
+        }
+        Err(e) => Ok((false, e, 1)),
     }
-    let inputs_json = serde_json::to_string(payload).map_err(|e| e.to_string())?;
-    let output = Command::new(python_bin())
-        .args([
-            runner.to_string_lossy().as_ref(),
-            "--action",
-            action,
-            "--inputs",
-            &inputs_json,
-        ])
-        .current_dir(repo)
-        .output()
-        .map_err(|e| format!("spawn execute-action: {e}"))?;
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let line = stdout.lines().filter(|l| !l.trim().is_empty()).last().unwrap_or("");
-    if line.is_empty() {
-        return Ok((
-            false,
-            if stderr.trim().is_empty() {
-                "empty stdout".into()
-            } else {
-                stderr.trim().to_string()
-            },
-            output.status.code().unwrap_or(1),
-        ));
-    }
-    let envelope: Value = serde_json::from_str(line).map_err(|e| format!("invalid JSON: {e}"))?;
-    let data = envelope.get("data").cloned().unwrap_or(json!({}));
-    let exit_code = envelope
-        .get("status_code")
-        .and_then(|v| v.as_i64())
-        .unwrap_or(if envelope.get("success").and_then(|v| v.as_bool()) == Some(true) {
-            0
-        } else {
-            1
-        }) as i32;
-    let ok = envelope.get("success").and_then(|v| v.as_bool()) == Some(true)
-        && data.get("success").and_then(|v| v.as_bool()).unwrap_or(true);
-    let err = envelope
-        .get("error")
-        .or_else(|| data.get("error"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("action failed")
-        .to_string();
-    Ok((ok, err, exit_code))
 }
 
 fn pull_request_review_precheck(
@@ -485,7 +448,7 @@ fn dispatch_process_subscriber(
     }
 }
 
-fn dispatch_subscriber(
+pub(crate) fn dispatch_subscriber(
     repo: &Path,
     subscriber: &Value,
     event: &mut Value,

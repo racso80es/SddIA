@@ -30,15 +30,20 @@ jobs:
           key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
           restore-keys: |
             native-${{ runner.os }}-
-      - name: Build execute-process (frontmatter parser QA)
-        run: cd SddIA && cargo build -p execute-process
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Build QA aduana (execute-process + sddia-qa)
+        run: |
+          cd SddIA
+          cargo build -p execute-process
+          cargo build -p sddia-qa
       - name: verify-tools-index
-        run: python SddIA/scripts/qa/verify-tools-index.py
+        run: SddIA/target/debug/sddia-qa verify-tools-index
       - name: verify-process-integrity
-        run: python SddIA/scripts/qa/verify-process-integrity.py
+        run: SddIA/target/debug/sddia-qa verify-process-integrity
+      - name: verify-compiled-capsules
+        run: |
+          cd SddIA
+          cargo build --workspace
+          target/debug/sddia-qa verify-compiled-capsules
 
   eda-iota-smoke-simulate:
     runs-on: ubuntu-latest
@@ -54,16 +59,14 @@ jobs:
           key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
           restore-keys: |
             native-${{ runner.os }}-
-      - name: Build centinelas + orquestador (smoke EDA)
+      - name: Build centinelas + orquestador + QA
         run: |
           cd SddIA
           cargo build -p event-watcher
           cargo build -p execute-process
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+          cargo build -p sddia-qa
       - name: run-iota-ci-smoke (simulate)
-        run: python SddIA/scripts/qa/run-iota-ci-smoke.py --simulate --json
+        run: SddIA/target/debug/sddia-qa run-iota-ci-smoke --simulate --json
 
   wasi-runtime-smoke:
     runs-on: ubuntu-latest
@@ -87,21 +90,19 @@ jobs:
             wasi-${{ runner.os }}-
       - name: Build WASI workspace
         run: cd SddIA && cargo build --workspace --target wasm32-wasip1
-      - name: Build nativos (centinelas + orquestador)
+      - name: Build nativos (centinelas + orquestador + QA)
         run: |
           cd SddIA
           cargo build -p event-watcher
           cargo build -p execute-process
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+          cargo build -p sddia-qa
       - name: WASI CI smoke
         env:
           SDDIA_CI_REQUIRE_WASI: "1"
           SDDIA_LAB_SIMULATE_IOTA: "1"
           SDDIA_LAB_SIMULATE_SYNC_INDEX: "1"
           SDDIA_LAB_ROUTE_SYNC: "1"
-        run: python SddIA/scripts/qa/run-wasi-ci-smoke.py --json
+        run: SddIA/target/debug/sddia-qa run-wasi-ci-smoke --json
 
   eda-bus-e2e-smoke:
     runs-on: ubuntu-latest
@@ -125,20 +126,18 @@ jobs:
             wasi-${{ runner.os }}-
       - name: Build WASI workspace
         run: cd SddIA && cargo build --workspace --target wasm32-wasip1
-      - name: Build nativos (centinelas + orquestador)
+      - name: Build nativos (centinelas + orquestador + QA)
         run: |
           cd SddIA
           cargo build -p event-watcher
           cargo build -p execute-process
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+          cargo build -p sddia-qa
       - name: EDA E2E lab (simulate)
         env:
           SDDIA_LAB_SIMULATE_IOTA: "1"
           SDDIA_LAB_SIMULATE_SYNC_INDEX: "1"
           SDDIA_LAB_ROUTE_SYNC: "1"
-        run: python SddIA/scripts/qa/run-eda-e2e-lab.py --entity-class tool --json
+        run: SddIA/target/debug/sddia-qa run-eda-e2e-lab --entity-class tool --json
       - name: event-sweeper --once (idempotent)
         run: |
           cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build --release -p event-sweeper
@@ -151,20 +150,23 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
         with:
-          python-version: "3.12"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Install iota-immutable-publisher deps
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            SddIA/target
+          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          restore-keys: |
+            native-${{ runner.os }}-
+      - name: Build nativos (smoke IOTA físico)
         run: |
-          PUB=SddIA/scripts/tools/iota-immutable-publisher
-          if [ ! -d "$PUB" ]; then
-            echo "iota-immutable-publisher ausente — omitiendo job físico"
-            exit 0
-          fi
-          cd "$PUB" && npm ci
+          cd SddIA
+          cargo build -p event-watcher
+          cargo build -p execute-process
+          cargo build -p iota-immutable-publisher
+          cargo build -p sddia-qa
       - name: run-iota-ci-smoke (physical)
         env:
           IOTA_WALLET_SECRET: ${{ secrets.IOTA_WALLET_SECRET }}
@@ -173,4 +175,4 @@ jobs:
             echo "IOTA_WALLET_SECRET no configurado — omitiendo anclaje físico Testnet"
             exit 0
           fi
-          python SddIA/scripts/qa/run-iota-ci-smoke.py --require-physical --json
+          SddIA/target/debug/sddia-qa run-iota-ci-smoke --require-physical --json

@@ -1,5 +1,6 @@
 pub mod eda_bus;
 pub mod eda_sweep;
+pub mod github_bridge;
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};

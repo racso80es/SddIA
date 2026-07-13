@@ -4,7 +4,6 @@ use super::capsules::{invoke_action, invoke_git_manager, invoke_shell_executor, 
 use regex::Regex;
 use serde_json::{json, Value};
 use std::path::Path;
-use std::process::Command;
 use std::sync::OnceLock;
 
 static GH_PR_URL_RE: OnceLock<Regex> = OnceLock::new();
@@ -51,23 +50,7 @@ fn delivery_pr_title(inputs: &Value) -> String {
 }
 
 fn run_eda_audit_scan(repo: &Path) -> Result<Value, String> {
-    let script = repo.join("SddIA/scripts/qa/audit-entity-eda-coverage.py");
-    if !script.is_file() {
-        return Err(format!("audit script ausente: {}", script.display()));
-    }
-    let py = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-    let output = Command::new(&py)
-        .arg(&script)
-        .args(["--scan", "--json"])
-        .current_dir(repo)
-        .output()
-        .map_err(|e| e.to_string())?;
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let line = stdout.trim();
-    if line.is_empty() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
-    }
-    serde_json::from_str(line).map_err(|e| format!("JSON audit EDA: {e}"))
+    super::eda_coverage::scan_orphans(repo)
 }
 
 fn backfill_manifest_active(repo: &Path, persist_ref: Option<&str>) -> bool {

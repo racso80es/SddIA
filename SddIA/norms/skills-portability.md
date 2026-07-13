@@ -21,10 +21,9 @@ Este documento **no** es una skill ni un proceso ejecutable. Consolida el metaco
 1. Copiar o fusionar `cumulo.paths.json` y validar claves: `directories.norms`, `directories.skills`, `execution_capsules.skills`.
 2. Registrar skills en `SddIA/skills/index.md` con filas alineadas al YAML de cada `{name}.md`.
 3. Asegurar que agentes consumen rutas vía Cúmulo, no paths absolutos del desarrollador.
-4. Para binarios en transición, usar `SddIA/scripts/limbo/` y la convención de extensión `.limbo.*` hasta que un Proceso los sustituya.
+4. Las cápsulas ejecutables residen bajo `execution_capsules` en Cúmulo (`SddIA/skills/`, `SddIA/tools/`, `SddIA/daemons/`) con artefactos en `SddIA/target/`.
 
 ## 3. Referencias
 
 - Contrato de familia: `SddIA/skills/skills-contract.md`
 - Orquestación PR: `SddIA/norms/pull-request-orchestration.md`
-- Limbo: `SddIA/scripts/limbo/README.md`

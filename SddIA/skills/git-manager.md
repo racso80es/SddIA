@@ -31,11 +31,13 @@ Motor unificado y ciego para interacciones **exclusivas** con el binario nativo 
 - La validación de política (p. ej. prefijos `feat/`) es previa a la invocación; norma: `SddIA/norms/git-operations.md`.
 
 ## 3. Motor de ejecución (cápsula física)
-Cápsula **`git-manager.py`** resuelta vía `cumulo.paths.json` → `execution_capsules.skills` → `git-manager.py`. Un único objeto JSON por **stdin**; respuesta JSON en **stdout** (`success`, `exitCode`, `data`, `error` si fallo). Invocación orientativa desde la raíz del workspace:
+Cápsula nativa **`git-manager`** resuelta vía `cumulo.paths.json` → `compiled_capsules` → `SddIA/target/{release|debug}/git-manager` (preferente WASM en `compiled_capsules.wasm_root`). Un único objeto JSON por **stdin**; respuesta JSON en **stdout** (`success`, `exitCode`, `data`, `error` si fallo).
 
-`python {paths.execution_capsules.skills}/git-manager.py`
+Invocación orientativa: `./sddia-run.sh --tool git-manager`
 
-Implementación: **patrón Command** (argumentos en lista, `subprocess` **sin** `shell=True`), validación estricta de `operation_payload_json` y tokens sin metacaracteres de shell; rutas de `files` en `commit` confinadas al repositorio. El proceso termina con código `0` si `git` devolvió `0`, `1` en caso contrario o error de validación.
+Invocación directa (tras `cargo build -p git-manager`): `SddIA/target/debug/git-manager`
+
+Implementación: crate Rust `SddIA/skills/git-manager/` — patrón Command (argumentos en lista, sin shell); validación estricta de `operation_payload_json`; rutas de `files` en `commit` confinadas al repositorio.
 
 ## 4. Referencias normativas
 - `SddIA/norms/skill-io-git-manager-frozen.md`

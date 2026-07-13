@@ -14,10 +14,6 @@ const CONFLICT_BACKOFF_SECONDS: u64 = 5;
 const STATE_REL: &str = ".SddIA/.state/telegram_last_id";
 const LEGACY_STATE_REL: &str = ".SddIA/daemons/state/telegram-watcher.json";
 
-fn python_bin() -> String {
-    env::var("PYTHON").unwrap_or_else(|_| "python3".into())
-}
-
 fn execute_process_bin(repo: &Path) -> PathBuf {
     if let Ok(p) = env::var("SDDIA_EXECUTE_PROCESS_BIN") {
         if !p.trim().is_empty() {
@@ -31,10 +27,6 @@ fn execute_process_bin(repo: &Path) -> PathBuf {
         }
     }
     repo.join("SddIA/target/debug/execute-process")
-}
-
-fn orchestrator_is_python(path: &Path) -> bool {
-    path.extension().and_then(|e| e.to_str()) == Some("py")
 }
 
 fn state_path(repo: &Path) -> PathBuf {
@@ -187,18 +179,10 @@ fn invoke_gateway(repo: &Path, text: &str, dry_run: bool) -> i32 {
     }
     let runner = execute_process_bin(repo);
     let payload = serde_json::json!({ "text": text }).to_string();
-    let out = if orchestrator_is_python(&runner) {
-        Command::new(python_bin())
-            .arg(&runner)
-            .args(["--process", "telegram-gateway", "--inputs", &payload])
-            .current_dir(repo)
-            .output()
-    } else {
-        Command::new(&runner)
-            .args(["--process", "telegram-gateway", "--inputs", &payload])
-            .current_dir(repo)
-            .output()
-    };
+    let out = Command::new(&runner)
+        .args(["--process", "telegram-gateway", "--inputs", &payload])
+        .current_dir(repo)
+        .output();
     match out {
         Ok(o) => {
             if o.status.success() {

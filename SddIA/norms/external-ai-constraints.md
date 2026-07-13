@@ -2,7 +2,7 @@
 
 **Tipo:** Norma motor / Comportamiento IA  
 **UUID:** 95b5ac3a-061f-458d-bfb6-69f91a1c1731  
-**Versión:** 1.3.0  
+**Versión:** 1.4.0  
 **Seguridad:** Karma2Token  
 **Dependencias normativas:** `obediencia-procesos.md`, `paths-via-cumulo.md`, `touchpoints-ia.md`
 
@@ -36,16 +36,17 @@ Bajo ninguna circunstancia puedes **crear, modificar o eliminar** archivos en lo
 
 ### DA-3 — Única Vía de Acción
 
-**Resolución del orquestador (SSOT):** toda invocación al motor de procesos debe usar el binario Rust nativo. SSOT de resolución: `SddIA/scripts/qa/orchestrator_resolve.py` (`resolve_orchestrator_cmd`). Wrapper de entrada: `./sddia-run.sh`. Override: `SDDIA_EXECUTE_PROCESS_BIN`. Si el binario no está compilado, la resolución falla explícitamente (compilar: `cd SddIA && cargo build -p execute-process`).
+**Resolución del orquestador (SSOT):** toda invocación al motor de procesos debe usar el binario Rust nativo. SSOT de resolución: `SddIA/scripts/common/sddia_shell_lib.sh` (`_sddia_resolve_orchestrator`). Wrapper de entrada: `./sddia-run.sh`. Override: `SDDIA_EXECUTE_PROCESS_BIN`. Si el binario no está compilado, la resolución falla explícitamente (compilar: `cd SddIA && cargo build -p execute-process`).
 
 | Intención | Invocación obligatoria |
 |-----------|------------------------|
 | Crear / actualizar entidad de dominio | `./sddia-run.sh --process entity-manager --inputs '{...}'` |
 | Cierre de entrega / apertura PR | `./sddia-run.sh --process delivery-close-cycle --inputs '{...}'` |
 | Forja por clase concreta | `{entity_class}-creator` solo vía cadena autorizada (`entity-manager`) |
-| Invocación directa (lab / CI) | `SddIA/target/debug/execute-process --process …` o `python3 SddIA/scripts/qa/orchestrator_resolve.py --process …` |
+| Invocación directa (lab / CI) | `SddIA/target/debug/execute-process --process …` |
+| Aduana QA (índices, EDA, smokes) | `SddIA/target/debug/sddia-qa …` |
 
-Prohibido bypass del bus EDA (`/.events/`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa. Prohibido hardcodear `python … execute-process.py` o invocar el orquestador sin pasar por `orchestrator_resolve` / binario nativo.
+Prohibido bypass del bus EDA (`/.events/`). Prohibido `git commit` de genoma sin correlato en bus cuando la aduana física esté activa. Prohibido invocar el orquestador sin pasar por `./sddia-run.sh` / `SDDIA_EXECUTE_PROCESS_BIN` / binario nativo compilado.
 
 ### DA-4 — Acoplamiento Raw Kernel ↔ ciclo feature
 

@@ -147,7 +147,7 @@ Antes del sello universal:
 2. Si forja idempotente detectó artefacto preexistente → mismo criterio (un sello por UUID).
 3. En `update`/`delete`: comprobar duplicado de mismo `lifecycle_operation` + `hash_signature_new`/`hash_signature_old` cuando aplique.
 
-Implementación lab: `execute_process_capsules.py` → `find_existing_domain_event`, `assert_idempotent_emit`.
+Implementación lab: handler nativo `entity_manager` en `execute-process` → `find_existing_domain_event`, `assert_idempotent_emit`.
 
 ## Fase 2 — Delete físico
 
@@ -181,7 +181,7 @@ Propagar `event_id` y `target_path` a outputs del proceso.
 
 Tras persistir el JSON en `eda_bus.pending`:
 
-1. El **watcher** (`event-watcher.py` → `execute-process --process route-domain-event`) filtra suscriptores por `applies_to_origin_topology`.
+1. El **watcher** (`event-watcher` → `execute-process --process route-domain-event`) filtra suscriptores por `applies_to_origin_topology`.
 2. Solo eventos con `origin_topology=core` y `event_type=Domain_Entity_Created` disparan `iota-immutable-publisher` si el umbral DLT está satisfecho (`hash_signature_new` válido, no placeholder).
 3. Emisiones con `emitter_agent=cumulo-eda-backfill` omiten DLT por entidad (Fase C); el cierre exige `--anchor-merkle` con acta IOTA del lote.
 4. Eventos `origin_topology=local` no mutan índices canónicos bajo `SddIA/` (fan-out acotado por suscripción).

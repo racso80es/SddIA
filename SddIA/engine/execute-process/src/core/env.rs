@@ -10,6 +10,13 @@ const VAULT_PRECEDENCE_KEYS: &[&str] = &["SDDIA_LAB_SIMULATE_IOTA", "SDDIA_IOTA_
 
 /// Carga bóveda global → local; aplica al entorno del proceso (paridad `env_loader.py`).
 pub fn load_hierarchical_env(repo_root: &Path) -> Result<HashMap<String, String>, String> {
+    let merged = load_hierarchical_env_merged(repo_root)?;
+    apply_env(&merged);
+    Ok(merged)
+}
+
+/// Solo lectura de bóveda (sin mutar `std::env`).
+pub fn load_hierarchical_env_merged(repo_root: &Path) -> Result<HashMap<String, String>, String> {
     let global_path = repo_root.join(".dev/.env");
     let local_path = repo_root.join(".SddIA/.dev/.env");
     let mut merged: HashMap<String, String> = HashMap::new();
@@ -26,8 +33,36 @@ pub fn load_hierarchical_env(repo_root: &Path) -> Result<HashMap<String, String>
         merged.extend(parse_dotenv_file(&local_path)?);
     }
 
-    apply_env(&merged);
     Ok(merged)
+}
+
+fn bash_export(key: &str, value: &str) -> String {
+    let escaped = value.replace('\'', "'\"'\"'");
+    format!("export {key}='{escaped}'")
+}
+
+fn bat_set(key: &str, value: &str) -> String {
+    let escaped = value.replace('%', "%%").replace('"', "\"\"");
+    format!("set \"{key}={escaped}\"")
+}
+
+/// Emite variables de bóveda para eval en shell (`bash`) o cmd (`bat`).
+pub fn emit_shell_env(repo_root: &Path, format: &str) -> Result<(), String> {
+    let merged = load_hierarchical_env_merged(repo_root)?;
+    let global_path = repo_root.join(".dev/.env");
+    let local_path = repo_root.join(".SddIA/.dev/.env");
+    if global_path.is_file() && local_path.is_file() {
+        eprintln!("{CONFIG_LOG}");
+    }
+    for (key, value) in merged {
+        let line = if format == "bat" {
+            bat_set(&key, &value)
+        } else {
+            bash_export(&key, &value)
+        };
+        println!("{line}");
+    }
+    Ok(())
 }
 
 fn apply_env(merged: &HashMap<String, String>) {

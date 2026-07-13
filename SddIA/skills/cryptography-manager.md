@@ -26,11 +26,13 @@ outputs:
 `cryptography-manager` centraliza operaciones criptográficas deterministas (SHA-256, validación de hash, UUID v4) para eliminar cálculos mentales de la IA y garantizar bytes exactos en auditorías de calidad.
 
 ## 2. Motor de ejecución (no LLM-Native)
-Esta skill **no** es LLM-Native. Su uso requiere invocar la cápsula homónima resuelta vía `cumulo.paths.json` → `execution_capsules.skills` → `cryptography-manager.py`, pasando **un único objeto JSON por stdin** y leyendo **exclusivamente** la respuesta JSON de stdout.
+Esta skill **no** es LLM-Native. Su uso requiere invocar la cápsula homónima resuelta vía `cumulo.paths.json` → `compiled_capsules` → `SddIA/target/{release|debug}/cryptography-manager` (preferente WASM en `compiled_capsules.wasm_root`), pasando **un único objeto JSON por stdin** y leyendo **exclusivamente** la respuesta JSON de stdout.
 
-Comando orientativo (desde la raíz del workspace):
+Invocación orientativa: `./sddia-run.sh --tool cryptography-manager`
 
-`python {paths.execution_capsules.skills}/cryptography-manager.py`
+Invocación directa (tras `cargo build -p cryptography-manager`): `SddIA/target/debug/cryptography-manager`
+
+Implementación: crate Rust `SddIA/skills/cryptography-manager/`.
 
 ## 3. Contrato I/O (stdin / stdout)
 * **Entrada:** JSON UTF-8 con `operation`, `target_type` (salvo `GENERATE_UUID`) y `target_payload` según el esquema del frontmatter.

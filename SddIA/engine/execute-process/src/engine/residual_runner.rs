@@ -6,10 +6,10 @@ use super::phase_capsules::{
     capsule_eda_genomic_audit_gate, execute_delivery_close_phase, execute_feature_phase,
     try_invoke_delegates,
 };
-use super::python_core::{
+use super::route_fractal_core::{
     invoke_radamanto_batch, invoke_route_fractal, invoke_telemetry_compliance,
-    run_telemetry_batch_stub,
 };
+use super::telemetry_batch_stub::run_telemetry_batch_stub;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
 use crate::core::resolver::{validate_process_inputs, ProcessDef};

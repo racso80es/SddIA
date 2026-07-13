@@ -9,11 +9,9 @@ REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
   exit 1
 }
 cd "$REPO_ROOT" || exit 1
-export PYTHONIOENCODING=utf-8
-PYTHON=${PYTHON:-python}
-GATE="$REPO_ROOT/SddIA/scripts/qa/git-hooks/pre_commit_gate.py"
+GATE="$REPO_ROOT/SddIA/scripts/qa/git-hooks/pre_commit_gate.sh"
 if [ ! -f "$GATE" ]; then
   echo "SddIA pre-commit: missing $GATE" >&2
   exit 1
 fi
-exec "$PYTHON" "$GATE"
+exec /usr/bin/env bash "$GATE"

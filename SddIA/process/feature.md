@@ -83,7 +83,7 @@ Misma regla que `bug-fix` § Cierre documental en rama: PBI en `docs/todos/done/
 
 ## Perfil laboratorio vs runtime IDE
 
-| Aspecto | Laboratorio (`execute-process.py`) | Runtime IDE completo |
+| Aspecto | Laboratorio (`execute-process` nativo) | Runtime IDE completo |
 | :--- | :--- | :--- |
 | Fase 1 Inicialización | `workspace-init` físico (git-manager + `objectives.md` mínimo) | Igual + norma documental completa |
 | Fases 2–5 (Mayeuta…Argos) | `simulated` / agentes IDE | Agentes V5 con salidas en `persist_ref` |
