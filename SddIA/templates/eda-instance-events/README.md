@@ -58,4 +58,4 @@ Redirige rutas del bus en entornos de desarrollo sin mutar el genoma:
 - `SddIA/events/index.md` — índice de familias; catálogo por `events/{family}/index.md`
 - `SddIA/core/cumulo.paths.json` — `event_bus`, `eda_bus`, `eda_instance.customization`
 - `SddIA/process/route-domain-event.md` — validación instancia ↔ Clase (gate ECST) y fan-out
-- `SddIA/scripts/daemons/event-sweeper.py` — recolector post-consenso
+- `SddIA/daemons/event-sweeper.sh` / binario `SddIA/target/{debug|release}/event-sweeper` — recolector post-consenso

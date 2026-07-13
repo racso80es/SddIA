@@ -34,7 +34,7 @@ Esta versión inicial establece el marco; Dédalo y Cúmulo completarán los det
 
 - Prohibido escribir inputs JSON one-shot (`_close-cycle-*`, `_delivery-close-*` ad hoc) bajo `docs/features/<persist_ref>/`.
 - Prohibido forja de laboratorio en catálogo Core (`SddIA/tools/`, etc.) sin cadena productiva y evento ECST.
-- Helper canónico: `SddIA/scripts/qa/tmp_paths.py` (`write_ephemeral_json`, `cleanup_path`).
+- Helper canónico: `SddIA/scripts/qa/git-hooks/hook_common.sh` (`_write_ephemeral_json`, `_cleanup_path`).
 - Depuración local: `SDDIA_KEEP_TMP=1` conserva payloads y forges lab.
 
 ## 3.1 Cobertura EDA genómica (pre-commit / aduana)

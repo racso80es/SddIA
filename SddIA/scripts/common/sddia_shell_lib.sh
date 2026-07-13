@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Resuelve SDDIA_EXECUTE_PROCESS_BIN (paridad orchestrator_resolve.py).
+# Resuelve SDDIA_EXECUTE_PROCESS_BIN (SSOT orquestador nativo).
 set -euo pipefail
 
 _sddia_resolve_orchestrator() {

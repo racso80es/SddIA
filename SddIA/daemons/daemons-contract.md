@@ -60,7 +60,7 @@ Objeto YAML obligatorio en frontmatter de cada `{name}.md`:
 ```yaml
 execution:
   entrypoint: "<ruta lógica o relativa al workspace del artefacto ejecutable>"
-  runtime: "<identificador de runtime delivery: python3 | node | bash | wasmtime | ...>"
+  runtime: "<identificador de runtime delivery: native-rust | bash | wasmtime | ...>"
   heartbeat_interval_seconds: <entero positivo>
 ```
 
@@ -74,8 +74,8 @@ Ejemplo canónico (ilustrativo, no normativo en rutas):
 
 ```yaml
 execution:
-  entrypoint: "scripts/daemons/telegram-watcher.py"
-  runtime: "python3"
+  entrypoint: "SddIA/daemons/telegram-watcher.sh"
+  runtime: "native-rust"
   heartbeat_interval_seconds: 30
 ```
 

@@ -45,12 +45,12 @@ porcentaje_de_exito: null
 Kill-Switch global (CEN-03). Al apagar el motor SddIA (`SIGTERM`, `SIGINT`, `atexit`) o invocación manual, purga **todos** los Centinelas indexados sin procesos huérfanos.
 
 ```bash
-python3 SddIA/scripts/qa/execute-process.py --process daemon-kill-switch --inputs '{"repository_path":"<abs>"}'
+./sddia-run.sh --process daemon-kill-switch --inputs '{"repository_path":"<abs>"}'
 ```
 
-## Registro de hooks
+## Purga manual
 
-El CLI `execute-process.py` registra `register_kill_switch_hooks(repo)` al arrancar. Ante señal de terminación del Core, ejecuta purga antes de salir.
+Invocación explícita vía `./sddia-run.sh --process daemon-kill-switch` o `--process governance-daemon-manager` con `operation: kill`. No depende de intérprete Python.
 
 ## Fase 1 — Enumeración índice
 
@@ -78,7 +78,7 @@ Emitir `Process_Execution_Completed` con `purge_report[]` y `stale_locks_removed
 
 ## Handler laboratorio
 
-`daemon_kill_switch_core.run_daemon_kill_switch()` — invocado desde `execute-process.py`.
+Handler laboratorio: módulo nativo `handlers::daemon_kill_switch` en `execute-process`.
 
 ## Límites
 

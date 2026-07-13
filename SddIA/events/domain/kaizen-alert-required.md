@@ -36,7 +36,7 @@ Clase ECST para alerta Kaizen de **paridad documental (DIA)** detectada por la A
 
 ## Emisores autorizados
 
-- Proceso **`pull-request-review`** (cápsula post-`audit-doc-parity.py` cuando `alert_required: true`)
+- Proceso **`pull-request-review`** (cápsula post-sensor DIA `audit-doc-parity` cuando `alert_required: true`)
 - Acción **`emit-kaizen-alert-required-event`** (opcional; laboratorio)
 
 ## Suscripciones (fan-out v1)

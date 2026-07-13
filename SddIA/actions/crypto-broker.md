@@ -19,10 +19,10 @@ porcentaje_de_exito: null
 # AcciÃ³n: crypto-broker
 
 ## 1. PropÃ³sito
-Ser la **Ãºnica puerta autorizada** hacia `skill:cryptography-manager` cuando el orquestador principal (p. ej. `execute-process` bajo contexto `ecosystem-evolution`) no posee en su `allowed_policies` el contexto `quality-assurance` de la skill. Cerbero evalÃºa esta acciÃ³n con su propio `context`; la acciÃ³n delega la fÃ­sica exclusivamente en la cÃ¡psula resuelta vÃ­a `cumulo.paths.json` â†’ `execution_capsules.skills` â†’ `cryptography-manager.py`.
+Ser la **única puerta autorizada** hacia `skill:cryptography-manager` cuando el orquestador principal (p. ej. `execute-process` bajo contexto `ecosystem-evolution`) no posee en su `allowed_policies` el contexto `quality-assurance` de la skill. Cerbero evalúa esta acción con su propio `context`; la acción delega la física exclusivamente en la cápsula nativa resuelta vía `cumulo.paths.json` → `compiled_capsules` → `cryptography-manager`.
 
-## 2. OrquestaciÃ³n
-1. Resolver la ruta del intÃ©rprete y del script `cryptography-manager.py` desde el SSOT (sin rutas absolutas inventadas).
+## 2. Orquestación
+1. Resolver el binario `cryptography-manager` desde `compiled_capsules` (sin rutas absolutas inventadas).
 2. Pasar `crypto_request` como **Ãºnico JSON por stdin** al proceso de la cÃ¡psula.
 3. Leer **exclusivamente** la respuesta JSON de stdout; reenviarla como `crypto_response`.
 4. Propagar `exitCode` igual al `exitCode` devuelto por la cÃ¡psula (o 1 si el proceso falla).

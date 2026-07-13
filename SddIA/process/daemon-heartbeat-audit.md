@@ -39,10 +39,10 @@ Triaje Argos (CEN-05). Fan-out suscriptor de `Daemon_Heartbeat` en bus fractal t
 
 ```bash
 # Sweep manual (sin evento)
-python3 SddIA/scripts/qa/execute-process.py --process daemon-heartbeat-audit --inputs '{"sweep":true}'
+./sddia-run.sh --process daemon-heartbeat-audit --inputs '{"sweep":true}'
 
 # Fan-out vía route-telemetry (automático)
-SDDIA_LAB_ROUTE_SYNC=1 python3 SddIA/scripts/qa/execute-process.py --process route-telemetry --inputs '{"event_file_path":".events/telemetry/<id>.json"}'
+SDDIA_LAB_ROUTE_SYNC=1 ./sddia-run.sh --process route-telemetry --inputs '{"event_file_path":".events/telemetry/<id>.json"}'
 ```
 
 ## Umbral

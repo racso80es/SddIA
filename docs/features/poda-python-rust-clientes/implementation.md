@@ -11,6 +11,7 @@ items_applied:
   - ola-4-cores-qa
   - ola-5-qa-parcial
   - ola-5-capa-qa-cero-py
+  - ola-6-docs-genoma
 ---
 
 # Implementación — poda-python-rust-clientes
@@ -93,13 +94,21 @@ items_applied:
 | `.github/workflows/sddia-index-qa.yml` | CI vía `sddia-qa` + Rust (sin Python) |
 | Gate O11 (repo) | `find . -name '*.py'` excl. `.venv/.tools` → **0** |
 
-## Pendiente (Olas 6–7)
+## Ola 6 — documentación genómica ✅
 
-### Ola 6 — Documentación genómica
-- [ ] `SddIA/skills/*.md` → delivery Rust
-- [ ] Contratos/normas/README sin referencias `.py` operativas
+| Touchpoint | Acción |
+|------------|--------|
+| `SddIA/skills/*.md` | Cápsulas Rust vía `compiled_capsules`; invocación `./sddia-run.sh --tool` |
+| `SddIA/norms/external-ai-constraints.md` | v1.4.0 — SSOT `sddia_shell_lib.sh`; sin `orchestrator_resolve.py` |
+| `SddIA/norms/git-operations.md`, `touchpoints-ia.md`, `execution-contexts.md` | Helpers bash / cápsulas Rust |
+| `SddIA/process/*.md`, `actions/*.md`, `events/*.md` | Sin referencias operativas `.py` |
+| `SddIA/daemons/*.md`, `daemons-contract.md` | Runtime `native-rust`; bridge IOTA nativo |
+| `SddIA/library/norms/features-documentation-pattern.md` | Gates QA vía `sddia-qa` |
+| `README.md` | Entrypoints bash/Rust; EDA con Centinelas nativos |
+| `event-watcher`, `telegram-watcher` | Eliminado fallback `python_bin()` |
+| Gate O12 (genoma operativo) | `SddIA/` excl. `evolution/` → **0 refs `.py` operativas** |
 
-### Ola 7 — Gate cero-Python + cierre
+## Pendiente (Ola 7)
 - [ ] O11: cero ficheros `.py` (excl. `.venv/`, `.tools/`)
 - [ ] O12: cero referencias operativas
 - [ ] Argos / `validacion.md` APTO

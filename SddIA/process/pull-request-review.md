@@ -35,7 +35,7 @@ phases:
   delegates_to:
   - agent:argos
 - name: Triaje técnico
-  intent: Ejecutar tests, auditoría estática y sensor DIA (audit-doc-parity.py) vía cápsulas autorizadas; alerta documental no bloqueante; respeto de capsule-json-io.
+  intent: Ejecutar tests, auditoría estática y sensor DIA (audit-doc-parity) vía cápsulas autorizadas; alerta documental no bloqueante; respeto de capsule-json-io.
   delegates_to:
   - action:execute-process
 - name: Certificación RBAC
@@ -82,7 +82,7 @@ Reglas **no bloqueantes** (fricción suave); el sensor no invoca agentes.
 
 | ID | Regla |
 |----|-------|
-| **DIA-1** | Invocar `SddIA/scripts/qa/audit-doc-parity.py` con `persist_ref`, refs git y salida JSON |
+| **DIA-1** | Invocar sensor DIA `audit-doc-parity` (contrato en `docs/features/norma-paridad-documental/`) con `persist_ref`, refs git y salida JSON |
 | **DIA-2** | Si `alert_required: true`, depositar evento **`Kaizen_Alert_Required`** en `eda_bus.pending`; **prohibido** `delivery_state: failed` por DIA |
 | **DIA-3** | El sensor no delega a Cúmulo; persistencia Kaizen DIA **exclusivamente** vía evento `Kaizen_Alert_Required` → suscriptor `agent:cumulo` (`materialize-kaizen-alert-doc`) |
 

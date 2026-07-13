@@ -65,4 +65,4 @@ Entrada por **stdin** (JSON) o `--request-file`. Salida: envelope `tools-contrac
 
 ## Delegación
 
-Invocada por `execute-action.py` (acción `sync-entity-index`, agente Cúmulo) y por agentes en runtime IDE vía orquestación documentada en la acción.
+Invocada por `./sddia-run.sh --action sync-entity-index` (acción `sync-entity-index`, agente Cúmulo) y por agentes en runtime IDE vía orquestación documentada en la acción.

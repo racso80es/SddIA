@@ -97,12 +97,12 @@ Prohibido depender de un segundo PR `docs/cerrar-pbi-*` para campos que solo exi
 
 ## Perfil laboratorio vs runtime IDE
 
-| Aspecto | Laboratorio (`execute-process.py`) | Runtime IDE completo |
+| Aspecto | Laboratorio (`execute-process` nativo) | Runtime IDE completo |
 | :--- | :--- | :--- |
 | Fase 1 Inicialización | `workspace-init` físico (git-manager + `objectives.md` mínimo) | Igual; `persist_ref` bajo `docs/fixes/` si rama `fix/` o `source_process: bug-fix` |
 | Fases 2–4 (Dedalo…Argos) | `simulated` / agentes IDE | Agentes V5; cascada mínima `spec.md` + `implementation.md` + `execution.md` + `validacion.md` |
 | Fase 5 Cierre documental en rama | Manual / operador IA en rama `fix/*` | PBI en `done/` + `validacion.md` pre-merge |
 | Fase 6 Cierre de entrega | Delega en `delivery-close-cycle` con `source_process: bug-fix` | Orquestador inyecta `pr_title`, `pr_body` |
-| Inputs workspace-init | `branch_name` + `persist_ref` + (`bug_summary` \| `fix_name`); no exige `feature_name` | Misma regla en handler `execute_process_capsules.py` |
+| Inputs workspace-init | `branch_name` + `persist_ref` + (`bug_summary` \| `fix_name`); no exige `feature_name` | Misma regla en handler nativo `workspace_init` |
 
 **Contrato git-manager fetch:** toda invocación `fetch` debe incluir `prune` (boolean) según `skill-io-git-manager-frozen.md` §3.7.

@@ -82,7 +82,7 @@ Los `.md` de fase siguen siendo la fuente de verdad documental. Los **inputs JSO
 | Tipo | Convención | Versionado |
 |------|------------|------------|
 | Fixture plantilla | `_smoke-<escenario>.json` en `persist_ref` | Sí — plantilla reproducible en el PR de la feature |
-| Input operativo | `.tmp/<proceso>-<uuid>.json` vía `tmp_paths.write_ephemeral_json` | No — borrar tras `execute-process` |
+| Input operativo | `.tmp/<proceso>-<uuid>.json` vía `_write_ephemeral_json` en `hook_common.sh` | No — borrar tras `execute-process` |
 | Cierre ciclo ad hoc | Copiar plantilla a `.tmp/`; prohibido `_close-cycle-*.json` suelto en `persist_ref` | No |
 
 Ver `SddIA/norms/git-operations.md` §3 y Kaizen `kaizen-higiene-ficheros-temporales`.
@@ -94,10 +94,10 @@ Cuando una feature muta entidades bajo `SddIA/` (skills, events, process, agents
 - Toda entidad indexada debe estar en el SSOT `SddIA/core/eda-coverage.json` (`coverage_matrix[entity_uuid].is_covered == true`).
 - El gate **Aduana EDA genómica** (`--scan`) consulta **solo** `eda-coverage.json`; el bus local (`eda_bus`) es transporte, no fuente de verdad para `orphan_count`.
 - `emit-domain-mutation` ejecuta upsert SSOT **antes** de escribir en `pending/`.
-- Backfill one-shot: `audit-entity-eda-coverage.py --backfill-coverage` (sin emitir al bus).
-- El gate **Aduana EDA genómica** en `delivery-close-cycle` invoca `audit-entity-eda-coverage.py --scan --json`.
+- Backfill one-shot: cadena `entity-manager` → `emit-domain-mutation` con manifiesto Fase C (`backfill-manifest.json`; sin emitir al bus directo).
+- El gate **Aduana EDA genómica** en `delivery-close-cycle` invoca `sddia-qa audit-eda-coverage --scan --json`.
 - **Ruido de Sistema (block):** `orphan_count > 0` — entidad indexada sin cobertura en SSOT.
 - **Excepción legacy:** backfill Fase C con manifiesto activo (`--emit --skip-dlt` + `--anchor-merkle`) mientras migra a SSOT.
-- Forja directa de `.md` sin pasar por `entity-manager` → huérfana EDA hasta `--backfill-coverage` o emit con sello.
+- Forja directa de `.md` sin pasar por `entity-manager` → huérfana EDA hasta backfill Fase C o emit con sello.
 
 Referencia implementación: `docs/features/eda-coverage-ssot-bus-isolation/` (2026-05-25).

@@ -102,28 +102,24 @@ flowchart LR
 | Paso | Componente | Responsabilidad |
 |------|------------|-----------------|
 | 1 | Emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | Escriben ECST en `.events/pending/` |
-| 2 | `event-watcher.py` | Monitoriza `pending/`; delega en `route-domain-event` |
+| 2 | `event-watcher` (binario Rust) | Monitoriza `pending/`; delega en `route-domain-event` |
 | 3 | **`route-domain-event`** | Gate ECST; fan-out async; purga `pending/` al consenso |
 | 4 | Suscriptores | Trabajo de dominio; testigos con `result_status` |
-| 5 | `event-sweeper.py` | Purga residual; alerta Kaizen si hay `dead-letter/` |
+| 5 | `event-sweeper` (binario Rust) | Purga residual; alerta Kaizen si hay `dead-letter/` |
 
 **Invocación manual (laboratorio):**
 
 ```bash
-# Wrapper canónico (resuelve binario nativo o fallback Python vía SSOT)
+# Wrapper canónico (resuelve binario nativo vía SSOT)
 ./sddia-run.sh --process route-domain-event \
   --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
 
 # Binario nativo directo (tras cargo build -p execute-process)
 SddIA/target/debug/execute-process --process route-domain-event \
   --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
-
-# Resolución SSOT explícita (Python)
-python3 SddIA/scripts/qa/orchestrator_resolve.py --process route-domain-event \
-  --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
 ```
 
-**Resolución del orquestador:** SSOT en `SddIA/scripts/qa/orchestrator_resolve.py` — binario Rust obligatorio (`SddIA/target/{debug,release}/execute-process`). Override: `SDDIA_EXECUTE_PROCESS_BIN=/ruta/al/binario`. Compilar: `cd SddIA && cargo build -p execute-process`.
+**Resolución del orquestador:** SSOT en `SddIA/scripts/common/sddia_shell_lib.sh` — binario Rust obligatorio (`SddIA/target/{debug,release}/execute-process`). Wrapper: `./sddia-run.sh`. Override: `SDDIA_EXECUTE_PROCESS_BIN=/ruta/al/binario`. Compilar: `cd SddIA && cargo build -p execute-process`.
 
 Modo sync: `SDDIA_LAB_ROUTE_SYNC=1`. Plantilla Vía C: [`SddIA/templates/eda-instance-events/README.md`](SddIA/templates/eda-instance-events/README.md). Features: [refactor-topologia-eventos-ola-c-v3](docs/features/refactor-topologia-eventos-ola-c-v3/), [telemetria-reactiva-eda-fase3](docs/features/telemetria-reactiva-eda-fase3/).
 
@@ -146,17 +142,15 @@ Si existen **ambas** bóvedas, el runtime registra en stderr: `[CONFIG] Jerarqu�
 
 > **Nota EDA:** `PYTHONUTF8=1` u otras variables en la bóveda global **no sustituyen** el flujo canónico de presentación/merge (`delivery-close-cycle` → `PullRequest_Presented` → `accept-pr` → `PullRequest_Merged`). Ver `SddIA/norms/pull-request-orchestration.md`.
 
-**Entrypoints que cargan la jerarquía** (vía `SddIA/scripts/qa/env_loader.py`) **antes** de invocar cápsulas:
+**Entrypoints que cargan la jerarquía** (bóveda bash en `sddia_shell_lib.sh` / `execute-process`) **antes** de invocar cápsulas:
 
 | Entrypoint | Punto de carga |
 |------------|----------------|
-| `./sddia-run.sh` | Wrapper canónico → `orchestrator_resolve.py` (binario preferente) |
-| `SddIA/scripts/qa/orchestrator_resolve.py` | SSOT de resolución del ejecutable orquestador |
+| `./sddia-run.sh` | Wrapper canónico → `_sddia_resolve_orchestrator` + binario nativo |
+| `SddIA/scripts/common/sddia_shell_lib.sh` | SSOT de resolución del ejecutable orquestador |
 | `SddIA/target/debug/execute-process` (binario nativo) | Tras resolver raíz + bóvedas en `main`; motor residual Rust (`residual_runner`) |
-| `SddIA/scripts/qa/execute_process_capsules.py` | Legacy interno EDA (`route_fractal_event_core`); no es entrypoint CLI |
-| `SddIA/scripts/qa/execute-action.py` | Inicio de `main()` |
-| `SddIA/scripts/daemons/event-watcher.py` | Inicio de `main()` |
-| `SddIA/scripts/daemons/event-sweeper.py` | Inicio de `main()` |
+| `SddIA/scripts/tools/invoke.sh` / `invoke.bat` | `--tool` sobre `execute-process` |
+| `SddIA/daemons/*.sh` | Launchers Centinelas (binarios Rust en `SddIA/target/`) |
 
 Las cápsulas (p. ej. `iota-immutable-publisher`) **consumen** `process.env` / `os.environ` ya inyectado; **prohibido** `dotenv` local en el directorio del tool.
 
@@ -274,7 +268,7 @@ Tras campaña exitosa, el orquestador emite `System_Immunity_Certified` en el bu
 **Laboratorio (estímulo E2E):**
 
 ```bash
-python SddIA/scripts/qa/execute-action.py --action emit-suite-execution-requested \
+./sddia-run.sh --action emit-suite-execution-requested \
   --inputs '{"suite_id":"core-full-stress"}'
 ```
 

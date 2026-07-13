@@ -35,7 +35,7 @@ Acción canónica del Agente **Cúmulo** para reconciliación asíncrona de cat�
 | **Creator (síncrono)** | En `create`/`update`, la fase Indexación del `*-creator` escribe la fila en `index.md` |
 | **Esta acción (async)** | `create`/`update`: **auditoría** de idempotencia (fila presente); `delete`: **purga** de fila |
 
-No mueve archivos del bus (jurisdicción del proceso `route-domain-event`). En runtime del demonio, delega la lógica determinista en `SddIA/scripts/qa/execute-action.py --action sync-entity-index`, que orquesta `tool:markdown-table-editor`.
+No mueve archivos del bus (jurisdicción del proceso `route-domain-event`). En runtime del demonio, delega la lógica determinista en `./sddia-run.sh --action sync-entity-index`, que orquesta `tool:markdown-table-editor`.
 
 ## 2. Orquestación
 
@@ -74,7 +74,7 @@ Gate **Cerbero** por `context: ecosystem-evolution`. Rutas de índices vía `cum
 1. Leer índice vía `filesystem-manager`.
 2. Eliminar filas `|` que contengan el token `entity_name` (excluir separadores `---`).
 3. Persistir índice actualizado vía `WRITE_FILE`.
-4. En demonio: `execute-action.py` invoca `markdown-table-editor` (`delete_row` / `row_exists`).
+4. En demonio: `./sddia-run.sh --action sync-entity-index` invoca `markdown-table-editor` (`delete_row` / `row_exists`).
 
 ### Paso 4 — Cierre (stdout envelope S+)
 

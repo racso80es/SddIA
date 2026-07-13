@@ -67,7 +67,9 @@ Actuador OS puro del ciclo de vida de **Centinelas** indexados. No interpreta ne
 Invocación canónica:
 
 ```bash
-python3 SddIA/scripts/qa/execute-process.py --process governance-daemon-manager --inputs '{"operation":"start","daemon_id":"telegram-watcher","repository_path":"<abs>","cumulo_topology":{...}}'
+```bash
+./sddia-run.sh --process governance-daemon-manager --inputs '{"operation":"start","daemon_id":"telegram-watcher","repository_path":"<abs>","cumulo_topology":{...}}'
+```
 ```
 
 ## Ceguera lógica (invariante)
@@ -87,7 +89,7 @@ python3 SddIA/scripts/qa/execute-process.py --process governance-daemon-manager 
 4. Extraer obligatoriamente:
    - `uuid` → `daemon_uuid`
    - `execution.entrypoint` → ruta relativa al `repository_path`
-   - `execution.runtime` → launcher (ej. `python3`, `bash`)
+   - `execution.runtime` → launcher (ej. `native-rust`, `bash`)
 5. Resolver lock path: `{daemons_instance.status}/{daemon_id}.lock` (SSOT: `cumulo.daemons_instance.status`).
 
 ## Fase 2 — Validación operativa
@@ -158,7 +160,7 @@ Propagar `orchestration_event_id` y `orchestration_event_path` a outputs del pro
 
 ## Handler laboratorio
 
-Implementación física futura: `governance_daemon_manager_core.py` invocado desde `execute-process.py` cuando `process_name == governance-daemon-manager`.
+Implementación física: handler nativo `handlers::governance_daemon` en `execute-process` cuando `process_name == governance-daemon-manager`.
 
 ## Límites
 

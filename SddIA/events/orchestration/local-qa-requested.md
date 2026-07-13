@@ -14,7 +14,7 @@ hash_signature: "sha256:pending"
 
 # Event: Local_QA_Requested
 
-Estímulo síncrono emitido por el hook `pre-push` vía `route_domain_event_core.py --event Local_QA_Requested --blocking`. Activa la aduana de fricción local antes de permitir el push al repositorio remoto. Suscriptor: **Argos** → `pull-request-review`.
+Estímulo síncrono emitido por el hook `pre-push` vía enrutador fractal nativo (`route-domain-event` / `route-orchestration`) con `--blocking`. Activa la aduana de fricción local antes de permitir el push al repositorio remoto. Suscriptor: **Argos** → `pull-request-review`.
 
 ## Payload ECST
 
@@ -32,7 +32,7 @@ Estímulo síncrono emitido por el hook `pre-push` vía `route_domain_event_core
 
 ## Emisores autorizados
 
-- `git-hook-pre-push` (vía `route_domain_event_core.py __main__`)
+- `git-hook-pre-push` (vía hook bash → `./sddia-run.sh --process route-domain-event`)
 
 ## Suscripciones
 
