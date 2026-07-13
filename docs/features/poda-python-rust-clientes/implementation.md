@@ -12,6 +12,8 @@ items_applied:
   - ola-5-qa-parcial
   - ola-5-capa-qa-cero-py
   - ola-6-docs-genoma
+  - ola-7-verify-binaries
+  - ola-8-cierre
 ---
 
 # Implementación — poda-python-rust-clientes
@@ -108,9 +110,21 @@ items_applied:
 | `event-watcher`, `telegram-watcher` | Eliminado fallback `python_bin()` |
 | Gate O12 (genoma operativo) | `SddIA/` excl. `evolution/` → **0 refs `.py` operativas** |
 
-## Pendiente (Ola 7)
-- [ ] O11: cero ficheros `.py` (excl. `.venv/`, `.tools/`)
-- [ ] O12: cero referencias operativas
-- [ ] Argos / `validacion.md` APTO
-- [ ] PBI → `docs/todos/done/`
-- [ ] PR + `delivery-close-cycle`
+## Ola 7 — verificación binarios Rust ✅
+
+| Touchpoint | Acción |
+|------------|--------|
+| `tools/sddia-qa/src/verify_compiled_capsules.rs` | **Nuevo** — descubre crates con `main.rs`; valida binarios en `compiled_capsules` |
+| `sddia-qa verify-compiled-capsules [--json]` | Gate CA18 — 24 binarios nativos |
+| `.github/workflows/sddia-index-qa.yml` | `cargo build --workspace` + verificador |
+| Gate CA18 | 24/24 binarios tras build workspace |
+
+## Ola 8 — gate cero-Python + cierre ✅
+
+| Touchpoint | Acción |
+|------------|--------|
+| Gate O11 | `find . -name '*.py'` excl. `.venv/.tools` → **0** |
+| Gate O12 | Genoma operativo sin refs Python delivery |
+| `validacion.md` | `global: APTO`, `pbi_archived: true` |
+| PBI | → `docs/todos/done/` |
+| Pendiente | PR único + `delivery-close-cycle` |

@@ -5,9 +5,9 @@ updated: "2026-07-11"
 process: feature
 branch_name: feat/poda-python-rust-clientes
 persist_ref: docs/features/poda-python-rust-clientes
-phases: 7
+phases: 8
 agent_planificador: dedalo
-consolidation_order: engine-cores, clientes, purga-ssot, cores-qa, capa-qa, docs-genoma, cierre-cero-py
+consolidation_order: engine-cores, clientes, purga-ssot, cores-qa, capa-qa, docs-genoma, verify-binaries, cierre-cero-py
 ---
 
 # Plan de implementación — poda-python-rust-clientes
@@ -25,10 +25,11 @@ Blueprint Tekton. PBI v2.0.0 — **cero `.py` y cero referencias operativas**; r
 | **Ola 1 — Engine cores** | ✅ | `implementation.md` |
 | **Ola 2 — Clientes** | ✅ | `implementation.md` |
 | **Ola 3 — Purga limbo + Cúmulo** | ✅ | `implementation.md` |
-| **Ola 4 — Purga cores QA duplicados** | ⏳ | — |
+| **Ola 4 — Purga cores QA duplicados** | ✅ | `implementation.md` |
 | **Ola 5 — Capa QA/aduana** | ✅ | `sddia-qa`, 0 `.py` en QA |
-| **Ola 6 — Docs genómicas** | ⏳ | — |
-| **Ola 7 — Gate cero-Python + cierre** | ⏳ | `validacion.md` |
+| **Ola 6 — Docs genómicas** | ✅ | `implementation.md` |
+| **Ola 7 — Verificación binarios** | ✅ | `verify-compiled-capsules` 24/24 |
+| **Ola 8 — Gate cero-Python + cierre** | ✅ | `validacion.md` APTO |
 
 **Orden de consolidación:**
 
@@ -37,7 +38,8 @@ Ola 1 Engine ──► Ola 2 Clientes ──► Ola 3 Limbo
       ──► Ola 4 Cores QA duplicados
       ──► Ola 5 Capa QA + DEBT-K2
       ──► Ola 6 Docs skills/contratos
-      ──► Ola 7 Gate O11/O12 + Argos + delivery-close
+      ──► Ola 7 Verificación binarios Rust
+      ──► Ola 8 Gate O11/O12 + Argos + delivery-close
 ```
 
 ---

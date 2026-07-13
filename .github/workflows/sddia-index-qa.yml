@@ -39,6 +39,11 @@ jobs:
         run: SddIA/target/debug/sddia-qa verify-tools-index
       - name: verify-process-integrity
         run: SddIA/target/debug/sddia-qa verify-process-integrity
+      - name: verify-compiled-capsules
+        run: |
+          cd SddIA
+          cargo build --workspace
+          target/debug/sddia-qa verify-compiled-capsules
 
   eda-iota-smoke-simulate:
     runs-on: ubuntu-latest

@@ -2,6 +2,7 @@ mod eda_e2e_lab;
 mod iota_ci_smoke;
 mod lab_teardown;
 mod resolve;
+mod verify_compiled_capsules;
 mod verify_tools_index;
 mod wasi_ci_smoke;
 
@@ -18,6 +19,7 @@ fn usage() -> &'static str {
 Comandos:\n\
   verify-tools-index\n\
   verify-process-integrity\n\
+  verify-compiled-capsules [--json]\n\
   audit-eda-coverage --scan [--json]\n\
   recalc-process-hash-signatures [--write] [--files STEM ...]\n\
   run-iota-ci-smoke [--simulate] [--require-physical] [--json]\n\
@@ -135,6 +137,9 @@ fn main() {
     let code = match cmd {
         "verify-tools-index" => verify_tools_index::run(&repo),
         "verify-process-integrity" => verify_process_integrity::run_cli(&repo),
+        "verify-compiled-capsules" => {
+            verify_compiled_capsules::run(&repo, has_flag(rest, "--json"))
+        }
         "audit-eda-coverage" => {
             if !has_flag(rest, "--scan") {
                 eprintln!("audit-eda-coverage requiere --scan");

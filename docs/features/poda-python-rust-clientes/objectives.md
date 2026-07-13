@@ -5,9 +5,9 @@ updated: "2026-07-11"
 process: feature
 branch_name: feat/poda-python-rust-clientes
 persist_ref: docs/features/poda-python-rust-clientes
-pbi_ref: docs/todos/pending/[REFACTOR] Poda ejecutables Python — adecuación de clientes a cápsulas Rust.md
+pbi_ref: docs/todos/done/[REFACTOR] Poda ejecutables Python — adecuación de clientes a cápsulas Rust.md
 document_id: PBI-REFACTOR-PODA-PYTHON-RUST
-status: abierto
+status: cerrado
 priority: alta
 related:
   - README.md
@@ -48,13 +48,15 @@ Eliminar **Python del repositorio SddIA** en su totalidad operativa: runtime, ca
 | **O7** | Purga limbo | `scripts/limbo` ausente; Cúmulo sin `scripts_limbo` |
 | **O8** | Paridad JSON | Golden / `cargo test -p execute-process` verdes |
 | **O9** | Smoke EDA | Suite e2e post-ola en verde |
-| **O10** | Cierre documental | PR + `validacion.md` APTO + PBI en `done/` |
+| **O10** | Cierre documental | PR + `validacion.md` APTO + PBI en `done/` (O18) |
 | **O11** | **Cero `.py` en repo** | `find . -name '*.py'` excl. `.venv/`, `.tools/` → vacío |
 | **O12** | **Cero referencias operativas a Python** | Sin rutas `.py` ni `python3` como delivery en genoma operativo (skills, contratos, normas, README, daemons) |
 | **O13** | Purga cores QA duplicados | 15 cores Python eliminados; tests migrados a Rust |
 | **O14** | Capa QA/aduana sin Python | `SddIA/scripts/qa/` sin `.py`; hooks/runners Rust o shell |
 | **O15** | Docs skills alineadas | `SddIA/skills/{name}.md` → crates + `compiled_capsules` |
 | **O16** | DEBT-K2 cerrado | `github-bridge-watcher` sin spawn Python |
+| **O17** | Binarios Rust coherentes | `sddia-qa verify-compiled-capsules` 24/24 tras `cargo build --workspace` |
+| **O18** | Cierre documental | PR + `validacion.md` APTO + PBI en `done/` |
 
 ## Política de compatibilidad
 
@@ -78,9 +80,9 @@ Eliminar **Python del repositorio SddIA** en su totalidad operativa: runtime, ca
 |------|--------|--------|
 | Inicialización de Espacio de Trabajo | git-manager | ✅ ejecutada |
 | Estabilización de Requisitos | Mayeuta | ✅ `clarify.md` (ampliado v2) |
-| Diseño de Blueprint | Dedalo | ✅ `spec.md`, `plan.md` (7 olas) |
-| Ejecución Olas 1–4 | Tekton | ✅ |
-| Ejecución Olas 5–7 | Tekton | ⏳ pendiente |
-| Verificación | Argos | ⏳ pendiente (post O11) |
-| Cierre documental en rama | filesystem-manager | ⏳ pendiente |
-| Cierre de entrega | delivery-close-cycle | ⏳ pendiente |
+| Diseño de Blueprint | Dedalo | ✅ `spec.md`, `plan.md` (8 olas) |
+| Ejecución Olas 1–6 | Tekton | ✅ |
+| Ejecución Olas 7–8 | Tekton | ✅ |
+| Verificación | Argos | ✅ `validacion.md` APTO |
+| Cierre documental en rama | filesystem-manager | ✅ PBI → done |
+| Cierre de entrega | delivery-close-cycle | ⏳ PR pendiente |

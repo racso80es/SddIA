@@ -8,6 +8,11 @@ items_applied:
   - ola-1-engine-cores
   - ola-2-clientes-shell
   - ola-3-purga-limbo
+  - ola-4-cores-qa
+  - ola-5-capa-qa-cero-py
+  - ola-6-docs-genoma
+  - ola-7-verify-binaries
+  - ola-8-cierre
 ---
 
 # Ejecución — poda-python-rust-clientes
@@ -27,8 +32,9 @@ echo '{"workspace_path":"'"$(pwd)/.SddIA/workspaces/smoke"'"}' | SddIA/scripts/t
 test ! -d SddIA/scripts/limbo
 rg scripts_limbo SddIA/core/cumulo.paths.json  # debe fallar (clave ausente)
 
-# QA idempotencia watcher
-cd SddIA/scripts/qa && python3 -m unittest test_bucle_fantasma_bus.py -v
+# Verificación binarios (Ola 7)
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build --workspace
+SddIA/target/debug/sddia-qa verify-compiled-capsules
 ```
 
 ## Evidencias Ola 1
@@ -65,24 +71,58 @@ cd SddIA/scripts/qa && python3 -m unittest test_bucle_fantasma_bus.py -v
 
 | Check | Resultado |
 |-------|-----------|
-| 15 cores QA + `execute-action.py` eliminados | ✅ 0 `*_core.py` en QA |
-| `--action emit-domain-mutation` (Rust) | ✅ |
-| `run_process` delega procesos nativos | ✅ |
-| `cargo test -p execute-process --lib` | ✅ 50/50 |
-| Tests QA migrados (13 smoke) | ✅ |
+| 15 cores QA + `execute-action.py` eliminados | ✅ |
+| `cargo test -p execute-process --lib` | ✅ 51/51 |
+
+## Evidencias Ola 5
+
+| Check | Resultado |
+|-------|-----------|
+| `sddia-qa` binario | ✅ |
+| `SddIA/scripts/qa/**/*.py` | ✅ 0 |
+| Gate O11 | ✅ 0 `.py` |
+
+## Evidencias Ola 6
+
+| Check | Resultado |
+|-------|-----------|
+| Skills/normas/README sin refs `.py` operativas | ✅ |
+| `event-watcher` / `telegram-watcher` sin `python_bin` | ✅ |
+
+## Evidencias Ola 7
+
+| Check | Resultado |
+|-------|-----------|
+| `cargo build --workspace` | ✅ |
+| `sddia-qa verify-compiled-capsules` | ✅ 24/24 |
+| CI gate binarios | ✅ workflow actualizado |
+
+## Evidencias Ola 8
+
+| Check | Resultado |
+|-------|-----------|
+| Gate O11 | ✅ 0 `.py` |
+| Gate O12 | ✅ genoma operativo limpio |
+| `cargo test -p execute-process --lib` | ✅ 51/51 |
+| `validacion.md` APTO | ✅ |
+| PBI → `docs/todos/done/` | ✅ |
 
 ## Notas
 
 - Compilar con `CARGO_TARGET_DIR=$PWD/target` para que clientes resuelvan el binario correcto.
-- **PBI v2.0.0:** Olas 1–3 cerradas; **Done** requiere Olas 4–7 (cero `.py`, cero referencias, rotura compatibilidad asumida).
-- Inventario actual post-Ola 3: **~75 `.py`** en repo fuente (72 en QA + 3 misc).
+- **Done documental:** olas 1–8 cerradas; PR pendiente.
 
-## Gate pendiente (Ola 7)
+## Gate verificación binarios (Ola 7)
 
 ```bash
-# O11 — cero ficheros .py
-find . -name '*.py' -not -path './.venv/*' -not -path './.tools/*' -not -path './.git/*'
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build --workspace
+SddIA/target/debug/sddia-qa verify-compiled-capsules [--json]
+```
 
-# O12 — referencias operativas (objetivo final)
-rg '\.py|python3?' SddIA docs scripts --glob '!**/.venv/**' --glob '!**/.tools/**'
+## Gate cero-Python (Ola 8)
+
+```bash
+find . -name '*.py' -not -path './.venv/*' -not -path './.tools/*' -not -path './.git/*'
+SddIA/target/debug/sddia-qa verify-tools-index
+SddIA/target/debug/sddia-qa verify-process-integrity
 ```
