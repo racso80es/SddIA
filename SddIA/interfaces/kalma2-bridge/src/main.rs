@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::io::Read;
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -36,11 +37,21 @@ fn repo_root() -> PathBuf {
     PathBuf::from(".")
 }
 
-fn resolve_orchestrator(repo: &Path) -> Option<PathBuf> {
+fn is_native_elf(path: &Path) -> bool {
+    let mut magic = [0; 4];
+    std::fs::File::open(path)
+        .and_then(|mut file| file.read_exact(&mut magic))
+        .is_ok_and(|_| magic == *b"\x7fELF")
+}
+
+fn resolve_orchestrator(repo: &Path) -> Result<PathBuf, String> {
     if let Ok(o) = std::env::var("SDDIA_EXECUTE_PROCESS_BIN") {
         let trimmed = o.trim();
         if !trimmed.is_empty() {
-            return Some(PathBuf::from(trimmed));
+            let candidate = PathBuf::from(trimmed);
+            return is_native_elf(&candidate)
+                .then_some(candidate)
+                .ok_or_else(|| "orquestador configurado no es un binario ELF nativo".into());
         }
     }
     for rel in [
@@ -48,11 +59,11 @@ fn resolve_orchestrator(repo: &Path) -> Option<PathBuf> {
         "SddIA/target/release/execute-process",
     ] {
         let candidate = repo.join(rel);
-        if candidate.is_file() {
-            return Some(candidate);
+        if is_native_elf(&candidate) {
+            return Ok(candidate);
         }
     }
-    None
+    Err("orquestador nativo no encontrado en SddIA/target/{release,debug}".into())
 }
 
 fn client_timeout_secs() -> u64 {
@@ -63,7 +74,11 @@ fn client_timeout_secs() -> u64 {
 }
 
 fn json_header() -> Header {
-    Header::from_bytes(&b"Content-Type"[..], &b"application/json; charset=utf-8"[..]).unwrap()
+    Header::from_bytes(
+        &b"Content-Type"[..],
+        &b"application/json; charset=utf-8"[..],
+    )
+    .unwrap()
 }
 
 fn reply(req: tiny_http::Request, code: u16, body: String) {
@@ -212,12 +227,17 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
     };
 
     let bin = match resolve_orchestrator(repo) {
-        Some(b) => b,
-        None => {
+        Ok(b) => b,
+        Err(message) => {
             reply(
                 req,
                 500,
-                r#"{"success":false,"message":"orquestador no encontrado","exit_code":1}"#.into(),
+                serde_json::json!({
+                    "success": false,
+                    "message": message,
+                    "exit_code": 1
+                })
+                .to_string(),
             );
             return;
         }
@@ -293,6 +313,17 @@ mod tests {
     fn resolve_orchestrator_finds_debug_binary() {
         let repo = repo_root();
         let bin = resolve_orchestrator(&repo);
-        assert!(bin.is_some(), "execute-process debe existir tras cargo build");
+        assert!(
+            bin.is_ok(),
+            "execute-process nativo debe existir tras cargo build"
+        );
+    }
+
+    #[test]
+    fn native_elf_rejects_script_content() {
+        let path = std::env::temp_dir().join("kalma2-bridge-non-elf-test");
+        std::fs::write(&path, "#!/usr/bin/env python3\n").unwrap();
+        assert!(!is_native_elf(&path));
+        std::fs::remove_file(path).unwrap();
     }
 }

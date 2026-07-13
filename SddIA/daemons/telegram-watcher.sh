@@ -11,11 +11,11 @@ NATIVE_DEBUG="$TARGET/debug/telegram-watcher"
 
 cd "$REPO_ROOT"
 
-if [[ -f "$NATIVE_RELEASE" ]]; then
-  exec "$NATIVE_RELEASE" "$@"
-fi
-if [[ -f "$NATIVE_DEBUG" ]]; then
+if [[ -x "$NATIVE_DEBUG" ]]; then
   exec "$NATIVE_DEBUG" "$@"
+fi
+if [[ -x "$NATIVE_RELEASE" ]]; then
+  exec "$NATIVE_RELEASE" "$@"
 fi
 
 echo "[telegram-watcher] binario no encontrado (build: cd SddIA && CARGO_TARGET_DIR=\$PWD/target cargo build -p telegram-watcher)" >&2
