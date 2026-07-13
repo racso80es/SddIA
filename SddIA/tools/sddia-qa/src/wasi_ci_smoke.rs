@@ -9,28 +9,44 @@ fn wasm_artifact(repo: &Path, name: &str) -> std::path::PathBuf {
         .join(format!("{name}.wasm"))
 }
 
-fn run_wasmtime(wasm: &Path, payload: &Value, dir_mount: Option<&str>) -> Result<Value, String> {
-    let mut cmd = Command::new("wasmtime");
+fn run_wasmtime(wasmtime_bin: &Path, wasm: &Path, payload: &Value, dir_mount: Option<&str>) -> Result<Value, String> {
+    use std::io::Write;
+    use std::process::Stdio;
+
+    let mut cmd = Command::new(wasmtime_bin);
     cmd.arg("run");
     if let Some(mount) = dir_mount {
         cmd.arg(format!("--dir={mount}"));
     }
     cmd.arg(wasm);
-    cmd.stdin(std::process::Stdio::piped());
     let input = serde_json::to_string(payload).map_err(|e| e.to_string())?;
-    cmd.stdin(std::process::Stdio::piped());
+    cmd.stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     let mut child = cmd
         .spawn()
         .map_err(|e| format!("wasmtime spawn: {e}"))?;
     if let Some(mut stdin) = child.stdin.take() {
-        use std::io::Write;
-        let _ = stdin.write_all(input.as_bytes());
+        stdin
+            .write_all(input.as_bytes())
+            .map_err(|e| format!("wasmtime stdin: {e}"))?;
     }
     let output = child.wait_with_output().map_err(|e| e.to_string())?;
+    if !output.status.success() && output.stdout.is_empty() {
+        return Err(format!(
+            "wasmtime exit {}: {}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
     let stdout = String::from_utf8_lossy(&output.stdout);
     let line = stdout.trim().lines().last().unwrap_or("");
     if line.is_empty() {
-        return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+        return Err(format!(
+            "wasmtime stdout vacío (status={}, stderr={})",
+            output.status,
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
     }
     let body: Value = serde_json::from_str(line).map_err(|e| e.to_string())?;
     if body.get("success") != Some(&json!(true)) {
@@ -52,7 +68,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
 
     let result = (|| -> Result<(), String> {
         let wasmtime_bin = which::which("wasmtime").map_err(|_| "wasmtime not in PATH".to_string())?;
-        let ver = Command::new("wasmtime")
+        let ver = Command::new(&wasmtime_bin)
             .arg("--version")
             .output()
             .map_err(|e| e.to_string())?;
@@ -74,6 +90,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         }
 
         let uuid_body = run_wasmtime(
+            &wasmtime_bin,
             &crypto_wasm,
             &json!({"operation": "GENERATE_UUID", "target_payload": null}),
             Some("/"),
@@ -88,6 +105,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
             .push(json!({"crypto_wasm": "GENERATE_UUID", "ok": true}));
 
         let poc_body = run_wasmtime(
+            &wasmtime_bin,
             &wasi_poc,
             &json!({
                 "meta": {"schemaVersion": "2.0", "entityKind": "tool", "entityId": "wasi-poc"},

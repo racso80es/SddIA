@@ -6,7 +6,7 @@ contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
-hash_signature: sha256:bebaa3c536ff8a67dca9f61c841e594a4efcfd51593dd6badbc8549422232b60
+hash_signature: sha256:31bd1f3876e28fcf0803dc80344e4c0c5885e9cc6f34e542022a80cce8bd8fbf
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo

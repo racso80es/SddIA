@@ -8,7 +8,7 @@ context:
 - quality-assurance
 - source-control
 - pr-lifecycle
-hash_signature: sha256:64480577eb56061a1c2091958879f398e23cfb7b85f43b5e20378ff84a1f399e
+hash_signature: sha256:031dd47281349eff7b9cfe6f36fcab893c4a2a8ac12c41493eb2596f0661e5fe
 inputs:
 - pr_id_or_path: Identificador o ruta lógica del PR
 - pr_branch: Rama asociada al PR
