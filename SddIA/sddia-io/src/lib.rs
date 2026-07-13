@@ -1,3 +1,5 @@
+pub mod outbound_lab;
+
 use std::io::{self, Read};
 use std::process;
 use serde::{Deserialize, Serialize};
