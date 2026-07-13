@@ -184,7 +184,7 @@ fn audit_staleness(repo: &Path) -> Result<Vec<Value>, String> {
     Ok(fractures)
 }
 
-fn audit_telemetry_file(repo: &Path, rel_path: &str) -> Result<Value, String> {
+pub fn audit_telemetry_file(repo: &Path, rel_path: &str) -> Result<Value, String> {
     let event_path = (repo.join(rel_path.trim()))
         .canonicalize()
         .map_err(|e| e.to_string())?;

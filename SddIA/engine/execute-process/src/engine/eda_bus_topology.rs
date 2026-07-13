@@ -818,7 +818,7 @@ pub fn maybe_purge_processing_header(
     false
 }
 
-fn safe_remove_path(path: &Path) -> bool {
+pub fn safe_remove_path(path: &Path) -> bool {
     if !path.is_file() {
         return true;
     }

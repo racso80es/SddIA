@@ -8,10 +8,6 @@ use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-fn python_bin() -> String {
-    std::env::var("PYTHON").unwrap_or_else(|_| "python3".into())
-}
-
 fn resolve_telegram_tool(repo: &Path) -> Option<(String, std::path::PathBuf)> {
     if let Some(native) = resolve_capsule_native(repo, "send-telegram-notification") {
         return Some(("native".into(), native));
@@ -25,12 +21,6 @@ fn resolve_telegram_tool(repo: &Path) -> Option<(String, std::path::PathBuf)> {
         {
             return Some(("wasm".into(), wasm));
         }
-    }
-    let limbo = repo.join(
-        "SddIA/scripts/limbo/tools/send-telegram-notification/main.py",
-    );
-    if limbo.is_file() {
-        return Some(("python".into(), limbo));
     }
     None
 }
@@ -49,24 +39,6 @@ fn invoke_send_telegram_notification(
     };
 
     let output = match kind.as_str() {
-        "python" => {
-            let mut child = Command::new(python_bin())
-                .arg(&path)
-                .current_dir(repo)
-                .stdin(Stdio::piped())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn()
-                .map_err(|e| format!("spawn telegram tool: {e}"))?;
-            if let Some(mut stdin) = child.stdin.take() {
-                stdin
-                    .write_all(payload.as_bytes())
-                    .map_err(|e| format!("stdin telegram tool: {e}"))?;
-            }
-            child
-                .wait_with_output()
-                .map_err(|e| format!("wait telegram tool: {e}"))?
-        }
         "wasm" => {
             let mut cmd = Command::new("wasmtime");
             cmd.args(["run", "--dir=.", &path.to_string_lossy()]);
