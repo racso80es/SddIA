@@ -3,6 +3,7 @@ feature_name: poda-python-rust-clientes
 created: "2026-07-11"
 process: feature
 branch: feat/poda-python-rust-clientes
+pr_url: https://github.com/racso80es/SddIA/pull/110
 global: APTO
 pbi_archived: true
 pbi_ref: docs/todos/done/[REFACTOR] Poda ejecutables Python — adecuación de clientes a cápsulas Rust.md
@@ -59,4 +60,4 @@ cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib -p 
 ## Cierre documental
 
 - PBI archivado en `docs/todos/done/` (`document_id: PBI-REFACTOR-PODA-PYTHON-RUST`).
-- PR pendiente: `feat/poda-python-rust-clientes` → `main` vía `delivery-close-cycle`.
+- PR [#110](https://github.com/racso80es/SddIA/pull/110): `feat/poda-python-rust-clientes` → `main`.
