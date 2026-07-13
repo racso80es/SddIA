@@ -44,14 +44,15 @@ flowchart TD
 
 1. Ancla `REPO_ROOT`.
 2. Lanza centinelas vía `SddIA/scripts/daemons/<name>.sh`.
-3. Resuelve y arranca `kalma2-bridge` (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
+3. Resuelve y arranca `kalma2-bridge` nativo ELF (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
 4. Health check HTTP en `http://127.0.0.1:8765/`.
 5. `wait` hasta señal de terminación.
 
 ## Uso
 
 ```bash
-cd SddIA && cargo build -p kalma2-bridge -p execute-process
+(cd SddIA && cargo build -p kalma2-bridge -p execute-process \
+  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher)
 ./start-sddia.sh
 ```
 
@@ -73,12 +74,19 @@ Variables de entorno:
 ## Requisitos previos
 
 ```bash
-cd SddIA && cargo build -p kalma2-bridge -p execute-process \
-  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher
+(cd SddIA && cargo build -p kalma2-bridge -p execute-process \
+  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher)
 ```
 
 - Bundle UI en `interfaces/kalma2/`.
-- `curl` para health check.
+- `curl` para health check y `file` para validar ejecutables ELF nativos.
+
+## Garantía de ejecución nativa
+
+- Los dos centinelas obligatorios deben iniciar como ELF nativo; el fallo de cualquiera cancela la ignición antes de lanzar Kalma2.
+- Los centinelas opcionales no alteran la condición de éxito de los obligatorios.
+- El arranque muestra la ruta del ELF resuelto para cada componente. La prioridad es `debug` y después `release`, coherente con `cargo build` del uso documentado.
+- `SDDIA_KALMA2_BRIDGE_BIN` y `SDDIA_EXECUTE_PROCESS_BIN` solo admiten binarios ELF ejecutables; un script Python u otro wrapper es rechazado explícitamente.
 
 ## Diagnóstico
 

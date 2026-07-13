@@ -2,10 +2,22 @@
 # Resuelve SDDIA_EXECUTE_PROCESS_BIN (SSOT orquestador nativo).
 set -euo pipefail
 
+_sddia_is_native_elf() {
+  local candidate="$1"
+  local mime
+  [[ -x "$candidate" ]] || return 1
+  mime="$(file -Lb --mime-type "$candidate" 2>/dev/null || true)"
+  [[ "$mime" == "application/x-executable" || "$mime" == "application/x-pie-executable" ]]
+}
+
 _sddia_resolve_orchestrator() {
   local repo_root="$1"
   if [[ -n "${SDDIA_EXECUTE_PROCESS_BIN:-}" ]]; then
     SDDIA_EXECUTE_PROCESS_BIN="$(cd "$(dirname "$SDDIA_EXECUTE_PROCESS_BIN")" && pwd)/$(basename "$SDDIA_EXECUTE_PROCESS_BIN")"
+    if ! _sddia_is_native_elf "$SDDIA_EXECUTE_PROCESS_BIN"; then
+      echo "[ERROR] SDDIA_EXECUTE_PROCESS_BIN no es un binario ELF nativo ejecutable: $SDDIA_EXECUTE_PROCESS_BIN" >&2
+      return 1
+    fi
     export SDDIA_EXECUTE_PROCESS_BIN
     return 0
   fi
@@ -13,7 +25,7 @@ _sddia_resolve_orchestrator() {
   for candidate in \
     "$repo_root/SddIA/target/debug/execute-process" \
     "$repo_root/SddIA/target/release/execute-process"; do
-    if [[ -f "$candidate" && -x "$candidate" ]]; then
+    if _sddia_is_native_elf "$candidate"; then
       SDDIA_EXECUTE_PROCESS_BIN="$candidate"
       export SDDIA_EXECUTE_PROCESS_BIN
       return 0
