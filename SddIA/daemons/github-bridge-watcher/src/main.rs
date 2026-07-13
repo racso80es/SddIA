@@ -1,15 +1,13 @@
+use sddia_daemon_runtime::github_bridge::{load_bridge_state, process_pr};
 use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
-use serde::Deserialize;
 use serde_json::{json, Value};
 use std::env;
 use std::fs;
 use std::path::Path;
-use std::process::Command;
 use std::sync::{Arc, Mutex};
 use std::{thread, time::Duration};
 
 const DEFAULT_REPO: &str = "racso80es/SddIA";
-const STATE_REL: &str = ".SddIA/.dev/github_bridge_state.json";
 const SIMULATION_REL: &str = ".SddIA/.dev/remote_pr_simulation.json";
 const HEARTBEAT_TICK_SECONDS: u64 = 10;
 
@@ -25,10 +23,6 @@ fn spawn_heartbeat_worker(
         }
         thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
     })
-}
-
-fn python_bin() -> String {
-    env::var("PYTHON").unwrap_or_else(|_| "python3".into())
 }
 
 fn lab_simulate() -> bool {
@@ -47,23 +41,6 @@ fn poll_seconds() -> u64 {
         .and_then(|s| s.parse::<u64>().ok())
         .map(|n| n.max(5))
         .unwrap_or(30)
-}
-
-#[derive(Debug, Default, Deserialize)]
-struct BridgeState {
-    #[serde(default)]
-    processed_pr_urls: Vec<String>,
-}
-
-fn load_state(repo: &Path) -> BridgeState {
-    let path = repo.join(STATE_REL);
-    if !path.is_file() {
-        return BridgeState::default();
-    }
-    let Ok(raw) = fs::read_to_string(&path) else {
-        return BridgeState::default();
-    };
-    serde_json::from_str(&raw).unwrap_or_default()
 }
 
 fn github_request(url: &str, token: &str) -> Option<Value> {
@@ -183,57 +160,12 @@ fn fetch_lab_simulation(repo: &Path) -> Vec<Value> {
     vec![]
 }
 
-fn invoke_process_pr(repo: &Path, pr: &Value) -> bool {
-    let script = repo.join("SddIA/scripts/qa/github_bridge_process_pr.py");
-    let payload = json!({
-        "repository_path": repo.to_string_lossy(),
-        "pr": pr,
-    })
-    .to_string();
-    let out = Command::new(python_bin())
-        .arg(&script)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::inherit())
-        .spawn();
-    let Ok(mut child) = out else {
-        eprintln!("[GITHUB-BRIDGE] spawn process_pr failed");
-        return false;
-    };
-    if let Some(mut stdin) = child.stdin.take() {
-        use std::io::Write;
-        let _ = stdin.write_all(payload.as_bytes());
-    }
-    let result = child.wait_with_output();
-    match result {
-        Ok(o) if o.status.success() => {
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            let line = stdout.trim().lines().last().unwrap_or("");
-            serde_json::from_str::<Value>(line)
-                .ok()
-                .and_then(|v| v.get("handled").and_then(|h| h.as_bool()))
-                .unwrap_or(false)
-        }
-        Ok(o) => {
-            eprintln!(
-                "[GITHUB-BRIDGE] process_pr exit {}",
-                o.status.code().unwrap_or(-1)
-            );
-            false
-        }
-        Err(e) => {
-            eprintln!("[GITHUB-BRIDGE] process_pr error: {e}");
-            false
-        }
-    }
-}
-
 fn run_cycle(
     repo: &Path,
     shared: &Arc<Mutex<DaemonRuntime>>,
     top: &sddia_daemon_runtime::BusTopology,
 ) -> i32 {
-    let state = load_state(repo);
+    let mut state = load_bridge_state(repo);
     let repository = env::var("SDDIA_GITHUB_REPOSITORY")
         .unwrap_or_else(|_| DEFAULT_REPO.into())
         .trim()
@@ -265,10 +197,14 @@ fn run_cycle(
         if pr_url.is_empty() || state.processed_pr_urls.iter().any(|u| u == pr_url) {
             continue;
         }
-        if invoke_process_pr(repo, &pr) {
-            if let Ok(mut rt) = shared.lock() {
-                rt.note_stimulus();
+        match process_pr(repo, &pr, &mut state) {
+            Ok(true) => {
+                if let Ok(mut rt) = shared.lock() {
+                    rt.note_stimulus();
+                }
             }
+            Ok(false) => {}
+            Err(e) => eprintln!("[GITHUB-BRIDGE] process_pr error: {e}"),
         }
     }
     if let Ok(mut rt) = shared.lock() {

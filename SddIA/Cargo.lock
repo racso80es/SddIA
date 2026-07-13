@@ -924,6 +924,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sddia-qa"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "execute-process",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "uuid",
+]
+
+[[package]]
 name = "semver"
 version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"

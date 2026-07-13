@@ -13,7 +13,7 @@ for f in "$SRC"/*; do
   [ -f "$f" ] || continue
   base=$(basename "$f")
   case "$base" in
-    *.py|*.ps1|*.sh|*.md|*.json|*.txt|install-hooks*) continue ;;
+    *.py|*.ps1|*.md|*.json|*.txt|install-hooks*|hook_common.sh|*_gate.sh|*_gate.py) continue ;;
   esac
   case "$base" in
     *.*) continue ;;
