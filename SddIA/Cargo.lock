@@ -603,6 +603,7 @@ dependencies = [
  "sddia-io",
  "serde",
  "serde_json",
+ "ureq",
 ]
 
 [[package]]
@@ -921,6 +922,7 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+ "uuid",
 ]
 
 [[package]]
@@ -949,6 +951,7 @@ dependencies = [
  "sddia-io",
  "serde",
  "serde_json",
+ "ureq",
 ]
 
 [[package]]
