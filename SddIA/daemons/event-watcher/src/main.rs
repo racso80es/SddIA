@@ -174,6 +174,44 @@ fn prune_routed_ok(
     routed_ok.retain(|u| still.contains(u));
 }
 
+fn fractal_side_effect_committed(path: &Path) -> bool {
+    let Ok(raw) = fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
+        return false;
+    };
+    let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
+        return false;
+    };
+    // Eco Telegram: si el fallback ya entregó, no re-despachar el archivo completo
+    // mientras queden fallos no-terminales (el router salta skipped-already-delivered).
+    ds.iter().any(|(k, v)| {
+        let st = v.as_str().unwrap_or("");
+        (k.contains("telegram-fallback") || k.contains("send-telegram"))
+            && (st == "success" || st == "skipped-already-delivered" || st.starts_with("skipped"))
+    })
+}
+
+fn fractal_fully_terminal(path: &Path) -> bool {
+    let Ok(raw) = fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
+        return false;
+    };
+    let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
+        return false;
+    };
+    if ds.is_empty() {
+        return false;
+    }
+    ds.values().all(|v| {
+        let st = v.as_str().unwrap_or("");
+        st == "success" || st == "skipped-already-delivered" || st.starts_with("skipped")
+    }) && !ds.values().any(|v| v.as_str() == Some("failed"))
+}
+
 fn watcher_skip_reason(
     event_uuid: &str,
     key: &str,
@@ -191,10 +229,17 @@ fn watcher_skip_reason(
     if routed_ok.contains(event_uuid) && path.is_file() {
         return Some(format!("routed-ok pending file uuid={event_uuid}"));
     }
+    if process_name != "route-domain-event" && fractal_fully_terminal(path) {
+        return Some(format!("fractal-terminal uuid={event_uuid}"));
+    }
     if process_name == "route-domain-event" && has_dead_letter_witnesses(repo, top, event_uuid) {
         return Some("dead-letter kaizen".into());
     }
     if attempts.get(key).copied().unwrap_or(0) >= MAX_ROUTE_ATTEMPTS {
+        // Si ya hubo side-effect Telegram, no seguir reintentando eco.
+        if process_name != "route-domain-event" && fractal_side_effect_committed(path) {
+            return Some(format!("max attempts + side-effect committed ({MAX_ROUTE_ATTEMPTS})"));
+        }
         return Some(format!("max attempts ({MAX_ROUTE_ATTEMPTS})"));
     }
     None
@@ -275,7 +320,10 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                     &top,
                     &attempts,
                 ) {
-                    if skip.starts_with("in-flight") || skip.starts_with("routed-ok") {
+                    if skip.starts_with("in-flight")
+                        || skip.starts_with("routed-ok")
+                        || skip.starts_with("fractal-terminal")
+                    {
                         println!("[WATCHER] skip {skip}");
                     } else if skip.starts_with("max attempts") {
                         println!("[WATCHER] Skip {key}: {skip}");
@@ -298,6 +346,11 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                         routed_ok.remove(&event_uuid);
                         attempts.remove(&key);
                     }
+                } else if !(process_name != "route-domain-event"
+                    && path.is_file()
+                    && fractal_side_effect_committed(&path))
+                {
+                    routed_ok.remove(&event_uuid);
                 }
                 if process_name == "route-domain-event" {
                     if out.status.success()
@@ -312,18 +365,21 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                         attempts.remove(&key);
                     }
                     let note = if path.is_file() {
-                        " (archivo persiste — D3 activo)"
+                        " (archivo persiste — consenso incompleto)"
                     } else {
-                        ""
+                        " (purgado)"
                     };
                     println!("[WATCHER] {key}: enrutado ({process_name}){note}");
                 } else {
-                    routed_ok.remove(&event_uuid);
                     let err = String::from_utf8_lossy(&out.stderr);
                     let so = String::from_utf8_lossy(&out.stdout);
                     eprintln!(
                         "[WATCHER] {process_name} falló ({key}): {}",
-                        if !err.trim().is_empty() { err.trim() } else { so.trim() }
+                        if !err.trim().is_empty() {
+                            err.trim()
+                        } else {
+                            so.trim()
+                        }
                     );
                 }
             }
