@@ -4,7 +4,8 @@ use super::cerbero_governance_react_core::react_to_domain_event;
 use super::eda_bus_topology::{rel_event_path, safe_remove_path, subscriber_id};
 use super::fix_tool_process_core::process_fix_tool;
 use super::fractal_bus::{
-    load_fractal_subscription_rel, maybe_purge_fractal_telemetry_when_terminal,
+    delivery_stamp_terminal_ok, load_fractal_subscription_rel,
+    maybe_purge_fractal_telemetry_when_terminal, stamp_fractal_delivery_state,
 };
 use super::invoke_orchestrator::invoke_process_full;
 use super::radamanto_batch_core::process_telemetry_file;
@@ -23,6 +24,7 @@ const OK_STATUSES: &[&str] = &[
     "skipped-empty-text",
     "skipped-empty-message",
     "skipped-lab-simulated",
+    "skipped-already-delivered",
 ];
 
 fn dispatch_fractal_subscriber(
@@ -301,13 +303,45 @@ fn route_fractal_event(
         });
     }
 
+    let prior_delivery = event
+        .get("delivery_state")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+
     for sub in &subscribers {
+        let sid = subscriber_id(sub);
+        if let Some(prev) = prior_delivery.get(&sid).and_then(|v| v.as_str()) {
+            if delivery_stamp_terminal_ok(prev) {
+                delivery_status.insert(sid.clone(), json!("skipped-already-delivered"));
+                stamp_fractal_delivery_state(&event_path, &sid, "skipped-already-delivered");
+                continue;
+            }
+        }
         let (sid, status, _err, _code) =
             dispatch_fractal_subscriber(repo, sub, &event, &rel_path);
+        stamp_fractal_delivery_state(&event_path, &sid, &status);
         if !OK_STATUSES.contains(&status.as_str()) {
             all_ok = false;
         }
         delivery_status.insert(sid, json!(status));
+    }
+
+    // Releer stamps tras despacho: all_ok si todos los requeridos están terminales OK
+    if event_path.is_file() {
+        if let Ok(raw) = fs::read_to_string(&event_path) {
+            if let Ok(body) = serde_json::from_str::<Value>(&raw) {
+                if let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) {
+                    let required: Vec<String> = subscribers.iter().map(subscriber_id).collect();
+                    all_ok = required.iter().all(|sid| {
+                        ds.get(sid)
+                            .and_then(|v| v.as_str())
+                            .map(delivery_stamp_terminal_ok)
+                            .unwrap_or(false)
+                    });
+                }
+            }
+        }
     }
 
     let purged_purge_after = if all_ok && purge_after && event_path.is_file() {
@@ -316,7 +350,8 @@ fn route_fractal_event(
         false
     };
 
-    let is_telemetry_bus = subscriptions_rel.replace('\\', "/").contains("telemetry");
+    let subs_norm = subscriptions_rel.replace('\\', "/");
+    let is_telemetry_bus = subs_norm.contains("telemetry");
     let purged_telemetry = if all_ok && is_telemetry_bus && event_path.is_file() {
         maybe_purge_fractal_telemetry_when_terminal(repo, &event_path, &registry, event_type)
     } else {
@@ -358,7 +393,8 @@ pub fn route_orchestration_event(repo: &Path, event_file_path: &str) -> Value {
 pub fn route_domain_fractal_event(repo: &Path, event_file_path: &str) -> Value {
     let subs = load_fractal_subscription_rel(repo, "domain_subscriptions")
         .unwrap_or_else(|_| "SddIA/core/event-domain-subscriptions.json".into());
-    route_fractal_event(repo, event_file_path, &subs, false, false)
+    // Opción B: purga física del JSON domain tras consenso de suscriptores (purge_after=true).
+    route_fractal_event(repo, event_file_path, &subs, true, false)
 }
 
 pub fn invoke_route_fractal(repo: &Path, fn_name: &str, event_rel: &str) -> Result<Value, String> {

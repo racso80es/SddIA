@@ -1,4 +1,5 @@
 use crate::eda_bus::{ensure_event_bus_topology, header_path, load_registry, EdBusPaths};
+use crate::{load_bus_topology, BusTopology};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -16,79 +17,140 @@ pub struct SweepReport {
     pub skipped: Vec<Value>,
 }
 
-pub fn sweep_once(repo: &Path) -> Result<SweepReport, String> {
-    let bus = ensure_event_bus_topology(repo)?;
-    let registry = load_registry(&bus).ok();
-    let mut report = SweepReport::default();
+fn delivery_stamp_terminal_ok(status: &str) -> bool {
+    status == "success" || status == "skipped" || status.starts_with("skipped")
+}
 
-    if !bus.pending.is_dir() {
-        return Ok(report);
+fn fractal_event_fully_terminal(body: &Value) -> bool {
+    let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
+        return false;
+    };
+    if ds.is_empty() {
+        return false;
     }
+    if ds.values().any(|v| v.as_str() == Some("failed")) {
+        return false;
+    }
+    ds.values().all(|v| {
+        v.as_str()
+            .map(delivery_stamp_terminal_ok)
+            .unwrap_or(false)
+    })
+}
 
-    let mut entries: Vec<PathBuf> = fs::read_dir(&bus.pending)
-        .map_err(|e| format!("read pending: {e}"))?
+fn sweep_fractal_dir(dir: &Path, family: &str, report: &mut SweepReport) -> Result<(), String> {
+    if !dir.is_dir() {
+        return Ok(());
+    }
+    let mut entries: Vec<PathBuf> = fs::read_dir(dir)
+        .map_err(|e| format!("read fractal {family}: {e}"))?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
         .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
         .collect();
     entries.sort();
-
-    for parent_path in entries {
-        let event_uuid = parent_path
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy()
-            .into_owned();
-        let result = try_sweep_event(repo, &bus, &event_uuid, registry.as_ref())?;
-        match result.get("status").and_then(|v| v.as_str()) {
-            Some("purged") => report.purged.push(json!({
-                "event_uuid": event_uuid,
-                "witnesses": result.get("witnesses").unwrap_or(&json!(0)),
-                "headers": result.get("headers").unwrap_or(&json!(0)),
-                "pending": result.get("pending").unwrap_or(&json!(0)),
-            })),
-            Some("kaizen-finalized") => report.kaizen_finalized.push(json!({
-                "event_uuid": event_uuid,
-                "pending": result.get("pending").unwrap_or(&json!(0)),
-                "headers": result.get("headers").unwrap_or(&json!(0)),
-            })),
-            Some("kaizen") => {
-                let dead = list_witnesses(repo, &bus, "dead_letter_subscribers", &event_uuid);
-                emit_kaizen_alert(
-                    &event_uuid,
-                    result.get("event_type").and_then(|v| v.as_str()).unwrap_or(""),
-                    &dead,
-                );
-                report.kaizen_alerts.push(event_uuid);
-            }
-            Some(status)
-                if matches!(
-                    status,
-                    "invalid-json"
-                        | "missing-event_type"
-                        | "no-subscribers"
-                        | "absent"
-                        | "invalid-registry"
-                ) =>
-            {
-                report.skipped.push(json!({
-                    "event_uuid": event_uuid,
-                    "reason": status,
-                }));
-            }
-            Some("in-flight") => report.skipped.push(json!({
-                "event_uuid": event_uuid,
-                "reason": "subscribers-in-flight",
-                "in_flight": result.get("in_flight").cloned().unwrap_or(json!([])),
-            })),
-            Some("awaiting") => report.skipped.push(json!({
-                "event_uuid": event_uuid,
-                "reason": "awaiting-subscribers",
-                "pending": result.get("pending_subscribers").cloned().unwrap_or(json!([])),
-            })),
-            _ => {}
+    for path in entries {
+        let Ok(raw) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(body) = serde_json::from_str::<Value>(&raw) else {
+            continue;
+        };
+        if !fractal_event_fully_terminal(&body) {
+            continue;
+        }
+        if safe_remove_path(&path) {
+            report.purged.push(json!({
+                "family": family,
+                "path": path.file_name().map(|n| n.to_string_lossy().into_owned()),
+                "event_id": body.get("event_id").cloned().unwrap_or(Value::Null),
+            }));
         }
     }
+    Ok(())
+}
+
+fn sweep_fractal_bus(repo: &Path, report: &mut SweepReport) -> Result<(), String> {
+    let top: BusTopology = load_bus_topology(repo);
+    sweep_fractal_dir(&top.domain, "domain", report)?;
+    sweep_fractal_dir(&top.orchestration, "orchestration", report)?;
+    sweep_fractal_dir(&top.telemetry, "telemetry", report)?;
+    Ok(())
+}
+
+pub fn sweep_once(repo: &Path) -> Result<SweepReport, String> {
+    let bus = ensure_event_bus_topology(repo)?;
+    let registry = load_registry(&bus).ok();
+    let mut report = SweepReport::default();
+
+    if bus.pending.is_dir() {
+        let mut entries: Vec<PathBuf> = fs::read_dir(&bus.pending)
+            .map_err(|e| format!("read pending: {e}"))?
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
+            .collect();
+        entries.sort();
+
+        for parent_path in entries {
+            let event_uuid = parent_path
+                .file_stem()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned();
+            let result = try_sweep_event(repo, &bus, &event_uuid, registry.as_ref())?;
+            match result.get("status").and_then(|v| v.as_str()) {
+                Some("purged") => report.purged.push(json!({
+                    "event_uuid": event_uuid,
+                    "witnesses": result.get("witnesses").unwrap_or(&json!(0)),
+                    "headers": result.get("headers").unwrap_or(&json!(0)),
+                    "pending": result.get("pending").unwrap_or(&json!(0)),
+                })),
+                Some("kaizen-finalized") => report.kaizen_finalized.push(json!({
+                    "event_uuid": event_uuid,
+                    "pending": result.get("pending").unwrap_or(&json!(0)),
+                    "headers": result.get("headers").unwrap_or(&json!(0)),
+                })),
+                Some("kaizen") => {
+                    let dead = list_witnesses(repo, &bus, "dead_letter_subscribers", &event_uuid);
+                    emit_kaizen_alert(
+                        &event_uuid,
+                        result.get("event_type").and_then(|v| v.as_str()).unwrap_or(""),
+                        &dead,
+                    );
+                    report.kaizen_alerts.push(event_uuid);
+                }
+                Some(status)
+                    if matches!(
+                        status,
+                        "invalid-json"
+                            | "missing-event_type"
+                            | "no-subscribers"
+                            | "absent"
+                            | "invalid-registry"
+                    ) =>
+                {
+                    report.skipped.push(json!({
+                        "event_uuid": event_uuid,
+                        "reason": status,
+                    }));
+                }
+                Some("in-flight") => report.skipped.push(json!({
+                    "event_uuid": event_uuid,
+                    "reason": "subscribers-in-flight",
+                    "in_flight": result.get("in_flight").cloned().unwrap_or(json!([])),
+                })),
+                Some("awaiting") => report.skipped.push(json!({
+                    "event_uuid": event_uuid,
+                    "reason": "awaiting-subscribers",
+                    "pending": result.get("pending_subscribers").cloned().unwrap_or(json!([])),
+                })),
+                _ => {}
+            }
+        }
+    }
+
+    sweep_fractal_bus(repo, &mut report)?;
     Ok(report)
 }
 

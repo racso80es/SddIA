@@ -1,5 +1,6 @@
 use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
-use serde_json::Value;
+use serde_json::{json, Value};
+use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -11,8 +12,10 @@ use std::{thread, time::Duration};
 const POLL_TIMEOUT: u64 = 25;
 const HEARTBEAT_TICK_SECONDS: u64 = 10;
 const CONFLICT_BACKOFF_SECONDS: u64 = 5;
-const STATE_REL: &str = ".SddIA/.state/telegram_last_id";
-const LEGACY_STATE_REL: &str = ".SddIA/daemons/state/telegram-watcher.json";
+const STATE_REL: &str = ".SddIA/daemons/state/telegram-watcher.json";
+const LEGACY_STATE_REL: &str = ".SddIA/.state/telegram_last_id";
+const SEEN_REL: &str = ".SddIA/daemons/state/telegram-seen-update-ids.json";
+const SEEN_MAX: usize = 512;
 
 fn execute_process_bin(repo: &Path) -> PathBuf {
     if let Ok(p) = env::var("SDDIA_EXECUTE_PROCESS_BIN") {
@@ -20,7 +23,10 @@ fn execute_process_bin(repo: &Path) -> PathBuf {
             return PathBuf::from(p);
         }
     }
-    for rel in ["SddIA/target/debug/execute-process", "SddIA/target/release/execute-process"] {
+    for rel in [
+        "SddIA/target/debug/execute-process",
+        "SddIA/target/release/execute-process",
+    ] {
         let candidate = repo.join(rel);
         if candidate.is_file() {
             return candidate;
@@ -38,20 +44,24 @@ fn load_last_update_id(repo: &Path) -> i64 {
     if path.is_file() {
         if let Ok(raw) = fs::read_to_string(&path) {
             let trimmed = raw.trim();
-            if trimmed.chars().all(|c| c.is_ascii_digit()) {
-                return trimmed.parse::<i64>().unwrap_or(0).max(0);
-            }
             if let Ok(body) = serde_json::from_str::<Value>(trimmed) {
                 if let Some(id) = body.get("last_update_id").and_then(|v| v.as_i64()) {
                     return id.max(0);
                 }
+            }
+            if trimmed.chars().all(|c| c.is_ascii_digit()) {
+                return trimmed.parse::<i64>().unwrap_or(0).max(0);
             }
         }
     }
     let legacy = repo.join(LEGACY_STATE_REL);
     if legacy.is_file() {
         if let Ok(raw) = fs::read_to_string(&legacy) {
-            if let Ok(body) = serde_json::from_str::<Value>(&raw) {
+            let trimmed = raw.trim();
+            if trimmed.chars().all(|c| c.is_ascii_digit()) {
+                return trimmed.parse::<i64>().unwrap_or(0).max(0);
+            }
+            if let Ok(body) = serde_json::from_str::<Value>(trimmed) {
                 if let Some(id) = body.get("last_update_id").and_then(|v| v.as_i64()) {
                     return id.max(0);
                 }
@@ -66,8 +76,51 @@ fn save_last_update_id(repo: &Path, last_update_id: i64) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("mkdir state: {e}"))?;
     }
-    fs::write(&path, format!("{last_update_id}"))
-        .map_err(|e| format!("write state: {e}"))
+    let body = json!({ "last_update_id": last_update_id });
+    let tmp = path.with_extension("json.tmp");
+    fs::write(&tmp, format!("{body}\n")).map_err(|e| format!("write state tmp: {e}"))?;
+    fs::rename(&tmp, &path).map_err(|e| format!("rename state: {e}"))?;
+    // Espejo legacy para operadores que lean la ruta antigua.
+    let legacy = repo.join(LEGACY_STATE_REL);
+    if let Some(parent) = legacy.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let _ = fs::write(&legacy, format!("{last_update_id}"));
+    Ok(())
+}
+
+fn load_seen(repo: &Path) -> HashSet<i64> {
+    let path = repo.join(SEEN_REL);
+    let Ok(raw) = fs::read_to_string(path) else {
+        return HashSet::new();
+    };
+    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
+        return HashSet::new();
+    };
+    body.get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_i64())
+                .collect::<HashSet<_>>()
+        })
+        .unwrap_or_default()
+}
+
+fn save_seen(repo: &Path, seen: &HashSet<i64>) -> Result<(), String> {
+    let path = repo.join(SEEN_REL);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("mkdir seen: {e}"))?;
+    }
+    let mut ids: Vec<i64> = seen.iter().copied().collect();
+    ids.sort_unstable();
+    if ids.len() > SEEN_MAX {
+        ids = ids.split_off(ids.len() - SEEN_MAX);
+    }
+    let body = json!({ "ids": ids });
+    let tmp = path.with_extension("json.tmp");
+    fs::write(&tmp, format!("{body}\n")).map_err(|e| format!("write seen tmp: {e}"))?;
+    fs::rename(&tmp, &path).map_err(|e| format!("rename seen: {e}"))
 }
 
 fn require_env() -> Result<(String, String), i32> {
@@ -210,12 +263,24 @@ fn process_updates(
     centinela: &mut DaemonRuntime,
 ) -> Result<i64, String> {
     let mut max_id = load_last_update_id(repo);
+    let mut seen = load_seen(repo);
+
+    // ACK PRIMERO: avanzar offset antes de side-effects (Telegram no reentrega).
     for upd in updates {
-        let Some(obj) = upd.as_object() else {
+        if let Some(uid) = upd.get("update_id").and_then(|v| v.as_i64()) {
+            max_id = max_id.max(uid);
+        }
+    }
+    if !updates.is_empty() && max_id > 0 {
+        save_last_update_id(repo, max_id)?;
+    }
+
+    for upd in updates {
+        let Some(uid) = upd.get("update_id").and_then(|v| v.as_i64()) else {
             continue;
         };
-        if let Some(uid) = obj.get("update_id").and_then(|v| v.as_i64()) {
-            max_id = max_id.max(uid);
+        if !seen.insert(uid) {
+            continue;
         }
         if chat_id(upd).as_deref() != Some(allowed_chat) {
             continue;
@@ -224,11 +289,12 @@ fn process_updates(
             continue;
         };
         centinela.note_stimulus();
-        invoke_gateway(repo, &text, dry_run);
+        let rc = invoke_gateway(repo, &text, dry_run);
+        if rc != 0 {
+            eprintln!("[telegram-watcher] gateway rc={rc} update_id={uid}");
+        }
     }
-    if !updates.is_empty() && max_id > 0 {
-        save_last_update_id(repo, max_id)?;
-    }
+    save_seen(repo, &seen)?;
     Ok(max_id)
 }
 
@@ -260,7 +326,9 @@ fn run_loop(repo: PathBuf, dry_run: bool) -> Result<(), i32> {
     })?;
     let shared = Arc::new(Mutex::new(centinela));
     let _hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
-    println!("[telegram-watcher] bucle iniciado (keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)");
+    println!(
+        "[telegram-watcher] bucle iniciado (keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)"
+    );
     loop {
         let mut centinela = shared.lock().map_err(|_| {
             eprintln!("[telegram-watcher] lock poisoned");
