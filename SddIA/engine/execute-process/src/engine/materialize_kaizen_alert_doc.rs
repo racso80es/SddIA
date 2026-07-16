@@ -40,9 +40,91 @@ pub fn kaizen_alert_doc_hash(review_id: &str, implicated_files: &[String]) -> St
     format!("{:x}", hasher.finalize())[..8].to_string()
 }
 
+/// Huella estable sin `review_id` — anti-spam ola event-bus-audit.
+pub fn kaizen_alert_content_fingerprint(alert_kind: &str, implicated_files: &[String]) -> String {
+    let mut sorted = implicated_files.to_vec();
+    sorted.sort();
+    let key = format!("{}|{}", alert_kind.trim(), sorted.join("\n"));
+    let mut hasher = Sha256::new();
+    hasher.update(key.as_bytes());
+    format!("{:x}", hasher.finalize())[..12].to_string()
+}
+
 fn kaizen_todo_path(repo: &Path, hash8: &str) -> PathBuf {
     repo.join("docs/todos/pending")
         .join(format!("PENDING_AUDIT_DOC_{hash8}.md"))
+}
+
+fn parse_table_cell(raw: &str, field: &str) -> Option<String> {
+    let needle = format!("| `{field}` |");
+    for line in raw.lines() {
+        let t = line.trim();
+        if let Some(rest) = t.strip_prefix(&needle) {
+            let cell = rest.trim().trim_end_matches('|').trim();
+            return Some(cell.to_string());
+        }
+    }
+    None
+}
+
+fn parse_implicated_files_from_body(raw: &str) -> Vec<String> {
+    let Some(cell) = parse_table_cell(raw, "implicated_files") else {
+        return Vec::new();
+    };
+    cell.split(',')
+        .map(|s| {
+            s.trim()
+                .trim_matches('`')
+                .trim()
+                .to_string()
+        })
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// PENDING_AUDIT_DOC abierto con misma huella (alert_kind + files).
+fn find_open_kaizen_audit_doc(
+    repo: &Path,
+    alert_kind: &str,
+    implicated_files: &[String],
+) -> Option<PathBuf> {
+    let pending = repo.join("docs/todos/pending");
+    if !pending.is_dir() {
+        return None;
+    }
+    let want = kaizen_alert_content_fingerprint(alert_kind, implicated_files);
+    let mut matches: Vec<PathBuf> = fs::read_dir(&pending)
+        .ok()?
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.starts_with("PENDING_AUDIT_DOC_") && n.ends_with(".md"))
+                .unwrap_or(false)
+        })
+        .collect();
+    matches.sort();
+    for path in matches {
+        let Ok(raw) = fs::read_to_string(&path) else {
+            continue;
+        };
+        // Checklist sin cerrar = abierto
+        if !raw.contains("- [ ] Revisar `spec.md`") {
+            continue;
+        }
+        let kind = parse_table_cell(&raw, "alert_kind")
+            .unwrap_or_default()
+            .trim_matches('`')
+            .to_string();
+        let files = parse_implicated_files_from_body(&raw);
+        if kind == alert_kind
+            && kaizen_alert_content_fingerprint(&kind, &files) == want
+        {
+            return Some(path);
+        }
+    }
+    None
 }
 
 fn optional_cell(inputs: &Value, key: &str) -> String {
@@ -124,6 +206,22 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         .get("alert_kind")
         .and_then(|v| v.as_str())
         .unwrap_or("doc_parity");
+
+    if let Some(existing) = find_open_kaizen_audit_doc(repo, alert_kind, &files) {
+        let existing_rel = existing
+            .strip_prefix(repo)
+            .unwrap_or(&existing)
+            .to_string_lossy()
+            .replace('\\', "/");
+        return Ok(json!({
+            "success": true,
+            "target_path": existing_rel,
+            "message": "TODO Kaizen abierto misma huella (idempotente por alert_kind+files)",
+            "hash8": hash8,
+            "content_fingerprint": kaizen_alert_content_fingerprint(alert_kind, &files),
+        }));
+    }
+
     let persist_cell = optional_cell(inputs, "persist_ref");
     let branch_cell = optional_cell(inputs, "pr_branch");
     let impacts_cell = impacts_doc_cell(inputs);
@@ -230,5 +328,53 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.contains("implicated_files no contiene rutas válidas"));
+    }
+
+    #[test]
+    fn materialize_dedupes_open_doc_same_files_different_review() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+
+        let files = json!([
+            ".events/pending/aaa.json",
+            ".events/pending/bbb.json"
+        ]);
+        let first = json!({
+            "review_id": "11111111-1111-1111-1111-111111111111",
+            "alert_justification": "Auditoría event-bus-audit: 86 dead-letter",
+            "alert_kind": "event-bus-audit",
+            "implicated_files": files,
+        });
+        let second = json!({
+            "review_id": "22222222-2222-2222-2222-222222222222",
+            "alert_justification": "Auditoría event-bus-audit: 86 dead-letter (otra corrida)",
+            "alert_kind": "event-bus-audit",
+            "implicated_files": [
+                ".events/pending/bbb.json",
+                ".events/pending/aaa.json"
+            ],
+        });
+
+        let out1 = run(repo, &first).expect("first");
+        assert_eq!(out1.get("message"), Some(&json!("TODO Kaizen materializado")));
+        let path1 = out1.get("target_path").and_then(|v| v.as_str()).unwrap().to_string();
+
+        let out2 = run(repo, &second).expect("second");
+        assert_eq!(
+            out2.get("message"),
+            Some(&json!("TODO Kaizen abierto misma huella (idempotente por alert_kind+files)"))
+        );
+        assert_eq!(
+            out2.get("target_path").and_then(|v| v.as_str()),
+            Some(path1.as_str())
+        );
+
+        let count = fs::read_dir(repo.join("docs/todos/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("md"))
+            .count();
+        assert_eq!(count, 1);
     }
 }
