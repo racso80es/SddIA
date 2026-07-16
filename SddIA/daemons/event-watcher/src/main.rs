@@ -206,10 +206,14 @@ fn fractal_fully_terminal(path: &Path) -> bool {
     if ds.is_empty() {
         return false;
     }
+    // Terminal = success|skipped*|failed. Con failed el sweeper/router mueven a DLQ (C2).
     ds.values().all(|v| {
         let st = v.as_str().unwrap_or("");
-        st == "success" || st == "skipped-already-delivered" || st.starts_with("skipped")
-    }) && !ds.values().any(|v| v.as_str() == Some("failed"))
+        st == "success"
+            || st == "failed"
+            || st == "skipped-already-delivered"
+            || st.starts_with("skipped")
+    })
 }
 
 fn watcher_skip_reason(

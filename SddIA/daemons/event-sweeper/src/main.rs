@@ -12,6 +12,7 @@ fn print_report(report: &SweepReport, json: bool) {
             "{}",
             serde_json::json!({
                 "purged": report.purged,
+                "dead_lettered": report.dead_lettered,
                 "kaizen_alerts": report.kaizen_alerts,
                 "kaizen_finalized": report.kaizen_finalized,
                 "skipped": report.skipped,
@@ -21,6 +22,9 @@ fn print_report(report: &SweepReport, json: bool) {
     }
     if !report.purged.is_empty() {
         println!("[SWEEPER] Purgados: {:?}", report.purged);
+    }
+    if !report.dead_lettered.is_empty() {
+        println!("[SWEEPER] Dead-letter: {:?}", report.dead_lettered);
     }
     if !report.kaizen_finalized.is_empty() {
         println!("[SWEEPER] Kaizen terminalizados: {:?}", report.kaizen_finalized);

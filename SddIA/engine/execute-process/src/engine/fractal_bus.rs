@@ -145,6 +145,80 @@ pub fn delivery_stamp_terminal_ok(status: &str) -> bool {
     status == "success" || status == "skipped" || status.starts_with("skipped")
 }
 
+pub fn delivery_stamp_terminal(status: &str) -> bool {
+    delivery_stamp_terminal_ok(status) || status == "failed"
+}
+
+/// Stamps no vacíos, todos terminales, al menos un `failed` (laudo C2 → DLQ).
+pub fn fractal_delivery_terminal_with_failure(body: &Value) -> bool {
+    let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
+        return false;
+    };
+    if ds.is_empty() {
+        return false;
+    }
+    let all_terminal = ds
+        .values()
+        .all(|v| v.as_str().map(delivery_stamp_terminal).unwrap_or(false));
+    all_terminal && ds.values().any(|v| v.as_str() == Some("failed"))
+}
+
+pub fn load_fractal_dead_letter_dir(repo: &Path) -> PathBuf {
+    let default = repo.join(".events/dead-letter");
+    let Ok(cfg) = load_paths_config(repo) else {
+        return default;
+    };
+    if let Some(dl) = cfg
+        .get("eda_fractal")
+        .and_then(|f| f.get("dead_letter"))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+    {
+        let trimmed = dl.trim().trim_start_matches("./");
+        return repo.join(trimmed);
+    }
+    if let Some(dl) = cfg
+        .get("eda_bus")
+        .and_then(|b| b.get("dead_letter"))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+    {
+        let trimmed = dl.trim().trim_start_matches("./");
+        return repo.join(trimmed);
+    }
+    default
+}
+
+/// Move físico a `eda_fractal.dead_letter` (crea directorio si falta).
+pub fn move_fractal_event_to_dead_letter(repo: &Path, event_path: &Path) -> bool {
+    if !event_path.is_file() {
+        return false;
+    }
+    let dead_letter = load_fractal_dead_letter_dir(repo);
+    if let Err(e) = fs::create_dir_all(&dead_letter) {
+        eprintln!("[fractal-dlq] mkdir {}: {e}", dead_letter.display());
+        return false;
+    }
+    let Some(name) = event_path.file_name() else {
+        return false;
+    };
+    let dest = dead_letter.join(name);
+    if dest.exists() {
+        let _ = fs::remove_file(&dest);
+    }
+    match fs::rename(event_path, &dest) {
+        Ok(()) => true,
+        Err(e) => {
+            eprintln!(
+                "[fractal-dlq] rename {} → {}: {e}",
+                event_path.display(),
+                dest.display()
+            );
+            false
+        }
+    }
+}
+
 pub fn required_subscriber_ids(registry: &Value, event_type: &str) -> Vec<String> {
     registry
         .get(event_type)

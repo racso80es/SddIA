@@ -81,6 +81,7 @@
     "telemetry": "./.events/telemetry",
     "orchestration": "./.events/orchestration",
     "domain": "./.events/domain",
+    "dead_letter": "./.events/dead-letter",
     "telemetry_subscriptions": "SddIA/core/event-telemetry-subscriptions.json",
     "orchestration_subscriptions": "SddIA/core/event-orchestration-subscriptions.json",
     "domain_subscriptions": "SddIA/core/event-domain-subscriptions.json"
