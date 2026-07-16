@@ -65,6 +65,46 @@ fn fracture_pbi_path(repo: &Path, process_name: &str, error_trace: &str) -> Path
     ))
 }
 
+/// PBI pending abierto del mismo `process_name` (anti-spam ola heartbeat).
+fn find_open_fracture_pbi(repo: &Path, process_name: &str) -> Option<PathBuf> {
+    let pending = repo.join("docs/todos/pending");
+    if !pending.is_dir() {
+        return None;
+    }
+    let slug = slugify_process_name(process_name);
+    let prefix = format!("[FIX] {slug} — fractura sistémica (");
+    let suffix = ").md";
+    let mut matches: Vec<PathBuf> = fs::read_dir(&pending)
+        .ok()?
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.extension().and_then(|x| x.to_str()) == Some("md")
+                && p.file_name()
+                    .and_then(|n| n.to_str())
+                    .map(|n| n.starts_with(&prefix) && n.ends_with(suffix))
+                    .unwrap_or(false)
+        })
+        .collect();
+    matches.sort();
+    for path in matches {
+        let Ok(raw) = fs::read_to_string(&path) else {
+            continue;
+        };
+        // Frontmatter status abierto (default de materialize).
+        let status_open = raw.lines().take(40).any(|line| {
+            let t = line.trim();
+            t == "status: abierto"
+                || t == "status: \"abierto\""
+                || t == "status: 'abierto'"
+        });
+        if status_open {
+            return Some(path);
+        }
+    }
+    None
+}
+
 fn build_pbi_body(
     process_name: &str,
     error_trace: &str,
@@ -157,6 +197,21 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
             "success": true,
             "target_path": rel_path,
             "message": "PBI ya existente (idempotente)",
+        }));
+    }
+
+    // Misma clase de fractura, traza distinta (p.ej. missed_cycles/timestamp): no spamear.
+    if let Some(existing) = find_open_fracture_pbi(repo, &process_name) {
+        let existing_rel = existing
+            .strip_prefix(repo)
+            .unwrap_or(&existing)
+            .to_string_lossy()
+            .replace('\\', "/");
+        return Ok(json!({
+            "success": true,
+            "target_path": existing_rel,
+            "message": "PBI abierto del mismo proceso (idempotente por process_name)",
+            "deduped_trace_hash": trace_hash,
         }));
     }
 
@@ -254,5 +309,47 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.contains("attempted_action"));
+    }
+
+    #[test]
+    fn materialize_dedupes_open_pbi_same_process_different_trace() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+
+        let first = json!({
+            "process_name": "event-watcher",
+            "error_trace": "Centinela event-watcher omitió 13 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-07-16T15:55:03Z",
+            "agent_emitter": "argos",
+            "attempted_action": "daemon-heartbeat-audit",
+        });
+        let second = json!({
+            "process_name": "event-watcher",
+            "error_trace": "Centinela event-watcher omitió 37 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-07-16T16:08:11Z",
+            "agent_emitter": "argos",
+            "attempted_action": "daemon-heartbeat-audit",
+        });
+
+        let out1 = run(repo, &first).expect("first");
+        assert_eq!(out1.get("message"), Some(&json!("PBI materializado")));
+        let path1 = out1.get("target_path").and_then(|v| v.as_str()).unwrap().to_string();
+
+        let out2 = run(repo, &second).expect("second");
+        assert_eq!(
+            out2.get("message"),
+            Some(&json!("PBI abierto del mismo proceso (idempotente por process_name)"))
+        );
+        assert_eq!(
+            out2.get("target_path").and_then(|v| v.as_str()),
+            Some(path1.as_str())
+        );
+
+        let pending = repo.join("docs/todos/pending");
+        let count = fs::read_dir(&pending)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("md"))
+            .count();
+        assert_eq!(count, 1);
     }
 }
