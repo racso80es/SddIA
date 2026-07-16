@@ -1,5 +1,5 @@
 use crate::eda_bus::{ensure_event_bus_topology, header_path, load_registry, EdBusPaths};
-use crate::{load_bus_topology, BusTopology};
+use crate::{ensure_fractal_dirs, load_bus_topology, BusTopology};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -12,6 +12,7 @@ pub const POLL_SECONDS: u64 = 5;
 #[derive(Debug, Clone, Default)]
 pub struct SweepReport {
     pub purged: Vec<Value>,
+    pub dead_lettered: Vec<Value>,
     pub kaizen_alerts: Vec<String>,
     pub kaizen_finalized: Vec<Value>,
     pub skipped: Vec<Value>,
@@ -21,8 +22,17 @@ fn delivery_stamp_terminal_ok(status: &str) -> bool {
     status == "success" || status == "skipped" || status.starts_with("skipped")
 }
 
-fn fractal_event_fully_terminal(body: &Value) -> bool {
-    let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
+fn delivery_stamp_terminal(status: &str) -> bool {
+    delivery_stamp_terminal_ok(status) || status == "failed"
+}
+
+fn fractal_delivery_state<'a>(body: &'a Value) -> Option<&'a serde_json::Map<String, Value>> {
+    body.get("delivery_state").and_then(|v| v.as_object())
+}
+
+/// Todos los stamps terminales OK (success|skipped*) — sin `failed`.
+fn fractal_event_all_ok(body: &Value) -> bool {
+    let Some(ds) = fractal_delivery_state(body) else {
         return false;
     };
     if ds.is_empty() {
@@ -38,7 +48,48 @@ fn fractal_event_fully_terminal(body: &Value) -> bool {
     })
 }
 
-fn sweep_fractal_dir(dir: &Path, family: &str, report: &mut SweepReport) -> Result<(), String> {
+/// Todos los stamps terminales y al menos un `failed` → DLQ (laudo C2).
+fn fractal_event_terminal_with_failure(body: &Value) -> bool {
+    let Some(ds) = fractal_delivery_state(body) else {
+        return false;
+    };
+    if ds.is_empty() {
+        return false;
+    }
+    let all_terminal = ds.values().all(|v| {
+        v.as_str()
+            .map(delivery_stamp_terminal)
+            .unwrap_or(false)
+    });
+    all_terminal && ds.values().any(|v| v.as_str() == Some("failed"))
+}
+
+fn move_fractal_to_dead_letter(path: &Path, dead_letter_dir: &Path) -> Result<PathBuf, String> {
+    fs::create_dir_all(dead_letter_dir)
+        .map_err(|e| format!("mkdir dead_letter {}: {e}", dead_letter_dir.display()))?;
+    let file_name = path
+        .file_name()
+        .ok_or_else(|| format!("dead_letter move: sin nombre {}", path.display()))?;
+    let dest = dead_letter_dir.join(file_name);
+    if dest.exists() {
+        let _ = fs::remove_file(&dest);
+    }
+    fs::rename(path, &dest).map_err(|e| {
+        format!(
+            "dead_letter rename {} → {}: {e}",
+            path.display(),
+            dest.display()
+        )
+    })?;
+    Ok(dest)
+}
+
+fn sweep_fractal_dir(
+    dir: &Path,
+    family: &str,
+    dead_letter_dir: &Path,
+    report: &mut SweepReport,
+) -> Result<(), String> {
     if !dir.is_dir() {
         return Ok(());
     }
@@ -56,15 +107,34 @@ fn sweep_fractal_dir(dir: &Path, family: &str, report: &mut SweepReport) -> Resu
         let Ok(body) = serde_json::from_str::<Value>(&raw) else {
             continue;
         };
-        if !fractal_event_fully_terminal(&body) {
+        if fractal_event_all_ok(&body) {
+            if safe_remove_path(&path) {
+                report.purged.push(json!({
+                    "family": family,
+                    "path": path.file_name().map(|n| n.to_string_lossy().into_owned()),
+                    "event_id": body.get("event_id").cloned().unwrap_or(Value::Null),
+                }));
+            }
             continue;
         }
-        if safe_remove_path(&path) {
-            report.purged.push(json!({
-                "family": family,
-                "path": path.file_name().map(|n| n.to_string_lossy().into_owned()),
-                "event_id": body.get("event_id").cloned().unwrap_or(Value::Null),
-            }));
+        if fractal_event_terminal_with_failure(&body) {
+            match move_fractal_to_dead_letter(&path, dead_letter_dir) {
+                Ok(dest) => {
+                    report.dead_lettered.push(json!({
+                        "family": family,
+                        "path": dest.file_name().map(|n| n.to_string_lossy().into_owned()),
+                        "from": path.file_name().map(|n| n.to_string_lossy().into_owned()),
+                        "event_id": body.get("event_id").cloned().unwrap_or(Value::Null),
+                    }));
+                }
+                Err(e) => {
+                    report.skipped.push(json!({
+                        "family": family,
+                        "reason": e,
+                        "path": path.file_name().map(|n| n.to_string_lossy().into_owned()),
+                    }));
+                }
+            }
         }
     }
     Ok(())
@@ -72,9 +142,10 @@ fn sweep_fractal_dir(dir: &Path, family: &str, report: &mut SweepReport) -> Resu
 
 fn sweep_fractal_bus(repo: &Path, report: &mut SweepReport) -> Result<(), String> {
     let top: BusTopology = load_bus_topology(repo);
-    sweep_fractal_dir(&top.domain, "domain", report)?;
-    sweep_fractal_dir(&top.orchestration, "orchestration", report)?;
-    sweep_fractal_dir(&top.telemetry, "telemetry", report)?;
+    let _ = ensure_fractal_dirs(&top);
+    sweep_fractal_dir(&top.domain, "domain", &top.dead_letter, report)?;
+    sweep_fractal_dir(&top.orchestration, "orchestration", &top.dead_letter, report)?;
+    sweep_fractal_dir(&top.telemetry, "telemetry", &top.dead_letter, report)?;
     Ok(())
 }
 
@@ -571,4 +642,51 @@ fn emit_kaizen_alert(event_uuid: &str, event_type: &str, witnesses: &[PathBuf]) 
         "witnesses": details,
     });
     eprintln!("{}", serde_json::to_string(&alert).unwrap_or_default());
+}
+
+#[cfg(test)]
+mod fractal_dlq_tests {
+    use super::*;
+    use std::io::Write;
+    use uuid::Uuid;
+
+    #[test]
+    fn terminal_with_failure_moves_to_dead_letter() {
+        let base = std::env::temp_dir().join(format!("sddia-dlq-{}", Uuid::new_v4()));
+        let domain = base.join("domain");
+        let dl = base.join("dead-letter");
+        fs::create_dir_all(&domain).unwrap();
+        let path = domain.join("evt.json");
+        let body = json!({
+            "event_id": "evt",
+            "delivery_state": {
+                "cumulo.iota-immutable-publisher": "failed",
+                "mayeuta.telegram-fallback-responder": "skipped-already-delivered"
+            }
+        });
+        {
+            let mut f = fs::File::create(&path).unwrap();
+            f.write_all(serde_json::to_string_pretty(&body).unwrap().as_bytes())
+                .unwrap();
+        }
+        assert!(fractal_event_terminal_with_failure(&body));
+        assert!(!fractal_event_all_ok(&body));
+        let dest = move_fractal_to_dead_letter(&path, &dl).unwrap();
+        assert!(!path.exists());
+        assert!(dest.is_file());
+        assert_eq!(dest.parent().unwrap(), dl.as_path());
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn all_ok_not_terminal_with_failure() {
+        let body = json!({
+            "delivery_state": {
+                "a": "success",
+                "b": "skipped-already-delivered"
+            }
+        });
+        assert!(fractal_event_all_ok(&body));
+        assert!(!fractal_event_terminal_with_failure(&body));
+    }
 }

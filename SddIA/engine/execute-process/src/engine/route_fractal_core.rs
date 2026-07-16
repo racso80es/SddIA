@@ -4,8 +4,9 @@ use super::cerbero_governance_react_core::react_to_domain_event;
 use super::eda_bus_topology::{rel_event_path, safe_remove_path, subscriber_id};
 use super::fix_tool_process_core::process_fix_tool;
 use super::fractal_bus::{
-    delivery_stamp_terminal_ok, load_fractal_subscription_rel,
-    maybe_purge_fractal_telemetry_when_terminal, stamp_fractal_delivery_state,
+    delivery_stamp_terminal_ok, fractal_delivery_terminal_with_failure,
+    load_fractal_subscription_rel, maybe_purge_fractal_telemetry_when_terminal,
+    move_fractal_event_to_dead_letter, stamp_fractal_delivery_state,
 };
 use super::invoke_orchestrator::invoke_process_full;
 use super::radamanto_batch_core::process_telemetry_file;
@@ -350,6 +351,18 @@ fn route_fractal_event(
         false
     };
 
+    // Laudo C2: terminal-with-failure → move a eda_fractal.dead_letter (no unlink).
+    let mut dead_lettered = false;
+    if !all_ok && purge_after && event_path.is_file() {
+        if let Ok(raw) = fs::read_to_string(&event_path) {
+            if let Ok(body) = serde_json::from_str::<Value>(&raw) {
+                if fractal_delivery_terminal_with_failure(&body) {
+                    dead_lettered = move_fractal_event_to_dead_letter(repo, &event_path);
+                }
+            }
+        }
+    }
+
     let subs_norm = subscriptions_rel.replace('\\', "/");
     let is_telemetry_bus = subs_norm.contains("telemetry");
     let purged_telemetry = if all_ok && is_telemetry_bus && event_path.is_file() {
@@ -362,6 +375,17 @@ fn route_fractal_event(
     let purge_failed = all_ok
         && event_path.is_file()
         && ((purge_after && !purged_purge_after) || (is_telemetry_bus && !purged_telemetry));
+    let dead_letter_failed = !all_ok
+        && purge_after
+        && !dead_lettered
+        && event_path.is_file()
+        && {
+            fs::read_to_string(&event_path)
+                .ok()
+                .and_then(|r| serde_json::from_str::<Value>(&r).ok())
+                .map(|b| fractal_delivery_terminal_with_failure(&b))
+                .unwrap_or(false)
+        };
 
     json!({
         "success": all_ok,
@@ -372,6 +396,8 @@ fn route_fractal_event(
             "parent_path": rel_path,
             "purged": purged,
             "purge_failed": purge_failed,
+            "dead_lettered": dead_lettered,
+            "dead_letter_failed": dead_letter_failed,
             "skip_ecst_gate": skip_ecst_gate,
         },
         "error": if all_ok { Value::Null } else { json!("one or more subscribers failed") },

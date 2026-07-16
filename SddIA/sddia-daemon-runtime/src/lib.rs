@@ -14,6 +14,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone)]
 pub struct BusTopology {
     pub pending: PathBuf,
+    pub dead_letter: PathBuf,
     pub dead_letter_subscribers: PathBuf,
     pub telemetry: PathBuf,
     pub orchestration: PathBuf,
@@ -80,6 +81,7 @@ pub fn status_dir(repo: &Path) -> PathBuf {
 pub fn load_bus_topology(repo: &Path) -> BusTopology {
     let defaults = |repo: &Path| BusTopology {
         pending: repo.join(".events/pending"),
+        dead_letter: repo.join(".events/dead-letter"),
         dead_letter_subscribers: repo.join(".events/dead-letter/subscribers"),
         telemetry: repo.join(".events/telemetry"),
         orchestration: repo.join(".events/orchestration"),
@@ -96,7 +98,10 @@ pub fn load_bus_topology(repo: &Path) -> BusTopology {
             top.pending = rel_path(repo, p);
         }
         if let Some(dl) = bus.get("dead_letter").and_then(|v| v.as_str()) {
-            top.dead_letter_subscribers = rel_path(repo, &format!("{}/subscribers", dl.trim_end_matches('/')));
+            let dl_norm = dl.trim_end_matches('/');
+            top.dead_letter = rel_path(repo, dl_norm);
+            top.dead_letter_subscribers =
+                rel_path(repo, &format!("{dl_norm}/subscribers"));
         }
     }
     if let Some(fractal) = fractal {
@@ -109,12 +114,24 @@ pub fn load_bus_topology(repo: &Path) -> BusTopology {
                 *dest = rel_path(repo, p);
             }
         }
+        // Laudo B: eda_fractal.dead_letter prevalece sobre eda_bus.dead_letter
+        if let Some(dl) = fractal.get("dead_letter").and_then(|v| v.as_str()) {
+            let dl_norm = dl.trim_end_matches('/');
+            top.dead_letter = rel_path(repo, dl_norm);
+            top.dead_letter_subscribers =
+                rel_path(repo, &format!("{dl_norm}/subscribers"));
+        }
     }
     top
 }
 
 pub fn ensure_fractal_dirs(top: &BusTopology) -> Result<(), String> {
-    for dir in [&top.telemetry, &top.orchestration, &top.domain] {
+    for dir in [
+        &top.telemetry,
+        &top.orchestration,
+        &top.domain,
+        &top.dead_letter,
+    ] {
         fs::create_dir_all(dir).map_err(|e| format!("mkdir {}: {e}", dir.display()))?;
     }
     Ok(())
@@ -122,6 +139,7 @@ pub fn ensure_fractal_dirs(top: &BusTopology) -> Result<(), String> {
 
 pub fn ensure_bus_dirs(top: &BusTopology) -> Result<(), String> {
     fs::create_dir_all(&top.pending).map_err(|e| format!("mkdir pending: {e}"))?;
+    fs::create_dir_all(&top.dead_letter).map_err(|e| format!("mkdir dead_letter: {e}"))?;
     fs::create_dir_all(&top.dead_letter_subscribers)
         .map_err(|e| format!("mkdir dead_letter_subscribers: {e}"))?;
     Ok(())
