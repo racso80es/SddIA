@@ -1,12 +1,12 @@
 ---
-index_version: "1.1.0"
+index_version: "1.2.0"
 entity_family: "events"
 maintained_by_agent: "cumulo"
 paths_ref: "SddIA/core/cumulo.paths.json"
 directories_key: "events"
 contracts_key: "events"
-indexed_at: "2026-05-27"
-synchronization_note: "Índice de familias; catálogo ECST en index.md de cada subcarpeta."
+indexed_at: "2026-07-19"
+synchronization_note: "Índice de familias; catálogo ECST en index.md de cada subcarpeta. Recuentos alineados a telemetria-activa-domain-entity-updated."
 ---
 
 # Índice de eventos (Core SddIA) — Trinidad de Estímulos
@@ -15,14 +15,15 @@ Contrato normativo: [`events-contract.md`](events-contract.md) (raíz; no es Cla
 
 ## Familias (Simetría fractal)
 
-| Familia | Códice | Clases (Fase 1) | Emisor principal |
-|---------|--------|-----------------|------------------|
-| `telemetry` | [`telemetry/index.md`](telemetry/index.md) | 1 | Solo CLI |
-| `orchestration` | [`orchestration/index.md`](orchestration/index.md) | 0 | CLI / auditores (Fase 3) |
-| `domain` | [`domain/index.md`](domain/index.md) | 7 | Cúmulo, Cerbero, acciones `emit-*` |
+| Familia | Códice | Clases ECST | Emisor principal |
+|---------|--------|-------------|------------------|
+| `telemetry` | [`telemetry/index.md`](telemetry/index.md) | 2 | Solo CLI |
+| `orchestration` | [`orchestration/index.md`](orchestration/index.md) | 2 | CLI / auditores / hooks |
+| `domain` | [`domain/index.md`](domain/index.md) | 20 | Cúmulo, Cerbero, Radamanto, acciones `emit-*` |
 
 ## Integridad
 
-- **Total Clases:** 8 ECST (7 dominio migradas + `Raw_Execution_Finished`).
+- **Total Clases:** 24 ECST (20 domain + 2 telemetry + 2 orchestration).
 - **Raíz:** solo `events-contract.md`, este `index.md` y subcarpetas `{telemetry,orchestration,domain}/`.
-- **Runtime:** instancias V3+ siguen en `eda_bus.pending` para dominio legacy (D0.2); rutas fractal `./.events/{family}/` en Fase 3.
+- **Runtime:** instancias V3+ en `eda_bus.pending` para dominio legacy (D0.2); rutas fractal `./.events/{family}/`.
+- **Telemetría activa:** `Raw_Execution_Finished` → Radamanto → `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (no confundir con CRUD `Domain_Entity_Updated`).

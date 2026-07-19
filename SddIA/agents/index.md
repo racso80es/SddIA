@@ -22,7 +22,7 @@ Contrato normativo de la familia: `agents-contract.md` (no constituye un agente 
 | `argos.md` | `bd3b1d76-3734-4fbb-b447-ad5e4a5e4907` | argos | 1.0.0 | agents-contract v1.0.0 | `quality-assurance`, `filesystem-ops`, `source-control`, `event-routing` |
 | `dedalo.md` | `9e60e48e-43be-463d-999e-d3dbd83924af` | dedalo | 1.0.0 | agents-contract v1.0.0 | `ecosystem-evolution`, `knowledge-management`, `filesystem-ops` |
 | `mayeuta.md` | `db1acdb5-23b9-490e-a339-dc511091e959` | mayeuta | 1.0.0 | agents-contract v1.0.0 | `knowledge-management`, `filesystem-ops` |
-| `radamanto.md` | `4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a` | radamanto | 1.0.0 | agents-contract v1.0.0 | `quality-assurance`, `ecosystem-evolution` |
+| `radamanto.md` | `4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a` | radamanto | 1.1.0 | agents-contract v1.0.0 | `quality-assurance`, `ecosystem-evolution` |
 
 ## Archivos en carpeta no catalogados como agente
 

@@ -1,26 +1,28 @@
 ---
 family: domain
-index_version: "1.2.0"
+index_version: "1.3.0"
 maintained_by_agent: cumulo
-indexed_at: "2026-05-29"
-synchronization_note: "Cada fila debe coincidir con la cabecera YAML del archivo en esta carpeta."
+indexed_at: "2026-07-19"
+synchronization_note: "Cada fila debe coincidir con la cabecera YAML del archivo en esta carpeta. Incluye Domain_Entity_Telemetry_Captured (telemetria-activa)."
 ---
 
 # Códice de Familia — `domain`
 
 ## Propósito
 
-Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones genómicas, fracturas, Kaizen).
+Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones genómicas, Self-Healing, snapshots de telemetría, fracturas, Kaizen).
 
 | Campo | Valor |
 |-------|-------|
-| **Emisores autorizados** | Agentes Core: Cúmulo, Cerbero, **Radamanto** (Self-Healing); acciones `emit-*` indexadas |
-| **Consumidor runtime (Fase 3)** | `./.events/domain/` → `route-domain` + pipeline V3+ `pending/` (coexistencia D0.2) |
+| **Emisores autorizados** | Agentes Core: Cúmulo, Cerbero, **Radamanto** (Self-Healing + Telemetry_Captured); acciones `emit-*` indexadas |
+| **Consumidor runtime** | `./.events/domain/` → `route-domain` + pipeline V3+ `pending/` (coexistencia D0.2) |
+| **Ingesta vectorial** | `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (no es CRUD `Domain_Entity_Updated`) |
 
 ## Catálogo de Clases ECST
 
 | Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |
 |----------------|------|------|------------|---------|----------|---------|--------------|
+| `domain-entity-telemetry-captured.md` | `54a49fa7-8d45-4376-9aa1-deeebeb301ea` | domain-entity-telemetry-captured | Domain_Entity_Telemetry_Captured | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `domain_entity_telemetry_captured` |
 | `vector-memory-indexed.md` | `5fc8293d-d853-4b20-8387-b039c9eb5438` | vector-memory-indexed | Vector_Memory_Indexed | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `vector_memory_indexed` |
 | `thought-persisted.md` | `612a8b69-23fc-48d0-950e-28722ab084b9` | thought-persisted | Thought_Persisted | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `thought_persisted` |
 | `domain-entity-deleted.md` | `a7c81b2f-b466-4b18-82c5-84ef0a5941b8` | domain-entity-deleted | Domain_Entity_Deleted | 1.1.0 | events-contract v1.1.0 | ecosystem-evolution | `domain_entity_deleted` |

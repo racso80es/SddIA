@@ -1,0 +1,21 @@
+{
+  "feature_name": "telemetria-activa-domain-entity-updated",
+  "branch_name": "feat/telemetria-activa-domain-entity-updated",
+  "persist_ref": "docs/features/telemetria-activa-domain-entity-updated",
+  "base_branch": "main",
+  "refined_requirements": "Sustituir el sumidero ciego de la aduana de telemetría por un flujo reactivo cerrado (Grado S+): procesar payload, estructurar métricas de rendimiento y mutar estado del componente emitiendo Domain_Entity_Updated (mutation_type Telemetry_Snapshot_Captured). Suscriptor nativo indexa el registro en LanceDB vía lancedb_evolution_repo (core/memory). PBI: docs/todos/pending/[OPERATIVO] PBI: Gestión e Ingesta de Telemetría Activa mediante Domain_Entity_Updated.md. Estado inicial: Por Refinar — primera acción = estabilización Mayeuta.",
+  "pbi_ref": "docs/todos/pending/[OPERATIVO] PBI: Gestión e Ingesta de Telemetría Activa mediante Domain_Entity_Updated.md",
+  "document_id": "PBI-TELEMETRIA-ACTIVA-DOMAIN-ENTITY-UPDATED",
+  "depends_on_features": [
+    "docs/features/telemetria-reactiva-eda-fase4",
+    "docs/features/adecuar-ed-telemetry",
+    "docs/features/memoria-vectorial",
+    "docs/features/boveda-evolucion-epigenetica"
+  ],
+  "related_artifacts": [
+    "SddIA/events/domain/domain-entity-updated.md",
+    "SddIA/core/event-domain-subscriptions.json",
+    "SddIA/core/memory/",
+    "SddIA/engine/execute-process/"
+  ]
+}

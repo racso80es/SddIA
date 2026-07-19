@@ -51,6 +51,13 @@
       "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
+  "Domain_Entity_Telemetry_Captured": [
+    {
+      "agent": "cumulo",
+      "process": "memory-evolution-ingest",
+      "intent": "Indexar snapshot de ejecución en LanceDB vía EvolutionProxy / vector_store/evolution."
+    }
+  ],
   "Domain_Entity_Deleted": [
     {
       "agent": "cumulo",

@@ -13,6 +13,7 @@ pub mod residual_runner;
 pub mod route_domain_core;
 pub mod route_fractal_core;
 pub mod radamanto_batch_core;
+pub mod memory_evolution_ingest_core;
 pub mod telemetry_batch_stub;
 pub mod telemetry_compliance_core;
 pub mod invoke_orchestrator;
@@ -39,8 +40,46 @@ pub mod verify_process_integrity;
 
 use crate::core::resolver::load_process_def;
 use crate::envelope::OrchestratorEnvelope;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::path::Path;
+
+fn run_memory_evolution_ingest(
+    repo: &Path,
+    process_inputs: &Value,
+) -> Result<OrchestratorEnvelope, String> {
+    let rel = process_inputs
+        .get("event_file_path")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or("event_file_path requerido")?;
+    let result = memory_evolution_ingest_core::ingest_domain_event_file(repo, rel);
+    let ok = result.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+    let status_code = if ok { 0 } else { 1 };
+    Ok(OrchestratorEnvelope {
+        success: ok,
+        status_code,
+        data: Some(result.clone()),
+        error: if ok {
+            None
+        } else {
+            result
+                .get("error")
+                .and_then(|v| v.as_str())
+                .map(str::to_string)
+        },
+        execution_report: Some(json!({
+            "process_name": "memory-evolution-ingest",
+            "phases": [{
+                "phase_name": "Ingesta evolution",
+                "status": if ok { "executed" } else { "failed" },
+                "handler": "memory-evolution-ingest-core",
+                "result": result,
+            }],
+        })),
+        exit_code: status_code,
+    })
+}
 
 /// Punto de entrada del motor.
 pub fn run_process(
@@ -72,6 +111,10 @@ pub fn run_process(
 
     if canonical == "daemon-heartbeat-audit" {
         return handlers::daemon_heartbeat::run(repo, process_inputs);
+    }
+
+    if canonical == "memory-evolution-ingest" {
+        return run_memory_evolution_ingest(repo, process_inputs);
     }
 
     if canonical == "route-domain-event" {

@@ -1,8 +1,8 @@
 ---
 family: telemetry
-index_version: "1.0.0"
+index_version: "1.1.0"
 maintained_by_agent: cumulo
-indexed_at: "2026-05-27"
+indexed_at: "2026-07-19"
 ---
 
 # Códice de Familia — `telemetry`
@@ -13,8 +13,9 @@ Ruido físico de infraestructura (Nivel 1): métricas de ejecución capturadas e
 
 | Campo | Valor |
 |-------|-------|
-| **Emisores autorizados** | **Solo CLI** — `execute-process`, `execute-action`, cápsulas `execute_process_capsules` |
-| **Consumidor runtime (Fase 3)** | `./.events/telemetry/` → `route-telemetry` → Radamanto (batch); purga tras consumo |
+| **Emisores autorizados** | **Solo CLI** — `execute-process`, `execute-action`, cápsulas |
+| **Consumidor runtime** | `./.events/telemetry/` → `route-telemetry` → `radamanto-batch` + `telemetry-compliance-audit` (+ `daemon-heartbeat-audit` para latidos) |
+| **Chispa secundaria (domain)** | Tras consumo OK, Radamanto emite `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` |
 
 ## Catálogo de Clases ECST
 
@@ -25,4 +26,5 @@ Ruido físico de infraestructura (Nivel 1): métricas de ejecución capturadas e
 
 ## Integridad
 
-- **Clases:** 1 ECST (Fase 1); ampliación prevista en Fases 3–5.
+- **Clases:** 2 ECST.
+- **Purga:** fan-out sella `delivery_state`; purga física vía infraestructura (`route-telemetry` / sweeper), no el stub residual.
