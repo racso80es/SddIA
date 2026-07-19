@@ -7,7 +7,7 @@ workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
   - "ecosystem-evolution"
   - "event-routing"
-hash_signature: "sha256:ffc5c8d2c833a8a8f222c29bfda2cb73e96e27fd964e2848ba86a06acf805dba"
+hash_signature: "sha256:b6751f5f70d23638899528703fe3db0e72ab5be3e5727c7b39953417c68e0877"
 inputs:
   - "event_file_path": "Ruta relativa al JSON Domain_Entity_Telemetry_Captured en ./.events/domain/"
 outputs:
