@@ -2,7 +2,7 @@
 name = "kalma2-bridge"
 version = "0.1.0"
 edition = "2021"
-description = "Puente HTTP Kalma2 — aduana inerte E/S (estático + POST /api/interact)"
+description = "Puente HTTP Kalma2 — aduana inerte E/S (estático + POST /api/interact + GET /api/status)"
 
 [[bin]]
 name = "kalma2-bridge"

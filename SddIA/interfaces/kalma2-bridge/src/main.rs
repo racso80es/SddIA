@@ -203,6 +203,333 @@ fn run_orchestrator(repo: &Path, bin: &Path, prompt: &str) -> Result<String, Str
     }
 }
 
+fn normalize_rel(path: &str) -> String {
+    let p = path.replace('\\', "/");
+    p.strip_prefix("./").unwrap_or(&p).to_string()
+}
+
+fn load_fractal_paths(repo: &Path) -> (PathBuf, PathBuf, PathBuf) {
+    let defaults = (
+        repo.join(".events/domain"),
+        repo.join(".events/orchestration"),
+        repo.join(".events/dead-letter"),
+    );
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
+        return defaults;
+    };
+    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return defaults;
+    };
+    let fractal = cfg.get("eda_fractal");
+    let domain = fractal
+        .and_then(|f| f.get("domain"))
+        .and_then(|v| v.as_str())
+        .map(normalize_rel)
+        .map(|r| repo.join(r))
+        .unwrap_or(defaults.0);
+    let orch = fractal
+        .and_then(|f| f.get("orchestration"))
+        .and_then(|v| v.as_str())
+        .map(normalize_rel)
+        .map(|r| repo.join(r))
+        .unwrap_or(defaults.1);
+    let dead = fractal
+        .and_then(|f| f.get("dead_letter"))
+        .and_then(|v| v.as_str())
+        .map(normalize_rel)
+        .map(|r| repo.join(r))
+        .unwrap_or(defaults.2);
+    (domain, orch, dead)
+}
+
+fn is_uuid_v4ish(s: &str) -> bool {
+    let s = s.trim();
+    if s.len() != 36 {
+        return false;
+    }
+    let b = s.as_bytes();
+    for (i, c) in b.iter().enumerate() {
+        match i {
+            8 | 13 | 18 | 23 => {
+                if *c != b'-' {
+                    return false;
+                }
+            }
+            _ => {
+                if !c.is_ascii_hexdigit() {
+                    return false;
+                }
+            }
+        }
+    }
+    true
+}
+
+fn terminal_ok(status: &str) -> bool {
+    status == "success" || status == "skipped" || status.starts_with("skipped")
+}
+
+fn terminal_failed(status: &str) -> bool {
+    status == "failed" || status.starts_with("failed")
+}
+
+fn read_json_file(path: &Path) -> Option<serde_json::Value> {
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+fn find_domain_event(domain_dir: &Path, dead_dir: &Path, event_id: &str) -> Option<(PathBuf, serde_json::Value, bool)> {
+    let name = format!("{event_id}.json");
+    let in_domain = domain_dir.join(&name);
+    if in_domain.is_file() {
+        if let Some(v) = read_json_file(&in_domain) {
+            return Some((in_domain, v, false));
+        }
+    }
+    let in_dead = dead_dir.join(&name);
+    if in_dead.is_file() {
+        if let Some(v) = read_json_file(&in_dead) {
+            return Some((in_dead, v, true));
+        }
+    }
+    None
+}
+
+fn find_pec_by_correlation(orch_dir: &Path, correlation_id: &str) -> Option<serde_json::Value> {
+    let Ok(entries) = std::fs::read_dir(orch_dir) else {
+        return None;
+    };
+    let mut best: Option<serde_json::Value> = None;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let Some(body) = read_json_file(&path) else {
+            continue;
+        };
+        if body.get("event_type").and_then(|v| v.as_str()) != Some("Process_Execution_Completed") {
+            continue;
+        }
+        let cid = body
+            .get("payload")
+            .and_then(|p| p.get("correlation_id"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if cid == correlation_id {
+            best = Some(body);
+        }
+    }
+    best
+}
+
+fn project_status(
+    domain: Option<&serde_json::Value>,
+    in_dead_letter: bool,
+    pec: Option<&serde_json::Value>,
+) -> (&'static str, String) {
+    if let Some(pec) = pec {
+        let st = pec
+            .get("payload")
+            .and_then(|p| p.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("success");
+        let pname = pec
+            .get("payload")
+            .and_then(|p| p.get("process_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("?");
+        if st == "success" {
+            return (
+                "completed",
+                format!("Proceso «{pname}» completado (PEC correlacionado)."),
+            );
+        }
+        return (
+            "failed",
+            format!("Proceso «{pname}» falló (status={st})."),
+        );
+    }
+
+    if in_dead_letter {
+        return (
+            "failed",
+            "Evento en dead-letter del bus fractal.".into(),
+        );
+    }
+
+    if let Some(body) = domain {
+        let ds = body
+            .get("delivery_state")
+            .and_then(|v| v.as_object());
+        if let Some(ds) = ds {
+            if !ds.is_empty() {
+                let any_fail = ds.values().any(|v| {
+                    v.as_str().map(terminal_failed).unwrap_or(false)
+                });
+                if any_fail {
+                    return (
+                        "failed",
+                        "Algún suscriptor del dominio falló.".into(),
+                    );
+                }
+                let all_ok = ds
+                    .values()
+                    .all(|v| v.as_str().map(terminal_ok).unwrap_or(false));
+                if all_ok {
+                    return (
+                        "routed",
+                        "Sistema Nervioso aceptó el evento (delivery_state OK).".into(),
+                    );
+                }
+            }
+        }
+        return (
+            "pending",
+            "Evento en dominio; consenso de suscriptores incompleto.".into(),
+        );
+    }
+
+    (
+        "pending",
+        "Sin rastro durable aún (posible purge post-route); seguir sondeo.".into(),
+    )
+}
+
+fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
+    if !is_uuid_v4ish(event_id) {
+        return (
+            400,
+            serde_json::json!({
+                "success": false,
+                "message": "event_id inválido",
+                "exit_code": 1
+            })
+            .to_string(),
+        );
+    }
+
+    let (domain_dir, orch_dir, dead_dir) = load_fractal_paths(repo);
+    let domain_hit = find_domain_event(&domain_dir, &dead_dir, event_id);
+    let pec = find_pec_by_correlation(&orch_dir, event_id);
+
+    if domain_hit.is_none() && pec.is_none() {
+        return (
+            404,
+            serde_json::json!({
+                "success": false,
+                "event_id": event_id,
+                "message": "evento no encontrado",
+                "exit_code": 1
+            })
+            .to_string(),
+        );
+    }
+
+    let in_dead = domain_hit.as_ref().map(|h| h.2).unwrap_or(false);
+    let domain_val = domain_hit.as_ref().map(|h| &h.1);
+    let (status, message) = project_status(domain_val, in_dead, pec.as_ref());
+
+    let delivery_status = domain_val
+        .and_then(|b| b.get("delivery_state"))
+        .cloned()
+        .unwrap_or(serde_json::json!({}));
+
+    let event_type = domain_val
+        .and_then(|b| b.get("event_type"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("Kalma2_Process_Requested");
+
+    let orch_obj = if let Some(ref pec) = pec {
+        serde_json::json!({
+            "found": true,
+            "event_id": pec.get("event_id"),
+            "process_name": pec.get("payload").and_then(|p| p.get("process_name")),
+            "process_status": pec.get("payload").and_then(|p| p.get("status")),
+        })
+    } else {
+        serde_json::json!({
+            "found": false,
+            "event_id": null,
+            "process_name": null,
+            "process_status": null
+        })
+    };
+
+    (
+        200,
+        serde_json::json!({
+            "success": true,
+            "event_id": event_id,
+            "correlation_id": event_id,
+            "status": status,
+            "domain": {
+                "found": domain_hit.is_some(),
+                "event_type": event_type,
+                "delivery_status": delivery_status,
+                "dead_letter": in_dead
+            },
+            "orchestration": orch_obj,
+            "message": message,
+            "exit_code": 0
+        })
+        .to_string(),
+    )
+}
+
+fn handle_status(req: tiny_http::Request, repo: &Path) {
+    let url = req.url().to_string();
+    let event_id = url
+        .split('?')
+        .nth(1)
+        .unwrap_or("")
+        .split('&')
+        .find_map(|pair| {
+            let mut parts = pair.splitn(2, '=');
+            let k = parts.next()?;
+            let v = parts.next().unwrap_or("");
+            (k == "event_id").then(|| {
+                percent_decode(v)
+            })
+        });
+
+    let Some(event_id) = event_id.filter(|s| !s.is_empty()) else {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"event_id requerido","exit_code":1}"#.into(),
+        );
+        return;
+    };
+
+    let (code, body) = build_status_body(repo, &event_id);
+    reply(req, code, body);
+}
+
+fn percent_decode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            let hex = &s[i + 1..i + 3];
+            if let Ok(v) = u8::from_str_radix(hex, 16) {
+                out.push(v as char);
+                i += 3;
+                continue;
+            }
+        }
+        if bytes[i] == b'+' {
+            out.push(' ');
+        } else {
+            out.push(bytes[i] as char);
+        }
+        i += 1;
+    }
+    out
+}
+
 fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
     let mut buf = String::new();
     if req.as_reader().read_to_string(&mut buf).is_err() {
@@ -265,6 +592,7 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
     let path = req.url().split('?').next().unwrap_or("/");
     match (req.method(), path) {
         (Method::Post, "/api/interact") => handle_interact(req, &repo),
+        (Method::Get, "/api/status") => handle_status(req, &repo),
         (Method::Get, _) => serve_static(req, &ui_root),
         _ => reply(
             req,
@@ -325,5 +653,33 @@ mod tests {
         std::fs::write(&path, "#!/usr/bin/env python3\n").unwrap();
         assert!(!is_native_elf(&path));
         std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn uuid_v4ish_accepts_canonical() {
+        assert!(is_uuid_v4ish("458c34a8-9ad5-4a40-88c4-0be1e5d9598e"));
+        assert!(!is_uuid_v4ish("not-a-uuid"));
+        assert!(!is_uuid_v4ish(""));
+    }
+
+    #[test]
+    fn project_status_completed_from_pec() {
+        let pec = serde_json::json!({
+            "payload": {"status": "success", "process_name": "task-queue-manager"}
+        });
+        let (st, _) = project_status(None, false, Some(&pec));
+        assert_eq!(st, "completed");
+    }
+
+    #[test]
+    fn project_status_routed_from_delivery() {
+        let domain = serde_json::json!({
+            "delivery_state": {
+                "task-queue-manager": "success",
+                "iota-immutable-publisher": "skipped-lab-no-credentials"
+            }
+        });
+        let (st, _) = project_status(Some(&domain), false, None);
+        assert_eq!(st, "routed");
     }
 }
