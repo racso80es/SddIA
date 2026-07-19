@@ -9,6 +9,7 @@ use super::fractal_bus::{
     move_fractal_event_to_dead_letter, stamp_fractal_delivery_state,
 };
 use super::invoke_orchestrator::invoke_process_full;
+use super::memory_evolution_ingest_core::ingest_domain_event_file;
 use super::radamanto_batch_core::process_telemetry_file;
 use super::route_domain_core::dispatch_subscriber;
 use super::telemetry_compliance_core::audit_telemetry_compliance;
@@ -147,6 +148,23 @@ fn dispatch_fractal_subscriber(
                             .and_then(|v| v.as_str())
                             .map(str::to_string)
                             .or_else(|| Some("fix-tool-process failed".into())),
+                        1,
+                    )
+                }
+            }
+            "memory-evolution-ingest" => {
+                let result = ingest_domain_event_file(repo, rel_path);
+                if result.get("ok").and_then(|v| v.as_bool()) == Some(true) {
+                    (sid, "success".into(), None, 0)
+                } else {
+                    (
+                        sid,
+                        "failed".into(),
+                        result
+                            .get("error")
+                            .and_then(|v| v.as_str())
+                            .map(str::to_string)
+                            .or_else(|| Some("memory-evolution-ingest failed".into())),
                         1,
                     )
                 }

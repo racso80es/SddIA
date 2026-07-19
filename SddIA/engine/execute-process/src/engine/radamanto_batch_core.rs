@@ -192,6 +192,48 @@ fn build_domain_event(event_type: &str, payload: Value) -> Value {
     })
 }
 
+/// Snapshot de ejecución → Domain_Entity_Telemetry_Captured (fail-soft).
+fn emit_telemetry_captured_failsoft(
+    repo: &Path,
+    entity_id: &str,
+    asset_id: &str,
+    sample: &Value,
+    origin_event_id: &str,
+) -> Value {
+    let exit_code = sample.get("exit_code").and_then(|v| v.as_i64()).unwrap_or(1);
+    let duration_ms = sample.get("duration_ms").and_then(|v| v.as_i64()).unwrap_or(0);
+    let payload = json!({
+        "entity_type": entity_type_from_id(entity_id),
+        "entity_id": entity_id,
+        "asset_id": asset_id,
+        "execution_metrics": {
+            "duration_ms": duration_ms,
+            "exit_code": exit_code,
+            "success_status": exit_code == 0
+        },
+        "origin_stimulus": {
+            "event_type": "Raw_Execution_Finished",
+            "event_id": origin_event_id
+        },
+        "evolution_footprint": null,
+        "state_after": {
+            "last_execution_ms": duration_ms,
+            "last_exit_code": exit_code
+        }
+    });
+    let ev = build_domain_event("Domain_Entity_Telemetry_Captured", payload);
+    match emit_domain_and_route(repo, &ev) {
+        Ok(result) => json!({
+            "type": "Domain_Entity_Telemetry_Captured",
+            "result": result,
+        }),
+        Err(e) => json!({
+            "type": "Domain_Entity_Telemetry_Captured",
+            "error": e,
+        }),
+    }
+}
+
 fn emit_domain_and_route(repo: &Path, event: &Value) -> Result<Value, String> {
     let seal = write_fractal_event(repo, event, "domain")?;
     let route_out = if lab_route_sync() {
@@ -235,6 +277,11 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
     if !payload.is_object() {
         return Err("payload invalido".into());
     }
+    let origin_event_id = body
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let asset_id = payload
         .get("asset_id")
         .and_then(|v| v.as_str())
@@ -373,6 +420,13 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
                 entity_bucket(&mut stats, &entity_id)["samples"] = json!(samples);
                 save_stats(repo, &cfg, &stats)?;
                 mark_consumed(repo, &cfg, asset_id)?;
+                actions.push(emit_telemetry_captured_failsoft(
+                    repo,
+                    &entity_id,
+                    asset_id,
+                    &sample,
+                    &origin_event_id,
+                ));
                 stamp_fractal_delivery_state(
                     &event_path,
                     RADAMANTO_BATCH_SUBSCRIBER_KEY,
@@ -459,6 +513,13 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
     entity_bucket(&mut stats, &entity_id)["samples"] = json!(samples);
     save_stats(repo, &cfg, &stats)?;
     mark_consumed(repo, &cfg, asset_id)?;
+    actions.push(emit_telemetry_captured_failsoft(
+        repo,
+        &entity_id,
+        asset_id,
+        &sample,
+        &origin_event_id,
+    ));
     stamp_fractal_delivery_state(&event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "success");
     let final_status = entity_bucket(&mut load_stats(repo, &cfg), &entity_id)
         .get("status")

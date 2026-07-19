@@ -140,6 +140,7 @@ const THERMODYNAMIC_EXEMPT: &[&str] = &[
     "route-domain",
     "telemetry-batch-stub",
     "radamanto-batch",
+    "memory-evolution-ingest",
     "cerbero-governance-react",
     "fix-tool-process",
     "kalma2-interact",

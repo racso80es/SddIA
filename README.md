@@ -72,7 +72,7 @@ SSOT: [`cumulo.paths.json`](SddIA/core/cumulo.paths.json) → `eda_fractal.*`. D
 | `./.events/orchestration/` | Latencia mínima; línea de montaje | [`route-orchestration`](SddIA/process/route-orchestration.md) | [`event-orchestration-subscriptions.json`](SddIA/core/event-orchestration-subscriptions.json) |
 | `./.events/domain/` | Gobernanza; Cerbero / Cúmulo / procesos reactivos | [`route-domain`](SddIA/process/route-domain.md) | [`event-domain-subscriptions.json`](SddIA/core/event-domain-subscriptions.json) |
 
-Telemetría con **fan-out** (p. ej. `radamanto-batch` + `telemetry-compliance-audit`): cada consumidor sella `delivery_state`; la purga física del JSON pertenece solo a la infraestructura (`route-telemetry` o `event-sweeper`).
+Telemetría con **fan-out** (p. ej. `radamanto-batch` + `telemetry-compliance-audit`): cada consumidor sella `delivery_state`; la purga física del JSON pertenece solo a la infraestructura (`route-telemetry` o `event-sweeper`). Tras consumo OK, Radamanto emite chispa domain `Domain_Entity_Telemetry_Captured` (suscriptor: `memory-evolution-ingest`).
 
 #### Pipeline dominio legacy (V3+)
 
@@ -172,13 +172,15 @@ Catálogo canónico (UUID, `allowed_policies`, versiones): `{paths.directories.a
 | **Mayeuta** | Clarificación: estabiliza el *qué* y el *por qué*; no diseña procesos ni código. |
 | **Dedalo** | Planificación: norm pack + blueprint de **Process** alineado a contrato y RBAC del ejecutor. |
 | **Argos** | Verificación: inspector de la **materia** (artefactos, calidad estructural, tests); juicio por evidencia. |
-| **Radamanto** | Actuario de **confianza**: batching de telemetría CLI, umbrales deterministas, sellado DLT de estatus de herramientas y **certificación de inmunidad** Caos. Ver [`radamanto.md`](SddIA/agents/radamanto.md). |
+| **Radamanto** | Actuario de **confianza**: batching de telemetría CLI, umbrales deterministas, sellado DLT de estatus de entidades, **snapshot de ejecución** (`Domain_Entity_Telemetry_Captured`) e **inmunidad** Caos. Ver [`radamanto.md`](SddIA/agents/radamanto.md). |
 
 **Flujo típico:** Mayeuta → Dedalo → Tekton → Argos. Cerbero actúa en cada delegación a cápsulas (Peaje RBAC); Cúmulo gobierna rutas y catálogos.
 
-**Argos vs Radamanto:** Argos audita código y artefactos concretos; Radamanto acumula estadística agregada de telemetría y gobierna estatus macroscópico vía DLT: eventos `Tool_*` / `Status_*` (Self-Healing) y **`System_Immunity_Certified`** (campañas Suite exitosas). Radamanto **no** evalúa diffs ni mide por sí mismo. Cúmulo mantiene DLT sobre PR/ECST; **no** sella inmunidad Caos.
+**Argos vs Radamanto:** Argos audita código y artefactos concretos; Radamanto acumula estadística agregada de telemetría y gobierna estatus macroscópico vía DLT: eventos `Domain_Entity_{Degraded|Restored|Deprecated}` (Self-Healing) y **`System_Immunity_Certified`** (campañas Suite exitosas). Además emite **`Domain_Entity_Telemetry_Captured`** por cada consumo OK de `Raw_Execution_Finished` (trazabilidad vectorial; no es CRUD genómico). Radamanto **no** evalúa diffs ni mide por sí mismo. Cúmulo mantiene DLT sobre PR/ECST; **no** sella inmunidad Caos.
 
-**Self-Healing (alto nivel):** telemetría degradada → Radamanto emite `Tool_Degraded` → Cerbero revoca RBAC → Tekton/Dédalo reparan en sandbox → Argos valida estructura → telemetría exitosa → Radamanto `Status_Restored` → Cerbero rehabilita. Tras `max_recovery_attempts` → `Tool_Deprecated`. Detalle: [telemetria-reactiva-eda-fase4](docs/features/telemetria-reactiva-eda-fase4/).
+**Self-Healing (alto nivel):** telemetría degradada → Radamanto emite `Domain_Entity_Degraded` → Cerbero revoca RBAC → Tekton/Dédalo reparan en sandbox → Argos valida estructura → telemetría exitosa → Radamanto `Domain_Entity_Restored` → Cerbero rehabilita. Tras `max_recovery_attempts` → `Domain_Entity_Deprecated`. Detalle: [telemetria-reactiva-eda-fase4](docs/features/telemetria-reactiva-eda-fase4/); taxonomía: [adecuar-ed-telemetry](docs/features/adecuar-ed-telemetry/).
+
+**Telemetría activa → memoria (alto nivel):** `Raw_Execution_Finished` → `route-telemetry` → `radamanto-batch` → `Domain_Entity_Telemetry_Captured` → `route-domain` → [`memory-evolution-ingest`](SddIA/process/memory-evolution-ingest.md) → store `.SddIA/vector_store/evolution/`. Ortogonal al Self-Healing. Feature: [telemetria-activa-domain-entity-updated](docs/features/telemetria-activa-domain-entity-updated/).
 
 ## Orquestación multi-agente y relevo por artefactos
 
@@ -209,6 +211,8 @@ Toda ejecución transita por el **orquestador** (`execute-process` binario Rust 
 **Recibos termodinámicos (opcionales):** si la cápsula devuelve `telemetry_receipt` en stdout JSON, el CLI lo anexa al payload telemetría. Omisión **no** falla la ejecución de negocio. Contratos ED declaran `telemetry_provided` / `telemetry_schema` en skills y actions.
 
 **Auditoría de cumplimiento:** el proceso [`telemetry-compliance-audit`](SddIA/process/telemetry-compliance-audit.md) cruza recibo vs contrato ED; incumplimiento → `Telemetry_Compliance_Breached` en `./.events/domain/`. Gobernanza reactiva post-breach: pendiente (Kaizen). Detalle: [telemetria-reactiva-eda-fase5](docs/features/telemetria-reactiva-eda-fase5/).
+
+**Ingesta vectorial (post-aduana):** cada ejecución consumida por Radamanto deja rastro indexable vía `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (store evolution bajo `.SddIA/vector_store/evolution/`). No sustituye recibos ni umbrales Self-Healing.
 
 ## Ingeniería del Caos (Patrón Suite)
 
