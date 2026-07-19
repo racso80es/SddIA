@@ -104,6 +104,22 @@ fn record_heartbeat(state: &mut Value, repo: &Path, payload: &Value) {
     daemons.insert(daemon_id.to_string(), Value::Object(entry));
 }
 
+/// Baseline de latido: el más reciente entre estado persistido y arranque del lock.
+/// Evita falsos positivos tras downtime + reinicio (last_hb obsoleto, PID nuevo).
+fn effective_heartbeat_baseline(
+    last_heartbeat_at: Option<&str>,
+    lock_started_at: Option<&str>,
+) -> Option<chrono::DateTime<Utc>> {
+    let hb = last_heartbeat_at.and_then(parse_iso);
+    let started = lock_started_at.and_then(parse_iso);
+    match (hb, started) {
+        (Some(a), Some(b)) => Some(a.max(b)),
+        (Some(a), None) => Some(a),
+        (None, Some(b)) => Some(b),
+        (None, None) => None,
+    }
+}
+
 fn audit_running_daemon(
     repo: &Path,
     state: &mut Value,
@@ -131,16 +147,11 @@ fn audit_running_daemon(
         .unwrap_or_default();
     entry.insert("heartbeat_interval_seconds".into(), json!(interval));
 
-    let last_hb = entry
-        .get("last_heartbeat_at")
-        .and_then(|v| v.as_str())
-        .and_then(parse_iso)
-        .or_else(|| {
-            lock.get("started_at")
-                .and_then(|v| v.as_str())
-                .and_then(parse_iso)
-        });
-    let elapsed = if let Some(last) = last_hb {
+    let baseline = effective_heartbeat_baseline(
+        entry.get("last_heartbeat_at").and_then(|v| v.as_str()),
+        lock.get("started_at").and_then(|v| v.as_str()),
+    );
+    let elapsed = if let Some(last) = baseline {
         (Utc::now() - last).num_seconds().max(0) as f64
     } else {
         (interval * MISSED_CYCLES_THRESHOLD) as f64
@@ -156,12 +167,13 @@ fn audit_running_daemon(
         return Ok(None);
     }
 
+    let baseline_iso = baseline.map(|dt| dt.to_rfc3339_opts(chrono::SecondsFormat::Secs, true));
     let seal = emit_system_fracture(
         repo,
         daemon_id,
         &resolve_daemon_uuid(repo, daemon_id),
         missed,
-        entry.get("last_heartbeat_at").and_then(|v| v.as_str()),
+        baseline_iso.as_deref(),
     )?;
     let mut updated = entry;
     updated.insert(
@@ -264,4 +276,46 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         })),
         exit_code: 0,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn baseline_prefers_newer_started_at_on_cold_start() {
+        let stale = "2026-07-19T17:13:18Z";
+        let started = "2026-07-19T17:32:58Z";
+        let baseline = effective_heartbeat_baseline(Some(stale), Some(started)).unwrap();
+        assert_eq!(
+            baseline.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            "2026-07-19T17:32:58Z"
+        );
+        let elapsed = (parse_iso("2026-07-19T17:33:01Z").unwrap() - baseline)
+            .num_seconds()
+            .max(0);
+        let missed = elapsed / 30;
+        assert!(missed < MISSED_CYCLES_THRESHOLD, "missed={missed}");
+    }
+
+    #[test]
+    fn baseline_prefers_newer_heartbeat_in_steady_state() {
+        let hb = "2026-07-19T17:40:29Z";
+        let started = "2026-07-19T17:32:58Z";
+        let baseline = effective_heartbeat_baseline(Some(hb), Some(started)).unwrap();
+        assert_eq!(
+            baseline.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            "2026-07-19T17:40:29Z"
+        );
+    }
+
+    #[test]
+    fn baseline_falls_back_to_started_when_no_heartbeat() {
+        let started = "2026-07-19T17:32:58Z";
+        let baseline = effective_heartbeat_baseline(None, Some(started)).unwrap();
+        assert_eq!(
+            baseline.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            "2026-07-19T17:32:58Z"
+        );
+    }
 }
