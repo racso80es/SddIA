@@ -3,6 +3,7 @@ feature_name: kalma2-event-bus-integration
 branch: feat/kalma2-event-bus-integration
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/119
 created: "2026-07-19"
 process: feature
 checks:
