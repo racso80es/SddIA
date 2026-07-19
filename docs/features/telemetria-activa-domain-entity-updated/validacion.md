@@ -3,6 +3,7 @@ feature_name: telemetria-activa-domain-entity-updated
 created: "2026-07-19"
 process: feature
 branch: feat/telemetria-activa-domain-entity-updated
+pr_url: https://github.com/racso80es/SddIA/pull/117
 global: APTO
 pbi_archived: true
 pbi_ref: docs/todos/done/[OPERATIVO] PBI: Gestión e Ingesta de Telemetría Activa mediante Domain_Entity_Updated.md
