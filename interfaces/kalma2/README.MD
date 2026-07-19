@@ -51,7 +51,7 @@ sequenceDiagram
 | Capa | Artefacto | Responsabilidad |
 |------|-----------|-----------------|
 | **Material (UI)** | `index.html`, `app.js`, `style.css` | Captura el prompt, llama al puente y muestra la respuesta |
-| **Puente HTTP** | `SddIA/target/{debug,release}/kalma2-bridge` | Sirve estáticos, expone `/api/interact`, invoca orquestador nativo |
+| **Puente HTTP** | `SddIA/target/{debug,release}/kalma2-bridge` | Sirve estáticos, `/api/interact`, `/api/status` (lectura bus), invoca orquestador nativo |
 | **Orquestador** | `execute-process` (binario Rust) | Resuelve el proceso, aplica peaje termodinámico y enruta al handler |
 | **Proceso** | `SddIA/process/kalma2-interact.md` | Contrato declarativo: fases Síntesis → Respuesta |
 | **Handler** | `engine/handlers/kalma2.rs` | Ejecuta la síntesis Mayeuta lab y devuelve el envelope JSON |
@@ -70,7 +70,9 @@ Definición atómica: `SddIA/process/kalma2-interact.md` (uuid `acdb6c88-f0d9-4e
 
 | Salida | Descripción |
 |--------|-------------|
-| `response` | Texto de síntesis Mayeuta (≤ 2 líneas, voz Tormentosa/Aiúa) |
+| `response` | Texto de síntesis Mayeuta o acuse de encolado |
+| `degraded` | `true` si la síntesis usó fallback determinista (sin CLI LLM) |
+| `emitted` / `event_id` / `correlation_id` | Presentes si se encoló `Kalma2_Process_Requested` (`correlation_id ≡ event_id`) |
 
 ### Fases
 
@@ -189,13 +191,25 @@ Sirve el bundle estático de `interfaces/kalma2/` (`index.html`, `app.js`, `styl
 { "prompt": "texto del operador" }
 ```
 
-**Response (éxito):**
+**Response (chat degradado):** envelope con `data.response`, `data.degraded: true`.
+
+**Response (execute encolado):** `data.emitted`, `data.event_id`, `data.correlation_id` (iguales) + acuse en `data.response`.
+
+La UI, si hay `emitted`, entra en poll de `/api/status` hasta `completed`/`failed`/timeout. Un 404 intermedio se trata como `pending` (purge post-route del dominio).
+
+### `GET /api/status?event_id=<uuid>`
+
+Lectura ciega del bus fractal (domain / dead-letter / orchestration). Proyecta `status`: `pending` | `routed` | `completed` | `failed`.
 
 ```json
 {
   "success": true,
-  "response": "[Tormentosa/Aiúa] Recibo el estímulo: «...».\nLo asimilo como fricción arquitectónica — ¿es señal o ruido?",
-  "duration_ms": 42
+  "event_id": "<uuid>",
+  "correlation_id": "<uuid>",
+  "status": "completed",
+  "domain": { "found": false, "delivery_status": {}, "dead_letter": false },
+  "orchestration": { "found": true, "process_name": "task-queue-manager", "process_status": "success" },
+  "message": "…"
 }
 ```
 

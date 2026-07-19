@@ -1,0 +1,21 @@
+{
+  "feature_name": "kalma2-event-bus-integration",
+  "branch_name": "feat/kalma2-event-bus-integration",
+  "persist_ref": "docs/features/kalma2-event-bus-integration",
+  "base_branch": "main",
+  "refined_requirements": "Integración real de Kalma2 con el motor de eventos SddIA: cerrar el lazo sensorial UI↔EDA más allá del acuse síncrono. Semilla PBI v0 (Por Refinar): docs/todos/pending/[[OPERATIVO] PBI: Integración Real de Kalma2 con el Motor de Eventos SddIA.md. Primera acción = estabilización Mayeuta (auditar incongruencias vs genoma ya entregado: kalma2-bridge-rust + kalma2-mayeuta-llm-router).",
+  "pbi_ref": "docs/todos/pending/[OPERATIVO] PBI: Integración Real de Kalma2 con el Motor de Eventos SddIA.md",
+  "document_id": "PBI-KALMA2-EVENT-BUS-INTEGRATION",
+  "depends_on_features": [
+    "docs/features/kalma2-bridge-rust",
+    "docs/features/kalma2-mayeuta-llm-router"
+  ],
+  "related_artifacts": [
+    "interfaces/kalma2/app.js",
+    "SddIA/interfaces/kalma2-bridge/",
+    "SddIA/process/kalma2-interact.md",
+    "SddIA/engine/execute-process/src/engine/handlers/mayeuta.rs",
+    "SddIA/events/domain/kalma2-process-requested.md",
+    "SddIA/core/event-domain-subscriptions.json"
+  ]
+}

@@ -37,6 +37,12 @@ pub fn run(
         .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path")))
         .and_then(|v| v.as_str());
     let persist_ref = process_inputs.get("persist_ref").and_then(|v| v.as_str());
+    let correlation_id = process_inputs
+        .get("correlation_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
 
     let mut result = json!({
         "asset_id": asset_id,
@@ -86,7 +92,12 @@ pub fn run(
     }
 
     if success {
-        if let Some(ws) = workspace_path.filter(|s| !s.trim().is_empty()) {
+        let ws = workspace_path
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string);
+        // PEC: workspace (legado) o correlation_id (lazo Kalma2 / EDA).
+        if ws.is_some() || correlation_id.is_some() {
             let orch_id = Uuid::new_v4().to_string();
             let phase_count = state
                 .get("phase_reports")
@@ -97,8 +108,10 @@ pub fn run(
                 "asset_id": asset_id,
                 "process_name": process_name,
                 "status": "success",
-                "workspace_path": ws,
             });
+            if let Some(ref path) = ws {
+                payload["workspace_path"] = json!(path);
+            }
             if let Some(eid) = execution_id {
                 payload["execution_id"] = json!(eid);
             }
@@ -107,6 +120,9 @@ pub fn run(
             }
             if let Some(pr) = persist_ref {
                 payload["persist_ref"] = json!(pr);
+            }
+            if let Some(ref cid) = correlation_id {
+                payload["correlation_id"] = json!(cid);
             }
             let orch_event = json!({
                 "event_id": orch_id,

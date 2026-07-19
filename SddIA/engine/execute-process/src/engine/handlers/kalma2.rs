@@ -153,8 +153,9 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 
     if filter_c_should_abort(prompt) {
         let response = synthesize_mayeuta_response(prompt);
-        return Ok(envelope_response(
+        return Ok(envelope_response_with_data(
             &response,
+            json!({ "degraded": true }),
             json!([{
                 "phase_name": "Triaje-C",
                 "status": "aborted",
@@ -219,6 +220,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
                 "emitted": true,
                 "event_type": "Kalma2_Process_Requested",
                 "event_id": event_id,
+                "correlation_id": event_id,
                 "seal": seal,
             }),
             json!([{
@@ -238,11 +240,14 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         ));
     }
 
-    let response = synthesize_via_skill(repo, prompt)
-        .unwrap_or_else(|_| synthesize_mayeuta_response(prompt));
+    let (response, degraded) = match synthesize_via_skill(repo, prompt) {
+        Ok(text) => (text, false),
+        Err(_) => (synthesize_mayeuta_response(prompt), true),
+    };
 
-    Ok(envelope_response(
+    Ok(envelope_response_with_data(
         &response,
+        json!({ "degraded": degraded }),
         json!([{
             "phase_name": "Clasificación",
             "status": "executed",
@@ -253,6 +258,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             "phase_name": "Síntesis",
             "status": "executed",
             "handler": "mayeuta-llm",
+            "degraded": degraded,
         }]),
     ))
 }
@@ -269,8 +275,10 @@ mod tests {
         let repo = find_repo_root().expect("repo");
         let env = run(&repo, &json!({"prompt": "hola lab"})).unwrap();
         assert!(env.success);
-        let resp = env.data.as_ref().unwrap()["response"].as_str().unwrap();
+        let data = env.data.as_ref().unwrap();
+        let resp = data["response"].as_str().unwrap();
         assert!(resp.contains("Tormentosa/Aiúa"));
+        assert_eq!(data.get("degraded").and_then(|v| v.as_bool()), Some(true));
     }
 
     #[test]
@@ -283,11 +291,15 @@ mod tests {
         )
         .unwrap();
         assert!(env.success);
-        let resp = env.data.as_ref().unwrap()["response"].as_str().unwrap();
+        let data = env.data.as_ref().unwrap();
+        let resp = data["response"].as_str().unwrap();
         assert!(resp.contains("encolada") || resp.contains("Tarea"));
+        assert_eq!(data.get("emitted").and_then(|v| v.as_bool()), Some(true));
+        let event_id = data.get("event_id").and_then(|v| v.as_str()).unwrap();
+        assert!(!event_id.is_empty());
         assert_eq!(
-            env.data.as_ref().unwrap().get("emitted").and_then(|v| v.as_bool()),
-            Some(true)
+            data.get("correlation_id").and_then(|v| v.as_str()),
+            Some(event_id)
         );
     }
 
