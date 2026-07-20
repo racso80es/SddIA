@@ -5,6 +5,7 @@ process: feature
 branch: feat/kalma2-full-cycle
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/122
 checks:
   AC-A1_cycle_phase_initialized: APTO
   AC-A2_status_initialized: APTO
