@@ -5,6 +5,7 @@ process: feature
 branch: feat/kalma2-process-dispatch
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/121
 checks:
   AC1_tqm_no_input_validation: APTO
   AC2_child_dispatch: APTO
