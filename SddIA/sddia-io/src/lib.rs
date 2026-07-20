@@ -51,10 +51,11 @@ pub fn emit_success<T: Serialize>(result: Option<T>) {
 }
 
 pub fn emit_error(msg: &str, exit_code: i32) {
+    // `error` = contrato sddia-io; `feedback` = alias legible para route-domain / DLT.
     let response: SddiaResponse<Value> = SddiaResponse {
         success: false,
         exit_code,
-        feedback: None,
+        feedback: Some(msg.to_string()),
         result: None,
         error: Some(msg.to_string()),
     };
