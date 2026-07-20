@@ -62,6 +62,10 @@ git_changes:
 | AC-C1 | `pbi_body` inyectado | ✅ | `load_pbi_body_reads_file` |
 | AC-C2 | objectives prioriza PBI | ✅ | `workspace_init.rs` |
 
+## Seguimiento live
+
+PBI pendiente: `docs/todos/pending/[FEATURE] kalma2-llm-live — ejecución real Cursor desde Kalma2 (f0f1b1ec).md` (H1–H9: CLI host, chat LLM, fases agent, SDK, timeout, daemons, full-cycle).
+
 ## Comandos (2026-07-20)
 
 ```bash

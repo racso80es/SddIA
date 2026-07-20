@@ -40,6 +40,7 @@ progress:
   argos: APTO
 open_debt:
   - B2-process-agent-handoff-event-optional
+  - docs/todos/pending/[FEATURE] kalma2-llm-live — ejecución real Cursor desde Kalma2 (f0f1b1ec).md
 ---
 
 # [FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre

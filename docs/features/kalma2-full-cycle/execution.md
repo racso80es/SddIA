@@ -46,3 +46,4 @@ process: feature
 | — | Wrapper Cursor CLI/SDK entregado (`kalma2-agent-runtime-cursor`) |
 | — | Argos `validacion.md` **APTO** (A+B+C + B-prod) |
 | B2 | Evento dominio handoff opcional |
+| Live | PBI `kalma2-llm-live` (f0f1b1ec) — CLI host / SDK / timeout / smoke E2E |
