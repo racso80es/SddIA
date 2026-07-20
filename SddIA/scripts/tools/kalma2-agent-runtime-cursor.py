@@ -1,23 +1,33 @@
 #!/usr/bin/env python3
-"""kalma2-agent-runtime-cursor — wrapper producción AGENT_PHASE (deuda B-prod).
+"""kalma2-agent-runtime-cursor — prótesis Python (Foso Biológico).
 
-Backends:
+Modos:
+  AGENT_PHASE (default) — JSON stdin → última línea JSON stdout (full-cycle B).
+  CHAT_STREAM — inserta en SQLite local de Cursor (state.vscdb) + tokens por stdout (SSE).
+
+Backends AGENT_PHASE:
   cli  (default) — SDDIA_AGENT_RUNTIME_CLI || SDDIA_LLM_CLI_COMMAND || "cursor-agent --print"
   sdk            — Cursor SDK Python (cursor_sdk) con CURSOR_API_KEY / local cwd
 
-Mock lab/CI:
-  SDDIA_AGENT_RUNTIME_MOCK=1 → no invoca Cursor; status=executed y handoff mock.
+CHAT_STREAM / SQLite (entropía absorbida aquí; cero crates en Core):
+  SDDIA_CURSOR_VSCDB          — ruta absoluta a globalStorage/state.vscdb
+  SDDIA_CURSOR_SQLITE_WRITE   — 1 (default si DB existe) escribe; 0 solo dry-run + stream
+  SDDIA_CURSOR_COMPOSER_ID    — reutilizar composer existente (opcional)
+  SDDIA_CURSOR_WORKSPACE_ID   — hash workspaceStorage (opcional; se infiere del repo)
 
-Salida (stdout, última línea JSON):
-  {"success":true,"data":{"status":"executed|awaiting_agents|failed","message":"..."},"error":null}
+Mock lab/CI:
+  SDDIA_AGENT_RUNTIME_MOCK=1 → AGENT_PHASE executed; CHAT_STREAM eco de tokens.
+  SDDIA_LLM_CHAT_MOCK=1 → CHAT_STREAM eco (sin tocar SQLite).
 """
 from __future__ import annotations
 
 import json
 import os
 import shlex
+import sqlite3
 import subprocess
 import sys
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -240,6 +250,410 @@ def main() -> None:
     except json.JSONDecodeError as e:
         emit(False, None, f"JSON inválido: {e}", 1)
 
+    op = (doc.get("operation") or "").strip()
+    if op == "CHAT_STREAM":
+        run_chat_stream(doc)
+        return
+
+    # Default / AGENT_PHASE (contrato full-cycle B)
+    run_agent_phase(doc)
+
+
+def run_chat_stream(doc: dict[str, Any]) -> None:
+    """CHAT_STREAM: prótesis SQLite Cursor + tokens por stdout para SSE."""
+    prompt = (doc.get("prompt") or "").strip()
+    if not prompt:
+        print("prompt vacío", file=sys.stderr)
+        raise SystemExit(1)
+
+    if env_truthy("SDDIA_LLM_CHAT_MOCK") or env_truthy("SDDIA_AGENT_RUNTIME_MOCK"):
+        words = prompt.split() or ["(vacío)"]
+        for w in words:
+            print(w, flush=True)
+        print("\n[kalma2-chat-stream mock ok]", flush=True)
+        raise SystemExit(0)
+
+    repo = Path(doc.get("repo_root") or os.getcwd()).resolve()
+    db = resolve_cursor_vscdb()
+    write = env_truthy("SDDIA_CURSOR_SQLITE_WRITE") or (
+        os.environ.get("SDDIA_CURSOR_SQLITE_WRITE", "").strip() == ""
+        and db is not None
+        and db.is_file()
+    )
+
+    composer_id = (os.environ.get("SDDIA_CURSOR_COMPOSER_ID") or "").strip() or str(uuid.uuid4())
+    user_bubble = str(uuid.uuid4())
+    asst_bubble = str(uuid.uuid4())
+    now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+    now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    name = ("Kalma2: " + prompt[:48]).strip()
+    workspace_id = resolve_workspace_id(repo)
+
+    reply, infer_backend = stream_infer_tokens(prompt)
+
+    if write and db is not None and db.is_file():
+        try:
+            persist_chat_to_sqlite(
+                db,
+                composer_id=composer_id,
+                user_bubble_id=user_bubble,
+                asst_bubble_id=asst_bubble,
+                prompt=prompt,
+                reply=reply,
+                name=name,
+                now_iso=now_iso,
+                now_ms=now_ms,
+                workspace_id=workspace_id,
+                repo=repo,
+            )
+            print(
+                f"\n[kalma2-sqlite ok composer={composer_id[:8]}… backend={infer_backend}]",
+                flush=True,
+            )
+        except Exception as e:  # noqa: BLE001 — prótesis: no tumbar Core
+            print(f"\n[kalma2-sqlite error] {e}", flush=True)
+            raise SystemExit(1)
+    else:
+        reason = "DB ausente" if db is None or not db.is_file() else "SDDIA_CURSOR_SQLITE_WRITE=0"
+        print(f"\n[kalma2-sqlite skip] {reason} backend={infer_backend}", flush=True)
+
+    raise SystemExit(0)
+
+
+def resolve_cursor_vscdb() -> Path | None:
+    override = (os.environ.get("SDDIA_CURSOR_VSCDB") or "").strip()
+    if override:
+        return Path(override).expanduser()
+    home = Path.home()
+    candidates = [
+        home / ".config/Cursor/User/globalStorage/state.vscdb",
+        home / "Library/Application Support/Cursor/User/globalStorage/state.vscdb",
+        home / "AppData/Roaming/Cursor/User/globalStorage/state.vscdb",
+    ]
+    for c in candidates:
+        if c.is_file():
+            return c
+    return candidates[0]
+
+
+def resolve_workspace_id(repo: Path) -> str | None:
+    override = (os.environ.get("SDDIA_CURSOR_WORKSPACE_ID") or "").strip()
+    if override:
+        return override
+    ws_root = Path.home() / ".config/Cursor/User/workspaceStorage"
+    if not ws_root.is_dir():
+        mac = Path.home() / "Library/Application Support/Cursor/User/workspaceStorage"
+        ws_root = mac if mac.is_dir() else ws_root
+    if not ws_root.is_dir():
+        return None
+    repo_s = str(repo.resolve())
+    best: tuple[int, str] | None = None
+    for d in ws_root.iterdir():
+        wj = d / "workspace.json"
+        if not wj.is_file():
+            continue
+        try:
+            folder = str(json.loads(wj.read_text(encoding="utf-8")).get("folder") or "")
+        except Exception:
+            continue
+        path = folder.replace("file://", "")
+        if path.rstrip("/") == repo_s.rstrip("/"):
+            return d.name
+        if repo_s in path or path in repo_s:
+            try:
+                score = len(os.path.commonpath([path or "/", repo_s]))
+            except ValueError:
+                score = 0
+            if best is None or score > best[0]:
+                best = (score, d.name)
+    return best[1] if best else None
+
+
+def _rich_text(text: str) -> str:
+    return json.dumps(
+        {
+            "root": {
+                "children": [
+                    {
+                        "children": [
+                            {
+                                "detail": 0,
+                                "format": 0,
+                                "mode": "normal",
+                                "style": "",
+                                "text": text,
+                                "type": "text",
+                                "version": 1,
+                            }
+                        ],
+                        "direction": "ltr",
+                        "format": "",
+                        "indent": 0,
+                        "type": "paragraph",
+                        "version": 1,
+                    }
+                ],
+                "direction": "ltr",
+                "format": "",
+                "indent": 0,
+                "type": "root",
+                "version": 1,
+            }
+        },
+        ensure_ascii=False,
+    )
+
+
+def _minimal_bubble(bubble_id: str, typ: int, text: str, created_at: str) -> dict[str, Any]:
+    return {
+        "_v": 3,
+        "type": typ,
+        "bubbleId": bubble_id,
+        "text": text,
+        "richText": _rich_text(text),
+        "createdAt": created_at,
+        "approximateLintErrors": [],
+        "lints": [],
+        "codebaseContextChunks": [],
+        "commits": [],
+        "pullRequests": [],
+        "attachedCodeChunks": [],
+        "assistantSuggestedDiffs": [],
+        "gitDiffs": [],
+        "interpreterResults": [],
+        "images": [],
+        "attachedFolders": [],
+        "attachedFoldersNew": [],
+        "userResponsesToSuggestedCodeBlocks": [],
+        "suggestedCodeBlocks": [],
+        "diffsForCompressingFiles": [],
+        "relevantFiles": [],
+        "toolResults": [],
+        "notepads": [],
+        "capabilities": [],
+        "multiFileLinterErrors": [],
+    }
+
+
+def _minimal_composer(
+    composer_id: str,
+    name: str,
+    headers: list[dict[str, Any]],
+    now_ms: int,
+) -> dict[str, Any]:
+    return {
+        "_v": 16,
+        "composerId": composer_id,
+        "name": name,
+        "richText": _rich_text(""),
+        "hasLoaded": True,
+        "text": "",
+        "fullConversationHeadersOnly": headers,
+        "conversationMap": {},
+        "status": "completed",
+        "unifiedMode": "chat",
+        "context": {},
+        "generatingBubbleIds": [],
+        "isReadingLongFile": False,
+        "codeBlockData": {},
+        "originalFileStates": {},
+        "newlyCreatedFiles": [],
+        "newlyCreatedFolders": [],
+        "createdAt": now_ms,
+        "lastUpdatedAt": now_ms,
+        "conversationCheckpointLastUpdatedAt": now_ms,
+        "hasChangedContext": False,
+        "activeTabsShouldBeReactive": True,
+        "capabilities": [],
+        "isFileListExpanded": False,
+    }
+
+
+def resolve_infer_cli() -> list[str]:
+    """CLI de inferencia — nunca reentrar en esta prótesis (evita recursión STREAM)."""
+    for key in ("SDDIA_LLM_INFER_COMMAND", "SDDIA_AGENT_RUNTIME_CLI"):
+        raw = os.environ.get(key, "").strip()
+        if raw:
+            return split_command(raw)
+    raw = os.environ.get("SDDIA_LLM_CLI_COMMAND", "").strip()
+    if raw and "kalma2-agent-runtime-cursor.py" not in raw:
+        return split_command(raw)
+    return []
+
+
+def stream_infer_tokens(prompt: str) -> tuple[str, str]:
+    """CLI stream si existe; si no, ack determinista. Devuelve (texto, backend)."""
+    try:
+        cmd = resolve_infer_cli()
+    except Exception:
+        cmd = []
+
+    if cmd:
+        try:
+            timeout = int(os.environ.get("SDDIA_LLM_CLI_TIMEOUT_SECS", "120") or "120")
+            proc = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            assert proc.stdin is not None and proc.stdout is not None
+            try:
+                proc.stdin.write(prompt)
+                proc.stdin.close()
+            except BrokenPipeError:
+                pass
+            chunks: list[str] = []
+            try:
+                for line in proc.stdout:
+                    for w in line.split():
+                        print(w, flush=True)
+                        chunks.append(w)
+                proc.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                print("\n[infer timeout]", flush=True)
+            err = (proc.stderr.read() if proc.stderr else "") or ""
+            if chunks and proc.returncode == 0:
+                return " ".join(chunks), "cli"
+            if chunks:
+                return " ".join(chunks), f"cli-rc{proc.returncode}"
+            if err.strip():
+                print(f"[infer stderr] {err.strip()[:200]}", flush=True)
+        except FileNotFoundError:
+            pass
+        except Exception as e:  # noqa: BLE001
+            print(f"[infer error] {e}", flush=True)
+
+    ack = (
+        f"[kalma2→cursor-sqlite] Prompt encolado en state.vscdb. "
+        f"Sin CLI de inferencia; abre Cursor para continuar. "
+        f"Semilla: {prompt[:240]}"
+    )
+    for w in ack.split():
+        print(w, flush=True)
+    return ack, "sqlite-ack"
+
+
+def persist_chat_to_sqlite(
+    db: Path,
+    *,
+    composer_id: str,
+    user_bubble_id: str,
+    asst_bubble_id: str,
+    prompt: str,
+    reply: str,
+    name: str,
+    now_iso: str,
+    now_ms: int,
+    workspace_id: str | None,
+    repo: Path,
+) -> None:
+    headers = [
+        {
+            "bubbleId": user_bubble_id,
+            "type": 1,
+            "grouping": {"isRenderable": True, "hasText": True, "isShortPlainText": True},
+        },
+        {
+            "bubbleId": asst_bubble_id,
+            "type": 2,
+            "grouping": {"isRenderable": True, "hasText": True, "isShortPlainText": True},
+        },
+    ]
+    user_b = _minimal_bubble(user_bubble_id, 1, prompt, now_iso)
+    asst_b = _minimal_bubble(asst_bubble_id, 2, reply, now_iso)
+    composer = _minimal_composer(composer_id, name, headers, now_ms)
+
+    uri = {
+        "$mid": 1,
+        "fsPath": str(repo),
+        "external": f"file://{repo}",
+        "path": str(repo),
+        "scheme": "file",
+    }
+    header_value = {
+        "type": "head",
+        "composerId": composer_id,
+        "name": name,
+        "lastUpdatedAt": now_ms,
+        "createdAt": now_ms,
+        "unifiedMode": "chat",
+        "forceMode": "edit",
+        "hasUnreadMessages": False,
+        "isArchived": False,
+        "isDraft": False,
+        "workspaceIdentifier": {
+            "id": workspace_id or "kalma2-unknown",
+            "uri": uri,
+        },
+    }
+
+    con = sqlite3.connect(str(db), timeout=8.0)
+    try:
+        con.execute("PRAGMA busy_timeout=8000")
+        cur = con.cursor()
+        rows = [
+            (f"composerData:{composer_id}", json.dumps(composer, ensure_ascii=False)),
+            (f"bubbleId:{composer_id}:{user_bubble_id}", json.dumps(user_b, ensure_ascii=False)),
+            (f"bubbleId:{composer_id}:{asst_bubble_id}", json.dumps(asst_b, ensure_ascii=False)),
+        ]
+        cur.executemany(
+            "INSERT OR REPLACE INTO cursorDiskKV (key, value) VALUES (?, ?)",
+            rows,
+        )
+
+        row = cur.execute(
+            "SELECT value FROM ItemTable WHERE key=?",
+            ("composer.composerHeaders",),
+        ).fetchone()
+        if row and row[0]:
+            try:
+                idx = json.loads(row[0])
+            except json.JSONDecodeError:
+                idx = {"allComposers": []}
+        else:
+            idx = {"allComposers": []}
+        composers = idx.get("allComposers")
+        if not isinstance(composers, list):
+            composers = []
+        composers = [
+            c
+            for c in composers
+            if not (isinstance(c, dict) and c.get("composerId") == composer_id)
+        ]
+        composers.insert(0, header_value)
+        idx["allComposers"] = composers
+        cur.execute(
+            "INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)",
+            ("composer.composerHeaders", json.dumps(idx, ensure_ascii=False)),
+        )
+
+        try:
+            cur.execute(
+                "INSERT OR REPLACE INTO composerHeaders "
+                "(composerId, workspaceId, createdAt, lastUpdatedAt, isArchived, isSubagent, "
+                "recency, checkpointAt, value) VALUES (?,?,?,?,0,0,?,?,?)",
+                (
+                    composer_id,
+                    workspace_id or "",
+                    now_ms,
+                    now_ms,
+                    now_ms,
+                    now_ms,
+                    json.dumps(header_value, ensure_ascii=False),
+                ),
+            )
+        except sqlite3.Error:
+            pass
+
+        con.commit()
+    finally:
+        con.close()
+
+
+def run_agent_phase(doc: dict[str, Any]) -> None:
     repo = Path(doc.get("repo_root") or os.getcwd()).resolve()
     persist = (doc.get("persist_ref") or "").strip()
     phase = doc.get("phase_name") or "?"
