@@ -1,0 +1,22 @@
+{
+  "feature_name": "kalma2-process-dispatch",
+  "branch_name": "feat/kalma2-process-dispatch",
+  "persist_ref": "docs/features/kalma2-process-dispatch",
+  "base_branch": "main",
+  "refined_requirements": "Restablecer el flujo Kalma2_Process_Requested → suscriptor tekton.task-queue-manager: evidencia dead-letter a7725b42 (payload {process, raw_text} → failed). Semilla PBI v0 Por Refinar: docs/todos/pending/[FIX] interacción con front kalma2.md. Liquida deuda D3 (task-queue-manager genérico) heredada de kalma2-mayeuta-llm-router / kalma2-event-bus-integration. Primera acción = estabilización Mayeuta (incongruencias título vs síntoma, contratos TQM vs ECST, Vía A/B).",
+  "pbi_ref": "docs/todos/pending/[FIX] interacción con front kalma2.md",
+  "document_id": "PBI-KALMA2-PROCESS-DISPATCH",
+  "depends_on_features": [
+    "docs/features/kalma2-mayeuta-llm-router",
+    "docs/features/kalma2-event-bus-integration"
+  ],
+  "related_artifacts": [
+    "SddIA/events/domain/kalma2-process-requested.md",
+    "SddIA/process/task-queue-manager.md",
+    "SddIA/engine/execute-process/src/engine/route_domain_core.rs",
+    "SddIA/engine/execute-process/src/engine/handlers/kalma2.rs",
+    "SddIA/core/event-domain-subscriptions.json",
+    ".events/dead-letter/a7725b42-2661-4bc5-9795-c69d8ca2ab5c.json"
+  ],
+  "evidence_event_id": "a7725b42-2661-4bc5-9795-c69d8ca2ab5c"
+}

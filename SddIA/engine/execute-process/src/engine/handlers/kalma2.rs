@@ -70,11 +70,8 @@ fn extract_pbi_ref(prompt: &str, process_inputs: &Value) -> Option<String> {
             return Some(p.trim().to_string());
         }
     }
-    prompt
-        .split_whitespace()
-        .find(|t| t.contains("docs/todos/pending/") && t.ends_with(".md"))
-        .map(str::trim)
-        .map(str::to_string)
+    // Paths con espacios / em-dash: anclar en docs/todos/{pending|done}/ … .md
+    super::task_queue_manager::extract_pbi_path(prompt)
 }
 
 fn iso_now() -> String {
@@ -300,6 +297,16 @@ mod tests {
         assert_eq!(
             data.get("correlation_id").and_then(|v| v.as_str()),
             Some(event_id)
+        );
+    }
+
+    #[test]
+    fn kalma2_extracts_pbi_ref_with_spaces() {
+        let prompt = "Inicia proceso fix para corregir la incidencia documentada en docs/todos/pending/[FIX] telegram-watcher — fractura sistémica (e6cbecb9032c).md";
+        let got = extract_pbi_ref(prompt, &json!({}));
+        assert_eq!(
+            got.as_deref(),
+            Some("docs/todos/pending/[FIX] telegram-watcher — fractura sistémica (e6cbecb9032c).md")
         );
     }
 

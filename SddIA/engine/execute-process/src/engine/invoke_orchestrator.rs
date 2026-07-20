@@ -53,11 +53,24 @@ pub fn invoke_process(repo: &Path, process_name: &str, inputs: &Value) -> Result
 }
 
 pub fn invoke_process_full(repo: &Path, process_name: &str, inputs: &Value) -> Result<Value, String> {
+    invoke_process_full_with_env(repo, process_name, inputs, &[])
+}
+
+pub fn invoke_process_full_with_env(
+    repo: &Path,
+    process_name: &str,
+    inputs: &Value,
+    extra_env: &[(&str, &str)],
+) -> Result<Value, String> {
     let bin = resolve_orchestrator_bin(repo)?;
     let inputs_json = serde_json::to_string(inputs).map_err(|e| e.to_string())?;
-    let output = Command::new(&bin)
-        .args(["--process", process_name, "--inputs", &inputs_json])
-        .current_dir(repo)
+    let mut cmd = Command::new(&bin);
+    cmd.args(["--process", process_name, "--inputs", &inputs_json])
+        .current_dir(repo);
+    for (k, v) in extra_env {
+        cmd.env(k, v);
+    }
+    let output = cmd
         .output()
         .map_err(|e| format!("spawn orquestador: {e}"))?;
     let stdout = String::from_utf8_lossy(&output.stdout);

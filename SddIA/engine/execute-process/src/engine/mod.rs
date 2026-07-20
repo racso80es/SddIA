@@ -93,6 +93,10 @@ pub fn run_process(
         return handlers::kalma2::run(repo, process_inputs);
     }
 
+    if canonical == "task-queue-manager" {
+        return handlers::task_queue_manager::run(repo, process_inputs);
+    }
+
     if canonical == "telegram-fallback-responder" {
         return handlers::telegram_fallback::run(repo, process_inputs);
     }
