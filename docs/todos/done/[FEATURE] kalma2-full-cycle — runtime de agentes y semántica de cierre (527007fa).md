@@ -5,13 +5,13 @@ title: "[FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierr
 format: markdown
 version: "1.0.0"
 created: "2026-07-20"
-status: "en_curso"
+status: "done"
 priority: alta
 process: feature
 feature_ref: docs/features/kalma2-full-cycle
+validacion_ref: docs/features/kalma2-full-cycle/validacion.md
 branch_name: feat/kalma2-full-cycle
-suggested_feature_name: kalma2-full-cycle
-suggested_branch: feat/kalma2-full-cycle
+archived_path: docs/todos/done/[FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre (527007fa).md
 execution_id_init: 956100c7-c03f-488b-af1e-2624f84bd0b0
 evidence_event_id: e022814f-fc3a-441f-88c5-d60cb5e47e48
 evidence_artifact: docs/fixes/7ad3175957d4/objectives.md
@@ -37,17 +37,16 @@ progress:
   slice_A: forjado
   slice_B: forjado_hook_y_lab_wrapper
   slice_C: forjado
+  argos: APTO
+open_debt:
+  - B-prod-cursor-agent-sdk-wrapper
 ---
 
 # [FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre
 
 ## Estado
 
-**v1.0.0 en curso** en rama `feat/kalma2-full-cycle` (`execution_id` init `956100c7-…`).
-
-- **Slice A:** forjado — `cycle_phase` + UI honesta.
-- **Slice B:** hook nativo + wrapper lab `kalma2-agent-runtime-lab.sh` (producción Cursor/SDK pendiente en bóveda).
-- **Slice C:** forjado — TQM carga `pbi_body`; `objectives.md` prioriza el PBI.
+**Done documental (Argos APTO)** en rama `feat/kalma2-full-cycle`. Slices A+B-hook+C forjados. Deuda: wrapper Cursor/SDK producción en bóveda.
 
 ## Síntoma (expectativa vs resultado)
 

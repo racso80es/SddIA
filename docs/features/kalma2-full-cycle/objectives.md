@@ -13,6 +13,9 @@ depends_on:
   - docs/features/kalma2-mayeuta-llm-router
 execution_id_init: 956100c7-c03f-488b-af1e-2624f84bd0b0
 evidence_event_id: e022814f-fc3a-441f-88c5-d60cb5e47e48
+status: validacion_apto
+pbi_archived: true
+pbi_ref: docs/todos/done/[FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre (527007fa).md
 ---
 
 # Objetivos — kalma2-full-cycle

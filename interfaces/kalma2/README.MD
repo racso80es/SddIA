@@ -195,12 +195,11 @@ Sirve el bundle estático de `interfaces/kalma2/` (`index.html`, `app.js`, `styl
 
 **Response (execute encolado):** `data.emitted`, `data.event_id`, `data.correlation_id` (iguales) + acuse en `data.response`.
 
-La UI, si hay `emitted`, entra en poll de `/api/status` hasta `completed`/`failed`/timeout. Un 404 intermedio se trata como `pending` (purge post-route del dominio).
+La UI, si hay `emitted`, entra en poll de `/api/status` hasta `completed`/`failed`/`initialized`/`awaiting_agents`/timeout. Un 404 intermedio se trata como `pending` (purge post-route del dominio). `initialized` / `awaiting_agents` = ciclo arrancado o en espera de agentes (no cierre de negocio); ver feature `kalma2-full-cycle`.
 
 ### `GET /api/status?event_id=<uuid>`
 
-Lectura ciega del bus fractal (domain / dead-letter / orchestration). Proyecta `status`: `pending` | `routed` | `completed` | `failed`.
-
+Lectura ciega del bus fractal (domain / dead-letter / orchestration). Proyecta `status`: `pending` | `routed` | `initialized` | `awaiting_agents` | `completed` | `failed`. El PEC puede traer `cycle_phase` para distinguir arranque vs cierre.
 ```json
 {
   "success": true,

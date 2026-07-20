@@ -42,4 +42,4 @@ process: feature
 | ID | Nota |
 |----|------|
 | B-prod | Comando Cursor/Agent SDK en bóveda operador |
-| Validacion Argos | Pendiente cierre documental / PR |
+| — | Argos `validacion.md` **APTO** (slices A+B-hook+C) |
