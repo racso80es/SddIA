@@ -58,10 +58,9 @@ git_changes:
 | AC-B3 | Sin env → `simulated` | ✅ | `not_configured_returns_simulated` |
 | AC-B4 | Fase failed → envelope fail | ✅ | `executor.rs` phase_failed |
 | AC-B5 | Lab wrapper handoff | ✅ | `kalma2-agent-runtime-lab.sh` |
-| B-prod | Wrapper Cursor CLI/SDK | ✅ | `kalma2-agent-runtime-cursor.{sh,py}` · mock + soft awaiting |
+| B-prod | Wrapper Cursor CLI/SDK | ✅ | `kalma2-agent-runtime-cursor.{sh,py}` · mock + soft awaiting; live = bóveda |
 | AC-C1 | `pbi_body` inyectado | ✅ | `load_pbi_body_reads_file` |
 | AC-C2 | objectives prioriza PBI | ✅ | `workspace_init.rs` |
-| B-prod | Cursor/SDK real | ✅ | Wrapper entregado; live = config bóveda |
 
 ## Comandos (2026-07-20)
 
