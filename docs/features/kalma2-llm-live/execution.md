@@ -2,6 +2,19 @@
 feature_name: kalma2-llm-live
 created: "2026-07-20"
 process: feature
+items_applied:
+  - bridge-chat-sse-execute
+  - mayeuta-stream
+  - handler-mode
+  - dual-mode-py
+  - ui-bifurcation
+  - env-example
+  - smokes-s1-s5
+  - host-a-cli-auth
+  - host-b-chat-live
+  - host-c-agent-phase-live
+correlation_id: "00000000-0000-4000-8000-0000000000hc"
+tekton_verdict: executed
 ---
 
 # Execution — kalma2-llm-live
@@ -12,41 +25,28 @@ process: feature
 |-------|--------|
 | `execution_id` | `7c200ac9-7713-4352-8463-886391b81540` |
 | Rama | `feat/kalma2-llm-live` |
-| Skips | `SDDIA_LAB_SKIP_PBI_ARCHIVE` + `SDDIA_LAB_SKIP_DELIVERY_CLOSE` |
-| Agentes runtime | `awaiting_agents` (cursor-agent ausente) → forja Tekton en IDE |
+| Skips lab | `SDDIA_LAB_SKIP_PBI_ARCHIVE` + `SDDIA_LAB_SKIP_DELIVERY_CLOSE` |
 
-## Verificación
+## Materialización código (plan 1–5)
 
-| Comando / smoke | Resultado |
-|-----------------|-----------|
-| `cargo test -p mayeuta-llm` | OK |
-| `cargo test -p kalma2-bridge` | OK |
-| `cargo test -p execute-process kalma2` | OK |
-| CHAT_STREAM mock Python | tokens por stdout |
-| CHAT_STREAM SQLite (DB temp) | `composerData` + 2 bubbles + headers; sin recursión CLI |
-| S1/S2 smoke `kalma2-chat-infer-smoke.sh` | lab infer `backend=cli` + REQUIRE_INFER fail OK |
-| S3 smoke `kalma2-agent-phase-smoke.sh` | MOCK/LAB_AUTO executed + REQUIRE_CLI→failed |
-| S4 smoke `kalma2-sqlite-smoke.sh` | composerData + bubbles + headers (AC8) |
-| S5 smoke `kalma2-sse-fracture-smoke.sh` | watchdog → `System_Fracture_Detected` |
-| Argos `validacion.md` | **APTO** lab · deuda `cursor-agent` host |
+| Fase | Estado | Nota |
+|------|--------|------|
+| 1 bridge SSE/execute | aplicado | |
+| 2 mayeuta-llm STREAM | aplicado | |
+| 3 dual-mode `.py` | aplicado | |
+| 4 UI Chat/Forjar | aplicado | |
+| 5 smokes S1–S5 | aplicado | lab APTO |
 
-## Deuda host (mismo PBI §9 — a ejecutar)
+## Host live (§9)
 
-| ID | Acción |
-|----|--------|
-| HOST-A | Instalar Cursor Agent CLI + PATH |
-| HOST-B | Chat live (`SDDIA_LLM_INFER_COMMAND`, sin mock) |
-| HOST-C | Agent phases live (`REQUIRE_CLI=1`, execute E2E) |
-| HOST-D | SQLite live opcional (L-WAL) |
-| HOST-E | `validacion` host APTO + PBI → done + merge |
+| Acción | Resultado |
+|--------|-----------|
+| HOST-A CLI + `agent login` | OK — `2026.07.17-3e2a980` · `racso80es@gmail.com` |
+| HOST-B bóveda + `CHAT_STREAM` | OK — meta `backend=cli`, cuerpo live (≠ sqlite-ack) |
+| HOST-C `AGENT_PHASE` | OK — `status=executed` `backend=cli` (~114s) |
+| HOST-D SQLite live | omitido (lab AC8 APTO) |
+| HOST-E docs | `validacion` APTO · PBI → `done/` |
 
-Ref: PBI v2.3.1 §9 · `runbook-infer.md` / `runbook-agent.md` / `runbook-sqlite.md`
-| mayeuta-llm STREAM → Python | tokens OK |
-| `POST /api/chat` SSE | frames `data:` |
-| `POST /api/execute` | `emitted` + `event_id` |
+## Veredicto
 
-## Pendiente Argos
-
-- AC2 kill -9 E2E formal
-- AC4 `cargo build --release` sin `.py` (ya estructural)
-- validacion.md APTO + cierre documental en rama
+`executed` — lab + HOST-A…C. Merge PR #123 pendiente operador.

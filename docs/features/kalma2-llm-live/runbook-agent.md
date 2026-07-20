@@ -14,16 +14,16 @@ Tras `/api/execute` → EDA → TQM → hijo, las fases `agent:` no quedan en so
 ## Bóveda
 
 ```bash
-# Producción Cursor CLI
+# Producción Cursor CLI (comillas + --trust no-interactivo)
 SDDIA_AGENT_RUNTIME_COMMAND=SddIA/scripts/tools/kalma2-agent-runtime-cursor.sh
-SDDIA_AGENT_RUNTIME_CLI=cursor-agent --print   # o agent --print tras install
+SDDIA_AGENT_RUNTIME_CLI="/home/racso/.local/bin/cursor-agent --print --trust"
 SDDIA_AGENT_RUNTIME_BACKEND=cli
 # Demo live: no enmascarar CLI missing
 SDDIA_AGENT_RUNTIME_REQUIRE_CLI=1
 # unset SDDIA_AGENT_RUNTIME_MOCK
 ```
 
-Instalar CLI: ver `runbook-infer.md` (`curl https://cursor.com/install | bash` + `PATH=~/.local/bin`).
+Instalar CLI + auth: ver `runbook-infer.md` (`curl https://cursor.com/install | bash` + `agent login` + `--trust`).
 
 ## Lab (cableado, sin Cursor)
 

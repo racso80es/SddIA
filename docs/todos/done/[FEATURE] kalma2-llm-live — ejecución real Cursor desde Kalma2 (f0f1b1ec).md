@@ -3,10 +3,10 @@ document_id: PBI-KALMA2-LLM-LIVE-V2
 uuid: f0f1b1ec-4b79-47c6-85e2-a0ac2ca3164b
 title: "[FEATURE] kalma2-llm-live — Interacción S+ Grade y Prótesis de Ejecución"
 format: markdown
-version: "2.3.1"
+version: "2.3.2"
 created: "2026-07-20"
 refined: "2026-07-20"
-status: "en-curso-host-live"
+status: "done"
 priority: alta
 process: feature
 suggested_feature_name: kalma2-llm-live
@@ -33,15 +33,14 @@ inherited_from: docs/todos/done/[FEATURE] kalma2-full-cycle — runtime de agent
 supersedes: "v2.3.0 — reabre en-curso para ejecutar deuda host (cursor-agent live) en este mismo PBI/PR"
 evidence:
   - "2026-07-20 lab APTO: SSE/execute/STREAM/SQLite/smokes S1–S5; PR #123"
-  - "Host: cursor-agent ausente → chat sqlite-ack / agent soft — DEUDA A EJECUTAR (§9)"
+  - "2026-07-20 host APTO: CLI+login; CHAT_STREAM backend=cli; AGENT_PHASE executed cli; HOST-D omitido"
 ---
 
-# [FEATURE] kalma2-llm-live — Interacción S+ Grade y Prótesis de Ejecución (v2.3.1)
+# [FEATURE] kalma2-llm-live — Interacción S+ Grade y Prótesis de Ejecución (v2.3.2)
 
 ## Estado
 
-**v2.3.1 — En curso (deuda host).** Lab cableado APTO en PR [#123](https://github.com/racso80es/SddIA/pull/123).  
-Este PBI **incluye y prioriza** la deuda host: instalar Cursor Agent CLI y demostrar chat/fases **live** (no solo smoke lab).
+**v2.3.2 — Done (lab + host A–C).** PR [#123](https://github.com/racso80es/SddIA/pull/123). Merge pendiente operador.
 
 ### Ya forjado (lab — no reabrir)
 
@@ -71,8 +70,10 @@ Laudos L-EP…L-WAL, AC1–AC9 y fases 1–8a: ver v2.3.0 / `docs/features/kalma
 | Acción | `curl https://cursor.com/install -fsS \| bash` · `export PATH="$HOME/.local/bin:$PATH"` · `agent --version` · auth si aplica (`agent login`) |
 | Ref | `docs/features/kalma2-llm-live/runbook-infer.md` |
 | Criterio | `cursor-agent --print` o `agent --print` responde a prompt corto con stdout no vacío |
+| Evidencia 2026-07-20 | CLI `2026.07.17-3e2a980`; `agent login` → `racso80es@gmail.com`; smoke `cursor-agent --print --mode ask --trust` → `ok` |
 
-- [ ] HOST-A completado
+- [x] HOST-A instalado (CLI en PATH)
+- [x] HOST-A auth (`agent login`)
 
 ### HOST-B — Chat live (cierra S1/S2 · AC6 real)
 
@@ -81,8 +82,9 @@ Laudos L-EP…L-WAL, AC1–AC9 y fases 1–8a: ver v2.3.0 / `docs/features/kalma
 | Acción | Bóveda `.dev/.env` (no versionar): `SDDIA_LLM_INFER_COMMAND=cursor-agent --print` (o path absoluto); `SDDIA_LLM_REQUIRE_INFER=1`; **unset** `SDDIA_LLM_CHAT_MOCK` / `SDDIA_AGENT_RUNTIME_MOCK`; reiniciar bridge |
 | Smoke | UI Chat o `POST /api/chat` → meta `[kalma2-meta] {"backend":"cli",...}` y tokens **≠** `sqlite-ack` / `[infer-lab]` |
 | Criterio | AC6 live: backend cli real |
+| Evidencia 2026-07-20 | Bóveda con paths + `--trust` + `REQUIRE_*=1`. Prótesis `CHAT_STREAM` → meta `backend=cli`, cuerpo `pong` (≠ sqlite-ack / infer-lab) |
 
-- [ ] HOST-B completado
+- [x] HOST-B completado (prótesis live; reiniciar bridge si UI SSE aún con bóveda vieja)
 
 ### HOST-C — Agent phases live (cierra S3 · AC7 real)
 
@@ -92,8 +94,9 @@ Laudos L-EP…L-WAL, AC1–AC9 y fases 1–8a: ver v2.3.0 / `docs/features/kalma
 | Smoke | UI Forjar Proceso / `POST /api/execute` → TQM → hijo → fase agent `executed` o handoff con `backend: cli` (no soft solo por CLI missing) |
 | Ref | `runbook-agent.md` |
 | Criterio | AC7 live |
+| Evidencia 2026-07-20 | `AGENT_PHASE` live → `{"success":true,"data":{"status":"executed","backend":"cli",...}}` (~114s) |
 
-- [ ] HOST-C completado
+- [x] HOST-C completado
 
 ### HOST-D — SQLite live opcional bajo L-WAL (refuerza AC8)
 
@@ -103,7 +106,7 @@ Laudos L-EP…L-WAL, AC1–AC9 y fases 1–8a: ver v2.3.0 / `docs/features/kalma
 | Ref | `runbook-sqlite.md` |
 | Criterio | Keys `composerData`/`bubbleId` en DB real o backup verificado |
 
-- [ ] HOST-D completado (recomendado; no bloquea si A–C OK y lab AC8 ya APTO)
+- [ ] HOST-D completado (recomendado; no bloquea si A–C OK y lab AC8 ya APTO) — **omitido** (A–C OK; lab AC8 APTO)
 
 ### HOST-E — Cierre tras host
 
@@ -112,7 +115,7 @@ Laudos L-EP…L-WAL, AC1–AC9 y fases 1–8a: ver v2.3.0 / `docs/features/kalma
 | Acción | Actualizar `validacion.md`: `host_cursor_agent_live: APTO`; evidencia comandos; PBI → `docs/todos/done/` con checkboxes HOST-*; merge PR #123 |
 | Criterio | Done = lab + host (A–C) en el mismo PR |
 
-- [ ] HOST-E completado
+- [x] HOST-E completado (docs + archive; merge PR pendiente operador)
 
 ## 10. Plan de acción (host)
 

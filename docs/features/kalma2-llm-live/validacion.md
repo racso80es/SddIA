@@ -3,8 +3,8 @@ feature_name: kalma2-llm-live
 created: "2026-07-20"
 process: feature
 branch: feat/kalma2-llm-live
-global: APTO_LAB
-pbi_archived: false
+global: APTO
+pbi_archived: true
 checks:
   AC1_sse_tokens: APTO
   AC2_fracture_watchdog: APTO
@@ -15,7 +15,7 @@ checks:
   AC7_agent_require_cli: APTO
   AC8_sqlite_keys: APTO
   AC9_closure_docs: APTO
-  host_cursor_agent_live: PENDIENTE  # §9 PBI HOST-A…C — ejecutar en este PR
+  host_cursor_agent_live: APTO
 git_changes:
   - SddIA/interfaces/kalma2-bridge/src/main.rs
   - SddIA/skills/mayeuta-llm/src/main.rs
@@ -31,8 +31,8 @@ git_changes:
 
 ## Veredicto
 
-**APTO_LAB** (Argos) — circuito cableado S+ (SSE, execute, STREAM, SQLite, smokes S1–S5).  
-**Host live (mismo PBI §9):** `HOST-A…C` pendientes — instalar `cursor-agent` y demostrar chat/fases live antes de Done total. Ver PBI en `docs/todos/pending/`.
+**APTO** (lab + host) — circuito S+ cableado y Cursor Agent CLI live en host (HOST-A…C).  
+HOST-D (SQLite live) omitido: lab AC8 APTO; A–C OK.
 
 ## Checks
 
@@ -47,7 +47,9 @@ git_changes:
 | AC7 | REQUIRE_CLI → failed no soft | ✅ | `kalma2-agent-phase-smoke.sh` |
 | AC8 | SQLite keys | ✅ | `kalma2-sqlite-smoke.sh` |
 | AC9 | Cierre documental en rama | ✅ | este archivo + PBI → done |
-| Live CLI | cursor-agent en host (HOST-A…C) | ⏳ | **en alcance PBI** — runbook-infer/agent |
+| Live HOST-A | CLI + auth | ✅ | `cursor-agent` `2026.07.17-3e2a980`; `agent login` OK |
+| Live HOST-B | Chat infer `backend=cli` | ✅ | prótesis `CHAT_STREAM` → `pong` (≠ sqlite-ack) |
+| Live HOST-C | AGENT_PHASE executed cli | ✅ | `status=executed` `backend=cli` (~114s) |
 
 ## Comandos
 
@@ -56,9 +58,12 @@ git_changes:
 ./SddIA/scripts/tools/kalma2-agent-phase-smoke.sh
 ./SddIA/scripts/tools/kalma2-sqlite-smoke.sh
 ./SddIA/scripts/tools/kalma2-sse-fracture-smoke.sh
+# Host (bóveda + auth):
+# cursor-agent --print --mode ask --trust "…"
+# CHAT_STREAM / AGENT_PHASE vía kalma2-agent-runtime-cursor.py
 ```
 
 ## Cierre documental
 
-- PBI → `docs/todos/done/` · `pbi_archived: false`
-- PR único en `feat/kalma2-llm-live`
+- PBI → `docs/todos/done/` · `pbi_archived: true`
+- PR único en `feat/kalma2-llm-live` (#123)

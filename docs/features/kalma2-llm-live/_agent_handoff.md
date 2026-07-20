@@ -64,3 +64,34 @@ persist_ref: docs/features/kalma2-llm-live
 - backend: `mock`
 - status: `executed`
 - message: mock: AGENT_PHASE sin invocar Cursor
+
+## 2026-07-20T17:37Z — Ejecución
+- process: `feature`
+- agents: `tekton`
+- correlation_id: `00000000-0000-4000-8000-0000000000hc`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: código lab ya en árbol; docs implementation/execution sellados; Shell Rejected → sin re-smoke ni HOST-C ni git-manager
+
+## 2026-07-20T17:39:33Z — Ejecución
+- process: `feature`
+- agents: `tekton`
+- correlation_id: `00000000-0000-4000-8000-0000000000hc`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - HOST-C sigue abierto en el PBI; Argos/cierre no tocados.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Audit: touchpoints del plan (bridge SSE/execute, STREAM, dual-mode `.py`, UI, smokes) ya en el árbol; sin delta de código nuevo.
+- Sellados: `docs/features/kalma2-llm-live/implementation.md`, `execution.md`; handoff `…hc` en `_agent_handoff.md`.
+- Shell/cápsulas (`shell-executor` / `git-manager`) → Rejected: sin re-smoke S1–S5, sin HOST-C E2E, sin git.
+- HOST-C sigue abierto en el PBI; Argos/cierre no tocados.
+```
