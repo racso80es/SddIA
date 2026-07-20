@@ -16,10 +16,12 @@ CHAT_STREAM / SQLite (entropía absorbida aquí; cero crates en Core):
   SDDIA_CURSOR_WORKSPACE_ID   — hash workspaceStorage (opcional; se infiere del repo)
   SDDIA_LLM_INFER_COMMAND     — CLI de tokens (preferente; no reentrar prótesis)
   SDDIA_LLM_REQUIRE_INFER=1   — fallar si no hay CLI (demo live S1)
+  SDDIA_AGENT_RUNTIME_REQUIRE_CLI=1 — AGENT_PHASE: CLI missing → failed (no awaiting soft)
 
 Mock lab/CI:
   SDDIA_AGENT_RUNTIME_MOCK=1 → AGENT_PHASE executed; CHAT_STREAM eco de tokens.
   SDDIA_LLM_CHAT_MOCK=1 → CHAT_STREAM eco (sin tocar SQLite).
+  SDDIA_AGENT_RUNTIME_LAB_AUTO=1 → lab wrapper status=executed
 """
 from __future__ import annotations
 
@@ -57,10 +59,18 @@ def split_command(raw: str) -> list[str]:
 
 
 def resolve_cli() -> list[str]:
-    for key in ("SDDIA_AGENT_RUNTIME_CLI", "SDDIA_LLM_CLI_COMMAND"):
+    """CLI para AGENT_PHASE — resuelve ~/.local/bin; no reentra la prótesis como infer."""
+    for key in ("SDDIA_AGENT_RUNTIME_CLI", "SDDIA_LLM_INFER_COMMAND", "SDDIA_LLM_CLI_COMMAND"):
         raw = os.environ.get(key, "").strip()
-        if raw:
-            return split_command(raw)
+        if not raw:
+            continue
+        if key == "SDDIA_LLM_CLI_COMMAND" and "kalma2-agent-runtime-cursor.py" in raw:
+            continue
+        return _normalize_infer_argv(split_command(raw))
+    for name in ("cursor-agent", "agent"):
+        hit = _which_on_path(name)
+        if hit:
+            return [hit, "--print"]
     return ["cursor-agent", "--print"]
 
 
@@ -796,8 +806,14 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         x in (err or "").lower()
         for x in ("no encontrado", "not found", "no instalado", "timeout", "api_key", "401", "auth")
     )
-    status = "awaiting_agents" if soft else "failed"
-    message = err or "runtime falló"
+    # S3 live: no enmascarar ausencia de CLI como awaiting_agents
+    if soft and env_truthy("SDDIA_AGENT_RUNTIME_REQUIRE_CLI"):
+        status = "failed"
+        message = f"REQUIRE_CLI: {err or 'CLI ausente'}"
+        soft = False
+    else:
+        status = "awaiting_agents" if soft else "failed"
+        message = err or "runtime falló"
     handoff = append_handoff(
         repo,
         persist,

@@ -25,14 +25,15 @@ process: feature
 | CHAT_STREAM mock Python | tokens por stdout |
 | CHAT_STREAM SQLite (DB temp) | `composerData` + 2 bubbles + headers; sin recursión CLI |
 | S1/S2 smoke `kalma2-chat-infer-smoke.sh` | lab infer `backend=cli` + REQUIRE_INFER fail OK |
+| S3 smoke `kalma2-agent-phase-smoke.sh` | MOCK/LAB_AUTO executed + REQUIRE_CLI→failed |
 | AGENT_PHASE MOCK=1 | envelope JSON `executed` |
 
 ## Pendiente live host
 
 | Ítem | Nota |
 |------|------|
-| S1 live | Instalar `cursor-agent` (`runbook-infer.md`); bóveda `SDDIA_LLM_INFER_COMMAND` |
-| S3–S6 | Agent phases, SQLite live, AC2, cierre |
+| S1/S3 live | Instalar `cursor-agent` (`runbook-infer.md` / `runbook-agent.md`) |
+| S4–S6 | SQLite live, AC2, cierre |
 | mayeuta-llm STREAM → Python | tokens OK |
 | `POST /api/chat` SSE | frames `data:` |
 | `POST /api/execute` | `emitted` + `event_id` |

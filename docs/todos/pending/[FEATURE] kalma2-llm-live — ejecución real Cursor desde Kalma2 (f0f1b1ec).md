@@ -121,7 +121,7 @@ Hitos 1–4 de v2.2: puente SSE, wrapper STREAM, prótesis dual-mode + SQLite la
 
 - [x] **Fase 1–4 (base):** bridge SSE/execute, mayeuta STREAM, prótesis dual+SQLite lab, UI dual — en `feat/kalma2-llm-live`.
 - [x] **Fase 5a (cableado S1/S2):** meta `[kalma2-meta]`, `SDDIA_LLM_REQUIRE_INFER`, autodetect `~/.local/bin`, smoke lab + runbook-infer. **Pendiente 5b:** CLI Cursor instalado en host → tokens live.
-- [ ] **Fase 6:** S3 — agent phases live desde Kalma2 execute.
+- [x] **Fase 6a (cableado S3):** PATH/`REQUIRE_CLI`, smoke AGENT_PHASE + runbook-agent. **Pendiente 6b:** `cursor-agent` en host + E2E Kalma2→TQM→fase `executed`.
 - [ ] **Fase 7:** S4 — validación SQLite (copia/live) + runbook L-IDE/L-WAL.
 - [ ] **Fase 8:** S5+S6 — AC2 E2E + Argos + cierre documental/PR.
 
