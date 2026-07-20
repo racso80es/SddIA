@@ -91,3 +91,11 @@ button:disabled {
 button:not(:disabled):hover {
   background: #2f6ae8;
 }
+
+button.secondary {
+  background: #3a4553;
+}
+
+button.secondary:not(:disabled):hover {
+  background: #4a5563;
+}

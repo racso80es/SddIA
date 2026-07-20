@@ -1,16 +1,20 @@
 use serde::Deserialize;
-use std::io::Read;
+use std::io::{BufRead, BufReader, Read};
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Arc;
 use std::thread;
-use std::time::{Duration, Instant};
-use tiny_http::{Header, Method, Response, Server};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use tiny_http::{Header, Method, Response, Server, StatusCode};
 
 #[derive(Deserialize)]
 struct InteractReq {
     prompt: String,
+    #[serde(default)]
+    mode: Option<String>,
+    #[serde(default)]
+    process: Option<String>,
 }
 
 fn repo_root() -> PathBuf {
@@ -147,7 +151,19 @@ fn serve_static(req: tiny_http::Request, ui_root: &Path) {
 }
 
 fn run_orchestrator(repo: &Path, bin: &Path, prompt: &str) -> Result<String, String> {
-    let inputs = serde_json::json!({ "prompt": prompt }).to_string();
+    run_orchestrator_inputs(
+        repo,
+        bin,
+        &serde_json::json!({ "prompt": prompt }),
+    )
+}
+
+fn run_orchestrator_inputs(
+    repo: &Path,
+    bin: &Path,
+    inputs: &serde_json::Value,
+) -> Result<String, String> {
+    let inputs = inputs.to_string();
     let timeout = Duration::from_secs(client_timeout_secs());
     let repo = repo.to_path_buf();
     let bin = bin.to_path_buf();
@@ -551,7 +567,163 @@ fn percent_decode(s: &str) -> String {
     out
 }
 
-fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
+fn sse_header() -> Header {
+    Header::from_bytes(
+        &b"Content-Type"[..],
+        &b"text/event-stream; charset=utf-8"[..],
+    )
+    .unwrap()
+}
+
+fn chat_timeout_secs() -> u64 {
+    std::env::var("SDDIA_LLM_SSE_TIMEOUT_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .or_else(|| {
+            std::env::var("SDDIA_LLM_CLI_TIMEOUT_SECS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+        })
+        .unwrap_or(120)
+}
+
+fn new_event_id() -> String {
+    let mut b = [0u8; 16];
+    if let Ok(mut f) = std::fs::File::open("/dev/urandom") {
+        let _ = f.read_exact(&mut b);
+    } else {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        for (i, slot) in b.iter_mut().enumerate() {
+            *slot = ((nanos >> (i * 8)) as u8).wrapping_add(i as u8);
+        }
+    }
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    format!(
+        "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+        b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13],
+        b[14], b[15]
+    )
+}
+
+fn load_eda_pending(repo: &Path) -> PathBuf {
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    if let Ok(text) = std::fs::read_to_string(&cfg_path) {
+        if let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) {
+            if let Some(rel) = cfg
+                .pointer("/eda_bus/pending")
+                .and_then(|v| v.as_str())
+                .map(normalize_rel)
+            {
+                return repo.join(rel);
+            }
+        }
+    }
+    repo.join(".events/pending")
+}
+
+fn emit_system_fracture(repo: &Path, fracture_kind: &str, error_trace: &str) {
+    let event_id = new_event_id();
+    let pending = load_eda_pending(repo);
+    let _ = std::fs::create_dir_all(&pending);
+    let ts = chrono_like_now();
+    let event = serde_json::json!({
+        "event_id": event_id,
+        "event_type": "System_Fracture_Detected",
+        "event_family": "domain",
+        "timestamp": ts,
+        "emitter_agent": "kalma2-bridge",
+        "payload": {
+            "process_name": "kalma2-bridge",
+            "error_trace": error_trace,
+            "agent_emitter": "kalma2-bridge",
+            "attempted_action": "sse_chat_stream",
+            "source": "kalma2-bridge",
+            "fracture_kind": fracture_kind,
+        }
+    });
+    let target = pending.join(format!("{event_id}.json"));
+    let _ = std::fs::write(
+        &target,
+        serde_json::to_string_pretty(&event).unwrap_or_else(|_| "{}".into()),
+    );
+}
+
+fn chrono_like_now() -> String {
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    // ISO-ish sin chrono crate: epoch seconds (suficiente para bus).
+    format!("{secs}")
+}
+
+fn resolve_mayeuta_llm(repo: &Path) -> Result<PathBuf, String> {
+    if let Ok(o) = std::env::var("SDDIA_MAYEUTA_LLM_BIN") {
+        let trimmed = o.trim();
+        if !trimmed.is_empty() {
+            let candidate = PathBuf::from(trimmed);
+            return is_native_elf(&candidate)
+                .then_some(candidate)
+                .ok_or_else(|| "SDDIA_MAYEUTA_LLM_BIN no es ELF nativo".into());
+        }
+    }
+    for rel in [
+        "SddIA/target/debug/mayeuta-llm",
+        "SddIA/target/release/mayeuta-llm",
+    ] {
+        let candidate = repo.join(rel);
+        if is_native_elf(&candidate) {
+            return Ok(candidate);
+        }
+    }
+    Err("mayeuta-llm no encontrado en SddIA/target/{debug,release}".into())
+}
+
+/// Reader que transforma líneas del hijo en frames SSE `data: …\n\n`.
+struct SseLineReader {
+    inner: BufReader<std::process::ChildStdout>,
+    pending: Vec<u8>,
+    finished: bool,
+}
+
+impl Read for SseLineReader {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if buf.is_empty() {
+            return Ok(0);
+        }
+        if !self.pending.is_empty() {
+            let n = self.pending.len().min(buf.len());
+            buf[..n].copy_from_slice(&self.pending[..n]);
+            self.pending.drain(..n);
+            return Ok(n);
+        }
+        if self.finished {
+            return Ok(0);
+        }
+        let mut line = String::new();
+        match self.inner.read_line(&mut line)? {
+            0 => {
+                self.finished = true;
+                Ok(0)
+            }
+            _ => {
+                let payload = line.trim_end_matches(['\r', '\n']);
+                let frame = format!("data: {payload}\n\n");
+                self.pending = frame.into_bytes();
+                let n = self.pending.len().min(buf.len());
+                buf[..n].copy_from_slice(&self.pending[..n]);
+                self.pending.drain(..n);
+                Ok(n)
+            }
+        }
+    }
+}
+
+fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
     let mut buf = String::new();
     if req.as_reader().read_to_string(&mut buf).is_err() {
         reply(
@@ -564,6 +736,174 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
 
     let prompt = match serde_json::from_str::<InteractReq>(&buf) {
         Ok(p) if !p.prompt.trim().is_empty() => p.prompt.trim().to_string(),
+        _ => {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"prompt requerido","exit_code":1}"#.into(),
+            );
+            return;
+        }
+    };
+
+    let skill = match resolve_mayeuta_llm(repo) {
+        Ok(b) => b,
+        Err(message) => {
+            emit_system_fracture(repo, "prosthetic_collapse", &message);
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": message,
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+            return;
+        }
+    };
+
+    let stdin_payload = serde_json::json!({
+        "operation": "STREAM",
+        "prompt": prompt,
+    })
+    .to_string();
+
+    let mut child = match Command::new(&skill)
+        .current_dir(repo)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            let msg = format!("spawn mayeuta-llm: {e}");
+            emit_system_fracture(repo, "prosthetic_collapse", &msg);
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": msg,
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+            return;
+        }
+    };
+
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        if let Err(e) = stdin.write_all(stdin_payload.as_bytes()) {
+            let msg = format!("stdin mayeuta-llm: {e}");
+            let _ = child.kill();
+            emit_system_fracture(repo, "prosthetic_collapse", &msg);
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": msg,
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+            return;
+        }
+    }
+
+    let Some(stdout) = child.stdout.take() else {
+        let _ = child.kill();
+        emit_system_fracture(repo, "prosthetic_collapse", "mayeuta-llm sin stdout");
+        reply(
+            req,
+            500,
+            r#"{"success":false,"message":"mayeuta-llm sin stdout","exit_code":1}"#.into(),
+        );
+        return;
+    };
+
+    let timeout = Duration::from_secs(chat_timeout_secs());
+    let started = Instant::now();
+    let repo_watch = repo.to_path_buf();
+    let child_id = child.id();
+
+    // Watchdog: si el stream supera timeout, mata al hijo → Read EOF + fractura.
+    thread::spawn(move || {
+        while started.elapsed() < timeout {
+            thread::sleep(Duration::from_millis(200));
+            // cheap liveness: /proc
+            if !Path::new(&format!("/proc/{child_id}")).exists() {
+                return;
+            }
+        }
+        let _ = Command::new("kill")
+            .args(["-9", &child_id.to_string()])
+            .status();
+        emit_system_fracture(
+            &repo_watch,
+            "sse_watchdog",
+            &format!("SSE chat timeout {timeout:?}; kill -9 pid={child_id}"),
+        );
+    });
+
+    let reader = SseLineReader {
+        inner: BufReader::new(stdout),
+        pending: Vec::new(),
+        finished: false,
+    };
+
+    let response = Response::new(
+        StatusCode(200),
+        vec![sse_header()],
+        reader,
+        None,
+        None,
+    );
+    if req.respond(response).is_err() {
+        let _ = child.kill();
+        emit_system_fracture(
+            repo,
+            "sse_watchdog",
+            "cliente SSE desconectado durante stream",
+        );
+        return;
+    }
+
+    match child.wait() {
+        Ok(status) if status.success() => {}
+        Ok(status) => {
+            emit_system_fracture(
+                repo,
+                "prosthetic_collapse",
+                &format!(
+                    "mayeuta-llm/prótesis exit {}",
+                    status.code().unwrap_or(1)
+                ),
+            );
+        }
+        Err(e) => {
+            emit_system_fracture(repo, "prosthetic_collapse", &format!("wait hijo: {e}"));
+        }
+    }
+}
+
+fn handle_execute(mut req: tiny_http::Request, repo: &Path) {
+    let mut buf = String::new();
+    if req.as_reader().read_to_string(&mut buf).is_err() {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"prompt requerido","exit_code":1}"#.into(),
+        );
+        return;
+    }
+
+    let parsed = match serde_json::from_str::<InteractReq>(&buf) {
+        Ok(p) if !p.prompt.trim().is_empty() => p,
         _ => {
             reply(
                 req,
@@ -591,8 +931,165 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
         }
     };
 
+    let mut inputs = serde_json::json!({
+        "prompt": parsed.prompt.trim(),
+        "mode": "execute",
+    });
+    if let Some(proc) = parsed.process.filter(|s| !s.trim().is_empty()) {
+        inputs["process"] = serde_json::json!(proc.trim());
+    }
+
     let t0 = Instant::now();
-    match run_orchestrator(repo, &bin, &prompt) {
+    match run_orchestrator_inputs(repo, &bin, &inputs) {
+        Ok(mut line) => {
+            if let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&line) {
+                if let Some(obj) = v.as_object_mut() {
+                    obj.insert(
+                        "duration_ms".into(),
+                        serde_json::json!(t0.elapsed().as_millis() as u64),
+                    );
+                }
+                line = v.to_string();
+            }
+            reply(req, 200, line);
+        }
+        Err(body) => reply(req, 500, body),
+    }
+}
+
+fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
+    let mut buf = String::new();
+    if req.as_reader().read_to_string(&mut buf).is_err() {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"prompt requerido","exit_code":1}"#.into(),
+        );
+        return;
+    }
+
+    let parsed = match serde_json::from_str::<InteractReq>(&buf) {
+        Ok(p) if !p.prompt.trim().is_empty() => p,
+        _ => {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"prompt requerido","exit_code":1}"#.into(),
+            );
+            return;
+        }
+    };
+
+    // L-EP: alias por mode explícito.
+    let mode = parsed
+        .mode
+        .as_deref()
+        .map(str::trim)
+        .unwrap_or("")
+        .to_lowercase();
+    if mode == "execute" {
+        // Reconstruir body mínimo y reutilizar execute vía orquestador.
+        let bin = match resolve_orchestrator(repo) {
+            Ok(b) => b,
+            Err(message) => {
+                reply(
+                    req,
+                    500,
+                    serde_json::json!({
+                        "success": false,
+                        "message": message,
+                        "exit_code": 1
+                    })
+                    .to_string(),
+                );
+                return;
+            }
+        };
+        let mut inputs = serde_json::json!({
+            "prompt": parsed.prompt.trim(),
+            "mode": "execute",
+        });
+        if let Some(proc) = parsed.process.filter(|s| !s.trim().is_empty()) {
+            inputs["process"] = serde_json::json!(proc.trim());
+        }
+        let t0 = Instant::now();
+        match run_orchestrator_inputs(repo, &bin, &inputs) {
+            Ok(mut line) => {
+                if let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&line) {
+                    if let Some(obj) = v.as_object_mut() {
+                        obj.insert(
+                            "duration_ms".into(),
+                            serde_json::json!(t0.elapsed().as_millis() as u64),
+                        );
+                    }
+                    line = v.to_string();
+                }
+                reply(req, 200, line);
+            }
+            Err(body) => reply(req, 500, body),
+        }
+        return;
+    }
+    if mode == "chat" {
+        // Compat: chat síncrono (no SSE) vía mode=chat en interact.
+        let bin = match resolve_orchestrator(repo) {
+            Ok(b) => b,
+            Err(message) => {
+                reply(
+                    req,
+                    500,
+                    serde_json::json!({
+                        "success": false,
+                        "message": message,
+                        "exit_code": 1
+                    })
+                    .to_string(),
+                );
+                return;
+            }
+        };
+        let inputs = serde_json::json!({
+            "prompt": parsed.prompt.trim(),
+            "mode": "chat",
+        });
+        let t0 = Instant::now();
+        match run_orchestrator_inputs(repo, &bin, &inputs) {
+            Ok(mut line) => {
+                if let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&line) {
+                    if let Some(obj) = v.as_object_mut() {
+                        obj.insert(
+                            "duration_ms".into(),
+                            serde_json::json!(t0.elapsed().as_millis() as u64),
+                        );
+                    }
+                    line = v.to_string();
+                }
+                reply(req, 200, line);
+            }
+            Err(body) => reply(req, 500, body),
+        }
+        return;
+    }
+
+    let bin = match resolve_orchestrator(repo) {
+        Ok(b) => b,
+        Err(message) => {
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": message,
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+            return;
+        }
+    };
+
+    let t0 = Instant::now();
+    match run_orchestrator(repo, &bin, parsed.prompt.trim()) {
         Ok(mut line) => {
             if let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&line) {
                 if let Some(obj) = v.as_object_mut() {
@@ -612,6 +1109,8 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
 fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) {
     let path = req.url().split('?').next().unwrap_or("/");
     match (req.method(), path) {
+        (Method::Post, "/api/chat") => handle_chat(req, &repo),
+        (Method::Post, "/api/execute") => handle_execute(req, &repo),
         (Method::Post, "/api/interact") => handle_interact(req, &repo),
         (Method::Get, "/api/status") => handle_status(req, &repo),
         (Method::Get, _) => serve_static(req, &ui_root),
