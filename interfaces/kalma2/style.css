@@ -66,6 +66,8 @@ textarea {
 
 .status[data-kind="pending"] { color: #c9a227; }
 .status[data-kind="routed"] { color: #5b9fd4; }
+.status[data-kind="initialized"],
+.status[data-kind="awaiting_agents"] { color: #c9a227; }
 .status[data-kind="completed"],
 .status[data-kind="ok"] { color: #3dba7a; }
 .status[data-kind="degraded"] { color: #e0a050; }

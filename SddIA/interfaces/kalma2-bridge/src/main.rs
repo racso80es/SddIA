@@ -340,16 +340,35 @@ fn project_status(
             .and_then(|p| p.get("process_name"))
             .and_then(|v| v.as_str())
             .unwrap_or("?");
-        if st == "success" {
+        if st != "success" {
             return (
-                "completed",
-                format!("Proceso «{pname}» completado (PEC correlacionado)."),
+                "failed",
+                format!("Proceso «{pname}» falló (status={st})."),
             );
         }
-        return (
-            "failed",
-            format!("Proceso «{pname}» falló (status={st})."),
-        );
+        // Slice A kalma2-full-cycle: cycle_phase distingue arranque vs cierre de negocio.
+        // Legacy sin campo → completed (compat L3).
+        let cycle = pec
+            .get("payload")
+            .and_then(|p| p.get("cycle_phase"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("completed");
+        return match cycle {
+            "initialized" => (
+                "initialized",
+                format!(
+                    "Ciclo «{pname}» arrancado (init OK). Fases de agentes pendientes o simuladas en lab."
+                ),
+            ),
+            "awaiting_agents" => (
+                "awaiting_agents",
+                format!("Ciclo «{pname}» en espera de agentes IDE."),
+            ),
+            _ => (
+                "completed",
+                format!("Proceso «{pname}» completado (PEC correlacionado)."),
+            ),
+        };
     }
 
     if in_dead_letter {
@@ -447,13 +466,15 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
             "event_id": pec.get("event_id"),
             "process_name": pec.get("payload").and_then(|p| p.get("process_name")),
             "process_status": pec.get("payload").and_then(|p| p.get("status")),
+            "cycle_phase": pec.get("payload").and_then(|p| p.get("cycle_phase")),
         })
     } else {
         serde_json::json!({
             "found": false,
             "event_id": null,
             "process_name": null,
-            "process_status": null
+            "process_status": null,
+            "cycle_phase": null
         })
     };
 
@@ -669,6 +690,33 @@ mod tests {
         });
         let (st, _) = project_status(None, false, Some(&pec));
         assert_eq!(st, "completed");
+    }
+
+    #[test]
+    fn project_status_initialized_from_cycle_phase() {
+        let pec = serde_json::json!({
+            "payload": {
+                "status": "success",
+                "process_name": "bug-fix",
+                "cycle_phase": "initialized"
+            }
+        });
+        let (st, msg) = project_status(None, false, Some(&pec));
+        assert_eq!(st, "initialized");
+        assert!(msg.contains("arrancado"));
+    }
+
+    #[test]
+    fn project_status_awaiting_agents_from_cycle_phase() {
+        let pec = serde_json::json!({
+            "payload": {
+                "status": "success",
+                "process_name": "feature",
+                "cycle_phase": "awaiting_agents"
+            }
+        });
+        let (st, _) = project_status(None, false, Some(&pec));
+        assert_eq!(st, "awaiting_agents");
     }
 
     #[test]
