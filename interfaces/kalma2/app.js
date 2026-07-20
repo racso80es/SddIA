@@ -114,6 +114,10 @@ async function enviarChat() {
         for (const line of block.split("\n")) {
           if (line.startsWith("data: ")) {
             const token = line.slice(6);
+            if (token.startsWith("[kalma2-meta]")) {
+              setStatus(token.replace("[kalma2-meta] ", "meta · "), "pending");
+              continue;
+            }
             acc += (acc ? " " : "") + token;
             out.value = acc;
           }

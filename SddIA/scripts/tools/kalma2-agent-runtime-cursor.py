@@ -14,6 +14,8 @@ CHAT_STREAM / SQLite (entropía absorbida aquí; cero crates en Core):
   SDDIA_CURSOR_SQLITE_WRITE   — 1 (default si DB existe) escribe; 0 solo dry-run + stream
   SDDIA_CURSOR_COMPOSER_ID    — reutilizar composer existente (opcional)
   SDDIA_CURSOR_WORKSPACE_ID   — hash workspaceStorage (opcional; se infiere del repo)
+  SDDIA_LLM_INFER_COMMAND     — CLI de tokens (preferente; no reentrar prótesis)
+  SDDIA_LLM_REQUIRE_INFER=1   — fallar si no hay CLI (demo live S1)
 
 Mock lab/CI:
   SDDIA_AGENT_RUNTIME_MOCK=1 → AGENT_PHASE executed; CHAT_STREAM eco de tokens.
@@ -469,26 +471,73 @@ def _minimal_composer(
     }
 
 
+def _which_on_path(name: str) -> str | None:
+    """Busca ejecutable incluyendo ~/.local/bin (Cursor Agent CLI post-install)."""
+    extras = [
+        str(Path.home() / ".local/bin"),
+        "/usr/local/bin",
+    ]
+    path = os.environ.get("PATH", "")
+    search = os.pathsep.join([*extras, path])
+    for d in search.split(os.pathsep):
+        if not d:
+            continue
+        cand = Path(d) / name
+        if cand.is_file() and os.access(cand, os.X_OK):
+            return str(cand)
+    return None
+
+
 def resolve_infer_cli() -> list[str]:
     """CLI de inferencia — nunca reentrar en esta prótesis (evita recursión STREAM)."""
     for key in ("SDDIA_LLM_INFER_COMMAND", "SDDIA_AGENT_RUNTIME_CLI"):
         raw = os.environ.get(key, "").strip()
         if raw:
-            return split_command(raw)
+            return _normalize_infer_argv(split_command(raw))
     raw = os.environ.get("SDDIA_LLM_CLI_COMMAND", "").strip()
     if raw and "kalma2-agent-runtime-cursor.py" not in raw:
-        return split_command(raw)
+        return _normalize_infer_argv(split_command(raw))
+    # Autodetección post-install Cursor CLI
+    for name in ("cursor-agent", "agent"):
+        hit = _which_on_path(name)
+        if hit:
+            return [hit, "--print"]
     return []
 
 
+def _normalize_infer_argv(parts: list[str]) -> list[str]:
+    """Si el binario no está en PATH, resuelve vía ~/.local/bin."""
+    if not parts:
+        return parts
+    bin0 = parts[0]
+    if Path(bin0).is_file() or "/" in bin0:
+        return parts
+    hit = _which_on_path(bin0)
+    if hit:
+        return [hit, *parts[1:]]
+    return parts
+
+
+def emit_meta(backend: str, **extra: Any) -> None:
+    """Primera línea de telemetría para SSE (UI/ops). No es token de modelo."""
+    payload = {"backend": backend, **extra}
+    print(f"[kalma2-meta] {json.dumps(payload, ensure_ascii=False)}", flush=True)
+
+
 def stream_infer_tokens(prompt: str) -> tuple[str, str]:
-    """CLI stream si existe; si no, ack determinista. Devuelve (texto, backend)."""
+    """CLI stream si existe; si no, ack determinista (o fail si REQUIRE_INFER)."""
+    require = env_truthy("SDDIA_LLM_REQUIRE_INFER")
     try:
         cmd = resolve_infer_cli()
-    except Exception:
+    except Exception as e:
         cmd = []
+        if require:
+            emit_meta("error", error=str(e))
+            print(f"[infer resolve error] {e}", flush=True)
+            raise SystemExit(2)
 
     if cmd:
+        emit_meta("cli", command=cmd[0])
         try:
             timeout = int(os.environ.get("SDDIA_LLM_CLI_TIMEOUT_SECS", "120") or "120")
             proc = subprocess.Popen(
@@ -521,11 +570,32 @@ def stream_infer_tokens(prompt: str) -> tuple[str, str]:
                 return " ".join(chunks), f"cli-rc{proc.returncode}"
             if err.strip():
                 print(f"[infer stderr] {err.strip()[:200]}", flush=True)
-        except FileNotFoundError:
-            pass
+            if require:
+                emit_meta("error", error="cli_empty_or_failed", rc=proc.returncode)
+                raise SystemExit(3)
+        except FileNotFoundError as e:
+            if require:
+                emit_meta("error", error=f"cli_not_found:{e}")
+                print(f"[infer] CLI no encontrado: {e}", flush=True)
+                raise SystemExit(3)
+        except SystemExit:
+            raise
         except Exception as e:  # noqa: BLE001
             print(f"[infer error] {e}", flush=True)
+            if require:
+                emit_meta("error", error=str(e))
+                raise SystemExit(3)
 
+    if require:
+        emit_meta("error", error="no_infer_cli")
+        print(
+            "[infer] SDDIA_LLM_REQUIRE_INFER=1 pero no hay CLI "
+            "(instala Cursor Agent CLI o fija SDDIA_LLM_INFER_COMMAND).",
+            flush=True,
+        )
+        raise SystemExit(3)
+
+    emit_meta("sqlite-ack")
     ack = (
         f"[kalma2→cursor-sqlite] Prompt encolado en state.vscdb. "
         f"Sin CLI de inferencia; abre Cursor para continuar. "
