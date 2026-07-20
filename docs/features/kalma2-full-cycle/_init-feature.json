@@ -1,0 +1,23 @@
+{
+  "feature_name": "kalma2-full-cycle",
+  "branch_name": "feat/kalma2-full-cycle",
+  "persist_ref": "docs/features/kalma2-full-cycle",
+  "base_branch": "main",
+  "refined_requirements": "Cerrar el hueco entre arranque EDA Kalma2 (workspace-init + objectives.md + UI completed engañoso) y gestión completa del ciclo de vida (Dedalo→Tekton→Argos→cierre documental/PR) solicitado desde Kalma2. Evidencia e022814f: solo docs/fixes/7ad3175957d4/objectives.md pese a UI completed. Semilla PBI: docs/todos/pending/[FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre (527007fa).md. Rebanadas: A semántica status; B runtime agentes post-init; C consumo cuerpo pbi_ref. Evoluciona laudo L2 de kalma2-process-dispatch. Primera acción = estabilización Mayeuta + diseño Dedalo.",
+  "pbi_ref": "docs/todos/pending/[FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre (527007fa).md",
+  "document_id": "PBI-KALMA2-FULL-CYCLE-RUNTIME",
+  "depends_on_features": [
+    "docs/features/kalma2-process-dispatch",
+    "docs/features/kalma2-event-bus-integration",
+    "docs/features/kalma2-mayeuta-llm-router"
+  ],
+  "related_artifacts": [
+    "SddIA/process/bug-fix.md",
+    "SddIA/engine/execute-process/src/engine/executor.rs",
+    "SddIA/engine/execute-process/src/engine/handlers/task_queue_manager.rs",
+    "SddIA/interfaces/kalma2-bridge/src/main.rs",
+    "interfaces/kalma2/app.js",
+    "docs/features/kalma2-process-dispatch/spec.md"
+  ],
+  "evidence_event_id": "e022814f-fc3a-441f-88c5-d60cb5e47e48"
+}

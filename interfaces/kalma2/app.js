@@ -45,17 +45,26 @@ async function pollStatus(eventId, out, ackText) {
     setStatus(`${status} · ${eventId.slice(0, 8)}…`, status);
     out.value = `${ackText}\n\n[estado: ${status}] ${st.message || ""}`;
 
-    if (status === "completed" || status === "failed") {
+    // Terminales: cierre de negocio, fallo, o arranque honesto (slice A kalma2-full-cycle).
+    if (
+      status === "completed" ||
+      status === "failed" ||
+      status === "initialized" ||
+      status === "awaiting_agents"
+    ) {
       const orch = st.orchestration || {};
       if (orch.found) {
         out.value += `\nproceso=${orch.process_name || "?"} status=${orch.process_status || "?"}`;
+        if (orch.cycle_phase) {
+          out.value += ` cycle_phase=${orch.cycle_phase}`;
+        }
       }
       return;
     }
   }
 
   setStatus("timeout", "failed");
-  out.value = `${ackText}\n\n[timeout] sin completed/failed en ${POLL_TIMEOUT_MS / 1000}s`;
+  out.value = `${ackText}\n\n[timeout] sin completed/failed/initialized en ${POLL_TIMEOUT_MS / 1000}s`;
 }
 
 async function enviar() {

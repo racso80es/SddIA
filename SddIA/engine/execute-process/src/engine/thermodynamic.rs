@@ -11,6 +11,36 @@ fn iso_now() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
+const LIFECYCLE_PROCESSES: &[&str] = &["bug-fix", "feature", "refactorization"];
+
+/// Deriva `cycle_phase` desde `phase_reports` (laudo L5 kalma2-full-cycle).
+/// Solo aplica a procesos de ciclo de vida; resto → None (compat bridge).
+pub fn derive_cycle_phase(process_name: &str, phase_reports: Option<&Value>) -> Option<&'static str> {
+    if !LIFECYCLE_PROCESSES.contains(&process_name) {
+        return None;
+    }
+    let Some(arr) = phase_reports.and_then(|v| v.as_array()) else {
+        return Some("completed");
+    };
+    let mut has_awaiting = false;
+    let mut has_simulated = false;
+    for p in arr {
+        let st = p.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        if matches!(st, "awaiting" | "awaiting_agents") {
+            has_awaiting = true;
+        } else if st == "simulated" {
+            has_simulated = true;
+        }
+    }
+    if has_awaiting {
+        Some("awaiting_agents")
+    } else if has_simulated {
+        Some("initialized")
+    } else {
+        Some("completed")
+    }
+}
+
 pub fn run(
     repo: &Path,
     process_name: &str,
@@ -99,11 +129,8 @@ pub fn run(
         // PEC: workspace (legado) o correlation_id (lazo Kalma2 / EDA).
         if ws.is_some() || correlation_id.is_some() {
             let orch_id = Uuid::new_v4().to_string();
-            let phase_count = state
-                .get("phase_reports")
-                .and_then(|v| v.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0);
+            let phase_reports = state.get("phase_reports");
+            let phase_count = phase_reports.and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
             let mut payload = json!({
                 "asset_id": asset_id,
                 "process_name": process_name,
@@ -123,6 +150,9 @@ pub fn run(
             }
             if let Some(ref cid) = correlation_id {
                 payload["correlation_id"] = json!(cid);
+            }
+            if let Some(phase) = derive_cycle_phase(process_name, phase_reports) {
+                payload["cycle_phase"] = json!(phase);
             }
             let orch_event = json!({
                 "event_id": orch_id,
@@ -164,4 +194,52 @@ const THERMODYNAMIC_EXEMPT: &[&str] = &[
 
 pub fn is_exempt(process_name: &str) -> bool {
     THERMODYNAMIC_EXEMPT.contains(&process_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn derive_initialized_when_simulated() {
+        let reports = json!([
+            {"phase_name": "Inicialización", "status": "executed"},
+            {"phase_name": "Diseño", "status": "simulated"},
+            {"phase_name": "Cierre", "status": "skipped"}
+        ]);
+        assert_eq!(
+            derive_cycle_phase("bug-fix", Some(&reports)),
+            Some("initialized")
+        );
+    }
+
+    #[test]
+    fn derive_awaiting_agents_priority() {
+        let reports = json!([
+            {"status": "simulated"},
+            {"status": "awaiting_agents"}
+        ]);
+        assert_eq!(
+            derive_cycle_phase("feature", Some(&reports)),
+            Some("awaiting_agents")
+        );
+    }
+
+    #[test]
+    fn derive_completed_without_simulated() {
+        let reports = json!([
+            {"status": "executed"},
+            {"status": "skipped"}
+        ]);
+        assert_eq!(
+            derive_cycle_phase("bug-fix", Some(&reports)),
+            Some("completed")
+        );
+    }
+
+    #[test]
+    fn derive_none_for_non_lifecycle() {
+        let reports = json!([{"status": "simulated"}]);
+        assert_eq!(derive_cycle_phase("task-queue-manager", Some(&reports)), None);
+    }
 }
