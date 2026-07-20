@@ -297,10 +297,11 @@ pub fn capsule_delivery_emit_presented(
         .and_then(|v| v.as_str())
         .or_else(|| inputs.get("pr_url").and_then(|v| v.as_str()))
         .map(str::trim)
-        .filter(|s| !s.is_empty());
-    if let Some(url) = pr_url {
-        action_inputs["pr_url"] = json!(url);
-    }
+        .filter(|s| !s.is_empty())
+        .ok_or(
+            "pr_url obligatorio para Sello Presentación ECST (evita PullRequest_Presented incompleto → DLT Argos/IOTA)",
+        )?;
+    action_inputs["pr_url"] = json!(pr_url);
     if let Some(corr) = str_field(inputs, "correlation_id") {
         action_inputs["correlation_id"] = json!(corr);
     }
@@ -665,5 +666,30 @@ pub fn execute_feature_phase(
         "Cierre documental en rama" => Some(capsule_feature_pbi_archive(repo, inputs, state)),
         "Cierre de entrega" => Some(capsule_feature_invoke_delivery_close(repo, inputs, state)),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod emit_presented_tests {
+    use super::*;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn repo_root() -> PathBuf {
+        let mut here = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        here.pop();
+        here.pop();
+        here.pop();
+        here
+    }
+
+    #[test]
+    fn emit_presented_rejects_missing_pr_url() {
+        let repo = repo_root();
+        let inputs = json!({"branch_name": "fix/demo"});
+        let mut state = json!({});
+        let err = capsule_delivery_emit_presented(&repo, &inputs, &mut state)
+            .expect_err("must require pr_url");
+        assert!(err.contains("pr_url obligatorio"), "got: {err}");
     }
 }

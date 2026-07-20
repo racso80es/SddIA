@@ -1,7 +1,7 @@
 //! Núcleo orquestador `route-domain-event` nativo (paridad `route_domain_event_core.py`).
 
 use super::actions;
-use super::capsules::invoke_capsule_json;
+use super::capsules::{invoke_capsule_json, invoke_tool_capsule_json};
 use super::ecst_validation::{load_event_class_schemas, validate_ecst_instance};
 use super::eda_bus_topology::{
     delegation_meta, dlt_threshold_ok, ensure_event_bus_topology, ensure_processing_header,
@@ -300,6 +300,19 @@ fn simulate_iota_enabled() -> bool {
     )
 }
 
+/// Extrae traza humana del envelope cápsula (`error` | `feedback` | `message`).
+/// Paridad capsule-json-io / sddia-io::emit_error (campo `error`).
+fn capsule_error_trace(body: &Value, ok: bool) -> String {
+    body.get("error")
+        .or_else(|| body.get("feedback"))
+        .or_else(|| body.get("message"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or(if ok { "ok" } else { "iota publish failed" })
+        .to_string()
+}
+
 fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Option<String>) {
     if simulate_iota_enabled() {
         let digest = format!("lab-sim-{}", &Uuid::new_v4().simple().to_string()[..24]);
@@ -313,7 +326,7 @@ fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Opti
     let _timeout = iota_timeout_seconds();
     let repo = repo.to_path_buf();
     let handle = thread::spawn(move || {
-        invoke_capsule_json(&repo, "iota-immutable-publisher", &payload, false)
+        invoke_tool_capsule_json(&repo, "iota-immutable-publisher", &payload, false)
     });
     let result = match handle.join() {
         Ok(Ok(r)) => r,
@@ -331,12 +344,7 @@ fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Opti
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string);
-    let feedback = body
-        .get("feedback")
-        .or_else(|| body.get("message"))
-        .and_then(|v| v.as_str())
-        .unwrap_or(if ok { "ok" } else { "iota publish failed" })
-        .to_string();
+    let feedback = capsule_error_trace(body, ok);
     (ok, feedback, if ok { 0 } else { result.exit_code }, digest)
 }
 
@@ -1135,6 +1143,33 @@ mod blocking_tests {
         here.pop();
         here.pop();
         here
+    }
+
+    #[test]
+    fn capsule_error_trace_prefers_error_field() {
+        let body = json!({
+            "success": false,
+            "error": "iota-publish-unavailable: configure relay",
+            "feedback": "ignored-when-error-present"
+        });
+        let trace = capsule_error_trace(&body, false);
+        assert!(trace.starts_with("iota-publish-unavailable"));
+        assert_ne!(trace, "iota publish failed");
+    }
+
+    #[test]
+    fn capsule_error_trace_falls_back_to_feedback() {
+        let body = json!({"success": false, "feedback": "config-missing: IOTA_WALLET_SECRET"});
+        assert_eq!(
+            capsule_error_trace(&body, false),
+            "config-missing: IOTA_WALLET_SECRET"
+        );
+    }
+
+    #[test]
+    fn capsule_error_trace_opaque_only_when_empty() {
+        let body = json!({"success": false});
+        assert_eq!(capsule_error_trace(&body, false), "iota publish failed");
     }
 
     #[test]
