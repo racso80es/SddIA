@@ -1,0 +1,9 @@
+{
+  "feature_name": "kalma2-llm-live",
+  "branch_name": "feat/kalma2-llm-live",
+  "persist_ref": "docs/features/kalma2-llm-live",
+  "base_branch": "main",
+  "refined_requirements": "Feature S+ Grade: streaming SSE Kalma2↔LLM, abstracción mayeuta-llm (Rust) sobre prótesis Python kalma2-agent-runtime-cursor.py (Foso Biológico / dual-mode chat-stream + AGENT_PHASE), enrutamiento determinista /api/chat vs /api/execute sin CLASSIFY_INTENT como aduana. Laudos L-EP L-CI L-SK L-FILE L-SF L-STOP. AC1–AC5 en PBI v2.2.0. Depende de kalma2-full-cycle APTO. No reabrir ECST/TQM. Primera acción = estabilización Mayeuta + diseño Dedalo + forja Tekton.",
+  "pbi_ref": "docs/todos/pending/[FEATURE] kalma2-llm-live — ejecución real Cursor desde Kalma2 (f0f1b1ec).md",
+  "document_id": "PBI-KALMA2-LLM-LIVE-V2"
+}

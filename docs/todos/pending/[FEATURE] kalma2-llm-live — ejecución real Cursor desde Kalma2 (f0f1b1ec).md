@@ -1,134 +1,151 @@
 ---
-document_id: PBI-KALMA2-LLM-LIVE
+document_id: PBI-KALMA2-LLM-LIVE-V2
 uuid: f0f1b1ec-4b79-47c6-85e2-a0ac2ca3164b
-title: "[FEATURE] kalma2-llm-live — ejecución real de LLM/agentes Cursor desde Kalma2"
+title: "[FEATURE] kalma2-llm-live — Interacción S+ Grade y Prótesis de Ejecución"
 format: markdown
-version: "1.0.0"
+version: "2.3.0"
 created: "2026-07-20"
-status: "abierto"
+refined: "2026-07-20"
+status: "especificacion-blindada"
 priority: alta
 process: feature
 suggested_feature_name: kalma2-llm-live
 suggested_branch: feat/kalma2-llm-live
 depends_on:
   - docs/features/kalma2-full-cycle
-  - docs/features/kalma2-mayeuta-llm-router
+baseline_delivered:
   - docs/features/kalma2-event-bus-integration
+  - docs/features/kalma2-mayeuta-llm-router
+  - docs/features/kalma2-process-dispatch
 related:
+  - SddIA/skills/mayeuta-llm/
+  - SddIA/interfaces/kalma2-bridge/
   - SddIA/scripts/tools/kalma2-agent-runtime-cursor.py
-  - SddIA/skills/mayeuta-llm/src/main.rs
-  - SddIA/engine/execute-process/src/engine/agent_runtime.rs
+  - SddIA/scripts/tools/kalma2-agent-runtime-cursor.sh
   - interfaces/kalma2/
   - .dev/.env.example
+  - docs/features/kalma2-llm-live/
 inherited_from: docs/todos/done/[FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre (527007fa).md
+supersedes: "v2.2.0 — amplía backlog de tramos aún smoke/soft (inferencia, agent live, SQLite→IDE, AC2, cierre)"
 evidence:
-  - "Bóveda activada 2026-07-20 (SDDIA_AGENT_RUNTIME_* + SDDIA_LLM_CLI_COMMAND) — no versionable (.gitignore)"
-  - "Host lab: cursor-agent ausente de PATH → soft awaiting_agents"
+  - "2026-07-20 feat/kalma2-llm-live: /api/chat SSE + /api/execute + STREAM + prótesis SQLite (lab DB temp) + UI dual"
+  - "Host: cursor-agent ausente → chat sqlite-ack; fases agent awaiting_agents"
+  - "Insert SQLite ≠ disparo del agente IDE Cursor"
 ---
 
-# [FEATURE] kalma2-llm-live — ejecución real de LLM/agentes Cursor desde Kalma2
+# [FEATURE] kalma2-llm-live — Interacción S+ Grade y Prótesis de Ejecución (v2.3)
 
 ## Estado
 
-**v1.0.0 abierto.** Tras `kalma2-full-cycle` (APTO + PR #122) y activación en bóveda local, faltan eslabones de **instancia/host** y endurecimiento para que Kalma2 ejecute LLM y fases de agentes de forma real (no mock / no soft-await).
+**v2.3.0 — Especificación Blindada + backlog de cierre live.** Depende de `kalma2-full-cycle` (A+B+C APTO). Rama activa: `feat/kalma2-llm-live`.
 
-## Ya entregado (no reabrir)
+### Ya forjado (no reabrir como diseño)
 
-| Capacidad | Dónde |
-|-----------|--------|
-| Emisión EDA + poll status + `cycle_phase` | kalma2-event-bus-integration · kalma2-full-cycle A |
-| Hook `SDDIA_AGENT_RUNTIME_COMMAND` | `agent_runtime.rs` |
-| Wrapper Cursor CLI/SDK/mock | `kalma2-agent-runtime-cursor.{sh,py}` |
-| `pbi_body` en despacho | TQM + workspace_init |
-| Claves en bóveda local | `.dev/.env` + `.SddIA/.dev/.env` (ignoradas por git) |
+| Tramo | Evidencia |
+|-------|-----------|
+| `/api/chat` SSE + watchdog + `System_Fracture_Detected` | bridge + smoke |
+| `/api/execute` → `Kalma2_Process_Requested` | bridge + kalma2 `mode=execute` |
+| `mayeuta-llm` STREAM → subproceso Python | skill + smoke |
+| Dual-mode `.py` (`CHAT_STREAM` + `AGENT_PHASE`) | smoke MOCK + DB temp |
+| UI Chat / Forjar Proceso | `interfaces/kalma2/` |
+| Prótesis SQLite (insert `composerData` + bubbles + headers) | lab en DB temporal |
 
-## Huecos para ejecución real (checklist)
+## 1. Clarificación Estratégica (Filtro B — Táctica del Refugio)
 
-### H1 — Binario Cursor CLI en el host
+- **Aislamiento paramétrico (Foso Biológico):** SddIA desconoce Cursor. SQLite / CLI / SDK viven solo en la prótesis Python. Core Rust puro.
+- **Jurisdicción de enrutamiento:** Enrutamiento determinista = aduana `kalma2-bridge` + UI (sin `CLASSIFY_INTENT` como aduana).
 
-| Ítem | Detalle |
-|------|---------|
-| Síntoma | `cursor-agent` no está en PATH → wrapper responde `awaiting_agents` |
-| Acción | Instalar CLI Cursor Agent **o** fijar ruta absoluta en bóveda: `SDDIA_AGENT_RUNTIME_CLI=/ruta/cursor-agent --print` y `SDDIA_LLM_CLI_COMMAND=…` |
-| Criterio | `command -v` / exec del CLI con prompt corto → stdout no vacío |
+### 1.1 Laudos (compactos + ampliación v2.3)
 
-### H2 — Chat Kalma2 con LLM (mayeuta-llm)
+| ID | Norma |
+|----|--------|
+| **L-EP** | `/api/chat` SSE + `/api/execute`; `/api/interact` compat/deprecado. |
+| **L-CI** | Sin `CLASSIFY_INTENT` como aduana. |
+| **L-SK** | Evolucionar `mayeuta-llm` (STREAM ya forjado). |
+| **L-FILE** | Dual-mode chat-stream + AGENT_PHASE. |
+| **L-SF** | Fractura SSE/prótesis vía `System_Fracture_Detected`. |
+| **L-STOP** | UI no mezcla Chat y Forjar en la misma petición. |
+| **L-INF** | Inferencia de tokens de chat = `SDDIA_LLM_INFER_COMMAND` \| `SDDIA_AGENT_RUNTIME_CLI` (nunca reentrar en el `.py` prótesis). Sin binario → **prohibido** declarar chat live; solo `sqlite-ack` / mock explícito. |
+| **L-IDE** | Insertar en `state.vscdb` **no implica** disparar el agente del IDE. Disparo live = CLI/SDK (o mecanismo documentado de instancia). SQLite = persistencia/continuabilidad, no oráculo. |
+| **L-WAL** | Escritura en DB live con Cursor abierto es contención WAL; lab debe usar copia (`SDDIA_CURSOR_VSCDB`) o Cursor cerrado. Smoke en DB temp ≠ validación live. |
 
-| Ítem | Detalle |
-|------|---------|
-| Camino | `POST /api/interact` sin intent execute → Skill `mayeuta-llm` → `SDDIA_LLM_CLI_COMMAND` |
-| Hueco | Mismo CLI ausente; sin él la UI marca `[degradado]` (fallback determinista) |
-| Acción | Misma instalación H1; smoke chat en Kalma2 sin prefijo «inicia fix» |
-| Criterio | Envelope `degraded≠true` y respuesta no-determinista |
+## 2. Objetivos S+ Grade
 
-### H3 — Fases agent: live tras despacho execute
+1. Streaming SSE con watchdog.
+2. Abstracción Rust → Python (coste cero ante LLM soberano).
+3. Enrutamiento físico Chat vs Proceso.
+4. **(v2.3)** Circuito **live** Kalma2↔Cursor: inferencia real, fases agent ejecutadas, SQLite validada fuera de mock, AC2 y cierre documental.
 
-| Ítem | Detalle |
-|------|---------|
-| Camino | Kalma2 execute → TQM → hijo `bug-fix`/`feature` → fases Dedalo/Tekton/Argos → `agent-runtime` → wrapper Cursor |
-| Hueco | Depende de H1 (o H4 SDK); reiniciar `kalma2-bridge` / ecosistema tras cambiar bóveda |
-| Acción | Prompt fix con PBI; verificar `_agent_handoff.md` con `backend: cli` y `status: executed`; artefactos bajo `persist_ref` |
-| Criterio | `cycle_phase=completed` (sin `simulated`) o al menos fases `executed` con transcript |
+## 3. Huecos smoke / soft / incompleto (backlog obligatorio)
 
-### H4 — Backend SDK (alternativa a CLI)
+Estos puntos **bloquean** declarar Done / `validacion.md` APTO global salvo laudo Racso de alcance reducido.
 
-| Ítem | Detalle |
-|------|---------|
-| Acción | `pip install cursor-sdk`; bóveda: `SDDIA_AGENT_RUNTIME_BACKEND=sdk` + `CURSOR_API_KEY` + `SDDIA_AGENT_RUNTIME_MODEL` |
-| Criterio | AGENT_PHASE vía SDK → `executed` en host sin `cursor-agent` |
+| ID | Hueco | Síntoma actual | Acción | Criterio de salida |
+|----|-------|----------------|--------|-------------------|
+| **S1** | Inferencia LLM en chat | Sin `cursor-agent` / `SDDIA_LLM_INFER_COMMAND` → backend `sqlite-ack` | Instalar CLI o fijar `SDDIA_LLM_INFER_COMMAND` / `SDDIA_AGENT_RUNTIME_CLI` en bóveda; smoke chat sin MOCK | Tokens SSE **no** son acuse determinista; `backend≠sqlite-ack` (o telemetría equivalente) |
+| **S2** | `*_MOCK=1` en chat | Eco de palabras; cero SQLite | Lab/CI puede mockear; **producción/demo live** exige `SDDIA_LLM_CHAT_MOCK` y `SDDIA_AGENT_RUNTIME_MOCK` unset | Chat live documentado sin flags mock |
+| **S3** | Fases agent soft | `cursor-agent` ausente → `awaiting_agents` | Misma bóveda que S1; reiniciar runtime/bridge; smoke `bug-fix`/`feature` desde `/api/execute` hasta fases `executed` o handoff con `backend: cli\|sdk` | PEC/`cycle_phase` honestos; no solo `awaiting_agents` por CLI missing |
+| **S4** | SQLite ≠ disparo IDE | Insert deja conversación; el IDE no responde solo | Documentar L-IDE; opcional: runbook «abrir composer en Cursor»; **no** vender insert como chat autónomo del IDE | Spec/runbook + AC explícito: persistencia verificada en `state.vscdb` (copia o live bajo L-WAL) con keys legibles |
+| **S5** | AC2 formal | Kill prótesis no E2E automatizado | Script/lab: `kill -9` hijo durante `/api/chat` → canal cerrado + evento en `.events/pending` | AC2 verificado con evidencia en `execution.md` / `validacion.md` |
+| **S6** | Cierre documental/PR | Sin `validacion.md` APTO ni PBI en `done/` | Completar Argos + mover PBI en la **misma** rama; `delivery-close-cycle` / PR | Done = un PR + `pbi_archived: true` |
 
-### H5 — Timeout LLM / runtime
+## 4. Especificación Técnica y Hitos
 
-| Ítem | Detalle |
-|------|---------|
-| Deuda heredada | `SDDIA_LLM_CLI_TIMEOUT_SECS` documentado pero **no** implementado en `mayeuta-llm` (wait bloqueante) |
-| Acción | Implementar timeout en Skill mayeuta-llm; alinear con `SDDIA_AGENT_RUNTIME_TIMEOUT_SECS` del wrapper |
-| Criterio | CLI colgado no bloquea el bridge más allá del timeout |
+### Entregados (Hitos 1–4 base)
 
-### H6 — Propagación de bóveda en procesos hijos
+Hitos 1–4 de v2.2: puente SSE, wrapper STREAM, prótesis dual-mode + SQLite lab, aduana UI — **forjados**; quedan S1–S6.
 
-| Ítem | Detalle |
-|------|---------|
-| Hecho | `execute-process` llama `load_hierarchical_env` al arrancar |
-| Verificar | Tras `start-sddia` / bridge, el hijo ve `SDDIA_AGENT_RUNTIME_COMMAND` y el CLI |
-| Riesgo | Bridge arrancado fuera de `sddia-run`/`start-sddia` sin env cargado en el padre (el hijo sí recarga bóveda — validar empíricamente) |
+### Hito 5 — Inferencia live (cierra S1/S2)
 
-### H7 — Sistema Nervioso operativo
+- Cablear bóveda: `SDDIA_LLM_INFER_COMMAND` o CLI agent.
+- Prohibir mock en checklist de aceptación live.
+- Telemetría de backend en cola SSE o log de prótesis (`cli` \| `sdk` \| `sqlite-ack`).
 
-| Ítem | Detalle |
-|------|---------|
-| Requisito | `event-watcher` (y daemons asociados) activos para consumir `Kalma2_Process_Requested` |
-| Criterio | Evento no queda huérfano en pending; TQM corre; status UI avanza |
+### Hito 6 — Agent runtime live (cierra S3)
 
-### H8 — Cierre de ciclo de negocio (post-agentes)
+- Verificar `SDDIA_AGENT_RUNTIME_COMMAND` → `.py` AGENT_PHASE con CLI/SDK real.
+- E2E: Forjar Proceso desde Kalma2 → evento → TQM → hijo → al menos una fase `executed` (o handoff auditable no-soft por ausencia de binario).
 
-| Ítem | Detalle |
-|------|---------|
-| Contexto | L2 process-dispatch sigue skip archive/delivery salvo `SDDIA_TQM_FULL_CYCLE=1` |
-| Acción | Solo tras H3 estable: valorar full-cycle o que agentes dejen artefactos listos y un operador/Argos cierre |
-| Criterio | Definir laudo: ¿Kalma2 debe abrir PR solo o hasta `initialized`+agentes? |
+### Hito 7 — SQLite live bajo L-WAL/L-IDE (cierra S4)
 
-### H9 — (Opcional) Evento EDA de handoff B2
+- Smoke contra copia de `state.vscdb` **o** DB live con Cursor cerrado.
+- Verificar `composerData:` + `bubbleId:` + entrada en `composer.composerHeaders`.
+- Runbook: límites (no auto-disparo IDE).
 
-| Ítem | Detalle |
-|------|---------|
-| Alcance | `Process_Agent_Handoff_Requested` + cola IDE — no bloquea LLM live mínimo |
-| Ref | open_debt de kalma2-full-cycle |
+### Hito 8 — AC2 + cierre (cierra S5/S6)
 
-## Fuera de alcance
+- Prueba kill formal.
+- `validacion.md` APTO, PBI → `docs/todos/done/`, PR único.
 
-- Re-forjar aduana bridge / emisión ECST (ya APTO).
-- Remediación de fracturas daemon (`*-watcher`) salvo como smoke de H7.
-- Versionar secretos o `.dev/.env` / `.SddIA/.dev/.env` (gitignore).
+## 5. Plan de Acción (línea de montaje)
 
-## Objetivo medible
+- [x] **Fase 1–4 (base):** bridge SSE/execute, mayeuta STREAM, prótesis dual+SQLite lab, UI dual — en `feat/kalma2-llm-live`.
+- [ ] **Fase 5:** S1+S2 — inferencia live; bóveda sin mock en demo.
+- [ ] **Fase 6:** S3 — agent phases live desde Kalma2 execute.
+- [ ] **Fase 7:** S4 — validación SQLite (copia/live) + runbook L-IDE/L-WAL.
+- [ ] **Fase 8:** S5+S6 — AC2 E2E + Argos + cierre documental/PR.
 
-Desde Kalma2 en `127.0.0.1:8765`:
+## 6. Criterios de Aceptación (Validación Rúnica)
 
-1. **Chat:** respuesta LLM no degradada.
-2. **Execute:** proceso allowlist encola, agentes Cursor ejecutan fases, status honesto (`awaiting_agents` solo si runtime espera; `completed` solo con trabajo real).
-3. Runbook de instancia documentado (instalación CLI o SDK + reinicio servicios).
+| ID | Criterio |
+|----|----------|
+| **AC1** | SSE tokens desde stdout Python (lab o live). |
+| **AC2** | `kill -9` prótesis → cierre limpio + `System_Fracture_Detected` (evidencia formal). |
+| **AC3** | Proceso UI → `/api/execute` → orquestación async (no texto libre). |
+| **AC4** | Purga del `.py` → `cargo build --release` Core OK. |
+| **AC5** | AGENT_PHASE JSON válido post-CHAT_STREAM (no regresión B). |
+| **AC6** | Chat live: inferencia ≠ `sqlite-ack` / mock (S1/S2). |
+| **AC7** | Execute live: al menos una fase agent no-soft por CLI missing (S3). |
+| **AC8** | SQLite: keys `composerData`/`bubbleId` verificadas en DB de prueba o live bajo L-WAL; runbook L-IDE presente (S4). |
+| **AC9** | `validacion.md` global APTO + PBI archivado en el mismo PR (S6). |
 
-## Mandato
+## 7. Fuera de alcance
 
-Forjar feature `kalma2-llm-live` (o bug-fix operativo de instancia) cerrando H1–H7 como mínimo; H8/H9 con laudo Racso.
+- Re-forjar ECST/TQM / event-bus.
+- Hacer que el insert SQLite **dispare** autónomamente el agente UI de Cursor (salvo nuevo laudo; contradice L-IDE).
+- LLM local soberano (solo contrato a coste cero).
+- Versionar secretos / `.dev/.env`.
+
+## 8. Mandato
+
+Cerrar S1–S6 en `feat/kalma2-llm-live` bajo L-EP…L-WAL. Done = un PR mergeado en main + `validacion.md` APTO (`pbi_archived: true`) + PBI en `docs/todos/done/`.
