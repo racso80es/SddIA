@@ -18,14 +18,21 @@ process: feature
 
 | Comando | Resultado |
 |---------|-----------|
-| `cargo test -p execute-process derive_` | 5/5 OK (4 derive + 1 slug filter noise ok) |
-| `cargo test -p kalma2-bridge project_status` | 4/4 OK |
+| `cargo test -p execute-process derive_` | OK |
+| `cargo test -p kalma2-bridge project_status` | OK |
 | `cargo build -p execute-process -p kalma2-bridge` | OK |
+
+## Verificación Slice B
+
+| Comando | Resultado |
+|---------|-----------|
+| `cargo test -p execute-process agent_runtime` | 3/3 OK |
+| `cargo build -p execute-process` | OK |
 
 ## Deudas abiertas
 
 | ID | Nota |
 |----|------|
-| B | Runtime Dedalo/Tekton/Argos post-init |
+| B-wrapper | Comando físico Cursor/Agent en bóveda operador |
 | C | Consumo cuerpo `pbi_ref` → `pbi_body` |
-| Validacion Argos formal | Pendiente cuando se priorice cierre de A o A+B |
+| Validacion Argos formal | Pendiente cierre A+B parcial o full |

@@ -35,7 +35,7 @@ inherited_debt:
   - R1-status-completed-semantico
 progress:
   slice_A: forjado
-  slice_B: documentado
+  slice_B: forjado_hook
   slice_C: documentado
 ---
 
@@ -46,7 +46,8 @@ progress:
 **v1.0.0 en curso** en rama `feat/kalma2-full-cycle` (`execution_id` init `956100c7-…`).
 
 - **Slice A (semántica status):** forjado — PEC `cycle_phase` + proyección UI `initialized`/`awaiting_agents`.
-- **Slices B/C:** contrato en `docs/features/kalma2-full-cycle/spec.md`; forja pendiente.
+- **Slice B (runtime agentes):** hook nativo `SDDIA_AGENT_RUNTIME_COMMAND` + fases `agent:` → `agent-runtime`. Wrapper Cursor/SDK = configuración de instancia.
+- **Slice C:** contrato en spec; forja pendiente.
 
 ## Síntoma (expectativa vs resultado)
 

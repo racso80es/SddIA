@@ -1,4 +1,5 @@
 pub mod actions;
+pub mod agent_runtime;
 pub mod capsule_invoke_smoke;
 pub mod capsule_paths;
 pub mod capsules;

@@ -19,8 +19,9 @@ process: feature
 ### Fase B — Runtime agentes (contrato ahora; forja incremental)
 
 - [x] Documentar env / evento handoff en `spec.md` (hecho en spec §3)
-- [ ] Stub o issue de seguimiento: no bloquear APTO de A
-- [ ] Futuro: invocación real post-init → fases `executed`
+- [x] Hook nativo `agent_runtime` + tests mock CLI
+- [ ] Wrapper instancia Cursor Agent / SDK (comando en bóveda)
+- [ ] Futuro opcional: evento `Process_Agent_Handoff_Requested` (B2)
 
 ### Fase C — pbi_body (diferible)
 

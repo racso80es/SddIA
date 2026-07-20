@@ -130,8 +130,18 @@ fn execute_phase(
     }
 
     if delegates_are_only_agents(&delegates) {
+        if super::agent_runtime::is_configured() {
+            return super::agent_runtime::invoke_agent_phase(
+                repo,
+                process_name,
+                phase_name,
+                &delegates,
+                inputs,
+                state,
+            );
+        }
         entry["status"] = json!("simulated");
-        entry["note"] = json!("agentes IDE; sin handler físico en laboratorio");
+        entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");
         return entry;
     }
 
@@ -234,7 +244,11 @@ pub fn run_generic(
     }
 
     let blocked = false;
-    let status_code = if blocked { 1 } else { 0 };
+    let phase_failed = phase_reports
+        .iter()
+        .any(|p| p.get("status") == Some(&json!("failed")));
+    let success = !blocked && !phase_failed;
+    let status_code = if success { 0 } else { 1 };
     let duration_ms = toll_start
         .map(|t| t.elapsed().as_millis() as i64)
         .unwrap_or(0);
@@ -247,16 +261,20 @@ pub fn run_generic(
             &inputs_mut,
             status_code,
             duration_ms,
-            !blocked,
+            success,
         );
         data["thermodynamic_toll"] = toll;
     }
 
     Ok(OrchestratorEnvelope {
-        success: !blocked,
+        success,
         status_code,
         data: Some(data),
-        error: None,
+        error: if phase_failed {
+            Some("una o más fases fallaron (incl. agent-runtime)".into())
+        } else {
+            None
+        },
         execution_report: Some(json!({
             "process_name": process_name,
             "phases": phase_reports,

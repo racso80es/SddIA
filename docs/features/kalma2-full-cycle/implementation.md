@@ -6,28 +6,32 @@ items:
   - thermodynamic.rs cycle_phase
   - kalma2-bridge project_status
   - interfaces/kalma2 app.js + style.css
+  - agent_runtime.rs SDDIA_AGENT_RUNTIME_COMMAND
+  - executor.rs + residual_runner.rs wire
 ---
 
 # Implementation — kalma2-full-cycle
 
-## Touchpoints (Slice A — forjado)
+## Touchpoints Slice A
 
 | # | Path | Cambio |
 |---|------|--------|
-| 1 | `SddIA/engine/execute-process/src/engine/thermodynamic.rs` | `derive_cycle_phase` + emisión `cycle_phase` en PEC |
-| 2 | `SddIA/interfaces/kalma2-bridge/src/main.rs` | `project_status` mapea `initialized` / `awaiting_agents`; orch expone `cycle_phase` |
-| 3 | `interfaces/kalma2/app.js` | Poll terminal también en `initialized` / `awaiting_agents` |
-| 4 | `interfaces/kalma2/style.css` | Colores status nuevos |
+| 1 | `thermodynamic.rs` | `derive_cycle_phase` + PEC |
+| 2 | `kalma2-bridge` | `project_status` + orch.cycle_phase |
+| 3–4 | `app.js` / `style.css` | Terminales UI |
 
-## Decisiones de forja
+## Touchpoints Slice B
 
-- L3 compat: PEC sin `cycle_phase` → UI `completed`.
-- L4: no se derogó L2 de process-dispatch en esta entrega.
-- Slices B/C: contrato en `spec.md`; forja diferida (deuda explícita).
+| # | Path | Cambio |
+|---|------|--------|
+| 5 | `engine/agent_runtime.rs` | CLI `SDDIA_AGENT_RUNTIME_COMMAND` · op `AGENT_PHASE` |
+| 6 | `executor.rs` | Fases solo-agent → runtime si configurado; fallo de fase → envelope fail |
+| 7 | `residual_runner.rs` | Misma aduana agent-runtime |
+| 8 | `.dev/.env.example` | Documenta env |
 
 ## Pendiente
 
 | Slice | Estado |
 |-------|--------|
-| B runtime agentes | Documentado; sin invocación física aún |
-| C `pbi_body` | Documentado; sin lectura FS en TQM aún |
+| B wrapper Cursor/Agent SDK real | Fuera: contrato + hook nativo listos; comando instancia |
+| C `pbi_body` | Diferido |

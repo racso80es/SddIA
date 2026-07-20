@@ -58,14 +58,40 @@ Otros procesos: omitir `cycle_phase` o `completed` (status bridge legacy).
 
 UI: poll termina también en `initialized` y `awaiting_agents` (estados terminales mientras no exista runtime B que avance el ciclo).
 
-## 3. Slice B — contrato (no forja completa obligatoria en v1)
+## 3. Slice B — runtime de agentes
 
 | Elemento | Contrato |
 |----------|----------|
-| Trigger | Tras `workspace-init` executed en hijo Kalma2 |
-| Invocación | Extensión futura: env `SDDIA_AGENT_RUNTIME_COMMAND` o evento `Process_Agent_Handoff_Requested` |
-| Éxito de negocio | Fases agente `executed` → `cycle_phase=completed` |
-| Sin runtime | Mantener `simulated` → `initialized` (A) |
+| Trigger | Fase con `delegates_to` solo `agent:*` tras init |
+| Env | `SDDIA_AGENT_RUNTIME_COMMAND` (bóveda `.dev/.env`) |
+| I/O | JSON stdin `operation=AGENT_PHASE` → última línea JSON stdout |
+| Status fase | `executed` \| `awaiting_agents` \| `failed` |
+| Sin env | `simulated` → `cycle_phase=initialized` (slice A) |
+| Fallo fase | Envelope hijo `success=false` (no PEC success engañoso) |
+
+### Payload stdin (AGENT_PHASE)
+
+```json
+{
+  "operation": "AGENT_PHASE",
+  "process_name": "bug-fix",
+  "phase_name": "Diseño del fix",
+  "agents": ["dedalo"],
+  "persist_ref": "docs/fixes/…",
+  "branch_name": "fix/…",
+  "correlation_id": "<uuid>",
+  "pbi_ref": "docs/todos/pending/….md",
+  "inputs": {},
+  "workspace_path": null,
+  "repo_root": "/abs/path"
+}
+```
+
+### Respuesta stdout
+
+```json
+{"success": true, "data": {"status": "executed", "message": "spec.md materializado"}}
+```
 
 ## 4. Slice C — contrato
 
@@ -94,4 +120,8 @@ UI: poll termina también en `initialized` y `awaiting_agents` (estados terminal
 | AC-A4 | PEC legacy sin `cycle_phase` → `completed` (compat) |
 | AC-A5 | Tests unitarios bridge + derivación thermodynamic |
 | AC-B0 | `spec`/`plan` documentan contrato runtime B (esta entrega) |
+| AC-B1 | Con `SDDIA_AGENT_RUNTIME_COMMAND`, fase `agent:` → `handler=agent-runtime` (no `simulated`) |
+| AC-B2 | CLI mock `status=executed` → fase `executed`; `awaiting_agents` → fase `awaiting_agents` |
+| AC-B3 | Sin env → sigue `simulated` (compat A) |
+| AC-B4 | Fase `failed` → envelope hijo `success=false` |
 | AC-C0 | `spec`/`plan` documentan consumo `pbi_body` (forja C diferible) |

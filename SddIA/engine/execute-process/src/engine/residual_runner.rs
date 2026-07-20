@@ -553,8 +553,18 @@ fn execute_phase(
     }
 
     if delegates_are_only_agents(&delegates) {
+        if super::agent_runtime::is_configured() {
+            return super::agent_runtime::invoke_agent_phase(
+                repo,
+                process_name,
+                phase_name,
+                &delegates,
+                inputs,
+                state,
+            );
+        }
         entry["status"] = json!("simulated");
-        entry["note"] = json!("agentes IDE; sin handler físico en laboratorio");
+        entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");
         return entry;
     }
 
