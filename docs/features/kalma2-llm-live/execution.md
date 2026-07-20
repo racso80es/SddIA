@@ -27,15 +27,16 @@ process: feature
 | S1/S2 smoke `kalma2-chat-infer-smoke.sh` | lab infer `backend=cli` + REQUIRE_INFER fail OK |
 | S3 smoke `kalma2-agent-phase-smoke.sh` | MOCK/LAB_AUTO executed + REQUIRE_CLI→failed |
 | S4 smoke `kalma2-sqlite-smoke.sh` | composerData + bubbles + headers (AC8) |
-| AGENT_PHASE MOCK=1 | envelope JSON `executed` |
+| S5 smoke `kalma2-sse-fracture-smoke.sh` | watchdog → `System_Fracture_Detected` |
+| Argos `validacion.md` | **APTO** lab · deuda `cursor-agent` host |
 
 ## Pendiente live host
 
 | Ítem | Nota |
 |------|------|
 | S1/S3 live | Instalar `cursor-agent` |
-| S4 live | Copia/live DB con Cursor cerrado (`runbook-sqlite.md`) |
-| S5–S6 | AC2 kill, validacion/PR |
+| S4 live | Cursor cerrado + DB real |
+| PR merge | delivery-close / `gh pr create` |
 | mayeuta-llm STREAM → Python | tokens OK |
 | `POST /api/chat` SSE | frames `data:` |
 | `POST /api/execute` | `emitted` + `event_id` |

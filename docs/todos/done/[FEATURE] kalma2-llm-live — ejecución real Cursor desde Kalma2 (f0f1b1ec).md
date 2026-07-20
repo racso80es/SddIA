@@ -6,7 +6,7 @@ format: markdown
 version: "2.3.0"
 created: "2026-07-20"
 refined: "2026-07-20"
-status: "especificacion-blindada"
+status: "cerrado-en-rama"
 priority: alta
 process: feature
 suggested_feature_name: kalma2-llm-live
@@ -123,7 +123,8 @@ Hitos 1–4 de v2.2: puente SSE, wrapper STREAM, prótesis dual-mode + SQLite la
 - [x] **Fase 5a (cableado S1/S2):** meta `[kalma2-meta]`, `SDDIA_LLM_REQUIRE_INFER`, autodetect `~/.local/bin`, smoke lab + runbook-infer. **Pendiente 5b:** CLI Cursor instalado en host → tokens live.
 - [x] **Fase 6a (cableado S3):** PATH/`REQUIRE_CLI`, smoke AGENT_PHASE + runbook-agent. **Pendiente 6b:** `cursor-agent` en host + E2E Kalma2→TQM→fase `executed`.
 - [x] **Fase 7a (S4):** runbook-sqlite (L-IDE/L-WAL) + `kalma2-sqlite-smoke.sh` (schema/copia). **Pendiente 7b:** validación operador en DB live con Cursor cerrado.
-- [ ] **Fase 8:** S5+S6 — AC2 E2E + Argos + cierre documental/PR.
+- [x] **Fase 8a:** S5 AC2 watchdog smoke + Argos validacion APTO (lab).
+- [ ] **Fase 8b:** PR merge + host cursor-agent live (deuda).
 
 ## 6. Criterios de Aceptación (Validación Rúnica)
 
