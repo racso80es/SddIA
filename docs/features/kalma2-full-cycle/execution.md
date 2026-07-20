@@ -28,11 +28,18 @@ process: feature
 |---------|-----------|
 | `cargo test -p execute-process agent_runtime` | 3/3 OK |
 | `cargo build -p execute-process` | OK |
+| Smoke `kalma2-agent-runtime-lab.sh` | `awaiting_agents` + `_agent_handoff.md` |
+
+## Verificación Slice C
+
+| Comando | Resultado |
+|---------|-----------|
+| `cargo test -p execute-process load_pbi_body` | 1/1 OK |
+| `cargo test -p execute-process build_bug_fix` | 1/1 OK |
 
 ## Deudas abiertas
 
 | ID | Nota |
 |----|------|
-| B-wrapper | Comando físico Cursor/Agent en bóveda operador |
-| C | Consumo cuerpo `pbi_ref` → `pbi_body` |
-| Validacion Argos formal | Pendiente cierre A+B parcial o full |
+| B-prod | Comando Cursor/Agent SDK en bóveda operador |
+| Validacion Argos | Pendiente cierre documental / PR |

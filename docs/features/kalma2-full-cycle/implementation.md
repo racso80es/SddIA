@@ -7,31 +7,39 @@ items:
   - kalma2-bridge project_status
   - interfaces/kalma2 app.js + style.css
   - agent_runtime.rs SDDIA_AGENT_RUNTIME_COMMAND
-  - executor.rs + residual_runner.rs wire
+  - kalma2-agent-runtime-lab.sh
+  - task_queue_manager pbi_body
+  - workspace_init pbi_body / pbi_ref
 ---
 
 # Implementation — kalma2-full-cycle
 
-## Touchpoints Slice A
+## Slice A
 
-| # | Path | Cambio |
-|---|------|--------|
-| 1 | `thermodynamic.rs` | `derive_cycle_phase` + PEC |
-| 2 | `kalma2-bridge` | `project_status` + orch.cycle_phase |
-| 3–4 | `app.js` / `style.css` | Terminales UI |
+| Path | Cambio |
+|------|--------|
+| `thermodynamic.rs` | `cycle_phase` en PEC |
+| `kalma2-bridge` + UI | `initialized` / `awaiting_agents` |
 
-## Touchpoints Slice B
+## Slice B
 
-| # | Path | Cambio |
-|---|------|--------|
-| 5 | `engine/agent_runtime.rs` | CLI `SDDIA_AGENT_RUNTIME_COMMAND` · op `AGENT_PHASE` |
-| 6 | `executor.rs` | Fases solo-agent → runtime si configurado; fallo de fase → envelope fail |
-| 7 | `residual_runner.rs` | Misma aduana agent-runtime |
-| 8 | `.dev/.env.example` | Documenta env |
+| Path | Cambio |
+|------|--------|
+| `agent_runtime.rs` | Hook CLI `AGENT_PHASE` |
+| `executor.rs` / `residual_runner.rs` | Wire + fail envelope |
+| `scripts/tools/kalma2-agent-runtime-lab.sh` | Wrapper lab (handoff + awaiting_agents) |
+
+## Slice C
+
+| Path | Cambio |
+|------|--------|
+| `handlers/task_queue_manager.rs` | `load_pbi_body` + semilla combinada + `pbi_body` |
+| `workspace_init.rs` | Misión desde `pbi_body`; frontmatter `pbi_ref` |
 
 ## Pendiente
 
-| Slice | Estado |
-|-------|--------|
-| B wrapper Cursor/Agent SDK real | Fuera: contrato + hook nativo listos; comando instancia |
-| C `pbi_body` | Diferido |
+| Ítem | Nota |
+|------|------|
+| Wrapper Cursor/SDK producción | Config bóveda; lab script no sustituye agentes V5 |
+| Evento handoff B2 | Opcional |
+| Argos `validacion.md` APTO | Cierre documental feature |

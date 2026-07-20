@@ -93,13 +93,15 @@ UI: poll termina también en `initialized` y `awaiting_agents` (estados terminal
 {"success": true, "data": {"status": "executed", "message": "spec.md materializado"}}
 ```
 
-## 4. Slice C — contrato
+## 4. Slice C — consumo `pbi_body`
 
 | Elemento | Contrato |
 |----------|----------|
-| Input | `pbi_ref` resuelto (ya A′ en process-dispatch) |
-| Enriquecimiento | Leer FS del PBI → `pbi_body` / semilla de `objectives.md` |
-| Momento | Preferible en TQM/`workspace_init` al despachar hijo |
+| Input | `pbi_ref` resuelto (A′ process-dispatch) |
+| Lectura | TQM `load_pbi_body(repo, pbi_ref)` al construir inputs hijo |
+| Campo | `pbi_body` en inputs del hijo + semilla combinada (prompt + PBI) en `bug_summary`/`refined_requirements`/`refactor_goal` |
+| objectives.md | Preferir `pbi_body` como misión; frontmatter incluye `pbi_ref` si existe |
+| Fallo FS | No tumba despacho; omite `pbi_body` |
 
 ## 5. Touchpoints código (Slice A)
 
@@ -124,4 +126,7 @@ UI: poll termina también en `initialized` y `awaiting_agents` (estados terminal
 | AC-B2 | CLI mock `status=executed` → fase `executed`; `awaiting_agents` → fase `awaiting_agents` |
 | AC-B3 | Sin env → sigue `simulated` (compat A) |
 | AC-B4 | Fase `failed` → envelope hijo `success=false` |
-| AC-C0 | `spec`/`plan` documentan consumo `pbi_body` (forja C diferible) |
+| AC-B5 | Wrapper lab `kalma2-agent-runtime-lab.sh` registra `_agent_handoff.md` y responde `awaiting_agents` |
+| AC-C0 | `spec`/`plan` documentan consumo `pbi_body` |
+| AC-C1 | Con PBI en disco, TQM inyecta `pbi_body` y semilla combinada en inputs hijo |
+| AC-C2 | `objectives.md` prioriza `pbi_body` y anota `pbi_ref` en frontmatter |

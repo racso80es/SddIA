@@ -86,7 +86,24 @@ fn resolve_pbi_ref(inputs: &Value, task_text: &str) -> Option<String> {
     extract_pbi_path(task_text)
 }
 
+/// Lee el cuerpo del PBI referenciado (slice C). Fallo FS → None (no tumba despacho).
+pub fn load_pbi_body(repo: &Path, pbi_ref: &str) -> Option<String> {
+    let rel = pbi_ref.trim();
+    if rel.is_empty() || rel.contains("..") {
+        return None;
+    }
+    let path = repo.join(rel);
+    let raw = std::fs::read_to_string(&path).ok()?;
+    let body = raw.trim();
+    if body.is_empty() {
+        None
+    } else {
+        Some(body.to_string())
+    }
+}
+
 fn build_child_inputs(
+    repo: &Path,
     process: &str,
     task_text: &str,
     pbi_ref: Option<&str>,
@@ -99,22 +116,36 @@ fn build_child_inputs(
     }
     if let Some(p) = pbi_ref.filter(|s| !s.is_empty()) {
         map.insert("pbi_ref".into(), json!(p));
+        if let Some(body) = load_pbi_body(repo, p) {
+            map.insert("pbi_body".into(), json!(body));
+        }
     }
     map.insert("base_branch".into(), json!("main"));
 
+    // Semilla de ciclo: preferir cuerpo PBI (misión) y conservar prompt como contexto.
+    let seed = match map.get("pbi_body").and_then(|v| v.as_str()) {
+        Some(body) if !body.is_empty() => format!(
+            "## Prompt operador\n{}\n\n## PBI adjunto (`{}`)\n{}",
+            task_text,
+            pbi_ref.unwrap_or(""),
+            body
+        ),
+        _ => task_text.to_string(),
+    };
+
     match process {
         "bug-fix" => {
-            map.insert("bug_summary".into(), json!(task_text));
+            map.insert("bug_summary".into(), json!(seed));
             map.insert("fix_name".into(), json!(slug.clone()));
             map.insert("branch_name".into(), json!(format!("fix/{slug}")));
         }
         "feature" => {
-            map.insert("refined_requirements".into(), json!(task_text));
+            map.insert("refined_requirements".into(), json!(seed));
             map.insert("feature_name".into(), json!(slug.clone()));
             map.insert("branch_name".into(), json!(format!("feat/{slug}")));
         }
         "refactorization" => {
-            map.insert("refactor_goal".into(), json!(task_text));
+            map.insert("refactor_goal".into(), json!(seed));
             map.insert(
                 "refined_constraints".into(),
                 json!("Despacho Kalma2 vía task-queue-manager; alcance acotado al goal."),
@@ -158,11 +189,13 @@ fn dispatch_child(
         .map(str::trim)
         .filter(|s| !s.is_empty());
     let child_inputs = build_child_inputs(
+        repo,
         process,
         task_text,
         pbi.as_deref(),
         correlation_id,
     )?;
+    let pbi_loaded = child_inputs.get("pbi_body").is_some();
     let extra_env = child_env_for_kalma2(correlation_id);
     let env_refs: Vec<(&str, &str)> = extra_env
         .iter()
@@ -175,7 +208,10 @@ fn dispatch_child(
         .or_else(|| child.get("exit_code"))
         .and_then(|v| v.as_i64())
         .unwrap_or(if ok { 0 } else { 1 }) as i32;
-    let child_data = child.get("data").cloned().unwrap_or(json!({}));
+    let mut child_data = child.get("data").cloned().unwrap_or(json!({}));
+    if let Some(obj) = child_data.as_object_mut() {
+        obj.insert("pbi_body_loaded".into(), json!(pbi_loaded));
+    }
     Ok(OrchestratorEnvelope {
         success: ok && status_code == 0,
         status_code,
@@ -264,15 +300,35 @@ mod tests {
 
     #[test]
     fn build_bug_fix_inputs() {
+        let repo = Path::new(".");
         let v = build_child_inputs(
+            repo,
             "bug-fix",
             "semilla",
             Some("docs/todos/pending/[FIX] x (aabbccddeeff).md"),
             Some("corr-1"),
         )
         .unwrap();
-        assert_eq!(v["bug_summary"], "semilla");
+        // Sin fichero real: seed = prompt; con fichero incluiría pbi_body.
+        assert!(v["bug_summary"].as_str().unwrap().contains("semilla"));
         assert_eq!(v["branch_name"], "fix/aabbccddeeff");
         assert_eq!(v["correlation_id"], "corr-1");
+    }
+
+    #[test]
+    fn load_pbi_body_reads_file() {
+        let dir = std::env::temp_dir().join(format!("sddia-pbi-{}", Uuid::new_v4()));
+        let rel = "docs/todos/pending/[FIX] demo (aabbccddeeff0011).md";
+        let full = dir.join(rel);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, "# PBI demo\n\nCuerpo del defecto.\n").unwrap();
+        let body = load_pbi_body(&dir, rel).expect("body");
+        assert!(body.contains("Cuerpo del defecto"));
+        let v = build_child_inputs(&dir, "bug-fix", "inicia fix", Some(rel), None).unwrap();
+        assert!(v.get("pbi_body").is_some());
+        let summary = v["bug_summary"].as_str().unwrap();
+        assert!(summary.contains("PBI adjunto"));
+        assert!(summary.contains("Cuerpo del defecto"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

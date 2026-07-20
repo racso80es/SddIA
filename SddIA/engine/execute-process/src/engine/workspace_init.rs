@@ -103,12 +103,19 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         .unwrap_or_else(|| format!("{default_docs}/{task_name}"));
 
     let refined = inputs
-        .get("refined_requirements")
+        .get("pbi_body")
+        .or_else(|| inputs.get("refined_requirements"))
         .or_else(|| inputs.get("refactor_goal"))
         .or_else(|| inputs.get("bug_summary"))
         .or_else(|| inputs.get("description"))
         .and_then(|v| v.as_str())
         .unwrap_or("");
+
+    let pbi_ref_meta = inputs
+        .get("pbi_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
 
     let mut git_steps: Vec<Value> = Vec::new();
 
@@ -168,8 +175,11 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         } else {
             refined.trim().to_string()
         };
+        let pbi_line = pbi_ref_meta
+            .map(|p| format!("pbi_ref: {p}\n"))
+            .unwrap_or_default();
         let body = format!(
-            "---\nfeature_name: {task_name}\ncreated: \"{created}\"\nprocess: {process_label}\nbranch_name: {branch_name}\npersist_ref: {persist_ref}\n---\n\n# Objetivos — {task_name}\n\n## Misión\n\n{summary}\n\n## Alcance (manifiesto)\n\nInicialización de contexto vía orquestador nativo `execute-process` (laboratorio).\n\n## Ley aplicada\n\n- Git exclusivamente vía `skill:git-manager`.\n- Jerarquía: Acción → Agente → Skill → Tools.\n"
+            "---\nfeature_name: {task_name}\ncreated: \"{created}\"\nprocess: {process_label}\nbranch_name: {branch_name}\npersist_ref: {persist_ref}\n{pbi_line}---\n\n# Objetivos — {task_name}\n\n## Misión\n\n{summary}\n\n## Alcance (manifiesto)\n\nInicialización de contexto vía orquestador nativo `execute-process` (laboratorio).\n\n## Ley aplicada\n\n- Git exclusivamente vía `skill:git-manager`.\n- Jerarquía: Acción → Agente → Skill → Tools.\n"
         );
         fs::write(&objectives_path, body).map_err(|e| e.to_string())?;
     }

@@ -35,8 +35,8 @@ inherited_debt:
   - R1-status-completed-semantico
 progress:
   slice_A: forjado
-  slice_B: forjado_hook
-  slice_C: documentado
+  slice_B: forjado_hook_y_lab_wrapper
+  slice_C: forjado
 ---
 
 # [FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre
@@ -45,9 +45,9 @@ progress:
 
 **v1.0.0 en curso** en rama `feat/kalma2-full-cycle` (`execution_id` init `956100c7-…`).
 
-- **Slice A (semántica status):** forjado — PEC `cycle_phase` + proyección UI `initialized`/`awaiting_agents`.
-- **Slice B (runtime agentes):** hook nativo `SDDIA_AGENT_RUNTIME_COMMAND` + fases `agent:` → `agent-runtime`. Wrapper Cursor/SDK = configuración de instancia.
-- **Slice C:** contrato en spec; forja pendiente.
+- **Slice A:** forjado — `cycle_phase` + UI honesta.
+- **Slice B:** hook nativo + wrapper lab `kalma2-agent-runtime-lab.sh` (producción Cursor/SDK pendiente en bóveda).
+- **Slice C:** forjado — TQM carga `pbi_body`; `objectives.md` prioriza el PBI.
 
 ## Síntoma (expectativa vs resultado)
 

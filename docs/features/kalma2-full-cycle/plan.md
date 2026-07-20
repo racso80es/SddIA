@@ -20,13 +20,15 @@ process: feature
 
 - [x] Documentar env / evento handoff en `spec.md` (hecho en spec §3)
 - [x] Hook nativo `agent_runtime` + tests mock CLI
-- [ ] Wrapper instancia Cursor Agent / SDK (comando en bóveda)
+- [x] Wrapper lab `SddIA/scripts/tools/kalma2-agent-runtime-lab.sh`
+- [ ] Wrapper producción Cursor Agent / SDK (bóveda operador)
 - [ ] Futuro opcional: evento `Process_Agent_Handoff_Requested` (B2)
 
-### Fase C — pbi_body (diferible)
+### Fase C — pbi_body
 
-- [ ] Lectura FS `pbi_ref` en despacho TQM / workspace-init
-- [ ] Tests path con espacios (reusar A′)
+- [x] Lectura FS `pbi_ref` en despacho TQM
+- [x] `workspace_init` prioriza `pbi_body` + `pbi_ref` en objectives
+- [x] Tests path con espacios / cuerpo en disco
 
 ## Riesgos
 
