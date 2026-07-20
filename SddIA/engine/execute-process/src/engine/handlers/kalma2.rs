@@ -161,6 +161,21 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         ));
     }
 
+    // L-CI / L-EP: mode explícito desde bridge (/api/execute|/api/chat) — sin CLASSIFY_INTENT.
+    let mode = process_inputs
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .unwrap_or("");
+
+    if mode == "execute" {
+        return run_execute_deterministic(repo, prompt, process_inputs);
+    }
+    if mode == "chat" {
+        return run_chat_only(repo, prompt);
+    }
+
+    // Legado /api/interact: CLASSIFY_INTENT degradado a heurística local si CLI falla (no aduana S+).
     let intent_data = classify_intent(repo, prompt).unwrap_or_else(|_| json!({
         "intent": "chat",
         "confidence": 0.0,
@@ -186,57 +201,68 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         .unwrap_or_else(|| json!({}));
 
     if intent == "execute" && confidence >= CONFIDENCE_THRESHOLD {
-        if !allowlisted(&process_name) {
-            let response = format!(
-                "[Tormentosa/Aiúa] Proceso «{process_name}» no autorizado. \
-                 Allowlist: bug-fix, feature, refactorization, task-queue-manager."
-            );
-            return Ok(envelope_response(
-                &response,
-                json!([{
-                    "phase_name": "Enrutamiento",
-                    "status": "rejected",
-                    "handler": "kalma2-interact-core",
-                    "process_name": process_name,
-                }]),
-            ));
-        }
-        let pbi_ref = extract_pbi_ref(prompt, &nested_inputs);
-        let event = build_kalma2_process_event(&process_name, pbi_ref.as_deref(), prompt);
-        let event_id = event
-            .get("event_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        let (_, _, domain_dir) = load_fractal_dirs(repo);
-        let seal = write_fractal_event(repo, &event, &domain_dir)?;
-        let ack = ack_enqueued(&process_name, &event_id);
-        return Ok(envelope_response_with_data(
-            &ack,
-            json!({
-                "emitted": true,
-                "event_type": "Kalma2_Process_Requested",
-                "event_id": event_id,
-                "correlation_id": event_id,
-                "seal": seal,
-            }),
+        return emit_process_event(repo, prompt, &process_name, &nested_inputs, intent, confidence);
+    }
+
+    run_chat_only(repo, prompt)
+}
+
+fn heuristic_process_name(prompt: &str) -> Option<&'static str> {
+    let lower = prompt.to_lowercase();
+    if prompt.contains("[FIX]") || lower.contains("bug-fix") || lower.contains("inicia fix") {
+        Some("bug-fix")
+    } else if prompt.contains("[FEATURE]")
+        || lower.contains("inicia feature")
+        || lower.contains("forjar feature")
+    {
+        Some("feature")
+    } else if lower.contains("refactor") {
+        Some("refactorization")
+    } else {
+        None
+    }
+}
+
+fn run_execute_deterministic(
+    repo: &Path,
+    prompt: &str,
+    process_inputs: &Value,
+) -> Result<OrchestratorEnvelope, String> {
+    let process_name = process_inputs
+        .get("process")
+        .or_else(|| process_inputs.get("process_name"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| heuristic_process_name(prompt).map(str::to_string))
+        .unwrap_or_default();
+
+    if process_name.is_empty() || !allowlisted(&process_name) {
+        let response = format!(
+            "[Tormentosa/Aiúa] Proceso no determinado o no autorizado («{process_name}»). \
+             Indica process en el payload o palabras clave allowlist: bug-fix, feature, refactorization."
+        );
+        return Ok(envelope_response(
+            &response,
             json!([{
-                "phase_name": "Clasificación",
-                "status": "executed",
-                "handler": "mayeuta-llm",
-                "intent": intent,
-                "process_name": process_name,
-                "confidence": confidence,
-            }, {
                 "phase_name": "Enrutamiento",
-                "status": "executed",
+                "status": "rejected",
                 "handler": "kalma2-interact-core",
-                "emitted": true,
-                "event_type": "Kalma2_Process_Requested",
+                "mode": "execute",
+                "process_name": process_name,
             }]),
         ));
     }
 
+    let nested = process_inputs
+        .get("process_inputs")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    emit_process_event(repo, prompt, &process_name, &nested, "execute", 1.0)
+}
+
+fn run_chat_only(repo: &Path, prompt: &str) -> Result<OrchestratorEnvelope, String> {
     let (response, degraded) = match synthesize_via_skill(repo, prompt) {
         Ok(text) => (text, false),
         Err(_) => (synthesize_mayeuta_response(prompt), true),
@@ -246,16 +272,66 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         &response,
         json!({ "degraded": degraded }),
         json!([{
-            "phase_name": "Clasificación",
-            "status": "executed",
-            "handler": "mayeuta-llm",
-            "intent": intent,
-            "confidence": confidence,
-        }, {
             "phase_name": "Síntesis",
             "status": "executed",
             "handler": "mayeuta-llm",
+            "intent": "chat",
             "degraded": degraded,
+        }]),
+    ))
+}
+
+fn emit_process_event(
+    repo: &Path,
+    prompt: &str,
+    process_name: &str,
+    nested_inputs: &Value,
+    intent: &str,
+    confidence: f64,
+) -> Result<OrchestratorEnvelope, String> {
+    if !allowlisted(process_name) {
+        let response = format!(
+            "[Tormentosa/Aiúa] Proceso «{process_name}» no autorizado. \
+             Allowlist: bug-fix, feature, refactorization, task-queue-manager."
+        );
+        return Ok(envelope_response(
+            &response,
+            json!([{
+                "phase_name": "Enrutamiento",
+                "status": "rejected",
+                "handler": "kalma2-interact-core",
+                "process_name": process_name,
+            }]),
+        ));
+    }
+    let pbi_ref = extract_pbi_ref(prompt, nested_inputs);
+    let event = build_kalma2_process_event(process_name, pbi_ref.as_deref(), prompt);
+    let event_id = event
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let (_, _, domain_dir) = load_fractal_dirs(repo);
+    let seal = write_fractal_event(repo, &event, &domain_dir)?;
+    let ack = ack_enqueued(process_name, &event_id);
+    Ok(envelope_response_with_data(
+        &ack,
+        json!({
+            "emitted": true,
+            "event_type": "Kalma2_Process_Requested",
+            "event_id": event_id,
+            "correlation_id": event_id,
+            "seal": seal,
+        }),
+        json!([{
+            "phase_name": "Enrutamiento",
+            "status": "executed",
+            "handler": "kalma2-interact-core",
+            "intent": intent,
+            "process_name": process_name,
+            "confidence": confidence,
+            "emitted": true,
+            "event_type": "Kalma2_Process_Requested",
         }]),
     ))
 }

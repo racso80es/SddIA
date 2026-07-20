@@ -14,6 +14,13 @@ function payloadOf(data) {
   return data.data && typeof data.data === "object" ? data.data : data;
 }
 
+function setBusy(busy) {
+  const chat = $("chat");
+  const forge = $("forge");
+  if (chat) chat.disabled = busy;
+  if (forge) forge.disabled = busy;
+}
+
 async function pollStatus(eventId, out, ackText) {
   const started = Date.now();
   setStatus(`pending · ${eventId.slice(0, 8)}…`, "pending");
@@ -24,7 +31,6 @@ async function pollStatus(eventId, out, ackText) {
     try {
       const r = await fetch(`/api/status?event_id=${encodeURIComponent(eventId)}`);
       if (r.status === 404) {
-        // Dominio puede haberse purgado post-route; seguir hasta PEC o timeout.
         setStatus("pending · esperando rastro…", "pending");
         out.value = `${ackText}\n\n[estado: pending — evento en tránsito]`;
         continue;
@@ -45,7 +51,6 @@ async function pollStatus(eventId, out, ackText) {
     setStatus(`${status} · ${eventId.slice(0, 8)}…`, status);
     out.value = `${ackText}\n\n[estado: ${status}] ${st.message || ""}`;
 
-    // Terminales: cierre de negocio, fallo, o arranque honesto (slice A kalma2-full-cycle).
     if (
       status === "completed" ||
       status === "failed" ||
@@ -67,18 +72,79 @@ async function pollStatus(eventId, out, ackText) {
   out.value = `${ackText}\n\n[timeout] sin completed/failed/initialized en ${POLL_TIMEOUT_MS / 1000}s`;
 }
 
-async function enviar() {
-  const btn = $("send");
+async function enviarChat() {
   const out = $("output");
   const prompt = $("prompt").value.trim();
   if (!prompt) return;
 
-  btn.disabled = true;
-  out.value = "…procesando";
-  setStatus("enviando…", "pending");
+  setBusy(true);
+  out.value = "";
+  setStatus("chat SSE…", "pending");
 
   try {
-    const r = await fetch("/api/interact", {
+    const r = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      body: JSON.stringify({ prompt }),
+    });
+    if (!r.ok) {
+      let msg = r.statusText;
+      try {
+        const j = await r.json();
+        msg = j.message || j.error || msg;
+      } catch (_) {
+        /* ignore */
+      }
+      setStatus("error", "failed");
+      out.value = `[error] ${msg}`;
+      return;
+    }
+
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    let acc = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split("\n\n");
+      buf = parts.pop() || "";
+      for (const block of parts) {
+        for (const line of block.split("\n")) {
+          if (line.startsWith("data: ")) {
+            const token = line.slice(6);
+            if (token.startsWith("[kalma2-meta]")) {
+              setStatus(token.replace("[kalma2-meta] ", "meta · "), "pending");
+              continue;
+            }
+            acc += (acc ? " " : "") + token;
+            out.value = acc;
+          }
+        }
+      }
+    }
+    setStatus("ok", "ok");
+    if (!acc) out.value = "(stream vacío)";
+  } catch (e) {
+    setStatus("red", "failed");
+    out.value = `[fallo red] ${e}`;
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function forjarProceso() {
+  const out = $("output");
+  const prompt = $("prompt").value.trim();
+  if (!prompt) return;
+
+  setBusy(true);
+  out.value = "…encolando proceso";
+  setStatus("execute…", "pending");
+
+  try {
+    const r = await fetch("/api/execute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prompt }),
@@ -101,27 +167,23 @@ async function enviar() {
       return;
     }
 
-    if (payload.degraded === true) {
-      setStatus("degradado", "degraded");
-      out.value = `[degradado]\n${text}`;
-    } else {
-      setStatus("ok", "ok");
-      out.value = text;
-    }
+    setStatus("ok", "ok");
+    out.value = text;
   } catch (e) {
     setStatus("red", "failed");
     out.value = `[fallo red] ${e}`;
   } finally {
-    btn.disabled = false;
+    setBusy(false);
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  $("send").addEventListener("click", enviar);
-  $("prompt").addEventListener("keydown", (ev) => {
-    if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
-      ev.preventDefault();
-      enviar();
+  $("chat").addEventListener("click", enviarChat);
+  $("forge").addEventListener("click", forjarProceso);
+  $("prompt").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      enviarChat();
     }
   });
 });

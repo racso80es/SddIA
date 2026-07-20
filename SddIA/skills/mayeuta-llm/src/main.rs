@@ -6,6 +6,8 @@ use std::process::{Command, Stdio};
 
 const OP_SYNTHESIZE: &str = "SYNTHESIZE";
 const OP_CLASSIFY: &str = "CLASSIFY_INTENT";
+/// STREAM: orquesta subproceso inyectado y reenvía stdout línea a línea (sin envelope JSON).
+const OP_STREAM: &str = "STREAM";
 const CONFIDENCE_MIN: f64 = 0.0;
 const CONFIDENCE_MAX: f64 = 1.0;
 
@@ -81,9 +83,20 @@ fn split_command(raw: &str) -> Result<Vec<String>, String> {
     Ok(parts)
 }
 
+fn resolve_cli_raw() -> Result<String, String> {
+    for key in ["SDDIA_LLM_CHAT_COMMAND", "SDDIA_LLM_CLI_COMMAND"] {
+        if let Ok(raw) = std::env::var(key) {
+            let trimmed = raw.trim();
+            if !trimmed.is_empty() {
+                return Ok(trimmed.to_string());
+            }
+        }
+    }
+    Err("SDDIA_LLM_CLI_COMMAND / SDDIA_LLM_CHAT_COMMAND ausente".into())
+}
+
 fn run_cli(prompt_assembled: &str) -> Result<String, String> {
-    let raw = std::env::var("SDDIA_LLM_CLI_COMMAND")
-        .map_err(|_| "SDDIA_LLM_CLI_COMMAND ausente".to_string())?;
+    let raw = resolve_cli_raw()?;
     let parts = split_command(&raw)?;
     let (bin, args) = parts
         .split_first()
@@ -115,6 +128,105 @@ fn run_cli(prompt_assembled: &str) -> Result<String, String> {
         });
     }
     Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
+/// Orquesta subproceso y vuelca stdout en tiempo real (Ceguera Espacial: no interpreta destino).
+fn handle_stream(doc: &Value) -> ! {
+    let p = prompt(doc);
+    if p.is_empty() {
+        // STREAM no usa envelope JSON en éxito; en fallo escribe una línea a stderr y exit 1.
+        eprintln!("prompt required");
+        std::process::exit(1);
+    }
+    let raw = match resolve_cli_raw() {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
+    let parts = match split_command(&raw) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
+    let (bin, args) = match parts.split_first() {
+        Some(x) => x,
+        None => {
+            eprintln!("comando vacío");
+            std::process::exit(1);
+        }
+    };
+
+    let payload = json!({
+        "operation": "CHAT_STREAM",
+        "prompt": p,
+    })
+    .to_string();
+
+    let mut child = match Command::new(bin)
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("spawn CLI: {e}");
+            std::process::exit(1);
+        }
+    };
+
+    if let Some(mut stdin) = child.stdin.take() {
+        if let Err(e) = stdin.write_all(payload.as_bytes()) {
+            eprintln!("stdin CLI: {e}");
+            let _ = child.kill();
+            std::process::exit(1);
+        }
+    }
+
+    let Some(stdout) = child.stdout.take() else {
+        eprintln!("sin stdout del subproceso");
+        let _ = child.kill();
+        std::process::exit(1);
+    };
+
+    let mut reader = io::BufReader::new(stdout);
+    let mut line = String::new();
+    let mut out = io::stdout().lock();
+    loop {
+        line.clear();
+        match io::BufRead::read_line(&mut reader, &mut line) {
+            Ok(0) => break,
+            Ok(_) => {
+                if out.write_all(line.as_bytes()).is_err() {
+                    let _ = child.kill();
+                    std::process::exit(1);
+                }
+                let _ = out.flush();
+            }
+            Err(e) => {
+                eprintln!("read stdout: {e}");
+                let _ = child.kill();
+                std::process::exit(1);
+            }
+        }
+    }
+
+    match child.wait() {
+        Ok(status) if status.success() => std::process::exit(0),
+        Ok(status) => {
+            eprintln!("CLI exit {}", status.code().unwrap_or(1));
+            std::process::exit(status.code().unwrap_or(1));
+        }
+        Err(e) => {
+            eprintln!("wait CLI: {e}");
+            std::process::exit(1);
+        }
+    }
 }
 
 fn build_classify_prompt(user_prompt: &str) -> String {
@@ -266,6 +378,7 @@ fn main() {
     match operation(&doc) {
         OP_SYNTHESIZE => handle_synthesize(&doc),
         OP_CLASSIFY => handle_classify(&doc),
+        OP_STREAM => handle_stream(&doc),
         other => emit(false, None, &format!("unknown operation: {other}")),
     }
 }
