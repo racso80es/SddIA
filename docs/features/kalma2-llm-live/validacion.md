@@ -16,6 +16,11 @@ checks:
   AC8_sqlite_keys: APTO
   AC9_closure_docs: APTO
   host_cursor_agent_live: APTO
+  host_d_sqlite_live: APTO
+  debt_l_ide_oracle_cli: APTO
+  debt_ecst_no_reforge: APTO
+  debt_secrets_not_versioned: APTO
+  host_b2_sse_live: APTO
 git_changes:
   - SddIA/interfaces/kalma2-bridge/src/main.rs
   - SddIA/skills/mayeuta-llm/src/main.rs
@@ -24,6 +29,7 @@ git_changes:
   - SddIA/scripts/tools/kalma2-*-smoke.sh
   - interfaces/kalma2/
   - docs/features/kalma2-llm-live/
+  - .dev/.env.example
   - docs/todos/done/[FEATURE] kalma2-llm-live — ejecución real Cursor desde Kalma2 (f0f1b1ec).md
 ---
 
@@ -31,25 +37,19 @@ git_changes:
 
 ## Veredicto
 
-**APTO** (lab + host) — circuito S+ cableado y Cursor Agent CLI live en host (HOST-A…C).  
-HOST-D (SQLite live) omitido: lab AC8 APTO; A–C OK.
+**APTO** — lab + host A–D + deuda §11 (L-IDE oráculo CLI, ECST no-reforge, secrets).
 
 ## Checks
 
 | ID | Criterio | Estado | Evidencia |
 |----|----------|--------|-----------|
-| AC1 | SSE tokens stdout Python | ✅ | smoke chat + bridge |
-| AC2 | Colapso/watchdog → `System_Fracture_Detected` | ✅ | `kalma2-sse-fracture-smoke.sh` |
-| AC3 | Execute ≠ texto libre | ✅ | `/api/execute` + mode execute |
-| AC4 | Sin `.py` → `cargo build --release` Core | ✅ | estructurales (sin dep Cargo) |
-| AC5 | AGENT_PHASE JSON intacto | ✅ | smoke MOCK + unit agent_runtime |
-| AC6 | Infer ≠ sqlite-ack (lab) | ✅ | `kalma2-chat-infer-smoke.sh` |
-| AC7 | REQUIRE_CLI → failed no soft | ✅ | `kalma2-agent-phase-smoke.sh` |
-| AC8 | SQLite keys | ✅ | `kalma2-sqlite-smoke.sh` |
-| AC9 | Cierre documental en rama | ✅ | este archivo + PBI → done |
-| Live HOST-A | CLI + auth | ✅ | `cursor-agent` `2026.07.17-3e2a980`; `agent login` OK |
-| Live HOST-B | Chat infer `backend=cli` | ✅ | prótesis `CHAT_STREAM` → `pong` (≠ sqlite-ack) |
-| Live HOST-C | AGENT_PHASE executed cli | ✅ | `status=executed` `backend=cli` (~114s) |
+| AC1–AC9 | Lab S+ | ✅ | smokes S1–S5 |
+| HOST-A…C | CLI auth + chat + AGENT_PHASE | ✅ | previos |
+| HOST-D | SQLite backup L-WAL host | ✅ | `kalma2-sqlite-live-smoke.sh` |
+| HOST-B2 | SSE `/api/chat` live | ✅ | `kalma2-chat-sse-live-smoke.sh` |
+| DEBT-L-IDE | Oráculo CLI; reject IDE_WATCH; wake | ✅ | exit 4 + `kalma2-wake ok` |
+| DEBT-ECST | No reforge; full-cycle APTO | ✅ | `kalma2-full-cycle/validacion.md` |
+| DEBT-SECRETS | `.env` no trackeado | ✅ | gitignore + `.env.example` |
 
 ## Comandos
 
@@ -58,12 +58,11 @@ HOST-D (SQLite live) omitido: lab AC8 APTO; A–C OK.
 ./SddIA/scripts/tools/kalma2-agent-phase-smoke.sh
 ./SddIA/scripts/tools/kalma2-sqlite-smoke.sh
 ./SddIA/scripts/tools/kalma2-sse-fracture-smoke.sh
-# Host (bóveda + auth):
-# cursor-agent --print --mode ask --trust "…"
-# CHAT_STREAM / AGENT_PHASE vía kalma2-agent-runtime-cursor.py
+./SddIA/scripts/tools/kalma2-sqlite-live-smoke.sh
+./SddIA/scripts/tools/kalma2-chat-sse-live-smoke.sh
 ```
 
 ## Cierre documental
 
-- PBI → `docs/todos/done/` · `pbi_archived: true`
-- PR único en `feat/kalma2-llm-live` (#123)
+- PBI → `docs/todos/done/` · `pbi_archived: true` · v2.3.3
+- PR único `#123` — merge pendiente operador

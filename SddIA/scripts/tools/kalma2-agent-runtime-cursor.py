@@ -17,6 +17,9 @@ CHAT_STREAM / SQLite (entropía absorbida aquí; cero crates en Core):
   SDDIA_LLM_INFER_COMMAND     — CLI de tokens (preferente; no reentrar prótesis)
   SDDIA_LLM_REQUIRE_INFER=1   — fallar si no hay CLI (demo live S1)
   SDDIA_AGENT_RUNTIME_REQUIRE_CLI=1 — AGENT_PHASE: CLI missing → failed (no awaiting soft)
+  Autodetect cursor-agent/agent inyecta --trust (host no-interactivo).
+  SDDIA_CURSOR_IDE_WATCH_ONLY=1 — rechazado (L-IDE); oráculo = CLI.
+  SDDIA_CURSOR_WAKE_AGENT=1   — segundo disparo CLI post-persist SQLite.
 
 Mock lab/CI:
   SDDIA_AGENT_RUNTIME_MOCK=1 → AGENT_PHASE executed; CHAT_STREAM eco de tokens.
@@ -58,6 +61,22 @@ def split_command(raw: str) -> list[str]:
     return parts
 
 
+def _ensure_noninteractive_agent_flags(parts: list[str]) -> list[str]:
+    """Añade --trust a cursor-agent/agent si falta (host no-interactivo / Workspace Trust)."""
+    if not parts:
+        return parts
+    bin0 = Path(parts[0]).name
+    if bin0 not in ("cursor-agent", "agent"):
+        return parts
+    flags = set(parts[1:])
+    if flags & {"--trust", "-f", "--yolo"}:
+        return parts
+    # Tras --print suele ir el resto; insertar --trust al final de flags conocidos
+    out = list(parts)
+    out.append("--trust")
+    return out
+
+
 def resolve_cli() -> list[str]:
     """CLI para AGENT_PHASE — resuelve ~/.local/bin; no reentra la prótesis como infer."""
     for key in ("SDDIA_AGENT_RUNTIME_CLI", "SDDIA_LLM_INFER_COMMAND", "SDDIA_LLM_CLI_COMMAND"):
@@ -66,12 +85,12 @@ def resolve_cli() -> list[str]:
             continue
         if key == "SDDIA_LLM_CLI_COMMAND" and "kalma2-agent-runtime-cursor.py" in raw:
             continue
-        return _normalize_infer_argv(split_command(raw))
+        return _ensure_noninteractive_agent_flags(_normalize_infer_argv(split_command(raw)))
     for name in ("cursor-agent", "agent"):
         hit = _which_on_path(name)
         if hit:
-            return [hit, "--print"]
-    return ["cursor-agent", "--print"]
+            return _ensure_noninteractive_agent_flags([hit, "--print"])
+    return _ensure_noninteractive_agent_flags(["cursor-agent", "--print"])
 
 
 def role_brief(agent: str, phase: str, process: str) -> str:
@@ -301,7 +320,24 @@ def run_chat_stream(doc: dict[str, Any]) -> None:
     name = ("Kalma2: " + prompt[:48]).strip()
     workspace_id = resolve_workspace_id(repo)
 
+    # Oráculo = CLI (L-IDE: el IDE no dispara solo por insert SQLite).
+    # SDDIA_CURSOR_IDE_WATCH_ONLY=1 está prohibido en live (fallar explícito).
+    if env_truthy("SDDIA_CURSOR_IDE_WATCH_ONLY"):
+        emit_meta(
+            "error",
+            error="ide_watch_only_forbidden",
+            laudo="L-IDE",
+            hint="Usar infer CLI (SDDIA_LLM_INFER_COMMAND); insert SQLite ≠ oráculo",
+        )
+        print(
+            "[kalma2] SDDIA_CURSOR_IDE_WATCH_ONLY=1 rechazado (L-IDE). "
+            "El disparo autónomo es el CLI post-prompt, no el watch del IDE.",
+            flush=True,
+        )
+        raise SystemExit(4)
+
     reply, infer_backend = stream_infer_tokens(prompt)
+    emit_meta("oracle", mode="cli", ide_auto_fire=False, infer_backend=infer_backend)
 
     if write and db is not None and db.is_file():
         try:
@@ -328,6 +364,18 @@ def run_chat_stream(doc: dict[str, Any]) -> None:
     else:
         reason = "DB ausente" if db is None or not db.is_file() else "SDDIA_CURSOR_SQLITE_WRITE=0"
         print(f"\n[kalma2-sqlite skip] {reason} backend={infer_backend}", flush=True)
+
+    # DEBT-L-IDE: wake opcional vía CLI (no vía watch IDE) tras persistir.
+    if write and env_truthy("SDDIA_CURSOR_WAKE_AGENT") and infer_backend.startswith("cli"):
+        wake_prompt = (
+            f"Contexto Kalma2 composer `{composer_id}` ya persistido en state.vscdb. "
+            f"No reescribas la DB. Confirma con una sola palabra: awake"
+        )
+        ok, out, err = run_cli(repo, wake_prompt)
+        if ok:
+            print(f"\n[kalma2-wake ok] {(out.splitlines()[-1] if out else 'ok')[:120]}", flush=True)
+        else:
+            print(f"\n[kalma2-wake skip] {err or out or 'wake failed'}", flush=True)
 
     raise SystemExit(0)
 
@@ -503,15 +551,15 @@ def resolve_infer_cli() -> list[str]:
     for key in ("SDDIA_LLM_INFER_COMMAND", "SDDIA_AGENT_RUNTIME_CLI"):
         raw = os.environ.get(key, "").strip()
         if raw:
-            return _normalize_infer_argv(split_command(raw))
+            return _ensure_noninteractive_agent_flags(_normalize_infer_argv(split_command(raw)))
     raw = os.environ.get("SDDIA_LLM_CLI_COMMAND", "").strip()
     if raw and "kalma2-agent-runtime-cursor.py" not in raw:
-        return _normalize_infer_argv(split_command(raw))
+        return _ensure_noninteractive_agent_flags(_normalize_infer_argv(split_command(raw)))
     # Autodetección post-install Cursor CLI
     for name in ("cursor-agent", "agent"):
         hit = _which_on_path(name)
         if hit:
-            return [hit, "--print"]
+            return _ensure_noninteractive_agent_flags([hit, "--print", "--mode", "ask"])
     return []
 
 

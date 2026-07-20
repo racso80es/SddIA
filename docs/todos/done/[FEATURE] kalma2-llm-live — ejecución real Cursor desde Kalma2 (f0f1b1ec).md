@@ -3,7 +3,7 @@ document_id: PBI-KALMA2-LLM-LIVE-V2
 uuid: f0f1b1ec-4b79-47c6-85e2-a0ac2ca3164b
 title: "[FEATURE] kalma2-llm-live — Interacción S+ Grade y Prótesis de Ejecución"
 format: markdown
-version: "2.3.2"
+version: "2.3.3"
 created: "2026-07-20"
 refined: "2026-07-20"
 status: "done"
@@ -30,17 +30,18 @@ related:
   - docs/features/kalma2-llm-live/runbook-agent.md
   - docs/features/kalma2-llm-live/runbook-sqlite.md
 inherited_from: docs/todos/done/[FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre (527007fa).md
-supersedes: "v2.3.0 — reabre en-curso para ejecutar deuda host (cursor-agent live) en este mismo PBI/PR"
+supersedes: "v2.3.2 — absorbe HOST-D + deuda ex-fuera-de-alcance (L-IDE oráculo CLI, ECST no-reforge, secrets)"
 evidence:
   - "2026-07-20 lab APTO: SSE/execute/STREAM/SQLite/smokes S1–S5; PR #123"
-  - "2026-07-20 host APTO: CLI+login; CHAT_STREAM backend=cli; AGENT_PHASE executed cli; HOST-D omitido"
+  - "2026-07-20 host A–C APTO: CLI+login; CHAT_STREAM cli; AGENT_PHASE executed"
+  - "2026-07-20 HOST-D + B2 SSE live; L-IDE oráculo CLI + wake; ECST dependencia APTO; .env no versionado"
 ---
 
-# [FEATURE] kalma2-llm-live — Interacción S+ Grade y Prótesis de Ejecución (v2.3.2)
+# [FEATURE] kalma2-llm-live — Interacción S+ Grade y Prótesis de Ejecución (v2.3.3)
 
 ## Estado
 
-**v2.3.2 — Done (lab + host A–C).** PR [#123](https://github.com/racso80es/SddIA/pull/123). Merge pendiente operador.
+**v2.3.3 — Done (lab + host A–D + deuda absorbida).** PR [#123](https://github.com/racso80es/SddIA/pull/123). Merge pendiente operador.
 
 ### Ya forjado (lab — no reabrir)
 
@@ -105,15 +106,16 @@ Laudos L-EP…L-WAL, AC1–AC9 y fases 1–8a: ver v2.3.0 / `docs/features/kalma
 | Acción | Cursor cerrado **o** copia `sqlite3 … .backup`; `SDDIA_CURSOR_VSCDB` + `SDDIA_CURSOR_SQLITE_WRITE=1`; chat una vez; verificar composer `Kalma2:` en DB/UI |
 | Ref | `runbook-sqlite.md` |
 | Criterio | Keys `composerData`/`bubbleId` en DB real o backup verificado |
+| Evidencia 2026-07-20 | `kalma2-sqlite-live-smoke.sh`: backup Python L-WAL de `state.vscdb` host + write + composer `Kalma2: HOST-D…` |
 
-- [ ] HOST-D completado (recomendado; no bloquea si A–C OK y lab AC8 ya APTO) — **omitido** (A–C OK; lab AC8 APTO)
+- [x] HOST-D completado (backup L-WAL de DB host; no write concurrente)
 
 ### HOST-E — Cierre tras host
 
 | Campo | Detalle |
 |-------|---------|
 | Acción | Actualizar `validacion.md`: `host_cursor_agent_live: APTO`; evidencia comandos; PBI → `docs/todos/done/` con checkboxes HOST-*; merge PR #123 |
-| Criterio | Done = lab + host (A–C) en el mismo PR |
+| Criterio | Done = lab + host (A–D) + §11 deuda absorbida en el mismo PR |
 
 - [x] HOST-E completado (docs + archive; merge PR pendiente operador)
 
@@ -123,17 +125,54 @@ Laudos L-EP…L-WAL, AC1–AC9 y fases 1–8a: ver v2.3.0 / `docs/features/kalma
 1. HOST-A install CLI + PATH + version
 2. HOST-B bóveda chat + smoke SSE live
 3. HOST-C bóveda agent + execute E2E (daemons)
-4. HOST-D (opc) SQLite live
-5. HOST-E validacion + archive PBI + merge
+4. HOST-D SQLite live (backup L-WAL)
+5. §11 deuda ex-fuera-de-alcance
+6. HOST-E validacion + archive PBI + merge
 ```
 
-## 11. Fuera de alcance (sin cambio)
+## 11. Deuda absorbida (antes fuera de alcance) — obligatoria antes de Done
 
-- Disparo autónomo del agente UI solo por insert SQLite (L-IDE).
-- Re-forjar ECST/TQM.
-- Versionar secretos / `.dev/.env`.
+> Incorporada al PBI v2.3.3. No abrir PBI paralelo.
+
+### DEBT-L-IDE — Oráculo ≠ watch IDE
+
+| Campo | Detalle |
+|-------|---------|
+| Antes | «Disparo autónomo del agente UI **solo** por insert SQLite» — imposible/incorrecto (L-IDE) |
+| Implementación | Oráculo = **CLI** tras prompt; meta `oracle` `ide_auto_fire=false`; `SDDIA_CURSOR_IDE_WATCH_ONLY=1` → exit 4; wake opcional `SDDIA_CURSOR_WAKE_AGENT=1` vía CLI |
+| Evidencia | reject IDE_WATCH; wake → `kalma2-wake ok awake`; SSE live con meta oracle |
+
+- [x] DEBT-L-IDE completado
+
+### DEBT-ECST — No re-forjar ECST/TQM
+
+| Campo | Detalle |
+|-------|---------|
+| Antes | Re-forjar ECST/TQM en este feature |
+| Implementación | **No re-forja.** Dependencia `docs/features/kalma2-full-cycle` `global: APTO` vigente |
+| Evidencia | `validacion.md` full-cycle `global: APTO` |
+
+- [x] DEBT-ECST completado (laudo: no reforge)
+
+### DEBT-SECRETS — No versionar secretos
+
+| Campo | Detalle |
+|-------|---------|
+| Antes | «Versionar secretos / `.dev/.env`» (prohibido) |
+| Implementación | Cumplimiento: `.dev/.env` gitignored; `.dev/.env.example` documenta `--trust` / L-IDE / HOST-D sin secretos |
+| Evidencia | `git check-ignore .dev/.env`; example actualizado |
+
+- [x] DEBT-SECRETS completado (anti-versionado)
+
+### HOST-B2 — SSE live vía bridge
+
+| Campo | Detalle |
+|-------|---------|
+| Acción | `kalma2-chat-sse-live-smoke.sh` → `POST /api/chat` frames `data:` con `backend=cli` |
+| Evidencia | `sse-live-ok` + meta cli/oracle |
+
+- [x] HOST-B2 completado
 
 ## 12. Mandato
 
-Ejecutar §9 HOST-A…E en `feat/kalma2-llm-live` / PR #123.  
-Hasta HOST-A–C cerrados, **no** declarar Done total del PBI (lab solo = APTO parcial).
+Cerrado en `feat/kalma2-llm-live` / PR #123 tras §9 + §11. Merge operador.

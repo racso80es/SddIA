@@ -32,9 +32,13 @@ Transcript Mayeuta (2026-07-20). Semilla PBI v2.2.0 (`PBI-KALMA2-LLM-LIVE-V2` / 
 | L-SF | `System_Fracture_Detected` con `source=kalma2-bridge` |
 | L-STOP | UI no mezcla Chat y Forjar Proceso |
 
-## D2 — Fuera de alcance
+## D2 — Fuera de alcance (absorbido en PBI §11 v2.3.3)
 
-ECST/TQM, sustituir AGENT_PHASE por SQLite en fases agent, LLM soberano, versionar secretos.
+| Ítem | Resolución |
+|------|------------|
+| Disparo solo por insert SQLite | Oráculo CLI + reject `IDE_WATCH_ONLY` + wake opcional |
+| Re-forjar ECST/TQM | No; dependencia `kalma2-full-cycle` APTO |
+| Versionar secretos | No; gitignore + `.env.example` |
 
 ## D3 — Runtime agentes
 

@@ -42,15 +42,18 @@ export SDDIA_LLM_INFER_COMMAND=SddIA/scripts/tools/kalma2-llm-infer-lab.sh  # o 
 
 ## Live (operador)
 
-1. Cerrar Cursor **o** aceptar riesgo WAL.
-2. `SDDIA_CURSOR_VSCDB` → DB real; `SDDIA_CURSOR_SQLITE_WRITE=1`.
-3. Chat Kalma2 → verificar en UI Cursor que aparece composer `Kalma2: …` (puede requerir recarga).
-4. No esperar respuesta autónoma del agente IDE (L-IDE).
+1. Preferir **backup** (`kalma2-sqlite-live-smoke.sh`) o Cursor cerrado (L-WAL).
+2. `SDDIA_CURSOR_VSCDB` → DB/copia; `SDDIA_CURSOR_SQLITE_WRITE=1`.
+3. Chat Kalma2 → composer `Kalma2: …` en DB; reply viene del **CLI** (oráculo), no del watch IDE.
+4. `SDDIA_CURSOR_IDE_WATCH_ONLY=1` → rechazado (exit 4).
+5. Opcional: `SDDIA_CURSOR_WAKE_AGENT=1` → segundo disparo CLI post-persist (`kalma2-wake`).
 
-## Criterios AC8
+## Criterios AC8 / HOST-D
 
 | Check | OK |
 |-------|-----|
-| Keys `composerData:` + 2× `bubbleId:` en DB de prueba | smoke |
+| Keys `composerData:` + 2× `bubbleId:` en DB de prueba | smoke lab |
 | Entrada en `composer.composerHeaders` / tabla `composerHeaders` | smoke |
+| Backup host L-WAL + write + Kalma2 | `kalma2-sqlite-live-smoke.sh` |
 | Runbook L-IDE/L-WAL presente | este doc |
+| Oráculo CLI (`ide_auto_fire=false`) | meta oracle |
