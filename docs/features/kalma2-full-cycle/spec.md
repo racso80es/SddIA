@@ -93,6 +93,16 @@ UI: poll termina también en `initialized` y `awaiting_agents` (estados terminal
 {"success": true, "data": {"status": "executed", "message": "spec.md materializado"}}
 ```
 
+### Wrapper producción (B-prod)
+
+| Artefacto | Rol |
+|-----------|-----|
+| `SddIA/scripts/tools/kalma2-agent-runtime-cursor.sh` | Entrada `SDDIA_AGENT_RUNTIME_COMMAND` |
+| `…/kalma2-agent-runtime-cursor.py` | Prompt por rol + backend `cli` \| `sdk` \| `mock` |
+| `…/kalma2-agent-runtime-lab.sh` | Lab: handoff sin Cursor |
+
+Env clave: `SDDIA_AGENT_RUNTIME_CLI` (fallback `SDDIA_LLM_CLI_COMMAND`), `SDDIA_AGENT_RUNTIME_BACKEND`, `CURSOR_API_KEY` (sdk), `SDDIA_AGENT_RUNTIME_MOCK`.
+
 ## 4. Slice C — consumo `pbi_body`
 
 | Elemento | Contrato |

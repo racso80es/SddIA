@@ -21,7 +21,7 @@ process: feature
 - [x] Documentar env / evento handoff en `spec.md` (hecho en spec §3)
 - [x] Hook nativo `agent_runtime` + tests mock CLI
 - [x] Wrapper lab `SddIA/scripts/tools/kalma2-agent-runtime-lab.sh`
-- [ ] Wrapper producción Cursor Agent / SDK (bóveda operador)
+- [x] Wrapper producción Cursor CLI/SDK `kalma2-agent-runtime-cursor.{sh,py}`
 - [ ] Futuro opcional: evento `Process_Agent_Handoff_Requested` (B2)
 
 ### Fase C — pbi_body

@@ -39,14 +39,14 @@ progress:
   slice_C: forjado
   argos: APTO
 open_debt:
-  - B-prod-cursor-agent-sdk-wrapper
+  - B2-process-agent-handoff-event-optional
 ---
 
 # [FEATURE] kalma2-full-cycle — runtime de agentes y semántica de cierre
 
 ## Estado
 
-**Done documental (Argos APTO)** en rama `feat/kalma2-full-cycle`. Slices A+B-hook+C forjados. Deuda: wrapper Cursor/SDK producción en bóveda.
+**Done documental (Argos APTO)** en rama `feat/kalma2-full-cycle`. Slices A+B+C + wrapper producción Cursor CLI/SDK. Live requiere bóveda (`cursor-agent` o `CURSOR_API_KEY`).
 
 ## Síntoma (expectativa vs resultado)
 

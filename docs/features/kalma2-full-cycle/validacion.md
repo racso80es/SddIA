@@ -17,9 +17,9 @@ checks:
   AC-B3_simulated_compat: APTO
   AC-B4_phase_fail_envelope: APTO
   AC-B5_lab_wrapper: APTO
+  B_prod_cursor_sdk: APTO
   AC-C1_pbi_body_inject: APTO
   AC-C2_objectives_pbi: APTO
-  B_prod_cursor_sdk: DEUDA
 git_changes:
   - SddIA/engine/execute-process/src/engine/thermodynamic.rs
   - SddIA/engine/execute-process/src/engine/agent_runtime.rs
@@ -29,6 +29,8 @@ git_changes:
   - SddIA/engine/execute-process/src/engine/workspace_init.rs
   - SddIA/interfaces/kalma2-bridge/src/main.rs
   - SddIA/scripts/tools/kalma2-agent-runtime-lab.sh
+  - SddIA/scripts/tools/kalma2-agent-runtime-cursor.sh
+  - SddIA/scripts/tools/kalma2-agent-runtime-cursor.py
   - interfaces/kalma2/app.js
   - interfaces/kalma2/style.css
   - .dev/.env.example
@@ -40,7 +42,7 @@ git_changes:
 
 ## Veredicto
 
-**APTO** (Argos lab) para slices A+B-hook+C. Deuda explícita: wrapper producción Cursor/Agent SDK (bóveda instancia).
+**APTO** (Argos lab) para slices A+B+C incluido wrapper producción Cursor (`cli`/`sdk`/`mock`). La ejecución live depende de bóveda (`cursor-agent` o `CURSOR_API_KEY`+`cursor-sdk`).
 
 ## Checks
 
@@ -56,9 +58,10 @@ git_changes:
 | AC-B3 | Sin env → `simulated` | ✅ | `not_configured_returns_simulated` |
 | AC-B4 | Fase failed → envelope fail | ✅ | `executor.rs` phase_failed |
 | AC-B5 | Lab wrapper handoff | ✅ | `kalma2-agent-runtime-lab.sh` |
+| B-prod | Wrapper Cursor CLI/SDK | ✅ | `kalma2-agent-runtime-cursor.{sh,py}` · mock + soft awaiting |
 | AC-C1 | `pbi_body` inyectado | ✅ | `load_pbi_body_reads_file` |
 | AC-C2 | objectives prioriza PBI | ✅ | `workspace_init.rs` |
-| B-prod | Cursor/SDK real | ⏳ | Deuda bóveda operador |
+| B-prod | Cursor/SDK real | ✅ | Wrapper entregado; live = config bóveda |
 
 ## Comandos (2026-07-20)
 

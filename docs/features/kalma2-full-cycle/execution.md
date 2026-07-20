@@ -29,6 +29,8 @@ process: feature
 | `cargo test -p execute-process agent_runtime` | 3/3 OK |
 | `cargo build -p execute-process` | OK |
 | Smoke `kalma2-agent-runtime-lab.sh` | `awaiting_agents` + `_agent_handoff.md` |
+| Smoke `kalma2-agent-runtime-cursor.sh` MOCK=1 | `executed` |
+| Smoke cursor CLI ausente | `awaiting_agents` (soft) |
 
 ## Verificación Slice C
 
@@ -41,5 +43,6 @@ process: feature
 
 | ID | Nota |
 |----|------|
-| B-prod | Comando Cursor/Agent SDK en bóveda operador |
-| — | Argos `validacion.md` **APTO** (slices A+B-hook+C) |
+| — | Wrapper Cursor CLI/SDK entregado (`kalma2-agent-runtime-cursor`) |
+| — | Argos `validacion.md` **APTO** (A+B+C + B-prod) |
+| B2 | Evento dominio handoff opcional |

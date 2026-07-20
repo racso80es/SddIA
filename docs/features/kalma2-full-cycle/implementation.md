@@ -28,6 +28,7 @@ items:
 | `agent_runtime.rs` | Hook CLI `AGENT_PHASE` |
 | `executor.rs` / `residual_runner.rs` | Wire + fail envelope |
 | `scripts/tools/kalma2-agent-runtime-lab.sh` | Wrapper lab (handoff + awaiting_agents) |
+| `scripts/tools/kalma2-agent-runtime-cursor.{sh,py}` | Wrapper producción CLI/SDK/mock |
 
 ## Slice C
 
@@ -40,6 +41,5 @@ items:
 
 | Ítem | Nota |
 |------|------|
-| Wrapper Cursor/SDK producción | Config bóveda; lab script no sustituye agentes V5 |
 | Evento handoff B2 | Opcional |
-| Argos `validacion.md` APTO | Cierre documental feature |
+| Live Cursor en instancia | Configurar bóveda (`SDDIA_AGENT_RUNTIME_*` / `CURSOR_API_KEY`) |
