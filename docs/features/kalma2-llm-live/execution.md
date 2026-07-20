@@ -30,13 +30,17 @@ process: feature
 | S5 smoke `kalma2-sse-fracture-smoke.sh` | watchdog → `System_Fracture_Detected` |
 | Argos `validacion.md` | **APTO** lab · deuda `cursor-agent` host |
 
-## Pendiente live host
+## Deuda host (mismo PBI §9 — a ejecutar)
 
-| Ítem | Nota |
-|------|------|
-| S1/S3 live | Instalar `cursor-agent` |
-| S4 live | Cursor cerrado + DB real |
-| PR merge | delivery-close / `gh pr create` |
+| ID | Acción |
+|----|--------|
+| HOST-A | Instalar Cursor Agent CLI + PATH |
+| HOST-B | Chat live (`SDDIA_LLM_INFER_COMMAND`, sin mock) |
+| HOST-C | Agent phases live (`REQUIRE_CLI=1`, execute E2E) |
+| HOST-D | SQLite live opcional (L-WAL) |
+| HOST-E | `validacion` host APTO + PBI → done + merge |
+
+Ref: PBI v2.3.1 §9 · `runbook-infer.md` / `runbook-agent.md` / `runbook-sqlite.md`
 | mayeuta-llm STREAM → Python | tokens OK |
 | `POST /api/chat` SSE | frames `data:` |
 | `POST /api/execute` | `emitted` + `event_id` |
