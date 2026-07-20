@@ -4,5 +4,6 @@ pub mod governance_daemon;
 pub mod kalma2;
 pub mod mayeuta;
 pub mod route_domain;
+pub mod task_queue_manager;
 pub mod telegram_fallback;
 pub mod telegram_gateway;
