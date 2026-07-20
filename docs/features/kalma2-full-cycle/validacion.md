@@ -78,4 +78,5 @@ CARGO_TARGET_DIR=target cargo test -p kalma2-bridge project_status
 ## Cierre documental
 
 - PBI → `docs/todos/done/` · `pbi_archived: true`
-- Listo para PR único / `delivery-close-cycle`
+- `finalize-process.md` en `persist_ref`
+- PR: https://github.com/racso80es/SddIA/pull/122
