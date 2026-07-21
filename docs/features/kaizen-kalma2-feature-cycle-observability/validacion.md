@@ -8,11 +8,11 @@ pbi_archived: true
 document_id: PBI-KAIZEN-KALMA2-FEATURE-CYCLE-OBS
 pbi_ref: docs/todos/done/[Kaizen] ciclo Kalma2-feature — correlación EDA, estados terminales y aduana PPR.md
 correlation_id: 6ae1b7be-54e5-4750-8888-5f19ac76551f
-approval_status: approved_awaiting_pr
+approval_status: pr_open
 remote_pushed: true
 remote_branch: feat/kaizen-kalma2-feature-cycle-observability
 pr_compare_url: https://github.com/racso80es/SddIA/compare/main...feat/kaizen-kalma2-feature-cycle-observability?expand=1
-pr_url: null
+pr_url: https://github.com/racso80es/SddIA/pull/124
 checks:
   AC_O1_early_pec: APTO
   AC_O2_failed_pec_api: APTO
@@ -72,6 +72,6 @@ Smoke E2E Kalma2 UI requiere Centinelas + auth; unitario + contrato cubren el ne
 
 ## Forja
 
-Rama publicada en origin. Compare (abrir PR cuando API disponible):
+Rama publicada. PR abierto:
 
-https://github.com/racso80es/SddIA/compare/main...feat/kaizen-kalma2-feature-cycle-observability?expand=1
+https://github.com/racso80es/SddIA/pull/124
