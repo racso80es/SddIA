@@ -610,9 +610,12 @@ pub(crate) fn dispatch_subscriber(
         if process_key == "pull-request-review" {
             process_inputs.insert("code_diff".into(), json!("origin/main...HEAD"));
             process_inputs.insert("tasks_path".into(), json!("docs/todos"));
-            if let Some(pr) = process_inputs.get("persist_ref").and_then(|v| v.as_str()) {
-                process_inputs.insert("document_context".into(), json!(pr));
-            }
+            let doc_ctx = process_inputs
+                .get("persist_ref")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .unwrap_or("docs/features");
+            process_inputs.insert("document_context".into(), json!(doc_ctx));
         }
 
         std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
