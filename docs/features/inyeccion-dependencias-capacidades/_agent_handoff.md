@@ -55,23 +55,23 @@ persist_ref: docs/features/inyeccion-dependencias-capacidades
 - status: `executed`
 - message: spec.md + plan.md · D3 Racso (Metadatos Activos / Códice / Aduana Temprana / MVP sync)
 
-## 2026-07-21T13:10:00Z — Verificación (relay IDE)
-- process: `feature`
-- agents: `argos`
-- correlation_id: `9120e3da-6ba9-4a93-9735-34486383c7de`
+## 2026-07-21T13:15:00Z — Cierre de entrega (parcial)
+- process: `delivery-close-cycle`
+- agents: ``
+- correlation_id: `521fccd4-8743-4236-8748-0f7e69b0db19`
 - pbi_ref: `docs/todos/pending/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
 - runtime: tekton-ide-relay
 - backend: `ide`
-- status: `executed`
-- message: validacion.md global APTO (MVP); pbi_archived false — residual R1–R8 en pending
+- status: `failed`
+- message: push OK 38f5809; gh GraphQL Forbidden; runbook-delivery-close.md listo para operador
 
 ### Transcript (tail)
 
 ```
-**Veredicto: ok** (Argos MVP APTO)
+**Veredicto: blocked** (PR no abierto en sesion)
 
-- PBI kitchen→pending con §3 residual fuera MVP
-- Cascada F-DOC completa · AC-P1..P3 / AC-M1..M3 APTO
-- pbi_archived: false (PBI vivo; no Done total PBI-042)
-- Siguiente: delivery-close-cycle bajo orden
+- Commit+push: OK
+- EDA genomic: orphan_count 0
+- gh pr create: Forbidden api.github.com/graphql
+- Accion: abrir PR desde entorno con API, luego delivery-close con pr_url
 ```

@@ -12,6 +12,8 @@ execution_id: 9120e3da-6ba9-4a93-9735-34486383c7de
 verdict: aprobado
 scope: MVP — Metadatos Activos + Códice de la Lengua + Aduana Temprana
 residual_tracked: true
+delivery_state: pending_pr
+delivery_blocker: "gh api.github.com/graphql Forbidden en sesion (push OK); ver runbook-delivery-close.md"
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
