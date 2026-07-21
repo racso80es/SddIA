@@ -1,6 +1,7 @@
 ---
 feature_name: iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
 created: "2026-07-20"
+updated: "2026-07-21"
 process: feature
 branch_name: feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
 persist_ref: docs/features/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
@@ -13,11 +14,10 @@ items_applied:
   - F1-B
   - F1-C
   - F1-D
-items_blocked:
   - F1-E-cargo
+  - F1-E-tests
   - F1-E-git
-tekton_verdict: blocked
-block_reason: shell_allowlist_no_cargo_no_git_manager
+tekton_verdict: ok
 legacy_env_break: "GESFER_CAPSULE_REQUEST/GESFER_SKIP_STDIN → SDDIA_*; cero consumidores en repo"
 ---
 
@@ -25,26 +25,41 @@ legacy_env_break: "GESFER_CAPSULE_REQUEST/GESFER_SKIP_STDIN → SDDIA_*; cero co
 
 ## Registro
 
-| Paso | Cápsula | Resultado |
-|------|---------|-----------|
-| Leer objectives/spec/plan | — | OK |
-| F1-A SSOT + crate | filesystem-manager | OK — `products` + `sddia-core` |
-| F1-B npm `@sddia/core` | filesystem-manager | OK |
-| F1-C capsule-json-io + evolution | filesystem-manager | OK — ruptura legacy consciente |
-| F1-D forge/portal | filesystem-manager | OK — esqueletos sin UI |
-| E1 `cargo check -p sddia-core` | shell-executor | **BLOCKED** — Shell allowlist (solo `ls`) |
-| E2 anti-GesFer | Grep (IDE) | OK — 0 hits en perímetro |
-| E3 implementation/execution | filesystem-manager | OK — este par |
-| E4 commit | git-manager | **BLOCKED** — misma allowlist; binario existe en `target/debug/` |
+| Paso | Cápsula / herramienta | Resultado |
+|------|----------------------|-----------|
+| F1-A…D materialización | filesystem-manager (sesión previa) | OK |
+| E1 `cargo check -p sddia-core --locked --offline` | shell-executor / cargo | **OK** |
+| E1b `cargo test -p sddia-core --locked --offline` | cargo | **OK** — 2 passed |
+| E2 anti-GesFer | rg | OK — 0 hits |
+| E2b fachada npm (estática) | python3 | OK — package + markers + deps apps |
+| E3 docs | filesystem-manager | OK |
+| E4 commits F1 + satélites | git (mandato operador) | OK — 5 commits base |
+| E4b `git-manager status` | skill:git-manager | OK — `success: true` |
+| E5 higiene locks Centinelas | `.gitignore` | OK — `daemons/status/` ignorado |
+
+## Evidencia cargo
+
+```text
+cargo check -p sddia-core --locked --offline  → Finished
+cargo test  -p sddia-core --locked --offline  → 2 passed
+```
+
+## Evidencia git-manager
+
+```text
+stdin → SddIA/target/debug/git-manager
+{"operation_type":"status","repository_path":"/home/racso/Proyectos/SddIA","operation_payload_json":{}}
+→ success: true
+```
 
 ## Ruptura consciente (F1-C)
 
-Alias `GESFER_*` eliminados de la norma. Ningún código del repo referenciaba esas env vars (solo la norma). Consumidor externo = adaptar a `SDDIA_*`.
+Alias `GESFER_*` eliminados de la norma. Ningún código del repo referenciaba esas env vars.
 
 ## Fuera de alcance (AC6)
 
-Sin `.SddIA/` en repos GesFer, sin IOTA, sin wallet, sin UI Forge/Portal.
+Sin inyección GesFer, IOTA, wallet ni UI Forge/Portal.
 
 ## Veredicto
 
-`blocked` — materialización F1-1…F1-3 en disco; verify cargo + commit vía `git-manager` requieren ejecución fuera de esta sesión (allowlist Shell).
+`ok` — F1-1…F1-3 con evidencia reproducible; cierre de entrega (`delivery-close-cycle` / PR) queda como paso de orquestación posterior.

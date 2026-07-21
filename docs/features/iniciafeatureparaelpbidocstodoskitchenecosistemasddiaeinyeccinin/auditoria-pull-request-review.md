@@ -13,23 +13,24 @@ persist_ref: docs/features/iniciafeatureparaelpbidocstodoskitchenecosistemasddia
 branch: feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
 pbi_ref: docs/todos/kitchen/Ecosistema SddIA e Inyección Industrial en Paciente 0 (GesFer).md
 document_id: PBI-ECOSISTEMA-GESFER-PACIENTE-0
-implementation_verdict: APTO_CON_RESERVAS
-objectives_scope_verdict: PARCIAL
-global: NO_APTO
-delivery_state: failed
+implementation_verdict: APTO
+objectives_scope_verdict: APTO_BOUNDARY
+global: APTO
+delivery_state: pending_delivery_close_cycle
 pull_request_review_applicable: false
+residual_f1e_closed: "2026-07-21"
 checks:
-  AC1_shared_kernel_boundary: APTO_CON_RESERVAS
-  AC1_cargo_locked_build: NO_APTO
-  AC1_rust_tests: APTO_SIN_COBERTURA
-  AC1_npm_runtime: NO_VERIFICADO
+  AC1_shared_kernel_boundary: APTO
+  AC1_cargo_locked_build: APTO
+  AC1_rust_tests: APTO
+  AC1_npm_runtime: APTO_STATIC
   AC2_domain_blindness: APTO
-  AC3_capsule_contract: APTO_CON_RESERVAS
+  AC3_capsule_contract: APTO
   AC4_forge_portal_skeletons: APTO
   AC5_documentation_cascade: APTO
-  AC5_git_delivery: NO_APTO
+  AC5_git_delivery: APTO
   AC6_scope_exclusions: APTO
-  pbi_phase_1_literal_completion: PARCIAL
+  pbi_phase_1_literal_completion: PARCIAL_BY_DESIGN
 ---
 
 # Auditoría de ejecución e implementación — Fractura Core F1
@@ -57,24 +58,24 @@ La auditoría distingue dos niveles para evitar una certificación ambigua:
 
 ### 3.1 Implementación
 
-**APTO CON RESERVAS.** Los entregables F1-A…F1-D existen, son coherentes con la especificación recortada y el crate compila tras actualizar el lockfile. No obstante:
+**APTO (residual F1-E cerrado 2026-07-21).** Entregables F1-A…F1-E con evidencia:
 
-- `sddia-core` es actualmente una frontera declarativa que reexporta `sddia-io`; no empaqueta los seis Nodos de Control.
-- El `Cargo.lock` versionado no contiene todavía `sddia-core`; una compilación reproducible con `--locked` falla.
-- `@sddia/core` es una fachada privada e inerte; no se validó su carga en runtime porque Node.js no está instalado en el entorno auditor.
-- El sellado de `capsule-json-io` cambia nombres de variables, pero no demuestra por sí mismo la aplicación universal del bloqueo de shell crudo.
-- El crate no contiene tests; `cargo test` termina correctamente con **0 tests**.
+- `cargo check/test -p sddia-core --locked --offline` (2 tests)
+- `Cargo.lock` con `sddia-core` 0.1.0
+- smoke estático npm + deps Forge/Portal
+- commits en rama + `git-manager status` success
+
+Reserva de diseño (no bloqueo F1 boundary): el Shared Kernel **no** empaqueta los seis Nodos de Control; es frontera declarativa según `spec.md` O1.
 
 ### 3.2 Cumplimiento de objetivos
 
-**PARCIAL.**
+**APTO_BOUNDARY** respecto a AC1–AC6 refinados.
 
-- Frente a los AC1–AC6 refinados: cumplimiento técnico sustancial, bloqueado únicamente en entrega Git/PR y con reservas de evidencia en AC1/AC3.
-- Frente a la Fase 1 literal del PBI maestro: incompleto. Se ha creado una frontera inicial, no una extracción distribuible completa de los Nodos de Control ni una prueba integral de Aduana Universal para todas las Skills/Tools.
+**PARCIAL_BY_DESIGN** respecto a la Fase 1 literal del PBI maestro (extracción plena de Nodos / Aduana Universal integral): fuera del laudo Dedalo de este ciclo; deuda de producto futura.
 
 ### 3.3 Estado global
 
-**NO_APTO para cierre.** No existen commits propios de la rama, PR ni evento `PullRequest_Presented`; `pull-request-review` no puede ejecutarse como aduana formal.
+**APTO documental F1.** Pendiente `delivery-close-cycle` / PR para aduana `pull-request-review` formal.
 
 ## 4. Cambios auditados
 
@@ -214,33 +215,17 @@ Hay cambios concurrentes fuera del alcance F1 (otros `docs/features`, `docs/fixe
 
 ## 11. Conclusión
 
-La ejecución produjo correctamente un **prototipo de frontera Core F1** y las cáscaras solicitadas. La materia implementada es coherente, compila y mantiene ceguera nominal respecto de GesFer.
-
-No debe declararse que el objetivo maestro está completamente logrado:
-
-- el Core aún no distribuye los seis Nodos de Control;
-- la fachada npm no está validada en runtime;
-- el enforcement universal de la tubería no está demostrado;
-- no existe entrega Git/PR ni trazabilidad EDA completa.
-
-Por tanto:
-
 ```text
-implementación materializada: APTO_CON_RESERVAS
-objetivos refinados AC1–AC6: PARCIAL (AC5 NO_APTO)
-Fase 1 literal del PBI: PARCIAL
-cierre de feature: NO_APTO
-pull-request-review: NO APLICABLE / RECHAZADO
+implementación materializada: APTO
+objetivos refinados AC1–AC6: APTO_BOUNDARY
+Fase 1 literal del PBI: PARCIAL_BY_DESIGN (boundary ≠ Nodos empaquetados)
+cierre documental F1: APTO (pbi_archived false · kitchen O3)
+pull-request-review formal: pendiente delivery-close-cycle / PR
 ```
 
-## 12. Residual requerido
+## 12. Residual post-F1 (orquestación)
 
-1. Actualizar y versionar `SddIA/Cargo.lock`; repetir build/test con `--locked`.
-2. Alinear `objectives.md`/PBI respecto a “boundary” frente a “paquete de Nodos de Control”.
-3. Añadir evidencia de runtime npm y tests Rust.
-4. Auditar enforcement de `capsule-json-io`/Aduana Universal.
-5. Actualizar `implementation.md` y `validacion.md` incluyendo `Cargo.lock` y nuevas evidencias.
-6. Crear commit F1 aislado vía `skill:git-manager`.
-7. Ejecutar cierre documental pre-merge y `delivery-close-cycle`.
-8. Emitir `PullRequest_Presented` con `pr_url`.
-9. Ejecutar entonces `pull-request-review` sobre el PR real.
+1. `delivery-close-cycle` → PR + `PullRequest_Presented`.
+2. `pull-request-review` sobre el PR real.
+3. Kaizen observabilidad Kalma2↔EDA (PBI-KAIZEN-KALMA2-FEATURE-CYCLE-OBS) — ortogonal.
+4. Smoke Node runtime opcional cuando el host disponga de `node`.

@@ -1,6 +1,7 @@
 ---
 feature_name: iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
 created: "2026-07-20"
+updated: "2026-07-21"
 process: feature
 branch_name: feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
 persist_ref: docs/features/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
@@ -16,6 +17,9 @@ items:
   - id: F1-A-ssot
     path: SddIA/core/cumulo.paths.json
     status: done
+  - id: F1-A-lock
+    path: SddIA/Cargo.lock
+    status: done
   - id: F1-B
     path: packages/sddia-core
     status: done
@@ -30,20 +34,28 @@ items:
     status: done
   - id: F1-E-cargo
     path: SddIA/sddia-core
-    status: blocked
+    status: done
+  - id: F1-E-tests
+    path: SddIA/sddia-core/src/lib.rs
+    status: done
   - id: F1-E-git
     path: skill:git-manager
-    status: blocked
-tekton_verdict: blocked
-block_reason: shell_allowlist_no_cargo_no_git_manager
+    status: done
+tekton_verdict: ok
 ---
 
 # Implementation — Fractura Core F1
 
 ## Sentencia
 
-Materialización **F1-A…F1-D completa** vía `skill:filesystem-manager` (LLM-native).  
-**F1-E incompleto:** entorno de sesión solo permite `ls` en Shell; `cargo check` y `skill:git-manager` no invocables. No se inventa éxito de compilación ni commit.
+Materialización **F1-A…F1-E completa** con evidencia reproducible:
+
+- Shared Kernel Rust + npm + SSOT `products`
+- Sellado `SDDIA_*` en `capsule-json-io`
+- Cáscaras Forge/Portal
+- `Cargo.lock` actualizado; `cargo check/test --locked`
+- Tests de markers / reexport
+- Commits en rama; `git-manager status` exitoso
 
 ## Touchpoints
 
@@ -51,25 +63,18 @@ Materialización **F1-A…F1-D completa** vía `skill:filesystem-manager` (LLM-n
 |----|-----------|--------|
 | F1-A | `SddIA/core/cumulo.paths.json` | `version` 1.5.0→1.5.1; bloque `products` |
 | F1-A | `SddIA/Cargo.toml` | member `sddia-core` |
-| F1-A | `SddIA/sddia-core/` | crate Shared Kernel; `pub use sddia_io::*` + `jurisdiction` |
-| F1-B | `packages/sddia-core/` | npm `@sddia/core` 0.1.0 private + README |
+| F1-A | `SddIA/Cargo.lock` | entrada `sddia-core` 0.1.0 |
+| F1-A | `SddIA/sddia-core/` | crate + tests jurisdicción |
+| F1-B | `packages/sddia-core/` | npm `@sddia/core` 0.1.0 private |
 | F1-C | `SddIA/norms/capsule-json-io.md` | `SDDIA_CAPSULE_REQUEST` / `SDDIA_SKIP_STDIN` |
-| F1-C | `SddIA/evolution/4dd6f7a2-7bbf-4744-8a4c-7ac315ed9a51.md` | registro evolution |
-| F1-D | `apps/sddia-forge/` | esqueleto + dep `file:../../packages/sddia-core` |
-| F1-D | `apps/sddia-portal/` | homólogo |
+| F1-C | `SddIA/evolution/4dd6f7a2-….md` | registro evolution |
+| F1-D | `apps/sddia-forge/` / `apps/sddia-portal/` | esqueletos + dep inerte |
+| Higiene | `.gitignore` | ignora `.SddIA/daemons/status/` |
 
 ## Anti-GesFer (perímetro F1)
 
-Scan Grep en `capsule-json-io`, `packages/sddia-core`, `SddIA/sddia-core`, `apps/*` → **0 matches**.  
-Library códices/normas de dominio **no** tocados (fuera de perímetro).
-
-## Residual operador (F1-E)
-
-```bash
-cd SddIA && cargo check -p sddia-core
-# commit vía skill:git-manager (no git crudo)
-```
+Scan en `capsule-json-io`, `packages/sddia-core`, `SddIA/sddia-core`, `apps/*` → **0 matches**.
 
 ## Veredicto
 
-**blocked** — forja física lista; sellado verify/commit pendiente de shell/cápsulas.
+**ok** — frontera F1 certificable bajo AC1–AC6 refinados; PBI kitchen maestro permanece sin archivar (O3).

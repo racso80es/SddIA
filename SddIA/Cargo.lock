@@ -906,6 +906,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "sddia-core"
+version = "0.1.0"
+dependencies = [
+ "sddia-io",
+]
+
+[[package]]
 name = "sddia-daemon-runtime"
 version = "0.1.0"
 dependencies = [
