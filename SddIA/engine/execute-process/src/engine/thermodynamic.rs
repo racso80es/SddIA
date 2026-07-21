@@ -121,62 +121,96 @@ pub fn run(
         }
     }
 
-    if success {
-        let ws = workspace_path
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(str::to_string);
-        // PEC: workspace (legado) o correlation_id (lazo Kalma2 / EDA).
-        if ws.is_some() || correlation_id.is_some() {
-            let orch_id = Uuid::new_v4().to_string();
-            let phase_reports = state.get("phase_reports");
-            let phase_count = phase_reports.and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
-            let mut payload = json!({
-                "asset_id": asset_id,
-                "process_name": process_name,
-                "status": "success",
-            });
-            if let Some(ref path) = ws {
-                payload["workspace_path"] = json!(path);
-            }
-            if let Some(eid) = execution_id {
-                payload["execution_id"] = json!(eid);
-            }
-            if phase_count > 0 {
-                payload["phase_count"] = json!(phase_count);
-            }
-            if let Some(pr) = persist_ref {
-                payload["persist_ref"] = json!(pr);
-            }
-            if let Some(ref cid) = correlation_id {
-                payload["correlation_id"] = json!(cid);
-            }
+    // PEC: éxito (legado) o fallo con correlation_id (lazo Kalma2 — evita 404/timeout ciego).
+    let ws = workspace_path
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    let emit_pec = (success && (ws.is_some() || correlation_id.is_some()))
+        || (!success && correlation_id.is_some());
+    if emit_pec {
+        let orch_id = Uuid::new_v4().to_string();
+        let phase_reports = state.get("phase_reports");
+        let phase_count = phase_reports.and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
+        let pec_status = if success { "success" } else { "failed" };
+        let mut payload = json!({
+            "asset_id": asset_id,
+            "process_name": process_name,
+            "status": pec_status,
+            "exit_code": exit_code,
+        });
+        if let Some(ref path) = ws {
+            payload["workspace_path"] = json!(path);
+        }
+        if let Some(eid) = execution_id {
+            payload["execution_id"] = json!(eid);
+        }
+        if phase_count > 0 {
+            payload["phase_count"] = json!(phase_count);
+        }
+        if let Some(pr) = persist_ref {
+            payload["persist_ref"] = json!(pr);
+        }
+        if let Some(ref cid) = correlation_id {
+            payload["correlation_id"] = json!(cid);
+        }
+        if success {
             if let Some(phase) = derive_cycle_phase(process_name, phase_reports) {
                 payload["cycle_phase"] = json!(phase);
             }
-            let orch_event = json!({
-                "event_id": orch_id,
-                "event_type": "Process_Execution_Completed",
-                "event_family": "orchestration",
-                "timestamp": iso_now(),
-                "emitter_agent": "execute-process",
-                "payload": payload,
-                "delivery_state": {},
-            });
-            match write_fractal_event(repo, &orch_event, &orch_dir) {
-                Ok(seal) => {
-                    result["orchestration"] = seal;
-                }
-                Err(e) => {
-                    result["orchestration_error"] = json!(e);
-                    result["orchestration_io_failed"] = json!(true);
-                    eprintln!("[THERMODYNAMIC-TOLL-EMERGENCY] process={process_name} channel=orchestration: {e}");
-                }
+        } else {
+            payload["cycle_phase"] = json!("failed");
+        }
+        let orch_event = json!({
+            "event_id": orch_id,
+            "event_type": "Process_Execution_Completed",
+            "event_family": "orchestration",
+            "timestamp": iso_now(),
+            "emitter_agent": "execute-process",
+            "payload": payload,
+            "delivery_state": {},
+        });
+        match write_fractal_event(repo, &orch_event, &orch_dir) {
+            Ok(seal) => {
+                result["orchestration"] = seal;
+            }
+            Err(e) => {
+                result["orchestration_error"] = json!(e);
+                result["orchestration_io_failed"] = json!(true);
+                eprintln!("[THERMODYNAMIC-TOLL-EMERGENCY] process={process_name} channel=orchestration: {e}");
             }
         }
     }
 
     result
+}
+
+/// Emite PEC temprano `initialized` (TQM → hijo lifecycle) para sondeo Kalma2.
+pub fn emit_initialized_pec(
+    repo: &Path,
+    process_name: &str,
+    correlation_id: &str,
+) -> Result<Value, String> {
+    let (_, orch_dir, _) = load_fractal_dirs(repo);
+    fs::create_dir_all(repo.join(&orch_dir)).ok();
+    let orch_id = Uuid::new_v4().to_string();
+    let payload = json!({
+        "process_name": process_name,
+        "status": "success",
+        "correlation_id": correlation_id,
+        "cycle_phase": "initialized",
+        "emitter_hint": "task-queue-manager-early-pec",
+    });
+    let orch_event = json!({
+        "event_id": orch_id,
+        "event_type": "Process_Execution_Completed",
+        "event_family": "orchestration",
+        "timestamp": iso_now(),
+        "emitter_agent": "task-queue-manager",
+        "payload": payload,
+        "delivery_state": {},
+    });
+    write_fractal_event(repo, &orch_event, &orch_dir)
 }
 
 const THERMODYNAMIC_EXEMPT: &[&str] = &[
@@ -241,5 +275,25 @@ mod tests {
     fn derive_none_for_non_lifecycle() {
         let reports = json!([{"status": "simulated"}]);
         assert_eq!(derive_cycle_phase("task-queue-manager", Some(&reports)), None);
+    }
+
+    #[test]
+    fn emit_initialized_pec_writes_orchestration() {
+        let tmp = tempfile::tempdir().expect("tmp");
+        let repo = tmp.path();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_fractal":{"telemetry":"./.events/telemetry","orchestration":"./.events/orchestration","domain":"./.events/domain"}}"#,
+        )
+        .unwrap();
+        let seal = emit_initialized_pec(repo, "feature", "11111111-1111-4111-8111-111111111111")
+            .expect("pec");
+        let path = seal.get("target_path").and_then(|v| v.as_str()).unwrap();
+        let raw = std::fs::read_to_string(repo.join(path)).unwrap();
+        let ev: Value = serde_json::from_str(&raw).unwrap();
+        assert_eq!(ev["event_type"], "Process_Execution_Completed");
+        assert_eq!(ev["payload"]["cycle_phase"], "initialized");
+        assert_eq!(ev["payload"]["correlation_id"], "11111111-1111-4111-8111-111111111111");
     }
 }
