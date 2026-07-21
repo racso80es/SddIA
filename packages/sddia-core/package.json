@@ -1,0 +1,23 @@
+{
+  "name": "@sddia/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Kernel SddIA — fachada npm de jurisdicción Core ciega",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "keywords": [
+    "sddia",
+    "shared-kernel"
+  ],
+  "license": "MIT"
+}

@@ -16,7 +16,7 @@ Un único objeto JSON (una línea recomendada; se acepta JSON multilínea en std
 | `meta.token` | object | Opcional; Karma2Token si el contrato lo exige. |
 | `request` | object | Cuerpo libre definido en `paths.skillsDefinitionPath/<skill-id>/spec.md`. |
 
-**Entrada alternativa:** variable de entorno `GESFER_CAPSULE_REQUEST` con el mismo JSON. Si `GESFER_SKIP_STDIN=1`, no se lee stdin.
+**Entrada alternativa:** variable de entorno `SDDIA_CAPSULE_REQUEST` con el mismo JSON. Si `SDDIA_SKIP_STDIN=1`, no se lee stdin.
 
 **Archivo:** `--request-file <ruta>` (argumento del `.exe`) para pruebas locales.
 
