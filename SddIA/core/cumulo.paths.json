@@ -1,5 +1,5 @@
 {
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -97,6 +97,12 @@
     "workspacesRoot": ".SddIA/workspaces/",
     "featurePath": "docs/features",
     "fixPath": "docs/fixes"
+  },
+  "products": {
+    "shared_kernel_npm": "packages/sddia-core",
+    "shared_kernel_crate": "SddIA/sddia-core",
+    "forge": "apps/sddia-forge",
+    "portal": "apps/sddia-portal"
   },
   "radamanto": {
     "stats": ".SddIA/radamanto/stats.json",

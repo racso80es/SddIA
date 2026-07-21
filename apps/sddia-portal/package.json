@@ -1,0 +1,9 @@
+{
+  "name": "sddia-portal",
+  "version": "0.0.0",
+  "private": true,
+  "description": "SddIA Portal — esqueleto F1 (Consumidores / terminal opaca futura). Sin UI.",
+  "dependencies": {
+    "@sddia/core": "file:../../packages/sddia-core"
+  }
+}

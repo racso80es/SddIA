@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "sddia-io",
+    "sddia-core",
     "sddia-daemon-runtime",
     "engine/*",
     "skills/*",
