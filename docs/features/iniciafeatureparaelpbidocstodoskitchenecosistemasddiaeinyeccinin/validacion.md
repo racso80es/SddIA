@@ -1,106 +1,115 @@
 ---
 feature_name: iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
-created: "2026-07-20"
-updated: "2026-07-21"
-process: feature
+created: "2026-07-21"
+process: pull-request-review
+phase: Triaje documental
 branch: feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
-global: APTO
+branch_name_injected: null
+global: NO_APTO
 pbi_archived: false
-correlation_id: 4dd6f7a2-7bbf-4744-8a4c-7ac315ed9a51
-canonical_feature_name: fractura-core-paciente-0-gesfer
-document_id: PBI-ECOSISTEMA-GESFER-PACIENTE-0
-pbi_ref: docs/todos/kitchen/Ecosistema SddIA e Inyección Industrial en Paciente 0 (GesFer).md
-approval_status: approved_f1_boundary_awaiting_forge_auth
-delivery_close_attempted: true
-delivery_close_status: blocked_github_auth
-delivery_close_execution_id: 7fbe382b-ad1b-46ed-a277-1d42f59d70e3
-remote_pushed: true
-remote_branch: feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
-pr_compare_url: https://github.com/racso80es/SddIA/compare/main...feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin?expand=1
-pr_url: null
-git_manager_invoked: true
-git_manager_operation: status
-cargo_check_invoked: true
-cargo_check_cmd: "cargo check -p sddia-core --locked --offline"
-cargo_test_cmd: "cargo test -p sddia-core --locked --offline"
-cargo_test_result: "2 passed"
-npm_runtime: static_python_smoke
-tekton_verdict_aligned: ok
-scope_note: "AC1 = boundary Shared Kernel (spec O1), no extracción física de los 6 Nodos de Control"
+pbi_ref: ""
+correlation_id: 8Bnq4p1hzQxat79duyKxq7iH6qkJDS8jr7myYYZ5Sebf
+pr_url: https://github.com/racso80es/SddIA/pull/125
+approval_status: blocked
+verdict: requiere_cambios
+delivery_state: failed
+git_manager_invoked: false
+git_manager_error: "cápsula no ejecutable en esta sesión — Shell rechazado; sin stdout físico de skill:git-manager"
 checks:
-  AC1_shared_kernel_artifacts: APTO
-  AC1_cargo_check_locked: APTO
-  AC1_rust_tests: APTO
-  AC1_npm_facade_static: APTO
-  AC2_anti_gesfer_perimeter: APTO
-  AC3_capsule_json_io_hermetic: APTO
-  AC4_forge_portal_skeletons: APTO
-  AC5_doc_cascade: APTO
-  AC5_git_commits_and_git_manager_status: APTO
-  AC6_no_phases_2_4: APTO
-  chain_verdict_coherent: APTO
-  pbi_master_kitchen_retained: APTO
+  DOC_OBJECTIVES: NO_APTO
+  DOC_SPEC: NO_APTO
+  DOC_PLAN: NO_APTO
+  DOC_IMPLEMENTATION: NO_APTO
+  DOC_FRONTMATTER_CASCADE: NO_APTO
+  DOC_PBI_LINK: NO_APTO
+  BRANCH_ALIGN: NO_APTO
+  GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO
 git_changes:
-  - SddIA/core/cumulo.paths.json
-  - SddIA/Cargo.toml
-  - SddIA/Cargo.lock
-  - SddIA/sddia-core/
-  - SddIA/norms/capsule-json-io.md
-  - SddIA/evolution/4dd6f7a2-7bbf-4744-8a4c-7ac315ed9a51.md
-  - packages/sddia-core/
-  - apps/sddia-forge/
-  - apps/sddia-portal/
-  - .gitignore
-  - docs/features/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin/
+  - docs/features/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin/_agent_handoff.md
+  - docs/features/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin/validacion.md
 ---
 
-# Validación — Fractura Core F1 (Argos · Verificación)
+# Validación — Triaje documental (Argos · pull-request-review)
 
 ## Veredicto
 
-**APTO** — frontera F1 certificada con evidencia `cargo --locked`, tests Rust (2), smoke estático npm y `git-manager status`.
-
-`pbi_archived: false` deliberado: el PBI kitchen es plan maestro multi-fase (O3); este ciclo solo cierra **Fase 1 boundary**.
+**NO_APTO / blocked** — `delivery_state: failed`. Cascada documental ausente bajo `persist_ref`. No se inventa éxito de forja ni de aduana.
 
 ## Ingesta
 
 | Input | Resolución |
 |-------|------------|
 | `persist_ref` | `docs/features/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin` |
-| `branch_name` | `feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin` |
-| `acceptance_criteria` | `objectives.md` AC1–AC6 + `spec.md` §6 (boundary) |
-| Auditoría previa | `auditoria-pull-request-review.md` (NO_APTO histórico; residual F1-E cerrado aquí) |
+| `branch_name` (runtime) | `None` / vacío |
+| `branch` (ECST `PullRequest_Presented`) | `feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin` |
+| `pr_url` (ECST) | `https://github.com/racso80es/SddIA/pull/125` |
+| `pbi_ref` | vacío |
+| `correlation_id` | `8Bnq4p1hzQxat79duyKxq7iH6qkJDS8jr7myYYZ5Sebf` |
+| Workspace snapshot (inicio sesión) | rama local `feat/kaizen-kalma2-feature-cycle-observability` — **desalineada** del PR #125 |
 
-## Checks
+## Evidencia filesystem (`persist_ref`)
+
+Contenido observado (lectura directa):
+
+| Artefacto | Estado |
+|-----------|--------|
+| `_agent_handoff.md` | presente (fallos SSL EPROTO en ciclos previos) |
+| `objectives.md` | **ausente** |
+| `spec.md` | **ausente** |
+| `plan.md` | **ausente** |
+| `implementation.md` | **ausente** |
+| `clarify.md` / `execution.md` | **ausentes** |
+| `auditoria-pull-request-review.md` | **ausente** (referenciado por PBI Kaizen; no materializado) |
+| `validacion.md` | este informe |
+
+## Checks (Triaje documental)
 
 | ID | Criterio | Estado | Evidencia |
 |----|----------|--------|-----------|
-| AC1 artifacts | Crate + npm + `products` | **APTO** | `SddIA/sddia-core`, `packages/sddia-core`, `cumulo.paths.json` v1.5.1 |
-| AC1 cargo | `cargo check --locked` | **APTO** | OK offline |
-| AC1 tests | markers + reexport | **APTO** | 2 passed |
-| AC1 npm | fachada estática | **APTO** | python smoke (Node ausente en host) |
-| AC2 | anti-GesFer | **APTO** | 0 hits perímetro |
-| AC3 | `SDDIA_*` schema 2.0 | **APTO** | `capsule-json-io.md` |
-| AC4 | esqueletos | **APTO** | forge/portal sin UI |
-| AC5 cascade | docs | **APTO** | clarify…validacion + auditoría |
-| AC5 git | commits + git-manager | **APTO** | commits en rama; `git-manager status` success |
-| AC6 | sin F2–F4 | **APTO** | sin inyección GesFer/IOTA/wallet/UI |
-| kitchen | no archive maestro | **APTO** | O3 / `pbi_archived: false` |
+| DOC_OBJECTIVES | `objectives.md` + frontmatter | **NO_APTO** | archivo inexistente |
+| DOC_SPEC | `spec.md` + frontmatter | **NO_APTO** | archivo inexistente |
+| DOC_PLAN | `plan.md` + frontmatter | **NO_APTO** | archivo inexistente |
+| DOC_IMPLEMENTATION | `implementation.md` + frontmatter | **NO_APTO** | archivo inexistente |
+| DOC_FRONTMATTER_CASCADE | Cascada features-documentation-pattern | **NO_APTO** | solo handoff efímero |
+| DOC_PBI_LINK | `pbi_ref` resoluble / archivo en done\|pending | **NO_APTO** | `pbi_ref` vacío; residual F1 no archivado aquí |
+| BRANCH_ALIGN | rama runtime ↔ ECST ↔ checkout | **NO_APTO** | inject `None`; ECST declara `feat/iniciafeature…`; cwd en otra rama |
+| GIT_EVIDENCE_VIA_GIT_MANAGER | `skill:git-manager` `status` | **NO_APTO** | Shell sesión rechazado; sin `success`/`data.gitStdout` |
 
-## Nota Grado S+
+## Git (`skill:git-manager`)
 
-- **Boundary ≠ extracción de Nodos:** alineado a `spec.md` O1; deuda de paquete distribuible pleno → features hijas / Kaizen de producto si Racso lo exige.
-- **Node runtime:** no instalado; evidencia npm = contrato estático. Smoke Node queda como mejora opcional post-merge.
-- **PPR formal:** requiere `delivery-close-cycle` + `PullRequest_Presented`; ver PBI Kaizen observabilidad.
+**No materializado.** Invocación prevista (no ejecutada):
+
+```text
+stdin → git-manager (vía sddia-run / cápsula nativa)
+{"operation_type":"status","repository_path":"/home/racso/Proyectos/SddIA","operation_payload_json":{}}
+```
+
+`git_changes` lista solo paths documentales verificados por filesystem en este ciclo (sin diff OID confirmado por cápsula). Snapshot inicial de sesión: `persist_ref` untracked.
+
+## ECST / bus
+
+| Campo | Valor |
+|-------|--------|
+| event_id | `8Bnq4p1hzQxat79duyKxq7iH6qkJDS8jr7myYYZ5Sebf` |
+| event_type | `PullRequest_Presented` |
+| emitter | `github-bridge-watcher` |
+| subscriber | `argos.pull-request-review` (processing) |
+| delivery_state.argos (pre-triaje) | `pending` |
 
 ## approval_status
 
 ```text
-approved_f1_boundary_awaiting_forge_auth — AC1–AC6 APTO; delivery-close-cycle bloqueado por token GitHub inválido; ver runbook-delivery-close.md
+blocked — vacío documental F-DOC (objectives/spec/plan/implementation);
+branch_name null; git-manager evidence gap; pbi_archived false
 ```
 
-## Forja
+## correction_blueprint_md (orientativo)
 
-Rama publicada en origin. PR pendiente: host bloquea api.github.com.
+| Fase | intent | delegates_to |
+|------|--------|--------------|
+| Alinear rama | Checkout limpio a `feat/iniciafeature…` | `skill:git-manager` |
+| Completar cascada | Materializar objectives→execution bajo persist_ref | `agent:mayeuta` → `agent:dedalo` → `agent:tekton` |
+| Vincular PBI | `pbi_ref` + move a `docs/todos/done/` si procede | `agent:cumulo` |
+| Re-aduana | Re-emitir/reprocesar PPR tras cascada | `action:execute-process` → `pull-request-review` |
 
-https://github.com/racso80es/SddIA/compare/main...feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin?expand=1
+**Prohibido** handoff a `accept-pr` con este veredicto.
