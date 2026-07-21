@@ -437,6 +437,22 @@ fn execute_phase(
         "delegates_to": delegates,
     });
 
+    if let Err(di_err) =
+        crate::engine::capability_di_gate::validate_phase_capability_di(repo, phase, process_name)
+    {
+        crate::engine::capability_di_gate::write_di_dead_letter(
+            repo,
+            &di_err,
+            phase_name,
+            process_name,
+        );
+        entry["status"] = json!("failed");
+        entry["handler"] = json!("capability-di-gate");
+        entry["error"] = json!(di_err.message);
+        entry["di_gate_code"] = json!(di_err.code.as_str());
+        return entry;
+    }
+
     if phase_name == "Aduana EDA genómica" {
         match capsule_eda_genomic_audit_gate(repo, inputs, state) {
             Ok(gate) => {

@@ -101,3 +101,19 @@ Prohibido omitir `workspace_template` tras adoptar `process-contract v1.4.0`.
 Métricas operativas para el ciclo de vida del flujo:
 * `minteo_maximo`: Límite de ejecuciones de este proceso en la red.
 * `porcentaje_de_exito`: Variable que audita si las iteraciones del proceso alcanzan el cierre sin colapso entrópico.
+
+## 6. Metadatos Activos — DI por capacidades (MVP)
+
+Campos opcionales en frontmatter de `{name}.md` (proceso) y/o en cada elemento de `phases`:
+
+```yaml
+requires_capability:
+  - id: "doc:closure"       # DEBE existir en capability-taxonomy.catalog
+    contract: "doc.closure" # → directories.capability_contracts / {contract}.schema.json
+    version: ">=1.0.0"      # SemVer o rango simple >=X.Y.Z
+```
+
+* **`delegates_to`** sigue resolviendo el artefacto físico en MVP.
+* La **Aduana Temprana** (`capability_di_gate` en `execute-process`) valida taxonomía + `provides` del proveedor + schema **antes de la ignición** de la fase.
+* Norma SSOT: `normative_documents.capability_taxonomy` (Códice de la Lengua).
+* Prohibido `spec.json` como soporte de estos metadatos.

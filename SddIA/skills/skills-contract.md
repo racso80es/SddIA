@@ -59,3 +59,17 @@ Campos opcionales en frontmatter de `{name}.md`:
 | `telemetry_schema` | string[] | `["prompt_tokens", "completion_tokens"]` si `telemetry_provided: true` | Claves obligatorias en el recibo |
 
 Ausencia de ambos campos → la ED no entra en auditoría de cumplimiento termodinámico.
+## 7. Metadatos Activos — `provides` (MVP DI)
+
+Campo opcional en frontmatter cuando la skill ofrece una capacidad homologada:
+
+```yaml
+provides:
+  - id: "doc:closure"
+    contract: "doc.closure"
+    version: "1.0.0"
+```
+
+* `id` ∈ Códice de la Lengua (`capability-taxonomy.catalog`).
+* `capabilities[]` (operaciones atómicas de la cápsula) **no** sustituye a `provides`.
+* Consumidores process validan vía `requires_capability` + Aduana Temprana en `execute-process`.
