@@ -23,8 +23,9 @@ checks:
   AC_PPR_via_ecst_bus: APTO
   cargo_thermodynamic_tests: APTO
 lab_pr_url: "https://github.com/lab-simulated/SddIA/pull/0-feat-kaizen-kalma2-feature-cycle-observability"
-ppr_event_id: "1b7ea160-5703-48ad-b51b-5db7d46ac192"
-ppr_witness: ".events/processed/subscribers/1b7ea160-5703-48ad-b51b-5db7d46ac192.argos.pull-request-review.json"
+ppr_event_id: "a43a4e8e-41ed-4a2a-8a20-1b781d9f46cf"
+ppr_event_id_lab: "1b7ea160-5703-48ad-b51b-5db7d46ac192"
+ppr_witness: ".events/processed/subscribers/a43a4e8e-41ed-4a2a-8a20-1b781d9f46cf.argos.pull-request-review.json"
 git_changes:
   - SddIA/engine/execute-process/src/core/resolver.rs
   - SddIA/engine/execute-process/src/engine/route_domain_core.rs
@@ -61,8 +62,9 @@ SDDIA_LAB_ROUTE_SYNC=1 ./sddia-run.sh --process route-domain-event --inputs '{"e
 
 | Ciclo | event_id | `argos.pull-request-review` |
 |-------|----------|-----------------------------|
-| Kaizen (esta rama) | `1b7ea160-5703-48ad-b51b-5db7d46ac192` | success |
-| F1 kitchen (otra rama) | `3c441eaf-0a8e-421b-8fe2-d7dd43ff92f4` | success |
+| Kaizen lab | `1b7ea160-5703-48ad-b51b-5db7d46ac192` | success |
+| Kaizen PR #124 | `a43a4e8e-41ed-4a2a-8a20-1b781d9f46cf` | success |
+| F1 kitchen | `3c441eaf-0a8e-421b-8fe2-d7dd43ff92f4` | success |
 
 Periféricos `send-telegram-notification` / `iota-immutable-publisher` pueden fallar sin invalidar PPR.
 
