@@ -28,6 +28,8 @@ const DEFAULTABLE: &[&str] = &[
     "pr_title",
     "pr_body",
     "target_branch",
+    // pull-request-review v1.1 / genoma: opcional hasta que delivery-close aporte URL
+    "pr_url",
 ];
 
 pub type ProcessDef = HashMap<String, YamlValue>;

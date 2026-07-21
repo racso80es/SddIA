@@ -2,6 +2,7 @@
 
 use super::super::invoke_orchestrator::invoke_process_full_with_env;
 use super::super::residual_runner;
+use super::super::thermodynamic;
 use crate::core::resolver::load_process_def;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Map, Value};
@@ -196,6 +197,18 @@ fn dispatch_child(
         correlation_id,
     )?;
     let pbi_loaded = child_inputs.get("pbi_body").is_some();
+    // O2 Kaizen: PEC initialized antes del hijo — el UI deja de timeout 120s sin rastro.
+    let early_pec = if let Some(cid) = correlation_id {
+        match thermodynamic::emit_initialized_pec(repo, process, cid) {
+            Ok(seal) => Some(seal),
+            Err(e) => {
+                eprintln!("[TQM-EARLY-PEC] correlation={cid} process={process}: {e}");
+                None
+            }
+        }
+    } else {
+        None
+    };
     let extra_env = child_env_for_kalma2(correlation_id);
     let env_refs: Vec<(&str, &str)> = extra_env
         .iter()
@@ -219,6 +232,7 @@ fn dispatch_child(
             "dispatched_process": process,
             "correlation_id": correlation_id,
             "pbi_ref": pbi,
+            "early_pec": early_pec,
             "child": child_data,
             "handler": "task-queue-manager-kalma2",
         })),
