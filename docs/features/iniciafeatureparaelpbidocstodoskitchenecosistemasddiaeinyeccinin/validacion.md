@@ -10,7 +10,11 @@ correlation_id: 4dd6f7a2-7bbf-4744-8a4c-7ac315ed9a51
 canonical_feature_name: fractura-core-paciente-0-gesfer
 document_id: PBI-ECOSISTEMA-GESFER-PACIENTE-0
 pbi_ref: docs/todos/kitchen/Ecosistema SddIA e Inyección Industrial en Paciente 0 (GesFer).md
-approval_status: approved_f1_boundary
+approval_status: approved_f1_boundary_awaiting_forge_auth
+delivery_close_attempted: true
+delivery_close_status: blocked_github_auth
+delivery_close_execution_id: 7fbe382b-ad1b-46ed-a277-1d42f59d70e3
+pr_url: null
 git_manager_invoked: true
 git_manager_operation: status
 cargo_check_invoked: true
@@ -89,5 +93,5 @@ git_changes:
 ## approval_status
 
 ```text
-approved_f1_boundary — AC1–AC6 APTO; PBI kitchen retenido; PR/aduana pendiente de delivery-close-cycle
+approved_f1_boundary_awaiting_forge_auth — AC1–AC6 APTO; delivery-close-cycle bloqueado por token GitHub inválido; ver runbook-delivery-close.md
 ```

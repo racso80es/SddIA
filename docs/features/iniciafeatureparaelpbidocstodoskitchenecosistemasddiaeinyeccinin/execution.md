@@ -62,4 +62,6 @@ Sin inyección GesFer, IOTA, wallet ni UI Forge/Portal.
 
 ## Veredicto
 
-`ok` — F1-1…F1-3 con evidencia reproducible; cierre de entrega (`delivery-close-cycle` / PR) queda como paso de orquestación posterior.
+`ok` — F1-1…F1-3 con evidencia reproducible.
+
+**Cierre de entrega (2026-07-21):** `delivery-close-cycle` ejecutó Snapshot + EDA (`orphan_count: 0`); **falló** Publicación remota / forja / sello ECST por **auth GitHub inválida** (`gh auth` token invalid; push HTTPS sin credenciales). Ver `runbook-delivery-close.md`.
