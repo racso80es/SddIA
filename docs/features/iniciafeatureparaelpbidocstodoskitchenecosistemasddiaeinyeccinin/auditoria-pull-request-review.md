@@ -88,20 +88,19 @@ Reserva de diseño (no bloqueo F1 boundary): el Shared Kernel **no** empaqueta l
 | Contrato I/O | `SddIA/norms/capsule-json-io.md` | Usa `SDDIA_CAPSULE_REQUEST` y `SDDIA_SKIP_STDIN`; schema 2.0 |
 | Cáscaras | `apps/sddia-forge/`, `apps/sddia-portal/` | Solo README, package.json y .gitignore |
 | Evolución | `SddIA/evolution/4dd6f7a2-7bbf-4744-8a4c-7ac315ed9a51.md` | Correlación y alcance F1 registrados |
-| Documentación | Cascada completa bajo `persist_ref` | Coherente; validación original en NO_APTO |
+| Documentación | Cascada completa bajo `persist_ref` | Coherente; `validacion.md` **APTO** (2026-07-21) |
 
 ### Hallazgo de trazabilidad del lockfile
 
-`SddIA/Cargo.lock` no incorpora la entrada `sddia-core` 0.1.0. `cargo check` sin `--locked` puede generarla y compilar, pero `cargo check -p sddia-core --locked` falla porque el lockfile necesita actualización. Es un touchpoint necesario para reproducibilidad del workspace, no figura en el inventario original de `implementation.md`/`validacion.md` y debe incorporarse al alcance documental y al futuro commit F1.
+`SddIA/Cargo.lock` **ya incorpora** `sddia-core` 0.1.0. `cargo check/test -p sddia-core --locked --offline` OK.
 
 ## 5. Validaciones ejecutadas
 
 ### Rust
 
 ```text
-cargo check -p sddia-core           → OK tras regenerar lockfile
-cargo test  -p sddia-core --locked  → OK tras regenerar lockfile (0 tests)
-cargo check -p sddia-core --locked  → NO_APTO con lockfile versionado actual
+cargo check -p sddia-core --locked --offline  → OK
+cargo test  -p sddia-core --locked --offline  → OK (2 passed)
 ```
 
 Advertencias preexistentes/no bloqueantes observadas:
@@ -125,21 +124,23 @@ GesFer/gesfer/GESFER en perímetro F1         → 0 coincidencias
 Fuentes UI/router/AST/runtime en apps         → ausentes
 ```
 
-Las menciones a UI/AST en los README son exclusiones documentales, no implementaciones de producto.
-
 ### npm
 
-El contrato estático de `package.json`, `index.js` e `index.d.ts` es coherente en nombre, versión y markers. La prueba de carga con Node.js quedó **NO VERIFICADA** porque el ejecutable `node` no está instalado.
+Contrato estático OK (`package.json` / `index.js` / deps apps). Node.js ausente en host → smoke runtime diferido.
+
+### Git
+
+Commits en rama (6 vs `main`) + `git-manager status` → `success: true`.
 
 ## 6. Matriz de objetivos refinados
 
 | AC | Objetivo | Evidencia | Veredicto |
 |----|----------|-----------|-----------|
-| AC1 | Boundary Core consumible, crate/npm y SSOT | Crate compila tras actualizar lock; fachada npm y `products` existen | **APTO CON RESERVAS**: lock pendiente, boundary sin extracción de Nodos de Control |
-| AC2 | Cero literales GesFer en perímetro tocado | Scan de norma, crates, package y apps: 0 | **APTO** |
-| AC3 | `capsule-json-io` como ley y E/S hermética | Schema 2.0 y env `SDDIA_*` | **APTO CON RESERVAS**: contrato actualizado, enforcement integral no probado |
+| AC1 | Boundary Core consumible, crate/npm y SSOT | Crate + lock + tests + fachada npm + `products` | **APTO** (boundary; no extracción de Nodos) |
+| AC2 | Cero literales GesFer en perímetro tocado | Scan: 0 | **APTO** |
+| AC3 | `capsule-json-io` como ley y E/S hermética | Schema 2.0 y env `SDDIA_*` | **APTO** (contrato; campaña universal Skills = Kaizen futuro) |
 | AC4 | Forge/Portal vacíos con dependencia inerte | Tres archivos por app; dep local | **APTO** |
-| AC5 | Cascada documental y Git vía git-manager | Cascada completa; sin commit/PR | **NO_APTO** por entrega Git |
+| AC5 | Cascada documental y Git | Cascada + commits + git-manager | **APTO** |
 | AC6 | Sin Fases 2–4 | Sin inyección GesFer, IOTA, wallet ni UI | **APTO** |
 
 ## 7. Contraste con el PBI maestro
@@ -168,29 +169,28 @@ Cumplido en el alcance acordado: ambos esqueletos están vacíos y declaran una 
 | Hallazgo | Resultado |
 |----------|-----------|
 | Cascada Mayeuta → Dedalo → Tekton → Argos | Materializada en filesystem |
-| Tekton | F1-A…D done; F1-E bloqueado en sesión original |
-| Argos original | `global: NO_APTO`, alineado con F1-E |
-| Correlación en `.events/` | No localizada |
+| Tekton | F1-A…E **ok** tras residual 2026-07-21 |
+| Argos | `global: APTO` boundary; histórico NO_APTO F1-E cerrado |
+| Correlación en `.events/` | No localizada (deuda Kaizen observabilidad) |
 | Workspace exacto `feature/<correlation_id>` | No localizado |
-| Commits `main..HEAD` | 0 |
-| PR / `pr_url` | Ausente |
+| Commits `main..HEAD` | ≥6 |
+| PR / `pr_url` | Ausente — pendiente `delivery-close-cycle` |
 | `PullRequest_Presented` de esta feature | Ausente |
-| Centinelas | Procesos vivos y heartbeats activos durante la auditoría inicial |
+| Centinelas | Locks de status en `.gitignore`; heartbeats observados en auditoría |
 
-La persistencia documental demuestra ejecución parcial, pero el rastro EDA no permite reconstruir de forma íntegra el estímulo raíz y sus handoffs. Existe una deuda de observabilidad entre Kalma2, `task-queue-manager`, el proceso `feature` y el bus.
+La materia F1 está sellada en Git; el rastro EDA del estímulo Kalma2 sigue incompleto → PBI-KAIZEN-KALMA2-FEATURE-CYCLE-OBS.
 
 ## 9. Aplicación de `pull-request-review`
 
-La aduana requiere una rama presentada, diff/commit identificable y correlación ECST `PullRequest_Presented`. Este ciclo carece de esos prerrequisitos.
+Con commits existe materia revisable, pero **sin PR/`pr_url`/`PullRequest_Presented`** la aduana formal aún no aplica.
 
 ```text
-verdict: rechazado
-delivery_state: failed
+verdict: pendiente_estimulo
+delivery_state: pending_delivery_close_cycle
 accept_pr_handoff: false
-reason: no_pr_no_commits_no_pull_request_presented
+reason: commits_ok_no_pull_request_presented
 ```
 
-No se evalúa handoff a `accept-pr` y no procede declarar éxito de entrega.
 
 ## 10. Riesgos y hallazgos
 
