@@ -194,24 +194,17 @@ reason: commits_ok_no_pull_request_presented
 
 ## 10. Riesgos y hallazgos
 
-### Bloqueantes
+### Abiertos (no bloquean F1 boundary)
 
-1. **Lockfile Rust desactualizado:** el build reproducible con `--locked` falla.
-2. **Sin commit/PR:** AC5 y Definition of Done incumplidos.
-3. **PBI no archivado:** permanece en `docs/todos/kitchen/`; `pbi_archived: false`.
-4. **Rastro EDA incompleto:** correlación ausente del bus y sin workspace correlacionado.
+1. **Sin PR / `PullRequest_Presented`:** aduana PPR formal pendiente de `delivery-close-cycle`.
+2. **PBI kitchen no archivado:** deliberado (O3); plan maestro multi-fase.
+3. **Rastro EDA incompleto:** Kaizen PBI-KAIZEN-KALMA2-FEATURE-CYCLE-OBS.
+4. **Smoke Node runtime:** host sin `node`; evidencia npm estática.
+5. **Enforcement universal Aduana:** contrato hermético OK; campaña Skills/Tools = deuda futura.
 
-### No bloqueantes para el prototipo F1, pero obligatorios antes de certificar producto
+### Cerrados en residual F1-E
 
-1. Añadir tests del crate para versión, ceguera y API reexportada.
-2. Ejecutar smoke npm en entorno Node y verificar resolución desde Forge/Portal.
-3. Definir si F1.1 significa boundary declarativo o distribución real de Nodos de Control; hoy objetivos y PBI no son equivalentes.
-4. Probar enforcement de Aduana Universal sobre una muestra representativa de Skills/Tools.
-5. Incorporar `SddIA/Cargo.lock` al inventario documental de cambios.
-
-### Higiene del working tree
-
-Hay cambios concurrentes fuera del alcance F1 (otros `docs/features`, `docs/fixes`, PBI de Centinelas y estado de daemons). El futuro commit debe seleccionar únicamente los touchpoints de esta feature para no contaminar el PR.
+Lockfile, tests Rust, commits, `git-manager status`, higiene `daemons/status/`, `validacion.md` APTO.
 
 ## 11. Conclusión
 
