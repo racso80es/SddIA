@@ -14,6 +14,9 @@ approval_status: approved_f1_boundary_awaiting_forge_auth
 delivery_close_attempted: true
 delivery_close_status: blocked_github_auth
 delivery_close_execution_id: 7fbe382b-ad1b-46ed-a277-1d42f59d70e3
+remote_pushed: true
+remote_branch: feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin
+pr_compare_url: https://github.com/racso80es/SddIA/compare/main...feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin?expand=1
 pr_url: null
 git_manager_invoked: true
 git_manager_operation: status
@@ -95,3 +98,9 @@ git_changes:
 ```text
 approved_f1_boundary_awaiting_forge_auth — AC1–AC6 APTO; delivery-close-cycle bloqueado por token GitHub inválido; ver runbook-delivery-close.md
 ```
+
+## Forja
+
+Rama publicada en origin. PR pendiente: host bloquea api.github.com.
+
+https://github.com/racso80es/SddIA/compare/main...feat/iniciafeatureparaelpbidocstodoskitchenecosistemasddiaeinyeccinin?expand=1
