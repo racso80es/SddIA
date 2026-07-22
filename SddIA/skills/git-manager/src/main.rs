@@ -92,12 +92,31 @@ fn rel_path_under_repo(repo: &Path, path_str: &str) -> String {
     if p.is_absolute() {
         fail("file path must be relative to the repository");
     }
-    let full = repo.join(p);
-    let full = full.canonicalize().unwrap_or_else(|_| fail("file path does not exist"));
-    if !full.starts_with(repo) {
+    if p.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
         fail("file path escapes the repository");
     }
-    full.strip_prefix(repo).unwrap().to_str().unwrap().to_string()
+    let full = repo.join(p);
+    // Paths ausentes (p.ej. deletes en porcelain) deben poder pasar a `git add --`.
+    if !full.exists() {
+        return path_str
+            .trim()
+            .trim_end_matches('/')
+            .replace('\\', "/");
+    }
+    let repo_canon = repo
+        .canonicalize()
+        .unwrap_or_else(|_| fail("repository path does not exist"));
+    let full = full
+        .canonicalize()
+        .unwrap_or_else(|_| fail("file path does not exist"));
+    if !full.starts_with(&repo_canon) {
+        fail("file path escapes the repository");
+    }
+    full.strip_prefix(&repo_canon)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string()
 }
 
 fn handle(op: &str, repo: &Path, payload: &Value) -> (Value, i32) {
@@ -200,7 +219,14 @@ fn handle(op: &str, repo: &Path, payload: &Value) -> (Value, i32) {
 
             for f in file_strs {
                 let rel = rel_path_under_repo(repo, f);
-                let (a_stdout, a_stderr, a_code) = run_git(repo, &["add", "--", &rel]);
+                let full = repo.join(&rel);
+                let (a_stdout, a_stderr, a_code) = if full.exists() {
+                    // Altas/mods (incl. dirs): -A cubre el pathspec.
+                    run_git(repo, &["add", "-A", "--", &rel])
+                } else {
+                    // Deletes (worktree ausente): plain `add` falla; `rm --ignore-unmatch` es idempotente.
+                    run_git(repo, &["rm", "--ignore-unmatch", "--", &rel])
+                };
                 if a_code != 0 {
                     let err_summary = format!("git add failed: {}", a_stderr.trim());
                     return (json!({ "gitStdout": a_stdout, "gitStderr": a_stderr, "errorSummary": err_summary }), a_code);
