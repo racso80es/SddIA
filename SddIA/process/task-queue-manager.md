@@ -1,7 +1,7 @@
 ---
 uuid: 608ae470-4db2-4ae6-8bb8-7aa5949c208a
 name: task-queue-manager
-version: 1.0.0
+version: 1.1.0
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 aliases:
@@ -9,7 +9,7 @@ aliases:
 context:
 - ecosystem-evolution
 - filesystem-ops
-hash_signature: sha256:8242f460c0de8738ad77f20438a318fdfaa132ac2a62d1cb00e30fa14122f7c9
+hash_signature: sha256:2ced2d81886d826b739bfb9c39f03f0e7492352d1602b30e276d75d3e7439de1
 inputs:
 - tasks_path: Raíz de cola de tareas resuelta vía Cumulo
 outputs:
@@ -18,8 +18,10 @@ outputs:
 phases:
 - name: Triaje
   intent: Leer raíz de cola, priorizar y aplicar marcas KAIZEN según convención local.
-  delegates_to:
-  - skill:filesystem-manager
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
 - name: Activación
   intent: Promover tarea a ACTIVE/ y snapshot git inicial.
   delegates_to:
@@ -31,11 +33,18 @@ phases:
   delegates_to:
   - action:execute-process
   - agent:tekton
-- name: Finalización
-  intent: Mover a DONE/ y consolidar estado en git.
-  delegates_to:
-  - skill:filesystem-manager
-  - skill:git-manager
+- name: Finalización FS
+  intent: Mover tarea a DONE/ (persistencia ciega).
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
+- name: Finalización Git
+  intent: Consolidar estado en git (sync ciego).
+  requires_capability:
+  - id: proc:git-sync
+    contract: proc.git_sync
+    version: '>=1.0.0'
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/fs.persist.schema.json",
+  "title": "fs.persist",
+  "type": "object",
+  "required": ["exitCode", "data"],
+  "properties": {
+    "exitCode": {
+      "type": "integer",
+      "description": "0 éxito / distinto de 0 fallo"
+    },
+    "data": {
+      "description": "Contenido (READ_FILE), listado (LIST_DIR) u objeto de evidencia de escritura/borrado/movimiento"
+    },
+    "error_log": {
+      "type": "string",
+      "description": "Detalle si exitCode != 0"
+    }
+  },
+  "additionalProperties": true
+}

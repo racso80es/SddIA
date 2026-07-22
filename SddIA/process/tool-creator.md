@@ -1,11 +1,11 @@
 ---
 uuid: "c4355159-b6ea-4201-973a-a08db5ce8156"
 name: "tool-creator"
-version: "1.1.0"
+version: "1.2.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:d93db300fd0598a158703f762b6c697f538a4c927c291c00c3caec8246f14ffb
+hash_signature: sha256:ba34c500193e98855a9bfc864759c2a53e92e13483c9d18a107609b61f377a35
 inputs:
   - "scope": "Enum estricto obligatorio: `core` | `local`. Resuelve el SSOT de definición e índice (simetría fractal)."
   - "tool_name": "Identificador kebab-case canónico de la tool (`{name}` del archivo `{tool_name}.md` bajo la raíz resuelta por `scope`)"
@@ -46,14 +46,20 @@ phases:
       - "skill:shell-executor"
   - name: "Forja del Contrato y Cápsula"
     intent: "Generar el Markdown bajo contrato tools y la cápsula física en la topología resuelta por `scope`."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "action:crypto-broker"
-      - "skill:filesystem-manager"
   - name: "Indexación"
     intent: "Cúmulo valida metadatos atómicos; solo tras autorización se escribe la fila en el `index.md` del ámbito `scope`."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "agent:cumulo"
-      - "skill:filesystem-manager"
 phase_invocations:
   - phase_name: "Forja del Contrato y Cápsula"
     invocations:

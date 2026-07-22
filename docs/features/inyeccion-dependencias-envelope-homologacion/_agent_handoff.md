@@ -195,3 +195,141 @@ Desbloqueo Hito 4:
 - git-manager status: OK
 - validacion.md → global: APTO; pbi_archived: false
 ```
+
+## 2026-07-22T10:30:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `e3079c94-2a40-4f60-b9c4-b4ade1ca031b`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `verdict: aprobado` · `delivery_state: success` · `accept_pr_handoff: true`
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (F2/F3/F4 APTO; sin bloqueo).
+
+- Tocados: `validacion.md`, `_agent_handoff.md`
+- Gates: F2 doc APTO · F3 tech proxy APTO · F4 RBAC APTO (`exitCode: 0`)
+- `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` (Shell rejected; no inventado)
+- Deuda no bloqueante: TECH_FORMAL_EXECUTE_PROCESS, RBAC_SIGNER_PRESENT, RBAC_* registry/KM
+- `pbi_archived: false` · `verdict: aprobado` · `delivery_state: success` · `accept_pr_handoff: true`
+```
+
+## 2026-07-22T10:28:55Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `e3079c94-2a40-4f60-b9c4-b4ade1ca031b`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `pbi_archived: false` · `accept_pr_handoff: true` · rama `feat/inyeccion-dependencias-envelope-homologacion`
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`aprobado` · `delivery_state: success`)
+
+- Tocados: `validacion.md`, `_agent_handoff.md`
+- F2/F3/F4: **APTO** (doc cascada · proxy `execution.md` 24/24 · Cerbero `exitCode: 0`)
+- `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` — `git-manager` no materializado (Shell rejected)
+- Deuda no bloqueante: `TECH_FORMAL_EXECUTE_PROCESS`, `RBAC_SIGNER_PRESENT`, registry/KM
+- `pbi_archived: false` · `accept_pr_handoff: true` · rama `feat/inyeccion-dependencias-envelope-homologacion`
+```
+
+## 2026-07-22T10:35:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `e3079c94-2a40-4f60-b9c4-b4ade1ca031b`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `kaizen_seeds: 2` · `delivery_state: success` heredado · `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO`
+
+### Transcript (tail)
+
+```
+**Cosecha Kaizen — cumulo · veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md`, 2 seeds `docs/todos/pending/`
+- Seeds: [OPERATIVO] Kalma2-agent-runtime-cursor residual (PPR #136); [ARQUITECTURA] delivery-close-cycle revoked+signer (PPR #136)
+- Dedup: revoked PPR #124/#125 done; Kalma2 nativo #125 done (residual agent path nuevo)
+- DIA: sin `Kaizen_Alert_Required` en bus
+- `git-manager`: Shell rejected — NO_APTO (no inventado)
+- `KAIZEN_COSECHA_GATE: APTO` · `accept_pr_handoff: true` · `pbi_archived: false`
+```
+
+## 2026-07-22T10:31:44Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `e3079c94-2a40-4f60-b9c4-b4ade1ca031b`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - DIA: sin `Kaizen_Alert_Required`; PBI-042 sigue en pending
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — Cosecha Kaizen APTO; `delivery_state: success` heredado.
+
+- `docs/todos/pending/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md`
+- `docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — revoked_entities y ECST signer (PPR #136).md`
+- `docs/features/…/validacion.md` (fase 6, `kaizen_seeds: 2`)
+- `docs/features/…/_agent_handoff.md`
+- `git-manager`: Shell rejected → `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` (no inventado)
+- DIA: sin `Kaizen_Alert_Required`; PBI-042 sigue en pending
+```
+
+## 2026-07-22T10:31:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `d7ae8006-fcdd-4c97-b9e3-25df119370fd`
+- pbi_ref: `docs/todos/pending/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `F2_DOC_GATE: APTO` · `verdict: aprobado` · rama `docs/finalize-inyeccion-dependencias-envelope-homologacion` · PR #137
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (Triaje documental / F2 APTO)
+
+- Tocados: `validacion.md`, `_agent_handoff.md`
+- Cascada: objectives/clarify/spec/plan/implementation/execution/finalize + frontmatter YAML
+- `persist_ref` vacío inyectado → resuelto vía handoff
+- `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` (Shell rejected; no inventado)
+- ECST d7ae8006 · PR #137 · merge observado 683474dd/754da69 (no sustituye git-manager)
+- `pbi_archived: false` · PBI-042 multi-hito
+```
+
+## 2026-07-22T10:35:00Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `d7ae8006-fcdd-4c97-b9e3-25df119370fd`
+- pbi_ref: `docs/todos/pending/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `F4_RBAC_GATE: APTO` · `exitCode: 0` · `resolution: PASS_F4_RBAC` · deudas signer/emitter-revoked no bloqueantes
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (Certificación RBAC APTO — `exitCode: 0`)
+
+- Tocados: `validacion.md`, `_agent_handoff.md`
+- Norma: `directories.norms` → `execution-contexts.md` (integridad espacial APTO)
+- Emisor ECST: `delivery-close-cycle` tipo-autorizado; **revoked** → `RBAC_EMITTER_NOT_REVOKED: NO_APTO`
+- Firmante: `null` → `RBAC_SIGNER_PRESENT`/`NOT_REVOKED: NO_APTO`
+- Genoma área (docs finalize + PBI pending; sin KM/genoma forja) → `RBAC_SIGNER_VS_GENOME: APTO`
+- `RBAC_PROCESS_REGISTRY: APTO` (`pull-request-review` ausente de revoked)
+- `git-manager`: Shell rejected — `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` (no inventado)
+- `delivery_state: pending_downstream_phases` · Cerbero no escribe `docs/todos/`
+```

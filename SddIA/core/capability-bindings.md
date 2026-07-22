@@ -2,7 +2,7 @@
 uuid: "c4a8f2e1-7b3d-4e9a-a1c6-5d8f0b2e4a71"
 id: capability-bindings
 name: capability-bindings
-version: "1.0.0"
+version: "1.1.0"
 nature: "runtime-ssot"
 scope: "agnostic"
 bindings:
@@ -13,6 +13,10 @@ bindings:
   - capability_id: "proc:git-sync"
     contract: "proc.git_sync"
     provider: "skill:git-manager"
+    provider_version: ">=1.0.0"
+  - capability_id: "fs:persist"
+    contract: "fs.persist"
+    provider: "skill:filesystem-manager"
     provider_version: ">=1.0.0"
 ---
 

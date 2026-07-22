@@ -1,7 +1,7 @@
 ---
 uuid: "f4a5b6c7-d8e9-4f0a-1b2c-3d4e5f6a7b8c"
 name: "filesystem-manager"
-version: "1.0.0"
+version: "1.1.0"
 contract: "skills-contract v1.1.0"
 context: "filesystem-ops"
 capabilities:
@@ -14,6 +14,9 @@ capabilities:
 provides:
   - id: "doc:closure"
     contract: "doc.closure"
+    version: "1.0.0"
+  - id: "fs:persist"
+    contract: "fs.persist"
     version: "1.0.0"
 inputs:
   - "operation": "Enum estricto: [READ_FILE, WRITE_FILE, LIST_DIR, DELETE_FILE, CREATE_DIR, MOVE_FILE]"

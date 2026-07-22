@@ -4,6 +4,8 @@ Este documento establece la hoja de ruta estratégica y física para transmutar 
 
 ---
 
+pdte de refinar Refinar y a la espera de haber implementado PBI docs/todos/kitchen/[REFACTOR] Separación de Dominio SddIA y Abstracción del Contexto de Ejecución.md
+
 ## Matriz de Hitos y Dependencias Críticas
 
 [Fase 1: Fractura Core] ---> [Fase 2: Inyección GesFer] ---> [Fase 3: Forja/Minteo] ---> [Fase 4: Runtime Invisible]

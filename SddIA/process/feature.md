@@ -1,14 +1,14 @@
 ---
 uuid: 1b4fa69f-4299-47ca-b2ed-380f2263239c
 name: feature
-version: 1.3.1
+version: 1.3.2
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:53061f78d184f9daed5b91028e99d5df701445e610de41a07de7150870c664da
+hash_signature: sha256:1c456765c4548e2d888d9986af3568d1e21197981720d2292cb12ea40775cbc4
 inputs:
 - feature_name: Nombre kebab-case o etiqueta humana de la feature
 - refined_requirements: Requisitos crudos o semi-refinados de entrada
@@ -24,8 +24,10 @@ outputs:
 phases:
 - name: Inicialización de Espacio de Trabajo
   intent: Sincronización determinista (fetch), checkout a base_branch y creación/aislamiento de la nueva rama branch_name.
-  delegates_to:
-  - skill:git-manager
+  requires_capability:
+  - id: proc:git-sync
+    contract: proc.git_sync
+    version: '>=1.0.0'
 - name: Estabilización de Requisitos
   intent: Mayeuta debe mapear sus salidas lógicas a la norma features-documentation-pattern del active_norm_pack. El transcript se persiste como clarify.md y el requisito termodinámico como objectives.md (con frontmatter obligatorio) bajo persist_ref.
   delegates_to:

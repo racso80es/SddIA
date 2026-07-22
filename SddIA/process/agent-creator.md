@@ -1,11 +1,11 @@
 ---
 uuid: "e7d5087c-6d47-4890-9602-34962496b3bb"
 name: "agent-creator"
-version: "1.0.0"
+version: "1.1.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:a6fb8f1b3567887f1fb21db92094236fef4873a64a28541845e0373a0ccf3b11
+hash_signature: sha256:ca0b758b4c1393db76e5bf934de3c09e3f5470833593c73e7bdb2419166d7057
 inputs:
   - "agent_name": "Identificador kebab-case del agente (`{name}` del archivo de definición bajo `cumulo.directories.agents`)"
   - "allowed_policies": "Array de contextos S+ Grade (identificadores de `execution-contexts.md`) que el agente puede solicitar ante Cerbero"
@@ -28,14 +28,20 @@ phases:
       - "action:policy-validator"
   - name: "Forja de Identidad"
     intent: "Generar uuid v4 y cabecera YAML (contract, allowed_policies, inputs, outputs, hash_signature si aplica) según agents-contract v1.0.0; cuerpo con agent_purpose bajo directories.agents; rutas solo vía cumulo."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "action:crypto-broker"
-      - "skill:filesystem-manager"
   - name: "Indexación de Soberanía"
     intent: "Actualizar el catálogo de Agentes exponiendo explícitamente sus allowed_policies para lectura rápida de Cerbero."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "agent:cumulo"
-      - "skill:filesystem-manager"
 phase_invocations:
   - phase_name: "Forja de Identidad"
     invocations:

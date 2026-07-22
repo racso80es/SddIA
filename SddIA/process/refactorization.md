@@ -1,14 +1,14 @@
 ---
 uuid: ae01e3ff-af68-4b94-90b3-97e5c03d75ee
 name: refactorization
-version: 1.2.1
+version: 1.2.2
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:529225db2b8b6c74960d815d92f5e07e4bb15929ac993a52bd98a02e772bcbe7
+hash_signature: sha256:97976e9b0bbe022ff1c3a2803b3030f26dac9da64f0a976c4108283ea677a30f
 inputs:
 - refactor_goal: Propósito central de la refactorización
 - refined_constraints: Restricciones de alcance complementarias y límites
@@ -24,8 +24,10 @@ outputs:
 phases:
 - name: Inicialización de Espacio de Trabajo
   intent: 'Sincronización determinista (fetch), checkout a base_branch y creación/aislamiento de la nueva rama branch_name.'
-  delegates_to:
-  - skill:git-manager
+  requires_capability:
+  - id: proc:git-sync
+    contract: proc.git_sync
+    version: '>=1.0.0'
 - name: Estabilización de alcance
   intent: 'Mayeuta debe mapear sus salidas lógicas a la norma features-documentation-pattern del active_norm_pack. El transcript se persiste como clarify.md y el requisito termodinámico como objectives.md (con frontmatter obligatorio) bajo persist_ref.'
   delegates_to:
