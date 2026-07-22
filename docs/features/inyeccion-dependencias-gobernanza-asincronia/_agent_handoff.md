@@ -155,3 +155,43 @@ Blueprint Hito 3 materializado. Resumen:
 
 **Desbloqueo:** ejecutar `cargo test capability_di cerbero_di di_output di_reactor` y re-auditar.
 ```
+
+## 2026-07-22T09:46:56Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `a078d4bb-d60a-4dc6-a914-0ef58b498733`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0F18CF534750000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:57Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `a078d4bb-d60a-4dc6-a914-0ef58b498733`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0018CF030710000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:58Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `a078d4bb-d60a-4dc6-a914-0ef58b498733`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C081E94E90740000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:59Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `a078d4bb-d60a-4dc6-a914-0ef58b498733`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0414C32AC740000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:

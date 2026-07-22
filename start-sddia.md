@@ -2,12 +2,14 @@
 id: start-sddia
 uuid: d5aae800-06b0-4acc-b0fc-476d8e241eb1
 type: process
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Ignición del ecosistema SddIA (`start-sddia.sh`)
 
 Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
+
+**v1.2.0:** carga bóveda (`.dev/.env` + `.SddIA/.dev/.env`) antes de Kalma2; gate de `Daemon_Heartbeat` auditado para obligatorios; cleanup retira locks bajo `.SddIA/daemons/status/`.
 
 ## Objetivo
 
@@ -29,24 +31,28 @@ SSOT de rutas: `SddIA/core/cumulo.paths.json`.
 
 ```mermaid
 flowchart TD
-    A[start-sddia.sh] --> B[cd REPO_ROOT]
+    A[start-sddia.sh] --> V[load vault _sddia_load_vault]
+    V --> B[cd REPO_ROOT]
     B --> C[Centinelas obligatorios]
     C --> D{event-watcher + event-sweeper OK?}
     D -->|no| X[cleanup + exit 1]
     D -->|sí| E[Centinelas opcionales]
-    E --> F[kalma2-bridge]
+    E --> F[kalma2-bridge hereda bóveda]
     F --> G{HTTP GET / responde?}
     G -->|no| X
-    G -->|sí| H[wait — ecosistema operativo]
+    G -->|sí| HB{heartbeats obligatorios auditados?}
+    HB -->|no| X
+    HB -->|sí| H[wait — ecosistema operativo]
     H --> I[SIGINT/SIGTERM]
-    I --> J[cleanup: jobs + pkill centinelas + kalma2-bridge]
+    I --> J[cleanup: pkill + rm locks status]
 ```
 
-1. Ancla `REPO_ROOT`.
+1. Ancla `REPO_ROOT` y carga bóveda (`_sddia_load_vault`) para que `kalma2-bridge`/`mayeuta-llm` hereden `SDDIA_LLM_*`.
 2. Lanza centinelas vía `SddIA/scripts/daemons/<name>.sh`.
 3. Resuelve y arranca `kalma2-bridge` nativo ELF (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
 4. Health check HTTP en `http://127.0.0.1:8765/`.
-5. `wait` hasta señal de terminación.
+5. Gate: `daemon-heartbeat-audit` confirma latidos frescos de obligatorios (`missed_cycles < 3`).
+6. `wait` hasta señal de terminación; cleanup elimina locks en `.SddIA/daemons/status/`.
 
 ## Uso
 
@@ -70,6 +76,7 @@ Variables de entorno:
 
 - `kill` jobs en background.
 - `pkill -x` centinelas + `kalma2-bridge`.
+- Elimina `{daemons_instance.status}/{name}.lock` de los cuatro centinelas (contrato CEN-01; evita PIDs muertos residuales).
 
 ## Requisitos previos
 

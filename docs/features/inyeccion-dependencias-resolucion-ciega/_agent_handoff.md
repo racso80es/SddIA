@@ -229,3 +229,53 @@ accept-pr OK
 - PR #127 merged/closed en GitHub
 - PBI-042 hito2_status entregado_en_main; pbi_archived false
 ```
+
+## 2026-07-22T09:47:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `a7d49178-2695-450c-8928-ecac08e2666d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C011922768760000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:47:25Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `a7d49178-2695-450c-8928-ecac08e2666d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0A1714543720000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:47:26Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `a7d49178-2695-450c-8928-ecac08e2666d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0C18F946F760000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:47:27Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `a7d49178-2695-450c-8928-ecac08e2666d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C091AD5EB4730000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:47:28Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `a7d49178-2695-450c-8928-ecac08e2666d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0017226057D0000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:

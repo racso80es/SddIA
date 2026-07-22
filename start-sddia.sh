@@ -8,6 +8,10 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_ROOT"
 
+# shellcheck source=SddIA/scripts/common/sddia_shell_lib.sh
+source "$REPO_ROOT/SddIA/scripts/common/sddia_shell_lib.sh"
+_sddia_load_vault "$REPO_ROOT"
+
 KALMA_PORT="${SDDIA_CLIENT_PORT:-8765}"
 KALMA_HOST="127.0.0.1"
 KALMA_URL="http://${KALMA_HOST}:${KALMA_PORT}"
@@ -15,7 +19,10 @@ DAEMON_LAUNCHER_DIR="SddIA/scripts/daemons"
 REQUIRED_DAEMONS=(event-watcher event-sweeper)
 OPTIONAL_DAEMONS=(telegram-watcher github-bridge-watcher)
 DAEMON_NAMES=("${REQUIRED_DAEMONS[@]}" "${OPTIONAL_DAEMONS[@]}")
+STATUS_DIR=".SddIA/daemons/status"
+HEARTBEAT_AUDIT=".SddIA/daemons/state/heartbeat-audit.json"
 CLEANUP_DONE=0
+IGNITION_EPOCH="$(date -u +%s)"
 
 echo "[SddIA] Iniciando secuencia de ignición del núcleo..."
 echo "[SddIA] Repo: $REPO_ROOT"
@@ -38,6 +45,12 @@ cleanup() {
     done
 
     pkill -x kalma2-bridge 2>/dev/null || true
+
+    # Contrato CEN-01: retirar locks tras apagado (evita PIDs muertos residuales).
+    sleep 0.3
+    for daemon in "${DAEMON_NAMES[@]}"; do
+        rm -f "${STATUS_DIR}/${daemon}.lock"
+    done
 
     echo "[SddIA] Ecosistema detenido de forma segura."
     exit "$exit_code"
@@ -110,6 +123,69 @@ _start_daemon() {
     return 1
 }
 
+_required_heartbeats_ready() {
+    python3 - "$HEARTBEAT_AUDIT" "$IGNITION_EPOCH" "${REQUIRED_DAEMONS[@]}" <<'PY'
+import json, sys, time
+from pathlib import Path
+from datetime import datetime, timezone
+
+audit_path = Path(sys.argv[1])
+ignition = int(sys.argv[2])
+required = sys.argv[3:]
+if not audit_path.is_file():
+    sys.exit(1)
+try:
+    body = json.loads(audit_path.read_text(encoding="utf-8"))
+except Exception:
+    sys.exit(1)
+daemons = body.get("daemons") or {}
+now = int(time.time())
+for name in required:
+    entry = daemons.get(name) or {}
+    last = entry.get("last_heartbeat_at")
+    if not last:
+        sys.exit(1)
+    try:
+        # Accept Z or +00:00
+        ts = last.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(ts)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        epoch = int(dt.timestamp())
+    except Exception:
+        sys.exit(1)
+    # Latido posterior al arranque, o al menos fresco (< 90s).
+    if epoch < ignition and (now - epoch) > 90:
+        sys.exit(1)
+    missed = int(entry.get("missed_cycles") or 0)
+    if missed >= 3:
+        sys.exit(1)
+sys.exit(0)
+PY
+}
+
+_wait_required_heartbeats() {
+    local attempts="${1:-45}"
+    local delay="${2:-1}"
+    local i
+
+    echo "[SddIA] Esperando Daemon_Heartbeat auditado de obligatorios..."
+    for ((i = 1; i <= attempts; i++)); do
+        # Sweep Argos (no bloqueante si falla el orquestador).
+        if [[ -x ./sddia-run.sh ]]; then
+            ./sddia-run.sh --process daemon-heartbeat-audit --inputs '{}' >/dev/null 2>&1 || true
+        fi
+        if _required_heartbeats_ready; then
+            echo "  -> heartbeats obligatorios: OK (audit fresco, missed_cycles<3)"
+            return 0
+        fi
+        sleep "$delay"
+    done
+
+    echo "  -> [ERROR] heartbeats de ${REQUIRED_DAEMONS[*]} no confirmados en ${attempts}s."
+    return 1
+}
+
 # 1. Centinelas (Sistema Nervioso EDA)
 echo "[SddIA] Levantando Sistema Nervioso (Demonios)..."
 
@@ -127,8 +203,14 @@ for name in "${OPTIONAL_DAEMONS[@]}"; do
     fi
 done
 
-# 2. Kalma2 (puente HTTP nativo Rust)
+# 2. Kalma2 (puente HTTP nativo Rust) — hereda bóveda ya exportada
 echo "[SddIA] Levantando el puente de Kalma2 (kalma2-bridge)..."
+
+if [[ -n "${SDDIA_LLM_CHAT_COMMAND:-}${SDDIA_LLM_CLI_COMMAND:-}" ]]; then
+    echo "  -> bóveda LLM: SDDIA_LLM_*_COMMAND exportada (chat SSE habilitado)"
+else
+    echo "  -> [WARN] bóveda sin SDDIA_LLM_CHAT_COMMAND/CLI_COMMAND; POST /api/chat emitirá System_Fracture_Detected"
+fi
 
 BRIDGE_BIN="$(_resolve_bridge_bin || true)"
 if [[ -z "$BRIDGE_BIN" ]]; then
@@ -153,6 +235,10 @@ if ! _wait_http "${KALMA_URL}/" "Kalma2" 30 0.5; then
 fi
 
 echo "  -> Kalma2: ACTIVO (${KALMA_URL})"
+
+if ! _wait_required_heartbeats 45 1; then
+    cleanup 1
+fi
 
 echo "===================================================================="
 echo "[SddIA] Ecosistema S+ Grade operativo."
