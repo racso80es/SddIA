@@ -14,7 +14,10 @@ execution_id: d4e8f1a3-6c7b-4d9e-a2f0-3b4c5d6e7f8a
 verdict: aprobado
 approval_status: approved
 scope: "Done global — Archivo PBI-042 (R15 / AC-DONE)"
-delivery_state: ready_for_delivery_close
+delivery_state: success
+pr_url: https://github.com/racso80es/SddIA/pull/142
+pr_presented_event_id: 3c1028bc-5828-431b-98df-014fef67b84d
+snapshot_commit: 8ae5f0561326fcaff2c3b55827843b5feb8992bd
 gate_pending_cleanup: pass
 checks:
   DOC_CLARIFY: APTO
