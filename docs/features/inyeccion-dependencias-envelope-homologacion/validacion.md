@@ -13,8 +13,11 @@ correlation_id: ""
 verdict: aprobado
 scope: "Hito 4 — Envelope Cerbero + homologación catálogo (R9–R10)"
 residual_tracked: true
-delivery_state: ready
+delivery_state: success
 approval_status: approved
+pr_url: https://github.com/racso80es/SddIA/pull/136
+pr_presented_event_id: e3079c94-2a40-4f60-b9c4-b4ade1ca031b
+snapshot_commit: 975758068bbb32a4217904a94179f1a98ee2dd73
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO

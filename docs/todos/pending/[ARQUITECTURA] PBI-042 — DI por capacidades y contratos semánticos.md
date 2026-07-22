@@ -26,6 +26,8 @@ hito4_status: apto_en_rama
 hito4_feature: docs/features/inyeccion-dependencias-envelope-homologacion
 hito4_branch: feat/inyeccion-dependencias-envelope-homologacion
 hito4_execution_id: 0ec31f97-ad31-4ae5-8005-dc6220bad185
+hito4_pr: https://github.com/racso80es/SddIA/pull/136
+hito4_snapshot_commit: 975758068bbb32a4217904a94179f1a98ee2dd73
 related:
   - docs/features/inyeccion-dependencias-envelope-homologacion/objectives.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/spec.md
