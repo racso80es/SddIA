@@ -44,6 +44,10 @@ phases:
   - agent:argos
 - name: Cierre documental en rama
   intent: 'Antes del merge: mover PBI a docs/todos/done/ en la rama del PR; validacion.md con pbi_archived true según features-documentation-pattern v1.2.0 (sin merged_pr obligatorio).'
+  requires_capability:
+  - id: doc:closure
+    contract: doc.closure
+    version: '>=1.0.0'
   delegates_to:
   - skill:filesystem-manager
 - name: Cierre de entrega

@@ -16,6 +16,7 @@ Contrato normativo de la familia: `norms-contract.md` (no constituye una norma t
 
 | Archivo fuente | uuid | name | version | scope | category |
 |----------------|------|------|---------|-------|----------|
+| `capability-taxonomy.md` | `e9c66ec6-5b59-4aae-b9f2-91cc313fe295` | capability-taxonomy | 1.0.0 | agnostic | architecture |
 | `features-documentation-pattern.md` | `4c448c82-de41-460f-b24f-82a84fa5ed69` | features-documentation-pattern | 1.0.0 | agnostic | workflow |
 | `patterns-in-planning-implementation-execution.md` | `1c6af49c-3091-4648-aa54-bbf6bcb90f82` | patterns-in-planning-implementation-execution | 1.0.0 | agnostic | workflow |
 | `pr-acceptance-protocol.md` | `7c18fe07-9567-4f06-8d2b-a58e04608171` | pr-acceptance-protocol | 1.0.0 | agnostic | workflow |
@@ -29,5 +30,7 @@ Ninguno. `norms-contract.md` es el contrato de familia, no una fila del catálog
 
 ## Integridad (última pasada)
 
-- **Sincronización:** seis archivos `tactical-norm` con identidad atómica; reflejados en sendas filas del catálogo.
+- **Sincronización:** siete archivos `tactical-norm` con identidad atómica; reflejados en sendas filas del catálogo.
 - **Metadatos:** valores de la tabla copiados desde el YAML de cada norma al momento de indexación.
+- **2026-07-21:** alta `capability-taxonomy` (Códice de la Lengua / PBI-042).
+

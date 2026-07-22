@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/doc.closure.schema.json",
+  "title": "doc.closure",
+  "type": "object",
+  "required": [
+    "exitCode",
+    "data"
+  ],
+  "properties": {
+    "exitCode": {
+      "type": "integer",
+      "description": "0 \u00e9xito / distinto de 0 fallo"
+    },
+    "data": {
+      "type": "object",
+      "description": "Evidencia de cierre (paths, flags)"
+    },
+    "error_log": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

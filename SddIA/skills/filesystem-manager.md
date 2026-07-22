@@ -11,6 +11,10 @@ capabilities:
   - "delete-file"
   - "create-directory"
   - "move-file"
+provides:
+  - id: "doc:closure"
+    contract: "doc.closure"
+    version: "1.0.0"
 inputs:
   - "operation": "Enum estricto: [READ_FILE, WRITE_FILE, LIST_DIR, DELETE_FILE, CREATE_DIR, MOVE_FILE]"
   - "target_path": "Ruta relativa al directorio raíz del proyecto"

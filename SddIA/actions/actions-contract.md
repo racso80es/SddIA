@@ -62,3 +62,18 @@ Campos opcionales en frontmatter de `{name}.md` — misma semántica que `skills
 |-------|------|---------|
 | `telemetry_provided` | boolean | `false` |
 | `telemetry_schema` | string[] | schema mínimo canónico si `true` |
+
+## 7. Metadatos Activos — `provides` (MVP DI)
+
+Campo opcional en frontmatter cuando la acción ofrece una capacidad homologada:
+
+```yaml
+provides:
+  - id: "doc:closure"
+    contract: "doc.closure"
+    version: "1.0.0"
+```
+
+* `id` ∈ Códice de la Lengua (`capability-taxonomy.catalog`).
+* `capabilities[]` legacy (etiquetas operativas) **no** sustituye a `provides`.
+* Consumidores process validan vía `requires_capability` + Aduana Temprana en `execute-process`.
