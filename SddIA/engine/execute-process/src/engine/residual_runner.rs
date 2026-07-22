@@ -1,6 +1,7 @@
 //! Motor residual nativo — reemplaza `delegate_python` / capsules bridge.
 
 use super::accept_pr::execute_accept_pr_phase;
+use super::pull_request_review::execute_pull_request_review_phase;
 use super::invoke_orchestrator::invoke_process_full;
 use super::phase_capsules::{
     capsule_eda_genomic_audit_gate, execute_delivery_close_phase, execute_feature_phase,
@@ -611,6 +612,26 @@ fn execute_phase_body_residual(
 
     if process_name == "accept-pr" {
         if let Some(result) = execute_accept_pr_phase(repo, phase_name, inputs, state) {
+            return match result {
+                Ok(phase_entry) => {
+                    if let Some(obj) = phase_entry.as_object() {
+                        for (k, v) in obj {
+                            entry[k.clone()] = v.clone();
+                        }
+                    }
+                    entry
+                }
+                Err(e) => {
+                    entry["status"] = json!("failed");
+                    entry["error"] = json!(e);
+                    entry
+                }
+            };
+        }
+    }
+
+    if process_name == "pull-request-review" {
+        if let Some(result) = execute_pull_request_review_phase(repo, phase_name, inputs, state) {
             return match result {
                 Ok(phase_entry) => {
                     if let Some(obj) = phase_entry.as_object() {

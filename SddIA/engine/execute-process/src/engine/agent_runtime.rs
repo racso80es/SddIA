@@ -99,13 +99,29 @@ pub fn invoke_agent_phase(
     };
 
     let agents = agent_names(delegates);
+    // G4: PPR inyecta `pr_branch`; runtime Kalma2 lee `branch_name`.
+    let branch_name = inputs
+        .get("branch_name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| json!(s))
+        .or_else(|| {
+            inputs
+                .get("pr_branch")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(|s| json!(s))
+        })
+        .unwrap_or(Value::Null);
     let mut payload = json!({
         "operation": "AGENT_PHASE",
         "process_name": process_name,
         "phase_name": phase_name,
         "agents": agents,
         "persist_ref": inputs.get("persist_ref"),
-        "branch_name": inputs.get("branch_name"),
+        "branch_name": branch_name,
         "correlation_id": inputs.get("correlation_id"),
         "pbi_ref": inputs.get("pbi_ref"),
         "inputs": inputs,
@@ -295,5 +311,40 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
 
         assert_eq!(entry["status"], "awaiting_agents");
+    }
+
+    #[test]
+    fn branch_name_coalesces_from_pr_branch() {
+        let dir = std::env::temp_dir().join(format!("sddia-agent-rt-br-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = dir.join("mock-agent.sh");
+        // Echo stdin last line of interest via capturing branch from stdin JSON is heavy;
+        // assert payload construction by re-reading ENV path: we check status executed and
+        // that invoke succeeds with only pr_branch set (no panic / null-only path).
+        fs::write(
+            &script,
+            r#"#!/bin/sh
+python3 -c 'import json,sys; doc=json.load(sys.stdin); assert doc.get("branch_name")=="feat/from-pr", doc; print(json.dumps({"success":True,"data":{"status":"executed","message":"branch-ok"}}))'
+"#,
+        )
+        .unwrap();
+        let mut perms = fs::metadata(&script).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&script, perms).unwrap();
+
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "pull-request-review",
+            "Triaje documental",
+            &[json!("agent:argos")],
+            &json!({"pr_branch": "feat/from-pr", "persist_ref": "docs/features/x"}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+
+        assert_eq!(entry["status"], "executed", "{entry}");
     }
 }

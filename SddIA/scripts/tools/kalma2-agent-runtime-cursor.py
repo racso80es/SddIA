@@ -143,6 +143,12 @@ def build_prompt(doc: dict[str, Any]) -> str:
     else:
         seed = ""
 
+    branch = ""
+    if doc.get("branch_name"):
+        branch = str(doc.get("branch_name"))
+    elif isinstance(inputs, dict):
+        branch = str(inputs.get("branch_name") or inputs.get("pr_branch") or "")
+
     brief = role_brief(str(agent), str(phase), str(process))
     parts = [
         "[HARD OVERRIDE — SddIA kalma2-agent-runtime-cursor]",
@@ -152,12 +158,14 @@ def build_prompt(doc: dict[str, Any]) -> str:
         f"- phase: {phase}",
         f"- agents: {', '.join(str(a) for a in agents)}",
         f"- persist_ref: {persist}",
-        f"- branch_name: {doc.get('branch_name') or inputs.get('branch_name') if isinstance(inputs, dict) else ''}",
+        f"- branch_name: {branch}",
         f"- pbi_ref: {pbi_ref}",
         f"- correlation_id: {corr}",
         "",
         "Reglas:",
         "- Git solo vía skill:git-manager del ecosistema (no bypass raw destructivo).",
+        "- Evidencia git: preferir `./sddia-run.sh --tool git-manager` (JSON stdin) o evidencia ya materializada por handler nativo PPR; no depender del Shell IDE.",
+        "- KM / docs/todos/: materializar semillas Kaizen solo como agent:cumulo (Cosecha Kaizen) o vía event Kaizen_Alert_Required; Tekton/Argos NO escriben TODOs bajo docs/todos/.",
         "- No inventes éxito: si no puedes materializar, dilo explícitamente.",
         "- Trabaja en el repositorio local (cwd = repo_root).",
         "",

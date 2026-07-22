@@ -5,6 +5,7 @@ pub mod capsule_paths;
 pub mod capsules;
 pub mod daemons;
 pub mod accept_pr;
+pub mod pull_request_review;
 pub mod entity_manager;
 pub mod delivery_close;
 pub mod cerbero_governance_react_core;

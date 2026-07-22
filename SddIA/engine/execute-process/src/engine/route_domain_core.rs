@@ -563,6 +563,8 @@ pub(crate) fn dispatch_subscriber(
 
         let mut process_inputs = Map::new();
         process_inputs.insert("pr_branch".into(), json!(branch));
+        // G4: alias runtime Kalma2 / agent_runtime (branch_name).
+        process_inputs.insert("branch_name".into(), json!(branch));
         process_inputs.insert(
             "pr_id_or_path".into(),
             json!(payload_obj
