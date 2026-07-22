@@ -18,6 +18,9 @@ delivery_state: success
 pr_url: https://github.com/racso80es/SddIA/pull/142
 pr_presented_event_id: 3c1028bc-5828-431b-98df-014fef67b84d
 snapshot_commit: 8ae5f0561326fcaff2c3b55827843b5feb8992bd
+merged_pr: 142
+merge_commit: 90424f47c6c8dfeaab797decd8266fead3d6f0a4
+pr_merged_event_id: 8543cca3-02a3-4d3c-bde4-3f66957d0a75
 gate_pending_cleanup: pass
 checks:
   DOC_CLARIFY: APTO
@@ -69,4 +72,5 @@ PBI-042 exclusivo en `docs/todos/done/` (`status: cerrado`, v1.2.1). Origen `pen
 
 ## Handoff
 
-Listo para `delivery-close-cycle` (lab skippeado en esta sesión). Sin segundo PR documental.
+PR mergeado: https://github.com/racso80es/SddIA/pull/142 · merge `90424f4` · `PullRequest_Merged` `8543cca3-…`.  
+PBI-042 archivado en `docs/todos/done/`. Ver `finalize-process.md`.
