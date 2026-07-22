@@ -1,39 +1,41 @@
 ---
-uuid: "62f08bbd-e9ce-479d-8d1b-792684e1bd26"
-name: "entity-manager"
-version: "1.0.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
-context: "ecosystem-evolution"
-hash_signature: sha256:ce6a81a1b44f6340a89d392aef23d4f89a83613dee3a920e1bb856811ecf20e6
+context: ecosystem-evolution
+contract: process-contract v1.4.0
+hash_signature: sha256:48b0fe4735831530e001ee3a8558c9c1225bf1097b98d1de71128c12739b9955
 inputs:
-  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event | suite"
-  - "entity_name": "string; identificador kebab-case de la entidad"
-  - "lifecycle_operation": "string; enum: create | update | delete"
-  - "semantic_seed": "object|null; parámetros de forja para el creator hijo; ignorado en delete"
-  - "cumulo_topology": "Topología SSOT inyectada (paths, contratos, directorios)"
-outputs:
-  - "event_id": "UUID v4 del evento Domain_Entity_* en eda_bus.pending"
-  - "target_path": "Ruta relativa del JSON emitido en pending/"
-  - "handoff_entity_uuid": "UUID de la entidad afectada (desde creator o frontmatter en delete)"
-  - "handoff_hash_signature_new": "Sello post-mutación o null en delete"
-  - "handoff_hash_signature_old": "Sello pre-mutación o null en create"
-  - "handoff_version": "Versión SemVer resultante"
-phases:
-  - name: "Delegación al creator"
-    intent: "En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 9 clases (skill, event, process, agent, tool, action, norm, codex, suite)."
-    delegates_to:
-      - "action:execute-process"
-  - name: "Delete físico"
-    intent: "Solo en delete: READ_FILE del artefacto para extraer uuid/version/hash_signature; DELETE_FILE del .md bajo directories.*."
-    delegates_to:
-      - "skill:filesystem-manager"
-  - name: "Sello universal"
-    intent: "Invocar action:emit-domain-mutation con emitter_agent entity-manager y handoff del creator o metadatos de delete."
-    delegates_to:
-      - "action:emit-domain-mutation"
+- entity_class: 'string; enum: process | agent | skill | tool | action | norm | codex | event | suite'
+- entity_name: string; identificador kebab-case de la entidad
+- lifecycle_operation: 'string; enum: create | update | delete'
+- semantic_seed: object|null; parámetros de forja para el creator hijo; ignorado en delete
+- cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
 minteo_maximo: null
+name: entity-manager
+outputs:
+- event_id: UUID v4 del evento Domain_Entity_* en eda_bus.pending
+- target_path: Ruta relativa del JSON emitido en pending/
+- handoff_entity_uuid: UUID de la entidad afectada (desde creator o frontmatter en delete)
+- handoff_hash_signature_new: Sello post-mutación o null en delete
+- handoff_hash_signature_old: Sello pre-mutación o null en create
+- handoff_version: Versión SemVer resultante
+phases:
+- delegates_to:
+  - action:execute-process
+  intent: 'En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 9 clases (skill, event, process, agent, tool, action, norm, codex, suite).'
+  name: Delegación al creator
+- intent: 'Solo en delete: READ_FILE del artefacto para extraer uuid/version/hash_signature; DELETE_FILE del .md bajo directories.*.'
+  name: Delete físico
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
+- delegates_to:
+  - action:emit-domain-mutation
+  intent: Invocar action:emit-domain-mutation con emitter_agent entity-manager y handoff del creator o metadatos de delete.
+  name: Sello universal
 porcentaje_de_exito: null
+uuid: 62f08bbd-e9ce-479d-8d1b-792684e1bd26
+version: 1.0.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # entity-manager

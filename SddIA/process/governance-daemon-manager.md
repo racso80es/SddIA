@@ -1,57 +1,63 @@
 ---
-uuid: "5a89793a-ba98-4b4f-9287-43c087e312df"
-name: "governance-daemon-manager"
-version: "1.0.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
-  - "system-operations"
-  - "ecosystem-evolution"
-hash_signature: sha256:8421824f1e4e2d5def6615f0c0a2b661ddc11b9ad2488e90d61e7046807f23dc
+- system-operations
+- ecosystem-evolution
+contract: process-contract v1.4.0
+hash_signature: sha256:5c1e999195271bc637127214c91d65f91e7c283ddab6a82ca67175da91190d54
 inputs:
-  - "operation": "Enum estricto: `start` | `status` | `kill` — directriz física OS a ejecutar"
-  - "daemon_id": "Identificador kebab-case del Centinela (`name` en `{daemon_id}.md`; debe existir en `SddIA/daemons/index.md`)"
-  - "cumulo_topology": "Topología SSOT inyectada (paths, contratos, directorios, daemons_instance); prohibido inferir rutas del host"
-  - "repository_path": "Ruta absoluta del workspace raíz; inyectada por orquestador para resolución de `execution.entrypoint`"
-  - "kill_grace_seconds": "Opcional; segundos entre SIGTERM y SIGKILL en `kill` (default `10`)"
-outputs:
-  - "os_result": "Objeto con resultado físico de la operación (pid, alive, signal, exit_code, lock_path, entrypoint_resolved, runtime)"
-  - "daemon_uuid": "UUID v4 extraído del frontmatter de `{daemon_id}.md`"
-  - "operation_status": "Enum: `succeeded` | `failed` | `noop` (ej. kill sobre PID inexistente)"
-  - "orchestration_event_id": "UUID v4 del `Process_Execution_Completed` emitido en `eda_fractal.orchestration`"
-  - "orchestration_event_path": "Ruta relativa del JSON en `./.events/orchestration/`"
-phases:
-  - name: "Resolución SSOT"
-    intent: "Consultar `{directories.daemons}/index.md`; validar fila para `daemon_id`; leer `{daemon_id}.md`; extraer `execution.entrypoint`, `execution.runtime`, `uuid`, `name` vía cumulo."
-    delegates_to:
-      - "agent:cumulo"
-      - "skill:filesystem-manager"
-  - name: "Validación operativa"
-    intent: "Validar `operation` ∈ {start, status, kill}; RBAC Cerbero sobre contexto del Centinela; abortar si daemon_id ausente del índice o entrypoint/runtime inválidos. Ceguera lógica: no evaluar necesidad de arranque/parada."
-    delegates_to:
-      - "agent:cerbero"
-  - name: "Actuación OS"
-    intent: "Ejecutar directriz física sobre el SO mediante `skill:shell-executor`: spawn (start), lectura lock/PID (status), SIGTERM→SIGKILL (kill). Sin escalada root/sudo."
-    delegates_to:
-      - "skill:shell-executor"
-      - "skill:filesystem-manager"
-  - name: "Sello orchestration"
-    intent: "Emitir instancia ECST `Process_Execution_Completed` en `eda_fractal.orchestration` con payload extendido incluyendo `os_result`, `operation`, `daemon_id`, `daemon_uuid`, `operation_status`."
-    delegates_to:
-      - "action:crypto-broker"
-      - "skill:bus-operator"
-phase_invocations:
-  - phase_name: "Sello orchestration"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "orchestration_event_id"
-        on_error: abort
+- operation: 'Enum estricto: `start` | `status` | `kill` — directriz física OS a ejecutar'
+- daemon_id: Identificador kebab-case del Centinela (`name` en `{daemon_id}.md`; debe existir en `SddIA/daemons/index.md`)
+- cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios, daemons_instance); prohibido inferir rutas del host
+- repository_path: Ruta absoluta del workspace raíz; inyectada por orquestador para resolución de `execution.entrypoint`
+- kill_grace_seconds: Opcional; segundos entre SIGTERM y SIGKILL en `kill` (default `10`)
 minteo_maximo: null
+name: governance-daemon-manager
+outputs:
+- os_result: Objeto con resultado físico de la operación (pid, alive, signal, exit_code, lock_path, entrypoint_resolved, runtime)
+- daemon_uuid: UUID v4 extraído del frontmatter de `{daemon_id}.md`
+- operation_status: 'Enum: `succeeded` | `failed` | `noop` (ej. kill sobre PID inexistente)'
+- orchestration_event_id: UUID v4 del `Process_Execution_Completed` emitido en `eda_fractal.orchestration`
+- orchestration_event_path: Ruta relativa del JSON en `./.events/orchestration/`
+phase_invocations:
+- invocations:
+  - bind:
+      data.result: orchestration_event_id
+    capsule: action:crypto-broker
+    on_error: abort
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+  phase_name: Sello orchestration
+phases:
+- delegates_to:
+  - agent:cumulo
+  intent: Consultar `{directories.daemons}/index.md`; validar fila para `daemon_id`; leer `{daemon_id}.md`; extraer `execution.entrypoint`, `execution.runtime`, `uuid`, `name` vía cumulo.
+  name: Resolución SSOT
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
+- delegates_to:
+  - agent:cerbero
+  intent: 'Validar `operation` ∈ {start, status, kill}; RBAC Cerbero sobre contexto del Centinela; abortar si daemon_id ausente del índice o entrypoint/runtime inválidos. Ceguera lógica: no evaluar necesidad de arranque/parada.'
+  name: Validación operativa
+- delegates_to:
+  - skill:shell-executor
+  intent: 'Ejecutar directriz física sobre el SO mediante `skill:shell-executor`: spawn (start), lectura lock/PID (status), SIGTERM→SIGKILL (kill). Sin escalada root/sudo.'
+  name: Actuación OS
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
+- delegates_to:
+  - action:crypto-broker
+  - skill:bus-operator
+  intent: Emitir instancia ECST `Process_Execution_Completed` en `eda_fractal.orchestration` con payload extendido incluyendo `os_result`, `operation`, `daemon_id`, `daemon_uuid`, `operation_status`.
+  name: Sello orchestration
 porcentaje_de_exito: null
+uuid: 5a89793a-ba98-4b4f-9287-43c087e312df
+version: 1.0.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # governance-daemon-manager
