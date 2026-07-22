@@ -17,11 +17,18 @@ hito2_feature: docs/features/inyeccion-dependencias-resolucion-ciega
 hito2_branch: feat/inyeccion-dependencias-resolucion-ciega
 hito2_pr: https://github.com/racso80es/SddIA/pull/127
 hito2_merge_commit: 60c4635b351ee78c4f5d1050cc09e4bda3f8c6af
+hito3_status: entregado_en_rama
+hito3_feature: docs/features/inyeccion-dependencias-gobernanza-asincronia
+hito3_branch: feat/inyeccion-dependencias-gobernanza-asincronia
+hito3_pr: https://github.com/racso80es/SddIA/pull/128
 related:
   - docs/features/inyeccion-dependencias-capacidades/spec.md
   - docs/features/inyeccion-dependencias-capacidades/plan.md
   - docs/features/inyeccion-dependencias-resolucion-ciega/spec.md
   - docs/features/inyeccion-dependencias-resolucion-ciega/validacion.md
+  - docs/features/inyeccion-dependencias-gobernanza-asincronia/objectives.md
+  - docs/features/inyeccion-dependencias-gobernanza-asincronia/spec.md
+  - docs/features/inyeccion-dependencias-gobernanza-asincronia/plan.md
   - SddIA/library/norms/capability-taxonomy.md
   - SddIA/core/capability-bindings.md
   - SddIA/engine/execute-process/src/engine/capability_di_gate.rs
@@ -72,12 +79,14 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 ### Hito 3 — Gobernanza y asincronía
 
+> Ciclo `docs/features/inyeccion-dependencias-gobernanza-asincronia` · PR [#128](https://github.com/racso80es/SddIA/pull/128) · **entregado en rama** (pending merge).
+
 | ID | Ítem | Notas |
 |----|------|-------|
-| **R5** | Cerbero: cruce RBAC + (opcional) revalidación de schema DI en el payload empaquetado | MVP: aduana DI = gate en `execute-process`; Cerbero permanece RBAC |
-| **R6** | Composición DI 100% EDA (PBI §2.6): sin hilo síncrono de fases; ECST post-cápsula en `./.events/` | Bus Core = `./.events/` (no `.SddIA/events/`) |
-| **R7** | Expansión del Códice de la Lengua más allá de `doc:closure` | Altas vía `entity-manager` update + evolution |
-| **R8** | Validación JSON Schema runtime del **payload** de salida (no solo firma declarada de `outputs`) | MVP: contraste `required` del schema vs outputs declarados del proveedor |
+| **R5** | Cerbero: cruce RBAC + (opcional) revalidación de schema DI en el payload empaquetado | **Hecho en rama** — `cerbero_di_rbac` post-gate; revalidación schema diferida (Q2) |
+| **R6** | Composición DI 100% EDA (PBI §2.6): sin hilo síncrono de fases; ECST post-cápsula en `./.events/` | **Hecho en rama** — piloto `CapabilityDi_*` + `SDDIA_DI_EDA_PILOT=1`; sync H2 default |
+| **R7** | Expansión del Códice de la Lengua más allá de `doc:closure` | **Hecho en rama** — `proc:git-sync` → `git-manager` |
+| **R8** | Validación JSON Schema runtime del **payload** de salida (no solo firma declarada de `outputs`) | **Hecho en rama** — `capability_di_output_validator` |
 
 ### Ortogonal (no este PBI)
 

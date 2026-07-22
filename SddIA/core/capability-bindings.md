@@ -10,6 +10,10 @@ bindings:
     contract: "doc.closure"
     provider: "skill:filesystem-manager"
     provider_version: ">=1.0.0"
+  - capability_id: "proc:git-sync"
+    contract: "proc.git_sync"
+    provider: "skill:git-manager"
+    provider_version: ">=1.0.0"
 ---
 
 # Capability bindings (SSOT DI)

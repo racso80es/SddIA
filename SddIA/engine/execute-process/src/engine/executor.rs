@@ -43,13 +43,49 @@ fn execute_phase(
     repo: &Path,
     phase: &Value,
     process_name: &str,
-    _process_def: &ProcessDef,
+    process_def: &ProcessDef,
     inputs: &Value,
     state: &mut Value,
 ) -> Value {
     let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
 
-    // PBI-042 Hito 2: resolve ciego → fase efectiva → Aduana Temprana.
+    // R6: piloto EDA — emitir evento y omitir cadena sync DI (sin await del reactor).
+    if super::capability_di_reactor::is_eda_pilot_phase(phase) {
+        let mut entry = json!({
+            "phase_name": phase_name,
+            "delegates_to": phase.get("delegates_to").cloned().unwrap_or(json!([])),
+            "di_composition": "eda_pilot",
+        });
+        match super::capability_di_reactor::emit_di_requested(repo, phase, process_name, inputs) {
+            Ok(event_id) => {
+                entry["capability_di_event_id"] = json!(event_id);
+                entry["handler"] = json!("capability-di-reactor-emit");
+                super::capability_di_reactor::spawn_reactor_background(
+                    repo.to_path_buf(),
+                    process_def.clone(),
+                );
+            }
+            Err(e) => {
+                entry["status"] = json!("failed");
+                entry["handler"] = json!("capability-di-reactor-emit");
+                entry["error"] = json!(e);
+                return entry;
+            }
+        }
+        // Continuar ejecución de fase sin di_binding (path piloto).
+        return execute_phase_body(
+            repo,
+            phase,
+            process_name,
+            process_def,
+            inputs,
+            state,
+            entry,
+            &[],
+        );
+    }
+
+    // PBI-042 Hito 2/3: resolve ciego → fase efectiva → Aduana Temprana → Cerbero RBAC.
     let resolved_bindings = match super::capability_di_resolver::resolve_phase_bindings(repo, phase)
     {
         Ok(b) => b,
@@ -99,6 +135,57 @@ fn execute_phase(
         entry["di_gate_code"] = json!(di_err.code.as_str());
         return entry;
     }
+
+    let requester_policies =
+        super::cerbero_di_rbac::resolve_requester_policies(process_def, inputs);
+    if let Err(cerbero_err) = super::cerbero_di_rbac::validate_di_rbac(
+        repo,
+        process_name,
+        phase_name,
+        &requester_policies,
+        &resolved_bindings,
+    ) {
+        super::cerbero_di_rbac::write_cerbero_di_dead_letter(
+            repo,
+            &cerbero_err,
+            phase_name,
+            process_name,
+        );
+        entry["status"] = json!("failed");
+        entry["handler"] = json!("cerbero-di-rbac");
+        entry["error"] = json!(cerbero_err.message);
+        entry["cerbero_di_code"] = json!(cerbero_err.code.as_str());
+        return entry;
+    }
+
+    execute_phase_body(
+        repo,
+        &effective_phase,
+        process_name,
+        process_def,
+        inputs,
+        state,
+        entry,
+        &resolved_bindings,
+    )
+}
+
+fn execute_phase_body(
+    repo: &Path,
+    phase: &Value,
+    process_name: &str,
+    _process_def: &ProcessDef,
+    inputs: &Value,
+    state: &mut Value,
+    mut entry: Value,
+    resolved_bindings: &[super::capability_di_resolver::ResolvedBinding],
+) -> Value {
+    let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
+    let delegates = phase
+        .get("delegates_to")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
 
     if is_workspace_init_phase(phase, inputs, process_name) {
         match run_workspace_init(repo, inputs, process_name) {
@@ -199,7 +286,9 @@ fn execute_phase(
         repo,
         &delegates,
         inputs,
-        &resolved_bindings,
+        resolved_bindings,
+        process_name,
+        phase_name,
     ) {
         if let Some(obj) = capsule_entry.as_object() {
             for (k, v) in obj {

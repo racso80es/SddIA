@@ -88,7 +88,7 @@ fn execute_phase(
     }
 
     if let Some(capsule_entry) =
-        super::phase_capsules::try_invoke_delegates(repo, &delegates, inputs, &[])
+        super::phase_capsules::try_invoke_delegates(repo, &delegates, inputs, &[], "delivery-close-cycle", "")
     {
         if let Some(obj) = capsule_entry.as_object() {
             for (k, v) in obj {

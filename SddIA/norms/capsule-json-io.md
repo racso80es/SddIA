@@ -54,6 +54,10 @@ Una sola línea JSON en stdout.
 - `exitCode === 0` ⟺ `success === true`.
 - Errores de validación de envelope: `success: false`, `exitCode` ≠ 0.
 
+## Validación post-ejecución (PBI-042 Hito 3 — R8)
+
+Tras invocación de cápsula con `di_binding` presente, `execute-process` valida el **payload real** de salida (stdout JSON) contra `{contract}.schema.json` en `directories.capability_contracts`. Fallo → abort de fase + DLQ `./.events/dead-letter` con código `CONTRACT_OUTPUT_SCHEMA_MISMATCH`. Skip lab: `SDDIA_LAB_SKIP_CAPABILITY_DI=1` (coherente con resolve/gate).
+
 ## Implementación de referencia
 
 Rust: `scripts/skills-rs/src/capsule_v2.rs` (Cúmulo: `paths.skillsRustPath`).

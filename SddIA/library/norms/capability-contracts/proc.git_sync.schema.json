@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/proc.git_sync.schema.json",
+  "title": "proc.git_sync",
+  "type": "object",
+  "required": ["success", "exitCode", "data"],
+  "properties": {
+    "success": { "type": "boolean" },
+    "exitCode": { "type": "integer" },
+    "data": { "type": "object" },
+    "error": { "type": "string" }
+  },
+  "additionalProperties": true
+}
