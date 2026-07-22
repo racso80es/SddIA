@@ -1,7 +1,7 @@
 ---
 uuid: "4dac18fc-4cd1-4aa4-bdc3-faeb3bf762fc"
 name: "git-manager"
-version: "1.0.0"
+version: "1.0.1"
 contract: "skills-contract v1.1.0"
 context: "source-control"
 provides:
@@ -13,7 +13,7 @@ capabilities:
   - "git-branching"
   - "git-commit"
   - "git-sync-remote"
-hash_signature: "sha256:e3c101d4bdfc8ee9d33b55393a4bb073069303987007946fa26806c7b34d6792"
+hash_signature: "sha256:3cd48be3309bf0c536b4b20435bc2cf3a1dee8b37b15afcdc286fa59add19441"
 inputs:
   - "operation_type": "Enum congelado (minúsculas): status | checkout | commit | push | pull | fetch | branch_list. SSOT: normative_documents.skill_io_git_manager_frozen en cumulo.paths.json."
   - "repository_path": "string; ruta absoluta del repositorio Git, resuelta previamente por Cúmulo (sin path traversal)."

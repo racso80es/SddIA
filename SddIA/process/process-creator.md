@@ -1,11 +1,11 @@
 ---
 uuid: "7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4"
 name: "process-creator"
-version: "1.0.0"
+version: "1.1.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:b0b74db50d849219c315cd934ec299750bb87791a17fd3abed89bfccf4652730
+hash_signature: sha256:f2d93954c210ff49a66930447b3afe6b5b7676a97b3c4e6a5e5ccea26bc3b91b
 inputs:
   - "process_name": "Identificador kebab-case del proceso (`{name}` del archivo `{name}.md`)"
   - "process_description": "Descripción operativa del propósito del proceso"
@@ -28,14 +28,20 @@ phases:
       - "agent:cerbero"
   - name: "Forja del archivo"
     intent: "Generar uuid v4; calcular hash_signature canónico del array phases (JSON UTF-8, sort_keys); redactar YAML y cuerpo conforme a process-contract; persistir bajo directories.process."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "action:crypto-broker"
-      - "skill:filesystem-manager"
   - name: "Auditoría y actualización del índice"
     intent: "Verificar process/index.md y fila Name|UUID|Versión|Context|Descripción alineada al YAML fuente."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "agent:cumulo"
-      - "skill:filesystem-manager"
 phase_invocations:
   - phase_name: "Forja del archivo"
     invocations:

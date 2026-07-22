@@ -1,14 +1,14 @@
 ---
 uuid: ac8d078c-9785-490b-9f43-ad310fe9df9d
 name: bug-fix
-version: 1.4.1
+version: 1.4.2
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:c7741279e6d9dc9b54c81a29f6592bc622086597c0a9ceba03e89d0d6eb9c922
+hash_signature: sha256:3a99e75db1d2de217ed455bf3a96f2cf6cef14bf08b41880f9e7cd9cc0d4be2a
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
@@ -23,8 +23,10 @@ outputs:
 phases:
 - name: Inicialización de Espacio de Trabajo
   intent: 'Sincronización determinista (fetch), checkout a base_branch y creación/aislamiento de la nueva rama branch_name.'
-  delegates_to:
-  - skill:git-manager
+  requires_capability:
+  - id: proc:git-sync
+    contract: proc.git_sync
+    version: '>=1.0.0'
 - name: Diseño del fix
   intent: 'Dedalo consumirá el cuerpo del bug_summary para emitir sus salidas lógicas bajo persist_ref. Se mapeará obligatoriamente a spec.md (y plan.md de ser emitido un blueprint de proceso).'
   delegates_to:

@@ -1,11 +1,11 @@
 ---
 uuid: "b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d"
 name: "skill-creator"
-version: "1.0.0"
+version: "1.1.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:b440cb791d2d5ea69a4c11c3f7dd9fe6ebcb1df3e1a512f4bdf18c3c7acefb45
+hash_signature: sha256:3212efbe9fa3292eb87b8cd96300b7b328f352a89313914d20b8dca1cc9c8ef2
 inputs:
   - "skill_name": "Identificador kebab-case de la skill (`{name}` del archivo `{name}.md` en `cumulo.directories.skills`)"
   - "skill_context": "Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)"
@@ -29,14 +29,20 @@ phases:
       - "agent:cerbero"
   - name: "Forja del Markdown"
     intent: "Generar uuid v4 y hash_signature de integridad según política de skills; YAML (contract, context, capabilities, inputs, outputs) y cuerpo conforme a contracts.skills; rutas solo vía cumulo."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "action:crypto-broker"
-      - "skill:filesystem-manager"
   - name: "Indexación"
     intent: "Auditar skills/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la skill creada."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "agent:cumulo"
-      - "skill:filesystem-manager"
 phase_invocations:
   - phase_name: "Forja del Markdown"
     invocations:

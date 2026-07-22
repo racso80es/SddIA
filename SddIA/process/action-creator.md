@@ -1,11 +1,11 @@
 ---
 uuid: d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f
 name: action-creator
-version: 1.0.0
+version: 1.1.0
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: ecosystem-evolution
-hash_signature: sha256:b73c4b13849716087b4033ab1b49d4e43c27f79c4fbc51d0894a686217ca3c7f
+hash_signature: sha256:0e3fe0d3e6bc0982ce8ef1f3c56229db9682a79f6f666f7fbd8744b8e0bcc06a
 inputs:
 - action_name: Identificador kebab-case de la acción (`{name}` del archivo `{name}.md`
     en `cumulo.directories.actions`)
@@ -37,15 +37,21 @@ phases:
   intent: Generar uuid v4 y cabecera YAML (contract, context, capabilities, inputs,
     outputs, hash_signature si aplica) según actions-contract; cuerpo con orquestación
     bajo directories.actions.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
   delegates_to:
   - action:crypto-broker
-  - skill:filesystem-manager
 - name: Gobernanza
   intent: Crear o actualizar actions/index.md con columna Capabilities y fila idéntica
     a la cabecera de la acción creada.
+  requires_capability:
+  - id: fs:persist
+    contract: fs.persist
+    version: '>=1.0.0'
   delegates_to:
   - agent:cumulo
-  - skill:filesystem-manager
 phase_invocations:
 - phase_name: Forja del Artefacto
   invocations:

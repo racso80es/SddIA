@@ -1,11 +1,11 @@
 ---
 uuid: "b28194d9-62a8-4cbc-9cbd-237e51e44333"
 name: "event-creator"
-version: "1.2.0"
+version: "1.3.0"
 contract: "process-contract v1.4.0"
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context: "ecosystem-evolution"
-hash_signature: sha256:9e537522414f796d25a713825f5678bc0474008cae8a61add056d03147206e60
+hash_signature: sha256:41c8c335618a7c89ce8f7d5e0907135456d3f723fbc014ad2217118eb08234a5
 inputs:
   - "event_name": "Identificador kebab-case de la Clase (`{name}` del archivo `{name}.md` en `cumulo.directories.events`)"
   - "event_type": "Identificador ECST PascalCase_Snake (p. ej. PullRequest_Merged); único en catálogo"
@@ -33,14 +33,20 @@ phases:
       - "agent:cerbero"
   - name: "Forja del Artefacto"
     intent: "Generar uuid v4 y hash_signature de integridad; YAML (contract, context, event_type, event_family, capabilities) y cuerpo con Payload ECST REQUIRED/OPTIONAL/FORBIDDEN, emisores y suscripciones; rutas solo vía cumulo."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "action:crypto-broker"
-      - "skill:filesystem-manager"
   - name: "Gobernanza de Índice"
     intent: "Auditar events/{effective_event_family}/index.md (columna Capabilities obligatoria) e insertar fila idéntica a la cabecera de la Clase creada."
+    requires_capability:
+      - id: "fs:persist"
+        contract: "fs.persist"
+        version: ">=1.0.0"
     delegates_to:
       - "agent:cumulo"
-      - "skill:filesystem-manager"
 phase_invocations:
   - phase_name: "Forja del Artefacto"
     invocations:
