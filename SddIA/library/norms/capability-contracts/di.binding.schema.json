@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/di.binding.schema.json",
+  "title": "di.binding",
+  "type": "object",
+  "required": [
+    "capability_id",
+    "contract",
+    "contract_schema_ref",
+    "provider",
+    "provider_ref",
+    "resolved_version",
+    "binding_ssot"
+  ],
+  "properties": {
+    "capability_id": { "type": "string", "minLength": 1 },
+    "contract": { "type": "string", "minLength": 1 },
+    "contract_schema_ref": { "type": "string", "minLength": 1 },
+    "provider": {
+      "type": "string",
+      "pattern": "^(skill|action):[a-z0-9-]+$"
+    },
+    "provider_ref": { "type": "string", "minLength": 1 },
+    "resolved_version": { "type": "string", "minLength": 1 },
+    "binding_ssot": { "type": "string", "const": "capability_di.bindings" }
+  },
+  "additionalProperties": false
+}

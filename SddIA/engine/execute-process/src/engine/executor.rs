@@ -158,6 +158,36 @@ fn execute_phase(
         return entry;
     }
 
+    let packaged_for_check: Vec<Value> = if let Some(di) = entry.get("di_binding") {
+        if di.is_array() {
+            di.as_array().cloned().unwrap_or_default()
+        } else {
+            vec![di.clone()]
+        }
+    } else {
+        resolved_bindings
+            .iter()
+            .map(super::capability_di_resolver::di_binding_object)
+            .collect()
+    };
+    if let Err(envelope_err) = super::cerbero_di_envelope::validate_packaged_bindings(
+        repo,
+        &resolved_bindings,
+        &packaged_for_check,
+    ) {
+        super::cerbero_di_envelope::write_cerbero_envelope_dead_letter(
+            repo,
+            &envelope_err,
+            phase_name,
+            process_name,
+        );
+        entry["status"] = json!("failed");
+        entry["handler"] = json!("cerbero-di-envelope");
+        entry["error"] = json!(envelope_err.message);
+        entry["cerbero_envelope_di_code"] = json!(envelope_err.code.as_str());
+        return entry;
+    }
+
     execute_phase_body(
         repo,
         &effective_phase,

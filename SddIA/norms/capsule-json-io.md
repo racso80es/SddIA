@@ -58,6 +58,10 @@ Una sola línea JSON en stdout.
 
 Tras invocación de cápsula con `di_binding` presente, `execute-process` valida el **payload real** de salida (stdout JSON) contra `{contract}.schema.json` en `directories.capability_contracts`. Fallo → abort de fase + DLQ `./.events/dead-letter` con código `CONTRACT_OUTPUT_SCHEMA_MISMATCH`. Skip lab: `SDDIA_LAB_SKIP_CAPABILITY_DI=1` (coherente con resolve/gate).
 
+## Revalidación envelope Cerbero (PBI-042 Hito 4 — R9)
+
+Tras gate APTO y RBAC allow, `cerbero_di_envelope` valida cada objeto `di_binding` empaquetado contra `di.binding.schema.json` en `directories.capability_contracts` y cruza coherencia con `ResolvedBinding` + fila `capability-bindings.md`. Fallo → abort pre-inject + DLQ con `CERBERO_ENVELOPE_SCHEMA_MISMATCH` o `CERBERO_DI_BINDING_INCOHERENT`. Orden: `resolve → gate → cerbero_rbac → cerbero_envelope → inject`. Skip lab: `SDDIA_LAB_SKIP_CAPABILITY_DI=1`.
+
 ## Implementación de referencia
 
 Rust: `scripts/skills-rs/src/capsule_v2.rs` (Cúmulo: `paths.skillsRustPath`).

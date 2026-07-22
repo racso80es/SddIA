@@ -38,6 +38,7 @@ pub mod capability_di_resolver;
 pub mod capability_di_output_validator;
 pub mod capability_di_reactor;
 pub mod cerbero_di_rbac;
+pub mod cerbero_di_envelope;
 pub mod sync_entity_index;
 pub mod suite_execution_requested;
 pub mod thermodynamic;
