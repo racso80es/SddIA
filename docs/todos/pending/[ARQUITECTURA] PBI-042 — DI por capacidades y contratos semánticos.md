@@ -22,7 +22,14 @@ hito3_feature: docs/features/inyeccion-dependencias-gobernanza-asincronia
 hito3_branch: feat/inyeccion-dependencias-gobernanza-asincronia
 hito3_pr: https://github.com/racso80es/SddIA/pull/128
 hito3_merge_commit: 51fd4344ac07ddb27fe96ba4c25c9c27f87a20ca
+hito4_status: apto_en_rama
+hito4_feature: docs/features/inyeccion-dependencias-envelope-homologacion
+hito4_branch: feat/inyeccion-dependencias-envelope-homologacion
+hito4_execution_id: 0ec31f97-ad31-4ae5-8005-dc6220bad185
 related:
+  - docs/features/inyeccion-dependencias-envelope-homologacion/objectives.md
+  - docs/features/inyeccion-dependencias-envelope-homologacion/spec.md
+  - docs/features/inyeccion-dependencias-envelope-homologacion/validacion.md
   - docs/features/inyeccion-dependencias-capacidades/spec.md
   - docs/features/inyeccion-dependencias-capacidades/plan.md
   - docs/features/inyeccion-dependencias-resolucion-ciega/spec.md
@@ -89,6 +96,15 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 | **R7** | Expansión del Códice de la Lengua más allá de `doc:closure` | **Hecho en main** — `proc:git-sync` → `git-manager` |
 | **R8** | Validación JSON Schema runtime del **payload** de salida (no solo firma declarada de `outputs`) | **Hecho en main** — `capability_di_output_validator` |
 
+### Hito 4 — Envelope Cerbero + homologación catálogo
+
+> Ciclo `docs/features/inyeccion-dependencias-envelope-homologacion` · rama `feat/inyeccion-dependencias-envelope-homologacion` · execution `0ec31f97-…` (2026-07-22). Argos: **APTO** (desbloqueo runtime).
+
+| ID | Ítem | Notas |
+|----|------|-------|
+| **R9** | Cerbero revalida schema del envelope `di_binding` empaquetado (Q2 Hito 3) | **APTO en rama** — `cerbero_di_envelope.rs` + tests 24/24 |
+| **R10** | Homologación ampliada catálogo ED (≥8 total; ≥4 nuevas) | **APTO en rama** — 8 ED; hash_signature recalc; L-R10-SEAL |
+
 ### Ortogonal (no este PBI)
 
 - Plan maestro GesFer / Paciente 0 (otro PBI kitchen).
@@ -96,7 +112,7 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 ---
 
-## 4. Criterios de aceptación — residual (futuros ciclos)
+## 4. Criterios de aceptación — residual (ciclo Hito 4+)
 
 | ID | Criterio |
 |----|----------|
@@ -104,6 +120,8 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 | **AC-R2** | Cápsula recibe en `stdin` el binding resuelto (paths/contrato) de forma ciega |
 | **AC-R5** | Cerbero puede rechazar inject por RBAC aunque el gate DI haya pasado |
 | **AC-R6** | Flujo piloto de DI vía evento de dominio + reacción asíncrona sin bloquear el orquestador de fases |
+| **AC-R9** | Cerbero rechaza inject si `di_binding` empaquetado incumple schema aunque gate+RBAC pasen |
+| **AC-R10** | ≥8 ED homologadas con `provides`/`requires_capability` + bindings coherentes |
 
 ---
 

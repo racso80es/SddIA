@@ -1,14 +1,14 @@
 ---
 uuid: bd81c878-5e1c-4fe5-b204-85c9136d8bc7
 name: accept-pr
-version: 1.0.0
+version: 1.0.1
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - pr-lifecycle
 - source-control
 - filesystem-ops
-hash_signature: sha256:6b324b6381a78b2425a017d570068a97ffb1d7382bf17dd784dcfe563d55dbb4
+hash_signature: sha256:f7a6ef21856490f3ac9b69133f948dcf54066d3a05fa7c5dc1019fdd3a289938
 inputs:
 - source_branch: Rama feature a fusionar hacia main (validada por git-operations antes de invocar)
 - author: Autor del merge para el evento PullRequest_Merged
@@ -29,6 +29,10 @@ phases:
   - agent:argos
 - name: Fusión Soberana
   intent: Hacer checkout a la rama main y ejecutar el merge de la rama origen.
+  requires_capability:
+  - id: proc:git-sync
+    contract: proc.git_sync
+    version: '>=1.0.0'
   delegates_to:
   - skill:git-manager
 - name: Sello Criptográfico de Fusión

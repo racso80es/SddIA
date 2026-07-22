@@ -1,14 +1,14 @@
 ---
 uuid: ae01e3ff-af68-4b94-90b3-97e5c03d75ee
 name: refactorization
-version: 1.2.0
+version: 1.2.1
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:5417bf69d8e1011536a3cb69edde6e8fd4314c6f5a4a128417329e84817f675b
+hash_signature: sha256:529225db2b8b6c74960d815d92f5e07e4bb15929ac993a52bd98a02e772bcbe7
 inputs:
 - refactor_goal: Propósito central de la refactorización
 - refined_constraints: Restricciones de alcance complementarias y límites
@@ -42,6 +42,12 @@ phases:
   intent: 'Argos audita la entrega. Su output (audit_report_md) se mapea unívocamente a validacion.md en persist_ref, inyectando el frontmatter exigido (branch, global, checks, git_changes).'
   delegates_to:
   - agent:argos
+- name: Cierre documental en rama
+  intent: 'Antes del merge: mover PBI a docs/todos/done/ en la rama del PR; validacion.md con pbi_archived true según features-documentation-pattern v1.2.0 (sin merged_pr obligatorio).'
+  requires_capability:
+  - id: doc:closure
+    contract: doc.closure
+    version: '>=1.0.0'
 - name: Cierre de entrega
   intent: 'Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process (refactorization), persist_ref y branch_name.'
   delegates_to:

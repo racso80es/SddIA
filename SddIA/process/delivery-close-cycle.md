@@ -1,12 +1,13 @@
 ---
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
 name: delivery-close-cycle
-version: 1.1.0
+version: 1.1.1
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
-hash_signature: sha256:31bd1f3876e28fcf0803dc80344e4c0c5885e9cc6f34e542022a80cce8bd8fbf
+- source-control
+hash_signature: sha256:2e0e83ebf44c6f5b1ebf03323272c88d7c27aa7f52cb239c09a77fee70c734ec
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -37,6 +38,10 @@ phases:
   - agent:argos
 - name: Publicación remota
   intent: Publicar la rama de trabajo en origin antes de abrir el PR.
+  requires_capability:
+  - id: proc:git-sync
+    contract: proc.git_sync
+    version: '>=1.0.0'
   delegates_to:
   - skill:git-manager
 - name: Apertura en forja

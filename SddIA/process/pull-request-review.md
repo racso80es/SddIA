@@ -1,14 +1,14 @@
 ---
 uuid: 6d59f23b-df29-4be5-9bb9-29cede3474b9
 name: pull-request-review
-version: 2.2.0
+version: 2.2.1
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - quality-assurance
 - source-control
 - pr-lifecycle
-hash_signature: sha256:031dd47281349eff7b9cfe6f36fcab893c4a2a8ac12c41493eb2596f0661e5fe
+hash_signature: sha256:4b00ee00bd61afd10725b139c07902033d83256441d841ca4a4c573b98b2688f
 inputs:
 - pr_id_or_path: Identificador o ruta lógica del PR
 - pr_branch: Rama asociada al PR
@@ -28,6 +28,10 @@ outputs:
 phases:
 - name: Preparación de rama
   intent: Alinear checkout, fetch y estado limpio para inspección reproducible de pr_branch.
+  requires_capability:
+  - id: proc:git-sync
+    contract: proc.git_sync
+    version: '>=1.0.0'
   delegates_to:
   - skill:git-manager
 - name: Triaje documental

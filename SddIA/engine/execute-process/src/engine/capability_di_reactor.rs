@@ -2,6 +2,7 @@
 
 use super::capability_di_gate;
 use super::capability_di_resolver::{self, ResolvedBinding};
+use super::cerbero_di_envelope;
 use super::cerbero_di_rbac::{self, resolve_requester_policies};
 use super::eda_bus_topology::{
     ensure_event_bus_topology, iso_now, load_event_bus_topology, write_json_atomic,
@@ -86,6 +87,7 @@ struct ChainOutcome {
     chain_status: &'static str,
     di_gate_code: Option<String>,
     cerbero_di_code: Option<String>,
+    cerbero_envelope_di_code: Option<String>,
     error: Option<String>,
 }
 
@@ -108,6 +110,7 @@ fn run_sync_chain(
                 chain_status: "failed",
                 di_gate_code: None,
                 cerbero_di_code: None,
+                cerbero_envelope_di_code: None,
                 error: Some(e.message),
             };
         }
@@ -124,6 +127,7 @@ fn run_sync_chain(
             chain_status: "failed",
             di_gate_code: Some(e.code.as_str().to_string()),
             cerbero_di_code: None,
+            cerbero_envelope_di_code: None,
             error: Some(e.message),
         };
     }
@@ -141,6 +145,23 @@ fn run_sync_chain(
             chain_status: "failed",
             di_gate_code: None,
             cerbero_di_code: Some(e.code.as_str().to_string()),
+            cerbero_envelope_di_code: None,
+            error: Some(e.message),
+        };
+    }
+
+    let packaged: Vec<Value> = bindings
+        .iter()
+        .map(capability_di_resolver::di_binding_object)
+        .collect();
+    if let Err(e) = cerbero_di_envelope::validate_packaged_bindings(repo, &bindings, &packaged) {
+        cerbero_di_envelope::write_cerbero_envelope_dead_letter(repo, &e, phase_name, process_name);
+        return ChainOutcome {
+            bindings,
+            chain_status: "failed",
+            di_gate_code: None,
+            cerbero_di_code: None,
+            cerbero_envelope_di_code: Some(e.code.as_str().to_string()),
             error: Some(e.message),
         };
     }
@@ -150,6 +171,7 @@ fn run_sync_chain(
         chain_status: "resolved",
         di_gate_code: None,
         cerbero_di_code: None,
+        cerbero_envelope_di_code: None,
         error: None,
     }
 }
@@ -172,6 +194,7 @@ fn emit_di_resolved(repo: &Path, request_event_id: &str, outcome: &ChainOutcome)
             "chain_status": outcome.chain_status,
             "di_gate_code": outcome.di_gate_code,
             "cerbero_di_code": outcome.cerbero_di_code,
+            "cerbero_envelope_di_code": outcome.cerbero_envelope_di_code,
             "error": outcome.error,
         },
         "delivery_state": { "ecst_ack": true }
@@ -229,6 +252,7 @@ pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Va
             "chain_status": outcome.chain_status,
             "di_gate_code": outcome.di_gate_code,
             "cerbero_di_code": outcome.cerbero_di_code,
+            "cerbero_envelope_di_code": outcome.cerbero_envelope_di_code,
         });
     }
     Ok(json!({"processed": processed, "last": last}))
@@ -308,6 +332,11 @@ catalog:
             root,
             "SddIA/library/norms/capability-contracts/doc.closure.schema.json",
             r#"{"type":"object","required":["exitCode","data"],"properties":{"exitCode":{"type":"integer"},"data":{"type":"object"}}}"#,
+        );
+        write_file(
+            root,
+            "SddIA/library/norms/capability-contracts/di.binding.schema.json",
+            include_str!("../../../../library/norms/capability-contracts/di.binding.schema.json"),
         );
         write_file(
             root,
