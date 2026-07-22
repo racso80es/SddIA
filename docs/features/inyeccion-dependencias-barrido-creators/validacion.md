@@ -14,7 +14,10 @@ verdict: aprobado
 approval_status: approved
 scope: "Hito 6 — Barrido creators residuales DI (R14)"
 residual_tracked: true
-delivery_state: ready_for_delivery_close
+delivery_state: success
+pr_url: https://github.com/racso80es/SddIA/pull/140
+pr_presented_event_id: facf6563-91be-4e9d-9aa7-9107d5947757
+snapshot_commit: 66095cb5c2eb6fa7c722cdf7317c85c3bc176198
 gate_forge_update: pass
 gate_shell_runtime: pass
 checks:
@@ -99,4 +102,5 @@ Ola `N_ola=4` = **4/4**. Sellos `Domain_Entity_Updated` ×4 con hash post-mutaci
 
 ## Handoff
 
-Listo para **Cierre de entrega** (`delivery-close-cycle`) cuando operador lo autorice. PBI-042 no se archiva en este ciclo.
+PR abierto: https://github.com/racso80es/SddIA/pull/140 · `PullRequest_Presented` `facf6563-…` · snapshot `66095cb`.  
+PBI-042 **no** se archiva en este ciclo (**L-PBI-LOC**). Merge vía `accept-pr` cuando CI/revisión lo permitan.
