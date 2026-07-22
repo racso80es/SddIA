@@ -92,3 +92,18 @@ persist_ref: docs/features/inyeccion-dependencias-capacidades
 - event_id: 348fd30f-c553-4fdf-8d51-5a3699426bc2
 - orphan_count: 0 · pbi_archived: false (residual)
 ```
+
+## 2026-07-22T05:00:00Z — accept-pr
+- process: `accept-pr`
+- correlation_id: `348fd30f-c553-4fdf-8d51-5a3699426bc2`
+- status: `executed`
+- message: merge d887d7b · PullRequest_Merged 60eb7846-… · main push OK · higiene delete_branch payload mismatch (rama limpia vía fetch prune)
+
+### transcript (tail)
+
+```
+**Veredicto: ok** (ciclo feature cerrado en main)
+
+- MVP mergeado
+- PBI-042 pending (residual)
+```

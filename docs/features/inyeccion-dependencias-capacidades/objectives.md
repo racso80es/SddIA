@@ -7,9 +7,9 @@ persist_ref: docs/features/inyeccion-dependencias-capacidades
 document_id: PBI-042-INYECCION-DEPENDENCIAS-CAPACIDADES
 pbi_ref: docs/todos/pending/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md
 execution_id: 9120e3da-6ba9-4a93-9735-34486383c7de
-status: validated
+status: closed
 verdict: ok
-phase_gate: argos-mvp-apto
+phase_gate: accept-pr-merged
 ---
 
 # Objetivos — inyeccion-dependencias-capacidades
@@ -20,7 +20,7 @@ Materializar el MVP de DI por capacidades semánticas: **Metadatos Activos** + *
 
 ## Estado
 
-MVP **APTO** · PR https://github.com/racso80es/SddIA/pull/126 · `PullRequest_Presented` emitido. PBI en `pending/` (residual R1–R8).
+Ciclo feature **cerrado** en `main` (merge `d887d7b`, PR #126). PBI-042 permanece en pending (R1–R8).
 
 ## Vectores soberanos (Racso)
 

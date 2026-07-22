@@ -15,6 +15,10 @@ residual_tracked: true
 delivery_state: success
 pr_url: https://github.com/racso80es/SddIA/pull/126
 pr_presented_event_id: 348fd30f-c553-4fdf-8d51-5a3699426bc2
+merged_pr: 126
+merge_commit: d887d7b3911f04a956ab5ba62a36d001cbab33fd
+closed: true
+accept_pr_event_id: 60eb7846-d794-4237-bef1-b8f663ea4f6e
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
@@ -97,3 +101,11 @@ R1–R8 del PBI pending (resolución ciega, Library_Codex binding, Cerbero schem
 ## Siguiente
 
 PR #126 abierto. Aduana `pull-request-review` aguas abajo. PBI-042 sigue en pending (residual R1–R8).
+
+## Cierre accept-pr
+
+| Campo | Valor |
+|-------|-------|
+| merge_commit | `d887d7b3911f04a956ab5ba62a36d001cbab33fd` |
+| PullRequest_Merged | `60eb7846-d794-4237-bef1-b8f663ea4f6e` |
+| PBI-042 | permanece en `pending/` (residual R1–R8) |
