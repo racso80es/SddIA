@@ -152,6 +152,20 @@ async function forjarProceso() {
     const data = await r.json();
     const payload = payloadOf(data);
     const text = data.response ?? payload.response;
+
+    // H2 / L5: acuse async 202 accepted (pasarela no bloqueante).
+    const acceptedId =
+      data.correlation_id || data.event_id || payload.correlation_id || payload.event_id;
+    if (data.success && (r.status === 202 || data.status === "accepted") && acceptedId) {
+      const ack =
+        data.message ||
+        text ||
+        `intención aceptada (${acceptedId}); consultando estado…`;
+      out.value = ack;
+      await pollStatus(acceptedId, out, ack);
+      return;
+    }
+
     const ok = data.success && text;
 
     if (!ok) {
