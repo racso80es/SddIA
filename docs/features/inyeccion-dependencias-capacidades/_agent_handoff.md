@@ -107,3 +107,43 @@ persist_ref: docs/features/inyeccion-dependencias-capacidades
 - MVP mergeado
 - PBI-042 pending (residual)
 ```
+
+## 2026-07-22T09:46:42Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `348fd30f-c553-4fdf-8d51-5a3699426bc2`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C001912262750000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:43Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `348fd30f-c553-4fdf-8d51-5a3699426bc2`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C001EF4CBE740000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:44Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `348fd30f-c553-4fdf-8d51-5a3699426bc2`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0A1CE8DE5790000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:45Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `348fd30f-c553-4fdf-8d51-5a3699426bc2`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C06131EDF3790000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:

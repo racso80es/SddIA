@@ -91,3 +91,43 @@ Código materializado según spec K1–K4 en `phase_capsules.rs`:
 
 **Desbloqueo:** tests + smoke lab → re-Argos con `global: APTO` → mover PBI a `done/` en el mismo PR.
 ```
+
+## 2026-07-22T09:46:51Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `9b90d564-052d-4330-bd9a-e9e95f65f9ea`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0E1B3FA9C7C0000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:52Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `9b90d564-052d-4330-bd9a-e9e95f65f9ea`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0A148CC737A0000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:53Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `9b90d564-052d-4330-bd9a-e9e95f65f9ea`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0D18B7424780000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:54Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `9b90d564-052d-4330-bd9a-e9e95f65f9ea`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0718EF11A760000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:

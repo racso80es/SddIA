@@ -124,3 +124,43 @@ persist_ref: docs/fixes/kalma2-ppr-runtime-gaps-ppr-125
 - backend: `cli`
 - status: `failed`
 - message: Error: [internal] write EPROTO C0913190277F0000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:47Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `5aa309de-c77e-497a-9312-48bf042a151f`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0F14741A57C0000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:48Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `5aa309de-c77e-497a-9312-48bf042a151f`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C081C8F69A7B0000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:49Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `5aa309de-c77e-497a-9312-48bf042a151f`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C0816DE1607B0000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
+
+## 2026-07-22T09:46:50Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `5aa309de-c77e-497a-9312-48bf042a151f`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [internal] write EPROTO C001099D517D0000:error:0A0000C6:SSL routines:tls_get_more_records:packet length too long:../deps/openssl/openssl/ssl/record/methods/tls_common.c:662:
