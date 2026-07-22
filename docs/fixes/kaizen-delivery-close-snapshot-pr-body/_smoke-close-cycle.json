@@ -1,0 +1,8 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/fixes/kaizen-delivery-close-snapshot-pr-body",
+  "branch_name": "fix/kaizen-delivery-close-snapshot-pr-body",
+  "pr_title": "fix(delivery-close): snapshot WIP + pr_body --body-file",
+  "pr_body": "## Summary\n- Snapshot consolida untracked\n- PR body multilínea vía --body-file\n\n## Test plan\n- [x] cargo test phase_capsules\n- [x] smoke delivery-close-cycle",
+  "target_branch": "main"
+}

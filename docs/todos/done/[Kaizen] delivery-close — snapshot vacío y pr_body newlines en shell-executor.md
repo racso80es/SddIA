@@ -4,7 +4,10 @@ title: "[Kaizen] delivery-close — snapshot vacío y pr_body con newlines en sh
 format: markdown
 version: "1.0.0"
 created: "2026-07-22"
-status: abierto
+closed: "2026-07-22"
+status: done
+branch_name: fix/kaizen-delivery-close-snapshot-pr-body
+feature_ref: docs/fixes/kaizen-delivery-close-snapshot-pr-body
 priority: alta
 process: bug-fix
 uuid: 09c707bb-03fd-445a-9aa6-bf165b94b7e5

@@ -3,7 +3,8 @@
 use super::capsules::{invoke_action, invoke_git_manager, invoke_shell_executor, invoke_tool};
 use regex::Regex;
 use serde_json::{json, Value};
-use std::path::Path;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 static GH_PR_URL_RE: OnceLock<Regex> = OnceLock::new();
@@ -26,6 +27,193 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string)
+}
+
+/// Paridad con `assert_safe_token` de `shell-executor` (sin invocar la cápsula).
+fn is_shell_token_safe(token: &str) -> bool {
+    !token.chars().any(|c| "\n\r;|><`".contains(c))
+        && !token.contains("&&")
+        && !token.contains("$(")
+        && !token.contains('&')
+}
+
+fn classify_delivery_error(err: &str) -> Option<&'static str> {
+    if err.contains("forbidden shell metacharacters")
+        || err.contains("no pasa preflight de token seguro")
+    {
+        Some("PR_BODY_METACHAR")
+    } else {
+        None
+    }
+}
+
+fn format_delivery_error(error_code: &str, msg: &str) -> String {
+    format!("[{error_code}] {msg}")
+}
+
+fn delivery_phase_failed(handler: &str, error_code: &str, msg: &str) -> Value {
+    json!({
+        "status": "failed",
+        "handler": handler,
+        "error_code": error_code,
+        "error": format_delivery_error(error_code, msg),
+    })
+}
+
+fn git_porcelain_stdout(data: &Value) -> String {
+    data.get("gitStdout")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string()
+}
+
+fn git_commit_hash(data: &Value) -> Option<Value> {
+    data.get("commitHash")
+        .or_else(|| data.get("commit_hash"))
+        .cloned()
+}
+
+/// Desescapa path `git status --porcelain` entrecomillado (C-style / octal UTF-8).
+fn unescape_git_cquoted_path(raw: &str) -> String {
+    let s = raw.trim().trim_end_matches('/');
+    if !(s.starts_with('"') && s.ends_with('"') && s.len() >= 2) {
+        return s.to_string();
+    }
+    let inner = &s[1..s.len() - 1];
+    let bytes = inner.as_bytes();
+    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'\\' && i + 1 < bytes.len() {
+            match bytes[i + 1] {
+                b'n' => {
+                    out.push(b'\n');
+                    i += 2;
+                }
+                b't' => {
+                    out.push(b'\t');
+                    i += 2;
+                }
+                b'r' => {
+                    out.push(b'\r');
+                    i += 2;
+                }
+                b'\\' => {
+                    out.push(b'\\');
+                    i += 2;
+                }
+                b'"' => {
+                    out.push(b'"');
+                    i += 2;
+                }
+                b'a' => {
+                    out.push(0x07);
+                    i += 2;
+                }
+                b'b' => {
+                    out.push(0x08);
+                    i += 2;
+                }
+                b'f' => {
+                    out.push(0x0c);
+                    i += 2;
+                }
+                b'v' => {
+                    out.push(0x0b);
+                    i += 2;
+                }
+                c if (b'0'..=b'7').contains(&c) => {
+                    let mut val: u8 = 0;
+                    let mut count = 0;
+                    while count < 3 && i + 1 + count < bytes.len() {
+                        let d = bytes[i + 1 + count];
+                        if !(b'0'..=b'7').contains(&d) {
+                            break;
+                        }
+                        val = val * 8 + (d - b'0');
+                        count += 1;
+                    }
+                    out.push(val);
+                    i += 1 + count;
+                }
+                _ => {
+                    out.push(bytes[i]);
+                    i += 1;
+                }
+            }
+        } else {
+            out.push(bytes[i]);
+            i += 1;
+        }
+    }
+    String::from_utf8(out).unwrap_or_else(|_| inner.to_string())
+}
+
+/// Extrae paths relativos de `git status --porcelain=v1`.
+fn parse_porcelain_paths(git_stdout: &str) -> Vec<String> {
+    let mut paths = Vec::new();
+    for line in git_stdout.lines() {
+        let line = line.trim_end();
+        if line.is_empty() {
+            continue;
+        }
+        let raw = if let Some(rest) = line.strip_prefix("?? ") {
+            rest.trim()
+        } else if line.len() >= 4 {
+            let rest = line[3..].trim();
+            if let Some(idx) = rest.find(" -> ") {
+                rest[idx + 4..].trim()
+            } else {
+                rest
+            }
+        } else {
+            continue;
+        };
+        let path = unescape_git_cquoted_path(raw);
+        if !path.is_empty() {
+            paths.push(path);
+        }
+    }
+    let mut seen = HashSet::new();
+    paths
+        .into_iter()
+        .filter(|p| seen.insert(p.clone()))
+        .collect()
+}
+
+fn resolve_pr_body_file_dir(repo: &Path, inputs: &Value, state: &Value) -> Result<PathBuf, String> {
+    if let Some(persist_ref) = str_field(inputs, "persist_ref") {
+        return Ok(repo.join(persist_ref).join(".tmp"));
+    }
+    let execution_id = str_field(inputs, "execution_id").or_else(|| {
+        state
+            .get("execution_id")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+    });
+    if let Some(eid) = execution_id {
+        return Ok(repo
+            .join(".SddIA/workspaces/delivery-close-cycle")
+            .join(eid));
+    }
+    Err("persist_ref o execution_id requeridos cuando pr_body está presente".into())
+}
+
+fn write_pr_body_file(dir: &Path, content: &str) -> Result<String, String> {
+    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let file_path = dir.join("pr-body.md");
+    std::fs::write(&file_path, content).map_err(|e| e.to_string())?;
+    let abs = file_path
+        .canonicalize()
+        .map_err(|e| e.to_string())?
+        .to_string_lossy()
+        .to_string();
+    if !is_shell_token_safe(&abs) {
+        return Err(format!(
+            "path --body-file no pasa preflight de token seguro: {abs}"
+        ));
+    }
+    Ok(abs)
 }
 
 fn parse_gh_pr_url(stdout: &str) -> Option<String> {
@@ -117,21 +305,88 @@ pub fn capsule_delivery_snapshot_final_with_repo(
     }
     let branch = str_field(inputs, "branch_name")
         .ok_or("branch_name es obligatorio para Snapshot final")?;
-    let data = invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch}))?;
-    let commit_hash = data
-        .get("commitHash")
-        .or_else(|| data.get("commit_hash"))
-        .cloned();
+
+    let hash_before_data =
+        invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch}))?;
+    let hash_before = git_commit_hash(&hash_before_data);
+
+    let status_data = invoke_git_manager(repo, "status", &json!({}))?;
+    let porcelain = git_porcelain_stdout(&status_data);
+
+    if porcelain.trim().is_empty() {
+        if let Some(obj) = state.as_object_mut() {
+            if let Some(h) = &hash_before {
+                obj.insert("snapshot_commit_hash".into(), h.clone());
+            }
+        }
+        return Ok(json!({
+            "status": "executed",
+            "handler": "delivery-snapshot-final",
+            "commit_hash": hash_before,
+            "branch": branch,
+            "consolidated": false,
+        }));
+    }
+
+    let files = parse_porcelain_paths(&porcelain);
+    if files.is_empty() {
+        return Ok(delivery_phase_failed(
+            "delivery-snapshot-final",
+            "SNAPSHOT_DIRTY_SKIPPED",
+            "porcelain no vacío pero sin paths parseables",
+        ));
+    }
+    let files_count = files.len();
+
+    if let Err(e) = invoke_git_manager(
+        repo,
+        "commit",
+        &json!({
+            "message": "delivery-close: snapshot final consolidado",
+            "files": files,
+        }),
+    ) {
+        return Ok(delivery_phase_failed(
+            "delivery-snapshot-final",
+            "SNAPSHOT_DIRTY_SKIPPED",
+            &e,
+        ));
+    }
+
+    let status_after_data = invoke_git_manager(repo, "status", &json!({}))?;
+    let porcelain_after = git_porcelain_stdout(&status_after_data);
+    if !porcelain_after.trim().is_empty() {
+        return Ok(delivery_phase_failed(
+            "delivery-snapshot-final",
+            "SNAPSHOT_DIRTY_SKIPPED",
+            "working tree sigue sucio tras commit de snapshot",
+        ));
+    }
+
+    let hash_after_data =
+        invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch}))?;
+    let hash_after = git_commit_hash(&hash_after_data);
+
+    if hash_before == hash_after {
+        return Ok(delivery_phase_failed(
+            "delivery-snapshot-final",
+            "SNAPSHOT_DIRTY_SKIPPED",
+            "hash_after == hash_before; snapshot no consolidó WIP",
+        ));
+    }
+
     if let Some(obj) = state.as_object_mut() {
-        if let Some(h) = &commit_hash {
+        if let Some(h) = &hash_after {
             obj.insert("snapshot_commit_hash".into(), h.clone());
         }
     }
     Ok(json!({
         "status": "executed",
         "handler": "delivery-snapshot-final",
-        "commit_hash": commit_hash,
+        "commit_hash": hash_after,
         "branch": branch,
+        "consolidated": true,
+        "files_committed": files_count,
     }))
 }
 
@@ -238,12 +493,31 @@ pub fn capsule_delivery_gh_pr(
         target,
     ];
     if let Some(body) = str_field(inputs, "pr_body") {
-        args.push("--body".into());
-        args.push(body);
+        let body_dir = resolve_pr_body_file_dir(repo, inputs, state)?;
+        let body_path = match write_pr_body_file(&body_dir, &body) {
+            Ok(p) => p,
+            Err(e) => {
+                return Ok(delivery_phase_failed(
+                    "delivery-gh-pr",
+                    "PR_BODY_METACHAR",
+                    &e,
+                ));
+            }
+        };
+        args.push("--body-file".into());
+        args.push(body_path);
     } else {
         args.push("--fill".into());
     }
-    let data = invoke_shell_executor(repo, "gh", &args)?;
+    let data = match invoke_shell_executor(repo, "gh", &args) {
+        Ok(d) => d,
+        Err(e) => {
+            if let Some(code) = classify_delivery_error(&e) {
+                return Ok(delivery_phase_failed("delivery-gh-pr", code, &e));
+            }
+            return Err(e);
+        }
+    };
     let stdout = data.get("stdout").and_then(|v| v.as_str()).unwrap_or("");
     let stderr = data.get("stderr").and_then(|v| v.as_str()).unwrap_or("");
     let mut pr_url = parse_gh_pr_url(stdout).or_else(|| parse_gh_pr_url(stderr));
@@ -727,5 +1001,108 @@ mod emit_presented_tests {
         let err = capsule_delivery_emit_presented(&repo, &inputs, &mut state)
             .expect_err("must require pr_url");
         assert!(err.contains("pr_url obligatorio"), "got: {err}");
+    }
+}
+
+#[cfg(test)]
+mod delivery_close_kaizen_tests {
+    use super::*;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn repo_root() -> PathBuf {
+        let mut here = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        here.pop();
+        here.pop();
+        here.pop();
+        here
+    }
+
+    #[test]
+    fn parse_porcelain_paths_untracked_and_modified() {
+        let stdout = "?? docs/fixes/new/file.md\n M SddIA/engine/foo.rs\n";
+        let paths = parse_porcelain_paths(stdout);
+        assert_eq!(
+            paths,
+            vec![
+                "docs/fixes/new/file.md".to_string(),
+                "SddIA/engine/foo.rs".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn parse_porcelain_paths_rename() {
+        let stdout = "R  old/path.md -> new/path.md\n";
+        let paths = parse_porcelain_paths(stdout);
+        assert_eq!(paths, vec!["new/path.md".to_string()]);
+    }
+
+    #[test]
+    fn parse_porcelain_paths_cquoted_unicode_and_delete() {
+        // Em-dash U+2014 = \342\200\224 ; ó U+00F3 = \303\255 in "vacío"
+        let stdout = concat!(
+            " D \"docs/todos/pending/[Kaizen] delivery-close \\342\\200\\224 snapshot vac\\303\\255o.md\"\n",
+            "?? \"docs/todos/done/[Kaizen] delivery-close \\342\\200\\224 snapshot vac\\303\\255o.md\"\n",
+            "?? docs/fixes/kaizen-delivery-close-snapshot-pr-body/\n",
+        );
+        let paths = parse_porcelain_paths(stdout);
+        assert_eq!(
+            paths,
+            vec![
+                "docs/todos/pending/[Kaizen] delivery-close — snapshot vacío.md".to_string(),
+                "docs/todos/done/[Kaizen] delivery-close — snapshot vacío.md".to_string(),
+                "docs/fixes/kaizen-delivery-close-snapshot-pr-body".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn pr_body_file_path_is_safe_token() {
+        let repo = repo_root();
+        let dir = repo.join("docs/fixes/kaizen-delivery-close-snapshot-pr-body/.tmp");
+        let body = "## Summary\n- línea 1\n- línea 2\n";
+        let path = write_pr_body_file(&dir, body).expect("write pr-body");
+        assert!(is_shell_token_safe(&path));
+        assert!(path.ends_with("pr-body.md"));
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn map_shell_metachar_error_to_pr_body_metachar() {
+        let err = "arguments[9] contains forbidden shell metacharacters";
+        assert_eq!(classify_delivery_error(err), Some("PR_BODY_METACHAR"));
+    }
+
+    #[test]
+    fn snapshot_dirty_failure_sets_error_code() {
+        let entry = delivery_phase_failed(
+            "delivery-snapshot-final",
+            "SNAPSHOT_DIRTY_SKIPPED",
+            "hash_after == hash_before",
+        );
+        assert_eq!(entry.get("status").and_then(|v| v.as_str()), Some("failed"));
+        assert_eq!(
+            entry.get("error_code").and_then(|v| v.as_str()),
+            Some("SNAPSHOT_DIRTY_SKIPPED")
+        );
+        assert!(
+            entry
+                .get("error")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .starts_with("[SNAPSHOT_DIRTY_SKIPPED]")
+        );
+    }
+
+    #[test]
+    fn resolve_pr_body_file_dir_from_persist_ref() {
+        let repo = repo_root();
+        let inputs = json!({
+            "persist_ref": "docs/fixes/kaizen-delivery-close-snapshot-pr-body"
+        });
+        let state = json!({});
+        let dir = resolve_pr_body_file_dir(&repo, &inputs, &state).expect("dir");
+        assert!(dir.ends_with("docs/fixes/kaizen-delivery-close-snapshot-pr-body/.tmp"));
     }
 }
