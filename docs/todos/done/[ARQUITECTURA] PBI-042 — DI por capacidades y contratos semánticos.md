@@ -2,13 +2,17 @@
 document_id: PBI-042-INYECCION-DEPENDENCIAS-CAPACIDADES
 title: "[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos"
 format: markdown
-version: "1.2.0"
+version: "1.2.1"
 created: "2026-07-21"
 promoted_from: docs/todos/kitchen/PBI_Inyeccion_Dependencias_Capacidades.md
 promoted_at: "2026-07-21"
-status: abierto
+status: cerrado
 priority: alta
 process: feature
+close_feature: docs/features/inyeccion-dependencias-cierre-pbi
+close_branch: feat/inyeccion-dependencias-cierre-pbi
+close_execution_id: d4e8f1a3-6c7b-4d9e-a2f0-3b4c5d6e7f8a
+closed_at: "2026-07-22"
 mvp_status: entregado_en_rama
 mvp_feature: docs/features/inyeccion-dependencias-capacidades
 mvp_branch: feat/inyeccion-dependencias-capacidades
@@ -44,6 +48,7 @@ hito6_pr: https://github.com/racso80es/SddIA/pull/140
 hito6_snapshot_commit: 66095cb5c2eb6fa7c722cdf7317c85c3bc176198
 hito6_merge_commit: 42038482c84859a289d0229eb739e5d5b3e1b129
 related:
+  - docs/features/inyeccion-dependencias-cierre-pbi/validacion.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/finalize-process.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/objectives.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/spec.md
@@ -90,7 +95,7 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 ## 3. Pendiente fuera del MVP (backlog post-merge)
 
-> Esta sección es el residual explícito: **no** bloquea el Done del feature MVP actual.
+> Esta sección conserva la historia R1–R14. **No** reabre ítems como pendientes: todos Hecho/Omitido. Residual post-Done = §6.
 
 ### Hito 2 — Resolución ciega e inyección
 
@@ -165,6 +170,18 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 ## 5. Referencias
 
 - Feature MVP: `docs/features/inyeccion-dependencias-capacidades/`
+- Cierre Done global: `docs/features/inyeccion-dependencias-cierre-pbi/`
 - Norma: `SddIA/library/norms/capability-taxonomy.md`
 - Gate: `SddIA/engine/execute-process/src/engine/capability_di_gate.rs`
 - Semilla kitchen original: promovida desde `docs/todos/kitchen/PBI_Inyeccion_Dependencias_Capacidades.md` (2026-07-21)
+
+---
+
+## 6. Cierre Done global (R15)
+
+Done alcanzado: MVP + Hitos 2–6 (R1–R14; R13 omitido Q6-A) en main.
+
+Residual **fuera de este Done** (no blocker): ola H7+ ED residuales; EDA-only total sync→async —
+solo con laudo Racso posterior. GesFer / Fractura Core F1 = otros PBI.
+
+Archivo: `docs/todos/done/` · `status: cerrado` · ciclo `inyeccion-dependencias-cierre-pbi` · `execution_id` `d4e8f1a3-6c7b-4d9e-a2f0-3b4c5d6e7f8a`.
