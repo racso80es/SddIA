@@ -33,6 +33,7 @@ pub mod handlers;
 pub mod phase_capsules;
 pub mod policy_validator;
 pub mod capability_di_gate;
+pub mod capability_di_resolver;
 pub mod sync_entity_index;
 pub mod suite_execution_requested;
 pub mod thermodynamic;

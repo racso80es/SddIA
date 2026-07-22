@@ -423,10 +423,13 @@ mod tests {
             root,
             "SddIA/core/cumulo.paths.json",
             r#"{
-  "version": "1.5.2",
+  "version": "1.5.3",
   "directories": {
     "library_norms": "SddIA/library/norms/",
     "capability_contracts": "SddIA/library/norms/capability-contracts/"
+  },
+  "capability_di": {
+    "bindings": "SddIA/core/capability-bindings.md"
   },
   "normative_documents": {
     "capability_taxonomy": "SddIA/library/norms/capability-taxonomy.md"
@@ -436,6 +439,18 @@ mod tests {
     "dead_letter": "./.events/dead-letter"
   }
 }"#,
+        );
+        write_md(
+            root,
+            "SddIA/core/capability-bindings.md",
+            r#"---
+name: capability-bindings
+bindings:
+  - capability_id: "doc:closure"
+    contract: "doc.closure"
+    provider: "skill:filesystem-manager"
+---
+"#,
         );
         write_md(
             root,
@@ -565,6 +580,24 @@ outputs:
         });
         let err = validate_phase_capability_di(td.path(), &phase, "feature").unwrap_err();
         assert_eq!(err.code, DiGateCode::CapabilityProviderMismatch);
+    }
+
+    #[test]
+    fn ac_p1_real_repo_feature_phase_blind_via_resolver() {
+        let root = crate::core::repo::find_repo_root().expect("repo root");
+        let phase = json!({
+            "name": "Cierre documental en rama",
+            "requires_capability": [{
+                "id": "doc:closure",
+                "contract": "doc.closure",
+                "version": ">=1.0.0"
+            }]
+        });
+        let bindings = crate::engine::capability_di_resolver::resolve_phase_bindings(&root, &phase)
+            .expect("resolve");
+        let effective =
+            crate::engine::capability_di_resolver::phase_with_effective_delegates(&phase, &bindings);
+        validate_phase_capability_di(&root, &effective, "feature").expect("gate after resolve");
     }
 
     #[test]

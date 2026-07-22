@@ -280,4 +280,18 @@ mod tests {
         append_row(&index, "| new-row-duplicate |", "new-row").unwrap();
         assert_eq!(text.matches("| new-row |").count(), 1);
     }
+
+    #[test]
+    #[ignore = "one-off: refresh hash_signature on process YAMLs"]
+    fn refresh_process_hash_feature_bugfix() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .canonicalize()
+            .expect("repo root");
+        for name in ["feature.md", "bug-fix.md"] {
+            let p = root.join("process").join(name);
+            let (old, new) = refresh_process_hash(&p).expect("refresh");
+            eprintln!("{}: {:?} -> {}", name, old, new);
+        }
+    }
 }

@@ -15,6 +15,21 @@ Un único objeto JSON (una línea recomendada; se acepta JSON multilínea en std
 | `meta.entityId` | string | kebab-case; para skills coincide con `skill_id`; para tools coincide con **`name`** según `tools-contract.md` v1.2.0 (alias histórico `toolId` solo en payloads legados). (Alias: `entity_id`.) |
 | `meta.token` | object | Opcional; Karma2Token si el contrato lo exige. |
 | `request` | object | Cuerpo libre definido en `paths.skillsDefinitionPath/<skill-id>/spec.md`. |
+| `di_binding` | object | **Opcional (PBI-042 Hito 2).** Binding DI resuelto por el runtime antes de stdin. Hermano de `request`. |
+
+### Campo opcional `di_binding`
+
+Inyectado por `capability_di_resolver` cuando la fase declara `requires_capability`. Paths lógicos vía Cúmulo (nunca absolutos de host).
+
+| Subcampo | Tipo | Obligatorio | Descripción |
+|----------|------|-------------|-------------|
+| `capability_id` | string | sí | Homologado en `capability-taxonomy`. |
+| `contract` | string | sí | Clave de schema (`doc.closure`, …). |
+| `contract_schema_ref` | string | sí | Ref lógica (`capability_contracts/{contract}`). |
+| `provider` | string | sí | Identidad canónica (`skill:…` \| `action:…`). |
+| `provider_ref` | string | sí | Ref lógica al `{name}.md` del proveedor. |
+| `resolved_version` | string | sí | Versión del `provides` del proveedor. |
+| `binding_ssot` | string | sí | Clave Cúmulo del mapa (`capability_di.bindings`). |
 
 **Entrada alternativa:** variable de entorno `SDDIA_CAPSULE_REQUEST` con el mismo JSON. Si `SDDIA_SKIP_STDIN=1`, no se lee stdin.
 

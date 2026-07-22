@@ -1,10 +1,13 @@
 {
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
     "manifest": "SddIA/sddia-core.manifest.json",
     "pathsDefinition": "SddIA/core/cumulo.paths.json"
+  },
+  "capability_di": {
+    "bindings": "SddIA/core/capability-bindings.md"
   },
   "directories": {
     "norms": "SddIA/norms",

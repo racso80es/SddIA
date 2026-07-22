@@ -87,7 +87,9 @@ fn execute_phase(
         return entry;
     }
 
-    if let Some(capsule_entry) = super::phase_capsules::try_invoke_delegates(repo, &delegates, inputs) {
+    if let Some(capsule_entry) =
+        super::phase_capsules::try_invoke_delegates(repo, &delegates, inputs, &[])
+    {
         if let Some(obj) = capsule_entry.as_object() {
             for (k, v) in obj {
                 entry[k.clone()] = v.clone();

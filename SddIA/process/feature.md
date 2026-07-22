@@ -1,14 +1,14 @@
 ---
 uuid: 1b4fa69f-4299-47ca-b2ed-380f2263239c
 name: feature
-version: 1.3.0
+version: 1.3.1
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:d16d940377a0e3ad5a48aec07361f9977c7cfdf73f66eb04516843a4c8f35684
+hash_signature: sha256:53061f78d184f9daed5b91028e99d5df701445e610de41a07de7150870c664da
 inputs:
 - feature_name: Nombre kebab-case o etiqueta humana de la feature
 - refined_requirements: Requisitos crudos o semi-refinados de entrada
@@ -48,8 +48,6 @@ phases:
   - id: doc:closure
     contract: doc.closure
     version: '>=1.0.0'
-  delegates_to:
-  - skill:filesystem-manager
 - name: Cierre de entrega
   intent: Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process, persist_ref y branch_name.
   delegates_to:

@@ -2,7 +2,7 @@
 document_id: PBI-042-INYECCION-DEPENDENCIAS-CAPACIDADES
 title: "[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-07-21"
 promoted_from: docs/todos/kitchen/PBI_Inyeccion_Dependencias_Capacidades.md
 promoted_at: "2026-07-21"
@@ -12,11 +12,19 @@ process: feature
 mvp_status: entregado_en_rama
 mvp_feature: docs/features/inyeccion-dependencias-capacidades
 mvp_branch: feat/inyeccion-dependencias-capacidades
+hito2_status: apto_en_rama
+hito2_feature: docs/features/inyeccion-dependencias-resolucion-ciega
+hito2_branch: feat/inyeccion-dependencias-resolucion-ciega
 related:
   - docs/features/inyeccion-dependencias-capacidades/spec.md
   - docs/features/inyeccion-dependencias-capacidades/plan.md
+  - docs/features/inyeccion-dependencias-resolucion-ciega/spec.md
+  - docs/features/inyeccion-dependencias-resolucion-ciega/validacion.md
   - SddIA/library/norms/capability-taxonomy.md
+  - SddIA/core/capability-bindings.md
   - SddIA/engine/execute-process/src/engine/capability_di_gate.rs
+  - SddIA/engine/execute-process/src/engine/capability_di_resolver.rs
+  - docs/todos/pending/[Kaizen] delivery-close — snapshot vacío y pr_body newlines en shell-executor.md
 ---
 
 # [ARQUITECTURA] PBI-042: DI por Capacidades y Validación de Contratos Semánticos
@@ -51,12 +59,14 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 ### Hito 2 — Resolución ciega e inyección
 
+> Ciclo `docs/features/inyeccion-dependencias-resolucion-ciega` · rama `feat/inyeccion-dependencias-resolucion-ciega` · Argos **APTO** (2026-07-22). R4 = piloto ampliado (no migración masiva).
+
 | ID | Ítem | Notas |
 |----|------|-------|
-| **R1** | Injector que resuelve `requires_capability` → artefacto físico **sin** depender de `delegates_to` por identidad | Hoy el gate valida coherencia provides↔requires; no sustituye el binding |
-| **R2** | Wrapper CLI: inyectar rutas/contratos resueltos en el JSON de `stdin` de la cápsula | Matriz original §4.2 |
-| **R3** | Mapa capability→artefacto (binding table en Cúmulo o entidad dedicada) | **No** sobrecargar `Library_Codex` de normas (L-CODEX-ROLE); decidir entidad nueva vs ampliación explícita de contrato de códice |
-| **R4** | Migración masiva: anotar `provides`/`requires_capability` en el catálogo ED (process/action/skill/tool/agent) | MVP solo piloto cierre documental |
+| **R1** | Injector que resuelve `requires_capability` → artefacto físico **sin** depender de `delegates_to` por identidad | **Hecho en rama** — `capability_di_resolver` |
+| **R2** | Wrapper CLI: inyectar rutas/contratos resueltos en el JSON de `stdin` de la cápsula | **Hecho en rama** — `di_binding` envelope v2 |
+| **R3** | Mapa capability→artefacto (binding table en Cúmulo o entidad dedicada) | **Hecho en rama** — `capability-bindings.md` + `capability_di.bindings` |
+| **R4** | Anotar `provides`/`requires_capability` (piloto ampliado) | **Hecho en rama** — `feature` + `bug-fix` ciegos; migración masiva diferida |
 
 ### Hito 3 — Gobernanza y asincronía
 

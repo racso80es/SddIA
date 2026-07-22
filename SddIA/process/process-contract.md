@@ -102,7 +102,7 @@ Métricas operativas para el ciclo de vida del flujo:
 * `minteo_maximo`: Límite de ejecuciones de este proceso en la red.
 * `porcentaje_de_exito`: Variable que audita si las iteraciones del proceso alcanzan el cierre sin colapso entrópico.
 
-## 6. Metadatos Activos — DI por capacidades (MVP)
+## 6. Metadatos Activos — DI por capacidades
 
 Campos opcionales en frontmatter de `{name}.md` (proceso) y/o en cada elemento de `phases`:
 
@@ -113,7 +113,16 @@ requires_capability:
     version: ">=1.0.0"      # SemVer o rango simple >=X.Y.Z
 ```
 
-* **`delegates_to`** sigue resolviendo el artefacto físico en MVP.
-* La **Aduana Temprana** (`capability_di_gate` en `execute-process`) valida taxonomía + `provides` del proveedor + schema **antes de la ignición** de la fase.
-* Norma SSOT: `normative_documents.capability_taxonomy` (Códice de la Lengua).
+### Modo ciego (Hito 2)
+
+* Si la fase declara **solo** `requires_capability` (sin `delegates_to` skill/action), el runtime resuelve el proveedor vía **binding table** (`capability_di.bindings` → `SddIA/core/capability-bindings.md`) y sintetiza el proveedor efectivo antes de la Aduana.
+* **`delegates_to` es opcional** cuando existe fila canónica en el mapa DI para cada `requires_capability`.
+* Si coexisten `requires_capability` y `delegates_to` (skill/action), el proveedor resuelto **debe coincidir**; mismatch → `CAPABILITY_PROVIDER_MISMATCH`.
+* Sin fila en el mapa → `CAPABILITY_BINDING_MISSING`.
+
+### Aduana y Códice
+
+* La **Aduana Temprana** (`capability_di_gate`) valida taxonomía + `provides` del proveedor **efectivo** + schema **antes de la ignición**.
+* El injector (`capability_di_resolver`) **no** sustituye la aduana; la alimenta.
+* Norma SSOT taxonomía: `normative_documents.capability_taxonomy` (Códice de la Lengua). **Prohibido** usar Library_Codex de normas como router DI.
 * Prohibido `spec.json` como soporte de estos metadatos.
