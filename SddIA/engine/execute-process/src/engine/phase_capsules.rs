@@ -395,11 +395,14 @@ fn build_capsule_payload(kind: &str, name: &str, inputs: &Value) -> Value {
 
 /// Intenta invocar delegados skill:/tool: con cápsula resoluble (P5).
 /// Si hay `di_bindings`, inyecta `di_binding` en el payload stdin (R2).
+/// Post-invoke: valida payload real vs schema contrato (R8).
 pub fn try_invoke_delegates(
     repo: &Path,
     delegates: &[Value],
     inputs: &Value,
     di_bindings: &[super::capability_di_resolver::ResolvedBinding],
+    process_name: &str,
+    phase_name: &str,
 ) -> Option<Value> {
     let mut capsule_missing = false;
     let mut last_err: Option<String> = None;
@@ -416,6 +419,27 @@ pub fn try_invoke_delegates(
             super::capability_di_resolver::merge_first_di_binding(&base, di_bindings);
         match invoke_tool(repo, name, &payload) {
             Ok(body) => {
+                if let Some(b) = di_bindings.first() {
+                    if let Err(out_err) =
+                        super::capability_di_output_validator::validate_output_payload(
+                            repo, b, &body,
+                        )
+                    {
+                        super::capability_di_output_validator::write_output_dead_letter(
+                            repo,
+                            &out_err,
+                            phase_name,
+                            process_name,
+                            &b.contract,
+                        );
+                        return Some(json!({
+                            "status": "failed",
+                            "handler": "capability-di-output-validator",
+                            "error": out_err.message,
+                            "output_validator_code": out_err.code.as_str(),
+                        }));
+                    }
+                }
                 let mut out = json!({
                     "status": "executed",
                     "handler": format!("capsule-{kind}-{name}"),

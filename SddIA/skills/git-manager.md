@@ -4,6 +4,10 @@ name: "git-manager"
 version: "1.0.0"
 contract: "skills-contract v1.1.0"
 context: "source-control"
+provides:
+  - id: "proc:git-sync"
+    contract: "proc.git_sync"
+    version: "1.0.0"
 capabilities:
   - "git-read-state"
   - "git-branching"

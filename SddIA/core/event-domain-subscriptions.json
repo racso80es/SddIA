@@ -203,6 +203,12 @@
       "intent": "Anclaje traza grafo de pensamiento en DLT."
     }
   ],
+  "CapabilityDi_Requested": [
+    {
+      "agent": "cumulo",
+      "intent": "Piloto DI async — reactor engine capability_di_reactor (non-blocking)."
+    }
+  ],
   "Vector_Memory_Indexed": [
     {
       "agent": "cumulo",

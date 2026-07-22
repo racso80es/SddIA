@@ -1,7 +1,7 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.0"
+version: "1.0.1"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
@@ -12,6 +12,10 @@ catalog:
     contract: "doc.closure"
     version: "1.0.0"
     description: "Cierre documental en rama (archivo PBI / validacion pbi_archived)."
+  - id: "proc:git-sync"
+    contract: "proc.git_sync"
+    version: "1.0.0"
+    description: "Operaciones Git gobernadas (sync, branch, commit) vía cápsula git-manager."
 ---
 
 ## Directriz Core
@@ -27,6 +31,7 @@ Alta de términos: únicamente vía `entity-manager` (`lifecycle_operation: upda
 | id | contract | version | Descripción |
 |----|----------|---------|-------------|
 | `doc:closure` | `doc.closure` | 1.0.0 | Cierre documental en rama |
+| `proc:git-sync` | `proc.git_sync` | 1.0.0 | Operaciones Git gobernadas vía git-manager |
 
 ## Restricciones Duras
 
