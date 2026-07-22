@@ -29,12 +29,13 @@ hito4_execution_id: 0ec31f97-ad31-4ae5-8005-dc6220bad185
 hito4_pr: https://github.com/racso80es/SddIA/pull/136
 hito4_snapshot_commit: 975758068bbb32a4217904a94179f1a98ee2dd73
 hito4_merge_commit: 6b0e98cff03e3ff923fc71aee0f0e685b9a70233
-hito5_status: entregado_en_rama
+hito5_status: entregado_en_main
 hito5_feature: docs/features/inyeccion-dependencias-migracion-catalogo
 hito5_branch: feat/inyeccion-dependencias-migracion-catalogo
 hito5_execution_id: a8f4c2e1-6b9d-4e3a-9c7f-1d2e5a8b0c4f
 hito5_pr: https://github.com/racso80es/SddIA/pull/138
 hito5_snapshot_commit: 3e640d443cc16d3a108ab12e61f0159979d944ef
+hito5_merge_commit: 66a0f7146e9952920d113078e2dfcf4594cfb0ba
 related:
   - docs/features/inyeccion-dependencias-envelope-homologacion/finalize-process.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/objectives.md
@@ -121,8 +122,8 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 | ID | Ítem | Notas |
 |----|------|-------|
-| **R11** | Sello `Domain_Entity_Updated` vía entity-manager (cierra L-R10-SEAL) | **Hecho en rama** — backfill baseline + prep + ola sellados; orphan 0 |
-| **R12** | Ola migración ≥8 ED nuevas (total ≥16) + alta `fs:persist` | **Hecho en rama** — taxonomía v1.0.2 + 8 ED + bonus Inicialización |
+| **R11** | Sello `Domain_Entity_Updated` vía entity-manager (cierra L-R10-SEAL) | **Hecho en main** — merge `66a0f71` |
+| **R12** | Ola migración ≥8 ED nuevas (total ≥16) + alta `fs:persist` | **Hecho en main** — merge `66a0f71` |
 | **R13** | Ampliar piloto EDA DI | **Omitido** (Q6-A) |
 
 ### Ortogonal (no este PBI)
