@@ -7,10 +7,11 @@ persist_ref: docs/features/inyeccion-dependencias-resolucion-ciega
 pbi_ref: docs/todos/pending/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md
 document_id: PBI-042-RESOLUCION-CIEGA-INYECCION
 execution_id: a7e3c9f2-4b1d-4e8a-9c5f-2d6b8e1a0f47
-phase: argos-verified
-status: hito2-apto
+phase: accept-pr-merged
+status: closed
 verdict: ok
 execution_id_runtime: 2161b482-7bc6-4cda-a8c7-a70cda8c05b8
+merge_commit: 60c4635b351ee78c4f5d1050cc09e4bda3f8c6af
 ---
 
 # Objetivos — inyeccion-dependencias-resolucion-ciega

@@ -209,3 +209,23 @@ Kaizen: docs/todos/pending/[Kaizen] delivery-close — snapshot vacío y pr_body
 document_id: PBI-KAIZEN-DELIVERY-CLOSE-SNAPSHOT-PR-BODY
 uuid: 09c707bb-03fd-445a-9aa6-bf165b94b7e5
 ```
+
+## 2026-07-22T05:55:00Z — accept-pr
+- process: `accept-pr`
+- agents: ``
+- correlation_id: `14f78c84-2ae7-4fd0-8bb5-204f61fab396`
+- pbi_ref: `docs/todos/pending/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
+- runtime: tekton-ide-relay
+- backend: `ide`
+- status: `executed`
+- message: merge 60c4635 · PullRequest_Merged dd430697-… · main push OK · higiene delete_branch payload mismatch
+
+### Transcript (tail)
+
+```
+accept-pr OK
+- merge_commit 60c4635b351ee78c4f5d1050cc09e4bda3f8c6af
+- event dd430697-785c-4e6c-b67a-101655528bf1
+- PR #127 merged/closed en GitHub
+- PBI-042 hito2_status entregado_en_main; pbi_archived false
+```

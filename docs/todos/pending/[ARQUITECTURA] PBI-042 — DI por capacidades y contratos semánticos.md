@@ -12,9 +12,11 @@ process: feature
 mvp_status: entregado_en_rama
 mvp_feature: docs/features/inyeccion-dependencias-capacidades
 mvp_branch: feat/inyeccion-dependencias-capacidades
-hito2_status: apto_en_rama
+hito2_status: entregado_en_main
 hito2_feature: docs/features/inyeccion-dependencias-resolucion-ciega
 hito2_branch: feat/inyeccion-dependencias-resolucion-ciega
+hito2_pr: https://github.com/racso80es/SddIA/pull/127
+hito2_merge_commit: 60c4635b351ee78c4f5d1050cc09e4bda3f8c6af
 related:
   - docs/features/inyeccion-dependencias-capacidades/spec.md
   - docs/features/inyeccion-dependencias-capacidades/plan.md
@@ -59,14 +61,14 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 ### Hito 2 — Resolución ciega e inyección
 
-> Ciclo `docs/features/inyeccion-dependencias-resolucion-ciega` · rama `feat/inyeccion-dependencias-resolucion-ciega` · Argos **APTO** (2026-07-22). R4 = piloto ampliado (no migración masiva).
+> Ciclo `docs/features/inyeccion-dependencias-resolucion-ciega` · PR [#127](https://github.com/racso80es/SddIA/pull/127) merge `60c4635` (2026-07-22). R4 = piloto ampliado (no migración masiva).
 
 | ID | Ítem | Notas |
 |----|------|-------|
-| **R1** | Injector que resuelve `requires_capability` → artefacto físico **sin** depender de `delegates_to` por identidad | **Hecho en rama** — `capability_di_resolver` |
-| **R2** | Wrapper CLI: inyectar rutas/contratos resueltos en el JSON de `stdin` de la cápsula | **Hecho en rama** — `di_binding` envelope v2 |
-| **R3** | Mapa capability→artefacto (binding table en Cúmulo o entidad dedicada) | **Hecho en rama** — `capability-bindings.md` + `capability_di.bindings` |
-| **R4** | Anotar `provides`/`requires_capability` (piloto ampliado) | **Hecho en rama** — `feature` + `bug-fix` ciegos; migración masiva diferida |
+| **R1** | Injector que resuelve `requires_capability` → artefacto físico **sin** depender de `delegates_to` por identidad | **Hecho en main** — `capability_di_resolver` |
+| **R2** | Wrapper CLI: inyectar rutas/contratos resueltos en el JSON de `stdin` de la cápsula | **Hecho en main** — `di_binding` envelope v2 |
+| **R3** | Mapa capability→artefacto (binding table en Cúmulo o entidad dedicada) | **Hecho en main** — `capability-bindings.md` + `capability_di.bindings` |
+| **R4** | Anotar `provides`/`requires_capability` (piloto ampliado) | **Hecho en main** — `feature` + `bug-fix` ciegos; migración masiva diferida |
 
 ### Hito 3 — Gobernanza y asincronía
 
