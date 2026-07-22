@@ -1,67 +1,73 @@
 ---
-uuid: "dd9e13b2-fc07-40d2-95f5-b50ebd535a9e"
-name: "codex-creator"
-version: "1.1.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
-  - "ecosystem-evolution"
-  - "knowledge-management"
-hash_signature: sha256:5e893f9ac177f1fbf7d40c3e34ba95914d9d691693241b6db14eb8510af962e0
+- ecosystem-evolution
+- knowledge-management
+contract: process-contract v1.4.0
+hash_signature: sha256:265e42fa9a88287d58a64095a19d00f0d920430e2b5fb737fda1c15068aec66f
 inputs:
-  - "domain_codex_slug": "Identificador kebab-case del archivo (`{slug}.md` bajo `directories.library_codexes`)"
-  - "domain_codex_name": "Nombre estratégico del paquete (campo `name` del frontmatter según `codex-contract.md`)"
-  - "domain_codex_version": "SemVer inicial del códice"
-  - "domain_codex_author": "Creador del paquete"
-  - "target_environment": "Array de strings: entornos donde el códice tiene autoridad"
-  - "tactical_norm_inventory": "Lista de referencias a normas atómicas: cada ítem `{ norm: <UUIDv4>, path: <ruta relativa canónica al .md bajo la cantera> }`"
-  - "codex_contract_version": "Versión del contrato a materializar (p. ej. 1.0.0 según `codex-contract.md` vía `cumulo.contracts.library_codexes`)"
-  - "domain_codex_certification_grade": "Opcional; por defecto `Pendiente` hasta auditoría Argos"
-outputs:
-  - "artifact_domain_codex_md": "Archivo `{paths.directories.library_codexes}/{domain_codex_slug}.md` conforme a `codex-contract.md`"
-  - "artifact_library_codexes_index": "`{paths.directories.library_codexes}/index.md` creado o actualizado con fila alineada a la cabecera YAML del códice"
-  - "handoff_entity_uuid": "UUID v4 del códice forjado; consumido por `entity-manager`"
-  - "handoff_hash_signature_new": "Sello post-forja"
-  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
-  - "handoff_version": "SemVer resultante"
-phases:
-  - name: "Selección y Triaje (Inventario)"
-    intent: "Recibir tactical_norm_inventory y target_environment; verificar bajo directories.library_norms que cada norma existe y es válida bajo norms-contract."
-    delegates_to:
-      - "agent:cumulo"
-      - "agent:cerbero"
-  - name: "Inyección de Identidad"
-    intent: "Emitir UUID v4 del códice; fijar versión inicial y certification_grade por defecto Pendiente hasta auditoría Argos."
-    delegates_to:
-      - "action:crypto-broker"
-      - "agent:cumulo"
-  - name: "Forja de Estrategia (El Vibe)"
-    intent: "Redactar cuerpo Markdown: Estrategia de Dominio e Instrucciones de Prioridad ante matices contradictorios entre normas."
-    delegates_to:
-      - "agent:dedalo"
-      - "agent:argos"
-  - name: "Materialización (Transmutación a Activo Físico)"
-    intent: "Ensamblar YAML (composition con paths de normas) y Markdown en un solo flujo; nombre de archivo kebab-case; persistir en directories.library_codexes."
-    delegates_to:
-      - "skill:filesystem-manager"
-      - "agent:cumulo"
-  - name: "Indexación"
-    intent: "Verificar library_codexes/index.md e insertar o actualizar fila Archivo fuente|uuid|name|version|target_environment|certification_grade alineada al YAML fuente."
-    delegates_to:
-      - "agent:cumulo"
-      - "skill:filesystem-manager"
-phase_invocations:
-  - phase_name: "Inyección de Identidad"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "domain_codex_uuid"
-        on_error: abort
+- domain_codex_slug: Identificador kebab-case del archivo (`{slug}.md` bajo `directories.library_codexes`)
+- domain_codex_name: Nombre estratégico del paquete (campo `name` del frontmatter según `codex-contract.md`)
+- domain_codex_version: SemVer inicial del códice
+- domain_codex_author: Creador del paquete
+- target_environment: 'Array de strings: entornos donde el códice tiene autoridad'
+- tactical_norm_inventory: 'Lista de referencias a normas atómicas: cada ítem `{ norm: <UUIDv4>, path: <ruta relativa canónica al .md bajo la cantera> }`'
+- codex_contract_version: Versión del contrato a materializar (p. ej. 1.0.0 según `codex-contract.md` vía `cumulo.contracts.library_codexes`)
+- domain_codex_certification_grade: Opcional; por defecto `Pendiente` hasta auditoría Argos
 minteo_maximo: null
+name: codex-creator
+outputs:
+- artifact_domain_codex_md: Archivo `{paths.directories.library_codexes}/{domain_codex_slug}.md` conforme a `codex-contract.md`
+- artifact_library_codexes_index: '`{paths.directories.library_codexes}/index.md` creado o actualizado con fila alineada a la cabecera YAML del códice'
+- handoff_entity_uuid: UUID v4 del códice forjado; consumido por `entity-manager`
+- handoff_hash_signature_new: Sello post-forja
+- handoff_hash_signature_old: Sello previo en update; `null` en create
+- handoff_version: SemVer resultante
+phase_invocations:
+- invocations:
+  - bind:
+      data.result: domain_codex_uuid
+    capsule: action:crypto-broker
+    on_error: abort
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+  phase_name: Inyección de Identidad
+phases:
+- delegates_to:
+  - agent:cumulo
+  - agent:cerbero
+  intent: Recibir tactical_norm_inventory y target_environment; verificar bajo directories.library_norms que cada norma existe y es válida bajo norms-contract.
+  name: Selección y Triaje (Inventario)
+- delegates_to:
+  - action:crypto-broker
+  - agent:cumulo
+  intent: Emitir UUID v4 del códice; fijar versión inicial y certification_grade por defecto Pendiente hasta auditoría Argos.
+  name: Inyección de Identidad
+- delegates_to:
+  - agent:dedalo
+  - agent:argos
+  intent: 'Redactar cuerpo Markdown: Estrategia de Dominio e Instrucciones de Prioridad ante matices contradictorios entre normas.'
+  name: Forja de Estrategia (El Vibe)
+- delegates_to:
+  - agent:cumulo
+  intent: Ensamblar YAML (composition con paths de normas) y Markdown en un solo flujo; nombre de archivo kebab-case; persistir en directories.library_codexes.
+  name: Materialización (Transmutación a Activo Físico)
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
+- delegates_to:
+  - agent:cumulo
+  intent: Verificar library_codexes/index.md e insertar o actualizar fila Archivo fuente|uuid|name|version|target_environment|certification_grade alineada al YAML fuente.
+  name: Indexación
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
 porcentaje_de_exito: null
+uuid: dd9e13b2-fc07-40d2-95f5-b50ebd535a9e
+version: 1.1.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # codex-creator

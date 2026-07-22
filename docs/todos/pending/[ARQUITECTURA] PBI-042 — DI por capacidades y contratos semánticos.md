@@ -36,6 +36,10 @@ hito5_execution_id: a8f4c2e1-6b9d-4e3a-9c7f-1d2e5a8b0c4f
 hito5_pr: https://github.com/racso80es/SddIA/pull/138
 hito5_snapshot_commit: 3e640d443cc16d3a108ab12e61f0159979d944ef
 hito5_merge_commit: 66a0f7146e9952920d113078e2dfcf4594cfb0ba
+hito6_status: entregado_en_rama
+hito6_feature: docs/features/inyeccion-dependencias-barrido-creators
+hito6_branch: feat/inyeccion-dependencias-barrido-creators
+hito6_execution_id: c9d1e4f2-7a8b-4c5d-9e0f-1a2b3c4d5e6f
 related:
   - docs/features/inyeccion-dependencias-envelope-homologacion/finalize-process.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/objectives.md
@@ -118,13 +122,21 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 ### Hito 5 — Sellado EDA + ola migración catálogo
 
-> Ciclo `docs/features/inyeccion-dependencias-migracion-catalogo` · rama `feat/inyeccion-dependencias-migracion-catalogo` · **en curso**.
+> Ciclo `docs/features/inyeccion-dependencias-migracion-catalogo` · PR [#138](https://github.com/racso80es/SddIA/pull/138) merge `66a0f71` (2026-07-22).
 
 | ID | Ítem | Notas |
 |----|------|-------|
 | **R11** | Sello `Domain_Entity_Updated` vía entity-manager (cierra L-R10-SEAL) | **Hecho en main** — merge `66a0f71` |
 | **R12** | Ola migración ≥8 ED nuevas (total ≥16) + alta `fs:persist` | **Hecho en main** — merge `66a0f71` |
 | **R13** | Ampliar piloto EDA DI | **Omitido** (Q6-A) |
+
+### Hito 6 — Barrido creators residuales
+
+> Ciclo `docs/features/inyeccion-dependencias-barrido-creators` · rama `feat/inyeccion-dependencias-barrido-creators` · **en curso**.
+
+| ID | Ítem | Notas |
+|----|------|-------|
+| **R14** | Homologar `norm`/`codex`/`daemon`/`suite`-creator con `fs:persist` (+ forge update preservante) | **Hecho en rama** — `N_ola=4`; validacion APTO |
 
 ### Ortogonal (no este PBI)
 
@@ -143,6 +155,7 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 | **AC-R6** | Flujo piloto de DI vía evento de dominio + reacción asíncrona sin bloquear el orquestador de fases |
 | **AC-R9** | Cerbero rechaza inject si `di_binding` empaquetado incumple schema aunque gate+RBAC pasen |
 | **AC-R10** | ≥8 ED homologadas con `provides`/`requires_capability` + bindings coherentes |
+| **AC-R14** | Creators residuales (`norm`/`codex`/`daemon`/`suite`) homologados con DI ciego + sellos EDA + orphan 0 |
 
 ---
 

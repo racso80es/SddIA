@@ -1,66 +1,72 @@
 ---
-uuid: "a132a6fc-52c8-4795-8c68-a2897d456588"
-name: "norm-creator"
-version: "1.2.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
-  - "ecosystem-evolution"
-  - "knowledge-management"
-hash_signature: sha256:924276cd786aa74350a54671378eefb052f260251a6d16e53a3f578120754cc5
+- ecosystem-evolution
+- knowledge-management
+contract: process-contract v1.4.0
+hash_signature: sha256:d340ad0c9e467d4e2d66c15a978fa70d5bea5aae1053c9b166b64fdf86fab6bf
 inputs:
-  - "tactical_norm_name": "Identificador kebab-case del archivo (`{name}.md` bajo `directories.library_norms`)"
-  - "tactical_norm_version": "SemVer de la norma (p. ej. 1.0.0)"
-  - "tactical_norm_friction": "Descripción de la fricción o patrón a cristalizar en una única norma atómica"
-  - "tactical_norm_author": "Entidad creadora (persona o agente)"
-  - "tactical_norm_dependencies": "Array de UUID v4 de normas prerequisito; `[]` si no aplica"
-  - "norms_contract_version": "Versión del contrato a materializar (p. ej. 1.0.0 según `norms-contract.md` vía `cumulo.contracts.library_norms`)"
-outputs:
-  - "artifact_tactical_norm_md": "Archivo `{paths.directories.library_norms}/{tactical_norm_name}.md` con frontmatter y cuerpo conforme a `norms-contract.md`"
-  - "artifact_library_norms_index": "`{paths.directories.library_norms}/index.md` creado o actualizado con fila alineada a la cabecera YAML de la norma"
-  - "handoff_entity_uuid": "UUID v4 de la norma forjada; consumido por `entity-manager`"
-  - "handoff_hash_signature_new": "Sello post-forja"
-  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
-  - "handoff_version": "SemVer resultante"
-phases:
-  - name: "Triaje de Entrada (Aduana Lógica)"
-    intent: "Recibir tactical_norm_friction; abortar si viola el Principio de Atomicidad (dominios contradictorios o multi-vector no atomizable)."
-    delegates_to:
-      - "agent:cumulo"
-      - "agent:cerbero"
-  - name: "Clasificación Semántica"
-    intent: "Deducir scope y category según enums de norms-contract; validar tactical_norm_dependencies; emitir UUID v4 para cabecera vía crypto-broker."
-    delegates_to:
-      - "action:crypto-broker"
-      - "agent:dedalo"
-      - "agent:cumulo"
-  - name: "Destilación Rúnica"
-    intent: "Separar conocimiento en Directriz Core (aséptica) y Restricciones Duras (prohibiciones explícitas para Filtro A)."
-    delegates_to:
-      - "agent:dedalo"
-      - "agent:argos"
-  - name: "Materialización"
-    intent: "Ensamblar YAML y Markdown conforme a contracts.library_norms; persistir en directories.library_norms con nombre kebab-case."
-    delegates_to:
-      - "skill:filesystem-manager"
-      - "agent:cumulo"
-  - name: "Indexación"
-    intent: "Verificar library_norms/index.md e insertar o actualizar fila Archivo fuente|uuid|name|version|scope|category alineada al YAML fuente."
-    delegates_to:
-      - "agent:cumulo"
-      - "skill:filesystem-manager"
-phase_invocations:
-  - phase_name: "Clasificación Semántica"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "tactical_norm_uuid"
-        on_error: abort
+- tactical_norm_name: Identificador kebab-case del archivo (`{name}.md` bajo `directories.library_norms`)
+- tactical_norm_version: SemVer de la norma (p. ej. 1.0.0)
+- tactical_norm_friction: Descripción de la fricción o patrón a cristalizar en una única norma atómica
+- tactical_norm_author: Entidad creadora (persona o agente)
+- tactical_norm_dependencies: Array de UUID v4 de normas prerequisito; `[]` si no aplica
+- norms_contract_version: Versión del contrato a materializar (p. ej. 1.0.0 según `norms-contract.md` vía `cumulo.contracts.library_norms`)
 minteo_maximo: null
+name: norm-creator
+outputs:
+- artifact_tactical_norm_md: Archivo `{paths.directories.library_norms}/{tactical_norm_name}.md` con frontmatter y cuerpo conforme a `norms-contract.md`
+- artifact_library_norms_index: '`{paths.directories.library_norms}/index.md` creado o actualizado con fila alineada a la cabecera YAML de la norma'
+- handoff_entity_uuid: UUID v4 de la norma forjada; consumido por `entity-manager`
+- handoff_hash_signature_new: Sello post-forja
+- handoff_hash_signature_old: Sello previo en update; `null` en create
+- handoff_version: SemVer resultante
+phase_invocations:
+- invocations:
+  - bind:
+      data.result: tactical_norm_uuid
+    capsule: action:crypto-broker
+    on_error: abort
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+  phase_name: Clasificación Semántica
+phases:
+- delegates_to:
+  - agent:cumulo
+  - agent:cerbero
+  intent: Recibir tactical_norm_friction; abortar si viola el Principio de Atomicidad (dominios contradictorios o multi-vector no atomizable).
+  name: Triaje de Entrada (Aduana Lógica)
+- delegates_to:
+  - action:crypto-broker
+  - agent:dedalo
+  - agent:cumulo
+  intent: Deducir scope y category según enums de norms-contract; validar tactical_norm_dependencies; emitir UUID v4 para cabecera vía crypto-broker.
+  name: Clasificación Semántica
+- delegates_to:
+  - agent:dedalo
+  - agent:argos
+  intent: Separar conocimiento en Directriz Core (aséptica) y Restricciones Duras (prohibiciones explícitas para Filtro A).
+  name: Destilación Rúnica
+- delegates_to:
+  - agent:cumulo
+  intent: Ensamblar YAML y Markdown conforme a contracts.library_norms; persistir en directories.library_norms con nombre kebab-case.
+  name: Materialización
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
+- delegates_to:
+  - agent:cumulo
+  intent: Verificar library_norms/index.md e insertar o actualizar fila Archivo fuente|uuid|name|version|scope|category alineada al YAML fuente.
+  name: Indexación
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
 porcentaje_de_exito: null
+uuid: a132a6fc-52c8-4795-8c68-a2897d456588
+version: 1.2.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # norm-creator

@@ -227,6 +227,157 @@ pub fn refresh_process_hash(process_path: &Path) -> Result<(Option<String>, Stri
     Ok((old_hash, new_hash))
 }
 
+/// SemVer patch bump (`1.2.0` → `1.2.1`).
+pub fn bump_semver_patch(version: &str) -> String {
+    let trimmed = version.trim();
+    let parts: Vec<&str> = trimmed.split('.').collect();
+    match parts.as_slice() {
+        [maj, min, pat, ..] => {
+            let patch: u64 = pat
+                .chars()
+                .take_while(|c| c.is_ascii_digit())
+                .collect::<String>()
+                .parse()
+                .unwrap_or(0);
+            format!("{maj}.{min}.{}", patch + 1)
+        }
+        [maj, min] => format!("{maj}.{min}.1"),
+        [maj] if !maj.is_empty() => format!("{maj}.0.1"),
+        _ => "1.0.1".into(),
+    }
+}
+
+fn split_md_frontmatter(text: &str) -> Result<(String, String), String> {
+    let rest = text
+        .strip_prefix("---")
+        .ok_or_else(|| "frontmatter ausente (sin --- inicial)".to_string())?;
+    let rest = rest.strip_prefix('\n').unwrap_or(rest);
+    let (yaml, body) = rest
+        .split_once("\n---")
+        .ok_or_else(|| "frontmatter ausente (sin --- de cierre)".to_string())?;
+    let body = body.strip_prefix('\n').unwrap_or(body);
+    Ok((yaml.to_string(), body.to_string()))
+}
+
+/// Resultado de patch update con `process_phases`.
+pub struct ProcessPhasesPatchResult {
+    pub entity_uuid: String,
+    pub old_hash: Option<String>,
+    pub new_hash: String,
+    pub old_version: String,
+    pub new_version: String,
+}
+
+/// Update canónico: reemplaza `phases` + bump version + `hash_signature`.
+/// Preserva uuid/name/inputs/outputs/phase_invocations/context/workspace_template y cuerpo MD.
+pub fn patch_process_phases_update(
+    process_path: &Path,
+    phases: &Value,
+    process_version: Option<&str>,
+) -> Result<ProcessPhasesPatchResult, String> {
+    if !phases.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+        return Err("process_phases debe ser array no vacío".into());
+    }
+    let text = fs::read_to_string(process_path).map_err(|e| e.to_string())?;
+    let (yaml, body) = split_md_frontmatter(&text)?;
+    let fm_val: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+    let mut map = match fm_val {
+        Value::Object(m) => m,
+        _ => return Err("frontmatter no es objeto YAML".into()),
+    };
+
+    let entity_uuid = map
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if entity_uuid.is_empty() {
+        return Err("uuid ausente en frontmatter".into());
+    }
+    let old_hash = map
+        .get("hash_signature")
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let old_version = map
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("1.0.0")
+        .to_string();
+    let new_version = process_version
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| bump_semver_patch(&old_version));
+    let new_hash = sha256_phases_integrity(phases);
+
+    map.insert("phases".into(), phases.clone());
+    map.insert("version".into(), Value::String(new_version.clone()));
+    map.insert("hash_signature".into(), Value::String(new_hash.clone()));
+
+    let yaml_out = serde_yaml::to_string(&Value::Object(map)).map_err(|e| e.to_string())?;
+    // serde_yaml may emit a leading "---\n"; strip for double-fence safety
+    let yaml_out = yaml_out
+        .strip_prefix("---\n")
+        .unwrap_or(&yaml_out)
+        .trim_end()
+        .to_string();
+    let body = body.trim_start_matches('\n');
+    let mut out = format!("---\n{yaml_out}\n---\n\n{body}");
+    if !out.ends_with('\n') {
+        out.push('\n');
+    }
+    fs::write(process_path, out).map_err(|e| e.to_string())?;
+
+    Ok(ProcessPhasesPatchResult {
+        entity_uuid,
+        old_hash,
+        new_hash,
+        old_version,
+        new_version,
+    })
+}
+
+/// Actualiza columna Versión en `process/index.md` para `name`.
+pub fn update_process_index_version(
+    index_path: &Path,
+    name: &str,
+    new_version: &str,
+) -> Result<(), String> {
+    if !index_path.is_file() {
+        return Ok(());
+    }
+    let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+    let mut changed = false;
+    let mut lines: Vec<String> = Vec::new();
+    for line in idx.lines() {
+        if !line.starts_with('|') {
+            lines.push(line.to_string());
+            continue;
+        }
+        let cols: Vec<&str> = line.split('|').collect();
+        // | Name | UUID | Versión | ... → cols[1]=Name
+        if cols.len() >= 4 && cols[1].trim() == name {
+            let mut new_cols: Vec<String> = cols.iter().map(|c| (*c).to_string()).collect();
+            new_cols[3] = format!(" {new_version} ");
+            let rebuilt = new_cols.join("|");
+            if rebuilt != *line {
+                changed = true;
+            }
+            lines.push(rebuilt);
+        } else {
+            lines.push(line.to_string());
+        }
+    }
+    if changed {
+        let mut out = lines.join("\n");
+        if idx.ends_with('\n') && !out.ends_with('\n') {
+            out.push('\n');
+        }
+        fs::write(index_path, out).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 pub fn handoff_create(
     entity_uuid: &str,
     hash_sig: &str,
@@ -279,6 +430,13 @@ mod tests {
         assert!(text.contains("| new-row |"));
         append_row(&index, "| new-row-duplicate |", "new-row").unwrap();
         assert_eq!(text.matches("| new-row |").count(), 1);
+    }
+
+    #[test]
+    fn bump_semver_patch_increments() {
+        assert_eq!(bump_semver_patch("1.2.0"), "1.2.1");
+        assert_eq!(bump_semver_patch("1.1.0"), "1.1.1");
+        assert_eq!(bump_semver_patch("1.0.0"), "1.0.1");
     }
 
     #[test]

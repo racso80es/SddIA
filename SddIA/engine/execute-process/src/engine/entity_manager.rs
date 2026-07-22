@@ -150,27 +150,32 @@ fn creator_inputs_from_entity(
                 ("actions_contract_version".into(), seed_field(seed, "actions_contract_version", json!("1.2.0"))),
             ]),
         ),
-        "process" => merge_maps(
-            &base,
-            Map::from_iter([
+        "process" => {
+            // process_phases / process_version: solo si vienen en seed.
+            // Default stub en update destruiría genoma rico vía patch_process_phases_update.
+            let mut fields: Map<String, Value> = Map::from_iter([
                 ("process_name".into(), seed_field(seed, "process_name", json!(entity_name))),
                 (
                     "process_description".into(),
                     seed_field(seed, "process_description", json!(format!("Proceso {entity_name}"))),
                 ),
                 ("process_context".into(), seed_field(seed, "process_context", json!("ecosystem-evolution"))),
-                (
-                    "process_phases".into(),
-                    seed_field(
-                        seed,
-                        "process_phases",
-                        json!([{"name": "Fase inicial", "intent": "stub"}]),
-                    ),
-                ),
                 ("process_contract_version".into(), seed_field(seed, "process_contract_version", json!("1.3.0"))),
                 ("process_aliases".into(), seed_field(seed, "process_aliases", json!([]))),
-            ]),
-        ),
+            ]);
+            if let Some(phases) = seed.get("process_phases") {
+                fields.insert("process_phases".into(), phases.clone());
+            }
+            if let Some(ver) = seed
+                .get("process_version")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                fields.insert("process_version".into(), json!(ver));
+            }
+            merge_maps(&base, fields)
+        }
         "agent" => merge_maps(
             &base,
             Map::from_iter([

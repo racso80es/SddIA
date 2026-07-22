@@ -1,74 +1,82 @@
 ---
-uuid: "c172f130-532f-4714-be4e-fcd80b84a5dc"
-name: "daemon-creator"
-version: "1.0.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
-context: "ecosystem-evolution"
-hash_signature: sha256:ac5164ffcd8f3dafa4837e13574ae2ff51a8214743606b6ea078a513b88c64d5
+context: ecosystem-evolution
+contract: process-contract v1.4.0
+hash_signature: sha256:c7e0a688ed06442289d38341078dc0c127341f13dd8d15dce04181f7f0dc1441
 inputs:
-  - "daemon_name": "Identificador kebab-case del Centinela (`{name}` del archivo `{name}.md` en `cumulo.directories.daemons`)"
-  - "daemon_context": "Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)"
-  - "daemon_description": "Descripción operativa del estímulo físico interceptado y límites de Ceguera Lógica"
-  - "daemon_capabilities": "Array de strings semánticos (enrutamiento; ej. `telegram-long-poll`, `eda-bus-watch`)"
-  - "daemon_execution": "Bloque obligatorio: `entrypoint`, `runtime`, `heartbeat_interval_seconds` (§4 daemons-contract)"
-  - "daemon_jurisdiction": "Declaración de aislamiento; default canónico del contrato"
-  - "daemon_version": "SemVer de la definición (ej. 1.0.0)"
-  - "daemons_contract_version": "Versión del contrato daemons a materializar (ej. 1.0.0 según `daemons-contract.md`)"
-outputs:
-  - "artifact_daemon_md": "Archivo `{paths.directories.daemons}/{daemon_name}.md` con cabecera YAML conforme a `paths.contracts.daemons`"
-  - "artifact_daemons_index": "`{paths.directories.daemons}/index.md` actualizado con fila sincronizada a la cabecera YAML"
-  - "handoff_entity_uuid": "UUID v4 del Centinela forjado (`child_daemon_uuid`); consumido por `entity-manager`"
-  - "handoff_hash_signature_new": "Sello `sha256:` + hex canónico post-forja; consumido por `entity-manager`"
-  - "handoff_hash_signature_old": "Sello previo en update; `null` en create"
-  - "handoff_version": "SemVer resultante (`daemon_version`)"
-phases:
-  - name: "Validación RBAC y topología"
-    intent: "Verificar daemon_context en execution-contexts; unicidad y kebab-case de daemon_name bajo directories.daemons; SemVer; bloque execution completo y heartbeat_interval_seconds ≥ 5."
-    delegates_to:
-      - "agent:cumulo"
-      - "agent:cerbero"
-  - name: "Forja del Markdown"
-    intent: "Generar uuid v4 y hash_signature de integridad según canon §7 daemons-contract; YAML (contract, context, capabilities, execution, jurisdiction) y cuerpo conforme a contracts.daemons; rutas solo vía cumulo."
-    delegates_to:
-      - "action:crypto-broker"
-      - "skill:filesystem-manager"
-  - name: "Indexación"
-    intent: "Auditar daemons/index.md (columna heartbeat_interval_seconds obligatoria) e insertar fila idéntica a la cabecera del Centinela creado."
-    delegates_to:
-      - "agent:cumulo"
-      - "skill:filesystem-manager"
-phase_invocations:
-  - phase_name: "Forja del Markdown"
-    invocations:
-      - capsule: "action:crypto-broker"
-        stdin_json:
-          operation: "GENERATE_UUID"
-          target_payload: null
-        bind:
-          "data.result": "child_daemon_uuid"
-        on_error: abort
-      - capsule: "action:crypto-broker"
-        stdin_spec:
-          operation: "GENERATE_SHA256"
-          target_type: "STRING"
-          target_payload:
-            type: "canonical_json_utf8"
-            from_process_inputs:
-              - "daemon_name"
-              - "daemon_version"
-              - "daemon_context"
-              - "daemon_capabilities"
-              - "daemon_execution"
-            json_dumps:
-              sort_keys: true
-              separators: [",", ":"]
-              ensure_ascii: false
-        bind:
-          "data.result": "child_daemon_integrity_hex"
-        on_error: abort
+- daemon_name: Identificador kebab-case del Centinela (`{name}` del archivo `{name}.md` en `cumulo.directories.daemons`)
+- daemon_context: Contexto RBAC Cerbero (debe existir en `execution-contexts.md`)
+- daemon_description: Descripción operativa del estímulo físico interceptado y límites de Ceguera Lógica
+- daemon_capabilities: Array de strings semánticos (enrutamiento; ej. `telegram-long-poll`, `eda-bus-watch`)
+- daemon_execution: 'Bloque obligatorio: `entrypoint`, `runtime`, `heartbeat_interval_seconds` (§4 daemons-contract)'
+- daemon_jurisdiction: Declaración de aislamiento; default canónico del contrato
+- daemon_version: SemVer de la definición (ej. 1.0.0)
+- daemons_contract_version: Versión del contrato daemons a materializar (ej. 1.0.0 según `daemons-contract.md`)
 minteo_maximo: null
+name: daemon-creator
+outputs:
+- artifact_daemon_md: Archivo `{paths.directories.daemons}/{daemon_name}.md` con cabecera YAML conforme a `paths.contracts.daemons`
+- artifact_daemons_index: '`{paths.directories.daemons}/index.md` actualizado con fila sincronizada a la cabecera YAML'
+- handoff_entity_uuid: UUID v4 del Centinela forjado (`child_daemon_uuid`); consumido por `entity-manager`
+- handoff_hash_signature_new: Sello `sha256:` + hex canónico post-forja; consumido por `entity-manager`
+- handoff_hash_signature_old: Sello previo en update; `null` en create
+- handoff_version: SemVer resultante (`daemon_version`)
+phase_invocations:
+- invocations:
+  - bind:
+      data.result: child_daemon_uuid
+    capsule: action:crypto-broker
+    on_error: abort
+    stdin_json:
+      operation: GENERATE_UUID
+      target_payload: null
+  - bind:
+      data.result: child_daemon_integrity_hex
+    capsule: action:crypto-broker
+    on_error: abort
+    stdin_spec:
+      operation: GENERATE_SHA256
+      target_payload:
+        from_process_inputs:
+        - daemon_name
+        - daemon_version
+        - daemon_context
+        - daemon_capabilities
+        - daemon_execution
+        json_dumps:
+          ensure_ascii: false
+          separators:
+          - ','
+          - ':'
+          sort_keys: true
+        type: canonical_json_utf8
+      target_type: STRING
+  phase_name: Forja del Markdown
+phases:
+- delegates_to:
+  - agent:cumulo
+  - agent:cerbero
+  intent: Verificar daemon_context en execution-contexts; unicidad y kebab-case de daemon_name bajo directories.daemons; SemVer; bloque execution completo y heartbeat_interval_seconds ≥ 5.
+  name: Validación RBAC y topología
+- delegates_to:
+  - action:crypto-broker
+  intent: Generar uuid v4 y hash_signature de integridad según canon §7 daemons-contract; YAML (contract, context, capabilities, execution, jurisdiction) y cuerpo conforme a contracts.daemons; rutas solo vía cumulo.
+  name: Forja del Markdown
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
+- delegates_to:
+  - agent:cumulo
+  intent: Auditar daemons/index.md (columna heartbeat_interval_seconds obligatoria) e insertar fila idéntica a la cabecera del Centinela creado.
+  name: Indexación
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
 porcentaje_de_exito: null
+uuid: c172f130-532f-4714-be4e-fcd80b84a5dc
+version: 1.0.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # daemon-creator
