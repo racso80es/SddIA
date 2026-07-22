@@ -4,9 +4,11 @@ title: "[FIX] kalma2-bridge — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-07-20"
-status: "abierto"
+status: done
 priority: alta
 process: bug-fix
+consolidated_into: "docs/todos/done/[FIX] centinelas+kalma2 — ola fracturas start-sddia 2026-07-22.md"
+closed: "2026-07-22"
 incident_ref: "System_Fracture_Detected — cbe0c30b3695"
 related:
   - SddIA/norms/obediencia-procesos.md
@@ -50,3 +52,8 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 - **Corrección de proceso oficial:** Auditar proceso `kalma2-bridge`, acción `sse_chat_stream` y emisor `kalma2-bridge`.
 
 > Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar.
+
+
+## Cierre ola
+
+Duplicado operativo absorbido por `docs/todos/done/[FIX] centinelas+kalma2 — ola fracturas start-sddia 2026-07-22.md` (`start-sddia` v1.2 vault+cleanup+heartbeat gate).

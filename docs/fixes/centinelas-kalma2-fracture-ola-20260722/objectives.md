@@ -24,3 +24,7 @@ Inicialización de contexto vía orquestador nativo `execute-process` (laborator
 
 - Git exclusivamente vía `skill:git-manager`.
 - Jerarquía: Acción → Agente → Skill → Tools.
+
+## Estado
+
+Ejecutado en runtime IDE. Ver `validacion.md` APTO.
