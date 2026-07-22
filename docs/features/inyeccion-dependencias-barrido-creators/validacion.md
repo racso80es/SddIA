@@ -18,6 +18,9 @@ delivery_state: success
 pr_url: https://github.com/racso80es/SddIA/pull/140
 pr_presented_event_id: facf6563-91be-4e9d-9aa7-9107d5947757
 snapshot_commit: 66095cb5c2eb6fa7c722cdf7317c85c3bc176198
+merged_pr: 140
+merge_commit: 42038482c84859a289d0229eb739e5d5b3e1b129
+pr_merged_event_id: 412419e6-885d-442c-ab2d-b16b2075d2ac
 gate_forge_update: pass
 gate_shell_runtime: pass
 checks:
@@ -102,5 +105,5 @@ Ola `N_ola=4` = **4/4**. Sellos `Domain_Entity_Updated` ×4 con hash post-mutaci
 
 ## Handoff
 
-PR abierto: https://github.com/racso80es/SddIA/pull/140 · `PullRequest_Presented` `facf6563-…` · snapshot `66095cb`.  
-PBI-042 **no** se archiva en este ciclo (**L-PBI-LOC**). Merge vía `accept-pr` cuando CI/revisión lo permitan.
+PR mergeado: https://github.com/racso80es/SddIA/pull/140 · merge `4203848` · `PullRequest_Merged` `412419e6-…`.  
+PBI-042 **no** se archiva (**L-PBI-LOC**). Ver `finalize-process.md`.
