@@ -16,6 +16,9 @@ verdict: aprobado
 approval_status: approved
 scope: "Hito 1 (H7) — Núcleo FS residual DI fs:persist (R1–R3 / AC-H7)"
 delivery_state: success
+pr_url: https://github.com/racso80es/SddIA/pull/144
+pr_presented_event_id: 53d3bf48-dcfc-4f70-9327-2a0f1b19d1db
+snapshot_commit: 67f7e8dce98f71268c130f06e8ae42a2f2f3d542
 gate_shell_runtime: pass
 orphan_count: 0
 n_ola_homologated: 8
