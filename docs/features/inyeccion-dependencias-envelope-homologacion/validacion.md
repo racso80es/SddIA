@@ -18,6 +18,10 @@ approval_status: approved
 pr_url: https://github.com/racso80es/SddIA/pull/136
 pr_presented_event_id: e3079c94-2a40-4f60-b9c4-b4ade1ca031b
 snapshot_commit: 975758068bbb32a4217904a94179f1a98ee2dd73
+merged_pr: 136
+merge_commit: 6b0e98cff03e3ff923fc71aee0f0e685b9a70233
+closed: true
+accept_pr_event_id: f11a3e1c-b016-43fc-8c93-c8597689fad5
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
