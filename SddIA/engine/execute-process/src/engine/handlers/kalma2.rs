@@ -82,7 +82,14 @@ fn build_kalma2_process_event(
     process: &str,
     pbi_ref: Option<&str>,
     raw_text: &str,
+    correlation_id: Option<&str>,
 ) -> Value {
+    let event_id = correlation_id
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .and_then(|s| Uuid::parse_str(s).ok())
+        .map(|u| u.to_string())
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
     let mut payload = json!({
         "process": process,
         "raw_text": raw_text,
@@ -91,7 +98,7 @@ fn build_kalma2_process_event(
         payload["pbi_ref"] = json!(p);
     }
     json!({
-        "event_id": Uuid::new_v4().to_string(),
+        "event_id": event_id,
         "event_type": "Kalma2_Process_Requested",
         "event_family": "domain",
         "timestamp": iso_now(),
@@ -201,7 +208,9 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         .unwrap_or_else(|| json!({}));
 
     if intent == "execute" && confidence >= CONFIDENCE_THRESHOLD {
-        return emit_process_event(repo, prompt, &process_name, &nested_inputs, intent, confidence);
+        let mut nested = nested_inputs;
+        plumb_correlation_id(process_inputs, &mut nested);
+        return emit_process_event(repo, prompt, &process_name, &nested, intent, confidence);
     }
 
     run_chat_only(repo, prompt)
@@ -220,6 +229,26 @@ fn heuristic_process_name(prompt: &str) -> Option<&'static str> {
         Some("refactorization")
     } else {
         None
+    }
+}
+
+fn plumb_correlation_id(process_inputs: &Value, nested: &mut Value) {
+    let has_nested = nested
+        .get("correlation_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .is_some();
+    if has_nested {
+        return;
+    }
+    if let Some(cid) = process_inputs
+        .get("correlation_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        nested["correlation_id"] = json!(cid);
     }
 }
 
@@ -255,10 +284,11 @@ fn run_execute_deterministic(
         ));
     }
 
-    let nested = process_inputs
+    let mut nested = process_inputs
         .get("process_inputs")
         .cloned()
         .unwrap_or_else(|| json!({}));
+    plumb_correlation_id(process_inputs, &mut nested);
     emit_process_event(repo, prompt, &process_name, &nested, "execute", 1.0)
 }
 
@@ -305,7 +335,15 @@ fn emit_process_event(
         ));
     }
     let pbi_ref = extract_pbi_ref(prompt, nested_inputs);
-    let event = build_kalma2_process_event(process_name, pbi_ref.as_deref(), prompt);
+    let correlation_id = nested_inputs
+        .get("correlation_id")
+        .and_then(|v| v.as_str());
+    let event = build_kalma2_process_event(
+        process_name,
+        pbi_ref.as_deref(),
+        prompt,
+        correlation_id,
+    );
     let event_id = event
         .get("event_id")
         .and_then(|v| v.as_str())
@@ -383,6 +421,55 @@ mod tests {
         assert_eq!(
             got.as_deref(),
             Some("docs/todos/pending/[FIX] telegram-watcher — fractura sistémica (e6cbecb9032c).md")
+        );
+    }
+
+    #[test]
+    fn kalma2_honors_preassigned_correlation_id() {
+        let cid = "458c34a8-9ad5-4a40-88c4-0be1e5d9598e";
+        let event = build_kalma2_process_event(
+            "feature",
+            None,
+            "inicia feature docs/todos/pending/[FEATURE] x.md",
+            Some(cid),
+        );
+        assert_eq!(event.get("event_id").and_then(|v| v.as_str()), Some(cid));
+        assert_eq!(
+            event.get("event_type").and_then(|v| v.as_str()),
+            Some("Kalma2_Process_Requested")
+        );
+    }
+
+    #[test]
+    fn kalma2_invalid_correlation_id_falls_back_to_new_uuid() {
+        let event = build_kalma2_process_event("feature", None, "x", Some("not-a-uuid"));
+        let eid = event.get("event_id").and_then(|v| v.as_str()).unwrap();
+        assert!(Uuid::parse_str(eid).is_ok());
+        assert_ne!(eid, "not-a-uuid");
+    }
+
+    #[test]
+    fn kalma2_execute_plumbs_top_level_correlation_id() {
+        std::env::remove_var("SDDIA_LLM_CLI_COMMAND");
+        let repo = find_repo_root().expect("repo");
+        let cid = "a1b2c3d4-e5f6-4789-a012-3456789abcde";
+        let env = run(
+            &repo,
+            &json!({
+                "prompt": "inicia feature docs/todos/pending/[FEATURE] plumb-cid.md",
+                "mode": "execute",
+                "process": "feature",
+                "correlation_id": cid,
+            }),
+        )
+        .unwrap();
+        assert!(env.success);
+        let data = env.data.as_ref().unwrap();
+        assert_eq!(data.get("emitted").and_then(|v| v.as_bool()), Some(true));
+        assert_eq!(data.get("event_id").and_then(|v| v.as_str()), Some(cid));
+        assert_eq!(
+            data.get("correlation_id").and_then(|v| v.as_str()),
+            Some(cid)
         );
     }
 

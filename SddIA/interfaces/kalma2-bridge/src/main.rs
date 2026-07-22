@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tiny_http::{Header, Method, Response, Server, StatusCode};
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 struct InteractReq {
@@ -148,6 +149,85 @@ fn serve_static(req: tiny_http::Request, ui_root: &Path) {
     )
     .unwrap();
     let _ = req.respond(Response::from_data(body).with_header(hdr));
+}
+
+/// Acuse fire-and-forget: UUID preasignado + spawn de kalma2-interact sin join HTTP.
+struct AcceptedAck {
+    correlation_id: String,
+    duration_ms: u64,
+}
+
+enum AcceptSyncError {
+    Orchestrator(String),
+    Spawn(String),
+}
+
+fn accept_execute(
+    repo: &Path,
+    prompt: &str,
+    process: Option<&str>,
+) -> Result<AcceptedAck, AcceptSyncError> {
+    let t0 = Instant::now();
+    let bin = resolve_orchestrator(repo).map_err(AcceptSyncError::Orchestrator)?;
+    let correlation_id = Uuid::new_v4().to_string();
+
+    let mut inputs = serde_json::json!({
+        "prompt": prompt.trim(),
+        "mode": "execute",
+        "correlation_id": &correlation_id,
+    });
+    if let Some(proc) = process.map(str::trim).filter(|s| !s.is_empty()) {
+        inputs["process"] = serde_json::json!(proc);
+    }
+    let inputs_json = inputs.to_string();
+
+    let mut child = Command::new(&bin)
+        .args(["--process", "kalma2-interact", "--inputs", &inputs_json])
+        .current_dir(repo)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|e| AcceptSyncError::Spawn(e.to_string()))?;
+
+    // Reaper: evita zombies; no bloquea el socket HTTP (L1/L8).
+    thread::spawn(move || {
+        let _ = child.wait();
+    });
+
+    Ok(AcceptedAck {
+        correlation_id,
+        duration_ms: t0.elapsed().as_millis() as u64,
+    })
+}
+
+fn accepted_body(ack: &AcceptedAck) -> String {
+    serde_json::json!({
+        "success": true,
+        "status": "accepted",
+        "correlation_id": ack.correlation_id,
+        "event_id": ack.correlation_id,
+        "message": "intención aceptada; consultar GET /api/status",
+        "duration_ms": ack.duration_ms,
+    })
+    .to_string()
+}
+
+fn reply_accept_result(req: tiny_http::Request, result: Result<AcceptedAck, AcceptSyncError>) {
+    match result {
+        Ok(ack) => reply(req, 202, accepted_body(&ack)),
+        Err(AcceptSyncError::Orchestrator(message)) | Err(AcceptSyncError::Spawn(message)) => {
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": message,
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+        }
+    }
 }
 
 fn run_orchestrator(repo: &Path, bin: &Path, prompt: &str) -> Result<String, String> {
@@ -914,47 +994,12 @@ fn handle_execute(mut req: tiny_http::Request, repo: &Path) {
         }
     };
 
-    let bin = match resolve_orchestrator(repo) {
-        Ok(b) => b,
-        Err(message) => {
-            reply(
-                req,
-                500,
-                serde_json::json!({
-                    "success": false,
-                    "message": message,
-                    "exit_code": 1
-                })
-                .to_string(),
-            );
-            return;
-        }
-    };
-
-    let mut inputs = serde_json::json!({
-        "prompt": parsed.prompt.trim(),
-        "mode": "execute",
-    });
-    if let Some(proc) = parsed.process.filter(|s| !s.trim().is_empty()) {
-        inputs["process"] = serde_json::json!(proc.trim());
-    }
-
-    let t0 = Instant::now();
-    match run_orchestrator_inputs(repo, &bin, &inputs) {
-        Ok(mut line) => {
-            if let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&line) {
-                if let Some(obj) = v.as_object_mut() {
-                    obj.insert(
-                        "duration_ms".into(),
-                        serde_json::json!(t0.elapsed().as_millis() as u64),
-                    );
-                }
-                line = v.to_string();
-            }
-            reply(req, 200, line);
-        }
-        Err(body) => reply(req, 500, body),
-    }
+    let process = parsed
+        .process
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    reply_accept_result(req, accept_execute(repo, parsed.prompt.trim(), process));
 }
 
 fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
@@ -988,46 +1033,12 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
         .unwrap_or("")
         .to_lowercase();
     if mode == "execute" {
-        // Reconstruir body mínimo y reutilizar execute vía orquestador.
-        let bin = match resolve_orchestrator(repo) {
-            Ok(b) => b,
-            Err(message) => {
-                reply(
-                    req,
-                    500,
-                    serde_json::json!({
-                        "success": false,
-                        "message": message,
-                        "exit_code": 1
-                    })
-                    .to_string(),
-                );
-                return;
-            }
-        };
-        let mut inputs = serde_json::json!({
-            "prompt": parsed.prompt.trim(),
-            "mode": "execute",
-        });
-        if let Some(proc) = parsed.process.filter(|s| !s.trim().is_empty()) {
-            inputs["process"] = serde_json::json!(proc.trim());
-        }
-        let t0 = Instant::now();
-        match run_orchestrator_inputs(repo, &bin, &inputs) {
-            Ok(mut line) => {
-                if let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&line) {
-                    if let Some(obj) = v.as_object_mut() {
-                        obj.insert(
-                            "duration_ms".into(),
-                            serde_json::json!(t0.elapsed().as_millis() as u64),
-                        );
-                    }
-                    line = v.to_string();
-                }
-                reply(req, 200, line);
-            }
-            Err(body) => reply(req, 500, body),
-        }
+        let process = parsed
+            .process
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        reply_accept_result(req, accept_execute(repo, parsed.prompt.trim(), process));
         return;
     }
     if mode == "chat" {
@@ -1228,5 +1239,40 @@ mod tests {
         });
         let (st, _) = project_status(Some(&domain), false, None);
         assert_eq!(st, "routed");
+    }
+
+    #[test]
+    fn accepted_body_identity_correlation_event() {
+        let ack = AcceptedAck {
+            correlation_id: "458c34a8-9ad5-4a40-88c4-0be1e5d9598e".into(),
+            duration_ms: 3,
+        };
+        let v: serde_json::Value = serde_json::from_str(&accepted_body(&ack)).unwrap();
+        assert_eq!(v["success"], true);
+        assert_eq!(v["status"], "accepted");
+        assert_eq!(v["correlation_id"], ack.correlation_id);
+        assert_eq!(v["event_id"], ack.correlation_id);
+        assert_eq!(v["duration_ms"], 3);
+    }
+
+    #[test]
+    fn bridge_execute_path_has_no_eda_write_helpers() {
+        // Audit estático AC-R2: producción (antes de #[cfg(test)]) sin sellado fractal.
+        // Excluye el módulo de tests: include_str se autoincriminaría con este assert.
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        assert!(
+            !prod.contains("write_fractal_event"),
+            "bridge prod no debe llamar write_fractal_event"
+        );
+        assert!(
+            prod.contains("accept_execute") && prod.contains("Stdio::null()"),
+            "camino execute debe usar spawn detach"
+        );
+        // Fire-and-forget: camino execute no usa join del orquestador.
+        assert!(
+            prod.contains("reply_accept_result") && prod.contains("AcceptedAck"),
+            "execute debe responder acuse AcceptedAck"
+        );
     }
 }
