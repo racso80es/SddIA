@@ -17,6 +17,13 @@ const VALID_ENTITY_TYPES: &[&str] = &[
     "process", "agent", "skill", "tool", "action", "norm", "codex", "event",
 ];
 
+/// Procesos con fases `agent:` (wall-clock IDE/Kalma2): exentos de `latency_threshold`.
+const LATENCY_THRESHOLD_EXEMPT: &[&str] = &["pull-request-review"];
+
+fn is_latency_threshold_exempt(entity_id: &str) -> bool {
+    LATENCY_THRESHOLD_EXEMPT.contains(&entity_id)
+}
+
 fn iso_now() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
@@ -465,13 +472,18 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
         let avg_ms = avg_duration(&samples);
         let mut degraded = false;
         let mut reason = "";
+        // Procesos aduana con fases agent: (wall-clock IDE/Kalma2) no deben
+        // auto-revocarse por latency_threshold — falso positivo PPR #124/#125.
         if samples.len() as i64 >= min_batch && rate < rate_min {
             degraded = true;
             reason = "success_rate_below_threshold";
         } else if samples.len() as i64 >= abrupt_min && rate < rate_min {
             degraded = true;
             reason = "abrupt_success_rate_drop";
-        } else if samples.len() >= 5 && avg_ms > latency_thresh {
+        } else if samples.len() >= 5
+            && avg_ms > latency_thresh
+            && !is_latency_threshold_exempt(&entity_id)
+        {
             degraded = true;
             reason = "latency_threshold";
         }
@@ -533,4 +545,16 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
         "actions": actions,
         "purged": false,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pull_request_review_is_latency_exempt() {
+        assert!(is_latency_threshold_exempt("pull-request-review"));
+        assert!(!is_latency_threshold_exempt("feature"));
+        assert!(!is_latency_threshold_exempt("delivery-close-cycle"));
+    }
 }
