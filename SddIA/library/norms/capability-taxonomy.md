@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.2"
+version: "1.0.3"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:fc0e784d8f700fb71845221f8c8486c22b66feae30cd48f8e9792dc24781ae78"
+hash_signature: "sha256:a0d1b0c634ee85f7e0a97e68179e7da35cf5f563a7ad7c1f5808977bffbbe5d2"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -20,6 +20,10 @@ catalog:
     contract: "fs.persist"
     version: "1.0.0"
     description: "Persistencia de artefactos vía filesystem-manager (READ/WRITE/LIST/DELETE/CREATE/MOVE) en forja/índice/workspace."
+  - id: "bus:route"
+    contract: "bus.route"
+    version: "1.0.0"
+    description: "Enrutado / fan-out del bus EDA fractal (domain, orchestration, telemetry) vía cápsula bus-operator."
 ---
 
 ## Directriz Core
@@ -37,10 +41,11 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `doc:closure` | `doc.closure` | 1.0.0 | Cierre documental en rama |
 | `proc:git-sync` | `proc.git_sync` | 1.0.0 | Operaciones Git gobernadas vía git-manager |
 | `fs:persist` | `fs.persist` | 1.0.0 | Persistencia artefactos vía filesystem-manager |
+| `bus:route` | `bus.route` | 1.0.0 | Fan-out bus EDA fractal vía bus-operator |
 
 ## Restricciones Duras
 
 - Prohibido declarar capacidades no indexadas en `catalog`.
 - Prohibido usar `spec.json` como soporte de `provides`/`requires_capability`; SSOT = `{name}.md`.
 - El contrato I/O de cada capacidad vive bajo el path Cúmulo `capability_contracts` (`{contract}.schema.json`).
-- Referencia feature: `docs/features/inyeccion-dependencias-capacidades` (PBI-042); Hito 5 alta `fs:persist`: `docs/features/inyeccion-dependencias-migracion-catalogo`.
+- Referencia feature: `docs/features/inyeccion-dependencias-capacidades` (PBI-042); Hito 5 alta `fs:persist`: `docs/features/inyeccion-dependencias-migracion-catalogo`; H8 alta `bus:route`: `docs/features/inyeccion-dependencias-h8-familia-route`.
