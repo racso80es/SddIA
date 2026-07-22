@@ -75,3 +75,20 @@ persist_ref: docs/features/inyeccion-dependencias-capacidades
 - gh pr create: Forbidden api.github.com/graphql
 - Accion: abrir PR desde entorno con API, luego delivery-close con pr_url
 ```
+
+## 2026-07-22T04:55:00Z — Cierre de entrega
+- process: `delivery-close-cycle`
+- correlation_id: `886e539a-4ee5-46c1-90f9-6dae4478a73c`
+- pbi_ref: `docs/todos/pending/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
+- status: `executed`
+- message: PR #126 + PullRequest_Presented 348fd30f-… (GH_CONFIG_DIR; .env GH_TOKEN causaba Forbidden)
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- pr_url: https://github.com/racso80es/SddIA/pull/126
+- event_id: 348fd30f-c553-4fdf-8d51-5a3699426bc2
+- orphan_count: 0 · pbi_archived: false (residual)
+```
