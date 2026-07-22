@@ -19,6 +19,9 @@ delivery_state: success
 pr_url: https://github.com/racso80es/SddIA/pull/144
 pr_presented_event_id: 53d3bf48-dcfc-4f70-9327-2a0f1b19d1db
 snapshot_commit: 67f7e8dce98f71268c130f06e8ae42a2f2f3d542
+merged_pr: 144
+merge_commit: 8f882b82c74660e0ec5be8c0ed2931bfab454290
+pr_merged_event_id: 2c8ac7a9-be05-479d-8174-ca7d919ae349
 gate_shell_runtime: pass
 orphan_count: 0
 n_ola_homologated: 8
