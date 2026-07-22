@@ -24,6 +24,7 @@ related:
   - SddIA/core/capability-bindings.md
   - SddIA/engine/execute-process/src/engine/capability_di_gate.rs
   - SddIA/engine/execute-process/src/engine/capability_di_resolver.rs
+  - docs/todos/pending/[Kaizen] delivery-close — snapshot vacío y pr_body newlines en shell-executor.md
 ---
 
 # [ARQUITECTURA] PBI-042: DI por Capacidades y Validación de Contratos Semánticos

@@ -192,3 +192,20 @@ delivery-close OK
 - event a7d49178-2695-450c-8928-ecac08e2666d
 - pbi_archived false
 ```
+
+## 2026-07-22T05:55:00Z — Deuda Kaizen post-cierre
+- process: `feature`
+- agents: `tekton`
+- correlation_id: `2161b482-7bc6-4cda-a8c7-a70cda8c05b8`
+- runtime: tekton-ide-relay
+- backend: `ide`
+- status: `executed`
+- message: PBI Kaizen delivery-close snapshot/pr_body creado; commit+push a PR #127.
+
+### Transcript (tail)
+
+```
+Kaizen: docs/todos/pending/[Kaizen] delivery-close — snapshot vacío y pr_body newlines en shell-executor.md
+document_id: PBI-KAIZEN-DELIVERY-CLOSE-SNAPSHOT-PR-BODY
+uuid: 09c707bb-03fd-445a-9aa6-bf165b94b7e5
+```
