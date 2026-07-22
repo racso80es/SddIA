@@ -16,6 +16,9 @@ global: APTO
 pbi_archived: true
 approval_status: approved
 verdict: aprobado
+pr_url: https://github.com/racso80es/SddIA/pull/146
+snapshot_commit: 7a1b59f7c659baddc96e6b5e3f58b63cfe026add
+pr_presented_event_id: 356674d3-aa2f-434c-acaf-3dec075af2c3
 git_manager_invoked: true
 tekton_status: evidence_apto
 scope: "H1+H2 Done mínimo PBI-044 (R1–R5; R6/H3 defer)"

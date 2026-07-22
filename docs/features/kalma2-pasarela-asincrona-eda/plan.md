@@ -45,7 +45,7 @@ Blueprint de forja Tekton (H1+H2 = Done mínimo PBI-044). H3/R6 fuera.
 - [x] `implementation.md` / `execution.md`
 - [x] `validacion.md` APTO (AC-R1..AC-R4; AC-R5/R6 fuera/defer)
 - [x] PBI → `docs/todos/done/` + `pbi_archived: true` en la rama
-- [ ] Handoff Argos → `delivery-close-cycle`
+- [x] Handoff Argos → `delivery-close-cycle` — PR #146 · snapshot `7a1b59f`
 
 ## Orden de forja
 
