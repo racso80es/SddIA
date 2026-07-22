@@ -2,7 +2,7 @@
 document_id: PBI-043-DI-CATALOGO-RESIDUAL-H7
 title: "[ARQUITECTURA] PBI-043 — DI residual H7+ (catálogo ED sin capacidades)"
 format: markdown
-version: "1.0.0"
+version: "1.1.0"
 created: "2026-07-22"
 uuid: 3d68a854-1e90-41fe-8205-f9e982866c4b
 status: abierto
@@ -13,9 +13,17 @@ spawned_at: "2026-07-22"
 spawn_reason: Residual H7+ diferido en Done global PBI-042 (R15); laudo Racso para documentar backlog accionable
 baseline_taxonomy: "doc:closure | proc:git-sync | fs:persist"
 baseline_bindings: SddIA/core/capability-bindings.md@1.1.0
-inventory_count: 24
+inventory_count: 16
 inventory_date: "2026-07-22"
+hito7_status: entregado_en_main
+hito7_feature: docs/features/inyeccion-dependencias-h7-nucleo-fs
+hito7_branch: feat/inyeccion-dependencias-h7-nucleo-fs
+hito7_execution_id: b8e2a471-5c9d-4f3a-8e1b-6d0c9f2a4b7e
+hito7_pr: https://github.com/racso80es/SddIA/pull/144
+hito7_snapshot_commit: 67f7e8dce98f71268c130f06e8ae42a2f2f3d542
+hito7_merge_commit: 8f882b82c74660e0ec5be8c0ed2931bfab454290
 related:
+  - docs/features/inyeccion-dependencias-h7-nucleo-fs/finalize-process.md
   - docs/todos/done/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md
   - docs/features/inyeccion-dependencias-cierre-pbi/finalize-process.md
   - docs/features/inyeccion-dependencias-barrido-creators/finalize-process.md
@@ -46,8 +54,9 @@ related:
 | Runtime DI (gate / resolver / Cerbero RBAC+envelope / output validator / piloto EDA) | **Entregado** — no reescribir salvo bug |
 | Taxonomía | `doc:closure`, `proc:git-sync`, `fs:persist` |
 | Bindings | `capability-bindings.md` v1.1.0 |
-| Process homologados con `requires_capability` | **18** (feature/bug-fix/creators/delivery/accept-pr/…) |
-| Process **sin** `requires_capability` | **24** (inventario §3; fecha `inventory_date`) |
+| Process homologados con `requires_capability` | **26** post-H7 (baseline 18 + 8 §3.1) |
+| Process **sin** `requires_capability` | **16** residual H8–H10 (post-H7; recontar al abrir hito) |
+| Hito 1 H7 núcleo FS | **Hecho en main** — PR [#144](https://github.com/racso80es/SddIA/pull/144) merge `8f882b8` |
 
 ---
 
@@ -55,18 +64,18 @@ related:
 
 > Snapshot 2026-07-22 sobre `SddIA/process/*.md` (excl. `process-contract`, `index`). Recontar al abrir cada hito.
 
-### 3.1 Consumidores FS (`filesystem-manager` en fases) — prioridad alta
+### 3.1 Consumidores FS (`filesystem-manager` en fases) — **cerrado H7**
 
-| ED | Capacidad candidata | Notas |
-|----|---------------------|-------|
-| `entity-manager` | `fs:persist` | Núcleo forja; path ciego preferente |
-| `route-domain-event` | `fs:persist` | Bus domain + FS |
-| `daemon-kill-switch` | `fs:persist` | + bus-operator |
-| `governance-daemon-manager` | `fs:persist` | + shell-executor (ver §5 Q-cap) |
-| `daemon-heartbeat-audit` | `fs:persist` | + Argos |
-| `fix-tool-process` | `fs:persist` | |
-| `telemetry-batch-stub` | `fs:persist` | |
-| `workspace-smoke` | `fs:persist` | |
+| ED | Capacidad | Estado |
+|----|-----------|--------|
+| `entity-manager` | `fs:persist` | **Hecho** H7 |
+| `route-domain-event` | `fs:persist` | **Hecho** H7 |
+| `daemon-kill-switch` | `fs:persist` | **Hecho** H7 |
+| `governance-daemon-manager` | `fs:persist` | **Hecho** H7 |
+| `daemon-heartbeat-audit` | `fs:persist` | **Hecho** H7 |
+| `fix-tool-process` | `fs:persist` | **Hecho** H7 |
+| `telemetry-batch-stub` | `fs:persist` | **Hecho** H7 |
+| `workspace-smoke` | `fs:persist` | **Hecho** H7 |
 
 ### 3.2 Familia route (sin FS declarado)
 
@@ -107,13 +116,15 @@ related:
 
 ### Hito 1 — H7 · Núcleo FS (`fs:persist`)
 
-| ID | Ítem | Piso |
-|----|------|------|
-| **R1** | Homologar §3.1 (8 ED) con `requires_capability` → `fs:persist` (path ciego preferente) | `N_ola ≥ 8` |
-| **R2** | Mutación vía `entity-manager` + `Domain_Entity_Updated` + evolution; `orphan_count == 0` | |
-| **R3** | Regresión suites DI MVP→H6 (capability_di / cerbero_di) | |
+> Ciclo `docs/features/inyeccion-dependencias-h7-nucleo-fs` · PR [#144](https://github.com/racso80es/SddIA/pull/144) merge `8f882b8` (2026-07-22).
 
-**AC-H7:** 8/8 §3.1 con DI coherente taxonomía+bindings; sellos EDA; orphan 0; runtime preservado.
+| ID | Ítem | Notas |
+|----|------|-------|
+| **R1** | Homologar §3.1 (8 ED) con `requires_capability` → `fs:persist` (path ciego preferente) | **Hecho en main** — `N_ola=8` |
+| **R2** | Mutación vía `entity-manager` + `Domain_Entity_Updated` + evolution; `orphan_count == 0` | **Hecho en main** |
+| **R3** | Regresión suites DI MVP→H6 (capability_di / cerbero_di) | **Hecho en main** — 24/24 |
+
+**AC-H7:** **APTO** — 8/8 §3.1; sellos ×8; orphan 0; runtime preservado.
 
 ### Hito 2 — H8 · Familia route
 
