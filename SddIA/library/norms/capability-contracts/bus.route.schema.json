@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/bus.route.schema.json",
+  "title": "bus.route",
+  "type": "object",
+  "required": ["success", "exitCode"],
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "true si el fan-out / tránsito de bus completó sin error fatal"
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "0 éxito / distinto de 0 fallo"
+    },
+    "result": {
+      "description": "Payload de resolve_subscribers / transit_payload / apply_receipt / sync_entity_index"
+    },
+    "error": {
+      "type": "string",
+      "description": "Diagnóstico si success=false o exitCode!=0"
+    }
+  },
+  "additionalProperties": true
+}
