@@ -12,8 +12,10 @@ execution_id: f8b2c4d1-6e3a-4f7b-9c2d-1a0e5f8b3c7d
 verdict: aprobado
 scope: "Hito 3 — Gobernanza Cerbero, piloto EDA, Códice y schema salida (R5–R8)"
 residual_tracked: true
-delivery_state: pending_delivery_close
+delivery_state: success
 approval_status: approved
+pr_url: https://github.com/racso80es/SddIA/pull/128
+pr_presented_event_id: a078d4bb-d60a-4dc6-a914-0ef58b498733
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
