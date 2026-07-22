@@ -36,10 +36,13 @@ hito5_execution_id: a8f4c2e1-6b9d-4e3a-9c7f-1d2e5a8b0c4f
 hito5_pr: https://github.com/racso80es/SddIA/pull/138
 hito5_snapshot_commit: 3e640d443cc16d3a108ab12e61f0159979d944ef
 hito5_merge_commit: 66a0f7146e9952920d113078e2dfcf4594cfb0ba
-hito6_status: entregado_en_rama
+hito6_status: entregado_en_main
 hito6_feature: docs/features/inyeccion-dependencias-barrido-creators
 hito6_branch: feat/inyeccion-dependencias-barrido-creators
 hito6_execution_id: c9d1e4f2-7a8b-4c5d-9e0f-1a2b3c4d5e6f
+hito6_pr: https://github.com/racso80es/SddIA/pull/140
+hito6_snapshot_commit: 66095cb5c2eb6fa7c722cdf7317c85c3bc176198
+hito6_merge_commit: 42038482c84859a289d0229eb739e5d5b3e1b129
 related:
   - docs/features/inyeccion-dependencias-envelope-homologacion/finalize-process.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/objectives.md
@@ -132,11 +135,11 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 ### Hito 6 — Barrido creators residuales
 
-> Ciclo `docs/features/inyeccion-dependencias-barrido-creators` · rama `feat/inyeccion-dependencias-barrido-creators` · **en curso**.
+> Ciclo `docs/features/inyeccion-dependencias-barrido-creators` · PR [#140](https://github.com/racso80es/SddIA/pull/140) merge `4203848` (2026-07-22).
 
 | ID | Ítem | Notas |
 |----|------|-------|
-| **R14** | Homologar `norm`/`codex`/`daemon`/`suite`-creator con `fs:persist` (+ forge update preservante) | **Hecho en rama** — `N_ola=4`; validacion APTO |
+| **R14** | Homologar `norm`/`codex`/`daemon`/`suite`-creator con `fs:persist` (+ forge update preservante) | **Hecho en main** — merge `4203848` |
 
 ### Ortogonal (no este PBI)
 
