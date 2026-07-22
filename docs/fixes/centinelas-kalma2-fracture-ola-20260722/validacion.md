@@ -5,6 +5,7 @@ process: bug-fix
 branch: fix/centinelas-kalma2-fracture-ola-20260722
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/134
 pbi_ref: docs/todos/done/[FIX] centinelas+kalma2 — ola fracturas start-sddia 2026-07-22.md
 checks:
   CA1-ignition: pass
