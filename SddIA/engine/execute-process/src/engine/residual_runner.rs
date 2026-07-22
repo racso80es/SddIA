@@ -426,7 +426,32 @@ fn execute_phase(
     state: &mut Value,
 ) -> Value {
     let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let delegates = phase
+
+    let resolved_bindings = match crate::engine::capability_di_resolver::resolve_phase_bindings(repo, phase)
+    {
+        Ok(b) => b,
+        Err(di_err) => {
+            crate::engine::capability_di_resolver::write_resolve_dead_letter(
+                repo,
+                &di_err,
+                phase_name,
+                process_name,
+            );
+            return json!({
+                "phase_name": phase_name,
+                "delegates_to": phase.get("delegates_to").cloned().unwrap_or(json!([])),
+                "status": "failed",
+                "handler": "capability-di-resolver",
+                "error": di_err.message,
+                "di_resolve_code": di_err.code.as_str(),
+            });
+        }
+    };
+    let effective_phase = crate::engine::capability_di_resolver::phase_with_effective_delegates(
+        phase,
+        &resolved_bindings,
+    );
+    let delegates = effective_phase
         .get("delegates_to")
         .and_then(|v| v.as_array())
         .cloned()
@@ -434,12 +459,18 @@ fn execute_phase(
 
     let mut entry = json!({
         "phase_name": phase_name,
-        "delegates_to": delegates,
+        "delegates_to": delegates.clone(),
     });
+    if let Some(b) = resolved_bindings.first() {
+        entry["di_binding"] = crate::engine::capability_di_resolver::di_binding_object(b);
+        entry["resolved_provider"] = json!(b.provider);
+    }
 
-    if let Err(di_err) =
-        crate::engine::capability_di_gate::validate_phase_capability_di(repo, phase, process_name)
-    {
+    if let Err(di_err) = crate::engine::capability_di_gate::validate_phase_capability_di(
+        repo,
+        &effective_phase,
+        process_name,
+    ) {
         crate::engine::capability_di_gate::write_di_dead_letter(
             repo,
             &di_err,
@@ -577,6 +608,9 @@ fn execute_phase(
                 &delegates,
                 inputs,
                 state,
+                resolved_bindings.first().map(|b| {
+                    crate::engine::capability_di_resolver::di_binding_object(b)
+                }),
             );
         }
         entry["status"] = json!("simulated");
@@ -584,7 +618,9 @@ fn execute_phase(
         return entry;
     }
 
-    if let Some(capsule_entry) = try_invoke_delegates(repo, &delegates, inputs) {
+    if let Some(capsule_entry) =
+        try_invoke_delegates(repo, &delegates, inputs, &resolved_bindings)
+    {
         if let Some(obj) = capsule_entry.as_object() {
             for (k, v) in obj {
                 entry[k.clone()] = v.clone();

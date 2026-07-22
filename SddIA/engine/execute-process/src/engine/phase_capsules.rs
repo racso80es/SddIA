@@ -394,7 +394,13 @@ fn build_capsule_payload(kind: &str, name: &str, inputs: &Value) -> Value {
 }
 
 /// Intenta invocar delegados skill:/tool: con cápsula resoluble (P5).
-pub fn try_invoke_delegates(repo: &Path, delegates: &[Value], inputs: &Value) -> Option<Value> {
+/// Si hay `di_bindings`, inyecta `di_binding` en el payload stdin (R2).
+pub fn try_invoke_delegates(
+    repo: &Path,
+    delegates: &[Value],
+    inputs: &Value,
+    di_bindings: &[super::capability_di_resolver::ResolvedBinding],
+) -> Option<Value> {
     let mut capsule_missing = false;
     let mut last_err: Option<String> = None;
     for d in delegates {
@@ -405,14 +411,20 @@ pub fn try_invoke_delegates(repo: &Path, delegates: &[Value], inputs: &Value) ->
         let Some((kind, name)) = delegate_prefix(s) else {
             continue;
         };
-        let payload = build_capsule_payload(kind, name, inputs);
+        let base = build_capsule_payload(kind, name, inputs);
+        let payload =
+            super::capability_di_resolver::merge_first_di_binding(&base, di_bindings);
         match invoke_tool(repo, name, &payload) {
             Ok(body) => {
-                return Some(json!({
+                let mut out = json!({
                     "status": "executed",
                     "handler": format!("capsule-{kind}-{name}"),
                     "capsule_result": body,
-                }));
+                });
+                if let Some(b) = di_bindings.first() {
+                    out["di_binding"] = super::capability_di_resolver::di_binding_object(b);
+                }
+                return Some(out);
             }
             Err(e) if e.contains("no encontrada") => {
                 capsule_missing = true;

@@ -48,7 +48,31 @@ fn execute_phase(
     state: &mut Value,
 ) -> Value {
     let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
-    let delegates = phase
+
+    // PBI-042 Hito 2: resolve ciego → fase efectiva → Aduana Temprana.
+    let resolved_bindings = match super::capability_di_resolver::resolve_phase_bindings(repo, phase)
+    {
+        Ok(b) => b,
+        Err(di_err) => {
+            super::capability_di_resolver::write_resolve_dead_letter(
+                repo,
+                &di_err,
+                phase_name,
+                process_name,
+            );
+            return json!({
+                "phase_name": phase_name,
+                "delegates_to": phase.get("delegates_to").cloned().unwrap_or(json!([])),
+                "status": "failed",
+                "handler": "capability-di-resolver",
+                "error": di_err.message,
+                "di_resolve_code": di_err.code.as_str(),
+            });
+        }
+    };
+    let effective_phase =
+        super::capability_di_resolver::phase_with_effective_delegates(phase, &resolved_bindings);
+    let delegates = effective_phase
         .get("delegates_to")
         .and_then(|v| v.as_array())
         .cloned()
@@ -56,13 +80,18 @@ fn execute_phase(
 
     let mut entry = json!({
         "phase_name": phase_name,
-        "delegates_to": delegates,
+        "delegates_to": delegates.clone(),
     });
+    if let Some(b) = resolved_bindings.first() {
+        entry["di_binding"] = super::capability_di_resolver::di_binding_object(b);
+        entry["resolved_provider"] = json!(b.provider);
+    }
 
-    // Aduana Temprana (PBI-042): pre-ignición si la fase declara requires_capability.
-    if let Err(di_err) =
-        super::capability_di_gate::validate_phase_capability_di(repo, phase, process_name)
-    {
+    if let Err(di_err) = super::capability_di_gate::validate_phase_capability_di(
+        repo,
+        &effective_phase,
+        process_name,
+    ) {
         super::capability_di_gate::write_di_dead_letter(repo, &di_err, phase_name, process_name);
         entry["status"] = json!("failed");
         entry["handler"] = json!("capability-di-gate");
@@ -143,21 +172,35 @@ fn execute_phase(
 
     if delegates_are_only_agents(&delegates) {
         if super::agent_runtime::is_configured() {
-            return super::agent_runtime::invoke_agent_phase(
+            let mut agent_entry = super::agent_runtime::invoke_agent_phase(
                 repo,
                 process_name,
                 phase_name,
                 &delegates,
                 inputs,
                 state,
+                resolved_bindings.first().map(|b| {
+                    super::capability_di_resolver::di_binding_object(b)
+                }),
             );
+            if let Some(b) = resolved_bindings.first() {
+                agent_entry["di_binding"] =
+                    super::capability_di_resolver::di_binding_object(b);
+                agent_entry["resolved_provider"] = json!(b.provider);
+            }
+            return agent_entry;
         }
         entry["status"] = json!("simulated");
         entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");
         return entry;
     }
 
-    if let Some(capsule_entry) = super::phase_capsules::try_invoke_delegates(repo, &delegates, inputs) {
+    if let Some(capsule_entry) = super::phase_capsules::try_invoke_delegates(
+        repo,
+        &delegates,
+        inputs,
+        &resolved_bindings,
+    ) {
         if let Some(obj) = capsule_entry.as_object() {
             for (k, v) in obj {
                 entry[k.clone()] = v.clone();

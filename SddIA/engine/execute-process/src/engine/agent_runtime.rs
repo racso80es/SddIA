@@ -61,12 +61,16 @@ pub fn invoke_agent_phase(
     delegates: &[Value],
     inputs: &Value,
     state: &Value,
+    di_binding: Option<Value>,
 ) -> Value {
     let mut entry = json!({
         "phase_name": phase_name,
         "delegates_to": delegates,
         "handler": "agent-runtime",
     });
+    if let Some(di) = &di_binding {
+        entry["di_binding"] = di.clone();
+    }
 
     let raw = match std::env::var(ENV_CMD) {
         Ok(v) if !v.trim().is_empty() => v,
@@ -95,7 +99,7 @@ pub fn invoke_agent_phase(
     };
 
     let agents = agent_names(delegates);
-    let payload = json!({
+    let mut payload = json!({
         "operation": "AGENT_PHASE",
         "process_name": process_name,
         "phase_name": phase_name,
@@ -109,6 +113,11 @@ pub fn invoke_agent_phase(
             .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path"))),
         "repo_root": repo.display().to_string(),
     });
+    if let Some(di) = di_binding {
+        if let Some(obj) = payload.as_object_mut() {
+            obj.insert("di_binding".into(), di);
+        }
+    }
 
     let mut child = match Command::new(&bin)
         .args(&args)
@@ -222,6 +231,7 @@ mod tests {
             &[json!("agent:dedalo")],
             &json!({}),
             &json!({}),
+            None,
         );
         assert_eq!(entry["status"], "simulated");
     }
@@ -248,6 +258,7 @@ mod tests {
             &[json!("agent:dedalo")],
             &json!({"persist_ref": "docs/fixes/x", "correlation_id": "corr"}),
             &json!({}),
+            None,
         );
         std::env::remove_var(ENV_CMD);
         let _ = fs::remove_dir_all(&dir);
@@ -278,6 +289,7 @@ mod tests {
             &[json!("agent:tekton")],
             &json!({}),
             &json!({}),
+            None,
         );
         std::env::remove_var(ENV_CMD);
         let _ = fs::remove_dir_all(&dir);

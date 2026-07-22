@@ -1,14 +1,14 @@
 ---
 uuid: ac8d078c-9785-490b-9f43-ad310fe9df9d
 name: bug-fix
-version: 1.4.0
+version: 1.4.1
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:d143033143044a5595d8946d4146c5eb2b04bd09ca32d1be82264f0b2dd2f8c3
+hash_signature: sha256:c7741279e6d9dc9b54c81a29f6592bc622086597c0a9ceba03e89d0d6eb9c922
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
@@ -39,8 +39,10 @@ phases:
   - agent:argos
 - name: Cierre documental en rama
   intent: 'Antes del merge: mover PBI a docs/todos/done/ en la rama del PR; validacion.md con pbi_archived true según features-documentation-pattern v1.2.0 (sin merged_pr obligatorio).'
-  delegates_to:
-  - skill:filesystem-manager
+  requires_capability:
+  - id: doc:closure
+    contract: doc.closure
+    version: '>=1.0.0'
 - name: Cierre de entrega
   intent: 'Consolidación final, impacto SddIA y apertura de PR. Se delega en action:execute-process inyectando el process_name canónico delivery-close-cycle junto con source_process (bug-fix), persist_ref y branch_name.'
   delegates_to:
