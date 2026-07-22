@@ -13,8 +13,11 @@ execution_id: a8f4c2e1-6b9d-4e3a-9c7f-1d2e5a8b0c4f
 verdict: aprobado
 scope: "Hito 5 — Sellado EDA Domain_Entity_Updated + ola migración catálogo ED (R11–R12)"
 residual_tracked: true
-delivery_state: ready_for_delivery_close
+delivery_state: success
 approval_status: approved
+pr_url: https://github.com/racso80es/SddIA/pull/138
+pr_presented_event_id: 51f9a9fb-04c1-49e7-bd35-b0260af9ef3b
+snapshot_commit: 3e640d443cc16d3a108ab12e61f0159979d944ef
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
@@ -119,4 +122,5 @@ GesFer, Fractura Core F1, EDA-only total, archivo PBI-042 padre, R13 (omitido Q6
 
 ## Handoff
 
-Listo para `delivery-close-cycle`. PBI-042 **no** se archiva en este ciclo.
+PR abierto: https://github.com/racso80es/SddIA/pull/138 · `PullRequest_Presented` `51f9a9fb-…`.  
+PBI-042 **no** se archiva en este ciclo (**L-PBI-LOC**). Aduana `pull-request-review` aguas abajo.
