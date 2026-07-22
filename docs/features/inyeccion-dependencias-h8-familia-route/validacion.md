@@ -16,6 +16,9 @@ scope: "Hito 2 (H8) — Familia route residual DI (R4–R5 / AC-H8) · Rama A bu
 q1_laudo: alta-bus-route
 ac_h8_branch: A
 racso_countersign: "2026-07-22T16:56:00Z"
+pr_url: https://github.com/racso80es/SddIA/pull/147
+snapshot_commit: 0bf540510600590ae51d3ae93211af2aac0f6778
+pr_presented_event_id: 06123b33-bf11-4ed2-a051-5509b0941713
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
