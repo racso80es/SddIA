@@ -1,9 +1,9 @@
 //! Forjas por `entity_class` (paridad `execute_process_forges.py` + skill/event en capsules).
 
 use super::common::{
-    append_row, capability_name, handoff_create, idempotent_forge_handoff, parse_frontmatter,
-    refresh_process_hash, repo_tool_base, required_str, sha256_canon,
-    str_field, generate_uuid,
+    append_row, capability_name, handoff_create, idempotent_forge_handoff, optional_str,
+    parse_frontmatter, patch_process_phases_update, refresh_process_hash, repo_tool_base,
+    required_str, sha256_canon, str_field, update_process_index_version, generate_uuid,
 };
 use serde_json::{json, Value};
 use std::fs;
@@ -153,6 +153,31 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
     if lifecycle == "update" && process_path.is_file() {
+        let phases_opt = inputs.get("process_phases").filter(|p| {
+            p.as_array().map(|a| !a.is_empty()).unwrap_or(false)
+        });
+        if let Some(phases) = phases_opt {
+            let explicit_ver = optional_str(inputs, "process_version");
+            let patch = patch_process_phases_update(
+                &process_path,
+                phases,
+                explicit_ver.as_deref(),
+            )?;
+            if patch.old_version != patch.new_version {
+                update_process_index_version(
+                    &repo.join("SddIA/process/index.md"),
+                    &name,
+                    &patch.new_version,
+                )?;
+            }
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.new_version,
+            }));
+        }
+
         let fm = parse_frontmatter(&process_path)?;
         let (old_hash, new_hash) = refresh_process_hash(&process_path)?;
         let version = fm
@@ -797,5 +822,151 @@ mod tests {
             canon_json_sorted(&canon),
             r#"{"scope":"local","tool_context":"ecosystem-evolution","tool_name":"x"}"#
         );
+    }
+
+    #[test]
+    fn process_forge_update_with_phases_adds_requires_capability_preserves_inputs() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let process_dir = repo.join("SddIA/process");
+        fs::create_dir_all(&process_dir).unwrap();
+        fs::write(
+            repo.join("SddIA/process/index.md"),
+            "| Name | UUID | Versión | Context | Aliases | Descripción |\n|------|------|---------|---------|---------|-------------|\n| di-patch-lab | aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee | 1.0.0 | ecosystem-evolution | — | lab |\n",
+        )
+        .unwrap();
+        let md = process_dir.join("di-patch-lab.md");
+        fs::write(
+            &md,
+            r#"---
+uuid: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+name: "di-patch-lab"
+version: "1.0.0"
+contract: "process-contract v1.4.0"
+context: "ecosystem-evolution"
+hash_signature: sha256:deadbeef
+inputs:
+  - "foo": "bar"
+outputs:
+  - "baz": "qux"
+phases:
+  - name: "Forja"
+    intent: "escribir"
+    delegates_to:
+      - "skill:filesystem-manager"
+  - name: "Indexación"
+    intent: "índice"
+    delegates_to:
+      - "skill:filesystem-manager"
+      - "agent:cumulo"
+phase_invocations:
+  - phase_name: "Forja"
+    invocations: []
+---
+
+# di-patch-lab
+
+cuerpo preservado
+"#,
+        )
+        .unwrap();
+
+        let phases = json!([
+            {
+                "name": "Forja",
+                "intent": "escribir",
+                "requires_capability": [{
+                    "id": "fs:persist",
+                    "contract": "fs.persist",
+                    "version": ">=1.0.0"
+                }],
+                "delegates_to": ["action:crypto-broker"]
+            },
+            {
+                "name": "Indexación",
+                "intent": "índice",
+                "requires_capability": [{
+                    "id": "fs:persist",
+                    "contract": "fs.persist",
+                    "version": ">=1.0.0"
+                }],
+                "delegates_to": ["agent:cumulo"]
+            }
+        ]);
+        let inputs = json!({
+            "process_name": "di-patch-lab",
+            "lifecycle_operation": "update",
+            "process_phases": phases,
+            "process_version": "1.0.1",
+        });
+        let out = run_process_forge(repo, &inputs).expect("update forge");
+        assert_eq!(out["handoff_version"], json!("1.0.1"));
+        assert_eq!(
+            out["handoff_entity_uuid"],
+            json!("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")
+        );
+        assert!(out["handoff_hash_signature_new"]
+            .as_str()
+            .unwrap_or("")
+            .starts_with("sha256:"));
+
+        let body = fs::read_to_string(&md).unwrap();
+        assert!(body.contains("requires_capability"));
+        assert!(body.contains("fs:persist"));
+        assert!(body.contains("cuerpo preservado"));
+        assert!(body.contains("phase_invocations"));
+        assert!(body.contains("inputs:"));
+        assert!(body.contains("outputs:"));
+        assert!(body.contains("foo"));
+        assert!(!body.contains("skill:filesystem-manager"));
+        assert!(body.contains("1.0.1"));
+
+        let idx = fs::read_to_string(repo.join("SddIA/process/index.md")).unwrap();
+        assert!(idx.contains("| di-patch-lab |") && idx.contains("1.0.1"));
+    }
+
+    #[test]
+    fn process_forge_update_without_phases_remains_hash_only() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let process_dir = repo.join("SddIA/process");
+        fs::create_dir_all(&process_dir).unwrap();
+        let md = process_dir.join("hash-only-lab.md");
+        fs::write(
+            &md,
+            r#"---
+uuid: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+name: "hash-only-lab"
+version: "2.0.0"
+contract: "process-contract v1.4.0"
+context: "ecosystem-evolution"
+hash_signature: sha256:1111111111111111111111111111111111111111111111111111111111111111
+phases:
+  - name: "A"
+    intent: "x"
+    delegates_to:
+      - "agent:cumulo"
+---
+
+# hash-only-lab
+"#,
+        )
+        .unwrap();
+        let before = fs::read_to_string(&md).unwrap();
+        let out = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "hash-only-lab",
+                "lifecycle_operation": "update",
+            }),
+        )
+        .expect("hash-only");
+        assert_eq!(out["handoff_version"], json!("2.0.0"));
+        let after = fs::read_to_string(&md).unwrap();
+        assert!(after.contains("name: \"hash-only-lab\"") || after.contains("name: hash-only-lab"));
+        assert!(after.contains("intent: \"x\"") || after.contains("intent: x"));
+        // version unchanged
+        assert!(after.contains("2.0.0"));
+        assert_ne!(before, after); // hash_signature refreshed
     }
 }
