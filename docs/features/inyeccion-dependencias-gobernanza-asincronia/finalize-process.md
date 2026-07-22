@@ -12,8 +12,6 @@ merge_commit: 51fd4344ac07ddb27fe96ba4c25c9c27f87a20ca
 accept_pr_execution_id: 70ef9144-c31d-4dd4-b8fc-b962c5ec1fc6
 correlation_id: b6ed4bcf-5878-495f-858b-f2a4d8371545
 status: closed
-kaizen_debt:
-  - docs/todos/pending/[Kaizen] delivery-close — snapshot vacío y pr_body newlines en shell-executor.md
 ---
 
 # Finalize — inyeccion-dependencias-gobernanza-asincronia
@@ -37,9 +35,14 @@ R5 Cerbero RBAC post-gate · R6 piloto EDA `CapabilityDi_*` · R7 `proc:git-sync
 
 | Ítem | Destino |
 |------|---------|
-| Kaizen delivery-close snapshot/pr_body | `PBI-KAIZEN-DELIVERY-CLOSE-SNAPSHOT-PR-BODY` |
 | Cerbero revalidación schema `di_binding` (Q2) | Post-Hito 3 / backlog |
 | Sustitución total sync→EDA | Fuera de piloto R6 |
+
+## Deuda Kaizen saldada
+
+| Ítem | Cierre |
+|------|--------|
+| delivery-close snapshot/pr_body | PR #129 · `docs/fixes/kaizen-delivery-close-snapshot-pr-body/` |
 
 ## Notas de cierre
 

@@ -12,8 +12,6 @@ merge_commit: 60c4635b351ee78c4f5d1050cc09e4bda3f8c6af
 accept_pr_execution_id: 0e85c707-8eaa-4182-8080-efc0bf28b7da
 correlation_id: 14f78c84-2ae7-4fd0-8bb5-204f61fab396
 status: closed
-kaizen_debt:
-  - docs/todos/pending/[Kaizen] delivery-close — snapshot vacío y pr_body newlines en shell-executor.md
 ---
 
 # Finalize — inyeccion-dependencias-resolucion-ciega
@@ -37,8 +35,13 @@ R1 resolver · R2 inject `di_binding` · R3 `capability-bindings` · R4 piloto `
 
 | Ítem | Destino |
 |------|---------|
-| PBI-042 Hito 3 (R5–R8) | `docs/todos/pending/[ARQUITECTURA] PBI-042 — …` |
-| Kaizen delivery-close snapshot/pr_body | `PBI-KAIZEN-DELIVERY-CLOSE-SNAPSHOT-PR-BODY` |
+| PBI-042 Hito 3 (R5–R8) | Cerrado en PR #128 |
+
+## Deuda Kaizen saldada
+
+| Ítem | Cierre |
+|------|--------|
+| delivery-close snapshot/pr_body | PR #129 · `PBI-KAIZEN-DELIVERY-CLOSE-SNAPSHOT-PR-BODY` |
 
 ## Notas de cierre
 

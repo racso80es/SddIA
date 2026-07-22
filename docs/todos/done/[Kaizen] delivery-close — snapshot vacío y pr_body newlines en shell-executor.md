@@ -14,6 +14,9 @@ uuid: 09c707bb-03fd-445a-9aa6-bf165b94b7e5
 source_feature: docs/features/inyeccion-dependencias-resolucion-ciega
 source_pr: https://github.com/racso80es/SddIA/pull/127
 source_execution_id: 067337ee-4ed1-44f5-b5be-40e8d7f6deb5
+pr_url: https://github.com/racso80es/SddIA/pull/129
+merged_pr: 129
+merge_commit: f00a121c78dbe9bec5e36710057d36e495974f6b
 related:
   - docs/features/inyeccion-dependencias-resolucion-ciega/finalize-process.md
   - docs/features/inyeccion-dependencias-resolucion-ciega/_agent_handoff.md
