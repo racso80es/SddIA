@@ -12,8 +12,10 @@ execution_id: 2161b482-7bc6-4cda-a8c7-a70cda8c05b8
 verdict: aprobado
 scope: "Hito 2 — Resolución ciega e inyección (R1–R4)"
 residual_tracked: true
-delivery_state: ready_for_close
+delivery_state: success
 approval_status: approved
+pr_url: https://github.com/racso80es/SddIA/pull/127
+pr_presented_event_id: a7d49178-2695-450c-8928-ecac08e2666d
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO

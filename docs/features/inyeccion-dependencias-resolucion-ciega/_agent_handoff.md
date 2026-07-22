@@ -172,3 +172,23 @@ persist_ref: docs/features/inyeccion-dependencias-resolucion-ciega
 - PBI-042 v1.2.0: hito2_status apto_en_rama
 - Siguiente: delivery-close-cycle (bajo orden)
 ```
+
+## 2026-07-22T05:50:00Z — Cierre de entrega
+- process: `delivery-close-cycle`
+- agents: ``
+- correlation_id: `2c17212e-f9d0-41cd-88f6-50f0f67e2299`
+- pbi_ref: `docs/todos/pending/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
+- runtime: tekton-ide-relay
+- backend: `ide`
+- status: `executed`
+- message: PR #127 + PullRequest_Presented a7d49178-…; PBI no archivado.
+
+### Transcript (tail)
+
+```
+delivery-close OK
+- commit 4b61e04
+- pr https://github.com/racso80es/SddIA/pull/127
+- event a7d49178-2695-450c-8928-ecac08e2666d
+- pbi_archived false
+```
