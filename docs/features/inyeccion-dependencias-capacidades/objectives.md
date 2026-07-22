@@ -20,7 +20,7 @@ Materializar el MVP de DI por capacidades semánticas: **Metadatos Activos** + *
 
 ## Estado
 
-MVP **APTO** (`validacion.md`). PBI en `pending/` con residual R1–R8. Pendiente operador: `delivery-close-cycle` / PR.
+MVP **APTO** · PR https://github.com/racso80es/SddIA/pull/126 · `PullRequest_Presented` emitido. PBI en `pending/` (residual R1–R8).
 
 ## Vectores soberanos (Racso)
 

@@ -12,8 +12,9 @@ execution_id: 9120e3da-6ba9-4a93-9735-34486383c7de
 verdict: aprobado
 scope: MVP — Metadatos Activos + Códice de la Lengua + Aduana Temprana
 residual_tracked: true
-delivery_state: pending_pr
-delivery_blocker: "gh api.github.com/graphql Forbidden en sesion (push OK); ver runbook-delivery-close.md"
+delivery_state: success
+pr_url: https://github.com/racso80es/SddIA/pull/126
+pr_presented_event_id: 348fd30f-c553-4fdf-8d51-5a3699426bc2
 checks:
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: APTO
@@ -95,4 +96,4 @@ R1–R8 del PBI pending (resolución ciega, Library_Codex binding, Cerbero schem
 
 ## Siguiente
 
-`delivery-close-cycle` / PR bajo orden del operador. PBI-042 sigue vivo en pending hasta rebanadas Hito 2/3.
+PR #126 abierto. Aduana `pull-request-review` aguas abajo. PBI-042 sigue en pending (residual R1–R8).
