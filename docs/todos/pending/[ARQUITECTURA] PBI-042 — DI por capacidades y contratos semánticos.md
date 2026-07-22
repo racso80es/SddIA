@@ -22,13 +22,15 @@ hito3_feature: docs/features/inyeccion-dependencias-gobernanza-asincronia
 hito3_branch: feat/inyeccion-dependencias-gobernanza-asincronia
 hito3_pr: https://github.com/racso80es/SddIA/pull/128
 hito3_merge_commit: 51fd4344ac07ddb27fe96ba4c25c9c27f87a20ca
-hito4_status: apto_en_rama
+hito4_status: entregado_en_main
 hito4_feature: docs/features/inyeccion-dependencias-envelope-homologacion
 hito4_branch: feat/inyeccion-dependencias-envelope-homologacion
 hito4_execution_id: 0ec31f97-ad31-4ae5-8005-dc6220bad185
 hito4_pr: https://github.com/racso80es/SddIA/pull/136
 hito4_snapshot_commit: 975758068bbb32a4217904a94179f1a98ee2dd73
+hito4_merge_commit: 6b0e98cff03e3ff923fc71aee0f0e685b9a70233
 related:
+  - docs/features/inyeccion-dependencias-envelope-homologacion/finalize-process.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/objectives.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/spec.md
   - docs/features/inyeccion-dependencias-envelope-homologacion/validacion.md
@@ -100,12 +102,12 @@ DoD escenarios 1–3 del PBI original: **cubiertos en MVP síncrono** (sin resol
 
 ### Hito 4 — Envelope Cerbero + homologación catálogo
 
-> Ciclo `docs/features/inyeccion-dependencias-envelope-homologacion` · rama `feat/inyeccion-dependencias-envelope-homologacion` · execution `0ec31f97-…` (2026-07-22). Argos: **APTO** (desbloqueo runtime).
+> Ciclo `docs/features/inyeccion-dependencias-envelope-homologacion` · PR [#136](https://github.com/racso80es/SddIA/pull/136) merge `6b0e98c` (2026-07-22).
 
 | ID | Ítem | Notas |
 |----|------|-------|
-| **R9** | Cerbero revalida schema del envelope `di_binding` empaquetado (Q2 Hito 3) | **APTO en rama** — `cerbero_di_envelope.rs` + tests 24/24 |
-| **R10** | Homologación ampliada catálogo ED (≥8 total; ≥4 nuevas) | **APTO en rama** — 8 ED; hash_signature recalc; L-R10-SEAL |
+| **R9** | Cerbero revalida schema del envelope `di_binding` empaquetado (Q2 Hito 3) | **Hecho en main** — `cerbero_di_envelope.rs` |
+| **R10** | Homologación ampliada catálogo ED (≥8 total; ≥4 nuevas) | **Hecho en main** — 8 ED; L-R10-SEAL |
 
 ### Ortogonal (no este PBI)
 
