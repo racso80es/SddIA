@@ -333,3 +333,78 @@ Desbloqueo Hito 4:
 - `git-manager`: Shell rejected — `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` (no inventado)
 - `delivery_state: pending_downstream_phases` · Cerbero no escribe `docs/todos/`
 ```
+
+## 2026-07-23T07:08:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `d7ae8006-fcdd-4c97-b9e3-25df119370fd`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `F2_DOC_GATE: APTO` · `verdict: aprobado` · `pbi_archived: true` · rama `docs/finalize-inyeccion-dependencias-envelope-homologacion` · PR #137 · merge observado 683474dd/754da69
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (Triaje documental / F2 APTO)
+
+- Tocados: `validacion.md`, `_agent_handoff.md`
+- Cascada: objectives/clarify/spec/plan/implementation/execution/finalize + frontmatter YAML + evolution
+- `persist_ref` vacío → resuelto `docs/features/inyeccion-dependencias-envelope-homologacion`
+- `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` (Shell rejected ×3; no inventado)
+- `BRANCH_WORKTREE_SYNC: NO_APTO` (.git/HEAD = main)
+- `MERGE_ALREADY_OBSERVED: APTO` (683474dd / 754da69)
+- PBI-042 en `done/` · `pbi_archived: true`
+```
+
+## 2026-07-23T07:15:00Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `d7ae8006-fcdd-4c97-b9e3-25df119370fd`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: PASS_F4_RBAC · exitCode 0 · deudas signer/emitter/git-manager no bloqueantes · PR #137 finalize.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `PASS_F4_RBAC` · `exitCode: 0` · `F4_RBAC_GATE: APTO`
+
+- Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`).
+- Peaje F4 cumplido; deudas no bloqueantes: signer ausente, emitter revoked, git-manager (Shell rejected), worktree≠rama.
+- Norma: `directories.norms` → `execution-contexts.md` (integridad espacial APTO).
+- ECST `d7ae8006-…` · branch finalize · PR #137; merge observado `683474dd`/`754da69…`.
+- `RBAC_AUTHORING_KM_POLICY: APTO` (docs finalize; sin paths KM/forja).
+- `RBAC_PROCESS_REGISTRY: APTO` (`pull-request-review` ausente de revoked).
+- PBI-042 en `done/`; sin semillas en `docs/todos/` (jurisdicción Cumulo).
+- Downstream: Veredicto Argos / Cosecha / Handoff (respetar MERGE_ALREADY_OBSERVED).
+```
+
+## 2026-07-23T07:20:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `d7ae8006-fcdd-4c97-b9e3-25df119370fd`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] PBI-042 — DI por capacidades y contratos semánticos.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `kaizen_seeds: 0` · `dedup: 2` · `delivery_state: no_heredado` · `KAIZEN_COSECHA_GATE: APTO` · `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO`
+
+### Transcript (tail)
+
+```
+**Cosecha Kaizen — cumulo · veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md`
+- Seeds nuevas: 0
+- Dedup: OPERATIVO Kalma2 residual (PPR #136); ARQUITECTURA delivery-close-cycle revoked+signer (PPR #136)
+- DIA: sin `Kaizen_Alert_Required` en bus
+- `git-manager`: Shell rejected — NO_APTO (no inventado)
+- F2/F4 heredados (Triaje doc + PASS_F4_RBAC); F5 Argos ausente → `verdict/delivery_state: no_heredado` · `COSECHA_SIN_F5`
+- Merge finalize observado (`683474dd-…` / `754da69…`) · `accept_pr_handoff: false`
+- Feature Done preservado (PR #136 / `6b0e98cf`); PBI-042 en `done/`
+- `KAIZEN_COSECHA_GATE: APTO`
+```
