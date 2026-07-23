@@ -148,11 +148,11 @@ related:
 
 | ID | Ítem | Piso | Estado |
 |----|------|------|--------|
-| **R8-A** | Alta `llm:interact` + `provides` en `skill:mayeuta-llm` + homologar `kalma2-interact` | laudo H10-A | **APROBADO — ciclo fino** |
+| **R8-A** | Alta `llm:interact` + `provides` en `skill:mayeuta-llm` + homologar `kalma2-interact` | laudo H10-A | **DONE** (35 with / 7 without) |
 | **R8-B** | Resto §3.4 (Cerbero, Radamanto, Telegram, Suites, memory, capsule-smoke) | defer termodinámico | **DEFER** → ola nueva PBI |
-| **R9** | Altas Códice solo con laudo (`llm:interact` catalogada en H9; binding listo) | Sin inventar | parcial |
+| **R9** | Altas Códice solo con laudo (`llm:interact` catalogada H9; provider H10-A) | Sin inventar | **DONE** para llm |
 
-**AC-H10:** partido — H10-A ciclo fino; H10-B defer.
+**AC-H10:** partido — H10-A **APTO**; H10-B defer.
 
 ### Hito 5 (opcional) — EDA-only DI
 

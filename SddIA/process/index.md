@@ -6,7 +6,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 |------|------|---------|---------|---------|-------------|
 | memory-evolution-ingest | eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2 | 1.1.0 | ecosystem-evolution, event-routing | — | Ingesta Domain_Entity_Telemetry_Captured → vector_store/evolution |
 | event-bus-audit | 8d577a50-055a-40b9-b7e2-93e2d2415796 | 1.0.1 | quality-assurance | — | Auditoría empírica on-demand del bus EDA: escaneo ./.events, |
-| kalma2-interact | acdb6c88-f0d9-4e10-9d2f-7e4b5401a892 | 1.0.0 | ecosystem-evolution | — | Proceso PoC Kalma2: síntesis Mayeuta lab ante prompt del cli |
+| kalma2-interact | acdb6c88-f0d9-4e10-9d2f-7e4b5401a892 | 1.1.1 | ecosystem-evolution | — | Proceso PoC Kalma2: síntesis Mayeuta lab ante prompt del cli |
 | daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.0.1 | quality-assurance | — | Triaje Argos: latido térmico Centinelas; System_Fracture_Det |
 | daemon-kill-switch | b0de6585-11fc-4b3c-8b19-ad6b727d820e | 1.0.1 | system-operations | — | Kill-Switch global: purga SIGTERM/SIGKILL de todos los Centi |
 | governance-daemon-manager | 5a89793a-ba98-4b4f-9287-43c087e312df | 1.0.1 | system-operations | — | Actuador OS puro: start, status, kill de Centinelas indexado |
