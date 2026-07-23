@@ -1,0 +1,180 @@
+{
+  "n": 12,
+  "rtts_ms": [
+    19.588,
+    0.799,
+    0.699,
+    0.737,
+    0.63,
+    0.787,
+    2.297,
+    3.207,
+    0.76,
+    0.636,
+    0.666,
+    0.548
+  ],
+  "p99_ms": 3.207,
+  "max_ms": 19.588,
+  "min_ms": 0.548,
+  "mean_ms": 2.613,
+  "all_202": true,
+  "results": [
+    {
+      "i": 1,
+      "http": 202,
+      "ms": 19.588,
+      "body": {
+        "correlation_id": "1d15f6b4-920b-4612-b148-e27b7ca28ec0",
+        "duration_ms": 1,
+        "event_id": "1d15f6b4-920b-4612-b148-e27b7ca28ec0",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 2,
+      "http": 202,
+      "ms": 0.799,
+      "body": {
+        "correlation_id": "5c3810e5-1dcd-476f-a19c-d6cf1ac8976c",
+        "duration_ms": 0,
+        "event_id": "5c3810e5-1dcd-476f-a19c-d6cf1ac8976c",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 3,
+      "http": 202,
+      "ms": 0.699,
+      "body": {
+        "correlation_id": "0a625317-7886-466f-b4ad-2758a3ebbb39",
+        "duration_ms": 0,
+        "event_id": "0a625317-7886-466f-b4ad-2758a3ebbb39",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 4,
+      "http": 202,
+      "ms": 0.737,
+      "body": {
+        "correlation_id": "9de1c874-f136-44c5-a544-83fce614b5d3",
+        "duration_ms": 0,
+        "event_id": "9de1c874-f136-44c5-a544-83fce614b5d3",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 5,
+      "http": 202,
+      "ms": 0.63,
+      "body": {
+        "correlation_id": "5503bbb1-f647-4ff5-b97f-943202daaf25",
+        "duration_ms": 0,
+        "event_id": "5503bbb1-f647-4ff5-b97f-943202daaf25",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 6,
+      "http": 202,
+      "ms": 0.787,
+      "body": {
+        "correlation_id": "51a2a180-a01f-4be5-8bde-df03bd6e8ec6",
+        "duration_ms": 0,
+        "event_id": "51a2a180-a01f-4be5-8bde-df03bd6e8ec6",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 7,
+      "http": 202,
+      "ms": 2.297,
+      "body": {
+        "correlation_id": "dd0eaee7-6ffb-4cb7-8c7a-75854b8bd12a",
+        "duration_ms": 0,
+        "event_id": "dd0eaee7-6ffb-4cb7-8c7a-75854b8bd12a",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 8,
+      "http": 202,
+      "ms": 3.207,
+      "body": {
+        "correlation_id": "6ee96fe4-a9d6-46ca-9d52-f95151e39ac2",
+        "duration_ms": 2,
+        "event_id": "6ee96fe4-a9d6-46ca-9d52-f95151e39ac2",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 9,
+      "http": 202,
+      "ms": 0.76,
+      "body": {
+        "correlation_id": "bf220391-8f0f-4917-87c2-e18c355e80e0",
+        "duration_ms": 0,
+        "event_id": "bf220391-8f0f-4917-87c2-e18c355e80e0",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 10,
+      "http": 202,
+      "ms": 0.636,
+      "body": {
+        "correlation_id": "b8f3dea4-f69b-4721-9147-c32edefb9843",
+        "duration_ms": 0,
+        "event_id": "b8f3dea4-f69b-4721-9147-c32edefb9843",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 11,
+      "http": 202,
+      "ms": 0.666,
+      "body": {
+        "correlation_id": "80dd2781-c3eb-4d7d-a8e3-55650fb95a30",
+        "duration_ms": 0,
+        "event_id": "80dd2781-c3eb-4d7d-a8e3-55650fb95a30",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    },
+    {
+      "i": 12,
+      "http": 202,
+      "ms": 0.548,
+      "body": {
+        "correlation_id": "4b7ff8aa-3421-4da9-8966-b6c1ba96942e",
+        "duration_ms": 0,
+        "event_id": "4b7ff8aa-3421-4da9-8966-b6c1ba96942e",
+        "message": "intención aceptada; consultar GET /api/status",
+        "status": "accepted",
+        "success": true
+      }
+    }
+  ]
+}
