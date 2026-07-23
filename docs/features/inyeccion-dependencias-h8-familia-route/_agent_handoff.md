@@ -96,3 +96,43 @@ persist_ref: docs/features/inyeccion-dependencias-h8-familia-route
 6. PBI-043: **ausente** en `docs/todos/`.
 7. Tocados: solo `validacion.md` (Argos).
 ```
+
+## 2026-07-23T05:40:03Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `06123b33-bf11-4ed2-a051-5509b0941713`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [unavailable] connect ECONNREFUSED 127.0.0.1:41903
+
+## 2026-07-23T05:40:04Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `06123b33-bf11-4ed2-a051-5509b0941713`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [unavailable] connect ECONNREFUSED 127.0.0.1:41903
+
+## 2026-07-23T05:40:05Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `06123b33-bf11-4ed2-a051-5509b0941713`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [unavailable] connect ECONNREFUSED 127.0.0.1:41903
+
+## 2026-07-23T05:40:06Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `06123b33-bf11-4ed2-a051-5509b0941713`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [unavailable] connect ECONNREFUSED 127.0.0.1:41903
