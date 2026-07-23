@@ -1,36 +1,44 @@
 ---
-uuid: "acdb6c88-f0d9-4e10-9d2f-7e4b5401a892"
-name: kalma2-interact
-version: "1.1.0"
-contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
-hash_signature: sha256:405f34ec7453e8669d7f6a5aef84097c0e5a1d773d5ba286e7897a9a4d9458e1
+contract: process-contract v1.4.0
+hash_signature: sha256:bd3d7326c2eccd70b5df392ec96dc87180aa7fd58af338626e22a45d986d5c4b
 inputs:
 - prompt: Texto del operador desde el cliente Kalma2
+minteo_maximo: null
+name: kalma2-interact
 outputs:
 - response: Respuesta Mayeuta (LLM o fallback determinista)
 - emitted: (opcional) true si se encoló proceso vía EDA
 phases:
-- name: Triaje-C
-  intent: "Filtrar comandos reservados (/ ! TODO: IDEA:) antes de LLM."
-  delegates_to:
+- delegates_to:
   - agent:mayeuta
-- name: Clasificación
+  intent: 'Filtrar comandos reservados (/ ! TODO: IDEA:) antes de LLM.'
+  name: Triaje-C
+- delegates_to:
+  - skill:mayeuta-llm
   intent: CLASSIFY_INTENT vía skill mayeuta-llm (CLI Cursor o heurística).
-  delegates_to:
-  - skill:mayeuta-llm
-- name: Enrutamiento
-  intent: Procesos allowlisted → evento Kalma2_Process_Requested (asíncrono) + acuse.
-  delegates_to:
+  name: Clasificación
+  requires_capability:
+  - contract: llm.interact
+    id: llm:interact
+    version: '>=1.0.0'
+- delegates_to:
   - agent:mayeuta
-- name: Síntesis
-  intent: SYNTHESIZE vía mayeuta-llm con degradación a síntesis determinista.
-  delegates_to:
+  intent: Procesos allowlisted → evento Kalma2_Process_Requested (asíncrono) + acuse.
+  name: Enrutamiento
+- delegates_to:
   - skill:mayeuta-llm
-minteo_maximo: null
+  intent: SYNTHESIZE vía mayeuta-llm con degradación a síntesis determinista.
+  name: Síntesis
+  requires_capability:
+  - contract: llm.interact
+    id: llm:interact
+    version: '>=1.0.0'
 porcentaje_de_exito: null
+uuid: acdb6c88-f0d9-4e10-9d2f-7e4b5401a892
+version: 1.1.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # kalma2-interact
