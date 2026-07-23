@@ -11,6 +11,7 @@ related_document_ids:
   - PBI-FIX-FRACTURE-da29db92ed52
 pbi_ref: docs/todos/done/[FIX] event-sweeper — fractura sistémica (d22645cea40c).md
 execution_id: 21d465b1-940f-45e2-879d-9cb8f773e230
+pr_url: https://github.com/racso80es/SddIA/pull/155
 checks:
   - id: CA1
     result: APTO
