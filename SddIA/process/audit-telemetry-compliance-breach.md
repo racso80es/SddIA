@@ -1,36 +1,40 @@
 ---
-uuid: "fd2f075c-5d01-4b54-8b26-67678417e22b"
-name: audit-telemetry-compliance-breach
-version: "1.0.0"
-contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - chaos-engineering
 - quality-assurance
 - event-routing
-hash_signature: sha256:7f26bdd8cbece98b2e4fa3f175d425ed9ddc6017340939be9ae9e2b72caaf985
+contract: process-contract v1.4.0
+hash_signature: sha256:d76a759b6bba2eec181d4527c4cbfa1ace866518ab8593effbdfe594d52dbdbe
 inputs: []
+minteo_maximo: null
+name: audit-telemetry-compliance-breach
 outputs:
 - breach_event_path: Ruta relativa al JSON domain Telemetry_Compliance_Breached
-phases:
-- name: Estímulo alucinación recibo
-  intent: Ejecutar schema-corruptor sin recibo válido.
-  delegates_to:
-  - agent:tekton
-  - tool:schema-corruptor
-- name: Certificación Argos
-  intent: Verificar Telemetry_Compliance_Breached en ./.events/domain/.
-  delegates_to:
-  - agent:argos
 phase_invocations:
-- phase_name: Estímulo alucinación recibo
-  invocations:
+- invocations:
   - capsule: tool:schema-corruptor
+    on_error: abort
     stdin_json:
       corruption_mode: empty
-    on_error: abort
-minteo_maximo: null
+  phase_name: Estímulo alucinación recibo
+phases:
+- delegates_to:
+  - agent:tekton
+  - tool:schema-corruptor
+  intent: Ejecutar schema-corruptor sin recibo válido.
+  name: Estímulo alucinación recibo
+  requires_capability:
+  - contract: qa.probe
+    id: qa:probe
+    version: '>=1.0.0'
+- delegates_to:
+  - agent:argos
+  intent: Verificar Telemetry_Compliance_Breached en ./.events/domain/.
+  name: Certificación Argos
 porcentaje_de_exito: null
+uuid: fd2f075c-5d01-4b54-8b26-67678417e22b
+version: 1.0.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # audit-telemetry-compliance-breach

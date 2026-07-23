@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/qa.probe.schema.json",
+  "title": "qa.probe",
+  "type": "object",
+  "required": ["success", "exitCode"],
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "true si el estímulo/auditoría de sonda completó sin error fatal de orquestación"
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "0 éxito / distinto de 0 fallo (caos defensivo puede ser exitCode!=0 con success de negocio)"
+    },
+    "error": {
+      "type": "string",
+      "description": "Diagnóstico opcional"
+    }
+  },
+  "additionalProperties": true
+}

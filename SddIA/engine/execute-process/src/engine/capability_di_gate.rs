@@ -320,8 +320,11 @@ pub fn validate_phase_capability_di(
         let mut matched_provider: Option<PathBuf> = None;
         for d in &delegates {
             let Some(del) = d.as_str() else { continue };
-            // Solo action|skill en MVP
-            if !(del.starts_with("skill:") || del.starts_with("action:")) {
+            // H9: skill|action|tool (laudo Racso tool-provider)
+            if !(del.starts_with("skill:")
+                || del.starts_with("action:")
+                || del.starts_with("tool:"))
+            {
                 continue;
             }
             let Some(path) = resolve_capsule_md(repo, del) else {

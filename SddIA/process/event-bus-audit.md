@@ -1,26 +1,30 @@
 ---
-uuid: "8d577a50-055a-40b9-b7e2-93e2d2415796"
-name: "event-bus-audit"
-version: "1.0.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
-  - "quality-assurance"
-  - "event-routing"
-hash_signature: sha256:a236607c025cd3a9d3e01ef3371ea0b683071de59e1b8ffb24617261cfa9b7ce
+- quality-assurance
+- event-routing
+contract: process-contract v1.4.0
+hash_signature: sha256:f5cb7744f3bf4d32c6013f8fd2376b1c9fbb1841d18a90578c40783018188a3b
 inputs: []
-outputs:
-  - "audit_summary": "Conteos por estado y familia del bus"
-  - "anomalies": "Lista de anomalías detectadas"
-  - "report_path": "Ruta del informe Markdown en workspace"
-  - "kaizen_event_id": "UUID del evento Kaizen emitido (si aplica)"
-phases:
-  - name: "Auditoría empírica del bus"
-    intent: "Escanear estados DLT y familias fractales; validar ECST; generar informe y Kaizen si procede"
-    delegates_to:
-      - "tool:event-bus-audit"
 minteo_maximo: null
+name: event-bus-audit
+outputs:
+- audit_summary: Conteos por estado y familia del bus
+- anomalies: Lista de anomalías detectadas
+- report_path: Ruta del informe Markdown en workspace
+- kaizen_event_id: UUID del evento Kaizen emitido (si aplica)
+phases:
+- delegates_to:
+  - tool:event-bus-audit
+  intent: Escanear estados DLT y familias fractales; validar ECST; generar informe y Kaizen si procede
+  name: Auditoría empírica del bus
+  requires_capability:
+  - contract: qa.probe
+    id: qa:probe
+    version: '>=1.0.0'
 porcentaje_de_exito: null
+uuid: 8d577a50-055a-40b9-b7e2-93e2d2415796
+version: 1.0.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # event-bus-audit

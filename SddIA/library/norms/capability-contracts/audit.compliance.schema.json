@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/audit.compliance.schema.json",
+  "title": "audit.compliance",
+  "type": "object",
+  "required": ["success", "exitCode"],
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "true si la auditoría de cumplimiento termodinámico/gobernanza completó"
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "0 éxito / distinto de 0 fallo"
+    },
+    "data": {
+      "description": "Resultado de cruce recibo vs contrato / sellos delivery_state"
+    },
+    "error": {
+      "type": "string",
+      "description": "Diagnóstico opcional"
+    }
+  },
+  "additionalProperties": true
+}
