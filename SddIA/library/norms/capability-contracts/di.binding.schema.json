@@ -18,7 +18,7 @@
     "contract_schema_ref": { "type": "string", "minLength": 1 },
     "provider": {
       "type": "string",
-      "pattern": "^(skill|action):[a-z0-9-]+$"
+      "pattern": "^(skill|action|tool):[a-z0-9-]+$"
     },
     "provider_ref": { "type": "string", "minLength": 1 },
     "resolved_version": { "type": "string", "minLength": 1 },

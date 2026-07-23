@@ -1,32 +1,33 @@
 ---
-document_id: PBI-FIX-FRACTURE-da29db92ed52
-title: "[FIX] telegram-watcher — fractura sistémica"
+document_id: PBI-FIX-FRACTURE-d22645cea40c
+title: "[FIX] event-sweeper — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-07-22"
-status: "abierto"
+status: cerrado
+fix_ref: docs/fixes/daemon-heartbeat-ingest-ignition
 priority: alta
 process: bug-fix
-incident_ref: "System_Fracture_Detected — da29db92ed52"
+incident_ref: "System_Fracture_Detected — d22645cea40c"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
 ---
 
-# [FIX] telegram-watcher — fractura sistémica
+# [FIX] event-sweeper — fractura sistémica
 
 ## Incidente (auto-generado por Cúmulo)
 
 | Campo | Valor |
 |-------|--------|
-| Proceso | `telegram-watcher` |
+| Proceso | `event-sweeper` |
 | Emisor | `argos` |
 | Acción intentada | `daemon-heartbeat-audit` |
 
 ## Traza de error
 
 ```
-Centinela telegram-watcher omitió 23 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-07-22T10:19:51Z
+Centinela event-sweeper omitió 23 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-07-22T10:19:49Z
 ```
 
 ## Mandato
@@ -39,7 +40,7 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ### Diagnóstico de causa raíz
 
-- Causa raíz no clasificada automáticamente para `telegram-watcher`; requiere laudo humano.
+- Causa raíz no clasificada automáticamente para `event-sweeper`; requiere laudo humano.
 
 ### Veredicto evolutivo
 
@@ -47,6 +48,6 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ### Propuestas
 
-- **Corrección de proceso oficial:** Auditar proceso `telegram-watcher`, acción `daemon-heartbeat-audit` y emisor `argos`.
+- **Corrección de proceso oficial:** Auditar proceso `event-sweeper`, acción `daemon-heartbeat-audit` y emisor `argos`.
 
 > Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar.
