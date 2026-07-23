@@ -98,11 +98,18 @@ fn contracts_dir_rel(repo: &Path) -> Result<String, DiResolveError> {
         .to_string())
 }
 
+fn is_capsule_provider(delegate: &str) -> bool {
+    delegate.starts_with("skill:")
+        || delegate.starts_with("action:")
+        || delegate.starts_with("tool:")
+}
+
 fn provider_md_rel(provider: &str) -> Option<String> {
     let (kind, name) = provider.split_once(':')?;
     match kind {
         "skill" => Some(format!("directories.skills/{name}.md")),
         "action" => Some(format!("directories.actions/{name}.md")),
+        "tool" => Some(format!("directories.tools/{name}.md")),
         _ => None,
     }
 }
@@ -112,6 +119,7 @@ fn provider_fs_rel(provider: &str) -> Option<String> {
     match kind {
         "skill" => Some(format!("SddIA/skills/{name}.md")),
         "action" => Some(format!("SddIA/actions/{name}.md")),
+        "tool" => Some(format!("SddIA/tools/{name}.md")),
         _ => None,
     }
 }
@@ -202,7 +210,11 @@ fn provider_provides_id(path: &Path, capability_id: &str) -> Option<(String, Str
 
 fn scan_catalog_providers(repo: &Path, capability_id: &str) -> Vec<String> {
     let mut found = Vec::new();
-    for (kind, dir) in [("skill", "SddIA/skills"), ("action", "SddIA/actions")] {
+    for (kind, dir) in [
+        ("skill", "SddIA/skills"),
+        ("action", "SddIA/actions"),
+        ("tool", "SddIA/tools"),
+    ] {
         let root = repo.join(dir);
         let Ok(entries) = fs::read_dir(&root) else {
             continue;
@@ -213,6 +225,9 @@ fn scan_catalog_providers(repo: &Path, capability_id: &str) -> Vec<String> {
                 continue;
             }
             let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+            if stem.ends_with("-contract") || stem == "index" {
+                continue;
+            }
             if provider_provides_id(&path, capability_id).is_some() {
                 found.push(format!("{kind}:{stem}"));
             }
@@ -295,29 +310,32 @@ pub fn resolve_phase_bindings(
             });
         }
 
-        // Dual path: if delegates_to present, resolved provider must match relevant skill/action delegates.
-        let skill_action_dels: Vec<&String> = delegates
-            .iter()
-            .filter(|d| d.starts_with("skill:") || d.starts_with("action:"))
-            .collect();
-        if !skill_action_dels.is_empty() && !skill_action_dels.iter().any(|d| *d == provider) {
-            return Err(DiResolveError {
-                code: DiResolveCode::ProviderMismatch,
-                message: format!(
-                    "proveedor resuelto '{provider}' no coincide con delegates_to {skill_action_dels:?}"
-                ),
-            });
+        // H9: preferir skill|action|tool en delegates_to que ya declare provides(cap);
+        // si no hay, usar fila binding (path ciego → inyección posterior).
+        let mut resolved_provider = provider.clone();
+        for d in &delegates {
+            if !is_capsule_provider(d) {
+                continue;
+            }
+            let Some(fs) = provider_fs_rel(d) else {
+                continue;
+            };
+            let path = repo.join(&fs);
+            if provider_provides_id(&path, &cap_id).is_some() {
+                resolved_provider = d.clone();
+                break;
+            }
         }
 
-        let fs_rel = provider_fs_rel(provider).ok_or_else(|| DiResolveError {
+        let fs_rel = provider_fs_rel(&resolved_provider).ok_or_else(|| DiResolveError {
             code: DiResolveCode::ConfigError,
-            message: format!("provider no resoluble: {provider}"),
+            message: format!("provider no resoluble: {resolved_provider}"),
         })?;
         let provider_path = repo.join(&fs_rel);
         let (prov_contract, prov_version) = provider_provides_id(&provider_path, &cap_id).ok_or_else(
             || DiResolveError {
                 code: DiResolveCode::ProviderMismatch,
-                message: format!("provider '{provider}' no declara provides id='{cap_id}'"),
+                message: format!("provider '{resolved_provider}' no declara provides id='{cap_id}'"),
             },
         )?;
 
@@ -331,13 +349,14 @@ pub fn resolve_phase_bindings(
             cap_id.replace(':', ".")
         };
 
-        let logical_ref = provider_md_rel(provider).unwrap_or_else(|| fs_rel.clone());
+        let logical_ref =
+            provider_md_rel(&resolved_provider).unwrap_or_else(|| fs_rel.clone());
         let schema_rel = format!("{contracts_rel}/{contract}.schema.json");
 
         out.push(ResolvedBinding {
             capability_id: cap_id,
             contract,
-            provider: provider.clone(),
+            provider: resolved_provider,
             provider_md_rel: logical_ref,
             contract_schema_rel: schema_rel,
             version: prov_version,
@@ -357,12 +376,13 @@ pub fn phase_with_effective_delegates(phase: &Value, bindings: &[ResolvedBinding
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    let has_skill_action = existing.iter().any(|d| {
+    // H9: skill|action|tool ya anclado ⇒ no inyectar; solo agentes ⇒ path ciego + inject.
+    let has_capsule = existing.iter().any(|d| {
         d.as_str()
-            .map(|s| s.starts_with("skill:") || s.starts_with("action:"))
+            .map(is_capsule_provider)
             .unwrap_or(false)
     });
-    if has_skill_action {
+    if has_capsule {
         return effective;
     }
     let mut dels = existing;
@@ -525,7 +545,8 @@ bindings: []
     }
 
     #[test]
-    fn resolve_dual_mismatch() {
+    fn resolve_prefers_delegate_provider_over_binding_row() {
+        // H9: si delegates_to declara provides(cap), prevalece sobre fila canónica.
         let td = fixture_repo();
         write_md(
             td.path(),
@@ -543,8 +564,8 @@ provides:
             "requires_capability": [{"id": "doc:closure", "contract": "doc.closure"}],
             "delegates_to": ["skill:other-skill"]
         });
-        let err = resolve_phase_bindings(td.path(), &phase).unwrap_err();
-        assert_eq!(err.code, DiResolveCode::ProviderMismatch);
+        let bindings = resolve_phase_bindings(td.path(), &phase).expect("resolve");
+        assert_eq!(bindings[0].provider, "skill:other-skill");
     }
 
     #[test]

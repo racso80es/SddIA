@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.3"
+version: "1.0.4"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:a0d1b0c634ee85f7e0a97e68179e7da35cf5f563a7ad7c1f5808977bffbbe5d2"
+hash_signature: "sha256:e0fa06d7b8b9a299d0afb9ac35cc35317d5e5746415bf47d20c84749a8358523"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -24,6 +24,18 @@ catalog:
     contract: "bus.route"
     version: "1.0.0"
     description: "Enrutado / fan-out del bus EDA fractal (domain, orchestration, telemetry) vía cápsula bus-operator."
+  - id: "qa:probe"
+    contract: "qa.probe"
+    version: "1.0.0"
+    description: "Sonda de caos / auditoría empírica vía tools (sandbox-breacher, schema-corruptor, io-choke, event-bus-audit)."
+  - id: "audit:compliance"
+    contract: "audit.compliance"
+    version: "1.0.0"
+    description: "Auditoría de cumplimiento termodinámico/gobernanza (exclusiva telemetry-compliance-audit); distinta de qa:probe (Caos)."
+  - id: "llm:interact"
+    contract: "llm.interact"
+    version: "1.0.0"
+    description: "Interacción LLM gobernada vía skill mayeuta-llm (síntesis / clasificación de intención)."
 ---
 
 ## Directriz Core
@@ -42,10 +54,14 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `proc:git-sync` | `proc.git_sync` | 1.0.0 | Operaciones Git gobernadas vía git-manager |
 | `fs:persist` | `fs.persist` | 1.0.0 | Persistencia artefactos vía filesystem-manager |
 | `bus:route` | `bus.route` | 1.0.0 | Fan-out bus EDA fractal vía bus-operator |
+| `qa:probe` | `qa.probe` | 1.0.0 | Sonda Caos / auditoría empírica vía tools |
+| `audit:compliance` | `audit.compliance` | 1.0.0 | Cumplimiento termodinámico (Gobernanza; ≠ Caos) |
+| `llm:interact` | `llm.interact` | 1.0.0 | Interacción LLM vía mayeuta-llm |
 
 ## Restricciones Duras
 
 - Prohibido declarar capacidades no indexadas en `catalog`.
 - Prohibido usar `spec.json` como soporte de `provides`/`requires_capability`; SSOT = `{name}.md`.
 - El contrato I/O de cada capacidad vive bajo el path Cúmulo `capability_contracts` (`{contract}.schema.json`).
-- Referencia feature: `docs/features/inyeccion-dependencias-capacidades` (PBI-042); Hito 5 alta `fs:persist`: `docs/features/inyeccion-dependencias-migracion-catalogo`; H8 alta `bus:route`: `docs/features/inyeccion-dependencias-h8-familia-route`.
+- **Rigor taxonómico:** `qa:probe` (Caos/sonda) ≠ `audit:compliance` (Gobernanza/cumplimiento). Prohibido reuso cruzado.
+- Referencia: PBI-042/043 features DI; H9 `inyeccion-dependencias-h9-auditorias`.

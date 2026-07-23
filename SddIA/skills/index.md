@@ -16,6 +16,7 @@ Contrato normativo de la familia: `skills-contract.md` (no constituye una skill 
 
 | Archivo fuente | uuid | name | version | contract | context | Capabilities |
 |----------------|------|------|---------|------------|---------|--------------|
+| `compliance-auditor.md` | `a9b8c7d6-e5f4-4321-9a0b-1c2d3e4f5a6b` | compliance-auditor | 1.0.0 | skills-contract v1.1.0 | quality-assurance | `thermodynamic-compliance-audit`, `delivery-state-seal` |
 | `filesystem-manager.md` | `f4a5b6c7-d8e9-4f0a-1b2c-3d4e5f6a7b8c` | filesystem-manager | 1.0.0 | skills-contract v1.1.0 | filesystem-ops | `file-read`, `file-write`, `list-directory`, `delete-file`, `create-directory`, `move-file` |
 | `cryptography-manager.md` | `a1f2e3d4-c5b6-4789-a012-3456789abc0` | cryptography-manager | 1.0.0 | skills-contract v1.1.0 | quality-assurance | `sha256-generation`, `hash-validation`, `uuid-generation` |
 | `git-manager.md` | `4dac18fc-4cd1-4aa4-bdc3-faeb3bf762fc` | git-manager | 1.0.0 | skills-contract v1.1.0 | source-control | `git-read-state`, `git-branching`, `git-commit`, `git-sync-remote` |

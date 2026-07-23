@@ -137,21 +137,22 @@ related:
 
 ### Hito 3 — H9 · Auditorías
 
-| ID | Ítem | Piso |
-|----|------|------|
-| **R6** | Modelo DI para ED tool-bound (auditorías §3.3): capacidad nueva vs `delegates_to` tool + `requires_capability` de orquestación | |
-| **R7** | Homologar 5 ED §3.3 | `N_ola ≥ 5` |
+| ID | Ítem | Piso | Estado |
+|----|------|------|--------|
+| **R6** | Modelo DI tool-bound: `qa:probe` (Caos) + extensión DI `tool:`; `audit:compliance` (Gobernanza) — **sin** reuso qa:probe en telemetry-compliance | laudo 2026-07-23 | **DONE** |
+| **R7** | Homologar 5 ED §3.3 | `N_ola ≥ 5` | **DONE** (34 with / 8 without) |
 
-**AC-H9:** 5/5 auditorías homologadas bajo modelo R6; orphan 0.
+**AC-H9:** 5/5 auditorías homologadas bajo modelo R6; orphan 0. → **APTO** (`inyeccion-dependencias-h9-auditorias`).
 
 ### Hito 4 — H10 · Gobernanza e interactores
 
-| ID | Ítem | Piso |
-|----|------|------|
-| **R8** | Homologar 8 ED §3.4 (o partición Dedalo si blast-radius) | `N_ola ≥ 8` o 2 sub-olas |
-| **R9** | Altas controladas al Códice solo con laudo (p. ej. `llm:interact`, `bus:ops`) | Sin inventar términos libres |
+| ID | Ítem | Piso | Estado |
+|----|------|------|--------|
+| **R8-A** | Alta `llm:interact` + `provides` en `skill:mayeuta-llm` + homologar `kalma2-interact` | laudo H10-A | **APROBADO — ciclo fino** |
+| **R8-B** | Resto §3.4 (Cerbero, Radamanto, Telegram, Suites, memory, capsule-smoke) | defer termodinámico | **DEFER** → ola nueva PBI |
+| **R9** | Altas Códice solo con laudo (`llm:interact` catalogada en H9; binding listo) | Sin inventar | parcial |
 
-**AC-H10:** §3.4 homologado (umbral Dedalo ≥ piso); orphan 0; taxonomía coherente.
+**AC-H10:** partido — H10-A ciclo fino; H10-B defer.
 
 ### Hito 5 (opcional) — EDA-only DI
 

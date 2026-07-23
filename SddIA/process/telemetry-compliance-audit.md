@@ -1,24 +1,28 @@
 ---
-uuid: "b3c4d5e6-f7a8-4901-b2c3-d4e5f6a7b8c9"
-name: telemetry-compliance-audit
-version: "1.0.0"
-contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - event-routing
 - quality-assurance
-hash_signature: sha256:d7f2478df454d23763aa512507150ac6cd134973180d2353cea1b99622019019
+contract: process-contract v1.4.0
+hash_signature: sha256:87881548d653d0fe182faecf5481c0e622fdbc981c9c8af617857a4cfc449c11
 inputs:
 - event_file_path: Ruta relativa al JSON de telemetría en ./.events/telemetry/
+minteo_maximo: null
+name: telemetry-compliance-audit
 outputs:
 - audit_result: Resultado cruce recibo vs contrato ED
 phases:
-- name: Auditoría cumplimiento termodinámico
-  intent: Cruzar telemetry_receipt vs contrato ED; emitir dominio breach si aplica; sellar delivery_state (T5.6 — sin borrado físico).
-  delegates_to:
+- delegates_to:
   - agent:argos
-minteo_maximo: null
+  intent: Cruzar telemetry_receipt vs contrato ED; emitir dominio breach si aplica; sellar delivery_state (T5.6 — sin borrado físico).
+  name: Auditoría cumplimiento termodinámico
+  requires_capability:
+  - contract: audit.compliance
+    id: audit:compliance
+    version: '>=1.0.0'
 porcentaje_de_exito: null
+uuid: b3c4d5e6-f7a8-4901-b2c3-d4e5f6a7b8c9
+version: 1.0.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # telemetry-compliance-audit

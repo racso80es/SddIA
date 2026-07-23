@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/llm.interact.schema.json",
+  "title": "llm.interact",
+  "type": "object",
+  "required": ["success", "data"],
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "true si SYNTHESIZE/CLASSIFY_INTENT completó"
+    },
+    "data": {
+      "description": "Payload según operación (text / intent+process_name…)"
+    },
+    "error": {
+      "type": ["string", "null"],
+      "description": "Diagnóstico si success=false"
+    }
+  },
+  "additionalProperties": true
+}
