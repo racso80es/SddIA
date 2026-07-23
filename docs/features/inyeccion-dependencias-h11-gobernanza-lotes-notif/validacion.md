@@ -9,6 +9,7 @@ execution_id: 881f8cf6-6a4c-48aa-9f76-d84df5641db8
 agent: argos
 global: APTO
 pbi_archived: true
+pr_url: "https://github.com/racso80es/SddIA/pull/157"
 racso_countersign: "2026-07-23T14:49:00Z"
 checks:
   AC-H11: APTO
