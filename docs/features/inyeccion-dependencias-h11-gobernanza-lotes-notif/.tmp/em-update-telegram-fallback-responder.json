@@ -1,0 +1,47 @@
+{
+  "entity_class": "process",
+  "entity_name": "telegram-fallback-responder",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "telegram-fallback-responder",
+    "scope": "core",
+    "process_version": "1.0.1",
+    "process_phases": [
+      {
+        "name": "Filtro C",
+        "intent": "Evaluar si payload.text empieza por /, ! o palabras reservadas (TODO:, IDEA:). Abortar con success silencioso para ceder a especialistas.",
+        "requires_capability": [
+          {
+            "id": "llm:interact",
+            "contract": "llm.interact",
+            "version": ">=1.0.0"
+          }
+        ],
+        "delegates_to": [
+          "agent:mayeuta"
+        ]
+      },
+      {
+        "name": "Síntesis",
+        "intent": "Invocar Mayeuta con prompt literal: [HARD OVERRIDE] Has recibido este estímulo externo: \"{text}\". Genera respuesta orgánica ≤2 líneas (Tormentosa/Aiúa).",
+        "requires_capability": [
+          {
+            "id": "llm:interact",
+            "contract": "llm.interact",
+            "version": ">=1.0.0"
+          }
+        ],
+        "delegates_to": [
+          "agent:mayeuta"
+        ]
+      },
+      {
+        "name": "Materialización",
+        "intent": "Ejecutar send-telegram-notification con message=output Síntesis y chat_id del payload.",
+        "delegates_to": [
+          "tool:send-telegram-notification"
+        ]
+      }
+    ]
+  }
+}

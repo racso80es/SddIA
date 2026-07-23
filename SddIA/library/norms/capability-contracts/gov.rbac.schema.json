@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/gov.rbac.schema.json",
+  "title": "gov.rbac",
+  "type": "object",
+  "required": [
+    "success",
+    "exitCode"
+  ],
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "true si reacci\u00f3n RBAC/gobernanza complet\u00f3"
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "0 \u00e9xito / distinto de 0 fallo"
+    },
+    "data": {
+      "description": "Estado revocaci\u00f3n / governance_result"
+    },
+    "error": {
+      "type": "string",
+      "description": "Diagn\u00f3stico opcional"
+    }
+  },
+  "additionalProperties": true
+}

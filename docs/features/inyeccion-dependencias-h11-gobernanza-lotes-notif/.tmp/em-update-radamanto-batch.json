@@ -1,0 +1,26 @@
+{
+  "entity_class": "process",
+  "entity_name": "radamanto-batch",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "radamanto-batch",
+    "scope": "core",
+    "process_version": "1.1.1",
+    "process_phases": [
+      {
+        "name": "Consumo batch Radamanto",
+        "intent": "Acumular telemetría CLI, evaluar umbrales, emitir Domain_Entity_{Degraded|Restored|Deprecated} y Domain_Entity_Telemetry_Captured; sellar delivery_state.",
+        "requires_capability": [
+          {
+            "id": "fs:persist",
+            "contract": "fs.persist",
+            "version": ">=1.0.0"
+          }
+        ],
+        "delegates_to": [
+          "agent:radamanto"
+        ]
+      }
+    ]
+  }
+}

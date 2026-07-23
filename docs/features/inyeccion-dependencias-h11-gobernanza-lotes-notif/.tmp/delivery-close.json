@@ -1,0 +1,7 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/inyeccion-dependencias-h11-gobernanza-lotes-notif",
+  "branch_name": "feat/inyeccion-dependencias-h11-gobernanza-lotes-notif",
+  "pr_title": "feat(di): H11 PBI-045 — DI gobernanza, lotes y notificaciones",
+  "pr_body": "## Summary\n- Homologa 7/7 ED residuales con DI (H11-A–D) tras laudo Racso.\n- Altas Códice `gov:rbac` + `channel:ingest`; forge `tool:telegram-gateway.md`; skill `rbac-governor`.\n- Inventario process 42/0; orphan 0; suites capability_di/cerbero_di verdes; PBI-045 archivado.\n\n## Test plan\n- [x] orphan_count == 0\n- [x] cargo test -p execute-process capability_di\n- [x] cargo test -p execute-process cerbero_di\n- [x] validacion.md APTO + pbi_archived"
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/channel.ingest.schema.json",
+  "title": "channel.ingest",
+  "type": "object",
+  "required": [
+    "success"
+  ],
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "true si ingesta/transmutaci\u00f3n de canal complet\u00f3"
+    },
+    "emitted": {
+      "type": "boolean",
+      "description": "si se emiti\u00f3 evento domain"
+    },
+    "event_type": {
+      "description": "tipo ECST emitido si aplica"
+    },
+    "event": {
+      "description": "payload evento"
+    },
+    "error": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

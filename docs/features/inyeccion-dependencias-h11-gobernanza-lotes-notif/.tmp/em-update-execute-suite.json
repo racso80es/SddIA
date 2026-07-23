@@ -1,0 +1,48 @@
+{
+  "entity_class": "process",
+  "entity_name": "execute-suite",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "execute-suite",
+    "scope": "core",
+    "process_version": "1.0.1",
+    "process_phases": [
+      {
+        "name": "Resolución Suite",
+        "intent": "Cargar spec Suite desde Cúmulo/directories.suites.",
+        "requires_capability": [
+          {
+            "id": "fs:persist",
+            "contract": "fs.persist",
+            "version": ">=1.0.0"
+          }
+        ],
+        "delegates_to": [
+          "agent:cumulo"
+        ]
+      },
+      {
+        "name": "Orquestación nodos",
+        "intent": "Por cada atomic_node, subproceso execute-process aislado.",
+        "delegates_to": [
+          "agent:tekton",
+          "action:execute-process"
+        ]
+      },
+      {
+        "name": "Compilación manifiesto",
+        "intent": "Argos escribe survival-manifest.md en workspace orquestador.",
+        "delegates_to": [
+          "agent:argos"
+        ]
+      },
+      {
+        "name": "Certificación inmunidad",
+        "intent": "Tras éxito global y manifiesto, emitir System_Immunity_Certified en bus domain.",
+        "delegates_to": [
+          "agent:radamanto"
+        ]
+      }
+    ]
+  }
+}

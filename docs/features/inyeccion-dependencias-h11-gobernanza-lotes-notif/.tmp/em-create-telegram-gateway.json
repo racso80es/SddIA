@@ -1,0 +1,14 @@
+{
+  "entity_class": "tool",
+  "entity_name": "telegram-gateway",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "tool_name": "telegram-gateway",
+    "tool_context": "ecosystem-evolution",
+    "scope": "core",
+    "domain_origin": "SddIA",
+    "execution_logic": "Aduana aferente Telegram: text → evento domain (Kaizen_Idea_Captured | Manual_Task_Requested).",
+    "tool_version": "1.0.0",
+    "tools_contract_version": "1.3.0"
+  }
+}
