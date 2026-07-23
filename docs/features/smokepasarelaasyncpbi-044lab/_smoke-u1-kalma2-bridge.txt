@@ -1,0 +1,20 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling kalma2-bridge v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/interfaces/kalma2-bridge)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running unittests src/main.rs (target/debug/deps/kalma2_bridge-eb158876c5fb614b)
+
+running 9 tests
+test tests::accepted_body_identity_correlation_event ... ok
+test tests::project_status_awaiting_agents_from_cycle_phase ... ok
+test tests::project_status_completed_from_pec ... ok
+test tests::project_status_initialized_from_cycle_phase ... ok
+test tests::native_elf_rejects_script_content ... ok
+test tests::project_status_routed_from_delivery ... ok
+test tests::resolve_orchestrator_finds_debug_binary ... ok
+test tests::uuid_v4ish_accepts_canonical ... ok
+test tests::bridge_execute_path_has_no_eda_write_helpers ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

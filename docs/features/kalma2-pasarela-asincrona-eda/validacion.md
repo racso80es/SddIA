@@ -1,42 +1,68 @@
 ---
 feature_name: kalma2-pasarela-asincrona-eda
 created: "2026-07-22"
-updated: "2026-07-22"
-process: feature
-phase: Verificación
-agent: argos
+updated: "2026-07-23"
+process: pull-request-review
+phase: Cosecha Kaizen
+agent: cumulo
 branch: feat/kalma2-pasarela-asincrona-eda
+branch_name_injected: feat/kalma2-pasarela-asincrona-eda
 persist_ref: docs/features/kalma2-pasarela-asincrona-eda
 document_id: PBI-044-KALMA2-PASARELA-ASINCRONA-EDA
 pbi_uuid: 8c71b50f-7067-472a-a149-40041920b054
 pbi_ref: docs/todos/done/[ARQUITECTURA] PBI-044 — Pasarela asíncrona Kalma2 y desacople por bus de eventos.md
-correlation_id: 6178f1d1-e1d7-4446-bc9b-fca16d79b872
-execution_id: 002f4e1b-0155-4874-95cd-8e6953ed0f70
-global: APTO
-pbi_archived: true
-approval_status: approved
-verdict: aprobado
+correlation_id: 356674d3-aa2f-434c-acaf-3dec075af2c3
 pr_url: https://github.com/racso80es/SddIA/pull/146
-snapshot_commit: 7a1b59f7c659baddc96e6b5e3f58b63cfe026add
 pr_presented_event_id: 356674d3-aa2f-434c-acaf-3dec075af2c3
-git_manager_invoked: true
-tekton_status: evidence_apto
-scope: "H1+H2 Done mínimo PBI-044 (R1–R5; R6/H3 defer)"
+global: NO_APTO
+pbi_archived: true
+approval_status: rechazado
+verdict: rechazado
+delivery_state: failed
+accept_pr_handoff: false
+resolution: FAIL_F4_RBAC
+audit_event_reference: 356674d3-aa2f-434c-acaf-3dec075af2c3
+authorization_status:
+  exitCode: null
+  signer_identity_rbac: null
+  note: "Cerbero fase Certificación RBAC status=blocked (entorno/tooling); sin peaje físico — heredado Argos"
+git_manager_invoked: false
+git_manager_error: "cápsula no invocable en esta sesión (Shell/Auto-review rejected); sin stdout físico de ./sddia-run.sh --tool git-manager"
+scope: "H1+H2 Done mínimo PBI-044 (R1–R5; R6/H3 defer) — aduana PPR Cosecha Kaizen"
 checks:
-  DOC_CASCADE: APTO
-  AC_R1_ACCEPT_CONTRACT_STATIC: APTO
-  AC_R1_TIMING_P99_SMOKE: APTO
-  AC_R2_SPATIAL_BLINDNESS_STATIC: APTO
-  AC_R2_SPAWN_CORRELATION_RUNTIME: APTO
-  AC_R3_NERVE_REGRESSION: APTO
-  AC_R4_STATUS_TERMINAL_SMOKE: APTO
-  AC_R5_CHAT_OUT_OF_DONE: APTO
-  AC_R6_H3_DEFER: APTO
-  R3_ECST_CANONICAL: APTO
-  U1_CARGO_TEST_BRIDGE: APTO
-  U2_CARGO_TEST_KALMA2: APTO
-  GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
-  AC_DONE_PBI: APTO
+  F2_DOC_GATE: APTO
+  F3_TECH_GATE: APTO
+  F4_RBAC_GATE: NO_APTO
+  VERDICT_SYNTHESIS_GATE: NO_APTO
+  DOC_OBJECTIVES: APTO
+  DOC_SPEC: APTO
+  DOC_PLAN: APTO
+  DOC_IMPLEMENTATION: APTO
+  DOC_EXECUTION: APTO
+  DOC_FRONTMATTER_YAML: APTO
+  TECH_AC_SCOPE: APTO
+  TECH_BRIDGE_SPAWN_202: APTO
+  TECH_SPATIAL_BLINDNESS: APTO
+  TECH_ECST_CANONICAL: APTO
+  TECH_CARGO_PROXY: APTO
+  TECH_FORMAL_EXECUTE_PROCESS: NO_APTO
+  RBAC_CERBERO_EVIDENCE: NO_APTO
+  RBAC_SIGNER_PRESENT: NO_APTO
+  RBAC_EMITTER_NOT_REVOKED: NO_APTO
+  RBAC_PROCESS_REGISTRY: APTO
+  BRANCH_ECST_ALIGN: APTO
+  GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO
+  GIT_EVIDENCE_HISTORICAL_FEATURE: APTO
+  PBI_DONE_PRESENT: APTO
+  ACCEPT_PR_HANDOFF: NO_APTO
+  KAIZEN_COSECHA_GATE: APTO
+  KAIZEN_DIA_ALERT: APTO
+  KAIZEN_SEED_DCC_REVOKED_SIGNER: APTO
+  KAIZEN_SEED_KALMA2_RUNTIME_RESIDUAL: APTO
+kaizen_seeds: []
+kaizen_seeds_dedup:
+  - docs/todos/pending/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md
+  - docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — revoked_entities y ECST signer (PPR #136).md
 git_changes:
   - SddIA/interfaces/kalma2-bridge/src/main.rs
   - SddIA/interfaces/kalma2-bridge/Cargo.toml
@@ -48,53 +74,106 @@ git_changes:
   - docs/todos/pending/[ARQUITECTURA] PBI-043 — Pasarela asíncrona de Cursor y desacople por bus de eventos.md
 ---
 
-# Validación — kalma2-pasarela-asincrona-eda (Argos · Verificación)
+# Validación — Cosecha Kaizen (Cúmulo · pull-request-review)
 
-## Veredicto
+## Veredicto de fase
 
-**APTO / approved** — H1+H2 evidentes (estático + `cargo test` + smokes HTTP S1–S3 + git-manager). R6/H3 defer documentado.
+**APTO (cosecha)** — `kaizen_seeds: 0` nuevas · `kaizen_seeds_dedup: 2` · `KAIZEN_COSECHA_GATE: APTO`.
+
+Peaje aduana **heredado** fase 5: `verdict: rechazado` · `delivery_state: failed` · `accept_pr_handoff: false` · `resolution: FAIL_F4_RBAC`. Cosecha **no** altera `delivery_state`.
+
+| Gate | Delegado | Estado | Criterio |
+|------|----------|--------|----------|
+| F2 | Argos (doc) | **APTO** | heredado · cascada frontmatter |
+| F3 | execute-process / proxy | **APTO** | heredado · proxy Tekton `execution.md` |
+| F4 | Cerbero | **NO_APTO** | heredado · sin peaje físico |
+| Kaizen | Cúmulo | **APTO** | deuda mapeada (dedup); sin DIA |
 
 ## Ingesta
 
 | Input | Resolución |
 |-------|------------|
 | `persist_ref` | `docs/features/kalma2-pasarela-asincrona-eda` |
-| `branch` | `feat/kalma2-pasarela-asincrona-eda` |
-| `pbi_ref` | archivado en `docs/todos/done/` · `document_id: PBI-044-KALMA2-PASARELA-ASINCRONA-EDA` |
-| `execution_id` | `002f4e1b-0155-4874-95cd-8e6953ed0f70` |
-| Smoke cid | `6178f1d1-e1d7-4446-bc9b-fca16d79b872` |
+| `branch` / `branch_name` | `feat/kalma2-pasarela-asincrona-eda` |
+| `correlation_id` | `356674d3-aa2f-434c-acaf-3dec075af2c3` |
+| `pr_url` | `https://github.com/racso80es/SddIA/pull/146` |
+| ECST | `.events/processed/356674d3-…json` · `PullRequest_Presented` · emitter `delivery-close-cycle` · **sin** `signer_identity_rbac` |
+| DIA bus | sin `Kaizen_Alert_Required` en `.events/` para este `correlation_id` |
 
-## Checks
+## F2 / F3 / F4 (heredados Argos)
 
-| ID | Criterio | Estado | Evidencia |
-|----|----------|--------|-----------|
-| DOC_CASCADE | Cascada bajo persist_ref | **APTO** | clarify→objectives→spec→plan→implementation→execution→validacion |
-| AC-R1 contrato | 202 + `accepted` + cid | **APTO** | `accept_execute` / `reply_accept_result`; 12/12 bodies |
-| AC-R1 timing | p99 &lt; 50 ms | **APTO** | N=12; p99 RTT **4.5 ms**; bridge `duration_ms` p99=3 |
-| AC-R2 ceguera | Bridge sin write fractal | **APTO** | audit prod `!write_fractal_event`; spawn+reaper |
-| AC-R2 runtime | `Kalma2_Process_Requested` cid≡event_id | **APTO** | `.events/domain/6178f1d1-….json` |
-| R3 ECST | Solo evento canónico | **APTO** | cero `Kalma2_Interaction_Requested` |
-| AC-R3 nervio | Sin regresión suscripciones | **APTO** | diff `main` subscriptions = 0 líneas |
-| AC-R4 status | poll status con cid | **APTO** | GET 200 `pending` + domain.found (PEC e2e diferido sin watcher; unit PEC ok) |
-| AC-R5 chat | fuera Done | **APTO** | chat sync intacto |
-| AC-R6 H3 | Telegram defer | **APTO** | documentado |
-| U1 / U2 | cargo tests | **APTO** | bridge 9/9; kalma2 10/10 |
-| GIT | git-manager | **APTO** | `success: true` status |
-| AC-DONE-PBI | PBI done + `pbi_archived` | **APTO** | este veredicto + move en rama |
+Sin re-litigio. Resumen bloqueante:
 
-## Git (`skill:git-manager`)
+- `F4_RBAC_GATE` / `RBAC_CERBERO_EVIDENCE` / `RBAC_SIGNER_PRESENT` → **NO_APTO** (bloqueo fase 5).
+- Correction blueprint fase 5 (`ppr-rehab-f4-cerbero-kalma2-pasarela`) permanece vigente; **no** se materializa seed duplicado de rehabilitación F4 (es re-ejecución de peaje, no deuda genérica nueva).
 
-```text
-printf '%s' '{"operation_type":"status","repository_path":"/home/racso/Proyectos/SddIA","operation_payload_json":{}}' \
-  | ./sddia-run.sh --tool git-manager
-→ success: true
+## Git / rama
+
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **NO_APTO** | `./sddia-run.sh --tool git-manager` → Shell Rejected; sin stdout físico (sesión Cúmulo) |
+| `GIT_EVIDENCE_HISTORICAL_FEATURE` | **APTO** | heredado · `execution.md` sesión Tekton |
+| `BRANCH_ECST_ALIGN` | **APTO** | ECST `payload.branch` = `feat/kalma2-pasarela-asincrona-eda` |
+
+## PBI
+
+| Check | Estado | Nota |
+|-------|--------|------|
+| `PBI_DONE_PRESENT` | **APTO** | `docs/todos/done/[ARQUITECTURA] PBI-044 — …` |
+| `pbi_archived` | `true` | no autoriza `accept-pr` con F4 fallido |
+
+## Dictamen final
+
+```json
+{
+  "phase": "Cosecha Kaizen",
+  "verdict": "rechazado",
+  "delivery_state": "failed",
+  "accept_pr_handoff": false,
+  "resolution": "FAIL_F4_RBAC",
+  "audit_event_reference": "356674d3-aa2f-434c-acaf-3dec075af2c3",
+  "kaizen_seeds": 0,
+  "kaizen_seeds_dedup": 2,
+  "blocking_findings": [
+    "F4_RBAC_GATE:NO_APTO",
+    "RBAC_CERBERO_EVIDENCE:NO_APTO",
+    "RBAC_SIGNER_PRESENT:NO_APTO"
+  ],
+  "non_blocking_findings": [
+    "TECH_FORMAL_EXECUTE_PROCESS:NO_APTO",
+    "GIT_EVIDENCE_VIA_GIT_MANAGER:NO_APTO",
+    "RBAC_EMITTER_NOT_REVOKED:NO_APTO"
+  ]
+}
 ```
 
-## Cierre documental
+## Cosecha Kaizen — semillas
 
-| Campo | Valor |
-|-------|--------|
-| `global` | `APTO` |
-| `pbi_archived` | `true` |
-| H3/R6 | defer; no bloquea Done H1+H2 |
-| Siguiente | `delivery-close-cycle` → PR único |
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `KAIZEN_COSECHA_GATE` | **APTO** | deuda contabilizada; 0 seeds nuevas |
+| `KAIZEN_DIA_ALERT` | **APTO** | sin evento `Kaizen_Alert_Required` en bus |
+| `KAIZEN_SEED_KALMA2_RUNTIME_RESIDUAL` | **APTO** | dedup → OPERATIVO PPR #136 |
+| `KAIZEN_SEED_DCC_REVOKED_SIGNER` | **APTO** | dedup → ARQUITECTURA PPR #136 |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **NO_APTO** | invocación cápsula no materializada (Shell rejected) |
+
+### Mapeo findings → seeds
+
+| Finding | Tratamiento Cúmulo |
+|---------|-------------------|
+| `TECH_FORMAL_EXECUTE_PROCESS` | **dedup** `[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136)` · R1 |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **dedup** mismo OPERATIVO · R2 |
+| `RBAC_EMITTER_NOT_REVOKED` | **dedup** `[ARQUITECTURA] delivery-close-cycle — revoked_entities y ECST signer (PPR #136)` · E1; empírico: clave aún en `revoked` |
+| `RBAC_SIGNER_PRESENT` | **dedup** mismo ARQUITECTURA · E2; ECST #146 sin firmante |
+| `F4_RBAC_GATE` / `RBAC_CERBERO_EVIDENCE` | **sin seed** — correction blueprint fase 5 (re-Cerbero); fallo de peaje/sesión, no deuda genérica nueva |
+
+## Jurisdicción de fase
+
+Cubre **Cosecha Kaizen** (fase 6). Handoff `accept-pr` **no** procede (`accept_pr_handoff: false`). Semillas bajo `docs/todos/` solo Cúmulo / `Kaizen_Alert_Required`.
+
+## approval_status
+
+```text
+rechazado — kaizen_seeds: 0 (dedup 2); delivery_state failed heredado;
+git-manager sesión NO_APTO (sin stdout); accept-pr bloqueado por F4
+```

@@ -131,3 +131,68 @@ Genoma DI intacto. **AC-DONE incompleto** (dual pending+done). Desbloqueo: elimi
 
 **AC-DONE NO_APTO** — dual `pending/` (abierto v1.2.0) + `done/` (cerrado v1.2.1). Cascada/evolution/regs/genoma = APTO por path-assert. `git-manager` no materializable (Shell rechazado). Desbloqueo: borrar solo el path `pending/` → re-sello APTO.
 ```
+
+## 2026-07-23T05:59:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `3c1028bc-5828-431b-98df-014fef67b84d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `delivery_state: pending_downstream_phases` (F3/F4 fuera de esta fase)
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (Triaje documental / F2 APTO)
+
+- Tocados: `docs/features/inyeccion-dependencias-cierre-pbi/validacion.md`
+- Cascada F2: objectives/clarify/spec/plan/implementation (+ execution/finalize/evolution) con frontmatter YAML
+- PBI-042 exclusivo en `docs/todos/done/` · `pbi_archived: true` · `branch: feat/inyeccion-dependencias-cierre-pbi`
+- ECST `3c1028bc-…` · PR #142 · merge observado `8543cca3-…`/`90424f4` (no sustituye git-manager)
+- `GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO` — Shell rechazó `./sddia-run.sh --tool git-manager` ×2; sin stdout inventado
+- `delivery_state: pending_downstream_phases` (F3/F4 fuera de esta fase)
+```
+
+## 2026-07-23T06:00:07Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `3c1028bc-5828-431b-98df-014fef67b84d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: Reintentar cuando el runtime de herramientas esté operativo.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+No pude ejecutar la Certificación RBAC: las herramientas del entorno (Read/Shell/Glob) devolvieron `Service temporarily unavailable` de forma reiterada. Sin acceso al repo no materialicé evidencia git vía `git-manager`, ni leí el contrato de `pull-request-review` / `cerbero`, ni actualicé `docs/features/inyeccion-dependencias-cierre-pbi`.
+
+**Archivos tocados:** ninguno.
+
+Reintentar cuando el runtime de herramientas esté operativo.
+```
+
+## 2026-07-23T06:00:43Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `3c1028bc-5828-431b-98df-014fef67b84d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [unavailable] getaddrinfo ENOTFOUND api2.cursor.sh
+
+## 2026-07-23T06:01:03Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `3c1028bc-5828-431b-98df-014fef67b84d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Error: [unavailable] getaddrinfo ENOTFOUND api2.cursor.sh

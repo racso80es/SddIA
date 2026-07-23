@@ -1,0 +1,12 @@
+{
+  "delivery_state": {},
+  "emitter_agent": "kalma2-interact",
+  "event_family": "domain",
+  "event_id": "27a4d453-3348-49d3-951e-c06bf5fc114f",
+  "event_type": "Kalma2_Process_Requested",
+  "payload": {
+    "process": "feature",
+    "raw_text": "lab-smoke-pbi044 evidence — inicia feature documentada smoke-only"
+  },
+  "timestamp": "2026-07-23T12:15:34Z"
+}

@@ -1,0 +1,21 @@
+{
+  "correlation_id": "27a4d453-3348-49d3-951e-c06bf5fc114f",
+  "domain": {
+    "dead_letter": false,
+    "delivery_status": {},
+    "event_type": "Kalma2_Process_Requested",
+    "found": true
+  },
+  "event_id": "27a4d453-3348-49d3-951e-c06bf5fc114f",
+  "exit_code": 0,
+  "message": "Evento en dominio; consenso de suscriptores incompleto.",
+  "orchestration": {
+    "cycle_phase": null,
+    "event_id": null,
+    "found": false,
+    "process_name": null,
+    "process_status": null
+  },
+  "status": "pending",
+  "success": true
+}
