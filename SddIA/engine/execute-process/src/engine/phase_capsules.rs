@@ -1,6 +1,9 @@
 //! Handlers de fase con cápsulas skill/tool/action (P5).
 
-use super::capsules::{invoke_action, invoke_git_manager, invoke_shell_executor, invoke_tool};
+use super::capsules::{
+    invoke_action, invoke_git_manager, invoke_shell_executor, invoke_tool_capsule_json,
+    unwrap_tool_body,
+};
 use regex::Regex;
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -691,12 +694,23 @@ pub fn try_invoke_delegates(
         let base = build_capsule_payload(kind, name, inputs);
         let payload =
             super::capability_di_resolver::merge_first_di_binding(&base, di_bindings);
-        match invoke_tool(repo, name, &payload) {
-            Ok(body) => {
+        // H9/qa.probe: validar envelope sddia-io (success/exitCode), no el `result` interno.
+        match invoke_tool_capsule_json(repo, name, &payload, true) {
+            Ok(cap) => {
+                if cap.exit_code != 0 || cap.body.get("success") == Some(&json!(false)) {
+                    let err = cap
+                        .body
+                        .get("error")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("tool failed")
+                        .to_string();
+                    last_err = Some(err);
+                    continue;
+                }
                 if let Some(b) = di_bindings.first() {
                     if let Err(out_err) =
                         super::capability_di_output_validator::validate_output_payload(
-                            repo, b, &body,
+                            repo, b, &cap.body,
                         )
                     {
                         super::capability_di_output_validator::write_output_dead_letter(
@@ -714,6 +728,7 @@ pub fn try_invoke_delegates(
                         }));
                     }
                 }
+                let body = unwrap_tool_body(&cap.body);
                 let mut out = json!({
                     "status": "executed",
                     "handler": format!("capsule-{kind}-{name}"),

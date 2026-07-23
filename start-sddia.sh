@@ -164,6 +164,51 @@ sys.exit(0)
 PY
 }
 
+# Ingesta directa de Daemon_Heartbeat (evita inanición de route-telemetry
+# cuando pending/ satura event-watcher). Actualiza heartbeat-audit.json vía Argos.
+_ingest_telemetry_heartbeats() {
+    [[ -x ./sddia-run.sh ]] || return 0
+    local rel
+    while IFS= read -r rel; do
+        [[ -z "$rel" ]] && continue
+        ./sddia-run.sh --process daemon-heartbeat-audit \
+            --inputs "{\"event_file_path\":\"${rel}\"}" >/dev/null 2>&1 || true
+    done < <(python3 - "$REPO_ROOT" "${REQUIRED_DAEMONS[@]}" <<'PY'
+import json, sys
+from pathlib import Path
+
+repo = Path(sys.argv[1])
+required = sys.argv[2:]
+tel = repo / ".events" / "telemetry"
+if not tel.is_dir():
+    sys.exit(0)
+
+latest = {name: None for name in required}  # name -> (mtime, rel)
+for path in tel.glob("*.json"):
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        continue
+    if body.get("event_type") != "Daemon_Heartbeat":
+        continue
+    payload = body.get("payload") or {}
+    name = payload.get("daemon_name")
+    if name not in latest:
+        continue
+    mtime = path.stat().st_mtime
+    prev = latest[name]
+    if prev is None or mtime > prev[0]:
+        rel = path.relative_to(repo).as_posix()
+        latest[name] = (mtime, rel)
+
+for name in required:
+    entry = latest.get(name)
+    if entry:
+        print(entry[1])
+PY
+)
+}
+
 _wait_required_heartbeats() {
     local attempts="${1:-45}"
     local delay="${2:-1}"
@@ -171,9 +216,11 @@ _wait_required_heartbeats() {
 
     echo "[SddIA] Esperando Daemon_Heartbeat auditado de obligatorios..."
     for ((i = 1; i <= attempts; i++)); do
-        # Sweep Argos (no bloqueante si falla el orquestador).
+        # 1) Ingestar latidos recientes desde telemetry (gate no depende solo del fan-out).
+        _ingest_telemetry_heartbeats
+        # 2) Sweep Argos (staleness / fracturas; no bloqueante si falla el orquestador).
         if [[ -x ./sddia-run.sh ]]; then
-            ./sddia-run.sh --process daemon-heartbeat-audit --inputs '{}' >/dev/null 2>&1 || true
+            ./sddia-run.sh --process daemon-heartbeat-audit --inputs '{"sweep":true}' >/dev/null 2>&1 || true
         fi
         if _required_heartbeats_ready; then
             echo "  -> heartbeats obligatorios: OK (audit fresco, missed_cycles<3)"
