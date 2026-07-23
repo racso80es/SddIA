@@ -195,6 +195,47 @@ La colaboración entre agentes no es mensajería efímera: es **línea de montaj
 
 Sin Workspace materializado y artefactos versionables, no hay handoff válido bajo este modelo. Detalle: [telemetria-reactiva-eda-fase2](docs/features/telemetria-reactiva-eda-fase2/).
 
+## Inyección de dependencias por capacidades (DI)
+
+Las fases de un **Process** pueden declarar `requires_capability` en lugar de (o además de) cablear un provider concreto. El orquestador resuelve el artefacto canónico, valida contrato y aplica Peaje RBAC **antes** de inyectar la cápsula — **Aduana Temprana** + **ceguera espacial** (la ED no conoce rutas absolutas del repo).
+
+| Concepto | Rol |
+|----------|-----|
+| `requires_capability` | Demanda semántica en la fase (`id` + `contract` + `version`) |
+| `provides` | Oferta del provider (`skill:` / `action:` / `tool:`) |
+| Path ciego | Resolver elige provider vía bindings; la fase no fija el path |
+| Path mixto | `delegates_to` + `requires_capability` coherentes (preferencia al delegate que `provides`) |
+
+### SSOT (Norte Magnético)
+
+| Artefacto | Path (Cúmulo) |
+|-----------|----------------|
+| Taxonomía (Códice) | [`SddIA/library/norms/capability-taxonomy.md`](SddIA/library/norms/capability-taxonomy.md) |
+| Bindings runtime | [`SddIA/core/capability-bindings.md`](SddIA/core/capability-bindings.md) |
+| Contratos I/O | `SddIA/library/norms/capability-contracts/{contract}.schema.json` |
+
+Prohibido inventar `capability_id` fuera del Códice (**AC-NO-INVENT** / Filtro A). Alta de términos solo con laudo + mutación gobernada + sello EDA.
+
+### Catálogo vigente (PBI-042 / PBI-043)
+
+| id | contract | Provider canónico |
+|----|----------|-------------------|
+| `doc:closure` | `doc.closure` | `skill:filesystem-manager` |
+| `proc:git-sync` | `proc.git_sync` | `skill:git-manager` |
+| `fs:persist` | `fs.persist` | `skill:filesystem-manager` |
+| `bus:route` | `bus.route` | `skill:bus-operator` |
+| `qa:probe` | `qa.probe` | `tool:event-bus-audit` (tools caos/audit también `provides`) |
+| `audit:compliance` | `audit.compliance` | `skill:compliance-auditor` |
+| `llm:interact` | `llm.interact` | `skill:mayeuta-llm` |
+
+**Rigor taxonómico:** `qa:probe` (Caos/sonda) ≠ `audit:compliance` (Gobernanza/cumplimiento). Prohibido reuso cruzado.
+
+### Cadena runtime (orden)
+
+`resolve` → `gate` → Cerbero RBAC → `envelope` → inyección → `output_validator`.
+
+Programa de homologación residual del catálogo process: **PBI-043** (Done — H7–H10-A + H-DOC) bajo `docs/todos/done/`. Miscelánea gobernanza/lotes/notificaciones: **PBI-045** (Hito 11) bajo `docs/todos/pending/`.
+
 ## Aduana Universal (CLI)
 
 Toda ejecución transita por el **orquestador** (`execute-process` binario Rust nativo vía `orchestrator_resolve`). Wrapper de entrada: `./sddia-run.sh`. El **Peaje Termodinámico** (distinto del Peaje RBAC de Cerbero) intercepta cada invocación:
