@@ -8,6 +8,8 @@ pbi_archived: true
 document_id: PBI-PPR-136-DCC-REVOKED-SIGNER
 pbi_ref: docs/todos/done/[ARQUITECTURA] delivery-close-cycle — revoked_entities y ECST signer (PPR #136).md
 execution_id: 00b9e53d-d231-45f5-9685-4d2b86b7ab63
+pr_url: https://github.com/racso80es/SddIA/pull/158
+ecst_event_id: 0e3c01a4-3bf5-44ac-a3f3-7b7bae1e531b
 authorization_status:
   exitCode: 0
   signer_identity_rbac: Vertice_Biologico_Relay
