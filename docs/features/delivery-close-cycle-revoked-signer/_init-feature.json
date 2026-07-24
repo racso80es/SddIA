@@ -1,0 +1,9 @@
+{
+  "feature_name": "delivery-close-cycle-revoked-signer",
+  "branch_name": "feat/delivery-close-cycle-revoked-signer",
+  "persist_ref": "docs/features/delivery-close-cycle-revoked-signer",
+  "base_branch": "main",
+  "refined_requirements": "PBI-PPR-136-DCC-REVOKED-SIGNER: Liquidar deuda RBAC no bloqueante PPR #136 sobre emisor ECST PullRequest_Presented. E1: rehabilitar o justificar retención de delivery-close-cycle en .SddIA/cerbero/revoked_entities.json (abrupt_success_rate_drop since 2026-07-13). E2: delivery-close-cycle debe emitir PullRequest_Presented con signer_identity_rbac no nulo (contrato ECST). Criterio: checks RBAC_EMITTER_NOT_REVOKED y RBAC_SIGNER_PRESENT APTO en aduana PPR posterior. Fuera: rehabilitación feature/bug-fix salvo laudo agrupado; residual Kalma2-agent-runtime-cursor.",
+  "pbi_ref": "docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — revoked_entities y ECST signer (PPR #136).md",
+  "document_id": "PBI-PPR-136-DCC-REVOKED-SIGNER"
+}
