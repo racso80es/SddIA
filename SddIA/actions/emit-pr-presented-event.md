@@ -1,7 +1,7 @@
 ---
 uuid: "a1b2c3d4-e5f6-4789-a012-3456789abcde"
 name: "emit-pr-presented-event"
-version: "1.1.0"
+version: "1.1.1"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -15,6 +15,7 @@ inputs:
   - "emitter_agent": "string; emisor lógico (default delivery-close-cycle cuando invocado desde cierre)"
   - "pr_url": "string; URL del PR en forja (opcional, payload ECST v1.1)"
   - "correlation_id": "string; UUID v4 de correlación causal (opcional)"
+  - "signer_identity_rbac": "string; identidad relay local (opcional; default Vertice_Biologico_Relay — aduana RBAC_SIGNER_PRESENT)"
 outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
@@ -30,6 +31,8 @@ porcentaje_de_exito: null
 Emitir la instancia ECST **PullRequest_Presented** en `eda_bus.pending` conforme a `SddIA/events/domain/pull-request-presented.md`. No abre PR en GitHub, no ejecuta `push` ni enruta el bus; solo mintea `event_id` y persiste el JSON en pending.
 
 **Invariante:** el invocante típico es el proceso **`delivery-close-cycle`** tras la fase «Apertura en forja»; debe pasar `emitter_agent: delivery-close-cycle` y `pr_url` cuando esté disponible.
+
+**Firmante:** `payload.signer_identity_rbac` se rellena siempre (input opcional o default `Vertice_Biologico_Relay`) para satisfacer aduana `RBAC_SIGNER_PRESENT` (paridad `github-bridge-watcher`).
 
 ## 2. Orquestación
 
@@ -57,7 +60,8 @@ Gate **Cerbero** previo por `context`. Rutas vía `cumulo.paths.json`.
   "payload": {
     "branch": "<branch>",
     "status": "<status>",
-    "pr_url": "<pr_url si aplica>"
+    "pr_url": "<pr_url si aplica>",
+    "signer_identity_rbac": "<signer_identity_rbac | Vertice_Biologico_Relay>"
   },
   "delivery_state": {}
 }

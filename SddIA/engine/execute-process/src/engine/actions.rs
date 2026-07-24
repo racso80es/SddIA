@@ -73,8 +73,16 @@ fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
         .get("status")
         .and_then(|v| v.as_str())
         .unwrap_or("presented");
+    // Paridad github-bridge: aduana RBAC_SIGNER_PRESENT exige firmante no nulo.
+    let signer = str_field(inputs, "signer_identity_rbac")
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "Vertice_Biologico_Relay".into());
     let event_id = generate_uuid(repo)?;
-    let mut payload = json!({"branch": branch, "status": status});
+    let mut payload = json!({
+        "branch": branch,
+        "status": status,
+        "signer_identity_rbac": signer,
+    });
     if let Some(url) = str_field(inputs, "pr_url") {
         payload["pr_url"] = json!(url);
     }
