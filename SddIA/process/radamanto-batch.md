@@ -1,25 +1,29 @@
 ---
-uuid: "2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d"
-name: radamanto-batch
-version: "1.1.0"
-contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - event-routing
 - quality-assurance
 - ecosystem-evolution
-hash_signature: sha256:e7b2573427f71385c647f7a4469edd3c6bdb908cb15fef2ca81c4f80434e4108
+contract: process-contract v1.4.0
+hash_signature: sha256:018ec936627329a3e963461009b23fb892bd32ba39f54d51d6cfc6d9dc58ed7f
 inputs:
 - event_file_path: Ruta relativa al JSON de telemetría en ./.events/telemetry/
+minteo_maximo: null
+name: radamanto-batch
 outputs:
 - batch_result: Stats actualizados y acciones dominio emitidas (Self-Healing + Telemetry_Captured)
 phases:
-- name: Consumo batch Radamanto
-  intent: Acumular telemetría CLI, evaluar umbrales, emitir Domain_Entity_{Degraded|Restored|Deprecated} y Domain_Entity_Telemetry_Captured; sellar delivery_state.
-  delegates_to:
+- delegates_to:
   - agent:radamanto
-minteo_maximo: null
+  intent: Acumular telemetría CLI, evaluar umbrales, emitir Domain_Entity_{Degraded|Restored|Deprecated} y Domain_Entity_Telemetry_Captured; sellar delivery_state.
+  name: Consumo batch Radamanto
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
 porcentaje_de_exito: null
+uuid: 2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d
+version: 1.1.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # radamanto-batch

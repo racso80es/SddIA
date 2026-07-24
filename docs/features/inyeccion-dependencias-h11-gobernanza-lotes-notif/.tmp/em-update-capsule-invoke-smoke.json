@@ -1,0 +1,26 @@
+{
+  "entity_class": "process",
+  "entity_name": "capsule-invoke-smoke",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "capsule-invoke-smoke",
+    "scope": "core",
+    "process_version": "1.0.1",
+    "process_phases": [
+      {
+        "name": "Invocación io-choke",
+        "intent": "Invocar tool:io-choke sobre workspace_path inyectado (golden D-P5.2).",
+        "requires_capability": [
+          {
+            "id": "qa:probe",
+            "contract": "qa.probe",
+            "version": ">=1.0.0"
+          }
+        ],
+        "delegates_to": [
+          "tool:io-choke"
+        ]
+      }
+    ]
+  }
+}

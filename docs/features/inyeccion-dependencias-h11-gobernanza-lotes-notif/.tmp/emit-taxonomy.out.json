@@ -1,0 +1,1 @@
+{"success":true,"status_code":0,"data":{"event_id":"5505e7ef-a933-4ad4-ade1-4e75607abf3e","event_type":"Domain_Entity_Updated","idempotent":true,"success":true,"target_path":".events/processed/5505e7ef-a933-4ad4-ade1-4e75607abf3e.json"},"exitCode":0}

@@ -1,24 +1,28 @@
 ---
-uuid: "eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2"
-name: "memory-evolution-ingest"
-version: "1.1.0"
-contract: "process-contract v1.4.0"
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
-  - "ecosystem-evolution"
-  - "event-routing"
-hash_signature: "sha256:b6751f5f70d23638899528703fe3db0e72ab5be3e5727c7b39953417c68e0877"
+- ecosystem-evolution
+- event-routing
+contract: process-contract v1.4.0
+hash_signature: sha256:81faeb08b544af0f169019e6299cce1cbb74a706ef67bb57dd1671ebc1fd5d63
 inputs:
-  - "event_file_path": "Ruta relativa al JSON Domain_Entity_Telemetry_Captured en ./.events/domain/"
-outputs:
-  - "ingest_result": "Registro EvolutionEvent persistido o skip idempotente"
-phases:
-  - name: "Ingesta evolution"
-    intent: "Leer evento domain Telemetry_Captured; capturar EvolutionEvent; persistir en .SddIA/vector_store/evolution/; sellar delivery_state."
-    delegates_to:
-      - "agent:cumulo"
+- event_file_path: Ruta relativa al JSON Domain_Entity_Telemetry_Captured en ./.events/domain/
 minteo_maximo: null
+name: memory-evolution-ingest
+outputs:
+- ingest_result: Registro EvolutionEvent persistido o skip idempotente
+phases:
+- delegates_to:
+  - agent:cumulo
+  intent: Leer evento domain Telemetry_Captured; capturar EvolutionEvent; persistir en .SddIA/vector_store/evolution/; sellar delivery_state.
+  name: Ingesta evolution
+  requires_capability:
+  - contract: fs.persist
+    id: fs:persist
+    version: '>=1.0.0'
 porcentaje_de_exito: null
+uuid: eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2
+version: 1.1.1
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # memory-evolution-ingest

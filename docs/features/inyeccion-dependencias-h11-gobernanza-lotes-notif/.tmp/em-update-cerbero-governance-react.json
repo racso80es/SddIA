@@ -1,0 +1,26 @@
+{
+  "entity_class": "process",
+  "entity_name": "cerbero-governance-react",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "cerbero-governance-react",
+    "process_version": "1.0.1",
+    "scope": "core",
+    "process_phases": [
+      {
+        "name": "Reacción RBAC gobernanza",
+        "intent": "Actualizar lista revocación/rehabilitación ante eventos Radamanto.",
+        "requires_capability": [
+          {
+            "id": "gov:rbac",
+            "contract": "gov.rbac",
+            "version": ">=1.0.0"
+          }
+        ],
+        "delegates_to": [
+          "agent:cerbero"
+        ]
+      }
+    ]
+  }
+}

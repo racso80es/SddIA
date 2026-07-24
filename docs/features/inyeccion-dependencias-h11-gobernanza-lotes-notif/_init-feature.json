@@ -1,0 +1,9 @@
+{
+  "feature_name": "inyeccion-dependencias-h11-gobernanza-lotes-notif",
+  "branch_name": "feat/inyeccion-dependencias-h11-gobernanza-lotes-notif",
+  "persist_ref": "docs/features/inyeccion-dependencias-h11-gobernanza-lotes-notif",
+  "base_branch": "main",
+  "refined_requirements": "PBI-045 Hito 11: Homologar con DI las 7 ED process residuales de gobernanza, lotes, suites, memoria y canales (cerbero-governance-react, radamanto-batch, memory-evolution-ingest, execute-suite, telegram-gateway, telegram-fallback-responder, capsule-invoke-smoke). Precedente PBI-043 Done 35/7; H10-B diferido. Restricciones AC-NO-INVENT, AC-THERMO, AC-SEAL, AC-ORPHAN, AC-REG. Fuera: reescritura runtime DI, reabrir PBI-043, GesFer/F1/PPR#136.",
+  "pbi_ref": "docs/todos/pending/[ARQUITECTURA] PBI-045 — DI para Gobernanza, Lotes y Notificaciones (Hito 11).md",
+  "document_id": "PBI-045-DI-GOBERNANZA-LOTES-NOTIFICACIONES"
+}

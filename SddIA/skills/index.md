@@ -22,6 +22,7 @@ Contrato normativo de la familia: `skills-contract.md` (no constituye una skill 
 | `git-manager.md` | `4dac18fc-4cd1-4aa4-bdc3-faeb3bf762fc` | git-manager | 1.0.0 | skills-contract v1.1.0 | source-control | `git-read-state`, `git-branching`, `git-commit`, `git-sync-remote` |
 | `text-metrics.md` | `0c84d99b-aa67-4b27-abb6-7133867c5102` | text-metrics | 1.0.0 | skills-contract v1.1.0 | ecosystem-evolution | `text-metrics` |
 | `intent-transpiler.md` | `4f0edfe0-4380-442b-962d-9e98f8ecf956` | intent-transpiler | 1.0.0 | skills-contract v1.3.0 | knowledge-management | `intent-structuring`, `ssot-path-resolution`, `feature-topology-gate` |
+| `rbac-governor.md` | `131ca963-db42-43cd-ade3-a41c3b704147` | rbac-governor | 1.0.0 | skills-contract v1.1.0 | knowledge-management | `rbac_governor` |
 | `shell-executor.md` | `93d23720-d79a-412f-a85d-ab9b2d9862bd` | shell-executor | 1.0.0 | skills-contract v1.1.0 | system-operations | `execute-external-binary`, `orchestrator-bridge` |
 | `bus-operator.md` | `c8e1f4a2-6b3d-4f9e-a1c0-2d7e8f9a0b1c` | bus-operator | 1.1.0 | skills-contract v1.1.0 | ecosystem-evolution | `eda-subscription-lookup`, `event-bus-transit`, `receipt-suffix-mutation`, `delegate-markdown-table-editor` |
 | `mayeuta-llm.md` | `80c96e96-3e03-4af4-bed3-0af46d3fcf7f` | mayeuta-llm | 1.0.0 | skills-contract v1.1.0 | ecosystem-evolution | `llm-synthesize`, `llm-classify-intent`, `local-subprocess-inference` |

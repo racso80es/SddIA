@@ -1,0 +1,12 @@
+{
+  "entity_class": "skill",
+  "lifecycle_operation": "update",
+  "entity_uuid": "131ca963-db42-43cd-ade3-a41c3b704147",
+  "entity_name": "rbac-governor",
+  "version": "1.0.0",
+  "hash_signature_old": "sha256:a7d3945761e15f99183ef3b1613af709a4880ed2867dac5adcc2f389da3682d1",
+  "hash_signature_new": "sha256:f9efcfaf84c66e41b05c5ccd4faab35fe6fe1fcbc30ddc665d00acbedc656d6d",
+  "changes_summary": "H11-C: skill rbac-governor provides gov:rbac",
+  "emitter_agent": "entity-manager",
+  "origin_topology": "core"
+}

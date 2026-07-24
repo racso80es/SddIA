@@ -1,0 +1,34 @@
+{
+  "entity_class": "skill",
+  "entity_name": "rbac-governor",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "skill_name": "rbac-governor",
+    "skill_context": "knowledge-management",
+    "skill_description": "Proveedor canónico gov:rbac — ancla DI para reacción RBAC Cerbero Self-Healing (PBI-045 H11-C).",
+    "skill_version": "1.0.0",
+    "skill_inputs_schema": [
+      {
+        "operation": "string"
+      },
+      {
+        "operation_payload": "object"
+      }
+    ],
+    "skill_outputs_schema": [
+      {
+        "success": "boolean"
+      },
+      {
+        "exitCode": "integer"
+      },
+      {
+        "data": "object"
+      },
+      {
+        "error": "string"
+      }
+    ],
+    "scope": "core"
+  }
+}

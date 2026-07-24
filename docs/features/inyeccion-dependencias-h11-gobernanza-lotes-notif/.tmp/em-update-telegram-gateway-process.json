@@ -1,0 +1,26 @@
+{
+  "entity_class": "process",
+  "entity_name": "telegram-gateway",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "telegram-gateway",
+    "process_version": "1.0.1",
+    "scope": "core",
+    "process_phases": [
+      {
+        "name": "Transmutación e inyección",
+        "intent": "Regex MVP (TODO prefix → Kaizen_Idea_Captured; resto Manual_Task_Requested) y write_fractal_event domain.",
+        "requires_capability": [
+          {
+            "id": "channel:ingest",
+            "contract": "channel.ingest",
+            "version": ">=1.0.0"
+          }
+        ],
+        "delegates_to": [
+          "tool:telegram-gateway"
+        ]
+      }
+    ]
+  }
+}

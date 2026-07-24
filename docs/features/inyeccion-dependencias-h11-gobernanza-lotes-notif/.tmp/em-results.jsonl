@@ -1,0 +1,5 @@
+{"name": "capsule-invoke-smoke", "success": true, "event_id": "5fc4ac64-e6a0-4699-a7cb-a7d9c35957fd", "version": null, "error": null}
+{"name": "telegram-fallback-responder", "success": true, "event_id": "04e61bae-3030-42ef-a2d5-c77cab22c445", "version": null, "error": null}
+{"name": "memory-evolution-ingest", "success": true, "event_id": "0e0152df-7151-48a6-a262-ce7676a8fb18", "version": null, "error": null}
+{"name": "radamanto-batch", "success": true, "event_id": "a8e7b2d4-a01d-431a-a6a7-ba950ea2de29", "version": null, "error": null}
+{"name": "execute-suite", "success": true, "event_id": "3589d535-554c-4cc3-b18c-57e2bdbb1a1a", "version": null, "error": null}

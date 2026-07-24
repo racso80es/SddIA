@@ -1,0 +1,12 @@
+{
+  "entity_class": "norm",
+  "lifecycle_operation": "update",
+  "entity_uuid": "e9c66ec6-5b59-4aae-b9f2-91cc313fe295",
+  "entity_name": "capability-taxonomy",
+  "version": "1.0.5",
+  "hash_signature_old": "sha256:e0fa06d7b8b9a299d0afb9ac35cc35317d5e5746415bf47d20c84749a8358523",
+  "hash_signature_new": "sha256:13129a1f48dfecd9aa2e80640a8a7fcc0f390582176a06527d9a172c2df8cf47",
+  "changes_summary": "H11 laudo Racso: alta gov:rbac + channel:ingest en Códice v1.0.5",
+  "emitter_agent": "entity-manager",
+  "origin_topology": "core"
+}

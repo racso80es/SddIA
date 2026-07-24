@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.4"
+version: "1.0.5"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:e0fa06d7b8b9a299d0afb9ac35cc35317d5e5746415bf47d20c84749a8358523"
+hash_signature: "sha256:13129a1f48dfecd9aa2e80640a8a7fcc0f390582176a06527d9a172c2df8cf47"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -36,6 +36,14 @@ catalog:
     contract: "llm.interact"
     version: "1.0.0"
     description: "Interacción LLM gobernada vía skill mayeuta-llm (síntesis / clasificación de intención)."
+  - id: "gov:rbac"
+    contract: "gov.rbac"
+    version: "1.0.0"
+    description: "Gobernanza RBAC / reacción Self-Healing Cerbero (revocación/rehabilitación); ortogonal a audit:compliance."
+  - id: "channel:ingest"
+    contract: "channel.ingest"
+    version: "1.0.0"
+    description: "Ingesta aferente de canal externo (Telegram) hacia eventos domain vía tool telegram-gateway."
 ---
 
 ## Directriz Core
@@ -57,6 +65,8 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `qa:probe` | `qa.probe` | 1.0.0 | Sonda Caos / auditoría empírica vía tools |
 | `audit:compliance` | `audit.compliance` | 1.0.0 | Cumplimiento termodinámico (Gobernanza; ≠ Caos) |
 | `llm:interact` | `llm.interact` | 1.0.0 | Interacción LLM vía mayeuta-llm |
+| `gov:rbac` | `gov.rbac` | 1.0.0 | Gobernanza RBAC Cerbero Self-Healing |
+| `channel:ingest` | `channel.ingest` | 1.0.0 | Ingesta canal Telegram → domain |
 
 ## Restricciones Duras
 
@@ -64,4 +74,5 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 - Prohibido usar `spec.json` como soporte de `provides`/`requires_capability`; SSOT = `{name}.md`.
 - El contrato I/O de cada capacidad vive bajo el path Cúmulo `capability_contracts` (`{contract}.schema.json`).
 - **Rigor taxonómico:** `qa:probe` (Caos/sonda) ≠ `audit:compliance` (Gobernanza/cumplimiento). Prohibido reuso cruzado.
-- Referencia: PBI-042/043 features DI; H9 `inyeccion-dependencias-h9-auditorias`.
+- **Rigor H11:** `gov:rbac` ≠ `audit:compliance`; `channel:ingest` ≠ `bus:route`.
+- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`.

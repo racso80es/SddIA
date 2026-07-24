@@ -4,8 +4,12 @@ title: "[ARQUITECTURA] PBI-045 — DI para Gobernanza, Lotes y Notificaciones (H
 format: markdown
 version: "1.0.0"
 created: "2026-07-23"
+closed_at: "2026-07-23"
+close_feature: docs/features/inyeccion-dependencias-h11-gobernanza-lotes-notif
+close_branch: feat/inyeccion-dependencias-h11-gobernanza-lotes-notif
+racso_countersign: "2026-07-23T14:49:00Z"
 uuid: 0de372fb-c559-43e4-9238-8c91c45e606c
-status: abierto
+status: cerrado
 priority: media
 process: feature
 spawned_from: docs/todos/done/[ARQUITECTURA] PBI-043 — DI residual H7+ (catálogo ED sin capacidades).md
