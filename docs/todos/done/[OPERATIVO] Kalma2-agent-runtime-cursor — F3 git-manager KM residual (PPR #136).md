@@ -4,14 +4,17 @@ title: "[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (
 format: markdown
 version: "1.0.0"
 created: "2026-07-22"
-updated: "2026-07-22"
-status: abierto
+updated: "2026-07-25"
+status: done
 priority: alta
-process: bug-fix
+process: feature
 uuid: 3d9bb1de-e45d-49fe-99f7-9b0b31d79c1d
 source_feature: docs/features/inyeccion-dependencias-envelope-homologacion
 source_correlation_id: e3079c94-2a40-4f60-b9c4-b4ade1ca031b
 source_audit: docs/features/inyeccion-dependencias-envelope-homologacion/validacion.md
+feature_ref: docs/features/kalma2-agent-runtime-cursor-f3-km-residual
+validacion_ref: docs/features/kalma2-agent-runtime-cursor-f3-km-residual/validacion.md
+branch_name: feat/kalma2-agent-runtime-cursor-f3-km-residual
 pr_url: https://github.com/racso80es/SddIA/pull/136
 related:
   - docs/todos/done/[OPERATIVO] Kalma2 PPR runtime — F3 execute-process, git-manager y KM policy (PPR #125).md
@@ -35,9 +38,9 @@ Cerrar el **residual** de aduana PPR cuando el runtime es `kalma2-agent-runtime-
 
 ## Criterio de cierre
 
-- [ ] F3 formal ejecutable desde `kalma2-agent-runtime-cursor` (o evidencia nativa inyectada al agent handoff) → check APTO.
-- [ ] Evidencia `git-manager` materializada en sesiones agent-runtime (o bypass soberano documentado) → `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`.
-- [ ] Autoría KM Cumulo-only enforceable en agent-runtime sin falso NO_APTO.
+- [x] F3 formal ejecutable desde `kalma2-agent-runtime-cursor` (o evidencia nativa inyectada al agent handoff) → check APTO.
+- [x] Evidencia `git-manager` materializada en sesiones agent-runtime (o bypass soberano documentado) → `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`.
+- [x] Autoría KM Cumulo-only enforceable en agent-runtime sin falso NO_APTO.
 
 ## Fuera de alcance
 
