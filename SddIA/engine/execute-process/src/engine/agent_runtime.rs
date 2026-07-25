@@ -51,6 +51,52 @@ fn agent_names(delegates: &[Value]) -> Vec<String> {
         .collect()
 }
 
+fn truthy_state_flag(state: &Value, key: &str) -> bool {
+    match state.get(key) {
+        Some(Value::Bool(b)) => *b,
+        Some(Value::String(s)) => matches!(s.to_lowercase().as_str(), "true" | "1" | "yes" | "on"),
+        Some(Value::Number(n)) => n.as_i64().unwrap_or(0) != 0,
+        _ => false,
+    }
+}
+
+/// Copia flags nativos PPR (#125) al payload del CLI agente (L-STATE-FWD / PPR #136 residual).
+fn inject_runtime_evidence_from_state(payload: &mut Value, state: &Value) {
+    let Some(obj) = payload.as_object_mut() else {
+        return;
+    };
+
+    let git = truthy_state_flag(state, "git_manager_invoked");
+    let formal = truthy_state_flag(state, "formal_execute_process")
+        || truthy_state_flag(state, "tech_triage_formal");
+
+    if git {
+        obj.insert("git_manager_invoked".into(), json!(true));
+    }
+    if formal {
+        obj.insert("formal_execute_process".into(), json!(true));
+        obj.insert("tech_triage_formal".into(), json!(true));
+    }
+    if let Some(checks) = state.get("tech_checks") {
+        obj.insert("tech_checks".into(), checks.clone());
+    }
+
+    let mut runtime_evidence = json!({
+        "git_manager_invoked": git,
+        "formal_execute_process": formal,
+        "tech_triage_formal": truthy_state_flag(state, "tech_triage_formal"),
+    });
+    if let Some(checks) = state.get("tech_checks") {
+        if let Some(re) = runtime_evidence.as_object_mut() {
+            re.insert("tech_checks".into(), checks.clone());
+        }
+    }
+    // Solo adjuntar objeto si hay señal nativa (evita ruido en fases sin Prep/Triaje).
+    if git || formal || state.get("tech_checks").is_some() {
+        obj.insert("runtime_evidence".into(), runtime_evidence);
+    }
+}
+
 /// Invoca el CLI de runtime para una fase de agentes.
 /// Respuesta esperada (última línea JSON):
 /// `{ "success": bool, "data": { "status": "executed"|"awaiting_agents"|"failed", "message"?: str } }`
@@ -129,6 +175,8 @@ pub fn invoke_agent_phase(
             .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path"))),
         "repo_root": repo.display().to_string(),
     });
+    // L-STATE-FWD (PPR #136 residual): reenviar evidencia nativa #125 al payload agente.
+    inject_runtime_evidence_from_state(&mut payload, state);
     if let Some(di) = di_binding {
         if let Some(obj) = payload.as_object_mut() {
             obj.insert("di_binding".into(), di);
@@ -346,5 +394,53 @@ python3 -c 'import json,sys; doc=json.load(sys.stdin); assert doc.get("branch_na
         let _ = fs::remove_dir_all(&dir);
 
         assert_eq!(entry["status"], "executed", "{entry}");
+    }
+
+    #[test]
+    fn runtime_evidence_forwards_native_state_flags() {
+        let dir = std::env::temp_dir().join(format!("sddia-agent-rt-ev-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = dir.join("mock-agent.sh");
+        fs::write(
+            &script,
+            r#"#!/bin/sh
+python3 -c '
+import json,sys
+doc=json.load(sys.stdin)
+assert doc.get("git_manager_invoked") is True, doc
+assert doc.get("formal_execute_process") is True, doc
+assert doc.get("tech_triage_formal") is True, doc
+re=doc.get("runtime_evidence") or {}
+assert re.get("git_manager_invoked") is True, re
+assert re.get("formal_execute_process") is True, re
+assert (re.get("tech_checks") or {}).get("TECH_FORMAL_EXECUTE_PROCESS")=="APTO", re
+print(json.dumps({"success":True,"data":{"status":"executed","message":"evidence-fwd-ok"}}))
+'
+"#,
+        )
+        .unwrap();
+        let mut perms = fs::metadata(&script).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&script, perms).unwrap();
+
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "pull-request-review",
+            "Verificación",
+            &[json!("agent:argos")],
+            &json!({"persist_ref": "docs/features/x", "branch_name": "feat/x"}),
+            &json!({
+                "git_manager_invoked": true,
+                "tech_triage_formal": true,
+                "tech_checks": {"TECH_FORMAL_EXECUTE_PROCESS": "APTO"}
+            }),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+
+        assert_eq!(entry["status"], "executed", "{entry}");
+        assert_eq!(entry["message"], "evidence-fwd-ok");
     }
 }

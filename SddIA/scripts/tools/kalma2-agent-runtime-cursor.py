@@ -28,6 +28,7 @@ Mock lab/CI:
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shlex
@@ -38,6 +39,9 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+EVIDENCE_SCHEMA = "kalma2-agent-runtime-evidence/v1"
+EVIDENCE_MARKER = "### Runtime evidence (machine)"
 
 
 def emit(success: bool, data: dict[str, Any] | None, error: str | None, code: int = 0) -> None:
@@ -122,7 +126,297 @@ def role_brief(agent: str, phase: str, process: str) -> str:
     )
 
 
-def build_prompt(doc: dict[str, Any]) -> str:
+def is_evidence_gate(doc: dict[str, Any]) -> bool:
+    """L-TRIGGER: materializar evidencia en Verificación / agent:argos."""
+    agents = [str(a).lower() for a in (doc.get("agents") or [])]
+    phase = str(doc.get("phase_name") or "").lower()
+    if any(a == "argos" or a.endswith(":argos") for a in agents):
+        return True
+    return "verific" in phase
+
+
+def _as_bool(v: Any) -> bool:
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)):
+        return v != 0
+    if isinstance(v, str):
+        return v.strip().lower() in ("1", "true", "yes", "on")
+    return False
+
+
+def _check_apto(v: Any) -> bool:
+    if isinstance(v, str):
+        return v.strip().upper() == "APTO"
+    return _as_bool(v)
+
+
+def _extract_native_evidence(doc: dict[str, Any]) -> dict[str, Any]:
+    """Flags nativos #125 / payload forward (L-STATE-FWD)."""
+    re_ev = doc.get("runtime_evidence")
+    re_ev = re_ev if isinstance(re_ev, dict) else {}
+    inputs = doc.get("inputs")
+    inputs = inputs if isinstance(inputs, dict) else {}
+    checks = (
+        doc.get("tech_checks")
+        or re_ev.get("tech_checks")
+        or inputs.get("tech_checks")
+        or {}
+    )
+    if not isinstance(checks, dict):
+        checks = {}
+
+    git = (
+        _as_bool(doc.get("git_manager_invoked"))
+        or _as_bool(re_ev.get("git_manager_invoked"))
+        or _as_bool(inputs.get("git_manager_invoked"))
+    )
+    formal = (
+        _as_bool(doc.get("formal_execute_process"))
+        or _as_bool(doc.get("tech_triage_formal"))
+        or _as_bool(re_ev.get("formal_execute_process"))
+        or _as_bool(re_ev.get("tech_triage_formal"))
+        or _as_bool(inputs.get("formal_execute_process"))
+        or _as_bool(inputs.get("tech_triage_formal"))
+        or _check_apto(checks.get("TECH_FORMAL_EXECUTE_PROCESS"))
+    )
+    return {
+        "git_manager_invoked": git,
+        "formal_execute_process": formal,
+        "tech_checks": checks,
+        "git_evidence_digest": re_ev.get("git_evidence_digest"),
+        "formal_evidence_detail": re_ev.get("formal_evidence_detail"),
+    }
+
+
+def _yaml_escape(s: str) -> str:
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def format_evidence_block(ev: dict[str, Any]) -> str:
+    lines = [
+        EVIDENCE_MARKER,
+        "",
+        "```yaml",
+        f"schema: {EVIDENCE_SCHEMA}",
+        f"materialized_at: \"{ev.get('materialized_at', '')}\"",
+        f"source: {ev.get('source', 'none')}",
+        f"git_manager_invoked: {'true' if ev.get('git_manager_invoked') else 'false'}",
+        f"formal_execute_process: {'true' if ev.get('formal_execute_process') else 'false'}",
+        f"TECH_FORMAL_EXECUTE_PROCESS: {ev.get('TECH_FORMAL_EXECUTE_PROCESS', 'NO_APTO')}",
+        f"GIT_EVIDENCE_VIA_GIT_MANAGER: {ev.get('GIT_EVIDENCE_VIA_GIT_MANAGER', 'NO_APTO')}",
+    ]
+    digest = ev.get("git_evidence_digest")
+    if digest:
+        lines.append(f'git_evidence_digest: "{_yaml_escape(str(digest)[:128])}"')
+    detail = ev.get("formal_evidence_detail")
+    if detail:
+        lines.append(f'formal_evidence_detail: "{_yaml_escape(str(detail)[:240])}"')
+    notes = ev.get("notes")
+    if notes:
+        lines.append(f'notes: "{_yaml_escape(str(notes)[:240])}"')
+    lines.extend(["```", ""])
+    return "\n".join(lines)
+
+
+def append_runtime_evidence(repo: Path, persist: str, ev: dict[str, Any]) -> str | None:
+    if not persist:
+        return None
+    d = repo / persist
+    d.mkdir(parents=True, exist_ok=True)
+    handoff = d / "_agent_handoff.md"
+    if not handoff.exists():
+        handoff.write_text(
+            "---\n"
+            "generated_by: kalma2-agent-runtime-cursor\n"
+            f"persist_ref: {persist}\n"
+            "---\n\n# Agent handoff log\n",
+            encoding="utf-8",
+        )
+    with handoff.open("a", encoding="utf-8") as f:
+        f.write("\n")
+        f.write(format_evidence_block(ev))
+    return str(Path(persist) / "_agent_handoff.md")
+
+
+def _handoff_has_apto_evidence(repo: Path, persist: str) -> bool:
+    """Idempotencia: bloque previo con ambos checks APTO."""
+    if not persist:
+        return False
+    handoff = repo / persist / "_agent_handoff.md"
+    if not handoff.is_file():
+        return False
+    text = handoff.read_text(encoding="utf-8")
+    if EVIDENCE_MARKER not in text:
+        return False
+    idx = text.rfind(EVIDENCE_MARKER)
+    tail = text[idx:]
+    return (
+        "TECH_FORMAL_EXECUTE_PROCESS: APTO" in tail
+        and "GIT_EVIDENCE_VIA_GIT_MANAGER: APTO" in tail
+    )
+
+
+def _invoke_git_manager_status(repo: Path) -> tuple[bool, str, str]:
+    """Subprocess prótesis: ./sddia-run.sh --tool git-manager (no Shell IDE)."""
+    payload = {
+        "operation_type": "status",
+        "repository_path": str(repo.resolve()),
+        "operation_payload_json": {},
+    }
+    script = repo / "sddia-run.sh"
+    if not script.is_file():
+        return False, "", "sddia-run.sh ausente"
+    timeout = int(os.environ.get("SDDIA_EVIDENCE_TIMEOUT_SECS", "90") or "90")
+    try:
+        proc = subprocess.run(
+            [str(script), "--tool", "git-manager"],
+            input=json.dumps(payload).encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=str(repo),
+            timeout=timeout,
+            check=False,
+        )
+    except FileNotFoundError as e:
+        return False, "", f"spawn: {e}"
+    except subprocess.TimeoutExpired:
+        return False, "", f"timeout {timeout}s"
+    out = proc.stdout.decode("utf-8", errors="replace").strip()
+    err = proc.stderr.decode("utf-8", errors="replace").strip()
+    if proc.returncode != 0:
+        return False, out, err or f"exit {proc.returncode}"
+    # success: capsule JSON con success/exitCode
+    try:
+        body = json.loads(out.splitlines()[-1] if out else "{}")
+    except json.JSONDecodeError:
+        body = {}
+    ok = bool(body.get("success")) or body.get("exitCode") == 0
+    if not ok and proc.returncode == 0 and out:
+        # Algunas cápsulas emiten envelope sin success explícito
+        ok = "gitStdout" in out or '"data"' in out
+    digest_src = out[-800:] if out else err
+    digest = hashlib.sha256(digest_src.encode("utf-8")).hexdigest()[:32]
+    return ok, digest, err if not ok else ""
+
+
+def _invoke_formal_integrity(repo: Path) -> tuple[bool, str]:
+    """F3 formal: execute-process --verify-process-integrity vía sddia-run."""
+    script = repo / "sddia-run.sh"
+    if not script.is_file():
+        return False, "sddia-run.sh ausente"
+    timeout = int(os.environ.get("SDDIA_EVIDENCE_TIMEOUT_SECS", "120") or "120")
+    try:
+        proc = subprocess.run(
+            [str(script), "--verify-process-integrity"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=str(repo),
+            timeout=timeout,
+            check=False,
+        )
+    except FileNotFoundError as e:
+        return False, f"spawn: {e}"
+    except subprocess.TimeoutExpired:
+        return False, f"timeout {timeout}s"
+    out = proc.stdout.decode("utf-8", errors="replace").strip()
+    err = proc.stderr.decode("utf-8", errors="replace").strip()
+    blob = f"{out}\n{err}".strip()
+    if proc.returncode == 0:
+        return True, (out or "ok")[:200]
+    return False, (blob or f"exit {proc.returncode}")[:200]
+
+
+def materialize_runtime_evidence(
+    repo: Path,
+    persist: str,
+    doc: dict[str, Any],
+) -> dict[str, Any]:
+    """Evidence Bridge R1/R2 (L-BRIDGE). No inventa APTO (L-MOCK / L-TRUTH)."""
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    native = _extract_native_evidence(doc)
+
+    if env_truthy("SDDIA_AGENT_RUNTIME_MOCK"):
+        ev = {
+            "schema": EVIDENCE_SCHEMA,
+            "materialized_at": ts,
+            "source": "none",
+            "git_manager_invoked": False,
+            "formal_execute_process": False,
+            "TECH_FORMAL_EXECUTE_PROCESS": "NO_APTO",
+            "GIT_EVIDENCE_VIA_GIT_MANAGER": "NO_APTO",
+            "evidence_materialized": False,
+            "notes": "mock",
+        }
+        append_runtime_evidence(repo, persist, ev)
+        return ev
+
+    git_ok = bool(native["git_manager_invoked"])
+    formal_ok = bool(native["formal_execute_process"])
+    digest = native.get("git_evidence_digest")
+    formal_detail = native.get("formal_evidence_detail")
+    notes_parts: list[str] = []
+    used_subprocess = False
+    source = "none"
+
+    if git_ok and formal_ok:
+        source = "native_state"
+        notes_parts.append("idempotent-hit")
+    elif _handoff_has_apto_evidence(repo, persist):
+        source = "native_state"
+        git_ok = True
+        formal_ok = True
+        notes_parts.append("idempotent-hit-handoff")
+    else:
+        if not git_ok:
+            ok, dig, err = _invoke_git_manager_status(repo)
+            used_subprocess = True
+            if ok:
+                git_ok = True
+                digest = dig
+            else:
+                notes_parts.append(f"git-manager:{err or 'failed'}")
+        if not formal_ok:
+            ok, detail = _invoke_formal_integrity(repo)
+            used_subprocess = True
+            if ok:
+                formal_ok = True
+                formal_detail = detail
+            else:
+                notes_parts.append(f"formal:{detail}")
+
+        if used_subprocess and (git_ok or formal_ok):
+            source = "prosthesis_subprocess"
+        elif used_subprocess:
+            source = "none"
+        elif git_ok or formal_ok:
+            source = "native_state"
+            notes_parts.append("partial-native")
+
+    ev: dict[str, Any] = {
+        "schema": EVIDENCE_SCHEMA,
+        "materialized_at": ts,
+        "source": source,
+        "git_manager_invoked": git_ok,
+        "formal_execute_process": formal_ok,
+        "TECH_FORMAL_EXECUTE_PROCESS": "APTO" if formal_ok else "NO_APTO",
+        "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO" if git_ok else "NO_APTO",
+        "evidence_materialized": bool(git_ok or formal_ok),
+    }
+    if digest:
+        ev["git_evidence_digest"] = digest
+    if formal_detail:
+        ev["formal_evidence_detail"] = formal_detail
+    if notes_parts:
+        ev["notes"] = "; ".join(notes_parts)[:240]
+    elif source == "native_state":
+        ev["notes"] = "idempotent-hit"
+
+    append_runtime_evidence(repo, persist, ev)
+    return ev
+
+
+def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) -> str:
     process = doc.get("process_name") or "?"
     phase = doc.get("phase_name") or "?"
     agents = doc.get("agents") or []
@@ -170,6 +464,33 @@ def build_prompt(doc: dict[str, Any]) -> str:
         "- Trabaja en el repositorio local (cwd = repo_root).",
         "",
     ]
+
+    agent_l = str(agent).lower()
+    if agent_l == "argos" or "verific" in str(phase).lower():
+        parts.extend(
+            [
+                "## Aduana Argos — Evidence Bridge + KM (R1/R2/R3)",
+                f"- Lee el bloque `{EVIDENCE_MARKER}` en `{persist}/_agent_handoff.md` (schema {EVIDENCE_SCHEMA}).",
+                "- `TECH_FORMAL_EXECUTE_PROCESS` / `GIT_EVIDENCE_VIA_GIT_MANAGER`: copia veredicto del bloque; "
+                "no inventes stdout. Si source=none o checks NO_APTO → emite NO_APTO.",
+                "- `RBAC_AUTHORING_KM_POLICY`: audita **solo** autoría bajo `docs/todos/**`. "
+                "Cumulo / `Kaizen_Alert_Required` = vía legítima. Sin writes KM ilegítimos → **APTO**. "
+                "Forja Core (`SddIA/actions/`, skills, process, etc.) ≠ este check (aduana genómica aparte).",
+                "",
+            ]
+        )
+        if evidence:
+            parts.extend(
+                [
+                    "## Runtime evidence (session)",
+                    f"- source: `{evidence.get('source')}`",
+                    f"- TECH_FORMAL_EXECUTE_PROCESS: {evidence.get('TECH_FORMAL_EXECUTE_PROCESS')}",
+                    f"- GIT_EVIDENCE_VIA_GIT_MANAGER: {evidence.get('GIT_EVIDENCE_VIA_GIT_MANAGER')}",
+                    f"- notes: {evidence.get('notes') or '(none)'}",
+                    "",
+                ]
+            )
+
     if seed:
         parts.extend(["## Semilla / inputs", str(seed)[:8000], ""])
     if pbi_body:
@@ -799,6 +1120,10 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
     if backend not in ("cli", "sdk"):
         backend = "cli"
 
+    evidence: dict[str, Any] | None = None
+    if is_evidence_gate(doc):
+        evidence = materialize_runtime_evidence(repo, persist, doc)
+
     if env_truthy("SDDIA_AGENT_RUNTIME_MOCK"):
         msg = "mock: AGENT_PHASE sin invocar Cursor"
         handoff = append_handoff(
@@ -813,18 +1138,17 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             status="executed",
             message=msg,
         )
-        emit(
-            True,
-            {
-                "status": "executed",
-                "message": msg,
-                "handoff_path": handoff,
-                "backend": "mock",
-            },
-            None,
-        )
+        data: dict[str, Any] = {
+            "status": "executed",
+            "message": msg,
+            "handoff_path": handoff,
+            "backend": "mock",
+        }
+        if evidence is not None:
+            data["runtime_evidence"] = evidence
+        emit(True, data, None)
 
-    prompt = build_prompt(doc)
+    prompt = build_prompt(doc, evidence)
     if backend == "sdk":
         ok, out, err = run_sdk(repo, prompt)
     else:
@@ -846,16 +1170,15 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             message=message,
             transcript=out,
         )
-        emit(
-            True,
-            {
-                "status": status,
-                "message": message,
-                "handoff_path": handoff,
-                "backend": backend,
-            },
-            None,
-        )
+        data_ok: dict[str, Any] = {
+            "status": status,
+            "message": message,
+            "handoff_path": handoff,
+            "backend": backend,
+        }
+        if evidence is not None:
+            data_ok["runtime_evidence"] = evidence
+        emit(True, data_ok, None)
 
     # CLI/SDK ausente o fallo blando → awaiting_agents (no tumbar ciclo si es config)
     soft = any(
@@ -883,14 +1206,17 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         message=message,
         transcript=out or None,
     )
+    data_fail: dict[str, Any] = {
+        "status": status,
+        "message": message,
+        "handoff_path": handoff,
+        "backend": backend,
+    }
+    if evidence is not None:
+        data_fail["runtime_evidence"] = evidence
     emit(
         True if status == "awaiting_agents" else False,
-        {
-            "status": status,
-            "message": message,
-            "handoff_path": handoff,
-            "backend": backend,
-        },
+        data_fail,
         None if status == "awaiting_agents" else message,
         0 if status == "awaiting_agents" else 1,
     )
