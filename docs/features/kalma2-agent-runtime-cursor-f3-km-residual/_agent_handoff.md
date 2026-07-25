@@ -178,3 +178,16 @@ formal_evidence_detail: "verify-process-integrity: OK"
 - `pbi_archived: false` — PBI sigue en `pending/`; Cierre documental pendiente.
 - Residual no bloqueante: `TECH_SMOKE_HOST: NO_APTO`.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-07-25T08:07:29Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```

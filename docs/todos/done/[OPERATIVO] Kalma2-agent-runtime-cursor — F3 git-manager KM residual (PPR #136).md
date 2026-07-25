@@ -15,7 +15,8 @@ source_audit: docs/features/inyeccion-dependencias-envelope-homologacion/validac
 feature_ref: docs/features/kalma2-agent-runtime-cursor-f3-km-residual
 validacion_ref: docs/features/kalma2-agent-runtime-cursor-f3-km-residual/validacion.md
 branch_name: feat/kalma2-agent-runtime-cursor-f3-km-residual
-pr_url: https://github.com/racso80es/SddIA/pull/136
+source_pr_url: https://github.com/racso80es/SddIA/pull/136
+pr_url: https://github.com/racso80es/SddIA/pull/159
 related:
   - docs/todos/done/[OPERATIVO] Kalma2 PPR runtime — F3 execute-process, git-manager y KM policy (PPR #125).md
   - SddIA/skills/git-manager.md

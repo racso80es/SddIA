@@ -47,7 +47,7 @@ Blueprint Tekton: Evidence Bridge R1/R2 + alcance KM R3. Sin reabrir #125 nativo
 - [x] Evolution breve (UUID feature / PBI)
 - [x] Argos: `validacion.md` APTO + checks AC-R1..R3 + smoke host
 - [x] PBI → `docs/todos/done/` + `pbi_archived: true`
-- [ ] Handoff `delivery-close-cycle`
+- [x] Handoff `delivery-close-cycle` → https://github.com/racso80es/SddIA/pull/159
 
 ## Orden de forja
 

@@ -16,9 +16,10 @@ pbi_ref: docs/todos/done/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-mana
 correlation_id: ""
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/159
 approval_status: aprobado
 verdict: apto
-delivery_state: ready_for_delivery_close
+delivery_state: presented
 resolution: PASS_R1_R2_R3_PBI_ARCHIVED
 git_manager_invoked: true
 git_evidence_source: prosthesis_subprocess

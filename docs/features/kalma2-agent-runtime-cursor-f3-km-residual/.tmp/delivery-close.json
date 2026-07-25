@@ -1,9 +1,0 @@
-{
-  "source_process": "feature",
-  "persist_ref": "docs/features/kalma2-agent-runtime-cursor-f3-km-residual",
-  "branch_name": "feat/kalma2-agent-runtime-cursor-f3-km-residual",
-  "base_branch": "main",
-  "target_branch": "main",
-  "pr_title": "feat(kalma2): Evidence Bridge R1/R2/R3 residual agent-runtime (PPR #136)",
-  "pr_body": "## Summary\n\n- Evidence Bridge en `kalma2-agent-runtime-cursor`: materializa `git-manager` + F3 formal fuera del Shell IDE (residual PPR #136).\n- Forward de flags nativos #125 en `agent_runtime.rs` + smoke T3 + unit test.\n- Cierre documental: PBI archivado, `validacion.md` APTO (`pbi_archived: true`).\n\n## Test plan\n\n- [x] `bash SddIA/scripts/tools/kalma2-evidence-bridge-smoke.sh`\n- [x] `cargo test -p execute-process --lib runtime_evidence_forwards_native_state_flags`\n- [ ] CI verify-tools / EDA coverage\n"
-}
