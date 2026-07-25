@@ -17,6 +17,8 @@ validacion_ref: docs/features/kalma2-agent-runtime-cursor-f3-km-residual/validac
 branch_name: feat/kalma2-agent-runtime-cursor-f3-km-residual
 source_pr_url: https://github.com/racso80es/SddIA/pull/136
 pr_url: https://github.com/racso80es/SddIA/pull/159
+merge_commit: c987dcbd4d4248861a06ae3b0cca9793a56d5134
+merged_at: "2026-07-25T08:17:40Z"
 related:
   - docs/todos/done/[OPERATIVO] Kalma2 PPR runtime — F3 execute-process, git-manager y KM policy (PPR #125).md
   - SddIA/skills/git-manager.md

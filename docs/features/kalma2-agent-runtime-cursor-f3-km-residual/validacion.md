@@ -15,6 +15,10 @@ spec_uuid: f3a91c2e-8b47-4d6e-a1c5-9e0d7b4f2a68
 pbi_ref: docs/todos/done/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md
 correlation_id: 1b8892bf-fde5-4fc2-bec2-6783764460d0
 pr_url: https://github.com/racso80es/SddIA/pull/159
+merged_pr: 159
+merge_commit: c987dcbd4d4248861a06ae3b0cca9793a56d5134
+closed: true
+delivery_state: merged
 pr_presented_event_id: 1b8892bf-fde5-4fc2-bec2-6783764460d0
 global: APTO
 pbi_archived: true
