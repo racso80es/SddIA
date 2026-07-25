@@ -24,10 +24,10 @@ global: APTO
 pbi_archived: true
 approval_status: aprobado
 verdict: aprobado
-delivery_state: success
 accept_pr_handoff: true
-resolution: PASS_F5_VERDICT
+resolution: PASS_F5_VERDICT_MERGED
 audit_event_reference: 1b8892bf-fde5-4fc2-bec2-6783764460d0
+merged_event_id: c1be340b-4bd8-406f-9f62-f32fb9bc5815
 authorization_status:
   exitCode: 0
   signer_identity_rbac: Vertice_Biologico_Relay
