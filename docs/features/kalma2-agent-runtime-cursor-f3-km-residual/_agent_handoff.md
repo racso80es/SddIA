@@ -191,3 +191,456 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit-handoff"
 ```
+
+## 2026-07-25T08:10:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: `docs/todos/done/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - validacion.md F2 APTO; R1/R2 copia native_state; R3 KM APTO; delivery_state pending_downstream.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `resolution: PASS_F2_DOC`)
+
+- Escrito `validacion.md` (process=pull-request-review · phase=Triaje documental).
+- R1/R2: copia bloque machine (`source=native_state` · notes=idempotent-hit-handoff); Shell git-manager Rejected (sin inventar stdout).
+- R3: `RBAC_AUTHORING_KM_POLICY: APTO` — sin writes ilegítimos `docs/todos/**`; Argos no tocó KM.
+- F2 cascada DOC + evolution + PBI done · `pbi_archived: true`.
+- `delivery_state: pending_downstream_phases` (F3/F4/Veredicto fuera de fase).
+```
+
+## 2026-07-25T08:09:12Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 7. Sin mutación KM.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F2_DOC`)
+
+1. `validacion.md` — PPR Triaje documental; `checks` R1/R2/R3 + F2 + `git_changes` + `branch`.
+2. `_agent_handoff.md` — append Argos · `correlation_id` `1b8892bf-…`.
+3. R1/R2: copia machine `native_state` → ambos **APTO** (Shell `git-manager` Rejected; sin inventar stdout).
+4. R3: `RBAC_AUTHORING_KM_POLICY` **APTO** — sin writes ilegítimos en `docs/todos/**`.
+5. F2 cascada + PBI `done/` · `pbi_archived: true` · rama worktree alineada.
+6. `delivery_state: pending_downstream_phases` (F3/F4 fuera de fase).
+7. Sin mutación KM.
+```
+
+## 2026-07-25T08:20:00Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: PASS_F4_RBAC · exitCode 0 · E1/E2 APTO · Evidence Bridge R1/R2 heredados · F3/Shell git-manager no bloqueantes.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `PASS_F4_RBAC` · `exitCode: 0` · `F4_RBAC_GATE: APTO`
+
+1. **Tocados:** `validacion.md`, `_agent_handoff.md` (solo `persist_ref`).
+2. **E1/E2 APTO:** `RBAC_EMITTER_NOT_REVOKED` + `RBAC_SIGNER_PRESENT` (VBR en ECST `1b8892bf`).
+3. **Espacial/registry APTO;** KM scoped APTO (L-R3); Cerbero sin write `docs/todos/`.
+4. **Huecos:** F3_TECH_GATE pendiente; Shell git-manager Rejected (R2 = copia `native_state`); sin merge `1b8892bf`.
+5. **`delivery_state: pending_downstream_phases`**; sin escritura en `docs/todos/`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-07-25T08:09:47Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-07-25T08:15:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: `docs/todos/done/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - validacion.md F2 APTO; R1/R2 copia native_state 08:09:47Z; R3 KM APTO; ECST FS NO_APTO no bloqueante.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F2_DOC`)
+
+1. `validacion.md` — PPR Triaje documental; checks R1/R2/R3 + F2 + git_changes + branch.
+2. R1/R2: copia machine `native_state` @ 2026-07-25T08:09:47Z → ambos APTO (Shell git-manager Rejected; sin inventar stdout).
+3. R3: `RBAC_AUTHORING_KM_POLICY` APTO — sin writes ilegítimos `docs/todos/**`; Argos no tocó KM.
+4. F2 cascada + evolution + PBI done · `pbi_archived: true` · HEAD worktree alineado.
+5. `ECST_EVENT_FS: NO_APTO` — bus `./.events` sin artefacto correlation; envelope `.tmp/ppr159.json` sí.
+6. `delivery_state: pending_downstream_phases` (F3/F4 fuera de fase).
+7. Sin mutación KM.
+```
+
+## 2026-07-25T08:10:43Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. No bloqueantes: `ECST_EVENT_FS` / `MERGE_ALREADY_OBSERVED` = NO_APTO; `delivery_state: pending_downstream_phases`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F2_DOC`)
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (append Argos). Sin mutación KM.
+2. R1/R2: copia machine `native_state` @ `2026-07-25T08:09:47Z` → ambos **APTO** (Shell `git-manager` Rejected; sin inventar stdout).
+3. R3: `RBAC_AUTHORING_KM_POLICY` **APTO** — PBI en `done/`; sin writes ilegítimos `docs/todos/**`.
+4. F2 cascada + evolution + rama worktree alineada · `pbi_archived: true`.
+5. No bloqueantes: `ECST_EVENT_FS` / `MERGE_ALREADY_OBSERVED` = NO_APTO; `delivery_state: pending_downstream_phases`.
+```
+
+## 2026-07-25T08:11:02Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. `delivery_state: pending_downstream_phases`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `PASS_F4_RBAC` · `exitCode: 0` · `F4_RBAC_GATE: APTO`
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`).
+2. E1/E2 APTO: `delivery-close-cycle` ∉ revoked; signer `Vertice_Biologico_Relay` en ECST `1b8892bf`.
+3. Espacial/registry APTO; KM scoped APTO (L-R3); Cerbero sin write en `docs/todos/`.
+4. Huecos no bloqueantes: `F3_TECH_GATE: pendiente`; Shell `git-manager` Rejected (R2 = copia `native_state`); sin merge de este CID.
+5. `delivery_state: pending_downstream_phases`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-07-25T08:11:02Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-07-25T08:15:30Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: PASS_F4_RBAC · exitCode 0 · E1/E2 APTO · R1/R2 copia native_state · F3/Shell no bloqueantes.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `PASS_F4_RBAC` · `exitCode: 0` · `F4_RBAC_GATE: APTO`
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`).
+2. E1/E2 APTO: `delivery-close-cycle` ∉ revoked; signer `Vertice_Biologico_Relay` en ECST `1b8892bf`.
+3. Espacial/registry APTO; KM scoped APTO (L-R3); Cerbero sin write en `docs/todos/`.
+4. Huecos no bloqueantes: `F3_TECH_GATE: pendiente`; Shell `git-manager` Rejected (R2 = copia `native_state` @ 08:11:02Z); sin merge de este CID.
+5. `delivery_state: pending_downstream_phases`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-07-25T08:11:02Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-07-25T08:12:20Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. `delivery_state: pending_downstream_phases`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `PASS_F4_RBAC` · `exitCode: 0` · `F4_RBAC_GATE: APTO`
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`).
+2. E1/E2 APTO: `delivery-close-cycle` ∉ revoked; signer `Vertice_Biologico_Relay` en ECST `1b8892bf`.
+3. Espacial/registry APTO; KM scoped APTO; Cerbero sin write en `docs/todos/`.
+4. Huecos no bloqueantes: `F3_TECH_GATE: pendiente`; Shell `git-manager` Rejected (R2 = copia `native_state`); sin merge CID.
+5. `delivery_state: pending_downstream_phases`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-07-25T08:12:20Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-07-25T08:25:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: `docs/todos/done/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: PASS_F5_VERDICT · delivery_state success · accept_pr_handoff true · R1/R2 copia native_state · R3 KM APTO.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success` · `accept_pr_handoff: true`)
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`). Sin mutación KM.
+2. R1/R2: copia machine `native_state` @ `2026-07-25T08:12:20Z` → ambos **APTO** (Shell `git-manager` Rejected; sin inventar stdout).
+3. R3: `RBAC_AUTHORING_KM_POLICY` **APTO** — sin writes ilegítimos `docs/todos/**`.
+4. F2/F3/F4 APTO; F5 síntesis sin bloqueo; PBI `done/` · `pbi_archived: true`.
+5. `MERGE_ALREADY_OBSERVED: NO_APTO` → `accept_pr_handoff: true` (handoff soberano pendiente).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-07-25T08:12:20Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-07-25T08:25:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: `docs/todos/done/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - validacion.md F5 PASS_F5_VERDICT; delivery_state success; accept_pr_handoff true; R1/R2/R3 APTO.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F5_VERDICT` · `delivery_state: success`)
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`). Sin mutación KM.
+2. R1/R2: copia machine `native_state` @ `2026-07-25T08:12:20Z` → ambos **APTO** (Shell `git-manager` Rejected; sin inventar stdout).
+3. R3: `RBAC_AUTHORING_KM_POLICY` **APTO** — sin writes ilegítimos `docs/todos/**`.
+4. F2/F3/F4 APTO · F5 síntesis · `accept_pr_handoff: true` (sin `PullRequest_Merged` 1b8892bf).
+5. `pbi_archived: true` · PBI `done/` · PR #159.
+```
+
+## 2026-07-25T08:13:38Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. `global: APTO` · `pbi_archived: true` · PR #159.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `delivery_state: success`)
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`). Sin mutación KM.
+2. R1/R2: copia machine `native_state` @ `08:12:20Z` → ambos **APTO** (Shell `git-manager` Rejected; sin inventar stdout).
+3. R3: `RBAC_AUTHORING_KM_POLICY` **APTO** — sin writes ilegítimos en `docs/todos/**`.
+4. F2/F3/F4 APTO · F5 síntesis · `accept_pr_handoff: true` (sin `PullRequest_Merged` `1b8892bf`).
+5. `global: APTO` · `pbi_archived: true` · PR #159.
+```
+
+## 2026-07-25T08:40:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: `docs/todos/done/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `kaizen_seeds: 0` · `dedup/cerrado: 2` · `delivery_state: success` · `KAIZEN_COSECHA_GATE: APTO` · `accept_pr_handoff: true`
+
+### Transcript (tail)
+
+```
+**Cosecha Kaizen — cumulo · veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`). Sin writes nuevos en `docs/todos/`.
+- Seeds nuevas: **0** · dedup/cerrado ×2 → OPERATIVO + ARQUITECTURA PPR #136 (ambos `done/`).
+- DIA: sin `Kaizen_Alert_Required` en bus.
+- `git-manager`: Shell Rejected — R2 = copia `native_state` @ 08:12:20Z (no inventado).
+- F5 heredado `PASS_F5_VERDICT` · `delivery_state: success`.
+- Merge ausente → `accept_pr_handoff: true`.
+- `TECH_SMOKE_HOST` / merge ausente → **sin seed** (artefacto sesión / handoff).
+- `KAIZEN_COSECHA_GATE: APTO`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-07-25T08:12:20Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-07-25T08:14:11Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. `global: APTO` · `pbi_archived: true` · PR #159.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `delivery_state: success`)
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`). Sin mutación KM.
+2. R1/R2: copia machine `native_state` @ `08:12:20Z` → ambos **APTO** (Shell `git-manager` Rejected; sin inventar stdout).
+3. R3: `RBAC_AUTHORING_KM_POLICY` **APTO** — sin writes ilegítimos en `docs/todos/**`.
+4. F2/F3/F4 APTO · F5 síntesis · `accept_pr_handoff: true` (sin `PullRequest_Merged` `1b8892bf`).
+5. `global: APTO` · `pbi_archived: true` · PR #159.
+```
+
+## 2026-07-25T08:30:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: `docs/todos/done/[OPERATIVO] Kalma2-agent-runtime-cursor — F3 git-manager KM residual (PPR #136).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `kaizen_seeds: 0` · `dedup/cerrado: 2` · `KAIZEN_COSECHA_GATE: APTO` · delivery_state success heredado · accept_pr_handoff true.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`KAIZEN_COSECHA_GATE: APTO` · `kaizen_seeds: 0` · F5 heredado)
+
+1. Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`). Sin writes en `docs/todos/` (0 semillas).
+2. Hereda F5: `verdict: aprobado` · `delivery_state: success` · `accept_pr_handoff: true`.
+3. R1/R2: copia machine `native_state` @ `08:12:20Z` → APTO; Shell `git-manager` Rejected (sin inventar stdout).
+4. Dedup cerrado ×2 → OPERATIVO + ARQUITECTURA PPR #136 (`done/`); `TECH_SMOKE_HOST` sin seed.
+5. DIA: sin `Kaizen_Alert_Required`; merge `1b8892bf` ausente → handoff `accept-pr` procede.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-07-25T08:12:20Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-07-25T08:15:59Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `TECH_SMOKE_HOST` / merge ausente → sin seed · `KAIZEN_COSECHA_GATE: APTO`.
+
+### Transcript (tail)
+
+```
+**Cosecha Kaizen — cumulo · veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`).
+- Semillas nuevas: **0** · dedup/cerrado ×2 → OPERATIVO + ARQUITECTURA PPR #136 (`done/`).
+- DIA: sin `Kaizen_Alert_Required` · sin writes en `docs/todos/`.
+- `git-manager`: Shell Rejected · R2 = copia `native_state` @ 08:12:20Z (no inventado).
+- F5 heredado · `delivery_state: success` · `accept_pr_handoff: true` (sin merge `1b8892bf`).
+- `TECH_SMOKE_HOST` / merge ausente → sin seed · `KAIZEN_COSECHA_GATE: APTO`.
+```
+
+## 2026-07-25T08:17:03Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `1b8892bf-fde5-4fc2-bec2-6783764460d0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `KAIZEN_COSECHA_GATE: APTO`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`).
+- `kaizen_seeds: 0` · dedup cerrado ×2 (OPERATIVO + ARQUITECTURA PPR #136 en `done/`).
+- Sin `Kaizen_Alert_Required`; sin writes en `docs/todos/`.
+- F5 heredado: `aprobado` / `delivery_state: success` / `accept_pr_handoff: true`.
+- Shell `git-manager` Rejected — R2 = copia `native_state` (no inventado).
+- `TECH_SMOKE_HOST` / merge ausente → sin seed.
+- `KAIZEN_COSECHA_GATE: APTO`.
+```
