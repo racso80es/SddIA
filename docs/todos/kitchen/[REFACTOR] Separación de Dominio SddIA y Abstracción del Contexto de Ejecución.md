@@ -46,3 +46,36 @@ El motor de SddIA puede arrancar, escuchar el Bus de Eventos y procesar un event
 La carpeta SddIA/process/ contiene exclusivamente flujos agnósticos o desacoplados mediante códices, eliminando el acoplamiento rígido de arranque.
 
 El Core en Rust compila limpiamente (cargo build --release) manteniendo la Ceguera Espacial absoluta.
+
+# Refinamiento 1.0
+Document ID: PBI-SDDIA-DOMAIN-ABSTRACT-01
+Title: "[ARQUITECTURA] Separación de Dominio SddIA y Abstracción del Contexto de Ejecución"
+Format: markdown
+Version: "2.0.0" (Refactorizado)
+Status: "pendiente-kitchen"
+Priority: Alta (Prerrequisito Bloqueante)
+Process: refactor
+Suggested Branch: refactor/sddia-domain-abstraction
+
+# 1. Clarificación Estratégica (Filtro B - Soberanía Estructural)
+El ecosistema SddIA abandona su concepción legacy como "herramienta de repositorios de código" para formalizarse como un Sistema Nervioso Central Reactivo (Arquitectura Orientada a Eventos - EDA) de propósito general. 
+
+Este PBI establece la Separación de Dominio Estricta: el Motor Core (`SddIA/core/` y `SddIA/engine/`) debe purgar cualquier supuesto implícito de que el estímulo entrante proviene de un Pull Request o requiere un repositorio Git. El motor se limita a arrancar, enrutar la entropía física a través de Cúmulo/Cerbero, e invocar la ejecución S+ Grade, independientemente de si el dominio es código fuente, gestión de correo o la domótica del entorno.
+
+# 2. Especificación Técnica y Hitos de Ejecución (Física del Motor)
+
+## Hito 1: Desacoplamiento del Orquestador (`workspace_init` / `execute-process`)
+- **Directriz:** Refactorizar el motor de inicialización para erradicar la dependencia estricta de Git. 
+- **Acción:** El orquestador no intentará clonar, validar ramas, ni instanciar contextos de versionado a menos que el Códice de Dominio activo así lo demande explícitamente a través del Enrutamiento Semántico.
+
+## Hito 2: Agnosticismo del Bus de Eventos (`.SddIA/events/domain/`)
+- **Directriz:** Generalizar la matriz de consumo del Bus.
+- **Acción:** Los *daemons* y el motor de enrutamiento deben ser capaces de procesar estructuras JSON estándar (La Chispa) sin fallar por ausencia de metadatos de repositorios. Un evento tipo `Email_Received` o `Prompt_Submitted` tiene la misma autoridad térmica que un `PullRequest_Merged`.
+
+## Hito 3: Poda Ontológica de Dependencias (Filtro C)
+- **Directriz:** Eliminar de la capa Core cualquier acoplamiento a casos de uso específicos (como despliegues Tekton para lenguajes específicos). La capa Core es solo la autopista de información; el cargamento lo define la Librería (Códices).
+
+# 3. Aduana Ontológica y Criterios de Aceptación (S+ Grade)
+- [ ] **Independencia del Dominio:** El motor de SddIA puede arrancar, escuchar el Bus de Eventos y procesar un evento de dominio simulado en vacío sin generar errores de compilación (`cargo build --release`) y sin requerir la existencia de una carpeta `.git`.
+- [ ] **Cierre de Ciclo Limpio:** La carpeta `SddIA/process/` del Core solo contiene contratos agnósticos.
+- [ ] **Hermeticidad Anti-Panic:** Si se inyecta un evento sin el Códice de Dominio adecuado, Cerbero deniega la ejecución por "Falta de Autoridad" en lugar de provocar un colapso del sistema (Ceguera Espacial mantenida).

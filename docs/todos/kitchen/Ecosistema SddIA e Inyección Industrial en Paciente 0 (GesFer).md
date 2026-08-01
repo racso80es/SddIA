@@ -73,3 +73,40 @@ pdte de refinar Refinar y a la espera de haber implementado PBI docs/todos/kitch
 - [ ] **4.3. Auditoría de Artefactos y Peaje Termodinámico:**
   - El agente **Argos** intercepta el diff del archivo generado, validando que el código neto respeta estrictamente el códice de arquitectura hexagonal minteado.
   - Si cumple, se aprueba la mutación del dominio físico. La Aduana calcula la eficiencia termodinámica de la llamada y emite un chispazo de telemetría a IOTA Rebased, registrando de forma inmutable el éxito rotundo del proceso.
+
+# Refinamiento v1
+Document ID: PBI-KALMA2-MVP-01
+Title: "[OPERATIVO] Paciente 0: Instanciación de Kalma2 MVP (Prompt + Triage de Correo)"
+Format: markdown
+Version: "1.0.0"
+Status: "pendiente-kitchen"
+Priority: Alta (Estratégica / Primer Consumidor Real)
+Process: feature
+Depends On: PBI-SDDIA-DOMAIN-ABSTRACT-01
+
+# 1. Clarificación Estratégica (Filtro B - Táctica del Refugio y Simbiosis)
+GesFer ha cumplido su propósito histórico y es relevado como Paciente 0. SddIA materializa su primera instanciación productiva orientada al propósito simbiótico original: actuar como Asistente Personal S+ Grade a través de la interfaz Kalma2.
+
+Este MVP establece la Autonomía Sensorial Periférica. El sistema asimilará el caos del correo electrónico del Vértice Biológico (Rexson), filtrando el ruido entrópico (Spam) y elevando a la consciencia biológica exclusivamente la señal relevante (Notificaciones críticas, agendamiento de pedidos, interacciones directas). 
+
+# 2. Especificación Técnica y Hitos de Ejecución (El Nuevo Genoma)
+
+## Hito 1: Despliegue del Centinela Periférico (El Tacto Inerte)
+- **Directriz:** Creación de un *daemon* o hook de latencia (ej. un watcher en Rust o Node) conectado a la API de correo.
+- **Acción:** Este script físico sufre de Ceguera Espacial absoluta. Al detectar un nuevo correo, genera un payload inerte (La Chispa) y lo inyecta como `Email_Received` en el bus de eventos (`.SddIA/events/domain/`).
+
+## Hito 2: Enrutamiento Semántico y el Códice Kalma2
+- **Directriz:** Creación del `codex-kalma2-assistant.md` dentro de la Librería SddIA.
+- **Acción:** Cúmulo asimila el evento del Bus. Cerbero evalúa el Códice y aprueba el peso térmico para procesar el correo. Se despierta a Mayeuta/Tekton (dependiendo de la delegación de LLM) para procesar el cuerpo del mensaje.
+
+## Hito 3: Triaje Entrópico de Ejecución
+- **Directriz:** Clasificación en matriz de 3 vías.
+- **Acción:** El agente procesa el correo bajo tres reglas duras:
+  1. *Spam/Ruido:* Eliminación o archivo silencioso (Filtro C).
+  2. *Relevancia Pasiva:* Notificación visible en el dashboard/prompt de Kalma2.
+  3. *Relevancia Activa (Agenda):* Extracción de datos (ej. fecha de entrega de un pedido) e invocación de una *Skill* para asentar el evento en la agenda local.
+
+# 3. Aduana Ontológica y Criterios de Aceptación (S+ Grade)
+- [ ] **Trazabilidad sin Fugas:** Un correo inyectado en el bus cruza toda la topología y se refleja en la interfaz Kalma2 sin necesidad de intervención manual en la terminal.
+- [ ] **Peaje Termodinámico Medible:** Argos registra el éxito de la clasificación y mide el costo (tokens/tiempo) de la inferencia, asegurando que no hay secuestro semántico por correos con verbosidad comercial.
+- [ ] **Soberanía de Interacción:** La caja de prompt de Kalma2 actual coexiste pacíficamente con el proceso en *background* del correo, manteniendo la estabilidad del servidor local.

@@ -20,6 +20,8 @@ REQUIRED_DAEMONS=(event-watcher event-sweeper)
 OPTIONAL_DAEMONS=(telegram-watcher github-bridge-watcher)
 DAEMON_NAMES=("${REQUIRED_DAEMONS[@]}" "${OPTIONAL_DAEMONS[@]}")
 STATUS_DIR=".SddIA/daemons/status"
+IOTA_RELAY_DIR=".SddIA/services/iota-publish-relay"
+IOTA_RELAY_PID=""
 HEARTBEAT_AUDIT=".SddIA/daemons/state/heartbeat-audit.json"
 CLEANUP_DONE=0
 IGNITION_EPOCH="$(date -u +%s)"
@@ -51,6 +53,10 @@ cleanup() {
     for daemon in "${DAEMON_NAMES[@]}"; do
         rm -f "${STATUS_DIR}/${daemon}.lock"
     done
+
+    if [[ -n "$IOTA_RELAY_PID" ]]; then
+        pkill -x iota-publish-relay 2>/dev/null || true
+    fi
 
     echo "[SddIA] Ecosistema detenido de forma segura."
     exit "$exit_code"
@@ -265,6 +271,22 @@ if [[ -z "$BRIDGE_BIN" ]]; then
     cleanup 1
 fi
 echo "  -> kalma2-bridge: binario nativo=${BRIDGE_BIN}"
+
+# --- INFRAESTRUCTURA DLT (IOTA RELAY) ---
+if [[ -f "$IOTA_RELAY_DIR/server.mjs" ]]; then
+    echo "[SddIA] Levantando Aduana DLT (IOTA Relay)..."
+    if [[ ! -d "$IOTA_RELAY_DIR/node_modules" ]]; then
+        echo "  -> Instalando dependencias Node.js..."
+        (cd "$IOTA_RELAY_DIR" && npm install --silent)
+    fi
+    (cd "$IOTA_RELAY_DIR" && node server.mjs > relay.log 2>&1) &
+    IOTA_RELAY_PID=$!
+    sleep 1 # Termodinámica básica para asegurar el binding del puerto 8787
+    echo "  -> IOTA Relay: ACTIVO en puerto 8787 (PID: $IOTA_RELAY_PID)"
+else
+    echo "  -> [WARN] IOTA Relay no encontrado en $IOTA_RELAY_DIR. Las delegaciones a DLT fallarán."
+fi
+# ----------------------------------------
 
 export SDDIA_REPO_ROOT="$REPO_ROOT"
 "$BRIDGE_BIN" &

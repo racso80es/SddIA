@@ -15,6 +15,7 @@ Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema
 
 | Componente | Rol | Ruta de arranque |
 |------------|-----|------------------|
+| **Servicios de Red** | Puente local hacia IOTA Rebased (Relay) | `.SddIA/services/iota-publish-relay/server.mjs` (Node.js) |
 | **Centinelas obligatorios** | Bus EDA y barrido de pendientes | `SddIA/scripts/daemons/event-watcher.sh`, `event-sweeper.sh` |
 | **Centinelas opcionales** | Telegram y GitHub bridge | `SddIA/scripts/daemons/telegram-watcher.sh`, `github-bridge-watcher.sh` |
 | **Kalma2** | UI + `POST /api/interact` | `SddIA/target/{debug,release}/kalma2-bridge` |
@@ -102,6 +103,7 @@ Variables de entorno:
 | `kalma2-bridge no encontrado` | `cargo build -p kalma2-bridge` |
 | `orquestador no encontrado` (POST) | `cargo build -p execute-process` |
 | Centinela no arranca | `.SddIA/daemons/logs/<name>.log` |
+| `Error IOTA: Connection refused (os error 111)` | Revisar `.SddIA/services/iota-publish-relay/relay.log` |
 
 ## Verificación rápida
 
