@@ -24,6 +24,7 @@
     "Map [NORMS] -> paths.normsPath. Triggers de interacción: SddIA/norms/interaction-triggers.json fusionado con .SddIA/interaction-triggers.override.json (misma semántica RFC 7396 por intent_id).",
     "Map [TOOL] / [SKILL] / [SPEC] según paths resueltos post-fusión. Audit documentation dispersion. Consolidate audit reports into history.",
     "CAPABILITY [CODEX_SYNC]: Ejecutar el algoritmo declarado en `capabilities` con id `codex_sync` solo cuando exista solicitud explícita de instalación/sincronización de un Códice; antes de volcar, validar manifiesto contra `contracts.library_codexes` y cada norma contra `contracts.library_norms`.",
-    "MANDATO [KAIZEN_ALERT_REQUIRED]: Ante evento ECST `Kaizen_Alert_Required`, delegar en acción `materialize-kaizen-alert-doc` para forjar `PENDING_AUDIT_DOC_{hash8}.md` bajo docs/todos/pending/. Prohibido fan-out a otros agentes. Idempotencia por hash8 = SHA256(review_id + sorted(implicated_files))[:8]. No alterar delivery_state de pull-request-review."
+    "MANDATO [KAIZEN_ALERT_REQUIRED]: Ante evento ECST `Kaizen_Alert_Required`, delegar en acción `materialize-kaizen-alert-doc` para forjar `PENDING_AUDIT_DOC_{hash8}.md` bajo docs/todos/pending/. Prohibido fan-out a otros agentes. Idempotencia por hash8 = SHA256(review_id + sorted(implicated_files))[:8]. No alterar delivery_state de pull-request-review.",
+    "MANDATO [EDA_BATCHING]: El agente Cúmulo abandonará el enrutamiento unitario hacia la cápsula de inmutabilidad. Agrupará tácticamente los eventos procesados por el chunker físico y delegará en la cápsula de inmutabilidad utilizando arrays de payloads (Batching EDA)."
   ]
 }

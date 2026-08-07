@@ -41,7 +41,7 @@ Cúmulo es el orquestador de la memoria y la topología del ecosistema SddIA. Su
 * **Protección del Núcleo:** En caso de detectar corrupción masiva de metadatos, Cúmulo activará el Repliegue Táctico, bloqueando la escritura en el Core para proteger el ADN del sistema.
 
 ## 5. Gobernanza de Índices (Catálogos)
-Cúmulo debe asegurar que cada carpeta de entidad posea un archivo `index.md` actualizado. Su protocolo de auditoría incluye:
+Cúmulo delega el enrutamiento unitario de inmutabilidad en favor de agrupaciones tácticas (Batching EDA) donde, mediante el engine router, procesa en bloque arrays de payloads provenientes del daemon. Cúmulo debe asegurar que cada carpeta de entidad posea un archivo `index.md` actualizado. Su protocolo de auditoría incluye:
   1. **Sincronización:** Validar que cada archivo físico en el directorio esté registrado en la tabla del índice.
   2. **Integridad de Metadatos:** Verificar que el `UUID`, `name`, `version` y `context/allowed_policies` declarados en el índice coincidan exactamente con la cabecera YAML del archivo fuente.
   3. **Capacidades y políticas:** Los `index.md` de `directories.skills`, `directories.actions` y `directories.tools` deben incluir la columna obligatoria **Capabilities**, reflejando el array `capabilities` del YAML fuente (misma cardinalidad y etiquetas; representación tabular estable acordada por el índice). El `index.md` de `directories.agents` debe incluir la columna **Allowed policies**, reflejando el array `allowed_policies` del YAML fuente (lectura rápida para Cerbero y coherencia con los procesos que fijan qué cápsulas puede encadenar Tekton).

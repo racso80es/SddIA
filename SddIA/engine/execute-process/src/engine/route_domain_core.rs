@@ -314,6 +314,9 @@ fn capsule_error_trace(body: &Value, ok: bool) -> String {
 }
 
 fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Option<String>) {
+    if BATCH_MODE.with(|b| b.get()) {
+        return (true, "batched".into(), 0, Some("batched-digest".into()));
+    }
     if simulate_iota_enabled() {
         let digest = format!("lab-sim-{}", &Uuid::new_v4().simple().to_string()[..24]);
         return (true, "lab-simulated".into(), 0, Some(digest));
@@ -1214,4 +1217,131 @@ mod blocking_tests {
         });
         assert!(is_local_qa_event(&ev));
     }
+}
+
+
+pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>) -> Value {
+    let bus = match ensure_event_bus_topology(repo) {
+        Ok(b) => b,
+        Err(e) => return json!({ "success": false, "exitCode": 1, "error": e }),
+    };
+
+    let subs_path = repo.join(&bus.subscriptions);
+    let registry: Value = fs::read_to_string(&subs_path).ok()
+        .and_then(|t| serde_json::from_str(t.strip_prefix('\u{feff}').unwrap_or(&t)).ok())
+        .unwrap_or(json!({}));
+
+    let mut payloads_to_anchor = vec![];
+    let mut uuids_to_anchor = vec![];
+    let mut results = vec![];
+
+    for path_str in &event_file_paths {
+        let raw_path = std::path::PathBuf::from(path_str);
+        let event_path = if raw_path.is_absolute() { raw_path } else { repo.join(&raw_path) };
+
+        let Ok(text) = fs::read_to_string(&event_path) else { continue };
+        let Ok(event) = serde_json::from_str::<Value>(&text) else { continue };
+
+        let Some(event_type) = event.get("event_type").and_then(|v| v.as_str()) else { continue };
+        let Some(event_uuid) = event.get("event_id").and_then(|v| v.as_str()) else { continue };
+        let payload = event.get("payload").cloned().unwrap_or(json!({}));
+        let origin_topology = resolve_origin_topology(&payload);
+
+        let mut needs_anchor = false;
+        let subscribers = registry.get(event_type).and_then(|v| v.as_array()).cloned().unwrap_or_default();
+        for sub in subscribers {
+            if subscriber_applies_to_topology(&sub, &origin_topology) {
+                if sub.get("tool").and_then(|v| v.as_str()) == Some("iota-immutable-publisher") {
+                    needs_anchor = true;
+                    break;
+                }
+            }
+        }
+
+        if needs_anchor {
+            if let Some(ds) = event.get("delivery_state").and_then(|v| v.as_object()) {
+                if ds.contains_key("cumulo.iota-immutable-publisher") || ds.contains_key("cumulo") {
+                    needs_anchor = false;
+                }
+            }
+        }
+
+        if needs_anchor {
+            let mut buf = Vec::new();
+            let formatter = serde_json::ser::CompactFormatter;
+            let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);
+            let _ = serde::Serialize::serialize(&payload, &mut ser);
+            let payload_str = String::from_utf8(buf).unwrap_or_default();
+            payloads_to_anchor.push(payload_str);
+            uuids_to_anchor.push(event_uuid.to_string());
+
+            let mut modified_event = event.clone();
+            if let Some(obj) = modified_event.as_object_mut() {
+                let ds = obj.entry("delivery_state").or_insert(json!({}));
+                if let Some(ds_obj) = ds.as_object_mut() {
+                    ds_obj.insert("cumulo.iota-immutable-publisher".to_string(), json!("success"));
+                }
+            }
+            let _ = crate::engine::eda_bus_topology::write_json_atomic(&event_path, &modified_event);
+        }
+    }
+
+    if !payloads_to_anchor.is_empty() {
+        let payload = json!({
+            "action": "publish_immutable_data",
+            "network": "testnet",
+            "payload": payloads_to_anchor,
+        });
+
+        let repo_buf = repo.to_path_buf();
+        let handle = std::thread::spawn(move || {
+            crate::engine::capsules::invoke_tool_capsule_json(&repo_buf, "iota-immutable-publisher", &payload, false)
+        });
+
+        if let Ok(Ok(result)) = handle.join() {
+            let body = result.body;
+            if body.get("success").and_then(|v: &serde_json::Value| v.as_bool()).unwrap_or(false) {
+                let proofs = body.get("result").and_then(|r: &serde_json::Value| r.get("merkle_proofs")).and_then(|v: &serde_json::Value| v.as_array());
+                if let Some(proofs) = proofs {
+                    let proofs_dir = repo.join(".SddIA").join("proofs");
+                    let _ = std::fs::create_dir_all(&proofs_dir);
+
+                    for (i, uuid) in uuids_to_anchor.iter().enumerate() {
+                        if let Some(proof) = proofs.get(i) {
+                            let proof_path = proofs_dir.join(format!("{}.json", uuid));
+                            let _ = std::fs::write(&proof_path, serde_json::to_string_pretty(proof).unwrap_or_default());
+
+                            let event_path = std::path::PathBuf::from(&bus.pending).join(format!("{}.json", uuid));
+                            if let Ok(text) = fs::read_to_string(&event_path) {
+                                if let Ok(mut event) = serde_json::from_str::<Value>(&text) {
+                                    if let Some(obj) = event.as_object_mut() {
+                                        if let Some(ds) = obj.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
+                                            if let Some(digest) = body.get("result").and_then(|r| r.get("transaction_digest")).and_then(|v| v.as_str()) {
+                                                ds.insert("transaction_digest".to_string(), json!(digest));
+                                            }
+                                        }
+                                    }
+                                    let _ = crate::engine::eda_bus_topology::write_json_atomic(&event_path, &event);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for path_str in &event_file_paths {
+        let out = route_domain_event(repo, path_str);
+        results.push(out);
+
+        let raw_path = std::path::PathBuf::from(path_str);
+        let event_uuid = raw_path.file_stem().unwrap_or_default().to_string_lossy();
+        let _sweep = try_sweep_event(repo, &bus, &event_uuid, Some(&registry));
+    }
+
+    json!({ "success": true, "exitCode": 0, "data": results })
+}
+thread_local! {
+    static BATCH_MODE: std::cell::Cell<bool> = std::cell::Cell::new(false);
 }

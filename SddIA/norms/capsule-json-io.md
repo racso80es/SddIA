@@ -14,7 +14,7 @@ Un único objeto JSON (una línea recomendada; se acepta JSON multilínea en std
 | `meta.entityKind` | string | `"skill"` \| `"tool"`. (Alias: `entity_kind`.) |
 | `meta.entityId` | string | kebab-case; para skills coincide con `skill_id`; para tools coincide con **`name`** según `tools-contract.md` v1.2.0 (alias histórico `toolId` solo en payloads legados). (Alias: `entity_id`.) |
 | `meta.token` | object | Opcional; Karma2Token si el contrato lo exige. |
-| `request` | object | Cuerpo libre definido en `paths.skillsDefinitionPath/<skill-id>/spec.md`. |
+| `request` | object | Cuerpo libre definido en `paths.skillsDefinitionPath/<skill-id>/spec.md`. Soporta procesamiento en bloque (arrays) si la cápsula lo permite. |
 | `di_binding` | object | **Opcional (PBI-042 Hito 2).** Binding DI resuelto por el runtime antes de stdin. Hermano de `request`. |
 
 ### Campo opcional `di_binding`

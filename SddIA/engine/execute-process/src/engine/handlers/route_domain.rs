@@ -10,14 +10,20 @@ use std::path::Path;
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
     let blocking =
         input_truthy(process_inputs, "blocking") || input_truthy(process_inputs, "sync");
-    let event_rel = resolve_route_event_path(repo, process_inputs, blocking)?;
+    let mut paths = vec![];
+    if let Some(arr) = process_inputs.get("event_file_paths").and_then(|v| v.as_array()) {
+        paths = arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+    } else {
+        let event_rel = resolve_route_event_path(repo, process_inputs, blocking)?;
+        paths.push(event_rel);
+    }
     let _sync_guard = if blocking {
         Some(SyncRouteGuard::activate())
     } else {
         None
     };
 
-    let out = route_domain_event(repo, &event_rel);
+    let out = crate::engine::route_domain_core::route_domain_batch(repo, paths);
     let ok = out.get("success").and_then(|v| v.as_bool()).unwrap_or(false)
         && out.get("exitCode").and_then(|v| v.as_i64()).unwrap_or(1) == 0;
     let status_code = out

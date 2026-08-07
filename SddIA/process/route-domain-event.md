@@ -6,6 +6,7 @@ contract: process-contract v1.4.0
 hash_signature: sha256:265df9077cc868ce998267acfa7f5f0fca8ec54547f2a32533335f5c638758f9
 inputs:
 - event_file_path: Ruta relativa al JSON padre en eda_bus.pending (.events/pending/)
+- event_file_paths: Lista de rutas relativas a los JSONs (opcional, habilita batching semántico)
 - cumulo_topology: Topología SSOT inyectada (opcional en laboratorio)
 minteo_maximo: null
 name: route-domain-event

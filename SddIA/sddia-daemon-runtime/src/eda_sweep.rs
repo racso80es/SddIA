@@ -151,77 +151,40 @@ fn sweep_fractal_bus(repo: &Path, report: &mut SweepReport) -> Result<(), String
 
 pub fn sweep_once(repo: &Path) -> Result<SweepReport, String> {
     let bus = ensure_event_bus_topology(repo)?;
-    let registry = load_registry(&bus).ok();
     let mut report = SweepReport::default();
 
     if bus.pending.is_dir() {
         let mut entries: Vec<PathBuf> = fs::read_dir(&bus.pending)
-            .map_err(|e| format!("read pending: {e}"))?
+            .map_err(|e| format!("read pending: {}", e))?
             .filter_map(|e| e.ok())
             .map(|e| e.path())
             .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
             .collect();
         entries.sort();
 
-        for parent_path in entries {
-            let event_uuid = parent_path
-                .file_stem()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .into_owned();
-            let result = try_sweep_event(repo, &bus, &event_uuid, registry.as_ref())?;
-            match result.get("status").and_then(|v| v.as_str()) {
-                Some("purged") => report.purged.push(json!({
-                    "event_uuid": event_uuid,
-                    "witnesses": result.get("witnesses").unwrap_or(&json!(0)),
-                    "headers": result.get("headers").unwrap_or(&json!(0)),
-                    "pending": result.get("pending").unwrap_or(&json!(0)),
-                })),
-                Some("kaizen-finalized") => report.kaizen_finalized.push(json!({
-                    "event_uuid": event_uuid,
-                    "pending": result.get("pending").unwrap_or(&json!(0)),
-                    "headers": result.get("headers").unwrap_or(&json!(0)),
-                })),
-                Some("kaizen") => {
-                    let dead = list_witnesses(repo, &bus, "dead_letter_subscribers", &event_uuid);
-                    emit_kaizen_alert(
-                        &event_uuid,
-                        result.get("event_type").and_then(|v| v.as_str()).unwrap_or(""),
-                        &dead,
-                    );
-                    report.kaizen_alerts.push(event_uuid);
-                }
-                Some(status)
-                    if matches!(
-                        status,
-                        "invalid-json"
-                            | "missing-event_type"
-                            | "no-subscribers"
-                            | "absent"
-                            | "invalid-registry"
-                    ) =>
-                {
-                    report.skipped.push(json!({
-                        "event_uuid": event_uuid,
-                        "reason": status,
-                    }));
-                }
-                Some("in-flight") => report.skipped.push(json!({
-                    "event_uuid": event_uuid,
-                    "reason": "subscribers-in-flight",
-                    "in_flight": result.get("in_flight").cloned().unwrap_or(json!([])),
-                })),
-                Some("awaiting") => report.skipped.push(json!({
-                    "event_uuid": event_uuid,
-                    "reason": "awaiting-subscribers",
-                    "pending": result.get("pending_subscribers").cloned().unwrap_or(json!([])),
-                })),
-                _ => {}
+        let chunks: Vec<&[PathBuf]> = entries.chunks(50).collect();
+        for chunk in chunks {
+            let mut paths = vec![];
+            for p in chunk {
+                let p_str = p.strip_prefix(repo).unwrap_or(p).to_string_lossy();
+                let p_str_safe = p_str.replace("\\", "/");
+                paths.push(p_str_safe);
             }
+
+            let mut runner = repo.join("SddIA").join("target").join("debug").join("execute-process");
+            if !runner.is_file() {
+                runner = repo.join("SddIA").join("target").join("release").join("execute-process");
+            }
+
+            let payload = json!({ "event_file_paths": paths }).to_string();
+            let _out = std::process::Command::new(&runner)
+                .args(["--process", "route-domain-event", "--inputs", &payload])
+                .current_dir(repo)
+                .output();
         }
     }
 
-    sweep_fractal_bus(repo, &mut report)?;
+        sweep_fractal_bus(repo, &mut report)?;
     Ok(report)
 }
 
