@@ -215,12 +215,12 @@ fn dispatch_fractal_subscriber(
             }
             _ => {
                 let mut event_mut = event.clone();
-                dispatch_subscriber(repo, subscriber, &mut event_mut)
+                dispatch_subscriber(repo, subscriber, &mut event_mut, false)
             }
         }
     } else {
         let mut event_mut = event.clone();
-        dispatch_subscriber(repo, subscriber, &mut event_mut)
+        dispatch_subscriber(repo, subscriber, &mut event_mut, false)
     }
 }
 

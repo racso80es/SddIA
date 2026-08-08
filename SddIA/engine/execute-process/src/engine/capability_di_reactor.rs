@@ -215,6 +215,7 @@ pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Va
         .map_err(|e| e.to_string())?
         .flatten()
         .map(|e| e.path())
+            .filter(|p| p.is_file())
         .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
         .collect();
 
@@ -416,6 +417,7 @@ outputs:
             .unwrap()
             .flatten()
             .map(|e| e.path())
+            .filter(|p| p.is_file())
             .collect();
         assert!(!processed.is_empty());
         let text = fs::read_to_string(&processed[0]).unwrap();

@@ -23,7 +23,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         None
     };
 
-    let out = crate::engine::route_domain_core::route_domain_batch(repo, paths);
+    let out = crate::engine::route_domain_core::route_domain_batch(repo, paths.clone());
     let ok = out.get("success").and_then(|v| v.as_bool()).unwrap_or(false)
         && out.get("exitCode").and_then(|v| v.as_i64()).unwrap_or(1) == 0;
     let status_code = out
@@ -36,10 +36,19 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         .and_then(|v| v.as_str())
         .map(str::to_string);
 
+    let mut final_data = out.get("data").cloned();
+    if paths.len() == 1 {
+        if let Some(arr) = final_data.as_ref().and_then(|v| v.as_array()) {
+            if let Some(first) = arr.first() {
+                final_data = first.get("data").cloned();
+            }
+        }
+    }
+
     Ok(OrchestratorEnvelope {
         success: ok,
         status_code,
-        data: out.get("data").cloned(),
+        data: final_data,
         error: out
             .get("error")
             .and_then(|v| v.as_str())

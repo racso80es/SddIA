@@ -463,6 +463,7 @@ pub(crate) fn dispatch_subscriber(
     repo: &Path,
     subscriber: &Value,
     event: &mut Value,
+    batch_mode_iota: bool,
 ) -> (String, String, Option<String>, i32) {
     let sid = subscriber_id(subscriber);
     let agent = subscriber.get("agent").and_then(|v| v.as_str()).map(str::trim);
@@ -669,7 +670,11 @@ pub(crate) fn dispatch_subscriber(
         if !ok_thresh {
             return (sid, "skipped-dlt-threshold".into(), Some(reason), 0);
         }
-        let (ok, feedback, code, digest) = invoke_iota_publisher(repo, event);
+        let (ok, feedback, code, digest) = if batch_mode_iota {
+            (true, "batched".into(), 0, Some("batched-digest".into()))
+        } else {
+            invoke_iota_publisher(repo, event)
+        };
         if ok {
             if let Some(d) = digest {
                 if let Some(ds) = event.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
@@ -758,6 +763,7 @@ fn handle_subscriber(
     registry: &Value,
     origin_topology: &str,
     dispatch_mode: &str,
+    batch_mode_iota: bool,
 ) -> (String, String) {
     let sid = subscriber_id(subscriber);
     if terminal_witness_exists(repo, bus, event_uuid, &sid) {
@@ -784,7 +790,7 @@ fn handle_subscriber(
         dispatch_mode,
     );
 
-    let (_, status, err, exit_code) = dispatch_subscriber(repo, subscriber, event);
+    let (_, status, err, exit_code) = dispatch_subscriber(repo, subscriber, event, batch_mode_iota);
     let delegation = delegation_meta(subscriber, exit_code);
 
     let promote_result = if status_is_terminal_ok(&status) {
@@ -843,7 +849,7 @@ fn handle_subscriber(
 }
 
 /// Ejecuta enrutamiento ECST/fan-out de un evento de dominio.
-pub fn route_domain_event(repo: &Path, event_file_path: &str) -> Value {
+pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: bool) -> Value {
     let bus = match ensure_event_bus_topology(repo) {
         Ok(b) => b,
         Err(e) => {
@@ -1053,6 +1059,7 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str) -> Value {
                 &registry,
                 &origin_topology,
                 dispatch_mode,
+                batch_mode_iota,
             );
             delivery_status.insert(sid, status);
         }
@@ -1092,6 +1099,7 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str) -> Value {
                         &registry,
                         &origin,
                         "async",
+                        batch_mode_iota,
                     );
                     results.lock().unwrap().insert(sid, status);
                 })
@@ -1275,14 +1283,7 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
             payloads_to_anchor.push(payload_str);
             uuids_to_anchor.push(event_uuid.to_string());
 
-            let mut modified_event = event.clone();
-            if let Some(obj) = modified_event.as_object_mut() {
-                let ds = obj.entry("delivery_state").or_insert(json!({}));
-                if let Some(ds_obj) = ds.as_object_mut() {
-                    ds_obj.insert("cumulo.iota-immutable-publisher".to_string(), json!("success"));
-                }
-            }
-            let _ = crate::engine::eda_bus_topology::write_json_atomic(&event_path, &modified_event);
+
         }
     }
 
@@ -1332,7 +1333,7 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
     }
 
     for path_str in &event_file_paths {
-        let out = route_domain_event(repo, path_str);
+        let out = route_domain_event(repo, path_str, true);
         results.push(out);
 
         let raw_path = std::path::PathBuf::from(path_str);
