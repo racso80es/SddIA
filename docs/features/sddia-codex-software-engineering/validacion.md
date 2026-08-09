@@ -12,6 +12,7 @@ pbi_archived: true
 document_id: PBI-SDDIA-DOMAIN-ABSTRACT-02
 pbi_ref: docs/todos/done/[ARQUITECTURA] PBI-SDDIA-DOMAIN-ABSTRACT-02 — Migración process software a códice.md
 execution_id: c76c5d95-b066-49ca-834b-78a4f9443a62
+pr_url: https://github.com/racso80es/SddIA/pull/162
 approval_status: aprobado
 verdict: aprobado
 checks:
