@@ -44,6 +44,7 @@ pub mod suite_execution_requested;
 pub mod thermodynamic;
 pub mod workspace;
 pub mod workspace_init;
+pub mod domain_profile;
 pub mod verify_process_integrity;
 
 use crate::core::resolver::load_process_def;

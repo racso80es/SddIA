@@ -1,7 +1,10 @@
 //! Inicialización de espacio de trabajo (git-manager + objectives.md).
 
 use super::capsules::invoke_git_manager;
-use super::workspace::{load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path};
+use super::domain_profile::resolve_execution_profile;
+use super::workspace::{
+    load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path,
+};
 use chrono::Utc;
 use serde_json::{json, Value};
 use std::fs;
@@ -53,8 +56,49 @@ fn env_truthy(key: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn phase_requires_git_sync(phase: &Value) -> bool {
+    if let Some(caps) = phase.get("requires_capability").and_then(|v| v.as_array()) {
+        for c in caps {
+            let id = c
+                .get("id")
+                .and_then(|x| x.as_str())
+                .or_else(|| c.as_str());
+            if id == Some("proc:git-sync") {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn phase_has_git_manager_delegate(phase: &Value) -> bool {
+    if let Some(delegates) = phase.get("delegates_to").and_then(|v| v.as_array()) {
+        if delegates
+            .iter()
+            .any(|d| d.as_str() == Some("skill:git-manager"))
+        {
+            return true;
+        }
+    }
+    if let Some(providers) = phase.get("resolved_provider").and_then(|v| v.as_array()) {
+        if providers
+            .iter()
+            .any(|d| d.as_str() == Some("skill:git-manager"))
+        {
+            return true;
+        }
+    }
+    if let Some(p) = phase.get("resolved_provider").and_then(|v| v.as_str()) {
+        if p == "skill:git-manager" {
+            return true;
+        }
+    }
+    false
+}
+
 pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, String> {
     let cfg = load_paths_config(repo)?;
+    let profile = resolve_execution_profile(repo, inputs);
     let task_name = workspace_task_name(inputs);
     let mut branch_name = inputs
         .get("branch_name")
@@ -75,7 +119,11 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             .unwrap_or_else(|| branch_name.clone())
     });
 
-    let default_prefix = if process_label == "bug-fix" { "fix" } else { "feat" };
+    let default_prefix = if process_label == "bug-fix" {
+        "fix"
+    } else {
+        "feat"
+    };
     let branch_name = if branch_name.starts_with(&format!("{default_prefix}/")) {
         branch_name
     } else {
@@ -118,11 +166,23 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         .filter(|s| !s.is_empty());
 
     let mut git_steps: Vec<Value> = Vec::new();
+    let skip_lab = env_truthy("SDDIA_LAB_SKIP_GIT");
+    let skip_profile = !profile.git_required;
 
-    if env_truthy("SDDIA_LAB_SKIP_GIT") {
+    if skip_lab {
         git_steps.push(json!({
             "op": "git",
             "result": {"skipped": true, "reason": "SDDIA_LAB_SKIP_GIT"},
+        }));
+    } else if skip_profile {
+        git_steps.push(json!({
+            "op": "git",
+            "result": {
+                "skipped": true,
+                "reason": "profile_git_not_required",
+                "profile_source": profile.source,
+                "codex_slug": profile.codex_slug,
+            },
         }));
     } else {
         let fetch = invoke_git_manager(repo, "fetch", &json!({"remote": "origin", "prune": true}))?;
@@ -144,7 +204,10 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             )?;
             git_steps.push(json!({"op": "pull_base", "result": pull}));
         } else {
-            git_steps.push(json!({"op": "pull_base", "result": {"skipped": true, "reason": "offline_fetch", "offline": true}}));
+            git_steps.push(json!({
+                "op": "pull_base",
+                "result": {"skipped": true, "reason": "offline_fetch", "offline": true}
+            }));
         }
 
         let checkout_feature = invoke_git_manager(
@@ -197,24 +260,21 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         "persist_ref": persist_ref,
         "objectives_path": objectives_rel,
         "git_steps": git_steps,
+        "execution_profile": profile.to_json(),
     }))
 }
 
+/// Detector de fase Inicialización: acepta delegates post-DI, `requires_capability: proc:git-sync`
+/// o `resolved_provider` con `skill:git-manager` (I7 / L-SPLIT-A D4).
 pub fn is_workspace_init_phase(phase: &Value, inputs: &Value, process_name: &str) -> bool {
-    let delegates = phase.get("delegates_to").and_then(|v| v.as_array());
-    let Some(delegates) = delegates else {
-        return false;
-    };
-    let has_git = delegates
-        .iter()
-        .any(|d| d.as_str() == Some("skill:git-manager"));
-    if !has_git {
-        return false;
-    }
     if !matches!(process_name, "feature" | "bug-fix" | "refactorization") {
         return false;
     }
-    if phase.get("name").and_then(|v| v.as_str()) != Some("Inicialización de Espacio de Trabajo") {
+    if phase.get("name").and_then(|v| v.as_str()) != Some("Inicialización de Espacio de Trabajo")
+    {
+        return false;
+    }
+    if !phase_has_git_manager_delegate(phase) && !phase_requires_git_sync(phase) {
         return false;
     }
     if workspace_task_name(inputs).is_some() {
@@ -230,4 +290,82 @@ pub fn is_workspace_init_phase(phase: &Value, inputs: &Value, process_name: &str
         }
     }
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    fn write_cumulo(root: &Path) {
+        fs::create_dir_all(root.join("SddIA/core")).unwrap();
+        fs::write(
+            root.join("SddIA/core/cumulo.paths.json"),
+            r#"{
+  "directories": { "documentation": "docs" },
+  "paths": { "featurePath": "docs/features", "fixPath": "docs/fixes" }
+}"#,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn detector_accepts_requires_capability_without_delegates() {
+        let phase = json!({
+            "name": "Inicialización de Espacio de Trabajo",
+            "requires_capability": [
+                { "id": "proc:git-sync", "contract": "proc.git_sync", "version": ">=1.0.0" }
+            ]
+        });
+        let inputs = json!({ "feature_name": "demo-task" });
+        assert!(is_workspace_init_phase(&phase, &inputs, "feature"));
+    }
+
+    #[test]
+    fn detector_accepts_delegates_git_manager() {
+        let phase = json!({
+            "name": "Inicialización de Espacio de Trabajo",
+            "delegates_to": ["skill:git-manager"]
+        });
+        let inputs = json!({ "feature_name": "demo-task" });
+        assert!(is_workspace_init_phase(&phase, &inputs, "feature"));
+    }
+
+    #[test]
+    fn detector_rejects_unrelated_phase() {
+        let phase = json!({
+            "name": "Estabilización de Requisitos",
+            "requires_capability": [{ "id": "proc:git-sync" }]
+        });
+        let inputs = json!({ "feature_name": "demo-task" });
+        assert!(!is_workspace_init_phase(&phase, &inputs, "feature"));
+    }
+
+    #[test]
+    fn run_skips_git_when_profile_git_not_required() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        // Ensure no SDDIA_LAB_SKIP_GIT interference in this process.
+        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+        let inputs = json!({
+            "feature_name": "no-git-boot",
+            "branch_name": "feat/no-git-boot",
+            "persist_ref": "docs/features/no-git-boot",
+            "refined_requirements": "smoke AC-WSINIT",
+            "execution_profile": { "git_required": false }
+        });
+        let out = run(root, &inputs, "feature").expect("run ok");
+        let steps = out["git_steps"].as_array().unwrap();
+        assert_eq!(steps.len(), 1);
+        assert_eq!(steps[0]["result"]["skipped"], json!(true));
+        assert_eq!(
+            steps[0]["result"]["reason"],
+            json!("profile_git_not_required")
+        );
+        assert!(root
+            .join("docs/features/no-git-boot/objectives.md")
+            .is_file());
+        assert_eq!(out["execution_profile"]["git_required"], json!(false));
+    }
 }
