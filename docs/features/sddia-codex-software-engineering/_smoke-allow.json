@@ -1,0 +1,10 @@
+{
+  "feature_name": "smoke-allow-domain-authority",
+  "branch_name": "feat/smoke-allow-domain-authority",
+  "persist_ref": "docs/features/sddia-codex-software-engineering/_smoke-allow-persist",
+  "refined_requirements": "smoke AC-ALLOW",
+  "execution_profile": {
+    "git_required": false,
+    "codex_slug": "codex-software-engineering"
+  }
+}

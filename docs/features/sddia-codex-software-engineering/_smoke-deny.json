@@ -1,0 +1,10 @@
+{
+  "feature_name": "smoke-deny-domain-authority",
+  "branch_name": "feat/smoke-deny-domain-authority",
+  "persist_ref": "docs/features/sddia-codex-software-engineering/_smoke-deny-persist",
+  "refined_requirements": "smoke AC-GATE",
+  "execution_profile": {
+    "git_required": false,
+    "codex_slug": null
+  }
+}
