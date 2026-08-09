@@ -1,21 +1,26 @@
 ---
 document_id: PBI-SDDIA-DOMAIN-ABSTRACT-03
-uuid: pending-on-forge
+uuid: 7ade2a5f-be13-41ef-8b11-deb96fd58be3
 title: "[REFACTOR] Relocalización física process software fuera del Core"
 format: markdown
-version: "0.1.0"
+version: "0.2.0"
 created: "2026-08-09"
-status: pendiente-kitchen
+status: done
 priority: Media (post ABSTRACT-02)
 process: refactorization
 depends_on:
   - PBI-SDDIA-DOMAIN-ABSTRACT-02
 parent_pbi: PBI-SDDIA-DOMAIN-ABSTRACT-02
+feature_name: sddia-domain-abstract-03-relocalizacion
+branch_name: feat/sddia-domain-abstract-03-relocalizacion
+persist_ref: docs/features/sddia-domain-abstract-03-relocalizacion
+refined: "2026-08-09"
+archived: "2026-08-09"
 ---
 
-# [REFACTOR] Relocalización física process software (semilla kitchen)
+# [REFACTOR] Relocalización física process software (cerrado en rama)
 
-**No iniciar** hasta cierre APTO de ABSTRACT-02.
+**Prerrequisito ABSTRACT-02:** satisfecho (Done + validacion APTO). Promovido kitchen→pending.
 
 ## Objetivo
 

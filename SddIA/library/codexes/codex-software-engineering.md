@@ -48,4 +48,4 @@ Normas tácticas: documentación atómica de tareas, patrones plan→implementac
 | `accept-pr` | Fusión soberana |
 | `delivery-close-cycle` | Cierre entrega / PR |
 
-Relocalización física fuera de `directories.process` = ABSTRACT-03.
+Relocalización física fuera de `directories.process` = ABSTRACT-03 (**L-PACK-MULTIROOT-SIX-MOVE**): packing canónico `SddIA/library/codexes/codex-software-engineering/process/` vía `directories.process_domain_roots` (Cúmulo ≥1.6.0). Move físico pendiente de AC-RESOLVE evidenciado en ciclo ABSTRACT-03.

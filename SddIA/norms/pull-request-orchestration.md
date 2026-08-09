@@ -22,7 +22,7 @@ Queda **prohibido** enrutar `gh` a través de `git-manager`.
 
 ## 3. Presentación (cierre de entrega)
 
-La apertura de Pull Request hacia `main` se orquesta **exclusivamente** mediante el proceso **`SddIA/process/delivery-close-cycle.md`** (`process: delivery-close-cycle`), resuelto vía Cúmulo y ejecutado con `action:execute-process`.
+La apertura de Pull Request hacia `main` se orquesta **exclusivamente** mediante el proceso **`delivery-close-cycle`** (resuelto vía Cúmulo: `directories.process_domain_roots` + `directories.process`; packing códice software tras ABSTRACT-03), ejecutado con `action:execute-process`.
 
 Secuencia canónica dentro del proceso:
 
@@ -58,12 +58,12 @@ La **Única Fuente de Verdad (SSOT)** para la consolidación de código en `main
 
 ## 6. Referencias
 
-- `SddIA/process/delivery-close-cycle.md`
+- Proceso `delivery-close-cycle` (resolución Cúmulo / `process_domain_roots`; packing códice software post-ABSTRACT-03)
 - `SddIA/actions/emit-pr-presented-event.md`
 - `SddIA/norms/skill-io-git-manager-frozen.md`
 - `SddIA/norms/skill-io-shell-executor-frozen.md`
 - `SddIA/norms/git-operations.md`
-- `SddIA/process/accept-pr.md`
+- Proceso `accept-pr` (misma resolución multi-root)
 - `docs/features/l1-o5-runbooks-paridad/runbook-accept-pr.md` — **runbook operativo SSOT** (merge/push main/delete vía `execute-process --process accept-pr`)
 - `SddIA/norms/obediencia-procesos.md` — Ley de Jurisdicción Delegada y protocolo Kintsugi ante fallo de flujo
 
