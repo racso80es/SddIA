@@ -1,0 +1,9 @@
+{
+  "refactor_name": "sddia-domain-abstract-03-relocalizacion",
+  "branch_name": "feat/sddia-domain-abstract-03-relocalizacion",
+  "persist_ref": "docs/features/sddia-domain-abstract-03-relocalizacion",
+  "base_branch": "main",
+  "process_label": "refactorization",
+  "refactor_goal": "Relocalizar físicamente los process de ciclo de vida software (feature, bug-fix, refactorization) y ciclo PR fuera de directories.process Core hacia packing códice, con path de resolución multi-root demostrado.",
+  "refined_constraints": "Depende de PBI-SDDIA-DOMAIN-ABSTRACT-02 Done. document_id PBI-SDDIA-DOMAIN-ABSTRACT-03. Laudo Dedalo L-PACK-MULTIROOT-SIX-MOVE."
+}

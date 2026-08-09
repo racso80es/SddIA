@@ -357,9 +357,8 @@ outputs:
     }
 
     fn process_def() -> ProcessDef {
-        let path = crate::core::repo::find_repo_root()
-            .expect("repo")
-            .join("SddIA/process/feature.md");
+        let repo = crate::core::repo::find_repo_root().expect("repo");
+        let path = crate::core::resolver::resolve_process_path(&repo, "feature").expect("feature");
         parse_frontmatter(&path).expect("feature fm")
     }
 
