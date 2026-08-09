@@ -13,7 +13,10 @@ global: APTO
 pbi_archived: true
 document_id: PBI-SDDIA-DOMAIN-ABSTRACT-03
 pbi_ref: docs/todos/done/[REFACTOR] PBI-SDDIA-DOMAIN-ABSTRACT-03 — Relocalización física process software.md
-correlation_id: ""
+correlation_id: "3211daac-00d2-4833-b37e-979d899e3468"
+pr_url: https://github.com/racso80es/SddIA/pull/163
+pr_presented_event_id: 3211daac-00d2-4833-b37e-979d899e3468
+execution_id: c66016d8-c746-4c11-82ef-f24fd8b6ab65
 approval_status: aprobado
 verdict: aprobado
 laudo: L-PACK-MULTIROOT-SIX-MOVE
@@ -21,7 +24,7 @@ gate: L-RESOLVE-FIRST
 git_manager_invoked: true
 git_evidence_source: git-manager
 formal_execute_process: true
-evidence_bridge_notes: "git-manager status OK @ 2026-08-09; cargo test ac_resolve 5/5; release build 17:47:14; feature resolve→INPUT_VALIDATION; kalma2-interact OK; digest 3d1127e6fe8bd3059b5eb0afbcf921bb"
+evidence_bridge_notes: "git-manager status OK @ 2026-08-09; cargo test ac_resolve 5/5; release build 17:47:14; feature resolve→INPUT_VALIDATION; kalma2-interact OK; digest 3d1127e6fe8bd3059b5eb0afbcf921bb; DCC PR #163 + ECST 3211daac"
 shell_git_manager_session: "APTO — ./sddia-run.sh --tool git-manager operation_type=status"
 checks:
   AC_RESOLVE: APTO
