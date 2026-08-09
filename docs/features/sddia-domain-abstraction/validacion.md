@@ -12,6 +12,7 @@ pbi_archived: true
 document_id: PBI-SDDIA-DOMAIN-ABSTRACT-01
 pbi_ref: docs/todos/done/[ARQUITECTURA] Separación de Dominio SddIA y Abstracción del Contexto de Ejecución.md
 execution_id: 758d4440-2889-47a9-b412-ffab00ba0c1d
+pr_url: https://github.com/racso80es/SddIA/pull/161
 approval_status: aprobado
 verdict: aprobado
 checks:
