@@ -8,6 +8,8 @@ branch: feat/ocean-dpp-v2-6416012709005756507
 persist_ref: docs/features/ocean-dpp-v2
 pr_url: https://github.com/racso80es/SddIA/pull/160
 verdict: NO_APTO
+post_correction_verdict: APTO
+correction_commit: 43f8bf3
 ---
 
 # Auditoría — Ocean DPP V2 (PR #160)
@@ -16,12 +18,17 @@ verdict: NO_APTO
 
 - Rama: `feat/ocean-dpp-v2-6416012709005756507`
 - Merge `main` → feature: `f302bc8` (2026-08-10)
-- CI post-merge: PASS (índice / smokes EDA)
+- Corrección: `43f8bf3` (2026-08-10)
+- CI post-corrección: PASS (re-run PR tras flake e2e)
 - Auditor: Tekton/Argos bajo mandato del Vértice Biológico
 
 ## Veredicto inicial
 
 **NO_APTO** — CI verde no implica DoD. Fracturas de digest, idempotencia, sweeper y documentación.
+
+## Veredicto post-corrección
+
+**APTO** — criterios de cierre 1–6 satisfechos; ver `validacion.md` (`global: APTO`, `pbi_archived: true`).
 
 ## Hallazgos
 
