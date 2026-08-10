@@ -327,7 +327,7 @@ mod tests {
         std::env::remove_var(ENV_CMD);
         let _ = fs::remove_dir_all(&dir);
 
-        assert_eq!(entry["status"], "executed", "{entry}");
+        assert_eq!(entry["status"], "awaiting_agents", "{entry}");
         assert_eq!(entry["handler"], "agent-runtime");
     }
 

@@ -5,6 +5,7 @@ use sddia_io::outbound_lab::{
 use sddia_io::{emit_error, emit_success, read_stdin_json};
 use serde_json::{json, Value};
 use std::time::Duration;
+use sha2::Digest;
 
 #[cfg(target_arch = "wasm32")]
 fn main() {
@@ -45,37 +46,83 @@ fn run(req: &Value) -> Result<Value, String> {
         .filter(|s| !s.is_empty())
         .ok_or_else(|| "Campo obligatorio ausente o inválido: network".to_string())?;
 
-    let payload = req
+    let payload_val = req
         .get("payload")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
         .ok_or_else(|| "Campo obligatorio ausente o inválido: payload".to_string())?;
 
-    if lab_simulate_iota_enabled() {
-        return Ok(simulated_result(network));
-    }
+    let (payload_str, merkle_proofs) = if let Some(arr) = payload_val.as_array() {
+        let strings: Vec<String> = arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+        if strings.is_empty() {
+            return Err("Payload array is empty".to_string());
+        }
 
-    if let Some(mock_url) = lab_mock_iota_url() {
-        return post_mock(&mock_url, network, payload);
-    }
+        let leaves: Vec<[u8; 32]> = strings.iter().map(|s| {
+            let mut hasher = sha2::Sha256::new();
+            sha2::Digest::update(&mut hasher, s.as_bytes());
+            let result = hasher.finalize();
+            let mut arr = [0u8; 32];
+            arr.copy_from_slice(&result);
+            arr
+        }).collect();
 
-    let repo = find_repo_root_from_cwd();
-    if load_iota_wallet_secret(repo.as_deref()).is_none() {
-        return Err("config-missing: IOTA_WALLET_SECRET".into());
-    }
+        let tree = rs_merkle::MerkleTree::<rs_merkle::algorithms::Sha256>::from_leaves(&leaves);
+        let root = tree.root().ok_or("Cannot compute merkle root")?;
+        let root_hex = hex::encode(root);
 
-    if let Ok(relay) = std::env::var("IOTA_PUBLISH_RELAY_URL") {
-        let relay = relay.trim().to_string();
-        if !relay.is_empty() {
-            return publish_via_relay(&relay, network, payload);
+        let mut proofs = vec![];
+        for i in 0..leaves.len() {
+            let proof = tree.proof(&[i]);
+            let proof_bytes = proof.to_bytes();
+            proofs.push(json!({
+                "index": i,
+                "total_leaves": leaves.len(),
+                "proof": hex::encode(proof_bytes),
+                "payload": strings[i],
+                "merkle_root": root_hex.clone()
+            }));
+        }
+
+        (root_hex, Some(json!(proofs)))
+    } else if let Some(s) = payload_val.as_str() {
+        let s = s.trim().to_string();
+        if s.is_empty() {
+            return Err("Campo obligatorio ausente o inválido: payload".to_string());
+        }
+        (s, None)
+    } else {
+        return Err("Payload debe ser string o array de strings".to_string());
+    };
+
+    let mut out = if lab_simulate_iota_enabled() {
+        simulated_result(network)
+    } else if let Some(mock_url) = lab_mock_iota_url() {
+        post_mock(&mock_url, network, &payload_str)?
+    } else {
+        let repo = find_repo_root_from_cwd();
+        if load_iota_wallet_secret(repo.as_deref()).is_none() {
+            return Err("config-missing: IOTA_WALLET_SECRET".into());
+        }
+
+        if let Ok(relay) = std::env::var("IOTA_PUBLISH_RELAY_URL") {
+            let relay = relay.trim().to_string();
+            if !relay.is_empty() {
+                publish_via_relay(&relay, network, &payload_str)?
+            } else {
+                return Err("iota-publish-unavailable: configure SDDIA_LAB_SIMULATE_IOTA, SDDIA_LAB_MOCK_IOTA_URL o IOTA_PUBLISH_RELAY_URL".into());
+            }
+        } else {
+            return Err("iota-publish-unavailable: configure SDDIA_LAB_SIMULATE_IOTA, SDDIA_LAB_MOCK_IOTA_URL o IOTA_PUBLISH_RELAY_URL".into());
+        }
+    };
+
+    if let Some(proofs) = merkle_proofs {
+        if let Some(obj) = out.as_object_mut() {
+            obj.insert("merkle_proofs".to_string(), proofs);
+            obj.insert("merkle_root".to_string(), json!(payload_str));
         }
     }
 
-    Err(
-        "iota-publish-unavailable: configure SDDIA_LAB_SIMULATE_IOTA, SDDIA_LAB_MOCK_IOTA_URL o IOTA_PUBLISH_RELAY_URL"
-            .into(),
-    )
+    Ok(out)
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -169,6 +216,9 @@ fn publish_via_relay(relay_url: &str, network: &str, payload: &str) -> Result<Va
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn rejects_missing_action() {
@@ -178,6 +228,7 @@ mod tests {
 
     #[test]
     fn lab_simulate_returns_digest() {
+        let _g = ENV_LOCK.lock().unwrap();
         std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
         let out = run(&json!({
             "action": "publish_immutable_data",
@@ -190,6 +241,39 @@ mod tests {
             .and_then(|v| v.as_str())
             .unwrap_or("");
         assert!(digest.starts_with("lab-sim-"));
+        std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
+    }
+
+    #[test]
+    fn merkle_array_payload_returns_root_and_proofs() {
+        let _g = ENV_LOCK.lock().unwrap();
+        std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
+        let out = run(&json!({
+            "action": "publish_immutable_data",
+            "network": "testnet",
+            "payload": ["{\"a\":1}", "{\"b\":2}", "{\"c\":3}"]
+        }))
+        .expect("merkle simulate");
+        let root = out
+            .get("merkle_root")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert_eq!(root.len(), 64);
+        let proofs = out
+            .get("merkle_proofs")
+            .and_then(|v| v.as_array())
+            .expect("proofs");
+        assert_eq!(proofs.len(), 3);
+        assert_eq!(
+            proofs[0].get("merkle_root").and_then(|v| v.as_str()).unwrap_or(""),
+            root
+        );
+        let digest = out
+            .get("transaction_digest")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert!(digest.starts_with("lab-sim-"));
+        assert_ne!(digest, "batched-digest");
         std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
     }
 }

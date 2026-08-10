@@ -2,7 +2,7 @@
 
 use crate::envelope::OrchestratorEnvelope;
 use crate::engine::route_domain_core::{
-    input_truthy, resolve_route_event_path, route_domain_event, SyncRouteGuard,
+    input_truthy, resolve_route_event_path, SyncRouteGuard,
 };
 use serde_json::{json, Value};
 use std::path::Path;
@@ -10,14 +10,20 @@ use std::path::Path;
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
     let blocking =
         input_truthy(process_inputs, "blocking") || input_truthy(process_inputs, "sync");
-    let event_rel = resolve_route_event_path(repo, process_inputs, blocking)?;
+    let mut paths = vec![];
+    if let Some(arr) = process_inputs.get("event_file_paths").and_then(|v| v.as_array()) {
+        paths = arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+    } else {
+        let event_rel = resolve_route_event_path(repo, process_inputs, blocking)?;
+        paths.push(event_rel);
+    }
     let _sync_guard = if blocking {
         Some(SyncRouteGuard::activate())
     } else {
         None
     };
 
-    let out = route_domain_event(repo, &event_rel);
+    let out = crate::engine::route_domain_core::route_domain_batch(repo, paths.clone());
     let ok = out.get("success").and_then(|v| v.as_bool()).unwrap_or(false)
         && out.get("exitCode").and_then(|v| v.as_i64()).unwrap_or(1) == 0;
     let status_code = out
@@ -30,10 +36,19 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         .and_then(|v| v.as_str())
         .map(str::to_string);
 
+    let mut final_data = out.get("data").cloned();
+    if paths.len() == 1 {
+        if let Some(arr) = final_data.as_ref().and_then(|v| v.as_array()) {
+            if let Some(first) = arr.first() {
+                final_data = first.get("data").cloned();
+            }
+        }
+    }
+
     Ok(OrchestratorEnvelope {
         success: ok,
         status_code,
-        data: out.get("data").cloned(),
+        data: final_data,
         error: out
             .get("error")
             .and_then(|v| v.as_str())

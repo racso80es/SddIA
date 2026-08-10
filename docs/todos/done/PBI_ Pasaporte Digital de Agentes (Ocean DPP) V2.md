@@ -1,6 +1,17 @@
+---
+document_id: PBI-OCEAN-DPP-V2
+title: "[PBI] Arquitectura Ocean DPP: Pasaporte Digital de Entidad y Merkle Batching V2"
+status: done
+process: feature
+persist_ref: docs/features/ocean-dpp-v2
+pr_url: https://github.com/racso80es/SddIA/pull/160
+branch: feat/ocean-dpp-v2-6416012709005756507
+closed: "2026-08-10"
+---
+
 # **\[PBI\] Arquitectura Ocean DPP: Pasaporte Digital de Entidad y Merkle Batching V2**
 
-**Estado:** Backlog (Reserva táctica para futura iteración) | **Entidades Afectadas:** Cúmulo, iota-immutable-publisher, Radamanto, Argos, Tékton
+**Estado:** Done (rama feat/ocean-dpp-v2 — cierre documental pre-merge PR #160) | **Entidades Afectadas:** Cúmulo, iota-immutable-publisher, Radamanto, Argos, Tékton
 
 ## **1\. Especificación Técnica Profunda (Spec)**
 

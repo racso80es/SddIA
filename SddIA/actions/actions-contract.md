@@ -38,7 +38,7 @@ Cualquier alias, traducción o variante kebab-case con la misma intención semá
 
 ## 3. Interfaz de Interacción (I/O JSON Estricto)
 Toda acción debe declarar explícitamente en su `{name}.md`:
-* **`inputs`**: Esquema JSON de los datos requeridos para iniciar la orquestación.
+* **`inputs`**: Esquema JSON de los datos requeridos para iniciar la orquestación. Habilita procesamiento en bloque (*arrays*) si el contrato lo específica.
 * **`outputs`**: Esquema JSON del resultado.
 
 La cápsula ejecutora de la acción se comunica por `stdin`/`stdout` con un envelope canónico **idéntico al de Skills** (`skills-contract.md` § 3):

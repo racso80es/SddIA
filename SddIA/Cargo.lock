@@ -695,9 +695,12 @@ dependencies = [
 name = "iota-immutable-publisher"
 version = "0.1.0"
 dependencies = [
+ "hex",
+ "rs_merkle",
  "sddia-io",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
  "ureq",
 ]
 
@@ -1065,6 +1068,15 @@ dependencies = [
  "libc",
  "untrusted",
  "windows-sys",
+]
+
+[[package]]
+name = "rs_merkle"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb09b49230ba22e8c676e7b75dfe2887dea8121f18b530ae0ba519ce442d2b21"
+dependencies = [
+ "sha2 0.10.9",
 ]
 
 [[package]]

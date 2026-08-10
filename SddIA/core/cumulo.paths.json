@@ -95,7 +95,8 @@
     "domain_subscriptions": "SddIA/core/event-domain-subscriptions.json"
   },
   "eda_instance": {
-    "customization": ".SddIA/events"
+    "customization": ".SddIA/events",
+    "proofs": ".SddIA/proofs"
   },
   "env_hierarchy": {
     "global": ".dev/.env",

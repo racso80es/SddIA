@@ -29,7 +29,7 @@ Entradas esperadas en el payload.
 {
   "action": "string (Obligatorio. ej: 'publish_immutable_data')",
   "network": "string (Obligatorio. ej: 'testnet')",
-  "payload": "string (Obligatorio. El dato a eternizar)"
+  "payload": "string|array (Obligatorio. El dato a eternizar, o array de strings para agrupar en un Árbol de Merkle)"
 }
 ```
 
@@ -44,7 +44,9 @@ Estructura de la respuesta emitida por la cápsula.
   "feedback": "string (Obligatorio. Mensaje detallado sobre el resultado o el error)",
   "result": {
     "transaction_digest": "string (Hash de la transacción inmutable, presente si success es true)",
-    "object_id": "string (Opcional. ID del objeto de estado en MoveVM)"
+    "object_id": "string (Opcional. ID del objeto de estado en MoveVM)",
+    "merkle_proofs": "array (Opcional. Lista de Merkle proofs si el payload era un array de elementos)",
+    "merkle_root": "string (Opcional. Raíz de Merkle si se usó batching)"
   }
 }
 ```
