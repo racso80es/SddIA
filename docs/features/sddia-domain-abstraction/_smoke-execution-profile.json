@@ -6,7 +6,7 @@
   "refined_requirements": "Smoke AC-WSINIT: init sin Git vía execution_profile",
   "execution_profile": {
     "git_required": false,
-    "codex_slug": null,
+    "codex_slug": "codex-software-engineering",
     "allowed_policies": ["ecosystem-evolution", "filesystem-ops", "knowledge-management"]
   },
   "cumulo_topology": { "pathsDefinition": "SddIA/core/cumulo.paths.json" },
