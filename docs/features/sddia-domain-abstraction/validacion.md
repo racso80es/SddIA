@@ -1,7 +1,7 @@
 ---
 feature_name: sddia-domain-abstraction
 created: "2026-08-05"
-updated: "2026-08-09"
+updated: "2026-08-10"
 process: feature
 phase: Verificación
 agent: argos
@@ -37,15 +37,14 @@ git_changes:
   - SddIA/evolution/a1c3e5f7-2948-4b6d-8e0a-1f2b3c4d5e6f.md
   - docs/features/sddia-domain-abstraction/
   - docs/todos/done/[ARQUITECTURA] Separación de Dominio SddIA y Abstracción del Contexto de Ejecución.md
-  - docs/todos/kitchen/[REFACTOR] PBI-SDDIA-DOMAIN-ABSTRACT-02 — Migración process software a códice.md
-  - docs/todos/kitchen/[REFACTOR] Separación de Dominio SddIA y Abstracción del Contexto de Ejecución.md
+  - docs/todos/done/[ARQUITECTURA] PBI-SDDIA-DOMAIN-ABSTRACT-02 — Migración process software a códice.md
 ---
 
 # Validación — sddia-domain-abstraction
 
 ## Veredicto
 
-**APTO** — MVP L-SPLIT-A (perfil de dominio + gate Git en `workspace_init`). ABSTRACT-02 diferido.
+**APTO** — MVP L-SPLIT-A (perfil de dominio + gate Git en `workspace_init`). ABSTRACT-02/03 ya en `main` (post #161).
 
 ## Criterios
 
@@ -55,17 +54,19 @@ git_changes:
 | **AC-BOOT** | APTO | Mismo smoke: `workspace-init` executed + `objectives` materializado; rama no forzada |
 | **AC-CODEX** | APTO | `domain_profile.rs` + schema en `spec.md`; slug opcional; instancia `.SddIA/active-domain-profile.json` |
 | **AC-DENY** | APTO | `cerbero_di_rbac::ac_r5_gate_pass_cerbero_deny` → `CERBERO_RBAC_DENIED` |
-| **AC-BUILD** | APTO | `cargo build -p execute-process --release` OK (2026-08-09) |
+| **AC-BUILD** | APTO | `cargo build -p execute-process --release` OK (2026-08-09; re-audit 2026-08-10) |
 | **AC-DOC** | APTO | Cascada completa; PBI en `done/`; `pbi_archived: true` |
 
 ## I7
 
 Detector endurecido: `requires_capability∋proc:git-sync` ∨ `delegates_to`/`resolved_provider`∋`skill:git-manager`. Path DI→síntesis documentado en `spec.md`.
 
-## Fuera de alcance (confirmado)
+## Fuera de alcance (histórico ABSTRACT-01)
 
-Migración process→códice (ABSTRACT-02 kitchen). Vaciado `SddIA/process/`. Nuevos ECST PA.
+Migración process→códice y relocalización física: cerradas en ABSTRACT-02/03. Nuevos ECST PA siguen fuera.
 
-## Nota binario
+## Nota binario / smoke post-authority
 
-Smoke válido solo con binario recompilado en `SddIA/target` (evitar `CARGO_TARGET_DIR` sandbox / binario stale jul-24).
+Smoke válido solo con binario recompilado en `SddIA/target` (evitar `CARGO_TARGET_DIR` sandbox / binario stale).
+
+Post ABSTRACT-02: el fixture `_smoke-execution-profile.json` debe llevar `codex_slug: codex-software-engineering` junto a `git_required: false`. Sin slug → `DOMAIN_AUTHORITY_DENIED` (comportamiento esperado del gate de autoridad, no regresión del gate Git).

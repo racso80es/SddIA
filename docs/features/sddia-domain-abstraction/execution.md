@@ -41,10 +41,13 @@ SDDIA_AGENT_RUNTIME_COMMAND= SDDIA_LAB_SKIP_GIT= \
 | Git skip | `reason: profile_git_not_required`, `profile_source: input_execution_profile` |
 | Sin `SDDIA_LAB_SKIP_GIT` | env vacío en smoke |
 | `execution_profile.git_required: false` | data |
+| `execution_profile.codex_slug` | `codex-software-engineering` (obligatorio post ABSTRACT-02) |
 | Rama intacta | permaneció `feat/sddia-domain-abstraction` (no checkout) |
 
-`execution_id` smoke: `8606b3ba-dc3a-4b5c-8ca7-5971a012e7d4` (corrida previa con binario stale ejecutó git; re-smoke con binario 2026-08-05 OK).
+`execution_id` smoke histórico: `8606b3ba-dc3a-4b5c-8ca7-5971a012e7d4`. Re-audit 2026-08-10: smoke con slug software → `profile_git_not_required`; fixture sin slug → `DOMAIN_AUTHORITY_DENIED`.
 
 ## Nota operativa
 
 `CARGO_TARGET_DIR` del sandbox puede apuntar a cache antigua: forzar `CARGO_TARGET_DIR=SddIA/target` al compilar el binario de smoke. Binario `SddIA/target/debug/execute-process` fechado 2026-07-24 = **stale** (sin gate de perfil).
+
+Post ABSTRACT-02 (`domain_authority`): `feature` con `git_required: false` **exige** `codex_slug: codex-software-engineering`. `codex_slug: null` ya no es smoke válido.
