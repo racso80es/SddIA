@@ -313,10 +313,45 @@ fn capsule_error_trace(body: &Value, ok: bool) -> String {
         .to_string()
 }
 
-fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Option<String>) {
-    if BATCH_MODE.with(|b| b.get()) {
-        return (true, "batched".into(), 0, Some("batched-digest".into()));
+fn is_valid_iota_anchor(ds: &Map<String, Value>) -> bool {
+    if ds.get("merkle_anchored").and_then(|v| v.as_bool()) == Some(true) {
+        if let Some(d) = ds.get("transaction_digest").and_then(|v| v.as_str()).map(str::trim) {
+            return !d.is_empty() && d != "batched-digest";
+        }
+        return true;
     }
+    if let Some(d) = ds.get("transaction_digest").and_then(|v| v.as_str()).map(str::trim) {
+        if !d.is_empty() && d != "batched-digest" {
+            return true;
+        }
+        if d == "batched-digest" {
+            return false;
+        }
+    }
+    ds.contains_key("cumulo.iota-immutable-publisher") || ds.contains_key("cumulo")
+}
+
+fn resolve_eda_proofs_dir(repo: &Path) -> PathBuf {
+    if let Ok(cfg) = super::workspace::load_paths_config(repo) {
+        if let Some(p) = cfg
+            .get("eda_instance")
+            .and_then(|e| e.get("proofs"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            let pb = PathBuf::from(p);
+            return if pb.is_absolute() {
+                pb
+            } else {
+                repo.join(pb)
+            };
+        }
+    }
+    repo.join(".SddIA").join("proofs")
+}
+
+fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Option<String>) {
     if simulate_iota_enabled() {
         let digest = format!("lab-sim-{}", &Uuid::new_v4().simple().to_string()[..24]);
         return (true, "lab-simulated".into(), 0, Some(digest));
@@ -671,15 +706,45 @@ pub(crate) fn dispatch_subscriber(
             return (sid, "skipped-dlt-threshold".into(), Some(reason), 0);
         }
         let (ok, feedback, code, digest) = if batch_mode_iota {
-            (true, "batched".into(), 0, Some("batched-digest".into()))
+            if let Some(ds) = event.get("delivery_state").and_then(|v| v.as_object()) {
+                if is_valid_iota_anchor(ds) {
+                    let d = ds
+                        .get("transaction_digest")
+                        .and_then(|v| v.as_str())
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty() && *s != "batched-digest")
+                        .map(str::to_string);
+                    (true, "batched-preanchored".into(), 0, d)
+                } else {
+                    (
+                        false,
+                        "batch-missing-merkle-anchor".into(),
+                        1,
+                        None,
+                    )
+                }
+            } else {
+                (
+                    false,
+                    "batch-missing-merkle-anchor".into(),
+                    1,
+                    None,
+                )
+            }
         } else {
             invoke_iota_publisher(repo, event)
         };
         if ok {
-            if let Some(d) = digest {
-                if let Some(ds) = event.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
-                    ds.insert("cumulo".to_string(), json!("success"));
-                    ds.insert("transaction_digest".to_string(), json!(d));
+            if let Some(ds) = event.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
+                ds.insert("cumulo".to_string(), json!("success"));
+                if let Some(d) = digest {
+                    let existing = ds
+                        .get("transaction_digest")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    if existing.is_empty() || existing == "batched-digest" {
+                        ds.insert("transaction_digest".to_string(), json!(d));
+                    }
                 }
             }
             return (sid, "success".into(), None, code);
@@ -1235,40 +1300,59 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
     };
 
     let subs_path = repo.join(&bus.subscriptions);
-    let registry: Value = fs::read_to_string(&subs_path).ok()
+    let registry: Value = fs::read_to_string(&subs_path)
+        .ok()
         .and_then(|t| serde_json::from_str(t.strip_prefix('\u{feff}').unwrap_or(&t)).ok())
         .unwrap_or(json!({}));
 
     let mut payloads_to_anchor = vec![];
     let mut uuids_to_anchor = vec![];
+    let mut event_paths_by_uuid: HashMap<String, PathBuf> = HashMap::new();
     let mut results = vec![];
 
     for path_str in &event_file_paths {
-        let raw_path = std::path::PathBuf::from(path_str);
-        let event_path = if raw_path.is_absolute() { raw_path } else { repo.join(&raw_path) };
+        let raw_path = PathBuf::from(path_str);
+        let event_path = if raw_path.is_absolute() {
+            raw_path
+        } else {
+            repo.join(&raw_path)
+        };
 
-        let Ok(text) = fs::read_to_string(&event_path) else { continue };
-        let Ok(event) = serde_json::from_str::<Value>(&text) else { continue };
+        let Ok(text) = fs::read_to_string(&event_path) else {
+            continue;
+        };
+        let Ok(event) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
 
-        let Some(event_type) = event.get("event_type").and_then(|v| v.as_str()) else { continue };
-        let Some(event_uuid) = event.get("event_id").and_then(|v| v.as_str()) else { continue };
+        let Some(event_type) = event.get("event_type").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let Some(event_uuid) = event.get("event_id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        event_paths_by_uuid.insert(event_uuid.to_string(), event_path.clone());
         let payload = event.get("payload").cloned().unwrap_or(json!({}));
         let origin_topology = resolve_origin_topology(&payload);
 
         let mut needs_anchor = false;
-        let subscribers = registry.get(event_type).and_then(|v| v.as_array()).cloned().unwrap_or_default();
+        let subscribers = registry
+            .get(event_type)
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
         for sub in subscribers {
-            if subscriber_applies_to_topology(&sub, &origin_topology) {
-                if sub.get("tool").and_then(|v| v.as_str()) == Some("iota-immutable-publisher") {
-                    needs_anchor = true;
-                    break;
-                }
+            if subscriber_applies_to_topology(&sub, &origin_topology)
+                && sub.get("tool").and_then(|v| v.as_str()) == Some("iota-immutable-publisher")
+            {
+                needs_anchor = true;
+                break;
             }
         }
 
         if needs_anchor {
             if let Some(ds) = event.get("delivery_state").and_then(|v| v.as_object()) {
-                if ds.contains_key("cumulo.iota-immutable-publisher") || ds.contains_key("cumulo") {
+                if is_valid_iota_anchor(ds) {
                     needs_anchor = false;
                 }
             }
@@ -1282,8 +1366,6 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
             let payload_str = String::from_utf8(buf).unwrap_or_default();
             payloads_to_anchor.push(payload_str);
             uuids_to_anchor.push(event_uuid.to_string());
-
-
         }
     }
 
@@ -1296,35 +1378,75 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
 
         let repo_buf = repo.to_path_buf();
         let handle = std::thread::spawn(move || {
-            crate::engine::capsules::invoke_tool_capsule_json(&repo_buf, "iota-immutable-publisher", &payload, false)
+            invoke_tool_capsule_json(&repo_buf, "iota-immutable-publisher", &payload, false)
         });
 
         if let Ok(Ok(result)) = handle.join() {
             let body = result.body;
-            if body.get("success").and_then(|v: &serde_json::Value| v.as_bool()).unwrap_or(false) {
-                let proofs = body.get("result").and_then(|r: &serde_json::Value| r.get("merkle_proofs")).and_then(|v: &serde_json::Value| v.as_array());
-                if let Some(proofs) = proofs {
-                    let proofs_dir = repo.join(".SddIA").join("proofs");
-                    let _ = std::fs::create_dir_all(&proofs_dir);
+            if body
+                .get("success")
+                .and_then(|v: &Value| v.as_bool())
+                .unwrap_or(false)
+            {
+                let digest = body
+                    .get("result")
+                    .and_then(|r| r.get("transaction_digest"))
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string);
+                let merkle_root = body
+                    .get("result")
+                    .and_then(|r| r.get("merkle_root"))
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string);
+                let proofs = body
+                    .get("result")
+                    .and_then(|r| r.get("merkle_proofs"))
+                    .and_then(|v| v.as_array());
+                let proofs_dir = resolve_eda_proofs_dir(repo);
+                let _ = fs::create_dir_all(&proofs_dir);
 
-                    for (i, uuid) in uuids_to_anchor.iter().enumerate() {
+                for (i, uuid) in uuids_to_anchor.iter().enumerate() {
+                    if let Some(proofs) = proofs {
                         if let Some(proof) = proofs.get(i) {
-                            let proof_path = proofs_dir.join(format!("{}.json", uuid));
-                            let _ = std::fs::write(&proof_path, serde_json::to_string_pretty(proof).unwrap_or_default());
+                            let proof_path = proofs_dir.join(format!("{uuid}.json"));
+                            let _ = fs::write(
+                                &proof_path,
+                                serde_json::to_string_pretty(proof).unwrap_or_default(),
+                            );
+                        }
+                    }
 
-                            let event_path = std::path::PathBuf::from(&bus.pending).join(format!("{}.json", uuid));
-                            if let Ok(text) = fs::read_to_string(&event_path) {
-                                if let Ok(mut event) = serde_json::from_str::<Value>(&text) {
-                                    if let Some(obj) = event.as_object_mut() {
-                                        if let Some(ds) = obj.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
-                                            if let Some(digest) = body.get("result").and_then(|r| r.get("transaction_digest")).and_then(|v| v.as_str()) {
-                                                ds.insert("transaction_digest".to_string(), json!(digest));
-                                            }
-                                        }
+                    let event_path = event_paths_by_uuid
+                        .get(uuid)
+                        .cloned()
+                        .unwrap_or_else(|| {
+                            PathBuf::from(&bus.pending).join(format!("{uuid}.json"))
+                        });
+                    let event_path = if event_path.is_absolute() {
+                        event_path
+                    } else {
+                        repo.join(&event_path)
+                    };
+                    if let Ok(text) = fs::read_to_string(&event_path) {
+                        if let Ok(mut event) = serde_json::from_str::<Value>(&text) {
+                            if let Some(obj) = event.as_object_mut() {
+                                if !obj.contains_key("delivery_state") {
+                                    obj.insert("delivery_state".to_string(), json!({}));
+                                }
+                                if let Some(ds) =
+                                    obj.get_mut("delivery_state").and_then(|v| v.as_object_mut())
+                                {
+                                    ds.insert("cumulo".to_string(), json!("success"));
+                                    ds.insert("merkle_anchored".to_string(), json!(true));
+                                    if let Some(ref d) = digest {
+                                        ds.insert("transaction_digest".to_string(), json!(d));
                                     }
-                                    let _ = crate::engine::eda_bus_topology::write_json_atomic(&event_path, &event);
+                                    if let Some(ref root) = merkle_root {
+                                        ds.insert("merkle_root".to_string(), json!(root));
+                                    }
                                 }
                             }
+                            let _ = write_json_atomic(&event_path, &event);
                         }
                     }
                 }
@@ -1336,13 +1458,10 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
         let out = route_domain_event(repo, path_str, true);
         results.push(out);
 
-        let raw_path = std::path::PathBuf::from(path_str);
+        let raw_path = PathBuf::from(path_str);
         let event_uuid = raw_path.file_stem().unwrap_or_default().to_string_lossy();
         let _sweep = try_sweep_event(repo, &bus, &event_uuid, Some(&registry));
     }
 
     json!({ "success": true, "exitCode": 0, "data": results })
-}
-thread_local! {
-    static BATCH_MODE: std::cell::Cell<bool> = std::cell::Cell::new(false);
 }

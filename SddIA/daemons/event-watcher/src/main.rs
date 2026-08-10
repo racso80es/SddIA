@@ -13,6 +13,8 @@ use std::{thread, time::Duration};
 const POLL_SECONDS: u64 = 2;
 const MAX_ROUTE_ATTEMPTS: u32 = 3;
 const HEARTBEAT_TICK_SECONDS: u64 = 10;
+/// Chunk físico (Dogma del Despertador): tope de paths por invocación al orquestador.
+const PHYSICAL_ROUTE_CHUNK: usize = 50;
 
 fn spawn_heartbeat_worker(
     centinela: Arc<Mutex<DaemonRuntime>>,
@@ -102,6 +104,19 @@ fn invoke_route_process(repo: &Path, rel_path: &str, process_name: &str) -> Outp
         .output()
         .unwrap_or_else(|e| {
             eprintln!("[WATCHER] spawn execute-process: {e}");
+            Command::new("false").output().expect("false")
+        })
+}
+
+fn invoke_route_process_batch(repo: &Path, rel_paths: &[String], process_name: &str) -> Output {
+    let runner = execute_process_bin(repo);
+    let payload = json!({ "event_file_paths": rel_paths }).to_string();
+    Command::new(&runner)
+        .args(["--process", process_name, "--inputs", &payload])
+        .current_dir(repo)
+        .output()
+        .unwrap_or_else(|e| {
+            eprintln!("[WATCHER] spawn execute-process batch: {e}");
             Command::new("false").output().expect("false")
         })
 }
@@ -309,6 +324,84 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
                 .collect();
             paths.sort();
+            if process_name == "route-domain-event" {
+                let mut eligible: Vec<(PathBuf, String, String, String)> = Vec::new();
+                for path in paths {
+                    let file_name = path.file_name().unwrap_or_default().to_string_lossy().into_owned();
+                    let key = format!(
+                        "{}/{}",
+                        watch_dir.file_name().unwrap_or_default().to_string_lossy(),
+                        file_name
+                    );
+                    let event_uuid = path
+                        .file_stem()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned();
+                    if let Some(skip) = watcher_skip_reason(
+                        &event_uuid,
+                        &key,
+                        process_name,
+                        &path,
+                        &processing,
+                        &routed_ok,
+                        &repo,
+                        &top,
+                        &attempts,
+                    ) {
+                        if skip.starts_with("in-flight")
+                            || skip.starts_with("routed-ok")
+                            || skip.starts_with("fractal-terminal")
+                        {
+                            println!("[WATCHER] skip {skip}");
+                        } else if skip.starts_with("max attempts") {
+                            println!("[WATCHER] Skip {key}: {skip}");
+                        }
+                        continue;
+                    }
+                    let rel = rel_event_path(&repo, &path);
+                    eligible.push((path, event_uuid, key, rel));
+                }
+                for chunk in eligible.chunks(PHYSICAL_ROUTE_CHUNK) {
+                    if chunk.is_empty() {
+                        continue;
+                    }
+                    let rels: Vec<String> = chunk.iter().map(|(_, _, _, r)| r.clone()).collect();
+                    println!(
+                        "[WATCHER] Lote físico {} eventos → route-domain-event (semantic batch in-engine)",
+                        rels.len()
+                    );
+                    if let Ok(mut rt) = shared.lock() {
+                        rt.note_stimulus();
+                    }
+                    for (_, event_uuid, key, _) in chunk {
+                        processing.insert(event_uuid.clone());
+                        *attempts.entry(key.clone()).or_insert(0) += 1;
+                    }
+                    let out = invoke_route_process_batch(&repo, &rels, process_name);
+                    for (path, event_uuid, key, _) in chunk {
+                        processing.remove(event_uuid);
+                        let file_name = path.file_name().unwrap_or_default().to_string_lossy();
+                        if out.status.success() {
+                            if path.is_file() {
+                                routed_ok.insert(event_uuid.clone());
+                            } else {
+                                routed_ok.remove(event_uuid);
+                                attempts.remove(key);
+                            }
+                            if !has_dead_letter_witnesses(&repo, &top, event_uuid) && !path.is_file()
+                            {
+                                attempts.remove(key);
+                            }
+                            log_route_outcome(&repo, &top, &file_name, event_uuid, &out);
+                        } else {
+                            routed_ok.remove(event_uuid);
+                            log_route_outcome(&repo, &top, &file_name, event_uuid, &out);
+                        }
+                    }
+                }
+                continue;
+            }
             for path in paths {
                 let file_name = path.file_name().unwrap_or_default().to_string_lossy();
                 let key = format!("{}/{}", watch_dir.file_name().unwrap_or_default().to_string_lossy(), file_name);
@@ -356,15 +449,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 {
                     routed_ok.remove(&event_uuid);
                 }
-                if process_name == "route-domain-event" {
-                    if out.status.success()
-                        && !has_dead_letter_witnesses(&repo, &top, &event_uuid)
-                        && !path.is_file()
-                    {
-                        attempts.remove(&key);
-                    }
-                    log_route_outcome(&repo, &top, &file_name, &event_uuid, &out);
-                } else if out.status.success() {
+                if out.status.success() {
                     if !path.is_file() {
                         attempts.remove(&key);
                     }

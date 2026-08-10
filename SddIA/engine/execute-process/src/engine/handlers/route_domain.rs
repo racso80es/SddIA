@@ -2,7 +2,7 @@
 
 use crate::envelope::OrchestratorEnvelope;
 use crate::engine::route_domain_core::{
-    input_truthy, resolve_route_event_path, route_domain_event, SyncRouteGuard,
+    input_truthy, resolve_route_event_path, SyncRouteGuard,
 };
 use serde_json::{json, Value};
 use std::path::Path;

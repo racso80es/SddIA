@@ -216,6 +216,9 @@ fn publish_via_relay(relay_url: &str, network: &str, payload: &str) -> Result<Va
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn rejects_missing_action() {
@@ -225,6 +228,7 @@ mod tests {
 
     #[test]
     fn lab_simulate_returns_digest() {
+        let _g = ENV_LOCK.lock().unwrap();
         std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
         let out = run(&json!({
             "action": "publish_immutable_data",
@@ -237,6 +241,39 @@ mod tests {
             .and_then(|v| v.as_str())
             .unwrap_or("");
         assert!(digest.starts_with("lab-sim-"));
+        std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
+    }
+
+    #[test]
+    fn merkle_array_payload_returns_root_and_proofs() {
+        let _g = ENV_LOCK.lock().unwrap();
+        std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
+        let out = run(&json!({
+            "action": "publish_immutable_data",
+            "network": "testnet",
+            "payload": ["{\"a\":1}", "{\"b\":2}", "{\"c\":3}"]
+        }))
+        .expect("merkle simulate");
+        let root = out
+            .get("merkle_root")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert_eq!(root.len(), 64);
+        let proofs = out
+            .get("merkle_proofs")
+            .and_then(|v| v.as_array())
+            .expect("proofs");
+        assert_eq!(proofs.len(), 3);
+        assert_eq!(
+            proofs[0].get("merkle_root").and_then(|v| v.as_str()).unwrap_or(""),
+            root
+        );
+        let digest = out
+            .get("transaction_digest")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert!(digest.starts_with("lab-sim-"));
+        assert_ne!(digest, "batched-digest");
         std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
     }
 }
