@@ -14,7 +14,7 @@ feature_ref: docs/features/process-creator-process-domain-roots
 branch_name: feat/process-creator-process-domain-roots
 source_correlation_id: 3211daac-00d2-4833-b37e-979d899e3468
 source_audit: docs/features/sddia-domain-abstract-03-relocalizacion/validacion.md
-pr_url: ""
+pr_url: https://github.com/racso80es/SddIA/pull/165
 related:
   - SddIA/process/process-creator.md
   - SddIA/core/cumulo.paths.json

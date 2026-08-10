@@ -187,3 +187,23 @@ process-creator.md: hash_signature mismatch (file pending-refresh-… vs compute
 - contamination: reverted sddia-domain-abstraction
 - validacion: `global: APTO` · `pbi_archived: true`
 - PBI → `docs/todos/done/`
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-10T15:48:41Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+## 2026-08-10T15:48:00Z — delivery-close-cycle
+- status: `executed`
+- snapshot: `69641f03d7cbade4d3d7c674b555094db03384b8`
+- pr_url: https://github.com/racso80es/SddIA/pull/165
+- event_id: `497d60a1-7c8c-40ff-aef3-5a4c8746d23e` (PullRequest_Presented)
+- higiene: skipped (SDDIA_LAB_SKIP_HIGIENE)

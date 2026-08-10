@@ -19,6 +19,9 @@ approval_status: aprobado
 verdict: aprobado
 delivery_state: ready_for_pr
 resolution: PASS_REMEDIATION_TEKTON_ARGOS
+pr_url: https://github.com/racso80es/SddIA/pull/165
+pr_presented_event_id: 497d60a1-7c8c-40ff-aef3-5a4c8746d23e
+snapshot_commit_hash: 69641f03d7cbade4d3d7c674b555094db03384b8
 laudo: L-JURIS-MEMBERSHIP-PLUS-FLAG
 git_manager_invoked: true
 git_evidence_source: sddia-run-tool-git-manager
