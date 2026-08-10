@@ -25,19 +25,32 @@ fn phases_as_json(fm: &std::collections::HashMap<String, YamlValue>) -> Result<V
 }
 
 pub fn verify(repo: &Path) -> Result<(), Vec<String>> {
-    let process_dir = repo.join("SddIA/process");
+    let roots = match crate::core::resolver::process_search_roots(repo) {
+        Ok(r) => r,
+        Err(e) => return Err(vec![e]),
+    };
     let mut errors = Vec::new();
-    if !process_dir.is_dir() {
-        errors.push(format!("Missing {}", process_dir.display()));
+    let core_process = roots.last().cloned().unwrap_or_else(|| repo.join("SddIA/process"));
+    if !core_process.is_dir() {
+        errors.push(format!("Missing {}", core_process.display()));
         return Err(errors);
     }
 
-    let mut entries: Vec<_> = fs::read_dir(&process_dir)
-        .map_err(|e| vec![format!("read process dir: {e}")])?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("md"))
-        .collect();
+    let mut entries: Vec<_> = Vec::new();
+    for root in &roots {
+        if !root.is_dir() {
+            continue;
+        }
+        let Ok(rd) = fs::read_dir(root) else {
+            errors.push(format!("read process dir: {}", root.display()));
+            continue;
+        };
+        for e in rd.filter_map(|e| e.ok()).map(|e| e.path()) {
+            if e.extension().and_then(|x| x.to_str()) == Some("md") {
+                entries.push(e);
+            }
+        }
+    }
     entries.sort();
 
     for md in entries {

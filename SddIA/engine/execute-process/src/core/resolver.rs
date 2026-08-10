@@ -1,4 +1,5 @@
 use crate::core::parser::load_frontmatter_yaml;
+use crate::core::paths::load_paths_config;
 use regex::Regex;
 use serde_json::{json, Value};
 use serde_yaml::Value as YamlValue;
@@ -35,13 +36,47 @@ const DEFAULTABLE: &[&str] = &[
 
 pub type ProcessDef = HashMap<String, YamlValue>;
 
-pub fn resolve_process_path(repo: &Path, process_name: &str) -> Result<PathBuf, String> {
-    let process_dir = repo.join("SddIA/process");
-    let direct = process_dir.join(format!("{process_name}.md"));
-    if direct.is_file() {
-        return Ok(direct);
+/// Raíces de resolución process: domain roots (orden Cúmulo) + Core `directories.process`.
+pub fn process_search_roots(repo: &Path) -> Result<Vec<PathBuf>, String> {
+    let cfg = load_paths_config(repo)?;
+    let dirs = cfg.get("directories");
+    let mut roots: Vec<PathBuf> = Vec::new();
+    if let Some(arr) = dirs
+        .and_then(|d| d.get("process_domain_roots"))
+        .and_then(|v| v.as_array())
+    {
+        for item in arr {
+            if let Some(rel) = item.as_str() {
+                let rel = rel.trim().trim_end_matches('/').replace('\\', "/");
+                if !rel.is_empty() {
+                    roots.push(repo.join(rel));
+                }
+            }
+        }
     }
-    for entry in std::fs::read_dir(&process_dir).map_err(|e| e.to_string())? {
+    let core_rel = dirs
+        .and_then(|d| d.get("process"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().trim_end_matches('/').replace('\\', "/"))
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "SddIA/process".to_string());
+    roots.push(repo.join(core_rel));
+    Ok(roots)
+}
+
+fn resolve_in_root(root: &Path, process_name: &str) -> Result<Option<PathBuf>, String> {
+    if !root.is_dir() {
+        return Ok(None);
+    }
+    let direct = root.join(format!("{process_name}.md"));
+    if direct.is_file() {
+        return Ok(Some(direct));
+    }
+
+    let mut by_name: Option<PathBuf> = None;
+    let mut by_alias: Option<PathBuf> = None;
+
+    for entry in std::fs::read_dir(root).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("md") {
@@ -53,14 +88,29 @@ pub fn resolve_process_path(repo: &Path, process_name: &str) -> Result<PathBuf, 
         }
         let fm = load_frontmatter_yaml(&path)?;
         if yaml_str(&fm, "name").as_deref() == Some(process_name) {
-            return Ok(path);
+            by_name = Some(path);
+            break;
         }
-        if let Some(YamlValue::Sequence(aliases)) = fm.get("aliases") {
-            for a in aliases {
-                if a.as_str() == Some(process_name) {
-                    return Ok(path);
+        if by_alias.is_none() {
+            if let Some(YamlValue::Sequence(aliases)) = fm.get("aliases") {
+                for a in aliases {
+                    if a.as_str() == Some(process_name) {
+                        by_alias = Some(path.clone());
+                        break;
+                    }
                 }
             }
+        }
+    }
+
+    Ok(by_name.or(by_alias))
+}
+
+pub fn resolve_process_path(repo: &Path, process_name: &str) -> Result<PathBuf, String> {
+    let roots = process_search_roots(repo)?;
+    for root in roots {
+        if let Some(path) = resolve_in_root(&root, process_name)? {
+            return Ok(path);
         }
     }
     Err(format!("Proceso no encontrado: {process_name}"))
@@ -189,12 +239,46 @@ pub fn normalize_request(raw: &Value) -> Result<(String, Value), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
+
+    fn write_minimal_process(dir: &Path, name: &str) {
+        fs::create_dir_all(dir).unwrap();
+        fs::write(
+            dir.join(format!("{name}.md")),
+            format!(
+                "---\nname: \"{name}\"\nuuid: \"00000000-0000-4000-8000-000000000001\"\nversion: \"1.0.0\"\nphases: []\n---\n# {name}\n"
+            ),
+        )
+        .unwrap();
+    }
+
+    fn fixture_cumulo(repo: &Path, domain_roots: &[&str]) {
+        let core = repo.join("SddIA/core");
+        fs::create_dir_all(&core).unwrap();
+        let roots_json: Value = domain_roots.iter().map(|s| json!(s)).collect();
+        let cfg = json!({
+            "version": "1.6.0",
+            "directories": {
+                "process": "SddIA/process",
+                "process_domain_roots": roots_json
+            }
+        });
+        fs::write(
+            core.join("cumulo.paths.json"),
+            serde_json::to_string_pretty(&cfg).unwrap(),
+        )
+        .unwrap();
+    }
 
     #[test]
     fn resolves_kalma2_by_filename() {
         let repo = crate::core::repo::find_repo_root().unwrap();
         let path = resolve_process_path(&repo, "kalma2-interact").unwrap();
         assert!(path.ends_with("kalma2-interact.md"));
+        assert!(
+            path.to_string_lossy().contains("SddIA/process"),
+            "Core process must resolve under directories.process"
+        );
     }
 
     #[test]
@@ -203,5 +287,92 @@ mod tests {
         let (name, _, phases) = load_process_def(&repo, "kalma2-interact").unwrap();
         assert_eq!(name, "kalma2-interact");
         assert!(!phases.is_empty());
+    }
+
+    #[test]
+    fn ac_resolve_domain_root_only() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        let domain = "SddIA/library/codexes/codex-software-engineering/process";
+        fixture_cumulo(repo, &[domain]);
+        write_minimal_process(&repo.join(domain), "feature");
+        // Core process dir ausente de feature — solo domain
+        fs::create_dir_all(repo.join("SddIA/process")).unwrap();
+
+        let path = resolve_process_path(repo, "feature").unwrap();
+        assert!(
+            path.ends_with("codex-software-engineering/process/feature.md"),
+            "got {}",
+            path.display()
+        );
+    }
+
+    #[test]
+    fn ac_resolve_core_when_absent_from_domain() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        let domain = "SddIA/library/codexes/codex-software-engineering/process";
+        fixture_cumulo(repo, &[domain]);
+        fs::create_dir_all(repo.join(domain)).unwrap();
+        write_minimal_process(&repo.join("SddIA/process"), "kalma2-interact");
+
+        let path = resolve_process_path(repo, "kalma2-interact").unwrap();
+        assert!(path.ends_with("SddIA/process/kalma2-interact.md"));
+    }
+
+    #[test]
+    fn ac_resolve_missing_errors() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        fixture_cumulo(
+            repo,
+            &["SddIA/library/codexes/codex-software-engineering/process"],
+        );
+        fs::create_dir_all(repo.join("SddIA/process")).unwrap();
+        let err = resolve_process_path(repo, "no-such-process").unwrap_err();
+        assert!(err.contains("Proceso no encontrado"));
+    }
+
+    #[test]
+    fn ac_resolve_domain_precedes_core() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        let domain = "SddIA/library/codexes/codex-software-engineering/process";
+        fixture_cumulo(repo, &[domain]);
+        write_minimal_process(&repo.join(domain), "feature");
+        write_minimal_process(&repo.join("SddIA/process"), "feature");
+
+        let path = resolve_process_path(repo, "feature").unwrap();
+        assert!(
+            path.to_string_lossy()
+                .contains("codex-software-engineering/process"),
+            "domain-first; got {}",
+            path.display()
+        );
+    }
+
+    #[test]
+    fn ac_resolve_no_single_core_hardcode() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        // Solo domain root; sin SddIA/process en absoluto
+        let domain = "pack/domain-process";
+        let core = repo.join("SddIA/core");
+        fs::create_dir_all(&core).unwrap();
+        fs::write(
+            core.join("cumulo.paths.json"),
+            serde_json::to_string_pretty(&json!({
+                "directories": {
+                    "process": "SddIA/process",
+                    "process_domain_roots": [domain]
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        write_minimal_process(&repo.join(domain), "refactorization");
+
+        let path = resolve_process_path(repo, "refactorization").unwrap();
+        assert!(path.ends_with("pack/domain-process/refactorization.md"));
     }
 }

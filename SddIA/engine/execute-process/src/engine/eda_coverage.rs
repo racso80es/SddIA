@@ -157,7 +157,27 @@ pub fn scan_orphans(repo: &Path) -> Result<Value, String> {
     use crate::core::parser::parse_frontmatter;
     let mut orphans = Vec::new();
     let mut indexed_count = 0usize;
-    for (entity_class, rel_dir) in ENTITY_DIRS {
+    let mut dirs: Vec<(&str, String)> = ENTITY_DIRS
+        .iter()
+        .map(|(c, d)| (*c, (*d).to_string()))
+        .collect();
+    if let Ok(cfg) = load_paths_config(repo) {
+        if let Some(arr) = cfg
+            .get("directories")
+            .and_then(|d| d.get("process_domain_roots"))
+            .and_then(|v| v.as_array())
+        {
+            for item in arr {
+                if let Some(rel) = item.as_str() {
+                    let rel = rel.trim().trim_end_matches('/').replace('\\', "/");
+                    if !rel.is_empty() {
+                        dirs.push(("process", rel));
+                    }
+                }
+            }
+        }
+    }
+    for (entity_class, rel_dir) in &dirs {
         let base = repo.join(rel_dir);
         let index_map = parse_index_uuids(&base.join("index.md"));
         for (name, uuid) in index_map {

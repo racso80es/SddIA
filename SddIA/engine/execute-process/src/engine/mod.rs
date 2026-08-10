@@ -44,6 +44,8 @@ pub mod suite_execution_requested;
 pub mod thermodynamic;
 pub mod workspace;
 pub mod workspace_init;
+pub mod domain_profile;
+pub mod domain_authority;
 pub mod verify_process_integrity;
 
 use crate::core::resolver::load_process_def;
@@ -96,6 +98,32 @@ pub fn run_process(
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
     let (canonical, process_def, phases) = load_process_def(repo, process_name)?;
+
+    if let Err(deny) =
+        domain_authority::assert_process_allowed(repo, &canonical, process_inputs)
+    {
+        return Ok(OrchestratorEnvelope {
+            success: false,
+            status_code: 1,
+            data: Some(json!({
+                "error_code": deny.code,
+                "process_name": deny.process_name,
+                "profile_source": deny.profile_source,
+                "handler": "domain-authority",
+            })),
+            error: Some(deny.to_error_string()),
+            execution_report: Some(json!({
+                "phases": [{
+                    "phase_name": "Domain Authority",
+                    "status": "failed",
+                    "handler": "domain-authority",
+                    "error": deny.to_error_string(),
+                    "error_code": deny.code,
+                }]
+            })),
+            exit_code: 1,
+        });
+    }
 
     if canonical == "kalma2-interact" {
         return handlers::kalma2::run(repo, process_inputs);
