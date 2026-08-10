@@ -20,7 +20,7 @@ Todo proceso debe poseer un documento de definición `{name}.md` que declare:
 * **`contract`**: Versión de contrato implementado (p. ej. `process-contract v1.4.0`).
 * **`workspace_template`**: Plantilla relativa de territorio operativo impermanente (v1.4.0+). Placeholders: `{process_name}`, `{execution_id}`. Ejemplo: `".SddIA/workspaces/{process_name}/{execution_id}/"`.
 * **`context`**: Listado de política de Seguridad de las que hace uso.
-* **`aliases`** *(opcional, v1.3.0)*: array de strings en **kebab-case**, sin duplicados internos, sin colisión con el `name` canónico del proceso ni con `name` ni `aliases` de otros procesos catalogados bajo `directories.process`. Solo amplía la **resolución de identidad** al invocar un proceso; no altera la semántica de `inputs`, `outputs` ni `phases`.
+* **`aliases`** *(opcional, v1.3.0)*: array de strings en **kebab-case**, sin duplicados internos, sin colisión con el `name` canónico del proceso ni con `name` ni `aliases` de otros procesos catalogados en el **catálogo multi-root** (unión de `directories.process` ∪ `directories.process_domain_roots`, Cúmulo ≥1.6.0). Solo amplía la **resolución de identidad** al invocar un proceso; no altera la semántica de `inputs`, `outputs` ni `phases`.
 
 ### 1.1 Resolución de Identidad (canónico > alias)
 * El **nombre soberano** del proceso es el par **`{filename}.md` sin extensión** **≡** **`name` del frontmatter YAML**. Deben coincidir; cualquier divergencia es defecto bloqueante de gobernanza.

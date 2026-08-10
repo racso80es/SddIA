@@ -5,9 +5,54 @@ use super::common::{
     parse_frontmatter, patch_process_phases_update, refresh_process_hash, repo_tool_base,
     required_str, sha256_canon, str_field, update_process_index_version, generate_uuid,
 };
+use crate::core::paths::load_paths_config;
+use crate::core::resolver::{process_search_roots, resolve_process_path};
 use serde_json::{json, Value};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+/// Fallback alineado a `domain_authority::SOFTWARE_PROCESS_MEMBERSHIP` (evita ciclo forges↔engine).
+const SOFTWARE_PROCESS_MEMBERSHIP_FALLBACK: &[&str] = &[
+    "feature",
+    "bug-fix",
+    "refactorization",
+    "pull-request-review",
+    "accept-pr",
+    "delivery-close-cycle",
+];
+
+fn process_in_software_membership(repo: &Path, name: &str) -> bool {
+    let path = repo.join("SddIA/library/codexes/codex-software-engineering.md");
+    if path.is_file() {
+        if let Ok(raw) = fs::read_to_string(&path) {
+            if let Some((fm, _)) = split_md_frontmatter(&raw) {
+                if let Ok(v) = serde_yaml::from_str::<Value>(&fm) {
+                    if let Some(arr) = v.get("process_membership").and_then(|x| x.as_array()) {
+                        return arr.iter().any(|x| x.as_str() == Some(name));
+                    }
+                }
+            }
+        }
+    }
+    SOFTWARE_PROCESS_MEMBERSHIP_FALLBACK.contains(&name)
+}
+
+fn split_md_frontmatter(raw: &str) -> Option<(String, String)> {
+    let mut lines = raw.lines();
+    if lines.next()? != "---" {
+        return None;
+    }
+    let mut fm = String::new();
+    for line in lines.by_ref() {
+        if line == "---" {
+            let body: String = lines.collect::<Vec<_>>().join("\n");
+            return Some((fm, body));
+        }
+        fm.push_str(line);
+        fm.push('\n');
+    }
+    None
+}
 
 const TRINITY_FAMILIES: &[&str] = &["telemetry", "orchestration", "domain"];
 
@@ -147,54 +192,307 @@ hash_signature: "{hash_sig}"
     Ok(handoff_create(&action_uuid, &hash_sig, &version, json!({})))
 }
 
+/// Destino de escritura process (L-JURIS-MEMBERSHIP-PLUS-FLAG + process_domain_roots).
+struct ProcessWriteDest {
+    root_abs: PathBuf,
+    root_rel: String,
+    jurisdiction: String,
+}
+
+fn relpath_under_repo(repo: &Path, abs: &Path) -> String {
+    abs.strip_prefix(repo)
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|_| abs.display().to_string().replace('\\', "/"))
+}
+
+fn cfg_process_core_rel(cfg: &Value) -> String {
+    cfg.get("directories")
+        .and_then(|d| d.get("process"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().trim_end_matches('/').replace('\\', "/"))
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "SddIA/process".to_string())
+}
+
+fn cfg_process_domain_rels(cfg: &Value) -> Vec<String> {
+    cfg.get("directories")
+        .and_then(|d| d.get("process_domain_roots"))
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.trim().trim_end_matches('/').replace('\\', "/"))
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn classify_process_jurisdiction(repo: &Path, inputs: &Value, name: &str) -> Result<String, String> {
+    match inputs
+        .get("process_jurisdiction")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        Some("domain") => Ok("domain".into()),
+        Some("core") => Ok("core".into()),
+        Some(other) => Err(format!(
+            "process_jurisdiction inválido: {other:?}; debe ser domain | core"
+        )),
+        None => {
+            if process_in_software_membership(repo, name) {
+                Ok("domain".into())
+            } else {
+                Ok("core".into())
+            }
+        }
+    }
+}
+
+fn resolve_process_write_dest(
+    repo: &Path,
+    inputs: &Value,
+    name: &str,
+) -> Result<ProcessWriteDest, String> {
+    let cfg = load_paths_config(repo).unwrap_or_else(|_| {
+        json!({
+            "directories": {
+                "process": "SddIA/process",
+                "process_domain_roots": []
+            }
+        })
+    });
+    let core_rel = cfg_process_core_rel(&cfg);
+    let domain_rels = cfg_process_domain_rels(&cfg);
+    let jurisdiction = classify_process_jurisdiction(repo, inputs, name)?;
+
+    if jurisdiction == "core" {
+        return Ok(ProcessWriteDest {
+            root_abs: repo.join(&core_rel),
+            root_rel: core_rel,
+            jurisdiction,
+        });
+    }
+
+    if domain_rels.is_empty() {
+        return Err(
+            "process_jurisdiction=domain pero directories.process_domain_roots vacío (Cúmulo/overlay)"
+                .into(),
+        );
+    }
+
+    let chosen = if let Some(explicit) = inputs
+        .get("process_domain_root")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        let explicit = explicit.trim_end_matches('/').replace('\\', "/");
+        if !domain_rels.iter().any(|r| r == &explicit) {
+            return Err(format!(
+                "process_domain_root {explicit:?} no ∈ directories.process_domain_roots fusionado"
+            ));
+        }
+        explicit
+    } else {
+        domain_rels[0].clone()
+    };
+
+    Ok(ProcessWriteDest {
+        root_abs: repo.join(&chosen),
+        root_rel: chosen,
+        jurisdiction,
+    })
+}
+
+/// L-UNIQ-MULTI: colisión name/aliases en unión Core ∪ process_domain_roots.
+fn find_process_identity_collision(
+    repo: &Path,
+    name: &str,
+    extra_aliases: &[String],
+) -> Result<Option<PathBuf>, String> {
+    let roots = match process_search_roots(repo) {
+        Ok(r) => r,
+        Err(_) => vec![repo.join("SddIA/process")],
+    };
+    let mut needles: Vec<&str> = vec![name];
+    for a in extra_aliases {
+        needles.push(a.as_str());
+    }
+
+    for root in roots {
+        if !root.is_dir() {
+            continue;
+        }
+        for entry in fs::read_dir(&root).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+            if stem == "index" || stem == "process-contract" {
+                continue;
+            }
+            if needles.iter().any(|n| *n == stem) {
+                return Ok(Some(path));
+            }
+            let fm = parse_frontmatter(&path)?;
+            if let Some(n) = fm.get("name").and_then(|v| v.as_str()) {
+                if needles.iter().any(|x| *x == n) {
+                    return Ok(Some(path));
+                }
+            }
+            if let Some(aliases) = fm.get("aliases").and_then(|v| v.as_array()) {
+                for a in aliases {
+                    if let Some(as_) = a.as_str() {
+                        if needles.iter().any(|x| *x == as_) {
+                            return Ok(Some(path));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(None)
+}
+
+fn process_aliases_from_inputs(inputs: &Value) -> Vec<String> {
+    inputs
+        .get("process_aliases")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(|s| s.trim().to_string()))
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn locate_existing_process_path(repo: &Path, name: &str) -> Option<PathBuf> {
+    resolve_process_path(repo, name).ok().or_else(|| {
+        let legacy = repo.join("SddIA/process").join(format!("{name}.md"));
+        legacy.is_file().then_some(legacy)
+    })
+}
+
+fn forge_outputs_extra(dest: &ProcessWriteDest, name: &str) -> Value {
+    json!({
+        "resolved_process_root": dest.root_rel,
+        "process_jurisdiction_applied": dest.jurisdiction,
+        "artifact_process_md": format!("{}/{name}.md", dest.root_rel),
+        "artifact_process_index": format!("{}/index.md", dest.root_rel),
+    })
+}
+
 pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "process_name")?;
-    let process_path = repo.join("SddIA/process").join(format!("{name}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
-    if lifecycle == "update" && process_path.is_file() {
-        let phases_opt = inputs.get("process_phases").filter(|p| {
-            p.as_array().map(|a| !a.is_empty()).unwrap_or(false)
-        });
-        if let Some(phases) = phases_opt {
-            let explicit_ver = optional_str(inputs, "process_version");
-            let patch = patch_process_phases_update(
-                &process_path,
-                phases,
-                explicit_ver.as_deref(),
-            )?;
-            if patch.old_version != patch.new_version {
-                update_process_index_version(
-                    &repo.join("SddIA/process/index.md"),
-                    &name,
-                    &patch.new_version,
+    if lifecycle == "update" {
+        if let Some(process_path) = locate_existing_process_path(repo, &name) {
+            let dest_root = process_path
+                .parent()
+                .ok_or_else(|| "process path sin parent".to_string())?
+                .to_path_buf();
+            let root_rel = relpath_under_repo(repo, &dest_root);
+            let core_rel = load_paths_config(repo)
+                .map(|c| cfg_process_core_rel(&c))
+                .unwrap_or_else(|_| "SddIA/process".into());
+            let jurisdiction = if root_rel == core_rel {
+                "core"
+            } else {
+                "domain"
+            };
+            let dest = ProcessWriteDest {
+                root_abs: dest_root.clone(),
+                root_rel: root_rel.clone(),
+                jurisdiction: jurisdiction.into(),
+            };
+            let phases_opt = inputs.get("process_phases").filter(|p| {
+                p.as_array().map(|a| !a.is_empty()).unwrap_or(false)
+            });
+            if let Some(phases) = phases_opt {
+                let explicit_ver = optional_str(inputs, "process_version");
+                let patch = patch_process_phases_update(
+                    &process_path,
+                    phases,
+                    explicit_ver.as_deref(),
                 )?;
+                if patch.old_version != patch.new_version {
+                    update_process_index_version(
+                        &dest_root.join("index.md"),
+                        &name,
+                        &patch.new_version,
+                    )?;
+                }
+                let mut out = json!({
+                    "handoff_entity_uuid": patch.entity_uuid,
+                    "handoff_hash_signature_new": patch.new_hash,
+                    "handoff_hash_signature_old": patch.old_hash,
+                    "handoff_version": patch.new_version,
+                });
+                if let (Value::Object(base), Value::Object(ext)) =
+                    (&mut out, forge_outputs_extra(&dest, &name))
+                {
+                    for (k, v) in ext {
+                        base.insert(k, v);
+                    }
+                }
+                return Ok(out);
             }
-            return Ok(json!({
-                "handoff_entity_uuid": patch.entity_uuid,
-                "handoff_hash_signature_new": patch.new_hash,
-                "handoff_hash_signature_old": patch.old_hash,
-                "handoff_version": patch.new_version,
-            }));
-        }
 
-        let fm = parse_frontmatter(&process_path)?;
-        let (old_hash, new_hash) = refresh_process_hash(&process_path)?;
-        let version = fm
-            .get("version")
-            .and_then(|v| v.as_str())
-            .unwrap_or("1.0.0")
-            .to_string();
-        return Ok(json!({
-            "handoff_entity_uuid": fm.get("uuid"),
-            "handoff_hash_signature_new": new_hash,
-            "handoff_hash_signature_old": old_hash,
-            "handoff_version": version,
-        }));
+            let fm = parse_frontmatter(&process_path)?;
+            let (old_hash, new_hash) = refresh_process_hash(&process_path)?;
+            let version = fm
+                .get("version")
+                .and_then(|v| v.as_str())
+                .unwrap_or("1.0.0")
+                .to_string();
+            let mut out = json!({
+                "handoff_entity_uuid": fm.get("uuid"),
+                "handoff_hash_signature_new": new_hash,
+                "handoff_hash_signature_old": old_hash,
+                "handoff_version": version,
+            });
+            if let (Value::Object(base), Value::Object(ext)) =
+                (&mut out, forge_outputs_extra(&dest, &name))
+            {
+                for (k, v) in ext {
+                    base.insert(k, v);
+                }
+            }
+            return Ok(out);
+        }
+    }
+
+    let dest = resolve_process_write_dest(repo, inputs, &name)?;
+    let process_path = dest.root_abs.join(format!("{name}.md"));
+    let aliases = process_aliases_from_inputs(inputs);
+
+    if lifecycle == "create" {
+        if let Some(hit) = find_process_identity_collision(repo, &name, &aliases)? {
+            if hit != process_path {
+                return Err(format!(
+                    "L-UNIQ-MULTI: identidad {name:?} colisiona con {}",
+                    relpath_under_repo(repo, &hit)
+                ));
+            }
+        }
     }
 
     if let Some(skip) = idempotent_forge_handoff(&process_path, &lifecycle)? {
-        return Ok(skip);
+        let mut out = skip;
+        if let (Value::Object(base), Value::Object(ext)) =
+            (&mut out, forge_outputs_extra(&dest, &name))
+        {
+            for (k, v) in ext {
+                base.insert(k, v);
+            }
+        }
+        return Ok(out);
     }
 
     let context = str_field(inputs, "process_context", "ecosystem-evolution");
@@ -226,12 +524,17 @@ phases:
 {desc}
 "#
     );
-    fs::create_dir_all(process_path.parent().unwrap()).map_err(|e| e.to_string())?;
+    fs::create_dir_all(&dest.root_abs).map_err(|e| e.to_string())?;
     fs::write(&process_path, body).map_err(|e| e.to_string())?;
     let summary: String = desc.chars().take(60).collect();
     let row = format!("| {name} | {process_uuid} | {version} | {context} | — | {summary} |");
-    append_row(&repo.join("SddIA/process/index.md"), &row, &name)?;
-    Ok(handoff_create(&process_uuid, &hash_sig, &version, json!({})))
+    append_row(&dest.root_abs.join("index.md"), &row, &name)?;
+    Ok(handoff_create(
+        &process_uuid,
+        &hash_sig,
+        &version,
+        forge_outputs_extra(&dest, &name),
+    ))
 }
 
 pub fn run_agent_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
@@ -784,6 +1087,46 @@ mod tests {
     use crate::forges::common::canon_json_sorted;
     use std::fs;
 
+    fn fixture_cumulo(repo: &Path, domain_roots: &[&str]) {
+        let core = repo.join("SddIA/core");
+        fs::create_dir_all(&core).unwrap();
+        let roots_json: Value = domain_roots.iter().map(|s| json!(s)).collect();
+        let cfg = json!({
+            "version": "1.6.0",
+            "directories": {
+                "process": "SddIA/process",
+                "process_domain_roots": roots_json
+            }
+        });
+        fs::write(
+            core.join("cumulo.paths.json"),
+            serde_json::to_string_pretty(&cfg).unwrap(),
+        )
+        .unwrap();
+    }
+
+    fn write_index(path: &Path) {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        fs::write(
+            path,
+            "| Name | UUID | Versión | Context | Aliases | Descripción |\n|------|------|---------|---------|---------|-------------|\n",
+        )
+        .unwrap();
+    }
+
+    fn write_minimal_process(dir: &Path, name: &str) {
+        fs::create_dir_all(dir).unwrap();
+        fs::write(
+            dir.join(format!("{name}.md")),
+            format!(
+                "---\nname: \"{name}\"\nuuid: \"00000000-0000-4000-8000-000000000099\"\nversion: \"1.0.0\"\nphases: []\n---\n# {name}\n"
+            ),
+        )
+        .unwrap();
+    }
+
     #[test]
     fn tool_forge_hash_signature_deterministic_with_lab_sha256() {
         std::env::set_var("SDDIA_FORGE_LAB_SHA256", "abc123deadbeef");
@@ -828,6 +1171,7 @@ mod tests {
     fn process_forge_update_with_phases_adds_requires_capability_preserves_inputs() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
+        fixture_cumulo(repo, &[]);
         let process_dir = repo.join("SddIA/process");
         fs::create_dir_all(&process_dir).unwrap();
         fs::write(
@@ -909,6 +1253,8 @@ cuerpo preservado
             .as_str()
             .unwrap_or("")
             .starts_with("sha256:"));
+        assert_eq!(out["resolved_process_root"], json!("SddIA/process"));
+        assert_eq!(out["process_jurisdiction_applied"], json!("core"));
 
         let body = fs::read_to_string(&md).unwrap();
         assert!(body.contains("requires_capability"));
@@ -929,6 +1275,7 @@ cuerpo preservado
     fn process_forge_update_without_phases_remains_hash_only() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
+        fixture_cumulo(repo, &[]);
         let process_dir = repo.join("SddIA/process");
         fs::create_dir_all(&process_dir).unwrap();
         let md = process_dir.join("hash-only-lab.md");
@@ -968,5 +1315,152 @@ phases:
         // version unchanged
         assert!(after.contains("2.0.0"));
         assert_ne!(before, after); // hash_signature refreshed
+    }
+
+    #[test]
+    fn ac_juris_domain_flag_writes_domain_root() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let domain = "SddIA/library/codexes/codex-software-engineering/process";
+        fixture_cumulo(repo, &[domain]);
+        write_index(&repo.join("SddIA/process/index.md"));
+        write_index(&repo.join(domain).join("index.md"));
+        std::env::set_var("SDDIA_FORGE_LAB_UUID", "cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+        std::env::set_var("SDDIA_FORGE_LAB_SHA256", "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd");
+
+        let out = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "lab-domain-juris",
+                "process_jurisdiction": "domain",
+                "process_description": "alta domain",
+                "lifecycle_operation": "create",
+            }),
+        )
+        .expect("domain forge");
+
+        assert_eq!(out["process_jurisdiction_applied"], json!("domain"));
+        assert_eq!(out["resolved_process_root"], json!(domain));
+        assert!(repo.join(domain).join("lab-domain-juris.md").is_file());
+        assert!(!repo.join("SddIA/process/lab-domain-juris.md").exists());
+        let core_idx = fs::read_to_string(repo.join("SddIA/process/index.md")).unwrap();
+        assert!(!core_idx.contains("lab-domain-juris"));
+        let dom_idx = fs::read_to_string(repo.join(domain).join("index.md")).unwrap();
+        assert!(dom_idx.contains("lab-domain-juris"));
+        // AC-RESOLVE-COMPAT: post-alta domain
+        let resolved = resolve_process_path(repo, "lab-domain-juris").unwrap();
+        assert!(resolved.ends_with("lab-domain-juris.md"));
+        assert!(resolved.to_string_lossy().contains("codex-software-engineering"));
+
+        std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+        std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
+    }
+
+    #[test]
+    fn ac_juris_default_non_membership_writes_core() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let domain = "SddIA/library/codexes/codex-software-engineering/process";
+        fixture_cumulo(repo, &[domain]);
+        write_index(&repo.join("SddIA/process/index.md"));
+        fs::create_dir_all(repo.join(domain)).unwrap();
+        std::env::set_var("SDDIA_FORGE_LAB_UUID", "dddddddd-dddd-4ddd-8ddd-dddddddddddd");
+        std::env::set_var("SDDIA_FORGE_LAB_SHA256", "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+
+        let out = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "lab-core-default",
+                "process_description": "alta core",
+                "lifecycle_operation": "create",
+            }),
+        )
+        .expect("core forge");
+
+        assert_eq!(out["process_jurisdiction_applied"], json!("core"));
+        assert_eq!(out["resolved_process_root"], json!("SddIA/process"));
+        assert!(repo.join("SddIA/process/lab-core-default.md").is_file());
+        assert!(!repo.join(domain).join("lab-core-default.md").exists());
+
+        std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+        std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
+    }
+
+    #[test]
+    fn ac_uniq_packing_name_blocks_core_create() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let domain = "SddIA/library/codexes/codex-software-engineering/process";
+        fixture_cumulo(repo, &[domain]);
+        write_minimal_process(&repo.join(domain), "feature");
+        write_index(&repo.join("SddIA/process/index.md"));
+
+        let err = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "feature",
+                "process_jurisdiction": "core",
+                "lifecycle_operation": "create",
+            }),
+        )
+        .expect_err("must abort L-UNIQ-MULTI");
+        assert!(err.contains("L-UNIQ-MULTI"), "got {err}");
+        assert!(!repo.join("SddIA/process/feature.md").exists());
+    }
+
+    #[test]
+    fn ac_uniq_alias_cross_root_aborts() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let domain = "SddIA/library/codexes/codex-software-engineering/process";
+        fixture_cumulo(repo, &[domain]);
+        fs::create_dir_all(repo.join(domain)).unwrap();
+        fs::write(
+            repo.join(domain).join("packed-alias.md"),
+            "---\nname: \"packed-alias\"\naliases:\n  - \"ghost-alias\"\nuuid: \"00000000-0000-4000-8000-000000000077\"\nversion: \"1.0.0\"\nphases: []\n---\n# packed-alias\n",
+        )
+        .unwrap();
+        write_index(&repo.join("SddIA/process/index.md"));
+
+        let err = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "ghost-alias",
+                "lifecycle_operation": "create",
+            }),
+        )
+        .expect_err("alias cross-root");
+        assert!(err.contains("L-UNIQ-MULTI"), "got {err}");
+    }
+
+    #[test]
+    fn ac_smoke_domain_no_core_executable() {
+        // AC-SMOKE: alta domain no deja artefacto bajo SddIA/process/
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let domain = "SddIA/library/codexes/codex-software-engineering/process";
+        fixture_cumulo(repo, &[domain]);
+        write_index(&repo.join("SddIA/process/index.md"));
+        write_index(&repo.join(domain).join("index.md"));
+        std::env::set_var("SDDIA_FORGE_LAB_UUID", "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee");
+        std::env::set_var("SDDIA_FORGE_LAB_SHA256", "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
+        run_process_forge(
+            repo,
+            &json!({
+                "process_name": "smoke-software-lab",
+                "process_jurisdiction": "domain",
+                "lifecycle_operation": "create",
+            }),
+        )
+        .expect("smoke");
+
+        assert!(!repo.join("SddIA/process/smoke-software-lab.md").exists());
+        assert!(repo.join(domain).join("smoke-software-lab.md").is_file());
+        let core_idx = fs::read_to_string(repo.join("SddIA/process/index.md")).unwrap();
+        assert!(!core_idx.contains("smoke-software-lab"));
+
+        std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+        std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
     }
 }
