@@ -8,7 +8,10 @@ pbi_archived: true
 pbi_ref: docs/todos/done/[FEATURE] Auditoría periódica del registro evolution.md
 pr_url: https://github.com/racso80es/SddIA/pull/167
 pr_presented_event_id: 87be4821-6983-4ad4-bb57-cb81fe5549de
+pr_merged_event_id: 88c62ba8-9c7a-49d3-8fbb-88244ff5b15d
+merge_commit: 132a4832b7ef459f5fc8b6b162363765dec30c0a
 snapshot_commit: e0aa29c202541b6371fdebfaae441a9e62d3ee57
+closed: true
 checks:
   process_forged_via_entity_manager: pass
   process_integrity: pass
@@ -59,4 +62,4 @@ git_changes:
 
 ## Cierre documental
 
-PBI en `docs/todos/done/`. PR presentado: https://github.com/racso80es/SddIA/pull/167 · evento `87be4821-6983-4ad4-bb57-cb81fe5549de`.
+Done: PR #167 mergeado en `main` (`132a483`) · PBI en `docs/todos/done/` · `pbi_archived: true`.
