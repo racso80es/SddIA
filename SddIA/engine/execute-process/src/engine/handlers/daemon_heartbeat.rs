@@ -74,7 +74,7 @@ fn emit_system_fracture(
     }))
 }
 
-fn record_heartbeat(state: &mut Value, repo: &Path, payload: &Value) {
+fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Option<&str>) {
     let Some(daemon_name) = payload.get("daemon_name").and_then(|v| v.as_str()) else {
         return;
     };
@@ -94,7 +94,24 @@ fn record_heartbeat(state: &mut Value, repo: &Path, payload: &Value) {
         .and_then(|v| v.as_object())
         .cloned()
         .unwrap_or_default();
-    entry.insert("last_heartbeat_at".into(), json!(iso_now()));
+    let ts = at
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .or_else(|| payload.get("timestamp").and_then(|v| v.as_str()))
+        .unwrap_or_else(|| "");
+    let ts = if ts.is_empty() { iso_now() } else { ts.to_string() };
+    // Solo avanzar el reloj (no retroceder con ingest desordenado).
+    let prev = entry
+        .get("last_heartbeat_at")
+        .and_then(|v| v.as_str())
+        .and_then(parse_iso);
+    let next = parse_iso(&ts);
+    let keep = match (prev, next) {
+        (Some(p), Some(n)) if n < p => p.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        (_, Some(n)) => n.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        _ => ts,
+    };
+    entry.insert("last_heartbeat_at".into(), json!(keep));
     entry.insert("missed_cycles".into(), json!(0));
     entry.insert(
         "heartbeat_interval_seconds".into(),
@@ -102,6 +119,105 @@ fn record_heartbeat(state: &mut Value, repo: &Path, payload: &Value) {
     );
     entry.remove("fracture_event_id");
     daemons.insert(daemon_id.to_string(), Value::Object(entry));
+}
+
+fn heartbeats_side_dir(repo: &Path) -> Result<std::path::PathBuf, String> {
+    Ok(state_dir(repo)?.join("heartbeats"))
+}
+
+fn telemetry_dir(repo: &Path) -> std::path::PathBuf {
+    use super::super::eda_bus::load_eda_fractal;
+    load_eda_fractal(repo)
+        .ok()
+        .and_then(|m| m.get("telemetry").cloned())
+        .map(|rel| {
+            let t = rel.trim().trim_start_matches("./");
+            repo.join(t)
+        })
+        .unwrap_or_else(|| repo.join(".events/telemetry"))
+}
+
+/// Vía A+C: refrescar audit desde side-channel y último Daemon_Heartbeat en telemetry
+/// sin depender del fan-out (cierra agujero PR #155 en régimen).
+fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
+    let mut ingested = 0u32;
+
+    // C: side-channel por daemon
+    if let Ok(dir) = heartbeats_side_dir(repo) {
+        if dir.is_dir() {
+            for entry in fs::read_dir(&dir).map_err(|e| e.to_string())? {
+                let entry = entry.map_err(|e| e.to_string())?;
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                let Ok(raw) = fs::read_to_string(&path) else {
+                    continue;
+                };
+                let Ok(body) = serde_json::from_str::<Value>(&raw) else {
+                    continue;
+                };
+                let ts = body.get("timestamp").and_then(|v| v.as_str());
+                let name = body
+                    .get("daemon_name")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| path.file_stem().and_then(|s| s.to_str()));
+                let Some(name) = name else { continue };
+                let payload = json!({
+                    "daemon_name": name,
+                    "timestamp": ts,
+                    "pid": body.get("pid"),
+                    "status": body.get("status").unwrap_or(&json!("alive")),
+                });
+                record_heartbeat_at(state, repo, &payload, ts);
+                ingested += 1;
+            }
+        }
+    }
+
+    // A: último HB por daemon_name en telemetry (mtime)
+    let tel = telemetry_dir(repo);
+    if tel.is_dir() {
+        let mut latest: std::collections::HashMap<String, (std::time::SystemTime, Value, String)> =
+            std::collections::HashMap::new();
+        for entry in fs::read_dir(&tel).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let Ok(meta) = path.metadata() else { continue };
+            let Ok(mtime) = meta.modified() else { continue };
+            let Ok(raw) = fs::read_to_string(&path) else { continue };
+            let Ok(body) = serde_json::from_str::<Value>(&raw) else { continue };
+            if body.get("event_type").and_then(|v| v.as_str()) != Some("Daemon_Heartbeat") {
+                continue;
+            }
+            let payload = body.get("payload").cloned().unwrap_or(json!({}));
+            let Some(name) = payload.get("daemon_name").and_then(|v| v.as_str()) else {
+                continue;
+            };
+            let ts = body
+                .get("timestamp")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let replace = match latest.get(name) {
+                None => true,
+                Some((prev, _, _)) => mtime > *prev,
+            };
+            if replace {
+                latest.insert(name.to_string(), (mtime, payload, ts));
+            }
+        }
+        for (_name, (_mtime, payload, ts)) in latest {
+            let at = if ts.is_empty() { None } else { Some(ts.as_str()) };
+            record_heartbeat_at(state, repo, &payload, at);
+            ingested += 1;
+        }
+    }
+
+    Ok(ingested)
 }
 
 /// Baseline de latido: el más reciente entre estado persistido y arranque del lock.
@@ -186,6 +302,7 @@ fn audit_running_daemon(
 
 fn audit_staleness(repo: &Path) -> Result<Vec<Value>, String> {
     let mut state = load_state(repo);
+    let _ = ingest_regime(repo, &mut state)?;
     let mut fractures = Vec::new();
     for daemon_id in list_indexed_daemon_ids(repo)? {
         if let Some(seal) = audit_running_daemon(repo, &mut state, &daemon_id)? {
@@ -217,7 +334,9 @@ pub fn audit_telemetry_file(repo: &Path, rel_path: &str) -> Result<Value, String
     }
 
     let mut state = load_state(repo);
-    record_heartbeat(&mut state, repo, &payload);
+    let event_ts = body.get("timestamp").and_then(|v| v.as_str());
+    record_heartbeat_at(&mut state, repo, &payload, event_ts);
+    let _ = ingest_regime(repo, &mut state)?;
     save_state(repo, &state)?;
 
     let fractures = audit_staleness(repo)?;
