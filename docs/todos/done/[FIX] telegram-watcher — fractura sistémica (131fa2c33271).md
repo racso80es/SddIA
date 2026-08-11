@@ -4,7 +4,8 @@ title: "[FIX] telegram-watcher — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-07-24"
-status: "abierto"
+status: cerrado
+fix_ref: docs/fixes/centinelas-fracture-ola-20260723
 priority: alta
 process: bug-fix
 incident_ref: "System_Fracture_Detected — 131fa2c33271"
@@ -33,20 +34,6 @@ Centinela telegram-watcher omitió 18 ciclos consecutivos de Daemon_Heartbeat (u
 
 Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `curl`) hasta cierre documentado.
 
-## Conclusión Analítica y Propuesta Evolutiva
+## Cierre (ola 20260723)
 
-*(Síntesis Mayeuta — Kintsugi async)*
-
-### Diagnóstico de causa raíz
-
-- Causa raíz no clasificada automáticamente para `telegram-watcher`; requiere laudo humano.
-
-### Veredicto evolutivo
-
-**Corrección de proceso oficial** (`process_fix`)
-
-### Propuestas
-
-- **Corrección de proceso oficial:** Auditar proceso `telegram-watcher`, acción `daemon-heartbeat-audit` y emisor `argos`.
-
-> Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar.
+Laudo **(B) deuda documental**: runtime sano al 2026-08-11 (`missed_cycles=0`); mitigaciones ya en `main` (olas 0716/0722 + PR #155). Archivado bajo `docs/fixes/centinelas-fracture-ola-20260723`.

@@ -4,7 +4,8 @@ title: "[FIX] github-bridge-watcher — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-07-23"
-status: "abierto"
+status: cerrado
+fix_ref: docs/fixes/centinelas-fracture-ola-20260723
 priority: alta
 process: bug-fix
 incident_ref: "System_Fracture_Detected — a69be9535f82"
@@ -33,12 +34,6 @@ Centinela github-bridge-watcher omitió 234 ciclos consecutivos de Daemon_Heartb
 
 Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `curl`) hasta cierre documentado.
 
-## Conclusión Analítica y Propuesta Evolutiva
+## Cierre (ola 20260723)
 
-_Pendiente de síntesis Mayeuta (Kintsugi async)._
-
-## Criterio de cierre
-
-- [ ] Causa raíz resuelta
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/`
+Laudo **(B) deuda documental**: runtime sano al 2026-08-11 (`missed_cycles=0`); mitigaciones ya en `main` (olas 0716/0722 + PR #155). Archivado bajo `docs/fixes/centinelas-fracture-ola-20260723`.
