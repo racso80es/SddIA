@@ -174,6 +174,11 @@ fn creator_inputs_from_entity(
             {
                 fields.insert("process_version".into(), json!(ver));
             }
+            for optional_key in ["process_jurisdiction", "process_domain_root"] {
+                if let Some(value) = seed.get(optional_key) {
+                    fields.insert(optional_key.into(), value.clone());
+                }
+            }
             merge_maps(&base, fields)
         }
         "agent" => merge_maps(
@@ -265,18 +270,38 @@ fn delegate_creator(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Va
     let seed = inputs.get("semantic_seed").cloned().unwrap_or(json!({}));
     let child_inputs = creator_inputs_from_entity(&class, &entity_name, &lifecycle, &seed)?;
 
-    if let Ok(forge) = materialize_by_inputs(repo, &child_inputs) {
-        if forge.get("handoff_entity_uuid").is_some() {
-            merge_handoff(state, &forge);
-            return Ok(json!({
-                "child_process": creator,
-                "handoff": state.get("handoff"),
-                "forge_only": true,
-            }));
+    let forge_error = match materialize_by_inputs(repo, &child_inputs) {
+        Ok(forge) => {
+            if forge.get("handoff_entity_uuid").is_some() {
+                merge_handoff(state, &forge);
+                return Ok(json!({
+                    "child_process": creator,
+                    "handoff": state.get("handoff"),
+                    "forge_only": true,
+                }));
+            }
+            None
         }
-    }
+        Err(error) => Some(error),
+    };
 
-    let data = invoke_process(repo, creator, &child_inputs)?;
+    let data = invoke_process(repo, creator, &child_inputs).map_err(|invoke_error| {
+        format!(
+            "forja nativa fallida: {}; fallback {creator} fallido: {invoke_error}",
+            forge_error.as_deref().unwrap_or("handoff ausente")
+        )
+    })?;
+    let fallback_has_handoff = data.get("handoff_entity_uuid").is_some()
+        || data
+            .get("handoff")
+            .and_then(|handoff| handoff.get("handoff_entity_uuid"))
+            .is_some();
+    if !fallback_has_handoff {
+        return Err(format!(
+            "forja nativa fallida: {}; fallback {creator} terminó sin handoff_entity_uuid",
+            forge_error.as_deref().unwrap_or("handoff ausente")
+        ));
+    }
     merge_handoff(state, &data);
     if let Some(h) = data.get("handoff") {
         merge_handoff(state, h);
@@ -492,4 +517,26 @@ pub fn run(
         })),
         exit_code: status_code,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn process_creator_inputs_include_declared_jurisdiction_fields() {
+        let inputs = creator_inputs_from_entity(
+            "process",
+            "evolution-audit",
+            "create",
+            &json!({
+                "process_jurisdiction": "domain",
+                "process_domain_root": "domain/process"
+            }),
+        )
+        .expect("process inputs");
+
+        assert_eq!(inputs["process_jurisdiction"], json!("domain"));
+        assert_eq!(inputs["process_domain_root"], json!("domain/process"));
+    }
 }
