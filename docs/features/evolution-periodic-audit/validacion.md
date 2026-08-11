@@ -6,6 +6,9 @@ branch: feat/evolution-periodic-audit
 global: APTO
 pbi_archived: true
 pbi_ref: docs/todos/done/[FEATURE] Auditoría periódica del registro evolution.md
+pr_url: https://github.com/racso80es/SddIA/pull/167
+pr_presented_event_id: 87be4821-6983-4ad4-bb57-cb81fe5549de
+snapshot_commit: e0aa29c202541b6371fdebfaae441a9e62d3ee57
 checks:
   process_forged_via_entity_manager: pass
   process_integrity: pass
@@ -56,4 +59,4 @@ git_changes:
 
 ## Cierre documental
 
-PBI movido a `docs/todos/done/` en esta rama. Entrega vía `delivery-close-cycle` en `feat/evolution-periodic-audit`.
+PBI en `docs/todos/done/`. PR presentado: https://github.com/racso80es/SddIA/pull/167 · evento `87be4821-6983-4ad4-bb57-cb81fe5549de`.

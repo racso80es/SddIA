@@ -33,3 +33,12 @@ items_applied:
 - Backlog derivado: cinco PBIs priorizados, con dependencias explícitas.
 
 La ejecución CLI resolvió correctamente RBAC/DI y materializó el workspace. Las fases de agentes se ejecutaron en el runtime IDE; el CLI las registra como `simulated` cuando `SDDIA_AGENT_RUNTIME_COMMAND` no está configurado.
+
+## Entrega
+
+| Operación | Resultado |
+|---|---|
+| Commit feature | `bdf771e` |
+| delivery-close-cycle | `b85945f9-d958-4b4e-8eca-b8388da9f349` |
+| PR | https://github.com/racso80es/SddIA/pull/167 |
+| PullRequest_Presented | `87be4821-6983-4ad4-bb57-cb81fe5549de` |
