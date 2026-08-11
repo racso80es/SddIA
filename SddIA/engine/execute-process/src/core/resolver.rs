@@ -32,6 +32,9 @@ const DEFAULTABLE: &[&str] = &[
     // pull-request-review v1.1 / genoma: opcional hasta que delivery-close aporte URL
     "pr_url",
     "document_context",
+    // process-creator v1.2: ambos son opcionales; la jurisdicción se infiere y el root usa [0].
+    "process_jurisdiction",
+    "process_domain_root",
 ];
 
 pub type ProcessDef = HashMap<String, YamlValue>;
@@ -374,5 +377,21 @@ mod tests {
 
         let path = resolve_process_path(repo, "refactorization").unwrap();
         assert!(path.ends_with("pack/domain-process/refactorization.md"));
+    }
+
+    #[test]
+    fn process_creator_optional_jurisdiction_inputs_are_defaultable() {
+        let def: ProcessDef = serde_yaml::from_str(
+            r#"
+inputs:
+  - process_name: "Nombre requerido"
+  - process_jurisdiction: "Opcional"
+  - process_domain_root: "Opcional"
+"#,
+        )
+        .expect("process def");
+
+        validate_process_inputs(&def, &json!({"process_name": "audit"}), "process-creator")
+            .expect("optional creator inputs");
     }
 }

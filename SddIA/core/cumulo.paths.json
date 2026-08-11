@@ -1,5 +1,5 @@
 {
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -105,7 +105,8 @@
   "paths": {
     "workspacesRoot": ".SddIA/workspaces/",
     "featurePath": "docs/features",
-    "fixPath": "docs/fixes"
+    "fixPath": "docs/fixes",
+    "auditsPath": "docs/audits"
   },
   "products": {
     "shared_kernel_npm": "packages/sddia-core",

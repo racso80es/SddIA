@@ -212,16 +212,12 @@ pub fn refresh_process_hash(process_path: &Path) -> Result<(Option<String>, Stri
         .unwrap_or_else(|| json!([{"name": "Fase inicial", "intent": "update"}]));
     let new_hash = sha256_phases_integrity(&phases);
     let mut text = fs::read_to_string(process_path).map_err(|e| e.to_string())?;
-    if let Some(ref old) = old_hash {
-        if text.contains(old) {
-            text = text.replacen(&format!("hash_signature: {old}"), &format!("hash_signature: {new_hash}"), 1);
-        } else {
-            static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-            let re = RE.get_or_init(|| Regex::new(r"(?m)^hash_signature:\s*.+$").expect("regex"));
-            text = re
-                .replace(&text, format!("hash_signature: {new_hash}"))
-                .into_owned();
-        }
+    if old_hash.is_some() {
+        static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+        let re = RE.get_or_init(|| Regex::new(r"(?m)^hash_signature:\s*.+$").expect("regex"));
+        text = re
+            .replace(&text, format!("hash_signature: \"{new_hash}\""))
+            .into_owned();
     }
     fs::write(process_path, text).map_err(|e| e.to_string())?;
     Ok((old_hash, new_hash))
@@ -437,6 +433,32 @@ mod tests {
         assert_eq!(bump_semver_patch("1.2.0"), "1.2.1");
         assert_eq!(bump_semver_patch("1.1.0"), "1.1.1");
         assert_eq!(bump_semver_patch("1.0.0"), "1.0.1");
+    }
+
+    #[test]
+    fn refresh_process_hash_replaces_quoted_value() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let process = tmp.path().join("quoted-process.md");
+        fs::write(
+            &process,
+            r#"---
+uuid: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
+name: "quoted-process"
+version: "1.0.0"
+hash_signature: "sha256:old"
+phases:
+  - name: "Fase"
+    intent: "Salida explícita."
+---
+# quoted-process
+"#,
+        )
+        .unwrap();
+
+        let (_, expected) = refresh_process_hash(&process).expect("refresh");
+        let text = fs::read_to_string(process).expect("read");
+        assert!(text.contains(&format!("hash_signature: \"{expected}\"")));
+        assert!(!text.contains("sha256:old"));
     }
 
     #[test]
