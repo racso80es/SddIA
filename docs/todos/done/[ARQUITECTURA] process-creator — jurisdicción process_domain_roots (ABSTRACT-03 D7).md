@@ -4,17 +4,17 @@ title: "[ARQUITECTURA] process-creator — jurisdicción process_domain_roots (A
 format: markdown
 version: "1.0.0"
 created: "2026-08-09"
-updated: "2026-08-09"
-status: abierto
+updated: "2026-08-10"
+status: cerrado
 priority: media
 process: feature
 uuid: a3c7e91f-2b4d-4f8a-9c1e-7d6b0a5f3211
 source_feature: docs/features/sddia-domain-abstract-03-relocalizacion
-feature_ref: docs/features/sddia-domain-abstract-03-relocalizacion
-branch_name: feat/sddia-domain-abstract-03-relocalizacion
+feature_ref: docs/features/process-creator-process-domain-roots
+branch_name: feat/process-creator-process-domain-roots
 source_correlation_id: 3211daac-00d2-4833-b37e-979d899e3468
 source_audit: docs/features/sddia-domain-abstract-03-relocalizacion/validacion.md
-pr_url: https://github.com/racso80es/SddIA/pull/163
+pr_url: https://github.com/racso80es/SddIA/pull/165
 related:
   - SddIA/process/process-creator.md
   - SddIA/core/cumulo.paths.json
@@ -36,10 +36,10 @@ Liquidar deuda **D7** diferida en ABSTRACT-03: tras el move de los 6 process sof
 
 ## Criterio de cierre
 
-- [ ] `process-creator` (o forja sustituta) resuelve destino vía `process_domain_roots` + política de jurisdicción (software-lifecycle → códice; resto → Core).
-- [ ] Índice del root destino actualizado; sin fila fantasma en Core para altas de dominio.
-- [ ] AC / smoke: alta de process software no deja artefacto ejecutable bajo `SddIA/process/`.
-- [ ] Documentar overlay instancia si aplica (`.SddIA/local.paths.json`).
+- [x] `process-creator` (o forja sustituta) resuelve destino vía `process_domain_roots` + política de jurisdicción (software-lifecycle → códice; resto → Core).
+- [x] Índice del root destino actualizado; sin fila fantasma en Core para altas de dominio.
+- [x] AC / smoke: alta de process software no deja artefacto ejecutable bajo `SddIA/process/`.
+- [x] Documentar overlay instancia si aplica (`.SddIA/local.paths.json`).
 
 ## Fuera de alcance
 

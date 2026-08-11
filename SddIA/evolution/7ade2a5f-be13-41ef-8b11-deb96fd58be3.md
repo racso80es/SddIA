@@ -28,4 +28,4 @@ Miembros movidos: `feature`, `bug-fix`, `refactorization`, `pull-request-review`
 
 ## Deuda conocida
 
-`process-creator` sigue escribiendo bajo `directories.process` Core (D7 / L-KEEP-CORE).
+D7 (`process-creator` escritura mono-root Core) → liquidada en feature `process-creator-process-domain-roots` / evolution `a3c7e91f-2b4d-4f8a-9c1e-7d6b0a5f3211` (L-JURIS-MEMBERSHIP-PLUS-FLAG). Creator permanece Core (L-KEEP-CORE); destino de alta es multi-root.

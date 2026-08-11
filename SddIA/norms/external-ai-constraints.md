@@ -26,7 +26,7 @@ Bajo ninguna circunstancia puedes **crear, modificar o eliminar** archivos en lo
 | `directories.skills` | `SddIA/skills/` |
 | `directories.actions` | `SddIA/actions/` |
 | `directories.process` | `SddIA/process/` |
-| `directories.process_domain_roots` | Packing process de dominio (p. ej. `SddIA/library/codexes/codex-software-engineering/process/`); resolución orquestador = domain roots primero, luego Core |
+| `directories.process_domain_roots` | Packing process de dominio (p. ej. `SddIA/library/codexes/codex-software-engineering/process/`); resolución orquestador = domain roots primero, luego Core; **escritura** de creators/`process-creator`/`run_process_forge` respeta la misma topología + jurisdicción (no forzar solo Core) |
 | `directories.agents` | `SddIA/agents/` |
 | `directories.events` | `SddIA/events/` |
 | `directories.norms` | `SddIA/norms/` |
