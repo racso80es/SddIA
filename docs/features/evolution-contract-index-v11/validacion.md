@@ -3,6 +3,7 @@ feature_name: evolution-contract-index-v11
 branch: feat/evolution-contract-index-v11
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/169
 created: "2026-08-11"
 process: feature
 execution_id: c906d516-f708-48bc-87b3-19980a9a11ab

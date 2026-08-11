@@ -47,3 +47,24 @@ persist_ref: docs/features/evolution-contract-index-v11
 1. Contrato + índice 61 + `sddia-qa validate-evolution-contract` (61/61).
 2. PBI en `docs/todos/done/`; `validacion.md` APTO / `pbi_archived: true`.
 3. Siguiente: commit + `delivery-close-cycle` / PR (pendiente mandato operador).
+
+## 2026-08-11 — delivery-close-cycle
+
+- process: `delivery-close-cycle`
+- execution_id: `4ec751e0-1613-4b73-8902-65abe44310f5`
+- pr_url: https://github.com/racso80es/SddIA/pull/169
+- event_id: `ae2cb6fe-4193-490e-a7bc-343f65c7233c`
+- status: `presented`
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-11T17:48:30Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
