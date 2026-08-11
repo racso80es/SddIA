@@ -17,6 +17,7 @@ related_document_ids:
   - PBI-FIX-FRACTURE-63c439de23d0
 laudo_c3: A+B+C+D
 scope: "Cierre circuito Daemon_Heartbeat régimen — side-channel + ingest + fairness + Crash-Only"
+pr_url: https://github.com/racso80es/SddIA/pull/168
 ---
 
 # Validación — heartbeat-circuit-regimen-20260811
