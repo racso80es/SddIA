@@ -2,7 +2,7 @@
 document_id: 4feb4ea2-b1ca-41c6-bc57-75457840eabf
 title: Evolution — restaurar contrato e índice canónico
 type: architecture
-status: pending
+status: done
 priority: critical
 created: "2026-08-11"
 suggested_branch: feat/evolution-contract-index-v11

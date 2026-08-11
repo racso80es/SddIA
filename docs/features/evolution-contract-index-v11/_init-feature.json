@@ -1,0 +1,12 @@
+{
+  "feature_name": "evolution-contract-index-v11",
+  "branch_name": "feat/evolution-contract-index-v11",
+  "persist_ref": "docs/features/evolution-contract-index-v11",
+  "base_branch": "main",
+  "refined_requirements": "EV-AUD-001 (critical): Cúmulo declara normative_documents.evolution_contract y evolution_log pero ambos archivos están ausentes. Restaurar SSOT mínima compatible con 61 registros históricos sin reescribirlos. Alcance: (1) materializar evolution_contract.md v1.1+ migrable; (2) esquema único, compatibilidad legacy y semántica de borradores; (3) materializar Evolution_log.md con cabecera contractual e inventario inicial (1 fila por registro oficial); (4) resolver colisión estándar atómico global vs filename {uuid}.md de evolution; (5) validador de contrato en modo lectura que clasifique los 61 registros sin pérdida ni mutación. AC: rutas Cúmulo existen y coherentes; contrato define campos obligatorios/enums/fecha/identidad/hash/referencias; validador clasifica 61 sin mutar; Evolution_log exactamente 1 fila/registro oficial; borradores y sin-fecha explícitos; QA+docs migración en un único PR. Fuera: normalización física históricos; gate CI bloqueante. Fuente: docs/audits/evolution/2026-08-11.md. Bloquea PBIs 7bb37ff1-decd-4ec5-968b-344a5334f9eb y 70f78d23-e209-4e41-9292-cb7421a934f6.",
+  "pbi_ref": "docs/todos/pending/[ARQUITECTURA] Evolution — restaurar contrato e índice canónico (EV-AUD-001).md",
+  "document_id": "4feb4ea2-b1ca-41c6-bc57-75457840eabf",
+  "execution_id": "c906d516-f708-48bc-87b3-19980a9a11ab",
+  "source_audit": "docs/audits/evolution/2026-08-11.md",
+  "finding": "EV-AUD-001"
+}
