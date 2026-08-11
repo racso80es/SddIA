@@ -11,6 +11,7 @@ use std::{thread, time::Duration};
 /// Margen bajo el intervalo de heartbeat (30s) para no bloquear el hilo principal en el límite.
 const POLL_TIMEOUT: u64 = 25;
 const HEARTBEAT_TICK_SECONDS: u64 = 10;
+const HEARTBEAT_EMIT_FAIL_BUDGET: u32 = 5;
 const CONFLICT_BACKOFF_SECONDS: u64 = 5;
 const STATE_REL: &str = ".SddIA/daemons/state/telegram-watcher.json";
 const LEGACY_STATE_REL: &str = ".SddIA/.state/telegram_last_id";
@@ -189,13 +190,32 @@ fn spawn_heartbeat_worker(
     centinela: Arc<Mutex<DaemonRuntime>>,
     top: BusTopology,
 ) -> thread::JoinHandle<()> {
-    thread::spawn(move || loop {
-        if let Ok(mut rt) = centinela.lock() {
-            if let Err(e) = rt.tick(&top) {
-                eprintln!("[telegram-watcher] heartbeat keepalive: {e}");
+    thread::spawn(move || {
+        let mut fails = 0u32;
+        loop {
+            let tick_result = {
+                if let Ok(mut rt) = centinela.lock() {
+                    rt.tick(&top)
+                } else {
+                    Err("lock poisoned".into())
+                }
+            };
+            match tick_result {
+                Ok(()) => fails = 0,
+                Err(e) => {
+                    fails += 1;
+                    eprintln!(
+                        "[telegram-watcher] heartbeat keepalive: {e} (fail {fails}/{HEARTBEAT_EMIT_FAIL_BUDGET})"
+                    );
+                    if fails >= HEARTBEAT_EMIT_FAIL_BUDGET {
+                        panic!(
+                            "Fallo crítico termodinámico: Incapacidad de reportar telemetría (side-channel). Abortando entidad para evitar estado Zombi. last_error={e}"
+                        );
+                    }
+                }
             }
+            thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
         }
-        thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
     })
 }
 

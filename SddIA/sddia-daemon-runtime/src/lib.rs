@@ -78,6 +78,27 @@ pub fn status_dir(repo: &Path) -> PathBuf {
         .unwrap_or_else(|| repo.join(".SddIA/daemons/status"))
 }
 
+pub fn state_dir(repo: &Path) -> PathBuf {
+    load_cumulo(repo)
+        .ok()
+        .and_then(|cfg| {
+            cfg.get("daemons_instance")
+                .and_then(|d| d.get("state"))
+                .and_then(|v| v.as_str())
+                .map(|s| rel_path(repo, s))
+        })
+        .unwrap_or_else(|| repo.join(".SddIA/daemons/state"))
+}
+
+/// Side-channel de prueba de vida (Vía C): independiente del fan-out del bus.
+pub fn heartbeats_dir(repo: &Path) -> PathBuf {
+    state_dir(repo).join("heartbeats")
+}
+
+pub fn side_channel_path(repo: &Path, daemon_name: &str) -> PathBuf {
+    heartbeats_dir(repo).join(format!("{daemon_name}.json"))
+}
+
 pub fn load_bus_topology(repo: &Path) -> BusTopology {
     let defaults = |repo: &Path| BusTopology {
         pending: repo.join(".events/pending"),
@@ -310,24 +331,45 @@ impl DaemonRuntime {
         if !force && self.last_emit.elapsed() < self.heartbeat_interval {
             return Ok(());
         }
+        let ts = iso_now();
         let mut payload = json!({
             "daemon_name": self.daemon_name,
             "daemon_uuid": self.daemon_uuid,
             "pid": std::process::id(),
             "uptime_seconds": self.started_at.elapsed().as_secs(),
             "status": "alive",
+            "timestamp": ts,
         });
         if let Some(stimulus) = &self.last_stimulus_at {
             payload["last_stimulus_at"] = json!(stimulus);
         }
+        // Vía C: side-channel obligatorio (vitalidad sin fan-out).
+        let side = json!({
+            "daemon_name": self.daemon_name,
+            "daemon_uuid": self.daemon_uuid,
+            "pid": std::process::id(),
+            "timestamp": ts,
+            "uptime_seconds": self.started_at.elapsed().as_secs(),
+            "status": "alive",
+            "source": "side-channel",
+            "heartbeat_interval_seconds": self.heartbeat_interval.as_secs(),
+        });
+        write_json_atomic(&side_channel_path(&self.repo, &self.daemon_name), &side)?;
+
         let event = json!({
             "event_id": Uuid::new_v4().to_string(),
             "event_type": "Daemon_Heartbeat",
-            "timestamp": iso_now(),
+            "timestamp": ts,
             "emitter_agent": self.daemon_name,
             "payload": payload,
         });
-        write_fractal_event(&self.repo, top, &event, "telemetry")?;
+        // ECST bus: best-effort tras side-channel (inanición de fan-out no tumba si C OK).
+        if let Err(e) = write_fractal_event(&self.repo, top, &event, "telemetry") {
+            eprintln!(
+                "[{}] Daemon_Heartbeat ECST falló (side-channel OK): {e}",
+                self.daemon_name
+            );
+        }
         self.last_emit = Instant::now();
         Ok(())
     }

@@ -13,6 +13,8 @@ use std::{thread, time::Duration};
 const POLL_SECONDS: u64 = 2;
 const MAX_ROUTE_ATTEMPTS: u32 = 3;
 const HEARTBEAT_TICK_SECONDS: u64 = 10;
+/// Crash-Only (Vía D): fallos consecutivos de emisión side-channel.
+const HEARTBEAT_EMIT_FAIL_BUDGET: u32 = 5;
 /// Chunk físico (Dogma del Despertador): tope de paths por invocación al orquestador.
 const PHYSICAL_ROUTE_CHUNK: usize = 50;
 
@@ -20,13 +22,30 @@ fn spawn_heartbeat_worker(
     centinela: Arc<Mutex<DaemonRuntime>>,
     top: BusTopology,
 ) -> thread::JoinHandle<()> {
-    thread::spawn(move || loop {
-        if let Ok(mut rt) = centinela.lock() {
-            if let Err(e) = rt.tick(&top) {
-                eprintln!("[WATCHER] heartbeat keepalive: {e}");
+    thread::spawn(move || {
+        let mut fails = 0u32;
+        loop {
+            let tick_result = {
+                if let Ok(mut rt) = centinela.lock() {
+                    rt.tick(&top)
+                } else {
+                    Err("lock poisoned".into())
+                }
+            };
+            match tick_result {
+                Ok(()) => fails = 0,
+                Err(e) => {
+                    fails += 1;
+                    eprintln!("[WATCHER] heartbeat keepalive: {e} (fail {fails}/{HEARTBEAT_EMIT_FAIL_BUDGET})");
+                    if fails >= HEARTBEAT_EMIT_FAIL_BUDGET {
+                        panic!(
+                            "Fallo crítico termodinámico: Incapacidad de reportar telemetría (side-channel). Abortando entidad para evitar estado Zombi. last_error={e}"
+                        );
+                    }
+                }
             }
+            thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
         }
-        thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
     })
 }
 
@@ -61,14 +80,37 @@ fn fractal_watch_enabled() -> bool {
 }
 
 fn watch_targets(repo: &Path, top: &sddia_daemon_runtime::BusTopology) -> Vec<(PathBuf, String)> {
-    let mut targets = vec![(top.pending.clone(), "route-domain-event".into())];
+    // Vía B: telemetría (Daemon_Heartbeat) antes que pending/dominio/orquestación.
+    let mut targets = Vec::new();
+    if fractal_watch_enabled() {
+        targets.push((top.telemetry.clone(), "route-telemetry".into()));
+    }
+    targets.push((top.pending.clone(), "route-domain-event".into()));
     if fractal_watch_enabled() {
         targets.push((top.domain.clone(), "route-domain".into()));
         targets.push((top.orchestration.clone(), "route-orchestration".into()));
-        targets.push((top.telemetry.clone(), "route-telemetry".into()));
     }
     let _ = repo;
     targets
+}
+
+fn is_daemon_heartbeat(path: &Path) -> bool {
+    let Ok(raw) = fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
+        return false;
+    };
+    body.get("event_type").and_then(|v| v.as_str()) == Some("Daemon_Heartbeat")
+}
+
+/// Dentro de telemetry: HB primero (fairness bajo saturación).
+fn prioritize_heartbeat_paths(paths: &mut Vec<PathBuf>) {
+    paths.sort_by_key(|p| {
+        let hb = is_daemon_heartbeat(p);
+        // false < true en sort_by_key invertido: HB (0) antes que no-HB (1)
+        (!hb, p.to_string_lossy().to_string())
+    });
 }
 
 fn has_dead_letter_witnesses(
@@ -323,7 +365,11 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 .map(|e| e.path())
                 .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
                 .collect();
-            paths.sort();
+            if process_name == "route-telemetry" {
+                prioritize_heartbeat_paths(&mut paths);
+            } else {
+                paths.sort();
+            }
             if process_name == "route-domain-event" {
                 let mut eligible: Vec<(PathBuf, String, String, String)> = Vec::new();
                 for path in paths {
