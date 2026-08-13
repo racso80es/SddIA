@@ -138,10 +138,9 @@ pub fn run(
     }
     state["phase_reports"] = json!(phase_reports);
 
-    let blocked = phase_reports.iter().any(|p| p.get("status") == Some(&json!("blocked")));
-    let failed = phase_reports.iter().any(|p| p.get("status") == Some(&json!("failed")));
-    let success = !blocked && !failed;
-    let status_code = if success { 0 } else { 1 };
+    let verdict =
+        super::phase_terminal::aggregate_execution_terminal(&phase_reports, &state);
+    let status_code = verdict.status_code;
     let duration_ms = toll_start
         .map(|t| t.elapsed().as_millis() as i64)
         .unwrap_or(0);
@@ -164,6 +163,7 @@ pub fn run(
             data[key] = v.clone();
         }
     }
+    super::phase_terminal::apply_failed_phase_fields(&mut data, &verdict);
 
     let toll = thermodynamic::run(
         repo,
@@ -172,19 +172,21 @@ pub fn run(
         &inputs_mut,
         status_code,
         duration_ms,
-        success,
+        verdict.success,
     );
     data["thermodynamic_toll"] = toll;
 
     Ok(OrchestratorEnvelope {
-        success,
+        success: verdict.success,
         status_code,
         data: Some(data),
-        error: if success {
-            None
-        } else {
-            Some("delivery-close-cycle con fases blocked/failed".into())
-        },
+        error: verdict.error.clone().or_else(|| {
+            if verdict.success {
+                None
+            } else {
+                Some("delivery-close-cycle con fases blocked/failed".into())
+            }
+        }),
         execution_report: Some(json!({
             "process_name": process_name,
             "phases": phase_reports,

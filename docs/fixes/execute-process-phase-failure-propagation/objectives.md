@@ -1,4 +1,17 @@
 ---
+feature_name: execute-process-phase-failure-propagation
+created: "2026-08-11"
+process: bug-fix
+branch_name: fix/execute-process-phase-failure-propagation
+persist_ref: docs/fixes/execute-process-phase-failure-propagation
+pbi_ref: docs/todos/done/[FIX] execute-process — fallo de fase debe fallar ejecución global (EV-AUD-005).md
+---
+
+# Objetivos — execute-process-phase-failure-propagation
+
+## Misión
+
+---
 document_id: 04f8f435-450b-477a-970a-4a05dd0224cb
 title: execute-process — fallo de fase debe fallar ejecución global
 type: bug-fix
@@ -37,3 +50,12 @@ Garantizar que el estado global sea una agregación fiel de todas las fases y nu
 - Telemetría y evento de orquestación reflejan el mismo estado terminal.
 - Tests cubren DI gate, Cerbero RBAC, cápsula, agente y persistencia fallidos.
 - Regresión reproduce y corrige la ejecución `62b201cf-0d82-4153-8c7d-8223233cf476`.
+
+## Alcance (manifiesto)
+
+Inicialización de contexto vía orquestador nativo `execute-process` (laboratorio).
+
+## Ley aplicada
+
+- Git exclusivamente vía `skill:git-manager`.
+- Jerarquía: Acción → Agente → Skill → Tools.
