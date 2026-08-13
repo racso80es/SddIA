@@ -24,15 +24,27 @@ fn git(repo: &Path, args: &[&str]) -> Result<(String, i32), String> {
     ))
 }
 
+fn range_diff_spec(repo: &Path) -> Result<String, String> {
+    for spec in ["origin/main", "main"] {
+        if let Ok((stdout, 0)) = git(repo, &["rev-parse", "--verify", "--quiet", spec]) {
+            if !stdout.trim().is_empty() {
+                return Ok(format!("{spec}...HEAD"));
+            }
+        }
+    }
+    Err("faltan refs origin/main y main para --range (CI: fetch origin main)".into())
+}
+
 fn diff_paths(repo: &Path, range: bool) -> Result<Vec<(String, String)>, String> {
     let (stdout, code) = if range {
+        let spec = range_diff_spec(repo)?;
         git(
             repo,
             &[
                 "diff",
                 "--name-status",
                 "--diff-filter=ACMRD",
-                "origin/main...HEAD",
+                &spec,
             ],
         )?
     } else {
@@ -67,7 +79,7 @@ fn diff_paths(repo: &Path, range: bool) -> Result<Vec<(String, String)>, String>
 fn read_blob(repo: &Path, rel: &str, staged: bool) -> Option<String> {
     if staged {
         let spec = format!(":{rel}");
-        if let Ok((s, c)) = git(repo, &["show", &spec]) {
+        if let Ok((s, c)) = git(repo, &["show", spec.as_str()]) {
             if c == 0 {
                 return Some(s);
             }

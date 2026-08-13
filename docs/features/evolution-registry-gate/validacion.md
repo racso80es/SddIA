@@ -1,16 +1,49 @@
 ---
 feature_name: evolution-registry-gate
-branch: feat/evolution-registry-gate
-global: APTO
-pbi_archived: true
-pr_url: https://github.com/racso80es/SddIA/pull/172
 created: "2026-08-13"
-process: feature
-execution_id: 0bceeb41-64d1-4920-af9d-46a11c0455a2
+updated: "2026-08-13"
+process: pull-request-review
+phase: Triaje documental
+agent: argos
+agents: argos
+branch: feat/evolution-registry-gate
+branch_name_injected: feat/evolution-registry-gate
 persist_ref: docs/features/evolution-registry-gate
 pbi_ref: docs/todos/done/[FEATURE] Evolution — gate automático de registro y coherencia (EV-AUD-001-002).md
 document_id: 70f78d23-e209-4e41-9292-cb7421a934f6
+correlation_id: d234b930-8a9a-41bc-ab61-c0844049e8d2
+pr_url: https://github.com/racso80es/SddIA/pull/172
+pr_presented_event_id: f2a44d1b-7769-4fa6-b82f-1f3d6a66e8b8
+execution_id: 0bceeb41-64d1-4920-af9d-46a11c0455a2
+global: APTO
+pbi_archived: true
+approval_status: aprobado
+verdict: aprobado
+resolution: PASS_F2_DOC
+delivery_state: pending_downstream_phases
+git_manager_invoked: true
+formal_execute_process: true
+git_evidence_source: evidence-bridge-native_state
+git_manager_error: "cápsula no invocable en esta sesión (Shell/Auto-review rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge; sin bypass raw"
+evidence_bridge_notes: "R1/R2 copia bloque Runtime evidence (machine) delivery-close + session source=native_state notes=idempotent-hit-handoff; Shell git-manager Rejected — sin stdout inventado"
+shell_git_manager_session: "Rejected / no materializado — sin gitStdout en esta invocación Argos Triaje documental"
 checks:
+  TECH_FORMAL_EXECUTE_PROCESS: APTO
+  GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+  GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+  RBAC_AUTHORING_KM_POLICY: APTO
+  F2_DOC_GATE: APTO
+  DOC_OBJECTIVES: APTO
+  DOC_CLARIFY: APTO
+  DOC_SPEC: APTO
+  DOC_PLAN: APTO
+  DOC_IMPLEMENTATION: APTO
+  DOC_EXECUTION: APTO
+  DOC_FRONTMATTER_YAML: APTO
+  PBI_ARCHIVED: APTO
+  PBI_DONE_PRESENT: APTO
+  PBI_PENDING_ABSENT: APTO
+  BRANCH_RUNTIME_INJECT: APTO
   AC-ATOMIC: APTO
   AC-MATERIAL: APTO
   AC-INVALID: APTO
@@ -40,35 +73,95 @@ git_changes:
   - SddIA/Cargo.lock
   - docs/features/evolution-registry-gate/
   - docs/todos/done/[FEATURE] Evolution — gate automático de registro y coherencia (EV-AUD-001-002).md
-  - docs/todos/pending/[FEATURE] Evolution — gate automático de registro y coherencia (EV-AUD-001-002).md
+blocking_findings: []
+non_blocking_findings:
+  - GIT_EVIDENCE_SESSION_SHELL
+  - DELIVERY_CLOSE_PUSH_WORKFLOW_SCOPE
 ---
 
-# Validación — evolution-registry-gate
+# Validación — evolution-registry-gate (Argos · Triaje documental PPR)
 
-## Dictamen
+**global: APTO** — `resolution: PASS_F2_DOC` · cascada documental presente · R1/R2/R3 APTO · `delivery_state: pending_downstream_phases`.
 
-**APTO** — EV-AUD-001/002 cubiertos en modo **delta**: cápsula WASI `sddia-evolution-register` coteja JSON inyectado; CLI nativo `sddia-qa gate-evolution` captura e invoca; pre-commit/CI abortan solo ante `success: false` ∧ `exitCode > 0`. Universo 61 no se certifica (L-DEP / L-ENFORCE-DELTA).
+## Ingesta
 
-## Checks
+| Input | Resolución |
+|-------|------------|
+| `persist_ref` | `docs/features/evolution-registry-gate` |
+| `pbi_ref` (inyectado) | vacío → resuelto `docs/todos/done/[FEATURE] Evolution — gate automático…` |
+| `correlation_id` | `d234b930-8a9a-41bc-ab61-c0844049e8d2` |
+| `branch_name` | `feat/evolution-registry-gate` |
+| `pr_url` | `https://github.com/racso80es/SddIA/pull/172` |
+| Evidence Bridge | `_agent_handoff.md` § Runtime evidence (machine) + session `native_state` / `idempotent-hit-handoff` |
+
+## Aduana Evidence Bridge (R1 / R2 / R3)
+
+Copia del veredicto machine/session (no stdout Shell inventado):
+
+| Campo | Valor |
+|-------|-------|
+| `source` | `native_state` (session; notes `idempotent-hit-handoff`) · machine prior `execute-process-native` |
+| `git_manager_invoked` | `true` (bridge) |
+| `formal_execute_process` | `true` |
+| `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** — copia bridge; sin inventar stdout |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** — copia bridge |
+| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` esta sesión |
+| `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**`; PBI en `done/` = cierre feature previo (vía legítima), no semilla Kaizen ilegal |
+
+## Cascada documental (F2)
+
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `DOC_OBJECTIVES` | **APTO** | `objectives.md` + YAML |
+| `DOC_CLARIFY` | **APTO** | `clarify.md` + YAML |
+| `DOC_SPEC` | **APTO** | `spec.md` + YAML |
+| `DOC_PLAN` | **APTO** | `plan.md` + YAML · fases 1–9 `[x]` |
+| `DOC_IMPLEMENTATION` | **APTO** | `implementation.md` + YAML |
+| `DOC_EXECUTION` | **APTO** | `execution.md` + `items_applied` |
+| `DOC_FRONTMATTER_YAML` | **APTO** | cascada con frontmatter |
+| `PBI_DONE_PRESENT` / `PBI_ARCHIVED` | **APTO** | `docs/todos/done/[FEATURE] Evolution — …` · `status: done` · `pbi_archived: true` |
+| `PBI_PENDING_ABSENT` | **APTO** | 0 hits `70f78d23…` / EV-AUD-001-002 bajo `docs/todos/pending/` |
+| `BRANCH_RUNTIME_INJECT` | **APTO** | `feat/evolution-registry-gate` |
+| `F2_DOC_GATE` | **APTO** | peaje Triaje documental · `PASS_F2_DOC` |
+
+## Checks feature (heredados · no re-ejecutados en F2)
 
 | ID | Resultado | Evidencia |
 |----|-----------|-----------|
-| AC-ATOMIC | APTO | Cápsula emite `{detail,index}`; `persist()` backup→detalle→índice→rollback. Hito `0bceeb41-…` aplicado desde JSON de cápsula (hash `sha256:e275fc41…`). Residual: sin test de crash a mitad de write. |
-| AC-MATERIAL | APTO | Test `material_unregistered` → `EVOL_MATERIAL_UNREGISTERED` |
-| AC-INVALID | APTO | `hash_mismatch`, `not_indexed`, `alta_requires_fecha`, `baja_requires_rutas_eliminadas` |
-| AC-SELF | APTO | Test `self_only_evolution_ok`; smoke `gate-evolution --json` → `EVOL_OK` (sin staged material) |
-| AC-TESTS | APTO | 14 tests: alta/dup/idempotente, modificacion, baja, hash, inject, cero Git en prod |
-| AC-CUMULO | APTO | CLI `load_paths_config`; `directories.evolution` + `evolution_log` + `evolution_contract`; falta → `EVOL_CUMULO` |
-| AC-ADUANA | APTO | `pre_commit_gate.sh` + job `wasi-runtime-smoke` invocan el mismo CLI; sin env de skip obrero |
-| AC-INJECT | APTO | Tests JSON stdin; `lib.rs` prod sin `Command::new("git")` / `git diff` |
-| AC-HOOK-INERT | APTO | Bloque evolution: solo `gate-evolution --json` + parseo sobre. `git diff --cached` restante = EDA `staged_touches_genome` (preexistente; no inventario evolution) |
-| AC-WASI | APTO | Crate `wasm32-wasip1`; CI `cargo build --workspace --target wasm32-wasip1` |
-| AC-DIAG | APTO | Sobre v2.0 `reason_codes`; `exitCode === 0` ⟺ `success` |
-| AC-DEP | APTO | Gate modo delta; 61 legacy no entran. `7bb37ff1-…` sigue abierto |
-| AC-PR | APTO | Cascada + PBI en `docs/todos/done/` (`pbi_archived: true`) en esta rama |
+| AC-ATOMIC | APTO | Cápsula `{detail,index}`; hito `0bceeb41-…` hash `sha256:e275fc41…`. Residual: sin test crash mid-write. |
+| AC-MATERIAL | APTO | `EVOL_MATERIAL_UNREGISTERED` |
+| AC-INVALID | APTO | hash/index/alta/baja reason-codes |
+| AC-SELF | APTO | `self_only_evolution_ok`; smoke `EVOL_OK` |
+| AC-TESTS | APTO | 14 tests (claim `execution.md`) |
+| AC-CUMULO | APTO | `directories.evolution` + contract/log |
+| AC-ADUANA | APTO | pre-commit + CI mismo CLI |
+| AC-INJECT | APTO | JSON stdin; cero Git en prod cápsula |
+| AC-HOOK-INERT | APTO | detonador `gate-evolution --json` |
+| AC-WASI | APTO | `wasm32-wasip1` |
+| AC-DIAG | APTO | `reason_codes`; `exitCode===0` ⟺ `success` |
+| AC-DEP | APTO | gate delta; `7bb37ff1-…` abierto |
+| AC-PR | APTO | cascada + PBI `done/` en rama |
 
-## Notas
+## Git / inventario
 
-- `validate-evolution-contract` intacto (solo lectura del corte).
-- WIP ajeno (fixes EV-AUD-005 / seeds OPERATIVO) **fuera** de este PR.
-- `delivery-close-cycle` / PR: mandato operador. `pr_url` no es gate de Done.
+`git_changes` = inventario documental previo + handoff delivery (sin `gitStdout` fresco: Shell Rejected). R2 canónico vía Evidence Bridge. No bypass raw.
+
+## No bloqueante
+
+- `GIT_EVIDENCE_SESSION_SHELL`: cápsula no invocable vía Shell IDE esta sesión.
+- `DELIVERY_CLOSE_PUSH_WORKFLOW_SCOPE`: handoff — push rechazado por PAT sin scope `workflow` (mutación `.github/workflows/…`); fuera de peaje F2.
+
+## Dictamen
+
+```json
+{
+  "phase": "Triaje documental",
+  "verdict": "aprobado",
+  "global": "APTO",
+  "resolution": "PASS_F2_DOC",
+  "pbi_archived": true,
+  "delivery_state": "pending_downstream_phases",
+  "correlation_id": "d234b930-8a9a-41bc-ab61-c0844049e8d2",
+  "blocking_findings": []
+}
+```
