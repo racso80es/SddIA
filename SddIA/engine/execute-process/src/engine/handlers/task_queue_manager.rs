@@ -6,7 +6,9 @@ use super::super::thermodynamic;
 use crate::core::resolver::load_process_def;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Map, Value};
-use std::path::Path;
+use std::fs::{self, OpenOptions};
+use std::io::{ErrorKind, Write};
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 const DISPATCHABLE: &[&str] = &["bug-fix", "feature", "refactorization"];
@@ -15,6 +17,88 @@ fn env_truthy(key: &str) -> bool {
     std::env::var(key)
         .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
         .unwrap_or(false)
+}
+
+struct SingleFlightGuard {
+    path: PathBuf,
+}
+
+impl Drop for SingleFlightGuard {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.path);
+    }
+}
+
+fn single_flight_dir(repo: &Path) -> PathBuf {
+    repo.join(".SddIA/daemons/state/tqm-single-flight")
+}
+
+fn lock_pid_alive(path: &Path) -> bool {
+    let Ok(raw) = fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(pid) = raw.trim().parse::<u32>() else {
+        return false;
+    };
+    Path::new(&format!("/proc/{pid}")).exists()
+}
+
+fn try_acquire_single_flight(
+    repo: &Path,
+    correlation_id: &str,
+) -> Result<Option<SingleFlightGuard>, String> {
+    let dir = single_flight_dir(repo);
+    fs::create_dir_all(&dir).map_err(|e| format!("tqm-single-flight mkdir: {e}"))?;
+    let path = dir.join(format!("{correlation_id}.lock"));
+    for _ in 0..3 {
+        match OpenOptions::new().write(true).create_new(true).open(&path) {
+            Ok(mut f) => {
+                let _ = writeln!(f, "{}", std::process::id());
+                return Ok(Some(SingleFlightGuard { path }));
+            }
+            Err(e) if e.kind() == ErrorKind::AlreadyExists => {
+                if lock_pid_alive(&path) {
+                    return Ok(None);
+                }
+                let _ = fs::remove_file(&path);
+            }
+            Err(e) => return Err(format!("tqm-single-flight lock: {e}")),
+        }
+    }
+    Ok(None)
+}
+
+fn single_flight_hit_envelope(
+    process: &str,
+    correlation_id: &str,
+    pbi: Option<String>,
+) -> OrchestratorEnvelope {
+    OrchestratorEnvelope {
+        success: true,
+        status_code: 0,
+        data: Some(json!({
+            "dispatched_process": process,
+            "correlation_id": correlation_id,
+            "pbi_ref": pbi,
+            "single_flight_hit": true,
+            "handler": "task-queue-manager-kalma2",
+        })),
+        error: None,
+        execution_report: Some(json!({
+            "process_name": "task-queue-manager",
+            "phases": [{
+                "phase_name": "Triaje Kalma2",
+                "status": "executed",
+                "handler": "task-queue-manager-kalma2",
+                "single_flight_hit": true,
+            }, {
+                "phase_name": "Despacho",
+                "status": "skipped",
+                "reason": "single-flight correlation_id",
+            }],
+        })),
+        exit_code: 0,
+    }
 }
 
 /// Extrae `docs/todos/{pending|done}/….md` aunque el path contenga espacios.
@@ -75,6 +159,55 @@ fn derive_slug(pbi_ref: Option<&str>, task_text: &str) -> String {
     sanitize_slug(task_text)
 }
 
+/// Preferencia PBI: `suggested_branch` del frontmatter (p. ej. fix/execute-process-…).
+fn extract_suggested_branch(pbi_body: &str) -> Option<String> {
+    let trimmed = pbi_body.trim_start();
+    if !trimmed.starts_with("---") {
+        return None;
+    }
+    let rest = trimmed.strip_prefix("---")?;
+    let end = rest.find("\n---")?;
+    let fm = &rest[..end];
+    for line in fm.lines() {
+        let line = line.trim();
+        let Some(raw) = line
+            .strip_prefix("suggested_branch:")
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        else {
+            continue;
+        };
+        let cleaned = raw
+            .trim_matches('"')
+            .trim_matches('\'')
+            .trim()
+            .trim_matches('"')
+            .trim_matches('\'');
+        if cleaned.is_empty() || cleaned.contains("..") || cleaned.contains(' ') {
+            return None;
+        }
+        if !(cleaned.starts_with("fix/")
+            || cleaned.starts_with("feat/")
+            || cleaned.starts_with("feature/")
+            || cleaned.starts_with("refactor/"))
+        {
+            return None;
+        }
+        return Some(cleaned.to_string());
+    }
+    None
+}
+
+fn slug_from_branch(branch: &str) -> String {
+    let stripped = branch
+        .strip_prefix("fix/")
+        .or_else(|| branch.strip_prefix("feat/"))
+        .or_else(|| branch.strip_prefix("feature/"))
+        .or_else(|| branch.strip_prefix("refactor/"))
+        .unwrap_or(branch);
+    sanitize_slug(stripped)
+}
+
 fn resolve_pbi_ref(inputs: &Value, task_text: &str) -> Option<String> {
     if let Some(p) = inputs
         .get("pbi_ref")
@@ -110,17 +243,22 @@ fn build_child_inputs(
     pbi_ref: Option<&str>,
     correlation_id: Option<&str>,
 ) -> Result<Value, String> {
-    let slug = derive_slug(pbi_ref, task_text);
     let mut map = Map::new();
     if let Some(c) = correlation_id.filter(|s| !s.is_empty()) {
         map.insert("correlation_id".into(), json!(c));
     }
+    let mut suggested_branch: Option<String> = None;
     if let Some(p) = pbi_ref.filter(|s| !s.is_empty()) {
         map.insert("pbi_ref".into(), json!(p));
         if let Some(body) = load_pbi_body(repo, p) {
+            suggested_branch = extract_suggested_branch(&body);
             map.insert("pbi_body".into(), json!(body));
         }
     }
+    let slug = suggested_branch
+        .as_deref()
+        .map(slug_from_branch)
+        .unwrap_or_else(|| derive_slug(pbi_ref, task_text));
     map.insert("base_branch".into(), json!("main"));
 
     // Semilla de ciclo: preferir cuerpo PBI (misión) y conservar prompt como contexto.
@@ -138,12 +276,19 @@ fn build_child_inputs(
         "bug-fix" => {
             map.insert("bug_summary".into(), json!(seed));
             map.insert("fix_name".into(), json!(slug.clone()));
-            map.insert("branch_name".into(), json!(format!("fix/{slug}")));
+            let branch = suggested_branch
+                .clone()
+                .unwrap_or_else(|| format!("fix/{slug}"));
+            map.insert("branch_name".into(), json!(branch));
         }
         "feature" => {
             map.insert("refined_requirements".into(), json!(seed));
             map.insert("feature_name".into(), json!(slug.clone()));
-            map.insert("branch_name".into(), json!(format!("feat/{slug}")));
+            let branch = suggested_branch
+                .clone()
+                .filter(|b| b.starts_with("feat/") || b.starts_with("feature/"))
+                .unwrap_or_else(|| format!("feat/{slug}"));
+            map.insert("branch_name".into(), json!(branch));
         }
         "refactorization" => {
             map.insert("refactor_goal".into(), json!(seed));
@@ -152,7 +297,10 @@ fn build_child_inputs(
                 json!("Despacho Kalma2 vía task-queue-manager; alcance acotado al goal."),
             );
             map.insert("refactor_name".into(), json!(slug.clone()));
-            map.insert("branch_name".into(), json!(format!("feat/{slug}")));
+            let branch = suggested_branch
+                .clone()
+                .unwrap_or_else(|| format!("feat/{slug}"));
+            map.insert("branch_name".into(), json!(branch));
         }
         _ => return Err(format!("proceso no despachable: {process}")),
     }
@@ -189,6 +337,14 @@ fn dispatch_child(
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty());
+    let _sf_guard = if let Some(cid) = correlation_id {
+        match try_acquire_single_flight(repo, cid)? {
+            Some(g) => Some(g),
+            None => return Ok(single_flight_hit_envelope(process, cid, pbi.clone())),
+        }
+    } else {
+        None
+    };
     let child_inputs = build_child_inputs(
         repo,
         process,
@@ -197,7 +353,7 @@ fn dispatch_child(
         correlation_id,
     )?;
     let pbi_loaded = child_inputs.get("pbi_body").is_some();
-    // O2 Kaizen: PEC initialized antes del hijo — el UI deja de timeout 120s sin rastro.
+    // O2 Kaizen: PEC awaiting_agents antes del hijo — UI sondea sin cortar en initialized.
     let early_pec = if let Some(cid) = correlation_id {
         match thermodynamic::emit_initialized_pec(repo, process, cid) {
             Ok(seal) => Some(seal),
@@ -343,6 +499,42 @@ mod tests {
         let summary = v["bug_summary"].as_str().unwrap();
         assert!(summary.contains("PBI adjunto"));
         assert!(summary.contains("Cuerpo del defecto"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn suggested_branch_from_pbi_frontmatter() {
+        let dir = std::env::temp_dir().join(format!("sddia-pbi-sb-{}", Uuid::new_v4()));
+        let rel = "docs/todos/pending/[FIX] execute-process — fallo (EV-AUD-005).md";
+        let full = dir.join(rel);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(
+            &full,
+            "---\nsuggested_branch: fix/execute-process-phase-failure-propagation\ntype: bug-fix\n---\n\n# body\n",
+        )
+        .unwrap();
+        let v = build_child_inputs(&dir, "bug-fix", "inicia proceso fix", Some(rel), None).unwrap();
+        assert_eq!(
+            v["branch_name"].as_str().unwrap(),
+            "fix/execute-process-phase-failure-propagation"
+        );
+        assert_eq!(
+            v["fix_name"].as_str().unwrap(),
+            "execute-process-phase-failure-propagation"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn single_flight_second_acquire_hits_while_guard_lives() {
+        let dir = std::env::temp_dir().join(format!("sddia-sf-{}", Uuid::new_v4()));
+        let cid = "dcb9efed-2268-4298-8108-7a55cf4db323";
+        let g1 = try_acquire_single_flight(&dir, cid)
+            .unwrap()
+            .expect("first acquire");
+        assert!(try_acquire_single_flight(&dir, cid).unwrap().is_none());
+        drop(g1);
+        assert!(try_acquire_single_flight(&dir, cid).unwrap().is_some());
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -397,6 +397,7 @@ fn find_pec_by_correlation(orch_dir: &Path, correlation_id: &str) -> Option<serd
         return None;
     };
     let mut best: Option<serde_json::Value> = None;
+    let mut best_ts = String::new();
     for entry in entries.flatten() {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("json") {
@@ -413,7 +414,16 @@ fn find_pec_by_correlation(orch_dir: &Path, correlation_id: &str) -> Option<serd
             .and_then(|p| p.get("correlation_id"))
             .and_then(|v| v.as_str())
             .unwrap_or("");
-        if cid == correlation_id {
+        if cid != correlation_id {
+            continue;
+        }
+        let ts = body
+            .get("timestamp")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if best.is_none() || ts >= best_ts {
+            best_ts = ts;
             best = Some(body);
         }
     }
@@ -1227,6 +1237,28 @@ mod tests {
         });
         let (st, _) = project_status(None, false, Some(&pec));
         assert_eq!(st, "awaiting_agents");
+    }
+
+    #[test]
+    fn find_pec_by_correlation_prefers_latest_timestamp() {
+        let orch = std::env::temp_dir().join(format!("sddia-pec-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&orch).unwrap();
+        let cid = "11111111-1111-4111-8111-111111111111";
+        let early = serde_json::json!({
+            "event_type": "Process_Execution_Completed",
+            "timestamp": "2026-08-13T05:00:00Z",
+            "payload": {"correlation_id": cid, "cycle_phase": "awaiting_agents", "status": "success"}
+        });
+        let late = serde_json::json!({
+            "event_type": "Process_Execution_Completed",
+            "timestamp": "2026-08-13T05:10:00Z",
+            "payload": {"correlation_id": cid, "cycle_phase": "completed", "status": "success"}
+        });
+        std::fs::write(orch.join("early.json"), early.to_string()).unwrap();
+        std::fs::write(orch.join("late.json"), late.to_string()).unwrap();
+        let pec = find_pec_by_correlation(&orch, cid).expect("pec");
+        assert_eq!(pec["payload"]["cycle_phase"], "completed");
+        let _ = std::fs::remove_dir_all(&orch);
     }
 
     #[test]
