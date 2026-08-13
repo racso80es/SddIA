@@ -13,6 +13,20 @@ MAIN_GUARD_MSG="Violación de Soberanía: main solo muta mediante el proceso acc
 # shellcheck source=/dev/null
 source "$REPO/SddIA/scripts/common/sddia_shell_lib.sh"
 
+resolve_sddia_qa() {
+  local candidate
+  for candidate in \
+    "$REPO/SddIA/target/debug/sddia-qa" \
+    "$REPO/SddIA/target/release/sddia-qa"; do
+    if [[ -x "$candidate" ]]; then
+      SDDIA_QA_BIN="$candidate"
+      return 0
+    fi
+  done
+  echo "SddIA pre-commit: sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)" >&2
+  return 1
+}
+
 skip_hooks() {
   [[ "${SDDIA_SKIP_HOOKS:-}" == "1" ]]
 }
