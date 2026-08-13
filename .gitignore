@@ -3,6 +3,7 @@
 
 # Cursor — logs de depuración locales
 .cursor/debug_*
+.cursor/debug-*.log
 
 # Node.js local del workspace (IOTA toolchain)
 .tools/
