@@ -97,24 +97,24 @@ orchestration_event: 04a671fd-f852-4054-a7bf-fcfff8e59aba
 3. Residual: sin test de crash mid-write (AC-ATOMIC); `git diff --cached` EDA preexistente (no evolution).
 4. Siguiente: **delivery-close-cycle** / PR — mandato operador. No incluir WIP ajeno.
 
-## 2026-08-13 — delivery-close-cycle (bloqueado en push)
+## 2026-08-13 — delivery-close-cycle
 
 - process: `delivery-close-cycle`
-- execution_id: `8f534a62-6e06-426a-a2d6-5fab895e7db4`
-- snapshot: `715ee974b1f9d515aea2e0776bc4cb8b96f46171` (`consolidated: true`, 16 paths git-manager; diff 25 files)
-- EDA: `orphan_count: 0`
-- status: **failed** — `Publicación remota`
+- execution_id: `fc341e99-05a1-4e38-9c1f-f808f1d44ecb`
+- pr_url: https://github.com/racso80es/SddIA/pull/172
+- event_id: `f2a44d1b-7769-4fa6-b82f-1f3d6a66e8b8`
+- snapshot: `f0c4c857ae16842523a1c03cc25e3d98ac07bde2`
+- status: `presented`
 
-### Fractura
+### Runtime evidence (machine)
 
-GitHub rechazó el push HTTPS: el PAT **no tiene scope `workflow`** y el snapshot muta `.github/workflows/sddia-index-qa.yml`.
-
-Prohibido bypass `git push` / `gh pr create` (norma orquestación). Reintento = mismo proceso cuando el token tenga `workflow`, con árbol limpio (WIP en `stash@{0}`).
-
-```text
-gh auth refresh -s workflow
-SDDIA_AGENT_RUNTIME_COMMAND= SDDIA_LAB_SKIP_HIGIENE=1 \
-  ./sddia-run.sh --process delivery-close-cycle --inputs-file .tmp/delivery-close-evolution-registry-gate.json
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+source: execute-process-native
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+execution_id: fc341e99-05a1-4e38-9c1f-f808f1d44ecb
+orchestration_event: 489fe7aa-8385-451d-8f0d-7b252a8df7f3
 ```
-
-

@@ -3,6 +3,7 @@ feature_name: evolution-registry-gate
 branch: feat/evolution-registry-gate
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/172
 created: "2026-08-13"
 process: feature
 execution_id: 0bceeb41-64d1-4920-af9d-46a11c0455a2
