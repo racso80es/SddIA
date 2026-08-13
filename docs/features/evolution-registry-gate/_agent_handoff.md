@@ -118,18 +118,3 @@ GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 execution_id: fc341e99-05a1-4e38-9c1f-f808f1d44ecb
 orchestration_event: 489fe7aa-8385-451d-8f0d-7b252a8df7f3
 ```
-
-## 2026-08-13 — Argos Triaje documental (PPR)
-
-- process: `pull-request-review`
-- phase: `Triaje documental`
-- agents: `argos`
-- correlation_id: `d234b930-8a9a-41bc-ab61-c0844049e8d2`
-- status: `PASS_F2_DOC`
-
-### Resumen
-
-1. `validacion.md` **APTO** · `resolution: PASS_F2_DOC` · `delivery_state: pending_downstream_phases`.
-2. R1/R2: copia Evidence Bridge (`native_state` / `idempotent-hit-handoff`) → **APTO**; Shell `git-manager` Rejected (sin stdout inventado).
-3. R3 `RBAC_AUTHORING_KM_POLICY`: **APTO** — 0 writes Argos bajo `docs/todos/**`.
-4. Cascada F2 presente; PBI `70f78d23-…` en `done/`; pending ausente.
