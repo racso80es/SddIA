@@ -100,6 +100,21 @@ pub fn run(
         if let Some(ws) = workspace_path {
             payload["workspace_path"] = json!(ws);
         }
+        // CA5 / EV-AUD-005: telemetría refleja fase causal (mismo agregador que envelope/PEC).
+        if !success {
+            if let Some(arr) = state.get("phase_reports").and_then(|v| v.as_array()) {
+                let verdict = super::phase_terminal::aggregate_execution_terminal(arr, state);
+                if let Some(ref fp) = verdict.failed_phase {
+                    payload["failed_phase"] = json!(fp.phase_name);
+                    if let Some(ref code) = fp.code {
+                        payload["failed_phase_code"] = json!(code);
+                    }
+                    if let Some(ref err) = fp.error {
+                        payload["failed_phase_error"] = json!(err);
+                    }
+                }
+            }
+        }
         let telemetry_event = json!({
             "event_id": telemetry_id,
             "event_type": "Raw_Execution_Finished",
@@ -160,6 +175,19 @@ pub fn run(
             }
         } else {
             payload["cycle_phase"] = json!("failed");
+            // CA5 / EV-AUD-005: espejo de fase causal en PEC (mismo veredicto que envelope).
+            if let Some(arr) = phase_reports.and_then(|v| v.as_array()) {
+                let verdict = super::phase_terminal::aggregate_execution_terminal(arr, state);
+                if let Some(ref fp) = verdict.failed_phase {
+                    payload["failed_phase"] = json!(fp.phase_name);
+                    if let Some(ref code) = fp.code {
+                        payload["failed_phase_code"] = json!(code);
+                    }
+                    if let Some(ref err) = fp.error {
+                        payload["failed_phase_error"] = json!(err);
+                    }
+                }
+            }
         }
         let orch_event = json!({
             "event_id": orch_id,

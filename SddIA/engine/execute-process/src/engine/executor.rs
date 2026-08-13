@@ -417,15 +417,14 @@ pub fn run_generic(
         }
     }
 
-    let blocked = false;
-    let phase_failed = phase_reports
-        .iter()
-        .any(|p| p.get("status") == Some(&json!("failed")));
-    let success = !blocked && !phase_failed;
-    let status_code = if success { 0 } else { 1 };
+    let verdict =
+        super::phase_terminal::aggregate_execution_terminal(&phase_reports, &state);
+    let status_code = verdict.status_code;
     let duration_ms = toll_start
         .map(|t| t.elapsed().as_millis() as i64)
         .unwrap_or(0);
+
+    super::phase_terminal::apply_failed_phase_fields(&mut data, &verdict);
 
     if toll_start.is_some() {
         let toll = thermodynamic::run(
@@ -435,20 +434,16 @@ pub fn run_generic(
             &inputs_mut,
             status_code,
             duration_ms,
-            success,
+            verdict.success,
         );
         data["thermodynamic_toll"] = toll;
     }
 
     Ok(OrchestratorEnvelope {
-        success,
+        success: verdict.success,
         status_code,
         data: Some(data),
-        error: if phase_failed {
-            Some("una o más fases fallaron (incl. agent-runtime)".into())
-        } else {
-            None
-        },
+        error: verdict.error.clone(),
         execution_report: Some(json!({
             "process_name": process_name,
             "phases": phase_reports,

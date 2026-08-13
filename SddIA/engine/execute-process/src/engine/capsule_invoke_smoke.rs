@@ -32,7 +32,8 @@ pub fn run(
     let workspace_path = state
         .get("workspace_path")
         .and_then(|v| v.as_str())
-        .ok_or("workspace_path ausente tras bootstrap")?;
+        .ok_or("workspace_path ausente tras bootstrap")?
+        .to_string();
 
     let tool_payload = json!({
         "workspace_path": workspace_path,
@@ -70,25 +71,30 @@ pub fn run(
         phase_reports.push(entry);
     }
 
-    let success = phase_reports.iter().all(|p| p.get("status") == Some(&json!("executed")));
-    let status_code = if success { 0 } else { 1 };
+    state["phase_reports"] = json!(phase_reports);
+    let verdict =
+        super::phase_terminal::aggregate_execution_terminal(&phase_reports, &state);
+    let mut data = json!({
+        "process_name": process_name,
+        "workspace_path": workspace_path,
+        "capsule_invoked": verdict.success,
+    });
+    super::phase_terminal::apply_failed_phase_fields(&mut data, &verdict);
     Ok(OrchestratorEnvelope {
-        success,
-        status_code,
-        data: Some(json!({
-            "process_name": process_name,
-            "workspace_path": workspace_path,
-            "capsule_invoked": success,
-        })),
-        error: if success {
-            None
-        } else {
-            Some("capsule-invoke-smoke falló".into())
-        },
+        success: verdict.success,
+        status_code: verdict.status_code,
+        data: Some(data),
+        error: verdict.error.clone().or_else(|| {
+            if verdict.success {
+                None
+            } else {
+                Some("capsule-invoke-smoke falló".into())
+            }
+        }),
         execution_report: Some(json!({
             "process_name": process_name,
             "phases": phase_reports,
         })),
-        exit_code: status_code,
+        exit_code: verdict.status_code,
     })
 }

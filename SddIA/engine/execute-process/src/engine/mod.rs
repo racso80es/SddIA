@@ -32,6 +32,7 @@ pub mod materialize_fracture_pbi;
 pub mod materialize_kaizen_alert_doc;
 pub mod handlers;
 pub mod phase_capsules;
+pub mod phase_terminal;
 pub mod policy_validator;
 pub mod capability_di_gate;
 pub mod capability_di_resolver;

@@ -838,9 +838,11 @@ fn run_generic(
             &mut state,
         ));
     }
+    state["phase_reports"] = json!(phase_reports);
 
-    let blocked = state.get("argos_verdict") == Some(&json!("block"));
-    let status_code = if blocked { 1 } else { 0 };
+    let verdict =
+        crate::engine::phase_terminal::aggregate_execution_terminal(&phase_reports, &state);
+    let status_code = verdict.status_code;
     let duration_ms = toll_start
         .map(|t| t.elapsed().as_millis() as i64)
         .unwrap_or(0);
@@ -863,6 +865,7 @@ fn run_generic(
             data[key] = v.clone();
         }
     }
+    crate::engine::phase_terminal::apply_failed_phase_fields(&mut data, &verdict);
 
     if toll_start.is_some() {
         data["thermodynamic_toll"] = thermodynamic::run(
@@ -872,19 +875,15 @@ fn run_generic(
             &inputs_mut,
             status_code,
             duration_ms,
-            !blocked,
+            verdict.success,
         );
     }
 
     Ok(OrchestratorEnvelope {
-        success: !blocked,
+        success: verdict.success,
         status_code,
         data: Some(data),
-        error: if blocked {
-            Some("Argos: Ruido de Sistema".into())
-        } else {
-            None
-        },
+        error: verdict.error.clone(),
         execution_report: Some(json!({
             "process_name": process_name,
             "phases": phase_reports,
