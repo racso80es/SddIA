@@ -53,3 +53,26 @@ notes: "Argos Verificación — R1/R2 copia session; Shell git-manager/cargo Rej
 3. `cargo test -p execute-process --lib phase_terminal` → 13 passed (stdout en `execution.md`).
 4. `./sddia-run.sh --tool git-manager` status → `success:true`.
 5. `validacion.md` **APTO**; PBI movido a `docs/todos/done/`.
+
+## 2026-08-13T05:58:10Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `c6ea62de-1fe3-4688-9afe-8495cbf045f0`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: REQUIRE_CLI: timeout 600s
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-13T05:58:10Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
