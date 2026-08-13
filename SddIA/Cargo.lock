@@ -1176,6 +1176,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sddia-evolution-register"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "sddia-io",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "uuid",
+]
+
+[[package]]
 name = "sddia-io"
 version = "0.1.0"
 dependencies = [

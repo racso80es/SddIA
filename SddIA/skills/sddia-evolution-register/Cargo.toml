@@ -1,0 +1,21 @@
+[package]
+name = "sddia-evolution-register"
+version = "0.1.0"
+edition = "2021"
+description = "Cápsula WASI: cotejo diff×registry evolution y cálculo de registros canónicos"
+
+[[bin]]
+name = "sddia-evolution-register"
+path = "src/main.rs"
+
+[lib]
+name = "sddia_evolution_register"
+path = "src/lib.rs"
+
+[dependencies]
+hex = "0.4.3"
+sddia-io = { path = "../../sddia-io" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.11.0"
+uuid = { version = "1.23.2", features = ["v4"] }

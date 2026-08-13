@@ -39,6 +39,8 @@ jobs:
         run: SddIA/target/debug/sddia-qa verify-tools-index
       - name: verify-process-integrity
         run: SddIA/target/debug/sddia-qa verify-process-integrity
+      - name: evolution-register unit tests
+        run: cargo test -p sddia-evolution-register --manifest-path SddIA/Cargo.toml
       - name: verify-compiled-capsules
         run: |
           cd SddIA
@@ -103,6 +105,10 @@ jobs:
           SDDIA_LAB_SIMULATE_SYNC_INDEX: "1"
           SDDIA_LAB_ROUTE_SYNC: "1"
         run: SddIA/target/debug/sddia-qa run-wasi-ci-smoke --json
+      - name: evolution gate (delta)
+        run: |
+          cargo test -p sddia-evolution-register --manifest-path SddIA/Cargo.toml
+          SddIA/target/debug/sddia-qa gate-evolution --json --range
 
   eda-bus-e2e-smoke:
     runs-on: ubuntu-latest

@@ -18,6 +18,7 @@ Universo: corte auditoría `docs/audits/evolution/2026-08-11.md` (`main@9d9abd8`
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `0bceeb41-64d1-4920-af9d-46a11c0455a2` | 2026-08-13 | Gate automático evolution: cápsula WASI, inyección JSON, hook inerte (EV-AUD-001/002). | CANONICO | `SddIA/evolution/0bceeb41-64d1-4920-af9d-46a11c0455a2.md` |
 | `949472a8-0518-4dee-8951-c196db2719e6` | 2026-08-10 | Ocean DPP V2 | INV-A | `SddIA/evolution/949472a8-0518-4dee-8951-c196db2719e6.md` |
 | `a3c7e91f-2b4d-4f8a-9c1e-7d6b0a5f3211` | 2026-08-10 | process-creator multi-root | INV-A | `SddIA/evolution/a3c7e91f-2b4d-4f8a-9c1e-7d6b0a5f3211.md` |
 | `7ade2a5f-be13-41ef-8b11-deb96fd58be3` | 2026-08-09 | ABSTRACT-03 | INV-A | `SddIA/evolution/7ade2a5f-be13-41ef-8b11-deb96fd58be3.md` |
