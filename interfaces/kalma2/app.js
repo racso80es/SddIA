@@ -1,7 +1,10 @@
 const $ = (id) => document.getElementById(id);
 
 const POLL_MS = 1500;
+/** Timeout corto mientras no hay rastro de ciclo. */
 const POLL_TIMEOUT_MS = 120000;
+/** Timeout largo tras initialized/awaiting_agents (agentes IDE pueden tardar). */
+const POLL_TIMEOUT_LIFECYCLE_MS = 30 * 60 * 1000;
 
 function setStatus(text, kind) {
   const el = $("status");
@@ -23,9 +26,11 @@ function setBusy(busy) {
 
 async function pollStatus(eventId, out, ackText) {
   const started = Date.now();
+  let deadline = started + POLL_TIMEOUT_MS;
+  let lifecycleArmed = false;
   setStatus(`pending · ${eventId.slice(0, 8)}…`, "pending");
 
-  while (Date.now() - started < POLL_TIMEOUT_MS) {
+  while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, POLL_MS));
     let st;
     try {
@@ -51,25 +56,30 @@ async function pollStatus(eventId, out, ackText) {
     setStatus(`${status} · ${eventId.slice(0, 8)}…`, status);
     out.value = `${ackText}\n\n[estado: ${status}] ${st.message || ""}`;
 
-    if (
-      status === "completed" ||
-      status === "failed" ||
-      status === "initialized" ||
-      status === "awaiting_agents"
-    ) {
-      const orch = st.orchestration || {};
-      if (orch.found) {
-        out.value += `\nproceso=${orch.process_name || "?"} status=${orch.process_status || "?"}`;
-        if (orch.cycle_phase) {
-          out.value += ` cycle_phase=${orch.cycle_phase}`;
-        }
+    const orch = st.orchestration || {};
+    if (orch.found) {
+      out.value += `\nproceso=${orch.process_name || "?"} status=${orch.process_status || "?"}`;
+      if (orch.cycle_phase) {
+        out.value += ` cycle_phase=${orch.cycle_phase}`;
       }
+    }
+
+    // Terminales de negocio: solo completed/failed cortan el sondeo.
+    // initialized / awaiting_agents / routed / pending → siguen (flujo agentes).
+    if (status === "completed" || status === "failed") {
       return;
+    }
+    if (
+      !lifecycleArmed &&
+      (status === "initialized" || status === "awaiting_agents")
+    ) {
+      lifecycleArmed = true;
+      deadline = Math.max(deadline, Date.now() + POLL_TIMEOUT_LIFECYCLE_MS);
     }
   }
 
   setStatus("timeout", "failed");
-  out.value = `${ackText}\n\n[timeout] sin completed/failed/initialized en ${POLL_TIMEOUT_MS / 1000}s`;
+  out.value = `${ackText}\n\n[timeout] sin completed/failed en ${(deadline - started) / 1000}s`;
 }
 
 async function enviarChat() {

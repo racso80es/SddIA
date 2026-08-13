@@ -185,7 +185,8 @@ pub fn run(
     result
 }
 
-/// Emite PEC temprano `initialized` (TQM → hijo lifecycle) para sondeo Kalma2.
+/// Emite PEC temprano post-dispatch (TQM → hijo lifecycle) para sondeo Kalma2.
+/// `cycle_phase=awaiting_agents`: el hijo ya arrancó; el UI no debe congelarse en `initialized`.
 pub fn emit_initialized_pec(
     repo: &Path,
     process_name: &str,
@@ -198,7 +199,7 @@ pub fn emit_initialized_pec(
         "process_name": process_name,
         "status": "success",
         "correlation_id": correlation_id,
-        "cycle_phase": "initialized",
+        "cycle_phase": "awaiting_agents",
         "emitter_hint": "task-queue-manager-early-pec",
     });
     let orch_event = json!({
@@ -293,7 +294,7 @@ mod tests {
         let raw = std::fs::read_to_string(repo.join(path)).unwrap();
         let ev: Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(ev["event_type"], "Process_Execution_Completed");
-        assert_eq!(ev["payload"]["cycle_phase"], "initialized");
+        assert_eq!(ev["payload"]["cycle_phase"], "awaiting_agents");
         assert_eq!(ev["payload"]["correlation_id"], "11111111-1111-4111-8111-111111111111");
     }
 }
