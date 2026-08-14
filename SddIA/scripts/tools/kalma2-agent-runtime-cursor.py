@@ -17,6 +17,9 @@ CHAT_STREAM / SQLite (entropía absorbida aquí; cero crates en Core):
   SDDIA_LLM_INFER_COMMAND     — CLI de tokens (preferente; no reentrar prótesis)
   SDDIA_LLM_REQUIRE_INFER=1   — fallar si no hay CLI (demo live S1)
   SDDIA_AGENT_RUNTIME_REQUIRE_CLI=1 — AGENT_PHASE: CLI missing → failed (no awaiting soft)
+  SDDIA_AGENT_RUNTIME_TIMEOUT_SECS — default 600. TimeoutExpired → failed (no soft).
+  SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION — override si phase_name empieza por "ejecuc".
+  Soft config (awaiting_agents) SIN "timeout": CLI ausente, not found, 401, auth, api_key.
   Autodetect cursor-agent/agent inyecta --trust (host no-interactivo).
   SDDIA_CURSOR_IDE_WATCH_ONLY=1 — rechazado (L-IDE); oráculo = CLI.
   SDDIA_CURSOR_WAKE_AGENT=1   — segundo disparo CLI post-persist SQLite.
@@ -56,6 +59,44 @@ def emit(success: bool, data: dict[str, Any] | None, error: str | None, code: in
 
 def env_truthy(key: str) -> bool:
     return os.environ.get(key, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+SOFT_CONFIG_MARKERS = (
+    "no encontrado",
+    "not found",
+    "no instalado",
+    "api_key",
+    "401",
+    "auth",
+)
+
+
+def is_soft_config_error(err: str) -> bool:
+    """Config-only soft. Timeout is terminal (KALMA2-AUD-4b9de6-001)."""
+    e = (err or "").lower()
+    if "timeout" in e:
+        return False
+    return any(x in e for x in SOFT_CONFIG_MARKERS)
+
+
+def resolve_timeout_secs(phase: str = "") -> int:
+    default = int(os.environ.get("SDDIA_AGENT_RUNTIME_TIMEOUT_SECS", "600") or "600")
+    phase_l = (phase or "").strip().lower()
+    if phase_l.startswith("ejecuc"):
+        raw = (os.environ.get("SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION") or "").strip()
+        if raw:
+            return int(raw)
+    return default
+
+
+def resolve_persist_ref(doc: dict[str, Any]) -> str:
+    persist = str(doc.get("persist_ref") or "").strip()
+    if persist:
+        return persist
+    inputs = doc.get("inputs")
+    if isinstance(inputs, dict):
+        return str(inputs.get("persist_ref") or "").strip()
+    return ""
 
 
 def split_command(raw: str) -> list[str]:
@@ -421,7 +462,7 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
     phase = doc.get("phase_name") or "?"
     agents = doc.get("agents") or []
     agent = agents[0] if agents else "?"
-    persist = (doc.get("persist_ref") or "").strip()
+    persist = resolve_persist_ref(doc)
     pbi_ref = doc.get("pbi_ref") or ""
     corr = doc.get("correlation_id") or ""
     inputs = doc.get("inputs") or {}
@@ -549,9 +590,9 @@ def append_handoff(
     return str(Path(persist) / "_agent_handoff.md")
 
 
-def run_cli(repo: Path, prompt: str) -> tuple[bool, str, str]:
+def run_cli(repo: Path, prompt: str, phase: str = "") -> tuple[bool, str, str]:
     cmd = resolve_cli()
-    timeout = int(os.environ.get("SDDIA_AGENT_RUNTIME_TIMEOUT_SECS", "600") or "600")
+    timeout = resolve_timeout_secs(phase)
     try:
         proc = subprocess.run(
             cmd,
@@ -1112,7 +1153,7 @@ def persist_chat_to_sqlite(
 
 def run_agent_phase(doc: dict[str, Any]) -> None:
     repo = Path(doc.get("repo_root") or os.getcwd()).resolve()
-    persist = (doc.get("persist_ref") or "").strip()
+    persist = resolve_persist_ref(doc)
     phase = doc.get("phase_name") or "?"
     process = doc.get("process_name") or "?"
     agents = doc.get("agents") or []
@@ -1152,7 +1193,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
     if backend == "sdk":
         ok, out, err = run_sdk(repo, prompt)
     else:
-        ok, out, err = run_cli(repo, prompt)
+        ok, out, err = run_cli(repo, prompt, str(phase))
 
     if ok:
         status = "executed"
@@ -1180,11 +1221,8 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             data_ok["runtime_evidence"] = evidence
         emit(True, data_ok, None)
 
-    # CLI/SDK ausente o fallo blando → awaiting_agents (no tumbar ciclo si es config)
-    soft = any(
-        x in (err or "").lower()
-        for x in ("no encontrado", "not found", "no instalado", "timeout", "api_key", "401", "auth")
-    )
+    # CLI/SDK ausente o fallo de config → awaiting_agents. Timeout = failed.
+    soft = is_soft_config_error(err or "")
     # S3 live: no enmascarar ausencia de CLI como awaiting_agents
     if soft and env_truthy("SDDIA_AGENT_RUNTIME_REQUIRE_CLI"):
         status = "failed"

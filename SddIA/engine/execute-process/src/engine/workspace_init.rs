@@ -22,12 +22,35 @@ fn workspace_task_name(inputs: &Value) -> Option<String> {
     if let Some(branch) = inputs.get("branch_name").and_then(|v| v.as_str()) {
         let b = branch.trim();
         if let Some((prefix, slug)) = b.split_once('/') {
-            if (prefix == "feat" || prefix == "fix") && !slug.trim().is_empty() {
+            if matches!(prefix, "feat" | "feature" | "fix" | "refactor") && !slug.trim().is_empty()
+            {
                 return Some(slug.trim().to_string());
             }
         }
     }
     None
+}
+
+fn has_work_branch_prefix(branch: &str) -> bool {
+    ["feat/", "feature/", "fix/", "refactor/"]
+        .iter()
+        .any(|p| branch.starts_with(p))
+}
+
+fn default_branch_prefix(process_label: &str) -> &'static str {
+    match process_label {
+        "bug-fix" => "fix",
+        "refactorization" => "refactor",
+        _ => "feat",
+    }
+}
+
+/// Conserva feat/fix/refactor si ya vienen; si no, aplica el default del proceso.
+fn canonicalize_branch_name(branch_name: String, process_label: &str, task_name: &str) -> String {
+    if has_work_branch_prefix(&branch_name) {
+        return branch_name;
+    }
+    format!("{}/{task_name}", default_branch_prefix(process_label))
 }
 
 fn workspace_process_label(inputs: &Value, branch_name: &str, process_name: &str) -> String {
@@ -59,10 +82,7 @@ fn env_truthy(key: &str) -> bool {
 fn phase_requires_git_sync(phase: &Value) -> bool {
     if let Some(caps) = phase.get("requires_capability").and_then(|v| v.as_array()) {
         for c in caps {
-            let id = c
-                .get("id")
-                .and_then(|x| x.as_str())
-                .or_else(|| c.as_str());
+            let id = c.get("id").and_then(|x| x.as_str()).or_else(|| c.as_str());
             if id == Some("proc:git-sync") {
                 return true;
             }
@@ -100,34 +120,28 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
     let cfg = load_paths_config(repo)?;
     let profile = resolve_execution_profile(repo, inputs);
     let task_name = workspace_task_name(inputs);
-    let mut branch_name = inputs
+    let branch_name = inputs
         .get("branch_name")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string);
 
-    if branch_name.is_none() {
-        branch_name = task_name.as_ref().map(|t| format!("feat/{t}"));
-    }
-    let branch_name = branch_name.ok_or("branch_name inválido")?;
-    let process_label = workspace_process_label(inputs, &branch_name, process_name);
+    let process_label =
+        workspace_process_label(inputs, branch_name.as_deref().unwrap_or(""), process_name);
     let task_name = task_name.unwrap_or_else(|| {
         branch_name
-            .split_once('/')
-            .map(|(_, s)| s.to_string())
-            .unwrap_or_else(|| branch_name.clone())
+            .as_deref()
+            .and_then(|b| b.split_once('/').map(|(_, s)| s.to_string()))
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| branch_name.clone().unwrap_or_default())
     });
-
-    let default_prefix = if process_label == "bug-fix" {
-        "fix"
-    } else {
-        "feat"
-    };
-    let branch_name = if branch_name.starts_with(&format!("{default_prefix}/")) {
-        branch_name
-    } else {
-        format!("{default_prefix}/{task_name}")
+    if task_name.is_empty() && branch_name.is_none() {
+        return Err("branch_name inválido".into());
+    }
+    let branch_name = match branch_name {
+        Some(b) => canonicalize_branch_name(b, &process_label, &task_name),
+        None => format!("{}/{task_name}", default_branch_prefix(&process_label)),
     };
 
     let base_branch = inputs
@@ -270,8 +284,7 @@ pub fn is_workspace_init_phase(phase: &Value, inputs: &Value, process_name: &str
     if !matches!(process_name, "feature" | "bug-fix" | "refactorization") {
         return false;
     }
-    if phase.get("name").and_then(|v| v.as_str()) != Some("Inicialización de Espacio de Trabajo")
-    {
+    if phase.get("name").and_then(|v| v.as_str()) != Some("Inicialización de Espacio de Trabajo") {
         return false;
     }
     if !phase_has_git_manager_delegate(phase) && !phase_requires_git_sync(phase) {
@@ -367,5 +380,45 @@ mod tests {
             .join("docs/features/no-git-boot/objectives.md")
             .is_file());
         assert_eq!(out["execution_profile"]["git_required"], json!(false));
+    }
+
+    #[test]
+    fn refactor_prefix_is_not_rewritten_to_feat() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+        let inputs = json!({
+            "refactor_name": "kalma2-phase-barrier-timeout-persist",
+            "branch_name": "refactor/kalma2-phase-barrier-timeout-persist",
+            "persist_ref": "docs/features/kalma2-phase-barrier-timeout-persist",
+            "refactor_goal": "AC-BRANCH",
+            "execution_profile": { "git_required": false }
+        });
+        let out = run(root, &inputs, "refactorization").expect("run ok");
+        assert_eq!(
+            out["branch_name"].as_str().unwrap(),
+            "refactor/kalma2-phase-barrier-timeout-persist"
+        );
+        assert_eq!(out["process_label"].as_str().unwrap(), "refactorization");
+        assert!(root
+            .join("docs/features/kalma2-phase-barrier-timeout-persist/objectives.md")
+            .is_file());
+    }
+
+    #[test]
+    fn refactorization_default_prefix_is_refactor() {
+        assert_eq!(
+            canonicalize_branch_name("kalma2-x".into(), "refactorization", "kalma2-x"),
+            "refactor/kalma2-x"
+        );
+        assert_eq!(
+            canonicalize_branch_name("feat/keep".into(), "refactorization", "keep"),
+            "feat/keep"
+        );
+        assert_eq!(
+            canonicalize_branch_name("fix/keep".into(), "feature", "keep"),
+            "fix/keep"
+        );
     }
 }

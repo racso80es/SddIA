@@ -1,0 +1,9 @@
+{
+  "source_process": "refactorization",
+  "persist_ref": "docs/features/kalma2-phase-barrier-timeout-persist",
+  "branch_name": "refactor/kalma2-phase-barrier-timeout-persist",
+  "base_branch": "main",
+  "target_branch": "main",
+  "pr_title": "refactor(kalma2): barrera de fase, timeout terminal y persist_ref",
+  "pr_body": "## Summary\n- Barrera de fase: Verificación/cierre no corren si Ejecución ∈ {failed, awaiting_agents}.\n- Timeout de cursor-agent es terminal (no soft); override `SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION`.\n- Conserva rama `refactor/` e inyecta `persist_ref` TQM→hijo→handoff.\n\n## Test plan\n- [x] cargo test -p execute-process --lib (workspace_init, TQM, executor, agent_runtime)\n- [x] python3 SddIA/scripts/tools/test_kalma2_runtime_timeout.py\n"
+}

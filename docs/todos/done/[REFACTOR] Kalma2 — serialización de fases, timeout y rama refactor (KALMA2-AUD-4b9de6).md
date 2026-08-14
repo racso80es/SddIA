@@ -2,7 +2,7 @@
 document_id: 1de0bdd1-6144-4e45-8efa-92db0f399147
 title: Kalma2 — serialización de fases, timeout y rama refactor
 type: refactorization
-status: pending
+status: done
 priority: high
 created: "2026-08-14"
 suggested_branch: refactor/kalma2-phase-barrier-timeout-persist

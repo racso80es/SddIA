@@ -23,10 +23,44 @@ fn env_truthy(key: &str) -> bool {
 }
 
 fn delegates_are_only_agents(delegates: &[Value]) -> bool {
-    delegates.iter().all(|d| {
-        d.as_str()
-            .map(|s| s.starts_with("agent:"))
-            .unwrap_or(false)
+    !delegates.is_empty()
+        && delegates
+            .iter()
+            .all(|d| d.as_str().map(|s| s.starts_with("agent:")).unwrap_or(false))
+}
+
+fn phase_delegates(phase: &Value) -> Vec<Value> {
+    phase
+        .get("delegates_to")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default()
+}
+
+fn is_verify_or_close_phase(phase_name: &str) -> bool {
+    matches!(
+        phase_name,
+        "Verificación" | "Cierre documental en rama" | "Cierre de entrega"
+    )
+}
+
+fn agent_phase_blocks_downstream(status: &str) -> bool {
+    matches!(
+        status,
+        "failed" | "blocked" | "awaiting_agents" | "awaiting"
+    )
+}
+
+fn skipped_barrier_entry(phase: &Value, prior_status: &str) -> Value {
+    let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
+    json!({
+        "phase_name": phase_name,
+        "delegates_to": phase.get("delegates_to").cloned().unwrap_or(json!([])),
+        "status": "skipped",
+        "skipped": true,
+        "handler": "phase-barrier",
+        "reason": "prior_agent_phase_not_executed",
+        "prior_status": prior_status,
     })
 }
 
@@ -244,12 +278,13 @@ fn execute_phase_body(
         }
     }
 
-    if process_name == "feature" || process_name == "bug-fix" {
+    if process_name == "feature" || process_name == "bug-fix" || process_name == "refactorization" {
         if matches!(
             phase_name,
             "Cierre documental en rama" | "Cierre de entrega"
         ) {
-            if phase_name == "Cierre documental en rama" && env_truthy("SDDIA_LAB_SKIP_PBI_ARCHIVE") {
+            if phase_name == "Cierre documental en rama" && env_truthy("SDDIA_LAB_SKIP_PBI_ARCHIVE")
+            {
                 entry["status"] = json!("skipped");
                 entry["handler"] = json!("feature-pbi-archive");
                 entry["skipped"] = json!(true);
@@ -296,13 +331,12 @@ fn execute_phase_body(
                 &delegates,
                 inputs,
                 state,
-                resolved_bindings.first().map(|b| {
-                    super::capability_di_resolver::di_binding_object(b)
-                }),
+                resolved_bindings
+                    .first()
+                    .map(|b| super::capability_di_resolver::di_binding_object(b)),
             );
             if let Some(b) = resolved_bindings.first() {
-                agent_entry["di_binding"] =
-                    super::capability_di_resolver::di_binding_object(b);
+                agent_entry["di_binding"] = super::capability_di_resolver::di_binding_object(b);
                 agent_entry["resolved_provider"] = json!(b.provider);
             }
             return agent_entry;
@@ -328,19 +362,21 @@ fn execute_phase_body(
         return entry;
     }
 
-    if delegates
-        .iter()
-        .any(|d| d.as_str().map(|s| s.starts_with("skill:") || s.starts_with("tool:")).unwrap_or(false))
-    {
+    if delegates.iter().any(|d| {
+        d.as_str()
+            .map(|s| s.starts_with("skill:") || s.starts_with("tool:"))
+            .unwrap_or(false)
+    }) {
         entry["status"] = json!("simulated");
         entry["note"] = json!("cápsula ausente en compiled_capsules (SSOT SddIA/target)");
         return entry;
     }
 
-    if delegates
-        .iter()
-        .any(|d| d.as_str().map(|s| s.starts_with("action:")).unwrap_or(false))
-    {
+    if delegates.iter().any(|d| {
+        d.as_str()
+            .map(|s| s.starts_with("action:"))
+            .unwrap_or(false)
+    }) {
         entry["status"] = json!("simulated");
         entry["note"] = json!("acción sin handler nativo ni bridge resuelto");
         return entry;
@@ -378,15 +414,31 @@ pub fn run_generic(
     bootstrap_workspace(repo, process_name, &template, &mut inputs_mut, &mut state)?;
 
     let mut phase_reports: Vec<Value> = Vec::new();
+    let mut barrier_prior: Option<String> = None;
     for phase in phases {
-        phase_reports.push(execute_phase(
+        let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
+        let agent_only = delegates_are_only_agents(&phase_delegates(phase));
+        if let Some(prior) = barrier_prior.as_deref() {
+            if agent_only || is_verify_or_close_phase(phase_name) {
+                phase_reports.push(skipped_barrier_entry(phase, prior));
+                continue;
+            }
+        }
+        let entry = execute_phase(
             repo,
             phase,
             process_name,
             process_def,
             &inputs_mut,
             &mut state,
-        ));
+        );
+        if agent_only {
+            let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
+            if agent_phase_blocks_downstream(status) {
+                barrier_prior = Some(status.to_string());
+            }
+        }
+        phase_reports.push(entry);
     }
     state["phase_reports"] = json!(phase_reports);
 
@@ -417,8 +469,7 @@ pub fn run_generic(
         }
     }
 
-    let verdict =
-        super::phase_terminal::aggregate_execution_terminal(&phase_reports, &state);
+    let verdict = super::phase_terminal::aggregate_execution_terminal(&phase_reports, &state);
     let status_code = verdict.status_code;
     let duration_ms = toll_start
         .map(|t| t.elapsed().as_millis() as i64)
@@ -450,4 +501,108 @@ pub fn run_generic(
         })),
         exit_code: status_code,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn agent_phase(name: &str, agent: &str) -> Value {
+        json!({
+            "name": name,
+            "delegates_to": [format!("agent:{agent}")]
+        })
+    }
+
+    #[test]
+    fn barrier_helpers_classify_statuses() {
+        assert!(agent_phase_blocks_downstream("failed"));
+        assert!(agent_phase_blocks_downstream("awaiting_agents"));
+        assert!(agent_phase_blocks_downstream("blocked"));
+        assert!(!agent_phase_blocks_downstream("executed"));
+        assert!(!agent_phase_blocks_downstream("simulated"));
+        assert!(!agent_phase_blocks_downstream("skipped"));
+        assert!(is_verify_or_close_phase("Verificación"));
+        assert!(is_verify_or_close_phase("Cierre de entrega"));
+        assert!(!is_verify_or_close_phase("Ejecución"));
+    }
+
+    #[test]
+    fn skipped_barrier_entry_marks_verification() {
+        let phase = agent_phase("Verificación", "argos");
+        let entry = skipped_barrier_entry(&phase, "failed");
+        assert_eq!(entry["status"], "skipped");
+        assert_eq!(entry["handler"], "phase-barrier");
+        assert_eq!(entry["reason"], "prior_agent_phase_not_executed");
+        assert_eq!(entry["prior_status"], "failed");
+        assert_eq!(entry["phase_name"], "Verificación");
+    }
+
+    #[test]
+    fn empty_delegates_are_not_agent_only() {
+        assert!(!delegates_are_only_agents(&[]));
+        assert!(delegates_are_only_agents(&[json!("agent:tekton")]));
+        assert!(!delegates_are_only_agents(&[
+            json!("agent:tekton"),
+            json!("skill:git-manager")
+        ]));
+    }
+
+    #[test]
+    fn barrier_sequence_skips_verification_after_failed_execution() {
+        struct Fake {
+            name: &'static str,
+            agent: bool,
+            voc: bool,
+            status: &'static str,
+        }
+        let phases = [
+            Fake {
+                name: "Inicialización",
+                agent: false,
+                voc: false,
+                status: "executed",
+            },
+            Fake {
+                name: "Ejecución",
+                agent: true,
+                voc: false,
+                status: "failed",
+            },
+            Fake {
+                name: "Verificación",
+                agent: true,
+                voc: true,
+                status: "would-invoke-argos",
+            },
+            Fake {
+                name: "Cierre de entrega",
+                agent: false,
+                voc: true,
+                status: "would-close",
+            },
+        ];
+        let mut barrier: Option<&str> = None;
+        let mut out: Vec<(&str, &str)> = Vec::new();
+        for p in &phases {
+            if barrier.is_some() && (p.agent || p.voc) {
+                out.push((p.name, "skipped"));
+                continue;
+            }
+            out.push((p.name, p.status));
+            if p.agent && agent_phase_blocks_downstream(p.status) {
+                barrier = Some(p.status);
+            }
+        }
+        assert_eq!(
+            out,
+            vec![
+                ("Inicialización", "executed"),
+                ("Ejecución", "failed"),
+                ("Verificación", "skipped"),
+                ("Cierre de entrega", "skipped"),
+            ]
+        );
+        assert!(barrier.is_some());
+    }
 }
