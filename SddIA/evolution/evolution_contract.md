@@ -5,7 +5,7 @@ type: norm
 version: 1.1.1
 contrato_version: "1.1.1"
 created: "2026-08-11"
-updated: "2026-08-13"
+updated: "2026-08-14"
 source_feature: evolution-registry-gate
 normative_key: normative_documents.evolution_contract
 ---
@@ -42,9 +42,13 @@ Todo registro **nuevo** debe incluir frontmatter YAML con:
 
 `autor`, `impacto`, `cambios_realizados`, `id` (kebab), `proyecto_origen_cambio`, `contexto`, `replicacion`, `source_feature`, `document_id`.
 
-## 3. Compatibilidad legacy (solo lectura / clasificación)
+## 3. Universo oficial post-migración y arqueología legacy
 
-Los históricos **no** se reescriben por este contrato. El validador `validate-evolution-contract` los clasifica; el gate `gate-evolution` **no** certifica el universo legacy (modo delta).
+Tras `evolution-history-normalization` (manifiesto `docs/features/evolution-history-normalization/migration-manifest.json`, PBI `7bb37ff1-…`), el **universo oficial** bajo `directories.evolution` es **CANONICO** v1.1.1. Verificación: `sddia-qa validate-evolution-contract --universe official --manifest <manifiesto>`.
+
+La tabla siguiente es **arqueología de lectura** (clasificador `--universe audit-cut` y manifiesto reversible). No describe el estado post-PR. El mapa `old_path → new_path` no vive bajo `directories.evolution`.
+
+Los históricos **ya migrados** no se reescriben de nuevo por este contrato. El gate `gate-evolution` certifica el **delta** inyectado, no re-audita el universo completo.
 
 | Señal | Clase / mapeo |
 |-------|----------------|
@@ -67,9 +71,9 @@ Los históricos **no** se reescriben por este contrato. El validador `validate-e
 | `related_entities`, `artefactos_afectados` | `relacionado` |
 | `descripcion`, `descripcion_breve`, título H1 | descripción |
 
-### Tipologías legacy → enum canónico (migración futura)
+### Tipologías legacy → enum canónico
 
-`feature` / `bug-fix` / `refactorizacion` / `feature-milestone` / `process` / `type` atómico → destino típico `modificacion` o `alta` según laudo del PBI de migración; **este contrato no muta históricos**.
+`feature` / `bug-fix` / `refactorizacion` / `feature-milestone` / `process` / `type` atómico → `modificacion` salvo evidencia de `baja`/`alta`. Aplicado por el migrador del PBI `7bb37ff1-…`; este contrato no autoriza mutaciones posteriores fuera de `gate-evolution`.
 
 ## 4. Índice (`Evolution_log.md`)
 
@@ -84,7 +88,7 @@ Los históricos **no** se reescriben por este contrato. El validador `validate-e
 
 ## 6. Semántica de borradores
 
-Artefactos bajo `directories.evolution` con señal `BORRADOR` permanecen clasificados en el universo si pertenecen al corte indexado; su extracción física pertenece a un ciclo de migración distinto.
+Artefactos con señal `BORRADOR` **no** permanecen bajo `directories.evolution`. Extracción autorizada: `docs/audits/evolution/drafts/` (`paths.auditsPath`). El clasificador `audit-cut` sigue leyendo el inventario histórico del corte; `--universe official` los excluye vía manifiesto (`lote: L4` / `accion: extract`).
 
 ## 7. Exclusiones de correlación material (L-EXCL / L-SELF)
 

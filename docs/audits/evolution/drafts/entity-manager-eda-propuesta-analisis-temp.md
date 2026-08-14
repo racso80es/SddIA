@@ -16,7 +16,7 @@ relacionado:
   - "SddIA/core/cumulo.paths.json"
   - "SddIA/core/event-subscriptions.json"
   - "SddIA/norms/execution-contexts.md"
-  - "SddIA/evolution/emit-domain-mutation-analisis-temp.md"
+  - "docs/audits/evolution/drafts/emit-domain-mutation-analisis-temp.md"
   - "SddIA/evolution/f2e8b1a4-9c3d-4e5f-a6b7-8d9e0f1a2b3c.md"
 ---
 
@@ -383,7 +383,7 @@ No exclusivos de esta propuesta, pero bloquean valor end-to-end:
 | Agente diseño | `SddIA/agents/dedalo.md` |
 | Agente ejecución | `SddIA/agents/tekton.md` |
 | Watcher | `SddIA/scripts/daemons/event-watcher.py` |
-| Análisis emisor | `SddIA/evolution/emit-domain-mutation-analisis-temp.md` |
+| Análisis emisor | `docs/audits/evolution/drafts/emit-domain-mutation-analisis-temp.md` |
 | Auditoría EDA | `SddIA/evolution/f2e8b1a4-9c3d-4e5f-a6b7-8d9e0f1a2b3c.md` |
 | Orquestación anidada (patrón) | `SddIA/process/feature.md` → `delivery-close-cycle` |
 | Meta-orquestación | `SddIA/actions/execute-process.md` |
