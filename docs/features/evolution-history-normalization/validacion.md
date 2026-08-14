@@ -13,6 +13,8 @@ pbi_ref: docs/todos/done/[REFACTOR] Evolution — migrar históricos y extraer b
 document_id: 7bb37ff1-decd-4ec5-968b-344a5334f9eb
 correlation_id: 4b9de6b3-c400-49c8-86f2-55f08ec64ce4
 execution_id: 63062872-e707-496e-b1b3-1ea736e256f0
+pr_url: https://github.com/racso80es/SddIA/pull/173
+pr_presented_event_id: e8fb3a94-e9f2-443c-8547-c50aa091af20
 source_audit: docs/audits/evolution/2026-08-11.md
 findings:
   - EV-AUD-002
