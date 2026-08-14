@@ -2,10 +2,13 @@
 document_id: 7bb37ff1-decd-4ec5-968b-344a5334f9eb
 title: Evolution — migrar históricos y extraer borradores
 type: refactorization
-status: pending
+status: done
 priority: high
 created: "2026-08-11"
+closed: "2026-08-14"
 suggested_branch: refactor/evolution-history-normalization
+persist_ref: docs/features/evolution-history-normalization
+execution_id: 63062872-e707-496e-b1b3-1ea736e256f0
 source_audit: docs/audits/evolution/2026-08-11.md
 findings:
   - EV-AUD-002
@@ -45,3 +48,7 @@ Normalizar los históricos al contrato restaurado, preservando identidad, fecha,
 ## Restricción
 
 Prohibida una sustitución masiva sin manifiesto reversible y pruebas por lote.
+
+## Cierre
+
+Rama `refactor/evolution-history-normalization`. Universo official 65/65 CANONICO (64 migrados + hito `63062872-…`). Manifiesto `docs/features/evolution-history-normalization/migration-manifest.json`.

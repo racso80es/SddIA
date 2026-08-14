@@ -6,7 +6,7 @@ phase: Diseño de refactor
 agents: dedalo
 branch_name: refactor/evolution-history-normalization
 persist_ref: docs/features/evolution-history-normalization
-pbi_ref: docs/todos/pending/[REFACTOR] Evolution — migrar históricos y extraer borradores (EV-AUD-002-007).md
+pbi_ref: docs/todos/done/[REFACTOR] Evolution — migrar históricos y extraer borradores (EV-AUD-002-007).md
 document_id: 7bb37ff1-decd-4ec5-968b-344a5334f9eb
 correlation_id: 4b9de6b3-c400-49c8-86f2-55f08ec64ce4
 phases: "T0-manifest T1-L1 T2-L2 T3-L3 T4-L4 T5-index T6-validator T7-refs T8-evolution T9-argos"
