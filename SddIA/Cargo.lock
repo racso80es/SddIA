@@ -1203,6 +1203,7 @@ dependencies = [
  "chrono",
  "execute-process",
  "regex",
+ "sddia-evolution-register",
  "serde",
  "serde_json",
  "serde_yaml",
