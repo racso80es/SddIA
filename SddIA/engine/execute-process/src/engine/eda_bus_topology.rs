@@ -1,6 +1,8 @@
 //! Topología bus EDA V3+ y testigos (paridad `eda_bus_utils.py` subset route-domain).
 
-use super::workspace::{load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path};
+use super::workspace::{
+    load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path,
+};
 use chrono::Utc;
 use regex::Regex;
 use serde_json::{json, Value};
@@ -29,13 +31,11 @@ static UUID4_RE: LazyLock<Regex> = LazyLock::new(|| {
         .expect("uuid regex")
 });
 
-static BRANCH_NUMERIC_SUFFIX_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^(?P<base>.+)-\d{10,}$").expect("branch suffix regex")
-});
+static BRANCH_NUMERIC_SUFFIX_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(?P<base>.+)-\d{10,}$").expect("branch suffix regex"));
 
-static GH_PR_URL_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)github\.com/[^/]+/[^/]+/pull/(\d+)").expect("gh pr regex")
-});
+static GH_PR_URL_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)github\.com/[^/]+/[^/]+/pull/(\d+)").expect("gh pr regex"));
 
 #[derive(Debug, Clone)]
 pub struct EventBusTopology {
@@ -513,7 +513,10 @@ pub fn subscriber_applies_to_topology(subscriber: &Value, origin_topology: &str)
 }
 
 pub fn inject_domain_entity_topology_defaults(event: &mut Value) {
-    let event_type = event.get("event_type").and_then(|v| v.as_str()).unwrap_or("");
+    let event_type = event
+        .get("event_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     if !DOMAIN_ENTITY_TYPES.contains(&event_type) {
         return;
     }
@@ -540,7 +543,10 @@ pub fn dlt_threshold_ok(event: &Value) -> (bool, String) {
     if resolve_origin_topology(&Value::Object(payload.clone())) != "core" {
         return (false, "topology-local".into());
     }
-    let entity_uuid = payload.get("entity_uuid").and_then(|v| v.as_str()).unwrap_or("");
+    let entity_uuid = payload
+        .get("entity_uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     if !UUID4_RE.is_match(entity_uuid) {
         return (false, "invalid-uuid".into());
     }
@@ -577,6 +583,11 @@ pub fn infer_persist_ref_from_branch(repo: &Path, branch: &str) -> Option<String
     let b = branch.trim();
     let mut candidates = Vec::new();
     if let Some(slug) = b.strip_prefix("feat/") {
+        candidates.push(format!("{features_prefix}/{slug}"));
+        if let Some(caps) = BRANCH_NUMERIC_SUFFIX_RE.captures(slug) {
+            candidates.push(format!("{features_prefix}/{}", &caps["base"]));
+        }
+    } else if let Some(slug) = b.strip_prefix("refactor/") {
         candidates.push(format!("{features_prefix}/{slug}"));
         if let Some(caps) = BRANCH_NUMERIC_SUFFIX_RE.captures(slug) {
             candidates.push(format!("{features_prefix}/{}", &caps["base"]));
@@ -641,10 +652,7 @@ pub fn is_lab_simulated_pr_url(pr_url: Option<&str>) -> bool {
 }
 
 fn run_git(repo: &Path, args: &[&str]) -> (i32, String, String) {
-    let output = Command::new("git")
-        .args(args)
-        .current_dir(repo)
-        .output();
+    let output = Command::new("git").args(args).current_dir(repo).output();
     match output {
         Ok(o) => (
             o.status.code().unwrap_or(1),
@@ -665,7 +673,9 @@ fn gh_pr_state(pr_url: &str) -> Option<String> {
         return None;
     }
     let body: Value = serde_json::from_slice(&output.stdout).ok()?;
-    body.get("state").and_then(|v| v.as_str()).map(str::to_string)
+    body.get("state")
+        .and_then(|v| v.as_str())
+        .map(str::to_string)
 }
 
 pub fn github_pr_merged(pr_url: &str) -> bool {
@@ -676,7 +686,10 @@ fn branch_exists_on_remote(repo: &Path, branch: &str, fetch: bool) -> bool {
     if fetch {
         run_git(repo, &["fetch", "origin", "--prune"]);
     }
-    let (code, _, _) = run_git(repo, &["rev-parse", "--verify", &format!("origin/{branch}")]);
+    let (code, _, _) = run_git(
+        repo,
+        &["rev-parse", "--verify", &format!("origin/{branch}")],
+    );
     code == 0
 }
 
@@ -737,12 +750,14 @@ pub fn resolve_pull_request_lifecycle(
             }
             Some(_) => diagnostics.push("gh:ERROR".into()),
             None => {
-                diagnostics.push(if gh_executable().is_none() {
-                    "gh:UNAVAILABLE"
-                } else {
-                    "gh:ERROR"
-                }
-                .into());
+                diagnostics.push(
+                    if gh_executable().is_none() {
+                        "gh:UNAVAILABLE"
+                    } else {
+                        "gh:ERROR"
+                    }
+                    .into(),
+                );
             }
         }
     } else {
@@ -889,8 +904,7 @@ fn finalize_kaizen_terminal(
     if pending_path.is_file() && safe_remove_path(pending_path) {
         counts["pending"] = json!(1);
     }
-    if maybe_purge_processing_header(repo, bus, event_uuid, registry, event_type, origin_topology)
-    {
+    if maybe_purge_processing_header(repo, bus, event_uuid, registry, event_type, origin_topology) {
         counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
     }
     counts
@@ -1109,6 +1123,10 @@ pub fn rel_event_path(repo: &Path, event_path: &Path) -> String {
     event_path
         .canonicalize()
         .ok()
-        .and_then(|p| p.strip_prefix(repo.canonicalize().ok()?).ok().map(|r| r.to_string_lossy().replace('\\', "/")))
+        .and_then(|p| {
+            p.strip_prefix(repo.canonicalize().ok()?)
+                .ok()
+                .map(|r| r.to_string_lossy().replace('\\', "/"))
+        })
         .unwrap_or_else(|| event_path.to_string_lossy().replace('\\', "/"))
 }

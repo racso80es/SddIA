@@ -1,0 +1,9 @@
+{
+  "refactor_name": "kalma2-phase-barrier-timeout-persist",
+  "branch_name": "refactor/kalma2-phase-barrier-timeout-persist",
+  "persist_ref": "docs/features/kalma2-phase-barrier-timeout-persist",
+  "base_branch": "main",
+  "process_label": "refactorization",
+  "refactor_goal": "Barrera de fase Kalma2: no avanzar a Verificación si Ejecución no es executed; timeout de agente = failed; conservar rama refactor/; persist_ref end-to-end TQM→hijo→handoff.",
+  "refined_constraints": "Prohibido subir timeout como único remedio. Prohibido mezclar con migración Evolution EV-AUD-002/007. No activar SDDIA_TQM_FULL_CYCLE. Genoma process solo vía entity-manager si el contrato de fase lo exige. document_id 1de0bdd1-6144-4e45-8efa-92db0f399147. Hallazgos KALMA2-AUD-4b9de6-001..005."
+}

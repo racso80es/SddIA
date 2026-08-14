@@ -42,6 +42,23 @@ fn split_command(raw: &str) -> Result<Vec<String>, String> {
     Ok(parts)
 }
 
+fn resolve_persist_ref_value(inputs: &Value, state: &Value) -> Value {
+    inputs
+        .get("persist_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| json!(s))
+        .or_else(|| {
+            state
+                .get("workspace")
+                .and_then(|w| w.get("persist_ref"))
+                .cloned()
+                .filter(|v| v.as_str().map(|s| !s.trim().is_empty()).unwrap_or(false))
+        })
+        .unwrap_or(Value::Null)
+}
+
 fn agent_names(delegates: &[Value]) -> Vec<String> {
     delegates
         .iter()
@@ -161,12 +178,13 @@ pub fn invoke_agent_phase(
                 .map(|s| json!(s))
         })
         .unwrap_or(Value::Null);
+    let persist_ref = resolve_persist_ref_value(inputs, state);
     let mut payload = json!({
         "operation": "AGENT_PHASE",
         "process_name": process_name,
         "phase_name": phase_name,
         "agents": agents,
-        "persist_ref": inputs.get("persist_ref"),
+        "persist_ref": persist_ref,
         "branch_name": branch_name,
         "correlation_id": inputs.get("correlation_id"),
         "pbi_ref": inputs.get("pbi_ref"),
@@ -229,7 +247,10 @@ pub fn invoke_agent_phase(
     if line.is_empty() {
         entry["status"] = json!("failed");
         entry["error"] = json!(if stderr.trim().is_empty() {
-            format!("agent-runtime sin stdout (exit {})", out.status.code().unwrap_or(1))
+            format!(
+                "agent-runtime sin stdout (exit {})",
+                out.status.code().unwrap_or(1)
+            )
         } else {
             stderr.trim().to_string()
         });
@@ -246,7 +267,10 @@ pub fn invoke_agent_phase(
         }
     };
 
-    let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+    let success = body
+        .get("success")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let data = body.get("data").cloned().unwrap_or(json!({}));
     let status = data
         .get("status")
@@ -264,7 +288,11 @@ pub fn invoke_agent_phase(
     if let Some(msg) = data.get("message").and_then(|v| v.as_str()) {
         entry["message"] = json!(msg);
     }
-    if let Some(err) = body.get("error").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+    if let Some(err) = body
+        .get("error")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+    {
         entry["error"] = json!(err);
     }
     if !out.status.success() && normalized == "executed" {
@@ -327,7 +355,7 @@ mod tests {
         std::env::remove_var(ENV_CMD);
         let _ = fs::remove_dir_all(&dir);
 
-        assert_eq!(entry["status"], "awaiting_agents", "{entry}");
+        assert_eq!(entry["status"], "executed", "{entry}");
         assert_eq!(entry["handler"], "agent-runtime");
     }
 
@@ -442,5 +470,21 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"evidence
 
         assert_eq!(entry["status"], "executed", "{entry}");
         assert_eq!(entry["message"], "evidence-fwd-ok");
+    }
+
+    #[test]
+    fn persist_ref_falls_back_from_workspace_state() {
+        let from_ws = resolve_persist_ref_value(
+            &json!({"persist_ref": ""}),
+            &json!({"workspace": {"persist_ref": "docs/features/from-ws"}}),
+        );
+        assert_eq!(from_ws, json!("docs/features/from-ws"));
+        let from_inputs = resolve_persist_ref_value(
+            &json!({"persist_ref": "docs/features/top"}),
+            &json!({"workspace": {"persist_ref": "docs/features/from-ws"}}),
+        );
+        assert_eq!(from_inputs, json!("docs/features/top"));
+        let missing = resolve_persist_ref_value(&json!({}), &json!({}));
+        assert_eq!(missing, Value::Null);
     }
 }

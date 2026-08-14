@@ -3,6 +3,9 @@
 use super::super::invoke_orchestrator::invoke_process_full_with_env;
 use super::super::residual_runner;
 use super::super::thermodynamic;
+use super::super::workspace::{
+    load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path,
+};
 use crate::core::resolver::load_process_def;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Map, Value};
@@ -198,6 +201,61 @@ fn extract_suggested_branch(pbi_body: &str) -> Option<String> {
     None
 }
 
+fn extract_fm_string(pbi_body: &str, key: &str) -> Option<String> {
+    let trimmed = pbi_body.trim_start();
+    if !trimmed.starts_with("---") {
+        return None;
+    }
+    let rest = trimmed.strip_prefix("---")?;
+    let end = rest.find("\n---")?;
+    let prefix = format!("{key}:");
+    for line in rest[..end].lines() {
+        let line = line.trim();
+        let Some(raw) = line
+            .strip_prefix(&prefix)
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        else {
+            continue;
+        };
+        let cleaned = raw
+            .trim_matches('"')
+            .trim_matches('\'')
+            .trim()
+            .trim_matches('"')
+            .trim_matches('\'');
+        if cleaned.is_empty() || cleaned.contains("..") {
+            return None;
+        }
+        return Some(cleaned.to_string());
+    }
+    None
+}
+
+fn resolve_child_persist_ref(
+    repo: &Path,
+    process: &str,
+    slug: &str,
+    pbi_body: Option<&str>,
+) -> String {
+    if let Some(body) = pbi_body {
+        if let Some(p) = extract_fm_string(body, "persist_ref_suggested")
+            .or_else(|| extract_fm_string(body, "persist_ref"))
+        {
+            return p;
+        }
+    }
+    let cfg = load_paths_config(repo).unwrap_or_else(|_| json!({}));
+    match process {
+        "bug-fix" => format!("{}/{}", resolve_documentation_fixes_path(repo, &cfg), slug),
+        _ => format!(
+            "{}/{}",
+            resolve_documentation_features_path(repo, &cfg),
+            slug
+        ),
+    }
+}
+
 fn slug_from_branch(branch: &str) -> String {
     let stripped = branch
         .strip_prefix("fix/")
@@ -299,18 +357,29 @@ fn build_child_inputs(
             map.insert("refactor_name".into(), json!(slug.clone()));
             let branch = suggested_branch
                 .clone()
-                .unwrap_or_else(|| format!("feat/{slug}"));
+                .unwrap_or_else(|| format!("refactor/{slug}"));
             map.insert("branch_name".into(), json!(branch));
         }
         _ => return Err(format!("proceso no despachable: {process}")),
     }
+    let persist = resolve_child_persist_ref(
+        repo,
+        process,
+        &slug,
+        map.get("pbi_body").and_then(|v| v.as_str()),
+    );
+    map.insert("persist_ref".into(), json!(persist));
     Ok(Value::Object(map))
 }
 
 fn child_env_for_kalma2(correlation_id: Option<&str>) -> Vec<(String, String)> {
     let mut env = Vec::new();
-    if correlation_id.map(|s| !s.is_empty()).unwrap_or(false) && !env_truthy("SDDIA_TQM_FULL_CYCLE") {
-        for key in ["SDDIA_LAB_SKIP_PBI_ARCHIVE", "SDDIA_LAB_SKIP_DELIVERY_CLOSE"] {
+    if correlation_id.map(|s| !s.is_empty()).unwrap_or(false) && !env_truthy("SDDIA_TQM_FULL_CYCLE")
+    {
+        for key in [
+            "SDDIA_LAB_SKIP_PBI_ARCHIVE",
+            "SDDIA_LAB_SKIP_DELIVERY_CLOSE",
+        ] {
             if std::env::var(key).is_err() {
                 env.push((key.to_string(), "1".into()));
             }
@@ -345,13 +414,8 @@ fn dispatch_child(
     } else {
         None
     };
-    let child_inputs = build_child_inputs(
-        repo,
-        process,
-        task_text,
-        pbi.as_deref(),
-        correlation_id,
-    )?;
+    let child_inputs =
+        build_child_inputs(repo, process, task_text, pbi.as_deref(), correlation_id)?;
     let pbi_loaded = child_inputs.get("pbi_body").is_some();
     // O2 Kaizen: PEC awaiting_agents antes del hijo — UI sondea sin cortar en initialized.
     let early_pec = if let Some(cid) = correlation_id {
@@ -371,7 +435,10 @@ fn dispatch_child(
         .map(|(k, v)| (k.as_str(), v.as_str()))
         .collect();
     let child = invoke_process_full_with_env(repo, process, &child_inputs, &env_refs)?;
-    let ok = child.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+    let ok = child
+        .get("success")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let status_code = child
         .get("status_code")
         .or_else(|| child.get("exit_code"))
@@ -464,7 +531,8 @@ mod tests {
 
     #[test]
     fn derive_slug_from_hash() {
-        let pbi = "docs/todos/pending/[FIX] telegram-watcher — fractura sistémica (e6cbecb9032c).md";
+        let pbi =
+            "docs/todos/pending/[FIX] telegram-watcher — fractura sistémica (e6cbecb9032c).md";
         assert_eq!(derive_slug(Some(pbi), "x"), "e6cbecb9032c");
     }
 
@@ -535,6 +603,54 @@ mod tests {
         assert!(try_acquire_single_flight(&dir, cid).unwrap().is_none());
         drop(g1);
         assert!(try_acquire_single_flight(&dir, cid).unwrap().is_some());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn refactor_child_keeps_suggested_branch_and_persist_ref() {
+        let dir = std::env::temp_dir().join(format!("sddia-pbi-ref-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(dir.join("SddIA/core")).unwrap();
+        std::fs::write(
+            dir.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"featurePath":"docs/features","fixPath":"docs/fixes"}}"#,
+        )
+        .unwrap();
+        let rel = "docs/todos/pending/[REFACTOR] Kalma2 (KALMA2-AUD).md";
+        let full = dir.join(rel);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(
+            &full,
+            "---\nsuggested_branch: refactor/kalma2-phase-barrier-timeout-persist\npersist_ref_suggested: docs/features/kalma2-phase-barrier-timeout-persist\ntype: refactorization\n---\n\n# body\n",
+        )
+        .unwrap();
+        let v =
+            build_child_inputs(&dir, "refactorization", "inicia proceso", Some(rel), None).unwrap();
+        assert_eq!(
+            v["branch_name"].as_str().unwrap(),
+            "refactor/kalma2-phase-barrier-timeout-persist"
+        );
+        assert_eq!(
+            v["persist_ref"].as_str().unwrap(),
+            "docs/features/kalma2-phase-barrier-timeout-persist"
+        );
+        assert!(!v["persist_ref"].as_str().unwrap().is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn refactor_child_persist_ref_fallback_from_cumulo() {
+        let dir = std::env::temp_dir().join(format!("sddia-pbi-fb-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(dir.join("SddIA/core")).unwrap();
+        std::fs::write(
+            dir.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"featurePath":"docs/features","fixPath":"docs/fixes"}}"#,
+        )
+        .unwrap();
+        let v = build_child_inputs(&dir, "refactorization", "semilla", None, None).unwrap();
+        let persist = v["persist_ref"].as_str().unwrap();
+        assert!(persist.starts_with("docs/features/"), "{persist}");
+        assert!(!persist.is_empty());
+        assert!(v["branch_name"].as_str().unwrap().starts_with("refactor/"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
