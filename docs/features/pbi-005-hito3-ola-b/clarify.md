@@ -108,7 +108,7 @@ Transcript de decisiones (2026-05-20). Complementa `objectives.md` y alimentará
 
 | Pregunta | Decisión |
 |----------|----------|
-| Ubicación preferida | **`SddIA/evolution/git-hooks-ca3-ola-b-contract.md`** (evolución táctica; UUID en frontmatter) |
+| Ubicación preferida | **`SddIA/evolution/c032d392-a586-4b8c-baaf-6cb831ebb943.md`** (post-migración EV-AUD-002; origen `git-hooks-ca3-ola-b-contract.md`) |
 | Alternativa | Norma en `SddIA/norms/` si Argos exige jurisdiction `dedalo` |
 | Contenido mínimo | Tabla hook → trigger → proceso → evento; inputs JSON; prohibiciones; referencias cruzadas |
 | Alineación | `pull-request-orchestration.md` v1.0.0 § 3–4; `accept-pr.md`; `delivery-close-cycle.md` v1.1 |

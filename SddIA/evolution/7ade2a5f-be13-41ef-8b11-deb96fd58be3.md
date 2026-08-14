@@ -1,11 +1,13 @@
 ---
-uuid: 7ade2a5f-be13-41ef-8b11-deb96fd58be3
-date: "2026-08-09"
-feature_name: sddia-domain-abstract-03-relocalizacion
+contrato_version: "1.1.1"
+id_cambio: "7ade2a5f-be13-41ef-8b11-deb96fd58be3"
+fecha: 2026-08-09
+tipo_operacion: modificacion
+descripcion_breve: "Evolution — ABSTRACT-03 relocalización física process software"
+hash_integrity: "sha256:841b00b4e7f30be867aafdb1f7a35ab068de66391ffe252c7c64cce65299258f"
+relacionado:
+  - SddIA/evolution
 document_id: PBI-SDDIA-DOMAIN-ABSTRACT-03
-type: architectural-milestone
-scope: L-PACK-MULTIROOT-SIX-MOVE
-parent_document_id: PBI-SDDIA-DOMAIN-ABSTRACT-02
 ---
 
 # Evolution — ABSTRACT-03 relocalización física process software

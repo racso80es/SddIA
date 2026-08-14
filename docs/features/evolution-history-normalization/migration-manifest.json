@@ -1,0 +1,1015 @@
+{
+  "manifest_version": "1.0.0",
+  "feature": "evolution-history-normalization",
+  "correlation_id": "4b9de6b3-c400-49c8-86f2-55f08ec64ce4",
+  "contrato_version_target": "1.1.1",
+  "frozen_at": "2026-08-14T10:08:05Z",
+  "universe_total_official": 64,
+  "draft_extractions": 2,
+  "repo_commit_at_freeze": "3d98ad6cd9cdf5f48913354e3b63c9b5a76b2528",
+  "blocked_items": [],
+  "entries": [
+    {
+      "seq": 1,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/00b9e53d-d231-45f5-9685-4d2b86b7ab63.md",
+      "new_path": "SddIA/evolution/00b9e53d-d231-45f5-9685-4d2b86b7ab63.md",
+      "id_cambio": "00b9e53d-d231-45f5-9685-4d2b86b7ab63",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 2,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/0a24332e-e120-480a-87eb-ec9854d27aaa.md",
+      "new_path": "SddIA/evolution/0a24332e-e120-480a-87eb-ec9854d27aaa.md",
+      "id_cambio": "0a24332e-e120-480a-87eb-ec9854d27aaa",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 3,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/0c19403d-2749-4296-90fa-5551e907552a.md",
+      "new_path": "SddIA/evolution/0c19403d-2749-4296-90fa-5551e907552a.md",
+      "id_cambio": "0c19403d-2749-4296-90fa-5551e907552a",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 4,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/0f5191df-927b-4da0-acf3-bb715766b5fa.md",
+      "new_path": "SddIA/evolution/0f5191df-927b-4da0-acf3-bb715766b5fa.md",
+      "id_cambio": "0f5191df-927b-4da0-acf3-bb715766b5fa",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 5,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/23a81b0e-3930-4589-b5db-25ddd8eb5717.md",
+      "new_path": "SddIA/evolution/23a81b0e-3930-4589-b5db-25ddd8eb5717.md",
+      "id_cambio": "23a81b0e-3930-4589-b5db-25ddd8eb5717",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 6,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/4dd6f7a2-7bbf-4744-8a4c-7ac315ed9a51.md",
+      "new_path": "SddIA/evolution/4dd6f7a2-7bbf-4744-8a4c-7ac315ed9a51.md",
+      "id_cambio": "4dd6f7a2-7bbf-4744-8a4c-7ac315ed9a51",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 7,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/527007fa-7200-41ee-84bb-202737f4f983.md",
+      "new_path": "SddIA/evolution/527007fa-7200-41ee-84bb-202737f4f983.md",
+      "id_cambio": "527007fa-7200-41ee-84bb-202737f4f983",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 8,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/52dab164-f4a3-4504-bc4e-be5d95c030b2.md",
+      "new_path": "SddIA/evolution/52dab164-f4a3-4504-bc4e-be5d95c030b2.md",
+      "id_cambio": "52dab164-f4a3-4504-bc4e-be5d95c030b2",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 9,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/5df409e5-c594-4e07-bc6f-857d69a433f1.md",
+      "new_path": "SddIA/evolution/5df409e5-c594-4e07-bc6f-857d69a433f1.md",
+      "id_cambio": "5df409e5-c594-4e07-bc6f-857d69a433f1",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 10,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/6ae1b7be-54e5-4750-8888-5f19ac76551f.md",
+      "new_path": "SddIA/evolution/6ae1b7be-54e5-4750-8888-5f19ac76551f.md",
+      "id_cambio": "6ae1b7be-54e5-4750-8888-5f19ac76551f",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 11,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/6eb3c394-be0e-4c93-ad10-bd0c14cf3b2e.md",
+      "new_path": "SddIA/evolution/6eb3c394-be0e-4c93-ad10-bd0c14cf3b2e.md",
+      "id_cambio": "6eb3c394-be0e-4c93-ad10-bd0c14cf3b2e",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 12,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/7ade2a5f-be13-41ef-8b11-deb96fd58be3.md",
+      "new_path": "SddIA/evolution/7ade2a5f-be13-41ef-8b11-deb96fd58be3.md",
+      "id_cambio": "7ade2a5f-be13-41ef-8b11-deb96fd58be3",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 13,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/7c2e9a1b-4f8d-4e6a-9c3b-2a1d0e5f8b47.md",
+      "new_path": "SddIA/evolution/7c2e9a1b-4f8d-4e6a-9c3b-2a1d0e5f8b47.md",
+      "id_cambio": "7c2e9a1b-4f8d-4e6a-9c3b-2a1d0e5f8b47",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 14,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/835f4679-f143-4483-8fa4-346f7140348e.md",
+      "new_path": "SddIA/evolution/835f4679-f143-4483-8fa4-346f7140348e.md",
+      "id_cambio": "835f4679-f143-4483-8fa4-346f7140348e",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "created",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 15,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/83bbfdeb-4715-4915-88be-751532dc268a.md",
+      "new_path": "SddIA/evolution/83bbfdeb-4715-4915-88be-751532dc268a.md",
+      "id_cambio": "83bbfdeb-4715-4915-88be-751532dc268a",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "created",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 16,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/881f8cf6-6a4c-48aa-9f76-d84df5641db8.md",
+      "new_path": "SddIA/evolution/881f8cf6-6a4c-48aa-9f76-d84df5641db8.md",
+      "id_cambio": "881f8cf6-6a4c-48aa-9f76-d84df5641db8",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 17,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/90165e5a-5cdf-46fc-998d-bf4f399c26f3.md",
+      "new_path": "SddIA/evolution/90165e5a-5cdf-46fc-998d-bf4f399c26f3.md",
+      "id_cambio": "90165e5a-5cdf-46fc-998d-bf4f399c26f3",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 18,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/949472a8-0518-4dee-8951-c196db2719e6.md",
+      "new_path": "SddIA/evolution/949472a8-0518-4dee-8951-c196db2719e6.md",
+      "id_cambio": "949472a8-0518-4dee-8951-c196db2719e6",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 19,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/a1b2c3d4-e5f6-4789-a012-3456789abcde.md",
+      "new_path": "SddIA/evolution/a1b2c3d4-e5f6-4789-a012-3456789abcde.md",
+      "id_cambio": "a1b2c3d4-e5f6-4789-a012-3456789abcde",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 20,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/a1c3e5f7-2948-4b6d-8e0a-1f2b3c4d5e6f.md",
+      "new_path": "SddIA/evolution/a1c3e5f7-2948-4b6d-8e0a-1f2b3c4d5e6f.md",
+      "id_cambio": "a1c3e5f7-2948-4b6d-8e0a-1f2b3c4d5e6f",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 21,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/a3c7e91f-2b4d-4f8a-9c1e-7d6b0a5f3211.md",
+      "new_path": "SddIA/evolution/a3c7e91f-2b4d-4f8a-9c1e-7d6b0a5f3211.md",
+      "id_cambio": "a3c7e91f-2b4d-4f8a-9c1e-7d6b0a5f3211",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 22,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/a7c3e91f-2b4d-4e8a-9f01-6d5c8b3a1742.md",
+      "new_path": "SddIA/evolution/a7c3e91f-2b4d-4e8a-9f01-6d5c8b3a1742.md",
+      "id_cambio": "a7c3e91f-2b4d-4e8a-9f01-6d5c8b3a1742",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 23,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/a7c3e91f-2b84-4d6e-9f01-5c8a2e7d4b63.md",
+      "new_path": "SddIA/evolution/a7c3e91f-2b84-4d6e-9f01-5c8a2e7d4b63.md",
+      "id_cambio": "a7c3e91f-2b84-4d6e-9f01-5c8a2e7d4b63",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 24,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/a7c4e2b1-9f5d-4a8e-b3c1-6d0e8f2a4b79.md",
+      "new_path": "SddIA/evolution/a7c4e2b1-9f5d-4a8e-b3c1-6d0e8f2a4b79.md",
+      "id_cambio": "a7c4e2b1-9f5d-4a8e-b3c1-6d0e8f2a4b79",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 25,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/b2c3d4e5-f6a7-4890-b123-456789abcdef.md",
+      "new_path": "SddIA/evolution/b2c3d4e5-f6a7-4890-b123-456789abcdef.md",
+      "id_cambio": "b2c3d4e5-f6a7-4890-b123-456789abcdef",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 26,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/b2d4e6f8-3a5c-4d7e-9f1b-2c3d4e5f6a7b.md",
+      "new_path": "SddIA/evolution/b2d4e6f8-3a5c-4d7e-9f1b-2c3d4e5f6a7b.md",
+      "id_cambio": "b2d4e6f8-3a5c-4d7e-9f1b-2c3d4e5f6a7b",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 27,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/b8e2a471-5c9d-4f3a-8e1b-6d0c9f2a4b7e.md",
+      "new_path": "SddIA/evolution/b8e2a471-5c9d-4f3a-8e1b-6d0c9f2a4b7e.md",
+      "id_cambio": "b8e2a471-5c9d-4f3a-8e1b-6d0c9f2a4b7e",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 28,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/c642aa29-4980-46ed-bf24-c5b7c3cde913.md",
+      "new_path": "SddIA/evolution/c642aa29-4980-46ed-bf24-c5b7c3cde913.md",
+      "id_cambio": "c642aa29-4980-46ed-bf24-c5b7c3cde913",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 29,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/c9d1e4f2-7a8b-4c5d-9e0f-1a2b3c4d5e6f.md",
+      "new_path": "SddIA/evolution/c9d1e4f2-7a8b-4c5d-9e0f-1a2b3c4d5e6f.md",
+      "id_cambio": "c9d1e4f2-7a8b-4c5d-9e0f-1a2b3c4d5e6f",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 30,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/c9e4b17a-6f2d-4a8e-9c3b-1d5e8f0a7b42.md",
+      "new_path": "SddIA/evolution/c9e4b17a-6f2d-4a8e-9c3b-1d5e8f0a7b42.md",
+      "id_cambio": "c9e4b17a-6f2d-4a8e-9c3b-1d5e8f0a7b42",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 31,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/d4e8f1a3-6c7b-4d9e-a2f0-3b4c5d6e7f8a.md",
+      "new_path": "SddIA/evolution/d4e8f1a3-6c7b-4d9e-a2f0-3b4c5d6e7f8a.md",
+      "id_cambio": "d4e8f1a3-6c7b-4d9e-a2f0-3b4c5d6e7f8a",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 32,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/e7a4b2c3-8f1d-4e6a-9b2c-1d3e5f7a9b0c.md",
+      "new_path": "SddIA/evolution/e7a4b2c3-8f1d-4e6a-9b2c-1d3e5f7a9b0c.md",
+      "id_cambio": "e7a4b2c3-8f1d-4e6a-9b2c-1d3e5f7a9b0c",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 33,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/e9c66ec6-5b59-4aae-b9f2-91cc313fe295.md",
+      "new_path": "SddIA/evolution/e9c66ec6-5b59-4aae-b9f2-91cc313fe295.md",
+      "id_cambio": "e9c66ec6-5b59-4aae-b9f2-91cc313fe295",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 34,
+      "lote": "L1",
+      "old_path": "SddIA/evolution/f8b2c4d1-6e3a-4f7b-9c2d-1a0e5f8b3c7d.md",
+      "new_path": "SddIA/evolution/f8b2c4d1-6e3a-4f7b-9c2d-1a0e5f8b3c7d.md",
+      "id_cambio": "f8b2c4d1-6e3a-4f7b-9c2d-1a0e5f8b3c7d",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 35,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/3b42e74f-9b9e-4efa-84ad-c8431ba290b2.md",
+      "new_path": "SddIA/evolution/3b42e74f-9b9e-4efa-84ad-c8431ba290b2.md",
+      "id_cambio": "3b42e74f-9b9e-4efa-84ad-c8431ba290b2",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 36,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/51b4d573-3f1f-40f3-8316-81137404876c.md",
+      "new_path": "SddIA/evolution/51b4d573-3f1f-40f3-8316-81137404876c.md",
+      "id_cambio": "51b4d573-3f1f-40f3-8316-81137404876c",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 37,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/80a6462c-ea81-4b23-8464-8abb92ce2b81.md",
+      "new_path": "SddIA/evolution/80a6462c-ea81-4b23-8464-8abb92ce2b81.md",
+      "id_cambio": "80a6462c-ea81-4b23-8464-8abb92ce2b81",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 38,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/8fc4c8d1-3752-42a8-a97d-c6e4f143f70c.md",
+      "new_path": "SddIA/evolution/8fc4c8d1-3752-42a8-a97d-c6e4f143f70c.md",
+      "id_cambio": "8fc4c8d1-3752-42a8-a97d-c6e4f143f70c",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 39,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/a7b3e4f1-2c8d-4e5a-9b6f-0d1e2f3a4b5c.md",
+      "new_path": "SddIA/evolution/a7b3e4f1-2c8d-4e5a-9b6f-0d1e2f3a4b5c.md",
+      "id_cambio": "a7b3e4f1-2c8d-4e5a-9b6f-0d1e2f3a4b5c",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 40,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/a8f2c1d3-4e5b-4a6c-9d0e-1f2a3b4c5d6e.md",
+      "new_path": "SddIA/evolution/a8f2c1d3-4e5b-4a6c-9d0e-1f2a3b4c5d6e.md",
+      "id_cambio": "a8f2c1d3-4e5b-4a6c-9d0e-1f2a3b4c5d6e",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 41,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/b4741071-d690-4232-aaef-3268a218ab8b.md",
+      "new_path": "SddIA/evolution/b4741071-d690-4232-aaef-3268a218ab8b.md",
+      "id_cambio": "b4741071-d690-4232-aaef-3268a218ab8b",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 42,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/b7e4a2c1-9f3d-4e5a-8b6c-0d1e2f3a4b5c.md",
+      "new_path": "SddIA/evolution/b7e4a2c1-9f3d-4e5a-8b6c-0d1e2f3a4b5c.md",
+      "id_cambio": "b7e4a2c1-9f3d-4e5a-8b6c-0d1e2f3a4b5c",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 43,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/b8e4f2a1-9c3d-4e7b-a1f0-6d2e8c9b4a7f.md",
+      "new_path": "SddIA/evolution/b8e4f2a1-9c3d-4e7b-a1f0-6d2e8c9b4a7f.md",
+      "id_cambio": "b8e4f2a1-9c3d-4e7b-a1f0-6d2e8c9b4a7f",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 44,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/c0163c40-e230-468b-b380-daafbfd52606.md",
+      "new_path": "SddIA/evolution/c0163c40-e230-468b-b380-daafbfd52606.md",
+      "id_cambio": "c0163c40-e230-468b-b380-daafbfd52606",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 45,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a.md",
+      "new_path": "SddIA/evolution/c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a.md",
+      "id_cambio": "c3a9f1b2-8e4d-42c6-a7d3-9f0e1b2c3d4a",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 46,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/c6931c73-4cfc-4a11-b082-54099d420f59.md",
+      "new_path": "SddIA/evolution/c6931c73-4cfc-4a11-b082-54099d420f59.md",
+      "id_cambio": "c6931c73-4cfc-4a11-b082-54099d420f59",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 47,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/c906d516-f708-48bc-87b3-19980a9a11ab.md",
+      "new_path": "SddIA/evolution/c906d516-f708-48bc-87b3-19980a9a11ab.md",
+      "id_cambio": "c906d516-f708-48bc-87b3-19980a9a11ab",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "alta",
+      "classes_detected": [
+        "CANONICO",
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 48,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/c9e2a1f0-8b4d-4e6f-9a0c-1d2e3f4a5b6c.md",
+      "new_path": "SddIA/evolution/c9e2a1f0-8b4d-4e6f-9a0c-1d2e3f4a5b6c.md",
+      "id_cambio": "c9e2a1f0-8b4d-4e6f-9a0c-1d2e3f4a5b6c",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 49,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/ccabb2a1-8aca-47f5-977a-16f1a4896fd8.md",
+      "new_path": "SddIA/evolution/ccabb2a1-8aca-47f5-977a-16f1a4896fd8.md",
+      "id_cambio": "ccabb2a1-8aca-47f5-977a-16f1a4896fd8",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 50,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/ebdc4cb8-b25c-4c3c-ad94-18485ce53b8b.md",
+      "new_path": "SddIA/evolution/ebdc4cb8-b25c-4c3c-ad94-18485ce53b8b.md",
+      "id_cambio": "ebdc4cb8-b25c-4c3c-ad94-18485ce53b8b",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 51,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/ef684063-d16f-4ee1-b5d0-d9fde843f105.md",
+      "new_path": "SddIA/evolution/ef684063-d16f-4ee1-b5d0-d9fde843f105.md",
+      "id_cambio": "ef684063-d16f-4ee1-b5d0-d9fde843f105",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 52,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/f2e8b1a4-9c3d-4e5f-a6b7-8d9e0f1a2b3c.md",
+      "new_path": "SddIA/evolution/f2e8b1a4-9c3d-4e5f-a6b7-8d9e0f1a2b3c.md",
+      "id_cambio": "f2e8b1a4-9c3d-4e5f-a6b7-8d9e0f1a2b3c",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 53,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/f81e4b2a-6c0d-4a8f-9e31-2d7b8a4c1e00.md",
+      "new_path": "SddIA/evolution/f81e4b2a-6c0d-4a8f-9e31-2d7b8a4c1e00.md",
+      "id_cambio": "f81e4b2a-6c0d-4a8f-9e31-2d7b8a4c1e00",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 54,
+      "lote": "L2",
+      "old_path": "SddIA/evolution/fa7b3fc4-2bfd-4c3a-9cce-52bc47b09ee9.md",
+      "new_path": "SddIA/evolution/fa7b3fc4-2bfd-4c3a-9cce-52bc47b09ee9.md",
+      "id_cambio": "fa7b3fc4-2bfd-4c3a-9cce-52bc47b09ee9",
+      "accion": "normalize_fm",
+      "uuid_source": "filename",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 55,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/capsules-bridge-rust-port.md",
+      "new_path": "SddIA/evolution/a7b3c4d5-e6f7-4890-a1b2-c3d4e5f67890.md",
+      "id_cambio": "a7b3c4d5-e6f7-4890-a1b2-c3d4e5f67890",
+      "accion": "normalize_and_rename",
+      "uuid_source": "frontmatter_uuid",
+      "fecha_source": "created",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A",
+        "NOMBRE"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 56,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/e1f2a3b4-c5d6-4789-e012-3456789abcde.md",
+      "new_path": "SddIA/evolution/e8f967f5-99c3-484b-b876-3c6d0f6d29b1.md",
+      "id_cambio": "e8f967f5-99c3-484b-b876-3c6d0f6d29b1",
+      "accion": "normalize_and_rename",
+      "uuid_source": "manifest_v4",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 57,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/event-bus-audit-process.md",
+      "new_path": "SddIA/evolution/8d577a50-055a-40b9-b7e2-93e2d2415796.md",
+      "id_cambio": "8d577a50-055a-40b9-b7e2-93e2d2415796",
+      "accion": "normalize_and_rename",
+      "uuid_source": "frontmatter_uuid",
+      "fecha_source": "created",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A",
+        "NOMBRE"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 58,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/git-hooks-ca3-ola-b-contract.md",
+      "new_path": "SddIA/evolution/c032d392-a586-4b8c-baaf-6cb831ebb943.md",
+      "id_cambio": "c032d392-a586-4b8c-baaf-6cb831ebb943",
+      "accion": "normalize_and_rename",
+      "uuid_source": "manifest_v4",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L",
+        "NOMBRE"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 59,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/migracion-execute-process-rust-p14-p15.md",
+      "new_path": "SddIA/evolution/2021b663-ecf6-4ea9-82dc-06aa52e44413.md",
+      "id_cambio": "2021b663-ecf6-4ea9-82dc-06aa52e44413",
+      "accion": "normalize_and_rename",
+      "uuid_source": "manifest_v4",
+      "fecha_source": "git_first_add",
+      "fecha_derivacion": "2026-06-18T17:25:49+02:00",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A",
+        "NOMBRE",
+        "SIN_FECHA"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 60,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/pull-request-automation-dlt-oraculo-20260523.md",
+      "new_path": "SddIA/evolution/05d3d2f9-8b67-4e51-a215-03a15c4efd06.md",
+      "id_cambio": "05d3d2f9-8b67-4e51-a215-03a15c4efd06",
+      "accion": "normalize_and_rename",
+      "uuid_source": "manifest_v4",
+      "fecha_source": "created",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-A",
+        "NOMBRE",
+        "UUID-INV"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 61,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/pull-request-review-v2-aduana-20260522.md",
+      "new_path": "SddIA/evolution/cfeb3de1-b708-4a7b-9bce-92553d98fe85.md",
+      "id_cambio": "cfeb3de1-b708-4a7b-9bce-92553d98fe85",
+      "accion": "normalize_and_rename",
+      "uuid_source": "manifest_v4",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L",
+        "NOMBRE",
+        "UUID-INV"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 62,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/pull-request-review-v2.1-dia-20260525.md",
+      "new_path": "SddIA/evolution/7a396904-dd3a-4e44-ba82-8df2c59430b6.md",
+      "id_cambio": "7a396904-dd3a-4e44-ba82-8df2c59430b6",
+      "accion": "normalize_and_rename",
+      "uuid_source": "manifest_v4",
+      "fecha_source": "fecha",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "INV-L",
+        "NOMBRE",
+        "UUID-INV"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 63,
+      "lote": "L3",
+      "old_path": "SddIA/evolution/pull-request-review-v2.2-kaizen-alert-eda-v2-20260525.md",
+      "new_path": "SddIA/evolution/cfeac8b3-24ec-4405-bcff-cc4526698257.md",
+      "id_cambio": "cfeac8b3-24ec-4405-bcff-cc4526698257",
+      "accion": "normalize_and_rename",
+      "uuid_source": "manifest_v4",
+      "fecha_source": "date",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "NOMBRE",
+        "UUID-INV"
+      ],
+      "hash_action": "compute"
+    },
+    {
+      "seq": 64,
+      "lote": "L4",
+      "old_path": "SddIA/evolution/emit-domain-mutation-analisis-temp.md",
+      "new_path": "docs/audits/evolution/drafts/emit-domain-mutation-analisis-temp.md",
+      "id_cambio": null,
+      "accion": "extract",
+      "classes_detected": [
+        "BORRADOR",
+        "NOMBRE",
+        "UUID-INV"
+      ],
+      "hash_action": "none"
+    },
+    {
+      "seq": 65,
+      "lote": "L4",
+      "old_path": "SddIA/evolution/entity-manager-eda-propuesta-analisis-temp.md",
+      "new_path": "docs/audits/evolution/drafts/entity-manager-eda-propuesta-analisis-temp.md",
+      "id_cambio": null,
+      "accion": "extract",
+      "classes_detected": [
+        "BORRADOR",
+        "NOMBRE",
+        "UUID-INV"
+      ],
+      "hash_action": "none"
+    },
+    {
+      "seq": 66,
+      "lote": "SKIP",
+      "old_path": "SddIA/evolution/0bceeb41-64d1-4920-af9d-46a11c0455a2.md",
+      "new_path": "SddIA/evolution/0bceeb41-64d1-4920-af9d-46a11c0455a2.md",
+      "id_cambio": "0bceeb41-64d1-4920-af9d-46a11c0455a2",
+      "accion": "skip",
+      "uuid_source": "filename",
+      "tipo_operacion": "modificacion",
+      "classes_detected": [
+        "CANONICO",
+        "INV-L"
+      ],
+      "hash_action": "preserve"
+    }
+  ]
+}

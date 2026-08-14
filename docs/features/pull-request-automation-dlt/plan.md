@@ -83,7 +83,7 @@ Blueprint alineado al PBI v2.0.0 (H1–H4), `clarify.md` D1–D9 y `spec.md`.
 
 - [x] Evolucionar `SddIA/events/pull-request-presented.md` → v1.2.0.
 - [x] Añadir guard en `route_domain_event_core.py`: skip IOTA si `dlt_anchor_address` presente.
-- [x] Entrada evolución `SddIA/evolution/pull-request-automation-dlt-oraculo-20260523.md`.
+- [x] Entrada evolución `SddIA/evolution/05d3d2f9-8b67-4e51-a215-03a15c4efd06.md` (alias origen `pull-request-automation-dlt-oraculo-20260523.md`).
 
 **Criterio de salida:** smoke remoto no dispara segunda publicación IOTA; ruta local Cursor intacta.
 

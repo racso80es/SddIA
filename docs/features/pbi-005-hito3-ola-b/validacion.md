@@ -21,7 +21,7 @@ git_changes:
   - SddIA/scripts/qa/git-hooks/
   - SddIA/scripts/qa/execute_process_capsules.py
   - SddIA/scripts/qa/execute-action.py
-  - SddIA/evolution/git-hooks-ca3-ola-b-contract.md
+  - SddIA/evolution/c032d392-a586-4b8c-baaf-6cb831ebb943.md
 ---
 
 # Validación — Ola B (hooks ciclo PR / CA-3)

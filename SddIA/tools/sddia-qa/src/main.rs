@@ -2,6 +2,7 @@ mod gate_evolution;
 mod eda_e2e_lab;
 mod iota_ci_smoke;
 mod lab_teardown;
+mod migrate_evolution_history;
 mod resolve;
 mod validate_evolution_contract;
 mod verify_compiled_capsules;
@@ -27,7 +28,8 @@ Comandos:\n\
   run-iota-ci-smoke [--simulate] [--require-physical] [--json]\n\
   run-eda-e2e-lab [--entity-class CLASS] [--entity-name NAME] [--json]\n\
   run-wasi-ci-smoke [--skip-e2e] [--json]\n\
-  validate-evolution-contract [--json] [--universe audit-cut] [--audit-ref PATH]\n\
+  validate-evolution-contract [--json] [--universe audit-cut|official] [--audit-ref PATH] [--manifest PATH]\n\
+  migrate-evolution-history manifest|apply|verify|reindex [--json] [--write PATH] [--manifest PATH] [--lote L1|L2|L3|L4] [--dry-run]\n\
   gate-evolution [--json] [--range]\n\
   evolution-register [--json] [--dry-run]\n"
 }
@@ -174,6 +176,7 @@ fn main() {
         "run-eda-e2e-lab" => eda_e2e_lab::run(&repo, rest),
         "run-wasi-ci-smoke" => wasi_ci_smoke::run(&repo, rest),
         "validate-evolution-contract" => validate_evolution_contract::run(&repo, rest),
+        "migrate-evolution-history" => migrate_evolution_history::run(&repo, rest),
         "gate-evolution" => gate_evolution::run_gate(&repo, rest),
         "evolution-register" => gate_evolution::run_mutate(&repo, rest),
         other => {

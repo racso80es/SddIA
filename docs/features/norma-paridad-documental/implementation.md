@@ -10,7 +10,7 @@ items:
   - SddIA/process/pull-request-review.md
   - SddIA/process/index.md
   - SddIA/scripts/qa/execute_process_capsules.py
-  - SddIA/evolution/pull-request-review-v2.1-dia-20260525.md
+  - SddIA/evolution/7a396904-dd3a-4e44-ba82-8df2c59430b6.md
 ---
 
 # Implementación — Norma de Paridad Documental (DIA)
@@ -23,7 +23,7 @@ items:
 | **Sensor** | `audit-doc-parity.py` — diff vs spec; stdout JSON; exit 0 en alerta |
 | **Genoma aduana** | `pull-request-review` v2.1.0 — reglas DIA-1..3 |
 | **Cápsulas lab** | `_invoke_dia_audit` en triaje técnico; `PENDING_AUDIT_DOC_*` en Kaizen |
-| **Evolución** | `pull-request-review-v2.1-dia-20260525.md` |
+| **Evolución** | `7a396904-dd3a-4e44-ba82-8df2c59430b6.md` |
 
 ## Decisiones de implementación
 

@@ -10,7 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-fn yaml_str(v: &YamlValue) -> Option<String> {
+pub(crate) fn yaml_str(v: &YamlValue) -> Option<String> {
     match v {
         YamlValue::String(s) => Some(s.clone()),
         YamlValue::Number(n) => Some(n.to_string()),
@@ -19,7 +19,7 @@ fn yaml_str(v: &YamlValue) -> Option<String> {
     }
 }
 
-fn fm_get(fm: &std::collections::HashMap<String, YamlValue>, keys: &[&str]) -> Option<String> {
+pub(crate) fn fm_get(fm: &std::collections::HashMap<String, YamlValue>, keys: &[&str]) -> Option<String> {
     for k in keys {
         if let Some(v) = fm.get(*k) {
             if let Some(s) = yaml_str(v) {
@@ -33,7 +33,7 @@ fn fm_get(fm: &std::collections::HashMap<String, YamlValue>, keys: &[&str]) -> O
     None
 }
 
-fn is_uuid_v4(s: &str) -> bool {
+pub(crate) fn is_uuid_v4(s: &str) -> bool {
     let re = Regex::new(
         r"(?i)^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
     )
@@ -41,7 +41,7 @@ fn is_uuid_v4(s: &str) -> bool {
     re.is_match(s.trim())
 }
 
-fn looks_like_uuid(s: &str) -> bool {
+pub(crate) fn looks_like_uuid(s: &str) -> bool {
     let re = Regex::new(
         r"(?i)^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
     )
@@ -49,7 +49,7 @@ fn looks_like_uuid(s: &str) -> bool {
     re.is_match(s.trim())
 }
 
-fn parse_date_ok(s: &str) -> bool {
+pub(crate) fn parse_date_ok(s: &str) -> bool {
     let t = s.trim().trim_matches('"');
     if Regex::new(r"^\d{4}-\d{2}-\d{2}$")
         .unwrap()
@@ -77,7 +77,7 @@ fn list_nonempty(fm: &std::collections::HashMap<String, YamlValue>, keys: &[&str
     false
 }
 
-fn classify_record(path: &Path, fname: &str) -> Value {
+pub(crate) fn classify_record(path: &Path, fname: &str) -> Value {
     let stem = path
         .file_stem()
         .and_then(|s| s.to_str())
@@ -222,10 +222,74 @@ fn parse_audit_universe(audit_path: &Path) -> Result<Vec<String>, String> {
     Ok(out)
 }
 
-fn count_log_rows(log_path: &Path) -> Result<usize, String> {
+pub(crate) fn count_log_rows(log_path: &Path) -> Result<usize, String> {
     let text = fs::read_to_string(log_path).map_err(|e| e.to_string())?;
     let re = Regex::new(r"(?m)^\| `(?:[0-9a-fA-F-]{36}|UUID-INV)` \|").unwrap();
     Ok(re.find_iter(&text).count())
+}
+
+pub(crate) fn is_evolution_meta(fname: &str) -> bool {
+    let l = fname.to_ascii_lowercase();
+    l == "evolution_log.md" || l == "evolution_contract.md"
+}
+
+pub(crate) fn list_official_filenames(evo_dir: &Path) -> Result<Vec<String>, String> {
+    let mut names: Vec<String> = Vec::new();
+    let rd = fs::read_dir(evo_dir).map_err(|e| format!("{}: {e}", evo_dir.display()))?;
+    for ent in rd.flatten() {
+        let p = ent.path();
+        if p.extension().and_then(|x| x.to_str()) != Some("md") {
+            continue;
+        }
+        let fname = p
+            .file_name()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_string();
+        if is_evolution_meta(&fname) {
+            continue;
+        }
+        names.push(fname);
+    }
+    names.sort();
+    Ok(names)
+}
+
+fn classes_for_universe(universe: &str, row: &Value) -> Vec<String> {
+    let raw: Vec<String> = row
+        .get("classes")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_default();
+    if universe != "official" {
+        return raw;
+    }
+    let canon = row
+        .get("canonical_v11")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if canon {
+        vec!["CANONICO".into()]
+    } else {
+        raw
+    }
+}
+
+fn hash_matches_canonical(path: &Path) -> bool {
+    let Ok(raw) = fs::read_to_string(path) else {
+        return false;
+    };
+    let fm = load_frontmatter_yaml(path).unwrap_or_default();
+    let stored = fm_get(&fm, &["hash_integrity"]).unwrap_or_default();
+    if stored.trim().is_empty() {
+        return false;
+    }
+    let computed = sddia_evolution_register::canonical_hash(&raw);
+    stored.trim() == computed
 }
 
 pub fn run(repo: &Path, args: &[String]) -> i32 {
@@ -287,6 +351,28 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         return 1;
     }
 
+    let manifest_rel = resolve::flag_value(args, "--manifest");
+    let extract_stems: BTreeSet<String> = manifest_rel
+        .and_then(|p| fs::read_to_string(repo.join(p)).ok())
+        .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())
+        .and_then(|v| v.get("entries").and_then(|e| e.as_array()).cloned())
+        .map(|arr| {
+            arr.iter()
+                .filter(|e| {
+                    e.get("lote").and_then(|x| x.as_str()) == Some("L4")
+                        || e.get("accion").and_then(|x| x.as_str()) == Some("extract")
+                })
+                .filter_map(|e| {
+                    e.get("old_path")
+                        .and_then(|x| x.as_str())
+                        .and_then(|p| Path::new(p).file_name())
+                        .and_then(|s| s.to_str())
+                        .map(|s| s.to_string())
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
     let files: Vec<String> = match universe {
         "audit-cut" => {
             let audit_path = if Path::new(audit_ref).is_absolute() {
@@ -302,8 +388,18 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
                 }
             }
         }
+        "official" => match list_official_filenames(&evo_dir) {
+            Ok(v) => v
+                .into_iter()
+                .filter(|n| !extract_stems.contains(n))
+                .collect(),
+            Err(e) => {
+                eprintln!("{e}");
+                return 1;
+            }
+        },
         other => {
-            eprintln!("universe no soportado: {other} (use audit-cut)");
+            eprintln!("universe no soportado: {other} (use audit-cut|official)");
             return 1;
         }
     };
@@ -311,6 +407,8 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
     let mut rows = Vec::new();
     let mut by_class: BTreeMap<String, usize> = BTreeMap::new();
     let mut missing = Vec::new();
+    let mut non_exclusive = Vec::new();
+    let mut hash_mismatch = Vec::new();
 
     for fname in &files {
         let path = evo_dir.join(fname);
@@ -319,20 +417,37 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
             continue;
         }
         // Solo lectura: load_frontmatter_yaml / metadata; no write.
-        let row = classify_record(&path, fname);
-        if let Some(arr) = row.get("classes").and_then(|v| v.as_array()) {
-            for c in arr {
-                if let Some(s) = c.as_str() {
-                    *by_class.entry(s.to_string()).or_insert(0) += 1;
-                }
+        let mut row = classify_record(&path, fname);
+        let classes = classes_for_universe(universe, &row);
+        if universe == "official" {
+            if let Some(obj) = row.as_object_mut() {
+                obj.insert("classes".into(), json!(classes.clone()));
             }
+            let exclusive = classes.len() == 1 && classes[0] == "CANONICO";
+            if !exclusive {
+                non_exclusive.push(fname.clone());
+            }
+            if exclusive && !hash_matches_canonical(&path) {
+                hash_mismatch.push(fname.clone());
+            }
+        }
+        for s in &classes {
+            *by_class.entry(s.clone()).or_insert(0) += 1;
         }
         rows.push(row);
     }
 
     let log_rows = count_log_rows(&log_path).unwrap_or(0);
+    let canon_count = *by_class.get("CANONICO").unwrap_or(&0);
+    let official_ok = universe != "official"
+        || (missing.is_empty()
+            && non_exclusive.is_empty()
+            && hash_mismatch.is_empty()
+            && canon_count == rows.len()
+            && log_rows == rows.len());
+    let success = missing.is_empty() && official_ok;
     let report = json!({
-        "success": missing.is_empty(),
+        "success": success,
         "mode": "read-only",
         "universe": universe,
         "audit_ref": audit_ref,
@@ -342,6 +457,8 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         "universe_total": files.len(),
         "classified_total": rows.len(),
         "missing": missing,
+        "non_exclusive_canonico": non_exclusive,
+        "hash_mismatch": hash_mismatch,
         "evolution_log_rows": log_rows,
         "log_matches_universe": log_rows == files.len(),
         "by_class": by_class,
@@ -363,7 +480,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         }
     }
 
-    if missing.is_empty() {
+    if success {
         0
     } else {
         1
