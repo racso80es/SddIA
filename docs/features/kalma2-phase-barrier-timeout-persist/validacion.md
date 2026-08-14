@@ -8,6 +8,9 @@ pbi_ref: docs/todos/done/[REFACTOR] Kalma2 — serialización de fases, timeout 
 document_id: 1de0bdd1-6144-4e45-8efa-92db0f399147
 source_correlation_id: 4b9de6b3-c400-49c8-86f2-55f08ec64ce4
 execution_id: d630a6cf-1767-4751-a2b9-b1f4210a01fb
+pr_url: https://github.com/racso80es/SddIA/pull/174
+pr_presented_event_id: 2b466b03-9125-414e-9893-8ea6d8ef7f93
+snapshot_commit: 2f7fc11238141296cc050e2769e80f764ebeef14
 phase: verification
 agents: argos
 global: APTO
@@ -19,7 +22,7 @@ checks:
   AC-BRANCH: APTO
   AC-PERSIST: APTO
   AC-TESTS: APTO
-  AC-PR: PENDIENTE
+  AC-PR: APTO
   L-TIMEOUT-ENV: APTO
   L-SKIP-LAB: APTO
   L-GENOME: APTO
@@ -65,7 +68,7 @@ Argos. Evidencia determinista: unitarios Rust/Python + inspección de contratos 
 | **AC-BRANCH** | APTO | `refactor_prefix_is_not_rewritten_to_feat`; TQM `refactor_child_keeps_suggested_branch_and_persist_ref`. HEAD de trabajo = `refactor/kalma2-phase-barrier-timeout-persist`. |
 | **AC-PERSIST** | APTO | TQM inyecta `persist_ref` (FM o Cúmulo). `resolve_persist_ref_value` fallback workspace. Prompt Python `resolve_persist_ref`. |
 | **AC-TESTS** | APTO | 24 Rust + 4 Python cubren TQM, workspace-init, timeout, barrera. |
-| **AC-PR** | PENDIENTE | `delivery-close-cycle` posterior. No bloquea APTO de forja. |
+| **AC-PR** | APTO | PR https://github.com/racso80es/SddIA/pull/174 ; PBI en `docs/todos/done/`; `validacion.md` APTO en el mismo PR. |
 | **L-TIMEOUT-ENV** | APTO | Default 600. Override `SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION` solo fase Ejecución. Default no subido. |
 | **L-SKIP-LAB** | APTO | Skip PBI archive / delivery-close también si `process_name == refactorization`. |
 | **L-GENOME** | APTO | `refactorization.md` y `git-operations.md` intocados. |

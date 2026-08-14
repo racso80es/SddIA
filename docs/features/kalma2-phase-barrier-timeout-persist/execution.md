@@ -29,6 +29,6 @@ execution_id: d630a6cf-1767-4751-a2b9-b1f4210a01fb
 - `cargo test -p execute-process --lib -- workspace_init agent_runtime::tests handlers::task_queue_manager::tests executor::tests` → **23 passed**.
 - `python3 SddIA/scripts/tools/test_kalma2_runtime_timeout.py` → **4 passed**.
 
-## Pendiente (cierre de entrega)
+## Cierre de entrega
 
-`delivery-close-cycle`: snapshot, push, PR. `pr_url` se ancla en este `validacion.md` tras apertura.
+`delivery-close-cycle` ejecutado: snapshot `2f7fc11`, PR https://github.com/racso80es/SddIA/pull/174 , ECST `2b466b03-…`.
