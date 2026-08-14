@@ -25,7 +25,7 @@ PBI-005 deja **CA-3** parcial tras Ola A (PR #12, `pre-commit` Argos). Esta feat
 |----|----------|
 | **D1–D4** | Feature separada; hooks = adaptadores; `execute-process.py` + JSON en `tmp/` |
 | **D5–D6** | `pre-push` → `delivery-close-cycle`; `post-merge` → `accept-pr` |
-| **D7** | Contrato H3.1 en `SddIA/evolution/git-hooks-ca3-ola-b-contract.md` |
+| **D7** | Contrato H3.1 en `SddIA/evolution/c032d392-a586-4b8c-baaf-6cb831ebb943.md` |
 | **D8** | Prohibido `gh pr merge`, `gh pr create`, acciones EDA sueltas en hooks |
 | **D9** | Instalador dinámico (véase **O5**) |
 | **D10–D12** | Perfil lab; cierre PBI v1.5.0 tras APTO |
@@ -264,7 +264,7 @@ Resiliencia **O4** se implementa **dentro** del handler `accept-pr`, no en el ho
 
 ## 7. Contrato normativo H3.1
 
-Documento: **`SddIA/evolution/git-hooks-ca3-ola-b-contract.md`**
+Documento: **`SddIA/evolution/c032d392-a586-4b8c-baaf-6cb831ebb943.md`**
 
 | Hook | Trigger | Proceso | Evento | Resolución |
 |------|---------|---------|--------|------------|
@@ -280,7 +280,7 @@ Referencias obligatorias: `pull-request-orchestration.md`, `accept-pr.md`, `deli
 
 | ID | Archivo | Fase |
 |----|---------|------|
-| H3.1 | `SddIA/evolution/git-hooks-ca3-ola-b-contract.md` | spec/plan |
+| H3.1 | `SddIA/evolution/c032d392-a586-4b8c-baaf-6cb831ebb943.md` | spec/plan |
 | H3.2 | `pre-push`, `pre_push_gate.py`, `hook_common.py` | impl |
 | H3.3 | `post-merge`, `post_merge_gate.py` | impl |
 | H3.4 | Revisión estática: sin `gh pr merge` en `git-hooks/` | impl |

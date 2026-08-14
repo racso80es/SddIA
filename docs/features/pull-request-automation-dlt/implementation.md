@@ -8,7 +8,7 @@ items:
   - SddIA/scripts/qa/simulate_remote_pr.py
   - SddIA/scripts/qa/route_domain_event_core.py
   - SddIA/events/pull-request-presented.md
-  - SddIA/evolution/pull-request-automation-dlt-oraculo-20260523.md
+  - SddIA/evolution/05d3d2f9-8b67-4e51-a215-03a15c4efd06.md
   - docs/features/pull-request-automation-dlt/_smoke-remote-pr-dlt.json
 ---
 

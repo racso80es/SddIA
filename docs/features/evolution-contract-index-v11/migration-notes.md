@@ -43,3 +43,7 @@ SddIA/target/debug/sddia-qa validate-evolution-contract --json \
 ```
 
 Exit 0 = clasificación completa del universo; no implica conformidad canónica de cada registro. Gate CI bloqueante = fuera de alcance (PBI `70f78d23-…`).
+
+## Cierre (PBI `7bb37ff1-…` / EV-AUD-002-007)
+
+La normalización física y extracción de borradores se ejecutó en `docs/features/evolution-history-normalization/`. Mapa reversible: `migration-manifest.json`. Universo oficial post-migración: 64 registros CANONICO + hito de ciclo si `evolution-register` añade alta. Corte `2026-08-11.md` permanece como arqueología; no reescribir.

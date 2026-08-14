@@ -15,7 +15,7 @@ items_applied:
   - install-hooks.sh
   - execute_process_capsules accept-pr capsule
   - execute-action traceability_anomaly
-  - evolution git-hooks-ca3-ola-b-contract.md
+  - evolution c032d392-a586-4b8c-baaf-6cb831ebb943.md
 ---
 
 # Ejecución — Ola B

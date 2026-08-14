@@ -25,7 +25,7 @@ git_changes:
   - SddIA/scripts/qa/execute_process_capsules.py
   - SddIA/process/pull-request-review.md
   - SddIA/process/index.md
-  - SddIA/evolution/pull-request-review-v2.1-dia-20260525.md
+  - SddIA/evolution/7a396904-dd3a-4e44-ba82-8df2c59430b6.md
   - docs/todos/done/norma-paridad-documental.md
 ---
 

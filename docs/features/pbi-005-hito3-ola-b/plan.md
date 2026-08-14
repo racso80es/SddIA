@@ -18,7 +18,7 @@ phase: planning-ola-b
 
 | # | Tarea | Artefacto | Estado |
 |---|-------|-----------|--------|
-| 1.1 | Evolution H3.1 | `SddIA/evolution/git-hooks-ca3-ola-b-contract.md` | [x] |
+| 1.1 | Evolution H3.1 | `SddIA/evolution/c032d392-a586-4b8c-baaf-6cb831ebb943.md` | [x] |
 
 ## Fase 2 — Módulos compartidos y `pre-push` (H3.2, O1–O3)
 

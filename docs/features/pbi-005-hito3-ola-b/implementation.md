@@ -19,7 +19,7 @@ ola: B
 | Instalador Unix | `install-hooks.sh` | O5 symlink/copia dinámica |
 | Cápsula accept-pr | `execute_process_capsules.py` | O4 merge huérfano |
 | Sello anomalía | `execute-action.py` | `traceability_anomaly` en Merged |
-| Contrato H3.1 | `SddIA/evolution/git-hooks-ca3-ola-b-contract.md` | Norma táctica |
+| Contrato H3.1 | `SddIA/evolution/c032d392-a586-4b8c-baaf-6cb831ebb943.md` | Norma táctica |
 
 ## Cadena `pre-push`
 
