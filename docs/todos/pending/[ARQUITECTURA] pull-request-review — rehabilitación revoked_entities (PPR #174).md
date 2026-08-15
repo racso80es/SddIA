@@ -57,3 +57,19 @@ Re-revocación empírica tras rehabilitación histórica PPR #124/#125.
 
 - Residual Kalma2 Shell/`git-manager` (dedup OPERATIVO PPR #136 done).
 - Merge histórico PR #174 / handoff `accept-pr` (merge hermano `dbbcabb4` ↔ CID `2b466b03`).
+
+
+---
+
+## Refinamiento: Resolución de Impacto S+ Grade (15-08-2026)
+
+Tras someter el incidente al Protocolo de Acero, se diagnostica que el colapso del proceso no es un defecto de código aislado, sino una fractura en la arquitectura de auditoría: Radamanto está evaluando un macro-proceso multi-fase con la inflexibilidad estadística (`success_rate`) de una herramienta atómica.
+
+Se establecen las siguientes directrices de intervención:
+
+### Vías de Implementación Inmediata (Mandato Activo)
+1. **Auditoría de Umbrales Diferenciados:** Se procederá a alinear la ontología (corrigiendo `entity_type` a `process` en Cerbero) y se instruirá a Radamanto con una tabla de umbrales diferenciada. Los procesos de larga duración y múltiples fases gozarán de mayor tolerancia estadística en la tasa de éxito para evitar falsos positivos y revocaciones prematuras.
+2. **Resiliencia de Fase (Kintsugi Ontológico):** Se aplicará un patrón de falla controlada (*fail-soft*) a nivel interno del proceso `pull-request-review`. Si el agente encargado detecta fricción o ruptura en una sub-fase (ej. caída de API externa o error de lectura puntual), deberá absorber el error y registrar la fricción sin causar el colapso termodinámico lineal de la ejecución completa, posibilitando un resultado de éxito parcial.
+
+### Constancia de Evolución Futura (Faro Kaizen)
+3. **Desacople Reactivo (Fragmentación EDA):** Queda registrada en el Cúmulo la posibilidad arquitectónica de trocear `pull-request-review` en eventos atómicos puros a través del Bus Fractal (ej. `PullRequest_Analysis_Started` → `PullRequest_Diff_Extracted`). **Esta vía queda explícitamente descartada en el ciclo actual** por aplicación del Filtro C (Eficiencia) para evitar incurrir en sobreingeniería y saturación termodinámica, pero se mantiene como ruta teórica de optimización S+ Grade a largo plazo en caso de que la complejidad del proceso escale.
