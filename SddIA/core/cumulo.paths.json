@@ -1,5 +1,5 @@
 {
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -87,6 +87,7 @@
   },
   "eda_fractal": {
     "telemetry": "./.events/telemetry",
+    "progress": "./.events/progress",
     "orchestration": "./.events/orchestration",
     "domain": "./.events/domain",
     "dead_letter": "./.events/dead-letter",

@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::collections::HashSet;
 use std::io::{BufRead, BufReader, Read};
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
@@ -605,6 +606,161 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
     )
 }
 
+fn load_progress_path(repo: &Path) -> PathBuf {
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    let default = repo.join(".events/progress");
+    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
+        return default;
+    };
+    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return default;
+    };
+    cfg.get("eda_fractal")
+        .and_then(|f| f.get("progress"))
+        .and_then(|v| v.as_str())
+        .map(normalize_rel)
+        .map(|r| repo.join(r))
+        .unwrap_or(default)
+}
+
+fn query_param<'a>(url: &'a str, key: &str) -> Option<String> {
+    url.split('?')
+        .nth(1)?
+        .split('&')
+        .find_map(|pair| {
+            let mut parts = pair.splitn(2, '=');
+            let k = parts.next()?;
+            let v = parts.next().unwrap_or("");
+            (k == key).then(|| percent_decode(v))
+        })
+        .filter(|s| !s.is_empty())
+}
+
+fn list_trace_files(corr_dir: &Path) -> Vec<PathBuf> {
+    let Ok(entries) = std::fs::read_dir(corr_dir) else {
+        return vec![];
+    };
+    let mut paths: Vec<PathBuf> = entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
+        .collect();
+    paths.sort_by(|a, b| trace_sort_key(a).cmp(&trace_sort_key(b)));
+    paths
+}
+
+fn trace_sort_key(path: &Path) -> String {
+    read_json_file(path)
+        .and_then(|v| v.get("timestamp").and_then(|t| t.as_str()).map(str::to_string))
+        .unwrap_or_else(|| {
+            path.file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        })
+}
+
+fn sse_progress_frame(body: &str) -> Vec<u8> {
+    format!("event: progress\ndata: {body}\n\n").into_bytes()
+}
+
+struct ProgressStreamReader {
+    corr_dir: PathBuf,
+    seen: HashSet<String>,
+    pending: Vec<u8>,
+    finished: bool,
+    last_poll: Instant,
+    last_ping: Instant,
+}
+
+impl ProgressStreamReader {
+    fn new(corr_dir: PathBuf) -> Self {
+        Self {
+            corr_dir,
+            seen: HashSet::new(),
+            pending: Vec::new(),
+            finished: false,
+            last_poll: Instant::now() - Duration::from_secs(1),
+            last_ping: Instant::now(),
+        }
+    }
+
+    fn collect_new_frames(&mut self) {
+        for path in list_trace_files(&self.corr_dir) {
+            let key = path
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            if key.is_empty() || self.seen.contains(&key) {
+                continue;
+            }
+            if let Some(body) = read_json_file(&path) {
+                if let Ok(compact) = serde_json::to_string(&body) {
+                    self.pending.extend_from_slice(&sse_progress_frame(&compact));
+                    self.seen.insert(key);
+                }
+            }
+        }
+    }
+}
+
+impl Read for ProgressStreamReader {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if buf.is_empty() {
+            return Ok(0);
+        }
+        loop {
+            if !self.pending.is_empty() {
+                let n = self.pending.len().min(buf.len());
+                buf[..n].copy_from_slice(&self.pending[..n]);
+                self.pending.drain(..n);
+                return Ok(n);
+            }
+            if self.finished {
+                return Ok(0);
+            }
+            if self.last_poll.elapsed() >= Duration::from_millis(400) {
+                self.collect_new_frames();
+                self.last_poll = Instant::now();
+                continue;
+            }
+            if self.last_ping.elapsed() >= Duration::from_secs(15) {
+                self.pending.extend_from_slice(b": ping\n\n");
+                self.last_ping = Instant::now();
+                continue;
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
+    }
+}
+
+fn handle_progress_stream(req: tiny_http::Request, repo: &Path) {
+    let url = req.url();
+    let correlation_id = match query_param(url, "correlation_id") {
+        Some(id) if is_uuid_v4ish(&id) => id,
+        Some(_) | None => {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"correlation_id inválido o ausente","exit_code":1}"#
+                    .into(),
+            );
+            return;
+        }
+    };
+
+    let corr_dir = load_progress_path(repo).join(&correlation_id);
+
+    let reader = ProgressStreamReader::new(corr_dir);
+    let response = Response::new(
+        StatusCode(200),
+        vec![sse_header()],
+        reader,
+        None,
+        None,
+    );
+    let _ = req.respond(response);
+}
+
 fn handle_status(req: tiny_http::Request, repo: &Path) {
     let url = req.url().to_string();
     let event_id = url
@@ -1134,6 +1290,7 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Post, "/api/execute") => handle_execute(req, &repo),
         (Method::Post, "/api/interact") => handle_interact(req, &repo),
         (Method::Get, "/api/status") => handle_status(req, &repo),
+        (Method::Get, "/api/progress/stream") => handle_progress_stream(req, &repo),
         (Method::Get, _) => serve_static(req, &ui_root),
         _ => reply(
             req,
@@ -1285,6 +1442,47 @@ mod tests {
         assert_eq!(v["correlation_id"], ack.correlation_id);
         assert_eq!(v["event_id"], ack.correlation_id);
         assert_eq!(v["duration_ms"], 3);
+    }
+
+    #[test]
+    fn progress_stream_route_before_static() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let dispatch = prod.split("fn dispatch").nth(1).expect("dispatch");
+        let status_pos = dispatch.find("\"/api/status\"").expect("status route");
+        let progress_pos = dispatch
+            .find("\"/api/progress/stream\"")
+            .expect("progress route");
+        let static_pos = dispatch.find("serve_static").expect("static");
+        assert!(progress_pos > status_pos);
+        assert!(progress_pos < static_pos);
+    }
+
+    #[test]
+    fn list_trace_files_sorted_by_timestamp() {
+        let dir = std::env::temp_dir().join(format!("kalma2-traces-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("b.json"),
+            r#"{"trace_id":"b","timestamp":"2026-08-15T10:00:01Z"}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("a.json"),
+            r#"{"trace_id":"a","timestamp":"2026-08-15T10:00:00Z"}"#,
+        )
+        .unwrap();
+        let files = list_trace_files(&dir);
+        assert_eq!(files.len(), 2);
+        assert!(files[0].to_string_lossy().contains("a.json"));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn sse_progress_frame_format() {
+        let frame = String::from_utf8(sse_progress_frame(r#"{"trace_id":"x"}"#)).unwrap();
+        assert!(frame.starts_with("event: progress\n"));
+        assert!(frame.contains("data: {\"trace_id\":\"x\"}"));
     }
 
     #[test]

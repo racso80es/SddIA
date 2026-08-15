@@ -34,6 +34,7 @@ pub mod handlers;
 pub mod phase_capsules;
 pub mod phase_terminal;
 pub mod policy_validator;
+pub mod progress_trace;
 pub mod capability_di_gate;
 pub mod capability_di_resolver;
 pub mod capability_di_output_validator;

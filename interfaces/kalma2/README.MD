@@ -22,7 +22,7 @@
 ### Fuera de alcance (PoC)
 
 - Autenticación multiusuario, Cerbero, Karma2Token en el puente.
-- WebSockets, SSE o colas de mensajes.
+- WebSockets o colas de mensajes distintas del bus de progreso PTC.
 - Despliegue remoto, frameworks SPA o empaquetado npm.
 - LLM externo: la respuesta es síntesis Mayeuta de laboratorio (determinista).
 
@@ -51,7 +51,7 @@ sequenceDiagram
 | Capa | Artefacto | Responsabilidad |
 |------|-----------|-----------------|
 | **Material (UI)** | `index.html`, `app.js`, `style.css` | Captura el prompt, llama al puente y muestra la respuesta |
-| **Puente HTTP** | `SddIA/target/{debug,release}/kalma2-bridge` | Sirve estáticos, `/api/interact`, `/api/status` (lectura bus), invoca orquestador nativo |
+| **Puente HTTP** | `SddIA/target/{debug,release}/kalma2-bridge` | Sirve estáticos, `/api/interact`, `/api/status` (veredicto), `/api/progress/stream` (PTC), invoca orquestador nativo |
 | **Orquestador** | `execute-process` (binario Rust) | Resuelve el proceso, aplica peaje termodinámico y enruta al handler |
 | **Proceso** | `SddIA/process/kalma2-interact.md` | Contrato declarativo: fases Síntesis → Respuesta |
 | **Handler** | `engine/handlers/kalma2.rs` | Ejecuta la síntesis Mayeuta lab y devuelve el envelope JSON |
@@ -195,7 +195,19 @@ Sirve el bundle estático de `interfaces/kalma2/` (`index.html`, `app.js`, `styl
 
 **Response (execute encolado):** `data.emitted`, `data.event_id`, `data.correlation_id` (iguales) + acuse en `data.response`.
 
-La UI, si hay `emitted`, entra en poll de `/api/status` hasta `completed`/`failed`/`initialized`/`awaiting_agents`/timeout. Un 404 intermedio se trata como `pending` (purge post-route del dominio). `initialized` / `awaiting_agents` = ciclo arrancado o en espera de agentes (no cierre de negocio); ver feature `kalma2-full-cycle`.
+La UI, si hay `emitted`, entra en **dual-canal**: poll de `/api/status` (veredicto terminal) **y** `EventSource` a `/api/progress/stream?correlation_id=…` (chispazos PTC en consola cromática). El stream de progreso **no sustituye** el poll de status. Un 404 intermedio en status se trata como `pending` (purge post-route del dominio). `initialized` / `awaiting_agents` = ciclo arrancado o en espera de agentes (no cierre de negocio); ver feature `kalma2-full-cycle`.
+
+### `GET /api/progress/stream?correlation_id=<uuid>`
+
+Canal SSE complementario (≠ chat LLM en `/api/chat`):
+
+| Aspecto | Contrato |
+|---------|----------|
+| Auth | Localhost only |
+| 400 | `correlation_id` ausente o no UUID |
+| 200 | `text/event-stream`; frames `event: progress` + JSON PTC compacto |
+| Replay | Trazas existentes bajo `.events/progress/{correlation_id}/` al conectar |
+| Live | Poll acotado del subdirectorio |
 
 ### `GET /api/status?event_id=<uuid>`
 

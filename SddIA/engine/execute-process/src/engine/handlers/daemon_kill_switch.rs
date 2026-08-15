@@ -98,7 +98,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     if let Some(obj) = event.as_object_mut() {
         obj.insert("emitter_agent".into(), json!("daemon-kill-switch"));
     }
-    let (_, orch_dir, _) = load_fractal_dirs(repo);
+    let (_, orch_dir, _, _) = load_fractal_dirs(repo);
     let orch = write_fractal_event(repo, &event, &orch_dir).unwrap_or(json!({"error": "write failed"}));
 
     Ok(OrchestratorEnvelope {

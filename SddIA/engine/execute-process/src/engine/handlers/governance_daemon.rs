@@ -40,7 +40,7 @@ fn emit_orchestration(
     if let Some(obj) = base.as_object_mut() {
         obj.insert("emitter_agent".into(), json!("governance-daemon-manager"));
     }
-    let (_, orch_dir, _) = load_fractal_dirs(repo);
+    let (_, orch_dir, _, _) = load_fractal_dirs(repo);
     write_fractal_event(repo, &base, &orch_dir).unwrap_or(json!({"error": "orchestration write failed"}))
 }
 

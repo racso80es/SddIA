@@ -415,6 +415,11 @@ pub fn run_generic(
 
     let mut phase_reports: Vec<Value> = Vec::new();
     let mut barrier_prior: Option<String> = None;
+    let correlation_id = inputs_mut
+        .get("correlation_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
     for phase in phases {
         let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
         let agent_only = delegates_are_only_agents(&phase_delegates(phase));
@@ -424,6 +429,18 @@ pub fn run_generic(
                 continue;
             }
         }
+        let delegates = phase_delegates(phase);
+        if let Some(cid) = correlation_id {
+            super::progress_trace::emit_progress_trace(
+                repo,
+                cid,
+                phase_name,
+                &delegates,
+                "start",
+                None,
+                Some(process_name),
+            );
+        }
         let entry = execute_phase(
             repo,
             phase,
@@ -432,6 +449,18 @@ pub fn run_generic(
             &inputs_mut,
             &mut state,
         );
+        if let Some(cid) = correlation_id {
+            let status = entry.get("status").and_then(|v| v.as_str());
+            super::progress_trace::emit_progress_trace(
+                repo,
+                cid,
+                phase_name,
+                &delegates,
+                "end",
+                status,
+                Some(process_name),
+            );
+        }
         if agent_only {
             let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
             if agent_phase_blocks_downstream(status) {

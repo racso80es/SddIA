@@ -146,6 +146,111 @@ fn sweep_fractal_bus(repo: &Path, report: &mut SweepReport) -> Result<(), String
     sweep_fractal_dir(&top.domain, "domain", &top.dead_letter, report)?;
     sweep_fractal_dir(&top.orchestration, "orchestration", &top.dead_letter, report)?;
     sweep_fractal_dir(&top.telemetry, "telemetry", &top.dead_letter, report)?;
+    sweep_progress_leaf(repo, &top, report)?;
+    Ok(())
+}
+
+fn progress_ttl_hours() -> u64 {
+    std::env::var("SDDIA_PROGRESS_TTL_HOURS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(24)
+}
+
+fn pec_terminal_for_correlation(orch_dir: &Path, correlation_id: &str) -> bool {
+    let Ok(entries) = fs::read_dir(orch_dir) else {
+        return false;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let Ok(raw) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(body) = serde_json::from_str::<Value>(&raw) else {
+            continue;
+        };
+        if body.get("event_type").and_then(|v| v.as_str()) != Some("Process_Execution_Completed") {
+            continue;
+        }
+        let cid = body
+            .pointer("/payload/correlation_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if cid != correlation_id {
+            continue;
+        }
+        let st = body
+            .pointer("/payload/status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if st == "failed" {
+            return true;
+        }
+        if st == "success" {
+            let cycle = body
+                .pointer("/payload/cycle_phase")
+                .and_then(|v| v.as_str())
+                .unwrap_or("completed");
+            return !matches!(cycle, "initialized" | "awaiting_agents");
+        }
+    }
+    false
+}
+
+fn dir_older_than_ttl(dir: &Path, ttl_hours: u64) -> bool {
+    let Ok(meta) = fs::metadata(dir) else {
+        return false;
+    };
+    let Ok(modified) = meta.modified() else {
+        return false;
+    };
+    if let Ok(age) = modified.elapsed() {
+        return age > Duration::from_secs(ttl_hours * 3600);
+    }
+    false
+}
+
+fn remove_dir_all_best_effort(dir: &Path) -> bool {
+    if !dir.is_dir() {
+        return false;
+    }
+    fs::remove_dir_all(dir).is_ok()
+}
+
+fn sweep_progress_leaf(repo: &Path, top: &BusTopology, report: &mut SweepReport) -> Result<(), String> {
+    let progress_root = &top.progress;
+    if !progress_root.is_dir() {
+        return Ok(());
+    }
+    let ttl = progress_ttl_hours();
+    let orch = top.orchestration.clone();
+    let Ok(entries) = fs::read_dir(progress_root) else {
+        return Ok(());
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let Some(corr) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        let terminal_pec = pec_terminal_for_correlation(&orch, corr);
+        let ttl_expired = dir_older_than_ttl(&path, ttl);
+        if terminal_pec || ttl_expired {
+            if remove_dir_all_best_effort(&path) {
+                report.purged.push(json!({
+                    "family": "progress",
+                    "correlation_id": corr,
+                    "reason": if terminal_pec { "pec-terminal" } else { "ttl" },
+                }));
+            }
+        }
+    }
+    let _ = repo;
     Ok(())
 }
 
@@ -688,5 +793,46 @@ mod fractal_dlq_tests {
         });
         assert!(fractal_event_all_ok(&body));
         assert!(!fractal_event_terminal_with_failure(&body));
+    }
+
+    #[test]
+    fn progress_sweep_purges_on_terminal_pec() {
+        let base = std::env::temp_dir().join(format!("sddia-prog-sweep-{}", Uuid::new_v4()));
+        let repo = base.join("repo");
+        let progress = base.join("progress");
+        let orch = base.join("orch");
+        let corr = "44444444-4444-4444-8444-444444444444";
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            format!(
+                r#"{{"eda_fractal":{{"telemetry":"{}/telemetry","progress":"{}/progress","orchestration":"{}/orch","domain":"{}/domain","dead_letter":"{}/dl"}}}}"#,
+                base.display(),
+                base.display(),
+                base.display(),
+                base.display(),
+                base.display(),
+            ),
+        )
+        .unwrap();
+        std::fs::create_dir_all(&progress).unwrap();
+        std::fs::create_dir_all(progress.join(corr)).unwrap();
+        std::fs::write(
+            progress.join(corr).join("t1.json"),
+            r#"{"trace_id":"t1"}"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(&orch).unwrap();
+        let pec = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {"correlation_id": corr, "status": "success", "cycle_phase": "completed"}
+        });
+        std::fs::write(orch.join("pec.json"), pec.to_string()).unwrap();
+        let top = load_bus_topology(&repo);
+        let mut report = SweepReport::default();
+        sweep_progress_leaf(&repo, &top, &mut report).unwrap();
+        assert!(!progress.join(corr).exists());
+        assert_eq!(report.purged.len(), 1);
+        let _ = std::fs::remove_dir_all(base);
     }
 }
