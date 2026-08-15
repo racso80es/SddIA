@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 65
+universe_total: 66
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `5b135a1d-480d-4e8c-abca-3cca8fda97e9` | 2026-08-15 | Fix look-ahead Kaizen en enrich-fracture-pbi-kaizen y recover_lock en route-domain-event; ignición start-sddia recompila execute-process. | CANONICO | `SddIA/evolution/5b135a1d-480d-4e8c-abca-3cca8fda97e9.md` |
 | `d630a6cf-1767-4751-a2b9-b1f4210a01fb` | 2026-08-14 | Kalma2: barrera de fase, timeout terminal y persist_ref en despacho refactorization (KALMA2-AUD-4b9de6). | CANONICO | `SddIA/evolution/d630a6cf-1767-4751-a2b9-b1f4210a01fb.md` |
 | `63062872-e707-496e-b1b3-1ea736e256f0` | 2026-08-14 | Normalización de históricos evolution al contrato v1.1.1 y extracción de borradores (EV-AUD-002/007). | CANONICO | `SddIA/evolution/63062872-e707-496e-b1b3-1ea736e256f0.md` |
 | `0bceeb41-64d1-4920-af9d-46a11c0455a2` | 2026-08-13 | Gate automático evolution: cápsula WASI, inyección JSON, hook inerte (EV-AUD-001/002). | CANONICO | `SddIA/evolution/0bceeb41-64d1-4920-af9d-46a11c0455a2.md` |
