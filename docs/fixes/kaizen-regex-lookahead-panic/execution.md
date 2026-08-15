@@ -35,6 +35,7 @@ cd SddIA && cargo build -p execute-process
 ## Evidencia
 
 `cargo test -p execute-process --lib enrich_fracture_pbi_kaizen`: 6 passed, 0 failed.
-`cargo build -p execute-process`: ok → `SddIA/target/debug/execute-process`.
+`CARGO_TARGET_DIR=SddIA/target cargo build -p execute-process`: ELF 2026-08-15 10:28; sin string `regex kaizen section`.
+`start-sddia.sh` v1.2.1: recompila orquestador en `SddIA/target` y exporta `SDDIA_EXECUTE_PROCESS_BIN`.
 ---
 
