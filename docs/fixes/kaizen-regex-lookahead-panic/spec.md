@@ -20,7 +20,7 @@ correlation_id: 91884ac3-d226-4046-b887-bc373bc7c869
 
 Cascada: panic del hilo suscriptor → `PoisonError` en `event.lock().unwrap()` y `event_arc.lock().unwrap()`.
 
-`start-sddia.sh` no es causal: solo ignición del watcher.
+`start-sddia.sh` no es la causa del look-ahead; sí es el **vector empírico de cierre** (CA5).
 
 ## Causa raíz
 
@@ -35,9 +35,29 @@ Cascada: panic del hilo suscriptor → `PoisonError` en `event.lock().unwrap()` 
 1. Recorte de sección por delimitadores Markdown (`split_once` + `find("\n## ")`). Sin `regex`.
 2. `recover_lock`: `unwrap_or_else(PoisonError::into_inner)`.
 3. `catch_unwind` en dispatch async: panic de suscriptor → `failed: subscriber panicked`.
+4. Ignición: `start-sddia.sh` recompila `execute-process` en `SddIA/target` y exporta `SDDIA_EXECUTE_PROCESS_BIN`.
+
+## CA5 — Validación empírica de `./start-sddia.sh` (bloqueante)
+
+Protocolo:
+
+```bash
+./start-sddia.sh
+```
+
+**APTO** solo si en el mismo arranque:
+
+| Señal | Obligatorio |
+|-------|-------------|
+| `[SddIA] Asegurando orquestador nativo` + path a `SddIA/target/.../execute-process` | sí |
+| `[SddIA] Ecosistema S+ Grade operativo.` | sí |
+| Centinelas obligatorios ACTIVO; heartbeats `missed_cycles<3` | sí |
+| Ausencia de `regex kaizen section` / `look-around` / `PoisonError` | sí |
+| Ausencia de `[WATCHER] route-domain-event falló` por panic del orquestador | sí |
+
+Cualquier otro fallo de ignición (Kalma2, IOTA, gate de latidos, panic distinto) **bloquea** CA5. No se declara Done con tests unitarios solos.
 
 ## Fuera de alcance
 
-- Causa de las fracturas heartbeat de centinelas (PBIs pending distintos).
-- Cambios en `start-sddia.sh`.
+- Causa raíz de fracturas heartbeat históricas de centinelas, salvo que impidan el gate de ignición (entonces entran por CA5).
 ---

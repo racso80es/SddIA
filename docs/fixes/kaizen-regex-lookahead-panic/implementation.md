@@ -12,6 +12,7 @@ items:
   - F2-recover-lock
   - F3-catch-unwind-async
   - F4-unit-regression
+  - F5-empirical-start-sddia
 ---
 
 # Implementación — kaizen-regex-lookahead-panic
@@ -23,6 +24,7 @@ items:
 | H1 | `enrich_fracture_pbi_kaizen.rs` | Upsert por delimitadores; elimina `regex` + look-ahead |
 | H2 | `route_domain_core.rs` | `recover_lock` + `catch_unwind` en fan-out async |
 | H3 | tests del handler | Placeholder conserva `## Criterio`; re-upsert de síntesis existente |
+| H4 | `start-sddia.sh` / `start-sddia.md` | Recompila orquestador en `SddIA/target`; CA5 exige ignición empírica |
 
 ## Semántica upsert
 
