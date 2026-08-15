@@ -103,3 +103,75 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "copia Argos F2 session prosthesis_subprocess; Shell git-manager Rejected esta sesión Cerbero — sin stdout inventado"
 ```
+
+## 2026-08-15T08:39:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `2b466b03-9125-414e-9893-8ea6d8ef7f93`
+- pbi_ref: `docs/todos/done/[REFACTOR] Kalma2 — serialización de fases, timeout y rama refactor (KALMA2-AUD-4b9de6).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: COSECHA_SIN_F5 · kaizen_seeds 0 · dedup 1 · KAIZEN_COSECHA_GATE APTO · accept_pr_handoff false · Shell git-manager Rejected.
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md` (solo `persist_ref`; 0 writes `docs/todos/`).
+- `KAIZEN_COSECHA_GATE: APTO` · `kaizen_seeds: 0` · `kaizen_seeds_dedup: 1` (OPERATIVO PPR #136 done).
+- F2/F4 heredados APTO; F5 Argos **ausente** → `verdict/delivery_state: no_heredado` · `resolution: COSECHA_SIN_F5`.
+- DIA: sin `Kaizen_Alert_Required`; R1/R2 copia Evidence Bridge `prosthesis_subprocess`.
+- Shell git-manager Rejected — `GIT_EVIDENCE_SESSION_SHELL: NO_APTO` (sin stdout inventado).
+- `accept_pr_handoff: false` (sin F5; merge este CID NO_APTO); HEAD FS=`main` ≠ ECST branch.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-15T08:39:00Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "copia Argos F2 session prosthesis_subprocess; Shell git-manager Rejected esta sesión Cúmulo — sin stdout inventado; F5 ausente → COSECHA_SIN_F5"
+```
+
+## 2026-08-15T08:40:55Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `2b466b03-9125-414e-9893-8ea6d8ef7f93`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Shell `git-manager` Rejected — sin stdout inventado; HEAD FS=`main` ≠ rama ECST.
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md` (0 writes bajo `docs/todos/`).
+- `KAIZEN_COSECHA_GATE: APTO` · `kaizen_seeds: 0` · dedup 1 (OPERATIVO PPR #136 done).
+- F2/F4 heredados APTO; F5 ausente → `COSECHA_SIN_F5` · `delivery_state: no_heredado` · `accept_pr_handoff: false`.
+- DIA: sin `Kaizen_Alert_Required`; R1/R2 copia Evidence Bridge `prosthesis_subprocess`.
+- Shell `git-manager` Rejected — sin stdout inventado; HEAD FS=`main` ≠ rama ECST.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-15T08:40:56Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
