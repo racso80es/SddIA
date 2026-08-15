@@ -17,6 +17,7 @@ pub struct BusTopology {
     pub dead_letter: PathBuf,
     pub dead_letter_subscribers: PathBuf,
     pub telemetry: PathBuf,
+    pub progress: PathBuf,
     pub orchestration: PathBuf,
     pub domain: PathBuf,
 }
@@ -105,6 +106,7 @@ pub fn load_bus_topology(repo: &Path) -> BusTopology {
         dead_letter: repo.join(".events/dead-letter"),
         dead_letter_subscribers: repo.join(".events/dead-letter/subscribers"),
         telemetry: repo.join(".events/telemetry"),
+        progress: repo.join(".events/progress"),
         orchestration: repo.join(".events/orchestration"),
         domain: repo.join(".events/domain"),
     };
@@ -128,6 +130,7 @@ pub fn load_bus_topology(repo: &Path) -> BusTopology {
     if let Some(fractal) = fractal {
         for (key, dest) in [
             ("telemetry", &mut top.telemetry),
+            ("progress", &mut top.progress),
             ("orchestration", &mut top.orchestration),
             ("domain", &mut top.domain),
         ] {
@@ -149,6 +152,7 @@ pub fn load_bus_topology(repo: &Path) -> BusTopology {
 pub fn ensure_fractal_dirs(top: &BusTopology) -> Result<(), String> {
     for dir in [
         &top.telemetry,
+        &top.progress,
         &top.orchestration,
         &top.domain,
         &top.dead_letter,

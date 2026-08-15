@@ -4,11 +4,12 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 
-pub fn load_fractal_dirs(repo: &Path) -> (String, String, String) {
+pub fn load_fractal_dirs(repo: &Path) -> (String, String, String, String) {
     let defaults = (
         "./.events/telemetry".to_string(),
         "./.events/orchestration".to_string(),
         "./.events/domain".to_string(),
+        "./.events/progress".to_string(),
     );
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
     let Ok(text) = fs::read_to_string(&cfg_path) else {
@@ -30,11 +31,20 @@ pub fn load_fractal_dirs(repo: &Path) -> (String, String, String) {
         .and_then(|f| f.get("domain"))
         .and_then(|v| v.as_str())
         .unwrap_or(&defaults.2);
+    let prog = fractal
+        .and_then(|f| f.get("progress"))
+        .and_then(|v| v.as_str())
+        .unwrap_or(&defaults.3);
     (
         tele.trim().replace('\\', "/"),
         orch.trim().replace('\\', "/"),
         dom.trim().replace('\\', "/"),
+        prog.trim().replace('\\', "/"),
     )
+}
+
+pub fn load_progress_dir(repo: &Path) -> String {
+    load_fractal_dirs(repo).3
 }
 
 pub fn write_fractal_event(repo: &Path, event: &Value, family_dir: &str) -> Result<Value, String> {

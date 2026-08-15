@@ -50,7 +50,7 @@ pub fn run(
     duration_ms: i64,
     success: bool,
 ) -> Value {
-    let (tele_dir, orch_dir, _) = load_fractal_dirs(repo);
+    let (tele_dir, orch_dir, _, _) = load_fractal_dirs(repo);
     fs::create_dir_all(repo.join(&tele_dir)).ok();
     fs::create_dir_all(repo.join(&orch_dir)).ok();
 
@@ -220,7 +220,7 @@ pub fn emit_initialized_pec(
     process_name: &str,
     correlation_id: &str,
 ) -> Result<Value, String> {
-    let (_, orch_dir, _) = load_fractal_dirs(repo);
+    let (_, orch_dir, _, _) = load_fractal_dirs(repo);
     fs::create_dir_all(repo.join(&orch_dir)).ok();
     let orch_id = Uuid::new_v4().to_string();
     let payload = json!({

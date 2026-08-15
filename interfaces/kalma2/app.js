@@ -6,6 +6,8 @@ const POLL_TIMEOUT_MS = 120000;
 /** Timeout largo tras initialized/awaiting_agents (agentes IDE pueden tardar). */
 const POLL_TIMEOUT_LIFECYCLE_MS = 30 * 60 * 1000;
 
+let progressSource = null;
+
 function setStatus(text, kind) {
   const el = $("status");
   if (!el) return;
@@ -22,6 +24,48 @@ function setBusy(busy) {
   const forge = $("forge");
   if (chat) chat.disabled = busy;
   if (forge) forge.disabled = busy;
+}
+
+function closeProgressStream() {
+  if (progressSource) {
+    progressSource.close();
+    progressSource = null;
+  }
+}
+
+function appendProgressTrace(trace) {
+  const consoleEl = $("progress-console");
+  if (!consoleEl || !trace || typeof trace !== "object") return;
+
+  const severity = trace.severity || "info";
+  const agent = trace.source_agent || "?";
+  const phase = trace.phase || "?";
+  const msg = trace.message || "";
+
+  const line = document.createElement("div");
+  line.className = `progress-line severity-${severity}`;
+  line.innerHTML = `<span class="badge">[${agent}]</span><span class="phase">${phase}</span> · ${msg}`;
+  consoleEl.appendChild(line);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+function openProgressStream(correlationId) {
+  closeProgressStream();
+  const consoleEl = $("progress-console");
+  if (consoleEl) consoleEl.innerHTML = "";
+
+  const url = `/api/progress/stream?correlation_id=${encodeURIComponent(correlationId)}`;
+  progressSource = new EventSource(url);
+  progressSource.addEventListener("progress", (ev) => {
+    try {
+      appendProgressTrace(JSON.parse(ev.data));
+    } catch (_) {
+      /* ignore malformed frame */
+    }
+  });
+  progressSource.onerror = () => {
+    /* poll status sigue; reconexión nativa EventSource */
+  };
 }
 
 async function pollStatus(eventId, out, ackText) {
@@ -44,11 +88,13 @@ async function pollStatus(eventId, out, ackText) {
       if (!r.ok || !st.success) {
         setStatus(`error · ${st.message || r.status}`, "failed");
         out.value = `${ackText}\n\n[error status] ${st.message || r.status}`;
+        closeProgressStream();
         return;
       }
     } catch (e) {
       setStatus(`red · ${e}`, "failed");
       out.value = `${ackText}\n\n[fallo red status] ${e}`;
+      closeProgressStream();
       return;
     }
 
@@ -64,9 +110,8 @@ async function pollStatus(eventId, out, ackText) {
       }
     }
 
-    // Terminales de negocio: solo completed/failed cortan el sondeo.
-    // initialized / awaiting_agents / routed / pending → siguen (flujo agentes).
     if (status === "completed" || status === "failed") {
+      closeProgressStream();
       return;
     }
     if (
@@ -80,6 +125,7 @@ async function pollStatus(eventId, out, ackText) {
 
   setStatus("timeout", "failed");
   out.value = `${ackText}\n\n[timeout] sin completed/failed en ${(deadline - started) / 1000}s`;
+  closeProgressStream();
 }
 
 async function enviarChat() {
@@ -87,6 +133,7 @@ async function enviarChat() {
   const prompt = $("prompt").value.trim();
   if (!prompt) return;
 
+  closeProgressStream();
   setBusy(true);
   out.value = "";
   setStatus("chat SSE…", "pending");
@@ -149,6 +196,7 @@ async function forjarProceso() {
   const prompt = $("prompt").value.trim();
   if (!prompt) return;
 
+  closeProgressStream();
   setBusy(true);
   out.value = "…encolando proceso";
   setStatus("execute…", "pending");
@@ -163,7 +211,6 @@ async function forjarProceso() {
     const payload = payloadOf(data);
     const text = data.response ?? payload.response;
 
-    // H2 / L5: acuse async 202 accepted (pasarela no bloqueante).
     const acceptedId =
       data.correlation_id || data.event_id || payload.correlation_id || payload.event_id;
     if (data.success && (r.status === 202 || data.status === "accepted") && acceptedId) {
@@ -172,6 +219,7 @@ async function forjarProceso() {
         text ||
         `intención aceptada (${acceptedId}); consultando estado…`;
       out.value = ack;
+      openProgressStream(acceptedId);
       await pollStatus(acceptedId, out, ack);
       return;
     }
@@ -187,6 +235,7 @@ async function forjarProceso() {
     if (payload.emitted && payload.event_id) {
       const eventId = payload.event_id;
       out.value = text;
+      openProgressStream(eventId);
       await pollStatus(eventId, out, text);
       return;
     }
@@ -197,6 +246,7 @@ async function forjarProceso() {
     setStatus("red", "failed");
     out.value = `[fallo red] ${e}`;
   } finally {
+    closeProgressStream();
     setBusy(false);
   }
 }

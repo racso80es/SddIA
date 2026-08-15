@@ -155,7 +155,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         });
     };
 
-    let (_, _, domain_dir) = load_fractal_dirs(repo);
+    let (_, _, domain_dir, _) = load_fractal_dirs(repo);
     let chat_id = std::env::var("TELEGRAM_ALLOWED_CHAT_ID")
         .ok()
         .map(|s| s.trim().to_string())

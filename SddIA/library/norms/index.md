@@ -4,7 +4,7 @@ entity_family: "library-norms"
 maintained_by_agent: "cumulo"
 paths_ref: "SddIA/core/cumulo.paths.json"
 directories_key: "library_norms"
-indexed_at: "2026-05-15"
+indexed_at: "2026-08-15"
 synchronization_note: "Cada fila debe coincidir con la cabecera YAML del archivo fuente indicado."
 ---
 
@@ -23,6 +23,7 @@ Contrato normativo de la familia: `norms-contract.md` (no constituye una norma t
 | `nextjs-hydration-client-state.md` | `86a2f359-8137-43e4-b5ff-61d235ef3cde` | nextjs-hydration-client-state | 1.0.0 | frontend | architecture |
 | `openapi-contract-rest-frontend.md` | `e6ae3df7-9d47-4dd1-8051-025f9fd171c7` | openapi-contract-rest-frontend | 1.0.0 | frontend | workflow |
 | `openapi-contract-rest-admin-frontend.md` | `c93387f0-d4c8-41ae-8d1a-12f2239d2710` | openapi-contract-rest-admin-frontend | 1.0.0 | frontend | workflow |
+| `progress-trace-contract.md` | `7d4e9f12-3a6b-4c5d-9e0f-1a2b3c4d5e6f` | progress-trace-contract | 1.0.0 | agnostic | architecture |
 
 ## Archivos en carpeta no catalogados como norma táctica
 
@@ -30,7 +31,7 @@ Ninguno. `norms-contract.md` es el contrato de familia, no una fila del catálog
 
 ## Integridad (última pasada)
 
-- **Sincronización:** siete archivos `tactical-norm` con identidad atómica; reflejados en sendas filas del catálogo.
+- **Sincronización:** nueve archivos `tactical-norm` con identidad atómica; reflejados en sendas filas del catálogo.
 - **Metadatos:** valores de la tabla copiados desde el YAML de cada norma al momento de indexación.
 - **2026-07-21:** alta `capability-taxonomy` (Códice de la Lengua / PBI-042).
 

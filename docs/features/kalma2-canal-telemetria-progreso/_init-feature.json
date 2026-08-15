@@ -1,0 +1,25 @@
+{
+  "feature_name": "kalma2-canal-telemetria-progreso",
+  "branch_name": "feat/kalma2-canal-telemetria-progreso",
+  "persist_ref": "docs/features/kalma2-canal-telemetria-progreso",
+  "base_branch": "main",
+  "document_id": "PBI-KALMA2-CANAL-TELEMETRIA-PROGRESO",
+  "pbi_ref": "docs/todos/pending/[OPERATIVO] PBI: Canal Asíncrono de Telemetría de Progreso y Observabilidad Activa para Interfaces Externas (Kalma2).md",
+  "refined_requirements": "Semilla v0 Por Refinar (PBI OPERATIVO Kalma2): canal asíncrono fire-and-forget de trazas de progreso para interfaces externas durante execute-process (fases Spec/Clarify/Plan/Implementation/Validation/Closure). Alcance táctico declarado: (1) contrato semántico de telemetría efímera; (2) emisión desde orquestador Rust sin violar Ceguera Espacial; (3) SSE en kalma2-bridge alimentado por FS; (4) consola cromática WUI; (5) sweeper de huérfanos. INCONGRUENCIAS A TRIAR (Mayeuta, no implementar a ciegas): (I1) PBI escribe .SddIA/events/telemetry/ — SSOT Cúmulo eda_fractal.telemetry = ./.events/telemetry/; .SddIA/events/ es personalización Vía C, no bus. (I2) Schema propuesto telemetry.trace.schema.json bajo .SddIA/library/norms/capability-contracts/ — SSOT directories.capability_contracts = SddIA/library/norms/capability-contracts/; telemetría de dominio es Clase ECST en SddIA/events/telemetry/, no capability-contract. (I3) Envelope PBI (phase/severity/source_agent/message) no es ECST (falta event_type, emitter_agent, payload). (I4) Familia telemetry hoy = Raw_Execution_Finished + Daemon_Heartbeat; emisores Solo CLI; consumidores radamanto-batch + telemetry-compliance-audit — mezclar trazas UI de progreso con peaje termodinámico es colisión ontológica. (I5) kalma2-event-bus-integration lauda poll v1 GET /api/status y deja SSE/WS fuera de alcance; PBI-044 fija status como proyección de correlación/terminal; PBI pide SUSTITUIR polling — probable overreach: status=veredicto, traces=progreso. (I6) kalma2-bridge ya expone text/event-stream (chat LLM), no bus de progreso. (I7) Latencia WUI <100ms es criterio de interfaz, no invariante del Core. (I8) Adyacente no fusionar: Kaizen PEC suscriptores (GET /api/status 404 post-purge). Primera acción = estabilización Mayeuta + laudo de canal (fractal telemetry vs clase nueva vs canal efímero distinto).",
+  "depends_on_features": [
+    "docs/features/kalma2-event-bus-integration",
+    "docs/features/kalma2-bridge-rust",
+    "docs/features/kalma2-full-cycle",
+    "docs/features/telemetria-reactiva-eda-fase0"
+  ],
+  "related_artifacts": [
+    "SddIA/core/cumulo.paths.json",
+    "SddIA/events/events-contract.md",
+    "SddIA/events/telemetry/index.md",
+    "SddIA/interfaces/kalma2-bridge/src/main.rs",
+    "interfaces/kalma2/app.js",
+    "SddIA/engine/execute-process/src/engine/executor.rs",
+    "SddIA/core/event-telemetry-subscriptions.json",
+    "docs/features/kalma2-event-bus-integration/objectives.md"
+  ]
+}

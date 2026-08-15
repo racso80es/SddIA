@@ -349,7 +349,7 @@ fn emit_process_event(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let (_, _, domain_dir) = load_fractal_dirs(repo);
+    let (_, _, domain_dir, _) = load_fractal_dirs(repo);
     let seal = write_fractal_event(repo, &event, &domain_dir)?;
     let ack = ack_enqueued(process_name, &event_id);
     Ok(envelope_response_with_data(
