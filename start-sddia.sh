@@ -26,6 +26,17 @@ HEARTBEAT_AUDIT=".SddIA/daemons/state/heartbeat-audit.json"
 CLEANUP_DONE=0
 IGNITION_EPOCH="$(date -u +%s)"
 
+_ensure_orchestrator() {
+    echo "[SddIA] Asegurando orquestador nativo (execute-process)..."
+    local target_dir="$REPO_ROOT/SddIA/target"
+    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -q); then
+        echo "  -> [ERROR] cargo build -p execute-process falló (CARGO_TARGET_DIR=${target_dir})."
+        return 1
+    fi
+    _sddia_resolve_orchestrator "$REPO_ROOT" || return 1
+    echo "  -> orquestador: ${SDDIA_EXECUTE_PROCESS_BIN}"
+}
+
 echo "[SddIA] Iniciando secuencia de ignición del núcleo..."
 echo "[SddIA] Repo: $REPO_ROOT"
 
@@ -238,6 +249,10 @@ _wait_required_heartbeats() {
     echo "  -> [ERROR] heartbeats de ${REQUIRED_DAEMONS[*]} no confirmados en ${attempts}s."
     return 1
 }
+
+if ! _ensure_orchestrator; then
+    cleanup 1
+fi
 
 # 1. Centinelas (Sistema Nervioso EDA)
 echo "[SddIA] Levantando Sistema Nervioso (Demonios)..."

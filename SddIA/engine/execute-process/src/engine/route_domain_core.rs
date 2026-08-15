@@ -18,7 +18,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::{Arc, Mutex};
+use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use uuid::Uuid;
 
@@ -33,6 +34,10 @@ fn sync_dispatch_mode() -> bool {
             .as_str(),
         "1" | "true" | "yes"
     )
+}
+
+fn recover_lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+    mutex.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 fn dispatch_mode_label() -> &'static str {
@@ -1117,7 +1122,7 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
                 repo,
                 &bus,
                 sub,
-                &mut event_arc.lock().unwrap(),
+                &mut recover_lock(&event_arc),
                 &event_uuid,
                 &event_type,
                 &event_path,
@@ -1152,28 +1157,40 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
                 let registry = registry.clone();
                 let origin = origin_topology.clone();
                 let results = Arc::clone(&results);
+                let sid_fallback = subscriber_id(&sub);
                 thread::spawn(move || {
-                    let (sid, status) = handle_subscriber(
-                        &repo,
-                        &bus,
-                        &sub,
-                        &mut event.lock().unwrap(),
-                        &event_uuid,
-                        &event_type,
-                        &pending,
-                        &registry,
-                        &origin,
-                        "async",
-                        batch_mode_iota,
-                    );
-                    results.lock().unwrap().insert(sid, status);
+                    let outcome = catch_unwind(AssertUnwindSafe(|| {
+                        let mut ev = recover_lock(&event);
+                        handle_subscriber(
+                            &repo,
+                            &bus,
+                            &sub,
+                            &mut ev,
+                            &event_uuid,
+                            &event_type,
+                            &pending,
+                            &registry,
+                            &origin,
+                            "async",
+                            batch_mode_iota,
+                        )
+                    }));
+                    let mut results = recover_lock(&results);
+                    match outcome {
+                        Ok((sid, status)) => {
+                            results.insert(sid, status);
+                        }
+                        Err(_) => {
+                            results.insert(sid_fallback, "failed: subscriber panicked".into());
+                        }
+                    }
                 })
             })
             .collect();
         for h in handles {
             let _ = h.join();
         }
-        delivery_status = results.lock().unwrap().clone();
+        delivery_status = recover_lock(&results).clone();
     }
 
     let skip_only = !delivery_status.is_empty()
@@ -1189,9 +1206,12 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
         "dispatch_mode": dispatch_mode,
     });
 
-    if let Some(ds) = event_arc.lock().unwrap().get("delivery_state").and_then(|v| v.as_object()) {
-        if let Some(d) = ds.get("transaction_digest").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
-            result_data["transaction_digest"] = json!(d);
+    {
+        let ev = recover_lock(&event_arc);
+        if let Some(ds) = ev.get("delivery_state").and_then(|v| v.as_object()) {
+            if let Some(d) = ds.get("transaction_digest").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
+                result_data["transaction_digest"] = json!(d);
+            }
         }
     }
 

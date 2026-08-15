@@ -2,14 +2,14 @@
 id: start-sddia
 uuid: d5aae800-06b0-4acc-b0fc-476d8e241eb1
 type: process
-version: 1.2.0
+version: 1.2.1
 ---
 
 # Ignición del ecosistema SddIA (`start-sddia.sh`)
 
 Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
 
-**v1.2.0:** carga bóveda (`.dev/.env` + `.SddIA/.dev/.env`) antes de Kalma2; gate de `Daemon_Heartbeat` auditado para obligatorios; cleanup retira locks bajo `.SddIA/daemons/status/`.
+**v1.2.1:** ignición recompila `execute-process` en `SddIA/target` (`CARGO_TARGET_DIR` explícito) y exporta `SDDIA_EXECUTE_PROCESS_BIN` a los centinelas. Evita ELF stale de caché sandbox / `target` ajeno.
 
 ## Objetivo
 
@@ -33,7 +33,8 @@ SSOT de rutas: `SddIA/core/cumulo.paths.json`.
 ```mermaid
 flowchart TD
     A[start-sddia.sh] --> V[load vault _sddia_load_vault]
-    V --> B[cd REPO_ROOT]
+    V --> O[cargo build execute-process en SddIA/target]
+    O --> B[cd REPO_ROOT]
     B --> C[Centinelas obligatorios]
     C --> D{event-watcher + event-sweeper OK?}
     D -->|no| X[cleanup + exit 1]
@@ -49,11 +50,12 @@ flowchart TD
 ```
 
 1. Ancla `REPO_ROOT` y carga bóveda (`_sddia_load_vault`) para que `kalma2-bridge`/`mayeuta-llm` hereden `SDDIA_LLM_*`.
-2. Lanza centinelas vía `SddIA/scripts/daemons/<name>.sh`.
-3. Resuelve y arranca `kalma2-bridge` nativo ELF (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
-4. Health check HTTP en `http://127.0.0.1:8765/`.
-5. Gate: `daemon-heartbeat-audit` confirma latidos frescos de obligatorios (`missed_cycles < 3`).
-6. `wait` hasta señal de terminación; cleanup elimina locks en `.SddIA/daemons/status/`.
+2. `cargo build -p execute-process` con `CARGO_TARGET_DIR=$REPO/SddIA/target`; exporta `SDDIA_EXECUTE_PROCESS_BIN`.
+3. Lanza centinelas vía `SddIA/scripts/daemons/<name>.sh`.
+4. Resuelve y arranca `kalma2-bridge` nativo ELF (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
+5. Health check HTTP en `http://127.0.0.1:8765/`.
+6. Gate: `daemon-heartbeat-audit` confirma latidos frescos de obligatorios (`missed_cycles < 3`).
+7. `wait` hasta señal de terminación; cleanup elimina locks en `.SddIA/daemons/status/`.
 
 ## Uso
 

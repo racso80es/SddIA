@@ -1,7 +1,6 @@
 //! Handler nativo `enrich-fracture-pbi-kaizen` — síntesis Mayeuta sobre PBI Cúmulo (D-P6T.1).
 
 use super::materialize_fracture_pbi;
-use regex::Regex;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -173,28 +172,24 @@ pub fn analyze_fracture_kaizen(
 }
 
 /// Paridad `execute-action.py::_upsert_fracture_kaizen_section`.
+///
+/// Recorte de sección por delimitadores Markdown (`\n## ` / EOF). El crate
+/// `regex` no soporta look-ahead; un patrón `(?=\n## |\Z)` panica en runtime
+/// y envenena el mutex de `route-domain-event`.
 pub fn upsert_fracture_kaizen_section(content: &str, section: &str) -> String {
     const MARKER: &str = "## Conclusión Analítica y Propuesta Evolutiva";
-    const PLACEHOLDER: &str = "_Pendiente de síntesis Mayeuta (Kintsugi async)._";
 
     if let Some((before, after)) = content.split_once(MARKER) {
-        if after.trim().starts_with(PLACEHOLDER) {
-            return format!("{}\n\n{section}\n", before.trim_end());
+        let remainder = after.find("\n## ").map(|i| &after[i..]).unwrap_or("");
+        let before = before.trim_end();
+        if remainder.is_empty() {
+            format!("{before}\n\n{section}\n")
+        } else {
+            format!("{before}\n\n{section}{remainder}")
         }
-        static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-        let re = RE.get_or_init(|| {
-            Regex::new(&format!(
-                r"(?m)^{}[\s\S]*?(?=\n## |\Z)",
-                regex::escape(MARKER)
-            ))
-            .expect("regex kaizen section")
-        });
-        return re
-            .replace(content, format!("{section}\n"))
-            .into_owned();
+    } else {
+        format!("{}\n\n{section}\n", content.trim_end())
     }
-
-    format!("{}\n\n{section}\n", content.trim_end())
 }
 
 /// Ejecuta `enrich-fracture-pbi-kaizen` (paridad `execute-action.py::_run_enrich_fracture_pbi_kaizen`).
@@ -280,6 +275,20 @@ mod tests {
         assert!(out.contains("*(Síntesis Mayeuta"));
         assert!(!out.contains("Pendiente de síntesis"));
         assert!(out.contains("## Mandato"));
+        assert!(out.contains("## Criterio"));
+    }
+
+    #[test]
+    fn upsert_replaces_existing_synthesis_without_lookahead() {
+        let content = "## Mandato\n\nfoo\n\n## Conclusión Analítica y Propuesta Evolutiva\n\n*(Síntesis Mayeuta — Kintsugi async)*\n\nold\n\n## Criterio\n\nbar\n";
+        let section = "## Conclusión Analítica y Propuesta Evolutiva\n\n*(Síntesis Mayeuta — Kintsugi async)*\n\n### Diagnóstico de causa raíz\n\n- nueva\n";
+        let out = upsert_fracture_kaizen_section(content, section);
+        assert!(out.contains("### Diagnóstico de causa raíz"));
+        assert!(out.contains("## Criterio"));
+        assert!(!out.contains("\nold\n"));
+        let out2 = upsert_fracture_kaizen_section(&out, section);
+        assert!(out2.contains("## Criterio"));
+        assert!(out2.contains("- nueva"));
     }
 
     #[test]
