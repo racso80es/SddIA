@@ -29,8 +29,10 @@ IGNITION_EPOCH="$(date -u +%s)"
 _ensure_orchestrator() {
     echo "[SddIA] Asegurando orquestador nativo (execute-process)..."
     local target_dir="$REPO_ROOT/SddIA/target"
-    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -q); then
+    local build_log
+    if ! build_log="$(cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -q 2>&1)"; then
         echo "  -> [ERROR] cargo build -p execute-process falló (CARGO_TARGET_DIR=${target_dir})."
+        [[ -n "$build_log" ]] && echo "$build_log" >&2
         return 1
     fi
     _sddia_resolve_orchestrator "$REPO_ROOT" || return 1

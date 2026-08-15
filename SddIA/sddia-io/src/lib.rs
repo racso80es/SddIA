@@ -2,7 +2,7 @@ pub mod outbound_lab;
 
 use std::io::{self, Read};
 use std::process;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::Value;
 
 #[derive(Serialize)]
