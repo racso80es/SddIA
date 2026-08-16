@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 72
+universe_total: 73
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `4828a809-c6ae-46d3-8b36-d0eb4df1060e` | 2026-08-16 | Fire-and-Forget Tekton: DA-5, CLI detach allowlist y acuse PEC en eda_fractal.orchestration. | CANONICO | `SddIA/evolution/4828a809-c6ae-46d3-8b36-d0eb4df1060e.md` |
 | `ba900e95-1a47-4185-b86c-bc7a251b4fe6` | 2026-08-16 | Umbrales Radamanto por entity_type process + rehab revoked PPR/DCC (PPR #174+#177) | CANONICO | `SddIA/evolution/ba900e95-1a47-4185-b86c-bc7a251b4fe6.md` |
 | `ef2b0ef2-b792-4cb7-ac1b-bfea203f4bde` | 2026-08-16 | Umbrales Radamanto por entity_type process vs tool y fail-soft PPR/DCC (PPR #174+#177). | CANONICO | `SddIA/evolution/ef2b0ef2-b792-4cb7-ac1b-bfea203f4bde.md` |
 | `080768b8-bff3-47c0-8292-b273faabca58` | 2026-08-16 | process-creator CREATE materializa contrato completo (EV-AUD-003); hash sobre fases escritas. | CANONICO | `SddIA/evolution/080768b8-bff3-47c0-8292-b273faabca58.md` |

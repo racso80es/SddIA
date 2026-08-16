@@ -58,6 +58,12 @@ pub fn bootstrap_workspace(
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
         .map(str::to_string)
+        .or_else(|| {
+            std::env::var("SDDIA_DETACHED_EXECUTION_ID")
+                .ok()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
         .unwrap_or_else(|| Uuid::new_v4().to_string());
 
     let ws_str = if let Some(existing) = process_inputs.get("workspace_path").and_then(|v| v.as_str()) {
