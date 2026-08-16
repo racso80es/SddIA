@@ -70,3 +70,106 @@ persist_ref: docs/features/tekton-fire-and-forget
 - runtime: ide-relay
 - status: `executed`
 - message: **APTO** · AC1–AC6 · unit cli_detach 5/5 · PBI archivado. `EM_AGENT_UPDATE` NO_APTO no bloqueante. Downstream delivery-close-cycle.
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-16T17:00:41Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-16T17:00:47Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-08-16T17:05:00Z — Triaje documental
+- process: `pull-request-review`
+- phase: `Triaje documental`
+- agents: `argos`
+- correlation_id: `5Zoqf2J6mfbgK24EvFifnRDS5nFZ9gv2t2HwmKguqMFE`
+- persist_ref: `docs/features/tekton-fire-and-forget`
+- runtime: kalma2-agent-runtime-cursor
+- status: `executed`
+- message: **PASS_F2_DOC** · APTO · R1/R2 copia native_state · KM R3 APTO · Shell git-manager Rejected (no inventado) · PR #180.
+
+## 2026-08-16T17:01:58Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `5ead1e57-67ec-496c-adb2-2a4bdcf1e3be`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream: Triaje técnico → Cerbero → Veredicto.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `PASS_F2_DOC` · `global: APTO` · `delivery_state: pending_downstream_phases`
+
+- Toqué solo `docs/features/tekton-fire-and-forget/validacion.md` (Triaje documental PPR).
+- Cascada doc (`clarify`/`objectives`/`spec`/`plan`/`implementation`/`execution` + evolution) **APTO**.
+- R1/R2: copia Evidence Bridge (`TECH_FORMAL` / `GIT_EVIDENCE` **APTO**); Shell `git-manager` Rejected → `GIT_EVIDENCE_SESSION_SHELL` NO_APTO (sin stdout inventado).
+- R3 KM: **APTO** — 0 writes ilegítimos bajo `docs/todos/**` esta fase.
+- Rama/worktree alineados; PBI en `done/`; merge este CID no observado.
+- Downstream: Triaje técnico → Cerbero → Veredicto.
+```
+
+## 2026-08-16T17:02:04Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `5Zoqf2J6mfbgK24EvFifnRDS5nFZ9gv2t2HwmKguqMFE`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: No bloqueantes: Shell `git-manager` Rejected (`GIT_EVIDENCE_SESSION_SHELL`); sin merge ECST; PBI `status: abierto` stale.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `PASS_F2_DOC` · `global: APTO` · `delivery_state: pending_downstream_phases`
+
+- `docs/features/tekton-fire-and-forget/validacion.md` — reescrito (PPR Triaje documental; R1/R2/R3).
+- `docs/features/tekton-fire-and-forget/_agent_handoff.md` — entrada de fase.
+
+Checks: F2 documental APTO; `TECH_FORMAL_*` / `GIT_EVIDENCE_VIA_GIT_MANAGER` APTO (copia `native_state`); `RBAC_AUTHORING_KM_POLICY` APTO; `BRANCH_WORKTREE_SYNC` APTO.  
+No bloqueantes: Shell `git-manager` Rejected (`GIT_EVIDENCE_SESSION_SHELL`); sin merge ECST; PBI `status: abierto` stale.
+```
+
+## 2026-08-16T17:06:00Z — Certificación RBAC
+- process: `pull-request-review`
+- phase: `Certificación RBAC`
+- agents: `cerbero`
+- correlation_id: `5Zoqf2J6mfbgK24EvFifnRDS5nFZ9gv2t2HwmKguqMFE`
+- persist_ref: `docs/features/tekton-fire-and-forget`
+- runtime: kalma2-agent-runtime-cursor
+- status: `executed`
+- message: **PASS_F4_RBAC** · exitCode 0 · VBR×genoma APTO · GBW∉revoked · PPR∉revoked · Shell git-manager Rejected (no inventado).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `PASS_F4_RBAC` · `F4_RBAC_GATE: APTO` · `delivery_state: pending_downstream_phases`
+
+- `docs/features/tekton-fire-and-forget/validacion.md` — reescrito (PPR Certificación RBAC; F4 checks).
+- `docs/features/tekton-fire-and-forget/_agent_handoff.md` — entrada de fase.
+
+Checks: F4 APTO; `RBAC_SIGNER_VS_GENOME` APTO (VBR×engine/daemons/agents+norms+docs); `RBAC_EMITTER_NOT_REVOKED` APTO; `RBAC_PROCESS_REGISTRY` APTO; R1/R2 copia `native_state`.  
+No bloqueantes: Shell `git-manager` Rejected; `F3_TECH_GATE` NO_APTO (sin Triaje técnico este CID); sin merge ECST.
+```

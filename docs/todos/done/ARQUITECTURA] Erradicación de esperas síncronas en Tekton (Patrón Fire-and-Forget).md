@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] Erradicación de esperas síncronas en Tekton (Patrón Fi
 format: markdown
 version: "1.0.0"
 created: "2026-08-15"
-status: abierto
+status: cerrado
 priority: alta
 process: feature
 related:
