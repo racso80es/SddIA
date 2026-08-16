@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities 
 format: markdown
 version: "1.0.0"
 created: "2026-08-15"
-updated: "2026-08-15T14:21:30Z"
+updated: "2026-08-16T16:23:00Z"
 status: abierto
 priority: media
 process: bug-fix
@@ -22,12 +22,18 @@ related:
   - docs/todos/done/[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities (PPR #125).md
   - docs/fixes/kaizen-regex-lookahead-panic/validacion.md
   - docs/features/kalma2-canal-telemetria-progreso/validacion.md
+  - docs/fixes/centinelas-fracture-ola-20260812/validacion.md
+  - docs/fixes/process-creator-full-contract-forge/validacion.md
 sightings:
   - "PPR #174 · CID 6vw31k4eo… (origen seed)"
   - "PPR #175 · CID 7mDbYBoZi… · Cosecha Kaizen 2026-08-15 — dedup; misma revocación since 2026-08-15T08:40:55Z"
   - "PPR #175 · CID 83b18b3a… · Cosecha Kaizen 2026-08-15T10:57:00Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
   - "PPR #176 · CID 34bfbc96… · Cosecha Kaizen 2026-08-15T14:20:00Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
   - "PPR #176 · CID AuweRKSX… · Cosecha Kaizen 2026-08-15T14:21:30Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
+  - "PPR #177 · CID 4b770fd6… · Cosecha Kaizen 2026-08-16T16:18:30Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
+  - "PPR #177 · CID 6pKCg2PFF… · Cosecha Kaizen 2026-08-16T16:20:00Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
+  - "PPR #178 · CID Eq9cotK1… · Cosecha Kaizen 2026-08-16T16:22:00Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
+  - "PPR #178 · CID ca6fc6cb… · Cosecha Kaizen 2026-08-16T16:23:00Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
 ---
 
 # [ARQUITECTURA] pull-request-review — rehabilitación revoked_entities (PPR #174)
@@ -49,6 +55,10 @@ Re-revocación empírica tras rehabilitación histórica PPR #124/#125.
 | Sighting adicional | `83b18b3a-b3ae-47ad-8948-77d5dbb52067` · PR #175 (Cosecha Kaizen 2026-08-15T10:57:00Z — dedup; sin seed nueva) |
 | Sighting adicional | `34bfbc96-c25d-47dc-94ec-17866a717444` · PR #176 (Cosecha Kaizen 2026-08-15T14:20:00Z — dedup; sin seed nueva) |
 | Sighting adicional | `AuweRKSXLLcfVV3xs5f4Fn9YdhYHuPos8nhNaREGG2Tb` · PR #176 (Cosecha Kaizen 2026-08-15T14:21:30Z — dedup; sin seed nueva) |
+| Sighting adicional | `4b770fd6-99a0-435e-af43-a153aa23e310` · PR #177 (Cosecha Kaizen 2026-08-16T16:18:30Z — dedup; sin seed nueva) |
+| Sighting adicional | `6pKCg2PFFXiMmcdLVUYT8NTw8K5b5TRSUNmHQWN7vFNM` · PR #177 (Cosecha Kaizen 2026-08-16T16:20:00Z — dedup; sin seed nueva) |
+| Sighting adicional | `Eq9cotK1s2wxj7xxqgzid13v6pgpoeiq8q89BXhpdA8d` · PR #178 (Cosecha Kaizen 2026-08-16T16:22:00Z — dedup; sin seed nueva) |
+| Sighting adicional | `ca6fc6cb-4ecd-427f-9638-ae1960963cc3` · PR #178 (Cosecha Kaizen 2026-08-16T16:23:00Z — dedup; sin seed nueva) |
 | Check aduana | `RBAC_PROCESS_REGISTRY: NO_APTO` (Cerbero F4; no bloqueante) |
 
 ## Mandato
