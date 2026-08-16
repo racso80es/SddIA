@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 67
+universe_total: 68
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `e4b8c2a1-7d3f-4a96-9c5e-2f8b1d0a6e47` | 2026-08-16 | Ola documental centinelas-fracture-ola-20260812 — Laudo B, 4 PBI heartbeat archivados; EV-AUD-003 segregado. | CANONICO | `SddIA/evolution/e4b8c2a1-7d3f-4a96-9c5e-2f8b1d0a6e47.md` |
 | `9451ac66-cfa9-4415-bc00-032c75b12a09` | 2026-08-15 | Canal efímero PTC (`eda_fractal.progress`) para observabilidad de progreso Kalma2; dual-canal con GET /api/status. | CANONICO | `SddIA/evolution/9451ac66-cfa9-4415-bc00-032c75b12a09.md` |
 | `5b135a1d-480d-4e8c-abca-3cca8fda97e9` | 2026-08-15 | Fix look-ahead Kaizen en enrich-fracture-pbi-kaizen y recover_lock en route-domain-event; ignición start-sddia recompila execute-process. | CANONICO | `SddIA/evolution/5b135a1d-480d-4e8c-abca-3cca8fda97e9.md` |
 | `d630a6cf-1767-4751-a2b9-b1f4210a01fb` | 2026-08-14 | Kalma2: barrera de fase, timeout terminal y persist_ref en despacho refactorization (KALMA2-AUD-4b9de6). | CANONICO | `SddIA/evolution/d630a6cf-1767-4751-a2b9-b1f4210a01fb.md` |
