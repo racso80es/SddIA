@@ -4,8 +4,10 @@ created: "2026-08-16"
 process: bug-fix
 items:
   - create-persists-process-phases
-  - persist-workspace-inputs-outputs
-  - ev-aud-003-unit-test
+  - hash-written-phases-integrity
+  - entity-manager-payload-propagation
+  - evolution-audit-fixture
+  - fail-closed-index
 ---
 
 # Implementation — EV-AUD-003
@@ -14,11 +16,11 @@ items:
 
 | Artefacto | Cambio |
 |-----------|--------|
-| `SddIA/engine/execute-process/src/forges/factory.rs` | CREATE serializa `process_phases` reales + `workspace_template` / inputs / outputs / aliases / `phase_invocations`; aborta si YAML leído ≠ fases pedidas |
-| Genoma `process-creator.md` | Sin mutación (contrato ya exigía el payload) |
-| Jurisdicción D7 | Intacta |
+| `SddIA/engine/execute-process/src/forges/factory.rs` | CREATE serializa payload contractual; `refresh_process_hash` sella `sha256_phases_integrity` sobre fases **escritas**; índice con aliases/contexto; delete+error si índice falla |
+| `SddIA/engine/execute-process/src/engine/entity_manager.rs` | Seed `process` propaga `workspace_template`, inputs/outputs, `phase_invocations` |
+| `SddIA/process/process-creator.md` | Sin mutación (contrato ya exigía el payload) |
 
-## Pendiente (mismos ACs del PBI)
+## Fuera de esta entrega
 
-- Fixture `evolution-audit` sin laudo de excepción.
-- Alineación explícita `entity-manager` si el envelope no propaga `process_phases`.
+- Ola heartbeat PR #177.
+- D7 jurisdicción (cerrado).

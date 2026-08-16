@@ -174,7 +174,17 @@ fn creator_inputs_from_entity(
             {
                 fields.insert("process_version".into(), json!(ver));
             }
-            for optional_key in ["process_jurisdiction", "process_domain_root"] {
+            for optional_key in [
+                "process_jurisdiction",
+                "process_domain_root",
+                "workspace_template",
+                "process_inputs",
+                "inputs",
+                "process_outputs",
+                "outputs",
+                "process_phase_invocations",
+                "phase_invocations",
+            ] {
                 if let Some(value) = seed.get(optional_key) {
                     fields.insert(optional_key.into(), value.clone());
                 }
@@ -538,5 +548,31 @@ mod tests {
 
         assert_eq!(inputs["process_jurisdiction"], json!("domain"));
         assert_eq!(inputs["process_domain_root"], json!("domain/process"));
+    }
+
+    #[test]
+    fn process_creator_inputs_propagate_contract_payload() {
+        let inputs = creator_inputs_from_entity(
+            "process",
+            "evolution-audit",
+            "create",
+            &json!({
+                "process_phases": [{"name": "Inventario", "intent": "listar"}],
+                "workspace_template": ".SddIA/workspaces/{process_name}/{execution_id}/",
+                "process_inputs": [{"audit_date": "ISO"}],
+                "process_outputs": [{"summary": "conteos"}],
+                "phase_invocations": []
+            }),
+        )
+        .expect("process inputs");
+
+        assert_eq!(
+            inputs["process_phases"][0]["name"],
+            json!("Inventario")
+        );
+        assert!(inputs["workspace_template"].as_str().unwrap().contains("workspaces"));
+        assert_eq!(inputs["process_inputs"][0]["audit_date"], json!("ISO"));
+        assert_eq!(inputs["process_outputs"][0]["summary"], json!("conteos"));
+        assert_eq!(inputs["phase_invocations"], json!([]));
     }
 }

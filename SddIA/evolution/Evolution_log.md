@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 67
+universe_total: 69
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `080768b8-bff3-47c0-8292-b273faabca58` | 2026-08-16 | process-creator CREATE materializa contrato completo (EV-AUD-003); hash sobre fases escritas. | CANONICO | `SddIA/evolution/080768b8-bff3-47c0-8292-b273faabca58.md` |
 | `9451ac66-cfa9-4415-bc00-032c75b12a09` | 2026-08-15 | Canal efímero PTC (`eda_fractal.progress`) para observabilidad de progreso Kalma2; dual-canal con GET /api/status. | CANONICO | `SddIA/evolution/9451ac66-cfa9-4415-bc00-032c75b12a09.md` |
 | `5b135a1d-480d-4e8c-abca-3cca8fda97e9` | 2026-08-15 | Fix look-ahead Kaizen en enrich-fracture-pbi-kaizen y recover_lock en route-domain-event; ignición start-sddia recompila execute-process. | CANONICO | `SddIA/evolution/5b135a1d-480d-4e8c-abca-3cca8fda97e9.md` |
 | `d630a6cf-1767-4751-a2b9-b1f4210a01fb` | 2026-08-14 | Kalma2: barrera de fase, timeout terminal y persist_ref en despacho refactorization (KALMA2-AUD-4b9de6). | CANONICO | `SddIA/evolution/d630a6cf-1767-4751-a2b9-b1f4210a01fb.md` |

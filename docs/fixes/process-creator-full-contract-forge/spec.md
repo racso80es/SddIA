@@ -5,7 +5,7 @@ process: bug-fix
 base: main
 branch: fix/process-creator-full-contract-forge
 scope: EV-AUD-003
-pbi_ref: docs/todos/pending/[FIX] process-creator — materialización contractual completa (EV-AUD-003).md
+pbi_ref: docs/todos/done/[FIX] process-creator — materialización contractual completa (EV-AUD-003).md
 ---
 
 # Spec — process-creator materialización contractual (EV-AUD-003)
@@ -26,7 +26,7 @@ Precisión: no es «fases dentro de `workspace_template`». Son campos independi
 1. CREATE serializa las `process_phases` efectivas (serde_yaml), no un literal `Fase inicial`.
 2. Persistir `workspace_template`, `inputs`/`process_inputs`, `outputs`/`process_outputs`, `aliases`, `phase_invocations` si vienen.
 3. Abortar y borrar el artefacto si las `phases` leídas ≠ las solicitadas.
-4. Hash sigue `sha256_canon` sobre `process_phases` (paridad crypto-broker / lab SHA256).
+4. Tras el write, `refresh_process_hash` sella `hash_signature` con `sha256_phases_integrity` sobre las fases **escritas** (paridad `verify-process-integrity`).
 
 ## Criterios
 
@@ -37,3 +37,7 @@ Precisión: no es «fases dentro de `workspace_template`». Son campos independi
 | CA3 | `hash_signature` se calcula sobre las fases usadas en el write |
 | CA4 | Jurisdicción Core/domain y L-UNIQ-MULTI intactos |
 | CA5 | Test `ev_aud_003_create_persists_requested_phases_not_stub` |
+| CA6 | Artefacto CREATE supera `verify-process-integrity` sin parche |
+| CA7 | Índice coincide UUID/versión/contexto/descripción; aliases si vienen |
+| CA8 | Fallo post-write borra artefacto; sin handoff |
+| CA9 | Fixture `evolution-audit` recreable; `entity-manager` propaga payload |
