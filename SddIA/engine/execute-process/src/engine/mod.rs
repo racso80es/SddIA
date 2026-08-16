@@ -48,6 +48,7 @@ pub mod workspace;
 pub mod workspace_init;
 pub mod domain_profile;
 pub mod domain_authority;
+pub mod cli_detach;
 pub mod verify_process_integrity;
 
 use crate::core::resolver::load_process_def;
@@ -125,6 +126,10 @@ pub fn run_process(
             })),
             exit_code: 1,
         });
+    }
+
+    if let Some(detached) = cli_detach::maybe_detach(repo, &canonical, process_inputs)? {
+        return Ok(detached);
     }
 
     if canonical == "kalma2-interact" {

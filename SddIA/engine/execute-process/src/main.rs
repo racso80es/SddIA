@@ -94,6 +94,12 @@ fn parse_args() -> Result<(Option<String>, Option<String>, Option<String>, bool,
             "--forge" => {
                 forge_mode = true;
             }
+            "--detach" => {
+                env::set_var("SDDIA_CLI_DETACH", "1");
+            }
+            "--foreground" => {
+                env::set_var("SDDIA_CLI_FOREGROUND", "1");
+            }
             "--inputs" => {
                 i += 1;
                 inputs_raw = Some(args.get(i).ok_or("--inputs requiere valor")?.clone());

@@ -1,0 +1,12 @@
+---
+description: Veto Fire-and-Forget post-acuse CLI (DA-5)
+alwaysApply: true
+---
+
+# DA-5 — Fire-and-Forget
+
+Tras `./sddia-run.sh` / `execute-process` y JSON de acuse: prohibido `sleep`, `wait`, bucles de polling sobre `./.events/` o status, y `AwaitShell` extra para vigilar centinelas.
+
+Éxito = inyección acusada (`data.detached: true` en procesos largos). Siguiente estímulo = Racso o Kalma2.
+
+No castrar ticks de daemons ni el wait hasta el acuse del propio CLI.

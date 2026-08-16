@@ -2,7 +2,7 @@
 
 **Tipo:** Norma motor / Comportamiento IA  
 **UUID:** 95b5ac3a-061f-458d-bfb6-69f91a1c1731  
-**Versión:** 1.4.0  
+**Versión:** 1.5.0  
 **Seguridad:** Karma2Token  
 **Dependencias normativas:** `obediencia-procesos.md`, `paths-via-cumulo.md`, `touchpoints-ia.md`
 
@@ -54,6 +54,20 @@ Prohibido bypass del bus EDA (`/.events/`). Prohibido `git commit` de genoma sin
 Cuando el runtime inyecte el prefijo **Raw Kernel** (§ Prefijo creator), la IA obrera **debe** comprobar topología documental activa (`docs/features/{name}/objectives.md` con rama coherente) o invocar `./sddia-run.sh --process feature` **antes** de mutar genoma (`directories.tools`, `skills`, `actions`, `process`, `agents`, `events`, `norms` en Cúmulo) o escribir bajo un `persist_ref` ajeno al ciclo autorizado.
 
 Prohibido aplicar el bisturí sobre el código base bajo Raw Kernel sin cobertura documental de feature o fix equivalente.
+
+### DA-5 — Fire-and-Forget (Mandato de Latencia)
+
+Tras invocar la Aduana (`./sddia-run.sh` / `execute-process`) y recibir el JSON de acuse (`success` + `exitCode`), la IA obrera **prohíbe**:
+
+- `sleep`, `timeout`, `wait` de shell cuyo objeto sea dar tiempo al Core.
+- Bucles `while` / reintentos de lectura sobre `./.events/`, status HTTP o artefactos de `persist_ref`.
+- `AwaitShell` / `notify_on_output` / esperas extra **después** del acuse para vigilar `event-watcher` o materialización.
+
+Éxito de Tekton = **inyección acusada**, no = trabajo remoto terminado. El siguiente estímulo lo dictan el Vértice Biológico o Kalma2.
+
+**Fuera del veto:** ticks internos de daemons; backoff de cápsulas; bloqueo del invocador **hasta** el stdout JSON del CLI (el acuse); relevo IDE de fases `simulated` del ciclo `feature`/`bug-fix`/`refactorization` activo.
+
+Procesos largos (`pull-request-review` y los listados en `SDDIA_CLI_DETACH_PROCESSES`) el CLI desprende el hijo y acusa con `data.detached: true` al depositar `Process_Execution_Completed` (`cycle_phase: awaiting_agents`) en `eda_fractal.orchestration` (`./.events/orchestration/`). Prohibido tratar `.SddIA/events/` como cola.
 
 ## Prefijo creator (Fase B)
 

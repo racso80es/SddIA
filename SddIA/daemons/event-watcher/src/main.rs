@@ -167,6 +167,7 @@ fn invoke_route_process(repo: &Path, rel_path: &str, process_name: &str) -> Outp
     Command::new(&runner)
         .args(["--process", process_name, "--inputs", &payload])
         .current_dir(repo)
+        .env("SDDIA_CLI_FOREGROUND", "1")
         .output()
         .unwrap_or_else(|e| {
             eprintln!("[WATCHER] spawn execute-process: {e}");
@@ -180,6 +181,7 @@ fn invoke_route_process_batch(repo: &Path, rel_paths: &[String], process_name: &
     Command::new(&runner)
         .args(["--process", process_name, "--inputs", &payload])
         .current_dir(repo)
+        .env("SDDIA_CLI_FOREGROUND", "1")
         .output()
         .unwrap_or_else(|e| {
             eprintln!("[WATCHER] spawn execute-process batch: {e}");
@@ -331,6 +333,7 @@ fn run_route_cli(repo: &Path, event_file_path: &str) -> i32 {
     let out = Command::new(&runner)
         .args(["--process", "route-domain-event", "--inputs", &payload])
         .current_dir(repo)
+        .env("SDDIA_CLI_FOREGROUND", "1")
         .output();
     match out {
         Ok(o) => {

@@ -57,4 +57,5 @@ Las IAs de asistencia externa operan bajo **SddIA/norms/external-ai-constraints.
 - **Forja:** prohibida mutación manual de genoma (`SddIA/tools/`, `skills/`, `actions/`, `process/`, `agents/`, `events/`, `norms/`, `library/`).
 - **Acción:** toda entidad vía `execute-process.py` → `entity-manager`; entregas vía `delivery-close-cycle`.
 - **Raw Kernel (DA-4):** con prefijo RAW activo, verificar topología `docs/features/` o instanciar `feature` antes de mutar genoma.
+- **Fire-and-Forget (DA-5):** tras acuse JSON del CLI, prohibido `sleep`/`wait`/polling/`AwaitShell` post-acuse. Éxito = inyección acusada. Procesos largos (`pull-request-review`) retornan `detached: true`; no join a watcher.
 La aduana física (pre-commit / hooks PR) refuerza esta norma; no la sustituye.
