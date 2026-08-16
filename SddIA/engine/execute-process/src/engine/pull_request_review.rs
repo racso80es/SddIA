@@ -33,6 +33,21 @@ fn truthy_flag(v: &Value, key: &str) -> bool {
     }
 }
 
+/// Fricción no causal de sub-fase PPR (API externa, timeout, bridge git soft).
+pub(crate) fn is_ppr_fail_soft_friction(err: &str) -> bool {
+    let e = err.to_lowercase();
+    e.contains("timeout")
+        || e.contains("timed out")
+        || e.contains("rate limit")
+        || e.contains("api")
+        || e.contains("soft")
+        || e.contains("bridge")
+        || e.contains("lectura")
+        || e.contains("evidence")
+        || e.contains("network")
+        || e.contains("temporarily")
+}
+
 /// Ejecuta fase nativa de PPR. `None` = fase no cubierta (seguir residual).
 pub fn execute_pull_request_review_phase(
     repo: &Path,
@@ -64,8 +79,19 @@ fn prep_branch(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, 
     )?;
     steps.push(json!({"op": "checkout", "branch": branch, "result": checkout}));
 
-    let status = invoke_git_manager(repo, "status", &json!({}))?;
-    steps.push(json!({"op": "status", "result": status.clone()}));
+    // L-FAILSOFT-OLA1: lectura puntual post-checkout no colapsa la fase lineal.
+    let (status, status_fail_soft) = match invoke_git_manager(repo, "status", &json!({})) {
+        Ok(s) => (s, false),
+        Err(e) => (
+            json!({
+                "ok": false,
+                "error": e,
+                "note": "git status soft; checkout OK",
+            }),
+            true,
+        ),
+    };
+    steps.push(json!({"op": "status", "result": status.clone(), "fail_soft": status_fail_soft}));
 
     if let Some(obj) = state.as_object_mut() {
         obj.insert("pr_branch".into(), json!(branch));
@@ -74,15 +100,20 @@ fn prep_branch(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, 
         obj.insert("git_prep_status".into(), status.clone());
     }
 
-    Ok(json!({
-        "status": "executed",
+    let mut out = json!({
+        "status": if status_fail_soft { "failed" } else { "executed" },
         "handler": "ppr-prep-branch",
         "git_manager_invoked": true,
         "pr_branch": branch,
         "branch_name": branch,
         "git_steps": steps,
         "git_status": status,
-    }))
+    });
+    if status_fail_soft {
+        out["fail_soft"] = json!(true);
+        out["error"] = json!("git status soft friction post-checkout (ola1)");
+    }
+    Ok(out)
 }
 
 fn tech_triage(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, String> {
@@ -218,5 +249,14 @@ mod tests {
         assert_eq!(out["skipped"], true);
         assert_eq!(out["reason"], "verdict_not_aprobado");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn ppr_fail_soft_friction_patterns() {
+        assert!(is_ppr_fail_soft_friction("GitHub API timeout"));
+        assert!(is_ppr_fail_soft_friction("soft bridge evidence"));
+        assert!(!is_ppr_fail_soft_friction(
+            "Triaje técnico formal: verify-process-integrity falló"
+        ));
     }
 }

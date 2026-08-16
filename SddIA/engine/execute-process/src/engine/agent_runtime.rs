@@ -114,6 +114,17 @@ fn inject_runtime_evidence_from_state(payload: &mut Value, state: &Value) {
     }
 }
 
+/// Ola 1: fricción de agente en fases no-aduana (no F2/F4/F5) no colapsa PPR.
+fn finish_agent_entry(mut entry: Value, process_name: &str, phase_name: &str) -> Value {
+    if process_name == "pull-request-review"
+        && matches!(phase_name, "Triaje documental" | "Cosecha Kaizen")
+        && entry.get("status").and_then(|v| v.as_str()) == Some("failed")
+    {
+        entry["fail_soft"] = json!(true);
+    }
+    entry
+}
+
 /// Invoca el CLI de runtime para una fase de agentes.
 /// Respuesta esperada (última línea JSON):
 /// `{ "success": bool, "data": { "status": "executed"|"awaiting_agents"|"failed", "message"?: str } }`
@@ -140,7 +151,7 @@ pub fn invoke_agent_phase(
         _ => {
             entry["status"] = json!("simulated");
             entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");
-            return entry;
+            return finish_agent_entry(entry, process_name, phase_name);
         }
     };
 
@@ -149,7 +160,7 @@ pub fn invoke_agent_phase(
         Err(e) => {
             entry["status"] = json!("failed");
             entry["error"] = json!(e);
-            return entry;
+            return finish_agent_entry(entry, process_name, phase_name);
         }
     };
     let (bin, args) = match parts.split_first() {
@@ -157,7 +168,7 @@ pub fn invoke_agent_phase(
         None => {
             entry["status"] = json!("failed");
             entry["error"] = json!("comando runtime vacío");
-            return entry;
+            return finish_agent_entry(entry, process_name, phase_name);
         }
     };
 
@@ -213,7 +224,7 @@ pub fn invoke_agent_phase(
         Err(e) => {
             entry["status"] = json!("failed");
             entry["error"] = json!(format!("spawn agent-runtime: {e}"));
-            return entry;
+            return finish_agent_entry(entry, process_name, phase_name);
         }
     };
 
@@ -222,7 +233,7 @@ pub fn invoke_agent_phase(
         if let Err(e) = stdin.write_all(body.as_bytes()) {
             entry["status"] = json!("failed");
             entry["error"] = json!(format!("stdin agent-runtime: {e}"));
-            return entry;
+            return finish_agent_entry(entry, process_name, phase_name);
         }
     }
 
@@ -231,7 +242,7 @@ pub fn invoke_agent_phase(
         Err(e) => {
             entry["status"] = json!("failed");
             entry["error"] = json!(format!("wait agent-runtime: {e}"));
-            return entry;
+            return finish_agent_entry(entry, process_name, phase_name);
         }
     };
 
@@ -254,7 +265,7 @@ pub fn invoke_agent_phase(
         } else {
             stderr.trim().to_string()
         });
-        return entry;
+        return finish_agent_entry(entry, process_name, phase_name);
     }
 
     let body: Value = match serde_json::from_str(line) {
@@ -263,7 +274,7 @@ pub fn invoke_agent_phase(
             entry["status"] = json!("failed");
             entry["error"] = json!(format!("JSON agent-runtime: {e}"));
             entry["raw_stdout"] = json!(line);
-            return entry;
+            return finish_agent_entry(entry, process_name, phase_name);
         }
     };
 
@@ -304,7 +315,7 @@ pub fn invoke_agent_phase(
         ));
     }
     entry["runtime_response"] = body;
-    entry
+    finish_agent_entry(entry, process_name, phase_name)
 }
 
 #[cfg(test)]
@@ -486,5 +497,47 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"evidence
         assert_eq!(from_inputs, json!("docs/features/top"));
         let missing = resolve_persist_ref_value(&json!({}), &json!({}));
         assert_eq!(missing, Value::Null);
+    }
+
+    #[test]
+    fn ppr_doc_triage_agent_failed_is_fail_soft() {
+        let dir = std::env::temp_dir().join(format!("sddia-agent-rt-fs-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = dir.join("mock-agent.sh");
+        fs::write(
+            &script,
+            r#"#!/bin/sh
+python3 -c 'import json; print(json.dumps({"success":False,"data":{"status":"failed","message":"timeout"}}))'
+"#,
+        )
+        .unwrap();
+        let mut perms = fs::metadata(&script).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&script, perms).unwrap();
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let soft = invoke_agent_phase(
+            &dir,
+            "pull-request-review",
+            "Triaje documental",
+            &[json!("agent:argos")],
+            &json!({"pr_branch": "feat/x"}),
+            &json!({}),
+            None,
+        );
+        let hard = invoke_agent_phase(
+            &dir,
+            "pull-request-review",
+            "Veredicto y bloqueo",
+            &[json!("agent:argos")],
+            &json!({"pr_branch": "feat/x"}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(soft["status"], "failed");
+        assert_eq!(soft["fail_soft"], true);
+        assert_eq!(hard["status"], "failed");
+        assert!(hard.get("fail_soft").is_none());
     }
 }

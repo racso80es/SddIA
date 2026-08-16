@@ -74,6 +74,7 @@ pub fn load_radamanto_config(repo: &Path) -> Result<HashMap<String, Value>, Stri
     let thresh_path = repo.join(thresh_rel);
     let mut thresholds = json!({
         "success_rate_min": 0.85,
+        "success_rate_min_by_entity_type": {},
         "batch_min_events": 10,
         "latency_ms_p95_threshold": 30000,
         "redemption_success_count": 3,
