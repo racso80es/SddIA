@@ -1,11 +1,11 @@
 ---
 feature_name: tekton-fire-and-forget
 created: "2026-08-16"
-updated: "2026-08-16T17:03:00Z"
+updated: "2026-08-16T17:04:00Z"
 process: pull-request-review
-phase: Certificación RBAC
-agent: cerbero
-agents: cerbero
+phase: Veredicto y bloqueo
+agent: argos
+agents: argos
 branch: feat/tekton-fire-and-forget
 branch_name_injected: feat/tekton-fire-and-forget
 persist_ref: docs/features/tekton-fire-and-forget
@@ -21,25 +21,43 @@ execution_id: 57dc7e51-9a48-4b98-a717-191da9070903
 laudo: L-CLI-DETACH-ALLOWLIST
 global: APTO
 pbi_archived: true
-approval_status: pendiente_veredicto
-verdict: pendiente
-delivery_state: pending_downstream_phases
-resolution: PASS_F4_RBAC
+approval_status: aprobado
+verdict: aprobado
+delivery_state: success
+accept_pr_handoff: true
+resolution: PASS_F5_VERDICT
 authorization_status:
   exitCode: 0
   signer_identity_rbac: Vertice_Biologico_Relay
   emitter_agent: delivery-close-cycle
-  note: "PASS_F4_RBAC · VBR×engine/daemons/norms/agents+docs+evolution APTO · DCC∈revoked E1 NO_APTO · PPR∉revoked · sibling GBW 5Zoqf2J6 · Shell git-manager Rejected — sin stdout inventado"
+  note: "PASS_F5_VERDICT · F2/F4 APTO · F3 ausente no bloqueante · E1 DCC∈revoked NO_APTO no bloqueante · R1/R2 copia Evidence Bridge native_state · Shell git-manager Rejected — sin stdout inventado · accept_pr_handoff true"
 git_manager_invoked: false
-git_manager_error: "cápsula no invocable en esta sesión Cerbero (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
+git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
 handoff_machine_file: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine) source=native_state notes=idempotent-hit-handoff @ 17:00:47Z; TECH_FORMAL_* / GIT_EVIDENCE_* APTO; Shell git-manager Rejected esta sesión Cerbero — sin stdout inventado"
+evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine) source=native_state notes=idempotent-hit @ 17:03:36Z + session; TECH_FORMAL_* / GIT_EVIDENCE_* APTO; Shell git-manager Rejected esta sesión Argos F5 — sin stdout inventado"
 shell_git_manager_session: "Rejected (Auto-review); R2 no inventado — copia machine native_state"
-scope: "PPR Certificación RBAC — tekton-fire-and-forget (PR #180 · ECST 5ead1e57…)"
+scope: "PPR Veredicto y bloqueo — tekton-fire-and-forget (PR #180 · ECST 5ead1e57…)"
 checks:
+  F2_DOC_GATE: APTO
+  F3_TECH_GATE: NO_APTO
   F4_RBAC_GATE: APTO
+  VERDICT_SYNTHESIS_GATE: APTO
+  F5_VERDICT_GATE: APTO
+  F5_VERDICT_PRESENT: APTO
+  DOC_OBJECTIVES: APTO
+  DOC_CLARIFY: APTO
+  DOC_SPEC: APTO
+  DOC_PLAN: APTO
+  DOC_IMPLEMENTATION: APTO
+  DOC_EXECUTION: APTO
+  DOC_FRONTMATTER_YAML: APTO
+  DOC_EVOLUTION: APTO
+  TECH_FORMAL_EXECUTE_PROCESS: APTO
+  TECH_FEATURE_EXECUTION_PROXY: APTO
+  GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+  GIT_EVIDENCE_SESSION_SHELL: NO_APTO
   RBAC_SPATIAL_INTEGRITY: APTO
   RBAC_SIGNER_PRESENT: APTO
   RBAC_SIGNER_NOT_REVOKED: APTO
@@ -49,21 +67,18 @@ checks:
   RBAC_PROCESS_REGISTRY: APTO
   RBAC_AUTHORING_KM_POLICY: APTO
   ECST_SIGNER_PRESENT: APTO
-  F2_DOC_GATE: APTO
-  F3_TECH_GATE: NO_APTO
-  TECH_FORMAL_EXECUTE_PROCESS: APTO
-  GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
-  GIT_EVIDENCE_SESSION_SHELL: NO_APTO
   BRANCH_RUNTIME_INJECT: APTO
   BRANCH_ECST_ALIGN: APTO
   BRANCH_WORKTREE_SYNC: APTO
   MERGE_ALREADY_OBSERVED: NO_APTO
+  ACCEPT_PR_HANDOFF: APTO
   PERSIST_REF_RESOLVED: APTO
   PBI_DONE_PRESENT: APTO
   PBI_PENDING_ABSENT: APTO
   AC_DONE_PATH: APTO
   HANDOFF_MACHINE_FILE: APTO
   HANDOFF_EVIDENCE_BLOCK: APTO
+  DIA_ALERT_REQUIRED: APTO
 git_changes:
   - SddIA/engine/execute-process/src/engine/cli_detach.rs
   - SddIA/engine/execute-process/src/engine/mod.rs
@@ -83,30 +98,35 @@ git_changes:
 blocking_findings: []
 non_blocking_findings:
   - GIT_EVIDENCE_SESSION_SHELL
-  - RBAC_EMITTER_NOT_REVOKED
   - F3_TECH_GATE
+  - RBAC_EMITTER_NOT_REVOKED
   - MERGE_ALREADY_OBSERVED
 situational_notes:
-  - "delivery-close-cycle ∈ revoked since 2026-08-16T16:40:55Z (success_rate_below_threshold) — E1 NO_APTO no bloqueante; rehab done PPR #177/#174+#177; Cerbero 0 writes KM"
-  - "sibling Presented 5Zoqf2J6… emitter=github-bridge-watcher ∉ revoked · mismo PR #180 · sin PullRequest_Merged ninguno"
-  - "pull-request-review ∉ revoked · PROCESS_REGISTRY APTO"
+  - "Sin violación bloqueante F2–F4 → delivery_state success · accept_pr_handoff true"
+  - "F3 Triaje técnico PPR no materializado este CID — NO_APTO no bloqueante (heredado Cerbero)"
+  - "delivery-close-cycle ∈ revoked — E1 NO_APTO no bloqueante; F4_RBAC_GATE APTO"
+  - "sibling Presented 5Zoqf2J6… mismo PR #180 · sin PullRequest_Merged ninguno"
+  - "Argos F5 0 writes docs/todos/** · R3 KM APTO"
 ---
 
-# Validación — Certificación RBAC (Cerbero · pull-request-review)
+# Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
 
-**APTO** — `resolution: PASS_F4_RBAC` · `exitCode: 0` · `F4_RBAC_GATE: APTO` · `delivery_state: pending_downstream_phases`.
+**APTO** — `verdict: aprobado` · `delivery_state: success` · `resolution: PASS_F5_VERDICT` · `accept_pr_handoff: true`.
+
+Sin violación bloqueante F2–F4. Peaje F2 `PASS_F2_DOC` y F4 `PASS_F4_RBAC` (`exitCode: 0`) heredados. Merge de este ECST **no** observado → handoff `accept-pr` **procede** (fase posterior; sin merge directo en aduana).
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
-| F2 | Argos (doc) | **APTO** | heredado · `PASS_F2_DOC` |
-| F3 | execute-process | **pendiente** | fuera de jurisdicción Certificación RBAC |
-| F4 | Cerbero | **APTO** | firmante VBR × área genoma · E1 DCC∈revoked no bloqueante |
+| F2 | Argos (doc) | **APTO** | heredado · `PASS_F2_DOC` · cascada revalidada |
+| F3 | execute-process | **NO_APTO** | Triaje técnico PPR ausente este CID (no bloqueante) |
+| F4 | Cerbero | **APTO** | `PASS_F4_RBAC` · `exitCode: 0` · E1 DCC∈revoked no bloqueante |
+| F5 | Argos (veredicto) | **APTO** | síntesis sin fail F2–F4 |
 
 ## Evidence Bridge (R1 / R2 / R3)
 
-Copia literal del bloque `### Runtime evidence (machine)` en `_agent_handoff.md` (último, `native_state`) + session; **no** stdout Shell inventado:
+Copia literal del bloque `### Runtime evidence (machine)` en `_agent_handoff.md` (`native_state` @ 17:03:36Z) + session; **no** stdout Shell inventado:
 
 | Campo | Valor |
 |-------|-------|
@@ -115,10 +135,10 @@ Copia literal del bloque `### Runtime evidence (machine)` en `_agent_handoff.md`
 | `formal_execute_process` | `true` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
-| `notes` | `idempotent-hit-handoff` |
-| `materialized_at` | `2026-08-16T17:00:47Z` |
-| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` físico esta sesión Cerbero |
-| `RBAC_AUTHORING_KM_POLICY` | **APTO** — Cerbero 0 writes bajo `docs/todos/**` |
+| `notes` | `idempotent-hit` |
+| `materialized_at` | `2026-08-16T17:03:36Z` |
+| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` físico esta sesión Argos F5 |
+| `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` |
 
 ## Ingesta
 
@@ -127,52 +147,55 @@ Copia literal del bloque `### Runtime evidence (machine)` en `_agent_handoff.md`
 | `persist_ref` | `docs/features/tekton-fire-and-forget` |
 | `pbi_ref` (inyectado) | vacío → **resuelto** `docs/todos/done/ARQUITECTURA] Erradicación de esperas síncronas en Tekton (Patrón Fire-and-Forget).md` |
 | `correlation_id` / Presented | `5ead1e57-67ec-496c-adb2-2a4bdcf1e3be` |
-| Sibling Presented | `5Zoqf2J6mfbgK24EvFifnRDS5nFZ9gv2t2HwmKguqMFE` (emisor `github-bridge-watcher`) |
+| Sibling Presented | `5Zoqf2J6mfbgK24EvFifnRDS5nFZ9gv2t2HwmKguqMFE` (mismo PR #180) |
 | `document_id` | `PBI-TEKTON-FIRE-AND-FORGET` |
 | ECST `emitter_agent` | `delivery-close-cycle` |
 | ECST `signer_identity_rbac` | `Vertice_Biologico_Relay` |
 | `branch` (ECST) | `feat/tekton-fire-and-forget` |
 | `branch_name` (runtime) | `feat/tekton-fire-and-forget` |
 | `.git/HEAD` (FS) | `refs/heads/feat/tekton-fire-and-forget` |
-| ref local rama (FS) | `.git/refs/heads/feat/tekton-fire-and-forget` → `25589026…` |
+| ref local rama (FS) | `.git/refs/heads/feat/tekton-fire-and-forget` → `cf423ac0…` |
 | `pr_url` | `https://github.com/racso80es/SddIA/pull/180` |
-| Evento Presented | `.events/processing/5ead1e57-….json` · subscriber `argos.pull-request-review` · `state: processing` |
-| Evento Merged (este ECST) | **ausente** |
+| Evento Presented | `.events/processing/5ead1e57-….json` · subscriber `argos.pull-request-review` |
+| Evento Merged (este ECST / sibling) | **ausente** |
+| F2 heredado | Triaje documental · `PASS_F2_DOC` |
+| F4 heredado | Certificación RBAC · `PASS_F4_RBAC` · `exitCode: 0` |
 
-## F4 — Certificación RBAC
-
-| Check | Estado | Evidencia |
-|-------|--------|-----------|
-| `RBAC_SPATIAL_INTEGRITY` | **APTO** | `directories.norms` → `SddIA/norms/execution-contexts.md` accesible |
-| `ECST_SIGNER_PRESENT` | **APTO** | payload `signer_identity_rbac: Vertice_Biologico_Relay` |
-| `RBAC_SIGNER_PRESENT` | **APTO** | mismo firmante ECST |
-| `RBAC_SIGNER_NOT_REVOKED` | **APTO** | `Vertice_Biologico_Relay` ∉ `.SddIA/cerbero/revoked_entities.json` |
-| `RBAC_EMITTER_AUTHORIZED` | **APTO** | `delivery-close-cycle` emisor canónico `PullRequest_Presented` |
-| `RBAC_EMITTER_NOT_REVOKED` | **NO_APTO** | `delivery-close-cycle` ∈ revoked since `2026-08-16T16:40:55Z` · `success_rate_below_threshold` (no bloqueante F4) |
-| `RBAC_PROCESS_REGISTRY` | **APTO** | `pull-request-review` ∉ revoked |
-| `RBAC_SIGNER_VS_GENOME` | **APTO** | VBR × `engine/…/cli_detach*` + `daemons/event-watcher` + `norms/external-ai-constraints` + `agents/tekton.md`/`index.md` + `.cursorrules` + docs/evolution |
-| `RBAC_AUTHORING_KM_POLICY` | **APTO** | Cerbero 0 writes `docs/todos/` |
-| `F4_RBAC_GATE` | **APTO** | `exitCode: 0` · `PASS_F4_RBAC` |
-
-## VBR × genoma
-
-Área afectada (path-assert / cascada F2): motor `cli_detach` + watcher foreground, DA-5 norma, contrato tekton, touchpoints Cursor, evolution `4828a809-…`, feature docs, PBI done. Mutación quirúrgica agents/norms (EM update abortado UUID) alineada a laudo `L-CLI-DETACH-ALLOWLIST`. **Sin** mutación forja `tools/` / `skills/` / `actions/` / `process/` / `library/`.
-
-## F2 — Triaje documental (heredado)
+## F2 — Triaje documental (revalidado)
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| `F2_DOC_GATE` | **APTO** | Argos · `resolution: PASS_F2_DOC` · CID sibling/`5ead1e57` |
-| Cascada documental | **APTO** | objectives/clarify/spec/plan/implementation/execution + YAML |
+| `DOC_OBJECTIVES` | **APTO** | `objectives.md` + YAML |
+| `DOC_CLARIFY` | **APTO** | `clarify.md` + YAML |
+| `DOC_SPEC` | **APTO** | `spec.md` + YAML · `L-CLI-DETACH-ALLOWLIST` |
+| `DOC_PLAN` | **APTO** | `plan.md` + YAML · T0–T5 |
+| `DOC_IMPLEMENTATION` | **APTO** | `implementation.md` + YAML · items T1–T5 |
+| `DOC_EXECUTION` | **APTO** | `execution.md` + YAML · unit/smoke |
+| `DOC_FRONTMATTER_YAML` | **APTO** | cascada base con `---` YAML |
 | `DOC_EVOLUTION` | **APTO** | `SddIA/evolution/4828a809-c6ae-46d3-8b36-d0eb4df1060e.md` |
+| `F2_DOC_GATE` | **APTO** | criterios proceso § Triaje documental |
 
-## PBI / Done path
+## F3 — Triaje técnico
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| `PBI_DONE_PRESENT` | **APTO** | `docs/todos/done/ARQUITECTURA] …Fire-and-Forget).md` · `document_id: PBI-TEKTON-FIRE-AND-FORGET` · `status: cerrado` |
-| `PBI_PENDING_ABSENT` | **APTO** | sin coincidencia bajo `docs/todos/pending/` |
-| `AC_DONE_PATH` | **APTO** | done exclusivo + `pbi_archived: true` |
+| `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** | copia Evidence Bridge R1 (`native_state` / verify formal) |
+| `TECH_FEATURE_EXECUTION_PROXY` | **APTO** | `execution.md` · unit `cli_detach` 5/5 · smoke `--detach` |
+| `F3_TECH_GATE` | **NO_APTO** | fase Triaje técnico PPR no materializada este CID (no bloqueante) |
+| `DIA_ALERT_REQUIRED` | **APTO** | sin `Kaizen_Alert_Required` para este CID (N/A) |
+
+## F4 — Certificación RBAC (heredada)
+
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `F4_RBAC_GATE` | **APTO** | Cerbero `PASS_F4_RBAC` · `exitCode: 0` |
+| `RBAC_SIGNER_PRESENT` | **APTO** | `Vertice_Biologico_Relay` |
+| `RBAC_SIGNER_NOT_REVOKED` | **APTO** | VBR ∉ revoked |
+| `RBAC_SIGNER_VS_GENOME` | **APTO** | VBR × engine/daemons/norms/agents+docs |
+| `RBAC_EMITTER_AUTHORIZED` | **APTO** | DCC emisor canónico Presented |
+| `RBAC_EMITTER_NOT_REVOKED` | **NO_APTO** | DCC ∈ revoked (no bloqueante F4/F5) |
+| `RBAC_PROCESS_REGISTRY` | **APTO** | `pull-request-review` ∉ revoked |
+| `RBAC_AUTHORING_KM_POLICY` | **APTO** | Argos F5 0 writes `docs/todos/` |
 
 ## Git / rama
 
@@ -184,25 +207,27 @@ Copia literal del bloque `### Runtime evidence (machine)` en `_agent_handoff.md`
 | `BRANCH_ECST_ALIGN` | **APTO** | ECST `payload.branch` = misma rama |
 | `BRANCH_WORKTREE_SYNC` | **APTO** | `.git/HEAD` → `refs/heads/feat/tekton-fire-and-forget` (FS) |
 | `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `5ead1e57-…` ni sibling `5Zoqf2J6…` |
+| `ACCEPT_PR_HANDOFF` | **APTO** | `accept_pr_handoff: true` (merge ausente) |
 
-`git_changes` por **inventario path-assert** heredado F2 (no `gitStdout` de esta sesión).
+`git_changes` por inventario path-assert heredado F2/F4 (no `gitStdout` de esta sesión).
 
-## Situacional (no bloqueante F4)
+## PBI / Done path
 
-- `RBAC_EMITTER_NOT_REVOKED` NO_APTO — DCC re-revocado post-rehab #177; Cúmulo/Kaizen downstream (dedup done).
-- Sibling GBW `5Zoqf2J6…` ∉ revoked — mismo PR; no sustituye peaje E1 de este CID.
-- `F3_TECH_GATE` NO_APTO (sin materialización Triaje técnico PPR este CID).
-- `MERGE_ALREADY_OBSERVED` NO_APTO → handoff `accept-pr` queda a Veredicto Argos.
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `PBI_DONE_PRESENT` | **APTO** | `docs/todos/done/ARQUITECTURA] …Fire-and-Forget).md` · `status: cerrado` · `document_id: PBI-TEKTON-FIRE-AND-FORGET` |
+| `PBI_PENDING_ABSENT` | **APTO** | sin coincidencia bajo `docs/todos/pending/` |
+| `AC_DONE_PATH` | **APTO** | done exclusivo + `pbi_archived: true` |
 
 ## Dictamen final
 
 ```json
 {
-  "phase": "Certificación RBAC",
-  "resolution": "PASS_F4_RBAC",
-  "exitCode": 0,
-  "F4_RBAC_GATE": "APTO",
-  "delivery_state": "pending_downstream_phases",
+  "phase": "Veredicto y bloqueo",
+  "verdict": "aprobado",
+  "delivery_state": "success",
+  "accept_pr_handoff": true,
+  "resolution": "PASS_F5_VERDICT",
   "audit_event_reference": "5ead1e57-67ec-496c-adb2-2a4bdcf1e3be",
   "authorization_status": {
     "exitCode": 0,
@@ -212,8 +237,8 @@ Copia literal del bloque `### Runtime evidence (machine)` en `_agent_handoff.md`
   "blocking_findings": [],
   "non_blocking_findings": [
     "GIT_EVIDENCE_SESSION_SHELL:NO_APTO",
-    "RBAC_EMITTER_NOT_REVOKED:NO_APTO",
     "F3_TECH_GATE:NO_APTO",
+    "RBAC_EMITTER_NOT_REVOKED:NO_APTO",
     "MERGE_ALREADY_OBSERVED:NO_APTO"
   ]
 }
@@ -221,13 +246,13 @@ Copia literal del bloque `### Runtime evidence (machine)` en `_agent_handoff.md`
 
 ## Jurisdicción de fase
 
-Cubre **Certificación RBAC** (F4). Downstream: Veredicto y bloqueo (Argos) → Cosecha Kaizen (Cúmulo) → Handoff (`accept-pr`; sin merge directo en aduana). Cerbero **no** escribe bajo `docs/todos/`.
+Cubre **Veredicto y bloqueo** (F5). Downstream: Cosecha Kaizen (Cúmulo) → Handoff materialización (`accept-pr`; sin merge directo en aduana). Argos **no** escribe bajo `docs/todos/`.
 
 ## approval_status
 
 ```text
-pendiente_veredicto — PASS_F4_RBAC · exitCode 0 · F4_RBAC_GATE APTO;
-VBR×genoma APTO · PPR∉revoked · E1 DCC∈revoked NO_APTO no bloqueante;
+aprobado — PASS_F5_VERDICT · delivery_state success · accept_pr_handoff true;
+F2/F4 APTO · F3 ausente no bloqueante · E1 DCC∈revoked NO_APTO no bloqueante;
 R1/R2 APTO vía Evidence Bridge native_state; GIT_EVIDENCE_SESSION_SHELL NO_APTO;
 CID 5ead1e57… · sibling 5Zoqf2J6… · PR #180 · rama feat/tekton-fire-and-forget.
 ```
