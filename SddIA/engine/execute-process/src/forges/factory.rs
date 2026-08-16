@@ -495,40 +495,112 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
         return Ok(out);
     }
 
-    let context = str_field(inputs, "process_context", "ecosystem-evolution");
+    let context_val = match inputs.get("process_context") {
+        Some(v @ Value::Array(a)) if !a.is_empty() => v.clone(),
+        Some(Value::String(s)) if !s.trim().is_empty() => json!(s.trim()),
+        _ => json!("ecosystem-evolution"),
+    };
+    let context_cell = match &context_val {
+        Value::Array(arr) => arr
+            .iter()
+            .filter_map(|v| v.as_str())
+            .collect::<Vec<_>>()
+            .join(", "),
+        Value::String(s) => s.clone(),
+        _ => "ecosystem-evolution".into(),
+    };
     let version = str_field(inputs, "process_version", "1.0.0");
     let contract_ver = str_field(inputs, "process_contract_version", "1.3.0");
     let desc = str_field(inputs, "process_description", &format!("Proceso {name}"));
     let phases = inputs
         .get("process_phases")
         .cloned()
+        .filter(|p| p.as_array().map(|a| !a.is_empty()).unwrap_or(false))
         .unwrap_or_else(|| json!([{"name": "Fase inicial", "intent": desc}]));
     let process_uuid = generate_uuid(repo)?;
-    let hash_sig = sha256_canon(repo, &json!({"process_phases": phases}))?;
-
-    let body = format!(
-        r#"---
-uuid: "{process_uuid}"
-name: "{name}"
-version: "{version}"
-contract: "process-contract v{contract_ver}"
-context: "{context}"
-hash_signature: "{hash_sig}"
-phases:
-  - name: "Fase inicial"
-    intent: "{desc}"
----
-
-# {name}
-
-{desc}
-"#
+    let workspace_template = str_field(
+        inputs,
+        "workspace_template",
+        ".SddIA/workspaces/{process_name}/{execution_id}/",
     );
+
+    let mut fm = serde_json::Map::new();
+    fm.insert("uuid".into(), json!(process_uuid));
+    fm.insert("name".into(), json!(name));
+    fm.insert("version".into(), json!(version));
+    fm.insert(
+        "contract".into(),
+        json!(format!("process-contract v{contract_ver}")),
+    );
+    fm.insert("workspace_template".into(), json!(workspace_template));
+    fm.insert("context".into(), context_val);
+    fm.insert("hash_signature".into(), json!("sha256:pending"));
+    if !aliases.is_empty() {
+        fm.insert("aliases".into(), json!(aliases));
+    }
+    if let Some(ins) = inputs
+        .get("process_inputs")
+        .or_else(|| inputs.get("inputs"))
+        .cloned()
+        .filter(|v| !v.is_null())
+    {
+        fm.insert("inputs".into(), ins);
+    }
+    if let Some(outs) = inputs
+        .get("process_outputs")
+        .or_else(|| inputs.get("outputs"))
+        .cloned()
+        .filter(|v| !v.is_null())
+    {
+        fm.insert("outputs".into(), outs);
+    }
+    fm.insert("phases".into(), phases.clone());
+    if let Some(inv) = inputs
+        .get("process_phase_invocations")
+        .or_else(|| inputs.get("phase_invocations"))
+        .cloned()
+        .filter(|v| !v.is_null())
+    {
+        fm.insert("phase_invocations".into(), inv);
+    }
+
+    let yaml_out = serde_yaml::to_string(&Value::Object(fm)).map_err(|e| e.to_string())?;
+    let yaml_out = yaml_out
+        .strip_prefix("---\n")
+        .unwrap_or(&yaml_out)
+        .trim_end()
+        .to_string();
+    let body = format!("---\n{yaml_out}\n---\n\n# {name}\n\n{desc}\n");
     fs::create_dir_all(&dest.root_abs).map_err(|e| e.to_string())?;
-    fs::write(&process_path, body).map_err(|e| e.to_string())?;
+    fs::write(&process_path, &body).map_err(|e| e.to_string())?;
+    let written = parse_frontmatter(&process_path)?;
+    let written_phases = written.get("phases").cloned().unwrap_or(Value::Null);
+    if written_phases != phases {
+        let _ = fs::remove_file(&process_path);
+        return Err(
+            "materialización incompleta: phases escritas ≠ process_phases (EV-AUD-003)".into(),
+        );
+    }
+    let (_hash_old, hash_sig) = match refresh_process_hash(&process_path) {
+        Ok(h) => h,
+        Err(e) => {
+            let _ = fs::remove_file(&process_path);
+            return Err(e);
+        }
+    };
     let summary: String = desc.chars().take(60).collect();
-    let row = format!("| {name} | {process_uuid} | {version} | {context} | — | {summary} |");
-    append_row(&dest.root_abs.join("index.md"), &row, &name)?;
+    let aliases_cell = if aliases.is_empty() {
+        "—".to_string()
+    } else {
+        aliases.join(", ")
+    };
+    let row = format!(
+        "| {name} | {process_uuid} | {version} | {context_cell} | {aliases_cell} | {summary} |"
+    );
+    if let Err(e) = append_row(&dest.root_abs.join("index.md"), &row, &name) {
+        let _ = fs::remove_file(&process_path);
+        return Err(e);
+    }
     Ok(handoff_create(
         &process_uuid,
         &hash_sig,
@@ -1406,6 +1478,187 @@ phases:
         .expect_err("must abort L-UNIQ-MULTI");
         assert!(err.contains("L-UNIQ-MULTI"), "got {err}");
         assert!(!repo.join("SddIA/process/feature.md").exists());
+    }
+
+    #[test]
+    fn ev_aud_003_create_persists_requested_phases_not_stub() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fixture_cumulo(repo, &[]);
+        write_index(&repo.join("SddIA/process/index.md"));
+        std::env::set_var("SDDIA_FORGE_LAB_UUID", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+        std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
+
+        let phases = json!([
+            {"name": "Validación de inputs", "intent": "comprobar contrato"},
+            {"name": "Forja del archivo", "intent": "persistir fases"}
+        ]);
+        let out = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "lab-full-contract",
+                "process_description": "EV-AUD-003",
+                "lifecycle_operation": "create",
+                "process_phases": phases,
+                "workspace_template": ".SddIA/workspaces/{process_name}/{execution_id}/",
+                "process_inputs": [{"process_name": "kebab"}],
+                "process_outputs": [{"artifact_process_md": "path"}],
+            }),
+        )
+        .expect("create full contract");
+
+        let md = repo.join("SddIA/process/lab-full-contract.md");
+        let body = fs::read_to_string(&md).unwrap();
+        assert!(body.contains("Validación de inputs"), "got:\n{body}");
+        assert!(body.contains("Forja del archivo"), "got:\n{body}");
+        assert!(!body.contains("Fase inicial"), "stub leaked:\n{body}");
+        assert!(body.contains("workspace_template:"));
+        assert!(body.contains("inputs:"));
+        assert!(body.contains("outputs:"));
+        assert!(out["handoff_hash_signature_new"]
+            .as_str()
+            .unwrap_or("")
+            .starts_with("sha256:"));
+        assert_ne!(
+            out["handoff_hash_signature_new"].as_str().unwrap_or(""),
+            "sha256:pending"
+        );
+        crate::engine::verify_process_integrity::verify(repo)
+            .unwrap_or_else(|e| panic!("integrity: {e:?}"));
+        let idx = fs::read_to_string(repo.join("SddIA/process/index.md")).unwrap();
+        assert!(idx.contains("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"));
+        assert!(idx.contains("lab-full-contract"));
+        assert!(idx.contains("EV-AUD-003"));
+
+        let again = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "lab-full-contract",
+                "lifecycle_operation": "create",
+                "process_phases": phases,
+            }),
+        )
+        .expect("idempotent create");
+        assert_eq!(again.get("idempotent"), Some(&json!(true)));
+
+        std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+    }
+
+    #[test]
+    fn ev_aud_003_evolution_audit_fixture_recreates_without_stub() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fixture_cumulo(repo, &[]);
+        write_index(&repo.join("SddIA/process/index.md"));
+        std::env::set_var("SDDIA_FORGE_LAB_UUID", "8f4b09da-e277-4fc2-9890-8a363fa8a96f");
+        std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
+
+        let phases = json!([
+            {
+                "name": "Inventario normalizado",
+                "intent": "Resolver evolution_root_ref vía Cúmulo",
+                "delegates_to": ["agent:cumulo", "agent:argos"]
+            },
+            {
+                "name": "Clasificación de relevancia",
+                "intent": "Asignar R1-R5",
+                "delegates_to": ["agent:argos"]
+            },
+            {
+                "name": "Validación material",
+                "intent": "Contrastar evidencia vigente",
+                "delegates_to": ["agent:argos"]
+            },
+            {
+                "name": "Persistencia oficial",
+                "intent": "Persistir informe",
+                "requires_capability": [{
+                    "id": "fs:persist",
+                    "contract": "fs.persist",
+                    "version": ">=1.0.0"
+                }]
+            },
+            {
+                "name": "Protocolo de Acero",
+                "intent": "Revisar contradicciones",
+                "delegates_to": ["agent:argos"]
+            }
+        ]);
+        let out = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "evolution-audit",
+                "process_description": "Auditoría periódica del registro evolution",
+                "process_context": ["quality-assurance", "filesystem-ops"],
+                "process_version": "1.0.0",
+                "process_contract_version": "1.4.0",
+                "lifecycle_operation": "create",
+                "workspace_template": ".SddIA/workspaces/{process_name}/{execution_id}/",
+                "process_inputs": [
+                    {"audit_date": "Fecha ISO de corte de la auditoría"},
+                    {"mode": "Enum estricto: full | since_last"}
+                ],
+                "process_outputs": [
+                    {"audit_report_path": "Informe oficial versionado"}
+                ],
+                "process_phases": phases,
+            }),
+        )
+        .expect("evolution-audit fixture");
+
+        let body = fs::read_to_string(repo.join("SddIA/process/evolution-audit.md")).unwrap();
+        assert!(body.contains("Inventario normalizado"));
+        assert!(body.contains("Protocolo de Acero"));
+        assert!(body.contains("fs:persist"));
+        assert!(body.contains("quality-assurance"));
+        assert!(!body.contains("Fase inicial"));
+        crate::engine::verify_process_integrity::verify(repo)
+            .unwrap_or_else(|e| panic!("evolution-audit integrity: {e:?}"));
+        let idx = fs::read_to_string(repo.join("SddIA/process/index.md")).unwrap();
+        assert!(idx.contains("8f4b09da-e277-4fc2-9890-8a363fa8a96f"));
+        assert!(idx.contains("quality-assurance, filesystem-ops"));
+        assert_eq!(
+            out["handoff_entity_uuid"],
+            json!("8f4b09da-e277-4fc2-9890-8a363fa8a96f")
+        );
+
+        std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+    }
+
+    #[test]
+    fn ev_aud_003_create_fail_closed_deletes_artifact_if_index_write_fails() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fixture_cumulo(repo, &[]);
+        write_index(&repo.join("SddIA/process/index.md"));
+        std::env::set_var("SDDIA_FORGE_LAB_UUID", "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+        std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
+
+        let idx = repo.join("SddIA/process/index.md");
+        let mut perms = fs::metadata(&idx).unwrap().permissions();
+        perms.set_readonly(true);
+        fs::set_permissions(&idx, perms).unwrap();
+
+        let err = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "lab-fail-closed",
+                "process_description": "EV-AUD-003 fail-closed",
+                "lifecycle_operation": "create",
+                "process_phases": [{"name": "Solo", "intent": "borrar si índice falla"}],
+            }),
+        )
+        .expect_err("index write must fail");
+        assert!(!err.is_empty(), "got {err}");
+        assert!(
+            !repo.join("SddIA/process/lab-fail-closed.md").exists(),
+            "artefacto huérfano"
+        );
+
+        let mut restore = fs::metadata(&idx).unwrap().permissions();
+        restore.set_readonly(false);
+        let _ = fs::set_permissions(&idx, restore);
+        std::env::remove_var("SDDIA_FORGE_LAB_UUID");
     }
 
     #[test]
