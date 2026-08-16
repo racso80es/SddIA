@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities 
 format: markdown
 version: "1.0.0"
 created: "2026-08-15"
-updated: "2026-08-15T10:57:00Z"
+updated: "2026-08-15T14:21:30Z"
 status: abierto
 priority: media
 process: bug-fix
@@ -21,10 +21,13 @@ related:
   - docs/todos/done/[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities (PPR #124).md
   - docs/todos/done/[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities (PPR #125).md
   - docs/fixes/kaizen-regex-lookahead-panic/validacion.md
+  - docs/features/kalma2-canal-telemetria-progreso/validacion.md
 sightings:
   - "PPR #174 · CID 6vw31k4eo… (origen seed)"
   - "PPR #175 · CID 7mDbYBoZi… · Cosecha Kaizen 2026-08-15 — dedup; misma revocación since 2026-08-15T08:40:55Z"
   - "PPR #175 · CID 83b18b3a… · Cosecha Kaizen 2026-08-15T10:57:00Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
+  - "PPR #176 · CID 34bfbc96… · Cosecha Kaizen 2026-08-15T14:20:00Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
+  - "PPR #176 · CID AuweRKSX… · Cosecha Kaizen 2026-08-15T14:21:30Z — dedup; misma revocación since 2026-08-15T08:40:55Z"
 ---
 
 # [ARQUITECTURA] pull-request-review — rehabilitación revoked_entities (PPR #174)
@@ -44,6 +47,8 @@ Re-revocación empírica tras rehabilitación histórica PPR #124/#125.
 | ECST origen | `6vw31k4eoXBCpXXfNWB4EL4FvtxYDbtZao4J47vwVPf8` · PR #174 |
 | Sighting adicional | `7mDbYBoZiQTE5dsrB5WHpcybGmuesR4CzGd3ExmZe5R` · PR #175 (Cosecha Kaizen — dedup; sin seed nueva) |
 | Sighting adicional | `83b18b3a-b3ae-47ad-8948-77d5dbb52067` · PR #175 (Cosecha Kaizen 2026-08-15T10:57:00Z — dedup; sin seed nueva) |
+| Sighting adicional | `34bfbc96-c25d-47dc-94ec-17866a717444` · PR #176 (Cosecha Kaizen 2026-08-15T14:20:00Z — dedup; sin seed nueva) |
+| Sighting adicional | `AuweRKSXLLcfVV3xs5f4Fn9YdhYHuPos8nhNaREGG2Tb` · PR #176 (Cosecha Kaizen 2026-08-15T14:21:30Z — dedup; sin seed nueva) |
 | Check aduana | `RBAC_PROCESS_REGISTRY: NO_APTO` (Cerbero F4; no bloqueante) |
 
 ## Mandato
