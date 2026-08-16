@@ -1,5 +1,5 @@
 {
-  "version": "1.2.0",
+  "version": "1.2.1",
   "agent": "radamanto",
   "measurement_prohibited": true,
   "dlt_exclusive_events": [
@@ -10,8 +10,8 @@
   ],
   "telemetry_snapshot_event": "Domain_Entity_Telemetry_Captured",
   "rules": {
-    "R4.1": "success_rate < success_rate_min → Domain_Entity_Degraded",
-    "R4.2": "avg_duration_ms > latency_ms_p95_threshold (≥5 samples) → Domain_Entity_Degraded",
+    "R4.1": "success_rate < (success_rate_min_by_entity_type[entity_type] ?? success_rate_min) → Domain_Entity_Degraded",
+    "R4.2": "avg_duration_ms > latency_ms_p95_threshold (≥5 samples) → Domain_Entity_Degraded (omitir si entity_type=process o LATENCY_THRESHOLD_EXEMPT)",
     "R4.3": "pending_redemption + structure_valid + consecutive_success_count >= redemption_success_count → Domain_Entity_Restored (solo Radamanto)",
     "R4.4": "recovery_attempts >= max_recovery_attempts → Domain_Entity_Deprecated",
     "R4.5": "tras consumo OK de Raw_Execution_Finished → Domain_Entity_Telemetry_Captured (fail-soft; siempre, ortogonal a umbrales)"

@@ -1,7 +1,7 @@
 //! Motor residual nativo — reemplaza `delegate_python` / capsules bridge.
 
 use super::accept_pr::execute_accept_pr_phase;
-use super::pull_request_review::execute_pull_request_review_phase;
+use super::pull_request_review::{execute_pull_request_review_phase, is_ppr_fail_soft_friction};
 use super::invoke_orchestrator::invoke_process_full;
 use super::phase_capsules::{
     capsule_eda_genomic_audit_gate, execute_delivery_close_phase, execute_feature_phase,
@@ -634,6 +634,11 @@ fn execute_phase_body_residual(
                 Err(e) => {
                     entry["status"] = json!("failed");
                     entry["error"] = json!(e);
+                    super::delivery_close::mark_fail_soft_if_secondary(
+                        &mut entry,
+                        phase_name,
+                        state,
+                    );
                     entry
                 }
             };
@@ -674,6 +679,10 @@ fn execute_phase_body_residual(
                 Err(e) => {
                     entry["status"] = json!("failed");
                     entry["error"] = json!(e);
+                    // L-FAILSOFT-OLA1: fricción no causal no colapsa agregación terminal.
+                    if is_ppr_fail_soft_friction(&e) {
+                        entry["fail_soft"] = json!(true);
+                    }
                     entry
                 }
             };

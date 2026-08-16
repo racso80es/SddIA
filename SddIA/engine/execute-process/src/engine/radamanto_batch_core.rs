@@ -6,6 +6,7 @@ use super::fractal_bus::{
     RADAMANTO_BATCH_SUBSCRIBER_KEY,
 };
 use super::invoke_orchestrator::invoke_process_full;
+use crate::core::resolver::resolve_process_path;
 use chrono::Utc;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
@@ -17,11 +18,21 @@ const VALID_ENTITY_TYPES: &[&str] = &[
     "process", "agent", "skill", "tool", "action", "norm", "codex", "event",
 ];
 
-/// Procesos con fases `agent:` (wall-clock IDE/Kalma2): exentos de `latency_threshold`.
+/// Allowlist aditiva (overlay). Tipología `process` también exime latency (L-LATENCY-PROCESS).
 const LATENCY_THRESHOLD_EXEMPT: &[&str] = &["pull-request-review"];
 
-fn is_latency_threshold_exempt(entity_id: &str) -> bool {
+fn is_latency_threshold_exempt(repo: &Path, entity_id: &str) -> bool {
     LATENCY_THRESHOLD_EXEMPT.contains(&entity_id)
+        || resolve_entity_type(repo, entity_id) == "process"
+}
+
+fn success_rate_min_for(thresholds: &Value, etype: &str) -> f64 {
+    thresholds
+        .get("success_rate_min_by_entity_type")
+        .and_then(|m| m.get(etype))
+        .and_then(|v| v.as_f64())
+        .or_else(|| thresholds.get("success_rate_min").and_then(|v| v.as_f64()))
+        .unwrap_or(0.85)
 }
 
 fn iso_now() -> String {
@@ -99,7 +110,8 @@ fn target_entity_from_payload(payload: &Value) -> String {
     "unknown-entity".into()
 }
 
-fn entity_type_from_id(entity_id: &str) -> &'static str {
+/// Precedencia L-TYPE-RESOLVE: prefijo `type:id` válido → catálogo process → default `tool`.
+fn resolve_entity_type(repo: &Path, entity_id: &str) -> &'static str {
     if let Some((prefix, _)) = entity_id.split_once(':') {
         let p = prefix.trim().to_lowercase();
         if VALID_ENTITY_TYPES.contains(&p.as_str()) {
@@ -116,12 +128,18 @@ fn entity_type_from_id(entity_id: &str) -> &'static str {
             };
         }
     }
+    if resolve_process_path(repo, entity_id).is_ok() {
+        return "process";
+    }
     "tool"
 }
 
-fn governance_payload(entity_id: &str, extra: Value) -> Value {
+fn governance_payload(repo: &Path, entity_id: &str, extra: Value) -> Value {
     let mut obj = serde_json::Map::new();
-    obj.insert("entity_type".into(), json!(entity_type_from_id(entity_id)));
+    obj.insert(
+        "entity_type".into(),
+        json!(resolve_entity_type(repo, entity_id)),
+    );
     obj.insert("entity_id".into(), json!(entity_id));
     if let Some(map) = extra.as_object() {
         for (k, v) in map {
@@ -210,7 +228,7 @@ fn emit_telemetry_captured_failsoft(
     let exit_code = sample.get("exit_code").and_then(|v| v.as_i64()).unwrap_or(1);
     let duration_ms = sample.get("duration_ms").and_then(|v| v.as_i64()).unwrap_or(0);
     let payload = json!({
-        "entity_type": entity_type_from_id(entity_id),
+        "entity_type": resolve_entity_type(repo, entity_id),
         "entity_id": entity_id,
         "asset_id": asset_id,
         "execution_metrics": {
@@ -362,6 +380,7 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
                 let ev = build_domain_event(
                     "Domain_Entity_Deprecated",
                     governance_payload(
+                        repo,
                         &entity_id,
                         json!({
                             "recovery_attempts": attempts,
@@ -410,6 +429,7 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
                 let ev = build_domain_event(
                     "Domain_Entity_Restored",
                     governance_payload(
+                        repo,
                         &entity_id,
                         json!({
                             "success_rate": (rate * 10000.0).round() / 10000.0,
@@ -460,10 +480,8 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
             .get("abrupt_drop_min_samples")
             .and_then(|v| v.as_i64())
             .unwrap_or(3);
-        let rate_min = thresholds
-            .get("success_rate_min")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.85);
+        let etype = resolve_entity_type(repo, &entity_id);
+        let rate_min = success_rate_min_for(&thresholds, etype);
         let latency_thresh = thresholds
             .get("latency_ms_p95_threshold")
             .and_then(|v| v.as_f64())
@@ -472,8 +490,7 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
         let avg_ms = avg_duration(&samples);
         let mut degraded = false;
         let mut reason = "";
-        // Procesos aduana con fases agent: (wall-clock IDE/Kalma2) no deben
-        // auto-revocarse por latency_threshold — falso positivo PPR #124/#125.
+        // Procesos multi-fase: umbral por tipo + latency exempt (L-LATENCY-PROCESS).
         if samples.len() as i64 >= min_batch && rate < rate_min {
             degraded = true;
             reason = "success_rate_below_threshold";
@@ -482,7 +499,7 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
             reason = "abrupt_success_rate_drop";
         } else if samples.len() >= 5
             && avg_ms > latency_thresh
-            && !is_latency_threshold_exempt(&entity_id)
+            && !is_latency_threshold_exempt(repo, &entity_id)
         {
             degraded = true;
             reason = "latency_threshold";
@@ -505,6 +522,7 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
             let ev = build_domain_event(
                 "Domain_Entity_Degraded",
                 governance_payload(
+                    repo,
                     &entity_id,
                     json!({
                         "reason": reason,
@@ -552,9 +570,46 @@ mod tests {
     use super::*;
 
     #[test]
-    fn pull_request_review_is_latency_exempt() {
-        assert!(is_latency_threshold_exempt("pull-request-review"));
-        assert!(!is_latency_threshold_exempt("feature"));
-        assert!(!is_latency_threshold_exempt("delivery-close-cycle"));
+    fn success_rate_min_lookup_by_entity_type() {
+        let t = json!({
+            "success_rate_min": 0.85,
+            "success_rate_min_by_entity_type": {
+                "process": 0.70,
+                "tool": 0.85,
+                "agent": 0.75
+            }
+        });
+        assert!((success_rate_min_for(&t, "process") - 0.70).abs() < 1e-9);
+        assert!((success_rate_min_for(&t, "tool") - 0.85).abs() < 1e-9);
+        assert!((success_rate_min_for(&t, "agent") - 0.75).abs() < 1e-9);
+        assert!((success_rate_min_for(&t, "unknown") - 0.85).abs() < 1e-9);
+        let plain = json!({"success_rate_min": 0.85});
+        assert!((success_rate_min_for(&plain, "process") - 0.85).abs() < 1e-9);
+    }
+
+    #[test]
+    fn allowlist_latency_exempt_without_catalog() {
+        let fake = Path::new("/tmp/sddia-no-such-repo-radamanto-thresh");
+        assert!(is_latency_threshold_exempt(fake, "pull-request-review"));
+        assert!(!is_latency_threshold_exempt(fake, "delivery-close-cycle"));
+        assert!(!is_latency_threshold_exempt(fake, "some-atomic-tool"));
+    }
+
+    #[test]
+    fn bare_process_names_resolve_as_process() {
+        let repo = crate::core::repo::find_repo_root().expect("repo root");
+        assert_eq!(resolve_entity_type(&repo, "delivery-close-cycle"), "process");
+        assert_eq!(resolve_entity_type(&repo, "pull-request-review"), "process");
+        assert_eq!(resolve_entity_type(&repo, "tool:lab-x"), "tool");
+        assert_eq!(resolve_entity_type(&repo, "process:feature"), "process");
+        assert_eq!(resolve_entity_type(&repo, "no-such-entity-xyz"), "tool");
+    }
+
+    #[test]
+    fn process_entity_is_latency_exempt_via_type() {
+        let repo = crate::core::repo::find_repo_root().expect("repo root");
+        assert!(is_latency_threshold_exempt(&repo, "delivery-close-cycle"));
+        assert!(is_latency_threshold_exempt(&repo, "pull-request-review"));
+        assert!(!is_latency_threshold_exempt(&repo, "no-such-entity-xyz"));
     }
 }

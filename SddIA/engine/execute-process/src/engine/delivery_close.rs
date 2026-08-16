@@ -27,6 +27,31 @@ fn delegates_are_only_agents(delegates: &[Value]) -> bool {
     })
 }
 
+/// Fases secundarias post umbral físico (push + pr_url): no bloquean sello Presented.
+fn is_dcc_secondary_phase(phase_name: &str) -> bool {
+    matches!(
+        phase_name,
+        "Impacto SddIA condicional" | "Higiene local"
+    )
+}
+
+pub(crate) fn mark_fail_soft_if_secondary(entry: &mut Value, phase_name: &str, state: &Value) {
+    let has_pr = state
+        .get("pr_url")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .is_some();
+    let pushed = state.get("delivery_push").is_some();
+    if (has_pr || pushed) && is_dcc_secondary_phase(phase_name) {
+        if entry.get("status").and_then(|v| v.as_str()) == Some("failed")
+            || entry.get("status").and_then(|v| v.as_str()) == Some("blocked")
+        {
+            entry["fail_soft"] = json!(true);
+        }
+    }
+}
+
 fn execute_phase(
     repo: &Path,
     phase: &Value,
@@ -53,11 +78,13 @@ fn execute_phase(
                         entry[k.clone()] = v.clone();
                     }
                 }
+                mark_fail_soft_if_secondary(&mut entry, phase_name, state);
                 return entry;
             }
             Err(e) => {
                 entry["status"] = json!("failed");
                 entry["error"] = json!(e);
+                mark_fail_soft_if_secondary(&mut entry, phase_name, state);
                 return entry;
             }
         }
@@ -71,11 +98,30 @@ fn execute_phase(
                         entry[k.clone()] = v.clone();
                     }
                 }
+                mark_fail_soft_if_secondary(&mut entry, phase_name, state);
                 entry
             }
             Err(e) => {
                 entry["status"] = json!("failed");
                 entry["error"] = json!(e);
+                // L-FAILSOFT-OLA2: telemetría/validación secundaria post pr_url.
+                let soft_err = {
+                    let el = e.to_lowercase();
+                    el.contains("timeout")
+                        || el.contains("telemetry")
+                        || el.contains("receipt")
+                        || el.contains("validaci")
+                };
+                let has_pr = state
+                    .get("pr_url")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .is_some();
+                if has_pr && (is_dcc_secondary_phase(phase_name) || soft_err) {
+                    entry["fail_soft"] = json!(true);
+                }
+                mark_fail_soft_if_secondary(&mut entry, phase_name, state);
                 entry
             }
         };
@@ -95,6 +141,7 @@ fn execute_phase(
                 entry[k.clone()] = v.clone();
             }
         }
+        mark_fail_soft_if_secondary(&mut entry, phase_name, state);
         return entry;
     }
 
@@ -194,3 +241,53 @@ pub fn run(
         exit_code: status_code,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dcc_hygiene_failed_is_fail_soft_when_pr_url_present() {
+        let mut entry = json!({
+            "phase_name": "Higiene local",
+            "status": "failed",
+            "error": "timeout telemetry_receipt",
+        });
+        mark_fail_soft_if_secondary(
+            &mut entry,
+            "Higiene local",
+            &json!({"pr_url": "https://github.com/x/y/pull/1"}),
+        );
+        assert_eq!(entry["fail_soft"], true);
+        let v = super::super::phase_terminal::aggregate_execution_terminal(
+            &[entry],
+            &json!({}),
+        );
+        assert!(v.success);
+    }
+
+    #[test]
+    fn dcc_hygiene_failed_without_pr_stays_causal() {
+        let mut entry = json!({
+            "phase_name": "Higiene local",
+            "status": "failed",
+        });
+        mark_fail_soft_if_secondary(&mut entry, "Higiene local", &json!({}));
+        assert!(entry.get("fail_soft").is_none());
+    }
+
+    #[test]
+    fn dcc_snapshot_failed_never_fail_soft() {
+        let mut entry = json!({
+            "phase_name": "Snapshot final",
+            "status": "failed",
+        });
+        mark_fail_soft_if_secondary(
+            &mut entry,
+            "Snapshot final",
+            &json!({"pr_url": "https://github.com/x/y/pull/1"}),
+        );
+        assert!(entry.get("fail_soft").is_none());
+    }
+}
+
