@@ -217,6 +217,7 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
         "materialize-fracture-pbi" => super::materialize_fracture_pbi::run(repo, inputs)?,
         "materialize-kaizen-alert-doc" => super::materialize_kaizen_alert_doc::run(repo, inputs)?,
         "enrich-fracture-pbi-kaizen" => super::enrich_fracture_pbi_kaizen::run(repo, inputs)?,
+        "persist-pec-correlation-proof" => super::persist_pec_correlation_proof::run(repo, inputs)?,
         _ => return Ok(None),
     };
     Ok(Some(data))

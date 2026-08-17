@@ -25,6 +25,7 @@ const OK_STATUSES: &[&str] = &[
     "skipped-dlt-threshold",
     "skipped-empty-text",
     "skipped-empty-message",
+    "skipped-no-correlation",
     "skipped-lab-simulated",
     "skipped-already-delivered",
 ];

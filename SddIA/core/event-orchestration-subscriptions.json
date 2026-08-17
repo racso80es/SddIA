@@ -1,3 +1,14 @@
 {
-  "Process_Execution_Completed": []
+  "Process_Execution_Completed": [
+    {
+      "agent": "cumulo",
+      "action": "persist-pec-correlation-proof",
+      "intent": "Proyección durable del PEC por correlation_id bajo eda_instance.proofs (cierre 404 WUI post-purge)."
+    },
+    {
+      "agent": "argos",
+      "tool": "send-telegram-notification",
+      "intent": "Notificar al Vértice Biológico el cierre táctico (process_name + correlation_id + status)."
+    }
+  ]
 }

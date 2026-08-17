@@ -340,6 +340,43 @@ fn load_fractal_paths(repo: &Path) -> (PathBuf, PathBuf, PathBuf) {
     (domain, orch, dead)
 }
 
+fn load_proofs_dir(repo: &Path) -> PathBuf {
+    let default = repo.join(".SddIA/proofs");
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
+        return default;
+    };
+    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return default;
+    };
+    cfg.get("eda_instance")
+        .and_then(|e| e.get("proofs"))
+        .and_then(|v| v.as_str())
+        .map(normalize_rel)
+        .map(|r| repo.join(r))
+        .unwrap_or(default)
+}
+
+fn pec_view_from_proof(proof: &serde_json::Value) -> serde_json::Value {
+    serde_json::json!({
+        "event_id": proof.get("pec_event_id"),
+        "event_type": "Process_Execution_Completed",
+        "timestamp": proof.get("timestamp"),
+        "payload": proof.get("payload"),
+    })
+}
+
+fn find_pec_proof(proofs_dir: &Path, correlation_id: &str) -> Option<serde_json::Value> {
+    let path = proofs_dir
+        .join("pec-correlation")
+        .join(format!("{correlation_id}.json"));
+    let body = read_json_file(&path)?;
+    if body.get("kind").and_then(|v| v.as_str()) != Some("pec-correlation-proof") {
+        return None;
+    }
+    Some(pec_view_from_proof(&body))
+}
+
 fn is_uuid_v4ish(s: &str) -> bool {
     let s = s.trim();
     if s.len() != 36 {
@@ -537,8 +574,10 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
     }
 
     let (domain_dir, orch_dir, dead_dir) = load_fractal_paths(repo);
+    let proofs_dir = load_proofs_dir(repo);
     let domain_hit = find_domain_event(&domain_dir, &dead_dir, event_id);
-    let pec = find_pec_by_correlation(&orch_dir, event_id);
+    let pec = find_pec_by_correlation(&orch_dir, event_id)
+        .or_else(|| find_pec_proof(&proofs_dir, event_id));
 
     if domain_hit.is_none() && pec.is_none() {
         return (
@@ -1416,6 +1455,70 @@ mod tests {
         let pec = find_pec_by_correlation(&orch, cid).expect("pec");
         assert_eq!(pec["payload"]["cycle_phase"], "completed");
         let _ = std::fs::remove_dir_all(&orch);
+    }
+
+    #[test]
+    fn find_pec_proof_reads_namespaced_json() {
+        let proofs = std::env::temp_dir().join(format!("sddia-proofs-{}", uuid::Uuid::new_v4()));
+        let ns = proofs.join("pec-correlation");
+        std::fs::create_dir_all(&ns).unwrap();
+        let cid = "e273713c-dd91-487b-8716-1bdc8c5da741";
+        std::fs::write(
+            ns.join(format!("{cid}.json")),
+            serde_json::json!({
+                "kind": "pec-correlation-proof",
+                "correlation_id": cid,
+                "pec_event_id": "9ff24776-26c7-4596-8b08-7b6fc4531641",
+                "payload": {
+                    "process_name": "feature",
+                    "status": "success",
+                    "cycle_phase": "completed"
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let pec = find_pec_proof(&proofs, cid).expect("proof");
+        assert_eq!(pec["payload"]["process_name"], "feature");
+        let _ = std::fs::remove_dir_all(&proofs);
+    }
+
+    #[test]
+    fn build_status_body_resolves_proof_after_pec_gone() {
+        let repo = std::env::temp_dir().join(format!("sddia-status-proof-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(repo.join(".events/domain")).unwrap();
+        std::fs::create_dir_all(repo.join(".events/orchestration")).unwrap();
+        let cid = "e273713c-dd91-487b-8716-1bdc8c5da741";
+        let proof_dir = repo.join(".SddIA/proofs/pec-correlation");
+        std::fs::create_dir_all(&proof_dir).unwrap();
+        std::fs::write(
+            proof_dir.join(format!("{cid}.json")),
+            serde_json::json!({
+                "kind": "pec-correlation-proof",
+                "correlation_id": cid,
+                "pec_event_id": "9ff24776-26c7-4596-8b08-7b6fc4531641",
+                "timestamp": "2026-08-15T12:00:00Z",
+                "payload": {
+                    "process_name": "feature",
+                    "status": "success",
+                    "cycle_phase": "completed"
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let (code, body) = build_status_body(&repo, cid);
+        assert_eq!(code, 200);
+        let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert_eq!(v["status"], "completed");
+        assert_eq!(v["orchestration"]["found"], true);
+        let _ = std::fs::remove_dir_all(&repo);
     }
 
     #[test]
