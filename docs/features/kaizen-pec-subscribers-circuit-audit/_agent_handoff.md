@@ -417,3 +417,26 @@ notes: "idempotent-hit; Cúmulo Cosecha copia Argos F5 CID DLKDvjJ7 native_state
 - F5 heredado `success` · sin `PullRequest_Merged` `DLKDvjJ7…` → `accept_pr_handoff: true`.
 - R1/R2: Evidence Bridge `native_state` · Shell `git-manager` Rejected (sin stdout inventado).
 ```
+
+## 2026-08-17T06:17:58Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `94b7f03c-0e4d-4d40-a5c8-2936e29954f3`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream: Handoff `accept-pr` (sin merge en aduana).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `kaizen_seeds_dedup: 2` · `accept_pr_handoff: true`
+
+- `validacion.md` — Cosecha CID `94b7f03c…` (DCC∈revoked).
+- `_agent_handoff.md` — entrada de fase + conflicto de merge cerrado (HEAD).
+- Dedup #177 (satélite + canónico Radamanto) y #136 (Shell/`git-manager`); sin `PENDING_AUDIT_DOC_*`.
+- FIX watcher GBW/Telegram ya existían vía `System_Fracture_Detected` (fuera de `document_id`).
+- `git-manager`: Shell Rejected; R1/R2 copia Evidence Bridge; sin stdout inventado.
+- Downstream: Handoff `accept-pr` (sin merge en aduana).
+```

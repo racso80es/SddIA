@@ -38,6 +38,7 @@ source_correlation_ids:
   - 5ead1e57-67ec-496c-adb2-2a4bdcf1e3be
   - 94b7f03c-0e4d-4d40-a5c8-2936e29954f3
   - DLKDvjJ7pL86Z3eTdu8Cd3BBPmYZHQKAb89qENbcGzzt
+  - DLKDvjJ7pL86Z3eTdu8Cd3BBPmYZHQKAb89qENbcGzzt
 source_audits:
   - docs/features/kalma2-phase-barrier-timeout-persist/validacion.md
   - docs/fixes/centinelas-fracture-ola-20260812/validacion.md
@@ -128,8 +129,7 @@ Satélite: `docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — rehabilit
 | ECST origen | `4b770fd6-99a0-435e-af43-a153aa23e310` · PR #177 |
 | Sighting adicional | `ca6fc6cb-4ecd-427f-9638-ae1960963cc3` · PR #178 |
 | Sighting adicional | `5ead1e57-67ec-496c-adb2-2a4bdcf1e3be` · PR #180 (Cosecha Kaizen tekton-fire-and-forget) |
-| Sighting adicional | `94b7f03c-0e4d-4d40-a5c8-2936e29954f3` · PR #181 (sibling DCC; harvest CID `DLKDvjJ7…`) |
-| Sighting adicional | `94b7f03c-0e4d-4d40-a5c8-2936e29954f3` · PR #181 (Cosecha Kaizen kaizen-pec-subscribers-circuit-audit) |
+| Sighting adicional | `94b7f03c-0e4d-4d40-a5c8-2936e29954f3` · sibling `DLKDvjJ7…` · PR #181 (Cosecha Kaizen kaizen-pec-subscribers-circuit-audit) |
 | Check aduana | `RBAC_EMITTER_NOT_REVOKED: NO_APTO` (Cerbero F4/F5; no bloqueante) |
 | Firmante ECST | `Vertice_Biologico_Relay` (presente — E2 #136 liquidado) |
 
@@ -138,8 +138,7 @@ Satélite: `docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — rehabilit
 - PPR #177 · CID `4b770fd6…` (origen seed)
 - PPR #178 · CID `ca6fc6cb…`
 - PPR #180 · CID `5ead1e57…` · sibling `5Zoqf2J6…` — misma clase DCC∈revoked `since 2026-08-16T16:40:55Z`
-- PPR #181 · harvest CID `DLKDvjJ7…` (GBW) · sibling DCC `94b7f03c…` — misma clase DCC∈revoked `since 2026-08-16T16:40:55Z`
-- PPR #181 · CID `94b7f03c…` · sibling `DLKDvjJ7…` — misma clase DCC∈revoked `since 2026-08-16T16:40:55Z`
+- PPR #181 · CID `94b7f03c…` (DCC) · sibling `DLKDvjJ7…` (GBW) — misma clase DCC∈revoked `since 2026-08-16T16:40:55Z`
 
 ### Intervención ola 2
 
