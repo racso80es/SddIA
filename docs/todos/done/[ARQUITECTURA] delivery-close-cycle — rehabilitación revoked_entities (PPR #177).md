@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] delivery-close-cycle — rehabilitación revoked_entities
 format: markdown
 version: "1.1.0"
 created: "2026-08-16"
-updated: "2026-08-16T17:06:00Z"
+updated: "2026-08-17T06:20:00Z"
 status: done
 role: ola
 ola: 2
@@ -16,7 +16,7 @@ parent_document_id: PBI-PPR-174-177-REVOKED-PROCESS-THRESHOLDS
 parent_pbi: "docs/todos/done/[ARQUITECTURA] umbrales Radamanto process — rehabilitación revoked_entities (PPR #174+#177).md"
 consolidated_into: "docs/todos/done/[ARQUITECTURA] umbrales Radamanto process — rehabilitación revoked_entities (PPR #174+#177).md"
 source_correlation_id: 4b770fd6-99a0-435e-af43-a153aa23e310
-incident_ref: "RBAC_EMITTER_NOT_REVOKED:NO_APTO — delivery-close-cycle re-revocado since 2026-08-16T16:40:55Z (success_rate_below_threshold); sighting PPR #180 CID 5ead1e57…"
+incident_ref: "RBAC_EMITTER_NOT_REVOKED:NO_APTO — delivery-close-cycle re-revocado since 2026-08-16T16:40:55Z (success_rate_below_threshold); sighting PPR #181 CID 94b7f03c…"
 entity: delivery-close-cycle
 ---
 
@@ -29,3 +29,7 @@ entity: delivery-close-cycle
 Este archivo permanece como satélite de Cosecha Kaizen (filename + `document_id`) para dedup de sightings. Archivo a `done/` en el mismo PR que el canónico.
 
 Sighting Cosecha `2026-08-16T17:06:00Z`: PPR #180 · CID `5ead1e57-67ec-496c-adb2-2a4bdcf1e3be` · check `RBAC_EMITTER_NOT_REVOKED` · sin seed nueva.
+
+Sighting Cosecha `2026-08-17T06:20:00Z`: PPR #181 · harvest CID `DLKDvjJ7pL86Z3eTdu8Cd3BBPmYZHQKAb89qENbcGzzt` (emisor GBW∉revoked) · sibling DCC `94b7f03c-0e4d-4d40-a5c8-2936e29954f3` · DCC∈revoked `since 2026-08-16T16:40:55Z` · sin seed nueva.
+
+Sighting Cosecha `2026-08-17T06:18:00Z`: PPR #181 · CID `94b7f03c-0e4d-4d40-a5c8-2936e29954f3` · sibling `DLKDvjJ7pL86Z3eTdu8Cd3BBPmYZHQKAb89qENbcGzzt` · check `RBAC_EMITTER_NOT_REVOKED` · sin seed nueva.
