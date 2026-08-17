@@ -4,10 +4,13 @@ title: "[Kaizen] Process_Execution_Completed — suscriptores y auditoría de ci
 format: markdown
 version: "1.0.0"
 created: "2026-08-15"
-updated: "2026-08-15T13:47:00Z"
-status: abierto
+updated: "2026-08-17T05:55:00Z"
+status: done
 priority: alta
 process: feature
+feature_ref: docs/features/kaizen-pec-subscribers-circuit-audit
+validacion_ref: docs/features/kaizen-pec-subscribers-circuit-audit/validacion.md
+branch_name: feat/kaizen-pec-subscribers-circuit-audit
 uuid: fe8d3d21-ebeb-4a83-8b53-f2d7f0c19b16
 incident_ref: "Kalma2 Forjar Proceso 2026-08-15 — timeout UI 120s; PEC 9ff24776 y dominio e273713c enrutados y purgados; GET /api/status 404"
 source_correlation_id: e273713c-dd91-487b-8716-1bdc8c5da741
@@ -181,11 +184,11 @@ Mutación de genoma (`events/`, `tools/event-bus-audit`, `process/route-orchestr
 
 ## 8. Criterio de cierre del PBI
 
-- [ ] `Process_Execution_Completed` tiene ≥1 suscriptor indexado y el fan-out se observa en testigos.
-- [ ] Tras route+purge del padre, `GET /api/status?event_id=<cid>` proyecta estado terminal o de ciclo (`completed`/`failed`/`initialized`/`awaiting_agents`) — **no** 404 persistente ni timeout 120s ciego.
-- [ ] Telegram (o exención Dedalo documentada) notifica cierre PEC con `process_name` + `correlation_id`.
-- [ ] `event-bus-audit` (o proceso laudo) falla/alerta ante `PURGE_BLACKHOLE` y lista H2–H5 como hallazgos, no como silencio.
-- [ ] `validacion.md` APTO + este PBI en `docs/todos/done/` en el **mismo** PR.
+- [x] `Process_Execution_Completed` tiene ≥1 suscriptor indexado y el fan-out se observa en testigos.
+- [x] Tras route+purge del padre, `GET /api/status?event_id=<cid>` proyecta estado terminal o de ciclo (`completed`/`failed`/`initialized`/`awaiting_agents`) — **no** 404 persistente ni timeout 120s ciego.
+- [x] Telegram (o exención Dedalo documentada) notifica cierre PEC con `process_name` + `correlation_id`.
+- [x] `event-bus-audit` (o proceso laudo) falla/alerta ante `PURGE_BLACKHOLE` y lista H2–H5 como hallazgos, no como silencio.
+- [x] `validacion.md` APTO + este PBI en `docs/todos/done/` en el **mismo** PR.
 
 ## 9. Referencias
 

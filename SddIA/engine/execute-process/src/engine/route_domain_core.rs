@@ -270,6 +270,29 @@ fn build_telegram_message_from_event(event: &Value) -> Option<String> {
                 .unwrap_or_else(|| "sin-traza".into());
             Some(format!("Fractura detectada: {proc}\n{trace}"))
         }
+        "Process_Execution_Completed" => {
+            let pname = payload
+                .and_then(|p| p.get("process_name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("?");
+            let cid = payload
+                .and_then(|p| p.get("correlation_id"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .unwrap_or("sin-correlation_id");
+            let st = payload
+                .and_then(|p| p.get("status"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("success");
+            let cycle = payload
+                .and_then(|p| p.get("cycle_phase"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("completed");
+            Some(format!(
+                "PEC {st}/{cycle}: {pname}\ncorrelation_id={cid}"
+            ))
+        }
         _ => None,
     }
 }
@@ -757,6 +780,20 @@ pub(crate) fn dispatch_subscriber(
         return (sid, "failed".into(), Some(feedback), code);
     }
 
+    if subscriber.get("action").and_then(|v| v.as_str()).map(str::trim)
+        == Some("persist-pec-correlation-proof")
+    {
+        match super::persist_pec_correlation_proof::run_from_event(repo, event) {
+            Ok(super::persist_pec_correlation_proof::PersistOutcome::Wrote(_)) => {
+                return (sid, "success".into(), None, 0);
+            }
+            Ok(super::persist_pec_correlation_proof::PersistOutcome::SkippedNoCid) => {
+                return (sid, "skipped-no-correlation".into(), None, 0);
+            }
+            Err(e) => return (sid, "failed".into(), Some(e), 1),
+        }
+    }
+
     if let Some(action) = subscriber.get("action").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
         if action == "sync-entity-index"
             && matches!(
@@ -1236,6 +1273,7 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
 #[cfg(test)]
 mod blocking_tests {
     use super::*;
+    use std::fs;
     use std::path::PathBuf;
 
     fn repo_root() -> PathBuf {
@@ -1309,6 +1347,60 @@ mod blocking_tests {
             "emitter_agent": "git-hook-pre-push",
         });
         assert!(is_local_qa_event(&ev));
+    }
+
+    #[test]
+    fn telegram_message_for_pec_includes_correlation() {
+        let ev = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "feature",
+                "correlation_id": "e273713c-dd91-487b-8716-1bdc8c5da741",
+                "status": "success",
+                "cycle_phase": "completed"
+            }
+        });
+        let msg = build_telegram_message_from_event(&ev).expect("msg");
+        assert!(msg.contains("feature"));
+        assert!(msg.contains("e273713c-dd91-487b-8716-1bdc8c5da741"));
+        assert!(msg.contains("success"));
+    }
+
+    #[test]
+    fn dispatch_persist_pec_proof_writes_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        let cid = "e273713c-dd91-487b-8716-1bdc8c5da741";
+        let mut event = json!({
+            "event_id": "9ff24776-26c7-4596-8b08-7b6fc4531641",
+            "event_type": "Process_Execution_Completed",
+            "timestamp": "2026-08-15T12:00:00Z",
+            "payload": {
+                "correlation_id": cid,
+                "process_name": "feature",
+                "status": "success",
+                "cycle_phase": "completed"
+            }
+        });
+        let sub = json!({
+            "agent": "cumulo",
+            "action": "persist-pec-correlation-proof"
+        });
+        let (sid, status, err, code) = dispatch_subscriber(repo, &sub, &mut event, false);
+        assert_eq!(sid, "cumulo.persist-pec-correlation-proof");
+        assert_eq!(status, "success");
+        assert!(err.is_none());
+        assert_eq!(code, 0);
+        assert!(repo
+            .join(".SddIA/proofs/pec-correlation")
+            .join(format!("{cid}.json"))
+            .is_file());
     }
 }
 
