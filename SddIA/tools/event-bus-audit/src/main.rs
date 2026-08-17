@@ -3,7 +3,7 @@ use regex::Regex;
 use sddia_io::{emit_error, emit_success, read_stdin_json};
 use serde::Serialize;
 use serde_json::{json, Value};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
@@ -122,11 +122,11 @@ fn resolve_bus_paths(repo: &Path) -> Result<BusPaths, String> {
     })
 }
 
-fn load_known_event_types(repo: &Path) -> HashSet<String> {
-    let mut types = HashSet::new();
+fn load_catalog(repo: &Path) -> HashMap<String, String> {
+    let mut catalog = HashMap::new();
     let events_root = repo.join("SddIA/events");
     if !events_root.is_dir() {
-        return types;
+        return catalog;
     }
     let re = Regex::new(r#"event_type:\s*"?([^"\n]+)"?"#).expect("regex");
     for family in ["telemetry", "orchestration", "domain"] {
@@ -140,17 +140,134 @@ fn load_known_event_types(repo: &Path) -> HashSet<String> {
                 if path.extension().and_then(|e| e.to_str()) != Some("md") {
                     continue;
                 }
+                if path.file_name().and_then(|n| n.to_str()) == Some("index.md") {
+                    continue;
+                }
                 if let Ok(text) = fs::read_to_string(&path) {
                     if let Some(fm) = text.split("---").nth(1) {
                         if let Some(cap) = re.captures(fm) {
-                            types.insert(cap[1].trim().to_string());
+                            catalog.insert(cap[1].trim().to_string(), family.to_string());
                         }
                     }
                 }
             }
         }
     }
-    types
+    catalog
+}
+
+fn load_known_event_types(repo: &Path) -> HashSet<String> {
+    load_catalog(repo).into_keys().collect()
+}
+
+fn load_registry_counts(path: &Path) -> HashMap<String, usize> {
+    let mut out = HashMap::new();
+    let Ok(text) = fs::read_to_string(path) else {
+        return out;
+    };
+    let Ok(val) = serde_json::from_str::<Value>(&text) else {
+        return out;
+    };
+    let Some(obj) = val.as_object() else {
+        return out;
+    };
+    for (k, v) in obj {
+        let n = v
+            .as_array()
+            .map(|a| a.iter().filter(|s| s.is_object()).count())
+            .unwrap_or(0);
+        out.insert(k.clone(), n);
+    }
+    out
+}
+
+const PURGE_AFTER_FAMILIES: &[&str] = &["orchestration", "domain"];
+
+fn audit_subscription_coverage(repo: &Path, state: &mut ScanState) {
+    let catalog = load_catalog(repo);
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    let cfg: Value = fs::read_to_string(&cfg_path)
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or(json!({}));
+    let fractal = cfg.get("eda_fractal");
+    let rel_for = |key: &str, default: &str| -> String {
+        fractal
+            .and_then(|f| f.get(key))
+            .and_then(|v| v.as_str())
+            .unwrap_or(default)
+            .trim()
+            .trim_start_matches("./")
+            .replace('\\', "/")
+    };
+    let regs = [
+        (
+            "telemetry",
+            rel_for(
+                "telemetry_subscriptions",
+                "SddIA/core/event-telemetry-subscriptions.json",
+            ),
+        ),
+        (
+            "orchestration",
+            rel_for(
+                "orchestration_subscriptions",
+                "SddIA/core/event-orchestration-subscriptions.json",
+            ),
+        ),
+        (
+            "domain",
+            rel_for(
+                "domain_subscriptions",
+                "SddIA/core/event-domain-subscriptions.json",
+            ),
+        ),
+    ];
+    let mut by_family: HashMap<&str, (String, HashMap<String, usize>)> = HashMap::new();
+    for (family, rel) in &regs {
+        let counts = load_registry_counts(&repo.join(rel));
+        by_family.insert(*family, (rel.clone(), counts));
+    }
+
+    for (event_type, family) in &catalog {
+        let (rel, counts) = match by_family.get(family.as_str()) {
+            Some(v) => v,
+            None => continue,
+        };
+        let n = counts.get(event_type).copied();
+        if n.unwrap_or(0) == 0 {
+            state.anomalies.push(Anomaly {
+                kind: "EMPTY_SUBSCRIBERS".into(),
+                path: rel.clone(),
+                detail: event_type.clone(),
+            });
+            if PURGE_AFTER_FAMILIES.contains(&family.as_str()) {
+                state.anomalies.push(Anomaly {
+                    kind: "PURGE_BLACKHOLE".into(),
+                    path: rel.clone(),
+                    detail: format!("{event_type} family={family} purge_after=true"),
+                });
+            }
+        }
+    }
+
+    for (family, (rel, counts)) in &by_family {
+        for key in counts.keys() {
+            match catalog.get(key) {
+                None => state.anomalies.push(Anomaly {
+                    kind: "ORPHAN_REGISTRY_KEY".into(),
+                    path: rel.clone(),
+                    detail: key.clone(),
+                }),
+                Some(cat_fam) if cat_fam != *family => state.anomalies.push(Anomaly {
+                    kind: "FAMILY_MISMATCH".into(),
+                    path: rel.clone(),
+                    detail: format!("{key} registry={family} class_family={cat_fam}"),
+                }),
+                Some(_) => {}
+            }
+        }
+    }
 }
 
 fn rel_path(repo: &Path, path: &Path) -> String {
@@ -488,6 +605,8 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
         &mut state,
     );
 
+    audit_subscription_coverage(repo, &mut state);
+
     state.stale_pending = stale_pending;
     Ok((state, paths))
 }
@@ -659,6 +778,11 @@ fn main() {
         .iter()
         .filter(|a| a.kind == "structural" || a.kind == "parse")
         .count() as u64;
+    let circuit_alert = state.anomalies.iter().any(|a| {
+        a.kind == "PURGE_BLACKHOLE"
+            || (a.kind == "EMPTY_SUBSCRIBERS"
+                && a.path.contains("orchestration"))
+    });
 
     let summary = AuditSummary {
         stale_pending_count: state.stale_pending.len() as u64,
@@ -702,7 +826,8 @@ fn main() {
         || summary.dead_letter_witness_count > 0
         || structural_error_count > 0
         || orphan_witness_count > 0
-        || summary.stale_pending_count > 0;
+        || summary.stale_pending_count > 0
+        || circuit_alert;
 
     let mut kaizen_event_id = None;
     let mut kaizen_target = None;
@@ -764,5 +889,73 @@ mod tests {
             .captures("f47cb2ff-a6b8-4b45-90af-6292b5c3393a.cumulo.materialize-fracture-pbi.json")
             .unwrap();
         assert_eq!(&cap[1], "f47cb2ff-a6b8-4b45-90af-6292b5c3393a");
+    }
+
+    #[test]
+    fn circuit_coverage_emits_four_codes() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/events/orchestration")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/events/domain")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{
+              "eda_fractal": {
+                "telemetry_subscriptions": "SddIA/core/event-telemetry-subscriptions.json",
+                "orchestration_subscriptions": "SddIA/core/event-orchestration-subscriptions.json",
+                "domain_subscriptions": "SddIA/core/event-domain-subscriptions.json"
+              }
+            }"#,
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/events/orchestration/pec.md"),
+            "---\nevent_type: Process_Execution_Completed\nevent_family: orchestration\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/events/orchestration/lqa.md"),
+            "---\nevent_type: Local_QA_Requested\nevent_family: orchestration\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/events/domain/pra.md"),
+            "---\nevent_type: PullRequest_Audited\nevent_family: domain\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/core/event-telemetry-subscriptions.json"),
+            "{}",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/core/event-orchestration-subscriptions.json"),
+            r#"{"Process_Execution_Completed": []}"#,
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/core/event-domain-subscriptions.json"),
+            r#"{
+              "Local_QA_Requested": [{"agent":"argos","process":"pull-request-review"}],
+              "CapabilityDi_Requested": [{"agent":"cumulo","process":"x"}]
+            }"#,
+        )
+        .unwrap();
+        let mut state = ScanState::default();
+        audit_subscription_coverage(repo, &mut state);
+        let kinds: Vec<&str> = state.anomalies.iter().map(|a| a.kind.as_str()).collect();
+        assert!(kinds.contains(&"EMPTY_SUBSCRIBERS"), "{kinds:?}");
+        assert!(kinds.contains(&"PURGE_BLACKHOLE"), "{kinds:?}");
+        assert!(kinds.contains(&"FAMILY_MISMATCH"), "{kinds:?}");
+        assert!(kinds.contains(&"ORPHAN_REGISTRY_KEY"), "{kinds:?}");
+        assert!(state
+            .anomalies
+            .iter()
+            .any(|a| a.kind == "ORPHAN_REGISTRY_KEY" && a.detail == "CapabilityDi_Requested"));
+        assert!(state
+            .anomalies
+            .iter()
+            .any(|a| a.kind == "FAMILY_MISMATCH" && a.detail.contains("Local_QA_Requested")));
     }
 }

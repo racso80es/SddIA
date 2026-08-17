@@ -23,4 +23,6 @@ implementation_path_ref: "SddIA/tools/event-bus-audit"
 
 Auditoría empírica del bus EDA: escaneo .events, validación ECST, informe y emisión Kaizen_Alert_Required.
 
+Cubre además el cruce catálogo `SddIA/events/{family}/` ↔ registros Cúmulo (`EMPTY_SUBSCRIBERS`, `FAMILY_MISMATCH`, `ORPHAN_REGISTRY_KEY`, `PURGE_BLACKHOLE`). Umbral orchestration/blackhole → `Kaizen_Alert_Required` sin fallar el audit (`success` se mantiene).
+
 Proveedor canónico de capacidad `qa:probe` en bindings (PBI-043 H9).

@@ -17,6 +17,7 @@ docs/events/
 
 # Personalización de eventos por instancia (Vía C)
 .SddIA/events/
+.SddIA/proofs/
 
 # Workspaces operativos impermanentes (Fase 2 EDA)
 .SddIA/workspaces/

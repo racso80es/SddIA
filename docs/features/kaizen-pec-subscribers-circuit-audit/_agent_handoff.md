@@ -332,3 +332,88 @@ notes: "idempotent-hit"
 - R3 `RBAC_AUTHORING_KM_POLICY` **APTO** — Argos 0 writes `docs/todos/**`.
 - F2/F4 APTO; F3 ausente no bloqueante; MERGE ausente → handoff `accept-pr`. Cosecha fuera de jurisdicción.
 ```
+
+## 2026-08-17T06:18:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `94b7f03c-0e4d-4d40-a5c8-2936e29954f3`
+- persist_ref: `docs/features/kaizen-pec-subscribers-circuit-audit`
+- pbi_ref: `docs/todos/done/[Kaizen] Process_Execution_Completed — suscriptores y auditoría de circuito EDA.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 2 · accept_pr_handoff true · Shell git-manager Rejected.
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: ok**
+
+- Cosecha: `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `kaizen_seeds_dedup: 2` · `delivery_state: success` · `accept_pr_handoff: true`.
+- Reescrito `docs/features/kaizen-pec-subscribers-circuit-audit/validacion.md` (fase Cosecha Kaizen).
+- Anotada la fase en `docs/features/kaizen-pec-subscribers-circuit-audit/_agent_handoff.md`.
+- Dedup #177 DCC∈revoked (sighting PR #181 CID `94b7f03c…`) + #136 Shell/git-manager residual.
+- Sin `Kaizen_Alert_Required` → sin `PENDING_AUDIT_DOC_*`. FIX watcher GBW/Telegram ya materializados vía `System_Fracture_Detected` (fuera `document_id`).
+- R1/R2 copia Evidence Bridge Argos F5 `native_state`; Shell `git-manager` Rejected; sin stdout inventado.
+- Sin `PullRequest_Merged` → `accept_pr_handoff: true`. Downstream: Handoff `accept-pr`.
+```
+
+## 2026-08-17T06:20:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `DLKDvjJ7pL86Z3eTdu8Cd3BBPmYZHQKAb89qENbcGzzt`
+- persist_ref: `docs/features/kaizen-pec-subscribers-circuit-audit`
+- pbi_ref: `docs/todos/done/[Kaizen] Process_Execution_Completed — suscriptores y auditoría de circuito EDA.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: KAIZEN_COSECHA_GATE · seeds 0 · dedup 2 (#177+#136) · accept_pr_handoff true (sin Merged) · sin Kaizen_Alert_Required · Shell Rejected.
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md`; KM: sighting dedup #177 (0 seed nueva).
+- Cosecha: `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `kaizen_seeds_dedup: 2` · `delivery_state: success` · `accept_pr_handoff: true`.
+- Dedup: #177 (DCC revoked since 16:40:55Z · sibling `94b7f03c…`) + #136 OPERATIVO Shell/git-manager.
+- DIA: sin `Kaizen_Alert_Required`; R1/R2 copia Evidence Bridge `native_state`; Shell git-manager Rejected — sin stdout inventado.
+- FIX watcher GBW/Telegram: pending `System_Fracture_Detected` (fuera `document_id`; 0 seed).
+- Sin `PullRequest_Merged` `DLKDvjJ7…` / PR #181 → Handoff `accept-pr` procede.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-17T06:20:00Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit; Cúmulo Cosecha copia Argos F5 CID DLKDvjJ7 native_state; Shell git-manager Rejected — sin stdout inventado; KAIZEN_COSECHA_GATE seeds 0 dedup 2 (#177+#136); sin Merged → accept_pr_handoff true"
+```
+
+## 2026-08-17T06:17:13Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `DLKDvjJ7pL86Z3eTdu8Cd3BBPmYZHQKAb89qENbcGzzt`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - R1/R2: Evidence Bridge `native_state` · Shell `git-manager` Rejected (sin stdout inventado).
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md`; KM sighting en satélite/canónico `#177` (0 seed nueva).
+- `KAIZEN_COSECHA_GATE` · seeds **0** · dedup **2** (`#177` DCC sibling + `#136` Shell) · sin `Kaizen_Alert_Required`.
+- F5 heredado `success` · sin `PullRequest_Merged` `DLKDvjJ7…` → `accept_pr_handoff: true`.
+- R1/R2: Evidence Bridge `native_state` · Shell `git-manager` Rejected (sin stdout inventado).
+```
