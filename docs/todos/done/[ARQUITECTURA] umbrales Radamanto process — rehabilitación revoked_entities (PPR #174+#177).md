@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] umbrales Radamanto process — rehabilitación revoked_en
 format: markdown
 version: "1.0.0"
 created: "2026-08-16"
-updated: "2026-08-16T16:40:00Z"
+updated: "2026-08-16T17:06:00Z"
 status: done
 priority: media
 process: refactorization
@@ -31,10 +31,11 @@ olas:
     entity: delivery-close-cycle
     seed_pr: 177
     check: RBAC_EMITTER_NOT_REVOKED
-    since: "2026-08-16T16:11:08Z"
+    since: "2026-08-16T16:40:55Z"
 source_correlation_ids:
   - 6vw31k4eoXBCpXXfNWB4EL4FvtxYDbtZao4J47vwVPf8
   - 4b770fd6-99a0-435e-af43-a153aa23e310
+  - 5ead1e57-67ec-496c-adb2-2a4bdcf1e3be
 source_audits:
   - docs/features/kalma2-phase-barrier-timeout-persist/validacion.md
   - docs/fixes/centinelas-fracture-ola-20260812/validacion.md
@@ -120,12 +121,19 @@ Satélite: `docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — rehabilit
 | Registro | `.SddIA/cerbero/revoked_entities.json` → `revoked.delivery-close-cycle` |
 | `entity_type` (instancia) | `tool` (entropía: es proceso) |
 | `reason` | `success_rate_below_threshold` |
-| `since` | `2026-08-16T16:11:08Z` |
+| `since` | `2026-08-16T16:40:55Z` (re-revocación post-rehab; previo `16:11:08Z`) |
 | ≠ incidente #136 done | #136: `abrupt_success_rate_drop` since `2026-07-13` (cerrado; check APTO residual abierto) |
 | ECST origen | `4b770fd6-99a0-435e-af43-a153aa23e310` · PR #177 |
 | Sighting adicional | `ca6fc6cb-4ecd-427f-9638-ae1960963cc3` · PR #178 |
+| Sighting adicional | `5ead1e57-67ec-496c-adb2-2a4bdcf1e3be` · PR #180 (Cosecha Kaizen tekton-fire-and-forget) |
 | Check aduana | `RBAC_EMITTER_NOT_REVOKED: NO_APTO` (Cerbero F4/F5; no bloqueante) |
 | Firmante ECST | `Vertice_Biologico_Relay` (presente — E2 #136 liquidado) |
+
+### Sightings ola 2 (dedup Cosecha; sin seed nueva)
+
+- PPR #177 · CID `4b770fd6…` (origen seed)
+- PPR #178 · CID `ca6fc6cb…`
+- PPR #180 · CID `5ead1e57…` · sibling `5Zoqf2J6…` — misma clase DCC∈revoked `since 2026-08-16T16:40:55Z`
 
 ### Intervención ola 2
 

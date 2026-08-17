@@ -388,3 +388,122 @@ Downstream: Cosecha Kaizen → Handoff accept-pr.
 - R3 KM: **APTO**. Sin `PullRequest_Merged` → handoff `accept-pr` procede.
 - Downstream: Cosecha Kaizen → Handoff.
 ```
+
+## 2026-08-16T17:06:30Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `5Zoqf2J6mfbgK24EvFifnRDS5nFZ9gv2t2HwmKguqMFE`
+- persist_ref: `docs/features/tekton-fire-and-forget`
+- pbi_ref: `docs/todos/done/ARQUITECTURA] Erradicación de esperas síncronas en Tekton (Patrón Fire-and-Forget).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: KAIZEN_COSECHA_GATE · seeds 0 · dedup 1 (#136) · accept_pr_handoff false (sibling merge ddfa2da4↔5ead1e57) · sin Kaizen_Alert_Required · Shell Rejected.
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md`; KM: 0 seed nueva (dedup #136).
+- Cosecha: `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `kaizen_seeds_dedup: 1` · `delivery_state: success` · `accept_pr_handoff: false`.
+- Dedup: OPERATIVO #136 (Shell/F3 residual Kalma2).
+- Emisor GBW∉revoked · PPR∉revoked · merge sibling `ddfa2da4` (CID `5ead1e57…`) → sin re-merge.
+- DIA: sin `Kaizen_Alert_Required`; R1/R2 copia Evidence Bridge `native_state`; Shell git-manager Rejected — sin stdout inventado.
+- Downstream: Handoff materialización omitido (`accept_pr_handoff: false`).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-16T17:06:30Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit; Cúmulo Cosecha copia Argos F5 CID 5Zoqf2J6 native_state; Shell git-manager Rejected — sin stdout inventado; KAIZEN_COSECHA_GATE seeds 0 dedup 1 (#136); sibling merge ddfa2da4 → accept_pr_handoff false"
+```
+
+## 2026-08-16T17:06:22Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `5Zoqf2J6mfbgK24EvFifnRDS5nFZ9gv2t2HwmKguqMFE`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Shell `git-manager` Rejected — R2 vía `native_state` (sin stdout inventado).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `KAIZEN_COSECHA_GATE` · seeds 0 · dedup 1 · `accept_pr_handoff: false`
+
+- `validacion.md` — reescrito (Cosecha Kaizen · CID `5Zoqf2J6…`).
+- `_agent_handoff.md` — entrada de fase + Evidence Bridge.
+- KM: 0 writes nuevas en `docs/todos/` · dedup OPERATIVO #136 (Shell/F3).
+- Emisor GBW∉revoked · sin `Kaizen_Alert_Required`.
+- Merge sibling `ddfa2da4`↔`5ead1e57` → sin re-merge.
+- Shell `git-manager` Rejected — R2 vía `native_state` (sin stdout inventado).
+```
+
+## 2026-08-16T17:06:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `5ead1e57-67ec-496c-adb2-2a4bdcf1e3be`
+- persist_ref: `docs/features/tekton-fire-and-forget`
+- pbi_ref: `docs/todos/done/ARQUITECTURA] Erradicación de esperas síncronas en Tekton (Patrón Fire-and-Forget).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: KAIZEN_COSECHA_GATE · seeds 0 · dedup 2 (#177+#136) · accept_pr_handoff false (Merged ddfa2da4) · sin Kaizen_Alert_Required · Shell Rejected.
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md`; KM: sighting dedup #177 (0 seed nueva).
+- Cosecha: `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `kaizen_seeds_dedup: 2` · `delivery_state: success` · `accept_pr_handoff: false`.
+- Dedup: #177 (DCC revoked since 16:40:55Z) + #136 OPERATIVO Shell/git-manager.
+- DIA: sin `Kaizen_Alert_Required`; R1/R2 copia Evidence Bridge `native_state`; Shell git-manager Rejected — sin stdout inventado.
+- Merged `ddfa2da4…` (audit `5ead1e57…`) → Handoff omitido.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-16T17:06:00Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit; Cúmulo Cosecha copia Argos F5 CID 5ead1e57 native_state; Shell git-manager Rejected — sin stdout inventado; KAIZEN_COSECHA_GATE seeds 0 dedup 2 (#177+#136); Merged ddfa2da4 → accept_pr_handoff false"
+```
+
+## 2026-08-16T17:07:12Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `5ead1e57-67ec-496c-adb2-2a4bdcf1e3be`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - R1/R2: Evidence Bridge `native_state` · Shell `git-manager` Rejected (sin stdout inventado).
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: ok**
+
+- Tocados: `validacion.md`, `_agent_handoff.md`; KM sighting en canónico/satélite `#177` (0 seed nueva).
+- `KAIZEN_COSECHA_GATE` · seeds **0** · dedup **2** (`#177` DCC + `#136` Shell) · sin `Kaizen_Alert_Required`.
+- F5 heredado `success` · `PullRequest_Merged` `ddfa2da4…` → `accept_pr_handoff: false` (sin re-handoff).
+- R1/R2: Evidence Bridge `native_state` · Shell `git-manager` Rejected (sin stdout inventado).
+```
