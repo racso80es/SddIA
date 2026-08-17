@@ -10,6 +10,7 @@ uuid: fe8d3d21-ebeb-4a83-8b53-f2d7f0c19b16
 laudo: S2-pec-correlation-proof
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/181
 checks:
   AC-O1-FANOUT: "APTO — 2 suscriptores (persist-pec-correlation-proof + send-telegram-notification); route_persists_proof_then_purges_parent"
   AC-O1-STATUS: "APTO — build_status_body_resolves_proof_after_pec_gone → HTTP 200 completed post-purge"
@@ -37,6 +38,7 @@ git_changes:
   - SddIA/evolution/6586a1e1-a1d7-4ffc-bd6a-b3f658d7ef79.md
   - SddIA/evolution/Evolution_log.md
   - docs/features/kaizen-pec-subscribers-circuit-audit/
+  - docs/features/kaizen-pec-subscribers-circuit-audit/finalize-process.md
   - docs/todos/done/[Kaizen] Process_Execution_Completed — suscriptores y auditoría de circuito EDA.md
 ---
 
