@@ -13,6 +13,10 @@ pbi_archived: true
 approval_status: aprobado
 verdict: aprobado
 delivery_state: success
+pr_url: https://github.com/racso80es/SddIA/pull/182
+merged_pr: true
+merge_commit: 8bbde24cf3b2b5bd8793a629e50d1dba6578fa0d
+closed: "2026-08-18"
 ---
 
 # Validación — kalma2-mvp-sensorial-email (Ola A)
