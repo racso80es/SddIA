@@ -1,5 +1,5 @@
 {
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -15,7 +15,8 @@
     "actions": "SddIA/actions",
     "process": "SddIA/process",
     "process_domain_roots": [
-      "SddIA/library/codexes/codex-software-engineering/process"
+      "SddIA/library/codexes/codex-software-engineering/process",
+      "SddIA/library/codexes/codex-kalma2-assistant/process"
     ],
     "skills": "SddIA/skills",
     "tools": "SddIA/tools",

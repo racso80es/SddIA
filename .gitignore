@@ -58,3 +58,4 @@ __pycache__/
 .SddIA/vector_store/
 
 target/
+/.SddIA/inbox

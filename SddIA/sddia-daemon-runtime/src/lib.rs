@@ -284,6 +284,13 @@ impl DaemonRuntime {
                     self.daemon_name
                 ));
             }
+            if other != std::process::id() {
+                eprintln!(
+                    "[{}] lock huérfano pid={other}; recuperando",
+                    self.daemon_name
+                );
+                let _ = fs::remove_file(&self.lock_path);
+            }
         }
         self.write_lock()?;
         self.emit_heartbeat(top, true)?;

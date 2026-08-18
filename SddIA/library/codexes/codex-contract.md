@@ -1,9 +1,9 @@
 ---
 name: "codex-contract"
-version: "1.1.0"
+version: "1.2.0"
 nature: "contract"
 target_entity: "domain-codex"
-description: "Contrato estructural obligatorio para el orquestador de normas (Códice) en la Librería SddIA."
+description: "Contrato estructural obligatorio para el orquestador de normas (Códice) en la Librería SddIA. v1.2.0: bloque dlt opcional (identidad de activo / pre-mint)."
 ---
 
 # Contrato de Entidad: Códice de Dominio (Domain Codex)
@@ -23,6 +23,22 @@ El archivo DEBE contener este frontmatter para permitir el Enrutamiento Semánti
 - `composition`: (Array de Objetos) El inventario exacto de normas. Cada objeto DEBE contener:
   - `norm`: (String) El UUID de la norma táctica.
   - `path`: (String) La ruta relativa canónica hacia el archivo `.md` de la norma en la cantera.
+- `dlt`: (Objeto, **opcional**, v1.2.0) Identidad de activo para minteo. La **ausencia** del bloque no invalida el códice (retrocompatibilidad con v1.1.0). Si el bloque está presente, DEBE contener:
+  - `asset_class`: (String) Clase de activo (p. ej. `domain-codex`).
+  - `mint_status`: (String) Enum estricto: `pre-mint` \| `minted` \| `revoked`.
+  - `ledger`: (String) Identificador del ledger de anclaje.
+  - `canonical_hash`: (String) Hash canónico del códice; DEBE ser idéntico a `hash_signature`. El minteo ancla, no recalcula.
+  - `token_id`: (String \| `null`) Identificador on-chain. DEBE ser `null` mientras `mint_status` sea `pre-mint`.
+  - `owner_vertex`: (String) Titular soberano del activo.
+
+### 1.1 Invariantes del bloque `dlt` (si presente)
+
+| Invariante | Regla |
+|-----------|-------|
+| `canonical_hash` | Idéntico a `hash_signature` |
+| `mint_status: pre-mint` | `token_id` es `null` |
+| `uuid` | Inmutable de por vida; un UUID nuevo es otro activo |
+| `version` | SemVer; cambio de contenido ⇒ nueva versión ⇒ nuevo `canonical_hash` |
 
 ## 2. Reglas de Cuerpo (Markdown)
 El cuerpo del archivo actúa como la inyección de contexto ("Vibe") para el Agente orquestador. DEBE contener:

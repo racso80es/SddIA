@@ -270,6 +270,17 @@ fn audit_subscription_coverage(repo: &Path, state: &mut ScanState) {
     }
 }
 
+fn utf8_prefix(s: &str, max_bytes: usize) -> &str {
+    if s.len() <= max_bytes {
+        return s;
+    }
+    let mut end = max_bytes;
+    while end > 0 && !s.is_char_boundary(end) {
+        end -= 1;
+    }
+    &s[..end]
+}
+
 fn rel_path(repo: &Path, path: &Path) -> String {
     path.strip_prefix(repo)
         .unwrap_or(path)
@@ -700,7 +711,7 @@ fn build_report_md(
         ranked.sort_by(|a, b| b.1.cmp(a.1));
         for (err, count) in ranked.into_iter().take(10) {
             let short = if err.len() > 120 {
-                format!("{}…", &err[..120])
+                format!("{}…", utf8_prefix(err, 120))
             } else {
                 err.clone()
             };
@@ -876,6 +887,15 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn utf8_prefix_does_not_split_emdash() {
+        let s = format!("{}—resto", "x".repeat(119));
+        let p = utf8_prefix(&s, 120);
+        assert!(p.is_char_boundary(p.len()));
+        assert!(!p.contains('—'));
+        assert_eq!(p.len(), 119);
+    }
 
     #[test]
     fn parse_timestamp_accepts_z_suffix() {

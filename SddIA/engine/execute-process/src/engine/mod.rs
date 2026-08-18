@@ -149,6 +149,10 @@ pub fn run_process(
         return handlers::telegram_gateway::run(repo, process_inputs);
     }
 
+    if canonical == "email-triage-gateway" {
+        return handlers::email_triage::run(repo, process_inputs);
+    }
+
     if canonical == "governance-daemon-manager" {
         return handlers::governance_daemon::run(repo, process_inputs);
     }

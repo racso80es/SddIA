@@ -413,7 +413,12 @@ fn read_json_file(path: &Path) -> Option<serde_json::Value> {
     serde_json::from_str(&text).ok()
 }
 
-fn find_domain_event(domain_dir: &Path, dead_dir: &Path, event_id: &str) -> Option<(PathBuf, serde_json::Value, bool)> {
+fn find_domain_event_with_proofs(
+    domain_dir: &Path,
+    dead_dir: &Path,
+    proofs_dir: Option<&Path>,
+    event_id: &str,
+) -> Option<(PathBuf, serde_json::Value, bool)> {
     let name = format!("{event_id}.json");
     let in_domain = domain_dir.join(&name);
     if in_domain.is_file() {
@@ -425,6 +430,20 @@ fn find_domain_event(domain_dir: &Path, dead_dir: &Path, event_id: &str) -> Opti
     if in_dead.is_file() {
         if let Some(v) = read_json_file(&in_dead) {
             return Some((in_dead, v, true));
+        }
+    }
+    if let Some(proofs) = proofs_dir {
+        let in_proof = proofs.join("email-triaged").join(&name);
+        if in_proof.is_file() {
+            if let Some(v) = read_json_file(&in_proof) {
+                let projected = serde_json::json!({
+                    "event_id": v.get("event_id").cloned().unwrap_or(serde_json::json!(event_id)),
+                    "event_type": v.get("event_type").cloned().unwrap_or(serde_json::json!("Email_Triaged")),
+                    "timestamp": v.get("timestamp"),
+                    "payload": v.get("payload"),
+                });
+                return Some((in_proof, projected, false));
+            }
         }
     }
     None
@@ -575,7 +594,7 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
 
     let (domain_dir, orch_dir, dead_dir) = load_fractal_paths(repo);
     let proofs_dir = load_proofs_dir(repo);
-    let domain_hit = find_domain_event(&domain_dir, &dead_dir, event_id);
+    let domain_hit = find_domain_event_with_proofs(&domain_dir, &dead_dir, Some(&proofs_dir), event_id);
     let pec = find_pec_by_correlation(&orch_dir, event_id)
         .or_else(|| find_pec_proof(&proofs_dir, event_id));
 
@@ -1518,6 +1537,83 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert_eq!(v["status"], "completed");
         assert_eq!(v["orchestration"]["found"], true);
+        let _ = std::fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn build_status_body_projects_email_triaged() {
+        let repo = std::env::temp_dir().join(format!("sddia-email-triaged-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(repo.join(".events/domain")).unwrap();
+        std::fs::create_dir_all(repo.join(".events/orchestration")).unwrap();
+        std::fs::create_dir_all(repo.join(".events/dead-letter")).unwrap();
+        let eid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        std::fs::write(
+            repo.join(".events/domain").join(format!("{eid}.json")),
+            serde_json::json!({
+                "event_id": eid,
+                "event_type": "Email_Triaged",
+                "event_family": "domain",
+                "payload": {
+                    "message_uid": "42",
+                    "verdict": "noise",
+                    "decision_path": "deterministic",
+                    "thermodynamic_cost": {"tokens_in": 0, "tokens_out": 0, "duration_ms": 0}
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let (code, body) = build_status_body(&repo, eid);
+        assert_eq!(code, 200);
+        let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert_eq!(v["success"], true);
+        assert_eq!(v["domain"]["found"], true);
+        assert_eq!(v["domain"]["event_type"], "Email_Triaged");
+        let _ = std::fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn build_status_body_projects_email_triaged_from_proof_after_purge() {
+        let repo = std::env::temp_dir().join(format!("sddia-email-triaged-proof-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(repo.join(".events/domain")).unwrap();
+        std::fs::create_dir_all(repo.join(".events/orchestration")).unwrap();
+        std::fs::create_dir_all(repo.join(".events/dead-letter")).unwrap();
+        let eid = "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff";
+        let proof_dir = repo.join(".SddIA/proofs/email-triaged");
+        std::fs::create_dir_all(&proof_dir).unwrap();
+        std::fs::write(
+            proof_dir.join(format!("{eid}.json")),
+            serde_json::json!({
+                "kind": "email-triaged-proof",
+                "event_id": eid,
+                "event_type": "Email_Triaged",
+                "timestamp": "2026-08-18T15:00:00Z",
+                "payload": {
+                    "message_uid": "42",
+                    "verdict": "noise",
+                    "decision_path": "deterministic"
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let (code, body) = build_status_body(&repo, eid);
+        assert_eq!(code, 200);
+        let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+        assert_eq!(v["domain"]["found"], true);
+        assert_eq!(v["domain"]["event_type"], "Email_Triaged");
         let _ = std::fs::remove_dir_all(&repo);
     }
 

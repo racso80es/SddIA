@@ -18,6 +18,8 @@ KALMA_URL="http://${KALMA_HOST}:${KALMA_PORT}"
 DAEMON_LAUNCHER_DIR="SddIA/scripts/daemons"
 REQUIRED_DAEMONS=(event-watcher event-sweeper)
 OPTIONAL_DAEMONS=(telegram-watcher github-bridge-watcher)
+EMAIL_DAEMON="email-watcher"
+EMAIL_DAEMON_STARTED=0
 DAEMON_NAMES=("${REQUIRED_DAEMONS[@]}" "${OPTIONAL_DAEMONS[@]}")
 STATUS_DIR=".SddIA/daemons/status"
 IOTA_RELAY_DIR=".SddIA/services/iota-publish-relay"
@@ -60,12 +62,14 @@ cleanup() {
     done
 
     pkill -x kalma2-bridge 2>/dev/null || true
+    pkill -x "$EMAIL_DAEMON" 2>/dev/null || true
 
     # Contrato CEN-01: retirar locks tras apagado (evita PIDs muertos residuales).
     sleep 0.3
     for daemon in "${DAEMON_NAMES[@]}"; do
         rm -f "${STATUS_DIR}/${daemon}.lock"
     done
+    rm -f "${STATUS_DIR}/${EMAIL_DAEMON}.lock"
 
     if [[ -n "$IOTA_RELAY_PID" ]]; then
         pkill -x iota-publish-relay 2>/dev/null || true
@@ -273,6 +277,18 @@ for name in "${OPTIONAL_DAEMONS[@]}"; do
     fi
 done
 
+if [[ -n "${SDDIA_EMAIL_IMAP_HOST:-}" ]]; then
+    echo "[SddIA] Centinela sensorial IMAP (${EMAIL_DAEMON})..."
+    if _start_daemon "$EMAIL_DAEMON"; then
+        EMAIL_DAEMON_STARTED=1
+        ((OPTIONAL_DAEMONS_OK++)) || true
+    else
+        echo "  -> [WARN] ${EMAIL_DAEMON} no arrancó (revise SDDIA_EMAIL_* en bóveda instancia)."
+    fi
+else
+    echo "[SddIA] ${EMAIL_DAEMON} omitido (SDDIA_EMAIL_IMAP_HOST no configurado en bóveda)."
+fi
+
 # 2. Kalma2 (puente HTTP nativo Rust) — hereda bóveda ya exportada
 echo "[SddIA] Levantando el puente de Kalma2 (kalma2-bridge)..."
 
@@ -328,7 +344,10 @@ fi
 
 echo "===================================================================="
 echo "[SddIA] Ecosistema S+ Grade operativo."
-echo "[SddIA] Centinelas obligatorios: ${#REQUIRED_DAEMONS[@]}/${#REQUIRED_DAEMONS[@]}; opcionales: ${OPTIONAL_DAEMONS_OK}/${#OPTIONAL_DAEMONS[@]}"
+echo "[SddIA] Centinelas obligatorios: ${#REQUIRED_DAEMONS[@]}/${#REQUIRED_DAEMONS[@]}; opcionales: ${OPTIONAL_DAEMONS_OK}/$(( ${#OPTIONAL_DAEMONS[@]} + ($EMAIL_DAEMON_STARTED) ))"
+if [[ "$EMAIL_DAEMON_STARTED" -eq 1 ]]; then
+    echo "[SddIA] ${EMAIL_DAEMON}: ACTIVO (circuito sensorial correo)"
+fi
 echo "[SddIA] Kalma2 disponible en: ${KALMA_URL}"
 echo "[SddIA] Presiona Ctrl+C para realizar una desconexión limpia."
 echo "===================================================================="
