@@ -2,12 +2,14 @@
 id: start-sddia
 uuid: d5aae800-06b0-4acc-b0fc-476d8e241eb1
 type: process
-version: 1.2.1
+version: 1.2.2
 ---
 
 # Ignición del ecosistema SddIA (`start-sddia.sh`)
 
-Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
+Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA), el centinela **email-watcher** (si IMAP configurado) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
+
+**v1.2.2:** integra `email-watcher` como centinela opcional condicionado a `SDDIA_EMAIL_IMAP_HOST` en bóveda (`.SddIA/.dev/.env` prevalece sobre `.dev/.env`).
 
 **v1.2.1:** ignición recompila `execute-process` en `SddIA/target` (`CARGO_TARGET_DIR` explícito) y exporta `SDDIA_EXECUTE_PROCESS_BIN` a los centinelas. Evita ELF stale de caché sandbox / `target` ajeno.
 
@@ -18,6 +20,7 @@ Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema
 | **Servicios de Red** | Puente local hacia IOTA Rebased (Relay) | `.SddIA/services/iota-publish-relay/server.mjs` (Node.js) |
 | **Centinelas obligatorios** | Bus EDA y barrido de pendientes | `SddIA/scripts/daemons/event-watcher.sh`, `event-sweeper.sh` |
 | **Centinelas opcionales** | Telegram y GitHub bridge | `SddIA/scripts/daemons/telegram-watcher.sh`, `github-bridge-watcher.sh` |
+| **Centinela sensorial (condicional)** | Correo IMAP read-only → `Email_Received` | `SddIA/scripts/daemons/email-watcher.sh` si `SDDIA_EMAIL_IMAP_HOST` está en bóveda |
 | **Kalma2** | UI + `POST /api/interact` | `SddIA/target/{debug,release}/kalma2-bridge` |
 
 ## Separación genoma / instancia
@@ -39,7 +42,10 @@ flowchart TD
     C --> D{event-watcher + event-sweeper OK?}
     D -->|no| X[cleanup + exit 1]
     D -->|sí| E[Centinelas opcionales]
-    E --> F[kalma2-bridge hereda bóveda]
+    E --> EW{SDDIA_EMAIL_IMAP_HOST?}
+    EW -->|sí| EWA[email-watcher]
+    EW -->|no| F[kalma2-bridge hereda bóveda]
+    EWA --> F
     F --> G{HTTP GET / responde?}
     G -->|no| X
     G -->|sí| HB{heartbeats obligatorios auditados?}
@@ -52,16 +58,17 @@ flowchart TD
 1. Ancla `REPO_ROOT` y carga bóveda (`_sddia_load_vault`) para que `kalma2-bridge`/`mayeuta-llm` hereden `SDDIA_LLM_*`.
 2. `cargo build -p execute-process` con `CARGO_TARGET_DIR=$REPO/SddIA/target`; exporta `SDDIA_EXECUTE_PROCESS_BIN`.
 3. Lanza centinelas vía `SddIA/scripts/daemons/<name>.sh`.
-4. Resuelve y arranca `kalma2-bridge` nativo ELF (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
-5. Health check HTTP en `http://127.0.0.1:8765/`.
-6. Gate: `daemon-heartbeat-audit` confirma latidos frescos de obligatorios (`missed_cycles < 3`).
-7. `wait` hasta señal de terminación; cleanup elimina locks en `.SddIA/daemons/status/`.
+4. Si `SDDIA_EMAIL_IMAP_HOST` está definido tras `_sddia_load_vault`, lanza `email-watcher` (fallo no bloquea ignición; emite `[WARN]`).
+5. Resuelve y arranca `kalma2-bridge` nativo ELF (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
+6. Health check HTTP en `http://127.0.0.1:8765/`.
+7. Gate: `daemon-heartbeat-audit` confirma latidos frescos de obligatorios (`missed_cycles < 3`).
+8. `wait` hasta señal de terminación; cleanup elimina locks en `.SddIA/daemons/status/` (incl. `email-watcher.lock`).
 
 ## Uso
 
 ```bash
 (cd SddIA && cargo build -p kalma2-bridge -p execute-process \
-  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher)
+  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher -p email-watcher)
 ./start-sddia.sh
 ```
 
@@ -74,18 +81,21 @@ Variables de entorno:
 | `SDDIA_KALMA2_BRIDGE_BIN` | autodetect | Override binario bridge |
 | `SDDIA_EXECUTE_PROCESS_BIN` | autodetect | Override orquestador (bridge) |
 | `SDDIA_REPO_ROOT` | autodetect | Raíz repo (bridge) |
+| `SDDIA_EMAIL_IMAP_HOST` | — | Si presente en bóveda, arranca `email-watcher` |
+| `SDDIA_EMAIL_INITIAL_LOOKBACK_DAYS` | `60` | Primer sondeo IMAP: ventana `SINCE` (no `ALL`) |
+| `SDDIA_EMAIL_MAX_UIDS_PER_POLL` | `50` | Tope por sondeo; UNSEEN prioritario |
 
 ## Apagado limpio
 
 - `kill` jobs en background.
-- `pkill -x` centinelas + `kalma2-bridge`.
-- Elimina `{daemons_instance.status}/{name}.lock` de los cuatro centinelas (contrato CEN-01; evita PIDs muertos residuales).
+- `pkill -x` centinelas + `kalma2-bridge` + `email-watcher` (si estaba activo).
+- Elimina `{daemons_instance.status}/{name}.lock` de los cuatro centinelas base y `email-watcher.lock` (contrato CEN-01; evita PIDs muertos residuales).
 
 ## Requisitos previos
 
 ```bash
 (cd SddIA && cargo build -p kalma2-bridge -p execute-process \
-  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher)
+  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher -p email-watcher)
 ```
 
 - Bundle UI en `interfaces/kalma2/`.

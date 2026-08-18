@@ -158,6 +158,14 @@
       "intent": "Aduana síncrona local pre-push: Argos verifica cobertura documental y QA antes de permitir el push."
     }
   ],
+  "Email_Received": [
+    {
+      "agent": "cumulo",
+      "process": "email-triage-gateway",
+      "intent": "Aduana cognitiva del canal aferente de correo; triaje de tres vías bajo codex-kalma2-assistant."
+    }
+  ],
+  "Email_Triaged": [],
   "TelegramMessage_Received": [
     {
       "agent": "mayeuta",

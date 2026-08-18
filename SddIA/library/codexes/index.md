@@ -16,6 +16,7 @@ Contrato normativo de la familia: `codex-contract.md` (no constituye un códice 
 
 | Archivo fuente | uuid | name | version | target_environment | certification_grade |
 |----------------|------|------|---------|-------------------|---------------------|
+| `codex-kalma2-assistant.md` | `c43544f3-c557-4cc3-8a03-7175282f2c88` | SddIA Codex Kalma2 Personal Assistant | 1.0.0 | personal-assistant, email, kalma2 | Pendiente |
 | `codex-software-engineering.md` | `a69d04b0-1d07-49ef-bcbf-6850e4a70ae2` | SddIA Codex Software Engineering | 1.0.0 | software-engineering, git, pull-request | Pendiente |
 | `codex-backend-admin-splus.md` | `04f0bc4e-ef1f-4431-a445-398f1820db07` | SddIA Codex Backend Admin S+ | 1.0.0 | backend, dotnet, admin | Pendiente |
 | `codex-frontend-admin-splus.md` | `30dc1742-aba2-4c30-8a3a-eea0e256194b` | SddIA Codex Frontend Admin S+ | 1.0.0 | frontend, nextjs, admin | Pendiente |
@@ -29,4 +30,5 @@ Ninguno. `codex-contract.md` es el contrato de familia, no una fila del catálog
 
 - **Sincronización:** cuatro archivos `domain-codex` con identidad atómica; reflejados en sendas filas del catálogo (incl. `codex-software-engineering` ABSTRACT-02).
 - **Metadatos:** valores de la tabla copiados desde el YAML de cada códice al momento de indexación.
+
 

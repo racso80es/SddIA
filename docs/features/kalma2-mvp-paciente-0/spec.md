@@ -106,7 +106,7 @@ kalma2-bridge ──► execute-process --process sync-client-assets  (202, fire
 
 ```yaml
 ---
-uuid: "9a9694fb-3eae-4379-b67c-43e0d802f4d3"
+uuid: "574fe330-137f-4f3a-b72d-dba189c6c406"
 name: "email-received"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -139,7 +139,7 @@ hash_signature: "sha256:pending-forge"
 
 ```yaml
 ---
-uuid: "915726b1-0805-42e1-a1f8-9d730eaf27f9"
+uuid: "6a4b0e9a-42e1-425c-8a16-9344eae4f246"
 name: "email-triaged"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
@@ -168,7 +168,7 @@ hash_signature: "sha256:pending-forge"
 
 ```yaml
 ---
-uuid: "e32bc42b-365a-4ee1-a2ae-55ea4237f440"
+uuid: "773a11e7-3a42-4eba-a383-79dd6ef8c263"
 name: "email-watcher"
 version: "1.0.0"
 contract: "daemons-contract v1.0.0"
@@ -213,8 +213,14 @@ Leída de `{instancia}/.SddIA/.dev/.env` (`env_hierarchy.instance`). Ningún val
 | `SDDIA_EMAIL_MAILBOX` | No | `INBOX` |
 | `SDDIA_EMAIL_POLL_SECONDS` | No | `60` |
 | `SDDIA_EMAIL_SNIPPET_CHARS` | No | `512` |
+| `SDDIA_EMAIL_INITIAL_LOOKBACK_DAYS` | No | `60` — ventana del **primer** sondeo (`SINCE` IMAP); no usa `ALL` |
+| `SDDIA_EMAIL_MAX_UIDS_PER_POLL` | No | `50` — tope por sondeo; UNSEEN prioritario |
 
-### 4.3 Idempotencia
+### 4.3 Idempotencia y ventana inicial
+
+**Primer arranque** (`last_uid: 0`): el centinela busca correo con `SINCE <hoy − SDDIA_EMAIL_INITIAL_LOOKBACK_DAYS>` (defecto 60 días). El histórico anterior queda fuera del MVP; consulta diferida a una ola futura (backfill bajo demanda del usuario).
+
+**Arranques posteriores**: búsqueda incremental `UID (last_uid+1):*` **unida a `UNSEEN`**; prioridad al correo no leído (UID descendente), tope `SDDIA_EMAIL_MAX_UIDS_PER_POLL`. El watermark avanza solo en secuencia contigua (no salta huecos del catch-up).
 
 `{instancia}/.SddIA/daemons/state/email-watcher.json`:
 
@@ -232,7 +238,7 @@ Regla: solo se emite ECST para `uid > last_uid`; el watermark se persiste **desp
 
 ```yaml
 ---
-uuid: "d4a29f1f-ba90-44d7-94c8-5fba9eaef33b"
+uuid: "3d8c7e09-6d98-422d-909f-5b233ba7fcf2"
 name: "email-triage-matrix"
 version: "1.0.0"
 nature: "tactical-norm"
@@ -255,7 +261,7 @@ Cuerpo normativo obligatorio:
 
 ```yaml
 ---
-uuid: "f50ebb1d-8765-4aff-becc-6048951d4a1e"
+uuid: "c43544f3-c557-4cc3-8a03-7175282f2c88"
 name: "SddIA Codex Kalma2 Personal Assistant"
 version: "1.0.0"
 nature: "domain-codex"
@@ -265,7 +271,7 @@ certification_grade: "Pendiente"
 process_membership:
   - email-triage-gateway
 composition:
-  - norm: "d4a29f1f-ba90-44d7-94c8-5fba9eaef33b"
+  - norm: "3d8c7e09-6d98-422d-909f-5b233ba7fcf2"
     path: "../norms/email-triage-matrix.md"
   - norm: "4c448c82-de41-460f-b24f-82a84fa5ed69"
     path: "../norms/features-documentation-pattern.md"
@@ -300,7 +306,7 @@ Reside en `SddIA/library/codexes/codex-kalma2-assistant/process/`, no en `SddIA/
 
 ```yaml
 ---
-uuid: "815215e7-fd7f-4500-baff-6801a53842ea"
+uuid: "9cb9a63a-bb86-4b97-8a75-4dac2f2cb5ce"
 name: email-triage-gateway
 version: "1.0.0"
 contract: process-contract v1.4.0
@@ -453,7 +459,7 @@ Base remota configurable por entorno (defecto `https://raw.githubusercontent.com
 
 ```yaml
 ---
-uuid: "0219a3a5-a5a9-4bb5-a225-77a501e8fba0"
+uuid: "feb7314d-b86d-4653-a876-507c824ec9e2"
 name: agenda-manager
 version: "1.0.0"
 contract: skills-contract

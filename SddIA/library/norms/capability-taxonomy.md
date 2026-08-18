@@ -1,7 +1,7 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.5"
+version: "1.0.6"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
@@ -44,6 +44,10 @@ catalog:
     contract: "channel.ingest"
     version: "1.0.0"
     description: "Ingesta aferente de canal externo (Telegram) hacia eventos domain vía tool telegram-gateway."
+  - id: "agenda:persist"
+    contract: "agenda.persist"
+    version: "1.0.0"
+    description: "Asiento de agenda local de instancia vía skill agenda-manager."
 ---
 
 ## Directriz Core
@@ -67,6 +71,7 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `llm:interact` | `llm.interact` | 1.0.0 | Interacción LLM vía mayeuta-llm |
 | `gov:rbac` | `gov.rbac` | 1.0.0 | Gobernanza RBAC Cerbero Self-Healing |
 | `channel:ingest` | `channel.ingest` | 1.0.0 | Ingesta canal Telegram → domain |
+| `agenda:persist` | `agenda.persist` | 1.0.0 | Agenda local de instancia vía agenda-manager |
 
 ## Restricciones Duras
 

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/agenda.persist.schema.json",
+  "title": "agenda.persist",
+  "type": "object",
+  "required": ["exitCode", "data"],
+  "properties": {
+    "exitCode": {
+      "type": "integer",
+      "description": "0 éxito / distinto de 0 fallo"
+    },
+    "data": {
+      "description": "agenda_entry_id (CREATE) o listado de asientos (LIST)"
+    },
+    "error_log": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

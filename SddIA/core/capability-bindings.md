@@ -2,7 +2,7 @@
 uuid: "c4a8f2e1-7b3d-4e9a-a1c6-5d8f0b2e4a71"
 id: capability-bindings
 name: capability-bindings
-version: "1.4.0"
+version: "1.5.0"
 nature: "runtime-ssot"
 scope: "agnostic"
 bindings:
@@ -41,6 +41,10 @@ bindings:
   - capability_id: "channel:ingest"
     contract: "channel.ingest"
     provider: "tool:telegram-gateway"
+    provider_version: ">=1.0.0"
+  - capability_id: "agenda:persist"
+    contract: "agenda.persist"
+    provider: "skill:agenda-manager"
     provider_version: ">=1.0.0"
 ---
 

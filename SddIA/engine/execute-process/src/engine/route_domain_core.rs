@@ -527,6 +527,7 @@ pub(crate) fn dispatch_subscriber(
     subscriber: &Value,
     event: &mut Value,
     batch_mode_iota: bool,
+    event_path: Option<&Path>,
 ) -> (String, String, Option<String>, i32) {
     let sid = subscriber_id(subscriber);
     let agent = subscriber.get("agent").and_then(|v| v.as_str()).map(str::trim);
@@ -615,6 +616,26 @@ pub(crate) fn dispatch_subscriber(
             if let Some(chat) = payload_obj.get("chat_id").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
                 process_inputs.insert("chat_id".into(), json!(chat));
             }
+            let (status, exit_code) =
+                dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
+            if status == "success" {
+                return (sid, status, None, exit_code);
+            }
+            return (sid, "failed".into(), Some(status), exit_code);
+        }
+
+        if process_key == "email-triage-gateway" {
+            let Some(path) = event_path else {
+                return (
+                    sid,
+                    "failed".into(),
+                    Some("event_file_path required for email-triage-gateway".into()),
+                    1,
+                );
+            };
+            let rel = super::eda_bus_topology::rel_event_path(repo, path);
+            let mut process_inputs = Map::new();
+            process_inputs.insert("event_file_path".into(), json!(rel));
             let (status, exit_code) =
                 dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
             if status == "success" {
@@ -897,7 +918,8 @@ fn handle_subscriber(
         dispatch_mode,
     );
 
-    let (_, status, err, exit_code) = dispatch_subscriber(repo, subscriber, event, batch_mode_iota);
+    let (_, status, err, exit_code) =
+        dispatch_subscriber(repo, subscriber, event, batch_mode_iota, Some(pending_path));
     let delegation = delegation_meta(subscriber, exit_code);
 
     let promote_result = if status_is_terminal_ok(&status) {
@@ -1392,7 +1414,7 @@ mod blocking_tests {
             "agent": "cumulo",
             "action": "persist-pec-correlation-proof"
         });
-        let (sid, status, err, code) = dispatch_subscriber(repo, &sub, &mut event, false);
+        let (sid, status, err, code) = dispatch_subscriber(repo, &sub, &mut event, false, None);
         assert_eq!(sid, "cumulo.persist-pec-correlation-proof");
         assert_eq!(status, "success");
         assert!(err.is_none());

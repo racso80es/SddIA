@@ -22,6 +22,8 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 
 | Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |
 |----------------|------|------|------------|---------|----------|---------|--------------|
+| `email-triaged.md` | `6a4b0e9a-42e1-425c-8a16-9344eae4f246` | email-triaged | Email_Triaged | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `email_triaged` |
+| `email-received.md` | `574fe330-137f-4f3a-b72d-dba189c6c406` | email-received | Email_Received | 1.0.0 | events-contract v1.1.0 | peripheral-sensing | `email_received` |
 | `domain-entity-telemetry-captured.md` | `54a49fa7-8d45-4376-9aa1-deeebeb301ea` | domain-entity-telemetry-captured | Domain_Entity_Telemetry_Captured | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `domain_entity_telemetry_captured` |
 | `vector-memory-indexed.md` | `5fc8293d-d853-4b20-8387-b039c9eb5438` | vector-memory-indexed | Vector_Memory_Indexed | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `vector_memory_indexed` |
 | `thought-persisted.md` | `612a8b69-23fc-48d0-950e-28722ab084b9` | thought-persisted | Thought_Persisted | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `thought_persisted` |
@@ -46,5 +48,5 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 
 ## Integridad
 
-- **Clases:** 20 ECST en `SddIA/events/domain/`.
+- **Clases:** 22 ECST en `SddIA/events/domain/`.
 - **Regla de oro:** no mezclar telemetría cruda ni orquestación táctica en esta familia.

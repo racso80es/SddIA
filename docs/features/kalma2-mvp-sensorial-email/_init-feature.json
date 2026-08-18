@@ -1,0 +1,9 @@
+{
+  "feature_name": "kalma2-mvp-sensorial-email",
+  "branch_name": "feat/kalma2-mvp-sensorial-email",
+  "persist_ref": "docs/features/kalma2-mvp-sensorial-email",
+  "base_branch": "main",
+  "document_id": "PBI-KALMA2-MVP-01A",
+  "pbi_ref": "docs/todos/pending/[OPERATIVO] Kalma2 MVP 01A — Circuito sensorial de correo (Paciente 0).md",
+  "execution_id": "fa4dde03-a0ec-426f-ade7-850246ba7575"
+}

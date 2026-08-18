@@ -1,0 +1,18 @@
+[Unit]
+Description=SddIA email-watcher (%i)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%f
+EnvironmentFile=-%f/.SddIA/.dev/.env
+ExecStart=@@SDDIA_CORE_ROOT@@/SddIA/daemons/email-watcher.sh
+Restart=always
+RestartSec=5
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+[Install]
+WantedBy=default.target
