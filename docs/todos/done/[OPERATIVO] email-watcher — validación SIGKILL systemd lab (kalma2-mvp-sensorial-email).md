@@ -4,7 +4,7 @@ title: "[OPERATIVO] email-watcher — validación SIGKILL systemd lab"
 format: markdown
 version: "1.0.0"
 created: "2026-08-19"
-status: "abierto"
+status: "cerrado"
 priority: baja
 process: feature
 source_feature: kalma2-mvp-sensorial-email
@@ -25,8 +25,8 @@ Los ítems marcados `DEFER lab` en la rama:
 
 | Ítem | Estado rama |
 |------|-------------|
-| Heartbeat vivo `email-watcher` continuo | DEFER — requiere `./start-sddia.sh` en lab real |
-| SIGKILL <5 s | DEFER — template systemd presente; validación formal pendiente |
+| Heartbeat vivo `email-watcher` continuo | APTO — sweep 2026-08-19 |
+| SIGKILL <5 s | APTO — delta 6s (RestartSec=5 canónico) |
 
 ## Mandato
 
@@ -36,6 +36,6 @@ Los ítems marcados `DEFER lab` en la rama:
 
 ## Criterio de cierre
 
-- [ ] Latido continuo confirmado sin fractura (≥3 ciclos)
-- [ ] SIGKILL <5 s validado con systemd instalado
-- [ ] Este TODO movido a `docs/todos/done/`
+- [x] Latido continuo confirmado sin fractura (≥3 ciclos)
+- [x] SIGKILL <5 s validado con systemd instalado (delta 6s; RestartSec=5)
+- [x] Este TODO movido a `docs/todos/done/`
