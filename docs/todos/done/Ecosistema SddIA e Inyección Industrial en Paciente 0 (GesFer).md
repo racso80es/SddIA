@@ -4,7 +4,8 @@ uuid: "d7d00838-9ee6-472f-a164-95dcba2ceb80"
 title: "[OPERATIVO] Paciente 0: Instanciación de Kalma2 MVP (Centinela de Correo + Sincronización de Activos)"
 format: markdown
 version: "2.1.0"
-status: refinado-desglosado
+status: done
+updated: "2026-08-19"
 role: umbrella
 priority: alta
 process: feature

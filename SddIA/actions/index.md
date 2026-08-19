@@ -29,6 +29,7 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 | materialize-fracture-pbi | b2c3d4e5-f6a7-4890-b123-4567890abcde | 1.0.0 | ecosystem-evolution | Materializa PBI bug-fix en docs/todos/pending/ ante System_Fracture_Detected (Kintsugi — el Qué). Cúmulo vía bus EDA. | `fracture-pbi-materialization`, `delegate-filesystem-manager`, `cumulo-debt-ledger` |
 | materialize-kaizen-alert-doc | d7e6f5a4-b3c2-4109-8765-43210abcdef0 | 1.0.0 | quality-assurance | Materializa TODO PENDING_AUDIT_DOC_* ante Kaizen_Alert_Required (cicatriz DIA). Cúmulo vía bus EDA. | `kaizen-alert-doc-materialization`, `delegate-filesystem-manager`, `cumulo-debt-ledger` |
 | enrich-fracture-pbi-kaizen | c4d5e6f7-a8b9-4012-c345-678901234567 | 1.0.0 | knowledge-management | Enriquece PBI de fractura con causa raíz y propuesta evolutiva (Kintsugi — el Por Qué). Mayeuta vía bus EDA. | `fracture-root-cause-analysis`, `kaizen-evolution-proposal`, `delegate-filesystem-manager` |
+| download-remote-asset | 6175f5cd-7844-4d0c-aa93-d2ce3a41d18e | 1.0.0 | knowledge-management | Reclamación de activos del repositorio maestro con declaración de integridad SHA-256. Abstracción de origen opaca (pivote DLT G7). | `remote-asset-reclamation`, `asset-integrity-declaration` |
 
 ## Archivos en carpeta no catalogados como acción
 

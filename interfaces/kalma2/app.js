@@ -22,8 +22,10 @@ function payloadOf(data) {
 function setBusy(busy) {
   const chat = $("chat");
   const forge = $("forge");
+  const sync = $("sync-genome");
   if (chat) chat.disabled = busy;
   if (forge) forge.disabled = busy;
+  if (sync) sync.disabled = busy;
 }
 
 function closeProgressStream() {
@@ -251,9 +253,50 @@ async function forjarProceso() {
   }
 }
 
+async function syncGenome() {
+  const out = $("output");
+  if (!out) return;
+
+  closeProgressStream();
+  setBusy(true);
+  out.value = "…solicitando sincronización de genoma";
+  setStatus("sync…", "pending");
+
+  try {
+    const r = await fetch("/api/sync-assets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        asset_id: "c43544f3-c557-4cc3-8a03-7175282f2c88",
+        asset_family: "library_codexes",
+      }),
+    });
+    const data = await r.json();
+
+    if (!data.success || r.status !== 202) {
+      setStatus("error", "failed");
+      out.value = `[error] ${data.message ?? data.error ?? "sync falló"}`;
+      return;
+    }
+
+    const correlationId = data.correlation_id || data.event_id;
+    const ack = data.message || `sync-client-assets aceptado (${correlationId}); observando progreso…`;
+    out.value = ack;
+    openProgressStream(correlationId);
+    await pollStatus(correlationId, out, ack);
+  } catch (e) {
+    setStatus("red", "failed");
+    out.value = `[fallo red] ${e}`;
+  } finally {
+    setBusy(false);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   $("chat").addEventListener("click", enviarChat);
   $("forge").addEventListener("click", forjarProceso);
+  const syncBtn = $("sync-genome");
+  if (syncBtn) syncBtn.addEventListener("click", syncGenome);
   $("prompt").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();

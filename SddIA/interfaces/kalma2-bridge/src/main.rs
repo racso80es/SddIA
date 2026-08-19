@@ -19,6 +19,13 @@ struct InteractReq {
     process: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct SyncAssetsReq {
+    asset_id: String,
+    #[serde(default)]
+    asset_family: Option<String>,
+}
+
 fn repo_root() -> PathBuf {
     if let Ok(p) = std::env::var("SDDIA_REPO_ROOT") {
         let trimmed = p.trim();
@@ -1341,12 +1348,120 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
     }
 }
 
+fn handle_sync_assets(mut req: tiny_http::Request, repo: &Path) {
+    let mut buf = String::new();
+    if req.as_reader().read_to_string(&mut buf).is_err() {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"body requerido","exit_code":1}"#.into(),
+        );
+        return;
+    }
+
+    let parsed: SyncAssetsReq = match serde_json::from_str::<SyncAssetsReq>(&buf) {
+        Ok(p) if !p.asset_id.trim().is_empty() => p,
+        _ => {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"asset_id requerido","exit_code":1}"#.into(),
+            );
+            return;
+        }
+    };
+
+    let asset_family = parsed
+        .asset_family
+        .as_deref()
+        .unwrap_or("library_codexes")
+        .trim()
+        .to_string();
+
+    let correlation_id = Uuid::new_v4().to_string();
+    let inputs = serde_json::json!({
+        "asset_id": parsed.asset_id.trim(),
+        "asset_family": asset_family,
+        "correlation_id": correlation_id,
+        "execution_id": correlation_id,
+    })
+    .to_string();
+
+    let bin = match resolve_orchestrator(repo) {
+        Ok(b) => b,
+        Err(message) => {
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": message,
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+            return;
+        }
+    };
+
+    let t0 = Instant::now();
+
+    let mut child = match Command::new(&bin)
+        .args([
+            "--process",
+            "sync-client-assets",
+            "--inputs",
+            &inputs,
+        ])
+        .current_dir(repo)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": e.to_string(),
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+            return;
+        }
+    };
+
+    // Reaper: evita zombies; no bloquea el socket HTTP (DA-5 fire-and-forget).
+    thread::spawn(move || {
+        let _ = child.wait();
+    });
+
+    reply(
+        req,
+        202,
+        serde_json::json!({
+            "accepted": true,
+            "success": true,
+            "status": "accepted",
+            "correlation_id": correlation_id,
+            "event_id": correlation_id,
+            "message": "sync-client-assets encolado; consultar GET /api/status",
+            "duration_ms": t0.elapsed().as_millis() as u64,
+        })
+        .to_string(),
+    );
+}
+
 fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) {
     let path = req.url().split('?').next().unwrap_or("/");
     match (req.method(), path) {
         (Method::Post, "/api/chat") => handle_chat(req, &repo),
         (Method::Post, "/api/execute") => handle_execute(req, &repo),
         (Method::Post, "/api/interact") => handle_interact(req, &repo),
+        (Method::Post, "/api/sync-assets") => handle_sync_assets(req, &repo),
         (Method::Get, "/api/status") => handle_status(req, &repo),
         (Method::Get, "/api/progress/stream") => handle_progress_stream(req, &repo),
         (Method::Get, _) => serve_static(req, &ui_root),
@@ -1682,6 +1797,42 @@ mod tests {
         let frame = String::from_utf8(sse_progress_frame(r#"{"trace_id":"x"}"#)).unwrap();
         assert!(frame.starts_with("event: progress\n"));
         assert!(frame.contains("data: {\"trace_id\":\"x\"}"));
+    }
+
+    #[test]
+    fn sync_assets_route_exists_in_dispatch() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        assert!(
+            prod.contains("\"/api/sync-assets\""),
+            "dispatch debe tener la ruta /api/sync-assets"
+        );
+        assert!(
+            prod.contains("handle_sync_assets"),
+            "handle_sync_assets debe estar definida en producción"
+        );
+    }
+
+    #[test]
+    fn sync_assets_handler_is_fire_and_forget() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let handler_start = prod.find("fn handle_sync_assets").expect("handle_sync_assets");
+        let handler_slice = &prod[handler_start..];
+        let next_fn = handler_slice[1..].find("\nfn ").unwrap_or(handler_slice.len());
+        let handler_body = &handler_slice[..next_fn + 1];
+        assert!(
+            handler_body.contains("Stdio::null()"),
+            "handle_sync_assets debe spawn con Stdio::null() (fire-and-forget DA-5)"
+        );
+        assert!(
+            handler_body.contains("202"),
+            "handle_sync_assets debe responder 202 accepted"
+        );
+        assert!(
+            handler_body.contains("\"accepted\": true") || handler_body.contains("\"accepted\":true"),
+            "response body debe incluir accepted:true"
+        );
     }
 
     #[test]

@@ -412,6 +412,7 @@ name = "execute-process"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "hex",
  "jsonschema",
  "regex",
  "sddia-io",
@@ -593,6 +594,18 @@ dependencies = [
  "sddia-daemon-runtime",
  "serde",
  "serde_json",
+ "ureq",
+]
+
+[[package]]
+name = "github-raw-fetcher"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "sddia-io",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
  "ureq",
 ]
 

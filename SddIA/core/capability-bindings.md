@@ -46,6 +46,10 @@ bindings:
     contract: "agenda.persist"
     provider: "skill:agenda-manager"
     provider_version: ">=1.0.0"
+  - capability_id: "asset:fetch"
+    contract: "asset.fetch"
+    provider: "tool:github-raw-fetcher"
+    provider_version: ">=1.0.0"
 ---
 
 # Capability bindings (SSOT DI)
