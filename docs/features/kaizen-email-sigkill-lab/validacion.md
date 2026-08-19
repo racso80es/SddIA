@@ -6,6 +6,11 @@ process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
 agents: argos
+updated: "2026-08-19T10:25:00Z"
+process: pull-request-review
+phase: Cosecha Kaizen
+agent: cumulo
+agents: cumulo
 branch: feat/kaizen-email-sigkill-lab
 branch_name: feat/kaizen-email-sigkill-lab
 branch_name_injected: feat/kaizen-email-sigkill-lab
@@ -17,6 +22,9 @@ parent_pbi: PBI-KALMA2-MVP-01A
 correlation_id: 7YcpMMYvym1xhzRagrouBwJ9Leon8toRTr3Ja8wyp8Yw
 pr_presented_event_id: 2a0cc923-27ec-45a1-b352-58489369991a
 audit_event_reference: 7YcpMMYvym1xhzRagrouBwJ9Leon8toRTr3Ja8wyp8Yw
+correlation_id: 2a0cc923-27ec-45a1-b352-58489369991a
+pr_presented_event_id: 2a0cc923-27ec-45a1-b352-58489369991a
+audit_event_reference: 2a0cc923-27ec-45a1-b352-58489369991a
 pr_url: https://github.com/racso80es/SddIA/pull/184
 execution_id: "8641ce9e-9d4e-4b9e-b225-18db0eda9410"
 global: APTO

@@ -129,7 +129,6 @@ Veredicto: ok — RBAC APTO, sin mutación genoma, idempotente respecto a PPR #1
 ```
 
 ---
-
 ## 2026-08-19T10:25:00Z — Cosecha Kaizen (PPR #184)
 - process: `pull-request-review`
 - phase: `Cosecha Kaizen`
@@ -326,7 +325,6 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit-handoff"
 ```
-
 ## 2026-08-19T10:24:00Z — Certificación RBAC
 - process: `pull-request-review`
 - agents: `cerbero`
@@ -351,7 +349,6 @@ genome_mutation_detected: false
 revoked_entity_alert: "feature (permanent, max_recovery_attempts_exceeded)"
 verdict: authorized
 ```
-
 ## 2026-08-19T08:24:30Z — Triaje documental
 - process: `pull-request-review`
 - agents: `argos`

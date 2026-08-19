@@ -5,6 +5,78 @@ persist_ref: docs/features/kalma2-mvp-sync-activos
 
 # Agent handoff log
 
+## 2026-08-19T10:11:00Z — Cosecha Kaizen
+
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu`
+- runtime: kalma2-agent-runtime-cursor
+- status: `executed`
+- message: Cosecha Kaizen completada. `blocking_findings: []` en PPR. Sin eventos `Kaizen_Alert_Required` activos. Sin PBIs Kaizen en `docs/todos/pending/` vinculados al feature. Semillas cosechadas: 0. Ciclo PPR `kalma2-mvp-sync-activos` cerrado. PR listo para merge a `main`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+Archivos tocados (2):
+1. docs/features/kalma2-mvp-sync-activos/validacion.md — MUTATE: phase→Cosecha Kaizen, agent→cumulo, check KAIZEN_HARVEST añadido.
+2. docs/features/kalma2-mvp-sync-activos/_agent_handoff.md — MUTATE: esta entrada.
+
+Semillas Kaizen: 0 (sin hallazgos pendientes del PPR).
+```
+
+## 2026-08-19T10:10:00Z — Veredicto y bloqueo (PPR)
+
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu`
+- runtime: kalma2-agent-runtime-cursor
+- status: `executed`
+- message: Veredicto final PPR. Evidence bridge (session): `source=native_state`, `TECH_FORMAL_EXECUTE_PROCESS=APTO`, `GIT_EVIDENCE_VIA_GIT_MANAGER=APTO`, `notes=idempotent-hit`. Consistente con evidencia machine (08:10:19Z). `RBAC_CERBERO_CERT: APTO` (cerbero, 9 áreas / 0 bloqueos). Todos los checks APTO. `global: APTO`. `pbi_archived: true`. PR desbloqueado para merge a `main`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+Archivos tocados (2):
+1. docs/features/kalma2-mvp-sync-activos/validacion.md — MUTATE: phase→Veredicto y bloqueo, agent→argos, check PPR_VERDICT_ARGOS añadido, updated actualizado.
+2. docs/features/kalma2-mvp-sync-activos/_agent_handoff.md — MUTATE: esta entrada.
+
+| Check | Veredicto |
+|---|---|
+| TECH_FORMAL_EXECUTE_PROCESS | APTO |
+| GIT_EVIDENCE_VIA_GIT_MANAGER | APTO |
+| RBAC_AUTHORING_KM_POLICY | APTO |
+| HASH_SIGNATURE_SEALED | APTO |
+| RBAC_CERBERO_CERT | APTO |
+| PPR_VERDICT_ARGOS | APTO |
+| **Global** | **APTO** |
+```
+
+## 2026-08-19T10:07:00Z — Certificación RBAC (PPR)
+
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu`
+- runtime: kalma2-agent-runtime-cursor
+- status: `executed`
+- message: Cruce RBAC sobre 9 áreas de genoma afectadas. Firmante principal: `tekton` (cadena `ecosystem-evolution` → `entity-manager`). Firmantes secundarios: `argos`, `dedalo`, `mayeuta` en áreas excluidas de gate EDA. Sin violación de perímetro. `exitCode: 0`. Check `RBAC_CERBERO_CERT: APTO` añadido a `validacion.md`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+Archivos tocados (2):
+1. docs/features/kalma2-mvp-sync-activos/validacion.md — MUTATE: phase→Certificación RBAC, agent→cerbero, check RBAC_CERBERO_CERT añadido, tabla de certificación RBAC en cuerpo.
+2. docs/features/kalma2-mvp-sync-activos/_agent_handoff.md — MUTATE: esta entrada.
+
+Matriz RBAC: 9 áreas auditadas / 9 PASS / 0 bloqueos.
+```
+
 ## 2026-08-19T10:06:00Z — Triaje documental (PPR)
 
 - process: `pull-request-review`
@@ -269,4 +341,86 @@ Archivos tocados (2):
 | HASH_SIGNATURE_SEALED | APTO (`sha256:9b4b98de…` en `sync-client-assets.md`) |
 | PBI_DONE_PRESENT | APTO |
 | **Global** | **APTO** |
+```
+
+## 2026-08-19T08:10:19Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 9 áreas de genoma auditadas. Firmante principal `tekton` opera vía cadena `ecosystem-evolution → entity-manager`; contexto operativo final de entidades forjadas no constituye requisito de permiso del firmante. Firmantes secundarios (`argos`, `dedalo`, `mayeuta`) actúan en áreas excluidas de gate EDA (`docs/features/`, `docs/todos/done/`). Cero violaciones de perímetro. **exitCode: 0. Veredicto: ok.**
+
+### Transcript (tail)
+
+```
+---
+
+**Resumen — Certificación RBAC (cerbero):**
+
+1. `validacion.md` — MUTATE: `phase` → `Certificación RBAC`, `agent` → `cerbero`, check `RBAC_CERBERO_CERT: APTO` añadido, tabla de auditoría RBAC en cuerpo.
+2. `_agent_handoff.md` — MUTATE: entrada fase `Certificación RBAC` añadida.
+
+9 áreas de genoma auditadas. Firmante principal `tekton` opera vía cadena `ecosystem-evolution → entity-manager`; contexto operativo final de entidades forjadas no constituye requisito de permiso del firmante. Firmantes secundarios (`argos`, `dedalo`, `mayeuta`) actúan en áreas excluidas de gate EDA (`docs/features/`, `docs/todos/done/`). Cero violaciones de perímetro. **exitCode: 0. Veredicto: ok.**
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-19T08:10:19Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-08-19T08:10:58Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: Evidence bridge confirmada: `native_state` / `TECH_FORMAL_EXECUTE_PROCESS=APTO` / `GIT_EVIDENCE_VIA_GIT_MANAGER=APTO` / `idempotent-hit`. Todos los checks APTO (16/16). `global: APTO`. `pbi_archived: true`. PR desbloqueado para merge a `main`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+Archivos tocados (2):
+1. `docs/features/kalma2-mvp-sync-activos/validacion.md` — MUTATE: `phase→Veredicto y bloqueo`, `agent→argos`, check `PPR_VERDICT_ARGOS: APTO` añadido, `updated` actualizado.
+2. `docs/features/kalma2-mvp-sync-activos/_agent_handoff.md` — MUTATE: entrada fase Veredicto y bloqueo añadida.
+
+Evidence bridge confirmada: `native_state` / `TECH_FORMAL_EXECUTE_PROCESS=APTO` / `GIT_EVIDENCE_VIA_GIT_MANAGER=APTO` / `idempotent-hit`. Todos los checks APTO (16/16). `global: APTO`. `pbi_archived: true`. PR desbloqueado para merge a `main`.
+```
+
+## 2026-08-19T08:12:18Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: Semillas Kaizen cosechadas: **0** — `blocking_findings: []`, sin eventos `Kaizen_Alert_Required` activos, sin PBIs pending vinculados al feature. PPR `kalma2-mvp-sync-activos` completado en todas sus fases. PR listo para merge a `main`.
+
+### Transcript (tail)
+
+```
+---
+
+**Veredicto: ok**
+
+Archivos tocados (2):
+1. `docs/features/kalma2-mvp-sync-activos/validacion.md` — MUTATE: `phase→Cosecha Kaizen`, `agent→cumulo`, check `KAIZEN_HARVEST: APTO` añadido, `updated` actualizado.
+2. `docs/features/kalma2-mvp-sync-activos/_agent_handoff.md` — MUTATE: entrada fase Cosecha Kaizen añadida.
+
+Semillas Kaizen cosechadas: **0** — `blocking_findings: []`, sin eventos `Kaizen_Alert_Required` activos, sin PBIs pending vinculados al feature. PPR `kalma2-mvp-sync-activos` completado en todas sus fases. PR listo para merge a `main`.
 ```
