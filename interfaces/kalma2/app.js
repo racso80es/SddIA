@@ -313,6 +313,9 @@ async function loadEmailInbox() {
   try {
     const r = await fetch("/api/email-inbox");
     const data = await r.json();
+    // #region agent log
+    fetch('http://127.0.0.1:7400/ingest/b4cd7cca-3613-4ae7-9d27-95676f671320',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'478d0f'},body:JSON.stringify({sessionId:'478d0f',runId:'post-fix',hypothesisId:'W',location:'app.js:loadEmailInbox',message:'inbox fetch',data:{http:r.status,success:!!data.success,n:Array.isArray(data.items)?data.items.length:-1},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     const items = Array.isArray(data.items) ? data.items : [];
     if (!items.length) {
       root.textContent = "Sin fricción accionable.";

@@ -1507,6 +1507,34 @@ fn list_actionable_email_items(repo: &Path) -> Vec<serde_json::Value> {
 
 fn handle_email_inbox(req: tiny_http::Request, repo: &Path) {
     let items = list_actionable_email_items(repo);
+    // #region agent log
+    {
+        use std::io::Write;
+        let rec = serde_json::json!({
+            "sessionId": "478d0f",
+            "hypothesisId": "W",
+            "location": "kalma2-bridge.rs:handle_email_inbox",
+            "message": "email-inbox listed",
+            "data": {
+                "repo": repo.display().to_string(),
+                "n": items.len(),
+                "first_uid": items.first().and_then(|v| v.get("message_uid")).cloned()
+            },
+            "timestamp": SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0),
+            "runId": "post-fix"
+        });
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("/home/racso/Proyectos/SddIA/.cursor/debug-478d0f.log")
+        {
+            let _ = writeln!(f, "{rec}");
+        }
+    }
+    // #endregion
     reply(
         req,
         200,
