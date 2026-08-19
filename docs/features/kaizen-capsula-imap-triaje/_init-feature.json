@@ -1,0 +1,12 @@
+{
+  "feature_name": "kaizen-capsula-imap-triaje",
+  "branch_name": "feat/kaizen-capsula-imap-triaje",
+  "persist_ref": "docs/features/kaizen-capsula-imap-triaje",
+  "base_branch": "main",
+  "document_id": "PBI-KAIZEN-CAPSULA-IMAP-TRIAJE",
+  "pbi_ref": "docs/todos/pending/PBI-KAIZEN-CAPSULA-IMAP-TRIAJE.md",
+  "execution_id": "14fff213-bcee-4c26-ad17-53e5e585979b",
+  "depends_on_features": [
+    "docs/features/kalma2-mvp-sensorial-email"
+  ]
+}

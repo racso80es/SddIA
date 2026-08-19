@@ -1455,6 +1455,164 @@ fn handle_sync_assets(mut req: tiny_http::Request, repo: &Path) {
     );
 }
 
+fn list_actionable_email_items(repo: &Path) -> Vec<serde_json::Value> {
+    let dir = load_proofs_dir(repo).join("email-triaged");
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        return Vec::new();
+    };
+    let mut items: Vec<(String, serde_json::Value)> = Vec::new();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let Some(v) = read_json_file(&path) else {
+            continue;
+        };
+        let payload = v.get("payload").cloned().unwrap_or(serde_json::json!({}));
+        if payload.get("verdict").and_then(|x| x.as_str()) != Some("actionable") {
+            continue;
+        }
+        let ts = v
+            .get("timestamp")
+            .and_then(|t| t.as_str())
+            .unwrap_or("")
+            .to_string();
+        let event_id = v
+            .get("event_id")
+            .and_then(|x| x.as_str())
+            .map(str::to_string)
+            .unwrap_or_else(|| {
+                path.file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("")
+                    .to_string()
+            });
+        items.push((
+            ts.clone(),
+            serde_json::json!({
+                "event_id": event_id,
+                "message_uid": payload.get("message_uid"),
+                "from": payload.get("from"),
+                "subject": payload.get("subject"),
+                "verdict": "actionable",
+                "timestamp": ts,
+                "agenda_entry_id": payload.get("agenda_entry_id"),
+            }),
+        ));
+    }
+    items.sort_by(|a, b| b.0.cmp(&a.0));
+    items.into_iter().take(20).map(|(_, v)| v).collect()
+}
+
+fn handle_email_inbox(req: tiny_http::Request, repo: &Path) {
+    let items = list_actionable_email_items(repo);
+    reply(
+        req,
+        200,
+        serde_json::json!({
+            "success": true,
+            "items": items,
+            "exit_code": 0
+        })
+        .to_string(),
+    );
+}
+
+#[derive(Deserialize)]
+struct EmailQuickActionReq {
+    message_uid: String,
+    action: String,
+    #[serde(default)]
+    source_event_id: Option<String>,
+}
+
+fn handle_email_quick_action(mut req: tiny_http::Request, repo: &Path) {
+    let mut buf = String::new();
+    if req.as_reader().read_to_string(&mut buf).is_err() {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"body requerido","exit_code":1}"#.into(),
+        );
+        return;
+    }
+    let parsed = match serde_json::from_str::<EmailQuickActionReq>(&buf) {
+        Ok(p) => p,
+        Err(_) => {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"message_uid y action requeridos","exit_code":1}"#.into(),
+            );
+            return;
+        }
+    };
+    let uid = parsed.message_uid.trim();
+    let action = parsed.action.trim().to_ascii_lowercase();
+    if uid.is_empty() || !matches!(action.as_str(), "archive" | "draft" | "delegate") {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"action inválida","exit_code":1}"#.into(),
+        );
+        return;
+    }
+    let event_id = new_event_id();
+    let (domain_dir, _, _) = load_fractal_paths(repo);
+    if std::fs::create_dir_all(&domain_dir).is_err() {
+        reply(
+            req,
+            500,
+            r#"{"success":false,"message":"mkdir domain","exit_code":1}"#.into(),
+        );
+        return;
+    }
+    let mut payload = serde_json::json!({
+        "message_uid": uid,
+        "action": action,
+        "channel": "kalma2",
+    });
+    if let Some(src) = parsed
+        .source_event_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        payload["source_event_id"] = serde_json::json!(src);
+    }
+    let event = serde_json::json!({
+        "event_id": event_id,
+        "event_type": "Email_Quick_Action_Requested",
+        "event_family": "domain",
+        "timestamp": chrono_like_now(),
+        "emitter_agent": "kalma2-bridge",
+        "payload": payload,
+    });
+    let target = domain_dir.join(format!("{event_id}.json"));
+    if std::fs::write(&target, format!("{event}\n")).is_err() {
+        reply(
+            req,
+            500,
+            r#"{"success":false,"message":"write domain event","exit_code":1}"#.into(),
+        );
+        return;
+    }
+    reply(
+        req,
+        202,
+        serde_json::json!({
+            "success": true,
+            "accepted": true,
+            "status": "accepted",
+            "event_id": event_id,
+            "message": "acción rápida encolada",
+            "exit_code": 0
+        })
+        .to_string(),
+    );
+}
+
 fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) {
     let path = req.url().split('?').next().unwrap_or("/");
     match (req.method(), path) {
@@ -1462,7 +1620,9 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Post, "/api/execute") => handle_execute(req, &repo),
         (Method::Post, "/api/interact") => handle_interact(req, &repo),
         (Method::Post, "/api/sync-assets") => handle_sync_assets(req, &repo),
+        (Method::Post, "/api/email-quick-action") => handle_email_quick_action(req, &repo),
         (Method::Get, "/api/status") => handle_status(req, &repo),
+        (Method::Get, "/api/email-inbox") => handle_email_inbox(req, &repo),
         (Method::Get, "/api/progress/stream") => handle_progress_stream(req, &repo),
         (Method::Get, _) => serve_static(req, &ui_root),
         _ => reply(
@@ -1790,6 +1950,42 @@ mod tests {
         assert_eq!(files.len(), 2);
         assert!(files[0].to_string_lossy().contains("a.json"));
         let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn email_inbox_filters_actionable_only() {
+        let repo = std::env::temp_dir().join(format!("sddia-inbox-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        let dir = repo.join(".SddIA/proofs/email-triaged");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("noise.json"),
+            r#"{"event_id":"n","timestamp":"2026-08-19T10:00:00Z","payload":{"verdict":"noise","message_uid":"1"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("act.json"),
+            r#"{"event_id":"a","timestamp":"2026-08-19T11:00:00Z","payload":{"verdict":"actionable","message_uid":"2","from":"x@y","subject":"Go"}}"#,
+        )
+        .unwrap();
+        let items = list_actionable_email_items(&repo);
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0]["event_id"], "a");
+        assert_eq!(items[0]["subject"], "Go");
+        let _ = std::fs::remove_dir_all(repo);
+    }
+
+    #[test]
+    fn email_routes_exist_in_dispatch() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        assert!(prod.contains("\"/api/email-inbox\""));
+        assert!(prod.contains("\"/api/email-quick-action\""));
     }
 
     #[test]
