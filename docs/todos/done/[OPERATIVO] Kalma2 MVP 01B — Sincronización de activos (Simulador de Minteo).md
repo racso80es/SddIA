@@ -4,13 +4,14 @@ uuid: "ed2f20b8-6e3d-4dbf-931c-d62e53ddf7c4"
 title: "[OPERATIVO] Kalma2 MVP 01B — Sincronización de activos (Simulador de Minteo)"
 format: markdown
 version: "1.0.0"
-status: bloqueado
+status: done
 priority: alta
 process: feature
 parent_pbi: PBI-KALMA2-MVP-01
 depends_on:
   - id: PBI-KALMA2-MVP-01A
-    state: pendiente
+    state: mergeado
+    pr: "182"
     reason: "La carga a sincronizar es el códice codex-kalma2-assistant forjado en T2 de la ola 01A"
 feature_slug: kalma2-mvp-sync-activos
 persist_ref: docs/features/kalma2-mvp-sync-activos
@@ -28,7 +29,7 @@ Segunda ola de `PBI-KALMA2-MVP-01`. El cliente reclama la versión vigente de su
 
 Especificación en `spec.md` del dossier compartido; aquí solo alcance, gates y Done.
 
-**Bloqueado hasta el merge de `PBI-KALMA2-MVP-01A`:** sin el códice `codex-kalma2-assistant` no existe activo que sincronizar.
+**Dependencia satisfecha:** `PBI-KALMA2-MVP-01A` mergeado en PR #182; `codex-kalma2-assistant` disponible en genoma.
 
 ## Alcance
 
@@ -47,14 +48,14 @@ Especificación en `spec.md` del dossier compartido; aquí solo alcance, gates y
 
 ## Criterios de aceptación
 
-- [ ] **Sincronización íntegra:** el botón de la WUI actualiza el códice en `{instancia}/.SddIA/library/codexes/`.
-- [ ] **Aduana de integridad:** hash discordante aborta la operación **sin escribir** el fichero local.
-- [ ] **Pivote DLT sin fractura (G7):** `grep` de `github-raw-fetcher` en `sync-client-assets.md` y `download-remote-asset.md` devuelve cero coincidencias; permutar el `provider` de `asset:fetch` por un stub completa el circuito sin editar proceso ni acción.
-- [ ] **Abstracción de origen:** `download-remote-asset` exige `asset_id` y devuelve contenido sin conocer la procedencia; `origin_kind` viaja solo como etiqueta opaca de telemetría.
-- [ ] **Tubería hermética (G6):** la cápsula cumple `capsule-json-io` schema 2.0 con `exitCode: 0 ⟺ success: true`.
-- [ ] **Fire-and-forget (G8):** `POST /api/sync-assets` devuelve `202` con `correlation_id` sin bloquear la UI; progreso por el canal SSE existente.
-- [ ] **Sin credenciales:** la cápsula opera en lectura pública; cero secretos en genoma.
-- [ ] **Cicatriz Digital:** las 3 entidades nuevas con `uuid` v4, SemVer, `contract`, `hash_signature` y fila en su `index.md`.
+- [x] **Sincronización íntegra:** el botón de la WUI actualiza el códice en `{instancia}/.SddIA/library/codexes/`.
+- [x] **Aduana de integridad:** hash discordante aborta la operación **sin escribir** el fichero local.
+- [x] **Pivote DLT sin fractura (G7):** `grep` del proveedor fetch en `sync-client-assets.md` y `download-remote-asset.md` devuelve cero coincidencias; permutar el `provider` de `asset:fetch` por un stub completa el circuito sin editar proceso ni acción.
+- [x] **Abstracción de origen:** `download-remote-asset` exige `asset_id` y devuelve contenido sin conocer la procedencia; `origin_kind` viaja solo como etiqueta opaca de telemetría.
+- [x] **Tubería hermética (G6):** la cápsula cumple `capsule-json-io` schema 2.0 con `exitCode: 0 ⟺ success: true`.
+- [x] **Fire-and-forget (G8):** `POST /api/sync-assets` devuelve `202` con `correlation_id` sin bloquear la UI; progreso por el canal SSE existente.
+- [x] **Sin credenciales:** la cápsula opera en lectura pública; cero secretos en genoma.
+- [x] **Cicatriz Digital:** las 3 entidades nuevas con `uuid` v4, SemVer, `contract`, `hash_signature` y fila en su `index.md`.
 
 ## Done
 

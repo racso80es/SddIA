@@ -5,6 +5,7 @@ pub mod kalma2;
 pub mod mayeuta;
 pub mod route_domain;
 pub mod task_queue_manager;
+pub mod sync_client_assets;
 pub mod telegram_fallback;
 pub mod email_triage;
 pub mod telegram_gateway;
