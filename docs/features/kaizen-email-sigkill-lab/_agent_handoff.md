@@ -5,6 +5,22 @@ persist_ref: docs/features/kaizen-email-sigkill-lab
 
 # Agent handoff log
 
+## 2026-08-19T10:25:00Z — Cosecha Kaizen (PPR #184)
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `2a0cc923-27ec-45a1-b352-58489369991a`
+- runtime: cursor-tekton-relay
+- status: `executed`
+- message: PPR completo relay IDE. F2/F4/Veredicto APTO. F3 NO_APTO no bloqueante (CI preexistente en main). Kaizen seeds 0. `accept_pr_handoff: true`. PR #184 listo para merge.
+
+## 2026-08-19T10:24:00Z — pull-request-review inyectado
+- process: `pull-request-review`
+- correlation_id: `2a0cc923-27ec-45a1-b352-58489369991a`
+- execution_id: `5404f29d-e558-40d0-b898-ce8a2b1de407`
+- status: `accepted`
+- message: CLI detach acusado (`detached: true`). Relay IDE continúa fases documentales.
+
 ## 2026-08-19T10:23:00Z — Ejecución lab (Tekton relay)
 - process: `feature`
 - agents: `tekton`
@@ -133,6 +149,64 @@ formal_evidence_detail: "verify-process-integrity: OK"
 - agents: `argos`
 - correlation_id: ``
 - pbi_ref: `docs/todos/pending/[OPERATIVO] email-watcher — validación SIGKILL systemd lab (kalma2-mvp-sensorial-email).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Connection lost, reconnecting to https://agentn.global.api5.cursor.sh (attempt 1)...
+Retry attempt 1...
+Connection lost, reconnecting to https://agentn.global.api5.cursor.sh (attempt 2)...
+Retry attempt 2...
+Connection lost, reconnecting to https://agentn.global.api5.cursor.sh (attempt 3)...
+Retry attempt 3...
+RetriableError: [resource_exhausted] Error
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-19T08:23:45Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-08-19T08:24:06Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `7YcpMMYvym1xhzRagrouBwJ9Leon8toRTr3Ja8wyp8Yw`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `failed`
+- message: Connection lost, reconnecting to https://agentn.global.api5.cursor.sh (attempt 1)...
+Retry attempt 1...
+Connection lost, reconnecting to https://agentn.global.api5.cursor.sh (attempt 2)...
+Retry attempt 2...
+Connection lost, reconnecting to https://agentn.global.api5.cursor.sh (attempt 3)...
+Retry attempt 3...
+RetriableError: [resource_exhausted] Error
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-19T08:24:10Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-08-19T08:24:30Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `2XyNciPL7yiQuKGFY77qJASEEBjTP572gFt1VjK2HQVY`
+- pbi_ref: ``
 - runtime: kalma2-agent-runtime-cursor
 - backend: `cli`
 - status: `failed`
