@@ -209,3 +209,16 @@ sync-client-assets.md: hash_signature mismatch (file pending-forge… vs compute
 
 **Causa raíz:** `SddIA/process/sync-client-assets.md` tiene `hash_signature: sha256:pending-forge`; el motor computa `9b4b98de9941a7d9…` y detecta mismatch. La entidad no puede invocarse con firma pendiente. PR y cierre documental bloqueados. Tekton debe sellar el hash real y relanzar `verify-process-integrity` antes de volver a Argos.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-19T08:06:29Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
