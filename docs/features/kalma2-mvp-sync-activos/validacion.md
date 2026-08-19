@@ -1,11 +1,11 @@
 ---
 feature_name: kalma2-mvp-sync-activos
 created: "2026-08-19"
-updated: "2026-08-19T10:06:00Z"
+updated: "2026-08-19T10:11:00Z"
 process: pull-request-review
-phase: Triaje documental
-agent: argos
-agents: argos
+phase: Cosecha Kaizen
+agent: cumulo
+agents: cumulo
 branch: feat/kalma2-mvp-sync-activos
 branch_name: feat/kalma2-mvp-sync-activos
 persist_ref: docs/features/kalma2-mvp-sync-activos
@@ -33,6 +33,9 @@ checks:
   PBI_PENDING_ABSENT: APTO
   EVOLUTION_CICATRIZ: APTO
   HASH_SIGNATURE_SEALED: APTO
+  RBAC_CERBERO_CERT: APTO
+  PPR_VERDICT_ARGOS: APTO
+  KAIZEN_HARVEST: APTO
 git_changes:
   - docs/features/kalma2-mvp-sync-activos/
   - docs/todos/done/[OPERATIVO] Kalma2 MVP 01B — Sincronización de activos (Simulador de Minteo).md
@@ -66,6 +69,22 @@ Re-auditoría tras sellado de `hash_signature` en `sync-client-assets.md` (`sha2
 | GATE_G8 | APTO | bridge 202 + `correlation_id` en `--inputs`; WUI + SSE |
 | GATE_G9 | APTO | aduana SHA-256 pre-escritura; `SddIA/evolution/kalma2-mvp-sync-activos-ola-b.md` |
 | PBI cierre | APTO | 01B + paraguas `PBI-KALMA2-MVP-01` en `docs/todos/done/` |
+
+## Certificación RBAC (cerbero)
+
+| Firmante | Área genoma | Contexto entidad | `allowed_policies` firmante | Resultado |
+|----------|-------------|------------------|-----------------------------|-----------|
+| tekton | `SddIA/tools/github-raw-fetcher.md` | `system-operations` | `system-operations` ✓ | PASS |
+| tekton (vía `entity-manager`) | `SddIA/actions/download-remote-asset.md` | `knowledge-management` | forja bajo `ecosystem-evolution` → `entity-manager` (`ecosystem-evolution`) ✓ | PASS |
+| tekton (vía `entity-manager`) | `SddIA/process/sync-client-assets.md` | `ecosystem-evolution` | `ecosystem-evolution` ✓ | PASS |
+| tekton (vía `entity-manager`) | `SddIA/core/capability-bindings.md` | `ecosystem-evolution` | `ecosystem-evolution` ✓ | PASS |
+| tekton | `SddIA/engine/…/sync_client_assets.rs` | `ecosystem-evolution` | `ecosystem-evolution` ✓ | PASS |
+| tekton | `interfaces/kalma2/` | `filesystem-ops`, `source-control` | `filesystem-ops`, `source-control` ✓ | PASS |
+| tekton | `SddIA/evolution/` | excepción §external-ai-constraints | excepción explícita | PASS |
+| argos/tekton/dedalo/mayeuta | `docs/features/` | excepción §external-ai-constraints | excepción explícita | PASS |
+| argos | `docs/todos/done/` | `filesystem-ops`, `knowledge-management` | `filesystem-ops`, `knowledge-management` ✓ | PASS |
+
+Nota: la cadena `tekton → execute-process → entity-manager` opera íntegramente bajo contexto `ecosystem-evolution`. El contexto operativo final de la entidad creada (`knowledge-management` en `download-remote-asset`) no constituye requisito de permiso del firmante. exitCode: 0.
 
 ## Smokes reproducibles
 
