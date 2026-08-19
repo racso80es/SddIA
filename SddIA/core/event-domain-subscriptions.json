@@ -165,7 +165,20 @@
       "intent": "Aduana cognitiva del canal aferente de correo; triaje de tres vías bajo codex-kalma2-assistant."
     }
   ],
-  "Email_Triaged": [],
+  "Email_Triaged": [
+    {
+      "agent": "argos",
+      "tool": "send-telegram-notification",
+      "intent": "Poke humano si verdict=actionable; ruido silenciado en dispatcher (skipped-empty-message)."
+    }
+  ],
+  "Email_Quick_Action_Requested": [
+    {
+      "agent": "cumulo",
+      "process": "email-quick-action-ingest",
+      "intent": "Persistir proof de intención de acción rápida; no IMAP STORE."
+    }
+  ],
   "TelegramMessage_Received": [
     {
       "agent": "mayeuta",

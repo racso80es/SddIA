@@ -303,4 +303,70 @@ document.addEventListener("DOMContentLoaded", () => {
       enviarChat();
     }
   });
+  loadEmailInbox();
 });
+
+async function loadEmailInbox() {
+  const root = $("email-inbox");
+  if (!root) return;
+  root.textContent = "cargando…";
+  try {
+    const r = await fetch("/api/email-inbox");
+    const data = await r.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    if (!items.length) {
+      root.textContent = "Sin fricción accionable.";
+      return;
+    }
+    root.innerHTML = "";
+    for (const it of items) {
+      const card = document.createElement("article");
+      card.className = "inbox-card";
+      const from = it.from || "?";
+      const subject = it.subject || "(sin asunto)";
+      const uid = it.message_uid || "";
+      const eid = it.event_id || "";
+      card.innerHTML = `<div class="meta">${from} · uid ${uid}</div>
+        <div class="subject"></div>
+        <div class="quick">
+          <button type="button" data-action="archive">Archivar</button>
+          <button type="button" data-action="draft" class="secondary">Generar borrador</button>
+          <button type="button" data-action="delegate" class="secondary">Delegar</button>
+        </div>`;
+      card.querySelector(".subject").textContent = subject;
+      card.querySelectorAll("button[data-action]").forEach((btn) => {
+        btn.addEventListener("click", () =>
+          sendQuickAction(uid, btn.getAttribute("data-action"), eid, btn)
+        );
+      });
+      root.appendChild(card);
+    }
+  } catch (e) {
+    root.textContent = `error inbox: ${e}`;
+  }
+}
+
+async function sendQuickAction(messageUid, action, sourceEventId, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch("/api/email-quick-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message_uid: String(messageUid),
+        action,
+        source_event_id: sourceEventId || undefined,
+      }),
+    });
+    const data = await r.json();
+    if (!data.success) {
+      setStatus(data.message || "acción fallida", "failed");
+      return;
+    }
+    setStatus(`acción ${action} · ${String(data.event_id || "").slice(0, 8)}…`, "ok");
+  } catch (e) {
+    setStatus(`red · ${e}`, "failed");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}

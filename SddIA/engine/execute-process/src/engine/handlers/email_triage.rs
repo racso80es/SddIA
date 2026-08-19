@@ -189,13 +189,17 @@ fn classify_llm(repo: &Path, payload: &Value) -> Result<(String, Option<String>,
 
 fn emit_triaged(
     repo: &Path,
-    message_uid: &str,
+    src: &Value,
     verdict: &str,
     decision_path: &str,
     matched_rule: Option<&str>,
     cost: &Value,
     agenda_entry_id: Option<&str>,
 ) -> Result<Value, String> {
+    let message_uid = src
+        .get("message_uid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let (_, _, domain_dir, _) = load_fractal_dirs(repo);
     let mut payload = json!({
         "message_uid": message_uid,
@@ -208,6 +212,22 @@ fn emit_triaged(
     }
     if let Some(aid) = agenda_entry_id {
         payload["agenda_entry_id"] = json!(aid);
+    }
+    if let Some(from) = src
+        .get("from")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        payload["from"] = json!(from);
+    }
+    if let Some(subject) = src
+        .get("subject")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        payload["subject"] = json!(subject);
     }
     let event = json!({
         "event_id": Uuid::new_v4().to_string(),
@@ -278,11 +298,6 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     let raw = fs::read_to_string(&path).map_err(|e| format!("leer evento: {e}"))?;
     let event: Value = serde_json::from_str(&raw).map_err(|e| format!("JSON evento: {e}"))?;
     let payload = event.get("payload").cloned().unwrap_or(json!({}));
-    let uid = payload
-        .get("message_uid")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
 
     let mut phases = Vec::new();
     let c = triaje_c(&payload);
@@ -387,7 +402,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 
     let seal = emit_triaged(
         repo,
-        &uid,
+        &payload,
         &verdict,
         &decision_path,
         matched_rule,
@@ -454,5 +469,35 @@ mod tests {
         let c = triaje_c(&payload);
         assert!(!c.concluded);
         assert!(commercial_verbosity_trap(&payload));
+    }
+
+    #[test]
+    fn emit_triaged_copies_from_subject_not_snippet() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","telemetry":".events/telemetry","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        let src = json!({
+            "message_uid": "7",
+            "from": "a@b",
+            "subject": "Acto",
+            "snippet": "secreto"
+        });
+        let seal = emit_triaged(repo, &src, "actionable", "deterministic", None, &zeros_cost(), None)
+            .expect("emit");
+        let event_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let proof: Value = serde_json::from_str(
+            &fs::read_to_string(repo.join(".SddIA/proofs/email-triaged").join(format!("{event_id}.json")))
+                .unwrap(),
+        )
+        .unwrap();
+        let p = &proof["payload"];
+        assert_eq!(p["from"], json!("a@b"));
+        assert_eq!(p["subject"], json!("Acto"));
+        assert!(p.get("snippet").is_none());
     }
 }

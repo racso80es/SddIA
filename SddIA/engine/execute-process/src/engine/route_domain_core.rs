@@ -293,6 +293,32 @@ fn build_telegram_message_from_event(event: &Value) -> Option<String> {
                 "PEC {st}/{cycle}: {pname}\ncorrelation_id={cid}"
             ))
         }
+        "Email_Triaged" => {
+            let verdict = payload
+                .and_then(|p| p.get("verdict"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            if verdict != "actionable" {
+                return None;
+            }
+            let uid = payload
+                .and_then(|p| p.get("message_uid"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("?");
+            let from = payload
+                .and_then(|p| p.get("from"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .unwrap_or("?");
+            let subject = payload
+                .and_then(|p| p.get("subject"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .unwrap_or("(sin asunto)");
+            Some(format!(
+                "Correo accionable\nfrom={from}\nsubject={subject}\nuid={uid}"
+            ))
+        }
         _ => None,
     }
 }
@@ -1386,6 +1412,39 @@ mod blocking_tests {
         assert!(msg.contains("feature"));
         assert!(msg.contains("e273713c-dd91-487b-8716-1bdc8c5da741"));
         assert!(msg.contains("success"));
+    }
+
+    #[test]
+    fn email_triaged_noise_yields_no_telegram() {
+        let ev = json!({
+            "event_type": "Email_Triaged",
+            "payload": {
+                "message_uid": "9",
+                "verdict": "noise",
+                "from": "list@ex",
+                "subject": "newsletter"
+            }
+        });
+        assert!(build_telegram_message_from_event(&ev).is_none());
+    }
+
+    #[test]
+    fn email_triaged_actionable_builds_poke() {
+        let ev = json!({
+            "event_type": "Email_Triaged",
+            "payload": {
+                "message_uid": "42",
+                "verdict": "actionable",
+                "from": "jefe@corp",
+                "subject": "Firma hoy"
+            }
+        });
+        let msg = build_telegram_message_from_event(&ev).expect("msg");
+        assert!(msg.contains("Correo accionable"));
+        assert!(msg.contains("jefe@corp"));
+        assert!(msg.contains("Firma hoy"));
+        assert!(msg.contains("uid=42"));
+        assert!(!msg.contains("newsletter"));
     }
 
     #[test]

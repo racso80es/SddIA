@@ -329,9 +329,13 @@ fn poll_once(
             processed.push(uid);
             continue;
         }
-        let fetched = session
-            .uid_fetch(uid.to_string(), "BODY.PEEK[]")
-            .map_err(|e| format!("imap fetch: {e}"))?;
+        let fetched = match session.uid_fetch(uid.to_string(), "BODY.PEEK[]") {
+            Ok(f) => f,
+            Err(e) => {
+                eprintln!("[email-watcher] uid {uid} fetch: {e}");
+                continue;
+            }
+        };
         let Some(msg) = fetched.iter().next() else {
             continue;
         };
@@ -342,8 +346,18 @@ fn poll_once(
             None => text.split_once("\n\n").unwrap_or((text.as_ref(), "")),
         };
         let snippet = decode_snippet(body, cfg.snippet_chars);
-        let body_ref = persist_eml(repo, uid, raw)?;
-        emit_received(repo, top, uid, &cfg.mailbox, headers, &snippet, &body_ref)?;
+        let body_ref = match persist_eml(repo, uid, raw) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("[email-watcher] uid {uid} persist: {e}");
+                continue;
+            }
+        };
+        if let Err(e) = emit_received(repo, top, uid, &cfg.mailbox, headers, &snippet, &body_ref) {
+            eprintln!("[email-watcher] uid {uid} emit: {e}");
+            let _ = fs::remove_file(inbox_dir(repo).join(format!("{uid}.eml")));
+            continue;
+        }
         processed.push(uid);
         centinela.note_stimulus();
     }
@@ -391,6 +405,19 @@ fn run_loop(running: Arc<AtomicBool>) -> Result<(), i32> {
     Ok(())
 }
 
+fn once_envelope(success: bool, message: &str) -> Value {
+    json!({
+        "meta": {
+            "schemaVersion": "2.0",
+            "entityKind": "tool",
+            "entityId": "email-watcher"
+        },
+        "success": success,
+        "exitCode": if success { 0 } else { 1 },
+        "message": message,
+    })
+}
+
 fn main() {
     let running = Arc::new(AtomicBool::new(true));
     let flag = Arc::clone(&running);
@@ -403,6 +430,7 @@ fn main() {
             Ok(r) => r,
             Err(e) => {
                 eprintln!("{e}");
+                println!("{}", once_envelope(false, &e.to_string()));
                 std::process::exit(1);
             }
         };
@@ -410,6 +438,7 @@ fn main() {
             Ok(c) => c,
             Err(e) => {
                 eprintln!("[email-watcher] {e}");
+                println!("{}", once_envelope(false, &e));
                 std::process::exit(1);
             }
         };
@@ -417,15 +446,22 @@ fn main() {
         let mut centinela = DaemonRuntime::new(repo.clone(), "email-watcher");
         if let Err(e) = centinela.bootstrap(&top) {
             eprintln!("[email-watcher] {e}");
+            println!("{}", once_envelope(false, &e));
             std::process::exit(1);
         }
-        if let Err(e) = poll_once(&repo, &top, &cfg, &mut centinela) {
-            eprintln!("[email-watcher] {e}");
-            centinela.shutdown();
-            std::process::exit(1);
-        }
+        let poll_result = poll_once(&repo, &top, &cfg, &mut centinela);
         let _ = centinela.tick(&top);
         centinela.shutdown();
+        match poll_result {
+            Ok(()) => {
+                println!("{}", once_envelope(true, "poll ok"));
+            }
+            Err(e) => {
+                eprintln!("[email-watcher] {e}");
+                println!("{}", once_envelope(false, &e));
+                std::process::exit(1);
+            }
+        }
         return;
     }
     if let Err(code) = run_loop(running) {
@@ -505,5 +541,17 @@ mod tests {
         save_last_uid(&repo, "INBOX", 42).unwrap();
         assert_eq!(load_last_uid(&repo), 42);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn once_envelope_json_io_contract() {
+        let ok = once_envelope(true, "poll ok");
+        assert_eq!(ok["success"], json!(true));
+        assert_eq!(ok["exitCode"], json!(0));
+        assert_eq!(ok["meta"]["schemaVersion"], json!("2.0"));
+        assert_eq!(ok["meta"]["entityId"], json!("email-watcher"));
+        let fail = once_envelope(false, "imap connect: timeout");
+        assert_eq!(fail["success"], json!(false));
+        assert_eq!(fail["exitCode"], json!(1));
     }
 }

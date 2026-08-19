@@ -1,0 +1,16 @@
+{
+  "correlation_id": "14fff213-bcee-4c26-ad17-53e5e585979b",
+  "merkle_anchored": false,
+  "source_feature": "kaizen-capsula-imap-triaje",
+  "reason": "orphan_count=2 preexistente en main (01B simulador DLT, fuera de perímetro): github-raw-fetcher 66daf19f + download-remote-asset 6175f5cd, hash_signature sha256:pending-forge. No forjados en este ciclo. Gate DCC → warn.",
+  "orphans": [
+    {
+      "entity_uuid": "66daf19f-217a-4874-b417-99e5be2571f3",
+      "entity_name": "github-raw-fetcher"
+    },
+    {
+      "entity_uuid": "6175f5cd-7844-4d0c-aa93-d2ce3a41d18e",
+      "entity_name": "download-remote-asset"
+    }
+  ]
+}

@@ -153,6 +153,10 @@ pub fn run_process(
         return handlers::email_triage::run(repo, process_inputs);
     }
 
+    if canonical == "email-quick-action-ingest" {
+        return handlers::email_quick_action::run(repo, process_inputs);
+    }
+
     if canonical == "sync-client-assets" {
         return handlers::sync_client_assets::run(repo, process_inputs);
     }

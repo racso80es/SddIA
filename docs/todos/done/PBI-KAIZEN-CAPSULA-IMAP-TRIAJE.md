@@ -4,7 +4,7 @@ title: "[KAIZEN] Evolución de Cápsula IMAP y Activación de Triaje Interactivo
 format: markdown
 version: "1.0.0"
 created: "2026-08-19"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: feature
 related:
