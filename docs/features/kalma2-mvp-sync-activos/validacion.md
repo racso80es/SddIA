@@ -1,9 +1,9 @@
 ---
 feature_name: kalma2-mvp-sync-activos
 created: "2026-08-19"
-updated: "2026-08-19T08:05:00Z"
-process: feature
-phase: Verificación
+updated: "2026-08-19T10:06:00Z"
+process: pull-request-review
+phase: Triaje documental
 agent: argos
 agents: argos
 branch: feat/kalma2-mvp-sync-activos
@@ -12,6 +12,7 @@ persist_ref: docs/features/kalma2-mvp-sync-activos
 pbi_ref: docs/todos/done/[OPERATIVO] Kalma2 MVP 01B — Sincronización de activos (Simulador de Minteo).md
 document_id: PBI-KALMA2-MVP-01B
 uuid: "ed2f20b8-6e3d-4dbf-931c-d62e53ddf7c4"
+correlation_id: 8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu
 global: APTO
 pbi_archived: true
 approval_status: aprobado
@@ -19,6 +20,8 @@ verdict: aprobado
 resolution: PASS_FEATURE_CLOSURE
 checks:
   TECH_FORMAL_EXECUTE_PROCESS: APTO
+  GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+  RBAC_AUTHORING_KM_POLICY: APTO
   VERIFY_COMPILED_CAPSULES: APTO
   GATE_G5_ASSET_FETCH: APTO
   GATE_G6_CAPSULE_IO: APTO
@@ -29,6 +32,7 @@ checks:
   PBI_DONE_PRESENT: APTO
   PBI_PENDING_ABSENT: APTO
   EVOLUTION_CICATRIZ: APTO
+  HASH_SIGNATURE_SEALED: APTO
 git_changes:
   - docs/features/kalma2-mvp-sync-activos/
   - docs/todos/done/[OPERATIVO] Kalma2 MVP 01B — Sincronización de activos (Simulador de Minteo).md

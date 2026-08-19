@@ -5,6 +5,25 @@ persist_ref: docs/features/kalma2-mvp-sync-activos
 
 # Agent handoff log
 
+## 2026-08-19T10:06:00Z — Triaje documental (PPR)
+
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu`
+- runtime: kalma2-agent-runtime-cursor
+- status: `executed`
+- message: Re-auditoría PPR. Evidence bridge: TECH_FORMAL_EXECUTE_PROCESS=APTO (session source `prosthesis_subprocess`), GIT_EVIDENCE_VIA_GIT_MANAGER=APTO. Artefactos verificados: `hash_signature` sellado en `sync-client-assets.md` (`sha256:9b4b98de…`), PBI-01B en `docs/todos/done/`, cicatriz digital presente, todos los gates G5–G9 PASS. RBAC_KM: sin writes ilegítimos bajo `docs/todos/`. Global: APTO. `validacion.md` actualizado con `correlation_id` PPR y check `HASH_SIGNATURE_SEALED`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+Archivos tocados (2):
+1. docs/features/kalma2-mvp-sync-activos/validacion.md — MUTATE (updated PPR correlation_id, phase, checks)
+2. docs/features/kalma2-mvp-sync-activos/_agent_handoff.md — MUTATE (esta entrada)
+```
+
 ## 2026-08-19T09:53:00Z — Ejecución
 
 - process: `feature`
@@ -221,4 +240,33 @@ formal_execute_process: true
 TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+## 2026-08-19T08:07:47Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `8NhEnkT3oQVZJzLNP1Yk8b4u52PtZio6S89cu1Wr2tRu`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: | **Global** | **APTO** |
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+Archivos tocados (2):
+1. `docs/features/kalma2-mvp-sync-activos/validacion.md` — MUTATE: `correlation_id` PPR añadido, `phase` → `pull-request-review`, `updated` actualizado, checks `GIT_EVIDENCE_VIA_GIT_MANAGER`, `RBAC_AUTHORING_KM_POLICY` y `HASH_SIGNATURE_SEALED` explicitados.
+2. `docs/features/kalma2-mvp-sync-activos/_agent_handoff.md` — MUTATE: entrada fase Triaje documental PPR añadida.
+
+| Check | Veredicto |
+|---|---|
+| TECH_FORMAL_EXECUTE_PROCESS | APTO (session source `prosthesis_subprocess`) |
+| GIT_EVIDENCE_VIA_GIT_MANAGER | APTO |
+| RBAC_AUTHORING_KM_POLICY | APTO (sin writes KM ilegítimos) |
+| HASH_SIGNATURE_SEALED | APTO (`sha256:9b4b98de…` en `sync-client-assets.md`) |
+| PBI_DONE_PRESENT | APTO |
+| **Global** | **APTO** |
 ```
