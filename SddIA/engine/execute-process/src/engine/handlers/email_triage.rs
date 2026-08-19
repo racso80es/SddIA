@@ -6,8 +6,30 @@ use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
 use serde_json::{json, Value};
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
+
+// #region agent log
+fn dbg478(hypothesis_id: &str, location: &str, message: &str, data: Value) {
+    let rec = json!({
+        "sessionId": "478d0f",
+        "hypothesisId": hypothesis_id,
+        "location": location,
+        "message": message,
+        "data": data,
+        "timestamp": Utc::now().timestamp_millis(),
+        "runId": "post-fix"
+    });
+    if let Ok(mut f) = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("/home/racso/Proyectos/SddIA/.cursor/debug-478d0f.log")
+    {
+        let _ = writeln!(f, "{rec}");
+    }
+}
+// #endregion
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct TriageC {
@@ -25,19 +47,208 @@ fn zeros_cost() -> Value {
 }
 
 fn from_addr(payload: &Value) -> String {
-    payload
-        .get("from")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_ascii_lowercase()
+    decode_rfc2047(
+        payload
+            .get("from")
+            .and_then(|v| v.as_str())
+            .unwrap_or(""),
+    )
+    .to_ascii_lowercase()
 }
 
 fn subject_of(payload: &Value) -> String {
-    payload
-        .get("subject")
+    decode_rfc2047(
+        payload
+            .get("subject")
+            .and_then(|v| v.as_str())
+            .unwrap_or(""),
+    )
+    .to_ascii_lowercase()
+}
+
+fn decode_q_bytes(s: &str) -> Vec<u8> {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'_' => {
+                out.push(b' ');
+                i += 1;
+            }
+            b'=' if i + 2 < b.len() => {
+                match u8::from_str_radix(std::str::from_utf8(&b[i + 1..i + 3]).unwrap_or(""), 16) {
+                    Ok(v) => {
+                        out.push(v);
+                        i += 3;
+                    }
+                    Err(_) => {
+                        out.push(b[i]);
+                        i += 1;
+                    }
+                }
+            }
+            c => {
+                out.push(c);
+                i += 1;
+            }
+        }
+    }
+    out
+}
+
+fn decode_base64_bytes(s: &str) -> Vec<u8> {
+    fn val(c: u8) -> Option<u8> {
+        match c {
+            b'A'..=b'Z' => Some(c - b'A'),
+            b'a'..=b'z' => Some(c - b'a' + 26),
+            b'0'..=b'9' => Some(c - b'0' + 52),
+            b'+' | b'-' => Some(62),
+            b'/' | b'_' => Some(63),
+            _ => None,
+        }
+    }
+    let filtered: Vec<u8> = s.bytes().filter(|c| *c != b'=' && !c.is_ascii_whitespace()).collect();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < filtered.len() {
+        let a = val(filtered[i]).unwrap_or(0) as u32;
+        let b = filtered.get(i + 1).copied().and_then(val).unwrap_or(0) as u32;
+        let c = filtered.get(i + 2).copied().and_then(val).unwrap_or(0) as u32;
+        let d = filtered.get(i + 3).copied().and_then(val).unwrap_or(0) as u32;
+        let n = (a << 18) | (b << 12) | (c << 6) | d;
+        out.push((n >> 16) as u8);
+        if i + 2 < filtered.len() {
+            out.push(((n >> 8) & 0xff) as u8);
+        }
+        if i + 3 < filtered.len() {
+            out.push((n & 0xff) as u8);
+        }
+        i += 4;
+    }
+    out
+}
+
+fn charset_bytes(charset: &str, bytes: &[u8]) -> String {
+    match charset.trim().to_ascii_lowercase().as_str() {
+        "utf-8" | "utf8" | "us-ascii" => String::from_utf8_lossy(bytes).into_owned(),
+        _ => bytes.iter().map(|&b| char::from(b)).collect(),
+    }
+}
+
+fn take_encoded_word(s: &str) -> Option<(usize, String)> {
+    if !s.starts_with("=?") {
+        return None;
+    }
+    let rest = &s[2..];
+    let c_end = rest.find('?')?;
+    let charset = &rest[..c_end];
+    let rest = &rest[c_end + 1..];
+    let e_end = rest.find('?')?;
+    let enc = rest[..e_end].to_ascii_uppercase();
+    let rest = &rest[e_end + 1..];
+    let b_end = rest.find("?=")?;
+    let body = &rest[..b_end];
+    let total = 2 + c_end + 1 + e_end + 1 + b_end + 2;
+    let raw = match enc.as_str() {
+        "Q" => decode_q_bytes(body),
+        "B" => decode_base64_bytes(body),
+        _ => return None,
+    };
+    Some((total, charset_bytes(charset, &raw)))
+}
+
+fn decode_rfc2047(input: &str) -> String {
+    let mut out = String::new();
+    let mut i = 0;
+    while i < input.len() {
+        if input[i..].starts_with("=?") {
+            if let Some((consumed, decoded)) = take_encoded_word(&input[i..]) {
+                out.push_str(&decoded);
+                i += consumed;
+                let rest = &input[i..];
+                let ws = rest
+                    .chars()
+                    .take_while(|c| matches!(*c, ' ' | '\t' | '\r' | '\n'))
+                    .map(|c| c.len_utf8())
+                    .sum::<usize>();
+                if rest.get(ws..).is_some_and(|r| r.starts_with("=?")) {
+                    i += ws;
+                }
+                continue;
+            }
+        }
+        let ch = input[i..].chars().next().unwrap();
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+    out
+}
+
+fn llm_output_blob(body: &Value) -> String {
+    body.get("data")
+        .and_then(|d| d.get("text"))
         .and_then(|v| v.as_str())
+        .or_else(|| {
+            body.get("data")
+                .and_then(|d| d.get("result"))
+                .and_then(|v| v.as_str())
+        })
+        .or_else(|| body.get("result").and_then(|v| v.as_str()))
         .unwrap_or("")
-        .to_ascii_lowercase()
+        .to_string()
+}
+
+fn parse_triage_llm_blob(text: &str) -> Value {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return json!({});
+    }
+    if let Ok(v) = serde_json::from_str::<Value>(trimmed) {
+        return v;
+    }
+    for line in trimmed.lines().rev() {
+        let t = line.trim().trim_start_matches("```json").trim_start_matches("```").trim();
+        if t.starts_with('{') {
+            if let Ok(v) = serde_json::from_str::<Value>(t) {
+                return v;
+            }
+        }
+    }
+    if let (Some(s), Some(e)) = (trimmed.find('{'), trimmed.rfind('}')) {
+        if e > s {
+            if let Ok(v) = serde_json::from_str::<Value>(&trimmed[s..=e]) {
+                return v;
+            }
+        }
+    }
+    json!({})
+}
+
+fn extract_actionable_from_subject(subject: &str) -> Option<(String, String)> {
+    let decoded = decode_rfc2047(subject);
+    let lower = decoded.to_lowercase();
+    let acto = ["reunión", "reunion", "meeting", "cita", "llamada"]
+        .iter()
+        .any(|k| lower.contains(k));
+    if !acto {
+        return None;
+    }
+    let re = regex::Regex::new(
+        r"(?i)(\d{1,2}/\d{1,2}/\d{4})(?:\s*(?:a\s+las\s+)?(\d{1,2}:\d{2}))?",
+    )
+    .ok()?;
+    let cap = re.captures(&decoded)?;
+    let date = cap.get(1)?.as_str();
+    let datetime = match cap.get(2).map(|m| m.as_str()) {
+        Some(t) => format!("{date} {t}"),
+        None => date.to_string(),
+    };
+    let title = decoded.trim().to_string();
+    if title.is_empty() {
+        return None;
+    }
+    Some((title, datetime))
 }
 
 fn list_headers_text(payload: &Value) -> String {
@@ -135,50 +346,101 @@ fn persist_agenda(repo: &Path, payload: &Value, title: &str, datetime: &str) -> 
 
 fn classify_llm(repo: &Path, payload: &Value) -> Result<(String, Option<String>, Option<String>, Value), String> {
     let started = std::time::Instant::now();
+    let from_plain = decode_rfc2047(payload.get("from").and_then(|v| v.as_str()).unwrap_or(""));
+    let subject_plain = decode_rfc2047(payload.get("subject").and_then(|v| v.as_str()).unwrap_or(""));
+    let snippet = payload.get("snippet").and_then(|v| v.as_str()).unwrap_or("");
     let prompt = format!(
         "Clasifica este correo como noise, passive o actionable. JSON estricto {{\"verdict\":\"...\",\"title\":null,\"datetime\":null}}. No uses verbosidad ni urgencia comercial para elevar a actionable. from={} subject={} snippet={}",
-        payload.get("from").and_then(|v| v.as_str()).unwrap_or(""),
-        payload.get("subject").and_then(|v| v.as_str()).unwrap_or(""),
-        payload.get("snippet").and_then(|v| v.as_str()).unwrap_or(""),
+        from_plain, subject_plain, snippet,
     );
-    let body = invoke_capsule_json(
+    let body = match invoke_capsule_json(
         repo,
         "mayeuta-llm",
         &json!({"operation": "SYNTHESIZE", "prompt": prompt}),
         false,
-    )?
-    .body;
-    let text = body
+    ) {
+        Ok(r) => r.body,
+        Err(e) => {
+            // #region agent log
+            dbg478(
+                "A",
+                "email_triage.rs:classify_llm",
+                "mayeuta-llm invoke error",
+                json!({"error": e.clone(), "uid": payload.get("message_uid")}),
+            );
+            // #endregion
+            return Err(e);
+        }
+    };
+    let data_text = body
         .get("data")
-        .and_then(|d| d.get("result"))
+        .and_then(|d| d.get("text"))
         .and_then(|v| v.as_str())
-        .or_else(|| body.get("result").and_then(|v| v.as_str()))
         .unwrap_or("");
-    let parsed: Value = serde_json::from_str(text.trim()).unwrap_or(json!({}));
+    let text = llm_output_blob(&body);
+    let parsed = parse_triage_llm_blob(&text);
     let mut verdict = parsed
         .get("verdict")
         .and_then(|v| v.as_str())
-        .unwrap_or("passive")
+        .unwrap_or("")
         .to_ascii_lowercase();
     if !matches!(verdict.as_str(), "noise" | "passive" | "actionable") {
-        verdict = "passive".into();
+        verdict = String::new();
     }
     if commercial_verbosity_trap(payload) && verdict == "actionable" {
         verdict = "passive".into();
     }
-    let title = parsed
+    let mut title = parsed
         .get("title")
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
-    let datetime = parsed
+    let mut datetime = parsed
         .get("datetime")
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
+    let mut extracted = false;
+    if verdict.is_empty() || (verdict == "actionable" && datetime.is_none()) {
+        if let Some((t, dt)) = extract_actionable_from_subject(&subject_plain) {
+            extracted = true;
+            if title.is_none() {
+                title = Some(t);
+            }
+            datetime = Some(dt);
+            verdict = "actionable".into();
+        }
+    }
+    if verdict.is_empty() {
+        verdict = "passive".into();
+    }
     if verdict == "actionable" && datetime.is_none() {
         verdict = "passive".into();
     }
+    // #region agent log
+    dbg478(
+        "A",
+        "email_triage.rs:classify_llm",
+        "llm classify result",
+        json!({
+            "uid": payload.get("message_uid"),
+            "subject_rfc2047": payload.get("subject").and_then(|v| v.as_str()).unwrap_or("").contains("=?"),
+            "decoded_has_date": subject_plain.contains("2026"),
+            "subject_len": subject_plain.len(),
+            "llm_success": body.get("success"),
+            "has_data_text": !data_text.is_empty(),
+            "data_text_len": data_text.len(),
+            "parsed_text_len": text.len(),
+            "parsed_keys": parsed.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
+            "trap": commercial_verbosity_trap(payload),
+            "datetime_present": datetime.is_some(),
+            "extracted_from_subject": extracted,
+            "final_verdict": verdict,
+            "hypothesisB": payload.get("subject").and_then(|v| v.as_str()).unwrap_or("").contains("=?"),
+            "hypothesisC_datetime_drop": parsed.get("verdict").and_then(|v| v.as_str()) == Some("actionable") && datetime.is_none()
+        }),
+    );
+    // #endregion
     let cost = json!({
         "tokens_in": body.get("tokens_in").and_then(|v| v.as_u64()).unwrap_or(0),
         "tokens_out": body.get("tokens_out").and_then(|v| v.as_u64()).unwrap_or(0),
@@ -219,7 +481,7 @@ fn emit_triaged(
         .map(str::trim)
         .filter(|s| !s.is_empty())
     {
-        payload["from"] = json!(from);
+        payload["from"] = json!(decode_rfc2047(from));
     }
     if let Some(subject) = src
         .get("subject")
@@ -227,7 +489,7 @@ fn emit_triaged(
         .map(str::trim)
         .filter(|s| !s.is_empty())
     {
-        payload["subject"] = json!(subject);
+        payload["subject"] = json!(decode_rfc2047(subject));
     }
     let event = json!({
         "event_id": Uuid::new_v4().to_string(),
@@ -499,5 +761,39 @@ mod tests {
         assert_eq!(p["from"], json!("a@b"));
         assert_eq!(p["subject"], json!("Acto"));
         assert!(p.get("snippet").is_none());
+    }
+
+    #[test]
+    fn rfc2047_q_decodes_spanish_meeting_subject() {
+        let raw = "=?UTF-8?Q?Reuni=C3=B3n_con_Racso_el_21=2F08=2F2026_a_las_10=3A00?=";
+        assert_eq!(
+            decode_rfc2047(raw),
+            "Reunión con Racso el 21/08/2026 a las 10:00"
+        );
+    }
+
+    #[test]
+    fn parse_triage_blob_prefers_json_in_prose() {
+        let blob = "ok\n{\"verdict\":\"actionable\",\"title\":\"Reunión\",\"datetime\":\"21/08/2026 10:00\"}\n";
+        let v = parse_triage_llm_blob(blob);
+        assert_eq!(v["verdict"], json!("actionable"));
+        assert_eq!(v["datetime"], json!("21/08/2026 10:00"));
+    }
+
+    #[test]
+    fn extract_actionable_from_encoded_meeting_subject() {
+        let raw = "=?UTF-8?Q?Reuni=C3=B3n_con_Racso_el_21=2F08=2F2026_a_las_10=3A00?=";
+        let (title, dt) = extract_actionable_from_subject(raw).expect("extract");
+        assert!(title.contains("Reunión"));
+        assert!(dt.contains("21/08/2026"));
+        assert!(dt.contains("10:00"));
+    }
+
+    #[test]
+    fn llm_output_blob_reads_data_text() {
+        let body = json!({"success": true, "data": {"text": "{\"verdict\":\"passive\"}"}});
+        assert!(llm_output_blob(&body).contains("passive"));
+        let parsed = parse_triage_llm_blob(&llm_output_blob(&body));
+        assert_eq!(parsed["verdict"], json!("passive"));
     }
 }

@@ -208,10 +208,130 @@ fn header_value<'a>(headers: &'a str, name: &str) -> Option<String> {
         }
     }
     if capturing && !val.is_empty() {
-        Some(val)
+        Some(decode_rfc2047(&val))
     } else {
         None
     }
+}
+
+fn decode_q_bytes(s: &str) -> Vec<u8> {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'_' => {
+                out.push(b' ');
+                i += 1;
+            }
+            b'=' if i + 2 < b.len() => {
+                match u8::from_str_radix(std::str::from_utf8(&b[i + 1..i + 3]).unwrap_or(""), 16) {
+                    Ok(v) => {
+                        out.push(v);
+                        i += 3;
+                    }
+                    Err(_) => {
+                        out.push(b[i]);
+                        i += 1;
+                    }
+                }
+            }
+            c => {
+                out.push(c);
+                i += 1;
+            }
+        }
+    }
+    out
+}
+
+fn decode_base64_bytes(s: &str) -> Vec<u8> {
+    fn val(c: u8) -> Option<u8> {
+        match c {
+            b'A'..=b'Z' => Some(c - b'A'),
+            b'a'..=b'z' => Some(c - b'a' + 26),
+            b'0'..=b'9' => Some(c - b'0' + 52),
+            b'+' | b'-' => Some(62),
+            b'/' | b'_' => Some(63),
+            _ => None,
+        }
+    }
+    let filtered: Vec<u8> = s.bytes().filter(|c| *c != b'=' && !c.is_ascii_whitespace()).collect();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i < filtered.len() {
+        let a = val(filtered[i]).unwrap_or(0) as u32;
+        let b = filtered.get(i + 1).copied().and_then(val).unwrap_or(0) as u32;
+        let c = filtered.get(i + 2).copied().and_then(val).unwrap_or(0) as u32;
+        let d = filtered.get(i + 3).copied().and_then(val).unwrap_or(0) as u32;
+        let n = (a << 18) | (b << 12) | (c << 6) | d;
+        out.push((n >> 16) as u8);
+        if i + 2 < filtered.len() {
+            out.push(((n >> 8) & 0xff) as u8);
+        }
+        if i + 3 < filtered.len() {
+            out.push((n & 0xff) as u8);
+        }
+        i += 4;
+    }
+    out
+}
+
+fn charset_bytes(charset: &str, bytes: &[u8]) -> String {
+    match charset.trim().to_ascii_lowercase().as_str() {
+        "utf-8" | "utf8" | "us-ascii" => String::from_utf8_lossy(bytes).into_owned(),
+        _ => bytes.iter().map(|&b| char::from(b)).collect(),
+    }
+}
+
+fn take_encoded_word(s: &str) -> Option<(usize, String)> {
+    if !s.starts_with("=?") {
+        return None;
+    }
+    let rest = &s[2..];
+    let c_end = rest.find('?')?;
+    let charset = &rest[..c_end];
+    let rest = &rest[c_end + 1..];
+    let e_end = rest.find('?')?;
+    let enc = rest[..e_end].to_ascii_uppercase();
+    let rest = &rest[e_end + 1..];
+    let b_end = rest.find("?=")?;
+    let body = &rest[..b_end];
+    let total = 2 + c_end + 1 + e_end + 1 + b_end + 2;
+    let raw = match enc.as_str() {
+        "Q" => decode_q_bytes(body),
+        "B" => decode_base64_bytes(body),
+        _ => return None,
+    };
+    Some((total, charset_bytes(charset, &raw)))
+}
+
+fn decode_rfc2047(input: &str) -> String {
+    let mut out = String::new();
+    let mut i = 0;
+    let chars = input;
+    while i < chars.len() {
+        if chars[i..].starts_with("=?") {
+            if let Some((consumed, decoded)) = take_encoded_word(&chars[i..]) {
+                out.push_str(&decoded);
+                i += consumed;
+                let rest = &chars[i..];
+                let ws = rest
+                    .chars()
+                    .take_while(|c| *c == ' ' || *c == '\t' || *c == '\r' || *c == '\n')
+                    .map(|c| c.len_utf8())
+                    .sum::<usize>();
+                if rest.get(ws..).is_some_and(|r| r.starts_with("=?")) {
+                    i += ws;
+                }
+                continue;
+            }
+        }
+        let ch = chars[i..].chars().next().unwrap();
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+    out
 }
 
 fn detect_list_headers(headers: &str) -> Vec<String> {
@@ -472,6 +592,24 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rfc2047_q_decodes_spanish_meeting_subject() {
+        let raw = "=?UTF-8?Q?Reuni=C3=B3n_con_Racso_el_21=2F08=2F2026_a_las_10=3A00?=";
+        assert_eq!(
+            decode_rfc2047(raw),
+            "Reunión con Racso el 21/08/2026 a las 10:00"
+        );
+    }
+
+    #[test]
+    fn header_value_decodes_rfc2047_subject() {
+        let h = "Subject: =?UTF-8?Q?Reuni=C3=B3n_con_Racso_el_21=2F08=2F2026_a_las_10=3A00?=\r\nFrom: a@b\r\n";
+        assert_eq!(
+            header_value(h, "Subject").as_deref(),
+            Some("Reunión con Racso el 21/08/2026 a las 10:00")
+        );
+    }
 
     #[test]
     fn list_id_is_captured() {

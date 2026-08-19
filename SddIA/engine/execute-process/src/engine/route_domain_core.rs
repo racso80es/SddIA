@@ -16,6 +16,7 @@ use chrono::Utc;
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -746,6 +747,30 @@ pub(crate) fn dispatch_subscriber(
     if subscriber.get("tool").and_then(|v| v.as_str()) == Some("send-telegram-notification") {
         let message = build_telegram_message_from_event(event);
         let Some(message) = message else {
+            // #region agent log
+            {
+                let rec = json!({
+                    "sessionId": "478d0f",
+                    "hypothesisId": "D",
+                    "location": "route_domain_core.rs:telegram",
+                    "message": "telegram skipped-empty-message",
+                    "data": {
+                        "event_type": event.get("event_type"),
+                        "verdict": event.get("payload").and_then(|p| p.get("verdict")),
+                        "uid": event.get("payload").and_then(|p| p.get("message_uid"))
+                    },
+                    "timestamp": Utc::now().timestamp_millis(),
+                    "runId": "post-fix"
+                });
+                if let Ok(mut f) = fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open("/home/racso/Proyectos/SddIA/.cursor/debug-478d0f.log")
+                {
+                    let _ = writeln!(f, "{rec}");
+                }
+            }
+            // #endregion
             return (sid, "skipped-empty-message".into(), None, 0);
         };
         match invoke_send_telegram_notification(repo, &message) {
