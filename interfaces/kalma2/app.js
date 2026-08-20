@@ -294,7 +294,8 @@ async function syncGenome() {
 
 document.addEventListener("DOMContentLoaded", () => {
   $("chat").addEventListener("click", enviarChat);
-  $("forge").addEventListener("click", forjarProceso);
+  const forgeBtn = $("forge");
+  if (forgeBtn) forgeBtn.addEventListener("click", forjarProceso);
   const syncBtn = $("sync-genome");
   if (syncBtn) syncBtn.addEventListener("click", syncGenome);
   $("prompt").addEventListener("keydown", (e) => {
@@ -303,8 +304,27 @@ document.addEventListener("DOMContentLoaded", () => {
       enviarChat();
     }
   });
+  applyConsumerProfileUi();
   loadEmailInbox();
 });
+
+/** Filtro C: oculta Forjar Proceso en perfil consumidor. */
+async function applyConsumerProfileUi() {
+  const forge = $("forge");
+  if (!forge) return;
+  try {
+    const r = await fetch("/api/runtime-profile");
+    const data = await r.json();
+    if (data && data.forge_allowed === false) {
+      forge.hidden = true;
+      forge.disabled = true;
+      forge.removeAttribute("aria-hidden");
+      forge.setAttribute("aria-hidden", "true");
+    }
+  } catch (_) {
+    /* lab sin bridge actualizado: botón visible (fail-open engineering) */
+  }
+}
 
 async function loadEmailInbox() {
   const root = $("email-inbox");

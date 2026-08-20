@@ -26,6 +26,24 @@ use uuid::Uuid;
 
 const ALLOWLIST_KALMA2: &[&str] = &["bug-fix", "feature", "refactorization", "task-queue-manager"];
 
+/// Acciones de forja documental (Filtro C — L-FRACTURE). No vaciar JSON de suscripciones.
+const CONSUMER_SKIP_FORGE_ACTIONS: &[&str] = &[
+    "materialize-fracture-pbi",
+    "enrich-fracture-pbi-kaizen",
+    "materialize-kaizen-alert-doc",
+];
+
+fn runtime_profile_is_consumer() -> bool {
+    matches!(
+        std::env::var("SDDIA_RUNTIME_PROFILE")
+            .unwrap_or_default()
+            .trim()
+            .to_lowercase()
+            .as_str(),
+        "consumer" | "consumidor"
+    )
+}
+
 fn sync_dispatch_mode() -> bool {
     matches!(
         std::env::var("SDDIA_LAB_ROUTE_SYNC")
@@ -867,6 +885,9 @@ pub(crate) fn dispatch_subscriber(
     }
 
     if let Some(action) = subscriber.get("action").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
+        if runtime_profile_is_consumer() && CONSUMER_SKIP_FORGE_ACTIONS.contains(&action) {
+            return (sid, "skipped-consumer-profile".into(), None, 0);
+        }
         if action == "sync-entity-index"
             && matches!(
                 std::env::var("SDDIA_LAB_SIMULATE_SYNC_INDEX")
@@ -1507,6 +1528,27 @@ mod blocking_tests {
             .join(".SddIA/proofs/pec-correlation")
             .join(format!("{cid}.json"))
             .is_file());
+    }
+
+    #[test]
+    fn consumer_profile_skips_forge_actions() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        std::env::set_var("SDDIA_RUNTIME_PROFILE", "consumer");
+        let mut event = json!({
+            "event_id": "00000000-0000-4000-8000-000000000001",
+            "event_type": "System_Fracture_Detected",
+            "payload": { "process_name": "x", "error_trace": "t" }
+        });
+        let sub = json!({
+            "agent": "cumulo",
+            "action": "materialize-fracture-pbi"
+        });
+        let (_sid, status, err, code) = dispatch_subscriber(repo, &sub, &mut event, false, None);
+        std::env::remove_var("SDDIA_RUNTIME_PROFILE");
+        assert_eq!(status, "skipped-consumer-profile");
+        assert!(err.is_none());
+        assert_eq!(code, 0);
     }
 }
 

@@ -2,12 +2,14 @@
 id: start-sddia
 uuid: d5aae800-06b0-4acc-b0fc-476d8e241eb1
 type: process
-version: 1.2.2
+version: 1.3.0
 ---
 
 # Ignición del ecosistema SddIA (`start-sddia.sh`)
 
 Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA), el centinela **email-watcher** (si IMAP configurado) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
+
+**v1.3.0:** perfil `SDDIA_RUNTIME_PROFILE` (`consumer`|`engineering`); Filtro C excluye `github-bridge-watcher` en consumidor; R-07 omite spawn de `email-watcher`/`telegram-watcher` si `SDDIA_SENSORIAL_JURISDICTION=systemd` o unidad user `sddia-email-watcher@*` activa.
 
 **v1.2.2:** integra `email-watcher` como centinela opcional condicionado a `SDDIA_EMAIL_IMAP_HOST` en bóveda (`.SddIA/.dev/.env` prevalece sobre `.dev/.env`).
 

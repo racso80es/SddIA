@@ -17,16 +17,44 @@ KALMA_HOST="127.0.0.1"
 KALMA_URL="http://${KALMA_HOST}:${KALMA_PORT}"
 DAEMON_LAUNCHER_DIR="SddIA/scripts/daemons"
 REQUIRED_DAEMONS=(event-watcher event-sweeper)
-OPTIONAL_DAEMONS=(telegram-watcher github-bridge-watcher)
+# Perfil runtime (L-PROFILE): consumer | engineering. Default lab = engineering.
+RUNTIME_PROFILE="$(echo "${SDDIA_RUNTIME_PROFILE:-engineering}" | tr '[:upper:]' '[:lower:]')"
 EMAIL_DAEMON="email-watcher"
 EMAIL_DAEMON_STARTED=0
-DAEMON_NAMES=("${REQUIRED_DAEMONS[@]}" "${OPTIONAL_DAEMONS[@]}")
 STATUS_DIR=".SddIA/daemons/status"
 IOTA_RELAY_DIR=".SddIA/services/iota-publish-relay"
 IOTA_RELAY_PID=""
 HEARTBEAT_AUDIT=".SddIA/daemons/state/heartbeat-audit.json"
 CLEANUP_DONE=0
 IGNITION_EPOCH="$(date -u +%s)"
+
+# Filtro C: consumidor sin github-bridge-watcher (F-04).
+if [[ "$RUNTIME_PROFILE" == "consumer" || "$RUNTIME_PROFILE" == "consumidor" ]]; then
+    OPTIONAL_DAEMONS=(telegram-watcher)
+else
+    OPTIONAL_DAEMONS=(telegram-watcher github-bridge-watcher)
+fi
+DAEMON_NAMES=("${REQUIRED_DAEMONS[@]}" "${OPTIONAL_DAEMONS[@]}")
+
+# R-07: jurisdicción sensorial systemd ⇒ script no spawnea email/telegram.
+_sensorial_under_systemd() {
+    local juris
+    juris="$(echo "${SDDIA_SENSORIAL_JURISDICTION:-}" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$juris" == "systemd" ]]; then
+        return 0
+    fi
+    if command -v systemctl >/dev/null 2>&1; then
+        if systemctl --user list-units --type=service --state=running --no-legend 2>/dev/null \
+            | awk '{print $1}' | grep -E '^sddia-email-watcher@.+\.service$' >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    return 1
+}
+SENSORIAL_SYSTEMD=0
+if _sensorial_under_systemd; then
+    SENSORIAL_SYSTEMD=1
+fi
 
 _ensure_orchestrator() {
     echo "[SddIA] Asegurando orquestador nativo (execute-process)..."
@@ -43,6 +71,10 @@ _ensure_orchestrator() {
 
 echo "[SddIA] Iniciando secuencia de ignición del núcleo..."
 echo "[SddIA] Repo: $REPO_ROOT"
+echo "[SddIA] Perfil runtime: ${RUNTIME_PROFILE} (SDDIA_RUNTIME_PROFILE)"
+if [[ "$SENSORIAL_SYSTEMD" -eq 1 ]]; then
+    echo "[SddIA] Jurisdicción sensorial: systemd (R-07 — sin spawn email/telegram desde script)"
+fi
 
 cleanup() {
     local exit_code="${1:-0}"
@@ -272,12 +304,19 @@ done
 
 OPTIONAL_DAEMONS_OK=0
 for name in "${OPTIONAL_DAEMONS[@]}"; do
+    # R-07: telegram-watcher bajo systemd sensorial no se spawnea desde script.
+    if [[ "$SENSORIAL_SYSTEMD" -eq 1 && "$name" == "telegram-watcher" ]]; then
+        echo "  -> ${name}: omitido (jurisdicción systemd R-07)"
+        continue
+    fi
     if _start_daemon "$name"; then
         ((OPTIONAL_DAEMONS_OK++)) || true
     fi
 done
 
-if [[ -n "${SDDIA_EMAIL_IMAP_HOST:-}" ]]; then
+if [[ "$SENSORIAL_SYSTEMD" -eq 1 ]]; then
+    echo "[SddIA] ${EMAIL_DAEMON} omitido (jurisdicción systemd R-07 — unidad @%f responsable)."
+elif [[ -n "${SDDIA_EMAIL_IMAP_HOST:-}" ]]; then
     echo "[SddIA] Centinela sensorial IMAP (${EMAIL_DAEMON})..."
     if _start_daemon "$EMAIL_DAEMON"; then
         EMAIL_DAEMON_STARTED=1
