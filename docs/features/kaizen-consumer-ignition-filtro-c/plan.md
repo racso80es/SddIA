@@ -66,7 +66,7 @@ Laudos: `spec.md` §1 (`L-PROFILE` … `L-FORGE`).
 
 - [x] `implementation.md` / `execution.md` / `validacion.md` APTO
 - [x] PBI → `docs/todos/done/` en rama; `pbi_archived: true`
-- [ ] `delivery-close-cycle` (un PR)
+- [x] `delivery-close-cycle` (PR #187) — aduana EDA bloqueó por 2 huérfanos preexistentes; PR abierto igualmente
 
 ## Dependencias
 

@@ -9,6 +9,8 @@ document_id: PBI-KAIZEN-CONSUMER-IGNITION-FILTRO-C
 uuid: "1c70e777-9b7f-4ad3-ada5-225ab6d141c6"
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/187
+eda_audit_note: "delivery-close exitCode 1 — orphan_count=2 preexistentes (github-raw-fetcher, download-remote-asset); no introducidos por este Kaizen"
 checks:
   O1_FILTRO_C: APTO
   O2_R07: APTO
