@@ -110,6 +110,17 @@ fn target_entity_from_payload(payload: &Value) -> String {
     "unknown-entity".into()
 }
 
+/// Poda de supervivencia: lab hueco no alimenta success_rate ni recovery_attempts.
+pub(crate) fn is_survival_hollow(payload: &Value) -> bool {
+    if payload.get("lab_hollow").and_then(|v| v.as_bool()) == Some(true) {
+        return true;
+    }
+    matches!(
+        payload.get("cycle_phase").and_then(|v| v.as_str()),
+        Some("initialized") | Some("awaiting_agents")
+    )
+}
+
 /// Precedencia L-TYPE-RESOLVE: prefijo `type:id` válido → catálogo process → default `tool`.
 fn resolve_entity_type(repo: &Path, entity_id: &str) -> &'static str {
     if let Some((prefix, _)) = entity_id.split_once(':') {
@@ -317,6 +328,16 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
     if load_consumed(repo, &cfg).contains(asset_id) {
         stamp_fractal_delivery_state(&event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "skipped");
         return Ok(json!({"ok": true, "skipped": "duplicate_asset_id", "asset_id": asset_id}));
+    }
+
+    if is_survival_hollow(&payload) {
+        mark_consumed(repo, &cfg, asset_id)?;
+        stamp_fractal_delivery_state(&event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "skipped");
+        return Ok(json!({
+            "ok": true,
+            "skipped": "survival_hollow",
+            "asset_id": asset_id,
+        }));
     }
 
     let entity_id = target_entity_from_payload(&payload);
@@ -611,5 +632,30 @@ mod tests {
         assert!(is_latency_threshold_exempt(&repo, "delivery-close-cycle"));
         assert!(is_latency_threshold_exempt(&repo, "pull-request-review"));
         assert!(!is_latency_threshold_exempt(&repo, "no-such-entity-xyz"));
+    }
+
+    #[test]
+    fn hollow_by_cycle_phase() {
+        assert!(is_survival_hollow(&json!({"cycle_phase": "initialized"})));
+        assert!(is_survival_hollow(&json!({"cycle_phase": "awaiting_agents"})));
+        assert!(is_survival_hollow(&json!({"lab_hollow": true, "cycle_phase": "completed"})));
+    }
+
+    #[test]
+    fn fire_completed_and_failed_are_not_hollow() {
+        assert!(!is_survival_hollow(&json!({"cycle_phase": "completed"})));
+        assert!(!is_survival_hollow(&json!({"cycle_phase": "failed", "exit_code": 1})));
+        assert!(!is_survival_hollow(&json!({"exit_code": 0})));
+    }
+
+    #[test]
+    fn thresholds_110_process_intact() {
+        let repo = crate::core::repo::find_repo_root().expect("repo root");
+        let raw = std::fs::read_to_string(repo.join("SddIA/agents/radamanto.thresholds.json"))
+            .expect("thresholds");
+        let t: Value = serde_json::from_str(&raw).expect("json");
+        assert_eq!(t["version"], "1.1.0");
+        assert_eq!(t["success_rate_min_by_entity_type"]["process"], 0.70);
+        assert_eq!(t["max_recovery_attempts"], 3);
     }
 }

@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 74
+universe_total: 75
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `c041bfd2-3be0-4956-83ec-be28fadee390` | 2026-08-20 | Rehab process feature (revoked permanent) + fail-soft padre DCC + poda telemetría hueca Radamanto. | CANONICO | `SddIA/evolution/c041bfd2-3be0-4956-83ec-be28fadee390.md` |
 | `6586a1e1-a1d7-4ffc-bd6a-b3f658d7ef79` | 2026-08-17 | PEC: testigo durable + Telegram y auditoría de cobertura catálogo↔registro. | CANONICO | `SddIA/evolution/6586a1e1-a1d7-4ffc-bd6a-b3f658d7ef79.md` |
 | `4828a809-c6ae-46d3-8b36-d0eb4df1060e` | 2026-08-16 | Fire-and-Forget Tekton: DA-5, CLI detach allowlist y acuse PEC en eda_fractal.orchestration. | CANONICO | `SddIA/evolution/4828a809-c6ae-46d3-8b36-d0eb4df1060e.md` |
 | `ba900e95-1a47-4185-b86c-bc7a251b4fe6` | 2026-08-16 | Umbrales Radamanto por entity_type process + rehab revoked PPR/DCC (PPR #174+#177) | CANONICO | `SddIA/evolution/ba900e95-1a47-4185-b86c-bc7a251b4fe6.md` |
