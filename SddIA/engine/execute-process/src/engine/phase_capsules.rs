@@ -915,6 +915,138 @@ pub fn capsule_feature_pbi_archive(
     }))
 }
 
+fn envelope_data(envelope: &Value) -> &Value {
+    envelope.get("data").unwrap_or(envelope)
+}
+
+fn envelope_child_phases(envelope: &Value) -> Option<&Vec<Value>> {
+    let report = envelope
+        .get("execution_report")
+        .or_else(|| envelope_data(envelope).get("execution_report"));
+    report.and_then(|r| r.get("phases")).and_then(|v| v.as_array())
+}
+
+fn envelope_has_physical_threshold(envelope: &Value) -> bool {
+    let data = envelope_data(envelope);
+    let pr_ok = |v: Option<&Value>| {
+        v.and_then(|x| x.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .is_some()
+    };
+    if pr_ok(data.get("pr_url")) {
+        return true;
+    }
+    if data.get("delivery_push").is_some() {
+        return true;
+    }
+    if pr_ok(data.get("delivery_close").and_then(|d| d.get("pr_url"))) {
+        return true;
+    }
+    // Defensa: data.delivery_push aún no copiado; fase de publicación remota executed.
+    envelope_child_phases(envelope)
+        .map(|phases| {
+            phases.iter().any(|p| {
+                p.get("phase_name").and_then(|v| v.as_str()) == Some("Publicación remota")
+                    && p.get("status").and_then(|v| v.as_str()) == Some("executed")
+            })
+        })
+        .unwrap_or(false)
+}
+
+fn dcc_error_is_secondary(err: &str) -> bool {
+    let el = err.to_lowercase();
+    el.contains("timeout")
+        || el.contains("telemetry")
+        || el.contains("receipt")
+        || el.contains("validaci")
+        || el.contains("higiene")
+        || el.contains("impacto")
+        || el.contains("telemetry_io")
+}
+
+fn dcc_phase_is_secondary(phase_name: &str) -> bool {
+    // Paridad con delivery_close::is_dcc_secondary_phase (no importar: ciclo de módulos).
+    matches!(
+        phase_name,
+        "Impacto SddIA condicional" | "Higiene local"
+    )
+}
+
+fn child_phases_fail_soft(envelope: &Value) -> bool {
+    envelope_child_phases(envelope)
+        .map(|phases| {
+            phases
+                .iter()
+                .any(|p| p.get("fail_soft").and_then(|v| v.as_bool()) == Some(true))
+        })
+        .unwrap_or(false)
+}
+
+fn child_has_causal_hard_fail(envelope: &Value) -> bool {
+    envelope_child_phases(envelope)
+        .map(|phases| {
+            phases.iter().any(|p| {
+                let status = p.get("status").and_then(|v| v.as_str()).unwrap_or("");
+                let hard = matches!(status, "failed" | "blocked")
+                    && p.get("fail_soft").and_then(|v| v.as_bool()) != Some(true);
+                if !hard {
+                    return false;
+                }
+                let name = p.get("phase_name").and_then(|v| v.as_str()).unwrap_or("");
+                !dcc_phase_is_secondary(name)
+            })
+        })
+        .unwrap_or(false)
+}
+
+/// L-FAILSOFT-PADRE: DCC hijo cruzó umbral físico y el fallo es cola secundaria.
+pub(crate) fn feature_dcc_parent_fail_soft(envelope: &Value) -> bool {
+    if envelope.get("success") == Some(&json!(true)) {
+        return false;
+    }
+    if !envelope_has_physical_threshold(envelope) {
+        return false;
+    }
+    if child_has_causal_hard_fail(envelope) {
+        return false;
+    }
+    if envelope_data(envelope)
+        .get("telemetry_io_failed")
+        .and_then(|v| v.as_bool())
+        == Some(true)
+        || envelope_data(envelope)
+            .pointer("/thermodynamic_toll/telemetry_io_failed")
+            .and_then(|v| v.as_bool())
+            == Some(true)
+    {
+        return true;
+    }
+    let err = envelope
+        .get("error")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    child_phases_fail_soft(envelope) || dcc_error_is_secondary(err)
+}
+
+fn copy_delivery_close_into_state(state: &mut Value, data: &Value) {
+    if let Some(obj) = state.as_object_mut() {
+        for key in [
+            "pr_url",
+            "event_id",
+            "target_path",
+            "closed_branch",
+            "snapshot_commit_hash",
+            "delivery_push",
+        ] {
+            if let Some(v) = data.get(key) {
+                obj.insert(key.into(), v.clone());
+            }
+        }
+        obj.insert("delivery_close".into(), data.clone());
+    }
+}
+
 pub fn capsule_feature_invoke_delivery_close(
     repo: &Path,
     inputs: &Value,
@@ -957,28 +1089,34 @@ pub fn capsule_feature_invoke_delivery_close(
     if let Some(url) = str_field(inputs, "pr_url") {
         child_inputs["pr_url"] = json!(url);
     }
-    let data =
-        super::invoke_orchestrator::invoke_process(repo, "delivery-close-cycle", &child_inputs)?;
-    if let Some(obj) = state.as_object_mut() {
-        for key in [
-            "pr_url",
-            "event_id",
-            "target_path",
-            "closed_branch",
-            "snapshot_commit_hash",
-        ] {
-            if let Some(v) = data.get(key) {
-                obj.insert(key.into(), v.clone());
-            }
-        }
-        obj.insert("delivery_close".into(), data.clone());
+    let envelope =
+        super::invoke_orchestrator::invoke_process_full(repo, "delivery-close-cycle", &child_inputs)?;
+    let data = envelope.get("data").cloned().unwrap_or(envelope.clone());
+    copy_delivery_close_into_state(state, &data);
+    if envelope.get("success") == Some(&json!(true)) {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "feature-delivery-close",
+            "child_process": "delivery-close-cycle",
+            "delivery_close": data,
+        }));
     }
-    Ok(json!({
-        "status": "executed",
-        "handler": "feature-delivery-close",
-        "child_process": "delivery-close-cycle",
-        "delivery_close": data,
-    }))
+    let err = envelope
+        .get("error")
+        .and_then(|v| v.as_str())
+        .unwrap_or("subproceso falló")
+        .to_string();
+    if feature_dcc_parent_fail_soft(&envelope) {
+        return Ok(json!({
+            "status": "failed",
+            "fail_soft": true,
+            "handler": "feature-delivery-close",
+            "child_process": "delivery-close-cycle",
+            "error": err,
+            "delivery_close": data,
+        }));
+    }
+    Err(err)
 }
 
 pub fn execute_feature_phase(
@@ -1119,5 +1257,113 @@ mod delivery_close_kaizen_tests {
         let state = json!({});
         let dir = resolve_pr_body_file_dir(&repo, &inputs, &state).expect("dir");
         assert!(dir.ends_with("docs/fixes/kaizen-delivery-close-snapshot-pr-body/.tmp"));
+    }
+}
+
+#[cfg(test)]
+mod feature_dcc_parent_fail_soft_tests {
+    use super::feature_dcc_parent_fail_soft;
+    use serde_json::json;
+
+    #[test]
+    fn soft_when_pr_url_and_hygiene_error() {
+        let envelope = json!({
+            "success": false,
+            "error": "fase \"Higiene local\" failed",
+            "data": {"pr_url": "https://github.com/racso80es/SddIA/pull/185"}
+        });
+        assert!(feature_dcc_parent_fail_soft(&envelope));
+    }
+
+    #[test]
+    fn soft_when_telemetry_io_failed_after_push() {
+        let envelope = json!({
+            "success": false,
+            "error": "subproceso falló",
+            "data": {
+                "delivery_push": {"ok": true},
+                "thermodynamic_toll": {"telemetry_io_failed": true}
+            }
+        });
+        assert!(feature_dcc_parent_fail_soft(&envelope));
+    }
+
+    #[test]
+    fn soft_when_push_and_child_fail_soft_phase() {
+        let envelope = json!({
+            "success": false,
+            "error": "subproceso falló",
+            "data": {"delivery_push": {"ok": true}},
+            "execution_report": {
+                "phases": [
+                    {"phase_name": "Higiene local", "status": "failed", "fail_soft": true}
+                ]
+            }
+        });
+        assert!(feature_dcc_parent_fail_soft(&envelope));
+    }
+
+    #[test]
+    fn hard_when_snapshot_failed_without_physical_threshold() {
+        let envelope = json!({
+            "success": false,
+            "error": "fase \"Snapshot final\" failed",
+            "data": {}
+        });
+        assert!(!feature_dcc_parent_fail_soft(&envelope));
+    }
+
+    #[test]
+    fn hard_when_child_succeeded() {
+        let envelope = json!({
+            "success": true,
+            "data": {"pr_url": "https://github.com/racso80es/SddIA/pull/1"}
+        });
+        assert!(!feature_dcc_parent_fail_soft(&envelope));
+    }
+
+    #[test]
+    fn hard_when_push_but_apertura_failed_without_fail_soft() {
+        let envelope = json!({
+            "success": false,
+            "error": "fase \"Apertura en forja\" failed",
+            "data": {"delivery_push": {"ok": true}},
+            "execution_report": {
+                "phases": [
+                    {"phase_name": "Publicación remota", "status": "executed"},
+                    {"phase_name": "Apertura en forja", "status": "failed"}
+                ]
+            }
+        });
+        assert!(!feature_dcc_parent_fail_soft(&envelope));
+    }
+
+    #[test]
+    fn physical_fallback_from_remote_phase_executed() {
+        let envelope = json!({
+            "success": false,
+            "error": "fase \"Higiene local\" failed",
+            "data": {},
+            "execution_report": {
+                "phases": [
+                    {"phase_name": "Publicación remota", "status": "executed"},
+                    {"phase_name": "Higiene local", "status": "failed", "fail_soft": true}
+                ]
+            }
+        });
+        assert!(feature_dcc_parent_fail_soft(&envelope));
+    }
+
+    #[test]
+    fn aggregator_treats_parent_fail_soft_as_success() {
+        let reports = vec![json!({
+            "phase_name": "Cierre de entrega",
+            "status": "failed",
+            "fail_soft": true,
+            "handler": "feature-delivery-close"
+        })];
+        let v = crate::engine::phase_terminal::aggregate_execution_terminal(&reports, &json!({}));
+        assert!(v.success);
+        assert_eq!(v.status_code, 0);
     }
 }

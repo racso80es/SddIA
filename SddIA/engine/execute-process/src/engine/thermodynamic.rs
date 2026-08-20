@@ -13,6 +13,12 @@ fn iso_now() -> String {
 
 const LIFECYCLE_PROCESSES: &[&str] = &["bug-fix", "feature", "refactorization"];
 
+fn env_truthy(key: &str) -> bool {
+    std::env::var(key)
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+        .unwrap_or(false)
+}
+
 /// Deriva `cycle_phase` desde `phase_reports` (laudo L5 kalma2-full-cycle).
 /// Solo aplica a procesos de ciclo de vida; resto → None (compat bridge).
 pub fn derive_cycle_phase(process_name: &str, phase_reports: Option<&Value>) -> Option<&'static str> {
@@ -39,6 +45,38 @@ pub fn derive_cycle_phase(process_name: &str, phase_reports: Option<&Value>) -> 
     } else {
         Some("completed")
     }
+}
+
+pub(crate) fn survival_cycle_phase(
+    process_name: &str,
+    phase_reports: Option<&Value>,
+    success: bool,
+) -> Option<&'static str> {
+    if !success && LIFECYCLE_PROCESSES.contains(&process_name) {
+        return Some("failed");
+    }
+    derive_cycle_phase(process_name, phase_reports)
+}
+
+fn phase_reports_lab_skip_closure(phase_reports: Option<&Value>) -> bool {
+    let Some(arr) = phase_reports.and_then(|v| v.as_array()) else {
+        return false;
+    };
+    arr.iter().any(|p| {
+        let reason = p.get("reason").and_then(|v| v.as_str()).unwrap_or("");
+        reason.contains("SDDIA_LAB_SKIP_PBI_ARCHIVE")
+            || reason.contains("SDDIA_LAB_SKIP_DELIVERY_CLOSE")
+    })
+}
+
+/// `lab_hollow` en REF: lab-skip de cierre (env o reason en phase_reports), no cycle_phase.
+pub(crate) fn is_lab_hollow_sample(
+    process_name: &str,
+    _cycle_phase: Option<&str>,
+    success: bool,
+    lab_skip_closure: bool,
+) -> bool {
+    success && LIFECYCLE_PROCESSES.contains(&process_name) && lab_skip_closure
 }
 
 pub fn run(
@@ -99,6 +137,17 @@ pub fn run(
         }
         if let Some(ws) = workspace_path {
             payload["workspace_path"] = json!(ws);
+        }
+        let phase_reports = state.get("phase_reports");
+        let cycle = survival_cycle_phase(process_name, phase_reports, success);
+        if let Some(phase) = cycle {
+            payload["cycle_phase"] = json!(phase);
+        }
+        let lab_skip_closure = env_truthy("SDDIA_LAB_SKIP_PBI_ARCHIVE")
+            || env_truthy("SDDIA_LAB_SKIP_DELIVERY_CLOSE")
+            || phase_reports_lab_skip_closure(phase_reports);
+        if is_lab_hollow_sample(process_name, cycle, success, lab_skip_closure) {
+            payload["lab_hollow"] = json!(true);
         }
         // CA5 / EV-AUD-005: telemetría refleja fase causal (mismo agregador que envelope/PEC).
         if !success {
@@ -304,6 +353,53 @@ mod tests {
     fn derive_none_for_non_lifecycle() {
         let reports = json!([{"status": "simulated"}]);
         assert_eq!(derive_cycle_phase("task-queue-manager", Some(&reports)), None);
+    }
+
+    #[test]
+    fn hollow_initialized_is_cycle_phase_not_lab_flag() {
+        assert!(!is_lab_hollow_sample(
+            "feature",
+            Some("initialized"),
+            true,
+            false
+        ));
+        assert_eq!(
+            survival_cycle_phase(
+                "feature",
+                Some(&json!([{"status": "simulated"}])),
+                true
+            ),
+            Some("initialized")
+        );
+    }
+
+    #[test]
+    fn hollow_lab_skip_closure_on_success() {
+        assert!(is_lab_hollow_sample("feature", Some("completed"), true, true));
+    }
+
+    #[test]
+    fn fire_failed_is_not_hollow() {
+        assert!(!is_lab_hollow_sample(
+            "feature",
+            Some("failed"),
+            false,
+            true
+        ));
+        assert_eq!(
+            survival_cycle_phase("feature", None, false),
+            Some("failed")
+        );
+    }
+
+    #[test]
+    fn completed_without_skip_is_not_hollow() {
+        assert!(!is_lab_hollow_sample(
+            "feature",
+            Some("completed"),
+            true,
+            false
+        ));
     }
 
     #[test]

@@ -205,6 +205,7 @@ pub fn run(
         "closed_branch",
         "snapshot_commit_hash",
         "delivery_close",
+        "delivery_push",
     ] {
         if let Some(v) = state.get(key) {
             data[key] = v.clone();
