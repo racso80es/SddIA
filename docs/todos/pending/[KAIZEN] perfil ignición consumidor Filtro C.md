@@ -3,13 +3,15 @@ document_id: PBI-KAIZEN-CONSUMER-IGNITION-FILTRO-C
 uuid: "1c70e777-9b7f-4ad3-ada5-225ab6d141c6"
 title: "[KAIZEN] Ignición Consumidor: Poda Filtro C, Empaquetado (Release Bundle) y Diagnóstico Local"
 format: markdown
-version: "0.2.0"
+version: "0.2.1"
 status: pending
 type: kaizen
 priority: alta
 created: "2026-08-20"
 updated: "2026-08-20"
 derived_from: PBI-LAB-PACIENTE0-SDDIA-AP
+preprod_vault_backup: "/home/racso/Proyectos/SddIA_AP.preprod-vault"
+preprod_instance_path: "/home/racso/Proyectos/SddIA_AP"
 tech_debt_ids:
   - DT-START-SDDIA-CONSUMER-PROFILE
   - DT-SYSTEMD-FULL-COVERAGE
@@ -18,6 +20,8 @@ friction_ids:
   - R-07
   - F-06
   - F-07
+  - F-08
+  - F-09
 ---
 
 # [KAIZEN] Evolución de Despliegue: Perfil Consumidor, Empaquetado y Diagnóstico
@@ -26,36 +30,76 @@ friction_ids:
 
 | Afirmación propuesta | Dictamen | Corrección / ancla |
 |----------------------|----------|-------------------|
-| Existe `sddia-daemons@<instancia>.service` | **Inexacto hoy** | Solo existe `SddIA/templates/systemd/sddia-email-watcher@.service.template`. La plantilla multi-daemon es **objetivo** de este PBI (absorbe `DT-SYSTEMD-FULL-COVERAGE`). |
-| `WorkingDirectory` → raíz `.SddIA/` | **Incorrecto** | Plantilla actual: `WorkingDirectory=%f` = **raíz de instancia** (padre de `.SddIA/` y `./.events/`). Binding obligatorio = raíz de instancia, no `.SddIA/`. |
-| Empaquetar solo «Cerbero, Cúmulo, Mayeuta» como nodos binarios | **Impreciso** | Son roles/agentes ontológicos, no un release set cerrado. Empaquetar: binarios runtime + cápsulas exigidas por el códice + contratos/normas necesarios. |
-| Extirpar *todo* `.rs`/`.py` del artefacto | **Aspiracional / faseado** | Hoy hay lanzadores `.sh` y posibles cápsulas no-Rust. Meta: cero fuentes de ingeniería y cero deps de desarrollo; scripts de lanzamiento mínimos permitidos hasta paridad Rust. |
+| Existe `sddia-daemons@<instancia>.service` | **Parcial** | En host hay `sddia-daemon@.service` + `sddia-daemons.target`, pero **no** parametrizan por raíz de instancia (WD fijo al lab). `sddia-email-watcher@` sí usa `%f`. Objetivo: unificar patrón hermético multi-cliente (§2.5, F-08). |
+| `WorkingDirectory` → raíz `.SddIA/` | **Incorrecto** | Plantilla email: `WorkingDirectory=%f` = **raíz de instancia**. Binding obligatorio = raíz de instancia, no `.SddIA/`. |
+| Empaquetar solo «Cerbero, Cúmulo, Mayeuta» | **Impreciso** | Binarios runtime + cápsulas/skills del códice + contratos/normas. |
+| Extirpar *todo* `.rs`/`.py` | **Aspiracional / faseado** | Meta: cero fuentes de ingeniería; lanzadores mínimos hasta paridad Rust. |
 | `build-release-bundle.sh` ya existe | **No** | Entidad a forjar. |
-| Smoke vía `eda-local-topology-test` / `Local_QA_Requested` | **Parcialmente existente** | Reutilizar/adaptar tool `.SddIA/tools/eda-local-topology-test` + evento `SddIA/events/orchestration/local-qa-requested.md`; no reinventar nombres. |
-| `agenda-manager` es binario eferente como Telegram | **Inexacto** | Es **skill** (`agenda:persist`). El bundle resuelve el grafo de capacidades del códice (skills + tools), no una lista hardcodeada. |
-| Tres `email-watcher` + watermark estancado | **Observado en ensayo** | R-07: `start-sddia.sh` + systemd (+ dups). Watermark también afectado por catch-up `last_uid=0` + lote «primeros 50» (F-07). |
-| Falta `send-telegram-notification` en AP | **Observado** | F-06: códice exige tool; target AP sin binario → DLQ. |
-| Prohibir centinelas globales compartidos | **Nuevo / coherente** | Alineado a ceguera espacial + multi-cliente; formalizar. |
-| Objetivos 1–3 del borrador v0.2 + notas Racso | **Ya cubiertos / absorbidos** | Filtro C = §1; copia de core completo = §2; batería post-despliegue = §3; servicios por cliente = §4. |
+| Smoke `eda-local-topology-test` / `Local_QA_Requested` | **Parcialmente existente** | Reutilizar/adaptar; no reinventar. |
+| `agenda-manager` = binario eferente | **Inexacto** | Skill `agenda:persist`. |
+| Tres `email-watcher` + watermark estancado | **Observado** | R-07 + F-07. |
+| Falta `send-telegram-notification` | **Observado (mitigado en ensayo)** | F-06; tras build local el poke E2E funcionó. |
+| Constitución L2 Windows/pwsh en Linux | **Fósil** | F-09. |
+| Centinelas globales compartidos | **F-08 en host** | `sddia-daemon@*` WD=`…/SddIA` (lab). |
 
-**UUID / document_id:** inmutables (`1c70e777-…` / `PBI-KAIZEN-CONSUMER-IGNITION-FILTRO-C`).
+**UUID / document_id:** inmutables.
 
 ---
 
 ## 1. Origen y destilación de fricción
 
-Ensayo `PBI-LAB-PACIENTE0-SDDIA-AP` (informe §11):
-
 | ID | Fricción | Evidencia |
 |----|----------|-----------|
-| **F-04** | Derrame ontológico / Filtro C | `System_Fracture_Detected` → `enrich-fracture-pbi-kaizen` / `materialize-fracture-pbi` en instancia consumidor |
-| **R-07** | Colisión de receptores | `start-sddia.sh` + `sddia-email-watcher@.service` (hasta 3 PIDs) sobre el mismo buzón/watermark |
-| **F-06** | Binario eferente ausente | `send-telegram-notification` no en `SddIA_AP/SddIA/target/debug/` → `Email_Triaged` actionable en DL (`argos.send-telegram-notification: failed`) |
-| **F-07** | Catch-up IMAP no «últimos 50» | `last_uid=0` + `MAX_UIDS_PER_POLL=50` procesa UIDs antiguos del lookback; correo nuevo no entra |
-| — | Entropía de código | Trasplante copió genoma/fuente completo al paciente (notas Racso) |
-| — | Ceguera post-despliegue | Validación por observación pasiva; falta smoke determinista reutilizable |
+| **F-04** | Derrame ontológico / Filtro C | Fracture → enrich/materialize fracture en consumidor |
+| **R-07** | Colisión receptores | `start-sddia.sh` + `sddia-email-watcher@…AP` |
+| **F-06** | Binario eferente ausente | Telegram DLQ hasta `cargo build -p send-telegram-notification` |
+| **F-07** | Catch-up IMAP ≠ últimos 50 | `last_uid=0` + lote lookback |
+| **F-08** | Systemd no hermético multi-cliente | `sddia-daemon@*` WD lab fijo vs `email-watcher@%f` |
+| **F-09** | Constitución fósil | `L2_ENV` Windows+pwsh en instancia Linux |
+| — | Entropía de código | Trasplante ~**1,7 GiB** (mayoría `SddIA/target` + fuentes) |
+| — | Ceguera post-despliegue | Sin smoke determinista obligatorio |
 
-También: `start-sddia.sh` intenta `github-bridge-watcher`; WUI expone «Forjar Proceso» (`DT-START-SDDIA-CONSUMER-PROFILE`).
+También: `github-bridge-watcher` en ignición script; WUI «Forjar Proceso» (`DT-START-SDDIA-CONSUMER-PROFILE`).
+
+---
+
+## 1bis. Entorno de preproducción (rescate Paciente 0)
+
+Bóveda y metadatos del ensayo se tratan como **perfil preprod**. Secretos **fuera de git**:
+
+| Ítem | Valor |
+|------|-------|
+| Backup | `/home/racso/Proyectos/SddIA_AP.preprod-vault/` |
+| Contenido | `instance.SddIA.dev.env`, `root.dev.env`, `constitution/`, `codexes/`, `env-keys.inventory.txt`, `README.md` |
+| product / workspace_id | `SddIA_AP` / `sddia-ap-paciente-0` |
+| WUI preprod | `SDDIA_CLIENT_PORT=8766` |
+| Códice | `codex-kalma2-assistant` (`sync-client-assets` / PEC `sddia-ap-lab-sync-001` success) |
+| Systemd AP | `sddia-email-watcher@home-racso-Proyectos-SddIA_AP.service` |
+| Filtro C Git | `core.hooksPath=/dev/null`; `.husky.disabled-filtro-c` |
+
+### Claves bóveda (checklist rehidratación, sin valores)
+
+**Instancia (prevalece):** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_CHAT_ID`, `SDDIA_LLM_*`, `SDDIA_EMAIL_IMAP_*`, `SDDIA_EMAIL_MAILBOX`, `SDDIA_EMAIL_POLL_SECONDS`, `SDDIA_EMAIL_SNIPPET_CHARS`, `SDDIA_EMAIL_INITIAL_LOOKBACK_DAYS`, `SDDIA_EMAIL_MAX_UIDS_PER_POLL`, `SDDIA_AGENT_RUNTIME_*`, `SDDIA_CLIENT_PORT`.
+
+**Raíz:** subset LLM + IMAP + AGENT_RUNTIME + `SDDIA_ENV` + `SDDIA_CLIENT_PORT` (Telegram solo en instancia).
+
+### Métricas al cierre del ensayo
+
+| Métrica | Valor |
+|---------|-------|
+| inbox `.eml` | 55 |
+| proofs | 55 (`noise` 50, `passive` 4, `actionable` 1) |
+| agenda | 3 |
+| Binarios al cierre | daemons EDA + `kalma2-bridge` + `mayeuta-llm` + `send-telegram-notification` + `github-raw-fetcher` |
+| E2E actionable | WUI OK; Telegram OK post-F-06 |
+
+### Re-despliegue (post-kaizen)
+
+1. Cerrar al menos R-07 + F-06 (checklist bundle) + F-07 antes de materializar de nuevo.
+2. Restaurar bóveda desde `SddIA_AP.preprod-vault` (README del backup).
+3. Re-render/enable unidad systemd solo con instancia recreada.
+4. Puerto **8766**; no compartir token Telegram ni app-password IMAP con lab forja.
+5. Corregir constitución L2 (F-09) en plantilla consumidor.
 
 ---
 
@@ -63,79 +107,77 @@ También: `start-sddia.sh` intenta `github-bridge-watcher`; WUI expone «Forjar 
 
 ### 2.1 Poda de perfil consumidor (Filtro C)
 
-1. `start-sddia.sh` / plantillas systemd: **no** ignitar `github-bridge-watcher` en perfil consumidor.
-2. WUI Kalma2: ocultar/deshabilitar «Forjar Proceso» bajo perfil consumidor.
-3. No enrutar `System_Fracture_Detected` a procesos de ingeniería si `codex-software-engineering` ausente (o flag de perfil explícito).
-4. **Anti-colisión R-07 (instancia única sensorial):** si el paciente delega receptores a systemd, `start-sddia.sh` **no** levantará `email-watcher` / `telegram-watcher` en background. Candado singleton o cesión explícita de jurisdicción al OS. Un solo escritor del watermark IMAP por instancia.
+1. Sin `github-bridge-watcher` en perfil consumidor.
+2. WUI sin «Forjar Proceso» usable.
+3. Sin suscriptores de forja ante Fracture si no hay códice de ingeniería.
+4. **Anti-colisión R-07:** con systemd sensorial, `start-sddia.sh` no spawnea `email-watcher`/`telegram-watcher`. Un solo escritor de watermark por instancia.
 
 ### 2.2 Ignición IMAP — últimos 50
 
-En primer arranque / catch-up de consumidor: recuperar solo los **50 correos más recientes** (UIDs más altos o UNSEEN acotado), no los «primeros 50 del lookback». Watermark anclado al máximo del lote. Alineación de `SDDIA_EMAIL_MAX_UIDS_PER_POLL` a esa semántica (código + docs).
+Primer catch-up: solo **50 UIDs más recientes**; watermark = max del lote (F-07).
 
 ### 2.3 Encapsulamiento físico (Release Bundle)
 
-- Forjar `build-release-bundle` (script y/o cápsula Rust) que genere artefacto de despliegue.
-- Contenido mínimo: binarios runtime (daemons, `execute-process`, bridge WUI), contratos/normas/códice necesarios, bus inerte, bóveda plantilla — **sin** fuentes de ingeniería (`.rs` de desarrollo, tests, dossiers) ni deps de build en el paquete de cliente.
-- **Resolución dinámica de cápsulas (F-06):** el bundle **lee el códice inyectado** (p. ej. `codex-kalma2-assistant`) y compila/empaqueta **todas** las dependencias runtime exigidas por el grafo de capacidades (tools como `send-telegram-notification`, skills como `agenda-manager` + su implementación). Runtime completo ⇒ cero DLQ por binario ausente.
-- Faseado: si alguna cápsula aún no es binario nativo, documentar excepción temporal; meta = paridad Rust.
+- Forjar `build-release-bundle`.
+- Runtime + códice + cápsulas del grafo de capacidades (F-06); sin fuentes de ingeniería ni deps de build.
+- Verificación: `send-telegram-notification` presente tras bundle con `codex-kalma2-assistant`.
 
-### 2.4 Verificación de vida (smoke local)
+### 2.4 Smoke local
 
-- Adaptar/ejecutar batería post-despliegue basada en **`eda-local-topology-test`** + estímulo **`Local_QA_Requested`** (`local-qa-requested`), no inventar tool paralelo.
-- Auditar integridad del bus, reacción de centinelas EDA, presencia de cápsulas del códice y carga de bóveda (sin filtrar secretos a logs).
-- Gate: envelope `success: true` antes de declarar paciente listo.
+Reutilizar `eda-local-topology-test` + `Local_QA_Requested`; gate `success: true`.
 
-### 2.5 Instanciación hermética de centinelas (multi-cliente)
+### 2.5 Instanciación hermética multi-cliente
 
-1. **Prohibido** ejecutar centinelas globales o compartidos entre instancias (un proceso, N raíces).
-2. Todo despliegue registra unidades systemd **parametrizadas por instancia** (evolución desde `sddia-email-watcher@` hacia cobertura completa tipo `sddia-<daemon>@<instancia>` / plantilla unificada — nombre final en forja; el borrador `sddia-daemons@` es **propuesta**, no SSOT actual) **o** procesos supervisados locales.
-3. Binding obligatorio: `WorkingDirectory` = **raíz de la instancia** (`%f` hoy); `EnvironmentFile` = `%f/.SddIA/.dev/.env`. Competencia solo por credenciales de esa bóveda.
-4. `start-sddia.sh` actúa **únicamente** sobre daemons de la carpeta ejecutora; cero interferencia con instancias vecinas (paths, locks, puertos, tokens).
+1. Prohibidos centinelas globales compartidos (F-08).
+2. Unidades parametrizadas por raíz de instancia (`%f`) para **todos** los daemons (evolucionar `sddia-daemon@` lab-fijo → patrón tipo `email-watcher@`).
+3. `WorkingDirectory` = raíz instancia; `EnvironmentFile` = `%f/.SddIA/.dev/.env`.
+4. `start-sddia.sh` solo sobre la carpeta ejecutora.
 
 ---
 
 ## 3. Fuera de alcance
 
-- Wizard UX de configuración (`DT-CONFIG-UX-ONBOARDING`, aplazada en ensayo).
+- Wizard UX (`DT-CONFIG-UX-ONBOARDING`).
 - Sustituir Kalma2 WUI completa.
-- Forja de nuevos dominios de negocio ajenos al perfil consumidor.
+- Dominios de negocio ajenos al perfil consumidor.
 
-`DT-SYSTEMD-FULL-COVERAGE` **deja de ser “fuera”**: queda **absorbida** por §2.5 (cierre o reducción explícita al cerrar este PBI).
+`DT-SYSTEMD-FULL-COVERAGE` **absorbida** por §2.5.
 
 ---
 
 ## 4. Criterios de cierre
 
-### Filtro C / R-07
+### Filtro C / R-07 / F-09
 
-- [ ] Perfil consumidor: sin `github-bridge-watcher`, sin «Forjar Proceso» usable, sin suscriptores de forja ante Fracture.
-- [ ] Gate: fracture sintética en `SddIA_AP` → cero `enrich-fracture` / `materialize-fracture` / `bug-fix` / `feature`.
-- [ ] Con systemd sensorial activo: `start-sddia.sh` no spawnea segundo `email-watcher`/`telegram-watcher` (R-07 cerrado).
-- [ ] Documentación perfil en starter-kit / constitución local.
+- [ ] Sin github-bridge / Forjar Proceso / suscriptores forja en consumidor.
+- [ ] Gate fracture sintética → cero procesos de ingeniería.
+- [ ] Systemd sensorial ⇒ `start-sddia` no duplica sensores (R-07).
+- [ ] Constitución consumidor sin L2 Windows fósil (F-09).
+- [ ] Docs starter-kit / constitución local.
 
 ### IMAP últimos 50
 
-- [ ] Primer poll instancia limpia: como máximo los **50 UIDs más altos** (o UNSEEN acotado); watermark = max del lote; sin catch-up de meses.
+- [ ] Primer poll: máx. 50 UIDs más altos; watermark = max.
 
 ### Release bundle + F-06
 
-- [ ] `build-release-bundle` produce paquete sin fuentes de ingeniería ni árbol de desarrollo.
-- [ ] Bundle incluye cápsulas/skills exigidas por el códice (verificación: `send-telegram-notification` presente tras bundle con `codex-kalma2-assistant`).
-- [ ] Instancia desplegada desde el paquete: E2E actionable → Telegram + WUI sin DLQ por binario ausente.
+- [ ] Bundle sin fuentes de ingeniería.
+- [ ] Cápsulas del códice incluidas (`send-telegram-notification` verificable).
+- [ ] E2E actionable → Telegram + WUI sin DLQ por binario ausente.
 
-### Smoke + multi-cliente
+### Smoke + multi-cliente (F-08)
 
-- [ ] Smoke (`eda-local-topology-test` / `Local_QA_Requested`) → `success: true` en paciente fresco.
-- [ ] Dos instancias en el mismo host: centinelas con `WorkingDirectory` distintos; sin locks/watermarks/credenciales cruzados.
-- [ ] `start-sddia.sh` en instancia A no toca procesos ni estado de instancia B.
+- [ ] Smoke `success: true` en paciente fresco.
+- [ ] Dos instancias: WD distintos; sin locks/credenciales cruzados.
+- [ ] `sddia-daemon@*` (o sucesor) no queda atado a una sola ruta lab.
 
 ---
 
 ## 5. Notas de forja
 
-Mutación de genoma vía proceso `feature`/`kaizen` (no edición manual). Vincular UUID `1c70e777-9b7f-4ad3-ada5-225ab6d141c6` en `SddIA/evolution/` al cerrar.
+Vía proceso `feature`/`kaizen`. UUID `1c70e777-9b7f-4ad3-ada5-225ab6d141c6` en evolution al cerrar.
 
-**Orden sugerido de entrega:** (1) R-07 + IMAP últimos 50 + Filtro C runtime, (2) resolución cápsulas en bundle / build checklist F-06, (3) smoke local, (4) plantillas systemd multi-daemon + hermeticidad multi-cliente.
+**Orden:** (1) R-07 + F-07 + Filtro C, (2) F-06 bundle, (3) smoke, (4) F-08/F-09 systemd + constitución.
 
 ---
 
@@ -143,11 +185,10 @@ Mutación de genoma vía proceso `feature`/`kaizen` (no edición manual). Vincul
 
 | Ref | Uso |
 |-----|-----|
-| `docs/todos/done/[LABORATORIO] MVP Paciente 0 SddIA_AP.md` §11 | Fricciones F-04, R-07, ensayo |
-| `SddIA/templates/systemd/sddia-email-watcher@.service.template` | SSOT systemd sensorial actual (`WorkingDirectory=%f`) |
-| `start-sddia.sh` | Ignición híbrida; rama IMAP L280+ |
-| `SddIA/events/orchestration/local-qa-requested.md` | ECST smoke |
-| `.SddIA/tools/eda-local-topology-test.md` | Tool smoke existente |
-| `SddIA/library/codexes/codex-kalma2-assistant.md` | Grafo de dependencias del bundle |
-| `SddIA/tools/send-telegram-notification.md` | Caso F-06 |
-| `SddIA/skills/agenda-manager.md` | Skill (no confundir con tool binario) |
+| `docs/todos/done/[LABORATORIO] MVP Paciente 0 SddIA_AP.md` §11 | Ensayo |
+| `/home/racso/Proyectos/SddIA_AP.preprod-vault/` | Bóveda preprod (no git) |
+| `SddIA/templates/systemd/sddia-email-watcher@.service.template` | SSOT `%f` |
+| `~/.config/systemd/user/sddia-daemon@.service` | Patrón lab actual (F-08) |
+| `start-sddia.sh` | Ignición híbrida |
+| `local-qa-requested` / `eda-local-topology-test` | Smoke |
+| `codex-kalma2-assistant` / `send-telegram-notification` / `agenda-manager` | Bundle |
