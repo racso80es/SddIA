@@ -4,13 +4,13 @@ title: "[ARQUITECTURA] refactorization — rehabilitación revoked_entities (PPR
 format: markdown
 version: "1.0.0"
 created: "2026-08-20"
-status: abierto
+status: done
 priority: media
 process: refactorization
 dispatch: true
 uuid: a3f7b2c8-4e1d-4f59-9c6a-8d2e1f0b9a5c
-suggested_branch: refactor/refactorization-revoked-registry-rehab
-persist_ref: docs/features/refactorization-revoked-registry-rehab
+suggested_branch: docs/features/feature-revoked-registry-rehab
+persist_ref: docs/features/feature-revoked-registry-rehab
 branch_name: refactor/refactorization-revoked-registry-rehab
 source_correlation_id: CNwwfDm7Hqb1zd23zRtkjP2o7QqgR5PaH26YBpbN8Wz3
 source_pr_url: https://github.com/racso80es/SddIA/pull/186
