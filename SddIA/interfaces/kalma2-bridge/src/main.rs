@@ -57,6 +57,37 @@ fn is_native_elf(path: &Path) -> bool {
         .is_ok_and(|_| magic == *b"\x7fELF")
 }
 
+/// Perfil runtime de instancia (Filtro C). Default: engineering.
+fn runtime_profile() -> String {
+    let raw = std::env::var("SDDIA_RUNTIME_PROFILE").unwrap_or_default();
+    let p = raw.trim().to_lowercase();
+    if p.is_empty() {
+        "engineering".into()
+    } else {
+        p
+    }
+}
+
+fn runtime_profile_is_consumer() -> bool {
+    matches!(runtime_profile().as_str(), "consumer" | "consumidor")
+}
+
+fn handle_runtime_profile(req: tiny_http::Request) {
+    let profile = runtime_profile();
+    let forge_allowed = !matches!(profile.as_str(), "consumer" | "consumidor");
+    reply(
+        req,
+        200,
+        serde_json::json!({
+            "success": true,
+            "profile": profile,
+            "forge_allowed": forge_allowed,
+            "exit_code": 0
+        })
+        .to_string(),
+    );
+}
+
 fn resolve_orchestrator(repo: &Path) -> Result<PathBuf, String> {
     if let Ok(o) = std::env::var("SDDIA_EXECUTE_PROCESS_BIN") {
         let trimmed = o.trim();
@@ -1203,6 +1234,19 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
 }
 
 fn handle_execute(mut req: tiny_http::Request, repo: &Path) {
+    if runtime_profile_is_consumer() {
+        reply(
+            req,
+            403,
+            serde_json::json!({
+                "success": false,
+                "message": "Forjar Proceso deshabilitado en perfil consumidor (Filtro C)",
+                "exit_code": 1
+            })
+            .to_string(),
+        );
+        return;
+    }
     let mut buf = String::new();
     if req.as_reader().read_to_string(&mut buf).is_err() {
         reply(
@@ -1650,6 +1694,7 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Post, "/api/sync-assets") => handle_sync_assets(req, &repo),
         (Method::Post, "/api/email-quick-action") => handle_email_quick_action(req, &repo),
         (Method::Get, "/api/status") => handle_status(req, &repo),
+        (Method::Get, "/api/runtime-profile") => handle_runtime_profile(req),
         (Method::Get, "/api/email-inbox") => handle_email_inbox(req, &repo),
         (Method::Get, "/api/progress/stream") => handle_progress_stream(req, &repo),
         (Method::Get, _) => serve_static(req, &ui_root),

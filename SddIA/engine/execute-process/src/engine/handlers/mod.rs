@@ -1,6 +1,7 @@
 pub mod daemon_heartbeat;
 pub mod daemon_kill_switch;
 pub mod governance_daemon;
+pub mod instance_creator;
 pub mod kalma2;
 pub mod mayeuta;
 pub mod route_domain;

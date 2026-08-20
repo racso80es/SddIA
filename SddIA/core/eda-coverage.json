@@ -600,6 +600,12 @@
       "last_emitted_event": "Domain_Entity_Updated",
       "last_hash": "sha256:6ea867c307d8e0abe50190423cc86ba376b90bdfaec8fa1976bad98ad0d8f2cd"
     },
+    "dead5ca7-c0b9-42ef-aad6-171991fb524f": {
+      "correlation_timestamp": "2026-08-20T11:53:18.370Z",
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:b2fdac7ebf844d395968fa6c216d126d6e9385bf0d6adc8791af39e87157de82"
+    },
     "e11c4348-29b5-45cd-bac8-f33f40e18a12": {
       "correlation_timestamp": "2026-08-19T15:27:18.832Z",
       "is_covered": true,

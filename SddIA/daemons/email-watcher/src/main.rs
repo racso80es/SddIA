@@ -88,8 +88,21 @@ fn require_cfg() -> Result<ImapCfg, String> {
 
 fn uid_search_criterion(last: u32, lookback_days: u64) -> String {
     if last == 0 {
-        let since = Utc::now() - chrono::Duration::days(lookback_days as i64);
-        format!("SINCE {}", since.format("%d-%b-%Y"))
+        // F-07: bootstrap = ALL; el lote se recorta a los N UIDs más recientes en plan_bootstrap_uids.
+        // lookback_days queda reservado para opt-in legado (SDDIA_EMAIL_BOOTSTRAP_SINCE=1).
+        let _ = lookback_days;
+        if matches!(
+            std::env::var("SDDIA_EMAIL_BOOTSTRAP_SINCE")
+                .unwrap_or_default()
+                .trim()
+                .to_lowercase()
+                .as_str(),
+            "1" | "true" | "yes"
+        ) {
+            let since = Utc::now() - chrono::Duration::days(lookback_days as i64);
+            return format!("SINCE {}", since.format("%d-%b-%Y"));
+        }
+        "ALL".to_string()
     } else {
         format!("UID {}:*", last + 1)
     }
@@ -126,6 +139,19 @@ fn uids_after(uids: impl IntoIterator<Item = u32>, last: u32) -> Vec<u32> {
     let mut ordered: Vec<u32> = uids.into_iter().filter(|u| *u > last).collect();
     ordered.sort_unstable();
     ordered
+}
+
+/// Bootstrap F-07: los `max` UIDs más altos del mailbox (orden ascendente para procesar).
+fn plan_bootstrap_uids(uids: impl IntoIterator<Item = u32>, max: usize) -> Vec<u32> {
+    if max == 0 {
+        return Vec::new();
+    }
+    let mut all: Vec<u32> = uids.into_iter().collect();
+    all.sort_unstable();
+    if all.len() > max {
+        all = all[all.len() - max..].to_vec();
+    }
+    all
 }
 
 /// Prioriza UNSEEN (más recientes primero) y limita el lote; el catch-up continúa en sondeos siguientes.
@@ -426,25 +452,26 @@ fn poll_once(
         .map_err(|e| format!("imap examine: {e}"))?;
 
     let last = load_last_uid(repo);
+    let bootstrap = last == 0;
     let criterion = uid_search_criterion(last, cfg.initial_lookback_days);
     let uids = session
         .uid_search(criterion)
         .map_err(|e| format!("imap search: {e}"))?;
-    let incremental = uids_after(uids, last);
 
-    let unseen: Vec<u32> = if last > 0 {
-        session
+    let ordered = if bootstrap {
+        plan_bootstrap_uids(uids, cfg.max_uids_per_poll)
+    } else {
+        let incremental = uids_after(uids, last);
+        let unseen: Vec<u32> = session
             .uid_search("UNSEEN")
             .map(|set| set.into_iter().collect())
-            .unwrap_or_default()
-    } else {
-        Vec::new()
+            .unwrap_or_default();
+        plan_poll_uids(&incremental, &unseen, last, cfg.max_uids_per_poll)
     };
-
-    let ordered = plan_poll_uids(&incremental, &unseen, last, cfg.max_uids_per_poll);
     let mut processed = Vec::new();
 
-    for uid in ordered {
+    for uid in &ordered {
+        let uid = *uid;
         if inbox_dir(repo).join(format!("{uid}.eml")).is_file() {
             processed.push(uid);
             continue;
@@ -482,7 +509,14 @@ fn poll_once(
         centinela.note_stimulus();
     }
 
-    if !processed.is_empty() {
+    if bootstrap {
+        // F-07: watermark = techo del lote bootstrap (abandona UIDs antiguos no seleccionados).
+        if let Some(ceiling) = ordered.iter().copied().max() {
+            if ceiling > 0 {
+                save_last_uid(repo, &cfg.mailbox, ceiling)?;
+            }
+        }
+    } else if !processed.is_empty() {
         let new_last = advance_contiguous_watermark(last, &processed);
         if new_last > last {
             save_last_uid(repo, &cfg.mailbox, new_last)?;
@@ -632,10 +666,15 @@ mod tests {
     }
 
     #[test]
-    fn first_poll_uses_since_not_all() {
+    fn first_poll_uses_all_not_since() {
         let c = uid_search_criterion(0, 60);
-        assert!(c.starts_with("SINCE "));
-        assert!(!c.contains("ALL"));
+        assert_eq!(c, "ALL");
+    }
+
+    #[test]
+    fn bootstrap_takes_highest_n_uids() {
+        let batch = plan_bootstrap_uids([1, 2, 3, 10, 11, 12, 13], 3);
+        assert_eq!(batch, vec![11, 12, 13]);
     }
 
     #[test]

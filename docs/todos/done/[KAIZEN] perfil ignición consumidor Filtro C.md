@@ -4,7 +4,7 @@ uuid: "1c70e777-9b7f-4ad3-ada5-225ab6d141c6"
 title: "[KAIZEN] Ignición Consumidor: Forja de Instancias, Empaquetado y Diagnóstico Local"
 format: markdown
 version: "0.3.0"
-status: pending
+status: done
 type: kaizen
 priority: alta
 created: "2026-08-20"

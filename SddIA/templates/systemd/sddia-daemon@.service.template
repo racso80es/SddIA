@@ -1,0 +1,19 @@
+[Unit]
+Description=SddIA daemon %i (%f)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%f
+EnvironmentFile=-%f/.SddIA/.dev/.env
+# Sustituir %%i por el nombre del binario del centinela (event-watcher, event-sweeper, …)
+ExecStart=@@SDDIA_CORE_ROOT@@/SddIA/scripts/daemons/%i.sh
+Restart=always
+RestartSec=5
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+[Install]
+WantedBy=default.target

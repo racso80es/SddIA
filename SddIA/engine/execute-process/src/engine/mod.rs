@@ -161,6 +161,10 @@ pub fn run_process(
         return handlers::sync_client_assets::run(repo, process_inputs);
     }
 
+    if canonical == "instance-creator" {
+        return handlers::instance_creator::run(repo, process_inputs);
+    }
+
     if canonical == "governance-daemon-manager" {
         return handlers::governance_daemon::run(repo, process_inputs);
     }
