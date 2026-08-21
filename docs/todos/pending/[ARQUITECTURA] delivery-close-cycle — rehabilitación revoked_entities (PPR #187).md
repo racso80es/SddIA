@@ -45,6 +45,12 @@ Rehabilitar el proceso `delivery-close-cycle` en `.SddIA/cerbero/revoked_entitie
 
 PPR #187 · CID `4gKBTRCyZzvEFQcbDWFnBmdC3ZjvqTJmauHiYgTWwj32` · emisor ECST `github-bridge-watcher` ∉ revoked · `PullRequest_Presented` @ `2026-08-20T12:04:09Z` · clave DCC revocada 1s después (`12:04:10Z`).
 
+## Sightings adicionales
+
+| Sighting | CID | Nota |
+|----------|-----|------|
+| Cosecha Kaizen gemelo | `34736c88-34d3-46f8-a050-75e7775d005b` | Dedup; seed ya materializada @ `4gKBTRCy…` |
+
 ## Contexto heredado
 
 Ola 2 (#174+#177) liquidó umbrales Radamanto + rehab instancia DCC. Esta cicatriz es **episodio nuevo** (`since` distinto); no deduplicar contra satélite done #177.

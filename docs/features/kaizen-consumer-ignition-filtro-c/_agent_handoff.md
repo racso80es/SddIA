@@ -5,16 +5,16 @@ persist_ref: docs/features/kaizen-consumer-ignition-filtro-c
 
 # Agent handoff log
 
-## 2026-08-20T14:20:00Z — Cosecha Kaizen
+## 2026-08-20T14:15:00Z — Cosecha Kaizen
 - process: `pull-request-review`
 - phase: `Cosecha Kaizen`
 - agents: `cumulo`
-- correlation_id: `34736c88-34d3-46f8-a050-75e7775d005b`
+- correlation_id: `4gKBTRCyZzvEFQcbDWFnBmdC3ZjvqTJmauHiYgTWwj32`
 - pbi_ref: ``
 - runtime: kalma2-agent-runtime-cursor
 - backend: `cli`
 - status: `executed`
-- message: **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE APTO` · kaizen_seeds 1 (DCC #187) · dedup 1 (#136 Shell)
+- message: **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE APTO` · kaizen_seeds 1 (#187 DCC) · dedup 1 (#136 Shell)
 
 ### transcript (tail)
 
@@ -22,9 +22,9 @@ persist_ref: docs/features/kaizen-consumer-ignition-filtro-c
 **Cúmulo · Cosecha Kaizen — veredicto: `ok`**
 
 1. `validacion.md` — fase Cosecha Kaizen, `KAIZEN_COSECHA_GATE`, `kaizen_seeds: 1`, `dedup: 1`.
-2. `docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — rehabilitación revoked_entities (PPR #187).md` — **CREATE** (`since 2026-08-20T12:04:10Z` ≠ ola #177).
+2. `docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — rehabilitación revoked_entities (PPR #187).md` — **CREATE** (`since 2026-08-20T12:04:10Z` ≠ #177; `source_correlation_id` = este CID).
 3. `_agent_handoff.md` — entrada Cosecha Kaizen + runtime evidence.
-4. DIA: sin `Kaizen_Alert_Required` para CID `34736c88…` → 0× `PENDING_AUDIT_DOC_*`.
+4. DIA: sin `Kaizen_Alert_Required` para CID `4gKBTRCy…` → 0× `PENDING_AUDIT_DOC_*`.
 5. Dedup: `GIT_EVIDENCE_SESSION_SHELL` / `F3_TECH_GATE` → done PPR #136 (referencia; sin writes).
 6. `./sddia-run.sh --tool git-manager`: Shell **Rejected**; R1/R2 vía Evidence Bridge (`native_state`, `idempotent-hit`).
 7. Downstream: Handoff materialización (`accept_pr_handoff: true` → PR #187).
@@ -35,7 +35,7 @@ persist_ref: docs/features/kaizen-consumer-ignition-filtro-c
 
 ```yaml
 schema: kalma2-agent-runtime-evidence/v1
-materialized_at: "2026-08-20T14:20:00Z"
+materialized_at: "2026-08-20T14:15:00Z"
 source: native_state
 git_manager_invoked: false
 formal_execute_process: true
@@ -44,7 +44,26 @@ GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 KAIZEN_COSECHA_GATE: APTO
 kaizen_seeds: 1
 kaizen_seeds_dedup: 1
-notes: "Evidence Bridge Argos F5 idempotent-hit; Shell git-manager Rejected sesión Cúmulo Cosecha; DCC seed NEW since 12:04:10Z"
+notes: "seed DCC PPR #187 since 12:04:10Z; dedup Shell #136; Shell git-manager Rejected sesión Cúmulo Cosecha CID 4gKBTRCy"
+```
+
+## 2026-08-20T14:20:00Z — Cosecha Kaizen (gemelo)
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `34736c88-34d3-46f8-a050-75e7775d005b`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: `ok`** — sighting dedup vs seed #187 @ CID `4gKBTRCy…` (sin CREATE)
+
+### transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen (gemelo 34736c88…) — veredicto: `ok`**
+
+Sighting concurrente sobre misma deuda DCC; seed canónica `source_correlation_id=4gKBTRCy…`.
 ```
 
 ## 2026-08-20T14:12:00Z — Veredicto y bloqueo
@@ -135,4 +154,25 @@ authorization_exitCode: 0
 5. Downstream: Handoff `accept-pr` PR #187.
 
 **Veredicto: `ok`**
+```
+
+## 2026-08-20T14:16:33Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `4gKBTRCyZzvEFQcbDWFnBmdC3ZjvqTJmauHiYgTWwj32`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 4. Sin `Kaizen_Alert_Required` → 0× `PENDING_AUDIT_DOC_*`; `git-manager` Shell Rejected (R2 bridge; sin stdout inventado).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `KAIZEN_COSECHA_GATE` · seeds 1 / dedup 1.
+
+1. `docs/todos/pending/[ARQUITECTURA] delivery-close-cycle — rehabilitación revoked_entities (PPR #187).md` — **CREATE** (DCC re-revocado `since 2026-08-20T12:04:10Z` ≠ #177).
+2. `docs/features/kaizen-consumer-ignition-filtro-c/validacion.md` — fase Cosecha · `kaizen_seeds: 1` · dedup Shell→#136.
+3. `docs/features/kaizen-consumer-ignition-filtro-c/_agent_handoff.md` — entrada CID `4gKBTRCy…` + Evidence Bridge.
+4. Sin `Kaizen_Alert_Required` → 0× `PENDING_AUDIT_DOC_*`; `git-manager` Shell Rejected (R2 bridge; sin stdout inventado).
 ```
