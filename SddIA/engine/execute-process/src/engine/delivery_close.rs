@@ -52,6 +52,50 @@ pub(crate) fn mark_fail_soft_if_secondary(entry: &mut Value, phase_name: &str, s
     }
 }
 
+fn dcc_physical_threshold_crossed(state: &Value) -> bool {
+    let has_pr = state
+        .get("pr_url")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .is_some();
+    let pushed = state.get("delivery_push").is_some();
+    has_pr || pushed
+}
+
+/// L-FAILSOFT-RETRO (PPR #187): adjudicación retroactiva de `fail_soft` sobre
+/// `"Aduana EDA genómica"` cuando el umbral físico ya cruzó (huérfanos preexistentes).
+/// Idempotente. No debilita la señal Argos (`argos_verdict: block` se conserva).
+pub(crate) fn adjudicate_eda_fail_soft_post_physical(phase_reports: &mut [Value], state: &Value) {
+    if !dcc_physical_threshold_crossed(state) {
+        return;
+    }
+    for report in phase_reports.iter_mut() {
+        let phase_name = report
+            .get("phase_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if phase_name != "Aduana EDA genómica" {
+            continue;
+        }
+        let status = report.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        if status != "blocked" && status != "failed" {
+            continue;
+        }
+        let orphan_count = report
+            .get("orphan_count")
+            .and_then(|v| v.as_i64().or_else(|| v.as_u64().map(|u| u as i64)))
+            .unwrap_or(0);
+        if orphan_count <= 0 {
+            continue;
+        }
+        if report.get("argos_verdict").and_then(|v| v.as_str()) != Some("block") {
+            continue;
+        }
+        report["fail_soft"] = json!(true);
+    }
+}
+
 fn execute_phase(
     repo: &Path,
     phase: &Value,
@@ -183,6 +227,7 @@ pub fn run(
     for phase in phases {
         phase_reports.push(execute_phase(repo, phase, &inputs_mut, &mut state));
     }
+    adjudicate_eda_fail_soft_post_physical(&mut phase_reports, &state);
     state["phase_reports"] = json!(phase_reports);
 
     let verdict =
@@ -289,6 +334,60 @@ mod tests {
             &json!({"pr_url": "https://github.com/x/y/pull/1"}),
         );
         assert!(entry.get("fail_soft").is_none());
+    }
+
+    fn eda_blocked_orphans_report() -> Value {
+        json!({
+            "phase_name": "Aduana EDA genómica",
+            "status": "blocked",
+            "argos_verdict": "block",
+            "orphan_count": 2,
+            "handler": "eda-genomic-audit",
+        })
+    }
+
+    #[test]
+    fn eda_blocked_with_pr_url_gets_fail_soft_and_aggregator_success() {
+        let mut reports = vec![eda_blocked_orphans_report()];
+        let state = json!({"pr_url": "https://github.com/x/y/pull/187"});
+        adjudicate_eda_fail_soft_post_physical(&mut reports, &state);
+        assert_eq!(reports[0]["fail_soft"], true);
+        assert_eq!(reports[0]["argos_verdict"], "block");
+        assert_eq!(reports[0]["status"], "blocked");
+        let v = super::super::phase_terminal::aggregate_execution_terminal(&reports, &state);
+        assert!(v.success);
+        assert_eq!(v.status_code, 0);
+    }
+
+    #[test]
+    fn eda_blocked_without_physical_stays_causal() {
+        let mut reports = vec![eda_blocked_orphans_report()];
+        let state = json!({});
+        adjudicate_eda_fail_soft_post_physical(&mut reports, &state);
+        assert!(reports[0].get("fail_soft").is_none());
+        let v = super::super::phase_terminal::aggregate_execution_terminal(&reports, &state);
+        assert!(!v.success);
+        assert_eq!(v.status_code, 1);
+    }
+
+    #[test]
+    fn eda_blocked_with_delivery_push_only_gets_fail_soft() {
+        let mut reports = vec![eda_blocked_orphans_report()];
+        let state = json!({"delivery_push": {"ok": true}});
+        adjudicate_eda_fail_soft_post_physical(&mut reports, &state);
+        assert_eq!(reports[0]["fail_soft"], true);
+        let v = super::super::phase_terminal::aggregate_execution_terminal(&reports, &state);
+        assert!(v.success);
+        assert_eq!(v.status_code, 0);
+    }
+
+    #[test]
+    fn adjudicate_eda_fail_soft_is_idempotent() {
+        let mut reports = vec![eda_blocked_orphans_report()];
+        let state = json!({"pr_url": "https://github.com/x/y/pull/1"});
+        adjudicate_eda_fail_soft_post_physical(&mut reports, &state);
+        adjudicate_eda_fail_soft_post_physical(&mut reports, &state);
+        assert_eq!(reports[0]["fail_soft"], true);
     }
 }
 
