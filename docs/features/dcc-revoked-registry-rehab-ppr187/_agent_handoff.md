@@ -491,3 +491,140 @@ F5_VERDICT_GATE: APTO
 
 **Downstream:** Cosecha Kaizen (Cúmulo) → Handoff `accept-pr`
 ```
+
+## 2026-08-24T17:47:41Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `yNAyHU5euMGdJ2j4QfnqtgPzoWAHwb1ojQ1oAz3FkNN`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: `ok`** — downstream: Cosecha Kaizen (Cúmulo) → Handoff `accept-pr` PR #188.
+
+### Transcript (tail)
+
+```
+**Argos · Veredicto y bloqueo — `ok`**
+
+**Archivos tocados:**
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — F5; `global: APTO` · `branch`/`git_changes` APTO
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada F5 + runtime evidence (CID `yNAyHU5eu…`)
+
+**R1/R2:** Evidence Bridge `native_state` → `TECH_FORMAL_EXECUTE_PROCESS: APTO` · `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO` · `notes: idempotent-hit`. `./sddia-run.sh --tool git-manager` → Shell Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO` (no bloqueante; sin stdout inventado).
+
+**R3 KM:** `RBAC_AUTHORING_KM_POLICY: APTO` — Argos 0 writes en `docs/todos/**`.
+
+**Síntesis:** F2/F4 APTO (Cerbero `exitCode: 0`); F3 proxy `execution.md` APTO / formal NO_APTO no bloqueante; `PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `accept_pr_handoff: true` · `pbi_archived: true`.
+
+**Veredicto: `ok`** — downstream: Cosecha Kaizen (Cúmulo) → Handoff `accept-pr` PR #188.
+```
+
+## 2026-08-24T19:50:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `053f03e1-1beb-427f-b0c4-4060ac9e1600`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] delivery-close-cycle — rehabilitación revoked_entities (PPR #187).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `dedup: 2` · downstream Handoff `accept-pr` PR #188
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: `ok`**
+
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — fase Cosecha Kaizen, `KAIZEN_COSECHA_GATE`, `kaizen_seeds: 0`, `dedup: 2`, CID `053f03e1…`, PR #188.
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Cosecha + runtime evidence.
+3. DIA: sin `Kaizen_Alert_Required` → 0× `PENDING_AUDIT_DOC_*`.
+4. Dedup: `REVOKED_ENTITY_ALERT_REFACTORIZATION` → done #186 (cosecha previa @ `CNwwfDm7…`); `GIT_EVIDENCE_SESSION_SHELL` → done #136.
+5. `./sddia-run.sh --tool git-manager`: Shell Rejected; R1/R2 vía Evidence Bridge `native_state` (sin stdout inventado).
+6. Cúmulo 0 writes `docs/todos/**` esta fase (solo dedup sighting).
+7. `accept_pr_handoff: true` · downstream Handoff `accept-pr` PR #188.
+8. **Veredicto: `ok`**
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-24T19:50:00Z"
+source: native_state-evidence-bridge
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "Shell git-manager Rejected esta sesión Cúmulo Cosecha; R1/R2 copia machine Argos F5 native_state notes=idempotent-hit; sin stdout inventado; KAIZEN_COSECHA_GATE · kaizen_seeds 0 · dedup 2; DCC rehab A1 · refactorization alerta dedup #186; CID 053f03e1"
+KAIZEN_COSECHA_GATE: APTO
+kaizen_seeds: 0
+kaizen_seeds_dedup: 2
+```
+
+## 2026-08-24T19:52:00Z — Cosecha Kaizen (canónico)
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `yNAyHU5euMGdJ2j4QfnqtgPzoWAHwb1ojQ1oAz3FkNN`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] delivery-close-cycle — rehabilitación revoked_entities (PPR #187).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `dedup: 2` · re-run idempotente CID canónico · downstream Handoff `accept-pr` PR #188
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen (canónico yNAyHU5eu…) — veredicto: `ok`**
+
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — fase Cosecha Kaizen; CID alineado `yNAyHU5eu…`; `KAIZEN_COSECHA_GATE`; `kaizen_seeds: 0`; `dedup: 2`.
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Cosecha canónica + runtime evidence.
+3. DIA: sin `Kaizen_Alert_Required` para CID `yNAyHU5eu…` → 0× `PENDING_AUDIT_DOC_*`.
+4. Dedup: `REVOKED_ENTITY_ALERT_REFACTORIZATION` → done #186; `GIT_EVIDENCE_SESSION_SHELL` → done #136.
+5. `./sddia-run.sh --tool git-manager`: Shell Rejected; R1/R2 vía Evidence Bridge `native_state` (sin stdout inventado).
+6. Cúmulo 0 writes `docs/todos/**` (re-run idempotente vs gemelo `053f03e1…` @ 19:50:00Z).
+7. `accept_pr_handoff: true` · downstream Handoff `accept-pr` PR #188.
+8. **Veredicto: `ok`**
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-24T19:52:00Z"
+source: native_state-evidence-bridge
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "Shell git-manager Rejected; R1/R2 copia Argos F5 native_state idempotent-hit; KAIZEN_COSECHA_GATE · kaizen_seeds 0 · dedup 2; re-run idempotente gemelo 053f03e1; CID canónico yNAyHU5eu"
+KAIZEN_COSECHA_GATE: APTO
+kaizen_seeds: 0
+kaizen_seeds_dedup: 2
+```
+
+## 2026-08-24T17:48:12Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `053f03e1-1beb-427f-b0c4-4060ac9e1600`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 8. **Veredicto: `ok`**.
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: `ok`**
+
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — reescrito fase Cosecha Kaizen; `KAIZEN_COSECHA_GATE: APTO`; `kaizen_seeds: 0`; `dedup: 2`.
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Cosecha + runtime evidence (CID `053f03e1…`).
+3. **0 writes** en `docs/todos/**` — dedup sighting: `refactorization` → done #186; `GIT_EVIDENCE_SESSION_SHELL` → done #136.
+4. DIA: sin `Kaizen_Alert_Required` para este CID.
+5. `./sddia-run.sh --tool git-manager` → Shell Rejected; R1/R2 vía Evidence Bridge `native_state` (sin stdout inventado).
+6. F5 heredado APTO · `accept_pr_handoff: true` · PR #188 sin merge observado.
+7. Downstream: Handoff materialización (`accept-pr`).
+8. **Veredicto: `ok`**.
+```
