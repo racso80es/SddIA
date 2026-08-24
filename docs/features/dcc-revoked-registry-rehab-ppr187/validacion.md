@@ -25,16 +25,14 @@ pbi_archived: true
 approval_status: aprobado
 verdict: aprobado
 delivery_state: success
-accept_pr_handoff: true
-resolution: KAIZEN_COSECHA_GATE
 kaizen_seeds: 0
 kaizen_seeds_dedup: 2
-scope: "PPR Cosecha Kaizen — dcc-revoked-registry-rehab-ppr187 (PR #188 · ECST yNAyHU5eu…)"
+scope: "PPR accept-pr — dcc-revoked-registry-rehab-ppr187 (PR #188 MERGED · e81c020)"
 authorization_status:
   exitCode: 0
   signer_identity_rbac: Vertice_Biologico_Relay
   emitter_agent: github-bridge-watcher
-  note: "KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 2 (#186 refactorization + #136 Shell) · F5 heredado APTO · accept_pr_handoff true · DCC rehab A1 · Shell git-manager Rejected — sin stdout inventado"
+  note: "ACCEPT_PR_COMPLETE · merge e81c020 · PR #188 MERGED · KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 2 · DCC rehab A1+A2 · orphan_merge traceability_warning no bloqueante"
 git_manager_invoked: false
 git_manager_error: "cápsula no invocable en esta sesión Cúmulo (Shell Rejected sobre ./sddia-run.sh --tool git-manager); R2 = copia Evidence Bridge native_state; sin bypass raw"
 git_evidence_source: native_state-evidence-bridge
@@ -167,17 +165,17 @@ Bloque machine de referencia: `_agent_handoff.md` Argos F5 CID `yNAyHU5eu…` @ 
   "phase": "Cosecha Kaizen",
   "verdict": "aprobado",
   "delivery_state": "success",
-  "accept_pr_handoff": true,
-  "resolution": "KAIZEN_COSECHA_GATE",
+  "accept_pr_handoff": false,
+  "resolution": "ACCEPT_PR_COMPLETE",
   "kaizen_seeds": 0,
   "kaizen_seeds_dedup": 2,
   "audit_event_reference": "yNAyHU5euMGdJ2j4QfnqtgPzoWAHwb1ojQ1oAz3FkNN",
   "blocking_findings": [],
   "non_blocking_findings": [
     "GIT_EVIDENCE_SESSION_SHELL:NO_APTO",
-    "MERGE_ALREADY_OBSERVED:NO_APTO",
     "REVOKED_ENTITY_ALERT_REFACTORIZATION:dedup_PPR_186",
-    "PBI_REF_STALE_PENDING_IN_CASCADE"
+    "orphan_merge:traceability_warning",
+    "hygiene_failure:delete_branch_payload"
   ]
 }
 ```
@@ -198,8 +196,8 @@ Ciclo **cerrado**. `accept-pr` materializado · merge `e81c020` · PR #188 MERGE
 ## approval_status
 
 ```text
-aprobado — KAIZEN_COSECHA_GATE · kaizen_seeds 0 · dedup 2 (#186 refactorization + #136 Shell);
-F5 heredado success · accept_pr_handoff true (sin PullRequest_Merged yNAyHU5eu… / PR #188);
-PBI archivado en done/; DCC rehab A1 verificado; sin Kaizen_Alert_Required;
-R1/R2 APTO vía Evidence Bridge native_state; GIT_EVIDENCE_SESSION_SHELL NO_APTO (Shell Rejected; sin stdout inventado); CID yNAyHU5eu….
+aprobado — ACCEPT_PR_COMPLETE · merge e81c020 · PR #188 MERGED;
+KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 2 (#186 refactorization + #136 Shell);
+PBI archivado en done/; DCC rehab A1+A2; MERGE_ALREADY_OBSERVED APTO;
+R1/R2 APTO vía Evidence Bridge native_state; GIT_EVIDENCE_SESSION_SHELL NO_APTO (no bloqueante); CID yNAyHU5eu….
 ```
