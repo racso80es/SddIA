@@ -186,6 +186,48 @@ Archivos tocados:
 **Downstream:** `delivery_state: pending_downstream_phases` — F3 técnico → Cerbero → Veredicto → Cosecha → Handoff.
 ```
 
+## 2026-08-24T17:50:00Z — Certificación RBAC
+- process: `pull-request-review`
+- phase: `Certificación RBAC`
+- agents: `cerbero`
+- correlation_id: `053f03e1-1beb-427f-b0c4-4060ac9e1600`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: ok** — PASS_F4_RBAC · exitCode 0 · 6 loci / 0 bloqueos · DCC∉revoked (A1) · GBW∉revoked · refactorization∈revoked alerta no bloqueante
+
+### Transcript (tail)
+
+```
+**Cerbero · Certificación RBAC — veredicto: `ok`**
+
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — fase Certificación RBAC; checks F4/RBAC/Evidence Bridge; matriz VBR×genoma; `authorization_status.exitCode: 0`.
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Certificación RBAC + runtime evidence.
+3. Matriz RBAC: VBR × engine/evolution/docs APTO; sin mutación DA-2 forja; AC-GIT-CLEAN (.SddIA/cerbero|radamanto ausentes diff).
+4. `RBAC_DCC_REGISTRY: APTO` — `delivery-close-cycle` ∉ revoked/permanent; stats healthy + laudo A1.
+5. `RBAC_PROCESS_REGISTRY: APTO` — `pull-request-review` ∉ revoked; alerta no bloqueante: `refactorization` ∈ revoked (2026-08-20T05:48:56Z).
+6. `./sddia-run.sh --tool git-manager`: Shell Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO`; R1/R2 vía Evidence Bridge (`native_state`, idempotent-hit-handoff).
+7. `F4_RBAC_GATE: APTO` · `RBAC_CERBERO_CERT: APTO` · ECST PR #188 · `.git/HEAD` sync rama PR.
+8. **Veredicto: `ok`** — flujo puede avanzar a **Veredicto y bloqueo** (Argos).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-24T17:50:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff; shell-git-manager-rejected-cerbero-f4"
+RBAC_CERBERO_CERT: APTO
+F4_RBAC_GATE: APTO
+authorization_exitCode: 0
+```
+
 ## 2026-08-24T17:44:40Z — Triaje documental
 - process: `pull-request-review`
 - agents: `argos`
@@ -214,4 +256,126 @@ Archivos tocados:
 **No bloqueante:** sin `PullRequest_Merged` PR #188 · `pbi_ref` histórico `pending/` en cascada (PBI físico solo en `done/`).
 
 **Downstream:** F3→F4→Veredicto→Cosecha→Handoff pendientes · `delivery_state: pending_downstream_phases`.
+```
+
+## 2026-08-24T17:50:00Z — Certificación RBAC
+- process: `pull-request-review`
+- phase: `Certificación RBAC`
+- agents: `cerbero`
+- correlation_id: `yNAyHU5euMGdJ2j4QfnqtgPzoWAHwb1ojQ1oAz3FkNN`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: ok** — PASS_F4_RBAC · exitCode 0 · 6 loci / 0 bloqueos · GBW∉revoked · DCC rehab A1 · refactorization∈revoked alerta no bloqueante
+
+### Transcript (tail)
+
+```
+**Cerbero · Certificación RBAC — veredicto: ok**
+
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — fase F4, `PASS_F4_RBAC`, matriz VBR×genoma, `authorization_status.exitCode: 0`
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Cerbero + runtime evidence
+
+F4: `PASS_F4_RBAC` · `exitCode: 0` · `F4_RBAC_GATE: APTO` · CID `yNAyHU5eu…` · PR #188.
+ECST: firmante `Vertice_Biologico_Relay` · emisor `github-bridge-watcher` ∉ revoked.
+VBR×genoma APTO: `delivery_close` + `residual_runner` + evolution + docs; sin DA-2 forja.
+`RBAC_DCC_REGISTRY: APTO` — `delivery-close-cycle` ∉ revoked/permanent · stats healthy + laudo A1.
+`refactorization` ∈ revoked (since 05:48:56Z) — alerta no bloqueante; `pull-request-review` ∉ revoked.
+Shell `git-manager` Rejected → R2 copia Evidence Bridge `native_state` APTO; session NO_APTO.
+F2 heredado APTO · F3 pendiente · Cerbero 0 writes `docs/todos/**` · `delivery_state: pending_downstream_phases`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-24T17:50:00Z"
+source: native_state-evidence-bridge
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "Shell git-manager Rejected esta sesión Cerbero F4; R1/R2 copia machine Argos F2 native_state; sin stdout inventado; PASS_F4_RBAC · DCC rehab A1 · refactorization alerta no bloqueante; CID yNAyHU5eu"
+RBAC_CERBERO_CERT: APTO
+F4_RBAC_GATE: APTO
+authorization_exitCode: 0
+```
+
+## 2026-08-24T17:45:42Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `053f03e1-1beb-427f-b0c4-4060ac9e1600`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **KM:** Cerbero 0 writes `docs/todos/**`. Downstream: F3 (si pendiente) → Veredicto Argos → Cosecha → Handoff.
+
+### Transcript (tail)
+
+```
+**Cerbero · Certificación RBAC — veredicto: `ok`**
+
+**Archivos tocados:**
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — reescrito fase F4; checks RBAC + Evidence Bridge; `authorization_status.exitCode: 0`.
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Cerbero + bloque runtime evidence.
+
+**Dictamen:** `PASS_F4_RBAC` · `F4_RBAC_GATE: APTO` · 6 loci genoma · 0 bloqueos. VBR × engine/evolution/docs APTO; sin mutación DA-2 forja. `delivery-close-cycle` ∉ revoked (A1 rehab); `pull-request-review` y `github-bridge-watcher` ∉ revoked. Alerta no bloqueante: `refactorization` ∈ revoked.
+
+**Git:** `./sddia-run.sh --tool git-manager` → Shell Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO`; R2 APTO vía Evidence Bridge `native_state` (Argos F2). `.git/HEAD` sync rama PR.
+
+**KM:** Cerbero 0 writes `docs/todos/**`. Downstream: F3 (si pendiente) → Veredicto Argos → Cosecha → Handoff.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-24T17:45:42Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-08-24T17:45:55Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `yNAyHU5euMGdJ2j4QfnqtgPzoWAHwb1ojQ1oAz3FkNN`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **KM:** Cerbero 0 writes `docs/todos/**`. Downstream: F3 (si pendiente) → Veredicto Argos → Cosecha → Handoff.
+
+### Transcript (tail)
+
+```
+**Cerbero · Certificación RBAC — veredicto: `ok`**
+
+**Archivos tocados:**
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — fase F4, `PASS_F4_RBAC`, matriz VBR×genoma, checks RBAC
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Cerbero + runtime evidence (CID `yNAyHU5eu…`)
+
+**Dictamen:** `F4_RBAC_GATE: APTO` · `exitCode: 0` · 6 loci / 0 bloqueos. VBR × `delivery_close` + `residual_runner` + evolution + docs; sin DA-2 forja. `github-bridge-watcher` y `pull-request-review` ∉ revoked. `delivery-close-cycle` rehab A1 (`RBAC_DCC_REGISTRY: APTO`). Alerta no bloqueante: `refactorization` ∈ revoked.
+
+**Git:** `./sddia-run.sh --tool git-manager` → Shell Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO`; R1/R2 vía Evidence Bridge `native_state` (Argos F2). `.git/HEAD` sync rama PR.
+
+**KM:** Cerbero 0 writes `docs/todos/**`. Downstream: F3 (si pendiente) → Veredicto Argos → Cosecha → Handoff.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-24T17:45:55Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
 ```
