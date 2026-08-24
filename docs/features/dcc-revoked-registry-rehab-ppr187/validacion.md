@@ -1,14 +1,16 @@
 ---
 feature_name: dcc-revoked-registry-rehab-ppr187
 created: "2026-08-21"
-updated: "2026-08-24T19:52:00Z"
-process: pull-request-review
-phase: Cosecha Kaizen
-agent: cumulo
-agents: cumulo
-branch: refactor/dcc-revoked-registry-rehab-ppr187
-branch_name: refactor/dcc-revoked-registry-rehab-ppr187
-branch_name_injected: refactor/dcc-revoked-registry-rehab-ppr187
+updated: "2026-08-24T19:55:00Z"
+process: accept-pr
+phase: Handoff materializado
+branch: main
+branch_name: main
+merge_commit: e81c020bb12fa59711b0f88befd5f0f0d67fd184
+merged_pr: https://github.com/racso80es/SddIA/pull/188
+pr_merged_event_id: 5e0aae5e-fa4b-4532-964a-4b227d53043d
+accept_pr_handoff: false
+resolution: ACCEPT_PR_COMPLETE
 persist_ref: docs/features/dcc-revoked-registry-rehab-ppr187
 pbi_ref: docs/todos/done/[ARQUITECTURA] delivery-close-cycle — rehabilitación revoked_entities (PPR #187).md
 document_id: PBI-PPR-187-DCC-REVOKED-REGISTRY
@@ -63,7 +65,7 @@ checks:
   RBAC_CERBERO_CERT: APTO
   RBAC_EMITTER_NOT_REVOKED: APTO
   BRANCH_WORKTREE_SYNC: APTO
-  MERGE_ALREADY_OBSERVED: NO_APTO
+  MERGE_ALREADY_OBSERVED: APTO
   ACCEPT_PR_HANDOFF: APTO
   PERSIST_REF_RESOLVED: APTO
   HANDOFF_MACHINE_FILE: APTO
@@ -88,8 +90,7 @@ blocking_findings: []
 non_blocking_findings:
   - GIT_EVIDENCE_SESSION_SHELL
   - MERGE_ALREADY_OBSERVED
-  - REVOKED_ENTITY_ALERT_REFACTORIZATION
-  - PBI_REF_STALE_PENDING_IN_CASCADE
+  - HYGIENE_DELETE_BRANCH_PAYLOAD
 situational_notes:
   - "delivery-close-cycle ∉ revoked — A1 rehab materializada (execution.md); PBI-PPR-187 en done/"
   - "refactorization ∈ revoked — dedup done #186 (cosecha previa CID CNwwfDm7…); sighting adicional CID yNAyHU5eu…"
@@ -183,7 +184,16 @@ Bloque machine de referencia: `_agent_handoff.md` Argos F5 CID `yNAyHU5eu…` @ 
 
 ## Jurisdicción de fase
 
-Cubre **Cosecha Kaizen**. Downstream: Handoff materialización (`accept_pr_handoff: true` → `accept-pr` · PR #188; sin merge directo en aduana). Cúmulo materializa KM solo aquí o vía `Kaizen_Alert_Required`.
+Ciclo **cerrado**. `accept-pr` materializado · merge `e81c020` · PR #188 MERGED.
+
+## Handoff accept-pr (post-Cosecha)
+
+| Campo | Valor |
+|-------|--------|
+| `merge_commit_hash` | `e81c020bb12fa59711b0f88befd5f0f0d67fd184` |
+| `PullRequest_Merged` | `5e0aae5e-fa4b-4532-964a-4b227d53043d` |
+| `MERGE_ALREADY_OBSERVED` | **APTO** |
+| Higiene rama | `hygiene_failure` delete_branch payload — no bloqueante |
 
 ## approval_status
 

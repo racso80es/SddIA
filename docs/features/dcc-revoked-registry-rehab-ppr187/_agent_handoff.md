@@ -628,3 +628,22 @@ kaizen_seeds_dedup: 2
 7. Downstream: Handoff materialización (`accept-pr`).
 8. **Veredicto: `ok`**.
 ```
+
+## 2026-08-24T19:55:00Z — Handoff accept-pr
+- process: `accept-pr`
+- correlation_id: `yNAyHU5euMGdJ2j4QfnqtgPzoWAHwb1ojQ1oAz3FkNN`
+- status: `executed`
+- message: **Veredicto: ok** — merge `e81c020` · PR #188 MERGED · PullRequest_Merged `5e0aae5e…`
+
+### Transcript (tail)
+
+```
+**accept-pr — veredicto: ok**
+
+1. Fusión Soberana: merge refactor/dcc-revoked-registry-rehab-ppr187 → main · `e81c020bb12fa59711b0f88befd5f0f0d67fd184`
+2. PullRequest_Merged: event_id `5e0aae5e-fa4b-4532-964a-4b227d53043d`
+3. Push main → origin OK
+4. Higiene: hygiene_failure delete_branch payload (rama remota puede persistir; no bloqueante)
+5. orphan_merge: true (Presented no en bus local para CID yNAyHU5eu…)
+6. PR #188 state MERGED @ GitHub
+```
