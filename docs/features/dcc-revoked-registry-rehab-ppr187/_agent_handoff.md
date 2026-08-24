@@ -379,3 +379,115 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit"
 ```
+
+## 2026-08-24T17:55:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- phase: `Veredicto y bloqueo`
+- agents: `argos`
+- correlation_id: `053f03e1-1beb-427f-b0c4-4060ac9e1600`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] delivery-close-cycle — rehabilitación revoked_entities (PPR #187).md`
+- status: `executed`
+- message: **Veredicto: ok** — PASS_F5_VERDICT · aprobado · accept_pr_handoff true · PR #188
+
+### Transcript (tail)
+
+```
+**Argos · Veredicto y bloqueo PPR — veredicto: ok**
+
+1. `validacion.md` — reescrito fase F5; `global: APTO` · `verdict: aprobado` · `delivery_state: success` · `resolution: PASS_F5_VERDICT`.
+2. `_agent_handoff.md` — entrada F5 + runtime evidence.
+3. F2/F3/F4 heredados APTO; Cerbero `exitCode: 0` · `PASS_F4_RBAC`; sin violación bloqueante.
+4. R1/R2 Evidence Bridge `native_state` → TECH_FORMAL + GIT_EVIDENCE APTO · `notes: idempotent-hit`.
+5. R3 KM: Argos 0 writes `docs/todos/**` → RBAC_AUTHORING_KM_POLICY APTO.
+6. `./sddia-run.sh --tool git-manager` → Shell Rejected → GIT_EVIDENCE_SESSION_SHELL NO_APTO (no bloqueante).
+7. `accept_pr_handoff: true` · MERGE ausente PR #188 · downstream Cosecha Kaizen → Handoff.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-24T17:55:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+F5_VERDICT_GATE: APTO
+PASS_F5_VERDICT: true
+verdict: aprobado
+delivery_state: success
+accept_pr_handoff: true
+```
+
+## 2026-08-24T19:45:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- phase: `Veredicto y bloqueo`
+- agents: `argos`
+- correlation_id: `yNAyHU5euMGdJ2j4QfnqtgPzoWAHwb1ojQ1oAz3FkNN`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: `ok`** — `PASS_F5_VERDICT` · `delivery_state: success` · `accept_pr_handoff: true` · downstream Cosecha Kaizen (Cúmulo)
+
+### Transcript (tail)
+
+```
+**Argos · Veredicto y bloqueo PPR — veredicto: ok** (CID yNAyHU5eu…)
+
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — fase F5; `verdict: aprobado`; `resolution: PASS_F5_VERDICT`.
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Argos F5 + runtime evidence.
+3. R1/R2: `source=native_state` `notes=idempotent-hit` → `TECH_FORMAL_EXECUTE_PROCESS: APTO` · `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO`.
+4. R3 KM: `RBAC_AUTHORING_KM_POLICY: APTO` — Argos 0 writes `docs/todos/**`.
+5. git-manager: Shell Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO`; sin stdout inventado.
+6. F2/F4 heredados APTO · F3 proxy `execution.md` (14 tests) · F3 formal NO_APTO no bloqueante.
+7. **F5:** `PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `accept_pr_handoff: true`.
+8. **No bloqueantes:** GIT_EVIDENCE_SESSION_SHELL · F3_TECH_GATE · MERGE_ALREADY_OBSERVED · refactorization∈revoked.
+9. **Veredicto: `ok`** — Cosecha Kaizen (Cúmulo) → Handoff `accept-pr` PR #188.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-24T19:45:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+F5_VERDICT_GATE: APTO
+```
+
+## 2026-08-24T17:47:21Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `053f03e1-1beb-427f-b0c4-4060ac9e1600`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Downstream:** Cosecha Kaizen (Cúmulo) → Handoff `accept-pr`
+
+### Transcript (tail)
+
+```
+**Argos · Veredicto y bloqueo — `ok`**
+
+**Archivos tocados:**
+1. `docs/features/dcc-revoked-registry-rehab-ppr187/validacion.md` — reescrito fase F5 (`global/checks/git_changes/branch`)
+2. `docs/features/dcc-revoked-registry-rehab-ppr187/_agent_handoff.md` — entrada Argos F5 + bloque runtime evidence
+
+**Veredicto:** `global: APTO` · `verdict: aprobado` · `resolution: PASS_F5_VERDICT` · `delivery_state: success` · `accept_pr_handoff: true` · rama `refactor/dcc-revoked-registry-rehab-ppr187` · `pbi_archived: true`
+
+**R1/R2:** Evidence Bridge `native_state` → `TECH_FORMAL_EXECUTE_PROCESS: APTO` · `GIT_EVIDENCE_VIA_GIT_MANAGER: APTO` · `notes: idempotent-hit` (copia literal; sin stdout inventado)
+
+**R3 KM:** `RBAC_AUTHORING_KM_POLICY: APTO` — Argos 0 writes en `docs/todos/**`
+
+**No bloqueante:** `./sddia-run.sh --tool git-manager` → Shell Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO`; `MERGE_ALREADY_OBSERVED: NO_APTO` (PR #188 sin merge)
+
+**Downstream:** Cosecha Kaizen (Cúmulo) → Handoff `accept-pr`
+```
