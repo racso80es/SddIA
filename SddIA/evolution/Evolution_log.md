@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14` | 2026-08-21 | Rehab DCC PPR #187 + adjudicación retroactiva fail_soft EDA post-umbral físico. | CANONICO | `SddIA/evolution/c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14.md` |
 | `14f34c46-7683-4a2f-9042-69795d170d88` | 2026-08-20 | Kaizen consumidor: Filtro C, bundle hermético, instance-creator y systemd %f. | CANONICO | `SddIA/evolution/14f34c46-7683-4a2f-9042-69795d170d88.md` |
 | `c041bfd2-3be0-4956-83ec-be28fadee390` | 2026-08-20 | Rehab process feature (revoked permanent) + fail-soft padre DCC + poda telemetría hueca Radamanto. | CANONICO | `SddIA/evolution/c041bfd2-3be0-4956-83ec-be28fadee390.md` |
 | `6586a1e1-a1d7-4ffc-bd6a-b3f658d7ef79` | 2026-08-17 | PEC: testigo durable + Telegram y auditoría de cobertura catálogo↔registro. | CANONICO | `SddIA/evolution/6586a1e1-a1d7-4ffc-bd6a-b3f658d7ef79.md` |

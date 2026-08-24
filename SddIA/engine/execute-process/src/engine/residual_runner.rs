@@ -847,6 +847,13 @@ fn run_generic(
             &mut state,
         ));
     }
+    // L-RESIDUAL-SYM / PPR #187: misma adjudicación retroactiva EDA que delivery_close::run.
+    if process_name == "delivery-close-cycle" {
+        super::delivery_close::adjudicate_eda_fail_soft_post_physical(
+            &mut phase_reports,
+            &state,
+        );
+    }
     state["phase_reports"] = json!(phase_reports);
 
     let verdict =
