@@ -3,7 +3,7 @@ document_id: PBI-KAIZEN-IGNICION-SOBERANA
 title: "[ARQUITECTURA] Ignición Soberana y Persistencia de Centinelas (Systemd Completo)"
 format: markdown
 version: "1.0.0"
-status: abierto
+status: cerrado
 type: kaizen
 priority: alta
 process: feature

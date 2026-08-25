@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 77
+universe_total: 78
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `181d6291-9735-4187-a6f7-f6e56472aa3e` | 2026-08-25 | Ignición soberana: systemd @%f por centinela y start-sddia sin spawn & del bus/WUI. | CANONICO | `SddIA/evolution/181d6291-9735-4187-a6f7-f6e56472aa3e.md` |
 | `6b1f97f4-fa9d-48df-a58a-167f5d5e06dc` | 2026-08-25 | Kaizen Paciente 0 residual: resolver orquestador, overlay {}, pin ignición, smoke sin Local_QA. | CANONICO | `SddIA/evolution/6b1f97f4-fa9d-48df-a58a-167f5d5e06dc.md` |
 | `916bf0f9-05ea-4408-8b6e-294e7efcc5f9` | 2026-08-25 | Kaizen Paciente 0: cicatriz SHA-256 bundle, CORE_ROOT instancia, ignición bundle-safe, elevación asunto triaje. | CANONICO | `SddIA/evolution/916bf0f9-05ea-4408-8b6e-294e7efcc5f9.md` |
 | `c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14` | 2026-08-21 | Rehab DCC PPR #187 + adjudicación retroactiva fail_soft EDA post-umbral físico. | CANONICO | `SddIA/evolution/c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14.md` |
