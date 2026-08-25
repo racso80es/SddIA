@@ -6,30 +6,8 @@ use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
 use serde_json::{json, Value};
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
-
-// #region agent log
-fn dbg478(hypothesis_id: &str, location: &str, message: &str, data: Value) {
-    let rec = json!({
-        "sessionId": "478d0f",
-        "hypothesisId": hypothesis_id,
-        "location": location,
-        "message": message,
-        "data": data,
-        "timestamp": Utc::now().timestamp_millis(),
-        "runId": "post-fix"
-    });
-    if let Ok(mut f) = fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open("/home/racso/Proyectos/SddIA/.cursor/debug-478d0f.log")
-    {
-        let _ = writeln!(f, "{rec}");
-    }
-}
-// #endregion
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct TriageC {
@@ -344,13 +322,61 @@ fn persist_agenda(repo: &Path, payload: &Value, title: &str, datetime: &str) -> 
     Ok(id)
 }
 
-fn classify_llm(repo: &Path, payload: &Value) -> Result<(String, Option<String>, Option<String>, Value), String> {
+fn llm_require_infer() -> bool {
+    std::env::var("SDDIA_LLM_REQUIRE_INFER")
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+        .unwrap_or(false)
+}
+
+/// L-INFER: peaje 0 sin elevación estructural → `classification-degraded`.
+fn mark_classification_degraded(
+    extras: &mut Value,
+    require_infer: bool,
+    tokens_in: u64,
+    tokens_out: u64,
+    elevated: bool,
+) {
+    if require_infer && tokens_in + tokens_out == 0 && !elevated {
+        extras["classification-degraded"] = json!(true);
+    }
+}
+
+/// Post-LLM: extracción estructural completa eleva a actionable (L-GUARD).
+fn maybe_elevate_from_subject(
+    verdict: &str,
+    title: Option<String>,
+    datetime: Option<String>,
+    subject_plain: &str,
+) -> (String, Option<String>, Option<String>, bool) {
+    let already_complete = verdict == "actionable" && datetime.is_some();
+    if already_complete {
+        return (verdict.to_string(), title, datetime, false);
+    }
+    if let Some((t, dt)) = extract_actionable_from_subject(subject_plain) {
+        let title = if title.as_ref().map(|s| !s.is_empty()).unwrap_or(false) {
+            title
+        } else {
+            Some(t)
+        };
+        return ("actionable".into(), title, Some(dt), true);
+    }
+    let mut verdict = verdict.to_string();
+    if verdict.is_empty() {
+        verdict = "passive".into();
+    }
+    if verdict == "actionable" && datetime.is_none() {
+        verdict = "passive".into();
+    }
+    (verdict, title, datetime, false)
+}
+
+fn classify_llm(repo: &Path, payload: &Value) -> Result<(String, Option<String>, Option<String>, Value, Value), String> {
     let started = std::time::Instant::now();
     let from_plain = decode_rfc2047(payload.get("from").and_then(|v| v.as_str()).unwrap_or(""));
     let subject_plain = decode_rfc2047(payload.get("subject").and_then(|v| v.as_str()).unwrap_or(""));
     let snippet = payload.get("snippet").and_then(|v| v.as_str()).unwrap_or("");
     let prompt = format!(
-        "Clasifica este correo como noise, passive o actionable. JSON estricto {{\"verdict\":\"...\",\"title\":null,\"datetime\":null}}. No uses verbosidad ni urgencia comercial para elevar a actionable. from={} subject={} snippet={}",
+        "Clasifica este correo como noise, passive o actionable. JSON estricto {{\"verdict\":\"...\",\"title\":null,\"datetime\":null}}. Reunión o cita con fecha extraíble en el asunto es candidato actionable (datetime obligatorio). No uses verbosidad ni urgencia comercial para elevar a actionable. from={} subject={} snippet={}",
         from_plain, subject_plain, snippet,
     );
     let body = match invoke_capsule_json(
@@ -360,23 +386,22 @@ fn classify_llm(repo: &Path, payload: &Value) -> Result<(String, Option<String>,
         false,
     ) {
         Ok(r) => r.body,
-        Err(e) => {
-            // #region agent log
-            dbg478(
-                "A",
-                "email_triage.rs:classify_llm",
-                "mayeuta-llm invoke error",
-                json!({"error": e.clone(), "uid": payload.get("message_uid")}),
-            );
-            // #endregion
-            return Err(e);
+        Err(_) => {
+            let (verdict, title, datetime, elevated) =
+                maybe_elevate_from_subject("", None, None, &subject_plain);
+            let mut extras = json!({});
+            if elevated {
+                extras["subject_elevation"] = json!(true);
+            }
+            mark_classification_degraded(&mut extras, llm_require_infer(), 0, 0, elevated);
+            let cost = json!({
+                "tokens_in": 0,
+                "tokens_out": 0,
+                "duration_ms": started.elapsed().as_millis() as u64,
+            });
+            return Ok((verdict, title, datetime, cost, extras));
         }
     };
-    let data_text = body
-        .get("data")
-        .and_then(|d| d.get("text"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
     let text = llm_output_blob(&body);
     let parsed = parse_triage_llm_blob(&text);
     let mut verdict = parsed
@@ -390,63 +415,37 @@ fn classify_llm(repo: &Path, payload: &Value) -> Result<(String, Option<String>,
     if commercial_verbosity_trap(payload) && verdict == "actionable" {
         verdict = "passive".into();
     }
-    let mut title = parsed
+    let title = parsed
         .get("title")
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
-    let mut datetime = parsed
+    let datetime = parsed
         .get("datetime")
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
-    let mut extracted = false;
-    if verdict.is_empty() || (verdict == "actionable" && datetime.is_none()) {
-        if let Some((t, dt)) = extract_actionable_from_subject(&subject_plain) {
-            extracted = true;
-            if title.is_none() {
-                title = Some(t);
-            }
-            datetime = Some(dt);
-            verdict = "actionable".into();
-        }
+    let (verdict, title, datetime, extracted) =
+        maybe_elevate_from_subject(&verdict, title, datetime, &subject_plain);
+    let mut extras = json!({});
+    if extracted {
+        extras["subject_elevation"] = json!(true);
     }
-    if verdict.is_empty() {
-        verdict = "passive".into();
-    }
-    if verdict == "actionable" && datetime.is_none() {
-        verdict = "passive".into();
-    }
-    // #region agent log
-    dbg478(
-        "A",
-        "email_triage.rs:classify_llm",
-        "llm classify result",
-        json!({
-            "uid": payload.get("message_uid"),
-            "subject_rfc2047": payload.get("subject").and_then(|v| v.as_str()).unwrap_or("").contains("=?"),
-            "decoded_has_date": subject_plain.contains("2026"),
-            "subject_len": subject_plain.len(),
-            "llm_success": body.get("success"),
-            "has_data_text": !data_text.is_empty(),
-            "data_text_len": data_text.len(),
-            "parsed_text_len": text.len(),
-            "parsed_keys": parsed.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
-            "trap": commercial_verbosity_trap(payload),
-            "datetime_present": datetime.is_some(),
-            "extracted_from_subject": extracted,
-            "final_verdict": verdict,
-            "hypothesisB": payload.get("subject").and_then(|v| v.as_str()).unwrap_or("").contains("=?"),
-            "hypothesisC_datetime_drop": parsed.get("verdict").and_then(|v| v.as_str()) == Some("actionable") && datetime.is_none()
-        }),
+    let tokens_in = body.get("tokens_in").and_then(|v| v.as_u64()).unwrap_or(0);
+    let tokens_out = body.get("tokens_out").and_then(|v| v.as_u64()).unwrap_or(0);
+    mark_classification_degraded(
+        &mut extras,
+        llm_require_infer(),
+        tokens_in,
+        tokens_out,
+        extracted,
     );
-    // #endregion
     let cost = json!({
-        "tokens_in": body.get("tokens_in").and_then(|v| v.as_u64()).unwrap_or(0),
-        "tokens_out": body.get("tokens_out").and_then(|v| v.as_u64()).unwrap_or(0),
+        "tokens_in": tokens_in,
+        "tokens_out": tokens_out,
         "duration_ms": started.elapsed().as_millis() as u64,
     });
-    Ok((verdict, title, datetime, cost))
+    Ok((verdict, title, datetime, cost, extras))
 }
 
 fn emit_triaged(
@@ -457,6 +456,7 @@ fn emit_triaged(
     matched_rule: Option<&str>,
     cost: &Value,
     agenda_entry_id: Option<&str>,
+    extras: Option<&Value>,
 ) -> Result<Value, String> {
     let message_uid = src
         .get("message_uid")
@@ -474,6 +474,11 @@ fn emit_triaged(
     }
     if let Some(aid) = agenda_entry_id {
         payload["agenda_entry_id"] = json!(aid);
+    }
+    if let Some(ex) = extras.and_then(|v| v.as_object()) {
+        for (k, v) in ex {
+            payload[k.clone()] = v.clone();
+        }
     }
     if let Some(from) = src
         .get("from")
@@ -565,7 +570,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     let c = triaje_c(&payload);
     let mut classification_ran = false;
 
-    let (verdict, decision_path, matched_rule, cost, agenda_id) = if c.concluded {
+    let (verdict, decision_path, matched_rule, cost, agenda_id, extras) = if c.concluded {
         phases.push(json!({
             "phase_name": "Triaje-C",
             "status": "executed",
@@ -588,6 +593,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             c.matched_rule,
             zeros_cost(),
             None,
+            json!({}),
         )
     } else {
         phases.push(json!({
@@ -598,7 +604,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         classification_ran = true;
         let classified = classify_llm(repo, &payload);
         match classified {
-            Ok((verdict, title, datetime, cost)) => {
+            Ok((verdict, title, datetime, cost, extras)) => {
                 phases.push(json!({
                     "phase_name": "Clasificacion",
                     "status": "executed",
@@ -638,7 +644,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
                         "reason": "not-actionable",
                     }));
                 }
-                (verdict, "llm".to_string(), None, cost, agenda_id)
+                (verdict, "llm".to_string(), None, cost, agenda_id, extras)
             }
             Err(e) => {
                 phases.push(json!({
@@ -657,6 +663,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
                     None,
                     zeros_cost(),
                     None,
+                    json!({}),
                 )
             }
         }
@@ -670,6 +677,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         matched_rule,
         &cost,
         agenda_id.as_deref(),
+        Some(&extras),
     )?;
     phases.push(json!({
         "phase_name": "Emision",
@@ -749,7 +757,7 @@ mod tests {
             "subject": "Acto",
             "snippet": "secreto"
         });
-        let seal = emit_triaged(repo, &src, "actionable", "deterministic", None, &zeros_cost(), None)
+        let seal = emit_triaged(repo, &src, "actionable", "deterministic", None, &zeros_cost(), None, None)
             .expect("emit");
         let event_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
         let proof: Value = serde_json::from_str(
@@ -787,6 +795,54 @@ mod tests {
         assert!(title.contains("Reunión"));
         assert!(dt.contains("21/08/2026"));
         assert!(dt.contains("10:00"));
+    }
+
+    #[test]
+    fn infer_degraded_when_require_zero_tokens_subject_without_date() {
+        let (v, _, dt, elev) =
+            maybe_elevate_from_subject("passive", None, None, "Hola equipo, ¿cómo va?");
+        assert_eq!(v, "passive");
+        assert!(dt.is_none());
+        assert!(!elev);
+        let mut extras = json!({});
+        mark_classification_degraded(&mut extras, true, 0, 0, elev);
+        assert_eq!(extras["classification-degraded"], json!(true));
+    }
+
+    #[test]
+    fn infer_not_degraded_when_subject_elevates() {
+        let (v, _, _, elev) = maybe_elevate_from_subject(
+            "passive",
+            None,
+            None,
+            "Reunión con Racso el 25/08/2026 a las 10:00",
+        );
+        assert_eq!(v, "actionable");
+        assert!(elev);
+        let mut extras = json!({});
+        mark_classification_degraded(&mut extras, true, 0, 0, elev);
+        assert!(extras.get("classification-degraded").is_none());
+    }
+
+    #[test]
+    fn infer_not_degraded_when_tokens_nonzero() {
+        let mut extras = json!({});
+        mark_classification_degraded(&mut extras, true, 12, 4, false);
+        assert!(extras.get("classification-degraded").is_none());
+    }
+
+    #[test]
+    fn llm_passive_meeting_subject_elevates_to_actionable() {
+        let (v, title, dt, elev) = maybe_elevate_from_subject(
+            "passive",
+            None,
+            None,
+            "Reunión con Racso el 25/08/2026 a las 10:00",
+        );
+        assert_eq!(v, "actionable");
+        assert!(elev);
+        assert!(title.unwrap().contains("Reunión"));
+        assert!(dt.unwrap().contains("25/08/2026"));
     }
 
     #[test]

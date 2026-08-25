@@ -96,9 +96,138 @@ echo "[bundle] out=${OUT}"
 echo "[bundle] profile=${PROFILE} cargo_profile=${PROFILE_BIN}"
 echo "[bundle] capsules: ${!CAPSULE_SET[*]}"
 
+# L-BUNDLE-STALE v2 — cicatriz SHA-256 del cierre de compilación (no mtime).
+TARGET_SRC="$REPO_ROOT/SddIA/target/${PROFILE_BIN}"
+
+_sddia_crate_root() {
+  local name="$1" d
+  for d in \
+    "$REPO_ROOT/SddIA/engine/${name}" \
+    "$REPO_ROOT/SddIA/daemons/${name}" \
+    "$REPO_ROOT/SddIA/tools/${name}" \
+    "$REPO_ROOT/SddIA/interfaces/${name}"; do
+    if [[ -f "$d/Cargo.toml" ]]; then
+      printf '%s\n' "$d"
+      return 0
+    fi
+  done
+  return 1
+}
+
+_sddia_collect_path_dep_dirs() {
+  local start="$1"
+  local -A seen=()
+  local -a queue=("$start")
+  local dir toml dep abs
+  while [[ ${#queue[@]} -gt 0 ]]; do
+    dir="${queue[0]}"
+    queue=("${queue[@]:1}")
+    [[ -n "${seen[$dir]:-}" ]] && continue
+    seen[$dir]=1
+    printf '%s\n' "$dir"
+    toml="$dir/Cargo.toml"
+    [[ -f "$toml" ]] || continue
+    while IFS= read -r dep; do
+      [[ -z "$dep" ]] && continue
+      if [[ "$dep" == /* ]]; then
+        abs="$dep"
+      else
+        abs="$(cd "$dir/$dep" 2>/dev/null && pwd)" || continue
+      fi
+      [[ -f "$abs/Cargo.toml" ]] || continue
+      queue+=("$abs")
+    done < <(rg -oN 'path\s*=\s*"([^"]+)"' -r '$1' "$toml" 2>/dev/null || true)
+  done
+}
+
+_sddia_source_digest() {
+  local name="$1"
+  local crate tmp f rel hex
+  crate="$(_sddia_crate_root "$name")" || return 1
+  tmp="$(mktemp)"
+  {
+    _sddia_collect_path_dep_dirs "$crate"
+  } | while IFS= read -r dir; do
+    [[ -f "$dir/Cargo.toml" ]] && printf '%s\n' "$dir/Cargo.toml"
+    [[ -f "$dir/build.rs" ]] && printf '%s\n' "$dir/build.rs"
+    if [[ -d "$dir/src" ]]; then
+      find "$dir/src" -type f ! -path '*/target/*' -print
+    fi
+  done > "$tmp"
+  {
+    [[ -f "$REPO_ROOT/SddIA/Cargo.toml" ]] && printf '%s\n' "$REPO_ROOT/SddIA/Cargo.toml"
+    [[ -f "$REPO_ROOT/SddIA/Cargo.lock" ]] && printf '%s\n' "$REPO_ROOT/SddIA/Cargo.lock"
+    cat "$tmp"
+  } | LC_ALL=C sort -u > "${tmp}.u"
+  command -v sha256sum >/dev/null 2>&1 || {
+    echo "[ERROR] sha256sum requerido (L-BUNDLE-STALE v2)" >&2
+    rm -f "$tmp" "${tmp}.u"
+    return 1
+  }
+  hex="$(
+    while IFS= read -r f; do
+      [[ -f "$f" ]] || continue
+      rel="${f#"$REPO_ROOT"/}"
+      printf '%s\t%s\n' "$rel" "$(sha256sum "$f" | awk '{print $1}')"
+    done < "${tmp}.u" | sha256sum | awk '{print "sha256:"$1}'
+  )"
+  rm -f "$tmp" "${tmp}.u"
+  printf '%s\n' "$hex"
+}
+
+_sddia_elf_digest() {
+  printf 'sha256:%s\n' "$(sha256sum "$1" | awk '{print $1}')"
+}
+
+_sddia_write_witness() {
+  local name="$1"
+  local elf="$TARGET_SRC/$name"
+  [[ -x "$elf" ]] || return 1
+  local src d_elf
+  src="$(_sddia_source_digest "$name")" || return 1
+  d_elf="$(_sddia_elf_digest "$elf")"
+  printf 'source_sha256: %s\nelf_sha256: %s\n' "$src" "$d_elf" > "${elf}.sha256"
+}
+
+_sddia_verify_witness() {
+  local name="$1"
+  local elf="$TARGET_SRC/$name"
+  local wit="${elf}.sha256"
+  if [[ ! -x "$elf" ]]; then
+    echo "[ERROR] L-BUNDLE-STALE: ELF ausente: $elf — omitir --skip-build" >&2
+    return 1
+  fi
+  if [[ ! -f "$wit" ]]; then
+    echo "[ERROR] L-BUNDLE-STALE: testigo ausente ${name}.sha256 — omitir --skip-build y recompilar" >&2
+    return 1
+  fi
+  local want_src want_elf got_src got_elf
+  want_src="$(awk '/^source_sha256:/{print $2}' "$wit")"
+  want_elf="$(awk '/^elf_sha256:/{print $2}' "$wit")"
+  got_src="$(_sddia_source_digest "$name")" || return 1
+  got_elf="$(_sddia_elf_digest "$elf")"
+  if [[ "$want_src" != "$got_src" || "$want_elf" != "$got_elf" ]]; then
+    echo "[ERROR] L-BUNDLE-STALE: cicatriz divergente para $name. Omitir --skip-build." >&2
+    echo "[ERROR]   testigo source=$want_src elf=$want_elf" >&2
+    echo "[ERROR]   actual  source=$got_src elf=$got_elf" >&2
+    return 1
+  fi
+  echo "[bundle] cicatriz OK $name"
+}
+
+if [[ -n "${SDDIA_BUNDLE_DIGEST_ONLY:-}" ]]; then
+  _sddia_source_digest "$SDDIA_BUNDLE_DIGEST_ONLY"
+  exit 0
+fi
+
 mkdir -p "$OUT"
 
-if [[ "$SKIP_BUILD" -ne 1 ]]; then
+if [[ "$SKIP_BUILD" -eq 1 ]]; then
+  echo "[bundle] --skip-build: auditando cicatriz SHA-256…"
+  for name in "${CONSUMER_BINS[@]}"; do
+    _sddia_verify_witness "$name" || exit 1
+  done
+else
   echo "[bundle] compilando cápsulas nativas…"
   local_pkgs=()
   for name in "${!CAPSULE_SET[@]}"; do
@@ -111,7 +240,6 @@ if [[ "$SKIP_BUILD" -ne 1 ]]; then
       local_pkgs+=("-p" "$name")
     fi
   done
-  # Paquetes con locus no trivial
   local_pkgs+=(-p execute-process -p kalma2-bridge -p event-watcher -p event-sweeper -p email-watcher -p telegram-watcher -p send-telegram-notification)
   (
     cd "$REPO_ROOT/SddIA"
@@ -121,9 +249,11 @@ if [[ "$SKIP_BUILD" -ne 1 ]]; then
       CARGO_TARGET_DIR=target cargo build "${local_pkgs[@]}" -q
     fi
   )
+  echo "[bundle] escribiendo testigos .sha256…"
+  for name in "${CONSUMER_BINS[@]}"; do
+    _sddia_write_witness "$name" || echo "[WARN] testigo no escrito: $name" >&2
+  done
 fi
-
-TARGET_SRC="$REPO_ROOT/SddIA/target/${PROFILE_BIN}"
 STAGE="$OUT"
 mkdir -p "$STAGE/SddIA/target/${PROFILE_BIN}"
 mkdir -p "$STAGE/SddIA/target/debug" "$STAGE/SddIA/target/release"
@@ -243,6 +373,36 @@ if [[ ! -f "$STAGE/SddIA/tools/send-telegram-notification.md" ]] \
   exit 1
 fi
 
+# F-DEP-03 / L-BUNDLE-PY: centinelas sin orquestador .py
+for name in execute-process event-watcher event-sweeper email-watcher telegram-watcher kalma2-bridge; do
+  bin="$STAGE/SddIA/target/release/$name"
+  [[ -x "$bin" ]] || continue
+  if strings "$bin" 2>/dev/null | grep -F -q "execute-process.py"; then
+    echo "[ERROR] F-DEP-03: $name referencia execute-process.py — ELF stale. Rebuild sin --skip-build." >&2
+    exit 1
+  fi
+done
+
+DIGESTS_JSON="{}"
+DIGESTS_JSON=$(
+  python3 - <<PY
+import json, os, pathlib
+root = pathlib.Path(r"""$TARGET_SRC""")
+out = {}
+for name in """${CONSUMER_BINS[*]}""".split():
+    wit = root / f"{name}.sha256"
+    if not wit.is_file():
+        continue
+    src = ""
+    for line in wit.read_text().splitlines():
+        if line.startswith("source_sha256:"):
+            src = line.split(None, 1)[1].strip()
+    if src:
+        out[name] = src
+print(json.dumps(out))
+PY
+)
+
 BINS_JSON=$(python3 - <<PY
 import json, os
 root = r"""$STAGE/SddIA/target/release"""
@@ -265,6 +425,7 @@ cat > "$STAGE/MANIFEST.json" <<EOF
   "capsules_resolved": ${CAPS_LIST},
   "excludes": ["*.rs", "Cargo.toml", "src/", "docs/features", "target build tree sources"],
   "filtro_c": $( [[ "$PROFILE" == "consumer" || "$PROFILE" == "consumidor" ]] && echo true || echo false ),
+  "source_digests": ${DIGESTS_JSON},
   "generator": "SddIA/scripts/build-release-bundle.sh"
 }
 EOF
@@ -299,9 +460,12 @@ Crear \`{instancia}/.SddIA/.dev/.env\` (prevalece sobre \`.dev/.env\` raíz):
 | \`SDDIA_CLIENT_PORT\` | Puerto Kalma2 (ej. 8766) |
 | \`SDDIA_EMAIL_*\` | IMAP (opcional) |
 | \`TELEGRAM_BOT_TOKEN\` / \`TELEGRAM_ALLOWED_CHAT_ID\` | Eferente |
-| \`SDDIA_LLM_*\` | Chat WUI |
+| \`SDDIA_LLM_*\` | Clasificacion de correo (recomendado) + chat WUI |
+| \`SDDIA_LLM_REQUIRE_INFER\` | Opt-in: \`1\` = no emitir \`passive\` silencioso si la inferencia no consume tokens |
 
-**Prohibido** versionar secretos en git.
+**LLM:** recomendado para Clasificacion. Sin LLM operativo el triaje queda en Triaje-C + extracción estructural de asunto (reunión con fecha extraíble → \`actionable\`).
+
+**Prohibido** versionar secretos en git. Inventario mínimo consumidor: nombres de claves, no valores.
 
 ## 3. Systemd hermético (recomendado)
 

@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `916bf0f9-05ea-4408-8b6e-294e7efcc5f9` | 2026-08-25 | Kaizen Paciente 0: cicatriz SHA-256 bundle, CORE_ROOT instancia, ignición bundle-safe, elevación asunto triaje. | CANONICO | `SddIA/evolution/916bf0f9-05ea-4408-8b6e-294e7efcc5f9.md` |
 | `c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14` | 2026-08-21 | Rehab DCC PPR #187 + adjudicación retroactiva fail_soft EDA post-umbral físico. | CANONICO | `SddIA/evolution/c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14.md` |
 | `14f34c46-7683-4a2f-9042-69795d170d88` | 2026-08-20 | Kaizen consumidor: Filtro C, bundle hermético, instance-creator y systemd %f. | CANONICO | `SddIA/evolution/14f34c46-7683-4a2f-9042-69795d170d88.md` |
 | `c041bfd2-3be0-4956-83ec-be28fadee390` | 2026-08-20 | Rehab process feature (revoked permanent) + fail-soft padre DCC + poda telemetría hueca Radamanto. | CANONICO | `SddIA/evolution/c041bfd2-3be0-4956-83ec-be28fadee390.md` |

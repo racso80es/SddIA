@@ -4,7 +4,7 @@ context:
 - filesystem-ops
 - system-operations
 contract: process-contract v1.4.0
-hash_signature: "sha256:b2fdac7ebf844d395968fa6c216d126d6e9385bf0d6adc8791af39e87157de82"
+hash_signature: sha256:60b5491f4029d390584facaed2db1723042fefb0719eba2fd1da7a97a8abd4cc
 inputs:
 - instance_root: Ruta absoluta o relativa (al repo) de la carpeta instancia objetivo
 name: instance-creator
@@ -13,24 +13,24 @@ outputs:
 - smoke: Resultado del gate post-ignición
 - runtime_profile: Perfil aplicado
 phases:
-- intent: Crear/verificar arbol .SddIA/ y overlay local.paths en carpeta objetivo
+- intent: Crear/verificar arbol .SddIA/ y overlay starter-kit local.paths.json (prohibido stub {})
   name: Topologia
 - intent: Inyectar secretos desde vault/plantilla sin filtrar a logs
   name: Vault
-- intent: Registrar unidades hermeticas WorkingDirectory=%f
+- intent: Registrar unidades hermeticas WorkingDirectory=%f; @@SDDIA_CORE_ROOT@@ = instance_root no repo CLI
   name: Systemd
 - intent: Arrancar daemons segun SDDIA_RUNTIME_PROFILE y jurisdiccion sensorial R-07
   name: Ignicion
-- intent: Orquestar eda-local-topology-test / Local_QA_Requested; gate success:true
+- intent: Preflight topology+Local_QA; si skip_ignition no exigir route-domain*; si ignicion no skipped, route-domain-event success:true
   name: Smoke
 uuid: dead5ca7-c0b9-42ef-aad6-171991fb524f
-version: 1.0.0
+version: 1.1.1
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # instance-creator
 
-Despliegue hermético de instancia consumidor: topología `.SddIA/`, vault, systemd `%f`, ignición perfilada y smoke post-ignición (`eda-local-topology-test` / `Local_QA_Requested`). Complementa `sync-client-assets`; no inventa CLI `sddia`.
+Despliegue hermético de instancia consumidor: topología `.SddIA/` (starter-kit `local.paths.json`), vault, systemd `%f` con `CORE_ROOT=instance_root`, ignición perfilada y smoke (topology + `route-domain-event` si ignición no skipped). Complementa `sync-client-assets`; no inventa CLI `sddia`.
 
 ## Invocación
 
@@ -50,4 +50,4 @@ Handler nativo: `engine/execute-process` → `handlers/instance_creator.rs`.
 
 ## Norma
 
-`SddIA/norms/sddia-distribution-protocol.md` v1.1.0 (Vía C + bundle + este proceso).
+`SddIA/norms/sddia-distribution-protocol.md` v1.2.0 (Vía C + bundle + este proceso).

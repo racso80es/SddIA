@@ -3,16 +3,24 @@ document_id: PBI-KAIZEN-PACIENTE0-REDEPLOY-20260824
 uuid: "56aff1d3-d5f6-4502-9b5b-e5a57dc718e3"
 title: "[KAIZEN] Paciente 0 (SddIA_AP): Redeploy, bundle y triaje de correo"
 format: markdown
-version: "1.1.0"
-status: abierto
+version: "1.2.0"
+status: done
 type: kaizen
 priority: alta
-process: null
+process: feature
+persist_ref: docs/features/kaizen-paciente0-redeploy-fricciones
+execution_id: "c95fa63f-be71-481b-a927-475e7c885fd0"
 created: "2026-08-24"
-updated: "2026-08-24"
+updated: "2026-08-25"
+pbi_archived: true
+audit_ref: docs/audits/kaizen-paciente0-redeploy-20260825.md
+evolution_id: "916bf0f9-05ea-4408-8b6e-294e7efcc5f9"
 redeploy_executed_at: "2026-08-24T17:56:25Z"
+redeploy_t6_at: "2026-08-25T11:17:33Z"
 instance_creator_correlation_id: "5d8c081d-49ed-4764-996c-a0937218ba2e"
-forge_branch: main
+instance_creator_t6_correlation_id: "9528fb5f-9d72-4990-adce-44bca7dc734d"
+g5_event_id: "413e6edf-e19c-4ec4-8b5c-e9ccd6a4d13f"
+forge_branch: feat/kaizen-paciente0-redeploy-fricciones
 wui_port: 8766
 systemd_unit: "sddia-email-watcher@home-racso-Proyectos-SddIA_AP.service"
 derived_from: PBI-LAB-PACIENTE0-SDDIA-AP
@@ -383,18 +391,20 @@ email-watcher (systemd, WD=SddIA_AP)
 
 ## 6. Criterios de cierre
 
+Cierre T6 2026-08-25: `docs/audits/kaizen-paciente0-redeploy-20260825.md`. O11 (`delivery-close-cycle` / PR) pendiente.
+
 ### Despliegue
 
-- [ ] Redeploy Paciente 0 **solo** vía `instance-creator` + bundle, sin parches manuales en `{instancia}/start-sddia.sh`.
-- [ ] `systemd` `%f` con `ExecStart` bajo `{instancia}/SddIA/` sin intervención operador.
-- [ ] `build-release-bundle --skip-build` rechazado si ELF stale (gate F-DEP-03).
-- [ ] Smoke: `route-domain*` OK en instancia recién creada.
+- [x] Redeploy Paciente 0 **solo** vía `instance-creator` + bundle, sin parches manuales en `{instancia}/start-sddia.sh`.
+- [x] `systemd` `%f` con `ExecStart` bajo `{instancia}/SddIA/` sin intervención operador.
+- [x] `build-release-bundle --skip-build` rechazado si ELF stale (gate F-DEP-03).
+- [x] Smoke: `route-domain*` OK en instancia recién creada. (`Email_Triaged` `413e6edf-…` enrutado; probe clase no ECST no es centinela)
 
 ### Triaje
 
-- [ ] Correo reunión (patrón asunto §4) → `verdict=actionable`, asiento agenda, WUI inbox, Telegram poke.
-- [ ] Test unitario: LLM `passive` + asunto reunión → `actionable` vía extracción (§2).
-- [ ] Proof con `tokens_in/out` documentados cuando LLM activo, o flag `classification-degraded` si inferencia omitida.
+- [x] Correo reunión (patrón asunto §4) → `verdict=actionable`, asiento agenda, WUI inbox. Telegram poke: `message_id=9` (instancia).
+- [x] Test unitario: LLM `passive` + asunto reunión → `actionable` vía extracción (§2).
+- [x] Proof con `tokens_in/out` documentados cuando LLM activo, o flag `classification-degraded` si inferencia omitida. (G5: tokens 0 + `subject_elevation`; código `REQUIRE_INFER` presente)
 
 ---
 
@@ -420,7 +430,7 @@ Mutación de genoma: proceso `feature` / `bug-fix` → `entity-manager`. UUID PB
 |-----|-----|
 | `docs/todos/done/[LABORATORIO] MVP Paciente 0 SddIA_AP.md` | Ensayo original, gates G0–G5, F-03 |
 | `docs/todos/done/[KAIZEN] perfil ignición consumidor Filtro C.md` | instance-creator, bundle, F-06–F-09 |
-| `SddIA/norms/sddia-distribution-protocol.md` | Vía C v1.1.0 |
+| `SddIA/norms/sddia-distribution-protocol.md` | Vía C v1.2.0 |
 | `SddIA/process/instance-creator.md` | Fases Topologia–Smoke |
 | `SddIA/library/norms/email-triage-matrix.md` | Matriz tres vías |
 | `SddIA/engine/execute-process/src/engine/handlers/email_triage.rs` | Triaje-C, Clasificacion, extracción |
@@ -435,3 +445,5 @@ Mutación de genoma: proceso `feature` / `bug-fix` → `entity-manager`. UUID PB
 
 
 ## 9. al finalizar PBI, generar documento auditoria indicando lo relevante de la prueba empirica de despliegue paciente 0, con contenido relevante de kaicen y aquella otra información que pueda ser relevante a consultar en el futuro.
+
+**Hecho (2026-08-25):** `docs/audits/kaizen-paciente0-redeploy-20260825.md` (`document_id: AUDIT-KAIZEN-PACIENTE0-REDEPLOY-20260825`). Evolution: `SddIA/evolution/916bf0f9-05ea-4408-8b6e-294e7efcc5f9.md`.
