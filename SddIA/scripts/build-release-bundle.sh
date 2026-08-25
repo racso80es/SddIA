@@ -471,7 +471,18 @@ Crear \`{instancia}/.SddIA/.dev/.env\` (prevalece sobre \`.dev/.env\` raíz):
 
 Plantillas: \`SddIA/templates/systemd/\` (\`WorkingDirectory=%f\`, \`EnvironmentFile=%f/.SddIA/.dev/.env\`).
 
-Si la jurisdicción sensorial es systemd, \`start-sddia.sh\` **no** spawnea \`email-watcher\`/\`telegram-watcher\`.
+Fábrica \`sddia-daemon@.service.template\` → unidades \`sddia-{event-watcher,event-sweeper,kalma2-bridge,…}@.service\` en \`.SddIA/systemd/\`. Enable:
+
+\`\`\`bash
+ESC="$(systemd-escape -p "\$PWD")"
+systemctl --user enable --now "sddia-event-watcher@\${ESC}.service"
+systemctl --user enable --now "sddia-event-sweeper@\${ESC}.service"
+systemctl --user enable --now "sddia-kalma2-bridge@\${ESC}.service"
+\`\`\`
+
+\`start-sddia.sh\` en jurisdicción systemd hace ese enable y **no** spawnea esos ELF con \`&\`. Linger: \`loginctl enable-linger "\$USER"\`.
+
+Si la jurisdicción sensorial es systemd, tampoco spawnea \`email-watcher\`/\`telegram-watcher\` desde el script (R-07).
 
 ## 4. Ignición
 

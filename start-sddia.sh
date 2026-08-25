@@ -56,6 +56,27 @@ if _sensorial_under_systemd; then
     SENSORIAL_SYSTEMD=1
 fi
 
+_user_systemd_bus_ok() {
+    command -v systemctl >/dev/null 2>&1 || return 1
+    systemctl --user show-environment >/dev/null 2>&1
+}
+
+_resolved_daemon_jurisdiction() {
+    local j
+    j="$(echo "${SDDIA_DAEMON_JURISDICTION:-}" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$j" == "systemd" || "$j" == "script" ]]; then
+        printf '%s\n' "$j"
+        return 0
+    fi
+    if _user_systemd_bus_ok; then
+        printf '%s\n' "systemd"
+    else
+        printf '%s\n' "script"
+    fi
+}
+
+DAEMON_JURIS="$(_resolved_daemon_jurisdiction)"
+
 _ensure_orchestrator() {
     echo "[SddIA] Asegurando orquestador nativo (execute-process)..."
     if [[ -f "$REPO_ROOT/MANIFEST.json" ]] || [[ ! -f "$REPO_ROOT/SddIA/Cargo.toml" ]]; then
@@ -84,6 +105,7 @@ echo "[SddIA] Perfil runtime: ${RUNTIME_PROFILE} (SDDIA_RUNTIME_PROFILE)"
 if [[ "$SENSORIAL_SYSTEMD" -eq 1 ]]; then
     echo "[SddIA] Jurisdicción sensorial: systemd (R-07 — sin spawn email/telegram desde script)"
 fi
+echo "[SddIA] Jurisdicción centinelas: ${DAEMON_JURIS} (SDDIA_DAEMON_JURISDICTION)"
 
 cleanup() {
     local exit_code="${1:-0}"
@@ -94,6 +116,11 @@ cleanup() {
 
     echo ""
     echo "[SddIA] Interrupción detectada. Apagando el Sistema Nervioso y Kalma2..."
+
+    if [[ "${DAEMON_JURIS:-script}" == "systemd" ]]; then
+        echo "[SddIA] Jurisdicción systemd: no pkill de centinelas (supervisor = systemd --user)."
+        exit "$exit_code"
+    fi
 
     kill $(jobs -p) 2>/dev/null || true
 
@@ -185,6 +212,103 @@ _start_daemon() {
 
     echo "  -> [ERROR] ${name} no arrancó como binario nativo (revisar .SddIA/daemons/logs/${name}.log)"
     return 1
+}
+
+_warn_xdg_linger() {
+    if [[ -z "${XDG_RUNTIME_DIR:-}" ]]; then
+        echo "[SddIA] [WARN] XDG_RUNTIME_DIR vacío: systemctl --user no tiene bus. Active sesión o: loginctl enable-linger $(id -un)"
+    fi
+    if command -v loginctl >/dev/null 2>&1; then
+        local linger
+        linger="$(loginctl show-user "$(id -un)" -p Linger --value 2>/dev/null || true)"
+        if [[ "$linger" != "yes" ]]; then
+            echo "[SddIA] [WARN] Linger inactivo: reboot no re-ignita unidades --user. Active: loginctl enable-linger $(id -un)"
+        fi
+    fi
+}
+
+_instance_unit_escape() {
+    systemd-escape -p "$REPO_ROOT"
+}
+
+_materialize_systemd_units() {
+    local dest="$REPO_ROOT/.SddIA/systemd"
+    local tpl="$REPO_ROOT/SddIA/templates/systemd"
+    local factory="$tpl/sddia-daemon@.service.template"
+    local email="$tpl/sddia-email-watcher@.service.template"
+    local name body
+    mkdir -p "$dest"
+    if [[ -f "$factory" ]]; then
+        for name in event-watcher event-sweeper kalma2-bridge telegram-watcher github-bridge-watcher; do
+            body="$(cat "$factory")"
+            body="${body//@@SDDIA_CORE_ROOT@@/$REPO_ROOT}"
+            body="${body//@@DAEMON_NAME@@/$name}"
+            printf '%s\n' "$body" >"$dest/sddia-${name}@.service"
+        done
+    fi
+    if [[ -f "$email" ]]; then
+        body="$(cat "$email")"
+        body="${body//@@SDDIA_CORE_ROOT@@/$REPO_ROOT}"
+        printf '%s\n' "$body" >"$dest/sddia-email-watcher@.service"
+    fi
+}
+
+_sync_user_systemd_units() {
+    local src dest f
+    src="$REPO_ROOT/.SddIA/systemd"
+    dest="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+    if [[ ! -d "$src" ]]; then
+        echo "[SddIA] [ERROR] unidades ausentes en ${src} (re-ejecute instance-creator o copie SddIA/templates/systemd)." >&2
+        return 1
+    fi
+    mkdir -p "$dest"
+    local found=0
+    for f in "$src"/*.service; do
+        [[ -f "$f" ]] || continue
+        found=1
+        cp -f "$f" "$dest/"
+    done
+    if [[ "$found" -eq 0 ]]; then
+        echo "[SddIA] [ERROR] ningún .service en ${src}" >&2
+        return 1
+    fi
+    systemctl --user daemon-reload
+}
+
+_enable_instance_unit() {
+    local stem="$1"
+    local esc
+    esc="$(_instance_unit_escape)"
+    systemctl --user enable --now "${stem}@${esc}.service"
+}
+
+_systemd_ignite() {
+    _warn_xdg_linger
+    if ! command -v systemd-escape >/dev/null 2>&1; then
+        echo "[SddIA] [ERROR] systemd-escape ausente." >&2
+        return 1
+    fi
+    _materialize_systemd_units
+    _sync_user_systemd_units || return 1
+
+    _enable_instance_unit "sddia-event-watcher" || return 1
+    _enable_instance_unit "sddia-event-sweeper" || return 1
+    _enable_instance_unit "sddia-kalma2-bridge" || return 1
+
+    if [[ -n "${SDDIA_EMAIL_IMAP_HOST:-}" || "$SENSORIAL_SYSTEMD" -eq 1 ]]; then
+        if [[ -f "$REPO_ROOT/.SddIA/systemd/sddia-email-watcher@.service" ]]; then
+            _enable_instance_unit "sddia-email-watcher" || echo "  -> [WARN] sddia-email-watcher@%f no enable"
+        fi
+    fi
+
+    if [[ -n "${TELEGRAM_BOT_TOKEN:-}" ]]; then
+        _enable_instance_unit "sddia-telegram-watcher" || echo "  -> [WARN] sddia-telegram-watcher@%f no enable"
+    fi
+
+    if [[ "$RUNTIME_PROFILE" != "consumer" && "$RUNTIME_PROFILE" != "consumidor" ]]; then
+        _enable_instance_unit "sddia-github-bridge-watcher" || echo "  -> [WARN] sddia-github-bridge-watcher@%f no enable"
+    fi
+    return 0
 }
 
 _required_heartbeats_ready() {
@@ -301,7 +425,33 @@ if ! _ensure_orchestrator; then
     cleanup 1
 fi
 
-# 1. Centinelas (Sistema Nervioso EDA)
+if [[ "$DAEMON_JURIS" == "systemd" ]]; then
+    echo "[SddIA] Levantando Sistema Nervioso vía systemd --user (@%f)..."
+    if ! _systemd_ignite; then
+        echo "[SddIA] [ERROR] enable --now de unidades de instancia falló."
+        cleanup 1
+    fi
+
+    if ! _wait_http "${KALMA_URL}/" "Kalma2" 30 0.5; then
+        echo "  -> [ERROR] Kalma2 no alcanzable; revise sddia-kalma2-bridge@%f y SDDIA_CLIENT_PORT."
+        cleanup 1
+    fi
+    echo "  -> Kalma2: ACTIVO (${KALMA_URL}) [systemd]"
+
+    if ! _wait_required_heartbeats 45 1; then
+        cleanup 1
+    fi
+
+    echo "===================================================================="
+    echo "[SddIA] Ecosistema S+ Grade operativo (systemd --user)."
+    echo "[SddIA] Unidades enable --now con instancia $(systemd-escape -p "$REPO_ROOT")."
+    echo "[SddIA] Kalma2: ${KALMA_URL}"
+    echo "[SddIA] Este script no retiene hijos; stop: systemctl --user stop 'sddia-*@$(systemd-escape -p "$REPO_ROOT").service'"
+    echo "===================================================================="
+    exit 0
+fi
+
+# 1. Centinelas (Sistema Nervioso EDA) — jurisdicción script
 echo "[SddIA] Levantando Sistema Nervioso (Demonios)..."
 
 for name in "${REQUIRED_DAEMONS[@]}"; do

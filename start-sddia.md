@@ -2,12 +2,14 @@
 id: start-sddia
 uuid: d5aae800-06b0-4acc-b0fc-476d8e241eb1
 type: process
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Ignición del ecosistema SddIA (`start-sddia.sh`)
 
 Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA), el centinela **email-watcher** (si IMAP configurado) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
+
+**v1.4.0:** jurisdicción `SDDIA_DAEMON_JURISDICTION` (`systemd`|`script`). Default `systemd` si el bus `--user` responde. Unidades `sddia-{daemon}@%f` (fábrica `sddia-daemon@.service.template`). El script hace `enable --now` y **sale**; no retiene hijos del bus/WUI. WARN Linger / `XDG_RUNTIME_DIR`. Fallback `script` = spawn `&` + `wait` (lab sin systemd user).
 
 **v1.3.0:** perfil `SDDIA_RUNTIME_PROFILE` (`consumer`|`engineering`); Filtro C excluye `github-bridge-watcher` en consumidor; R-07 omite spawn de `email-watcher`/`telegram-watcher` si `SDDIA_SENSORIAL_JURISDICTION=systemd` o unidad user `sddia-email-watcher@*` activa.
 
@@ -38,23 +40,20 @@ SSOT de rutas: `SddIA/core/cumulo.paths.json`.
 ```mermaid
 flowchart TD
     A[start-sddia.sh] --> V[load vault _sddia_load_vault]
-    V --> O[cargo build execute-process en SddIA/target]
-    O --> B[cd REPO_ROOT]
-    B --> C[Centinelas obligatorios]
-    C --> D{event-watcher + event-sweeper OK?}
-    D -->|no| X[cleanup + exit 1]
-    D -->|sí| E[Centinelas opcionales]
-    E --> EW{SDDIA_EMAIL_IMAP_HOST?}
-    EW -->|sí| EWA[email-watcher]
-    EW -->|no| F[kalma2-bridge hereda bóveda]
-    EWA --> F
-    F --> G{HTTP GET / responde?}
-    G -->|no| X
-    G -->|sí| HB{heartbeats obligatorios auditados?}
+    V --> J{DAEMON_JURIS systemd?}
+    J -->|sí| S[enable --now sddia-*@%f]
+    S --> G{HTTP GET / responde?}
+    J -->|no| O[cargo/orquestador]
+    O --> C[Centinelas &]
+    C --> F[kalma2-bridge &]
+    F --> G
+    G -->|no| X[cleanup + exit 1]
+    G -->|sí| HB{heartbeats?}
     HB -->|no| X
-    HB -->|sí| H[wait — ecosistema operativo]
-    H --> I[SIGINT/SIGTERM]
-    I --> J[cleanup: pkill + rm locks status]
+    HB -->|sí systemd| E[exit 0]
+    HB -->|sí script| H[wait]
+    H --> I[SIGINT]
+    I --> K[pkill + rm locks]
 ```
 
 1. Ancla `REPO_ROOT` y carga bóveda (`_sddia_load_vault`) para que `kalma2-bridge`/`mayeuta-llm` hereden `SDDIA_LLM_*`.
@@ -78,6 +77,7 @@ Variables de entorno:
 
 | Variable | Default | Efecto |
 |----------|---------|--------|
+| `SDDIA_DAEMON_JURISDICTION` | auto (`systemd` si bus user; si no `script`) | Fuerza supervisor systemd o spawn de consola |
 | `SDDIA_CLIENT_PORT` | `8765` | Puerto HTTP Kalma2 |
 | `SDDIA_CLIENT_TIMEOUT_SECONDS` | `120` | Timeout subproceso orquestador |
 | `SDDIA_KALMA2_BRIDGE_BIN` | autodetect | Override binario bridge |

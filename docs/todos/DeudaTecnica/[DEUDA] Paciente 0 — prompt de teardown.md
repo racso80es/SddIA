@@ -46,9 +46,9 @@ Constantes:
 - Nombre por defecto: SddIA_AP
 - INSTANCE_ROOT: /home/racso/Proyectos/SddIA_AP  (salvo override)
 - No borrar: forja /home/racso/Proyectos/SddIA , bóveda /home/racso/Proyectos/.dev
-- No borrar la plantilla systemd ~/.config/systemd/user/sddia-email-watcher@.service (compartida)
+- No borrar plantillas systemd en ~/.config/systemd/user/sddia-*-watcher@.service ni sddia-kalma2-bridge@.service (compartidas; %f selecciona instancia)
 - No stop/disable unidades cuyo %f sea la FORJA (lab), solo la instancia
-- Orden: SIGTERM a start-sddia de la instancia → stop/disable email-watcher@%f instancia
+- Orden: SIGTERM a start-sddia de la instancia → stop/disable unidades @%f de INSTANCE_ROOT
          → pkill residual bajo INSTANCE_ROOT → rm -rf INSTANCE_ROOT
 - Verificar: unit inactive; pgrep sin INSTANCE_ROOT; directorio ausente; :8766 sin kalma2 de esa instancia
 - Vaults *.deploy-vault / *.preprod-vault: NO borrar salvo petición explícita (siguientes redeploys)
@@ -64,12 +64,13 @@ Constantes:
 | `INSTANCE_NAME` | `SddIA_AP` |
 | `INSTANCE_ROOT` | `/home/racso/Proyectos/${INSTANCE_NAME}` |
 | `UNIT_AP` | `sddia-email-watcher@$(systemd-escape -p "$INSTANCE_ROOT").service` |
-| `UNIT_LAB` | `sddia-email-watcher@$(systemd-escape -p /home/racso/Proyectos/SddIA).service` |
+| `UNIT_BUS` | `sddia-event-watcher@…`, `sddia-event-sweeper@…`, `sddia-kalma2-bridge@…` (mismo escape de `$INSTANCE_ROOT`) |
+| `UNIT_LAB` | mismas plantillas con escape de `/home/racso/Proyectos/SddIA` |
 
 ### En alcance
 
-- `start-sddia.sh` y centinelas spawneados desde la instancia (`event-watcher`, `event-sweeper`, `kalma2-bridge`, `telegram-watcher` si el script los levantó).
-- systemd `email-watcher@%f` **de esa instancia** (R-07).
+- `start-sddia.sh` residual de la instancia (si quedó en `wait` de jurisdicción `script`).
+- systemd `@%f` **de esa instancia**: email + event-watcher + event-sweeper + kalma2-bridge (+ telegram/github si enable).
 - ELF bajo `{INSTANCE_ROOT}/SddIA/target/`.
 - Árbol `{INSTANCE_ROOT}` (bundle, `.SddIA/`, `.events/`, logs).
 
@@ -80,7 +81,7 @@ Constantes:
 | `/home/racso/Proyectos/SddIA` | Forja |
 | `/home/racso/Proyectos/.dev` | SSOT de configuración |
 | `UNIT_LAB` si está `active` | Ensayo lab; no es Paciente 0 |
-| Plantilla `sddia-email-watcher@.service` | Instancia-agnóstica (`%f`) |
+| Plantilla `sddia-*@.service` | Instancia-agnóstica (`%f`); no disable de plantilla |
 | `{INSTANCE_NAME}.deploy-vault` / `.preprod-vault` | Default: conservar |
 
 ---
@@ -101,18 +102,20 @@ pkill -TERM -f "${INST}/start-sddia.sh" 2>/dev/null || true
 
 Espera breve del trap (~1 s). Si el proceso sigue: `pkill -KILL -f "${INST}/start-sddia.sh"`.
 
-### 2 — systemd sensorial de la instancia
+### 2 — systemd de la instancia (`@%f`)
 
 ```bash
-UNIT_AP="sddia-email-watcher@$(systemd-escape -p "$INST").service"
-systemctl --user stop "$UNIT_AP" 2>/dev/null || true
-systemctl --user disable "$UNIT_AP" 2>/dev/null || true
-systemctl --user reset-failed "$UNIT_AP" 2>/dev/null || true
+ESC="$(systemd-escape -p "$INST")"
+for stem in sddia-email-watcher sddia-event-watcher sddia-event-sweeper \
+            sddia-kalma2-bridge sddia-telegram-watcher sddia-github-bridge-watcher; do
+  u="${stem}@${ESC}.service"
+  systemctl --user stop "$u" 2>/dev/null || true
+  systemctl --user disable "$u" 2>/dev/null || true
+  systemctl --user reset-failed "$u" 2>/dev/null || true
+done
 ```
 
-**No** `disable` de `sddia-email-watcher@.service` (plantilla). **No** tocar `UNIT_LAB`.
-
-Otras unidades `sddia-daemon@*` cuyo `WorkingDirectory` sea `$INST`: `stop` + `disable` igual.
+**No** `disable` de las plantillas `sddia-*@.service` (sin instancia). **No** tocar unidades cuyo escape sea la FORJA (`UNIT_LAB`).
 
 ### 3 — Residuales ELF / puerto
 
@@ -178,5 +181,6 @@ Fases: SignalScript → StopSystemd → ReapPids → RmTree → Verify. Prohibid
 |-----|-----|
 | `docs/todos/DeudaTecnica/[DEUDA] Paciente 0 — prompt y proceso de despliegue.md` | Simétrico deploy |
 | `start-sddia.sh` | trap SIGTERM / cleanup |
-| `SddIA/templates/systemd/sddia-email-watcher@.service.template` | Unidad `%f` |
+| `SddIA/templates/systemd/sddia-email-watcher@.service.template` | Unidad `%f` sensorial |
+| `SddIA/templates/systemd/sddia-daemon@.service.template` | Fábrica bus/WUI `@%f` |
 | `SddIA/norms/sddia-distribution-protocol.md` | Multi-cliente hermético |

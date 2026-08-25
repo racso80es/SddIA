@@ -173,15 +173,27 @@ Acuse JSON = éxito de inyección (DA-5). Verificar en el acuse: `success:true`,
 
 Si falla: no parchear instancia; reinyectar con pin release + unlink `{}`.
 
-### 5 — systemd sensorial (R-07)
+### 5 — systemd núcleo + sensorial (`@%f`)
+
+`instance-creator` deja unidades en `${INSTANCE_ROOT}/.SddIA/systemd/` (`sddia-event-watcher@.service`, `sddia-event-sweeper@.service`, `sddia-kalma2-bridge@.service`, `sddia-email-watcher@.service`, …). `start-sddia.sh` (jurisdicción systemd) las re-materializa, copia a `~/.config/systemd/user/` y hace `enable --now` con `systemd-escape -p "$INSTANCE_ROOT"`.
 
 ```bash
-cp -f "${INSTANCE_ROOT}/.SddIA/systemd/sddia-email-watcher@.service" \
-  "${HOME}/.config/systemd/user/sddia-email-watcher@.service"
+# Linger (reboot sin login gráfico)
+loginctl enable-linger "$(id -un)"
+# Lab: stop/disable las mismas plantillas @escape(FORGE_ROOT) si están active
+```
+
+Copia manual opcional (si se ignora `start-sddia`):
+
+```bash
+mkdir -p "${HOME}/.config/systemd/user"
+cp -f "${INSTANCE_ROOT}/.SddIA/systemd/"sddia-*.service \
+  "${HOME}/.config/systemd/user/"
 systemctl --user daemon-reload
-# Lab: stop/disable sddia-email-watcher@$(systemd-escape -p "$FORGE_ROOT") si active
-systemctl --user enable --now \
-  "sddia-email-watcher@$(systemd-escape -p "$INSTANCE_ROOT").service"
+ESC="$(systemd-escape -p "$INSTANCE_ROOT")"
+for stem in sddia-event-watcher sddia-event-sweeper sddia-kalma2-bridge sddia-email-watcher; do
+  systemctl --user enable --now "${stem}@${ESC}.service"
+done
 ```
 
 ### 6 — Ignición núcleo
@@ -192,10 +204,10 @@ mkdir -p .SddIA/daemons/logs
 env -u SDDIA_EXECUTE_PROCESS_BIN \
   SDDIA_RUNTIME_PROFILE=consumer \
   SDDIA_SENSORIAL_JURISDICTION=systemd \
-  nohup ./start-sddia.sh >> .SddIA/daemons/logs/start-sddia.log 2>&1 &
+  ./start-sddia.sh >> .SddIA/daemons/logs/start-sddia.log 2>&1
 ```
 
-Esperado: `MANIFEST.json` presente → **0** `cargo build`; WUI `http://127.0.0.1:${WUI_PORT}/`; log `Ecosistema S+ Grade operativo`; email/telegram **no** spawneados por script.
+Esperado: jurisdicción `systemd`; **exit 0** (el script **no** queda en `wait`); log `unidades enable --now`; WUI `http://127.0.0.1:${WUI_PORT}/`; email/telegram **no** spawneados con `&`. Override lab atado a TTY: `SDDIA_DAEMON_JURISDICTION=script`.
 
 ### 7 — Cierre documental del ciclo de despliegue
 
@@ -227,7 +239,7 @@ No secretos. Fallo = NO APTO de ola (sigue §8).
 | G1 | topología | `.SddIA/`, `.events/{domain,orchestration,telemetry,pending}/`; `local.paths.json` no `{}` |
 | G2 | ley local | `constitution.json` `product=SddIA_AP`; códice `codex-kalma2-assistant` en `.SddIA/library/codexes/` |
 | G3 | WUI + EDA | HTTP 200 en `:${WUI_PORT}`; log ignición `route-domain` / `route-telemetry` enruta; 0 `cargo build` |
-| G3b | systemd | unidad AP `active`; `WorkingDirectory=INSTANCE_ROOT`; `ExecStart` bajo instancia |
+| G3b | systemd | unidades AP `sddia-{event-watcher,event-sweeper,kalma2-bridge,email-watcher}@%f` `active`; `WorkingDirectory=INSTANCE_ROOT`; `ExecStart` bajo instancia |
 | G4 | Filtro C | sin `github-bridge`; instancia sin `AGENT_RUNTIME_*`; sin `codex-software-engineering` en códices locales |
 | G-orch | resolución ELF | creator usó **release** (o cicatriz vigente); ignición **sin** ELF forja si se aisló env (F-DEP-09) |
 | G5 | First Blood | **Opcional** en redeploy rutinario (DA-5). Si se ejecuta: reunión estructural → `actionable` (antecesor T6). No esperar IMAP en bucle. |
