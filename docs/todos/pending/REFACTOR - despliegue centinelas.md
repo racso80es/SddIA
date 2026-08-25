@@ -11,6 +11,8 @@ process: feature
 
 # [ARQUITECTURA] Ignición Soberana y Persistencia de Centinelas (Systemd Completo)
 
+# pendiente de refinar. Prestar especial antención a posibles incohrencias, alucinaciones o inexactitudes.
+
 ## 0. Contexto y Fractura Termodinámica
 El despliegue de **Paciente 0** sufre actualmente de "Ignición Híbrida". Mientras el `email-watcher` opera bajo la jurisdicción de `systemd` como servicio de usuario, el núcleo del bus de eventos (`event-watcher`, `event-sweeper`) y la interfaz (`kalma2-bridge`) dependen de la ejecución del script `start-sddia.sh` atado a la sesión de terminal. 
 
@@ -38,6 +40,10 @@ El script de ignición (presente en las plantillas del bundle/starter-kit) pierd
 
 ### 1.3. Ajuste de Plantillas Systemd
 Revisar `SddIA/templates/systemd/sddia-daemon@.service.template` para asegurar que el `ExecStart` apunte correctamente al binario compilado de `SddIA/target/release/` dentro del `CORE_ROOT` de la instancia, garantizando la Ceguera Espacial (no hardcodear la ruta de la forja).
+
+### 1.4. Ajuste en documentos de despliegue
+
+Revisar y adecuar docs/todos/DeudaTecnica/[DEUDA] Paciente 0 — prompt de teardown.md y docs/todos/kitchen/PBI-KITCHEN-TOKENIZACION-NFT.md si es necesario contenido afectado por los cambios aplicados en el PBI
 
 ## 2. Restricciones Duras (Protocolo de Acero)
 *   **No duplicación de ejecutores:** Ningún centinela debe poder ser arrancado por consola si ya está siendo gestionado por `systemd`. El diseño debe prevenir colisiones de puertos (en el caso de `kalma2-bridge`) o bloqueos de archivos en `.events/`.
