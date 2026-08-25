@@ -1,11 +1,11 @@
 ---
 uuid: "c17189c7-75ff-46cc-995c-d8b9a8af12e4"
 name: "sddia-distribution-protocol"
-version: "1.2.0"
+version: "1.2.1"
 contract: "knowledge-contract v1.0.0"
-hash_signature: "sha256:pending-evolution-kaizen-paciente0-redeploy"
-evolved_from: "1.1.0"
-laudo_locus: "norm-creator solo materializa directories.library_norms; esta norma Core vive en directories.norms — mutación bajo feature activa kaizen-paciente0-redeploy-fricciones"
+hash_signature: "sha256:pending-evolution-kaizen-paciente0-redeploy-20260825"
+evolved_from: "1.2.0"
+laudo_locus: "norm-creator solo materializa directories.library_norms; esta norma Core vive en directories.norms — mutación bajo feature activa kaizen-paciente0-redeploy-20260825"
 ---
 
 ## Protocolo de Distribución SddIA — Patrón “Vía C”
@@ -74,11 +74,11 @@ El generador lee el códice inyectado (y suscripciones eferentes) y empaqueta de
 
 Motor ejecutable de despliegue (forjado vía `entity-manager` → `process-creator`):
 
-1. Instanciar topología `.SddIA/` en carpeta objetivo; `local.paths.json` desde starter-kit (prohibido `{}`).
+1. Instanciar topología `.SddIA/` en carpeta objetivo; `local.paths.json` desde starter-kit. Prohibido dejar stub `{}` / objeto JSON vacío (existencia del fichero no implica overlay válido).
 2. Inyectar secretos desde vault/plantilla (nunca loguear secretos).
 3. Registrar unidades systemd herméticas (`WorkingDirectory=%f`). `@@SDDIA_CORE_ROOT@@` = **raíz de instancia**, no el repo del CLI forjador.
-4. Ignitar daemons según perfil y jurisdicción sensorial (R-07).
-5. Smoke: preflight `eda-local-topology-test` / `Local_QA_Requested`. Si `skip_ignition`, no exigir `route-domain*`. Si ignición no skipped: `route-domain-event` `success:true` sobre un evento de laboratorio.
+4. Ignitar daemons según perfil y jurisdicción sensorial (R-07). En bundle (`MANIFEST.json` o sin `Cargo.toml`): ignorar `SDDIA_EXECUTE_PROCESS_BIN` cuyo path no esté bajo la raíz de instancia.
+5. Smoke: preflight topología (overlay no vacío). **No** emitir `Local_QA_Requested` (emisor autorizado = hook pre-push; `payload.branch` REQUIRED). Si `skip_ignition`, no exigir `route-domain*`. Si ignición no skipped: `route-domain-event` `success:true` sobre un evento de laboratorio.
 
 Invocación canónica:
 
@@ -98,6 +98,7 @@ Prohibido inventar binario CLI `sddia` como fachada.
 - Toda unidad de instancia: `WorkingDirectory=%f` y bóveda `%f/.SddIA/.dev/.env`.
 - Plantilla de referencia: `SddIA/templates/systemd/sddia-email-watcher@.service.template`.
 - `start-sddia.sh` / `instance-creator` operan solo sobre la carpeta objetivo.
+- `_sddia_resolve_orchestrator`: si existen debug y release, usar debug **solo** si su mtime es estrictamente mayor que release (lab); en caso contrario release (F-DEP-07).
 
 ---
 

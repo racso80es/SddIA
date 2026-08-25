@@ -4,14 +4,14 @@ uuid: "d4f13e9a-5d91-4ab8-a2f5-be2e6b8c4815"
 title: "[KAIZEN] Paciente 0 (SddIA_AP): Redeploy 2026-08-25 post-absorción y fricciones residuales"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 type: kaizen
 priority: alta
 process: feature
 persist_ref: docs/features/kaizen-paciente0-redeploy-20260825
 created: "2026-08-25"
 updated: "2026-08-25"
-pbi_archived: false
+pbi_archived: true
 derived_from: PBI-KAIZEN-PACIENTE0-REDEPLOY-20260824
 antecesor_persist_ref: docs/features/kaizen-paciente0-redeploy-fricciones
 antecesor_audit_ref: docs/audits/kaizen-paciente0-redeploy-20260825.md

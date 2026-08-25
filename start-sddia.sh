@@ -59,6 +59,7 @@ fi
 _ensure_orchestrator() {
     echo "[SddIA] Asegurando orquestador nativo (execute-process)..."
     if [[ -f "$REPO_ROOT/MANIFEST.json" ]] || [[ ! -f "$REPO_ROOT/SddIA/Cargo.toml" ]]; then
+        _sddia_discard_foreign_orchestrator_pin "$REPO_ROOT"
         if _sddia_resolve_orchestrator "$REPO_ROOT"; then
             echo "  -> orquestador (bundle): ${SDDIA_EXECUTE_PROCESS_BIN}"
             return 0

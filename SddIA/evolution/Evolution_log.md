@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 76
+universe_total: 77
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6b1f97f4-fa9d-48df-a58a-167f5d5e06dc` | 2026-08-25 | Kaizen Paciente 0 residual: resolver orquestador, overlay {}, pin ignición, smoke sin Local_QA. | CANONICO | `SddIA/evolution/6b1f97f4-fa9d-48df-a58a-167f5d5e06dc.md` |
 | `916bf0f9-05ea-4408-8b6e-294e7efcc5f9` | 2026-08-25 | Kaizen Paciente 0: cicatriz SHA-256 bundle, CORE_ROOT instancia, ignición bundle-safe, elevación asunto triaje. | CANONICO | `SddIA/evolution/916bf0f9-05ea-4408-8b6e-294e7efcc5f9.md` |
 | `c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14` | 2026-08-21 | Rehab DCC PPR #187 + adjudicación retroactiva fail_soft EDA post-umbral físico. | CANONICO | `SddIA/evolution/c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14.md` |
 | `14f34c46-7683-4a2f-9042-69795d170d88` | 2026-08-20 | Kaizen consumidor: Filtro C, bundle hermético, instance-creator y systemd %f. | CANONICO | `SddIA/evolution/14f34c46-7683-4a2f-9042-69795d170d88.md` |
