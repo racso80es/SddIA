@@ -59,8 +59,25 @@ fn starter_local_paths_json() -> &'static str {
 "#
 }
 
+fn local_paths_needs_replace(path: &Path) -> bool {
+    if !path.is_file() {
+        return true;
+    }
+    let Ok(raw) = fs::read_to_string(path) else {
+        return false;
+    };
+    let t = raw.trim();
+    if t.is_empty() || t == "{}" {
+        return true;
+    }
+    serde_json::from_str::<Value>(t)
+        .ok()
+        .and_then(|v| v.as_object().map(|o| o.is_empty()))
+        .unwrap_or(false)
+}
+
 fn materialize_local_paths(repo: &Path, local_paths: &Path) -> Result<(), String> {
-    if local_paths.is_file() {
+    if !local_paths_needs_replace(local_paths) {
         return Ok(());
     }
     let starter = repo.join("SddIA/scripts/starter-kit/.SddIA/local.paths.json");
@@ -239,7 +256,7 @@ fn run_smoke(repo: &Path, instance_root: &Path, skip_ignition: bool) -> Value {
         }
     }
 
-    // 2) Smoke nativo de topología (tool aún stub en instancia) + estímulo Local_QA_Requested.
+    // 2) Smoke nativo de topología. No emitir Local_QA_Requested (F-SMOKE-01 / L-QA-EMIT).
     let mut checks = serde_json::Map::new();
     let mut ok = true;
     let require_dir = |rel: &str, checks: &mut serde_json::Map<String, Value>, ok: &mut bool| {
@@ -266,7 +283,7 @@ fn run_smoke(repo: &Path, instance_root: &Path, skip_ignition: bool) -> Value {
     }
 
     let local_paths = instance_root.join(".SddIA/local.paths.json");
-    let lp_ok = local_paths.is_file();
+    let lp_ok = local_paths.is_file() && !local_paths_needs_replace(&local_paths);
     checks.insert("local_paths_present".into(), json!(lp_ok));
     if !lp_ok {
         ok = false;
@@ -293,35 +310,7 @@ fn run_smoke(repo: &Path, instance_root: &Path, skip_ignition: bool) -> Value {
         ok = false;
     }
 
-    let pending = instance_root.join(".events/pending");
-    if let Err(e) = ensure_dir(&pending) {
-        return json!({
-            "mode": "native-topology+local-qa",
-            "success": false,
-            "checks": checks,
-            "error": e
-        });
-    }
-    let eid = Uuid::new_v4().to_string();
-    let event = json!({
-        "event_id": eid,
-        "event_type": "Local_QA_Requested",
-        "event_family": "orchestration",
-        "timestamp": Utc::now().to_rfc3339(),
-        "emitter_agent": "instance-creator",
-        "payload": {
-            "blocking": false,
-            "source": "instance-creator-smoke",
-            "instance_root": instance_root.display().to_string(),
-            "topology_ok": ok
-        }
-    });
-    let path = pending.join(format!("{}.json", event["event_id"].as_str().unwrap()));
-    let emit_ok = fs::write(&path, format!("{event}\n")).is_ok();
-    checks.insert("local_qa_emitted".into(), json!(emit_ok));
-    if !emit_ok {
-        ok = false;
-    }
+    checks.insert("local_qa_emitted".into(), json!(false));
 
     if skip_ignition {
         checks.insert(
@@ -341,8 +330,7 @@ fn run_smoke(repo: &Path, instance_root: &Path, skip_ignition: bool) -> Value {
         "mode": "native-topology+local-qa",
         "success": ok,
         "checks": checks,
-        "event_path": if emit_ok { json!(path.display().to_string()) } else { Value::Null },
-        "note": "eda-local-topology-test binario ausente; smoke nativo + Local_QA_Requested"
+        "note": "eda-local-topology-test binario ausente; smoke nativo (sin Local_QA_Requested)"
     })
 }
 
@@ -671,6 +659,50 @@ mod tests {
         let smoke = env.data.as_ref().unwrap().get("smoke").unwrap();
         assert_eq!(smoke["mode"], "native-topology+local-qa");
         assert_eq!(smoke["success"], true);
-        assert!(instance.join(".events/pending").read_dir().unwrap().next().is_some());
+        assert_eq!(smoke["checks"]["local_qa_emitted"], false);
+        let pending_n = instance
+            .join(".events/pending")
+            .read_dir()
+            .unwrap()
+            .count();
+        assert_eq!(pending_n, 0, "F-SMOKE-01: no Local_QA_Requested en pending");
+    }
+
+    #[test]
+    fn replaces_empty_local_paths_stub() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/templates/systemd")).unwrap();
+        fs::write(
+            repo.join("SddIA/templates/systemd/sddia-email-watcher@.service.template"),
+            "[Service]\nWorkingDirectory=%f\nExecStart=@@SDDIA_CORE_ROOT@@/SddIA/daemons/email-watcher.sh\n",
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(repo.join("SddIA/core/cumulo.paths.json"), "{}").unwrap();
+        fs::create_dir_all(repo.join("SddIA/tools")).unwrap();
+        fs::write(
+            repo.join("SddIA/tools/send-telegram-notification.md"),
+            "---\nname: send-telegram-notification\n---\n",
+        )
+        .unwrap();
+
+        let instance = repo.join("cliente-stub");
+        fs::create_dir_all(instance.join(".SddIA")).unwrap();
+        fs::write(instance.join(".SddIA/local.paths.json"), "{}\n").unwrap();
+
+        let env = run(
+            repo,
+            &json!({
+                "instance_root": instance.display().to_string(),
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env.success);
+        let paths_txt = fs::read_to_string(instance.join(".SddIA/local.paths.json")).unwrap();
+        assert_ne!(paths_txt.trim(), "{}");
+        assert!(paths_txt.contains("local_tools"));
     }
 }

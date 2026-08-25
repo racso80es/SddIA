@@ -10,6 +10,25 @@ _sddia_is_native_elf() {
   [[ "$mime" == "application/x-executable" || "$mime" == "application/x-pie-executable" ]]
 }
 
+_sddia_elf_mtime() {
+  stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null
+}
+
+# F-DEP-09: pin de forja no aplica a ignición/CLI de otra raíz.
+_sddia_discard_foreign_orchestrator_pin() {
+  local repo_root="$1"
+  [[ -n "${SDDIA_EXECUTE_PROCESS_BIN:-}" ]] || return 0
+  local pin_dir pin_base abs_pin abs_root
+  pin_dir="$(dirname "$SDDIA_EXECUTE_PROCESS_BIN")"
+  pin_base="$(basename "$SDDIA_EXECUTE_PROCESS_BIN")"
+  abs_pin="$(cd "$pin_dir" 2>/dev/null && pwd)/$pin_base" || return 0
+  abs_root="$(cd "$repo_root" && pwd)"
+  if [[ "$abs_pin" != "$abs_root"/* ]]; then
+    echo "[CONFIG] SDDIA_EXECUTE_PROCESS_BIN fuera de ${abs_root}; ignorado (F-DEP-09)" >&2
+    unset SDDIA_EXECUTE_PROCESS_BIN
+  fi
+}
+
 _sddia_resolve_orchestrator() {
   local repo_root="$1"
   if [[ -n "${SDDIA_EXECUTE_PROCESS_BIN:-}" ]]; then
@@ -21,16 +40,35 @@ _sddia_resolve_orchestrator() {
     export SDDIA_EXECUTE_PROCESS_BIN
     return 0
   fi
-  local candidate
-  for candidate in \
-    "$repo_root/SddIA/target/debug/execute-process" \
-    "$repo_root/SddIA/target/release/execute-process"; do
-    if _sddia_is_native_elf "$candidate"; then
-      SDDIA_EXECUTE_PROCESS_BIN="$candidate"
-      export SDDIA_EXECUTE_PROCESS_BIN
-      return 0
+  local debug_bin release_bin
+  debug_bin="$repo_root/SddIA/target/debug/execute-process"
+  release_bin="$repo_root/SddIA/target/release/execute-process"
+  local d_ok=0 r_ok=0
+  if _sddia_is_native_elf "$debug_bin"; then d_ok=1; fi
+  if _sddia_is_native_elf "$release_bin"; then r_ok=1; fi
+  # F-DEP-07: debug solo si es estrictamente más nuevo que release (lab). Empate o stale → release.
+  if [[ "$d_ok" -eq 1 && "$r_ok" -eq 1 ]]; then
+    local dm rm_
+    dm="$(_sddia_elf_mtime "$debug_bin")"
+    rm_="$(_sddia_elf_mtime "$release_bin")"
+    if [[ -n "$dm" && -n "$rm_" && "$dm" -gt "$rm_" ]]; then
+      SDDIA_EXECUTE_PROCESS_BIN="$debug_bin"
+    else
+      SDDIA_EXECUTE_PROCESS_BIN="$release_bin"
     fi
-  done
+    export SDDIA_EXECUTE_PROCESS_BIN
+    return 0
+  fi
+  if [[ "$d_ok" -eq 1 ]]; then
+    SDDIA_EXECUTE_PROCESS_BIN="$debug_bin"
+    export SDDIA_EXECUTE_PROCESS_BIN
+    return 0
+  fi
+  if [[ "$r_ok" -eq 1 ]]; then
+    SDDIA_EXECUTE_PROCESS_BIN="$release_bin"
+    export SDDIA_EXECUTE_PROCESS_BIN
+    return 0
+  fi
   echo "[ERROR] binario execute-process no encontrado. Compilar: cd SddIA && cargo build -p execute-process" >&2
   return 1
 }
