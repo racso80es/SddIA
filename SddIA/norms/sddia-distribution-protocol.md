@@ -1,11 +1,11 @@
 ---
 uuid: "c17189c7-75ff-46cc-995c-d8b9a8af12e4"
 name: "sddia-distribution-protocol"
-version: "1.1.0"
+version: "1.2.0"
 contract: "knowledge-contract v1.0.0"
-hash_signature: "sha256:pending-evolution-kaizen-consumer-ignition"
-evolved_from: "1.0.0"
-laudo_locus: "norm-creator solo materializa directories.library_norms; esta norma Core vive en directories.norms — mutación bajo feature activa kaizen-consumer-ignition-filtro-c"
+hash_signature: "sha256:pending-evolution-kaizen-paciente0-redeploy"
+evolved_from: "1.1.0"
+laudo_locus: "norm-creator solo materializa directories.library_norms; esta norma Core vive en directories.norms — mutación bajo feature activa kaizen-paciente0-redeploy-fricciones"
 ---
 
 ## Protocolo de Distribución SddIA — Patrón “Vía C”
@@ -63,17 +63,22 @@ Con `--profile consumer`: no incluir lanzador/binario `github-bridge-watcher`. R
 ### Resolución de cápsulas (F-06)
 El generador lee el códice inyectado (y suscripciones eferentes) y empaqueta dependencias del grafo. Gate mínimo: `send-telegram-notification` (`.md` + binario) verificable.
 
+### Gate ELF fresco (L-BUNDLE-STALE v2 / F-DEP-03)
+- Tras copiar ELF, `strings` sobre centinelas **no** debe contener `execute-process.py`.
+- `--skip-build` solo si existe testigo `SddIA/target/${profile}/<bin>.sha256` cuyo `source_sha256` (SHA-256 del cierre de compilación local: crate + `path =` + `Cargo.lock` workspace) y `elf_sha256` coinciden con el working tree y el ELF. Testigo ausente o divergencia → abort; exigir rebuild **sin** `--skip-build`.
+- Prohibido mtime / `find -newer` como oráculo. Prohibido MD5. El testigo lo escribe el propio `build-release-bundle.sh` tras `cargo build`.
+
 ---
 
 ## Proceso `instance-creator`
 
 Motor ejecutable de despliegue (forjado vía `entity-manager` → `process-creator`):
 
-1. Instanciar topología `.SddIA/` en carpeta objetivo.
+1. Instanciar topología `.SddIA/` en carpeta objetivo; `local.paths.json` desde starter-kit (prohibido `{}`).
 2. Inyectar secretos desde vault/plantilla (nunca loguear secretos).
-3. Registrar unidades systemd herméticas (`WorkingDirectory=%f`, `EnvironmentFile=%f/.SddIA/.dev/.env`).
+3. Registrar unidades systemd herméticas (`WorkingDirectory=%f`). `@@SDDIA_CORE_ROOT@@` = **raíz de instancia**, no el repo del CLI forjador.
 4. Ignitar daemons según perfil y jurisdicción sensorial (R-07).
-5. Orquestar smoke post-ignición: `eda-local-topology-test` / estímulo `Local_QA_Requested` → `success: true`.
+5. Smoke: preflight `eda-local-topology-test` / `Local_QA_Requested`. Si `skip_ignition`, no exigir `route-domain*`. Si ignición no skipped: `route-domain-event` `success:true` sobre un evento de laboratorio.
 
 Invocación canónica:
 

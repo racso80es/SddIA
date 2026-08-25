@@ -58,6 +58,14 @@ fi
 
 _ensure_orchestrator() {
     echo "[SddIA] Asegurando orquestador nativo (execute-process)..."
+    if [[ -f "$REPO_ROOT/MANIFEST.json" ]] || [[ ! -f "$REPO_ROOT/SddIA/Cargo.toml" ]]; then
+        if _sddia_resolve_orchestrator "$REPO_ROOT"; then
+            echo "  -> orquestador (bundle): ${SDDIA_EXECUTE_PROCESS_BIN}"
+            return 0
+        fi
+        echo "  -> [ERROR] bundle hermético: ELF execute-process ausente. Reinyectar bundle (no cargo)." >&2
+        return 1
+    fi
     local target_dir="$REPO_ROOT/SddIA/target"
     local build_log
     if ! build_log="$(cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -q 2>&1)"; then

@@ -1,7 +1,7 @@
 ---
 uuid: "3d8c7e09-6d98-422d-909f-5b233ba7fcf2"
 name: "email-triage-matrix"
-version: "1.0.0"
+version: "1.0.1"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
@@ -19,7 +19,7 @@ Matriz de triaje de correo de tres vías para el asistente Kalma2. La semántica
 - `noise`: estímulo sin valor para la consciencia (listas, bulk, marketing, bounce). No eleva. Deja constancia en `Email_Triaged`.
 - `passive`: informativo; no exige acto. No asienta agenda.
 - `actionable`: exige acto con fecha/título extraíbles. Única vía que dispara `agenda:persist`.
-- Desempate: si una regla determinista marca `noise`, prevalece sobre cualquier otra señal. Si hay `actionable` y `passive` sin `noise`, gana `actionable` solo con extracción completa; si la extracción falla, degrada a `passive`.
+- Desempate: si una regla determinista marca `noise`, prevalece sobre cualquier otra señal. Si hay `actionable` y `passive` sin `noise`, gana `actionable` solo con extracción completa; si la extracción falla, degrada a `passive`. Tras Clasificacion LLM, si la extracción estructural del asunto es completa, el veredicto se eleva a `actionable` aunque el LLM haya emitido `passive` o `noise`; Triaje-C `noise` ya cerrado no se reabre.
 
 ### 2. Reglas deterministas del Triaje-C
 

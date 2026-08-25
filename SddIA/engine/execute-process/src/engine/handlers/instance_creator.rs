@@ -7,6 +7,7 @@ use chrono::Utc;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::time::Instant;
 use uuid::Uuid;
 
@@ -27,6 +28,48 @@ fn truthy(inputs: &Value, key: &str) -> bool {
                 .unwrap_or(false)
         })
     })
+}
+
+fn starter_local_paths_json() -> &'static str {
+    r#"{
+  "directories": {
+    "local_tools": ".SddIA/tools",
+    "local_norms": ".SddIA/norms",
+    "local_security": ".SddIA/security",
+    "local_constitution": ".SddIA/constitution",
+    "local_principles": ".SddIA/principles",
+    "local_patterns": ".SddIA/patterns",
+    "local_templates": ".SddIA/templates",
+    "local_evolution": ".SddIA/evolution",
+    "library_codexes": ".SddIA/library/codexes/",
+    "library_norms": ".SddIA/library/norms/"
+  },
+  "paths": {
+    "localLibraryCodexes": ".SddIA/library/codexes/",
+    "localLibraryNorms": ".SddIA/library/norms/"
+  },
+  "files": {
+    "interaction_triggers_override": ".SddIA/interaction-triggers.override.json",
+    "local_security_contract": ".SddIA/local-security-contract.json",
+    "local_evolution_log": ".SddIA/evolution/Evolution_log.md",
+    "featuresDocumentationPattern": ".SddIA/library/norms/features-documentation-pattern.md",
+    "features_documentation_pattern": ".SddIA/library/norms/features-documentation-pattern.md"
+  }
+}
+"#
+}
+
+fn materialize_local_paths(repo: &Path, local_paths: &Path) -> Result<(), String> {
+    if local_paths.is_file() {
+        return Ok(());
+    }
+    let starter = repo.join("SddIA/scripts/starter-kit/.SddIA/local.paths.json");
+    if starter.is_file() {
+        fs::copy(&starter, local_paths).map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+    fs::write(local_paths, starter_local_paths_json()).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 fn ensure_dir(p: &Path) -> Result<(), String> {
@@ -141,8 +184,8 @@ fn install_systemd_templates(repo: &Path, instance_root: &Path) -> Result<Value,
         {
             let name = p.file_name().unwrap().to_string_lossy().to_string();
             let body = fs::read_to_string(&p).map_err(|e| e.to_string())?;
-            // Sustituye marcador de core root por ruta del genoma relativo a la instancia.
-            let core = repo.display().to_string();
+            // Sustituye marcador de core root por la raíz de instancia (no el repo del CLI).
+            let core = instance_root.display().to_string();
             let rendered = body.replace("@@SDDIA_CORE_ROOT@@", &core);
             let out = dest.join(name.trim_end_matches(".template"));
             fs::write(&out, rendered).map_err(|e| e.to_string())?;
@@ -157,7 +200,7 @@ fn install_systemd_templates(repo: &Path, instance_root: &Path) -> Result<Value,
     }))
 }
 
-fn run_smoke(repo: &Path, instance_root: &Path) -> Value {
+fn run_smoke(repo: &Path, instance_root: &Path, skip_ignition: bool) -> Value {
     // 1) Preferir cápsula eda-local-topology-test si hay binario.
     let candidates = [
         repo.join("SddIA/target/release/eda-local-topology-test"),
@@ -280,6 +323,20 @@ fn run_smoke(repo: &Path, instance_root: &Path) -> Value {
         ok = false;
     }
 
+    if skip_ignition {
+        checks.insert(
+            "route_domain".into(),
+            json!({ "skipped": true, "reason": "skip_ignition" }),
+        );
+    } else {
+        let probe = probe_route_domain(instance_root);
+        let rd_ok = probe.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+        checks.insert("route_domain".into(), probe);
+        if !rd_ok {
+            ok = false;
+        }
+    }
+
     json!({
         "mode": "native-topology+local-qa",
         "success": ok,
@@ -287,6 +344,66 @@ fn run_smoke(repo: &Path, instance_root: &Path) -> Value {
         "event_path": if emit_ok { json!(path.display().to_string()) } else { Value::Null },
         "note": "eda-local-topology-test binario ausente; smoke nativo + Local_QA_Requested"
     })
+}
+
+fn probe_route_domain(instance_root: &Path) -> Value {
+    let bin = [
+        instance_root.join("SddIA/target/release/execute-process"),
+        instance_root.join("SddIA/target/debug/execute-process"),
+    ]
+    .into_iter()
+    .find(|p| p.is_file());
+    let Some(bin) = bin else {
+        return json!({
+            "success": false,
+            "reason": "execute-process ELF ausente en instancia"
+        });
+    };
+    let domain = instance_root.join(".events/domain");
+    if let Err(e) = fs::create_dir_all(&domain) {
+        return json!({ "success": false, "error": e.to_string() });
+    }
+    let eid = Uuid::new_v4().to_string();
+    let rel = format!(".events/domain/{eid}.json");
+    let event = json!({
+        "event_id": eid,
+        "event_type": "Instance_Creator_Smoke_Probe",
+        "event_family": "domain",
+        "timestamp": Utc::now().to_rfc3339(),
+        "emitter_agent": "instance-creator",
+        "payload": { "source": "instance-creator-smoke-route" }
+    });
+    let path = instance_root.join(&rel);
+    if fs::write(&path, format!("{event}\n")).is_err() {
+        return json!({ "success": false, "reason": "write probe event" });
+    }
+    let inputs = json!({ "event_file_path": rel, "blocking": true });
+    match Command::new(&bin)
+        .current_dir(instance_root)
+        .args([
+            "--process",
+            "route-domain-event",
+            "--inputs",
+            &inputs.to_string(),
+        ])
+        .output()
+    {
+        Ok(out) => {
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            let line = stdout.lines().last().unwrap_or("");
+            let parsed: Value = serde_json::from_str(line).unwrap_or(json!({}));
+            let success = parsed
+                .get("success")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            json!({
+                "success": success,
+                "exit_code": out.status.code(),
+                "event_path": rel
+            })
+        }
+        Err(e) => json!({ "success": false, "error": e.to_string() }),
+    }
 }
 
 fn try_ignite(instance_root: &Path, profile: &str) -> Value {
@@ -362,9 +479,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         ensure_dir(&sddia.join(sub))?;
     }
     let local_paths = sddia.join("local.paths.json");
-    if !local_paths.is_file() {
-        fs::write(&local_paths, "{}\n").map_err(|e| e.to_string())?;
-    }
+    materialize_local_paths(repo, &local_paths)?;
     let events = instance_root.join(".events");
     for fam in ["pending", "domain", "orchestration", "telemetry", "dead-letter"] {
         ensure_dir(&events.join(fam))?;
@@ -428,7 +543,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     let smoke = if skip_smoke {
         json!({ "success": true, "skipped": true })
     } else {
-        run_smoke(repo, &instance_root)
+        run_smoke(repo, &instance_root, skip_ignition)
     };
     let smoke_ok = smoke.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
     phases.push(phase(
@@ -502,6 +617,22 @@ mod tests {
         assert!(env.success);
         assert!(instance.join(".SddIA/.dev/.env").is_file());
         assert!(instance.join(".SddIA/local.paths.json").is_file());
+        let paths_txt = fs::read_to_string(instance.join(".SddIA/local.paths.json")).unwrap();
+        assert_ne!(paths_txt.trim(), "{}");
+        assert!(paths_txt.contains("local_tools"));
+        let unit = fs::read_to_string(
+            instance.join(".SddIA/systemd/sddia-email-watcher@.service"),
+        )
+        .unwrap();
+        let inst = instance.display().to_string();
+        assert!(
+            unit.contains(&format!("{inst}/SddIA/")),
+            "CORE_ROOT debe ser instance_root, unit={unit}"
+        );
+        assert!(
+            !unit.contains(&format!("{}/SddIA/daemons", repo.display())),
+            "CORE_ROOT no debe ser repo forjador"
+        );
         assert!(instance.join(".events/pending").is_dir());
         assert!(instance
             .join(".SddIA/systemd/sddia-email-watcher@.service")
