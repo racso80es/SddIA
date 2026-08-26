@@ -104,7 +104,7 @@ Instancia viva: `http://127.0.0.1:8766/`.
 
 No Kaizen redeploy Paciente 0 (`OLA-MEJORA` en gates; residuales F-DEP-07/08 ya en Kaizen 20260825).
 
-**FIX lab abierto:** `PBI-FIX-BUNDLE-TELEGRAM-GATEWAY` — hueco F-06 en `build-release-bundle.sh` (`telegram-gateway` no empaquetado con `telegram-watcher`). Ciclo `bug-fix` en forja; no parchear instancia.
+**FIX lab cerrado (forja):** `PBI-FIX-BUNDLE-TELEGRAM-GATEWAY` — PR [#194](https://github.com/racso80es/SddIA/pull/194); `build-release-bundle.sh` empaqueta `telegram-gateway` con gate F-BUNDLE-06. **Pendiente:** redeploy Paciente 0 con bundle nuevo (sin copia manual ELF).
 
 SSOT residual deploy: `docs/todos/done/[KAIZEN] Paciente 0 SddIA_AP — redeploy 20260825 y fricciones.md`. Aislamiento: `docs/todos/done/[KAIZEN] aislamiento multi-instancia centinelas.md`.
 
@@ -134,7 +134,7 @@ Watcher AP recibió update (`update_id=551975545`); falló `execute-process --pr
 
 | ID | Estado | Nota |
 |----|--------|------|
-| **F-BUNDLE-06** | **ABIERTO** | `MANIFEST` `20260826T110203Z`: 7 capsules sin `telegram-gateway`; gate G-bundle §5 del prompt no lo exigía explícitamente |
+| **F-BUNDLE-06** | **CERRADO (forja)** | Fix PR #194: bundle 8 capsules incluye `telegram-gateway`; redeploy AP pendiente |
 | F-SYS-02 / F-DEP-10 / F-CEN-PKILL | APTO | cwd/exe bajo `SddIA_AP`; inbox WUI `:8766` ≠ `:8765` |
 | Stop `sddia-daemon@telegram-watcher` (legado lab) | higiene | Bot lab; **no** causa del silencio Paciente 0 |
 
@@ -143,7 +143,7 @@ Watcher AP recibió update (`update_id=551975545`); falló `execute-process --pr
 | Ámbito | Veredicto |
 |--------|-----------|
 | Gates despliegue §5 (infra, EDA, WUI, systemd) | **OLA-MEJORA** |
-| Sensorial Telegram conversacional post-ola | **F-BUNDLE-06** hasta FIX bundle + redeploy |
+| Sensorial Telegram conversacional post-ola | **Pendiente redeploy AP** (fix forja mergeado; validar G-telegram tras bundle nuevo) |
 
 ## 7. Qué no se hizo
 
@@ -152,4 +152,4 @@ Watcher AP recibió update (`update_id=551975545`); falló `execute-process --pr
 - Overlay rsync (no había periféricos; wipe).
 - Forja de genoma en este estímulo (FIX documentado para ciclo `bug-fix`).
 - Restaurar `PREPROD_VAULT` (ausente); constitución reconstruida desde starter-kit.
-- Workaround copia manual `telegram-gateway` ELF (pendiente absorción en lab).
+- Redeploy Paciente 0 con bundle post-PR #194 (G-telegram / CA4–CA5).

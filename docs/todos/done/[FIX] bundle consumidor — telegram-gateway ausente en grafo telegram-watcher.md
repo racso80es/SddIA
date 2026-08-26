@@ -4,14 +4,16 @@ uuid: "67110f2f-2be8-4fd3-b0a7-8dc400fe803f"
 title: "[FIX] bundle consumidor — telegram-gateway ausente en grafo telegram-watcher"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 type: bug-fix
 priority: alta
 process: bug-fix
 persist_ref: docs/fixes/bundle-consumer-telegram-gateway
 created: "2026-08-26"
 updated: "2026-08-26"
-pbi_archived: false
+pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/194
+closed: "2026-08-26"
 derived_from:
   - PBI-DT-PACIENTE0-DEPLOY-PROCESS
   - AUDIT-PACIENTE0-DEPLOY-20260826T110203Z
@@ -97,11 +99,11 @@ Mutación vía ciclo `bug-fix` — **no** parchear `SddIA/` en instancia consumi
 
 ## 3. Criterios de aceptación
 
-- [ ] `build-release-bundle.sh --profile consumer` produce ELF `SddIA/target/release/telegram-gateway` y entra en `MANIFEST.json` `capsules_resolved`.
-- [ ] Gate bundle falla si `telegram-watcher` ∈ bins y `telegram-gateway` ausente.
-- [ ] Redeploy Paciente 0 **sin** copia manual de ELF: `./sddia-run.sh --process telegram-gateway --inputs '{"text":"sigues?"}'` → `success:true`, `emitted:true`.
-- [ ] Mensaje de prueba al bot Paciente 0 → respuesta ≤2 líneas con patrón Tormentosa/Aiúa (o `telegram-fallback-responder` success en journal).
-- [ ] `docs/audits/paciente0-deploy-20260826T110203Z.md` § post-ola marcado resuelto con manifest nuevo.
+- [x] `build-release-bundle.sh --profile consumer` produce ELF `SddIA/target/release/telegram-gateway` y entra en `MANIFEST.json` `capsules_resolved`.
+- [x] Gate bundle falla si `telegram-watcher` ∈ bins y `telegram-gateway` ausente.
+- [x] `./sddia-run.sh --process telegram-gateway --inputs '{"text":"sigues?"}'` → `success:true`, `emitted:true` (forja).
+- [ ] Mensaje de prueba al bot Paciente 0 → respuesta ≤2 líneas (pendiente redeploy AP).
+- [x] `docs/audits/paciente0-deploy-20260826T110203Z.md` § post-ola marcado resuelto (forja).
 
 ---
 

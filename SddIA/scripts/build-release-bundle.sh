@@ -47,15 +47,19 @@ CONSUMER_BINS=(
   event-sweeper
   email-watcher
   telegram-watcher
+  telegram-gateway
   send-telegram-notification
 )
 
 # Capsules tool extraídas del códice / grafo eferente (F-06).
+# Semilla aferente conversacional: telegram-gateway (F-BUNDLE-06) — el escáner
+# no deriva --process desde daemons; alinear con send-telegram-notification.
 declare -A CAPSULE_SET=()
 for b in "${CONSUMER_BINS[@]}"; do
   CAPSULE_SET["$b"]=1
 done
 CAPSULE_SET["send-telegram-notification"]=1
+CAPSULE_SET["telegram-gateway"]=1
 
 _add_capsule() {
   local name="$1"
@@ -240,7 +244,7 @@ else
       local_pkgs+=("-p" "$name")
     fi
   done
-  local_pkgs+=(-p execute-process -p kalma2-bridge -p event-watcher -p event-sweeper -p email-watcher -p telegram-watcher -p send-telegram-notification)
+  local_pkgs+=(-p execute-process -p kalma2-bridge -p event-watcher -p event-sweeper -p email-watcher -p telegram-watcher -p telegram-gateway -p send-telegram-notification)
   (
     cd "$REPO_ROOT/SddIA"
     if [[ "$PROFILE_BIN" == "release" ]]; then
@@ -373,6 +377,15 @@ if [[ ! -f "$STAGE/SddIA/tools/send-telegram-notification.md" ]] \
   exit 1
 fi
 
+# F-BUNDLE-06: grafo aferente si telegram-watcher ∈ stage
+if [[ -x "$STAGE/SddIA/target/release/telegram-watcher" ]]; then
+  if [[ ! -f "$STAGE/SddIA/tools/telegram-gateway.md" ]] \
+    || [[ ! -x "$STAGE/SddIA/target/release/telegram-gateway" ]]; then
+    echo "[ERROR] F-06/F-BUNDLE-06: telegram-watcher empaquetado exige telegram-gateway (.md + ELF)" >&2
+    exit 1
+  fi
+fi
+
 # F-DEP-03 / L-BUNDLE-PY: centinelas sin orquestador .py
 for name in execute-process event-watcher event-sweeper email-watcher telegram-watcher kalma2-bridge; do
   bin="$STAGE/SddIA/target/release/$name"
@@ -503,6 +516,9 @@ O vía proceso (cuando exista en el genoma del bundle):
 \`\`\`bash
 test -x SddIA/target/release/send-telegram-notification
 test -f SddIA/tools/send-telegram-notification.md
+# Si telegram-watcher ∈ MANIFEST (F-BUNDLE-06):
+test -x SddIA/target/release/telegram-gateway
+test -f SddIA/tools/telegram-gateway.md
 ./sddia-run.sh --process workspace-smoke --inputs '{}'   # o eda-local-topology-test / Local_QA_Requested
 \`\`\`
 
