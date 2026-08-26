@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `e2b9a4f1-7c83-4d5e-9a16-0f8b3c5d7e21` | 2026-08-26 | Rehab PPR PPR #190: survival hollow hijo detached + cycle_phase telemetría; Cerbero permanent+revoked. | CANONICO | `SddIA/evolution/e2b9a4f1-7c83-4d5e-9a16-0f8b3c5d7e21.md` |
 | `16239778-a5bc-4a55-8996-9301e51a6176` | 2026-08-26 | email-watcher: imap_identity_sha256 + bootstrap automático ante cambio de cuenta o watermark obsoleto. | CANONICO | `SddIA/evolution/16239778-a5bc-4a55-8996-9301e51a6176.md` |
 | `a1c9e7f3-2b4d-5e6f-8a9b-0c1d2e3f4a5b` | 2026-08-26 | Ola documental centinelas-fracture-ola-20260819 — Laudo B, 5 PBI heartbeat archivados; watermark IMAP segregado. | CANONICO | `SddIA/evolution/a1c9e7f3-2b4d-5e6f-8a9b-0c1d2e3f4a5b.md` |
 | `6b600e3f-2f4a-4f1f-b0f9-087d2f954c1f` | 2026-08-26 | F-CI-EDA-E2E-WASI-BUILD — build WASI selectivo CI excluyendo daemons nativos (email-watcher/openssl) | CANONICO | `SddIA/evolution/6b600e3f-2f4a-4f1f-b0f9-087d2f954c1f.md` |

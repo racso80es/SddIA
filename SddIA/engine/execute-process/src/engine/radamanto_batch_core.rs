@@ -115,6 +115,15 @@ pub(crate) fn is_survival_hollow(payload: &Value) -> bool {
     if payload.get("lab_hollow").and_then(|v| v.as_bool()) == Some(true) {
         return true;
     }
+    if payload.get("detach").and_then(|v| v.as_bool()) == Some(true) {
+        return true;
+    }
+    // Hijo PPR post-detach: el acuse CLI ya fue success; el KO tardío no es supervivencia.
+    if payload.get("detached_child").and_then(|v| v.as_bool()) == Some(true)
+        && payload.get("exit_code").and_then(|v| v.as_i64()) != Some(0)
+    {
+        return true;
+    }
     matches!(
         payload.get("cycle_phase").and_then(|v| v.as_str()),
         Some("initialized") | Some("awaiting_agents")
@@ -646,6 +655,26 @@ mod tests {
         assert!(!is_survival_hollow(&json!({"cycle_phase": "completed"})));
         assert!(!is_survival_hollow(&json!({"cycle_phase": "failed", "exit_code": 1})));
         assert!(!is_survival_hollow(&json!({"exit_code": 0})));
+    }
+
+    #[test]
+    fn ppr_detached_child_failure_is_hollow() {
+        assert!(is_survival_hollow(&json!({
+            "process_name": "pull-request-review",
+            "detached_child": true,
+            "exit_code": 1,
+            "duration_ms": 2_500_000
+        })));
+        assert!(!is_survival_hollow(&json!({
+            "process_name": "pull-request-review",
+            "detached_child": true,
+            "exit_code": 0
+        })));
+        assert!(is_survival_hollow(&json!({
+            "process_name": "pull-request-review",
+            "detach": true,
+            "cycle_phase": "awaiting_agents"
+        })));
     }
 
     #[test]
