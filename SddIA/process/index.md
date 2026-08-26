@@ -6,7 +6,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
-| instance-creator | dead5ca7-c0b9-42ef-aad6-171991fb524f | 1.2.0 | ecosystem-evolution, filesystem-ops, system-operations | — | Despliegue hermético de instancia consumidor: topología .Sdd |
+| instance-creator | dead5ca7-c0b9-42ef-aad6-171991fb524f | 1.3.0 | ecosystem-evolution, filesystem-ops, system-operations | — | Despliegue hermético de instancia consumidor: topología .Sdd |
 | evolution-audit | 8f4b09da-e277-4fc2-9890-8a363fa8a96f | 1.0.0 | quality-assurance, filesystem-ops | — | Auditoría periódica del registro evolution: inventario, relevancia, validación y persistencia oficial. |
 | memory-evolution-ingest | eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2 | 1.1.1 | ecosystem-evolution, event-routing | — | Ingesta Domain_Entity_Telemetry_Captured → vector_store/evolution |
 | event-bus-audit | 8d577a50-055a-40b9-b7e2-93e2d2415796 | 1.0.1 | quality-assurance | — | Auditoría empírica on-demand del bus EDA: escaneo ./.events, |

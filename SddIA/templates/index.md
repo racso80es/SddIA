@@ -14,4 +14,5 @@ Catálogo bajo `templates-contract`. Plantillas **motor** en `SddIA/templates/<t
 |-------------|------------|-------------|
 | process-splus-frontmatter | motor | Plantilla de proceso S+ (ver carpeta). |
 | spec-template | motor | Plantilla `spec.md` con DIA (`impacts_doc` + § Impacto en Documentación). |
-| systemd/sddia-email-watcher@.service | motor | Plantilla systemd del Centinela IMAP (`WorkingDirectory=%f`, marcador `@@SDDIA_CORE_ROOT@@`). |
+| systemd/sddia-email-watcher@.service | motor | Plantilla systemd del Centinela IMAP (`WorkingDirectory=%f`, `ExecStart=%f/SddIA/daemons/email-watcher.sh`). |
+| systemd/sddia-daemon@.service | motor | Fábrica `sddia-{daemon}@%f` (`ExecStart=%f/SddIA/scripts/daemons/@@DAEMON_NAME@@.sh`). |

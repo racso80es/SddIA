@@ -2,12 +2,14 @@
 id: start-sddia
 uuid: d5aae800-06b0-4acc-b0fc-476d8e241eb1
 type: process
-version: 1.4.0
+version: 1.4.1
 ---
 
 # Ignición del ecosistema SddIA (`start-sddia.sh`)
 
 Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA), el centinela **email-watcher** (si IMAP configurado) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
+
+**v1.4.1:** `ExecStart=%f/SddIA/…` (molde user universal; no path de host). Cleanup lab: PID de lock de `$REPO_ROOT`, cero `pkill -x`.
 
 **v1.4.0:** jurisdicción `SDDIA_DAEMON_JURISDICTION` (`systemd`|`script`). Default `systemd` si el bus `--user` responde. Unidades `sddia-{daemon}@%f` (fábrica `sddia-daemon@.service.template`). El script hace `enable --now` y **sale**; no retiene hijos del bus/WUI. WARN Linger / `XDG_RUNTIME_DIR`. Fallback `script` = spawn `&` + `wait` (lab sin systemd user).
 

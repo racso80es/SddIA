@@ -3,19 +3,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-TARGET="$REPO_ROOT/SddIA/target"
-
-NATIVE_RELEASE="$TARGET/release/email-watcher"
-NATIVE_DEBUG="$TARGET/debug/email-watcher"
-
+# shellcheck source=../scripts/common/sddia_shell_lib.sh
+source "$SCRIPT_DIR/../scripts/common/sddia_shell_lib.sh"
+_FALLBACK_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(_sddia_resolve_instance_root "$_FALLBACK_ROOT")"
 cd "$REPO_ROOT"
 
-if [[ -x "$NATIVE_DEBUG" ]]; then
-  exec "$NATIVE_DEBUG" "$@"
-fi
-if [[ -x "$NATIVE_RELEASE" ]]; then
-  exec "$NATIVE_RELEASE" "$@"
+if BIN="$(_sddia_resolve_daemon_binary "$REPO_ROOT" email-watcher)"; then
+  exec "$BIN" "$@"
 fi
 
 echo "[email-watcher] binario no encontrado (build: cd SddIA && cargo build -p email-watcher)" >&2

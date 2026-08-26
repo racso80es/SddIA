@@ -11,7 +11,10 @@ DAEMON="$1"
 shift
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+# shellcheck source=../common/sddia_shell_lib.sh
+source "$SCRIPT_DIR/../common/sddia_shell_lib.sh"
+_FALLBACK_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+REPO_ROOT="$(_sddia_resolve_instance_root "$_FALLBACK_ROOT")"
 EXEC="$SCRIPT_DIR/_exec_daemon.sh"
 LOCK_FILE="$REPO_ROOT/.SddIA/daemons/status/${DAEMON}.lock"
 
@@ -28,31 +31,8 @@ for arg in "$@"; do
   esac
 done
 
-_lock_pid() {
-  if [[ ! -f "$LOCK_FILE" ]]; then
-    return 0
-  fi
-  sed -n 's/.*"pid"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$LOCK_FILE" | head -1
-}
-
 _stop_previous() {
-  pkill -x "$DAEMON" 2>/dev/null || true
-
-  local pid
-  pid="$(_lock_pid)"
-  if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-    kill "$pid" 2>/dev/null || true
-    sleep 1
-    if kill -0 "$pid" 2>/dev/null; then
-      kill -9 "$pid" 2>/dev/null || true
-      sleep 1
-    fi
-  fi
-
-  pid="$(_lock_pid)"
-  if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
-    rm -f "$LOCK_FILE"
-  fi
+  _sddia_stop_lock_pid "$LOCK_FILE"
 }
 
 _one_shot_mode() {
@@ -107,7 +87,9 @@ if [[ ! -x "$EXEC" ]]; then
   exit 1
 fi
 
-_stop_previous
+if [[ -z "${INVOCATION_ID:-}" ]]; then
+  _stop_previous
+fi
 
 if _one_shot_mode "${args[@]}"; then
   exec "$EXEC" "$DAEMON" "${args[@]}"

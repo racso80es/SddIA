@@ -203,15 +203,12 @@ fn install_systemd_templates(repo: &Path, instance_root: &Path) -> Result<Value,
     let dest = instance_root.join(".SddIA/systemd");
     ensure_dir(&dest)?;
     let mut copied = Vec::new();
-    let core = instance_root.display().to_string();
 
     let factory = templates.join(SYSTEMD_FACTORY_TEMPLATE);
     if factory.is_file() {
         let body = fs::read_to_string(&factory).map_err(|e| e.to_string())?;
         for name in SYSTEMD_FACTORY_DAEMONS {
-            let rendered = body
-                .replace("@@SDDIA_CORE_ROOT@@", &core)
-                .replace("@@DAEMON_NAME@@", name);
+            let rendered = body.replace("@@DAEMON_NAME@@", name);
             let out_name = format!("sddia-{name}@.service");
             let out = dest.join(&out_name);
             fs::write(&out, rendered).map_err(|e| e.to_string())?;
@@ -230,9 +227,8 @@ fn install_systemd_templates(repo: &Path, instance_root: &Path) -> Result<Value,
             || p.extension().and_then(|e| e.to_str()) == Some("service")
         {
             let body = fs::read_to_string(&p).map_err(|e| e.to_string())?;
-            let rendered = body.replace("@@SDDIA_CORE_ROOT@@", &core);
             let out = dest.join(fname.trim_end_matches(".template"));
-            fs::write(&out, rendered).map_err(|e| e.to_string())?;
+            fs::write(&out, body).map_err(|e| e.to_string())?;
             copied.push(out.file_name().unwrap().to_string_lossy().to_string());
         }
     }
@@ -607,12 +603,12 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/templates/systemd")).unwrap();
         fs::write(
             repo.join("SddIA/templates/systemd/sddia-email-watcher@.service.template"),
-            "[Service]\nWorkingDirectory=%f\nExecStart=@@SDDIA_CORE_ROOT@@/SddIA/daemons/email-watcher.sh\n",
+            "[Service]\nWorkingDirectory=%f\nExecStart=%f/SddIA/daemons/email-watcher.sh\n",
         )
         .unwrap();
         fs::write(
             repo.join("SddIA/templates/systemd/sddia-daemon@.service.template"),
-            "ExecStart=@@SDDIA_CORE_ROOT@@/SddIA/scripts/daemons/@@DAEMON_NAME@@.sh\nWorkingDirectory=%f\n",
+            "ExecStart=%f/SddIA/scripts/daemons/@@DAEMON_NAME@@.sh\nWorkingDirectory=%f\n",
         )
         .unwrap();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
@@ -647,12 +643,16 @@ mod tests {
         .unwrap();
         let inst = instance.display().to_string();
         assert!(
-            unit.contains(&format!("{inst}/SddIA/")),
-            "CORE_ROOT debe ser instance_root, unit={unit}"
+            unit.contains("ExecStart=%f/SddIA/daemons/email-watcher.sh"),
+            "ExecStart universal %f, unit={unit}"
+        );
+        assert!(
+            !unit.contains(&inst),
+            "ExecStart no debe hornear instance_root absoluto, unit={unit}"
         );
         assert!(
             !unit.contains(&format!("{}/SddIA/daemons", repo.display())),
-            "CORE_ROOT no debe ser repo forjador"
+            "ExecStart no debe ser repo forjador"
         );
         assert!(instance.join(".events/pending").is_dir());
         assert!(instance
@@ -662,11 +662,10 @@ mod tests {
             instance.join(".SddIA/systemd/sddia-event-watcher@.service"),
         )
         .unwrap();
-        assert!(ew.contains(&format!(
-            "{inst}/SddIA/scripts/daemons/event-watcher.sh"
-        )));
+        assert!(ew.contains("ExecStart=%f/SddIA/scripts/daemons/event-watcher.sh"));
         assert!(ew.contains("WorkingDirectory=%f"));
         assert!(!ew.contains("@@DAEMON_NAME@@"));
+        assert!(!ew.contains(&inst));
         assert!(instance
             .join(".SddIA/systemd/sddia-event-sweeper@.service")
             .is_file());
@@ -726,7 +725,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/templates/systemd")).unwrap();
         fs::write(
             repo.join("SddIA/templates/systemd/sddia-email-watcher@.service.template"),
-            "[Service]\nWorkingDirectory=%f\nExecStart=@@SDDIA_CORE_ROOT@@/SddIA/daemons/email-watcher.sh\n",
+            "[Service]\nWorkingDirectory=%f\nExecStart=%f/SddIA/daemons/email-watcher.sh\n",
         )
         .unwrap();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
