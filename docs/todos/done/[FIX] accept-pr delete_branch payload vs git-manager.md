@@ -4,7 +4,7 @@ uuid: "94f74fa6-a063-4d94-96a1-2f4d92ffb692"
 title: "[FIX] accept-pr — payload delete_branch vs contrato git-manager"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 type: bug-fix
 priority: alta
 process: bug-fix
@@ -49,7 +49,7 @@ SSOT de proceso ya correcto: `accept-pr.md` § Fase 4 exige **dos** llamadas `de
 
 | Afirmación | Veredicto | Corrección |
 |------------|-----------|------------|
-| «`remote` debe ser el nombre del remote (`origin`)» | **Falso para `delete_branch`** | En `push`/`pull`/`fetch`, `remote` es **string**. En `delete_branch` (cápsula Rust) `remote` es **boolean** (local vs `git push origin --delete`). Homónimo; no unificar. |
+| «`remote` debe ser el nombre del remote (`origin`)» | **Falso para `delete_branch`** | En `push`/`pull`/`fetch`, `remote` es **string**. En `delete_branch` (cápsula Rust) `remote` es **boolean** (local vs `git origin --delete`). Homónimo; no unificar. |
 | Una sola invocación con `remote: "origin"` borra local y remoto | **Falso** | Claves extra/faltantes → abort cápsula **antes** de `git`. Falta `force`. |
 | El FIX #37 ya curó esto | **Incompleto** | Curó Python + visibilidad `hygiene_failure`. El puerto Rust (`SddIA/engine/execute-process/src/engine/accept_pr.rs` `delete_branch_hygiene`) reintrodujo payload ilegítimo. |
 | `skill-io-git-manager-frozen.md` documenta `delete_branch` | **Falso** | Enum §2: `status`…`branch_list` **sin** `delete_branch`. La cápsula **sí** implementa la op (líneas 178–192). Dualidad norma congelada vs genoma físico. |
@@ -78,7 +78,7 @@ Cápsula (`git-manager` `src/main.rs`):
 
 ```text
 payload_exact(..., ["branch_name", "remote", "force"])
-remote: bool  → true  => git push origin --delete <branch>
+remote: bool  → true  => git origin --delete <branch>
 force:  bool  → false => git branch -d (local)
 ```
 
@@ -113,11 +113,11 @@ remoto: { "branch_name", "remote": true,  "force": false }
 
 ## 4. Criterios de cierre
 
-- [ ] `accept_pr.rs`: **0** `"remote": "origin"` en `delete_branch`. Dos `invoke_git_manager` con booleanos + `force`.
-- [ ] Test unitario del helper (o del handler Fase 4) que falle si el payload no coincide con `payload_exact`.
-- [ ] Smoke/`accept-pr` lab: rama dummy local se borra; remoto ausente no tumba `success: true` del proceso.
-- [ ] `skill-io-git-manager-frozen.md` (SemVer) incluye `delete_branch` **o** documenta exclusión consciente + recorte de cápsula (laudo Mayeuta). Mutación de norma/skill vía `entity-manager`.
-- [ ] `validacion.md` APTO + PBI → `docs/todos/done/` en el **mismo** PR (`bug-fix`).
+- [x] `accept_pr.rs`: **0** `"remote": "origin"` en `delete_branch`. Dos `invoke_git_manager` con booleanos + `force`.
+- [x] Test unitario del helper (o del handler Fase 4) que falle si el payload no coincide con `payload_exact`.
+- [x] Smoke/`accept-pr` lab: rama dummy local se borra; remoto ausente no tumba `success: true` del proceso.
+- [x] `skill-io-git-manager-frozen.md` (SemVer) incluye `delete_branch` **o** documenta exclusión consciente + recorte de cápsula (laudo Mayeuta). Mutación de norma/skill vía `entity-manager`.
+- [x] `validacion.md` APTO + PBI → `docs/todos/done/` en el **mismo** PR (`bug-fix`).
 
 ---
 
