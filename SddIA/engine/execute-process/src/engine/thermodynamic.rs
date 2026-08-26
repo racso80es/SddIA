@@ -11,7 +11,18 @@ fn iso_now() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
-const LIFECYCLE_PROCESSES: &[&str] = &["bug-fix", "feature", "refactorization"];
+const LIFECYCLE_PROCESSES: &[&str] = &[
+    "bug-fix",
+    "feature",
+    "refactorization",
+    "pull-request-review",
+];
+
+fn is_detached_child_run() -> bool {
+    std::env::var("SDDIA_DETACHED_EXECUTION_ID")
+        .map(|v| !v.trim().is_empty())
+        .unwrap_or(false)
+}
 
 fn env_truthy(key: &str) -> bool {
     std::env::var(key)
@@ -148,6 +159,10 @@ pub fn run(
             || phase_reports_lab_skip_closure(phase_reports);
         if is_lab_hollow_sample(process_name, cycle, success, lab_skip_closure) {
             payload["lab_hollow"] = json!(true);
+        }
+        // L-PPR-DETACH-SURVIVAL: hijo foreground post-CLI-detach; KO no envenena Radamanto.
+        if is_detached_child_run() {
+            payload["detached_child"] = json!(true);
         }
         // CA5 / EV-AUD-005: telemetría refleja fase causal (mismo agregador que envelope/PEC).
         if !success {
@@ -353,6 +368,15 @@ mod tests {
     fn derive_none_for_non_lifecycle() {
         let reports = json!([{"status": "simulated"}]);
         assert_eq!(derive_cycle_phase("task-queue-manager", Some(&reports)), None);
+    }
+
+    #[test]
+    fn derive_ppr_simulated_is_initialized() {
+        let reports = json!([{"status": "simulated"}]);
+        assert_eq!(
+            derive_cycle_phase("pull-request-review", Some(&reports)),
+            Some("initialized")
+        );
     }
 
     #[test]
