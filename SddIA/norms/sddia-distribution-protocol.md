@@ -1,11 +1,11 @@
 ---
 uuid: "c17189c7-75ff-46cc-995c-d8b9a8af12e4"
 name: "sddia-distribution-protocol"
-version: "1.2.2"
+version: "1.2.3"
 contract: "knowledge-contract v1.0.0"
-hash_signature: "sha256:pending-evolution-kaizen-aislamiento-multi-instancia"
-evolved_from: "1.2.1"
-laudo_locus: "norm-creator solo materializa directories.library_norms; esta norma Core vive en directories.norms — mutación bajo feature activa kaizen-aislamiento-multi-instancia"
+hash_signature: "sha256:pending-f-bundle-06-telegram-gateway"
+evolved_from: "1.2.2"
+laudo_locus: "norm-creator solo materializa directories.library_norms; esta norma Core vive en directories.norms — mutación bajo bug-fix activo bundle-consumer-telegram-gateway (F-BUNDLE-06)"
 ---
 
 ## Protocolo de Distribución SddIA — Patrón “Vía C”
@@ -61,7 +61,7 @@ Script canónico: `SddIA/scripts/build-release-bundle.sh`.
 Con `--profile consumer`: no incluir lanzador/binario `github-bridge-watcher`. Runtime: `SDDIA_RUNTIME_PROFILE=consumer`.
 
 ### Resolución de cápsulas (F-06)
-El generador lee el códice inyectado (y suscripciones eferentes) y empaqueta dependencias del grafo. Gate mínimo: `send-telegram-notification` (`.md` + binario) verificable.
+El generador lee el códice inyectado (y suscripciones eferentes) y empaqueta dependencias del grafo. Gate mínimo: `send-telegram-notification` (`.md` + binario) verificable. Si `telegram-watcher` ∈ paquete, exigir además `telegram-gateway` (`.md` + binario) — grafo aferente conversacional (F-BUNDLE-06); el escáner eferente no deriva `--process` desde fuentes daemon.
 
 ### Gate ELF fresco (L-BUNDLE-STALE v2 / F-DEP-03)
 - Tras copiar ELF, `strings` sobre centinelas **no** debe contener `execute-process.py`.
