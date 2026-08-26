@@ -3,7 +3,7 @@ document_id: PBI-DT-PACIENTE0-DEPLOY-PROCESS
 uuid: "7bf2bf4c-361e-4967-a58d-89dee74ea60d"
 title: "[DEUDA] Paciente 0 — prompt de despliegue y proceso futuro"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 status: deuda_tecnica
 type: deuda
 priority: alta
@@ -16,10 +16,10 @@ instance_name_default: SddIA_AP
 config_source: /home/racso/Proyectos/.dev/.env
 instance_parent: /home/racso/Proyectos
 audits_path: docs/audits
-last_deploy_audit_ref: docs/audits/paciente0-deploy-20260826T110203Z.md
+last_deploy_audit_ref: docs/audits/paciente0-deploy-20260826T120032Z.md
 last_deploy_ola_verdict: OLA-MEJORA
-post_ola_friction_open: F-BUNDLE-06
-fix_pbi_ref: docs/todos/pending/[FIX] bundle consumidor — telegram-gateway ausente en grafo telegram-watcher.md
+post_ola_friction_open: null
+fix_pbi_ref: docs/todos/done/[FIX] bundle consumidor — telegram-gateway ausente en grafo telegram-watcher.md
 fix_pbi_document_id: PBI-FIX-BUNDLE-TELEGRAM-GATEWAY
 kaizen_pending_ref: null
 kaizen_pending_document_id: null
@@ -35,10 +35,8 @@ tech_debt_ids:
   - DT-SMOKE-ECST-LOCAL-QA
   - DT-SYSTEMD-USER-ENABLE
   - DT-CONFIG-UX-ONBOARDING
-  - DT-BUNDLE-TELEGRAM-GATEWAY
 blocks_on:
   - PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825
-  - PBI-FIX-BUNDLE-TELEGRAM-GATEWAY
 derived_from:
   - PBI-LAB-PACIENTE0-SDDIA-AP
   - PBI-KAIZEN-PACIENTE0-REDEPLOY-20260824
@@ -141,7 +139,7 @@ Localizar el **último** PBI Kaizen de despliegue Paciente 0:
 2. Si no hay pending: `docs/todos/done/` mismo prefijo.
 3. Cargar `friction_ids`, gates, `bundle_manifest`, `instance_creator_*_correlation_id`.
 
-Ese documento es la **línea base** del contraste §6. Snapshot 2026-08-26: done `PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825` (pending homónimo no existe). Última cicatriz de ola: `docs/audits/paciente0-deploy-20260826T110203Z.md`.
+Ese documento es la **línea base** del contraste §6. Snapshot 2026-08-26: done `PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825` (pending homónimo no existe). Última cicatriz de ola: `docs/audits/paciente0-deploy-20260826T120032Z.md`.
 
 ### 2 — Vault staging
 
@@ -234,6 +232,7 @@ Esperado: jurisdicción `systemd`; **exit 0** (el script **no** queda en `wait`)
 | 3 Redeploy post-merge | 2026-08-25 12:01Z | `PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825` (done) | mismo canal; `main` | Instancia OK **tras** pin release; F-DEP-07/08/09/SMOKE-01/SYS-01 |
 | 4 Redeploy wipe | 2026-08-25 13:15Z | `AUDIT-PACIENTE0-DEPLOY-20260825T131532Z` | wipe; instancia ausente | **OLA-ESTABLE** |
 | 5 Redeploy post-aislamiento | 2026-08-26 11:02Z | `AUDIT-PACIENTE0-DEPLOY-20260826T110203Z` | wipe; `main` + merge aislamiento | Gates **OLA-MEJORA**; post-ola Telegram conversacional **F-BUNDLE-06** (FIX lab) |
+| 6 Redeploy post-PR #194 | 2026-08-26 12:00Z | `AUDIT-PACIENTE0-DEPLOY-20260826T120032Z` | wipe; `main` + bundle 8 cápsulas | **OLA-MEJORA**; G-telegram APTO; F-BUNDLE-06 cerrado en runtime |
 
 Cada nueva ejecución de **este prompt** es una **ola N+1**. El contraste §6 la sitúa respecto a la ola Kaizen más reciente.
 
@@ -367,8 +366,9 @@ Wizard UX (`DT-CONFIG-UX-ONBOARDING`). Mutación de genoma (eso es el ciclo `fea
 | `SddIA/process/instance-creator.md` | Fases Topologia–Smoke |
 | `SddIA/scripts/common/sddia_shell_lib.sh` | `_sddia_resolve_orchestrator` (F-DEP-07) |
 | `SddIA/core/cumulo.paths.json` | `auditsPath`, `featurePath` |
+| `docs/audits/paciente0-deploy-20260826T120032Z.md` | Ola 6 + G-telegram APTO |
 | `docs/audits/paciente0-deploy-20260826T110203Z.md` | Ola 5 + post-ola Telegram |
-| `docs/todos/pending/[FIX] bundle consumidor — telegram-gateway ausente en grafo telegram-watcher.md` | F-BUNDLE-06 / FIX lab |
+| `docs/todos/done/[FIX] bundle consumidor — telegram-gateway ausente en grafo telegram-watcher.md` | F-BUNDLE-06 cerrado (PR #194 + ola 6) |
 | `docs/todos/done/[KAIZEN] Paciente 0 SddIA_AP — redeploy 20260825 y fricciones.md` | Kaizen baseline deploy |
 | `docs/todos/done/[LABORATORIO] MVP Paciente 0 SddIA_AP.md` | Ola 0 |
 | `docs/audits/kaizen-paciente0-redeploy-20260825.md` | Ola 2 T6 |
@@ -381,4 +381,4 @@ Wizard UX (`DT-CONFIG-UX-ONBOARDING`). Mutación de genoma (eso es el ciclo `fea
 - [x] Prompt copiable (§1) + procedimiento (§3) + gates + contraste de olas + audit + Kaizen condicional.
 - [ ] Proceso `paciente0-deploy` forjado vía `entity-manager` (ciclo feature distinto).
 - [ ] Absorción F-DEP-07/08/09 en Core (`PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825`) — **bloquea** la eliminación de mitigaciones del prompt.
-- [ ] Absorción F-BUNDLE-06 (`PBI-FIX-BUNDLE-TELEGRAM-GATEWAY`) — **bloquea** G-telegram APTO en consumidor sin workaround.
+- [x] Absorción F-BUNDLE-06 (`PBI-FIX-BUNDLE-TELEGRAM-GATEWAY`) — validado ola 6 (G-telegram APTO, bundle 8 cápsulas, sin copia manual ELF).
