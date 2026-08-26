@@ -121,3 +121,81 @@ notes: "idempotent-hit-handoff"
 - F2 cascada: objectives/spec/plan(N/A)/implementation/execution **APTO**
 - Residuo honesto: `pbi_archived: false` (PBI aún en `pending/`); DOC_EVOLUTION / CA smoke previos = no bloqueantes F2
 ```
+
+## 2026-08-26T11:42:00Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `59606407-eed3-4da8-ac13-3cf6205b2147`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: ok** — PASS_F4_RBAC · exitCode 0 · 5 loci / 0 bloqueos · DCC∉revoked · PPR∈permanent+revoked NO_APTO (dedup #190)
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F4_RBAC` · `exitCode: 0` · `F4_RBAC_GATE: APTO`)
+
+1. Tocados: `validacion.md` (+ stamp `_agent_handoff.md`); Cerbero 0 writes `docs/todos/**`.
+2. R1/R2: copia Evidence Bridge `native_state` @ 11:36:49Z → TECH_FORMAL + GIT_EVIDENCE **APTO**.
+3. Shell `./sddia-run.sh --tool git-manager` → Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO` (sin stdout inventado).
+4. E1/E2: VBR + DCC ∉ revoked; VBR×scripts/norms/docs/evolution/todos **PASS** (5 loci / 0 bloqueos).
+5. `RBAC_PROCESS_REGISTRY: NO_APTO` — PPR∈permanent+revoked → **dedup** PPR #190 (no siembra); bug-fix/refactorization alertas laterales.
+6. PBI en `done/` · `pbi_archived: true` (FS); F3 NO_APTO no bloqueante; `delivery_state: pending_downstream_phases` · CID `59606407…` · PR #194.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-26T11:42:00Z"
+source: prosthesis_subprocess-evidence-bridge
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+RBAC_CERBERO_CERT: APTO
+F4_RBAC_GATE: APTO
+rbac_exit_code: 0
+genome_areas_audited: 5
+genome_blocks: 0
+revoked_entity_alert: "pull-request-review (permanent+revoked since 2026-08-25) dedup PPR #190; bug-fix (revoked tool since 2026-08-16T16:09:32Z); refactorization (revoked since 2026-08-20T05:48:56Z)"
+notes: "Shell git-manager Rejected esta sesión Cerbero F4; R1/R2 copia machine Argos F2 native_state/prosthesis; sin stdout inventado; PASS_F4_RBAC · CID 59606407"
+```
+
+## 2026-08-26T11:42:14Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `59606407-eed3-4da8-ac13-3cf6205b2147`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. PBI en `done/` · `pbi_archived: true` (FS); F3 NO_APTO no bloqueante; `delivery_state: pending_downstream_phases`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F4_RBAC` · `exitCode: 0`)
+
+1. Tocados: `docs/fixes/bundle-consumer-telegram-gateway/validacion.md` + stamp `_agent_handoff.md`.
+2. Cerbero 0 writes `docs/todos/**`.
+3. R1/R2: Evidence Bridge `native_state` → TECH_FORMAL + GIT_EVIDENCE **APTO**; Shell `git-manager` Rejected → SESSION_SHELL **NO_APTO** (sin stdout inventado).
+4. VBR×5 loci (scripts/norms/docs/evolution/todos) / 0 bloqueos; DCC∉revoked; PPR∈permanent+revoked → dedup #190.
+5. PBI en `done/` · `pbi_archived: true` (FS); F3 NO_APTO no bloqueante; `delivery_state: pending_downstream_phases`.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-26T11:42:14Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
