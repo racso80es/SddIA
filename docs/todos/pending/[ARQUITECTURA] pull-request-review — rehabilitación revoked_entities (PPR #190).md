@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities 
 format: markdown
 version: "1.1.0"
 created: "2026-08-25"
-updated: "2026-08-26T08:30:00Z"
+updated: "2026-08-26T11:48:00Z"
 status: pending
 priority: alta
 process: refactorization
@@ -69,6 +69,7 @@ Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · `ka
 
 | Sighting | CID | Nota |
 |----------|-----|------|
+| Cosecha PR #194 | `59606407-eed3-4da8-ac13-3cf6205b2147` | `@ 2026-08-26T11:48:00Z` · bundle-consumer-telegram-gateway · 0 create · affirm #190 · Cerbero permanent+revoked OK · accept_pr_handoff true |
 | Cosecha PR #193 | `d994ca73-e566-4955-bfe0-dc11678c7e87` | `@ 2026-08-26T08:30:00Z` · kaizen-aislamiento-multi-instancia · 0 create · affirm #190 · Cerbero permanent+revoked OK · Merged 3555239d |
 | Cosecha reinject PR #192 | `d4f010fb-7118-4d9a-831f-1d1255b79465` | `@ 2026-08-26T07:35:00Z` · kaizen-ignicion-soberana-centinelas · 0 create · affirm #190 · Cerbero permanent+revoked OK |
 | Cosecha PR #192 | `d4f010fb-7118-4d9a-831f-1d1255b79465` | `@ 2026-08-26T07:35:00Z` · kaizen-ignicion-soberana-centinelas · 0 create · FS permanent+revoked confirmado · peaje validacion KAIZEN_COSECHA_GATE |

@@ -1,76 +1,171 @@
-Refinar pbi fix con el siguiente error al pasar test de PR wn github test eda-bus-e2e-smoke
+---
+document_id: PBI-FIX-EDA-BUS-E2E-SMOKE-WASI-BUILD
+uuid: "b9e4d3f2-5c6a-7b8e-9f0d-1e2f3a4b5c6d"
+title: "[FIX] eda-bus-e2e-smoke — build WASI workspace bloquea E2E lab"
+format: markdown
+version: "1.1.0"
+status: pending
+type: bug-fix
+priority: alta
+process: bug-fix
+persist_ref: docs/fixes/eda-bus-e2e-smoke-wasi-build-block
+created: "2026-08-26"
+updated: "2026-08-26"
+pbi_archived: false
+derived_from:
+  - PBI-KAIZEN-EDA-BUS-E2E-WASMTIME-FALLBACK
+  - PBI-FIX-WASI-RUNTIME-SMOKE
+incident_ref: "PR #194 — job eda-bus-e2e-smoke FAIL exit 101; E2E lab nunca ejecutado"
+audit_ref: docs/fixes/bundle-consumer-telegram-gateway/validacion.md
+workflow: .github/workflows/sddia-index-qa.yml
+job_name: eda-bus-e2e-smoke
+ci_run_id: "32964510993"
+ci_job_id: "98163957132"
+related_pbi: docs/todos/pending/[Fix] wasi-runtime-somke.md
+friction_ids:
+  - F-CI-EDA-E2E-WASI-BUILD
+tech_debt_ids:
+  - DT-WASI-NATIVE-DAEMON-SPLIT
+blocks_on: []
+---
 
-warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
-package:   /home/runner/work/SddIA/SddIA/SddIA/tools/wasi-poc/Cargo.toml
-workspace: /home/runner/work/SddIA/SddIA/SddIA/Cargo.toml
-    Updating crates.io index
- Downloading crates ...
-  Downloaded bufstream v0.1.4
-  Downloaded arrayvec v0.5.2
-  Downloaded base64 v0.13.1
-  Downloaded bitflags v1.3.2
-  Downloaded bitflags v2.11.1
-  Downloaded cfg_aliases v0.2.2
-  Downloaded native-tls v0.2.18
-  Downloaded foreign-types v0.3.2
-  Downloaded ctrlc v3.5.2
-  Downloaded pkg-config v0.3.34
-  Downloaded imap-proto v0.10.2
-  Downloaded openssl-macros v0.1.1
-  Downloaded foreign-types-shared v0.1.1
-  Downloaded openssl-probe v0.2.1
-  Downloaded static_assertions v1.1.0
-  Downloaded imap v2.4.1
-  Downloaded openssl-sys v0.9.117
-  Downloaded nom v5.1.3
-  Downloaded vcpkg v0.2.15
-  Downloaded openssl v0.10.81
-  Downloaded nix v0.31.3
-  Downloaded lexical-core v0.7.6
-   Compiling proc-macro2 v1.0.106
-   Compiling quote v1.0.45
-   Compiling unicode-ident v1.0.24
-   Compiling cfg-if v1.0.4
-   Compiling serde_core v1.0.228
-   Compiling memchr v2.8.1
-   Compiling serde v1.0.228
-   Compiling zmij v1.0.21
-   Compiling serde_json v1.0.150
-   Compiling itoa v1.0.18
-   Compiling getrandom v0.4.2
-   Compiling uuid v1.23.2
-   Compiling syn v2.0.117
-   Compiling autocfg v1.5.1
-   Compiling version_check v0.9.5
-  Could not find openssl via pkg-config:
+# [FIX] `eda-bus-e2e-smoke` — build WASI workspace bloquea E2E lab
+
+## 0. Contexto
+
+Empiría **2026-08-26** en PR #194 (`fix/bundle-consumer-telegram-gateway`). El job `eda-bus-e2e-smoke` falla en el **mismo paso** que `wasi-runtime-smoke`: compilación WASI del workspace completo. El fix de bundle telegram-gateway **no** modifica workflow ni `email-watcher`.
+
+### Rol del job en la arquitectura CI
+
+| Aspecto | `eda-bus-e2e-smoke` | `wasi-runtime-smoke` |
+|---------|---------------------|----------------------|
+| **Propósito** | Smoke **EDA bus** end-to-end: emisión domain → route → suscriptores (lab simulado) | Certificación **ejecución WASI física** (`SDDIA_CI_REQUIRE_WASI=1`) |
+| **Runtime WASM** | Fallback permitido (Python / nativo si wasmtime falla — PR #83) | WASI **obligatorio** |
+| **Paso compartido que falla** | `Build WASI workspace` | `Build WASI workspace` |
+| **Smoke propio** | `sddia-qa run-eda-e2e-lab --entity-class tool --json` | `sddia-qa run-wasi-ci-smoke --json` |
+| **Extra** | `event-sweeper --once` | `gate-evolution --range` |
+
+Ambos jobs comparten cache key `wasi-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}` y el comando:
+
+```bash
+cd SddIA && cargo build --workspace --target wasm32-wasip1
+```
+
+**Relación con fix anterior (PR #83):** el Kaizen `eda-bus-e2e-wasmtime-fallback` resolvió `wasmtime` ausente en **runtime** (`cryptography-manager` fallback). El fallo actual es en **compilación** previa: el workspace WASI no llega a construirse.
+
+---
+
+## 1. Fricción
+
+| ID | Síntoma | Causa raíz | Ad-hoc (no persistir) | Acción |
+|----|---------|------------|----------------------|--------|
+| **F-CI-EDA-E2E-WASI-BUILD** | Job `eda-bus-e2e-smoke` FAIL ~43s; cero evidencia E2E | `cargo build --workspace --target wasm32-wasip1` arrastra `email-watcher` → `openssl-sys` incompatible con WASI | Desactivar job en workflow temporalmente | Unificar fix con `PBI-FIX-WASI-RUNTIME-SMOKE` (mismo DT) |
+
+---
+
+## 2. Comportamiento producido (log CI)
+
+### 2.1 Secuencia del job (esperada vs real)
+
+| # | Step workflow | Esperado | Real PR #194 |
+|---|---------------|----------|--------------|
+| 1 | checkout + rust-toolchain (`wasm32-wasip1`) | OK | OK |
+| 2 | Install wasmtime | OK | OK |
+| 3 | cache restore | OK | OK |
+| 4 | **Build WASI workspace** | ELF `.wasm` para skills/tools | **FAIL exit 101** |
+| 5 | Build nativos (`event-watcher`, `execute-process`, `sddia-qa`) | — | **no ejecutado** |
+| 6 | **EDA E2E lab (simulate)** | `run-eda-e2e-lab` JSON success | **no ejecutado** |
+| 7 | **event-sweeper --once** | sweep idempotente | **no ejecutado** |
+
+### 2.2 Error canónico (run `32964510993`, job `98163957132`)
+
+Mismo bloqueo que `wasi-runtime-smoke`:
+
+```text
+   Compiling openssl-sys v0.9.117
+error: failed to run custom build command for `openssl-sys v0.9.117`
+
+Could not find openssl via pkg-config:
   pkg-config has not been configured to support cross-compilation.
 
-  Install a sysroot for the target platform and configure it via
-  PKG_CONFIG_SYSROOT_DIR and PKG_CONFIG_PATH, or install a
-  cross-compiling wrapper for pkg-config and set it via
-  PKG_CONFIG environment variable.
+$HOST = x86_64-unknown-linux-gnu
+$TARGET = wasm32-wasip1
+openssl-sys = 0.9.117
 
-  cargo:warning=Could not find directory of OpenSSL installation, and this `-sys` crate cannot proceed without this knowledge. If OpenSSL is installed and this crate had trouble finding it,  you can set the `OPENSSL_DIR` environment variable for the compilation process. See stderr section below for further information.
-
-  --- stderr
-
-
-  Could not find directory of OpenSSL installation, and this `-sys` crate cannot
-  proceed without this knowledge. If OpenSSL is installed and this crate had
-  trouble finding it,  you can set the `OPENSSL_DIR` environment variable for the
-  compilation process.
-
-  Make sure you also have the development packages of openssl installed.
-  For example, `libssl-dev` on Ubuntu or `openssl-devel` on Fedora.
-
-  If you're in a situation where you think the directory *should* be found
-  automatically, please open a bug at https://github.com/rust-openssl/rust-openssl
-  and include information about your system as well as this message.
-
-  $HOST = x86_64-unknown-linux-gnu
-  $TARGET = wasm32-wasip1
-  openssl-sys = 0.9.117
-
-
-warning: build failed, waiting for other jobs to finish...
 Error: Process completed with exit code 101.
+```
+
+Dependencias descargadas en el mismo job incluyen `imap`, `native-tls`, `openssl` — traza de `email-watcher`, no del smoke E2E en sí.
+
+### 2.3 Qué **no** es este fallo
+
+| Hipótesis | Evidencia contra |
+|-----------|------------------|
+| Falta `wasmtime` en PATH | wasmtime se instala; fallo antes de smoke |
+| Payload ECST `emit-domain-mutation` | Fix previo `fix-eda-bus-e2e-smoke-entity-payload`; E2E lab no llegó a ejecutar |
+| Fallback `cryptography-manager` | PR #83; runtime no alcanzado |
+| Regresión `telegram-gateway` / bundle | Cambios solo en `build-release-bundle.sh`; no en workspace WASI |
+| Topología local vs suscriptores | Kaizen histórico distinto; job no ejecuta sweep |
+
+### 2.4 Impacto operativo
+
+- PRs pueden mergearse vía `accept-pr` local con jobs WASI en rojo (observado PR #194).
+- **No hay** señal CI de salud del bus EDA ni de `event-sweeper` en main hasta corregir el paso de build.
+- Jobs nativos (`verify-tools-index`, `eda-iota-*`) siguen verdes → el defecto está acotado al grafo WASI del workflow.
+
+---
+
+## 3. Alcance del fix (propuesta)
+
+**Unificar con `PBI-FIX-WASI-RUNTIME-SMOKE`** — un solo parche workflow/workspace recomendado.
+
+| Artefacto | Cambio |
+|-----------|--------|
+| `.github/workflows/sddia-index-qa.yml` | En **ambos** jobs `wasi-runtime-smoke` y `eda-bus-e2e-smoke`: build WASI solo de paquetes migrados; excluir `email-watcher` y daemons nativos |
+| Alternativa | Paso `Build WASI workspace` solo en `wasi-runtime-smoke`; `eda-bus-e2e-smoke` omite WASI build y confía en fallback (alineado con espíritu PR #83) — **validar** que `run-eda-e2e-lab` no exige `.wasm` frescos del workspace completo |
+| `docs/fixes/eda-bus-e2e-wasmtime-fallback/` | Nota: fallback runtime ≠ build workspace |
+
+---
+
+## 4. Criterios de aceptación
+
+- [ ] Job `eda-bus-e2e-smoke` SUCCESS en PR de verificación.
+- [ ] `sddia-qa run-eda-e2e-lab --entity-class tool --json` ejecuta y acusa success.
+- [ ] `event-sweeper --once --json` ejecuta tras E2E lab.
+- [ ] Fix compartido con `wasi-runtime-smoke` documentado (un PR o dos PBIs cerrados en el mismo merge).
+- [ ] Sin regresión en fallback wasmtime (si se mantiene path sin WASI build en este job).
+
+---
+
+## 5. Referencias
+
+| Ref | Uso |
+|-----|-----|
+| `docs/todos/pending/[Fix] wasi-runtime-somke.md` | Misma causa raíz; fix unificado |
+| `docs/todos/done/[Kaizen] eda-bus-e2e-smoke — fallback cryptography-manager sin wasmtime.md` | Contexto fallback runtime |
+| `docs/todos/done/[Kaizen] eda-bus-e2e-smoke — topología local vs suscriptores core y sweep vacío.md` | Historial E2E distinto |
+| `docs/fixes/fix-eda-bus-e2e-smoke-entity-payload/` | Fix payload ECST (ya cerrado) |
+| `.github/workflows/sddia-index-qa.yml` L116–153 | Definición job |
+| PR #194 | Incidente |
+
+---
+
+## 6. Log crudo (referencia)
+
+<details>
+<summary>Fragmento PR #194 eda-bus-e2e-smoke (truncado)</summary>
+
+```text
+warning: profiles for the non root package will be ignored…
+  Downloaded openssl-sys v0.9.117
+  Downloaded imap v2.4.1
+  Downloaded native-tls v0.2.18
+  Could not find openssl via pkg-config:
+  pkg-config has not been configured to support cross-compilation.
+…
+$TARGET = wasm32-wasip1
+openssl-sys = 0.9.117
+Error: Process completed with exit code 101.
+```
+
+</details>

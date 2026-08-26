@@ -221,3 +221,66 @@ notes: "idempotent-hit"
 4. F2/F4 **APTO**; F3 **NO_APTO** no bloqueante; `accept_pr_handoff: true` (merge ausente).
 5. Residuos no bloqueantes: Shell `git-manager` Rejected; `BRANCH_WORKTREE_SYNC` NO_APTO (`.git/HEAD`→`main`); PPR dedup #190.
 ```
+
+## 2026-08-26T11:48:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `59606407-eed3-4da8-ac13-3cf6205b2147`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 2` · `dedup: 3` · downstream Handoff `accept-pr` PR #194
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: `ok`** (CID 59606407…)
+
+1. `docs/fixes/bundle-consumer-telegram-gateway/validacion.md` — fase Cosecha Kaizen; `KAIZEN_COSECHA_GATE`; `kaizen_seeds: 2`; `dedup: 3`.
+2. Semillas nuevas: `accept-pr` + `bug-fix` revoked registry (PPR #194) bajo `docs/todos/pending/`.
+3. Dedup: #190 (sighting) + #186 refactorization + #136 Shell/F3.
+4. DIA: sin `Kaizen_Alert_Required` para este CID.
+5. Shell `git-manager` Rejected → R1/R2 Evidence Bridge native_state (sin stdout inventado).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-26T11:48:00Z"
+source: native_state-evidence-bridge
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+KAIZEN_COSECHA_GATE: APTO
+notes: "Cosecha Kaizen CID 59606407; Shell git-manager Rejected; R1/R2 Argos F5 native_state; kaizen_seeds 2 · dedup 3 (#190+#186+#136); seeds accept-pr+bug-fix PPR #194"
+kaizen_seeds: 2
+kaizen_seeds_dedup: 3
+```
+
+## 2026-08-26T11:49:23Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `59606407-eed3-4da8-ac13-3cf6205b2147`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 6. Shell `git-manager` Rejected → R1/R2 Evidence Bridge (sin stdout inventado). Handoff pendiente con riesgo `accept-pr` revocado.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 2` · `dedup: 3`
+
+1. `validacion.md` — peaje Cosecha; `accept_pr_handoff: true` heredado F5.
+2. `_agent_handoff.md` — stamp Cosecha + runtime evidence.
+3. **Create:** `docs/todos/pending/[ARQUITECTURA] accept-pr — … (PPR #194).md` (`accept-pr`∈revoked since `11:42:26Z`).
+4. **Create:** `docs/todos/pending/[ARQUITECTURA] bug-fix — … (PPR #194).md`.
+5. **Dedup/sighting:** #190 (+fila PR #194); #186; #136. Sin DIA/`Kaizen_Alert_Required`.
+6. Shell `git-manager` Rejected → R1/R2 Evidence Bridge (sin stdout inventado). Handoff pendiente con riesgo `accept-pr` revocado.
+```
