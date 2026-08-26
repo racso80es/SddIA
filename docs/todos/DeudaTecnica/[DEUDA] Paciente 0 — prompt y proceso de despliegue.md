@@ -3,7 +3,7 @@ document_id: PBI-DT-PACIENTE0-DEPLOY-PROCESS
 uuid: "7bf2bf4c-361e-4967-a58d-89dee74ea60d"
 title: "[DEUDA] Paciente 0 — prompt de despliegue y proceso futuro"
 format: markdown
-version: "1.0.0"
+version: "1.1.0"
 status: deuda_tecnica
 type: deuda
 priority: alta
@@ -11,15 +11,20 @@ process: null
 process_candidate: paciente0-deploy
 process_candidate_class: process
 created: "2026-08-25"
-updated: "2026-08-25"
+updated: "2026-08-26"
 instance_name_default: SddIA_AP
 config_source: /home/racso/Proyectos/.dev/.env
 instance_parent: /home/racso/Proyectos
 audits_path: docs/audits
-kaizen_pending_ref: docs/todos/pending/[KAIZEN] Paciente 0 SddIA_AP — redeploy 20260825 y fricciones.md
-kaizen_pending_document_id: PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825
-last_kaizen_done_ref: docs/todos/done/[KAIZEN] Paciente 0 SddIA_AP — redeploy y fricciones operativas.md
-last_kaizen_done_document_id: PBI-KAIZEN-PACIENTE0-REDEPLOY-20260824
+last_deploy_audit_ref: docs/audits/paciente0-deploy-20260826T110203Z.md
+last_deploy_ola_verdict: OLA-MEJORA
+post_ola_friction_open: F-BUNDLE-06
+fix_pbi_ref: docs/todos/pending/[FIX] bundle consumidor — telegram-gateway ausente en grafo telegram-watcher.md
+fix_pbi_document_id: PBI-FIX-BUNDLE-TELEGRAM-GATEWAY
+kaizen_pending_ref: null
+kaizen_pending_document_id: null
+last_kaizen_done_ref: docs/todos/done/[KAIZEN] Paciente 0 SddIA_AP — redeploy 20260825 y fricciones.md
+last_kaizen_done_document_id: PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825
 antecesor_persist_ref: docs/features/kaizen-paciente0-redeploy-fricciones
 antecesor_audit_ref: docs/audits/kaizen-paciente0-redeploy-20260825.md
 tech_debt_ids:
@@ -30,8 +35,10 @@ tech_debt_ids:
   - DT-SMOKE-ECST-LOCAL-QA
   - DT-SYSTEMD-USER-ENABLE
   - DT-CONFIG-UX-ONBOARDING
+  - DT-BUNDLE-TELEGRAM-GATEWAY
 blocks_on:
   - PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825
+  - PBI-FIX-BUNDLE-TELEGRAM-GATEWAY
 derived_from:
   - PBI-LAB-PACIENTE0-SDDIA-AP
   - PBI-KAIZEN-PACIENTE0-REDEPLOY-20260824
@@ -70,6 +77,8 @@ Mitigaciones vigentes (Kaizen 20260825, aún no absorbidas en Core):
 - Ignición: env -u SDDIA_EXECUTE_PROCESS_BIN (o pin al ELF del BUNDLE instancia) (F-DEP-09).
 - systemctl --user: copiar unidad renderizada → ~/.config/systemd/user/ y enable --now (F-SYS-01).
 - Lab email-watcher@…SddIA: no dejar active (R-07).
+- Lab telegram-watcher@…SddIA: puede coexistir con AP **solo** si `TELEGRAM_BOT_TOKEN` lab ≠ instancia (mismo `TELEGRAM_ALLOWED_CHAT_ID` permitido). Si tokens iguales → stop/disable lab (R-07 análogo).
+- Legado `sddia-daemon@telegram-watcher`: stop/disable si active (higiene pre-ignición soberana).
 
 Cierre del estímulo:
 1) Validaciones habituales (este documento §5).
@@ -132,7 +141,7 @@ Localizar el **último** PBI Kaizen de despliegue Paciente 0:
 2. Si no hay pending: `docs/todos/done/` mismo prefijo.
 3. Cargar `friction_ids`, gates, `bundle_manifest`, `instance_creator_*_correlation_id`.
 
-Ese documento es la **línea base** del contraste §6. Snapshot 2026-08-25: pending `PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825`.
+Ese documento es la **línea base** del contraste §6. Snapshot 2026-08-26: done `PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825` (pending homónimo no existe). Última cicatriz de ola: `docs/audits/paciente0-deploy-20260826T110203Z.md`.
 
 ### 2 — Vault staging
 
@@ -222,7 +231,9 @@ Esperado: jurisdicción `systemd`; **exit 0** (el script **no** queda en `wait`)
 | 0 Ensayo | 2026-08-20 | `PBI-LAB-PACIENTE0-SDDIA-AP` | clone + build debug, no bundle hermético | APTO laboratorio; G5 lote sin `actionable` (F-03) |
 | 1 Redeploy | 2026-08-24 | `PBI-KAIZEN-PACIENTE0-REDEPLOY-20260824` | bundle+creator; parches instancia | WUI OK; F-DEP-01…06; G5 reunión → `passive` |
 | 2 Absorción T6 | 2026-08-25 a.m. | audit `kaizen-paciente0-redeploy-20260825` + feature merge | bundle fresco + creator release | F-DEP-01…04 y F-TRIAGE-01 absorbidos; G5 sintético `actionable` |
-| 3 Redeploy post-merge | 2026-08-25 12:01Z | `PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825` (pending) | mismo canal; `main` | Instancia OK **tras** pin release; F-DEP-07/08/09/SMOKE-01/SYS-01 |
+| 3 Redeploy post-merge | 2026-08-25 12:01Z | `PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825` (done) | mismo canal; `main` | Instancia OK **tras** pin release; F-DEP-07/08/09/SMOKE-01/SYS-01 |
+| 4 Redeploy wipe | 2026-08-25 13:15Z | `AUDIT-PACIENTE0-DEPLOY-20260825T131532Z` | wipe; instancia ausente | **OLA-ESTABLE** |
+| 5 Redeploy post-aislamiento | 2026-08-26 11:02Z | `AUDIT-PACIENTE0-DEPLOY-20260826T110203Z` | wipe; `main` + merge aislamiento | Gates **OLA-MEJORA**; post-ola Telegram conversacional **F-BUNDLE-06** (FIX lab) |
 
 Cada nueva ejecución de **este prompt** es una **ola N+1**. El contraste §6 la sitúa respecto a la ola Kaizen más reciente.
 
@@ -235,7 +246,7 @@ No secretos. Fallo = NO APTO de ola (sigue §8).
 | ID | Check | Criterio APTO |
 |----|--------|----------------|
 | G0-config | `CONFIG_SOURCE` existe; staging copió vault | `vault_env_present`; claves IMAP/LLM en instancia (nombres, no valores) |
-| G-bundle | integridad artefacto | 0 `.rs`; `PY_LEAK=no`; `MANIFEST.json`; Filtro C sin `github-bridge-watcher` |
+| G-bundle | integridad artefacto | 0 `.rs`; `PY_LEAK=no`; `MANIFEST.json`; Filtro C sin `github-bridge-watcher`; **si** `telegram-watcher` ∈ manifest → ELF + `.md` `telegram-gateway` bajo `SddIA/target` (F-BUNDLE-06) |
 | G1 | topología | `.SddIA/`, `.events/{domain,orchestration,telemetry,pending}/`; `local.paths.json` no `{}` |
 | G2 | ley local | `constitution.json` `product=SddIA_AP`; códice `codex-kalma2-assistant` en `.SddIA/library/codexes/` |
 | G3 | WUI + EDA | HTTP 200 en `:${WUI_PORT}`; log ignición `route-domain` / `route-telemetry` enruta; 0 `cargo build` |
@@ -243,8 +254,11 @@ No secretos. Fallo = NO APTO de ola (sigue §8).
 | G4 | Filtro C | sin `github-bridge`; instancia sin `AGENT_RUNTIME_*`; sin `codex-software-engineering` en códices locales |
 | G-orch | resolución ELF | creator usó **release** (o cicatriz vigente); ignición **sin** ELF forja si se aisló env (F-DEP-09) |
 | G5 | First Blood | **Opcional** en redeploy rutinario (DA-5). Si se ejecuta: reunión estructural → `actionable` (antecesor T6). No esperar IMAP en bucle. |
+| G-telegram | conversacional bot instancia | **Opcional** post-ola (DA-5). `./sddia-run.sh --process telegram-gateway --inputs '{"text":"…"}'` → `success:true` `emitted:true`; o mensaje al bot → journal sin `gateway rc=1` y respuesta Tormentosa/Aiúa. **No** sustituye gate correo→`send-telegram-notification` (canal distinto). |
 
 Smoke creator `Local_QA_Requested` → DLQ `payload.branch` = **F-SMOKE-01** conocido: no tumba G3 si EDA real enruta; sí se anota en contraste.
+
+**Telegram multi-instancia:** tokens distintos lab vs instancia → watchers `@forja` y `@AP` pueden coexistir. Mismo `TELEGRAM_ALLOWED_CHAT_ID` es válido (un operador, dos bots). Correo→Telegram usa `send-telegram-notification` (suele APTO); chat entrante usa `telegram-watcher` → `telegram-gateway` (validar G-telegram / F-BUNDLE-06).
 
 ---
 
@@ -269,7 +283,7 @@ Para cada ID del Kaizen baseline y cada gate G*:
 
 IDs mínimos a contrastar (unión del último Kaizen + gates §5):
 
-`F-DEP-01` … `F-DEP-09`, `F-DEP-05`, `F-SMOKE-01`, `F-SYS-01`, `F-TRIAGE-01`…`03` (si G5), G0–G4, G3b, G-orch, G-bundle.
+`F-DEP-01` … `F-DEP-09`, `F-DEP-05`, `F-SMOKE-01`, `F-SYS-01`, `F-BUNDLE-06` (si G-telegram auditado), `F-TRIAGE-01`…`03` (si G5), G0–G4, G3b, G-orch, G-bundle, G-telegram (opcional).
 
 ### 6.3 Veredicto valorativo de ola
 
@@ -292,13 +306,15 @@ Crear `{paths.auditsPath}/paciente0-deploy-{STAMP}.md` (`docs/audits/`, Cúmulo 
 
 Frontmatter mínimo: `document_id`, `uuid` v4, `created`, `instance_path`, `bundle_manifest`, `instance_creator_correlation_id`, `ola_verdict`, `kaizen_baseline_document_id`, `wave_matrix_ref` (este archivo o tabla embebida).
 
-Cuerpo: canal usado; mitigaciones aplicadas (pin release, unlink `{}`, `env -u`); gates §5; **matriz §6.2 + veredicto §6.3**; fricciones nuevas si las hay; qué **no** se hizo (p. ej. G5). Cero secretos. No reescribir audits T6 previos; este archivo es la cicatriz de **esta** ola.
+Cuerpo: canal usado; mitigaciones aplicadas (pin release, unlink `{}`, `env -u`); gates §5; **matriz §6.2 + veredicto §6.3**; fricciones nuevas si las hay; **§ post-ola sensorial** (Telegram/correo, tokens distintos, F-BUNDLE-06); qué **no** se hizo (p. ej. G5). Cero secretos. No reescribir audits T6 previos; este archivo es la cicatriz de **esta** ola.
 
 ---
 
 ## 8. PBI Kaizen pendiente (condicional)
 
 **Generar** `docs/todos/pending/[KAIZEN] Paciente 0 ${INSTANCE_NAME} — redeploy {STAMP} y fricciones.md` **si y solo si** §6.3 ∈ {`OLA-REGRESIÓN`, `OLA-NUEVA-FRICCIÓN`} **o** el Kaizen pending vigente quedó obsoleto (nueva bitácora que no cabe en un apéndice).
+
+**Excepción post-ola (no Kaizen redeploy):** fricción **F-BUNDLE-06** (cápsula `telegram-gateway` ausente en bundle consumidor) → **FIX lab** `PBI-FIX-BUNDLE-TELEGRAM-GATEWAY` vía `bug-fix` en forja; no duplicar Kaizen Paciente 0 ni parchear `SddIA/` en instancia.
 
 Estructura (antecesor `docs/features/kaizen-paciente0-redeploy-fricciones` + PBI 20260824/20260825):
 
@@ -351,8 +367,9 @@ Wizard UX (`DT-CONFIG-UX-ONBOARDING`). Mutación de genoma (eso es el ciclo `fea
 | `SddIA/process/instance-creator.md` | Fases Topologia–Smoke |
 | `SddIA/scripts/common/sddia_shell_lib.sh` | `_sddia_resolve_orchestrator` (F-DEP-07) |
 | `SddIA/core/cumulo.paths.json` | `auditsPath`, `featurePath` |
-| `docs/todos/pending/[KAIZEN] Paciente 0 SddIA_AP — redeploy 20260825 y fricciones.md` | Kaizen baseline actual |
-| `docs/todos/done/[KAIZEN] Paciente 0 SddIA_AP — redeploy y fricciones operativas.md` | Ola 1 |
+| `docs/audits/paciente0-deploy-20260826T110203Z.md` | Ola 5 + post-ola Telegram |
+| `docs/todos/pending/[FIX] bundle consumidor — telegram-gateway ausente en grafo telegram-watcher.md` | F-BUNDLE-06 / FIX lab |
+| `docs/todos/done/[KAIZEN] Paciente 0 SddIA_AP — redeploy 20260825 y fricciones.md` | Kaizen baseline deploy |
 | `docs/todos/done/[LABORATORIO] MVP Paciente 0 SddIA_AP.md` | Ola 0 |
 | `docs/audits/kaizen-paciente0-redeploy-20260825.md` | Ola 2 T6 |
 | `docs/features/kaizen-paciente0-redeploy-fricciones/` | Estructura documental Kaizen |
@@ -364,3 +381,4 @@ Wizard UX (`DT-CONFIG-UX-ONBOARDING`). Mutación de genoma (eso es el ciclo `fea
 - [x] Prompt copiable (§1) + procedimiento (§3) + gates + contraste de olas + audit + Kaizen condicional.
 - [ ] Proceso `paciente0-deploy` forjado vía `entity-manager` (ciclo feature distinto).
 - [ ] Absorción F-DEP-07/08/09 en Core (`PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825`) — **bloquea** la eliminación de mitigaciones del prompt.
+- [ ] Absorción F-BUNDLE-06 (`PBI-FIX-BUNDLE-TELEGRAM-GATEWAY`) — **bloquea** G-telegram APTO en consumidor sin workaround.
