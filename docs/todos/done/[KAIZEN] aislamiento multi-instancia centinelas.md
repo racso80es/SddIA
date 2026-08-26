@@ -4,14 +4,14 @@ uuid: "b5d19318-a0fd-440b-9aac-8c6d93f775ed"
 title: "[KAIZEN] Aislamiento multi-instancia de centinelas (forja + clientes coexistentes)"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 type: kaizen
 priority: alta
 process: feature
 persist_ref: docs/features/kaizen-aislamiento-multi-instancia
 created: "2026-08-26"
 updated: "2026-08-26"
-pbi_archived: false
+pbi_archived: true
 derived_from:
   - PBI-KAIZEN-IGNICION-SOBERANA
   - PBI-DT-PACIENTE0-DEPLOY-PROCESS

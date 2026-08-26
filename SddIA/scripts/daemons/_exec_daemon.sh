@@ -11,11 +11,11 @@ DAEMON="$1"
 shift
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-ENTRY="$REPO_ROOT/SddIA/daemons/${DAEMON}.sh"
-
 # shellcheck source=../common/sddia_shell_lib.sh
 source "$SCRIPT_DIR/../common/sddia_shell_lib.sh"
+_FALLBACK_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+REPO_ROOT="$(_sddia_resolve_instance_root "$_FALLBACK_ROOT")"
+ENTRY="$REPO_ROOT/SddIA/daemons/${DAEMON}.sh"
 
 _setup_node_path() {
   local node_bin

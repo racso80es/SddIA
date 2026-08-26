@@ -126,21 +126,13 @@ cleanup() {
 
     local daemon
     for daemon in "${DAEMON_NAMES[@]}"; do
-        pkill -x "$daemon" 2>/dev/null || true
+        _sddia_stop_lock_pid "${STATUS_DIR}/${daemon}.lock"
     done
+    _sddia_stop_lock_pid "${STATUS_DIR}/kalma2-bridge.lock"
+    _sddia_stop_lock_pid "${STATUS_DIR}/${EMAIL_DAEMON}.lock"
 
-    pkill -x kalma2-bridge 2>/dev/null || true
-    pkill -x "$EMAIL_DAEMON" 2>/dev/null || true
-
-    # Contrato CEN-01: retirar locks tras apagado (evita PIDs muertos residuales).
-    sleep 0.3
-    for daemon in "${DAEMON_NAMES[@]}"; do
-        rm -f "${STATUS_DIR}/${daemon}.lock"
-    done
-    rm -f "${STATUS_DIR}/${EMAIL_DAEMON}.lock"
-
-    if [[ -n "$IOTA_RELAY_PID" ]]; then
-        pkill -x iota-publish-relay 2>/dev/null || true
+    if [[ -n "$IOTA_RELAY_PID" ]] && kill -0 "$IOTA_RELAY_PID" 2>/dev/null; then
+        kill "$IOTA_RELAY_PID" 2>/dev/null || true
     fi
 
     echo "[SddIA] Ecosistema detenido de forma segura."
@@ -241,14 +233,12 @@ _materialize_systemd_units() {
     if [[ -f "$factory" ]]; then
         for name in event-watcher event-sweeper kalma2-bridge telegram-watcher github-bridge-watcher; do
             body="$(cat "$factory")"
-            body="${body//@@SDDIA_CORE_ROOT@@/$REPO_ROOT}"
             body="${body//@@DAEMON_NAME@@/$name}"
             printf '%s\n' "$body" >"$dest/sddia-${name}@.service"
         done
     fi
     if [[ -f "$email" ]]; then
         body="$(cat "$email")"
-        body="${body//@@SDDIA_CORE_ROOT@@/$REPO_ROOT}"
         printf '%s\n' "$body" >"$dest/sddia-email-watcher@.service"
     fi
 }

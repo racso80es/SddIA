@@ -109,6 +109,55 @@ _sddia_load_vault() {
   done
 }
 
+# F-DEP-10: raíz de instancia, no ubicación del wrapper.
+# Jerarquía: SDDIA_INSTANCE_ROOT (absoluto existente) → cwd con .SddIA → fallback lab (SCRIPT_DIR).
+_sddia_is_instance_root() {
+  local d="$1"
+  [[ -n "$d" && -d "$d/.SddIA" ]]
+}
+
+_sddia_resolve_instance_root() {
+  local fallback="$1"
+  local cand
+  if [[ -n "${SDDIA_INSTANCE_ROOT:-}" && "${SDDIA_INSTANCE_ROOT}" == /* && -d "${SDDIA_INSTANCE_ROOT}" ]]; then
+    (cd "${SDDIA_INSTANCE_ROOT}" && pwd)
+    return 0
+  fi
+  cand="${PWD}"
+  if _sddia_is_instance_root "$cand"; then
+    (cd "$cand" && pwd)
+    return 0
+  fi
+  printf '%s\n' "$fallback"
+}
+
+_sddia_lock_pid_from_file() {
+  local lock_file="$1"
+  if [[ ! -f "$lock_file" ]]; then
+    return 0
+  fi
+  sed -n 's/.*"pid"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$lock_file" | head -1
+}
+
+# F-CEN-PKILL: parada = PID del lock de esa raíz. Cero pkill -x.
+_sddia_stop_lock_pid() {
+  local lock_file="$1"
+  local pid
+  pid="$(_sddia_lock_pid_from_file "$lock_file")"
+  if [[ -n "${pid:-}" ]] && kill -0 "$pid" 2>/dev/null; then
+    kill "$pid" 2>/dev/null || true
+    sleep 1
+    if kill -0 "$pid" 2>/dev/null; then
+      kill -9 "$pid" 2>/dev/null || true
+      sleep 1
+    fi
+  fi
+  pid="$(_sddia_lock_pid_from_file "$lock_file")"
+  if [[ -z "${pid:-}" ]] || ! kill -0 "$pid" 2>/dev/null; then
+    rm -f "$lock_file"
+  fi
+}
+
 _sddia_resolve_daemon_binary() {
   local repo_root="$1"
   local daemon="$2"
