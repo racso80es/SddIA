@@ -89,6 +89,8 @@ Variables de entorno:
 | `SDDIA_EMAIL_INITIAL_LOOKBACK_DAYS` | `60` | Primer sondeo IMAP: ventana `SINCE` (no `ALL`) |
 | `SDDIA_EMAIL_MAX_UIDS_PER_POLL` | `50` | Tope por sondeo; UNSEEN prioritario |
 
+**Cambio de cuenta IMAP:** al editar `SDDIA_EMAIL_IMAP_USER` o `SDDIA_EMAIL_IMAP_HOST` en bóveda y reiniciar el centinela, `email-watcher` detecta el cambio de identidad (`imap_identity_sha256` en state) y hace bootstrap automático (no hace falta resetear `last_uid` a mano). Cambiar solo `SDDIA_EMAIL_IMAP_SECRET` (misma cuenta) **no** resetea el watermark.
+
 ## Apagado limpio
 
 - `kill` jobs en background.

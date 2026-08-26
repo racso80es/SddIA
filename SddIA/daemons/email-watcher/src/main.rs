@@ -5,6 +5,7 @@ use sddia_daemon_runtime::{
     find_repo_root, load_bus_topology, write_fractal_event, BusTopology, DaemonRuntime,
 };
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -21,6 +22,18 @@ const DEFAULT_SNIPPET: usize = 512;
 const DEFAULT_INITIAL_LOOKBACK_DAYS: u64 = 60;
 const DEFAULT_MAX_UIDS_PER_POLL: usize = 50;
 const STATE_FILE: &str = "email-watcher.json";
+
+struct EmailWatcherState {
+    last_uid: u32,
+    _mailbox: String,
+    imap_identity_sha256: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WatermarkResetReason {
+    IdentityChanged,
+    AboveCeiling,
+}
 
 struct ImapCfg {
     host: String,
@@ -86,6 +99,22 @@ fn require_cfg() -> Result<ImapCfg, String> {
     })
 }
 
+fn imap_identity_sha256(cfg: &ImapCfg) -> String {
+    imap_identity_sha256_from(&cfg.host, cfg.port, &cfg.mailbox, &cfg.user)
+}
+
+fn imap_identity_sha256_from(host: &str, port: u16, mailbox: &str, user: &str) -> String {
+    let normalized = format!(
+        "{}|{}|{}|{}",
+        host.trim().to_ascii_lowercase(),
+        port,
+        mailbox.trim().to_ascii_lowercase(),
+        user.trim().to_ascii_lowercase(),
+    );
+    let digest = Sha256::digest(normalized.as_bytes());
+    format!("{:x}", digest)
+}
+
 fn uid_search_criterion(last: u32, lookback_days: u64) -> String {
     if last == 0 {
         // F-07: bootstrap = ALL; el lote se recorta a los N UIDs más recientes en plan_bootstrap_uids.
@@ -120,19 +149,70 @@ fn inbox_dir(repo: &Path) -> PathBuf {
     instance_root(repo).join("inbox")
 }
 
-fn load_last_uid(repo: &Path) -> u32 {
+fn load_state(repo: &Path) -> EmailWatcherState {
     let path = state_path(repo);
     if !path.is_file() {
-        return 0;
+        return EmailWatcherState {
+            last_uid: 0,
+            _mailbox: DEFAULT_MAILBOX.to_string(),
+            imap_identity_sha256: None,
+        };
     }
     let Ok(raw) = fs::read_to_string(&path) else {
-        return 0;
+        return EmailWatcherState {
+            last_uid: 0,
+            _mailbox: DEFAULT_MAILBOX.to_string(),
+            imap_identity_sha256: None,
+        };
     };
-    serde_json::from_str::<Value>(&raw)
-        .ok()
-        .and_then(|v| v.get("last_uid").and_then(|x| x.as_u64()))
-        .map(|n| n as u32)
-        .unwrap_or(0)
+    let Ok(v) = serde_json::from_str::<Value>(&raw) else {
+        return EmailWatcherState {
+            last_uid: 0,
+            _mailbox: DEFAULT_MAILBOX.to_string(),
+            imap_identity_sha256: None,
+        };
+    };
+    EmailWatcherState {
+        last_uid: v
+            .get("last_uid")
+            .and_then(|x| x.as_u64())
+            .map(|n| n as u32)
+            .unwrap_or(0),
+        _mailbox: v
+            .get("mailbox")
+            .and_then(|x| x.as_str())
+            .unwrap_or(DEFAULT_MAILBOX)
+            .to_string(),
+        imap_identity_sha256: v
+            .get("imap_identity_sha256")
+            .and_then(|x| x.as_str())
+            .map(str::to_string),
+    }
+}
+
+fn load_last_uid(repo: &Path) -> u32 {
+    load_state(repo).last_uid
+}
+
+fn resolve_watermark(
+    last: u32,
+    stored_identity: Option<&str>,
+    identity_now: &str,
+    mailbox_max_uid: Option<u32>,
+) -> (u32, Option<WatermarkResetReason>) {
+    if let Some(stored) = stored_identity {
+        if stored != identity_now {
+            return (0, Some(WatermarkResetReason::IdentityChanged));
+        }
+    }
+    if last > 0 {
+        if let Some(max_uid) = mailbox_max_uid {
+            if max_uid < last {
+                return (0, Some(WatermarkResetReason::AboveCeiling));
+            }
+        }
+    }
+    (last, None)
 }
 
 fn uids_after(uids: impl IntoIterator<Item = u32>, last: u32) -> Vec<u32> {
@@ -200,7 +280,12 @@ fn advance_contiguous_watermark(last: u32, processed: &[u32]) -> u32 {
     next
 }
 
-fn save_last_uid(repo: &Path, mailbox: &str, last_uid: u32) -> Result<(), String> {
+fn save_state(
+    repo: &Path,
+    mailbox: &str,
+    last_uid: u32,
+    imap_identity_sha256: &str,
+) -> Result<(), String> {
     let path = state_path(repo);
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("mkdir state: {e}"))?;
@@ -208,9 +293,14 @@ fn save_last_uid(repo: &Path, mailbox: &str, last_uid: u32) -> Result<(), String
     let body = json!({
         "mailbox": mailbox,
         "last_uid": last_uid,
+        "imap_identity_sha256": imap_identity_sha256,
         "updated_at": iso_now(),
     });
     fs::write(&path, format!("{body}\n")).map_err(|e| format!("write watermark: {e}"))
+}
+
+fn save_last_uid(repo: &Path, mailbox: &str, last_uid: u32, identity: &str) -> Result<(), String> {
+    save_state(repo, mailbox, last_uid, identity)
 }
 
 fn header_value<'a>(headers: &'a str, name: &str) -> Option<String> {
@@ -451,7 +541,28 @@ fn poll_once(
         .examine(&cfg.mailbox)
         .map_err(|e| format!("imap examine: {e}"))?;
 
-    let last = load_last_uid(repo);
+    let state = load_state(repo);
+    let identity_now = imap_identity_sha256(cfg);
+    let mailbox_max_uid = session
+        .uid_search("ALL")
+        .ok()
+        .and_then(|uids| uids.into_iter().max().map(|u| u as u32));
+    let (last, reset_reason) = resolve_watermark(
+        state.last_uid,
+        state.imap_identity_sha256.as_deref(),
+        &identity_now,
+        mailbox_max_uid,
+    );
+    match reset_reason {
+        Some(WatermarkResetReason::IdentityChanged) => {
+            eprintln!("[email-watcher] imap identity changed; resetting watermark");
+        }
+        Some(WatermarkResetReason::AboveCeiling) => {
+            eprintln!("[email-watcher] watermark above mailbox ceiling; resetting watermark");
+        }
+        None => {}
+    }
+
     let bootstrap = last == 0;
     let criterion = uid_search_criterion(last, cfg.initial_lookback_days);
     let uids = session
@@ -511,16 +622,21 @@ fn poll_once(
 
     if bootstrap {
         // F-07: watermark = techo del lote bootstrap (abandona UIDs antiguos no seleccionados).
-        if let Some(ceiling) = ordered.iter().copied().max() {
-            if ceiling > 0 {
-                save_last_uid(repo, &cfg.mailbox, ceiling)?;
-            }
-        }
+        let _ = ordered.iter().copied().max();
+    }
+
+    let final_last = if bootstrap {
+        ordered.iter().copied().max().unwrap_or(last)
     } else if !processed.is_empty() {
-        let new_last = advance_contiguous_watermark(last, &processed);
-        if new_last > last {
-            save_last_uid(repo, &cfg.mailbox, new_last)?;
-        }
+        advance_contiguous_watermark(last, &processed)
+    } else {
+        last
+    };
+
+    let identity_needs_persist = state.imap_identity_sha256.as_deref() != Some(identity_now.as_str());
+    let last_changed = final_last != state.last_uid;
+    if identity_needs_persist || last_changed {
+        save_last_uid(repo, &cfg.mailbox, final_last, &identity_now)?;
     }
 
     let _ = session.logout();
@@ -710,13 +826,64 @@ mod tests {
     }
 
     #[test]
+    fn imap_identity_normalizes_case_and_whitespace() {
+        let a = imap_identity_sha256_from("  IMAP.Gmail.COM ", 993, " INBOX ", " User@Example.com ");
+        let b = imap_identity_sha256_from("imap.gmail.com", 993, "inbox", "user@example.com");
+        assert_eq!(a, b);
+        assert_eq!(a.len(), 64);
+    }
+
+    #[test]
+    fn imap_identity_changes_when_user_changes() {
+        let a = imap_identity_sha256_from("imap.example.com", 993, "inbox", "a@b.com");
+        let b = imap_identity_sha256_from("imap.example.com", 993, "inbox", "c@d.com");
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn resolve_watermark_identity_mismatch_resets() {
+        let id_a = imap_identity_sha256_from("imap.example.com", 993, "inbox", "a@b.com");
+        let id_b = imap_identity_sha256_from("imap.example.com", 993, "inbox", "c@d.com");
+        let (last, reason) = resolve_watermark(104466, Some(&id_a), &id_b, Some(5799));
+        assert_eq!(last, 0);
+        assert_eq!(reason, Some(WatermarkResetReason::IdentityChanged));
+    }
+
+    #[test]
+    fn resolve_watermark_legacy_skips_identity_check() {
+        let id_b = imap_identity_sha256_from("imap.example.com", 993, "inbox", "c@d.com");
+        let (last, reason) = resolve_watermark(42, None, &id_b, Some(5799));
+        assert_eq!(last, 42);
+        assert_eq!(reason, None);
+    }
+
+    #[test]
+    fn resolve_watermark_ceiling_resets_stale_high_uid() {
+        let id = imap_identity_sha256_from("imap.example.com", 993, "inbox", "a@b.com");
+        let (last, reason) = resolve_watermark(104466, Some(&id), &id, Some(5799));
+        assert_eq!(last, 0);
+        assert_eq!(reason, Some(WatermarkResetReason::AboveCeiling));
+    }
+
+    #[test]
+    fn resolve_watermark_same_identity_within_ceiling() {
+        let id = imap_identity_sha256_from("imap.example.com", 993, "inbox", "a@b.com");
+        let (last, reason) = resolve_watermark(5798, Some(&id), &id, Some(5799));
+        assert_eq!(last, 5798);
+        assert_eq!(reason, None);
+    }
+
+    #[test]
     fn watermark_roundtrip_persists_last_uid() {
         let dir = std::env::temp_dir().join(format!("sddia-ew-{}", Uuid::new_v4()));
         let repo = dir.join("repo");
         let state = repo.join(".SddIA").join("daemons").join("state");
         std::fs::create_dir_all(&state).unwrap();
-        save_last_uid(&repo, "INBOX", 42).unwrap();
+        let identity = imap_identity_sha256_from("imap.example.com", 993, "inbox", "a@b.com");
+        save_last_uid(&repo, "INBOX", 42, &identity).unwrap();
         assert_eq!(load_last_uid(&repo), 42);
+        let loaded = load_state(&repo);
+        assert_eq!(loaded.imap_identity_sha256.as_deref(), Some(identity.as_str()));
         let _ = std::fs::remove_dir_all(&dir);
     }
 
