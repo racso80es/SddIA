@@ -92,8 +92,8 @@ jobs:
           key: wasi-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
           restore-keys: |
             wasi-${{ runner.os }}-
-      - name: Build WASI workspace
-        run: cd SddIA && cargo build --workspace --target wasm32-wasip1
+      - name: Build WASI capsules (skills/tools; exclude native daemons)
+        run: SddIA/scripts/qa/build-wasi-capsules.sh
       - name: Build nativos (centinelas + orquestador + QA)
         run: |
           cd SddIA
@@ -133,8 +133,8 @@ jobs:
           key: wasi-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
           restore-keys: |
             wasi-${{ runner.os }}-
-      - name: Build WASI workspace
-        run: cd SddIA && cargo build --workspace --target wasm32-wasip1
+      - name: Build WASI capsules (skills/tools; exclude native daemons)
+        run: SddIA/scripts/qa/build-wasi-capsules.sh
       - name: Build nativos (centinelas + orquestador + QA)
         run: |
           cd SddIA

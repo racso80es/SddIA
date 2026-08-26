@@ -37,8 +37,8 @@ wasi-runtime-smoke:
           ~/.cargo/git
           SddIA/target
         key: wasi-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
-    - name: Build WASI workspace
-      run: cd SddIA && cargo build --workspace --target wasm32-wasip1
+    - name: Build WASI capsules (skills/tools; exclude native daemons)
+      run: SddIA/scripts/qa/build-wasi-capsules.sh
     - uses: actions/setup-python@v5
       with:
         python-version: "3.12"

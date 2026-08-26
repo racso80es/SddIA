@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6b600e3f-2f4a-4f1f-b0f9-087d2f954c1f` | 2026-08-26 | F-CI-EDA-E2E-WASI-BUILD — build WASI selectivo CI excluyendo daemons nativos (email-watcher/openssl) | CANONICO | `SddIA/evolution/6b600e3f-2f4a-4f1f-b0f9-087d2f954c1f.md` |
 | `7e3c1a90-4b2d-4f8a-9c1e-6a0b2c8d4e1f` | 2026-08-26 | Aislamiento multi-instancia: ExecStart=%f, REPO_ROOT por instancia, cero pkill -x. | CANONICO | `SddIA/evolution/7e3c1a90-4b2d-4f8a-9c1e-6a0b2c8d4e1f.md` |
 | `181d6291-9735-4187-a6f7-f6e56472aa3e` | 2026-08-25 | Ignición soberana: systemd @%f por centinela y start-sddia sin spawn & del bus/WUI. | CANONICO | `SddIA/evolution/181d6291-9735-4187-a6f7-f6e56472aa3e.md` |
 | `6b1f97f4-fa9d-48df-a58a-167f5d5e06dc` | 2026-08-25 | Kaizen Paciente 0 residual: resolver orquestador, overlay {}, pin ignición, smoke sin Local_QA. | CANONICO | `SddIA/evolution/6b1f97f4-fa9d-48df-a58a-167f5d5e06dc.md` |

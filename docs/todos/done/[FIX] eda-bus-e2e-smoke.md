@@ -4,14 +4,14 @@ uuid: "b9e4d3f2-5c6a-7b8e-9f0d-1e2f3a4b5c6d"
 title: "[FIX] eda-bus-e2e-smoke — build WASI workspace bloquea E2E lab"
 format: markdown
 version: "1.1.0"
-status: pending
+status: done
 type: bug-fix
 priority: alta
 process: bug-fix
 persist_ref: docs/fixes/eda-bus-e2e-smoke-wasi-build-block
 created: "2026-08-26"
 updated: "2026-08-26"
-pbi_archived: false
+pbi_archived: true
 derived_from:
   - PBI-KAIZEN-EDA-BUS-E2E-WASMTIME-FALLBACK
   - PBI-FIX-WASI-RUNTIME-SMOKE
@@ -129,11 +129,11 @@ Dependencias descargadas en el mismo job incluyen `imap`, `native-tls`, `openssl
 
 ## 4. Criterios de aceptación
 
-- [ ] Job `eda-bus-e2e-smoke` SUCCESS en PR de verificación.
-- [ ] `sddia-qa run-eda-e2e-lab --entity-class tool --json` ejecuta y acusa success.
-- [ ] `event-sweeper --once --json` ejecuta tras E2E lab.
-- [ ] Fix compartido con `wasi-runtime-smoke` documentado (un PR o dos PBIs cerrados en el mismo merge).
-- [ ] Sin regresión en fallback wasmtime (si se mantiene path sin WASI build en este job).
+- [x] Job `eda-bus-e2e-smoke` SUCCESS en PR de verificación.
+- [x] `sddia-qa run-eda-e2e-lab --entity-class tool --json` ejecuta y acusa success.
+- [x] `event-sweeper --once --json` ejecuta tras E2E lab.
+- [x] Fix compartido con `wasi-runtime-smoke` documentado (un PR o dos PBIs cerrados en el mismo merge).
+- [x] Sin regresión en fallback wasmtime (si se mantiene path sin WASI build en este job).
 
 ---
 
