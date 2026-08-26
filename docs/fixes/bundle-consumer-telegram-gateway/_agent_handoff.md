@@ -86,3 +86,38 @@ formal_evidence_detail: "verify-process-integrity: OK"
 - Bloqueantes: CA1/CA3 smoke, CA4/CA5 Paciente 0, CA6 PBI aún en `pending/` (`pbi_archived: false`)
 - Shell `git-manager` Rejected → sin OID inventado
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-26T11:36:49Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-08-26T11:39:07Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `59606407-eed3-4da8-ac13-3cf6205b2147`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residuo honesto: `pbi_archived: false` (PBI aún en `pending/`); DOC_EVOLUTION / CA smoke previos = no bloqueantes F2
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F2_DOC` · `delivery_state: pending_downstream_phases`)
+
+- Tocado: `docs/fixes/bundle-consumer-telegram-gateway/validacion.md`
+- R1/R2: copia bridge `native_state` @ 11:36:49Z + session → **APTO** (sin stdout inventado; Shell `git-manager` Rejected)
+- R3 KM: **APTO** (0 writes Argos bajo `docs/todos/**`)
+- F2 cascada: objectives/spec/plan(N/A)/implementation/execution **APTO**
+- Residuo honesto: `pbi_archived: false` (PBI aún en `pending/`); DOC_EVOLUTION / CA smoke previos = no bloqueantes F2
+```
