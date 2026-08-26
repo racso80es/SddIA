@@ -199,3 +199,25 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit"
 ```
+
+## 2026-08-26T11:45:51Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `59606407-eed3-4da8-ac13-3cf6205b2147`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. Residuos no bloqueantes: Shell `git-manager` Rejected; `BRANCH_WORKTREE_SYNC` NO_APTO (`.git/HEAD`→`main`); PPR dedup #190.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F5_VERDICT` · `delivery_state: success`)
+
+1. Tocado: `docs/fixes/bundle-consumer-telegram-gateway/validacion.md` (fase Veredicto y bloqueo).
+2. R1/R2: copia bridge `native_state` @ 11:42:14Z + session → TECH_FORMAL + GIT_EVIDENCE **APTO** (sin stdout inventado).
+3. R3 KM: **APTO** — Argos 0 writes `docs/todos/**`.
+4. F2/F4 **APTO**; F3 **NO_APTO** no bloqueante; `accept_pr_handoff: true` (merge ausente).
+5. Residuos no bloqueantes: Shell `git-manager` Rejected; `BRANCH_WORKTREE_SYNC` NO_APTO (`.git/HEAD`→`main`); PPR dedup #190.
+```
