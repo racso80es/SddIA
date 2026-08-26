@@ -19,6 +19,8 @@ correlation_id: 59606407-eed3-4da8-ac13-3cf6205b2147
 pr_presented_event_id: 59606407-eed3-4da8-ac13-3cf6205b2147
 audit_event_reference: 59606407-eed3-4da8-ac13-3cf6205b2147
 pr_url: https://github.com/racso80es/SddIA/pull/194
+merged_pr: 194
+merge_commit: 0247e7e65499d36dbb677fe539a664c7448bb9c6
 global: APTO
 pbi_archived: true
 approval_status: aprobado
