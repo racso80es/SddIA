@@ -14,6 +14,8 @@ checks:
   CA-5-evolution-gate: pass
 evolution_id: 6b600e3f-2f4a-4f1f-b0f9-087d2f954c1f
 pr_url: https://github.com/racso80es/SddIA/pull/195
+ecst_event_id: 5316715f-0b2a-4069-a032-c379e31fc533
+snapshot_commit: c6f90ecdac3a591d776901a6441b192620c636ba
 git_changes:
   - SddIA/scripts/qa/build-wasi-capsules.sh
   - .github/workflows/sddia-index-qa.yml
@@ -21,6 +23,7 @@ git_changes:
   - SddIA/evolution/Evolution_log.md
   - docs/fixes/eda-bus-e2e-smoke-wasi-build-block/
   - docs/todos/done/[FIX] eda-bus-e2e-smoke.md
+  - docs/todos/done/[Fix] wasi-runtime-somke.md
 ---
 
 # Validación

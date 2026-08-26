@@ -4,14 +4,15 @@ uuid: "a8f3c2e1-4b5d-6a7e-8f9c-0d1e2f3a4b5c"
 title: "[FIX] wasi-runtime-smoke — build WASI workspace falla (openssl-sys / email-watcher)"
 format: markdown
 version: "1.1.0"
-status: pending
-type: bug-fix
+status: done
 priority: alta
 process: bug-fix
-persist_ref: docs/fixes/wasi-runtime-smoke-openssl-email-watcher
+persist_ref: docs/fixes/eda-bus-e2e-smoke-wasi-build-block
 created: "2026-08-26"
 updated: "2026-08-26"
-pbi_archived: false
+pbi_archived: true
+closed_by_pr: https://github.com/racso80es/SddIA/pull/195
+unified_with: PBI-FIX-EDA-BUS-E2E-SMOKE-WASI-BUILD
 derived_from:
   - PBI-KAIZEN-CI-WASI-RUNTIME-BUILD
   - docs/features/ci-wasi-runtime-validation
