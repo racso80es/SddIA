@@ -58,6 +58,8 @@ PPR #186 · CID `CNwwfDm7Hqb1zd23zRtkjP2o7QqgR5PaH26YBpbN8Wz3` · ciclo authorin
 | Cosecha Kaizen dedup | `3dcf4dfb-cd9c-4733-9925-b80f3f5806f4` | Re-run PPR #202 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral |
 | Cosecha Kaizen dedup | `6237015f-0f8d-42ea-97ea-a44afac5318d` | PPR #203 · emit-pr-audited-revoked-registry-rehab-ppr202 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral |
 | Cosecha Kaizen dedup | `1e9972cf-2ffd-47f0-8cf8-c9427e7023d8` | PPR #206 · accept-pr-revoked-registry-rehab-ppr203 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral |
+| Cosecha Kaizen dedup | `4CMsk8z5Gx7mFQHc512m9FoJibvnr463cVyVcWz5imKm` | PPR #208 · kaizen-aduana-dlt-relay-supervisado · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · seed accept-pr #208 aparte |
+| Cosecha Kaizen dedup | `04ea6960-3089-4523-9461-cccfbe202f1a` | PPR #208 · kaizen-aduana-dlt-relay-supervisado · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral |
 
 ## Contexto heredado (PBI-185)
 

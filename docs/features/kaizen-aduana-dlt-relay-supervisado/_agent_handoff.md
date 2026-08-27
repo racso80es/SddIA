@@ -287,3 +287,241 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit"
 ```
+
+## 2026-08-27T18:26:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `4CMsk8z5Gx7mFQHc512m9FoJibvnr463cVyVcWz5imKm`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. Downstream Cosecha/Handoff (`accept_pr_handoff: false`/`pending`; L-HANDOFF-F5 · MERGE ausente · `accept-pr`∈revoked).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `delivery_state: success` · `global: APTO`)
+
+1. `docs/features/kaizen-aduana-dlt-relay-supervisado/validacion.md` — reescrito (PPR Veredicto y bloqueo · CID `4CMsk8z5…` · PR #208).
+2. F5: F2+F4 APTO · F3 NO_APTO no bloqueante · `accept_pr_handoff: false`/`pending` (L-HANDOFF-F5) · `branch` NO_APTO (HEAD=main; ref ausente).
+3. R1/R2: copia Evidence Bridge `native_state`/`idempotent-hit` → TECH_FORMAL/GIT_EVIDENCE APTO; Shell git-manager Rejected → GIT_EVIDENCE_SESSION_SHELL NO_APTO (sin stdout inventado).
+4. R3 KM: APTO — Argos 0 writes `docs/todos/**`; laterales accept-pr/refactorization revoked no bloqueantes F5.
+5. Downstream Cosecha/Handoff (`accept_pr_handoff: false`/`pending`; L-HANDOFF-F5 · MERGE ausente · `accept-pr`∈revoked).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-27T18:26:00Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-08-27T18:30:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `04ea6960-3089-4523-9461-cccfbe202f1a`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream Cosecha/Handoff (`accept_pr_handoff: false`/`blocked`; L-HANDOFF-F5 · MERGE ausente · `accept-pr`∈revoked).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `delivery_state: success` · `global: APTO`)
+
+1. `validacion.md` — fase Veredicto y bloqueo; `F5_VERDICT_GATE: APTO`; CID `04ea6960…` · PR #208.
+2. F5: F2+F4 APTO · F3 NO_APTO no bloqueante · `accept_pr_handoff: false`/`blocked` (L-HANDOFF-F5).
+3. R1/R2: copia Evidence Bridge `native_state` @ `18:23:28Z` notes=`idempotent-hit` → TECH_FORMAL/GIT_EVIDENCE **APTO**; Shell `git-manager` Rejected → SESSION_SHELL **NO_APTO**.
+4. R3 KM: **APTO** — Argos 0 writes `docs/todos/**`.
+5. Downstream Cosecha/Handoff (`accept_pr_handoff: false`/`blocked`; L-HANDOFF-F5 · MERGE ausente · `accept-pr`∈revoked).
+```
+
+## 2026-08-27T18:25:54Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `04ea6960-3089-4523-9461-cccfbe202f1a`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 6. Downstream Cosecha/Handoff pendientes.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+1. Escrito: `validacion.md` (Veredicto y bloqueo · CID `04ea6960…` · PR #208).
+2. Sello: `_agent_handoff.md` — stamp F5 + transcript.
+3. R1/R2: copia Evidence Bridge `native_state` @ `18:23:28Z` → TECH_FORMAL/GIT_EVIDENCE **APTO**; Shell `git-manager` Rejected → SESSION_SHELL **NO_APTO**.
+4. R3 KM: **APTO** — 0 writes Argos en `docs/todos/**`.
+5. F2+F4 APTO; F3 NO_APTO no bloqueante; `accept_pr_handoff: false`/`blocked` (L-HANDOFF-F5 · MERGE ausente · `accept-pr`∈revoked).
+6. Downstream Cosecha/Handoff pendientes.
+```
+
+## 2026-08-27T18:26:03Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `4CMsk8z5Gx7mFQHc512m9FoJibvnr463cVyVcWz5imKm`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 6. Downstream Cosecha/Handoff pendientes · `accept-pr`∈revoked situacional.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+1. Escrito: `docs/features/kaizen-aduana-dlt-relay-supervisado/validacion.md` (Veredicto y bloqueo · CID `4CMsk8z5…` · PR #208).
+2. Sello: `_agent_handoff.md` — stamp F5 + transcript.
+3. R1/R2: copia Evidence Bridge `native_state`/`idempotent-hit` → TECH_FORMAL/GIT_EVIDENCE **APTO**; Shell `git-manager` Rejected → SESSION_SHELL **NO_APTO**.
+4. R3 KM: **APTO** — 0 writes Argos en `docs/todos/**`.
+5. F2+F4 APTO; F3 NO_APTO no bloqueante; `accept_pr_handoff: false`/`pending` (L-HANDOFF-F5); `branch` NO_APTO (HEAD=`main`).
+6. Downstream Cosecha/Handoff pendientes · `accept-pr`∈revoked situacional.
+```
+
+## 2026-08-27T18:32:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `04ea6960-3089-4523-9461-cccfbe202f1a`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 1` · `dedup: 2` · Handoff `blocked` (`accept-pr`∈revoked)
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: `ok`** (CID 04ea6960…)
+
+1. `validacion.md` — fase Cosecha Kaizen; `KAIZEN_COSECHA_GATE`; `kaizen_seeds: 1`; `dedup: 2`; CID `04ea6960…`; PR #208.
+2. `docs/todos/pending/PBI-PPR-208-ACCEPT-PR-REVOKED-REGISTRY.md` — seed nueva (accept-pr re-revoked since `18:21:13Z` ≠ #203 done).
+3. `docs/todos/done/…refactorization…(PPR #186).md` — sighting affirm CID `04ea6960…`.
+4. Dedup #136 Shell/F3 (0 create); DIA `Kaizen_Alert_Required` ausente; FIX `6a49e0ad310e` lateral (0 create).
+5. Staging `_kaizen_seed_accept_pr_ppr208.md` · MATERIALIZED.
+6. R1/R2: copia Evidence Bridge Argos F5 `native_state`/`idempotent-hit` @ `18:23:28Z` → TECH_FORMAL + GIT_EVIDENCE **APTO**.
+7. Shell `./sddia-run.sh --tool git-manager` → Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO` (sin stdout inventado).
+8. `accept_pr_handoff: false` / `blocked` (L-HANDOFF-F5 · MERGE ausente · accept-pr∈revoked).
+9. **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE` · seeds 1 · dedup 2.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-27T18:32:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+notes: "Cosecha Kaizen CID 04ea6960; Shell git-manager Rejected; R1/R2 Argos F5 native_state; kaizen_seeds 1 · dedup 2 (#186+#136); seed accept-pr PPR #208 path-id"
+kaizen_seeds: 1
+kaizen_seeds_dedup: 2
+KAIZEN_COSECHA_GATE: APTO
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+```
+
+## 2026-08-27T18:28:44Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `04ea6960-3089-4523-9461-cccfbe202f1a`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 5. Dedup #136 + #186; DIA ausente; Handoff `false`/`blocked` (`accept-pr`∈revoked).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `KAIZEN_COSECHA_GATE` · seeds 1 · dedup 2 · CID `04ea6960…`
+
+1. `docs/todos/pending/PBI-PPR-208-ACCEPT-PR-REVOKED-REGISTRY.md` — seed nueva (`accept-pr` re-revoked since `18:21:13Z` ≠ #203).
+2. `docs/features/…/_kaizen_seed_accept_pr_ppr208.md` — staging MATERIALIZED.
+3. `docs/todos/done/…refactorization…(PPR #186).md` — sighting affirm.
+4. `validacion.md` + `_agent_handoff.md` — fase Cosecha; R2 via Evidence Bridge; Shell `git-manager` Rejected (sin stdout inventado).
+5. Dedup #136 + #186; DIA ausente; Handoff `false`/`blocked` (`accept-pr`∈revoked).
+```
+
+## 2026-08-27T18:33:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- correlation_id: `4CMsk8z5Gx7mFQHc512m9FoJibvnr463cVyVcWz5imKm`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 1` · `dedup: 2` · Handoff `pending` (`accept-pr`∈revoked)
+
+### Transcript (tail)
+
+```
+**Cúmulo · Cosecha Kaizen — veredicto: `ok`** (CID 4CMsk8z5…)
+
+1. `validacion.md` — fase Cosecha Kaizen; `KAIZEN_COSECHA_GATE`; `kaizen_seeds: 1`; `dedup: 2`; CID `4CMsk8z5…`; PR #208.
+2. `docs/todos/pending/PBI-PPR-208-ACCEPT-PR-REVOKED-REGISTRY.md` — seed (accept-pr re-revoked since `18:21:13Z` ≠ #203 done); path id; `source_correlation_id=4CMsk8z5…`.
+3. `docs/todos/done/…refactorization…(PPR #186).md` — sighting affirm CID `4CMsk8z5…`.
+4. Dedup #136 Shell/F3 (0 create); DIA `Kaizen_Alert_Required` ausente.
+5. Staging `_kaizen_seed_accept_pr_ppr208.md` · MATERIALIZED.
+6. R1/R2: copia Evidence Bridge Argos F5 `native_state`/`idempotent-hit` @ `18:26:00Z` → TECH_FORMAL + GIT_EVIDENCE **APTO**.
+7. Shell `./sddia-run.sh --tool git-manager` → Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO` (sin stdout inventado).
+8. `accept_pr_handoff: false` / `pending` (L-HANDOFF-F5 · MERGE ausente · accept-pr∈revoked situacional).
+9. **Veredicto: `ok`** — `KAIZEN_COSECHA_GATE` · seeds 1 · dedup 2.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-27T18:33:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+notes: "Cosecha Kaizen CID 4CMsk8z5; Shell git-manager Rejected; R1/R2 Argos F5 native_state; kaizen_seeds 1 · dedup 2 (#186+#136); seed accept-pr PPR #208 path-id"
+kaizen_seeds: 1
+kaizen_seeds_dedup: 2
+KAIZEN_COSECHA_GATE: APTO
+accept_pr_handoff: false
+accept_pr_handoff_status: pending
+```
+
+## 2026-08-27T18:29:47Z — Cosecha Kaizen
+- process: `pull-request-review`
+- agents: `cumulo`
+- correlation_id: `4CMsk8z5Gx7mFQHc512m9FoJibvnr463cVyVcWz5imKm`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 4. Shell `git-manager` Rejected → R2 Evidence Bridge; `accept_pr_handoff: false`/`pending`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** — `KAIZEN_COSECHA_GATE` · seeds `1` · dedup `2`
+
+1. `docs/todos/pending/PBI-PPR-208-ACCEPT-PR-REVOKED-REGISTRY.md` — seed `accept-pr` re-revoked @ `18:21:13Z` (≠ #203 done).
+2. `docs/features/…/validacion.md` + `_agent_handoff.md` + `_kaizen_seed_accept_pr_ppr208.md` — fase Cosecha CID `4CMsk8z5…`.
+3. Sighting `#186` + dedup `#136` Shell/F3; DIA `Kaizen_Alert_Required` ausente.
+4. Shell `git-manager` Rejected → R2 Evidence Bridge; `accept_pr_handoff: false`/`pending`.
+```
