@@ -17,6 +17,7 @@ evolution_id: a8f3c1e2-9b4d-4e7a-8c5f-1d2e3f4a5b6c
 correlation_id: "7756d929-8baa-40a3-962c-15be0e5c0541"
 source_correlation_id: "7c215675-2ad2-436a-9749-ff635c52c8b3"
 source_pr_url: https://github.com/racso80es/SddIA/pull/200
+pr_url: https://github.com/racso80es/SddIA/pull/202
 parent_pbi: docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #194).md
 global: APTO
 pbi_archived: true
@@ -79,6 +80,7 @@ situational_notes:
   - "cargo test -p execute-process --lib t_a2_ → 7/7 @ 2026-08-27"
   - "L-HANDOFF-F5: MERGE ausente ⇒ accept_pr_handoff false + status pending"
   - "refactorization ∈ revoked — lateral; Cúmulo/Kaizen"
+  - "PR #202 abierto vía delivery-close-cycle · ECST Presented 1498e461…"
 ---
 
 # Validación — Verificación (Argos · refactorization)

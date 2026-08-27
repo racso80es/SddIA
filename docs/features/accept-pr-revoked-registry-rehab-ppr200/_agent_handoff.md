@@ -73,3 +73,16 @@ persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr200
 5. RBAC OK; sin forja genoma; umbrales/agregador/YAML `accept-pr` intactos.
 6. Git no materializado en esta fase (no requerido para diseño).
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-27T12:09:46Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
