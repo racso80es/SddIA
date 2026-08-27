@@ -424,6 +424,319 @@ fn resolve_eda_proofs_dir(repo: &Path) -> PathBuf {
     repo.join(".SddIA").join("proofs")
 }
 
+fn resolve_dlt_reanchor_dir(repo: &Path) -> PathBuf {
+    if let Ok(cfg) = super::workspace::load_paths_config(repo) {
+        if let Some(p) = cfg
+            .get("eda_instance")
+            .and_then(|e| e.get("dlt_reanchor"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            let pb = PathBuf::from(p);
+            return if pb.is_absolute() {
+                pb
+            } else {
+                repo.join(pb)
+            };
+        }
+    }
+    repo.join(".SddIA").join("dlt").join("reanchor-queue")
+}
+
+fn iota_relay_health_url() -> String {
+    if let Ok(url) = std::env::var("IOTA_PUBLISH_RELAY_URL") {
+        let t = url.trim();
+        if !t.is_empty() {
+            if let Some(base) = t.strip_suffix("/v1/publish") {
+                return format!("{base}/health");
+            }
+        }
+    }
+    let host = std::env::var("IOTA_PUBLISH_RELAY_HOST").unwrap_or_else(|_| "127.0.0.1".into());
+    let port = std::env::var("IOTA_PUBLISH_RELAY_PORT").unwrap_or_else(|_| "8787".into());
+    format!("http://{host}:{port}/health")
+}
+
+fn iota_relay_health_ok() -> bool {
+    let url = iota_relay_health_url();
+    let out = Command::new("curl")
+        .args(["-sf", "--max-time", "2", &url])
+        .output();
+    matches!(out, Ok(o) if o.status.success())
+}
+
+fn enqueue_dlt_reanchor(repo: &Path, event_uuid: &str, path: &Path, error_trace: &str) {
+    let dir = resolve_dlt_reanchor_dir(repo);
+    let _ = fs::create_dir_all(&dir);
+    let entry = json!({
+        "event_uuid": event_uuid,
+        "path": path.to_string_lossy(),
+        "error_trace": error_trace,
+        "queued_at": Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+    });
+    let target = dir.join(format!("{event_uuid}.json"));
+    let _ = write_json_atomic(&target, &entry);
+}
+
+fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
+    let pending_rel = if let Ok(cfg) = super::workspace::load_paths_config(repo) {
+        cfg.get("eda_bus")
+            .and_then(|b| b.get("pending"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().trim_start_matches("./").to_string())
+            .unwrap_or_else(|| ".events/pending".into())
+    } else {
+        ".events/pending".into()
+    };
+    let pending = repo.join(&pending_rel);
+    let _ = fs::create_dir_all(&pending);
+    let event_id = Uuid::new_v4().to_string();
+    let event = json!({
+        "event_id": event_id,
+        "event_type": "System_Fracture_Detected",
+        "timestamp": Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+        "emitter_agent": "execute-process",
+        "payload": {
+            "process_name": "route-domain-event",
+            "error_trace": format!(
+                "F-DLT-RELAY-SIN-SUPERVISOR: merkle-batch-preseal failed: {causa}"
+            ),
+            "agent_emitter": "execute-process",
+            "attempted_action": "merkle-batch-preseal",
+            "friction_id": "F-DLT-RELAY-SIN-SUPERVISOR",
+        },
+    });
+    let target = pending.join(format!("{event_id}.json"));
+    let _ = write_json_atomic(&target, &event);
+}
+
+fn stamp_batch_anchor_error(
+    repo: &Path,
+    bus: &EventBusTopology,
+    event_paths_by_uuid: &HashMap<String, PathBuf>,
+    uuids: &[String],
+    causa: &str,
+) {
+    for uuid in uuids {
+        if let Some(event_path) = event_paths_by_uuid.get(uuid) {
+            let event_path = if event_path.is_absolute() {
+                event_path.clone()
+            } else {
+                repo.join(event_path)
+            };
+            if let Ok(text) = fs::read_to_string(&event_path) {
+                if let Ok(mut event) = serde_json::from_str::<Value>(&text) {
+                    if let Some(obj) = event.as_object_mut() {
+                        if !obj.contains_key("delivery_state") {
+                            obj.insert("delivery_state".to_string(), json!({}));
+                        }
+                        if let Some(ds) =
+                            obj.get_mut("delivery_state").and_then(|v| v.as_object_mut())
+                        {
+                            ds.insert(
+                                "last_batch_anchor_error".to_string(),
+                                json!(causa),
+                            );
+                        }
+                    }
+                    let _ = write_json_atomic(&event_path, &event);
+                }
+            }
+            enqueue_dlt_reanchor(repo, uuid, &event_path, causa);
+        } else {
+            let fallback = PathBuf::from(&bus.pending).join(format!("{uuid}.json"));
+            enqueue_dlt_reanchor(repo, uuid, &fallback, causa);
+        }
+    }
+}
+
+fn try_drain_dlt_reanchor_queue(repo: &Path, bus: &EventBusTopology) {
+    if simulate_iota_enabled() || !iota_relay_health_ok() {
+        return;
+    }
+    let dir = resolve_dlt_reanchor_dir(repo);
+    if !dir.is_dir() {
+        return;
+    }
+    let mut queue_files = vec![];
+    let mut payloads = vec![];
+    let mut uuids = vec![];
+    let mut paths_by_uuid: HashMap<String, PathBuf> = HashMap::new();
+
+    let Ok(entries) = fs::read_dir(&dir) else {
+        return;
+    };
+    for ent in entries.flatten() {
+        let p = ent.path();
+        if p.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let Ok(text) = fs::read_to_string(&p) else {
+            continue;
+        };
+        let Ok(body) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
+        let Some(uuid) = body.get("event_uuid").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let Some(path_str) = body.get("path").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let event_path = PathBuf::from(path_str);
+        let event_path = if event_path.is_absolute() {
+            event_path
+        } else {
+            repo.join(&event_path)
+        };
+        if !event_path.is_file() {
+            continue;
+        }
+        let Ok(evt_text) = fs::read_to_string(&event_path) else {
+            continue;
+        };
+        let Ok(event) = serde_json::from_str::<Value>(&evt_text) else {
+            continue;
+        };
+        if let Some(ds) = event.get("delivery_state").and_then(|v| v.as_object()) {
+            if is_valid_iota_anchor(ds) {
+                let _ = fs::remove_file(&p);
+                continue;
+            }
+        }
+        let payload = event.get("payload").cloned().unwrap_or(json!({}));
+        let mut buf = Vec::new();
+        let formatter = serde_json::ser::CompactFormatter;
+        let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);
+        if serde::Serialize::serialize(&payload, &mut ser).is_err() {
+            continue;
+        }
+        payloads.push(String::from_utf8(buf).unwrap_or_default());
+        uuids.push(uuid.to_string());
+        paths_by_uuid.insert(uuid.to_string(), event_path);
+        queue_files.push(p);
+    }
+
+    if payloads.is_empty() {
+        return;
+    }
+
+    let payload = json!({
+        "action": "publish_immutable_data",
+        "network": "testnet",
+        "payload": payloads,
+    });
+    let repo_buf = repo.to_path_buf();
+    let handle = thread::spawn(move || {
+        invoke_tool_capsule_json(&repo_buf, "iota-immutable-publisher", &payload, false)
+    });
+
+    let ok = match handle.join() {
+        Ok(Ok(result)) => {
+            let body = result.body;
+            if body.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
+                apply_merkle_batch_success(repo, bus, &uuids, &paths_by_uuid, &body);
+                true
+            } else {
+                let causa = capsule_error_trace(&body, false);
+                stamp_batch_anchor_error(repo, bus, &paths_by_uuid, &uuids, &causa);
+                emit_dlt_batch_fracture(repo, &causa);
+                false
+            }
+        }
+        Ok(Err(e)) => {
+            let causa = format!("iota-invoke: {e}");
+            stamp_batch_anchor_error(repo, bus, &paths_by_uuid, &uuids, &causa);
+            emit_dlt_batch_fracture(repo, &causa);
+            false
+        }
+        Err(_) => {
+            let causa = "iota-thread-panicked";
+            stamp_batch_anchor_error(repo, bus, &paths_by_uuid, &uuids, causa);
+            emit_dlt_batch_fracture(repo, causa);
+            false
+        }
+    };
+
+    if ok {
+        for q in queue_files {
+            let _ = fs::remove_file(&q);
+        }
+    }
+}
+
+fn apply_merkle_batch_success(
+    repo: &Path,
+    _bus: &EventBusTopology,
+    uuids: &[String],
+    paths_by_uuid: &HashMap<String, PathBuf>,
+    body: &Value,
+) {
+    let digest = body
+        .get("result")
+        .and_then(|r| r.get("transaction_digest"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let merkle_root = body
+        .get("result")
+        .and_then(|r| r.get("merkle_root"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let proofs = body
+        .get("result")
+        .and_then(|r| r.get("merkle_proofs"))
+        .and_then(|v| v.as_array());
+    let proofs_dir = resolve_eda_proofs_dir(repo);
+    let _ = fs::create_dir_all(&proofs_dir);
+
+    for (i, uuid) in uuids.iter().enumerate() {
+        if let Some(proofs) = proofs {
+            if let Some(proof) = proofs.get(i) {
+                let proof_path = proofs_dir.join(format!("{uuid}.json"));
+                let _ = fs::write(
+                    &proof_path,
+                    serde_json::to_string_pretty(proof).unwrap_or_default(),
+                );
+            }
+        }
+        if let Some(event_path) = paths_by_uuid.get(uuid) {
+            if let Ok(text) = fs::read_to_string(event_path) {
+                if let Ok(mut event) = serde_json::from_str::<Value>(&text) {
+                    if let Some(obj) = event.as_object_mut() {
+                        if !obj.contains_key("delivery_state") {
+                            obj.insert("delivery_state".to_string(), json!({}));
+                        }
+                        if let Some(ds) = obj.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
+                            ds.insert("cumulo".to_string(), json!("success"));
+                            ds.insert("merkle_anchored".to_string(), json!(true));
+                            ds.remove("last_batch_anchor_error");
+                            if let Some(ref d) = digest {
+                                ds.insert("transaction_digest".to_string(), json!(d));
+                            }
+                            if let Some(ref root) = merkle_root {
+                                ds.insert("merkle_root".to_string(), json!(root));
+                            }
+                        }
+                    }
+                    let _ = write_json_atomic(event_path, &event);
+                }
+            }
+        }
+    }
+}
+
+fn batch_anchor_error_trace(event: &Value) -> String {
+    let causa = event
+        .get("delivery_state")
+        .and_then(|ds| ds.get("last_batch_anchor_error"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("batch-missing-merkle-anchor");
+    format!("batch-anchor-failed: {causa}")
+}
+
 fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Option<String>) {
     if simulate_iota_enabled() {
         let digest = format!("lab-sim-{}", &Uuid::new_v4().simple().to_string()[..24]);
@@ -839,7 +1152,7 @@ pub(crate) fn dispatch_subscriber(
                 } else {
                     (
                         false,
-                        "batch-missing-merkle-anchor".into(),
+                        batch_anchor_error_trace(event),
                         1,
                         None,
                     )
@@ -847,7 +1160,7 @@ pub(crate) fn dispatch_subscriber(
             } else {
                 (
                     false,
-                    "batch-missing-merkle-anchor".into(),
+                    batch_anchor_error_trace(event),
                     1,
                     None,
                 )
@@ -1409,6 +1722,94 @@ mod blocking_tests {
     }
 
     #[test]
+    fn batch_anchor_error_prefers_last_causa() {
+        let ev = json!({
+            "delivery_state": {
+                "last_batch_anchor_error": "iota-relay-unreachable: Connection refused"
+            }
+        });
+        let trace = batch_anchor_error_trace(&ev);
+        assert!(trace.starts_with("batch-anchor-failed:"));
+        assert!(trace.contains("iota-relay-unreachable"));
+        assert!(!trace.ends_with("batch-missing-merkle-anchor"));
+    }
+
+    #[test]
+    fn batch_anchor_error_fallback_prefixed() {
+        let ev = json!({});
+        assert_eq!(
+            batch_anchor_error_trace(&ev),
+            "batch-anchor-failed: batch-missing-merkle-anchor"
+        );
+    }
+
+    #[test]
+    fn resolve_dlt_reanchor_respects_cumulo() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_instance":{"dlt_reanchor":".SddIA/dlt/reanchor-queue"}}"#,
+        )
+        .unwrap();
+        let dir = resolve_dlt_reanchor_dir(repo);
+        assert!(dir.ends_with(".SddIA/dlt/reanchor-queue"));
+    }
+
+    #[test]
+    fn enqueue_dlt_reanchor_writes_queue_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_instance":{"dlt_reanchor":".SddIA/dlt/reanchor-queue"}}"#,
+        )
+        .unwrap();
+        let ev_path = repo.join("evt.json");
+        fs::write(&ev_path, "{}").unwrap();
+        enqueue_dlt_reanchor(repo, "uuid-1", &ev_path, "iota-relay-unreachable: x");
+        let q = repo.join(".SddIA/dlt/reanchor-queue/uuid-1.json");
+        assert!(q.is_file());
+        let body: Value = serde_json::from_str(&fs::read_to_string(&q).unwrap()).unwrap();
+        assert_eq!(body["event_uuid"], "uuid-1");
+        assert!(body["error_trace"]
+            .as_str()
+            .unwrap()
+            .contains("iota-relay-unreachable"));
+    }
+
+    #[test]
+    fn emit_dlt_batch_fracture_writes_pending() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+        )
+        .unwrap();
+        emit_dlt_batch_fracture(repo, "iota-relay-unreachable: Connection refused");
+        let pending = repo.join(".events/pending");
+        let mut found = false;
+        for ent in fs::read_dir(&pending).unwrap() {
+            let p = ent.unwrap().path();
+            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
+            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
+            {
+                assert_eq!(
+                    body["payload"]["friction_id"],
+                    "F-DLT-RELAY-SIN-SUPERVISOR"
+                );
+                assert_eq!(body["payload"]["attempted_action"], "merkle-batch-preseal");
+                found = true;
+            }
+        }
+        assert!(found);
+    }
+
+    #[test]
     fn sync_route_guard_sets_and_restores_env() {
         std::env::remove_var("SDDIA_LAB_ROUTE_SYNC");
         {
@@ -1562,6 +1963,9 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
         Err(e) => return json!({ "success": false, "exitCode": 1, "error": e }),
     };
 
+    // L-QUEUE: re-anclaje de cola si /health OK (sin reinyectar a pending/).
+    try_drain_dlt_reanchor_queue(repo, &bus);
+
     let subs_path = repo.join(&bus.subscriptions);
     let registry: Value = fs::read_to_string(&subs_path)
         .ok()
@@ -1644,75 +2048,116 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
             invoke_tool_capsule_json(&repo_buf, "iota-immutable-publisher", &payload, false)
         });
 
-        if let Ok(Ok(result)) = handle.join() {
-            let body = result.body;
-            if body
-                .get("success")
-                .and_then(|v: &Value| v.as_bool())
-                .unwrap_or(false)
-            {
-                let digest = body
-                    .get("result")
-                    .and_then(|r| r.get("transaction_digest"))
-                    .and_then(|v| v.as_str())
-                    .map(str::to_string);
-                let merkle_root = body
-                    .get("result")
-                    .and_then(|r| r.get("merkle_root"))
-                    .and_then(|v| v.as_str())
-                    .map(str::to_string);
-                let proofs = body
-                    .get("result")
-                    .and_then(|r| r.get("merkle_proofs"))
-                    .and_then(|v| v.as_array());
-                let proofs_dir = resolve_eda_proofs_dir(repo);
-                let _ = fs::create_dir_all(&proofs_dir);
+        match handle.join() {
+            Ok(Ok(result)) => {
+                let body = result.body;
+                if body
+                    .get("success")
+                    .and_then(|v: &Value| v.as_bool())
+                    .unwrap_or(false)
+                {
+                    let digest = body
+                        .get("result")
+                        .and_then(|r| r.get("transaction_digest"))
+                        .and_then(|v| v.as_str())
+                        .map(str::to_string);
+                    let merkle_root = body
+                        .get("result")
+                        .and_then(|r| r.get("merkle_root"))
+                        .and_then(|v| v.as_str())
+                        .map(str::to_string);
+                    let proofs = body
+                        .get("result")
+                        .and_then(|r| r.get("merkle_proofs"))
+                        .and_then(|v| v.as_array());
+                    let proofs_dir = resolve_eda_proofs_dir(repo);
+                    let _ = fs::create_dir_all(&proofs_dir);
 
-                for (i, uuid) in uuids_to_anchor.iter().enumerate() {
-                    if let Some(proofs) = proofs {
-                        if let Some(proof) = proofs.get(i) {
-                            let proof_path = proofs_dir.join(format!("{uuid}.json"));
-                            let _ = fs::write(
-                                &proof_path,
-                                serde_json::to_string_pretty(proof).unwrap_or_default(),
-                            );
-                        }
-                    }
-
-                    let event_path = event_paths_by_uuid
-                        .get(uuid)
-                        .cloned()
-                        .unwrap_or_else(|| {
-                            PathBuf::from(&bus.pending).join(format!("{uuid}.json"))
-                        });
-                    let event_path = if event_path.is_absolute() {
-                        event_path
-                    } else {
-                        repo.join(&event_path)
-                    };
-                    if let Ok(text) = fs::read_to_string(&event_path) {
-                        if let Ok(mut event) = serde_json::from_str::<Value>(&text) {
-                            if let Some(obj) = event.as_object_mut() {
-                                if !obj.contains_key("delivery_state") {
-                                    obj.insert("delivery_state".to_string(), json!({}));
-                                }
-                                if let Some(ds) =
-                                    obj.get_mut("delivery_state").and_then(|v| v.as_object_mut())
-                                {
-                                    ds.insert("cumulo".to_string(), json!("success"));
-                                    ds.insert("merkle_anchored".to_string(), json!(true));
-                                    if let Some(ref d) = digest {
-                                        ds.insert("transaction_digest".to_string(), json!(d));
-                                    }
-                                    if let Some(ref root) = merkle_root {
-                                        ds.insert("merkle_root".to_string(), json!(root));
-                                    }
-                                }
+                    for (i, uuid) in uuids_to_anchor.iter().enumerate() {
+                        if let Some(proofs) = proofs {
+                            if let Some(proof) = proofs.get(i) {
+                                let proof_path = proofs_dir.join(format!("{uuid}.json"));
+                                let _ = fs::write(
+                                    &proof_path,
+                                    serde_json::to_string_pretty(proof).unwrap_or_default(),
+                                );
                             }
-                            let _ = write_json_atomic(&event_path, &event);
+                        }
+
+                        let event_path = event_paths_by_uuid
+                            .get(uuid)
+                            .cloned()
+                            .unwrap_or_else(|| {
+                                PathBuf::from(&bus.pending).join(format!("{uuid}.json"))
+                            });
+                        let event_path = if event_path.is_absolute() {
+                            event_path
+                        } else {
+                            repo.join(&event_path)
+                        };
+                        if let Ok(text) = fs::read_to_string(&event_path) {
+                            if let Ok(mut event) = serde_json::from_str::<Value>(&text) {
+                                if let Some(obj) = event.as_object_mut() {
+                                    if !obj.contains_key("delivery_state") {
+                                        obj.insert("delivery_state".to_string(), json!({}));
+                                    }
+                                    if let Some(ds) = obj
+                                        .get_mut("delivery_state")
+                                        .and_then(|v| v.as_object_mut())
+                                    {
+                                        ds.insert("cumulo".to_string(), json!("success"));
+                                        ds.insert("merkle_anchored".to_string(), json!(true));
+                                        ds.remove("last_batch_anchor_error");
+                                        if let Some(ref d) = digest {
+                                            ds.insert("transaction_digest".to_string(), json!(d));
+                                        }
+                                        if let Some(ref root) = merkle_root {
+                                            ds.insert("merkle_root".to_string(), json!(root));
+                                        }
+                                    }
+                                }
+                                let _ = write_json_atomic(&event_path, &event);
+                            }
                         }
                     }
+                } else {
+                    let causa = capsule_error_trace(&body, false);
+                    eprintln!(
+                        "[route_domain_batch] pre-sellado Merkle falló: {causa}"
+                    );
+                    stamp_batch_anchor_error(
+                        repo,
+                        &bus,
+                        &event_paths_by_uuid,
+                        &uuids_to_anchor,
+                        &causa,
+                    );
+                    emit_dlt_batch_fracture(repo, &causa);
                 }
+            }
+            Ok(Err(e)) => {
+                let causa = e;
+                eprintln!("[route_domain_batch] invoke cápsula: {causa}");
+                stamp_batch_anchor_error(
+                    repo,
+                    &bus,
+                    &event_paths_by_uuid,
+                    &uuids_to_anchor,
+                    &causa,
+                );
+                emit_dlt_batch_fracture(repo, &causa);
+            }
+            Err(_) => {
+                let causa = "iota-thread-panicked".to_string();
+                eprintln!("[route_domain_batch] {causa}");
+                stamp_batch_anchor_error(
+                    repo,
+                    &bus,
+                    &event_paths_by_uuid,
+                    &uuids_to_anchor,
+                    &causa,
+                );
+                emit_dlt_batch_fracture(repo, &causa);
             }
         }
     }

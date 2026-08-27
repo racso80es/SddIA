@@ -191,6 +191,7 @@ const SYSTEMD_FACTORY_DAEMONS: &[&str] = &[
     "kalma2-bridge",
     "telegram-watcher",
     "github-bridge-watcher",
+    "iota-publish-relay",
 ];
 
 const SYSTEMD_FACTORY_TEMPLATE: &str = "sddia-daemon@.service.template";
