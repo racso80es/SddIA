@@ -212,6 +212,9 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
         "emit-domain-mutation" => super::domain_mutation::run(repo, inputs)?,
         "crypto-broker" => super::crypto_broker::run(repo, inputs)?,
         "emit-suite-execution-requested" => super::suite_execution_requested::run(repo, inputs)?,
+        "emit-user-preference-change-requested" => {
+            super::user_preference_change_requested::run(repo, inputs)?
+        }
         "policy-validator" => super::policy_validator::run(repo, inputs)?,
         "sync-entity-index" => super::sync_entity_index::run(repo, inputs)?,
         "materialize-fracture-pbi" => super::materialize_fracture_pbi::run(repo, inputs)?,

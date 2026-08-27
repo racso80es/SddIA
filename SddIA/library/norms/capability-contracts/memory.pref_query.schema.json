@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/memory.pref_query.schema.json",
+  "title": "memory.pref_query",
+  "type": "object",
+  "required": ["exitCode"],
+  "properties": {
+    "exitCode": { "type": "integer" },
+    "result": {
+      "type": "object",
+      "properties": {
+        "preferences": { "type": "array" }
+      }
+    },
+    "error_log": { "type": "string" }
+  },
+  "additionalProperties": true
+}

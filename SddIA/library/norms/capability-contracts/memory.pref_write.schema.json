@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/memory.pref_write.schema.json",
+  "title": "memory.pref_write",
+  "type": "object",
+  "required": ["exitCode"],
+  "properties": {
+    "exitCode": { "type": "integer" },
+    "result": {
+      "type": "object",
+      "properties": {
+        "preference_id": { "type": "string" },
+        "revision_id": { "type": "string" },
+        "operation": { "type": "string" }
+      }
+    },
+    "error_log": { "type": "string" }
+  },
+  "additionalProperties": true
+}

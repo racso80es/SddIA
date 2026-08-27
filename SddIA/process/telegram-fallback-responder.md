@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - external-ingest
 contract: process-contract v1.4.0
-hash_signature: sha256:924537e45cb8cdc5d0b04054d00d98faad62d3fdcfb57dc28e7540a53d150c3e
+hash_signature: "sha256:a6ef5b4852804590b9bf4f8ac6bb9c7923bf1146cca46e950577b701a493f2ce"
 inputs:
 - text: Texto del mensaje Telegram (payload.text)
 - chat_id: Chat destino para respuesta eferente
@@ -22,6 +22,12 @@ phases:
   - contract: llm.interact
     id: llm:interact
     version: '>=1.0.0'
+- intent: Consulta opt-in memory:pref-query; fail-open a bloque vacío.
+  name: Contexto preferencias
+  requires_capability:
+  - contract: memory.pref_query
+    id: memory:pref-query
+    version: '>=1.0.0'
 - delegates_to:
   - agent:mayeuta
   intent: 'Invocar Mayeuta con prompt literal: [HARD OVERRIDE] Has recibido este estímulo externo: "{text}". Genera respuesta orgánica ≤2 líneas (Tormentosa/Aiúa).'
@@ -36,7 +42,7 @@ phases:
   name: Materialización
 porcentaje_de_exito: null
 uuid: c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f
-version: 1.0.1
+version: "1.0.2"
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
