@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 84
+universe_total: 86
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -20,6 +20,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 | `16239778-a5bc-4a55-8996-9301e51a6176` | 2026-08-26 | email-watcher: imap_identity_sha256 + bootstrap automático ante cambio de cuenta o watermark obsoleto. | CANONICO | `SddIA/evolution/16239778-a5bc-4a55-8996-9301e51a6176.md` |
 | `a1c9e7f3-2b4d-5e6f-8a9b-0c1d2e3f4a5b` | 2026-08-26 | Ola documental centinelas-fracture-ola-20260819 — Laudo B, 5 PBI heartbeat archivados; watermark IMAP segregado. | CANONICO | `SddIA/evolution/a1c9e7f3-2b4d-5e6f-8a9b-0c1d2e3f4a5b.md` |
 | `6b600e3f-2f4a-4f1f-b0f9-087d2f954c1f` | 2026-08-26 | F-CI-EDA-E2E-WASI-BUILD — build WASI selectivo CI excluyendo daemons nativos (email-watcher/openssl) | CANONICO | `SddIA/evolution/6b600e3f-2f4a-4f1f-b0f9-087d2f954c1f.md` |
+| `67110f2f-2be8-4fd3-b0a7-8dc400fe803f` | 2026-08-26 | F-BUNDLE-06 — telegram-gateway en bundle consumidor | CANONICO | `SddIA/evolution/67110f2f-2be8-4fd3-b0a7-8dc400fe803f.md` |
 | `7e3c1a90-4b2d-4f8a-9c1e-6a0b2c8d4e1f` | 2026-08-26 | Aislamiento multi-instancia: ExecStart=%f, REPO_ROOT por instancia, cero pkill -x. | CANONICO | `SddIA/evolution/7e3c1a90-4b2d-4f8a-9c1e-6a0b2c8d4e1f.md` |
 | `181d6291-9735-4187-a6f7-f6e56472aa3e` | 2026-08-25 | Ignición soberana: systemd @%f por centinela y start-sddia sin spawn & del bus/WUI. | CANONICO | `SddIA/evolution/181d6291-9735-4187-a6f7-f6e56472aa3e.md` |
 | `6b1f97f4-fa9d-48df-a58a-167f5d5e06dc` | 2026-08-25 | Kaizen Paciente 0 residual: resolver orquestador, overlay {}, pin ignición, smoke sin Local_QA. | CANONICO | `SddIA/evolution/6b1f97f4-fa9d-48df-a58a-167f5d5e06dc.md` |
@@ -27,6 +28,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 | `c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14` | 2026-08-21 | Rehab DCC PPR #187 + adjudicación retroactiva fail_soft EDA post-umbral físico. | CANONICO | `SddIA/evolution/c4a91e7b-2f68-4d3a-a8e1-5b7c9d0e2f14.md` |
 | `14f34c46-7683-4a2f-9042-69795d170d88` | 2026-08-20 | Kaizen consumidor: Filtro C, bundle hermético, instance-creator y systemd %f. | CANONICO | `SddIA/evolution/14f34c46-7683-4a2f-9042-69795d170d88.md` |
 | `c041bfd2-3be0-4956-83ec-be28fadee390` | 2026-08-20 | Rehab process feature (revoked permanent) + fail-soft padre DCC + poda telemetría hueca Radamanto. | CANONICO | `SddIA/evolution/c041bfd2-3be0-4956-83ec-be28fadee390.md` |
+| `fa0f00e4-20f1-4258-95a9-e4d753f71d71` | 2026-08-19 | Kaizen IMAP: guante centinela + fan-out Email_Triaged actionable + acciones rápidas | CANONICO | `SddIA/evolution/fa0f00e4-20f1-4258-95a9-e4d753f71d71.md` |
 | `6586a1e1-a1d7-4ffc-bd6a-b3f658d7ef79` | 2026-08-17 | PEC: testigo durable + Telegram y auditoría de cobertura catálogo↔registro. | CANONICO | `SddIA/evolution/6586a1e1-a1d7-4ffc-bd6a-b3f658d7ef79.md` |
 | `4828a809-c6ae-46d3-8b36-d0eb4df1060e` | 2026-08-16 | Fire-and-Forget Tekton: DA-5, CLI detach allowlist y acuse PEC en eda_fractal.orchestration. | CANONICO | `SddIA/evolution/4828a809-c6ae-46d3-8b36-d0eb4df1060e.md` |
 | `ba900e95-1a47-4185-b86c-bc7a251b4fe6` | 2026-08-16 | Umbrales Radamanto por entity_type process + rehab revoked PPR/DCC (PPR #174+#177) | CANONICO | `SddIA/evolution/ba900e95-1a47-4185-b86c-bc7a251b4fe6.md` |
