@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 82
+universe_total: 83
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `8a4b0d3f-5c2e-4f9b-8d6a-7e8f9a0b1c2d` | 2026-08-27 | Rehab bug-fix PPR #194: A1 Cerbero/Radamanto; ontología process (fósil tool); sin A2 motor. | CANONICO | `SddIA/evolution/8a4b0d3f-5c2e-4f9b-8d6a-7e8f9a0b1c2d.md` |
 | `7f3a9c2e-4b1d-4e8a-9c5f-6d7e8a9b0c1d` | 2026-08-27 | Rehab accept-pr PPR #194: delete_branch canónico, handoff_status, frozen git-manager 1.1.0; Cerbero A1. | CANONICO | `SddIA/evolution/7f3a9c2e-4b1d-4e8a-9c5f-6d7e8a9b0c1d.md` |
 | `e2b9a4f1-7c83-4d5e-9a16-0f8b3c5d7e21` | 2026-08-26 | Rehab PPR PPR #190: survival hollow hijo detached + cycle_phase telemetría; Cerbero permanent+revoked. | CANONICO | `SddIA/evolution/e2b9a4f1-7c83-4d5e-9a16-0f8b3c5d7e21.md` |
 | `16239778-a5bc-4a55-8996-9301e51a6176` | 2026-08-26 | email-watcher: imap_identity_sha256 + bootstrap automático ante cambio de cuenta o watermark obsoleto. | CANONICO | `SddIA/evolution/16239778-a5bc-4a55-8996-9301e51a6176.md` |

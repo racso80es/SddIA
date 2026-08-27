@@ -4,8 +4,12 @@ title: "[ARQUITECTURA] bug-fix — rehabilitación revoked_entities (PPR #194)"
 format: markdown
 version: "1.0.0"
 created: "2026-08-26"
-updated: "2026-08-26T11:48:00Z"
-status: pending
+updated: "2026-08-27T11:49:44Z"
+status: done
+refinement_status: implemented
+persist_ref: docs/features/bug-fix-revoked-registry-rehab-ppr194
+branch_name: refactor/bug-fix-revoked-registry-rehab-ppr194
+pbi_archived: true
 priority: media
 process: refactorization
 type: refactorization
@@ -24,8 +28,10 @@ related:
   - SddIA/agents/radamanto.thresholds.json
   - SddIA/library/codexes/codex-software-engineering/process/bug-fix.md
   - docs/fixes/bundle-consumer-telegram-gateway/validacion.md
+  - docs/features/accept-pr-revoked-registry-rehab-ppr194/validacion.md
 source_audits:
   - docs/fixes/bundle-consumer-telegram-gateway/validacion.md
+  - docs/features/accept-pr-revoked-registry-rehab-ppr194/validacion.md
   - .SddIA/cerbero/revoked_entities.json
 ---
 
@@ -39,7 +45,7 @@ Rehabilitar la entidad `bug-fix` en `.SddIA/cerbero/revoked_entities.json` tras 
 |-------|--------|
 | Entidad | `bug-fix` |
 | Registro | `.SddIA/cerbero/revoked_entities.json` → **`revoked.bug-fix`** |
-| `entity_type` (registry) | `tool` (revisar misclasificación vs `process` — jurisprudencia #174) |
+| `entity_type` (registry) | `tool` (fósil; post-A1 stats `process` — jurisprudencia #174) |
 | `reason` | `abrupt_success_rate_drop` |
 | Since | `2026-08-16T16:09:32Z` |
 | Check origen | `REVOKED_ENTITY_ALERT_BUG_FIX` (F4/F5 Cerbero/Argos · alerta no bloqueante) + FS Cosecha #194 |
@@ -51,8 +57,14 @@ PPR #194 · CID `59606407-eed3-4da8-ac13-3cf6205b2147` · `persist_ref` `docs/fi
 
 Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · seed nueva (esta).
 
-## Criterio de cierre (borrador)
+## Sightings adicionales
 
-- [ ] Laudo rehabilitación Cerbero / Radamanto; corregir `entity_type` si procede (`process` vs `tool`)
-- [ ] `bug-fix` ausente de `revoked`/`permanent` en `revoked_entities.json`
-- [ ] Cascada feature/fix + `validacion.md` APTO + PBI en `done/`
+| Sighting | CID | Nota |
+|----------|-----|------|
+| Cosecha PR #200 | `7c215675-2ad2-436a-9749-ff635c52c8b3` | `@ 2026-08-27T11:42:00Z` · accept-pr-revoked-registry-rehab-ppr194 · 0 create · affirm #194 · Cerbero `bug-fix`∈revoked since `2026-08-16T16:09:32Z` · F5 lateral |
+
+## Criterio de cierre
+
+- [x] Laudo rehabilitación Cerbero / Radamanto; `entity_type: process` (fósil `tool` borrado)
+- [x] `bug-fix` ausente de `revoked`/`permanent` en `revoked_entities.json` (instancia; fuera del PR)
+- [x] Cascada feature + `validacion.md` APTO + PBI en `done/`
