@@ -159,14 +159,34 @@ fn tech_triage(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, 
     }))
 }
 
+/// True si el error de invoke accept-pr es bloqueo Cerbero/revoked/forbidden (L-HANDOFF-RUNTIME).
+pub(crate) fn is_accept_pr_block_err(err: &str) -> bool {
+    let e = err.to_lowercase();
+    e.contains("revoked")
+        || e.contains("forbidden")
+        || e.contains("cerbero")
+        || e.contains("permanently revoked")
+        || e.contains("entity revoked")
+}
+
+/// Convención F5: MERGE ausente ⇒ no `accept_pr_handoff: true` (L-HANDOFF-F5 / T-A3-NO-TRUE-PENDING).
+pub(crate) fn f5_handoff_when_merge_absent() -> (bool, &'static str) {
+    (false, "pending")
+}
+
 fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, String> {
     if env_truthy("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF") {
+        if let Some(obj) = state.as_object_mut() {
+            obj.insert("accept_pr_handoff".into(), json!(false));
+            obj.insert("accept_pr_handoff_status".into(), json!("skipped"));
+        }
         return Ok(json!({
             "status": "executed",
             "handler": "ppr-handoff-accept-pr",
             "skipped": true,
             "reason": "SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF",
             "accept_pr_handoff": false,
+            "accept_pr_handoff_status": "skipped",
         }));
     }
 
@@ -179,12 +199,17 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
         || truthy_flag(inputs, "accept_pr_handoff");
 
     if !verdict_ok {
+        if let Some(obj) = state.as_object_mut() {
+            obj.insert("accept_pr_handoff".into(), json!(false));
+            obj.insert("accept_pr_handoff_status".into(), json!("skipped"));
+        }
         return Ok(json!({
             "status": "executed",
             "handler": "ppr-handoff-accept-pr",
             "skipped": true,
             "reason": "verdict_not_aprobado",
             "accept_pr_handoff": false,
+            "accept_pr_handoff_status": "skipped",
         }));
     }
 
@@ -209,18 +234,52 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
         child["merge_already_done"] = json!(true);
     }
 
-    let data = invoke_orchestrator::invoke_process(repo, "accept-pr", &child)?;
-    if let Some(obj) = state.as_object_mut() {
-        obj.insert("accept_pr_handoff".into(), json!(true));
-        obj.insert("accept_pr".into(), data.clone());
+    match invoke_orchestrator::invoke_process(repo, "accept-pr", &child) {
+        Ok(data) => {
+            // L-HANDOFF-STATUS: true solo si status == consumed.
+            if let Some(obj) = state.as_object_mut() {
+                obj.insert("accept_pr_handoff".into(), json!(true));
+                obj.insert("accept_pr_handoff_status".into(), json!("consumed"));
+                obj.insert("accept_pr".into(), data.clone());
+            }
+            Ok(json!({
+                "status": "executed",
+                "handler": "ppr-handoff-accept-pr",
+                "accept_pr_handoff": true,
+                "accept_pr_handoff_status": "consumed",
+                "accept_pr": data,
+            }))
+        }
+        Err(e) if is_accept_pr_block_err(&e) => {
+            if let Some(obj) = state.as_object_mut() {
+                obj.insert("accept_pr_handoff".into(), json!(false));
+                obj.insert("accept_pr_handoff_status".into(), json!("blocked"));
+                obj.insert("accept_pr_block_reason".into(), json!(e.clone()));
+            }
+            Ok(json!({
+                "status": "executed",
+                "handler": "ppr-handoff-accept-pr",
+                "accept_pr_handoff": false,
+                "accept_pr_handoff_status": "blocked",
+                "block_reason": e,
+            }))
+        }
+        Err(e) => {
+            // Otros Err: señal blocked explícita sin inventar merge (L-HANDOFF-RUNTIME c).
+            if let Some(obj) = state.as_object_mut() {
+                obj.insert("accept_pr_handoff".into(), json!(false));
+                obj.insert("accept_pr_handoff_status".into(), json!("blocked"));
+                obj.insert("accept_pr_block_reason".into(), json!(e.clone()));
+            }
+            Ok(json!({
+                "status": "executed",
+                "handler": "ppr-handoff-accept-pr",
+                "accept_pr_handoff": false,
+                "accept_pr_handoff_status": "blocked",
+                "block_reason": e,
+            }))
+        }
     }
-
-    Ok(json!({
-        "status": "executed",
-        "handler": "ppr-handoff-accept-pr",
-        "accept_pr_handoff": true,
-        "accept_pr": data,
-    }))
 }
 
 #[cfg(test)]
@@ -248,7 +307,40 @@ mod tests {
         let out = handoff_accept_pr(&dir, &inputs, &mut state).unwrap();
         assert_eq!(out["skipped"], true);
         assert_eq!(out["reason"], "verdict_not_aprobado");
+        assert_eq!(out["accept_pr_handoff"], false);
+        assert_eq!(out["accept_pr_handoff_status"], "skipped");
+        assert_eq!(state["accept_pr_handoff"], false);
+        assert_eq!(state["accept_pr_handoff_status"], "skipped");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn t_a3_skip_verdict() {
+        let dir = std::env::temp_dir().join(format!("sddia-ppr-ho-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut state = json!({"verdict": "requiere_cambios"});
+        let inputs = json!({"pr_branch": "feat/x"});
+        let out = handoff_accept_pr(&dir, &inputs, &mut state).unwrap();
+        assert_eq!(out["accept_pr_handoff"], false);
+        assert_eq!(out["accept_pr_handoff_status"], "skipped");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn t_a3_blocked_err_classifier() {
+        assert!(is_accept_pr_block_err("process accept-pr is revoked in Cerbero"));
+        assert!(is_accept_pr_block_err("FORBIDDEN: entity revoked"));
+        assert!(is_accept_pr_block_err("cerbero gate denied"));
+        assert!(!is_accept_pr_block_err("merge conflict on main"));
+    }
+
+    #[test]
+    fn t_a3_no_true_pending_f5_convention() {
+        let (handoff, status) = f5_handoff_when_merge_absent();
+        assert!(!handoff);
+        assert_eq!(status, "pending");
+        // MERGE ausente ⇒ never true (L-HANDOFF-F5).
+        assert_ne!((true, "pending"), (handoff, status));
     }
 
     #[test]

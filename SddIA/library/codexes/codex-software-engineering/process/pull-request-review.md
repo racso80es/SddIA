@@ -1,7 +1,7 @@
 ---
 uuid: 6d59f23b-df29-4be5-9bb9-29cede3474b9
 name: pull-request-review
-version: 2.2.1
+version: 2.3.0
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -24,7 +24,9 @@ outputs:
 - verdict: aprobado | requiere_cambios | rechazado
 - delivery_state: success | failed
 - kaizen_seeds: Semillas Kaizen persistidas bajo docs/todos/
-- accept_pr_handoff: true si se delegó handoff a accept-pr
+- accept_pr_handoff: boolean; true solo si accept_pr_handoff_status == consumed (merge soberano / invoke accept-pr Ok). Prohibido true con MERGE ausente (L-HANDOFF-F5).
+- accept_pr_handoff_status: pending | consumed | blocked | skipped
+- accept_pr_block_reason: string opcional si status == blocked
 phases:
 - name: Preparación de rama
   intent: Alinear checkout, fetch y estado limpio para inspección reproducible de pr_branch.

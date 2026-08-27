@@ -4,8 +4,13 @@ uuid: "94f74fa6-a063-4d94-96a1-2f4d92ffb692"
 title: "[FIX] accept-pr — payload delete_branch vs contrato git-manager"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 type: bug-fix
+absorbed_by: PBI-PPR-194-ACCEPT-PR-REVOKED-REGISTRY
+persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr194
+branch_name: refactor/accept-pr-revoked-registry-rehab-ppr194
+pbi_archived: true
+updated: "2026-08-27T11:22:00Z"
 priority: alta
 process: bug-fix
 persist_ref: docs/fixes/accept-pr-delete-branch-payload

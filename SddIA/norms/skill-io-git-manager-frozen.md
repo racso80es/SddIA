@@ -1,7 +1,7 @@
 ---
 uuid: "b2c3d4e5-f6a7-4890-b123-456789abcdef"
 name: "skill-io-git-manager-frozen"
-version: "1.0.0"
+version: "1.1.0"
 entity_type: "norm"
 jurisdiction: "cerbero"
 freeze_status: "congelado"
@@ -11,9 +11,11 @@ schema_version: "2026-05-07"
 
 # Esquema de entrada congelado — `git-manager`
 
-**Estado:** Congelado antes de la forja física de la cápsula. Cerbero y Argos deben rechazar cualquier `operation_type` o claves de `operation_payload_json` no listadas aquí.
+**Estado:** Congelado. Cerbero y Argos deben rechazar cualquier `operation_type` o claves de `operation_payload_json` no listadas aquí.
 
 **Alcance de ejecución:** Solo el binario **`git`** nativo del sistema. Ningún otro ejecutable (p. ej. `gh`, `npm`) puede invocarse a través de esta skill.
+
+**SemVer 1.1.0 (L-FROZEN-ALIGN / PBI-PPR-194):** declara ops que la cápsula ya ejecuta (`delete_branch`, `merge`, `get_last_commit`, `diff_name_only`). Homónimo `remote`: string en `push`/`pull`/`fetch` ≠ boolean en `delete_branch` — no unificar.
 
 ## 1. Raíz del mensaje (stdin JSON)
 
@@ -21,13 +23,13 @@ schema_version: "2026-05-07"
 | :--- | :--- | :---: | :--- |
 | `operation_type` | `string` (enum) | Sí | Uno de los valores del §2. |
 | `repository_path` | `string` | Sí | Ruta absoluta del repositorio, **resuelta previamente por Cúmulo** (sin path traversal). |
-| `operation_payload_json` | `object` | Sí | Carga según `operation_type`; claves extra están prohibidas salvo evolución explícita del presente documento. |
+| `operation_payload_json` | `object` | Sí | Carga según `operation_type`; claves extra quedan prohibidas salvo evolución explícita del presente documento. |
 
 ## 2. `operation_type` (enum estricto)
 
 Valores permitidos, en minúsculas y exactamente:
 
-`status` · `checkout` · `commit` · `push` · `pull` · `fetch` · `branch_list`
+`status` · `checkout` · `commit` · `push` · `pull` · `fetch` · `branch_list` · `get_last_commit` · `merge` · `delete_branch` · `diff_name_only`
 
 ## 3. `operation_payload_json` por operación
 
@@ -121,8 +123,62 @@ La validación de que el nombre cumple política de ramas **no** es responsabili
 | `remote` | `string` | Sí |
 | `prune` | `boolean` | Sí |
 
+### 3.8 `get_last_commit`
+
+```json
+{
+  "ref": "string"
+}
+```
+
+| Clave | Tipo | Obligatorio |
+| :--- | :--- | :---: |
+| `ref` | `string` | Sí |
+
+### 3.9 `merge`
+
+```json
+{
+  "branch_name": "string",
+  "no_ff": true
+}
+```
+
+| Clave | Tipo | Obligatorio |
+| :--- | :--- | :---: |
+| `branch_name` | `string` | Sí |
+| `no_ff` | `boolean` | Sí |
+
+### 3.10 `delete_branch`
+
+```json
+{
+  "branch_name": "string",
+  "remote": false,
+  "force": false
+}
+```
+
+| Clave | Tipo | Obligatorio | Notas |
+| :--- | :--- | :---: | :--- |
+| `branch_name` | `string` | Sí | Nombre de rama a eliminar |
+| `remote` | **boolean** | Sí | `false` → `git branch -d/-D`; `true` → `git push origin --delete`. **No** es el string `"origin"`. |
+| `force` | `boolean` | Sí | Solo afecta delete local (`-D` vs `-d`) |
+
+### 3.11 `diff_name_only`
+
+```json
+{
+  "ref_spec": "string"
+}
+```
+
+| Clave | Tipo | Obligatorio |
+| :--- | :--- | :---: |
+| `ref_spec` | `string` | Sí |
+
 ## 4. Referencias
 
-- Resolución de rutas normativas: `SddIA/core/cumulo.paths.json` → `directories.norms`.
+- Resolución de rutas normativas: `SddIA/core/cumulo.paths.json` → `directories.norms` / `normative_documents.skill_io_git_manager_frozen`.
 - Política de nombres de rama y convenciones: `SddIA/norms/git-operations.md`.
 - Orquestación de PRs (no atómica): `SddIA/norms/pull-request-orchestration.md`.
