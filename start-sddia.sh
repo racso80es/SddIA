@@ -22,8 +22,8 @@ RUNTIME_PROFILE="$(echo "${SDDIA_RUNTIME_PROFILE:-engineering}" | tr '[:upper:]'
 EMAIL_DAEMON="email-watcher"
 EMAIL_DAEMON_STARTED=0
 STATUS_DIR=".SddIA/daemons/status"
-IOTA_RELAY_DIR=".SddIA/services/iota-publish-relay"
-IOTA_RELAY_PID=""
+IOTA_RELAY_DIR="${SDDIA_IOTA_RELAY_DIR:-.SddIA/services/iota-publish-relay}"
+IOTA_DLT_REQUIRED=0
 HEARTBEAT_AUDIT=".SddIA/daemons/state/heartbeat-audit.json"
 CLEANUP_DONE=0
 IGNITION_EPOCH="$(date -u +%s)"
@@ -33,6 +33,43 @@ if [[ "$RUNTIME_PROFILE" == "consumer" || "$RUNTIME_PROFILE" == "consumidor" ]];
     OPTIONAL_DAEMONS=(telegram-watcher)
 else
     OPTIONAL_DAEMONS=(telegram-watcher github-bridge-watcher)
+fi
+
+# L-REQUIRED: aduana DLT = centinela obligatorio si no-consumer + sin simulación + URL loopback + hijo Node presente.
+_iota_dlt_required() {
+    if [[ "$RUNTIME_PROFILE" == "consumer" || "$RUNTIME_PROFILE" == "consumidor" ]]; then
+        return 1
+    fi
+    if [[ "${SDDIA_LAB_SIMULATE_IOTA:-0}" != "0" ]]; then
+        return 1
+    fi
+    local url="${IOTA_PUBLISH_RELAY_URL:-}"
+    if [[ -z "$url" ]]; then
+        return 1
+    fi
+    if [[ ! "$url" =~ 127\.0\.0\.1|/localhost|localhost ]]; then
+        return 1
+    fi
+    if [[ ! -f "$IOTA_RELAY_DIR/server.mjs" ]]; then
+        return 1
+    fi
+    return 0
+}
+
+_iota_relay_health_url() {
+    local url="${IOTA_PUBLISH_RELAY_URL:-}"
+    if [[ -n "$url" && "$url" == */v1/publish ]]; then
+        echo "${url%/v1/publish}/health"
+        return 0
+    fi
+    local host="${IOTA_PUBLISH_RELAY_HOST:-127.0.0.1}"
+    local port="${IOTA_PUBLISH_RELAY_PORT:-8787}"
+    echo "http://${host}:${port}/health"
+}
+
+if _iota_dlt_required; then
+    IOTA_DLT_REQUIRED=1
+    REQUIRED_DAEMONS+=(iota-publish-relay)
 fi
 DAEMON_NAMES=("${REQUIRED_DAEMONS[@]}" "${OPTIONAL_DAEMONS[@]}")
 
@@ -131,10 +168,6 @@ cleanup() {
     _sddia_stop_lock_pid "${STATUS_DIR}/kalma2-bridge.lock"
     _sddia_stop_lock_pid "${STATUS_DIR}/${EMAIL_DAEMON}.lock"
 
-    if [[ -n "$IOTA_RELAY_PID" ]] && kill -0 "$IOTA_RELAY_PID" 2>/dev/null; then
-        kill "$IOTA_RELAY_PID" 2>/dev/null || true
-    fi
-
     echo "[SddIA] Ecosistema detenido de forma segura."
     exit "$exit_code"
 }
@@ -198,6 +231,16 @@ _start_daemon() {
     local executable
     executable="$(readlink -f "/proc/${pid}/exe" 2>/dev/null || true)"
     if kill -0 "$pid" 2>/dev/null && _is_native_elf "$executable"; then
+        if [[ "$name" == "iota-publish-relay" ]]; then
+            local health
+            health="$(_iota_relay_health_url)"
+            if ! _wait_http "$health" "IOTA Relay" 30 0.5; then
+                echo "  -> [ERROR] ${name}: sin binding /health en ${health} (prohibido ACTIVO no verificado)"
+                return 1
+            fi
+            echo "  -> ${name}: ACTIVO (pid=${pid}, health=${health})"
+            return 0
+        fi
         echo "  -> ${name}: ACTIVO (pid=${pid}, binario nativo=${executable})"
         return 0
     fi
@@ -231,7 +274,7 @@ _materialize_systemd_units() {
     local name body
     mkdir -p "$dest"
     if [[ -f "$factory" ]]; then
-        for name in event-watcher event-sweeper kalma2-bridge telegram-watcher github-bridge-watcher; do
+        for name in event-watcher event-sweeper kalma2-bridge telegram-watcher github-bridge-watcher iota-publish-relay; do
             body="$(cat "$factory")"
             body="${body//@@DAEMON_NAME@@/$name}"
             printf '%s\n' "$body" >"$dest/sddia-${name}@.service"
@@ -297,6 +340,18 @@ _systemd_ignite() {
 
     if [[ "$RUNTIME_PROFILE" != "consumer" && "$RUNTIME_PROFILE" != "consumidor" ]]; then
         _enable_instance_unit "sddia-github-bridge-watcher" || echo "  -> [WARN] sddia-github-bridge-watcher@%f no enable"
+    fi
+
+    # L-REQUIRED: enable relay ANTES del exit 0 de jurisdicción systemd (ceguera histórica L441).
+    if [[ "$IOTA_DLT_REQUIRED" -eq 1 ]]; then
+        _enable_instance_unit "sddia-iota-publish-relay" || return 1
+        local health
+        health="$(_iota_relay_health_url)"
+        if ! _wait_http "$health" "IOTA Relay" 30 0.5; then
+            echo "  -> [ERROR] iota-publish-relay sin /health en ${health}"
+            return 1
+        fi
+        echo "  -> iota-publish-relay: ACTIVO (systemd + ${health})"
     fi
     return 0
 }
@@ -493,21 +548,11 @@ if [[ -z "$BRIDGE_BIN" ]]; then
 fi
 echo "  -> kalma2-bridge: binario nativo=${BRIDGE_BIN}"
 
-# --- INFRAESTRUCTURA DLT (IOTA RELAY) ---
-if [[ -f "$IOTA_RELAY_DIR/server.mjs" ]]; then
-    echo "[SddIA] Levantando Aduana DLT (IOTA Relay)..."
-    if [[ ! -d "$IOTA_RELAY_DIR/node_modules" ]]; then
-        echo "  -> Instalando dependencias Node.js..."
-        (cd "$IOTA_RELAY_DIR" && npm install --silent)
-    fi
-    (cd "$IOTA_RELAY_DIR" && node server.mjs > relay.log 2>&1) &
-    IOTA_RELAY_PID=$!
-    sleep 1 # Termodinámica básica para asegurar el binding del puerto 8787
-    echo "  -> IOTA Relay: ACTIVO en puerto 8787 (PID: $IOTA_RELAY_PID)"
-else
-    echo "  -> [WARN] IOTA Relay no encontrado en $IOTA_RELAY_DIR. Las delegaciones a DLT fallarán."
+# Aduana DLT: centinela iota-publish-relay ya arrancado vía REQUIRED_DAEMONS / _start_daemon
+# (L-SUPERVISOR + L-HEALTH). Sin hijo Node inline ni ACTIVO no verificado.
+if [[ "$IOTA_DLT_REQUIRED" -eq 0 ]]; then
+    echo "  -> IOTA Relay: omitido (no L-REQUIRED: consumer/simulación/URL no-loopback/hijo ausente)"
 fi
-# ----------------------------------------
 
 export SDDIA_REPO_ROOT="$REPO_ROOT"
 "$BRIDGE_BIN" &

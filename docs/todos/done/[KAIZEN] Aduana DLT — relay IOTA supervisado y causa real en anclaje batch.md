@@ -5,7 +5,7 @@ title: "[KAIZEN] Aduana DLT — relay IOTA supervisado y causa real en anclaje b
 format: markdown
 version: "1.0.0"
 created: "2026-08-27"
-status: "propuesto"
+status: "archivado"
 priority: "critica"
 process: feature
 type: kaizen

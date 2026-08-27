@@ -1106,6 +1106,163 @@ fn emitter_lines(emitters: &Value) -> String {
         .unwrap_or_else(|| "- *(definir en forja completa)*".into())
 }
 
+/// Forja nativa `daemon-creator` (L-FORGE): `{name}.md` + fila en `daemons/index.md`.
+pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    let name = optional_name(inputs, "daemon_name")?;
+    let kebab = regex::Regex::new(r"^[a-z][a-z0-9]*(-[a-z0-9]+)*$").map_err(|e| e.to_string())?;
+    if !kebab.is_match(&name) {
+        return Err(format!("daemon_name no kebab-case: {name}"));
+    }
+
+    let daemons_root = repo.join("SddIA/daemons");
+    let daemon_path = daemons_root.join(format!("{name}.md"));
+    let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    if let Some(skip) = idempotent_forge_handoff(&daemon_path, &lifecycle)? {
+        return Ok(skip);
+    }
+    if lifecycle == "create" && daemon_path.is_file() {
+        return Err(format!("Ya existe {}", daemon_path.display()));
+    }
+
+    let context = str_field(inputs, "daemon_context", "ecosystem-evolution");
+    let version = str_field(inputs, "daemon_version", "1.0.0");
+    let contract_ver = str_field(inputs, "daemons_contract_version", "1.0.0");
+    let desc = str_field(
+        inputs,
+        "daemon_description",
+        &format!("Centinela {name}"),
+    );
+    let jurisdiction = str_field(
+        inputs,
+        "daemon_jurisdiction",
+        "Aislada — Ceguera Lógica. Solo inyecta eventos físicos en el bus",
+    );
+    let caps = inputs
+        .get("daemon_capabilities")
+        .cloned()
+        .unwrap_or_else(|| json!([]));
+    let exec = inputs
+        .get("daemon_execution")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
+    let entrypoint = exec
+        .get("entrypoint")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("SddIA/daemons/{name}.sh")
+        .replace("{name}", &name);
+    let runtime = exec
+        .get("runtime")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("native-rust");
+    let heartbeat = exec
+        .get("heartbeat_interval_seconds")
+        .and_then(|v| v.as_u64())
+        .or_else(|| {
+            exec.get("heartbeat_interval_seconds")
+                .and_then(|v| v.as_i64())
+                .map(|n| n as u64)
+        })
+        .unwrap_or(30);
+    if heartbeat < 5 {
+        return Err(format!(
+            "heartbeat_interval_seconds debe ser ≥ 5 (recibido {heartbeat})"
+        ));
+    }
+
+    let daemon_uuid = generate_uuid(repo)?;
+    let hash_sig = sha256_canon(
+        repo,
+        &json!({
+            "daemon_name": name,
+            "daemon_version": version,
+            "daemon_context": context,
+            "daemon_capabilities": caps,
+            "daemon_execution": {
+                "entrypoint": entrypoint,
+                "runtime": runtime,
+                "heartbeat_interval_seconds": heartbeat,
+            },
+        }),
+    )?;
+
+    let cap_yaml = caps
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| format!("  - \"{s}\""))
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "  - \"daemon-heartbeat\"".into());
+
+    let caps_index = caps
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| format!("`{s}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        })
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "`daemon-heartbeat`".into());
+
+    let body = format!(
+        r#"---
+uuid: "{daemon_uuid}"
+name: "{name}"
+version: "{version}"
+contract: "daemons-contract v{contract_ver}"
+context: "{context}"
+hash_signature: "{hash_sig}"
+capabilities:
+{cap_yaml}
+execution:
+  entrypoint: "{entrypoint}"
+  runtime: "{runtime}"
+  heartbeat_interval_seconds: {heartbeat}
+jurisdiction: "{jurisdiction}"
+telemetry_provided: true
+telemetry_schema:
+  - "uptime_seconds"
+  - "pid"
+  - "status"
+---
+
+# {name}
+
+{desc}
+
+Forja: `daemon-creator` (porte nativo `run_daemon_forge`). UUID vía `action:crypto-broker`.
+"#
+    );
+    fs::create_dir_all(&daemons_root).map_err(|e| e.to_string())?;
+    fs::write(&daemon_path, body).map_err(|e| e.to_string())?;
+
+    let index_path = daemons_root.join("index.md");
+    let row = format!(
+        "| `{name}.md` | `{daemon_uuid}` | {name} | {version} | daemons-contract v{contract_ver} | {context} | {caps_index} | {heartbeat} |"
+    );
+    append_row(&index_path, &row, &name)?;
+
+    Ok(json!({
+        "artifact_daemon_md": daemon_path.strip_prefix(repo).unwrap_or(&daemon_path).to_string_lossy().replace('\\', "/"),
+        "artifact_daemons_index": index_path.strip_prefix(repo).unwrap_or(&index_path).to_string_lossy().replace('\\', "/"),
+        "handoff_entity_uuid": daemon_uuid,
+        "handoff_hash_signature_new": hash_sig,
+        "handoff_hash_signature_old": null,
+        "handoff_version": version,
+    }))
+}
+
 pub fn materialize_by_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
     if let Some(class) = inputs.get("entity_class").and_then(|v| v.as_str()) {
         return match class {
@@ -1118,8 +1275,12 @@ pub fn materialize_by_inputs(repo: &Path, inputs: &Value) -> Result<Value, Strin
             "suite" => run_suite_forge(repo, inputs),
             "skill" => run_skill_forge(repo, inputs),
             "event" => run_event_forge(repo, inputs),
+            "daemon" => run_daemon_forge(repo, inputs),
             other => Err(format!("entity_class no soportada en forja nativa: {other}")),
         };
+    }
+    if inputs.get("daemon_name").is_some() {
+        return run_daemon_forge(repo, inputs);
     }
     if inputs.get("skill_name").is_some()
         || (inputs.get("skill_inputs_schema").is_some() && inputs.get("skill_context").is_some())

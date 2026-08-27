@@ -1,5 +1,5 @@
 {
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -98,7 +98,8 @@
   },
   "eda_instance": {
     "customization": ".SddIA/events",
-    "proofs": ".SddIA/proofs"
+    "proofs": ".SddIA/proofs",
+    "dlt_reanchor": ".SddIA/dlt/reanchor-queue"
   },
   "env_hierarchy": {
     "global": ".dev/.env",
