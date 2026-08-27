@@ -664,6 +664,11 @@ fn execute_phase_body_residual(
                         phase_name,
                         state,
                     );
+                    super::accept_pr::mark_fail_soft_if_sync_post_merge(
+                        &mut entry,
+                        phase_name,
+                        state,
+                    );
                     entry
                 }
             };
@@ -861,6 +866,7 @@ fn run_generic(
     }
     if process_name == "accept-pr" {
         super::accept_pr::adjudicate_seal_fail_soft_post_merge(&mut phase_reports, &state);
+        super::accept_pr::adjudicate_sync_fail_soft_post_merge(&mut phase_reports, &state);
     }
     state["phase_reports"] = json!(phase_reports);
 

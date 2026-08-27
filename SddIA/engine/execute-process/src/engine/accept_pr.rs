@@ -352,6 +352,7 @@ pub(crate) fn accept_pr_physical_threshold_crossed(state: &Value) -> bool {
 }
 
 const SEAL_PHASE: &str = "Sello Criptográfico de Fusión";
+const SYNC_PHASE: &str = "Sincronización y Limpieza";
 
 /// L-FAILSOFT-SEAL (PPR #200): sello EDA KO no tumba survival si el merge ya cruzó.
 pub(crate) fn mark_fail_soft_if_seal_post_merge(
@@ -383,6 +384,39 @@ pub(crate) fn adjudicate_seal_fail_soft_post_merge(phase_reports: &mut [Value], 
             .unwrap_or("")
             .to_string();
         mark_fail_soft_if_seal_post_merge(report, &phase_name, state);
+    }
+}
+
+/// L-FAILSOFT-SYNC (PPR #203): push/sync KO no tumba survival si el merge ya cruzó.
+pub(crate) fn mark_fail_soft_if_sync_post_merge(
+    entry: &mut Value,
+    phase_name: &str,
+    state: &Value,
+) {
+    if phase_name != SYNC_PHASE {
+        return;
+    }
+    if !accept_pr_physical_threshold_crossed(state) {
+        return;
+    }
+    let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if status == "failed" || status == "blocked" {
+        entry["fail_soft"] = json!(true);
+    }
+}
+
+/// Adjudicación retroactiva sync (simetría sello #200 / DCC #187). Idempotente.
+pub(crate) fn adjudicate_sync_fail_soft_post_merge(phase_reports: &mut [Value], state: &Value) {
+    if !accept_pr_physical_threshold_crossed(state) {
+        return;
+    }
+    for report in phase_reports.iter_mut() {
+        let phase_name = report
+            .get("phase_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        mark_fail_soft_if_sync_post_merge(report, &phase_name, state);
     }
 }
 
@@ -493,6 +527,59 @@ mod tests {
         })];
         adjudicate_seal_fail_soft_post_merge(&mut reports, &state);
         adjudicate_seal_fail_soft_post_merge(&mut reports, &state);
+        assert_eq!(reports[0]["fail_soft"], true);
+        let v = crate::engine::phase_terminal::aggregate_execution_terminal(&reports, &state);
+        assert!(v.success);
+    }
+
+    #[test]
+    fn t_a2_sync_fail_soft_when_merge_hash_present() {
+        let state = json!({"merge_commit_hash": "120d741c33fe8c3e6e8b9fc423651c0f8768f446"});
+        let mut entry = json!({
+            "phase_name": "Sincronización y Limpieza",
+            "status": "failed",
+            "error": "git push origin main rejected",
+        });
+        mark_fail_soft_if_sync_post_merge(
+            &mut entry,
+            "Sincronización y Limpieza",
+            &state,
+        );
+        assert_eq!(entry["fail_soft"], true);
+        let v = crate::engine::phase_terminal::aggregate_execution_terminal(&[entry], &state);
+        assert!(v.success);
+        assert_eq!(v.status_code, 0);
+    }
+
+    #[test]
+    fn t_a2_sync_fail_hard_without_merge_hash() {
+        let state = json!({});
+        let mut entry = json!({
+            "phase_name": "Sincronización y Limpieza",
+            "status": "failed",
+            "error": "git push origin main rejected",
+        });
+        mark_fail_soft_if_sync_post_merge(
+            &mut entry,
+            "Sincronización y Limpieza",
+            &state,
+        );
+        assert!(entry.get("fail_soft").is_none());
+        let v = crate::engine::phase_terminal::aggregate_execution_terminal(&[entry], &state);
+        assert!(!v.success);
+        assert_eq!(v.status_code, 1);
+    }
+
+    #[test]
+    fn t_a2_sync_adjudicate_idempotent() {
+        let state = json!({"merge_commit_hash": "abc"});
+        let mut reports = vec![json!({
+            "phase_name": "Sincronización y Limpieza",
+            "status": "failed",
+            "error": "push failed",
+        })];
+        adjudicate_sync_fail_soft_post_merge(&mut reports, &state);
+        adjudicate_sync_fail_soft_post_merge(&mut reports, &state);
         assert_eq!(reports[0]["fail_soft"], true);
         let v = crate::engine::phase_terminal::aggregate_execution_terminal(&reports, &state);
         assert!(v.success);

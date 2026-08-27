@@ -4,8 +4,12 @@ title: "[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #203)
 format: markdown
 version: "1.0.0"
 created: "2026-08-27"
-updated: "2026-08-27T12:35:45Z"
-status: pending
+updated: "2026-08-27T16:04:48Z"
+status: done
+refinement_status: implemented
+persist_ref: docs/features/accept-pr-anti-recurrence-ppr203
+branch_name: refactor/accept-pr-revoked-registry-rehab-ppr203
+pbi_archived: true
 priority: alta
 process: refactorization
 type: refactorization
@@ -27,9 +31,16 @@ related:
   - docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #200).md
   - docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #194).md
   - docs/features/emit-pr-audited-revoked-registry-rehab-ppr202/validacion.md
+  - docs/features/accept-pr-revoked-registry-rehab-ppr203/
+  - docs/features/accept-pr-anti-recurrence-ppr203/
 source_audits:
   - docs/features/emit-pr-audited-revoked-registry-rehab-ppr202/validacion.md
-  - .SddIA/cerbero/revoked_entities.json
+  - docs/features/accept-pr-anti-recurrence-ppr203/validacion.md
+olas:
+  - id: A1
+    persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr203
+  - id: A2
+    persist_ref: docs/features/accept-pr-anti-recurrence-ppr203
 ---
 
 # [ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #203)
@@ -56,7 +67,7 @@ Rehabilitar el proceso `accept-pr` en `.SddIA/cerbero/revoked_entities.json` tra
 |----------|------------|---------|--------|
 | #194 | accept-pr-revoked-registry-rehab | `2026-08-26T11:42:26Z` | **done** |
 | #200 | accept-pr-revoked-registry-rehab | `2026-08-27T11:31:15Z` | **done** (rehab A1+A2 · laudo #200) |
-| **#203 (este PBI)** | Cosecha post-merge #203 | `2026-08-27T12:31:30Z` | **pending** |
+| **#203 (este PBI)** | Cosecha post-merge #203 | `2026-08-27T12:31:30Z` | **done** (olas A1+A2 · laudo #203) |
 
 ## Sighting Cosecha
 
@@ -64,12 +75,12 @@ PPR #203 · CID `6237015f-0f8d-42ea-97ea-a44afac5318d` · `persist_ref` `docs/fe
 
 Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · seed nueva (esta).
 
-## Criterio de cierre (borrador)
+## Criterio de cierre
 
-- [ ] Laudo rehabilitación Cerbero / Radamanto (anti-recurrencia post-rehab; limpiar `rehab_laudo`/`rehabilitated_at` obsoletos)
-- [ ] `accept-pr` ausente de `revoked` (y `permanent` si aplica)
-- [ ] Cascada feature/fix + `validacion.md` APTO + PBI en `done/`
-- [ ] Smoke handoff sin re-revocación inmediata post-merge
+- [x] Laudo rehabilitación Cerbero / Radamanto (anti-recurrencia post-rehab; limpiar `rehab_laudo`/`rehabilitated_at` obsoletos)
+- [x] `accept-pr` ausente de `revoked` (y `permanent` si aplica)
+- [x] Cascada feature/fix + `validacion.md` APTO + PBI en `done/`
+- [x] Smoke handoff sin re-revocación inmediata post-merge (lab smoke `b1fe6e90-…` exit 0)
 
 ## Fuera de alcance
 
