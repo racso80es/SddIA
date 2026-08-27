@@ -4,6 +4,7 @@ members = [
     "sddia-io",
     "sddia-core",
     "sddia-daemon-runtime",
+    "user-preference-core",
     "engine/*",
     "skills/*",
     "tools/*",

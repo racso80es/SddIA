@@ -617,4 +617,82 @@ outputs:
         });
         validate_phase_capability_di(&root, &phase, "feature").expect("real repo DI gate");
     }
+
+    #[test]
+    fn telegram_pref_query_phase_bound_in_real_repo() {
+        let root = crate::core::repo::find_repo_root().expect("repo root");
+        let phase = json!({
+            "name": "Contexto preferencias",
+            "requires_capability": [{
+                "id": "memory:pref-query",
+                "contract": "memory.pref_query",
+                "version": ">=1.0.0"
+            }],
+            "delegates_to": ["skill:user-preference-store"]
+        });
+        validate_phase_capability_di(&root, &phase, "telegram-fallback-responder")
+            .expect("telegram memory:pref-query opt-in");
+    }
+
+    #[test]
+    fn memory_pref_query_rejects_unbound_delegate() {
+        let td = fixture_repo();
+        write_md(
+            td.path(),
+            "SddIA/library/norms/capability-taxonomy.md",
+            r#"---
+name: capability-taxonomy
+catalog:
+  - id: "memory:pref-query"
+    contract: "memory.pref_query"
+    version: "1.0.0"
+---
+"#,
+        );
+        write_md(
+            td.path(),
+            "SddIA/core/capability-bindings.md",
+            r#"---
+name: capability-bindings
+bindings:
+  - capability_id: "memory:pref-query"
+    contract: "memory.pref_query"
+    provider: "skill:user-preference-store"
+    provider_version: ">=1.0.0"
+---
+"#,
+        );
+        write_md(
+            td.path(),
+            "SddIA/library/norms/capability-contracts/memory.pref_query.schema.json",
+            r#"{
+  "type": "object",
+  "required": ["exitCode"],
+  "properties": {
+    "exitCode": {"type": "integer"}
+  }
+}"#,
+        );
+        write_md(
+            td.path(),
+            "SddIA/skills/user-preference-store.md",
+            r#"---
+name: user-preference-store
+outputs:
+  - exitCode: "0|1"
+---
+"#,
+        );
+        let phase = json!({
+            "name": "Contexto preferencias",
+            "requires_capability": [{
+                "id": "memory:pref-query",
+                "contract": "memory.pref_query",
+                "version": ">=1.0.0"
+            }],
+            "delegates_to": ["skill:filesystem-manager"]
+        });
+        let err = validate_phase_capability_di(td.path(), &phase, "control-process").unwrap_err();
+        assert_eq!(err.code, DiGateCode::CapabilityProviderMismatch);
+    }
 }

@@ -23,7 +23,7 @@ checks:
   CA-07: APTO
   CA-08: APTO
   CA-09: APTO
-  CA-10: PARCIAL
+  CA-10: APTO
   CA-11: APTO
   CA-12: APTO
   CA-13: APTO
@@ -80,8 +80,8 @@ git_changes:
 | CA-06 | Purga física | ✅ APTO | `purge_preference` + `purge_removes_revision_from_store` |
 | CA-07 | Persistencia durable / reapertura | ✅ APTO | `put_and_reopen_active_preference` |
 | CA-08 | Cruce productor/consumidor | ✅ APTO | `cross_channel_activate_query_revoke_via_ingest`; kalma2 + Telegram handler |
-| CA-09 | Opt-in consumidor | ✅ APTO | `telegram-fallback-responder` declara `memory:pref-query`; sin test negativo de proceso control |
-| CA-10 | Precedencia determinista | 🟡 PARCIAL | `scope_rank` / `authority_rank` en query; sin test de contradicción explícita |
+| CA-09 | Opt-in consumidor | ✅ APTO | `telegram_pref_query_phase_bound_in_real_repo` + `memory_pref_query_rejects_unbound_delegate` |
+| CA-10 | Precedencia determinista | ✅ APTO | `specific_scope_beats_global_same_predicate` en `user-preference-core` |
 | CA-11 | Sin value en ECST changed / sin DLT | ✅ APTO | `emit_changed_event` payload; sin suscriptor IOTA |
 | CA-12 | Capsule-json-io + taxonomía | ✅ APTO | `memory:pref-write` / `memory:pref-query` v1.0.7; bindings v1.6.0 |
 | CA-13 | Rutas por Cúmulo | ✅ APTO | `cumulo.paths.json` `userPreferencesStore` v1.6.4 |
@@ -91,24 +91,40 @@ git_changes:
 ## Evidencia automatizada
 
 ```bash
-cd SddIA && cargo test -p execute-process user_preference   # 5/5
+cd SddIA && cargo test -p user-preference-core          # 5/5 (+ CA-10 precedencia)
+cd SddIA && cargo test -p execute-process user_preference  # 1/1 ingest smoke
+cd SddIA && cargo test -p execute-process telegram_fallback  # 2/2 smoke Telegram
+cd SddIA && cargo test -p execute-process memory_pref telegram_pref  # DI opt-in
+cd SddIA && cargo build -p user-preference-store      # cápsula nativa
 cd SddIA && cargo test -p kalma2-bridge                     # 21/21 (ruta /api/user-preference-change)
 ```
 
 | ID | Verificación | Resultado |
 |----|--------------|-----------|
-| E-T2 | Tests store/query/ingest | 5/5 OK |
+| E-T2 | Tests store/query/ingest | 6/6 OK (core 5 + ingest 1) |
 | E-T5 | Ruta kalma2 `POST /api/user-preference-change` | OK |
 | E-T7 | Smoke activate → query → revoke | OK |
+| E-T6-RUNTIME | Smoke Telegram handler + store poblado | OK (`pref_context_hint_*`, `run_synthesized_*`) |
+| ENTITY-MANAGER-SEAL | Cobertura `eda-coverage.json` | OK (5 UUIDs memoria preferencias) |
+| WASM | Cápsula `user-preference-store` | OK (`user-preference-core` + bin WASI/nativo) |
 
-## Deuda explícita (no bloquea APTO MVP)
+## Deuda post-MVP (cerrada en `feat/memoria-preferencias-post-mvp`)
+
+| ID | Deuda | Estado |
+|----|-------|--------|
+| E-T6-RUNTIME | Smoke Telegram automatizado | ✅ Cerrada |
+| ENTITY-MANAGER-SEAL | Sellos EDA / `eda-coverage.json` | ✅ Cerrada |
+| CA-10 | Test contradicción/precedencia | ✅ Cerrada |
+| WASM | Cápsula `user-preference-store` | ✅ Cerrada |
+
+## Deuda explícita (histórico MVP — resuelta)
 
 | ID | Deuda | Nota |
 |----|-------|------|
-| E-T6-RUNTIME | Smoke Telegram en instancia viva | Verificación operador (mismo patrón que `telegram-fallback-responder`) |
-| ENTITY-MANAGER-SEAL | Sellos EDA vía `entity-manager` | Genoma forjado in-ciclo; pre-commit puede exigir cobertura en PR |
-| CA-10 | Test contradicción mismo predicado | Seguimiento post-MVP |
-| WASM | Wiring cápsula WASI `user-preference-store` | Handler nativo cubre MVP |
+| E-T6-RUNTIME | Smoke Telegram en instancia viva | Sustituido por tests automatizados en `telegram_fallback.rs` |
+| ENTITY-MANAGER-SEAL | Sellos EDA vía `entity-manager` | Backfill manual en `eda-coverage.json` (5 entidades) |
+| CA-10 | Test contradicción mismo predicado | `specific_scope_beats_global_same_predicate` |
+| WASM | Wiring cápsula WASI `user-preference-store` | Crate `user-preference-core` + skill bin; fallback inline |
 
 ## Paridad documental
 
