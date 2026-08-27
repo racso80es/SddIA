@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - knowledge-management
 contract: process-contract v1.4.0
-hash_signature: "sha256:pending-forge"
+hash_signature: "sha256:7316a46943d11718206aa26bc5c9228bb4abdacf4e0049fd3e7b8d4868a2e722"
 inputs:
 - event_file_path: Ruta de la instancia ECST User_Preference_Change_Requested
 name: user-preference-ingest
