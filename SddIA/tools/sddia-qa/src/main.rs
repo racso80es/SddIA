@@ -30,7 +30,8 @@ Comandos:\n\
   run-wasi-ci-smoke [--skip-e2e] [--json]\n\
   validate-evolution-contract [--json] [--universe audit-cut|official] [--audit-ref PATH] [--manifest PATH]\n\
   migrate-evolution-history manifest|apply|verify|reindex [--json] [--write PATH] [--manifest PATH] [--lote L1|L2|L3|L4] [--dry-run]\n\
-  gate-evolution [--json] [--range]\n\
+  gate-evolution [--json] [--range|--all] [--if-touched]\n\
+  evolution-rehash --id <uuid> [--json] [--dry-run]\n\
   evolution-register [--json] [--dry-run]\n"
 }
 
@@ -178,6 +179,7 @@ fn main() {
         "validate-evolution-contract" => validate_evolution_contract::run(&repo, rest),
         "migrate-evolution-history" => migrate_evolution_history::run(&repo, rest),
         "gate-evolution" => gate_evolution::run_gate(&repo, rest),
+        "evolution-rehash" => gate_evolution::run_rehash(&repo, rest),
         "evolution-register" => gate_evolution::run_mutate(&repo, rest),
         other => {
             eprintln!("comando desconocido: {other}\n{}", usage());

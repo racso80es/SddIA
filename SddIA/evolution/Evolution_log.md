@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `07dc027a-fdb5-487a-9fea-1a5dd67d38ca` | 2026-08-27 | Kaizen evolution gate fidelidad HEAD + evolution-rehash + DA-6 veto CI polling | CANONICO | `SddIA/evolution/07dc027a-fdb5-487a-9fea-1a5dd67d38ca.md` |
 | `b7e4a91c-2f5d-4c8b-9e1a-6d3f0a8b2c7e` | 2026-08-27 | Rehab accept-pr PPR #203: fail_soft sync post-merge; Cerbero A1 laudo #203 (olas A1+A2). | CANONICO | `SddIA/evolution/b7e4a91c-2f5d-4c8b-9e1a-6d3f0a8b2c7e.md` |
 | `7ad2ef99-4c50-4b6d-9cc1-313d3338bb1b` | 2026-08-27 | Memoria soberana UserPreference: store JSON local, caps memory:pref-*, ingest EDA, kalma2 + Telegram opt-in. | CANONICO | `SddIA/evolution/7ad2ef99-4c50-4b6d-9cc1-313d3338bb1b.md` |
 | `c2e8f4a1-7b3d-4e9c-a5f6-8d1e2f3a4b5c` | 2026-08-27 | Rehab emit-pr-audited-event PPR #202: Cerbero A1 laudo #202; acción PullRequest_Audited restaurada. | CANONICO | `SddIA/evolution/c2e8f4a1-7b3d-4e9c-a5f6-8d1e2f3a4b5c.md` |
