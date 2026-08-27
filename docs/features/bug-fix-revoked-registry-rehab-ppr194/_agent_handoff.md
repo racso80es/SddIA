@@ -107,6 +107,19 @@ Sin touchpoints motor/genoma; umbrales 1.1.0 intactos; laterales fuera.
 3. Residual T5 delivery-close-cycle.
 ```
 
+## 2026-08-27T11:51:30Z — Cierre T5
+- process: `delivery-close-cycle`
+- status: `executed`
+- message: PR https://github.com/racso80es/SddIA/pull/201 · snapshot a153946 · Presented 224d877d-…
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+T5 DCC acuse success. Sello `pr_url` en validacion.md. Merge soberano = PPR/`accept-pr` (accept-pr ∈ revoked · handoff no forzado aquí).
+```
+
 ## 2026-08-27T11:49:21Z — Ejecución
 - process: `refactorization`
 - agents: `tekton`
@@ -116,3 +129,39 @@ Sin touchpoints motor/genoma; umbrales 1.1.0 intactos; laterales fuera.
 - backend: `cli`
 - status: `failed`
 - message: timeout 600s
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-27T11:51:04Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+## 2026-08-27T11:52:47Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `224d877d-f477-4fcc-9cda-f60681c9e648`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 6. Downstream F3/F4/Veredicto — `pending_downstream_phases`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F2_DOC`)
+
+1. `validacion.md` — reescrito (PPR Triaje documental; `branch`/`checks`/`git_changes`).
+2. Evidence Bridge R1/R2 — copia machine `prosthesis_subprocess` @ `11:51:04Z` → ambos **APTO**.
+3. R3 KM — **APTO** (0 writes Argos bajo `docs/todos/**`).
+4. Cascada F2 — objectives→execution + evolution `8a4b0d3f-…` + PBI en `done/` → **APTO**.
+5. `GIT_EVIDENCE_SESSION_SHELL` — **NO_APTO** (Shell Rejected; sin stdout inventado; no bloquea F2).
+6. Downstream F3/F4/Veredicto — `pending_downstream_phases`.
+```

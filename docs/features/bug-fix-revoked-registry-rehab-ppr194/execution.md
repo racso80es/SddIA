@@ -49,6 +49,6 @@ Cascada `implementation.md` / `execution.md` + evolution `8a4b0d3f-5c2e-4f9b-8d6
 
 `validacion.md` `global: APTO` · `pbi_archived: true`. PBI en `docs/todos/done/`.
 
-## Pendiente runtime
+## T5
 
-T5 `delivery-close-cycle`.
+`delivery-close-cycle` · snapshot `a153946` · `pr_url` https://github.com/racso80es/SddIA/pull/201 · ECST `224d877d-f477-4fcc-9cda-f60681c9e648`.
