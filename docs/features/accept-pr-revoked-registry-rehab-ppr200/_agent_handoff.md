@@ -86,3 +86,28 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 formal_evidence_detail: "verify-process-integrity: OK"
 ```
+
+## 2026-08-27T12:13:22Z — Verificación
+- process: `refactorization`
+- agents: `argos`
+- correlation_id: ``
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 8. Residual: ejecutar tests → re-Argos → T5 DCC.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+1. `docs/features/accept-pr-revoked-registry-rehab-ppr200/validacion.md` — reescrito (fase Verificación · `refactorization`).
+2. Evidence Bridge R1/R2: **APTO** (`native_state` @ `12:11:27Z`, copia; sin stdout inventado).
+3. R3 KM: **APTO** (Argos 0 writes `docs/todos/**`).
+4. A1/A2/THRESH/DOC/GIT-CLEAN: **APTO** (FS + path-assert).
+5. **AC-TESTS NO_APTO** — `cargo test … t_a2_` no materializado (Shell Rejected Tekton).
+6. `global: NO_APTO` · `resolution: FAIL_VERIFICATION` · `delivery_state: blocked`.
+7. PBI ya en `done/` · `pbi_archived: true` · rama alineada.
+8. Residual: ejecutar tests → re-Argos → T5 DCC.
+```
