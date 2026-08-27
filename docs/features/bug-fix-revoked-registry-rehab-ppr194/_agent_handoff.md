@@ -165,3 +165,63 @@ formal_evidence_detail: "verify-process-integrity: OK"
 5. `GIT_EVIDENCE_SESSION_SHELL` — **NO_APTO** (Shell Rejected; sin stdout inventado; no bloquea F2).
 6. Downstream F3/F4/Veredicto — `pending_downstream_phases`.
 ```
+
+## 2026-08-27T11:53:00Z — Certificación RBAC
+- process: `pull-request-review`
+- agents: `cerbero`
+- correlation_id: `224d877d-f477-4fcc-9cda-f60681c9e648`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] bug-fix — rehabilitación revoked_entities (PPR #194).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: PASS_F4_RBAC exitCode 0; VBR×evolution/docs; DCC∉revoked; PPR∉revoked; bug-fix∉revoked; Shell git-manager Rejected.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F4_RBAC` · `exitCode: 0`)
+
+1. `validacion.md` — reescrito (PPR Certificación RBAC; `authorization_status` + checks F4).
+2. Spatial + ECST — `execution-contexts.md` OK; firmante `Vertice_Biologico_Relay`; emisor `delivery-close-cycle` ∉ revoked.
+3. Registry — `pull-request-review` ∉ revoked; `bug-fix` healthy `entity_type: process` post-A1.
+4. VBR × genoma — evolution + docs; sin DA-2 forja; instancia Cerbero/Radamanto fuera del PR.
+5. Evidence Bridge R1/R2 — copia machine `prosthesis_subprocess` @ `11:51:04Z` → **APTO**; `GIT_EVIDENCE_SESSION_SHELL` **NO_APTO** (Shell Rejected; sin stdout inventado).
+6. R3 KM — **APTO** (0 writes Cerbero bajo `docs/todos/**`).
+7. Downstream F3/Veredicto/Cosecha/Handoff — `pending_downstream_phases` (`accept-pr` ∈ revoked lateral).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-08-27T11:53:18Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit-handoff"
+```
+
+## 2026-08-27T11:55:14Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `99259cef-ee2a-41e5-b9cf-62c1b96b2e8d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 6. Downstream F3/F4/Veredicto — `pending_downstream_phases`.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_F2_DOC`)
+
+1. `validacion.md` — reescrito (PPR Triaje documental; `branch`/`checks`/`git_changes`; CID `99259cef…`).
+2. Evidence Bridge R1/R2 — copia machine `native_state` @ `11:53:18Z` → ambos **APTO** (`idempotent-hit-handoff`).
+3. R3 KM — **APTO** (0 writes Argos bajo `docs/todos/**`).
+4. Cascada F2 — objectives→execution + evolution `8a4b0d3f-…` + PBI en `done/` → **APTO**.
+5. `GIT_EVIDENCE_SESSION_SHELL` — **NO_APTO** (Shell Rejected; sin stdout inventado; no bloquea F2).
+6. Downstream F3/F4/Veredicto — `pending_downstream_phases`.
+```

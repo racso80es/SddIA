@@ -1,7 +1,7 @@
 ---
 feature_name: bug-fix-revoked-registry-rehab-ppr194
 created: "2026-08-27"
-updated: "2026-08-27T11:52:00Z"
+updated: "2026-08-27T11:53:30Z"
 process: pull-request-review
 phase: Triaje documental
 agent: argos
@@ -14,9 +14,9 @@ pbi_ref: docs/todos/done/[ARQUITECTURA] bug-fix — rehabilitación revoked_enti
 document_id: PBI-PPR-194-BUG-FIX-REVOKED-REGISTRY
 uuid: 8a4b0d3f-5c2e-4f9b-8d6a-7e8f9a0b1c2d
 evolution_id: 8a4b0d3f-5c2e-4f9b-8d6a-7e8f9a0b1c2d
-correlation_id: 224d877d-f477-4fcc-9cda-f60681c9e648
+correlation_id: 99259cef-ee2a-41e5-b9cf-62c1b96b2e8d
 pr_presented_event_id: 224d877d-f477-4fcc-9cda-f60681c9e648
-audit_event_reference: 224d877d-f477-4fcc-9cda-f60681c9e648
+audit_event_reference: 99259cef-ee2a-41e5-b9cf-62c1b96b2e8d
 source_correlation_id: "59606407-eed3-4da8-ac13-3cf6205b2147"
 source_pr_url: https://github.com/racso80es/SddIA/pull/194
 pr_url: https://github.com/racso80es/SddIA/pull/201
@@ -27,14 +27,14 @@ verdict: aprobado
 delivery_state: pending_downstream_phases
 resolution: PASS_F2_DOC
 git_manager_invoked: false
-git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge prosthesis_subprocess; sin bypass raw"
-git_evidence_source: prosthesis_subprocess-evidence-bridge
+git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
+git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
 handoff_machine_file: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine) @ 2026-08-27T11:51:04Z source=prosthesis_subprocess + session prosthesis_subprocess; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; formal_evidence_detail=verify-process-integrity: OK; Shell git-manager Rejected esta sesión Argos Triaje documental — sin gitStdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Triaje documental CID 224d877d…"
+evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine) @ 2026-08-27T11:53:18Z source=native_state + session native_state; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; notes=idempotent-hit-handoff; Shell git-manager Rejected esta sesión Argos Triaje documental — sin gitStdout inventado"
+shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Triaje documental CID 99259cef…"
 revoked_entity_alert: "refactorization (revoked, abrupt_success_rate_drop, since 2026-08-20T05:48:56Z); accept-pr (revoked, abrupt_success_rate_drop, since 2026-08-27T11:31:15Z); emit-pr-audited-event (revoked, since 2026-06-12T10:10:06+00:00) — laterales; bug-fix ∉ revoked post-A1"
-scope: "PPR Triaje documental — bug-fix-revoked-registry-rehab-ppr194 (CID 224d877d…)"
+scope: "PPR Triaje documental — bug-fix-revoked-registry-rehab-ppr194 (CID 99259cef…)"
 checks:
   F2_DOC_GATE: APTO
   DOC_OBJECTIVES: APTO
@@ -78,6 +78,7 @@ situational_notes:
   - "refactorization / accept-pr / emit-pr-audited-event ∈ revoked — laterales L-OUT; Cúmulo/Kaizen"
   - "pbi_ref inyectado vacío → resuelto a done/; cascada aún cita pending/ histórico"
   - "Argos 0 writes docs/todos/** esta fase"
+  - "idempotent-hit-handoff · Presented ECST 224d877d… · audit CID 99259cef…"
 ---
 
 # Validación — Triaje documental (Argos · pull-request-review)
@@ -99,16 +100,16 @@ Copia literal machine/session — **no** stdout Shell inventado:
 
 | Campo | Valor |
 |-------|-------|
-| `source` | `prosthesis_subprocess` (machine @ `2026-08-27T11:51:04Z` + session runtime) |
+| `source` | `native_state` (machine @ `2026-08-27T11:53:18Z` + session runtime) |
 | `git_manager_invoked` | `true` (bridge machine) · `false` (sesión Argos Shell) |
 | `formal_execute_process` | `true` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
-| `formal_evidence_detail` | `verify-process-integrity: OK` |
+| `notes` | `idempotent-hit-handoff` |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` físico esta sesión Argos |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` esta fase |
 
-Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-08-27T11:51:04Z`.
+Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-08-27T11:53:18Z`.
 
 ## Ingesta
 
@@ -116,7 +117,8 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-08-27T
 |-------|------------|
 | `persist_ref` | `docs/features/bug-fix-revoked-registry-rehab-ppr194` — presente |
 | `pbi_ref` (inyectado) | vacío → **resuelto** `docs/todos/done/[ARQUITECTURA] bug-fix — rehabilitación revoked_entities (PPR #194).md` |
-| `correlation_id` / Presented | `224d877d-f477-4fcc-9cda-f60681c9e648` |
+| `correlation_id` / audit | `99259cef-ee2a-41e5-b9cf-62c1b96b2e8d` |
+| Presented ECST (DCC) | `224d877d-f477-4fcc-9cda-f60681c9e648` |
 | `branch_name` (runtime) | `refactor/bug-fix-revoked-registry-rehab-ppr194` |
 | Evento Merged (este ECST) | **ausente** (FS; sin inventar) |
 | DIA bus | sin `Kaizen_Alert_Required` materializado por Argos esta fase |
@@ -150,13 +152,13 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-08-27T
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge `prosthesis_subprocess` (copia) |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge `native_state` (copia) |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | Shell Rejected; sin `gitStdout` |
 | `BRANCH_RUNTIME_INJECT` | **APTO** | `branch_name` = `refactor/bug-fix-revoked-registry-rehab-ppr194` |
 | `BRANCH_WORKTREE_SYNC` | **APTO** | `.git/HEAD` → `refs/heads/refactor/bug-fix-revoked-registry-rehab-ppr194` (FS; **no** stdout git-manager) |
 | `branch` | **APTO** | alineación inject/HEAD |
 | `git_changes` | **APTO** | inventario path-assert (cascada + evolution + PBI done); **no** es `gitStdout` de esta sesión |
-| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `224d877d…` |
+| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para Presented `224d877d…` / audit `99259cef…` |
 
 `git_changes` por **inventario path-assert**. Sin `.SddIA/cerbero/` ni `.SddIA/radamanto/` (AC-GIT-CLEAN heredado).
 
@@ -183,8 +185,9 @@ Sighting FS (no semilla Argos): `docs/todos/pending/[ARQUITECTURA] accept-pr —
   "pbi_archived": true,
   "branch": "refactor/bug-fix-revoked-registry-rehab-ppr194",
   "document_id": "PBI-PPR-194-BUG-FIX-REVOKED-REGISTRY",
-  "audit_event_reference": "224d877d-f477-4fcc-9cda-f60681c9e648",
-  "correlation_id": "224d877d-f477-4fcc-9cda-f60681c9e648"
+  "audit_event_reference": "99259cef-ee2a-41e5-b9cf-62c1b96b2e8d",
+  "correlation_id": "99259cef-ee2a-41e5-b9cf-62c1b96b2e8d",
+  "pr_presented_event_id": "224d877d-f477-4fcc-9cda-f60681c9e648"
 }
 ```
 
@@ -196,7 +199,7 @@ Triaje documental **no** certifica F3/F4 ni reabre genoma. Downstream: Triaje t�
 
 ```text
 aprobado — PASS_F2_DOC · global APTO · pbi_archived true;
-R1/R2 APTO vía Evidence Bridge prosthesis_subprocess;
+R1/R2 APTO vía Evidence Bridge native_state (idempotent-hit-handoff);
 GIT_EVIDENCE_SESSION_SHELL NO_APTO (Shell Rejected; sin stdout inventado);
 RBAC_AUTHORING_KM_POLICY APTO (Argos 0 writes KM).
 ```
