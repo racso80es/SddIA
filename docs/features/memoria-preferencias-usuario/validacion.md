@@ -3,8 +3,9 @@ feature_name: memoria-preferencias-usuario
 created: "2026-08-27"
 updated: "2026-08-27"
 process: feature
-branch: feat/memoria-preferencias-usuario
-branch_name: feat/memoria-preferencias-usuario
+branch: feat/memoria-preferencias-post-mvp
+branch_name: feat/memoria-preferencias-post-mvp
+pr_url: "https://github.com/racso80es/SddIA/pull/205"
 persist_ref: docs/features/memoria-preferencias-usuario
 pbi_ref: docs/todos/done/[ARQUITECTURA] Globalización de la Consciencia del Usuario (Grafo de Pensamiento Universal).md
 document_id: PBI-ARQ-CONSCIENCIA-UNIVERSAL
@@ -32,8 +33,9 @@ checks:
   E-T2: APTO
   E-T5: APTO
   E-T7: APTO
-  E-T6-RUNTIME: OPERADOR
-  ENTITY-MANAGER-SEAL: DEUDA
+  E-T6-RUNTIME: APTO
+  ENTITY-MANAGER-SEAL: APTO
+  WASM: APTO
 git_changes:
   - SddIA/library/norms/capability-taxonomy.md
   - SddIA/core/capability-bindings.md
@@ -66,7 +68,7 @@ git_changes:
 
 # Validación — memoria-preferencias-usuario (Argos)
 
-**Veredicto global: APTO** — MVP memoria soberana de preferencias del usuario (`UserPreference`), local a instancia, opt-in, separada de `ThoughtNode`. Rama `feat/memoria-preferencias-usuario`. PBI archivado en `docs/todos/done/`.
+**Veredicto global: APTO** — Memoria soberana `UserPreference` (MVP #204 + deuda post-MVP #205). PBI archivado en `docs/todos/done/`.
 
 ## Criterios de aceptación (PBI §11)
 
