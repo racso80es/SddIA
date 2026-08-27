@@ -1,7 +1,7 @@
 ---
 feature_name: emit-pr-audited-revoked-registry-rehab-ppr202
 created: "2026-08-27"
-updated: "2026-08-27T14:22:00Z"
+updated: "2026-08-27T14:32:00Z"
 process: refactorization
 phase: execution
 agents: tekton
@@ -47,6 +47,14 @@ Cascada `objectives`→`execution` + evolution `c2e8f4a1-7b3d-4e9c-a5f6-8d1e2f3a
 | ECST Presented | `6237015f-0f8d-42ea-97ea-a44afac5318d` |
 | Snapshot | `5f82cd57e4eab89cfbbfbfcb6b0cf12f59efecbe` @ `2026-08-27T14:28:00Z` |
 
-## Pendiente runtime
+## T6 (fusión + smoke post-merge)
 
-Merge PR #203 + smoke post-merge (opcional).
+`accept-pr` · `SDDIA_LAB_SKIP_BRANCH_DELETE=1` · CID `6237015f-…`.
+
+| Check | Resultado |
+|-------|-----------|
+| `exit_code` | **0** |
+| `merge_commit_hash` | `120d741c33fe8c3e6e8b9fc423651c0f8768f446` |
+| Merged ECST | `4afbf976-c295-4923-98bf-8cbeeff3b360` |
+| Cerbero post-merge | `emit-pr-audited-event` **∉** `revoked`/`permanent` |
+| Smoke post-merge | `emit-pr-audited-event` exit 0 · `07931293-…` |
