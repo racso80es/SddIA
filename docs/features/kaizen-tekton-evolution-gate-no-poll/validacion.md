@@ -12,6 +12,7 @@ uuid: "07dc027a-fdb5-487a-9fea-1a5dd67d38ca"
 execution_id: "96471044-003a-457a-bf59-041e94053b12"
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/207
 checks:
   K-FIDEL: APTO
   K-REHASH: APTO
@@ -70,4 +71,6 @@ SddIA/target/debug/sddia-qa gate-evolution --json --range
 SddIA/target/debug/sddia-qa gate-evolution --json --all
 ```
 
-Tras push de la rama, CI ejecuta delta + universe sobre `HEAD` del commit.
+PR: https://github.com/racso80es/SddIA/pull/207
+
+Tras merge, CI ejecuta delta + universe sobre `HEAD` del commit en main.
