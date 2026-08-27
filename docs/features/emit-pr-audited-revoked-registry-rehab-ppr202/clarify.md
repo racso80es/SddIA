@@ -26,7 +26,7 @@ Transcript Mayeuta. Estabiliza el **qué** y el **por qué**. Sin diseño de cá
 
 | Vector | Hecho |
 |--------|--------|
-| PBI canónico | `docs/todos/done/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md` (`document_id: PBI-PPR-202-EMIT-PR-AUDITED-REVOKED-REGISTRY`; `uuid: c2e8f4a1-…`; `status: pending`) |
+| PBI canónico | `docs/todos/done/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md` (`document_id: PBI-PPR-202-EMIT-PR-AUDITED-REVOKED-REGISTRY`; `uuid: c2e8f4a1-…`; `status: done`) |
 | Ciclo | `refactorization` · rama `refactor/emit-pr-audited-revoked-registry-rehab-ppr202` · un `persist_ref` · un PR |
 | Semilla operador | Rehabilitar `emit-pr-audited-event` en Cerbero/Radamanto tras revocación lateral `abrupt_success_rate_drop` (since `2026-06-12T10:10:06+00:00`) |
 | Padre | PPR #202 Cosecha Kaizen (`persist_ref`: `docs/features/accept-pr-revoked-registry-rehab-ppr200`; CID `1498e461…`) — elevó alerta F5 a seed canónica |
