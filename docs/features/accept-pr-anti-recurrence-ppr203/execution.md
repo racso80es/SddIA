@@ -12,7 +12,7 @@ items_applied:
   - T2-evolution
 branch_name: refactor/accept-pr-revoked-registry-rehab-ppr203
 persist_ref: docs/features/accept-pr-anti-recurrence-ppr203
-pbi_ref: docs/todos/pending/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #203).md
+pbi_ref: docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #203).md
 document_id: PBI-PPR-203-ACCEPT-PR-REVOKED-REGISTRY
 uuid: b7e4a91c-2f5d-4c8b-9e1a-6d3f0a8b2c7e
 ola: A2
@@ -36,6 +36,14 @@ Tests: `cargo test -p execute-process --lib t_a2_` → **10/10** @ 2026-08-27.
 ## T2 (documental)
 
 Cascada A2 + evolution `b7e4a91c-2f5d-4c8b-9e1a-6d3f0a8b2c7e`. Assert: **no** versionar `.SddIA/cerbero/` ni `.SddIA/radamanto/` en el PR.
+
+## T5 (DCC)
+
+| Campo | Valor |
+|-------|--------|
+| PR | https://github.com/racso80es/SddIA/pull/206 |
+| ECST Presented | `1e9972cf-2ffd-47f0-8cf8-c9427e7023d8` |
+| Snapshot | `6486d83a23535e1bff4bec72fa8ff9679cd873ca` |
 
 ## A1 hermano
 
