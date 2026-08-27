@@ -39,6 +39,14 @@ Cascada `objectives`→`execution` + evolution `c2e8f4a1-7b3d-4e9c-a5f6-8d1e2f3a
 
 `./sddia-run.sh --action emit-pr-audited-event` → **exit 0** · `event_id: 93b31621-761b-4865-a227-e92f6edac89a` · `PullRequest_Audited` en `.events/pending/`.
 
+## T5 (DCC)
+
+| Campo | Valor |
+|-------|--------|
+| PR | https://github.com/racso80es/SddIA/pull/203 |
+| ECST Presented | `6237015f-0f8d-42ea-97ea-a44afac5318d` |
+| Snapshot | `5f82cd57e4eab89cfbbfbfcb6b0cf12f59efecbe` @ `2026-08-27T14:28:00Z` |
+
 ## Pendiente runtime
 
-T5 `delivery-close-cycle` (apertura PR) — despacho post T3/T4.
+Merge PR #203 + smoke post-merge (opcional).

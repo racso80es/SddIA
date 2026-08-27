@@ -1,7 +1,7 @@
 ---
 feature_name: emit-pr-audited-revoked-registry-rehab-ppr202
 created: "2026-08-27"
-updated: "2026-08-27T14:22:00Z"
+updated: "2026-08-27T14:28:00Z"
 process: refactorization
 branch: refactor/emit-pr-audited-revoked-registry-rehab-ppr202
 branch_name: refactor/emit-pr-audited-revoked-registry-rehab-ppr202
@@ -10,8 +10,12 @@ pbi_ref: docs/todos/done/[ARQUITECTURA] emit-pr-audited-event — rehabilitació
 document_id: PBI-PPR-202-EMIT-PR-AUDITED-REVOKED-REGISTRY
 uuid: c2e8f4a1-7b3d-4e9c-a5f6-8d1e2f3a4b5c
 evolution_id: c2e8f4a1-7b3d-4e9c-a5f6-8d1e2f3a4b5c
+correlation_id: 6237015f-0f8d-42ea-97ea-a44afac5318d
+pr_presented_event_id: 6237015f-0f8d-42ea-97ea-a44afac5318d
+audit_event_reference: 6237015f-0f8d-42ea-97ea-a44afac5318d
 source_correlation_id: "1498e461-3235-483a-b210-907cca744cdd"
 source_pr_url: https://github.com/racso80es/SddIA/pull/202
+pr_url: https://github.com/racso80es/SddIA/pull/203
 feature_ref: docs/features/accept-pr-revoked-registry-rehab-ppr200
 global: APTO
 pbi_archived: true
@@ -60,6 +64,10 @@ revoked_entity_alert: "refactorization (revoked since 2026-08-20T05:48:56Z) — 
 
 - `refactorization` ∈ `revoked` — **L-OUT** (dedup done #186).
 
-## Pendiente
+## T5 DCC
 
-- T5 DCC: apertura PR en rama `refactor/emit-pr-audited-revoked-registry-rehab-ppr202`.
+| Campo | Valor |
+|-------|--------|
+| PR | https://github.com/racso80es/SddIA/pull/203 |
+| ECST Presented | `6237015f-0f8d-42ea-97ea-a44afac5318d` |
+| Snapshot | `5f82cd57e4eab89cfbbfbfcb6b0cf12f59efecbe` |
