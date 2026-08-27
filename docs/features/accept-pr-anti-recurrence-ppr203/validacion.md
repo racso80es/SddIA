@@ -68,6 +68,8 @@ git_changes:
 
 Predicado sync: fusión cruzada + push/sync KO → `fail_soft` + agregador `exit_code: 0`. Sin `merge_commit_hash` → causal.
 
-## Pendiente
+## Cierre
 
-- T5 `delivery-close-cycle` (apertura PR).
+- DCC: PR #206 · Presented `1e9972cf-…`
+- `finalize-process.md` en persist_ref A2
+- Post-merge: actualizar `merged_pr` / `merge_commit` tras fusión en `main`
