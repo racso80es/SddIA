@@ -422,6 +422,7 @@ dependencies = [
  "serde_yaml",
  "sha2 0.10.9",
  "tempfile",
+ "user-preference-core",
  "uuid",
 ]
 
@@ -1800,6 +1801,26 @@ dependencies = [
  "idna",
  "percent-encoding",
  "serde",
+]
+
+[[package]]
+name = "user-preference-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "hex",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+]
+
+[[package]]
+name = "user-preference-store"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "user-preference-core",
 ]
 
 [[package]]

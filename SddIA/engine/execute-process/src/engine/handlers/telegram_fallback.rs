@@ -1,7 +1,7 @@
 //! Handler nativo `telegram-fallback-responder` (P4).
 
 use super::mayeuta::{filter_c_should_abort, synthesize_mayeuta_response};
-use super::user_preference::{query_context_block, QuerySpec};
+use super::user_preference::build_pref_context_hint;
 use super::super::capsules::{resolve_capsule_native, resolve_capsule_wasm};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -141,26 +141,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         });
     }
 
-    let pref_ctx = query_context_block(
-        repo,
-        &QuerySpec {
-            max_results: Some(8),
-            ..Default::default()
-        },
-    );
-    let context_hint = if pref_ctx
-        .get("preferences")
-        .and_then(|v| v.as_array())
-        .map(|a| !a.is_empty())
-        == Some(true)
-    {
-        format!(
-            "\n[Contexto usuario — preferencias activas: {}]",
-            pref_ctx["preferences"]
-        )
-    } else {
-        String::new()
-    };
+    let context_hint = build_pref_context_hint(repo);
     let synthesized = synthesize_mayeuta_response(&format!("{text}{context_hint}"));
     let chat_id = process_inputs
         .get("chat_id")
@@ -233,4 +214,86 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         })),
         exit_code: if ok { 0 } else { 1 },
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::handlers::user_preference::{
+        put_revision, PreferenceAuthority, PreferenceStatus, ScopeType, UserPreference,
+    };
+    use serde_json::json;
+    use std::fs;
+
+    fn setup_repo(tmp: &std::path::Path) {
+        fs::create_dir_all(tmp.join("SddIA/core")).unwrap();
+        fs::write(
+            tmp.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"userPreferencesStore":".SddIA/vector_store/user_preferences"}}"#,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn pref_context_hint_populated_when_store_has_active_pref() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_repo(tmp.path());
+        let pref = UserPreference {
+            preference_id: String::new(),
+            revision_id: String::new(),
+            subject_kind: "person".into(),
+            subject_key: "telegram-user".into(),
+            predicate: "priority".into(),
+            value: json!({"level": "high"}),
+            scope_type: ScopeType::Channel,
+            scope_id: Some("telegram".into()),
+            status: PreferenceStatus::Active,
+            authority: PreferenceAuthority::ExplicitUser,
+            sensitivity: "personal".into(),
+            valid_from: None,
+            valid_until: None,
+            supersedes: None,
+            provenance: json!({}),
+            recorded_at: String::new(),
+        };
+        put_revision(tmp.path(), pref).unwrap();
+        let hint = build_pref_context_hint(tmp.path());
+        assert!(hint.contains("preferencias activas"));
+        assert!(hint.contains("high"));
+    }
+
+    #[test]
+    fn run_synthesized_with_pref_context_smoke_without_chat_id() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_repo(tmp.path());
+        let pref = UserPreference {
+            preference_id: String::new(),
+            revision_id: String::new(),
+            subject_kind: "person".into(),
+            subject_key: "smoke".into(),
+            predicate: "priority".into(),
+            value: json!({"level": "max"}),
+            scope_type: ScopeType::Global,
+            scope_id: None,
+            status: PreferenceStatus::Active,
+            authority: PreferenceAuthority::ExplicitUser,
+            sensitivity: "internal".into(),
+            valid_from: None,
+            valid_until: None,
+            supersedes: None,
+            provenance: json!({}),
+            recorded_at: String::new(),
+        };
+        put_revision(tmp.path(), pref).unwrap();
+        let env = std::env::var("TELEGRAM_ALLOWED_CHAT_ID").ok();
+        std::env::remove_var("TELEGRAM_ALLOWED_CHAT_ID");
+        let result = run(tmp.path(), &json!({"text": "hola mundo"})).unwrap();
+        if let Some(v) = env {
+            std::env::set_var("TELEGRAM_ALLOWED_CHAT_ID", v);
+        }
+        assert_eq!(result.data.as_ref().unwrap()["synthesized"], true);
+        assert_eq!(result.data.as_ref().unwrap()["filtered"], false);
+        assert_eq!(result.exit_code, 1);
+        assert_eq!(result.error.as_deref(), Some("chat_id ausente"));
+    }
 }

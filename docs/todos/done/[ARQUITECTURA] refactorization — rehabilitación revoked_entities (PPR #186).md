@@ -56,6 +56,7 @@ PPR #186 · CID `CNwwfDm7Hqb1zd23zRtkjP2o7QqgR5PaH26YBpbN8Wz3` · ciclo authorin
 | Cosecha Kaizen dedup | `45c01cfe-4b80-4d5a-acbb-3b3ae64c7ed5` | Re-run PPR #185 · seed ya materializada @ `CNwwfDm7…` |
 | Cosecha PR #202 | `1498e461-3235-483a-b210-907cca744cdd` | `@ 2026-08-27T12:20:00Z` · accept-pr-revoked-registry-rehab-ppr200 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral |
 | Cosecha Kaizen dedup | `3dcf4dfb-cd9c-4733-9925-b80f3f5806f4` | Re-run PPR #202 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral |
+| Cosecha Kaizen dedup | `6237015f-0f8d-42ea-97ea-a44afac5318d` | PPR #203 · emit-pr-audited-revoked-registry-rehab-ppr202 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral |
 
 ## Contexto heredado (PBI-185)
 

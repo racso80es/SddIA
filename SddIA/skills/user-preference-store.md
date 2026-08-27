@@ -13,7 +13,7 @@ provides:
   - id: "memory:pref-query"
     contract: "memory.pref_query"
     version: "1.0.0"
-hash_signature: "sha256:pending-forge"
+hash_signature: "sha256:45f128ce99ee838398316d5b990792c6c52f1b058ffe87b83d4638dc52e119c6"
 inputs:
   - "op": "PUT | REVOKE | PURGE | QUERY | EXPORT"
   - "revision": "objeto UserPreference (PUT)"
@@ -28,4 +28,4 @@ outputs:
 
 Store local de preferencias del Vértice Biológico bajo `paths.userPreferencesStore` (`.SddIA/vector_store/user_preferences/`).
 
-MVP: handler nativo `user-preference-store-core` en `execute-process`. Ortogonal a `ThoughtNode` y `EvolutionEvent`.
+Cápsula nativa/WASI (`SddIA/skills/user-preference-store/`) sobre crate `user-preference-core`. `execute-process` conserva ingest/fractal y fallback inline si la cápsula no está compilada. Ortogonal a `ThoughtNode` y `EvolutionEvent`.
