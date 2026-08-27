@@ -341,6 +341,51 @@ pub fn execute_accept_pr_phase(
     }
 }
 
+/// Umbral físico accept-pr: fusión soberana ya materializó `merge_commit_hash`.
+pub(crate) fn accept_pr_physical_threshold_crossed(state: &Value) -> bool {
+    state
+        .get("merge_commit_hash")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .is_some()
+}
+
+const SEAL_PHASE: &str = "Sello Criptográfico de Fusión";
+
+/// L-FAILSOFT-SEAL (PPR #200): sello EDA KO no tumba survival si el merge ya cruzó.
+pub(crate) fn mark_fail_soft_if_seal_post_merge(
+    entry: &mut Value,
+    phase_name: &str,
+    state: &Value,
+) {
+    if phase_name != SEAL_PHASE {
+        return;
+    }
+    if !accept_pr_physical_threshold_crossed(state) {
+        return;
+    }
+    let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if status == "failed" || status == "blocked" {
+        entry["fail_soft"] = json!(true);
+    }
+}
+
+/// Adjudicación retroactiva (simetría DCC PPR #187). Idempotente.
+pub(crate) fn adjudicate_seal_fail_soft_post_merge(phase_reports: &mut [Value], state: &Value) {
+    if !accept_pr_physical_threshold_crossed(state) {
+        return;
+    }
+    for report in phase_reports.iter_mut() {
+        let phase_name = report
+            .get("phase_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        mark_fail_soft_if_seal_post_merge(report, &phase_name, state);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -398,5 +443,58 @@ mod tests {
             None
         };
         assert_eq!(closed.as_deref(), Some("feat/w"));
+    }
+
+    #[test]
+    fn t_a2_seal_fail_soft_when_merge_hash_present() {
+        let state = json!({"merge_commit_hash": "6528d115deadbeef"});
+        let mut entry = json!({
+            "phase_name": "Sello Criptográfico de Fusión",
+            "status": "failed",
+            "error": "PullRequest_Merged dead-letter",
+        });
+        mark_fail_soft_if_seal_post_merge(
+            &mut entry,
+            "Sello Criptográfico de Fusión",
+            &state,
+        );
+        assert_eq!(entry["fail_soft"], true);
+        let v = crate::engine::phase_terminal::aggregate_execution_terminal(&[entry], &state);
+        assert!(v.success);
+        assert_eq!(v.status_code, 0);
+    }
+
+    #[test]
+    fn t_a2_seal_fail_hard_without_merge_hash() {
+        let state = json!({});
+        let mut entry = json!({
+            "phase_name": "Sello Criptográfico de Fusión",
+            "status": "failed",
+            "error": "emit-pr-merged-event nativo no disponible",
+        });
+        mark_fail_soft_if_seal_post_merge(
+            &mut entry,
+            "Sello Criptográfico de Fusión",
+            &state,
+        );
+        assert!(entry.get("fail_soft").is_none());
+        let v = crate::engine::phase_terminal::aggregate_execution_terminal(&[entry], &state);
+        assert!(!v.success);
+        assert_eq!(v.status_code, 1);
+    }
+
+    #[test]
+    fn t_a2_seal_adjudicate_idempotent() {
+        let state = json!({"merge_commit_hash": "abc"});
+        let mut reports = vec![json!({
+            "phase_name": "Sello Criptográfico de Fusión",
+            "status": "failed",
+            "error": "dlq",
+        })];
+        adjudicate_seal_fail_soft_post_merge(&mut reports, &state);
+        adjudicate_seal_fail_soft_post_merge(&mut reports, &state);
+        assert_eq!(reports[0]["fail_soft"], true);
+        let v = crate::engine::phase_terminal::aggregate_execution_terminal(&reports, &state);
+        assert!(v.success);
     }
 }

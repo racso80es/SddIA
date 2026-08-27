@@ -4,8 +4,12 @@ title: "[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #200)
 format: markdown
 version: "1.0.0"
 created: "2026-08-27"
-updated: "2026-08-27T11:42:00Z"
-status: pending
+updated: "2026-08-27T12:20:00Z"
+status: done
+refinement_status: implemented
+persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr200
+branch_name: refactor/accept-pr-revoked-registry-rehab-ppr200
+pbi_archived: true
 priority: alta
 process: refactorization
 type: refactorization
@@ -54,7 +58,7 @@ Rehabilitar el proceso `accept-pr` en `.SddIA/cerbero/revoked_entities.json` tra
 | Episodio | PR / ciclo | `since` | Estado |
 |----------|------------|---------|--------|
 | #194 | accept-pr-revoked-registry-rehab | `2026-08-26T11:42:26Z` | **done** (rehab + merge `6528d115…`) |
-| **#200 (este PBI)** | Cosecha post-merge #200 | `2026-08-27T11:31:15Z` | **pending** |
+| **#200 (este PBI)** | Cosecha post-merge #200 | `2026-08-27T11:31:15Z` | **done** (rehab A1+A2 · laudo #200) |
 
 ## Sighting Cosecha
 
@@ -62,9 +66,16 @@ PPR #200 · CID `7c215675-2ad2-436a-9749-ff635c52c8b3` · `persist_ref` `docs/fe
 
 Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · seed nueva (esta).
 
+## Sightings adicionales
+
+| Sighting | CID | Nota |
+|----------|-----|------|
+| Cosecha PR #201 | `224d877d-f477-4fcc-9cda-f60681c9e648` | `@ 2026-08-27T12:05:00Z` · bug-fix-revoked-registry-rehab-ppr194 · 0 create · affirm #200 · Cerbero `accept-pr`∈revoked since `2026-08-27T11:31:15Z` · F5 `delivery_state: failed` |
+| Cosecha PR #201 | `99259cef-ee2a-41e5-b9cf-62c1b96b2e8d` | `@ 2026-08-27T12:14:00Z` · bug-fix-revoked-registry-rehab-ppr194 · 0 create · affirm #200 · FS `accept-pr`∉revoked (A1 lab @ `12:00:00Z` · laudo #200 · healthy) · F5 `delivery_state: success` · handoff `false`+`pending` |
+
 ## Criterio de cierre (borrador)
 
-- [ ] Laudo rehabilitación Cerbero / Radamanto (anti-recurrencia post-rehab; limpiar `rehab_laudo`/`rehabilitated_at` obsoletos)
-- [ ] `accept-pr` ausente de `revoked` (y `permanent` si aplica)
-- [ ] Cascada feature/fix + `validacion.md` APTO + PBI en `done/`
+- [x] Laudo rehabilitación Cerbero / Radamanto (anti-recurrencia post-rehab; limpiar `rehab_laudo`/`rehabilitated_at` obsoletos)
+- [x] `accept-pr` ausente de `revoked` (y `permanent` si aplica)
+- [x] Cascada feature/fix + `validacion.md` APTO + PBI en `done/`
 - [ ] Smoke handoff sin re-revocación inmediata post-merge
