@@ -7,7 +7,7 @@ phase: mayeuta-stabilization
 agents: mayeuta
 branch_name: refactor/emit-pr-audited-revoked-registry-rehab-ppr202
 persist_ref: docs/features/emit-pr-audited-revoked-registry-rehab-ppr202
-pbi_ref: docs/todos/pending/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md
+pbi_ref: docs/todos/done/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md
 document_id: PBI-PPR-202-EMIT-PR-AUDITED-REVOKED-REGISTRY
 uuid: c2e8f4a1-7b3d-4e9c-a5f6-8d1e2f3a4b5c
 source_correlation_id: "1498e461-3235-483a-b210-907cca744cdd"
@@ -26,7 +26,7 @@ Transcript Mayeuta. Estabiliza el **qué** y el **por qué**. Sin diseño de cá
 
 | Vector | Hecho |
 |--------|--------|
-| PBI canónico | `docs/todos/pending/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md` (`document_id: PBI-PPR-202-EMIT-PR-AUDITED-REVOKED-REGISTRY`; `uuid: c2e8f4a1-…`; `status: pending`) |
+| PBI canónico | `docs/todos/done/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md` (`document_id: PBI-PPR-202-EMIT-PR-AUDITED-REVOKED-REGISTRY`; `uuid: c2e8f4a1-…`; `status: pending`) |
 | Ciclo | `refactorization` · rama `refactor/emit-pr-audited-revoked-registry-rehab-ppr202` · un `persist_ref` · un PR |
 | Semilla operador | Rehabilitar `emit-pr-audited-event` en Cerbero/Radamanto tras revocación lateral `abrupt_success_rate_drop` (since `2026-06-12T10:10:06+00:00`) |
 | Padre | PPR #202 Cosecha Kaizen (`persist_ref`: `docs/features/accept-pr-revoked-registry-rehab-ppr200`; CID `1498e461…`) — elevó alerta F5 a seed canónica |

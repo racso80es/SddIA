@@ -10,7 +10,7 @@ persist_ref: docs/features/emit-pr-audited-revoked-registry-rehab-ppr202
 - process: `refactorization`
 - agents: `tekton`
 - correlation_id: `1498e461-3235-483a-b210-907cca744cdd`
-- pbi_ref: `docs/todos/pending/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md`
 - status: `executed`
 - message: A1 Yunque Rúnico emit-pr-audited-event completada; sin A2 motor.
 
@@ -54,4 +54,28 @@ formal_execute_process: true
 TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+## 2026-08-27T12:29:50Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- correlation_id: `6237015f-0f8d-42ea-97ea-a44afac5318d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: 7. Downstream F3/F4/Veredicto pendientes · PR #203 · CID `6237015f…`
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+1. Tocado: `docs/features/emit-pr-audited-revoked-registry-rehab-ppr202/validacion.md`
+2. F2 documental: cascada YAML completa + evolution `c2e8f4a1…` + PBI en `done/`
+3. R1/R2: copia Evidence Bridge `prosthesis_subprocess` → `TECH_FORMAL` / `GIT_EVIDENCE` **APTO**
+4. Shell `git-manager`: Rejected — sin `gitStdout` inventado (`GIT_EVIDENCE_SESSION_SHELL: NO_APTO`)
+5. R3 KM: Argos 0 writes `docs/todos/**` → `RBAC_AUTHORING_KM_POLICY: APTO`
+6. `branch` / `git_changes`: APTO (path-assert; HEAD = rama inject)
+7. Downstream F3/F4/Veredicto pendientes · PR #203 · CID `6237015f…`
 ```

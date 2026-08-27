@@ -8,7 +8,7 @@ base: main
 scope: rehab-emit-pr-audited-event-cerbero
 branch_name: refactor/emit-pr-audited-revoked-registry-rehab-ppr202
 persist_ref: docs/features/emit-pr-audited-revoked-registry-rehab-ppr202
-pbi_ref: docs/todos/pending/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md
+pbi_ref: docs/todos/done/[ARQUITECTURA] emit-pr-audited-event — rehabilitación revoked_entities (PPR #202).md
 document_id: PBI-PPR-202-EMIT-PR-AUDITED-REVOKED-REGISTRY
 uuid: c2e8f4a1-7b3d-4e9c-a5f6-8d1e2f3a4b5c
 version_spec: "1.0.0"
