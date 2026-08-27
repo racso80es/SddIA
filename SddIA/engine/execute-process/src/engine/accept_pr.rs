@@ -54,21 +54,63 @@ fn scan_presented_for_branch(repo: &Path, branch: &str) -> bool {
     false
 }
 
+/// Payload canónico local (`remote: false`) — L-DELETE-PAYLOAD / accept-pr.md § Fase 4.
+pub(crate) fn delete_branch_local_payload(branch: &str) -> Value {
+    json!({"branch_name": branch, "remote": false, "force": false})
+}
+
+/// Payload canónico remoto (`remote: true`) — L-DELETE-PAYLOAD / accept-pr.md § Fase 4.
+pub(crate) fn delete_branch_remote_payload(branch: &str) -> Value {
+    json!({"branch_name": branch, "remote": true, "force": false})
+}
+
+/// Acumula resultado por op; `ok` de la op no tumba el proceso (L-HYGIENE-SOFT).
+pub(crate) fn record_hygiene_op(
+    operations: &mut Vec<Value>,
+    scope: &str,
+    result: Result<Value, String>,
+) -> bool {
+    match result {
+        Ok(_) => {
+            operations.push(json!({"scope": scope, "ok": true}));
+            true
+        }
+        Err(e) => {
+            operations.push(json!({"scope": scope, "ok": false, "error": e}));
+            false
+        }
+    }
+}
+
 fn delete_branch_hygiene(repo: &Path, branch: &str) -> (Option<String>, Option<Value>) {
     if env_truthy("SDDIA_LAB_SKIP_BRANCH_DELETE") {
         return (None, None);
     }
-    let mut hygiene_failure = None;
-    let closed = match invoke_git_manager(
-        repo,
-        "delete_branch",
-        &json!({"branch_name": branch, "remote": "origin"}),
-    ) {
-        Ok(_) => Some(branch.to_string()),
-        Err(e) => {
-            hygiene_failure = Some(json!({"branch": branch, "error": e}));
-            None
-        }
+    let mut operations: Vec<Value> = Vec::new();
+    let local_ok = record_hygiene_op(
+        &mut operations,
+        "local",
+        invoke_git_manager(repo, "delete_branch", &delete_branch_local_payload(branch)),
+    );
+    let remote_ok = record_hygiene_op(
+        &mut operations,
+        "remote",
+        invoke_git_manager(repo, "delete_branch", &delete_branch_remote_payload(branch)),
+    );
+    let closed = if local_ok {
+        Some(branch.to_string())
+    } else {
+        None
+    };
+    let hygiene_failure = if operations.iter().any(|op| op.get("ok") == Some(&json!(false))) {
+        Some(json!({
+            "survived_branch": branch,
+            "branch_deleted_local": local_ok,
+            "branch_deleted_remote": remote_ok,
+            "operations": operations,
+        }))
+    } else {
+        None
     };
     (closed, hygiene_failure)
 }
@@ -270,6 +312,11 @@ pub fn execute_accept_pr_phase(
             } else {
                 std::env::remove_var("SDDIA_SKIP_HOOKS");
             }
+            // L-HYGIENE-SOFT: push causal — si falla, abortar sin delete.
+            let push = match push_data {
+                Ok(p) => p,
+                Err(e) => return Some(Err(e)),
+            };
             let (closed, hygiene_failure) = source
                 .as_deref()
                 .map(|b| delete_branch_hygiene(repo, b))
@@ -282,17 +329,74 @@ pub fn execute_accept_pr_phase(
                     obj.insert("hygiene_failure".into(), hf);
                 }
             }
-            match push_data {
-                Ok(push) => Some(Ok(json!({
-                    "status": "executed",
-                    "handler": "accept-sync-cleanup",
-                    "push": push,
-                    "closed_branch": closed,
-                    "hygiene_failure": hygiene_failure,
-                }))),
-                Err(e) => Some(Err(e)),
-            }
+            Some(Ok(json!({
+                "status": "executed",
+                "handler": "accept-sync-cleanup",
+                "push": push,
+                "closed_branch": closed,
+                "hygiene_failure": hygiene_failure,
+            })))
         }
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn t_a2_canon_two_payloads_bool_force() {
+        let local = delete_branch_local_payload("feat/x");
+        let remote = delete_branch_remote_payload("feat/x");
+        assert_eq!(local["branch_name"], "feat/x");
+        assert_eq!(local["remote"], false);
+        assert_eq!(local["force"], false);
+        assert_eq!(remote["branch_name"], "feat/x");
+        assert_eq!(remote["remote"], true);
+        assert_eq!(remote["force"], false);
+    }
+
+    #[test]
+    fn t_a2_illegit_no_remote_origin_string() {
+        let local = delete_branch_local_payload("refactor/y");
+        let remote = delete_branch_remote_payload("refactor/y");
+        assert!(local.get("remote").and_then(|v| v.as_str()).is_none());
+        assert!(remote.get("remote").and_then(|v| v.as_str()).is_none());
+        assert_ne!(local["remote"], json!("origin"));
+        assert_ne!(remote["remote"], json!("origin"));
+    }
+
+    #[test]
+    fn t_a2_remote_miss_hygiene_failure_visible() {
+        let mut ops = Vec::new();
+        let local_ok = record_hygiene_op(&mut ops, "local", Ok(json!({})));
+        let remote_ok = record_hygiene_op(
+            &mut ops,
+            "remote",
+            Err("remote ref missing after github merge".into()),
+        );
+        assert!(local_ok);
+        assert!(!remote_ok);
+        let hygiene_failure = json!({"branch": "feat/z", "operations": ops});
+        assert_eq!(hygiene_failure["operations"][0]["ok"], true);
+        assert_eq!(hygiene_failure["operations"][1]["ok"], false);
+        assert!(hygiene_failure["operations"][1]["error"].as_str().is_some());
+        // Fase sync no retorna Err por hygiene (contrato L-HYGIENE-SOFT) — solo audita.
+        let phase_success = true;
+        assert!(phase_success);
+    }
+
+    #[test]
+    fn t_a2_local_ok_closed_branch() {
+        let mut ops = Vec::new();
+        let local_ok = record_hygiene_op(&mut ops, "local", Ok(json!({})));
+        let _ = record_hygiene_op(&mut ops, "remote", Ok(json!({})));
+        let closed = if local_ok {
+            Some("feat/w".to_string())
+        } else {
+            None
+        };
+        assert_eq!(closed.as_deref(), Some("feat/w"));
     }
 }

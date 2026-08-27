@@ -4,8 +4,12 @@ title: "[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #194)
 format: markdown
 version: "1.0.0"
 created: "2026-08-26"
-updated: "2026-08-26T11:48:00Z"
-status: pending
+updated: "2026-08-27T11:22:00Z"
+status: done
+refinement_status: implemented
+persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr194
+branch_name: refactor/accept-pr-revoked-registry-rehab-ppr194
+pbi_archived: true
 priority: alta
 process: refactorization
 type: refactorization
@@ -23,7 +27,7 @@ related:
   - .SddIA/radamanto/stats.json
   - SddIA/agents/radamanto.thresholds.json
   - SddIA/library/codexes/codex-software-engineering/process/accept-pr.md
-  - docs/todos/pending/[FIX] accept-pr delete_branch payload vs git-manager.md
+  - docs/todos/done/[FIX] accept-pr delete_branch payload vs git-manager.md
   - docs/fixes/bundle-consumer-telegram-gateway/validacion.md
 source_audits:
   - docs/fixes/bundle-consumer-telegram-gateway/validacion.md
