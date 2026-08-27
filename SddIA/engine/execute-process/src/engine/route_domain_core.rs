@@ -669,12 +669,15 @@ pub(crate) fn dispatch_subscriber(
             return (sid, "failed".into(), Some(status), exit_code);
         }
 
-        if process_key == "email-triage-gateway" {
+        if process_key == "email-triage-gateway"
+            || process_key == "email-quick-action-ingest"
+            || process_key == "user-preference-ingest"
+        {
             let Some(path) = event_path else {
                 return (
                     sid,
                     "failed".into(),
-                    Some("event_file_path required for email-triage-gateway".into()),
+                    Some(format!("event_file_path required for {process_key}")),
                     1,
                 );
             };

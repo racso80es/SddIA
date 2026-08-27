@@ -22,6 +22,12 @@ phases:
   - contract: llm.interact
     id: llm:interact
     version: '>=1.0.0'
+- intent: Consulta opt-in memory:pref-query; fail-open a bloque vacío.
+  name: Contexto preferencias
+  requires_capability:
+  - contract: memory.pref_query
+    id: memory:pref-query
+    version: '>=1.0.0'
 - delegates_to:
   - agent:mayeuta
   intent: 'Invocar Mayeuta con prompt literal: [HARD OVERRIDE] Has recibido este estímulo externo: "{text}". Genera respuesta orgánica ≤2 líneas (Tormentosa/Aiúa).'
@@ -36,7 +42,7 @@ phases:
   name: Materialización
 porcentaje_de_exito: null
 uuid: c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f
-version: 1.0.1
+version: "1.0.2"
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

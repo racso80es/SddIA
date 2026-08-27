@@ -1,6 +1,7 @@
 //! Handler nativo `telegram-fallback-responder` (P4).
 
 use super::mayeuta::{filter_c_should_abort, synthesize_mayeuta_response};
+use super::user_preference::{query_context_block, QuerySpec};
 use super::super::capsules::{resolve_capsule_native, resolve_capsule_wasm};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -140,7 +141,27 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         });
     }
 
-    let synthesized = synthesize_mayeuta_response(text);
+    let pref_ctx = query_context_block(
+        repo,
+        &QuerySpec {
+            max_results: Some(8),
+            ..Default::default()
+        },
+    );
+    let context_hint = if pref_ctx
+        .get("preferences")
+        .and_then(|v| v.as_array())
+        .map(|a| !a.is_empty())
+        == Some(true)
+    {
+        format!(
+            "\n[Contexto usuario — preferencias activas: {}]",
+            pref_ctx["preferences"]
+        )
+    } else {
+        String::new()
+    };
+    let synthesized = synthesize_mayeuta_response(&format!("{text}{context_hint}"));
     let chat_id = process_inputs
         .get("chat_id")
         .and_then(|v| v.as_str())

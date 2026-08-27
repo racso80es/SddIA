@@ -1685,6 +1685,164 @@ fn handle_email_quick_action(mut req: tiny_http::Request, repo: &Path) {
     );
 }
 
+#[derive(Deserialize)]
+struct UserPreferenceChangeReq {
+    operation: String,
+    #[serde(default)]
+    subject_key: Option<String>,
+    #[serde(default)]
+    subject_kind: Option<String>,
+    #[serde(default)]
+    predicate: Option<String>,
+    #[serde(default)]
+    scope_type: Option<String>,
+    #[serde(default)]
+    scope_id: Option<String>,
+    #[serde(default)]
+    value: Option<serde_json::Value>,
+    #[serde(default)]
+    preference_id: Option<String>,
+    #[serde(default)]
+    priority_level: Option<String>,
+}
+
+fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
+    let mut buf = String::new();
+    if req.as_reader().read_to_string(&mut buf).is_err() {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"body requerido","exit_code":1}"#.into(),
+        );
+        return;
+    }
+    let parsed = match serde_json::from_str::<UserPreferenceChangeReq>(&buf) {
+        Ok(p) => p,
+        Err(_) => {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"operation requerido","exit_code":1}"#.into(),
+            );
+            return;
+        }
+    };
+    let operation = parsed.operation.trim().to_ascii_lowercase();
+    if !matches!(
+        operation.as_str(),
+        "propose" | "activate" | "revoke" | "purge" | "ignore"
+    ) {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"operation inválida","exit_code":1}"#.into(),
+        );
+        return;
+    }
+    if operation == "purge" {
+        let pid = parsed
+            .preference_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        if pid.is_none() {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"preference_id requerido para purge","exit_code":1}"#.into(),
+            );
+            return;
+        }
+    } else if operation != "ignore" {
+        let sk = parsed
+            .subject_key
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        if sk.is_none() {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"subject_key requerido","exit_code":1}"#.into(),
+            );
+            return;
+        }
+    }
+    let event_id = new_event_id();
+    let (domain_dir, _, _) = load_fractal_paths(repo);
+    if std::fs::create_dir_all(&domain_dir).is_err() {
+        reply(
+            req,
+            500,
+            r#"{"success":false,"message":"mkdir domain","exit_code":1}"#.into(),
+        );
+        return;
+    }
+    let mut payload = serde_json::json!({
+        "operation": operation,
+        "channel": "kalma2",
+    });
+    if let Some(sk) = parsed.subject_key.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        payload["subject_key"] = serde_json::json!(sk);
+    }
+    if let Some(v) = parsed.subject_kind.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        payload["subject_kind"] = serde_json::json!(v);
+    }
+    if let Some(v) = parsed.predicate.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        payload["predicate"] = serde_json::json!(v);
+    }
+    if let Some(v) = parsed.scope_type.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        payload["scope_type"] = serde_json::json!(v);
+    }
+    if let Some(v) = parsed.scope_id.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        payload["scope_id"] = serde_json::json!(v);
+    }
+    if let Some(v) = parsed.preference_id.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        payload["preference_id"] = serde_json::json!(v);
+    }
+    if let Some(v) = parsed.value {
+        payload["value"] = v;
+    }
+    if let Some(v) = parsed
+        .priority_level
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        payload["priority_level"] = serde_json::json!(v);
+    }
+    let event = serde_json::json!({
+        "event_id": event_id,
+        "event_type": "User_Preference_Change_Requested",
+        "event_family": "domain",
+        "timestamp": chrono_like_now(),
+        "emitter_agent": "kalma2-bridge",
+        "payload": payload,
+    });
+    let target = domain_dir.join(format!("{event_id}.json"));
+    if std::fs::write(&target, format!("{event}\n")).is_err() {
+        reply(
+            req,
+            500,
+            r#"{"success":false,"message":"write domain event","exit_code":1}"#.into(),
+        );
+        return;
+    }
+    reply(
+        req,
+        202,
+        serde_json::json!({
+            "success": true,
+            "accepted": true,
+            "status": "accepted",
+            "event_id": event_id,
+            "message": "preferencia encolada",
+            "exit_code": 0
+        })
+        .to_string(),
+    );
+}
+
 fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) {
     let path = req.url().split('?').next().unwrap_or("/");
     match (req.method(), path) {
@@ -1693,6 +1851,7 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Post, "/api/interact") => handle_interact(req, &repo),
         (Method::Post, "/api/sync-assets") => handle_sync_assets(req, &repo),
         (Method::Post, "/api/email-quick-action") => handle_email_quick_action(req, &repo),
+        (Method::Post, "/api/user-preference-change") => handle_user_preference_change(req, &repo),
         (Method::Get, "/api/status") => handle_status(req, &repo),
         (Method::Get, "/api/runtime-profile") => handle_runtime_profile(req),
         (Method::Get, "/api/email-inbox") => handle_email_inbox(req, &repo),
@@ -2059,6 +2218,7 @@ mod tests {
         let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
         assert!(prod.contains("\"/api/email-inbox\""));
         assert!(prod.contains("\"/api/email-quick-action\""));
+        assert!(prod.contains("\"/api/user-preference-change\""));
     }
 
     #[test]

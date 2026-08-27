@@ -23,6 +23,8 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |
 |----------------|------|------|------------|---------|----------|---------|--------------|
 | `email-quick-action-requested.md` | `43d84426-7bb6-4179-91a0-aee13581bff6` | email-quick-action-requested | Email_Quick_Action_Requested | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `email_quick_action_requested` |
+| `user-preference-change-requested.md` | `a1b2c3d4-e5f6-4789-a012-3456789ab02` | user-preference-change-requested | User_Preference_Change_Requested | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `user_preference_change_requested` |
+| `user-preference-changed.md` | `b2c3d4e5-f6a7-4890-b123-456789ab003` | user-preference-changed | User_Preference_Changed | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `user_preference_changed` |
 | `email-triaged.md` | `6a4b0e9a-42e1-425c-8a16-9344eae4f246` | email-triaged | Email_Triaged | 1.1.0 | events-contract v1.1.0 | ecosystem-evolution | `email_triaged` |
 | `email-received.md` | `574fe330-137f-4f3a-b72d-dba189c6c406` | email-received | Email_Received | 1.0.0 | events-contract v1.1.0 | peripheral-sensing | `email_received` |
 | `domain-entity-telemetry-captured.md` | `54a49fa7-8d45-4376-9aa1-deeebeb301ea` | domain-entity-telemetry-captured | Domain_Entity_Telemetry_Captured | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `domain_entity_telemetry_captured` |

@@ -44,6 +44,7 @@ pub mod cerbero_di_rbac;
 pub mod cerbero_di_envelope;
 pub mod sync_entity_index;
 pub mod suite_execution_requested;
+pub mod user_preference_change_requested;
 pub mod thermodynamic;
 pub mod workspace;
 pub mod workspace_init;
@@ -155,6 +156,10 @@ pub fn run_process(
 
     if canonical == "email-quick-action-ingest" {
         return handlers::email_quick_action::run(repo, process_inputs);
+    }
+
+    if canonical == "user-preference-ingest" {
+        return handlers::user_preference::run_ingest(repo, process_inputs);
     }
 
     if canonical == "sync-client-assets" {

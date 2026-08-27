@@ -179,6 +179,13 @@
       "intent": "Persistir proof de intención de acción rápida; no IMAP STORE."
     }
   ],
+  "User_Preference_Change_Requested": [
+    {
+      "agent": "cumulo",
+      "process": "user-preference-ingest",
+      "intent": "Triaje y persistencia de preferencias del usuario; sin DLT."
+    }
+  ],
   "TelegramMessage_Received": [
     {
       "agent": "mayeuta",

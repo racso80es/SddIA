@@ -1,7 +1,7 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.6"
+version: "1.0.7"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
@@ -48,6 +48,14 @@ catalog:
     contract: "agenda.persist"
     version: "1.0.0"
     description: "Asiento de agenda local de instancia vía skill agenda-manager."
+  - id: "memory:pref-write"
+    contract: "memory.pref_write"
+    version: "1.0.0"
+    description: "Escritura de preferencias del usuario en store local de instancia vía user-preference-store."
+  - id: "memory:pref-query"
+    contract: "memory.pref_query"
+    version: "1.0.0"
+    description: "Consulta opt-in de preferencias activas del usuario vía user-preference-store."
 ---
 
 ## Directriz Core
@@ -72,6 +80,8 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `gov:rbac` | `gov.rbac` | 1.0.0 | Gobernanza RBAC Cerbero Self-Healing |
 | `channel:ingest` | `channel.ingest` | 1.0.0 | Ingesta canal Telegram → domain |
 | `agenda:persist` | `agenda.persist` | 1.0.0 | Agenda local de instancia vía agenda-manager |
+| `memory:pref-write` | `memory.pref_write` | 1.0.0 | Escritura preferencias usuario (store local) |
+| `memory:pref-query` | `memory.pref_query` | 1.0.0 | Consulta opt-in preferencias activas |
 
 ## Restricciones Duras
 
