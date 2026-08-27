@@ -2,15 +2,15 @@
 id: evolution-contract
 uuid: 6e2a9c41-8f3b-4d7e-9a1c-5b0d8e4f2a73
 type: norm
-version: 1.1.1
-contrato_version: "1.1.1"
+version: 1.1.2
+contrato_version: "1.1.2"
 created: "2026-08-11"
-updated: "2026-08-14"
+updated: "2026-08-27"
 source_feature: evolution-registry-gate
 normative_key: normative_documents.evolution_contract
 ---
 
-# Contrato evolution v1.1.1
+# Contrato evolution v1.1.2
 
 SSOT del protocolo de registro bajo `directories.evolution`. Clave Cúmulo: `normative_documents.evolution_contract`. Índice: `normative_documents.evolution_log`.
 
@@ -26,12 +26,12 @@ Todo registro **nuevo** debe incluir frontmatter YAML con:
 
 | Campo | Obligatorio | Regla |
 |-------|-------------|--------|
-| `contrato_version` | sí | SemVer del contrato aplicado; registros nuevos: `1.1.1`. |
+| `contrato_version` | sí | SemVer del contrato aplicado; registros nuevos: `1.1.2`. |
 | `id_cambio` | sí | UUID v4; **igual** al stem del filename. |
 | `fecha` | sí | `YYYY-MM-DD` o datetime ISO-8601. Prohibido inventar. |
 | `tipo_operacion` | sí | Enum: `alta` \| `baja` \| `modificacion`. |
 | `descripcion_breve` | sí | String no vacío. |
-| `hash_integrity` | sí | `sha256:` + hex del payload canónico (frontmatter **sin** este campo + cuerpo Markdown, UTF-8, LF). Vacío inválido. |
+| `hash_integrity` | sí | `sha256:` + **64** caracteres hex minúsculas `[0-9a-f]`. Placeholders (`pending`, `pending-merge`, `pending-anchor-on-merge`, …) **no conformes**. Vacío inválido. Ver §2.1. |
 | `relacionado` | sí | Lista con ≥1 referencia (path lógico, PBI, entidad, commit). |
 
 ### Condicionales
@@ -41,6 +41,17 @@ Todo registro **nuevo** debe incluir frontmatter YAML con:
 ### Opcionales canónicos
 
 `autor`, `impacto`, `cambios_realizados`, `id` (kebab), `proyecto_origen_cambio`, `contexto`, `replicacion`, `source_feature`, `document_id`.
+
+### 2.1 Payload canónico y `hash_integrity` (v1.1.2)
+
+Algoritmo SSOT: cápsula `sddia-evolution-register` → `canonical_hash` (sin cambio de algoritmo respecto a v1.1.1).
+
+1. Partir el fichero en líneas (normaliza CRLF al partir).
+2. Eliminar **todas** las líneas cuyo trim-start empieza por `hash_integrity:`.
+3. Unir con `\n` (`lines().join("\n")`) → **sin newline final** en el payload hasheado.
+4. SHA-256 hex minúsculas; prefijo `sha256:`.
+
+Re-anclaje canónico: `sddia-qa evolution-rehash --id <uuid>` (delega en la cápsula). Prohibido recálculo ad hoc (`sha256sum`, Python, `openssl`) que no replique el payload canónico.
 
 ## 3. Universo oficial post-migración y arqueología legacy
 
@@ -102,7 +113,7 @@ Listas ad hoc en hooks **prohibidas**. Untracked / `compiled_capsules` no entran
 
 Aduana Universal: `sddia-qa gate-evolution` (CLI nativo). Captura el árbol, inyecta JSON (`request.diff` + `request.registry`) en la cápsula WASI `sddia-evolution-register` vía `capsule-json-io` v2.0. La cápsula coteja y emite el veredicto. El CLI **no** delega el cotejo al hook.
 
-Fail-hard **solo sobre el delta inyectado**. El universo legacy no se certifica aquí.
+Fail-hard sobre el **delta inyectado** (`gate-evolution` sin flags, o `--range`). Modo universo: `gate-evolution --all` certifica **todos** los registros UUID bajo `directories.evolution` (blobs `HEAD`); activar en CI solo tras saneamiento del universo.
 
 | Código | Significado | Exit |
 |--------|-------------|------|
@@ -110,7 +121,7 @@ Fail-hard **solo sobre el delta inyectado**. El universo legacy no se certifica 
 | `EVOL_MATERIAL_UNREGISTERED` | Path material sin correlato en registros del diff | ≠0 |
 | `EVOL_RECORD_INVALID` | Registro del diff no canónico | ≠0 |
 | `EVOL_NOT_INDEXED` | Detalle del diff sin fila en índice | ≠0 |
-| `EVOL_HASH_MISMATCH` | `hash_integrity` ≠ recompute | ≠0 |
+| `EVOL_HASH_MISMATCH` | `hash_integrity` formato inválido, placeholder o ≠ recompute | ≠0 |
 | `EVOL_DUPLICATE` | `id_cambio` ya existe en alta | ≠0 |
 | `EVOL_ATOMICITY` | Persistencia detalle/índice inconsistente | ≠0 |
 | `EVOL_CUMULO` | Falta clave/ruta Cúmulo o cápsula | ≠0 |

@@ -10,3 +10,7 @@ Tras `./sddia-run.sh` / `execute-process` y JSON de acuse: prohibido `sleep`, `w
 Éxito = inyección acusada (`data.detached: true` en procesos largos). Siguiente estímulo = Racso o Kalma2.
 
 No castrar ticks de daemons ni el wait hasta el acuse del propio CLI.
+
+## DA-6 — Veto de Vigilancia Remota (CI)
+
+Tras el primer log de check GitHub fallido: prohibido `sleep` de espera, `gh pr checks` en bucle y `gh run rerun` del mismo `headSha`. Un finding → parche local (`gate-evolution --range` si toca evolution) → un push. No empujar docs de cierre con check rojo conocido. Ver `external-ai-constraints.md` v1.6.0.

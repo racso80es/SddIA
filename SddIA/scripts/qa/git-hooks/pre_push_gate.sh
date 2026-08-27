@@ -45,6 +45,12 @@ main() {
     exit 0
   fi
 
+  resolve_sddia_qa || exit 1
+  if ! "$SDDIA_QA_BIN" gate-evolution --json --range --if-touched; then
+    echo "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed" >&2
+    exit 1
+  fi
+
   local exit_code=0 branch persist_ref slug payload qa_payload
   for branch in "${branches[@]}"; do
     qa_payload=$(printf '{"event_type":"Local_QA_Requested","blocking":true,"emitter_agent":"git-hook-pre-push","payload":{"branch":"%s"}}' "$branch")

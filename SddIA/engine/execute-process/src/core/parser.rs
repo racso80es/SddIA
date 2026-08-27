@@ -28,6 +28,35 @@ pub fn load_frontmatter_yaml(md_path: &Path) -> Result<HashMap<String, Value>, S
     parse_frontmatter(md_path)
 }
 
+/// Parsea frontmatter YAML desde el contenido crudo de un `.md` (misma regla que `parse_frontmatter`).
+pub fn parse_frontmatter_from_str(text: &str) -> Result<HashMap<String, Value>, String> {
+    let parts: Vec<&str> = text.split("---").collect();
+    if parts.len() < 3 {
+        return Ok(HashMap::new());
+    }
+    let fm: Value = serde_yaml::from_str(parts[1].trim()).map_err(|e| e.to_string())?;
+    match fm {
+        Value::Mapping(m) => {
+            let mut out = HashMap::new();
+            for (k, v) in m {
+                if let Some(key) = k.as_str() {
+                    out.insert(key.to_string(), v);
+                }
+            }
+            Ok(out)
+        }
+        _ => Ok(HashMap::new()),
+    }
+}
+
+pub fn frontmatter_yaml_to_json(map: &HashMap<String, Value>) -> serde_json::Value {
+    let mut obj = serde_json::Map::new();
+    for (k, v) in map {
+        obj.insert(k.clone(), serde_json::to_value(v).unwrap_or(serde_json::Value::Null));
+    }
+    serde_json::Value::Object(obj)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

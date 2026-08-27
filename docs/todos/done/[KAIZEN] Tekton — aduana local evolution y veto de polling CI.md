@@ -5,7 +5,7 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-27"
 updated: "2026-08-27T16:45:00Z"
-status: pending
+status: done
 priority: alta
 process: feature
 type: kaizen

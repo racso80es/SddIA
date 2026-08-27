@@ -172,6 +172,15 @@ fn fm_str(fm: &Value, keys: &[&str]) -> Option<String> {
     None
 }
 
+fn is_valid_hash_integrity(declared: &str) -> bool {
+    let declared = declared.trim();
+    if !declared.starts_with("sha256:") {
+        return false;
+    }
+    let hex = declared.strip_prefix("sha256:").unwrap_or("");
+    hex.len() == 64 && hex.chars().all(|c| matches!(c, '0'..='9' | 'a'..='f'))
+}
+
 fn validate_canonical(rec: &Value) -> Option<(String, String)> {
     let fm = rec.get("frontmatter").unwrap_or(&Value::Null);
     let fname = rec
@@ -218,6 +227,14 @@ fn validate_canonical(rec: &Value) -> Option<(String, String)> {
             format!("{fname}: hash_integrity vacío"),
         ));
     }
+    if !is_valid_hash_integrity(&declared) {
+        return Some((
+            REASON_HASH.to_string(),
+            format!(
+                "{fname}: placeholder/formato inválido; sddia-qa evolution-rehash --id {id}"
+            ),
+        ));
+    }
     if let Some(raw) = rec.get("raw").and_then(|v| v.as_str()) {
         let recomputed = canonical_hash(raw);
         if recomputed != declared {
@@ -257,6 +274,135 @@ fn correlators<'a>(records: &'a [Value], evo: &str) -> Vec<&'a Value> {
         .collect()
 }
 
+fn universe_records<'a>(records: &'a [Value], evo: &str) -> Vec<&'a Value> {
+    records
+        .iter()
+        .filter(|r| {
+            let p = r.get("path").and_then(|v| v.as_str()).unwrap_or("");
+            is_record_file(p, evo) && !is_borrador(r)
+        })
+        .collect()
+}
+
+fn patch_hash_integrity_line(raw: &str, hash: &str) -> String {
+    let new_line = format!("hash_integrity: \"{hash}\"");
+    let mut replaced = false;
+    let mut out: Vec<String> = Vec::new();
+    for line in raw.split_inclusive('\n') {
+        let trimmed = line.trim_end_matches('\n');
+        if trimmed.trim_start().starts_with("hash_integrity:") {
+            out.push(new_line.clone());
+            replaced = true;
+        } else if !trimmed.is_empty() || line.ends_with('\n') {
+            out.push(trimmed.to_string());
+        }
+    }
+    if replaced {
+        return out.join("\n");
+    }
+  // Insertar tras descripcion_breve si existe
+    let mut inserted = false;
+    out.clear();
+    for line in raw.split_inclusive('\n') {
+        let trimmed = line.trim_end_matches('\n');
+        out.push(trimmed.to_string());
+        if !inserted && trimmed.trim_start().starts_with("descripcion_breve:") {
+            out.push(new_line.clone());
+            inserted = true;
+        }
+    }
+    if inserted {
+        out.join("\n")
+    } else {
+        format!("{raw}\n{new_line}\n")
+    }
+}
+
+fn verdict_universe(registry: &Value, evo: &str) -> Envelope {
+    let records = registry
+        .get("records")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let mut findings = Vec::new();
+    for rec in universe_records(&records, evo) {
+        let path = rec.get("path").and_then(|v| v.as_str()).unwrap_or("");
+        if let Some((code, detail)) = validate_canonical(rec) {
+            findings.push(json!({"path": path, "reason_code": code, "detail": detail}));
+        }
+    }
+    if findings.is_empty() {
+        ok_result(
+            json!({
+                "operation": "verdict",
+                "audit": "universe",
+                "reason_codes": [REASON_OK],
+                "findings": []
+            }),
+            "universo conforme",
+        )
+    } else {
+        err_result(
+            REASON_HASH,
+            "universo evolution no conforme",
+            json!(findings),
+        )
+    }
+}
+
+fn rehash(request: &Value) -> Envelope {
+    let id = match request.get("id_cambio").and_then(|v| v.as_str()) {
+        Some(s) if !s.trim().is_empty() => s.trim().to_string(),
+        _ => {
+            return err_result(REASON_INVALID, "id_cambio obligatorio", json!([]));
+        }
+    };
+    let registry = request.get("registry").cloned().unwrap_or(json!({}));
+    let evo = evo_prefix(&registry);
+    let ruta = format!("{evo}/{id}.md");
+    let records = registry
+        .get("records")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let rec = records
+        .iter()
+        .find(|r| r.get("path").and_then(|v| v.as_str()) == Some(ruta.as_str()));
+    let Some(rec) = rec else {
+        return err_result(
+            REASON_INVALID,
+            &format!("registro {id} no encontrado en registry"),
+            json!([]),
+        );
+    };
+    let raw = rec
+        .get("raw")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if raw.is_empty() {
+        return err_result(REASON_INVALID, "raw vacío", json!([]));
+    }
+    let hash = canonical_hash(raw);
+    let detail = patch_hash_integrity_line(raw, &hash);
+    let current_index = registry
+        .pointer("/index/content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    ok_result(
+        json!({
+            "operation": "rehash",
+            "reason_codes": [REASON_OK],
+            "findings": [],
+            "id_cambio": id,
+            "detail": detail,
+            "index": current_index,
+            "hash_integrity": hash,
+            "idempotent": detail == raw
+        }),
+        "hash re-anclado",
+    )
+}
+
 fn record_covers(rec: &Value, path: &str) -> bool {
     let fm = rec.get("frontmatter").unwrap_or(&Value::Null);
     let tipo = fm_str(fm, &["tipo_operacion"]).unwrap_or_default();
@@ -268,9 +414,17 @@ fn record_covers(rec: &Value, path: &str) -> bool {
 }
 
 fn verdict(request: &Value) -> Envelope {
-    let diff = request.get("diff").cloned().unwrap_or(json!({}));
     let registry = request.get("registry").cloned().unwrap_or(json!({}));
     let evo = evo_prefix(&registry);
+    let audit = request
+        .get("audit")
+        .and_then(|v| v.as_str())
+        .unwrap_or("delta");
+    if audit == "universe" {
+        return verdict_universe(&registry, &evo);
+    }
+
+    let diff = request.get("diff").cloned().unwrap_or(json!({}));
     let paths: Vec<String> = diff
         .get("paths")
         .and_then(|v| v.as_array())
@@ -290,17 +444,6 @@ fn verdict(request: &Value) -> Envelope {
         .filter(|p| path_under(p, SDDIA_PREFIX.trim_end_matches('/')) && !path_under(p, &evo))
         .cloned()
         .collect();
-
-    if material.is_empty() {
-        return ok_result(
-            json!({
-                "operation": "verdict",
-                "reason_codes": [REASON_OK],
-                "findings": []
-            }),
-            "L-SELF / sin material",
-        );
-    }
 
     let records = registry
         .get("records")
@@ -329,12 +472,23 @@ fn verdict(request: &Value) -> Envelope {
             }));
         }
     }
-    if let Some(f) = findings.first() {
-        let code = f
+    if !findings.is_empty() {
+        let code = findings[0]
             .get("reason_code")
             .and_then(|v| v.as_str())
             .unwrap_or(REASON_INVALID);
         return err_result(code, "registro del diff inválido", json!(findings));
+    }
+
+    if material.is_empty() {
+        return ok_result(
+            json!({
+                "operation": "verdict",
+                "reason_codes": [REASON_OK],
+                "findings": []
+            }),
+            "L-SELF / sin material",
+        );
     }
 
     for p in &material {
@@ -557,6 +711,7 @@ pub fn execute(payload: &Value) -> Envelope {
         .trim();
     match op {
         "verdict" => verdict(request),
+        "rehash" => rehash(request),
         "alta" | "modificacion" | "baja" => mutate(request, op),
         "" => err_result(REASON_INVALID, "operation ausente", json!([])),
         other => err_result(
@@ -845,6 +1000,83 @@ mod tests {
         }));
         assert!(again.success);
         assert_eq!(again.result["idempotent"], true);
+    }
+
+    #[test]
+    fn placeholder_format_rejected() {
+        let id = "11111111-1111-4111-8111-111111111111";
+        let mut rec = rec(id, &["SddIA/norms/foo.md"], true, false);
+        rec["frontmatter"]["hash_integrity"] = json!("sha256:pending");
+        rec["raw"] = json!(rec["raw"]);
+        let req = json!({
+            "operation": "verdict",
+            "diff": {"paths": [{"path": format!("SddIA/evolution/{id}.md"), "status": "M"}]},
+            "registry": registry(vec![rec], &[id])
+        });
+        let env = execute(&req);
+        assert!(!env.success);
+        assert_eq!(env.result["reason_codes"][0], REASON_HASH);
+        let detail = env.result["findings"][0]["detail"].as_str().unwrap_or("");
+        assert!(detail.contains("placeholder/formato"));
+    }
+
+    #[test]
+    fn evolution_only_placeholder_fails_without_material() {
+        let id = "22222222-2222-4222-8222-222222222222";
+        let mut rec = rec(id, &["SddIA/x"], true, false);
+        rec["frontmatter"]["hash_integrity"] = json!("sha256:pending");
+        let req = json!({
+            "operation": "verdict",
+            "diff": {"paths": [{"path": format!("SddIA/evolution/{id}.md"), "status": "M"}]},
+            "registry": registry(vec![rec], &[id])
+        });
+        let env = execute(&req);
+        assert!(!env.success, "{}", env.message);
+    }
+
+    #[test]
+    fn hash_newline_and_crlf_stable() {
+        let base = "---\ncontrato_version: \"1.1.1\"\nid_cambio: \"x\"\nfecha: \"2026-08-13\"\ntipo_operacion: alta\ndescripcion_breve: \"t\"\nrelacionado:\n  - \"SddIA/x\"\n---\n\n# t";
+        let with_nl = format!("{base}\n");
+        let with_crlf = base.replace("\n", "\r\n");
+        let h1 = canonical_hash(&with_nl);
+        let h2 = canonical_hash(with_nl.trim_end());
+        let h3 = canonical_hash(&with_crlf);
+        assert_eq!(h1, h2);
+        assert_eq!(h1, h3);
+    }
+
+    #[test]
+    fn universe_audit_validates_not_in_diff() {
+        let id = "33333333-3333-4333-8333-333333333333";
+        let rec = rec(id, &["SddIA/x"], false, true);
+        let req = json!({
+            "operation": "verdict",
+            "audit": "universe",
+            "registry": registry(vec![rec], &[id])
+        });
+        assert!(execute(&req).success);
+    }
+
+    #[test]
+    fn rehash_patches_placeholder() {
+        let id = "44444444-4444-4444-8444-444444444444";
+        let mut rec = rec(id, &["SddIA/x"], false, false);
+        rec["frontmatter"]["hash_integrity"] = json!("sha256:pending");
+        let raw = rec["raw"].as_str().unwrap().to_string();
+        rec["raw"] = json!(raw);
+        let env = execute(&json!({
+            "operation": "rehash",
+            "id_cambio": id,
+            "registry": registry(vec![rec], &[id])
+        }));
+        assert!(env.success, "{}", env.message);
+        let detail = env.result["detail"].as_str().unwrap();
+        assert!(detail.contains("hash_integrity: \"sha256:"));
+        assert!(!detail.contains("pending"));
+        assert!(is_valid_hash_integrity(
+            env.result["hash_integrity"].as_str().unwrap()
+        ));
     }
 
     #[test]

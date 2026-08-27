@@ -112,6 +112,8 @@ jobs:
           git fetch --no-tags origin main
           cargo test -p sddia-evolution-register --manifest-path SddIA/Cargo.toml
           SddIA/target/debug/sddia-qa gate-evolution --json --range
+      - name: evolution gate (universe)
+        run: SddIA/target/debug/sddia-qa gate-evolution --json --all
 
   eda-bus-e2e-smoke:
     runs-on: ubuntu-latest
