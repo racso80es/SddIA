@@ -1,7 +1,7 @@
 ---
 feature_name: accept-pr-revoked-registry-rehab-ppr200
 created: "2026-08-27"
-updated: "2026-08-27T12:20:00Z"
+updated: "2026-08-27T12:15:00Z"
 process: refactorization
 phase: Verificación
 agent: argos
@@ -18,15 +18,18 @@ correlation_id: "7756d929-8baa-40a3-962c-15be0e5c0541"
 source_correlation_id: "7c215675-2ad2-436a-9749-ff635c52c8b3"
 source_pr_url: https://github.com/racso80es/SddIA/pull/200
 pr_url: https://github.com/racso80es/SddIA/pull/202
+merged_pr: https://github.com/racso80es/SddIA/pull/202
+merge_commit: 42fff0765f1b0986f1807b89586bbef3f53c0011
+closed: "2026-08-27T12:11:54Z"
 parent_pbi: docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #194).md
 global: APTO
 pbi_archived: true
 approval_status: aprobado
 verdict: aprobado
 delivery_state: success
-accept_pr_handoff: false
-accept_pr_handoff_status: pending
-resolution: PASS_F5_VERDICT
+accept_pr_handoff: true
+accept_pr_handoff_status: consumed
+resolution: ACCEPT_PR_COMPLETE
 scope: "refactorization Verificación — accept-pr-revoked-registry-rehab-ppr200 (PPR #200)"
 git_manager_invoked: true
 formal_execute_process: true
@@ -57,8 +60,9 @@ checks:
   HANDOFF_MACHINE_FILE: APTO
   PBI_DONE_PRESENT: APTO
   PBI_PENDING_ABSENT: APTO
-  MERGE_ALREADY_OBSERVED: NO_APTO
+  MERGE_ALREADY_OBSERVED: APTO
   ACCEPT_PR_HANDOFF: APTO
+  AC-SMOKE-HANDOFF: APTO
   branch: APTO
   git_changes: APTO
 git_changes:
@@ -70,33 +74,28 @@ git_changes:
   - docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #200).md
 blocking_findings: []
 non_blocking_findings:
-  - MERGE_ALREADY_OBSERVED
   - REVOKED_ENTITY_ALERT_REFACTORIZATION
   - REVOKED_ENTITY_ALERT_EMIT_PR_AUDITED
 situational_notes:
   - "accept-pr ∉ revoked/permanent · stats healthy · rehab_laudo PBI-PPR-200-ACCEPT-PR-REVOKED-REGISTRY · rehabilitated_at 2026-08-27T12:00:00Z (FS instancia; fuera del PR)"
-  - "fósiles #194 (rehab_laudo/rehabilitated_at 11:20Z) sustituidos por laudo #200"
-  - "A2 fail_soft sello PullRequest_Merged post-merge_commit_hash — simetría DCC #187"
-  - "cargo test -p execute-process --lib t_a2_ → 7/7 @ 2026-08-27"
-  - "L-HANDOFF-F5: MERGE ausente ⇒ accept_pr_handoff false + status pending"
+  - "PR #202 MERGED 42fff076 @ 12:11:54Z · smoke accept-pr exit 0 · Merged c3a80d66… · sin re-revocación"
   - "refactorization ∈ revoked — lateral; Cúmulo/Kaizen"
-  - "PR #202 abierto vía delivery-close-cycle · ECST Presented 1498e461…"
 ---
 
 # Validación — Verificación (Argos · refactorization)
 
 ## Veredicto de fase
 
-**APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `pbi_archived: true`.
+**APTO** — `resolution: ACCEPT_PR_COMPLETE` · `verdict: aprobado` · `delivery_state: success` · `pbi_archived: true`.
 
-MERGE de este PR ausente → `accept_pr_handoff: false` + `accept_pr_handoff_status: pending`.
+PR #202 mergeado (`42fff076…`) · smoke `accept-pr` post-merge `exit_code: 0` · `accept_pr_handoff: true` + `consumed`.
 
 | Gate | Estado | Criterio |
 |------|--------|----------|
 | Producto A1/A2 / THRESH | **APTO** | FS instancia + code review + tests |
 | SMOKE | **APTO** | `t_a2_*` 7/7 incl. `t_a2_seal_*` |
 | DOC archive | **APTO** | PBI en `done/` · cascada completa |
-| F5 handoff truth | **APTO** | `false` + `pending` (MERGE ausente) |
+| F5 handoff truth | **APTO** | `true` + `consumed` (smoke post-merge) |
 
 ## Checks AC (spec §6)
 
@@ -109,7 +108,8 @@ MERGE de este PR ausente → `accept_pr_handoff: false` + `accept_pr_handoff_sta
 | AC-SMOKE | **APTO** | `cargo test -p execute-process --lib t_a2_` → 7/7. |
 | AC-THRESH | **APTO** | `radamanto.thresholds.json` 1.1.0 intacto. |
 | AC-DOC | **APTO** | Cascada objectives→validacion; PBI en `done/`. |
-| F5_HANDOFF_TRUTH | **APTO** | `accept_pr_handoff: false` + `pending`. |
+| AC-SMOKE-HANDOFF | **APTO** | `accept-pr` exit 0 post-merge; `accept-pr` ∉ revoked; stats `healthy` |
+| F5_HANDOFF_TRUTH | **APTO** | `accept_pr_handoff: true` + `consumed`. |
 
 ## Dictamen
 
@@ -117,15 +117,15 @@ MERGE de este PR ausente → `accept_pr_handoff: false` + `accept_pr_handoff_sta
 {
   "phase": "Verificación",
   "global": "APTO",
-  "resolution": "PASS_F5_VERDICT",
+  "resolution": "ACCEPT_PR_COMPLETE",
   "verdict": "aprobado",
   "delivery_state": "success",
   "pbi_archived": true,
-  "accept_pr_handoff": false,
-  "accept_pr_handoff_status": "pending",
+  "accept_pr_handoff": true,
+  "accept_pr_handoff_status": "consumed",
+  "merge_commit": "42fff0765f1b0986f1807b89586bbef3f53c0011",
   "blocking_findings": [],
   "non_blocking_findings": [
-    "MERGE_ALREADY_OBSERVED:NO_APTO",
     "REVOKED_ENTITY_ALERT_REFACTORIZATION",
     "REVOKED_ENTITY_ALERT_EMIT_PR_AUDITED"
   ]

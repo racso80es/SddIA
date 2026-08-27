@@ -1,7 +1,7 @@
 ---
 feature_name: accept-pr-revoked-registry-rehab-ppr200
 created: "2026-08-27"
-updated: "2026-08-27T12:05:00Z"
+updated: "2026-08-27T12:15:00Z"
 process: refactorization
 phase: execution
 agents: tekton
@@ -13,7 +13,7 @@ items_applied:
   - T2-evolution
 branch_name: refactor/accept-pr-revoked-registry-rehab-ppr200
 persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr200
-pbi_ref: docs/todos/pending/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #200).md
+pbi_ref: docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #200).md
 document_id: PBI-PPR-200-ACCEPT-PR-REVOKED-REGISTRY
 uuid: a8f3c1e2-9b4d-4e7a-8c5f-1d2e3f4a5b6c
 olas:
@@ -51,6 +51,24 @@ Locus Cúmulo: `radamanto.revoked_entities` = `.SddIA/cerbero/revoked_entities.j
 
 Cascada `objectives`→`execution` + evolution `a8f3c1e2-9b4d-4e7a-8c5f-1d2e3f4a5b6c`. Assert: **no** versionar `.SddIA/cerbero/` ni `.SddIA/radamanto/` en el PR.
 
-## Pendiente runtime
+## T5 (DCC)
 
-T4 archive PBI + `validacion.md` Argos. T5 `delivery-close-cycle`.
+| Campo | Valor |
+|-------|--------|
+| PR | https://github.com/racso80es/SddIA/pull/202 |
+| ECST Presented | `1498e461-3235-483a-b210-907cca744cdd` |
+| Merge | `42fff0765f1b0986f1807b89586bbef3f53c0011` @ `2026-08-27T12:11:54Z` |
+
+## T6 (smoke handoff post-merge)
+
+`accept-pr` @ `main` (binario post-#202) · `merge_already_done: true` · `SDDIA_LAB_SKIP_BRANCH_DELETE=1`.
+
+| Check | Resultado |
+|-------|-----------|
+| `exit_code` | **0** |
+| Sello | `PullRequest_Merged` `c3a80d66-…` · fase sello **executed** (no DLQ) |
+| `merge_commit_hash` | `42fff0765f1b0986f1807b89586bbef3f53c0011` |
+| `orphan_merge` | **false** (`Presented` `1498e461…` encontrado) |
+| Cerbero post-smoke | `accept-pr` **∉** `revoked`/`permanent` |
+| Radamanto post-smoke | `healthy` · 1×sample OK (`15d2c300…` · 782ms · exit 0) · **sin** re-revocación |
+

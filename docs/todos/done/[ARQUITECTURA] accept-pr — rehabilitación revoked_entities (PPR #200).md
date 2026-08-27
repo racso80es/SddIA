@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #200)
 format: markdown
 version: "1.0.0"
 created: "2026-08-27"
-updated: "2026-08-27T12:20:00Z"
+updated: "2026-08-27T12:15:00Z"
 status: done
 refinement_status: implemented
 persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr200
@@ -78,4 +78,4 @@ Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · see
 - [x] Laudo rehabilitación Cerbero / Radamanto (anti-recurrencia post-rehab; limpiar `rehab_laudo`/`rehabilitated_at` obsoletos)
 - [x] `accept-pr` ausente de `revoked` (y `permanent` si aplica)
 - [x] Cascada feature/fix + `validacion.md` APTO + PBI en `done/`
-- [ ] Smoke handoff sin re-revocación inmediata post-merge
+- [x] Smoke handoff sin re-revocación inmediata post-merge (`42fff076…` · accept-pr exit 0 · `c3a80d66…` Merged · Cerbero OK)
