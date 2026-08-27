@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #200)
 format: markdown
 version: "1.0.0"
 created: "2026-08-27"
-updated: "2026-08-27T12:15:00Z"
+updated: "2026-08-27T12:25:00Z"
 status: done
 refinement_status: implemented
 persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr200
@@ -19,6 +19,9 @@ suggested_branch: refactor/accept-pr-revoked-registry-rehab-ppr200
 persist_ref_suggested: docs/features/accept-pr-revoked-registry-rehab-ppr200
 source_correlation_id: "7c215675-2ad2-436a-9749-ff635c52c8b3"
 source_pr_url: https://github.com/racso80es/SddIA/pull/200
+merged_pr: https://github.com/racso80es/SddIA/pull/202
+merge_commit: 42fff0765f1b0986f1807b89586bbef3f53c0011
+closed: "2026-08-27T12:11:54Z"
 feature_ref: docs/features/accept-pr-revoked-registry-rehab-ppr194
 parent_pbi: docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #194).md
 incident_ref: "REVOKED_ENTITY_ALERT_ACCEPT_PR — accept-pr re-revoked post-rehab #194 (abrupt_success_rate_drop since 2026-08-27T11:31:15Z; rehabilitated_at 11:20:00Z; merge 6528d115… @ 11:31:11Z)"
