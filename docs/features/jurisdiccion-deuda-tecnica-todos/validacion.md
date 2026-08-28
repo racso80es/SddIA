@@ -32,7 +32,10 @@ git_changes:
   - docs/todos/pending/[DEUDA] Escaneo lineal de docs-todos en el resolutor de fractura — umbral de indexación.md
   - docs/todos/done/Registro y Resolución de Deuda Técnica (Kintsugi Ontológico).md
   - docs/todos/tmp/ (retirado)
+  - docs/features/jurisdiccion-deuda-tecnica-todos/backfill-acta-eda-20260828.json
+  - docs/todos/pending/[KAIZEN] Ciclo jurisdicción todos — norm-creator parcial, huérfanos EDA y colapso DCC sin fractura.md
 evolution_entry: SddIA/evolution/eb6fb73a-9ded-49a1-a2a9-314624358b4b.md
+eda_backfill_correlation_id: "a6f93bdc-a04d-4d7e-a3ae-d112386d10b1"
 ---
 
 # Validación — jurisdicción docs/todos
@@ -87,6 +90,32 @@ test ... pending_pbi_path_accepted_for_archive_gate ... ok
 
 Diff sin `fracture_pbi.rs`, `materialize_fracture_pbi.rs`, `enrich_fracture_pbi_kaizen.rs`.
 
+## Aduana EDA genómica — desbloqueo
+
+El primer intento de `delivery-close-cycle` quedó bloqueado con `orphan_count: 2` por dos entidades ajenas al diff (`github-raw-fetcher`, `download-remote-asset`), presentes en `main` desde `96c01b9` (2026-08-19).
+
+Saldadas por emisión canónica, sin mutación manual del SSOT:
+
+```text
+./sddia-run.sh --action emit-domain-mutation --inputs '{...}'   # x2
+./SddIA/target/debug/sddia-qa audit-eda-coverage --scan --json
+```
+
+```
+orphan_count: 0
+indexed_entities: 70
+orphans: []
+```
+
+```text
+./SddIA/target/debug/sddia-qa gate-evolution --json --range
+→ "message":"delta cubierto", "reason_codes":["EVOL_OK"]
+```
+
+Acta: `backfill-acta-eda-20260828.json`. Deuda residual `DT-EDA-PENDING-FORGE-STALE` (hash fósil en frontmatter) escalada al PBI Kaizen del ciclo.
+
 ## Cierre documental
 
 PBI `PBI-OPER-DEUDA-TECNICA-KINTSUGI-001` en `docs/todos/done/` en esta rama; `pbi_archived: true`.
+
+Fricción del ciclo auditada y escalada como `PBI-KAIZEN-CICLO-JURISDICCION-TODOS` en `docs/todos/pending/`, incluido el autorreporte de la apertura irregular del PR (vía raw tras colapso mudo del `delivery-close-cycle`).

@@ -19,6 +19,7 @@ derived_from:
 friction_ids:
   - F-NORM-FORGE-CONTRATO-PARCIAL
   - F-EDA-ORPHAN-BLOQUEA-CIERRE-AJENO
+  - F-DCC-VIA-EXCEPCION-INDOCUMENTADA
   - F-DCC-COLAPSO-SIN-FRACTURA
   - F-EVOLUTION-CORRELACION-EDA-COVERAGE
   - F-DCC-TMP-FUERA-DE-GITIGNORE
@@ -82,7 +83,11 @@ rg -l 'Restricciones Duras' SddIA/library/norms # 10 ficheros; no incluye todos-
 
 Ambas existen en `main` desde `96c01b9` (2026-08-19), nueve días antes de esta rama. Verificado con `git cat-file -e main:<path>`. **Ninguna pertenece al diff del PR.**
 
-El gate es correcto en su lectura (hay ruido de sistema) pero su **granularidad es global**: cualquier feature, toque lo que toque, queda incapaz de cerrar por ciclo hasta que alguien salde deuda ajena. Esto convierte una deuda latente en un bloqueo universal sin ruta de escape documentada.
+El gate es correcto en su lectura (hay ruido de sistema) pero su **granularidad es global**: cualquier feature, toque lo que toque, queda incapaz de cerrar por ciclo hasta que alguien salde deuda ajena.
+
+**Existe una vía de escape, pero está indocumentada.** `backfill_manifest_active` (`phase_capsules.rs:225-237`) degrada el veredicto de `block` a `warn` si `{persist_ref}/backfill-manifest.json` declara `correlation_id` y no tiene `merkle_anchored: true`. Ese mecanismo no aparece en `delivery-close-cycle.md` ni en norma alguna: solo en Rust. Un operador que colisione con el gate no tiene forma documental de descubrirlo.
+
+**Saldado en este ciclo (2026-08-28):** backfill por emisión canónica de `Domain_Entity_Created` vía `--action emit-domain-mutation` para ambas entidades. `audit-eda-coverage --scan` → `orphan_count: 0` sobre 70 entidades indexadas. Acta en `docs/features/jurisdiccion-deuda-tecnica-todos/backfill-acta-eda-20260828.json`, correlación `a6f93bdc-a04d-4d7e-a3ae-d112386d10b1`. Queda viva la deuda `DT-EDA-PENDING-FORGE-STALE`: la cobertura se selló con el `sha256:pending-forge` del propio frontmatter, por paridad con el precedente `eda-backfill-precommit-20260525`.
 
 ## 3. `F-DCC-COLAPSO-SIN-FRACTURA` — el proceso murió mudo
 
@@ -131,7 +136,8 @@ Atenuante fáctico, no excusa: el runtime no emitió fractura (§3), luego el pa
 
 - **CA1** — `run_norm_forge` emite `dependencies` desde `tactical_norm_dependencies` y separa `## Directriz Core` de `## Restricciones Duras (Aduana de Fricción)`. Test unitario con semilla que incluya dependencias y restricciones; aserción sobre ambas secciones.
 - **CA2** — `todos-jurisdiction.md` re-forjada a v1.1.0 vía `entity-manager` `lifecycle_operation: update`, ya conforme al contrato. Prohibida la corrección manual.
-- **CA3** — Los dos huérfanos `pending-forge` saldados (backfill o forja real), `orphan_count: 0` en `audit-eda-coverage --scan`. Si el saldo excede este ciclo, documentar en la norma la **vía de excepción** para que una feature ajena pueda cerrar.
+- **CA3** — ~~Los dos huérfanos saldados, `orphan_count: 0`~~. **Cumplida el 2026-08-28** (ver §2). Resta el sello real: `github-raw-fetcher` y `download-remote-asset` deben perder el `sha256:pending-forge` de su frontmatter vía `entity-manager` update, y la cobertura reflejar el hash verdadero.
+- **CA3b** — La vía de excepción `backfill-manifest.json` queda documentada en `delivery-close-cycle.md` y en norma: nombre exacto del fichero, campos que la activan (`correlation_id` sin `merkle_anchored: true`) y veredicto resultante (`warn`, `argos_noise: "backfill Fase C en curso"`). Hoy solo vive en Rust.
 - **CA4** — Toda fase de `delivery-close-cycle` que retorne `status: blocked` o `failed` deposita `System_Fracture_Detected` con `friction_id` propio, en paridad con `workspace_init`. Verificable: provocar el bloqueo y contar eventos en `.events/pending/`.
 - **CA5** — La correlación evolution de `SddIA/core/eda-coverage.json` se deriva del diff cuando el mutador es el propio motor, o `gate-evolution` la exime explícitamente. Sin round-trip manual de rehash.
 - **CA6** — `.gitignore` cubre `**/.tmp/`; `git status` limpio tras un `delivery-close-cycle` completo.
