@@ -177,6 +177,12 @@ mod tests {
         let tmp = TempDir::new().expect("tempdir");
         let repo = tmp.path();
         fs::create_dir_all(repo.join("SddIA/process")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"process":"SddIA/process","process_domain_roots":[]}}"#,
+        )
+        .unwrap();
         fs::write(
             repo.join("SddIA/process/process-contract.md"),
             "---\nid: process-contract\nphases: []\n---\n",

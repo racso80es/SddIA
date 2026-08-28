@@ -457,6 +457,18 @@ def materialize_runtime_evidence(
     return ev
 
 
+def resolve_execution_id(doc: dict[str, Any]) -> str:
+    eid = doc.get("execution_id")
+    if eid:
+        return str(eid).strip()
+    inputs = doc.get("inputs") or {}
+    if isinstance(inputs, dict):
+        inner = inputs.get("execution_id")
+        if inner:
+            return str(inner).strip()
+    return ""
+
+
 def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) -> str:
     process = doc.get("process_name") or "?"
     phase = doc.get("phase_name") or "?"
@@ -484,6 +496,8 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
     elif isinstance(inputs, dict):
         branch = str(inputs.get("branch_name") or inputs.get("pr_branch") or "")
 
+    execution_id = resolve_execution_id(doc)
+
     brief = role_brief(str(agent), str(phase), str(process))
     parts = [
         "[HARD OVERRIDE — SddIA kalma2-agent-runtime-cursor]",
@@ -494,6 +508,7 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
         f"- agents: {', '.join(str(a) for a in agents)}",
         f"- persist_ref: {persist}",
         f"- branch_name: {branch}",
+        f"- execution_id: {execution_id}",
         f"- pbi_ref: {pbi_ref}",
         f"- correlation_id: {corr}",
         "",
@@ -551,6 +566,7 @@ def append_handoff(
     agents: list[Any],
     corr: Any,
     pbi_ref: Any,
+    execution_id: Any = "",
     backend: str,
     status: str,
     message: str,
@@ -567,13 +583,15 @@ def append_handoff(
             "---\n"
             "generated_by: kalma2-agent-runtime-cursor\n"
             f"persist_ref: {persist}\n"
-            "---\n\n# Agent handoff log\n",
+            + (f'execution_id: "{execution_id}"\n' if execution_id else "")
+            + "---\n\n# Agent handoff log\n",
             encoding="utf-8",
         )
     block = (
         f"\n## {ts} — {phase}\n"
         f"- process: `{process}`\n"
         f"- agents: {', '.join(f'`{a}`' for a in agents) or '(ninguno)'}\n"
+        f"- execution_id: `{execution_id or ''}`\n"
         f"- correlation_id: `{corr or ''}`\n"
         f"- pbi_ref: `{pbi_ref or ''}`\n"
         f"- runtime: kalma2-agent-runtime-cursor\n"
@@ -1175,6 +1193,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             agents=list(agents),
             corr=doc.get("correlation_id"),
             pbi_ref=doc.get("pbi_ref"),
+            execution_id=resolve_execution_id(doc),
             backend="mock",
             status="executed",
             message=msg,
@@ -1206,6 +1225,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             agents=list(agents),
             corr=doc.get("correlation_id"),
             pbi_ref=doc.get("pbi_ref"),
+            execution_id=resolve_execution_id(doc),
             backend=backend,
             status=status,
             message=message,
@@ -1239,6 +1259,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         agents=list(agents),
         corr=doc.get("correlation_id"),
         pbi_ref=doc.get("pbi_ref"),
+        execution_id=resolve_execution_id(doc),
         backend=backend,
         status=status,
         message=message,

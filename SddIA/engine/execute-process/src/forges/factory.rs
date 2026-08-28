@@ -3,7 +3,8 @@
 use super::common::{
     append_row, capability_name, handoff_create, idempotent_forge_handoff, optional_str,
     parse_frontmatter, patch_process_phases_update, refresh_process_hash, repo_tool_base,
-    required_str, sha256_canon, str_field, update_process_index_version, generate_uuid,
+    required_str, sha256_canon, str_field, sync_daemons_index_census, update_process_index_version,
+    generate_uuid,
 };
 use crate::core::paths::load_paths_config;
 use crate::core::resolver::{process_search_roots, resolve_process_path};
@@ -416,10 +417,14 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
             });
             if let Some(phases) = phases_opt {
                 let explicit_ver = optional_str(inputs, "process_version");
+                let inputs_patch = inputs
+                    .get("process_inputs")
+                    .or_else(|| inputs.get("inputs"));
                 let patch = patch_process_phases_update(
                     &process_path,
                     phases,
                     explicit_ver.as_deref(),
+                    inputs_patch,
                 )?;
                 if patch.old_version != patch.new_version {
                     update_process_index_version(
@@ -1252,6 +1257,7 @@ Forja: `daemon-creator` (porte nativo `run_daemon_forge`). UUID vía `action:cry
         "| `{name}.md` | `{daemon_uuid}` | {name} | {version} | daemons-contract v{contract_ver} | {context} | {caps_index} | {heartbeat} |"
     );
     append_row(&index_path, &row, &name)?;
+    sync_daemons_index_census(&index_path)?;
 
     Ok(json!({
         "artifact_daemon_md": daemon_path.strip_prefix(repo).unwrap_or(&daemon_path).to_string_lossy().replace('\\', "/"),

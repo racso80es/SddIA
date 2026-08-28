@@ -1,0 +1,47 @@
+{
+  "entity_class": "process",
+  "entity_name": "entity-manager",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "entity-manager",
+    "process_version": "1.0.2",
+    "process_phases": [
+      {
+        "name": "Delegación al creator",
+        "intent": "En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 10 clases (skill, event, process, agent, tool, action, norm, codex, suite, daemon).",
+        "delegates_to": ["action:execute-process"]
+      },
+      {
+        "name": "Delete físico",
+        "intent": "Solo en delete: READ_FILE del artefacto para extraer uuid/version/hash_signature; DELETE_FILE del .md bajo directories.*.",
+        "requires_capability": [
+          {
+            "id": "fs:persist",
+            "contract": "fs.persist",
+            "version": ">=1.0.0"
+          }
+        ]
+      },
+      {
+        "name": "Sello universal",
+        "intent": "Invocar action:emit-domain-mutation con emitter_agent entity-manager y handoff del creator o metadatos de delete.",
+        "delegates_to": ["action:emit-domain-mutation"]
+      }
+    ],
+    "inputs": [
+      {
+        "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon"
+      },
+      { "entity_name": "string; identificador kebab-case de la entidad" },
+      {
+        "lifecycle_operation": "string; enum: create | update | delete"
+      },
+      {
+        "semantic_seed": "object|null; parámetros de forja para el creator hijo; ignorado en delete"
+      },
+      {
+        "cumulo_topology": "Topología SSOT inyectada (paths, contratos, directorios)"
+      }
+    ]
+  }
+}

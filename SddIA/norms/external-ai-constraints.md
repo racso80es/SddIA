@@ -2,7 +2,7 @@
 
 **Tipo:** Norma motor / Comportamiento IA  
 **UUID:** 95b5ac3a-061f-458d-bfb6-69f91a1c1731  
-**Versión:** 1.6.0  
+**Versión:** 1.6.1  
 **Seguridad:** Karma2Token  
 **Dependencias normativas:** `obediencia-procesos.md`, `paths-via-cumulo.md`, `touchpoints-ia.md`
 
@@ -66,6 +66,8 @@ Tras invocar la Aduana (`./sddia-run.sh` / `execute-process`) y recibir el JSON 
 Éxito de Tekton = **inyección acusada**, no = trabajo remoto terminado. El siguiente estímulo lo dictan el Vértice Biológico o Kalma2.
 
 **Fuera del veto:** ticks internos de daemons; backoff de cápsulas; bloqueo del invocador **hasta** el stdout JSON del CLI (el acuse); relevo IDE de fases `simulated` del ciclo `feature`/`bug-fix`/`refactorization` activo.
+
+**Relevo IDE (lab):** con `SDDIA_AGENT_RELAY_IDE=1` (o `true`/`yes`/`on`), las fases `agent:` quedan `simulated` aunque la bóveda defina `SDDIA_AGENT_RUNTIME_COMMAND`. El motor emite en stderr: `agent-runtime: lab-relay activo (bóveda ignorada)`. `unset` o ausencia de `COMMAND` **no** es contrato de relevo; usar el flag explícito. Paridad bóveda: `_sddia_load_vault` aplica `setdefault` (misma semántica que `apply_env` en Rust); precedencia incondicional solo para `SDDIA_LAB_SIMULATE_IOTA` y `SDDIA_IOTA_TIMEOUT_SECONDS`.
 
 Procesos largos (`pull-request-review` y los listados en `SDDIA_CLI_DETACH_PROCESSES`) el CLI desprende el hijo y acusa con `data.detached: true` al depositar `Process_Execution_Completed` (`cycle_phase: awaiting_agents`) en `eda_fractal.orchestration` (`./.events/orchestration/`). Prohibido tratar `.SddIA/events/` como cola.
 
