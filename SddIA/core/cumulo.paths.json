@@ -110,7 +110,11 @@
     "featurePath": "docs/features",
     "fixPath": "docs/fixes",
     "auditsPath": "docs/audits",
-    "userPreferencesStore": ".SddIA/vector_store/user_preferences/"
+    "userPreferencesStore": ".SddIA/vector_store/user_preferences/",
+    "todos": {
+      "pending": "docs/todos/pending",
+      "done": "docs/todos/done"
+    }
   },
   "products": {
     "shared_kernel_npm": "packages/sddia-core",

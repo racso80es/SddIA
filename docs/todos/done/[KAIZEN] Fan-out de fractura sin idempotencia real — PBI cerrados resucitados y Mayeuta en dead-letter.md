@@ -6,7 +6,9 @@ format: markdown
 version: "1.2.0"
 created: "2026-08-28"
 updated: "2026-08-28"
-status: "pendiente"
+status: "cerrado"
+closed: "2026-08-28"
+resolution_ref: docs/fixes/kaizen-fracture-fanout-idempotencia/validacion.md
 priority: "alta"
 process: bug-fix
 type: kaizen
@@ -25,9 +27,9 @@ architectural_constraints:
   - A-RESOLUTOR-EN-CORE
   - A-CEGUERA-NOMINAL
 related:
+  - SddIA/engine/execute-process/src/core/fracture_pbi.rs
   - SddIA/engine/execute-process/src/engine/materialize_fracture_pbi.rs
   - SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
-  - SddIA/engine/execute-process/src/core/paths.rs
   - SddIA/engine/execute-process/src/engine/handlers/task_queue_manager.rs
   - SddIA/core/cumulo.paths.json
   - SddIA/actions/materialize-fracture-pbi.md

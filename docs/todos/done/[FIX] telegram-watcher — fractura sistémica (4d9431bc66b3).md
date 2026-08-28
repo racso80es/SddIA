@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-4d9431bc66b3
 title: "[FIX] telegram-watcher — fractura sistémica"
 format: markdown
@@ -9,13 +10,15 @@ status: cerrado
 closed: "2026-08-26"
 priority: alta
 process: bug-fix
+fracture_process: telegram-watcher
+fracture_hash: 4d9431bc66b3
 incident_ref: "System_Fracture_Detected — 4d9431bc66b3"
 fix_ref: docs/fixes/centinelas-fracture-ola-20260819
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - docs/audits/centinelas-fracturas-eventos-pending-20260826.md
----
+
 
 # [FIX] telegram-watcher — fractura sistémica
 

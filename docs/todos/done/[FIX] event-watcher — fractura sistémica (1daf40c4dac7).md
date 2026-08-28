@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-1daf40c4dac7
 title: "[FIX] event-watcher — fractura sistémica"
 format: markdown
@@ -9,13 +10,15 @@ status: cerrado
 closed: "2026-08-26"
 priority: alta
 process: bug-fix
+fracture_process: event-watcher
+fracture_hash: 1daf40c4dac7
 incident_ref: "System_Fracture_Detected — 1daf40c4dac7"
 fix_ref: docs/fixes/centinelas-fracture-ola-20260819
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - docs/audits/centinelas-fracturas-eventos-pending-20260826.md
----
+
 
 # [FIX] event-watcher — fractura sistémica
 

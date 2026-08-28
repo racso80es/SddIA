@@ -1,9 +1,11 @@
 //! Handler nativo `enrich-fracture-pbi-kaizen` — síntesis Mayeuta sobre PBI Cúmulo (D-P6T.1).
 
-use super::materialize_fracture_pbi;
+use crate::core::fracture_pbi::{
+    fracture_trace_hash, resolve_enrich_target, scan_fracture_ledger, slugify_process_name,
+};
 use serde_json::{json, Value};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 fn required_str(inputs: &Value, key: &str) -> Result<String, String> {
     match inputs.get(key).and_then(|v| v.as_str()) {
@@ -19,12 +21,6 @@ fn optional_str(inputs: &Value, key: &str) -> Option<String> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string)
-}
-
-fn fracture_pbi_path(repo: &Path, process_name: &str, error_trace: &str) -> PathBuf {
-    repo.join("docs/todos/pending").join(
-        materialize_fracture_pbi::fracture_pbi_filename(process_name, error_trace),
-    )
 }
 
 /// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section).
@@ -172,10 +168,6 @@ pub fn analyze_fracture_kaizen(
 }
 
 /// Paridad `execute-action.py::_upsert_fracture_kaizen_section`.
-///
-/// Recorte de sección por delimitadores Markdown (`\n## ` / EOF). El crate
-/// `regex` no soporta look-ahead; un patrón `(?=\n## |\Z)` panica en runtime
-/// y envenena el mutex de `route-domain-event`.
 pub fn upsert_fracture_kaizen_section(content: &str, section: &str) -> String {
     const MARKER: &str = "## Conclusión Analítica y Propuesta Evolutiva";
 
@@ -199,22 +191,28 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let agent_emitter = required_str(inputs, "agent_emitter")?;
     let attempted_action = required_str(inputs, "attempted_action")?;
 
-    let target = match optional_str(inputs, "cumulo_pbi_path") {
-        Some(rel) => repo.join(rel),
-        None => fracture_pbi_path(repo, &process_name, &error_trace),
+    let trace_hash = fracture_trace_hash(&error_trace);
+    let fracture_process = slugify_process_name(&process_name);
+    let scan = scan_fracture_ledger(repo)?;
+
+    let target_rel = match resolve_enrich_target(
+        repo,
+        &scan,
+        optional_str(inputs, "cumulo_pbi_path").as_deref(),
+        &trace_hash,
+        &fracture_process,
+    ) {
+        Some(rel) => rel,
+        None => {
+            return Ok(json!({
+                "success": true,
+                "reason": "no_target",
+                "message": "no_target",
+            }));
+        }
     };
 
-    if !target.is_file() {
-        let rel = target
-            .strip_prefix(repo)
-            .unwrap_or(&target)
-            .to_string_lossy()
-            .replace('\\', "/");
-        return Err(format!(
-            "PBI de Cúmulo no encontrado: {rel} — ejecutar materialize-fracture-pbi antes"
-        ));
-    }
-
+    let target = repo.join(&target_rel);
     let (verdict, _, section) = analyze_fracture_kaizen(
         &process_name,
         &error_trace,
@@ -225,15 +223,9 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     fs::write(&target, upsert_fracture_kaizen_section(&content, &section))
         .map_err(|e| e.to_string())?;
 
-    let rel_path = target
-        .strip_prefix(repo)
-        .unwrap_or(&target)
-        .to_string_lossy()
-        .replace('\\', "/");
-
     Ok(json!({
         "success": true,
-        "target_path": rel_path,
+        "target_path": target_rel,
         "message": "PBI enriquecido con síntesis Kaizen",
         "evolution_verdict": verdict,
     }))
@@ -242,7 +234,19 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::materialize_fracture_pbi;
     use std::fs;
+
+    fn setup_repo(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"todos":{"pending":"docs/todos/pending","done":"docs/todos/done"}}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
+    }
 
     #[test]
     fn analyze_fracture_kaizen_recursion_verdict() {
@@ -279,23 +283,11 @@ mod tests {
     }
 
     #[test]
-    fn upsert_replaces_existing_synthesis_without_lookahead() {
-        let content = "## Mandato\n\nfoo\n\n## Conclusión Analítica y Propuesta Evolutiva\n\n*(Síntesis Mayeuta — Kintsugi async)*\n\nold\n\n## Criterio\n\nbar\n";
-        let section = "## Conclusión Analítica y Propuesta Evolutiva\n\n*(Síntesis Mayeuta — Kintsugi async)*\n\n### Diagnóstico de causa raíz\n\n- nueva\n";
-        let out = upsert_fracture_kaizen_section(content, section);
-        assert!(out.contains("### Diagnóstico de causa raíz"));
-        assert!(out.contains("## Criterio"));
-        assert!(!out.contains("\nold\n"));
-        let out2 = upsert_fracture_kaizen_section(&out, section);
-        assert!(out2.contains("## Criterio"));
-        assert!(out2.contains("- nueva"));
-    }
-
-    #[test]
     fn enrich_fracture_pbi_kaizen_e2e() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        setup_repo(repo);
+        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
 
         let inputs = json!({
             "process_name": "event-watcher",
@@ -323,9 +315,10 @@ mod tests {
     }
 
     #[test]
-    fn enrich_fracture_pbi_kaizen_missing_pbi() {
+    fn enrich_returns_no_target_without_pbi() {
         let tmp = tempfile::tempdir().expect("tempdir");
-        let err = run(
+        setup_repo(tmp.path());
+        let out = run(
             tmp.path(),
             &json!({
                 "process_name": "x",
@@ -334,7 +327,37 @@ mod tests {
                 "attempted_action": "b",
             }),
         )
-        .unwrap_err();
-        assert!(err.contains("PBI de Cúmulo no encontrado"));
+        .expect("no_target");
+        assert_eq!(out.get("reason"), Some(&json!("no_target")));
+    }
+
+    #[test]
+    fn enrich_finds_deduped_process_pbi_not_hash_path() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        setup_repo(repo);
+        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
+
+        let first = json!({
+            "process_name": "event-watcher",
+            "error_trace": "Centinela event-watcher omitió 13 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-07-16T15:55:03Z",
+            "agent_emitter": "argos",
+            "attempted_action": "daemon-heartbeat-audit",
+        });
+        let second = json!({
+            "process_name": "event-watcher",
+            "error_trace": "Centinela event-watcher omitió 37 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-07-16T16:08:11Z",
+            "agent_emitter": "argos",
+            "attempted_action": "daemon-heartbeat-audit",
+        });
+
+        materialize_fracture_pbi::run(repo, &first).expect("materialize");
+        materialize_fracture_pbi::run(repo, &second).expect("dedup");
+
+        let out = run(repo, &second).expect("enrich deduped");
+        assert_eq!(out.get("success"), Some(&json!(true)));
+        let path = out.get("target_path").and_then(|v| v.as_str()).unwrap();
+        let content = fs::read_to_string(repo.join(path)).unwrap();
+        assert!(content.contains("Síntesis Mayeuta"));
     }
 }

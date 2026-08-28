@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-f34e42b10828
 title: "[FIX] github-bridge-watcher — fractura sistémica"
 format: markdown
@@ -9,13 +10,15 @@ status: cerrado
 closed: "2026-08-26"
 priority: alta
 process: bug-fix
+fracture_process: github-bridge-watcher
+fracture_hash: f34e42b10828
 incident_ref: "System_Fracture_Detected — f34e42b10828"
 fix_ref: docs/fixes/centinelas-fracture-ola-20260819
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - docs/audits/centinelas-fracturas-eventos-pending-20260826.md
----
+
 
 # [FIX] github-bridge-watcher — fractura sistémica
 

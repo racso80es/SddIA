@@ -1,4 +1,5 @@
 ---
+
 fix_ref: "docs/features/heartbeat-circuit-regimen-20260811"
 document_id: PBI-FIX-FRACTURE-b8e3c0e97eb4
 title: "[FIX] event-sweeper — fractura sistémica"
@@ -9,11 +10,13 @@ status: cerrado
 closed: "2026-08-11"
 priority: alta
 process: bug-fix
+fracture_process: event-sweeper
+fracture_hash: b8e3c0e97eb4
 incident_ref: "System_Fracture_Detected — b8e3c0e97eb4"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] event-sweeper — fractura sistémica
 

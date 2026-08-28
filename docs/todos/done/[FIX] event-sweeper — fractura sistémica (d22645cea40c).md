@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-d22645cea40c
 title: "[FIX] event-sweeper — fractura sistémica"
 format: markdown
@@ -8,11 +9,13 @@ status: cerrado
 fix_ref: docs/fixes/daemon-heartbeat-ingest-ignition
 priority: alta
 process: bug-fix
+fracture_process: event-sweeper
+fracture_hash: d22645cea40c
 incident_ref: "System_Fracture_Detected — d22645cea40c"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] event-sweeper — fractura sistémica
 

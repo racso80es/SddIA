@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-dd1aea4a9a29
 title: "[FIX] event-sweeper — fractura sistémica"
 format: markdown
@@ -7,13 +8,15 @@ created: "2026-07-20"
 status: done
 priority: alta
 process: bug-fix
+fracture_process: event-sweeper
+fracture_hash: dd1aea4a9a29
 consolidated_into: "docs/todos/done/[FIX] centinelas+kalma2 — ola fracturas start-sddia 2026-07-22.md"
 closed: "2026-07-22"
 incident_ref: "System_Fracture_Detected — dd1aea4a9a29"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] event-sweeper — fractura sistémica
 

@@ -138,9 +138,8 @@ fn creator_inputs_from_entity(
             }
             merge_maps(&base, fields)
         }
-        "action" => merge_maps(
-            &base,
-            Map::from_iter([
+        "action" => {
+            let mut fields: Map<String, Value> = Map::from_iter([
                 ("action_name".into(), seed_field(seed, "action_name", json!(entity_name))),
                 ("action_context".into(), seed_field(seed, "action_context", json!("ecosystem-evolution"))),
                 ("action_inputs".into(), seed_field(seed, "action_inputs", json!([]))),
@@ -150,8 +149,18 @@ fn creator_inputs_from_entity(
                     seed_field(seed, "orchestration_logic", json!(format!("Acción {entity_name}"))),
                 ),
                 ("actions_contract_version".into(), seed_field(seed, "actions_contract_version", json!("1.2.0"))),
-            ]),
-        ),
+            ]);
+            for optional_key in [
+                "action_version",
+                "action_body",
+                "action_capabilities",
+            ] {
+                if let Some(value) = seed.get(optional_key) {
+                    fields.insert(optional_key.into(), value.clone());
+                }
+            }
+            merge_maps(&base, fields)
+        }
         "process" => {
             // process_phases / process_version: solo si vienen en seed.
             // Default stub en update destruiría genoma rico vía patch_process_phases_update.
