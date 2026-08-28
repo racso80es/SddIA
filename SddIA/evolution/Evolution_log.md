@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 87
+universe_total: 88
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `99467ec9-cf05-42fa-a272-8b0a5a9cddfa` | 2026-08-28 | TQM single-flight por PBI: clave document_id, liveness endurecido, proof durable y ECST TQM_Dispatch_Discarded. | CANONICO | `SddIA/evolution/99467ec9-cf05-42fa-a272-8b0a5a9cddfa.md` |
 | `d4f8e2a1-6c39-4b7e-9a05-1f3c8d7e6b20` | 2026-08-28 | Rehab accept-pr PPR #208: A1 Cerbero/Radamanto post re-revocación #203; motor A2 reutilizado. | CANONICO | `SddIA/evolution/d4f8e2a1-6c39-4b7e-9a05-1f3c8d7e6b20.md` |
 | `f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c` | 2026-08-28 | Rehab feature PPR #210: A1 Cerbero/Radamanto post re-revocación #185; motor A2/A3 reutilizado. | CANONICO | `SddIA/evolution/f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c.md` |
 | `e7a1b2c3-4d5e-6f78-9a0b-1c2d3e4f5a6b` | 2026-08-28 | Rehab bug-fix PPR #210: A1 Cerbero/Radamanto post re-revocación #194; sin A2 motor. | CANONICO | `SddIA/evolution/e7a1b2c3-4d5e-6f78-9a0b-1c2d3e4f5a6b.md` |

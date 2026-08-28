@@ -9,6 +9,7 @@ pbi_ref: docs/todos/done/[KAIZEN] TQM sin single-flight por PBI — cadenas bug-
 document_id: PBI-KAIZEN-TQM-SINGLE-FLIGHT-PBI
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/214
 uuid: f3e8a1c2-4b5d-4e6f-9a0b-1c2d3e4f5a6b
 checks:
   TQM-CA1: APTO
