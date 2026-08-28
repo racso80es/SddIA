@@ -11,6 +11,7 @@ execution_id: "a3050468-df71-4922-bac9-3743bef2e54d"
 pbi_ref: docs/todos/done/Registro y Resolución de Deuda Técnica (Kintsugi Ontológico).md
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/219
 checks:
   CA1-norma-jurisdiccion: pass
   CA2-done-inalterado: pass

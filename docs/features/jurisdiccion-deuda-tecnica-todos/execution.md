@@ -48,7 +48,9 @@ test ... pending_pbi_path_accepted_for_archive_gate ... ok
 
 ## L6 — Cierre
 
-`validacion.md` APTO + PBI archivado en `docs/todos/done/`. `delivery-close-cycle` pendiente de acuse.
+`validacion.md` APTO + PBI en `docs/todos/done/`. PR: https://github.com/racso80es/SddIA/pull/219
+
+`delivery-close-cycle` acusó fallo en Aduana EDA (`orphan_count: 2` preexistentes: `github-raw-fetcher`, `download-remote-asset`). Push y PR abiertos manualmente tras `gate-evolution` EVOL_OK.
 
 
 `id_cambio`: `eb6fb73a-9ded-49a1-a2a9-314624358b4b` vía `sddia-qa evolution-register`.
