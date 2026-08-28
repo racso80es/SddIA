@@ -1,7 +1,7 @@
 ---
 feature_name: kaizen-feature-lab-init-frictions
 created: "2026-08-28"
-updated: "2026-08-28T05:20:00Z"
+updated: "2026-08-28T05:48:00Z"
 process: feature
 phase: Verificación
 agent: argos
@@ -17,7 +17,9 @@ global: APTO
 pbi_archived: true
 approval_status: aprobado
 verdict: aprobado
-delivery_state: ready_for_delivery
+delivery_state: ready_for_merge
+pr_url: "https://github.com/racso80es/SddIA/pull/209"
+evolution_entry: "SddIA/evolution/f66bad66-2861-4603-b790-843859dd46a2.md"
 resolution: PASS_LAB_CA1_CA11_SUITE_GREEN
 scope: "Kaizen init lab feature — techo/entierro de runtime, relevo IDE, paridad bóveda, trazabilidad execution_id, circuito daemon, higiene de worktree."
 checks:

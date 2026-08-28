@@ -1,88 +1,27 @@
 ---
 feature_name: x
 created: "2026-07-23"
-updated: "2026-08-28"
 process: bug-fix
 persist_ref: docs/fixes/x
 branch_name: fix/x
-correlation_id: cc6d6e2c-b84b-40f9-ac01-acff25ed252e
-execution_id: 92716387-568c-42c9-895d-2bf2aa186659
+correlation_id: 32d31319-2827-4115-8efe-2c20354084a9
 pbi_ref: docs/todos/pending/[FIX] x.md
-phase: Ejecución
-agents: tekton
 status: blocked
 exitCode: 1
-verdict: blocked
-items_applied:
-  - T-GATE
-  - T1
-  - T2
-  - T4
-git_evidence: not_materialized
-git_manager_invoked: true
-git_manager_error: "Rejected: ./sddia-run.sh --tool git-manager (operation_type=status, repository_path=/home/racso/Proyectos/SddIA, operation_payload_json={}) — Shell IDE sin stdout; binario ausente en target"
-forge: 0
-pbi_physical: absent
-block_reason: "PBI [FIX] x.md ausente (upstream cumulo); GIT_EVIDENCE_SESSION_SHELL NO_APTO — Shell Rejected; no se inventa OID"
+items_applied: []
 ---
 
 # Execution — x (Tekton · registro)
 
-## Veredicto
+1. Ingesta fase Ejecución: `persist_ref` vacío en semilla → resuelto `docs/fixes/x` vía `objectives.md` / `paths.fixPath` + `feature_name: x`.
+2. Lectura SSOT / cascada: `objectives.md` presente; `spec.md` / `plan.md` / PBI `[FIX] x.md` **ausentes**.
+3. Touchpoint `on_critical_error`: aborto — sin mutación de genoma ni de producto.
+4. Intento evidencia git: `skill:git-manager` vía `./sddia-run.sh` — sin stdout físico (cápsula no ejecutable / shell sesión rechazado).
+5. Artefactos emitidos en este ciclo: `implementation.md`, `execution.md` (solo registro de blocked).
+6. Prohibido: escribir bajo `docs/todos/`; inventar código; marcar APTO; `delivery-close-cycle`.
 
-**blocked** — spec/plan consumidos; cascada documental Tekton completa; bloqueo residual upstream (PBI + git).
+## Remediación requerida (upstream)
 
-## T-GATE — Evidencia git
-
-| Check | Resultado | Evidencia |
-|-------|-----------|-----------|
-| `./sddia-run.sh --tool git-manager` `operation_type=status` | **Rejected** | sin stdout |
-| Binario `SddIA/target/{debug,release}/git-manager` | **ausente** | glob vacío |
-| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | declarado honesto; sin bypass raw |
-
-## T1 — Ingesta spec/plan
-
-| Artefacto | Estado |
-|-----------|--------|
-| `spec.md` | **ok** — L1–L4, CA1–CA7, touchpoints Tekton |
-| `plan.md` | **ok** — fases cumulo → Tekton → Argos → cierre |
-| `objectives.md` | **ok** — semilla lab smoke |
-| IDs propagados | `correlation_id` / `execution_id` coherentes con handoff Dedalo |
-
-## T2 — Cascada documental Tekton
-
-| Artefacto | Estado |
-|-----------|--------|
-| `implementation.md` | materializado — `items: []`, `forge: 0`, `status: blocked` |
-| `execution.md` | este archivo |
-| Escritura bajo `docs/todos/` | **no** (RBAC Tekton) |
-
-## T3 — PBI (condicional)
-
-| Check | Resultado |
-|-------|-----------|
-| `docs/todos/pending/[FIX] x.md` | **absent** |
-| Acción Tekton | aborto condicional; no inventar PBI |
-
-## T4 — Cierre Tekton
-
-| Campo | Valor |
-|-------|-------|
-| Fix físico producto | **no** — lab smoke documental |
-| `delivery-close-cycle` | **no invocado** — PBI ausente |
-| Handoff | Argos (Verificación) |
-
-## Secuencia ejecutada
-
-1. Ingesta fase Ejecución: `persist_ref=docs/fixes/x`, `branch_name=fix/x`, IDs de runtime Kalma2.
-2. Lectura `spec.md` + `plan.md` — precondición Diseño **ok**.
-3. Verificación PBI `pbi_ref` — **ausente**; Tekton no escribe KM.
-4. Intento `skill:git-manager` vía `./sddia-run.sh` — Shell Rejected; `git_evidence: not_materialized`.
-5. Emisión artefactos documentales bajo `persist_ref`; cero mutación genoma.
-6. Veredicto: **blocked**; handoff Argos.
-
-## Remediación upstream
-
-1. `agent:cumulo` → materializar `docs/todos/pending/[FIX] x.md`.
-2. Desbloquear canal Shell / compilar cápsula `git-manager` para evidencia git.
-3. Re-inyectar Argos → cierre documental si cascada completa.
+1. Materializar PBI real o corregir `pbi_ref`.
+2. Fase Diseño (Dedalo) → `spec.md` (+ `plan.md` si aplica).
+3. Re-inyectar Tekton con cascada legible + evidencia `git-manager`.
