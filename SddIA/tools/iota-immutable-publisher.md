@@ -1,17 +1,19 @@
 ---
-uuid: "7c8be7da-d080-4ad0-b0b0-df43be376e46"
-name: "iota-immutable-publisher"
-version: "1.0.0"
-contract: "tools-contract v1.2.0"
-contract_ref: "SddIA/tools/tools-contract.md"
-domain_origin: "SddIA"
-context: "system-operations"
 capabilities:
-  - "iota-publish"
-  - "immutable-anchor"
-  - "capsule-json-io"
-implementation_path_ref: "SddIA/tools/iota-immutable-publisher"
+- iota-publish
+- immutable-anchor
+- capsule-json-io
+context: system-operations
+contract: tools-contract v1.2.0
+contract_ref: SddIA/tools/tools-contract.md
+domain_origin: SddIA
+implementation_path_ref: SddIA/tools/iota-immutable-publisher
+name: iota-immutable-publisher
+source_sha256: sha256:30027ec820e44a0c80d2665c6bdf92edd6d2ae53dd91d194ba847f1bb05a80fa
+uuid: 7c8be7da-d080-4ad0-b0b0-df43be376e46
+version: 1.0.0
 ---
+
 
 # iota-immutable-publisher
 

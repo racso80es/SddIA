@@ -1,6 +1,6 @@
 //! Resolución SSOT de artefactos compilados (`compiled_capsules` en cumulo.paths.json).
 
-use super::capsule_digest::{compute_crate_source_digest, sha256_file_hex};
+use super::capsule_digest::sha256_file_hex;
 use super::workspace::load_paths_config;
 use crate::core::parser::parse_frontmatter;
 use std::fs;
@@ -93,7 +93,7 @@ fn resolve_capsule_crate_dir(repo: &Path, name: &str) -> Option<PathBuf> {
     None
 }
 
-fn resolve_capsule_genome(repo: &Path, name: &str) -> Option<PathBuf> {
+pub fn resolve_capsule_genome(repo: &Path, name: &str) -> Option<PathBuf> {
     for class in ["tools", "skills", "daemons"] {
         let p = repo.join("SddIA").join(class).join(format!("{name}.md"));
         if p.is_file() {
@@ -221,11 +221,11 @@ pub fn locate_capsule_crate_dir(repo: &Path, name: &str) -> Option<PathBuf> {
     resolve_capsule_crate_dir(repo, name)
 }
 
-/// Calcula digest de fuente para sellar genoma/testigo.
+/// Calcula digest de fuente para sellar genoma/testigo (paridad bundle).
 pub fn compute_capsule_source_digest(repo: &Path, name: &str) -> Result<String, String> {
     let crate_dir = resolve_capsule_crate_dir(repo, name)
         .ok_or_else(|| format!("crate no localizable: {name}"))?;
-    compute_crate_source_digest(&crate_dir)
+    super::capsule_digest::compute_bundle_source_digest(repo, &crate_dir)
 }
 
 #[cfg(test)]

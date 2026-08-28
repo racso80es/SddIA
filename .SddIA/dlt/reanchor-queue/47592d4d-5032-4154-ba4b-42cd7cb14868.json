@@ -1,6 +1,0 @@
-{
-  "error_trace": "Campo obligatorio ausente o inválido: payload",
-  "event_uuid": "47592d4d-5032-4154-ba4b-42cd7cb14868",
-  "path": "/home/racso/Proyectos/SddIA/.events/pending/47592d4d-5032-4154-ba4b-42cd7cb14868.json",
-  "queued_at": "2026-08-27T18:21:43Z"
-}

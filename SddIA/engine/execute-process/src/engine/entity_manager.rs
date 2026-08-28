@@ -416,6 +416,14 @@ pub fn run(
     phases: &[Value],
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
+    if process_inputs
+        .get("lifecycle_operation")
+        .and_then(|v| v.as_str())
+        == Some("seal-anchor")
+    {
+        return super::capsule_seal::run_entity_anchor(repo, process_inputs);
+    }
+
     validate_process_inputs(process_def, process_inputs, "entity-manager")?;
 
     let toll_start = Instant::now();

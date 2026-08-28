@@ -49,6 +49,7 @@ CONSUMER_BINS=(
   telegram-watcher
   telegram-gateway
   send-telegram-notification
+  iota-immutable-publisher
 )
 
 # Capsules tool extraídas del códice / grafo eferente (F-06).

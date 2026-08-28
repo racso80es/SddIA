@@ -707,6 +707,27 @@ pub fn repo_tool_base(repo: &Path, scope: &str) -> PathBuf {
     }
 }
 
+/// Parche quirúrgico: inserta o actualiza `source_sha256` en frontmatter YAML.
+pub fn patch_genome_source_sha256(genome_path: &Path, source_sha256: &str) -> Result<(), String> {
+    if source_sha256.trim().is_empty() || !source_sha256.starts_with("sha256:") {
+        return Err("source_sha256 inválido (esperado prefijo sha256:)".into());
+    }
+    let text = fs::read_to_string(genome_path).map_err(|e| e.to_string())?;
+    let (yaml, body) = split_md_frontmatter(&text)?;
+    let fm_val: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+    let mut map = match fm_val {
+        Value::Object(m) => m,
+        _ => return Err("frontmatter no es objeto YAML".into()),
+    };
+    map.insert(
+        "source_sha256".into(),
+        Value::String(source_sha256.to_string()),
+    );
+    let new_yaml = serde_yaml::to_string(&Value::Object(map)).map_err(|e| e.to_string())?;
+    let new_text = format!("---\n{new_yaml}---\n\n{body}");
+    fs::write(genome_path, new_text).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

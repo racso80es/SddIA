@@ -6,7 +6,10 @@ format: markdown
 version: "1.3.0"
 created: "2026-08-28"
 updated: "2026-08-28"
-status: "abierto"
+status: cerrado
+closed: "2026-08-28"
+resolution_ref: docs/fixes/capsula-binario-fosil-release-stale/
+cycle_blocked_by: null
 priority: alta
 process: bug-fix
 type: regression
@@ -436,9 +439,9 @@ de fractura no genera señal alguna en el bus._
 
 ## Criterio de cierre
 
-- [ ] Bloque I completo: el ciclo `bug-fix` de este PBI abre sin `SDDIA_LAB_ALLOW_DIRTY`
-- [ ] Parque recompilado e inventariado (CA14) antes de activar la aduana
-- [ ] Patrón de Anclaje operativo: genoma declara, motor verifica, línea de montaje actualiza
-- [ ] DLT anclando en batch y cola de reanclaje drenada
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/` en la misma rama del PR
+- [x] Bloque I completo: el ciclo `bug-fix` de este PBI abre sin `SDDIA_LAB_ALLOW_DIRTY`
+- [x] Parque recompilado e inventariado (CA14) antes de activar la aduana
+- [x] Patrón de Anclaje operativo: genoma declara, motor verifica, línea de montaje actualiza
+- [x] DLT anclando en batch y cola de reanclaje drenada
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/` en la misma rama del PR
