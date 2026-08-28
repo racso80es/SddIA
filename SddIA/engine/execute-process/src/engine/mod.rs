@@ -1,8 +1,11 @@
 pub mod actions;
 pub mod agent_runtime;
 pub mod capsule_invoke_smoke;
+pub mod capsule_seal;
+pub mod capsule_digest;
 pub mod capsule_paths;
 pub mod capsules;
+pub mod git_porcelain;
 pub mod daemons;
 pub mod accept_pr;
 pub mod pull_request_review;

@@ -312,6 +312,30 @@ fn main() {
         }
     }
 
+    if args.iter().any(|a| a == "--seal-capsules") {
+        let inputs_idx = args.iter().position(|a| a == "--inputs");
+        let inputs_raw = inputs_idx.and_then(|i| args.get(i + 1)).map(|s| s.as_str());
+        let inputs = match parse_inputs_arg(inputs_raw) {
+            Ok(v) => v,
+            Err(e) => {
+                let _ = writeln!(io::stderr(), "{e}");
+                process::exit(1);
+            }
+        };
+        match find_repo_root() {
+            Ok(repo) => {
+                let _ = load_hierarchical_env(&repo);
+                process::exit(execute_process::engine::capsule_seal::run_cli(
+                    &repo, &inputs,
+                ));
+            }
+            Err(e) => {
+                let _ = writeln!(io::stderr(), "{e}");
+                process::exit(1);
+            }
+        }
+    }
+
     if args.iter().any(|a| a == "--verify-process-integrity") {
         match find_repo_root() {
             Ok(repo) => process::exit(verify_process_integrity::run_cli(&repo)),

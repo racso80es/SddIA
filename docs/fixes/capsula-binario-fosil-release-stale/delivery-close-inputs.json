@@ -1,0 +1,8 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/fixes/capsula-binario-fosil-release-stale",
+  "branch_name": "fix/capsula-binario-fosil-release-stale",
+  "target_branch": "main",
+  "pr_title": "fix(capsules): anclaje ejecución — binario fósil iota-immutable-publisher (6a49e0ad310e-R1)",
+  "pr_body": "## Summary\n- Patrón de Anclaje: genoma `source_sha256` + testigo ELF + aduana `SDDIA_CAPSULE_ANCHOR`\n- `capsule_seal` CLI / entity-manager `seal-anchor`; porcelain UTF-8; fractura F-DIRTY-WORKTREE\n- Rebuild release publisher; cola reanchor drenada; PBI R1 archivado\n\n## Test plan\n- [x] cargo test -p execute-process capsule_paths capsule_digest\n- [x] cargo test -p iota-immutable-publisher\n- [x] validacion.md APTO + pbi_archived: true"
+}

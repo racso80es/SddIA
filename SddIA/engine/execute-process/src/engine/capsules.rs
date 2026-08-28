@@ -7,7 +7,11 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-pub use capsule_paths::{resolve_capsule_native, resolve_capsule_wasm};
+pub use capsule_paths::{
+    anchor_enabled, compute_capsule_source_digest, resolve_capsule_native,
+    resolve_capsule_native_checked, resolve_capsule_wasm, write_capsule_witness,
+    CapsuleResolveError,
+};
 
 const WASM_NATIVE_FALLBACK_MARKERS: &[&str] = &[
     "function not implemented",
@@ -51,7 +55,11 @@ fn resolve_capsule(
     entity_label: &str,
 ) -> Result<(String, PathBuf), String> {
     let wasm = capsule_paths::resolve_capsule_wasm(repo, name);
-    let native = capsule_paths::resolve_capsule_native(repo, name);
+    let native = match capsule_paths::resolve_capsule_native_checked(repo, name) {
+        Ok(p) => Some(p),
+        Err(capsule_paths::CapsuleResolveError::NotFound) => None,
+        Err(capsule_paths::CapsuleResolveError::StaleHash { message }) => return Err(message),
+    };
     if prefer_wasm {
         if let Some(w) = wasm.as_ref() {
             if has_wasmtime() {

@@ -1,6 +1,7 @@
 ---
 feature_name: capsula-binario-fosil-release-stale
 created: "2026-08-28"
+updated: "2026-08-28"
 process: bug-fix
 branch_name: fix/capsula-binario-fosil-release-stale
 persist_ref: docs/fixes/capsula-binario-fosil-release-stale
@@ -9,105 +10,121 @@ document_id: PBI-FIX-FRACTURE-6a49e0ad310e-R1
 uuid: a91f2d40-6e3b-4c8a-b7f1-2d9e0c5a84f6
 execution_id: "13161205-2a2a-4320-9953-554e18a1f7c5"
 phases:
-  - l0-ssot-freshness
-  - l1-gate-capsule-paths
-  - l2-call-sites
-  - l3-fracture-trace
-  - l4-purge-agent-log
+  - l0-porcelain-unescape
+  - l1-phase-fracture-emit
+  - l2-source-digest-core
+  - l3-witness-write
+  - l4-resolve-anchor
+  - l5-genome-em
+  - l6-call-sites-trace-purge
   - tests-unit
-  - l5-build-runtime
-  - l6-remediate-binaries-drain
+  - l7-rebuild-then-hard-gate
+  - l8-drain-dlt-start
   - doc-closure
 ---
 
-# Plan — Gate fail-stale + remediación fósiles
+# Plan — Anclaje de ejecución (sella Diseño)
 
-Orden: L0 → L1 → L2 → L3 → L4 → tests → L5 → L6 → cierre documental. Este artefacto sella Diseño (`spec.md` + `plan.md`). Código = fase Ejecución (Tekton).
+Orden: L0 → L1 → L2 → L3 → L4 → L5 → L6 → tests → L7 → L8 → cierre. **Este commit sella Diseño** (`spec.md` + `plan.md` + PBI v1.3.0). Código = fase Ejecución (parada siguiente).
 
-## Fase L0 — SSOT frescura (CA4)
+Prohibido en este sello: mutar `SddIA/tools|skills|actions|process|agents|events|norms` a mano; genoma `source_sha256` solo en L5 vía `entity-manager`.
 
-Archivo: `SddIA/core/cumulo.paths.json`.
+## Fase L0 — Porcelain (CA1/CA2)
 
-1. Bajo `compiled_capsules`, añadir `freshness.policy: fail-stale` y `freshness.source_roots: ["tools","skills","daemons"]`.
-2. No alterar orden `profiles: ["release","debug"]`.
-3. Defaults en Rust deben coincidir si la clave falta (documentar en comentario de `load_compiled_capsule_roots`).
+Archivo: `SddIA/engine/execute-process/src/engine/workspace_init.rs`.
 
-## Fase L1 — Gate en `capsule_paths.rs` (CA3)
+1. Desescapar quoting git **o** status `-z` vía `git-manager` si el I/O frozen lo permite sin ampliar genoma; si hace falta clave nueva en skill → `entity-manager`, no Write.
+2. Test unitario con la línea octal del PBI §8.1 y `pbi_ref` UTF-8 → `path_in_scope == true`.
+3. Comando: `cd SddIA && cargo test -p execute-process workspace_init`.
 
-Archivo: `SddIA/engine/execute-process/src/engine/capsule_paths.rs`.
+Sin L0 el resto del ciclo no abre por proceso oficial.
 
-1. Extender struct de carga con `freshness_policy` + `source_roots`.
-2. Helper `max_source_mtime(repo, name, source_roots) -> Option<SystemTime>` vía `execution_capsules` + `src/**` files.
-3. `resolve_capsule_native` → `Result<PathBuf, CapsuleResolveError>` con `NotFound` | `Stale {…}`.
-4. Misma semántica en `resolve_capsule_wasm` (simetría).
-5. Mensaje Stale: `capsule-stale: {name} {profile} {bin_mtime} < fuente {src_mtime}` (RFC3339 o epoch secs; una forma, estable en tests).
+## Fase L1 — Fractura de precondición (CA3)
 
-## Fase L2 — Call sites (propagación)
+Archivo: `workspace_init.rs` (+ `route_domain_core` / `materialize_pending_domain_event` si el emit reutiliza el helper existente).
 
-Archivos: `capsules.rs` y cualquier match/`unwrap` de `Option` sobre resolve nativo/wasm.
+1. Tras `dirty-worktree`, emitir `System_Fracture_Detected` (`process_name` = proceso vivo, `error_trace` = mensaje de abort, `attempted_action` = `workspace-init`).
+2. El `Err` de fase **sigue** abortando el ciclo; el evento no sustituye el aborto.
+3. Test: tempdir + dirty path fuera de scope → fichero pending de fractura (hash de contenido, no overwrite).
 
-1. `Stale` → error de invocación visible al caller (JSON/`Err`), no fallback a otro perfil.
-2. `NotFound` → comportamiento previo de ausencia (python/script fallback si existía).
-3. Actualizar tests del crate que asuman `Option`.
+## Fase L2 — Digest en Core (CA9, L-DIGEST-A-B)
 
-## Fase L3 — Traza factual (CA6)
+Archivos nuevos/extendidos bajo `SddIA/engine/execute-process/src/` (p. ej. `engine/capsule_digest.rs`). **No** duplicar lógica solo en bash.
 
-Archivo: `route_domain_core.rs` (`emit_dlt_batch_fracture`, pre-sellado batch, tests ~L1780/1855).
+1. Política A: crate + path-deps locales transitivos + recorte de lockfile.
+2. Fallback B si `cargo metadata` falla: `SddIA/Cargo.toml` + `Cargo.lock` + crate (paridad bundle actual).
+3. Tests: dos crates en tempdir; mutar A no cambia digest B (A); B documentado como fallback.
+4. Después: alinear `_sddia_source_digest` en `build-release-bundle.sh` al mismo contrato (llamar binario o documentar paridad de bytes en `execution.md` si el shell permanece como espejo).
 
-1. Clasificar `causa` / error de invoke:
-   - contiene `capsule-stale` → `F-CAPSULA-BINARIO-FOSIL`
-   - contrato entrada / `Campo obligatorio…payload` → `F-CAPSULA-CONTRATO-ENTRADA` + path si disponible
-   - `iota-relay-unreachable` / health fail → `F-DLT-RELAY-SIN-SUPERVISOR`
-2. `error_trace` = prefijo del `friction_id` + hecho medido (sin hipótesis).
-3. Ajustar unit tests de fractura.
+## Fase L3 — Testigo ELF (CA8 parcial)
 
-## Fase L4 — Purga log absoluto (CA9)
+1. Helper Rust: escribir `{elf}.sha256` (`source_sha256` + `elf_sha256`).
+2. Ampliar `CONSUMER_BINS` / lista de build para incluir `iota-immutable-publisher` y el resto de nativos indexados usados por runtime.
+3. `start-sddia.sh`: no solo `-p execute-process`; construir + testigo de la lista. Fallo de build aborta ignición.
 
-En `route_domain_core.rs` L1136–1159: borrar región agent log + `OpenOptions` a path host. Dejar retorno `skipped-empty-message`.
+## Fase L4 — Aduana `resolve_capsule_*` (CA5/CA6/CA10/CA11)
 
-## Fase tests unitarios (CA5) — antes de L5
+Archivo: `capsule_paths.rs` (+ caché `.SddIA/` CA10).
 
-En `capsule_paths.rs` `#[cfg(test)]` con tempdir + cumulo mínimo inyectado o roots override testables:
+1. Retirar «primer fichero existente».
+2. Contrato spec §2. `profiles` = búsqueda.
+3. Caché invalidada por `(path, mtime, len)` del ELF.
+4. Tests tempdir (a)–(e) del PBI CA11. Comando: `cargo test -p execute-process capsule_paths`.
 
-- (a) release fresco → Ok(release)
-- (b) release fósil + debug fresco → Stale (no Ok(debug))
-- (c) sin fuentes → Ok + no panic
-- (d) sin `freshness`/`profiles` en JSON → defaults
+**No activar** esta función en el path de invocación de producción hasta L7 (flag interno `SDDIA_CAPSULE_ANCHOR=off` por defecto **o** merge ordenado: primitivas verdes, wire-up en L7). Diseño preferido: código de aduana compilado desde L4, **gate de invocación** (`capsules.rs`) se enciende en L7 tras CA14.
 
-Comando: `cd SddIA && cargo test -p execute-process capsule_paths`
+## Fase L5 — Genoma `source_sha256` (CA4/CA7)
 
-## Fase L5 — Build arranque (CA8)
+```text
+./sddia-run.sh --process entity-manager --inputs '{… update tool|skill|daemon|… source_sha256 …}'
+```
 
-Archivo: `start-sddia.sh` (`_ensure_orchestrator` o paso previo).
+1. Backfill de cápsulas indexadas con digest A (o B si metadata falla, anotado).
+2. Prohibido `Write` sobre `SddIA/tools/*.md` etc.
+3. Contrato de acción: si `entity-manager` no admite el campo, forjar schema vía EM, no a mano.
 
-1. Tras/junto a `cargo build -p execute-process`, construir cápsulas nativas indexadas (mínimo: workspace packages bajo tools/skills/daemons con `[[bin]]`, o lista explícita alineada a members).
-2. Preferir perfil coherente con runtime (`release` si profiles[0]=release).
-3. Fallo de build → abortar ignición (no arrancar con fósiles conocidos).
+## Fase L6 — Call sites, traza, log (CA12/CA13)
 
-## Fase L6 — Remediación física (CA1/CA2/CA7)
+`capsules.rs`, `route_domain_core.rs`:
 
-Ops en worktree (documentar en `execution.md`):
+1. Propagar `capsule-stale-hash`.
+2. Matriz `friction_id` del spec.
+3. Borrar `#region agent log` (ruta absoluta).
+4. Actualizar tests que asuman relay ante causa genérica.
 
-1. Tabla 17 cápsulas: veredicto rebuild/delete.
-2. `cargo build --release -p iota-immutable-publisher` (+ resto según tabla).
-3. Repro PBI §1.1 sobre release → OK.
-4. Drenar `.SddIA/dlt/reanchor-queue/` (drain nativo o cierre documentado); verificar vacía / sin `payload`.
-5. Smoke pre-sellado batch bajo lab (`SDDIA_LAB_SIMULATE_IOTA=1` si aplica).
+## Fase tests unitarios
+
+Antes de L7: `workspace_init` + `capsule_digest` + `capsule_paths` + tests de fractura batch. Suite: `cargo test -p execute-process` de esos módulos.
+
+## Fase L7 — Rebuild luego fallo duro (CA14, L-ATTACK-ORDER)
+
+Ops documentadas en `execution.md` (no son el sello de Diseño):
+
+1. Inventario por cápsula: digest genoma, testigo, veredicto aduana **en dry-run**.
+2. `cargo build --release` del parque indexado; escribir testigos; EM actualiza genomas.
+3. Encender wire-up de aduana.
+4. Repro PBI §1.1 sobre `release` de `iota-immutable-publisher` → OK.
+
+## Fase L8 — DLT + arranque (CA15/CA16)
+
+1. Drenar o cerrar `.SddIA/dlt/reanchor-queue/` (instancia; evidencia en `execution.md`).
+2. Smoke pre-sellado batch (`SDDIA_LAB_SIMULATE_IOTA=1` admisible).
+3. Verificar `start-sddia.sh` / bundle no omiten publisher.
 
 ## Cierre documental (post-Argos, misma rama)
 
-1. `implementation.md` + `execution.md` (Tekton).
-2. Argos → `validacion.md` APTO, `pbi_archived: true` (CA10).
-3. Mover PBI R1 a `docs/todos/done/`; anotar padre sin reabrir (CA11).
-4. `delivery-close-cycle` con `source_process: bug-fix`.
+1. `implementation.md` + `execution.md`.
+2. `validacion.md` APTO, `pbi_archived: true` (CA17).
+3. PBI R1 → `docs/todos/done/`; anotar padre (CA18).
+4. `delivery-close-cycle` `source_process: bug-fix`.
 
-## Delegación (blueprint operativo)
+## Delegación
 
-| Fase proceso | Agente / acción | Artefacto |
-|------------|-----------------|-----------|
-| Diseño | agent:dedalo | `spec.md`, `plan.md` (este) |
-| Ejecución | agent:tekton | código + `implementation.md` + `execution.md` |
-| Verificación | agent:argos | `validacion.md` |
-| Cierre | action:execute-process → `delivery-close-cycle` | PR |
+| Fase proceso | Quién | Artefacto |
+|--------------|-------|-----------|
+| Diseño | Dedalo (este sello, relevo local) | `spec.md`, `plan.md` |
+| Ejecución | Tekton | código + `implementation.md` + `execution.md` |
+| Verificación | Argos | `validacion.md` |
+| Cierre | `delivery-close-cycle` | PR único |
 
-Git: solo `skill:git-manager` / `./sddia-run.sh --tool git-manager`. Prohibido bypass raw destructivo. KM `docs/todos/`: solo Cúmulo / evento Kaizen — Tekton no siembra TODOs.
+Git: `skill:git-manager` / `./sddia-run.sh --tool git-manager`. KM `docs/todos/`: Cúmulo / Kaizen — Tekton no siembra TODOs nuevos.

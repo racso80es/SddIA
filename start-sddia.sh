@@ -138,8 +138,35 @@ _ensure_orchestrator() {
     fi
     local target_dir="$REPO_ROOT/SddIA/target"
     local build_log
+    local release_pkgs=(
+        execute-process
+        iota-immutable-publisher
+        kalma2-bridge
+        event-watcher
+        event-sweeper
+        send-telegram-notification
+        telegram-gateway
+    )
+    local -a cargo_release_args=(--release -q)
+    for pkg in "${release_pkgs[@]}"; do
+        cargo_release_args+=(-p "$pkg")
+    done
+    if ! build_log="$(cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build "${cargo_release_args[@]}" 2>&1)"; then
+        echo "  -> [ERROR] cargo build --release falló (CARGO_TARGET_DIR=${target_dir})."
+        [[ -n "$build_log" ]] && echo "$build_log" >&2
+        return 1
+    fi
+    local ep_bin
+    for ep_bin in "$target_dir/debug/execute-process" "$target_dir/release/execute-process"; do
+        if [[ -x "$ep_bin" ]]; then
+            CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":true,"write_witness":true,"names":["iota-immutable-publisher","event-watcher","event-sweeper","send-telegram-notification","telegram-gateway"]}' >/dev/null 2>&1 \
+                || echo "  -> [WARN] --seal-capsules parcial (revisar genomas/testigos)"
+            break
+        fi
+    done
+    export SDDIA_CAPSULE_ANCHOR="${SDDIA_CAPSULE_ANCHOR:-1}"
     if ! build_log="$(cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -q 2>&1)"; then
-        echo "  -> [ERROR] cargo build -p execute-process falló (CARGO_TARGET_DIR=${target_dir})."
+        echo "  -> [ERROR] cargo build -p execute-process (debug orquestador) falló."
         [[ -n "$build_log" ]] && echo "$build_log" >&2
         return 1
     fi

@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 89
+universe_total: 90
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a91f2d40-6e3b-4c8a-b7f1-2d9e0c5a84f6` | 2026-08-28 | Anclaje de ejecución: aduana source_sha256, capsule_seal, porcelain UTF-8, publisher release alineado. | CANONICO | `SddIA/evolution/a91f2d40-6e3b-4c8a-b7f1-2d9e0c5a84f6.md` |
 | `a117c937-3a25-4bad-be50-0bde0c4eab74` | 2026-08-28 | Fan-out System_Fracture_Detected: resolutor Core fracture_pbi, idempotencia por genoma, contratos v1.1.0 y forja action update. | CANONICO | `SddIA/evolution/a117c937-3a25-4bad-be50-0bde0c4eab74.md` |
 | `6d64bcc7-b677-4c43-b239-928e279d2a04` | 2026-08-28 | Aduana evolution local: predicado material, base_resolution, verify-hooks, DCC fase evolution, pre-push PR OPEN | CANONICO | `SddIA/evolution/6d64bcc7-b677-4c43-b239-928e279d2a04.md` |
 | `99467ec9-cf05-42fa-a272-8b0a5a9cddfa` | 2026-08-28 | TQM single-flight por PBI: clave document_id, liveness endurecido, proof durable y ECST TQM_Dispatch_Discarded. | CANONICO | `SddIA/evolution/99467ec9-cf05-42fa-a272-8b0a5a9cddfa.md` |

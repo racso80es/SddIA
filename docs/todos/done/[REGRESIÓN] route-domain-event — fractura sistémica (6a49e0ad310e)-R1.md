@@ -6,7 +6,10 @@ format: markdown
 version: "1.3.0"
 created: "2026-08-28"
 updated: "2026-08-28"
-status: "abierto"
+status: cerrado
+closed: "2026-08-28"
+resolution_ref: docs/fixes/capsula-binario-fosil-release-stale/
+cycle_blocked_by: null
 priority: alta
 process: bug-fix
 type: regression
@@ -54,8 +57,9 @@ related:
   - docs/todos/done/[KAIZEN] Aduana DLT — relay IOTA supervisado y causa real en anclaje batch.md
   - docs/todos/done/[KAIZEN] Fan-out de fractura sin idempotencia real — PBI cerrados resucitados y Mayeuta en dead-letter.md
 source_audit: "Ejecución directa de ambos binarios de iota-immutable-publisher con payload array bajo SDDIA_LAB_SIMULATE_IOTA=1; barrido mtime release/debug y contraste con la fecha del último commit por crate; auditoría de los 8 testigos .sha256 de SddIA/target/release contra _sddia_source_digest y sha256sum del ELF; recuento por event_id único sobre las ocho carpetas de ./.events; historia git del genoma iota-immutable-publisher.md frente a la de su crate"
-review_notes: "v1.1.0 causa raíz aislada. v1.2.0 incorporado el bloqueo del gate dirty-worktree (§8). v1.3.0 (laudo Patrón de Anclaje de Ejecución): revocado el criterio de frescura por mtime; corregidas dos inexactitudes propias — «17 cápsulas fósiles» (real: 1 probada, 5 sospechosas) y «746 fracturas todas de route-domain-event» (real: 380 únicas, 11 de route-domain-event). Ciclo NO abierto."
+review_notes: "v1.1.0 causa raíz aislada. v1.2.0 dirty-worktree. v1.3.0 anclaje por contenido; mtime revocado; magnitud corregida. Diseño sellado 2026-08-28 en docs/fixes/capsula-binario-fosil-release-stale/{spec,plan}.md (spec abortado de fail-stale sustituido). Código = fase Ejecución."
 cycle_blocked_by: F-GATE-DIRTY-PORCELAIN-SIN-DESESCAPE
+design_ref: docs/fixes/capsula-binario-fosil-release-stale/spec.md
 ---
 
 # [REGRESIÓN] route-domain-event — fractura sistémica
@@ -435,9 +439,9 @@ de fractura no genera señal alguna en el bus._
 
 ## Criterio de cierre
 
-- [ ] Bloque I completo: el ciclo `bug-fix` de este PBI abre sin `SDDIA_LAB_ALLOW_DIRTY`
-- [ ] Parque recompilado e inventariado (CA14) antes de activar la aduana
-- [ ] Patrón de Anclaje operativo: genoma declara, motor verifica, línea de montaje actualiza
-- [ ] DLT anclando en batch y cola de reanclaje drenada
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/` en la misma rama del PR
+- [x] Bloque I completo: el ciclo `bug-fix` de este PBI abre sin `SDDIA_LAB_ALLOW_DIRTY`
+- [x] Parque recompilado e inventariado (CA14) antes de activar la aduana
+- [x] Patrón de Anclaje operativo: genoma declara, motor verifica, línea de montaje actualiza
+- [x] DLT anclando en batch y cola de reanclaje drenada
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/` en la misma rama del PR
