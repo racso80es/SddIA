@@ -19,10 +19,15 @@ olas:
 
 # Implementation — feature-revoked-registry-rehab-ppr210
 
+## Touchpoints
+
 | Artefacto | Cambio |
 |-----------|--------|
-| `.SddIA/cerbero/revoked_entities.json` | DELETE `revoked.feature` — **fuera PR** |
-| `.SddIA/radamanto/stats.json` | Reset bucket `feature` — **fuera PR** |
-| `SddIA/evolution/f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c.md` | Registro ciclo |
+| `.SddIA/cerbero/revoked_entities.json` | A1: eliminar `revoked.feature`. **Fuera del PR.** |
+| `.SddIA/radamanto/stats.json` | A1: reset bucket `feature` + laudo #210. **Fuera del PR.** |
+| `SddIA/evolution/f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c.md` | Registro UUID ciclo |
+| `persist_ref` | Cascada documental |
 
-Motor **intacto** (T0 #185 PASS).
+## Genoma / motor
+
+**Intacto.** T0 assert A2/A3 #185 PASS (`mark_fail_soft_if_secondary`, `invoke_process_full`, `is_survival_hollow`, `derive_cycle_phase`).

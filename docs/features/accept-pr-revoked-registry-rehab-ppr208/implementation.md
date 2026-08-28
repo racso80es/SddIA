@@ -19,4 +19,15 @@ olas:
 
 # Implementation — accept-pr-revoked-registry-rehab-ppr208
 
-Instancia `.SddIA/` fuera del PR. Evolution `d4f8e2a1-6c39-4b7e-9a05-1f3c8d7e6b20`. Motor intacto.
+## Touchpoints
+
+| Artefacto | Cambio |
+|-----------|--------|
+| `.SddIA/cerbero/revoked_entities.json` | A1: eliminar `revoked.accept-pr`. **Fuera del PR.** |
+| `.SddIA/radamanto/stats.json` | A1: reset bucket `accept-pr` + laudo #208. **Fuera del PR.** |
+| `SddIA/evolution/d4f8e2a1-6c39-4b7e-9a05-1f3c8d7e6b20.md` | Registro UUID ciclo |
+| `persist_ref` | Cascada documental |
+
+## Genoma / motor
+
+**Intacto.** T0 assert A2 #203 PASS (`mark_fail_soft_if_sync_post_merge`, `adjudicate_sync_fail_soft_post_merge`).

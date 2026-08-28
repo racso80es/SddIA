@@ -21,13 +21,25 @@ runtime_execution_id: "532a36c1-d46e-4c49-82ec-dbfc2ea50315"
 
 # Execution — feature-revoked-registry-rehab-ppr210
 
-## T0
-
-Motor #185 (`mark_fail_soft_if_secondary`, `invoke_process_full`, `is_survival_hollow`) — **PASS**.
-
-## T1
+## T0 (assert motor #185)
 
 | Check | Resultado |
 |-------|-----------|
-| `revoked.feature` | **ausente** |
-| stats `feature` | `healthy` · laudo #210 · `rehabilitated_at: 2026-08-28T06:13:50Z` · `samples: []` |
+| `delivery_close::mark_fail_soft_if_secondary` | **presente** |
+| `phase_capsules::capsule_feature_invoke_delivery_close` + `invoke_process_full` | **presente** |
+| `radamanto_batch_core::is_survival_hollow` | **presente** |
+| `thermodynamic::derive_cycle_phase` | **presente** |
+| Veredicto | **PASS** — sin A2 nuevo |
+
+## T1 (instancia · fuera del PR)
+
+| Check | Resultado |
+|-------|-----------|
+| `revoked.feature` | **ausente** (was since `2026-08-28T05:25:41Z`) |
+| `permanent.feature` | **ausente** |
+| laterales @ T1 | `bug-fix` · `accept-pr` · `refactorization` — **intactos** pre-rehab hermanas |
+| stats raíz `feature` | `healthy` · `recovery_attempts: 0` · `entity_type: process` · `structure_valid: true` · `rehab_laudo: PBI-PPR-210-FEATURE-REVOKED-REGISTRY` · `rehabilitated_at: 2026-08-28T06:13:50Z` · `samples: []` |
+
+## T2 (documental)
+
+Evolution `f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c`. Sin instancia en diff PR.
