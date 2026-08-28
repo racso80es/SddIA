@@ -409,5 +409,90 @@ mod tests {
         adjudicate_eda_fail_soft_post_physical(&mut reports, &state);
         assert_eq!(reports[0]["fail_soft"], true);
     }
+
+    #[test]
+    fn evolution_phase_blocks_unregistered_material_ca12() {
+        use std::fs;
+        use std::path::PathBuf;
+        use std::process::Command;
+        use uuid::Uuid;
+
+        let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        root.pop();
+        root.pop();
+        root.pop();
+        let qa = root.join("SddIA/target/debug/sddia-qa");
+        if !qa.is_file() {
+            panic!("compilar sddia-qa: cd SddIA && cargo build -p sddia-qa");
+        }
+        let wt = root.join("target/ca12-worktrees").join(Uuid::new_v4().to_string());
+        fs::create_dir_all(wt.parent().expect("parent")).expect("mkdir");
+        assert!(
+            Command::new("git")
+                .args(["worktree", "add", "-q", wt.to_str().expect("wt"), "HEAD"])
+                .current_dir(&root)
+                .status()
+                .expect("worktree")
+                .success()
+        );
+        let qa_dst = wt.join("SddIA/target");
+        if qa_dst.exists() {
+            let _ = fs::remove_dir_all(&qa_dst);
+        }
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(root.join("SddIA/target"), &qa_dst).expect("symlink target");
+        }
+        let probe = wt.join("SddIA/tools/_ca12_smoke_probe.txt");
+        fs::create_dir_all(probe.parent().expect("parent")).expect("mkdir");
+        fs::write(&probe, "probe\n").expect("write");
+        assert!(
+            Command::new("git")
+                .args(["add", "SddIA/tools/_ca12_smoke_probe.txt"])
+                .current_dir(&wt)
+                .status()
+                .unwrap()
+                .success()
+        );
+        assert!(
+            Command::new("git")
+                .args([
+                    "-c",
+                    "user.email=ca12@test",
+                    "-c",
+                    "user.name=ca12",
+                    "commit",
+                    "-m",
+                    "test: ca12 dcc",
+                    "--no-verify",
+                ])
+                .current_dir(&wt)
+                .status()
+                .unwrap()
+                .success()
+        );
+        let phase = json!({"name": "Aduana evolution", "delegates_to": []});
+        let mut state = json!({});
+        let entry = execute_phase(&wt, &phase, &json!({}), &mut state);
+        let _ = Command::new("git")
+            .args(["worktree", "remove", "-f"])
+            .arg(&wt)
+            .current_dir(&root)
+            .status();
+        assert_eq!(
+            entry.get("status").and_then(|v| v.as_str()),
+            Some("blocked"),
+            "entry={entry}"
+        );
+        let codes = entry
+            .get("reason_codes")
+            .and_then(|v| v.as_array())
+            .expect("reason_codes");
+        assert!(
+            codes
+                .iter()
+                .any(|c| c.as_str() == Some("EVOL_MATERIAL_UNREGISTERED"))
+        );
+    }
 }
 

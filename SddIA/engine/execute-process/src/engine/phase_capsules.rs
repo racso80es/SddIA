@@ -1503,6 +1503,144 @@ mod delivery_close_kaizen_tests {
 }
 
 #[cfg(test)]
+mod evolution_audit_ca12_tests {
+    use super::capsule_evolution_audit_gate;
+    use serde_json::json;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::process::Command;
+    use uuid::Uuid;
+
+    fn repo_root() -> PathBuf {
+        let mut here = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        here.pop();
+        here.pop();
+        here.pop();
+        here
+    }
+
+    #[cfg(not(unix))]
+    fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
+        fs::create_dir_all(dst)?;
+        for entry in fs::read_dir(src)? {
+            let entry = entry?;
+            let ty = entry.file_type()?;
+            let to = dst.join(entry.file_name());
+            if ty.is_dir() {
+                copy_dir_all(&entry.path(), &to)?;
+            } else {
+                fs::copy(entry.path(), to)?;
+            }
+        }
+        Ok(())
+    }
+
+    struct Ca12Worktree {
+        root: PathBuf,
+        path: PathBuf,
+    }
+
+    impl Ca12Worktree {
+        fn new() -> Self {
+            let root = repo_root();
+            let qa_src = root.join("SddIA/target/debug/sddia-qa");
+            assert!(
+                qa_src.is_file(),
+                "compilar sddia-qa antes del test CA12: cd SddIA && cargo build -p sddia-qa"
+            );
+            let id = Uuid::new_v4().to_string();
+            let path = root.join("target/ca12-worktrees").join(id);
+            fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+            let status = Command::new("git")
+                .args(["worktree", "add", "-q", path.to_str().expect("wt path"), "HEAD"])
+                .current_dir(&root)
+                .status()
+                .expect("git worktree add");
+            assert!(status.success(), "worktree add failed");
+            let target_src = root.join("SddIA/target");
+            let target_dst = path.join("SddIA/target");
+            if target_dst.exists() {
+                let _ = fs::remove_dir_all(&target_dst);
+            }
+            #[cfg(unix)]
+            {
+                std::os::unix::fs::symlink(&target_src, &target_dst).expect("symlink target");
+            }
+            #[cfg(not(unix))]
+            {
+                copy_dir_all(&target_src, &target_dst).expect("copy target");
+            }
+            Self { root, path }
+        }
+
+        fn commit_unregistered_probe(&self) {
+            let probe = self.path.join("SddIA/tools/_ca12_smoke_probe.txt");
+            fs::create_dir_all(probe.parent().expect("parent")).expect("mkdir probe");
+            fs::write(&probe, "probe\n").expect("write probe");
+            assert!(
+                Command::new("git")
+                    .args(["add", "SddIA/tools/_ca12_smoke_probe.txt"])
+                    .current_dir(&self.path)
+                    .status()
+                    .expect("git add")
+                    .success()
+            );
+            assert!(
+                Command::new("git")
+                    .args([
+                        "-c",
+                        "user.email=ca12@test",
+                        "-c",
+                        "user.name=ca12",
+                        "commit",
+                        "-m",
+                        "test: ca12 unregistered material",
+                        "--no-verify",
+                    ])
+                    .current_dir(&self.path)
+                    .status()
+                    .expect("git commit")
+                    .success()
+            );
+        }
+    }
+
+    impl Drop for Ca12Worktree {
+        fn drop(&mut self) {
+            let _ = Command::new("git")
+                .args(["worktree", "remove", "-f"])
+                .arg(&self.path)
+                .current_dir(&self.root)
+                .status();
+        }
+    }
+
+    #[test]
+    fn evolution_audit_gate_blocks_unregistered_material_ca12() {
+        let wt = Ca12Worktree::new();
+        wt.commit_unregistered_probe();
+        let mut state = json!({});
+        let result = capsule_evolution_audit_gate(&wt.path, &json!({}), &mut state)
+            .expect("gate debe retornar veredicto parseable");
+        assert_eq!(
+            result.get("status").and_then(|v| v.as_str()),
+            Some("blocked"),
+            "result={result}"
+        );
+        let codes = result
+            .get("reason_codes")
+            .and_then(|v| v.as_array())
+            .expect("reason_codes");
+        assert!(
+            codes
+                .iter()
+                .any(|c| c.as_str() == Some("EVOL_MATERIAL_UNREGISTERED")),
+            "codes={codes:?}"
+        );
+    }
+}
+
+#[cfg(test)]
 mod feature_dcc_parent_fail_soft_tests {
     use super::feature_dcc_parent_fail_soft;
     use serde_json::json;

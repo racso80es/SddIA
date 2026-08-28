@@ -78,5 +78,4 @@ cargo build -p sddia-qa -p execute-process
 
 ## Pendiente pre-PR
 
-- Smoke CA12 en worktree (operador; ver `execution.md`).
-- Cierre: `validacion.md`, PBI → `done/`, `delivery-close-cycle`.
+- Ninguno (CA12/CA14 cerrados en tests).
