@@ -1,0 +1,1 @@
+Cierre bug-fix route-domain-event fractura 6a49e0ad310e. Regla Kintsugi operador IA, purga PBI stale, validacion APTO. Ver persist_ref.

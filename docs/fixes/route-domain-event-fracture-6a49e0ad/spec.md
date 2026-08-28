@@ -4,7 +4,7 @@ created: "2026-08-28"
 process: bug-fix
 branch_name: fix/route-domain-event-fracture-6a49e0ad
 persist_ref: docs/fixes/route-domain-event-fracture-6a49e0ad
-pbi_ref: docs/todos/pending/[FIX] route-domain-event — fractura sistémica (6a49e0ad310e).md
+pbi_ref: docs/todos/done/[FIX] route-domain-event — fractura sistémica (6a49e0ad310e).md
 document_id: PBI-FIX-FRACTURE-6a49e0ad310e
 uuid: 6a49e0ad310e-0000-4000-8000-000000000001
 incident_ref: "System_Fracture_Detected — 6a49e0ad310e"
