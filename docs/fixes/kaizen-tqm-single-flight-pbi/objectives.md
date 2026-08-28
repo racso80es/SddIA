@@ -1,4 +1,18 @@
 ---
+feature_name: kaizen-tqm-single-flight-pbi
+created: "2026-08-28"
+process: bug-fix
+branch_name: fix/kaizen-tqm-single-flight-pbi
+persist_ref: docs/fixes/kaizen-tqm-single-flight-pbi
+pbi_ref: docs/todos/pending/[KAIZEN] TQM sin single-flight por PBI — cadenas bug-fix duplicadas y agentes en carrera.md
+execution_id: "25e1072f-3ba1-4b64-8e24-b9513ab702e3"
+---
+
+# Objetivos — kaizen-tqm-single-flight-pbi
+
+## Misión
+
+---
 document_id: PBI-KAIZEN-TQM-SINGLE-FLIGHT-PBI
 uuid: "86eabaf5-3fa2-4321-96ad-88d1b5485aa2"
 title: "[KAIZEN] TQM sin single-flight por PBI — cadenas bug-fix duplicadas y agentes en carrera"
@@ -218,3 +232,12 @@ con payload discriminado cubre el caso sin ampliar el catálogo.
 El guard `persist-execution-id-conflict` de `agent_runtime` cubre el conflicto a nivel
 de fase, pero actúa demasiado tarde: el `cursor-agent` de pago ya se invocó. Se
 mantiene como segunda barrera, no como sustituto.
+
+## Alcance (manifiesto)
+
+Inicialización de contexto vía orquestador nativo `execute-process` (laboratorio).
+
+## Ley aplicada
+
+- Git exclusivamente vía `skill:git-manager`.
+- Jerarquía: Acción → Agente → Skill → Tools.
