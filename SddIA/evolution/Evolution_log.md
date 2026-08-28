@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6d64bcc7-b677-4c43-b239-928e279d2a04` | 2026-08-28 | Aduana evolution local: predicado material, base_resolution, verify-hooks, DCC fase evolution, pre-push PR OPEN | CANONICO | `SddIA/evolution/6d64bcc7-b677-4c43-b239-928e279d2a04.md` |
 | `99467ec9-cf05-42fa-a272-8b0a5a9cddfa` | 2026-08-28 | TQM single-flight por PBI: clave document_id, liveness endurecido, proof durable y ECST TQM_Dispatch_Discarded. | CANONICO | `SddIA/evolution/99467ec9-cf05-42fa-a272-8b0a5a9cddfa.md` |
 | `d4f8e2a1-6c39-4b7e-9a05-1f3c8d7e6b20` | 2026-08-28 | Rehab accept-pr PPR #208: A1 Cerbero/Radamanto post re-revocación #203; motor A2 reutilizado. | CANONICO | `SddIA/evolution/d4f8e2a1-6c39-4b7e-9a05-1f3c8d7e6b20.md` |
 | `f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c` | 2026-08-28 | Rehab feature PPR #210: A1 Cerbero/Radamanto post re-revocación #185; motor A2/A3 reutilizado. | CANONICO | `SddIA/evolution/f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c.md` |

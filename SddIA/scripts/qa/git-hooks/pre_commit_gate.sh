@@ -65,22 +65,6 @@ main() {
     exit 1
   fi
 
-  resolve_sddia_qa || exit 1
-  local qa_json qa_rc=0 success="" exit_code=""
-  qa_json=$("$SDDIA_QA_BIN" gate-evolution --json) || qa_rc=$?
-  success=$(printf '%s' "$qa_json" | sed -n 's/.*"success"[[:space:]]*:[[:space:]]*\(true\|false\).*/\1/p' | tail -1)
-  exit_code=$(printf '%s' "$qa_json" | sed -n 's/.*"exitCode"[[:space:]]*:[[:space:]]*\(-\{0,1\}[0-9][0-9]*\).*/\1/p' | tail -1)
-  if [[ "$success" == "false" && "${exit_code:-$qa_rc}" -gt 0 ]]; then
-    echo "SddIA pre-commit: BLOCKED — evolution gate success=false exitCode=${exit_code:-$qa_rc}" >&2
-    printf '%s\n' "$qa_json" >&2
-    exit 1
-  fi
-  if [[ -z "$success" && "$qa_rc" -ne 0 ]]; then
-    echo "SddIA pre-commit: BLOCKED — evolution gate CLI rc=${qa_rc} (sobre ilegible)" >&2
-    printf '%s\n' "$qa_json" >&2
-    exit 1
-  fi
-
   exit 0
 }
 

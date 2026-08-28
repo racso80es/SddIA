@@ -4,6 +4,14 @@ set -euo pipefail
 # shellcheck source=hook_common.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hook_common.sh"
 
+run_evolution_gate() {
+  resolve_sddia_qa || return 1
+  if ! "$SDDIA_QA_BIN" gate-evolution --json --range --if-touched --sync-base; then
+    echo "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed" >&2
+    return 1
+  fi
+}
+
 main() {
   if skip_hooks; then
     echo "SddIA pre-push: SKIPPED (SDDIA_SKIP_HOOKS=1)" >&2
@@ -42,13 +50,8 @@ main() {
   done < <(printf '%s' "$stdin_text" | parse_pre_push_stdin)
 
   if [[ "${#branches[@]}" -eq 0 ]]; then
+    run_evolution_gate || exit 1
     exit 0
-  fi
-
-  resolve_sddia_qa || exit 1
-  if ! "$SDDIA_QA_BIN" gate-evolution --json --range --if-touched; then
-    echo "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed" >&2
-    exit 1
   fi
 
   local exit_code=0 branch persist_ref slug payload qa_payload

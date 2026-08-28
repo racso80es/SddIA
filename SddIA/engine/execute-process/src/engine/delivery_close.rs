@@ -1,6 +1,8 @@
 //! Proceso `delivery-close-cycle` nativo (P5 — fases skill/tool/action).
 
-use super::phase_capsules::{capsule_eda_genomic_audit_gate, execute_delivery_close_phase};
+use super::phase_capsules::{
+    capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate, execute_delivery_close_phase,
+};
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
@@ -129,6 +131,24 @@ fn execute_phase(
                 entry["status"] = json!("failed");
                 entry["error"] = json!(e);
                 mark_fail_soft_if_secondary(&mut entry, phase_name, state);
+                return entry;
+            }
+        }
+    }
+
+    if phase_name == "Aduana evolution" {
+        match capsule_evolution_audit_gate(repo, inputs, state) {
+            Ok(gate) => {
+                if let Some(obj) = gate.as_object() {
+                    for (k, v) in obj {
+                        entry[k.clone()] = v.clone();
+                    }
+                }
+                return entry;
+            }
+            Err(e) => {
+                entry["status"] = json!("failed");
+                entry["error"] = json!(e);
                 return entry;
             }
         }

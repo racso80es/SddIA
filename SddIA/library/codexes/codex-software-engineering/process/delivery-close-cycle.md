@@ -1,13 +1,9 @@
 ---
-uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
-name: delivery-close-cycle
-version: 1.1.1
-contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - ecosystem-evolution
 - source-control
-hash_signature: sha256:2e0e83ebf44c6f5b1ebf03323272c88d7c27aa7f52cb239c09a77fee70c734ec
+contract: process-contract v1.4.0
+hash_signature: sha256:b26d16f7bb9144d6d2e01cf9d89b196285fb9e043178915ae990cc51af184cb4
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -15,6 +11,8 @@ inputs:
 - pr_title: Título del pull request (forja GitHub)
 - pr_body: Cuerpo Markdown del PR (opcional)
 - target_branch: Rama destino del PR (default main)
+minteo_maximo: null
+name: delivery-close-cycle
 outputs:
 - pr_url: URL del pull request abierto o actualizado
 - event_id: UUID v4 del evento PullRequest_Presented
@@ -22,43 +20,46 @@ outputs:
 - closed_branch: Rama cerrada o higienizada según política local
 - evolution_entry: Referencia opcional a entrada en evolution/
 phases:
-- name: Snapshot final
+- delegates_to:
+  - skill:git-manager
   intent: Consolidar commit final del trabajo antes del cierre remoto.
-  delegates_to:
+  name: Snapshot final
+- delegates_to:
+  - agent:argos
+  intent: Evaluar mutaciones bajo SddIA/ para feature, bug-fix y refactorization; propagar sddia_paths.
+  name: Impacto SddIA condicional
+- delegates_to:
+  - agent:argos
+  intent: Invocar sddia-qa gate-evolution --json --range; bloquear si material sin registro evolution.
+  name: Aduana evolution
+- delegates_to:
+  - agent:argos
+  intent: Invocar sddia-qa audit-eda-coverage --scan --json; si orphan_count > 0, Argos registra Ruido de Sistema (block) salvo excepción documentada de backfill Fase C en curso.
+  name: Aduana EDA genómica
+- delegates_to:
   - skill:git-manager
-- name: Impacto SddIA condicional
-  intent: Si source_process == feature y existen mutaciones bajo SddIA/, Argos registra
-    impacto y evolución del Core.
-  delegates_to:
-  - agent:argos
-- name: Aduana EDA genómica
-  intent: Invocar `sddia-qa audit-eda-coverage --scan --json`; si orphan_count > 0, Argos
-    registra Ruido de Sistema (block) salvo excepción documentada de backfill Fase C en curso.
-  delegates_to:
-  - agent:argos
-- name: Publicación remota
   intent: Publicar la rama de trabajo en origin antes de abrir el PR.
+  name: Publicación remota
   requires_capability:
-  - id: proc:git-sync
-    contract: proc.git_sync
+  - contract: proc.git_sync
+    id: proc:git-sync
     version: '>=1.0.0'
-  delegates_to:
-  - skill:git-manager
-- name: Apertura en forja
-  intent: Crear o resolver el PR en GitHub vía gh (shell-executor); capturar pr_url.
-  delegates_to:
+- delegates_to:
   - skill:shell-executor
-- name: Sello Presentación ECST
-  intent: Emitir PullRequest_Presented en eda_bus.pending para anclaje posterior vía watcher.
-  delegates_to:
+  intent: Crear o resolver el PR en GitHub vía gh (shell-executor); capturar pr_url.
+  name: Apertura en forja
+- delegates_to:
   - action:emit-pr-presented-event
-- name: Higiene local
-  intent: 'Cerrar ciclo local (close-cycle): limpieza de ramas temporales y estado
-    de repo consistente.'
-  delegates_to:
+  intent: Emitir PullRequest_Presented en eda_bus.pending para anclaje posterior vía watcher.
+  name: Sello Presentación ECST
+- delegates_to:
   - skill:git-manager
-minteo_maximo: null
+  intent: 'Cerrar ciclo local (close-cycle): limpieza de ramas temporales y estado de repo consistente.'
+  name: Higiene local
 porcentaje_de_exito: null
+uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
+version: 1.2.0
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # delivery-close-cycle

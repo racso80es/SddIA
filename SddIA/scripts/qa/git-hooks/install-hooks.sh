@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 # Instala hooks SddIA dinámicamente en .git/hooks/ (O5)
+# Preferido: core.hooksPath=SddIA/scripts/qa/git-hooks (start-sddia.sh / verify-hooks).
 set -eu
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
   echo "Ejecutar desde un repositorio git." >&2

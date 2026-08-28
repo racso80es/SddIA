@@ -111,7 +111,7 @@ jobs:
         run: |
           git fetch --no-tags origin main
           cargo test -p sddia-evolution-register --manifest-path SddIA/Cargo.toml
-          SddIA/target/debug/sddia-qa gate-evolution --json --range
+          SddIA/target/debug/sddia-qa gate-evolution --json --range --require-synced-base
       - name: evolution gate (universe)
         run: SddIA/target/debug/sddia-qa gate-evolution --json --all
 
