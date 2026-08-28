@@ -1,4 +1,5 @@
 ---
+
 fix_ref: "docs/features/heartbeat-circuit-regimen-20260811"
 document_id: PBI-FIX-FRACTURE-23c58000e252
 title: "[FIX] github-bridge-watcher — fractura sistémica"
@@ -9,11 +10,13 @@ status: cerrado
 closed: "2026-08-11"
 priority: alta
 process: bug-fix
+fracture_process: github-bridge-watcher
+fracture_hash: 23c58000e252
 incident_ref: "System_Fracture_Detected — 23c58000e252"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] github-bridge-watcher — fractura sistémica
 

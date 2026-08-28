@@ -1,11 +1,22 @@
 //! Handler nativo `materialize-fracture-pbi` — materializa PBI Cúmulo ante fractura (D-P6T.1).
 
+use crate::core::fracture_pbi::{
+    display_filename_fix, display_filename_regression,
+    resolve_materialize, resolve_todos_pending_rel, scan_fracture_ledger,
+    MaterializeReason,
+};
 use chrono::Utc;
-use regex::Regex;
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use uuid::Uuid;
+
+pub use crate::core::fracture_pbi::{fracture_trace_hash, slugify_process_name};
+
+/// Solo para presentación al escribir; el motor no deduplica por nombre.
+pub fn fracture_pbi_filename(process_name: &str, error_trace: &str) -> String {
+    display_filename_fix(process_name, &fracture_trace_hash(error_trace))
+}
 
 fn required_str(inputs: &Value, key: &str) -> Result<String, String> {
     match inputs.get(key).and_then(|v| v.as_str()) {
@@ -23,86 +34,21 @@ fn optional_str(inputs: &Value, key: &str) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Paridad `execute-action.py::_slugify_process_name`.
-pub fn slugify_process_name(name: &str) -> String {
-    static RE_NON_WORD: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-    static RE_DASHES: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-    let re_non = RE_NON_WORD.get_or_init(|| Regex::new(r"[^\w\-]+").expect("regex"));
-    let re_dash = RE_DASHES.get_or_init(|| Regex::new(r"-+").expect("regex"));
-    let lower = name.trim().to_lowercase();
-    let slug = re_non.replace_all(&lower, "-");
-    let slug = re_dash.replace_all(&slug, "-");
-    let slug = slug.trim_matches('-');
-    if slug.is_empty() {
-        "fracture".to_string()
-    } else if slug.len() > 48 {
-        slug[..48].to_string()
-    } else {
-        slug.to_string()
-    }
-}
-
-/// Paridad `execute-action.py::_fracture_trace_hash`.
-pub fn fracture_trace_hash(error_trace: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(error_trace.trim().as_bytes());
-    format!("{:x}", hasher.finalize())[..12].to_string()
-}
-
-/// Paridad `execute-action.py::_fracture_pbi_filename`.
-pub fn fracture_pbi_filename(process_name: &str, error_trace: &str) -> String {
-    let slug = slugify_process_name(process_name);
-    format!(
-        "[FIX] {slug} — fractura sistémica ({}).md",
-        fracture_trace_hash(error_trace)
-    )
-}
-
-fn fracture_pbi_path(repo: &Path, process_name: &str, error_trace: &str) -> PathBuf {
-    repo.join("docs/todos/pending").join(fracture_pbi_filename(
-        process_name,
-        error_trace,
-    ))
-}
-
-/// PBI pending abierto del mismo `process_name` (anti-spam ola heartbeat).
-fn find_open_fracture_pbi(repo: &Path, process_name: &str) -> Option<PathBuf> {
-    let pending = repo.join("docs/todos/pending");
-    if !pending.is_dir() {
-        return None;
-    }
-    let slug = slugify_process_name(process_name);
-    let prefix = format!("[FIX] {slug} — fractura sistémica (");
-    let suffix = ").md";
-    let mut matches: Vec<PathBuf> = fs::read_dir(&pending)
-        .ok()?
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.extension().and_then(|x| x.to_str()) == Some("md")
-                && p.file_name()
-                    .and_then(|n| n.to_str())
-                    .map(|n| n.starts_with(&prefix) && n.ends_with(suffix))
-                    .unwrap_or(false)
-        })
-        .collect();
-    matches.sort();
-    for path in matches {
-        let Ok(raw) = fs::read_to_string(&path) else {
-            continue;
-        };
-        // Frontmatter status abierto (default de materialize).
-        let status_open = raw.lines().take(40).any(|line| {
-            let t = line.trim();
-            t == "status: abierto"
-                || t == "status: \"abierto\""
-                || t == "status: 'abierto'"
-        });
-        if status_open {
-            return Some(path);
-        }
-    }
-    None
+fn emit_resolver_telemetry(repo: &Path, scan: &crate::core::fracture_pbi::FractureLedgerScan) {
+    use super::fractal::{load_fractal_dirs, write_fractal_event};
+    let (tele_dir, _, _, _) = load_fractal_dirs(repo);
+    let event = json!({
+        "event_id": Uuid::new_v4().to_string(),
+        "event_type": "Fracture_Pbi_Resolver_Scan",
+        "timestamp": Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+        "emitter_agent": "materialize-fracture-pbi",
+        "payload": {
+            "docs_scanned": scan.docs_scanned,
+            "bytes_read": scan.bytes_read,
+            "duration_ms": scan.duration_ms,
+        },
+    });
+    let _ = write_fractal_event(repo, &event, &tele_dir);
 }
 
 fn build_pbi_body(
@@ -111,8 +57,12 @@ fn build_pbi_body(
     agent_emitter: &str,
     attempted_action: &str,
     trace_hash: &str,
+    fracture_process: &str,
+    document_id: &str,
+    title_prefix: &str,
     persist_ref: Option<&str>,
     branch_name: Option<&str>,
+    regression_of: Option<&str>,
 ) -> String {
     let today = Utc::now().format("%Y-%m-%d").to_string();
     let mut related_lines = vec![
@@ -126,23 +76,28 @@ fn build_pbi_body(
         related_lines.push(format!("  - branch: {b}"));
     }
     let related = related_lines.join("\n");
+    let regression_line = regression_of
+        .map(|r| format!("regression_of: {r}\n"))
+        .unwrap_or_default();
 
     format!(
         r#"---
-document_id: PBI-FIX-FRACTURE-{trace_hash}
-title: "[FIX] {process_name} — fractura sistémica"
+document_id: {document_id}
+title: "{title_prefix} {process_name} — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "{today}"
 status: "abierto"
 priority: alta
 process: bug-fix
+fracture_hash: {trace_hash}
+fracture_process: {fracture_process}
 incident_ref: "System_Fracture_Detected — {trace_hash}"
-related:
+{regression_line}related:
 {related}
 ---
 
-# [FIX] {process_name} — fractura sistémica
+# {title_prefix} {process_name} — fractura sistémica
 
 ## Incidente (auto-generado por Cúmulo)
 
@@ -183,55 +138,101 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let attempted_action = required_str(inputs, "attempted_action")?;
 
     let trace_hash = fracture_trace_hash(&error_trace);
-    let pending_dir = repo.join("docs/todos/pending");
+    let fracture_process = slugify_process_name(&process_name);
+
+    let pending_rel = resolve_todos_pending_rel(repo)?;
+    let pending_dir = repo.join(&pending_rel);
     fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
-    let target = fracture_pbi_path(repo, &process_name, &error_trace);
-    let rel_path = target
-        .strip_prefix(repo)
-        .unwrap_or(&target)
-        .to_string_lossy()
-        .replace('\\', "/");
 
-    if target.is_file() {
-        return Ok(json!({
-            "success": true,
-            "target_path": rel_path,
-            "message": "PBI ya existente (idempotente)",
-        }));
-    }
-
-    // Misma clase de fractura, traza distinta (p.ej. missed_cycles/timestamp): no spamear.
-    if let Some(existing) = find_open_fracture_pbi(repo, &process_name) {
-        let existing_rel = existing
-            .strip_prefix(repo)
-            .unwrap_or(&existing)
-            .to_string_lossy()
-            .replace('\\', "/");
-        return Ok(json!({
-            "success": true,
-            "target_path": existing_rel,
-            "message": "PBI abierto del mismo proceso (idempotente por process_name)",
-            "deduped_trace_hash": trace_hash,
-        }));
-    }
+    let scan = scan_fracture_ledger(repo)?;
+    emit_resolver_telemetry(repo, &scan);
+    let resolution = resolve_materialize(&scan, &trace_hash, &fracture_process);
 
     let persist_ref = optional_str(inputs, "persist_ref");
     let branch_name = optional_str(inputs, "branch_name");
+
+    match resolution.reason {
+        MaterializeReason::AlreadyOpen | MaterializeReason::DedupedByProcess => {
+            return Ok(json!({
+                "success": true,
+                "target_path": resolution.target_path,
+                "reason": resolution.reason.as_str(),
+                "message": resolution.reason.as_str(),
+            }));
+        }
+        MaterializeReason::RegressionOpened => {
+            let n = resolution.regression_n.unwrap_or(1);
+            let document_id = format!("PBI-FIX-FRACTURE-{trace_hash}-R{n}");
+            let predecessor = resolution
+                .predecessor_document_id
+                .as_deref()
+                .unwrap_or("");
+            let filename = display_filename_regression(&process_name, &trace_hash, n);
+            let target = pending_dir.join(&filename);
+            let body = build_pbi_body(
+                &process_name,
+                &error_trace,
+                &agent_emitter,
+                &attempted_action,
+                &trace_hash,
+                &fracture_process,
+                &document_id,
+                "[REGRESIÓN]",
+                persist_ref.as_deref(),
+                branch_name.as_deref(),
+                if predecessor.is_empty() {
+                    None
+                } else {
+                    Some(predecessor)
+                },
+            );
+            fs::write(&target, body).map_err(|e| e.to_string())?;
+            let rel_path = target
+                .strip_prefix(repo)
+                .unwrap_or(&target)
+                .to_string_lossy()
+                .replace('\\', "/");
+            return Ok(json!({
+                "success": true,
+                "target_path": rel_path,
+                "reason": "regression_opened",
+                "message": "regression_opened",
+                "canonical_ref": resolution.canonical_ref,
+                "trace_hash": trace_hash,
+            }));
+        }
+        MaterializeReason::Materialized => {}
+    }
+
+    let filename = display_filename_fix(&process_name, &trace_hash);
+    let target = pending_dir.join(&filename);
+    let document_id = format!("PBI-FIX-FRACTURE-{trace_hash}");
     let body = build_pbi_body(
         &process_name,
         &error_trace,
         &agent_emitter,
         &attempted_action,
         &trace_hash,
+        &fracture_process,
+        &document_id,
+        "[FIX]",
         persist_ref.as_deref(),
         branch_name.as_deref(),
+        None,
     );
     fs::write(&target, body).map_err(|e| e.to_string())?;
+
+    let rel_path = target
+        .strip_prefix(repo)
+        .unwrap_or(&target)
+        .to_string_lossy()
+        .replace('\\', "/");
 
     Ok(json!({
         "success": true,
         "target_path": rel_path,
-        "message": "PBI materializado",
+        "reason": "materialized",
+        "message": "materialized",
         "trace_hash": trace_hash,
     }))
 }
@@ -240,6 +241,38 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
 mod tests {
     use super::*;
     use std::fs;
+
+    fn setup_repo(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"todos":{"pending":"docs/todos/pending","done":"docs/todos/done"}}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
+        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
+    }
+
+    fn write_closed_done(repo: &Path, hash: &str, process: &str) {
+        let body = format!(
+            r#"---
+document_id: PBI-FIX-FRACTURE-{hash}
+fracture_hash: {hash}
+fracture_process: {process}
+status: cerrado
+process: bug-fix
+---
+
+# closed
+"#
+        );
+        fs::write(
+            repo.join(format!("docs/todos/done/canonical-{hash}.md")),
+            body,
+        )
+        .unwrap();
+    }
 
     #[test]
     fn slugify_truncates_and_normalizes() {
@@ -262,7 +295,7 @@ mod tests {
     fn materialize_fracture_pbi_creates_and_idempotent() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        setup_repo(repo);
 
         let inputs = json!({
             "process_name": "test-daemon",
@@ -275,7 +308,7 @@ mod tests {
 
         let out = run(repo, &inputs).expect("first run");
         assert_eq!(out.get("success"), Some(&json!(true)));
-        assert_eq!(out.get("message"), Some(&json!("PBI materializado")));
+        assert_eq!(out.get("reason"), Some(&json!("materialized")));
         assert!(out.get("trace_hash").and_then(|v| v.as_str()).is_some());
 
         let path = out
@@ -287,18 +320,20 @@ mod tests {
         let content = fs::read_to_string(&full).unwrap();
         assert!(content.contains("test-daemon"));
         assert!(content.contains("colapsó el watcher"));
+        assert!(content.contains("fracture_hash:"));
+        assert!(content.contains("fracture_process: test-daemon"));
         assert!(content.contains("docs/features/foo"));
         assert!(content.contains("branch: feat/test"));
         assert!(content.contains("Pendiente de síntesis Mayeuta"));
 
         let out2 = run(repo, &inputs).expect("second run");
-        assert_eq!(out2.get("message"), Some(&json!("PBI ya existente (idempotente)")));
-        assert!(out2.get("trace_hash").is_none());
+        assert_eq!(out2.get("reason"), Some(&json!("already_open")));
     }
 
     #[test]
     fn materialize_fracture_pbi_missing_field() {
         let tmp = tempfile::tempdir().expect("tempdir");
+        setup_repo(tmp.path());
         let err = run(
             tmp.path(),
             &json!({
@@ -315,7 +350,7 @@ mod tests {
     fn materialize_dedupes_open_pbi_same_process_different_trace() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
-        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        setup_repo(repo);
 
         let first = json!({
             "process_name": "event-watcher",
@@ -331,14 +366,11 @@ mod tests {
         });
 
         let out1 = run(repo, &first).expect("first");
-        assert_eq!(out1.get("message"), Some(&json!("PBI materializado")));
+        assert_eq!(out1.get("reason"), Some(&json!("materialized")));
         let path1 = out1.get("target_path").and_then(|v| v.as_str()).unwrap().to_string();
 
         let out2 = run(repo, &second).expect("second");
-        assert_eq!(
-            out2.get("message"),
-            Some(&json!("PBI abierto del mismo proceso (idempotente por process_name)"))
-        );
+        assert_eq!(out2.get("reason"), Some(&json!("deduped_by_process")));
         assert_eq!(
             out2.get("target_path").and_then(|v| v.as_str()),
             Some(path1.as_str())
@@ -346,6 +378,70 @@ mod tests {
 
         let pending = repo.join("docs/todos/pending");
         let count = fs::read_dir(&pending)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("md"))
+            .count();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn materialize_opens_regression_when_closed_in_done() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        setup_repo(repo);
+        let hash = fracture_trace_hash("same trace");
+        write_closed_done(repo, &hash, "route-domain-event");
+
+        let inputs = json!({
+            "process_name": "route-domain-event",
+            "error_trace": "same trace",
+            "agent_emitter": "execute-process",
+            "attempted_action": "merkle-batch-preseal",
+        });
+        let out = run(repo, &inputs).expect("regression");
+        assert_eq!(out.get("reason"), Some(&json!("regression_opened")));
+        assert!(out.get("canonical_ref").is_some());
+        let path = out.get("target_path").and_then(|v| v.as_str()).unwrap();
+        let content = fs::read_to_string(repo.join(path)).unwrap();
+        assert!(content.contains("regression_of: PBI-FIX-FRACTURE-"));
+        assert!(content.contains("[REGRESIÓN]"));
+        let done = fs::read_to_string(repo.join(format!("docs/todos/done/canonical-{hash}.md"))).unwrap();
+        assert!(!done.contains("regression_of"));
+    }
+
+    #[test]
+    fn materialize_burst_after_done_opens_single_regression() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        setup_repo(repo);
+        let hash = fracture_trace_hash("burst trace");
+        write_closed_done(repo, &hash, "route-domain-event");
+        let inputs = json!({
+            "process_name": "route-domain-event",
+            "error_trace": "burst trace",
+            "agent_emitter": "execute-process",
+            "attempted_action": "merkle-batch-preseal",
+        });
+        let mut regression_path = String::new();
+        for i in 0..7 {
+            let out = run(repo, &inputs).expect("burst");
+            if i == 0 {
+                assert_eq!(out.get("reason"), Some(&json!("regression_opened")));
+                regression_path = out
+                    .get("target_path")
+                    .and_then(|v| v.as_str())
+                    .unwrap()
+                    .to_string();
+            } else {
+                assert_eq!(out.get("reason"), Some(&json!("already_open")));
+                assert_eq!(
+                    out.get("target_path").and_then(|v| v.as_str()),
+                    Some(regression_path.as_str())
+                );
+            }
+        }
+        let count = fs::read_dir(repo.join("docs/todos/pending"))
             .unwrap()
             .filter_map(|e| e.ok())
             .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("md"))

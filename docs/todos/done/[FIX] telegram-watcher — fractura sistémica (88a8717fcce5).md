@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-88a8717fcce5
 title: "[FIX] telegram-watcher — fractura sistémica"
 format: markdown
@@ -7,11 +8,13 @@ created: "2026-07-16"
 status: "cerrado"
 priority: alta
 process: bug-fix
+fracture_process: telegram-watcher
+fracture_hash: 88a8717fcce5
 incident_ref: "System_Fracture_Detected — 88a8717fcce5"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] telegram-watcher — fractura sistémica
 

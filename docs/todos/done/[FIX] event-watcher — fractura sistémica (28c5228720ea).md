@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-28c5228720ea
 title: "[FIX] event-watcher — fractura sistémica"
 format: markdown
@@ -9,11 +10,13 @@ closed: "2026-08-16"
 fix_ref: docs/fixes/centinelas-fracture-ola-20260812
 priority: alta
 process: bug-fix
+fracture_process: event-watcher
+fracture_hash: 28c5228720ea
 incident_ref: "System_Fracture_Detected — 28c5228720ea"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] event-watcher — fractura sistémica
 

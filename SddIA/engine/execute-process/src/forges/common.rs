@@ -409,6 +409,276 @@ pub fn update_process_index_version(
     Ok(())
 }
 
+fn format_action_io_yaml(key: &str, items: &Value) -> String {
+    let Some(arr) = items.as_array() else {
+        return format!("{key}: []\n");
+    };
+    if arr.is_empty() {
+        return format!("{key}: []\n");
+    }
+    let mut lines = vec![format!("{key}:")];
+    for item in arr {
+        if let Some(obj) = item.as_object() {
+            for (k, v) in obj {
+                let desc = v.as_str().unwrap_or("");
+                lines.push(format!("  - \"{k}\": \"{desc}\""));
+            }
+        }
+    }
+    lines.join("\n") + "\n"
+}
+
+fn format_capabilities_yaml(caps: &Value) -> String {
+    let Some(arr) = caps.as_array() else {
+        return "capabilities: []\n".to_string();
+    };
+    if arr.is_empty() {
+        return "capabilities: []\n".to_string();
+    }
+    let mut lines = vec!["capabilities:".to_string()];
+    for c in arr {
+        if let Some(s) = c.as_str() {
+            lines.push(format!("  - \"{s}\""));
+        }
+    }
+    lines.join("\n") + "\n"
+}
+
+fn action_integrity_hash(
+    name: &str,
+    version: &str,
+    context: &str,
+    inputs: &Value,
+    outputs: &Value,
+    body: &str,
+) -> String {
+    let payload = json!({
+        "name": name,
+        "version": version,
+        "context": context,
+        "inputs": inputs,
+        "outputs": outputs,
+        "body": body.trim(),
+    });
+    let canon = canon_json_sorted(&payload);
+    let mut hasher = Sha256::new();
+    hasher.update(canon.as_bytes());
+    format!("sha256:{:x}", hasher.finalize())
+}
+
+fn hash_from_existing_action(text: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(text.as_bytes());
+    format!("sha256:{:x}", hasher.finalize())
+}
+
+/// Resultado de patch update de acción.
+pub struct ActionContentPatchResult {
+    pub entity_uuid: String,
+    pub old_hash: String,
+    pub new_hash: String,
+    pub old_version: String,
+    pub new_version: String,
+}
+
+/// Update canónico de acción: reemplaza inputs/outputs/capabilities y cuerpo MD; preserva uuid.
+pub fn patch_action_content_update(
+    action_path: &Path,
+    inputs: &Value,
+) -> Result<ActionContentPatchResult, String> {
+    let text = fs::read_to_string(action_path).map_err(|e| e.to_string())?;
+    let (yaml, _old_body) = split_md_frontmatter(&text)?;
+    let fm_val: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+    let map = match fm_val {
+        Value::Object(m) => m,
+        _ => return Err("frontmatter no es objeto YAML".into()),
+    };
+
+    let name = map
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if name.is_empty() {
+        return Err("name ausente en frontmatter".into());
+    }
+    let entity_uuid = map
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if entity_uuid.is_empty() {
+        return Err("uuid ausente en frontmatter".into());
+    }
+
+    let old_version = map
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("1.0.0")
+        .to_string();
+    let new_version = optional_str(inputs, "action_version")
+        .unwrap_or_else(|| bump_semver_patch(&old_version));
+
+    let old_hash = map
+        .get("hash_signature")
+        .and_then(|v| v.as_str())
+        .filter(|s| s.starts_with("sha256:"))
+        .map(str::to_string)
+        .unwrap_or_else(|| hash_from_existing_action(&text));
+
+    let context = optional_str(inputs, "action_context")
+        .or_else(|| map.get("context").and_then(|v| v.as_str()).map(str::to_string))
+        .unwrap_or_else(|| "ecosystem-evolution".to_string());
+    let contract_ver = optional_str(inputs, "actions_contract_version")
+        .unwrap_or_else(|| "1.2.0".to_string());
+
+    let action_inputs = inputs
+        .get("action_inputs")
+        .cloned()
+        .unwrap_or_else(|| json!([]));
+    let action_outputs = inputs
+        .get("action_outputs")
+        .cloned()
+        .unwrap_or_else(|| json!([]));
+    let capabilities = inputs
+        .get("action_capabilities")
+        .cloned()
+        .or_else(|| map.get("capabilities").cloned())
+        .unwrap_or_else(|| json!([]));
+
+    let body = inputs
+        .get("action_body")
+        .and_then(|v| v.as_str())
+        .or_else(|| inputs.get("orchestration_logic").and_then(|v| v.as_str()))
+        .ok_or("action_body u orchestration_logic requerido para update")?
+        .trim()
+        .to_string();
+
+    let new_hash = action_integrity_hash(
+        &name,
+        &new_version,
+        &context,
+        &action_inputs,
+        &action_outputs,
+        &body,
+    );
+
+    let minteo = map
+        .get("minteo_maximo")
+        .map(|v| {
+            if v.is_null() {
+                "null".to_string()
+            } else {
+                v.to_string()
+            }
+        })
+        .unwrap_or_else(|| "null".to_string());
+    let pct = map
+        .get("porcentaje_de_exito")
+        .map(|v| {
+            if v.is_null() {
+                "null".to_string()
+            } else {
+                v.to_string()
+            }
+        })
+        .unwrap_or_else(|| "null".to_string());
+
+    let fm_block = format!(
+        r#"---
+uuid: "{entity_uuid}"
+name: "{name}"
+version: "{new_version}"
+contract: "actions-contract v{contract_ver}"
+context: "{context}"
+{capabilities_yaml}{inputs_yaml}{outputs_yaml}hash_signature: "{new_hash}"
+minteo_maximo: {minteo}
+porcentaje_de_exito: {pct}
+---
+
+{body}
+"#,
+        capabilities_yaml = format_capabilities_yaml(&capabilities),
+        inputs_yaml = format_action_io_yaml("inputs", &action_inputs),
+        outputs_yaml = format_action_io_yaml("outputs", &action_outputs),
+    );
+
+    fs::write(action_path, fm_block).map_err(|e| e.to_string())?;
+
+    Ok(ActionContentPatchResult {
+        entity_uuid,
+        old_hash,
+        new_hash,
+        old_version,
+        new_version,
+    })
+}
+
+fn format_index_capabilities(capabilities: &Value) -> String {
+    capabilities
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|c| format!("`{c}`"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        })
+        .unwrap_or_default()
+}
+
+/// Sincroniza fila completa en `actions/index.md` (Name, UUID, Versión, Context, Descripción, Capabilities).
+pub fn sync_action_index_row(
+    index_path: &Path,
+    name: &str,
+    uuid: &str,
+    version: &str,
+    context: &str,
+    description: &str,
+    capabilities: &Value,
+) -> Result<(), String> {
+    if !index_path.is_file() {
+        return Ok(());
+    }
+    let caps = format_index_capabilities(capabilities);
+    let new_row = format!(
+        "| {name} | {uuid} | {version} | {context} | {description} | {caps} |"
+    );
+    let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+    let mut changed = false;
+    let mut lines: Vec<String> = Vec::new();
+    for line in idx.lines() {
+        if line.starts_with('|') {
+            let cols: Vec<&str> = line.split('|').collect();
+            if cols.len() >= 3 && cols[1].trim() == name {
+                if line != new_row {
+                    changed = true;
+                }
+                lines.push(new_row.clone());
+                continue;
+            }
+        }
+        lines.push(line.to_string());
+    }
+    if changed {
+        let mut out = lines.join("\n");
+        if idx.ends_with('\n') && !out.ends_with('\n') {
+            out.push('\n');
+        }
+        fs::write(index_path, out).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// Actualiza columna Versión en `actions/index.md` para `name`.
+pub fn update_action_index_version(
+    index_path: &Path,
+    name: &str,
+    new_version: &str,
+) -> Result<(), String> {
+    update_process_index_version(index_path, name, new_version)
+}
+
 pub fn handoff_create(
     entity_uuid: &str,
     hash_sig: &str,

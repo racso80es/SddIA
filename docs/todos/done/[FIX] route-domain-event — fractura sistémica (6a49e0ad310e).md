@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-6a49e0ad310e
 uuid: "6a49e0ad310e-0000-4000-8000-000000000001"
 title: "[FIX] route-domain-event — fractura sistémica"
@@ -11,6 +12,8 @@ closed: "2026-08-28"
 resolution_ref: docs/fixes/route-domain-event-fracture-6a49e0ad/
 priority: alta
 process: bug-fix
+fracture_process: route-domain-event
+fracture_hash: 6a49e0ad310e
 incident_ref: "System_Fracture_Detected — 6a49e0ad310e"
 resolution_ref: docs/todos/done/[KAIZEN] Aduana DLT — relay IOTA supervisado y causa real en anclaje batch.md
 merge_commit: 464ea3bd3718dc545446c7d1af36be2822e7c5fb
@@ -21,7 +24,7 @@ related:
   - docs/features/kaizen-aduana-dlt-relay-supervisado/
   - docs/fixes/route-domain-event-fracture-6a49e0ad/
   - .cursor/rules/kintsugi-fracture-protocol.mdc
----
+
 
 # [FIX] route-domain-event — fractura sistémica
 

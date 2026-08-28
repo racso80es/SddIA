@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-d0fb9b49071f
 title: "[FIX] event-sweeper — fractura sistémica"
 format: markdown
@@ -9,11 +10,13 @@ closed: "2026-08-16"
 fix_ref: docs/fixes/centinelas-fracture-ola-20260812
 priority: alta
 process: bug-fix
+fracture_process: event-sweeper
+fracture_hash: d0fb9b49071f
 incident_ref: "System_Fracture_Detected — d0fb9b49071f"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] event-sweeper — fractura sistémica
 

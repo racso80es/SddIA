@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-fd4c909af43c
 title: "[FIX] event-watcher — fractura sistémica"
 format: markdown
@@ -7,11 +8,13 @@ created: "2026-07-13"
 status: "cerrado"
 priority: alta
 process: bug-fix
+fracture_process: event-watcher
+fracture_hash: fd4c909af43c
 incident_ref: "System_Fracture_Detected — fd4c909af43c"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] event-watcher — fractura sistémica
 

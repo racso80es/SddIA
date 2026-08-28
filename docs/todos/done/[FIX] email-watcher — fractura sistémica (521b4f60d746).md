@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-521b4f60d746
 title: "[FIX] email-watcher — fractura sistémica"
 format: markdown
@@ -8,13 +9,15 @@ updated: "2026-08-18"
 status: done
 priority: alta
 process: bug-fix
+fracture_process: email-watcher
+fracture_hash: 521b4f60d746
 incident_ref: "System_Fracture_Detected — 521b4f60d746"
 resolution: "Cerrado in-ciclo PBI-KALMA2-MVP-01A — email-watcher en start-sddia.sh + A-02 lock huérfano"
 pr_url: https://github.com/racso80es/SddIA/pull/182
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] email-watcher — fractura sistémica
 

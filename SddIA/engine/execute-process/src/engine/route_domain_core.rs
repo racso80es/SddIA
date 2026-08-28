@@ -14,8 +14,10 @@ use super::eda_bus_topology::{
 use super::invoke_orchestrator::{invoke_process_full, resolve_orchestrator_bin};
 use chrono::Utc;
 use serde_json::{json, Map, Value};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -127,13 +129,29 @@ pub fn subscribers_for_event_type(repo: &Path, event_type: &str) -> Result<Vec<V
         .unwrap_or_default())
 }
 
-pub fn materialize_pending_domain_event(
-    repo: &Path,
+fn fracture_event_content_hash(event_type: &str, payload: &Value) -> String {
+    let canonical = json!({
+        "event_type": event_type,
+        "payload": payload,
+    });
+    let text = serde_json::to_string(&canonical).unwrap_or_else(|_| "{}".into());
+    let mut hasher = Sha256::new();
+    hasher.update(text.as_bytes());
+    format!("{:x}", hasher.finalize())[..12].to_string()
+}
+
+fn write_pending_domain_event_file(
+    _repo: &Path,
+    pending_dir: &Path,
     event_type: &str,
     emitter_agent: &str,
     payload: Value,
-) -> Result<String, String> {
-    let bus = ensure_event_bus_topology(repo)?;
+) -> Result<PathBuf, String> {
+    let content_hash = if event_type == "System_Fracture_Detected" {
+        Some(fracture_event_content_hash(event_type, &payload))
+    } else {
+        None
+    };
     let event_uuid = Uuid::new_v4().to_string();
     let event = json!({
         "event_id": event_uuid,
@@ -143,10 +161,46 @@ pub fn materialize_pending_domain_event(
         "payload": payload,
         "delivery_state": {},
     });
+    let text = serde_json::to_string_pretty(&event).map_err(|e| e.to_string())?;
+
+    if let Some(hash12) = content_hash {
+        let target = pending_dir.join(format!("{hash12}.json"));
+        match OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&target)
+        {
+            Ok(mut f) => {
+                writeln!(f, "{text}").map_err(|e| e.to_string())?;
+                f.sync_all().map_err(|e| e.to_string())?;
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
+            Err(e) => return Err(e.to_string()),
+        }
+        return Ok(target);
+    }
+
+    let target = pending_dir.join(format!("{event_uuid}.json"));
+    write_json_atomic(&target, &event)?;
+    Ok(target)
+}
+
+pub fn materialize_pending_domain_event(
+    repo: &Path,
+    event_type: &str,
+    emitter_agent: &str,
+    payload: Value,
+) -> Result<String, String> {
+    let bus = ensure_event_bus_topology(repo)?;
     let pending_dir = repo.join(&bus.pending);
     fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
-    let event_path = pending_dir.join(format!("{event_uuid}.json"));
-    write_json_atomic(&event_path, &event)?;
+    let event_path = write_pending_domain_event_file(
+        repo,
+        &pending_dir,
+        event_type,
+        emitter_agent,
+        payload,
+    )?;
     Ok(rel_event_path(repo, &event_path))
 }
 
@@ -491,24 +545,22 @@ fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
     };
     let pending = repo.join(&pending_rel);
     let _ = fs::create_dir_all(&pending);
-    let event_id = Uuid::new_v4().to_string();
-    let event = json!({
-        "event_id": event_id,
-        "event_type": "System_Fracture_Detected",
-        "timestamp": Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
-        "emitter_agent": "execute-process",
-        "payload": {
-            "process_name": "route-domain-event",
-            "error_trace": format!(
-                "F-DLT-RELAY-SIN-SUPERVISOR: merkle-batch-preseal failed: {causa}"
-            ),
-            "agent_emitter": "execute-process",
-            "attempted_action": "merkle-batch-preseal",
-            "friction_id": "F-DLT-RELAY-SIN-SUPERVISOR",
-        },
+    let payload = json!({
+        "process_name": "route-domain-event",
+        "error_trace": format!(
+            "F-DLT-RELAY-SIN-SUPERVISOR: merkle-batch-preseal failed: {causa}"
+        ),
+        "agent_emitter": "execute-process",
+        "attempted_action": "merkle-batch-preseal",
+        "friction_id": "F-DLT-RELAY-SIN-SUPERVISOR",
     });
-    let target = pending.join(format!("{event_id}.json"));
-    let _ = write_json_atomic(&target, &event);
+    let _ = write_pending_domain_event_file(
+        repo,
+        &pending,
+        "System_Fracture_Detected",
+        "execute-process",
+        payload,
+    );
 }
 
 fn stamp_batch_anchor_error(
