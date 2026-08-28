@@ -13,6 +13,7 @@ regression_of: PBI-FIX-FRACTURE-6a49e0ad310e
 global: APTO
 pbi_archived: true
 branch: fix/capsula-binario-fosil-release-stale
+pr_url: https://github.com/racso80es/SddIA/pull/218
 approval_status: aprobado
 verdict: aprobado
 delivery_state: success
