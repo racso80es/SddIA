@@ -9,6 +9,9 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c` | 2026-08-28 | Rehab feature PPR #210: A1 Cerbero/Radamanto post re-revocación #185; motor A2/A3 reutilizado. | CANONICO | `SddIA/evolution/f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c.md` |
+| `e7a1b2c3-4d5e-6f78-9a0b-1c2d3e4f5a6b` | 2026-08-28 | Rehab bug-fix PPR #210: A1 Cerbero/Radamanto post re-revocación #194; sin A2 motor. | CANONICO | `SddIA/evolution/e7a1b2c3-4d5e-6f78-9a0b-1c2d3e4f5a6b.md` |
+| `f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c` | 2026-08-28 | Rehab feature PPR #210: A1 Cerbero/Radamanto post re-revocación #185; motor A2/A3 reutilizado. | CANONICO | `SddIA/evolution/f8b2c3d4-5e6f-7a89-0b1c-2d3e4f5a6b7c.md` |
 | `e7a1b2c3-4d5e-6f78-9a0b-1c2d3e4f5a6b` | 2026-08-28 | Rehab bug-fix PPR #210: A1 Cerbero/Radamanto post re-revocación #194; sin A2 motor. | CANONICO | `SddIA/evolution/e7a1b2c3-4d5e-6f78-9a0b-1c2d3e4f5a6b.md` |
 | `f66bad66-2861-4603-b790-843859dd46a2` | 2026-08-28 | Kaizen init lab feature: techo/entierro agent_runtime, relevo IDE, paridad bóveda, execution_id, circuito daemon, higiene WT y snapshot todos. | CANONICO | `SddIA/evolution/f66bad66-2861-4603-b790-843859dd46a2.md` |
 | `1243c58b-8e93-4897-ba3e-3efc26564673` | 2026-08-27 | Kaizen aduana DLT: centinela iota-publish-relay, causa real batch, rescate Merkle 28 eventos | CANONICO | `SddIA/evolution/1243c58b-8e93-4897-ba3e-3efc26564673.md` |
