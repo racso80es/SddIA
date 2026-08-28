@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-cbe0c30b3695
 title: "[FIX] kalma2-bridge — fractura sistémica"
 format: markdown
@@ -7,13 +8,15 @@ created: "2026-07-20"
 status: done
 priority: alta
 process: bug-fix
+fracture_process: kalma2-bridge
+fracture_hash: cbe0c30b3695
 consolidated_into: "docs/todos/done/[FIX] centinelas+kalma2 — ola fracturas start-sddia 2026-07-22.md"
 closed: "2026-07-22"
 incident_ref: "System_Fracture_Detected — cbe0c30b3695"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] kalma2-bridge — fractura sistémica
 

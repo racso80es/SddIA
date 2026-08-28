@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-bb5d18128823
 title: "[FIX] github-bridge-watcher — fractura sistémica"
 format: markdown
@@ -8,11 +9,13 @@ status: cerrado
 fix_ref: docs/fixes/daemon-heartbeat-ingest-ignition
 priority: alta
 process: bug-fix
+fracture_process: github-bridge-watcher
+fracture_hash: bb5d18128823
 incident_ref: "System_Fracture_Detected — bb5d18128823"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] github-bridge-watcher — fractura sistémica
 

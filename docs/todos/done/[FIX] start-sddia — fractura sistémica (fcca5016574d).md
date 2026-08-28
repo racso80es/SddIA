@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-fcca5016574d
 title: "[FIX] start-sddia — fractura sistémica"
 format: markdown
@@ -7,12 +8,14 @@ created: "2026-07-13"
 status: done
 priority: alta
 process: bug-fix
+fracture_process: start-sddia
+fracture_hash: fcca5016574d
 incident_ref: "System_Fracture_Detected — fcca5016574d"
 branch_name: fix/start-sddia-native-contract
 fix_ref: docs/fixes/start-sddia-native-contract
 validacion_ref: docs/fixes/start-sddia-native-contract/validacion.md
 closed: "2026-07-13"
----
+
 
 # [FIX] start-sddia — fractura sistémica
 

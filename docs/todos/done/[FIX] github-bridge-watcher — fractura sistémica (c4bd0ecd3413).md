@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-c4bd0ecd3413
 title: "[FIX] github-bridge-watcher — fractura sistémica"
 format: markdown
@@ -7,11 +8,13 @@ created: "2026-07-13"
 status: "cerrado"
 priority: alta
 process: bug-fix
+fracture_process: github-bridge-watcher
+fracture_hash: c4bd0ecd3413
 incident_ref: "System_Fracture_Detected — c4bd0ecd3413"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] github-bridge-watcher — fractura sistémica
 

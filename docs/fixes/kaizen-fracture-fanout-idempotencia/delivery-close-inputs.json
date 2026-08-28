@@ -1,0 +1,8 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/fixes/kaizen-fracture-fanout-idempotencia",
+  "branch_name": "fix/kaizen-fracture-fanout-idempotencia",
+  "target_branch": "main",
+  "pr_title": "fix(fracture): idempotencia por genoma en fan-out System_Fracture_Detected",
+  "pr_body": "## Summary\n- Resolutor Core fracture_pbi con precedencia already_open / deduped_by_process / regression_opened / materialized\n- Mayeuta no_target sin dead-letter; dedup eventos por hash de contenido\n- Backfill genoma 56 PBI; contratos accion v1.1.0; 352 DL Mayeuta archivados\n- validacion APTO; PBI KAIZEN en done/\n\n## Test plan\n- [x] cargo test -p execute-process fracture (19 passed)\n- [x] smoke materialize regression_opened + already_open\n- [x] entity-manager update acciones v1.1.0"
+}

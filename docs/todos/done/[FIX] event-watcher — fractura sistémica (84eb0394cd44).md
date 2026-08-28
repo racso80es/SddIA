@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-84eb0394cd44
 title: "[FIX] event-watcher — fractura sistémica"
 format: markdown
@@ -7,13 +8,15 @@ created: "2026-07-21"
 status: done
 priority: alta
 process: bug-fix
+fracture_process: event-watcher
+fracture_hash: 84eb0394cd44
 consolidated_into: "docs/todos/done/[FIX] centinelas+kalma2 — ola fracturas start-sddia 2026-07-22.md"
 closed: "2026-07-22"
 incident_ref: "System_Fracture_Detected — 84eb0394cd44"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] event-watcher — fractura sistémica
 

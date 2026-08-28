@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-fe227c6e32d3
 title: "[FIX] email-watcher — fractura sistémica"
 format: markdown
@@ -9,13 +10,15 @@ status: cerrado
 closed: "2026-08-26"
 priority: alta
 process: bug-fix
+fracture_process: email-watcher
+fracture_hash: fe227c6e32d3
 incident_ref: "System_Fracture_Detected — fe227c6e32d3"
 fix_ref: docs/fixes/centinelas-fracture-ola-20260819
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - docs/audits/centinelas-fracturas-eventos-pending-20260826.md
----
+
 
 # [FIX] email-watcher — fractura sistémica
 

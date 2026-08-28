@@ -2,8 +2,9 @@
 
 use super::common::{
     append_row, capability_name, handoff_create, idempotent_forge_handoff, optional_str,
-    parse_frontmatter, patch_process_phases_update, refresh_process_hash, repo_tool_base,
-    required_str, sha256_canon, str_field, sync_daemons_index_census, update_process_index_version,
+    parse_frontmatter, patch_action_content_update, patch_process_phases_update,
+    refresh_process_hash, repo_tool_base, required_str, sha256_canon, str_field,
+    sync_action_index_row, sync_daemons_index_census, update_process_index_version,
     generate_uuid,
 };
 use crate::core::paths::load_paths_config;
@@ -149,6 +150,36 @@ pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "action_name")?;
     let action_path = repo.join("SddIA/actions").join(format!("{name}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+
+    if lifecycle == "update" && action_path.is_file() {
+        let patch = patch_action_content_update(&action_path, inputs)?;
+        let context = str_field(inputs, "action_context", "ecosystem-evolution");
+        let description = inputs
+            .get("orchestration_logic")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let capabilities = inputs
+            .get("action_capabilities")
+            .cloned()
+            .unwrap_or_else(|| json!([]));
+        sync_action_index_row(
+            &repo.join("SddIA/actions/index.md"),
+            &name,
+            &patch.entity_uuid,
+            &patch.new_version,
+            &context,
+            &description,
+            &capabilities,
+        )?;
+        return Ok(json!({
+            "handoff_entity_uuid": patch.entity_uuid,
+            "handoff_hash_signature_new": patch.new_hash,
+            "handoff_hash_signature_old": patch.old_hash,
+            "handoff_version": patch.new_version,
+        }));
+    }
+
     if let Some(skip) = idempotent_forge_handoff(&action_path, &lifecycle)? {
         return Ok(skip);
     }

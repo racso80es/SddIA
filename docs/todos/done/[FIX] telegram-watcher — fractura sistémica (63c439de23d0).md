@@ -1,4 +1,5 @@
 ---
+
 fix_ref: "docs/features/heartbeat-circuit-regimen-20260811"
 document_id: PBI-FIX-FRACTURE-63c439de23d0
 title: "[FIX] telegram-watcher — fractura sistémica"
@@ -9,11 +10,13 @@ status: cerrado
 closed: "2026-08-11"
 priority: alta
 process: bug-fix
+fracture_process: telegram-watcher
+fracture_hash: 63c439de23d0
 incident_ref: "System_Fracture_Detected — 63c439de23d0"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
----
+
 
 # [FIX] telegram-watcher — fractura sistémica
 

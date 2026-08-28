@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-9967f9f38f67
 title: "[FIX] github-bridge-watcher — fractura sistémica"
 format: markdown
@@ -7,12 +8,14 @@ created: "2026-06-16"
 status: "cerrado"
 priority: alta
 process: bug-fix
+fracture_process: github-bridge-watcher
+fracture_hash: 9967f9f38f67
 incident_ref: "System_Fracture_Detected — 9967f9f38f67"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - docs/fixes/centinelas-heartbeat-fracture/validacion.md
----
+
 
 # [FIX] github-bridge-watcher — fractura sistémica
 

@@ -1,4 +1,5 @@
 ---
+
 document_id: PBI-FIX-FRACTURE-ff0989e5b8c0
 title: "[FIX] event-sweeper — fractura sistémica"
 format: markdown
@@ -7,12 +8,14 @@ created: "2026-06-16"
 status: "cerrado"
 priority: alta
 process: bug-fix
+fracture_process: event-sweeper
+fracture_hash: ff0989e5b8c0
 incident_ref: "System_Fracture_Detected — ff0989e5b8c0"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - docs/fixes/event-sweeper-heartbeat-fracture-8b1ed140e48d/validacion.md
----
+
 
 # [FIX] event-sweeper — fractura sistémica
 
