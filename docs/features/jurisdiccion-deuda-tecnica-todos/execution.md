@@ -46,10 +46,9 @@ cd SddIA && cargo test -p execute-process pending_pbi_path -- --nocapture
 test ... pending_pbi_path_accepted_for_archive_gate ... ok
 ```
 
-## Pendiente (L6)
+## L6 — Cierre
 
-- `validacion.md` Argos + PBI a `done/` + `delivery-close-cycle`
+`validacion.md` APTO + PBI archivado en `docs/todos/done/`. `delivery-close-cycle` pendiente de acuse.
 
-## L5 — Evolution
 
 `id_cambio`: `eb6fb73a-9ded-49a1-a2a9-314624358b4b` vía `sddia-qa evolution-register`.
