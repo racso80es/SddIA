@@ -78,7 +78,7 @@ Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · see
 - [x] Laudo rehabilitación Cerbero / Radamanto (anti-recurrencia post-rehab #203; limpiar `rehab_laudo`/`rehabilitated_at` obsoletos)
 - [x] `accept-pr` ausente de `revoked` (y `permanent` si aplica)
 - [x] Cascada feature/fix + `validacion.md` APTO + PBI en `done/`
-- [ ] Smoke handoff sin re-revocación inmediata post-rehab (samples healthy · `structure_valid: true`)
+- [x] Smoke handoff sin re-revocación inmediata post-rehab (samples healthy · `structure_valid: true` · `execution_id` `20b51e8c-405f-4f4a-a428-f05c726bc4d8` · `merge_already_done` · `2026-08-28`)
 
 ## Fuera de alcance
 

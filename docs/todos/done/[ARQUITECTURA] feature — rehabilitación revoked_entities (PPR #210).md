@@ -69,7 +69,7 @@ Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · see
 - [x] Laudo rehabilitación Cerbero / Radamanto (anti-recurrencia post-rehab #185; A1+A2+A3 obligatorios si aplica)
 - [x] `feature` ausente de `revoked`/`permanent` en `revoked_entities.json`
 - [x] Cascada refactorization + `validacion.md` APTO + PBI en `done/`
-- [ ] Smoke proceso `feature` sin re-revocación inmediata post-rehab
+- [x] Smoke proceso `feature` sin re-revocación inmediata post-rehab (`execution_id` `458d194c-a5b4-4e53-918d-91901c2f1d5d` · `2026-08-28`)
 
 ## Fuera de alcance
 
