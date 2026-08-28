@@ -8,6 +8,17 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_ROOT"
 
+_sddia_ensure_hooks_path() {
+  local expected="SddIA/scripts/qa/git-hooks"
+  local current
+  current=$(git config --get core.hooksPath 2>/dev/null || true)
+  if [[ "$current" != "$expected" ]]; then
+    git config core.hooksPath "$expected"
+    echo "[SddIA] core.hooksPath -> ${expected}"
+  fi
+}
+_sddia_ensure_hooks_path
+
 # shellcheck source=SddIA/scripts/common/sddia_shell_lib.sh
 source "$REPO_ROOT/SddIA/scripts/common/sddia_shell_lib.sh"
 _sddia_load_vault "$REPO_ROOT"

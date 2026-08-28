@@ -347,6 +347,60 @@ pub fn capsule_eda_genomic_audit_gate(
     Ok(entry)
 }
 
+fn resolve_sddia_qa_bin(repo: &Path) -> Result<PathBuf, String> {
+    for rel in [
+        "SddIA/target/debug/sddia-qa",
+        "SddIA/target/release/sddia-qa",
+    ] {
+        let p = repo.join(rel);
+        if p.is_file() {
+            return Ok(p);
+        }
+    }
+    Err("sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)".into())
+}
+
+pub fn capsule_evolution_audit_gate(
+    repo: &Path,
+    _inputs: &Value,
+    state: &mut Value,
+) -> Result<Value, String> {
+    let bin = resolve_sddia_qa_bin(repo)?;
+    let out = std::process::Command::new(&bin)
+        .args(["gate-evolution", "--json", "--range"])
+        .current_dir(repo)
+        .output()
+        .map_err(|e| format!("gate-evolution spawn: {e}"))?;
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let body: Value = serde_json::from_str(stdout.trim())
+        .map_err(|e| format!("gate-evolution JSON inválido: {e}"))?;
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("evolution_gate".into(), body.clone());
+    }
+    let success = body.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
+    let exit_code = body
+        .get("exitCode")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(if success { 0 } else { 2 }) as i32;
+    let skipped = body.pointer("/result/skipped").is_some();
+    if success || skipped {
+        return Ok(json!({
+            "status": "executed",
+            "handler": "evolution-audit",
+            "exitCode": exit_code,
+            "skipped": skipped,
+            "base_resolution": body.pointer("/result/base_resolution").cloned(),
+        }));
+    }
+    Ok(json!({
+        "status": "blocked",
+        "handler": "evolution-audit",
+        "exitCode": exit_code,
+        "message": body.get("message").cloned().unwrap_or(Value::Null),
+        "reason_codes": body.pointer("/result/reason_codes").cloned().unwrap_or(json!([])),
+    }))
+}
+
 pub fn capsule_delivery_snapshot_final_with_repo(
     repo: &Path,
     inputs: &Value,
@@ -469,7 +523,11 @@ pub fn capsule_delivery_snapshot_final_with_repo(
     }))
 }
 
-pub fn capsule_delivery_impact_assessment(inputs: &Value, _state: &mut Value) -> Value {
+pub fn capsule_delivery_impact_assessment(
+    repo: &Path,
+    inputs: &Value,
+    state: &mut Value,
+) -> Value {
     if env_truthy("SDDIA_LAB_SKIP_IMPACT_ASSESSMENT") {
         return json!({
             "status": "skipped",
@@ -478,20 +536,112 @@ pub fn capsule_delivery_impact_assessment(inputs: &Value, _state: &mut Value) ->
             "reason": "SDDIA_LAB_SKIP_IMPACT_ASSESSMENT",
         });
     }
-    if inputs.get("source_process").and_then(|v| v.as_str()) != Some("feature") {
+    let source = inputs.get("source_process").and_then(|v| v.as_str()).unwrap_or("");
+    if !matches!(source, "feature" | "bug-fix" | "refactorization") {
         return json!({
             "status": "skipped",
             "handler": "delivery-impact-assessment",
             "skipped": true,
-            "reason": "source_process != feature",
+            "reason": "source_process no elegible para impacto SddIA",
         });
+    }
+    let target = str_field(inputs, "target_branch").unwrap_or_else(|| "main".into());
+    let origin_ref = format!("origin/{target}");
+    let ref_spec = if std::process::Command::new("git")
+        .args(["rev-parse", "--verify", "--quiet", &origin_ref])
+        .current_dir(repo)
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+    {
+        format!("{origin_ref}...HEAD")
+    } else {
+        format!("{target}...HEAD")
+    };
+    let data = match invoke_git_manager(
+        repo,
+        "diff_name_only",
+        &json!({"ref_spec": ref_spec}),
+    ) {
+        Ok(d) => d,
+        Err(e) => {
+            return json!({
+                "status": "executed",
+                "handler": "delivery-impact-assessment",
+                "impact": "unknown",
+                "sddia_paths": [],
+                "error": e,
+            });
+        }
+    };
+    let files: Vec<String> = data
+        .get("files")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    let cfg = match crate::core::paths::load_paths_config(repo) {
+        Ok(c) => c,
+        Err(_) => {
+            return json!({
+                "status": "executed",
+                "handler": "delivery-impact-assessment",
+                "impact": "none",
+                "sddia_paths": [],
+            });
+        }
+    };
+    let evo = cfg
+        .pointer("/directories/evolution")
+        .and_then(|v| v.as_str())
+        .unwrap_or("SddIA/evolution");
+    let mut prefixes = Vec::new();
+    if let Some(dirs) = cfg.get("directories").and_then(|v| v.as_object()) {
+        for val in dirs.values() {
+            if let Some(s) = val.as_str() {
+                let norm = s.trim().trim_end_matches('/');
+                if norm.starts_with("SddIA/")
+                    && norm != evo.trim_end_matches('/')
+                    && !norm.starts_with(&format!("{}/", evo.trim_end_matches('/')))
+                {
+                    prefixes.push(format!("{norm}/"));
+                }
+            } else if let Some(arr) = val.as_array() {
+                for item in arr {
+                    if let Some(s) = item.as_str() {
+                        let norm = s.trim().trim_end_matches('/');
+                        if norm.starts_with("SddIA/") {
+                            prefixes.push(format!("{norm}/"));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let sddia_paths: Vec<String> = files
+        .into_iter()
+        .filter(|p| {
+            let p = p.replace('\\', "/");
+            prefixes.iter().any(|prefix| {
+                let base = prefix.trim_end_matches('/');
+                p == base || p.starts_with(prefix) || p.starts_with(&format!("{base}/"))
+            })
+        })
+        .collect();
+    let impact = if sddia_paths.is_empty() { "none" } else { "material" };
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("sddia_impact".into(), json!(impact));
+        obj.insert("sddia_paths".into(), json!(sddia_paths.clone()));
     }
     json!({
         "status": "executed",
         "handler": "delivery-impact-assessment",
-        "impact": "none",
-        "sddia_paths": [],
-        "note": "git diff omitido en stub Rust; paridad lab vía skip",
+        "impact": impact,
+        "sddia_paths": sddia_paths,
+        "ref_spec": ref_spec,
     })
 }
 
@@ -716,7 +866,7 @@ pub fn execute_delivery_close_phase(
 ) -> Option<Result<Value, String>> {
     match phase_name {
         "Snapshot final" => Some(capsule_delivery_snapshot_final_with_repo(repo, inputs, state)),
-        "Impacto SddIA condicional" => Some(Ok(capsule_delivery_impact_assessment(inputs, state))),
+        "Impacto SddIA condicional" => Some(Ok(capsule_delivery_impact_assessment(repo, inputs, state))),
         "Publicación remota" => Some(capsule_delivery_remote_push(repo, inputs, state)),
         "Apertura en forja" => Some(capsule_delivery_gh_pr(repo, inputs, state)),
         "Sello Presentación ECST" => Some(capsule_delivery_emit_presented(repo, inputs, state)),
