@@ -12,6 +12,9 @@ global: APTO
 pbi_archived: true
 branch: fix/route-domain-event-fracture-6a49e0ad
 approval_status: aprobado
+pr_url: https://github.com/racso80es/SddIA/pull/210
+pr_presented_event_id: 4c2dfd1d-393d-4411-8956-d596ff0eef9c
+delivery_close_execution_id: 90f9c828-19d7-4b78-be4f-4b71478ac0b3
 checks:
   PHYSICAL_RELAY_ON_MAIN: APTO
   PROMPT_ADJUSTMENT_TOUCHPOINT: APTO
@@ -32,7 +35,7 @@ git_changes:
 
 ## Veredicto
 
-**APTO** — causa física ya remediada en main (Kaizen DLT #208); `prompt_adjustment` materializado; PBI stale purgado; test `emit_dlt_batch_fracture_writes_pending` OK.
+**APTO** — causa física ya remediada en main (Kaizen DLT #208); `prompt_adjustment` materializado; PBI stale purgado; test `emit_dlt_batch_fracture_writes_pending` OK; `delivery-close-cycle` acusado (`pr_url` PR #210 · `PullRequest_Presented` `4c2dfd1d-…`).
 
 ## Checks
 
