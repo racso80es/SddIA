@@ -51,16 +51,39 @@ fn git(repo: &Path, args: &[&str]) -> Result<(String, i32), String> {
     ))
 }
 
-fn git_timed(repo: &Path, args: &[&str], budget_ms: u64) -> Result<(String, i32), String> {
-    let mut child = Command::new("git")
-        .args(args)
-        .current_dir(repo)
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .env("GIT_SSH_COMMAND", "ssh -o BatchMode=yes")
+fn map_fetch_outcome(result: Result<(String, i32), String>) -> &'static str {
+    match result {
+        Ok((_, 0)) => "ok",
+        Ok((_, _)) => "error",
+        Err(ref e) if e == "timeout" => "timeout",
+        Err(_) => "error",
+    }
+}
+
+fn spawn_timed(
+    program: &str,
+    cwd: &Path,
+    args: &[&str],
+    budget_ms: u64,
+    extra_env: &[(&str, &str)],
+) -> Result<(String, i32), String> {
+    let mut cmd = Command::new(program);
+    cmd.args(args).current_dir(cwd);
+    for (key, val) in extra_env {
+        cmd.env(key, val);
+    }
+    let child = cmd
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| format!("git spawn: {e}"))?;
+        .map_err(|e| format!("spawn {program}: {e}"))?;
+    spawn_timed_wait(child, budget_ms)
+}
+
+fn spawn_timed_wait(
+    mut child: std::process::Child,
+    budget_ms: u64,
+) -> Result<(String, i32), String> {
     let start = Instant::now();
     let budget = Duration::from_millis(budget_ms);
     loop {
@@ -80,6 +103,19 @@ fn git_timed(repo: &Path, args: &[&str], budget_ms: u64) -> Result<(String, i32)
             None => thread::sleep(Duration::from_millis(50)),
         }
     }
+}
+
+fn git_timed(repo: &Path, args: &[&str], budget_ms: u64) -> Result<(String, i32), String> {
+    spawn_timed(
+        "git",
+        repo,
+        args,
+        budget_ms,
+        &[
+            ("GIT_TERMINAL_PROMPT", "0"),
+            ("GIT_SSH_COMMAND", "ssh -o BatchMode=yes"),
+        ],
+    )
 }
 
 fn ref_exists(repo: &Path, spec: &str) -> bool {
@@ -110,16 +146,12 @@ fn resolve_base(
 ) -> Result<BaseResolution, String> {
     let mut fetch_outcome = None;
     if sync_base {
-        fetch_outcome = Some(match git_timed(
+        let fetch_result = git_timed(
             repo,
             &["fetch", "--no-tags", "origin", "main"],
             SYNC_BUDGET_MS,
-        ) {
-            Ok((_, 0)) => "ok",
-            Ok((_, _)) => "error",
-            Err(ref e) if e == "timeout" => "timeout",
-            Err(_) => "error",
-        });
+        );
+        fetch_outcome = Some(map_fetch_outcome(fetch_result));
     }
 
     let (mode, git_ref, age_seconds) = if ref_exists(repo, "origin/main") {
@@ -813,6 +845,7 @@ pub fn run_mutate(repo: &Path, args: &[String]) -> i32 {
 mod tests {
     use super::*;
     use serde_json::json;
+    use std::path::PathBuf;
 
     #[test]
     fn material_prefixes_exclude_evolution() {
@@ -845,5 +878,111 @@ mod tests {
         let prefixes = vec!["SddIA/process/".to_string()];
         assert!(path_is_material("SddIA/process/bug-fix.md", &prefixes));
         assert!(!path_is_material("SddIA/evolution/foo.md", &prefixes));
+    }
+
+    #[test]
+    fn map_fetch_outcome_timeout_ca14() {
+        assert_eq!(
+            map_fetch_outcome(Err("timeout".into())),
+            "timeout"
+        );
+        assert_eq!(map_fetch_outcome(Ok(("".into(), 0))), "ok");
+    }
+
+    #[test]
+    fn git_timed_kills_process_within_budget_ca14() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let budget = 250u64;
+        let start = Instant::now();
+        let err = spawn_timed("sleep", tmp.path(), &["5"], budget, &[])
+            .expect_err("sleep must be killed");
+        assert_eq!(err, "timeout");
+        let elapsed = start.elapsed().as_millis();
+        assert!(elapsed >= budget as u128);
+        assert!(
+            elapsed < budget as u128 + 800,
+            "elapsed {elapsed}ms exceeds budget margin"
+        );
+    }
+
+    #[test]
+    fn resolve_base_sync_fetch_timeout_declares_outcome_ca14() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let real_git = std::env::var("PATH")
+            .ok()
+            .and_then(|p| {
+                p.split(':')
+                    .map(PathBuf::from)
+                    .find(|d| d.join("git").is_file())
+            })
+            .map(|d| d.join("git"))
+            .filter(|p| p.is_file())
+            .expect("git en PATH");
+        let bin = repo.join("bin");
+        fs::create_dir_all(&bin).expect("bin dir");
+        let wrapper = bin.join("git");
+        fs::write(
+            &wrapper,
+            format!(
+                "#!/bin/sh\nif [ \"$1\" = \"fetch\" ]; then sleep 10; exit 1; fi\nexec \"{}\" \"$@\"\n",
+                real_git.display()
+            ),
+        )
+        .expect("wrapper");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o755)).expect("chmod");
+        }
+        let path = format!(
+            "{}:{}",
+            bin.display(),
+            std::env::var("PATH").unwrap_or_default()
+        );
+        std::process::Command::new(&real_git)
+            .args(["init", "-b", "main"])
+            .current_dir(repo)
+            .env("PATH", &path)
+            .status()
+            .expect("git init");
+        for (k, v) in [("user.email", "ca14@test"), ("user.name", "ca14")] {
+            std::process::Command::new(&real_git)
+                .args(["config", k, v])
+                .current_dir(repo)
+                .status()
+                .expect("git config");
+        }
+        std::process::Command::new(&real_git)
+            .args(["commit", "--allow-empty", "-m", "init"])
+            .current_dir(repo)
+            .env("PATH", &path)
+            .status()
+            .expect("commit");
+        std::process::Command::new(&real_git)
+            .args(["update-ref", "refs/remotes/origin/main", "HEAD"])
+            .current_dir(repo)
+            .env("PATH", &path)
+            .status()
+            .expect("origin/main ref");
+        std::process::Command::new(&real_git)
+            .args(["remote", "add", "origin", "git@127.0.0.1:1/fake"])
+            .current_dir(repo)
+            .env("PATH", &path)
+            .status()
+            .expect("remote");
+        let prev_path = std::env::var("PATH").ok();
+        std::env::set_var("PATH", &path);
+        let start = Instant::now();
+        let base = resolve_base(repo, true, false).expect("resolve_base");
+        if let Some(p) = prev_path {
+            std::env::set_var("PATH", p);
+        }
+        let elapsed = start.elapsed().as_millis();
+        assert_eq!(base.fetch_outcome, Some("timeout"));
+        assert!(
+            elapsed < SYNC_BUDGET_MS as u128 + 800,
+            "resolve_base tardó {elapsed}ms"
+        );
     }
 }

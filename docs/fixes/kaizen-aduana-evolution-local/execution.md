@@ -33,7 +33,8 @@ uuid: fedb9597-a2a3-4c5b-825c-e3c7f3186b1b
 | L7 — retirar gate pre-commit | executed | `pre_commit_gate.sh` sin evolution |
 | L6 — DCC fase evolution | executed | `entity-manager` → DCC v1.2.0; handlers Rust |
 | tests-ci | executed | workflow `--require-synced-base` |
-| smoke CA12 | deferred | probe en worktree requiere binario en ruta worktree; validar post-commit con `gate-evolution --range` |
+| smoke CA12 | executed | `evolution_audit_ca12` + `evolution_phase_blocks_unregistered_material_ca12` |
+| CA14 timeout | executed | `git_timed_kills_process_within_budget_ca14` + `resolve_base_sync_fetch_timeout_declares_outcome_ca14` |
 | evolution-register | executed | `6d64bcc7-b677-4c43-b239-928e279d2a04` vía `sddia-qa evolution-register` |
 
 ## Comandos de verificación

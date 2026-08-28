@@ -23,9 +23,9 @@ checks:
   AEL-CA9: APTO
   AEL-CA10: APTO
   AEL-CA11: APTO
-  AEL-CA12: PENDIENTE_SMOKE
+  AEL-CA12: APTO
   AEL-CA13: APTO
-  AEL-CA14: PENDIENTE_TEST
+  AEL-CA14: APTO
   GATE_EVOLUTION_RANGE: APTO
   CARGO_TEST_GATE_EVOLUTION: APTO
   CARGO_TEST_DELIVERY_CLOSE: APTO
@@ -42,20 +42,20 @@ git_changes:
   - start-sddia.sh
   - docs/fixes/kaizen-aduana-evolution-local/
   - docs/todos/done/[KAIZEN] Aduana evolution local inexistente — hooks sin instalar, --if-touched invertido y fase de impacto stub.md
-non_blocking_findings:
-  - AEL-CA12 smoke DCC local post-merge
-  - AEL-CA14 test timeout fetch (mock git)
+non_blocking_findings: []
 ---
 
 # Validación — Aduana evolution local
 
-**global: APTO** — gate material en pre-push/DCC/CI; `gate-evolution --range` → `EVOL_OK`; 3 tests `gate_evolution` + 16 `delivery_close`; PBI archivado en rama.
+**global: APTO** — gate material en pre-push/DCC/CI; CA12 y CA14 cubiertos por tests automatizados.
 
 Evidencia local:
 
 ```bash
 unset CARGO_TARGET_DIR
-cargo test -p sddia-qa gate_evolution::tests    # 3 passed
-cargo test -p execute-process delivery_close      # 16 passed
+cargo test -p sddia-qa gate_evolution::tests           # 6 passed (incl. CA14)
+cargo test -p execute-process evolution_audit_ca12     # CA12 capsule
+cargo test -p execute-process evolution_phase_blocks   # CA12 fase DCC
+cargo test -p execute-process delivery_close           # suite DCC
 ./SddIA/target/debug/sddia-qa gate-evolution --json --range  # EVOL_OK
 ```
