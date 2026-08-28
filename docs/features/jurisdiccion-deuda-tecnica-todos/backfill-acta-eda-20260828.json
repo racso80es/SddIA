@@ -1,0 +1,55 @@
+{
+  "scanned_at": "2026-08-28T17:38:00Z",
+  "correlation_id": "a6f93bdc-a04d-4d7e-a3ae-d112386d10b1",
+  "motivo": "Aduana EDA genomica de delivery-close-cycle bloqueo el cierre de feat/jurisdiccion-deuda-tecnica-todos con orphan_count 2. Ambas entidades son ajenas al diff del PR #219 y preexisten en main desde 96c01b9 (2026-08-19).",
+  "vía": "emit-domain-mutation (--action) por entidad; upsert en SddIA/core/eda-coverage.json. Sin mutacion manual del SSOT ni del genoma.",
+  "orphan_count_before": 2,
+  "orphans": [
+    {
+      "entity_class": "tool",
+      "entity_name": "github-raw-fetcher",
+      "entity_uuid": "66daf19f-217a-4874-b417-99e5be2571f3",
+      "artifact_path": "SddIA/tools/github-raw-fetcher.md",
+      "artifact_exists": true,
+      "is_covered_ssot": false,
+      "hash_signature": "sha256:pending-forge"
+    },
+    {
+      "entity_class": "action",
+      "entity_name": "download-remote-asset",
+      "entity_uuid": "6175f5cd-7844-4d0c-aa93-d2ce3a41d18e",
+      "artifact_path": "SddIA/actions/download-remote-asset.md",
+      "artifact_exists": true,
+      "is_covered_ssot": false,
+      "hash_signature": "sha256:pending-forge"
+    }
+  ],
+  "emits": [
+    {
+      "success": true,
+      "event_type": "Domain_Entity_Created",
+      "event_id": "802047f3-93e1-4a99-8b4e-22caacf93a88",
+      "target_path": ".events/pending/802047f3-93e1-4a99-8b4e-22caacf93a88.json",
+      "entity_uuid": "66daf19f-217a-4874-b417-99e5be2571f3",
+      "action_name": "emit-domain-mutation"
+    },
+    {
+      "success": true,
+      "event_type": "Domain_Entity_Created",
+      "event_id": "15c32aef-ebd1-4ecf-aa6f-d949ee13cc0e",
+      "target_path": ".events/pending/15c32aef-ebd1-4ecf-aa6f-d949ee13cc0e.json",
+      "entity_uuid": "6175f5cd-7844-4d0c-aa93-d2ce3a41d18e",
+      "action_name": "emit-domain-mutation"
+    }
+  ],
+  "emit_count": 2,
+  "emit_ok": 2,
+  "orphan_count_after": 0,
+  "merkle_anchored": false,
+  "deuda_residual": {
+    "id": "DT-EDA-PENDING-FORGE-STALE",
+    "detalle": "Ambas entidades conservan hash_signature sha256:pending-forge en su frontmatter. La cobertura queda sellada con ese mismo valor por paridad con el precedente eda-backfill-precommit-20260525 (bus-operator). El re-sello real exige entity-manager update sobre genoma de kalma2 y queda fuera del alcance de este cierre.",
+    "pbi": "PBI-KAIZEN-CICLO-JURISDICCION-TODOS"
+  },
+  "nota_nombre_fichero": "Deliberadamente NO se llama backfill-manifest.json: ese nombre activa backfill_manifest_active en phase_capsules.rs y degrada el veredicto de la aduana de block a warn. Aqui el saldo es real (orphan_count 0), no una excepcion en curso."
+}
