@@ -74,6 +74,8 @@ Manifiesto: `.events/dead-letter/archive/kaizen-fracture-fanout-idempotencia/may
 
 - `validacion.md` → `global: APTO`, `pbi_archived: true`
 - PBI movido a `docs/todos/done/`
+- Commit `875b9c0` en rama `fix/kaizen-fracture-fanout-idempotencia` (push OK)
+- PR: pendiente `gh pr create` (API GitHub inaccesible en sesión) — https://github.com/racso80es/SddIA/compare/main...fix/kaizen-fracture-fanout-idempotencia
 
 ## Binario
 
