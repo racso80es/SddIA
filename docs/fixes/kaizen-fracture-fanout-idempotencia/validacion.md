@@ -11,6 +11,7 @@ uuid: 85287f67-30e7-4ffc-b83f-cc7562bd47df
 global: APTO
 pbi_archived: true
 branch: fix/kaizen-fracture-fanout-idempotencia
+pr_url: https://github.com/racso80es/SddIA/pull/217
 approval_status: aprobado
 verdict: aprobado
 delivery_state: success
