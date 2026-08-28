@@ -821,6 +821,52 @@ mod tests {
     }
 
     #[test]
+    fn extract_pbi_migrated_deuda_tecnica_paths() {
+        let paths = [
+            "docs/todos/pending/[DEUDA] Paciente 0 — prompt y proceso de despliegue.md",
+            "docs/todos/pending/[DEUDA] Paciente 0 — prompt de teardown.md",
+            "docs/todos/pending/[DEUDA] Escaneo lineal de docs-todos en el resolutor de fractura — umbral de indexación.md",
+        ];
+        for path in paths {
+            let text = format!("Despacha {path}");
+            let got = extract_pbi_path(&text).expect("pending path must be extractable");
+            assert_eq!(got, path);
+        }
+    }
+
+    #[test]
+    fn extract_pbi_ignores_inert_bucket_paths() {
+        let inert_only = [
+            "docs/todos/DeudaTecnica/[DEUDA] Paciente 0 — prompt y proceso de despliegue.md",
+            "docs/todos/kitchen/PBI-MULTI-LLM-ROUTER.md",
+            "docs/todos/historias/[ARQUITECTURA] MVP.md",
+        ];
+        for path in inert_only {
+            let text = format!("Ver {path}");
+            assert!(
+                extract_pbi_path(&text).is_none(),
+                "inert bucket must not be dispatchable: {path}"
+            );
+        }
+    }
+
+    #[test]
+    fn extract_pbi_prefers_pending_over_inert_when_both_present() {
+        let text = "docs/todos/kitchen/x.md y docs/todos/pending/[DEUDA] Escaneo lineal de docs-todos en el resolutor de fractura — umbral de indexación.md";
+        let got = extract_pbi_path(text).expect("pending wins");
+        assert!(got.starts_with("docs/todos/pending/"));
+    }
+
+    #[test]
+    fn pending_pbi_path_accepted_for_archive_gate() {
+        // Paridad con phase_capsules feature-pbi-archive (rel.contains docs/todos/pending/)
+        let rel = "docs/todos/pending/[DEUDA] Escaneo lineal de docs-todos en el resolutor de fractura — umbral de indexación.md";
+        assert!(rel.contains("docs/todos/pending/"));
+        let inert = "docs/todos/DeudaTecnica/[DEUDA] Escaneo lineal.md";
+        assert!(!inert.contains("docs/todos/pending/"));
+    }
+
+    #[test]
     fn derive_slug_from_hash() {
         let pbi =
             "docs/todos/pending/[FIX] telegram-watcher — fractura sistémica (e6cbecb9032c).md";

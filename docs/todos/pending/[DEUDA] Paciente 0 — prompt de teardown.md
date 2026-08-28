@@ -8,14 +8,15 @@ status: deuda_tecnica
 type: deuda
 priority: alta
 process: null
+dispatch: false
 process_candidate: paciente0-undeploy
 process_candidate_class: process
 created: "2026-08-25"
-updated: "2026-08-25"
+updated: "2026-08-28"
 instance_name_default: SddIA_AP
 instance_parent: /home/racso/Proyectos
 config_source: /home/racso/Proyectos/.dev/.env
-companion_deploy_ref: docs/todos/DeudaTecnica/[DEUDA] Paciente 0 — prompt y proceso de despliegue.md
+companion_deploy_ref: docs/todos/pending/[DEUDA] Paciente 0 — prompt y proceso de despliegue.md
 companion_deploy_document_id: PBI-DT-PACIENTE0-DEPLOY-PROCESS
 tech_debt_ids:
   - DT-PACIENTE0-UNDEPLOY-PROCESS
@@ -179,7 +180,7 @@ Fases: SignalScript → StopSystemd → ReapPids → RmTree → Verify. Prohibid
 
 | Ref | Uso |
 |-----|-----|
-| `docs/todos/DeudaTecnica/[DEUDA] Paciente 0 — prompt y proceso de despliegue.md` | Simétrico deploy |
+| `docs/todos/pending/[DEUDA] Paciente 0 — prompt y proceso de despliegue.md` | Simétrico deploy |
 | `start-sddia.sh` | trap SIGTERM / cleanup |
 | `SddIA/templates/systemd/sddia-email-watcher@.service.template` | Unidad `%f` sensorial |
 | `SddIA/templates/systemd/sddia-daemon@.service.template` | Fábrica bus/WUI `@%f` |
