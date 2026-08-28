@@ -5,9 +5,10 @@ title: "[FIX] route-domain-event — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-08-27"
-updated: "2026-08-27"
+updated: "2026-08-28"
 status: cerrado
-closed: "2026-08-27"
+closed: "2026-08-28"
+resolution_ref: docs/fixes/route-domain-event-fracture-6a49e0ad/
 priority: alta
 process: bug-fix
 incident_ref: "System_Fracture_Detected — 6a49e0ad310e"
@@ -17,6 +18,8 @@ related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - docs/features/kaizen-aduana-dlt-relay-supervisado/
+  - docs/fixes/route-domain-event-fracture-6a49e0ad/
+  - .cursor/rules/kintsugi-fracture-protocol.mdc
 ---
 
 # [FIX] route-domain-event — fractura sistémica
@@ -47,11 +50,16 @@ La causa física: relay IOTA sin centinela supervisado → `iota-immutable-publi
 
 La fractura `6a49e0ad310e` es **histórica** (pre-relay). Con relay activo y publisher alimentado, el pre-sellado no reproduce el error.
 
+### Remediación operativa (prompt_adjustment)
+
+Veredicto Mayeuta: touchpoint `.cursor/rules/kintsugi-fracture-protocol.mdc` (`alwaysApply: true`) — detener entrega ante colapso, escalado Kintsugi, notificación al Vértice Biológico. Fix documental: `docs/fixes/route-domain-event-fracture-6a49e0ad/`.
+
 ## Criterio de cierre
 
 - [x] Causa raíz resuelta (relay supervisado — Kaizen DLT)
-- [x] Documentado en `validacion.md` del feature
-- [x] Este TODO movido a `docs/todos/done/`
+- [x] `prompt_adjustment` materializado (regla operador IA)
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/` (sin copia stale en `pending/`)
 
 ## Conclusión Analítica y Propuesta Evolutiva
 
