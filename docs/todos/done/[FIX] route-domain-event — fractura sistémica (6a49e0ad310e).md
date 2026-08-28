@@ -13,7 +13,8 @@ priority: alta
 process: bug-fix
 incident_ref: "System_Fracture_Detected — 6a49e0ad310e"
 resolution_ref: docs/todos/done/[KAIZEN] Aduana DLT — relay IOTA supervisado y causa real en anclaje batch.md
-merge_commit: ecd84387db7408e46de6a153de799b5505f32b06
+merge_commit: 464ea3bd3718dc545446c7d1af36be2822e7c5fb
+merged_pr: 210
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
