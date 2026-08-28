@@ -29,6 +29,6 @@ Contrato normativo de la familia: `daemons-contract.md` (no constituye un Centin
 
 ## Integridad (última pasada)
 
-- **Sincronización:** cinco Centinelas catalogados (event-watcher, event-sweeper, telegram-watcher, github-bridge-watcher, email-watcher).
+- **Sincronización:** 6 Centinelas catalogados (iota-publish-relay, event-watcher, event-sweeper, telegram-watcher, github-bridge-watcher, email-watcher).
 - **Metadatos:** columnas alineadas a `daemons-contract.md` §11.
 

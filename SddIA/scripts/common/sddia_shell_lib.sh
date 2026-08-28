@@ -104,7 +104,11 @@ _sddia_load_vault() {
       elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
         value="${value:1:${#value}-2}"
       fi
-      export "$key=$value"
+      if [[ "$key" == SDDIA_LAB_SIMULATE_IOTA || "$key" == SDDIA_IOTA_TIMEOUT_SECONDS ]]; then
+        export "$key=$value"
+      elif [[ -z "${!key+x}" ]]; then
+        export "$key=$value"
+      fi
     done < "$file"
   done
 }

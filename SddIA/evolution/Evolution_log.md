@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `f66bad66-2861-4603-b790-843859dd46a2` | 2026-08-28 | Kaizen init lab feature: techo/entierro agent_runtime, relevo IDE, paridad bóveda, execution_id, circuito daemon, higiene WT y snapshot todos. | CANONICO | `SddIA/evolution/f66bad66-2861-4603-b790-843859dd46a2.md` |
 | `1243c58b-8e93-4897-ba3e-3efc26564673` | 2026-08-27 | Kaizen aduana DLT: centinela iota-publish-relay, causa real batch, rescate Merkle 28 eventos | CANONICO | `SddIA/evolution/1243c58b-8e93-4897-ba3e-3efc26564673.md` |
 | `07dc027a-fdb5-487a-9fea-1a5dd67d38ca` | 2026-08-27 | Kaizen evolution gate fidelidad HEAD + evolution-rehash + DA-6 veto CI polling | CANONICO | `SddIA/evolution/07dc027a-fdb5-487a-9fea-1a5dd67d38ca.md` |
 | `b7e4a91c-2f5d-4c8b-9e1a-6d3f0a8b2c7e` | 2026-08-27 | Rehab accept-pr PPR #203: fail_soft sync post-merge; Cerbero A1 laudo #203 (olas A1+A2). | CANONICO | `SddIA/evolution/b7e4a91c-2f5d-4c8b-9e1a-6d3f0a8b2c7e.md` |

@@ -194,6 +194,36 @@ pub fn append_row(index_path: &Path, row: &str, name: &str) -> Result<(), String
         .map_err(|e| e.to_string())
 }
 
+/// Sincroniza el censo del pie de `daemons/index.md` con las filas del catálogo (L-INDEX-CENSUS).
+pub fn sync_daemons_index_census(index_path: &Path) -> Result<(), String> {
+    if !index_path.is_file() {
+        return Ok(());
+    }
+    let mut text = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+    let mut names: Vec<String> = Vec::new();
+    for line in text.lines() {
+        let t = line.trim();
+        if !t.starts_with("| `") || !t.contains(".md`") {
+            continue;
+        }
+        if let Some(start) = t.find("| `") {
+            let rest = &t[start + 3..];
+            if let Some(end) = rest.find(".md`") {
+                names.push(rest[..end].to_string());
+            }
+        }
+    }
+    let n = names.len();
+    let list = names.join(", ");
+    let sync_line = format!("- **Sincronización:** {n} Centinelas catalogados ({list}).");
+    if let Some(idx) = text.find("- **Sincronización:**") {
+        if let Some(end) = text[idx..].find('\n') {
+            text.replace_range(idx..idx + end, &sync_line);
+        }
+    }
+    fs::write(index_path, text).map_err(|e| e.to_string())
+}
+
 pub fn sha256_phases_integrity(phases: &Value) -> String {
     let canon = canon_json_sorted(phases);
     let digest = Sha256::digest(canon.as_bytes());
@@ -265,11 +295,13 @@ pub struct ProcessPhasesPatchResult {
 }
 
 /// Update canónico: reemplaza `phases` + bump version + `hash_signature`.
-/// Preserva uuid/name/inputs/outputs/phase_invocations/context/workspace_template y cuerpo MD.
+/// Preserva uuid/name/outputs/phase_invocations/context/workspace_template y cuerpo MD.
+/// Si `inputs` es `Some`, reemplaza la clave `inputs` del frontmatter.
 pub fn patch_process_phases_update(
     process_path: &Path,
     phases: &Value,
     process_version: Option<&str>,
+    inputs: Option<&Value>,
 ) -> Result<ProcessPhasesPatchResult, String> {
     if !phases.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
         return Err("process_phases debe ser array no vacío".into());
@@ -307,6 +339,9 @@ pub fn patch_process_phases_update(
     let new_hash = sha256_phases_integrity(phases);
 
     map.insert("phases".into(), phases.clone());
+    if let Some(ins) = inputs {
+        map.insert("inputs".into(), ins.clone());
+    }
     map.insert("version".into(), Value::String(new_version.clone()));
     map.insert("hash_signature".into(), Value::String(new_hash.clone()));
 
@@ -410,6 +445,20 @@ mod tests {
     fn canon_json_sorted_matches_python_separators() {
         let v = json!({"b": 1, "a": {"z": 2, "y": 3}});
         assert_eq!(canon_json_sorted(&v), r#"{"a":{"y":3,"z":2},"b":1}"#);
+    }
+
+    #[test]
+    fn sync_daemons_index_census_updates_footer() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let index = tmp.path().join("index.md");
+        fs::write(
+            &index,
+            "| Archivo fuente | uuid | name |\n|------|------|------|\n| `a.md` | u1 | a |\n| `b.md` | u2 | b |\n\n## Integridad\n\n- **Sincronización:** uno Centinelas.\n",
+        )
+        .unwrap();
+        sync_daemons_index_census(&index).unwrap();
+        let text = fs::read_to_string(&index).unwrap();
+        assert!(text.contains("2 Centinelas catalogados (a, b)"));
     }
 
     #[test]
