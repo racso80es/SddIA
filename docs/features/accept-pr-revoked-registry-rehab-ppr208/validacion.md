@@ -8,7 +8,7 @@ agents: argos
 branch: refactor/accept-pr-revoked-registry-rehab-ppr208
 branch_name: refactor/accept-pr-revoked-registry-rehab-ppr208
 persist_ref: docs/features/accept-pr-revoked-registry-rehab-ppr208
-pbi_ref: docs/todos/done/PBI-PPR-208-ACCEPT-PR-REVOKED-REGISTRY.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #210).md
 document_id: PBI-PPR-208-ACCEPT-PR-REVOKED-REGISTRY
 uuid: d4f8e2a1-6c39-4b7e-9a05-1f3c8d7e6b20
 global: APTO
@@ -18,7 +18,6 @@ checks:
   AC-GIT-CLEAN: APTO
   AC-ONTO: APTO
   AC-DOC: APTO
-  T0-ASSERT-203: APTO
   DOC_CASCADE: APTO
   INSTANCE_OUT_OF_DIFF: APTO
 git_changes:
@@ -29,7 +28,7 @@ git_changes:
   - docs/features/accept-pr-revoked-registry-rehab-ppr208/implementation.md
   - docs/features/accept-pr-revoked-registry-rehab-ppr208/execution.md
   - docs/features/accept-pr-revoked-registry-rehab-ppr208/validacion.md
-  - docs/todos/done/PBI-PPR-208-ACCEPT-PR-REVOKED-REGISTRY.md
+  - docs/todos/done/[ARQUITECTURA] accept-pr — rehabilitación revoked_entities (PPR #210).md
   - SddIA/evolution/d4f8e2a1-6c39-4b7e-9a05-1f3c8d7e6b20.md
   - SddIA/evolution/Evolution_log.md
 ---
@@ -38,8 +37,7 @@ git_changes:
 
 **Veredicto:** `global: APTO` · `pbi_archived: true`
 
-- T0: motor #203 (fail_soft sync post-merge) **PASS**.
-- A1: `accept-pr` ∉ `revoked`/`permanent`; stats `healthy` · `structure_valid: true` · laudo #208.
-- Handoff PR #208: **fuera** (L-HANDOFF-F5).
-- Lateral `refactorization` ∈ `revoked`.
-- Diff PR: sin instancia Cerbero/Radamanto.
+- A1 instancia: `accept-pr` ∉ `revoked`/`permanent`; stats `healthy` · laudo #210 · `rehabilitated_at: 2026-08-28T06:13:50Z`.
+- Lateral `refactorization` ∈ `revoked` (no bloqueante).
+- Diff PR: **sin** `.SddIA/cerbero/` ni `.SddIA/radamanto/`.
+- Motor: intacto (L-NO-A2).
