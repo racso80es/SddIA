@@ -6,7 +6,7 @@ format: markdown
 version: "2.0.0"
 created: "2026-08-28"
 updated: "2026-08-28"
-status: pending
+status: listo_para_merge
 priority: media
 process: feature
 type: feature

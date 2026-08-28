@@ -8,10 +8,11 @@ status: deuda_tecnica
 type: deuda
 priority: alta
 process: null
+dispatch: false
 process_candidate: paciente0-deploy
 process_candidate_class: process
 created: "2026-08-25"
-updated: "2026-08-26"
+updated: "2026-08-28"
 instance_name_default: SddIA_AP
 config_source: /home/racso/Proyectos/.dev/.env
 instance_parent: /home/racso/Proyectos
