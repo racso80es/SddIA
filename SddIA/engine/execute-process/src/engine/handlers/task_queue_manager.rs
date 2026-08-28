@@ -1,6 +1,8 @@
 //! Handler nativo: task-queue-manager — triaje Kalma2 + despacho de ciclo hijo.
 
+use super::super::fractal::{load_fractal_dirs, write_fractal_event};
 use super::super::invoke_orchestrator::invoke_process_full_with_env;
+use super::super::persist_pec_correlation_proof;
 use super::super::residual_runner;
 use super::super::thermodynamic;
 use super::super::workspace::{
@@ -8,11 +10,18 @@ use super::super::workspace::{
 };
 use crate::core::resolver::load_process_def;
 use crate::envelope::OrchestratorEnvelope;
+use chrono::Utc;
+use serde::Deserialize;
 use serde_json::{json, Map, Value};
+use sha2::{Digest, Sha256};
 use std::fs::{self, OpenOptions};
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
+use std::time::SystemTime;
 use uuid::Uuid;
+
+const LOCK_CONTENT_GRACE_SECS: u64 = 2;
+const TQM_DISPATCH_DISCARDED_EVENT_TYPE: &str = "TQM_Dispatch_Discarded";
 
 const DISPATCHABLE: &[&str] = &["bug-fix", "feature", "refactorization"];
 
@@ -36,54 +45,300 @@ fn single_flight_dir(repo: &Path) -> PathBuf {
     repo.join(".SddIA/daemons/state/tqm-single-flight")
 }
 
-fn lock_pid_alive(path: &Path) -> bool {
-    let Ok(raw) = fs::read_to_string(path) else {
-        return false;
+fn normalize_rel(rel: &str) -> String {
+    let p = rel.trim().replace('\\', "/");
+    if let Some(stripped) = p.strip_prefix("./") {
+        stripped.to_string()
+    } else {
+        p
+    }
+}
+
+fn sha256_hex(input: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(input.as_bytes());
+    hex::encode(hasher.finalize())
+}
+
+struct LockIdentity {
+    lock_id: String,
+    lock_hex: String,
+    pbi_ref_normalized: String,
+}
+
+fn resolve_lock_identity(repo: &Path, pbi_ref: &str) -> Result<Option<LockIdentity>, String> {
+    let trimmed = pbi_ref.trim();
+    if trimmed.is_empty() || trimmed.contains("..") {
+        return Ok(None);
+    }
+    let norm_pbi = normalize_rel(trimmed);
+    if let Some(body) = load_pbi_body(repo, &norm_pbi) {
+        if let Some(doc_id) = extract_fm_string(&body, "document_id")
+            .or_else(|| extract_fm_string(&body, "uuid"))
+        {
+            let lock_id = format!("id:{doc_id}");
+            return Ok(Some(LockIdentity {
+                lock_hex: sha256_hex(&lock_id),
+                lock_id,
+                pbi_ref_normalized: norm_pbi,
+            }));
+        }
+    }
+    let lock_id = format!("path:{}", sha256_hex(&norm_pbi));
+    Ok(Some(LockIdentity {
+        lock_hex: sha256_hex(&lock_id),
+        lock_id,
+        pbi_ref_normalized: norm_pbi,
+    }))
+}
+
+#[derive(Debug, Deserialize)]
+struct LockPayload {
+    pid: u32,
+    #[serde(default)]
+    starttime: Option<String>,
+    #[serde(default)]
+    holder_correlation_id: Option<String>,
+}
+
+enum LockOccupancy {
+    Held,
+    Stale,
+}
+
+fn lock_mtime_age_secs(path: &Path) -> Option<u64> {
+    let modified = fs::metadata(path).ok()?.modified().ok()?;
+    let now = SystemTime::now();
+    now.duration_since(modified).ok().map(|d| d.as_secs())
+}
+
+#[cfg(target_os = "linux")]
+fn proc_starttime(pid: u32) -> Option<String> {
+    let stat = fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
+    let close = stat.rfind(')')?;
+    let after = stat.get(close + 2..)?;
+    let fields: Vec<&str> = after.split_whitespace().collect();
+    fields.get(19).map(|s| s.to_string())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn proc_starttime(_pid: u32) -> Option<String> {
+    None
+}
+
+#[cfg(unix)]
+fn signal_process_alive(pid: u32) -> bool {
+    unsafe { libc::kill(pid as i32, 0) == 0 }
+}
+
+#[cfg(not(unix))]
+fn signal_process_alive(_pid: u32) -> bool {
+    false
+}
+
+fn liveness_supported() -> bool {
+    cfg!(unix)
+}
+
+fn process_matches_lock(pid: u32, starttime: Option<&str>) -> Result<bool, String> {
+    if !liveness_supported() {
+        return Err("tqm-single-flight: liveness no soportada en esta plataforma".into());
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let proc_path = format!("/proc/{pid}");
+        if !Path::new(&proc_path).exists() {
+            return Ok(false);
+        }
+        if let Some(expected) = starttime.filter(|s| !s.is_empty()) {
+            return Ok(proc_starttime(pid).as_deref() == Some(expected));
+        }
+        return Ok(true);
+    }
+    #[cfg(all(unix, not(target_os = "linux")))]
+    {
+        eprintln!("[TQM-SF-LIVENESS] backend=kill0 pid={pid}");
+        return Ok(signal_process_alive(pid));
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = (pid, starttime);
+        Err("tqm-single-flight: liveness no soportada en esta plataforma".into())
+    }
+}
+
+fn parse_lock_payload(raw: &str) -> Option<LockPayload> {
+    if let Ok(v) = serde_json::from_str::<LockPayload>(raw.trim()) {
+        return Some(v);
+    }
+    let pid = raw.trim().parse::<u32>().ok()?;
+    Some(LockPayload {
+        pid,
+        starttime: None,
+        holder_correlation_id: None,
+    })
+}
+
+fn lock_occupancy(path: &Path) -> Result<LockOccupancy, String> {
+    let raw = fs::read_to_string(path).unwrap_or_default();
+    if raw.trim().is_empty() {
+        let age = lock_mtime_age_secs(path).unwrap_or(LOCK_CONTENT_GRACE_SECS + 1);
+        return Ok(if age <= LOCK_CONTENT_GRACE_SECS {
+            LockOccupancy::Held
+        } else {
+            LockOccupancy::Stale
+        });
+    }
+    let Some(payload) = parse_lock_payload(&raw) else {
+        let age = lock_mtime_age_secs(path).unwrap_or(LOCK_CONTENT_GRACE_SECS + 1);
+        return Ok(if age <= LOCK_CONTENT_GRACE_SECS {
+            LockOccupancy::Held
+        } else {
+            LockOccupancy::Stale
+        });
     };
-    let Ok(pid) = raw.trim().parse::<u32>() else {
-        return false;
-    };
-    Path::new(&format!("/proc/{pid}")).exists()
+    if process_matches_lock(payload.pid, payload.starttime.as_deref())? {
+        Ok(LockOccupancy::Held)
+    } else {
+        Ok(LockOccupancy::Stale)
+    }
+}
+
+fn read_holder_correlation_id(path: &Path) -> Option<String> {
+    let raw = fs::read_to_string(path).ok()?;
+    parse_lock_payload(&raw)
+        .and_then(|p| p.holder_correlation_id)
+        .filter(|s| !s.is_empty())
+}
+
+fn write_lock_payload(
+    file: &mut std::fs::File,
+    holder_correlation_id: Option<&str>,
+) -> Result<(), String> {
+    let starttime = proc_starttime(std::process::id());
+    let payload = json!({
+        "pid": std::process::id(),
+        "starttime": starttime,
+        "holder_correlation_id": holder_correlation_id.filter(|s| !s.is_empty()),
+    });
+    let line = serde_json::to_string(&payload).map_err(|e| e.to_string())?;
+    file.write_all(line.as_bytes())
+        .map_err(|e| format!("tqm-single-flight write: {e}"))?;
+    file.sync_all()
+        .map_err(|e| format!("tqm-single-flight sync: {e}"))
 }
 
 fn try_acquire_single_flight(
     repo: &Path,
-    correlation_id: &str,
+    identity: &LockIdentity,
+    holder_correlation_id: Option<&str>,
 ) -> Result<Option<SingleFlightGuard>, String> {
+    if !liveness_supported() {
+        return Err("tqm-single-flight: liveness no soportada en esta plataforma".into());
+    }
     let dir = single_flight_dir(repo);
     fs::create_dir_all(&dir).map_err(|e| format!("tqm-single-flight mkdir: {e}"))?;
-    let path = dir.join(format!("{correlation_id}.lock"));
+    let path = dir.join(format!("{}.lock", identity.lock_hex));
     for _ in 0..3 {
         match OpenOptions::new().write(true).create_new(true).open(&path) {
             Ok(mut f) => {
-                let _ = writeln!(f, "{}", std::process::id());
+                write_lock_payload(&mut f, holder_correlation_id)?;
                 return Ok(Some(SingleFlightGuard { path }));
             }
-            Err(e) if e.kind() == ErrorKind::AlreadyExists => {
-                if lock_pid_alive(&path) {
-                    return Ok(None);
+            Err(e) if e.kind() == ErrorKind::AlreadyExists => match lock_occupancy(&path)? {
+                LockOccupancy::Held => return Ok(None),
+                LockOccupancy::Stale => {
+                    let _ = fs::remove_file(&path);
                 }
-                let _ = fs::remove_file(&path);
-            }
+            },
             Err(e) => return Err(format!("tqm-single-flight lock: {e}")),
         }
     }
     Ok(None)
 }
 
+fn persist_single_flight_hit_proof(
+    repo: &Path,
+    identity: &LockIdentity,
+    holder_correlation_id: Option<&str>,
+    discarded_correlation_id: Option<&str>,
+) -> Result<String, String> {
+    let dir = persist_pec_correlation_proof::resolve_eda_proofs_dir(repo).join("tqm-single-flight");
+    fs::create_dir_all(&dir).map_err(|e| format!("tqm-single-flight proof mkdir: {e}"))?;
+    let path = dir.join(format!("{}.json", identity.lock_hex));
+    let payload = json!({
+        "kind": "tqm-single-flight-hit",
+        "timestamp": Utc::now().to_rfc3339(),
+        "pbi_ref": identity.pbi_ref_normalized,
+        "lock_key": identity.lock_id,
+        "lock_hex": identity.lock_hex,
+        "holder_correlation_id": holder_correlation_id.filter(|s| !s.is_empty()),
+        "discarded_correlation_id": discarded_correlation_id.filter(|s| !s.is_empty()),
+        "reason": "single_flight_pbi",
+    });
+    fs::write(
+        &path,
+        serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| format!("tqm-single-flight proof write: {e}"))?;
+    Ok(path
+        .strip_prefix(repo)
+        .unwrap_or(&path)
+        .to_string_lossy()
+        .replace('\\', "/"))
+}
+
+fn emit_single_flight_discarded_event(
+    repo: &Path,
+    identity: &LockIdentity,
+    holder_correlation_id: Option<&str>,
+    discarded_correlation_id: Option<&str>,
+) -> Result<Value, String> {
+    let (_, orch_dir, _, _) = load_fractal_dirs(repo);
+    let event_id = Uuid::new_v4().to_string();
+    let payload = json!({
+        "pbi_ref": identity.pbi_ref_normalized,
+        "lock_key": identity.lock_id,
+        "holder_correlation_id": holder_correlation_id.filter(|s| !s.is_empty()),
+        "discarded_correlation_id": discarded_correlation_id.filter(|s| !s.is_empty()),
+        "reason": "single_flight_pbi",
+    });
+    let event = json!({
+        "event_id": event_id,
+        "event_type": TQM_DISPATCH_DISCARDED_EVENT_TYPE,
+        "event_family": "orchestration",
+        "timestamp": Utc::now().to_rfc3339(),
+        "emitter_agent": "task-queue-manager",
+        "correlation_id": discarded_correlation_id.filter(|s| !s.is_empty()),
+        "payload": payload,
+        "delivery_state": {},
+    });
+    write_fractal_event(repo, &event, &orch_dir)
+}
+
 fn single_flight_hit_envelope(
     process: &str,
-    correlation_id: &str,
+    discarded_correlation_id: Option<&str>,
+    holder_correlation_id: Option<&str>,
     pbi: Option<String>,
+    identity: &LockIdentity,
+    proof_path: &str,
+    orchestration: Option<Value>,
 ) -> OrchestratorEnvelope {
     OrchestratorEnvelope {
         success: true,
         status_code: 0,
         data: Some(json!({
             "dispatched_process": process,
-            "correlation_id": correlation_id,
+            "correlation_id": discarded_correlation_id,
+            "holder_correlation_id": holder_correlation_id,
             "pbi_ref": pbi,
+            "lock_key": identity.lock_id,
+            "lock_hex": identity.lock_hex,
             "single_flight_hit": true,
+            "reason": "single_flight_pbi",
+            "proof_path": proof_path,
+            "orchestration": orchestration,
             "handler": "task-queue-manager-kalma2",
         })),
         error: None,
@@ -97,7 +352,7 @@ fn single_flight_hit_envelope(
             }, {
                 "phase_name": "Despacho",
                 "status": "skipped",
-                "reason": "single-flight correlation_id",
+                "reason": "single_flight_pbi",
             }],
         })),
         exit_code: 0,
@@ -406,10 +661,36 @@ fn dispatch_child(
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty());
-    let _sf_guard = if let Some(cid) = correlation_id {
-        match try_acquire_single_flight(repo, cid)? {
+    let lock_identity = if let Some(ref pbi_ref) = pbi {
+        resolve_lock_identity(repo, pbi_ref)?
+    } else {
+        None
+    };
+    let _sf_guard = if let Some(ref identity) = lock_identity {
+        match try_acquire_single_flight(repo, identity, correlation_id)? {
             Some(g) => Some(g),
-            None => return Ok(single_flight_hit_envelope(process, cid, pbi.clone())),
+            None => {
+                let lock_path = single_flight_dir(repo).join(format!("{}.lock", identity.lock_hex));
+                let holder = read_holder_correlation_id(&lock_path);
+                let proof_path =
+                    persist_single_flight_hit_proof(repo, identity, holder.as_deref(), correlation_id)?;
+                let orchestration = emit_single_flight_discarded_event(
+                    repo,
+                    identity,
+                    holder.as_deref(),
+                    correlation_id,
+                )
+                .ok();
+                return Ok(single_flight_hit_envelope(
+                    process,
+                    correlation_id,
+                    holder.as_deref(),
+                    pbi.clone(),
+                    identity,
+                    &proof_path,
+                    orchestration,
+                ));
+            }
         }
     } else {
         None
@@ -445,6 +726,15 @@ fn dispatch_child(
         .and_then(|v| v.as_i64())
         .unwrap_or(if ok { 0 } else { 1 }) as i32;
     let mut child_data = child.get("data").cloned().unwrap_or(json!({}));
+    if child_data
+        .get("detached")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return Err(
+            "tqm-single-flight: hijo detached con guard activo (invariante R1)".to_string(),
+        );
+    }
     if let Some(obj) = child_data.as_object_mut() {
         obj.insert("pbi_body_loaded".into(), json!(pbi_loaded));
     }
@@ -518,6 +808,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::cli_detach;
 
     #[test]
     fn extract_pbi_with_spaces_and_emdash() {
@@ -594,15 +885,125 @@ mod tests {
     }
 
     #[test]
-    fn single_flight_second_acquire_hits_while_guard_lives() {
-        let dir = std::env::temp_dir().join(format!("sddia-sf-{}", Uuid::new_v4()));
-        let cid = "dcb9efed-2268-4298-8108-7a55cf4db323";
-        let g1 = try_acquire_single_flight(&dir, cid)
+    fn dispatchable_processes_not_in_cli_detach_allowlist() {
+        let policy = cli_detach::DetachPolicy {
+            foreground: false,
+            force_detach: false,
+            allowlist: vec!["pull-request-review".into()],
+        };
+        for process in DISPATCHABLE {
+            assert!(
+                !policy.should_detach(process),
+                "{process} no debe estar en allowlist detach"
+            );
+        }
+    }
+
+    #[test]
+    fn lock_key_stable_for_path_variants() {
+        let dir = std::env::temp_dir().join(format!("sddia-sf-key-{}", Uuid::new_v4()));
+        let rel = "docs/todos/pending/[FIX] demo.md";
+        let full = dir.join(rel);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, "# demo\n").unwrap();
+        let a = resolve_lock_identity(&dir, rel)
+            .unwrap()
+            .expect("identity");
+        let b = resolve_lock_identity(&dir, &format!("./{rel}"))
+            .unwrap()
+            .expect("identity");
+        assert_eq!(a.lock_hex, b.lock_hex);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn lock_key_uses_document_id_across_pending_done() {
+        let dir = std::env::temp_dir().join(format!("sddia-sf-docid-{}", Uuid::new_v4()));
+        let pending = "docs/todos/pending/[KAIZEN] demo.md";
+        let done = "docs/todos/done/[KAIZEN] demo.md";
+        for rel in [pending, done] {
+            let full = dir.join(rel);
+            std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+            std::fs::write(
+                &full,
+                "---\ndocument_id: PBI-DEMO-LOCK\n---\n\n# demo\n",
+            )
+            .unwrap();
+        }
+        let pending_id = resolve_lock_identity(&dir, pending)
+            .unwrap()
+            .expect("pending");
+        let done_id = resolve_lock_identity(&dir, done).unwrap().expect("done");
+        assert_eq!(pending_id.lock_hex, done_id.lock_hex);
+        assert!(pending_id.lock_id.starts_with("id:"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn single_flight_same_pbi_different_correlation_ids() {
+        let dir = std::env::temp_dir().join(format!("sddia-sf-pbi-{}", Uuid::new_v4()));
+        let rel = "docs/todos/pending/[FIX] race.md";
+        let full = dir.join(rel);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, "---\ndocument_id: PBI-RACE\n---\n\n# race\n").unwrap();
+        let identity = resolve_lock_identity(&dir, rel).unwrap().expect("identity");
+        let g1 = try_acquire_single_flight(&dir, &identity, Some("cid-a"))
             .unwrap()
             .expect("first acquire");
-        assert!(try_acquire_single_flight(&dir, cid).unwrap().is_none());
+        assert!(try_acquire_single_flight(&dir, &identity, Some("cid-b"))
+            .unwrap()
+            .is_none());
         drop(g1);
-        assert!(try_acquire_single_flight(&dir, cid).unwrap().is_some());
+        assert!(try_acquire_single_flight(&dir, &identity, None)
+            .unwrap()
+            .is_some());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn single_flight_empty_recent_lock_not_purged() {
+        let dir = std::env::temp_dir().join(format!("sddia-sf-toctou-{}", Uuid::new_v4()));
+        let rel = "docs/todos/pending/[FIX] toctou.md";
+        let full = dir.join(rel);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, "# toctou\n").unwrap();
+        let identity = resolve_lock_identity(&dir, rel).unwrap().expect("identity");
+        let lock_dir = single_flight_dir(&dir);
+        std::fs::create_dir_all(&lock_dir).unwrap();
+        let lock_path = lock_dir.join(format!("{}.lock", identity.lock_hex));
+        std::fs::write(&lock_path, "").unwrap();
+        assert!(matches!(
+            lock_occupancy(&lock_path).unwrap(),
+            LockOccupancy::Held
+        ));
+        assert!(try_acquire_single_flight(&dir, &identity, Some("cid-b"))
+            .unwrap()
+            .is_none());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn single_flight_second_acquire_hits_while_guard_lives() {
+        let dir = std::env::temp_dir().join(format!("sddia-sf-{}", Uuid::new_v4()));
+        let rel = "docs/todos/pending/[FIX] guard.md";
+        let full = dir.join(rel);
+        std::fs::create_dir_all(full.parent().unwrap()).unwrap();
+        std::fs::write(&full, "---\ndocument_id: PBI-GUARD\n---\n\n# guard\n").unwrap();
+        let identity = resolve_lock_identity(&dir, rel).unwrap().expect("identity");
+        let g1 = try_acquire_single_flight(&dir, &identity, Some("dcb9efed-2268-4298-8108-7a55cf4db323"))
+            .unwrap()
+            .expect("first acquire");
+        assert!(try_acquire_single_flight(
+            &dir,
+            &identity,
+            Some("cc6d6e2c-b84b-40f9-ac01-acff25ed252e")
+        )
+        .unwrap()
+        .is_none());
+        drop(g1);
+        assert!(try_acquire_single_flight(&dir, &identity, Some("dcb9efed-2268-4298-8108-7a55cf4db323"))
+            .unwrap()
+            .is_some());
         let _ = std::fs::remove_dir_all(&dir);
     }
 

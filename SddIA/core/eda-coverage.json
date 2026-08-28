@@ -504,6 +504,12 @@
       "last_emitted_event": "Domain_Entity_Updated",
       "last_hash": "sha256:f7a6ef21856490f3ac9b69133f948dcf54066d3a05fa7c5dc1019fdd3a289938"
     },
+    "be28d7c5-18fd-4e08-9e53-e5e2bec63f16": {
+      "correlation_timestamp": "2026-08-28T10:09:49.870Z",
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:876a2aa15b6286ab195282bdd955b78a215d97cc85ff39b0259a6ca0d20d1b95"
+    },
     "c0d71f2b-c1c1-4c56-8f74-2f4f41b24c4f": {
       "correlation_timestamp": "2026-05-25T17:39:08+00:00",
       "is_covered": true,
