@@ -4,17 +4,62 @@
 //! invocan ese CLI (JSON stdin → última línea JSON stdout) en lugar de
 //! marcarse `simulated`.
 
+use crate::core::parser::parse_frontmatter_from_str;
 use serde_json::{json, Value};
+use std::fs;
 use std::io::Write;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::{Command, Output, Stdio};
+use std::thread;
+use std::time::Duration;
 
 const ENV_CMD: &str = "SDDIA_AGENT_RUNTIME_COMMAND";
+const ENV_RELAY: &str = "SDDIA_AGENT_RELAY_IDE";
+const ENV_DEPTH: &str = "SDDIA_AGENT_RUNTIME_DEPTH";
+const ENV_TIMEOUT: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS";
+const ENV_TIMEOUT_EXEC: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION";
+const DEFAULT_TIMEOUT_SECS: u64 = 660;
+const KILL_GRACE_MS: u64 = 500;
+
+fn env_truthy(key: &str) -> bool {
+    std::env::var(key)
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+        .unwrap_or(false)
+}
+
+fn lab_relay_active() -> bool {
+    env_truthy(ENV_RELAY)
+}
+
+fn agent_runtime_depth() -> u32 {
+    std::env::var(ENV_DEPTH)
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(0)
+}
 
 pub fn is_configured() -> bool {
+    if lab_relay_active() {
+        return false;
+    }
     std::env::var(ENV_CMD)
         .map(|v| !v.trim().is_empty())
         .unwrap_or(false)
+}
+
+fn resolve_timeout_secs(phase_name: &str) -> u64 {
+    let phase_l = phase_name.to_lowercase();
+    if phase_l.starts_with("ejecuc") {
+        if let Ok(v) = std::env::var(ENV_TIMEOUT_EXEC) {
+            if let Ok(n) = v.trim().parse::<u64>() {
+                return n;
+            }
+        }
+    }
+    std::env::var(ENV_TIMEOUT)
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(DEFAULT_TIMEOUT_SECS)
 }
 
 fn split_command(raw: &str) -> Result<Vec<String>, String> {
@@ -57,6 +102,64 @@ fn resolve_persist_ref_value(inputs: &Value, state: &Value) -> Value {
                 .filter(|v| v.as_str().map(|s| !s.trim().is_empty()).unwrap_or(false))
         })
         .unwrap_or(Value::Null)
+}
+
+fn resolve_execution_id(inputs: &Value, state: &Value) -> Option<String> {
+    inputs
+        .get("execution_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| {
+            state
+                .get("execution_id")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        })
+}
+
+/// Guard L-CONFLICT: artefactos con `execution_id` distinto del ciclo vivo.
+pub fn check_persist_execution_id_conflict(
+    repo: &Path,
+    persist_ref: &str,
+    live_id: &str,
+) -> Result<(), Vec<String>> {
+    let dir = repo.join(persist_ref);
+    if !dir.is_dir() {
+        return Ok(());
+    }
+    let mut conflicts = Vec::new();
+    let entries = fs::read_dir(&dir).map_err(|e| vec![e.to_string()])?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        if name == "_agent_handoff.md" || !name.ends_with(".md") {
+            continue;
+        }
+        let text = fs::read_to_string(&path).unwrap_or_default();
+        let fm = parse_frontmatter_from_str(&text).unwrap_or_default();
+        if let Some(existing) = fm.get("execution_id").and_then(|v| v.as_str()) {
+            let existing = existing.trim();
+            if !existing.is_empty() && existing != live_id {
+                conflicts.push(
+                    path.strip_prefix(repo)
+                        .map(|p| p.to_string_lossy().replace('\\', "/"))
+                        .unwrap_or_else(|_| path.display().to_string()),
+                );
+            }
+        }
+    }
+    if conflicts.is_empty() {
+        Ok(())
+    } else {
+        Err(conflicts)
+    }
 }
 
 fn agent_names(delegates: &[Value]) -> Vec<String> {
@@ -108,7 +211,6 @@ fn inject_runtime_evidence_from_state(payload: &mut Value, state: &Value) {
             re.insert("tech_checks".into(), checks.clone());
         }
     }
-    // Solo adjuntar objeto si hay señal nativa (evita ruido en fases sin Prep/Triaje).
     if git || formal || state.get("tech_checks").is_some() {
         obj.insert("runtime_evidence".into(), runtime_evidence);
     }
@@ -125,9 +227,76 @@ fn finish_agent_entry(mut entry: Value, process_name: &str, phase_name: &str) ->
     entry
 }
 
+fn build_agent_command(
+    bin: &str,
+    args: &[String],
+    repo: &Path,
+    depth: u32,
+) -> Command {
+    let mut cmd = Command::new(bin);
+    cmd.args(args)
+        .current_dir(repo)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .env(ENV_DEPTH, (depth + 1).to_string());
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        unsafe {
+            cmd.pre_exec(|| {
+                if libc::setpgid(0, 0) != 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+    }
+
+    cmd
+}
+
+#[cfg(unix)]
+fn kill_process_group(pid: u32) {
+    let pgid = pid as i32;
+    unsafe {
+        libc::kill(-pgid, libc::SIGTERM);
+    }
+    thread::sleep(Duration::from_millis(KILL_GRACE_MS));
+    unsafe {
+        libc::kill(-pgid, libc::SIGKILL);
+    }
+}
+
+#[cfg(not(unix))]
+fn kill_process_group(_pid: u32) {
+    // Best-effort en hosts no-Unix: el drop de Child intentará wait.
+}
+
+use std::sync::mpsc;
+
+fn wait_child_with_timeout(
+    child: std::process::Child,
+    timeout: Duration,
+) -> Result<Output, &'static str> {
+    let pid = child.id();
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let _ = tx.send(child.wait_with_output());
+    });
+    match rx.recv_timeout(timeout) {
+        Ok(Ok(out)) => Ok(out),
+        Ok(Err(_)) => Err("wait agent-runtime"),
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            kill_process_group(pid);
+            Err("agent-runtime-timeout")
+        }
+        Err(mpsc::RecvTimeoutError::Disconnected) => Err("wait agent-runtime"),
+    }
+}
+
 /// Invoca el CLI de runtime para una fase de agentes.
-/// Respuesta esperada (última línea JSON):
-/// `{ "success": bool, "data": { "status": "executed"|"awaiting_agents"|"failed", "message"?: str } }`
 pub fn invoke_agent_phase(
     repo: &Path,
     process_name: &str,
@@ -144,6 +313,19 @@ pub fn invoke_agent_phase(
     });
     if let Some(di) = &di_binding {
         entry["di_binding"] = di.clone();
+    }
+
+    if lab_relay_active() {
+        eprintln!("agent-runtime: lab-relay activo (bóveda ignorada)");
+        entry["status"] = json!("simulated");
+        entry["note"] = json!("SDDIA_AGENT_RELAY_IDE=1; relevo IDE");
+        return finish_agent_entry(entry, process_name, phase_name);
+    }
+
+    if agent_runtime_depth() >= 1 {
+        entry["status"] = json!("simulated");
+        entry["note"] = json!("reentry-guard: SDDIA_AGENT_RUNTIME_DEPTH>=1");
+        return finish_agent_entry(entry, process_name, phase_name);
     }
 
     let raw = match std::env::var(ENV_CMD) {
@@ -172,8 +354,21 @@ pub fn invoke_agent_phase(
         }
     };
 
+    let execution_id = resolve_execution_id(inputs, state);
+    let persist_ref_val = resolve_persist_ref_value(inputs, state);
+    if let (Some(live_id), Some(persist)) = (
+        execution_id.as_deref(),
+        persist_ref_val.as_str().filter(|s| !s.is_empty()),
+    ) {
+        if let Err(conflicts) = check_persist_execution_id_conflict(repo, persist, live_id) {
+            entry["status"] = json!("failed");
+            entry["error"] = json!("persist-execution-id-conflict");
+            entry["conflict_paths"] = json!(conflicts);
+            return finish_agent_entry(entry, process_name, phase_name);
+        }
+    }
+
     let agents = agent_names(delegates);
-    // G4: PPR inyecta `pr_branch`; runtime Kalma2 lee `branch_name`.
     let branch_name = inputs
         .get("branch_name")
         .and_then(|v| v.as_str())
@@ -189,14 +384,15 @@ pub fn invoke_agent_phase(
                 .map(|s| json!(s))
         })
         .unwrap_or(Value::Null);
-    let persist_ref = resolve_persist_ref_value(inputs, state);
+
     let mut payload = json!({
         "operation": "AGENT_PHASE",
         "process_name": process_name,
         "phase_name": phase_name,
         "agents": agents,
-        "persist_ref": persist_ref,
+        "persist_ref": persist_ref_val,
         "branch_name": branch_name,
+        "execution_id": execution_id,
         "correlation_id": inputs.get("correlation_id"),
         "pbi_ref": inputs.get("pbi_ref"),
         "inputs": inputs,
@@ -204,7 +400,6 @@ pub fn invoke_agent_phase(
             .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path"))),
         "repo_root": repo.display().to_string(),
     });
-    // L-STATE-FWD (PPR #136 residual): reenviar evidencia nativa #125 al payload agente.
     inject_runtime_evidence_from_state(&mut payload, state);
     if let Some(di) = di_binding {
         if let Some(obj) = payload.as_object_mut() {
@@ -212,14 +407,8 @@ pub fn invoke_agent_phase(
         }
     }
 
-    let mut child = match Command::new(&bin)
-        .args(&args)
-        .current_dir(repo)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-    {
+    let depth = agent_runtime_depth();
+    let mut child = match build_agent_command(&bin, &args, repo, depth).spawn() {
         Ok(c) => c,
         Err(e) => {
             entry["status"] = json!("failed");
@@ -237,11 +426,18 @@ pub fn invoke_agent_phase(
         }
     }
 
-    let out = match child.wait_with_output() {
+    let timeout_secs = resolve_timeout_secs(phase_name);
+    let out = match wait_child_with_timeout(child, Duration::from_secs(timeout_secs)) {
         Ok(o) => o,
+        Err("agent-runtime-timeout") => {
+            entry["status"] = json!("failed");
+            entry["error"] = json!("agent-runtime-timeout");
+            entry["timeout_secs"] = json!(timeout_secs);
+            return finish_agent_entry(entry, process_name, phase_name);
+        }
         Err(e) => {
             entry["status"] = json!("failed");
-            entry["error"] = json!(format!("wait agent-runtime: {e}"));
+            entry["error"] = json!(e);
             return finish_agent_entry(entry, process_name, phase_name);
         }
     };
@@ -307,7 +503,6 @@ pub fn invoke_agent_phase(
         entry["error"] = json!(err);
     }
     if !out.status.success() && normalized == "executed" {
-        // CLI non-zero: no promover a executed silencioso
         entry["status"] = json!("failed");
         entry["error"] = json!(format!(
             "agent-runtime exit {} pese a status executed",
@@ -323,10 +518,40 @@ mod tests {
     use super::*;
     use std::fs;
     use std::os::unix::fs::PermissionsExt;
+    use std::path::PathBuf;
+    use std::sync::Mutex;
+
+    static ENV_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
+        ENV_TEST_LOCK.lock().unwrap()
+    }
+
+    fn clear_agent_env() {
+        for key in [
+            ENV_CMD,
+            ENV_RELAY,
+            ENV_DEPTH,
+            ENV_TIMEOUT,
+            ENV_TIMEOUT_EXEC,
+        ] {
+            std::env::remove_var(key);
+        }
+    }
+
+    fn mock_script(dir: &Path, body: &str) -> PathBuf {
+        let script = dir.join("mock-agent.sh");
+        fs::write(&script, body).unwrap();
+        let mut perms = fs::metadata(&script).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&script, perms).unwrap();
+        script
+    }
 
     #[test]
     fn not_configured_returns_simulated() {
-        std::env::remove_var(ENV_CMD);
+        let _guard = env_lock();
+        clear_agent_env();
         let entry = invoke_agent_phase(
             Path::new("."),
             "bug-fix",
@@ -340,18 +565,99 @@ mod tests {
     }
 
     #[test]
+    fn relay_flag_forces_simulated_even_with_command() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-relay-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(
+            &dir,
+            "#!/bin/sh\necho '{\"success\":true,\"data\":{\"status\":\"executed\"}}'\n",
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        std::env::set_var(ENV_RELAY, "1");
+        let entry = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Ejecución",
+            &[json!("agent:tekton")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        std::env::remove_var(ENV_RELAY);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "simulated");
+        assert!(entry["note"]
+            .as_str()
+            .unwrap_or("")
+            .contains("SDDIA_AGENT_RELAY_IDE"));
+    }
+
+    #[test]
+    fn reentry_guard_skips_spawn() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-depth-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(
+            &dir,
+            "#!/bin/sh\necho '{\"success\":true,\"data\":{\"status\":\"executed\"}}'\n",
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        std::env::set_var(ENV_DEPTH, "1");
+        let entry = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Ejecución",
+            &[json!("agent:tekton")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        std::env::remove_var(ENV_DEPTH);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "simulated");
+        assert!(entry["note"].as_str().unwrap_or("").contains("reentry-guard"));
+    }
+
+    #[test]
+    fn timeout_kills_hanging_command() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-to-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(&dir, "#!/bin/sh\nsleep 30\n");
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        std::env::set_var(ENV_TIMEOUT, "1");
+        let entry = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Estabilización de Requisitos",
+            &[json!("agent:mayeuta")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        std::env::remove_var(ENV_TIMEOUT);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "failed");
+        assert_eq!(entry["error"], "agent-runtime-timeout");
+    }
+
+    #[test]
     fn configured_cli_marks_executed() {
+        let _guard = env_lock();
+        clear_agent_env();
         let dir = std::env::temp_dir().join(format!("sddia-agent-rt-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&dir).unwrap();
-        let script = dir.join("mock-agent.sh");
-        fs::write(
-            &script,
+        let script = mock_script(
+            &dir,
             "#!/bin/sh\ncat >/dev/null\necho '{\"success\":true,\"data\":{\"status\":\"executed\",\"message\":\"ok\"}}'\n",
-        )
-        .unwrap();
-        let mut perms = fs::metadata(&script).unwrap().permissions();
-        perms.set_mode(0o755);
-        fs::set_permissions(&script, perms).unwrap();
+        );
 
         std::env::set_var(ENV_CMD, script.display().to_string());
         let entry = invoke_agent_phase(
@@ -371,18 +677,48 @@ mod tests {
     }
 
     #[test]
-    fn configured_cli_can_await() {
-        let dir = std::env::temp_dir().join(format!("sddia-agent-rt-aw-{}", uuid::Uuid::new_v4()));
-        fs::create_dir_all(&dir).unwrap();
-        let script = dir.join("mock-agent.sh");
+    fn execution_id_conflict_detected() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-conf-{}", uuid::Uuid::new_v4()));
+        let persist = dir.join("docs/features/x");
+        fs::create_dir_all(&persist).unwrap();
         fs::write(
-            &script,
-            "#!/bin/sh\ncat >/dev/null\necho '{\"success\":true,\"data\":{\"status\":\"awaiting_agents\"}}'\n",
+            persist.join("plan.md"),
+            "---\nexecution_id: deadbeef-dead-beef-dead-beefdeadbeef\n---\n",
         )
         .unwrap();
-        let mut perms = fs::metadata(&script).unwrap().permissions();
-        perms.set_mode(0o755);
-        fs::set_permissions(&script, perms).unwrap();
+        let script = mock_script(
+            &dir,
+            "#!/bin/sh\necho '{\"success\":true,\"data\":{\"status\":\"executed\"}}'\n",
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let live = "80a3ca0d-80c5-4662-ab12-2afe757478c8";
+        let entry = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Diseño de Blueprint",
+            &[json!("agent:dedalo")],
+            &json!({"persist_ref": "docs/features/x", "execution_id": live}),
+            &json!({"execution_id": live}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "failed");
+        assert_eq!(entry["error"], "persist-execution-id-conflict");
+    }
+
+    #[test]
+    fn configured_cli_can_await() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-rt-aw-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(
+            &dir,
+            "#!/bin/sh\ncat >/dev/null\necho '{\"success\":true,\"data\":{\"status\":\"awaiting_agents\"}}'\n",
+        );
 
         std::env::set_var(ENV_CMD, script.display().to_string());
         let entry = invoke_agent_phase(
@@ -402,22 +738,16 @@ mod tests {
 
     #[test]
     fn branch_name_coalesces_from_pr_branch() {
+        let _guard = env_lock();
+        clear_agent_env();
         let dir = std::env::temp_dir().join(format!("sddia-agent-rt-br-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&dir).unwrap();
-        let script = dir.join("mock-agent.sh");
-        // Echo stdin last line of interest via capturing branch from stdin JSON is heavy;
-        // assert payload construction by re-reading ENV path: we check status executed and
-        // that invoke succeeds with only pr_branch set (no panic / null-only path).
-        fs::write(
-            &script,
+        let script = mock_script(
+            &dir,
             r#"#!/bin/sh
 python3 -c 'import json,sys; doc=json.load(sys.stdin); assert doc.get("branch_name")=="feat/from-pr", doc; print(json.dumps({"success":True,"data":{"status":"executed","message":"branch-ok"}}))'
 "#,
-        )
-        .unwrap();
-        let mut perms = fs::metadata(&script).unwrap().permissions();
-        perms.set_mode(0o755);
-        fs::set_permissions(&script, perms).unwrap();
+        );
 
         std::env::set_var(ENV_CMD, script.display().to_string());
         let entry = invoke_agent_phase(
@@ -436,12 +766,41 @@ python3 -c 'import json,sys; doc=json.load(sys.stdin); assert doc.get("branch_na
     }
 
     #[test]
+    fn payload_includes_execution_id() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-eid-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(
+            &dir,
+            r#"#!/bin/sh
+python3 -c 'import json,sys; doc=json.load(sys.stdin); assert doc.get("execution_id")=="live-id", doc; print(json.dumps({"success":True,"data":{"status":"executed"}}))'
+"#,
+        );
+
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Ejecución",
+            &[json!("agent:tekton")],
+            &json!({"execution_id": "live-id"}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "executed", "{entry}");
+    }
+
+    #[test]
     fn runtime_evidence_forwards_native_state_flags() {
+        let _guard = env_lock();
+        clear_agent_env();
         let dir = std::env::temp_dir().join(format!("sddia-agent-rt-ev-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&dir).unwrap();
-        let script = dir.join("mock-agent.sh");
-        fs::write(
-            &script,
+        let script = mock_script(
+            &dir,
             r#"#!/bin/sh
 python3 -c '
 import json,sys
@@ -456,11 +815,7 @@ assert (re.get("tech_checks") or {}).get("TECH_FORMAL_EXECUTE_PROCESS")=="APTO",
 print(json.dumps({"success":True,"data":{"status":"executed","message":"evidence-fwd-ok"}}))
 '
 "#,
-        )
-        .unwrap();
-        let mut perms = fs::metadata(&script).unwrap().permissions();
-        perms.set_mode(0o755);
-        fs::set_permissions(&script, perms).unwrap();
+        );
 
         std::env::set_var(ENV_CMD, script.display().to_string());
         let entry = invoke_agent_phase(
@@ -501,19 +856,16 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"evidence
 
     #[test]
     fn ppr_doc_triage_agent_failed_is_fail_soft() {
+        let _guard = env_lock();
+        clear_agent_env();
         let dir = std::env::temp_dir().join(format!("sddia-agent-rt-fs-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&dir).unwrap();
-        let script = dir.join("mock-agent.sh");
-        fs::write(
-            &script,
+        let script = mock_script(
+            &dir,
             r#"#!/bin/sh
 python3 -c 'import json; print(json.dumps({"success":False,"data":{"status":"failed","message":"timeout"}}))'
 "#,
-        )
-        .unwrap();
-        let mut perms = fs::metadata(&script).unwrap().permissions();
-        perms.set_mode(0o755);
-        fs::set_permissions(&script, perms).unwrap();
+        );
         std::env::set_var(ENV_CMD, script.display().to_string());
         let soft = invoke_agent_phase(
             &dir,

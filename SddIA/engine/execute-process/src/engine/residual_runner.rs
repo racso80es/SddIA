@@ -743,11 +743,6 @@ fn execute_phase_body_residual(
                 entry["forge"] = json!(true);
                 return entry;
             }
-            Err(e) if process_name == "daemon-creator" => {
-                entry["status"] = json!("simulated");
-                entry["note"] = json!(format!("daemon-creator forja pendiente porte: {e}"));
-                return entry;
-            }
             Err(e) => {
                 entry["status"] = json!("failed");
                 entry["error"] = json!(e);

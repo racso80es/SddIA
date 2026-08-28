@@ -8,6 +8,11 @@ const CONFIG_LOG: &str =
 
 const VAULT_PRECEDENCE_KEYS: &[&str] = &["SDDIA_LAB_SIMULATE_IOTA", "SDDIA_IOTA_TIMEOUT_SECONDS"];
 
+/// Claves de precedencia de bóveda (paridad `_sddia_load_vault` en `sddia_shell_lib.sh`).
+pub fn vault_precedence_keys() -> &'static [&'static str] {
+    VAULT_PRECEDENCE_KEYS
+}
+
 /// Carga bóveda global → local; aplica al entorno del proceso (paridad `env_loader.py`).
 pub fn load_hierarchical_env(repo_root: &Path) -> Result<HashMap<String, String>, String> {
     let merged = load_hierarchical_env_merged(repo_root)?;

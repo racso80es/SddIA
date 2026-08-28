@@ -14,7 +14,7 @@ use std::time::Instant;
 use uuid::Uuid;
 
 const PILOT_CLASSES: &[&str] = &[
-    "skill", "event", "process", "agent", "tool", "action", "norm", "codex", "suite",
+    "skill", "event", "process", "agent", "tool", "action", "norm", "codex", "suite", "daemon",
 ];
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
@@ -44,6 +44,7 @@ fn creator_name(class: &str) -> Option<&'static str> {
         "codex" => Some("codex-creator"),
         "event" => Some("event-creator"),
         "suite" => Some("suite-creator"),
+        "daemon" => Some("daemon-creator"),
         _ => None,
     }
 }
@@ -59,6 +60,7 @@ fn dir_by_class(class: &str) -> Option<&'static str> {
         "codex" => Some("SddIA/library/codexes"),
         "event" => Some("SddIA/events"),
         "suite" => Some("SddIA/suites"),
+        "daemon" => Some("SddIA/daemons"),
         _ => None,
     }
 }

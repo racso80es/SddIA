@@ -79,6 +79,73 @@ fn env_truthy(key: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn porcelain_path_from_line(line: &str) -> Option<String> {
+    let line = line.trim_end();
+    if line.is_empty() {
+        return None;
+    }
+    let raw = if let Some(rest) = line.strip_prefix("?? ") {
+        rest.trim()
+    } else if line.len() >= 4 {
+        let rest = line[3..].trim();
+        if let Some(idx) = rest.find(" -> ") {
+            rest[idx + 4..].trim()
+        } else {
+            rest
+        }
+    } else {
+        return None;
+    };
+    let path = raw.trim_matches('"').replace('\\', "/");
+    if path.is_empty() {
+        None
+    } else {
+        Some(path)
+    }
+}
+
+fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
+    let norm = path.trim_start_matches("./");
+    if norm == persist_ref.trim_start_matches("./")
+        || norm.starts_with(&format!("{}/", persist_ref.trim_start_matches("./")))
+    {
+        return true;
+    }
+    if let Some(pbi) = pbi_ref {
+        if norm == pbi.trim_start_matches("./") {
+            return true;
+        }
+    }
+    false
+}
+
+fn dirty_paths_outside_scope(
+    repo: &Path,
+    persist_ref: &str,
+    pbi_ref: Option<&str>,
+) -> Result<Vec<String>, String> {
+    if env_truthy("SDDIA_LAB_ALLOW_DIRTY") {
+        return Ok(vec![]);
+    }
+    let status = super::capsules::invoke_git_manager(repo, "status", &json!({}))?;
+    let stdout = status
+        .get("gitStdout")
+        .or_else(|| status.get("stdout"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let mut dirty = Vec::new();
+    for line in stdout.lines() {
+        if let Some(path) = porcelain_path_from_line(line) {
+            if !path_in_scope(&path, persist_ref, pbi_ref) {
+                dirty.push(path);
+            }
+        }
+    }
+    dirty.sort();
+    dirty.dedup();
+    Ok(dirty)
+}
+
 fn phase_requires_git_sync(phase: &Value) -> bool {
     if let Some(caps) = phase.get("requires_capability").and_then(|v| v.as_array()) {
         for c in caps {
@@ -199,6 +266,14 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             },
         }));
     } else {
+        let dirty = dirty_paths_outside_scope(repo, &persist_ref, pbi_ref_meta)?;
+        if !dirty.is_empty() {
+            return Err(format!(
+                "dirty-worktree: cambios fuera de persist_ref/pbi_ref: {}",
+                dirty.join(", ")
+            ));
+        }
+
         let fetch = invoke_git_manager(repo, "fetch", &json!({"remote": "origin", "prune": true}))?;
         git_steps.push(json!({"op": "fetch", "result": fetch}));
 
@@ -255,8 +330,15 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         let pbi_line = pbi_ref_meta
             .map(|p| format!("pbi_ref: {p}\n"))
             .unwrap_or_default();
+        let execution_id_line = inputs
+            .get("execution_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|eid| format!("execution_id: \"{eid}\"\n"))
+            .unwrap_or_default();
         let body = format!(
-            "---\nfeature_name: {task_name}\ncreated: \"{created}\"\nprocess: {process_label}\nbranch_name: {branch_name}\npersist_ref: {persist_ref}\n{pbi_line}---\n\n# Objetivos — {task_name}\n\n## Misión\n\n{summary}\n\n## Alcance (manifiesto)\n\nInicialización de contexto vía orquestador nativo `execute-process` (laboratorio).\n\n## Ley aplicada\n\n- Git exclusivamente vía `skill:git-manager`.\n- Jerarquía: Acción → Agente → Skill → Tools.\n"
+            "---\nfeature_name: {task_name}\ncreated: \"{created}\"\nprocess: {process_label}\nbranch_name: {branch_name}\npersist_ref: {persist_ref}\n{pbi_line}{execution_id_line}---\n\n# Objetivos — {task_name}\n\n## Misión\n\n{summary}\n\n## Alcance (manifiesto)\n\nInicialización de contexto vía orquestador nativo `execute-process` (laboratorio).\n\n## Ley aplicada\n\n- Git exclusivamente vía `skill:git-manager`.\n- Jerarquía: Acción → Agente → Skill → Tools.\n"
         );
         fs::write(&objectives_path, body).map_err(|e| e.to_string())?;
     }

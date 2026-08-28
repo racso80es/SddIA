@@ -1,9 +1,9 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:48b0fe4735831530e001ee3a8558c9c1225bf1097b98d1de71128c12739b9955
+hash_signature: sha256:d4a6b778b8671653c8b8da02aa9508dc2c30b7cab4ceb24445f4692547de1682
 inputs:
-- entity_class: 'string; enum: process | agent | skill | tool | action | norm | codex | event | suite'
+- entity_class: 'string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon'
 - entity_name: string; identificador kebab-case de la entidad
 - lifecycle_operation: 'string; enum: create | update | delete'
 - semantic_seed: object|null; parámetros de forja para el creator hijo; ignorado en delete
@@ -20,7 +20,7 @@ outputs:
 phases:
 - delegates_to:
   - action:execute-process
-  intent: 'En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 9 clases (skill, event, process, agent, tool, action, norm, codex, suite).'
+  intent: 'En create/update, invocar action:execute-process con el *-creator según entity_class. Piloto S+: las 10 clases (skill, event, process, agent, tool, action, norm, codex, suite, daemon).'
   name: Delegación al creator
 - intent: 'Solo en delete: READ_FILE del artefacto para extraer uuid/version/hash_signature; DELETE_FILE del .md bajo directories.*.'
   name: Delete físico
@@ -34,7 +34,7 @@ phases:
   name: Sello universal
 porcentaje_de_exito: null
 uuid: 62f08bbd-e9ce-479d-8d1b-792684e1bd26
-version: 1.0.1
+version: 1.0.2
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -55,6 +55,7 @@ Proceso orquestador (**Gestor de Entidad**) que envuelve los `*-creator` del gen
 | `norm` | `norm-creator` | **Piloto** |
 | `codex` | `codex-creator` | **Piloto** |
 | `suite` | `suite-creator` | **Piloto** |
+| `daemon` | `daemon-creator` | **Piloto** |
 
 Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domain_Entity_*`).
 
@@ -135,6 +136,11 @@ Entradas bajo `SddIA/evolution/` **no** pasan por este proceso (no emiten `Domai
 | `atomic_nodes` | array obligatorio |
 | `suite_version` | default `1.0.0` |
 | `suites_contract_version` | default `1.0.0` |
+
+| Campo `semantic_seed` | Input `daemon-creator` |
+|-----------------------|------------------------|
+| `daemon_name` o `entity_name` | `daemon_name` |
+| `daemon_context`, `daemon_capabilities`, `daemon_execution` | según contrato daemons |
 
 5. Invocar `action:execute-process` con `process_name` canónico y `process_inputs` mapeados.
 6. Extraer del `execution_report` / outputs del hijo: `handoff_entity_uuid`, `handoff_hash_signature_new`, `handoff_hash_signature_old`, `handoff_version`.

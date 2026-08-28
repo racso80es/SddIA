@@ -184,6 +184,60 @@ fn parse_porcelain_paths(git_stdout: &str) -> Vec<String> {
         .collect()
 }
 
+fn should_preserve_untracked_todos(path: &str, pbi_ref: Option<&str>) -> bool {
+    let norm = path.trim_start_matches("./");
+    if !norm.starts_with("docs/todos/") {
+        return false;
+    }
+    if let Some(pbi) = pbi_ref {
+        if norm == pbi.trim_start_matches("./") {
+            return false;
+        }
+    }
+    true
+}
+
+fn porcelain_untracked_paths(git_stdout: &str) -> HashSet<String> {
+    let mut set = HashSet::new();
+    for line in git_stdout.lines() {
+        if let Some(rest) = line.strip_prefix("?? ") {
+            for p in parse_porcelain_paths(&format!("?? {rest}")) {
+                set.insert(p);
+            }
+        }
+    }
+    set
+}
+
+fn filter_snapshot_commit_files(
+    files: Vec<String>,
+    porcelain: &str,
+    pbi_ref: Option<&str>,
+) -> Vec<String> {
+    let untracked = porcelain_untracked_paths(porcelain);
+    files
+        .into_iter()
+        .filter(|p| !untracked.contains(p) || !should_preserve_untracked_todos(p, pbi_ref))
+        .collect()
+}
+
+fn porcelain_excluding_preserved_untracked_todos(porcelain: &str, pbi_ref: Option<&str>) -> String {
+    porcelain
+        .lines()
+        .filter(|line| {
+            if let Some(rest) = line.strip_prefix("?? ") {
+                if let Some(path) = parse_porcelain_paths(&format!("?? {rest}")).first() {
+                    if should_preserve_untracked_todos(path, pbi_ref) {
+                        return false;
+                    }
+                }
+            }
+            true
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 fn resolve_pr_body_file_dir(repo: &Path, inputs: &Value, state: &Value) -> Result<PathBuf, String> {
     if let Some(persist_ref) = str_field(inputs, "persist_ref") {
         return Ok(repo.join(persist_ref).join(".tmp"));
@@ -331,8 +385,27 @@ pub fn capsule_delivery_snapshot_final_with_repo(
         }));
     }
 
-    let files = parse_porcelain_paths(&porcelain);
+    let pbi_ref = str_field(inputs, "pbi_ref");
+    let all_files = parse_porcelain_paths(&porcelain);
+    let files = filter_snapshot_commit_files(all_files.clone(), &porcelain, pbi_ref.as_deref());
     if files.is_empty() {
+        let remaining =
+            porcelain_excluding_preserved_untracked_todos(&porcelain, pbi_ref.as_deref());
+        if remaining.trim().is_empty() && !all_files.is_empty() {
+            if let Some(obj) = state.as_object_mut() {
+                if let Some(h) = &hash_before {
+                    obj.insert("snapshot_commit_hash".into(), h.clone());
+                }
+            }
+            return Ok(json!({
+                "status": "executed",
+                "handler": "delivery-snapshot-final",
+                "commit_hash": hash_before,
+                "branch": branch,
+                "consolidated": false,
+                "preserved_untracked_todos": true,
+            }));
+        }
         return Ok(delivery_phase_failed(
             "delivery-snapshot-final",
             "SNAPSHOT_DIRTY_SKIPPED",
@@ -357,7 +430,10 @@ pub fn capsule_delivery_snapshot_final_with_repo(
     }
 
     let status_after_data = invoke_git_manager(repo, "status", &json!({}))?;
-    let porcelain_after = git_porcelain_stdout(&status_after_data);
+    let porcelain_after = porcelain_excluding_preserved_untracked_todos(
+        &git_porcelain_stdout(&status_after_data),
+        pbi_ref.as_deref(),
+    );
     if !porcelain_after.trim().is_empty() {
         return Ok(delivery_phase_failed(
             "delivery-snapshot-final",
@@ -1208,6 +1284,22 @@ mod delivery_close_kaizen_tests {
                 "docs/fixes/kaizen-delivery-close-snapshot-pr-body".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn porcelain_excluding_preserved_untracked_todos_filters_ajeno() {
+        let stdout = "?? docs/todos/pending/[KAIZEN] otro.md\n M docs/features/x/objectives.md\n";
+        let out = porcelain_excluding_preserved_untracked_todos(stdout, None);
+        assert!(!out.contains("docs/todos/pending"));
+        assert!(out.contains("docs/features/x/objectives.md"));
+    }
+
+    #[test]
+    fn filter_snapshot_commit_files_skips_untracked_todos_ajeno() {
+        let porcelain = "?? docs/todos/pending/[KAIZEN] otro.md\n M docs/features/x/plan.md\n";
+        let all = parse_porcelain_paths(porcelain);
+        let files = filter_snapshot_commit_files(all, porcelain, None);
+        assert_eq!(files, vec!["docs/features/x/plan.md".to_string()]);
     }
 
     #[test]
