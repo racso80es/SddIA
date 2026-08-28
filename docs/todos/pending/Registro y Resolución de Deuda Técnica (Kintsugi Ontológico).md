@@ -17,6 +17,8 @@ depends_on: []
 related_pbis:
   - id: PBI-KAIZEN-FRACTURE-FANOUT-IDEMPOTENCIA
     rol: "Resolutor de ruta de PBI de fractura en Core. Este PBI NO duplica su alcance: consume el resolutor, no lo reimplementa."
+  - id: PBI-DT-FRACTURE-RESOLVER-SCAN-LINEAL
+    rol: "Primer habitante del portador de deuda no-fractura propuesto en CA4 (type: deuda + tech_debt_ids en pending/). Caso de prueba del formato antes de normarlo."
   - id: PBI-DT-PACIENTE0-DEPLOY-PROCESS
     rol: "Habitante actual de docs/todos/DeudaTecnica/; sujeto de reclasificación en CA3."
   - id: PBI-DT-PACIENTE0-UNDEPLOY-PROCESS
