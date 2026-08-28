@@ -533,6 +533,34 @@ fn enqueue_dlt_reanchor(repo: &Path, event_uuid: &str, path: &Path, error_trace:
     let _ = write_json_atomic(&target, &entry);
 }
 
+fn classify_batch_anchor_friction(causa: &str) -> (&'static str, String) {
+    let lower = causa.to_lowercase();
+    if causa.contains("capsule-stale-hash") || causa.contains("capsule-stale:") {
+        (
+            "F-CAPSULA-BINARIO-FOSIL",
+            format!("merkle-batch-preseal failed: {causa}"),
+        )
+    } else if lower.contains("iota-relay-unreachable")
+        || lower.contains("relay-unreachable")
+        || (lower.contains("relay") && lower.contains("health"))
+    {
+        (
+            "F-DLT-RELAY-SIN-SUPERVISOR",
+            format!("merkle-batch-preseal failed: {causa}"),
+        )
+    } else if lower.contains("campo obligatorio") || lower.contains("payload") {
+        (
+            "F-CAPSULA-CONTRATO-ENTRADA",
+            format!("merkle-batch-preseal failed: {causa}"),
+        )
+    } else {
+        (
+            "F-DLT-BATCH-ANCHOR",
+            format!("merkle-batch-preseal failed: {causa}"),
+        )
+    }
+}
+
 fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
     let pending_rel = if let Ok(cfg) = super::workspace::load_paths_config(repo) {
         cfg.get("eda_bus")
@@ -545,14 +573,13 @@ fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
     };
     let pending = repo.join(&pending_rel);
     let _ = fs::create_dir_all(&pending);
+    let (friction_id, error_trace) = classify_batch_anchor_friction(causa);
     let payload = json!({
         "process_name": "route-domain-event",
-        "error_trace": format!(
-            "F-DLT-RELAY-SIN-SUPERVISOR: merkle-batch-preseal failed: {causa}"
-        ),
+        "error_trace": error_trace,
         "agent_emitter": "execute-process",
         "attempted_action": "merkle-batch-preseal",
-        "friction_id": "F-DLT-RELAY-SIN-SUPERVISOR",
+        "friction_id": friction_id,
     });
     let _ = write_pending_domain_event_file(
         repo,
@@ -1133,30 +1160,6 @@ pub(crate) fn dispatch_subscriber(
     if subscriber.get("tool").and_then(|v| v.as_str()) == Some("send-telegram-notification") {
         let message = build_telegram_message_from_event(event);
         let Some(message) = message else {
-            // #region agent log
-            {
-                let rec = json!({
-                    "sessionId": "478d0f",
-                    "hypothesisId": "D",
-                    "location": "route_domain_core.rs:telegram",
-                    "message": "telegram skipped-empty-message",
-                    "data": {
-                        "event_type": event.get("event_type"),
-                        "verdict": event.get("payload").and_then(|p| p.get("verdict")),
-                        "uid": event.get("payload").and_then(|p| p.get("message_uid"))
-                    },
-                    "timestamp": Utc::now().timestamp_millis(),
-                    "runId": "post-fix"
-                });
-                if let Ok(mut f) = fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open("/home/racso/Proyectos/SddIA/.cursor/debug-478d0f.log")
-                {
-                    let _ = writeln!(f, "{rec}");
-                }
-            }
-            // #endregion
             return (sid, "skipped-empty-message".into(), None, 0);
         };
         match invoke_send_telegram_notification(repo, &message) {

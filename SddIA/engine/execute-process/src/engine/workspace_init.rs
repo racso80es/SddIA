@@ -2,6 +2,8 @@
 
 use super::capsules::invoke_git_manager;
 use super::domain_profile::resolve_execution_profile;
+use super::git_porcelain;
+use super::route_domain_core::materialize_pending_domain_event;
 use super::workspace::{
     load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path,
 };
@@ -79,29 +81,25 @@ fn env_truthy(key: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn porcelain_path_from_line(line: &str) -> Option<String> {
-    let line = line.trim_end();
-    if line.is_empty() {
-        return None;
-    }
-    let raw = if let Some(rest) = line.strip_prefix("?? ") {
-        rest.trim()
-    } else if line.len() >= 4 {
-        let rest = line[3..].trim();
-        if let Some(idx) = rest.find(" -> ") {
-            rest[idx + 4..].trim()
-        } else {
-            rest
-        }
-    } else {
-        return None;
-    };
-    let path = raw.trim_matches('"').replace('\\', "/");
-    if path.is_empty() {
-        None
-    } else {
-        Some(path)
-    }
+fn emit_workspace_init_fracture(
+    repo: &Path,
+    process_name: &str,
+    error_trace: &str,
+    friction_id: &str,
+) {
+    let payload = json!({
+        "process_name": process_name,
+        "error_trace": error_trace,
+        "agent_emitter": "execute-process",
+        "attempted_action": "workspace-init",
+        "friction_id": friction_id,
+    });
+    let _ = materialize_pending_domain_event(
+        repo,
+        "System_Fracture_Detected",
+        "execute-process",
+        payload,
+    );
 }
 
 fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
@@ -135,7 +133,7 @@ fn dirty_paths_outside_scope(
         .unwrap_or("");
     let mut dirty = Vec::new();
     for line in stdout.lines() {
-        if let Some(path) = porcelain_path_from_line(line) {
+        if let Some(path) = git_porcelain::porcelain_path_from_line(line) {
             if !path_in_scope(&path, persist_ref, pbi_ref) {
                 dirty.push(path);
             }
@@ -268,10 +266,17 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
     } else {
         let dirty = dirty_paths_outside_scope(repo, &persist_ref, pbi_ref_meta)?;
         if !dirty.is_empty() {
-            return Err(format!(
+            let msg = format!(
                 "dirty-worktree: cambios fuera de persist_ref/pbi_ref: {}",
                 dirty.join(", ")
-            ));
+            );
+            emit_workspace_init_fracture(
+                repo,
+                process_name,
+                &msg,
+                "F-DIRTY-WORKTREE",
+            );
+            return Err(msg);
         }
 
         let fetch = invoke_git_manager(repo, "fetch", &json!({"remote": "origin", "prune": true}))?;
@@ -502,5 +507,14 @@ mod tests {
             canonicalize_branch_name("fix/keep".into(), "feature", "keep"),
             "fix/keep"
         );
+    }
+
+    #[test]
+    fn path_in_scope_accepts_pbi_ref_with_unicode_after_unescape() {
+        use crate::engine::git_porcelain;
+        let pbi = "docs/todos/pending/[REGRESIÓN] route-domain-event — fractura sistémica (6a49e0ad310e)-R1.md";
+        let line = r#" M "docs/todos/pending/[REGRESI\303\223N] route-domain-event \342\200\224 fractura sist\303\251mica (6a49e0ad310e)-R1.md""#;
+        let path = git_porcelain::porcelain_path_from_line(line).expect("path");
+        assert!(path_in_scope(&path, "docs/fixes/other", Some(pbi)));
     }
 }
