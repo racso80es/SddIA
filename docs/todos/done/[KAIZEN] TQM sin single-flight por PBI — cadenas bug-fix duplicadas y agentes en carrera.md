@@ -6,7 +6,7 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-28"
 updated: "2026-08-28"
-status: "pendiente"
+status: "done"
 priority: "alta"
 process: bug-fix
 type: kaizen
