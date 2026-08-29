@@ -17,7 +17,7 @@ execution_id: "1dd48b02-251c-433a-85f8-bcfd7e93336e"
 | Diseño (Dedalo) | executed (`spec.md`, `plan.md`) |
 | Ejecución (Tekton) | executed (`implementation.md`) |
 | Verificación (Argos) | executed (`validacion.md`) |
-| Cierre documental / delivery | parcial — DCC aduanas OK; push rechazado (PAT sin scope `workflow`) |
+| Cierre documental / delivery | executed — DCC completo; PR #226 |
 
 ## Comandos ejecutados
 
@@ -70,3 +70,9 @@ Primer intento de `entity-manager` falló con `frontmatter ausente (sin --- de c
 ```
 
 Acción operador: push con credencial `workflow` scope o `gh auth refresh -s workflow`, luego repetir DCC.
+
+## delivery-close-cycle (intento 2 — OK)
+
+`execution_id`: `521a43ed-e34d-4cc6-a42d-8eb2da4ace88`
+
+Todas las fases `executed`. PR: https://github.com/racso80es/SddIA/pull/226

@@ -10,6 +10,7 @@ uuid: 5a049a19-29ae-4c3b-adb0-a8b4e8d042fb
 global: APTO
 pbi_archived: true
 branch: fix/integridad-proceso-forge-ci
+pr_url: https://github.com/racso80es/SddIA/pull/226
 checks:
   CA1_parse_frontmatter_test: APTO
   CA2_forge_hash_phases_test: APTO
