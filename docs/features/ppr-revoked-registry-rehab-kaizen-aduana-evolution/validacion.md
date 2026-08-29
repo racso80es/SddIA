@@ -13,6 +13,7 @@ document_id: PBI-KAIZEN-ADUANA-EVOLUTION-LOCAL-PPR-REVOKED-REGISTRY
 uuid: c4e8f1a2-9b3d-4f7e-a6c1-2d8e5f0b3a71
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/220
 checks:
   AC-A1-CERBERO: APTO
   AC-A1-SAMPLES: APTO
@@ -48,3 +49,4 @@ git_changes:
 - Laterales `bug-fix` · `refactorization` ∈ `revoked` (no bloqueante este ciclo).
 - Diff PR: **sin** `.SddIA/cerbero/` ni `.SddIA/radamanto/`.
 - Motor A2: **diferido** (`L-A2-T0` — mecanismo no confirmado empíricamente; PBI hijo pendiente).
+- DCC: PR https://github.com/racso80es/SddIA/pull/220 (1.er intento falló `EVOL_HASH_MISMATCH`; corregido con `evolution-rehash`).
