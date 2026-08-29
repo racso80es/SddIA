@@ -13,4 +13,4 @@ items_applied:
 
 # Ejecución — telemetria-cognitiva-llm-kalma2
 
-Código T0–T4 aplicado en rama `feat/telemetria-cognitiva-llm-kalma2`. Pendiente Argos/validacion.md y cierre PBI pre-merge.
+Código T0–T4 aplicado en rama `feat/telemetria-cognitiva-llm-kalma2`. `validacion.md` APTO; PBI archivado en `docs/todos/done/`. Evolution gate corregido (registro canónico v1.1.1).

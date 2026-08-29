@@ -4,7 +4,7 @@ created: "2026-08-29"
 process: feature
 branch_name: feat/telemetria-cognitiva-llm-kalma2
 persist_ref: docs/features/telemetria-cognitiva-llm-kalma2
-pbi_ref: docs/todos/pending/[ARQUITECTURA] Telemetría Cognitiva: Captura de métricas LLM y exposición en Kalma2.md
+pbi_ref: docs/todos/done/PBI-TELEMETRY-LLM-COGNITIVE-METRICS-KALMA2.md
 document_id: PBI-TELEMETRY-LLM-COGNITIVE-METRICS-KALMA2
 uuid: a1535038-8db5-4351-8a81-cfa5586b8c5b
 execution_id: "0cdb618e-51e4-461b-9d14-469a5363257b"
