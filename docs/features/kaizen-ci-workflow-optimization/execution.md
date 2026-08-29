@@ -56,4 +56,11 @@ Cascada completa + PBI → `docs/todos/done/PBI-KAIZEN-CI-WORKFLOW-OPTIMIZATION.
 | Push DCC | KO — PAT sin scope `workflow` en `.github/workflows/` |
 | Recuperación | `gh auth setup-git` + `git push -u origin HEAD` |
 | PR | https://github.com/racso80es/SddIA/pull/227 (`gh pr create`) |
-| ECST Presentación | Pendiente sello canónico post-PR (fase DCC omitida) |
+| ECST Presentación | `PullRequest_Presented` `1aa8b666-fdf3-4874-bde8-7dca3c26d6ab` vía `emit-pr-presented-event` |
+
+## CI empírico (PR #227)
+
+| Evento | Run | E2E | Físico | Fast-fail (3 jobs) |
+|--------|-----|-----|--------|---------------------|
+| `push` | [33258097811](https://github.com/racso80es/SddIA/actions/runs/33258097811) | SKIPPED | SKIPPED | SUCCESS |
+| `pull_request` | [33258099388](https://github.com/racso80es/SddIA/actions/runs/33258099388) | SUCCESS | SUCCESS | SUCCESS |

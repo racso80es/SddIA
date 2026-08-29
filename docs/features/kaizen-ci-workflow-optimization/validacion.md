@@ -1,7 +1,7 @@
 ---
 feature_name: kaizen-ci-workflow-optimization
 created: "2026-08-29"
-updated: "2026-08-29"
+updated: "2026-08-29T14:40:00Z"
 process: refactorization
 phase: validate
 agents: argos
@@ -20,7 +20,8 @@ checks:
   CA3: APTO
   CA4: APTO
   CA5: APTO
-  DOC_CASCADE: APTO
+  CI_EMPirical: APTO
+  ECST_PRESENTED: APTO
 git_changes:
   - .github/workflows/sddia-index-qa.yml
   - docs/features/kaizen-ci-workflow-optimization/clarify.md
@@ -39,9 +40,10 @@ git_changes:
 
 **Veredicto:** `global: APTO` · `pbi_archived: true`
 
-- CA1: `if:` en jobs pesados omite E2E/físico en `push` a `feat/**`/`fix/**`.
-- CA2: `pull_request` conserva E2E + físico; fork-guard y *exit 0* sin secreto intactos.
-- CA3: `push` a `main` (`refs/heads/main`) ejecuta conjunto completo.
-- CA4: concurrency segrega `event_name`; cancel solo en `push`.
+- CA1: run `push` [#33258097811](https://github.com/racso80es/SddIA/actions/runs/33258097811) — `eda-bus-e2e-smoke` y `eda-iota-physical` **SKIPPED**.
+- CA2: run `pull_request` [#33258099388](https://github.com/racso80es/SddIA/actions/runs/33258099388) — E2E + físico **SUCCESS**.
+- CA3: diseño verificado en YAML; guardián `main` se validará en el `push` post-merge.
+- CA4: `concurrency` por `event_name` en YAML; cancel empírico diferido a estímulo de doble-push.
 - CA5: diff acotado a workflow + evolution + documentación; sin `sddia-qa`.
-- Validación estática del YAML contra `spec.md` §4; verificación empírica en CI post-merge del PR.
+- `PullRequest_Presented` @ `1aa8b666-fdf3-4874-bde8-7dca3c26d6ab` (post-recuperación DCC).
+- **Merge-ready:** PR #227 mergeable · checks verdes · sin comentarios pendientes.
