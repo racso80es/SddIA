@@ -172,3 +172,29 @@ button.secondary:not(:disabled):hover {
   padding: 0.35rem 0.7rem;
   font-size: 0.8rem;
 }
+
+.cognitive-pulse h2 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.cognitive-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #3a4553;
+  border-radius: 6px;
+  background: #141b24;
+  font-size: 0.85rem;
+  font-family: ui-monospace, monospace;
+}
+
+.cognitive-quota {
+  color: #ffb347;
+  font-weight: 600;
+}
+
+.cognitive-quota.hidden {
+  display: none;
+}

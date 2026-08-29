@@ -20,6 +20,15 @@
       <button type="button" id="sync-genome" class="secondary">Sincronizar Genoma</button>
       <span id="status" class="status" aria-live="polite"></span>
     </div>
+    <section class="cognitive-pulse" aria-label="Pulso cognitivo">
+      <h2>Pulso cognitivo</h2>
+      <div id="cognitive-pulse" class="cognitive-panel">
+        <span id="cognitive-tokens">— tokens</span>
+        <span id="cognitive-model">modelo: —</span>
+        <span id="cognitive-latency">latencia: —</span>
+        <span id="cognitive-quota" class="cognitive-quota hidden" role="status">cuota elevada</span>
+      </div>
+    </section>
     <label for="output">Respuesta</label>
     <textarea id="output" rows="8" readonly placeholder="La salida aparecerá aquí…"></textarea>
     <label for="progress-console">Consola de progreso</label>

@@ -789,7 +789,7 @@ fn execute_phase_body_residual(
     }
 
     if let Some(capsule_entry) =
-        try_invoke_delegates(repo, &delegates, inputs, resolved_bindings, process_name, phase_name)
+        try_invoke_delegates(repo, &delegates, inputs, resolved_bindings, process_name, phase_name, state)
     {
         if let Some(obj) = capsule_entry.as_object() {
             for (k, v) in obj {

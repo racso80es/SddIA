@@ -1,13 +1,17 @@
 //! Skill `mayeuta-llm` — transductor CLI local (C1/C3).
 
 use serde_json::{json, Value};
+use std::fs;
 use std::io::{self, Read, Write};
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 const OP_SYNTHESIZE: &str = "SYNTHESIZE";
 const OP_CLASSIFY: &str = "CLASSIFY_INTENT";
 /// STREAM: orquesta subproceso inyectado y reenvía stdout línea a línea (sin envelope JSON).
 const OP_STREAM: &str = "STREAM";
+const COGNITIVE_DEGRADED_KEY: &str = "cognitive-degraded";
 const CONFIDENCE_MIN: f64 = 0.0;
 const CONFIDENCE_MAX: f64 = 1.0;
 
@@ -95,7 +99,8 @@ fn resolve_cli_raw() -> Result<String, String> {
     Err("SDDIA_LLM_CLI_COMMAND / SDDIA_LLM_CHAT_COMMAND ausente".into())
 }
 
-fn run_cli(prompt_assembled: &str) -> Result<String, String> {
+fn run_cli(prompt_assembled: &str) -> Result<(String, Instant), String> {
+    let started = Instant::now();
     let raw = resolve_cli_raw()?;
     let parts = split_command(&raw)?;
     let (bin, args) = parts
@@ -127,7 +132,104 @@ fn run_cli(prompt_assembled: &str) -> Result<String, String> {
             err
         });
     }
-    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+    Ok((
+        String::from_utf8_lossy(&out.stdout).trim().to_string(),
+        started,
+    ))
+}
+
+fn repo_root() -> PathBuf {
+    if let Ok(p) = std::env::var("SDDIA_REPO_ROOT") {
+        let trimmed = p.trim();
+        if !trimmed.is_empty() {
+            return PathBuf::from(trimmed);
+        }
+    }
+    if let Ok(cwd) = std::env::current_dir() {
+        for ancestor in cwd.ancestors() {
+            if ancestor.join("SddIA/core/cumulo.paths.json").is_file() {
+                return ancestor.to_path_buf();
+            }
+        }
+    }
+    PathBuf::from(".")
+}
+
+fn cognitive_inbox_dir(repo: &Path) -> PathBuf {
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    let default = repo.join(".SddIA/radamanto/inbox");
+    let Ok(text) = fs::read_to_string(&cfg_path) else {
+        return default;
+    };
+    let Ok(cfg) = serde_json::from_str::<Value>(&text) else {
+        return default;
+    };
+    cfg.get("radamanto")
+        .and_then(|r| r.get("cognitive_inbox"))
+        .and_then(|v| v.as_str())
+        .map(|rel| {
+            let rel = rel.trim().trim_start_matches("./");
+            repo.join(rel)
+        })
+        .unwrap_or(default)
+}
+
+fn token_field(usage: &Value, keys: &[&str]) -> u64 {
+    for k in keys {
+        if let Some(n) = usage.get(*k).and_then(|v| v.as_u64()) {
+            return n;
+        }
+    }
+    0
+}
+
+fn build_telemetry_receipt_from_cli(text: &str, started: Instant) -> Value {
+    let latency = started.elapsed().as_millis() as u64;
+    let mut receipt = json!({
+        "prompt_tokens": 0u64,
+        "completion_tokens": 0u64,
+        "provider_latency_ms": latency,
+        COGNITIVE_DEGRADED_KEY: true,
+    });
+    let parsed = extract_json_line(text).or_else(|| serde_json::from_str(text.trim()).ok());
+    if let Some(v) = parsed {
+        if let Some(usage) = v.get("usage") {
+            let prompt = token_field(usage, &["prompt_tokens", "input_tokens", "prompt_token_count"]);
+            let completion =
+                token_field(usage, &["completion_tokens", "output_tokens", "completion_token_count"]);
+            receipt["prompt_tokens"] = json!(prompt);
+            receipt["completion_tokens"] = json!(completion);
+            if prompt + completion > 0 {
+                receipt[COGNITIVE_DEGRADED_KEY] = json!(false);
+            }
+        }
+        if let Some(model) = v.get("model").or_else(|| v.get("llm_model")) {
+            receipt["llm_model"] = model.clone();
+        }
+        if let Some(tier) = v.get("tier") {
+            receipt["tier"] = tier.clone();
+        }
+    }
+    receipt
+}
+
+fn write_stream_inbox(receipt: &Value) {
+    let repo = repo_root();
+    let dir = cognitive_inbox_dir(&repo);
+    if fs::create_dir_all(&dir).is_err() {
+        return;
+    }
+    let id = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let mut doc = receipt.clone();
+    if let Some(obj) = doc.as_object_mut() {
+        obj.insert("source".into(), json!("stream"));
+        obj.insert("capsule_id".into(), json!("skill:mayeuta-llm"));
+    }
+    let path = dir.join(format!("{id}.json"));
+    let _ = fs::write(path, serde_json::to_string(&doc).unwrap_or_else(|_| "{}".into()));
 }
 
 /// Orquesta subproceso y vuelca stdout en tiempo real (Ceguera Espacial: no interpreta destino).
@@ -138,6 +240,7 @@ fn handle_stream(doc: &Value) -> ! {
         eprintln!("prompt required");
         std::process::exit(1);
     }
+    let started = Instant::now();
     let raw = match resolve_cli_raw() {
         Ok(r) => r,
         Err(e) => {
@@ -217,7 +320,11 @@ fn handle_stream(doc: &Value) -> ! {
     }
 
     match child.wait() {
-        Ok(status) if status.success() => std::process::exit(0),
+        Ok(status) if status.success() => {
+            let receipt = build_telemetry_receipt_from_cli("", started);
+            write_stream_inbox(&receipt);
+            std::process::exit(0);
+        }
         Ok(status) => {
             eprintln!("CLI exit {}", status.code().unwrap_or(1));
             std::process::exit(status.code().unwrap_or(1));
@@ -354,10 +461,20 @@ fn handle_classify(doc: &Value) {
         emit(false, None, "prompt required");
     }
     let assembled = build_classify_prompt(p);
-    let data = match run_cli(&assembled) {
-        Ok(out) if !out.is_empty() => parse_classify_response(&out, p),
-        _ => heuristic_classify(p),
+    let (mut data, receipt) = match run_cli(&assembled) {
+        Ok((out, started)) if !out.is_empty() => {
+            let data = parse_classify_response(&out, p);
+            (data, build_telemetry_receipt_from_cli(&out, started))
+        }
+        Ok((_out, started)) => (heuristic_classify(p), build_telemetry_receipt_from_cli("", started)),
+        Err(_) => (
+            heuristic_classify(p),
+            build_telemetry_receipt_from_cli("", Instant::now()),
+        ),
     };
+    if let Some(obj) = data.as_object_mut() {
+        obj.insert("telemetry_receipt".into(), receipt);
+    }
     emit(true, Some(data), "");
 }
 
@@ -367,7 +484,14 @@ fn handle_synthesize(doc: &Value) {
         emit(false, None, "prompt required");
     }
     match run_cli(p) {
-        Ok(text) if !text.is_empty() => emit(true, Some(json!({ "text": text })), ""),
+        Ok((text, started)) if !text.is_empty() => {
+            let receipt = build_telemetry_receipt_from_cli(&text, started);
+            emit(
+                true,
+                Some(json!({ "text": text, "telemetry_receipt": receipt })),
+                "",
+            );
+        }
         Ok(_) => emit(false, None, "CLI stdout vacío"),
         Err(e) => emit(false, None, &e),
     }
@@ -404,9 +528,26 @@ mod tests {
     #[test]
     fn synthesize_with_echo_mock() {
         std::env::set_var("SDDIA_LLM_CLI_COMMAND", "echo mock-response");
-        let out = run_cli("ignored").unwrap();
+        let (out, _) = run_cli("ignored").unwrap();
         assert!(out.contains("mock-response"));
         std::env::remove_var("SDDIA_LLM_CLI_COMMAND");
+    }
+
+    #[test]
+    fn receipt_degraded_without_usage() {
+        let r = build_telemetry_receipt_from_cli("plain text", Instant::now());
+        assert_eq!(r["prompt_tokens"], 0);
+        assert_eq!(r[COGNITIVE_DEGRADED_KEY], true);
+    }
+
+    #[test]
+    fn receipt_parses_usage_json() {
+        let text = r#"{"usage":{"prompt_tokens":10,"completion_tokens":5},"model":"gpt-test"}"#;
+        let r = build_telemetry_receipt_from_cli(text, Instant::now());
+        assert_eq!(r["prompt_tokens"], 10);
+        assert_eq!(r["completion_tokens"], 5);
+        assert_eq!(r[COGNITIVE_DEGRADED_KEY], false);
+        assert_eq!(r["llm_model"], "gpt-test");
     }
 
     #[test]

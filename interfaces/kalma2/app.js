@@ -292,6 +292,69 @@ async function syncGenome() {
   }
 }
 
+let cognitiveSource = null;
+
+function closeCognitiveStream() {
+  if (cognitiveSource) {
+    cognitiveSource.close();
+    cognitiveSource = null;
+  }
+}
+
+function renderCognitiveSnapshot(cog) {
+  if (!cog || typeof cog !== "object") return;
+  const prompt = Number(cog.tokens_prompt_total || 0);
+  const completion = Number(cog.tokens_completion_total || 0);
+  const tokensEl = $("cognitive-tokens");
+  const modelEl = $("cognitive-model");
+  const latEl = $("cognitive-latency");
+  const quotaEl = $("cognitive-quota");
+  if (tokensEl) tokensEl.textContent = `${prompt + completion} tokens (${prompt}↑ ${completion}↓)`;
+  if (modelEl) modelEl.textContent = `modelo: ${cog.last_model || "—"}`;
+  if (latEl) {
+    const avg = Number(cog.latency_ms_avg || 0);
+    latEl.textContent = `latencia media: ${avg ? `${Math.round(avg)} ms` : "—"}`;
+  }
+  if (quotaEl) {
+    quotaEl.classList.toggle("hidden", !cog.quota_alert);
+  }
+}
+
+async function loadCognitiveSnapshot() {
+  try {
+    const r = await fetch("/api/telemetry/cognitive");
+    const data = await r.json();
+    if (data.success && data.cognitive) renderCognitiveSnapshot(data.cognitive);
+  } catch (_) {
+    /* snapshot opcional */
+  }
+}
+
+function openCognitiveStream() {
+  closeCognitiveStream();
+  cognitiveSource = new EventSource("/api/telemetry/stream");
+  cognitiveSource.addEventListener("cognitive", (ev) => {
+    try {
+      const body = JSON.parse(ev.data);
+      const receipt = body?.payload?.telemetry_receipt;
+      if (receipt) {
+        renderCognitiveSnapshot({
+          tokens_prompt_total: receipt.prompt_tokens,
+          tokens_completion_total: receipt.completion_tokens,
+          last_model: receipt.llm_model,
+          latency_ms_avg: receipt.provider_latency_ms,
+          quota_alert: false,
+        });
+      }
+    } catch (_) {
+      /* ignore malformed frame */
+    }
+  });
+  cognitiveSource.onerror = () => {
+    /* EventSource reconecta */
+  };
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   $("chat").addEventListener("click", enviarChat);
   const forgeBtn = $("forge");
@@ -306,6 +369,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   applyConsumerProfileUi();
   loadEmailInbox();
+  loadCognitiveSnapshot();
+  openCognitiveStream();
 });
 
 /** Filtro C: oculta Forjar Proceso en perfil consumidor. */

@@ -46,7 +46,7 @@ fn write_json_atomic(path: &Path, data: &Value) -> Result<(), String> {
 fn load_stats(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
     let path = radamanto_path(repo, cfg, "stats");
     if !path.is_file() {
-        return json!({"entities": {}});
+        return json!({"entities": {}, "cognitive": default_cognitive_block()});
     }
     fs::read_to_string(&path)
         .ok()
@@ -55,9 +55,185 @@ fn load_stats(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
             if !data.get("entities").and_then(|v| v.as_object()).is_some() {
                 data["entities"] = json!({});
             }
+            if !data.get("cognitive").and_then(|v| v.as_object()).is_some() {
+                data["cognitive"] = default_cognitive_block();
+            }
             data
         })
-        .unwrap_or(json!({"entities": {}}))
+        .unwrap_or(json!({"entities": {}, "cognitive": default_cognitive_block()}))
+}
+
+fn default_cognitive_block() -> Value {
+    json!({
+        "tokens_prompt_total": 0,
+        "tokens_completion_total": 0,
+        "by_model": {},
+        "last_model": null,
+        "latency_ms_avg": 0,
+        "window": [],
+        "quota_alert": false,
+        "quota_critical": false
+    })
+}
+
+fn cognitive_thresholds(thresholds: &Value) -> (u64, u64, usize) {
+    let block = thresholds.get("cognitive").and_then(|v| v.as_object());
+    let max_tpm = block
+        .and_then(|o| o.get("max_tokens_per_minute"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(120_000);
+    let critical = block
+        .and_then(|o| o.get("critical_tokens_per_minute"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(500_000);
+    let cap = block
+        .and_then(|o| o.get("window_max_samples"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(120) as usize;
+    (max_tpm, critical, cap)
+}
+
+fn apply_cognitive_receipt(stats: &mut Value, receipt: &Value, thresholds: &Value) -> bool {
+    let prompt = receipt
+        .get("prompt_tokens")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let completion = receipt
+        .get("completion_tokens")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let latency = receipt
+        .get("provider_latency_ms")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let model = receipt
+        .get("llm_model")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+    let tokens = prompt + completion;
+
+    let cog = stats
+        .as_object_mut()
+        .and_then(|o| {
+            if !o.contains_key("cognitive") {
+                o.insert("cognitive".into(), default_cognitive_block());
+            }
+            o.get_mut("cognitive")
+        })
+        .and_then(|v| v.as_object_mut());
+    let Some(cog) = cog else {
+        return false;
+    };
+
+    let prompt_total = cog
+        .get("tokens_prompt_total")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0)
+        + prompt;
+    let completion_total = cog
+        .get("tokens_completion_total")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0)
+        + completion;
+    cog.insert("tokens_prompt_total".into(), json!(prompt_total));
+    cog.insert("tokens_completion_total".into(), json!(completion_total));
+    if model != "unknown" {
+        cog.insert("last_model".into(), json!(model));
+        if !cog.contains_key("by_model") {
+            cog.insert("by_model".into(), json!({}));
+        }
+        if let Some(bm) = cog.get_mut("by_model").and_then(|v| v.as_object_mut()) {
+            let prev = bm.get(&model).and_then(|v| v.as_u64()).unwrap_or(0);
+            bm.insert(model.clone(), json!(prev + tokens));
+        }
+    }
+    let samples_n = cog
+        .get("latency_samples")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+    let avg_prev = cog
+        .get("latency_ms_avg")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
+    let new_avg = if samples_n == 0 {
+        latency as f64
+    } else {
+        (avg_prev * samples_n as f64 + latency as f64) / (samples_n + 1) as f64
+    };
+    cog.insert("latency_ms_avg".into(), json!(new_avg));
+    cog.insert("latency_samples".into(), json!(samples_n + 1));
+
+    let (max_tpm, critical_tpm, cap) = cognitive_thresholds(thresholds);
+    let mut window: Vec<Value> = cog
+        .get("window")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    window.push(json!({
+        "ts": iso_now(),
+        "tokens": tokens,
+        "model": model,
+    }));
+    if window.len() > cap {
+        window = window[window.len() - cap..].to_vec();
+    }
+    cog.insert("window".into(), json!(window));
+
+    let now = Utc::now();
+    let minute_ago = now - chrono::Duration::seconds(60);
+    let mut tpm: u64 = 0;
+    for entry in &window {
+        let ts = entry.get("ts").and_then(|v| v.as_str()).unwrap_or("");
+        if let Ok(parsed) = chrono::DateTime::parse_from_rfc3339(ts) {
+            if parsed.with_timezone(&Utc) >= minute_ago {
+                tpm += entry.get("tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+            }
+        } else {
+            tpm += entry.get("tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+        }
+    }
+    let alert = tpm > max_tpm;
+    let critical = tpm > critical_tpm;
+    cog.insert("quota_alert".into(), json!(alert));
+    cog.insert("quota_critical".into(), json!(critical));
+    cog.insert("tokens_per_minute".into(), json!(tpm));
+    critical
+}
+
+fn drain_cognitive_inbox(
+    repo: &Path,
+    cfg: &HashMap<String, Value>,
+    stats: &mut Value,
+    thresholds: &Value,
+) -> Result<Vec<Value>, String> {
+    let inbox = radamanto_path(repo, cfg, "cognitive_inbox");
+    if !inbox.is_dir() {
+        return Ok(vec![]);
+    }
+    let mut critical_hits = Vec::new();
+    let entries: Vec<_> = fs::read_dir(&inbox)
+        .map_err(|e| e.to_string())?
+        .filter_map(|e| e.ok())
+        .collect();
+    for entry in entries {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let Ok(text) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(receipt) = serde_json::from_str::<Value>(&text) else {
+            let _ = fs::remove_file(&path);
+            continue;
+        };
+        if apply_cognitive_receipt(stats, &receipt, thresholds) {
+            critical_hits.push(receipt);
+        }
+        let _ = fs::remove_file(&path);
+    }
+    Ok(critical_hits)
 }
 
 fn save_stats(repo: &Path, cfg: &HashMap<String, Value>, stats: &Value) -> Result<(), String> {
@@ -376,6 +552,28 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
 
     let entity_id = target_entity_from_payload(&payload);
     let mut stats = load_stats(repo, &cfg);
+    let _inbox_critical = drain_cognitive_inbox(repo, &cfg, &mut stats, &thresholds)?;
+    if let Some(receipt) = payload.get("telemetry_receipt").filter(|v| v.is_object()) {
+        let critical = apply_cognitive_receipt(&mut stats, receipt, &thresholds);
+        if critical {
+            let capsule = payload
+                .get("capsule_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("cognitive-system");
+            let ev = build_domain_event(
+                "Domain_Entity_Degraded",
+                governance_payload(
+                    repo,
+                    capsule,
+                    json!({
+                        "reason": "cognitive_critical_quota",
+                        "tokens_per_minute": stats.pointer("/cognitive/tokens_per_minute").cloned(),
+                    }),
+                ),
+            );
+            let _ = emit_domain_and_route(repo, &ev);
+        }
+    }
     let sample = json!({
         "asset_id": asset_id,
         "exit_code": payload.get("exit_code").and_then(|v| v.as_i64()).unwrap_or(1),
@@ -625,6 +823,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cognitive_quota_alert_without_degraded_emit() {
+        let mut stats = json!({"entities": {}, "cognitive": default_cognitive_block()});
+        let thresholds = json!({
+            "cognitive": {
+                "max_tokens_per_minute": 10,
+                "critical_tokens_per_minute": 1000,
+                "window_max_samples": 10
+            }
+        });
+        let receipt = json!({
+            "prompt_tokens": 8,
+            "completion_tokens": 5,
+            "provider_latency_ms": 10,
+            "llm_model": "lab"
+        });
+        let critical = apply_cognitive_receipt(&mut stats, &receipt, &thresholds);
+        assert!(!critical);
+        assert_eq!(stats["cognitive"]["quota_alert"], true);
+    }
+
+    #[test]
     fn success_rate_min_lookup_by_entity_type() {
         let t = json!({
             "success_rate_min": 0.85,
@@ -748,8 +967,9 @@ mod tests {
         let raw = std::fs::read_to_string(repo.join("SddIA/agents/radamanto.thresholds.json"))
             .expect("thresholds");
         let t: Value = serde_json::from_str(&raw).expect("json");
-        assert_eq!(t["version"], "1.1.0");
+        assert_eq!(t["version"], "1.2.0");
         assert_eq!(t["success_rate_min_by_entity_type"]["process"], 0.70);
         assert_eq!(t["max_recovery_attempts"], 3);
+        assert!(t.get("cognitive").is_some());
     }
 }

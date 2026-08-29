@@ -125,6 +125,7 @@
   "radamanto": {
     "stats": ".SddIA/radamanto/stats.json",
     "consumed": ".SddIA/radamanto/consumed.json",
+    "cognitive_inbox": ".SddIA/radamanto/inbox",
     "thresholds": "SddIA/agents/radamanto.thresholds.json",
     "sandbox_root": ".SddIA/sandbox/",
     "revoked_entities": ".SddIA/cerbero/revoked_entities.json"

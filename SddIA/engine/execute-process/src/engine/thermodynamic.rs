@@ -179,6 +179,7 @@ pub fn run(
                 }
             }
         }
+        super::telemetry_receipt::attach_to_ref_payload(&mut payload, state);
         let telemetry_event = json!({
             "event_id": telemetry_id,
             "event_type": "Raw_Execution_Finished",
@@ -326,6 +327,20 @@ pub fn is_exempt(process_name: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn attach_receipt_from_state_to_ref_payload() {
+        let mut state = json!({
+            "telemetry_receipts": [
+                {"prompt_tokens": 4, "completion_tokens": 2, "provider_latency_ms": 50, "cognitive-degraded": false, "capsule_id": "skill:mayeuta-llm"}
+            ]
+        });
+        let mut payload = json!({"asset_id": "x", "exit_code": 0, "duration_ms": 1, "process_name": "feature"});
+        crate::engine::telemetry_receipt::attach_to_ref_payload(&mut payload, &state);
+        assert_eq!(payload["telemetry_receipt"]["prompt_tokens"], 4);
+        assert_eq!(payload["capsule_id"], "skill:mayeuta-llm");
+        let _ = state;
+    }
 
     #[test]
     fn derive_initialized_when_simulated() {
