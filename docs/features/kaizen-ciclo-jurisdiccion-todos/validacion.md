@@ -11,6 +11,7 @@ execution_id: "1550128b-c2ef-4c4d-8cbb-181a15a66940"
 pbi_ref: docs/todos/done/[KAIZEN] Ciclo jurisdicción todos — norm-creator parcial, huérfanos EDA y colapso DCC sin fractura.md
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/225
 checks:
   CA1-norm-forge: pass
   CA2-todos-jurisdiction-reforge: pass
