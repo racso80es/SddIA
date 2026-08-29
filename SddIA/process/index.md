@@ -14,13 +14,14 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | user-preference-ingest | d4e5f6a7-b8c9-4d0e-1f2a-3b4c5ab005 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Ingesta User_Preference_Change_Requested → store preferencias |
 | event-bus-audit | 8d577a50-055a-40b9-b7e2-93e2d2415796 | 1.0.1 | quality-assurance | — | Auditoría empírica on-demand del bus EDA: escaneo ./.events, |
 | kalma2-interact | acdb6c88-f0d9-4e10-9d2f-7e4b5401a892 | 1.1.1 | ecosystem-evolution | — | Proceso PoC Kalma2: síntesis Mayeuta lab ante prompt del cli |
-| daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.0.1 | quality-assurance | — | Triaje Argos: latido térmico Centinelas; System_Fracture_Det |
+| daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.1.0 | quality-assurance | — | Triaje Argos: suspend/crash + fagocitosis. |
 | daemon-kill-switch | b0de6585-11fc-4b3c-8b19-ad6b727d820e | 1.0.1 | system-operations | — | Kill-Switch global: purga SIGTERM/SIGKILL de todos los Centi |
 | governance-daemon-manager | 5a89793a-ba98-4b4f-9287-43c087e312df | 1.0.1 | system-operations | — | Actuador OS puro: start, status, kill de Centinelas indexado |
 | daemon-creator | c172f130-532f-4714-be4e-fcd80b84a5dc | 1.0.1 | ecosystem-evolution | — | Proceso maestro para estandarizar y automatizar la creación de nuevos Centinelas (daemons) en el Core SddIA. |
 | governance-daemon-manager | 5a89793a-ba98-4b4f-9287-43c087e312df | 1.0.1 | system-operations, ecosystem-evolution | — | Actuador OS puro: start, status, kill de Centinelas indexados bajo directories.daemons. |
 | daemon-kill-switch | b0de6585-11fc-4b3c-8b19-ad6b727d820e | 1.0.1 | system-operations, ecosystem-evolution | — | Kill-Switch global: purga SIGTERM/SIGKILL de todos los Centinelas al apagar el Core. |
-| daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.0.1 | quality-assurance, event-routing | — | Triaje Argos: latido térmico Centinelas; System_Fracture_Detected tras 3 ciclos omitidos. |
+| daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.1.0 | quality-assurance, event-routing | — | Triaje Argos: suspend/crash skew + SSOT umbrales; fagocitosis residual. |
+| phagocyte-recovered-fracture-pbis | e8f2a1b3-5c4d-4e6f-9a0b-1c2d3e4f5a7b | 1.0.0 | quality-assurance, ecosystem-evolution | — | Auto-poda PBI-FIX-FRACTURE recuperados (laudo B automático). |
 | process-creator | 7c2d9e41-88a3-4f6b-9c12-4def01a2b3c4 | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar nuevos procesos en el Core SddIA y mantener el índice del directorio `process`. |
 | skill-creator | b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d | 1.0.0 | ecosystem-evolution | — | Proceso maestro para estandarizar y automatizar la creación de nuevas skills (definición física y lógica) en el Core SddIA. |
 | action-creator | d0e1f2a3-b4c5-46d7-e8f9-0a1b2c3d4e5f | 1.0.0 | ecosystem-evolution | — | Proceso maestro para instanciar nuevas acciones (orquestaciones lógicas) en el Core SddIA y mantener el índice del directorio `actions`. |

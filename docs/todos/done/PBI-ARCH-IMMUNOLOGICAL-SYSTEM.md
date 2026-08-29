@@ -6,7 +6,9 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-26"
 refined: "2026-08-29"
-status: "pending"
+status: "cerrado"
+closed: "2026-08-29"
+fix_ref: docs/features/arch-immunological-system
 priority: "alta"
 process: feature
 related:

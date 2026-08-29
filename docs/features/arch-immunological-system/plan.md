@@ -23,7 +23,7 @@ runtime_execution_id: "987e1747-bd08-4c80-ad41-648f09cc4b12"
 
 # Plan — arch-immunological-system
 
-Blueprint Tekton. Contratos: `spec.md`. **Stop planning:** no ejecutar T0–T7 en esta sesión.
+Blueprint Tekton. Contratos: `spec.md`. **Stop planning:** ejecutado T0–T5; T7 delivery-close-cycle en curso.
 
 Init lab: `execution_id` `987e1747-bd08-4c80-ad41-648f09cc4b12` · vehículo `feature` · relevo IDE.
 

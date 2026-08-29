@@ -133,6 +133,9 @@
     "sandbox_root": ".SddIA/sandbox/",
     "revoked_entities": ".SddIA/cerbero/revoked_entities.json"
   },
+  "argos": {
+    "heartbeat_audit_thresholds": "SddIA/daemons/heartbeat-audit.thresholds.json"
+  },
   "telemetry_compliance": {
     "emitted_registry": ".SddIA/telemetry-compliance/emitted.json"
   },
