@@ -1,11 +1,12 @@
 //! Forjas por `entity_class` (paridad `execute_process_forges.py` + skill/event en capsules).
 
 use super::common::{
-    append_row, capability_name, handoff_create, idempotent_forge_handoff, optional_str,
-    parse_frontmatter, patch_action_content_update, patch_process_phases_update,
-    refresh_process_hash, repo_tool_base, required_str, sha256_canon, str_field,
-    sync_action_index_row, sync_daemons_index_census, update_process_index_version,
-    generate_uuid,
+    append_row, capability_name, dependencies_from_inputs, format_dependencies_yaml, handoff_create,
+    idempotent_forge_handoff, optional_str, parse_frontmatter, patch_action_content_update,
+    patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
+    patch_process_phases_update, refresh_process_hash, repo_tool_base, required_str, sha256_canon,
+    str_field,     sync_action_index_row, sync_daemons_index_census, update_library_norm_index_version,
+    update_process_index_version, norm_integrity_hash, generate_uuid,
 };
 use crate::core::paths::load_paths_config;
 use crate::core::resolver::{process_search_roots, resolve_process_path};
@@ -91,6 +92,23 @@ pub fn run_tool_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let base = repo_tool_base(repo, &scope);
     let tool_path = base.join(format!("{name}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+
+    if lifecycle == "update" && tool_path.is_file() {
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&tool_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+    }
+
     if let Some(skip) = idempotent_forge_handoff(&tool_path, &lifecycle)? {
         return Ok(skip);
     }
@@ -152,6 +170,19 @@ pub fn run_action_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
     if lifecycle == "update" && action_path.is_file() {
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&action_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         let patch = patch_action_content_update(&action_path, inputs)?;
         let context = str_field(inputs, "action_context", "ecosystem-evolution");
         let description = inputs
@@ -443,6 +474,26 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 root_rel: root_rel.clone(),
                 jurisdiction: jurisdiction.into(),
             };
+            if let Some(replacements) = inputs.get("markdown_body_replacements") {
+                let (entity_uuid, body_old_hash, _, version) =
+                    patch_artifact_body_replacements(&process_path, replacements)?;
+                let (phase_old_hash, new_hash) = refresh_process_hash(&process_path)?;
+                let old_hash = phase_old_hash.unwrap_or(body_old_hash);
+                let mut out = json!({
+                    "handoff_entity_uuid": entity_uuid,
+                    "handoff_hash_signature_new": new_hash,
+                    "handoff_hash_signature_old": old_hash,
+                    "handoff_version": version,
+                });
+                if let (Value::Object(base), Value::Object(ext)) =
+                    (&mut out, forge_outputs_extra(&dest, &name))
+                {
+                    for (k, v) in ext {
+                        base.insert(k, v);
+                    }
+                }
+                return Ok(out);
+            }
             let phases_opt = inputs.get("process_phases").filter(|p| {
                 p.as_array().map(|a| !a.is_empty()).unwrap_or(false)
             });
@@ -713,20 +764,39 @@ pub fn run_norm_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "tactical_norm_name")?;
     let norm_path = repo.join("SddIA/library/norms").join(format!("{name}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+
+    if lifecycle == "update" && norm_path.is_file() {
+        let patch = patch_norm_content_update(&norm_path, inputs)?;
+        if patch.old_version != patch.new_version {
+            update_library_norm_index_version(
+                &repo.join("SddIA/library/norms/index.md"),
+                &name,
+                &patch.new_version,
+            )?;
+        }
+        return Ok(json!({
+            "handoff_entity_uuid": patch.entity_uuid,
+            "handoff_hash_signature_new": patch.new_hash,
+            "handoff_hash_signature_old": patch.old_hash,
+            "handoff_version": patch.new_version,
+        }));
+    }
+
     if let Some(skip) = idempotent_forge_handoff(&norm_path, &lifecycle)? {
         return Ok(skip);
     }
 
     let version = str_field(inputs, "tactical_norm_version", "1.0.0");
     let friction = str_field(inputs, "tactical_norm_friction", &format!("Norma {name}"));
+    let hard_constraints =
+        str_field(inputs, "tactical_norm_hard_constraints", "Ninguna.");
     let author = str_field(inputs, "tactical_norm_author", "laboratorio");
     let scope = str_field(inputs, "norm_scope", "agnostic");
     let category = str_field(inputs, "norm_category", "workflow");
+    let deps = dependencies_from_inputs(inputs);
+    let dependencies_yaml = format_dependencies_yaml(&deps);
     let norm_uuid = generate_uuid(repo)?;
-    let hash_sig = sha256_canon(
-        repo,
-        &json!({"tactical_norm_name": name, "friction": friction, "scope": scope}),
-    )?;
+    let hash_sig = norm_integrity_hash(&name, &friction, &hard_constraints, &scope, &deps);
 
     let body = format!(
         r#"---
@@ -737,12 +807,16 @@ nature: "tactical-norm"
 author: "{author}"
 scope: "{scope}"
 category: "{category}"
-hash_signature: "{hash_sig}"
+{dependencies_yaml}hash_signature: "{hash_sig}"
 ---
 
 ## Directriz Core
 
 {friction}
+
+## Restricciones Duras (Aduana de Fricción)
+
+{hard_constraints}
 "#
     );
     fs::create_dir_all(norm_path.parent().unwrap()).map_err(|e| e.to_string())?;
@@ -1910,6 +1984,48 @@ phases:
         assert!(repo.join(domain).join("smoke-software-lab.md").is_file());
         let core_idx = fs::read_to_string(repo.join("SddIA/process/index.md")).unwrap();
         assert!(!core_idx.contains("smoke-software-lab"));
+
+        std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+        std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
+    }
+
+    #[test]
+    fn run_norm_forge_emits_dependencies_and_hard_constraints() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fixture_cumulo(repo, &[]);
+        let norms_dir = repo.join("SddIA/library/norms");
+        fs::create_dir_all(&norms_dir).unwrap();
+        fs::write(
+            norms_dir.join("index.md"),
+            "| Archivo fuente | uuid | name | version | scope | category |\n|----------------|------|------|---------|-------|----------|\n",
+        )
+        .unwrap();
+        std::env::set_var("SDDIA_FORGE_LAB_UUID", "f0b8ce4a-2f79-4516-bee0-acfe0d25bd58");
+        std::env::set_var(
+            "SDDIA_FORGE_LAB_SHA256",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        );
+
+        run_norm_forge(
+            repo,
+            &json!({
+                "tactical_norm_name": "lab-norm",
+                "tactical_norm_version": "1.0.0",
+                "tactical_norm_friction": "Directriz de prueba.",
+                "tactical_norm_hard_constraints": "- Prohibido X.",
+                "tactical_norm_dependencies": ["4c448c82-de41-460f-b24f-82a84fa5ed69"],
+                "lifecycle_operation": "create",
+            }),
+        )
+        .expect("norm forge");
+
+        let body = fs::read_to_string(norms_dir.join("lab-norm.md")).unwrap();
+        assert!(body.contains("dependencies:"));
+        assert!(body.contains("4c448c82-de41-460f-b24f-82a84fa5ed69"));
+        assert!(body.contains("## Directriz Core"));
+        assert!(body.contains("## Restricciones Duras (Aduana de Fricción)"));
+        assert!(body.contains("- Prohibido X."));
 
         std::env::remove_var("SDDIA_FORGE_LAB_UUID");
         std::env::remove_var("SDDIA_FORGE_LAB_SHA256");

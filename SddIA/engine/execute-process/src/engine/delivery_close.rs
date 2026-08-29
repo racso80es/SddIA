@@ -3,6 +3,7 @@
 use super::phase_capsules::{
     capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate, execute_delivery_close_phase,
 };
+use super::route_domain_core::materialize_pending_domain_event;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
@@ -223,6 +224,61 @@ fn execute_phase(
     entry
 }
 
+fn dcc_friction_id(phase_name: &str, report: &Value) -> String {
+    if let Some(id) = report.get("friction_id").and_then(|v| v.as_str()) {
+        return id.to_string();
+    }
+    match phase_name {
+        "Aduana EDA genómica" => "F-DCC-EDA-GENOMIC-BLOCK".into(),
+        "Aduana evolution" => "F-DCC-EVOLUTION-GATE".into(),
+        _ => format!(
+            "F-DCC-{}",
+            phase_name
+                .to_uppercase()
+                .replace(' ', "-")
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || *c == '-')
+                .collect::<String>()
+        ),
+    }
+}
+
+pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
+    for report in phase_reports {
+        if report.get("fail_soft").and_then(|v| v.as_bool()) == Some(true) {
+            continue;
+        }
+        let status = report.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        if status != "blocked" && status != "failed" {
+            continue;
+        }
+        let phase_name = report
+            .get("phase_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
+        let friction_id = dcc_friction_id(phase_name, report);
+        let error_trace = report
+            .get("error")
+            .and_then(|v| v.as_str())
+            .or_else(|| report.get("message").and_then(|v| v.as_str()))
+            .unwrap_or(status)
+            .to_string();
+        let payload = json!({
+            "process_name": "delivery-close-cycle",
+            "error_trace": error_trace,
+            "agent_emitter": "execute-process",
+            "attempted_action": phase_name,
+            "friction_id": friction_id,
+        });
+        let _ = materialize_pending_domain_event(
+            repo,
+            "System_Fracture_Detected",
+            "execute-process",
+            payload,
+        );
+    }
+}
+
 pub fn run(
     repo: &Path,
     process_name: &str,
@@ -247,6 +303,7 @@ pub fn run(
     for phase in phases {
         phase_reports.push(execute_phase(repo, phase, &inputs_mut, &mut state));
     }
+    emit_dcc_phase_fractures(repo, &phase_reports);
     adjudicate_eda_fail_soft_post_physical(&mut phase_reports, &state);
     state["phase_reports"] = json!(phase_reports);
 
@@ -311,6 +368,7 @@ pub fn run(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
 
     #[test]
     fn dcc_hygiene_failed_is_fail_soft_when_pr_url_present() {
@@ -354,6 +412,24 @@ mod tests {
             &json!({"pr_url": "https://github.com/x/y/pull/1"}),
         );
         assert!(entry.get("fail_soft").is_none());
+    }
+
+    #[test]
+    fn dcc_fracture_emits_on_blocked_phase() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Aduana evolution",
+            "status": "blocked",
+            "message": "EVOL_MATERIAL_UNREGISTERED",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(!pending.is_empty());
     }
 
     fn eda_blocked_orphans_report() -> Value {

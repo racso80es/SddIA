@@ -1,12 +1,14 @@
 ---
 uuid: "f0b8ce4a-2f79-4516-bee0-acfe0d25bd58"
 name: "todos-jurisdiction"
-version: "1.0.0"
+version: "1.1.0"
 nature: "tactical-norm"
 author: "dedalo"
 scope: "agnostic"
 category: "workflow"
-hash_signature: "sha256:2d0307c0fc004b5724582d938f5d9371c5f4741eb21c150bfe0a8338804a804f"
+dependencies:
+  - "4c448c82-de41-460f-b24f-82a84fa5ed69"
+hash_signature: "sha256:6ee2ff69d955336488d4f1620eeecc808d150b34b6ebf7bfada1a2cf3b98ba01"
 ---
 
 ## Directriz Core
@@ -24,4 +26,9 @@ Jurisdicción de buckets bajo docs/todos/. SSOT de rutas despachables: paths.tod
 
 Portador deuda no-fractura: type deuda + tech_debt_ids (prefijo DT-) en pending/ con dispatch false. friction_ids usa prefijo F-. Done inalterado: features-documentation-pattern v1.2.1.
 
-Restricciones: prohibido tercer estado de Done; prohibido anclar TQM a buckets inertes; prohibido mutar esta norma sin entity-manager; prohibido reimplementar fracture_pbi/materialize-fracture-pbi/enrich-fracture-pbi-kaizen.
+## Restricciones Duras (Aduana de Fricción)
+
+- Prohibido un tercer estado de Done.
+- Prohibido anclar TQM/archivado a buckets inertes (kitchen/, historias/, tmp/, DeudaTecnica/).
+- Prohibido mutar esta norma sin entity-manager.
+- Prohibido reimplementar fracture_pbi / materialize-fracture-pbi / enrich-fracture-pbi-kaizen.

@@ -125,19 +125,15 @@ pub fn capability_name(name: &str) -> String {
 }
 
 /// Paridad `execute_process_core.parse_frontmatter` (campos usados por forjas).
+/// Usa el parser Core (`split("---")`) para soportar valores como `workspace_template: …/---`.
 pub fn parse_frontmatter(path: &Path) -> Result<Map<String, Value>, String> {
-    let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
-    let Some(body) = text.strip_prefix("---") else {
-        return Ok(Map::new());
-    };
-    let Some((yaml, _)) = body.split_once("\n---") else {
-        return Ok(Map::new());
-    };
-    let fm: Value = serde_yaml::from_str(yaml).map_err(|e| e.to_string())?;
-    match fm {
-        Value::Object(map) => Ok(map),
-        _ => Ok(Map::new()),
+    let raw = crate::core::parser::parse_frontmatter(path)?;
+    let mut map = Map::new();
+    for (k, v) in raw {
+        let j = serde_json::to_value(&v).map_err(|e| e.to_string())?;
+        map.insert(k, j);
     }
+    Ok(map)
 }
 
 pub fn idempotent_forge_handoff(
@@ -726,6 +722,330 @@ pub fn patch_genome_source_sha256(genome_path: &Path, source_sha256: &str) -> Re
     let new_yaml = serde_yaml::to_string(&Value::Object(map)).map_err(|e| e.to_string())?;
     let new_text = format!("---\n{new_yaml}---\n\n{body}");
     fs::write(genome_path, new_text).map_err(|e| e.to_string())
+}
+
+/// Actualiza columna version en `library/norms/index.md` para `name`.
+pub fn update_library_norm_index_version(
+    index_path: &Path,
+    name: &str,
+    new_version: &str,
+) -> Result<(), String> {
+    if !index_path.is_file() {
+        return Ok(());
+    }
+    let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+    let mut changed = false;
+    let mut lines: Vec<String> = Vec::new();
+    for line in idx.lines() {
+        if !line.starts_with('|') {
+            lines.push(line.to_string());
+            continue;
+        }
+        let cols: Vec<&str> = line.split('|').collect();
+        let matches = cols.len() >= 5
+            && (cols[3].trim() == name || cols[1].trim().contains(&format!("{name}.md")));
+        if matches {
+            let mut new_cols: Vec<String> = cols.iter().map(|c| (*c).to_string()).collect();
+            new_cols[4] = format!(" {new_version} ");
+            let rebuilt = new_cols.join("|");
+            if rebuilt != *line {
+                changed = true;
+            }
+            lines.push(rebuilt);
+        } else {
+            lines.push(line.to_string());
+        }
+    }
+    if changed {
+        let mut out = lines.join("\n");
+        if idx.ends_with('\n') && !out.ends_with('\n') {
+            out.push('\n');
+        }
+        fs::write(index_path, out).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+pub fn dependencies_from_inputs(inputs: &Value) -> Vec<String> {
+    inputs
+        .get("tactical_norm_dependencies")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(str::trim).filter(|s| !s.is_empty()))
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+pub fn format_dependencies_yaml(deps: &[String]) -> String {
+    if deps.is_empty() {
+        return "dependencies: []\n".to_string();
+    }
+    let mut lines = vec!["dependencies:".to_string()];
+    for dep in deps {
+        lines.push(format!("  - \"{dep}\""));
+    }
+    lines.join("\n") + "\n"
+}
+
+pub fn norm_integrity_hash(
+    name: &str,
+    friction: &str,
+    hard_constraints: &str,
+    scope: &str,
+    deps: &[String],
+) -> String {
+    let payload = json!({
+        "tactical_norm_name": name,
+        "friction": friction.trim(),
+        "hard_constraints": hard_constraints.trim(),
+        "scope": scope,
+        "dependencies": deps,
+    });
+    let canon = canon_json_sorted(&payload);
+    let mut hasher = Sha256::new();
+    hasher.update(canon.as_bytes());
+    format!("sha256:{:x}", hasher.finalize())
+}
+
+fn strip_hash_signature_line(raw: &str) -> String {
+    raw.lines()
+        .filter(|l| !l.trim_start().starts_with("hash_signature:"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn canonical_artifact_hash(raw: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(strip_hash_signature_line(raw).as_bytes());
+    format!("sha256:{:x}", hasher.finalize())
+}
+
+pub fn apply_markdown_body_replacements(body: &str, replacements: &Value) -> Result<String, String> {
+    let Some(arr) = replacements.as_array() else {
+        return Err("markdown_body_replacements debe ser array".into());
+    };
+    let mut out = body.to_string();
+    for item in arr {
+        let from = item
+            .get("from")
+            .and_then(|v| v.as_str())
+            .ok_or("markdown_body_replacements[].from requerido")?;
+        let to = item
+            .get("to")
+            .and_then(|v| v.as_str())
+            .ok_or("markdown_body_replacements[].to requerido")?;
+        if !out.contains(from) {
+            return Err(format!("markdown_body_replacements: texto no encontrado: {from}"));
+        }
+        out = out.replacen(from, to, 1);
+    }
+    Ok(out)
+}
+
+pub fn patch_artifact_body_replacements(
+    artifact_path: &Path,
+    replacements: &Value,
+) -> Result<(String, String, String, String), String> {
+    let text = fs::read_to_string(artifact_path).map_err(|e| e.to_string())?;
+    let (yaml, body) = split_md_frontmatter(&text)?;
+    let fm_val: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+    let map = match fm_val {
+        Value::Object(m) => m,
+        _ => return Err("frontmatter no es objeto YAML".into()),
+    };
+    let entity_uuid = map
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if entity_uuid.is_empty() {
+        return Err("uuid ausente en frontmatter".into());
+    }
+    let version = map
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("1.0.0")
+        .to_string();
+    let old_hash = map
+        .get("hash_signature")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let new_body = apply_markdown_body_replacements(&body, replacements)?;
+    let draft = format!("---\n{yaml}---\n\n{new_body}");
+    let new_hash = canonical_artifact_hash(&draft);
+    let new_yaml = if yaml.contains("hash_signature:") {
+        static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+        let re = RE.get_or_init(|| Regex::new(r"(?m)^hash_signature:\s*.+$").expect("regex"));
+        re.replace(&yaml, format!("hash_signature: \"{new_hash}\""))
+            .to_string()
+    } else {
+        format!("{yaml}\nhash_signature: \"{new_hash}\"")
+    };
+    let new_text = format!("---\n{new_yaml}---\n\n{new_body}");
+    fs::write(artifact_path, new_text).map_err(|e| e.to_string())?;
+    Ok((entity_uuid, old_hash, new_hash, version))
+}
+
+/// Resultado de patch update de norma táctica.
+pub struct NormContentPatchResult {
+    pub entity_uuid: String,
+    pub old_hash: String,
+    pub new_hash: String,
+    pub old_version: String,
+    pub new_version: String,
+}
+
+pub fn patch_norm_content_update(
+    norm_path: &Path,
+    inputs: &Value,
+) -> Result<NormContentPatchResult, String> {
+    let text = fs::read_to_string(norm_path).map_err(|e| e.to_string())?;
+    let (_yaml, old_body) = split_md_frontmatter(&text)?;
+    let fm = parse_frontmatter(norm_path)?;
+    let name = fm
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or("name ausente en frontmatter")?
+        .to_string();
+    let entity_uuid = fm
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .ok_or("uuid ausente en frontmatter")?
+        .to_string();
+    let old_version = fm
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("1.0.0")
+        .to_string();
+    let new_version = optional_str(inputs, "tactical_norm_version")
+        .unwrap_or_else(|| bump_semver_patch(&old_version));
+    let old_hash = fm
+        .get("hash_signature")
+        .and_then(|v| v.as_str())
+        .filter(|s| s.starts_with("sha256:"))
+        .map(str::to_string)
+        .unwrap_or_else(|| canonical_artifact_hash(&text));
+
+    if let Some(replacements) = inputs.get("markdown_body_replacements") {
+        let (_, _, new_hash, _) = patch_artifact_body_replacements(norm_path, replacements)?;
+        return Ok(NormContentPatchResult {
+            entity_uuid,
+            old_hash,
+            new_hash,
+            old_version: old_version.clone(),
+            new_version,
+        });
+    }
+
+    let scope = optional_str(inputs, "norm_scope")
+        .or_else(|| fm.get("scope").and_then(|v| v.as_str()).map(str::to_string))
+        .unwrap_or_else(|| "agnostic".to_string());
+    let category = optional_str(inputs, "norm_category")
+        .or_else(|| fm.get("category").and_then(|v| v.as_str()).map(str::to_string))
+        .unwrap_or_else(|| "workflow".to_string());
+    let author = optional_str(inputs, "tactical_norm_author")
+        .or_else(|| fm.get("author").and_then(|v| v.as_str()).map(str::to_string))
+        .unwrap_or_else(|| "laboratorio".to_string());
+    let friction = optional_str(inputs, "tactical_norm_friction").unwrap_or_else(|| {
+        old_body
+            .split("## Restricciones Duras")
+            .next()
+            .unwrap_or(&old_body)
+            .replace("## Directriz Core", "")
+            .trim()
+            .to_string()
+    });
+    let hard_constraints = optional_str(inputs, "tactical_norm_hard_constraints")
+        .unwrap_or_else(|| "Ninguna.".to_string());
+    let deps = dependencies_from_inputs(inputs);
+    let new_hash = norm_integrity_hash(&name, &friction, &hard_constraints, &scope, &deps);
+    let dependencies_yaml = format_dependencies_yaml(&deps);
+    let body = format!(
+        r#"---
+uuid: "{entity_uuid}"
+name: "{name}"
+version: "{new_version}"
+nature: "tactical-norm"
+author: "{author}"
+scope: "{scope}"
+category: "{category}"
+{dependencies_yaml}hash_signature: "{new_hash}"
+---
+
+## Directriz Core
+
+{friction}
+
+## Restricciones Duras (Aduana de Fricción)
+
+{hard_constraints}
+"#
+    );
+    fs::write(norm_path, body).map_err(|e| e.to_string())?;
+    Ok(NormContentPatchResult {
+        entity_uuid,
+        old_hash,
+        new_hash,
+        old_version,
+        new_version,
+    })
+}
+
+/// Resultado de refresco de `hash_signature` sin mutar cuerpo.
+pub struct HashRefreshResult {
+    pub entity_uuid: String,
+    pub old_hash: String,
+    pub new_hash: String,
+    pub version: String,
+}
+
+pub fn patch_hash_signature_refresh(artifact_path: &Path) -> Result<HashRefreshResult, String> {
+    let text = fs::read_to_string(artifact_path).map_err(|e| e.to_string())?;
+    let fm = parse_frontmatter(artifact_path)?;
+    let entity_uuid = fm
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .ok_or("uuid ausente en frontmatter")?
+        .to_string();
+    let version = fm
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("1.0.0")
+        .to_string();
+    let old_hash = fm
+        .get("hash_signature")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let new_hash = canonical_artifact_hash(&text);
+    if old_hash == new_hash {
+        return Ok(HashRefreshResult {
+            entity_uuid,
+            old_hash,
+            new_hash,
+            version,
+        });
+    }
+    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(r"(?m)^hash_signature:\s*.+$").expect("regex"));
+    let new_text = if text.contains("hash_signature:") {
+        re.replace(&text, format!("hash_signature: \"{new_hash}\""))
+            .to_string()
+    } else {
+        let (yaml, body) = split_md_frontmatter(&text)?;
+        format!("---\n{yaml}hash_signature: \"{new_hash}\"\n---\n\n{body}")
+    };
+    fs::write(artifact_path, new_text).map_err(|e| e.to_string())?;
+    Ok(HashRefreshResult {
+        entity_uuid,
+        old_hash,
+        new_hash,
+        version,
+    })
 }
 
 #[cfg(test)]

@@ -6,7 +6,7 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-28"
 updated: "2026-08-29"
-status: pending
+status: done
 priority: alta
 process: feature
 type: feature
@@ -44,23 +44,27 @@ related:
   - SddIA/skills/sddia-evolution-register/src/lib.rs
   - .gitignore
 source_audit: "Auditoría post-ciclo feat/jurisdiccion-deuda-tecnica-todos (PR #219). Evidencia: artefacto forjado f0b8ce4a vs norms-contract v1.1.0; audit-eda-coverage --scan; git cat-file sobre main; .events/pending vacío tras colapso DCC; grep sobre .gitignore."
+validacion_ref: docs/features/kaizen-ciclo-jurisdiccion-todos/validacion.md
+evolution_entry: SddIA/evolution/a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b.md
 ---
 
 # [KAIZEN] Ciclo jurisdicción todos — fricción de ejecución
 
 Auditoría de la fricción emergida al ejecutar `PBI-OPER-DEUDA-TECNICA-KINTSUGI-001` (rama `feat/jurisdiccion-deuda-tecnica-todos`, PR [#219](https://github.com/racso80es/SddIA/pull/219)). Las **siete** fricciones (§0) son **de ciclo**, no del alcance del PBI de origen; ninguna se resolvió allí.
 
+**Cierre:** 2026-08-29 · rama `feat/kaizen-ciclo-jurisdiccion-todos` · `validacion.md` APTO · evolution `a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b`.
+
 ## 0. Trazabilidad fricción → sección → criterio
 
 | `friction_id` | Sección | Estado | Criterio | Deuda ligada |
 |---------------|---------|--------|----------|--------------|
-| `F-NORM-FORGE-CONTRATO-PARCIAL` | §1 | Reproducible | CA1, CA2 | `DT-NORM-FORGE-DEPENDENCIES-DESCARTADAS`, `DT-NORM-FORGE-SIN-RESTRICCIONES-DURAS` |
-| `F-EDA-ORPHAN-BLOQUEA-CIERRE-AJENO` | §2 | Saldada 2026-08-28 (deuda viva) | CA3 | `DT-EDA-PENDING-FORGE-STALE` |
-| `F-DCC-VIA-EXCEPCION-INDOCUMENTADA` | §2 | Reproducible | CA3b | — |
-| `F-DCC-COLAPSO-SIN-FRACTURA` | §3 | Reproducible | CA4 | — |
-| `F-EVOLUTION-CORRELACION-EDA-COVERAGE` | §4 | Reproducible | CA5 | — |
-| `F-DCC-TMP-FUERA-DE-GITIGNORE` | §5 | Reproducible | CA6 | — |
-| `F-TEKTON-BYPASS-RAW-POST-COLAPSO` | §6 | Autorreporte (no reproducible) | CA7 | — |
+| `F-NORM-FORGE-CONTRATO-PARCIAL` | §1 | Cerrada 2026-08-29 | CA1, CA2 | `DT-NORM-FORGE-DEPENDENCIES-DESCARTADAS`, `DT-NORM-FORGE-SIN-RESTRICCIONES-DURAS` |
+| `F-EDA-ORPHAN-BLOQUEA-CIERRE-AJENO` | §2 | Cerrada 2026-08-29 | CA3 | `DT-EDA-PENDING-FORGE-STALE` |
+| `F-DCC-VIA-EXCEPCION-INDOCUMENTADA` | §2 | Cerrada 2026-08-29 | CA3b | — |
+| `F-DCC-COLAPSO-SIN-FRACTURA` | §3 | Cerrada 2026-08-29 | CA4 | — |
+| `F-EVOLUTION-CORRELACION-EDA-COVERAGE` | §4 | Cerrada 2026-08-29 | CA5 | — |
+| `F-DCC-TMP-FUERA-DE-GITIGNORE` | §5 | Cerrada 2026-08-29 | CA6 | — |
+| `F-TEKTON-BYPASS-RAW-POST-COLAPSO` | §6 | Cerrada 2026-08-29 (normativa) | CA7 | — |
 
 ## 1. `F-NORM-FORGE-CONTRATO-PARCIAL` — el creator produce normas no conformes
 
