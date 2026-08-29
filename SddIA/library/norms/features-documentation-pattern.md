@@ -7,7 +7,8 @@ author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
----
+hash_signature: "sha256:b09b252415cd4b8fae9abc86d3c1b03da9421513479bbb707131ed2e9082b19e"---
+
 
 ## Directriz Core
 
@@ -97,7 +98,7 @@ Cuando una feature muta entidades bajo `SddIA/` (skills, events, process, agents
 - Backfill one-shot: cadena `entity-manager` → `emit-domain-mutation` con manifiesto Fase C (`backfill-manifest.json`; sin emitir al bus directo).
 - El gate **Aduana EDA genómica** en `delivery-close-cycle` invoca `sddia-qa audit-eda-coverage --scan --json`.
 - **Ruido de Sistema (block):** `orphan_count > 0` — entidad indexada sin cobertura en SSOT.
-- **Excepción legacy:** backfill Fase C con manifiesto activo (`--emit --skip-dlt` + `--anchor-merkle`) mientras migra a SSOT.
+- **Excepción backfill-manifest (warn):** si `{persist_ref}/backfill-manifest.json` declara `correlation_id` y **no** tiene `merkle_anchored: true`, la Aduana EDA degrada el veredicto de `block` a `warn` con `argos_noise: "backfill Fase C en curso"`. El backfill canónico sigue siendo `entity-manager` → `emit-domain-mutation`; el manifiesto no sustituye el sello final.
 - Forja directa de `.md` sin pasar por `entity-manager` → huérfana EDA hasta backfill Fase C o emit con sello.
 
 Referencia implementación: `docs/features/eda-coverage-ssot-bus-isolation/` (2026-05-25).

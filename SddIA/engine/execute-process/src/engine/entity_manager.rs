@@ -79,6 +79,17 @@ fn seed_field(seed: &Value, key: &str, default: Value) -> Value {
     seed.get(key).cloned().unwrap_or(default)
 }
 
+fn with_forge_seed_optionals(mut out: Value, seed: &Value) -> Value {
+    if let Value::Object(map) = &mut out {
+        for key in ["hash_refresh_only", "markdown_body_replacements"] {
+            if let Some(v) = seed.get(key) {
+                map.insert(key.into(), v.clone());
+            }
+        }
+    }
+    out
+}
+
 fn creator_inputs_from_entity(
     class: &str,
     entity_name: &str,
@@ -225,9 +236,13 @@ fn creator_inputs_from_entity(
                     "tactical_norm_friction".into(),
                     seed_field(seed, "tactical_norm_friction", json!(format!("Norma {entity_name}"))),
                 ),
+                (
+                    "tactical_norm_hard_constraints".into(),
+                    seed_field(seed, "tactical_norm_hard_constraints", json!("Ninguna.")),
+                ),
                 ("tactical_norm_author".into(), seed_field(seed, "tactical_norm_author", json!("laboratorio"))),
                 ("tactical_norm_dependencies".into(), seed_field(seed, "tactical_norm_dependencies", json!([]))),
-                ("norms_contract_version".into(), seed_field(seed, "norms_contract_version", json!("1.0.0"))),
+                ("norms_contract_version".into(), seed_field(seed, "norms_contract_version", json!("1.1.0"))),
                 ("norm_scope".into(), seed_field(seed, "norm_scope", json!("agnostic"))),
                 ("norm_category".into(), seed_field(seed, "norm_category", json!("workflow"))),
             ]),
@@ -261,7 +276,7 @@ fn creator_inputs_from_entity(
         ),
         other => return Err(format!("entity_class no soportada en forja rápida: {other}")),
     };
-    Ok(out)
+    Ok(with_forge_seed_optionals(out, seed))
 }
 
 fn merge_handoff(state: &mut Value, forge: &Value) {

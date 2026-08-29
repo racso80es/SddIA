@@ -2,7 +2,7 @@
 
 **Tipo:** Norma / Comportamiento
 **UUID:** 4c04f9ab-cf64-44b4-8db9-8d7d91e8432b
-**Versión:** 1.1
+**Versión:** 1.2
 **Seguridad:** Karma2Token
 
 ## Propósito
@@ -37,5 +37,15 @@ Ante colapso de un proceso oficial:
 4. **Delegar** a Mayeuta (`enrich-fracture-pbi-kaizen`) la síntesis analítica — el **Por Qué** y propuesta evolutiva.
 5. **Notificar** al Vértice Biológico: *"El proceso ha colapsado. Evento de fractura emitido. Cúmulo ha documentado la deuda. Mayeuta ha enriquecido el diagnóstico. A la espera de instrucciones."*
 6. **No avanzar** hasta laudo humano o autorización explícita de salto táctico documentada en el PBI activo.
+
+### Colapso mudo (v1.2)
+
+Si un proceso oficial retorna `failed` o `blocked` **sin** depositar `System_Fracture_Detected` en el bus (`.events/pending/` o ruta equivalente en `eda_bus`):
+
+1. El operador **emite** el evento por la vía canónica (`execute-process` / acción de emisión documentada) con `friction_id` estable del ciclo.
+2. **Detiene** de inmediato; prohibido improvisar transporte raw (`git push`, `gh pr create`, `curl`).
+3. Sigue el protocolo Kintsugi desde el paso 3 (delegar a Cúmulo / Mayeuta) una vez acusada la emisión.
+
+La ausencia de fractura en el runtime **no** autoriza bypass manual ni continuar la entrega.
 
 Referencias: `SddIA/events/domain/system-fracture-detected.md`, `docs/fixes/delivery-close-hook-eda-governance/`, PBI `[FIX] delivery-close-cycle`.

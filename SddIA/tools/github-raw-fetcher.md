@@ -6,7 +6,7 @@ version: "1.0.0"
 type: tool
 contract: tools-contract
 context: system-operations
-hash_signature: sha256:pending-forge
+hash_signature: "sha256:1830e89b0dc4bd16bad810e6f88c1edd3e79a002e6a754d46b1aff89ebf17e46"
 capabilities:
   - "github-raw-fetcher"
   - "asset-fetch"

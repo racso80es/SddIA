@@ -7,6 +7,7 @@ use uuid::Uuid;
 
 pub const REASON_OK: &str = "EVOL_OK";
 pub const REASON_UNREGISTERED: &str = "EVOL_MATERIAL_UNREGISTERED";
+pub const REASON_ENGINE_DERIVED: &str = "EVOL_ENGINE_DERIVED";
 pub const REASON_INVALID: &str = "EVOL_RECORD_INVALID";
 pub const REASON_NOT_INDEXED: &str = "EVOL_NOT_INDEXED";
 pub const REASON_HASH: &str = "EVOL_HASH_MISMATCH";
@@ -16,6 +17,11 @@ pub const REASON_CUMULO: &str = "EVOL_CUMULO";
 
 const EVO_PREFIX_DEFAULT: &str = "SddIA/evolution";
 const SDDIA_PREFIX: &str = "SddIA/";
+const EDA_COVERAGE_SSOT: &str = "SddIA/core/eda-coverage.json";
+
+fn is_engine_derived_material(path: &str) -> bool {
+    path.replace('\\', "/") == EDA_COVERAGE_SSOT
+}
 
 #[derive(Debug, Clone)]
 pub struct Envelope {
@@ -492,6 +498,9 @@ fn verdict(request: &Value) -> Envelope {
     }
 
     for p in &material {
+        if is_engine_derived_material(p) {
+            continue;
+        }
         let covered = cors.iter().any(|r| record_covers(r, p));
         if !covered {
             findings.push(json!({
@@ -1077,6 +1086,32 @@ mod tests {
         assert!(is_valid_hash_integrity(
             env.result["hash_integrity"].as_str().unwrap()
         ));
+    }
+
+    #[test]
+    fn eda_coverage_ssot_exempt_from_material_gate() {
+        let req = json!({
+            "operation": "verdict",
+            "diff": {"paths": [{"path": "SddIA/core/eda-coverage.json", "status": "M"}]},
+            "registry": registry(vec![], &[])
+        });
+        let env = execute(&req);
+        assert!(env.success, "{}", env.message);
+    }
+
+    #[test]
+    fn eda_coverage_plus_other_material_still_blocks() {
+        let req = json!({
+            "operation": "verdict",
+            "diff": {"paths": [
+                {"path": "SddIA/core/eda-coverage.json", "status": "M"},
+                {"path": "SddIA/norms/foo.md", "status": "M"}
+            ]},
+            "registry": registry(vec![], &[])
+        });
+        let env = execute(&req);
+        assert!(!env.success);
+        assert_eq!(env.result["reason_codes"][0], REASON_UNREGISTERED);
     }
 
     #[test]

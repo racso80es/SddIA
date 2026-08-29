@@ -6,7 +6,7 @@ version: "1.0.0"
 type: action
 contract: actions-contract
 context: knowledge-management
-hash_signature: sha256:pending-forge
+hash_signature: "sha256:1129f8a7ba24716caca3fa213ad6f829547aa2c37106ae3cc61221e30b59046e"
 capabilities:
   - "remote-asset-reclamation"
   - "asset-integrity-declaration"

@@ -1,0 +1,7 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/kaizen-ciclo-jurisdiccion-todos",
+  "branch_name": "feat/kaizen-ciclo-jurisdiccion-todos",
+  "pr_title": "feat(kaizen): ciclo jurisdicción todos — forge normas, fractura DCC, gate evolution",
+  "target_branch": "main"
+}

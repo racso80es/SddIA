@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - source-control
 contract: process-contract v1.4.0
-hash_signature: sha256:b26d16f7bb9144d6d2e01cf9d89b196285fb9e043178915ae990cc51af184cb4
+hash_signature: "sha256:7610a5b40ef09bb93e33cd2bbedaafbea18bd172b21831362806fb6c7d218ed6"
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -59,8 +59,8 @@ phases:
 porcentaje_de_exito: null
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
 version: 1.2.0
-workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
----
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/---
+
 
 # delivery-close-cycle
 
@@ -96,7 +96,7 @@ Salidas propagadas al envelope del proceso: `event_id`, `target_path`, `pr_url`.
 ## Notas operativas
 
 * La fase **Impacto SddIA condicional** debe evaluarse como no-op documentado cuando no aplique (`source_process != feature` o sin cambios bajo `SddIA/`), sin bloquear el resto del ciclo.
-* **Aduana EDA genómica:** ejecutar `SddIA/target/debug/sddia-qa audit-eda-coverage --scan --json` (o `./sddia-run.sh --audit-eda-coverage --scan --json`). Si `orphan_count > 0` (entidad indexada sin `Domain_Entity_Created` correlacionado), Argos emite **Ruido de Sistema** con veredicto `block` hasta backfill Fase C (`--emit --skip-dlt` + `--anchor-merkle` obligatorio al cierre). Excepción temporal: manifiesto `backfill-manifest.json` con `correlation_id` activo en la feature.
+* **Aduana EDA genómica:** ejecutar `SddIA/target/debug/sddia-qa audit-eda-coverage --scan --json` (o `./sddia-run.sh --audit-eda-coverage --scan --json`). Si `orphan_count > 0` (entidad indexada sin `Domain_Entity_Created` correlacionado), Argos emite **Ruido de Sistema** con veredicto `block`. **Excepción `backfill-manifest.json`:** si `{persist_ref}/backfill-manifest.json` declara `correlation_id` y **no** tiene `merkle_anchored: true`, el gate degrada el veredicto a `warn` con `argos_noise: "backfill Fase C en curso"`. El backfill canónico sigue siendo `entity-manager` → `emit-domain-mutation` con sello `--anchor-merkle` al cierre.
 * Todas las rutas y políticas se resuelven exclusivamente vía `cumulo.paths.json` y normas enlazadas (`git-operations`, `pull-request-orchestration`).
 
 ## Perfil laboratorio (`execute-process` nativo)
