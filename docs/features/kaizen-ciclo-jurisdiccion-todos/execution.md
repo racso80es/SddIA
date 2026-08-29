@@ -34,4 +34,4 @@ git check-ignore -v docs/features/kaizen-ciclo-jurisdiccion-todos/.tmp/pr-body.m
 
 L8: `SddIA/evolution/a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b.md` + fila en `Evolution_log.md` (`universe_total: 95`); `evolution-rehash` → `sha256:19ea8ad5…`.
 
-L9: `validacion.md` APTO · PBI → `docs/todos/done/` · `_delivery-close.json` listo para DCC.
+L9: `validacion.md` APTO · PBI → `docs/todos/done/` · DCC `success` · PR [#225](https://github.com/racso80es/SddIA/pull/225) · `PullRequest_Presented` emitido.
