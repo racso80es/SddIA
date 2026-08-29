@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -135,5 +135,9 @@
   },
   "telemetry_compliance": {
     "emitted_registry": ".SddIA/telemetry-compliance/emitted.json"
+  },
+  "observability": {
+    "map_snapshot": ".SddIA/observability/map-snapshot.json",
+    "ecosystem_health": ".SddIA/observability/ecosystem-health.json"
   }
 }

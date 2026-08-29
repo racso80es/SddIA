@@ -417,6 +417,7 @@ dependencies = [
  "jsonschema",
  "libc",
  "regex",
+ "sddia-ecosystem-health",
  "sddia-io",
  "serde",
  "serde_json",
@@ -901,6 +902,7 @@ dependencies = [
 name = "kalma2-bridge"
 version = "0.1.0"
 dependencies = [
+ "sddia-ecosystem-health",
  "serde",
  "serde_json",
  "tiny_http",
@@ -1450,6 +1452,17 @@ dependencies = [
  "serde",
  "serde_json",
  "uuid",
+]
+
+[[package]]
+name = "sddia-ecosystem-health"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "regex",
+ "serde",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

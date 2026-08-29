@@ -355,6 +355,50 @@ function openCognitiveStream() {
   };
 }
 
+function renderSystemHealth(data) {
+  const matrix = $("health-matrix");
+  const statusEl = $("health-map-status");
+  if (!matrix) return;
+  matrix.innerHTML = "";
+  if (statusEl) {
+    const ms = data?.map_status || "—";
+    const warn = data?.warning ? ` — ${data.warning}` : "";
+    statusEl.textContent = `mapa: ${ms}${warn}`;
+  }
+  const rows = Array.isArray(data?.rows) ? data.rows : [];
+  if (!rows.length) {
+    matrix.textContent = "sin filas de salud";
+    return;
+  }
+  for (const row of rows) {
+    const color = row.color || "gray";
+    const el = document.createElement("div");
+    el.className = `health-row health-${color}`;
+    el.title = row.reason || "";
+    const dot = document.createElement("span");
+    dot.className = "health-dot";
+    dot.setAttribute("aria-hidden", "true");
+    const label = document.createElement("span");
+    label.className = "health-label";
+    label.textContent = `${row.family || "?"}:${row.id || "?"}`;
+    const reason = document.createElement("span");
+    reason.className = "health-reason";
+    reason.textContent = row.reason || "";
+    el.append(dot, label, reason);
+    matrix.appendChild(el);
+  }
+}
+
+async function loadSystemHealth() {
+  try {
+    const r = await fetch("/api/system-health");
+    const data = await r.json();
+    if (data.success !== false) renderSystemHealth(data);
+  } catch (_) {
+    /* snapshot opcional */
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   $("chat").addEventListener("click", enviarChat);
   const forgeBtn = $("forge");
@@ -371,6 +415,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadEmailInbox();
   loadCognitiveSnapshot();
   openCognitiveStream();
+  loadSystemHealth();
 });
 
 /** Filtro C: oculta Forjar Proceso en perfil consumidor. */

@@ -186,6 +186,14 @@ pub fn run_process(
         return handlers::daemon_heartbeat::run(repo, process_inputs);
     }
 
+    if canonical == "compile-ecosystem-map-snapshot" {
+        return handlers::ecosystem_health::run_compile_map(repo, process_inputs);
+    }
+
+    if canonical == "query-ecosystem-health" {
+        return handlers::ecosystem_health::run_query(repo, process_inputs);
+    }
+
     if canonical == "memory-evolution-ingest" {
         return run_memory_evolution_ingest(repo, process_inputs);
     }

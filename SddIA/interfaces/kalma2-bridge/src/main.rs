@@ -2087,6 +2087,26 @@ fn handle_telemetry_cognitive(req: tiny_http::Request, repo: &Path) {
     );
 }
 
+fn handle_system_health(req: tiny_http::Request, repo: &Path) {
+    let result = sddia_ecosystem_health::fuse_ecosystem_health(
+        repo,
+        sddia_ecosystem_health::FuseOptions {
+            compile_map: false,
+            persist: true,
+        },
+    )
+    .unwrap_or_else(|e| {
+        serde_json::json!({
+            "success": false,
+            "exit_code": 1,
+            "error": e,
+            "rows": [],
+            "map_status": "error",
+        })
+    });
+    reply(req, 200, result.to_string());
+}
+
 fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) {
     let path = req.url().split('?').next().unwrap_or("/");
     match (req.method(), path) {
@@ -2102,6 +2122,7 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Get, "/api/progress/stream") => handle_progress_stream(req, &repo),
         (Method::Get, "/api/telemetry/stream") => handle_telemetry_stream(req, &repo),
         (Method::Get, "/api/telemetry/cognitive") => handle_telemetry_cognitive(req, &repo),
+        (Method::Get, "/api/system-health") => handle_system_health(req, &repo),
         (Method::Get, _) => serve_static(req, &ui_root),
         _ => reply(
             req,
@@ -2480,6 +2501,7 @@ mod tests {
         let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
         assert!(prod.contains("\"/api/telemetry/stream\""));
         assert!(prod.contains("\"/api/telemetry/cognitive\""));
+        assert!(prod.contains("\"/api/system-health\""));
         let dispatch = prod.split("fn dispatch").nth(1).expect("dispatch");
         let progress_pos = dispatch
             .find("\"/api/progress/stream\"")
@@ -2487,9 +2509,13 @@ mod tests {
         let telemetry_pos = dispatch
             .find("\"/api/telemetry/stream\"")
             .expect("telemetry route");
+        let health_pos = dispatch
+            .find("\"/api/system-health\"")
+            .expect("system-health route");
         let static_pos = dispatch.find("serve_static").expect("static");
         assert!(telemetry_pos > progress_pos);
-        assert!(telemetry_pos < static_pos);
+        assert!(health_pos > telemetry_pos);
+        assert!(health_pos < static_pos);
     }
 
     #[test]
