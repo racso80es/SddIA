@@ -1,12 +1,14 @@
 ---
 document_id: PBI-ARCH-IMMUNOLOGICAL-SYSTEM
-uuid: "GENERATED-UPON-MATERIALIZATION"
+uuid: "056ac6a1-02fc-4988-a704-1f5b648d0e40"
 title: "[ARQUITECTURA] Sistema Inmunológico Autónomo: Discriminación Suspend/Crash y Auto-Poda de Ruido Sistémico"
 format: markdown
 version: "1.1.0"
 created: "2026-08-26"
 refined: "2026-08-29"
-status: "pending"
+status: "cerrado"
+closed: "2026-08-29"
+fix_ref: docs/features/arch-immunological-system
 priority: "alta"
 process: feature
 related:

@@ -1,4 +1,6 @@
 pub mod daemon_heartbeat;
+pub mod heartbeat_audit_thresholds;
+pub mod phagocyte_recovered_fracture_pbis;
 pub mod ecosystem_health;
 pub mod daemon_kill_switch;
 pub mod governance_daemon;

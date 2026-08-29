@@ -1,5 +1,9 @@
 //! Handler nativo `daemon-heartbeat-audit` (P4).
 
+use super::heartbeat_audit_thresholds::{
+    load_heartbeat_audit_thresholds, monotonic_ms, HeartbeatAuditThresholds,
+};
+use super::phagocyte_recovered_fracture_pbis::{env_apply_enabled, run_phagocyte};
 use super::super::daemons::{
     daemon_interval, iso_now, list_indexed_daemon_ids, load_eda_pending, parse_iso, pid_alive,
     read_lock, resolve_daemon_uuid, stamp_delivery_state, state_dir, write_json_atomic,
@@ -12,7 +16,6 @@ use std::path::Path;
 use uuid::Uuid;
 
 const SUBSCRIBER_KEY: &str = "argos.daemon-heartbeat-audit";
-const MISSED_CYCLES_THRESHOLD: i64 = 3;
 
 fn heartbeat_state_path(repo: &Path) -> Result<std::path::PathBuf, String> {
     Ok(state_dir(repo)?.join("heartbeat-audit.json"))
@@ -39,17 +42,98 @@ fn save_state(repo: &Path, state: &Value) -> Result<(), String> {
     write_json_atomic(&heartbeat_state_path(repo)?, state)
 }
 
+struct AuditClockResult {
+    host_suspend: bool,
+    skew_seconds: Option<i64>,
+}
+
+fn update_audit_clocks(state: &mut Value, thresholds: &HeartbeatAuditThresholds) -> AuditClockResult {
+    let now_wall = iso_now();
+    let now_mono = monotonic_ms();
+    let root = match state.as_object_mut() {
+        Some(o) => o,
+        None => {
+            return AuditClockResult {
+                host_suspend: false,
+                skew_seconds: None,
+            }
+        }
+    };
+
+    let last_wall = root
+        .get("last_audit_wall_at")
+        .and_then(|v| v.as_str())
+        .and_then(parse_iso);
+    let last_mono = root.get("last_audit_mono_ms").and_then(|v| v.as_u64());
+
+    let mut result = AuditClockResult {
+        host_suspend: false,
+        skew_seconds: None,
+    };
+
+    if let (Some(lw), Some(lm), Some(nm)) = (last_wall, last_mono, now_mono) {
+        let wall_delta = (Utc::now() - lw).num_seconds();
+        let mono_delta_ms = nm.saturating_sub(lm);
+        let mono_delta = (mono_delta_ms / 1000) as i64;
+        let skew = wall_delta - mono_delta;
+        result.skew_seconds = Some(skew);
+        if skew >= thresholds.suspend_skew_seconds {
+            result.host_suspend = true;
+        }
+    }
+
+    root.insert("last_audit_wall_at".into(), json!(now_wall));
+    if let Some(nm) = now_mono {
+        root.insert("last_audit_mono_ms".into(), json!(nm));
+    }
+
+    result
+}
+
+fn reanchor_daemons_on_suspend(state: &mut Value, repo: &Path, now_iso: &str) {
+    let daemons = match state
+        .as_object_mut()
+        .and_then(|o| o.get_mut("daemons"))
+        .and_then(|d| d.as_object_mut())
+    {
+        Some(d) => d,
+        None => return,
+    };
+    for daemon_id in list_indexed_daemon_ids(repo).unwrap_or_default() {
+        let lock = read_lock(repo, &daemon_id);
+        let Some(lock) = lock else { continue };
+        let pid = lock.get("pid").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+        if !pid_alive(pid) {
+            continue;
+        }
+        let mut entry = daemons
+            .get(&daemon_id)
+            .and_then(|v| v.as_object())
+            .cloned()
+            .unwrap_or_default();
+        entry.insert("last_heartbeat_at".into(), json!(now_iso));
+        entry.insert("missed_cycles".into(), json!(0));
+        entry.insert("classification".into(), json!("host_suspend"));
+        entry.insert(
+            "heartbeat_interval_seconds".into(),
+            json!(daemon_interval(repo, &daemon_id)),
+        );
+        daemons.insert(daemon_id, Value::Object(entry));
+    }
+}
+
 fn emit_system_fracture(
     repo: &Path,
     daemon_id: &str,
     daemon_uuid: &str,
     missed_cycles: i64,
     last_heartbeat_at: Option<&str>,
+    threshold: i64,
 ) -> Result<Value, String> {
     let pending = load_eda_pending(repo)?;
     let event_id = Uuid::new_v4().to_string();
     let error_trace = format!(
-        "Centinela {daemon_id} omitió {missed_cycles} ciclos consecutivos de Daemon_Heartbeat (umbral={MISSED_CYCLES_THRESHOLD}). last_heartbeat={}",
+        "Centinela {daemon_id} omitió {missed_cycles} ciclos consecutivos de Daemon_Heartbeat (umbral={threshold}). last_heartbeat={}",
         last_heartbeat_at.unwrap_or("never")
     );
     let event = json!({
@@ -94,13 +178,13 @@ fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Opti
         .and_then(|v| v.as_object())
         .cloned()
         .unwrap_or_default();
+    let had_fracture = entry.get("fracture_event_id").is_some();
     let ts = at
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .or_else(|| payload.get("timestamp").and_then(|v| v.as_str()))
         .unwrap_or_else(|| "");
     let ts = if ts.is_empty() { iso_now() } else { ts.to_string() };
-    // Solo avanzar el reloj (no retroceder con ingest desordenado).
     let prev = entry
         .get("last_heartbeat_at")
         .and_then(|v| v.as_str())
@@ -116,6 +200,10 @@ fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Opti
     entry.insert(
         "heartbeat_interval_seconds".into(),
         json!(daemon_interval(repo, daemon_id)),
+    );
+    entry.insert(
+        "classification".into(),
+        json!(if had_fracture { "recovered" } else { "healthy" }),
     );
     entry.remove("fracture_event_id");
     daemons.insert(daemon_id.to_string(), Value::Object(entry));
@@ -137,12 +225,9 @@ fn telemetry_dir(repo: &Path) -> std::path::PathBuf {
         .unwrap_or_else(|| repo.join(".events/telemetry"))
 }
 
-/// Vía A+C: refrescar audit desde side-channel y último Daemon_Heartbeat en telemetry
-/// sin depender del fan-out (cierra agujero PR #155 en régimen).
 fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
     let mut ingested = 0u32;
 
-    // C: side-channel por daemon
     if let Ok(dir) = heartbeats_side_dir(repo) {
         if dir.is_dir() {
             for entry in fs::read_dir(&dir).map_err(|e| e.to_string())? {
@@ -175,7 +260,6 @@ fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
         }
     }
 
-    // A: último HB por daemon_name en telemetry (mtime)
     let tel = telemetry_dir(repo);
     if tel.is_dir() {
         let mut latest: std::collections::HashMap<String, (std::time::SystemTime, Value, String)> =
@@ -220,9 +304,7 @@ fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
     Ok(ingested)
 }
 
-/// Baseline de latido: el más reciente entre estado persistido y arranque del lock.
-/// Evita falsos positivos tras downtime + reinicio (last_hb obsoleto, PID nuevo).
-fn effective_heartbeat_baseline(
+pub fn effective_heartbeat_baseline(
     last_heartbeat_at: Option<&str>,
     lock_started_at: Option<&str>,
 ) -> Option<chrono::DateTime<Utc>> {
@@ -240,6 +322,8 @@ fn audit_running_daemon(
     repo: &Path,
     state: &mut Value,
     daemon_id: &str,
+    thresholds: &HeartbeatAuditThresholds,
+    host_suspend: bool,
 ) -> Result<Option<Value>, String> {
     let lock = read_lock(repo, daemon_id);
     let Some(lock) = lock else {
@@ -247,6 +331,10 @@ fn audit_running_daemon(
     };
     let pid = lock.get("pid").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
     if !pid_alive(pid) {
+        return Ok(None);
+    }
+
+    if host_suspend {
         return Ok(None);
     }
 
@@ -270,13 +358,16 @@ fn audit_running_daemon(
     let elapsed = if let Some(last) = baseline {
         (Utc::now() - last).num_seconds().max(0) as f64
     } else {
-        (interval * MISSED_CYCLES_THRESHOLD) as f64
+        (interval * thresholds.missed_cycles_threshold) as f64
     };
     let missed = (elapsed / interval as f64) as i64;
     entry.insert("missed_cycles".into(), json!(missed));
+    if missed >= thresholds.missed_cycles_threshold {
+        entry.insert("classification".into(), json!("stale"));
+    }
     daemons.insert(daemon_id.to_string(), Value::Object(entry.clone()));
 
-    if missed < MISSED_CYCLES_THRESHOLD {
+    if missed < thresholds.missed_cycles_threshold {
         return Ok(None);
     }
     if entry.get("fracture_event_id").is_some() {
@@ -290,6 +381,7 @@ fn audit_running_daemon(
         &resolve_daemon_uuid(repo, daemon_id),
         missed,
         baseline_iso.as_deref(),
+        thresholds.missed_cycles_threshold,
     )?;
     let mut updated = entry;
     updated.insert(
@@ -300,17 +392,68 @@ fn audit_running_daemon(
     Ok(Some(seal))
 }
 
-fn audit_staleness(repo: &Path) -> Result<Vec<Value>, String> {
+fn all_running_healthy(state: &Value, repo: &Path, thresholds: &HeartbeatAuditThresholds) -> bool {
+    for daemon_id in list_indexed_daemon_ids(repo).unwrap_or_default() {
+        let lock = read_lock(repo, &daemon_id);
+        let Some(lock) = lock else { continue };
+        let pid = lock.get("pid").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+        if !pid_alive(pid) {
+            continue;
+        }
+        let missed = state
+            .get("daemons")
+            .and_then(|d| d.get(&daemon_id))
+            .and_then(|e| e.get("missed_cycles"))
+            .and_then(|v| v.as_i64())
+            .unwrap_or(thresholds.missed_cycles_threshold);
+        if missed > 0 {
+            return false;
+        }
+    }
+    true
+}
+
+struct AuditStalenessResult {
+    fractures: Vec<Value>,
+    suspend_reanchored: bool,
+    skew_seconds: Option<i64>,
+    phagocyte: Option<Value>,
+}
+
+fn audit_staleness(repo: &Path) -> Result<AuditStalenessResult, String> {
+    let thresholds = load_heartbeat_audit_thresholds(repo);
     let mut state = load_state(repo);
+    let clock = update_audit_clocks(&mut state, &thresholds);
+    let now_iso = iso_now();
+    if clock.host_suspend {
+        reanchor_daemons_on_suspend(&mut state, repo, &now_iso);
+    }
     let _ = ingest_regime(repo, &mut state)?;
     let mut fractures = Vec::new();
     for daemon_id in list_indexed_daemon_ids(repo)? {
-        if let Some(seal) = audit_running_daemon(repo, &mut state, &daemon_id)? {
+        if let Some(seal) = audit_running_daemon(
+            repo,
+            &mut state,
+            &daemon_id,
+            &thresholds,
+            clock.host_suspend,
+        )? {
             fractures.push(seal);
         }
     }
     save_state(repo, &state)?;
-    Ok(fractures)
+
+    let mut phagocyte = None;
+    if fractures.is_empty() && all_running_healthy(&state, repo, &thresholds) {
+        phagocyte = Some(run_phagocyte(repo, env_apply_enabled())?);
+    }
+
+    Ok(AuditStalenessResult {
+        fractures,
+        suspend_reanchored: clock.host_suspend,
+        skew_seconds: clock.skew_seconds,
+        phagocyte,
+    })
 }
 
 pub fn audit_telemetry_file(repo: &Path, rel_path: &str) -> Result<Value, String> {
@@ -339,12 +482,15 @@ pub fn audit_telemetry_file(repo: &Path, rel_path: &str) -> Result<Value, String
     let _ = ingest_regime(repo, &mut state)?;
     save_state(repo, &state)?;
 
-    let fractures = audit_staleness(repo)?;
+    let audit = audit_staleness(repo)?;
     stamp_delivery_state(&event_path, SUBSCRIBER_KEY, "success");
     Ok(json!({
         "ok": true,
         "status": "audited",
-        "fractures_emitted": fractures,
+        "fractures_emitted": audit.fractures,
+        "suspend_reanchored": audit.suspend_reanchored,
+        "skew_seconds": audit.skew_seconds,
+        "phagocyte": audit.phagocyte,
         "daemon_name": payload.get("daemon_name"),
     }))
 }
@@ -379,11 +525,17 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         }
     }
 
-    let fractures = audit_staleness(repo)?;
+    let audit = audit_staleness(repo)?;
     Ok(OrchestratorEnvelope {
         success: true,
         status_code: 0,
-        data: Some(json!({"status": "sweep", "fractures_emitted": fractures})),
+        data: Some(json!({
+            "status": "sweep",
+            "fractures_emitted": audit.fractures,
+            "suspend_reanchored": audit.suspend_reanchored,
+            "skew_seconds": audit.skew_seconds,
+            "phagocyte": audit.phagocyte,
+        })),
         error: None,
         execution_report: Some(json!({
             "process_name": "daemon-heartbeat-audit",
@@ -400,6 +552,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::heartbeat_audit_thresholds::HeartbeatAuditThresholds;
 
     #[test]
     fn baseline_prefers_newer_started_at_on_cold_start() {
@@ -414,7 +567,7 @@ mod tests {
             .num_seconds()
             .max(0);
         let missed = elapsed / 30;
-        assert!(missed < MISSED_CYCLES_THRESHOLD, "missed={missed}");
+        assert!(missed < 3, "missed={missed}");
     }
 
     #[test]
@@ -436,5 +589,48 @@ mod tests {
             baseline.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
             "2026-07-19T17:32:58Z"
         );
+    }
+
+    #[test]
+    fn suspend_skew_detected_when_wall_runs_ahead_of_mono() {
+        let mut state = json!({"daemons": {}});
+        let thresholds = HeartbeatAuditThresholds {
+            missed_cycles_threshold: 3,
+            suspend_skew_seconds: 60,
+        };
+        let past = (Utc::now() - chrono::Duration::hours(2))
+            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
+        state
+            .as_object_mut()
+            .unwrap()
+            .insert("last_audit_wall_at".into(), json!(past));
+        state
+            .as_object_mut()
+            .unwrap()
+            .insert("last_audit_mono_ms".into(), json!(monotonic_ms().unwrap()));
+        let result = update_audit_clocks(&mut state, &thresholds);
+        assert!(result.host_suspend);
+        assert!(result.skew_seconds.unwrap_or(0) >= 60);
+    }
+
+    #[test]
+    fn thresholds_from_ssot_not_hardcoded_const() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"argos":{"heartbeat_audit_thresholds":"SddIA/daemons/heartbeat-audit.thresholds.json"},"daemons_instance":{"state":".SddIA/daemons/state"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/daemons/heartbeat-audit.thresholds.json"),
+            r#"{"missed_cycles_threshold":9,"suspend_skew_seconds":300}"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(repo.join(".SddIA/daemons/state")).unwrap();
+        let t = load_heartbeat_audit_thresholds(repo);
+        assert_eq!(t.missed_cycles_threshold, 9);
     }
 }

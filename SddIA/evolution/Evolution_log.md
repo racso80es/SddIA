@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `7f3a9e2b-1c4d-4f8a-9b6e-0d5c8a1f3e72` | 2026-08-29 | Sistema inmunológico: suspend/crash skew, SSOT umbrales, fagocitosis PBI-FIX-FRACTURE. | CANONICO | `SddIA/evolution/7f3a9e2b-1c4d-4f8a-9b6e-0d5c8a1f3e72.md` |
 | `d664b94d-3ce8-4b66-a4a7-0ff10570acf9` | 2026-08-29 | Kaizen CI: segregación push vs pull_request en sddia-index-qa, concurrency por evento, jobs pesados condicionados. | CANONICO | `SddIA/evolution/d664b94d-3ce8-4b66-a4a7-0ff10570acf9.md` |
 | `3347c0b0-99a2-45ca-a1dd-97c6ebc8298a` | 2026-08-29 | Integridad proceso: tests CA1/CA2, aduana DCC indices, job CI sddia-index-integrity, split_md_frontmatter Core | CANONICO | `SddIA/evolution/3347c0b0-99a2-45ca-a1dd-97c6ebc8298a.md` |
 | `a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b` | 2026-08-29 | Kaizen ciclo jurisdicción todos: norm forge conforme, fractura DCC, exención eda-coverage, backfill documentado. | CANONICO | `SddIA/evolution/a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b.md` |

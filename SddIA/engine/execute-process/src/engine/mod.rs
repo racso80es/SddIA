@@ -186,6 +186,10 @@ pub fn run_process(
         return handlers::daemon_heartbeat::run(repo, process_inputs);
     }
 
+    if canonical == "phagocyte-recovered-fracture-pbis" {
+        return handlers::phagocyte_recovered_fracture_pbis::run(repo, process_inputs);
+    }
+
     if canonical == "compile-ecosystem-map-snapshot" {
         return handlers::ecosystem_health::run_compile_map(repo, process_inputs);
     }

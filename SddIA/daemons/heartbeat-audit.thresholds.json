@@ -1,0 +1,4 @@
+{
+  "missed_cycles_threshold": 3,
+  "suspend_skew_seconds": 120
+}
