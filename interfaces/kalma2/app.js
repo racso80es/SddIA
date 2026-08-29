@@ -393,9 +393,22 @@ async function loadSystemHealth() {
   try {
     const r = await fetch("/api/system-health");
     const data = await r.json();
+    // #region agent log
+    fetch('http://127.0.0.1:7400/ingest/b4cd7cca-3613-4ae7-9d27-95676f671320',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fad1e1'},body:JSON.stringify({sessionId:'fad1e1',location:'app.js:loadSystemHealth',message:'system-health response',data:{httpStatus:r.status,success:data?.success,map_status:data?.map_status,rowCount:Array.isArray(data?.rows)?data.rows.length:null,message:data?.message||null},timestamp:Date.now(),hypothesisId:'H1-H4',runId:'audit1'})}).catch(()=>{});
+    // #endregion
     if (data.success !== false) renderSystemHealth(data);
-  } catch (_) {
-    /* snapshot opcional */
+    else {
+      const matrix = $("health-matrix");
+      const statusEl = $("health-map-status");
+      if (statusEl) statusEl.textContent = `mapa: error — ${data.message || "endpoint no disponible"}`;
+      if (matrix) matrix.textContent = "sin filas de salud (API success=false)";
+    }
+  } catch (err) {
+    // #region agent log
+    fetch('http://127.0.0.1:7400/ingest/b4cd7cca-3613-4ae7-9d27-95676f671320',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'fad1e1'},body:JSON.stringify({sessionId:'fad1e1',location:'app.js:loadSystemHealth',message:'system-health fetch failed',data:{error:String(err)},timestamp:Date.now(),hypothesisId:'H1-H4',runId:'audit1'})}).catch(()=>{});
+    // #endregion
+    const statusEl = $("health-map-status");
+    if (statusEl) statusEl.textContent = "mapa: error — no se pudo contactar /api/system-health";
   }
 }
 

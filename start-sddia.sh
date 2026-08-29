@@ -236,7 +236,7 @@ _resolve_bridge_bin() {
         return 0
     fi
     local rel
-    for rel in SddIA/target/debug/kalma2-bridge SddIA/target/release/kalma2-bridge; do
+    for rel in SddIA/target/release/kalma2-bridge SddIA/target/debug/kalma2-bridge; do
         if _is_native_elf "$rel"; then
             echo "$REPO_ROOT/$rel"
             return 0
