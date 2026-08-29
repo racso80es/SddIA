@@ -3,9 +3,9 @@ document_id: PBI-KAIZEN-CICLO-JURISDICCION-TODOS
 uuid: "74c4e6e9-baef-4a08-aa44-4adb0ffe1dfe"
 title: "[KAIZEN] Ciclo jurisdicción todos — norm-creator parcial, huérfanos EDA y colapso DCC sin fractura"
 format: markdown
-version: "1.0.0"
+version: "1.1.0"
 created: "2026-08-28"
-updated: "2026-08-28"
+updated: "2026-08-29"
 status: pending
 priority: alta
 process: feature
@@ -48,7 +48,19 @@ source_audit: "Auditoría post-ciclo feat/jurisdiccion-deuda-tecnica-todos (PR #
 
 # [KAIZEN] Ciclo jurisdicción todos — fricción de ejecución
 
-Auditoría de la fricción emergida al ejecutar `PBI-OPER-DEUDA-TECNICA-KINTSUGI-001` (rama `feat/jurisdiccion-deuda-tecnica-todos`, PR [#219](https://github.com/racso80es/SddIA/pull/219)). Las seis fricciones son **de ciclo**, no del alcance del PBI de origen: ninguna se resolvió allí y todas son reproducibles.
+Auditoría de la fricción emergida al ejecutar `PBI-OPER-DEUDA-TECNICA-KINTSUGI-001` (rama `feat/jurisdiccion-deuda-tecnica-todos`, PR [#219](https://github.com/racso80es/SddIA/pull/219)). Las **siete** fricciones (§0) son **de ciclo**, no del alcance del PBI de origen; ninguna se resolvió allí.
+
+## 0. Trazabilidad fricción → sección → criterio
+
+| `friction_id` | Sección | Estado | Criterio | Deuda ligada |
+|---------------|---------|--------|----------|--------------|
+| `F-NORM-FORGE-CONTRATO-PARCIAL` | §1 | Reproducible | CA1, CA2 | `DT-NORM-FORGE-DEPENDENCIES-DESCARTADAS`, `DT-NORM-FORGE-SIN-RESTRICCIONES-DURAS` |
+| `F-EDA-ORPHAN-BLOQUEA-CIERRE-AJENO` | §2 | Saldada 2026-08-28 (deuda viva) | CA3 | `DT-EDA-PENDING-FORGE-STALE` |
+| `F-DCC-VIA-EXCEPCION-INDOCUMENTADA` | §2 | Reproducible | CA3b | — |
+| `F-DCC-COLAPSO-SIN-FRACTURA` | §3 | Reproducible | CA4 | — |
+| `F-EVOLUTION-CORRELACION-EDA-COVERAGE` | §4 | Reproducible | CA5 | — |
+| `F-DCC-TMP-FUERA-DE-GITIGNORE` | §5 | Reproducible | CA6 | — |
+| `F-TEKTON-BYPASS-RAW-POST-COLAPSO` | §6 | Autorreporte (no reproducible) | CA7 | — |
 
 ## 1. `F-NORM-FORGE-CONTRATO-PARCIAL` — el creator produce normas no conformes
 
@@ -70,9 +82,11 @@ rg -l 'Restricciones Duras' SddIA/library/norms # 10 ficheros; no incluye todos-
 
 **Agravante (`DT-NORM-FORGE-DEPENDENCIES-DESCARTADAS`):** la semilla incluía `tactical_norm_dependencies: ["4c448c82-de41-460f-b24f-82a84fa5ed69"]`. El input viaja por `entity_manager.rs:229` hasta el forge y **se descarta en silencio**: `run_norm_forge` no lo lee. El proceso acusó `success: true`. Un input contractual perdido sin diagnóstico es peor que un fallo.
 
+**Agravante (`DT-NORM-FORGE-SIN-RESTRICCIONES-DURAS`):** aun con `{friction}` bien redactado, el forge lo vuelca íntegro bajo `## Directriz Core` y **nunca** genera el bloque `## Restricciones Duras (Aduana de Fricción)`. El Filtro de Acero carece así de ancla estructural donde leer las prohibiciones, con independencia de la calidad del texto de origen.
+
 **Consecuencia normativa:** el Filtro A no puede auditar contra esta norma, porque las restricciones no están en el bloque que el contrato designa para ello. Y no es corregible a mano (DA-2): exige `entity-manager` update con el forge ya reparado.
 
-## 2. `F-EDA-ORPHAN-BLOQUEA-CIERRE-AJENO` — deuda de terceros bloquea todo cierre
+## 2. `F-EDA-ORPHAN-BLOQUEA-CIERRE-AJENO` + `F-DCC-VIA-EXCEPCION-INDOCUMENTADA` — deuda de terceros bloquea todo cierre; la vía de escape no está documentada
 
 `delivery-close-cycle` abortó en **Aduana EDA genómica** con `argos_verdict: block`, `orphan_count: 2`:
 
@@ -85,7 +99,7 @@ Ambas existen en `main` desde `96c01b9` (2026-08-19), nueve días antes de esta 
 
 El gate es correcto en su lectura (hay ruido de sistema) pero su **granularidad es global**: cualquier feature, toque lo que toque, queda incapaz de cerrar por ciclo hasta que alguien salde deuda ajena.
 
-**Existe una vía de escape, pero está indocumentada.** `backfill_manifest_active` (`phase_capsules.rs:225-237`) degrada el veredicto de `block` a `warn` si `{persist_ref}/backfill-manifest.json` declara `correlation_id` y no tiene `merkle_anchored: true`. Ese mecanismo no aparece en `delivery-close-cycle.md` ni en norma alguna: solo en Rust. Un operador que colisione con el gate no tiene forma documental de descubrirlo.
+**Existe una vía de escape, pero está indocumentada (`F-DCC-VIA-EXCEPCION-INDOCUMENTADA`).** `backfill_manifest_active` (`phase_capsules.rs:225-237`) degrada el veredicto de `block` a `warn` si `{persist_ref}/backfill-manifest.json` declara `correlation_id` y no tiene `merkle_anchored: true`. Ese mecanismo no aparece en `delivery-close-cycle.md` ni en norma alguna: solo en Rust. Un operador que colisione con el gate no tiene forma documental de descubrirlo.
 
 **Saldado en este ciclo (2026-08-28):** backfill por emisión canónica de `Domain_Entity_Created` vía `--action emit-domain-mutation` para ambas entidades. `audit-eda-coverage --scan` → `orphan_count: 0` sobre 70 entidades indexadas. Acta en `docs/features/jurisdiccion-deuda-tecnica-todos/backfill-acta-eda-20260828.json`, correlación `a6f93bdc-a04d-4d7e-a3ae-d112386d10b1`. Queda viva la deuda `DT-EDA-PENDING-FORGE-STALE`: la cobertura se selló con el `sha256:pending-forge` del propio frontmatter, por paridad con el precedente `eda-backfill-precommit-20260525`.
 
