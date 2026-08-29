@@ -6,7 +6,7 @@ format: markdown
 version: "1.0.0"
 created: "2026-08-29"
 updated: "2026-08-29"
-status: pending
+status: done
 priority: alta
 process: bug-fix
 type: bug-fix
@@ -43,8 +43,8 @@ Fricción emergida al cerrar `PBI-KAIZEN-CICLO-JURISDICCION-TODOS`: el check CI 
 |---------------|---------|--------|----------|--------------|
 | `F-CORE-PARSE-FRONTMATTER-DELIMITADOR-CIEGO` | §1 | Saldada 2026-08-29 (`76be459`) | CA1 | `DT-PROCESS-MD-WORKSPACE-TEMPLATE-DELIMITADOR-COLISION` |
 | `F-PROCESS-FORGE-HASH-BODY-DIVERGENTE` | §2 | Saldada 2026-08-29 (`76be459`) | CA2 | — |
-| `F-CI-JOB-VERIFY-TOOLS-INDEX-NOMBRE-ENGANOSO` | §3 | Reproducible | CA3 | — |
-| `F-DCC-SIN-ADUANA-INTEGRIDAD-LOCAL` | §4 | Reproducible | CA4 | — |
+| `F-CI-JOB-VERIFY-TOOLS-INDEX-NOMBRE-ENGANOSO` | §3 | Saldada 2026-08-29 | CA3 | — |
+| `F-DCC-SIN-ADUANA-INTEGRIDAD-LOCAL` | §4 | Saldada 2026-08-29 | CA4 | — |
 
 ## 1. `F-CORE-PARSE-FRONTMATTER-DELIMITADOR-CIEGO` — el parser de forja trunca ante `---` embebido
 
@@ -92,11 +92,11 @@ Simetría rota: si la mutación de genoma (procesos/tools) puede desalinear esto
 
 ## 5. Criterios de aceptación
 
-- **CA1** — `forges/common.rs::parse_frontmatter` tolera valores con `---` embebido (delega en parser Core). Test unitario con fixture cuyo frontmatter contenga `workspace_template: …/---`; aserción de que `uuid`/`hash_signature` se leen. ✅ `76be459`; **resta el test dedicado**.
-- **CA2** — El process forge `update` con `markdown_body_replacements` sella `hash_signature` = `sha256_phases_integrity(phases)`, aceptado por `verify-process-integrity`. Test unitario que forje un body replacement y verifique paridad de hash. ✅ `76be459`; **resta el test dedicado**.
-- **CA3** — El workflow `sddia-index-qa.yml` expone cada verificador con nombre propio: o bien jobs separados (`verify-tools-index`, `verify-process-integrity`), o un job renombrado (`sddia-index-integrity`) cuyo nombre no reclame solo el índice de tools.
-- **CA4** — `delivery-close-cycle` gana una fase/aduana local que ejecuta `verify-process-integrity` + `verify-tools-index` antes de la Publicación remota, con veredicto `block` ante mismatch. Verificable: sellar un hash corrupto a mano y confirmar que el DCC bloquea localmente sin llegar al push.
-- **CA5** *(opcional, deuda)* — Sanear `DT-PROCESS-MD-WORKSPACE-TEMPLATE-DELIMITADOR-COLISION`: `workspace_template` de `delivery-close-cycle.md` no debe terminar en `---` (colisión con delimitador). Vía `entity-manager` update; el arreglo del parser (CA1) ya lo blinda, pero el artefacto sigue siendo frágil como precedente.
+- **CA1** — … ✅ `76be459` + test dedicado.
+- **CA2** — … ✅ `76be459` + test dedicado.
+- **CA3** — … ✅ job `sddia-index-integrity`.
+- **CA4** — … ✅ DCC v1.3.0 fase «Aduana integridad índices».
+- **CA5** — … ✅ `workspace_template` saneado vía `entity-manager`.
 
 ## 6. Invariantes
 

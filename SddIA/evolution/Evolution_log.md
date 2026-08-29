@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `3347c0b0-99a2-45ca-a1dd-97c6ebc8298a` | 2026-08-29 | Integridad proceso: tests CA1/CA2, aduana DCC indices, job CI sddia-index-integrity, split_md_frontmatter Core | CANONICO | `SddIA/evolution/3347c0b0-99a2-45ca-a1dd-97c6ebc8298a.md` |
 | `a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b` | 2026-08-29 | Kaizen ciclo jurisdicción todos: norm forge conforme, fractura DCC, exención eda-coverage, backfill documentado. | CANONICO | `SddIA/evolution/a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b.md` |
 | `97d96117-49cf-4db7-b860-acd65bee216a` | 2026-08-29 | Espejo de Consciencia: map-snapshot, fusión ecosystem-health, GET /api/system-health y panel Kalma2. | CANONICO | `SddIA/evolution/97d96117-49cf-4db7-b860-acd65bee216a.md` |
 | `b7e4c1a9-2f83-4d6e-9a15-3c8f0d2b6e47` | 2026-08-29 | Gobernanza SSOT infrastructure/adapters: Cúmulo 1.7.0, contrato, censo LanceDB placeholder. | CANONICO | `SddIA/evolution/b7e4c1a9-2f83-4d6e-9a15-3c8f0d2b6e47.md` |

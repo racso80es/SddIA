@@ -4,7 +4,8 @@ use super::accept_pr::execute_accept_pr_phase;
 use super::pull_request_review::{execute_pull_request_review_phase, is_ppr_fail_soft_friction};
 use super::invoke_orchestrator::invoke_process_full;
 use super::phase_capsules::{
-    capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate, execute_delivery_close_phase, execute_feature_phase,
+    capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate,
+    capsule_index_integrity_audit_gate, execute_delivery_close_phase, execute_feature_phase,
     try_invoke_delegates,
 };
 use super::route_fractal_core::{
@@ -622,6 +623,24 @@ fn execute_phase_body_residual(
 
     if phase_name == "Aduana evolution" {
         match capsule_evolution_audit_gate(repo, inputs, state) {
+            Ok(gate) => {
+                if let Some(obj) = gate.as_object() {
+                    for (k, v) in obj {
+                        entry[k.clone()] = v.clone();
+                    }
+                }
+                return entry;
+            }
+            Err(e) => {
+                entry["status"] = json!("failed");
+                entry["error"] = json!(e);
+                return entry;
+            }
+        }
+    }
+
+    if phase_name == "Aduana integridad índices" {
+        match capsule_index_integrity_audit_gate(repo, inputs, state) {
             Ok(gate) => {
                 if let Some(obj) = gate.as_object() {
                     for (k, v) in obj {

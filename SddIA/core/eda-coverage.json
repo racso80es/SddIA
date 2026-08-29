@@ -78,6 +78,12 @@
       "last_emitted_event": "Domain_Entity_Updated",
       "last_hash": "sha256:018ec936627329a3e963461009b23fb892bd32ba39f54d51d6cfc6d9dc58ed7f"
     },
+    "2b1b5261-2569-475b-853d-155106571010": {
+      "correlation_timestamp": "2026-08-29T14:20:38.067Z",
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:deadbeef"
+    },
     "2b337302-e794-46b8-ad4e-f65bafd21c94": {
       "correlation_timestamp": "2026-08-29T13:20:59.386Z",
       "is_covered": true,
@@ -157,10 +163,10 @@
       "last_hash": "sha256:3b708c27681bcbc3f525c077dac546da7f07237d0988a8b2306a52809555efb6"
     },
     "5417c92c-da7f-4d46-b245-55cf1b17961a": {
-      "correlation_timestamp": "2026-08-29T13:55:25.359Z",
+      "correlation_timestamp": "2026-08-29T14:19:59.285Z",
       "is_covered": true,
       "last_emitted_event": "Domain_Entity_Updated",
-      "last_hash": "sha256:7610a5b40ef09bb93e33cd2bbedaafbea18bd172b21831362806fb6c7d218ed6"
+      "last_hash": "sha256:83b193960647b429f9001469c73a616e8afa9cde31117c57583b0f9790d4ed01"
     },
     "54a49fa7-8d45-4376-9aa1-deeebeb301ea": {
       "correlation_timestamp": "2026-07-19T17:14:25.562Z",

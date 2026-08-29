@@ -270,15 +270,16 @@ pub fn bump_semver_patch(version: &str) -> String {
 }
 
 fn split_md_frontmatter(text: &str) -> Result<(String, String), String> {
-    let rest = text
-        .strip_prefix("---")
-        .ok_or_else(|| "frontmatter ausente (sin --- inicial)".to_string())?;
-    let rest = rest.strip_prefix('\n').unwrap_or(rest);
-    let (yaml, body) = rest
-        .split_once("\n---")
-        .ok_or_else(|| "frontmatter ausente (sin --- de cierre)".to_string())?;
-    let body = body.strip_prefix('\n').unwrap_or(body);
-    Ok((yaml.to_string(), body.to_string()))
+    let parts: Vec<&str> = text.split("---").collect();
+    if parts.len() < 3 {
+        return Err("frontmatter ausente (sin delimitadores ---)".to_string());
+    }
+    let yaml = parts[1].trim().to_string();
+    let body = parts[2..]
+        .join("---")
+        .trim_start_matches('\n')
+        .to_string();
+    Ok((yaml, body))
 }
 
 /// Resultado de patch update con `process_phases`.
@@ -298,6 +299,7 @@ pub fn patch_process_phases_update(
     phases: &Value,
     process_version: Option<&str>,
     inputs: Option<&Value>,
+    workspace_template: Option<&str>,
 ) -> Result<ProcessPhasesPatchResult, String> {
     if !phases.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
         return Err("process_phases debe ser array no vacío".into());
@@ -337,6 +339,9 @@ pub fn patch_process_phases_update(
     map.insert("phases".into(), phases.clone());
     if let Some(ins) = inputs {
         map.insert("inputs".into(), ins.clone());
+    }
+    if let Some(wt) = workspace_template.filter(|s| !s.is_empty()) {
+        map.insert("workspace_template".into(), Value::String(wt.to_string()));
     }
     map.insert("version".into(), Value::String(new_version.clone()));
     map.insert("hash_signature".into(), Value::String(new_hash.clone()));
@@ -1093,6 +1098,44 @@ mod tests {
         assert_eq!(bump_semver_patch("1.2.0"), "1.2.1");
         assert_eq!(bump_semver_patch("1.1.0"), "1.1.1");
         assert_eq!(bump_semver_patch("1.0.0"), "1.0.1");
+    }
+
+    #[test]
+    fn parse_frontmatter_reads_uuid_when_workspace_template_ends_with_delimiter() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let path = tmp.path().join("dcc-like.md");
+        fs::write(
+            &path,
+            r#"---
+uuid: "5417c92c-da7f-4d46-b245-55cf1b17961a"
+name: "delivery-close-cycle"
+version: "1.2.0"
+hash_signature: "sha256:b26d16f7bb9144d6d2e01cf9d89b196285fb9e043178915ae990cc51af184cb4"
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/---
+phases:
+  - name: "Fase"
+    intent: "Salida explícita."
+---
+
+# delivery-close-cycle
+"#,
+        )
+        .unwrap();
+        let fm = parse_frontmatter(&path).expect("parse");
+        assert_eq!(
+            fm.get("uuid").and_then(|v| v.as_str()),
+            Some("5417c92c-da7f-4d46-b245-55cf1b17961a")
+        );
+        assert!(
+            fm.get("hash_signature")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .starts_with("sha256:")
+        );
+        assert_eq!(
+            fm.get("name").and_then(|v| v.as_str()),
+            Some("delivery-close-cycle")
+        );
     }
 
     #[test]

@@ -284,6 +284,61 @@ fn resolve_sddia_qa_bin(repo: &Path) -> Result<PathBuf, String> {
     Err("sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)".into())
 }
 
+pub fn capsule_index_integrity_audit_gate(
+    repo: &Path,
+    _inputs: &Value,
+    state: &mut Value,
+) -> Result<Value, String> {
+    if env_truthy("SDDIA_LAB_SKIP_INDEX_INTEGRITY") {
+        return Ok(json!({
+            "status": "skipped",
+            "handler": "index-integrity-audit",
+            "reason": "SDDIA_LAB_SKIP_INDEX_INTEGRITY",
+            "skipped": true,
+        }));
+    }
+    let bin = resolve_sddia_qa_bin(repo)?;
+    for cmd in ["verify-process-integrity", "verify-tools-index"] {
+        let out = std::process::Command::new(&bin)
+            .arg(cmd)
+            .current_dir(repo)
+            .output()
+            .map_err(|e| format!("{cmd} spawn: {e}"))?;
+        if !out.status.success() {
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            if let Some(obj) = state.as_object_mut() {
+                obj.insert(
+                    "index_integrity_gate".into(),
+                    json!({
+                        "failed_command": cmd,
+                        "stderr": stderr.to_string(),
+                        "stdout": stdout.to_string(),
+                    }),
+                );
+            }
+            return Ok(json!({
+                "status": "blocked",
+                "handler": "index-integrity-audit",
+                "exitCode": out.status.code().unwrap_or(1),
+                "message": format!("{cmd} failed"),
+                "friction_id": "F-DCC-INDEX-INTEGRITY",
+            }));
+        }
+    }
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert(
+            "index_integrity_gate".into(),
+            json!({"status": "pass", "commands": ["verify-process-integrity", "verify-tools-index"]}),
+        );
+    }
+    Ok(json!({
+        "status": "executed",
+        "handler": "index-integrity-audit",
+        "exitCode": 0,
+    }))
+}
+
 pub fn capsule_evolution_audit_gate(
     repo: &Path,
     _inputs: &Value,
@@ -1567,6 +1622,102 @@ mod evolution_audit_ca12_tests {
                 .iter()
                 .any(|c| c.as_str() == Some("EVOL_MATERIAL_UNREGISTERED")),
             "codes={codes:?}"
+        );
+    }
+}
+
+#[cfg(test)]
+mod index_integrity_audit_tests {
+    use super::capsule_index_integrity_audit_gate;
+    use serde_json::json;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use std::process::Command;
+    use uuid::Uuid;
+
+    fn repo_root() -> PathBuf {
+        let mut here = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        here.pop();
+        here.pop();
+        here.pop();
+        here
+    }
+
+    #[test]
+    fn index_integrity_gate_skip_lab() {
+        std::env::set_var("SDDIA_LAB_SKIP_INDEX_INTEGRITY", "1");
+        let repo = repo_root();
+        let mut state = json!({});
+        let result = capsule_index_integrity_audit_gate(&repo, &json!({}), &mut state)
+            .expect("skip gate");
+        std::env::remove_var("SDDIA_LAB_SKIP_INDEX_INTEGRITY");
+        assert_eq!(
+            result.get("status").and_then(|v| v.as_str()),
+            Some("skipped")
+        );
+    }
+
+    #[test]
+    fn index_integrity_gate_blocks_corrupt_process_hash() {
+        let root = repo_root();
+        let qa = root.join("SddIA/target/debug/sddia-qa");
+        if !qa.is_file() {
+            eprintln!("skip: compilar sddia-qa antes del test");
+            return;
+        }
+        let wt = root
+            .join("target/index-integrity-worktrees")
+            .join(Uuid::new_v4().to_string());
+        fs::create_dir_all(wt.parent().expect("parent")).expect("mkdir");
+        assert!(
+            Command::new("git")
+                .args(["worktree", "add", "-q", wt.to_str().expect("wt"), "HEAD"])
+                .current_dir(&root)
+                .status()
+                .expect("worktree")
+                .success()
+        );
+        let target_dst = wt.join("SddIA/target");
+        if target_dst.exists() {
+            let _ = fs::remove_dir_all(&target_dst);
+        }
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(root.join("SddIA/target"), &target_dst).expect("symlink");
+        }
+        let dcc = wt.join(
+            "SddIA/library/codexes/codex-software-engineering/process/delivery-close-cycle.md",
+        );
+        let mut text = fs::read_to_string(&dcc).expect("read dcc");
+        text = text
+            .lines()
+            .map(|line| {
+                if line.trim_start().starts_with("hash_signature:") {
+                    r#"hash_signature: "sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef""#
+                        .to_string()
+                } else {
+                    line.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        fs::write(&dcc, text).expect("write corrupt hash");
+        let mut state = json!({});
+        let result = capsule_index_integrity_audit_gate(&wt, &json!({}), &mut state)
+            .expect("gate veredicto");
+        let _ = Command::new("git")
+            .args(["worktree", "remove", "-f"])
+            .arg(&wt)
+            .current_dir(&root)
+            .status();
+        assert_eq!(
+            result.get("status").and_then(|v| v.as_str()),
+            Some("blocked"),
+            "result={result}"
+        );
+        assert_eq!(
+            result.get("friction_id").and_then(|v| v.as_str()),
+            Some("F-DCC-INDEX-INTEGRITY")
         );
     }
 }
