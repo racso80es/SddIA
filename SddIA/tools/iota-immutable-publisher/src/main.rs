@@ -175,6 +175,24 @@ fn post_mock(mock_url: &str, network: &str, payload: &str) -> Result<Value, Stri
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+fn relay_error_detail(parsed: &Value, fallback: &str) -> String {
+    parsed
+        .get("error")
+        .or_else(|| parsed.get("feedback"))
+        .and_then(|v| v.as_str())
+        .unwrap_or(fallback)
+        .to_string()
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn format_relay_publish_error(status: u16, parsed: Option<&Value>, fallback: &str) -> String {
+    let detail = parsed
+        .map(|p| relay_error_detail(p, fallback))
+        .unwrap_or_else(|| fallback.to_string());
+    format!("iota-relay-publish-error: status={status} {detail}")
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn publish_via_relay(relay_url: &str, network: &str, payload: &str) -> Result<Value, String> {
     let agent = ureq::agent();
     let body = json!({
@@ -182,22 +200,29 @@ fn publish_via_relay(relay_url: &str, network: &str, payload: &str) -> Result<Va
         "network": network,
         "payload": payload,
     });
-    let resp = agent
+    let resp = match agent
         .post(relay_url)
         .set("Content-Type", "application/json")
         .timeout(Duration::from_secs(30))
         .send_string(&body.to_string())
-        .map_err(|e| format!("iota-relay-unreachable: {e}"))?;
+    {
+        Ok(r) => r,
+        Err(ureq::Error::Status(code, r)) => {
+            let parsed: Value = r.into_json().unwrap_or(Value::Null);
+            let parsed_ref = if parsed.is_null() {
+                None
+            } else {
+                Some(&parsed)
+            };
+            return Err(format_relay_publish_error(code, parsed_ref, "relay HTTP error"));
+        }
+        Err(e) => return Err(format!("iota-relay-unreachable: {e}")),
+    };
     let parsed: Value = resp
         .into_json()
         .map_err(|e| format!("iota-relay-invalid-json: {e}"))?;
     if parsed.get("success").and_then(|v| v.as_bool()) != Some(true) {
-        let err = parsed
-            .get("error")
-            .or_else(|| parsed.get("feedback"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("iota publish failed");
-        return Err(err.to_string());
+        return Err(format_relay_publish_error(200, Some(&parsed), "iota publish failed"));
     }
     let digest = parsed
         .get("result")
@@ -242,6 +267,15 @@ mod tests {
             .unwrap_or("");
         assert!(digest.starts_with("lab-sim-"));
         std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
+    }
+
+    #[test]
+    fn format_relay_publish_error_includes_status_and_body() {
+        let parsed = json!({"success": false, "error": "config-missing: IOTA_WALLET_SECRET"});
+        let msg = format_relay_publish_error(500, Some(&parsed), "relay HTTP error");
+        assert!(msg.starts_with("iota-relay-publish-error:"));
+        assert!(msg.contains("status=500"));
+        assert!(msg.contains("config-missing: IOTA_WALLET_SECRET"));
     }
 
     #[test]
