@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] Optimización termodinámica de flujos CI/CD (push vs pul
 format: markdown
 version: "1.1.0"
 created: "2026-08-29"
-status: pending
+status: done
 refinement_status: refined
 priority: media
 process: refactorization

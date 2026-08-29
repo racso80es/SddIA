@@ -1,0 +1,52 @@
+---
+feature_name: kaizen-ci-workflow-optimization
+created: "2026-08-29"
+process: refactorization
+phase: execution
+agents: tekton
+items_applied:
+  - T1-concurrency
+  - T2-job-if
+  - T3-evolution
+  - T4-tekton-docs
+  - T5-argos-archive
+branch_name: feat/kaizen-ci-workflow-optimization
+persist_ref: docs/features/kaizen-ci-workflow-optimization
+pbi_ref: docs/todos/done/PBI-KAIZEN-CI-WORKFLOW-OPTIMIZATION.md
+document_id: PBI-KAIZEN-CI-WORKFLOW-OPTIMIZATION
+uuid: d664b94d-3ce8-4b66-a4a7-0ff10570acf9
+runtime_execution_id: "780fed96-4a4c-4c5d-a693-f926e7bd79fb"
+---
+
+# Execution — kaizen-ci-workflow-optimization
+
+## T1 — Concurrency
+
+Bloque inyectado tras `on:` en `sddia-index-qa.yml`:
+
+```yaml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+```
+
+## T2 — Jobs pesados
+
+| Job | `if:` |
+|-----|-------|
+| `eda-bus-e2e-smoke` | `pull_request \|\| refs/heads/main` |
+| `eda-iota-physical` | (PR ∨ main) ∧ fork-guard legado |
+
+Jobs `sddia-index-integrity`, `eda-iota-smoke-simulate`, `wasi-runtime-smoke`: sin `if:` nuevo. Step `IOTA_WALLET_SECRET` / *exit 0*: intacto.
+
+## T3 — Evolution
+
+UUID `d664b94d-3ce8-4b66-a4a7-0ff10570acf9` · rehash vía `sddia-qa evolution-rehash`.
+
+## T4–T5 — Documental
+
+Cascada completa + PBI → `docs/todos/done/PBI-KAIZEN-CI-WORKFLOW-OPTIMIZATION.md`.
+
+## T6 — DCC
+
+Pendiente acuse `delivery-close-cycle` (push + PR).

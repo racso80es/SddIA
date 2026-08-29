@@ -1,0 +1,7 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/kaizen-ci-workflow-optimization",
+  "branch_name": "feat/kaizen-ci-workflow-optimization",
+  "pr_title": "feat(kaizen): segregación CI push vs pull_request en sddia-index-qa",
+  "target_branch": "main"
+}
