@@ -32,6 +32,12 @@
     },
     {
       "agent": "cumulo",
+      "process": "compile-ecosystem-map-snapshot",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Refrescar map-snapshot del Espejo de Consciencia tras mutación genómica."
+    },
+    {
+      "agent": "cumulo",
       "tool": "iota-immutable-publisher",
       "applies_to_origin_topology": ["core"],
       "intent": "Anclaje DLT IOTA Rebased (solo core)."
@@ -43,6 +49,12 @@
       "action": "sync-entity-index",
       "applies_to_origin_topology": ["core"],
       "intent": "Reconciliación idempotente del index.md canónico."
+    },
+    {
+      "agent": "cumulo",
+      "process": "compile-ecosystem-map-snapshot",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Refrescar map-snapshot del Espejo de Consciencia tras mutación genómica."
     },
     {
       "agent": "cumulo",
@@ -64,6 +76,12 @@
       "action": "sync-entity-index",
       "applies_to_origin_topology": ["core"],
       "intent": "Reconciliación idempotente del index.md canónico."
+    },
+    {
+      "agent": "cumulo",
+      "process": "compile-ecosystem-map-snapshot",
+      "applies_to_origin_topology": ["core"],
+      "intent": "Refrescar map-snapshot del Espejo de Consciencia tras mutación genómica."
     },
     {
       "agent": "cumulo",

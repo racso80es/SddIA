@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 93
+universe_total: 94
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `97d96117-49cf-4db7-b860-acd65bee216a` | 2026-08-29 | Espejo de Consciencia: map-snapshot, fusión ecosystem-health, GET /api/system-health y panel Kalma2. | CANONICO | `SddIA/evolution/97d96117-49cf-4db7-b860-acd65bee216a.md` |
 | `b7e4c1a9-2f83-4d6e-9a15-3c8f0d2b6e47` | 2026-08-29 | Gobernanza SSOT infrastructure/adapters: Cúmulo 1.7.0, contrato, censo LanceDB placeholder. | CANONICO | `SddIA/evolution/b7e4c1a9-2f83-4d6e-9a15-3c8f0d2b6e47.md` |
 | `a1535038-8db5-4351-8a81-cfa5586b8c5b` | 2026-08-29 | Telemetría cognitiva LLM: telemetry_receipt, Radamanto cognitive, SSE Kalma2. | CANONICO | `SddIA/evolution/a1535038-8db5-4351-8a81-cfa5586b8c5b.md` |
 | `18bacf31-9223-4b07-853e-a66c0d6c3ebd` | 2026-08-29 | A2 anti-recurrencia Radamanto: poda is_survival_hollow para CERBERO_ENTITY_REVOKED auto-referencial (kaizen-aduana-evolution). | CANONICO | `SddIA/evolution/18bacf31-9223-4b07-853e-a66c0d6c3ebd.md` |
