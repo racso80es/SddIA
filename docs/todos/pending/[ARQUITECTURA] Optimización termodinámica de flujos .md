@@ -42,3 +42,11 @@ Inyectar la directiva nativa `concurrency` en los flujos desencadenados por `pus
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+3. Criterios de Aceptación (Protocolo de Acero)
+[ ] CA1 (Sin Duplicación): Un commit subido a una rama con un PR abierto no dispara ejecuciones redundantes de eda-bus-e2e-smoke ni eda-iota-physical asociadas al evento push.
+
+[ ] CA2 (Aduana Severa): Las pruebas de integración física y E2E se ejecutan invariablemente cuando se abre o actualiza un pull_request contra la rama principal.
+
+[ ] CA3 (Cancelación Activa): Realizar dos push consecutivos en menos de un minuto a la misma rama cancela automáticamente la ejecución de GitHub Actions del primer commit.
+
+[ ] CA4 (Trazabilidad): El genoma del repositorio refleja esta optimización sin alterar la lógica interna de los tests individuales.
