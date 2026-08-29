@@ -49,4 +49,11 @@ Cascada completa + PBI → `docs/todos/done/PBI-KAIZEN-CI-WORKFLOW-OPTIMIZATION.
 
 ## T6 — DCC
 
-Pendiente acuse `delivery-close-cycle` (push + PR).
+| Campo | Valor |
+|-------|--------|
+| `execution_id` | `18a0f24b-888a-4649-a30a-f7a24133c1b8` |
+| Aduanas pre-push | evolution · EDA · índices — OK |
+| Push DCC | KO — PAT sin scope `workflow` en `.github/workflows/` |
+| Recuperación | `gh auth setup-git` + `git push -u origin HEAD` |
+| PR | https://github.com/racso80es/SddIA/pull/227 (`gh pr create`) |
+| ECST Presentación | Pendiente sello canónico post-PR (fase DCC omitida) |

@@ -13,6 +13,7 @@ document_id: PBI-KAIZEN-CI-WORKFLOW-OPTIMIZATION
 uuid: d664b94d-3ce8-4b66-a4a7-0ff10570acf9
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/227
 checks:
   CA1: APTO
   CA2: APTO
