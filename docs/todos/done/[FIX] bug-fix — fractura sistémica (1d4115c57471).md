@@ -3,21 +3,24 @@ document_id: PBI-FIX-FRACTURE-1d4115c57471
 uuid: "7fa1bc76-f562-4040-b7e3-1e6a843745ff"
 title: "[FIX] bug-fix — fractura sistémica (dirty-worktree en workspace-init)"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-08-29"
 updated: "2026-08-29"
-status: "abierto"
+status: cerrado
+closed: "2026-08-29"
 priority: media
 process: bug-fix
 fracture_hash: 1d4115c57471
 fracture_process: bug-fix
 friction_id: F-DIRTY-WORKTREE
 incident_ref: "System_Fracture_Detected — 1d4115c57471"
+resolution_ref: docs/fixes/bug-fix-fracture-1d4115c57471/
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - SddIA/engine/execute-process/src/engine/workspace_init.rs
   - docs/features/kaizen-feature-lab-init-frictions/spec.md
+  - docs/fixes/bug-fix-fracture-1d4115c57471/validacion.md
 ---
 
 # [FIX] bug-fix — fractura sistémica
@@ -55,9 +58,7 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ### Veredicto evolutivo
 
-**Cierre operativo** (higiene de worktree) — **no** `process_fix`. El guard funciona correctamente; no hay causa raíz de código que remediar.
-
-**Kaizen candidato (opcional):** discriminar en telemetría el *abort de guard pre-flight* (`F-DIRTY-WORKTREE`, higiene esperada) del *colapso sistémico de runtime*, para no materializar un PBI de fractura completa ante una protección que actúa como diseñada. Ver `system-fracture-detected.md`.
+**Kaizen de discriminación** entregado: `F-DIRTY-WORKTREE` aborta sin `System_Fracture_Detected`. El guard `L-DIRTY-INIT` permanece.
 
 ### Propuestas
 
@@ -70,5 +71,6 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 - [x] Causa raíz clasificada: guard `F-DIRTY-WORKTREE` (L-DIRTY-INIT) actuando por diseño, no defecto de motor
 - [x] Detonante resuelto: worktree limpio en `main`, cambios ajenos consolidados en sus ciclos
-- [ ] Laudo humano: confirmar cierre operativo (sin `process_fix`) y decidir si se abre kaizen de severidad de fractura
-- [ ] Este TODO movido a `docs/todos/done/`
+- [x] Kaizen: abort dirty sin `System_Fracture_Detected` (`workspace_init.rs`)
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/`
