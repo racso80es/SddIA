@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:pending-anchor-on-merge
+hash_signature: sha256:173309c4b6710ab22401ca3f652c8650d7691c6f886da90c3f28e6bb8454e7e0
 inputs:
 - sweep: Opcional boolean; reservado para paridad con audit (default true)
 - apply: Opcional boolean; si true mueve PBIs pending→done (default false; env SDDIA_PHAGOCYTE_APPLY=1)

@@ -12,6 +12,7 @@ execution_id: "987e1747-bd08-4c80-ad41-648f09cc4b12"
 global: APTO
 pbi_archived: true
 evolution_entry: SddIA/evolution/7f3a9e2b-1c4d-4f8a-9b6e-0d5c8a1f3e72.md
+pr_url: https://github.com/racso80es/SddIA/pull/228
 checks:
   AC-macrophage-argos: pass
   AC-suspend-discriminate: pass

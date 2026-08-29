@@ -3,7 +3,7 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: sha256:pending-anchor-on-merge
+hash_signature: sha256:d2792f2b96c82f65708927abc04b37fec4c256ab0ce905df9cc917ee51156e8f
 inputs:
 - event_file_path: Opcional; ruta relativa al JSON Daemon_Heartbeat en ./.events/telemetry/
 - sweep: Opcional boolean; si true y sin event_file_path, audita staleness de todos los Centinelas con lock vivo
