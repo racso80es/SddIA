@@ -3,7 +3,6 @@
 use super::capsules::invoke_git_manager;
 use super::domain_profile::resolve_execution_profile;
 use super::git_porcelain;
-use super::route_domain_core::materialize_pending_domain_event;
 use super::workspace::{
     load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path,
 };
@@ -79,27 +78,6 @@ fn env_truthy(key: &str) -> bool {
     std::env::var(key)
         .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
         .unwrap_or(false)
-}
-
-fn emit_workspace_init_fracture(
-    repo: &Path,
-    process_name: &str,
-    error_trace: &str,
-    friction_id: &str,
-) {
-    let payload = json!({
-        "process_name": process_name,
-        "error_trace": error_trace,
-        "agent_emitter": "execute-process",
-        "attempted_action": "workspace-init",
-        "friction_id": friction_id,
-    });
-    let _ = materialize_pending_domain_event(
-        repo,
-        "System_Fracture_Detected",
-        "execute-process",
-        payload,
-    );
 }
 
 fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
@@ -269,12 +247,6 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             let msg = format!(
                 "dirty-worktree: cambios fuera de persist_ref/pbi_ref: {}",
                 dirty.join(", ")
-            );
-            emit_workspace_init_fracture(
-                repo,
-                process_name,
-                &msg,
-                "F-DIRTY-WORKTREE",
             );
             return Err(msg);
         }
@@ -516,5 +488,91 @@ mod tests {
         let line = r#" M "docs/todos/pending/[REGRESI\303\223N] route-domain-event \342\200\224 fractura sist\303\251mica (6a49e0ad310e)-R1.md""#;
         let path = git_porcelain::porcelain_path_from_line(line).expect("path");
         assert!(path_in_scope(&path, "docs/fixes/other", Some(pbi)));
+    }
+
+    fn init_git_repo(root: &Path) {
+        use std::process::Command;
+        for args in [
+            &["init"][..],
+            &["config", "user.email", "wsinit@test.local"],
+            &["config", "user.name", "wsinit-test"],
+        ] {
+            let status = Command::new("git").args(args).current_dir(root).status();
+            assert!(status.is_ok_and(|s| s.success()), "git {:?}", args);
+        }
+        fs::write(root.join("README.md"), "seed\n").unwrap();
+        for args in [&["add", "."][..], &["commit", "-m", "init"][..]] {
+            let status = Command::new("git").args(args).current_dir(root).status();
+            assert!(status.is_ok_and(|s| s.success()), "git {:?}", args);
+        }
+    }
+
+    fn count_system_fracture_pending(repo: &Path) -> usize {
+        let pending = repo.join(".events/pending");
+        if !pending.is_dir() {
+            return 0;
+        }
+        let Ok(entries) = fs::read_dir(&pending) else {
+            return 0;
+        };
+        entries
+            .filter_map(Result::ok)
+            .filter(|e| {
+                e.path()
+                    .extension()
+                    .and_then(|x| x.to_str())
+                    .is_some_and(|x| x == "json")
+            })
+            .filter(|e| {
+                fs::read_to_string(e.path())
+                    .map(|t| t.contains("System_Fracture_Detected"))
+                    .unwrap_or(false)
+            })
+            .count()
+    }
+
+    fn link_capsule_target(root: &Path) {
+        let sddia_ws = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .and_then(|p| p.parent())
+            .expect("SddIA cargo workspace");
+        let target_parent = root.join("SddIA");
+        fs::create_dir_all(&target_parent).unwrap();
+        let link = target_parent.join("target");
+        if !link.exists() {
+            std::os::unix::fs::symlink(sddia_ws.join("target"), &link).expect("symlink target");
+        }
+    }
+
+    #[test]
+    fn run_dirty_outside_scope_aborts_without_system_fracture() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        link_capsule_target(root);
+        fs::create_dir_all(root.join(".events/pending")).unwrap();
+        init_git_repo(root);
+        fs::write(root.join("outside-dirty.txt"), "dirty\n").unwrap();
+
+        std::env::remove_var("SDDIA_LAB_ALLOW_DIRTY");
+        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+
+        let inputs = json!({
+            "fix_name": "dirty-scope-test",
+            "branch_name": "fix/dirty-scope-test",
+            "persist_ref": "docs/fixes/dirty-scope-test",
+            "execution_profile": { "git_required": true }
+        });
+        let err = run(root, &inputs, "bug-fix").expect_err("dirty abort");
+        assert!(
+            err.starts_with("dirty-worktree:"),
+            "unexpected err: {err}"
+        );
+        assert!(err.contains("outside-dirty.txt"));
+        assert_eq!(
+            count_system_fracture_pending(root),
+            0,
+            "F-DIRTY-WORKTREE must not emit System_Fracture_Detected"
+        );
     }
 }
