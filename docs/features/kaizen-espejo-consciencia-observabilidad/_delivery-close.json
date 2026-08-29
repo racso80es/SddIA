@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/kaizen-espejo-consciencia-observabilidad",
+  "branch_name": "feat/kaizen-espejo-consciencia-observabilidad",
+  "pr_title": "feat(observability): Espejo de Consciencia — salud del ecosistema en Kalma2",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/224",
+  "target_branch": "main"
+}
