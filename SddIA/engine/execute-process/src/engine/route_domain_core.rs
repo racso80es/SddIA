@@ -540,6 +540,11 @@ fn classify_batch_anchor_friction(causa: &str) -> (&'static str, String) {
             "F-CAPSULA-BINARIO-FOSIL",
             format!("merkle-batch-preseal failed: {causa}"),
         )
+    } else if lower.contains("iota-relay-publish-error") {
+        (
+            "F-DLT-PUBLISH-ERROR",
+            format!("merkle-batch-preseal failed: {causa}"),
+        )
     } else if lower.contains("iota-relay-unreachable")
         || lower.contains("relay-unreachable")
         || (lower.contains("relay") && lower.contains("health"))
@@ -1833,6 +1838,45 @@ mod blocking_tests {
             .as_str()
             .unwrap()
             .contains("iota-relay-unreachable"));
+    }
+
+    #[test]
+    fn classify_publish_error_vs_unreachable() {
+        let (publish, _) = classify_batch_anchor_friction(
+            "iota-relay-publish-error: status=500 config-missing: IOTA_WALLET_SECRET",
+        );
+        assert_eq!(publish, "F-DLT-PUBLISH-ERROR");
+        let (unreachable, _) =
+            classify_batch_anchor_friction("iota-relay-unreachable: Connection refused");
+        assert_eq!(unreachable, "F-DLT-RELAY-SIN-SUPERVISOR");
+    }
+
+    #[test]
+    fn emit_dlt_batch_fracture_publish_error_friction() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+        )
+        .unwrap();
+        emit_dlt_batch_fracture(
+            repo,
+            "iota-relay-publish-error: status=500 config-missing: IOTA_WALLET_SECRET",
+        );
+        let pending = repo.join(".events/pending");
+        let mut found = false;
+        for ent in fs::read_dir(&pending).unwrap() {
+            let p = ent.unwrap().path();
+            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
+            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
+            {
+                assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
+                found = true;
+            }
+        }
+        assert!(found);
     }
 
     #[test]
