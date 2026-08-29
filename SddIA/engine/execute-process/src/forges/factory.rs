@@ -502,11 +502,13 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 let inputs_patch = inputs
                     .get("process_inputs")
                     .or_else(|| inputs.get("inputs"));
+                let workspace_template = optional_str(inputs, "workspace_template");
                 let patch = patch_process_phases_update(
                     &process_path,
                     phases,
                     explicit_ver.as_deref(),
                     inputs_patch,
+                    workspace_template.as_deref(),
                 )?;
                 if patch.old_version != patch.new_version {
                     update_process_index_version(
@@ -1659,6 +1661,75 @@ phases:
         // version unchanged
         assert!(after.contains("2.0.0"));
         assert_ne!(before, after); // hash_signature refreshed
+    }
+
+    #[test]
+    fn process_forge_body_replacement_seals_phases_hash_not_artifact_hash() {
+        use super::parse_frontmatter;
+        use crate::forges::common::sha256_phases_integrity;
+        use sha2::{Digest, Sha256};
+
+        fn artifact_hash_without_signature_line(raw: &str) -> String {
+            let stripped = raw
+                .lines()
+                .filter(|l| !l.trim_start().starts_with("hash_signature:"))
+                .collect::<Vec<_>>()
+                .join("\n");
+            format!("sha256:{:x}", Sha256::digest(stripped.as_bytes()))
+        }
+
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fixture_cumulo(repo, &[]);
+        let process_dir = repo.join("SddIA/process");
+        fs::create_dir_all(&process_dir).unwrap();
+        let md = process_dir.join("body-repl-lab.md");
+        fs::write(
+            &md,
+            r#"---
+uuid: "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+name: "body-repl-lab"
+version: "1.0.0"
+contract: "process-contract v1.4.0"
+context: "ecosystem-evolution"
+hash_signature: "sha256:old"
+phases:
+  - name: "Fase"
+    intent: "intent original"
+    delegates_to:
+      - "agent:tekton"
+---
+
+# body-repl-lab
+
+NOTA_BACKFILL
+"#,
+        )
+        .unwrap();
+
+        let out = run_process_forge(
+            repo,
+            &json!({
+                "process_name": "body-repl-lab",
+                "lifecycle_operation": "update",
+                "markdown_body_replacements": [{
+                    "from": "NOTA_BACKFILL",
+                    "to": "backfill-manifest.json documentado en cuerpo."
+                }]
+            }),
+        )
+        .expect("forge");
+
+        let text = fs::read_to_string(&md).unwrap();
+        assert!(text.contains("backfill-manifest.json documentado en cuerpo."));
+        let fm = parse_frontmatter(&md).expect("fm");
+        let phases = fm.get("phases").expect("phases");
+        let expected = sha256_phases_integrity(phases);
+        let stored = fm.get("hash_signature").and_then(|v| v.as_str()).unwrap();
+        assert_eq!(stored, expected.as_str());
+        assert_eq!(out["handoff_hash_signature_new"].as_str().unwrap(), expected);
+        let artifact_hash = artifact_hash_without_signature_line(&text);
+        assert_ne!(stored, artifact_hash.as_str());
     }
 
     #[test]

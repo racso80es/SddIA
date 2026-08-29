@@ -1,7 +1,8 @@
 //! Proceso `delivery-close-cycle` nativo (P5 — fases skill/tool/action).
 
 use super::phase_capsules::{
-    capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate, execute_delivery_close_phase,
+    capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate,
+    capsule_index_integrity_audit_gate, execute_delivery_close_phase,
 };
 use super::route_domain_core::materialize_pending_domain_event;
 use super::thermodynamic;
@@ -155,6 +156,24 @@ fn execute_phase(
         }
     }
 
+    if phase_name == "Aduana integridad índices" {
+        match capsule_index_integrity_audit_gate(repo, inputs, state) {
+            Ok(gate) => {
+                if let Some(obj) = gate.as_object() {
+                    for (k, v) in obj {
+                        entry[k.clone()] = v.clone();
+                    }
+                }
+                return entry;
+            }
+            Err(e) => {
+                entry["status"] = json!("failed");
+                entry["error"] = json!(e);
+                return entry;
+            }
+        }
+    }
+
     if let Some(result) = execute_delivery_close_phase(repo, phase_name, inputs, state) {
         return match result {
             Ok(phase_entry) => {
@@ -231,6 +250,7 @@ fn dcc_friction_id(phase_name: &str, report: &Value) -> String {
     match phase_name {
         "Aduana EDA genómica" => "F-DCC-EDA-GENOMIC-BLOCK".into(),
         "Aduana evolution" => "F-DCC-EVOLUTION-GATE".into(),
+        "Aduana integridad índices" => "F-DCC-INDEX-INTEGRITY".into(),
         _ => format!(
             "F-DCC-{}",
             phase_name
