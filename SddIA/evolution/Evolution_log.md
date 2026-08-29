@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 97
+universe_total: 98
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `f757a7db-4d21-455c-b45f-4b5f61fe6f79` | 2026-08-29 | F-DIRTY-WORKTREE: workspace-init aborta sin System_Fracture_Detected (guard L-DIRTY-INIT). | CANONICO | `SddIA/evolution/f757a7db-4d21-455c-b45f-4b5f61fe6f79.md` |
 | `d8f2a4c1-7e3b-4f9a-8c2d-b3a715381787` | 2026-08-29 | DLT publish-error: F-DLT-PUBLISH-ERROR en merkle-batch-preseal e iota-immutable-publisher. | CANONICO | `SddIA/evolution/d8f2a4c1-7e3b-4f9a-8c2d-b3a715381787.md` |
 | `7f3a9e2b-1c4d-4f8a-9b6e-0d5c8a1f3e72` | 2026-08-29 | Sistema inmunológico: suspend/crash skew, SSOT umbrales, fagocitosis PBI-FIX-FRACTURE. | CANONICO | `SddIA/evolution/7f3a9e2b-1c4d-4f8a-9b6e-0d5c8a1f3e72.md` |
 | `d664b94d-3ce8-4b66-a4a7-0ff10570acf9` | 2026-08-29 | Kaizen CI: segregación push vs pull_request en sddia-index-qa, concurrency por evento, jobs pesados condicionados. | CANONICO | `SddIA/evolution/d664b94d-3ce8-4b66-a4a7-0ff10570acf9.md` |
