@@ -1,0 +1,10 @@
+{
+  "feature_name": "kaizen-espejo-consciencia-observabilidad",
+  "branch_name": "feat/kaizen-espejo-consciencia-observabilidad",
+  "persist_ref": "docs/features/kaizen-espejo-consciencia-observabilidad",
+  "base_branch": "main",
+  "document_id": "PBI-KAIZEN-ESPEJO-CONSCIENCIA-001",
+  "pbi_ref": "docs/todos/pending/[KAIZEN] Espejo de Consciencia: Proyección de Salud y Observabilidad del Ecosistema.md",
+  "execution_id": "a15ad28b-27a3-491c-902e-f78c100ffd43",
+  "uuid": "97d96117-49cf-4db7-b860-acd65bee216a"
+}
