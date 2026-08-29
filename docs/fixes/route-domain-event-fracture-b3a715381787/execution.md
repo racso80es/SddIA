@@ -21,8 +21,8 @@ items_applied:
 | Publisher prefijos | done | `main.rs` |
 | Clasificador fricción | done | `route_domain_core.rs` |
 | Tests unitarios | done | ver abajo |
-| Diagnóstico instancia (Fase 0) | parcial | ver § Causa 500 |
-| `validacion.md` / cierre documental | pendiente | pre-merge |
+| Diagnóstico instancia (Fase 0) | diferido | relay off; bóveda presente |
+| `validacion.md` / cierre documental | done | APTO taxonomía; PBI en `done/` |
 | `delivery-close-cycle` | **no invocado** | barrera `simulated` (PBI `c51acf014c0f`) |
 
 ## Comandos de verificación
@@ -47,6 +47,5 @@ CARGO_TARGET_DIR=target cargo build --release -p iota-immutable-publisher
 
 ## Pendiente
 
-- Reproducir publish con relay activo y confirmar candidato exacto del 500.
-- `validacion.md` APTO + PBI a `docs/todos/done/`.
-- PR vía `delivery-close-cycle` cuando exista barrera IDE o agentes ejecutados.
+- Publish E2E con relay activo (CA5 operacional).
+- PR vía `delivery-close-cycle` cuando exista barrera IDE o agentes ejecutados (PBI `c51acf014c0f`).
