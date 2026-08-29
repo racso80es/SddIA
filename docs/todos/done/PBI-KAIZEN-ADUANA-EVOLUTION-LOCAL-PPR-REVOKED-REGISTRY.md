@@ -4,9 +4,11 @@ title: "[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities 
 format: markdown
 version: "1.2.0"
 created: "2026-08-28"
-updated: "2026-08-29T04:43:31Z"
-status: pending
-refinement_status: dedalo_ready
+updated: "2026-08-29T04:47:57Z"
+status: done
+refinement_status: implemented
+pbi_archived: true
+persist_ref: docs/features/ppr-revoked-registry-rehab-kaizen-aduana-evolution
 refinement_date: "2026-08-29T04:43:31Z"
 priority: alta
 process: refactorization
@@ -125,7 +127,7 @@ Estado de la evidencia: **no concluyente**. `is_survival_hollow()` poda `lab_hol
 |----------|------------|---------|--------|
 | #124/#125/#174 | olas rehab PPR | varios | **done** |
 | #190 | kaizen-paciente0-redeploy | `2026-08-25T16:25:55Z` / `17:24:18Z` | **done** (rehab @ `18:02:03Z`, **sin poda de samples**) |
-| **este PBI** | Cosecha PPR kaizen-aduana-evolution-local | `2026-08-28T10:10:42Z` | **pending** |
+| **este PBI** | Cosecha PPR kaizen-aduana-evolution-local | `2026-08-28T10:10:42Z` | **done** (rehab @ `2026-08-29T04:47:57Z`; A2 diferida) |
 
 ## Sighting Cosecha
 
@@ -184,11 +186,11 @@ Si el laudo limita el ciclo a A1, o si T0 no confirma el mecanismo, A2 se materi
 
 ## Criterio de cierre
 
-- [ ] Laudo rehabilitación Cerbero / Radamanto con poda de `samples` (anti-recurrencia post-rehab #190)
-- [ ] `pull-request-review` ausente de `revoked` (y `permanent` si aplica)
-- [ ] Smoke PPR post-rehab sin re-revocación inmediata (`execution_id` registrado)
-- [ ] Laudo explícito sobre ola A2 (ejecutar en este ciclo o abrir PBI hijo)
-- [ ] Cascada feature/fix + `validacion.md` APTO + PBI en `done/` en el mismo PR
+- [x] Laudo rehabilitación Cerbero / Radamanto con poda de `samples` (anti-recurrencia post-rehab #190)
+- [x] `pull-request-review` ausente de `revoked` (y `permanent` si aplica)
+- [x] Smoke PPR post-rehab sin re-revocación inmediata (`execution_id` `ff62b08c-9f6f-4740-9664-3060bea114d8`)
+- [x] Laudo explícito sobre ola A2: **diferida** — PBI hijo (`L-A2-T0`; mecanismo no confirmado)
+- [x] Cascada feature/fix + `validacion.md` APTO + PBI en `done/` en el mismo PR
 
 ## Riesgos
 
@@ -208,5 +210,5 @@ Si el laudo limita el ciclo a A1, o si T0 no confirma el mecanismo, A2 se materi
 - Rehab `refactorization` (dedup done PPR #186).
 - **`bug-fix` re-revocado @ `2026-08-28T16:18:17Z`**, posterior al rehab #210 (`rehabilitated_at 2026-08-28T06:13:50Z`): episodio nuevo **sin PBI abierto** → requiere seed propia. No se resuelve aquí.
 - Residual Kalma2 Shell/`git-manager` (dedup OPERATIVO PPR #136).
-- Merge/Handoff soberano del ciclo `kaizen-aduana-evolution-local` (bloqueado mientras `pull-request-review` ∈ revoked).
+- Merge/Handoff soberano del ciclo `kaizen-aduana-evolution-local` (desbloqueado para PPR ∉ revoked; handoff downstream fuera de alcance).
 - Revisión de umbrales Radamanto (dedup done PPR #174+#177).

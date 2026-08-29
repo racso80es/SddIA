@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 90
+universe_total: 91
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `c4e8f1a2-9b3d-4f7e-a6c1-2d8e5f0b3a71` | 2026-08-29 | Rehab pull-request-review kaizen-aduana-evolution-local: A1 Cerbero/Radamanto post re-revocación #190; A2 diferida (L-A2-T0). | CANONICO | `SddIA/evolution/c4e8f1a2-9b3d-4f7e-a6c1-2d8e5f0b3a71.md` |
 | `eb6fb73a-9ded-49a1-a2a9-314624358b4b` | 2026-08-28 | Jurisdicción docs/todos: norma todos-jurisdiction, migración DeudaTecnica→pending, descarte tmp, tests extract_pbi. | CANONICO | `SddIA/evolution/eb6fb73a-9ded-49a1-a2a9-314624358b4b.md` |
 | `a91f2d40-6e3b-4c8a-b7f1-2d9e0c5a84f6` | 2026-08-28 | Anclaje de ejecución: aduana source_sha256, capsule_seal, porcelain UTF-8, publisher release alineado. | CANONICO | `SddIA/evolution/a91f2d40-6e3b-4c8a-b7f1-2d9e0c5a84f6.md` |
 | `a117c937-3a25-4bad-be50-0bde0c4eab74` | 2026-08-28 | Fan-out System_Fracture_Detected: resolutor Core fracture_pbi, idempotencia por genoma, contratos v1.1.0 y forja action update. | CANONICO | `SddIA/evolution/a117c937-3a25-4bad-be50-0bde0c4eab74.md` |
