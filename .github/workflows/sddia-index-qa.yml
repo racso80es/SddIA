@@ -12,6 +12,10 @@ on:
       - "feat/**"
       - "fix/**"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
 permissions:
   contents: read
 
@@ -117,6 +121,7 @@ jobs:
 
   eda-bus-e2e-smoke:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -157,8 +162,9 @@ jobs:
   eda-iota-physical:
     runs-on: ubuntu-latest
     if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

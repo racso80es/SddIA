@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 95
+universe_total: 96
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `d664b94d-3ce8-4b66-a4a7-0ff10570acf9` | 2026-08-29 | Kaizen CI: segregación push vs pull_request en sddia-index-qa, concurrency por evento, jobs pesados condicionados. | CANONICO | `SddIA/evolution/d664b94d-3ce8-4b66-a4a7-0ff10570acf9.md` |
 | `3347c0b0-99a2-45ca-a1dd-97c6ebc8298a` | 2026-08-29 | Integridad proceso: tests CA1/CA2, aduana DCC indices, job CI sddia-index-integrity, split_md_frontmatter Core | CANONICO | `SddIA/evolution/3347c0b0-99a2-45ca-a1dd-97c6ebc8298a.md` |
 | `a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b` | 2026-08-29 | Kaizen ciclo jurisdicción todos: norm forge conforme, fractura DCC, exención eda-coverage, backfill documentado. | CANONICO | `SddIA/evolution/a8f3c2e1-9d4b-4a7f-b6e5-1c2d3e4f5a6b.md` |
 | `97d96117-49cf-4db7-b860-acd65bee216a` | 2026-08-29 | Espejo de Consciencia: map-snapshot, fusión ecosystem-health, GET /api/system-health y panel Kalma2. | CANONICO | `SddIA/evolution/97d96117-49cf-4db7-b860-acd65bee216a.md` |
