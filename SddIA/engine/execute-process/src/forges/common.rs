@@ -125,19 +125,15 @@ pub fn capability_name(name: &str) -> String {
 }
 
 /// Paridad `execute_process_core.parse_frontmatter` (campos usados por forjas).
+/// Usa el parser Core (`split("---")`) para soportar valores como `workspace_template: …/---`.
 pub fn parse_frontmatter(path: &Path) -> Result<Map<String, Value>, String> {
-    let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
-    let Some(body) = text.strip_prefix("---") else {
-        return Ok(Map::new());
-    };
-    let Some((yaml, _)) = body.split_once("\n---") else {
-        return Ok(Map::new());
-    };
-    let fm: Value = serde_yaml::from_str(yaml).map_err(|e| e.to_string())?;
-    match fm {
-        Value::Object(map) => Ok(map),
-        _ => Ok(Map::new()),
+    let raw = crate::core::parser::parse_frontmatter(path)?;
+    let mut map = Map::new();
+    for (k, v) in raw {
+        let j = serde_json::to_value(&v).map_err(|e| e.to_string())?;
+        map.insert(k, j);
     }
+    Ok(map)
 }
 
 pub fn idempotent_forge_handoff(

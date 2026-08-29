@@ -475,8 +475,10 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 jurisdiction: jurisdiction.into(),
             };
             if let Some(replacements) = inputs.get("markdown_body_replacements") {
-                let (entity_uuid, old_hash, new_hash, version) =
+                let (entity_uuid, body_old_hash, _, version) =
                     patch_artifact_body_replacements(&process_path, replacements)?;
+                let (phase_old_hash, new_hash) = refresh_process_hash(&process_path)?;
+                let old_hash = phase_old_hash.unwrap_or(body_old_hash);
                 let mut out = json!({
                     "handoff_entity_uuid": entity_uuid,
                     "handoff_hash_signature_new": new_hash,
