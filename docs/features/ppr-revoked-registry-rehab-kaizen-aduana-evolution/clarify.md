@@ -43,7 +43,9 @@ Transcript Mayeuta. **Qué / por qué.** Touchpoints de motor solo como hipótes
 | Radamanto | `degraded` · `recovery_attempts: 1` · `structure_valid: false` · laudo fósil **#190** · `rehabilitated_at: 2026-08-26T18:02:03Z` · 20 samples (5/15) · rate **0.25** < `process: 0.70` |
 | Recidiva | Determinista: `success_rate()` evalúa ventana completa. Receta #208/#210 (`samples: []`) **no** aplicada en #190. |
 
-Dictamen: umbrales 1.1.0 **intactos**. A1 sin `L-SAMPLES` = recidiva inmediata. Hipótesis A2 (KO cortos 636–1301 ms = aborto F4) **no concluyente** — eventos `Raw_Execution_Finished` purgados.
+Dictamen: umbrales 1.1.0 **intactos**. A1 sin `L-SAMPLES` = recidiva inmediata. Hipótesis A2 (KO cortos 636–1301 ms = aborto de gobernanza) **no concluyente** — eventos `Raw_Execution_Finished` purgados.
+
+**Corrección (anti-alucinación):** `FAIL_F4_RBAC` = etiqueta aduana Cosecha, no `failed_phase_code` motor. Códigos reales (`cerbero_di_rbac.rs`): `CERBERO_ENTITY_REVOKED` (provider revocado) / `CERBERO_RBAC_DENIED` (política real) / `CERBERO_CONFIG_ERROR`. `validate_di_rbac` revoca por **provider**, no por proceso. A2 debe podar **solo** `CERBERO_ENTITY_REVOKED` auto-referencial (provider revocado == entidad puntuada); jamás violaciones legítimas. Mecanismo del lazo **sin verificar** → T0 bloqueante.
 
 ## D1 — Misión
 

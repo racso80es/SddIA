@@ -29,13 +29,15 @@ Blueprint Tekton. Contratos: `spec.md`. **Stop planning:** no ejecutar T0–T5 e
 
 Init lab: `execution_id` `aa0d1244-043a-421f-9b60-efb76c4985ca` · vehículo `feature` · `process_label: refactorization` · relevo IDE.
 
-## T0 — A2 motor (AC-A2-HOLLOW / AC-A2-TESTS) — **si laudo**
+## T0 — A2 motor (AC-A2-DISCRIM / AC-A2-TESTS) — **si laudo + confirmación empírica**
 
-1. `thermodynamic.rs`: asegurar `failed_phase_code` en payload KO (ya existe; no reabrir semántica).
-2. `radamanto_batch_core.rs`: extender `is_survival_hollow` per **L-A2-HOLLOW**.
-3. Tests `t_a2_hollow_*`. Assert podas `lab_hollow` / `detach` / `detached_child` / `cycle_phase` intactas.
-4. **Prohibido:** `phase_terminal.rs`, umbrales, YAML `pull-request-review.md`.
-5. Sin laudo: omitir T0; abrir PBI hijo con este diagnóstico.
+0. **Confirmación bloqueante:** reproducir muestras KO de PPR e identificar el `failed_phase_code` real. Si ≠ `CERBERO_ENTITY_REVOKED` auto-referencial, **abortar A2** (PBI hijo).
+1. `failed_phase_code` ya propagado por `thermodynamic.rs` (174/248) desde `phase_terminal.rs::apply_failed_phase_fields`; no reabrir semántica.
+2. `radamanto_batch_core.rs`: extender `is_survival_hollow` per **L-A2-HOLLOW** (solo `CERBERO_ENTITY_REVOKED` auto-referencial).
+3. **L-A2-NO-BLIND:** no podar `CERBERO_RBAC_DENIED` / `CERBERO_CONFIG_ERROR`.
+4. Tests `t_a2_hollow_entity_revoked_self` / `t_a2_hollow_rbac_denied_not_podado` / `t_a2_hollow_revoked_other_provider_not_podado`. Assert podas `lab_hollow` / `detach` / `detached_child` / `cycle_phase` intactas.
+5. **Prohibido:** `phase_terminal.rs`, umbrales, YAML `pull-request-review.md`.
+6. Sin laudo o sin confirmación T0: omitir; abrir PBI hijo con este diagnóstico.
 
 ## T1 — A1 instancia (AC-A1-* / AC-GIT-CLEAN)
 
@@ -92,7 +94,8 @@ A1 no espera T0.
 | `structure_valid` false | **L-RESET-ABS** |
 | Vehículo revocado | **L-VEHICLE** |
 | Instancia en PR | AC-GIT-CLEAN |
-| A2 sin evidencia F4 | **L-A2-SPLIT** |
+| Poda A2 ciega silencia RBAC real | **L-A2-NO-BLIND**: solo `CERBERO_ENTITY_REVOKED` auto-referencial |
+| A2 sobre mecanismo no verificado | **L-A2-T0** bloqueante |
 
 ## Fuera de este plan
 

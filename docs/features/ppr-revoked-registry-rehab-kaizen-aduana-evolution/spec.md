@@ -37,7 +37,9 @@ Saneamiento de instancia `pull-request-review` (Yunque A1). A2: poda de superviv
 | Motor rate | `radamanto_batch_core.rs` `success_rate()` = ok/n sobre ventana completa. |
 | Redención | `set_structure_valid(true)` es el único puente `degraded → pending_redemption`. |
 | ≠ #190 | Incidente #190 (permanent+revoked) **done**; receta incompleta (sin `L-SAMPLES`). |
-| Hipótesis F4 | 12 KO en 636–1301 ms vs OK 258–412 s. `failed_phase_code` ya en `thermodynamic.rs`. `is_survival_hollow` no poda F4. Evidencia de eventos: ausente. |
+| Hipótesis F4 | 12 KO en 636–1301 ms vs OK 258–412 s. Perfil de aborto temprano. Evidencia de eventos: ausente (purgados). |
+| Nomenclatura | `FAIL_F4_RBAC` = etiqueta aduana Cosecha, **no** `failed_phase_code` motor. Motor: `CERBERO_ENTITY_REVOKED` / `CERBERO_RBAC_DENIED` / `CERBERO_CONFIG_ERROR` (`cerbero_di_rbac.rs::CerberoDiCode`). |
+| Gate real | `validate_di_rbac` revoca por **provider** (`skill:`/`action:`/`tool:`), no por proceso puntuado. Lazo "PPR revocado → aborta sus runs" **no** sustentado por el código. |
 
 ## 3. Laudos Dedalo
 
@@ -51,8 +53,10 @@ Saneamiento de instancia `pull-request-review` (Yunque A1). A2: poda de superviv
 | **L-LATERAL** | `bug-fix` y `refactorization` intactos. |
 | **L-NO-THRESH** | `radamanto.thresholds.json` prohibido. |
 | **L-NO-YAML** | `pull-request-review.md` / `phase_terminal.rs` / agregador terminal prohibidos. |
-| **L-A2-HOLLOW** | Si laudo: `is_survival_hollow` retorna true cuando `failed_phase_code` ∈ {`FAIL_F4_RBAC`} **o** payload marque aborto de entidad revocada. Patrón `lab_hollow` / `detached_child`. |
-| **L-A2-SPLIT** | Sin laudo A2 → PBI hijo; A1 cierra igual. |
+| **L-A2-HOLLOW** | Si laudo + T0 confirma: `is_survival_hollow` true **solo** cuando `failed_phase_code == "CERBERO_ENTITY_REVOKED"` **y** provider revocado (de `failed_phase_error`) == entidad puntuada (`target_entity_from_payload`). Auto-referencial. Patrón `lab_hollow` / `detached_child`. |
+| **L-A2-NO-BLIND** | Prohibido podar `CERBERO_RBAC_DENIED` / `CERBERO_CONFIG_ERROR`: violaciones/fallos legítimos deben degradar `success_rate`. |
+| **L-A2-T0** | T0 bloqueante: reproducir empíricamente el `failed_phase_code` de las muestras KO de PPR antes de escribir poda. Si ≠ `CERBERO_ENTITY_REVOKED` auto-referencial, A2 no procede. |
+| **L-A2-SPLIT** | Sin laudo A2 o sin confirmación T0 → PBI hijo; A1 cierra igual. |
 | **L-DOC** | Cascada este persist_ref. Evolution UUID ciclo. |
 | **L-STOP** | Planning only esta sesión. |
 | **L-VEHICLE** | DCC `source_process: feature` / nota `process_label: refactorization`. |
@@ -78,7 +82,7 @@ stats["pull-request-review"] := {
 # no git-add .SddIA/cerbero|radamanto
 ```
 
-## 5. Contrato A2 (condicionado)
+## 5. Contrato A2 (condicionado a laudo + T0)
 
 ```text
 is_survival_hollow(payload) ⊇ {
@@ -86,9 +90,15 @@ is_survival_hollow(payload) ⊇ {
   detach,
   detached_child ∧ exit_code ≠ 0,
   cycle_phase ∈ {initialized, awaiting_agents},
-  failed_phase_code == FAIL_F4_RBAC   # nuevo, si laudo
+  # nuevo, si laudo + T0 confirma:
+  failed_phase_code == "CERBERO_ENTITY_REVOKED"
+    ∧ revoked_provider(failed_phase_error) == target_entity_from_payload(payload)
 }
-# tests t_a2_hollow_* ; t_survival_hollow_* preexistentes intactos
+# NUNCA podar: CERBERO_RBAC_DENIED, CERBERO_CONFIG_ERROR
+# tests: t_a2_hollow_entity_revoked_self (poda),
+#        t_a2_hollow_rbac_denied_not_podado (no poda),
+#        t_a2_hollow_revoked_other_provider_not_podado (no poda);
+#        t_survival_hollow_* preexistentes intactos
 ```
 
 ## 6. Mapa AC

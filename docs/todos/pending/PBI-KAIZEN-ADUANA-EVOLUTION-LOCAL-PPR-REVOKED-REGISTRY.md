@@ -2,12 +2,12 @@
 document_id: PBI-KAIZEN-ADUANA-EVOLUTION-LOCAL-PPR-REVOKED-REGISTRY
 title: "[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities (kaizen-aduana-evolution-local)"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-08-28"
-updated: "2026-08-29T04:33:37Z"
+updated: "2026-08-29T04:43:31Z"
 status: pending
 refinement_status: dedalo_ready
-refinement_date: "2026-08-29T04:33:37Z"
+refinement_date: "2026-08-29T04:43:31Z"
 priority: alta
 process: refactorization
 executor_vehicle: feature
@@ -35,6 +35,8 @@ related:
   - SddIA/agents/radamanto.thresholds.json
   - SddIA/engine/execute-process/src/engine/radamanto_batch_core.rs
   - SddIA/engine/execute-process/src/engine/thermodynamic.rs
+  - SddIA/engine/execute-process/src/engine/cerbero_di_rbac.rs
+  - SddIA/engine/execute-process/src/engine/phase_terminal.rs
   - SddIA/library/codexes/codex-software-engineering/process/pull-request-review.md
   - docs/todos/done/[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities (PPR #190).md
   - docs/todos/done/[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities (PPR #174).md
@@ -96,11 +98,26 @@ Contraste con las rehabs que **sí** aguantaron: `accept-pr` #208 y `bug-fix`/`f
 
 Segundo bloqueo, independiente del ratio: con `status: degraded` y `structure_valid: false` la máquina de redención nunca arranca (la transición a `pending_redemption` solo ocurre en `set_structure_valid(valid=true)`), así que la entidad no puede auto-sanar por acumulación de éxitos.
 
-### Hipótesis secundaria — bucle de refuerzo denegación → muestra KO (a validar en `clarify`)
+### Hipótesis secundaria — bucle de refuerzo denegación → muestra KO (NO verificada; a confirmar empíricamente en T0)
 
-Doce de las quince muestras KO tienen `duration_ms` en el rango `636–1301 ms`, incompatible con una ejecución real de PPR (las muestras exitosas están en `258 000–412 000 ms`). El perfil corresponde a abortos tempranos tipo `FAIL_F4_RBAC` — la propia denegación de Cerbero por entidad revocada. Si esas denegaciones se registran como muestra KO de la entidad, el sistema es autoconfirmante: revocado → deniega → muestra KO → ratio peor → re-revocación.
+Doce de las quince muestras KO tienen `duration_ms` en el rango `636–1301 ms`, incompatible con una ejecución real de PPR (las muestras exitosas están en `258 000–412 000 ms`). El perfil sugiere abortos tempranos de gobernanza. Si una denegación por revocación se registrara como muestra KO de la propia entidad, el sistema sería autoconfirmante: revocado → deniega → muestra KO → ratio peor → re-revocación.
 
-Estado de la evidencia: **no concluyente**. `is_survival_hollow()` poda `lab_hollow`, `detach` y `detached_child` (L-PPR-DETACH-SURVIVAL), pero **no** los abortos de gobernanza, aunque `thermodynamic.rs` sí propaga `failed_phase_code` en el payload. Los eventos `Raw_Execution_Finished` de esos `asset_id` ya fueron consumidos/purgados, por lo que la confirmación exige instrumentación nueva (ola A2), no arqueología.
+**Corrección de nomenclatura (evita alucinación previa):** `FAIL_F4_RBAC` es la etiqueta de veredicto de la **aduana Cosecha** (gate F4 en `validacion.md`/`_agent_handoff.md`), **no** un `failed_phase_code` del motor. Grep en `SddIA/engine/` lo confirma: no existe en el crate. El motor emite en `failed_phase_code` uno de tres códigos nativos (`cerbero_di_rbac.rs::CerberoDiCode`):
+
+| Código motor | Origen | ¿Poda A2? |
+|--------------|--------|-----------|
+| `CERBERO_ENTITY_REVOKED` | provider ∈ `revoked_entities` (`is_entity_revoked`) | **candidato único** |
+| `CERBERO_RBAC_DENIED` | `context ∉ requester_policies` (violación real de política) | **NUNCA** — anomalía legítima |
+| `CERBERO_CONFIG_ERROR` | políticas vacías / provider no resoluble | **NUNCA** — fallo real |
+
+**Fricción estructural (laudo Dedalo, motiva A2 quirúrgica):** podar categóricamente todo aborto RBAC crearía un punto ciego que silenciaría violaciones legítimas de permisos. El discriminante debe aislar **exclusivamente** `CERBERO_ENTITY_REVOKED`.
+
+**Inexactitud de mecanismo (a resolver en T0):** el gate `validate_di_rbac` evalúa revocación **del provider** (`skill:`/`action:`/`tool:`), no del proceso puntuado. Un proceso `pull-request-review` (id sin prefijo de provider) **no** matchea ese gate por sí mismo; solo generaría `CERBERO_ENTITY_REVOKED` si una de sus fases delega en un **provider** revocado. Por tanto:
+
+- El lazo "PPR revocado → aborta sus propios runs vía este gate" **no está sustentado** por el código leído. Queda como hipótesis abierta.
+- La poda A2 debe ser **auto-referencial**: solo hollow si el provider revocado (parseable de `failed_phase_error`) **coincide** con la entidad puntuada (`target_entity_from_payload`). De lo contrario se silenciaría un fallo legítimo tipo "mi dependencia está revocada".
+
+Estado de la evidencia: **no concluyente**. `is_survival_hollow()` poda `lab_hollow`, `detach`, `detached_child` y `cycle_phase`, pero **no** abortos de gobernanza. Los eventos `Raw_Execution_Finished` de esos `asset_id` ya fueron consumidos/purgados. **T0 debe primero reproducir empíricamente cómo se generan las muestras KO de `pull-request-review`** (¿provider revocado? ¿fallo real?) antes de escribir cualquier poda; sin esa confirmación, A2 no se ejecuta.
 
 ## Genealogía
 
@@ -126,16 +143,21 @@ Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · see
 2. `stats.json` → `pull-request-review`: `status: healthy` · `samples: []` · `consecutive_success_count: 0` · `recovery_attempts: 0` · `degraded_at: null` · `structure_valid: true` · `entity_type: process` · `rehab_laudo: PBI-KAIZEN-ADUANA-EVOLUTION-LOCAL-PPR-REVOKED-REGISTRY` · `rehabilitated_at` = timestamp del laudo (sustituye los residuales de #190).
 3. Smoke post-rehab: una ejecución PPR real (o handoff) sin re-revocación inmediata; registrar `execution_id` en `execution.md`.
 
-### Ola A2 — anti-recurrencia de motor (condicionada a laudo)
+### Ola A2 — anti-recurrencia de motor (condicionada a laudo + confirmación T0)
 
-Objetivo: que una **denegación de gobernanza no cuente como fallo de la entidad**, cerrando el bucle autoconfirmante.
+Objetivo: que una **denegación por revocación previa no cuente como fallo de la entidad**, cerrando el bucle autoconfirmante — **sin** crear un punto ciego para violaciones legítimas de política.
 
-1. Instrumentar: marcar la muestra con el discriminante de aborto de gobernanza (`failed_phase_code` tipo `FAIL_F4_RBAC` / entidad revocada) ya disponible en `thermodynamic.rs`.
-2. Extender `is_survival_hollow()` en `radamanto_batch_core.rs` para podar esa clase, en el mismo patrón que `lab_hollow` / `detached_child`.
-3. Tests unitarios de la nueva poda + aserción de que los casos existentes (`lab_hollow`, `detach`, `detached_child`, `cycle_phase`) siguen intactos.
-4. **Prohibido** en A2: mutar `radamanto.thresholds.json`, `phase_terminal.rs`, el agregador terminal, o el YAML de `pull-request-review`.
+0. **T0 — confirmación empírica (bloqueante de A2):** reproducir la generación de muestras KO de `pull-request-review` e identificar el `failed_phase_code` real. Si no es `CERBERO_ENTITY_REVOKED` auto-referencial, A2 no procede (el problema es otro y A1 basta).
+1. Discriminante: reutilizar `failed_phase_code` (ya propagado por `thermodynamic.rs` líneas 174/248 desde `phase_terminal.rs::apply_failed_phase_fields`). Ningún código nuevo de aduana.
+2. Extender `is_survival_hollow()` en `radamanto_batch_core.rs` para podar **exclusivamente** cuando:
+   - `failed_phase_code == "CERBERO_ENTITY_REVOKED"`, **y**
+   - el provider revocado (de `failed_phase_error`) coincide con la entidad puntuada (`target_entity_from_payload`) — poda **auto-referencial**.
+   - Patrón idéntico a `lab_hollow` / `detached_child`.
+3. **Prohibido podar** `CERBERO_RBAC_DENIED` y `CERBERO_CONFIG_ERROR`: son señales legítimas y deben degradar `success_rate` como hasta ahora.
+4. Tests unitarios: `t_a2_hollow_entity_revoked_self` (poda), `t_a2_hollow_rbac_denied_not_podado` (violación real NO podada), `t_a2_hollow_revoked_other_provider_not_podado` (dependencia ≠ self NO podada). Aserción de que `lab_hollow`, `detach`, `detached_child`, `cycle_phase` siguen intactos.
+5. **Prohibido** en A2: mutar `radamanto.thresholds.json`, `phase_terminal.rs`, el agregador terminal, o el YAML de `pull-request-review`.
 
-Si el laudo del Vértice Biológico limita el ciclo a A1, A2 se materializa como PBI hijo con esta misma evidencia; A1 no depende de A2.
+Si el laudo limita el ciclo a A1, o si T0 no confirma el mecanismo, A2 se materializa/queda como PBI hijo con esta evidencia; A1 no depende de A2.
 
 ## Criterios de aceptación
 
@@ -146,8 +168,8 @@ Si el laudo del Vértice Biológico limita el ciclo a A1, A2 se materializa como
 | `AC-A1-LAUDO` | `rehab_laudo` / `rehabilitated_at` apuntan a este `document_id`; residuales #190 eliminados |
 | `AC-A1-REDEEM` | `status: healthy` · `structure_valid: true` · `recovery_attempts: 0` · `degraded_at: null` |
 | `AC-A1-SMOKE` | ejecución PPR posterior al rehab sin re-revocación inmediata; `execution_id` registrado |
-| `AC-A2-HOLLOW` | denegación de gobernanza no genera muestra que degrade `success_rate` (o PBI hijo abierto con el diagnóstico) |
-| `AC-A2-TESTS` | `cargo test -p execute-process --lib` verde; podas preexistentes sin regresión |
+| `AC-A2-DISCRIM` | poda solo `CERBERO_ENTITY_REVOKED` auto-referencial; `CERBERO_RBAC_DENIED` y `CERBERO_CONFIG_ERROR` siguen degradando `success_rate` (o PBI hijo abierto) |
+| `AC-A2-TESTS` | `cargo test -p execute-process --lib` verde; nuevos `t_a2_hollow_*` (poda self, no-poda rbac_denied, no-poda otro provider); podas preexistentes sin regresión |
 | `AC-GIT-CLEAN` | diff del PR sin `.SddIA/cerbero/**` ni `.SddIA/radamanto/**` |
 | `AC-NO-THRESH` | `radamanto.thresholds.json` sin modificar |
 | `AC-DOC` | cascada Tekton en `persist_ref` + entrada `evolution` con `uuid c4e8f1a2-9b3d-4f7e-a6c1-2d8e5f0b3a71` (una por ciclo) |
@@ -178,6 +200,8 @@ Si el laudo del Vértice Biológico limita el ciclo a A1, A2 se materializa como
 | Ejecutar con vehículo revocado | **L-VEHICLE** (`feature`) |
 | Instancia versionada en el PR | `AC-GIT-CLEAN` |
 | Ajustar umbrales para "aprobar" | `AC-NO-THRESH`: falsear el termómetro, no curar la entidad |
+| **Poda A2 ciega silencia RBAC real** | `AC-A2-DISCRIM`: solo `CERBERO_ENTITY_REVOKED` auto-referencial; nunca `CERBERO_RBAC_DENIED`/`CERBERO_CONFIG_ERROR` |
+| A2 sobre mecanismo no verificado | T0 bloqueante: confirmar `failed_phase_code` real antes de escribir poda |
 
 ## Fuera de alcance
 
