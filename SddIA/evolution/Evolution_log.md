@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 92
+universe_total: 93
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `b7e4c1a9-2f83-4d6e-9a15-3c8f0d2b6e47` | 2026-08-29 | Gobernanza SSOT infrastructure/adapters: Cúmulo 1.7.0, contrato, censo LanceDB placeholder. | CANONICO | `SddIA/evolution/b7e4c1a9-2f83-4d6e-9a15-3c8f0d2b6e47.md` |
 | `a1535038-8db5-4351-8a81-cfa5586b8c5b` | 2026-08-29 | Telemetría cognitiva LLM: telemetry_receipt, Radamanto cognitive, SSE Kalma2. | CANONICO | `SddIA/evolution/a1535038-8db5-4351-8a81-cfa5586b8c5b.md` |
 | `18bacf31-9223-4b07-853e-a66c0d6c3ebd` | 2026-08-29 | A2 anti-recurrencia Radamanto: poda is_survival_hollow para CERBERO_ENTITY_REVOKED auto-referencial (kaizen-aduana-evolution). | CANONICO | `SddIA/evolution/18bacf31-9223-4b07-853e-a66c0d6c3ebd.md` |
 | `c4e8f1a2-9b3d-4f7e-a6c1-2d8e5f0b3a71` | 2026-08-29 | Rehab pull-request-review kaizen-aduana-evolution-local: A1 Cerbero/Radamanto post re-revocación #190; A2 diferida (L-A2-T0). | CANONICO | `SddIA/evolution/c4e8f1a2-9b3d-4f7e-a6c1-2d8e5f0b3a71.md` |
