@@ -110,6 +110,31 @@ fn target_entity_from_payload(payload: &Value) -> String {
     "unknown-entity".into()
 }
 
+/// Provider revocado en mensaje Cerbero: `proveedor '{id}' revocado en revoked_entities`.
+fn revoked_provider_from_phase_error(error: &str) -> Option<String> {
+    const PREFIX: &str = "proveedor '";
+    let start = error.find(PREFIX)? + PREFIX.len();
+    let rest = &error[start..];
+    let end = rest.find('\'')?;
+    Some(rest[..end].to_string())
+}
+
+/// Poda auto-referencial: entidad revocada que aborta por su propia revocación no degrada ratio.
+fn is_governance_self_revoked_hollow(payload: &Value) -> bool {
+    if payload.get("failed_phase_code").and_then(|v| v.as_str()) != Some("CERBERO_ENTITY_REVOKED")
+    {
+        return false;
+    }
+    let error = payload
+        .get("failed_phase_error")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let Some(revoked) = revoked_provider_from_phase_error(error) else {
+        return false;
+    };
+    revoked == target_entity_from_payload(payload)
+}
+
 /// Poda de supervivencia: lab hueco no alimenta success_rate ni recovery_attempts.
 pub(crate) fn is_survival_hollow(payload: &Value) -> bool {
     if payload.get("lab_hollow").and_then(|v| v.as_bool()) == Some(true) {
@@ -127,7 +152,7 @@ pub(crate) fn is_survival_hollow(payload: &Value) -> bool {
     matches!(
         payload.get("cycle_phase").and_then(|v| v.as_str()),
         Some("initialized") | Some("awaiting_agents")
-    )
+    ) || is_governance_self_revoked_hollow(payload)
 }
 
 /// Precedencia L-TYPE-RESOLVE: prefijo `type:id` válido → catálogo process → default `tool`.
@@ -674,6 +699,46 @@ mod tests {
             "process_name": "pull-request-review",
             "detach": true,
             "cycle_phase": "awaiting_agents"
+        })));
+    }
+
+    #[test]
+    fn t_a2_hollow_entity_revoked_self() {
+        assert!(is_survival_hollow(&json!({
+            "capsule_id": "skill:git-manager",
+            "failed_phase_code": "CERBERO_ENTITY_REVOKED",
+            "failed_phase_error": "proveedor 'skill:git-manager' revocado en revoked_entities",
+            "exit_code": 1
+        })));
+    }
+
+    #[test]
+    fn t_a2_hollow_rbac_denied_not_podado() {
+        assert!(!is_survival_hollow(&json!({
+            "process_name": "feature",
+            "failed_phase_code": "CERBERO_RBAC_DENIED",
+            "failed_phase_error": "RBAC deny: provider 'skill:filesystem-manager' context=[\"filesystem-ops\"] ∉ requester=[\"knowledge-management\"]",
+            "exit_code": 1
+        })));
+    }
+
+    #[test]
+    fn t_a2_hollow_revoked_other_provider_not_podado() {
+        assert!(!is_survival_hollow(&json!({
+            "process_name": "pull-request-review",
+            "failed_phase_code": "CERBERO_ENTITY_REVOKED",
+            "failed_phase_error": "proveedor 'skill:git-manager' revocado en revoked_entities",
+            "exit_code": 1
+        })));
+    }
+
+    #[test]
+    fn t_a2_hollow_config_error_not_podado() {
+        assert!(!is_survival_hollow(&json!({
+            "process_name": "feature",
+            "failed_phase_code": "CERBERO_CONFIG_ERROR",
+            "failed_phase_error": "políticas solicitante vacías (process=feature, phase=lab)",
+            "exit_code": 1
         })));
     }
 
