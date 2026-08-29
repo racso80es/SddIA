@@ -13,6 +13,7 @@ document_id: PBI-KAIZEN-ESPEJO-CONSCIENCIA-001
 uuid: 97d96117-49cf-4db7-b860-acd65bee216a
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/224
 checks:
   OBS-CA1: APTO
   OBS-CA2: APTO
