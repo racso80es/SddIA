@@ -36,8 +36,9 @@ Proveedor canónico de `llm:interact` (PBI-043 H10-A · laudo Racso).
 
 | Operación | Salida `data` |
 |-----------|---------------|
-| `SYNTHESIZE` | `{ "text": "<respuesta>" }` |
-| `CLASSIFY_INTENT` | `{ "intent", "process_name", "process_inputs", "confidence" }` |
+| `SYNTHESIZE` | `{ "text": "<respuesta>", "telemetry_receipt": { … } }` |
+| `CLASSIFY_INTENT` | `{ "intent", …, "telemetry_receipt": { … } }` |
+| `STREAM` | stdout línea a línea; receipt en `.SddIA/radamanto/inbox/` (no stdout) |
 
 ## Contexto de ejecución
 

@@ -830,6 +830,7 @@ pub fn try_invoke_delegates(
     di_bindings: &[super::capability_di_resolver::ResolvedBinding],
     process_name: &str,
     phase_name: &str,
+    state: &mut Value,
 ) -> Option<Value> {
     let mut capsule_missing = false;
     let mut last_err: Option<String> = None;
@@ -879,6 +880,12 @@ pub fn try_invoke_delegates(
                     }
                 }
                 let body = unwrap_tool_body(&cap.body);
+                let capsule_id = format!("{kind}:{name}");
+                if let Some(receipt) =
+                    super::telemetry_receipt::extract_from_capsule_body(&cap.body, &capsule_id)
+                {
+                    super::telemetry_receipt::accumulate_in_state(state, receipt, &capsule_id);
+                }
                 let mut out = json!({
                     "status": "executed",
                     "handler": format!("capsule-{kind}-{name}"),

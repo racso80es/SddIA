@@ -55,6 +55,10 @@ pub fn load_radamanto_config(repo: &Path) -> Result<HashMap<String, Value>, Stri
             "revoked_entities".into(),
             json!(".SddIA/cerbero/revoked_entities.json"),
         ),
+        (
+            "cognitive_inbox".into(),
+            json!(".SddIA/radamanto/inbox"),
+        ),
     ]);
     if let Ok(cfg) = load_paths_config(repo) {
         if let Some(block) = cfg.get("radamanto").and_then(|v| v.as_object()) {

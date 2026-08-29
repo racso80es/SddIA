@@ -48,6 +48,7 @@ pub mod cerbero_di_envelope;
 pub mod sync_entity_index;
 pub mod suite_execution_requested;
 pub mod user_preference_change_requested;
+pub mod telemetry_receipt;
 pub mod thermodynamic;
 pub mod workspace;
 pub mod workspace_init;

@@ -1,0 +1,10 @@
+{
+  "feature_name": "telemetria-cognitiva-llm-kalma2",
+  "branch_name": "feat/telemetria-cognitiva-llm-kalma2",
+  "persist_ref": "docs/features/telemetria-cognitiva-llm-kalma2",
+  "base_branch": "main",
+  "document_id": "PBI-TELEMETRY-LLM-COGNITIVE-METRICS-KALMA2",
+  "pbi_ref": "docs/todos/pending/[ARQUITECTURA] Telemetría Cognitiva: Captura de métricas LLM y exposición en Kalma2.md",
+  "execution_id": "0cdb618e-51e4-461b-9d14-469a5363257b",
+  "uuid": "a1535038-8db5-4351-8a81-cfa5586b8c5b"
+}

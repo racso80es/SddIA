@@ -1843,6 +1843,250 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
     );
 }
 
+fn load_telemetry_dir(repo: &Path) -> PathBuf {
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    let default = repo.join(".events/telemetry");
+    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
+        return default;
+    };
+    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return default;
+    };
+    cfg.get("eda_fractal")
+        .and_then(|f| f.get("telemetry"))
+        .and_then(|v| v.as_str())
+        .map(normalize_rel)
+        .map(|r| repo.join(r))
+        .unwrap_or(default)
+}
+
+fn load_radamanto_stats_path(repo: &Path) -> PathBuf {
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    let default = repo.join(".SddIA/radamanto/stats.json");
+    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
+        return default;
+    };
+    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return default;
+    };
+    cfg.get("radamanto")
+        .and_then(|r| r.get("stats"))
+        .and_then(|v| v.as_str())
+        .map(normalize_rel)
+        .map(|r| repo.join(r))
+        .unwrap_or(default)
+}
+
+fn load_cognitive_inbox_dir(repo: &Path) -> PathBuf {
+    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
+    let default = repo.join(".SddIA/radamanto/inbox");
+    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
+        return default;
+    };
+    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return default;
+    };
+    cfg.get("radamanto")
+        .and_then(|r| r.get("cognitive_inbox"))
+        .and_then(|v| v.as_str())
+        .map(normalize_rel)
+        .map(|r| repo.join(r))
+        .unwrap_or(default)
+}
+
+fn list_cognitive_events(repo: &Path, limit: usize) -> Vec<serde_json::Value> {
+    let mut items: Vec<(String, serde_json::Value)> = Vec::new();
+    let tele_dir = load_telemetry_dir(repo);
+    if tele_dir.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(&tele_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                let Some(body) = read_json_file(&path) else {
+                    continue;
+                };
+                if body
+                    .pointer("/payload/telemetry_receipt")
+                    .and_then(|v| v.as_object())
+                    .is_none()
+                {
+                    continue;
+                }
+                let ts = body
+                    .get("timestamp")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                items.push((ts, body));
+            }
+        }
+    }
+    let inbox = load_cognitive_inbox_dir(repo);
+    if inbox.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(&inbox) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                let Some(receipt) = read_json_file(&path) else {
+                    continue;
+                };
+                let ts = receipt
+                    .get("timestamp")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string)
+                    .unwrap_or_else(|| chrono_like_now());
+                let projected = serde_json::json!({
+                    "event_type": "Cognitive_Stream_Receipt",
+                    "timestamp": ts,
+                    "payload": { "telemetry_receipt": receipt },
+                });
+                items.push((ts, projected));
+            }
+        }
+    }
+    items.sort_by(|a, b| a.0.cmp(&b.0));
+    if items.len() > limit {
+        items = items.split_off(items.len() - limit);
+    }
+    items.into_iter().map(|(_, v)| v).collect()
+}
+
+fn sse_telemetry_frame(body: &str) -> Vec<u8> {
+    format!("event: cognitive\ndata: {body}\n\n").into_bytes()
+}
+
+struct TelemetryStreamReader {
+    repo: PathBuf,
+    seen: HashSet<String>,
+    pending: Vec<u8>,
+    finished: bool,
+    last_poll: Instant,
+    last_ping: Instant,
+    replay_done: bool,
+}
+
+impl TelemetryStreamReader {
+    fn new(repo: PathBuf) -> Self {
+        Self {
+            repo,
+            seen: HashSet::new(),
+            pending: Vec::new(),
+            finished: false,
+            last_poll: Instant::now() - Duration::from_secs(1),
+            last_ping: Instant::now(),
+            replay_done: false,
+        }
+    }
+
+    fn collect_new_frames(&mut self) {
+        if !self.replay_done {
+            for ev in list_cognitive_events(&self.repo, 20) {
+                let key = ev
+                    .get("event_id")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string)
+                    .unwrap_or_else(|| {
+                        ev.get("timestamp")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string()
+                    });
+                if key.is_empty() || self.seen.contains(&key) {
+                    continue;
+                }
+                if let Ok(compact) = serde_json::to_string(&ev) {
+                    self.pending.extend_from_slice(&sse_telemetry_frame(&compact));
+                    self.seen.insert(key);
+                }
+            }
+            self.replay_done = true;
+            return;
+        }
+        for ev in list_cognitive_events(&self.repo, 5) {
+            let key = ev
+                .get("event_id")
+                .and_then(|v| v.as_str())
+                .map(str::to_string)
+                .unwrap_or_else(|| {
+                    ev.get("timestamp")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string()
+                });
+            if key.is_empty() || self.seen.contains(&key) {
+                continue;
+            }
+            if let Ok(compact) = serde_json::to_string(&ev) {
+                self.pending.extend_from_slice(&sse_telemetry_frame(&compact));
+                self.seen.insert(key);
+            }
+        }
+    }
+}
+
+impl Read for TelemetryStreamReader {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        if buf.is_empty() {
+            return Ok(0);
+        }
+        loop {
+            if !self.pending.is_empty() {
+                let n = self.pending.len().min(buf.len());
+                buf[..n].copy_from_slice(&self.pending[..n]);
+                self.pending.drain(..n);
+                return Ok(n);
+            }
+            if self.finished {
+                return Ok(0);
+            }
+            if self.last_poll.elapsed() >= Duration::from_millis(500) {
+                self.collect_new_frames();
+                self.last_poll = Instant::now();
+                continue;
+            }
+            if self.last_ping.elapsed() >= Duration::from_secs(15) {
+                self.pending.extend_from_slice(b": ping\n\n");
+                self.last_ping = Instant::now();
+                continue;
+            }
+            thread::sleep(Duration::from_millis(100));
+        }
+    }
+}
+
+fn handle_telemetry_stream(req: tiny_http::Request, repo: &Path) {
+    let reader = TelemetryStreamReader::new(repo.to_path_buf());
+    let response = Response::new(
+        StatusCode(200),
+        vec![sse_header()],
+        reader,
+        None,
+        None,
+    );
+    let _ = req.respond(response);
+}
+
+fn handle_telemetry_cognitive(req: tiny_http::Request, repo: &Path) {
+    let stats_path = load_radamanto_stats_path(repo);
+    let cognitive = read_json_file(&stats_path)
+        .and_then(|v| v.get("cognitive").cloned())
+        .unwrap_or(serde_json::json!({}));
+    reply(
+        req,
+        200,
+        serde_json::json!({
+            "success": true,
+            "cognitive": cognitive,
+            "exit_code": 0
+        })
+        .to_string(),
+    );
+}
+
 fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) {
     let path = req.url().split('?').next().unwrap_or("/");
     match (req.method(), path) {
@@ -1856,6 +2100,8 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Get, "/api/runtime-profile") => handle_runtime_profile(req),
         (Method::Get, "/api/email-inbox") => handle_email_inbox(req, &repo),
         (Method::Get, "/api/progress/stream") => handle_progress_stream(req, &repo),
+        (Method::Get, "/api/telemetry/stream") => handle_telemetry_stream(req, &repo),
+        (Method::Get, "/api/telemetry/cognitive") => handle_telemetry_cognitive(req, &repo),
         (Method::Get, _) => serve_static(req, &ui_root),
         _ => reply(
             req,
@@ -2226,6 +2472,30 @@ mod tests {
         let frame = String::from_utf8(sse_progress_frame(r#"{"trace_id":"x"}"#)).unwrap();
         assert!(frame.starts_with("event: progress\n"));
         assert!(frame.contains("data: {\"trace_id\":\"x\"}"));
+    }
+
+    #[test]
+    fn telemetry_routes_exist_in_dispatch() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        assert!(prod.contains("\"/api/telemetry/stream\""));
+        assert!(prod.contains("\"/api/telemetry/cognitive\""));
+        let dispatch = prod.split("fn dispatch").nth(1).expect("dispatch");
+        let progress_pos = dispatch
+            .find("\"/api/progress/stream\"")
+            .expect("progress route");
+        let telemetry_pos = dispatch
+            .find("\"/api/telemetry/stream\"")
+            .expect("telemetry route");
+        let static_pos = dispatch.find("serve_static").expect("static");
+        assert!(telemetry_pos > progress_pos);
+        assert!(telemetry_pos < static_pos);
+    }
+
+    #[test]
+    fn sse_telemetry_frame_format() {
+        let frame = String::from_utf8(sse_telemetry_frame(r#"{"ok":true}"#)).unwrap();
+        assert!(frame.starts_with("event: cognitive\n"));
     }
 
     #[test]

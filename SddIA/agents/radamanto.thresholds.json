@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "success_rate_min": 0.85,
   "success_rate_min_by_entity_type": {
     "tool": 0.85,
@@ -15,5 +15,10 @@
   "latency_ms_p95_threshold": 30000,
   "redemption_success_count": 3,
   "max_recovery_attempts": 3,
-  "abrupt_drop_min_samples": 3
+  "abrupt_drop_min_samples": 3,
+  "cognitive": {
+    "max_tokens_per_minute": 120000,
+    "critical_tokens_per_minute": 500000,
+    "window_max_samples": 120
+  }
 }

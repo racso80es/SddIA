@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a1535038-8db5-4351-8a81-cfa5586b8c5b` | 2026-08-29 | Telemetría cognitiva LLM: telemetry_receipt, Radamanto cognitive, SSE Kalma2. | CANONICO | `SddIA/evolution/a1535038-8db5-4351-8a81-cfa5586b8c5b.md` |
 | `18bacf31-9223-4b07-853e-a66c0d6c3ebd` | 2026-08-29 | A2 anti-recurrencia Radamanto: poda is_survival_hollow para CERBERO_ENTITY_REVOKED auto-referencial (kaizen-aduana-evolution). | CANONICO | `SddIA/evolution/18bacf31-9223-4b07-853e-a66c0d6c3ebd.md` |
 | `c4e8f1a2-9b3d-4f7e-a6c1-2d8e5f0b3a71` | 2026-08-29 | Rehab pull-request-review kaizen-aduana-evolution-local: A1 Cerbero/Radamanto post re-revocación #190; A2 diferida (L-A2-T0). | CANONICO | `SddIA/evolution/c4e8f1a2-9b3d-4f7e-a6c1-2d8e5f0b3a71.md` |
 | `eb6fb73a-9ded-49a1-a2a9-314624358b4b` | 2026-08-28 | Jurisdicción docs/todos: norma todos-jurisdiction, migración DeudaTecnica→pending, descarte tmp, tests extract_pbi. | CANONICO | `SddIA/evolution/eb6fb73a-9ded-49a1-a2a9-314624358b4b.md` |

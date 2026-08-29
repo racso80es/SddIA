@@ -353,6 +353,7 @@ fn execute_phase_body(
         resolved_bindings,
         process_name,
         phase_name,
+        state,
     ) {
         if let Some(obj) = capsule_entry.as_object() {
             for (k, v) in obj {

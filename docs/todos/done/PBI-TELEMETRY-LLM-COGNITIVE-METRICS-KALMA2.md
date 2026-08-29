@@ -6,8 +6,12 @@ version: "1.2.0"
 created: "2026-08-29"
 refined: "2026-08-29"
 clarified: "2026-08-29"
-status: pending
-refinement_status: refined
+status: done
+refinement_status: implemented
+pbi_archived: true
+updated: "2026-08-29T13:20:00+02:00"
+persist_ref: docs/features/telemetria-cognitiva-llm-kalma2
+branch_name: feat/telemetria-cognitiva-llm-kalma2
 priority: alta
 process: feature
 executor_vehicle: feature
