@@ -26,7 +26,7 @@ related:
   - SddIA/tools/index.md
   - SddIA/core/cumulo.paths.json
   - docs/todos/done/PBI-TELEMETRY-LLM-COGNITIVE-METRICS-KALMA2.md
-  - docs/todos/pending/PBI-ARCH-INFRA-ADAPTERS-SSOT-001.md
+  - docs/todos/done/PBI-ARCH-INFRA-ADAPTERS-SSOT-001.md
 ---
 
 # [KAIZEN] Espejo de Consciencia: Proyección de Salud y Observabilidad del Ecosistema
@@ -74,7 +74,7 @@ Flujo exitoso: el usuario abre Kalma2 (o pide el estado) y obtiene una matriz vi
   - (b) **cápsula atómica** (`{name}.md` + `uuid` + `type`, creada vía `entity-manager`) si se requiere entidad gobernable e indexable.
   En ambos casos persiste/expone el Read Model como artefacto de instancia (candidato: `.SddIA/observability/ecosystem-health.json`, a declarar en `cumulo.paths.json`).
 - **DD-6 · Orquestación desacoplada (anti-anidamiento).** **Prohibido** invocar `query-ecosystem-health` de forma **síncrona** vía `execute-process` desde dentro de los procesos críticos `daemon-heartbeat-audit`/`radamanto-batch` (son procesos con core Rust, no daemons): anidar orquestación introduce latencia y puntos de fallo, y podría disparar `System_Fracture_Detected` en cascada. El refresco del Read Model se dispara **de forma asíncrona** reaccionando a eventos ya emitidos (`Daemon_Heartbeat`, `Domain_Entity_{Degraded|Restored|Deprecated}`, `Domain_Entity_{Created|Updated|Deleted}`). Si se necesita un disparador explícito, se define el evento `Ecosystem_State_Changed` con su **contrato atómico** `SddIA/events/**/ecosystem-state-changed.md` (uuid, familia, payload) consumido por un proceso suscriptor ligero — nunca un acoplamiento síncrono dentro del batch. Respeta DA-5 (fire-and-forget, sin polling).
-- **DD-7 · Exclusión de infraestructura (SSOT primero).** Los conectores `SddIA/infrastructure/adapters/**` (LanceDB, etc.) quedan **fuera** hasta que Cúmulo reciba el mandato de indexarlos y gobernarlos bajo `cumulo.paths.json`. Mapearlos sin registro en el SSOT viola la soberanía de rutas y la Anti-Alucinación Espacial de Cúmulo. IOTA sí es entidad gobernada (`tool:iota-immutable-publisher`), pero su fila "conector de infra" se difiere a Fase 2 por coherencia con el resto de la matriz de infraestructura. **Deuda derivada:** `PBI-ARCH-INFRA-ADAPTERS-SSOT-001` (`docs/todos/pending/PBI-ARCH-INFRA-ADAPTERS-SSOT-001.md`; bloquea esta Fase 2).
+- **DD-7 · Exclusión de infraestructura (SSOT primero).** Los conectores `SddIA/infrastructure/adapters/**` quedaron **fuera del MVP** del Espejo hasta gobernanza SSOT. **Deuda cerrada:** `PBI-ARCH-INFRA-ADAPTERS-SSOT-001` (`docs/todos/done/`) — `cumulo.paths.json` v1.7.0 + `index.md` + fichas con `status`. La **Fase 2** del Espejo puede consumir el censo vía `directories.infrastructure_adapters` (sin glob de `src/`). IOTA sigue en `tools/index.md`.
 
 ## 4. Alcance
 

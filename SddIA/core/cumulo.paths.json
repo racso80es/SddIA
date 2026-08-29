@@ -1,5 +1,5 @@
 {
-  "version": "1.6.5",
+  "version": "1.7.0",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -32,7 +32,9 @@
     "capability_contracts": "SddIA/library/norms/capability-contracts/",
     "events": "SddIA/events",
     "suites": "SddIA/suites",
-    "daemons": "SddIA/daemons"
+    "daemons": "SddIA/daemons",
+    "infrastructure": "SddIA/infrastructure",
+    "infrastructure_adapters": "SddIA/infrastructure/adapters"
   },
   "normative_documents": {
     "interaction_triggers": "SddIA/norms/interaction-triggers.json",
@@ -61,7 +63,8 @@
     "library_codexes": "SddIA/library/codexes/codex-contract.md",
     "events": "SddIA/events/events-contract.md",
     "suites": "SddIA/suites/suites-contract.md",
-    "daemons": "SddIA/daemons/daemons-contract.md"
+    "daemons": "SddIA/daemons/daemons-contract.md",
+    "infrastructure_adapters": "SddIA/infrastructure/adapters/adapters-contract.md"
   },
   "execution_capsules": {
     "skills": "SddIA/skills/",
