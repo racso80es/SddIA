@@ -6,21 +6,28 @@ version: "1.2.0"
 created: "2026-08-27"
 refined: "2026-08-29"
 clarified: "2026-08-29"
-status: "propuesto"
-priority: "critica"
+status: done
+refinement_status: implemented
+pbi_archived: true
+updated: "2026-08-29T15:30:00+02:00"
+persist_ref: docs/features/kaizen-espejo-consciencia-observabilidad
+branch_name: feat/kaizen-espejo-consciencia-observabilidad
+priority: critica
 process: feature
+executor_vehicle: feature
 type: kaizen
 dispatch: false
-suggested_branch: feat/kaizen-espejo-consciencia-observabilidad
-depends_on: []
 related:
   - SddIA/agents/radamanto.md
   - SddIA/agents/cumulo.md
   - SddIA/agents/argos.md
   - SddIA/process/daemon-heartbeat-audit.md
+  - SddIA/process/compile-ecosystem-map-snapshot.md
+  - SddIA/process/query-ecosystem-health.md
   - SddIA/events/telemetry/daemon-heartbeat.md
   - SddIA/events/domain/domain-entity-degraded.md
   - SddIA/interfaces/kalma2-bridge/src/main.rs
+  - SddIA/ecosystem-health/src/lib.rs
   - interfaces/kalma2/app.js
   - interfaces/kalma2/index.html
   - SddIA/tools/index.md

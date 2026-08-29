@@ -10,6 +10,7 @@ items_applied:
   - T2-procesos-eda
   - T3-bridge
   - T4-wui
+  - T5-cierre-documental
 ---
 
 # Ejecución — kaizen-espejo-consciencia-observabilidad
@@ -32,5 +33,4 @@ items_applied:
 
 ## Fuera de este commit
 
-- T5 cierre Argos (`validacion.md`, PBI archivado).
-- PR / `delivery-close-cycle`.
+- PR / `delivery-close-cycle` (siguiente estímulo).

@@ -64,8 +64,7 @@ items:
 
 - Sección `Espejo de consciencia` tras Pulso cognitivo; matriz por `color`/`reason`.
 
-## Pendiente (Argos / cierre)
+## T5 — Cierre
 
-- `validacion.md` APTO + PBI → `docs/todos/done/`.
-- Smoke E2E lab con `event-watcher` tras eventos domain.
-- Rebuild release en Paciente 0 (`CARGO_TARGET_DIR` explícito).
+- `validacion.md` APTO · `pbi_archived: true`.
+- PBI → `docs/todos/done/PBI-KAIZEN-ESPEJO-CONSCIENCIA-001.md`.
