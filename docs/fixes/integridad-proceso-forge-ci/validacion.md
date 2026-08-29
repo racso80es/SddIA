@@ -30,7 +30,8 @@ git_changes:
   - SddIA/core/eda-coverage.json
   - .github/workflows/sddia-index-qa.yml
   - docs/fixes/integridad-proceso-forge-ci/
-  - docs/todos/done/[FIX] Integridad de proceso — parse_frontmatter ciego, hash forge divergente y aduana CI opaca.md
+  - SddIA/evolution/3347c0b0-99a2-45ca-a1dd-97c6ebc8298a.md
+  - SddIA/evolution/Evolution_log.md
 ---
 
 # Validación — integridad proceso forge/CI/DCC
