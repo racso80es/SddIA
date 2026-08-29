@@ -10,6 +10,7 @@ pbi_ref: docs/todos/done/PBI-PPR-ANTI-RECURRENCE-HOLLOW-A2-KAIZEN-ADUANA-EVOLUTI
 document_id: PBI-PPR-ANTI-RECURRENCE-HOLLOW-A2-KAIZEN-ADUANA-EVOLUTION
 uuid: 18bacf31-9223-4b07-853e-a66c0d6c3ebd
 evolution_id: 18bacf31-9223-4b07-853e-a66c0d6c3ebd
+pr_url: https://github.com/racso80es/SddIA/pull/221
 parent_pbi: docs/todos/done/PBI-KAIZEN-ADUANA-EVOLUTION-LOCAL-PPR-REVOKED-REGISTRY.md
 global: APTO
 pbi_archived: true
@@ -68,5 +69,5 @@ Rehab instancia **done** PR #220 @ `c1007a51`. Este ciclo solo motor + documenta
 
 ## Cierre
 
-- DCC pendiente acuse en esta sesión
-- Post-merge: opcional `pr_url` / `merge_commit`
+- DCC: PR https://github.com/racso80es/SddIA/pull/221 · `execution_id` `5fd37e34-f583-40d2-89c7-f90d648d4640`
+- Post-merge: opcional `merge_commit`
