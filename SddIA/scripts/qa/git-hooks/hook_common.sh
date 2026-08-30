@@ -12,6 +12,7 @@ MAIN_GUARD_MSG="Violación de Soberanía: main solo muta mediante el proceso acc
 
 # shellcheck source=/dev/null
 source "$REPO/SddIA/scripts/common/sddia_shell_lib.sh"
+_sddia_augment_operator_path
 
 resolve_sddia_qa() {
   local candidate

@@ -40,12 +40,50 @@ pub struct CapsuleInvokeResult {
     pub body: Value,
 }
 
+fn wasmtime_candidate_paths() -> Vec<PathBuf> {
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(p) = std::env::var_os("WASMTIME") {
+        candidates.push(PathBuf::from(p));
+    }
+    candidates.push(PathBuf::from("wasmtime"));
+    if let Ok(home) = std::env::var("HOME") {
+        candidates.push(PathBuf::from(format!("{home}/.wasmtime/bin/wasmtime")));
+        candidates.push(PathBuf::from(format!("{home}/.cargo/bin/wasmtime")));
+        candidates.push(PathBuf::from(format!("{home}/.local/bin/wasmtime")));
+    }
+    candidates.push(PathBuf::from("/usr/local/bin/wasmtime"));
+    candidates
+}
+
+fn wasmtime_executable() -> Option<PathBuf> {
+    for c in wasmtime_candidate_paths() {
+        let looks_ok = if c.as_os_str() == "wasmtime" {
+            Command::new("wasmtime")
+                .arg("--version")
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false)
+        } else {
+            c.is_file()
+                && Command::new(&c)
+                    .arg("--version")
+                    .output()
+                    .map(|o| o.status.success())
+                    .unwrap_or(false)
+        };
+        if looks_ok {
+            return Some(if c.as_os_str() == "wasmtime" {
+                PathBuf::from("wasmtime")
+            } else {
+                c
+            });
+        }
+    }
+    None
+}
+
 fn has_wasmtime() -> bool {
-    Command::new("wasmtime")
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
+    wasmtime_executable().is_some()
 }
 
 fn resolve_capsule(
@@ -89,15 +127,32 @@ pub fn invoke_capsule_subprocess(
     path: &Path,
     stdin_payload: &str,
 ) -> Result<(String, String, i32), String> {
-    let mut cmd = if kind == "wasm" {
-        if !has_wasmtime() {
+    let wt = wasmtime_executable();
+    let (kind, bin): (&str, PathBuf) = if kind == "wasm" {
+        if wt.is_some() {
+            ("wasm", path.to_path_buf())
+        } else if let Some(name) = path.file_stem().and_then(|s| s.to_str()) {
+            match capsule_paths::resolve_capsule_native(repo, name) {
+                Some(n) => ("native", n),
+                None => {
+                    return Err(
+                        "wasmtime not in PATH; install wasmtime to run WASI capsules".into(),
+                    );
+                }
+            }
+        } else {
             return Err("wasmtime not in PATH; install wasmtime to run WASI capsules".into());
         }
-        let mut c = Command::new("wasmtime");
-        c.args(["run", "--dir=.", &path.to_string_lossy()]);
+    } else {
+        (kind, path.to_path_buf())
+    };
+    let mut cmd = if kind == "wasm" {
+        let wt = wt.expect("wasm kind implies wasmtime_executable");
+        let mut c = Command::new(wt);
+        c.args(["run", "--dir=.", &bin.to_string_lossy()]);
         c
     } else {
-        Command::new(path)
+        Command::new(&bin)
     };
     cmd.current_dir(repo)
         .stdin(Stdio::piped())
@@ -436,6 +491,18 @@ pub fn invoke_action(repo: &Path, action_name: &str, action_inputs: &Value) -> R
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wasmtime_candidates_include_home_dot_wasmtime() {
+        let Ok(home) = std::env::var("HOME") else {
+            return;
+        };
+        let want = PathBuf::from(format!("{home}/.wasmtime/bin/wasmtime"));
+        assert!(
+            wasmtime_candidate_paths().contains(&want),
+            "GitHub Desktop PATH no incluye ~/.wasmtime/bin"
+        );
+    }
 
     #[test]
     fn parse_capsule_last_line_json() {

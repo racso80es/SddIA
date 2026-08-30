@@ -73,6 +73,24 @@ _sddia_resolve_orchestrator() {
   return 1
 }
 
+# GitHub Desktop / GUI git: PATH mínimo (/usr/bin:/bin). wasmtime vive en ~/.wasmtime/bin.
+_sddia_augment_operator_path() {
+  local extra
+  local dirs=()
+  if [[ -n "${HOME:-}" ]]; then
+    dirs+=("$HOME/.wasmtime/bin" "$HOME/.cargo/bin" "$HOME/.local/bin")
+  fi
+  dirs+=("/usr/local/bin")
+  for extra in "${dirs[@]}"; do
+    [[ -d "$extra" ]] || continue
+    case ":${PATH:-}:" in
+      *":$extra:"*) continue ;;
+    esac
+    PATH="$extra${PATH:+:$PATH}"
+  done
+  export PATH
+}
+
 _sddia_load_vault() {
   local repo_root="$1"
   local global="$repo_root/.dev/.env"
