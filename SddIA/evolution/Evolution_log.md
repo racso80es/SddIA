@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `2381303e-5db6-4f35-b33f-70388e09295e` | 2026-08-30 | iota-publish-relay Ola 1: tick_with_status degraded hasta el espejo (fractura 701c77ebeab8) | CANONICO | `SddIA/evolution/2381303e-5db6-4f35-b33f-70388e09295e.md` |
 | `74674393-d689-4cc0-bd7f-6285a871ccff` | 2026-08-30 | iota-publish-relay Ola 0: gracia post-spawn GRACE_SECS=10 y omitir tick post-gracia (fractura 701c77ebeab8) | CANONICO | `SddIA/evolution/74674393-d689-4cc0-bd7f-6285a871ccff.md` |
 | `6d182670-51a5-43ab-adb0-aeaa3b8c3c9f` | 2026-08-30 | Aduana GUI: resolver wasmtime fuera del PATH de GitHub Desktop; correlato genoma daemons/telegram y hooks. | CANONICO | `SddIA/evolution/6d182670-51a5-43ab-adb0-aeaa3b8c3c9f.md` |
 | `00e89551-1241-4195-975d-9f06b306c873` | 2026-08-30 | AEL-CA9 residual: hook delega gate-evolution; DCC --sync-base; delivery-close-cycle 1.4.0 vía entity-manager. | CANONICO | `SddIA/evolution/00e89551-1241-4195-975d-9f06b306c873.md` |

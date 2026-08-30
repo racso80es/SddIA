@@ -6,7 +6,7 @@ format: markdown
 version: "1.0.0"
 created: "2026-08-30"
 updated: "2026-08-30"
-status: abierto
+status: cerrado
 refinement_status: clarified
 priority: alta
 process: bug-fix
@@ -146,6 +146,6 @@ Cierre documental del `bug-fix` (PBI a `done/`, `validacion.md` APTO) cuando CA9
 
 ## Criterio de cierre
 
-- [ ] Ola 1: RELAY-CA9…CA12
-- [ ] CA5–CA7 APTO o DIFERIDO explícito con PBI/ola siguiente
-- [ ] Argos APTO + este PBI en `docs/todos/done/` en la rama del PR único
+- [x] Ola 1: RELAY-CA9…CA12
+- [x] CA5–CA7 APTO o DIFERIDO explícito con PBI/ola siguiente
+- [x] Argos APTO + este PBI en `docs/todos/done/` en la rama del PR único

@@ -345,6 +345,28 @@ fn color_daemon(
     if missed >= MISSED_CYCLES_THRESHOLD {
         return ("red".into(), "missed_cycles".into(), missed, None, false);
     }
+    let hb_status = entry
+        .and_then(|e| e.get("status"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if hb_status == "degraded" {
+        return (
+            "yellow".into(),
+            "heartbeat_degraded".into(),
+            missed,
+            None,
+            false,
+        );
+    }
+    if hb_status == "shutting_down" {
+        return (
+            "yellow".into(),
+            "heartbeat_shutting_down".into(),
+            missed,
+            None,
+            false,
+        );
+    }
     let has_hb = entry
         .and_then(|e| e.get("last_heartbeat_at"))
         .and_then(|v| v.as_str())
@@ -764,6 +786,93 @@ mod tests {
             .expect("daemon row");
         assert_eq!(row["color"], "red");
         assert_eq!(row["reason"], "missed_cycles");
+    }
+
+    #[test]
+    fn daemon_yellow_on_heartbeat_degraded() {
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        write_repo_layout(repo);
+        compile_map_snapshot(repo).unwrap();
+        fs::write(
+            repo.join(".SddIA/daemons/state/heartbeat-audit.json"),
+            r#"{"daemons":{"event-watcher":{"missed_cycles":0,"last_heartbeat_at":"2020-01-01T00:00:00Z","status":"degraded"}}}"#,
+        )
+        .unwrap();
+        let out = fuse_ecosystem_health(
+            repo,
+            FuseOptions {
+                compile_map: false,
+                persist: false,
+            },
+        )
+        .unwrap();
+        let row = out["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == "event-watcher")
+            .expect("daemon row");
+        assert_eq!(row["color"], "yellow");
+        assert_eq!(row["reason"], "heartbeat_degraded");
+    }
+
+    #[test]
+    fn daemon_red_missed_beats_degraded() {
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        write_repo_layout(repo);
+        compile_map_snapshot(repo).unwrap();
+        fs::write(
+            repo.join(".SddIA/daemons/state/heartbeat-audit.json"),
+            r#"{"daemons":{"event-watcher":{"missed_cycles":3,"last_heartbeat_at":"2020-01-01T00:00:00Z","status":"degraded"}}}"#,
+        )
+        .unwrap();
+        let out = fuse_ecosystem_health(
+            repo,
+            FuseOptions {
+                compile_map: false,
+                persist: false,
+            },
+        )
+        .unwrap();
+        let row = out["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == "event-watcher")
+            .expect("daemon row");
+        assert_eq!(row["color"], "red");
+        assert_eq!(row["reason"], "missed_cycles");
+    }
+
+    #[test]
+    fn daemon_green_alive_compat() {
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        write_repo_layout(repo);
+        compile_map_snapshot(repo).unwrap();
+        fs::write(
+            repo.join(".SddIA/daemons/state/heartbeat-audit.json"),
+            r#"{"daemons":{"event-watcher":{"missed_cycles":0,"last_heartbeat_at":"2020-01-01T00:00:00Z"}}}"#,
+        )
+        .unwrap();
+        let out = fuse_ecosystem_health(
+            repo,
+            FuseOptions {
+                compile_map: false,
+                persist: false,
+            },
+        )
+        .unwrap();
+        let row = out["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["id"] == "event-watcher")
+            .expect("daemon row");
+        assert_eq!(row["color"], "green");
+        assert_eq!(row["reason"], "heartbeat_ok");
     }
 
     #[test]

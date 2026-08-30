@@ -20,7 +20,7 @@ const RESTART_BACKOFF_SECS: u64 = 2;
 const HEALTH_TIMEOUT_MS: u64 = 1500;
 
 struct SupervisorTickAction {
-    emit_heartbeat: bool,
+    heartbeat_status: &'static str,
     kill_child: bool,
 }
 
@@ -34,7 +34,11 @@ fn decide_supervisor_tick(
     child_alive: bool,
 ) -> SupervisorTickAction {
     SupervisorTickAction {
-        emit_heartbeat: health_ok || in_grace,
+        heartbeat_status: if health_ok || in_grace {
+            "alive"
+        } else {
+            "degraded"
+        },
         kill_child: !health_ok && !in_grace && child_alive,
     }
 }
@@ -247,10 +251,8 @@ fn main() {
         );
         let action = decide_supervisor_tick(health_ok, grace, child_alive_now);
 
-        if action.emit_heartbeat {
-            if let Err(e) = centinela.tick(&top) {
-                eprintln!("[{DAEMON_NAME}] heartbeat: {e}");
-            }
+        if let Err(e) = centinela.tick_with_status(&top, action.heartbeat_status) {
+            eprintln!("[{DAEMON_NAME}] heartbeat: {e}");
         }
 
         if action.kill_child {
@@ -297,27 +299,27 @@ mod tests {
     fn grace_refused_does_not_kill() {
         let grace = Duration::from_secs(GRACE_SECS);
         let action = decide_supervisor_tick(false, in_grace(true, Some(Duration::ZERO), grace), true);
-        assert!(action.emit_heartbeat);
+        assert_eq!(action.heartbeat_status, "alive");
         assert!(!action.kill_child);
     }
 
     #[test]
-    fn post_grace_refused_kills_and_omits_tick() {
+    fn post_grace_refused_kills_and_ticks_degraded() {
         let grace = Duration::from_secs(GRACE_SECS);
         let action = decide_supervisor_tick(
             false,
             in_grace(true, Some(Duration::from_secs(GRACE_SECS)), grace),
             true,
         );
-        assert!(!action.emit_heartbeat);
+        assert_eq!(action.heartbeat_status, "degraded");
         assert!(action.kill_child);
     }
 
     #[test]
-    fn healthy_ticks_no_kill() {
+    fn healthy_ticks_alive_no_kill() {
         let grace = Duration::from_secs(GRACE_SECS);
         let action = decide_supervisor_tick(true, in_grace(true, Some(Duration::from_secs(60)), grace), true);
-        assert!(action.emit_heartbeat);
+        assert_eq!(action.heartbeat_status, "alive");
         assert!(!action.kill_child);
     }
 
@@ -325,5 +327,17 @@ mod tests {
     fn grace_boundary_eq_is_outside() {
         let grace = Duration::from_secs(GRACE_SECS);
         assert!(!in_grace(true, Some(Duration::from_secs(GRACE_SECS)), grace));
+    }
+
+    #[test]
+    fn post_grace_no_child_ticks_degraded() {
+        let grace = Duration::from_secs(GRACE_SECS);
+        let action = decide_supervisor_tick(
+            false,
+            in_grace(false, None, grace),
+            false,
+        );
+        assert_eq!(action.heartbeat_status, "degraded");
+        assert!(!action.kill_child);
     }
 }

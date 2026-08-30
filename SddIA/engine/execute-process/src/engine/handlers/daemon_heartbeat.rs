@@ -201,10 +201,21 @@ fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Opti
         "heartbeat_interval_seconds".into(),
         json!(daemon_interval(repo, daemon_id)),
     );
-    entry.insert(
-        "classification".into(),
-        json!(if had_fracture { "recovered" } else { "healthy" }),
-    );
+    let hb_status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let classification = match hb_status {
+        Some("degraded") => "degraded",
+        Some("shutting_down") => "shutting_down",
+        _ if had_fracture => "recovered",
+        _ => "healthy",
+    };
+    entry.insert("classification".into(), json!(classification));
+    if let Some(s) = hb_status {
+        entry.insert("status".into(), json!(s));
+    }
     entry.remove("fracture_event_id");
     daemons.insert(daemon_id.to_string(), Value::Object(entry));
 }
@@ -632,5 +643,53 @@ mod tests {
         std::fs::create_dir_all(repo.join(".SddIA/daemons/state")).unwrap();
         let t = load_heartbeat_audit_thresholds(repo);
         assert_eq!(t.missed_cycles_threshold, 9);
+    }
+
+    fn record_payload(status: Option<&str>) -> (tempfile::TempDir, Value) {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"daemons_instance":{"state":".SddIA/daemons/state"}}"#,
+        )
+        .unwrap();
+        let mut payload = json!({
+            "daemon_name": "iota-publish-relay",
+            "timestamp": "2026-08-30T12:00:00Z"
+        });
+        if let Some(s) = status {
+            payload["status"] = json!(s);
+        }
+        let mut state = json!({"daemons": {}});
+        record_heartbeat_at(&mut state, repo, &payload, None);
+        (dir, state)
+    }
+
+    #[test]
+    fn degraded_not_healthy_missed_zero() {
+        let (_dir, state) = record_payload(Some("degraded"));
+        let entry = &state["daemons"]["iota-publish-relay"];
+        assert_eq!(entry["classification"], "degraded");
+        assert_eq!(entry["missed_cycles"], 0);
+        assert_eq!(entry["status"], "degraded");
+    }
+
+    #[test]
+    fn alive_still_healthy() {
+        let (_dir, state) = record_payload(Some("alive"));
+        let entry = &state["daemons"]["iota-publish-relay"];
+        assert_eq!(entry["classification"], "healthy");
+        assert_eq!(entry["missed_cycles"], 0);
+        assert_eq!(entry["status"], "alive");
+    }
+
+    #[test]
+    fn legacy_absent_status_healthy() {
+        let (_dir, state) = record_payload(None);
+        let entry = &state["daemons"]["iota-publish-relay"];
+        assert_eq!(entry["classification"], "healthy");
+        assert_eq!(entry["missed_cycles"], 0);
+        assert!(entry.get("status").is_none());
     }
 }
