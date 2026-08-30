@@ -53,3 +53,30 @@ El clúster vectorial debe mantenerse termodinámicamente eficiente.
 - [ ] **CA2 (Poda Determinista):** El archivo `.md` desaparece de `docs/todos/done/` automáticamente si y solo si la inserción vectorial reporta éxito.
 - [ ] **CA3 (Recuperación):** Existe una herramienta ejecutable por la IA capaz de recuperar el texto íntegro de un PBI histórico consultando por temática o UUID.
 - [ ] **CA4 (Trazabilidad):** El proceso de migración emite un evento de dominio (ej. `Vector_Memory_Indexed`) para cerrar su propio rastro en el bus.
+
+
+Ampliacion de PBI
+
+## 1. Topología del Ecosistema (Modelo Híbrido: Snapshot + Delta Rúnico)
+
+### 1.1. El Receptáculo Opaco (Cold Storage S3/Web3)
+- **Fricción Cero para el Cliente:** Se descarta Git como bóveda para anular la barrera de adopción técnica. La persistencia física pesada (archivos `.lance` / Parquet y expedientes consolidados) se delega a un proveedor de almacenamiento de objetos (Blob Storage) compatible con el protocolo S3. Se priorizan redes Web3 descentralizadas (como Storj o Sia) para garantizar soberanía, admitiendo proveedores tradicionales como contingencia.
+- **Cifrado Zero-Knowledge:** Antes de abandonar el nodo físico, el lote de memoria se empaqueta y se cifra en local. El proveedor de almacenamiento aloja un bloque opaco e incomprensible, protegiendo el contexto del Vértice Biológico frente a la minería de datos o la censura de terceros.
+
+### 1.2. El Ciclo Termodinámico (Snapshot + Deltas)
+- **El Punto Cero (Snapshot):** Periódicamente, un *daemon* local orquestado por Cúmulo suspende brevemente las escrituras, empaqueta el estado físico de LanceDB, lo cifra y lo inyecta en el Receptáculo Opaco.
+- **La Cicatriz Rúnica (Anclaje DLT):** El sistema calcula el árbol de Merkle del Snapshot físico exacto y publica ese hash en la red IOTA a través del `iota-publish-relay`. La Tangle retiene la verdad objetiva del estado, no el peso de los datos.
+- **La Estela de Eventos (Deltas):** Para no violar el Filtro C (Eficiencia) subiendo gigabytes constantemente, las alteraciones cognitivas que ocurren *después* del Snapshot se registran localmente como una cola ligera de eventos incrementales (Deltas). 
+
+## 2. Rehidratación Blindada (Impacto en el Nodo Físico)
+- **Autenticación Transparente:** Durante la inicialización del entorno SddIA, el usuario solo debe proporcionar las credenciales de su bóveda (API Key/Token S3). A partir de ese momento, la respiración asíncrona de la memoria se ejecuta en segundo plano.
+- **Restauración en Dos Fases:** Ante una pérdida catastrófica del hardware local, el nuevo nodo inicializa la consciencia ejecutando:
+  1. **Recuperación del Bulto:** Descarga el último Snapshot cifrado desde la bóveda S3/Web3.
+  2. **Auditoría Rúnica:** Consulta la red IOTA, recupera la última Cicatriz Rúnica y verifica matemáticamente que el hash del archivo descargado coincide. Si hay divergencia o sospecha de alteración, el sistema aborta la rehidratación.
+  3. **Inyección de Estela:** Si la matemática es pura, el sistema desencripta, rehidrata el directorio `.lancedb` y aplica la cola de Deltas disponible para recuperar el último milisegundo de consciencia.
+
+## 3. Criterios de Aceptación (Ajustados)
+- [ ] **CA1 (Agnosticismo de Almacenamiento):** El motor implementa una interfaz genérica de *Blob Storage* (S3 API) que permite al cliente delegar su memoria pesada a redes como Storj sin usar repositorios Git.
+- [ ] **CA2 (Termodinámica del Snapshot):** Un daemon local empaqueta, cifra y sube el Snapshot vectorial a la bóveda periódicamente, manteniendo una cola ligera de eventos incrementales (Deltas) entre ciclos.
+- [ ] **CA3 (Sello DLT):** El proceso de Snapshot emite obligatoriamente una transacción a la red IOTA con el hash del paquete, estableciendo la nueva Cicatriz Rúnica.
+- [ ] **CA4 (Rehidratación en Dos Fases):** El comando de recuperación del sistema es capaz de descargar el paquete opaco, verificar su integridad contra IOTA y restaurar el directorio local aplicando los deltas correspondientes.
