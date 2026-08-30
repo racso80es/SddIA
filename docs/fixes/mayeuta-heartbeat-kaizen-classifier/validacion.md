@@ -1,8 +1,9 @@
 ---
 feature_name: mayeuta-heartbeat-kaizen-classifier
 created: "2026-08-30"
-updated: "2026-08-30T19:20:00Z"
+updated: "2026-08-30T19:21:00Z"
 process: bug-fix
+pr_url: https://github.com/racso80es/SddIA/pull/236
 branch_name: fix/mayeuta-heartbeat-kaizen-classifier
 persist_ref: docs/fixes/mayeuta-heartbeat-kaizen-classifier
 pbi_ref: docs/todos/done/[FIX] Mayeuta — clasificador Kaizen ciego a latido de centinelas.md
