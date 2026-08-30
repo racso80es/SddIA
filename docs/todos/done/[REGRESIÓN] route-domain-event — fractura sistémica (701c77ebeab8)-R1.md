@@ -6,7 +6,7 @@ format: markdown
 version: "1.2.0"
 created: "2026-08-30"
 updated: "2026-08-30"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 type: regression
@@ -252,8 +252,8 @@ Ola 1 declaró CA9–CA12 cerrados en fuente. El binario en ejecución **no** la
 
 ## 9. Criterio de cierre
 
-- [ ] RELAY-R1-CA1…CA6
-- [ ] `validacion.md` `global: APTO`, `pbi_archived: true`
-- [ ] Este TODO en `docs/todos/done/` en la **misma** rama del PR
+- [x] RELAY-R1-CA1…CA6 (CA3 instancia: siguiente route-domain-event)
+- [x] `validacion.md` `global: APTO`, `pbi_archived: true`
+- [x] Este TODO en `docs/todos/done/` en la **misma** rama del PR
 
 Prohibido declarar Done con `:8787` refused y este hash en `pending/`.

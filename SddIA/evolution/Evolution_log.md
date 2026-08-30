@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `38fb99f7-5670-4f26-a918-ef6544d500ce` | 2026-08-30 | R1 701c77ebeab8: aduana ELF-fuente en resolutor de centinelas y launchers convergidos | CANONICO | `SddIA/evolution/38fb99f7-5670-4f26-a918-ef6544d500ce.md` |
 | `5eae5eb6-a1ee-4c70-8ded-982f48fbf6a5` | 2026-08-30 | Mayeuta: cubo heartbeat_starvation en analyze_fracture_kaizen; enrich-fracture-pbi-kaizen 1.2.0. | CANONICO | `SddIA/evolution/5eae5eb6-a1ee-4c70-8ded-982f48fbf6a5.md` |
 | `add08452-fbff-4768-b906-9b0eb2baa9e3` | 2026-08-30 | F4c: DNS/red transitoria en DCC no emite System_Fracture_Detected; Mayeuta sin colisión delivery-close. | CANONICO | `SddIA/evolution/add08452-fbff-4768-b906-9b0eb2baa9e3.md` |
 | `2381303e-5db6-4f35-b33f-70388e09295e` | 2026-08-30 | iota-publish-relay Ola 1: tick_with_status degraded hasta el espejo (fractura 701c77ebeab8) | CANONICO | `SddIA/evolution/2381303e-5db6-4f35-b33f-70388e09295e.md` |
