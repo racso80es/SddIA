@@ -1,7 +1,7 @@
 ---
 feature_name: dcc-simulated-barrier-c51acf014c0f
 created: "2026-08-30"
-updated: "2026-08-30T06:50:00Z"
+updated: "2026-08-30T07:05:00Z"
 process: bug-fix
 branch_name: fix/dcc-simulated-barrier-c51acf014c0f
 persist_ref: docs/fixes/dcc-simulated-barrier-c51acf014c0f
@@ -24,6 +24,10 @@ checks:
   CA6_UNIT_BARRIER: APTO
   CA7_UNIT_EMIT_FRACTURE: APTO
   CA8_CASCADE_DOCS: APTO
+  CA9_DISPATCHERS_EXECUTABLE: APTO
+  CA10_VERIFY_HOOKS_FIX: APTO
+  CA11_VERIFY_HOOKS_TEST: APTO
+  CA12_PRE_PUSH_EVOL_GATE: APTO
   CASCADE_SPEC: APTO
   CASCADE_PLAN: APTO
   CASCADE_IMPLEMENTATION: APTO
@@ -33,6 +37,12 @@ git_changes:
   - SddIA/engine/execute-process/src/engine/executor.rs
   - SddIA/engine/execute-process/src/engine/phase_capsules.rs
   - SddIA/engine/execute-process/src/engine/delivery_close.rs
+  - SddIA/tools/sddia-qa/src/verify_hooks.rs
+  - SddIA/tools/sddia-qa/src/main.rs
+  - SddIA/scripts/qa/git-hooks/pre_push_gate.sh
+  - SddIA/scripts/qa/git-hooks/pre-commit
+  - SddIA/scripts/qa/git-hooks/pre-push
+  - SddIA/scripts/qa/git-hooks/post-merge
   - docs/fixes/dcc-simulated-barrier-c51acf014c0f/
   - docs/todos/done/[FIX] delivery-close-cycle — barrera de fase simulated (c51acf014c0f).md
   - SddIA/evolution/a3c51acf-014c-4f0f-8000-c51acf014c0f.md
@@ -42,7 +52,7 @@ git_changes:
 
 ## Veredicto
 
-**APTO** — relevo IDE (`simulated`) sin `validacion.md` ya no encadena `delivery-close-cycle`; skip documental corta entrega; gate de aduana evolution no escala a `System_Fracture_Detected`; error de forja incluye telemetría `gh`.
+**APTO** — relevo IDE (`simulated`) sin `validacion.md` ya no encadena `delivery-close-cycle`; skip documental corta entrega; gate de aduana evolution no escala a `System_Fracture_Detected`; error de forja incluye telemetría `gh`; aduana local activa (dispatchers `+x`, `verify-hooks --fix`, evolution gate en pre-push).
 
 ## Checks
 
@@ -56,3 +66,7 @@ git_changes:
 | `CA6_UNIT_BARRIER` | APTO | tests `simulated_relay_*` |
 | `CA7_UNIT_EMIT_FRACTURE` | APTO | `dcc_fracture_emits_on_failed_forge_phase` |
 | `CA8_CASCADE_DOCS` | APTO | spec/plan/implementation/execution/validacion + PBI en `done/` |
+| `CA9_DISPATCHERS_EXECUTABLE` | APTO | `git ls-files --stage` → `100755` en dispatchers |
+| `CA10_VERIFY_HOOKS_FIX` | APTO | `verify-hooks --fix` idempotente |
+| `CA11_VERIFY_HOOKS_TEST` | APTO | `cargo test -p sddia-qa verify_hooks` (2/2) |
+| `CA12_PRE_PUSH_EVOL_GATE` | APTO | `run_evolution_gate` antes del bucle DCC en `pre_push_gate.sh` |

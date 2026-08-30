@@ -50,6 +50,26 @@ No aplicar `simulated` como barrera global a procesos sin cascada documental.
 
 `capsule_delivery_gh_pr`: concatenar stdout/stderr truncados al `Err` de `pr_url`. Cambio acotado.
 
+## Fase 4.5 — Aduana local activa (F4a/F4c, CA-9…CA-12)
+
+Refinado tras auditoría de la recaída `EVOL_HASH_MISMATCH`. Sin mutación de genoma `.md`.
+
+1. **F4a — bit ejecutable versionado (D1):** `git update-index --chmod=+x SddIA/scripts/qa/git-hooks/{pre-commit,pre-push,post-merge}`. Verificar con `git ls-files --stage` → `100755`.
+2. **F4a — verify-hooks activo (D2/D3):** `SddIA/tools/sddia-qa/src/verify_hooks.rs`:
+   - comprobar bit `+x` de cada dispatcher (metadata `st_mode & 0o111`), añadir finding si falta;
+   - modo `--fix`: `git config core.hooksPath SddIA/scripts/qa/git-hooks` + `chmod +x` dispatchers; idempotente.
+   - `main.rs`: enrutar `verify-hooks --fix`.
+   - Test unitario: fixture sin `+x` → finding; con `--fix` → exit 0 en segunda pasada.
+3. **F4c — gate evolution en pre-push (D4):** `SddIA/scripts/qa/git-hooks/pre_push_gate.sh`: correr `run_evolution_gate` (ya definido) sobre `origin/main...HEAD` **antes** del bucle de ramas DCC, cuando el rango toque `SddIA/evolution/` o material sin correlato. Conservar guarda `in_delivery_close_cycle` para el push del propio orquestador (no duplicar con AEL-CA9).
+
+Verificación:
+
+```text
+cd SddIA && cargo test -p sddia-qa verify_hooks
+git ls-files --stage SddIA/scripts/qa/git-hooks/pre-push   # 100755
+SddIA/target/debug/sddia-qa verify-hooks --json            # findings=[]
+```
+
 ## Fase 5 — Verificación
 
 ```text
@@ -66,9 +86,8 @@ Solo tras F1 en código + `validacion.md` APTO. **No** tratar `b0a4bde` / PR #23
 
 ## Diferido (laudo / ciclo propio)
 
-- AEL-CA9: fase evolution en genoma `delivery-close-cycle` vía `entity-manager`.
-- `verify-hooks` que **arme** `core.hooksPath`.
-- Higiene operativa de #231 (`systemd` instance, logs, tools/daemons en el snapshot).
+- AEL-CA9: fase `gate-evolution` en genoma `delivery-close-cycle` vía `entity-manager` (complementa F4c en la ruta del motor).
+- Higiene operativa de #231 (`systemd` instance, logs, tools/daemons en el snapshot) — resuelta vía revert en rama.
 
 ## Orden
 

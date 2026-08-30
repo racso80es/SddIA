@@ -3,9 +3,9 @@ document_id: PBI-FIX-FRACTURE-c51acf014c0f
 uuid: "c51acf01-4c0f-4000-8000-000000000001"
 title: "[FIX] delivery-close-cycle — apertura en forja sobre fix sin diseño (barrera simulated)"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-08-29"
-updated: "2026-08-29"
+updated: "2026-08-30"
 status: "cerrado"
 priority: alta
 process: bug-fix
@@ -189,7 +189,9 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 - [x] F2 resuelta: skip de `Cierre documental en rama` por `validacion.md` ausente emite señal/corta pipeline
 - [x] F3 mitigada: envelope de error de forja incluye `gh_stdout`/`gh_stderr`
 - [x] F4 resuelta: sin push prematuro, un ciclo `bug-fix` en relevo IDE **no** produce rojo de `wasi-runtime-smoke` por `EVOL_MATERIAL_UNREGISTERED` (smoke reproducible)
-- [ ] F4: `gate-evolution` alcanzable en la ruta de `delivery-close-cycle` (fase de proceso) **o** `core.hooksPath` armado/verificado al inicio de sesión de escritura — la aduana evolution deja de depender de CI como primera capa
+- [x] F4a (refinado v1.2.0): dispatchers con `+x` versionado; `verify-hooks --fix` arma `core.hooksPath` + `chmod` y comprueba bit ejecutable — la aduana local deja de estar dormida por-clon (CA-9/CA-10/CA-11)
+- [x] F4c (refinado v1.2.0): `pre_push_gate.sh` corre `gate-evolution --range` antes de la rama DCC; hash evolution inválido → BLOCKED local, no en CI (CA-12)
+- [ ] AEL-CA9 (diferido): `gate-evolution` como fase del genoma `delivery-close-cycle` vía `entity-manager`
 - [x] F4b: `emit_dcc_phase_fractures` no escala `blocked` de aduana determinista (`Aduana evolution`/`Aduana EDA`) a `System_Fracture_Detected`; conserva veredicto accionable (absorbe `c339de406e29`)
 - [x] `c339de406e29` unificada en este PBI (stub `done/` apuntando aquí; diagnóstico erróneo corregido)
 - [ ] Rama remota `fix/route-domain-event-fracture-b3a715381787` higienizada vía proceso (no raw)

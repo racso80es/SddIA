@@ -67,9 +67,24 @@ Si `feature-pbi-archive` skip por `validacion.md ausente`:
 
 `capsule_delivery_gh_pr`: al fallar `pr_url`, el `Err` incluye fragmentos truncados de `gh_stdout`/`gh_stderr`. No cambia la semántica de éxito.
 
-### F4 — Aduana en ruta de entrega (parcial, este ciclo)
+### F4 — Aduana local activa (refinado: implementable este ciclo)
 
-F1 elimina el push prematuro (palanca principal). En este ciclo **no** mutar genoma `delivery-close-cycle.md` (DA-2 / `entity-manager`). AEL-CA9 (fase evolution como contrato de proceso) y armado de `core.hooksPath` quedan **documentados**; implementación de genoma en ciclo posterior con laudo.
+F1 elimina el push prematuro (palanca principal contra la recurrencia de CI). Auditoría de la recaída `EVOL_HASH_MISMATCH` (correlato `a3c51acf`, PR #231) precisa la causa de que la aduana local **no** atrape errores evolution antes de CI:
+
+| # | Defecto | Naturaleza | Clasificación |
+|---|---------|-----------|---------------|
+| D1 | Dispatchers `pre-commit`/`pre-push`/`post-merge` versionados **sin bit ejecutable** (`-rw-rw-r--`) → git los ignora | Versionado, por-clon | `SddIA/scripts/` (no genoma) |
+| D2 | `verify_hooks.rs` comprueba `is_file()`, **no** el bit `+x` → reporta "hooks OK" en falso | Ceguera del verificador | `SddIA/tools/sddia-qa/src/` (motor QA, no entidad `.md`) |
+| D3 | `verify-hooks` **reporta** el remedio pero no lo **arma** (armado solo en `start-sddia.sh`) | Punto único de fallo | `SddIA/tools/sddia-qa/src/` |
+| D4 | Gate evolution no corre en ruta operador: `pre_commit_gate.sh` no lo invoca; `pre_push_gate.sh` en push de rama delega en DCC (auto-eximido `in_delivery_close_cycle`) | Cobertura nula del gate local | `SddIA/scripts/` (no genoma) |
+
+**Alcance implementable (F4a/F4c) — sin mutación de genoma `.md`:**
+
+- **F4a (D1):** versionar bit ejecutable de los tres dispatchers vía `git update-index --chmod=+x`. Persiste por-clon en el árbol; despierta la aduana de forma versionada.
+- **F4a (D2/D3):** `verify_hooks.rs` — comprobar bit ejecutable (no solo `is_file()`); nuevo modo `verify-hooks --fix` que **arma** idempotente: `git config core.hooksPath` + `chmod +x` dispatchers. Sin `--fix` conserva semántica de reporte, pero añade finding si falta `+x`.
+- **F4c (D4):** `pre_push_gate.sh` — correr `run_evolution_gate` (rango `origin/main...HEAD`, `--if-touched --sync-base`) **antes** de la rama DCC, para todo push que toque material bajo `SddIA/evolution/` o material sin correlato. Atrapa `EVOL_HASH_MISMATCH` / `EVOL_MATERIAL_UNREGISTERED` localmente, no en CI.
+
+**Diferido (AEL-CA9, requiere `entity-manager`):** declarar `gate-evolution` como **fase** del genoma `delivery-close-cycle.md` (mutación de entidad normada + recálculo `hash_signature`). Complementa F4c en la ruta del propio motor; fuera de este PR.
 
 ### F4b — Discriminar gate vs colapso
 
@@ -96,11 +111,14 @@ Conservar `status: blocked` y `reason_codes`. Opcional: telemetría fractal, no 
 | CA-6 | Test unitario: `agent_phase_blocks_downstream` / bucle — `simulated` barre DCC en `bug-fix` |
 | CA-7 | Test unitario: emit fracture — blocked evolution sin fichero pending de dominio |
 | CA-8 | Cascada spec/plan/implementation/execution/validacion APTO; PBI en `done/` en el mismo PR |
+| CA-9 (F4a) | Dispatchers `pre-commit`/`pre-push`/`post-merge` con bit `+x` versionado (`git ls-files --stage` → modo `100755`) |
+| CA-10 (F4a) | `verify-hooks` reporta finding si falta `+x`; `verify-hooks --fix` arma `core.hooksPath` + `chmod +x` idempotente (exit 0 en segunda pasada) |
+| CA-11 (F4a) | Test unitario `verify_hooks`: detecta ausencia de `+x` y remedia con `--fix` |
+| CA-12 (F4c) | `pre_push_gate.sh` corre `gate-evolution --range --if-touched --sync-base` sobre `origin/main...HEAD` antes de la rama DCC; push con hash evolution inválido → BLOCKED local |
 
-## Fuera de alcance (este PR de diseño; código en fases posteriores)
+## Fuera de alcance (este PR)
 
-- Mutación de `SddIA/library/codexes/.../delivery-close-cycle.md` vía `entity-manager` (AEL-CA9).
-- `git config core.hooksPath` en bootstrap (sesión / `verify-hooks` que **fije**).
-- Higienizar PR #231 / snapshot `b0a4bde` (instancia + genoma ajeno) — deuda operativa del init; no mezclar en el bisturí F1.
-- Reabrir DCC sobre este ciclo mientras F1 no esté implementado.
+- **AEL-CA9:** mutación de `SddIA/library/codexes/.../delivery-close-cycle.md` vía `entity-manager` (declarar `gate-evolution` como fase de proceso). Requiere forja de genoma + `hash_signature`; ciclo posterior con laudo.
+- Higienizar PR #231 / snapshot `b0a4bde` (instancia + genoma ajeno) — resuelto vía revert en la rama; no reintroducir.
+- Reabrir DCC sobre este ciclo mientras la cascada documental (`validacion.md`) no esté presente (F1 lo impide por diseño).
 - Fractura DLT `b3a715381787` / `701c77ebeab8`.
