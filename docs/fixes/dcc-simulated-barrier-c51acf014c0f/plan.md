@@ -86,7 +86,7 @@ Solo tras F1 en código + `validacion.md` APTO. **No** tratar `b0a4bde` / PR #23
 
 ## Diferido (laudo / ciclo propio)
 
-- AEL-CA9: fase `gate-evolution` en genoma `delivery-close-cycle` vía `entity-manager` (complementa F4c en la ruta del motor).
+- AEL-CA9: extraído a `PBI-KAIZEN-AEL-CA9-DCC-EVOLUTION-PHASE`.
 - Higiene operativa de #231 (`systemd` instance, logs, tools/daemons en el snapshot) — resuelta vía revert en rama.
 
 ## Orden

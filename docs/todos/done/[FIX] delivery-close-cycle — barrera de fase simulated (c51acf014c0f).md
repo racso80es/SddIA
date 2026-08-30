@@ -191,7 +191,7 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 - [x] F4 resuelta: sin push prematuro, un ciclo `bug-fix` en relevo IDE **no** produce rojo de `wasi-runtime-smoke` por `EVOL_MATERIAL_UNREGISTERED` (smoke reproducible)
 - [x] F4a (refinado v1.2.0): dispatchers con `+x` versionado; `verify-hooks --fix` arma `core.hooksPath` + `chmod` y comprueba bit ejecutable — la aduana local deja de estar dormida por-clon (CA-9/CA-10/CA-11)
 - [x] F4c (refinado v1.2.0): `pre_push_gate.sh` corre `gate-evolution --range` antes de la rama DCC; hash evolution inválido → BLOCKED local, no en CI (CA-12)
-- [ ] AEL-CA9 (diferido): `gate-evolution` como fase del genoma `delivery-close-cycle` vía `entity-manager`
+- [x] AEL-CA9 (diferido → PBI propio): `docs/todos/pending/[KAIZEN] AEL-CA9 — fase gate-evolution SSOT en delivery-close-cycle.md` (`PBI-KAIZEN-AEL-CA9-DCC-EVOLUTION-PHASE`)
 - [x] F4b: `emit_dcc_phase_fractures` no escala `blocked` de aduana determinista (`Aduana evolution`/`Aduana EDA`) a `System_Fracture_Detected`; conserva veredicto accionable (absorbe `c339de406e29`)
 - [x] `c339de406e29` unificada en este PBI (stub `done/` apuntando aquí; diagnóstico erróneo corregido)
 - [ ] Rama remota `fix/route-domain-event-fracture-b3a715381787` higienizada vía proceso (no raw)

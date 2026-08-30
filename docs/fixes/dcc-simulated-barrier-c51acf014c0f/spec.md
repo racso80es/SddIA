@@ -118,7 +118,7 @@ Conservar `status: blocked` y `reason_codes`. Opcional: telemetría fractal, no 
 
 ## Fuera de alcance (este PR)
 
-- **AEL-CA9:** mutación de `SddIA/library/codexes/.../delivery-close-cycle.md` vía `entity-manager` (declarar `gate-evolution` como fase de proceso). Requiere forja de genoma + `hash_signature`; ciclo posterior con laudo.
+- **AEL-CA9:** extraído a `PBI-KAIZEN-AEL-CA9-DCC-EVOLUTION-PHASE` (`docs/todos/pending/[KAIZEN] AEL-CA9 — fase gate-evolution SSOT en delivery-close-cycle.md`). La fase ya existe en genoma/motor; el residual es hook que duplica, paridad `--sync-base` y forja vía `entity-manager`.
 - Higienizar PR #231 / snapshot `b0a4bde` (instancia + genoma ajeno) — resuelto vía revert en la rama; no reintroducir.
 - Reabrir DCC sobre este ciclo mientras la cascada documental (`validacion.md`) no esté presente (F1 lo impide por diseño).
 - Fractura DLT `b3a715381787` / `701c77ebeab8`.
