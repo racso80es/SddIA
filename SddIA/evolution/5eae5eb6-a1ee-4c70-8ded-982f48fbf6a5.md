@@ -4,12 +4,14 @@ id_cambio: "5eae5eb6-a1ee-4c70-8ded-982f48fbf6a5"
 fecha: "2026-08-30"
 tipo_operacion: modificacion
 descripcion_breve: "Mayeuta: cubo heartbeat_starvation en analyze_fracture_kaizen; enrich-fracture-pbi-kaizen 1.2.0."
-hash_integrity: "sha256:39978d3cdcf0a657629664a7d096eaba38b44b5153a4e8bc31028ed7d40c0e3e"
+hash_integrity: "sha256:8a8131a1d37584fb80497acbaa6c64f52ec988cc2bf5b682f5aaa750a5f275c3"
 relacionado:
   - PBI-FIX-MAYEUTA-HB-KAIZEN-CLASSIFIER
   - docs/fixes/mayeuta-heartbeat-kaizen-classifier/
   - SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
   - SddIA/actions/enrich-fracture-pbi-kaizen.md
+  - SddIA/actions/index.md
+  - SddIA/core/eda-coverage.json
   - SddIA/evolution/Evolution_log.md
 autor: tekton
 contexto: "F-MAYEUTA-HB-BLIND: traza canónica Argos caía al fallback process_fix. F-MAYEUTA-HB-TOKEN-TRAP: prohibido token heartbeat en blob general."
