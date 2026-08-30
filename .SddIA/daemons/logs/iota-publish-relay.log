@@ -18,4 +18,3 @@ Emitted 'error' event on Server instance at:
 }
 
 Node.js v22.16.0
-[iota-publish-relay] listening http://127.0.0.1:8787/v1/publish
