@@ -1,16 +1,17 @@
 ---
-uuid: "e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8"
-name: "send-telegram-notification"
-version: "1.0.0"
-contract: "tools-contract v1.2.0"
-contract_ref: "SddIA/tools/tools-contract.md"
-domain_origin: "SddIA"
-context: "ecosystem-evolution"
 capabilities:
-  - "send-telegram-notification"
-  - "telegram-send-message"
-  - "capsule-json-io"
-implementation_path_ref: "SddIA/tools/send-telegram-notification"
+- send-telegram-notification
+- telegram-send-message
+- capsule-json-io
+context: ecosystem-evolution
+contract: tools-contract v1.2.0
+contract_ref: SddIA/tools/tools-contract.md
+domain_origin: SddIA
+implementation_path_ref: SddIA/tools/send-telegram-notification
+name: send-telegram-notification
+source_sha256: sha256:1097dec79cc8e73156a714b47dbb0529f7f676e2dd1da80c0da2b54d6a056c7e
+uuid: e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8
+version: 1.0.0
 ---
 
 # send-telegram-notification
