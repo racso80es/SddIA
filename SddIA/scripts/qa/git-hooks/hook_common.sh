@@ -35,6 +35,12 @@ in_delivery_close_cycle() {
   [[ "${SDDIA_HOOK_DELIVERY_CLOSE:-}" == "1" ]]
 }
 
+# AEL-CA9: el hook corre gate-evolution solo si DCC no va a invocarse (cero ramas nuevas).
+pre_push_hook_runs_evolution_gate() {
+  local n="${1:-0}"
+  [[ "$n" -eq 0 ]]
+}
+
 ref_to_branch() {
   local ref="$1"
   ref="${ref#refs/heads/}"

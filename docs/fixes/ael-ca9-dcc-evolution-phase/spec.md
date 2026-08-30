@@ -6,7 +6,7 @@ base: main
 scope: hook-delega-sync-base-genoma-entity-manager
 branch_name: fix/ael-ca9-dcc-evolution-phase
 persist_ref: docs/fixes/ael-ca9-dcc-evolution-phase
-pbi_ref: docs/todos/pending/[KAIZEN] AEL-CA9 — fase gate-evolution SSOT en delivery-close-cycle.md
+pbi_ref: docs/todos/done/[KAIZEN] AEL-CA9 — fase gate-evolution SSOT en delivery-close-cycle.md
 document_id: PBI-KAIZEN-AEL-CA9-DCC-EVOLUTION-PHASE
 execution_id: "8a2e80d1-39ad-4ca5-aeea-b665a77121df"
 ---

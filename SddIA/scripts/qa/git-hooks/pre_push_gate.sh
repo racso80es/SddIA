@@ -49,9 +49,8 @@ main() {
     branches+=("$branch")
   done < <(printf '%s' "$stdin_text" | parse_pre_push_stdin)
 
-  run_evolution_gate || exit 1
-
-  if [[ "${#branches[@]}" -eq 0 ]]; then
+  if pre_push_hook_runs_evolution_gate "${#branches[@]}"; then
+    run_evolution_gate || exit 1
     exit 0
   fi
 
