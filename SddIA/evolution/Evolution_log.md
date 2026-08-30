@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a3c51acf-014c-4f0f-8000-c51acf014c0f` | 2026-08-30 | F1-SIMULATED-BARRIER: relevo IDE sin validacion no encadena DCC; gate aduana sin System_Fracture_Detected. | CANONICO | `SddIA/evolution/a3c51acf-014c-4f0f-8000-c51acf014c0f.md` |
 | `f757a7db-4d21-455c-b45f-4b5f61fe6f79` | 2026-08-29 | F-DIRTY-WORKTREE: workspace-init aborta sin System_Fracture_Detected (guard L-DIRTY-INIT). | CANONICO | `SddIA/evolution/f757a7db-4d21-455c-b45f-4b5f61fe6f79.md` |
 | `d8f2a4c1-7e3b-4f9a-8c2d-b3a715381787` | 2026-08-29 | DLT publish-error: F-DLT-PUBLISH-ERROR en merkle-batch-preseal e iota-immutable-publisher. | CANONICO | `SddIA/evolution/d8f2a4c1-7e3b-4f9a-8c2d-b3a715381787.md` |
 | `7f3a9e2b-1c4d-4f8a-9b6e-0d5c8a1f3e72` | 2026-08-29 | Sistema inmunológico: suspend/crash skew, SSOT umbrales, fagocitosis PBI-FIX-FRACTURE. | CANONICO | `SddIA/evolution/7f3a9e2b-1c4d-4f8a-9b6e-0d5c8a1f3e72.md` |
