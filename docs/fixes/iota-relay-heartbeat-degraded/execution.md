@@ -20,7 +20,7 @@ items_applied:
 | Inicialización | executed (`39567569-6670-42d6-8174-116954dda036`) |
 | Diseño | `spec.md` + `plan.md` (`9fc3a4e`) |
 | Ejecución | parche 4 crates + tests CA9–CA12 |
-| Verificación Argos / DCC | pendiente (no este corte) |
+| Verificación Argos / DCC | executed — PR [#234](https://github.com/racso80es/SddIA/pull/234) |
 
 ## Comandos
 

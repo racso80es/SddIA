@@ -9,6 +9,7 @@ pbi_ref: docs/todos/done/[FIX] iota-publish-relay — Ola 1 latido degradado (70
 document_id: PBI-FIX-FRACTURE-701c77ebeab8-OLA1
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/234
 branch: fix/iota-relay-heartbeat-degraded
 checks:
   RELAY-CA9: APTO
