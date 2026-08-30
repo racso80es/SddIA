@@ -729,6 +729,8 @@ pub fn capsule_delivery_gh_pr(
     let stdout = data.get("stdout").and_then(|v| v.as_str()).unwrap_or("");
     let stderr = data.get("stderr").and_then(|v| v.as_str()).unwrap_or("");
     let mut pr_url = parse_gh_pr_url(stdout).or_else(|| parse_gh_pr_url(stderr));
+    let mut view_stdout = String::new();
+    let mut view_stderr = String::new();
     if pr_url.is_none() {
         let view = invoke_shell_executor(
             repo,
@@ -743,6 +745,20 @@ pub fn capsule_delivery_gh_pr(
                 ".url".into(),
             ],
         )?;
+        view_stdout = view
+            .get("stdout")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .chars()
+            .take(500)
+            .collect();
+        view_stderr = view
+            .get("stderr")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .chars()
+            .take(500)
+            .collect();
         pr_url = view
             .get("stdout")
             .and_then(|v| v.as_str())
@@ -750,7 +766,15 @@ pub fn capsule_delivery_gh_pr(
             .filter(|s| !s.is_empty())
             .map(str::to_string);
     }
-    let pr_url = pr_url.ok_or("no se pudo resolver pr_url desde gh")?;
+    let pr_url = pr_url.ok_or_else(|| {
+        format!(
+            "no se pudo resolver pr_url desde gh; gh_stdout={}; gh_stderr={}; view_stdout={}; view_stderr={}",
+            stdout.chars().take(500).collect::<String>(),
+            stderr.chars().take(500).collect::<String>(),
+            view_stdout,
+            view_stderr,
+        )
+    })?;
     if let Some(obj) = state.as_object_mut() {
         obj.insert("pr_url".into(), json!(pr_url));
     }
@@ -1288,6 +1312,14 @@ pub fn capsule_feature_invoke_delivery_close(
     });
     let branch = branch.ok_or("branch_name es obligatorio para Cierre de entrega")?;
     let persist_ref = persist_ref.ok_or("persist_ref es obligatorio para Cierre de entrega")?;
+    if !repo.join(&persist_ref).join("validacion.md").is_file() {
+        return Ok(json!({
+            "status": "awaiting_agents",
+            "handler": "feature-delivery-close",
+            "skipped": true,
+            "reason": "validacion.md ausente",
+        }));
+    }
     let mut child_inputs = json!({
         "source_process": "feature",
         "persist_ref": persist_ref,

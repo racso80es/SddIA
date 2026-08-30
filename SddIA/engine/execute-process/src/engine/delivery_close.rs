@@ -263,6 +263,14 @@ fn dcc_friction_id(phase_name: &str, report: &Value) -> String {
     }
 }
 
+fn dcc_gate_block_suppresses_fracture(phase_name: &str, status: &str) -> bool {
+    status == "blocked"
+        && matches!(
+            phase_name,
+            "Aduana evolution" | "Aduana EDA genómica"
+        )
+}
+
 pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
     for report in phase_reports {
         if report.get("fail_soft").and_then(|v| v.as_bool()) == Some(true) {
@@ -276,6 +284,9 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
             .get("phase_name")
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
+        if dcc_gate_block_suppresses_fracture(phase_name, status) {
+            continue;
+        }
         let friction_id = dcc_friction_id(phase_name, report);
         let error_trace = report
             .get("error")
@@ -435,7 +446,7 @@ mod tests {
     }
 
     #[test]
-    fn dcc_fracture_emits_on_blocked_phase() {
+    fn dcc_fracture_suppressed_on_evolution_gate_block() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fs::create_dir_all(repo.join(".events/pending")).unwrap();
@@ -443,6 +454,24 @@ mod tests {
             "phase_name": "Aduana evolution",
             "status": "blocked",
             "message": "EVOL_MATERIAL_UNREGISTERED",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn dcc_fracture_emits_on_failed_forge_phase() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Apertura en forja",
+            "status": "failed",
+            "error": "no se pudo resolver pr_url desde gh",
         })];
         emit_dcc_phase_fractures(repo, &reports);
         let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))

@@ -51,6 +51,30 @@ fn agent_phase_blocks_downstream(status: &str) -> bool {
     )
 }
 
+fn process_has_doc_cascade_delivery(process_name: &str) -> bool {
+    GENERIC_PROCESSES.contains(&process_name)
+}
+
+fn persist_validacion_exists(repo: &Path, inputs: &Value) -> bool {
+    inputs
+        .get("persist_ref")
+        .and_then(|v| v.as_str())
+        .map(|p| repo.join(p).join("validacion.md").is_file())
+        .unwrap_or(false)
+}
+
+/// Relevo IDE (`simulated`) sin cascada documental completa: no encadenar DCC.
+fn simulated_relay_blocks_close(
+    process_name: &str,
+    status: &str,
+    repo: &Path,
+    inputs: &Value,
+) -> bool {
+    status == "simulated"
+        && process_has_doc_cascade_delivery(process_name)
+        && !persist_validacion_exists(repo, inputs)
+}
+
 fn skipped_barrier_entry(phase: &Value, prior_status: &str) -> Value {
     let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
     json!({
@@ -466,6 +490,8 @@ pub fn run_generic(
             let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
             if agent_phase_blocks_downstream(status) {
                 barrier_prior = Some(status.to_string());
+            } else if simulated_relay_blocks_close(process_name, status, repo, &inputs_mut) {
+                barrier_prior = Some("awaiting_agents".to_string());
             }
         }
         phase_reports.push(entry);
@@ -634,5 +660,93 @@ mod tests {
             ]
         );
         assert!(barrier.is_some());
+    }
+
+    #[test]
+    fn simulated_relay_blocks_close_without_validacion() {
+        assert!(simulated_relay_blocks_close(
+            "bug-fix",
+            "simulated",
+            Path::new("/tmp"),
+            &json!({"persist_ref": "docs/fixes/missing"})
+        ));
+        assert!(!simulated_relay_blocks_close(
+            "evolution-audit",
+            "simulated",
+            Path::new("/tmp"),
+            &json!({"persist_ref": "docs/fixes/missing"})
+        ));
+    }
+
+    #[test]
+    fn barrier_sequence_skips_close_after_simulated_relay_without_validacion() {
+        struct Fake {
+            name: &'static str,
+            agent: bool,
+            close: bool,
+            status: &'static str,
+        }
+        let phases = [
+            Fake {
+                name: "Diseño",
+                agent: true,
+                close: false,
+                status: "simulated",
+            },
+            Fake {
+                name: "Ejecución",
+                agent: true,
+                close: false,
+                status: "simulated",
+            },
+            Fake {
+                name: "Verificación",
+                agent: true,
+                close: true,
+                status: "simulated",
+            },
+            Fake {
+                name: "Cierre documental en rama",
+                agent: false,
+                close: true,
+                status: "would-archive",
+            },
+            Fake {
+                name: "Cierre de entrega",
+                agent: false,
+                close: true,
+                status: "would-close",
+            },
+        ];
+        let process_name = "bug-fix";
+        let inputs = json!({"persist_ref": "docs/fixes/missing-validacion"});
+        let repo = Path::new("/tmp");
+        let mut barrier: Option<String> = None;
+        let mut out: Vec<(&str, &str)> = Vec::new();
+        for p in &phases {
+            if barrier.is_some() && (p.agent || p.close) {
+                out.push((p.name, "skipped"));
+                continue;
+            }
+            out.push((p.name, p.status));
+            if p.agent {
+                if agent_phase_blocks_downstream(p.status) {
+                    barrier = Some(p.status.to_string());
+                } else if simulated_relay_blocks_close(process_name, p.status, repo, &inputs) {
+                    barrier = Some("awaiting_agents".to_string());
+                }
+            }
+        }
+        assert_eq!(
+            out,
+            vec![
+                ("Diseño", "simulated"),
+                ("Ejecución", "skipped"),
+                ("Verificación", "skipped"),
+                ("Cierre documental en rama", "skipped"),
+                ("Cierre de entrega", "skipped"),
+            ]
+        );
+        assert_eq!(barrier.as_deref(), Some("awaiting_agents"));
     }
 }
