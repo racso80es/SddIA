@@ -6,7 +6,7 @@ format: markdown
 version: "1.2.0"
 created: "2026-08-30"
 updated: "2026-08-30"
-status: abierto
+status: cerrado
 refinement_status: clarified
 priority: alta
 process: bug-fix
@@ -223,6 +223,6 @@ Gracia + no-tick post-gracia. No fingir `degraded` hasta Ola 1.
 
 ## Criterio de cierre (PBI completo)
 
-- [ ] Ola 0: RELAY-CA1 y RELAY-CA4
+- [x] Ola 0: RELAY-CA1 y RELAY-CA4
 - [ ] Deuda Ola 1 / CA5–CA7 aceptada o absorbida en PBI hijo
-- [ ] Argos APTO + PBI en `docs/todos/done/` en la rama del PR único
+- [x] Argos APTO + PBI en `docs/todos/done/` en la rama del PR único

@@ -15,8 +15,29 @@ use std::time::{Duration, Instant};
 
 const DAEMON_NAME: &str = "iota-publish-relay";
 const TICK_SECS: u64 = 5;
+const GRACE_SECS: u64 = 10;
 const RESTART_BACKOFF_SECS: u64 = 2;
 const HEALTH_TIMEOUT_MS: u64 = 1500;
+
+struct SupervisorTickAction {
+    emit_heartbeat: bool,
+    kill_child: bool,
+}
+
+fn in_grace(child_present: bool, elapsed: Option<Duration>, grace: Duration) -> bool {
+    child_present && elapsed.map(|e| e < grace).unwrap_or(false)
+}
+
+fn decide_supervisor_tick(
+    health_ok: bool,
+    in_grace: bool,
+    child_alive: bool,
+) -> SupervisorTickAction {
+    SupervisorTickAction {
+        emit_heartbeat: health_ok || in_grace,
+        kill_child: !health_ok && !in_grace && child_alive,
+    }
+}
 
 fn resolve_relay_dir(repo: &Path) -> Result<PathBuf, String> {
     if let Ok(p) = env::var("SDDIA_IOTA_RELAY_DIR") {
@@ -185,14 +206,20 @@ fn main() {
     );
 
     let mut child: Option<Child> = None;
+    let mut child_spawned_at: Option<Instant> = None;
     let mut last_restart = Instant::now() - Duration::from_secs(RESTART_BACKOFF_SECS);
 
     while !stop.load(Ordering::SeqCst) {
-        let need_spawn = match child.as_mut() {
-            None => true,
-            Some(c) => !child_alive(c),
-        };
-        if need_spawn {
+        let mut child_alive_now = false;
+        if let Some(ref mut c) = child {
+            child_alive_now = child_alive(c);
+            if !child_alive_now {
+                child = None;
+                child_spawned_at = None;
+            }
+        }
+
+        if child.is_none() {
             if last_restart.elapsed() < Duration::from_secs(RESTART_BACKOFF_SECS) {
                 thread::sleep(Duration::from_millis(200));
             } else {
@@ -200,6 +227,8 @@ fn main() {
                     Ok(c) => {
                         eprintln!("[{DAEMON_NAME}] hijo Node pid={}", c.id());
                         child = Some(c);
+                        child_spawned_at = Some(Instant::now());
+                        child_alive_now = true;
                         last_restart = Instant::now();
                     }
                     Err(e) => {
@@ -210,19 +239,28 @@ fn main() {
             }
         }
 
-        if let Err(e) = centinela.tick(&top) {
-            eprintln!("[{DAEMON_NAME}] heartbeat: {e}");
+        let health_ok = probe_health(&health);
+        let grace = in_grace(
+            child.is_some(),
+            child_spawned_at.map(|t| t.elapsed()),
+            Duration::from_secs(GRACE_SECS),
+        );
+        let action = decide_supervisor_tick(health_ok, grace, child_alive_now);
+
+        if action.emit_heartbeat {
+            if let Err(e) = centinela.tick(&top) {
+                eprintln!("[{DAEMON_NAME}] heartbeat: {e}");
+            }
         }
 
-        if !probe_health(&health) {
+        if action.kill_child {
             if let Some(ref mut c) = child {
-                if child_alive(c) {
-                    eprintln!("[{DAEMON_NAME}] /health falló con hijo vivo; reinicio");
-                    let _ = c.kill();
-                    let _ = c.wait();
-                    child = None;
-                }
+                eprintln!("[{DAEMON_NAME}] /health falló con hijo vivo; reinicio");
+                let _ = c.kill();
+                let _ = c.wait();
             }
+            child = None;
+            child_spawned_at = None;
         }
 
         thread::sleep(Duration::from_secs(TICK_SECS));
@@ -253,5 +291,39 @@ mod tests {
     #[test]
     fn socket_addr_unused_ok() {
         let _: Option<SocketAddr> = "127.0.0.1:8787".parse().ok();
+    }
+
+    #[test]
+    fn grace_refused_does_not_kill() {
+        let grace = Duration::from_secs(GRACE_SECS);
+        let action = decide_supervisor_tick(false, in_grace(true, Some(Duration::ZERO), grace), true);
+        assert!(action.emit_heartbeat);
+        assert!(!action.kill_child);
+    }
+
+    #[test]
+    fn post_grace_refused_kills_and_omits_tick() {
+        let grace = Duration::from_secs(GRACE_SECS);
+        let action = decide_supervisor_tick(
+            false,
+            in_grace(true, Some(Duration::from_secs(GRACE_SECS)), grace),
+            true,
+        );
+        assert!(!action.emit_heartbeat);
+        assert!(action.kill_child);
+    }
+
+    #[test]
+    fn healthy_ticks_no_kill() {
+        let grace = Duration::from_secs(GRACE_SECS);
+        let action = decide_supervisor_tick(true, in_grace(true, Some(Duration::from_secs(60)), grace), true);
+        assert!(action.emit_heartbeat);
+        assert!(!action.kill_child);
+    }
+
+    #[test]
+    fn grace_boundary_eq_is_outside() {
+        let grace = Duration::from_secs(GRACE_SECS);
+        assert!(!in_grace(true, Some(Duration::from_secs(GRACE_SECS)), grace));
     }
 }
