@@ -1,0 +1,6 @@
+{
+  "error_trace": "iota-relay-publish-error: status=500 fetch failed",
+  "event_uuid": "e30c39cf-16f3-4a93-8fd5-9fcbdd469dc5",
+  "path": "/home/racso/Proyectos/SddIA/.events/pending/e30c39cf-16f3-4a93-8fd5-9fcbdd469dc5.json",
+  "queued_at": "2026-08-30T18:01:27Z"
+}
