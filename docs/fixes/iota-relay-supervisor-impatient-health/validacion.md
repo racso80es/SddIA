@@ -9,6 +9,7 @@ pbi_ref: docs/todos/done/[FIX] route-domain-event — fractura sistémica (701c7
 document_id: PBI-FIX-FRACTURE-701c77ebeab8
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/233
 branch: fix/iota-relay-supervisor-impatient-health
 checks:
   RELAY-CA1: APTO
