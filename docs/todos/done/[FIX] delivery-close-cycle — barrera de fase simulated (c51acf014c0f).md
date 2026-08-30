@@ -6,7 +6,7 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-29"
 updated: "2026-08-29"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 fracture_hash: c51acf014c0f
@@ -185,13 +185,13 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ## Criterio de cierre
 
-- [ ] F1 resuelta: `bug-fix` con fases de agente `simulated` **no** dispara `delivery-close-cycle` (o corta antes de `Apertura en forja`)
-- [ ] F2 resuelta: skip de `Cierre documental en rama` por `validacion.md` ausente emite señal/corta pipeline
-- [ ] F3 mitigada: envelope de error de forja incluye `gh_stdout`/`gh_stderr`
-- [ ] F4 resuelta: sin push prematuro, un ciclo `bug-fix` en relevo IDE **no** produce rojo de `wasi-runtime-smoke` por `EVOL_MATERIAL_UNREGISTERED` (smoke reproducible)
+- [x] F1 resuelta: `bug-fix` con fases de agente `simulated` **no** dispara `delivery-close-cycle` (o corta antes de `Apertura en forja`)
+- [x] F2 resuelta: skip de `Cierre documental en rama` por `validacion.md` ausente emite señal/corta pipeline
+- [x] F3 mitigada: envelope de error de forja incluye `gh_stdout`/`gh_stderr`
+- [x] F4 resuelta: sin push prematuro, un ciclo `bug-fix` en relevo IDE **no** produce rojo de `wasi-runtime-smoke` por `EVOL_MATERIAL_UNREGISTERED` (smoke reproducible)
 - [ ] F4: `gate-evolution` alcanzable en la ruta de `delivery-close-cycle` (fase de proceso) **o** `core.hooksPath` armado/verificado al inicio de sesión de escritura — la aduana evolution deja de depender de CI como primera capa
-- [ ] F4b: `emit_dcc_phase_fractures` no escala `blocked` de aduana determinista (`Aduana evolution`/`Aduana EDA`) a `System_Fracture_Detected`; conserva veredicto accionable (absorbe `c339de406e29`)
+- [x] F4b: `emit_dcc_phase_fractures` no escala `blocked` de aduana determinista (`Aduana evolution`/`Aduana EDA`) a `System_Fracture_Detected`; conserva veredicto accionable (absorbe `c339de406e29`)
 - [x] `c339de406e29` unificada en este PBI (stub `done/` apuntando aquí; diagnóstico erróneo corregido)
 - [ ] Rama remota `fix/route-domain-event-fracture-b3a715381787` higienizada vía proceso (no raw)
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/`
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/`

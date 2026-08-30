@@ -1,7 +1,7 @@
 {
   "compiled_at": "2026-08-29T13:28:55.854435857+00:00",
   "exit_code": 0,
-  "fused_at": "2026-08-30T04:37:58.553772393+00:00",
+  "fused_at": "2026-08-29T13:35:23.371787269+00:00",
   "map_status": "ok",
   "rows": [
     {
@@ -49,12 +49,12 @@
       "uuid": "456a3d9b-70b6-4113-9283-16ba6d142793"
     },
     {
-      "color": "green",
+      "color": "gray",
       "family": "daemon",
       "id": "iota-publish-relay",
       "missed_cycles": 0,
       "on_map": true,
-      "reason": "heartbeat_ok",
+      "reason": "no_heartbeat",
       "revoked": false,
       "thermo_status": null,
       "uuid": "78e94d53-0445-4394-b399-3e594cabc511"
@@ -214,14 +214,14 @@
       "uuid": ""
     },
     {
-      "color": "red",
+      "color": "green",
       "family": "tool",
       "id": "delivery-close-cycle",
       "missed_cycles": 0,
       "on_map": false,
       "reason": "off_map",
-      "revoked": true,
-      "thermo_status": null,
+      "revoked": false,
+      "thermo_status": "healthy",
       "uuid": ""
     },
     {
@@ -247,14 +247,14 @@
       "uuid": ""
     },
     {
-      "color": "red",
+      "color": "green",
       "family": "tool",
       "id": "entity-manager",
       "missed_cycles": 0,
       "on_map": false,
       "reason": "off_map",
-      "revoked": true,
-      "thermo_status": null,
+      "revoked": false,
+      "thermo_status": "healthy",
       "uuid": ""
     },
     {
@@ -322,17 +322,6 @@
       "revoked": false,
       "thermo_status": null,
       "uuid": "b2c4e6f8-1a3d-4e5b-9c7d-8e1f2a3b4c5d"
-    },
-    {
-      "color": "green",
-      "family": "tool",
-      "id": "process-creator",
-      "missed_cycles": 0,
-      "on_map": false,
-      "reason": "off_map",
-      "revoked": false,
-      "thermo_status": "healthy",
-      "uuid": ""
     },
     {
       "color": "red",
