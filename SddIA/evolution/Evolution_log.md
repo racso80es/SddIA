@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6d182670-51a5-43ab-adb0-aeaa3b8c3c9f` | 2026-08-30 | Aduana GUI: resolver wasmtime fuera del PATH de GitHub Desktop; correlato genoma daemons/telegram y hooks. | CANONICO | `SddIA/evolution/6d182670-51a5-43ab-adb0-aeaa3b8c3c9f.md` |
 | `00e89551-1241-4195-975d-9f06b306c873` | 2026-08-30 | AEL-CA9 residual: hook delega gate-evolution; DCC --sync-base; delivery-close-cycle 1.4.0 vía entity-manager. | CANONICO | `SddIA/evolution/00e89551-1241-4195-975d-9f06b306c873.md` |
 | `a3c51acf-014c-4f0f-8000-c51acf014c0f` | 2026-08-30 | F1-SIMULATED-BARRIER: relevo IDE sin validacion no encadena DCC; gate aduana sin System_Fracture_Detected. | CANONICO | `SddIA/evolution/a3c51acf-014c-4f0f-8000-c51acf014c0f.md` |
 | `f757a7db-4d21-455c-b45f-4b5f61fe6f79` | 2026-08-29 | F-DIRTY-WORKTREE: workspace-init aborta sin System_Fracture_Detected (guard L-DIRTY-INIT). | CANONICO | `SddIA/evolution/f757a7db-4d21-455c-b45f-4b5f61fe6f79.md` |
