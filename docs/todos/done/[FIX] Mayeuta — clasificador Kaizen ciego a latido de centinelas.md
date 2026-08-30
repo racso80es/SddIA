@@ -6,13 +6,15 @@ format: markdown
 version: "1.0.0"
 created: "2026-08-30"
 updated: "2026-08-30"
-status: "abierto"
+closed: "2026-08-30"
+status: "cerrado"
 priority: alta
 process: bug-fix
 type: bug-fix
 dispatch: true
 suggested_branch: fix/mayeuta-heartbeat-kaizen-classifier
-persist_ref_suggested: docs/fixes/mayeuta-heartbeat-kaizen-classifier
+persist_ref: docs/fixes/mayeuta-heartbeat-kaizen-classifier
+resolution_ref: docs/fixes/mayeuta-heartbeat-kaizen-classifier/
 friction_id: F-MAYEUTA-HB-BLIND
 friction_ids:
   - F-MAYEUTA-HB-BLIND
@@ -123,8 +125,8 @@ Cascada `bug-fix`: `persist_ref` = `docs/fixes/mayeuta-heartbeat-kaizen-classifi
 
 ## 5. Criterio de cierre
 
-- [ ] Cubo latido match solo `error_trace` + formato canónico Argos
-- [ ] Tests de la tabla §3 verdes; tests hook/DNS existentes siguen verdes
-- [ ] `enrich-fracture-pbi-kaizen.md` bump via `entity-manager` (cubo + prohibición F1)
-- [ ] `validacion.md` global `APTO`, `pbi_archived: true`
-- [ ] Este TODO en `docs/todos/done/` en la rama del PR
+- [x] Cubo latido match solo `error_trace` + formato canónico Argos
+- [x] Tests de la tabla §3 verdes; tests hook/DNS existentes siguen verdes
+- [x] `enrich-fracture-pbi-kaizen.md` bump via `entity-manager` (cubo + prohibición F1)
+- [x] `validacion.md` global `APTO`, `pbi_archived: true`
+- [x] Este TODO en `docs/todos/done/` en la rama del PR

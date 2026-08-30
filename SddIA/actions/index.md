@@ -29,7 +29,7 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 | sync-entity-index | a3f8c2e1-4b5d-6a7e-8f90-1a2b3c4d5e6f | 1.0.0 | ecosystem-evolution | Reconciliación asíncrona de index.md tras Domain_Entity_*: auditoría idempotente en create/update; purga de fila en delete. Cúmulo vía bus EDA. | `entity-index-reconciliation`, `delegate-filesystem-manager`, `cumulo-catalog-sync` |
 | materialize-fracture-pbi | b2c3d4e5-f6a7-4890-b123-4567890abcde | 1.1.0 | ecosystem-evolution | Materializa PBI de fractura con resolutor Core por genoma YAML (ceguera nominal). | `fracture-pbi-materialization`, `fracture-pbi-resolver`, `delegate-filesystem-manager`, `cumulo-debt-ledger` |
 | materialize-kaizen-alert-doc | d7e6f5a4-b3c2-4109-8765-43210abcdef0 | 1.0.0 | quality-assurance | Materializa TODO PENDING_AUDIT_DOC_* ante Kaizen_Alert_Required (cicatriz DIA). Cúmulo vía bus EDA. | `kaizen-alert-doc-materialization`, `delegate-filesystem-manager`, `cumulo-debt-ledger` |
-| enrich-fracture-pbi-kaizen | c4d5e6f7-a8b9-4012-c345-678901234567 | 1.1.0 | knowledge-management | Enriquece PBI de fractura vía resolutor Core; no_target sin dead-letter. | `fracture-root-cause-analysis`, `kaizen-evolution-proposal`, `fracture-pbi-resolver`, `delegate-filesystem-manager` |
+| enrich-fracture-pbi-kaizen | c4d5e6f7-a8b9-4012-c345-678901234567 | 1.2.0 | knowledge-management | Enriquece PBI de fractura vía resolutor Core; cubo heartbeat_starvation; no_target sin dead-letter. | `fracture-root-cause-analysis`, `kaizen-evolution-proposal`, `fracture-pbi-resolver`, `delegate-filesystem-manager` |
 | download-remote-asset | 6175f5cd-7844-4d0c-aa93-d2ce3a41d18e | 1.0.0 | knowledge-management | Reclamación de activos del repositorio maestro con declaración de integridad SHA-256. Abstracción de origen opaca (pivote DLT G7). | `remote-asset-reclamation`, `asset-integrity-declaration` |
 
 ## Archivos en carpeta no catalogados como acción
@@ -40,5 +40,4 @@ Ninguno. `actions-contract.md` es el contrato de familia, no una fila del catál
 
 - **Sincronización:** diez definiciones de acción con identidad atómica; reflejadas en sendas filas del catálogo.
 - **Metadatos:** valores de la tabla (incl. **Capabilities**) copiados desde el YAML de cada `{name}.md` al momento de indexación.
-
 

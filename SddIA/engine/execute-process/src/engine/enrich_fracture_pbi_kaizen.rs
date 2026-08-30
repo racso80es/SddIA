@@ -23,6 +23,16 @@ fn optional_str(inputs: &Value, key: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+/// Traza canónica Argos `emit_system_fracture`. Match **solo** `error_trace`
+/// (F-MAYEUTA-HB-TOKEN-TRAP: no usar `heartbeat`/`daemon`/`audit` sobre el blob concatenado).
+fn is_heartbeat_starvation_trace(error_trace: &str) -> bool {
+    error_trace.contains("Centinela ")
+        && error_trace.contains("omitió")
+        && error_trace.contains("ciclos consecutivos de Daemon_Heartbeat")
+        && error_trace.contains("umbral=")
+        && error_trace.contains("last_heartbeat=")
+}
+
 /// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section).
 pub fn analyze_fracture_kaizen(
     process_name: &str,
@@ -41,6 +51,19 @@ pub fn analyze_fracture_kaizen(
 
     let has_any = |tokens: &[&str]| tokens.iter().any(|t| blob.contains(t));
     let has_any_in = |hay: &str, tokens: &[&str]| tokens.iter().any(|t| hay.contains(t));
+
+    if is_heartbeat_starvation_trace(error_trace) {
+        root_causes.push(
+            "Inanición de `Daemon_Heartbeat` con proceso vivo (el auditor no emite si el PID está muerto); \
+             no es muerte del centinela. `process_name` es `daemon_id`, no un proceso de `directories.process`."
+                .into(),
+        );
+        proposals.push((
+            "refactor_tool".into(),
+            "Emitir latido en worker / no bloquear el hilo de heartbeat (paridad keepalive de centinelas hermanos)."
+                .into(),
+        ));
+    }
 
     if has_any_in(&hook_blob, &["recurs", "pre-push", "hook", "re-entrada"]) {
         root_causes.push(
@@ -283,6 +306,33 @@ mod tests {
             "tekton",
         );
         assert_eq!(verdict, "new_norm");
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_heartbeat_starvation() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "email-watcher",
+            "Centinela email-watcher omitió 3 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-08-30T07:51:47Z",
+            "daemon-heartbeat-audit",
+            "argos",
+        );
+        assert_eq!(verdict, "refactor_tool");
+        assert!(section.contains("Inanición de `Daemon_Heartbeat`"));
+        assert!(!section.contains("no clasificada"));
+        assert!(!section.contains("Auditar proceso"));
+        assert!(!section.contains("Recursión o re-entrada"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_heartbeat_not_from_action_name() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "email-watcher",
+            "timeout in worker",
+            "daemon-heartbeat-audit",
+            "argos",
+        );
+        assert!(!section.contains("Inanición de `Daemon_Heartbeat`"));
+        assert_ne!(verdict, "refactor_tool");
     }
 
     #[test]
