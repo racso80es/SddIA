@@ -635,6 +635,40 @@ fn stamp_batch_anchor_error(
     }
 }
 
+fn bus_dir_abs(repo: &Path, dir: &str) -> PathBuf {
+    let p = Path::new(dir);
+    if p.is_absolute() {
+        p.to_path_buf()
+    } else {
+        repo.join(dir)
+    }
+}
+
+/// Localiza el JSON del evento: path grabado, luego pending → processed → dead-letter por UUID.
+fn resolve_reanchor_event_path(
+    repo: &Path,
+    bus: &EventBusTopology,
+    uuid: &str,
+    stored_path: &Path,
+) -> Option<PathBuf> {
+    let stored = if stored_path.is_absolute() {
+        stored_path.to_path_buf()
+    } else {
+        repo.join(stored_path)
+    };
+    if stored.is_file() {
+        return Some(stored);
+    }
+    let fname = format!("{uuid}.json");
+    for dir in [&bus.pending, &bus.processed, &bus.dead_letter] {
+        let p = bus_dir_abs(repo, dir).join(&fname);
+        if p.is_file() {
+            return Some(p);
+        }
+    }
+    None
+}
+
 fn try_drain_dlt_reanchor_queue(repo: &Path, bus: &EventBusTopology) {
     if simulate_iota_enabled() || !iota_relay_health_ok() {
         return;
@@ -668,15 +702,10 @@ fn try_drain_dlt_reanchor_queue(repo: &Path, bus: &EventBusTopology) {
         let Some(path_str) = body.get("path").and_then(|v| v.as_str()) else {
             continue;
         };
-        let event_path = PathBuf::from(path_str);
-        let event_path = if event_path.is_absolute() {
-            event_path
-        } else {
-            repo.join(&event_path)
-        };
-        if !event_path.is_file() {
+        let stored = PathBuf::from(path_str);
+        let Some(event_path) = resolve_reanchor_event_path(repo, bus, uuid, &stored) else {
             continue;
-        }
+        };
         let Ok(evt_text) = fs::read_to_string(&event_path) else {
             continue;
         };
@@ -1838,6 +1867,77 @@ mod blocking_tests {
             .as_str()
             .unwrap()
             .contains("iota-relay-unreachable"));
+    }
+
+    fn test_reanchor_bus() -> EventBusTopology {
+        EventBusTopology {
+            pending: ".events/pending".into(),
+            processing: ".events/processing".into(),
+            processing_subscribers: ".events/processing/subscribers".into(),
+            processed: ".events/processed".into(),
+            processed_subscribers: ".events/processed/subscribers".into(),
+            dead_letter: ".events/dead-letter".into(),
+            dead_letter_subscribers: ".events/dead-letter/subscribers".into(),
+            subscriptions: "SddIA/core/event-domain-subscriptions.json".into(),
+        }
+    }
+
+    #[test]
+    fn resolve_reanchor_keeps_live_pending_path() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let uuid = "aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa";
+        let pending = repo.join(".events/pending");
+        fs::create_dir_all(&pending).unwrap();
+        let live = pending.join(format!("{uuid}.json"));
+        fs::write(&live, "{}").unwrap();
+        let bus = test_reanchor_bus();
+        let got = resolve_reanchor_event_path(repo, &bus, uuid, &live).unwrap();
+        assert_eq!(got, live);
+    }
+
+    #[test]
+    fn resolve_reanchor_finds_processed_when_pending_gone() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let uuid = "bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb";
+        let pending = repo.join(".events/pending");
+        let processed = repo.join(".events/processed");
+        fs::create_dir_all(&pending).unwrap();
+        fs::create_dir_all(&processed).unwrap();
+        let ghost = pending.join(format!("{uuid}.json"));
+        let live = processed.join(format!("{uuid}.json"));
+        fs::write(&live, r#"{"payload":{"k":1}}"#).unwrap();
+        let bus = test_reanchor_bus();
+        let got = resolve_reanchor_event_path(repo, &bus, uuid, &ghost).unwrap();
+        assert_eq!(got, live);
+    }
+
+    #[test]
+    fn resolve_reanchor_finds_dead_letter_when_pending_gone() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let uuid = "cccccccc-3333-4333-8333-cccccccccccc";
+        let pending = repo.join(".events/pending");
+        let dl = repo.join(".events/dead-letter");
+        fs::create_dir_all(&pending).unwrap();
+        fs::create_dir_all(&dl).unwrap();
+        let ghost = pending.join(format!("{uuid}.json"));
+        let live = dl.join(format!("{uuid}.json"));
+        fs::write(&live, r#"{"payload":{"k":2}}"#).unwrap();
+        let bus = test_reanchor_bus();
+        let got = resolve_reanchor_event_path(repo, &bus, uuid, &ghost).unwrap();
+        assert_eq!(got, live);
+    }
+
+    #[test]
+    fn resolve_reanchor_none_when_all_buckets_empty() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let uuid = "dddddddd-4444-4444-8444-dddddddddddd";
+        let ghost = repo.join(".events/pending").join(format!("{uuid}.json"));
+        let bus = test_reanchor_bus();
+        assert!(resolve_reanchor_event_path(repo, &bus, uuid, &ghost).is_none());
     }
 
     #[test]

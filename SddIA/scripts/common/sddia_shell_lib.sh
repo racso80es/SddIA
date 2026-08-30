@@ -180,18 +180,76 @@ _sddia_stop_lock_pid() {
   fi
 }
 
-_sddia_resolve_daemon_binary() {
+# Crate nativo del centinela (catálogo daemons/ o interfaces/ p.ej. kalma2-bridge).
+_sddia_daemon_crate_dir() {
   local repo_root="$1"
   local daemon="$2"
-  local candidate
-  for candidate in \
-    "$repo_root/SddIA/target/release/${daemon}" \
-    "$repo_root/SddIA/target/debug/${daemon}"; do
-    if [[ -f "$candidate" && -x "$candidate" ]]; then
-      echo "$candidate"
+  local d
+  for d in \
+    "$repo_root/SddIA/daemons/${daemon}" \
+    "$repo_root/SddIA/interfaces/${daemon}" \
+    "$repo_root/SddIA/${daemon}"; do
+    if [[ -f "$d/Cargo.toml" ]]; then
+      printf '%s\n' "$d"
       return 0
     fi
   done
+  return 1
+}
+
+# Máximo mtime de Cargo.toml + *.rs (excluye target/).
+_sddia_daemon_source_mtime() {
+  local crate_dir="$1"
+  local f t newest=0
+  while IFS= read -r -d '' f; do
+    t="$(_sddia_elf_mtime "$f")"
+    if [[ -n "${t:-}" && "$t" -gt "$newest" ]]; then
+      newest="$t"
+    fi
+  done < <(find "$crate_dir" \( -path '*/target/*' -prune \) -o \( \( -name Cargo.toml -o -name '*.rs' \) -type f -print0 \) 2>/dev/null)
+  if [[ "$newest" -gt 0 ]]; then
+    printf '%s\n' "$newest"
+    return 0
+  fi
+  return 1
+}
+
+_sddia_daemon_elf_fresh_vs_source() {
+  local elf="$1"
+  local crate_dir="$2"
+  local em sm
+  em="$(_sddia_elf_mtime "$elf")"
+  sm="$(_sddia_daemon_source_mtime "$crate_dir")" || return 1
+  [[ -n "${em:-}" && -n "${sm:-}" && "$em" -ge "$sm" ]]
+}
+
+# Release luego debug. MIME ELF + mtime ≥ fuente del crate. Fósil ⇒ no exec.
+_sddia_resolve_daemon_binary() {
+  local repo_root="$1"
+  local daemon="$2"
+  local crate_dir candidate stale=0
+  if ! crate_dir="$(_sddia_daemon_crate_dir "$repo_root" "$daemon")"; then
+    echo "[ERROR] Crate de ${daemon} no encontrado (SddIA/daemons|interfaces/${daemon})." >&2
+    return 1
+  fi
+  for candidate in \
+    "$repo_root/SddIA/target/release/${daemon}" \
+    "$repo_root/SddIA/target/debug/${daemon}"; do
+    if ! _sddia_is_native_elf "$candidate"; then
+      continue
+    fi
+    if ! _sddia_daemon_elf_fresh_vs_source "$candidate" "$crate_dir"; then
+      echo "[ERROR] ${daemon}: ELF fósil (mtime < fuente) ${candidate}. Compilar: cd SddIA && cargo build -p ${daemon}" >&2
+      stale=1
+      continue
+    fi
+    printf '%s\n' "$candidate"
+    return 0
+  done
+  if [[ "$stale" -eq 1 ]]; then
+    echo "[ERROR] Binario de ${daemon} desalineado con la fuente. Compilar: cd SddIA && cargo build -p ${daemon}" >&2
+    return 1
+  fi
   echo "[ERROR] Binario no encontrado para ${daemon} bajo SddIA/target/{release|debug}/" >&2
   return 1
 }
