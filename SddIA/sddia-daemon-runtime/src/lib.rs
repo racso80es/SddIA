@@ -39,6 +39,7 @@ pub struct DaemonRuntime {
     started_at: Instant,
     started_iso: String,
     last_emit: Instant,
+    last_heartbeat_status: Option<String>,
     last_stimulus_at: Option<String>,
     bootstrapped: bool,
 }
@@ -253,6 +254,15 @@ fn parse_daemon_spec(repo: &Path, daemon_name: &str) -> (String, u64) {
     (uuid, interval)
 }
 
+fn normalize_heartbeat_status(status: &str) -> Result<&'static str, String> {
+    match status.trim() {
+        "alive" => Ok("alive"),
+        "degraded" => Ok("degraded"),
+        "shutting_down" => Ok("shutting_down"),
+        other => Err(format!("heartbeat status inválido: {other}")),
+    }
+}
+
 impl DaemonRuntime {
     pub fn new(repo: PathBuf, daemon_name: &str) -> Self {
         let (daemon_uuid, interval_secs) = parse_daemon_spec(&repo, daemon_name);
@@ -265,6 +275,7 @@ impl DaemonRuntime {
             started_at: Instant::now(),
             started_iso: iso_now(),
             last_emit: Instant::now() - Duration::from_secs(3600),
+            last_heartbeat_status: None,
             last_stimulus_at: None,
             bootstrapped: false,
         }
@@ -293,7 +304,7 @@ impl DaemonRuntime {
             }
         }
         self.write_lock()?;
-        self.emit_heartbeat(top, true)?;
+        self.emit_heartbeat(top, true, "alive")?;
         self.bootstrapped = true;
         Ok(())
     }
@@ -303,10 +314,14 @@ impl DaemonRuntime {
     }
 
     pub fn tick(&mut self, top: &BusTopology) -> Result<(), String> {
+        self.tick_with_status(top, "alive")
+    }
+
+    pub fn tick_with_status(&mut self, top: &BusTopology, status: &str) -> Result<(), String> {
         if !self.bootstrapped {
             self.bootstrap(top)?;
         }
-        self.emit_heartbeat(top, false)?;
+        self.emit_heartbeat(top, false, status)?;
         Ok(())
     }
 
@@ -338,8 +353,18 @@ impl DaemonRuntime {
         fs::write(&self.lock_path, format!("{bytes}\n")).map_err(|e| format!("write lock: {e}"))
     }
 
-    fn emit_heartbeat(&mut self, top: &BusTopology, force: bool) -> Result<(), String> {
-        if !force && self.last_emit.elapsed() < self.heartbeat_interval {
+    fn emit_heartbeat(
+        &mut self,
+        top: &BusTopology,
+        force: bool,
+        status: &str,
+    ) -> Result<(), String> {
+        let status = normalize_heartbeat_status(status)?;
+        let status_changed = self.last_heartbeat_status.as_deref() != Some(status);
+        if !force
+            && !status_changed
+            && self.last_emit.elapsed() < self.heartbeat_interval
+        {
             return Ok(());
         }
         let ts = iso_now();
@@ -348,7 +373,7 @@ impl DaemonRuntime {
             "daemon_uuid": self.daemon_uuid,
             "pid": std::process::id(),
             "uptime_seconds": self.started_at.elapsed().as_secs(),
-            "status": "alive",
+            "status": status,
             "timestamp": ts,
         });
         if let Some(stimulus) = &self.last_stimulus_at {
@@ -361,7 +386,7 @@ impl DaemonRuntime {
             "pid": std::process::id(),
             "timestamp": ts,
             "uptime_seconds": self.started_at.elapsed().as_secs(),
-            "status": "alive",
+            "status": status,
             "source": "side-channel",
             "heartbeat_interval_seconds": self.heartbeat_interval.as_secs(),
         });
@@ -382,6 +407,7 @@ impl DaemonRuntime {
             );
         }
         self.last_emit = Instant::now();
+        self.last_heartbeat_status = Some(status.to_string());
         Ok(())
     }
 }
@@ -395,6 +421,7 @@ impl Drop for DaemonRuntime {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
     use std::thread;
     use std::time::Duration as StdDuration;
 
@@ -421,6 +448,64 @@ mod tests {
         rt.shutdown();
         thread::sleep(StdDuration::from_millis(20));
         assert!(!rt.lock_path.is_file());
+        let _ = fs::remove_dir_all(base);
+    }
+
+    fn fixture_runtime() -> (PathBuf, DaemonRuntime, BusTopology) {
+        let base = std::env::temp_dir().join(format!("sddia-daemon-test-{}", Uuid::new_v4()));
+        let repo = base.clone();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_fractal":{"telemetry":".events/telemetry"}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
+        fs::write(
+            repo.join("SddIA/daemons/test-daemon.md"),
+            "uuid: \"00000000-0000-4000-8000-000000000001\"\nexecution:\n  heartbeat_interval_seconds: 5\n",
+        )
+        .unwrap();
+        let top = load_bus_topology(&repo);
+        let rt = DaemonRuntime::new(repo.clone(), "test-daemon");
+        (base, rt, top)
+    }
+
+    fn side_status(repo: &Path) -> String {
+        let raw = fs::read_to_string(side_channel_path(repo, "test-daemon")).unwrap();
+        let v: Value = serde_json::from_str(&raw).unwrap();
+        v["status"].as_str().unwrap_or("").to_string()
+    }
+
+    #[test]
+    fn tick_with_status_degraded_writes_payload() {
+        let (base, mut rt, top) = fixture_runtime();
+        rt.bootstrap(&top).unwrap();
+        assert_eq!(side_status(&rt.repo), "alive");
+        rt.tick_with_status(&top, "degraded").unwrap();
+        assert_eq!(side_status(&rt.repo), "degraded");
+        rt.shutdown();
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn tick_defaults_alive() {
+        let (base, mut rt, top) = fixture_runtime();
+        rt.tick(&top).unwrap();
+        assert_eq!(side_status(&rt.repo), "alive");
+        rt.shutdown();
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn tick_rejects_unknown_status() {
+        let (base, mut rt, top) = fixture_runtime();
+        rt.bootstrap(&top).unwrap();
+        assert_eq!(side_status(&rt.repo), "alive");
+        let err = rt.tick_with_status(&top, "nope").unwrap_err();
+        assert!(err.contains("inválido"), "{err}");
+        assert_eq!(side_status(&rt.repo), "alive");
+        rt.shutdown();
         let _ = fs::remove_dir_all(base);
     }
 }
