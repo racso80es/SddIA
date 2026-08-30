@@ -3,10 +3,12 @@ document_id: PBI-FIX-FRACTURE-701c77ebeab8
 uuid: "4c18aeb3-66d9-4b94-8c43-bde65cb430a8"
 title: "[FIX] route-domain-event — fractura sistémica"
 format: markdown
-version: "1.2.0"
+version: "1.3.0"
 created: "2026-08-30"
 updated: "2026-08-30"
 status: cerrado
+child_pbi: PBI-FIX-FRACTURE-701c77ebeab8-OLA1
+child_ref: docs/todos/pending/[FIX] iota-publish-relay — Ola 1 latido degradado (701c77ebeab8).md
 refinement_status: clarified
 priority: alta
 process: bug-fix
@@ -46,8 +48,9 @@ related:
   - docs/todos/done/[FIX] route-domain-event — fractura sistémica (6a49e0ad310e).md
   - docs/todos/done/[REGRESIÓN] route-domain-event — fractura sistémica (6a49e0ad310e)-R1.md
   - docs/todos/done/[FIX] route-domain-event — fractura sistémica (b3a715381787).md
+  - docs/todos/pending/[FIX] iota-publish-relay — Ola 1 latido degradado (701c77ebeab8).md
 source_audit: "2026-08-30 territorio: refused 8787 + murder-loop journal. 2026-08-30 clarificación: leídos DaemonRuntime::emit_heartbeat (status cableado alive, fn privada), record_heartbeat_at (ignora status, missed_cycles=0), color_daemon (green solo por last_heartbeat_at + missed<3), daemons-contract §6.1 (status alive|degraded|shutting_down; emisión periódica obligatoria)."
-review_notes: "v1.0.0 semilla. v1.1.0 diagnóstico territorial. v1.2.0 clarificación: Ola 0 = CA1+CA4 en main.rs; Filtro A sobre 'degraded' vs espejo; omisión de tick como único palanca en este archivo."
+review_notes: "v1.0.0 semilla. v1.1.0 diagnóstico territorial. v1.2.0 clarificación: Ola 0 = CA1+CA4 en main.rs. v1.3.0 deuda Ola 1/CA5–CA7 absorbida en PBI hijo PBI-FIX-FRACTURE-701c77ebeab8-OLA1."
 ---
 
 # [FIX] route-domain-event — fractura sistémica
@@ -224,5 +227,5 @@ Gracia + no-tick post-gracia. No fingir `degraded` hasta Ola 1.
 ## Criterio de cierre (PBI completo)
 
 - [x] Ola 0: RELAY-CA1 y RELAY-CA4
-- [ ] Deuda Ola 1 / CA5–CA7 aceptada o absorbida en PBI hijo
+- [x] Deuda Ola 1 / CA5–CA7 absorbida en PBI hijo `PBI-FIX-FRACTURE-701c77ebeab8-OLA1`
 - [x] Argos APTO + PBI en `docs/todos/done/` en la rama del PR único

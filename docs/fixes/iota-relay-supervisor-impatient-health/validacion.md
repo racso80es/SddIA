@@ -21,12 +21,13 @@ checks:
   CASCADE_IMPLEMENTATION: APTO
   CASCADE_EXECUTION: APTO
   CASCADE_VALIDACION: APTO
-  OLA1_DEGRADED: DIFERIDO
-  RELAY-CA5_CA7: DIFERIDO
+  OLA1_DEGRADED: ABSORBIDO
+  RELAY-CA5_CA7: ABSORBIDO
 git_changes:
   - SddIA/daemons/iota-publish-relay/src/main.rs
   - docs/fixes/iota-relay-supervisor-impatient-health/
   - docs/todos/done/[FIX] route-domain-event — fractura sistémica (701c77ebeab8).md
+  - docs/todos/pending/[FIX] iota-publish-relay — Ola 1 latido degradado (701c77ebeab8).md
 ---
 
 # Validación — fractura `701c77ebeab8` (Argos)
@@ -42,5 +43,5 @@ git_changes:
 | RELAY-CA1 | APTO | `grace_refused_does_not_kill` |
 | RELAY-CA4 | APTO | `post_grace_refused_kills_and_omits_tick` |
 | T-A / T-B / T-C | APTO | tests + `grace_boundary_eq_is_outside` |
-| OLA1_DEGRADED | DIFERIDO | deuda runtime/audit/espejo |
-| RELAY-CA5_CA7 | DIFERIDO | logs, cola DLT, taxonomía |
+| OLA1_DEGRADED | ABSORBIDO | PBI hijo `PBI-FIX-FRACTURE-701c77ebeab8-OLA1` |
+| RELAY-CA5_CA7 | ABSORBIDO | mismo PBI hijo (olas 1b/2; no esta entrega) |
