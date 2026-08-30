@@ -186,8 +186,11 @@ fn execute_phase(
                 entry
             }
             Err(e) => {
-                entry["status"] = json!("failed");
                 entry["error"] = json!(e);
+                if stamp_dcc_network_block(&mut entry, phase_name, &e) {
+                    return entry;
+                }
+                entry["status"] = json!("failed");
                 // L-FAILSOFT-OLA2: telemetría/validación secundaria post pr_url.
                 let soft_err = {
                     let el = e.to_lowercase();
@@ -271,6 +274,41 @@ fn dcc_gate_block_suppresses_fracture(phase_name: &str, status: &str) -> bool {
         )
 }
 
+fn dcc_transient_network_trace(trace: &str) -> bool {
+    let t = trace.to_lowercase();
+    t.contains("could not resolve host")
+        || t.contains("temporary failure in name resolution")
+        || t.contains("name or service not known")
+        || t.contains("network is unreachable")
+        || t.contains("connection timed out")
+}
+
+fn dcc_net_block_suppresses_fracture(phase_name: &str, status: &str, error_trace: &str) -> bool {
+    matches!(status, "failed" | "blocked")
+        && matches!(phase_name, "Publicación remota" | "Apertura en forja")
+        && dcc_transient_network_trace(error_trace)
+}
+
+fn dcc_report_error_trace(report: &Value) -> String {
+    report
+        .get("error")
+        .and_then(|v| v.as_str())
+        .or_else(|| report.get("message").and_then(|v| v.as_str()))
+        .or_else(|| report.get("status").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .to_string()
+}
+
+/// F4c: DNS/red transitoria en push/forja → `blocked` accionable, no Kintsugi.
+fn stamp_dcc_network_block(entry: &mut Value, phase_name: &str, error: &str) -> bool {
+    if !dcc_net_block_suppresses_fracture(phase_name, "failed", error) {
+        return false;
+    }
+    entry["status"] = json!("blocked");
+    entry["friction_id"] = json!("F-DCC-DNS-UNRESOLVED");
+    true
+}
+
 pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
     for report in phase_reports {
         if report.get("fail_soft").and_then(|v| v.as_bool()) == Some(true) {
@@ -287,13 +325,11 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
         if dcc_gate_block_suppresses_fracture(phase_name, status) {
             continue;
         }
+        let error_trace = dcc_report_error_trace(report);
+        if dcc_net_block_suppresses_fracture(phase_name, status, &error_trace) {
+            continue;
+        }
         let friction_id = dcc_friction_id(phase_name, report);
-        let error_trace = report
-            .get("error")
-            .and_then(|v| v.as_str())
-            .or_else(|| report.get("message").and_then(|v| v.as_str()))
-            .unwrap_or(status)
-            .to_string();
         let payload = json!({
             "process_name": "delivery-close-cycle",
             "error_trace": error_trace,
@@ -479,6 +515,80 @@ mod tests {
             .filter_map(|e| e.ok())
             .collect();
         assert!(!pending.is_empty());
+    }
+
+    #[test]
+    fn dcc_transient_network_trace_positives_and_pr_url_negative() {
+        assert!(dcc_transient_network_trace(
+            "fatal: Could not resolve host: github.com"
+        ));
+        assert!(dcc_transient_network_trace(
+            "Temporary failure in name resolution"
+        ));
+        assert!(dcc_transient_network_trace("Name or service not known"));
+        assert!(dcc_transient_network_trace("Network is unreachable"));
+        assert!(dcc_transient_network_trace("Connection timed out"));
+        assert!(!dcc_transient_network_trace(
+            "no se pudo resolver pr_url desde gh"
+        ));
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_remote_push_dns() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Publicación remota",
+            "status": "failed",
+            "error": "fatal: no es posible acceder a 'https://github.com/racso80es/SddIA.git/': Could not resolve host: github.com",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_forge_dns() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Apertura en forja",
+            "status": "failed",
+            "error": "Could not resolve host: github.com",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn stamp_dcc_network_block_sets_friction_and_aggregator_fails() {
+        let mut entry = json!({
+            "phase_name": "Publicación remota",
+            "error": "Could not resolve host: github.com",
+        });
+        assert!(stamp_dcc_network_block(
+            &mut entry,
+            "Publicación remota",
+            "Could not resolve host: github.com",
+        ));
+        assert_eq!(entry["status"], "blocked");
+        assert_eq!(entry["friction_id"], "F-DCC-DNS-UNRESOLVED");
+        assert!(entry.get("fail_soft").is_none());
+        let v = super::super::phase_terminal::aggregate_execution_terminal(
+            &[entry],
+            &json!({}),
+        );
+        assert!(!v.success);
+        assert_eq!(v.status_code, 1);
     }
 
     fn eda_blocked_orphans_report() -> Value {

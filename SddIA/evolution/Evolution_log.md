@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `add08452-fbff-4768-b906-9b0eb2baa9e3` | 2026-08-30 | F4c: DNS/red transitoria en DCC no emite System_Fracture_Detected; Mayeuta sin colisión delivery-close. | CANONICO | `SddIA/evolution/add08452-fbff-4768-b906-9b0eb2baa9e3.md` |
 | `2381303e-5db6-4f35-b33f-70388e09295e` | 2026-08-30 | iota-publish-relay Ola 1: tick_with_status degraded hasta el espejo (fractura 701c77ebeab8) | CANONICO | `SddIA/evolution/2381303e-5db6-4f35-b33f-70388e09295e.md` |
 | `74674393-d689-4cc0-bd7f-6285a871ccff` | 2026-08-30 | iota-publish-relay Ola 0: gracia post-spawn GRACE_SECS=10 y omitir tick post-gracia (fractura 701c77ebeab8) | CANONICO | `SddIA/evolution/74674393-d689-4cc0-bd7f-6285a871ccff.md` |
 | `6d182670-51a5-43ab-adb0-aeaa3b8c3c9f` | 2026-08-30 | Aduana GUI: resolver wasmtime fuera del PATH de GitHub Desktop; correlato genoma daemons/telegram y hooks. | CANONICO | `SddIA/evolution/6d182670-51a5-43ab-adb0-aeaa3b8c3c9f.md` |
