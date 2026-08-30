@@ -3,10 +3,11 @@ document_id: PBI-FIX-FRACTURE-d0cfd5b66ff1
 uuid: "c2263a19-0af2-4164-a2b2-230825e2c35f"
 title: "[FIX] delivery-close-cycle — DNS en Publicación remota (fractura sobreescalada)"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-08-30"
 updated: "2026-08-30"
-status: "abierto"
+closed: "2026-08-30"
+status: "cerrado"
 refinement_status: "refinado"
 priority: alta
 process: bug-fix
@@ -18,6 +19,7 @@ friction_ids:
   - F-DCC-NET-OVERESCALATION
   - F-MAYEUTA-DCC-TOKEN-COLLISION
 incident_ref: "System_Fracture_Detected — d0cfd5b66ff1"
+resolution_ref: docs/fixes/dcc-dns-unresolved-d0cfd5b66ff1/
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
@@ -30,6 +32,8 @@ related:
   - docs/todos/done/[FIX] delivery-close-cycle — barrera de fase simulated (c51acf014c0f).md
   - docs/todos/done/[FIX] delivery-close-cycle — fractura sistémica (c339de406e29).md
   - docs/todos/done/[FIX] bug-fix — fractura sistémica (1d4115c57471).md
+  - docs/fixes/dcc-dns-unresolved-d0cfd5b66ff1/validacion.md
+  - SddIA/evolution/add08452-fbff-4768-b906-9b0eb2baa9e3.md
 ---
 
 # [FIX] delivery-close-cycle — DNS en Publicación remota (fractura sobreescalada)
@@ -81,60 +85,21 @@ Naturaleza: fallo de resolución DNS (red local, sandbox, `resolv.conf`, outage 
 
 F4b (`c51acf014c0f` / `c339de406e29`) silenció fractura solo para `blocked` de **Aduana evolution** / **Aduana EDA**. `dcc_gate_block_suppresses_fracture` no cubre `Publicación remota` ni status `failed`.
 
-```266:288:SddIA/engine/execute-process/src/engine/delivery_close.rs
-fn dcc_gate_block_suppresses_fracture(phase_name: &str, status: &str) -> bool {
-    status == "blocked"
-        && matches!(
-            phase_name,
-            "Aduana evolution" | "Aduana EDA genómica"
-        )
-}
-```
-
-`invoke_git_manager` convierte el stderr git en `Err(String)` (`unwrap_git_manager_body` no clasifica DNS). La fase queda `failed` → `emit_dcc_phase_fractures` emite Kintsugi. Antipatrón idéntico a `F-DIRTY-WORKTREE` (`1d4115c57471`): guard/fallo determinista de entorno escalado a colapso.
-
-Hay un hook `data.offline` en `unwrap_git_manager_body`, pero **git-manager nunca emite `offline`**. No usarlo para skippear el push.
+Entregado: predicado hermano `dcc_net_block_suppresses_fracture` + `stamp_dcc_network_block` (`F-DCC-DNS-UNRESOLVED`).
 
 ### F3 — Colisión de token Kaizen (deuda accionable, tercer incidente)
 
-```43:54:SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
-    if has_any(&["recurs", "pre-push", "hook", "delivery-close", "re-entrada"]) {
-        root_causes.push(
-            "Recursión o re-entrada en la cadena hook Git ↔ proceso de cierre (`delivery-close-cycle`)."
-                .into(),
-        );
-```
-
-`process_name` no debe entrar en el blob de matching de «recursión hook», o el token `delivery-close` debe exigirse **junto** a `hook`/`pre-push`/`re-entrada` en `error_trace`, no en solitario.
+Entregado: regla hook sobre `error_trace`+`attempted_action`; token unario `delivery-close` retirado.
 
 ## Veredicto evolutivo
 
-**Kaizen de discriminación** (`refactor_tool` sobre motor, no sobre el proceso DCC). El push no está roto. El sistema **no distingue** fallo de red transitorio de colapso de runtime, y Mayeuta **no lee** la traza.
-
-## Alcance del fix (cuando el Vértice Biológico lance `bug-fix`)
-
-**Dentro**
-
-1. **F2 — Taxonomía de red en DCC:** si la traza de `Publicación remota` (y, por simetría, `Apertura en forja` si `gh` falla igual) coincide con DNS/red transitoria (`Could not resolve host`, `Temporary failure in name resolution`, `Network is unreachable`, `Connection timed out` hacia el remoto), entonces:
-   - `status: blocked` (o `failed` + `fail_soft` **no**: el cierre **sí** falló; el operador debe reintentar).
-   - `friction_id: F-DCC-DNS-UNRESOLVED` (o familia `F-DCC-NET-*`).
-   - **No** emitir `System_Fracture_Detected`. Conservar veredicto accionable en envelope (`error` + fase).
-   - Extender `dcc_gate_block_suppresses_fracture` (o predicado hermano por traza, no solo por nombre de fase) — F4c de red, no reabrir F4b de aduana.
-2. **F3 — Mayeuta:** sacar `delivery-close` del matching unario; no concatenar `process_name` al blob de reglas de hook. Test: traza DNS + `process_name=delivery-close-cycle` **no** produce «recursión hook». Traza real `pre-push hook` **sí**.
-
-**Fuera**
-
-- Reimplementar `SDDIA_HOOK_DELIVERY_CLOSE` / `SDDIA_SKIP_HOOKS=1`.
-- Skip silencioso del push (`offline: true` como éxito).
-- Retry/backoff/polling en `git-manager` o Tekton (choca DA-5 Fire-and-Forget). Reintento = nueva inyección del proceso.
-- Mutar genoma DCC (fases, contrato `proc:git-sync`) salvo notas operativas de discriminación.
-- Resolver DNS del host; eso no es código.
+**Kaizen de discriminación** entregado (`add08452-fbff-4768-b906-9b0eb2baa9e3`).
 
 ## Criterio de cierre
 
-- [ ] Diagnóstico v1.0.0 («recursión hook») marcado erróneo en este PBI
-- [ ] F2: `emit_dcc_phase_fractures` no escala DNS/red transitoria de `Publicación remota` a `System_Fracture_Detected`; envelope conserva `blocked`/`failed` accionable
-- [ ] F3: `analyze_fracture_kaizen` no clasifica fracturas DCC genéricas como recursión hook; test de no-regresión con traza DNS
-- [ ] F1: documentado como detonante de entorno; reintento DCC es operativa, no código
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/` en la misma rama del PR
+- [x] Diagnóstico v1.0.0 («recursión hook») marcado erróneo en este PBI
+- [x] F2: `emit_dcc_phase_fractures` no escala DNS/red transitoria de `Publicación remota` a `System_Fracture_Detected`; envelope conserva `blocked` accionable
+- [x] F3: `analyze_fracture_kaizen` no clasifica fracturas DCC genéricas como recursión hook; test de no-regresión con traza DNS
+- [x] F1: documentado como detonante de entorno; reintento DCC es operativa, no código
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/` en la misma rama del PR

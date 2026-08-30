@@ -34,13 +34,15 @@ pub fn analyze_fracture_kaizen(
         "{error_trace}\n{attempted_action}\n{process_name}",
     )
     .to_lowercase();
+    let hook_blob = format!("{error_trace}\n{attempted_action}").to_lowercase();
 
     let mut root_causes: Vec<String> = Vec::new();
     let mut proposals: Vec<(String, String)> = Vec::new();
 
     let has_any = |tokens: &[&str]| tokens.iter().any(|t| blob.contains(t));
+    let has_any_in = |hay: &str, tokens: &[&str]| tokens.iter().any(|t| hay.contains(t));
 
-    if has_any(&["recurs", "pre-push", "hook", "delivery-close", "re-entrada"]) {
+    if has_any_in(&hook_blob, &["recurs", "pre-push", "hook", "re-entrada"]) {
         root_causes.push(
             "Recursión o re-entrada en la cadena hook Git ↔ proceso de cierre (`delivery-close-cycle`)."
                 .into(),
@@ -258,6 +260,18 @@ mod tests {
         );
         assert_eq!(verdict, "refactor_tool");
         assert!(section.contains("Recursión o re-entrada"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_dns_not_hook_recursion() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            "fatal: Could not resolve host: github.com",
+            "Publicación remota",
+            "execute-process",
+        );
+        assert!(!section.contains("Recursión o re-entrada"));
+        assert_ne!(verdict, "refactor_tool");
     }
 
     #[test]
