@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - source-control
 contract: process-contract v1.4.0
-hash_signature: "sha256:83b193960647b429f9001469c73a616e8afa9cde31117c57583b0f9790d4ed01"
+hash_signature: sha256:93448251c4ae3df5a6ed317c615f89bb46254bddae1d218a46ce4452a46e5241
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -30,7 +30,7 @@ phases:
   name: Impacto SddIA condicional
 - delegates_to:
   - agent:argos
-  intent: Invocar sddia-qa gate-evolution --json --range; bloquear si material sin registro evolution.
+  intent: Invocar sddia-qa gate-evolution --json --range --sync-base; bloquear si material sin registro evolution.
   name: Aduana evolution
 - delegates_to:
   - agent:argos
@@ -62,8 +62,9 @@ phases:
   name: Higiene local
 porcentaje_de_exito: null
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
-version: 1.3.0
-workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/---
+version: 1.4.0
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
+---
 
 # delivery-close-cycle
 
@@ -98,7 +99,8 @@ Salidas propagadas al envelope del proceso: `event_id`, `target_path`, `pr_url`.
 
 ## Notas operativas
 
-* La fase **Impacto SddIA condicional** debe evaluarse como no-op documentado cuando no aplique (`source_process != feature` o sin cambios bajo `SddIA/`), sin bloquear el resto del ciclo.
+* La fase **Impacto SddIA condicional** debe evaluarse como no-op documentado cuando no aplique (`source_process` distinto de `feature` / `bug-fix` / `refactorization`, o sin cambios bajo `SddIA/`), sin bloquear el resto del ciclo.
+* **Aduana evolution:** ejecutar `SddIA/target/debug/sddia-qa gate-evolution --json --range --sync-base`. Bloquear si `EVOL_MATERIAL_UNREGISTERED` / `EVOL_HASH_MISMATCH`. No emitir `System_Fracture_Detected` (gate accionable, F4b). CI usa `--require-synced-base` (AEL-CA13).
 * **Aduana integridad índices:** ejecutar `SddIA/target/debug/sddia-qa verify-process-integrity` y `verify-tools-index` antes de la publicación remota; veredicto `block` si alguno falla (paridad job CI `sddia-index-integrity`).
 * **Aduana EDA genómica:** ejecutar `SddIA/target/debug/sddia-qa audit-eda-coverage --scan --json` (o `./sddia-run.sh --audit-eda-coverage --scan --json`). Si `orphan_count > 0` (entidad indexada sin `Domain_Entity_Created` correlacionado), Argos emite **Ruido de Sistema** con veredicto `block`. **Excepción `backfill-manifest.json`:** si `{persist_ref}/backfill-manifest.json` declara `correlation_id` y **no** tiene `merkle_anchored: true`, el gate degrada el veredicto a `warn` con `argos_noise: "backfill Fase C en curso"`. El backfill canónico sigue siendo `entity-manager` → `emit-domain-mutation` con sello `--anchor-merkle` al cierre.
 * Todas las rutas y políticas se resuelven exclusivamente vía `cumulo.paths.json` y normas enlazadas (`git-operations`, `pull-request-orchestration`).
@@ -115,10 +117,11 @@ Variables de entorno para cápsulas físicas sin efectos destructivos por defect
 | `SDDIA_LAB_SIMULATE_GH_PR` | Simula `pr_url` sin invocar `gh` |
 | `SDDIA_LAB_SKIP_HIGIENE` | Omite checkout/delete en Higiene local |
 | `SDDIA_LAB_SKIP_INDEX_INTEGRITY` | Omite Aduana integridad índices (`verify-process-integrity` + `verify-tools-index`) |
+| `SDDIA_LAB_SKIP_EVOLUTION_GATE` | Omite Aduana evolution (`gate-evolution --range --sync-base`) |
 | `SDDIA_LAB_DELETE_FEATURE_BRANCH` | Si `1`, intenta borrar rama tras sello (solo lab explícito) |
 
-**Anti-recursión hook (Ola B):** cuando `source_process == git-hook-pre-push`, la fase Publicación remota ejecuta push con `SDDIA_SKIP_HOOKS=1` **solo** en el subproceso `git-manager`. El hook pre-push omite re-entrada si `SDDIA_HOOK_DELIVERY_CLOSE=1` (inyectado por `invoke_process` del hook).
+**Anti-recursión hook (Ola B):** el hook pre-push omite re-entrada si `SDDIA_HOOK_DELIVERY_CLOSE=1` (inyectado por `invoke_process`; guarda `in_delivery_close_cycle`). La fase Publicación remota puede fijar `SDDIA_SKIP_HOOKS=1` **solo** en el subproceso `git-manager` cuando `source_process == git-hook-pre-push`. El gate evolution del hook **no** corre si hay ramas nuevas (delega en este proceso); corre si no hay ramas nuevas (PR OPEN).
 
 ### Fase Impacto SddIA condicional (perfil laboratorio)
 
-Handler `delivery-impact-assessment`: diff name-only contra `origin/<target_branch>`; filtra prefijo `SddIA/`. Solo evalúa si `source_process == feature`. No bloquea el ciclo en lab (Argos IDE fuera de alcance). Propaga `sddia_impact` en envelope del proceso.
+Handler `delivery-impact-assessment`: diff name-only contra `origin/<target_branch>`; filtra prefijo `SddIA/`. Evalúa si `source_process` ∈ {`feature`, `bug-fix`, `refactorization`}. No bloquea el ciclo en lab (Argos IDE fuera de alcance). Propaga `sddia_impact` en envelope del proceso.

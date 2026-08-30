@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 98
+universe_total: 99
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `00e89551-1241-4195-975d-9f06b306c873` | 2026-08-30 | AEL-CA9 residual: hook delega gate-evolution; DCC --sync-base; delivery-close-cycle 1.4.0 vía entity-manager. | CANONICO | `SddIA/evolution/00e89551-1241-4195-975d-9f06b306c873.md` |
 | `a3c51acf-014c-4f0f-8000-c51acf014c0f` | 2026-08-30 | F1-SIMULATED-BARRIER: relevo IDE sin validacion no encadena DCC; gate aduana sin System_Fracture_Detected. | CANONICO | `SddIA/evolution/a3c51acf-014c-4f0f-8000-c51acf014c0f.md` |
 | `f757a7db-4d21-455c-b45f-4b5f61fe6f79` | 2026-08-29 | F-DIRTY-WORKTREE: workspace-init aborta sin System_Fracture_Detected (guard L-DIRTY-INIT). | CANONICO | `SddIA/evolution/f757a7db-4d21-455c-b45f-4b5f61fe6f79.md` |
 | `d8f2a4c1-7e3b-4f9a-8c2d-b3a715381787` | 2026-08-29 | DLT publish-error: F-DLT-PUBLISH-ERROR en merkle-batch-preseal e iota-immutable-publisher. | CANONICO | `SddIA/evolution/d8f2a4c1-7e3b-4f9a-8c2d-b3a715381787.md` |

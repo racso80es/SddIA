@@ -339,14 +339,26 @@ pub fn capsule_index_integrity_audit_gate(
     }))
 }
 
+pub fn evolution_gate_args() -> [&'static str; 4] {
+    ["gate-evolution", "--json", "--range", "--sync-base"]
+}
+
 pub fn capsule_evolution_audit_gate(
     repo: &Path,
     _inputs: &Value,
     state: &mut Value,
 ) -> Result<Value, String> {
+    if env_truthy("SDDIA_LAB_SKIP_EVOLUTION_GATE") {
+        return Ok(json!({
+            "status": "skipped",
+            "handler": "evolution-audit",
+            "skipped": true,
+            "reason": "SDDIA_LAB_SKIP_EVOLUTION_GATE",
+        }));
+    }
     let bin = resolve_sddia_qa_bin(repo)?;
     let out = std::process::Command::new(&bin)
-        .args(["gate-evolution", "--json", "--range"])
+        .args(evolution_gate_args())
         .current_dir(repo)
         .output()
         .map_err(|e| format!("gate-evolution spawn: {e}"))?;
@@ -1631,6 +1643,53 @@ mod evolution_audit_ca12_tests {
                 .current_dir(&self.root)
                 .status();
         }
+    }
+
+    #[test]
+    fn evolution_gate_args_include_sync_base_not_if_touched() {
+        let args = super::evolution_gate_args();
+        assert_eq!(
+            args,
+            ["gate-evolution", "--json", "--range", "--sync-base"]
+        );
+        assert!(!args.contains(&"--if-touched"));
+        assert!(!args.contains(&"--require-synced-base"));
+    }
+
+    #[test]
+    fn evolution_audit_gate_skip_lab() {
+        std::env::set_var("SDDIA_LAB_SKIP_EVOLUTION_GATE", "1");
+        let repo = repo_root();
+        let mut state = json!({});
+        let result = capsule_evolution_audit_gate(&repo, &json!({}), &mut state)
+            .expect("skip gate");
+        std::env::remove_var("SDDIA_LAB_SKIP_EVOLUTION_GATE");
+        assert_eq!(
+            result.get("status").and_then(|v| v.as_str()),
+            Some("skipped")
+        );
+    }
+
+    #[test]
+    fn pre_push_hook_runs_evolution_gate_only_when_no_branches_ca7() {
+        let common = repo_root().join("SddIA/scripts/qa/git-hooks/hook_common.sh");
+        let script = format!(
+            r#"set -euo pipefail
+source {common}
+pre_push_hook_runs_evolution_gate 0
+z0=$?
+if pre_push_hook_runs_evolution_gate 1; then z1=0; else z1=1; fi
+if pre_push_hook_runs_evolution_gate 2; then z2=0; else z2=1; fi
+echo "z0=$z0 z1=$z1 z2=$z2"
+[[ "$z0" -eq 0 && "$z1" -eq 1 && "$z2" -eq 1 ]]
+"#,
+            common = common.display()
+        );
+        let status = Command::new("bash")
+            .args(["-c", &script])
+            .status()
+            .expect("bash");
+        assert!(status.success(), "CA-7 predicado hook");
     }
 
     #[test]
