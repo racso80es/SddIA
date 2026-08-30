@@ -1,0 +1,18 @@
+[Unit]
+Description=SddIA kalma2-bridge (%f)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%f
+EnvironmentFile=-%f/.SddIA/.dev/.env
+ExecStart=%f/SddIA/scripts/daemons/kalma2-bridge.sh
+Restart=always
+RestartSec=5
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+[Install]
+WantedBy=default.target
