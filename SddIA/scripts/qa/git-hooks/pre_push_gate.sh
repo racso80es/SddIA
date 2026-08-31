@@ -30,7 +30,7 @@ main() {
   local branches=()
   while IFS='|' read -r local_ref local_sha remote_ref remote_sha; do
     [[ -n "$local_ref" ]] || continue
-    if is_delete_push "$remote_sha"; then
+    if is_delete_push "$local_sha"; then
       continue
     fi
     if is_main_ref "$local_ref"; then

@@ -651,11 +651,19 @@ pub fn capsule_delivery_remote_push(
             "reason": "SDDIA_LAB_SKIP_GIT_PUSH",
         }));
     }
-    let data = invoke_git_manager(
+    let prev_hook_guard = std::env::var("SDDIA_HOOK_DELIVERY_CLOSE").ok();
+    std::env::set_var("SDDIA_HOOK_DELIVERY_CLOSE", "1");
+    let push_result = invoke_git_manager(
         repo,
         "push",
         &json!({"remote": "origin", "branch": branch, "force": false}),
-    )?;
+    );
+    if let Some(v) = prev_hook_guard {
+        std::env::set_var("SDDIA_HOOK_DELIVERY_CLOSE", v);
+    } else {
+        std::env::remove_var("SDDIA_HOOK_DELIVERY_CLOSE");
+    }
+    let data = push_result?;
     if let Some(obj) = state.as_object_mut() {
         obj.insert("delivery_push".into(), data.clone());
     }
@@ -1690,6 +1698,35 @@ echo "z0=$z0 z1=$z1 z2=$z2"
             .status()
             .expect("bash");
         assert!(status.success(), "CA-7 predicado hook");
+    }
+
+    #[test]
+    fn is_delete_push_uses_local_sha_zeros_not_remote() {
+        let common = repo_root().join("SddIA/scripts/qa/git-hooks/hook_common.sh");
+        let zeros = "0000000000000000000000000000000000000000";
+        let real = "abc1230000000000000000000000000000000001";
+        let script = format!(
+            r#"set -euo pipefail
+source {common}
+if is_delete_push "{zeros}"; then d_local=1; else d_local=0; fi
+if is_delete_push "{real}"; then d_real=1; else d_real=0; fi
+echo "d_local=$d_local d_real=$d_real"
+[[ "$d_local" -eq 1 && "$d_real" -eq 0 ]]
+grep -q 'is_delete_push "$local_sha"' "{gate}"
+! grep -q 'is_delete_push "$remote_sha"' "{gate}"
+"#,
+            common = common.display(),
+            zeros = zeros,
+            real = real,
+            gate = repo_root()
+                .join("SddIA/scripts/qa/git-hooks/pre_push_gate.sh")
+                .display()
+        );
+        let status = Command::new("bash")
+            .args(["-c", &script])
+            .status()
+            .expect("bash");
+        assert!(status.success(), "is_delete_push local_sha protocol");
     }
 
     #[test]

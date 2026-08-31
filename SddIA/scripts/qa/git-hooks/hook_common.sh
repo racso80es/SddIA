@@ -192,6 +192,7 @@ parse_pre_push_stdin() {
   done
 }
 
+# Argumento: SHA **local** del stdin pre-push. Ceros = delete. SHA remoto cero = ref nueva (no delete).
 is_delete_push() {
   [[ "$1" =~ ^0+$ ]]
 }

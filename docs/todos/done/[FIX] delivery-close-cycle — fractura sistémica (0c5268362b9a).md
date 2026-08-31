@@ -6,8 +6,10 @@ format: markdown
 version: "1.2.0"
 created: "2026-08-30"
 updated: "2026-08-31"
-status: "abierto"
+closed: "2026-08-31"
+status: "cerrado"
 refinement_status: "refinado"
+resolution_ref: docs/fixes/dcc-hook-evol-overescalation-0c5268362b9a/
 priority: alta
 process: bug-fix
 fracture_hash: 0c5268362b9a
@@ -155,10 +157,10 @@ Corregir la causa raíz **sistémica** (F1/F2/F3). **Prohibido bypass raw** (`gh
 
 ## Criterio de cierre
 
-- [ ] Diagnóstico v1.0.0 («recursión hook» + reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`) marcado erróneo en este PBI
-- [ ] F2: `emit_dcc_phase_fractures` no escala Publicación remota fallida por evolution gate de pre-push a `System_Fracture_Detected`
-- [ ] F3: `analyze_fracture_kaizen` no clasifica la traza canónica de este incidente como recursión hook; test de no-regresión verde; test de recursión real sigue cubierto
-- [ ] F1: o bien `is_delete_push` alineado al protocolo git, o bien guarda de ciclo en push DCC operador — laudo explícito; AEL-CA9 CA-1 intacto
-- [ ] F0 documentado como detonante de especimen (cerrado en #236); fuera de alcance de código de este fix
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/` en la misma rama del PR
+- [x] Diagnóstico v1.0.0 («recursión hook» + reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`) marcado erróneo en este PBI
+- [x] F2: `emit_dcc_phase_fractures` no escala Publicación remota fallida por evolution gate de pre-push a `System_Fracture_Detected`
+- [x] F3: `analyze_fracture_kaizen` no clasifica la traza canónica de este incidente como recursión hook; test de no-regresión verde; test de recursión real sigue cubierto
+- [x] F1: `is_delete_push` alineado al protocolo git **y** guarda de ciclo en push DCC operador (laudo spec: complementarios, SSOT DCC); AEL-CA9 CA-1 intacto
+- [x] F0 documentado como detonante de especimen (cerrado en #236); fuera de alcance de código de este fix
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/` en la misma rama del PR
