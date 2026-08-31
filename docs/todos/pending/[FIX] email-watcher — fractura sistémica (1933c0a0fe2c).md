@@ -41,15 +41,15 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ### Diagnóstico de causa raíz
 
-- Causa raíz no clasificada automáticamente para `email-watcher`; requiere laudo humano.
+- Inanición de `Daemon_Heartbeat` con proceso vivo (el auditor no emite si el PID está muerto); no es muerte del centinela. `process_name` es `daemon_id`, no un proceso de `directories.process`.
 
 ### Veredicto evolutivo
 
-**Corrección de proceso oficial** (`process_fix`)
+**Refactor de herramienta / cápsula / handler lab** (`refactor_tool`)
 
 ### Propuestas
 
-- **Corrección de proceso oficial:** Auditar proceso `email-watcher`, acción `daemon-heartbeat-audit` y emisor `argos`.
+- **Refactor de herramienta / cápsula / handler lab:** Emitir latido en worker / no bloquear el hilo de heartbeat (paridad keepalive de centinelas hermanos).
 
 > Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar.
 ## Criterio de cierre
