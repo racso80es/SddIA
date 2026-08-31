@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `35d4d91a-eba6-4740-a18f-5e5fcb7428a4` | 2026-08-31 | Kalma2 agent-runtime: veredicto blocked, DNS Node awaiting_agents, stop_after=design, skipped_l2. | CANONICO | `SddIA/evolution/35d4d91a-eba6-4740-a18f-5e5fcb7428a4.md` |
 | `6b8504a4-b45f-468f-8a9f-7b188a8ca4a1` | 2026-08-31 | email-watcher: hilo keepalive heartbeat 10s (fractura 6c0db1296181) | CANONICO | `SddIA/evolution/6b8504a4-b45f-468f-8a9f-7b188a8ca4a1.md` |
 | `38fb99f7-5670-4f26-a918-ef6544d500ce` | 2026-08-30 | R1 701c77ebeab8: aduana ELF-fuente en resolutor de centinelas y launchers convergidos | CANONICO | `SddIA/evolution/38fb99f7-5670-4f26-a918-ef6544d500ce.md` |
 | `5eae5eb6-a1ee-4c70-8ded-982f48fbf6a5` | 2026-08-30 | Mayeuta: cubo heartbeat_starvation en analyze_fracture_kaizen; enrich-fracture-pbi-kaizen 1.2.0. | CANONICO | `SddIA/evolution/5eae5eb6-a1ee-4c70-8ded-982f48fbf6a5.md` |

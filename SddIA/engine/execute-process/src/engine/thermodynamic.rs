@@ -41,15 +41,20 @@ pub fn derive_cycle_phase(process_name: &str, phase_reports: Option<&Value>) -> 
     };
     let mut has_awaiting = false;
     let mut has_simulated = false;
+    let mut has_stop_after = false;
     for p in arr {
         let st = p.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        let reason = p.get("reason").and_then(|v| v.as_str()).unwrap_or("");
+        if reason == "stop_after" {
+            has_stop_after = true;
+        }
         if matches!(st, "awaiting" | "awaiting_agents") {
             has_awaiting = true;
         } else if st == "simulated" {
             has_simulated = true;
         }
     }
-    if has_awaiting {
+    if has_awaiting || has_stop_after {
         Some("awaiting_agents")
     } else if has_simulated {
         Some("initialized")
@@ -376,6 +381,22 @@ mod tests {
         assert_eq!(
             derive_cycle_phase("bug-fix", Some(&reports)),
             Some("completed")
+        );
+    }
+
+    #[test]
+    fn derive_stop_after_is_awaiting_not_completed() {
+        let reports = json!([
+            {"phase_name": "Diseño del fix", "status": "executed"},
+            {"phase_name": "Ejecución", "status": "skipped", "reason": "stop_after"}
+        ]);
+        assert_eq!(
+            derive_cycle_phase("bug-fix", Some(&reports)),
+            Some("awaiting_agents")
+        );
+        assert_eq!(
+            survival_cycle_phase("bug-fix", Some(&reports), true),
+            Some("awaiting_agents")
         );
     }
 

@@ -485,7 +485,7 @@ pub fn invoke_agent_phase(
         .unwrap_or(if success { "executed" } else { "failed" });
 
     let normalized = match status {
-        "executed" | "awaiting_agents" | "failed" => status,
+        "executed" | "awaiting_agents" | "failed" | "blocked" => status,
         "awaiting" => "awaiting_agents",
         _ if success => "executed",
         _ => "failed",
@@ -734,6 +734,33 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
 
         assert_eq!(entry["status"], "awaiting_agents");
+    }
+
+    #[test]
+    fn configured_cli_can_block() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-rt-bl-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(
+            &dir,
+            "#!/bin/sh\ncat >/dev/null\necho '{\"success\":true,\"data\":{\"status\":\"blocked\"}}'\n",
+        );
+
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "bug-fix",
+            "Diseño del fix",
+            &[json!("agent:dedalo")],
+            &json!({"persist_ref": "docs/fixes/x"}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+
+        assert_eq!(entry["status"], "blocked", "{entry}");
     }
 
     #[test]

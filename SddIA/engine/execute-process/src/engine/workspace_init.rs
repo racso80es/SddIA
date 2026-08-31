@@ -80,6 +80,76 @@ fn env_truthy(key: &str) -> bool {
         .unwrap_or(false)
 }
 
+/// Misión destilada: no volcar YAML+cuerpo del PBI (F7).
+fn distill_mission(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    let (fm, after) = if trimmed.starts_with("---") {
+        let rest = trimmed.strip_prefix("---").unwrap_or(trimmed);
+        if let Some(idx) = rest.find("\n---") {
+            let fm = rest[..idx].trim();
+            let after = rest[idx + 4..].trim();
+            (Some(fm), after)
+        } else {
+            (None, trimmed)
+        }
+    } else {
+        (None, trimmed)
+    };
+    let doc_id = fm.and_then(|block| {
+        block.lines().find_map(|l| {
+            l.trim()
+                .strip_prefix("document_id:")
+                .map(|s| s.trim().trim_matches('"').to_string())
+                .filter(|s| !s.is_empty())
+        })
+    });
+    let title = after.lines().find_map(|l| {
+        l.trim()
+            .strip_prefix("# ")
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    });
+    let para: String = after
+        .lines()
+        .skip_while(|l| {
+            let t = l.trim();
+            t.is_empty()
+                || t.starts_with('#')
+                || t.starts_with('|')
+                || t.starts_with('>')
+                || t.starts_with('-')
+        })
+        .take_while(|l| !l.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let para_cut: String = para.chars().take(400).collect();
+    let mut out = String::new();
+    if let Some(t) = title {
+        out.push_str(&t);
+        out.push('\n');
+    }
+    if let Some(d) = doc_id {
+        out.push_str("document_id: ");
+        out.push_str(&d);
+        out.push('\n');
+    }
+    if !para_cut.is_empty() {
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        out.push_str(&para_cut);
+    }
+    let distilled = out.trim().to_string();
+    if distilled.is_empty() {
+        trimmed.chars().take(400).collect()
+    } else {
+        distilled
+    }
+}
+
 fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
     let norm = path.trim_start_matches("./");
     if norm == persist_ref.trim_start_matches("./")
@@ -302,7 +372,7 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         let summary = if refined.trim().is_empty() {
             format!("{process_label} {task_name}")
         } else {
-            refined.trim().to_string()
+            distill_mission(refined)
         };
         let pbi_line = pbi_ref_meta
             .map(|p| format!("pbi_ref: {p}\n"))
@@ -488,6 +558,17 @@ mod tests {
         let line = r#" M "docs/todos/pending/[REGRESI\303\223N] route-domain-event \342\200\224 fractura sist\303\251mica (6a49e0ad310e)-R1.md""#;
         let path = git_porcelain::porcelain_path_from_line(line).expect("path");
         assert!(path_in_scope(&path, "docs/fixes/other", Some(pbi)));
+    }
+
+    #[test]
+    fn distill_mission_strips_pbi_yaml_dump() {
+        let raw = "---\ndocument_id: PBI-KAIZEN-X\ntitle: dump\n---\n\n# Título visible\n\nPárrafo corto de misión.\n\n## Alcance\n\nNo debe entrar el YAML.\n";
+        let got = distill_mission(raw);
+        assert!(got.contains("Título visible"));
+        assert!(got.contains("document_id: PBI-KAIZEN-X"));
+        assert!(got.contains("Párrafo corto"));
+        assert!(!got.contains("title: dump"));
+        assert!(!got.contains("## Alcance"));
     }
 
     fn init_git_repo(root: &Path) {
