@@ -5,6 +5,7 @@ process: feature
 branch: feat/kalma2-agent-verdict-barrier
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/239
 checks:
   CA-A1: pass
   CA-A2: pass
