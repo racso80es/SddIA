@@ -190,6 +190,9 @@ fn execute_phase(
                 if stamp_dcc_network_block(&mut entry, phase_name, &e) {
                     return entry;
                 }
+                if stamp_dcc_hook_evol_block(&mut entry, phase_name, &e) {
+                    return entry;
+                }
                 entry["status"] = json!("failed");
                 // L-FAILSOFT-OLA2: telemetría/validación secundaria post pr_url.
                 let soft_err = {
@@ -289,6 +292,22 @@ fn dcc_net_block_suppresses_fracture(phase_name: &str, status: &str, error_trace
         && dcc_transient_network_trace(error_trace)
 }
 
+fn dcc_hook_evol_gate_trace(trace: &str) -> bool {
+    trace
+        .to_lowercase()
+        .contains("evolution gate (--range --if-touched) failed")
+}
+
+fn dcc_hook_evol_block_suppresses_fracture(
+    phase_name: &str,
+    status: &str,
+    error_trace: &str,
+) -> bool {
+    matches!(status, "failed" | "blocked")
+        && phase_name == "Publicación remota"
+        && dcc_hook_evol_gate_trace(error_trace)
+}
+
 fn dcc_report_error_trace(report: &Value) -> String {
     report
         .get("error")
@@ -306,6 +325,16 @@ fn stamp_dcc_network_block(entry: &mut Value, phase_name: &str, error: &str) -> 
     }
     entry["status"] = json!("blocked");
     entry["friction_id"] = json!("F-DCC-DNS-UNRESOLVED");
+    true
+}
+
+/// F-DCC-HOOK-EVOL-OVERESCALATION: pre-push evolution gate ≠ colapso Kintsugi.
+fn stamp_dcc_hook_evol_block(entry: &mut Value, phase_name: &str, error: &str) -> bool {
+    if !dcc_hook_evol_block_suppresses_fracture(phase_name, "failed", error) {
+        return false;
+    }
+    entry["status"] = json!("blocked");
+    entry["friction_id"] = json!("F-DCC-HOOK-EVOL-OVERESCALATION");
     true
 }
 
@@ -327,6 +356,9 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
         }
         let error_trace = dcc_report_error_trace(report);
         if dcc_net_block_suppresses_fracture(phase_name, status, &error_trace) {
+            continue;
+        }
+        if dcc_hook_evol_block_suppresses_fracture(phase_name, status, &error_trace) {
             continue;
         }
         let friction_id = dcc_friction_id(phase_name, report);
@@ -589,6 +621,58 @@ mod tests {
         );
         assert!(!v.success);
         assert_eq!(v.status_code, 1);
+    }
+
+    #[test]
+    fn dcc_hook_evol_gate_trace_matches_canonical() {
+        assert!(dcc_hook_evol_gate_trace(
+            "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed"
+        ));
+        assert!(!dcc_hook_evol_gate_trace(
+            "SddIA pre-push: BLOCKED — delivery-close-cycle failed for feat/x"
+        ));
+        assert!(!dcc_hook_evol_gate_trace(
+            "Could not resolve host: github.com"
+        ));
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_remote_push_hook_evol_gate() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Publicación remota",
+            "status": "failed",
+            "error": "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed\nerror: falló el empuje de algunas referencias a 'https://github.com/racso80es/SddIA.git'",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn stamp_dcc_hook_evol_block_sets_friction() {
+        let mut entry = json!({
+            "phase_name": "Publicación remota",
+            "error": "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed",
+        });
+        assert!(stamp_dcc_hook_evol_block(
+            &mut entry,
+            "Publicación remota",
+            "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed",
+        ));
+        assert_eq!(entry["status"], "blocked");
+        assert_eq!(entry["friction_id"], "F-DCC-HOOK-EVOL-OVERESCALATION");
+        assert!(entry.get("fail_soft").is_none());
+        assert!(!stamp_dcc_hook_evol_block(
+            &mut entry,
+            "Apertura en forja",
+            "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed",
+        ));
     }
 
     fn eda_blocked_orphans_report() -> Value {

@@ -65,15 +65,22 @@ pub fn analyze_fracture_kaizen(
         ));
     }
 
-    if has_any_in(&hook_blob, &["recurs", "pre-push", "hook", "re-entrada"]) {
+    if has_any_in(
+        &hook_blob,
+        &[
+            "delivery-close-cycle failed for",
+            "recurs",
+            "re-entrada",
+        ],
+    ) {
         root_causes.push(
             "Recursión o re-entrada en la cadena hook Git ↔ proceso de cierre (`delivery-close-cycle`)."
                 .into(),
         );
         proposals.push((
             "refactor_tool".into(),
-            "Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE` y push interno con `SDDIA_SKIP_HOOKS=1` \
-             acotado al subproceso `git-manager`."
+            "Auditar por qué la guarda `SDDIA_HOOK_DELIVERY_CLOSE` no cortó la re-entrada; \
+             no reimplementarla. Verificar `in_delivery_close_cycle` en el subproceso `git-manager`."
                 .into(),
         ));
     }
@@ -277,12 +284,26 @@ mod tests {
     fn analyze_fracture_kaizen_recursion_verdict() {
         let (verdict, _, section) = analyze_fracture_kaizen(
             "delivery-close-cycle",
-            "pre-push hook blocked",
-            "run-phase-push",
-            "event-watcher",
+            "SddIA pre-push: BLOCKED — delivery-close-cycle failed for feat/x",
+            "Publicación remota",
+            "execute-process",
         );
         assert_eq!(verdict, "refactor_tool");
         assert!(section.contains("Recursión o re-entrada"));
+        assert!(section.contains("no reimplementarla"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_prepush_evol_gate_not_hook_recursion() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed\nerror: falló el empuje de algunas referencias a 'https://github.com/racso80es/SddIA.git'",
+            "Publicación remota",
+            "execute-process",
+        );
+        assert!(!section.contains("Recursión o re-entrada"));
+        assert!(!section.contains("Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE`"));
+        assert_ne!(verdict, "refactor_tool");
     }
 
     #[test]
