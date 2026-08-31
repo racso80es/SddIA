@@ -2,8 +2,8 @@
 id: lancedb-thought-repo
 uuid: "0a22c260-2c5a-4aaa-a632-2c9a78e983e4"
 type: infrastructure-adapter
-version: "1.0.0"
-status: placeholder
+version: "1.1.0"
+status: active
 crate_name: sddia-infrastructure-lancedb-thought
 impl_dir: lancedb_thought_repo
 contract: "adapters-contract v1.0.0"
@@ -13,11 +13,11 @@ context: ecosystem-evolution
 
 # Adaptador: lancedb-thought-repo
 
-Implementación host del puerto `ThoughtGraphRepository` (`SddIA/core/memory/`) sobre LanceDB.
+Implementación host del puerto `ThoughtGraphRepository` (`SddIA/core/memory/`) sobre LanceDB nativo.
 
-## Estado actual
+## Estado
 
-**Placeholder.** El crate `lancedb_thought_repo` devuelve éxito vacío (`Ok(None)`, `Ok(vec![])`) sin dependencia del crate `lancedb`. La integración física corresponde a `PBI-CORE-LANCEDB-REAL-001`.
+**Active.** Tabla `thought_graph_collection` en URI `{paths.vectorStore}/lancedb/`. Store, get-by-id, hijos por `parent_id`, KNN. Target `wasm32-wasip1` no soportado. Compilación exige `protoc`.
 
 ## Delivery
 

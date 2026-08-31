@@ -1,5 +1,5 @@
 {
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -114,6 +114,7 @@
     "fixPath": "docs/fixes",
     "auditsPath": "docs/audits",
     "userPreferencesStore": ".SddIA/vector_store/user_preferences/",
+    "vectorStore": ".SddIA/vector_store/",
     "todos": {
       "pending": "docs/todos/pending",
       "done": "docs/todos/done"

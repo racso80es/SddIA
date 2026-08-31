@@ -1,17 +1,20 @@
-//! Ingesta `Domain_Entity_Telemetry_Captured` → store evolution (mínimo durable).
+//! Ingesta `Domain_Entity_Telemetry_Captured` → LanceDB (puerto `EvolutionStore`).
 
 use super::fractal_bus::stamp_fractal_delivery_state;
+use super::workspace::load_paths_config;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
+use sddia_core_memory::models::evolution_node::{EvolutionEvent, SpatialPolarity};
+use sddia_core_memory::ports::EvolutionStore;
+use sddia_core_memory::services::inference_binding::LocalHashingEmbedder;
+use sddia_core_memory::services::inference_binding::SemanticInference;
+use sddia_infrastructure_lancedb_evolution::{LanceDbEvolutionAdapter, TABLE_EVOLUTION};
 use std::fs;
 use std::path::{Path, PathBuf};
 
 pub const MEMORY_EVOLUTION_INGEST_SUBSCRIBER_KEY: &str = "cumulo.memory-evolution-ingest";
-const STORE_REL: &str = ".SddIA/vector_store/evolution";
-
-fn store_dir(repo: &Path) -> PathBuf {
-    repo.join(STORE_REL)
-}
+const VECTOR_STORE_DEFAULT: &str = ".SddIA/vector_store";
+const LANCEDB_SUBDIR: &str = "lancedb";
 
 fn sha256_hex(payload: &str) -> String {
     let mut hasher = Sha256::new();
@@ -39,8 +42,23 @@ fn origin_stimulus_id(payload: &Value) -> Option<String> {
         .map(str::to_string)
 }
 
-fn record_path_for_id(repo: &Path, id: &str) -> PathBuf {
-    store_dir(repo).join(format!("{id}.json"))
+pub fn vector_store_root(repo: &Path) -> PathBuf {
+    load_paths_config(repo)
+        .ok()
+        .and_then(|cfg| {
+            cfg.get("paths")
+                .and_then(|p| p.get("vectorStore"))
+                .and_then(|v| v.as_str())
+                .map(|s| {
+                    let rel = s.trim().trim_start_matches("./");
+                    repo.join(rel)
+                })
+        })
+        .unwrap_or_else(|| repo.join(VECTOR_STORE_DEFAULT))
+}
+
+pub fn lancedb_uri(repo: &Path) -> PathBuf {
+    vector_store_root(repo).join(LANCEDB_SUBDIR)
 }
 
 /// Procesa un evento domain en ruta relativa; fail-soft hacia el caller vía `ok`.
@@ -100,9 +118,13 @@ fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
     let polarity = if success {
-        "EfficientSymmetry"
+        SpatialPolarity::EfficientSymmetry
     } else {
-        "StructuralFracture"
+        SpatialPolarity::StructuralFracture
+    };
+    let polarity_label = match polarity {
+        SpatialPolarity::EfficientSymmetry => "EfficientSymmetry",
+        SpatialPolarity::StructuralFracture => "StructuralFracture",
     };
 
     let payload_str = serde_json::to_string(&payload).map_err(|e| e.to_string())?;
@@ -113,8 +135,13 @@ fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
         sha256_hex(&payload_str)
     };
 
-    let out_path = record_path_for_id(repo, &record_id);
-    if out_path.is_file() {
+    let uri = lancedb_uri(repo);
+    let adapter = LanceDbEvolutionAdapter::open(&uri).map_err(|e| e.to_string())?;
+    if adapter
+        .get_event_by_id(&record_id)
+        .map_err(|e| e.to_string())?
+        .is_some()
+    {
         stamp_fractal_delivery_state(
             &event_path,
             MEMORY_EVOLUTION_INGEST_SUBSCRIBER_KEY,
@@ -124,15 +151,16 @@ fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
             "ok": true,
             "skipped": "already_indexed",
             "record_id": record_id,
-            "store_path": format!("{STORE_REL}/{record_id}.json"),
+            "store_backend": "lancedb",
+            "table": TABLE_EVOLUTION,
         }));
     }
 
-    let record = json!({
-        "id": record_id,
-        "polarity": polarity,
-        "payload": payload_str,
-        "operational_metadata": {
+    let mut event = EvolutionEvent {
+        id: record_id.clone(),
+        polarity,
+        payload: payload_str,
+        operational_metadata: json!({
             "success": success,
             "entity_id": entity_id,
             "entity_type": payload.get("entity_type"),
@@ -140,12 +168,13 @@ fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
             "duration_ms": metrics.get("duration_ms"),
             "exit_code": metrics.get("exit_code"),
             "source_event_id": body.get("event_id"),
-        },
-        "embedding": null,
-    });
-
-    fs::create_dir_all(store_dir(repo)).map_err(|e| e.to_string())?;
-    super::eda_bus_topology::write_json_atomic(&out_path, &record)?;
+        }),
+        embedding: None,
+    };
+    LocalHashingEmbedder
+        .embed_event(&mut event)
+        .map_err(|e| e.to_string())?;
+    adapter.store_event(event).map_err(|e| e.to_string())?;
 
     stamp_fractal_delivery_state(
         &event_path,
@@ -157,8 +186,9 @@ fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
         "ok": true,
         "record_id": record_id,
         "entity_id": entity_id,
-        "polarity": polarity,
-        "store_path": format!("{STORE_REL}/{record_id}.json"),
+        "polarity": polarity_label,
+        "store_backend": "lancedb",
+        "table": TABLE_EVOLUTION,
         "purged": false,
     }))
 }
@@ -168,12 +198,8 @@ mod tests {
     use super::*;
     use tempfile::tempdir;
 
-    #[test]
-    fn ingests_telemetry_captured_to_vector_store() {
-        let dir = tempdir().unwrap();
-        let repo = dir.path();
-        let event_rel = ".events/domain/test-telem.json";
-        let event_path = repo.join(event_rel);
+    fn write_event(repo: &Path, rel: &str) {
+        let event_path = repo.join(rel);
         fs::create_dir_all(event_path.parent().unwrap()).unwrap();
         let event = json!({
             "event_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
@@ -194,14 +220,59 @@ mod tests {
             "delivery_state": {}
         });
         fs::write(&event_path, serde_json::to_string_pretty(&event).unwrap()).unwrap();
+    }
+
+    #[test]
+    fn memory_evolution_ingest_persists_to_lancedb() {
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        let event_rel = ".events/domain/test-telem.json";
+        write_event(repo, event_rel);
+
+        let result = ingest_domain_event_file(repo, event_rel);
+        assert_eq!(result["ok"], json!(true), "{result}");
+        let record_id = result["record_id"].as_str().unwrap().to_string();
+        assert_eq!(result["store_backend"], json!("lancedb"));
+
+        let uri = lancedb_uri(repo);
+        drop(result);
+        let adapter = LanceDbEvolutionAdapter::open(&uri).unwrap();
+        let got = adapter.get_event_by_id(&record_id).unwrap().expect("row");
+        assert_eq!(got.id, record_id);
+        assert!(got.embedding.as_ref().unwrap().iter().any(|x| *x != 0.0));
+    }
+
+    #[test]
+    fn ingests_telemetry_captured_to_vector_store() {
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        let event_rel = ".events/domain/test-telem.json";
+        write_event(repo, event_rel);
 
         let result = ingest_domain_event_file(repo, event_rel);
         assert_eq!(result["ok"], json!(true), "{result}");
         assert!(result.get("record_id").and_then(|v| v.as_str()).is_some());
-        let store = repo.join(result["store_path"].as_str().unwrap());
-        assert!(store.is_file());
 
         let again = ingest_domain_event_file(repo, event_rel);
         assert_eq!(again["skipped"], json!("already_indexed"));
+    }
+
+    #[test]
+    fn json_fallback_is_not_used() {
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        let event_rel = ".events/domain/test-telem.json";
+        write_event(repo, event_rel);
+        let result = ingest_domain_event_file(repo, event_rel);
+        assert_eq!(result["ok"], json!(true), "{result}");
+        let record_id = result["record_id"].as_str().unwrap();
+        let json_path = vector_store_root(repo)
+            .join("evolution")
+            .join(format!("{record_id}.json"));
+        assert!(
+            !json_path.is_file(),
+            "JSON fallback written at {}",
+            json_path.display()
+        );
     }
 }

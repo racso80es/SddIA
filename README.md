@@ -180,7 +180,7 @@ Catálogo canónico (UUID, `allowed_policies`, versiones): `{paths.directories.a
 
 **Self-Healing (alto nivel):** telemetría degradada → Radamanto emite `Domain_Entity_Degraded` → Cerbero revoca RBAC → Tekton/Dédalo reparan en sandbox → Argos valida estructura → telemetría exitosa → Radamanto `Domain_Entity_Restored` → Cerbero rehabilita. Tras `max_recovery_attempts` → `Domain_Entity_Deprecated`. Detalle: [telemetria-reactiva-eda-fase4](docs/features/telemetria-reactiva-eda-fase4/); taxonomía: [adecuar-ed-telemetry](docs/features/adecuar-ed-telemetry/).
 
-**Telemetría activa → memoria (alto nivel):** `Raw_Execution_Finished` → `route-telemetry` → `radamanto-batch` → `Domain_Entity_Telemetry_Captured` → `route-domain` → [`memory-evolution-ingest`](SddIA/process/memory-evolution-ingest.md) → store `.SddIA/vector_store/evolution/`. Ortogonal al Self-Healing. Feature: [telemetria-activa-domain-entity-updated](docs/features/telemetria-activa-domain-entity-updated/).
+**Telemetría activa → memoria (alto nivel):** `Raw_Execution_Finished` → `route-telemetry` → `radamanto-batch` → `Domain_Entity_Telemetry_Captured` → `route-domain` → [`memory-evolution-ingest`](SddIA/process/memory-evolution-ingest.md) → LanceDB bajo `paths.vectorStore` (`{vectorStore}/lancedb/`, tabla `evolution`). Ortogonal al Self-Healing. Feature: [lancedb-real-vector-memory](docs/features/lancedb-real-vector-memory/).
 
 ## Orquestación multi-agente y relevo por artefactos
 
@@ -253,7 +253,7 @@ Toda ejecución transita por el **orquestador** (`execute-process` binario Rust 
 
 **Auditoría de cumplimiento:** el proceso [`telemetry-compliance-audit`](SddIA/process/telemetry-compliance-audit.md) cruza recibo vs contrato ED; incumplimiento → `Telemetry_Compliance_Breached` en `./.events/domain/`. Gobernanza reactiva post-breach: pendiente (Kaizen). Detalle: [telemetria-reactiva-eda-fase5](docs/features/telemetria-reactiva-eda-fase5/).
 
-**Ingesta vectorial (post-aduana):** cada ejecución consumida por Radamanto deja rastro indexable vía `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (store evolution bajo `.SddIA/vector_store/evolution/`). No sustituye recibos ni umbrales Self-Healing.
+**Ingesta vectorial (post-aduana):** cada ejecución consumida por Radamanto deja rastro indexable vía `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (LanceDB `{paths.vectorStore}/lancedb/`, tabla `evolution`). No sustituye recibos ni umbrales Self-Healing.
 
 ## Ingeniería del Caos (Patrón Suite)
 
