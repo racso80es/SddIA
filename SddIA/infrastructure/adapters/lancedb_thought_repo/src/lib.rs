@@ -1,7 +1,7 @@
 use lancedb::arrow::arrow_array::builder::{FixedSizeListBuilder, Float32Builder, StringBuilder, UInt16Builder};
 use lancedb::arrow::arrow_array::cast::AsArray;
 use lancedb::arrow::arrow_array::types::Float32Type;
-use lancedb::arrow::arrow_array::{RecordBatch, RecordBatchIterator};
+use lancedb::arrow::arrow_array::{Array, RecordBatch, RecordBatchIterator};
 use lancedb::arrow::arrow_schema::{DataType, Field, Schema};
 use futures::TryStreamExt;
 use lancedb::query::{ExecutableQuery, QueryBase};

@@ -37,6 +37,7 @@ uuid: "3c8b1a72-6e4f-4d90-a2c5-7f1e8b3d9a46"
 - Driver: `lancedb = "=0.37.1"` (0.38.0: `job.rs` referencia `Error::Http` inexistente).
 - URI: `{vectorStore}/lancedb/` — aislado de JSON legado y `user_preferences`.
 - Async: `OnceLock<Runtime>` por crate adaptador; puertos sync.
+- Arrow: `use lancedb::arrow::arrow_array::Array` obligatorio para `is_null` (E0599 en CI `cargo build --workspace`; el step `verify-compiled-capsules` no llega a ejecutarse si el workspace no cierra).
 - WASI: no.
 
 ## Mutaciones
