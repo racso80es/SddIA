@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `4d384bb1-f89d-41ce-835a-9db6d6bed114` | 2026-08-31 | LanceDB físico: crate 0.37.1, embeddings hashing, ingest EvolutionStore, SSOT paths.vectorStore. | CANONICO | `SddIA/evolution/4d384bb1-f89d-41ce-835a-9db6d6bed114.md` |
 | `bcb10a45-5cda-4e3e-9839-e0b912538003` | 2026-08-31 | F-DCC-HOOK-EVOL: pre-push evolution gate en Publicación remota no emite System_Fracture_Detected; cubo hook estricto; is_delete_push SHA local. | CANONICO | `SddIA/evolution/bcb10a45-5cda-4e3e-9839-e0b912538003.md` |
 | `35d4d91a-eba6-4740-a18f-5e5fcb7428a4` | 2026-08-31 | Kalma2 agent-runtime: veredicto blocked, DNS Node awaiting_agents, stop_after=design, skipped_l2. | CANONICO | `SddIA/evolution/35d4d91a-eba6-4740-a18f-5e5fcb7428a4.md` |
 | `6b8504a4-b45f-468f-8a9f-7b188a8ca4a1` | 2026-08-31 | email-watcher: hilo keepalive heartbeat 10s (fractura 6c0db1296181) | CANONICO | `SddIA/evolution/6b8504a4-b45f-468f-8a9f-7b188a8ca4a1.md` |

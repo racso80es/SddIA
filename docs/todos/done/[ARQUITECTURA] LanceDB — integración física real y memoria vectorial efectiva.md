@@ -5,7 +5,8 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-27"
 updated: "2026-08-31"
-status: pending
+archived: true
+status: done
 priority: alta
 process: feature
 type: feature
