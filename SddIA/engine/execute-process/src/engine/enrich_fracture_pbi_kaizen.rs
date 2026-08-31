@@ -33,6 +33,16 @@ fn is_heartbeat_starvation_trace(error_trace: &str) -> bool {
         && error_trace.contains("last_heartbeat=")
 }
 
+fn is_workflow_scope_trace(error_trace: &str) -> bool {
+    let t = error_trace.to_lowercase();
+    t.contains("without") && t.contains("workflow") && t.contains("scope")
+}
+
+fn is_remote_branch_absent_trace(error_trace: &str) -> bool {
+    let t = error_trace.to_lowercase();
+    t.contains("head sha can't be blank") || t.contains("head ref must be a branch")
+}
+
 /// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section).
 pub fn analyze_fracture_kaizen(
     process_name: &str,
@@ -65,7 +75,39 @@ pub fn analyze_fracture_kaizen(
         ));
     }
 
-    if has_any_in(
+    let credential_workflow = is_workflow_scope_trace(error_trace);
+    let remote_branch_absent = is_remote_branch_absent_trace(error_trace);
+
+    if credential_workflow {
+        root_causes.push(
+            "PAT de `git-manager` (HTTPS) sin scope `workflow` al tocar `.github/workflows/`; \
+             distinto del token `gh auth`. Colapso de credencial, no recursión hook (`F-DCC-WORKFLOW-SCOPE`)."
+                .into(),
+        );
+        proposals.push((
+            "process_fix".into(),
+            "Unificar credential helper git→`gh` (`gh auth setup-git`). \
+             `gh auth refresh -s workflow` solo basta si git ya delega en gh. \
+             Envelope DCC `blocked` `F-DCC-WORKFLOW-SCOPE`; no reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`."
+                .into(),
+        ));
+    }
+    if remote_branch_absent {
+        root_causes.push(
+            "Rama ausente en origin tras push rechazado (`Head sha can't be blank` / `Head ref must be a branch`). \
+             DCC no abortó tras Publicación remota failed; no es recursión hook."
+                .into(),
+        );
+        proposals.push((
+            "process_fix".into(),
+            "Halt de Apertura/Sello/Higiene si Publicación remota es `failed`/`blocked` (genoma DCC ya lo exige)."
+                .into(),
+        ));
+    }
+
+    if !credential_workflow
+        && !remote_branch_absent
+        && has_any_in(
         &hook_blob,
         &[
             "delivery-close-cycle failed for",
@@ -115,7 +157,10 @@ pub fn analyze_fracture_kaizen(
                 .into(),
         ));
     }
-    if has_any(&["timeout", "block", "abort", "failed", "colaps"]) {
+    if !credential_workflow
+        && !remote_branch_absent
+        && has_any(&["timeout", "block", "abort", "failed", "colaps"])
+    {
         root_causes.push(
             "Bloqueo operativo sin escalado Kintsugi previo al intento de recuperación manual."
                 .into(),
@@ -316,6 +361,35 @@ mod tests {
         );
         assert!(!section.contains("Recursión o re-entrada"));
         assert_ne!(verdict, "refactor_tool");
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_workflow_scope_not_hook() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            "Publicación remota failed:\nrefusing to allow a Personal Access Token to create or update workflow\n`.github/workflows/sddia-index-qa.yml` without `workflow` scope",
+            "Publicación remota",
+            "execute-process",
+        );
+        assert!(!section.contains("Recursión o re-entrada"));
+        assert!(!section.contains("Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE`"));
+        assert!(section.contains("F-DCC-WORKFLOW-SCOPE"));
+        assert!(section.contains("credential helper"));
+        assert_eq!(verdict, "process_fix");
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_head_sha_blank_not_hook() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            "no se pudo resolver pr_url desde gh; gh_stdout=; gh_stderr=pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between main and feat/lancedb-real-vector-memory, Head ref must be a branch (createPullRequest)",
+            "Apertura en forja",
+            "execute-process",
+        );
+        assert!(!section.contains("Recursión o re-entrada"));
+        assert!(!section.contains("Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE`"));
+        assert!(section.contains("Head sha can't be blank") || section.contains("Rama ausente"));
+        assert_eq!(verdict, "process_fix");
     }
 
     #[test]

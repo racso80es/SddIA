@@ -2,7 +2,7 @@
 
 **Tipo:** Norma motor / Comportamiento IA  
 **UUID:** 95b5ac3a-061f-458d-bfb6-69f91a1c1731  
-**Versión:** 1.6.1  
+**Versión:** 1.6.2  
 **Seguridad:** Karma2Token  
 **Dependencias normativas:** `obediencia-procesos.md`, `paths-via-cumulo.md`, `touchpoints-ia.md`
 
@@ -84,6 +84,15 @@ Un finding → parche local verificado → un push. Si el diff toca `directories
 Prohibido empujar documentación de cierre (`validacion.md`, PBI a `done/`) mientras haya un check rojo **conocido** del mismo `headSha`.
 
 Complementa DA-5 (post-acuse CLI Core); no sustituye la aduana física `pre_push_gate.sh` cuando el rango toca evolution.
+
+### DA-7 — Veto post-DCC `failed`/`blocked`
+
+Tras acuse de `delivery-close-cycle` con fase Publicación remota `failed` o `blocked` (incl. `F-DCC-WORKFLOW-SCOPE`):
+
+- Prohibido `git push`, `gh pr create` / `gh pr merge` raw, y URL `x-access-token`.
+- El rechazo GitHub `without workflow scope` es colapso de **credencial** (PAT de `git-manager` ≠ token `gh auth`), no de Core.
+- Operador: `gh auth setup-git` (unificar helper). `gh auth refresh -s workflow` solo si git ya delega en `gh`.
+- Siguiente estímulo = laudo del Vértice Biológico o re-inyección DCC con credencial alineada.
 
 ## Prefijo creator (Fase B)
 

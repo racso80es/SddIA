@@ -193,6 +193,9 @@ fn execute_phase(
                 if stamp_dcc_hook_evol_block(&mut entry, phase_name, &e) {
                     return entry;
                 }
+                if stamp_dcc_workflow_scope_block(&mut entry, phase_name, &e) {
+                    return entry;
+                }
                 entry["status"] = json!("failed");
                 // L-FAILSOFT-OLA2: telemetría/validación secundaria post pr_url.
                 let soft_err = {
@@ -308,6 +311,32 @@ fn dcc_hook_evol_block_suppresses_fracture(
         && dcc_hook_evol_gate_trace(error_trace)
 }
 
+fn dcc_workflow_scope_trace(trace: &str) -> bool {
+    let t = trace.to_lowercase();
+    t.contains("without") && t.contains("workflow") && t.contains("scope")
+}
+
+fn dcc_workflow_scope_block_suppresses_fracture(
+    phase_name: &str,
+    status: &str,
+    error_trace: &str,
+) -> bool {
+    matches!(status, "failed" | "blocked")
+        && phase_name == "Publicación remota"
+        && dcc_workflow_scope_trace(error_trace)
+}
+
+fn dcc_post_push_phase(phase_name: &str) -> bool {
+    matches!(
+        phase_name,
+        "Apertura en forja" | "Sello Presentación ECST" | "Higiene local"
+    )
+}
+
+fn dcc_push_terminal_halt(status: &str) -> bool {
+    matches!(status, "failed" | "blocked")
+}
+
 fn dcc_report_error_trace(report: &Value) -> String {
     report
         .get("error")
@@ -338,6 +367,19 @@ fn stamp_dcc_hook_evol_block(entry: &mut Value, phase_name: &str, error: &str) -
     true
 }
 
+/// F-DCC-WORKFLOW-SCOPE: PAT git sin scope workflow ≠ recursión hook.
+fn stamp_dcc_workflow_scope_block(entry: &mut Value, phase_name: &str, error: &str) -> bool {
+    if !dcc_workflow_scope_block_suppresses_fracture(phase_name, "failed", error) {
+        return false;
+    }
+    entry["status"] = json!("blocked");
+    entry["friction_id"] = json!("F-DCC-WORKFLOW-SCOPE");
+    entry["operator_hint"] = json!(
+        "Unificar credential helper git→gh (`gh auth setup-git`). `gh auth refresh -s workflow` solo si git ya delega en gh."
+    );
+    true
+}
+
 pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
     for report in phase_reports {
         if report.get("fail_soft").and_then(|v| v.as_bool()) == Some(true) {
@@ -359,6 +401,9 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
             continue;
         }
         if dcc_hook_evol_block_suppresses_fracture(phase_name, status, &error_trace) {
+            continue;
+        }
+        if dcc_workflow_scope_block_suppresses_fracture(phase_name, status, &error_trace) {
             continue;
         }
         let friction_id = dcc_friction_id(phase_name, report);
@@ -399,8 +444,26 @@ pub fn run(
     bootstrap_workspace(repo, process_name, &template, &mut inputs_mut, &mut state)?;
 
     let mut phase_reports: Vec<Value> = Vec::new();
+    let mut halt_after_push = false;
     for phase in phases {
-        phase_reports.push(execute_phase(repo, phase, &inputs_mut, &mut state));
+        let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
+        if halt_after_push && dcc_post_push_phase(phase_name) {
+            phase_reports.push(json!({
+                "phase_name": phase_name,
+                "status": "skipped",
+                "skipped": true,
+                "reason": "prior_push_not_ok",
+            }));
+            continue;
+        }
+        let entry = execute_phase(repo, phase, &inputs_mut, &mut state);
+        if phase_name == "Publicación remota" {
+            let st = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
+            if dcc_push_terminal_halt(st) {
+                halt_after_push = true;
+            }
+        }
+        phase_reports.push(entry);
     }
     emit_dcc_phase_fractures(repo, &phase_reports);
     adjudicate_eda_fail_soft_post_physical(&mut phase_reports, &state);
@@ -673,6 +736,60 @@ mod tests {
             "Apertura en forja",
             "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed",
         ));
+    }
+
+    #[test]
+    fn stamp_dcc_workflow_scope_block_sets_friction() {
+        let err = "refusing to allow a Personal Access Token to create or update workflow `.github/workflows/sddia-index-qa.yml` without `workflow` scope";
+        let mut entry = json!({
+            "phase_name": "Publicación remota",
+            "error": err,
+        });
+        assert!(stamp_dcc_workflow_scope_block(
+            &mut entry,
+            "Publicación remota",
+            err,
+        ));
+        assert_eq!(entry["status"], "blocked");
+        assert_eq!(entry["friction_id"], "F-DCC-WORKFLOW-SCOPE");
+        assert!(entry["operator_hint"].as_str().unwrap().contains("setup-git"));
+        assert!(entry.get("fail_soft").is_none());
+        let v = super::super::phase_terminal::aggregate_execution_terminal(
+            &[entry.clone()],
+            &json!({}),
+        );
+        assert!(!v.success);
+        assert_eq!(v.status_code, 1);
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_workflow_scope() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Publicación remota",
+            "status": "blocked",
+            "friction_id": "F-DCC-WORKFLOW-SCOPE",
+            "error": "without `workflow` scope",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn dcc_halt_skips_post_push_phases() {
+        assert!(dcc_post_push_phase("Apertura en forja"));
+        assert!(dcc_post_push_phase("Sello Presentación ECST"));
+        assert!(dcc_post_push_phase("Higiene local"));
+        assert!(!dcc_post_push_phase("Publicación remota"));
+        assert!(dcc_push_terminal_halt("failed"));
+        assert!(dcc_push_terminal_halt("blocked"));
+        assert!(!dcc_push_terminal_halt("executed"));
     }
 
     fn eda_blocked_orphans_report() -> Value {

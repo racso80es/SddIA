@@ -2,7 +2,7 @@
 
 **Tipo:** Norma / Comportamiento
 **UUID:** 4c04f9ab-cf64-44b4-8db9-8d7d91e8432b
-**Versión:** 1.2
+**Versión:** 1.3
 **Seguridad:** Karma2Token
 
 ## Propósito
@@ -47,5 +47,13 @@ Si un proceso oficial retorna `failed` o `blocked` **sin** depositar `System_Fra
 3. Sigue el protocolo Kintsugi desde el paso 3 (delegar a Cúmulo / Mayeuta) una vez acusada la emisión.
 
 La ausencia de fractura en el runtime **no** autoriza bypass manual ni continuar la entrega.
+
+### Credencial `workflow` (v1.3)
+
+`delivery-close-cycle` en Publicación remota con `status: blocked` y `friction_id: F-DCC-WORKFLOW-SCOPE` (GitHub: PAT sin scope `workflow` al tocar `.github/workflows/`) es colapso de **credencial**, no de Core ni de recursión hook.
+
+1. **Detener.** Prohibido `git push` / `gh` raw (incluida URL `x-access-token`).
+2. Unificar el credential helper de git con `gh` (`gh auth setup-git`). `gh auth refresh -s workflow` **solo** basta si git ya delega en `gh`.
+3. Re-inyectar `delivery-close-cycle` tras laudo o credencial alineada. No es salto táctico silencioso.
 
 Referencias: `SddIA/events/domain/system-fracture-detected.md`, `docs/fixes/delivery-close-hook-eda-governance/`, PBI `[FIX] delivery-close-cycle`.
