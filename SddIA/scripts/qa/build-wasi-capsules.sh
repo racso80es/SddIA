@@ -6,6 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TARGET="${WASI_TARGET:-wasm32-wasip1}"
 
 # Native-only crates: orchestrator, QA aduana, centinelas sensoriales (IMAP/TLS, etc.).
+# kalma2-bridge: órgano HTTP nativo (`ctrlc` / tiny_http); no cápsula WASI.
 EXCLUDE=(
   execute-process
   sddia-qa
@@ -14,6 +15,7 @@ EXCLUDE=(
   email-watcher
   telegram-watcher
   github-bridge-watcher
+  kalma2-bridge
 )
 
 packages=()
