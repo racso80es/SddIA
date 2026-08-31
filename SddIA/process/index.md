@@ -10,7 +10,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | compile-ecosystem-map-snapshot | e7f09165-c445-49ae-965d-41abb4738679 | 1.0.0 | ecosystem-evolution | — | Precompila inventario esperado (tools/skills/daemons) en map |
 | instance-creator | dead5ca7-c0b9-42ef-aad6-171991fb524f | 1.3.0 | ecosystem-evolution, filesystem-ops, system-operations | — | Despliegue hermético de instancia consumidor: topología .Sdd |
 | evolution-audit | 8f4b09da-e277-4fc2-9890-8a363fa8a96f | 1.0.0 | quality-assurance, filesystem-ops | — | Auditoría periódica del registro evolution: inventario, relevancia, validación y persistencia oficial. |
-| memory-evolution-ingest | eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2 | 1.1.1 | ecosystem-evolution, event-routing | — | Ingesta Domain_Entity_Telemetry_Captured → vector_store/evolution |
+| memory-evolution-ingest | eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2 | 1.2.0 | ecosystem-evolution, event-routing | — | Ingesta Domain_Entity_Telemetry_Captured → vector_store/evolution |
 | user-preference-ingest | d4e5f6a7-b8c9-4d0e-1f2a-3b4c5ab005 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Ingesta User_Preference_Change_Requested → store preferencias |
 | event-bus-audit | 8d577a50-055a-40b9-b7e2-93e2d2415796 | 1.0.1 | quality-assurance | — | Auditoría empírica on-demand del bus EDA: escaneo ./.events, |
 | kalma2-interact | acdb6c88-f0d9-4e10-9d2f-7e4b5401a892 | 1.1.1 | ecosystem-evolution | — | Proceso PoC Kalma2: síntesis Mayeuta lab ante prompt del cli |
@@ -51,5 +51,4 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | telegram-gateway | f5a6b7c8-d9e0-4f1a-b2c3-d4e5f6a7b8c9 | 1.0.1 | ecosystem-evolution, external-ingest | — | Aduana texto Telegram → eventos domain (`TelegramMessage_Received`, `Manual_Task_Requested`, `Kaizen_Idea_Captured`). |
 | telegram-fallback-responder | c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f | 1.0.1 | ecosystem-evolution, external-ingest | — | Triaje inverso Telegram: Filtro C → Mayeuta → `send-telegram-notification`. |
 | sync-client-assets | 0f6bf2ff-a067-46fb-9175-ee97e6a5dcd8 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Sincronización unidireccional repositorio maestro → instancia cliente: 4 fases (Manifiesto-Local, Reclamacion, Aduana-Integridad, Inyeccion). Aduana SHA-256 pre-escritura. |
-
 

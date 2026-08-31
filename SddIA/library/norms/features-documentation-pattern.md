@@ -7,8 +7,7 @@ author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
-hash_signature: "sha256:b09b252415cd4b8fae9abc86d3c1b03da9421513479bbb707131ed2e9082b19e"---
-
+hash_signature: "sha256:627e2ddf30c82a7d4eb851f0a81c31bc68a7a3fe048973d6a0e9d65c0169225f"---
 
 ## Directriz Core
 
@@ -53,6 +52,10 @@ Done = un único PR mergeado en main
      + PBI en docs/todos/done/ en esa misma rama
 ```
 
+### CA de CI (GitHub Actions)
+
+Un criterio de aceptación cuyo medio de verificación sea un check de CI / GitHub Actions **no** puede marcarse `APTO` en `checks` ni contribuir a `global: APTO` sin `run_id` o URL de run verde. Si el check aún no existe, el valor es `PENDIENTE-CI` y `global` no es `APTO` mientras ese CA sea gate.
+
 **Restricciones:**
 
 - Prohibido exigir `merged_pr` / `merge_commit` obligatorios para declarar la tarea cerrada.
@@ -75,6 +78,7 @@ Los artefactos históricos con `merged_pr` / `merge_commit` en `validacion.md` p
 - Prohibido producir más de un archivo por acción de fase (un `.md` por acción, sin duplicados ni variantes JSON).
 - Prohibido almacenar en el cuerpo Markdown datos que deban ser machine-readable si pueden declararse en frontmatter según la tabla canónica.
 - Prohibido crear nuevas tareas que violen este patrón; la migración de legado es la única excepción temporal y debe cerrarse eliminando el `.json`.
+- Prohibido `global: APTO` cuando un CA de CI/GitHub Actions carece de `run_id`/URL de check verde; usar `PENDIENTE-CI` en ese check.
 
 ## Artefactos efímeros (inputs runtime)
 

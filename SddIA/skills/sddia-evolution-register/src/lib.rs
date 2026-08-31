@@ -111,6 +111,44 @@ fn covers(reference: &str, path: &str) -> bool {
     p == r || p.starts_with(&format!("{r}/"))
 }
 
+/// Paths del diff que deberían estar en `relacionado` (lockfile, Cargo.toml, fichas adapter).
+pub fn suggest_relacionado_complements(diff_paths: &[String], relacionado: &[String]) -> Vec<String> {
+    let diff: Vec<String> = diff_paths
+        .iter()
+        .map(|p| p.replace('\\', "/"))
+        .collect();
+    let covered = |path: &str| relacionado.iter().any(|r| covers(r, path));
+    let mut missing = Vec::new();
+    let touches_sddia_manifest = diff.iter().any(|p| {
+        p.starts_with("SddIA/") && (p.ends_with("Cargo.toml") || p.ends_with("Cargo.lock"))
+    });
+    if touches_sddia_manifest {
+        for p in ["SddIA/Cargo.lock", "SddIA/Cargo.toml"] {
+            if diff.iter().any(|d| d == p) && !covered(p) {
+                missing.push(p.to_string());
+            }
+        }
+    }
+    for p in &diff {
+        if p.starts_with("SddIA/")
+            && p.ends_with("/Cargo.toml")
+            && p != "SddIA/Cargo.toml"
+            && !covered(p)
+        {
+            missing.push(p.clone());
+        }
+        if p.starts_with("SddIA/infrastructure/adapters/")
+            && p.ends_with(".md")
+            && !covered(p)
+        {
+            missing.push(p.clone());
+        }
+    }
+    missing.sort();
+    missing.dedup();
+    missing
+}
+
 fn is_borrador(rec: &Value) -> bool {
     let fname = rec
         .get("filename")
@@ -511,11 +549,26 @@ fn verdict(request: &Value) -> Envelope {
         }
     }
     if !findings.is_empty() {
-        return err_result(
-            REASON_UNREGISTERED,
-            "diff material sin evolution correlacionada",
-            json!(findings),
-        );
+        let rel: Vec<String> = cors
+            .iter()
+            .flat_map(|r| {
+                list_refs(
+                    r.get("frontmatter").unwrap_or(&Value::Null),
+                    &["relacionado"],
+                )
+            })
+            .collect();
+        let suggestions = suggest_relacionado_complements(&paths, &rel);
+        return Envelope {
+            success: false,
+            exit_code: 2,
+            message: "diff material sin evolution correlacionada".into(),
+            result: json!({
+                "reason_codes": [REASON_UNREGISTERED],
+                "findings": findings,
+                "suggested_relacionado": suggestions,
+            }),
+        };
     }
 
     ok_result(
@@ -1112,6 +1165,59 @@ mod tests {
         let env = execute(&req);
         assert!(!env.success);
         assert_eq!(env.result["reason_codes"][0], REASON_UNREGISTERED);
+    }
+
+    #[test]
+    fn suggest_relacionado_complements_lockfile_and_adapter_cards() {
+        let diff = vec![
+            "SddIA/Cargo.lock".into(),
+            "SddIA/engine/execute-process/Cargo.toml".into(),
+            "SddIA/infrastructure/adapters/index.md".into(),
+            "SddIA/infrastructure/adapters/lancedb-evolution-repo.md".into(),
+        ];
+        let missing = suggest_relacionado_complements(&diff, &["SddIA/core/memory/".into()]);
+        assert!(missing.contains(&"SddIA/Cargo.lock".into()));
+        assert!(missing.contains(&"SddIA/engine/execute-process/Cargo.toml".into()));
+        assert!(missing.contains(&"SddIA/infrastructure/adapters/index.md".into()));
+        assert!(missing.contains(&"SddIA/infrastructure/adapters/lancedb-evolution-repo.md".into()));
+        let complete = suggest_relacionado_complements(&diff, &missing);
+        assert!(complete.is_empty());
+    }
+
+    #[test]
+    fn lockfile_in_diff_without_relacionado_is_unregistered() {
+        let id = "eeeeeeee-1111-4111-8111-eeeeeeeeeeee";
+        let rec = rec(id, &["SddIA/core/memory/"], true, true);
+        let req = json!({
+            "operation": "verdict",
+            "diff": {"paths": [
+                {"path": "SddIA/Cargo.lock", "status": "M"},
+                {"path": format!("SddIA/evolution/{id}.md"), "status": "A"}
+            ]},
+            "registry": registry(vec![rec], &[id])
+        });
+        let env = execute(&req);
+        assert!(!env.success);
+        assert_eq!(env.result["reason_codes"][0], REASON_UNREGISTERED);
+        let suggested = env.result["suggested_relacionado"]
+            .as_array()
+            .expect("suggested_relacionado");
+        assert!(suggested.iter().any(|v| v.as_str() == Some("SddIA/Cargo.lock")));
+    }
+
+    #[test]
+    fn lockfile_in_diff_with_relacionado_is_ok() {
+        let id = "ffffffff-1111-4111-8111-ffffffffffff";
+        let rec = rec(id, &["SddIA/Cargo.lock"], true, true);
+        let req = json!({
+            "operation": "verdict",
+            "diff": {"paths": [
+                {"path": "SddIA/Cargo.lock", "status": "M"},
+                {"path": format!("SddIA/evolution/{id}.md"), "status": "A"}
+            ]},
+            "registry": registry(vec![rec], &[id])
+        });
+        assert!(execute(&req).success);
     }
 
     #[test]

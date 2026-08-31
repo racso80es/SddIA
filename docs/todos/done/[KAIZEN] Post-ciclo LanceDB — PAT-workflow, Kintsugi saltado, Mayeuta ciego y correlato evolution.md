@@ -6,7 +6,7 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-31"
 updated: "2026-08-31"
-status: pending
+status: done
 refinement_status: refinado
 priority: alta
 process: feature
