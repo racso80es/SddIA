@@ -1,8 +1,9 @@
 ---
 feature_name: dcc-hook-evol-overescalation-0c5268362b9a
 created: "2026-08-31"
-updated: "2026-08-31T10:00:00Z"
+updated: "2026-08-31T11:05:00Z"
 process: bug-fix
+pr_url: https://github.com/racso80es/SddIA/pull/240
 branch_name: fix/dcc-hook-evol-overescalation-0c5268362b9a
 persist_ref: docs/fixes/dcc-hook-evol-overescalation-0c5268362b9a
 pbi_ref: docs/todos/done/[FIX] delivery-close-cycle — fractura sistémica (0c5268362b9a).md
