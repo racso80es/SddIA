@@ -2,9 +2,9 @@
 document_id: PBI-CORE-LANCEDB-REAL-001
 title: "[ARQUITECTURA] LanceDB — integración física real y memoria vectorial efectiva"
 format: markdown
-version: "1.0.0"
+version: "1.1.0"
 created: "2026-08-27"
-updated: "2026-08-27"
+updated: "2026-08-31"
 status: pending
 priority: alta
 process: feature
@@ -39,11 +39,13 @@ Sustituir la implementación nominal de LanceDB por una integración física, du
 
 | Área | Estado actual | Estado requerido |
 |------|---------------|------------------|
-| Dependencia física | Los `Cargo.toml` no declaran el crate `lancedb` | Dependencia LanceDB real, versión compatible obtenida mediante Cargo |
-| Grafo de pensamiento | Operaciones placeholder: `Ok(())`, `None`, `vec![]` | Escritura, lectura exacta, consulta por `parent_id` y KNN reales |
-| Evolución | Un JSON por evento en `.SddIA/vector_store/evolution/` | Tabla LanceDB durable con upsert idempotente y consulta verificable |
-| Embeddings | `LocalSemanticInference` devuelve 384 ceros | Embeddings locales no constantes, dimensionalidad validada y errores explícitos |
-| Compilación | Adaptadores fuera de los miembros del workspace principal | Adaptadores incluidos en el grafo de build/test soportado |
+| Dependencia física | Ningún `Cargo.toml` declara el crate `lancedb` (solo aparece en el nombre de los packages adaptador) | Dependencia LanceDB real, versión compatible obtenida mediante Cargo |
+| Grafo de pensamiento | `lancedb_thought_repo`: los cuatro métodos son placeholder (`Ok(())`, `Ok(None)`, `Ok(vec![])`) | Escritura, lectura exacta, consulta por `parent_id` y KNN reales |
+| Evolución (adaptador) | `lancedb_evolution_repo::store_event` persiste un JSON por evento bajo `.SddIA/vector_store/evolution/`; no hay tabla LanceDB ni método de lectura en el puerto | Tabla LanceDB durable con upsert idempotente y consulta verificable |
+| Evolución (runtime) | El proceso `memory-evolution-ingest` **no** usa el adaptador ni el puerto `EvolutionStore`: escribe JSON directo desde el handler inline `memory_evolution_ingest_core.rs` con ruta hardcodeada `.SddIA/vector_store/evolution` | Runtime cableado al adaptador físico; una sola ruta de persistencia sin lógica JSON duplicada |
+| Embeddings | `LocalSemanticInference::embed_event` asigna `vec![0.0; 384]` (384 ceros constantes) | Embeddings locales no constantes, dimensionalidad validada y errores explícitos |
+| Compilación | `SddIA/core/memory/` y ambos adaptadores están fuera de los `members` del workspace principal; `execute-process` no depende de ellos | Core memory y adaptadores incluidos en el grafo de build/test soportado |
+| SSOT de ruta | `cumulo.paths.json` no declara la raíz del vector store de evolución (solo `userPreferencesStore`); la ruta vive hardcodeada en el runtime y en el adaptador | Raíz resuelta por SSOT Cúmulo con clave dedicada |
 | Reapertura | Sin prueba de cierre y reapertura del store | Datos recuperables tras destruir conexión/proceso y reabrir |
 
 ## Objetivo medible
@@ -84,7 +86,7 @@ Los esquemas deben declarar dimensionalidad del vector, campos requeridos, tipos
 
 ### 4. Configuración y soberanía
 
-- La raíz física se resolverá por configuración inyectada y SSOT Cúmulo; `.SddIA/vector_store/` será el valor local por defecto, no una ruta dispersa en lógica de dominio.
+- La raíz física se resolverá por configuración inyectada y SSOT Cúmulo. Hoy `cumulo.paths.json` solo declara `userPreferencesStore`; esta feature debe **añadir** la clave de la raíz del vector store de evolución/pensamiento y consumirla, eliminando las rutas hardcodeadas actuales (`STORE_REL` en `memory_evolution_ingest_core.rs` y `connection_string` en el adaptador). `.SddIA/vector_store/` será el valor local por defecto, no una ruta dispersa en lógica de dominio.
 - El almacenamiento permanecerá local y gitignored.
 - No habrá servicios vectoriales remotos ni credenciales obligatorias.
 - Los tests usarán directorios temporales aislados y no tocarán el store real del operador.
@@ -100,13 +102,13 @@ El modelo, dimensión, normalización y versión se registrarán en metadata. Lo
 ### Dentro
 
 - Integración del crate LanceDB real y sus dependencias.
-- Inclusión explícita de los crates adaptadores en workspace/build/CI.
-- Implementación completa de `ThoughtGraphRepository`.
-- Persistencia y lectura verificable de `EvolutionStore`; ampliar el puerto con consultas mínimas si actualmente impide probar el resultado.
+- Inclusión explícita de `SddIA/core/memory/` y de los crates adaptadores en workspace/build/CI (hoy los tres están fuera de `members`).
+- Implementación completa de `ThoughtGraphRepository` (los cuatro métodos hoy son placeholder).
+- Persistencia y lectura verificable de `EvolutionStore`; el puerto actual solo expone `store_event`, sin lectura: ampliarlo con las consultas mínimas necesarias para verificar el resultado.
 - Creación/apertura idempotente de tablas y validación de schemas.
 - Embedding local efectivo para los flujos cubiertos.
-- Wiring host del flujo `memory-evolution-ingest` al adaptador físico.
-- Migración controlada de los JSON evolution existentes, si existen en el store local, mediante importador explícito e idempotente.
+- Wiring host del flujo `memory-evolution-ingest` al adaptador físico, **reconciliando la lógica de persistencia duplicada**: hoy `memory_evolution_ingest_core.rs` escribe JSON directo sin pasar por `EvolutionStore`. El runtime debe pasar por el puerto/adaptador y quedar una única ruta de persistencia.
+- Migración controlada de los JSON evolution existentes en el store local (`.SddIA/vector_store/evolution/` contiene registros `{record_id}.json`), mediante importador explícito e idempotente.
 - Telemetría y errores operativos sin exponer contenido sensible.
 - Documentación de decisión tecnológica y límites de LanceDB.
 
@@ -123,16 +125,16 @@ El modelo, dimensión, normalización y versión se registrarán en metadata. Lo
 
 | ID | Criterio | Verificación |
 |----|----------|--------------|
-| LDB-CA1 | Los manifiestos declaran `lancedb` y los adaptadores compilan dentro del grafo soportado | `cargo check`/build selectivo documentado |
+| LDB-CA1 | Los manifiestos declaran `lancedb` y `core/memory` + ambos adaptadores compilan dentro del grafo soportado (workspace `members`) | `cargo check`/build selectivo documentado |
 | LDB-CA2 | No quedan métodos placeholder en los dos adaptadores ni comentarios que prometan integración futura | búsqueda estática + revisión |
 | LDB-CA3 | `store_thought` y recuperación por `node_id` sobreviven a cierre y reapertura | test de integración con directorio temporal |
 | LDB-CA4 | `get_children(parent_id)` devuelve únicamente hijos directos persistidos | test de integración |
 | LDB-CA5 | KNN devuelve vecinos reales en orden verificable y respeta `limit` | fixture con vectores de distancia conocida |
 | LDB-CA6 | `EvolutionEvent` queda persistido en una tabla LanceDB y es recuperable con metadata íntegra | test write → drop → reopen → read |
-| LDB-CA7 | Reingestar el mismo ID no duplica registros ni destruye el registro válido | test de idempotencia |
+| LDB-CA7 | Reingestar el mismo ID no duplica filas en la tabla LanceDB ni destruye el registro válido (la idempotencia hoy solo se garantiza a nivel de archivo JSON; debe garantizarse sobre la tabla) | test de idempotencia |
 | LDB-CA8 | Embeddings no constantes: textos distintos producen vectores válidos; misma entrada/modelo produce resultado estable dentro de tolerancia | test de inferencia local |
 | LDB-CA9 | Dimensión inválida, schema incompatible y store corrupto devuelven errores observables | tests negativos |
-| LDB-CA10 | El runtime `memory-evolution-ingest` usa el adaptador real; un evento causal aparece en LanceDB tras reapertura | smoke E2E |
+| LDB-CA10 | El runtime `memory-evolution-ingest` usa el adaptador real (no la escritura JSON inline de `memory_evolution_ingest_core.rs`); un evento causal aparece en LanceDB tras reapertura | smoke E2E |
 | LDB-CA11 | Ningún archivo JSON actúa como fallback o SSOT oculto tras activar LanceDB | inspección del store + prueba de fallo explícito |
 | LDB-CA12 | Store path y configuración se inyectan sin nombres de proyecto cliente en Core | revisión arquitectónica |
 | LDB-CA13 | CI ejecuta tests unitarios e integración sin red y sin mutar `.SddIA/vector_store/` del operador | workflow/log APTO |
@@ -180,8 +182,9 @@ El modelo, dimensión, normalización y versión se registrarán en metadata. Lo
 | Puertos/modelos/servicios | `SddIA/core/memory/` |
 | Adaptador evolución | `SddIA/infrastructure/adapters/lancedb_evolution_repo/` |
 | Adaptador pensamiento | `SddIA/infrastructure/adapters/lancedb_thought_repo/` |
-| Composición runtime | handler nativo de `memory-evolution-ingest` |
-| Workspace y dependencias | manifiestos Cargo aplicables |
+| Handler runtime a reconciliar | `SddIA/engine/execute-process/src/engine/memory_evolution_ingest_core.rs` (escritura JSON inline actual) |
+| SSOT de rutas | `SddIA/core/cumulo.paths.json` (añadir clave de raíz del vector store) |
+| Workspace y dependencias | manifiestos Cargo aplicables (`SddIA/Cargo.toml` `members`, `execute-process/Cargo.toml`) |
 | Persistencia local | `.SddIA/vector_store/` |
 | Cicatriz de decisión | `SddIA/evolution/{uuid}.md` vía proceso autorizado |
 | Evidencia | `docs/features/lancedb-real-vector-memory/` |
