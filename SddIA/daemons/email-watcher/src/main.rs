@@ -10,7 +10,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use uuid::Uuid;
@@ -21,6 +21,8 @@ const DEFAULT_POLL: u64 = 60;
 const DEFAULT_SNIPPET: usize = 512;
 const DEFAULT_INITIAL_LOOKBACK_DAYS: u64 = 60;
 const DEFAULT_MAX_UIDS_PER_POLL: usize = 50;
+const HEARTBEAT_TICK_SECONDS: u64 = 10;
+const HEARTBEAT_EMIT_FAIL_BUDGET: u32 = 5;
 const STATE_FILE: &str = "email-watcher.json";
 
 struct EmailWatcherState {
@@ -523,11 +525,44 @@ fn emit_received(
     write_fractal_event(repo, top, &event, "domain")
 }
 
+fn spawn_heartbeat_worker(
+    centinela: Arc<Mutex<DaemonRuntime>>,
+    top: BusTopology,
+) -> thread::JoinHandle<()> {
+    thread::spawn(move || {
+        let mut fails = 0u32;
+        loop {
+            let tick_result = {
+                if let Ok(mut rt) = centinela.lock() {
+                    rt.tick(&top)
+                } else {
+                    Err("lock poisoned".into())
+                }
+            };
+            match tick_result {
+                Ok(()) => fails = 0,
+                Err(e) => {
+                    fails += 1;
+                    eprintln!(
+                        "[email-watcher] heartbeat keepalive: {e} (fail {fails}/{HEARTBEAT_EMIT_FAIL_BUDGET})"
+                    );
+                    if fails >= HEARTBEAT_EMIT_FAIL_BUDGET {
+                        panic!(
+                            "Fallo crítico termodinámico: Incapacidad de reportar telemetría (side-channel). Abortando entidad para evitar estado Zombi. last_error={e}"
+                        );
+                    }
+                }
+            }
+            thread::sleep(Duration::from_secs(HEARTBEAT_TICK_SECONDS));
+        }
+    })
+}
+
 fn poll_once(
     repo: &Path,
     top: &BusTopology,
     cfg: &ImapCfg,
-    centinela: &mut DaemonRuntime,
+    mut on_stimulus: impl FnMut(),
 ) -> Result<(), String> {
     let tls = native_tls::TlsConnector::builder()
         .build()
@@ -617,7 +652,7 @@ fn poll_once(
             continue;
         }
         processed.push(uid);
-        centinela.note_stimulus();
+        on_stimulus();
     }
 
     if bootstrap {
@@ -658,20 +693,32 @@ fn run_loop(running: Arc<AtomicBool>) -> Result<(), i32> {
         eprintln!("[email-watcher] {e}");
         1
     })?;
+    let shared = Arc::new(Mutex::new(centinela));
+    let _hb = spawn_heartbeat_worker(Arc::clone(&shared), top.clone());
+    println!(
+        "[email-watcher] bucle iniciado (keepalive heartbeat cada {HEARTBEAT_TICK_SECONDS}s)"
+    );
     while running.load(Ordering::SeqCst) {
-        if let Err(e) = poll_once(&repo, &top, &cfg, &mut centinela) {
+        if let Err(e) = poll_once(&repo, &top, &cfg, || {
+            if let Ok(mut rt) = shared.lock() {
+                rt.note_stimulus();
+            }
+        }) {
             eprintln!("[email-watcher] poll: {e}");
         }
-        let _ = centinela.tick(&top);
+        if let Ok(mut rt) = shared.lock() {
+            let _ = rt.tick(&top);
+        }
         let step = Duration::from_secs(1);
         let mut waited = 0u64;
         while waited < cfg.poll_secs && running.load(Ordering::SeqCst) {
             thread::sleep(step);
             waited += 1;
-            let _ = centinela.tick(&top);
         }
     }
-    centinela.shutdown();
+    if let Ok(mut rt) = shared.lock() {
+        rt.shutdown();
+    }
     Ok(())
 }
 
@@ -719,7 +766,7 @@ fn main() {
             println!("{}", once_envelope(false, &e));
             std::process::exit(1);
         }
-        let poll_result = poll_once(&repo, &top, &cfg, &mut centinela);
+        let poll_result = poll_once(&repo, &top, &cfg, || centinela.note_stimulus());
         let _ = centinela.tick(&top);
         centinela.shutdown();
         match poll_result {
@@ -885,6 +932,31 @@ mod tests {
         let loaded = load_state(&repo);
         assert_eq!(loaded.imap_identity_sha256.as_deref(), Some(identity.as_str()));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn heartbeat_keepalive_matches_sibling_centinels() {
+        assert_eq!(HEARTBEAT_TICK_SECONDS, 10);
+        assert_eq!(HEARTBEAT_EMIT_FAIL_BUDGET, 5);
+    }
+
+    #[test]
+    fn once_branch_does_not_spawn_keepalive_worker() {
+        let src = include_str!("main.rs");
+        let after_main = src
+            .split("fn main()")
+            .nth(1)
+            .expect("main");
+        let once_branch = after_main
+            .split("if let Err(code) = run_loop")
+            .next()
+            .expect("once branch");
+        assert!(
+            !once_branch.contains("spawn_heartbeat_worker"),
+            "--once no debe arrancar hilo keepalive"
+        );
+        assert!(src.contains("fn spawn_heartbeat_worker"));
+        assert!(src.contains("let _hb = spawn_heartbeat_worker"));
     }
 
     #[test]

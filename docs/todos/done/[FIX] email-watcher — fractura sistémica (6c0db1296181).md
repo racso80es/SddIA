@@ -4,8 +4,8 @@ title: "[FIX] email-watcher — fractura sistémica"
 format: markdown
 version: "1.1.0"
 created: "2026-08-30"
-updated: "2026-08-30"
-status: "abierto"
+updated: "2026-08-31"
+status: "cerrado"
 priority: alta
 process: bug-fix
 type: bug-fix
@@ -144,10 +144,10 @@ El ledger `.SddIA/daemons/state/phagocytosed-fractures.json` acumula decenas de 
 
 **Si laudo A (recomendado)**
 
-- [ ] Keepalive en `email-watcher` modo continuo, paridad 10 s
-- [ ] `--once` sin hilo keepalive; tests del crate verdes
-- [ ] `validacion.md` global `APTO`, `pbi_archived: true`
-- [ ] Este TODO en `docs/todos/done/` en la rama del PR
+- [x] Keepalive en `email-watcher` modo continuo, paridad 10 s
+- [x] `--once` sin hilo keepalive; tests del crate verdes
+- [x] `validacion.md` global `APTO`, `pbi_archived: true`
+- [x] Este TODO en `docs/todos/done/` en la rama del PR
 
 **Si laudo B (Vértice Biológico desestima A)**
 
