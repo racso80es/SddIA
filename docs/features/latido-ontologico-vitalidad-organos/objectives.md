@@ -4,7 +4,7 @@ created: "2026-08-31"
 process: feature
 branch_name: feat/latido-ontologico-vitalidad-organos
 persist_ref: docs/features/latido-ontologico-vitalidad-organos
-pbi_ref: docs/todos/pending/[OPERATIVO] Latido Ontológico (System Heartbeat).md
+pbi_ref: docs/todos/done/[OPERATIVO] Latido Ontológico (System Heartbeat).md
 document_id: PBI-OPER-LATIDO-ONTOLOGICO-001
 uuid: "cafd87eb-817f-4eee-a169-f9cd6019e931"
 execution_id: "cb141830-b5e3-4b9e-904d-014922254734"

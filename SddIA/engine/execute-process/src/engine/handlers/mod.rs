@@ -8,6 +8,7 @@ pub mod instance_creator;
 pub mod kalma2;
 pub mod mayeuta;
 pub mod route_domain;
+pub mod system_vitality;
 pub mod task_queue_manager;
 pub mod sync_client_assets;
 pub mod telegram_fallback;

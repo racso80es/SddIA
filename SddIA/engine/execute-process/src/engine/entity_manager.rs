@@ -274,6 +274,48 @@ fn creator_inputs_from_entity(
                 ("suites_contract_version".into(), seed_field(seed, "suites_contract_version", json!("1.0.0"))),
             ]),
         ),
+        "daemon" => merge_maps(
+            &base,
+            Map::from_iter([
+                ("daemon_name".into(), seed_field(seed, "daemon_name", json!(entity_name))),
+                (
+                    "daemon_context".into(),
+                    seed_field(seed, "daemon_context", json!("ecosystem-evolution")),
+                ),
+                (
+                    "daemon_description".into(),
+                    seed_field(
+                        seed,
+                        "daemon_description",
+                        json!(format!("Centinela {entity_name}")),
+                    ),
+                ),
+                (
+                    "daemon_capabilities".into(),
+                    seed_field(seed, "daemon_capabilities", json!([])),
+                ),
+                (
+                    "daemon_execution".into(),
+                    seed_field(seed, "daemon_execution", json!({})),
+                ),
+                (
+                    "daemon_jurisdiction".into(),
+                    seed_field(
+                        seed,
+                        "daemon_jurisdiction",
+                        json!("Aislada — Ceguera Lógica. Solo inyecta eventos físicos en el bus"),
+                    ),
+                ),
+                (
+                    "daemon_version".into(),
+                    seed_field(seed, "daemon_version", json!("1.0.0")),
+                ),
+                (
+                    "daemons_contract_version".into(),
+                    seed_field(seed, "daemons_contract_version", json!("1.0.0")),
+                ),
+            ]),
+        ),
         other => return Err(format!("entity_class no soportada en forja rápida: {other}")),
     };
     Ok(with_forge_seed_optionals(out, seed))

@@ -186,6 +186,10 @@ pub fn run_process(
         return handlers::daemon_heartbeat::run(repo, process_inputs);
     }
 
+    if canonical == "system-vitality-probe" {
+        return handlers::system_vitality::run(repo, process_inputs);
+    }
+
     if canonical == "phagocyte-recovered-fracture-pbis" {
         return handlers::phagocyte_recovered_fracture_pbis::run(repo, process_inputs);
     }

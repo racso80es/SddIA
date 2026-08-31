@@ -10,6 +10,20 @@ const HEARTBEAT_EMIT_FAIL_BUDGET: u32 = 5;
 /// Cadencia mínima del ingest de régimen (Vía A) vía sweeper.
 const HEARTBEAT_AUDIT_SWEEP_SECONDS: u64 = 30;
 
+fn parse_vitality_probe_seconds(raw: Option<&str>) -> u64 {
+    match raw.map(str::trim).filter(|s| !s.is_empty()) {
+        None => 300,
+        Some(s) => match s.parse::<u64>() {
+            Ok(n) if n >= 30 => n,
+            _ => 30,
+        },
+    }
+}
+
+fn vitality_probe_seconds() -> u64 {
+    parse_vitality_probe_seconds(env::var("SDDIA_VITALITY_PROBE_SECONDS").ok().as_deref())
+}
+
 fn print_report(report: &SweepReport, json: bool) {
     if json {
         println!(
@@ -89,6 +103,32 @@ fn execute_process_bin(repo: &std::path::Path) -> std::path::PathBuf {
     repo.join("SddIA/target/debug/execute-process")
 }
 
+/// Probe periódico de invariantes no-proceso + HTTP Kalma2.
+fn invoke_vitality_probe(repo: &std::path::Path) {
+    let runner = execute_process_bin(repo);
+    let payload = "{}";
+    match std::process::Command::new(&runner)
+        .args(["--process", "system-vitality-probe", "--inputs", payload])
+        .current_dir(repo)
+        .output()
+    {
+        Ok(out) if out.status.success() => {}
+        Ok(out) => {
+            let err = String::from_utf8_lossy(&out.stderr);
+            let so = String::from_utf8_lossy(&out.stdout);
+            eprintln!(
+                "[SWEEPER] system-vitality-probe: {}",
+                if !err.trim().is_empty() {
+                    err.trim()
+                } else {
+                    so.trim()
+                }
+            );
+        }
+        Err(e) => eprintln!("[SWEEPER] system-vitality-probe spawn: {e}"),
+    }
+}
+
 /// Vía A: sweep periódico de auditoría (ingest régimen + staleness) sin fan-out.
 fn invoke_heartbeat_audit_sweep(repo: &std::path::Path) {
     let runner = execute_process_bin(repo);
@@ -133,6 +173,8 @@ fn run_sweeper(repo: std::path::PathBuf, once: bool, json: bool) -> Result<(), S
         );
     }
     let mut last_hb_audit = Instant::now() - Duration::from_secs(HEARTBEAT_AUDIT_SWEEP_SECONDS);
+    let vitality_secs = vitality_probe_seconds();
+    let mut last_vitality = Instant::now() - Duration::from_secs(vitality_secs);
     loop {
         let report = sweep_once(&repo)?;
         print_report(&report, json);
@@ -141,6 +183,10 @@ fn run_sweeper(repo: std::path::PathBuf, once: bool, json: bool) -> Result<(), S
         {
             invoke_heartbeat_audit_sweep(&repo);
             last_hb_audit = Instant::now();
+        }
+        if !once && last_vitality.elapsed() >= Duration::from_secs(vitality_secs) {
+            invoke_vitality_probe(&repo);
+            last_vitality = Instant::now();
         }
         {
             let mut centinela = shared
@@ -174,5 +220,29 @@ fn main() {
     if let Err(e) = run_sweeper(repo, once, json) {
         eprintln!("[SWEEPER] {e}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_vitality_probe_seconds;
+
+    #[test]
+    fn vitality_default_300_when_absent() {
+        assert_eq!(parse_vitality_probe_seconds(None), 300);
+        assert_eq!(parse_vitality_probe_seconds(Some("")), 300);
+    }
+
+    #[test]
+    fn vitality_floor_30_on_invalid_or_low() {
+        assert_eq!(parse_vitality_probe_seconds(Some("10")), 30);
+        assert_eq!(parse_vitality_probe_seconds(Some("abc")), 30);
+        assert_eq!(parse_vitality_probe_seconds(Some("0")), 30);
+    }
+
+    #[test]
+    fn vitality_honors_valid_seconds() {
+        assert_eq!(parse_vitality_probe_seconds(Some("300")), 300);
+        assert_eq!(parse_vitality_probe_seconds(Some("45")), 45);
     }
 }

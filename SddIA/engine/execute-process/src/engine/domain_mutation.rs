@@ -12,7 +12,7 @@ use std::path::Path;
 use uuid::Uuid;
 
 const ENTITY_CLASSES: &[&str] = &[
-    "process", "agent", "skill", "tool", "action", "norm", "codex", "event",
+    "process", "agent", "skill", "tool", "action", "norm", "codex", "event", "suite", "daemon",
 ];
 const LIFECYCLE_OPS: &[&str] = &["create", "update", "delete"];
 

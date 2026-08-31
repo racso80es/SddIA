@@ -282,6 +282,12 @@ fn split_md_frontmatter(text: &str) -> Result<(String, String), String> {
     Ok((yaml, body))
 }
 
+fn join_md_frontmatter(yaml: &str, body: &str) -> String {
+    let yaml = yaml.trim_end_matches('\n');
+    let body = body.trim_start_matches('\n');
+    format!("---\n{yaml}\n---\n\n{body}")
+}
+
 /// Resultado de patch update con `process_phases`.
 pub struct ProcessPhasesPatchResult {
     pub entity_uuid: String,
@@ -725,7 +731,7 @@ pub fn patch_genome_source_sha256(genome_path: &Path, source_sha256: &str) -> Re
         Value::String(source_sha256.to_string()),
     );
     let new_yaml = serde_yaml::to_string(&Value::Object(map)).map_err(|e| e.to_string())?;
-    let new_text = format!("---\n{new_yaml}---\n\n{body}");
+    let new_text = join_md_frontmatter(&new_yaml, &body);
     fs::write(genome_path, new_text).map_err(|e| e.to_string())
 }
 
@@ -880,7 +886,7 @@ pub fn patch_artifact_body_replacements(
         .unwrap_or("")
         .to_string();
     let new_body = apply_markdown_body_replacements(&body, replacements)?;
-    let draft = format!("---\n{yaml}---\n\n{new_body}");
+    let draft = join_md_frontmatter(&yaml, &new_body);
     let new_hash = canonical_artifact_hash(&draft);
     let new_yaml = if yaml.contains("hash_signature:") {
         static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
@@ -890,9 +896,239 @@ pub fn patch_artifact_body_replacements(
     } else {
         format!("{yaml}\nhash_signature: \"{new_hash}\"")
     };
-    let new_text = format!("---\n{new_yaml}---\n\n{new_body}");
+    let new_text = join_md_frontmatter(&new_yaml, &new_body);
     fs::write(artifact_path, new_text).map_err(|e| e.to_string())?;
     Ok((entity_uuid, old_hash, new_hash, version))
+}
+
+/// Fusiona capabilities YAML de un daemon (update) y sincroniza la celda del índice.
+pub fn merge_daemon_capabilities(
+    artifact_path: &Path,
+    index_path: &Path,
+    daemon_name: &str,
+    extra: &[String],
+) -> Result<(String, String, String, String), String> {
+    let extra: Vec<String> = extra
+        .iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if extra.is_empty() {
+        return Err("daemon_capabilities vacío".into());
+    }
+    let text = fs::read_to_string(artifact_path).map_err(|e| e.to_string())?;
+    let (yaml, body) = split_md_frontmatter(&text)?;
+    let fm_val: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+    let map = match fm_val {
+        Value::Object(m) => m,
+        _ => return Err("frontmatter no es objeto YAML".into()),
+    };
+    let entity_uuid = map
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if entity_uuid.is_empty() {
+        return Err("uuid ausente en frontmatter".into());
+    }
+    let version = map
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("1.0.0")
+        .to_string();
+    let old_hash = map
+        .get("hash_signature")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let existing: Vec<String> = map
+        .get("capabilities")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(|s| s.trim().to_string()))
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    let to_add: Vec<String> = extra
+        .into_iter()
+        .filter(|c| !existing.iter().any(|e| e == c))
+        .collect();
+    let mut yaml_new = yaml.clone();
+    if !to_add.is_empty() {
+        static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+        let re = RE.get_or_init(|| {
+            Regex::new(r"(?m)^capabilities:\s*\n((?:[ \t]*-[ \t].+\n)+)").expect("regex")
+        });
+        let Some(caps) = re.captures(&yaml) else {
+            return Err("bloque capabilities no encontrado en frontmatter".into());
+        };
+        let block = caps.get(1).map(|m| m.as_str()).unwrap_or("");
+        let indent_quoted = block.contains("  - ");
+        let mut additions = String::new();
+        for cap in &to_add {
+            if indent_quoted {
+                additions.push_str(&format!("  - \"{cap}\"\n"));
+            } else {
+                additions.push_str(&format!("- {cap}\n"));
+            }
+        }
+        yaml_new = re
+            .replace(&yaml, format!("capabilities:\n{block}{additions}"))
+            .into_owned();
+    }
+    let draft = join_md_frontmatter(&yaml_new, &body);
+    let new_hash = canonical_artifact_hash(&draft);
+    let yaml_hashed = if yaml_new.contains("hash_signature:") {
+        static REH: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+        let reh = REH.get_or_init(|| Regex::new(r"(?m)^hash_signature:\s*.+$").expect("regex"));
+        reh.replace(&yaml_new, format!("hash_signature: \"{new_hash}\""))
+            .into_owned()
+    } else {
+        format!("{yaml_new}\nhash_signature: \"{new_hash}\"")
+    };
+    let new_text = join_md_frontmatter(&yaml_hashed, &body);
+    fs::write(artifact_path, new_text).map_err(|e| e.to_string())?;
+
+    let mut all_caps = existing;
+    all_caps.extend(to_add);
+    let cell = all_caps
+        .iter()
+        .map(|c| format!("`{c}`"))
+        .collect::<Vec<_>>()
+        .join(", ");
+    if index_path.is_file() {
+        let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+        let needle = format!("| `{daemon_name}.md` |");
+        let mut out_lines: Vec<String> = Vec::new();
+        for line in idx.lines() {
+            if line.contains(&needle) {
+                let parts: Vec<&str> = line.split('|').collect();
+                if parts.len() >= 9 {
+                    let mut p: Vec<String> = parts.iter().map(|s| (*s).to_string()).collect();
+                    p[7] = format!(" {cell} ");
+                    out_lines.push(p.join("|"));
+                    continue;
+                }
+            }
+            out_lines.push(line.to_string());
+        }
+        if idx.ends_with('\n') {
+            out_lines.push(String::new());
+        }
+        fs::write(index_path, out_lines.join("\n")).map_err(|e| e.to_string())?;
+        sync_daemons_index_census(index_path)?;
+    }
+    Ok((entity_uuid, old_hash, new_hash, version))
+}
+
+/// Recuenta `{name}.md` de una familia ECST y actualiza el pie `Clases`.
+pub fn sync_event_family_class_count(family_index: &Path) -> Result<usize, String> {
+    if !family_index.is_file() {
+        return Ok(0);
+    }
+    let dir = family_index
+        .parent()
+        .ok_or("family index sin parent")?;
+    let mut n = 0usize;
+    for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
+        let p = entry.map_err(|e| e.to_string())?.path();
+        if p.extension().and_then(|s| s.to_str()) != Some("md") {
+            continue;
+        }
+        let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+        if stem == "index" {
+            continue;
+        }
+        n += 1;
+    }
+    let mut text = fs::read_to_string(family_index).map_err(|e| e.to_string())?;
+    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(r"- \*\*Clases:\*\* \d+ ECST\.").expect("regex"));
+    if re.is_match(&text) {
+        text = re
+            .replace(&text, format!("- **Clases:** {n} ECST."))
+            .into_owned();
+        fs::write(family_index, text).map_err(|e| e.to_string())?;
+    }
+    Ok(n)
+}
+
+/// Alinea la fila de familia y el total en `SddIA/events/index.md`.
+pub fn sync_events_root_family_count(
+    repo: &Path,
+    family: &str,
+    family_n: usize,
+) -> Result<(), String> {
+    let path = repo.join("SddIA/events/index.md");
+    if !path.is_file() {
+        return Ok(());
+    }
+    let mut text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let needle = format!("| `{family}` |");
+    let mut lines: Vec<String> = Vec::new();
+    let mut domain_n: Option<usize> = None;
+    let mut telemetry_n: Option<usize> = None;
+    let mut orch_n: Option<usize> = None;
+    for line in text.lines() {
+        let mut out = line.to_string();
+        if line.contains("| `telemetry` |")
+            || line.contains("| `orchestration` |")
+            || line.contains("| `domain` |")
+        {
+            let parts: Vec<&str> = line.split('|').collect();
+            if parts.len() >= 5 {
+                if let Ok(n) = parts[3].trim().parse::<usize>() {
+                    if line.contains("| `telemetry` |") {
+                        telemetry_n = Some(n);
+                    } else if line.contains("| `orchestration` |") {
+                        orch_n = Some(n);
+                    } else if line.contains("| `domain` |") {
+                        domain_n = Some(n);
+                    }
+                }
+                if line.contains(&needle) {
+                    let mut p: Vec<String> = parts.iter().map(|s| (*s).to_string()).collect();
+                    p[3] = format!(" {family_n} ");
+                    out = p.join("|");
+                    match family {
+                        "telemetry" => telemetry_n = Some(family_n),
+                        "orchestration" => orch_n = Some(family_n),
+                        "domain" => domain_n = Some(family_n),
+                        _ => {}
+                    }
+                }
+            }
+        }
+        lines.push(out);
+    }
+    text = lines.join("\n");
+    let d = domain_n.unwrap_or(0);
+    let t = telemetry_n.unwrap_or(family_n);
+    let o = orch_n.unwrap_or(0);
+    let total = d + t + o;
+    static RET: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let ret = RET.get_or_init(|| {
+        Regex::new(
+            r"- \*\*Total Clases:\*\* \d+ ECST \(\d+ domain \+ \d+ telemetry \+ \d+ orchestration\)\.",
+        )
+        .expect("regex")
+    });
+    if ret.is_match(&text) {
+        text = ret
+            .replace(
+                &text,
+                format!(
+                    "- **Total Clases:** {total} ECST ({d} domain + {t} telemetry + {o} orchestration)."
+                ),
+            )
+            .into_owned();
+    }
+    if !text.ends_with('\n') {
+        text.push('\n');
+    }
+    fs::write(&path, text).map_err(|e| e.to_string())
 }
 
 /// Resultado de patch update de norma táctica.
@@ -1075,6 +1311,34 @@ mod tests {
         sync_daemons_index_census(&index).unwrap();
         let text = fs::read_to_string(&index).unwrap();
         assert!(text.contains("2 Centinelas catalogados (a, b)"));
+    }
+
+    #[test]
+    fn merge_daemon_capabilities_appends_yaml_and_index_cell() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let daemon = tmp.path().join("event-sweeper.md");
+        let index = tmp.path().join("index.md");
+        fs::write(
+            &daemon,
+            "---\nuuid: \"3eafa012-2b71-47e5-b47e-467b59a3fd52\"\nname: event-sweeper\nversion: 1.0.0\nhash_signature: sha256:old\ncapabilities:\n- eda-pending-sweep\n- kaizen-dead-letter-alert\n---\n\n# event-sweeper\n\nbody\n",
+        )
+        .unwrap();
+        fs::write(
+            &index,
+            "| Archivo fuente | uuid | name | version | contract | context | Capabilities | heartbeat_interval_seconds |\n|----------------|------|------|---------|----------|---------|--------------|----------------------------|\n| `event-sweeper.md` | `3eafa012-2b71-47e5-b47e-467b59a3fd52` | event-sweeper | 1.0.0 | daemons-contract v1.0.0 | ecosystem-evolution | `eda-pending-sweep`, `kaizen-dead-letter-alert` | 30 |\n\n## Integridad (última pasada)\n\n- **Sincronización:** 1 Centinelas catalogados (event-sweeper).\n",
+        )
+        .unwrap();
+        merge_daemon_capabilities(
+            &daemon,
+            &index,
+            "event-sweeper",
+            &["vitality-probe-sweep".into()],
+        )
+        .unwrap();
+        let md = fs::read_to_string(&daemon).unwrap();
+        assert!(md.contains("- vitality-probe-sweep"), "{md}");
+        let idx = fs::read_to_string(&index).unwrap();
+        assert!(idx.contains("`vitality-probe-sweep`"), "{idx}");
     }
 
     #[test]

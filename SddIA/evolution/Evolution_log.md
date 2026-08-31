@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `0b5a80fd-6932-457c-bad0-f9e8b46390d0` | 2026-08-31 | Latido ontológico: censo kalma2-bridge, fractura lock huérfano, System_Vitality_Probed y sonda sweeper. | CANONICO | `SddIA/evolution/0b5a80fd-6932-457c-bad0-f9e8b46390d0.md` |
 | `922e218e-4487-455c-826a-9c439ef30318` | 2026-08-31 | Kaizen ciclo LanceDB: F-DCC-WORKFLOW-SCOPE, halt post-push, cubos Mayeuta, helper relacionado, ingest EvolutionStore, CA-CI. | CANONICO | `SddIA/evolution/922e218e-4487-455c-826a-9c439ef30318.md` |
 | `4d384bb1-f89d-41ce-835a-9db6d6bed114` | 2026-08-31 | LanceDB físico: crate 0.37.1, embeddings hashing, ingest EvolutionStore, SSOT paths.vectorStore. | CANONICO | `SddIA/evolution/4d384bb1-f89d-41ce-835a-9db6d6bed114.md` |
 | `bcb10a45-5cda-4e3e-9839-e0b912538003` | 2026-08-31 | F-DCC-HOOK-EVOL: pre-push evolution gate en Publicación remota no emite System_Fracture_Detected; cubo hook estricto; is_delete_push SHA local. | CANONICO | `SddIA/evolution/bcb10a45-5cda-4e3e-9839-e0b912538003.md` |

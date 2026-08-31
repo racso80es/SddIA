@@ -2888,6 +2888,8 @@ dependencies = [
 name = "kalma2-bridge"
 version = "0.1.0"
 dependencies = [
+ "ctrlc",
+ "sddia-daemon-runtime",
  "sddia-ecosystem-health",
  "serde",
  "serde_json",

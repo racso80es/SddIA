@@ -4,7 +4,7 @@ created: "2026-08-31"
 process: feature
 base: main
 scope: core
-pbi_ref: docs/todos/pending/[OPERATIVO] Latido Ontológico (System Heartbeat).md
+pbi_ref: docs/todos/done/[OPERATIVO] Latido Ontológico (System Heartbeat).md
 execution_id: "cb141830-b5e3-4b9e-904d-014922254734"
 ---
 

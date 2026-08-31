@@ -5,13 +5,14 @@ format: markdown
 version: "2.1.0"
 created: "2026-08-27"
 updated: "2026-08-31"
-status: pending
+status: cerrado
 priority: alta
 process: feature
 type: feature
 dispatch: false
 uuid: cafd87eb-817f-4eee-a169-f9cd6019e931
 suggested_branch: feat/latido-ontologico-vitalidad-organos
+persist_ref: docs/features/latido-ontologico-vitalidad-organos
 persist_ref_suggested: docs/features/latido-ontologico-vitalidad-organos
 depends_on: []
 related_pbis:
