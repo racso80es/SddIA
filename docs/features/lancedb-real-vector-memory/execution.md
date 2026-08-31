@@ -27,8 +27,9 @@ Init: `execution_id` `c4e7971d-7c67-4745-b1b4-eb8b3d84d652`. Fases Mayeuta–Arg
 | T2 | done | 5 tests thought ok |
 | T3 | done | 4 tests evolution + importador |
 | T4 | done | ingest 3 tests ok; `paths.vectorStore` |
-| T5 | done | CI step protoc + cargo test |
+| T5 | done | CI step protoc + cargo test; `sddia-index-integrity` verde run `33383923692` |
 | T6 | done | fichas `active` 1.1.0; evolution `4d384bb1-…` |
+| T-fix-Array | done | `8818faa` — trait `Array` para `is_null`; desbloquea `cargo build --workspace` / `verify-compiled-capsules` |
 
 ```text
 cd SddIA && cargo test -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution

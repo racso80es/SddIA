@@ -21,6 +21,8 @@ checks:
   LDB-CA13: APTO
   LDB-CA14: APTO
   LDB-CA15: APTO
+pr_url: https://github.com/racso80es/SddIA/pull/241
+ci_run_id: "33383923692"
 git_changes:
   - SddIA/Cargo.toml
   - SddIA/Cargo.lock
@@ -54,7 +56,7 @@ Argos (relevo IDE). Rama `feat/lancedb-real-vector-memory`. PBI archivado en `do
 | LDB-CA10 | APTO | `memory_evolution_ingest_persists_to_lancedb` |
 | LDB-CA11 | APTO | `json_fallback_is_not_used` |
 | LDB-CA12 | APTO | `paths.vectorStore`; URI inyectada `{vectorStore}/lancedb/` |
-| LDB-CA13 | APTO | CI `protobuf-compiler` + `cargo test` de los tres crates; tests en tempdir |
+| LDB-CA13 | APTO | `sddia-index-integrity` SUCCESS head `8818faa`; [run 33383923692](https://github.com/racso80es/SddIA/actions/runs/33383923692) (`protobuf-compiler` + tests memory/adapters). Parche E0599: trait `Array` en thought adapter |
 | LDB-CA14 | APTO | `SddIA/evolution/4d384bb1-f89d-41ce-835a-9db6d6bed114.md` hash anclado |
 | LDB-CA15 | APTO | este `validacion.md` + PBI en `done/` en la misma rama |
 
