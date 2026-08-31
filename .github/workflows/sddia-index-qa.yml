@@ -19,6 +19,11 @@ concurrency:
 permissions:
   contents: read
 
+# Pin: install.sh (latest via GitHub API) parsea `{` bajo rate-limit y sale 0.
+# Empiría PR #239 job wasi-runtime-smoke: Wasmtime ({) → URL inválida → wasmtime not in PATH.
+env:
+  WASMTIME_VERSION: v48.0.1
+
 jobs:
   sddia-index-integrity:
     runs-on: ubuntu-latest
@@ -85,8 +90,21 @@ jobs:
           targets: wasm32-wasip1
       - name: Install wasmtime
         run: |
-          curl https://wasmtime.dev/install.sh -sSf | bash
-          echo "$HOME/.wasmtime/bin" >> "$GITHUB_PATH"
+          set -euo pipefail
+          case "$(uname -m)" in
+            x86_64) arch="x86_64-linux" ;;
+            aarch64|arm64) arch="aarch64-linux" ;;
+            *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
+          esac
+          dest="$HOME/.wasmtime/bin"
+          mkdir -p "$dest"
+          tarball="wasmtime-${WASMTIME_VERSION}-${arch}.tar.xz"
+          url="https://github.com/bytecodealliance/wasmtime/releases/download/${WASMTIME_VERSION}/${tarball}"
+          curl -sSfL "$url" -o "/tmp/${tarball}"
+          tar -xJf "/tmp/${tarball}" -C /tmp
+          install -m 755 "/tmp/wasmtime-${WASMTIME_VERSION}-${arch}/wasmtime" "$dest/wasmtime"
+          echo "$dest" >> "$GITHUB_PATH"
+          "$dest/wasmtime" --version
       - uses: actions/cache@v4
         with:
           path: |
@@ -129,8 +147,21 @@ jobs:
           targets: wasm32-wasip1
       - name: Install wasmtime
         run: |
-          curl https://wasmtime.dev/install.sh -sSf | bash
-          echo "$HOME/.wasmtime/bin" >> "$GITHUB_PATH"
+          set -euo pipefail
+          case "$(uname -m)" in
+            x86_64) arch="x86_64-linux" ;;
+            aarch64|arm64) arch="aarch64-linux" ;;
+            *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
+          esac
+          dest="$HOME/.wasmtime/bin"
+          mkdir -p "$dest"
+          tarball="wasmtime-${WASMTIME_VERSION}-${arch}.tar.xz"
+          url="https://github.com/bytecodealliance/wasmtime/releases/download/${WASMTIME_VERSION}/${tarball}"
+          curl -sSfL "$url" -o "/tmp/${tarball}"
+          tar -xJf "/tmp/${tarball}" -C /tmp
+          install -m 755 "/tmp/wasmtime-${WASMTIME_VERSION}-${arch}/wasmtime" "$dest/wasmtime"
+          echo "$dest" >> "$GITHUB_PATH"
+          "$dest/wasmtime" --version
       - uses: actions/cache@v4
         with:
           path: |

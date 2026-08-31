@@ -6,6 +6,7 @@ use super::workspace_init::{is_workspace_init_phase, run as run_workspace_init};
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
+use std::fs;
 use std::path::Path;
 use std::time::Instant;
 use uuid::Uuid;
@@ -76,6 +77,10 @@ fn simulated_relay_blocks_close(
 }
 
 fn skipped_barrier_entry(phase: &Value, prior_status: &str) -> Value {
+    skipped_barrier_entry_reason(phase, prior_status, "prior_agent_phase_not_executed")
+}
+
+fn skipped_barrier_entry_reason(phase: &Value, prior_status: &str, reason: &str) -> Value {
     let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
     json!({
         "phase_name": phase_name,
@@ -83,9 +88,34 @@ fn skipped_barrier_entry(phase: &Value, prior_status: &str) -> Value {
         "status": "skipped",
         "skipped": true,
         "handler": "phase-barrier",
-        "reason": "prior_agent_phase_not_executed",
+        "reason": reason,
         "prior_status": prior_status,
     })
+}
+
+fn stop_after_design() -> bool {
+    std::env::var("SDDIA_TQM_STOP_AFTER")
+        .map(|s| s.trim().eq_ignore_ascii_case("design"))
+        .unwrap_or(false)
+}
+
+fn is_dedalo_design_phase(name: &str) -> bool {
+    matches!(
+        name,
+        "Diseño del fix" | "Diseño de Blueprint" | "Diseño de refactor"
+    )
+}
+
+fn persist_phase_reports_json(workspace_path: &str, reports: &[Value]) -> Result<(), String> {
+    let ws = workspace_path.trim();
+    if ws.is_empty() {
+        return Ok(());
+    }
+    let dir = Path::new(ws);
+    fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    let path = dir.join("phase_reports.json");
+    let body = serde_json::to_vec_pretty(reports).map_err(|e| e.to_string())?;
+    fs::write(&path, body).map_err(|e| e.to_string())
 }
 
 fn workspace_template(process_def: &ProcessDef) -> Result<String, String> {
@@ -440,6 +470,7 @@ pub fn run_generic(
 
     let mut phase_reports: Vec<Value> = Vec::new();
     let mut barrier_prior: Option<String> = None;
+    let mut barrier_reason: &'static str = "prior_agent_phase_not_executed";
     let correlation_id = inputs_mut
         .get("correlation_id")
         .and_then(|v| v.as_str())
@@ -450,7 +481,11 @@ pub fn run_generic(
         let agent_only = delegates_are_only_agents(&phase_delegates(phase));
         if let Some(prior) = barrier_prior.as_deref() {
             if agent_only || is_verify_or_close_phase(phase_name) {
-                phase_reports.push(skipped_barrier_entry(phase, prior));
+                phase_reports.push(skipped_barrier_entry_reason(
+                    phase,
+                    prior,
+                    barrier_reason,
+                ));
                 continue;
             }
         }
@@ -490,13 +525,31 @@ pub fn run_generic(
             let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
             if agent_phase_blocks_downstream(status) {
                 barrier_prior = Some(status.to_string());
+                barrier_reason = "prior_agent_phase_not_executed";
+            } else if stop_after_design()
+                && is_dedalo_design_phase(phase_name)
+                && status == "executed"
+            {
+                barrier_prior = Some("executed".to_string());
+                barrier_reason = "stop_after";
             } else if simulated_relay_blocks_close(process_name, status, repo, &inputs_mut) {
                 barrier_prior = Some("awaiting_agents".to_string());
+                barrier_reason = "prior_agent_phase_not_executed";
             }
         }
         phase_reports.push(entry);
     }
     state["phase_reports"] = json!(phase_reports);
+
+    if let Some(ws) = state
+        .get("workspace_path")
+        .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path")))
+        .and_then(|v| v.as_str())
+    {
+        if let Err(e) = persist_phase_reports_json(ws, &phase_reports) {
+            eprintln!("phase_reports.json: {e}");
+        }
+    }
 
     let mut data = json!({
         "process_name": process_name,
@@ -748,5 +801,88 @@ mod tests {
             ]
         );
         assert_eq!(barrier.as_deref(), Some("awaiting_agents"));
+    }
+
+    #[test]
+    fn is_dedalo_design_phase_names() {
+        assert!(is_dedalo_design_phase("Diseño del fix"));
+        assert!(is_dedalo_design_phase("Diseño de Blueprint"));
+        assert!(is_dedalo_design_phase("Diseño de refactor"));
+        assert!(!is_dedalo_design_phase("Ejecución"));
+        assert!(!is_dedalo_design_phase("Estabilización de Requisitos"));
+    }
+
+    #[test]
+    fn barrier_sequence_stop_after_design_skips_tekton() {
+        struct Fake {
+            name: &'static str,
+            agent: bool,
+            voc: bool,
+            status: &'static str,
+        }
+        let phases = [
+            Fake {
+                name: "Inicialización",
+                agent: false,
+                voc: false,
+                status: "executed",
+            },
+            Fake {
+                name: "Diseño del fix",
+                agent: true,
+                voc: false,
+                status: "executed",
+            },
+            Fake {
+                name: "Ejecución",
+                agent: true,
+                voc: false,
+                status: "would-tekton",
+            },
+            Fake {
+                name: "Verificación",
+                agent: true,
+                voc: true,
+                status: "would-argos",
+            },
+        ];
+        let mut barrier: Option<&str> = None;
+        let mut reason = "prior_agent_phase_not_executed";
+        let mut out: Vec<(&str, &str, &str)> = Vec::new();
+        for p in &phases {
+            if barrier.is_some() && (p.agent || p.voc) {
+                out.push((p.name, "skipped", reason));
+                continue;
+            }
+            out.push((p.name, p.status, ""));
+            if p.agent {
+                if agent_phase_blocks_downstream(p.status) {
+                    barrier = Some(p.status);
+                    reason = "prior_agent_phase_not_executed";
+                } else if is_dedalo_design_phase(p.name) && p.status == "executed" {
+                    barrier = Some("executed");
+                    reason = "stop_after";
+                }
+            }
+        }
+        assert_eq!(
+            out,
+            vec![
+                ("Inicialización", "executed", ""),
+                ("Diseño del fix", "executed", ""),
+                ("Ejecución", "skipped", "stop_after"),
+                ("Verificación", "skipped", "stop_after"),
+            ]
+        );
+    }
+
+    #[test]
+    fn persist_phase_reports_json_writes_file() {
+        let dir = std::env::temp_dir().join(format!("sddia-pr-{}", Uuid::new_v4()));
+        let reports = vec![json!({"phase_name": "Diseño del fix", "status": "executed"})];
+        persist_phase_reports_json(dir.to_str().unwrap(), &reports).expect("write");
+        let raw = fs::read_to_string(dir.join("phase_reports.json")).expect("read");
+        assert!(raw.contains("Diseño del fix"));
+        let _ = fs::remove_dir_all(&dir);
     }
 }

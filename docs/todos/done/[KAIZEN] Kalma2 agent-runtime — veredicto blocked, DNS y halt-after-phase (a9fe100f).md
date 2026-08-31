@@ -6,7 +6,7 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-31"
 updated: "2026-08-31"
-status: "abierto"
+status: "cerrado"
 refined: true
 refinement_status: "refinado"
 priority: alta
@@ -17,6 +17,7 @@ source_audit: docs/audits/kalma2-forge-email-watcher-keepalive-halt-20260830.md
 incident_ref: "bug-fix 9dbcfea6-4df8-47ac-873a-cf9bce846929 / correlation 17546079-3b13-4c21-9e9a-486ee3fec1a3"
 suggested_branch: feat/kalma2-agent-verdict-barrier
 persist_ref_suggested: docs/features/kalma2-agent-verdict-barrier
+archived_path: docs/todos/done/[KAIZEN] Kalma2 agent-runtime — veredicto blocked, DNS y halt-after-phase (a9fe100f).md
 review_notes: "v1.1.0 — el v1.0.0 omitía el normalizador de agent_runtime.rs (blocked→executed), confundía taxonomía F4c DCC con tokens Node ENOTFOUND, atribía phase_reports a workspace_init, y proponía TQM_FULL_CYCLE por heurística NL en contradicción con el laudo 527007fa."
 architectural_constraints:
   - A-NO-MENTIR-EXECUTED
@@ -162,13 +163,13 @@ El texto dual («detente tras plan y commit» / «forja PR») **no** se mapea 1:
 
 ## 4. Criterios de aceptación
 
-- [ ] **CA-A1** Fixture transcript `Veredicto: blocked` + CLI 0 → JSON prótesis `data.status=blocked` y `success=true`. Tras normalizador Rust, `entry.status=blocked`. `executor` no invoca la fase agente siguiente (`Ejecución` / Tekton).
-- [ ] **CA-A2** Fixture `getaddrinfo ENOTFOUND api2.cursor.sh` → `awaiting_agents`; **no** `failed`. Mismo resultado con `SDDIA_AGENT_RUNTIME_REQUIRE_CLI=1`. PEC `cycle_phase=awaiting_agents` (no `failed`). Argos/DCC `skipped` por `phase-barrier`, no por colapso Kintsugi.
-- [ ] **CA-A3** Test unitario Rust: stdout `{"success":true,"data":{"status":"blocked"}}` no se remapea a `executed`.
-- [ ] **CA-B1** `SDDIA_TQM_STOP_AFTER=design` (o input TQM): tras Dedalo `executed` con spec+plan, Tekton no arranca. PEC `cycle_phase` ∉ {`completed`}. PEC ≠ `failed` salvo fallo real de fase.
-- [ ] **CA-B2** Despacho Kalma2 con `correlation_id`, sin `SDDIA_TQM_FULL_CYCLE`: acuse TQM declara skip L2 (`skipped_l2` o campo estable documentado). Nunca UI/PEC `completed` que implique PR forjado. Un `task_text` que mencione «PR» **no** enciende full-cycle.
-- [ ] **CA-C1** `objectives.md` Misión ≠ cuerpo completo del PBI; frontmatter conserva `pbi_ref` si el input lo trae.
-- [ ] **CA-C2** `{workspace_path}/phase_reports.json` existe al terminar (éxito, `stop_after`, `blocked` o DNS `awaiting_agents`).
+- [x] **CA-A1** Fixture transcript `Veredicto: blocked` + CLI 0 → JSON prótesis `data.status=blocked` y `success=true`. Tras normalizador Rust, `entry.status=blocked`. `executor` no invoca la fase agente siguiente (`Ejecución` / Tekton).
+- [x] **CA-A2** Fixture `getaddrinfo ENOTFOUND api2.cursor.sh` → `awaiting_agents`; **no** `failed`. Mismo resultado con `SDDIA_AGENT_RUNTIME_REQUIRE_CLI=1`. PEC `cycle_phase=awaiting_agents` (no `failed`). Argos/DCC `skipped` por `phase-barrier`, no por colapso Kintsugi.
+- [x] **CA-A3** Test unitario Rust: stdout `{"success":true,"data":{"status":"blocked"}}` no se remapea a `executed`.
+- [x] **CA-B1** `SDDIA_TQM_STOP_AFTER=design` (o input TQM): tras Dedalo `executed` con spec+plan, Tekton no arranca. PEC `cycle_phase` ∉ {`completed`}. PEC ≠ `failed` salvo fallo real de fase.
+- [x] **CA-B2** Despacho Kalma2 con `correlation_id`, sin `SDDIA_TQM_FULL_CYCLE`: acuse TQM declara skip L2 (`skipped_l2` o campo estable documentado). Nunca UI/PEC `completed` que implique PR forjado. Un `task_text` que mencione «PR» **no** enciende full-cycle.
+- [x] **CA-C1** `objectives.md` Misión ≠ cuerpo completo del PBI; frontmatter conserva `pbi_ref` si el input lo trae.
+- [x] **CA-C2** `{workspace_path}/phase_reports.json` existe al terminar (éxito, `stop_after`, `blocked` o DNS `awaiting_agents`).
 
 ## 5. Orden
 

@@ -20,6 +20,8 @@ CHAT_STREAM / SQLite (entropía absorbida aquí; cero crates en Core):
   SDDIA_AGENT_RUNTIME_TIMEOUT_SECS — default 600. TimeoutExpired → failed (no soft).
   SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION — override si phase_name empieza por "ejecuc".
   Soft config (awaiting_agents) SIN "timeout": CLI ausente, not found, 401, auth, api_key.
+  Red transitoria Node (enotfound/getaddrinfo/eai_again) → awaiting_agents; REQUIRE_CLI no aplica.
+  Veredicto transcript blocked + CLI 0 → data.status=blocked (success true).
   Autodetect cursor-agent/agent inyecta --trust (host no-interactivo).
   SDDIA_CURSOR_IDE_WATCH_ONLY=1 — rechazado (L-IDE); oráculo = CLI.
   SDDIA_CURSOR_WAKE_AGENT=1   — segundo disparo CLI post-persist SQLite.
@@ -34,6 +36,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shlex
 import sqlite3
 import subprocess
@@ -70,6 +73,23 @@ SOFT_CONFIG_MARKERS = (
     "auth",
 )
 
+NETWORK_TRANSIENT_MARKERS = (
+    "enotfound",
+    "getaddrinfo",
+    "eai_again",
+    "could not resolve host",
+)
+
+_VERDICT_RE = re.compile(r"veredicto\s*:\s*(ok|blocked)", re.IGNORECASE)
+
+
+def parse_agent_verdict(transcript: str) -> str | None:
+    """Última ocurrencia `Veredicto: ok|blocked` (case-insensitive)."""
+    last: str | None = None
+    for m in _VERDICT_RE.finditer(transcript or ""):
+        last = m.group(1).lower()
+    return last
+
 
 def is_soft_config_error(err: str) -> bool:
     """Config-only soft. Timeout is terminal (KALMA2-AUD-4b9de6-001)."""
@@ -77,6 +97,25 @@ def is_soft_config_error(err: str) -> bool:
     if "timeout" in e:
         return False
     return any(x in e for x in SOFT_CONFIG_MARKERS)
+
+
+def is_transient_network_error(err: str) -> bool:
+    """DNS/red Node. Timeout sigue terminal. No copia F4c DCC (`connection timed out`)."""
+    e = (err or "").lower()
+    if "timeout" in e:
+        return False
+    return any(x in e for x in NETWORK_TRANSIENT_MARKERS)
+
+
+def operator_seed(seed: str) -> str:
+    """Un canal: si TQM concatenó PBI adjunto, conservar solo el prompt operador."""
+    s = seed or ""
+    marker = "## PBI adjunto"
+    if marker in s:
+        head = s.split(marker, 1)[0]
+        head = re.sub(r"^## Prompt operador\s*", "", head, count=1, flags=re.IGNORECASE)
+        return head.strip()[:8000]
+    return s[:8000]
 
 
 def resolve_timeout_secs(phase: str = "") -> int:
@@ -475,11 +514,13 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
     agents = doc.get("agents") or []
     agent = agents[0] if agents else "?"
     persist = resolve_persist_ref(doc)
-    pbi_ref = doc.get("pbi_ref") or ""
     corr = doc.get("correlation_id") or ""
     inputs = doc.get("inputs") or {}
+    pbi_ref = str(doc.get("pbi_ref") or "")
     pbi_body = ""
     if isinstance(inputs, dict):
+        if not pbi_ref:
+            pbi_ref = str(inputs.get("pbi_ref") or "")
         pbi_body = (inputs.get("pbi_body") or "")[:12000]
         seed = (
             inputs.get("bug_summary")
@@ -547,10 +588,19 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
                 ]
             )
 
-    if seed:
-        parts.extend(["## Semilla / inputs", str(seed)[:8000], ""])
-    if pbi_body:
-        parts.extend(["## Cuerpo PBI (pbi_body)", pbi_body, ""])
+    seed_op = operator_seed(str(seed) if seed else "")
+    if seed_op:
+        parts.extend(["## Semilla / inputs", seed_op, ""])
+    if pbi_ref:
+        parts.extend(
+            [
+                "## PBI",
+                f"Lee el fichero `{pbi_ref}` (un canal; el cuerpo no se vuelca aquí).",
+                "",
+            ]
+        )
+    elif pbi_body:
+        parts.extend(["## Cuerpo PBI (pbi_body)", pbi_body[:4000], ""])
     parts.append(
         "Al terminar, resume en ≤8 líneas qué archivos tocaste y el veredicto (ok|blocked)."
     )
@@ -1215,7 +1265,8 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         ok, out, err = run_cli(repo, prompt, str(phase))
 
     if ok:
-        status = "executed"
+        verdict = parse_agent_verdict(out or "")
+        status = "blocked" if verdict == "blocked" else "executed"
         message = (out.splitlines()[-1] if out else "ok")[:500]
         handoff = append_handoff(
             repo,
@@ -1241,16 +1292,23 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             data_ok["runtime_evidence"] = evidence
         emit(True, data_ok, None)
 
+    # Red transitoria (DNS Node) → awaiting_agents; REQUIRE_CLI no reclasifica.
     # CLI/SDK ausente o fallo de config → awaiting_agents. Timeout = failed.
-    soft = is_soft_config_error(err or "")
-    # S3 live: no enmascarar ausencia de CLI como awaiting_agents
-    if soft and env_truthy("SDDIA_AGENT_RUNTIME_REQUIRE_CLI"):
-        status = "failed"
-        message = f"REQUIRE_CLI: {err or 'CLI ausente'}"
-        soft = False
+    err_s = err or ""
+    if is_transient_network_error(err_s):
+        status = "awaiting_agents"
+        message = err_s or "runtime falló"
     else:
-        status = "awaiting_agents" if soft else "failed"
-        message = err or "runtime falló"
+        soft = is_soft_config_error(err_s)
+        if soft and env_truthy("SDDIA_AGENT_RUNTIME_REQUIRE_CLI"):
+            status = "failed"
+            message = f"REQUIRE_CLI: {err_s or 'CLI ausente'}"
+        elif soft:
+            status = "awaiting_agents"
+            message = err_s or "runtime falló"
+        else:
+            status = "failed"
+            message = err_s or "runtime falló"
     handoff = append_handoff(
         repo,
         persist,
