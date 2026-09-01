@@ -8,7 +8,7 @@ event_type: "Daemon_Heartbeat"
 context: "system-operations"
 capabilities:
   - "daemon_heartbeat"
-hash_signature: "sha256:fe74d6c877e862b34c75ee88472aa415a9e040580bb01431030c6f2bde02f459"
+hash_signature: "sha256:0ab6667f40161abe203828f48ec778f765f30e226707f5e4dd4c5c96e5cf9c72"
 ---
 
 # Event: Daemon_Heartbeat
@@ -33,8 +33,12 @@ Telemetría vital periódica emitida por Centinelas periféricos.
 ## Emisores autorizados
 
 - `event-watcher`
+- `event-sweeper`
 - `telegram-watcher`
 - `github-bridge-watcher`
+- `email-watcher`
+- `iota-publish-relay`
+- `kalma2-bridge`
 
 ## Suscripciones
 

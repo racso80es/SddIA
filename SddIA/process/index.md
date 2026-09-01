@@ -6,6 +6,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
+| system-vitality-probe | b215b373-f6d3-4fb1-9d55-60eb260df5cc | 1.0.0 | quality-assurance | — | Sondas deterministas de invariantes no-proceso y HTTP de Kal |
 | query-ecosystem-health | 2b337302-e794-46b8-ad4e-f65bafd21c94 | 1.0.0 | quality-assurance | — | Fusiona map-snapshot × territorio Argos/Radamanto/Cerbero y  |
 | compile-ecosystem-map-snapshot | e7f09165-c445-49ae-965d-41abb4738679 | 1.0.0 | ecosystem-evolution | — | Precompila inventario esperado (tools/skills/daemons) en map |
 | instance-creator | dead5ca7-c0b9-42ef-aad6-171991fb524f | 1.3.0 | ecosystem-evolution, filesystem-ops, system-operations | — | Despliegue hermético de instancia consumidor: topología .Sdd |
@@ -51,4 +52,5 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | telegram-gateway | f5a6b7c8-d9e0-4f1a-b2c3-d4e5f6a7b8c9 | 1.0.1 | ecosystem-evolution, external-ingest | — | Aduana texto Telegram → eventos domain (`TelegramMessage_Received`, `Manual_Task_Requested`, `Kaizen_Idea_Captured`). |
 | telegram-fallback-responder | c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f | 1.0.1 | ecosystem-evolution, external-ingest | — | Triaje inverso Telegram: Filtro C → Mayeuta → `send-telegram-notification`. |
 | sync-client-assets | 0f6bf2ff-a067-46fb-9175-ee97e6a5dcd8 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Sincronización unidireccional repositorio maestro → instancia cliente: 4 fases (Manifiesto-Local, Reclamacion, Aduana-Integridad, Inyeccion). Aduana SHA-256 pre-escritura. |
+
 

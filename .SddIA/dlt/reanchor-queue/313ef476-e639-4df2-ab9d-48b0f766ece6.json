@@ -1,6 +1,0 @@
-{
-  "error_trace": "iota-relay-unreachable: http://127.0.0.1:8787/v1/publish: Connection Failed: Connect error: Connection refused (os error 111)",
-  "event_uuid": "313ef476-e639-4df2-ab9d-48b0f766ece6",
-  "path": "/home/racso/Proyectos/SddIA/.events/pending/313ef476-e639-4df2-ab9d-48b0f766ece6.json",
-  "queued_at": "2026-08-30T09:23:52Z"
-}

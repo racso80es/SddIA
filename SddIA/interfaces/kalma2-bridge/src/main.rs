@@ -4,11 +4,12 @@ use std::io::{BufRead, BufReader, Read};
 use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tiny_http::{Header, Method, Response, Server, StatusCode};
 use uuid::Uuid;
+use sddia_daemon_runtime::{load_bus_topology, DaemonRuntime};
 
 #[derive(Deserialize)]
 struct InteractReq {
@@ -2152,6 +2153,35 @@ fn main() {
     });
 
     eprintln!("[kalma2-bridge] activo en http://127.0.0.1:{port}");
+
+    let top = load_bus_topology(&repo);
+    let mut runtime = DaemonRuntime::new(repo.clone(), "kalma2-bridge");
+    if let Err(e) = runtime.bootstrap(&top) {
+        eprintln!("[kalma2-bridge] heartbeat bootstrap: {e}");
+        std::process::exit(1);
+    }
+    let shared = Arc::new(Mutex::new(runtime));
+    {
+        let hb = Arc::clone(&shared);
+        let top_hb = top.clone();
+        thread::spawn(move || loop {
+            if let Ok(mut rt) = hb.lock() {
+                if let Err(e) = rt.tick(&top_hb) {
+                    eprintln!("[kalma2-bridge] heartbeat: {e}");
+                }
+            }
+            thread::sleep(Duration::from_secs(10));
+        });
+    }
+    {
+        let stop = Arc::clone(&shared);
+        let _ = ctrlc::set_handler(move || {
+            if let Ok(mut rt) = stop.lock() {
+                rt.shutdown();
+            }
+            std::process::exit(0);
+        });
+    }
 
     let repo = Arc::new(repo);
     let ui_root = Arc::new(ui_root);

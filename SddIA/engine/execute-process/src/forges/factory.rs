@@ -3,9 +3,10 @@
 use super::common::{
     append_row, capability_name, dependencies_from_inputs, format_dependencies_yaml, handoff_create,
     idempotent_forge_handoff, optional_str, parse_frontmatter, patch_action_content_update,
-    patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
-    patch_process_phases_update, refresh_process_hash, repo_tool_base, required_str, sha256_canon,
-    str_field,     sync_action_index_row, sync_daemons_index_census, update_library_norm_index_version,
+    merge_daemon_capabilities, patch_artifact_body_replacements, patch_hash_signature_refresh,
+    patch_norm_content_update, patch_process_phases_update, refresh_process_hash, repo_tool_base,
+    required_str, sha256_canon, str_field, sync_action_index_row, sync_daemons_index_census,
+    sync_event_family_class_count, sync_events_root_family_count, update_library_norm_index_version,
     update_process_index_version, norm_integrity_hash, generate_uuid,
 };
 use crate::core::paths::load_paths_config;
@@ -1067,6 +1068,23 @@ pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let events_root = repo.join("SddIA/events").join(&effective_family);
     let event_path = events_root.join(format!("{name}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    if lifecycle == "update" && event_path.is_file() {
+        if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            let (entity_uuid, old_hash, new_hash, version) =
+                patch_artifact_body_replacements(&event_path, replacements)?;
+            let family_index = events_root.join("index.md");
+            let n = sync_event_family_class_count(&family_index)?;
+            sync_events_root_family_count(repo, &effective_family, n)?;
+            return Ok(json!({
+                "artifact_event_md": event_path.strip_prefix(repo).unwrap_or(&event_path).to_string_lossy().replace('\\', "/"),
+                "artifact_events_index": family_index.strip_prefix(repo).unwrap_or(&family_index).to_string_lossy().replace('\\', "/"),
+                "handoff_entity_uuid": entity_uuid,
+                "handoff_hash_signature_new": new_hash,
+                "handoff_hash_signature_old": old_hash,
+                "handoff_version": version,
+            }));
+        }
+    }
     if lifecycle == "create" && event_path.is_file() {
         return Err(format!("Ya existe {}", event_path.display()));
     }
@@ -1160,6 +1178,8 @@ hash_signature: "{hash_sig}"
             fs::write(&index_path, idx).map_err(|e| e.to_string())?;
         }
     }
+    let family_n = sync_event_family_class_count(&index_path)?;
+    sync_events_root_family_count(repo, &effective_family, family_n)?;
 
     Ok(json!({
         "artifact_event_md": event_path.strip_prefix(repo).unwrap_or(&event_path).to_string_lossy().replace('\\', "/"),
@@ -1231,6 +1251,63 @@ pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
     if let Some(skip) = idempotent_forge_handoff(&daemon_path, &lifecycle)? {
         return Ok(skip);
+    }
+    if lifecycle == "update" && daemon_path.is_file() {
+        let mut patched = false;
+        let mut entity_uuid = String::new();
+        let mut old_hash = String::new();
+        let mut new_hash = String::new();
+        let mut version = String::new();
+        if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            if replacements
+                .as_array()
+                .map(|a| !a.is_empty())
+                .unwrap_or(true)
+            {
+                let r = patch_artifact_body_replacements(&daemon_path, replacements)?;
+                entity_uuid = r.0;
+                old_hash = r.1;
+                new_hash = r.2;
+                version = r.3;
+                patched = true;
+            }
+        }
+        let extra_caps: Vec<String> = inputs
+            .get("daemon_capabilities")
+            .and_then(|v| v.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x.as_str())
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_string)
+                    .collect()
+            })
+            .unwrap_or_default();
+        if !extra_caps.is_empty() {
+            let r = merge_daemon_capabilities(
+                &daemon_path,
+                &daemons_root.join("index.md"),
+                &name,
+                &extra_caps,
+            )?;
+            if !patched {
+                old_hash = r.1;
+            }
+            entity_uuid = r.0;
+            new_hash = r.2;
+            version = r.3;
+            patched = true;
+        }
+        if patched {
+            return Ok(json!({
+                "artifact_daemon_md": daemon_path.strip_prefix(repo).unwrap_or(&daemon_path).to_string_lossy().replace('\\', "/"),
+                "handoff_entity_uuid": entity_uuid,
+                "handoff_hash_signature_new": new_hash,
+                "handoff_hash_signature_old": old_hash,
+                "handoff_version": version,
+            }));
+        }
     }
     if lifecycle == "create" && daemon_path.is_file() {
         return Err(format!("Ya existe {}", daemon_path.display()));

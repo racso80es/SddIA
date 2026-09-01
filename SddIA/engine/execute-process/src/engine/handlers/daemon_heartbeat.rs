@@ -158,6 +158,63 @@ fn emit_system_fracture(
     }))
 }
 
+fn emit_orphan_lock_fracture(
+    repo: &Path,
+    state: &mut Value,
+    daemon_id: &str,
+    pid: i32,
+    lock: &Value,
+) -> Result<Option<Value>, String> {
+    let daemons = state
+        .as_object_mut()
+        .and_then(|o| o.get_mut("daemons"))
+        .and_then(|d| d.as_object_mut())
+        .ok_or("state daemons invalid")?;
+    let mut entry = daemons
+        .get(daemon_id)
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    if entry.get("fracture_event_id").is_some() {
+        entry.insert("classification".into(), json!("orphan_lock"));
+        daemons.insert(daemon_id.to_string(), Value::Object(entry));
+        return Ok(None);
+    }
+    let last_hb = entry
+        .get("last_heartbeat_at")
+        .and_then(|v| v.as_str())
+        .or_else(|| lock.get("started_at").and_then(|v| v.as_str()));
+    let error_trace = format!(
+        "Centinela {daemon_id} lock huérfano: PID {pid} muerto. last_heartbeat={}",
+        last_hb.unwrap_or("never")
+    );
+    let pending = load_eda_pending(repo)?;
+    let event_id = Uuid::new_v4().to_string();
+    let event = json!({
+        "event_id": event_id,
+        "event_type": "System_Fracture_Detected",
+        "timestamp": iso_now(),
+        "emitter_agent": "argos",
+        "payload": {
+            "process_name": daemon_id,
+            "error_trace": error_trace,
+            "agent_emitter": "argos",
+            "attempted_action": "daemon-heartbeat-audit",
+            "daemon_uuid": resolve_daemon_uuid(repo, daemon_id),
+            "orphan_pid": pid,
+        },
+    });
+    let target = repo.join(&pending).join(format!("{event_id}.json"));
+    write_json_atomic(&target, &event)?;
+    entry.insert("classification".into(), json!("orphan_lock"));
+    entry.insert("fracture_event_id".into(), json!(event_id));
+    daemons.insert(daemon_id.to_string(), Value::Object(entry));
+    Ok(Some(json!({
+        "event_id": event_id,
+        "target_path": target.strip_prefix(repo).unwrap_or(&target).to_string_lossy().replace('\\', "/"),
+    })))
+}
+
 fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Option<&str>) {
     let Some(daemon_name) = payload.get("daemon_name").and_then(|v| v.as_str()) else {
         return;
@@ -342,7 +399,7 @@ fn audit_running_daemon(
     };
     let pid = lock.get("pid").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
     if !pid_alive(pid) {
-        return Ok(None);
+        return emit_orphan_lock_fracture(repo, state, daemon_id, pid, &lock);
     }
 
     if host_suspend {
@@ -691,5 +748,37 @@ mod tests {
         assert_eq!(entry["classification"], "healthy");
         assert_eq!(entry["missed_cycles"], 0);
         assert!(entry.get("status").is_none());
+    }
+
+    #[test]
+    fn orphan_lock_dead_pid_emits_fracture_once() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/daemons/kalma2-bridge.md"),
+            "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\nname: kalma2-bridge\nexecution:\n  heartbeat_interval_seconds: 30\n---\n",
+        )
+        .unwrap();
+        crate::engine::daemons::write_lock(repo, "kalma2-bridge", 999_999, 30).unwrap();
+        let audit = audit_staleness(repo).unwrap();
+        assert_eq!(audit.fractures.len(), 1, "{:?}", audit.fractures);
+        let eid = audit.fractures[0]["event_id"].as_str().unwrap();
+        let raw = std::fs::read_to_string(repo.join(".events/pending").join(format!("{eid}.json")))
+            .unwrap();
+        assert!(raw.contains("lock huérfano"), "{raw}");
+        let audit2 = audit_staleness(repo).unwrap();
+        assert!(
+            audit2.fractures.is_empty(),
+            "idempotente: {:?}",
+            audit2.fractures
+        );
     }
 }
