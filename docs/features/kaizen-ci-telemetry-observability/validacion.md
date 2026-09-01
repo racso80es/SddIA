@@ -12,6 +12,9 @@ document_id: PBI-KAIZEN-CI-TELEMETRY-OBSERVABILITY
 uuid: "f8661783-55b7-4419-b659-e96369c02410"
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/249
+ci_run_id: "33516407073"
+ci_run_event: pull_request
 checks:
   CA1: APTO
   CA2: APTO
@@ -42,13 +45,14 @@ git_changes:
   - docs/features/kaizen-ci-telemetry-observability/implementation.md
   - docs/features/kaizen-ci-telemetry-observability/execution.md
   - docs/features/kaizen-ci-telemetry-observability/validacion.md
+  - docs/features/kaizen-ci-telemetry-observability/finalize-process.md
   - docs/features/kaizen-ci-telemetry-observability/_smoke-remote-ci-failure.json
   - docs/todos/done/[KAIZEN] Telemetría de CI - Captura remota de colapsos y asimilación local.md
 ---
 
 # Validacion — kaizen-ci-telemetry-observability
 
-`global: APTO`. Verificación = tests locales T4 (no CA de GitHub Actions como medio). PBI archivado en esta rama.
+`global: APTO`. Tests locales T4 + CI `pull_request` run [33516407073](https://github.com/racso80es/SddIA/actions/runs/33516407073) (cinco jobs SUCCESS). PBI archivado. PR https://github.com/racso80es/SddIA/pull/249.
 
 ## Checks
 

@@ -11,6 +11,7 @@ items_applied:
   - T2-bridge-sensor
   - T3-accumulator
   - T4-tests
+  - T8-delivery-close
 ---
 
 # Ejecución — kaizen-ci-telemetry-observability
@@ -37,3 +38,8 @@ cargo test -p execute-process --lib ci_job_failed_writes_ledger_not_stats
 cargo build -p github-bridge-watcher
 # ok
 ```
+
+## T8 DCC
+
+`execution_id` `025d4be9-528d-422d-a537-15aa89e21a1b`. Snapshot `70bf794`. PR [#249](https://github.com/racso80es/SddIA/pull/249). `PullRequest_Presented` `a5d63f50-464d-491d-a50c-188d87d33a3e`. CI run `33516407073` verde.
+
