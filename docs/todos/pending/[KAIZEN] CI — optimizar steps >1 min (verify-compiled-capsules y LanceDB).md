@@ -3,11 +3,11 @@ document_id: PBI-KAIZEN-CI-STEP-RUNTIME-GT-1MIN
 uuid: "530039c9-100b-413a-b3d5-ca632d83acc6"
 title: "[KAIZEN] CI — optimizar steps >1 min (verify-compiled-capsules y LanceDB)"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-09-01"
 updated: "2026-09-01"
-status: done
-refinement_status: implemented
+status: abierto
+refinement_status: refined
 priority: alta
 process: feature
 executor_vehicle: feature
@@ -90,6 +90,15 @@ Ningún step de los jobs hermanos supera 60 s en este run. Wall-clock de job >60
 
 `build-wasi-capsules.sh` **no** es cuello de botella en este run (11 s / 10 s). No se ataca en el ciclo salvo que un run cold-cache lo eleve >60 s.
 
+### 0.3 Evidencia A3.0 / A3.1 (PR #246, mismo PBI)
+
+| Ola | Run `pull_request` | Job integrity | headSha | Build | LanceDB | Job | Hecho |
+| :--- | :--- | :--- | :--- | ---: | ---: | ---: | :--- |
+| A3.0 hit `target/` | [33495498463](https://github.com/racso80es/SddIA/actions/runs/33495498463) | [99816608487](https://github.com/racso80es/SddIA/actions/runs/33495498463/job/99816608487) | `754c575` | 429 s | 419 s | 15 m 11 s | Restore `target/` 43 s **no** calienta Cargo (mtimes). |
+| A3.1 sccache sin wrapper | [33498554132](https://github.com/racso80es/SddIA/actions/runs/33498554132) | [99827293302](https://github.com/racso80es/SddIA/actions/runs/33498554132/job/99827293302) | `867bf5d` | 486 s | 830 s | 22 m 30 s | sccache: **0** compile requests; location `Local disk`. `CARGO_INCREMENTAL=0` **sin** wrapper alarga LanceDB (419→830 s). |
+
+`lookup-only: true` (A3.0 IOTA) **no descarga** el blob; A3.1 ya usa `actions/cache/restore@v4`.
+
 ## 1. Superficie de impacto (genoma verificado)
 
 - Workflow: `.github/workflows/sddia-index-qa.yml`, job `sddia-index-integrity`.
@@ -170,10 +179,29 @@ Medir, no dogma:
 | :--- | :--- |
 | First-write-wins de key `native-*` deja `target/` parcial | Keys por job, o iota **restore-only** (sin save de `SddIA/target`), o save solo desde integrity |
 | Restore de `SddIA/target` (62 s) no paga si el hit es parcial | Registry/git vs registry/git+target; wall-clock del job |
-| `CARGO_INCREMENTAL=0` | Solo con números |
-| sccache / mold\|lld | Solo si A1+A2+key de cache no bastan |
+| `CARGO_INCREMENTAL=0` | A3.1: **sí hay números** — sin wrapper **regresiona** LanceDB 419→830 s. Con wrapper: hipótesis (no medida aquí). |
+| sccache / mold\|lld | A3.1 instaló `sccache-action@v0.0.9` **sin** `RUSTC_WRAPPER` → 0 requests. Mold sigue fuera. |
 
 Prohibido partir LanceDB a job paralelo si Σ minutos-runner crece más que el ahorro de wall-clock del workflow (Filtro C).
+
+### Ola A3.0 / A3.1 — cerradas (NO_APTO)
+
+- A3.0: key `native-integrity-*` + `target/` en el blob. Hit no recorta compile.
+- A3.1: `target/` fuera del blob; `sccache-action` presente; wrapper **ausente**. Job peor que baseline. No cuenta como «primer run de calentamiento» de sccache GHA.
+
+### Ola A3.2 — Wrapper sccache (laudo v1.2.0)
+
+Tres palancas del Vértice Biológico, con correcciones anti-alucinación:
+
+1. **Inyección de entorno (sí, con colocación estricta).** Cargo no usa sccache salvo `RUSTC_WRAPPER=sccache`. El backend GHA no se activa salvo `SCCACHE_GHA_ENABLED=true` (A3.1: location = disco local del runner, efímero).
+   - **No** al `env:` de workflow: los jobs `wasi-*` no instalan sccache; el wrapper rompería `rustc`.
+   - `SCCACHE_GHA_ENABLED=true` y `CARGO_INCREMENTAL=0`: `env` de jobs `sddia-index-integrity`, `eda-iota-smoke-simulate`, `eda-iota-physical` (pueden existir **antes** de `sccache-action`).
+   - `RUSTC_WRAPPER=sccache`: **después** de `sccache-action` (step `GITHUB_ENV` o `env:` de los steps `cargo`/`sccache stats`). Si el wrapper está al arranque del job, `rustc -vV` (step `rustc cache id`) y `dtolnay/rust-toolchain` pueden ejecutarse **antes** de que sccache esté en `PATH`.
+   - Gate de honestidad del calentamiento: `sccache --show-stats` del primer SHA A3.2 debe mostrar `Compile requests` **> 0**. Si sigue en 0, CA1/CA5 no se aplazan a un «segundo run».
+2. **`CARGO_INCREMENTAL=0` (sostener, acoplado al wrapper).** Hipótesis operativa estándar (incremental de Cargo vs objetos de sccache); **no** está medida con wrapper en este repo. Sin wrapper es perjudicial (A3.1). No revertir incremental=0 en A3.2; si el primer SHA A3.2 tiene requests>0 y el segundo no comprime, reevaluar con números, no dogma.
+3. **Validación empírica en dos SHA del mismo PR (sí; no el mismo `headSha`).** `push` y `pull_request` del **mismo** SHA corren **en paralelo**: ninguno calienta al otro. CA1/CA5 se sellan en un `pull_request` **posterior** cuyo job integrity muestre hits sccache > 0 (GHA, no disco local). Protocolo: SHA-1 (wrapper) = calentamiento (suelo ~340 s+ admisible); SHA-2 (p. ej. sello documental) = medición. Prohibido `gh run rerun` del SHA-1 como sustituto (DA-6). Prohibido declarar APTO el SHA-1 «porque CI está verde».
+
+CA1 anti-maquillaje y CA5 (< 8 min, sin fallback 50 %) **no cambian**. Techo CA1 50 % (170 s / 180 s) solo en el SHA-2.
 
 ### Ola A4 — Cierre documental
 
@@ -181,11 +209,11 @@ Prohibido partir LanceDB a job paralelo si Σ minutos-runner crece más que el a
 
 ## 4. Criterios de aceptación
 
-- [ ] **CA1 (Umbral, anti-maquillaje):** en un run `pull_request` post-parche, `verify-compiled-capsules` y `LanceDB memory integration tests` duran **< 60 s** cada uno **con el compile que hoy vive en esos steps aún atribuido a ese presupuesto**. Si se separa compile vs verify, la **suma** compile-de-bins-del-gate + verify, y la **suma** compile-cfg(test)-adapters + tests LanceDB, deben cumplir el mismo umbral. **O** `spec.md` fija techo justificado con cronómetro **< 50 % del baseline de ese step** (340 s / 361 s) porque el suelo de compile lo impide.
+- [ ] **CA1 (Umbral, anti-maquillaje):** en un run `pull_request` **SHA-2 A3.2** (hits sccache > 0; no el SHA-1 de calentamiento ni `push`+`PR` del mismo OID), `Build native workspace` + `verify-compiled-capsules` y el step LanceDB duran **< 60 s** cada presupuesto **con el compile aún atribuido**. **O** techo `spec.md` **< 50 %** del baseline (340 s / 361 s) con cronómetro de ese SHA-2. Verde funcional del SHA-1 no sella APTO.
 - [ ] **CA2 (Cobertura):** el gate sigue exigiendo el mismo conjunto de bins `main.rs` (hoy 29 + `mandatory_bins`). Los 16 tests actuales (o superconjunto / mapeo explícito si hay integración) se ejecutan.
 - [ ] **CA3 (Inventario):** A0 del run `33477170741` queda como SSOT en este PBI. El PR de cierre adjunta tabla de steps del mismo workflow; si aparece un step nuevo >60 s, decisión atacar / diferir / techo.
-- [ ] **CA4 (Cache):** decisión empírica sobre key `native-*` y sobre cachear `SddIA/target` (mantener / partir por job / restore-only en iota / eliminar target) en `implementation.md` con números de un run.
-- [ ] **CA5 (Job):** wall-clock de `sddia-index-integrity` **< 8 min** en `pull_request` (baseline 13 m 36 s), sin `continue-on-error` ni skip de aduana.
+- [ ] **CA4 (Cache):** A3.2 cablea `SCCACHE_GHA_ENABLED` (job) + `RUSTC_WRAPPER` (post-action). `implementation.md` con stats sccache (requests, hits, location) del SHA-1 y SHA-2. `SddIA/target` no vuelve al blob salvo números nuevos.
+- [ ] **CA5 (Job):** wall-clock de `sddia-index-integrity` **< 8 min** en el mismo SHA-2 `pull_request` (baseline 13 m 36 s), sin `continue-on-error` ni skip de aduana. Sin fallback 50 %.
 - [ ] **CA6 (Hermandad):** `wasi-runtime-smoke`, `eda-bus-e2e-smoke`, `eda-iota-smoke-simulate` verdes en el PR de cierre. `eda-iota-physical` con `conclusion: success`; si el secret está ausente, el skip `exit 0` no cuenta como prueba de anclaje (fuera de alcance de este PBI).
 - [ ] **CA7 (Forja):** si se muta `SddIA/tools/`, vía `./sddia-run.sh --process entity-manager`. Workflow `.github/` en el mismo PR. Evolution anclado a `530039c9-100b-413a-b3d5-ca632d83acc6`.
 
@@ -222,3 +250,15 @@ document_id: PBI-KAIZEN-CI-STEP-RUNTIME-GT-1MIN
 | Coste LanceDB = compilar lancedb/Arrow de nuevo | Deps ya compiladas vía execute-process; calor = `cfg(test)` del orquestador (**366** tests compilados / 3 ejecutados). |
 | CA1 medible por nombre de step | Renombrar/partir compile maquilla el umbral; CA1 ahora suma presupuestos. |
 | `SddIA/scripts/qa/build-wasi-capsules.sh` en related como superficie caliente | Fuera de alcance salvo regresión A0. |
+
+## 8. Correcciones v1.1.0 / A3.1 → v1.2.0
+
+| Tesis | Hecho |
+| :--- | :--- |
+| `sccache-action` basta para que Cargo pase por sccache | A3.1: 0 compile requests. Hace falta `RUSTC_WRAPPER=sccache` **después** de instalar el binario. |
+| `SCCACHE_GHA_ENABLED` es opcional / implícito | A3.1: cache location = `Local disk`. Sin flag GHA el segundo runner no hereda el calentamiento. |
+| Inyectar wrapper en el `env:` raíz del workflow | Rompe jobs WASI (no instalan sccache). Solo integrity + IOTA. |
+| `CARGO_INCREMENTAL=0` siempre ayuda | Sin wrapper **regresiona** (LanceDB 830 s). Con wrapper: hipótesis, no cronómetro local. |
+| Primer run del PR = medición CA1/CA5 | Calentamiento. Medición = segundo SHA del mismo PR con hits>0. `push`+`pull_request` del mismo SHA no serializan. |
+| A3.1 (`867bf5d`) calentó sccache GHA | Falso. 0 requests. No es el SHA-1 de A3.2. |
+| Restore de `SddIA/target` en hit recorta compile | A3.0: 429 s ≈ frío. Mtimes de checkout. |

@@ -3,7 +3,7 @@ feature_name: kaizen-ci-step-runtime-gt-1min
 created: "2026-09-01"
 process: feature
 purpose: Estabilización Mayeuta — calor residual steps CI >60s
-version_clarify: "1.0.0"
+version_clarify: "1.1.0"
 execution_id: "a13e2476-8474-49ef-ab2f-0d1fe915a21f"
 pbi_ref: docs/todos/pending/[KAIZEN] CI — optimizar steps >1 min (verify-compiled-capsules y LanceDB).md
 document_id: PBI-KAIZEN-CI-STEP-RUNTIME-GT-1MIN
@@ -45,3 +45,12 @@ Run [33477170741](https://github.com/racso80es/SddIA/actions/runs/33477170741) `
 ## D3 — Forja
 
 YAML `.github/` ∉ DA-2. `engine/execute-process` ∉ tabla DA-2. Evolution vía `sddia-qa evolution-register`. `SddIA/tools/` no se toca.
+
+## D4 — A3.2 (PBI v1.2.0)
+
+| Palanca | Colocación |
+|---------|------------|
+| `SCCACHE_GHA_ENABLED=true` | `env` job integrity + IOTA (antes del action) |
+| `RUSTC_WRAPPER=sccache` | `GITHUB_ENV` **después** de `sccache-action` |
+| `CARGO_INCREMENTAL=0` | `env` job (ya presente; no revertir) |
+| Medición CA1/CA5 | SHA-2 del mismo PR; SHA-1 = calentamiento si stats requests > 0 |

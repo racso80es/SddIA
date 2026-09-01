@@ -11,7 +11,7 @@ persist_ref: docs/features/kaizen-ci-step-runtime-gt-1min
 pbi_ref: docs/todos/pending/[KAIZEN] CI — optimizar steps >1 min (verify-compiled-capsules y LanceDB).md
 document_id: PBI-KAIZEN-CI-STEP-RUNTIME-GT-1MIN
 uuid: "530039c9-100b-413a-b3d5-ca632d83acc6"
-version_spec: "1.1.0"
+version_spec: "1.2.0"
 status: dedalo_locked
 runtime_execution_id: "a13e2476-8474-49ef-ab2f-0d1fe915a21f"
 ---
@@ -34,7 +34,7 @@ Erradicar calor de compile en `sddia-index-integrity` sin debilitar `verify-comp
 |-----|----------|
 | **L-CACHE-INTEGRITY** | Integrity: `actions/cache@v4` de `~/.cargo/{registry,git}` (sin `SddIA/target`). Key `native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-${{ steps.rustc.outputs.hash }}`. `restore-keys`: mismo prefijo lock (sin legado `native-*`). |
 | **L-CACHE-IOTA-RO** | IOTA simulate + physical: `actions/cache/restore@v4` (misma key/paths). **Prohibido** `lookup-only` (no descarga). Jobs `wasi-*` intactos. |
-| **L-SCCACHE** | `mozilla-actions/sccache-action@v0.0.9` en integrity + IOTA. `CARGO_INCREMENTAL=0`. Permiso `actions: write`. Sin mold. Desbloqueado por A3 tras hit `754c575` (restore `target/` 43 s + compile 429 s). |
+| **L-SCCACHE** | Integrity + IOTA: `sccache-action@v0.0.9`. Job env: `CARGO_INCREMENTAL=0`, `SCCACHE_GHA_ENABLED=true` (antes del action). Tras el action: `echo RUSTC_WRAPPER=sccache >> $GITHUB_ENV`. No en `env:` de workflow (WASI). A3.1: 0 compile requests sin wrapper. |
 | **L-ONE-WORKSPACE** | Un `cargo build --workspace` (step `Build native workspace`). Eliminar `Build QA aduana` de dos `-p`. |
 | **L-GATE-IO** | `verify-compiled-capsules` solo ejecuta `sddia-qa verify-compiled-capsules`. CA1 = suma L-ONE-WORKSPACE + este step. |
 | **L-INGEST-ITEST** | Mover los 3 tests de `memory_evolution_ingest_core.rs` a `tests/memory_evolution_ingest.rs`. Borrar el módulo `#[cfg(test)]` del lib. |
@@ -65,11 +65,15 @@ Mismo `path`/`key`/`restore-keys` vía `actions/cache/restore@v4`. sccache igual
 
 ### 4.3 Steps integrity (orden)
 
-1. checkout, protoc, rust-toolchain, rustc id, sccache, cache §4.1
-2. `Build native workspace` → `cd SddIA && cargo build --workspace`
-3. `verify-tools-index` / `verify-process-integrity` / `evolution-register unit tests` (comandos vigentes)
-4. `verify-compiled-capsules` → `SddIA/target/debug/sddia-qa verify-compiled-capsules`
-5. LanceDB → § L-TEST-CMD
+1. checkout, protoc, rust-toolchain, rustc id
+2. `sccache-action@v0.0.9`
+3. `sccache rustc wrapper` → `echo RUSTC_WRAPPER=sccache >> "$GITHUB_ENV"`
+4. cache §4.1
+5. `Build native workspace` → `cd SddIA && cargo build --workspace`
+6. `verify-tools-index` / `verify-process-integrity` / `evolution-register unit tests` (comandos vigentes)
+7. `verify-compiled-capsules` → `SddIA/target/debug/sddia-qa verify-compiled-capsules`
+8. LanceDB → § L-TEST-CMD
+9. `sccache stats`
 
 ## 5. Contrato tests ingest
 
@@ -79,4 +83,6 @@ Integración usa API pública: `ingest_domain_event_file`, `lancedb_uri`, `vecto
 
 Ola A3.0 (cerrada, NO_APTO): run 33495498463 hit de key con `SddIA/target` en el blob → Build 429 s / LanceDB 419 s / job 15 m 11 s. Causa: fingerprints Cargo vs mtimes de checkout; `lookup-only` no restaura IOTA.
 
-Ola A3.1: sccache GHA + no cachear `target/` + `restore@v4`. Primer SHA A3.1 = miss de sccache (suelo ~340 s). CA1/CA5 se miden en el **segundo** `pull_request` con hit sccache. Techo CA1 50 % (170 s / 180 s) y CA5 < 8 min sin fallback.
+Ola A3.1 (cerrada, NO_APTO): action sin wrapper → 0 requests; job 22 m 30 s. No es SHA-1 de calentamiento.
+
+Ola A3.2: wrapper post-action + `SCCACHE_GHA_ENABLED` en job. SHA-1 = calentamiento (gate: compile requests > 0). SHA-2 mismo PR = medición CA1/CA5 (hits > 0). `push`+`PR` del mismo OID no serializan. Techo CA1 50 % (170 s / 180 s) y CA5 < 8 min sin fallback, solo SHA-2.
