@@ -11,6 +11,7 @@ items_applied:
   - T3-ingest-itest
   - T4-evolution
   - T1b-a31-sccache
+  - T8-a32-wrapper
 ---
 
 # Ejecución — kaizen-ci-step-runtime-gt-1min
@@ -26,6 +27,10 @@ items_applied:
 ## T1b — A3.1 (iteracion)
 
 `lookup-only` sustituido. `SddIA/target` fuera del blob. `mozilla-actions/sccache-action@v0.0.9`. `permissions.actions: write`.
+
+## T8 — A3.2 wrapper
+
+Job env `SCCACHE_GHA_ENABLED=true`. Step `sccache rustc wrapper` → `RUSTC_WRAPPER` en `GITHUB_ENV` tras el action. WASI intacto. Commit Diseño A3.2: `9eacf10`.
 
 ## T3 tests locales
 

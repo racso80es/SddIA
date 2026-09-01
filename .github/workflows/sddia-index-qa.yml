@@ -30,6 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CARGO_INCREMENTAL: "0"
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
       - name: Install protoc (lance-encoding)
@@ -40,6 +41,8 @@ jobs:
         run: echo "hash=$(rustc -vV | sha256sum | awk '{print $1}')" >> "$GITHUB_OUTPUT"
       - name: sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+      - name: sccache rustc wrapper
+        run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
       - uses: actions/cache@v4
         with:
           path: |
@@ -73,6 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CARGO_INCREMENTAL: "0"
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
       - name: Install protoc (lance-encoding)
@@ -83,6 +87,8 @@ jobs:
         run: echo "hash=$(rustc -vV | sha256sum | awk '{print $1}')" >> "$GITHUB_OUTPUT"
       - name: sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+      - name: sccache rustc wrapper
+        run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
       - uses: actions/cache/restore@v4
         with:
           path: |
@@ -229,6 +235,7 @@ jobs:
        github.event.pull_request.head.repo.full_name == github.repository)
     env:
       CARGO_INCREMENTAL: "0"
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
       - name: Install protoc (lance-encoding)
@@ -239,6 +246,8 @@ jobs:
         run: echo "hash=$(rustc -vV | sha256sum | awk '{print $1}')" >> "$GITHUB_OUTPUT"
       - name: sccache
         uses: mozilla-actions/sccache-action@v0.0.9
+      - name: sccache rustc wrapper
+        run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
       - uses: actions/cache/restore@v4
         with:
           path: |
