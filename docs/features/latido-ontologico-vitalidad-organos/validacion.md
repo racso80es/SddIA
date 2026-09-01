@@ -1,7 +1,7 @@
 ---
 feature_name: latido-ontologico-vitalidad-organos
 created: "2026-08-31"
-updated: "2026-08-31"
+updated: "2026-09-01"
 process: feature
 branch_name: feat/latido-ontologico-vitalidad-organos
 persist_ref: docs/features/latido-ontologico-vitalidad-organos
@@ -21,7 +21,9 @@ checks:
   VIT_CA4_VITALITY_EVENT: APTO
   VIT_CA5_SWEEPER: APTO
   VIT_CA6_NO_FORBIDDEN_CLASSES: APTO
-  CA_CI: PENDIENTE-CI
+  CA_CI: APTO
+pr_url: https://github.com/racso80es/SddIA/pull/243
+ci_run_id: "33477170741"
 git_changes:
   - SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs
   - SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
@@ -40,7 +42,7 @@ git_changes:
 
 ## Veredicto
 
-**APTO** — criterios de aceptación locales verdes; genoma vía entity-manager; PBI archivado en la misma rama. `CA_CI` queda `PENDIENTE-CI` hasta `run_id` de GitHub Actions (patrón CA de CI).
+**APTO** — criterios de aceptación locales verdes; genoma vía entity-manager; PBI archivado en la misma rama. `CA_CI` sellado con run GitHub Actions `33477170741` (head `58e0802`, workflow `sddia-index-qa`, evento `pull_request`).
 
 ## Checks
 
@@ -52,7 +54,7 @@ git_changes:
 | `VIT_CA4_VITALITY_EVENT` | APTO | clase `System_Vitality_Probed` uuid `380e11c3-…`; proceso `b215b373-…`; sondas cerbero red/green |
 | `VIT_CA5_SWEEPER` | APTO | 3 tests cadencia 300/piso 30; capability `vitality-probe-sweep` |
 | `VIT_CA6_NO_FORBIDDEN_CLASSES` | APTO | cero `System_Heartbeat_Emitted` / `System_Degraded` en el diff de entrega |
-| `CA_CI` | PENDIENTE-CI | sin `run_id` al sello documental |
+| `CA_CI` | APTO | [run 33477170741](https://github.com/racso80es/SddIA/actions/runs/33477170741) — `eda-iota-smoke-simulate`, `wasi-runtime-smoke`, `eda-bus-e2e-smoke`, `eda-iota-physical`, `sddia-index-integrity` SUCCESS |
 
 ## Fuera
 
