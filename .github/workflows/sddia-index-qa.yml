@@ -81,13 +81,16 @@ jobs:
           key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
           restore-keys: |
             native-${{ runner.os }}-
-      - name: Build centinelas + orquestador + QA
+      - name: Build centinelas + orquestador + publisher + QA
         run: |
           cd SddIA
           cargo build -p event-watcher
           cargo build -p execute-process
+          cargo build -p iota-immutable-publisher
           cargo build -p sddia-qa
       - name: run-iota-ci-smoke (simulate)
+        env:
+          SDDIA_LAB_SIMULATE_IOTA: "1"
         run: SddIA/target/debug/sddia-qa run-iota-ci-smoke --simulate --json
 
   wasi-runtime-smoke:
