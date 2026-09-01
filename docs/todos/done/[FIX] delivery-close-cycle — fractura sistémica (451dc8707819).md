@@ -3,10 +3,10 @@ document_id: PBI-FIX-FRACTURE-451dc8707819
 uuid: "bc16d090-2f7c-4845-8134-032989b094dc"
 title: "[FIX] delivery-close-cycle — pr_title con metacaracter en argv de shell-executor"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-09-01"
 updated: "2026-09-01"
-status: "abierto"
+status: "cerrado"
 refinement_status: "refinado"
 priority: alta
 process: bug-fix
@@ -21,6 +21,7 @@ incident_ref: "System_Fracture_Detected — 451dc8707819"
 specimen_cycle: "feat/kaizen-ci-step-runtime-gt-1min (PR #246; 1.ª DCC; residual fuera de ese PR)"
 suggested_branch: fix/dcc-pr-title-metachar-451dc8707819
 persist_ref_suggested: docs/fixes/dcc-pr-title-metachar-451dc8707819
+resolution_ref: docs/fixes/dcc-pr-title-metachar-451dc8707819/
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
@@ -34,6 +35,8 @@ related:
   - docs/fixes/kaizen-delivery-close-snapshot-pr-body/spec.md
   - docs/todos/done/[FIX] delivery-close-cycle — fractura sistémica (c51acf014c0f).md
   - docs/todos/done/[KAIZEN] CI — optimizar steps >1 min (verify-compiled-capsules y LanceDB).md
+  - SddIA/evolution/022dab7e-deba-4c3c-92e9-2eba68efbe8b.md
+  - docs/fixes/dcc-pr-title-metachar-451dc8707819/
 ---
 
 # [FIX] delivery-close-cycle — `pr_title` con metacaracter en argv
@@ -170,8 +173,8 @@ Corregir F1–F3 en `bug-fix`. **Prohibido bypass raw** (`gh`, `git`, `curl`) ha
 
 ## Criterio de cierre
 
-- [ ] F1: título con `>` no colapsa como `arguments[3]` (saneo o `blocked` tipado)
-- [ ] F2: `error_code` / `friction_id` distinguen title vs body
-- [ ] F3: Mayeuta clasifica esta traza; no catch-all ni recursión hook
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/` en el mismo PR
+- [x] F1: título con `>` no colapsa como `arguments[3]` (saneo o `blocked` tipado)
+- [x] F2: `error_code` / `friction_id` distinguen title vs body
+- [x] F3: Mayeuta clasifica esta traza; no catch-all ni recursión hook
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/` en el mismo PR

@@ -40,13 +40,57 @@ fn is_shell_token_safe(token: &str) -> bool {
         && !token.contains('&')
 }
 
+/// Saneo determinista para tokens que GitHub admite pero argv de `shell-executor` rechaza.
+/// No relaja la allowlist: el token resultante debe pasar `is_shell_token_safe`.
+fn sanitize_shell_argv_token(token: &str) -> String {
+    let mut s = token.replace("$(", "(");
+    s = s.replace("&&", " and ");
+    s = s.replace('&', " and ");
+    s = s.replace('>', " gt ");
+    s = s.replace('<', " lt ");
+    s = s.replace('|', "/");
+    s = s.replace(';', ",");
+    s = s.replace(['\n', '\r'], " ");
+    s = s.replace('`', "'");
+    s.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn parse_arguments_index(err: &str) -> Option<usize> {
+    let rest = err.split("arguments[").nth(1)?;
+    rest.split(']').next()?.parse().ok()
+}
+
 fn classify_delivery_error(err: &str) -> Option<&'static str> {
+    if err.contains("path --body-file no pasa preflight") {
+        return Some("PR_BODY_METACHAR");
+    }
     if err.contains("forbidden shell metacharacters")
         || err.contains("no pasa preflight de token seguro")
     {
-        Some("PR_BODY_METACHAR")
-    } else {
-        None
+        if let Some(idx) = parse_arguments_index(err) {
+            return Some(match idx {
+                3 => "PR_TITLE_METACHAR",
+                9 => "PR_BODY_METACHAR",
+                _ => "SHELL_METACHAR",
+            });
+        }
+        if err.contains("pr_title") {
+            return Some("PR_TITLE_METACHAR");
+        }
+        if err.contains("body-file") || err.contains("pr_body") {
+            return Some("PR_BODY_METACHAR");
+        }
+        return Some("SHELL_METACHAR");
+    }
+    None
+}
+
+fn friction_for_delivery_error_code(code: &str) -> Option<&'static str> {
+    match code {
+        "PR_TITLE_METACHAR" => Some("F-DCC-PR-TITLE-METACHAR"),
+        "PR_BODY_METACHAR" => Some("F-DCC-PR-BODY-METACHAR"),
+        "SHELL_METACHAR" => Some("F-DCC-SHELL-METACHAR"),
+        _ => None,
     }
 }
 
@@ -55,12 +99,22 @@ fn format_delivery_error(error_code: &str, msg: &str) -> String {
 }
 
 fn delivery_phase_failed(handler: &str, error_code: &str, msg: &str) -> Value {
-    json!({
+    let mut v = json!({
         "status": "failed",
         "handler": handler,
         "error_code": error_code,
         "error": format_delivery_error(error_code, msg),
-    })
+    });
+    if let Some(fid) = friction_for_delivery_error_code(error_code) {
+        v["friction_id"] = json!(fid);
+    }
+    v
+}
+
+fn delivery_phase_blocked(handler: &str, error_code: &str, msg: &str) -> Value {
+    let mut v = delivery_phase_failed(handler, error_code, msg);
+    v["status"] = json!("blocked");
+    v
 }
 
 fn git_porcelain_stdout(data: &Value) -> String {
@@ -709,12 +763,44 @@ pub fn capsule_delivery_gh_pr(
         }));
     }
     let target = str_field(inputs, "target_branch").unwrap_or_else(|| "main".into());
-    let title = delivery_pr_title(inputs);
+    let title_raw = delivery_pr_title(inputs);
+    let title = sanitize_shell_argv_token(&title_raw);
+    if title.is_empty() || !is_shell_token_safe(&title) {
+        let mut blocked = delivery_phase_blocked(
+            "delivery-gh-pr",
+            "PR_TITLE_METACHAR",
+            "pr_title no produce token argv seguro (índice 3)",
+        );
+        blocked["field"] = json!("pr_title");
+        blocked["argv_index"] = json!(3);
+        blocked["pr_title_original"] = json!(title_raw);
+        return Ok(blocked);
+    }
+    if !is_shell_token_safe(&branch) {
+        let mut blocked = delivery_phase_blocked(
+            "delivery-gh-pr",
+            "SHELL_METACHAR",
+            "branch_name no pasa preflight de token seguro (índice 5)",
+        );
+        blocked["field"] = json!("branch_name");
+        blocked["argv_index"] = json!(5);
+        return Ok(blocked);
+    }
+    if !is_shell_token_safe(&target) {
+        let mut blocked = delivery_phase_blocked(
+            "delivery-gh-pr",
+            "SHELL_METACHAR",
+            "target_branch no pasa preflight de token seguro (índice 7)",
+        );
+        blocked["field"] = json!("target_branch");
+        blocked["argv_index"] = json!(7);
+        return Ok(blocked);
+    }
     let mut args = vec![
         "pr".into(),
         "create".into(),
         "--title".into(),
-        title,
+        title.clone(),
         "--head".into(),
         branch.clone(),
         "--base".into(),
@@ -736,6 +822,23 @@ pub fn capsule_delivery_gh_pr(
         args.push(body_path);
     } else {
         args.push("--fill".into());
+    }
+    for (i, token) in args.iter().enumerate() {
+        if is_shell_token_safe(token) {
+            continue;
+        }
+        let code = match i {
+            3 => "PR_TITLE_METACHAR",
+            9 => "PR_BODY_METACHAR",
+            _ => "SHELL_METACHAR",
+        };
+        let mut blocked = delivery_phase_blocked(
+            "delivery-gh-pr",
+            code,
+            &format!("arguments[{i}] no pasa preflight de token seguro"),
+        );
+        blocked["argv_index"] = json!(i);
+        return Ok(blocked);
     }
     let data = match invoke_shell_executor(repo, "gh", &args) {
         Ok(d) => d,
@@ -797,13 +900,22 @@ pub fn capsule_delivery_gh_pr(
     })?;
     if let Some(obj) = state.as_object_mut() {
         obj.insert("pr_url".into(), json!(pr_url));
+        if title != title_raw {
+            obj.insert("pr_title_original".into(), json!(title_raw.clone()));
+            obj.insert("pr_title".into(), json!(title.clone()));
+        }
     }
-    Ok(json!({
+    let mut out = json!({
         "status": "executed",
         "handler": "delivery-gh-pr",
         "pr_url": pr_url,
         "gh_stdout": stdout.chars().take(500).collect::<String>(),
-    }))
+    });
+    if title != title_raw {
+        out["pr_title_original"] = json!(title_raw);
+        out["pr_title"] = json!(title);
+    }
+    Ok(out)
 }
 
 pub fn capsule_delivery_emit_presented(
@@ -1502,9 +1614,44 @@ mod delivery_close_kaizen_tests {
     }
 
     #[test]
+    fn sanitize_shell_argv_token_specimen_gt() {
+        let raw = "feat: kaizen CI — steps >1 min (cache integrity + ingest itest)";
+        let out = sanitize_shell_argv_token(raw);
+        assert!(!out.contains('>'));
+        assert!(is_shell_token_safe(&out));
+        assert!(out.contains("gt"));
+        assert!(out.contains("1 min"));
+    }
+
+    #[test]
     fn map_shell_metachar_error_to_pr_body_metachar() {
         let err = "arguments[9] contains forbidden shell metacharacters";
         assert_eq!(classify_delivery_error(err), Some("PR_BODY_METACHAR"));
+    }
+
+    #[test]
+    fn map_arguments_3_to_pr_title_metachar() {
+        let err = "arguments[3] contains forbidden shell metacharacters";
+        assert_eq!(classify_delivery_error(err), Some("PR_TITLE_METACHAR"));
+        let wrapped = "[PR_BODY_METACHAR] arguments[3] contains forbidden shell metacharacters";
+        assert_eq!(classify_delivery_error(wrapped), Some("PR_TITLE_METACHAR"));
+    }
+
+    #[test]
+    fn delivery_phase_failed_stamps_title_friction() {
+        let entry = delivery_phase_failed(
+            "delivery-gh-pr",
+            "PR_TITLE_METACHAR",
+            "arguments[3] contains forbidden shell metacharacters",
+        );
+        assert_eq!(
+            entry.get("friction_id").and_then(|v| v.as_str()),
+            Some("F-DCC-PR-TITLE-METACHAR")
+        );
+        assert_eq!(
+            entry.get("error_code").and_then(|v| v.as_str()),
+            Some("PR_TITLE_METACHAR")
+        );
     }
 
     #[test]
