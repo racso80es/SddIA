@@ -14,6 +14,7 @@ uuid: "bc16d090-2f7c-4845-8134-032989b094dc"
 incident_ref: "System_Fracture_Detected — 451dc8707819"
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/248
 checks:
   CA1: APTO
   CA2: APTO
