@@ -12,6 +12,7 @@ incident_ref: "System_Fracture_Detected — a90fad3fa8fa"
 global: APTO
 pbi_archived: true
 branch: fix/iota-dlt-publish-fetch-failed
+pr_url: https://github.com/racso80es/SddIA/pull/245
 approval_status: aprobado
 verdict: aprobado
 checks:
