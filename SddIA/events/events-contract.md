@@ -130,7 +130,7 @@ Variantes **Updated** y **Deleted** se documentan en sus Clases; heredan la dist
 
 | Familia | Naturaleza | Emisor autorizado | Destino runtime (Fase 3+) |
 |---------|------------|-------------------|---------------------------|
-| `telemetry` | Ruido físico — infraestructura | Solo CLI (Peaje Termodinámico) | `./.events/telemetry/` |
+| `telemetry` | Ruido físico — infraestructura | CLI (Peaje Termodinámico) **y** centinelas catalogados en la Clase (`Daemon_Heartbeat`, `CI_Job_Failed`) | `./.events/telemetry/` |
 | `orchestration` | Comunicación entre ED | CLI (éxito) o auditores | `./.events/orchestration/` |
 | `domain` | Verdad ontológica | Cúmulo, Cerbero, Radamanto | `./.events/domain/` + V3+ `pending/` (coexistencia) |
 

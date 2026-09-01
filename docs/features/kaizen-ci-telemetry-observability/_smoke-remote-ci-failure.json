@@ -1,0 +1,18 @@
+{
+  "check_runs": [
+    {
+      "id": 4242,
+      "name": "sddia-index-integrity",
+      "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "conclusion": "failure",
+      "html_url": "https://github.com/racso80es/SddIA/actions/runs/1/job/4242"
+    },
+    {
+      "id": 4243,
+      "name": "wasi-runtime-smoke",
+      "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "conclusion": "cancelled",
+      "html_url": "https://github.com/racso80es/SddIA/actions/runs/1/job/4243"
+    }
+  ]
+}

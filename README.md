@@ -43,7 +43,7 @@ Programas de referencia: [Telemetría Reactiva EDA S+ Grade](docs/features/telem
 
 | Familia | Naturaleza | Emisor autorizado | Destino runtime |
 |---------|------------|-------------------|-----------------|
-| `telemetry` | Ruido físico (Nivel 1) | **Solo CLI** (Peaje Termodinámico) | `./.events/telemetry/` |
+| `telemetry` | Ruido físico (Nivel 1) | CLI (Peaje Termodinámico) y centinelas catalogados en la Clase (`Daemon_Heartbeat`, `CI_Job_Failed`) | `./.events/telemetry/` |
 | `orchestration` | Línea de montaje táctica | CLI (éxito) / auditores | `./.events/orchestration/` |
 | `domain` | Verdad ontológica (Nivel 3) | Agentes Core (Cúmulo, Cerbero, Radamanto, …) | `./.events/domain/` |
 

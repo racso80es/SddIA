@@ -1,4 +1,7 @@
-use sddia_daemon_runtime::github_bridge::{load_bridge_state, process_pr};
+use sddia_daemon_runtime::github_bridge::{
+    assimilate_failed_check_runs, failed_check_runs_from_payload, load_bridge_state,
+    load_lab_ci_failure_payload, process_pr,
+};
 use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
 use serde_json::{json, Value};
 use std::env;
@@ -98,9 +101,14 @@ fn pr_record_from_github(item: &Value, repository: &str) -> Value {
         .and_then(|h| h.get("ref"))
         .and_then(|v| v.as_str())
         .unwrap_or("");
+    let head_sha = head
+        .and_then(|h| h.get("sha"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     json!({
         "repository": repository,
         "branch": branch,
+        "head_sha": head_sha,
         "pr_url": item.get("html_url").and_then(|v| v.as_str()).unwrap_or(""),
         "origin_agent": "jules",
         "github_number": item.get("number"),
@@ -159,6 +167,32 @@ fn fetch_open_prs(_repo: &Path, repository: &str, token: &str) -> Vec<Value> {
     records
 }
 
+fn fetch_check_runs(owner: &str, name: &str, sha: &str, token: &str) -> Option<Value> {
+    if sha.is_empty() {
+        return None;
+    }
+    let url = format!(
+        "https://api.github.com/repos/{owner}/{name}/commits/{sha}/check-runs?per_page=100"
+    );
+    github_request(&url, token)
+}
+
+fn checks_for_pr(repo: &Path, pr: &Value, repository: &str, token: &str) -> Vec<Value> {
+    if lab_simulate() {
+        return load_lab_ci_failure_payload(repo)
+            .map(|data| failed_check_runs_from_payload(&data))
+            .unwrap_or_default();
+    }
+    let sha = pr.get("head_sha").and_then(|v| v.as_str()).unwrap_or("");
+    let Some((owner, name)) = parse_repo_slug(repository) else {
+        return vec![];
+    };
+    let Some(data) = fetch_check_runs(&owner, &name, sha, token) else {
+        return vec![];
+    };
+    failed_check_runs_from_payload(&data)
+}
+
 fn fetch_lab_simulation(repo: &Path) -> Vec<Value> {
     let path = repo.join(SIMULATION_REL);
     if !path.is_file() {
@@ -206,10 +240,60 @@ fn run_cycle(
     };
 
     if candidates.is_empty() {
+        if lab_simulate() {
+            if let Some(data) = load_lab_ci_failure_payload(repo) {
+                let checks = failed_check_runs_from_payload(&data);
+                if !checks.is_empty() {
+                    match assimilate_failed_check_runs(
+                        repo,
+                        top,
+                        &mut state,
+                        &checks,
+                        repository.trim(),
+                        None,
+                        "",
+                    ) {
+                        Ok(n) if n > 0 => {
+                            if let Ok(mut rt) = shared.lock() {
+                                rt.note_stimulus();
+                            }
+                        }
+                        Ok(_) => {}
+                        Err(e) => eprintln!("[GITHUB-BRIDGE] CI_Job_Failed assimilate error: {e}"),
+                    }
+                }
+            }
+        }
         if let Ok(mut rt) = shared.lock() {
             let _ = rt.tick(top);
         }
         return 0;
+    }
+
+    let token = env::var("GITHUB_TOKEN").unwrap_or_default();
+    let token = token.trim().to_string();
+
+    for pr in &candidates {
+        let pr_url = pr.get("pr_url").and_then(|v| v.as_str()).unwrap_or("");
+        let head_sha = pr.get("head_sha").and_then(|v| v.as_str()).unwrap_or("");
+        let checks = checks_for_pr(repo, pr, repository.trim(), &token);
+        match assimilate_failed_check_runs(
+            repo,
+            top,
+            &mut state,
+            &checks,
+            repository.trim(),
+            if pr_url.is_empty() { None } else { Some(pr_url) },
+            head_sha,
+        ) {
+            Ok(n) if n > 0 => {
+                if let Ok(mut rt) = shared.lock() {
+                    rt.note_stimulus();
+                }
+            }
+            Ok(_) => {}
+            Err(e) => eprintln!("[GITHUB-BRIDGE] CI_Job_Failed assimilate error: {e}"),
+        }
     }
 
     for pr in candidates {

@@ -45,6 +45,7 @@ pub fn load_fractal_subscription_rel(repo: &Path, key: &str) -> Result<String, S
 pub fn load_radamanto_config(repo: &Path) -> Result<HashMap<String, Value>, String> {
     let mut defaults: HashMap<String, Value> = HashMap::from([
         ("stats".into(), json!(".SddIA/radamanto/stats.json")),
+        ("ci_failures".into(), json!(".SddIA/radamanto/ci_failures.json")),
         ("consumed".into(), json!(".SddIA/radamanto/consumed.json")),
         (
             "thresholds".into(),

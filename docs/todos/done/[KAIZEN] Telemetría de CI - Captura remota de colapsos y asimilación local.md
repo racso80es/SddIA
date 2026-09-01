@@ -6,14 +6,15 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-30"
 updated: "2026-09-01"
-status: pending
-refinement_status: refinado
+status: done
+refinement_status: implemented
 priority: media
 process: feature
 executor_vehicle: feature
 type: kaizen
 dispatch: false
 suggested_branch: feat/kaizen-ci-telemetry-observability
+persist_ref: docs/features/kaizen-ci-telemetry-observability
 persist_ref_suggested: docs/features/kaizen-ci-telemetry-observability
 depends_on: []
 related:
@@ -139,13 +140,13 @@ MVP de este PBI = A1 + A2 + A3.1. A3.2/A3.3 quedan en spec como olas siguientes,
 
 ## 3. Criterios de aceptación
 
-- [ ] **CA1 (Cruce de umbral):** Un job del workflow `sddia-index-qa` con `conclusion=failure` en un PR abierto (o fixture lab equivalente) produce exactamente una instancia `CI_Job_Failed` en `./.events/telemetry/` tras un ciclo del puente. Sin comentarios en el PR. Sin intervención de Tekton (`gh pr checks` / `gh run rerun`).
-- [ ] **CA2 (Idempotencia):** Dos ciclos consecutivos del puente sobre el mismo `check_run_id` (o `run_id`+`job_id`) no duplican instancias. El sello vive en `BridgeState`, no en reacciones GitHub.
-- [ ] **CA3 (Trinidad):** La Clase está catalogada en `telemetry/index.md`; `emitter_agent=github-bridge-watcher` es emisor autorizado de esa Clase (no de `Raw_Execution_Finished`). La instancia no se escribe en `eda_bus.pending` ni en `./.events/domain/`.
-- [ ] **CA4 (Cancelación ≠ fallo):** Un job `cancelled` (concurrency) no emite `CI_Job_Failed`.
-- [ ] **CA5 (Forja):** `ci-job-failed.md` nace por `entity-manager`. Diff de genoma `events/` + índices coherentes. `radamanto.thresholds.json` **no** se edita a mano.
-- [ ] **CA6 (No revocación ciega):** El MVP no emite `Domain_Entity_Degraded` ni muta ratios de entidades de genoma a partir de CI. Un flake no entra en `.SddIA/cerbero/revoked_entities.json`.
-- [ ] **CA7 (Lab):** Fixture de check fallido ejecutable con `github-bridge-watcher --once` y `SDDIA_LAB_SIMULATE_REMOTE_PR` (o flag documentado) sin `GITHUB_TOKEN`.
+- [x] **CA1 (Cruce de umbral):** Un job del workflow `sddia-index-qa` con `conclusion=failure` en un PR abierto (o fixture lab equivalente) produce exactamente una instancia `CI_Job_Failed` en `./.events/telemetry/` tras un ciclo del puente. Sin comentarios en el PR. Sin intervención de Tekton (`gh pr checks` / `gh run rerun`).
+- [x] **CA2 (Idempotencia):** Dos ciclos consecutivos del puente sobre el mismo `check_run_id` (o `run_id`+`job_id`) no duplican instancias. El sello vive en `BridgeState`, no en reacciones GitHub.
+- [x] **CA3 (Trinidad):** La Clase está catalogada en `telemetry/index.md`; `emitter_agent=github-bridge-watcher` es emisor autorizado de esa Clase (no de `Raw_Execution_Finished`). La instancia no se escribe en `eda_bus.pending` ni en `./.events/domain/`.
+- [x] **CA4 (Cancelación ≠ fallo):** Un job `cancelled` (concurrency) no emite `CI_Job_Failed`.
+- [x] **CA5 (Forja):** `ci-job-failed.md` nace por `entity-manager`. Diff de genoma `events/` + índices coherentes. `radamanto.thresholds.json` **no** se edita a mano.
+- [x] **CA6 (No revocación ciega):** El MVP no emite `Domain_Entity_Degraded` ni muta ratios de entidades de genoma a partir de CI. Un flake no entra en `.SddIA/cerbero/revoked_entities.json`.
+- [x] **CA7 (Lab):** Fixture de check fallido ejecutable con `github-bridge-watcher --once` y `SDDIA_LAB_SIMULATE_REMOTE_PR` (o flag documentado) sin `GITHUB_TOKEN`.
 
 Fuera de MVP (no bloquear el PR de A1+A2+A3.1):
 
