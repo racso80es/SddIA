@@ -5,6 +5,7 @@ process: bug-fix
 branch: fix/email-watcher-elf-fosil-1933c0a0fe2c
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/244
 checks:
   CA1-release-elf-fresh: pass
   CA2-tests: pass
@@ -42,4 +43,4 @@ Residual de entrega: PID 7064 ejecutaba ELF release 2026-08-26 sin keepalive. Fu
 |------|--------|
 | PBI → `docs/todos/done/` | ✅ |
 | `pbi_archived: true` | ✅ |
-| PR único pre-merge | ⏳ `delivery-close-cycle` |
+| PR único pre-merge | ✅ https://github.com/racso80es/SddIA/pull/244 |
