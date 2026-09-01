@@ -64,6 +64,8 @@ PPR #186 · CID `CNwwfDm7Hqb1zd23zRtkjP2o7QqgR5PaH26YBpbN8Wz3` · ciclo authorin
 | Cosecha Kaizen dedup | `HL5aytKdLW8NosiKrUjvaxJtQxzrb8XsAsQMz45sm6ps` | PPR #212 · feature-revoked-registry-rehab-ppr210 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · `feature`∉revoked (healthy · rehab A1 @ `06:13:50Z`) · execution `5beaf62e…` |
 | Cosecha Kaizen dedup | `HAS1wo6bQXZUdH7MQHMzLsyTTcDraMU2UAoyVjffAhth` | PPR #208 · accept-pr-revoked-registry-rehab-ppr208 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · `accept-pr`∉revoked (healthy · rehab A1 @ `06:13:50Z`) · execution `9cdc6d8a…` |
 | Cosecha Kaizen dedup | `8ZjTzcBwfFAVFQujfjGCJwJeJcj5pbB4SMHAD5bn5ybE` | PPR kaizen-aduana-evolution-local · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · seed PPR aparte |
+| Cosecha Kaizen dedup | `600cd25c-7d3d-4be4-a53b-54a9ff64be51` | PPR #247 restore-pbi-kaizen-ci-step-archive · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · seed PPR pending aparte · exec `ab27081e…` |
+| Cosecha Kaizen dedup | `AU1AzkrREQVTRhGHexuqiumPXPw8iP2SgCSLB7AcFKfc` | PPR restore-pbi-kaizen-ci-step-archive · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · seed PPR aparte (`PBI-RESTORE-…-PPR-REVOKED-REGISTRY`) · exec `a315ae3e…` |
 
 ## Contexto heredado (PBI-185)
 
