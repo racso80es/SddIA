@@ -43,6 +43,14 @@ fn is_remote_branch_absent_trace(error_trace: &str) -> bool {
     t.contains("head sha can't be blank") || t.contains("head ref must be a branch")
 }
 
+fn is_shell_metachar_fracture_trace(error_trace: &str) -> bool {
+    error_trace.contains("PR_TITLE_METACHAR")
+        || error_trace.contains("PR_BODY_METACHAR")
+        || error_trace.contains("SHELL_METACHAR")
+        || (error_trace.contains("forbidden shell metacharacters")
+            && error_trace.contains("arguments["))
+}
+
 /// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section).
 pub fn analyze_fracture_kaizen(
     process_name: &str,
@@ -101,6 +109,21 @@ pub fn analyze_fracture_kaizen(
         proposals.push((
             "process_fix".into(),
             "Halt de Apertura/Sello/Higiene si Publicación remota es `failed`/`blocked` (genoma DCC ya lo exige)."
+                .into(),
+        ));
+    }
+
+    if is_shell_metachar_fracture_trace(error_trace) {
+        root_causes.push(
+            "`delivery-close-cycle` Apertura en forja: token argv rechazado por `shell-executor` \
+             (`pr_title` / `branch_name` / `--body-file`). No es recursión hook. \
+             No reabrir K2 `--body-file` (`F-DCC-PR-TITLE-METACHAR`)."
+                .into(),
+        );
+        proposals.push((
+            "process_fix".into(),
+            "Preflight argv y sanear `pr_title`; códigos `PR_TITLE_METACHAR` ≠ `PR_BODY_METACHAR`. \
+             No relajar `assert_safe_token`. No reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`."
                 .into(),
         ));
     }
@@ -390,6 +413,23 @@ mod tests {
         assert!(!section.contains("Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE`"));
         assert!(section.contains("Head sha can't be blank") || section.contains("Rama ausente"));
         assert_eq!(verdict, "process_fix");
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_pr_title_metachar_not_hook() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            "[PR_BODY_METACHAR] arguments[3] contains forbidden shell metacharacters",
+            "Apertura en forja",
+            "execute-process",
+        );
+        assert_eq!(verdict, "process_fix");
+        assert!(section.contains("argv") || section.contains("pr_title"));
+        assert!(section.contains("F-DCC-PR-TITLE-METACHAR") || section.contains("PR_TITLE_METACHAR"));
+        assert!(!section.contains("Recursión o re-entrada"));
+        assert!(!section.contains("Auditar proceso"));
+        assert!(!section.contains("no clasificada"));
+        assert!(!section.contains("Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE`"));
     }
 
     #[test]

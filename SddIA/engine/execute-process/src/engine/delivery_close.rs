@@ -326,6 +326,24 @@ fn dcc_workflow_scope_block_suppresses_fracture(
         && dcc_workflow_scope_trace(error_trace)
 }
 
+fn dcc_title_metachar_trace(trace: &str) -> bool {
+    trace.contains("PR_TITLE_METACHAR") || trace.contains("F-DCC-PR-TITLE-METACHAR")
+}
+
+fn dcc_title_metachar_block_suppresses_fracture(
+    phase_name: &str,
+    status: &str,
+    error_trace: &str,
+    report: &Value,
+) -> bool {
+    matches!(status, "failed" | "blocked")
+        && phase_name == "Apertura en forja"
+        && (dcc_title_metachar_trace(error_trace)
+            || report.get("friction_id").and_then(|v| v.as_str())
+                == Some("F-DCC-PR-TITLE-METACHAR")
+            || report.get("error_code").and_then(|v| v.as_str()) == Some("PR_TITLE_METACHAR"))
+}
+
 fn dcc_post_push_phase(phase_name: &str) -> bool {
     matches!(
         phase_name,
@@ -404,6 +422,9 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
             continue;
         }
         if dcc_workflow_scope_block_suppresses_fracture(phase_name, status, &error_trace) {
+            continue;
+        }
+        if dcc_title_metachar_block_suppresses_fracture(phase_name, status, &error_trace, report) {
             continue;
         }
         let friction_id = dcc_friction_id(phase_name, report);
@@ -772,6 +793,26 @@ mod tests {
             "status": "blocked",
             "friction_id": "F-DCC-WORKFLOW-SCOPE",
             "error": "without `workflow` scope",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_forge_title_metachar() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Apertura en forja",
+            "status": "blocked",
+            "error_code": "PR_TITLE_METACHAR",
+            "friction_id": "F-DCC-PR-TITLE-METACHAR",
+            "error": "[PR_TITLE_METACHAR] arguments[3] contains forbidden shell metacharacters",
         })];
         emit_dcc_phase_fractures(repo, &reports);
         let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
