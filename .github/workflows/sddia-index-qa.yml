@@ -18,6 +18,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write
 
 # Pin: install.sh (latest via GitHub API) parsea `{` bajo rate-limit y sale 0.
 # Empiría PR #239 job wasi-runtime-smoke: Wasmtime ({) → URL inválida → wasmtime not in PATH.
@@ -27,25 +28,33 @@ env:
 jobs:
   sddia-index-integrity:
     runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: "0"
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
       - name: Install protoc (lance-encoding)
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - uses: dtolnay/rust-toolchain@stable
+      - name: rustc cache id
+        id: rustc
+        run: echo "hash=$(rustc -vV | sha256sum | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: sccache rustc wrapper
+        run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
       - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            SddIA/target
-          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          key: native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-${{ steps.rustc.outputs.hash }}
           restore-keys: |
-            native-${{ runner.os }}-
-      - name: Build QA aduana (execute-process + sddia-qa)
+            native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-
+      - name: Build native workspace
         run: |
           cd SddIA
-          cargo build -p execute-process
-          cargo build -p sddia-qa
+          cargo build --workspace
       - name: verify-tools-index
         run: SddIA/target/debug/sddia-qa verify-tools-index
       - name: verify-process-integrity
@@ -53,34 +62,41 @@ jobs:
       - name: evolution-register unit tests
         run: cargo test -p sddia-evolution-register --manifest-path SddIA/Cargo.toml
       - name: verify-compiled-capsules
-        run: |
-          cd SddIA
-          cargo build --workspace
-          target/debug/sddia-qa verify-compiled-capsules
+        run: SddIA/target/debug/sddia-qa verify-compiled-capsules
       - name: LanceDB memory integration tests
         run: |
           cd SddIA
-          cargo test -p sddia-core-memory
-          cargo test -p sddia-infrastructure-lancedb-thought
-          cargo test -p sddia-infrastructure-lancedb-evolution
-          cargo test -p execute-process -- memory_evolution_ingest json_fallback
+          cargo test -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution
+          cargo test -p execute-process --test memory_evolution_ingest
+      - name: sccache stats
+        if: always()
+        run: sccache --show-stats
 
   eda-iota-smoke-simulate:
     runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: "0"
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
       - name: Install protoc (lance-encoding)
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/cache@v4
+      - name: rustc cache id
+        id: rustc
+        run: echo "hash=$(rustc -vV | sha256sum | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: sccache rustc wrapper
+        run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+      - uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            SddIA/target
-          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          key: native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-${{ steps.rustc.outputs.hash }}
           restore-keys: |
-            native-${{ runner.os }}-
+            native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-
       - name: Build centinelas + orquestador + publisher + QA
         run: |
           cd SddIA
@@ -92,6 +108,9 @@ jobs:
         env:
           SDDIA_LAB_SIMULATE_IOTA: "1"
         run: SddIA/target/debug/sddia-qa run-iota-ci-smoke --simulate --json
+      - name: sccache stats
+        if: always()
+        run: sccache --show-stats
 
   wasi-runtime-smoke:
     runs-on: ubuntu-latest
@@ -214,20 +233,29 @@ jobs:
       (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') &&
       (github.event_name != 'pull_request' ||
        github.event.pull_request.head.repo.full_name == github.repository)
+    env:
+      CARGO_INCREMENTAL: "0"
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
       - name: Install protoc (lance-encoding)
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/cache@v4
+      - name: rustc cache id
+        id: rustc
+        run: echo "hash=$(rustc -vV | sha256sum | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+      - name: sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+      - name: sccache rustc wrapper
+        run: echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+      - uses: actions/cache/restore@v4
         with:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            SddIA/target
-          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          key: native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-${{ steps.rustc.outputs.hash }}
           restore-keys: |
-            native-${{ runner.os }}-
+            native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-
       - name: Build nativos (smoke IOTA físico)
         run: |
           cd SddIA
@@ -244,3 +272,6 @@ jobs:
             exit 0
           fi
           SddIA/target/debug/sddia-qa run-iota-ci-smoke --require-physical --json
+      - name: sccache stats
+        if: always()
+        run: sccache --show-stats
