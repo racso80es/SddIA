@@ -11,7 +11,7 @@ persist_ref: docs/features/kaizen-ci-step-runtime-gt-1min
 pbi_ref: docs/todos/pending/[KAIZEN] CI — optimizar steps >1 min (verify-compiled-capsules y LanceDB).md
 document_id: PBI-KAIZEN-CI-STEP-RUNTIME-GT-1MIN
 uuid: "530039c9-100b-413a-b3d5-ca632d83acc6"
-version_spec: "1.0.0"
+version_spec: "1.1.0"
 status: dedalo_locked
 runtime_execution_id: "a13e2476-8474-49ef-ab2f-0d1fe915a21f"
 ---
@@ -32,18 +32,21 @@ Erradicar calor de compile en `sddia-index-integrity` sin debilitar `verify-comp
 
 | Ref | Decisión |
 |-----|----------|
-| **L-CACHE-INTEGRITY** | Integrity: key `native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}`. `restore-keys`: `native-integrity-${{ runner.os }}-` y legado `native-${{ runner.os }}-`. |
-| **L-CACHE-IOTA-RO** | `eda-iota-smoke-simulate` y `eda-iota-physical`: misma key/paths, `lookup-only: true`. No save. Jobs `wasi-*` intactos (`wasi-…`). |
+| **L-CACHE-INTEGRITY** | Integrity: `actions/cache@v4` de `~/.cargo/{registry,git}` (sin `SddIA/target`). Key `native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-${{ steps.rustc.outputs.hash }}`. `restore-keys`: mismo prefijo lock (sin legado `native-*`). |
+| **L-CACHE-IOTA-RO** | IOTA simulate + physical: `actions/cache/restore@v4` (misma key/paths). **Prohibido** `lookup-only` (no descarga). Jobs `wasi-*` intactos. |
+| **L-SCCACHE** | `mozilla-actions/sccache-action@v0.0.9` en integrity + IOTA. `CARGO_INCREMENTAL=0`. Permiso `actions: write`. Sin mold. Desbloqueado por A3 tras hit `754c575` (restore `target/` 43 s + compile 429 s). |
 | **L-ONE-WORKSPACE** | Un `cargo build --workspace` (step `Build native workspace`). Eliminar `Build QA aduana` de dos `-p`. |
 | **L-GATE-IO** | `verify-compiled-capsules` solo ejecuta `sddia-qa verify-compiled-capsules`. CA1 = suma L-ONE-WORKSPACE + este step. |
 | **L-INGEST-ITEST** | Mover los 3 tests de `memory_evolution_ingest_core.rs` a `tests/memory_evolution_ingest.rs`. Borrar el módulo `#[cfg(test)]` del lib. |
 | **L-TEST-CMD** | `cargo test -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution` y `cargo test -p execute-process --test memory_evolution_ingest`. |
 | **L-NO-QA** | Cero cambios en `SddIA/tools/sddia-qa`. |
-| **L-NO-SCCACHE** | No sccache/mold en este ciclo. Si CA1/CA5 fallan en el PR, techo en `validacion.md` con `run_id` (CA1 fallback 50 %). CA5 sin fallback: reevaluar solo con números. |
+| **L-NO-MOLD** | No mold/lld en este ciclo. CA1 fallback 50 % y CA5 sin fallback siguen vigentes. |
 
 ## 4. Contrato YAML
 
 ### 4.1 Cache integrity
+
+Tras toolchain: `rustc cache id`, `sccache`, luego:
 
 ```yaml
 - uses: actions/cache@v4
@@ -51,20 +54,18 @@ Erradicar calor de compile en `sddia-index-integrity` sin debilitar `verify-comp
     path: |
       ~/.cargo/registry
       ~/.cargo/git
-      SddIA/target
-    key: native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+    key: native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-${{ steps.rustc.outputs.hash }}
     restore-keys: |
-      native-integrity-${{ runner.os }}-
-      native-${{ runner.os }}-
+      native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}-
 ```
 
 ### 4.2 Cache IOTA (simulate + physical)
 
-Idéntico `path`/`key`/`restore-keys` + `lookup-only: true`.
+Mismo `path`/`key`/`restore-keys` vía `actions/cache/restore@v4`. sccache igual. No save de `actions/cache`.
 
 ### 4.3 Steps integrity (orden)
 
-1. checkout, protoc, rust-toolchain, cache §4.1
+1. checkout, protoc, rust-toolchain, rustc id, sccache, cache §4.1
 2. `Build native workspace` → `cd SddIA && cargo build --workspace`
 3. `verify-tools-index` / `verify-process-integrity` / `evolution-register unit tests` (comandos vigentes)
 4. `verify-compiled-capsules` → `SddIA/target/debug/sddia-qa verify-compiled-capsules`
@@ -76,4 +77,6 @@ Integración usa API pública: `ingest_domain_event_file`, `lancedb_uri`, `vecto
 
 ## 6. Techo CA1 (suelo físico)
 
-Si el PR de cierre es cache-miss de `native-integrity-*` (restore parcial legado), `Build native workspace` puede seguir ~340 s. Entonces CA1 usa techo < 170 s **solo** si el cronómetro del run lo permite; si el suelo de 29 bins en frío lo impide, `spec.md`/cierre documenta el suelo y CA1 queda **PENDIENTE-CI** hasta un run con hit `native-integrity-*` (el save de este PR habilita el siguiente). CA5 (< 8 min) depende de A2 (quitar ~361 s de cfg(test) orquestador) + fusión 29 s; se verifica con `run_id`.
+Ola A3.0 (cerrada, NO_APTO): run 33495498463 hit de key con `SddIA/target` en el blob → Build 429 s / LanceDB 419 s / job 15 m 11 s. Causa: fingerprints Cargo vs mtimes de checkout; `lookup-only` no restaura IOTA.
+
+Ola A3.1: sccache GHA + no cachear `target/` + `restore@v4`. Primer SHA A3.1 = miss de sccache (suelo ~340 s). CA1/CA5 se miden en el **segundo** `pull_request` con hit sccache. Techo CA1 50 % (170 s / 180 s) y CA5 < 8 min sin fallback.

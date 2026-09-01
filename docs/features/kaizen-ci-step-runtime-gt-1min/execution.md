@@ -10,6 +10,7 @@ items_applied:
   - T2-workspace-gate
   - T3-ingest-itest
   - T4-evolution
+  - T1b-a31-sccache
 ---
 
 # Ejecución — kaizen-ci-step-runtime-gt-1min
@@ -20,7 +21,11 @@ items_applied:
 
 ## T1–T2 YAML
 
-`.github/workflows/sddia-index-qa.yml`: `native-integrity-*`; IOTA `lookup-only: true`; `Build native workspace`; gate I/O; LanceDB L-TEST-CMD.
+`.github/workflows/sddia-index-qa.yml`: `native-integrity-*` + rustc hash; registry/git; sccache; IOTA `cache/restore@v4`; `Build native workspace`; gate I/O; LanceDB L-TEST-CMD.
+
+## T1b — A3.1 (iteracion)
+
+`lookup-only` sustituido. `SddIA/target` fuera del blob. `mozilla-actions/sccache-action@v0.0.9`. `permissions.actions: write`.
 
 ## T3 tests locales
 

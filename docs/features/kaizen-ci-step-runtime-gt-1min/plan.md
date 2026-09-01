@@ -81,5 +81,5 @@ T1 → T2 → T3 → T4 → T5 → T6 → T7
 |--------|------------|
 | Primer PR cache-miss `native-integrity-*` | restore-keys legado; CA1 techo / PENDIENTE-CI |
 | Integración no ve el crate adapter | reexport o `use` del dep; no ciclo |
-| `lookup-only` no soportado | `actions/cache@v4` lo declara; si CI falla, un parche |
-| CA5 < 8 min en frío | A2 debe cortar el cfg(test) del orquestador; números en cierre |
+| `lookup-only` no restaura archivos | A3.1: `actions/cache/restore@v4` |
+| CA5 < 8 min en frío | A2 + sccache hit; números en cierre |
