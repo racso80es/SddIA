@@ -38,14 +38,14 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             SddIA/target
-          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          key: native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
           restore-keys: |
+            native-integrity-${{ runner.os }}-
             native-${{ runner.os }}-
-      - name: Build QA aduana (execute-process + sddia-qa)
+      - name: Build native workspace
         run: |
           cd SddIA
-          cargo build -p execute-process
-          cargo build -p sddia-qa
+          cargo build --workspace
       - name: verify-tools-index
         run: SddIA/target/debug/sddia-qa verify-tools-index
       - name: verify-process-integrity
@@ -53,17 +53,12 @@ jobs:
       - name: evolution-register unit tests
         run: cargo test -p sddia-evolution-register --manifest-path SddIA/Cargo.toml
       - name: verify-compiled-capsules
-        run: |
-          cd SddIA
-          cargo build --workspace
-          target/debug/sddia-qa verify-compiled-capsules
+        run: SddIA/target/debug/sddia-qa verify-compiled-capsules
       - name: LanceDB memory integration tests
         run: |
           cd SddIA
-          cargo test -p sddia-core-memory
-          cargo test -p sddia-infrastructure-lancedb-thought
-          cargo test -p sddia-infrastructure-lancedb-evolution
-          cargo test -p execute-process -- memory_evolution_ingest json_fallback
+          cargo test -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution
+          cargo test -p execute-process --test memory_evolution_ingest
 
   eda-iota-smoke-simulate:
     runs-on: ubuntu-latest
@@ -78,9 +73,11 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             SddIA/target
-          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          key: native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
           restore-keys: |
+            native-integrity-${{ runner.os }}-
             native-${{ runner.os }}-
+          lookup-only: true
       - name: Build centinelas + orquestador + publisher + QA
         run: |
           cd SddIA
@@ -225,9 +222,11 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             SddIA/target
-          key: native-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          key: native-integrity-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
           restore-keys: |
+            native-integrity-${{ runner.os }}-
             native-${{ runner.os }}-
+          lookup-only: true
       - name: Build nativos (smoke IOTA físico)
         run: |
           cd SddIA

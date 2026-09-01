@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `530039c9-100b-413a-b3d5-ca632d83acc6` | 2026-09-01 | Kaizen CI: cache native-integrity, un workspace build, ingest como test de integración. | CANONICO | `SddIA/evolution/530039c9-100b-413a-b3d5-ca632d83acc6.md` |
 | `0b5a80fd-6932-457c-bad0-f9e8b46390d0` | 2026-08-31 | Latido ontológico: censo kalma2-bridge, fractura lock huérfano, System_Vitality_Probed y sonda sweeper. | CANONICO | `SddIA/evolution/0b5a80fd-6932-457c-bad0-f9e8b46390d0.md` |
 | `922e218e-4487-455c-826a-9c439ef30318` | 2026-08-31 | Kaizen ciclo LanceDB: F-DCC-WORKFLOW-SCOPE, halt post-push, cubos Mayeuta, helper relacionado, ingest EvolutionStore, CA-CI. | CANONICO | `SddIA/evolution/922e218e-4487-455c-826a-9c439ef30318.md` |
 | `4d384bb1-f89d-41ce-835a-9db6d6bed114` | 2026-08-31 | LanceDB físico: crate 0.37.1, embeddings hashing, ingest EvolutionStore, SSOT paths.vectorStore. | CANONICO | `SddIA/evolution/4d384bb1-f89d-41ce-835a-9db6d6bed114.md` |
