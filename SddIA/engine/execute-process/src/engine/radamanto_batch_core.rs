@@ -499,6 +499,85 @@ fn emit_domain_and_route(repo: &Path, event: &Value) -> Result<Value, String> {
     Ok(json!({"seal": seal, "route": route_out}))
 }
 
+fn payload_check_run_id(payload: &Value) -> Option<i64> {
+    if let Some(n) = payload.get("check_run_id").and_then(|v| v.as_i64()) {
+        return Some(n);
+    }
+    payload
+        .get("check_run_id")
+        .and_then(|v| v.as_u64())
+        .and_then(|n| i64::try_from(n).ok())
+}
+
+fn load_ci_failures(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
+    let path = radamanto_path(repo, cfg, "ci_failures");
+    if !path.is_file() {
+        return json!({ "failures": [] });
+    }
+    fs::read_to_string(&path)
+        .ok()
+        .and_then(|t| serde_json::from_str::<Value>(&t).ok())
+        .map(|mut data| {
+            if !data.get("failures").and_then(|v| v.as_array()).is_some() {
+                data["failures"] = json!([]);
+            }
+            data
+        })
+        .unwrap_or(json!({ "failures": [] }))
+}
+
+fn save_ci_failures(repo: &Path, cfg: &HashMap<String, Value>, data: &Value) -> Result<(), String> {
+    let path = radamanto_path(repo, cfg, "ci_failures");
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    write_json_atomic(&path, data)
+}
+
+fn process_ci_job_failed(
+    repo: &Path,
+    cfg: &HashMap<String, Value>,
+    event_path: &Path,
+    payload: &Value,
+    origin_event_id: &str,
+) -> Result<Value, String> {
+    let check_run_id = payload_check_run_id(payload).ok_or("check_run_id requerido")?;
+    let mut ledger = load_ci_failures(repo, cfg);
+    let existing = ledger
+        .get("failures")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    if existing.iter().any(|row| payload_check_run_id(row) == Some(check_run_id)) {
+        stamp_fractal_delivery_state(event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "skipped");
+        return Ok(json!({
+            "ok": true,
+            "kind": "ci_job_failed",
+            "skipped": "duplicate_check_run_id",
+            "check_run_id": check_run_id,
+        }));
+    }
+    let mut failures = existing;
+    failures.push(json!({
+        "check_run_id": check_run_id,
+        "job_name": payload.get("job_name"),
+        "workflow_name": payload.get("workflow_name"),
+        "head_sha": payload.get("head_sha"),
+        "html_url": payload.get("html_url"),
+        "repository": payload.get("repository"),
+        "timestamp": iso_now(),
+        "event_id": origin_event_id,
+    }));
+    ledger["failures"] = json!(failures);
+    save_ci_failures(repo, cfg, &ledger)?;
+    stamp_fractal_delivery_state(event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "success");
+    Ok(json!({
+        "ok": true,
+        "kind": "ci_job_failed",
+        "check_run_id": check_run_id,
+    }))
+}
+
 pub fn process_telemetry_file(repo: &Path, rel_path: &str) -> Value {
     match process_telemetry_file_inner(repo, rel_path) {
         Ok(v) => v,
@@ -528,6 +607,13 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    let event_type = body
+        .get("event_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if event_type == "CI_Job_Failed" {
+        return process_ci_job_failed(repo, &cfg, &event_path, &payload, &origin_event_id);
+    }
     let asset_id = payload
         .get("asset_id")
         .and_then(|v| v.as_str())
@@ -971,5 +1057,62 @@ mod tests {
         assert_eq!(t["success_rate_min_by_entity_type"]["process"], 0.70);
         assert_eq!(t["max_recovery_attempts"], 3);
         assert!(t.get("cognitive").is_some());
+    }
+
+    #[test]
+    fn ci_job_failed_writes_ledger_not_stats() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{
+  "radamanto": {
+    "stats": ".SddIA/radamanto/stats.json",
+    "ci_failures": ".SddIA/radamanto/ci_failures.json",
+    "consumed": ".SddIA/radamanto/consumed.json",
+    "thresholds": "SddIA/agents/radamanto.thresholds.json"
+  }
+}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
+        fs::create_dir_all(repo.join(".SddIA/radamanto")).unwrap();
+        let event_id = "11111111-1111-4111-8111-111111111111";
+        let rel = format!(".events/telemetry/{event_id}.json");
+        let event = json!({
+            "event_id": event_id,
+            "event_type": "CI_Job_Failed",
+            "timestamp": "2026-09-01T00:00:00Z",
+            "emitter_agent": "github-bridge-watcher",
+            "payload": {
+                "repository": "racso80es/SddIA",
+                "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "workflow_name": "sddia-index-qa",
+                "job_name": "sddia-index-integrity",
+                "conclusion": "failure",
+                "html_url": "https://github.com/racso80es/SddIA/runs/4242",
+                "check_run_id": 4242
+            }
+        });
+        fs::write(repo.join(&rel), serde_json::to_string_pretty(&event).unwrap()).unwrap();
+
+        let r1 = process_telemetry_file(repo, &rel);
+        assert_eq!(r1["ok"], true);
+        assert_eq!(r1["kind"], "ci_job_failed");
+        assert!(!repo.join(".SddIA/radamanto/stats.json").is_file());
+        let ledger: Value = serde_json::from_str(
+            &fs::read_to_string(repo.join(".SddIA/radamanto/ci_failures.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(ledger["failures"].as_array().unwrap().len(), 1);
+
+        let r2 = process_telemetry_file(repo, &rel);
+        assert_eq!(r2["skipped"], "duplicate_check_run_id");
+        let ledger2: Value = serde_json::from_str(
+            &fs::read_to_string(repo.join(".SddIA/radamanto/ci_failures.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(ledger2["failures"].as_array().unwrap().len(), 1);
     }
 }

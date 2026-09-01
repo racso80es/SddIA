@@ -128,6 +128,7 @@
   },
   "radamanto": {
     "stats": ".SddIA/radamanto/stats.json",
+    "ci_failures": ".SddIA/radamanto/ci_failures.json",
     "consumed": ".SddIA/radamanto/consumed.json",
     "cognitive_inbox": ".SddIA/radamanto/inbox",
     "thresholds": "SddIA/agents/radamanto.thresholds.json",

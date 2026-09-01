@@ -17,5 +17,12 @@
       "process": "daemon-heartbeat-audit",
       "intent": "Triaje latido térmico Centinelas; System_Fracture_Detected tras 3 ciclos omitidos."
     }
+  ],
+  "CI_Job_Failed": [
+    {
+      "agent": "radamanto",
+      "process": "radamanto-batch",
+      "intent": "Ledger ci_failures.json; no stats.json; no Domain_Entity_Degraded."
+    }
   ]
 }

@@ -1,6 +1,7 @@
 //! Materialización ECST PullRequest_Presented (DEBT-K2 — sin Python).
 
 use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic, EdBusPaths};
+use crate::{write_fractal_event, BusTopology};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -12,15 +13,25 @@ use std::time::Duration;
 use uuid::Uuid;
 
 const STATE_REL: &str = ".SddIA/.dev/github_bridge_state.json";
+const CI_FAILURE_FIXTURE_REL: &str = ".SddIA/.dev/remote_ci_failure_simulation.json";
 const SIGNER_RBAC: &str = "Vertice_Biologico_Relay";
 const FALLBACK_FLAG: &str = "FALLBACK_LOCAL_SIGNATURE";
 const IOTA_RETRIES: usize = 3;
 const IOTA_BACKOFF_SECONDS: [u64; 3] = [1, 2, 4];
+const KNOWN_SDDIA_QA_JOBS: &[&str] = &[
+    "sddia-index-integrity",
+    "eda-iota-smoke-simulate",
+    "wasi-runtime-smoke",
+    "eda-bus-e2e-smoke",
+    "eda-iota-physical",
+];
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct BridgeState {
     #[serde(default)]
     pub processed_pr_urls: Vec<String>,
+    #[serde(default)]
+    pub processed_check_run_ids: Vec<i64>,
 }
 
 pub fn load_bridge_state(repo: &Path) -> BridgeState {
@@ -40,6 +51,132 @@ pub fn save_bridge_state(repo: &Path, state: &BridgeState) -> Result<(), String>
         fs::create_dir_all(parent).map_err(|e| format!("mkdir state: {e}"))?;
     }
     write_json_atomic(&path, &serde_json::to_value(state).map_err(|e| e.to_string())?)
+}
+
+pub fn workflow_name_for_job(job_name: &str) -> &'static str {
+    if KNOWN_SDDIA_QA_JOBS.contains(&job_name) {
+        "sddia-index-qa"
+    } else {
+        "github-actions"
+    }
+}
+
+pub fn check_run_id(item: &Value) -> Option<i64> {
+    if let Some(n) = item.get("id").and_then(|v| v.as_i64()) {
+        return Some(n);
+    }
+    item.get("id")
+        .and_then(|v| v.as_u64())
+        .and_then(|n| i64::try_from(n).ok())
+}
+
+pub fn is_failure_check_run(item: &Value) -> bool {
+    item.get("conclusion").and_then(|v| v.as_str()) == Some("failure")
+}
+
+pub fn failed_check_runs_from_payload(data: &Value) -> Vec<Value> {
+    let runs = data
+        .get("check_runs")
+        .and_then(|v| v.as_array())
+        .or_else(|| data.as_array());
+    let Some(runs) = runs else {
+        return vec![];
+    };
+    runs.iter()
+        .filter(|item| is_failure_check_run(item))
+        .cloned()
+        .collect()
+}
+
+pub fn load_lab_ci_failure_payload(repo: &Path) -> Option<Value> {
+    let path = repo.join(CI_FAILURE_FIXTURE_REL);
+    if !path.is_file() {
+        return None;
+    }
+    let raw = fs::read_to_string(&path).ok()?;
+    serde_json::from_str(&raw).ok()
+}
+
+pub fn compose_ci_job_failed_event(
+    check: &Value,
+    repository: &str,
+    pr_url: Option<&str>,
+    head_sha_fallback: &str,
+) -> Option<Value> {
+    if !is_failure_check_run(check) {
+        return None;
+    }
+    let id = check_run_id(check)?;
+    let job_name = check.get("name").and_then(|v| v.as_str()).unwrap_or("");
+    if job_name.is_empty() {
+        return None;
+    }
+    let head_sha = check
+        .get("head_sha")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or(head_sha_fallback);
+    let html_url = check.get("html_url").and_then(|v| v.as_str()).unwrap_or("");
+    let mut payload = json!({
+        "repository": repository,
+        "head_sha": head_sha,
+        "workflow_name": workflow_name_for_job(job_name),
+        "job_name": job_name,
+        "conclusion": "failure",
+        "html_url": html_url,
+        "check_run_id": id,
+    });
+    if let Some(pr) = pr_url.filter(|s| !s.is_empty()) {
+        payload["pr_url"] = json!(pr);
+    }
+    if let Some(run_id) = check.get("run_id") {
+        if !run_id.is_null() {
+            payload["run_id"] = run_id.clone();
+        }
+    }
+    if let Some(step) = check.get("step_name").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        payload["step_name"] = json!(step);
+    }
+    Some(json!({
+        "event_id": Uuid::new_v4().to_string(),
+        "event_type": "CI_Job_Failed",
+        "timestamp": iso_now(),
+        "emitter_agent": "github-bridge-watcher",
+        "payload": payload,
+    }))
+}
+
+pub fn assimilate_failed_check_runs(
+    repo: &Path,
+    top: &BusTopology,
+    state: &mut BridgeState,
+    checks: &[Value],
+    repository: &str,
+    pr_url: Option<&str>,
+    head_sha: &str,
+) -> Result<u32, String> {
+    let mut emitted = 0u32;
+    for check in checks {
+        let Some(id) = check_run_id(check) else {
+            continue;
+        };
+        if state.processed_check_run_ids.contains(&id) {
+            continue;
+        }
+        if !is_failure_check_run(check) {
+            continue;
+        }
+        let Some(event) = compose_ci_job_failed_event(check, repository, pr_url, head_sha) else {
+            continue;
+        };
+        write_fractal_event(repo, top, &event, "telemetry")?;
+        state.processed_check_run_ids.push(id);
+        emitted += 1;
+    }
+    if emitted > 0 {
+        save_bridge_state(repo, state)?;
+    }
+    Ok(emitted)
 }
 
 pub fn load_wallet_secret(repo: &Path) {
@@ -284,4 +421,115 @@ pub fn process_pr(repo: &Path, pr: &Value, state: &mut BridgeState) -> Result<bo
     state.processed_pr_urls.push(pr_url.to_string());
     save_bridge_state(repo, state)?;
     Ok(true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::load_bus_topology;
+    use std::fs;
+
+    fn fixture_repo() -> (PathBuf, BusTopology) {
+        let base = std::env::temp_dir().join(format!("sddia-gh-bridge-ci-{}", Uuid::new_v4()));
+        fs::create_dir_all(base.join("SddIA/core")).unwrap();
+        fs::write(
+            base.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_fractal":{"telemetry":".events/telemetry"}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(base.join(".events/telemetry")).unwrap();
+        let top = load_bus_topology(&base);
+        (base, top)
+    }
+
+    fn telemetry_files(repo: &Path) -> Vec<Value> {
+        let dir = repo.join(".events/telemetry");
+        let mut out = Vec::new();
+        if let Ok(rd) = fs::read_dir(&dir) {
+            for ent in rd.flatten() {
+                let p = ent.path();
+                if p.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                if let Ok(raw) = fs::read_to_string(&p) {
+                    if let Ok(v) = serde_json::from_str::<Value>(&raw) {
+                        out.push(v);
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn failure_emits_once_cancelled_skipped() {
+        let (base, top) = fixture_repo();
+        let payload = json!({
+            "check_runs": [
+                {
+                    "id": 4242,
+                    "name": "sddia-index-integrity",
+                    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "conclusion": "failure",
+                    "html_url": "https://github.com/racso80es/SddIA/runs/4242"
+                },
+                {
+                    "id": 4243,
+                    "name": "wasi-runtime-smoke",
+                    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "conclusion": "cancelled",
+                    "html_url": "https://github.com/racso80es/SddIA/runs/4243"
+                },
+                {
+                    "id": 4244,
+                    "name": "eda-bus-e2e-smoke",
+                    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "conclusion": "skipped",
+                    "html_url": "https://github.com/racso80es/SddIA/runs/4244"
+                }
+            ]
+        });
+        let checks = failed_check_runs_from_payload(&payload);
+        let mut state = BridgeState::default();
+        let n = assimilate_failed_check_runs(
+            &base,
+            &top,
+            &mut state,
+            &checks,
+            "racso80es/SddIA",
+            Some("https://github.com/racso80es/SddIA/pull/1"),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )
+        .unwrap();
+        assert_eq!(n, 1);
+        let events = telemetry_files(&base);
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0]["event_type"], "CI_Job_Failed");
+        assert_eq!(events[0]["emitter_agent"], "github-bridge-watcher");
+        assert_eq!(events[0]["payload"]["workflow_name"], "sddia-index-qa");
+        assert_eq!(events[0]["payload"]["job_name"], "sddia-index-integrity");
+        assert_eq!(events[0]["payload"]["check_run_id"], 4242);
+        assert!(events[0]["payload"].get("entity_id").is_none());
+        assert!(events[0]["payload"].get("asset_id").is_none());
+
+        let n2 = assimilate_failed_check_runs(
+            &base,
+            &top,
+            &mut state,
+            &checks,
+            "racso80es/SddIA",
+            Some("https://github.com/racso80es/SddIA/pull/1"),
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )
+        .unwrap();
+        assert_eq!(n2, 0);
+        assert_eq!(telemetry_files(&base).len(), 1);
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn unknown_job_maps_workflow_github_actions() {
+        assert_eq!(workflow_name_for_job("sddia-index-integrity"), "sddia-index-qa");
+        assert_eq!(workflow_name_for_job("custom-job"), "github-actions");
+    }
 }
