@@ -5,7 +5,10 @@ format: markdown
 version: "1.1.0"
 created: "2026-08-31"
 updated: "2026-09-01"
-status: "abierto"
+status: "cerrado"
+closed: "2026-09-01"
+fix_ref: docs/fixes/email-watcher-elf-fosil-1933c0a0fe2c
+laudo: C
 priority: alta
 process: bug-fix
 type: bug-fix
@@ -16,7 +19,7 @@ refined: true
 source_audit: "Journal systemd user 2026-08-31 09:05–09:20 CEST; lock PID 7064; heartbeat-audit.json 2026-09-01; ELF release/debug mtime; git bee97e23/d3ef9036; main.rs spawn_heartbeat_worker; enrich_fracture_pbi_kaizen.rs cubo heartbeat_starvation; phagocyte predicate"
 review_notes: "Refinado v1.1.0 — el sello es válido; el cubo Mayeuta receta keepalive ya cerrado en 6c0db1296181. Causa de ESTE hash = ELF fósil en PID 7064 (release 2026-08-26) + trigger DNS IMAP ~09:09 CEST. No reabrir genoma."
 suggested_work: recycle-fossil-elf
-persist_ref_suggested: docs/fixes/email-watcher-heartbeat-keepalive
+persist_ref_suggested: docs/fixes/email-watcher-elf-fosil-1933c0a0fe2c
 related_pbis:
   - id: PBI-FIX-FRACTURE-6c0db1296181
     rol: "Padre de genoma: keepalive 10 s mergeado 2026-08-31T09:18:44+02:00 (d3ef9036). Este sello es residual de la instancia no reciclada, no un segundo hueco de código."
@@ -170,10 +173,10 @@ ELF debug+release ambos fósiles: un `start-sddia.sh` *nuevo* fallaría la aduan
 
 **Si laudo C (recomendado)**
 
-- [ ] ELF de `email-watcher` con `mtime ≥` fuente; resolutor no lo marca fósil
-- [ ] Instancia reciclada (PID ≠ 7064 o `started_at` nuevo); keepalive presente en el proceso
-- [ ] Sweep / `heartbeat-audit.json`: `email-watcher` `missed_cycles=0` post-reciclo
-- [ ] Este TODO en `docs/todos/done/` (mismo PR si hay diff documental; sin re-parche de `main.rs`)
+- [x] ELF de `email-watcher` con `mtime ≥` fuente; resolutor no lo marca fósil
+- [x] Instancia reciclada (PID ≠ 7064 o `started_at` nuevo); keepalive presente en el proceso
+- [x] Sweep / `heartbeat-audit.json`: `email-watcher` `missed_cycles=0` post-reciclo
+- [x] Este TODO en `docs/todos/done/` (mismo PR si hay diff documental; sin re-parche de `main.rs`)
 
 **Si laudo A (Vértice Biológico insiste en genoma)**
 
