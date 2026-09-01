@@ -20,6 +20,7 @@ import { getFullnodeUrl, IotaClient } from "@iota/iota-sdk/client";
 import { Ed25519Keypair } from "@iota/iota-sdk/keypairs/ed25519";
 import { Transaction } from "@iota/iota-sdk/transactions";
 import { fromHex } from "@iota/iota-sdk/utils";
+import { formatPublishFailure } from "./relay-error.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -188,8 +189,9 @@ const server = http.createServer(async (req, res) => {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    sendJson(res, 500, { success: false, error: message, feedback: message });
+    const formatted = formatPublishFailure(err);
+    console.error("[iota-publish-relay] publish-error", formatted);
+    sendJson(res, 500, { success: false, ...formatted });
   }
 });
 

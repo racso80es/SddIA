@@ -16,7 +16,15 @@ Respuesta OK:
 { "success": true, "result": { "transaction_digest": "...", "object_id": "..." } }
 ```
 
-`GET /health` → `{ "ok": true }`.
+`GET /health` → `{ "ok": true }`. `/health` no toca IOTA.
+
+Fallo de publish (HTTP 500):
+
+```json
+{ "success": false, "error": "<message>[ | cause: …]", "feedback": "<igual>", "cause": { "name": "…", "message": "…", "code": "…" } }
+```
+
+`cause` solo si `err.cause` existe. `iota-immutable-publisher` lee `error`/`feedback`.
 
 ## Bóveda (`.SddIA/.dev/.env`)
 
