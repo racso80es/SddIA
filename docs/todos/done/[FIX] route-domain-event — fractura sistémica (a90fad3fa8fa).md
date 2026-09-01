@@ -3,10 +3,11 @@ document_id: PBI-FIX-FRACTURE-a90fad3fa8fa
 uuid: "832fb2e6-ebde-4ec7-9077-696b16f88b92"
 title: "[FIX] route-domain-event — fractura sistémica"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-08-30"
 updated: "2026-09-01"
-status: "abierto"
+status: "cerrado"
+closed: "2026-09-01"
 priority: alta
 process: bug-fix
 fracture_hash: a90fad3fa8fa
@@ -14,6 +15,7 @@ fracture_process: route-domain-event
 friction_id: F-DLT-PUBLISH-ERROR
 incident_ref: "System_Fracture_Detected — a90fad3fa8fa"
 refined: true
+resolution_ref: docs/fixes/iota-dlt-publish-fetch-failed/
 suggested_branch: fix/iota-dlt-publish-fetch-failed
 persist_ref_suggested: docs/fixes/iota-dlt-publish-fetch-failed
 source_audit: "2026-09-01T07:33Z host: unit sddia-iota-publish-relay@home-racso-Proyectos-SddIA active since 2026-08-30 19:58:10 CEST; ELF debug mtime 19:57:40; hijo node pid=67195 :8787; GET /health 200; SHA-256[:12](traza)=a90fad3fa8fa; PBI commit 5e40ed9 20:07:06 CEST; bóveda wallet+package presentes (valores no volcados), SDDIA_LAB_SIMULATE_IOTA=0, SDDIA_LAB_MOCK_IOTA_URL vacío; cola eda_instance.dlt_reanchor vacía; heartbeat iota-publish-relay healthy/alive; server.mjs catch solo err.message."
@@ -46,6 +48,7 @@ related:
   - docs/fixes/route-domain-event-fracture-b3a715381787/validacion.md
   - docs/todos/done/[REGRESIÓN] route-domain-event — fractura sistémica (701c77ebeab8)-R1.md
   - docs/fixes/iota-publish-relay-elf-fosil-r1/validacion.md
+  - docs/fixes/iota-dlt-publish-fetch-failed/validacion.md
 related_pbis:
   - id: PBI-FIX-FRACTURE-b3a715381787
     rol: "Hermano taxonomía. Prefijo iota-relay-publish-error + F-DLT-PUBLISH-ERROR entregados. CA5 instancia (causa física del 500) diferida — este sello la cumple en parte: cuerpo = fetch failed."
@@ -182,9 +185,9 @@ Ciclo `bug-fix`. Genoma `SddIA/tools/` **no** se toca (taxonomía ya entregada).
 
 ## 9. Criterio de cierre
 
-- [ ] DLT-FETCH-CA1…CA4
-- [ ] Argos APTO en `validacion.md` del fix (`pbi_archived: true`)
-- [ ] Este TODO movido a `docs/todos/done/` en la **misma** rama del PR
+- [x] DLT-FETCH-CA1…CA4
+- [x] Argos APTO en `validacion.md` del fix (`pbi_archived: true`)
+- [x] Este TODO movido a `docs/todos/done/` en la **misma** rama del PR
 
 Prohibido declarar Done con `SIMULATE=1` o con taxonomía «ya estaba» y sin CA3.
 

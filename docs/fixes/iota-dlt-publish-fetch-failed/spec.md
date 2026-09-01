@@ -6,7 +6,7 @@ base: main
 scope: relay-publish-error-cause-propagation
 branch_name: fix/iota-dlt-publish-fetch-failed
 persist_ref: docs/fixes/iota-dlt-publish-fetch-failed
-pbi_ref: docs/todos/pending/[FIX] route-domain-event — fractura sistémica (a90fad3fa8fa).md
+pbi_ref: docs/todos/done/[FIX] route-domain-event — fractura sistémica (a90fad3fa8fa).md
 document_id: PBI-FIX-FRACTURE-a90fad3fa8fa
 uuid: 832fb2e6-ebde-4ec7-9077-696b16f88b92
 execution_id: "479390a2-db58-46c7-857f-445dd26364c2"

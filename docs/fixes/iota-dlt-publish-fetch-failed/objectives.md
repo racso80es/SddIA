@@ -4,7 +4,7 @@ created: "2026-09-01"
 process: bug-fix
 branch_name: fix/iota-dlt-publish-fetch-failed
 persist_ref: docs/fixes/iota-dlt-publish-fetch-failed
-pbi_ref: docs/todos/pending/[FIX] route-domain-event — fractura sistémica (a90fad3fa8fa).md
+pbi_ref: docs/todos/done/[FIX] route-domain-event — fractura sistémica (a90fad3fa8fa).md
 execution_id: "479390a2-db58-46c7-857f-445dd26364c2"
 ---
 
