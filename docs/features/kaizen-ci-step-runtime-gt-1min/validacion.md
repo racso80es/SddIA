@@ -10,18 +10,19 @@ persist_ref: docs/features/kaizen-ci-step-runtime-gt-1min
 pbi_ref: docs/todos/done/[KAIZEN] CI — optimizar steps >1 min (verify-compiled-capsules y LanceDB).md
 document_id: PBI-KAIZEN-CI-STEP-RUNTIME-GT-1MIN
 uuid: "530039c9-100b-413a-b3d5-ca632d83acc6"
-global: PENDIENTE-CI
+global: NO_APTO
 pbi_archived: true
 pr_url: https://github.com/racso80es/SddIA/pull/246
-ci_run_id: "33493563587"
+ci_run_id: "33495498463"
 ci_run_event: pull_request
-ci_job_integrity: "99810443522"
+ci_job_integrity: "99816608487"
+ci_run_id_miss: "33493563587"
 checks:
-  CA1: PENDIENTE-CI
+  CA1: NO_APTO
   CA2: APTO
   CA3: APTO
   CA4: APTO
-  CA5: PENDIENTE-CI
+  CA5: NO_APTO
   CA6: APTO
   CA7: APTO
 git_changes:
@@ -42,44 +43,42 @@ git_changes:
 
 # Validacion — kaizen-ci-step-runtime-gt-1min
 
-Run de cierre (primer `pull_request` post-parche, cache-miss `native-integrity-*`): [33493563587](https://github.com/racso80es/SddIA/actions/runs/33493563587) job [99810443522](https://github.com/racso80es/SddIA/actions/runs/33493563587/job/99810443522) `headSha` `587e40a7fe141ec2cbbf0a2ea6491b4ff69afd1e`. PR https://github.com/racso80es/SddIA/pull/246.
+PR https://github.com/racso80es/SddIA/pull/246. Checks funcionales SUCCESS. `global: NO_APTO`: CA1 y CA5 no cumplen umbral (L-NO-SCCACHE / spec §6). Prohibido `accept-pr` con este veredicto.
+
+## Runs
+
+| Rol | Run | Evento | Job integrity | headSha |
+| :--- | :--- | :--- | :--- | :--- |
+| Miss key nueva | [33493563587](https://github.com/racso80es/SddIA/actions/runs/33493563587) | pull_request | [99810443522](https://github.com/racso80es/SddIA/actions/runs/33493563587/job/99810443522) | `587e40a` |
+| Hit key (medicion CA1/CA5) | [33495498463](https://github.com/racso80es/SddIA/actions/runs/33495498463) | pull_request | [99816608487](https://github.com/racso80es/SddIA/actions/runs/33495498463/job/99816608487) | `754c575` |
+| Hit key (push, colateral) | [33495496058](https://github.com/racso80es/SddIA/actions/runs/33495496058) | push | [99816601633](https://github.com/racso80es/SddIA/actions/runs/33495496058/job/99816601633) | `754c575` |
+
+Evidencia de hit en `754c575`: restore integrity 43 s (blob); Post cache 1 s (key ya sellada, first-write-wins). No es miss de key.
 
 ## CA2
 
-16 tests locales: 3 memory + 5 thought + 5 evolution + 3 ingest integracion. Gate no mutado (29 bins). CI del run anterior: conclusion SUCCESS.
+16 tests locales. Gate 29 bins. CI SUCCESS en ambos runs.
 
 ## CA3
 
-A0 SSOT en PBI v1.1.0 (run 33477170741). Tabla de cierre = este PR (steps del workflow).
+A0 = run 33477170741. Tabla de cierre = run 33495498463 (hit).
 
-### Integrity vs baseline (mismo evento `pull_request`)
+### Integrity vs baseline (`pull_request`)
 
-| Step | Baseline 99758755444 | Cierre 99810443522 | Decision |
-| :--- | ---: | ---: | :--- |
-| actions/cache@v4 (restore) | 62 s | 35 s | bajo umbral |
-| Build native workspace | (dentro de verify, 340 s) | 430 s | calor relocado; presupuesto CA1; suelo frio 29 bins (spec §6) |
-| verify-compiled-capsules | 340 s (build+gate) | 0 s (solo I/O) | anti-maquillaje: suma con Build |
-| LanceDB memory integration tests | 361 s | 419 s | frio del perfil `test`; A2 no medible hasta hit |
-| Post cache (save) | 0 s | 72 s | step nuevo >60 s; diferir (save de `target/` completo, A3) |
-| Job wall-clock | 816 s (13 m 36 s) | 976 s (16 m 16 s) | CA5; spec §6: no techo 50 % |
+| Step | Baseline 99758755444 | Miss 99810443522 | Hit 99816608487 | Decision |
+| :--- | ---: | ---: | ---: | :--- |
+| cache restore | 62 s | 35 s | 43 s | bajo/umbral |
+| Build native workspace | (en verify, 340 s) | 430 s | **429 s** | calor no cae con `target/` cacheado |
+| verify-compiled-capsules | 340 s | 0 s | 0 s | I/O; CA1 = suma con Build |
+| LanceDB | 361 s | 419 s | **419 s** | perfil `test` frio igual |
+| Post cache | 0 s | 72 s | 1 s | save ya hecho |
+| Job | 816 s (13 m 36 s) | 976 s | **911 s (15 m 11 s)** | CA5 |
 
-### Hermanos — steps >60 s (CA3)
-
-| Job | Wall-clock | Steps >60 s | Decision |
-| :--- | ---: | :--- | :--- |
-| sddia-index-integrity | 976 s | Build 430 s, LanceDB 419 s, Post cache 72 s | objeto PBI; miss de key nueva |
-| eda-iota-smoke-simulate | 531 s | Build centinelas 485 s | lookup-only + miss paralelo (integrity aun no ha save); diferir; verificar en hit |
-| eda-iota-physical | 521 s | Build nativos 476 s | igual; smoke physical 0 s (secret) |
-| wasi-runtime-smoke | 100 s | ninguno (cache 42 s, WASI 10 s, nativos 24 s) | sin regresion de umbral |
-| eda-bus-e2e-smoke | 108 s | ninguno (cache 44 s, WASI 13 s, nativos 25 s) | sin regresion de umbral |
+Hermanos hit (33495498463): IOTA simulate 525 s (build 505 s, cache 1 s); IOTA physical 509 s (build 494 s, cache 0 s); wasi 91 s; e2e 91 s. IOTA: step >60 s permanente. Causa: `lookup-only: true` **no descarga** el blob (solo existencia). L-CACHE-IOTA-RO queda incumplido en el primitivo; palanca correcta = `actions/cache/restore@v4` (restore sin save). Fuera de este sello; no se itera sin laudo.
 
 ## CA4
 
-Decisión confirmada con cronometro:
-
-- Restore integrity: 35 s (era 62 s). Hit parcial legado `native-*` + key nueva miss exacto.
-- Save solo integrity: Post cache 72 s (blob `target/` completo). IOTA `lookup-only` no sella.
-- IOTA restore 0 s en este run (key `native-integrity-*` inexistente al arranque paralelo). El save de este job habilita el siguiente SHA.
+Save solo integrity (`native-integrity-*`). Numeros: miss save 72 s; hit Post 1 s. Restore integrity en hit 43 s **no** calienta `cargo build --workspace` (429 s ≈ miss 430 s). IOTA `lookup-only` no restaura archivos (1 s / 0 s).
 
 ## CA7
 
@@ -87,10 +86,14 @@ Sin mutar `SddIA/tools/`. Evolution `530039c9-100b-413a-b3d5-ca632d83acc6`.
 
 ## CA6
 
-Verdes en run 33493563587: `wasi-runtime-smoke`, `eda-bus-e2e-smoke`, `eda-iota-smoke-simulate`. `eda-iota-physical` conclusion SUCCESS; secret ausente (smoke 0 s) fuera de alcance.
+Verdes en 33495498463: wasi, e2e, iota-simulate. iota-physical SUCCESS; secret ausente (smoke 0 s) fuera de alcance.
 
 ## CA1 / CA5
 
-Presupuesto CA1 (anti-maquillaje): Build + verify = **430 s** (techo 50 % de 340 s = 170 s; umbral 60 s). LanceDB **419 s** (techo 180 s). Job **16 m 16 s** (CA5 < 8 min, sin fallback).
+Hit `754c575` / job 99816608487:
 
-Suelo de 29 bins en frio: spec.md §6. CA1/CA5 permanecen `PENDIENTE-CI` hasta un `pull_request` con hit `native-integrity-*`. Prohibido `global: APTO` y merge hasta ese `run_id`. Prohibido polling (DA-6).
+- CA1 verify = 429 + 0 = **429 s** (umbral 60 s; techo 50 % = 170 s) → **NO_APTO**
+- CA1 LanceDB = **419 s** (techo 180 s) → **NO_APTO**
+- CA5 job = **15 m 11 s** (umbral 8 min; sin fallback) → **NO_APTO**
+
+Tests en verde no equivalen a estos umbrales. `global: NO_APTO`.
