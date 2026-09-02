@@ -13,6 +13,8 @@ related:
   - SddIA/core/cumulo.paths.json
 ---
 
+Pendiente de refinar teniendo prestando especial atención a posibles alucionaciones, incoherencias o inexactitudes
+
 ### [ARQUITECTURA] Inyección de perfiles LLM (Tiers) en contratos de agentes SddIA y Resolución Dinámica
 
 #### 1. Contexto Arquitectónico
