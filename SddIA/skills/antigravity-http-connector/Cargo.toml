@@ -1,0 +1,10 @@
+[package]
+name = "antigravity-http-connector"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sddia-io = { path = "../../sddia-io" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["blocking", "json"] }
