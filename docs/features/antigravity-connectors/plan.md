@@ -4,7 +4,7 @@ created: "2026-09-03"
 process: feature
 branch_name: feat/antigravity-connectors-8989250975201761652
 persist_ref: docs/features/antigravity-connectors
-status: refactor-required
+status: executed
 ---
 
 # Blueprint — refactor antigravity-connectors

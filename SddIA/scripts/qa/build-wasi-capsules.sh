@@ -17,7 +17,7 @@ EXCLUDE=(
   github-bridge-watcher
   kalma2-bridge
   antigravity-cli-executor
-  antigravity-http-connector
+  gemini-http-infer
 )
 
 packages=()

@@ -32,6 +32,13 @@ pub fn lab_mock_telegram_url() -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
+pub fn lab_mock_gemini_url() -> Option<String> {
+    env::var("SDDIA_LAB_MOCK_GEMINI_URL")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
 pub fn load_iota_wallet_secret(repo: Option<&Path>) -> Option<String> {
     let from_env = env::var("IOTA_WALLET_SECRET")
         .ok()

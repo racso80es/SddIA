@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `8b78b220-bac6-44f9-a870-deb610fd02bf` | 2026-09-03 | Forja gemini-http-infer y transductor agy print-mode | CANONICO | `SddIA/evolution/8b78b220-bac6-44f9-a870-deb610fd02bf.md` |
 | `f8661783-55b7-4419-b659-e96369c02410` | 2026-09-01 | Telemetría CI: CI_Job_Failed vía github-bridge-watcher; ledger ci_failures sin Domain_Entity_Degraded. | CANONICO | `SddIA/evolution/f8661783-55b7-4419-b659-e96369c02410.md` |
 | `022dab7e-deba-4c3c-92e9-2eba68efbe8b` | 2026-09-01 | DCC: saneo pr_title argv, PR_TITLE_METACHAR distinto de body, cubo Mayeuta metachar. | CANONICO | `SddIA/evolution/022dab7e-deba-4c3c-92e9-2eba68efbe8b.md` |
 | `530039c9-100b-413a-b3d5-ca632d83acc6` | 2026-09-01 | Kaizen CI: cache native-integrity, un workspace build, ingest como test de integración. | CANONICO | `SddIA/evolution/530039c9-100b-413a-b3d5-ca632d83acc6.md` |

@@ -6,11 +6,11 @@ process: feature
 branch_name: feat/antigravity-connectors-8989250975201761652
 persist_ref: docs/features/antigravity-connectors
 execution_id: "7d6ca13f-95e4-4b47-8457-6f37d54f3c3d"
-pbi_ref: "docs/todos/pending/[OPERATIVO] Forja de cápsulas nativas para integración dual con Google Antigravity (HTTP y CLI).md"
+pbi_ref: "docs/todos/done/[OPERATIVO] Forja de cápsulas nativas para integración dual con Google Antigravity (HTTP y CLI).md"
 document_id: PBI-CAPSULES-ANTIGRAVITY-NATIVE
 pbi_uuid: "7f966f32-5502-4bd7-b252-44849f29f5d3"
 pbi_version: "1.2.0"
-status: audit-no-apto
+status: executed
 ---
 
 # Objetivos — antigravity-connectors
@@ -21,9 +21,7 @@ Materializar los dos actuadores del PBI `PBI-CAPSULES-ANTIGRAVITY-NATIVE` v1.2.0
 
 ## Estado 2026-09-03
 
-La rama contiene un **esqueleto Jules** (`skill:antigravity-http-connector` + `skill:antigravity-cli-executor`) **NO_APTO** frente al PBI v1.2.0. Ver `clarify.md` (auditoría) y `plan.md` (refactor). Prohibido cerrar entrega sobre el código actual.
-
-El PBI permanece en `docs/todos/pending/` (no está en `done/`). `persist_ref` vigente = este directorio; ignorar `persist_ref_suggested` del PBI (`docs/features/capsules-antigravity-native`).
+Refactor ejecutado: tool `gemini-http-infer` + skill `antigravity-cli-executor` (print-mode). Skill HTTP Jules retirada. Tests lab verdes. Ver `execution.md` / `validacion.md`.
 
 ## Alcance (manifiesto)
 

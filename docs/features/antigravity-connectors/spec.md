@@ -5,7 +5,7 @@ process: feature
 base: main
 scope: antigravity-connectors
 version_spec: "1.0.0"
-status: refactor-required
+status: executed
 pbi_uuid: "7f966f32-5502-4bd7-b252-44849f29f5d3"
 pbi_version: "1.2.0"
 ---

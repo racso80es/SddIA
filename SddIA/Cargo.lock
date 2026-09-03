@@ -57,15 +57,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "antigravity-http-connector"
-version = "0.1.0"
-dependencies = [
- "sddia-io",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2142,6 +2133,16 @@ dependencies = [
  "memchr",
  "pin-project-lite",
  "slab",
+]
+
+[[package]]
+name = "gemini-http-infer"
+version = "0.1.0"
+dependencies = [
+ "sddia-io",
+ "serde",
+ "serde_json",
+ "ureq",
 ]
 
 [[package]]
