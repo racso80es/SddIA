@@ -16,6 +16,8 @@ EXCLUDE=(
   telegram-watcher
   github-bridge-watcher
   kalma2-bridge
+  antigravity-cli-executor
+  antigravity-http-connector
 )
 
 packages=()
