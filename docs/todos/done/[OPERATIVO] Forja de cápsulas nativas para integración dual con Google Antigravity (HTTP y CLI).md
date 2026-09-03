@@ -6,7 +6,7 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-02"
 updated: "2026-09-03"
-status: pending
+status: done
 refinement_status: refinado
 priority: alta
 process: feature
@@ -150,14 +150,14 @@ Anti-panic: fallos (red, timeout, spawn, JSON `agy`, key ausente) → JSON `succ
 
 ## 7. Criterios de aceptación
 
-* [ ] Ciclo `feature` activo; forja A/B por `entity-manager` (no mutación manual de genoma).
-* [ ] Tool `gemini-http-infer` y skill `antigravity-cli-executor` (o nombres laudoados) compilan nativos en el workspace Cargo (`tools/*` / `skills/*`).
-* [ ] Ninguna de las dos abre ficheros `env_hierarchy` ni usa `find_repo_root_from_cwd`. Secretos y paths solo `std::env::var` + JSON.
-* [ ] Activo A: con `SDDIA_LAB_MOCK_OUTBOUND` y URL mock, CI verde **sin** red Google ni `GEMINI_API_KEY` real. Sin mock y sin key → sobre `success: false`, no panic.
-* [ ] Activo B: invocación print + `--output-format json`; `--dangerously-skip-permissions` no sale en argv salvo doble opt-in (§3.2). Timeout y exit ≠0 de `agy` → sobre válido `success: false`.
-* [ ] stdout conforme `capsule-json-io` 2.0 (`meta` presente; `exitCode===0` iff `success`).
-* [ ] Cero `provides` / cero toque a `capability-taxonomy.md` / `capability-bindings.md` en este PR salvo laudo L3 por escrito en `clarify.md`.
-* [ ] `{name}.md` + índice; `hash_signature` y `context` ∈ matriz Cerbero. Prohibido `spec.json` / `manifest.json`.
+* [x] Ciclo `feature` activo; forja A/B por `entity-manager` (no mutación manual de genoma).
+* [x] Tool `gemini-http-infer` y skill `antigravity-cli-executor` (o nombres laudoados) compilan nativos en el workspace Cargo (`tools/*` / `skills/*`).
+* [x] Ninguna de las dos abre ficheros `env_hierarchy` ni usa `find_repo_root_from_cwd`. Secretos y paths solo `std::env::var` + JSON.
+* [x] Activo A: con `SDDIA_LAB_MOCK_OUTBOUND` y URL mock, CI verde **sin** red Google ni `GEMINI_API_KEY` real. Sin mock y sin key → sobre `success: false`, no panic.
+* [x] Activo B: invocación print + `--output-format json`; `--dangerously-skip-permissions` no sale en argv salvo doble opt-in (§3.2). Timeout y exit ≠0 de `agy` → sobre válido `success: false`.
+* [x] stdout conforme `capsule-json-io` 2.0 (`meta` presente; `exitCode===0` iff `success`).
+* [x] Cero `provides` / cero toque a `capability-taxonomy.md` / `capability-bindings.md` en este PR salvo laudo L3 por escrito en `clarify.md`.
+* [x] `{name}.md` + índice; `hash_signature` y `context` ∈ matriz Cerbero. Prohibido `spec.json` / `manifest.json`.
 
 ## 8. Laudos abiertos (bloquean ejecución, no el PBI)
 
