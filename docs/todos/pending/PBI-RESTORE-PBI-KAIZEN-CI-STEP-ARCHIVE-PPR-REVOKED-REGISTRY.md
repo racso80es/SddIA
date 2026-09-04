@@ -4,7 +4,7 @@ title: "[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities 
 format: markdown
 version: "1.0.0"
 created: "2026-09-01"
-updated: "2026-09-01T14:40:00Z"
+updated: "2026-09-04T12:30:00Z"
 status: pending
 refinement_status: seed
 priority: alta
@@ -35,8 +35,11 @@ related:
   - docs/todos/done/PBI-KAIZEN-ADUANA-EVOLUTION-LOCAL-PPR-REVOKED-REGISTRY.md
   - docs/todos/done/PBI-PPR-ANTI-RECURRENCE-HOLLOW-A2-KAIZEN-ADUANA-EVOLUTION.md
   - docs/fixes/restore-pbi-kaizen-ci-step-archive/validacion.md
+  - docs/fixes/ignition-pre-push-guard/validacion.md
 source_audits:
   - docs/fixes/restore-pbi-kaizen-ci-step-archive/validacion.md
+  - docs/fixes/ignition-pre-push-guard/validacion.md
+  - docs/ppr-cosecha-kaizen-20260904/validacion.md
   - .SddIA/cerbero/revoked_entities.json
   - .SddIA/radamanto/stats.json
 ---
@@ -103,6 +106,11 @@ Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · see
 |----------|-----|------|
 | Cosecha Kaizen create | `AU1AzkrREQVTRhGHexuqiumPXPw8iP2SgCSLB7AcFKfc` | exec `a315ae3e…` · seed path id · since `2026-08-29T05:01:52Z` |
 | Cosecha Kaizen dedup | `600cd25c-7d3d-4be4-a53b-54a9ff64be51` | exec `ab27081e…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F4_RBAC` · ECST emitter `delivery-close-cycle` |
+| Cosecha Kaizen dedup | `064918a2-af08-441f-a5b5-d34ad312c489` | exec `d712f728…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · PR #251 · Presented `2Wkh9xq…` |
+| Cosecha Kaizen dedup | `2Wkh9xqgpu1C8LPAhWzfrvL8LQXdTa5Rz55r81GWReda` | exec `7dd9caa4…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · PR #251 ignition-pre-push-guard · emitter `github-bridge-watcher` |
+| Cosecha Kaizen dedup | `cf977edc-706b-4b01-ba70-4beec1fcca82` | exec `95a54dc9…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · PR #251 dcc-lab-residual-capsules · emitter `delivery-close-cycle` |
+| Cosecha Kaizen dedup | `c368985f-2c03-4852-a9aa-0bc363f6c94e` | exec `db1b9e3f…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · sink `docs/ppr-cosecha-kaizen-20260904` · ECST `Local_QA_Requested` · emitter `git-hook-pre-push` |
+| Cosecha Kaizen dedup | `2dYUXN7nq9DsKAs7xZ5vWgq5G3fkfErbwT2Ke2ffnv3Z` | exec `66954b4b…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · sink `docs/ppr-cosecha-kaizen-20260904` · PR #253 · `PullRequest_Presented` · emitter `github-bridge-watcher` |
 
 ## Alcance
 
