@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `4c775b1f-5eea-46c6-94ff-25e1861bf9b1` | 2026-09-04 | gemini-http-infer live: ureq 4xx body, L-MODEL, empty candidate; agy argv sin --print bare; auth Antigravity | CANONICO | `SddIA/evolution/4c775b1f-5eea-46c6-94ff-25e1861bf9b1.md` |
 | `70b29d72-b36e-4055-830b-e2809047f0b2` | 2026-09-04 | Ola documental centinelas-fracture-ola-20260901 — Laudo B, 5 PBI lock huérfano archivados; vitality-probe segregado. | CANONICO | `SddIA/evolution/70b29d72-b36e-4055-830b-e2809047f0b2.md` |
 | `006592ea-20fa-425d-a1d2-a3102eb83628` | 2026-09-04 | Ignición DCC ca3d901fdc9a: parser pre-push, git-manager/sddia-qa/shell-executor/sddia-evolution-register, F4b binario lab. | CANONICO | `SddIA/evolution/006592ea-20fa-425d-a1d2-a3102eb83628.md` |
 | `8b78b220-bac6-44f9-a870-deb610fd02bf` | 2026-09-03 | Forja gemini-http-infer y transductor agy print-mode | CANONICO | `SddIA/evolution/8b78b220-bac6-44f9-a870-deb610fd02bf.md` |

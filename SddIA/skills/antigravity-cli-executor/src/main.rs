@@ -78,7 +78,6 @@ pub(crate) fn build_argv(
     allow_skip_permissions: bool,
 ) -> Result<(Vec<String>, Duration), String> {
     let mut argv = vec![
-        "--print".to_string(),
         "--output-format".to_string(),
         "json".to_string(),
     ];
@@ -160,11 +159,14 @@ pub(crate) fn build_argv(
     Ok((argv, timeout))
 }
 
+fn is_agy_auth_failure(stdout: &str, stderr: &str) -> bool {
+    let blob = format!("{stdout}\n{stderr}").to_lowercase();
+    blob.contains("authentication required") || blob.contains("not logged into antigravity")
+}
+
 fn map_agy_result(stdout: &str, stderr: &str) -> Result<Value, String> {
     let trimmed = stdout.trim();
-    if trimmed.to_lowercase().contains("authentication required")
-        || stderr.to_lowercase().contains("authentication required")
-    {
+    if is_agy_auth_failure(stdout, stderr) {
         return Err("agy authentication required".into());
     }
     if trimmed.is_empty() {
@@ -289,6 +291,8 @@ mod tests {
         assert!(argv.windows(2).any(|w| w == ["--output-format", "json"]));
         assert!(argv.contains(&"--sandbox".to_string()));
         assert!(!argv.iter().any(|a| a == "--dangerously-skip-permissions"));
+        assert!(!argv.iter().any(|a| a == "--print"));
+        assert!(!argv.windows(2).any(|w| w == ["--print", "--output-format"]));
         assert_eq!(argv[argv.len() - 2], "-p");
         assert_eq!(argv[argv.len() - 1], "hola");
     }
@@ -328,6 +332,12 @@ mod tests {
     #[test]
     fn map_auth_required() {
         let err = map_agy_result("", "authentication required").unwrap_err();
+        assert!(err.contains("authentication required"));
+    }
+
+    #[test]
+    fn map_auth_not_logged_into_antigravity() {
+        let err = map_agy_result("", "You are not logged into Antigravity.").unwrap_err();
         assert!(err.contains("authentication required"));
     }
 
