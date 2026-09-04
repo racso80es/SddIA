@@ -110,6 +110,7 @@ Materialización: Cosecha Kaizen (Cúmulo) · `KAIZEN_COSECHA_GATE: APTO` · see
 | Cosecha Kaizen dedup | `2Wkh9xqgpu1C8LPAhWzfrvL8LQXdTa5Rz55r81GWReda` | exec `7dd9caa4…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · PR #251 ignition-pre-push-guard · emitter `github-bridge-watcher` |
 | Cosecha Kaizen dedup | `cf977edc-706b-4b01-ba70-4beec1fcca82` | exec `95a54dc9…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · PR #251 dcc-lab-residual-capsules · emitter `delivery-close-cycle` |
 | Cosecha Kaizen dedup | `c368985f-2c03-4852-a9aa-0bc363f6c94e` | exec `db1b9e3f…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · sink `docs/ppr-cosecha-kaizen-20260904` · ECST `Local_QA_Requested` · emitter `git-hook-pre-push` |
+| Cosecha Kaizen dedup | `2dYUXN7nq9DsKAs7xZ5vWgq5G3fkfErbwT2Ke2ffnv3Z` | exec `66954b4b…` · 0 create · affirm pending · Cerbero PPR∈revoked same since · F5 `FAIL_F5_VERDICT` · sink `docs/ppr-cosecha-kaizen-20260904` · PR #253 · `PullRequest_Presented` · emitter `github-bridge-watcher` |
 
 ## Alcance
 

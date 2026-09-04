@@ -70,6 +70,7 @@ PPR #186 · CID `CNwwfDm7Hqb1zd23zRtkjP2o7QqgR5PaH26YBpbN8Wz3` · ciclo authorin
 | Cosecha Kaizen dedup | `2Wkh9xqgpu1C8LPAhWzfrvL8LQXdTa5Rz55r81GWReda` | PPR #251 ignition-pre-push-guard · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · seed PPR dedup pending · exec `7dd9caa4…` |
 | Cosecha Kaizen dedup | `cf977edc-706b-4b01-ba70-4beec1fcca82` | PPR #251 dcc-lab-residual-capsules · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · seed PPR dedup pending · exec `95a54dc9…` · emitter `delivery-close-cycle` |
 | Cosecha Kaizen dedup | `c368985f-2c03-4852-a9aa-0bc363f6c94e` | PPR docs/ppr-cosecha-kaizen-20260904 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · seed PPR dedup pending · exec `db1b9e3f…` · emitter `git-hook-pre-push` · ECST `Local_QA_Requested` |
+| Cosecha Kaizen dedup | `2dYUXN7nq9DsKAs7xZ5vWgq5G3fkfErbwT2Ke2ffnv3Z` | PPR docs/ppr-cosecha-kaizen-20260904 · 0 create · affirm #186 · Cerbero `refactorization`∈revoked since `2026-08-20T05:48:56Z` · F5 lateral · seed PPR dedup pending · exec `66954b4b…` · PR #253 · emitter `github-bridge-watcher` · `PullRequest_Presented` |
 
 ## Contexto heredado (PBI-185)
 
