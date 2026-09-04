@@ -34,6 +34,7 @@ docs/events/
 !.SddIA/.dev/.env.example
 .SddIA/daemons/state/
 .SddIA/daemons/status/
+.SddIA/daemons/logs/
 .SddIA/.state/
 
 # Artefactos locales de build/debug IOTA

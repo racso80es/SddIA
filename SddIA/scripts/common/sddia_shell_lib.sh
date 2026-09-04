@@ -91,6 +91,18 @@ _sddia_augment_operator_path() {
   export PATH
 }
 
+# lance-encoding (LanceDB) exige protoc en PATH. Sin él cargo --release aborta y puede dejar el ELF a medias.
+_sddia_require_protoc() {
+  _sddia_augment_operator_path
+  if command -v protoc >/dev/null 2>&1; then
+    export PROTOC="$(command -v protoc)"
+    return 0
+  fi
+  echo "[ERROR] protoc ausente (dependencia lance-encoding / LanceDB). Instalar: sudo apt-get install -y protobuf-compiler" >&2
+  echo "[ERROR] Alternativa: binario protoc en ~/.local/bin (PATH). Docs: docs/features/lancedb-real-vector-memory/spec.md" >&2
+  return 1
+}
+
 _sddia_load_vault() {
   local repo_root="$1"
   local global="$repo_root/.dev/.env"

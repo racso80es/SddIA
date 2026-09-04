@@ -24,11 +24,13 @@ main() {
   fi
 
   local stdin_text line local_ref local_sha remote_ref remote_sha
-  stdin_text=$(cat)
+  # $(cat) recorta el \n final; el marcador conserva el payload de git pre-push.
+  stdin_text=$(cat; printf x)
+  stdin_text="${stdin_text%x}"
   [[ -n "$stdin_text" ]] || exit 0
 
   local branches=()
-  while IFS='|' read -r local_ref local_sha remote_ref remote_sha; do
+  while IFS='|' read -r local_ref local_sha remote_ref remote_sha || [[ -n "${local_ref:-}" ]]; do
     [[ -n "$local_ref" ]] || continue
     if is_delete_push "$local_sha"; then
       continue

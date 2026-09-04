@@ -21,6 +21,7 @@ _sddia_ensure_hooks_path
 
 # shellcheck source=SddIA/scripts/common/sddia_shell_lib.sh
 source "$REPO_ROOT/SddIA/scripts/common/sddia_shell_lib.sh"
+_sddia_augment_operator_path
 _sddia_load_vault "$REPO_ROOT"
 
 KALMA_PORT="${SDDIA_CLIENT_PORT:-8765}"
@@ -137,23 +138,30 @@ _ensure_orchestrator() {
         return 1
     fi
     local target_dir="$REPO_ROOT/SddIA/target"
-    local build_log
     local release_pkgs=(
         execute-process
         iota-immutable-publisher
+        iota-publish-relay
         kalma2-bridge
         event-watcher
         event-sweeper
         send-telegram-notification
         telegram-gateway
+        telegram-watcher
+        github-bridge-watcher
+        email-watcher
     )
-    local -a cargo_release_args=(--release -q)
+    if ! _sddia_require_protoc; then
+        return 1
+    fi
+    echo "  -> toolchain: protoc=${PROTOC}"
+    local -a cargo_release_args=(--release)
     for pkg in "${release_pkgs[@]}"; do
         cargo_release_args+=(-p "$pkg")
     done
-    if ! build_log="$(cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build "${cargo_release_args[@]}" 2>&1)"; then
-        echo "  -> [ERROR] cargo build --release falló (CARGO_TARGET_DIR=${target_dir})."
-        [[ -n "$build_log" ]] && echo "$build_log" >&2
+    # Stream cargo (no -q, no captura): fallo visible; no aparenta cuelgue ni cierra sin traza.
+    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build "${cargo_release_args[@]}"); then
+        echo "  -> [ERROR] cargo build --release falló (CARGO_TARGET_DIR=${target_dir})." >&2
         return 1
     fi
     local ep_bin
@@ -165,9 +173,8 @@ _ensure_orchestrator() {
         fi
     done
     export SDDIA_CAPSULE_ANCHOR="${SDDIA_CAPSULE_ANCHOR:-1}"
-    if ! build_log="$(cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -q 2>&1)"; then
-        echo "  -> [ERROR] cargo build -p execute-process (debug orquestador) falló."
-        [[ -n "$build_log" ]] && echo "$build_log" >&2
+    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process); then
+        echo "  -> [ERROR] cargo build -p execute-process (debug orquestador) falló." >&2
         return 1
     fi
     _sddia_resolve_orchestrator "$REPO_ROOT" || return 1
@@ -182,6 +189,14 @@ if [[ "$SENSORIAL_SYSTEMD" -eq 1 ]]; then
 fi
 echo "[SddIA] Jurisdicción centinelas: ${DAEMON_JURIS} (SDDIA_DAEMON_JURISDICTION)"
 
+_hold_tty() {
+    local code="${1:-0}"
+    if [[ -t 0 && -t 1 ]]; then
+        echo "[SddIA] Fin de ignición (exit=${code}). Enter para cerrar esta consola."
+        read -r _ || true
+    fi
+}
+
 cleanup() {
     local exit_code="${1:-0}"
     if [[ "$CLEANUP_DONE" -eq 1 ]]; then
@@ -194,6 +209,7 @@ cleanup() {
 
     if [[ "${DAEMON_JURIS:-script}" == "systemd" ]]; then
         echo "[SddIA] Jurisdicción systemd: no pkill de centinelas (supervisor = systemd --user)."
+        _hold_tty "$exit_code"
         exit "$exit_code"
     fi
 
@@ -207,6 +223,7 @@ cleanup() {
     _sddia_stop_lock_pid "${STATUS_DIR}/${EMAIL_DAEMON}.lock"
 
     echo "[SddIA] Ecosistema detenido de forma segura."
+    _hold_tty "$exit_code"
     exit "$exit_code"
 }
 
@@ -531,6 +548,7 @@ if [[ "$DAEMON_JURIS" == "systemd" ]]; then
     echo "[SddIA] Kalma2: ${KALMA_URL}"
     echo "[SddIA] Este script no retiene hijos; stop: systemctl --user stop 'sddia-*@$(systemd-escape -p "$REPO_ROOT").service'"
     echo "===================================================================="
+    _hold_tty 0
     exit 0
 fi
 
