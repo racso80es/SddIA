@@ -82,7 +82,7 @@ Orden: 1 → 2 (DCC secuencial). Ola 3 independiente; no sustituye 1 ni 2.
 
 ## Criterio de cierre (padre)
 
-- [ ] Ola 1 cerrada (PBI en `done/`, `validacion.md` APTO)
+- [x] Ola 1 cerrada (PBI en `done/`, `validacion.md` APTO)
 - [ ] Ola 2 cerrada
 - [ ] Ola 3 cerrada o DIFERIDO explícito con laudo
 - [ ] Este TODO movido a `docs/todos/done/` en el PR que cierre la última ola absorbida
