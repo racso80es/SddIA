@@ -8,6 +8,7 @@ items_applied:
   - ignition-debug-sddia-qa
   - verify-ca1-elf
   - verify-ca2-gate-evolution
+  - verify-ca3-dcc-aduanas
 ---
 
 # Ejecución — Ola 2 `sddia-qa`
@@ -27,3 +28,13 @@ SddIA/target/release/sddia-qa gate-evolution --json --range --if-touched --sync-
 ```
 
 `success: true`, `reason_codes: ["EVOL_OK"]`, `skipped: if-touched`.
+
+## DCC-QA-CA3
+
+`delivery-close-cycle` `execution_id` `fa1e88a6-3b16-44e0-8710-8d9925f47085`. Snapshot `ab27234`.
+
+| Fase | Status |
+|------|--------|
+| Aduana integridad índices | **executed** `exitCode: 0` |
+| Aduana evolution | **blocked** `EVOL_CUMULO: cápsula sddia-evolution-register ausente` — no traza `sddia-qa no encontrado` |
+| Apertura en forja | failed `shell-executor` ausente (fuera de Ola 2) |

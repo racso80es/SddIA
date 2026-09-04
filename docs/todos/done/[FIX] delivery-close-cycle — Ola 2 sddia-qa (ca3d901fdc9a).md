@@ -6,7 +6,7 @@ format: markdown
 version: "1.0.0"
 created: "2026-09-04"
 updated: "2026-09-04"
-status: "abierto"
+status: cerrado
 refinement_status: clarified
 priority: alta
 process: bug-fix
@@ -103,6 +103,6 @@ Absorbe `F-DCC-EVOLUTION-GATE` y `F-DCC-INDEX-INTEGRITY` del padre `PBI-FIX-FRAC
 
 ## Criterio de cierre
 
-- [ ] DCC-QA-CA1…CA3
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO en `docs/todos/done/` en la rama del PR
+- [x] DCC-QA-CA1…CA3
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO en `docs/todos/done/` en la rama del PR
