@@ -184,7 +184,7 @@ invoke_process() {
 
 parse_pre_push_stdin() {
   local line local_ref local_sha remote_ref remote_sha
-  while IFS= read -r line; do
+  while IFS= read -r line || [[ -n "$line" ]]; do
     [[ -n "$line" ]] || continue
     read -r local_ref local_sha remote_ref remote_sha <<< "$line"
     [[ -n "$local_ref" ]] || continue
