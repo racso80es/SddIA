@@ -4,12 +4,15 @@ title: "[FIX] event-sweeper — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-09-04"
-status: "abierto"
+updated: "2026-09-04"
+status: cerrado
+closed: "2026-09-04"
 priority: alta
 process: bug-fix
-fracture_hash: 6cc3b954bad3
 fracture_process: event-sweeper
+fracture_hash: 6cc3b954bad3
 incident_ref: "System_Fracture_Detected — 6cc3b954bad3"
+fix_ref: docs/fixes/centinelas-fracture-ola-20260901
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
@@ -31,16 +34,12 @@ related:
 Centinela event-sweeper lock huérfano: PID 7007 muerto. last_heartbeat=2026-09-01T14:30:52Z
 ```
 
-## Mandato
+## Cierre (ola 20260901)
 
-Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `curl`) hasta cierre documentado.
-
-## Conclusión Analítica y Propuesta Evolutiva
-
-_Pendiente de síntesis Mayeuta (Kintsugi async)._
+Laudo **(B) deuda documental**: snapshot lock huérfano 2026-09-01T14:30Z; runtime sano al 2026-09-04 (`missed_cycles=0`, PID 67914 vivo). Archivado bajo `docs/fixes/centinelas-fracture-ola-20260901`.
 
 ## Criterio de cierre
 
-- [ ] Causa raíz resuelta
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/`
+- [x] Causa raíz resuelta (laudo B — snapshot histórico)
+- [x] Archivado en ola documental
+- [x] Este TODO movido a `docs/todos/done/`
