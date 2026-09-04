@@ -6,7 +6,7 @@ format: markdown
 version: "1.1.0"
 created: "2026-09-04"
 updated: "2026-09-04"
-status: "abierto"
+status: cerrado
 refinement_status: clarified
 priority: alta
 process: bug-fix
@@ -30,9 +30,9 @@ related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
   - SddIA/library/codexes/codex-software-engineering/process/delivery-close-cycle.md
-  - docs/todos/pending/[FIX] delivery-close-cycle — Ola 1 cápsula git-manager (ca3d901fdc9a).md
-  - docs/todos/pending/[FIX] delivery-close-cycle — Ola 2 sddia-qa (ca3d901fdc9a).md
-  - docs/todos/pending/[FIX] delivery-close-cycle — Ola 3 binario ausente no fractura (ca3d901fdc9a).md
+  - docs/todos/done/[FIX] delivery-close-cycle — Ola 1 cápsula git-manager (ca3d901fdc9a).md
+  - docs/todos/done/[FIX] delivery-close-cycle — Ola 2 sddia-qa (ca3d901fdc9a).md
+  - docs/todos/done/[FIX] delivery-close-cycle — Ola 3 binario ausente no fractura (ca3d901fdc9a).md
 source_audit: "2026-09-04 DCC execution_id 21eccbf3. Snapshot final y Publicación remota: cápsula git-manager ausente bajo SddIA/target. Aduana evolution e integridad índices: sddia-qa ausente. Cuatro System_Fracture_Detected emitidos. start-sddia.sh no construye git-manager ni sddia-qa. F4b no cubre binario lab ausente."
 review_notes: "v1.0.0 semilla Cúmulo. v1.1.0 laudo: deuda absorbida en Ola 1–3. Padre = índice; no se implementa aquí."
 ---
@@ -84,5 +84,5 @@ Orden: 1 → 2 (DCC secuencial). Ola 3 independiente; no sustituye 1 ni 2.
 
 - [x] Ola 1 cerrada (PBI en `done/`, `validacion.md` APTO)
 - [x] Ola 2 cerrada
-- [ ] Ola 3 cerrada o DIFERIDO explícito con laudo
-- [ ] Este TODO movido a `docs/todos/done/` en el PR que cierre la última ola absorbida
+- [x] Ola 3 cerrada o DIFERIDO explícito con laudo
+- [x] Este TODO movido a `docs/todos/done/` en el PR que cierre la última ola absorbida

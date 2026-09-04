@@ -6,14 +6,14 @@ format: markdown
 version: "1.0.0"
 created: "2026-09-04"
 updated: "2026-09-04"
-status: "abierto"
+status: cerrado
 refinement_status: clarified
 priority: media
 process: bug-fix
 type: fix
 dispatch: false
 parent_pbi: PBI-FIX-FRACTURE-ca3d901fdc9a
-parent_ref: docs/todos/pending/[FIX] delivery-close-cycle — fractura sistémica (ca3d901fdc9a).md
+parent_ref: docs/todos/done/[FIX] delivery-close-cycle — fractura sistémica (ca3d901fdc9a).md
 suggested_branch: fix/dcc-lab-missing-binary-no-fracture
 persist_ref_suggested: docs/fixes/dcc-lab-missing-binary-no-fracture
 fracture_hash: ca3d901fdc9a
@@ -101,6 +101,6 @@ Absorbe el **sobre-escalado** de las cuatro fricciones del padre: la traza es ac
 
 ## Criterio de cierre
 
-- [ ] DCC-NF-CA1…CA3
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO en `docs/todos/done/` en la rama del PR
+- [x] DCC-NF-CA1…CA3
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO en `docs/todos/done/` en la rama del PR

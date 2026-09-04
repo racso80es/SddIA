@@ -344,6 +344,23 @@ fn dcc_title_metachar_block_suppresses_fracture(
             || report.get("error_code").and_then(|v| v.as_str()) == Some("PR_TITLE_METACHAR"))
 }
 
+/// Receta de compile (ELF/cápsula ausente) ≠ colapso ontológico. No `fail_soft`.
+fn dcc_lab_binary_missing_trace(trace: &str) -> bool {
+    let t = trace.to_lowercase();
+    if t.contains("sddia-qa no encontrado") {
+        return true;
+    }
+    t.contains("cápsula skill") && t.contains("no encontrada bajo sddia/target")
+}
+
+fn dcc_lab_binary_missing_suppresses_fracture(
+    _phase_name: &str,
+    status: &str,
+    error_trace: &str,
+) -> bool {
+    matches!(status, "failed" | "blocked") && dcc_lab_binary_missing_trace(error_trace)
+}
+
 fn dcc_post_push_phase(phase_name: &str) -> bool {
     matches!(
         phase_name,
@@ -425,6 +442,9 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
             continue;
         }
         if dcc_title_metachar_block_suppresses_fracture(phase_name, status, &error_trace, report) {
+            continue;
+        }
+        if dcc_lab_binary_missing_suppresses_fracture(phase_name, status, &error_trace) {
             continue;
         }
         let friction_id = dcc_friction_id(phase_name, report);
@@ -800,6 +820,107 @@ mod tests {
             .filter_map(|e| e.ok())
             .collect();
         assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn dcc_lab_binary_missing_trace_positives_and_negatives() {
+        assert!(dcc_lab_binary_missing_trace(
+            "sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)"
+        ));
+        assert!(dcc_lab_binary_missing_trace(
+            "SddIA pre-commit: sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)"
+        ));
+        assert!(dcc_lab_binary_missing_trace(
+            "cápsula skill 'git-manager' no encontrada bajo SddIA/target"
+        ));
+        assert!(dcc_lab_binary_missing_trace(
+            "cápsula skill 'shell-executor' no encontrada bajo SddIA/target"
+        ));
+        assert!(!dcc_lab_binary_missing_trace(
+            "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed"
+        ));
+        assert!(!dcc_lab_binary_missing_trace(
+            "proveedor 'skill:git-manager' revocado en revoked_entities"
+        ));
+    }
+
+    fn pending_fracture_count(repo: &std::path::Path) -> usize {
+        fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .count()
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_sddia_qa_missing() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let err = "sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)";
+        let reports = vec![
+            json!({
+                "phase_name": "Aduana evolution",
+                "status": "failed",
+                "error": err,
+            }),
+            json!({
+                "phase_name": "Aduana integridad índices",
+                "status": "failed",
+                "error": err,
+            }),
+        ];
+        emit_dcc_phase_fractures(repo, &reports);
+        assert_eq!(pending_fracture_count(repo), 0);
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_git_manager_capsule_missing() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let err = "cápsula skill 'git-manager' no encontrada bajo SddIA/target";
+        let reports = vec![
+            json!({
+                "phase_name": "Snapshot final",
+                "status": "failed",
+                "error": err,
+            }),
+            json!({
+                "phase_name": "Publicación remota",
+                "status": "failed",
+                "error": err,
+            }),
+        ];
+        emit_dcc_phase_fractures(repo, &reports);
+        assert_eq!(pending_fracture_count(repo), 0);
+    }
+
+    #[test]
+    fn dcc_fracture_still_emits_on_rbac_revocation_and_evol_gate_failed() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        emit_dcc_phase_fractures(
+            repo,
+            &[json!({
+                "phase_name": "Snapshot final",
+                "status": "failed",
+                "error": "proveedor 'skill:git-manager' revocado en revoked_entities",
+            })],
+        );
+        assert!(pending_fracture_count(repo) >= 1);
+        let tmp2 = tempfile::tempdir().expect("tempdir");
+        let repo2 = tmp2.path();
+        fs::create_dir_all(repo2.join(".events/pending")).unwrap();
+        emit_dcc_phase_fractures(
+            repo2,
+            &[json!({
+                "phase_name": "Aduana evolution",
+                "status": "failed",
+                "error": "evolution gate (--range --if-touched) failed",
+            })],
+        );
+        assert!(pending_fracture_count(repo2) >= 1);
     }
 
     #[test]
