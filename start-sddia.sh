@@ -140,6 +140,7 @@ _ensure_orchestrator() {
     local target_dir="$REPO_ROOT/SddIA/target"
     local release_pkgs=(
         execute-process
+        git-manager
         iota-immutable-publisher
         iota-publish-relay
         kalma2-bridge
@@ -169,12 +170,15 @@ _ensure_orchestrator() {
         if [[ -x "$ep_bin" ]]; then
             CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":true,"write_witness":true,"names":["iota-immutable-publisher","event-watcher","event-sweeper","send-telegram-notification","telegram-gateway"]}' >/dev/null 2>&1 \
                 || echo "  -> [WARN] --seal-capsules parcial (revisar genomas/testigos)"
+            # git-manager: testigo ELF; write_genome=false (DA-2, Ola 1).
+            CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["git-manager"]}' >/dev/null 2>&1 \
+                || echo "  -> [WARN] --seal-capsules git-manager parcial (testigo; genoma intacto)"
             break
         fi
     done
     export SDDIA_CAPSULE_ANCHOR="${SDDIA_CAPSULE_ANCHOR:-1}"
-    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process); then
-        echo "  -> [ERROR] cargo build -p execute-process (debug orquestador) falló." >&2
+    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -p git-manager); then
+        echo "  -> [ERROR] cargo build -p execute-process -p git-manager (debug) falló." >&2
         return 1
     fi
     _sddia_resolve_orchestrator "$REPO_ROOT" || return 1
