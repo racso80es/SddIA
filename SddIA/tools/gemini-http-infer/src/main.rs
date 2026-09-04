@@ -66,12 +66,53 @@ fn generate_url(base: &str, model: &str) -> String {
     format!("{}/v1beta/models/{model}:generateContent", base.trim_end_matches('/'))
 }
 
+fn resolve_model(req: &Value) -> Result<String, String> {
+    if let Ok(m) = required_str(req, "model") {
+        return Ok(m);
+    }
+    env::var("SDDIA_GEMINI_MODEL")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "request.model o SDDIA_GEMINI_MODEL obligatorio".to_string())
+}
+
 fn extract_text(body: &Value) -> Option<String> {
     body.pointer("/candidates/0/content/parts/0/text")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string)
+}
+
+fn finish_reason(body: &Value) -> &str {
+    body.pointer("/candidates/0/finishReason")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+}
+
+fn google_error_message(body: &Value) -> String {
+    body.pointer("/error/message")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("")
+        .to_string()
+}
+
+fn map_http_error_body(code: u16, body: &Value) -> String {
+    let msg = google_error_message(body);
+    let blob = body.to_string();
+    let catalog = msg.to_lowercase().contains("no longer available")
+        || (code == 404
+            && (blob.contains("NOT_FOUND") || msg.to_lowercase().contains("not found")));
+    if catalog && !msg.is_empty() {
+        format!("gemini-model-unavailable: {msg}")
+    } else if catalog {
+        format!("gemini-model-unavailable: http-status-{code}: {body}")
+    } else {
+        format!("http-status-{code}: {body}")
+    }
 }
 
 fn mock_result(prompt: &str, model: &str) -> Value {
@@ -97,17 +138,26 @@ fn post_generate(url: &str, api_key: Option<&str>, prompt: &str, model: &str, te
     if let Some(key) = api_key {
         req = req.set("x-goog-api-key", key);
     }
-    let resp = req
-        .send_string(&payload.to_string())
-        .map_err(|e| format!("http-post-failed: {e}"))?;
-    let status = resp.status();
+    let resp = match req.send_string(&payload.to_string()) {
+        Ok(r) => r,
+        Err(ureq::Error::Status(code, resp)) => {
+            let body: Value = resp
+                .into_json()
+                .unwrap_or_else(|_| json!({"error": {"message": "body-not-json"}}));
+            return Err(map_http_error_body(code, &body));
+        }
+        Err(e) => return Err(format!("http-post-failed: {e}")),
+    };
     let body: Value = resp
         .into_json()
         .map_err(|e| format!("http-body-invalid-json: {e}"))?;
-    if status >= 400 {
-        return Err(format!("http-status-{status}: {body}"));
-    }
     let text = extract_text(&body).unwrap_or_default();
+    if text.is_empty() {
+        return Err(format!(
+            "gemini-empty-candidate: finishReason={}",
+            finish_reason(&body)
+        ));
+    }
     Ok(json!({
         "text": text,
         "raw_response": body,
@@ -118,7 +168,7 @@ fn post_generate(url: &str, api_key: Option<&str>, prompt: &str, model: &str, te
 fn run(doc: &Value) -> Result<Value, String> {
     let req = request_inner(doc);
     let prompt = required_str(req, "prompt")?;
-    let model = required_str(req, "model")?;
+    let model = resolve_model(req)?;
     let temperature = req.get("temperature").and_then(|v| v.as_f64());
 
     if lab_mock_outbound_enabled() && lab_mock_gemini_url().is_none() {
@@ -175,6 +225,27 @@ mod tests {
     fn required_fields_reject_empty_model() {
         let req = json!({"prompt": "x", "model": "  "});
         assert!(required_str(&req, "model").is_err());
+    }
+
+    #[test]
+    fn map_404_catalog_prefixes_unavailable() {
+        let body = json!({
+            "error": {
+                "code": 404,
+                "message": "This model models/gemini-2.5-flash is no longer available to new users.",
+                "status": "NOT_FOUND"
+            }
+        });
+        let mapped = map_http_error_body(404, &body);
+        assert!(mapped.starts_with("gemini-model-unavailable:"));
+        assert!(mapped.contains("no longer available"));
+    }
+
+    #[test]
+    fn empty_candidate_uses_finish_reason() {
+        let body = json!({"candidates": [{"finishReason": "MAX_TOKENS", "content": {}}]});
+        assert_eq!(finish_reason(&body), "MAX_TOKENS");
+        assert!(extract_text(&body).is_none());
     }
 
     #[test]
