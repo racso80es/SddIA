@@ -9,6 +9,66 @@ persist_ref: docs/ppr-cosecha-kaizen-20260904
 
 ```yaml
 schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:30:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: NO_APTO
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: NO_APTO
+KAIZEN_COSECHA_GATE: APTO
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+CUMULO_KM_AUTHORITY: APTO
+rbac_exit_code: 1
+verdict: aprobado
+global: APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+kaizen_seeds: 0
+kaizen_seeds_dedup: 3
+resolution: KAIZEN_COSECHA_GATE
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) dedup pending PBI-RESTORE; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor git-hook-pre-push ∉ revoked"
+notes: "Cúmulo Cosecha Kaizen CID 74a57c11… · exec 8d2567b6…; KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 3 · F5 heredado failed · accept_pr_handoff false/blocked · R1/R2 native_state idempotent-hit · Shell git-manager Rejected · 0 create KM + sighting pending + affirm #186; emitter git-hook-pre-push; sidecar _cosecha_kaizen_8d2567b6.md ante carrera sibling e431afdf…"
+```
+
+## 2026-09-04T13:30:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- execution_id: `8d2567b6-86b3-413c-adc2-54cd206c4324`
+- correlation_id: `74a57c11-6764-4a6a-92e6-7943faa48d35`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: **Veredicto fase: ok** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `dedup: 3` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked`.
+
+### transcript (tail)
+
+```
+## Resumen Cúmulo · Cosecha Kaizen
+
+**Archivos:** `validacion.md`; `_agent_handoff.md`; `_kaizen_seed_ppr_revoked.md`; `_cosecha_kaizen_8d2567b6.md`; pending PBI-RESTORE (sighting); done #186 (affirm).
+
+**Veredicto:** `ok` · seeds 0 · dedup 3 · Handoff prohibido.
+
+**Evidence:** R1/R2 APTO bridge; Shell git-manager Rejected; R3 KM APTO.
+```
+
+### Runtime evidence (machine) — Cúmulo Cosecha sibling e431afdf (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
 materialized_at: "2026-09-04T13:28:00Z"
 source: native_state
 git_manager_invoked: false
