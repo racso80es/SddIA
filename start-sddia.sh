@@ -151,6 +151,7 @@ _ensure_orchestrator() {
         telegram-watcher
         github-bridge-watcher
         email-watcher
+        sddia-qa
     )
     if ! _sddia_require_protoc; then
         return 1
@@ -177,8 +178,8 @@ _ensure_orchestrator() {
         fi
     done
     export SDDIA_CAPSULE_ANCHOR="${SDDIA_CAPSULE_ANCHOR:-1}"
-    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -p git-manager); then
-        echo "  -> [ERROR] cargo build -p execute-process -p git-manager (debug) falló." >&2
+    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -p git-manager -p sddia-qa); then
+        echo "  -> [ERROR] cargo build -p execute-process -p git-manager -p sddia-qa (debug) falló." >&2
         return 1
     fi
     _sddia_resolve_orchestrator "$REPO_ROOT" || return 1
