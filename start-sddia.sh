@@ -152,6 +152,8 @@ _ensure_orchestrator() {
         github-bridge-watcher
         email-watcher
         sddia-qa
+        shell-executor
+        sddia-evolution-register
     )
     if ! _sddia_require_protoc; then
         return 1
@@ -171,15 +173,15 @@ _ensure_orchestrator() {
         if [[ -x "$ep_bin" ]]; then
             CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":true,"write_witness":true,"names":["iota-immutable-publisher","event-watcher","event-sweeper","send-telegram-notification","telegram-gateway"]}' >/dev/null 2>&1 \
                 || echo "  -> [WARN] --seal-capsules parcial (revisar genomas/testigos)"
-            # git-manager: testigo ELF; write_genome=false (DA-2, Ola 1).
-            CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["git-manager"]}' >/dev/null 2>&1 \
-                || echo "  -> [WARN] --seal-capsules git-manager parcial (testigo; genoma intacto)"
+            # Skills DCC: testigo ELF; write_genome=false (DA-2).
+            CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["git-manager","shell-executor","sddia-evolution-register"]}' >/dev/null 2>&1 \
+                || echo "  -> [WARN] --seal-capsules skills DCC parcial (testigo; genoma intacto)"
             break
         fi
     done
     export SDDIA_CAPSULE_ANCHOR="${SDDIA_CAPSULE_ANCHOR:-1}"
-    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -p git-manager -p sddia-qa); then
-        echo "  -> [ERROR] cargo build -p execute-process -p git-manager -p sddia-qa (debug) falló." >&2
+    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -p git-manager -p sddia-qa -p shell-executor -p sddia-evolution-register); then
+        echo "  -> [ERROR] cargo build -p execute-process -p git-manager -p sddia-qa -p shell-executor -p sddia-evolution-register (debug) falló." >&2
         return 1
     fi
     _sddia_resolve_orchestrator "$REPO_ROOT" || return 1
