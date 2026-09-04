@@ -13,6 +13,9 @@ outputs:
   - "domain_status_events": "Domain_Entity_Degraded, Domain_Entity_Restored, Domain_Entity_Deprecated en ./.events/domain/"
   - "domain_telemetry_snapshots": "Domain_Entity_Telemetry_Captured por cada consumo OK (trazabilidad vectorial)"
   - "dlt_seals": "Sellado iota-immutable-publisher exclusivo sobre gobernanza entidades / inmunidad"
+llm_profile:
+  tier: "none"
+  description: "Actuario de umbrales; prohibido LLM"
 ---
 
 # Agente Radamanto: Certificador / Actuario

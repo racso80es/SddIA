@@ -7,6 +7,9 @@ allowed_policies:
   - "knowledge-management"
   - "ecosystem-evolution"
 hash_signature: "opcional_en_desarrollo"
+llm_profile:
+  tier: "none"
+  description: "Topología y SSOT; prohibido LLM"
 inputs:
   - "directorio_raiz_sddia"
   - "SddIA/core/cumulo.paths.json"

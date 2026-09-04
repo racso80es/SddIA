@@ -27,11 +27,12 @@ docs/events/
 .SddIA/cerbero/revoked_entities.json
 
 # Jerarquía de Bóvedas — secretos locales (no versionar)
-.dev/
-!.dev/.env.example
-!.dev/.env.test.example
-.SddIA/.dev/
-!.SddIA/.dev/.env.example
+# Contenido de bóvedas (cualquier profundidad). No ignorar el directorio
+# entero: si se ignora el dir, git no puede re-incluir `.env.example` y
+# `git add -A -- path` (git-manager / DCC) aborta el snapshot.
+**/.dev/*
+!**/.dev/.env.example
+!**/.dev/.env.test.example
 .SddIA/daemons/state/
 .SddIA/daemons/status/
 .SddIA/daemons/logs/

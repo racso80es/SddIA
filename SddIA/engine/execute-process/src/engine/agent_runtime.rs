@@ -4,7 +4,7 @@
 //! invocan ese CLI (JSON stdin → última línea JSON stdout) en lugar de
 //! marcarse `simulated`.
 
-use crate::core::parser::parse_frontmatter_from_str;
+use crate::core::parser::{parse_frontmatter, parse_frontmatter_from_str};
 use serde_json::{json, Value};
 use std::fs;
 use std::io::Write;
@@ -20,6 +20,7 @@ const ENV_TIMEOUT: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS";
 const ENV_TIMEOUT_EXEC: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION";
 const DEFAULT_TIMEOUT_SECS: u64 = 660;
 const KILL_GRACE_MS: u64 = 500;
+const DETERMINISTIC_AGENTS: &[&str] = &["cerbero", "cumulo", "radamanto"];
 
 fn env_truthy(key: &str) -> bool {
     std::env::var(key)
@@ -169,6 +170,63 @@ fn agent_names(delegates: &[Value]) -> Vec<String> {
         .filter_map(|s| s.strip_prefix("agent:"))
         .map(str::to_string)
         .collect()
+}
+
+fn is_deterministic_agent(name: &str) -> bool {
+    DETERMINISTIC_AGENTS.iter().any(|d| *d == name)
+}
+
+fn is_none_tier(tier: &str) -> bool {
+    tier.eq_ignore_ascii_case("none")
+}
+
+/// Lee `llm_profile` de `SddIA/agents/{name}.md`. Fail-soft si el `.md` falta.
+/// `all_none` = todos los agentes de la fase son `tier: none` (o deterministas sin YAML).
+fn load_llm_profiles(repo: &Path, agents: &[String]) -> (Value, bool) {
+    let mut map = serde_json::Map::new();
+    if agents.is_empty() {
+        return (Value::Object(map), false);
+    }
+    let mut all_none = true;
+    for name in agents {
+        let path = repo.join("SddIA/agents").join(format!("{name}.md"));
+        if !path.is_file() {
+            if is_deterministic_agent(name) {
+                map.insert(name.clone(), json!({ "tier": "none" }));
+            } else {
+                all_none = false;
+            }
+            continue;
+        }
+        let fm = match parse_frontmatter(&path) {
+            Ok(m) => m,
+            Err(_) => {
+                all_none = false;
+                continue;
+            }
+        };
+        match fm.get("llm_profile") {
+            Some(profile) => {
+                let json_profile = serde_json::to_value(profile).unwrap_or(json!({}));
+                let tier = json_profile
+                    .get("tier")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if !is_none_tier(tier) {
+                    all_none = false;
+                }
+                map.insert(name.clone(), json_profile);
+            }
+            None => {
+                if is_deterministic_agent(name) {
+                    map.insert(name.clone(), json!({ "tier": "none" }));
+                } else {
+                    all_none = false;
+                }
+            }
+        }
+    }
+    (Value::Object(map), all_none)
 }
 
 fn truthy_state_flag(state: &Value, key: &str) -> bool {
@@ -369,6 +427,14 @@ pub fn invoke_agent_phase(
     }
 
     let agents = agent_names(delegates);
+    let (llm_profiles, all_none) = load_llm_profiles(repo, &agents);
+    if all_none {
+        entry["status"] = json!("executed");
+        entry["note"] = json!("deterministic-agent-no-llm");
+        entry["llm_profiles"] = llm_profiles;
+        return finish_agent_entry(entry, process_name, phase_name);
+    }
+
     let branch_name = inputs
         .get("branch_name")
         .and_then(|v| v.as_str())
@@ -390,6 +456,7 @@ pub fn invoke_agent_phase(
         "process_name": process_name,
         "phase_name": phase_name,
         "agents": agents,
+        "llm_profiles": llm_profiles,
         "persist_ref": persist_ref_val,
         "branch_name": branch_name,
         "execution_id": execution_id,
@@ -918,5 +985,112 @@ python3 -c 'import json; print(json.dumps({"success":False,"data":{"status":"fai
         assert_eq!(soft["fail_soft"], true);
         assert_eq!(hard["status"], "failed");
         assert!(hard.get("fail_soft").is_none());
+    }
+
+    #[test]
+    fn llm_profile_high_is_injected_in_payload() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-llm-high-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(dir.join("SddIA/agents")).unwrap();
+        fs::write(
+            dir.join("SddIA/agents/dedalo.md"),
+            "---\nname: dedalo\nllm_profile:\n  tier: high\n  description: arquitectura\n---\n",
+        )
+        .unwrap();
+        let script = mock_script(
+            &dir,
+            r#"#!/bin/sh
+python3 -c 'import json,sys
+doc=json.load(sys.stdin)
+assert doc.get("repo_root")
+p=(doc.get("llm_profiles") or {}).get("dedalo") or {}
+assert p.get("tier")=="high", doc
+print(json.dumps({"success":True,"data":{"status":"executed","message":"tier-ok"}}))'
+"#,
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Diseño de Blueprint",
+            &[json!("agent:dedalo")],
+            &json!({"persist_ref": "docs/features/x"}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "executed", "{entry}");
+        assert_eq!(entry["message"], "tier-ok");
+    }
+
+    #[test]
+    fn llm_profile_none_does_not_spawn() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-llm-none-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(dir.join("SddIA/agents")).unwrap();
+        fs::write(
+            dir.join("SddIA/agents/cerbero.md"),
+            "---\nname: cerbero\nllm_profile:\n  tier: none\n---\n",
+        )
+        .unwrap();
+        let marker = dir.join("spawned");
+        let script = mock_script(
+            &dir,
+            &format!(
+                "#!/bin/sh\ntouch {}\necho '{{\"success\":true,\"data\":{{\"status\":\"executed\"}}}}'\n",
+                marker.display()
+            ),
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "pull-request-review",
+            "Certificación RBAC",
+            &[json!("agent:cerbero")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let spawned = marker.is_file();
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "executed", "{entry}");
+        assert_eq!(entry["note"], "deterministic-agent-no-llm");
+        assert_eq!(entry["llm_profiles"]["cerbero"]["tier"], "none");
+        assert!(!spawned);
+    }
+
+    #[test]
+    fn llm_profile_missing_agent_md_is_fail_soft() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-llm-miss-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(
+            &dir,
+            r#"#!/bin/sh
+python3 -c 'import json,sys
+doc=json.load(sys.stdin)
+assert "dedalo" not in (doc.get("llm_profiles") or {}), doc
+print(json.dumps({"success":True,"data":{"status":"executed","message":"soft-ok"}}))'
+"#,
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "feature",
+            "Diseño de Blueprint",
+            &[json!("agent:dedalo")],
+            &json!({}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+        assert_eq!(entry["status"], "executed", "{entry}");
+        assert_eq!(entry["message"], "soft-ok");
     }
 }

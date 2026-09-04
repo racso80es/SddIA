@@ -1,0 +1,9 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/arquitectura-llm-tiers",
+  "branch_name": "feat/arquitectura-llm-tiers",
+  "pr_title": "feat(llm-tiers): perfiles cognitivos en agentes y veto none",
+  "target_branch": "main",
+  "pbi_ref": "docs/todos/done/[ARQUITECTURA] Inyección de perfiles LLM (Tiers) en contratos de agentes SddIA y Resolución Dinámica.md",
+  "pr_body": "## Summary\n- Declara `llm_profile` en el genoma de agentes y lo inyecta en el payload `AGENT_PHASE`.\n- Veto de spawn LLM en fases solo `tier: none` (Cerbero/Cúmulo/Radamanto).\n- Harness de forja resuelve `SDDIA_LLM_TIER_*` con fallback `SDDIA_AGENT_RUNTIME_MODEL`.\n\n## Test plan\n- [x] `cd SddIA && cargo test -p execute-process llm_profile`\n- [x] `SDDIA_HARNESS_SELFTEST=1 python3 SddIA/scripts/tools/kalma2-agent-runtime-cursor.py`\n"
+}

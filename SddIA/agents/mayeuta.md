@@ -7,6 +7,9 @@ allowed_policies:
   - "knowledge-management"
   - "filesystem-ops"
 hash_signature: "opcional_en_desarrollo"
+llm_profile:
+  tier: "high"
+  description: "Mayéutica, refinamiento de requisitos y síntesis de intenciones"
 inputs:
   - "raw_user_intent"
   - "dedalo_escalation_logs_md"
