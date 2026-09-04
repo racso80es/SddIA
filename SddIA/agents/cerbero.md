@@ -11,6 +11,9 @@ inputs:
   - "active_policy_matrix": "Objeto 'execution-contexts' entregado dinámicamente por Cúmulo" # <--- Ruta eliminada
 outputs:
   - "authorization_status": "JSON con exitCode (0/1) y log de auditoría"
+llm_profile:
+  tier: "none"
+  description: "RBAC determinista; prohibido LLM"
 ---
 
 # Agente Cerbero: Motor de Gobernanza y Compliance

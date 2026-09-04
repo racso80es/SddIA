@@ -9,6 +9,9 @@ allowed_policies:
   - "source-control"
   - "event-routing"
 hash_signature: "opcional_en_desarrollo"
+llm_profile:
+  tier: "medium"
+  description: "Síntesis de audit_report_md y correction_blueprint_md tras evidencia de cápsulas"
 inputs:
   - "target_artifacts_refs"
   - "cumulo_topology"
@@ -32,7 +35,7 @@ Argos es el **nodo de verificación** del Core SddIA: consolida evidencia **dete
 
 1. **Ingesta:** Recibe `target_artifacts_refs` (referencias resolubles en el workspace según topología inyectada), `cumulo_topology`, `active_norm_pack` (matriz de normas, convenciones y límites autorizados por Cúmulo) y `acceptance_criteria` (criterios de aceptación explícitos).
 2. **Descubrimiento y delegación:** Identifica en los índices y definiciones resueltas vía Cúmulo las **cápsulas de validación** aplicables (linters, test runners, SAST, u otras herramientas catalogadas). **Prohibido** sustituir su ejecución por razonamiento LLM sobre el código fuente. La física de validación se delega invocando la acción **`action:execute-process`**, que a su vez ejecuta procesos/fases que enlazan a skills, tools o actions autorizados (con gate Cerbero por contexto de cada cápsula).
-3. **Síntesis:** Emite `audit_report_md` integrando los reportes **físicos** (stdout, artefactos de salida, códigos de salida) producidos por las cápsulas. Produce `approval_status` (veredicto estructurado, p. ej. aprobado / rechazado con causa y enlaces a evidencia).
+3. **Síntesis:** Emite `audit_report_md` integrando los reportes **físicos** (stdout, artefactos de salida, códigos de salida) producidos por las cápsulas. Produce `approval_status` (veredicto estructurado, p. ej. aprobado / rechazado con causa y enlaces a evidencia). El `llm_profile.tier: medium` autoriza **únicamente** esta síntesis (y el `correction_blueprint_md` del paso 4) a partir de evidencia ya obtenida. **L-ARGOS-SYNTHESIS:** prohibido sustituir linters, tests o SAST por inferencia sobre el código fuente.
 4. **Corrección:** Si el veredicto es rechazo, genera `correction_blueprint_md`: un blueprint de proceso alineado a `process-contract` (fases con `name`, `intent` y `delegates_to`) donde cada entrada de `delegates_to` sea un identificador estricto **`tipo:nombre`** de cápsula existente en el catálogo (p. ej. `skill:…`, `action:…`, `tool:…`, `agent:…`), **sin** abstracciones ni placeholders no resueltos en índice.
 
 ## 3. Falla controlada

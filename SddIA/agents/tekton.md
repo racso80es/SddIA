@@ -10,6 +10,9 @@ allowed_policies:
   - "system-operations"
   - "chaos-engineering"
 hash_signature: "opcional_en_desarrollo"
+llm_profile:
+  tier: "low"
+  description: "Forja táctica según especificación; sin decisiones de arquitectura"
 inputs:
   - "task_spec": "JSON con la descripción exacta del objetivo y restricciones"
   - "cumulo_topology": "JSON con las rutas válidas extraídas de cumulo.paths.json"

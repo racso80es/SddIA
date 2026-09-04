@@ -1,5 +1,5 @@
 ---
-contract_version: "1.0.0"
+contract_version: "1.1.0"
 entity_type: "agent"
 jurisdiction: "Core SddIA"
 ---
@@ -32,3 +32,16 @@ La comunicación con el agente debe ser estandarizada. Todo agente debe declarar
 Para facilitar el Desarrollo Kaizen y la futura industrialización, el esquema del agente permite (de forma opcional en la Fase Core) la inclusión de métricas de termodinámica operativa:
 * `minteo_maximo`: Límite de instancias o usos permitidos antes de requerir evolución.
 * `porcentaje_de_exito`: Variable actualizable que audita la eficacia histórica del agente en sus tareas.
+
+## 5. Perfil cognitivo (`llm_profile`, opcional)
+Campo YAML opcional. El genoma declara un nivel abstracto; la instancia resuelve el modelo físico en bóveda (`SDDIA_LLM_TIER_*`). Prohibido incrustar slugs comerciales, IPs o URLs de inferencia.
+
+```yaml
+llm_profile:
+  tier: "high"   # high | medium | low | none
+  description: "texto breve de la carga cognitiva"
+```
+
+* `high` / `medium` / `low`: el orquestador inyecta el nodo en el payload `AGENT_PHASE` (`llm_profiles`).
+* `none`: agente determinista. Una fase cuyos delegados son solo `none` **no** spawnea `SDDIA_AGENT_RUNTIME_COMMAND`.
+* Agentes sin el bloque: no se inventa un tier cognitivo. `cerbero`, `cumulo` y `radamanto` se tratan como `none` si el bloque falta.

@@ -177,6 +177,44 @@ def resolve_cli() -> list[str]:
     return _ensure_noninteractive_agent_flags(["cursor-agent", "--print"])
 
 
+TIER_ENV_KEYS = {
+    "high": "SDDIA_LLM_TIER_HIGH",
+    "medium": "SDDIA_LLM_TIER_MEDIUM",
+    "low": "SDDIA_LLM_TIER_LOW",
+}
+TIER_RANK = {"high": 3, "medium": 2, "low": 1, "none": 0}
+
+
+def resolve_phase_model(doc: dict[str, Any]) -> str:
+    """Modelo físico para AGENT_PHASE: mayor tier cognitivo → SDDIA_LLM_TIER_* → SDDIA_AGENT_RUNTIME_MODEL."""
+    fallback = (os.environ.get("SDDIA_AGENT_RUNTIME_MODEL") or "composer-2.5").strip() or "composer-2.5"
+    profiles = doc.get("llm_profiles")
+    if not isinstance(profiles, dict):
+        profiles = {}
+    best_tier = "none"
+    best_rank = -1
+    for raw in doc.get("agents") or []:
+        name = str(raw).strip()
+        profile = profiles.get(name)
+        if not isinstance(profile, dict) and name.lower() != name:
+            profile = profiles.get(name.lower())
+        if not isinstance(profile, dict):
+            continue
+        tier = str(profile.get("tier") or "").strip().lower()
+        rank = TIER_RANK.get(tier, -1)
+        if rank > best_rank:
+            best_rank = rank
+            best_tier = tier
+    if best_rank <= 0:
+        return fallback
+    env_key = TIER_ENV_KEYS.get(best_tier)
+    if env_key:
+        chosen = (os.environ.get(env_key) or "").strip()
+        if chosen:
+            return chosen
+    return fallback
+
+
 def role_brief(agent: str, phase: str, process: str) -> str:
     a = (agent or "").lower()
     if a == "mayeuta" or "estabil" in phase.lower():
@@ -684,18 +722,18 @@ def run_cli(repo: Path, prompt: str, phase: str = "") -> tuple[bool, str, str]:
     return True, out, err
 
 
-def run_sdk(repo: Path, prompt: str) -> tuple[bool, str, str]:
+def run_sdk(repo: Path, prompt: str, model_id: str | None = None) -> tuple[bool, str, str]:
     try:
         from cursor_sdk import Agent  # type: ignore
     except ImportError:
         return False, "", "cursor_sdk no instalado (pip install cursor-sdk)"
 
     api_key = os.environ.get("CURSOR_API_KEY", "").strip() or None
-    model_id = os.environ.get("SDDIA_AGENT_RUNTIME_MODEL", "composer-2.5").strip() or "composer-2.5"
+    resolved = (model_id or os.environ.get("SDDIA_AGENT_RUNTIME_MODEL") or "composer-2.5").strip() or "composer-2.5"
     try:
         # API pública beta: Agent.prompt one-shot local
         kwargs: dict[str, Any] = {
-            "model": model_id,
+            "model": resolved,
             "local": {"cwd": str(repo)},
         }
         if api_key:
@@ -1259,9 +1297,11 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         emit(True, data, None)
 
     prompt = build_prompt(doc, evidence)
+    resolved_model = resolve_phase_model(doc)
     if backend == "sdk":
-        ok, out, err = run_sdk(repo, prompt)
+        ok, out, err = run_sdk(repo, prompt, resolved_model)
     else:
+        # CLI: no se inventa --model (L-RESOLVE-SURFACE). El id queda en handoff para auditoría.
         ok, out, err = run_cli(repo, prompt, str(phase))
 
     if ok:
@@ -1287,6 +1327,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             "message": message,
             "handoff_path": handoff,
             "backend": backend,
+            "resolved_model": resolved_model,
         }
         if evidence is not None:
             data_ok["runtime_evidence"] = evidence
@@ -1328,6 +1369,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         "message": message,
         "handoff_path": handoff,
         "backend": backend,
+        "resolved_model": resolved_model,
     }
     if evidence is not None:
         data_fail["runtime_evidence"] = evidence
@@ -1339,5 +1381,39 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
     )
 
 
+def _selftest_resolve_phase_model() -> None:
+    prev_model = os.environ.get("SDDIA_AGENT_RUNTIME_MODEL")
+    prev_high = os.environ.get("SDDIA_LLM_TIER_HIGH")
+    os.environ["SDDIA_AGENT_RUNTIME_MODEL"] = "fallback-model"
+    os.environ.pop("SDDIA_LLM_TIER_HIGH", None)
+    try:
+        got = resolve_phase_model(
+            {"agents": ["dedalo"], "llm_profiles": {"dedalo": {"tier": "high"}}}
+        )
+        assert got == "fallback-model", got
+        os.environ["SDDIA_LLM_TIER_HIGH"] = "tier-high-id"
+        got = resolve_phase_model(
+            {"agents": ["dedalo"], "llm_profiles": {"dedalo": {"tier": "high"}}}
+        )
+        assert got == "tier-high-id", got
+        got = resolve_phase_model(
+            {"agents": ["cerbero"], "llm_profiles": {"cerbero": {"tier": "none"}}}
+        )
+        assert got == "fallback-model", got
+        print("resolve_phase_model ok", flush=True)
+    finally:
+        if prev_model is None:
+            os.environ.pop("SDDIA_AGENT_RUNTIME_MODEL", None)
+        else:
+            os.environ["SDDIA_AGENT_RUNTIME_MODEL"] = prev_model
+        if prev_high is None:
+            os.environ.pop("SDDIA_LLM_TIER_HIGH", None)
+        else:
+            os.environ["SDDIA_LLM_TIER_HIGH"] = prev_high
+
+
 if __name__ == "__main__":
-    main()
+    if env_truthy("SDDIA_HARNESS_SELFTEST"):
+        _selftest_resolve_phase_model()
+    else:
+        main()

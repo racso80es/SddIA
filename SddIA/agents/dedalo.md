@@ -8,6 +8,9 @@ allowed_policies:
   - "knowledge-management"
   - "filesystem-ops"
 hash_signature: "opcional_en_desarrollo"
+llm_profile:
+  tier: "high"
+  description: "Diseño arquitectónico y especificación formal de procesos"
 inputs:
   - "refined_requirements"
   - "cumulo_topology"
