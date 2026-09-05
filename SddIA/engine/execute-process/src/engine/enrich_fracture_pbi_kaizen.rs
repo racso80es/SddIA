@@ -43,6 +43,19 @@ fn is_remote_branch_absent_trace(error_trace: &str) -> bool {
     t.contains("head sha can't be blank") || t.contains("head ref must be a branch")
 }
 
+fn is_snapshot_gitignore_trace(error_trace: &str) -> bool {
+    let t = error_trace.to_lowercase();
+    (t.contains("snapshot_dirty_skipped") || t.contains("git add failed"))
+        && (t.contains("gitignore") || t.contains("ignorad") || t.contains("ignored by"))
+}
+
+fn is_symbolic_head_branch_trace(error_trace: &str) -> bool {
+    let t = error_trace.to_lowercase();
+    t.contains("branch_symbolic_head")
+        || (t.contains("head ref must be a branch")
+            && (t.contains("branch_name=head") || t.contains("--head head") || t.contains("simbólico")))
+}
+
 fn is_shell_executor_wasm_fallback_trace(error_trace: &str) -> bool {
     let t = error_trace.to_lowercase();
     t.contains("shell-executor wasm fallback marker")
@@ -92,8 +105,35 @@ pub fn analyze_fracture_kaizen(
     }
 
     let credential_workflow = is_workflow_scope_trace(error_trace);
-    let remote_branch_absent = is_remote_branch_absent_trace(error_trace);
+    let snapshot_gitignore = is_snapshot_gitignore_trace(error_trace);
+    let symbolic_head = is_symbolic_head_branch_trace(error_trace);
+    let remote_branch_absent = is_remote_branch_absent_trace(error_trace) && !symbolic_head;
     let shell_wasm_fallback = is_shell_executor_wasm_fallback_trace(error_trace);
+
+    if snapshot_gitignore {
+        root_causes.push(
+            "Snapshot final invocó `git add -A` sobre un path cubierto por `.gitignore` \
+             (`**/.dev/*` / starter-kit `.SddIA/.dev`). El commit aborta; no es rama ausente ni recursión hook (`F-DCC-SNAPSHOT-GITIGNORE`)."
+                .into(),
+        );
+        proposals.push((
+            "process_fix".into(),
+            "Omitir bóvedas `.dev` (salvo `.env.example`) del inventario de snapshot; \
+             `git-manager` commit no debe tumbar el lote si `git add` reporta path ignorado."
+                .into(),
+        ));
+    }
+    if symbolic_head {
+        root_causes.push(
+            "`branch_name=HEAD` (ref simbólica) llegó a Apertura en forja (`gh pr create --head HEAD` → `Head ref must be a branch`). No es PAT ni rama no empujada."
+                .into(),
+        );
+        proposals.push((
+            "process_fix".into(),
+            "Resolver HEAD a la rama actual (`branch_list` `*`) antes del fan-out DCC; abortar si detached. El hook pre-push no debe reenviar `HEAD` literal."
+                .into(),
+        ));
+    }
 
     if credential_workflow {
         root_causes.push(
@@ -152,6 +192,8 @@ pub fn analyze_fracture_kaizen(
     if !credential_workflow
         && !remote_branch_absent
         && !shell_wasm_fallback
+        && !snapshot_gitignore
+        && !symbolic_head
         && has_any_in(
         &hook_blob,
         &[
@@ -205,6 +247,8 @@ pub fn analyze_fracture_kaizen(
     if !credential_workflow
         && !remote_branch_absent
         && !shell_wasm_fallback
+        && !snapshot_gitignore
+        && !symbolic_head
         && has_any(&["timeout", "block", "abort", "failed", "colaps"])
     {
         root_causes.push(
@@ -436,6 +480,21 @@ mod tests {
         assert!(!section.contains("Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE`"));
         assert!(section.contains("Head sha can't be blank") || section.contains("Rama ausente"));
         assert_eq!(verdict, "process_fix");
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_snapshot_gitignore_not_head_sha() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            "[SNAPSHOT_DIRTY_SKIPPED] git add failed: Las siguientes rutas son ignoradas por uno de tus archivos .gitignore:\nSddIA/scripts/starter-kit/.SddIA/.dev",
+            "Snapshot final",
+            "execute-process",
+        );
+        assert_eq!(verdict, "process_fix");
+        assert!(section.contains("F-DCC-SNAPSHOT-GITIGNORE") || section.contains(".gitignore"));
+        assert!(!section.contains("Rama ausente"));
+        assert!(!section.contains("Recursión o re-entrada"));
+        assert!(!section.contains("escalado Kintsugi previo"));
     }
 
     #[test]

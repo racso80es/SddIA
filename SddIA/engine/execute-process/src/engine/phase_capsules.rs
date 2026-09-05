@@ -87,6 +87,7 @@ fn classify_delivery_error(err: &str) -> Option<&'static str> {
 
 fn friction_for_delivery_error_code(code: &str) -> Option<&'static str> {
     match code {
+        "BRANCH_SYMBOLIC_HEAD" => Some("F-DCC-BRANCH-SYMBOLIC-HEAD"),
         "PR_TITLE_METACHAR" => Some("F-DCC-PR-TITLE-METACHAR"),
         "PR_BODY_METACHAR" => Some("F-DCC-PR-BODY-METACHAR"),
         "SHELL_METACHAR" => Some("F-DCC-SHELL-METACHAR"),
@@ -175,6 +176,23 @@ fn should_preserve_untracked_todos(path: &str, pbi_ref: Option<&str>) -> bool {
     true
 }
 
+/// Specimen 1e62e8b851f8: `git add -A -- …/.dev` aborta por `**/.dev/*`.
+fn snapshot_path_is_ignored_vault(path: &str) -> bool {
+    let n = path
+        .trim_start_matches("./")
+        .trim_end_matches('/')
+        .replace('\\', "/");
+    if n.contains("/.dev/") || n.ends_with("/.dev") || n == ".dev" {
+        let fname = n.rsplit('/').next().unwrap_or("");
+        return fname != ".env.example" && fname != ".env.test.example";
+    }
+    n.ends_with("/starter-kit/.SddIA") || n.contains("/starter-kit/.SddIA/")
+}
+
+fn should_omit_from_snapshot(path: &str, pbi_ref: Option<&str>) -> bool {
+    should_preserve_untracked_todos(path, pbi_ref) || snapshot_path_is_ignored_vault(path)
+}
+
 fn porcelain_untracked_paths(git_stdout: &str) -> HashSet<String> {
     let mut set = HashSet::new();
     for line in git_stdout.lines() {
@@ -195,7 +213,7 @@ fn filter_snapshot_commit_files(
     let untracked = porcelain_untracked_paths(porcelain);
     files
         .into_iter()
-        .filter(|p| !untracked.contains(p) || !should_preserve_untracked_todos(p, pbi_ref))
+        .filter(|p| !untracked.contains(p) || !should_omit_from_snapshot(p, pbi_ref))
         .collect()
 }
 
@@ -205,7 +223,7 @@ fn porcelain_excluding_preserved_untracked_todos(porcelain: &str, pbi_ref: Optio
         .filter(|line| {
             if let Some(rest) = line.strip_prefix("?? ") {
                 if let Some(path) = parse_porcelain_paths(&format!("?? {rest}")).first() {
-                    if should_preserve_untracked_todos(path, pbi_ref) {
+                    if should_omit_from_snapshot(path, pbi_ref) {
                         return false;
                     }
                 }
@@ -735,6 +753,13 @@ pub fn capsule_delivery_gh_pr(
 ) -> Result<Value, String> {
     let branch = str_field(inputs, "branch_name")
         .ok_or("branch_name es obligatorio para Apertura en forja")?;
+    if branch.eq_ignore_ascii_case("head") {
+        return Ok(delivery_phase_blocked(
+            "delivery-gh-pr",
+            "BRANCH_SYMBOLIC_HEAD",
+            "branch_name=HEAD no es una rama; gh --head HEAD → Head ref must be a branch",
+        ));
+    }
     if let Some(preset) = str_field(inputs, "pr_url") {
         if let Some(obj) = state.as_object_mut() {
             obj.insert("pr_url".into(), json!(preset));
@@ -1600,6 +1625,31 @@ mod delivery_close_kaizen_tests {
         let all = parse_porcelain_paths(porcelain);
         let files = filter_snapshot_commit_files(all, porcelain, None);
         assert_eq!(files, vec!["docs/features/x/plan.md".to_string()]);
+    }
+
+    #[test]
+    fn filter_snapshot_skips_starter_kit_dev_vault() {
+        let porcelain = concat!(
+            "?? SddIA/scripts/starter-kit/.SddIA/.dev\n",
+            "?? SddIA/scripts/starter-kit/.SddIA/\n",
+            " M docs/features/x/plan.md\n",
+        );
+        let all = parse_porcelain_paths(porcelain);
+        let files = filter_snapshot_commit_files(all, porcelain, None);
+        assert_eq!(files, vec!["docs/features/x/plan.md".to_string()]);
+        let remaining = porcelain_excluding_preserved_untracked_todos(porcelain, None);
+        assert!(remaining.contains("docs/features/x/plan.md"));
+        assert!(!remaining.contains("starter-kit"));
+    }
+
+    #[test]
+    fn snapshot_vault_keeps_env_example() {
+        assert!(!snapshot_path_is_ignored_vault(
+            "SddIA/scripts/starter-kit/.SddIA/.dev/.env.example"
+        ));
+        assert!(snapshot_path_is_ignored_vault(
+            "SddIA/scripts/starter-kit/.SddIA/.dev"
+        ));
     }
 
     #[test]

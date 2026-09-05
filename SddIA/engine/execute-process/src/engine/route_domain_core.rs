@@ -393,6 +393,7 @@ fn build_telegram_message_from_event(event: &Value) -> Option<String> {
                 "Correo accionable\nfrom={from}\nsubject={subject}\nuid={uid}"
             ))
         }
+        "PullRequest_Merged" => super::notify_humanized_pr_merged::pr_merged_static_message(event),
         _ => None,
     }
 }
@@ -1447,6 +1448,20 @@ pub(crate) fn dispatch_subscriber(
     }
 
     if subscriber.get("action").and_then(|v| v.as_str()).map(str::trim)
+        == Some(super::notify_humanized_pr_merged::ACTION_NAME)
+    {
+        match super::notify_humanized_pr_merged::run_from_event(repo, event) {
+            Ok(super::notify_humanized_pr_merged::NotifyOutcome::Sent { .. }) => {
+                return (sid, "success".into(), None, 0);
+            }
+            Ok(super::notify_humanized_pr_merged::NotifyOutcome::SkippedEmpty) => {
+                return (sid, "skipped-empty-message".into(), None, 0);
+            }
+            Err(e) => return (sid, "failed".into(), Some(e), 1),
+        }
+    }
+
+    if subscriber.get("action").and_then(|v| v.as_str()).map(str::trim)
         == Some("persist-pec-correlation-proof")
     {
         match super::persist_pec_correlation_proof::run_from_event(repo, event) {
@@ -2256,6 +2271,104 @@ mod blocking_tests {
             "emitter_agent": "git-hook-pre-push",
         });
         assert!(is_local_qa_event(&ev));
+    }
+
+    #[test]
+    fn telegram_message_for_pr_merged_canonical_without_pr_url() {
+        let ev = json!({
+            "event_type": "PullRequest_Merged",
+            "correlation_id": "7f3a9c2e-1111-4222-8333-444444444444",
+            "payload": {
+                "source_branch": "feat/accept-pr-telegram-notify",
+                "target_branch": "main",
+                "merge_commit_hash": "a1b2c3d4e5f6789012345678901234567890abcd",
+                "author": "integration-operator",
+                "security_clearance": {
+                    "auditor": "Argos",
+                    "policy_applied": "pr-acceptance-protocol"
+                },
+                "traceability_anomaly": "merge_huérfano",
+                "traceability_note": "Fusión física sin PullRequest_Presented previo en bus local"
+            }
+        });
+        let msg = build_telegram_message_from_event(&ev).expect("msg");
+        assert!(msg.contains("feat/accept-pr-telegram-notify"));
+        assert!(msg.contains("a1b2c3d"));
+        assert!(msg.contains("(main)"));
+        assert!(msg.contains("integration-operator"));
+        assert!(msg.contains("Argos"));
+        assert!(msg.contains("pr-acceptance-protocol"));
+        assert!(msg.contains("7f3a9c2e…"));
+        assert!(!msg.contains("github.com"));
+        assert!(!msg.contains("merge_huérfano"));
+        assert!(!msg.contains("PullRequest_Presented previo"));
+        assert!(!msg.contains("2026-"));
+    }
+
+    #[test]
+    fn telegram_message_for_pr_merged_includes_pr_url() {
+        let ev = json!({
+            "event_type": "PullRequest_Merged",
+            "correlation_id": "abcdef01-2222-4333-8444-555555555555",
+            "payload": {
+                "source_branch": "fix/x",
+                "target_branch": "main",
+                "merge_commit_hash": "deadbeefcafebabe000000000000000000000000",
+                "author": "tekton",
+                "security_clearance": {
+                    "auditor": "Argos",
+                    "policy_applied": "pr-acceptance-protocol"
+                },
+                "pr_url": "https://github.com/user/repo/pull/42"
+            }
+        });
+        let msg = build_telegram_message_from_event(&ev).expect("msg");
+        assert!(msg.contains("deadbee"));
+        assert!(msg.contains("https://github.com/user/repo/pull/42"));
+        assert!(msg.contains("abcdef01…"));
+    }
+
+    #[test]
+    fn telegram_message_for_pr_merged_uses_payload_target_branch() {
+        let ev = json!({
+            "event_type": "PullRequest_Merged",
+            "payload": {
+                "source_branch": "feat/y",
+                "target_branch": "release",
+                "merge_commit_hash": "0123456789abcdef0123456789abcdef01234567",
+                "author": "ops"
+            }
+        });
+        let msg = build_telegram_message_from_event(&ev).expect("msg");
+        assert!(msg.contains("(release)"));
+        assert!(!msg.contains("(main)"));
+    }
+
+    #[test]
+    fn pull_request_merged_subscription_is_humanized_action_not_telegram_tool() {
+        let repo = repo_root();
+        for rel in [
+            "SddIA/core/event-domain-subscriptions.json",
+            "SddIA/core/event-subscriptions.json",
+        ] {
+            let raw = fs::read_to_string(repo.join(rel)).expect(rel);
+            let v: Value = serde_json::from_str(&raw).expect(rel);
+            let subs = v["PullRequest_Merged"].as_array().expect("arr");
+            let iota = subs.iter().any(|s| {
+                s.get("tool").and_then(|t| t.as_str()) == Some("iota-immutable-publisher")
+            });
+            let telegram_tool = subs.iter().any(|s| {
+                s.get("tool").and_then(|t| t.as_str()) == Some("send-telegram-notification")
+            });
+            let action = subs.iter().any(|s| {
+                s.get("agent").and_then(|t| t.as_str()) == Some("argos")
+                    && s.get("action").and_then(|t| t.as_str())
+                        == Some("notify-humanized-pr-merged")
+            });
+            assert!(iota, "IOTA intacto en {rel}");
+            assert!(!telegram_tool, "sin tool Telegram directa en {rel}");
+            assert!(action, "action humanizada en {rel}");
+        }
     }
 
     #[test]

@@ -28,6 +28,11 @@
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
       "intent": "Anclaje DLT IOTA Rebased."
+    },
+    {
+      "agent": "argos",
+      "action": "notify-humanized-pr-merged",
+      "intent": "Resumen ejecutivo post-merge: metadatos estáticos + síntesis de valor (fail-soft LLM)."
     }
   ],
   "Domain_Entity_Created": [
