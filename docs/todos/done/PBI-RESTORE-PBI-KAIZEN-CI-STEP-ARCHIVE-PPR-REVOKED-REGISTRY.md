@@ -4,9 +4,13 @@ title: "[ARQUITECTURA] pull-request-review — rehabilitación revoked_entities 
 format: markdown
 version: "1.2.0"
 created: "2026-09-01"
-updated: "2026-09-05T11:50:00Z"
-status: pending
-refinement_status: refinado
+updated: "2026-09-05T12:00:00Z"
+status: done
+refinement_status: implemented
+pbi_archived: true
+persist_ref: docs/features/ppr-revoked-registry-rehab-restore-kaizen-ci-step
+branch_name: refactor/ppr-revoked-registry-rehab-restore-kaizen-ci-step
+pr_url: https://github.com/racso80es/SddIA/pull/259
 priority: alta
 process: refactorization
 executor_vehicle: feature
@@ -253,9 +257,9 @@ No implica que todo sample Radamanto post-`degraded_at` sea aborto F4 (H10).
 
 ## 8. Criterio de Cierre y Transición
 
-- [ ] A1 instancia: `pull-request-review` eliminado de `revoked_entities.json`.
-- [ ] Stats reseteados: `healthy`, `structure_valid: true`, `samples: []`, laudo este PBI.
-- [ ] Smoke PPR: acuse detached OK; entidad sigue fuera de `revoked`.
-- [ ] Cascada `persist_ref` + evolution UUID ciclo.
-- [ ] PR documental; CI verde (CA6).
-- [ ] PBI en `docs/todos/done/PBI-RESTORE-PBI-KAIZEN-CI-STEP-ARCHIVE-PPR-REVOKED-REGISTRY.md` en la rama del PR; `validacion.md` `pbi_archived: true`.
+- [x] A1 instancia: `pull-request-review` eliminado de `revoked_entities.json`.
+- [x] Stats reseteados: `healthy`, `structure_valid: true`, `samples: []` en A1, laudo este PBI.
+- [x] Smoke PPR: acuse detached OK; entidad sigue fuera de `revoked`.
+- [x] Cascada `persist_ref` + evolution UUID ciclo.
+- [x] PR documental https://github.com/racso80es/SddIA/pull/259; CI verde run `33964399405` (CA6).
+- [x] PBI en `docs/todos/done/PBI-RESTORE-PBI-KAIZEN-CI-STEP-ARCHIVE-PPR-REVOKED-REGISTRY.md` en la rama del PR; `validacion.md` `pbi_archived: true`.
