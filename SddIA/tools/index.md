@@ -18,7 +18,7 @@ Contrato normativo de la familia: `tools-contract.md` (no constituye una tool ca
 |----------------|------|------|---------|------------|---------|--------------|
 | `gemini-http-infer.md` | `7a8da3ad-4916-4ee3-8407-aa1ecdc7ecba` | gemini-http-infer | 1.0.0 | tools-contract v1.2.0 | system-operations | `gemini_http_infer` |
 | `telegram-gateway.md` | `a23dda8f-b5d5-4091-a21c-f408159d3a3e` | telegram-gateway | 1.0.0 | tools-contract v1.3.0 | ecosystem-evolution | `telegram_gateway` |
-| `event-bus-audit.md` | `31fce110-1622-489c-a816-112849e22adb` | event-bus-audit | 1.1.0 | tools-contract v1.2.0 | quality-assurance | `event_bus_audit` |
+| `event-bus-audit.md` | `31fce110-1622-489c-a816-112849e22adb` | event-bus-audit | 1.2.0 | tools-contract v1.2.0 | quality-assurance | `event_bus_audit` |
 | `eda-lab-smoke-may20.md` | `96679492-4f06-4bbc-ae46-00100fb73c94` | eda-lab-smoke-may20 | 1.0.0 | tools-contract v1.2.0 | ecosystem-evolution | `eda_lab_smoke_may20` |
 | `iota-immutable-publisher.md` | `7c8be7da-d080-4ad0-b0b0-df43be376e46` | iota-immutable-publisher | 1.0.0 | tools-contract v1.2.0 | system-operations | `iota-publish`, `immutable-anchor`, `capsule-json-io` |
 | `markdown-table-editor.md` | `b2c4e6f8-1a3d-4e5b-9c7d-8e1f2a3b4c5d` | markdown-table-editor | 1.0.0 | tools-contract v1.2.0 | ecosystem-evolution | `markdown-table-parse`, `markdown-table-row-upsert`, `markdown-table-row-delete`, `markdown-table-persist`, `capsule-json-io` |

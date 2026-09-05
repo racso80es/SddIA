@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `65199eab-7ddf-47d1-b821-e865517f637b` | 2026-09-05 | event-bus-audit needs_kaizen accionable; plantilla Kaizen por alert_kind; emisor Clase alineado. | CANONICO | `SddIA/evolution/65199eab-7ddf-47d1-b821-e865517f637b.md` |
 | `166c91f9-7378-4766-b6fe-ff5e7eee382f` | 2026-09-05 | Cuota crónica CI: CI_Chronic_Failure_Detected, PBI Kaizen Cúmulo, umbral v1.3.0, CA9-NEG. | CANONICO | `SddIA/evolution/166c91f9-7378-4766-b6fe-ff5e7eee382f.md` |
 | `2d5df89a-7de9-46a9-bc1c-fda95edcbc2b` | 2026-09-04 | llm_profile en agentes; AGENT_PHASE llm_profiles; veto none; harness SDDIA_LLM_TIER_* | CANONICO | `SddIA/evolution/2d5df89a-7de9-46a9-bc1c-fda95edcbc2b.md` |
 | `4c775b1f-5eea-46c6-94ff-25e1861bf9b1` | 2026-09-04 | gemini-http-infer live: ureq 4xx body, L-MODEL, empty candidate; agy argv sin --print bare; auth Antigravity | CANONICO | `SddIA/evolution/4c775b1f-5eea-46c6-94ff-25e1861bf9b1.md` |
