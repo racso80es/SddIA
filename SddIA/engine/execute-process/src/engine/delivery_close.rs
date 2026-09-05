@@ -375,6 +375,46 @@ fn dcc_push_terminal_halt(status: &str) -> bool {
     matches!(status, "failed" | "blocked")
 }
 
+fn current_branch_from_list(stdout: &str) -> Option<String> {
+    for line in stdout.lines() {
+        let t = line.trim();
+        let Some(rest) = t.strip_prefix("* ") else {
+            continue;
+        };
+        let name = rest.split_whitespace().next().unwrap_or("");
+        if name.is_empty() || name.starts_with('(') {
+            return None;
+        }
+        return Some(name.to_string());
+    }
+    None
+}
+
+fn resolve_symbolic_head_branch(repo: &Path, inputs: &mut Value) -> Result<(), String> {
+    let raw = inputs
+        .get("branch_name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .unwrap_or("");
+    if !raw.eq_ignore_ascii_case("head") {
+        return Ok(());
+    }
+    let data = super::capsules::invoke_git_manager(repo, "branch_list", &json!({}))?;
+    let stdout = data
+        .get("gitStdout")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let Some(name) = current_branch_from_list(stdout) else {
+        return Err(
+            "branch_name=HEAD simbólico y no hay rama actual (detached); abortar DCC".into(),
+        );
+    };
+    if let Some(obj) = inputs.as_object_mut() {
+        obj.insert("branch_name".into(), json!(name));
+    }
+    Ok(())
+}
+
 fn dcc_report_error_trace(report: &Value) -> String {
     report
         .get("error")
@@ -486,6 +526,7 @@ pub fn run(
     let template = workspace_template(process_def)?;
     let mut inputs_mut = process_inputs.clone();
     bootstrap_workspace(repo, process_name, &template, &mut inputs_mut, &mut state)?;
+    resolve_symbolic_head_branch(repo, &mut inputs_mut)?;
 
     let mut phase_reports: Vec<Value> = Vec::new();
     let mut halt_after_push = false;
@@ -974,6 +1015,16 @@ mod tests {
         assert!(dcc_push_terminal_halt("failed"));
         assert!(dcc_push_terminal_halt("blocked"));
         assert!(!dcc_push_terminal_halt("executed"));
+    }
+
+    #[test]
+    fn current_branch_from_list_reads_star() {
+        let stdout = "  main abc\n* feat/eda-telegram-notify-pr-merged def msg\n";
+        assert_eq!(
+            current_branch_from_list(stdout).as_deref(),
+            Some("feat/eda-telegram-notify-pr-merged")
+        );
+        assert!(current_branch_from_list("* (HEAD detached at abc)\n").is_none());
     }
 
     fn eda_blocked_orphans_report() -> Value {

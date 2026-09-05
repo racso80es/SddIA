@@ -87,6 +87,12 @@ fn parse_commit_hash(stdout: &str, field: &str) -> String {
     hash.to_string()
 }
 
+fn git_add_rejected_as_ignored(stderr: &str) -> bool {
+    let t = stderr.to_lowercase();
+    (t.contains("gitignore") || t.contains(".gitignore"))
+        && (t.contains("ignored") || t.contains("ignorad"))
+}
+
 fn rel_path_under_repo(repo: &Path, path_str: &str) -> String {
     let p = Path::new(path_str);
     if p.is_absolute() {
@@ -217,6 +223,8 @@ fn handle(op: &str, repo: &Path, payload: &Value) -> (Value, i32) {
                 file_strs.push(f.as_str().unwrap_or_else(|| fail("files must be an array of strings")));
             }
 
+            let mut added = 0usize;
+            let mut skipped_ignored: Vec<String> = Vec::new();
             for f in file_strs {
                 let rel = rel_path_under_repo(repo, f);
                 let full = repo.join(&rel);
@@ -228,9 +236,30 @@ fn handle(op: &str, repo: &Path, payload: &Value) -> (Value, i32) {
                     run_git(repo, &["rm", "--ignore-unmatch", "--", &rel])
                 };
                 if a_code != 0 {
+                    if git_add_rejected_as_ignored(&a_stderr) {
+                        skipped_ignored.push(rel);
+                        continue;
+                    }
                     let err_summary = format!("git add failed: {}", a_stderr.trim());
                     return (json!({ "gitStdout": a_stdout, "gitStderr": a_stderr, "errorSummary": err_summary }), a_code);
                 }
+                added += 1;
+            }
+
+            if added == 0 {
+                let err_summary = format!(
+                    "git add failed: todas las rutas ignoradas por .gitignore ({})",
+                    skipped_ignored.join(", ")
+                );
+                return (
+                    json!({
+                        "gitStdout": "",
+                        "gitStderr": err_summary,
+                        "errorSummary": err_summary,
+                        "skippedIgnored": skipped_ignored,
+                    }),
+                    1,
+                );
             }
 
             let (stdout, stderr, code) = run_git(repo, &["commit", "-m", message]);
@@ -327,3 +356,26 @@ fn main() {
     let (data, code) = handle(op, &repo, payload);
     ok(data, code);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::git_add_rejected_as_ignored;
+
+    #[test]
+    fn git_add_rejected_as_ignored_spanish_gitignore() {
+        let stderr = "Las siguientes rutas son ignoradas por uno de tus archivos .gitignore:\nSddIA/scripts/starter-kit/.SddIA/.dev";
+        assert!(git_add_rejected_as_ignored(stderr));
+    }
+
+    #[test]
+    fn git_add_rejected_as_ignored_english_gitignore() {
+        let stderr = "The following paths are ignored by one of your .gitignore files:\nfoo/.dev";
+        assert!(git_add_rejected_as_ignored(stderr));
+    }
+
+    #[test]
+    fn git_add_rejected_as_ignored_not_generic_fail() {
+        assert!(!git_add_rejected_as_ignored("fatal: not a git repository"));
+    }
+}
+

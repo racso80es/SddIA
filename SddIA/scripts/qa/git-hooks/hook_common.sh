@@ -45,6 +45,10 @@ pre_push_hook_runs_evolution_gate() {
 ref_to_branch() {
   local ref="$1"
   ref="${ref#refs/heads/}"
+  if [[ "$ref" == "HEAD" ]]; then
+    git -C "$REPO" symbolic-ref --short HEAD 2>/dev/null || printf '%s' "$ref"
+    return 0
+  fi
   printf '%s' "$ref"
 }
 
