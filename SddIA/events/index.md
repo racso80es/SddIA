@@ -19,11 +19,11 @@ Contrato normativo: [`events-contract.md`](events-contract.md) (raíz; no es Cla
 |---------|--------|-------------|------------------|
 | `telemetry` | [`telemetry/index.md`](telemetry/index.md) | 4 | CLI + centinelas de Clase |
 | `orchestration` | [`orchestration/index.md`](orchestration/index.md) | 2 | CLI / auditores / hooks |
-| `domain` | [`domain/index.md`](domain/index.md) | 20 | Cúmulo, Cerbero, Radamanto, acciones `emit-*` |
+| `domain` | [`domain/index.md`](domain/index.md) | 27 | Cúmulo, Cerbero, Radamanto, acciones `emit-*` |
 
 ## Integridad
 
-- **Total Clases:** 26 ECST (20 domain + 4 telemetry + 2 orchestration).
+- **Total Clases:** 33 ECST (27 domain + 4 telemetry + 2 orchestration).
 - **Raíz:** solo `events-contract.md`, este `index.md` y subcarpetas `{telemetry,orchestration,domain}/`.
 - **Runtime:** instancias V3+ en `eda_bus.pending` para dominio legacy (D0.2); rutas fractal `./.events/{family}/`.
 - **Telemetría activa:** `Raw_Execution_Finished` → Radamanto → `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (no confundir con CRUD `Domain_Entity_Updated`).

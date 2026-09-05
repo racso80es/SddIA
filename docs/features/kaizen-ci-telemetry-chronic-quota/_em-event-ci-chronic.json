@@ -1,0 +1,27 @@
+{
+  "entity_class": "event",
+  "entity_name": "ci-chronic-failure-detected",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "event_name": "ci-chronic-failure-detected",
+    "event_family": "domain",
+    "event_type": "CI_Chronic_Failure_Detected",
+    "event_context": "quality-assurance",
+    "event_description": "Cuota crónica de fallos CI por job_name sin mapa job→entidad. Emisor Radamanto. Cúmulo materializa PBI Kaizen. No es DIA ni Kintsugi.",
+    "payload_required": [
+      "job_name",
+      "workflow_name",
+      "failure_count",
+      "quota_limit",
+      "sample_check_run_id",
+      "sample_html_url",
+      "repository",
+      "head_sha"
+    ],
+    "payload_optional": ["run_id", "step_name"],
+    "payload_forbidden": ["entity_id", "asset_id", "review_id", "process_name"],
+    "emitter_agents": ["radamanto"],
+    "event_version": "1.0.0",
+    "events_contract_version": "1.1.0"
+  }
+}

@@ -85,6 +85,10 @@ pub fn load_radamanto_config(repo: &Path) -> Result<HashMap<String, Value>, Stri
         "redemption_success_count": 3,
         "max_recovery_attempts": 3,
         "abrupt_drop_min_samples": 3,
+        "ci_failures": {
+            "per_job_limit": 3,
+            "job_entity_map": {}
+        }
     });
     if thresh_path.is_file() {
         if let Ok(text) = fs::read_to_string(&thresh_path) {

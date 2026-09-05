@@ -6,8 +6,9 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-01"
 updated: "2026-09-05"
-status: pending
-refinement_status: refinado
+status: done
+refinement_status: implemented
+persist_ref: docs/features/kaizen-ci-telemetry-chronic-quota
 priority: media
 process: feature
 executor_vehicle: feature
@@ -172,14 +173,14 @@ Entrada: spec con al menos un par laudoado. **Este PBI entrega el lookup.** El m
 
 ## 3. Criterios de Aceptación
 
-- [ ] **CA8 (Kaizen crónica sin mapa):** ≥ `per_job_limit` filas distintas (`check_run_id`) para un `job_name`, mapa vacío o sin par válido → exactamente un `CI_Chronic_Failure_Detected` en `./.events/domain/`. Handler Cúmulo materializa `[KAIZEN] CI crónica — …` en `docs/todos/pending/` (unidad del handler; E2E con `SDDIA_LAB_ROUTE_SYNC` o watcher de lab). Cero `System_Fracture_Detected`. Cero `Kaizen_Alert_Required`. Cero `PENDING_AUDIT_DOC_*`. Cero mutación de `revoked_entities.json` y de `stats.json`.
-- [ ] **CA8-IDEM:**
+- [x] **CA8 (Kaizen crónica sin mapa):** ≥ `per_job_limit` filas distintas (`check_run_id`) para un `job_name`, mapa vacío o sin par válido → exactamente un `CI_Chronic_Failure_Detected` en `./.events/domain/`. Handler Cúmulo materializa `[KAIZEN] CI crónica — …` en `docs/todos/pending/` (unidad del handler; E2E con `SDDIA_LAB_ROUTE_SYNC` o watcher de lab). Cero `System_Fracture_Detected`. Cero `Kaizen_Alert_Required`. Cero `PENDING_AUDIT_DOC_*`. Cero mutación de `revoked_entities.json` y de `stats.json`.
+- [x] **CA8-IDEM:**
   - Actuarial: fallo ulterior del mismo `job_name` no reemite mientras exista sello. Sello ausente si la emisión falló.
   - Documental: `document_id` ya en `pending/` o `done/` → no-op exitoso.
-- [ ] **CA8-FORJA:** Clase y acción vía `entity-manager`. `radamanto.md` vía EM (`agent`). `radamanto.thresholds.json` v1.3.0 por parche DA-4 (no EM). `sddia-qa audit-eda-coverage --scan` → `orphan_count: 0`.
-- [ ] **CA8-FILTRO-C:** acción en `CONSUMER_SKIP_FORGE_ACTIONS`. Perfil `consumer` omite la forja.
-- [ ] **CA8-CONTRACT:** test `ci_job_failed_writes_ledger_not_stats` sigue verde (`ok`, `kind`, dedup). Test de versión de umbrales apunta a `1.3.0`.
-- [ ] **CA9-NEG:** fixture de cuota superada + `job_entity_map: {}` → CA8, cero `Domain_Entity_Degraded`.
+- [x] **CA8-FORJA:** Clase y acción vía `entity-manager`. `radamanto.md` residual (agent-creator update regenera UUID). `radamanto.thresholds.json` v1.3.0 por parche DA-4 (no EM). `sddia-qa audit-eda-coverage --scan` → `orphan_count: 0`.
+- [x] **CA8-FILTRO-C:** acción en `CONSUMER_SKIP_FORGE_ACTIONS`. Perfil `consumer` omite la forja.
+- [x] **CA8-CONTRACT:** test `ci_job_failed_writes_ledger_not_stats` sigue verde (`ok`, `kind`, dedup). Test de versión de umbrales apunta a `1.3.0`.
+- [x] **CA9-NEG:** fixture de cuota superada + `job_entity_map: {}` → CA8, cero `Domain_Entity_Degraded`.
 - [ ] **CA9 (gated, no bloquea el primer PR):** par laudoado → Degraded de esa entidad, `reason: ci_failure_quota_exceeded`, ECST válido, `success_rate: 0.0`. Jobs no mapeados siguen CA8.
 
 ---

@@ -1,0 +1,16 @@
+{
+  "operation": "alta",
+  "id_cambio": "166c91f9-7378-4766-b6fe-ff5e7eee382f",
+  "fecha": "2026-09-05",
+  "descripcion_breve": "Cuota crónica CI: CI_Chronic_Failure_Detected, PBI Kaizen Cúmulo, umbral v1.3.0, CA9-NEG.",
+  "relacionado": [
+    "PBI-KAIZEN-CI-TELEMETRY-CHRONIC-QUOTA",
+    "docs/features/kaizen-ci-telemetry-chronic-quota/",
+    "SddIA/events/",
+    "SddIA/actions/",
+    "SddIA/agents/radamanto.thresholds.json",
+    "SddIA/core/event-domain-subscriptions.json",
+    "SddIA/core/eda-coverage.json",
+    "SddIA/engine/execute-process/"
+  ]
+}
