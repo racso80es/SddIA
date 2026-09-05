@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `d460313d-48a6-4bf9-8c67-dfac06730677` | 2026-09-05 | Correlato residual ola 2 Telegram: index actions y despacho nativo notify-humanized. | CANONICO | `SddIA/evolution/d460313d-48a6-4bf9-8c67-dfac06730677.md` |
 | `a3e5ead5-7e2f-4f6d-9331-78319abf251d` | 2026-09-05 | Kintsugi 1e62e8b851f8: snapshot DCC omite .dev/starter-kit; git-manager salta gitignore; HEAD simbólico resuelto. | CANONICO | `SddIA/evolution/a3e5ead5-7e2f-4f6d-9331-78319abf251d.md` |
 | `cef0d9ee-f0d0-4ba2-b3ef-28dd47a6d0d4` | 2026-09-05 | Ola 2 Telegram post-merge: action notify-humanized-pr-merged + síntesis Gemini fail-soft. | CANONICO | `SddIA/evolution/cef0d9ee-f0d0-4ba2-b3ef-28dd47a6d0d4.md` |
 | `c11b4325-3daa-4418-aa87-54438a3b165d` | 2026-09-05 | Telegram reactivo post-merge: suscripción PullRequest_Merged → send-telegram-notification y compositor EDA. | CANONICO | `SddIA/evolution/c11b4325-3daa-4418-aa87-54438a3b165d.md` |
