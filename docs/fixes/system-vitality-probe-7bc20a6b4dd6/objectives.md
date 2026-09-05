@@ -4,7 +4,7 @@ created: "2026-09-05"
 process: bug-fix
 branch_name: fix/system-vitality-probe-7bc20a6b4dd6
 persist_ref: docs/fixes/system-vitality-probe-7bc20a6b4dd6
-pbi_ref: docs/todos/pending/[FIX] system-vitality-probe — fractura sistémica (7bc20a6b4dd6).md
+pbi_ref: docs/todos/done/[FIX] system-vitality-probe — fractura sistémica (7bc20a6b4dd6).md
 execution_id: "777857be-0814-4923-ad64-dd29f7942962"
 uuid: db46c34e-4c2d-42dd-b2e1-36230853f23c
 ---

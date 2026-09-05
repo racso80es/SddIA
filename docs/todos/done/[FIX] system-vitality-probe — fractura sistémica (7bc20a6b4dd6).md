@@ -6,7 +6,9 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-04"
 updated: "2026-09-05"
-status: abierto
+status: cerrado
+closed: "2026-09-05"
+fix_ref: docs/fixes/system-vitality-probe-7bc20a6b4dd6
 refinement_status: refinado
 priority: alta
 process: bug-fix
@@ -164,7 +166,7 @@ Este PBI no implementa de nuevo ese diff. Archiva la fractura `7bc20a6b4dd6` y d
 
 ## 7. Criterio de cierre
 
-- [ ] CA1–CA5 en rama.
+- [x] CA1–CA5 en rama (evidencia en `docs/fixes/system-vitality-probe-7bc20a6b4dd6/`).
 - [ ] PR vía `delivery-close-cycle`.
 - [ ] CA6 verde post-PR.
-- [ ] PBI en `done/` + `validacion.md` APTO en ese PR.
+- [x] PBI en `done/` (este archivo). `validacion.md` APTO en el PR; CA6 `PENDIENTE-CI` hasta run verde.
