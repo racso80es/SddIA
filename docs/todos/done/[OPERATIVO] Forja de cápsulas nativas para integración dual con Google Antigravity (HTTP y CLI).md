@@ -29,7 +29,7 @@ related:
   - SddIA/norms/execution-contexts.md
   - SddIA/process/skill-creator.md
   - SddIA/norms/external-ai-constraints.md
-  - docs/todos/pending/PBI-ARQUITECTURA-LLM-TIERStitle: "[ARQUITECTURA] Inyección de perfiles LLM (Tiers) en contratos de agentes SddIA y Resolución Dinámica.md
+  - docs/todos/pending/PBI-ARQUITECTURA-LLM-TIERS.md
 refinement_notes: "Filtro A 2026-09-03. El v1.1.0 fusionaba tres superficies (Gemini REST, SDK Antigravity, CLI agy), robaba llm:interact a mayeuta-llm, inventaba ANTIGRAVITY_API_KEY/GEMINI_API_ENDPOINT, malcitaba outbound_lab y mezclaba sobres JSON. Flags headless de agy sí son reales (docs oficiales). Auth de agy ≠ API key."
 ---
 

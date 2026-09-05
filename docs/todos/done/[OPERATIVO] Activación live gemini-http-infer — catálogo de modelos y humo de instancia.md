@@ -36,7 +36,7 @@ related:
   - SddIA/norms/external-ai-constraints.md
   - SddIA/scripts/starter-kit/.SddIA/.dev/.env.example
   - SddIA/scripts/starter-kit/.dev/.env.example
-  - "docs/todos/pending/PBI-ARQUITECTURA-LLM-TIERStitle: \"[ARQUITECTURA] Inyección de perfiles LLM (Tiers) en contratos de agentes SddIA y Resolución Dinámica.md\""
+  - docs/todos/pending/PBI-ARQUITECTURA-LLM-TIERS.md
 refinement_notes: "Filtro A v1.2.0 (2026-09-04). Corrige v1.1: latencias 1.8s/21.3s, gemini-3.8-flash 503 y gemini-3.5-flash ~8s no son SSOT (no reproducidos en esta pasada; no CA). MAX_TOKENS+text vacío se observó en sonda urllib con maxOutputTokens:8, no en el crate (el tool no envía ese campo). thought:true no observado. finishReason!=STOP como fallo universal es excesivo. Display ureq 2.12 es `{url}: status code {N}` (cuerpo 4xx descartado; `if status>=400` código muerto — eso sí es hecho de crate). agy: `--print` consume el siguiente argv (error literal confirmado); host no logueado (`You are not logged into Antigravity`) vs crate que solo busca `authentication required`. Cargo: `cd SddIA && cargo build -p …` (DA-3), no solo --manifest-path. Mutación crates = entity-manager (DA-2). Humo skill live SUCCESS no es gate."
 ---
 

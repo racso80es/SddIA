@@ -9,6 +9,662 @@ persist_ref: docs/ppr-cosecha-kaizen-20260904
 
 ```yaml
 schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:47:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: NO_APTO
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: NO_APTO
+KAIZEN_COSECHA_GATE: APTO
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: NO_APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+CUMULO_KM_AUTHORITY: APTO
+rbac_exit_code: 1
+verdict: aprobado
+global: APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+kaizen_seeds: 0
+kaizen_seeds_dedup: 3
+resolution: KAIZEN_COSECHA_GATE
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) dedup pending PBI-RESTORE; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor delivery-close-cycle ∈ revoked"
+notes: "Cúmulo Cosecha Kaizen CID e4c9970f… · exec d50a40ba…; KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 3 · F5 heredado failed · accept_pr_handoff false/blocked · R1/R2 native_state idempotent-hit · Shell git-manager Rejected · 0 create KM + sighting pending + affirm #186; emitter delivery-close-cycle; sidecar _cosecha_kaizen_d50a40ba.md; reclaim handoff post-carrera sibling 0b826e3b @ 13:46:30Z"
+```
+
+## 2026-09-04T13:47:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- execution_id: `d50a40ba-d3dc-4e8e-bc54-c3a13eb60800`
+- correlation_id: `e4c9970f-9e15-40fe-857f-07c44c1bada5`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: **Veredicto fase: ok** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `dedup: 3` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked`.
+
+### transcript (tail)
+
+```
+## Resumen Cúmulo · Cosecha Kaizen
+
+**Archivos:** `validacion.md`; `_agent_handoff.md` (reclaim); `_kaizen_seed_ppr_revoked.md`; `_cosecha_kaizen_d50a40ba.md`; pending PBI-RESTORE (sighting); done #186 (affirm).
+
+**Veredicto:** `ok` · seeds 0 · dedup 3 · Handoff prohibido.
+
+**Evidence:** R1/R2 APTO bridge; Shell git-manager Rejected; R3 KM APTO.
+```
+
+### Runtime evidence (machine) — Cúmulo Cosecha sibling 0b826e3b (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:46:30Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: NO_APTO
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: NO_APTO
+KAIZEN_COSECHA_GATE: APTO
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+CUMULO_KM_AUTHORITY: APTO
+rbac_exit_code: 1
+verdict: aprobado
+global: APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+kaizen_seeds: 0
+kaizen_seeds_dedup: 3
+resolution: KAIZEN_COSECHA_GATE
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) dedup pending PBI-RESTORE; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor github-bridge-watcher ∉ revoked"
+notes: "Cúmulo Cosecha Kaizen CID DK5Qu… · exec 0b826e3b…; KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 3 · F5 heredado failed · accept_pr_handoff false/blocked · R1/R2 native_state idempotent-hit · Shell git-manager Rejected · 0 create KM + sighting pending + affirm #186; emitter github-bridge-watcher; sidecar _cosecha_kaizen_0b826e3b.md; reclaim handoff+validacion post-carrera sibling d50a40ba Cosecha @ 13:45:30Z"
+```
+
+## 2026-09-04T13:46:30Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- execution_id: `0b826e3b-ed99-4313-aa30-b2cc3c970d3f`
+- correlation_id: `DK5QuSSudtQmSiSMZikUXN83xiF7fwEHxGHGRCUBz1tm`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: **Veredicto fase: ok** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `dedup: 3` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked` · reclaim post-carrera sibling d50a40ba.
+
+### transcript (tail)
+
+```
+## Resumen Cúmulo · Cosecha Kaizen
+
+**Archivos:** `validacion.md`; `_agent_handoff.md`; `_kaizen_seed_ppr_revoked.md`; `_cosecha_kaizen_0b826e3b.md`; pending PBI-RESTORE (sighting); done #186 (affirm).
+
+**Veredicto:** `ok` · seeds 0 · dedup 3 · Handoff prohibido.
+
+**Evidence:** R1/R2 APTO bridge; Shell git-manager Rejected; R3 KM APTO.
+```
+
+### Runtime evidence (machine) — Cúmulo Cosecha sibling d50a40ba (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:45:30Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: NO_APTO
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: NO_APTO
+KAIZEN_COSECHA_GATE: APTO
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: NO_APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+CUMULO_KM_AUTHORITY: APTO
+rbac_exit_code: 1
+verdict: aprobado
+global: APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+kaizen_seeds: 0
+kaizen_seeds_dedup: 3
+resolution: KAIZEN_COSECHA_GATE
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) dedup pending PBI-RESTORE; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor delivery-close-cycle ∈ revoked"
+notes: "Cúmulo Cosecha Kaizen CID e4c9970f… · exec d50a40ba…; KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 3 · F5 heredado failed · accept_pr_handoff false/blocked · R1/R2 native_state idempotent-hit · Shell git-manager Rejected · 0 create KM + sighting pending + affirm #186; emitter delivery-close-cycle; sidecar _cosecha_kaizen_d50a40ba.md; reclaim handoff+validacion post-carrera sibling 0b826e3b…"
+```
+
+## 2026-09-04T13:45:30Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- execution_id: `d50a40ba-d3dc-4e8e-bc54-c3a13eb60800`
+- correlation_id: `e4c9970f-9e15-40fe-857f-07c44c1bada5`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: **Veredicto fase: ok** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `dedup: 3` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked`.
+
+### transcript (tail)
+
+```
+## Resumen Cúmulo · Cosecha Kaizen
+
+**Archivos:** `validacion.md`; `_agent_handoff.md`; `_kaizen_seed_ppr_revoked.md`; `_cosecha_kaizen_d50a40ba.md`; pending PBI-RESTORE (sighting); done #186 (affirm).
+
+**Veredicto:** `ok` · seeds 0 · dedup 3 · Handoff prohibido.
+
+**Evidence:** R1/R2 APTO bridge; Shell git-manager Rejected; R3 KM APTO.
+```
+
+### Runtime evidence (machine) — Cúmulo Cosecha sibling 0b826e3b (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:46:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: NO_APTO
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: NO_APTO
+KAIZEN_COSECHA_GATE: APTO
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+CUMULO_KM_AUTHORITY: APTO
+rbac_exit_code: 1
+verdict: aprobado
+global: APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+kaizen_seeds: 0
+kaizen_seeds_dedup: 3
+resolution: KAIZEN_COSECHA_GATE
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) dedup pending PBI-RESTORE; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor github-bridge-watcher ∉ revoked"
+notes: "Cúmulo Cosecha Kaizen CID DK5Qu… · exec 0b826e3b…; KAIZEN_COSECHA_GATE APTO · kaizen_seeds 0 · dedup 3 · F5 heredado failed · accept_pr_handoff false/blocked · R1/R2 native_state idempotent-hit · Shell git-manager Rejected · 0 create KM + sighting pending + affirm #186; emitter github-bridge-watcher; sidecar _cosecha_kaizen_0b826e3b.md; reclaim validacion post-carrera sibling d50a40ba Cosecha @ 13:45:00Z"
+```
+
+## 2026-09-04T13:46:00Z — Cosecha Kaizen
+- process: `pull-request-review`
+- phase: `Cosecha Kaizen`
+- agents: `cumulo`
+- execution_id: `0b826e3b-ed99-4313-aa30-b2cc3c970d3f`
+- correlation_id: `DK5QuSSudtQmSiSMZikUXN83xiF7fwEHxGHGRCUBz1tm`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: **Veredicto fase: ok** — `KAIZEN_COSECHA_GATE` · `kaizen_seeds: 0` · `dedup: 3` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked` · reclaim post-carrera sibling d50a40ba.
+
+### transcript (tail)
+
+```
+## Resumen Cúmulo · Cosecha Kaizen
+
+**Archivos:** `validacion.md`; `_agent_handoff.md`; `_kaizen_seed_ppr_revoked.md`; `_cosecha_kaizen_0b826e3b.md`; pending PBI-RESTORE (sighting); done #186 (affirm).
+
+**Veredicto:** `ok` · seeds 0 · dedup 3 · Handoff prohibido.
+
+**Evidence:** R1/R2 APTO bridge; Shell git-manager Rejected; R3 KM APTO.
+```
+
+### Runtime evidence (machine) — Argos F5 sibling d50a40ba (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:43:30Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: NO_APTO
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: NO_APTO
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: NO_APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+rbac_exit_code: 1
+verdict: rechazado
+global: NO_APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+resolution: FAIL_F5_VERDICT
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) BLOQUEANTE F4→F5; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor delivery-close-cycle ∈ revoked"
+notes: "Argos Veredicto y bloqueo CID e4c9970f… · exec d50a40ba…; FAIL_F5_VERDICT · F2 APTO · F4 NO_APTO PROCESS_REGISTRY · F3 NO_APTO no absuelve · delivery_state failed · accept_pr_handoff false/blocked · R1/R2 copia session native_state idempotent-hit · sin gitStdout inventado · Argos 0 writes KM · reclaim handoff+validacion post-carrera F5 sibling 0b826e3b @ 13:42:30Z; ECST PullRequest_Presented delivery-close-cycle; F4 Cerbero @ 13:40:00Z sidecar _rbac_cerbero_d50a40ba.md; sidecar _argos_veredicto_d50a40ba.md"
+```
+
+## 2026-09-04T13:43:30Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- phase: `Veredicto y bloqueo`
+- agents: `argos`
+- execution_id: `d50a40ba-d3dc-4e8e-bc54-c3a13eb60800`
+- correlation_id: `e4c9970f-9e15-40fe-857f-07c44c1bada5`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: **Veredicto: `blocked`** — `FAIL_F5_VERDICT` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked` · F4 NO_APTO (F2 APTO no absuelve).
+
+### transcript (tail)
+
+```
+## Resumen Argos · Veredicto y bloqueo
+
+**Archivos tocados:** `validacion.md` (reclaim F5 CID e4c9970f… / exec d50a40ba…); `_agent_handoff.md` (sello F5 reclaim); `_argos_veredicto_d50a40ba.md` (sidecar ante carrera sibling 0b826e3b).
+
+**Veredicto:** `blocked` · `FAIL_F5_VERDICT` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked`.
+
+**Bloqueante:** F4_RBAC (`pull-request-review` ∈ revoked since 2026-08-29T05:01:52Z) → `FAIL_F5_VERDICT`.
+
+**Evidence Bridge:** R1/R2 APTO copia session `native_state`/`idempotent-hit`; SESSION_SHELL NO_APTO (sin gitStdout inventado); R3 KM APTO (Argos 0 writes).
+
+**Siguiente paso:** Cosecha Kaizen (dedup seed PPR revoked) → Handoff prohibido.
+```
+
+### Runtime evidence (machine) — Argos F5 sibling 0b826e3b (prev entry)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:42:30Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: NO_APTO
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: NO_APTO
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+rbac_exit_code: 1
+verdict: rechazado
+global: NO_APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+resolution: FAIL_F5_VERDICT
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) BLOCKING F4→F5; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor github-bridge-watcher ∉ revoked"
+notes: "Argos F5 CID DK5Qu… · exec 0b826e3b…; FAIL_F5_VERDICT peaje F4→F5 RBAC_PROCESS_REGISTRY; F2 PASS_F2_DOC; F3 sin Triaje técnico NO_APTO L-OUT; emisor github-bridge-watcher∉revoked APTO; R1/R2 copia session native_state notes=idempotent-hit; Shell git-manager Rejected; Argos 0 writes KM; dedup pending PBI-RESTORE-…-PPR-REVOKED-REGISTRY; reclaim validacion+handoff post-carrera sibling d50a40ba; sidecar _argos_veredicto_0b826e3b.md; sibling concurrent e4c9970f/d50a40ba…"
+```
+
+## 2026-09-04T13:42:30Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- phase: `Veredicto y bloqueo`
+- agents: `argos`
+- execution_id: `0b826e3b-ed99-4313-aa30-b2cc3c970d3f`
+- correlation_id: `DK5QuSSudtQmSiSMZikUXN83xiF7fwEHxGHGRCUBz1tm`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: F5 bloqueado — peaje F4 `pull-request-review`∈revoked since 2026-08-29T05:01:52Z; `FAIL_F5_VERDICT`; `delivery_state: failed`; Handoff prohibido; reclaim post-carrera sibling d50a40ba.
+
+### transcript (tail)
+
+```
+## Resumen Argos · Veredicto y bloqueo
+
+**Archivos tocados:** `docs/ppr-cosecha-kaizen-20260904/validacion.md` (F5 CID DK5Qu… / exec 0b826e3b…); `_agent_handoff.md` (sello F5 reclaim); `_argos_veredicto_0b826e3b.md` (sidecar anti-carrera).
+
+**Veredicto:** `blocked` · `FAIL_F5_VERDICT` · `exitCode: 1` · `delivery_state: failed`.
+
+**Bloqueante:** `RBAC_PROCESS_REGISTRY` / `F4_RBAC_GATE` → `F5_VERDICT_GATE` — `pull-request-review` ∈ revoked (`since: 2026-08-29T05:01:52Z`, `abrupt_success_rate_drop`).
+
+**Lateral:** DCC/bug-fix/feature/entity-manager/refactorization ∈ revoked; emisor `github-bridge-watcher` ∉ revoked (`RBAC_EMITTER_NOT_REVOKED` APTO).
+
+**APTO lateral:** F2 PASS_F2_DOC · R1/R2 native_state/idempotent-hit · R3 KM 0 writes Argos · dedup pending PBI-RESTORE-…-PPR-REVOKED-REGISTRY.
+
+**Evidence Bridge:** R1/R2 APTO copia native_state notes=idempotent-hit; Shell git-manager Rejected → SESSION_SHELL NO_APTO.
+
+**Siguiente paso:** Cosecha Kaizen (dedup seed PPR revoked) → Handoff materialización **prohibido**.
+```
+
+### Runtime evidence (machine) — Argos F5 sibling d50a40ba (prev entry)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:43:00Z"
+source: native_state
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: NO_APTO
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: NO_APTO
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: NO_APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+rbac_exit_code: 1
+verdict: rechazado
+global: NO_APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+resolution: FAIL_F5_VERDICT
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) BLOQUEANTE F4→F5; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor delivery-close-cycle ∈ revoked"
+notes: "Argos Veredicto y bloqueo CID e4c9970f… · exec d50a40ba…; FAIL_F5_VERDICT · F2 APTO · F4 NO_APTO PROCESS_REGISTRY · F3 NO_APTO no absuelve · delivery_state failed · accept_pr_handoff false/blocked · R1/R2 copia session native_state idempotent-hit · sin gitStdout inventado · Argos 0 writes KM · reclaim validacion post-carrera F5 sibling 0b826e3b; ECST PullRequest_Presented delivery-close-cycle; F4 Cerbero @ 13:40:00Z sidecar _rbac_cerbero_d50a40ba.md; sidecar _argos_veredicto_d50a40ba.md"
+```
+
+## 2026-09-04T13:43:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- phase: `Veredicto y bloqueo`
+- agents: `argos`
+- execution_id: `d50a40ba-d3dc-4e8e-bc54-c3a13eb60800`
+- correlation_id: `e4c9970f-9e15-40fe-857f-07c44c1bada5`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: **Veredicto: `blocked`** — `FAIL_F5_VERDICT` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked` · F4 NO_APTO (F2 APTO no absuelve).
+
+### transcript (tail)
+
+```
+## Resumen Argos · Veredicto y bloqueo
+
+**Archivos tocados:** `validacion.md` (reclaim F5 CID e4c9970f… / exec d50a40ba…); `_agent_handoff.md` (sello F5); `_argos_veredicto_d50a40ba.md` (sidecar ante carrera sibling 0b826e3b).
+
+**Veredicto:** `blocked` · `FAIL_F5_VERDICT` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked`.
+
+**Bloqueante:** F4_RBAC (`pull-request-review` ∈ revoked since 2026-08-29T05:01:52Z) → `FAIL_F5_VERDICT`.
+
+**Evidence Bridge:** R1/R2 APTO copia session `native_state`/`idempotent-hit`; SESSION_SHELL NO_APTO (sin gitStdout inventado); R3 KM APTO (Argos 0 writes).
+
+**Siguiente paso:** Cosecha Kaizen (dedup seed PPR revoked) → Handoff prohibido.
+```
+
+### Runtime evidence (machine) — Cerbero F4 sibling 0b826e3b (prev)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:41:00Z"
+source: prosthesis_subprocess
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: pending
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: pending
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+rbac_exit_code: 1
+verdict: rechazado
+global: NO_APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+resolution: FAIL_F4_RBAC
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) BLOCKING F4; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor github-bridge-watcher ∉ revoked"
+notes: "Cerbero F4 CID DK5Qu… · exec 0b826e3b…; FAIL_F4_RBAC RBAC_PROCESS_REGISTRY; F2 heredado PASS_F2_DOC; emisor github-bridge-watcher∉revoked APTO; R1/R2 copia session prosthesis_subprocess; Shell git-manager Rejected; Cerbero 0 writes KM; dedup pending PBI-RESTORE-…-PPR-REVOKED-REGISTRY; reclaim validacion post-carrera sibling d50a40ba; sidecar _rbac_cerbero_0b826e3b.md; sibling concurrent e4c9970f/d50a40ba…"
+```
+
+## 2026-09-04T13:41:00Z — Certificación RBAC
+- process: `pull-request-review`
+- phase: `Certificación RBAC`
+- agents: `cerbero`
+- execution_id: `0b826e3b-ed99-4313-aa30-b2cc3c970d3f`
+- correlation_id: `DK5QuSSudtQmSiSMZikUXN83xiF7fwEHxGHGRCUBz1tm`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: F4 bloqueado — `pull-request-review`∈revoked since 2026-08-29T05:01:52Z; emisor `github-bridge-watcher`∉revoked; F2 heredado PASS_F2_DOC; downstream Veredicto/Cosecha/Handoff.
+
+### transcript (tail)
+
+```
+## Resumen Cerbero · Certificación RBAC
+
+**Archivos tocados:** `docs/ppr-cosecha-kaizen-20260904/validacion.md` (reescrito/reclaim PPR F4 CID DK5Qu… / exec 0b826e3b…); `_agent_handoff.md` (sello F4 + Evidence Bridge); `_rbac_cerbero_0b826e3b.md` (sidecar anti-carrera).
+
+**Veredicto:** `blocked` · `FAIL_F4_RBAC` · `exitCode: 1` · `delivery_state: failed`.
+
+**Bloqueante:** `RBAC_PROCESS_REGISTRY` — `pull-request-review` ∈ revoked (`since: 2026-08-29T05:01:52Z`, `abrupt_success_rate_drop`).
+
+**Lateral:** DCC/bug-fix/feature/entity-manager/refactorization ∈ revoked; emisor `github-bridge-watcher` ∉ revoked (`RBAC_EMITTER_NOT_REVOKED` APTO).
+
+**APTO lateral:** VBR contractual × docs sink · espacial OK · Cerbero 0 writes KM · F2 heredado PASS_F2_DOC · dedup pending PBI-RESTORE-…-PPR-REVOKED-REGISTRY.
+
+**Evidence Bridge:** R1/R2 APTO copia prosthesis_subprocess; Shell git-manager Rejected → SESSION_SHELL NO_APTO.
+
+**Siguiente paso:** Veredicto Argos (F5 debe reflejar failed) → Cosecha dedup seed PPR revoked → Handoff bloqueado.
+```
+
+### Runtime evidence (machine) — Cerbero F4 sibling d50a40ba (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:40:00Z"
+source: prosthesis_subprocess
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: pending
+F4_RBAC_GATE: NO_APTO
+F5_VERDICT_GATE: pending
+RBAC_CERBERO_CERT: NO_APTO
+RBAC_PROCESS_REGISTRY: NO_APTO
+RBAC_EMITTER_NOT_REVOKED: NO_APTO
+RBAC_AUTHORING_KM_POLICY: APTO
+rbac_exit_code: 1
+verdict: rechazado
+global: NO_APTO
+delivery_state: failed
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+resolution: FAIL_F4_RBAC
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) BLOCKING F4; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked; emisor delivery-close-cycle ∈ revoked"
+notes: "Cerbero F4 CID e4c9970f… · exec d50a40ba…; FAIL_F4_RBAC RBAC_PROCESS_REGISTRY; F2 heredado PASS_F2_DOC; emisor DCC∈revoked L-OUT; R1/R2 copia session prosthesis_subprocess; Shell git-manager Rejected; Cerbero 0 writes KM; dedup pending PBI-RESTORE-…-PPR-REVOKED-REGISTRY; sidecar _rbac_cerbero_d50a40ba.md; sibling concurrent exec 0b826e3b…"
+```
+
+## 2026-09-04T13:40:00Z — Certificación RBAC
+- process: `pull-request-review`
+- phase: `Certificación RBAC`
+- agents: `cerbero`
+- execution_id: `d50a40ba-d3dc-4e8e-bc54-c3a13eb60800`
+- correlation_id: `e4c9970f-9e15-40fe-857f-07c44c1bada5`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: F4 bloqueado — `pull-request-review`∈revoked since 2026-08-29T05:01:52Z; emisor DCC∈revoked L-OUT; F2 heredado PASS_F2_DOC; downstream Veredicto/Cosecha/Handoff.
+
+### transcript (tail)
+
+```
+## Resumen Cerbero · Certificación RBAC
+
+**Archivos tocados:** `docs/ppr-cosecha-kaizen-20260904/validacion.md` (reescrito PPR F4 CID e4c9970f… / exec d50a40ba…); `_agent_handoff.md` (sello F4 + Evidence Bridge); `_rbac_cerbero_d50a40ba.md` (sidecar anti-carrera).
+
+**Veredicto:** `blocked` · `FAIL_F4_RBAC` · `exitCode: 1` · `delivery_state: failed`.
+
+**Bloqueante:** `RBAC_PROCESS_REGISTRY` — `pull-request-review` ∈ revoked (`since: 2026-08-29T05:01:52Z`, `abrupt_success_rate_drop`).
+
+**Lateral:** DCC/bug-fix/feature/entity-manager/refactorization ∈ revoked; emisor `delivery-close-cycle` ∈ revoked (`RBAC_EMITTER_NOT_REVOKED` L-OUT).
+
+**APTO lateral:** VBR contractual × docs sink · espacial OK · Cerbero 0 writes KM · F2 heredado PASS_F2_DOC · dedup pending PBI-RESTORE-…-PPR-REVOKED-REGISTRY.
+
+**Evidence Bridge:** R1/R2 APTO copia prosthesis_subprocess; Shell git-manager Rejected → SESSION_SHELL NO_APTO.
+
+**Siguiente paso:** Veredicto Argos (F5 debe reflejar failed) → Cosecha dedup seed PPR revoked → Handoff bloqueado.
+```
+
+### Runtime evidence (machine) — Argos F2 sibling 0b826e3b (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:36:00Z"
+source: prosthesis_subprocess
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: pending
+F4_RBAC_GATE: pending
+F5_VERDICT_GATE: pending
+RBAC_CERBERO_CERT: pending
+RBAC_AUTHORING_KM_POLICY: APTO
+rbac_exit_code: null
+verdict: aprobado
+global: APTO
+delivery_state: pending_downstream_phases
+accept_pr_handoff: false
+resolution: PASS_F2_DOC
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) L-OUT F2; laterales DCC/bug-fix/feature/entity-manager/refactorization — peaje F4; emisor github-bridge-watcher ∉ revoked"
+notes: "Argos Triaje documental CID DK5Qu… · exec 0b826e3b…; PASS_F2_DOC · F2 APTO · cascada objectives/spec/plan/implementation (+execution) · R1/R2 copia session prosthesis_subprocess notes=(none) · Shell git-manager Rejected · Argos 0 writes KM · BRANCH_WORKTREE_SYNC NO_APTO inject docs/local-ledger-20260904≠main · ECST PullRequest_Presented github-bridge-watcher/jules · PR #255 · sidecar _argos_triaje_0b826e3b.md ante carrera sibling e4c9970f/d50a40ba…"
+```
+
+## 2026-09-04T13:36:00Z — Triaje documental
+- process: `pull-request-review`
+- phase: `Triaje documental`
+- agents: `argos`
+- execution_id: `0b826e3b-ed99-4313-aa30-b2cc3c970d3f`
+- correlation_id: `DK5QuSSudtQmSiSMZikUXN83xiF7fwEHxGHGRCUBz1tm`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: **Veredicto fase: ok** — `global: APTO` · `PASS_F2_DOC` · `F2_DOC_GATE: APTO`.
+
+### transcript (tail)
+
+```
+Argos · Triaje documental — ok / PASS_F2_DOC
+persist_ref inyectado vacío; candidato isomorfo docs/ + DCC SSOT → docs/ppr-cosecha-kaizen-20260904 con cascada objectives/spec/plan/implementation (+execution).
+R1/R2 APTO (session prosthesis_subprocess; notes none). R3 APTO (0 writes docs/todos/**).
+Shell git-manager Rejected; BRANCH_WORKTREE_SYNC NO_APTO vía FS .git/HEAD → main ≠ inject docs/local-ledger-20260904 (L-OUT F2).
+ECST PullRequest_Presented (github-bridge-watcher / jules); PR #255; pbi_ref → done residual DCC.
+Sidecar _argos_triaje_0b826e3b.md ante carrera sibling e4c9970f…/d50a40ba….
+```
+
+### Runtime evidence (machine) — Argos F2 sibling d50a40ba (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-09-04T13:36:00Z"
+source: prosthesis_subprocess
+git_manager_invoked: false
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+F2_DOC_GATE: APTO
+F3_TECH_GATE: pending
+F4_RBAC_GATE: pending
+F5_VERDICT_GATE: pending
+RBAC_CERBERO_CERT: pending
+RBAC_AUTHORING_KM_POLICY: APTO
+rbac_exit_code: null
+verdict: aprobado
+global: APTO
+delivery_state: pending_downstream_phases
+accept_pr_handoff: false
+resolution: PASS_F2_DOC
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-08-29T05:01:52Z) L-OUT F2; laterales DCC/bug-fix/feature/entity-manager/refactorization revoked — peaje F4; emisor delivery-close-cycle ∈ revoked (L-OUT emitter F2)"
+notes: "Argos Triaje documental CID e4c9970f… · exec d50a40ba…; PASS_F2_DOC · F2 APTO · cascada objectives/spec/plan/implementation (+execution) · R1/R2 copia session prosthesis_subprocess notes=(none) · Shell git-manager Rejected · Argos 0 writes KM · BRANCH_WORKTREE_SYNC NO_APTO HEAD=main≠docs/local-ledger-20260904 · persist_ref vía DCC ledger → docs/ppr-cosecha-kaizen-20260904 · PR #255 · ECST PullRequest_Presented delivery-close-cycle · reclaim validacion post-carrera sibling 0b826e3b · sidecar _argos_triaje_d50a40ba.md"
+```
+
+## 2026-09-04T13:36:00Z — Triaje documental
+- process: `pull-request-review`
+- phase: `Triaje documental`
+- agents: `argos`
+- execution_id: `d50a40ba-d3dc-4e8e-bc54-c3a13eb60800`
+- correlation_id: `e4c9970f-9e15-40fe-857f-07c44c1bada5`
+- persist_ref_injected: ``
+- persist_ref_audit_sink: `docs/ppr-cosecha-kaizen-20260904`
+- pbi_ref: `docs/todos/done/[FIX] delivery-close-cycle — residual cápsulas DCC (ca3d901fdc9a).md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `ok`
+- message: **Veredicto fase: ok** — `global: APTO` · `PASS_F2_DOC` · `F2_DOC_GATE: APTO`.
+
+### transcript (tail)
+
+```
+Argos · Triaje documental — ok / PASS_F2_DOC
+persist_ref inyectado vacío; isomorfo docs/local-ledger-20260904 ausente; SSOT DCC .tmp/dcc-local-ledger-20260904.json → docs/ppr-cosecha-kaizen-20260904 con cascada objectives/spec/plan/implementation (+execution).
+R1/R2 APTO (session prosthesis_subprocess; notes none). R3 APTO (0 writes docs/todos/**).
+Shell git-manager Rejected; BRANCH_WORKTREE_SYNC NO_APTO vía FS .git/HEAD=main ≠ inject docs/local-ledger-20260904 (no castra F2).
+ECST PullRequest_Presented (delivery-close-cycle); PR #255; pbi_ref → done residual DCC.
+Reclaim validacion.md post-carrera sibling 0b826e3b…; sidecar _argos_triaje_d50a40ba.md.
+```
+
+### Runtime evidence (machine) — Cúmulo Cosecha sibling 8d2567b6 (prev top)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
 materialized_at: "2026-09-04T13:30:00Z"
 source: native_state
 git_manager_invoked: false
