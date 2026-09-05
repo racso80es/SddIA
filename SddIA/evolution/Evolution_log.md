@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 100
+universe_total: 101
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `e2f8a1c4-7b3d-4e9f-a612-8c5d0b9e4f17` | 2026-09-05 | Rehab pull-request-review restore-kaizen-ci-step: A1 Cerbero/Radamanto; L-SAMPLES; L-VEHICLE-DUAL. | CANONICO | `SddIA/evolution/e2f8a1c4-7b3d-4e9f-a612-8c5d0b9e4f17.md` |
 | `65199eab-7ddf-47d1-b821-e865517f637b` | 2026-09-05 | event-bus-audit needs_kaizen accionable; plantilla Kaizen por alert_kind; emisor Clase alineado. | CANONICO | `SddIA/evolution/65199eab-7ddf-47d1-b821-e865517f637b.md` |
 | `166c91f9-7378-4766-b6fe-ff5e7eee382f` | 2026-09-05 | Cuota crónica CI: CI_Chronic_Failure_Detected, PBI Kaizen Cúmulo, umbral v1.3.0, CA9-NEG. | CANONICO | `SddIA/evolution/166c91f9-7378-4766-b6fe-ff5e7eee382f.md` |
 | `2d5df89a-7de9-46a9-bc1c-fda95edcbc2b` | 2026-09-04 | llm_profile en agentes; AGENT_PHASE llm_profiles; veto none; harness SDDIA_LLM_TIER_* | CANONICO | `SddIA/evolution/2d5df89a-7de9-46a9-bc1c-fda95edcbc2b.md` |
