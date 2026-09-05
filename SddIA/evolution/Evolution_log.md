@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `db46c34e-4c2d-42dd-b2e1-36230853f23c` | 2026-09-05 | Laudo B 7bc20a6b4dd6: archivo PBI vitality-probe; causa física PR #251 ab27234; cero mutación genómica. | CANONICO | `SddIA/evolution/db46c34e-4c2d-42dd-b2e1-36230853f23c.md` |
 | `e2f8a1c4-7b3d-4e9f-a612-8c5d0b9e4f17` | 2026-09-05 | Rehab pull-request-review restore-kaizen-ci-step: A1 Cerbero/Radamanto; L-SAMPLES; L-VEHICLE-DUAL. | CANONICO | `SddIA/evolution/e2f8a1c4-7b3d-4e9f-a612-8c5d0b9e4f17.md` |
 | `65199eab-7ddf-47d1-b821-e865517f637b` | 2026-09-05 | event-bus-audit needs_kaizen accionable; plantilla Kaizen por alert_kind; emisor Clase alineado. | CANONICO | `SddIA/evolution/65199eab-7ddf-47d1-b821-e865517f637b.md` |
 | `166c91f9-7378-4766-b6fe-ff5e7eee382f` | 2026-09-05 | Cuota crónica CI: CI_Chronic_Failure_Detected, PBI Kaizen Cúmulo, umbral v1.3.0, CA9-NEG. | CANONICO | `SddIA/evolution/166c91f9-7378-4766-b6fe-ff5e7eee382f.md` |
