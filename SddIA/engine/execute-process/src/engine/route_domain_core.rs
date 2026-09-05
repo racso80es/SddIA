@@ -393,56 +393,7 @@ fn build_telegram_message_from_event(event: &Value) -> Option<String> {
                 "Correo accionable\nfrom={from}\nsubject={subject}\nuid={uid}"
             ))
         }
-        "PullRequest_Merged" => {
-            let branch = payload
-                .and_then(|p| p.get("source_branch"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("?");
-            let hash = payload
-                .and_then(|p| p.get("merge_commit_hash"))
-                .and_then(|v| v.as_str())
-                .map(|h| &h[..7.min(h.len())])
-                .unwrap_or("?");
-            let author = payload
-                .and_then(|p| p.get("author"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("?");
-            let target = payload
-                .and_then(|p| p.get("target_branch"))
-                .and_then(|v| v.as_str())
-                .filter(|s| !s.is_empty())
-                .unwrap_or("main");
-            let mut lines = vec![
-                format!("✅ PR Fusionado — {branch}"),
-                "━━━━━━━━━━━━━━━━━━━━━━━━".into(),
-                format!("📦 Commit: {hash} ({target})"),
-                format!("👤 Integrador: {author}"),
-            ];
-            if let Some(sc) = payload.and_then(|p| p.get("security_clearance")) {
-                let auditor = sc.get("auditor").and_then(|v| v.as_str()).unwrap_or("?");
-                let policy = sc
-                    .get("policy_applied")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("?");
-                lines.push(format!("🔐 Auditor: {auditor} · {policy}"));
-            }
-            if let Some(url) = payload
-                .and_then(|p| p.get("pr_url"))
-                .and_then(|v| v.as_str())
-                .map(str::trim)
-                .filter(|s| !s.is_empty())
-            {
-                lines.push(url.to_string());
-            }
-            if let Some(cid) = event
-                .get("correlation_id")
-                .and_then(|v| v.as_str())
-                .filter(|s| s.len() >= 8)
-            {
-                lines.push(format!("🔗 Correlación: {}…", &cid[..8]));
-            }
-            Some(lines.join("\n"))
-        }
+        "PullRequest_Merged" => super::notify_humanized_pr_merged::pr_merged_static_message(event),
         _ => None,
     }
 }
@@ -1497,6 +1448,20 @@ pub(crate) fn dispatch_subscriber(
     }
 
     if subscriber.get("action").and_then(|v| v.as_str()).map(str::trim)
+        == Some(super::notify_humanized_pr_merged::ACTION_NAME)
+    {
+        match super::notify_humanized_pr_merged::run_from_event(repo, event) {
+            Ok(super::notify_humanized_pr_merged::NotifyOutcome::Sent { .. }) => {
+                return (sid, "success".into(), None, 0);
+            }
+            Ok(super::notify_humanized_pr_merged::NotifyOutcome::SkippedEmpty) => {
+                return (sid, "skipped-empty-message".into(), None, 0);
+            }
+            Err(e) => return (sid, "failed".into(), Some(e), 1),
+        }
+    }
+
+    if subscriber.get("action").and_then(|v| v.as_str()).map(str::trim)
         == Some("persist-pec-correlation-proof")
     {
         match super::persist_pec_correlation_proof::run_from_event(repo, event) {
@@ -2377,6 +2342,33 @@ mod blocking_tests {
         let msg = build_telegram_message_from_event(&ev).expect("msg");
         assert!(msg.contains("(release)"));
         assert!(!msg.contains("(main)"));
+    }
+
+    #[test]
+    fn pull_request_merged_subscription_is_humanized_action_not_telegram_tool() {
+        let repo = repo_root();
+        for rel in [
+            "SddIA/core/event-domain-subscriptions.json",
+            "SddIA/core/event-subscriptions.json",
+        ] {
+            let raw = fs::read_to_string(repo.join(rel)).expect(rel);
+            let v: Value = serde_json::from_str(&raw).expect(rel);
+            let subs = v["PullRequest_Merged"].as_array().expect("arr");
+            let iota = subs.iter().any(|s| {
+                s.get("tool").and_then(|t| t.as_str()) == Some("iota-immutable-publisher")
+            });
+            let telegram_tool = subs.iter().any(|s| {
+                s.get("tool").and_then(|t| t.as_str()) == Some("send-telegram-notification")
+            });
+            let action = subs.iter().any(|s| {
+                s.get("agent").and_then(|t| t.as_str()) == Some("argos")
+                    && s.get("action").and_then(|t| t.as_str())
+                        == Some("notify-humanized-pr-merged")
+            });
+            assert!(iota, "IOTA intacto en {rel}");
+            assert!(!telegram_tool, "sin tool Telegram directa en {rel}");
+            assert!(action, "action humanizada en {rel}");
+        }
     }
 
     #[test]

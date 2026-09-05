@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `cef0d9ee-f0d0-4ba2-b3ef-28dd47a6d0d4` | 2026-09-05 | Ola 2 Telegram post-merge: action notify-humanized-pr-merged + síntesis Gemini fail-soft. | CANONICO | `SddIA/evolution/cef0d9ee-f0d0-4ba2-b3ef-28dd47a6d0d4.md` |
 | `c11b4325-3daa-4418-aa87-54438a3b165d` | 2026-09-05 | Telegram reactivo post-merge: suscripción PullRequest_Merged → send-telegram-notification y compositor EDA. | CANONICO | `SddIA/evolution/c11b4325-3daa-4418-aa87-54438a3b165d.md` |
 | `e7c4a91b-2f6d-4e8a-9b3c-1d5f8a0e2476` | 2026-09-05 | DCC 1479509cab7d: fallback shell-executor sin reintento WASM ni fuga de centinela; aduana Kintsugi y cubo Mayeuta. | CANONICO | `SddIA/evolution/e7c4a91b-2f6d-4e8a-9b3c-1d5f8a0e2476.md` |
 | `db46c34e-4c2d-42dd-b2e1-36230853f23c` | 2026-09-05 | Laudo B 7bc20a6b4dd6: archivo PBI vitality-probe; causa física PR #251 ab27234; cero mutación genómica. | CANONICO | `SddIA/evolution/db46c34e-4c2d-42dd-b2e1-36230853f23c.md` |

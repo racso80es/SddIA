@@ -48,3 +48,13 @@ cd SddIA && cargo test -p execute-process --lib -- telegram_message_for_pr_merge
 ## CA-CI
 
 Run [33972972450](https://github.com/racso80es/SddIA/actions/runs/33972972450) sobre `ba501de` evento `pull_request`: `conclusion: success`.
+
+## Ola 2
+
+PBI v1.2.0 reabierto en `pending/`. Commit diseño `d5d97b5`.
+
+Handler nativo + JSON. Forja action: EM create `execution_id` `f6017b3e-8fd5-4996-828b-91347f229e98` uuid `1cd7bd40-b72f-4114-ac44-68b912774aa6`; update `0d03547d-2dc3-435c-b26a-6d3c65791c52` hash `sha256:126a051b…`. Clase evento replacements `bab599ae-e538-419c-ac88-7dc0f79ef8f3` hash `sha256:e82cf28d…`. Evolution `cef0d9ee-f0d0-4ba2-b3ef-28dd47a6d0d4`.
+
+Tests: `cargo test -p execute-process --lib -- notify_humanized telegram_message_for_pr_merged pull_request_merged_subscription` → 9 passed.
+
+Sin `accept-pr` (Kintsugi `1e62e8b851f8`).

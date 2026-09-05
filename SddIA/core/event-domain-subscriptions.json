@@ -24,8 +24,8 @@
     },
     {
       "agent": "argos",
-      "tool": "send-telegram-notification",
-      "intent": "Resumen ejecutivo post-merge al Vértice Biológico: branch, commit y auditor."
+      "action": "notify-humanized-pr-merged",
+      "intent": "Resumen ejecutivo post-merge: metadatos estáticos + síntesis de valor (fail-soft LLM)."
     }
   ],
   "Domain_Entity_Created": [

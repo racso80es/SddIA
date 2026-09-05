@@ -8,7 +8,7 @@ event_type: "PullRequest_Merged"
 context: "dlt-auditing"
 capabilities:
   - "pull_request_merged"
-hash_signature: "sha256:6cd7add82268b9d992d8ddc780f11f08f2c25b21f7eb0c09b58f82f80dae1bb5"
+hash_signature: "sha256:e82cf28dd23db23bafa5a860d46ca61ea431a12bbdd27712e0d49bf4e6dd4c20"
 ---
 
 # Event: PullRequest_Merged
@@ -41,6 +41,6 @@ Clase ECST para sello post-merge en main. Ancla DLT via merge_commit_hash (40 he
 | Suscriptor | Agente | Intent |
 | :--- | :--- | :--- |
 | `iota-immutable-publisher` | cumulo | Anclaje DLT IOTA Rebased |
-| `send-telegram-notification` | argos | Resumen ejecutivo post-merge al Vértice Biológico |
+| `notify-humanized-pr-merged` | argos | Metadatos estáticos + síntesis de valor (fail-soft LLM) |
 
 SSOT: `SddIA/core/event-domain-subscriptions.json` → clave `PullRequest_Merged`.
