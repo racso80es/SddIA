@@ -40,3 +40,11 @@ cd SddIA && cargo test -p execute-process --lib -- telegram_message_for_pr_merge
 ## Evolution
 
 `sddia-qa evolution-register` → `c11b4325-3daa-4418-aa87-54438a3b165d` (`EVOL_OK`, `alta`).
+
+## DCC / PR
+
+`delivery-close-cycle` `execution_id` `c71f05e3-55a7-4efb-ad27-de67a1be8664`. Snapshot `ba501de`. PR https://github.com/racso80es/SddIA/pull/262. Apertura en forja **executed**.
+
+## CA-CI
+
+Run [33972972450](https://github.com/racso80es/SddIA/actions/runs/33972972450) sobre `ba501de` evento `pull_request`: `conclusion: success`.

@@ -10,8 +10,10 @@ persist_ref: docs/features/eda-telegram-notify-pr-merged
 pbi_ref: docs/todos/done/PBI-EDA-TELEGRAM-NOTIFY-PR-MERGED.md
 document_id: PBI-EDA-TELEGRAM-NOTIFY-PR-MERGED
 uuid: "5880d6fc-99f3-4ecf-8c9e-a4885d45f117"
-global: PENDIENTE-CI
+global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/262
+ci_run_id: "33972972450"
 checks:
   TG-MERGED-CA1: APTO
   TG-MERGED-CA2: APTO
@@ -19,7 +21,7 @@ checks:
   TG-MERGED-CA4: APTO
   TG-MERGED-CA5: APTO
   TG-MERGED-CA6: APTO
-  TG-MERGED-CA-CI: PENDIENTE-CI
+  TG-MERGED-CA-CI: APTO
 git_changes:
   - SddIA/core/event-domain-subscriptions.json
   - SddIA/core/event-subscriptions.json
@@ -36,7 +38,7 @@ git_changes:
 
 ## Veredicto
 
-Unidades de código **APTO**. Global **PENDIENTE-CI** hasta `run_id` verde del PR. PBI archivado en `docs/todos/done/`.
+Unidades de código **APTO**. Global **APTO**. CA-CI sellado con run `33972972450` (PR #262, `headSha` `ba501de`, evento `pull_request`).
 
 ## Checks
 
@@ -48,7 +50,7 @@ Unidades de código **APTO**. Global **PENDIENTE-CI** hasta `run_id` verde del P
 | TG-MERGED-CA4 | APTO | Despacho por `tool` en `route_domain_core`; `accept_pr.rs` sin `send-telegram-notification`. |
 | TG-MERGED-CA5 | APTO | Entrada IOTA intacta en ambos JSON. |
 | TG-MERGED-CA6 | APTO | Clase uuid `cfb8ce66-…`; hash `sha256:6cd7add82268b9d992d8ddc780f11f08f2c25b21f7eb0c09b58f82f80dae1bb5`; coverage alineado. |
-| TG-MERGED-CA-CI | PENDIENTE-CI | Sin `run_id` aún. |
+| TG-MERGED-CA-CI | APTO | [run 33972972450](https://github.com/racso80es/SddIA/actions/runs/33972972450): `sddia-index-integrity`, `wasi-runtime-smoke`, `eda-iota-smoke-simulate`, `eda-bus-e2e-smoke`, `eda-iota-physical` pass. Jobs skip del evento `push` no son fallo. |
 
 ## Tests locales
 
