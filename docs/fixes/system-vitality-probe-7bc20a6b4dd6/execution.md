@@ -41,3 +41,11 @@ PBI `pending/` → `done/`. `status: cerrado`. `fix_ref: docs/fixes/system-vital
 ## Evolution
 
 `sddia-qa evolution-register` → `db46c34e-4c2d-42dd-b2e1-36230853f23c`.
+
+## DCC / PR
+
+`delivery-close-cycle` `execution_id` `5ecbe9a8-a82f-4924-b711-bbe289b86fb5`. Snapshot `6b5f48a`. PR https://github.com/racso80es/SddIA/pull/260.
+
+## CA6
+
+Run [33969304706](https://github.com/racso80es/SddIA/actions/runs/33969304706) sobre `6b5f48a`: pass (`sddia-index-integrity`, `wasi-runtime-smoke`, `eda-iota-smoke-simulate`, `eda-bus-e2e-smoke`, `eda-iota-physical`). Evento `push` duplicó jobs; los skip no son fallo.
