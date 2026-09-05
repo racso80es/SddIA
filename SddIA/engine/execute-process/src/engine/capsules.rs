@@ -35,6 +35,33 @@ const SHELL_EXECUTOR_NATIVE_FALLBACK_MARKERS: &[&str] = &[
     "no such file or directory (os error 44)",
 ];
 
+const SHELL_EXECUTOR_WASM_FALLBACK_MARKER: &str = "shell-executor wasm fallback marker";
+
+enum ShellWasmFollowup {
+    UseNative,
+    Fail(String),
+}
+
+fn shell_executor_native_missing_msg() -> String {
+    "cápsula skill 'shell-executor' no encontrada bajo SddIA/target (fallback nativo requerido por WASI)"
+        .into()
+}
+
+fn is_shell_executor_fallback_err(err: &str) -> bool {
+    err == SHELL_EXECUTOR_WASM_FALLBACK_MARKER
+        || blob_contains_markers(err, SHELL_EXECUTOR_NATIVE_FALLBACK_MARKERS)
+}
+
+fn shell_wasm_followup(wasm_err: &str, native_available: bool) -> ShellWasmFollowup {
+    if native_available {
+        ShellWasmFollowup::UseNative
+    } else if is_shell_executor_fallback_err(wasm_err) {
+        ShellWasmFollowup::Fail(shell_executor_native_missing_msg())
+    } else {
+        ShellWasmFollowup::Fail(wasm_err.to_string())
+    }
+}
+
 pub struct CapsuleInvokeResult {
     pub exit_code: i32,
     pub body: Value,
@@ -119,6 +146,14 @@ fn resolve_capsule(
 fn blob_contains_markers(blob: &str, markers: &[&str]) -> bool {
     let lower = blob.to_lowercase();
     markers.iter().any(|m| lower.contains(m))
+}
+
+fn shell_wasm_marker_err(kind: &str, blob: &str) -> Option<String> {
+    if kind == "wasm" && blob_contains_markers(blob, SHELL_EXECUTOR_NATIVE_FALLBACK_MARKERS) {
+        Some(blob.to_string())
+    } else {
+        None
+    }
 }
 
 pub fn invoke_capsule_subprocess(
@@ -449,11 +484,9 @@ pub fn invoke_shell_executor(
                 .get("error")
                 .and_then(|v| v.as_str())
                 .unwrap_or("shell-executor failed");
-            if blob_contains_markers(
-                &format!("{stderr}\n{stdout}\n{err}"),
-                SHELL_EXECUTOR_NATIVE_FALLBACK_MARKERS,
-            ) {
-                return Err("shell-executor wasm fallback marker".into());
+            let blob = format!("{stderr}\n{stdout}\n{err}");
+            if let Some(e) = shell_wasm_marker_err(kind, &blob) {
+                return Err(e);
             }
         }
         unwrap_shell_executor_body(&body)
@@ -463,9 +496,14 @@ pub fn invoke_shell_executor(
     if kind.as_str() == "wasm" {
         match run_shell(repo, "wasm", &path, &stdin_payload) {
             Ok(v) => return Ok(v),
-            Err(_) => {
-                if let Some(native) = capsule_paths::resolve_capsule_native(repo, "shell-executor") {
-                    return run_shell(repo, "native", &native, &stdin_payload);
+            Err(e) => {
+                let native = capsule_paths::resolve_capsule_native(repo, "shell-executor");
+                match shell_wasm_followup(&e, native.is_some()) {
+                    ShellWasmFollowup::UseNative => {
+                        let native = native.expect("followup UseNative implica native Some");
+                        return run_shell(repo, "native", &native, &stdin_payload);
+                    }
+                    ShellWasmFollowup::Fail(msg) => return Err(msg),
                 }
             }
         }
@@ -516,5 +554,48 @@ mod tests {
         let body = json!({"success": true, "exitCode": 0});
         let r = finalize_capsule_body(body, 1);
         assert_eq!(r.exit_code, 0);
+    }
+
+    #[test]
+    fn shell_wasm_followup_native_missing_canonical_not_retry() {
+        match shell_wasm_followup(SHELL_EXECUTOR_WASM_FALLBACK_MARKER, false) {
+            ShellWasmFollowup::Fail(msg) => {
+                assert!(msg.contains("cápsula skill 'shell-executor'"));
+                assert!(msg.to_lowercase().contains("no encontrada bajo sddia/target"));
+                assert_ne!(msg, SHELL_EXECUTOR_WASM_FALLBACK_MARKER);
+            }
+            ShellWasmFollowup::UseNative => panic!("nativo ausente no debe UseNative"),
+        }
+        match shell_wasm_followup("No such file or directory (os error 44)", false) {
+            ShellWasmFollowup::Fail(msg) => {
+                assert!(msg.to_lowercase().contains("no encontrada bajo sddia/target"));
+            }
+            ShellWasmFollowup::UseNative => panic!("marcador WASI sin nativo no debe UseNative"),
+        }
+        match shell_wasm_followup("gh auth failed: HTTP 401", false) {
+            ShellWasmFollowup::Fail(msg) => assert_eq!(msg, "gh auth failed: HTTP 401"),
+            ShellWasmFollowup::UseNative => panic!("error no-fallback no debe UseNative"),
+        }
+    }
+
+    #[test]
+    fn shell_wasm_followup_prefers_native_without_rewriting() {
+        match shell_wasm_followup("executable not found on path", true) {
+            ShellWasmFollowup::UseNative => {}
+            ShellWasmFollowup::Fail(msg) => panic!("nativo disponible no debe Fail: {msg}"),
+        }
+        match shell_wasm_followup(SHELL_EXECUTOR_WASM_FALLBACK_MARKER, true) {
+            ShellWasmFollowup::UseNative => {}
+            ShellWasmFollowup::Fail(msg) => panic!("nativo disponible no debe Fail: {msg}"),
+        }
+    }
+
+    #[test]
+    fn native_shell_markers_are_not_rewritten_to_sentinel() {
+        let blob = "executable not found on path";
+        assert!(shell_wasm_marker_err("native", blob).is_none());
+        let wasm_err = shell_wasm_marker_err("wasm", blob).expect("wasm sí reescribe blob");
+        assert_ne!(wasm_err, SHELL_EXECUTOR_WASM_FALLBACK_MARKER);
+        assert!(wasm_err.contains("executable not found on path"));
     }
 }

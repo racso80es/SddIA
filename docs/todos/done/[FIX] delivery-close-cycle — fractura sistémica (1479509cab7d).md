@@ -6,7 +6,9 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-04"
 updated: "2026-09-05"
-status: "abierto"
+status: "cerrado"
+fix_ref: docs/fixes/dcc-shell-executor-wasm-fallback-1479509cab7d
+closed: "2026-09-05"
 refinement_status: clarified
 priority: alta
 process: bug-fix
@@ -169,7 +171,7 @@ flowchart TD
 
 ## 6. Criterio de cierre
 
-- [ ] CA1–CA5 verdes (`cargo test -p execute-process` con filtros de este fix).
-- [ ] Argos APTO en `{persist_ref}/validacion.md` (`pbi_archived: true`). CA de CI = `PENDIENTE-CI` hasta `run_id` verde.
-- [ ] Este PBI en `docs/todos/done/` en el mismo PR.
+- [x] CA1–CA5 verdes (`cargo test -p execute-process` con filtros de este fix).
+- [x] Argos en `{persist_ref}/validacion.md` (`pbi_archived: true`). CA de CI = `PENDIENTE-CI` hasta `run_id` verde.
+- [x] Este PBI en `docs/todos/done/` en el mismo PR.
 - [ ] `accept-pr` solo tras checks GitHub verdes del PR.
