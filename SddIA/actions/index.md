@@ -16,6 +16,7 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 
 | Name | UUID | Versión | Context | Descripción | Capabilities |
 |------|------|---------|---------|-------------|--------------|
+| materialize-ci-chronic-failure-pbi | `a6eb7f0c-8b2f-4c7d-ae5e-6c1b589f3c92` | 1.0.0 | ecosystem-evolution | Materializa PBI Kaizen en pending/ ante CI_Chronic_Failure_Detected. | `materialize_ci_chronic_failure_p` |
 | persist-pec-correlation-proof | `accb4de7-bb1e-4f88-b5cd-b8775a8ff5a4` | 1.0.0 | ecosystem-evolution | Proyección durable PEC por correlation_id bajo eda_instance.proofs/pec-correlation/. | `persist-pec-correlation-proof` |
 | execute-process | f1e2d3c4-b5a6-4789-b012-cdef34567890 | 1.2.0 | ecosystem-evolution | Orquestación maestra para que Tekton ejecute un proceso del Core con resolución SSOT, mapa de identidad (canónico + aliases v1.3.0), fases ordenadas, `phase_invocations`, delegación a crypto-broker y gate Cerbero antes de cada cápsula. | `process-load-ssot`, `phase-graph-resolution`, `phase-invocation-binding`, `cerbero-policy-gate`, `capsule-fanout-skills-tools`, `crypto-broker-delegation` |
 | crypto-broker | 9b3259be-e7a0-4fb1-b5d9-620a46fbc18b | 1.0.0 | quality-assurance | Puerta RBAC hacia operaciones deterministas de `cryptography-manager` (UUID, SHA-256, validación de hash) sin exponer `quality-assurance` al orquestador de forja. | `cryptography-broker`, `delegate-cryptography-manager` |
@@ -40,4 +41,5 @@ Ninguno. `actions-contract.md` es el contrato de familia, no una fila del catál
 
 - **Sincronización:** diez definiciones de acción con identidad atómica; reflejadas en sendas filas del catálogo.
 - **Metadatos:** valores de la tabla (incl. **Capabilities**) copiados desde el YAML de cada `{name}.md` al momento de indexación.
+
 

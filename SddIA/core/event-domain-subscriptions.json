@@ -114,6 +114,13 @@
       "intent": "Materializar cicatriz Kaizen documental en docs/todos/pending/ (único suscriptor legítimo)."
     }
   ],
+  "CI_Chronic_Failure_Detected": [
+    {
+      "agent": "cumulo",
+      "action": "materialize-ci-chronic-failure-pbi",
+      "intent": "Materializar PBI Kaizen por fallo crónico de CI en docs/todos/pending/."
+    }
+  ],
   "Domain_Entity_Degraded": [
     {
       "agent": "cerbero",

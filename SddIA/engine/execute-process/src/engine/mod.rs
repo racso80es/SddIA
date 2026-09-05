@@ -33,6 +33,7 @@ pub mod fractal;
 pub mod enrich_fracture_pbi_kaizen;
 pub mod materialize_fracture_pbi;
 pub mod materialize_kaizen_alert_doc;
+pub mod materialize_ci_chronic_failure_pbi;
 pub mod persist_pec_correlation_proof;
 pub mod handlers;
 pub mod phase_capsules;

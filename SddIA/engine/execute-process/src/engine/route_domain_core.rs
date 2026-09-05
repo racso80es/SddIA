@@ -33,6 +33,7 @@ const CONSUMER_SKIP_FORGE_ACTIONS: &[&str] = &[
     "materialize-fracture-pbi",
     "enrich-fracture-pbi-kaizen",
     "materialize-kaizen-alert-doc",
+    "materialize-ci-chronic-failure-pbi",
 ];
 
 fn runtime_profile_is_consumer() -> bool {

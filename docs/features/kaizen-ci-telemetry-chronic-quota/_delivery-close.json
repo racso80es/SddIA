@@ -1,0 +1,11 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/kaizen-ci-telemetry-chronic-quota",
+  "branch_name": "feat/kaizen-ci-telemetry-chronic-quota",
+  "target_branch": "main",
+  "pbi_ref": "docs/todos/done/[KAIZEN] Telemetría de CI — cuota crónica y degradación mapeada (CA8-CA9).md",
+  "document_id": "PBI-KAIZEN-CI-TELEMETRY-CHRONIC-QUOTA",
+  "uuid": "166c91f9-7378-4766-b6fe-ff5e7eee382f",
+  "pr_title": "feat(kaizen): cuota cronica CI, PBI Kaizen CA8 y CA9-NEG",
+  "pr_body": "## Summary\n- Cuota per_job_limit sobre ledger ci_failures: sin mapa emite CI_Chronic_Failure_Detected y Cúmulo materializa PBI Kaizen.\n- Umbral radamanto.thresholds.json v1.3.0; mapa job_entity_map vacio (CA9-NEG).\n- Forja EM de clase y accion; CONSUMER_SKIP_FORGE_ACTIONS; cero DIA/Kintsugi/stats.json.\n\n## Test plan\n- [x] cargo test -p execute-process --lib -- ci_job_failed ci_chronic thresholds_110\n- [x] sddia-qa audit-eda-coverage --scan (orphan_count: 0)\n"
+}

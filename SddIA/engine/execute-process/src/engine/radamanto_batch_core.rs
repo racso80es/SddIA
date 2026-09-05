@@ -512,7 +512,7 @@ fn payload_check_run_id(payload: &Value) -> Option<i64> {
 fn load_ci_failures(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
     let path = radamanto_path(repo, cfg, "ci_failures");
     if !path.is_file() {
-        return json!({ "failures": [] });
+        return json!({ "failures": [], "alerts": {} });
     }
     fs::read_to_string(&path)
         .ok()
@@ -521,9 +521,12 @@ fn load_ci_failures(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
             if !data.get("failures").and_then(|v| v.as_array()).is_some() {
                 data["failures"] = json!([]);
             }
+            if !data.get("alerts").and_then(|v| v.as_object()).is_some() {
+                data["alerts"] = json!({});
+            }
             data
         })
-        .unwrap_or(json!({ "failures": [] }))
+        .unwrap_or(json!({ "failures": [], "alerts": {} }))
 }
 
 fn save_ci_failures(repo: &Path, cfg: &HashMap<String, Value>, data: &Value) -> Result<(), String> {
@@ -532,6 +535,145 @@ fn save_ci_failures(repo: &Path, cfg: &HashMap<String, Value>, data: &Value) -> 
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     write_json_atomic(&path, data)
+}
+
+fn payload_job_name(payload: &Value) -> Option<&str> {
+    payload
+        .get("job_name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+}
+
+fn row_job_name(row: &Value) -> Option<&str> {
+    payload_job_name(row)
+}
+
+fn ci_per_job_limit(thresholds: &Value) -> i64 {
+    thresholds
+        .get("ci_failures")
+        .and_then(|b| b.get("per_job_limit"))
+        .and_then(|v| v.as_i64())
+        .filter(|n| *n > 0)
+        .unwrap_or(3)
+}
+
+fn count_job_failures(ledger: &Value, job_name: &str) -> i64 {
+    ledger
+        .get("failures")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter(|row| row_job_name(row) == Some(job_name))
+                .count() as i64
+        })
+        .unwrap_or(0)
+}
+
+fn ci_alert_stamped(ledger: &Value, job_name: &str) -> bool {
+    ledger
+        .get("alerts")
+        .and_then(|a| a.get(job_name))
+        .is_some()
+}
+
+fn stamp_ci_alert(ledger: &mut Value, job_name: &str, count: i64, event_type: &str) {
+    if !ledger.get("alerts").and_then(|v| v.as_object()).is_some() {
+        ledger["alerts"] = json!({});
+    }
+    ledger["alerts"][job_name] = json!({
+        "emitted_at": iso_now(),
+        "count_at_alert": count,
+        "event_type": event_type,
+    });
+}
+
+fn lookup_mapped_entity(thresholds: &Value, job_name: &str) -> Option<(String, String)> {
+    let entry = thresholds
+        .get("ci_failures")?
+        .get("job_entity_map")?
+        .get(job_name)?;
+    let etype = entry.get("entity_type")?.as_str()?.trim();
+    let eid = entry.get("entity_id")?.as_str()?.trim();
+    if etype.is_empty() || eid.is_empty() {
+        return None;
+    }
+    if !VALID_ENTITY_TYPES.contains(&etype) {
+        return None;
+    }
+    Some((etype.to_string(), eid.to_string()))
+}
+
+fn genome_entity_exists(repo: &Path, entity_type: &str, entity_id: &str) -> bool {
+    let id = entity_id
+        .rsplit_once(':')
+        .map(|(_, rest)| rest)
+        .unwrap_or(entity_id)
+        .trim();
+    if id.is_empty() {
+        return false;
+    }
+    match entity_type {
+        "process" => resolve_process_path(repo, id).is_ok(),
+        "tool" => repo.join(format!("SddIA/tools/{id}.md")).is_file(),
+        "skill" => repo.join(format!("SddIA/skills/{id}.md")).is_file(),
+        "action" => repo.join(format!("SddIA/actions/{id}.md")).is_file(),
+        "agent" => repo.join(format!("SddIA/agents/{id}.md")).is_file(),
+        "norm" => repo.join(format!("SddIA/library/norms/{id}.md")).is_file(),
+        "codex" => repo.join(format!("SddIA/library/codexes/{id}.md")).is_file(),
+        "event" => ["telemetry", "orchestration", "domain"].iter().any(|fam| {
+            repo.join(format!("SddIA/events/{fam}/{id}.md")).is_file()
+        }),
+        _ => false,
+    }
+}
+
+fn payload_opt_copy(payload: &Value, key: &str) -> Option<Value> {
+    payload.get(key).cloned().filter(|v| !v.is_null())
+}
+
+fn emit_ci_chronic(
+    repo: &Path,
+    payload: &Value,
+    job_name: &str,
+    count: i64,
+    limit: i64,
+    check_run_id: i64,
+) -> Result<Value, String> {
+    let mut body = json!({
+        "job_name": job_name,
+        "workflow_name": payload.get("workflow_name").and_then(|v| v.as_str()).unwrap_or(""),
+        "failure_count": count,
+        "quota_limit": limit,
+        "sample_check_run_id": check_run_id,
+        "sample_html_url": payload.get("html_url").and_then(|v| v.as_str()).unwrap_or(""),
+        "repository": payload.get("repository").and_then(|v| v.as_str()).unwrap_or(""),
+        "head_sha": payload.get("head_sha").and_then(|v| v.as_str()).unwrap_or(""),
+    });
+    if let Some(obj) = body.as_object_mut() {
+        if let Some(v) = payload_opt_copy(payload, "run_id") {
+            obj.insert("run_id".into(), v);
+        }
+        if let Some(v) = payload_opt_copy(payload, "step_name") {
+            obj.insert("step_name".into(), v);
+        }
+    }
+    let ev = build_domain_event("CI_Chronic_Failure_Detected", body);
+    emit_domain_and_route(repo, &ev)
+}
+
+fn emit_ci_degraded(repo: &Path, entity_type: &str, entity_id: &str) -> Result<Value, String> {
+    let ev = build_domain_event(
+        "Domain_Entity_Degraded",
+        json!({
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "reason": "ci_failure_quota_exceeded",
+            "success_rate": 0.0,
+            "recovery_attempt": 0,
+        }),
+    );
+    emit_domain_and_route(repo, &ev)
 }
 
 fn process_ci_job_failed(
@@ -548,7 +690,69 @@ fn process_ci_job_failed(
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    if existing.iter().any(|row| payload_check_run_id(row) == Some(check_run_id)) {
+    let is_dup = existing
+        .iter()
+        .any(|row| payload_check_run_id(row) == Some(check_run_id));
+    if !is_dup {
+        let mut failures = existing;
+        failures.push(json!({
+            "check_run_id": check_run_id,
+            "job_name": payload.get("job_name"),
+            "workflow_name": payload.get("workflow_name"),
+            "head_sha": payload.get("head_sha"),
+            "html_url": payload.get("html_url"),
+            "repository": payload.get("repository"),
+            "timestamp": iso_now(),
+            "event_id": origin_event_id,
+        }));
+        ledger["failures"] = json!(failures);
+        save_ci_failures(repo, cfg, &ledger)?;
+    }
+
+    let thresholds = cfg.get("thresholds").cloned().unwrap_or(json!({}));
+    let limit = ci_per_job_limit(&thresholds);
+    let job_name = payload_job_name(payload);
+    let count = job_name
+        .map(|n| count_job_failures(&ledger, n))
+        .unwrap_or(0);
+    let stamped = job_name
+        .map(|n| ci_alert_stamped(&ledger, n))
+        .unwrap_or(false);
+
+    let mut status = if is_dup {
+        "duplicate_check_run_id"
+    } else {
+        "accumulated"
+    };
+    let mut emitted_type: Option<String> = None;
+
+    if let Some(job_name) = job_name {
+        if count >= limit && !stamped {
+            let mapped = lookup_mapped_entity(&thresholds, job_name).filter(|(etype, eid)| {
+                genome_entity_exists(repo, etype, eid)
+            });
+            let (event_type, emit_res) = match mapped {
+                Some((etype, eid)) => (
+                    "Domain_Entity_Degraded",
+                    emit_ci_degraded(repo, &etype, &eid),
+                ),
+                None => (
+                    "CI_Chronic_Failure_Detected",
+                    emit_ci_chronic(repo, payload, job_name, count, limit, check_run_id),
+                ),
+            };
+            emit_res?;
+            stamp_ci_alert(&mut ledger, job_name, count, event_type);
+            status = "alerted";
+            emitted_type = Some(event_type.to_string());
+        } else if !is_dup && count >= limit && stamped {
+            status = "alert_skipped";
+        }
+    }
+
+    save_ci_failures(repo, cfg, &ledger)?;
+
+    if is_dup && status == "duplicate_check_run_id" {
         stamp_fractal_delivery_state(event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "skipped");
         return Ok(json!({
             "ok": true,
@@ -557,25 +761,18 @@ fn process_ci_job_failed(
             "check_run_id": check_run_id,
         }));
     }
-    let mut failures = existing;
-    failures.push(json!({
-        "check_run_id": check_run_id,
-        "job_name": payload.get("job_name"),
-        "workflow_name": payload.get("workflow_name"),
-        "head_sha": payload.get("head_sha"),
-        "html_url": payload.get("html_url"),
-        "repository": payload.get("repository"),
-        "timestamp": iso_now(),
-        "event_id": origin_event_id,
-    }));
-    ledger["failures"] = json!(failures);
-    save_ci_failures(repo, cfg, &ledger)?;
+
     stamp_fractal_delivery_state(event_path, RADAMANTO_BATCH_SUBSCRIBER_KEY, "success");
-    Ok(json!({
+    let mut out = json!({
         "ok": true,
         "kind": "ci_job_failed",
         "check_run_id": check_run_id,
-    }))
+        "status": status,
+    });
+    if let Some(et) = emitted_type {
+        out["event_type"] = json!(et);
+    }
+    Ok(out)
 }
 
 pub fn process_telemetry_file(repo: &Path, rel_path: &str) -> Value {
@@ -907,6 +1104,7 @@ fn process_telemetry_file_inner(repo: &Path, rel_path: &str) -> Result<Value, St
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
 
     #[test]
     fn cognitive_quota_alert_without_degraded_emit() {
@@ -1047,23 +1245,11 @@ mod tests {
         })));
     }
 
-    #[test]
-    fn thresholds_110_process_intact() {
-        let repo = crate::core::repo::find_repo_root().expect("repo root");
-        let raw = std::fs::read_to_string(repo.join("SddIA/agents/radamanto.thresholds.json"))
-            .expect("thresholds");
-        let t: Value = serde_json::from_str(&raw).expect("json");
-        assert_eq!(t["version"], "1.2.0");
-        assert_eq!(t["success_rate_min_by_entity_type"]["process"], 0.70);
-        assert_eq!(t["max_recovery_attempts"], 3);
-        assert!(t.get("cognitive").is_some());
-    }
-
-    #[test]
-    fn ci_job_failed_writes_ledger_not_stats() {
+    fn ci_lab_repo() -> tempfile::TempDir {
         let td = tempfile::tempdir().unwrap();
         let repo = td.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/agents")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
@@ -1076,9 +1262,23 @@ mod tests {
 }"#,
         )
         .unwrap();
+        fs::write(
+            repo.join("SddIA/agents/radamanto.thresholds.json"),
+            r#"{
+  "version": "1.3.0",
+  "ci_failures": {
+    "per_job_limit": 3,
+    "job_entity_map": {}
+  }
+}"#,
+        )
+        .unwrap();
         fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
         fs::create_dir_all(repo.join(".SddIA/radamanto")).unwrap();
-        let event_id = "11111111-1111-4111-8111-111111111111";
+        td
+    }
+
+    fn write_ci_job_failed(repo: &Path, event_id: &str, check_run_id: i64, job_name: &str) -> String {
         let rel = format!(".events/telemetry/{event_id}.json");
         let event = json!({
             "event_id": event_id,
@@ -1089,30 +1289,225 @@ mod tests {
                 "repository": "racso80es/SddIA",
                 "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "workflow_name": "sddia-index-qa",
-                "job_name": "sddia-index-integrity",
+                "job_name": job_name,
                 "conclusion": "failure",
-                "html_url": "https://github.com/racso80es/SddIA/runs/4242",
-                "check_run_id": 4242
+                "html_url": format!("https://github.com/racso80es/SddIA/runs/{check_run_id}"),
+                "check_run_id": check_run_id
             }
         });
         fs::write(repo.join(&rel), serde_json::to_string_pretty(&event).unwrap()).unwrap();
+        rel
+    }
+
+    fn domain_event_types(repo: &Path) -> Vec<String> {
+        let dir = repo.join(".events/domain");
+        if !dir.is_dir() {
+            return Vec::new();
+        }
+        let mut types = Vec::new();
+        let mut entries: Vec<_> = fs::read_dir(&dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
+            .collect();
+        entries.sort();
+        for p in entries {
+            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
+            if let Some(t) = body.get("event_type").and_then(|v| v.as_str()) {
+                types.push(t.to_string());
+            }
+        }
+        types
+    }
+
+    fn read_ledger(repo: &Path) -> Value {
+        serde_json::from_str(
+            &fs::read_to_string(repo.join(".SddIA/radamanto/ci_failures.json")).unwrap(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn thresholds_110_process_intact() {
+        let repo = crate::core::repo::find_repo_root().expect("repo root");
+        let raw = std::fs::read_to_string(repo.join("SddIA/agents/radamanto.thresholds.json"))
+            .expect("thresholds");
+        let t: Value = serde_json::from_str(&raw).expect("json");
+        assert_eq!(t["version"], "1.3.0");
+        assert_eq!(t["success_rate_min_by_entity_type"]["process"], 0.70);
+        assert_eq!(t["max_recovery_attempts"], 3);
+        assert!(t.get("cognitive").is_some());
+        assert_eq!(t["ci_failures"]["per_job_limit"], 3);
+        assert_eq!(t["ci_failures"]["job_entity_map"], json!({}));
+    }
+
+    #[test]
+    fn ci_job_failed_writes_ledger_not_stats() {
+        let td = ci_lab_repo();
+        let repo = td.path();
+        let rel = write_ci_job_failed(
+            repo,
+            "11111111-1111-4111-8111-111111111111",
+            4242,
+            "sddia-index-integrity",
+        );
 
         let r1 = process_telemetry_file(repo, &rel);
         assert_eq!(r1["ok"], true);
         assert_eq!(r1["kind"], "ci_job_failed");
+        assert_eq!(r1["check_run_id"], 4242);
+        assert_eq!(r1["status"], "accumulated");
         assert!(!repo.join(".SddIA/radamanto/stats.json").is_file());
-        let ledger: Value = serde_json::from_str(
-            &fs::read_to_string(repo.join(".SddIA/radamanto/ci_failures.json")).unwrap(),
-        )
-        .unwrap();
-        assert_eq!(ledger["failures"].as_array().unwrap().len(), 1);
+        assert_eq!(read_ledger(repo)["failures"].as_array().unwrap().len(), 1);
+        assert!(domain_event_types(repo).is_empty());
 
         let r2 = process_telemetry_file(repo, &rel);
         assert_eq!(r2["skipped"], "duplicate_check_run_id");
-        let ledger2: Value = serde_json::from_str(
-            &fs::read_to_string(repo.join(".SddIA/radamanto/ci_failures.json")).unwrap(),
+        assert_eq!(read_ledger(repo)["failures"].as_array().unwrap().len(), 1);
+        assert!(domain_event_types(repo).is_empty());
+    }
+
+    #[test]
+    fn ci_job_failed_quota_emits_chronic_then_skips() {
+        let td = ci_lab_repo();
+        let repo = td.path();
+        let job = "sddia-index-integrity";
+        let ids = [
+            ("21111111-1111-4111-8111-111111111111", 5001),
+            ("22111111-1111-4111-8111-111111111111", 5002),
+            ("23111111-1111-4111-8111-111111111111", 5003),
+            ("24111111-1111-4111-8111-111111111111", 5004),
+        ];
+        let r1 = process_telemetry_file(
+            repo,
+            &write_ci_job_failed(repo, ids[0].0, ids[0].1, job),
+        );
+        let r2 = process_telemetry_file(
+            repo,
+            &write_ci_job_failed(repo, ids[1].0, ids[1].1, job),
+        );
+        assert_eq!(r1["status"], "accumulated");
+        assert_eq!(r2["status"], "accumulated");
+        assert!(domain_event_types(repo).is_empty());
+
+        let r3 = process_telemetry_file(
+            repo,
+            &write_ci_job_failed(repo, ids[2].0, ids[2].1, job),
+        );
+        assert_eq!(r3["ok"], true);
+        assert_eq!(r3["kind"], "ci_job_failed");
+        assert_eq!(r3["check_run_id"], 5003);
+        assert_eq!(r3["status"], "alerted");
+        assert_eq!(r3["event_type"], "CI_Chronic_Failure_Detected");
+        let types = domain_event_types(repo);
+        assert_eq!(
+            types
+                .iter()
+                .filter(|t| *t == "CI_Chronic_Failure_Detected")
+                .count(),
+            1
+        );
+        assert!(!types.iter().any(|t| t == "Domain_Entity_Degraded"));
+        assert!(!types.iter().any(|t| t == "System_Fracture_Detected"));
+        assert!(!types.iter().any(|t| t == "Kaizen_Alert_Required"));
+        let ledger = read_ledger(repo);
+        assert_eq!(ledger["failures"].as_array().unwrap().len(), 3);
+        assert_eq!(
+            ledger["alerts"][job]["event_type"],
+            "CI_Chronic_Failure_Detected"
+        );
+        assert!(!repo.join(".SddIA/radamanto/stats.json").is_file());
+
+        let r4 = process_telemetry_file(
+            repo,
+            &write_ci_job_failed(repo, ids[3].0, ids[3].1, job),
+        );
+        assert_eq!(r4["status"], "alert_skipped");
+        assert_eq!(
+            domain_event_types(repo)
+                .iter()
+                .filter(|t| *t == "CI_Chronic_Failure_Detected")
+                .count(),
+            1
+        );
+        assert_eq!(read_ledger(repo)["failures"].as_array().unwrap().len(), 4);
+        assert!(!repo.join(".SddIA/radamanto/stats.json").is_file());
+    }
+
+    #[test]
+    fn ci_job_failed_ca9_neg_empty_map_zero_degraded() {
+        let td = ci_lab_repo();
+        let repo = td.path();
+        for (eid, crid) in [
+            ("31111111-1111-4111-8111-111111111111", 6001),
+            ("32111111-1111-4111-8111-111111111111", 6002),
+            ("33111111-1111-4111-8111-111111111111", 6003),
+        ] {
+            process_telemetry_file(
+                repo,
+                &write_ci_job_failed(repo, eid, crid, "wasi-runtime-smoke"),
+            );
+        }
+        let types = domain_event_types(repo);
+        assert_eq!(
+            types
+                .iter()
+                .filter(|t| *t == "CI_Chronic_Failure_Detected")
+                .count(),
+            1
+        );
+        assert_eq!(
+            types
+                .iter()
+                .filter(|t| *t == "Domain_Entity_Degraded")
+                .count(),
+            0
+        );
+        assert!(!repo.join(".SddIA/radamanto/stats.json").is_file());
+    }
+
+    #[test]
+    fn ci_job_failed_retries_emit_when_unsealed() {
+        let td = ci_lab_repo();
+        let repo = td.path();
+        let job = "eda-iota-smoke-simulate";
+        let third = write_ci_job_failed(
+            repo,
+            "43111111-1111-4111-8111-111111111111",
+            7003,
+            job,
+        );
+        process_telemetry_file(
+            repo,
+            &write_ci_job_failed(repo, "41111111-1111-4111-8111-111111111111", 7001, job),
+        );
+        process_telemetry_file(
+            repo,
+            &write_ci_job_failed(repo, "42111111-1111-4111-8111-111111111111", 7002, job),
+        );
+        let r3 = process_telemetry_file(repo, &third);
+        assert_eq!(r3["status"], "alerted");
+
+        let mut ledger = read_ledger(repo);
+        ledger["alerts"] = json!({});
+        fs::write(
+            repo.join(".SddIA/radamanto/ci_failures.json"),
+            serde_json::to_string_pretty(&ledger).unwrap(),
         )
         .unwrap();
-        assert_eq!(ledger2["failures"].as_array().unwrap().len(), 1);
+
+        let retry = process_telemetry_file(repo, &third);
+        assert_eq!(retry["ok"], true);
+        assert_eq!(retry["status"], "alerted");
+        assert_eq!(retry["event_type"], "CI_Chronic_Failure_Detected");
+        assert_eq!(
+            domain_event_types(repo)
+                .iter()
+                .filter(|t| *t == "CI_Chronic_Failure_Detected")
+                .count(),
+            2
+        );
+        assert_eq!(read_ledger(repo)["failures"].as_array().unwrap().len(), 3);
     }
 }

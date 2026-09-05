@@ -1,0 +1,28 @@
+{
+  "entity_class": "action",
+  "entity_name": "materialize-ci-chronic-failure-pbi",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "action_name": "materialize-ci-chronic-failure-pbi",
+    "action_context": "ecosystem-evolution",
+    "action_version": "1.0.0",
+    "actions_contract_version": "1.2.0",
+    "action_inputs": [
+      {"job_name": "string"},
+      {"workflow_name": "string"},
+      {"failure_count": "number|string"},
+      {"quota_limit": "number|string"},
+      {"sample_check_run_id": "number|string"},
+      {"sample_html_url": "string"},
+      {"repository": "string"},
+      {"head_sha": "string"}
+    ],
+    "action_outputs": [
+      {"success": "boolean"},
+      {"status": "materialized | already_open_or_done"},
+      {"target_path": "string"},
+      {"document_id": "string"}
+    ],
+    "orchestration_logic": "Materializa PBI Kaizen en pending/ ante CI_Chronic_Failure_Detected."
+  }
+}
