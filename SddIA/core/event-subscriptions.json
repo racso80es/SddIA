@@ -28,6 +28,11 @@
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
       "intent": "Anclaje DLT IOTA Rebased."
+    },
+    {
+      "agent": "argos",
+      "tool": "send-telegram-notification",
+      "intent": "Resumen ejecutivo post-merge al Vértice Biológico: branch, commit y auditor."
     }
   ],
   "Domain_Entity_Created": [

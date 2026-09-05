@@ -5,9 +5,10 @@ title: "[ARQUITECTURA] Notificación Telegram reactiva post-merge — suscripci�
 format: markdown
 version: "1.1.0"
 created: "2026-09-05"
-updated: "2026-09-05T16:50:00+02:00"
-status: abierto
-refinement_status: refinado
+updated: "2026-09-05T16:55:00+02:00"
+status: cerrado
+refinement_status: implemented
+fix_ref: docs/features/eda-telegram-notify-pr-merged
 priority: media
 process: feature
 executor_vehicle: feature
