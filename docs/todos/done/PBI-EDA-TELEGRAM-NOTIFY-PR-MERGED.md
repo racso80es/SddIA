@@ -6,8 +6,8 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-05"
 updated: "2026-09-05T19:35:00+02:00"
-status: abierto
-refinement_status: refinado
+status: cerrado
+refinement_status: implemented
 ola: 2
 priority: media
 process: feature

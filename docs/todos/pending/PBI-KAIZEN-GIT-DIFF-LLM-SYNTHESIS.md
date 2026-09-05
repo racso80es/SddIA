@@ -14,7 +14,7 @@ type: kaizen
 dispatch: false
 suggested_branch: feat/kaizen-git-diff-llm-synthesis
 persist_ref_suggested: docs/features/kaizen-git-diff-llm-synthesis
-parent_pbi: docs/todos/pending/PBI-EDA-TELEGRAM-NOTIFY-PR-MERGED.md
+parent_pbi: docs/todos/done/PBI-EDA-TELEGRAM-NOTIFY-PR-MERGED.md
 parent_document_id: PBI-EDA-TELEGRAM-NOTIFY-PR-MERGED
 parent_uuid: "5880d6fc-99f3-4ecf-8c9e-a4885d45f117"
 friction_ids:

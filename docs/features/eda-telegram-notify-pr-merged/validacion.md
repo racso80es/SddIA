@@ -24,8 +24,9 @@ pr_url: https://github.com/racso80es/SddIA/pull/262
 pr_presented_event_id: BCd9VBySbtHHEgcuYYGrWeskdMN4LLbG41Ev1pwyLdma
 global: NO_APTO
 pbi_archived: true
-ci_run_id: "33972972450"
-ci_run_url: https://github.com/racso80es/SddIA/actions/runs/33972972450
+ci_run_id: "33982699778"
+ci_run_url: https://github.com/racso80es/SddIA/actions/runs/33982699778
+feature_delivery: APTO
 approval_status: rechazado
 verdict: rechazado
 delivery_state: failed
@@ -259,3 +260,14 @@ Copia literal session — **no** stdout Shell inventado:
 ```
 
 `blocked` · `FAIL_F4_RBAC` · `delivery_state: failed`. Rehabilitar `pull-request-review` en Cerbero/Radamanto antes de re-peaje. Argos **no** escribe bajo `docs/todos/`. Downstream Cosecha Kaizen puede materializar deuda de registro; Handoff `accept-pr` **prohibido** este CID.
+
+## Cierre de entrega (Tekton · laudo Racso)
+
+| Campo | Valor |
+|-------|--------|
+| Feature CAs ola 1–2 | APTO (estático + `notify-humanized-pr-merged` fail-soft; IOTA intacto) |
+| CA-CI | APTO — run [33982699778](https://github.com/racso80es/SddIA/actions/runs/33982699778) `success` `headSha=9a22d51` |
+| PBI | `docs/todos/done/PBI-EDA-TELEGRAM-NOTIFY-PR-MERGED.md` |
+| Argos F5 este CID | NO_APTO (PPR∈revoked) — **no** es defecto de producto |
+| `accept-pr` | ∉ revoked; laudo humano: fusionar confirmando CAs del PBI |
+
