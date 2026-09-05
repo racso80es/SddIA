@@ -70,6 +70,63 @@ UUID `cfb8ce66-784e-4826-8a0a-a20c671e3a60` inmutable. Versión 1.0.0 (schema pa
 2. Con `pr_url` → URL en texto.
 3. Con `traceability_anomaly` en payload → texto no contiene `merge_huérfano` ni la nota.
 
-## Fuera de spec
+## Fuera de spec (ola 1)
 
 Mutar `send-telegram-notification`. Inyectar `pr_url` en `accept-pr`. Versionar Clase a 1.1.0.
+
+---
+
+# Spec ola 2 — síntesis humanizada
+
+PBI v1.2.0. El fan-out `tool: send-telegram-notification` de `PullRequest_Merged` **se sustituye** (no se suma) por `action: notify-humanized-pr-merged`.
+
+## Contrato de fan-out ola 2
+
+```json
+{
+  "agent": "argos",
+  "action": "notify-humanized-pr-merged",
+  "intent": "Resumen ejecutivo post-merge: metadatos estáticos + síntesis de valor (fail-soft LLM)."
+}
+```
+
+`dispatch_subscriber`: si `action == "notify-humanized-pr-merged"` → `notify_humanized_pr_merged::run_from_event(repo, event)` **antes** del `try_run_native` payload-only.
+
+## Handler
+
+1. `static_msg = build_telegram_message_from_event(event)` (función crate-visible). `None` → `skipped-empty-message` (paridad tool).
+2. Invocar `gemini-http-infer` con `request.prompt` = bloque O2-DD-3 + hechos ECST (sin diffs). `temperature` ≤ 0.2. Timeout: respetar tool (default 30s); no retry.
+3. Si inferencia `success` y `result.text` trim no vacío: truncar a 2 líneas / 400 chars; `msg = static + "\n\n🧠 Síntesis de Valor: " + text`.
+4. Si inferencia falla (exit≠0, HTTP, timeout, vacío, key ausente fuera de lab-mock): `msg = static`.
+5. `invoke_send_telegram_notification(repo, msg)`. Fallo Telegram → testigo failed (ola 1). Gemini no marca failed.
+
+## Prompt base (contrato action)
+
+```text
+[EXECUTE AS RAW KERNEL. PROHIBIT VERBOSITY. PENALIZE CONJECTURE. MAX 2 LINES]
+Return only business value of this merge. Do not restate hash, auditor, branch, or correlation.
+Do not invent files, commits, or intent absent from CONTEXT.
+CONTEXT:
+source_branch=…
+target_branch=…
+merge_commit_hash=…
+author=…
+auditor=…
+policy=…
+pr_url=…   (omit line if empty)
+repository_name=… (omit if empty)
+```
+
+Este bloque es **prompt Gemini**, no el prefijo creator de `external-ai-constraints`.
+
+## Tests ola 2
+
+1. CA2 lab-mock: prompt contiene `MAX 2 LINES` + `source_branch` del fixture; se invoca la tool.
+2. CA4: infer `Err` / exit 1 → mensaje enviado **sin** `Síntesis de Valor`; status success.
+3. CA3: estático ignora `traceability_*`; correlación desde envelope.
+4. CA7: un invoke Telegram; JSON sin `tool: send-telegram-notification` bajo `PullRequest_Merged`.
+5. CA5: IOTA subscriber intacto.
+
+## Fuera de spec ola 2
+
+Entrenar LLM; retry API; payload ECST 1.1.0 con diffs; ampliar `git-manager`; `diff_name_only` en prompt; `accept-pr`; init feature desde `main`.
