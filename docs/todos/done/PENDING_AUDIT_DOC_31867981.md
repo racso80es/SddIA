@@ -3,20 +3,23 @@ document_id: PBI-KAIZEN-EVENT-BUS-AUDIT-31867981
 uuid: "46dde226-6672-420f-8d2a-a5f3b49cdea8"
 title: "[KAIZEN] Triaje de alerta de auditoría de bus EDA (PENDING_AUDIT_DOC_31867981)"
 format: markdown
-version: "1.2.0"
+version: "1.3.0"
 created: "2026-08-28"
 updated: "2026-09-05"
-status: pending
-refinement_status: refinado
+status: done
+refinement_status: implemented
 priority: media
 process: bug-fix
-executor_vehicle: none
+executor_vehicle: bug-fix
 type: kaizen
-dispatch: false
-scope: diagnostic-satellite
+dispatch: true
+scope: diagnostic-satellite-and-sensor-tuning
 follow_on_executor_vehicle: bug-fix
 suggested_branch: fix/kaizen-event-bus-audit-sensor-tuning
+persist_ref: docs/fixes/kaizen-event-bus-audit-sensor-tuning
 persist_ref_suggested: docs/fixes/kaizen-event-bus-audit-sensor-tuning
+branch: fix/kaizen-event-bus-audit-sensor-tuning
+execution_id: "f9830175-0405-42fd-9e0c-e6de1c26201d"
 derived_from: PENDING_AUDIT_DOC_31867981
 origin_review_id: "46dde226-6672-420f-8d2a-a5f3b49cdea8"
 alert_kind: event-bus-audit
@@ -35,7 +38,7 @@ related:
   - docs/fixes/kaizen-audit-doc-dedupe-ola-20260716/spec.md
   - docs/todos/done/PENDING_AUDIT_DOC_06755dde.md
   - docs/todos/done/[FIX] kaizen audit-doc — dedupe ola event-bus-audit 2026-07-16.md
-refinement_notes: "v1.2.0 Filtro A sobre el propio v1.1.0. Rectificado: (1) causa raíz 95%+ IOTA/Telegram es falsa sobre el universo DL; (2) censo 2026-09-05 por recuento de archivos, no por ejecución de event-bus-audit (evitar nuevo Kaizen); (3) el snippet needs_kaizen de v1.1.0 seguiría en true (stale pending + estructurales github-bridge); (4) 'fuera de alcance' de event-bus-dead-letter-remediation no es laudo eterno contra SddIA/tools/; (5) este ítem es satélite diagnóstico — mutación de genoma queda en follow-on, no en el Done de esta cicatriz."
+refinement_notes: "v1.3.0 Laudo 2026-09-05: ejecutar bug-fix (execution_id f9830175). Follow-on absorbido en este ciclo. v1.2.0 Filtro A intacto."
 ---
 
 # [KAIZEN] Triaje de alerta de auditoría de bus EDA (PENDING_AUDIT_DOC_31867981)
@@ -164,10 +167,10 @@ Prohibido tratar el snippet de `needs_kaizen` de v1.1.0 como parche aceptado.
 ## 4. Criterios de aceptación
 
 - [x] **CA1 (Filtro A):** El cuerpo desmiente DIA, el 95 % IOTA/Telegram, el snippet ineficaz y las métricas no reproducidas; cita censo 2026-09-05.
-- [x] **CA2 (Partición):** Mutación de sensor/plantilla/clase queda fuera de este Done; follow-on documentado sin despacho.
+- [x] **CA2 (Partición / laudo 2026-09-05):** El follow-on de sensor/plantilla/clase se ejecutó en este `bug-fix` (`execution_id` `f9830175`). L-NO-GENOME del v1.2.0 queda superado por laudo explícito.
 - [x] **CA3 (Precedentes):** Ola 2026-07-16 = dedupe de huella, no licencia para reabrir purga DL. `event-bus-dead-letter-remediation` § fuera de alcance = de *aquel* ciclo.
-- [ ] **CA4 (Archivo):** Tras laudo, el archivo vive en `docs/todos/done/` con el mismo `document_id`.
-- [ ] **CA5 (Inmutabilidad DL):** Ningún cambio en `.events/dead-letter/` atribuible a este ítem.
+- [x] **CA4 (Archivo):** Tras laudo, el archivo vive en `docs/todos/done/` con el mismo `document_id`.
+- [x] **CA5 (Inmutabilidad DL):** Ningún cambio en `.events/dead-letter/` atribuible a este ítem.
 
 ---
 
@@ -175,7 +178,7 @@ Prohibido tratar el snippet de `needs_kaizen` de v1.1.0 como parche aceptado.
 
 1. **L-SATELLITE:** Esta cicatriz se cierra por diagnóstico, no por remediación del bus.
 2. **L-NO-PURGE:** Prohibida purga u edición ad-hoc de `.events/dead-letter/` aquí.
-3. **L-NO-GENOME:** Prohibido usar este PBI como vehículo para editar `SddIA/tools/`, `SddIA/actions/` o `SddIA/events/`.
+3. **L-NO-GENOME (v1.2.0, superado 2026-09-05):** El laudo de implementación absorbe el follow-on en este ciclo `bug-fix`.
 4. **L-NO-FALSE-FIX:** No se acepta un `needs_kaizen` que siga verdadero ante DL histórico, dumps github-bridge o pending de fractura.
 
 ---

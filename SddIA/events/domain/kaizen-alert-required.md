@@ -1,7 +1,7 @@
 ---
 uuid: "a9b8c7d6-e5f4-4321-a987-6543210fedcb"
 name: "kaizen-alert-required"
-version: "1.0.0"
+version: "1.1.0"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "Kaizen_Alert_Required"
@@ -14,7 +14,7 @@ hash_signature: "sha256:pending-anchor-on-merge"
 
 # Event: Kaizen_Alert_Required
 
-Clase ECST para alerta Kaizen de **paridad documental (DIA)** detectada por la Aduana. Dispara materialización asíncrona de cicatriz `PENDING_AUDIT_DOC_*` vía **Cúmulo** — único suscriptor legítimo en v1.
+Clase ECST para alerta Kaizen de calidad (DIA **o** infraestructura de bus). Dispara materialización asíncrona de cicatriz `PENDING_AUDIT_DOC_*` vía **Cúmulo** — único suscriptor legítimo en v1. `alert_kind` discrimina plantilla (`doc_parity` vs `event-bus-audit`).
 
 ## Payload ECST
 
@@ -37,6 +37,7 @@ Clase ECST para alerta Kaizen de **paridad documental (DIA)** detectada por la A
 ## Emisores autorizados
 
 - Proceso **`pull-request-review`** (cápsula post-sensor DIA `audit-doc-parity` cuando `alert_required: true`)
+- Proceso **`event-bus-audit`** / `tool:event-bus-audit` (`alert_kind: event-bus-audit`, `needs_kaizen` accionable)
 - Acción **`emit-kaizen-alert-required-event`** (opcional; laboratorio)
 
 ## Suscripciones (fan-out v1)

@@ -82,6 +82,12 @@ fn parse_implicated_files_from_body(raw: &str) -> Vec<String> {
         .collect()
 }
 
+/// PENDING_AUDIT_DOC abierto: casilla DIA o de bus sin marcar.
+fn is_open_kaizen_checklist(raw: &str) -> bool {
+    raw.contains("- [ ] Revisar `spec.md`")
+        || raw.contains("- [ ] Contrastar métricas de la alerta con el censo del bus")
+}
+
 /// PENDING_AUDIT_DOC abierto con misma huella (alert_kind + files).
 fn find_open_kaizen_audit_doc(
     repo: &Path,
@@ -109,8 +115,7 @@ fn find_open_kaizen_audit_doc(
         let Ok(raw) = fs::read_to_string(&path) else {
             continue;
         };
-        // Checklist sin cerrar = abierto
-        if !raw.contains("- [ ] Revisar `spec.md`") {
+        if !is_open_kaizen_checklist(&raw) {
             continue;
         }
         let kind = parse_table_cell(&raw, "alert_kind")
@@ -151,12 +156,25 @@ fn build_todo_body(
     impacts_cell: &str,
     hits_md: &str,
 ) -> String {
+    let (origen, alerta, checklist) = if alert_kind == "doc_parity" {
+        (
+            "> Origen: `Kaizen_Alert_Required` / sensor DIA / evento EDA v2",
+            "**Alerta:** posible fuga de conocimiento documental.",
+            "## Checklist DIA\n\n- [ ] Revisar `spec.md` § Impacto en Documentación\n- [ ] Actualizar README/manuales afectados o corregir `impacts_doc`\n",
+        )
+    } else {
+        (
+            "> Origen: `Kaizen_Alert_Required` / event-bus-audit / evento EDA v2",
+            "**Alerta:** auditoría de infraestructura de bus EDA (no DIA).",
+            "## Checklist bus\n\n- [ ] Contrastar métricas de la alerta con el censo del bus (no purgar dead-letter)\n- [ ] Confirmar que `needs_kaizen` no es acumulación histórica\n",
+        )
+    };
     format!(
         r#"# {todo_name}
 
-> Origen: `Kaizen_Alert_Required` / sensor DIA / evento EDA v2
+{origen}
 
-**Alerta:** posible fuga de conocimiento documental.
+{alerta}
 
 | Campo | Valor |
 |-------|-------|
@@ -168,11 +186,7 @@ fn build_todo_body(
 | `impacts_doc` | {impacts_cell} |
 | `implicated_files` | {hits_md} |
 
-## Checklist DIA
-
-- [ ] Revisar `spec.md` § Impacto en Documentación
-- [ ] Actualizar README/manuales afectados o corregir `impacts_doc`
-"#
+{checklist}"#
     )
 }
 
@@ -359,6 +373,14 @@ mod tests {
         let out1 = run(repo, &first).expect("first");
         assert_eq!(out1.get("message"), Some(&json!("TODO Kaizen materializado")));
         let path1 = out1.get("target_path").and_then(|v| v.as_str()).unwrap().to_string();
+        let content = fs::read_to_string(repo.join(&path1)).unwrap();
+        assert!(!content.contains("fuga de conocimiento documental"), "{content}");
+        assert!(!content.contains("sensor DIA"), "{content}");
+        assert!(content.contains("Checklist bus"), "{content}");
+        assert!(
+            content.contains("- [ ] Contrastar métricas de la alerta con el censo del bus"),
+            "{content}"
+        );
 
         let out2 = run(repo, &second).expect("second");
         assert_eq!(

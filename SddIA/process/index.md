@@ -13,7 +13,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | evolution-audit | 8f4b09da-e277-4fc2-9890-8a363fa8a96f | 1.0.0 | quality-assurance, filesystem-ops | — | Auditoría periódica del registro evolution: inventario, relevancia, validación y persistencia oficial. |
 | memory-evolution-ingest | eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2 | 1.2.0 | ecosystem-evolution, event-routing | — | Ingesta Domain_Entity_Telemetry_Captured → vector_store/evolution |
 | user-preference-ingest | d4e5f6a7-b8c9-4d0e-1f2a-3b4c5ab005 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Ingesta User_Preference_Change_Requested → store preferencias |
-| event-bus-audit | 8d577a50-055a-40b9-b7e2-93e2d2415796 | 1.0.1 | quality-assurance | — | Auditoría empírica on-demand del bus EDA: escaneo ./.events, |
+| event-bus-audit | 8d577a50-055a-40b9-b7e2-93e2d2415796 | 1.0.2 | quality-assurance | — | Auditoría empírica on-demand del bus EDA: escaneo ./.events, |
 | kalma2-interact | acdb6c88-f0d9-4e10-9d2f-7e4b5401a892 | 1.1.1 | ecosystem-evolution | — | Proceso PoC Kalma2: síntesis Mayeuta lab ante prompt del cli |
 | daemon-heartbeat-audit | f45bda9d-40d9-471e-82a1-b9404b5a0dfd | 1.1.0 | quality-assurance | — | Triaje Argos: suspend/crash + fagocitosis. |
 | daemon-kill-switch | b0de6585-11fc-4b3c-8b19-ad6b727d820e | 1.0.1 | system-operations | — | Kill-Switch global: purga SIGTERM/SIGKILL de todos los Centi |

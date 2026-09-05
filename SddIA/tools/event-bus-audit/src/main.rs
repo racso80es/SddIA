@@ -24,6 +24,9 @@ struct AuditSummary {
     structural_error_count: u64,
     dead_letter_count: u64,
     dead_letter_witness_count: u64,
+    non_ecst_sink_count: u64,
+    actionable_stale_pending_count: u64,
+    fracture_stale_pending_count: u64,
 }
 
 #[derive(Debug)]
@@ -299,6 +302,20 @@ fn parse_timestamp(raw: &str) -> Option<DateTime<Utc>> {
         })
 }
 
+fn is_non_ecst_sink(value: &Value) -> bool {
+    value.get("event_id").and_then(|v| v.as_str()).is_none()
+        && value.get("event_type").and_then(|v| v.as_str()).is_none()
+        && value.get("emitter_agent").and_then(|v| v.as_str()).is_none()
+}
+
+fn is_fracture_stale_detail(detail: &str) -> bool {
+    detail.contains("event_type=System_Fracture_Detected;")
+}
+
+fn needs_kaizen_actionable(circuit_alert: bool, actionable_stale_pending_count: u64) -> bool {
+    circuit_alert || actionable_stale_pending_count > 0
+}
+
 fn validate_ecst_event(
     repo: &Path,
     bucket: &str,
@@ -311,6 +328,15 @@ fn validate_ecst_event(
     let rel = rel_path(repo, path);
     state.counts.entry(bucket.to_string()).or_insert(0);
     *state.counts.get_mut(bucket).unwrap() += 1;
+
+    if is_non_ecst_sink(value) {
+        state.anomalies.push(Anomaly {
+            kind: "non_ecst_sink".into(),
+            path: rel,
+            detail: "missing event_id, event_type, emitter_agent".into(),
+        });
+        return;
+    }
 
     let mut structural_errors = Vec::new();
 
@@ -415,11 +441,17 @@ fn scan_event_dir(
                     let age_hours = (now - parsed).num_hours();
                     if age_hours > stale_threshold_hours {
                         if let Some(eid) = value.get("event_id").and_then(|v| v.as_str()) {
-                            stale_pending.push(format!("{eid} ({age_hours}h)"));
+                            let et = value
+                                .get("event_type")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("?");
+                            stale_pending.push(format!("{eid} ({age_hours}h) {et}"));
                             state.anomalies.push(Anomaly {
                                 kind: "stale_pending".into(),
                                 path: rel_path(repo, &path),
-                                detail: format!("pending age {age_hours}h > threshold {stale_threshold_hours}h"),
+                                detail: format!(
+                                    "event_type={et}; pending age {age_hours}h > threshold {stale_threshold_hours}h"
+                                ),
                             });
                         }
                     }
@@ -685,8 +717,17 @@ fn build_report_md(
     lines.push("## Resumen de anomalías".into());
     lines.push(String::new());
     lines.push(format!("- Pending estancados: {}", summary.stale_pending_count));
+    lines.push(format!(
+        "- Pending estancados accionables (no fractura): {}",
+        summary.actionable_stale_pending_count
+    ));
+    lines.push(format!(
+        "- Pending estancados System_Fracture_Detected: {}",
+        summary.fracture_stale_pending_count
+    ));
     lines.push(format!("- Testigos huérfanos: {}", summary.orphan_witness_count));
     lines.push(format!("- Errores estructurales: {}", summary.structural_error_count));
+    lines.push(format!("- Sink no-ECST: {}", summary.non_ecst_sink_count));
     lines.push(format!("- Dead-letter (cabeceras): {}", summary.dead_letter_count));
     lines.push(format!(
         "- Dead-letter (testigos): {}",
@@ -789,6 +830,21 @@ fn main() {
         .iter()
         .filter(|a| a.kind == "structural" || a.kind == "parse")
         .count() as u64;
+    let non_ecst_sink_count = state
+        .anomalies
+        .iter()
+        .filter(|a| a.kind == "non_ecst_sink")
+        .count() as u64;
+    let actionable_stale_pending_count = state
+        .anomalies
+        .iter()
+        .filter(|a| a.kind == "stale_pending" && !is_fracture_stale_detail(&a.detail))
+        .count() as u64;
+    let fracture_stale_pending_count = state
+        .anomalies
+        .iter()
+        .filter(|a| a.kind == "stale_pending" && is_fracture_stale_detail(&a.detail))
+        .count() as u64;
     let circuit_alert = state.anomalies.iter().any(|a| {
         a.kind == "PURGE_BLACKHOLE"
             || (a.kind == "EMPTY_SUBSCRIBERS"
@@ -804,6 +860,9 @@ fn main() {
             .counts
             .get("dead-letter/subscribers")
             .unwrap_or(&0),
+        non_ecst_sink_count,
+        actionable_stale_pending_count,
+        fracture_stale_pending_count,
         counts: state.counts.clone(),
         counts_by_type: state.counts_by_type.clone(),
     };
@@ -833,12 +892,8 @@ fn main() {
         }
     }
 
-    let needs_kaizen = summary.dead_letter_count > 0
-        || summary.dead_letter_witness_count > 0
-        || structural_error_count > 0
-        || orphan_witness_count > 0
-        || summary.stale_pending_count > 0
-        || circuit_alert;
+    let needs_kaizen =
+        needs_kaizen_actionable(circuit_alert, summary.actionable_stale_pending_count);
 
     let mut kaizen_event_id = None;
     let mut kaizen_target = None;
@@ -846,19 +901,29 @@ fn main() {
     if emit_kaizen_alert && needs_kaizen {
         let review_id = Uuid::new_v4().to_string();
         let justification = format!(
-            "Auditoría event-bus-audit: {} dead-letter cabeceras, {} testigos KO, {} anomalías estructurales, {} huérfanos, {} pending estancados",
-            summary.dead_letter_count,
-            summary.dead_letter_witness_count,
+            "Auditoría event-bus-audit: circuit_alert={} actionable_stale={} (total_stale={}, fracture_stale={}) non_ecst_sink={} structural={} dead-letter={}",
+            circuit_alert,
+            summary.actionable_stale_pending_count,
+            summary.stale_pending_count,
+            summary.fracture_stale_pending_count,
+            summary.non_ecst_sink_count,
             structural_error_count,
-            orphan_witness_count,
-            summary.stale_pending_count
+            summary.dead_letter_count
         );
         let implicated: Vec<String> = state
             .anomalies
             .iter()
+            .filter(|a| {
+                a.kind == "PURGE_BLACKHOLE"
+                    || (a.kind == "EMPTY_SUBSCRIBERS" && a.path.contains("orchestration"))
+                    || (a.kind == "stale_pending" && !is_fracture_stale_detail(&a.detail))
+            })
             .take(50)
             .map(|a| a.path.clone())
             .collect();
+        if implicated.is_empty() {
+            eprintln!("warn: needs_kaizen sin implicated_files; se omite emisión Kaizen");
+        } else {
         match write_pending_kaizen(&repo, &paths, &review_id, &justification, &implicated) {
             Ok(seal) => {
                 kaizen_event_id = seal.get("event_id").and_then(|v| v.as_str()).map(str::to_string);
@@ -868,6 +933,7 @@ fn main() {
                 emit_error(&format!("Kaizen emit failed: {e}"), 1);
                 return;
             }
+        }
         }
     }
 
@@ -977,5 +1043,52 @@ mod tests {
             .anomalies
             .iter()
             .any(|a| a.kind == "FAMILY_MISMATCH" && a.detail.contains("Local_QA_Requested")));
+    }
+
+    #[test]
+    fn github_bridge_dump_is_non_ecst_sink_not_structural() {
+        let dump = json!({
+            "error": "iota-relay-unreachable",
+            "flag": "FALLBACK_LOCAL_SIGNATURE",
+            "source": "github-bridge-watcher",
+            "timestamp": "2026-07-23T14:59:37Z"
+        });
+        assert!(is_non_ecst_sink(&dump));
+
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let path = repo.join("github-bridge-20260723T145937Z-9a7687d8.json");
+        fs::write(&path, "{}").unwrap();
+        let mut state = ScanState::default();
+        validate_ecst_event(
+            repo,
+            "dead-letter",
+            &path,
+            &dump,
+            &HashSet::new(),
+            &mut state,
+            true,
+        );
+        assert_eq!(state.anomalies.len(), 1);
+        assert_eq!(state.anomalies[0].kind, "non_ecst_sink");
+        let structural = state
+            .anomalies
+            .iter()
+            .filter(|a| a.kind == "structural" || a.kind == "parse")
+            .count();
+        assert_eq!(structural, 0);
+    }
+
+    #[test]
+    fn needs_kaizen_ignores_historical_dl_and_fracture_stale() {
+        assert!(!needs_kaizen_actionable(false, 0));
+        assert!(needs_kaizen_actionable(true, 0));
+        assert!(needs_kaizen_actionable(false, 1));
+        assert!(is_fracture_stale_detail(
+            "event_type=System_Fracture_Detected; pending age 26h > threshold 24h"
+        ));
+        assert!(!is_fracture_stale_detail(
+            "event_type=PullRequest_Presented; pending age 26h > threshold 24h"
+        ));
     }
 }

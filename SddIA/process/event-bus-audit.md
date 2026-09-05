@@ -23,13 +23,13 @@ phases:
     version: '>=1.0.0'
 porcentaje_de_exito: null
 uuid: 8d577a50-055a-40b9-b7e2-93e2d2415796
-version: 1.0.1
+version: 1.0.2
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # event-bus-audit
 
-Proceso on-demand de auditoría empírica del bus EDA. Inspecciona `./.events/` (pending, processing, processed, dead-letter y familias fractales telemetry/orchestration/domain), valida coherencia ECST, detecta anomalías (staleness, huérfanos, tipos desconocidos) y genera informe. Emite `Kaizen_Alert_Required` en `eda_bus.pending` cuando hay dead-letters o anomalías estructurales.
+Proceso on-demand de auditoría empírica del bus EDA. Inspecciona `./.events/` (pending, processing, processed, dead-letter y familias fractales telemetry/orchestration/domain), valida coherencia ECST, detecta anomalías (staleness, huérfanos, tipos desconocidos) y genera informe. Emite `Kaizen_Alert_Required` en `eda_bus.pending` solo si `circuit_alert` o hay pending estancados que no sean `System_Fracture_Detected`. El volumen histórico de dead-letter no dispara Kaizen.
 
 ```bash
 # Auditoría completa con emisión Kaizen (default)

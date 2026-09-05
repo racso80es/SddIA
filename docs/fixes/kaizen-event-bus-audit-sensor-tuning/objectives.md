@@ -4,7 +4,7 @@ created: "2026-09-05"
 process: bug-fix
 branch_name: fix/kaizen-event-bus-audit-sensor-tuning
 persist_ref: docs/fixes/kaizen-event-bus-audit-sensor-tuning
-pbi_ref: docs/todos/pending/PENDING_AUDIT_DOC_31867981.md
+pbi_ref: docs/todos/done/PENDING_AUDIT_DOC_31867981.md
 execution_id: "f9830175-0405-42fd-9e0c-e6de1c26201d"
 ---
 
