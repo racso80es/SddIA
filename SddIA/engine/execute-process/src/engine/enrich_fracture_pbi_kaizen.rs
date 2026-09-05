@@ -43,6 +43,14 @@ fn is_remote_branch_absent_trace(error_trace: &str) -> bool {
     t.contains("head sha can't be blank") || t.contains("head ref must be a branch")
 }
 
+fn is_shell_executor_wasm_fallback_trace(error_trace: &str) -> bool {
+    let t = error_trace.to_lowercase();
+    t.contains("shell-executor wasm fallback marker")
+        || (t.contains("cápsula skill")
+            && t.contains("shell-executor")
+            && t.contains("no encontrada bajo sddia/target"))
+}
+
 fn is_shell_metachar_fracture_trace(error_trace: &str) -> bool {
     error_trace.contains("PR_TITLE_METACHAR")
         || error_trace.contains("PR_BODY_METACHAR")
@@ -85,6 +93,7 @@ pub fn analyze_fracture_kaizen(
 
     let credential_workflow = is_workflow_scope_trace(error_trace);
     let remote_branch_absent = is_remote_branch_absent_trace(error_trace);
+    let shell_wasm_fallback = is_shell_executor_wasm_fallback_trace(error_trace);
 
     if credential_workflow {
         root_causes.push(
@@ -113,6 +122,18 @@ pub fn analyze_fracture_kaizen(
         ));
     }
 
+    if shell_wasm_fallback {
+        root_causes.push(
+            "`shell-executor` WASM falló (sandbox WASI / working_directory / exec) y el fallback nativo faltó o el centinela interno se fugó. No es git push ni rama ausente."
+                .into(),
+        );
+        proposals.push((
+            "refactor_tool".into(),
+            "Saneamiento de `invoke_shell_executor`: no re-ejecutar WASM; error canónico si el ELF nativo falta; no emitir el centinela hacia DCC. Aduana `dcc_lab_binary_missing_trace` suprime Kintsugi."
+                .into(),
+        ));
+    }
+
     if is_shell_metachar_fracture_trace(error_trace) {
         root_causes.push(
             "`delivery-close-cycle` Apertura en forja: token argv rechazado por `shell-executor` \
@@ -130,6 +151,7 @@ pub fn analyze_fracture_kaizen(
 
     if !credential_workflow
         && !remote_branch_absent
+        && !shell_wasm_fallback
         && has_any_in(
         &hook_blob,
         &[
@@ -182,6 +204,7 @@ pub fn analyze_fracture_kaizen(
     }
     if !credential_workflow
         && !remote_branch_absent
+        && !shell_wasm_fallback
         && has_any(&["timeout", "block", "abort", "failed", "colaps"])
     {
         root_causes.push(
@@ -413,6 +436,23 @@ mod tests {
         assert!(!section.contains("Implementar guarda `SDDIA_HOOK_DELIVERY_CLOSE`"));
         assert!(section.contains("Head sha can't be blank") || section.contains("Rama ausente"));
         assert_eq!(verdict, "process_fix");
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_shell_executor_wasm_fallback_not_head_sha() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            "shell-executor wasm fallback marker",
+            "Apertura en forja",
+            "execute-process",
+        );
+        assert_eq!(verdict, "refactor_tool");
+        assert!(section.contains("WASI") || section.contains("fallback nativo"));
+        assert!(!section.contains("Head sha can't be blank"));
+        assert!(!section.contains("Halt de Apertura"));
+        assert!(!section.contains("Rama ausente"));
+        assert!(!section.contains("no clasificada"));
+        assert!(!section.contains("Auditar proceso"));
     }
 
     #[test]

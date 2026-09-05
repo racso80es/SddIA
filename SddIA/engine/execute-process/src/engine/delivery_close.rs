@@ -350,6 +350,9 @@ fn dcc_lab_binary_missing_trace(trace: &str) -> bool {
     if t.contains("sddia-qa no encontrado") {
         return true;
     }
+    if t.contains("shell-executor wasm fallback marker") {
+        return true;
+    }
     t.contains("cápsula skill") && t.contains("no encontrada bajo sddia/target")
 }
 
@@ -836,6 +839,9 @@ mod tests {
         assert!(dcc_lab_binary_missing_trace(
             "cápsula skill 'shell-executor' no encontrada bajo SddIA/target"
         ));
+        assert!(dcc_lab_binary_missing_trace(
+            "shell-executor wasm fallback marker"
+        ));
         assert!(!dcc_lab_binary_missing_trace(
             "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed"
         ));
@@ -870,6 +876,22 @@ mod tests {
             }),
         ];
         emit_dcc_phase_fractures(repo, &reports);
+        assert_eq!(pending_fracture_count(repo), 0);
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_shell_executor_wasm_fallback_marker() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        emit_dcc_phase_fractures(
+            repo,
+            &[json!({
+                "phase_name": "Apertura en forja",
+                "status": "failed",
+                "error": "shell-executor wasm fallback marker",
+            })],
+        );
         assert_eq!(pending_fracture_count(repo), 0);
     }
 
