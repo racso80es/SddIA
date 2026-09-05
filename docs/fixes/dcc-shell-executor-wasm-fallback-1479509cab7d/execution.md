@@ -27,6 +27,14 @@ SDDIA_AGENT_RELAY_IDE=1 SDDIA_LAB_ALLOW_DIRTY=1 SDDIA_LAB_SKIP_PBI_ARCHIVE=1 SDD
 
 `sddia-qa evolution-register` → `e7c4a91b-2f6d-4e8a-9b3c-1d5f8a0e2476` (`EVOL_OK`, `alta`).
 
+## DCC / PR
+
+`delivery-close-cycle` `execution_id` `24dcbc6d-a9a6-4886-bf81-6882a01fa2bb`. Snapshot `3ddbafb`. PR https://github.com/racso80es/SddIA/pull/261. Apertura en forja **executed** (sin fractura).
+
+## CA-CI
+
+Run [33971063784](https://github.com/racso80es/SddIA/actions/runs/33971063784) sobre `3ddbafb` evento `pull_request`: `conclusion: success`.
+
 ## Tests (CA1–CA5)
 
 ```text

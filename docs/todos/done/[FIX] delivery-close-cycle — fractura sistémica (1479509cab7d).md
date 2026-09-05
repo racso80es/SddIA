@@ -174,4 +174,4 @@ flowchart TD
 - [x] CA1–CA5 verdes (`cargo test -p execute-process` con filtros de este fix).
 - [x] Argos en `{persist_ref}/validacion.md` (`pbi_archived: true`). CA de CI = `PENDIENTE-CI` hasta `run_id` verde.
 - [x] Este PBI en `docs/todos/done/` en el mismo PR.
-- [ ] `accept-pr` solo tras checks GitHub verdes del PR.
+- [x] `accept-pr` solo tras checks GitHub verdes del PR.
