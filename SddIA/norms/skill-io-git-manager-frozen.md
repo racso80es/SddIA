@@ -1,7 +1,7 @@
 ---
 uuid: "b2c3d4e5-f6a7-4890-b123-456789abcdef"
 name: "skill-io-git-manager-frozen"
-version: "1.1.0"
+version: "1.2.0"
 entity_type: "norm"
 jurisdiction: "cerbero"
 freeze_status: "congelado"
@@ -15,7 +15,7 @@ schema_version: "2026-05-07"
 
 **Alcance de ejecución:** Solo el binario **`git`** nativo del sistema. Ningún otro ejecutable (p. ej. `gh`, `npm`) puede invocarse a través de esta skill.
 
-**SemVer 1.1.0 (L-FROZEN-ALIGN / PBI-PPR-194):** declara ops que la cápsula ya ejecuta (`delete_branch`, `merge`, `get_last_commit`, `diff_name_only`). Homónimo `remote`: string en `push`/`pull`/`fetch` ≠ boolean en `delete_branch` — no unificar.
+**SemVer 1.2.0 (PBI-KAIZEN-GIT-DIFF-LLM-SYNTHESIS):** añade `commit_summary` (subject Git + names-only first-parent acotado). Homónimo `remote`: string en `push`/`pull`/`fetch` ≠ boolean en `delete_branch` — no unificar.
 
 ## 1. Raíz del mensaje (stdin JSON)
 
@@ -29,7 +29,7 @@ schema_version: "2026-05-07"
 
 Valores permitidos, en minúsculas y exactamente:
 
-`status` · `checkout` · `commit` · `push` · `pull` · `fetch` · `branch_list` · `get_last_commit` · `merge` · `delete_branch` · `diff_name_only`
+`status` · `checkout` · `commit` · `push` · `pull` · `fetch` · `branch_list` · `get_last_commit` · `merge` · `delete_branch` · `diff_name_only` · `commit_summary`
 
 ## 3. `operation_payload_json` por operación
 
@@ -176,6 +176,26 @@ La validación de que el nombre cumple política de ramas **no** es responsabili
 | Clave | Tipo | Obligatorio |
 | :--- | :--- | :---: |
 | `ref_spec` | `string` | Sí |
+
+### 3.12 `commit_summary`
+
+```json
+{
+  "ref": "string",
+  "max_files": 30,
+  "max_subject_chars": 200
+}
+```
+
+| Clave | Tipo | Obligatorio | Notas |
+| :--- | :--- | :---: | :--- |
+| `ref` | `string` | Sí | Token seguro. Típicamente hash 40 hex. |
+| `max_files` | `integer` | Sí | 1–30 inclusive. |
+| `max_subject_chars` | `integer` | Sí | 1–200 inclusive. |
+
+Salida `data` (además de `gitStdout` / `gitStderr` / `errorSummary`): `commitHash` (40 hex), `subject` (primera línea Git `%s`, recortada), `files` (rutas, ≤ `max_files`), `totalFilesChanged` (antes de truncar), `truncated` (boolean).
+
+Ejecución: `rev-parse --verify <ref>`; `show -s --format=%s <ref>`; first-parent `diff --name-only -M <ref>^ <ref>` tras verificar `<ref>^`. Si el padre no existe (root/shallow): `success: false`. Prohibido parche unificado y `git diff` working-tree.
 
 ## 4. Referencias
 
