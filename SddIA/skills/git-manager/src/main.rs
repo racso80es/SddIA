@@ -42,6 +42,18 @@ fn payload_exact(payload: &Value, op: &str, expected: &[&str]) {
     }
 }
 
+fn bounded_usize(payload: &Value, field: &str, min: usize, max: usize) -> usize {
+    let n = payload
+        .get(field)
+        .and_then(|v| v.as_u64().or_else(|| v.as_i64().and_then(|i| u64::try_from(i).ok())))
+        .unwrap_or_else(|| fail(&format!("{field} must be an integer")));
+    let n = n as usize;
+    if n < min || n > max {
+        fail(&format!("{field} must be between {min} and {max} inclusive"));
+    }
+    n
+}
+
 fn git_exe() -> String {
     "git".to_string() // Assumed to be on path
 }
@@ -328,6 +340,106 @@ fn handle(op: &str, repo: &Path, payload: &Value) -> (Value, i32) {
             let err_summary = if stderr.trim().is_empty() { Value::Null } else { json!(stderr.trim()) };
             (json!({ "gitStdout": stdout, "gitStderr": stderr, "files": files, "errorSummary": err_summary }), code)
         }
+        "commit_summary" => {
+            payload_exact(payload, op, &["ref", "max_files", "max_subject_chars"]);
+            let r = payload
+                .get("ref")
+                .and_then(|v| v.as_str())
+                .unwrap_or_else(|| fail("ref must be a string"));
+            if r.trim().is_empty() {
+                fail("ref must be a non-empty string");
+            }
+            assert_safe_token(r, "ref");
+            let max_files = bounded_usize(payload, "max_files", 1, 30);
+            let max_subject_chars = bounded_usize(payload, "max_subject_chars", 1, 200);
+
+            let (v_stdout, v_stderr, v_code) = run_git(repo, &["rev-parse", "--verify", r]);
+            if v_code != 0 {
+                let err_summary = if v_stderr.trim().is_empty() {
+                    json!("rev-parse --verify failed")
+                } else {
+                    json!(v_stderr.trim())
+                };
+                return (
+                    json!({
+                        "gitStdout": v_stdout,
+                        "gitStderr": v_stderr,
+                        "errorSummary": err_summary
+                    }),
+                    v_code,
+                );
+            }
+            let hash = parse_commit_hash(&v_stdout, "commitHash");
+
+            let parent_ref = format!("{r}^");
+            assert_safe_token(&parent_ref, "ref");
+            let (_p_stdout, p_stderr, p_code) = run_git(repo, &["rev-parse", "--verify", &parent_ref]);
+            if p_code != 0 {
+                let err_summary = if p_stderr.trim().is_empty() {
+                    json!("first-parent missing (root or shallow)")
+                } else {
+                    json!(p_stderr.trim())
+                };
+                return (
+                    json!({
+                        "gitStdout": v_stdout,
+                        "gitStderr": p_stderr,
+                        "errorSummary": err_summary
+                    }),
+                    p_code,
+                );
+            }
+
+            let (s_stdout, s_stderr, _s_code) = run_git(repo, &["show", "-s", "--format=%s", r]);
+            let subject: String = s_stdout.trim().chars().take(max_subject_chars).collect();
+
+            let (d_stdout, d_stderr, d_code) =
+                run_git(repo, &["diff", "--name-only", "-M", &parent_ref, r]);
+            if d_code != 0 {
+                let err_summary = if d_stderr.trim().is_empty() {
+                    json!("first-parent name-only diff failed")
+                } else {
+                    json!(d_stderr.trim())
+                };
+                return (
+                    json!({
+                        "gitStdout": d_stdout,
+                        "gitStderr": d_stderr,
+                        "errorSummary": err_summary
+                    }),
+                    d_code,
+                );
+            }
+            let all_files: Vec<String> = d_stdout
+                .lines()
+                .map(|ln| ln.trim())
+                .filter(|ln| !ln.is_empty())
+                .map(|ln| ln.to_string())
+                .collect();
+            let total = all_files.len();
+            let truncated = total > max_files;
+            let files: Vec<String> = all_files.into_iter().take(max_files).collect();
+            let git_stdout = format!("{v_stdout}{s_stdout}{d_stdout}");
+            let git_stderr = format!("{v_stderr}{s_stderr}{d_stderr}");
+            let err_summary = if git_stderr.trim().is_empty() {
+                Value::Null
+            } else {
+                json!(git_stderr.trim())
+            };
+            (
+                json!({
+                    "gitStdout": git_stdout,
+                    "gitStderr": git_stderr,
+                    "commitHash": hash,
+                    "subject": subject,
+                    "files": files,
+                    "totalFilesChanged": total,
+                    "truncated": truncated,
+                    "errorSummary": err_summary
+                }),
+                0,
+            )
+        }
         _ => fail(&format!("unsupported operation_type: {}", op)),
     }
 }
@@ -341,7 +453,8 @@ fn main() {
 
     let allowed_ops = vec![
         "status", "checkout", "commit", "push", "pull", "fetch",
-        "branch_list", "get_last_commit", "merge", "delete_branch", "diff_name_only"
+        "branch_list", "get_last_commit", "merge", "delete_branch", "diff_name_only",
+        "commit_summary"
     ];
     if !allowed_ops.contains(&op) {
         fail(&format!("operation_type must be one of {:?}", allowed_ops));

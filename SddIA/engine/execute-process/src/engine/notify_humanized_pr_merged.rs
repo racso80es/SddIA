@@ -1,6 +1,6 @@
 //! Handler nativo `notify-humanized-pr-merged` — estático ola 1 + síntesis Gemini fail-soft.
 
-use super::capsules::{invoke_capsule_json, invoke_tool_capsule_json};
+use super::capsules::{invoke_capsule_json, invoke_git_manager, invoke_tool_capsule_json};
 use serde_json::{json, Value};
 use std::env;
 use std::path::Path;
@@ -82,7 +82,76 @@ pub fn pr_merged_static_message(event: &Value) -> Option<String> {
     Some(lines.join("\n"))
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct CommitSummary {
+    pub subject: String,
+    pub files: Vec<String>,
+    pub total_files_changed: usize,
+    pub truncated: bool,
+}
+
+pub fn commit_summary_from_data(data: &Value) -> Option<CommitSummary> {
+    let files = data
+        .get("files")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let subject = data
+        .get("subject")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .unwrap_or("")
+        .to_string();
+    let total = data
+        .get("totalFilesChanged")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(files.len() as u64) as usize;
+    let truncated = data
+        .get("truncated")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if subject.is_empty() && files.is_empty() && !truncated {
+        return None;
+    }
+    Some(CommitSummary {
+        subject,
+        files,
+        total_files_changed: total,
+        truncated,
+    })
+}
+
+pub fn try_commit_summary(repo: &Path, merge_hash: &str) -> Option<CommitSummary> {
+    let hash = merge_hash.trim();
+    if hash.is_empty() {
+        return None;
+    }
+    match invoke_git_manager(
+        repo,
+        "commit_summary",
+        &json!({
+            "ref": hash,
+            "max_files": 30,
+            "max_subject_chars": 200
+        }),
+    ) {
+        Ok(data) => commit_summary_from_data(&data),
+        Err(_) => None,
+    }
+}
+
 pub fn build_synthesis_prompt(event: &Value) -> String {
+    build_synthesis_prompt_with_git(event, None)
+}
+
+pub fn build_synthesis_prompt_with_git(event: &Value, git: Option<&CommitSummary>) -> String {
     let payload = event.get("payload").and_then(|v| v.as_object());
     let sc = payload.and_then(|p| p.get("security_clearance"));
     let auditor = sc
@@ -117,6 +186,20 @@ pub fn build_synthesis_prompt(event: &Value) -> String {
     let repo = payload_str(payload, "repository_name");
     if !repo.is_empty() {
         ctx.push(format!("repository_name={repo}"));
+    }
+    if let Some(g) = git {
+        if !g.subject.is_empty() {
+            ctx.push(format!("SUBJECT: {}", g.subject));
+        }
+        if !g.files.is_empty() {
+            ctx.push(format!("FILES: {}", g.files.join(", ")));
+        }
+        if g.truncated {
+            ctx.push(format!(
+                "truncated=true totalFilesChanged={}",
+                g.total_files_changed
+            ));
+        }
     }
     format!(
         "{PROMPT_KERNEL}\nReturn only business value of this merge. Do not restate hash, auditor, branch, or correlation.\nDo not invent files, commits, or intent absent from CONTEXT.\nCONTEXT:\n{}",
@@ -163,8 +246,13 @@ fn synthesis_from_capsule(body: &Value) -> Option<String> {
 }
 
 pub fn try_infer_synthesis(repo: &Path, event: &Value) -> Option<String> {
+    let merge_hash = payload_str(
+        event.get("payload").and_then(|v| v.as_object()),
+        "merge_commit_hash",
+    );
+    let git = try_commit_summary(repo, &merge_hash);
     let mut req = json!({
-        "prompt": build_synthesis_prompt(event),
+        "prompt": build_synthesis_prompt_with_git(event, git.as_ref()),
         "temperature": 0.2
     });
     if let Ok(model) = env::var("SDDIA_GEMINI_MODEL") {
@@ -270,6 +358,66 @@ mod tests {
         assert!(!p.contains("traceability"));
         assert!(!p.contains("merge_huérfano"));
         assert!(!p.contains("commits/diffs"));
+        assert!(!p.contains("SUBJECT:"));
+        assert!(!p.contains("FILES:"));
+    }
+
+    #[test]
+    fn notify_humanized_prompt_injects_git_facts_only_from_summary() {
+        let git = CommitSummary {
+            subject: "add capsule commit_summary".into(),
+            files: vec![
+                "SddIA/skills/git-manager/src/main.rs".into(),
+                "SddIA/norms/skill-io-git-manager-frozen.md".into(),
+            ],
+            total_files_changed: 2,
+            truncated: false,
+        };
+        let p = build_synthesis_prompt_with_git(&fixture_event(), Some(&git));
+        assert!(p.contains("PENALIZE CONJECTURE"));
+        assert!(p.contains("Do not invent files"));
+        assert!(p.contains("SUBJECT: add capsule commit_summary"));
+        assert!(p.contains("FILES: SddIA/skills/git-manager/src/main.rs, SddIA/norms/skill-io-git-manager-frozen.md"));
+        assert!(!p.contains("invented.rs"));
+        assert!(!p.contains("truncated=true"));
+    }
+
+    #[test]
+    fn notify_humanized_prompt_git_failsoft_omits_subject_files() {
+        let p = build_synthesis_prompt_with_git(&fixture_event(), None);
+        assert!(!p.contains("SUBJECT:"));
+        assert!(!p.contains("FILES:"));
+        assert!(p.contains("source_branch=feat/accept-pr-telegram-notify"));
+    }
+
+    #[test]
+    fn notify_humanized_prompt_truncated_note() {
+        let git = CommitSummary {
+            subject: "Merge branch 'feat/x'".into(),
+            files: vec!["a.rs".into(), "b.rs".into()],
+            total_files_changed: 40,
+            truncated: true,
+        };
+        let p = build_synthesis_prompt_with_git(&fixture_event(), Some(&git));
+        assert!(p.contains("SUBJECT: Merge branch 'feat/x'"));
+        assert!(p.contains("truncated=true totalFilesChanged=40"));
+        assert!(p.contains("FILES: a.rs, b.rs"));
+    }
+
+    #[test]
+    fn notify_humanized_commit_summary_from_data_parses() {
+        let data = json!({
+            "commitHash": "a1b2c3d4e5f6789012345678901234567890abcd",
+            "subject": "hello",
+            "files": ["a.rs", "b.rs"],
+            "totalFilesChanged": 2,
+            "truncated": false
+        });
+        let s = commit_summary_from_data(&data).unwrap();
+        assert_eq!(s.subject, "hello");
+        assert_eq!(s.files, vec!["a.rs", "b.rs"]);
+        assert!(!s.truncated);
+        assert!(commit_summary_from_data(&json!({})).is_none());
     }
 
     #[test]

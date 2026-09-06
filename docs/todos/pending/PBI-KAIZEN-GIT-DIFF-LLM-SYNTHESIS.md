@@ -112,7 +112,7 @@ Salida en `data` (además de `gitStdout` / `gitStderr` / `errorSummary`, paridad
 Ejecución (sin shell; `Command::new("git")`; args en lista):
 
 1. `rev-parse --verify <ref>` → `commitHash` (reutilizar `parse_commit_hash`).
-2. `show -s --format=%s -- <ref>` → `subject` (trim; corte a `max_subject_chars`; vacío permitido).
+2. `show -s --format=%s <ref>` → `subject` (trim; corte a `max_subject_chars`; vacío permitido).
 3. Diff **first-parent** de ese commit, dos argv, nunca working-tree: `diff --name-only -M <ref>^ <ref>` tras validar que `<ref>^` resuelve. Si `<ref>^` no existe (root / shallow): `success: false` / exit ≠ 0 — el handler hace fail-soft.
 
 Prohibido: `git show` de parche; `git diff` sin acotar a names-only; unificar `ref_spec` de `diff_name_only` con esta op.

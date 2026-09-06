@@ -27,7 +27,7 @@ Payload exacto:
 Git (args lista, sin shell):
 
 1. `rev-parse --verify <ref>`
-2. `show -s --format=%s -- <ref>`
+2. `show -s --format=%s <ref>`
 3. Tras `rev-parse --verify <ref>^`: `diff --name-only -M <ref>^ <ref>`
 
 `<ref>^` ausente → exit ≠ 0. Handler fail-soft.
