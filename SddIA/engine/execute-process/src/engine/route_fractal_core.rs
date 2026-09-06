@@ -28,6 +28,7 @@ const OK_STATUSES: &[&str] = &[
     "skipped-no-correlation",
     "skipped-lab-simulated",
     "skipped-already-delivered",
+    "skipped-config-missing",
 ];
 
 fn dispatch_fractal_subscriber(
