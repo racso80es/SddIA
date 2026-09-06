@@ -11,6 +11,10 @@ use super::eda_bus_topology::{
     subscriber_id, terminal_witness_exists, try_sweep_event, write_json_atomic,
     write_processing_witness, ECST_GATE_SUBSCRIBER, EventBusTopology,
 };
+use super::dlt_telemetry_anchor::{
+    apply_digest_to_delivery_state, digest_is_valid, is_iota_config_error, is_telemetry_captured,
+    persist_dlt_telemetry_proof, stamp_digest_on_event_file, telemetry_iota_skip_config, SKIP_STATUS,
+};
 use super::invoke_orchestrator::{invoke_process_full, resolve_orchestrator_bin};
 use chrono::Utc;
 use serde_json::{json, Map, Value};
@@ -1400,6 +1404,11 @@ pub(crate) fn dispatch_subscriber(
         if !ok_thresh {
             return (sid, "skipped-dlt-threshold".into(), Some(reason), 0);
         }
+        if is_telemetry_captured(event) {
+            if let Some(reason) = telemetry_iota_skip_config(repo) {
+                return (sid, SKIP_STATUS.into(), Some(reason), 0);
+            }
+        }
         let (ok, feedback, code, digest) = if batch_mode_iota {
             if let Some(ds) = event.get("delivery_state").and_then(|v| v.as_object()) {
                 if is_valid_iota_anchor(ds) {
@@ -1429,18 +1438,31 @@ pub(crate) fn dispatch_subscriber(
         } else {
             invoke_iota_publisher(repo, event)
         };
+        if is_telemetry_captured(event) && !ok && is_iota_config_error(&feedback) {
+            return (sid, SKIP_STATUS.into(), Some(feedback), 0);
+        }
         if ok {
-            if let Some(ds) = event.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
-                ds.insert("cumulo".to_string(), json!("success"));
-                if let Some(d) = digest {
-                    let existing = ds
-                        .get("transaction_digest")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("");
-                    if existing.is_empty() || existing == "batched-digest" {
-                        ds.insert("transaction_digest".to_string(), json!(d));
+            let digest = digest.filter(|d| digest_is_valid(d));
+            if is_telemetry_captured(event) && digest.is_none() {
+                return (
+                    sid,
+                    "failed".into(),
+                    Some("invalid-digest".into()),
+                    1,
+                );
+            }
+            if let Some(d) = digest.as_deref() {
+                apply_digest_to_delivery_state(event, d);
+                if let Some(path) = event_path {
+                    stamp_digest_on_event_file(path, d);
+                }
+                if is_telemetry_captured(event) {
+                    if let Err(e) = persist_dlt_telemetry_proof(repo, event, d) {
+                        return (sid, "failed".into(), Some(e), 1);
                     }
                 }
+            } else if let Some(ds) = event.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
+                ds.insert("cumulo".to_string(), json!("success"));
             }
             return (sid, "success".into(), None, code);
         }
@@ -2477,6 +2499,135 @@ mod blocking_tests {
         assert_eq!(status, "skipped-consumer-profile");
         assert!(err.is_none());
         assert_eq!(code, 0);
+    }
+
+    #[test]
+    fn dlt_telemetry_skip_config_missing_does_not_fail() {
+        let _g = super::super::dlt_telemetry_anchor::IOTA_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let prev_sim = std::env::var("SDDIA_LAB_SIMULATE_IOTA").ok();
+        let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        let prev_mock = std::env::var("SDDIA_LAB_MOCK_IOTA_URL").ok();
+        let prev_sec = std::env::var("IOTA_WALLET_SECRET").ok();
+        let prev_rel = std::env::var("IOTA_PUBLISH_RELAY_URL").ok();
+        std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
+        std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        std::env::remove_var("SDDIA_LAB_MOCK_IOTA_URL");
+        std::env::remove_var("IOTA_WALLET_SECRET");
+        std::env::remove_var("IOTA_PUBLISH_RELAY_URL");
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let mut event = json!({
+            "event_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "event_type": "Domain_Entity_Telemetry_Captured",
+            "payload": {
+                "entity_id": "feature",
+                "entity_type": "process",
+                "execution_metrics": {"duration_ms": 1, "exit_code": 0, "success_status": true},
+                "origin_stimulus": {"event_type": "Raw_Execution_Finished", "event_id": "11111111-2222-3333-4444-555555555555"}
+            },
+            "delivery_state": {}
+        });
+        let sub = json!({
+            "agent": "cumulo",
+            "tool": "iota-immutable-publisher"
+        });
+        let (_sid, status, err, code) = dispatch_subscriber(repo, &sub, &mut event, false, None);
+        match prev_sim { Some(v) => std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v), None => std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA") }
+        match prev_out { Some(v) => std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v), None => std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND") }
+        match prev_mock { Some(v) => std::env::set_var("SDDIA_LAB_MOCK_IOTA_URL", v), None => std::env::remove_var("SDDIA_LAB_MOCK_IOTA_URL") }
+        match prev_sec { Some(v) => std::env::set_var("IOTA_WALLET_SECRET", v), None => std::env::remove_var("IOTA_WALLET_SECRET") }
+        match prev_rel { Some(v) => std::env::set_var("IOTA_PUBLISH_RELAY_URL", v), None => std::env::remove_var("IOTA_PUBLISH_RELAY_URL") }
+        assert_eq!(status, "skipped-config-missing");
+        assert!(err.as_deref().unwrap_or("").contains("config-missing"));
+        assert_eq!(code, 0);
+        assert!(!repo.join(".SddIA/proofs/dlt-telemetry/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.json").is_file());
+    }
+
+    #[test]
+    fn dlt_telemetry_simulate_writes_proof() {
+        let _g = super::super::dlt_telemetry_anchor::IOTA_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let prev_sim = std::env::var("SDDIA_LAB_SIMULATE_IOTA").ok();
+        std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        let mut event = json!({
+            "event_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "event_type": "Domain_Entity_Telemetry_Captured",
+            "payload": {
+                "entity_id": "mayeuta-llm",
+                "entity_type": "skill",
+                "execution_metrics": {"duration_ms": 1, "exit_code": 0, "success_status": true},
+                "origin_stimulus": {"event_type": "Raw_Execution_Finished", "event_id": "11111111-2222-3333-4444-555555555555"}
+            },
+            "delivery_state": {}
+        });
+        let sub = json!({
+            "agent": "cumulo",
+            "tool": "iota-immutable-publisher"
+        });
+        let (_sid, status, err, code) = dispatch_subscriber(repo, &sub, &mut event, false, None);
+        match prev_sim { Some(v) => std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v), None => std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA") }
+        assert_eq!(status, "success", "{err:?}");
+        assert_eq!(code, 0);
+        let digest = event["delivery_state"]["transaction_digest"].as_str().unwrap_or("");
+        assert!(digest.starts_with("lab-sim-"), "{digest}");
+        assert_ne!(digest, "batched-digest");
+        let proof: Value = serde_json::from_str(
+            &fs::read_to_string(
+                repo.join(".SddIA/proofs/dlt-telemetry/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(proof["transaction_digest"].as_str().unwrap(), digest);
+        assert_eq!(proof["entity_id"], "mayeuta-llm");
+    }
+
+    #[test]
+    fn pull_request_iota_config_missing_still_fails() {
+        let _g = super::super::dlt_telemetry_anchor::IOTA_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let prev_sim = std::env::var("SDDIA_LAB_SIMULATE_IOTA").ok();
+        let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        let prev_mock = std::env::var("SDDIA_LAB_MOCK_IOTA_URL").ok();
+        let prev_sec = std::env::var("IOTA_WALLET_SECRET").ok();
+        let prev_rel = std::env::var("IOTA_PUBLISH_RELAY_URL").ok();
+        std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
+        std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        std::env::remove_var("SDDIA_LAB_MOCK_IOTA_URL");
+        std::env::remove_var("IOTA_WALLET_SECRET");
+        std::env::remove_var("IOTA_PUBLISH_RELAY_URL");
+        let tmp = tempfile::tempdir().unwrap();
+        let mut event = json!({
+            "event_id": "bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee",
+            "event_type": "PullRequest_Presented",
+            "payload": {"source_branch": "feat/x"},
+            "delivery_state": {}
+        });
+        let sub = json!({
+            "agent": "cumulo",
+            "tool": "iota-immutable-publisher"
+        });
+        let (_sid, status, _err, code) = dispatch_subscriber(tmp.path(), &sub, &mut event, false, None);
+        match prev_sim { Some(v) => std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v), None => std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA") }
+        match prev_out { Some(v) => std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v), None => std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND") }
+        match prev_mock { Some(v) => std::env::set_var("SDDIA_LAB_MOCK_IOTA_URL", v), None => std::env::remove_var("SDDIA_LAB_MOCK_IOTA_URL") }
+        match prev_sec { Some(v) => std::env::set_var("IOTA_WALLET_SECRET", v), None => std::env::remove_var("IOTA_WALLET_SECRET") }
+        match prev_rel { Some(v) => std::env::set_var("IOTA_PUBLISH_RELAY_URL", v), None => std::env::remove_var("IOTA_PUBLISH_RELAY_URL") }
+        assert_eq!(status, "failed");
+        assert_ne!(code, 0);
+        assert_ne!(status, "skipped-config-missing");
     }
 }
 

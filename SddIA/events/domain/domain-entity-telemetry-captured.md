@@ -8,12 +8,12 @@ event_type: "Domain_Entity_Telemetry_Captured"
 context: "ecosystem-evolution"
 capabilities:
   - "domain_entity_telemetry_captured"
-hash_signature: "sha256:cb5658086b143cf791798f9dd8798dbedef3dff7c80ff789fc29f4fd8e104cfc"
+hash_signature: "sha256:01884d5cb77da51e5b931314a7b3a3505369d53bca4b1c0aafa491c1ffcc25cd"
 ---
 
 # Event: Domain_Entity_Telemetry_Captured
 
-Snapshot de ejecución tras Raw_Execution_Finished. Emisor exclusivo Radamanto. Dispara ingesta vectorial vía memory-evolution-ingest.
+Snapshot de ejecución tras Raw_Execution_Finished. Emisor exclusivo Radamanto. Fan-out: `memory-evolution-ingest` (LanceDB) e `iota-immutable-publisher` (anclaje DLT).
 
 ## Payload ECST
 
@@ -41,4 +41,9 @@ Snapshot de ejecución tras Raw_Execution_Finished. Emisor exclusivo Radamanto. 
 
 ## Suscripciones
 
-Ver `SddIA/core/event-domain-subscriptions.json` → clave `Domain_Entity_Telemetry_Captured`.
+SSOT: `SddIA/core/event-domain-subscriptions.json` → clave `Domain_Entity_Telemetry_Captured` (paridad legado `event-subscriptions.json`).
+
+| Suscriptor | Proceso / tool | Intención |
+|------------|----------------|-----------|
+| `cumulo` | `memory-evolution-ingest` | Indexar snapshot en LanceDB vía EvolutionProxy |
+| `cumulo` | `iota-immutable-publisher` | Anclaje DLT inmutable del snapshot en IOTA Rebased |

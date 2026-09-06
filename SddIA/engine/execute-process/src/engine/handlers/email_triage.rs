@@ -852,4 +852,13 @@ mod tests {
         let parsed = parse_triage_llm_blob(&llm_output_blob(&body));
         assert_eq!(parsed["verdict"], json!("passive"));
     }
+
+    #[test]
+    fn email_triage_does_not_invoke_iota_publisher() {
+        let src = include_str!("email_triage.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        assert!(!prod.contains("iota-immutable-publisher"));
+        assert!(!prod.contains("invoke_iota_publisher"));
+        assert!(!prod.contains("publish_immutable_data"));
+    }
 }
