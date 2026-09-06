@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `95441293-1049-4016-8112-a322919d34e8` | 2026-09-06 | Triaje-P cold-start: memory:pref-query, P-EXEMPT-C y P-MUTE-SENDER sobre email-triage-gateway. | CANONICO | `SddIA/evolution/95441293-1049-4016-8112-a322919d34e8.md` |
 | `ad46c2d6-30fc-451e-8e74-5b19f4f2602e` | 2026-09-06 | Anclaje DLT de Domain_Entity_Telemetry_Captured: suscripción IOTA, proof durable y skip config-missing. | CANONICO | `SddIA/evolution/ad46c2d6-30fc-451e-8e74-5b19f4f2602e.md` |
 | `300bad66-5bf5-4f5d-af2c-83df9701576a` | 2026-09-06 | Kaizen commit_summary: git-manager frozen v1.2.0 y síntesis post-merge con hechos Git fail-soft. | CANONICO | `SddIA/evolution/300bad66-5bf5-4f5d-af2c-83df9701576a.md` |
 | `d460313d-48a6-4bf9-8c67-dfac06730677` | 2026-09-05 | Correlato residual ola 2 Telegram: index actions y despacho nativo notify-humanized. | CANONICO | `SddIA/evolution/d460313d-48a6-4bf9-8c67-dfac06730677.md` |

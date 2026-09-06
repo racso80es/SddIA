@@ -8,12 +8,12 @@ event_type: "Email_Triaged"
 context: "ecosystem-evolution"
 capabilities:
   - "email_triaged"
-hash_signature: "sha256:de33eb8edb7e135062bfe63a5edbc850f62f0e69e0649cec50d65258e9fdc620"
+hash_signature: "sha256:c5a6a60c3a66b6cc2081e6bd00402df83e8aa54d25fd60d633733102ee4cde8b"
 ---
 
 # Event: Email_Triaged
 
-Veredicto de triaje de correo. Porta decision_path y thermodynamic_cost para verificar el peaje (G5). Emisor: email-triage-gateway. v1.1.0 añade identidad táctica `from`/`subject` (nunca `snippet`/`body`) para fan-out humano.
+Veredicto de triaje de correo. Porta decision_path y thermodynamic_cost para verificar el peaje (G5). `decision_path` ∈ {`deterministic`, `llm`, `preference`} según quien **cerró**. Emisor: email-triage-gateway. v1.1.0 añade identidad táctica `from`/`subject` (nunca `snippet`/`body`) para fan-out humano.
 
 ## Payload ECST
 

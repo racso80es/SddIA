@@ -100,6 +100,26 @@ fn hex_sha256(parts: &[&[u8]]) -> String {
     hex::encode(hasher.finalize())
 }
 
+/// Extrae `local@domain` de `Nombre <addr>` o del string completo; ASCII lowercase.
+pub fn normalize_email_addr(from: &str) -> String {
+    let s = from.trim();
+    let addr = if let (Some(a), Some(b)) = (s.rfind('<'), s.rfind('>')) {
+        if a < b {
+            s[a + 1..b].trim()
+        } else {
+            s
+        }
+    } else {
+        s
+    };
+    addr.to_ascii_lowercase()
+}
+
+/// `subject_key` canónico: SHA-256 hex UTF-8 del addr normalizado. Nunca la dirección en claro.
+pub fn canonical_subject_key_from_addr(from: &str) -> String {
+    hex_sha256(&[normalize_email_addr(from).as_bytes()])
+}
+
 pub fn compute_preference_id(
     scope_type: &ScopeType,
     scope_id: Option<&str>,
@@ -746,5 +766,21 @@ mod tests {
             .join(format!("{}.json", stored.revision_id))
             .exists());
         assert!(read_head_index(&root).unwrap().get(&stored.preference_id).is_none());
+    }
+
+    #[test]
+    fn canonical_subject_key_collapses_display_name_and_is_not_plaintext() {
+        let a = canonical_subject_key_from_addr("noreply@shop.tld");
+        let b = canonical_subject_key_from_addr("Shop <noreply@shop.tld>");
+        let c = canonical_subject_key_from_addr("  NOREPLY@SHOP.TLD  ");
+        assert_eq!(a, b);
+        assert_eq!(a, c);
+        assert_eq!(a.len(), 64);
+        assert!(!a.contains('@'));
+        assert_ne!(a, "noreply@shop.tld");
+        assert_eq!(
+            normalize_email_addr("Shop <noreply@shop.tld>"),
+            "noreply@shop.tld"
+        );
     }
 }
