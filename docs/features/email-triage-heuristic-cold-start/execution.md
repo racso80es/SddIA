@@ -52,4 +52,4 @@ UUID inmutables. Body process documenta `preference`.
 
 ## Evolution
 
-`sddia-qa evolution-register` → `95441293-1049-4016-8112-a322919d34e8` (`EVOL_OK`, `alta`).
+`sddia-qa evolution-register` → `95441293-1049-4016-8112-a322919d34e8` (`EVOL_OK`, `alta`). Residual índices/DI → `d8d74352-2e54-46b3-bc67-08f8b8369f60`.
