@@ -635,6 +635,22 @@ outputs:
     }
 
     #[test]
+    fn email_triage_pref_query_phase_bound_in_real_repo() {
+        let root = crate::core::repo::find_repo_root().expect("repo root");
+        let phase = json!({
+            "name": "Triaje-P",
+            "requires_capability": [{
+                "id": "memory:pref-query",
+                "contract": "memory.pref_query",
+                "version": ">=1.0.0"
+            }],
+            "delegates_to": ["skill:user-preference-store"]
+        });
+        validate_phase_capability_di(&root, &phase, "email-triage-gateway")
+            .expect("email-triage-gateway memory:pref-query opt-in");
+    }
+
+    #[test]
     fn memory_pref_query_rejects_unbound_delegate() {
         let td = fixture_repo();
         write_md(

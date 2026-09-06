@@ -6,7 +6,10 @@ format: markdown
 version: "1.4.0"
 created: "2026-09-02"
 updated: "2026-09-06"
-status: "propuesta"
+status: cerrado
+feature_name: email-triage-heuristic-cold-start
+persist_ref: docs/features/email-triage-heuristic-cold-start
+pr_url: https://github.com/racso80es/SddIA/pull/266
 refinement_status: refined
 priority: alta
 type: operativo

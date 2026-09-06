@@ -1,12 +1,18 @@
-//! Handler nativo `email-triage-gateway` (PBI-KALMA2-MVP-01A). Peaje G5: Triaje-C early-exit.
+//! Handler nativo `email-triage-gateway` (PBI-KALMA2-MVP-01A / PBI-EMAIL-TRIAGE-HEURISTIC).
+//! Peaje G5: Triaje-C o mute P cierran sin Clasificacion.
 
 use super::super::capsules::invoke_capsule_json;
 use super::super::fractal::{load_fractal_dirs, write_fractal_event};
+use super::user_preference::query_context_block_with_capsule_fallback;
 use crate::envelope::OrchestratorEnvelope;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
+use user_preference_core::{
+    canonical_subject_key_from_addr, query, PreferenceAuthority, PreferenceStatus, QuerySpec,
+    UserPreference,
+};
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -285,6 +291,36 @@ fn triaje_c(payload: &Value) -> TriageC {
     }
 }
 
+fn p_exempt_c(prefs: &[UserPreference]) -> bool {
+    prefs.iter().any(|p| {
+        p.status == PreferenceStatus::Active
+            && p.authority == PreferenceAuthority::ExplicitUser
+            && p.predicate == "priority"
+            && matches!(
+                p.value.get("level").and_then(|v| v.as_str()),
+                Some("max") | Some("high")
+            )
+    })
+}
+
+fn mute_until_active(until: Option<&str>) -> bool {
+    let Some(u) = until.map(str::trim).filter(|s| !s.is_empty()) else {
+        return true;
+    };
+    DateTime::parse_from_rfc3339(u)
+        .map(|dt| dt.with_timezone(&Utc) > Utc::now())
+        .unwrap_or(true)
+}
+
+fn p_mute_sender(prefs: &[UserPreference]) -> bool {
+    prefs.iter().any(|p| {
+        p.status == PreferenceStatus::Active
+            && p.predicate == "mute"
+            && p.value.get("muted").and_then(|v| v.as_bool()) == Some(true)
+            && mute_until_active(p.value.get("until").and_then(|v| v.as_str()))
+    })
+}
+
 fn commercial_verbosity_trap(payload: &Value) -> bool {
     let snippet = payload
         .get("snippet")
@@ -370,15 +406,33 @@ fn maybe_elevate_from_subject(
     (verdict, title, datetime, false)
 }
 
-fn classify_llm(repo: &Path, payload: &Value) -> Result<(String, Option<String>, Option<String>, Value, Value), String> {
-    let started = std::time::Instant::now();
+fn classification_prompt(payload: &Value, pref_ctx: &Value) -> String {
     let from_plain = decode_rfc2047(payload.get("from").and_then(|v| v.as_str()).unwrap_or(""));
     let subject_plain = decode_rfc2047(payload.get("subject").and_then(|v| v.as_str()).unwrap_or(""));
     let snippet = payload.get("snippet").and_then(|v| v.as_str()).unwrap_or("");
-    let prompt = format!(
+    let mut prompt = format!(
         "Clasifica este correo como noise, passive o actionable. JSON estricto {{\"verdict\":\"...\",\"title\":null,\"datetime\":null}}. Reunión o cita con fecha extraíble en el asunto es candidato actionable (datetime obligatorio). No uses verbosidad ni urgencia comercial para elevar a actionable. from={} subject={} snippet={}",
         from_plain, subject_plain, snippet,
     );
+    if pref_ctx
+        .get("preferences")
+        .and_then(|v| v.as_array())
+        .map(|a| !a.is_empty())
+        == Some(true)
+    {
+        prompt.push_str(&format!(" user_preference_context={pref_ctx}"));
+    }
+    prompt
+}
+
+fn classify_llm(
+    repo: &Path,
+    payload: &Value,
+    pref_ctx: &Value,
+) -> Result<(String, Option<String>, Option<String>, Value, Value), String> {
+    let started = std::time::Instant::now();
+    let subject_plain = decode_rfc2047(payload.get("subject").and_then(|v| v.as_str()).unwrap_or(""));
+    let prompt = classification_prompt(payload, pref_ctx);
     let body = match invoke_capsule_json(
         repo,
         "mayeuta-llm",
@@ -567,16 +621,55 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     let payload = event.get("payload").cloned().unwrap_or(json!({}));
 
     let mut phases = Vec::new();
-    let c = triaje_c(&payload);
+    let from_decoded = decode_rfc2047(payload.get("from").and_then(|v| v.as_str()).unwrap_or(""));
+    let spec = QuerySpec {
+        subject_key: Some(canonical_subject_key_from_addr(&from_decoded)),
+        include_proposed: Some(false),
+        max_results: Some(8),
+        ..Default::default()
+    };
+    let pref_ctx = query_context_block_with_capsule_fallback(repo, &spec);
+    let prefs = query(repo, &spec).unwrap_or_default();
+    phases.push(json!({
+        "phase_name": "Triaje-P",
+        "status": "executed",
+        "preference_hits": prefs.len(),
+    }));
+
+    let exempt = p_exempt_c(&prefs);
+    let c = if exempt {
+        phases.push(json!({
+            "phase_name": "Triaje-C",
+            "status": "skipped",
+            "reason": "P-EXEMPT-C",
+        }));
+        TriageC {
+            concluded: false,
+            verdict: None,
+            matched_rule: None,
+        }
+    } else {
+        let c = triaje_c(&payload);
+        if c.concluded {
+            phases.push(json!({
+                "phase_name": "Triaje-C",
+                "status": "executed",
+                "matched_rule": c.matched_rule,
+                "verdict": c.verdict,
+            }));
+        } else {
+            phases.push(json!({
+                "phase_name": "Triaje-C",
+                "status": "executed",
+                "concluded": false,
+            }));
+        }
+        c
+    };
+
     let mut classification_ran = false;
 
     let (verdict, decision_path, matched_rule, cost, agenda_id, extras) = if c.concluded {
-        phases.push(json!({
-            "phase_name": "Triaje-C",
-            "status": "executed",
-            "matched_rule": c.matched_rule,
-            "verdict": c.verdict,
-        }));
         phases.push(json!({
             "phase_name": "Clasificacion",
             "status": "skipped",
@@ -595,21 +688,38 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             None,
             json!({}),
         )
-    } else {
+    } else if p_mute_sender(&prefs) {
         phases.push(json!({
-            "phase_name": "Triaje-C",
-            "status": "executed",
-            "concluded": false,
+            "phase_name": "Clasificacion",
+            "status": "skipped",
+            "reason": "p-mute-sender",
         }));
+        phases.push(json!({
+            "phase_name": "Asiento-Agenda",
+            "status": "skipped",
+            "reason": "not-actionable",
+        }));
+        (
+            "noise".to_string(),
+            "preference".to_string(),
+            Some("P-MUTE-SENDER"),
+            zeros_cost(),
+            None,
+            json!({}),
+        )
+    } else {
         classification_ran = true;
-        let classified = classify_llm(repo, &payload);
+        let classified = classify_llm(repo, &payload, &pref_ctx);
         match classified {
-            Ok((verdict, title, datetime, cost, extras)) => {
+            Ok((verdict, title, datetime, cost, mut extras)) => {
                 phases.push(json!({
                     "phase_name": "Clasificacion",
                     "status": "executed",
                     "verdict": verdict,
                 }));
+                if exempt {
+                    extras["exempt_rule"] = json!("P-EXEMPT-C");
+                }
                 let mut agenda_id = None;
                 if verdict == "actionable" {
                     if let (Some(t), Some(dt)) = (title.as_deref(), datetime.as_deref()) {
@@ -860,5 +970,267 @@ mod tests {
         assert!(!prod.contains("iota-immutable-publisher"));
         assert!(!prod.contains("invoke_iota_publisher"));
         assert!(!prod.contains("publish_immutable_data"));
+        assert!(!prod.to_ascii_lowercase().contains("expunge"));
+        assert!(!prod.contains("UID STORE"));
+    }
+
+    fn setup_triage_repo(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join(".events/domain")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"userPreferencesStore":".SddIA/vector_store/user_preferences"},"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","telemetry":".events/telemetry","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+    }
+
+    fn write_received(repo: &Path, name: &str, payload: Value) -> PathBuf {
+        let path = repo.join(".events/domain").join(format!("{name}.json"));
+        let event = json!({
+            "event_id": name,
+            "event_type": "Email_Received",
+            "event_family": "domain",
+            "payload": payload,
+        });
+        fs::write(&path, serde_json::to_string(&event).unwrap()).unwrap();
+        path
+    }
+
+    fn seed_pref(
+        repo: &Path,
+        from: &str,
+        predicate: &str,
+        value: Value,
+        authority: PreferenceAuthority,
+        status: PreferenceStatus,
+    ) {
+        let pref = UserPreference {
+            preference_id: String::new(),
+            revision_id: String::new(),
+            subject_kind: "person".into(),
+            subject_key: canonical_subject_key_from_addr(from),
+            predicate: predicate.into(),
+            value,
+            scope_type: user_preference_core::ScopeType::Channel,
+            scope_id: Some("email".into()),
+            status,
+            authority,
+            sensitivity: "personal".into(),
+            valid_from: None,
+            valid_until: None,
+            supersedes: None,
+            provenance: json!({"channel": "email"}),
+            recorded_at: String::new(),
+        };
+        user_preference_core::put_revision(repo, pref).unwrap();
+    }
+
+    fn run_received(repo: &Path, name: &str, payload: Value) -> OrchestratorEnvelope {
+        let path = write_received(repo, name, payload);
+        let rel = path.strip_prefix(repo).unwrap().to_string_lossy().replace('\\', "/");
+        run(repo, &json!({"event_file_path": rel})).expect("run")
+    }
+
+    #[test]
+    fn cold_start_noreply_is_c_noreply_without_llm() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_triage_repo(tmp.path());
+        let env = run_received(
+            tmp.path(),
+            "e1",
+            json!({"message_uid": "1", "from": "noreply@shop.tld", "subject": "Receipt"}),
+        );
+        let data = env.data.as_ref().unwrap();
+        assert_eq!(data["verdict"], "noise");
+        assert_eq!(data["decision_path"], "deterministic");
+        assert_eq!(data["classification_ran"], false);
+        let phases = env.execution_report.as_ref().unwrap()["phases"].as_array().unwrap();
+        assert_eq!(phases[0]["phase_name"], "Triaje-P");
+        assert_eq!(phases[1]["status"], "executed");
+        assert_eq!(phases[1]["matched_rule"], "C-NOREPLY");
+        assert_eq!(phases[2]["status"], "skipped");
+        assert_eq!(phases[2]["reason"], "triaje-c-concluded");
+    }
+
+    #[test]
+    fn mute_active_closes_preference_without_llm() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_triage_repo(tmp.path());
+        seed_pref(
+            tmp.path(),
+            "human@example.com",
+            "mute",
+            json!({"muted": true, "until": null}),
+            PreferenceAuthority::ExplicitUser,
+            PreferenceStatus::Active,
+        );
+        let env = run_received(
+            tmp.path(),
+            "e2",
+            json!({"message_uid": "2", "from": "Human <human@example.com>", "subject": "Hola"}),
+        );
+        let data = env.data.as_ref().unwrap();
+        assert_eq!(data["verdict"], "noise");
+        assert_eq!(data["decision_path"], "preference");
+        assert_eq!(data["classification_ran"], false);
+        let proof_dir = tmp.path().join(".SddIA/proofs/email-triaged");
+        let proof = fs::read_dir(&proof_dir).unwrap().next().unwrap().unwrap();
+        let body: Value = serde_json::from_str(&fs::read_to_string(proof.path()).unwrap()).unwrap();
+        assert_eq!(body["payload"]["matched_rule"], "P-MUTE-SENDER");
+        assert!(body["payload"].get("snippet").is_none());
+    }
+
+    #[test]
+    fn list_headers_beat_mute() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_triage_repo(tmp.path());
+        seed_pref(
+            tmp.path(),
+            "list@example.com",
+            "mute",
+            json!({"muted": true}),
+            PreferenceAuthority::ExplicitUser,
+            PreferenceStatus::Active,
+        );
+        let env = run_received(
+            tmp.path(),
+            "e3",
+            json!({
+                "message_uid": "3",
+                "from": "list@example.com",
+                "subject": "Weekly",
+                "list_headers": ["List-Id: <news.example.com>"]
+            }),
+        );
+        let data = env.data.as_ref().unwrap();
+        assert_eq!(data["verdict"], "noise");
+        assert_eq!(data["decision_path"], "deterministic");
+        assert_eq!(data["classification_ran"], false);
+    }
+
+    #[test]
+    fn explicit_priority_max_exempts_noreply_wall() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_triage_repo(tmp.path());
+        seed_pref(
+            tmp.path(),
+            "noreply@shop.tld",
+            "priority",
+            json!({"level": "max"}),
+            PreferenceAuthority::ExplicitUser,
+            PreferenceStatus::Active,
+        );
+        let env = run_received(
+            tmp.path(),
+            "e4",
+            json!({"message_uid": "4", "from": "noreply@shop.tld", "subject": "Receipt"}),
+        );
+        let data = env.data.as_ref().unwrap();
+        assert_eq!(data["classification_ran"], true);
+        assert_ne!(data["decision_path"], "deterministic");
+        let phases = env.execution_report.as_ref().unwrap()["phases"].as_array().unwrap();
+        assert_eq!(phases[1]["reason"], "P-EXEMPT-C");
+        assert_eq!(phases[1]["status"], "skipped");
+        assert_ne!(data["verdict"], json!(""));
+        let v = data["verdict"].as_str().unwrap();
+        assert!(matches!(v, "noise" | "passive" | "actionable"));
+    }
+
+    #[test]
+    fn inferred_priority_max_does_not_exempt() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_triage_repo(tmp.path());
+        seed_pref(
+            tmp.path(),
+            "noreply@shop.tld",
+            "priority",
+            json!({"level": "max"}),
+            PreferenceAuthority::Inferred,
+            PreferenceStatus::Active,
+        );
+        let env = run_received(
+            tmp.path(),
+            "e5",
+            json!({"message_uid": "5", "from": "noreply@shop.tld", "subject": "Receipt"}),
+        );
+        assert_eq!(env.data.as_ref().unwrap()["decision_path"], "deterministic");
+        assert_eq!(env.data.as_ref().unwrap()["classification_ran"], false);
+    }
+
+    #[test]
+    fn proposed_priority_max_does_not_exempt() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_triage_repo(tmp.path());
+        seed_pref(
+            tmp.path(),
+            "noreply@shop.tld",
+            "priority",
+            json!({"level": "max"}),
+            PreferenceAuthority::ExplicitUser,
+            PreferenceStatus::Proposed,
+        );
+        let env = run_received(
+            tmp.path(),
+            "e6",
+            json!({"message_uid": "6", "from": "noreply@shop.tld", "subject": "Receipt"}),
+        );
+        assert_eq!(env.data.as_ref().unwrap()["classification_ran"], false);
+        assert_eq!(env.data.as_ref().unwrap()["decision_path"], "deterministic");
+    }
+
+    #[test]
+    fn query_subject_key_is_never_plaintext_addr() {
+        let from = "Alice <alice@example.com>";
+        let key = canonical_subject_key_from_addr(from);
+        assert!(!key.contains('@'));
+        assert_ne!(key, "alice@example.com");
+        let spec = QuerySpec {
+            subject_key: Some(key.clone()),
+            ..Default::default()
+        };
+        assert_eq!(spec.subject_key.as_deref(), Some(key.as_str()));
+    }
+
+    #[test]
+    fn conjugacion_prompt_omitted_when_empty_present_when_partial() {
+        let payload = json!({"from": "a@b", "subject": "Hola", "snippet": "x"});
+        let empty = json!({"schema_version": "1.0.0", "preferences": []});
+        let p0 = classification_prompt(&payload, &empty);
+        assert!(!p0.contains("user_preference_context"));
+        let partial = json!({
+            "schema_version": "1.0.0",
+            "preferences": [{"predicate": "attention_window", "value": {"dow": [1]}}]
+        });
+        let p1 = classification_prompt(&payload, &partial);
+        assert!(p1.contains("user_preference_context"));
+        assert!(p1.contains("schema_version"));
+        assert!(!p1.contains("body"));
+        let baseline = classification_prompt(&payload, &json!({}));
+        assert_eq!(p0, baseline);
+    }
+
+    #[test]
+    fn p_exempt_requires_explicit_active_high() {
+        let mut pref = UserPreference {
+            preference_id: String::new(),
+            revision_id: String::new(),
+            subject_kind: "person".into(),
+            subject_key: "k".into(),
+            predicate: "priority".into(),
+            value: json!({"level": "normal"}),
+            scope_type: user_preference_core::ScopeType::Channel,
+            scope_id: Some("email".into()),
+            status: PreferenceStatus::Active,
+            authority: PreferenceAuthority::ExplicitUser,
+            sensitivity: "personal".into(),
+            valid_from: None,
+            valid_until: None,
+            supersedes: None,
+            provenance: json!({}),
+            recorded_at: String::new(),
+        };
+        assert!(!p_exempt_c(&[pref.clone()]));
+        pref.value = json!({"level": "high"});
+        assert!(p_exempt_c(&[pref]));
     }
 }
