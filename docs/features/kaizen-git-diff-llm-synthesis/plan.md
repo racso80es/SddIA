@@ -10,7 +10,7 @@ phases:
   - dcc-pr-ci-accept
 branch_name: feat/kaizen-git-diff-llm-synthesis
 persist_ref: docs/features/kaizen-git-diff-llm-synthesis
-pbi_ref: docs/todos/pending/PBI-KAIZEN-GIT-DIFF-LLM-SYNTHESIS.md
+pbi_ref: docs/todos/done/PBI-KAIZEN-GIT-DIFF-LLM-SYNTHESIS.md
 document_id: PBI-KAIZEN-GIT-DIFF-LLM-SYNTHESIS
 uuid: "1540ab52-4354-49a6-9d4e-63135aaccde2"
 execution_id: "00214f28-2a66-4597-8222-6fdc31250d16"

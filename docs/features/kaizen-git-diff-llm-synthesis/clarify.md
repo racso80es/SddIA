@@ -5,7 +5,7 @@ process: feature
 purpose: Estabilización Filtro A del PBI v1.2.0 tras init lab
 version_clarify: "1.0.0"
 execution_id: "00214f28-2a66-4597-8222-6fdc31250d16"
-pbi_ref: docs/todos/pending/PBI-KAIZEN-GIT-DIFF-LLM-SYNTHESIS.md
+pbi_ref: docs/todos/done/PBI-KAIZEN-GIT-DIFF-LLM-SYNTHESIS.md
 document_id: PBI-KAIZEN-GIT-DIFF-LLM-SYNTHESIS
 pbi_uuid: "1540ab52-4354-49a6-9d4e-63135aaccde2"
 pbi_version: "1.2.0"

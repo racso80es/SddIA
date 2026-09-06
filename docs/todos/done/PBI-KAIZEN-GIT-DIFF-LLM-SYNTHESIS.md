@@ -6,8 +6,9 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-05"
 updated: "2026-09-06"
-status: abierto
-refinement_status: refinado
+status: cerrado
+refinement_status: implemented
+pr_url: https://github.com/racso80es/SddIA/pull/263
 priority: media
 process: feature
 executor_vehicle: feature

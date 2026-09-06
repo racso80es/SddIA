@@ -30,7 +30,11 @@ cd SddIA && cargo test -p execute-process --lib -- notify_humanized pull_request
 # 10 passed
 ```
 
-`sddia-qa evolution-register` → `300bad66-5bf5-4f5d-af2c-83df9701576a` (`EVOL_OK`, `modificacion`).
+`sddia-qa evolution-register` → `300bad66-5bf5-4f5d-af2c-83df9701576a` (`EVOL_OK`, `modificacion`). Relacionado re-anclado con `SddIA/actions/index.md` y `SddIA/skills/index.md` (`hash_integrity` `sha256:20ca0573970119044739593261acf23cc47e404e96f3b26b40b9b437650c0b67`).
+
+DCC `989ea05b-de79-4c9e-8c53-f07aa3a1cf29` → PR https://github.com/racso80es/SddIA/pull/263 (`snapshot` `f549fd5`, `PullRequest_Presented` `e28fb1a3-80f5-4208-8805-b01034de0f3f`).
+
+CI post-PR APTO: runs `34013911717` (push) y `34013913164` (pull_request) `success` `headSha=f549fd5`.
 
 
 `./sddia-run.sh --process entity-manager --inputs-file .tmp/em-notify-humanized-pr-merged-update.json`
