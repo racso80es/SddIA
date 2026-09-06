@@ -4,7 +4,7 @@ uuid: "17380fcf-0630-45d3-9813-611d80beec0d"
 title: "[LABORATORIO] MVP Paciente 0: Anclaje de Telemetría DLT con Billetera Local"
 format: markdown
 version: "1.2.0"
-status: abierto
+status: cerrado
 type: laboratorio
 priority: alta
 process: feature
