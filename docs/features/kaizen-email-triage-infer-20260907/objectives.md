@@ -4,7 +4,7 @@ created: "2026-09-07"
 process: feature
 branch_name: feat/kaizen-email-triage-infer-20260907
 persist_ref: docs/features/kaizen-email-triage-infer-20260907
-pbi_ref: docs/todos/pending/[KAIZEN] Triaje de correo — batería 20260907 inferencia nula.md
+pbi_ref: docs/todos/done/[KAIZEN] Triaje de correo — batería 20260907 inferencia nula.md
 execution_id: "a55a6cc1-b980-4205-abe5-1a4702765c96"
 document_id: PBI-KAIZEN-EMAIL-TRIAGE-BATCH-20260907
 pbi_uuid: "b4b41c88-d90b-47fc-bf18-94efd37f2298"

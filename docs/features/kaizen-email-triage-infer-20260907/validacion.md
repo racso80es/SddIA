@@ -7,11 +7,14 @@ agents: argos
 branch: feat/kaizen-email-triage-infer-20260907
 branch_name: feat/kaizen-email-triage-infer-20260907
 persist_ref: docs/features/kaizen-email-triage-infer-20260907
-pbi_ref: docs/todos/pending/[KAIZEN] Triaje de correo — batería 20260907 inferencia nula.md
+pbi_ref: docs/todos/done/[KAIZEN] Triaje de correo — batería 20260907 inferencia nula.md
 document_id: PBI-KAIZEN-EMAIL-TRIAGE-BATCH-20260907
 uuid: "b4b41c88-d90b-47fc-bf18-94efd37f2298"
-global: NO_APTO
-pbi_archived: false
+global: APTO
+pbi_archived: true
+pr_url: "https://github.com/racso80es/SddIA/pull/268"
+ci_run_id: "34139558513"
+ci_run_url: "https://github.com/racso80es/SddIA/actions/runs/34139558513"
 checks:
   CA-1: APTO
   CA-2: APTO
@@ -21,18 +24,18 @@ checks:
   CA-6: APTO
   CA-7: APTO
   CA-8: APTO
-  CA-CI: PENDIENTE-CI
+  CA-CI: APTO
 git_changes:
   - SddIA/engine/execute-process/src/engine/handlers/email_triage.rs
   - SddIA/evolution/29e6cbc5-6d13-45b9-bd62-f24e3fdb0c45.md
   - SddIA/evolution/Evolution_log.md
   - docs/features/kaizen-email-triage-infer-20260907/
-  - docs/todos/pending/[KAIZEN] Triaje de correo — batería 20260907 inferencia nula.md
+  - docs/todos/done/[KAIZEN] Triaje de correo — batería 20260907 inferencia nula.md
 ---
 
 # Validacion — kaizen-email-triage-infer-20260907
 
-`global: NO_APTO` hasta `CA-CI` con `run_id` verde (L-CI / features-documentation-pattern v1.2.1). PBI permanece en `pending/` hasta ese sello. `accept-pr` prohibido antes.
+`global: APTO`. PBI archivado en `docs/todos/done/` en esta rama. CA-CI: run `34139558513` (PR #268, head `5f4f37c`). CA-5 gated (CLI de instancia).
 
 ## Checks
 
@@ -46,7 +49,7 @@ git_changes:
 | CA-6 | APTO | `l_guard_keywords_exclude_commercial_d3`. |
 | CA-7 | APTO | `email_triage_does_not_invoke_iota_publisher` (STORE/EXPUNGE). |
 | CA-8 | APTO | F-TRIAGE-03/06 fuera de Slice 1 (clarify). |
-| CA-CI | PENDIENTE-CI | Sin `run_id` GitHub Actions. |
+| CA-CI | APTO | Run [34139558513](https://github.com/racso80es/SddIA/actions/runs/34139558513): `sddia-index-integrity`, `wasi-runtime-smoke`, `eda-iota-smoke-simulate`, `eda-bus-e2e-smoke`, `eda-iota-physical` SUCCESS (push gemelo `34139554257` paridad). |
 
 ## Tests
 

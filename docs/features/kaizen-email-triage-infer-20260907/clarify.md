@@ -5,7 +5,7 @@ process: feature
 purpose: Estabilización Filtro A PBI v1.2.0; Slice 1 peaje/deglución
 version_clarify: "1.0.0"
 execution_id: "a55a6cc1-b980-4205-abe5-1a4702765c96"
-pbi_ref: docs/todos/pending/[KAIZEN] Triaje de correo — batería 20260907 inferencia nula.md
+pbi_ref: docs/todos/done/[KAIZEN] Triaje de correo — batería 20260907 inferencia nula.md
 document_id: PBI-KAIZEN-EMAIL-TRIAGE-BATCH-20260907
 pbi_uuid: "b4b41c88-d90b-47fc-bf18-94efd37f2298"
 pbi_version: "1.2.0"

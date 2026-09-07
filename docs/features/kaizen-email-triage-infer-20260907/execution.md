@@ -35,3 +35,7 @@ Nuevos: `tokens_from_nested_telemetry_receipt`, `failed_capsule_sets_classificat
 ## T4 evolution
 
 `id_cambio` `29e6cbc5-6d13-45b9-bd62-f24e3fdb0c45`. Hash vía `sddia-qa evolution-rehash`. Cero entity-manager (handler no es genoma DA-2).
+
+## DCC / CI
+
+PR https://github.com/racso80es/SddIA/pull/268. `execution_id` DCC `4588080b-dad8-4b27-b4b7-497ba119227e`. CA-CI run `34139558513`.

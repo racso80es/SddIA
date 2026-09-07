@@ -6,8 +6,10 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-07"
 updated: "2026-09-07"
-status: "propuesta"
-refinement_status: refinado
+status: done
+refinement_status: implemented
+persist_ref: docs/features/kaizen-email-triage-infer-20260907
+pr_url: "https://github.com/racso80es/SddIA/pull/268"
 priority: alta
 type: kaizen
 process: feature
@@ -268,14 +270,14 @@ SSOT de casos, inyección y oráculos: `docs/features/kaizen-email-triage-infer-
 
 ## 6. Criterios de Aceptación Formales
 
-- [ ] **CA-1 (Extracción de Telemetría):** `email_triage.rs` extrae `tokens_in` y `tokens_out` desde `data.telemetry_receipt` de `mayeuta-llm`. Un test unitario específico verifica que tokens > 0 no activan `classification-degraded`.
-- [ ] **CA-2 (Diagnóstico sin Deglución Silenciosa):** Si `mayeuta-llm` retorna error de ejecución (`exitCode != 0` o `success: false`), `classify_llm` documenta el fallo en `extras` (`classification_error` o similar) junto a `classification-degraded: true`, manteniendo la degradación fail-open a `passive`.
-- [ ] **CA-3 (Preservación de L-GUARD):** Asunto con acto (`reunión`/`cita`/`meeting`/`llamada`) + `dd/mm/yyyy` [hora] → `actionable`, `decision_path: llm`, agenda + poke, con LLM sano **y** con cápsula degradada. La matriz no exige fecha futura.
-- [ ] **CA-4 (Muro C-LIST Determinista):** Un fixture con cabecera `List-Id` o `List-Unsubscribe` concluye en `verdict: noise`, `decision_path: deterministic`, `matched_rule: C-LIST`; la fase Clasificación LLM se marca como `skipped` (peaje 0 tokens garantizado).
-- [ ] **CA-5 (Clasificación Semántica sin L-GUARD):** Ante un correo ambiguo sin cabeceras `List-*` y con LLM operativo, el sistema emite el veredicto semántico correspondiente con `tokens_in + tokens_out > 0`, sin bandera de degradación.
-- [ ] **CA-6 (Preservación Estricta de Laudo D3):** Queda prohibida la inclusión de palabras clave comerciales (`factura`, `documentación`, `computrabajo`) en la lógica de L-GUARD. Ningún correo concluye `actionable` sin fecha/hora verificable.
-- [ ] **CA-7 (Invariante IMAP):** La ejecución del triaje bajo ninguna circunstancia ejecuta comandos `STORE`, `EXPUNGE` ni altera el buzón IMAP remoto. Todo veredicto genera su correspondiente proof durable en `.SddIA/proofs/email-triaged/`.
-- [ ] **CA-8 (Desacople de Gates):** F-TRIAGE-03 (visualización en WUI) y F-TRIAGE-06 (calidad de agenda) no bloquean la aprobación ni el merge del Slice 1.
+- [x] **CA-1 (Extracción de Telemetría):** `email_triage.rs` extrae `tokens_in` y `tokens_out` desde `data.telemetry_receipt` de `mayeuta-llm`. Un test unitario específico verifica que tokens > 0 no activan `classification-degraded`.
+- [x] **CA-2 (Diagnóstico sin Deglución Silenciosa):** Si `mayeuta-llm` retorna error de ejecución (`exitCode != 0` o `success: false`), `classify_llm` documenta el fallo en `extras` (`classification_error` o similar) junto a `classification-degraded: true`, manteniendo la degradación fail-open a `passive`.
+- [x] **CA-3 (Preservación de L-GUARD):** Asunto con acto (`reunión`/`cita`/`meeting`/`llamada`) + `dd/mm/yyyy` [hora] → `actionable`, `decision_path: llm`, agenda + poke, con LLM sano **y** con cápsula degradada. La matriz no exige fecha futura.
+- [x] **CA-4 (Muro C-LIST Determinista):** Un fixture con cabecera `List-Id` o `List-Unsubscribe` concluye en `verdict: noise`, `decision_path: deterministic`, `matched_rule: C-LIST`; la fase Clasificación LLM se marca como `skipped` (peaje 0 tokens garantizado).
+- [ ] **CA-5 (Clasificación Semántica sin L-GUARD):** Ante un correo ambiguo sin cabeceras `List-*` y con LLM operativo, el sistema emite el veredicto semántico correspondiente con `tokens_in + tokens_out > 0`, sin bandera de degradación. **PENDIENTE-GATED** (L-SLICE; no bloquea merge).
+- [x] **CA-6 (Preservación Estricta de Laudo D3):** Queda prohibida la inclusión de palabras clave comerciales (`factura`, `documentación`, `computrabajo`) en la lógica de L-GUARD. Ningún correo concluye `actionable` sin fecha/hora verificable.
+- [x] **CA-7 (Invariante IMAP):** La ejecución del triaje bajo ninguna circunstancia ejecuta comandos `STORE`, `EXPUNGE` ni altera el buzón IMAP remoto. Todo veredicto genera su correspondiente proof durable en `.SddIA/proofs/email-triaged/`.
+- [x] **CA-8 (Desacople de Gates):** F-TRIAGE-03 (visualización en WUI) y F-TRIAGE-06 (calidad de agenda) no bloquean la aprobación ni el merge del Slice 1.
 
 ---
 
