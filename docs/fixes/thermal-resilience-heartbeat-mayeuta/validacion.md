@@ -8,8 +8,9 @@ persist_ref: docs/fixes/thermal-resilience-heartbeat-mayeuta
 pbi_ref: docs/todos/done/[FIX] Resiliencia Térmica en Heartbeat Audit y Poda Ontológica en Mayeuta.md
 document_id: PBI-FIX-THERMAL-RESILIENCE-HEARTBEAT-MAYEUTA
 execution_id: "0e0f6614-f1bd-40c5-9f63-af8e0a482786"
-global: PENDIENTE-CI
+global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/267
 checks:
   CA1_BTIME_GATE: APTO
   CA2_PRE_BOOT_NO_FRACTURE: APTO
@@ -19,7 +20,9 @@ checks:
   CA6_UNIT_TESTS: APTO
   CA7_ENTITY_MANAGER: APTO
   CA8_PBI_ARCHIVED: APTO
-  CA9_GITHUB_CHECKS: PENDIENTE-CI
+  CA9_GITHUB_CHECKS: APTO
+ci_run_id: "34127344317"
+ci_run_url: https://github.com/racso80es/SddIA/actions/runs/34127344317
 git_changes:
   - SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
   - SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
@@ -38,7 +41,7 @@ git_changes:
 
 ## Veredicto
 
-CA locales APTO (`cargo test -p execute-process --lib -- daemon_heartbeat enrich_fracture_pbi_kaizen`: 29 ok). **CA-9** (checks GitHub del PR) queda `PENDIENTE-CI` — `global` no es APTO hasta `run_id`/URL verde (`features-documentation-pattern` v1.2.1).
+CA locales APTO (`cargo test -p execute-process --lib -- daemon_heartbeat enrich_fracture_pbi_kaizen`: 29 ok). **CA-9** APTO — run `34127344317` (https://github.com/racso80es/SddIA/actions/runs/34127344317): `sddia-index-integrity`, `wasi-runtime-smoke`, `eda-iota-smoke-simulate`, `eda-bus-e2e-smoke`, `eda-iota-physical` SUCCESS.
 
 ## Checks
 
@@ -52,7 +55,7 @@ CA locales APTO (`cargo test -p execute-process --lib -- daemon_heartbeat enrich
 | CA-6 | APTO | 29 tests ok |
 | CA-7 | APTO | process 1.2.0 / action 1.3.0 vía `entity-manager` |
 | CA-8 | APTO | 4 satélites + madre en `docs/todos/done/` |
-| CA-9 | PENDIENTE-CI | post-PR |
+| CA-9 | APTO | run 34127344317 |
 
 ## PBI
 
