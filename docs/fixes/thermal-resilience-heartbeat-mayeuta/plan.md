@@ -13,7 +13,7 @@ phases:
   - accept-pr
 branch_name: fix/thermal-resilience-heartbeat-mayeuta
 persist_ref: docs/fixes/thermal-resilience-heartbeat-mayeuta
-pbi_ref: docs/todos/pending/[FIX] Resiliencia Térmica en Heartbeat Audit y Poda Ontológica en Mayeuta.md
+pbi_ref: docs/todos/done/[FIX] Resiliencia Térmica en Heartbeat Audit y Poda Ontológica en Mayeuta.md
 document_id: PBI-FIX-THERMAL-RESILIENCE-HEARTBEAT-MAYEUTA
 execution_id: "0e0f6614-f1bd-40c5-9f63-af8e0a482786"
 ---

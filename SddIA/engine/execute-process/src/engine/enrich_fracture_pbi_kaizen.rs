@@ -23,6 +23,16 @@ fn optional_str(inputs: &Value, key: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+/// Traza canónica Argos `emit_orphan_lock_fracture`. Match **solo** `error_trace`
+/// (F-MAYEUTA-ORPHAN-TOKEN-TRAP: no usar `orphan`/`huérfan` sobre el blob concatenado).
+fn is_orphan_lock_trace(error_trace: &str) -> bool {
+    error_trace.contains("Centinela ")
+        && error_trace.contains("lock huérfano")
+        && error_trace.contains("PID ")
+        && error_trace.contains("muerto")
+        && error_trace.contains("last_heartbeat=")
+}
+
 /// Traza canónica Argos `emit_system_fracture`. Match **solo** `error_trace`
 /// (F-MAYEUTA-HB-TOKEN-TRAP: no usar `heartbeat`/`daemon`/`audit` sobre el blob concatenado).
 fn is_heartbeat_starvation_trace(error_trace: &str) -> bool {
@@ -100,6 +110,20 @@ pub fn analyze_fracture_kaizen(
         proposals.push((
             "refactor_tool".into(),
             "Emitir latido en worker / no bloquear el hilo de heartbeat (paridad keepalive de centinelas hermanos)."
+                .into(),
+        ));
+    }
+
+    if is_orphan_lock_trace(error_trace) {
+        root_causes.push(
+            "Lock de centinela con PID muerto (ciclo de vida de daemon / sesión de host); \
+             no es entidad genómica huérfana de bus EDA. `process_name` es `daemon_id`."
+                .into(),
+        );
+        proposals.push((
+            "refactor_tool".into(),
+            "Discriminar lock anterior a `btime` del host frente a colapso en caliente; \
+             no ejecutar backfill `audit-entity-eda-coverage`."
                 .into(),
         ));
     }
@@ -233,7 +257,18 @@ pub fn analyze_fracture_kaizen(
                 .into(),
         ));
     }
-    if has_any(&["orphan", "ruido de sistema", "eda genómica", "huérfan"]) {
+    let genomic_ctx = has_any(&[
+        "eda genómica",
+        "domain_entity_created",
+        "audit-entity-eda-coverage",
+        "entity-manager",
+        "ruido de sistema",
+        "orphan_count",
+    ]);
+    if !is_orphan_lock_trace(error_trace)
+        && genomic_ctx
+        && has_any(&["orphan", "ruido de sistema", "eda genómica", "huérfan", "orphan_count"])
+    {
         root_causes.push(
             "Entidad genómica indexada sin correlato `Domain_Entity_Created` en bus EDA.".into(),
         );
@@ -566,7 +601,37 @@ mod tests {
             "argos",
         );
         assert!(!section.contains("Inanición de `Daemon_Heartbeat`"));
+        assert!(!section.contains("Lock de centinela"));
         assert_ne!(verdict, "refactor_tool");
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_orphan_lock_not_eda() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "email-watcher",
+            "Centinela email-watcher lock huérfano: PID 13215 muerto. last_heartbeat=2026-09-06T06:12:04Z",
+            "daemon-heartbeat-audit",
+            "argos",
+        );
+        assert_eq!(verdict, "refactor_tool");
+        assert!(section.contains("Lock de centinela") || section.contains("ciclo de vida"));
+        assert!(!section.contains("Domain_Entity_Created"));
+        assert!(!section.contains("audit-entity-eda-coverage --emit"));
+        assert!(!section.contains("no clasificada"));
+        assert!(!section.contains("Auditar proceso"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_genomic_orphan_still_eda() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "entity-manager",
+            "Ruido de Sistema: orphan_count=2 sin Domain_Entity_Created; ejecutar audit-entity-eda-coverage",
+            "entity-manager",
+            "cerbero",
+        );
+        assert_eq!(verdict, "refactor_tool");
+        assert!(section.contains("Domain_Entity_Created"));
+        assert!(!section.contains("Lock de centinela"));
     }
 
     #[test]
@@ -598,9 +663,10 @@ mod tests {
 
         let out = run(repo, &inputs).expect("enrich");
         assert_eq!(out.get("success"), Some(&json!(true)));
+        // Fixture: "colapsó" → catch-all Kintsugi (`prompt_adjustment`), no cubo hook/orphan/EDA.
         assert_eq!(
             out.get("evolution_verdict"),
-            Some(&json!("refactor_tool"))
+            Some(&json!("prompt_adjustment"))
         );
 
         let path = out
