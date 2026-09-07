@@ -3,6 +3,7 @@
 
 use super::super::capsules::invoke_capsule_json;
 use super::super::fractal::{load_fractal_dirs, write_fractal_event};
+use super::super::telemetry_receipt;
 use super::user_preference::query_context_block_with_capsule_fallback;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::{DateTime, Utc};
@@ -377,6 +378,66 @@ fn mark_classification_degraded(
     }
 }
 
+fn tokens_from_capsule_body(body: &Value) -> (u64, u64) {
+    if let Some(receipt) = telemetry_receipt::extract_from_capsule_body(body, "skill:mayeuta-llm") {
+        let tin = receipt
+            .get("prompt_tokens")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        let tout = receipt
+            .get("completion_tokens")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(0);
+        return (tin, tout);
+    }
+    (
+        body.get("tokens_in").and_then(|v| v.as_u64()).unwrap_or(0),
+        body.get("tokens_out").and_then(|v| v.as_u64()).unwrap_or(0),
+    )
+}
+
+fn capsule_invoke_failed(exit_code: i32, body: &Value) -> bool {
+    exit_code != 0 || body.get("success") != Some(&json!(true))
+}
+
+fn classification_error_text(body: &Value, spawn_err: Option<&str>) -> String {
+    if let Some(e) = spawn_err.filter(|s| !s.is_empty()) {
+        return e.to_string();
+    }
+    body.get("error")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            body.get("message")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+        })
+        .unwrap_or("mayeuta-llm failed")
+        .to_string()
+}
+
+fn degrade_without_llm(
+    subject_plain: &str,
+    started: std::time::Instant,
+    error: &str,
+) -> (String, Option<String>, Option<String>, Value, Value) {
+    let (verdict, title, datetime, elevated) =
+        maybe_elevate_from_subject("", None, None, subject_plain);
+    let mut extras = json!({ "classification_error": error });
+    if elevated {
+        extras["subject_elevation"] = json!(true);
+    }
+    mark_classification_degraded(&mut extras, llm_require_infer(), 0, 0, elevated);
+    let cost = json!({
+        "tokens_in": 0,
+        "tokens_out": 0,
+        "duration_ms": started.elapsed().as_millis() as u64,
+    });
+    (verdict, title, datetime, cost, extras)
+}
+
 /// Post-LLM: extracción estructural completa eleva a actionable (L-GUARD).
 fn maybe_elevate_from_subject(
     verdict: &str,
@@ -433,29 +494,22 @@ fn classify_llm(
     let started = std::time::Instant::now();
     let subject_plain = decode_rfc2047(payload.get("subject").and_then(|v| v.as_str()).unwrap_or(""));
     let prompt = classification_prompt(payload, pref_ctx);
-    let body = match invoke_capsule_json(
+    let invoked = match invoke_capsule_json(
         repo,
         "mayeuta-llm",
         &json!({"operation": "SYNTHESIZE", "prompt": prompt}),
         false,
     ) {
-        Ok(r) => r.body,
-        Err(_) => {
-            let (verdict, title, datetime, elevated) =
-                maybe_elevate_from_subject("", None, None, &subject_plain);
-            let mut extras = json!({});
-            if elevated {
-                extras["subject_elevation"] = json!(true);
-            }
-            mark_classification_degraded(&mut extras, llm_require_infer(), 0, 0, elevated);
-            let cost = json!({
-                "tokens_in": 0,
-                "tokens_out": 0,
-                "duration_ms": started.elapsed().as_millis() as u64,
-            });
-            return Ok((verdict, title, datetime, cost, extras));
+        Ok(r) => r,
+        Err(e) => {
+            return Ok(degrade_without_llm(&subject_plain, started, &e));
         }
     };
+    if capsule_invoke_failed(invoked.exit_code, &invoked.body) {
+        let err = classification_error_text(&invoked.body, None);
+        return Ok(degrade_without_llm(&subject_plain, started, &err));
+    }
+    let body = invoked.body;
     let text = llm_output_blob(&body);
     let parsed = parse_triage_llm_blob(&text);
     let mut verdict = parsed
@@ -485,8 +539,7 @@ fn classify_llm(
     if extracted {
         extras["subject_elevation"] = json!(true);
     }
-    let tokens_in = body.get("tokens_in").and_then(|v| v.as_u64()).unwrap_or(0);
-    let tokens_out = body.get("tokens_out").and_then(|v| v.as_u64()).unwrap_or(0);
+    let (tokens_in, tokens_out) = tokens_from_capsule_body(&body);
     mark_classification_degraded(
         &mut extras,
         llm_require_infer(),
@@ -961,6 +1014,65 @@ mod tests {
         assert!(llm_output_blob(&body).contains("passive"));
         let parsed = parse_triage_llm_blob(&llm_output_blob(&body));
         assert_eq!(parsed["verdict"], json!("passive"));
+    }
+
+    #[test]
+    fn tokens_from_nested_telemetry_receipt() {
+        let body = json!({
+            "success": true,
+            "data": {
+                "text": "{\"verdict\":\"passive\"}",
+                "telemetry_receipt": {"prompt_tokens": 10, "completion_tokens": 5}
+            }
+        });
+        assert_eq!(tokens_from_capsule_body(&body), (10, 5));
+        let mut extras = json!({});
+        mark_classification_degraded(&mut extras, true, 10, 5, false);
+        assert!(extras.get("classification-degraded").is_none());
+    }
+
+    #[test]
+    fn failed_capsule_sets_classification_error_passive() {
+        let started = std::time::Instant::now();
+        let body = json!({"success": false, "error": "CLI exit 1", "data": null});
+        assert!(capsule_invoke_failed(1, &body));
+        assert!(capsule_invoke_failed(0, &json!({})));
+        assert!(!capsule_invoke_failed(0, &json!({"success": true})));
+        let err = classification_error_text(&body, None);
+        assert_eq!(err, "CLI exit 1");
+        let (v, _, _, _, extras) = degrade_without_llm("Factura sin fecha", started, &err);
+        assert_eq!(v, "passive");
+        assert_eq!(extras["classification_error"], json!("CLI exit 1"));
+    }
+
+    #[test]
+    fn failed_capsule_meeting_subject_still_actionable() {
+        let started = std::time::Instant::now();
+        let (v, _, dt, _, extras) = degrade_without_llm(
+            "Reunión con Racso el 25/08/2026 a las 10:00",
+            started,
+            "CLI exit 1",
+        );
+        assert_eq!(v, "actionable");
+        assert!(dt.unwrap().contains("25/08/2026"));
+        assert_eq!(extras["subject_elevation"], json!(true));
+        assert_eq!(extras["classification_error"], json!("CLI exit 1"));
+        assert!(extras.get("classification-degraded").is_none());
+    }
+
+    #[test]
+    fn l_guard_keywords_exclude_commercial_d3() {
+        let src = include_str!("email_triage.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let guard = prod
+            .split("fn extract_actionable_from_subject")
+            .nth(1)
+            .unwrap_or("");
+        let guard = guard.split("fn list_headers_text").next().unwrap_or(guard);
+        let low = guard.to_ascii_lowercase();
+        assert!(!low.contains("factura"));
+        assert!(!low.contains("documentacion"));
+        assert!(!low.contains("computrabajo"));
     }
 
     #[test]

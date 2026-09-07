@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `29e6cbc5-6d13-45b9-bd62-f24e3fdb0c45` | 2026-09-07 | Slice 1 triaje correo: tokens desde telemetry_receipt y deglución de fallo mayeuta-llm en classify_llm. | CANONICO | `SddIA/evolution/29e6cbc5-6d13-45b9-bd62-f24e3fdb0c45.md` |
 | `c142dc19-b3d9-4810-bad2-734c1910606e` | 2026-09-07 | daemon-heartbeat-audit: puerta btime inhibe lock huérfano pre-boot; Mayeuta cubo orphan_lock acota EDA genómica. | CANONICO | `SddIA/evolution/c142dc19-b3d9-4810-bad2-734c1910606e.md` |
 | `d8d74352-2e54-46b3-bc67-08f8b8369f60` | 2026-09-06 | Correlato evolution residual: indices process/norms y test DI Triaje-P. | CANONICO | `SddIA/evolution/d8d74352-2e54-46b3-bc67-08f8b8369f60.md` |
 | `95441293-1049-4016-8112-a322919d34e8` | 2026-09-06 | Triaje-P cold-start: memory:pref-query, P-EXEMPT-C y P-MUTE-SENDER sobre email-triage-gateway. | CANONICO | `SddIA/evolution/95441293-1049-4016-8112-a322919d34e8.md` |
