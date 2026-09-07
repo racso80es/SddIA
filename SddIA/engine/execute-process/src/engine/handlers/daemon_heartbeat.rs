@@ -6,7 +6,7 @@ use super::heartbeat_audit_thresholds::{
 use super::phagocyte_recovered_fracture_pbis::{env_apply_enabled, run_phagocyte};
 use super::super::daemons::{
     daemon_interval, iso_now, list_indexed_daemon_ids, load_eda_pending, parse_iso, pid_alive,
-    read_lock, resolve_daemon_uuid, stamp_delivery_state, state_dir, write_json_atomic,
+    read_lock, remove_lock, resolve_daemon_uuid, stamp_delivery_state, state_dir, write_json_atomic,
 };
 use chrono::Utc;
 use crate::envelope::OrchestratorEnvelope;
@@ -372,6 +372,62 @@ fn ingest_regime(repo: &Path, state: &mut Value) -> Result<u32, String> {
     Ok(ingested)
 }
 
+/// Timestamp Unix de arranque del host (`btime` en `/proc/stat`). No es duración.
+pub fn parse_proc_stat_btime(stat: &str) -> Option<chrono::DateTime<Utc>> {
+    for line in stat.lines() {
+        let line = line.trim();
+        let Some(rest) = line.strip_prefix("btime ") else {
+            continue;
+        };
+        let secs: i64 = rest.trim().parse().ok()?;
+        return chrono::DateTime::from_timestamp(secs, 0);
+    }
+    None
+}
+
+fn host_boot_time_utc() -> Option<chrono::DateTime<Utc>> {
+    let raw = fs::read_to_string("/proc/stat").ok()?;
+    parse_proc_stat_btime(&raw)
+}
+
+pub fn lock_predates_host_boot(
+    started_at: Option<&str>,
+    last_heartbeat_at: Option<&str>,
+    boot_time: chrono::DateTime<Utc>,
+) -> bool {
+    let candidate = started_at
+        .and_then(parse_iso)
+        .or_else(|| last_heartbeat_at.and_then(parse_iso));
+    match candidate {
+        Some(ts) => ts < boot_time,
+        None => false,
+    }
+}
+
+fn classify_host_reboot_stale_lock(
+    repo: &Path,
+    state: &mut Value,
+    daemon_id: &str,
+    pid: i32,
+) -> Result<Option<Value>, String> {
+    let daemons = state
+        .as_object_mut()
+        .and_then(|o| o.get_mut("daemons"))
+        .and_then(|d| d.as_object_mut())
+        .ok_or("state daemons invalid")?;
+    let mut entry = daemons
+        .get(daemon_id)
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    entry.insert("classification".into(), json!("host_reboot_stale_lock"));
+    daemons.insert(daemon_id.to_string(), Value::Object(entry));
+    if !pid_alive(pid) {
+        let _ = remove_lock(repo, daemon_id);
+    }
+    Ok(None)
+}
+
 pub fn effective_heartbeat_baseline(
     last_heartbeat_at: Option<&str>,
     lock_started_at: Option<&str>,
@@ -392,12 +448,25 @@ fn audit_running_daemon(
     daemon_id: &str,
     thresholds: &HeartbeatAuditThresholds,
     host_suspend: bool,
+    boot_time: Option<chrono::DateTime<Utc>>,
 ) -> Result<Option<Value>, String> {
     let lock = read_lock(repo, daemon_id);
     let Some(lock) = lock else {
         return Ok(None);
     };
     let pid = lock.get("pid").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+    let last_hb = state
+        .get("daemons")
+        .and_then(|d| d.get(daemon_id))
+        .and_then(|e| e.get("last_heartbeat_at"))
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
+    let started = lock.get("started_at").and_then(|v| v.as_str());
+    if let Some(boot) = boot_time {
+        if lock_predates_host_boot(started, last_hb.as_deref(), boot) {
+            return classify_host_reboot_stale_lock(repo, state, daemon_id, pid);
+        }
+    }
     if !pid_alive(pid) {
         return emit_orphan_lock_fracture(repo, state, daemon_id, pid, &lock);
     }
@@ -489,6 +558,13 @@ struct AuditStalenessResult {
 }
 
 fn audit_staleness(repo: &Path) -> Result<AuditStalenessResult, String> {
+    audit_staleness_with_boot(repo, host_boot_time_utc())
+}
+
+fn audit_staleness_with_boot(
+    repo: &Path,
+    boot_time: Option<chrono::DateTime<Utc>>,
+) -> Result<AuditStalenessResult, String> {
     let thresholds = load_heartbeat_audit_thresholds(repo);
     let mut state = load_state(repo);
     let clock = update_audit_clocks(&mut state, &thresholds);
@@ -505,6 +581,7 @@ fn audit_staleness(repo: &Path) -> Result<AuditStalenessResult, String> {
             &daemon_id,
             &thresholds,
             clock.host_suspend,
+            boot_time,
         )? {
             fractures.push(seal);
         }
@@ -779,6 +856,80 @@ mod tests {
             audit2.fractures.is_empty(),
             "idempotente: {:?}",
             audit2.fractures
+        );
+    }
+
+    #[test]
+    fn parse_proc_stat_btime_reads_unix_epoch() {
+        let stat = "cpu  1 2 3\nbtime 1577836800\nintr 0\n";
+        let boot = parse_proc_stat_btime(stat).unwrap();
+        assert_eq!(
+            boot.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            "2020-01-01T00:00:00Z"
+        );
+    }
+
+    #[test]
+    fn lock_predates_boot_uses_started_at() {
+        let boot = parse_iso("2026-01-01T00:00:00Z").unwrap();
+        assert!(lock_predates_host_boot(
+            Some("2020-01-01T00:00:00Z"),
+            None,
+            boot
+        ));
+        assert!(!lock_predates_host_boot(
+            Some("2026-06-01T00:00:00Z"),
+            None,
+            boot
+        ));
+        assert!(!lock_predates_host_boot(None, None, boot));
+    }
+
+    #[test]
+    fn orphan_lock_pre_boot_does_not_emit() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/daemons/kalma2-bridge.md"),
+            "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\nname: kalma2-bridge\nexecution:\n  heartbeat_interval_seconds: 30\n---\n",
+        )
+        .unwrap();
+        let lock_path =
+            crate::engine::daemons::write_lock(repo, "kalma2-bridge", 999_999, 30).unwrap();
+        std::fs::write(
+            &lock_path,
+            r#"{"pid":999999,"started_at":"2020-01-01T00:00:00Z","heartbeat_interval_seconds":30}"#,
+        )
+        .unwrap();
+        let boot = parse_iso("2026-01-01T00:00:00Z").unwrap();
+        let audit = audit_staleness_with_boot(repo, Some(boot)).unwrap();
+        assert!(
+            audit.fractures.is_empty(),
+            "pre-boot no fractura: {:?}",
+            audit.fractures
+        );
+        let pending = std::fs::read_dir(repo.join(".events/pending")).unwrap().count();
+        assert_eq!(pending, 0, "pending debe quedar vacío");
+        let state: Value = serde_json::from_str(
+            &std::fs::read_to_string(repo.join(".SddIA/daemons/state/heartbeat-audit.json"))
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            state["daemons"]["kalma2-bridge"]["classification"],
+            "host_reboot_stale_lock"
+        );
+        assert!(
+            !lock_path.is_file(),
+            "lock muerto pre-boot debe depurarse"
         );
     }
 }

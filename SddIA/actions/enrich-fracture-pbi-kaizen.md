@@ -1,7 +1,7 @@
 ---
 uuid: "c4d5e6f7-a8b9-4012-c345-678901234567"
 name: "enrich-fracture-pbi-kaizen"
-version: "1.2.0"
+version: "1.3.0"
 contract: "actions-contract v1.2.0"
 context: "knowledge-management"
 capabilities:
@@ -23,7 +23,7 @@ outputs:
   - "message": "string; resultado del análisis Kaizen o no_target"
   - "reason": "string; enriched | no_target"
   - "evolution_verdict": "string|null; new_norm | refactor_tool | prompt_adjustment | process_fix"
-hash_signature: "sha256:eabe4edeede0f451df88d2c927503f2f2c0f45d562b666219306748f2773a368"
+hash_signature: "sha256:f0e7829359b07d2db9583fda56b5f775b375d8c924d68ff034894a04c7969aba"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -56,7 +56,9 @@ Cubo `heartbeat_starvation` (F-MAYEUTA-HB-BLIND): match **exclusivo** sobre `err
 
 **F-MAYEUTA-HB-TOKEN-TRAP:** prohibido clasificar latido con tokens `heartbeat`, `daemon`, `audit` o `colaps` sobre el blob concatenado (`error_trace` + `attempted_action` + `process_name`). `attempted_action` es siempre `daemon-heartbeat-audit` en esta familia.
 
-Cubos hook / bypass / huérfano EDA intactos (hook no concatena `process_name`).
+Cubo `orphan_lock` (F-MAYEUTA-ORPHAN-TOKEN-TRAP): match **exclusivo** sobre `error_trace` con anclas de `emit_orphan_lock_fracture` (`Centinela `, `lock huérfano`, `PID `, `muerto`, `last_heartbeat=`). Veredicto `refactor_tool`: ciclo de vida de daemon / sesión de host; **prohibido** `Domain_Entity_Created` / backfill `audit-entity-eda-coverage`. Evaluar antes del cubo EDA genómica y del catch-all.
+
+Cubo EDA genómica: exigir contexto genómico (`eda genómica` | `Domain_Entity_Created` | `audit-entity-eda-coverage` | `entity-manager` | `ruido de sistema` | `orphan_count`) **y** token huérfano/orphan; **no** disparar si `is_orphan_lock_trace`. Cubos hook / bypass intactos (hook no concatena `process_name`).
 
 ### Paso 3 — Enriquecimiento
 
@@ -73,3 +75,4 @@ Envelope con `success`, `target_path`, `reason` (`enriched` | `no_target`), `evo
 * No diseña código ejecutable ni fases `delegates_to`.
 * No mueve archivos del bus.
 * No usa `heartbeat`/`daemon`/`audit` como tokens del blob general para el cubo de latido.
+* No usa `orphan`/`huérfan` sobre el blob concatenado para clasificar lock de centinela.
