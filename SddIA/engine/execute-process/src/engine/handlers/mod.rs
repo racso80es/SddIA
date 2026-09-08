@@ -6,6 +6,7 @@ pub mod daemon_kill_switch;
 pub mod governance_daemon;
 pub mod instance_creator;
 pub mod kalma2;
+pub mod aiua_stimulus;
 pub mod mayeuta;
 pub mod route_domain;
 pub mod system_vitality;

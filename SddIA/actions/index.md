@@ -16,6 +16,9 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 
 | Name | UUID | Versión | Context | Descripción | Capabilities |
 |------|------|---------|---------|-------------|--------------|
+| persist-thought-record | `a37f9f1d-8f2a-441f-9357-776d65553362` | 1.0.0 | ecosystem-evolution | Invoca tool:thought-graph-access operation=store. No emite Thought_Persisted. | `persist_thought_record` |
+| invoke-aiua-core | `2edc7ef4-57e5-4d10-8753-bab8b0053cca` | 1.0.0 | ecosystem-evolution | Lee aiua_core.md vía directories.conscience (Cúmulo). Concatena genoma + active_ | `invoke_aiua_core` |
+| retrieve-active-context | `afa0424b-cdd4-4810-9a29-d8e7c06d6a1f` | 1.0.0 | ecosystem-evolution | Invoca tool:thought-graph-access operation=search. No toca el adaptador ni emite | `retrieve_active_context` |
 | notify-humanized-pr-merged | 1cd7bd40-b72f-4114-ac44-68b912774aa6 | 1.1.0 | ecosystem-evolution | Estático + commit_summary fail-soft + gemini-http-infer + send-telegram-notification. | `notify-humanized-pr-merged`, `delegate-gemini-http-infer`, `delegate-send-telegram-notification`, `delegate-git-manager` |
 | materialize-ci-chronic-failure-pbi | `a6eb7f0c-8b2f-4c7d-ae5e-6c1b589f3c92` | 1.0.0 | ecosystem-evolution | Materializa PBI Kaizen en pending/ ante CI_Chronic_Failure_Detected. | `materialize_ci_chronic_failure_p` |
 | persist-pec-correlation-proof | `accb4de7-bb1e-4f88-b5cd-b8775a8ff5a4` | 1.0.0 | ecosystem-evolution | Proyección durable PEC por correlation_id bajo eda_instance.proofs/pec-correlation/. | `persist-pec-correlation-proof` |
@@ -42,3 +45,6 @@ Ninguno. `actions-contract.md` es el contrato de familia, no una fila del catál
 
 - **Sincronización:** diez definiciones de acción con identidad atómica; reflejadas en sendas filas del catálogo.
 - **Metadatos:** valores de la tabla (incl. **Capabilities**) copiados desde el YAML de cada `{name}.md` al momento de indexación.
+
+
+
