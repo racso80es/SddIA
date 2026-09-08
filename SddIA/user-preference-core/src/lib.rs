@@ -53,6 +53,8 @@ pub struct UserPreference {
     pub supersedes: Option<String>,
     pub provenance: Value,
     pub recorded_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub embedding: Option<Vec<f32>>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -63,6 +65,111 @@ pub struct QuerySpec {
     pub scope_id: Option<String>,
     pub max_results: Option<usize>,
     pub include_proposed: Option<bool>,
+    #[serde(default)]
+    pub query_embedding: Option<Vec<f32>>,
+    #[serde(default)]
+    pub query_text: Option<String>,
+}
+
+pub trait UserPreferenceStore: Send + Sync {
+    type Error: std::fmt::Display;
+
+    fn put_revision(&self, pref: UserPreference) -> Result<UserPreference, Self::Error>;
+    fn get_active(&self, preference_id: &str) -> Result<Option<UserPreference>, Self::Error>;
+    fn query(&self, spec: &QuerySpec) -> Result<Vec<UserPreference>, Self::Error>;
+    fn query_context_block(&self, spec: &QuerySpec) -> Result<Value, Self::Error>;
+    fn purge_preference(&self, preference_id: &str) -> Result<(), Self::Error>;
+}
+
+#[derive(Debug, Clone)]
+pub struct JsonUserPreferenceStore {
+    repo: PathBuf,
+}
+
+impl JsonUserPreferenceStore {
+    pub fn new(repo: impl Into<PathBuf>) -> Self {
+        Self { repo: repo.into() }
+    }
+}
+
+impl UserPreferenceStore for JsonUserPreferenceStore {
+    type Error = String;
+
+    fn put_revision(&self, pref: UserPreference) -> Result<UserPreference, Self::Error> {
+        put_revision(&self.repo, pref)
+    }
+
+    fn get_active(&self, preference_id: &str) -> Result<Option<UserPreference>, Self::Error> {
+        get_active(&self.repo, preference_id)
+    }
+
+    fn query(&self, spec: &QuerySpec) -> Result<Vec<UserPreference>, Self::Error> {
+        query(&self.repo, spec)
+    }
+
+    fn query_context_block(&self, spec: &QuerySpec) -> Result<Value, Self::Error> {
+        Ok(query_context_block(&self.repo, spec))
+    }
+
+    fn purge_preference(&self, preference_id: &str) -> Result<(), Self::Error> {
+        purge_preference(&self.repo, preference_id)
+    }
+}
+
+pub fn scope_type_snake(scope: &ScopeType) -> &'static str {
+    match scope {
+        ScopeType::Global => "global",
+        ScopeType::Domain => "domain",
+        ScopeType::Project => "project",
+        ScopeType::Channel => "channel",
+    }
+}
+
+pub fn status_snake(status: &PreferenceStatus) -> &'static str {
+    match status {
+        PreferenceStatus::Proposed => "proposed",
+        PreferenceStatus::Active => "active",
+        PreferenceStatus::Revoked => "revoked",
+        PreferenceStatus::Superseded => "superseded",
+    }
+}
+
+pub fn authority_snake(auth: &PreferenceAuthority) -> &'static str {
+    match auth {
+        PreferenceAuthority::ExplicitUser => "explicit_user",
+        PreferenceAuthority::Inferred => "inferred",
+    }
+}
+
+pub fn empty_context_block() -> Value {
+    json!({
+        "schema_version": CONTEXT_SCHEMA_VERSION,
+        "preferences": [],
+    })
+}
+
+pub fn context_block_from_prefs(prefs: &[UserPreference]) -> Value {
+    let items: Vec<Value> = prefs
+        .iter()
+        .map(|p| {
+            json!({
+                "preference_id": p.preference_id,
+                "revision_id": p.revision_id,
+                "subject_kind": p.subject_kind,
+                "subject_key": p.subject_key,
+                "predicate": p.predicate,
+                "value": p.value,
+                "scope_type": scope_type_snake(&p.scope_type),
+                "scope_id": p.scope_id,
+                "status": status_snake(&p.status),
+                "authority": authority_snake(&p.authority),
+            })
+        })
+        .collect();
+    json!({
+        "schema_version": CONTEXT_SCHEMA_VERSION,
+        "preferences": items,
+    })
 }
 
 pub fn store_root(repo: &Path) -> PathBuf {
@@ -199,8 +306,7 @@ fn read_revision(root: &Path, revision_id: &str) -> Result<Option<UserPreference
     serde_json::from_str(&raw).map_err(|e| e.to_string()).map(Some)
 }
 
-pub fn put_revision(repo: &Path, mut pref: UserPreference) -> Result<UserPreference, String> {
-    let root = store_root(repo);
+pub fn finalize_preference_ids(mut pref: UserPreference) -> UserPreference {
     if pref.preference_id.is_empty() {
         pref.preference_id = compute_preference_id(
             &pref.scope_type,
@@ -216,6 +322,12 @@ pub fn put_revision(repo: &Path, mut pref: UserPreference) -> Result<UserPrefere
     if pref.revision_id.is_empty() {
         pref.revision_id = compute_revision_id(&pref.preference_id, &pref.value, &pref.recorded_at);
     }
+    pref
+}
+
+pub fn put_revision(repo: &Path, pref: UserPreference) -> Result<UserPreference, String> {
+    let root = store_root(repo);
+    let pref = finalize_preference_ids(pref);
     write_revision(&root, &pref)?;
     let mut index = read_head_index(&root)?;
     if matches!(pref.status, PreferenceStatus::Active | PreferenceStatus::Proposed) {
@@ -251,6 +363,37 @@ pub fn purge_preference(repo: &Path, preference_id: &str) -> Result<(), String> 
     }
     write_head_index(&root, &index)?;
     Ok(())
+}
+
+pub fn get_active(repo: &Path, preference_id: &str) -> Result<Option<UserPreference>, String> {
+    let root = store_root(repo);
+    let index = read_head_index(&root)?;
+    let Some(head) = index.get(preference_id) else {
+        return Ok(None);
+    };
+    let status = head.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if status == "revoked" || status == "superseded" {
+        return Ok(None);
+    }
+    let Some(rid) = head.get("revision_id").and_then(|v| v.as_str()) else {
+        return Ok(None);
+    };
+    read_revision(&root, rid)
+}
+
+pub fn list_head_revisions(repo: &Path) -> Result<Vec<UserPreference>, String> {
+    let root = store_root(repo);
+    let index = read_head_index(&root)?;
+    let mut out = Vec::new();
+    for (_pid, head) in index.iter() {
+        let Some(rid) = head.get("revision_id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        if let Some(pref) = read_revision(&root, rid)? {
+            out.push(pref);
+        }
+    }
+    Ok(out)
 }
 
 fn scope_rank(scope: &ScopeType) -> u8 {
@@ -316,6 +459,11 @@ pub fn query(repo: &Path, spec: &QuerySpec) -> Result<Vec<UserPreference>, Strin
         hits.push(pref);
     }
 
+    sort_preference_hits(&mut hits, max);
+    Ok(hits)
+}
+
+pub fn sort_preference_hits(hits: &mut Vec<UserPreference>, max: usize) {
     hits.sort_by(|a, b| {
         scope_rank(&b.scope_type)
             .cmp(&scope_rank(&a.scope_type))
@@ -323,38 +471,12 @@ pub fn query(repo: &Path, spec: &QuerySpec) -> Result<Vec<UserPreference>, Strin
             .then(b.recorded_at.cmp(&a.recorded_at))
     });
     hits.truncate(max);
-    Ok(hits)
 }
 
 pub fn query_context_block(repo: &Path, spec: &QuerySpec) -> Value {
     match query(repo, spec) {
-        Ok(prefs) => {
-            let items: Vec<Value> = prefs
-                .iter()
-                .map(|p| {
-                    json!({
-                        "preference_id": p.preference_id,
-                        "revision_id": p.revision_id,
-                        "subject_kind": p.subject_kind,
-                        "subject_key": p.subject_key,
-                        "predicate": p.predicate,
-                        "value": p.value,
-                        "scope_type": format!("{:?}", p.scope_type).to_lowercase(),
-                        "scope_id": p.scope_id,
-                        "status": format!("{:?}", p.status).to_lowercase(),
-                        "authority": format!("{:?}", p.authority).to_lowercase(),
-                    })
-                })
-                .collect();
-            json!({
-                "schema_version": CONTEXT_SCHEMA_VERSION,
-                "preferences": items,
-            })
-        }
-        Err(_) => json!({
-            "schema_version": CONTEXT_SCHEMA_VERSION,
-            "preferences": [],
-        }),
+        Ok(prefs) => context_block_from_prefs(&prefs),
+        Err(_) => empty_context_block(),
     }
 }
 
@@ -457,6 +579,7 @@ pub fn preference_from_event_payload(payload: &Value, operation: &str) -> Result
             .map(str::to_string),
         provenance,
         recorded_at,
+        embedding: None,
     }))
 }
 
@@ -597,6 +720,7 @@ mod tests {
             supersedes: None,
             provenance: json!({"channel": "kalma2"}),
             recorded_at: String::new(),
+            embedding: None,
         };
         let stored = put_revision(tmp.path(), pref).unwrap();
         drop(stored);
@@ -633,6 +757,7 @@ mod tests {
             supersedes: None,
             provenance: json!({}),
             recorded_at: String::new(),
+            embedding: None,
         };
         pref = put_revision(tmp.path(), pref).unwrap();
         let mut revoked = pref.clone();
@@ -665,6 +790,7 @@ mod tests {
             supersedes: None,
             provenance: json!({}),
             recorded_at: String::new(),
+            embedding: None,
         };
         put_revision(tmp.path(), pref).unwrap();
         assert!(query(tmp.path(), &QuerySpec::default()).unwrap().is_empty());
@@ -694,6 +820,7 @@ mod tests {
             supersedes: None,
             provenance: json!({}),
             recorded_at: "2026-08-27T12:00:00Z".into(),
+            embedding: None,
         };
         put_revision(tmp.path(), global).unwrap();
 
@@ -714,6 +841,7 @@ mod tests {
             supersedes: None,
             provenance: json!({}),
             recorded_at: "2026-08-27T12:00:01Z".into(),
+            embedding: None,
         };
         put_revision(tmp.path(), channel).unwrap();
 
@@ -755,6 +883,7 @@ mod tests {
             supersedes: None,
             provenance: json!({}),
             recorded_at: String::new(),
+            embedding: None,
         };
         let stored = put_revision(tmp.path(), pref).unwrap();
         let root = store_root(tmp.path());
@@ -782,5 +911,104 @@ mod tests {
             normalize_email_addr("Shop <noreply@shop.tld>"),
             "noreply@shop.tld"
         );
+    }
+
+    #[test]
+    fn embedding_absent_deserializes_to_none() {
+        let raw = r#"{
+            "preference_id": "p1",
+            "revision_id": "r1",
+            "subject_kind": "person",
+            "subject_key": "k",
+            "predicate": "priority",
+            "value": {"level": "high"},
+            "scope_type": "global",
+            "scope_id": null,
+            "status": "active",
+            "authority": "explicit_user",
+            "sensitivity": "internal",
+            "valid_from": null,
+            "valid_until": null,
+            "supersedes": null,
+            "provenance": {},
+            "recorded_at": "2026-09-08T00:00:00Z"
+        }"#;
+        let pref: UserPreference = serde_json::from_str(raw).unwrap();
+        assert!(pref.embedding.is_none());
+    }
+
+    #[test]
+    fn get_active_skips_revoked() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_repo(tmp.path());
+        let mut pref = UserPreference {
+            preference_id: String::new(),
+            revision_id: String::new(),
+            subject_kind: "person".into(),
+            subject_key: "ga".into(),
+            predicate: "priority".into(),
+            value: json!({"level": "high"}),
+            scope_type: ScopeType::Global,
+            scope_id: None,
+            status: PreferenceStatus::Active,
+            authority: PreferenceAuthority::ExplicitUser,
+            sensitivity: "internal".into(),
+            valid_from: None,
+            valid_until: None,
+            supersedes: None,
+            provenance: json!({}),
+            recorded_at: String::new(),
+            embedding: None,
+        };
+        pref = put_revision(tmp.path(), pref).unwrap();
+        assert!(get_active(tmp.path(), &pref.preference_id)
+            .unwrap()
+            .is_some());
+        let mut revoked = pref.clone();
+        revoked.status = PreferenceStatus::Revoked;
+        revoked.recorded_at = "2026-09-08T12:00:01Z".into();
+        revoked.revision_id =
+            compute_revision_id(&revoked.preference_id, &revoked.value, &revoked.recorded_at);
+        put_revision(tmp.path(), revoked).unwrap();
+        assert!(get_active(tmp.path(), &pref.preference_id)
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn json_store_trait_roundtrip() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_repo(tmp.path());
+        let store = JsonUserPreferenceStore::new(tmp.path());
+        let pref = UserPreference {
+            preference_id: String::new(),
+            revision_id: String::new(),
+            subject_kind: "person".into(),
+            subject_key: "trait".into(),
+            predicate: "mute".into(),
+            value: json!({"muted": true}),
+            scope_type: ScopeType::Global,
+            scope_id: None,
+            status: PreferenceStatus::Active,
+            authority: PreferenceAuthority::ExplicitUser,
+            sensitivity: "internal".into(),
+            valid_from: None,
+            valid_until: None,
+            supersedes: None,
+            provenance: json!({}),
+            recorded_at: String::new(),
+            embedding: None,
+        };
+        let stored = UserPreferenceStore::put_revision(&store, pref).unwrap();
+        let hits = UserPreferenceStore::query(
+            &store,
+            &QuerySpec {
+                subject_key: Some("trait".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].revision_id, stored.revision_id);
     }
 }

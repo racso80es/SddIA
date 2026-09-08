@@ -18,6 +18,7 @@ Contrato normativo de la familia: `adapters-contract.md` (no constituye un adapt
 |----------------|------|------|---------|--------|------------|----------|
 | `lancedb-thought-repo.md` | `0a22c260-2c5a-4aaa-a632-2c9a78e983e4` | lancedb-thought-repo | 1.1.0 | active | sddia-infrastructure-lancedb-thought | lancedb_thought_repo |
 | `lancedb-evolution-repo.md` | `ab9bef02-c2c1-426b-a2b2-ca1cc170f21c` | lancedb-evolution-repo | 1.1.0 | active | sddia-infrastructure-lancedb-evolution | lancedb_evolution_repo |
+| `lancedb-preferences-repo.md` | `4c0103c3-5683-4219-aafd-1370c2b63c69` | lancedb-preferences-repo | 1.0.0 | active | sddia-infrastructure-lancedb-preferences | lancedb_preferences_repo |
 
 ## Archivos en carpeta no catalogados como adaptador
 
@@ -25,6 +26,6 @@ Contrato normativo de la familia: `adapters-contract.md` (no constituye un adapt
 
 ## Integridad (última pasada)
 
-- **Sincronización:** 2 adaptadores catalogados (lancedb-thought-repo, lancedb-evolution-repo).
+- **Sincronización:** 3 adaptadores catalogados (lancedb-thought-repo, lancedb-evolution-repo, lancedb-preferences-repo).
 - **Metadatos:** columnas alineadas a `adapters-contract.md` §1.
-- **Estado:** ambos `active` (integración física LanceDB, `PBI-CORE-LANCEDB-REAL-001`).
+- **Estado:** tres `active` (integración física LanceDB, `PBI-CORE-LANCEDB-REAL-001` + `PBI-PREF-STORE-LANCEDB-MIGRATION`).

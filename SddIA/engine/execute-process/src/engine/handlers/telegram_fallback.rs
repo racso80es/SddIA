@@ -255,6 +255,7 @@ mod tests {
             supersedes: None,
             provenance: json!({}),
             recorded_at: String::new(),
+            embedding: None,
         };
         put_revision(tmp.path(), pref).unwrap();
         let hint = build_pref_context_hint(tmp.path());
@@ -283,6 +284,7 @@ mod tests {
             supersedes: None,
             provenance: json!({}),
             recorded_at: String::new(),
+            embedding: None,
         };
         put_revision(tmp.path(), pref).unwrap();
         let env = std::env::var("TELEGRAM_ALLOWED_CHAT_ID").ok();
