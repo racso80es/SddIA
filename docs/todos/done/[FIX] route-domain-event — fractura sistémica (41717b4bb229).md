@@ -225,7 +225,7 @@ CA-CI: `global: APTO` solo con `run_id` verde (`features-documentation-pattern` 
 ## 9. Criterio de cierre
 
 - [x] DLT-NET-CA1…CA3 (CA4 PENDIENTE_INSTANCIA: cápsula reprodujo ENETUNREACH; F1 fuera de código).
-- [ ] Argos APTO en `validacion.md` (`pbi_archived: true`) — CA-CI pendiente de run verde.
+- [x] Argos APTO en `validacion.md` (`pbi_archived: true`) — CA-CI run 34234850351 SUCCESS.
 - [x] Este PBI en `docs/todos/done/` en la misma rama del PR.
 
 Prohibido Done con `SIMULATE=1` o con «la cola ya existía» y sin CA1.

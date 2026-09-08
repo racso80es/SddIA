@@ -8,14 +8,17 @@ persist_ref: docs/fixes/route-domain-event-enetunreach-41717b4bb229
 pbi_ref: docs/todos/done/[FIX] route-domain-event — fractura sistémica (41717b4bb229).md
 document_id: PBI-FIX-FRACTURE-41717b4bb229
 execution_id: "7065b7fe-c55c-43cd-876c-78dfca1f99b1"
-global: NO_APTO
+global: APTO
 pbi_archived: true
+pr_url: "https://github.com/racso80es/SddIA/pull/273"
+ci_run_id: "34234850351"
+ci_run_url: "https://github.com/racso80es/SddIA/actions/runs/34234850351"
 checks:
   DLT-NET-CA1: APTO
   DLT-NET-CA2: APTO
   DLT-NET-CA3: APTO
   DLT-NET-CA4: PENDIENTE_INSTANCIA
-  CA-CI: PENDIENTE-CI
+  CA-CI: APTO
 git_changes:
   - SddIA/engine/execute-process/src/engine/route_domain_core.rs
   - SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
@@ -29,14 +32,16 @@ git_changes:
 
 ## Veredicto
 
-**NO_APTO** hasta CA-CI verde. Motor CA1–CA3 APTO. CA4: cápsula `SIMULATE=0` reprodujo `cause: ENETUNREACH` (F1 ambiental; relay systemd active ≠ publish). Laudo: anclaje on-chain no bloquea el predicado (homólogo F4c). Prohibido `SIMULATE=1`.
+**APTO** — predicado DLT transitorio suprime Kintsugi; cubo Mayeuta `process_fix`; CA-CI run [34234850351](https://github.com/racso80es/SddIA/actions/runs/34234850351) `pull_request` SUCCESS (`sddia-index-integrity`, `wasi-runtime-smoke`, `eda-bus-e2e-smoke`, `eda-iota-physical`, `eda-iota-smoke-simulate`).
+
+CA4: cápsula `SIMULATE=0` reprodujo `cause: ENETUNREACH` (F1 ambiental). No simular. Health ≠ publish.
 
 ## Checks
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| DLT-NET-CA1 | APTO | `emit_dlt_batch_fracture_suppressed_on_enetunreach`; cola `dlt_reanchor` escrita |
+| DLT-NET-CA1 | APTO | `emit_dlt_batch_fracture_suppressed_on_enetunreach` |
 | DLT-NET-CA2 | APTO | `emit_dlt_batch_fracture_publish_error_friction` |
-| DLT-NET-CA3 | APTO | `analyze_fracture_kaizen_dlt_publish_error_not_prompt`; catch-all e2e `colapsó` intacto |
-| DLT-NET-CA4 | PENDIENTE_INSTANCIA | cápsula exit 1 `cause: ENETUNREACH`; sin digest |
-| CA-CI | PENDIENTE-CI | sin `run_id` |
+| DLT-NET-CA3 | APTO | `analyze_fracture_kaizen_dlt_publish_error_not_prompt` |
+| DLT-NET-CA4 | PENDIENTE_INSTANCIA | cápsula exit 1 `ENETUNREACH`; sin digest |
+| CA-CI | APTO | run [34234850351](https://github.com/racso80es/SddIA/actions/runs/34234850351) SUCCESS |
