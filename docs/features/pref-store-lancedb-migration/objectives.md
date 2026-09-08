@@ -4,7 +4,7 @@ created: "2026-09-08"
 process: feature
 branch_name: feat/pref-store-lancedb-migration
 persist_ref: docs/features/pref-store-lancedb-migration
-pbi_ref: docs/todos/pending/[ARQUITECTURA] Migración del Store de Preferencias de Usuario a LanceDB.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] Migración del Store de Preferencias de Usuario a LanceDB.md
 execution_id: "338b68e4-de96-4303-93a7-d0c0e40acb9c"
 document_id: PBI-PREF-STORE-LANCEDB-MIGRATION
 pbi_uuid: "c79e6f1a-821b-4d7a-9a84-0b1e32d56a77"
