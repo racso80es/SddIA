@@ -1,0 +1,6 @@
+{
+  "error_trace": "iota-relay-publish-error: status=500 fetch failed | cause: ENETUNREACH",
+  "event_uuid": "03ded17d-ef18-4e5a-9a69-ef27671415b2",
+  "path": "/home/racso/Proyectos/SddIA/.events/pending/03ded17d-ef18-4e5a-9a69-ef27671415b2.json",
+  "queued_at": "2026-09-08T12:38:09Z"
+}

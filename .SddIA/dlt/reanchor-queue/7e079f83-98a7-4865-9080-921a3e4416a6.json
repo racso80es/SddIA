@@ -1,0 +1,6 @@
+{
+  "error_trace": "iota-relay-publish-error: status=500 fetch failed | cause: ENOTFOUND getaddrinfo getaddrinfo ENOTFOUND api.testnet.iota.cafe",
+  "event_uuid": "7e079f83-98a7-4865-9080-921a3e4416a6",
+  "path": "/home/racso/Proyectos/SddIA/.events/dead-letter/7e079f83-98a7-4865-9080-921a3e4416a6.json",
+  "queued_at": "2026-09-08T12:38:09Z"
+}
