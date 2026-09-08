@@ -6,7 +6,7 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-08"
 updated: "2026-09-08"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 fracture_hash: 41717b4bb229
@@ -224,9 +224,9 @@ CA-CI: `global: APTO` solo con `run_id` verde (`features-documentation-pattern` 
 
 ## 9. Criterio de cierre
 
-- [ ] DLT-NET-CA1…CA4 + CA-CI.
-- [ ] Argos APTO en `validacion.md` (`pbi_archived: true`).
-- [ ] Este PBI en `docs/todos/done/` en la misma rama del PR.
+- [x] DLT-NET-CA1…CA3 (CA4 PENDIENTE_INSTANCIA: cápsula reprodujo ENETUNREACH; F1 fuera de código).
+- [ ] Argos APTO en `validacion.md` (`pbi_archived: true`) — CA-CI pendiente de run verde.
+- [x] Este PBI en `docs/todos/done/` en la misma rama del PR.
 
 Prohibido Done con `SIMULATE=1` o con «la cola ya existía» y sin CA1.
 

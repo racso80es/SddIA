@@ -82,6 +82,13 @@ fn is_shell_metachar_fracture_trace(error_trace: &str) -> bool {
             && error_trace.contains("arguments["))
 }
 
+/// Publish IOTA con relay vivo (`F-DLT-PUBLISH-ERROR`). Match **solo** `error_trace`
+/// (el blob concatenado incluye `failed` de `merkle-batch-preseal failed` y dispara el catch-all).
+fn is_dlt_publish_error_trace(error_trace: &str) -> bool {
+    let t = error_trace.to_lowercase();
+    t.contains("iota-relay-publish-error") || t.contains("f-dlt-publish-error")
+}
+
 /// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section).
 pub fn analyze_fracture_kaizen(
     process_name: &str,
@@ -133,6 +140,7 @@ pub fn analyze_fracture_kaizen(
     let symbolic_head = is_symbolic_head_branch_trace(error_trace);
     let remote_branch_absent = is_remote_branch_absent_trace(error_trace) && !symbolic_head;
     let shell_wasm_fallback = is_shell_executor_wasm_fallback_trace(error_trace);
+    let dlt_publish = is_dlt_publish_error_trace(error_trace);
 
     if snapshot_gitignore {
         root_causes.push(
@@ -213,6 +221,20 @@ pub fn analyze_fracture_kaizen(
         ));
     }
 
+    if dlt_publish {
+        root_causes.push(
+            "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
+             Causa de transporte (`err.cause`) hacia fullnode Testnet, no operador ni relay caído."
+                .into(),
+        );
+        proposals.push((
+            "process_fix".into(),
+            "Si `err.cause` es red transitoria (`ENETUNREACH`/`ETIMEDOUT`/`ENOTFOUND`), no emitir \
+             `System_Fracture_Detected`; `dlt_reanchor` absorbe. Opaco (config-missing / Move) sí fractura."
+                .into(),
+        ));
+    }
+
     if !credential_workflow
         && !remote_branch_absent
         && !shell_wasm_fallback
@@ -284,6 +306,7 @@ pub fn analyze_fracture_kaizen(
         && !shell_wasm_fallback
         && !snapshot_gitignore
         && !symbolic_head
+        && !dlt_publish
         && has_any(&["timeout", "block", "abort", "failed", "colaps"])
     {
         root_causes.push(
@@ -486,6 +509,20 @@ mod tests {
         );
         assert!(!section.contains("Recursión o re-entrada"));
         assert_ne!(verdict, "refactor_tool");
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_dlt_publish_error_not_prompt() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "route-domain-event",
+            "merkle-batch-preseal failed: iota-relay-publish-error: status=500 fetch failed | cause: ENETUNREACH",
+            "merkle-batch-preseal",
+            "execute-process",
+        );
+        assert_eq!(verdict, "process_fix");
+        assert!(section.contains("iota-relay-publish-error"));
+        assert!(!section.contains("Ajustar instrucción operador"));
+        assert!(!section.contains("prompt_adjustment"));
     }
 
     #[test]
