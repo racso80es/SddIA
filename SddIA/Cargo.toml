@@ -9,6 +9,7 @@ members = [
     "core/memory",
     "infrastructure/adapters/lancedb_evolution_repo",
     "infrastructure/adapters/lancedb_thought_repo",
+    "infrastructure/adapters/lancedb_preferences_repo",
     "engine/*",
     "skills/*",
     "tools/*",

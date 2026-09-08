@@ -1,12 +1,48 @@
 //! Memoria soberana de preferencias — ingest/fractal en execute-process; store en `user-preference-core`.
 
+use crate::engine::memory_evolution_ingest_core::lancedb_uri;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
 use serde_json::{json, Value};
+use sddia_infrastructure_lancedb_preferences::LanceDbPreferenceAdapter;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 pub use user_preference_core::*;
+
+fn prefs_table_exists(repo: &Path) -> bool {
+    LanceDbPreferenceAdapter::table_exists(lancedb_uri(repo))
+}
+
+fn replica_put(repo: &Path, pref: &UserPreference) {
+    if !prefs_table_exists(repo) {
+        return;
+    }
+    if let Ok(adapter) = LanceDbPreferenceAdapter::open(lancedb_uri(repo)) {
+        let _ = UserPreferenceStore::put_revision(&adapter, pref.clone());
+    }
+}
+
+fn replica_purge(repo: &Path, preference_id: &str) {
+    if !prefs_table_exists(repo) {
+        return;
+    }
+    if let Ok(adapter) = LanceDbPreferenceAdapter::open(lancedb_uri(repo)) {
+        let _ = UserPreferenceStore::purge_preference(&adapter, preference_id);
+    }
+}
+
+pub fn put_revision_durable(repo: &Path, pref: UserPreference) -> Result<UserPreference, String> {
+    let stored = user_preference_core::put_revision(repo, pref)?;
+    replica_put(repo, &stored);
+    Ok(stored)
+}
+
+pub fn purge_preference_durable(repo: &Path, preference_id: &str) -> Result<(), String> {
+    user_preference_core::purge_preference(repo, preference_id)?;
+    replica_purge(repo, preference_id);
+    Ok(())
+}
 
 pub fn build_pref_context_hint(repo: &Path) -> String {
     let pref_ctx = query_context_block_with_capsule_fallback(
@@ -32,6 +68,14 @@ pub fn build_pref_context_hint(repo: &Path) -> String {
 }
 
 pub fn query_context_block_with_capsule_fallback(repo: &Path, spec: &QuerySpec) -> Value {
+    if prefs_table_exists(repo) {
+        return match LanceDbPreferenceAdapter::open(lancedb_uri(repo))
+            .and_then(|adapter| UserPreferenceStore::query_context_block(&adapter, spec))
+        {
+            Ok(block) => block,
+            Err(_) => empty_context_block(),
+        };
+    }
     let payload = json!({"op": "QUERY_CONTEXT", "spec": spec});
     if let Ok(inv) = crate::engine::capsules::invoke_capsule_json(
         repo,
@@ -59,7 +103,30 @@ pub fn query_context_block_with_capsule_fallback(repo: &Path, spec: &QuerySpec) 
 }
 
 pub fn run_capsule(repo: &Path, request: &Value) -> Value {
-    user_preference_core::run_capsule(repo, request)
+    let result = user_preference_core::run_capsule(repo, request);
+    if result.get("success") == Some(&json!(true)) && prefs_table_exists(repo) {
+        let op = request
+            .get("op")
+            .or_else(|| request.get("operation"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_ascii_uppercase();
+        if op == "PURGE" {
+            if let Some(pid) = request.get("preference_id").and_then(|v| v.as_str()) {
+                replica_purge(repo, pid);
+            }
+        } else if let Some(rid) = result
+            .pointer("/result/revision_id")
+            .and_then(|v| v.as_str())
+        {
+            if let Ok(heads) = list_head_revisions(repo) {
+                if let Some(pref) = heads.into_iter().find(|p| p.revision_id == rid) {
+                    replica_put(repo, &pref);
+                }
+            }
+        }
+    }
+    result
 }
 
 fn iso_now() -> String {
@@ -124,7 +191,7 @@ pub fn run_ingest(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnv
             .get("preference_id")
             .and_then(|v| v.as_str())
             .ok_or("preference_id requerido para purge")?;
-        purge_preference(repo, pid)?;
+        purge_preference_durable(repo, pid)?;
         phases.push(json!({"phase_name": "Persistir", "status": "executed", "op": "purge"}));
         return Ok(ok_ingest_envelope(true, phases, None));
     }
@@ -137,7 +204,7 @@ pub fn run_ingest(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnv
     };
     phases.push(json!({"phase_name": "Destilar", "status": "executed"}));
 
-    pref = put_revision(repo, pref)?;
+    pref = put_revision_durable(repo, pref)?;
     phases.push(json!({
         "phase_name": "Persistir",
         "status": "executed",

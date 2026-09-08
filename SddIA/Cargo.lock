@@ -1894,6 +1894,7 @@ dependencies = [
  "sddia-core-memory",
  "sddia-ecosystem-health",
  "sddia-infrastructure-lancedb-evolution",
+ "sddia-infrastructure-lancedb-preferences",
  "sddia-io",
  "serde",
  "serde_json",
@@ -5186,6 +5187,19 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "sddia-infrastructure-lancedb-preferences"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "lancedb",
+ "sddia-core-memory",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "user-preference-core",
 ]
 
 [[package]]

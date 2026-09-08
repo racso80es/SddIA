@@ -1133,6 +1133,7 @@ mod tests {
             supersedes: None,
             provenance: json!({"channel": "email"}),
             recorded_at: String::new(),
+            embedding: None,
         };
         user_preference_core::put_revision(repo, pref).unwrap();
     }
@@ -1340,6 +1341,7 @@ mod tests {
             supersedes: None,
             provenance: json!({}),
             recorded_at: String::new(),
+            embedding: None,
         };
         assert!(!p_exempt_c(&[pref.clone()]));
         pref.value = json!({"level": "high"});
