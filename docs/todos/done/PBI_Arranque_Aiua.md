@@ -6,8 +6,11 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-08"
 updated: "2026-09-08"
-status: "propuesta"
-refinement_status: refinado
+status: cerrado
+refinement_status: implemented
+pr_url: https://github.com/racso80es/SddIA/pull/270
+branch_name: feat/nucleo-aiua-tormentosa-motor
+persist_ref: docs/features/nucleo-aiua-tormentosa-motor
 priority: alta
 type: nucleo
 process: feature

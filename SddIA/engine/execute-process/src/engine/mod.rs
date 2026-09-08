@@ -145,6 +145,10 @@ pub fn run_process(
         return handlers::kalma2::run(repo, process_inputs);
     }
 
+    if canonical == "aiua-stimulus-processing" {
+        return handlers::aiua_stimulus::run(repo, process_inputs);
+    }
+
     if canonical == "task-queue-manager" {
         return handlers::task_queue_manager::run(repo, process_inputs);
     }

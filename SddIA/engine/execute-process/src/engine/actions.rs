@@ -205,6 +205,9 @@ fn emit_pr_audited(repo: &Path, inputs: &Value) -> Result<Value, String> {
 
 /// Ejecuta handler nativo si la acción está registrada. `None` = delegar a cápsula/bridge.
 pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<Option<Value>, String> {
+    if let Some(data) = super::handlers::aiua_stimulus::try_action(repo, action_name, inputs)? {
+        return Ok(Some(data));
+    }
     let data = match action_name {
         "emit-pr-presented-event" => emit_pr_presented(repo, inputs)?,
         "emit-pr-merged-event" => emit_pr_merged(repo, inputs)?,

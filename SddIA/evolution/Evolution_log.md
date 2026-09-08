@@ -9,6 +9,8 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a5e0d8aa-f84a-4e25-a7e3-807b7d5da598` | 2026-09-08 | Excluir thought-graph-access del build WASI CI (host LanceDB; paridad gemini-http-infer). | CANONICO | `SddIA/evolution/a5e0d8aa-f84a-4e25-a7e3-807b7d5da598.md` |
+| `4f009a69-e575-4d34-af85-e496d0dea370` | 2026-09-08 | Latido Aiúa: conscience, thought-graph-access, handler aiua-stimulus-processing y Thought_Persisted desde adaptador LanceDB. | CANONICO | `SddIA/evolution/4f009a69-e575-4d34-af85-e496d0dea370.md` |
 | `84233af2-b3c3-40e8-9b28-0aef17c87c4c` | 2026-09-08 | Adaptador LanceDB de preferencias: trait UserPreferenceStore, tabla user_preferences, dual-run JSON SSOT. | CANONICO | `SddIA/evolution/84233af2-b3c3-40e8-9b28-0aef17c87c4c.md` |
 | `29e6cbc5-6d13-45b9-bd62-f24e3fdb0c45` | 2026-09-07 | Slice 1 triaje correo: tokens desde telemetry_receipt y deglución de fallo mayeuta-llm en classify_llm. | CANONICO | `SddIA/evolution/29e6cbc5-6d13-45b9-bd62-f24e3fdb0c45.md` |
 | `c142dc19-b3d9-4810-bad2-734c1910606e` | 2026-09-07 | daemon-heartbeat-audit: puerta btime inhibe lock huérfano pre-boot; Mayeuta cubo orphan_lock acota EDA genómica. | CANONICO | `SddIA/evolution/c142dc19-b3d9-4810-bad2-734c1910606e.md` |

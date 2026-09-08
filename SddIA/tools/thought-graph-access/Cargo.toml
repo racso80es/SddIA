@@ -1,0 +1,13 @@
+[package]
+name = "thought-graph-access"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sddia-io = { path = "../../sddia-io" }
+sddia-core-memory = { path = "../../core/memory" }
+sddia-infrastructure-lancedb-thought = { path = "../../infrastructure/adapters/lancedb_thought_repo" }
+serde_json = "1.0"
+
+[dev-dependencies]
+tempfile = "3.10"

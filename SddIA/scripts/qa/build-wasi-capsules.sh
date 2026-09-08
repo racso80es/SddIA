@@ -7,6 +7,7 @@ TARGET="${WASI_TARGET:-wasm32-wasip1}"
 
 # Native-only crates: orchestrator, QA aduana, centinelas sensoriales (IMAP/TLS, etc.).
 # kalma2-bridge: órgano HTTP nativo (`ctrlc` / tiny_http); no cápsula WASI.
+# gemini-http-infer / thought-graph-access: host nativo (HTTP / LanceDB); no wasm32-wasip1.
 EXCLUDE=(
   execute-process
   sddia-qa
@@ -18,6 +19,7 @@ EXCLUDE=(
   kalma2-bridge
   antigravity-cli-executor
   gemini-http-infer
+  thought-graph-access
 )
 
 packages=()

@@ -5206,12 +5206,14 @@ dependencies = [
 name = "sddia-infrastructure-lancedb-thought"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "futures",
  "lancedb",
  "sddia-core-memory",
  "serde_json",
  "tempfile",
  "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -5767,6 +5769,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.3",
+]
+
+[[package]]
+name = "thought-graph-access"
+version = "0.1.0"
+dependencies = [
+ "sddia-core-memory",
+ "sddia-infrastructure-lancedb-thought",
+ "sddia-io",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

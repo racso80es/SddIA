@@ -16,6 +16,7 @@ Contrato normativo de la familia: `tools-contract.md` (no constituye una tool ca
 
 | Archivo fuente | uuid | name | version | contract | context | Capabilities |
 |----------------|------|------|---------|------------|---------|--------------|
+| `thought-graph-access.md` | `e61d4096-b610-4eaf-a6f6-823153a30a6b` | thought-graph-access | 1.0.0 | tools-contract v1.5.0 | ecosystem-evolution | `thought_graph_access` |
 | `gemini-http-infer.md` | `7a8da3ad-4916-4ee3-8407-aa1ecdc7ecba` | gemini-http-infer | 1.0.0 | tools-contract v1.2.0 | system-operations | `gemini_http_infer` |
 | `telegram-gateway.md` | `a23dda8f-b5d5-4091-a21c-f408159d3a3e` | telegram-gateway | 1.0.0 | tools-contract v1.3.0 | ecosystem-evolution | `telegram_gateway` |
 | `event-bus-audit.md` | `31fce110-1622-489c-a816-112849e22adb` | event-bus-audit | 1.2.0 | tools-contract v1.2.0 | quality-assurance | `event_bus_audit` |
@@ -36,6 +37,7 @@ Solo `tools-contract.md` (contrato de familia).
 
 - **Sincronización:** una definición `{name}.md` con identidad atómica; reflejada en fila del catálogo.
 - **Metadatos:** valores de la tabla (incl. **Capabilities**) copiados desde el YAML de `iota-immutable-publisher.md` al momento de indexación.
+
 
 
 
