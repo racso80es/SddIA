@@ -572,7 +572,19 @@ fn classify_batch_anchor_friction(causa: &str) -> (&'static str, String) {
     }
 }
 
+fn dlt_transient_network_trace(causa: &str) -> bool {
+    let t = causa.to_lowercase();
+    t.contains("enetunreach")
+        || t.contains("etimedout")
+        || t.contains("enotfound")
+        || t.contains("network is unreachable")
+        || t.contains("connection timed out")
+}
+
 fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
+    if dlt_transient_network_trace(causa) {
+        return;
+    }
     let pending_rel = if let Ok(cfg) = super::workspace::load_paths_config(repo) {
         cfg.get("eda_bus")
             .and_then(|b| b.get("pending"))
@@ -2226,6 +2238,58 @@ mod blocking_tests {
             }
         }
         assert!(found);
+    }
+
+    #[test]
+    fn dlt_transient_network_trace_positives_and_opaque_negative() {
+        assert!(dlt_transient_network_trace(
+            "iota-relay-publish-error: status=500 fetch failed | cause: ENETUNREACH"
+        ));
+        assert!(dlt_transient_network_trace("cause: ETIMEDOUT"));
+        assert!(dlt_transient_network_trace("ENOTFOUND getaddrinfo"));
+        assert!(dlt_transient_network_trace("Network is unreachable"));
+        assert!(dlt_transient_network_trace("Connection timed out"));
+        assert!(!dlt_transient_network_trace(
+            "iota-relay-publish-error: status=500 config-missing: IOTA_WALLET_SECRET"
+        ));
+        assert!(!dlt_transient_network_trace(
+            "iota-relay-unreachable: Connection refused"
+        ));
+    }
+
+    #[test]
+    fn emit_dlt_batch_fracture_suppressed_on_enetunreach() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"},"eda_instance":{"dlt_reanchor":".SddIA/dlt/reanchor-queue"}}"#,
+        )
+        .unwrap();
+        let causa =
+            "iota-relay-publish-error: status=500 fetch failed | cause: ENETUNREACH";
+        emit_dlt_batch_fracture(repo, causa);
+        let pending = repo.join(".events/pending");
+        if pending.is_dir() {
+            for ent in fs::read_dir(&pending).unwrap() {
+                let p = ent.unwrap().path();
+                if p.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
+                assert_ne!(
+                    body.get("event_type").and_then(|v| v.as_str()),
+                    Some("System_Fracture_Detected"),
+                    "ENETUNREACH must not emit Kintsugi"
+                );
+            }
+        }
+        let ev_path = repo.join("evt.json");
+        fs::write(&ev_path, "{}").unwrap();
+        enqueue_dlt_reanchor(repo, "863d1511-202f-4c11-87d7-747c1b4c25e8", &ev_path, causa);
+        let q = repo.join(".SddIA/dlt/reanchor-queue/863d1511-202f-4c11-87d7-747c1b4c25e8.json");
+        assert!(q.is_file());
     }
 
     #[test]
