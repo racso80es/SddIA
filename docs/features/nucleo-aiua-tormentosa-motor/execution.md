@@ -41,6 +41,10 @@ cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib -- 
 
 Lab-mock: `SDDIA_LAB_MOCK_OUTBOUND=1`. LanceDB vacío → `memories: []`. `thought_id` 64 hex. `telemetry.duration_ms` presente. ECST en pending.
 
+## WASI CI
+
+`thought-graph-access` excluido de `SddIA/scripts/qa/build-wasi-capsules.sh` (host LanceDB; paridad `gemini-http-infer`). Finding: `wasi-runtime-smoke` en run `34222880281`.
+
 ## Evolution
 
 `id_cambio` `4f009a69-e575-4d34-af85-e496d0dea370` vía `sddia-qa evolution-register`.
