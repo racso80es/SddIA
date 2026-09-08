@@ -4,7 +4,10 @@ title: "[FIX] delivery-close-cycle — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-09-08"
-status: "abierto"
+status: "cerrado"
+pr_url: "https://github.com/racso80es/SddIA/pull/272"
+branch_name: fix/dcc-gh-api-connect-49ce2db7152d
+persist_ref: docs/fixes/dcc-gh-api-connect-49ce2db7152d
 priority: alta
 process: bug-fix
 fracture_hash: 49ce2db7152d
@@ -56,6 +59,6 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 > Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar.
 ## Criterio de cierre
 
-- [ ] Causa raíz resuelta
-- [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/`
+- [x] Causa raíz resuelta
+- [x] Argos APTO en `validacion.md` del fix
+- [x] Este TODO movido a `docs/todos/done/`

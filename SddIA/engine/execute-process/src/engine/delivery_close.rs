@@ -183,6 +183,10 @@ fn execute_phase(
                     }
                 }
                 mark_fail_soft_if_secondary(&mut entry, phase_name, state);
+                let err = dcc_report_error_trace(&entry);
+                if stamp_dcc_network_block(&mut entry, phase_name, &err) {
+                    return entry;
+                }
                 entry
             }
             Err(e) => {
@@ -287,6 +291,8 @@ fn dcc_transient_network_trace(trace: &str) -> bool {
         || t.contains("name or service not known")
         || t.contains("network is unreachable")
         || t.contains("connection timed out")
+        || t.contains("error connecting to api.github.com")
+        || t.contains("check your internet connection or https://githubstatus.com")
 }
 
 fn dcc_net_block_suppresses_fracture(phase_name: &str, status: &str, error_trace: &str) -> bool {
@@ -708,9 +714,51 @@ mod tests {
         assert!(dcc_transient_network_trace("Name or service not known"));
         assert!(dcc_transient_network_trace("Network is unreachable"));
         assert!(dcc_transient_network_trace("Connection timed out"));
+        assert!(dcc_transient_network_trace(
+            "error connecting to api.github.com"
+        ));
+        assert!(dcc_transient_network_trace(
+            "check your internet connection or https://githubstatus.com"
+        ));
         assert!(!dcc_transient_network_trace(
             "no se pudo resolver pr_url desde gh"
         ));
+    }
+
+    const GH_API_CONNECT_TRACE: &str = "no se pudo resolver pr_url desde gh; gh_stdout=; gh_stderr=error connecting to api.github.com\ncheck your internet connection or https://githubstatus.com\n; view_stdout=; view_stderr=no pull requests found for branch \"feat/nucleo-aiua-tormentosa-motor\"";
+
+    #[test]
+    fn dcc_fracture_suppressed_on_forge_gh_api_connect() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Apertura en forja",
+            "status": "failed",
+            "error": GH_API_CONNECT_TRACE,
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn stamp_dcc_network_block_gh_api_connect() {
+        let mut entry = json!({
+            "phase_name": "Apertura en forja",
+            "error": GH_API_CONNECT_TRACE,
+        });
+        assert!(stamp_dcc_network_block(
+            &mut entry,
+            "Apertura en forja",
+            GH_API_CONNECT_TRACE,
+        ));
+        assert_eq!(entry["status"], "blocked");
+        assert_eq!(entry["friction_id"], "F-DCC-DNS-UNRESOLVED");
+        assert!(entry.get("fail_soft").is_none());
     }
 
     #[test]
