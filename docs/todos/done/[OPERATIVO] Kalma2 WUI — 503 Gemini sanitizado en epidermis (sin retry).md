@@ -6,7 +6,8 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-09"
 updated: "2026-09-09"
-status: "abierto"
+status: "cerrado"
+fix_ref: docs/fixes/kalma2-wui-aiua-503-sanitize
 refinement_status: refinado
 refined: true
 priority: media
@@ -14,6 +15,7 @@ type: operativo
 process: bug-fix
 dispatch: false
 suggested_branch: fix/kalma2-wui-aiua-503-sanitize
+persist_ref: docs/fixes/kalma2-wui-aiua-503-sanitize
 persist_ref_suggested: docs/fixes/kalma2-wui-aiua-503-sanitize
 spawned_by: PBI-FIX-KALMA2-BRIDGE-AIUA-ROUTE-STALE-ELF
 incident_ref: "Auditoría empírica WUI 2026-09-09 — 503 Gemini UNAVAILABLE crudo en WUI post-recycle"
@@ -239,18 +241,18 @@ Tras el canónico, `#output`:
 
 ## 6. Criterios de aceptación (Gates)
 
-- [ ] **KALMA-503-CA1 — Sanitización del payload en el puente:** envelope de orquestador con `error` `http-status-503: {"error":{"code":503,…,"status":"UNAVAILABLE"}}` → JSON del puente: `message` = canónico, sin blob Google ni `{`.
-- [ ] **KALMA-503-CA2 — Mensaje canónico:** exactamente `Tormentosa no disponible temporalmente por alta demanda del proveedor. Inténtalo más tarde.` (91 chars, ≤120).
-- [ ] **KALMA-503-CA3 — Veto DA-5:** no se introduce `sleep`, retry, backoff ni polling de reintento en `kalma2-bridge` ni en la cadena de esta petición. Respuesta inmediata y terminal. Iteración `for`/`loop` preexistente no es veto.
-- [ ] **KALMA-503-CA4 — No-regresión y no-enmascaramiento:**
+- [x] **KALMA-503-CA1 — Sanitización del payload en el puente:** envelope de orquestador con `error` `http-status-503: {"error":{"code":503,…,"status":"UNAVAILABLE"}}` → JSON del puente: `message` = canónico, sin blob Google ni `{`.
+- [x] **KALMA-503-CA2 — Mensaje canónico:** exactamente `Tormentosa no disponible temporalmente por alta demanda del proveedor. Inténtalo más tarde.` (91 chars, ≤120).
+- [x] **KALMA-503-CA3 — Veto DA-5:** no se introduce `sleep`, retry, backoff ni polling de reintento en `kalma2-bridge` ni en la cadena de esta petición. Respuesta inmediata y terminal. Iteración `for`/`loop` preexistente no es veto.
+- [x] **KALMA-503-CA4 — No-regresión y no-enmascaramiento:**
   - `POST /api/chat` y 404 `ruta desconocida` intactos.
   - `gemini-model-unavailable`, `timeout motor`, `subproceso falló`, colapso protésico y el error genérico `"gemini 503"` **no** se sustituyen por el canónico 503.
-- [ ] **KALMA-503-CA5 — Tests herméticos** en el binario `kalma2-bridge`:
+- [x] **KALMA-503-CA5 — Tests herméticos** en el binario `kalma2-bridge`:
   1. Envelope 503 del incidente → canónico.
   2. Envelope `http-status-503` **sin** tokens UNAVAILABLE/high demand → canónico (prefijo suficiente).
   3. Envelopes no-503 (404 modelo, `"gemini 503"`, timeout no aplica a flatten) → sin remapear.
   4. Cero red (`A-HERMETIC-TESTS-NO-LIVE`).
-- [ ] **KALMA-503-CA6 — Ciclo documental:** un único PR con código `kalma2-bridge`, tests, `validacion.md` y PBI en `docs/todos/done/` (`status: cerrado`). Cero diffs en `interfaces/kalma2/app.js` ni `SddIA/tools/gemini-http-infer`.
+- [x] **KALMA-503-CA6 — Ciclo documental:** un único PR con código `kalma2-bridge`, tests, `validacion.md` y PBI en `docs/todos/done/` (`status: cerrado`). Cero diffs en `interfaces/kalma2/app.js` ni `SddIA/tools/gemini-http-infer`.
 - [ ] **KALMA-503-CA-CI — Checks GitHub Actions del PR verdes con `run_id` antes de `global: APTO` definitivo y `accept-pr`.**
 
 ---

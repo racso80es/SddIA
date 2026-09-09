@@ -395,7 +395,28 @@ fn run_orchestrator_inputs(
     }
 }
 
+const AIUA_PROVIDER_UNAVAILABLE_MSG: &str =
+    "Tormentosa no disponible temporalmente por alta demanda del proveedor. Inténtalo más tarde.";
+
+fn is_gemini_upstream_unavailable(raw: &str) -> bool {
+    if raw.contains("http-status-503") {
+        return true;
+    }
+    let has_code = raw.contains("\"code\":503") || raw.contains("\"code\": 503");
+    if !has_code {
+        return false;
+    }
+    let lower = raw.to_ascii_lowercase();
+    lower.contains("unavailable")
+        || lower.contains("high demand")
+        || lower.contains("temporarily unavailable")
+        || lower.contains("service unavailable")
+}
+
 fn sanitize_bridge_message(raw: &str) -> String {
+    if is_gemini_upstream_unavailable(raw) {
+        return AIUA_PROVIDER_UNAVAILABLE_MSG.to_string();
+    }
     raw.chars()
         .map(|c| if c == '\n' || c == '\r' { ' ' } else { c })
         .take(240)
@@ -3045,6 +3066,53 @@ mod tests {
         });
         let err = flatten_aiua_wui(&envelope, 2).unwrap_err();
         assert!(err.contains("gemini 503"));
+        assert_ne!(err, AIUA_PROVIDER_UNAVAILABLE_MSG);
+    }
+
+    #[test]
+    fn flatten_aiua_wui_sanitizes_incident_503_blob() {
+        let envelope = serde_json::json!({
+            "success": false,
+            "error": "http-status-503: {\"error\":{\"code\":503,\"message\":\"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\"status\":\"UNAVAILABLE\"}}"
+        });
+        let err = flatten_aiua_wui(&envelope, 50).unwrap_err();
+        assert_eq!(err, AIUA_PROVIDER_UNAVAILABLE_MSG);
+        assert!(!err.contains('{'));
+        assert_eq!(err.chars().count(), 91);
+        assert!(err.len() <= 120);
+    }
+
+    #[test]
+    fn flatten_aiua_wui_sanitizes_http_status_503_prefix_alone() {
+        let envelope = serde_json::json!({
+            "success": false,
+            "error": "http-status-503: upstream saturated"
+        });
+        let err = flatten_aiua_wui(&envelope, 3).unwrap_err();
+        assert_eq!(err, AIUA_PROVIDER_UNAVAILABLE_MSG);
+    }
+
+    #[test]
+    fn flatten_aiua_wui_preserves_gemini_model_unavailable() {
+        let envelope = serde_json::json!({
+            "success": false,
+            "error": "gemini-model-unavailable: models/x is not found for API version"
+        });
+        let err = flatten_aiua_wui(&envelope, 4).unwrap_err();
+        assert!(err.starts_with("gemini-model-unavailable:"));
+        assert_ne!(err, AIUA_PROVIDER_UNAVAILABLE_MSG);
+    }
+
+    #[test]
+    fn sanitize_maps_google_json_503_without_tool_prefix() {
+        let raw = r#"{"error":{"code":503,"message":"high demand","status":"UNAVAILABLE"}}"#;
+        assert_eq!(sanitize_bridge_message(raw), AIUA_PROVIDER_UNAVAILABLE_MSG);
+    }
+
+    #[test]
+    fn sanitize_does_not_remap_timeout_or_join_literals() {
+        assert_eq!(sanitize_bridge_message("timeout motor"), "timeout motor");
+        assert_eq!(sanitize_bridge_message("subproceso falló"), "subproceso falló");
     }
 
     #[test]
