@@ -89,6 +89,20 @@ fn is_dlt_publish_error_trace(error_trace: &str) -> bool {
     t.contains("iota-relay-publish-error") || t.contains("f-dlt-publish-error")
 }
 
+fn is_dlt_gas_version_trace(error_trace: &str) -> bool {
+    let t = error_trace.to_lowercase();
+    t.contains("is not available for consumption") && t.contains("current version:")
+}
+
+fn is_dlt_transport_trace(error_trace: &str) -> bool {
+    let t = error_trace.to_lowercase();
+    t.contains("enetunreach")
+        || t.contains("etimedout")
+        || t.contains("enotfound")
+        || t.contains("network is unreachable")
+        || t.contains("connection timed out")
+}
+
 /// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section).
 pub fn analyze_fracture_kaizen(
     process_name: &str,
@@ -222,17 +236,43 @@ pub fn analyze_fracture_kaizen(
     }
 
     if dlt_publish {
-        root_causes.push(
-            "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
-             Causa de transporte (`err.cause`) hacia fullnode Testnet, no operador ni relay caído."
-                .into(),
-        );
-        proposals.push((
-            "process_fix".into(),
-            "Si `err.cause` es red transitoria (`ENETUNREACH`/`ETIMEDOUT`/`ENOTFOUND`), no emitir \
-             `System_Fracture_Detected`; `dlt_reanchor` absorbe. Opaco (config-missing / Move) sí fractura."
-                .into(),
-        ));
+        if is_dlt_gas_version_trace(error_trace) {
+            root_causes.push(
+                "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
+                 Colisión de versión de gas/inputs (`is not available for consumption` / `current version:`), \
+                 no operador ni transporte hacia fullnode."
+                    .into(),
+            );
+            proposals.push((
+                "process_fix".into(),
+                "Serializar `publishImmutableData` en el relay; si la firma de consumo/versión está presente, \
+                 no emitir `System_Fracture_Detected`; `dlt_reanchor` absorbe."
+                    .into(),
+            ));
+        } else if is_dlt_transport_trace(error_trace) {
+            root_causes.push(
+                "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
+                 Causa de transporte (`err.cause`) hacia fullnode Testnet, no operador ni relay caído."
+                    .into(),
+            );
+            proposals.push((
+                "process_fix".into(),
+                "Si `err.cause` es red transitoria (`ENETUNREACH`/`ETIMEDOUT`/`ENOTFOUND`), no emitir \
+                 `System_Fracture_Detected`; `dlt_reanchor` absorbe. Opaco (config-missing / Move) sí fractura."
+                    .into(),
+            ));
+        } else {
+            root_causes.push(
+                "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
+                 Causa opaca (ni red transitoria ni colisión de versión de gas). No es operador."
+                    .into(),
+            );
+            proposals.push((
+                "process_fix".into(),
+                "Opaco (`config-missing` / Move / inputs permanentes) sí fractura; no afirmar transporte."
+                    .into(),
+            ));
+        }
     }
 
     if !credential_workflow
@@ -307,7 +347,7 @@ pub fn analyze_fracture_kaizen(
         && !snapshot_gitignore
         && !symbolic_head
         && !dlt_publish
-        && has_any(&["timeout", "block", "abort", "failed", "colaps"])
+        && has_any(&["timeout", "block", "abort", "colaps"])
     {
         root_causes.push(
             "Bloqueo operativo sin escalado Kintsugi previo al intento de recuperación manual."
@@ -521,6 +561,37 @@ mod tests {
         );
         assert_eq!(verdict, "process_fix");
         assert!(section.contains("iota-relay-publish-error"));
+        assert!(section.contains("Causa de transporte"));
+        assert!(!section.contains("Ajustar instrucción operador"));
+        assert!(!section.contains("prompt_adjustment"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_dlt_gas_version_not_transport() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "route-domain-event",
+            "merkle-batch-preseal failed: iota-relay-publish-error: status=500 Transaction execution failed due to issues with transaction inputs, please review the errors and try again:\n- Object ID 0x93e4c1ee3a81aa2815b2f23485885a37f6c97eb20d7e58458d8dcc4dce6ff880 Version 850727115 Digest 5fX2xzFeULF5XhHLu3iLNotiKiR5bu8CVwJC9j5X6GBa is not available for consumption, current version: 850727116",
+            "merkle-batch-preseal",
+            "execute-process",
+        );
+        assert_eq!(verdict, "process_fix");
+        assert!(section.contains("gas/inputs") || section.contains("versión de gas"));
+        assert!(!section.contains("err.cause"));
+        assert!(!section.contains("Ajustar instrucción operador"));
+        assert!(!section.contains("prompt_adjustment"));
+        assert!(!section.contains("Causa de transporte"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_generic_failed_not_prompt() {
+        let (verdict, _, section) = analyze_fracture_kaizen(
+            "route-domain-event",
+            "merkle-batch-preseal failed: unexplained-capsule-error",
+            "merkle-batch-preseal",
+            "execute-process",
+        );
+        assert_eq!(verdict, "process_fix");
+        assert!(section.contains("requiere laudo humano"));
         assert!(!section.contains("Ajustar instrucción operador"));
         assert!(!section.contains("prompt_adjustment"));
     }
