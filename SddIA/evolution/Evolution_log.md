@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `5f09da5c-a96c-4475-9ce6-15d55cc5840c` | 2026-09-09 | DLT: colisión de versión de gas no emite System_Fracture_Detected; cola serial relay; Mayeuta subtipo DLT y catch-all sin failed. | CANONICO | `SddIA/evolution/5f09da5c-a96c-4475-9ce6-15d55cc5840c.md` |
 | `bdd512bd-42ea-4c45-ab97-2e0fa8ea37c8` | 2026-09-09 | Puente perceptivo Kalma2 WUI → aiua-stimulus-processing (POST /api/aiua/interact atómico). | CANONICO | `SddIA/evolution/bdd512bd-42ea-4c45-ab97-2e0fa8ea37c8.md` |
 | `39f747ac-2d49-48ff-8552-8d91269af74e` | 2026-09-09 | Correlato residual Aiúa audit: actions/index y starter-kit SDDIA_GEMINI_THINKING_LEVEL. | CANONICO | `SddIA/evolution/39f747ac-2d49-48ff-8552-8d91269af74e.md` |
 | `cef04e8e-36a5-40d1-b697-e00a0640db87` | 2026-09-09 | Aiúa residual auditoría: thinkingLevel en gemini-http-infer, cuerpos de tres acciones, prefacio de identidad en assembled_prompt. | CANONICO | `SddIA/evolution/cef04e8e-36a5-40d1-b697-e00a0640db87.md` |

@@ -41,4 +41,4 @@ Cápsula `iota-immutable-publisher` `SIMULATE=0` (`./sddia-run.sh --tool`). Dige
 
 ## Fase 6 — Genoma + evolution + cierre
 
-`entity-manager` update `enrich-fracture-pbi-kaizen`. `sddia-qa evolution-register`. `implementation.md` / `execution.md` / `validacion.md`. PBI → `docs/todos/done/`. `delivery-close-cycle`. Tras checks CI verdes: `accept-pr`.
+`entity-manager` update `enrich-fracture-pbi-kaizen`. `sddia-qa evolution-register`. `implementation.md` / `execution.md` / `validacion.md`. PBI → `docs/todos/done/`. `delivery-close-cycle`. Tras checks CI verdes: `accept-pr`. Canal LLM asíncrono = `PBI-FEATURE-ASYNC-FRACTURE-CLARIFICATION` (`docs/todos/pending/[FEATURE] Triaje asíncrono de fracturas inéditas (Mayeuta LLM).md`); no es gate de esta rama.

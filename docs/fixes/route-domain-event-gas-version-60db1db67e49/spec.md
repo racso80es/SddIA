@@ -6,7 +6,7 @@ base: main
 scope: dlt-gas-version-mutex-mayeuta
 branch_name: fix/route-domain-event-gas-version-60db1db67e49
 persist_ref: docs/fixes/route-domain-event-gas-version-60db1db67e49
-pbi_ref: docs/todos/pending/[FIX] route-domain-event — fractura sistémica (60db1db67e49).md
+pbi_ref: docs/todos/done/[FIX] route-domain-event — fractura sistémica (60db1db67e49).md
 document_id: PBI-FIX-FRACTURE-60db1db67e49
 execution_id: "468e7f10-99aa-4c91-8803-e06e229742a3"
 ---
@@ -25,7 +25,7 @@ Defectos:
 | F2 | `dlt_transient_network_trace` no cubre `is not available for consumption` ∧ `current version:` → `emit_dlt_batch_fracture` escala a Kintsugi aunque `dlt_reanchor` absorba. |
 | F3 | Catch-all Mayeuta `failed` → `prompt_adjustment` (ELF fósil en el sello). Fuente post-41717: cubo DLT genérico diagnostica transporte. |
 
-Laudo `L-ENRICH-KINTSUGI-DETERMINISTA` intacto. `mayeuta-llm` = `PBI-FEATURE-ASYNC-FRACTURE-CLARIFICATION` (fuera).
+Laudo `L-ENRICH-KINTSUGI-DETERMINISTA` intacto. `mayeuta-llm` = `PBI-FEATURE-ASYNC-FRACTURE-CLARIFICATION` (`docs/todos/pending/[FEATURE] Triaje asíncrono de fracturas inéditas (Mayeuta LLM).md`). Fuera de esta rama.
 
 ## Cambio requerido
 
@@ -51,6 +51,6 @@ PBI §8: DLT-GAS-CA1..CA4, MAYEUTA-CA5..CA7.
 ## Fuera de alcance
 
 - Reabrir taxonomía b3a715, cause-propagation a90fad, predicado **red** 41717.
-- `PBI-FEATURE-ASYNC-FRACTURE-CLARIFICATION`.
+- `PBI-FEATURE-ASYNC-FRACTURE-CLARIFICATION` (`docs/todos/pending/[FEATURE] Triaje asíncrono de fracturas inéditas (Mayeuta LLM).md`).
 - Retry/sleep/backoff (DA-5). Bypass raw. Simular IOTA como Done.
 - Mutar genoma `actions/` a mano.

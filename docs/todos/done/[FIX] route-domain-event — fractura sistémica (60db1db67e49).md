@@ -6,7 +6,7 @@ format: markdown
 version: "1.2.3"
 created: "2026-09-09"
 updated: "2026-09-09"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 fracture_hash: 60db1db67e49
@@ -283,13 +283,13 @@ Motor: `server.mjs` (instancia), `route_domain_core.rs`, `enrich_fracture_pbi_ka
 
 ## 9. Criterio de cierre
 
-- [ ] `DLT-GAS-CA1` (mutex relay).
-- [ ] `DLT-GAS-CA2` (predicado estrecho; opaco intacto).
-- [ ] `DLT-GAS-CA3` + `MAYEUTA-CA5` + `MAYEUTA-CA6` + `MAYEUTA-CA7` verdes en `execute-process`.
-- [ ] `DLT-GAS-CA4` en runtime real (`SIMULATE=0`).
-- [ ] `enrich-fracture-pbi-kaizen.md` bump via `entity-manager` (no Write directo).
-- [ ] Argos APTO en `validacion.md` (`pbi_archived: true`).
-- [ ] Este PBI en `docs/todos/done/` en la rama del PR.
+- [x] `DLT-GAS-CA1` (mutex relay).
+- [x] `DLT-GAS-CA2` (predicado estrecho; opaco intacto).
+- [x] `DLT-GAS-CA3` + `MAYEUTA-CA5` + `MAYEUTA-CA6` + `MAYEUTA-CA7` verdes en `execute-process`.
+- [x] `DLT-GAS-CA4` en runtime real (`SIMULATE=0`) — digest `5rkFWghseVYgDh5DTQsECyeRS9T1d99hkkBXa7ELoEja`.
+- [x] `enrich-fracture-pbi-kaizen.md` bump via `entity-manager` (no Write directo).
+- [ ] Argos `global: APTO` + CA-CI `run_id` verde post-PR (`validacion.md` `pbi_archived: true`).
+- [x] Este PBI en `docs/todos/done/` en la rama del PR.
 
 ---
 

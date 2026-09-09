@@ -581,8 +581,17 @@ fn dlt_transient_network_trace(causa: &str) -> bool {
         || t.contains("connection timed out")
 }
 
+fn dlt_transient_gas_version_trace(causa: &str) -> bool {
+    let t = causa.to_lowercase();
+    t.contains("is not available for consumption") && t.contains("current version:")
+}
+
+fn dlt_transient_error_trace(causa: &str) -> bool {
+    dlt_transient_network_trace(causa) || dlt_transient_gas_version_trace(causa)
+}
+
 fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
-    if dlt_transient_network_trace(causa) {
+    if dlt_transient_error_trace(causa) {
         return;
     }
     let pending_rel = if let Ok(cfg) = super::workspace::load_paths_config(repo) {
@@ -2255,6 +2264,18 @@ mod blocking_tests {
         assert!(!dlt_transient_network_trace(
             "iota-relay-unreachable: Connection refused"
         ));
+        assert!(dlt_transient_gas_version_trace(
+            "is not available for consumption, current version: 850727116"
+        ));
+        assert!(!dlt_transient_gas_version_trace(
+            "Transaction execution failed due to issues with transaction inputs, please review"
+        ));
+        assert!(dlt_transient_error_trace(
+            "iota-relay-publish-error: status=500 fetch failed | cause: ENETUNREACH"
+        ));
+        assert!(dlt_transient_error_trace(
+            "Object ID 0x93e4 is not available for consumption, current version: 1"
+        ));
     }
 
     #[test]
@@ -2290,6 +2311,63 @@ mod blocking_tests {
         enqueue_dlt_reanchor(repo, "863d1511-202f-4c11-87d7-747c1b4c25e8", &ev_path, causa);
         let q = repo.join(".SddIA/dlt/reanchor-queue/863d1511-202f-4c11-87d7-747c1b4c25e8.json");
         assert!(q.is_file());
+    }
+
+    #[test]
+    fn emit_dlt_batch_fracture_suppressed_on_gas_version_mismatch() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+        )
+        .unwrap();
+        let causa = "iota-relay-publish-error: status=500 Transaction execution failed due to issues with transaction inputs, please review the errors and try again:\n- Object ID 0x93e4c1ee3a81aa2815b2f23485885a37f6c97eb20d7e58458d8dcc4dce6ff880 Version 850727115 Digest 5fX2xzFeULF5XhHLu3iLNotiKiR5bu8CVwJC9j5X6GBa is not available for consumption, current version: 850727116";
+        emit_dlt_batch_fracture(repo, causa);
+        let pending = repo.join(".events/pending");
+        if pending.is_dir() {
+            for ent in fs::read_dir(&pending).unwrap() {
+                let p = ent.unwrap().path();
+                if p.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
+                assert_ne!(
+                    body.get("event_type").and_then(|v| v.as_str()),
+                    Some("System_Fracture_Detected"),
+                    "gas version mismatch must not emit Kintsugi"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn emit_dlt_batch_fracture_issues_inputs_without_version_still_emits() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+        )
+        .unwrap();
+        emit_dlt_batch_fracture(
+            repo,
+            "iota-relay-publish-error: status=500 Transaction execution failed due to issues with transaction inputs, please review the errors and try again:\n- Invalid object type",
+        );
+        let pending = repo.join(".events/pending");
+        let mut found = false;
+        for ent in fs::read_dir(&pending).unwrap() {
+            let p = ent.unwrap().path();
+            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
+            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
+            {
+                assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
+                found = true;
+            }
+        }
+        assert!(found);
     }
 
     #[test]

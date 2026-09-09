@@ -21,6 +21,7 @@ import { Ed25519Keypair } from "@iota/iota-sdk/keypairs/ed25519";
 import { Transaction } from "@iota/iota-sdk/transactions";
 import { fromHex } from "@iota/iota-sdk/utils";
 import { formatPublishFailure } from "./relay-error.mjs";
+import { createSerialQueue } from "./publish-queue.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
@@ -31,6 +32,7 @@ dotenv.config({ path: path.join(REPO_ROOT, ".SddIA/.dev/.env"), override: true }
 const HOST = process.env.IOTA_PUBLISH_RELAY_HOST || "127.0.0.1";
 const PORT = Number(process.env.IOTA_PUBLISH_RELAY_PORT || "8787");
 const PATH_PUBLISH = "/v1/publish";
+const enqueuePublish = createSerialQueue();
 
 function loadAnchorPackage() {
   const raw = fs.readFileSync(path.join(__dirname, "anchor-package.json"), "utf8");
@@ -180,7 +182,9 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 400, { success: false, error: "Campo obligatorio ausente: payload" });
       return;
     }
-    const published = await publishImmutableData(network.trim(), payload);
+    const published = await enqueuePublish(() =>
+      publishImmutableData(network.trim(), payload),
+    );
     sendJson(res, 200, {
       success: true,
       result: {
