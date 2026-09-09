@@ -111,11 +111,26 @@ fn resolve_orchestrator(repo: &Path) -> Result<PathBuf, String> {
     Err("orquestador nativo no encontrado en SddIA/target/{release,debug}".into())
 }
 
-fn client_timeout_secs() -> u64 {
-    std::env::var("SDDIA_CLIENT_TIMEOUT_SECONDS")
+fn env_timeout_secs(key: &str) -> Option<u64> {
+    std::env::var(key)
         .ok()
         .and_then(|v| v.parse().ok())
-        .unwrap_or(120)
+        .filter(|n| *n > 0)
+}
+
+fn resolve_client_timeout_secs(client: Option<u64>, gemini: Option<u64>) -> u64 {
+    let client = client.filter(|n| *n > 0).unwrap_or(120);
+    match gemini.filter(|n| *n > 0) {
+        Some(g) => client.max(g),
+        None => client,
+    }
+}
+
+fn client_timeout_secs() -> u64 {
+    resolve_client_timeout_secs(
+        env_timeout_secs("SDDIA_CLIENT_TIMEOUT_SECONDS"),
+        env_timeout_secs("SDDIA_GEMINI_HTTP_TIMEOUT_SECS"),
+    )
 }
 
 fn json_header() -> Header {
@@ -270,27 +285,39 @@ fn reply_accept_result(req: tiny_http::Request, result: Result<AcceptedAck, Acce
     }
 }
 
-fn run_orchestrator(repo: &Path, bin: &Path, prompt: &str) -> Result<String, String> {
-    run_orchestrator_inputs(
-        repo,
-        bin,
-        &serde_json::json!({ "prompt": prompt }),
-    )
+fn is_safe_process_name(process: &str) -> bool {
+    !process.is_empty()
+        && !process.starts_with('-')
+        && process
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
-fn run_orchestrator_inputs(
+enum OrchestratorOutcome {
+    Stdout(String),
+    Timeout,
+    JoinFail,
+    SpawnFail(String),
+}
+
+fn spawn_orchestrator(
     repo: &Path,
     bin: &Path,
+    process: &str,
     inputs: &serde_json::Value,
-) -> Result<String, String> {
+) -> OrchestratorOutcome {
+    if !is_safe_process_name(process) {
+        return OrchestratorOutcome::SpawnFail("process name inválido".into());
+    }
     let inputs = inputs.to_string();
     let timeout = Duration::from_secs(client_timeout_secs());
     let repo = repo.to_path_buf();
     let bin = bin.to_path_buf();
+    let process = process.to_string();
 
     let handle = thread::spawn(move || {
         Command::new(&bin)
-            .args(["--process", "kalma2-interact", "--inputs", &inputs])
+            .args(["--process", &process, "--inputs", &inputs])
             .current_dir(&repo)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -303,7 +330,7 @@ fn run_orchestrator_inputs(
             break;
         }
         if started.elapsed() >= timeout {
-            return Err(r#"{"success":false,"message":"timeout motor","exit_code":1}"#.into());
+            return OrchestratorOutcome::Timeout;
         }
         thread::sleep(Duration::from_millis(50));
     }
@@ -312,7 +339,7 @@ fn run_orchestrator_inputs(
         Ok(Ok(output)) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
             match stdout.lines().rev().find(|l| !l.trim().is_empty()) {
-                Some(line) => Ok(line.to_string()),
+                Some(line) => OrchestratorOutcome::Stdout(line.to_string()),
                 None => {
                     let err = String::from_utf8_lossy(&output.stderr);
                     let msg = if err.trim().is_empty() {
@@ -320,23 +347,111 @@ fn run_orchestrator_inputs(
                     } else {
                         err.trim()
                     };
-                    Ok(serde_json::json!({
-                        "success": false,
-                        "message": msg,
-                        "exit_code": output.status.code().unwrap_or(1)
-                    })
-                    .to_string())
+                    OrchestratorOutcome::Stdout(
+                        serde_json::json!({
+                            "success": false,
+                            "message": msg,
+                            "exit_code": output.status.code().unwrap_or(1)
+                        })
+                        .to_string(),
+                    )
                 }
             }
         }
-        Ok(Err(e)) => Ok(serde_json::json!({
+        Ok(Err(e)) => OrchestratorOutcome::SpawnFail(e.to_string()),
+        Err(_) => OrchestratorOutcome::JoinFail,
+    }
+}
+
+fn run_orchestrator(repo: &Path, bin: &Path, prompt: &str) -> Result<String, String> {
+    run_orchestrator_inputs(
+        repo,
+        bin,
+        "kalma2-interact",
+        &serde_json::json!({ "prompt": prompt }),
+    )
+}
+
+fn run_orchestrator_inputs(
+    repo: &Path,
+    bin: &Path,
+    process: &str,
+    inputs: &serde_json::Value,
+) -> Result<String, String> {
+    match spawn_orchestrator(repo, bin, process, inputs) {
+        OrchestratorOutcome::Stdout(line) => Ok(line),
+        OrchestratorOutcome::Timeout => {
+            Err(r#"{"success":false,"message":"timeout motor","exit_code":1}"#.into())
+        }
+        OrchestratorOutcome::JoinFail => {
+            Err(r#"{"success":false,"message":"subproceso falló","exit_code":1}"#.into())
+        }
+        OrchestratorOutcome::SpawnFail(e) => Ok(serde_json::json!({
             "success": false,
-            "message": e.to_string(),
+            "message": e,
             "exit_code": 1
         })
         .to_string()),
-        Err(_) => Err(r#"{"success":false,"message":"subproceso falló","exit_code":1}"#.into()),
     }
+}
+
+fn sanitize_bridge_message(raw: &str) -> String {
+    raw.chars()
+        .map(|c| if c == '\n' || c == '\r' { ' ' } else { c })
+        .take(240)
+        .collect::<String>()
+        .trim()
+        .to_string()
+}
+
+fn flatten_aiua_wui(
+    envelope: &serde_json::Value,
+    bridge_duration_ms: u64,
+) -> Result<serde_json::Value, String> {
+    let success = envelope
+        .get("success")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !success {
+        let msg = envelope
+            .get("error")
+            .or_else(|| envelope.get("message"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("latido fallido");
+        return Err(sanitize_bridge_message(msg));
+    }
+    let data = envelope
+        .get("data")
+        .ok_or_else(|| "envelope sin data".to_string())?;
+    let response = data
+        .get("response")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| "data.response ausente".to_string())?;
+    let thought_id = data
+        .get("thought_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let tel = data.get("telemetry").cloned().unwrap_or(serde_json::json!({}));
+    let mut telemetry = serde_json::json!({
+        "duration_ms": tel.get("duration_ms").cloned().unwrap_or(serde_json::Value::Null),
+        "model": tel.get("model").and_then(|v| v.as_str()).unwrap_or(""),
+    });
+    if let Some(tokens) = tel.get("tokens") {
+        if tokens.is_object() {
+            telemetry
+                .as_object_mut()
+                .expect("telemetry object")
+                .insert("tokens".into(), tokens.clone());
+        }
+    }
+    Ok(serde_json::json!({
+        "success": true,
+        "response": response,
+        "thought_id": thought_id,
+        "telemetry": telemetry,
+        "duration_ms": bridge_duration_ms,
+    }))
 }
 
 fn normalize_rel(path: &str) -> String {
@@ -968,7 +1083,12 @@ fn load_eda_pending(repo: &Path) -> PathBuf {
     repo.join(".events/pending")
 }
 
-fn emit_system_fracture(repo: &Path, fracture_kind: &str, error_trace: &str) {
+fn emit_system_fracture(
+    repo: &Path,
+    fracture_kind: &str,
+    error_trace: &str,
+    attempted_action: &str,
+) {
     let event_id = new_event_id();
     let pending = load_eda_pending(repo);
     let _ = std::fs::create_dir_all(&pending);
@@ -983,7 +1103,7 @@ fn emit_system_fracture(repo: &Path, fracture_kind: &str, error_trace: &str) {
             "process_name": "kalma2-bridge",
             "error_trace": error_trace,
             "agent_emitter": "kalma2-bridge",
-            "attempted_action": "sse_chat_stream",
+            "attempted_action": attempted_action,
             "source": "kalma2-bridge",
             "fracture_kind": fracture_kind,
         }
@@ -1092,7 +1212,7 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
     let skill = match resolve_mayeuta_llm(repo) {
         Ok(b) => b,
         Err(message) => {
-            emit_system_fracture(repo, "prosthetic_collapse", &message);
+            emit_system_fracture(repo, "prosthetic_collapse", &message, "sse_chat_stream");
             reply(
                 req,
                 500,
@@ -1123,7 +1243,7 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
         Ok(c) => c,
         Err(e) => {
             let msg = format!("spawn mayeuta-llm: {e}");
-            emit_system_fracture(repo, "prosthetic_collapse", &msg);
+            emit_system_fracture(repo, "prosthetic_collapse", &msg, "sse_chat_stream");
             reply(
                 req,
                 500,
@@ -1143,7 +1263,7 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
         if let Err(e) = stdin.write_all(stdin_payload.as_bytes()) {
             let msg = format!("stdin mayeuta-llm: {e}");
             let _ = child.kill();
-            emit_system_fracture(repo, "prosthetic_collapse", &msg);
+            emit_system_fracture(repo, "prosthetic_collapse", &msg, "sse_chat_stream");
             reply(
                 req,
                 500,
@@ -1160,7 +1280,12 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
 
     let Some(stdout) = child.stdout.take() else {
         let _ = child.kill();
-        emit_system_fracture(repo, "prosthetic_collapse", "mayeuta-llm sin stdout");
+        emit_system_fracture(
+            repo,
+            "prosthetic_collapse",
+            "mayeuta-llm sin stdout",
+            "sse_chat_stream",
+        );
         reply(
             req,
             500,
@@ -1190,6 +1315,7 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
             &repo_watch,
             "sse_watchdog",
             &format!("SSE chat timeout {timeout:?}; kill -9 pid={child_id}"),
+            "sse_chat_stream",
         );
     });
 
@@ -1212,6 +1338,7 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
             repo,
             "sse_watchdog",
             "cliente SSE desconectado durante stream",
+            "sse_chat_stream",
         );
         return;
     }
@@ -1226,10 +1353,16 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
                     "mayeuta-llm/prótesis exit {}",
                     status.code().unwrap_or(1)
                 ),
+                "sse_chat_stream",
             );
         }
         Err(e) => {
-            emit_system_fracture(repo, "prosthetic_collapse", &format!("wait hijo: {e}"));
+            emit_system_fracture(
+                repo,
+                "prosthetic_collapse",
+                &format!("wait hijo: {e}"),
+                "sse_chat_stream",
+            );
         }
     }
 }
@@ -1340,7 +1473,7 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
             "mode": "chat",
         });
         let t0 = Instant::now();
-        match run_orchestrator_inputs(repo, &bin, &inputs) {
+        match run_orchestrator_inputs(repo, &bin, "kalma2-interact", &inputs) {
             Ok(mut line) => {
                 if let Ok(mut v) = serde_json::from_str::<serde_json::Value>(&line) {
                     if let Some(obj) = v.as_object_mut() {
@@ -1390,6 +1523,103 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
             reply(req, 200, line);
         }
         Err(body) => reply(req, 500, body),
+    }
+}
+
+fn handle_aiua_interact(mut req: tiny_http::Request, repo: &Path) {
+    let mut buf = String::new();
+    if req.as_reader().read_to_string(&mut buf).is_err() {
+        reply(
+            req,
+            400,
+            r#"{"success":false,"message":"prompt requerido"}"#.into(),
+        );
+        return;
+    }
+
+    let parsed = match serde_json::from_str::<InteractReq>(&buf) {
+        Ok(p) if !p.prompt.trim().is_empty() => p,
+        _ => {
+            reply(
+                req,
+                400,
+                r#"{"success":false,"message":"prompt requerido"}"#.into(),
+            );
+            return;
+        }
+    };
+
+    let bin = match resolve_orchestrator(repo) {
+        Ok(b) => b,
+        Err(message) => {
+            emit_system_fracture(repo, "prosthetic_collapse", &message, "aiua_interact");
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": sanitize_bridge_message(&message)
+                })
+                .to_string(),
+            );
+            return;
+        }
+    };
+
+    let t0 = Instant::now();
+    let inputs = serde_json::json!({ "prompt": parsed.prompt.trim() });
+    match spawn_orchestrator(repo, &bin, "aiua-stimulus-processing", &inputs) {
+        OrchestratorOutcome::SpawnFail(e) => {
+            emit_system_fracture(repo, "prosthetic_collapse", &e, "aiua_interact");
+            reply(
+                req,
+                500,
+                serde_json::json!({
+                    "success": false,
+                    "message": sanitize_bridge_message(&e)
+                })
+                .to_string(),
+            );
+        }
+        OrchestratorOutcome::Timeout => {
+            reply(
+                req,
+                500,
+                r#"{"success":false,"message":"timeout motor"}"#.into(),
+            );
+        }
+        OrchestratorOutcome::JoinFail => {
+            reply(
+                req,
+                500,
+                r#"{"success":false,"message":"subproceso falló"}"#.into(),
+            );
+        }
+        OrchestratorOutcome::Stdout(line) => {
+            let envelope: serde_json::Value = match serde_json::from_str(&line) {
+                Ok(v) => v,
+                Err(_) => {
+                    reply(
+                        req,
+                        500,
+                        r#"{"success":false,"message":"envelope ilegible"}"#.into(),
+                    );
+                    return;
+                }
+            };
+            match flatten_aiua_wui(&envelope, t0.elapsed().as_millis() as u64) {
+                Ok(body) => reply(req, 200, body.to_string()),
+                Err(message) => reply(
+                    req,
+                    500,
+                    serde_json::json!({
+                        "success": false,
+                        "message": message
+                    })
+                    .to_string(),
+                ),
+            }
+        }
     }
 }
 
@@ -2114,6 +2344,7 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Post, "/api/chat") => handle_chat(req, &repo),
         (Method::Post, "/api/execute") => handle_execute(req, &repo),
         (Method::Post, "/api/interact") => handle_interact(req, &repo),
+        (Method::Post, "/api/aiua/interact") => handle_aiua_interact(req, &repo),
         (Method::Post, "/api/sync-assets") => handle_sync_assets(req, &repo),
         (Method::Post, "/api/email-quick-action") => handle_email_quick_action(req, &repo),
         (Method::Post, "/api/user-preference-change") => handle_user_preference_change(req, &repo),
@@ -2609,5 +2840,167 @@ mod tests {
             prod.contains("reply_accept_result") && prod.contains("AcceptedAck"),
             "execute debe responder acuse AcceptedAck"
         );
+    }
+
+    #[test]
+    fn aiua_interact_route_before_static() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let dispatch = prod.split("fn dispatch").nth(1).expect("dispatch");
+        let aiua_pos = dispatch
+            .find("\"/api/aiua/interact\"")
+            .expect("aiua interact route");
+        let static_pos = dispatch.find("serve_static").expect("static");
+        assert!(aiua_pos < static_pos);
+        assert!(prod.contains("handle_aiua_interact"));
+    }
+
+    #[test]
+    fn aiua_handler_never_calls_kalma2_interact() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let start = prod.find("fn handle_aiua_interact").expect("handle_aiua_interact");
+        let slice = &prod[start..];
+        let next = slice[1..].find("\nfn ").unwrap_or(slice.len());
+        let body = &slice[..next + 1];
+        assert!(
+            !body.contains("kalma2-interact"),
+            "handle_aiua_interact no debe cablear kalma2-interact"
+        );
+        assert!(body.contains("aiua-stimulus-processing"));
+        assert!(body.contains("aiua_interact"));
+    }
+
+    #[test]
+    fn spawn_orchestrator_process_name_is_parametrized() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let start = prod.find("fn spawn_orchestrator").expect("spawn_orchestrator");
+        let slice = &prod[start..];
+        let next = slice[1..].find("\nfn ").unwrap_or(slice.len());
+        let body = &slice[..next + 1];
+        assert!(body.contains("\"--process\""));
+        assert!(
+            !body.contains("\"kalma2-interact\""),
+            "spawn genérico no hardcodea kalma2-interact"
+        );
+        assert!(prod.contains("run_orchestrator_inputs"));
+        let run_start = prod.find("fn run_orchestrator(").expect("run_orchestrator");
+        let run_slice = &prod[run_start..];
+        let run_next = run_slice[1..].find("\nfn ").unwrap_or(run_slice.len());
+        let run_body = &run_slice[..run_next + 1];
+        assert!(
+            run_body.contains("\"kalma2-interact\""),
+            "helper Mayeuta síncrono conserva kalma2-interact"
+        );
+    }
+
+    #[test]
+    fn flatten_aiua_wui_extracts_envelope_data() {
+        let envelope = serde_json::json!({
+            "success": true,
+            "status_code": 0,
+            "exitCode": 0,
+            "data": {
+                "thought_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "response": "lab-mock: latido",
+                "telemetry": {
+                    "duration_ms": 12,
+                    "model": "lab-mock",
+                    "tokens": {"promptTokenCount": 3, "candidatesTokenCount": 8}
+                }
+            }
+        });
+        let body = flatten_aiua_wui(&envelope, 40).expect("flatten");
+        assert_eq!(body["success"], true);
+        assert_eq!(body["response"], "lab-mock: latido");
+        assert_eq!(
+            body["thought_id"].as_str().unwrap().len(),
+            64
+        );
+        assert_eq!(body["telemetry"]["model"], "lab-mock");
+        assert_eq!(body["telemetry"]["tokens"]["promptTokenCount"], 3);
+        assert_eq!(body["duration_ms"], 40);
+        assert!(body.get("exitCode").is_none());
+        assert!(body.get("data").is_none());
+    }
+
+    #[test]
+    fn flatten_aiua_wui_omits_tokens_when_absent() {
+        let envelope = serde_json::json!({
+            "success": true,
+            "data": {
+                "thought_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "response": "ok",
+                "telemetry": {"duration_ms": 1, "model": "x"}
+            }
+        });
+        let body = flatten_aiua_wui(&envelope, 1).unwrap();
+        assert!(body["telemetry"].get("tokens").is_none());
+    }
+
+    #[test]
+    fn flatten_aiua_wui_rejects_business_failure() {
+        let envelope = serde_json::json!({
+            "success": false,
+            "exitCode": 1,
+            "error": "gemini 503"
+        });
+        let err = flatten_aiua_wui(&envelope, 2).unwrap_err();
+        assert!(err.contains("gemini 503"));
+    }
+
+    #[test]
+    fn client_timeout_is_at_least_gemini() {
+        assert_eq!(resolve_client_timeout_secs(Some(120), Some(180)), 180);
+        assert_eq!(resolve_client_timeout_secs(Some(200), Some(180)), 200);
+        assert_eq!(resolve_client_timeout_secs(None, None), 120);
+        assert_eq!(resolve_client_timeout_secs(Some(0), Some(180)), 180);
+    }
+
+    #[test]
+    fn aiua_genome_has_no_kalma2_ui_coupling() {
+        let repo = repo_root();
+        for rel in [
+            "SddIA/process/aiua-stimulus-processing.md",
+            "SddIA/actions/retrieve-active-context.md",
+            "SddIA/actions/invoke-aiua-core.md",
+            "SddIA/actions/persist-thought-record.md",
+            "SddIA/tools/thought-graph-access.md",
+        ] {
+            let text = std::fs::read_to_string(repo.join(rel))
+                .unwrap_or_else(|_| panic!("leer {rel}"));
+            let lower = text.to_lowercase();
+            assert!(
+                !lower.contains("kalma2-interact") && !lower.contains("caja de texto"),
+                "{rel} no debe acoplar UI Kalma2"
+            );
+        }
+    }
+
+    #[test]
+    fn wui_aiua_pulse_and_setbusy_and_ctrl_enter_intact() {
+        let repo = repo_root();
+        let html = std::fs::read_to_string(repo.join("interfaces/kalma2/index.html")).unwrap();
+        assert!(html.contains("id=\"aiua-pulse\""));
+        assert!(html.contains("id=\"cognitive-pulse\""));
+        let js = std::fs::read_to_string(repo.join("interfaces/kalma2/app.js")).unwrap();
+        assert!(js.contains("enviarAiuaStimulus"));
+        assert!(js.contains("/api/aiua/interact"));
+        assert!(js.contains("appendProgressTrace"));
+        let setbusy_start = js.find("function setBusy").expect("setBusy");
+        let setbusy = &js[setbusy_start..];
+        let setbusy_end = setbusy[1..].find("\nfunction ").unwrap_or(setbusy.len());
+        let setbusy_body = &setbusy[..setbusy_end + 1];
+        assert!(setbusy_body.contains("aiua-pulse"));
+        assert!(js.contains("enviarChat()"));
+        let keydown = js.find("keydown").expect("keydown");
+        let key_slice = &js[keydown..keydown + 280];
+        assert!(
+            key_slice.contains("enviarChat()"),
+            "Ctrl+Enter debe seguir llamando enviarChat"
+        );
+        assert!(!key_slice.contains("enviarAiuaStimulus"));
+        assert!(!js.contains("localStorage"));
     }
 }
