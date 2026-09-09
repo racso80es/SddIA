@@ -23,9 +23,11 @@ function setBusy(busy) {
   const chat = $("chat");
   const forge = $("forge");
   const sync = $("sync-genome");
+  const aiua = $("aiua-pulse");
   if (chat) chat.disabled = busy;
   if (forge) forge.disabled = busy;
   if (sync) sync.disabled = busy;
+  if (aiua) aiua.disabled = busy;
 }
 
 function closeProgressStream() {
@@ -187,6 +189,56 @@ async function enviarChat() {
     if (!acc) out.value = "(stream vacío)";
   } catch (e) {
     setStatus("red", "failed");
+    out.value = `[fallo red] ${e}`;
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function enviarAiuaStimulus() {
+  const out = $("output");
+  const prompt = $("prompt").value.trim();
+  if (!prompt) return;
+
+  setBusy(true);
+  out.value = "";
+  setStatus("deliberando · Tormentosa asimilando estímulo…", "pending");
+
+  try {
+    const r = await fetch("/api/aiua/interact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+    let body = {};
+    try {
+      body = await r.json();
+    } catch (_) {
+      body = {};
+    }
+    if (!r.ok || body.success === false) {
+      const msg = body.message || body.error || r.statusText || "latido fallido";
+      setStatus("failed · " + String(msg).slice(0, 120), "failed");
+      out.value = `[error] ${msg}`;
+      return;
+    }
+    out.value = body.response || "";
+    const thought = body.thought_id || "";
+    const tel = body.telemetry && typeof body.telemetry === "object" ? body.telemetry : {};
+    const model = tel.model || "";
+    const dur = tel.duration_ms != null ? tel.duration_ms : body.duration_ms;
+    let traceMsg = `thought_id=${thought}`;
+    if (model) traceMsg += ` model=${model}`;
+    if (dur != null && dur !== "") traceMsg += ` duration_ms=${dur}`;
+    appendProgressTrace({
+      severity: "info",
+      source_agent: "aiua",
+      phase: "Consolidacion-Memoria",
+      message: traceMsg,
+    });
+    setStatus("ok · pensamiento asimilado", "ok");
+  } catch (e) {
+    setStatus("failed · red", "failed");
     out.value = `[fallo red] ${e}`;
   } finally {
     setBusy(false);
@@ -414,6 +466,8 @@ async function loadSystemHealth() {
 
 document.addEventListener("DOMContentLoaded", () => {
   $("chat").addEventListener("click", enviarChat);
+  const aiuaBtn = $("aiua-pulse");
+  if (aiuaBtn) aiuaBtn.addEventListener("click", enviarAiuaStimulus);
   const forgeBtn = $("forge");
   if (forgeBtn) forgeBtn.addEventListener("click", forjarProceso);
   const syncBtn = $("sync-genome");
