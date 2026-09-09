@@ -227,4 +227,27 @@ mod tests {
         let (ok, errors) = validate_ecst_instance(&event, Some(schema));
         assert!(ok, "{errors:?}");
     }
+
+    #[test]
+    fn loads_fracture_clarification_requested_schema() {
+        let repo = find_repo_root().unwrap();
+        let schemas = load_event_class_schemas(&repo);
+        let schema = schemas
+            .get("Fracture_Clarification_Requested")
+            .expect("schema");
+        assert!(schema.required.contains(&"fracture_pbi_path".to_string()));
+        assert!(schema.required.contains(&"process_name".to_string()));
+        assert!(schema.required.contains(&"error_trace_hash".to_string()));
+        assert!(schema.optional.contains(&"attempted_action".to_string()));
+        let event = json!({
+            "event_type": "Fracture_Clarification_Requested",
+            "payload": {
+                "fracture_pbi_path": "docs/todos/pending/x.md",
+                "process_name": "route-domain-event",
+                "error_trace_hash": "deadbeefcafe"
+            }
+        });
+        let (ok, errors) = validate_ecst_instance(&event, Some(schema));
+        assert!(ok, "{errors:?}");
+    }
 }

@@ -10,5 +10,12 @@
       "tool": "send-telegram-notification",
       "intent": "Notificar al Vértice Biológico el cierre táctico (process_name + correlation_id + status)."
     }
+  ],
+  "Fracture_Clarification_Requested": [
+    {
+      "agent": "mayeuta",
+      "action": "append-mayeuta-hypothesis",
+      "intent": "Hipótesis semántica asíncrona (mayeuta-llm) sobre fractura inédita; anexo consultivo."
+    }
   ]
 }

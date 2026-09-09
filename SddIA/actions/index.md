@@ -16,6 +16,7 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 
 | Name | UUID | Versión | Context | Descripción | Capabilities |
 |------|------|---------|---------|-------------|--------------|
+| append-mayeuta-hypothesis | d5c792b5-33a1-4287-a66f-ea3b2ad5716d | 1.0.0 | knowledge-management | Hipótesis semántica asíncrona (mayeuta-llm SYNTHESIZE); upsert H2; fail-open. | `fracture-semantic-hypothesis`, `delegate-mayeuta-llm` |
 | persist-thought-record | a37f9f1d-8f2a-441f-9357-776d65553362 | 1.1.0 | ecosystem-evolution | Acción persist-thought-record | `persist_thought_record` |
 | invoke-aiua-core | 2edc7ef4-57e5-4d10-8753-bab8b0053cca | 1.1.0 | ecosystem-evolution | Acción invoke-aiua-core | `invoke_aiua_core` |
 | retrieve-active-context | afa0424b-cdd4-4810-9a29-d8e7c06d6a1f | 1.1.0 | ecosystem-evolution | Acción retrieve-active-context | `retrieve_active_context` |

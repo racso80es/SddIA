@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `67a74480-f2b3-440d-a467-7dfe32726705` | 2026-09-09 | Triaje asíncrono de fracturas inéditas: Fracture_Clarification_Requested + append-mayeuta-hypothesis. | CANONICO | `SddIA/evolution/67a74480-f2b3-440d-a467-7dfe32726705.md` |
 | `11409c1e-0254-4eea-8d5a-c1c2f5b1b4bb` | 2026-09-09 | Correlato residual enrich-fracture-pbi-kaizen v1.4.0: actions/index.md. | CANONICO | `SddIA/evolution/11409c1e-0254-4eea-8d5a-c1c2f5b1b4bb.md` |
 | `5f09da5c-a96c-4475-9ce6-15d55cc5840c` | 2026-09-09 | DLT: colisión de versión de gas no emite System_Fracture_Detected; cola serial relay; Mayeuta subtipo DLT y catch-all sin failed. | CANONICO | `SddIA/evolution/5f09da5c-a96c-4475-9ce6-15d55cc5840c.md` |
 | `bdd512bd-42ea-4c45-ab97-2e0fa8ea37c8` | 2026-09-09 | Puente perceptivo Kalma2 WUI → aiua-stimulus-processing (POST /api/aiua/interact atómico). | CANONICO | `SddIA/evolution/bdd512bd-42ea-4c45-ab97-2e0fa8ea37c8.md` |

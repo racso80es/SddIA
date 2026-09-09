@@ -1044,12 +1044,24 @@ pub fn sync_event_family_class_count(family_index: &Path) -> Result<usize, Strin
         n += 1;
     }
     let mut text = fs::read_to_string(family_index).map_err(|e| e.to_string())?;
-    static RE: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
-    let re = RE.get_or_init(|| Regex::new(r"- \*\*Clases:\*\* \d+ ECST\.").expect("regex"));
-    if re.is_match(&text) {
-        text = re
+    static RE_BOLD: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    static RE_CAT: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    let re_bold = RE_BOLD.get_or_init(|| Regex::new(r"- \*\*Clases:\*\* \d+ ECST\.").expect("regex"));
+    let re_cat = RE_CAT.get_or_init(|| Regex::new(r"- \d+ clases ECST catalogadas").expect("regex"));
+    let mut changed = false;
+    if re_bold.is_match(&text) {
+        text = re_bold
             .replace(&text, format!("- **Clases:** {n} ECST."))
             .into_owned();
+        changed = true;
+    }
+    if re_cat.is_match(&text) {
+        text = re_cat
+            .replace(&text, format!("- {n} clases ECST catalogadas"))
+            .into_owned();
+        changed = true;
+    }
+    if changed {
         fs::write(family_index, text).map_err(|e| e.to_string())?;
     }
     Ok(n)
