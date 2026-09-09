@@ -6,7 +6,9 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-09"
 updated: "2026-09-09"
-status: "propuesta"
+pr_url: "https://github.com/racso80es/SddIA/pull/276"
+persist_ref: docs/features/kalma2-aiua-perceptive-bridge
+status: "done"
 refinement_status: refinado
 priority: alta
 type: nucleo

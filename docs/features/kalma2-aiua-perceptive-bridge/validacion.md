@@ -7,11 +7,14 @@ agents: argos
 branch: feat/kalma2-aiua-perceptive-bridge
 branch_name: feat/kalma2-aiua-perceptive-bridge
 persist_ref: docs/features/kalma2-aiua-perceptive-bridge
-pbi_ref: docs/todos/pending/[NÚCLEO] Puente Perceptivo: Interacción Biológica con Tormentosa desde Kalma2 WUI.md
+pbi_ref: docs/todos/done/[NÚCLEO] Puente Perceptivo: Interacción Biológica con Tormentosa desde Kalma2 WUI.md
 document_id: PBI-NUCLEO-PUENTE-PERCEPTIVO-KALMA2
 uuid: "d7192a54-7389-4b68-b3d4-b91c0e35921a"
-global: PENDIENTE-CI
-pbi_archived: false
+global: APTO
+pbi_archived: true
+pr_url: "https://github.com/racso80es/SddIA/pull/276"
+ci_run_id: "34322877409"
+ci_run_url: "https://github.com/racso80es/SddIA/actions/runs/34322877409"
 checks:
   CA-1: APTO
   CA-2: APTO
@@ -22,8 +25,8 @@ checks:
   CA-7: APTO
   CA-8: APTO
   CA-9: APTO
-  CA-10: PENDIENTE
-  CA-CI: PENDIENTE-CI
+  CA-10: APTO
+  CA-CI: APTO
 git_changes:
   - SddIA/interfaces/kalma2-bridge/src/main.rs
   - interfaces/kalma2/index.html
@@ -31,11 +34,12 @@ git_changes:
   - docs/features/kalma2-aiua-perceptive-bridge/
   - SddIA/evolution/bdd512bd-42ea-4c45-ab97-2e0fa8ea37c8.md
   - SddIA/evolution/Evolution_log.md
+  - docs/todos/done/[NÚCLEO] Puente Perceptivo: Interacción Biológica con Tormentosa desde Kalma2 WUI.md
 ---
 
 # Validacion — kalma2-aiua-perceptive-bridge
 
-`global: PENDIENTE-CI`. CA-CI sin `run_id`. PBI aún en `pending/`. No APTO hasta checks GitHub verdes.
+`global: APTO`. PBI archivado en `docs/todos/done/` en esta rama. CA-CI: run `34322877409` (PR #276, head `492c673`).
 
 ## Checks
 
@@ -50,8 +54,8 @@ git_changes:
 | CA-7 | APTO | `Ctrl+Enter` → `enviarChat`. Rutas chat/forge/sync intactas. |
 | CA-8 | APTO | `resolve_client_timeout_secs(120, 180) == 180`. |
 | CA-9 | APTO | Grep `kalma2-interact` / `caja de texto` en proceso/acciones/tool. |
-| CA-10 | PENDIENTE | Archivo PBI + `pbi_archived` tras CI verde. |
-| CA-CI | PENDIENTE-CI | Sin `run_id`. |
+| CA-10 | APTO | PBI en `docs/todos/done/`; `pbi_archived: true`. |
+| CA-CI | APTO | Run [34322877409](https://github.com/racso80es/SddIA/actions/runs/34322877409): `sddia-index-integrity`, `wasi-runtime-smoke`, `eda-iota-smoke-simulate`, `eda-bus-e2e-smoke`, `eda-iota-physical` SUCCESS. |
 
 ## Tests
 
