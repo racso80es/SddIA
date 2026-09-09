@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `39f747ac-2d49-48ff-8552-8d91269af74e` | 2026-09-09 | Correlato residual Aiúa audit: actions/index y starter-kit SDDIA_GEMINI_THINKING_LEVEL. | CANONICO | `SddIA/evolution/39f747ac-2d49-48ff-8552-8d91269af74e.md` |
 | `cef04e8e-36a5-40d1-b697-e00a0640db87` | 2026-09-09 | Aiúa residual auditoría: thinkingLevel en gemini-http-infer, cuerpos de tres acciones, prefacio de identidad en assembled_prompt. | CANONICO | `SddIA/evolution/cef04e8e-36a5-40d1-b697-e00a0640db87.md` |
 | `57e1dcd8-c04c-4818-818c-fb04ecf046e2` | 2026-09-08 | DLT: ENETUNREACH en merkle-batch-preseal no emite System_Fracture_Detected; cubo Mayeuta process_fix. | CANONICO | `SddIA/evolution/57e1dcd8-c04c-4818-818c-fb04ecf046e2.md` |
 | `0b3ef02b-debe-4532-91da-c265ed59942b` | 2026-09-08 | F4c: gh 'error connecting to api.github.com' en Apertura en forja no emite System_Fracture_Detected. | CANONICO | `SddIA/evolution/0b3ef02b-debe-4532-91da-c265ed59942b.md` |
