@@ -1135,8 +1135,8 @@ fn resolve_mayeuta_llm(repo: &Path) -> Result<PathBuf, String> {
         }
     }
     for rel in [
-        "SddIA/target/debug/mayeuta-llm",
         "SddIA/target/release/mayeuta-llm",
+        "SddIA/target/debug/mayeuta-llm",
     ] {
         let candidate = repo.join(rel);
         if is_native_elf(&candidate) {
@@ -2427,6 +2427,103 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    static MAYEUTA_RESOLVE_LOCK: Mutex<()> = Mutex::new(());
+
+    struct MayeutaEnvGuard {
+        prev: Option<String>,
+    }
+
+    impl MayeutaEnvGuard {
+        fn apply(value: Option<&str>) -> Self {
+            let prev = std::env::var("SDDIA_MAYEUTA_LLM_BIN").ok();
+            match value {
+                Some(v) => std::env::set_var("SDDIA_MAYEUTA_LLM_BIN", v),
+                None => std::env::remove_var("SDDIA_MAYEUTA_LLM_BIN"),
+            }
+            Self { prev }
+        }
+    }
+
+    impl Drop for MayeutaEnvGuard {
+        fn drop(&mut self) {
+            match self.prev.take() {
+                Some(v) => std::env::set_var("SDDIA_MAYEUTA_LLM_BIN", v),
+                None => std::env::remove_var("SDDIA_MAYEUTA_LLM_BIN"),
+            }
+        }
+    }
+
+    fn write_elf_stub(path: &Path) {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::write(path, b"\x7fELF").unwrap();
+    }
+
+    #[test]
+    fn resolve_mayeuta_llm_prefers_env_override_elf() {
+        let _lock = MAYEUTA_RESOLVE_LOCK.lock().unwrap();
+        let dir = std::env::temp_dir().join(format!(
+            "kalma2-mayeuta-override-{}",
+            std::process::id()
+        ));
+        let stub = dir.join("mayeuta-llm");
+        write_elf_stub(&stub);
+        let _guard = MayeutaEnvGuard::apply(Some(stub.to_str().unwrap()));
+        let got = resolve_mayeuta_llm(Path::new("/nonexistent-repo-root"));
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(got.unwrap(), stub);
+    }
+
+    #[test]
+    fn resolve_mayeuta_llm_prefers_release_over_debug() {
+        let _lock = MAYEUTA_RESOLVE_LOCK.lock().unwrap();
+        let _guard = MayeutaEnvGuard::apply(None);
+        let dir = std::env::temp_dir().join(format!(
+            "kalma2-mayeuta-profiles-{}",
+            std::process::id()
+        ));
+        let debug = dir.join("SddIA/target/debug/mayeuta-llm");
+        let release = dir.join("SddIA/target/release/mayeuta-llm");
+        write_elf_stub(&debug);
+        write_elf_stub(&release);
+        let got = resolve_mayeuta_llm(&dir);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(got.unwrap(), release);
+    }
+
+    #[test]
+    fn resolve_mayeuta_llm_missing_emits_literal_trace() {
+        let _lock = MAYEUTA_RESOLVE_LOCK.lock().unwrap();
+        let _guard = MayeutaEnvGuard::apply(None);
+        let dir = std::env::temp_dir().join(format!(
+            "kalma2-mayeuta-missing-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let err = resolve_mayeuta_llm(&dir).unwrap_err();
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(
+            err,
+            "mayeuta-llm no encontrado en SddIA/target/{debug,release}"
+        );
+    }
+
+    #[test]
+    fn resolve_mayeuta_llm_override_rejects_non_elf() {
+        let _lock = MAYEUTA_RESOLVE_LOCK.lock().unwrap();
+        let path = std::env::temp_dir().join(format!(
+            "kalma2-mayeuta-non-elf-{}",
+            std::process::id()
+        ));
+        std::fs::write(&path, "#!/bin/sh\n").unwrap();
+        let _guard = MayeutaEnvGuard::apply(Some(path.to_str().unwrap()));
+        let err = resolve_mayeuta_llm(Path::new("/nonexistent-repo-root")).unwrap_err();
+        let _ = std::fs::remove_file(&path);
+        assert_eq!(err, "SDDIA_MAYEUTA_LLM_BIN no es ELF nativo");
+    }
 
     #[test]
     fn resolve_orchestrator_finds_debug_binary() {

@@ -24,5 +24,26 @@ if [[ -z "$BRIDGE_BIN" ]]; then
   exit 1
 fi
 
+warn_if_mayeuta_llm_missing() {
+  local candidate
+  if [[ -n "${SDDIA_MAYEUTA_LLM_BIN:-}" ]]; then
+    if _sddia_is_native_elf "${SDDIA_MAYEUTA_LLM_BIN}"; then
+      return 0
+    fi
+    echo "[WARN] SDDIA_MAYEUTA_LLM_BIN no es ELF nativo (${SDDIA_MAYEUTA_LLM_BIN}). POST /api/chat colapsará. Compilar: cd SddIA && cargo build --release -p mayeuta-llm" >&2
+    return 0
+  fi
+  for candidate in \
+    "$REPO_ROOT/SddIA/target/release/mayeuta-llm" \
+    "$REPO_ROOT/SddIA/target/debug/mayeuta-llm"; do
+    if _sddia_is_native_elf "$candidate"; then
+      return 0
+    fi
+  done
+  echo "[WARN] mayeuta-llm no encontrado en SddIA/target/{release,debug}. POST /api/chat emitirá prosthetic_collapse. Compilar: cd SddIA && cargo build --release -p mayeuta-llm" >&2
+}
+
+warn_if_mayeuta_llm_missing
+
 export SDDIA_REPO_ROOT="$REPO_ROOT"
 exec "$BRIDGE_BIN"
