@@ -40,6 +40,12 @@ Incluye `flatten_aiua_wui_sanitizes_incident_503_blob`, `flatten_aiua_wui_saniti
 
 PBI `pending/` → `done/`. `status: cerrado`. `fix_ref: docs/fixes/kalma2-wui-aiua-503-sanitize`. `document_id` conservado.
 
+## DCC / PR / CI
+
+`delivery-close-cycle` `execution_id` `a94e5fec-0ccc-4b40-867f-7297be16c1a3`. Snapshot `dae9949`. PR https://github.com/racso80es/SddIA/pull/282. `PullRequest_Presented` `4dca2e3a-a5a8-456b-94fc-607242dfaf62`.
+
+Run [34380881579](https://github.com/racso80es/SddIA/actions/runs/34380881579) sobre `dae9949`: success. Evento `push` `34380878572`: skip e2e/physical (no fallo).
+
 ## Fuera del diff
 
 `interfaces/kalma2/app.js`, `SddIA/tools/gemini-http-infer`, `.SddIA/observability/ecosystem-health.json`, PBI Telegram kitchen.

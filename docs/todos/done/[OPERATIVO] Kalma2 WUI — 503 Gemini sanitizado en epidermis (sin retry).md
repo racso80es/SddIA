@@ -253,7 +253,7 @@ Tras el canónico, `#output`:
   3. Envelopes no-503 (404 modelo, `"gemini 503"`, timeout no aplica a flatten) → sin remapear.
   4. Cero red (`A-HERMETIC-TESTS-NO-LIVE`).
 - [x] **KALMA-503-CA6 — Ciclo documental:** un único PR con código `kalma2-bridge`, tests, `validacion.md` y PBI en `docs/todos/done/` (`status: cerrado`). Cero diffs en `interfaces/kalma2/app.js` ni `SddIA/tools/gemini-http-infer`.
-- [ ] **KALMA-503-CA-CI — Checks GitHub Actions del PR verdes con `run_id` antes de `global: APTO` definitivo y `accept-pr`.**
+- [x] **KALMA-503-CA-CI — Checks GitHub Actions del PR verdes con `run_id` antes de `global: APTO` definitivo y `accept-pr`.**
 
 ---
 
