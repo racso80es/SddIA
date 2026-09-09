@@ -226,6 +226,7 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
             super::materialize_ci_chronic_failure_pbi::run(repo, inputs)?
         }
         "enrich-fracture-pbi-kaizen" => super::enrich_fracture_pbi_kaizen::run(repo, inputs)?,
+        "append-mayeuta-hypothesis" => super::append_mayeuta_hypothesis::run(repo, inputs)?,
         "persist-pec-correlation-proof" => super::persist_pec_correlation_proof::run(repo, inputs)?,
         "notify-humanized-pr-merged" => super::notify_humanized_pr_merged::run(repo, inputs)?,
         _ => return Ok(None),

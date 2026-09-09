@@ -3,9 +3,13 @@
 use crate::core::fracture_pbi::{
     fracture_trace_hash, resolve_enrich_target, scan_fracture_ledger, slugify_process_name,
 };
+use chrono::Utc;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
+use uuid::Uuid;
+
+use super::fractal::{load_fractal_dirs, write_fractal_event};
 
 fn required_str(inputs: &Value, key: &str) -> Result<String, String> {
     match inputs.get(key).and_then(|v| v.as_str()) {
@@ -109,7 +113,7 @@ pub fn analyze_fracture_kaizen(
     error_trace: &str,
     attempted_action: &str,
     agent_emitter: &str,
-) -> (String, String, String) {
+) -> (String, String, String, bool) {
     let blob = format!(
         "{error_trace}\n{attempted_action}\n{process_name}",
     )
@@ -361,7 +365,8 @@ pub fn analyze_fracture_kaizen(
         ));
     }
 
-    if root_causes.is_empty() {
+    let unclassified = root_causes.is_empty();
+    if unclassified {
         root_causes.push(format!(
             "Causa raíz no clasificada automáticamente para `{process_name}`; requiere laudo humano."
         ));
@@ -429,7 +434,40 @@ pub fn analyze_fracture_kaizen(
         verdict_label = verdict_label(&verdict),
     );
 
-    (verdict, root_md, section)
+    (verdict, root_md, section, unclassified)
+}
+
+fn iso_now() -> String {
+    Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
+}
+
+fn emit_clarification_requested(
+    repo: &Path,
+    target_rel: &str,
+    process_name: &str,
+    trace_hash: &str,
+    attempted_action: &str,
+    agent_emitter: &str,
+) {
+    let orch_dir = load_fractal_dirs(repo).1;
+    let event = json!({
+        "event_id": Uuid::new_v4().to_string(),
+        "event_type": "Fracture_Clarification_Requested",
+        "event_family": "orchestration",
+        "timestamp": iso_now(),
+        "emitter_agent": "enrich-fracture-pbi-kaizen",
+        "payload": {
+            "fracture_pbi_path": target_rel,
+            "process_name": process_name,
+            "error_trace_hash": trace_hash,
+            "attempted_action": attempted_action,
+            "agent_emitter": agent_emitter,
+        },
+        "delivery_state": {},
+    });
+    if let Err(e) = write_fractal_event(repo, &event, &orch_dir) {
+        eprintln!("[enrich-fracture-pbi-kaizen] fail-soft Fracture_Clarification_Requested: {e}");
+    }
 }
 
 /// Paridad `execute-action.py::_upsert_fracture_kaizen_section`.
@@ -478,7 +516,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     };
 
     let target = repo.join(&target_rel);
-    let (verdict, _, section) = analyze_fracture_kaizen(
+    let (verdict, _, section, unclassified) = analyze_fracture_kaizen(
         &process_name,
         &error_trace,
         &attempted_action,
@@ -488,11 +526,23 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     fs::write(&target, upsert_fracture_kaizen_section(&content, &section))
         .map_err(|e| e.to_string())?;
 
+    if unclassified {
+        emit_clarification_requested(
+            repo,
+            &target_rel,
+            &process_name,
+            &trace_hash,
+            &attempted_action,
+            &agent_emitter,
+        );
+    }
+
     Ok(json!({
         "success": true,
         "target_path": target_rel,
         "message": "PBI enriquecido con síntesis Kaizen",
         "evolution_verdict": verdict,
+        "unclassified": unclassified,
     }))
 }
 
@@ -515,7 +565,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_recursion_verdict() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
             "SddIA pre-push: BLOCKED — delivery-close-cycle failed for feat/x",
             "Publicación remota",
@@ -528,7 +578,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_prepush_evol_gate_not_hook_recursion() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
             "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed\nerror: falló el empuje de algunas referencias a 'https://github.com/racso80es/SddIA.git'",
             "Publicación remota",
@@ -541,7 +591,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_dns_not_hook_recursion() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
             "fatal: Could not resolve host: github.com",
             "Publicación remota",
@@ -553,7 +603,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_dlt_publish_error_not_prompt() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "route-domain-event",
             "merkle-batch-preseal failed: iota-relay-publish-error: status=500 fetch failed | cause: ENETUNREACH",
             "merkle-batch-preseal",
@@ -568,7 +618,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_dlt_gas_version_not_transport() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "route-domain-event",
             "merkle-batch-preseal failed: iota-relay-publish-error: status=500 Transaction execution failed due to issues with transaction inputs, please review the errors and try again:\n- Object ID 0x93e4c1ee3a81aa2815b2f23485885a37f6c97eb20d7e58458d8dcc4dce6ff880 Version 850727115 Digest 5fX2xzFeULF5XhHLu3iLNotiKiR5bu8CVwJC9j5X6GBa is not available for consumption, current version: 850727116",
             "merkle-batch-preseal",
@@ -584,13 +634,14 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_generic_failed_not_prompt() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, unclassified) = analyze_fracture_kaizen(
             "route-domain-event",
             "merkle-batch-preseal failed: unexplained-capsule-error",
             "merkle-batch-preseal",
             "execute-process",
         );
         assert_eq!(verdict, "process_fix");
+        assert!(unclassified);
         assert!(section.contains("requiere laudo humano"));
         assert!(!section.contains("Ajustar instrucción operador"));
         assert!(!section.contains("prompt_adjustment"));
@@ -598,7 +649,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_workflow_scope_not_hook() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
             "Publicación remota failed:\nrefusing to allow a Personal Access Token to create or update workflow\n`.github/workflows/sddia-index-qa.yml` without `workflow` scope",
             "Publicación remota",
@@ -613,7 +664,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_head_sha_blank_not_hook() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
             "no se pudo resolver pr_url desde gh; gh_stdout=; gh_stderr=pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between main and feat/lancedb-real-vector-memory, Head ref must be a branch (createPullRequest)",
             "Apertura en forja",
@@ -627,7 +678,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_snapshot_gitignore_not_head_sha() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
             "[SNAPSHOT_DIRTY_SKIPPED] git add failed: Las siguientes rutas son ignoradas por uno de tus archivos .gitignore:\nSddIA/scripts/starter-kit/.SddIA/.dev",
             "Snapshot final",
@@ -642,7 +693,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_shell_executor_wasm_fallback_not_head_sha() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
             "shell-executor wasm fallback marker",
             "Apertura en forja",
@@ -659,7 +710,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_pr_title_metachar_not_hook() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
             "[PR_BODY_METACHAR] arguments[3] contains forbidden shell metacharacters",
             "Apertura en forja",
@@ -676,7 +727,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_bypass_new_norm() {
-        let (verdict, _, _) = analyze_fracture_kaizen(
+        let (verdict, _, _, _) = analyze_fracture_kaizen(
             "feature",
             "operator used gh pr create",
             "delivery-close-cycle",
@@ -687,7 +738,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_heartbeat_starvation() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "email-watcher",
             "Centinela email-watcher omitió 3 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-08-30T07:51:47Z",
             "daemon-heartbeat-audit",
@@ -702,7 +753,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_heartbeat_not_from_action_name() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "email-watcher",
             "timeout in worker",
             "daemon-heartbeat-audit",
@@ -715,7 +766,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_orphan_lock_not_eda() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "email-watcher",
             "Centinela email-watcher lock huérfano: PID 13215 muerto. last_heartbeat=2026-09-06T06:12:04Z",
             "daemon-heartbeat-audit",
@@ -731,7 +782,7 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_genomic_orphan_still_eda() {
-        let (verdict, _, section) = analyze_fracture_kaizen(
+        let (verdict, _, section, _) = analyze_fracture_kaizen(
             "entity-manager",
             "Ruido de Sistema: orphan_count=2 sin Domain_Entity_Created; ejecutar audit-entity-eda-coverage",
             "entity-manager",
@@ -831,5 +882,87 @@ mod tests {
         let path = out.get("target_path").and_then(|v| v.as_str()).unwrap();
         let content = fs::read_to_string(repo.join(path)).unwrap();
         assert!(content.contains("Síntesis Mayeuta"));
+    }
+
+    fn list_orch_events(repo: &Path) -> Vec<String> {
+        let dir = repo.join(".events/orchestration");
+        if !dir.is_dir() {
+            return Vec::new();
+        }
+        fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("json"))
+            .map(|p| fs::read_to_string(p).unwrap())
+            .collect()
+    }
+
+    #[test]
+    fn enrich_unclassified_emits_fracture_clarification_requested() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        setup_repo(repo);
+        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
+
+        let inputs = json!({
+            "process_name": "route-domain-event",
+            "error_trace": "test_trace_inedita_xyz unexplained-capsule-error",
+            "agent_emitter": "execute-process",
+            "attempted_action": "merkle-batch-preseal",
+        });
+        materialize_fracture_pbi::run(repo, &inputs).expect("materialize");
+        let out = run(repo, &inputs).expect("enrich");
+        assert_eq!(out.get("unclassified"), Some(&json!(true)));
+        let files = list_orch_events(repo);
+        assert_eq!(files.len(), 1);
+        let ev: Value = serde_json::from_str(&files[0]).unwrap();
+        assert_eq!(
+            ev.get("event_type").and_then(|v| v.as_str()),
+            Some("Fracture_Clarification_Requested")
+        );
+        let payload = ev.get("payload").and_then(|v| v.as_object()).unwrap();
+        assert!(payload.contains_key("fracture_pbi_path"));
+        assert!(payload.contains_key("process_name"));
+        assert!(payload.contains_key("error_trace_hash"));
+        assert_eq!(
+            payload.get("error_trace_hash").and_then(|v| v.as_str()).unwrap().len(),
+            12
+        );
+        let (ok, errors) = crate::engine::ecst_validation::validate_ecst_instance(
+            &ev,
+            Some(&crate::engine::ecst_validation::EventClassSchema {
+                required: vec![
+                    "fracture_pbi_path".into(),
+                    "process_name".into(),
+                    "error_trace_hash".into(),
+                ],
+                optional: vec![
+                    "attempted_action".into(),
+                    "agent_emitter".into(),
+                    "correlation_id".into(),
+                ],
+                forbidden: vec![],
+            }),
+        );
+        assert!(ok, "{errors:?}");
+    }
+
+    #[test]
+    fn enrich_classified_colaps_does_not_emit_clarification() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        setup_repo(repo);
+        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
+        let inputs = json!({
+            "process_name": "event-watcher",
+            "error_trace": "colapsó el daemon pre-push hook",
+            "agent_emitter": "event-watcher",
+            "attempted_action": "delivery-close-cycle",
+        });
+        materialize_fracture_pbi::run(repo, &inputs).expect("materialize");
+        let out = run(repo, &inputs).expect("enrich");
+        assert_eq!(out.get("unclassified"), Some(&json!(false)));
+        assert!(list_orch_events(repo).is_empty());
     }
 }

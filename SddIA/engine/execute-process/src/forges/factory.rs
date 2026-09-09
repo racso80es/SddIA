@@ -706,6 +706,19 @@ pub fn run_agent_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     if let Some(skip) = idempotent_forge_handoff(&agent_path, &lifecycle)? {
         return Ok(skip);
     }
+    if lifecycle == "update" && agent_path.is_file() {
+        let replacements = inputs
+            .get("markdown_body_replacements")
+            .ok_or("agent update requiere markdown_body_replacements (prohibido reescribir carta)")?;
+        let (entity_uuid, old_hash, new_hash, version) =
+            patch_artifact_body_replacements(&agent_path, replacements)?;
+        return Ok(json!({
+            "handoff_entity_uuid": entity_uuid,
+            "handoff_hash_signature_new": new_hash,
+            "handoff_hash_signature_old": old_hash,
+            "handoff_version": version,
+        }));
+    }
 
     let policies = inputs
         .get("allowed_policies")
