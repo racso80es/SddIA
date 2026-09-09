@@ -7,18 +7,19 @@ agents: argos
 branch: feat/aiua-audit-findings
 branch_name: feat/aiua-audit-findings
 persist_ref: docs/features/aiua-audit-findings
-pbi_ref: docs/todos/pending/[KAIZEN] Aiúa — hallazgos auditoría live y thinking HIGH.md
+pbi_ref: docs/todos/done/[KAIZEN] Aiúa — hallazgos auditoría live y thinking HIGH.md
 document_id: PBI-AIUA-AUDIT-FINDINGS-20260908
 uuid: "2fa76082-d3b1-49ed-af8e-0c1c33b7dd44"
-global: PENDIENTE-CI
-pbi_archived: false
+global: APTO
+pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/275
 checks:
   CA-1: APTO
   CA-2: APTO
   CA-3: APTO
   CA-4: APTO
   CA-5: APTO
-  CA-CI: PENDIENTE-CI
+  CA-CI: APTO
 git_changes:
   - SddIA/tools/gemini-http-infer/src/main.rs
   - SddIA/scripts/starter-kit/.dev/.env.example
@@ -31,11 +32,12 @@ git_changes:
   - SddIA/evolution/cef04e8e-36a5-40d1-b697-e00a0640db87.md
   - SddIA/evolution/Evolution_log.md
   - docs/features/aiua-audit-findings/
+  - docs/todos/done/[KAIZEN] Aiúa — hallazgos auditoría live y thinking HIGH.md
 ---
 
 # Validacion — aiua-audit-findings
 
-`global` no es `APTO` mientras CA-CI carezca de `run_id` verde.
+`global: APTO`. CA-CI: run `34320698806` (`success`) headSha `2de41c6a215d20d9ca79f0330f2f1175bcf8a419`. PR https://github.com/racso80es/SddIA/pull/275
 
 ## Checks
 
@@ -46,4 +48,4 @@ git_changes:
 | CA-3 acciones | APTO | EM update 1.1.0; UUIDs inmutables; cuerpos I/O + delegación |
 | CA-4 prefacio | APTO | tests concatenate + frontmatter name; 1ª persona; sin Constitución |
 | CA-5 H-LLM-4 | APTO | `clarify.md` L-CONST: no inyectar `CONSTITUTION_CORE.md` |
-| CA-CI | PENDIENTE-CI | sin `run_id` |
+| CA-CI | APTO | run `34320698806` https://github.com/racso80es/SddIA/actions/runs/34320698806 |

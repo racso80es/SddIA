@@ -54,4 +54,4 @@ Lab-mock: `SDDIA_LAB_MOCK_OUTBOUND=1`. Thinking no exigido.
 
 ## CA-CI
 
-`PENDIENTE-CI` hasta `run_id` verde del PR. No `global: APTO` ni archivo PBI hasta entonces.
+`APTO`. run `34320698806` https://github.com/racso80es/SddIA/actions/runs/34320698806 headSha `2de41c6`.
