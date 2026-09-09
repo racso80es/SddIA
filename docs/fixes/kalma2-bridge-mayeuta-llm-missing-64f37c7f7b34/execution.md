@@ -49,6 +49,12 @@ exit 0. stderr: `[WARN] SDDIA_MAYEUTA_LLM_BIN no es ELF nativo … Compilar: cd 
 
 `POST http://127.0.0.1:8765/api/chat` `{"prompt":"sello 64f37c7f7b34"}` `-m 5`: curl 28, 0 bytes, **no** HTTP 500, **no** traza literal. El 500 de este sello es inmediato (pre-spawn); timeout implica prótesis resuelta y spawn. No se exigió combustión LLM.
 
+## DCC / PR / CI
+
+`delivery-close-cycle` `execution_id` `a085fc80-d19f-4c2c-8bd2-6397056ac030`. Snapshot `42095f5`. PR https://github.com/racso80es/SddIA/pull/281. `PullRequest_Presented` `e9cd46fc-b518-4ecd-80d1-f4b0c865e2bd`.
+
+Run [34365771432](https://github.com/racso80es/SddIA/actions/runs/34365771432) sobre `42095f5`: pass (cinco jobs). Evento `push` `34365765446`: pass + skip e2e/physical (no fallo).
+
 ## Fuera del diff
 
 `interfaces/kalma2/app.js`, `.SddIA/observability/ecosystem-health.json`, PBI operativo 503 Gemini.

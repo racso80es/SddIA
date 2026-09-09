@@ -271,7 +271,7 @@ Sin cubo para esta traza → stub genérico. Conducta prevista. Higiene ≠ caus
 - [x] **KALMA-LLM-CA3** (test hermético).
 - [x] **KALMA-LLM-CA4** (WARN lanzador).
 - [x] **KALMA-LLM-CA6** (no-regresión de esta traza).
-- [ ] Argos `APTO` en `docs/fixes/kalma2-bridge-mayeuta-llm-missing-64f37c7f7b34/validacion.md` (`pbi_archived: true`). CA-CI pendiente de run verde post-PR.
+- [x] Argos `APTO` en `docs/fixes/kalma2-bridge-mayeuta-llm-missing-64f37c7f7b34/validacion.md` (`pbi_archived: true`).
 - [x] Este PBI en `docs/todos/done/` en la **misma** rama del fix.
 
 KALMA-LLM-CA5 no es checkbox de Done de este sello.
