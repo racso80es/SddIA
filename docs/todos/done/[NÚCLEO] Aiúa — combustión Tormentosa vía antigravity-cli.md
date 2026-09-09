@@ -6,13 +6,14 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-09"
 updated: "2026-09-09"
-status: "propuesta"
+status: "cerrado"
 refinement_status: refinado
 priority: alta
 type: nucleo
 process: feature
 dispatch: false
 suggested_branch: feat/aiua-antigravity-cli-vector
+persist_ref: docs/features/aiua-antigravity-cli-vector
 persist_ref_suggested: docs/features/aiua-antigravity-cli-vector
 spawned_by: PBI-NUCLEO-PUENTE-PERCEPTIVO-KALMA2
 lauds: H-AIUA-VECTOR

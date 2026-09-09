@@ -118,11 +118,18 @@ fn env_timeout_secs(key: &str) -> Option<u64> {
         .filter(|n| *n > 0)
 }
 
-fn resolve_client_timeout_secs(client: Option<u64>, gemini: Option<u64>) -> u64 {
+fn resolve_client_timeout_secs(client: Option<u64>, gemini: Option<u64>, agy: Option<u64>) -> u64 {
     let client = client.filter(|n| *n > 0).unwrap_or(120);
-    match gemini.filter(|n| *n > 0) {
-        Some(g) => client.max(g),
-        None => client,
+    let extra = [gemini, agy]
+        .into_iter()
+        .flatten()
+        .filter(|n| *n > 0)
+        .max()
+        .unwrap_or(0);
+    if extra > 0 {
+        client.max(extra)
+    } else {
+        client
     }
 }
 
@@ -130,6 +137,7 @@ fn client_timeout_secs() -> u64 {
     resolve_client_timeout_secs(
         env_timeout_secs("SDDIA_CLIENT_TIMEOUT_SECONDS"),
         env_timeout_secs("SDDIA_GEMINI_HTTP_TIMEOUT_SECS"),
+        env_timeout_secs("SDDIA_AGY_TIMEOUT_SECS"),
     )
 }
 
@@ -397,6 +405,10 @@ fn run_orchestrator_inputs(
 
 const AIUA_PROVIDER_UNAVAILABLE_MSG: &str =
     "Tormentosa no disponible temporalmente por alta demanda del proveedor. Inténtalo más tarde.";
+const AIUA_AGY_AUTH_MSG: &str =
+    "Tormentosa no disponible: se requiere autenticación en el CLI de Antigravity (agy).";
+const AIUA_AGY_TIMEOUT_MSG: &str =
+    "Tormentosa no disponible: tiempo de espera agotado al consultar el CLI de Antigravity.";
 
 fn is_gemini_upstream_unavailable(raw: &str) -> bool {
     if raw.contains("http-status-503") {
@@ -413,9 +425,27 @@ fn is_gemini_upstream_unavailable(raw: &str) -> bool {
         || lower.contains("service unavailable")
 }
 
+fn is_agy_timeout(raw: &str) -> bool {
+    raw.to_ascii_lowercase().contains("agy-timeout")
+}
+
+fn is_agy_auth_required(raw: &str) -> bool {
+    let lower = raw.to_ascii_lowercase();
+    lower.contains("agy authentication required")
+        || lower.contains("not logged into antigravity")
+        || lower.contains("please sign in")
+        || lower.contains("authentication required")
+}
+
 fn sanitize_bridge_message(raw: &str) -> String {
     if is_gemini_upstream_unavailable(raw) {
         return AIUA_PROVIDER_UNAVAILABLE_MSG.to_string();
+    }
+    if is_agy_timeout(raw) {
+        return AIUA_AGY_TIMEOUT_MSG.to_string();
+    }
+    if is_agy_auth_required(raw) {
+        return AIUA_AGY_AUTH_MSG.to_string();
     }
     raw.chars()
         .map(|c| if c == '\n' || c == '\r' { ' ' } else { c })
@@ -3117,10 +3147,34 @@ mod tests {
 
     #[test]
     fn client_timeout_is_at_least_gemini() {
-        assert_eq!(resolve_client_timeout_secs(Some(120), Some(180)), 180);
-        assert_eq!(resolve_client_timeout_secs(Some(200), Some(180)), 200);
-        assert_eq!(resolve_client_timeout_secs(None, None), 120);
-        assert_eq!(resolve_client_timeout_secs(Some(0), Some(180)), 180);
+        assert_eq!(resolve_client_timeout_secs(Some(120), Some(180), None), 180);
+        assert_eq!(resolve_client_timeout_secs(Some(200), Some(180), None), 200);
+        assert_eq!(resolve_client_timeout_secs(None, None, None), 120);
+        assert_eq!(resolve_client_timeout_secs(Some(0), Some(180), None), 180);
+        assert_eq!(resolve_client_timeout_secs(Some(120), None, Some(300)), 300);
+        assert_eq!(resolve_client_timeout_secs(None, None, None), 120);
+    }
+
+    #[test]
+    fn sanitize_maps_agy_auth_and_timeout() {
+        assert_eq!(
+            sanitize_bridge_message("agy authentication required"),
+            AIUA_AGY_AUTH_MSG
+        );
+        assert_eq!(
+            sanitize_bridge_message("You are not logged into Antigravity."),
+            AIUA_AGY_AUTH_MSG
+        );
+        assert_eq!(
+            sanitize_bridge_message("Please sign in to continue"),
+            AIUA_AGY_AUTH_MSG
+        );
+        assert_eq!(sanitize_bridge_message("agy-timeout"), AIUA_AGY_TIMEOUT_MSG);
+        assert_eq!(sanitize_bridge_message("timeout motor"), "timeout motor");
+        assert_eq!(
+            sanitize_bridge_message("agy-failed"),
+            "agy-failed"
+        );
     }
 
     #[test]
