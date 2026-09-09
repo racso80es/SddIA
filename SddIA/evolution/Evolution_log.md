@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `cef04e8e-36a5-40d1-b697-e00a0640db87` | 2026-09-09 | Aiúa residual auditoría: thinkingLevel en gemini-http-infer, cuerpos de tres acciones, prefacio de identidad en assembled_prompt. | CANONICO | `SddIA/evolution/cef04e8e-36a5-40d1-b697-e00a0640db87.md` |
 | `57e1dcd8-c04c-4818-818c-fb04ecf046e2` | 2026-09-08 | DLT: ENETUNREACH en merkle-batch-preseal no emite System_Fracture_Detected; cubo Mayeuta process_fix. | CANONICO | `SddIA/evolution/57e1dcd8-c04c-4818-818c-fb04ecf046e2.md` |
 | `0b3ef02b-debe-4532-91da-c265ed59942b` | 2026-09-08 | F4c: gh 'error connecting to api.github.com' en Apertura en forja no emite System_Fracture_Detected. | CANONICO | `SddIA/evolution/0b3ef02b-debe-4532-91da-c265ed59942b.md` |
 | `a5e0d8aa-f84a-4e25-a7e3-807b7d5da598` | 2026-09-08 | Excluir thought-graph-access del build WASI CI (host LanceDB; paridad gemini-http-infer). | CANONICO | `SddIA/evolution/a5e0d8aa-f84a-4e25-a7e3-807b7d5da598.md` |
