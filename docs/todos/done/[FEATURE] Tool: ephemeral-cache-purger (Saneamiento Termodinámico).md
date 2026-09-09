@@ -6,8 +6,10 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-09"
 updated: "2026-09-09"
-status: "propuesta"
+status: "done"
 refinement_status: refinado
+persist_ref: docs/features/tool-ephemeral-cache-purger
+pr_url: "https://github.com/racso80es/SddIA/pull/279"
 priority: alta
 type: feature
 process: feature
