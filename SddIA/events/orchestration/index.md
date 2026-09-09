@@ -27,4 +27,4 @@ Comunicación táctica entre Entidades de Dominio (Nivel 2): chispas de línea d
 
 ## Integridad
 
-- 2 clases ECST catalogadas en `SddIA/events/orchestration/`.
+- 4 clases ECST catalogadas en `SddIA/events/orchestration/`.
