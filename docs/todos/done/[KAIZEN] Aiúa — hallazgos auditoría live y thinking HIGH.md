@@ -6,8 +6,11 @@ format: markdown
 version: "1.0.0"
 created: "2026-09-09"
 updated: "2026-09-09"
-status: "propuesta"
-refinement_status: unrefined
+status: cerrado
+refinement_status: implemented
+pr_url: https://github.com/racso80es/SddIA/pull/275
+branch_name: feat/aiua-audit-findings
+persist_ref: docs/features/aiua-audit-findings
 priority: alta
 type: kaizen
 process: feature
@@ -81,9 +84,9 @@ Instancia (2026-09-09): `SDDIA_GEMINI_MODEL=gemini-3.8-flash`, `SDDIA_GEMINI_HTT
 
 #### 6. Criterios de aceptación
 
-- [ ] `gemini-http-infer` acepta thinking `high` vía env/request; default del modelo intacto si la env está vacía. Cero slug en Rust.
-- [ ] Lab-mock no exige thinking ni red.
-- [ ] Tres acciones: cuerpo `{name}.md` completo (inputs/outputs/delegación) alineado al handler.
-- [ ] Prefacio de identidad en el `assembled_prompt` (Filtro B, primera persona) **o** laudo explícito de no-hacer documentado en `clarify.md`.
-- [ ] H-LLM-4: laudo en `clarify.md` (inyectar o no Constitución).
-- [ ] Un PR. `validacion.md` APTO. PBI a `docs/todos/done/` en la misma rama.
+- [x] `gemini-http-infer` acepta thinking `high` vía env/request; default del modelo intacto si la env está vacía. Cero slug en Rust.
+- [x] Lab-mock no exige thinking ni red.
+- [x] Tres acciones: cuerpo `{name}.md` completo (inputs/outputs/delegación) alineado al handler.
+- [x] Prefacio de identidad en el `assembled_prompt` (Filtro B, primera persona) **o** laudo explícito de no-hacer documentado en `clarify.md`.
+- [x] H-LLM-4: laudo en `clarify.md` (inyectar o no Constitución).
+- [x] Un PR. `validacion.md` APTO. PBI a `docs/todos/done/` en la misma rama.

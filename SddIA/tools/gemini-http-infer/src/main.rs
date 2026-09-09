@@ -77,6 +77,60 @@ fn resolve_model(req: &Value) -> Result<String, String> {
         .ok_or_else(|| "request.model o SDDIA_GEMINI_MODEL obligatorio".to_string())
 }
 
+fn normalize_thinking_level(raw: &str) -> Result<String, String> {
+    match raw.trim().to_ascii_uppercase().as_str() {
+        "HIGH" | "MEDIUM" | "LOW" => Ok(raw.trim().to_ascii_uppercase()),
+        _ => Err(format!("thinking-level-invalid: {raw}")),
+    }
+}
+
+fn resolve_thinking_level(req: &Value) -> Result<Option<String>, String> {
+    if let Ok(raw) = required_str(req, "thinking_level") {
+        return normalize_thinking_level(&raw).map(Some);
+    }
+    if let Ok(raw) = required_str(req, "thinkingLevel") {
+        return normalize_thinking_level(&raw).map(Some);
+    }
+    match env::var("SDDIA_GEMINI_THINKING_LEVEL") {
+        Ok(v) => {
+            let t = v.trim();
+            if t.is_empty() {
+                Ok(None)
+            } else {
+                normalize_thinking_level(t).map(Some)
+            }
+        }
+        Err(_) => Ok(None),
+    }
+}
+
+fn generation_config(temperature: Option<f64>, thinking_level: Option<&str>) -> Option<Value> {
+    if temperature.is_none() && thinking_level.is_none() {
+        return None;
+    }
+    let mut cfg = serde_json::Map::new();
+    if let Some(t) = temperature {
+        cfg.insert("temperature".into(), json!(t));
+    }
+    if let Some(level) = thinking_level {
+        cfg.insert(
+            "thinkingConfig".into(),
+            json!({ "thinkingLevel": level }),
+        );
+    }
+    Some(Value::Object(cfg))
+}
+
+fn generate_content_payload(prompt: &str, temperature: Option<f64>, thinking_level: Option<&str>) -> Value {
+    let mut payload = json!({
+        "contents": [{"parts": [{"text": prompt}]}]
+    });
+    if let Some(cfg) = generation_config(temperature, thinking_level) {
+        payload["generationConfig"] = cfg;
+    }
+    payload
+}
+
 fn extract_text(body: &Value) -> Option<String> {
     body.pointer("/candidates/0/content/parts/0/text")
         .and_then(|v| v.as_str())
@@ -125,13 +179,15 @@ fn mock_result(prompt: &str, model: &str) -> Value {
     })
 }
 
-fn post_generate(url: &str, api_key: Option<&str>, prompt: &str, model: &str, temperature: Option<f64>) -> Result<Value, String> {
-    let mut payload = json!({
-        "contents": [{"parts": [{"text": prompt}]}]
-    });
-    if let Some(t) = temperature {
-        payload["generationConfig"] = json!({ "temperature": t });
-    }
+fn post_generate(
+    url: &str,
+    api_key: Option<&str>,
+    prompt: &str,
+    model: &str,
+    temperature: Option<f64>,
+    thinking_level: Option<&str>,
+) -> Result<Value, String> {
+    let payload = generate_content_payload(prompt, temperature, thinking_level);
     let mut req = ureq::post(url)
         .set("Content-Type", "application/json")
         .timeout(Duration::from_secs(timeout_secs()));
@@ -170,13 +226,21 @@ fn run(doc: &Value) -> Result<Value, String> {
     let prompt = required_str(req, "prompt")?;
     let model = resolve_model(req)?;
     let temperature = req.get("temperature").and_then(|v| v.as_f64());
+    let thinking_level = resolve_thinking_level(req)?;
 
     if lab_mock_outbound_enabled() && lab_mock_gemini_url().is_none() {
         return Ok(mock_result(&prompt, &model));
     }
 
     if let Some(mock_url) = lab_mock_gemini_url() {
-        return post_generate(&mock_url, None, &prompt, &model, temperature);
+        return post_generate(
+            &mock_url,
+            None,
+            &prompt,
+            &model,
+            temperature,
+            thinking_level.as_deref(),
+        );
     }
 
     let api_key = env::var("GEMINI_API_KEY")
@@ -186,7 +250,14 @@ fn run(doc: &Value) -> Result<Value, String> {
         .ok_or_else(|| "GEMINI_API_KEY ausente".to_string())?;
 
     let url = generate_url(&api_base(), &model);
-    post_generate(&url, Some(&api_key), &prompt, &model, temperature)
+    post_generate(
+        &url,
+        Some(&api_key),
+        &prompt,
+        &model,
+        temperature,
+        thinking_level.as_deref(),
+    )
 }
 
 fn main() {
@@ -252,5 +323,87 @@ mod tests {
     fn mock_result_prefixes_lab() {
         let v = mock_result("abc", "m1");
         assert!(v["text"].as_str().unwrap().starts_with("lab-mock:m1:"));
+    }
+
+    fn with_cleared_thinking_env<T>(f: impl FnOnce() -> T) -> T {
+        let prev = std::env::var("SDDIA_GEMINI_THINKING_LEVEL").ok();
+        std::env::remove_var("SDDIA_GEMINI_THINKING_LEVEL");
+        let out = f();
+        match prev {
+            Some(v) => std::env::set_var("SDDIA_GEMINI_THINKING_LEVEL", v),
+            None => std::env::remove_var("SDDIA_GEMINI_THINKING_LEVEL"),
+        }
+        out
+    }
+
+    #[test]
+    fn thinking_level_empty_is_none() {
+        with_cleared_thinking_env(|| {
+            let req = json!({"prompt": "x", "model": "m"});
+            assert_eq!(resolve_thinking_level(&req).unwrap(), None);
+        });
+    }
+
+    #[test]
+    fn thinking_level_from_env() {
+        with_cleared_thinking_env(|| {
+            std::env::set_var("SDDIA_GEMINI_THINKING_LEVEL", "high");
+            let req = json!({"prompt": "x", "model": "m"});
+            assert_eq!(resolve_thinking_level(&req).unwrap().as_deref(), Some("HIGH"));
+            std::env::remove_var("SDDIA_GEMINI_THINKING_LEVEL");
+        });
+    }
+
+    #[test]
+    fn thinking_level_request_beats_env() {
+        with_cleared_thinking_env(|| {
+            std::env::set_var("SDDIA_GEMINI_THINKING_LEVEL", "low");
+            let req = json!({"prompt": "x", "model": "m", "thinking_level": "high"});
+            assert_eq!(resolve_thinking_level(&req).unwrap().as_deref(), Some("HIGH"));
+            std::env::remove_var("SDDIA_GEMINI_THINKING_LEVEL");
+        });
+    }
+
+    #[test]
+    fn thinking_level_request_normalizes_high() {
+        let req = json!({"prompt": "x", "model": "m", "thinking_level": "high"});
+        assert_eq!(resolve_thinking_level(&req).unwrap().as_deref(), Some("HIGH"));
+    }
+
+    #[test]
+    fn thinking_level_alias_camel_case() {
+        let req = json!({"prompt": "x", "model": "m", "thinkingLevel": "medium"});
+        assert_eq!(
+            resolve_thinking_level(&req).unwrap().as_deref(),
+            Some("MEDIUM")
+        );
+    }
+
+    #[test]
+    fn thinking_level_invalid_errors() {
+        let req = json!({"prompt": "x", "model": "m", "thinking_level": "ultra"});
+        let err = resolve_thinking_level(&req).unwrap_err();
+        assert!(err.starts_with("thinking-level-invalid:"));
+    }
+
+    #[test]
+    fn generation_config_omitted_when_empty() {
+        assert!(generation_config(None, None).is_none());
+        let payload = generate_content_payload("hola", None, None);
+        assert!(payload.get("generationConfig").is_none());
+    }
+
+    #[test]
+    fn generation_config_merges_temperature_and_thinking() {
+        let cfg = generation_config(Some(0.2), Some("HIGH")).unwrap();
+        assert_eq!(cfg["temperature"], json!(0.2));
+        assert_eq!(cfg["thinkingConfig"]["thinkingLevel"], json!("HIGH"));
+    }
+
+    #[test]
+    fn payload_has_no_model_slug_literal() {
+        let src = include_str!("main.rs");
+        let needle = format!("gemini-{}-flash", "3.8");
+        assert!(!src.contains(&needle), "slug de catálogo eterno en crate");
     }
 }

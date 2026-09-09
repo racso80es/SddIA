@@ -53,6 +53,38 @@ pub fn retrieve_active_context(repo: &Path, inputs: &Value) -> Result<Value, Str
     Ok(json!({ "success": true, "memories": memories }))
 }
 
+fn yaml_frontmatter_str(genome: &str, key: &str) -> Option<String> {
+    let rest = genome.strip_prefix("---")?;
+    let yaml = rest.split_once("\n---").map(|(y, _)| y).unwrap_or(rest);
+    let prefix = format!("{key}:");
+    for line in yaml.lines() {
+        let line = line.trim();
+        let Some(raw) = line.strip_prefix(&prefix) else {
+            continue;
+        };
+        let v = raw.trim().trim_matches('"').trim_matches('\'').trim();
+        if !v.is_empty() {
+            return Some(v.to_string());
+        }
+    }
+    None
+}
+
+fn identity_preface(genome: &str) -> String {
+    let name = yaml_frontmatter_str(genome, "name");
+    let entity_type = yaml_frontmatter_str(genome, "entity_type");
+    match (name.as_deref(), entity_type.as_deref()) {
+        (Some(n), Some(t)) => format!(
+            "Eres {n}, la {t} del ecosistema SddIA. Hablas en primera persona. El genoma que sigue es tu identidad; no eres un asistente genérico.\n\n"
+        ),
+        (Some(n), None) => format!(
+            "Eres {n}, la Aiúa del ecosistema SddIA. Hablas en primera persona. El genoma que sigue es tu identidad; no eres un asistente genérico.\n\n"
+        ),
+        _ => "Eres la Aiúa del ecosistema SddIA. Hablas en primera persona. El genoma que sigue es tu identidad; no eres un asistente genérico.\n\n"
+            .to_string(),
+    }
+}
+
 pub fn invoke_aiua_core(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let prompt = str_opt(inputs, "prompt").ok_or("prompt obligatorio")?;
     let cfg = load_paths_config(repo)?;
@@ -63,7 +95,8 @@ pub fn invoke_aiua_core(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let genome_path = repo.join(conscience).join("aiua_core.md");
     let genome = fs::read_to_string(&genome_path)
         .map_err(|e| format!("genoma ausente {}: {e}", genome_path.display()))?;
-    let mut assembled = String::new();
+    let mut assembled = identity_preface(&genome);
+    assembled.push_str("---\n\n");
     assembled.push_str(&genome);
     assembled.push_str("\n\n---\n\n");
     if let Some(ctx) = inputs.get("active_context") {
@@ -262,7 +295,38 @@ mod tests {
         let assembled = out["assembled_prompt"].as_str().unwrap();
         assert!(assembled.contains("# GENOMA"));
         assert!(assembled.contains("hola"));
+        assert!(assembled.contains("Eres la Aiúa"));
+        assert!(assembled.contains("Hablas en primera persona"));
+        assert!(assembled.starts_with("Eres la Aiúa"));
         assert!(!assembled.contains("generativelanguage.googleapis.com"));
+        assert!(!assembled.contains("CONSTITUTION_CORE"));
+    }
+
+    #[test]
+    fn invoke_aiua_core_preface_uses_frontmatter_name() {
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"conscience":"SddIA/conscience"}}"#,
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/conscience/aiua_core.md"),
+            "---\nname: \"FixtureName\"\nentity_type: \"Aiúa\"\n---\n# GENOMA\nley",
+        )
+        .unwrap();
+        let out = invoke_aiua_core(
+            repo,
+            &json!({"prompt": "hola", "active_context": []}),
+        )
+        .unwrap();
+        let assembled = out["assembled_prompt"].as_str().unwrap();
+        assert!(assembled.starts_with("Eres FixtureName, la Aiúa"));
+        assert!(assembled.contains("# GENOMA"));
+        assert!(!assembled.contains("CONSTITUTION_CORE"));
     }
 
     fn workspace_debug_bin(name: &str) -> Option<std::path::PathBuf> {
