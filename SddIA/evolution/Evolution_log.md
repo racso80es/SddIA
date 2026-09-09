@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `1dc4055c-b0c8-40ff-a30d-d257152fb8df` | 2026-09-09 | Aiúa: combustión del latido vía skill antigravity-cli-executor (H-AIUA-VECTOR). | CANONICO | `SddIA/evolution/1dc4055c-b0c8-40ff-a30d-d257152fb8df.md` |
 | `24061402-d129-49b1-8a35-ee2388ee4816` | 2026-09-09 | kalma2-bridge: sanitizar 503 Gemini en epidermis (mensaje canónico, sin retry). PBI-OPERATIVO-KALMA2-AIUA-503-SANITIZE. | CANONICO | `SddIA/evolution/24061402-d129-49b1-8a35-ee2388ee4816.md` |
 | `0e4e3e14-c6e2-417f-8331-332310766679` | 2026-09-09 | kalma2-bridge: resolve_mayeuta_llm release-first, preflight WARN en lanzador, test hermético. Cierra sello 64f37c7f7b34 (prótesis ausente). | CANONICO | `SddIA/evolution/0e4e3e14-c6e2-417f-8331-332310766679.md` |
 | `51a53297-7e8d-469e-8bb2-8b413b28a366` | 2026-09-09 | Sello documental kalma2-bridge ELF fósil: POST /api/aiua/interact 404 por daemon no reciclado tras PR #276. CA-6 archivo PBI; cero diffs Rust. | CANONICO | `SddIA/evolution/51a53297-7e8d-469e-8bb2-8b413b28a366.md` |

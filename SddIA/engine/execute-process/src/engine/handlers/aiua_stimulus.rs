@@ -1,6 +1,6 @@
 //! Handler nativo `aiua-stimulus-processing` — latido CLI de la Aiúa.
 
-use super::super::capsules::invoke_tool_capsule_json;
+use super::super::capsules::{invoke_capsule_json, invoke_tool_capsule_json};
 use super::super::workspace::load_paths_config;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -14,6 +14,59 @@ fn str_opt(v: &Value, key: &str) -> Option<String> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string)
+}
+
+fn env_nonempty(key: &str) -> Option<String> {
+    env::var(key)
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+fn normalize_effort(raw: &str) -> Result<String, String> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "low" | "medium" | "high" => Ok(raw.trim().to_ascii_lowercase()),
+        other => Err(format!("effort inválido: {other}")),
+    }
+}
+
+fn resolve_effort(inputs: &Value) -> Result<String, String> {
+    let raw = str_opt(inputs, "effort")
+        .or_else(|| env_nonempty("SDDIA_AGY_EFFORT"))
+        .or_else(|| env_nonempty("SDDIA_GEMINI_THINKING_LEVEL"))
+        .unwrap_or_else(|| "high".to_string());
+    normalize_effort(&raw)
+}
+
+fn resolve_print_timeout() -> String {
+    let secs = env_nonempty("SDDIA_AGY_TIMEOUT_SECS")
+        .and_then(|s| s.parse::<u64>().ok())
+        .filter(|n| *n > 0)
+        .or_else(|| {
+            env_nonempty("SDDIA_CLIENT_TIMEOUT_SECONDS")
+                .and_then(|s| s.parse::<u64>().ok())
+                .filter(|n| *n > 0)
+        })
+        .unwrap_or(300);
+    format!("{secs}s")
+}
+
+fn capsule_error(body: &Value, fallback: &str) -> String {
+    body.get("error")
+        .and_then(|v| v.as_str())
+        .or_else(|| body.get("feedback").and_then(|v| v.as_str()))
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or(fallback)
+        .to_string()
+}
+
+fn usage_tokens(result: &Value) -> Option<Value> {
+    result.get("usage").and_then(|u| {
+        u.as_object()
+            .filter(|o| !o.is_empty())
+            .map(|_| u.clone())
+    })
 }
 
 fn unwrap_tool_result(body: &Value) -> Value {
@@ -150,19 +203,33 @@ pub fn persist_thought_record(repo: &Path, inputs: &Value) -> Result<Value, Stri
     }))
 }
 
-fn infer_gemini(repo: &Path, prompt: &str, model: &str) -> Result<Value, String> {
-    let mut req = json!({ "prompt": prompt });
+fn infer_antigravity_cli(
+    repo: &Path,
+    prompt: &str,
+    model: &str,
+    effort: &str,
+    print_timeout: &str,
+) -> Result<Value, String> {
+    let mut params = json!({
+        "effort": effort,
+        "print_timeout": print_timeout,
+    });
     if !model.is_empty() {
-        req["model"] = json!(model);
+        params["model"] = json!(model);
     }
-    let cap = invoke_tool_capsule_json(repo, "gemini-http-infer", &json!({ "request": req }), false)?;
+    let cap = invoke_capsule_json(
+        repo,
+        "antigravity-cli-executor",
+        &json!({
+            "request": {
+                "prompt": prompt,
+                "parameters": params,
+            }
+        }),
+        false,
+    )?;
     if cap.exit_code != 0 || cap.body.get("success") == Some(&json!(false)) {
-        return Err(cap
-            .body
-            .get("error")
-            .and_then(|v| v.as_str())
-            .unwrap_or("gemini-http-infer failed")
-            .to_string());
+        return Err(capsule_error(&cap.body, "agy-failed"));
     }
     Ok(cap.body)
 }
@@ -171,6 +238,8 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let prompt = str_opt(inputs, "prompt").ok_or("prompt obligatorio")?;
     let query = str_opt(inputs, "context_query").unwrap_or_else(|| prompt.clone());
     let model_in = str_opt(inputs, "model").unwrap_or_default();
+    let effort = resolve_effort(inputs)?;
+    let print_timeout = resolve_print_timeout();
 
     let ctx = retrieve_active_context(
         repo,
@@ -196,7 +265,13 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .unwrap_or("")
         .to_string();
 
-    let infer_body = infer_gemini(repo, assembled_prompt, &model)?;
+    let infer_body = infer_antigravity_cli(
+        repo,
+        assembled_prompt,
+        &model,
+        &effort,
+        &print_timeout,
+    )?;
     let result = unwrap_tool_result(&infer_body);
     let response = result
         .get("text")
@@ -208,14 +283,16 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .or_else(|| infer_body.get("result").and_then(|r| r.get("durationMs")))
         .cloned()
         .unwrap_or(json!(null));
-    let infer_model = result
-        .get("model")
-        .and_then(|v| v.as_str())
-        .unwrap_or(&model)
-        .to_string();
-    let tokens = result
-        .pointer("/raw_response/usageMetadata")
-        .cloned();
+    let infer_model = if model.is_empty() {
+        result
+            .get("model")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string()
+    } else {
+        model
+    };
+    let tokens = usage_tokens(&result);
 
     let persisted = persist_thought_record(
         repo,
@@ -252,7 +329,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             "phases": [
                 {"phase_name": "Triaje-Contexto", "status": "executed", "handler": "retrieve-active-context"},
                 {"phase_name": "Inyeccion-Genomica", "status": "executed", "handler": "invoke-aiua-core"},
-                {"phase_name": "Combustion-Inferencia", "status": "executed", "handler": "gemini-http-infer"},
+                {"phase_name": "Combustion-Inferencia", "status": "executed", "handler": "antigravity-cli-executor"},
                 {"phase_name": "Consolidacion-Memoria", "status": "executed", "handler": "persist-thought-record"},
             ]
         })),
@@ -342,11 +419,27 @@ mod tests {
     }
 
     #[test]
+    fn normalize_effort_accepts_case_insensitive_whitelist() {
+        assert_eq!(normalize_effort("HIGH").unwrap(), "high");
+        assert_eq!(normalize_effort("Medium").unwrap(), "medium");
+        assert_eq!(normalize_effort("low").unwrap(), "low");
+        assert!(normalize_effort("ultra").unwrap_err().contains("effort inválido"));
+    }
+
+    #[test]
+    fn usage_tokens_omits_empty_object() {
+        assert!(usage_tokens(&json!({"usage": {}})).is_none());
+        let t = usage_tokens(&json!({"usage": {"input_tokens": 1}})).unwrap();
+        assert_eq!(t["input_tokens"], 1);
+        assert!(usage_tokens(&json!({})).is_none());
+    }
+
+    #[test]
     fn lab_mock_empty_memories_yields_duration_and_thought_id() {
         let Some(graph) = workspace_debug_bin("thought-graph-access") else {
             return;
         };
-        let Some(gemini) = workspace_debug_bin("gemini-http-infer") else {
+        let Some(agy) = workspace_debug_bin("antigravity-cli-executor") else {
             return;
         };
         let dir = tempdir().unwrap();
@@ -365,11 +458,9 @@ mod tests {
         .unwrap();
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
         copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
-        copy_bin(&gemini, &repo.join("SddIA/target/debug"), "gemini-http-infer");
+        copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
-        let prev_url = std::env::var("SDDIA_LAB_MOCK_GEMINI_URL").ok();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
-        std::env::remove_var("SDDIA_LAB_MOCK_GEMINI_URL");
         let out = run(
             repo,
             &json!({
@@ -381,18 +472,16 @@ mod tests {
             Some(v) => std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v),
             None => std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND"),
         }
-        match prev_url {
-            Some(v) => std::env::set_var("SDDIA_LAB_MOCK_GEMINI_URL", v),
-            None => std::env::remove_var("SDDIA_LAB_MOCK_GEMINI_URL"),
-        }
         let env = out.expect("latido lab-mock");
         assert!(env.success);
         let data = env.data.expect("data");
         let thought_id = data["thought_id"].as_str().unwrap_or("");
         assert!(!thought_id.is_empty());
         assert_eq!(thought_id.len(), 64);
-        assert!(data["response"].as_str().unwrap_or("").starts_with("lab-mock:"));
+        assert!(data["response"].as_str().unwrap_or("").starts_with("lab-mock-agy:"));
         assert!(data["telemetry"]["duration_ms"].as_u64().is_some());
+        assert_eq!(data["telemetry"]["model"].as_str().unwrap_or(""), "lab-flash");
+        assert!(data["telemetry"].get("tokens").is_none());
         let pending = repo.join(".events/pending");
         let events: Vec<_> = fs::read_dir(&pending)
             .unwrap()
@@ -404,6 +493,15 @@ mod tests {
             serde_json::from_str(&fs::read_to_string(events[0].path()).unwrap()).unwrap();
         assert_eq!(body["event_type"], "Thought_Persisted");
         assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
+    }
+
+    #[test]
+    fn process_genome_combustion_is_antigravity_cli() {
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let text = fs::read_to_string(root.join("SddIA/process/aiua-stimulus-processing.md")).unwrap();
+        assert!(text.contains("skill:antigravity-cli-executor"));
+        assert!(!text.contains("tool:gemini-http-infer"));
+        assert!(!text.contains("gemini-3.8-flash"));
     }
 
     #[test]
