@@ -60,6 +60,9 @@ __pycache__/
 # LanceDB — almacén vectorial local (Bóveda Epigenética / Grafo)
 .SddIA/vector_store/
 
+# Cola DLT re-anclaje (runtime instancia; no snapshot DCC)
+.SddIA/dlt/
+
 # Bundles de release y instancias lab de empaquetado
 /dist/
 
