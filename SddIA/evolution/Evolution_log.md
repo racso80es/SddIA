@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `51a53297-7e8d-469e-8bb2-8b413b28a366` | 2026-09-09 | Sello documental kalma2-bridge ELF fósil: POST /api/aiua/interact 404 por daemon no reciclado tras PR #276. CA-6 archivo PBI; cero diffs Rust. | CANONICO | `SddIA/evolution/51a53297-7e8d-469e-8bb2-8b413b28a366.md` |
 | `0d6cd80e-a292-4919-b99c-37d0568ee76e` | 2026-09-09 | Tool nativa ephemeral-cache-purger y acción purge-sandbox-cache (jail /tmp/cursor-sandbox-cache). | CANONICO | `SddIA/evolution/0d6cd80e-a292-4919-b99c-37d0568ee76e.md` |
 | `67a74480-f2b3-440d-a467-7dfe32726705` | 2026-09-09 | Triaje asíncrono de fracturas inéditas: Fracture_Clarification_Requested + append-mayeuta-hypothesis. | CANONICO | `SddIA/evolution/67a74480-f2b3-440d-a467-7dfe32726705.md` |
 | `11409c1e-0254-4eea-8d5a-c1c2f5b1b4bb` | 2026-09-09 | Correlato residual enrich-fracture-pbi-kaizen v1.4.0: actions/index.md. | CANONICO | `SddIA/evolution/11409c1e-0254-4eea-8d5a-c1c2f5b1b4bb.md` |
