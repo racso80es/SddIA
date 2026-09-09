@@ -47,6 +47,12 @@ cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test --bin kalma2-bridge -- sanit
 
 `sddia-qa evolution-register` → `1dc4055c-b0c8-40ff-a30d-d257152fb8df` (`EVOL_OK`, `alta`).
 
+## DCC / PR / CI
+
+`delivery-close-cycle` `execution_id` `3cbf96fa-28d3-4049-a184-42af062546ec`. Snapshot `6821a22`. PR https://github.com/racso80es/SddIA/pull/283. `PullRequest_Presented` `fd594e13-bf5f-475a-9246-cf5f29b3ffa4`.
+
+Run [34386689756](https://github.com/racso80es/SddIA/actions/runs/34386689756) sobre `6821a22`: success (`sddia-index-integrity`, smokes). Evento `push` `34386684447`: integrity success; e2e/physical skip en un job.
+
 ## Fuera
 
 Crates HTTP/CLI. Mayeuta. `--print`. Kitchen router. Anatomía motora.

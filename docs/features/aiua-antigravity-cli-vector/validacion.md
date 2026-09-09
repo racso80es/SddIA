@@ -10,8 +10,10 @@ persist_ref: docs/features/aiua-antigravity-cli-vector
 pbi_ref: docs/todos/done/[NÚCLEO] Aiúa — combustión Tormentosa vía antigravity-cli.md
 document_id: PBI-NUCLEO-AIUA-ANTIGRAVITY-CLI-VECTOR
 uuid: "d15e82ed-ccad-4e5a-80ea-c6e808afa086"
-global: PENDIENTE-CI
+global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/283
+ci_run_id: "34386689756"
 checks:
   AIUA-AGY-CA1: APTO
   AIUA-AGY-CA2: APTO
@@ -23,7 +25,7 @@ checks:
   AIUA-AGY-CA8: APTO
   AIUA-AGY-CA9: FUERA-CI
   AIUA-AGY-CA10: APTO
-  AIUA-AGY-CA-CI: PENDIENTE-CI
+  AIUA-AGY-CA-CI: APTO
 git_changes:
   - SddIA/process/aiua-stimulus-processing.md
   - SddIA/process/index.md
@@ -39,7 +41,7 @@ git_changes:
 
 # Validación — aiua-antigravity-cli-vector
 
-**Veredicto global: PENDIENTE-CI.** CA locales APTOS. `accept-pr` solo con `run_id` verde.
+**Veredicto global: APTO.** CA-CI sellado con run `34386689756` (PR #283, `headSha` `6821a22`).
 
 | ID | Criterio | Estado | Evidencia |
 |----|----------|--------|-----------|
@@ -53,4 +55,4 @@ git_changes:
 | CA8 | ceguera Kalma2 | APTO | `process_genome_has_no_kalma2_ui_coupling`; cero diff `app.js` |
 | CA9 | live instancia | FUERA-CI | no gate CI |
 | CA10 | PBI en `done/` | APTO | este PR |
-| CA-CI | GitHub Actions verde | PENDIENTE-CI | — |
+| CA-CI | GitHub Actions verde | APTO | run [34386689756](https://github.com/racso80es/SddIA/actions/runs/34386689756) `headSha` `6821a22` |
