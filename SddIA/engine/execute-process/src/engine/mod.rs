@@ -49,6 +49,7 @@ pub mod capability_di_output_validator;
 pub mod capability_di_reactor;
 pub mod cerbero_di_rbac;
 pub mod cerbero_di_envelope;
+pub mod purge_sandbox_cache;
 pub mod sync_entity_index;
 pub mod suite_execution_requested;
 pub mod user_preference_change_requested;

@@ -219,6 +219,7 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
             super::user_preference_change_requested::run(repo, inputs)?
         }
         "policy-validator" => super::policy_validator::run(repo, inputs)?,
+        "purge-sandbox-cache" => super::purge_sandbox_cache::run(repo, inputs)?,
         "sync-entity-index" => super::sync_entity_index::run(repo, inputs)?,
         "materialize-fracture-pbi" => super::materialize_fracture_pbi::run(repo, inputs)?,
         "materialize-kaizen-alert-doc" => super::materialize_kaizen_alert_doc::run(repo, inputs)?,

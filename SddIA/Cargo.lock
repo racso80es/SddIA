@@ -1812,6 +1812,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ephemeral-cache-purger"
+version = "1.0.0"
+dependencies = [
+ "regex",
+ "sddia-io",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
