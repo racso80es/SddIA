@@ -52,7 +52,13 @@ PBI `pending/` → `done/`. `status: cerrado`. `fix_ref: docs/fixes/kalma2-bridg
 
 ## Evolution
 
-`sddia-qa evolution-register` → `51a53297-7e8d-469e-8bb2-8b413b28a366`.
+`sddia-qa evolution-register` → `51a53297-7e8d-469e-8bb2-8b413b28a366` (`EVOL_OK`, `alta`).
+
+## DCC / PR / CI
+
+`delivery-close-cycle` `execution_id` `a062ba10-2334-4b70-b3eb-3553a232718f`. Snapshot `39dc52c`. PR https://github.com/racso80es/SddIA/pull/280. `PullRequest_Presented` `c1adf5bc-dd47-480a-8130-f054e6f77e43`.
+
+Run [34362468515](https://github.com/racso80es/SddIA/actions/runs/34362468515) sobre `39dc52c`: pass (cinco jobs). Evento `push` `34362461303`: pass + skip e2e/physical (no fallo).
 
 ## Fuera del diff
 

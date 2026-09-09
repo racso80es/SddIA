@@ -7,8 +7,10 @@ persist_ref: docs/fixes/kalma2-bridge-aiua-interact-stale-elf
 pbi_ref: docs/todos/done/[FIX] kalma2-bridge ELF release fósil — POST api-aiua-interact 404.md
 document_id: PBI-FIX-KALMA2-BRIDGE-AIUA-ROUTE-STALE-ELF
 uuid: "bd611423-eea8-446a-a405-79cc08685e38"
-global: PENDIENTE-CI
+global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/280
+ci_run_id: "34362468515"
 checks:
   KALMA-STALE-CA1: APTO
   KALMA-STALE-CA2: APTO
@@ -16,7 +18,7 @@ checks:
   KALMA-STALE-CA4: APTO
   KALMA-STALE-CA5: APTO
   KALMA-STALE-CA6: APTO
-  KALMA-STALE-CA-CI: PENDIENTE-CI
+  KALMA-STALE-CA-CI: APTO
 git_changes:
   - docs/fixes/kalma2-bridge-aiua-interact-stale-elf/
   - docs/todos/done/[FIX] kalma2-bridge ELF release fósil — POST api-aiua-interact 404.md
@@ -27,7 +29,7 @@ git_changes:
 
 # Validación — kalma2-bridge-aiua-interact-stale-elf
 
-**Veredicto global: PENDIENTE-CI.** CA-1…CA-6 locales APTO. CA-CI exige `run_id` verde post-PR (features-documentation-pattern v1.2.1). `accept-pr` vetado hasta entonces.
+**Veredicto global: APTO.** CA-CI sellado con run `34362468515` (PR #280, `headSha` `39dc52c`).
 
 | ID | Criterio | Estado | Evidencia |
 |----|----------|--------|-----------|
@@ -37,7 +39,7 @@ git_changes:
 | KALMA-STALE-CA4 | No-regresión `/api/chat` enrutamiento | APTO | ≠404 inmediato; combustión Mayeuta deslindada |
 | KALMA-STALE-CA5 | Filename plano + enlaces lógicos | APTO | Basename sin `/`; PBI sin `file://` |
 | KALMA-STALE-CA6 | PBI en `done/`; `pbi_archived: true`; sin diffs puente | APTO | Este archivo + PBI archivado; crate/WUI fuera del sello |
-| KALMA-STALE-CA-CI | Checks GitHub Actions verdes | PENDIENTE-CI | Aún sin `run_id` |
+| KALMA-STALE-CA-CI | Checks GitHub Actions verdes | APTO | [run 34362468515](https://github.com/racso80es/SddIA/actions/runs/34362468515): `sddia-index-integrity`, `wasi-runtime-smoke`, `eda-iota-smoke-simulate`, `eda-bus-e2e-smoke`, `eda-iota-physical` pass. Duplicado push `34362461303`: mismos pass; skip e2e/physical del evento push no son fallo |
 
 ## Causa raíz cerrada (física + documental)
 
@@ -49,5 +51,5 @@ Residual de entrega: PID 6151 ejecutaba ELF 2026-09-06 sin la ruta de PR #276. R
 |------|--------|
 | PBI → `docs/todos/done/` | ✅ |
 | `pbi_archived: true` | ✅ |
-| PR único pre-merge | DCC |
-| CA-CI / `accept-pr` | Tras run verde |
+| PR único pre-merge | ✅ https://github.com/racso80es/SddIA/pull/280 |
+| CA-CI / `accept-pr` | ✅ run `34362468515`; `accept-pr` a continuación |
