@@ -3,8 +3,15 @@ feature_name: async-fracture-clarification-mayeuta
 created: "2026-09-09"
 process: feature
 branch: feat/async-fracture-clarification-mayeuta
-global: PENDIENTE-CI
+branch_name: feat/async-fracture-clarification-mayeuta
+persist_ref: docs/features/async-fracture-clarification-mayeuta
+pbi_ref: docs/todos/done/[FEATURE] Triaje asíncrono de fracturas inéditas (Mayeuta LLM).md
+document_id: PBI-FEATURE-ASYNC-FRACTURE-CLARIFICATION
+global: APTO
 pbi_archived: true
+pr_url: "https://github.com/racso80es/SddIA/pull/278"
+ci_run_id: "34341532022"
+ci_run_url: "https://github.com/racso80es/SddIA/actions/runs/34341532022"
 checks:
   ASYNC-CLARIFY-CA1: APTO
   ASYNC-CLARIFY-CA2: APTO
@@ -12,7 +19,7 @@ checks:
   ASYNC-CLARIFY-CA4: APTO
   ASYNC-CLARIFY-CA5: APTO
   ASYNC-CLARIFY-CA6: APTO
-  CA-CI: PENDIENTE-CI
+  CA-CI: APTO
 git_changes:
   - SddIA/events/orchestration/fracture-clarification-requested.md
   - SddIA/events/orchestration/index.md
@@ -36,7 +43,7 @@ git_changes:
 
 ## Resultado
 
-CA1–CA6 verificados en `cargo test -p execute-process --lib` (29 passed, filtro `enrich_fracture_pbi_kaizen` / `append_mayeuta_hypothesis` / `loads_fracture_clarification`). `global` no es APTO hasta check GitHub verde (`run_id`).
+CA1–CA6 verificados en `cargo test -p execute-process --lib` (29 passed, filtro `enrich_fracture_pbi_kaizen` / `append_mayeuta_hypothesis` / `loads_fracture_clarification`). CA-CI: run `34341532022` success (`sddia-index-qa` pull_request, HEAD `92f65756afe4bb7ca6ce7798b22c2634d0188f88`).
 
 | ID | Resultado | Evidencia |
 |----|-----------|-----------|
@@ -46,4 +53,4 @@ CA1–CA6 verificados en `cargo test -p execute-process --lib` (29 passed, filtr
 | CA4 | APTO | upsert conserva YAML / traza / Conclusión |
 | CA5 | APTO | `run_without_llm_cli_fail_open_leaves_pbi` |
 | CA6 | APTO | `prompt_contains_kernel_and_forbids_invented_paths` + `truncate_caps_at_15_lines` |
-| CA-CI | PENDIENTE-CI | GitHub Actions post-PR |
+| CA-CI | APTO | [run 34341532022](https://github.com/racso80es/SddIA/actions/runs/34341532022) |

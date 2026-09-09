@@ -6,7 +6,7 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-09"
 updated: "2026-09-09"
-status: "en-rama"
+status: "cerrado"
 refinement_status: refinado
 priority: media
 type: feature
