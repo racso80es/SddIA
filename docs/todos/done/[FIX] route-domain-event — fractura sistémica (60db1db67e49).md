@@ -288,7 +288,7 @@ Motor: `server.mjs` (instancia), `route_domain_core.rs`, `enrich_fracture_pbi_ka
 - [x] `DLT-GAS-CA3` + `MAYEUTA-CA5` + `MAYEUTA-CA6` + `MAYEUTA-CA7` verdes en `execute-process`.
 - [x] `DLT-GAS-CA4` en runtime real (`SIMULATE=0`) — digest `5rkFWghseVYgDh5DTQsECyeRS9T1d99hkkBXa7ELoEja`.
 - [x] `enrich-fracture-pbi-kaizen.md` bump via `entity-manager` (no Write directo).
-- [ ] Argos `global: APTO` + CA-CI `run_id` verde post-PR (`validacion.md` `pbi_archived: true`).
+- [x] Argos `global: APTO` + CA-CI `run_id` verde post-PR (`validacion.md` `pbi_archived: true`; run `34332282861`).
 - [x] Este PBI en `docs/todos/done/` en la rama del PR.
 
 ---
