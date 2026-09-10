@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `60b81a68-39ac-4ccd-b920-6ab759b474d8` | 2026-09-10 | Aiúa: anatomía motora — tendones parseados y despacho Aiua_Process_Requested en eda_fractal.domain. | CANONICO | `SddIA/evolution/60b81a68-39ac-4ccd-b920-6ab759b474d8.md` |
 | `89661fec-bed6-4c3d-8169-3922ddbe7a2f` | 2026-09-10 | kalma2-bridge: sanitizar red agy (network issue / dial tcp) en epidermis, sin retry. | CANONICO | `SddIA/evolution/89661fec-bed6-4c3d-8169-3922ddbe7a2f.md` |
 | `1bcd50a0-aa1c-468e-b2a0-87ce54923c9a` | 2026-09-10 | Aiúa: extraer texto de combustión agy antes de persistir pensamiento. | CANONICO | `SddIA/evolution/1bcd50a0-aa1c-468e-b2a0-87ce54923c9a.md` |
 | `1dc4055c-b0c8-40ff-a30d-d257152fb8df` | 2026-09-09 | Aiúa: combustión del latido vía skill antigravity-cli-executor (H-AIUA-VECTOR). | CANONICO | `SddIA/evolution/1dc4055c-b0c8-40ff-a30d-d257152fb8df.md` |

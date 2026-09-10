@@ -252,6 +252,13 @@
       "intent": "Anclaje DLT IOTA de la solicitud de proceso desde Kalma2."
     }
   ],
+  "Aiua_Process_Requested": [
+    {
+      "agent": "tekton",
+      "process": "task-queue-manager",
+      "intent": "Despacho del ciclo SDLC solicitado por el latido de la Aiúa."
+    }
+  ],
   "Kaizen_Idea_Captured": [
     {
       "agent": "cumulo",

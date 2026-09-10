@@ -16,6 +16,7 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 
 | Name | UUID | Versión | Context | Descripción | Capabilities |
 |------|------|---------|---------|-------------|--------------|
+| dispatch-aiua-intent | `a1086194-e19c-49b1-88e1-bd828211b3a8` | 1.0.0 | ecosystem-evolution | Traduce tendón Aiúa a ECST fractal domain (Aiua_Process_Requested) o delega en e | `dispatch_aiua_intent` |
 | purge-sandbox-cache | 37454c3a-4590-4dfb-a439-2014876a0138 | 1.0.1 | filesystem-ops | Acción purge-sandbox-cache | `purge_sandbox_cache`, `delegate-ephemeral-cache-purger` |
 | append-mayeuta-hypothesis | d5c792b5-33a1-4287-a66f-ea3b2ad5716d | 1.0.0 | knowledge-management | Hipótesis semántica asíncrona (mayeuta-llm SYNTHESIZE); upsert H2; fail-open. | `fracture-semantic-hypothesis`, `delegate-mayeuta-llm` |
 | persist-thought-record | a37f9f1d-8f2a-441f-9357-776d65553362 | 1.1.0 | ecosystem-evolution | Acción persist-thought-record | `persist_thought_record` |
@@ -47,3 +48,4 @@ Ninguno. `actions-contract.md` es el contrato de familia, no una fila del catál
 
 - **Sincronización:** diez definiciones de acción con identidad atómica; reflejadas en sendas filas del catálogo.
 - **Metadatos:** valores de la tabla (incl. **Capabilities**) copiados desde el YAML de cada `{name}.md` al momento de indexación.
+

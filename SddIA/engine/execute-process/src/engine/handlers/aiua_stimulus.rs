@@ -306,9 +306,34 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         &print_timeout,
     )?;
     let result = unwrap_tool_result(&infer_body);
-    let response = extract_infer_text(&result);
+    let mut response = extract_infer_text(&result);
+    let intent = super::super::aiua_intent::resolve_intent(&response);
+    let mut dispatched: Option<Value> = None;
+    if let Some(fc) = intent {
+        let name = fc.get("name").and_then(|v| v.as_str()).unwrap_or("");
+        if super::super::aiua_intent::is_motor_tendon(name) {
+            match super::super::aiua_intent::run(
+                repo,
+                &json!({ "function_call": fc }),
+            ) {
+                Ok(data) => dispatched = Some(data),
+                Err(e) => {
+                    response = format!("{response}\n\n[despacho motor rechazado: {e}]");
+                }
+            }
+        }
+    }
     if response.trim().is_empty() {
-        return Err("agy respuesta vacía".into());
+        if let Some(data) = &dispatched {
+            let name = data
+                .get("intent_dispatched")
+                .and_then(|v| v.as_str())
+                .unwrap_or("intent");
+            let eid = data.get("event_id").and_then(|v| v.as_str()).unwrap_or("");
+            response = format!("intent={name}; event_id={eid}");
+        } else {
+            return Err("agy respuesta vacía".into());
+        }
     }
     let duration_ms = result
         .get("durationMs")
@@ -347,14 +372,39 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         telemetry["tokens"] = t;
     }
 
+    let mut data = json!({
+        "thought_id": thought_id,
+        "response": response,
+        "telemetry": telemetry,
+    });
+    let dispatch_phase = if let Some(d) = &dispatched {
+        if let Some(eid) = d.get("event_id") {
+            data["event_id"] = eid.clone();
+            data["correlation_id"] = d
+                .get("correlation_id")
+                .cloned()
+                .unwrap_or_else(|| eid.clone());
+        }
+        if let Some(name) = d.get("intent_dispatched") {
+            data["intent_dispatched"] = name.clone();
+        }
+        json!({
+            "phase_name": "Despacho-Motor",
+            "status": "executed",
+            "handler": "dispatch-aiua-intent"
+        })
+    } else {
+        json!({
+            "phase_name": "Despacho-Motor",
+            "status": "skipped",
+            "handler": "dispatch-aiua-intent"
+        })
+    };
+
     Ok(OrchestratorEnvelope {
         success: true,
         status_code: 0,
-        data: Some(json!({
-            "thought_id": thought_id,
-            "response": response,
-            "telemetry": telemetry,
-        })),
+        data: Some(data),
         error: None,
         execution_report: Some(json!({
             "process_name": "aiua-stimulus-processing",
@@ -362,6 +412,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 {"phase_name": "Triaje-Contexto", "status": "executed", "handler": "retrieve-active-context"},
                 {"phase_name": "Inyeccion-Genomica", "status": "executed", "handler": "invoke-aiua-core"},
                 {"phase_name": "Combustion-Inferencia", "status": "executed", "handler": "antigravity-cli-executor"},
+                dispatch_phase,
                 {"phase_name": "Consolidacion-Memoria", "status": "executed", "handler": "persist-thought-record"},
             ]
         })),
@@ -541,6 +592,84 @@ mod tests {
             serde_json::from_str(&fs::read_to_string(events[0].path()).unwrap()).unwrap();
         assert_eq!(body["event_type"], "Thought_Persisted");
         assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
+        assert!(data.get("intent_dispatched").is_none());
+        let domain = repo.join(".events/domain");
+        if domain.is_dir() {
+            let domain_events: Vec<_> = fs::read_dir(&domain)
+                .unwrap()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("json"))
+                .collect();
+            assert!(domain_events.is_empty());
+        }
+    }
+
+    #[test]
+    fn lab_mock_overlay_intent_dispatches_domain_without_tqm() {
+        let Some(graph) = workspace_debug_bin("thought-graph-access") else {
+            return;
+        };
+        let Some(agy) = workspace_debug_bin("antigravity-cli-executor") else {
+            return;
+        };
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/events/domain")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{
+  "directories": {"conscience": "SddIA/conscience", "events": "SddIA/events", "suites": "SddIA/suites"},
+  "paths": {"vectorStore": ".SddIA/vector_store/"},
+  "eda_bus": {"pending": "./.events/pending"},
+  "eda_fractal": {"domain": "./.events/domain"}
+}"#,
+        )
+        .unwrap();
+        let class = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../SddIA/events/domain/aiua-process-requested.md");
+        fs::copy(
+            class,
+            repo.join("SddIA/events/domain/aiua-process-requested.md"),
+        )
+        .unwrap();
+        fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
+        copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
+        copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
+        let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
+        std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        std::env::set_var(
+            "SDDIA_LAB_MOCK_AIUA_INTENT",
+            r#"{"name":"iniciar_feature","args":{"goal":"motor","target_component":"aiua"}}"#,
+        );
+        let out = run(repo, &json!({"prompt": "ordena un feature", "model": "lab-flash"}));
+        match prev_out {
+            Some(v) => std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v),
+            None => std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND"),
+        }
+        match prev_intent {
+            Some(v) => std::env::set_var("SDDIA_LAB_MOCK_AIUA_INTENT", v),
+            None => std::env::remove_var("SDDIA_LAB_MOCK_AIUA_INTENT"),
+        }
+        let env = out.expect("latido overlay");
+        assert!(env.success);
+        let data = env.data.expect("data");
+        assert_eq!(data["intent_dispatched"], "iniciar_feature");
+        let eid = data["event_id"].as_str().unwrap();
+        assert!(!eid.is_empty());
+        let domain_path = repo.join(".events/domain").join(format!("{eid}.json"));
+        assert!(domain_path.is_file());
+        let body: Value = serde_json::from_str(&fs::read_to_string(&domain_path).unwrap()).unwrap();
+        assert_eq!(body["event_type"], "Aiua_Process_Requested");
+        assert_eq!(body["payload"]["process"], "feature");
+        let pending_aiua = repo.join(".events/pending").join(format!("{eid}.json"));
+        assert!(!pending_aiua.is_file());
+        let report = env.execution_report.unwrap();
+        let phases = report["phases"].as_array().unwrap();
+        assert!(phases.iter().any(|p| p["phase_name"] == "Despacho-Motor" && p["status"] == "executed"));
     }
 
     #[test]
@@ -548,6 +677,7 @@ mod tests {
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..");
         let text = fs::read_to_string(root.join("SddIA/process/aiua-stimulus-processing.md")).unwrap();
         assert!(text.contains("skill:antigravity-cli-executor"));
+        assert!(text.contains("action:dispatch-aiua-intent"));
         assert!(!text.contains("tool:gemini-http-infer"));
         assert!(!text.contains("gemini-3.8-flash"));
     }

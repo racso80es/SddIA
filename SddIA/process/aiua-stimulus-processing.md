@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:c7671b27aa3b391d6c8b75b58a946dc1cc911b86aad07ea6e18b2c64969648e1"
+hash_signature: "sha256:2c55c34da4bf5d9f2c374830a835aa5687f8650f0b2c36de96a52ae4ca26ebca"
 inputs:
 - prompt: string obligatorio
 - context_query: string opcional; default=prompt
@@ -26,14 +26,18 @@ phases:
   intent: Única llamada al LLM vía agy; Peaje Termodinámico del CLI.
   name: Combustion-Inferencia
 - delegates_to:
+  - action:dispatch-aiua-intent
+  intent: Si hay tendón motor, traducir a ECST fractal domain. Cero join a TQM.
+  name: Despacho-Motor
+- delegates_to:
   - action:persist-thought-record
   intent: Persistir par estímulo/respuesta; el adaptador emite Thought_Persisted.
   name: Consolidacion-Memoria
 uuid: 6c595785-e386-402f-b570-0b2aa6343051
-version: 1.1.0
+version: 1.2.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # aiua-stimulus-processing
 
-Latido ontológico de la Aiúa: contexto LanceDB, inyección de genoma, combustión vía Antigravity CLI (skill:antigravity-cli-executor), persistencia de pensamiento. Sin agente titular. Sin Kalma2.
+Latido ontológico de la Aiúa: contexto LanceDB, inyección de genoma, combustión vía Antigravity CLI (skill:antigravity-cli-executor), despacho motor EDA opcional (action:dispatch-aiua-intent → eda_fractal.domain), persistencia de pensamiento. Sin agente titular. Sin Kalma2. Cero join a TQM.

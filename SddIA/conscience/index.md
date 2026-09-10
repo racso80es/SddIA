@@ -16,7 +16,7 @@ Familia soberana de genomas de Aiúa. No es catálogo de agentes.
 
 | Archivo fuente | uuid | entity_id | name | version |
 |----------------|------|-----------|------|---------|
-| `aiua_core.md` | `942aa727-9f6b-454e-b999-32a26f5b7759` | `AIUA-CORE-TORMENTOSA` | Tormentosa | 1.1.0 |
+| `aiua_core.md` | `942aa727-9f6b-454e-b999-32a26f5b7759` | `AIUA-CORE-TORMENTOSA` | Tormentosa | 1.2.0 |
 
 ## Integridad (última pasada)
 
