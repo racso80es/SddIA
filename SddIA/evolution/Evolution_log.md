@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `cde619ba-f06e-4df6-9c2b-0f9e511ddb22` | 2026-09-10 | Correlato residual anatomía motora Aiúa: índices genómicos y despacho nativo execute-process. | CANONICO | `SddIA/evolution/cde619ba-f06e-4df6-9c2b-0f9e511ddb22.md` |
 | `60b81a68-39ac-4ccd-b920-6ab759b474d8` | 2026-09-10 | Aiúa: anatomía motora — tendones parseados y despacho Aiua_Process_Requested en eda_fractal.domain. | CANONICO | `SddIA/evolution/60b81a68-39ac-4ccd-b920-6ab759b474d8.md` |
 | `89661fec-bed6-4c3d-8169-3922ddbe7a2f` | 2026-09-10 | kalma2-bridge: sanitizar red agy (network issue / dial tcp) en epidermis, sin retry. | CANONICO | `SddIA/evolution/89661fec-bed6-4c3d-8169-3922ddbe7a2f.md` |
 | `1bcd50a0-aa1c-468e-b2a0-87ce54923c9a` | 2026-09-10 | Aiúa: extraer texto de combustión agy antes de persistir pensamiento. | CANONICO | `SddIA/evolution/1bcd50a0-aa1c-468e-b2a0-87ce54923c9a.md` |
