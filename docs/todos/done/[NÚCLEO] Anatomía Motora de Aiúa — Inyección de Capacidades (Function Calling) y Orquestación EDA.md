@@ -6,7 +6,8 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-09"
 updated: "2026-09-10"
-status: "propuesta"
+status: "cerrado"
+persist_ref: docs/features/aiua-motor-anatomy-eda
 refinement_status: refinado
 priority: alta
 type: nucleo
