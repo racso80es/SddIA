@@ -76,6 +76,39 @@ fn unwrap_tool_result(body: &Value) -> Value {
         .unwrap_or_else(|| body.clone())
 }
 
+fn nonempty_infer_str(v: Option<&Value>) -> Option<String> {
+    let v = v?;
+    if let Some(s) = v.as_str() {
+        return (!s.trim().is_empty()).then(|| s.to_string());
+    }
+    if let Some(obj) = v.as_object() {
+        return nonempty_infer_str(obj.get("text"))
+            .or_else(|| nonempty_infer_str(obj.get("content")))
+            .or_else(|| nonempty_infer_str(obj.get("response")));
+    }
+    if let Some(arr) = v.as_array() {
+        let parts: Vec<String> = arr
+            .iter()
+            .filter_map(|item| nonempty_infer_str(Some(item)))
+            .collect();
+        if parts.is_empty() {
+            return None;
+        }
+        return Some(parts.join("\n"));
+    }
+    None
+}
+
+/// Texto de combustión: `result.text` ≻ `response` ≻ `raw_response.{response,text,result}`.
+fn extract_infer_text(result: &Value) -> String {
+    nonempty_infer_str(result.get("text"))
+        .or_else(|| nonempty_infer_str(result.get("response")))
+        .or_else(|| nonempty_infer_str(result.pointer("/raw_response/response")))
+        .or_else(|| nonempty_infer_str(result.pointer("/raw_response/text")))
+        .or_else(|| nonempty_infer_str(result.pointer("/raw_response/result")))
+        .unwrap_or_default()
+}
+
 fn invoke_thought_graph(repo: &Path, request: Value) -> Result<Value, String> {
     let payload = json!({ "request": request });
     let cap = invoke_tool_capsule_json(repo, "thought-graph-access", &payload, false)?;
@@ -273,11 +306,10 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         &print_timeout,
     )?;
     let result = unwrap_tool_result(&infer_body);
-    let response = result
-        .get("text")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
+    let response = extract_infer_text(&result);
+    if response.trim().is_empty() {
+        return Err("agy respuesta vacía".into());
+    }
     let duration_ms = result
         .get("durationMs")
         .or_else(|| infer_body.get("result").and_then(|r| r.get("durationMs")))
@@ -432,6 +464,22 @@ mod tests {
         let t = usage_tokens(&json!({"usage": {"input_tokens": 1}})).unwrap();
         assert_eq!(t["input_tokens"], 1);
         assert!(usage_tokens(&json!({})).is_none());
+    }
+
+    #[test]
+    fn extract_infer_text_prefers_text_then_raw_response_object() {
+        assert_eq!(
+            extract_infer_text(&json!({"text": "ok", "raw_response": {"response": "no"}})),
+            "ok"
+        );
+        assert_eq!(
+            extract_infer_text(&json!({
+                "text": "",
+                "raw_response": {"status": "SUCCESS", "response": {"text": "latido"}}
+            })),
+            "latido"
+        );
+        assert!(extract_infer_text(&json!({"text": "  ", "raw_response": {"response": ""}})).is_empty());
     }
 
     #[test]
