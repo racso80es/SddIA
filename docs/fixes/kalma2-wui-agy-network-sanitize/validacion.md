@@ -10,8 +10,10 @@ persist_ref: docs/fixes/kalma2-wui-agy-network-sanitize
 pbi_ref: docs/todos/done/[FIX] Kalma2 WUI — red agy sanitizada en epidermis (sin retry).md
 document_id: PBI-FIX-KALMA2-AGY-NETWORK-SANITIZE
 uuid: "a8634b4b-49c8-4905-a824-ae0c251ca900"
-global: PENDIENTE-CI
+global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/285
+ci_run_id: "34503187825"
 checks:
   AGY-NET-CA1: APTO
   AGY-NET-CA2: APTO
@@ -19,7 +21,7 @@ checks:
   AGY-NET-CA4: APTO
   AGY-NET-CA5: APTO
   AGY-NET-CA6: APTO
-  AGY-NET-CA-CI: PENDIENTE-CI
+  AGY-NET-CA-CI: APTO
 git_changes:
   - SddIA/interfaces/kalma2-bridge/src/main.rs
   - docs/fixes/kalma2-wui-agy-network-sanitize/
@@ -30,7 +32,7 @@ git_changes:
 
 # Validación — kalma2-wui-agy-network-sanitize
 
-**Veredicto global: PENDIENTE-CI.** CA locales APTO.
+**Veredicto global: APTO.** CA-CI sellado con run `34503187825` (PR #285, `headSha` `7a7843d`).
 
 | ID | Criterio | Estado | Evidencia |
 |----|----------|--------|-----------|
@@ -40,4 +42,4 @@ git_changes:
 | CA4 | cero retry | APTO | clasificador síncrono |
 | CA5 | tests herméticos | APTO | `sanitize_maps_agy*` 2 passed |
 | CA6 | PBI `done/` | APTO | este PR |
-| CA-CI | GitHub verde | PENDIENTE-CI | — |
+| CA-CI | GitHub verde | APTO | run [34503187825](https://github.com/racso80es/SddIA/actions/runs/34503187825) `headSha` `7a7843d` |

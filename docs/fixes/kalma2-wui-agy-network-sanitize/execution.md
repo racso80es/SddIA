@@ -37,3 +37,9 @@ cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p kalma2-bridge --bin kalma
 ```
 
 `sddia-qa evolution-register` → `89661fec-bed6-4c3d-8169-3922ddbe7a2f` (`EVOL_OK`, `alta`).
+
+## DCC / PR / CI
+
+`delivery-close-cycle` `execution_id` `8b847a8a-8b42-4b58-8a7e-63634543883a`. Snapshot `7a7843d`. PR https://github.com/racso80es/SddIA/pull/285. `PullRequest_Presented` `a5386952-0dcb-4690-bdfc-6f5a056e6a01`.
+
+Run [34503187825](https://github.com/racso80es/SddIA/actions/runs/34503187825) sobre `7a7843d`: success. Evento `push` `34503182696`: integrity/wasi/iota-simulate success; e2e/physical SKIPPED en ese job.
