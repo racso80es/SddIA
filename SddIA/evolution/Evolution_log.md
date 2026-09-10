@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `1bcd50a0-aa1c-468e-b2a0-87ce54923c9a` | 2026-09-10 | Aiúa: extraer texto de combustión agy antes de persistir pensamiento. | CANONICO | `SddIA/evolution/1bcd50a0-aa1c-468e-b2a0-87ce54923c9a.md` |
 | `1dc4055c-b0c8-40ff-a30d-d257152fb8df` | 2026-09-09 | Aiúa: combustión del latido vía skill antigravity-cli-executor (H-AIUA-VECTOR). | CANONICO | `SddIA/evolution/1dc4055c-b0c8-40ff-a30d-d257152fb8df.md` |
 | `24061402-d129-49b1-8a35-ee2388ee4816` | 2026-09-09 | kalma2-bridge: sanitizar 503 Gemini en epidermis (mensaje canónico, sin retry). PBI-OPERATIVO-KALMA2-AIUA-503-SANITIZE. | CANONICO | `SddIA/evolution/24061402-d129-49b1-8a35-ee2388ee4816.md` |
 | `0e4e3e14-c6e2-417f-8331-332310766679` | 2026-09-09 | kalma2-bridge: resolve_mayeuta_llm release-first, preflight WARN en lanzador, test hermético. Cierra sello 64f37c7f7b34 (prótesis ausente). | CANONICO | `SddIA/evolution/0e4e3e14-c6e2-417f-8331-332310766679.md` |
