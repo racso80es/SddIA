@@ -409,6 +409,8 @@ const AIUA_AGY_AUTH_MSG: &str =
     "Tormentosa no disponible: se requiere autenticación en el CLI de Antigravity (agy).";
 const AIUA_AGY_TIMEOUT_MSG: &str =
     "Tormentosa no disponible: tiempo de espera agotado al consultar el CLI de Antigravity.";
+const AIUA_AGY_NETWORK_MSG: &str =
+    "Tormentosa no disponible: el CLI de Antigravity no pudo conectar con el proveedor.";
 
 fn is_gemini_upstream_unavailable(raw: &str) -> bool {
     if raw.contains("http-status-503") {
@@ -429,6 +431,11 @@ fn is_agy_timeout(raw: &str) -> bool {
     raw.to_ascii_lowercase().contains("agy-timeout")
 }
 
+fn is_agy_network_issue(raw: &str) -> bool {
+    let lower = raw.to_ascii_lowercase();
+    lower.contains("network issue connecting") || lower.contains("dial tcp")
+}
+
 fn is_agy_auth_required(raw: &str) -> bool {
     let lower = raw.to_ascii_lowercase();
     lower.contains("agy authentication required")
@@ -443,6 +450,9 @@ fn sanitize_bridge_message(raw: &str) -> String {
     }
     if is_agy_timeout(raw) {
         return AIUA_AGY_TIMEOUT_MSG.to_string();
+    }
+    if is_agy_network_issue(raw) {
+        return AIUA_AGY_NETWORK_MSG.to_string();
     }
     if is_agy_auth_required(raw) {
         return AIUA_AGY_AUTH_MSG.to_string();
@@ -3174,6 +3184,30 @@ mod tests {
         assert_eq!(
             sanitize_bridge_message("agy-failed"),
             "agy-failed"
+        );
+    }
+
+    #[test]
+    fn sanitize_maps_agy_network_issue() {
+        let empirical = concat!(
+            "agy exit=1; stderr=error: There was a network issue connecting to the server, ",
+            "please try again.; stdout={\"conversation_id\":\"a09eeba9-d2df-4706-a4b6-cfe76adae545\",",
+            "\"status\":\"ERROR\",\"response\":\"\",\"error\":\"There was a network issue connecting t"
+        );
+        assert_eq!(sanitize_bridge_message(empirical), AIUA_AGY_NETWORK_MSG);
+        assert!(!sanitize_bridge_message(empirical).contains('{'));
+        let eligibility = concat!(
+            "agy exit=1; stderr=; stdout={\"status\":\"ERROR\",\"error\":\"Eligibility check failed: ",
+            "Post \\\"https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist\\\": ",
+            "dial tcp [2001:4860:4842:400::]:443: connect:\"}"
+        );
+        assert_eq!(sanitize_bridge_message(eligibility), AIUA_AGY_NETWORK_MSG);
+        assert_ne!(AIUA_AGY_NETWORK_MSG, AIUA_PROVIDER_UNAVAILABLE_MSG);
+        assert_ne!(AIUA_AGY_NETWORK_MSG, AIUA_AGY_TIMEOUT_MSG);
+        assert_ne!(AIUA_AGY_NETWORK_MSG, AIUA_AGY_AUTH_MSG);
+        assert_eq!(
+            sanitize_bridge_message("agy authentication required"),
+            AIUA_AGY_AUTH_MSG
         );
     }
 
