@@ -10,8 +10,10 @@ persist_ref: docs/fixes/aiua-agy-empty-response-text
 pbi_ref: docs/todos/done/[FIX] Aiúa — combustión agy SUCCESS sin texto persistible.md
 document_id: PBI-FIX-AIUA-AGY-EMPTY-RESPONSE-TEXT
 uuid: "9d4898e6-d960-4dff-95b0-ce7d807c00c1"
-global: PENDIENTE-CI
+global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/284
+ci_run_id: "34501730833"
 checks:
   AIUA-TXT-CA1: APTO
   AIUA-TXT-CA2: APTO
@@ -19,7 +21,7 @@ checks:
   AIUA-TXT-CA4: APTO
   AIUA-TXT-CA5: APTO
   AIUA-TXT-CA6: APTO
-  AIUA-TXT-CA-CI: PENDIENTE-CI
+  AIUA-TXT-CA-CI: APTO
 git_changes:
   - SddIA/engine/execute-process/src/engine/handlers/aiua_stimulus.rs
   - docs/fixes/aiua-agy-empty-response-text/
@@ -30,7 +32,7 @@ git_changes:
 
 # Validación — aiua-agy-empty-response-text
 
-**Veredicto global: PENDIENTE-CI.** CA locales APTO. CA-CI pendiente de `run_id` verde.
+**Veredicto global: APTO.** CA-CI sellado con run `34501730833` (PR #284, `headSha` `6a03066`).
 
 | ID | Criterio | Estado | Evidencia |
 |----|----------|--------|-----------|
@@ -40,4 +42,4 @@ git_changes:
 | CA4 | cero skill/process/app.js | APTO | diff acotado al handler + docs |
 | CA5 | tests `aiua_stimulus` | APTO | 8 passed |
 | CA6 | PBI en `done/` | APTO | este PR |
-| CA-CI | GitHub Actions verde | PENDIENTE-CI | — |
+| CA-CI | GitHub Actions verde | APTO | run [34501730833](https://github.com/racso80es/SddIA/actions/runs/34501730833) `headSha` `6a03066` |
