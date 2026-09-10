@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `89661fec-bed6-4c3d-8169-3922ddbe7a2f` | 2026-09-10 | kalma2-bridge: sanitizar red agy (network issue / dial tcp) en epidermis, sin retry. | CANONICO | `SddIA/evolution/89661fec-bed6-4c3d-8169-3922ddbe7a2f.md` |
 | `1bcd50a0-aa1c-468e-b2a0-87ce54923c9a` | 2026-09-10 | Aiúa: extraer texto de combustión agy antes de persistir pensamiento. | CANONICO | `SddIA/evolution/1bcd50a0-aa1c-468e-b2a0-87ce54923c9a.md` |
 | `1dc4055c-b0c8-40ff-a30d-d257152fb8df` | 2026-09-09 | Aiúa: combustión del latido vía skill antigravity-cli-executor (H-AIUA-VECTOR). | CANONICO | `SddIA/evolution/1dc4055c-b0c8-40ff-a30d-d257152fb8df.md` |
 | `24061402-d129-49b1-8a35-ee2388ee4816` | 2026-09-09 | kalma2-bridge: sanitizar 503 Gemini en epidermis (mensaje canónico, sin retry). PBI-OPERATIVO-KALMA2-AIUA-503-SANITIZE. | CANONICO | `SddIA/evolution/24061402-d129-49b1-8a35-ee2388ee4816.md` |
