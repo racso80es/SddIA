@@ -52,6 +52,7 @@ pub mod cerbero_di_envelope;
 pub mod purge_sandbox_cache;
 pub mod sync_entity_index;
 pub mod suite_execution_requested;
+pub mod aiua_intent;
 pub mod user_preference_change_requested;
 pub mod telemetry_receipt;
 pub mod thermodynamic;

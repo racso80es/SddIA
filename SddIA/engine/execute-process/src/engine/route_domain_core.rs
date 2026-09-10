@@ -31,6 +31,52 @@ use std::thread;
 use uuid::Uuid;
 
 const ALLOWLIST_KALMA2: &[&str] = &["bug-fix", "feature", "refactorization", "task-queue-manager"];
+const SDLC_PROCESS_REQUESTED: &[&str] = &["Kalma2_Process_Requested", "Aiua_Process_Requested"];
+
+pub(crate) fn sdlc_process_request_inputs(event: &Value) -> Result<Map<String, Value>, String> {
+    let payload_obj = event
+        .get("payload")
+        .and_then(|v| v.as_object())
+        .ok_or_else(|| "payload must be object".to_string())?;
+    let proc = payload_obj
+        .get("process")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .unwrap_or("");
+    if !ALLOWLIST_KALMA2.contains(&proc) {
+        return Err(format!("proceso no permitido: {proc}"));
+    }
+    let mut process_inputs = Map::new();
+    process_inputs.insert(
+        "correlation_id".into(),
+        json!(event.get("event_id").and_then(|v| v.as_str()).unwrap_or("")),
+    );
+    process_inputs.insert("process".into(), json!(proc));
+    if let Some(pbi) = payload_obj
+        .get("pbi_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        process_inputs.insert("pbi_ref".into(), json!(pbi));
+    }
+    if let Some(raw) = payload_obj
+        .get("raw_text")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        process_inputs.insert("task_text".into(), json!(raw));
+    }
+    if let Some(extra) = payload_obj.get("process_inputs").and_then(|v| v.as_object()) {
+        for (k, v) in extra {
+            if !process_inputs.contains_key(k) {
+                process_inputs.insert(k.clone(), v.clone());
+            }
+        }
+    }
+    Ok(process_inputs)
+}
 
 /// Acciones de forja documental (Filtro C — L-FRACTURE). No vaciar JSON de suscripciones.
 const CONSUMER_SKIP_FORGE_ACTIONS: &[&str] = &[
@@ -1233,39 +1279,16 @@ pub(crate) fn dispatch_subscriber(
             return (sid, "failed".into(), Some("payload must be object".into()), 1);
         };
 
-        if event.get("event_type").and_then(|v| v.as_str()) == Some("Kalma2_Process_Requested") {
-            let proc = payload_obj
-                .get("process")
-                .and_then(|v| v.as_str())
-                .map(str::trim)
-                .unwrap_or("");
-            if !ALLOWLIST_KALMA2.contains(&proc) {
-                return (
-                    sid,
-                    "failed".into(),
-                    Some(format!("proceso no permitido: {proc}")),
-                    1,
-                );
-            }
-            let mut process_inputs = Map::new();
-            process_inputs.insert(
-                "correlation_id".into(),
-                json!(event.get("event_id").and_then(|v| v.as_str()).unwrap_or("")),
-            );
-            process_inputs.insert("process".into(), json!(proc));
-            if let Some(pbi) = payload_obj.get("pbi_ref").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
-                process_inputs.insert("pbi_ref".into(), json!(pbi));
-            }
-            if let Some(raw) = payload_obj.get("raw_text").and_then(|v| v.as_str()).map(str::trim).filter(|s| !s.is_empty()) {
-                process_inputs.insert("task_text".into(), json!(raw));
-            }
-            if let Some(extra) = payload_obj.get("process_inputs").and_then(|v| v.as_object()) {
-                for (k, v) in extra {
-                    if !process_inputs.contains_key(k) {
-                        process_inputs.insert(k.clone(), v.clone());
-                    }
-                }
-            }
+        if event
+            .get("event_type")
+            .and_then(|v| v.as_str())
+            .map(|t| SDLC_PROCESS_REQUESTED.contains(&t))
+            .unwrap_or(false)
+        {
+            let process_inputs = match sdlc_process_request_inputs(event) {
+                Ok(m) => m,
+                Err(e) => return (sid, "failed".into(), Some(e), 1),
+            };
             let (status, exit_code) =
                 dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
             if status == "success" {
@@ -2010,6 +2033,33 @@ mod blocking_tests {
         here.pop();
         here.pop();
         here
+    }
+
+    #[test]
+    fn aiua_process_requested_maps_like_kalma2() {
+        let event = json!({
+            "event_id": "11111111-1111-4111-8111-111111111111",
+            "event_type": "Aiua_Process_Requested",
+            "payload": {
+                "process": "feature",
+                "raw_text": "goal motor\n\ntarget_component: aiua",
+                "pbi_ref": "docs/todos/pending/x.md"
+            }
+        });
+        let mapped = sdlc_process_request_inputs(&event).unwrap();
+        assert_eq!(mapped.get("process").unwrap(), "feature");
+        assert_eq!(mapped.get("task_text").unwrap(), "goal motor\n\ntarget_component: aiua");
+        assert_eq!(mapped.get("pbi_ref").unwrap(), "docs/todos/pending/x.md");
+        assert_eq!(
+            mapped.get("correlation_id").unwrap(),
+            "11111111-1111-4111-8111-111111111111"
+        );
+        let bad = json!({
+            "event_id": "11111111-1111-4111-8111-111111111111",
+            "event_type": "Aiua_Process_Requested",
+            "payload": {"process": "not-a-cycle", "raw_text": "x"}
+        });
+        assert!(sdlc_process_request_inputs(&bad).unwrap_err().contains("no permitido"));
     }
 
     #[test]
