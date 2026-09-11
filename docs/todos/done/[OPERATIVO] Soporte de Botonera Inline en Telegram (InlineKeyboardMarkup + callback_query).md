@@ -6,7 +6,7 @@ format: markdown
 version: "1.1.0"
 created: "2026-09-06"
 updated: "2026-09-11"
-status: "propuesta"
+status: "done"
 refinement_status: refined
 priority: media
 type: operativo
