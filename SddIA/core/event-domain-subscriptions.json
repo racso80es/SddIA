@@ -221,6 +221,7 @@
       "intent": "Triaje y persistencia de preferencias del usuario; sin DLT."
     }
   ],
+  "TelegramCallback_Received": [],
   "TelegramMessage_Received": [
     {
       "agent": "mayeuta",

@@ -219,6 +219,14 @@ fn spawn_heartbeat_worker(
     })
 }
 
+fn json_id_to_string(v: &Value) -> String {
+    if let Some(n) = v.as_i64() {
+        n.to_string()
+    } else {
+        v.to_string()
+    }
+}
+
 fn extract_text(update: &Value) -> Option<String> {
     let msg = update
         .get("message")
@@ -233,16 +241,38 @@ fn extract_text(update: &Value) -> Option<String> {
 }
 
 fn chat_id(update: &Value) -> Option<String> {
+    if let Some(cb) = update.get("callback_query") {
+        let chat = cb.get("message")?.get("chat")?;
+        return chat.get("id").map(json_id_to_string);
+    }
     let msg = update
         .get("message")
         .or_else(|| update.get("edited_message"))?;
     let chat = msg.get("chat")?;
-    chat.get("id").map(|v| {
-        if let Some(n) = v.as_i64() {
-            n.to_string()
-        } else {
-            v.to_string()
-        }
+    chat.get("id").map(json_id_to_string)
+}
+
+struct CallbackExtract {
+    id: String,
+    data: String,
+    message_id: Option<String>,
+}
+
+fn extract_callback(update: &Value) -> Option<CallbackExtract> {
+    let cb = update.get("callback_query")?;
+    let id = cb.get("id")?.as_str()?.trim().to_string();
+    let data = cb.get("data")?.as_str()?.trim().to_string();
+    if id.is_empty() || data.is_empty() || data.len() > 64 {
+        return None;
+    }
+    let message_id = cb
+        .get("message")
+        .and_then(|m| m.get("message_id"))
+        .map(json_id_to_string);
+    Some(CallbackExtract {
+        id,
+        data,
+        message_id,
     })
 }
 
@@ -275,10 +305,66 @@ fn invoke_gateway(repo: &Path, text: &str, dry_run: bool) -> i32 {
     }
 }
 
+fn answer_callback_query(token: &str, callback_id: &str) {
+    let url = format!("https://api.telegram.org/bot{token}/answerCallbackQuery");
+    let agent = ureq::agent();
+    let form = vec![("callback_query_id", callback_id)];
+    if let Err(e) = agent
+        .post(&url)
+        .timeout(Duration::from_secs(15))
+        .send_form(&form)
+    {
+        eprintln!("[telegram-watcher] answerCallbackQuery error: {e}");
+    }
+}
+
+fn invoke_gateway_callback(
+    repo: &Path,
+    callback_data: &str,
+    chat_id: &str,
+    message_id: Option<&str>,
+    dry_run: bool,
+) -> i32 {
+    if dry_run {
+        return 0;
+    }
+    let runner = execute_process_bin(repo);
+    let mut payload = serde_json::json!({
+        "callback_data": callback_data,
+        "chat_id": chat_id,
+    });
+    if let Some(mid) = message_id {
+        payload["message_id"] = json!(mid);
+    }
+    let payload = payload.to_string();
+    let out = Command::new(&runner)
+        .args(["--process", "telegram-gateway", "--inputs", &payload])
+        .current_dir(repo)
+        .output();
+    match out {
+        Ok(o) => {
+            if o.status.success() {
+                0
+            } else {
+                let err = String::from_utf8_lossy(&o.stderr);
+                if !err.trim().is_empty() {
+                    eprintln!("{}", err.trim());
+                }
+                1
+            }
+        }
+        Err(e) => {
+            eprintln!("[telegram-watcher] spawn execute-process callback: {e}");
+            1
+        }
+    }
+}
+
 fn process_updates(
     repo: &Path,
     updates: &[Value],
     allowed_chat: &str,
+    token: &str,
     dry_run: bool,
     centinela: &mut DaemonRuntime,
 ) -> Result<i64, String> {
@@ -302,7 +388,27 @@ fn process_updates(
         if !seen.insert(uid) {
             continue;
         }
-        if chat_id(upd).as_deref() != Some(allowed_chat) {
+        let Some(cid) = chat_id(upd) else {
+            continue;
+        };
+        if cid != allowed_chat {
+            continue;
+        }
+        if let Some(cb) = extract_callback(upd) {
+            centinela.note_stimulus();
+            if !dry_run {
+                answer_callback_query(token, &cb.id);
+            }
+            let rc = invoke_gateway_callback(
+                repo,
+                &cb.data,
+                &cid,
+                cb.message_id.as_deref(),
+                dry_run,
+            );
+            if rc != 0 {
+                eprintln!("[telegram-watcher] gateway callback rc={rc} update_id={uid}");
+            }
             continue;
         }
         let Some(text) = extract_text(upd) else {
@@ -328,7 +434,7 @@ fn run_once(
     let last = load_last_update_id(repo);
     let offset = if last > 0 { last + 1 } else { 0 };
     let updates = get_updates(&token, offset);
-    if let Err(e) = process_updates(repo, &updates, &allowed, dry_run, centinela) {
+    if let Err(e) = process_updates(repo, &updates, &allowed, &token, dry_run, centinela) {
         eprintln!("[telegram-watcher] {e}");
     }
     let _ = centinela.tick(top);
@@ -387,5 +493,40 @@ fn main() {
         centinela.shutdown();
     } else if let Err(code) = run_loop(repo, dry_run) {
         std::process::exit(code);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn extract_callback_from_allowed_shape() {
+        let upd = json!({
+            "update_id": 1,
+            "callback_query": {
+                "id": "cb1",
+                "data": "p:max",
+                "message": {"message_id": 9, "chat": {"id": 42}}
+            }
+        });
+        assert_eq!(chat_id(&upd).as_deref(), Some("42"));
+        let cb = extract_callback(&upd).expect("cb");
+        assert_eq!(cb.data, "p:max");
+        assert_eq!(cb.message_id.as_deref(), Some("9"));
+        assert!(extract_text(&upd).is_none());
+    }
+
+    #[test]
+    fn extract_callback_rejects_oversize() {
+        let data = "x".repeat(65);
+        let upd = json!({
+            "callback_query": {
+                "id": "cb1",
+                "data": data,
+                "message": {"chat": {"id": 1}}
+            }
+        });
+        assert!(extract_callback(&upd).is_none());
     }
 }

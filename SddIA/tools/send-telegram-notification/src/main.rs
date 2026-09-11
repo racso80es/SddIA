@@ -37,12 +37,19 @@ fn run(req: &Value) -> Result<Value, String> {
         .map(str::trim)
         .filter(|s| !s.is_empty() && !s.eq_ignore_ascii_case("null"));
 
+    let reply_markup = serialize_reply_markup(req.get("reply_markup"))?;
+
     if lab_mock_outbound_enabled() {
-        return Ok(mock_success(message, parse_mode, "lab-mock-outbound"));
+        return Ok(mock_success(
+            message,
+            parse_mode,
+            reply_markup.as_deref(),
+            "lab-mock-outbound",
+        ));
     }
 
     if let Some(mock_url) = lab_mock_telegram_url() {
-        return post_mock(&mock_url, message, parse_mode);
+        return post_mock(&mock_url, message, parse_mode, reply_markup.as_deref());
     }
 
     let token = env::var("TELEGRAM_BOT_TOKEN")
@@ -56,35 +63,77 @@ fn run(req: &Value) -> Result<Value, String> {
 
     if token.is_empty() || chat_id.is_empty() {
         if truthy_env("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM") {
-            return Ok(mock_success(message, parse_mode, "skipped-lab-no-credentials"));
+            return Ok(mock_success(
+                message,
+                parse_mode,
+                reply_markup.as_deref(),
+                "skipped-lab-no-credentials",
+            ));
         }
         return Err("config-missing: TELEGRAM_BOT_TOKEN or TELEGRAM_ALLOWED_CHAT_ID".into());
     }
 
     if token.eq_ignore_ascii_case("lab-mock") {
-        return Ok(mock_success(message, parse_mode, "lab-mock-token"));
+        return Ok(mock_success(
+            message,
+            parse_mode,
+            reply_markup.as_deref(),
+            "lab-mock-token",
+        ));
     }
 
-    send_telegram(&token, &chat_id, message, parse_mode)
+    send_telegram(&token, &chat_id, message, parse_mode, reply_markup.as_deref())
+}
+
+fn serialize_reply_markup(raw: Option<&Value>) -> Result<Option<String>, String> {
+    let Some(v) = raw else {
+        return Ok(None);
+    };
+    if v.is_null() {
+        return Ok(None);
+    }
+    let obj = v
+        .as_object()
+        .ok_or_else(|| "reply_markup debe ser objeto JSON".to_string())?;
+    if obj
+        .get("inline_keyboard")
+        .and_then(|k| k.as_array())
+        .is_none()
+    {
+        return Err("reply_markup.inline_keyboard requerido".into());
+    }
+    serde_json::to_string(v).map(Some).map_err(|e| e.to_string())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn mock_success(message: &str, parse_mode: Option<&str>, mode: &str) -> Value {
+fn mock_success(
+    message: &str,
+    parse_mode: Option<&str>,
+    reply_markup: Option<&str>,
+    mode: &str,
+) -> Value {
     json!({
         "message_id": format!("mock-{}", &message.len()),
         "attempt": 1,
         "degraded_plain_fallback": false,
         "parse_mode_requested": parse_mode,
+        "reply_markup_present": reply_markup.is_some(),
         "mode": mode,
     })
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn post_mock(mock_url: &str, message: &str, parse_mode: Option<&str>) -> Result<Value, String> {
+fn post_mock(
+    mock_url: &str,
+    message: &str,
+    parse_mode: Option<&str>,
+    reply_markup: Option<&str>,
+) -> Result<Value, String> {
     let agent = ureq::agent();
     let payload = json!({
         "message": message,
         "parse_mode": parse_mode,
+        "reply_markup": reply_markup,
     });
     let resp = agent
         .post(mock_url)
@@ -118,22 +167,31 @@ fn send_telegram(
     chat_id: &str,
     message: &str,
     parse_mode: Option<&str>,
+    reply_markup: Option<&str>,
 ) -> Result<Value, String> {
     let url = format!("https://api.telegram.org/bot{token}/sendMessage");
     let agent = ureq::agent();
-    let (message_id, attempt, degraded) =
-        try_send(&agent, &url, chat_id, message, parse_mode).or_else(|first_err| {
-            if parse_mode.is_some() && first_err.contains("400") {
-                let (id, _, _) = try_send(&agent, &url, chat_id, message, None)?;
-                return Ok((id, 2, true));
-            }
-            Err(first_err)
-        })?;
+    let (message_id, attempt, degraded) = try_send(
+        &agent,
+        &url,
+        chat_id,
+        message,
+        parse_mode,
+        reply_markup,
+    )
+    .or_else(|first_err| {
+        if parse_mode.is_some() && first_err.contains("400") {
+            let (id, _, _) = try_send(&agent, &url, chat_id, message, None, reply_markup)?;
+            return Ok((id, 2, true));
+        }
+        Err(first_err)
+    })?;
     Ok(json!({
         "message_id": message_id,
         "attempt": attempt,
         "degraded_plain_fallback": degraded,
         "parse_mode_requested": parse_mode,
+        "reply_markup_present": reply_markup.is_some(),
     }))
 }
 
@@ -144,10 +202,14 @@ fn try_send(
     chat_id: &str,
     message: &str,
     parse_mode: Option<&str>,
+    reply_markup: Option<&str>,
 ) -> Result<(String, u32, bool), String> {
     let mut form: Vec<(&str, &str)> = vec![("chat_id", chat_id), ("text", message)];
     if let Some(pm) = parse_mode {
         form.push(("parse_mode", pm));
+    }
+    if let Some(rm) = reply_markup {
+        form.push(("reply_markup", rm));
     }
     let resp = agent
         .post(url)
@@ -188,6 +250,36 @@ mod tests {
         env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
         let out = run(&json!({"message": "hola"})).expect("mock success");
         assert!(out.get("message_id").is_some());
+        assert_eq!(out.get("reply_markup_present"), Some(&json!(false)));
         env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+    }
+
+    #[test]
+    fn lab_mock_includes_reply_markup_flag() {
+        env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        let out = run(&json!({
+            "message": "elige",
+            "parse_mode": null,
+            "reply_markup": {
+                "inline_keyboard": [[{"text": "ok", "callback_data": "p:1"}]]
+            }
+        }))
+        .expect("mock success");
+        assert_eq!(out.get("reply_markup_present"), Some(&json!(true)));
+        env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+    }
+
+    #[test]
+    fn rejects_reply_markup_without_keyboard() {
+        env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        let err = run(&json!({"message": "x", "reply_markup": {"foo": 1}})).unwrap_err();
+        env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        assert!(err.contains("inline_keyboard"));
+    }
+
+    #[test]
+    fn serialize_reply_markup_none_on_absent() {
+        assert_eq!(serialize_reply_markup(None).unwrap(), None);
+        assert_eq!(serialize_reply_markup(Some(&json!(null))).unwrap(), None);
     }
 }

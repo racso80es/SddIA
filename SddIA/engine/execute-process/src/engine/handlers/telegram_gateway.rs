@@ -75,11 +75,168 @@ fn build_telegram_message_received(text: &str, chat_id: &str) -> Value {
     })
 }
 
+fn build_telegram_callback_received(
+    callback_data: &str,
+    chat_id: &str,
+    message_id: Option<&str>,
+) -> Value {
+    let mut payload = json!({
+        "callback_data": callback_data,
+        "chat_id": chat_id,
+        "source": "telegram",
+    });
+    if let Some(mid) = message_id {
+        payload["message_id"] = json!(mid);
+    }
+    json!({
+        "event_id": Uuid::new_v4().to_string(),
+        "event_type": "TelegramCallback_Received",
+        "event_family": "domain",
+        "timestamp": iso_now(),
+        "emitter_agent": "telegram-gateway",
+        "payload": payload,
+        "delivery_state": {},
+    })
+}
+
+fn callback_data_ok(data: &str) -> Result<(), String> {
+    let trimmed = data.trim();
+    if trimmed.is_empty() {
+        return Err("callback_data vacío".into());
+    }
+    if trimmed.len() > 64 {
+        return Err("callback_data excede 64 bytes".into());
+    }
+    Ok(())
+}
+
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
     let text = process_inputs
         .get("text")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| "text requerido".to_string())?;
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let callback_data = process_inputs
+        .get("callback_data")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+
+    match (text, callback_data) {
+        (Some(_), Some(_)) | (None, None) => {
+            return xor_error();
+        }
+        (None, Some(cb)) => run_callback(repo, process_inputs, cb),
+        (Some(text), None) => run_text(repo, text),
+    }
+}
+
+fn xor_error() -> Result<OrchestratorEnvelope, String> {
+    Ok(OrchestratorEnvelope {
+        success: false,
+        status_code: 1,
+        data: Some(json!({
+            "ok": false,
+            "emitted": false,
+            "error": "xor-text-callback",
+        })),
+        error: Some("text y callback_data son XOR".into()),
+        execution_report: Some(json!({
+            "process_name": "telegram-gateway",
+            "phases": [{
+                "phase_name": "Transmutación e inyección",
+                "status": "failed",
+                "handler": "telegram-gateway-core",
+                "emitted": false,
+            }],
+        })),
+        exit_code: 1,
+    })
+}
+
+fn run_callback(
+    repo: &Path,
+    process_inputs: &Value,
+    callback_data: &str,
+) -> Result<OrchestratorEnvelope, String> {
+    callback_data_ok(callback_data)?;
+    let capsule = invoke_tool(
+        repo,
+        "telegram-gateway",
+        &json!({
+            "callback_data": callback_data,
+            "chat_id": process_inputs.get("chat_id"),
+            "message_id": process_inputs.get("message_id"),
+        }),
+    )?;
+    if capsule.get("success").and_then(|v| v.as_bool()) != Some(true) {
+        return Ok(fail_capsule(&capsule));
+    }
+    let event = capsule.get("event").cloned().unwrap_or_else(|| {
+        let chat = process_inputs
+            .get("chat_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let mid = process_inputs.get("message_id").and_then(|v| v.as_str());
+        build_telegram_callback_received(callback_data, chat, mid)
+    });
+    let (_, _, domain_dir, _) = load_fractal_dirs(repo);
+    let seal = write_fractal_event(repo, &event, &domain_dir)?;
+    let event_type = event.get("event_type").cloned();
+    let event_id = event.get("event_id").and_then(|v| v.as_str());
+    Ok(OrchestratorEnvelope {
+        success: true,
+        status_code: 0,
+        data: Some(json!({
+            "ok": true,
+            "emitted": true,
+            "event_type": event_type,
+            "event_id": event_id,
+            "seal": seal,
+        })),
+        error: None,
+        execution_report: Some(json!({
+            "process_name": "telegram-gateway",
+            "phases": [{
+                "phase_name": "Transmutación e inyección",
+                "status": "executed",
+                "handler": "telegram-gateway-core",
+                "emitted": true,
+                "event_type": event_type,
+            }],
+        })),
+        exit_code: 0,
+    })
+}
+
+fn fail_capsule(capsule: &Value) -> OrchestratorEnvelope {
+    OrchestratorEnvelope {
+        success: false,
+        status_code: 1,
+        data: Some(json!({
+            "ok": false,
+            "emitted": false,
+            "error": capsule.get("error").cloned().unwrap_or(json!("tool failed")),
+        })),
+        error: capsule
+            .get("error")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+            .or_else(|| Some("tool failed".into())),
+        execution_report: Some(json!({
+            "process_name": "telegram-gateway",
+            "phases": [{
+                "phase_name": "Transmutación e inyección",
+                "status": "failed",
+                "handler": "telegram-gateway-core",
+                "emitted": false,
+            }],
+        })),
+        exit_code: 1,
+    }
+}
+
+fn run_text(repo: &Path, text: &str) -> Result<OrchestratorEnvelope, String> {
 
     let capsule = invoke_tool(repo, "telegram-gateway", &json!({"text": text}))?;
     if capsule.get("success").and_then(|v| v.as_bool()) != Some(true) {
@@ -210,5 +367,24 @@ mod tests {
             ev.get("event_type").and_then(|v| v.as_str()),
             Some("Kaizen_Idea_Captured")
         );
+    }
+
+    #[test]
+    fn callback_event_type() {
+        let ev = build_telegram_callback_received("p:max", "1", Some("9"));
+        assert_eq!(
+            ev.get("event_type").and_then(|v| v.as_str()),
+            Some("TelegramCallback_Received")
+        );
+        assert_eq!(
+            ev.pointer("/payload/callback_data").and_then(|v| v.as_str()),
+            Some("p:max")
+        );
+    }
+
+    #[test]
+    fn callback_data_rejects_oversize() {
+        assert!(callback_data_ok(&"x".repeat(65)).is_err());
+        assert!(callback_data_ok("p:1").is_ok());
     }
 }

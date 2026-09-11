@@ -366,6 +366,12 @@
       "last_emitted_event": "Domain_Entity_Created",
       "last_hash": "sha256:304cf8e625509cad1a4fe687003c98152f3acf15cea97f3932282931490b2ff3"
     },
+    "89a10029-d4bd-4abc-bb08-ff59f6faf17f": {
+      "correlation_timestamp": "2026-09-11T10:07:53.689Z",
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Updated",
+      "last_hash": "sha256:07bf4191783afa4a818300273dd4e48a885b01e0faa71ea63fbd3062bcd2fe40"
+    },
     "8d577a50-055a-40b9-b7e2-93e2d2415796": {
       "correlation_timestamp": "2026-07-23T04:56:14.520Z",
       "is_covered": true,
@@ -463,10 +469,10 @@
       "last_hash": "sha256:ee711c90805f62f4f11863c731dae4b5cb66f4299fc6d821c5ec943e148b8d63"
     },
     "a23dda8f-b5d5-4091-a21c-f408159d3a3e": {
-      "correlation_timestamp": "2026-07-23T12:51:39.096Z",
+      "correlation_timestamp": "2026-09-11T10:07:53.339Z",
       "is_covered": true,
       "last_emitted_event": "Domain_Entity_Updated",
-      "last_hash": "sha256:e72d4f34012f875ea0c231950aec59fe60e3cf268568e8ebe973c1a72c8a5ad9"
+      "last_hash": "sha256:b396955f07a35637a65f4a1a40438f6520259c8325a5430c570bb497fc42ec5c"
     },
     "a37f9f1d-8f2a-441f-9357-776d65553362": {
       "correlation_timestamp": "2026-09-09T06:40:41.826Z",
@@ -840,6 +846,12 @@
       "last_emitted_event": "TelegramMessage_Received",
       "last_hash": "sha256:pending-anchor-on-merge"
     },
+    "e39a1c83-51ab-4a7c-81cf-5e10334afdee": {
+      "correlation_timestamp": "2026-09-11T10:06:51.943Z",
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:7f95dc20a257f16f1559f289d4450f6b38c6bbbdeaf143270c51a8ee3ff16b30"
+    },
     "e49588d1-4176-4323-97d2-59d2e34b561d": {
       "correlation_timestamp": "2026-07-11T07:50:04.290Z",
       "is_covered": true,
@@ -847,10 +859,10 @@
       "last_hash": "sha256:deadbeef"
     },
     "e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8": {
-      "correlation_timestamp": "2026-05-29T18:00:00+00:00",
+      "correlation_timestamp": "2026-09-11T10:12:25.997Z",
       "is_covered": true,
-      "last_emitted_event": "Manual_Task_Requested",
-      "last_hash": "sha256:pending-anchor-on-merge"
+      "last_emitted_event": "Domain_Entity_Updated",
+      "last_hash": "sha256:ee764b1cb22c42cf4132061ee3b91947f6180432ec74bc92e1f039fca303e923"
     },
     "e61d4096-b610-4eaf-a6f6-823153a30a6b": {
       "correlation_timestamp": "2026-09-08T11:30:22.772Z",
@@ -955,10 +967,10 @@
       "last_hash": "sha256:bdfb0968dd76fc18dd06277f738efc0cb0d7b0bf646ee2668e82ab4b7e11f031"
     },
     "f5a6b7c8-d9e0-4f1a-b2c3-d4e5f6a7b8c9": {
-      "correlation_timestamp": "2026-07-23T12:52:00.812Z",
+      "correlation_timestamp": "2026-09-11T10:07:53.564Z",
       "is_covered": true,
       "last_emitted_event": "Domain_Entity_Updated",
-      "last_hash": "sha256:4433ab87538bf549f7764c5eff775f30c56ea6fb3d4e398c9d61df9aa436e63b"
+      "last_hash": "sha256:08f46818616eb8f3efc05564f888423d08cf1368fa64712233eb31141c88f0e0"
     },
     "f8e3a1b2-c4d5-4e6f-9a0b-1c2d3e4f5a6b": {
       "correlation_timestamp": "2026-05-25T17:39:06+00:00",

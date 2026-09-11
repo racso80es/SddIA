@@ -109,6 +109,16 @@ pub fn run_tool_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": patch.version,
             }));
         }
+        if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            let (entity_uuid, old_hash, new_hash, version) =
+                patch_artifact_body_replacements(&tool_path, replacements)?;
+            return Ok(json!({
+                "handoff_entity_uuid": entity_uuid,
+                "handoff_hash_signature_new": new_hash,
+                "handoff_hash_signature_old": old_hash,
+                "handoff_version": version,
+            }));
+        }
     }
 
     if let Some(skip) = idempotent_forge_handoff(&tool_path, &lifecycle)? {

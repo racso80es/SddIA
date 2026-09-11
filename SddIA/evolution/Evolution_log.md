@@ -9,6 +9,8 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `f25d5647-f7af-46bb-9d16-f57c20f50019` | 2026-09-11 | Correlato residual botonera Telegram: índices event/process. | CANONICO | `SddIA/evolution/f25d5647-f7af-46bb-9d16-f57c20f50019.md` |
+| `4a402f77-9c77-45c8-8383-0a64dcfde71e` | 2026-09-11 | Botonera Telegram: reply_markup, callback_query, TelegramCallback_Received XOR gateway. | CANONICO | `SddIA/evolution/4a402f77-9c77-45c8-8383-0a64dcfde71e.md` |
 | `7210fe33-1a6f-4904-8d88-5683814a8585` | 2026-09-11 | Correlato evolution residual: dispatch handler, forja update códice, índices. | CANONICO | `SddIA/evolution/7210fe33-1a6f-4904-8d88-5683814a8585.md` |
 | `cf1ddf69-3dc6-4576-8245-e47c9536b000` | 2026-09-11 | Digest heurístico de ruido de correo: proceso email-noise-digest, handler nativo, membership códice kalma2. | CANONICO | `SddIA/evolution/cf1ddf69-3dc6-4576-8245-e47c9536b000.md` |
 | `cde619ba-f06e-4df6-9c2b-0f9e511ddb22` | 2026-09-10 | Correlato residual anatomía motora Aiúa: índices genómicos y despacho nativo execute-process. | CANONICO | `SddIA/evolution/cde619ba-f06e-4df6-9c2b-0f9e511ddb22.md` |
