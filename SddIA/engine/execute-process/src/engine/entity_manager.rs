@@ -247,9 +247,8 @@ fn creator_inputs_from_entity(
                 ("norm_category".into(), seed_field(seed, "norm_category", json!("workflow"))),
             ]),
         ),
-        "codex" => merge_maps(
-            &base,
-            Map::from_iter([
+        "codex" => {
+            let mut fields = Map::from_iter([
                 ("domain_codex_slug".into(), seed_field(seed, "domain_codex_slug", json!(entity_name))),
                 ("domain_codex_name".into(), seed_field(seed, "domain_codex_name", json!(entity_name))),
                 ("domain_codex_version".into(), seed_field(seed, "domain_codex_version", json!("1.0.0"))),
@@ -261,8 +260,12 @@ fn creator_inputs_from_entity(
                     "domain_codex_certification_grade".into(),
                     seed_field(seed, "domain_codex_certification_grade", json!("Pendiente")),
                 ),
-            ]),
-        ),
+            ]);
+            if let Some(v) = seed.get("markdown_body_replacements") {
+                fields.insert("markdown_body_replacements".into(), v.clone());
+            }
+            merge_maps(&base, fields)
+        }
         "suite" => merge_maps(
             &base,
             Map::from_iter([

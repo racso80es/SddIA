@@ -6,7 +6,9 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-06"
 updated: "2026-09-11"
-status: "propuesta"
+status: "cerrado"
+feature_name: email-noise-heuristic-digest
+persist_ref: docs/features/email-noise-heuristic-digest
 refinement_status: refined
 priority: media
 type: operativo

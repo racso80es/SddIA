@@ -1,13 +1,14 @@
 //! Forjas por `entity_class` (paridad `execute_process_forges.py` + skill/event en capsules).
 
 use super::common::{
-    append_row, capability_name, dependencies_from_inputs, format_dependencies_yaml, handoff_create,
-    idempotent_forge_handoff, optional_str, parse_frontmatter, patch_action_content_update,
-    merge_daemon_capabilities, patch_artifact_body_replacements, patch_hash_signature_refresh,
-    patch_norm_content_update, patch_process_phases_update, refresh_process_hash, repo_tool_base,
-    required_str, sha256_canon, str_field, sync_action_index_row, sync_daemons_index_census,
-    sync_event_family_class_count, sync_events_root_family_count, update_library_norm_index_version,
-    update_process_index_version, norm_integrity_hash, generate_uuid,
+    append_row, apply_markdown_body_replacements, capability_name, dependencies_from_inputs,
+    format_dependencies_yaml, handoff_create, idempotent_forge_handoff, optional_str,
+    parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
+    patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
+    patch_process_phases_update, refresh_process_hash, repo_tool_base, required_str, sha256_canon,
+    str_field, sync_action_index_row, sync_daemons_index_census, sync_event_family_class_count,
+    sync_events_root_family_count, update_library_norm_index_version, update_process_index_version,
+    norm_integrity_hash, generate_uuid,
 };
 use crate::core::paths::load_paths_config;
 use crate::core::resolver::{process_search_roots, resolve_process_path};
@@ -846,6 +847,66 @@ pub fn run_codex_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let slug = optional_name(inputs, "domain_codex_slug")?;
     let codex_path = repo.join("SddIA/library/codexes").join(format!("{slug}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    if lifecycle == "update" {
+        if !codex_path.is_file() {
+            return Err(format!("codex update: no existe {}", codex_path.display()));
+        }
+        let replacements = inputs
+            .get("markdown_body_replacements")
+            .ok_or("codex update requiere markdown_body_replacements")?;
+        let original = fs::read_to_string(&codex_path).map_err(|e| e.to_string())?;
+        let patched = apply_markdown_body_replacements(&original, replacements)?;
+        fs::write(&codex_path, patched).map_err(|e| e.to_string())?;
+        if let Some(ver) = optional_str(inputs, "domain_codex_version") {
+            let text = fs::read_to_string(&codex_path).map_err(|e| e.to_string())?;
+            static RE_VER: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+            let re = RE_VER.get_or_init(|| regex::Regex::new(r"(?m)^version:\s*.+$").expect("re"));
+            let next = re.replace(&text, format!("version: \"{ver}\"")).to_string();
+            fs::write(&codex_path, next).map_err(|e| e.to_string())?;
+        }
+        let fm_before = parse_frontmatter(&codex_path)?;
+        let old_hash = fm_before
+            .get("hash_signature")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let refresh = patch_hash_signature_refresh(&codex_path)?;
+        let text = fs::read_to_string(&codex_path).map_err(|e| e.to_string())?;
+        static RE_CANON: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+        let re_c = RE_CANON
+            .get_or_init(|| regex::Regex::new(r#"(?m)^(\s*canonical_hash:\s*).+$"#).expect("re"));
+        let synced = re_c
+            .replace(&text, format!("${{1}}\"{}\"", refresh.new_hash))
+            .to_string();
+        if synced != text {
+            fs::write(&codex_path, synced).map_err(|e| e.to_string())?;
+        }
+        let idx = repo.join("SddIA/library/codexes/index.md");
+        if let Some(ver) = optional_str(inputs, "domain_codex_version") {
+            if idx.is_file() {
+                let mut idx_body = fs::read_to_string(&idx).map_err(|e| e.to_string())?;
+                let needle = format!("`{slug}.md`");
+                if let Some(line) = idx_body.lines().find(|l| l.contains(&needle)) {
+                    let cols: Vec<&str> = line.split('|').collect();
+                    if cols.len() > 5 {
+                        let mut new_cols: Vec<String> =
+                            cols.iter().map(|c| (*c).to_string()).collect();
+                        new_cols[4] = format!(" {ver} ");
+                        let new_line = new_cols.join("|");
+                        idx_body = idx_body.replacen(line, &new_line, 1);
+                        fs::write(&idx, idx_body).map_err(|e| e.to_string())?;
+                    }
+                }
+            }
+        }
+        return Ok(json!({
+            "handoff_entity_uuid": refresh.entity_uuid,
+            "handoff_hash_signature_new": refresh.new_hash,
+            "handoff_hash_signature_old": old_hash,
+            "handoff_version": refresh.version,
+            "artifact_codex_md": format!("SddIA/library/codexes/{slug}.md"),
+        }));
+    }
     if let Some(skip) = idempotent_forge_handoff(&codex_path, &lifecycle)? {
         return Ok(skip);
     }
