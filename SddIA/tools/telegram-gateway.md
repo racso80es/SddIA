@@ -7,7 +7,7 @@ context: ecosystem-evolution
 contract: tools-contract v1.3.0
 contract_ref: SddIA/tools/tools-contract.md
 domain_origin: SddIA
-hash_signature: sha256:e72d4f34012f875ea0c231950aec59fe60e3cf268568e8ebe973c1a72c8a5ad9
+hash_signature: "sha256:b396955f07a35637a65f4a1a40438f6520259c8325a5430c570bb497fc42ec5c"
 implementation_path_ref: SddIA/tools/telegram-gateway
 name: telegram-gateway
 outputs:
@@ -27,6 +27,6 @@ version: 1.0.0
 
 # telegram-gateway
 
-Tool de aduana aferente Telegram (PBI-045 H11-D · laudo Racso). Transmuta `text` en evento domain (`Kaizen_Idea_Captured` / `Manual_Task_Requested`).
+Tool de aduana aferente Telegram. XOR: `text` → `Kaizen_Idea_Captured` / `Manual_Task_Requested`; `callback_data` → `TelegramCallback_Received`.
 
 Proveedor canónico de `channel:ingest`. Implementación Rust bajo `implementation_path_ref`.
