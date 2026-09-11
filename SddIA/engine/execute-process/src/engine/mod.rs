@@ -168,6 +168,10 @@ pub fn run_process(
         return handlers::email_triage::run(repo, process_inputs);
     }
 
+    if canonical == "email-noise-digest" {
+        return handlers::email_noise_digest::run(repo, process_inputs);
+    }
+
     if canonical == "email-quick-action-ingest" {
         return handlers::email_quick_action::run(repo, process_inputs);
     }

@@ -14,6 +14,7 @@ pub mod task_queue_manager;
 pub mod sync_client_assets;
 pub mod telegram_fallback;
 pub mod email_triage;
+pub mod email_noise_digest;
 pub mod email_quick_action;
 pub mod user_preference;
 pub mod telegram_gateway;
