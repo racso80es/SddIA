@@ -1,7 +1,7 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:24515d9ea999fbddb282705e42588bee8fe5211847c4c81a4a113023b4961482"
+hash_signature: sha256:c8ed5433e9c7d800857278ab5bd51e144629ac3d519eacd88c503001ce167af2
 inputs:
 - since: RFC3339 inclusivo
 - until: RFC3339 exclusivo
@@ -16,10 +16,10 @@ phases:
   name: Agregacion-Cuarentena
 - delegates_to:
   - tool:send-telegram-notification
-  intent: Poke Telegram plano parse_mode null si hay matches; cursor solo en exito.
+  intent: Poke Telegram parse_mode null + reply_markup por remitente listado; cursor y tokens solo en exito.
   name: Notificacion-Digest
 uuid: fc11c0d6-09ba-48e6-972c-561847f8c8ef
-version: 1.0.0
+version: 1.0.1
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

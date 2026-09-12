@@ -6,16 +6,17 @@ use super::super::daemons::{iso_now, state_dir, write_json_atomic};
 use crate::envelope::OrchestratorEnvelope;
 use chrono::{DateTime, Utc};
 use serde_json::{json, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use user_preference_core::normalize_email_addr;
+use user_preference_core::{canonical_subject_key_from_addr, normalize_email_addr};
 
 const C_RULES: &[&str] = &["C-LIST", "C-NOREPLY", "C-SUBJECT-NOISE"];
 const STATE_FILE: &str = "email-noise-digest.json";
 const MSG_CAP: usize = 4000;
 const SUBJECT_MAX: usize = 80;
-const FOOTER: &str = "¿Inyectar priority:max? Respuesta en ciclo aparte.";
+const MAX_BUTTON_ROWS: usize = 50;
+const FOOTER: &str = "⭐ N = priorizar (max) · 🔇 N = silenciar";
 
 #[derive(Clone)]
 struct Agg {
@@ -91,17 +92,26 @@ fn save_state(
     events_scanned: u64,
     senders: usize,
     notified: bool,
+    tokens: Option<Value>,
 ) -> Result<(), String> {
     let path = state_path(repo)?;
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("mkdir state: {e}"))?;
     }
+    let tokens_val = match tokens {
+        Some(t) => t,
+        None => load_state(repo)
+            .get("tokens")
+            .cloned()
+            .unwrap_or_else(|| json!({})),
+    };
     let body = json!({
         "last_until": until.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
         "last_run": iso_now(),
         "last_events_scanned": events_scanned,
         "last_senders_count": senders,
         "last_notified": notified,
+        "tokens": tokens_val,
     });
     write_json_atomic(&path, &body)
 }
@@ -289,9 +299,10 @@ fn truncate_subject(s: &str) -> String {
     format!("{}…", chars.into_iter().take(SUBJECT_MAX).collect::<String>())
 }
 
-fn sender_line(row: &SenderRow) -> String {
+fn sender_line(idx: usize, row: &SenderRow) -> String {
     format!(
-        "- {} ({}, {}) {}",
+        "{}. {} ({}, {}) {}",
+        idx,
         row.key,
         row.count,
         row.rule,
@@ -303,21 +314,35 @@ fn format_digest_message(
     since_date: &str,
     events_scanned: u64,
     rows: &[SenderRow],
-) -> String {
+) -> (String, usize) {
     let header = format!(
         "Ruido Triaje-C {since_date}\neventos={events_scanned} remitentes={}",
         rows.len()
     );
     let unique = rows.len();
     if unique == 0 {
-        return format!("{header}\n{FOOTER}");
+        return (format!("{header}\n{FOOTER}"), 0);
     }
-    let lines: Vec<String> = rows.iter().map(sender_line).collect();
-    let all = format!("{header}\n{}\n{FOOTER}", lines.join("\n"));
+    let cap_k = unique.min(MAX_BUTTON_ROWS);
+    let lines: Vec<String> = rows
+        .iter()
+        .take(cap_k)
+        .enumerate()
+        .map(|(i, row)| sender_line(i + 1, row))
+        .collect();
+    let all = if cap_k < unique {
+        format!(
+            "{header}\n{}\n+ {} remitentes omitidos\n{FOOTER}",
+            lines.join("\n"),
+            unique - cap_k
+        )
+    } else {
+        format!("{header}\n{}\n{FOOTER}", lines.join("\n"))
+    };
     if all.chars().count() <= MSG_CAP {
-        return all;
+        return (all, cap_k);
     }
-    for k in (0..unique).rev() {
+    for k in (0..cap_k).rev() {
         let omitted = unique - k;
         let body = if k == 0 {
             String::new()
@@ -327,17 +352,91 @@ fn format_digest_message(
         let omission = format!("\n+ {omitted} remitentes omitidos");
         let candidate = format!("{header}{body}{omission}\n{FOOTER}");
         if candidate.chars().count() <= MSG_CAP {
-            return candidate;
+            return (candidate, k);
         }
     }
-    format!("{header}\n+ {unique} remitentes omitidos\n{FOOTER}")
+    (
+        format!("{header}\n+ {unique} remitentes omitidos\n{FOOTER}"),
+        0,
+    )
 }
 
-fn default_notify(repo: &Path, message: &str) -> Result<Value, String> {
-    let payload = json!({
+fn assign_tokens(rows: &[SenderRow]) -> Vec<(String, String)> {
+    let mut used = HashSet::new();
+    let mut out = Vec::with_capacity(rows.len());
+    for row in rows {
+        let subject_key = canonical_subject_key_from_addr(&row.key);
+        let t8: String = subject_key.chars().take(8).collect();
+        let token = if used.contains(&t8) {
+            subject_key.chars().take(12).collect::<String>()
+        } else {
+            t8
+        };
+        if token.len() < 8 || used.contains(&token) {
+            out.push((String::new(), subject_key));
+            continue;
+        }
+        used.insert(token.clone());
+        out.push((token, subject_key));
+    }
+    out
+}
+
+fn tokens_map(listed: &[SenderRow], assigned: &[(String, String)]) -> Value {
+    let mut map = serde_json::Map::new();
+    let created = iso_now();
+    for (row, (token, subject_key)) in listed.iter().zip(assigned.iter()) {
+        if token.is_empty() {
+            continue;
+        }
+        map.insert(
+            token.clone(),
+            json!({
+                "subject_key": subject_key,
+                "rule": row.rule,
+                "created_at": created,
+            }),
+        );
+    }
+    Value::Object(map)
+}
+
+fn build_reply_markup(assigned: &[(String, String)]) -> Option<Value> {
+    let mut keyboard = Vec::new();
+    for (i, (token, _)) in assigned.iter().enumerate() {
+        if token.is_empty() {
+            continue;
+        }
+        let n = i + 1;
+        let max_cb = format!("dpref:max:{token}");
+        let mute_cb = format!("dpref:mute:{token}");
+        if max_cb.len() > 64 || mute_cb.len() > 64 {
+            continue;
+        }
+        keyboard.push(json!([
+            {"text": format!("⭐ {n}"), "callback_data": max_cb},
+            {"text": format!("🔇 {n}"), "callback_data": mute_cb}
+        ]));
+    }
+    if keyboard.is_empty() {
+        None
+    } else {
+        Some(json!({"inline_keyboard": keyboard}))
+    }
+}
+
+fn default_notify(
+    repo: &Path,
+    message: &str,
+    reply_markup: Option<&Value>,
+) -> Result<Value, String> {
+    let mut payload = json!({
         "message": message,
         "parse_mode": Value::Null,
     });
+    if let Some(rm) = reply_markup {
+        payload["reply_markup"] = rm.clone();
+    }
     let inv = invoke_capsule_json(repo, "send-telegram-notification", &payload, false)?;
     if inv.body.get("success") == Some(&json!(true)) {
         return Ok(inv.body);
@@ -360,7 +459,7 @@ fn run_with_notify<F>(
     mut notify: F,
 ) -> Result<OrchestratorEnvelope, String>
 where
-    F: FnMut(&Path, &str) -> Result<Value, String>,
+    F: FnMut(&Path, &str, Option<&Value>) -> Result<Value, String>,
 {
     let since = match required_rfc3339(process_inputs, "since") {
         Ok(v) => v,
@@ -403,7 +502,7 @@ where
     })];
 
     if events_scanned == 0 {
-        if let Err(e) = save_state(repo, &until, 0, 0, false) {
+        if let Err(e) = save_state(repo, &until, 0, 0, false, None) {
             return Ok(fail_envelope(e, phases));
         }
         phases.push(json!({
@@ -423,10 +522,14 @@ where
         ));
     }
 
-    let message = format_digest_message(&since_date, events_scanned, &rows);
-    match notify(repo, &message) {
+    let (message, listed_k) = format_digest_message(&since_date, events_scanned, &rows);
+    let listed = &rows[..listed_k];
+    let assigned = assign_tokens(listed);
+    let token_map = tokens_map(listed, &assigned);
+    let markup = build_reply_markup(&assigned);
+    match notify(repo, &message, markup.as_ref()) {
         Ok(_) => {
-            if let Err(e) = save_state(repo, &until, events_scanned, senders, true) {
+            if let Err(e) = save_state(repo, &until, events_scanned, senders, true, Some(token_map)) {
                 return Ok(fail_envelope(e, phases));
             }
             phases.push(json!({
@@ -434,6 +537,7 @@ where
                 "status": "executed",
                 "parse_mode": Value::Null,
                 "chars": message.chars().count(),
+                "buttons": listed_k,
             }));
             Ok(ok_data(
                 json!({
@@ -504,11 +608,11 @@ mod tests {
         fs::write(dir.join(format!("{event_id}.json")), format!("{body}\n")).unwrap();
     }
 
-    fn ok_notify(_repo: &Path, _msg: &str) -> Result<Value, String> {
+    fn ok_notify(_repo: &Path, _msg: &str, _markup: Option<&Value>) -> Result<Value, String> {
         Ok(json!({"success": true}))
     }
 
-    fn fail_notify(_repo: &Path, _msg: &str) -> Result<Value, String> {
+    fn fail_notify(_repo: &Path, _msg: &str, _markup: Option<&Value>) -> Result<Value, String> {
         Err("boom".into())
     }
 
@@ -623,7 +727,7 @@ mod tests {
                 "since": "2026-09-06T00:00:00Z",
                 "until": "2026-09-07T00:00:00Z"
             }),
-            |_, msg| {
+            |_, msg, _| {
                 *captured.lock().unwrap() = msg.to_string();
                 Ok(json!({"success": true}))
             },
@@ -631,10 +735,10 @@ mod tests {
         .unwrap();
         assert!(env.success);
         let msg = captured.lock().unwrap().clone();
-        let pos_a = msg.find("- alpha@x.tld").unwrap();
-        let pos_z = msg.find("- zeta@x.tld").unwrap();
+        let pos_a = msg.find("1. alpha@x.tld").unwrap();
+        let pos_z = msg.find("2. zeta@x.tld").unwrap();
         assert!(pos_a < pos_z);
-        assert!(msg.contains("- alpha@x.tld (2, C-LIST) A2") || msg.contains("C-LIST"));
+        assert!(msg.contains("1. alpha@x.tld (2, C-LIST) A2") || msg.contains("C-LIST"));
         assert!(msg.contains("A2"));
     }
 
@@ -649,7 +753,7 @@ mod tests {
                 "since": "2026-09-06T00:00:00Z",
                 "until": "2026-09-07T00:00:00Z"
             }),
-            |_, _| {
+            |_, _, _| {
                 notified = true;
                 Ok(json!({"success": true}))
             },
@@ -673,6 +777,7 @@ mod tests {
             1,
             1,
             true,
+            Some(json!({"deadbeef": {"subject_key": "aa", "rule": "C-LIST", "created_at": "2026-09-07T00:00:00Z"}})),
         )
         .unwrap();
         let env = run_with_notify(
@@ -685,6 +790,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(env.data.unwrap()["skipped"], json!(true));
+        assert_eq!(load_state(repo)["tokens"]["deadbeef"]["rule"], json!("C-LIST"));
 
         write_proof(
             repo,
@@ -757,11 +863,13 @@ mod tests {
                 subject: "x".repeat(90),
             })
             .collect();
-        let msg = format_digest_message("2026-09-06", 400, &rows);
+        let (msg, k) = format_digest_message("2026-09-06", 400, &rows);
         assert!(msg.chars().count() <= MSG_CAP);
         assert!(msg.contains("remitentes omitidos"));
         assert!(msg.contains(FOOTER));
-        assert!(msg.contains("parse_mode") == false);
+        assert!(!msg.contains("parse_mode"));
+        assert!(k <= MAX_BUTTON_ROWS);
+        assert!(k < rows.len());
     }
 
     #[test]
@@ -782,7 +890,7 @@ mod tests {
                 "since": "2026-09-06T00:00:00Z",
                 "until": "2026-09-07T00:00:00Z"
             }),
-            |_, msg| {
+            |_, msg, _| {
                 *captured.lock().unwrap() = msg.to_string();
                 Ok(json!({"success": true}))
             },
@@ -790,5 +898,79 @@ mod tests {
         .unwrap();
         assert!(env.success);
         assert!(captured.lock().unwrap().contains("_unknown"));
+    }
+
+    #[test]
+    fn email_noise_digest_markup_tokens_no_pii() {
+        let tmp = repo_with_cumulo();
+        let repo = tmp.path();
+        write_proof(
+            repo,
+            "n1",
+            "2026-09-06T10:00:00Z",
+            "noise",
+            "deterministic",
+            "C-NOREPLY",
+            "noreply@shop.tld",
+            "Hi",
+        );
+        let captured = std::sync::Mutex::new(None);
+        let env = run_with_notify(
+            repo,
+            &json!({
+                "since": "2026-09-06T00:00:00Z",
+                "until": "2026-09-07T00:00:00Z"
+            }),
+            |_, _, markup| {
+                *captured.lock().unwrap() = markup.cloned();
+                Ok(json!({"success": true}))
+            },
+        )
+        .unwrap();
+        assert!(env.success);
+        let markup = captured.lock().unwrap().clone().expect("markup");
+        let rows = markup["inline_keyboard"].as_array().unwrap();
+        assert_eq!(rows.len(), 1);
+        let max_cb = rows[0][0]["callback_data"].as_str().unwrap();
+        let mute_cb = rows[0][1]["callback_data"].as_str().unwrap();
+        assert!(max_cb.starts_with("dpref:max:"));
+        assert!(mute_cb.starts_with("dpref:mute:"));
+        assert!(max_cb.len() <= 64);
+        assert!(mute_cb.len() <= 64);
+        assert!(!max_cb.contains('@'));
+        assert!(!max_cb.contains("noreply"));
+        let st = load_state(repo);
+        let tokens = st["tokens"].as_object().unwrap();
+        assert_eq!(tokens.len(), 1);
+        let entry = tokens.values().next().unwrap();
+        let sk = entry["subject_key"].as_str().unwrap();
+        assert_eq!(sk.len(), 64);
+        assert!(!serde_json::to_string(&st).unwrap().contains("noreply@"));
+    }
+
+    #[test]
+    fn email_noise_digest_empty_preserves_tokens() {
+        let tmp = repo_with_cumulo();
+        let repo = tmp.path();
+        save_state(
+            repo,
+            &parse_rfc3339("2026-09-05T00:00:00Z").unwrap(),
+            1,
+            1,
+            true,
+            Some(json!({"abcdef01": {"subject_key": "aa", "rule": "C-LIST", "created_at": "2026-09-05T00:00:00Z"}})),
+        )
+        .unwrap();
+        let env = run_with_notify(
+            repo,
+            &json!({
+                "since": "2026-09-06T00:00:00Z",
+                "until": "2026-09-07T00:00:00Z"
+            }),
+            ok_notify,
+        )
+        .unwrap();
+        assert_eq!(env.data.unwrap()["notified"], json!(false));
+        assert_eq!(load_state(repo)["tokens"]["abcdef01"]["rule"], json!("C-LIST"));
     }
 }
