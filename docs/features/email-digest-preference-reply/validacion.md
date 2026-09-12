@@ -3,10 +3,14 @@ feature_name: email-digest-preference-reply
 created: "2026-09-12"
 process: feature
 branch: feat/email-digest-preference-reply
-global: NO_APTO
+global: APTO
 pbi_archived: true
 document_id: PBI-EMAIL-DIGEST-PREFERENCE-REPLY
 execution_id: "b6930240-b8a7-440a-ab0d-f9f853b1855a"
+pr_url: https://github.com/racso80es/SddIA/pull/289
+ci_run_id: "34675261240"
+ci_run_url: https://github.com/racso80es/SddIA/actions/runs/34675261240
+ci_head_sha: "1a2a5ce481a083c569680c2214e9a0bad597e335"
 checks:
   CA-1: APTO
   CA-2: APTO
@@ -19,7 +23,7 @@ checks:
   CA-9: APTO
   CA-10: APTO
   CA-11: APTO
-  CA-CI: PENDIENTE-CI
+  CA-CI: APTO
 git_changes:
   - SddIA/engine/execute-process/src/engine/handlers/email_noise_digest.rs
   - SddIA/engine/execute-process/src/engine/handlers/email_digest_preference_reply.rs
@@ -43,4 +47,4 @@ git_changes:
 
 Tests locales: `cargo test -p execute-process --lib -- email_noise_digest email_digest_preference_reply` → 15 passed (incluye `max_loop_triggers_p_exempt_c`).
 
-CA-CI: `PENDIENTE-CI`. `global` no APTO hasta `run_id` verde.
+CA-CI: run [34675261240](https://github.com/racso80es/SddIA/actions/runs/34675261240) sobre `1a2a5ce` — `sddia-index-integrity`, `eda-iota-smoke-simulate`, `wasi-runtime-smoke`, `eda-bus-e2e-smoke`, `eda-iota-physical` en pass. Cero fail.
