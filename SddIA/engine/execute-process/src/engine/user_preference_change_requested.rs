@@ -16,21 +16,25 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
 }
 
 fn mint_event_id(repo: &Path) -> Result<String, String> {
-    let out = crypto_broker::run(
+    match crypto_broker::run(
         repo,
         &json!({"operation": "GENERATE_UUID", "target_payload": null}),
-    )?;
-    if let Some(s) = out.get("crypto_response").and_then(|v| v.as_str()) {
-        return Ok(s.to_string());
+    ) {
+        Ok(out) => {
+            if let Some(s) = out.get("crypto_response").and_then(|v| v.as_str()) {
+                return Ok(s.to_string());
+            }
+            if let Some(nested) = out
+                .get("crypto_response")
+                .and_then(|v| v.get("result"))
+                .and_then(|v| v.as_str())
+            {
+                return Ok(nested.to_string());
+            }
+            Ok(Uuid::new_v4().to_string())
+        }
+        Err(_) => Ok(Uuid::new_v4().to_string()),
     }
-    if let Some(nested) = out
-        .get("crypto_response")
-        .and_then(|v| v.get("result"))
-        .and_then(|v| v.as_str())
-    {
-        return Ok(nested.to_string());
-    }
-    Ok(Uuid::new_v4().to_string())
 }
 
 pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {

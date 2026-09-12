@@ -1318,6 +1318,7 @@ pub(crate) fn dispatch_subscriber(
         if process_key == "email-triage-gateway"
             || process_key == "email-quick-action-ingest"
             || process_key == "user-preference-ingest"
+            || process_key == "email-digest-preference-reply"
         {
             let Some(path) = event_path else {
                 return (

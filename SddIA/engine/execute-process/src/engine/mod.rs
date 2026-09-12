@@ -172,6 +172,10 @@ pub fn run_process(
         return handlers::email_noise_digest::run(repo, process_inputs);
     }
 
+    if canonical == "email-digest-preference-reply" {
+        return handlers::email_digest_preference_reply::run(repo, process_inputs);
+    }
+
     if canonical == "email-quick-action-ingest" {
         return handlers::email_quick_action::run(repo, process_inputs);
     }

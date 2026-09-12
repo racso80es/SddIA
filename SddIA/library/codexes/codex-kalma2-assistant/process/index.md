@@ -13,7 +13,8 @@ Packing de dominio (`directories.process_domain_roots`). Semántica de correo fu
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
-| email-noise-digest | fc11c0d6-09ba-48e6-972c-561847f8c8ef | 1.0.0 | ecosystem-evolution | — | Digest batch determinista de ruido Triaje-C desde proofs ema |
+| email-digest-preference-reply | c77f96ad-ad01-466e-87cf-950b1976555b | 1.0.0 | ecosystem-evolution | — | Consume TelegramCallback_Received dpref:*; correlaciona toke |
+| email-noise-digest | fc11c0d6-09ba-48e6-972c-561847f8c8ef | 1.0.1 | ecosystem-evolution | — | Digest batch determinista de ruido Triaje-C desde proofs ema |
 | email-quick-action-ingest | e11c4348-29b5-45cd-bac8-f33f40e18a12 | 1.0.0 | ecosystem-evolution | — | Consume Email_Quick_Action_Requested: valida acción, persist |
 | email-triage-gateway | 9cb9a63a-bb86-4b97-8a75-4dac2f2cb5ce | 1.1.0 | external-ingest | — | Aduana cognitiva del canal aferente de correo. Triaje-C dete |
 

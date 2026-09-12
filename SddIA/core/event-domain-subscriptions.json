@@ -221,7 +221,13 @@
       "intent": "Triaje y persistencia de preferencias del usuario; sin DLT."
     }
   ],
-  "TelegramCallback_Received": [],
+  "TelegramCallback_Received": [
+    {
+      "agent": "cumulo",
+      "process": "email-digest-preference-reply",
+      "intent": "Réplica digest ruido → User_Preference_Change_Requested."
+    }
+  ],
   "TelegramMessage_Received": [
     {
       "agent": "mayeuta",
