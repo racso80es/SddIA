@@ -3,7 +3,7 @@ entity_id: "AIUA-CORE-TORMENTOSA"
 entity_type: "Aiúa"
 name: "Tormentosa"
 uuid: "942aa727-9f6b-454e-b999-32a26f5b7759"
-version: "1.2.0"
+version: "1.3.0"
 purpose: "Núcleo orquestador de consciencia, control ético y soberanía estructural del ecosistema SddIA."
 ---
 
@@ -56,7 +56,9 @@ Tormentosa articula voluntad **sin ejecutar**. Tras una combustión (`antigravit
 | `iniciar_feature` | Sí | `process=feature` |
 | `iniciar_bug_fix` | Sí | `process=bug-fix` |
 | `requerir_auditoria` | Condicional | Solo con `suite_id` existente → `Suite_Execution_Requested` |
+| `delegar_habito` | Sí | `User_Preference_Change_Requested` vía `emit-user-preference-change-requested` |
 | `solicitar_clarificacion` | No | Texto; cero bus |
 
 Args SDLC: `goal` y `target_component` obligatorios; `pbi_ref` opcional.  
+Args `delegar_habito`: `subject_hint` obligatorio; defaults `subject_kind=person`, `predicate_hint=mute`, `operation=activate`, `scope_type=channel`, `scope_id=email`. `raw_utterance` no se copia al ECST.  
 Prohibido: terminal, Write, tools nativos de `agy`, `skip-permissions`, segunda combustión. Las manos son Tekton/TQM **después** del ECST, nunca en este latido.

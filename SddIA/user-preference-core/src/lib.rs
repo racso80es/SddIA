@@ -227,6 +227,19 @@ pub fn canonical_subject_key_from_addr(from: &str) -> String {
     hex_sha256(&[normalize_email_addr(from).as_bytes()])
 }
 
+/// Normaliza hint de lenguaje natural: trim, lowercase, whitespace colapsado.
+pub fn normalize_hint(hint: &str) -> String {
+    hint.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+/// `subject_key` desde hint: SHA-256 hex UTF-8 de `normalize_hint`. Nunca el hint en claro.
+pub fn canonical_subject_key_from_hint(hint: &str) -> String {
+    hex_sha256(&[normalize_hint(hint).as_bytes()])
+}
+
 pub fn compute_preference_id(
     scope_type: &ScopeType,
     scope_id: Option<&str>,
@@ -488,22 +501,34 @@ pub fn preference_from_event_payload(payload: &Value, operation: &str) -> Result
 
     let subject_kind = payload
         .get("subject_kind")
-        .or_else(|| payload.get("subject_hint"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("person")
-        .to_string();
-    let subject_key = payload
-        .get("subject_key")
-        .or_else(|| payload.get("subject_hint"))
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .ok_or("subject_key o subject_hint requerido")?
+        .unwrap_or("person")
         .to_string();
+    let subject_key = if let Some(key) = payload
+        .get("subject_key")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        key.to_string()
+    } else if let Some(hint) = payload
+        .get("subject_hint")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        canonical_subject_key_from_hint(hint)
+    } else {
+        return Err("subject_key o subject_hint requerido".into());
+    };
     let predicate = payload
         .get("predicate")
         .or_else(|| payload.get("predicate_hint"))
         .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
         .unwrap_or("priority")
         .to_string();
 
@@ -522,9 +547,18 @@ pub fn preference_from_event_payload(payload: &Value, operation: &str) -> Result
         .and_then(|v| v.as_str())
         .map(str::to_string);
 
-    let value = payload.get("value").cloned().unwrap_or_else(|| {
-        json!({"level": payload.get("priority_level").and_then(|v| v.as_str()).unwrap_or("high")})
+    let mut value = payload.get("value").cloned().unwrap_or_else(|| {
+        if predicate == "mute" {
+            json!({"muted": true})
+        } else {
+            json!({"level": payload.get("priority_level").and_then(|v| v.as_str()).unwrap_or("high")})
+        }
     });
+    if predicate == "mute" && value.get("muted").is_none() {
+        if let Some(obj) = value.as_object_mut() {
+            obj.insert("muted".into(), json!(true));
+        }
+    }
 
     let (status, authority) = match op.as_str() {
         "propose" => (PreferenceStatus::Proposed, PreferenceAuthority::ExplicitUser),
@@ -911,6 +945,59 @@ mod tests {
             normalize_email_addr("Shop <noreply@shop.tld>"),
             "noreply@shop.tld"
         );
+    }
+
+    #[test]
+    fn canonical_subject_key_from_hint_hashes_and_collapses() {
+        let a = canonical_subject_key_from_hint("Computrabajo");
+        let b = canonical_subject_key_from_hint("  computrabajo  ");
+        let c = canonical_subject_key_from_hint("COMPUTRABAJO");
+        assert_eq!(a, b);
+        assert_eq!(a, c);
+        assert_eq!(a.len(), 64);
+        assert_ne!(a, "computrabajo");
+        assert_eq!(
+            canonical_subject_key_from_hint("foo   bar"),
+            canonical_subject_key_from_hint("foo bar")
+        );
+    }
+
+    #[test]
+    fn preference_from_event_payload_hashes_hint_and_defaults_mute() {
+        let pref = preference_from_event_payload(
+            &json!({
+                "channel": "kalma2",
+                "subject_hint": "computrabajo",
+                "predicate_hint": "mute",
+            }),
+            "activate",
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(pref.subject_kind, "person");
+        assert_eq!(pref.subject_key, canonical_subject_key_from_hint("computrabajo"));
+        assert_eq!(pref.predicate, "mute");
+        assert_eq!(pref.value["muted"], true);
+        assert_eq!(pref.status, PreferenceStatus::Active);
+        assert_eq!(pref.authority, PreferenceAuthority::ExplicitUser);
+    }
+
+    #[test]
+    fn preference_from_event_payload_keeps_precomputed_subject_key() {
+        let pref = preference_from_event_payload(
+            &json!({
+                "channel": "kalma2",
+                "subject_key": "hash-juan-smoke",
+                "subject_kind": "person",
+                "predicate": "priority",
+                "priority_level": "max",
+            }),
+            "activate",
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(pref.subject_key, "hash-juan-smoke");
+        assert_eq!(pref.value["level"], "max");
     }
 
     #[test]

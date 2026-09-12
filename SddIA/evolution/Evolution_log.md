@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `89d3ce2b-4bde-49af-8945-8aeb9c4e84cf` | 2026-09-12 | Tendón delegar_habito: NL Kalma2 → User_Preference_Change_Requested vía emit canónico; hash de subject_hint; P-MUTE-SENDER por candidatos From/asunto. | CANONICO | `SddIA/evolution/89d3ce2b-4bde-49af-8945-8aeb9c4e84cf.md` |
 | `7e4c1a90-2b6d-4f18-9c3a-5d8e0b1a2476` | 2026-09-12 | Réplica digest ruido → preferencias: botonera dpref, proceso email-digest-preference-reply, P-EXEMPT-C. | CANONICO | `SddIA/evolution/7e4c1a90-2b6d-4f18-9c3a-5d8e0b1a2476.md` |
 | `f25d5647-f7af-46bb-9d16-f57c20f50019` | 2026-09-11 | Correlato residual botonera Telegram: índices event/process. | CANONICO | `SddIA/evolution/f25d5647-f7af-46bb-9d16-f57c20f50019.md` |
 | `4a402f77-9c77-45c8-8383-0a64dcfde71e` | 2026-09-11 | Botonera Telegram: reply_markup, callback_query, TelegramCallback_Received XOR gateway. | CANONICO | `SddIA/evolution/4a402f77-9c77-45c8-8383-0a64dcfde71e.md` |
