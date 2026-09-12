@@ -6,7 +6,9 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-07"
 updated: "2026-09-12"
-status: "propuesta"
+status: "done"
+persist_ref: docs/features/intercepcion-habitos-kalma2
+pr_url: "https://github.com/racso80es/SddIA/pull/290"
 refinement_status: refined
 priority: "alta"
 type: nucleo
