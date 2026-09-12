@@ -433,7 +433,10 @@ pub fn try_action(repo: &Path, action_name: &str, inputs: &Value) -> Result<Opti
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
     use tempfile::tempdir;
+
+    static LAB_ENV: Mutex<()> = Mutex::new(());
 
     #[test]
     fn invoke_aiua_core_concatenates_genome() {
@@ -558,8 +561,11 @@ mod tests {
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
         copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
         copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
+        let _lab = LAB_ENV.lock().unwrap();
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        std::env::remove_var("SDDIA_LAB_MOCK_AIUA_INTENT");
         let out = run(
             repo,
             &json!({
@@ -570,6 +576,10 @@ mod tests {
         match prev_out {
             Some(v) => std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v),
             None => std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND"),
+        }
+        match prev_intent {
+            Some(v) => std::env::set_var("SDDIA_LAB_MOCK_AIUA_INTENT", v),
+            None => std::env::remove_var("SDDIA_LAB_MOCK_AIUA_INTENT"),
         }
         let env = out.expect("latido lab-mock");
         assert!(env.success);
@@ -638,6 +648,7 @@ mod tests {
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
         copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
         copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
+        let _lab = LAB_ENV.lock().unwrap();
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
         let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
@@ -670,6 +681,81 @@ mod tests {
         let report = env.execution_report.unwrap();
         let phases = report["phases"].as_array().unwrap();
         assert!(phases.iter().any(|p| p["phase_name"] == "Despacho-Motor" && p["status"] == "executed"));
+    }
+
+    #[test]
+    fn lab_mock_overlay_delegar_habito_does_not_join_ingest() {
+        let Some(graph) = workspace_debug_bin("thought-graph-access") else {
+            return;
+        };
+        let Some(agy) = workspace_debug_bin("antigravity-cli-executor") else {
+            return;
+        };
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/events/domain")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{
+  "directories": {"conscience": "SddIA/conscience", "events": "SddIA/events", "suites": "SddIA/suites"},
+  "paths": {"vectorStore": ".SddIA/vector_store/"},
+  "eda_bus": {"pending": "./.events/pending"},
+  "eda_fractal": {"domain": "./.events/domain"}
+}"#,
+        )
+        .unwrap();
+        let class_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../SddIA/events/domain");
+        fs::copy(
+            class_dir.join("user-preference-change-requested.md"),
+            repo.join("SddIA/events/domain/user-preference-change-requested.md"),
+        )
+        .unwrap();
+        fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
+        copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
+        copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
+        let _lab = LAB_ENV.lock().unwrap();
+        let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
+        std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        std::env::set_var(
+            "SDDIA_LAB_MOCK_AIUA_INTENT",
+            r#"{"name":"delegar_habito","args":{"subject_hint":"computrabajo","raw_utterance":"borra los correos de computrabajo"}}"#,
+        );
+        let out = run(
+            repo,
+            &json!({"prompt": "borra los correos de computrabajo", "model": "lab-flash"}),
+        );
+        match prev_out {
+            Some(v) => std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v),
+            None => std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND"),
+        }
+        match prev_intent {
+            Some(v) => std::env::set_var("SDDIA_LAB_MOCK_AIUA_INTENT", v),
+            None => std::env::remove_var("SDDIA_LAB_MOCK_AIUA_INTENT"),
+        }
+        let env = out.expect("latido overlay habito");
+        assert!(env.success);
+        let data = env.data.expect("data");
+        assert_eq!(data["intent_dispatched"], "delegar_habito");
+        let eid = data["event_id"].as_str().unwrap();
+        assert!(!eid.is_empty());
+        let domain_path = repo.join(".events/domain").join(format!("{eid}.json"));
+        assert!(domain_path.is_file());
+        let body: Value = serde_json::from_str(&fs::read_to_string(&domain_path).unwrap()).unwrap();
+        assert_eq!(body["event_type"], "User_Preference_Change_Requested");
+        assert_eq!(body["emitter_agent"], "emit-user-preference-change-requested");
+        assert_eq!(body["payload"]["predicate"], "mute");
+        assert_eq!(body["payload"]["value"]["muted"], true);
+        assert!(body["payload"].get("raw_utterance").is_none());
+        let report = env.execution_report.unwrap();
+        let phases = report["phases"].as_array().unwrap();
+        assert!(phases.iter().any(|p| p["phase_name"] == "Despacho-Motor" && p["status"] == "executed"));
+        assert!(!phases.iter().any(|p| p["phase_name"].as_str().unwrap_or("").contains("user-preference-ingest")
+            || p["process_name"].as_str() == Some("user-preference-ingest")));
+        assert_eq!(report["process_name"], "aiua-stimulus-processing");
     }
 
     #[test]

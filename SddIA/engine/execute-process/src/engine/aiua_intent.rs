@@ -4,9 +4,12 @@ use super::crypto_broker;
 use super::ecst_validation::validate_ecst_event;
 use super::eda_bus::write_fractal_event;
 use super::suite_execution_requested;
+use super::user_preference_change_requested;
 use chrono::Utc;
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::env;
+use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -17,6 +20,7 @@ const SDLC_TENDONS: &[(&str, &str)] = &[
 ];
 const SUITE_TENDON: &str = "requerir_auditoria";
 const CLARIFY_TENDON: &str = "solicitar_clarificacion";
+const HABIT_TENDON: &str = "delegar_habito";
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
     v.get(key)
@@ -92,7 +96,9 @@ pub fn resolve_intent(text: &str) -> Option<Value> {
 }
 
 pub fn is_motor_tendon(name: &str) -> bool {
-    SDLC_TENDONS.iter().any(|(n, _)| *n == name) || name == SUITE_TENDON
+    SDLC_TENDONS.iter().any(|(n, _)| *n == name)
+        || name == SUITE_TENDON
+        || name == HABIT_TENDON
 }
 
 fn sdlc_process(name: &str) -> Option<&'static str> {
@@ -165,11 +171,143 @@ fn emit_sdlc(
     }))
 }
 
+fn sha256_hex(s: &str) -> String {
+    hex::encode(Sha256::digest(s.as_bytes()))
+}
+
+fn blob_from_habit_args(args: &Value) -> String {
+    let mut parts = Vec::new();
+    for k in ["predicate_hint", "raw_utterance", "operation"] {
+        if let Some(s) = str_field(args, k) {
+            parts.push(s.to_ascii_lowercase());
+        }
+    }
+    parts.join(" ")
+}
+
+fn contains_any(blob: &str, words: &[&str]) -> bool {
+    words.iter().any(|w| blob.contains(w))
+}
+
+/// Matriz no-destructiva: borrado físico → mute. Fail-safe mute si el hint es desconocido.
+fn defensive_habit(args: &Value) -> (String, Value, String) {
+    let blob = blob_from_habit_args(args);
+    let hinted = str_field(args, "predicate_hint")
+        .unwrap_or_else(|| "mute".into())
+        .to_ascii_lowercase();
+    let op_in = str_field(args, "operation")
+        .unwrap_or_else(|| "activate".into())
+        .to_ascii_lowercase();
+
+    if contains_any(&blob, &["reactiva", "vuelve a avisarme"]) || op_in == "revoke" {
+        return ("mute".into(), json!({"muted": false}), "revoke".into());
+    }
+    if contains_any(
+        &blob,
+        &[
+            "borra",
+            "borrar",
+            "elimina",
+            "eliminar",
+            "limpia",
+            "limpiar",
+            "delete",
+            "expunge",
+            "destroy",
+            "ignora",
+            "silencia",
+            "no me avises",
+        ],
+    ) {
+        return ("mute".into(), json!({"muted": true}), "activate".into());
+    }
+    if contains_any(&blob, &["prioriza", "urgente", "maxima", "máxima"]) {
+        return ("priority".into(), json!({"level": "max"}), "activate".into());
+    }
+    if contains_any(&blob, &["importante", "relevante"]) {
+        return ("priority".into(), json!({"level": "high"}), "activate".into());
+    }
+    if hinted == "priority" {
+        let level = str_field(args, "priority_level").unwrap_or_else(|| "high".into());
+        return ("priority".into(), json!({"level": level}), op_in);
+    }
+    (
+        "mute".into(),
+        json!({"muted": true}),
+        if op_in.is_empty() {
+            "activate".into()
+        } else {
+            op_in
+        },
+    )
+}
+
+fn emit_habit(repo: &Path, args: &Value) -> Result<Value, String> {
+    let subject_hint =
+        str_field(args, "subject_hint").ok_or("args.subject_hint obligatorio")?;
+    let (predicate, value, operation) = defensive_habit(args);
+    let subject_kind = str_field(args, "subject_kind").unwrap_or_else(|| "person".into());
+    let scope_type = str_field(args, "scope_type").unwrap_or_else(|| "channel".into());
+    let scope_id = str_field(args, "scope_id").unwrap_or_else(|| "email".into());
+    let mut payload = json!({
+        "operation": operation,
+        "channel": "kalma2",
+        "subject_kind": subject_kind,
+        "subject_hint": subject_hint,
+        "predicate": predicate,
+        "predicate_hint": predicate,
+        "value": value,
+        "scope_type": scope_type,
+        "scope_id": scope_id,
+    });
+    if let Some(raw) = str_field(args, "raw_utterance") {
+        payload["utterance_ref"] = json!(sha256_hex(&raw));
+    }
+    if let Some(level) = str_field(args, "priority_level") {
+        payload["priority_level"] = json!(level);
+    }
+    let emit_inputs = json!({
+        "operation": operation,
+        "channel": "kalma2",
+        "payload": payload,
+    });
+    let out = user_preference_change_requested::run(repo, &emit_inputs)?;
+    if let Some(tp) = out.get("target_path").and_then(|v| v.as_str()) {
+        let path = if Path::new(tp).is_absolute() {
+            Path::new(tp).to_path_buf()
+        } else {
+            repo.join(tp)
+        };
+        let body: Value = serde_json::from_str(
+            &fs::read_to_string(&path).map_err(|e| format!("leer ECST hábito: {e}"))?,
+        )
+        .map_err(|e| format!("JSON ECST hábito: {e}"))?;
+        if body
+            .get("payload")
+            .and_then(|p| p.get("raw_utterance"))
+            .is_some()
+        {
+            return Err("raw_utterance filtrado al ECST".into());
+        }
+        validate_ecst_event(repo, &body)?;
+    }
+    Ok(json!({
+        "success": true,
+        "event_id": out.get("event_id"),
+        "target_path": out.get("target_path"),
+        "event_type": "User_Preference_Change_Requested",
+        "intent_dispatched": HABIT_TENDON,
+    }))
+}
+
 /// Ejecuta `dispatch-aiua-intent`.
 pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let (name, args) = function_call(inputs)?;
     if name == CLARIFY_TENDON {
         return Err("solicitar_clarificacion no es motor".into());
+    }
+    if name == HABIT_TENDON {
+        return emit_habit(repo, &args);
     }
     if name == SUITE_TENDON {
         let suite_id = str_field(&args, "suite_id").ok_or("args.suite_id obligatorio")?;
@@ -225,6 +363,7 @@ mod tests {
         assert!(!is_motor_tendon("no_existe"));
         assert!(!is_motor_tendon(CLARIFY_TENDON));
         assert!(is_motor_tendon("ordenar_refactorizacion"));
+        assert!(is_motor_tendon(HABIT_TENDON));
     }
 
     #[test]
@@ -307,5 +446,70 @@ mod tests {
             })
         )
         .is_err());
+    }
+
+    #[test]
+    fn extract_delegar_habito_fence() {
+        let text = "laudo\n```aiua-intent\n{\"name\":\"delegar_habito\",\"args\":{\"subject_hint\":\"computrabajo\",\"raw_utterance\":\"borra los correos de computrabajo\"}}\n```\n";
+        let parsed = extract_aiua_intent(text).unwrap();
+        assert_eq!(parsed["name"], "delegar_habito");
+        assert_eq!(parsed["args"]["subject_hint"], "computrabajo");
+        assert!(is_motor_tendon("delegar_habito"));
+    }
+
+    #[test]
+    fn dispatch_habit_borra_emits_mute_without_utterance() {
+        let repo = find_repo_root().unwrap();
+        let out = run(
+            &repo,
+            &json!({
+                "function_call": {
+                    "name": "delegar_habito",
+                    "args": {
+                        "subject_hint": "computrabajo",
+                        "raw_utterance": "borra los correos de computrabajo"
+                    }
+                }
+            }),
+        )
+        .expect("dispatch habit");
+        assert_eq!(out.get("success"), Some(&json!(true)));
+        assert_eq!(out["event_type"], "User_Preference_Change_Requested");
+        assert_eq!(out["intent_dispatched"], "delegar_habito");
+        let target = out["target_path"].as_str().unwrap();
+        assert!(target.contains(".events/domain/"), "{target}");
+        let path = repo.join(target);
+        let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(body["event_type"], "User_Preference_Change_Requested");
+        assert_eq!(
+            body["emitter_agent"],
+            "emit-user-preference-change-requested"
+        );
+        assert_eq!(body["payload"]["channel"], "kalma2");
+        assert_eq!(body["payload"]["predicate"], "mute");
+        assert_eq!(body["payload"]["value"]["muted"], true);
+        assert_eq!(body["payload"]["subject_hint"], "computrabajo");
+        assert!(body["payload"].get("raw_utterance").is_none());
+        assert!(body["payload"].get("body").is_none());
+        validate_ecst_event(&repo, &body).expect("ecst");
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn dispatch_habit_requires_subject_hint() {
+        let repo = find_repo_root().unwrap();
+        assert!(run(
+            &repo,
+            &json!({"function_call": {"name": "delegar_habito", "args": {}}})
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn genome_lists_delegar_habito_motor() {
+        let repo = find_repo_root().unwrap();
+        let text = fs::read_to_string(repo.join("SddIA/conscience/aiua_core.md")).unwrap();
+        assert!(text.contains("`delegar_habito`"));
+        assert!(text.contains("emit-user-preference-change-requested"));
     }
 }

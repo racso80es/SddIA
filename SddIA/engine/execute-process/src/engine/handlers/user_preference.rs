@@ -337,4 +337,45 @@ mod tests {
         );
         assert!(ctx_after["preferences"].as_array().unwrap().is_empty());
     }
+
+    #[test]
+    fn ingest_hashes_subject_hint_from_habit() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_repo(tmp.path());
+        write_domain_event(
+            tmp.path(),
+            "evt-hint-1",
+            json!({
+                "operation": "activate",
+                "channel": "kalma2",
+                "subject_hint": "computrabajo",
+                "subject_kind": "person",
+                "predicate": "mute",
+                "value": {"muted": true},
+                "scope_type": "channel",
+                "scope_id": "email",
+            }),
+        );
+        let ingest = run_ingest(
+            tmp.path(),
+            &json!({"event_file_path": ".events/domain/evt-hint-1.json"}),
+        )
+        .unwrap();
+        assert!(ingest.success);
+        assert_eq!(ingest.data.as_ref().unwrap()["recorded"], true);
+        let hashed = canonical_subject_key_from_hint("computrabajo");
+        assert_eq!(hashed.len(), 64);
+        let ctx = query_context_block(
+            tmp.path(),
+            &QuerySpec {
+                subject_key: Some(hashed.clone()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(ctx["preferences"].as_array().unwrap().len(), 1);
+        assert_eq!(ctx["preferences"][0]["subject_key"], hashed);
+        assert_ne!(ctx["preferences"][0]["subject_key"], "computrabajo");
+        assert_eq!(ctx["preferences"][0]["status"], "active");
+        assert_eq!(ctx["preferences"][0]["authority"], "explicit_user");
+    }
 }

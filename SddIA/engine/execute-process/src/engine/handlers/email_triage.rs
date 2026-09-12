@@ -8,11 +8,12 @@ use super::user_preference::query_context_block_with_capsule_fallback;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::{DateTime, Utc};
 use serde_json::{json, Value};
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use user_preference_core::{
-    canonical_subject_key_from_addr, query, PreferenceAuthority, PreferenceStatus, QuerySpec,
-    UserPreference,
+    canonical_subject_key_from_addr, canonical_subject_key_from_hint, normalize_email_addr, query,
+    PreferenceAuthority, PreferenceStatus, QuerySpec, UserPreference,
 };
 use uuid::Uuid;
 
@@ -320,6 +321,70 @@ fn p_mute_sender(prefs: &[UserPreference]) -> bool {
             && p.value.get("muted").and_then(|v| v.as_bool()) == Some(true)
             && mute_until_active(p.value.get("until").and_then(|v| v.as_str()))
     })
+}
+
+fn push_token(set: &mut BTreeSet<String>, s: &str) {
+    let t = s.trim();
+    if t.chars().count() >= 3 {
+        set.insert(t.to_lowercase());
+    }
+}
+
+/// Claves de preferencia: hash del From + hashes de tokens (display, local-part, labels, asunto).
+fn preference_subject_keys(from: &str, subject: &str) -> Vec<String> {
+    let mut tokens = BTreeSet::new();
+    if let Some(lt) = from.rfind('<') {
+        for tok in from[..lt].split(|c: char| !c.is_ascii_alphanumeric()) {
+            push_token(&mut tokens, tok);
+        }
+    }
+    let addr = normalize_email_addr(from);
+    if let Some((local, domain)) = addr.split_once('@') {
+        push_token(&mut tokens, local);
+        let labels: Vec<&str> = domain.split('.').collect();
+        for (i, lab) in labels.iter().enumerate() {
+            if i + 1 == labels.len() && (lab.len() == 2 || lab.len() == 3) {
+                continue;
+            }
+            push_token(&mut tokens, lab);
+        }
+    }
+    for tok in subject.split(|c: char| !c.is_ascii_alphanumeric()) {
+        push_token(&mut tokens, tok);
+    }
+    let mut keys = Vec::new();
+    let mut seen = BTreeSet::new();
+    let addr_key = canonical_subject_key_from_addr(from);
+    seen.insert(addr_key.clone());
+    keys.push(addr_key);
+    for t in tokens {
+        let k = canonical_subject_key_from_hint(&t);
+        if seen.insert(k.clone()) {
+            keys.push(k);
+        }
+    }
+    keys
+}
+
+fn query_prefs_for_email(repo: &Path, from: &str, subject: &str) -> Vec<UserPreference> {
+    let mut out = Vec::new();
+    let mut seen_pid = BTreeSet::new();
+    for key in preference_subject_keys(from, subject) {
+        let spec = QuerySpec {
+            subject_key: Some(key),
+            include_proposed: Some(false),
+            max_results: Some(8),
+            ..Default::default()
+        };
+        if let Ok(hits) = query(repo, &spec) {
+            for p in hits {
+                if seen_pid.insert(p.preference_id.clone()) {
+                    out.push(p);
+                }
+            }
+        }
+    }
+    out
 }
 
 fn commercial_verbosity_trap(payload: &Value) -> bool {
@@ -682,7 +747,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         ..Default::default()
     };
     let pref_ctx = query_context_block_with_capsule_fallback(repo, &spec);
-    let prefs = query(repo, &spec).unwrap_or_default();
+    let prefs = query_prefs_for_email(repo, &from_decoded, &subject_of(&payload));
     phases.push(json!({
         "phase_name": "Triaje-P",
         "status": "executed",
@@ -1191,6 +1256,49 @@ mod tests {
         let body: Value = serde_json::from_str(&fs::read_to_string(proof.path()).unwrap()).unwrap();
         assert_eq!(body["payload"]["matched_rule"], "P-MUTE-SENDER");
         assert!(body["payload"].get("snippet").is_none());
+    }
+
+    #[test]
+    fn mute_hint_computrabajo_matches_domain_label() {
+        let tmp = tempfile::tempdir().unwrap();
+        setup_triage_repo(tmp.path());
+        let pref = UserPreference {
+            preference_id: String::new(),
+            revision_id: String::new(),
+            subject_kind: "person".into(),
+            subject_key: canonical_subject_key_from_hint("computrabajo"),
+            predicate: "mute".into(),
+            value: json!({"muted": true}),
+            scope_type: user_preference_core::ScopeType::Channel,
+            scope_id: Some("email".into()),
+            status: PreferenceStatus::Active,
+            authority: PreferenceAuthority::ExplicitUser,
+            sensitivity: "personal".into(),
+            valid_from: None,
+            valid_until: None,
+            supersedes: None,
+            provenance: json!({"channel": "kalma2"}),
+            recorded_at: String::new(),
+            embedding: None,
+        };
+        user_preference_core::put_revision(tmp.path(), pref).unwrap();
+        let env = run_received(
+            tmp.path(),
+            "e-hint",
+            json!({
+                "message_uid": "h1",
+                "from": "Jobs <alertas@computrabajo.com>",
+                "subject": "Oferta laboral"
+            }),
+        );
+        let data = env.data.as_ref().unwrap();
+        assert_eq!(data["verdict"], "noise");
+        assert_eq!(data["decision_path"], "preference");
+        assert_eq!(data["classification_ran"], false);
+        let proof_dir = tmp.path().join(".SddIA/proofs/email-triaged");
+        let proof = fs::read_dir(&proof_dir).unwrap().next().unwrap().unwrap();
+        let body: Value = serde_json::from_str(&fs::read_to_string(proof.path()).unwrap()).unwrap();
+        assert_eq!(body["payload"]["matched_rule"], "P-MUTE-SENDER");
     }
 
     #[test]
