@@ -28,6 +28,10 @@ if grep -n 'pkill -x' "$ROOT/start-sddia.sh" | grep -v 'no pkill' >/dev/null; th
 fi
 grep -q 'ExecStart=%f/SddIA/scripts/daemons/@@DAEMON_NAME@@.sh' \
   "$ROOT/SddIA/templates/systemd/sddia-daemon@.service.template" || fail "factory ExecStart %f"
+grep -q 'LogRateLimitIntervalSec=30s' \
+  "$ROOT/SddIA/templates/systemd/sddia-daemon@.service.template" || fail "factory LogRateLimitIntervalSec"
+grep -q 'LogRateLimitBurst=500' \
+  "$ROOT/SddIA/templates/systemd/sddia-daemon@.service.template" || fail "factory LogRateLimitBurst"
 grep -q 'ExecStart=%f/SddIA/daemons/email-watcher.sh' \
   "$ROOT/SddIA/templates/systemd/sddia-email-watcher@.service.template" || fail "email ExecStart %f"
 if grep -q '@@SDDIA_CORE_ROOT@@' "$ROOT/SddIA/templates/systemd/"*.template; then

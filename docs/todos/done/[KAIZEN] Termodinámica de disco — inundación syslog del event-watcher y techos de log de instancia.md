@@ -6,8 +6,10 @@ format: markdown
 version: "1.2.0"
 created: "2026-09-11"
 updated: "2026-09-13"
-status: propuesta
+status: en_pr
 refinement_status: refinado
+persist_ref: docs/features/kaizen-disk-thermodynamics-syslog
+branch_name: feat/kaizen-disk-thermodynamics-syslog
 priority: alta
 type: kaizen
 process: feature

@@ -327,6 +327,11 @@ fn watcher_skip_reason(
     None
 }
 
+/// Poll-loop skip never emits console I/O (KA-DISK-1/2/3). One-shot traces live in apply_route_outcome_*.
+fn watcher_skip_emits_hot_path_trace(_skip: &str) -> bool {
+    false
+}
+
 fn run_route_cli(repo: &Path, event_file_path: &str) -> i32 {
     let runner = execute_process_bin(repo);
     let payload = json!({ "event_file_path": event_file_path }).to_string();
@@ -502,14 +507,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                             &repo,
                             &top,
                         ) {
-                            if skip.starts_with("in-flight")
-                                || skip.starts_with("routed-ok")
-                                || skip.starts_with("fractal-terminal")
-                            {
-                                println!("[WATCHER] skip {skip}");
-                            } else if skip.starts_with("max attempts") {
-                                println!("[WATCHER] Skip {key}: {skip}");
-                            }
+                            let _ = watcher_skip_emits_hot_path_trace(&skip);
                             continue;
                         }
                         let rel = rel_event_path(&repo, &path);
@@ -577,14 +575,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                         &repo,
                         &top,
                     ) {
-                        if skip.starts_with("in-flight")
-                            || skip.starts_with("routed-ok")
-                            || skip.starts_with("fractal-terminal")
-                        {
-                            println!("[WATCHER] skip {skip}");
-                        } else if skip.starts_with("max attempts") {
-                            println!("[WATCHER] Skip {key}: {skip}");
-                        }
+                        let _ = watcher_skip_emits_hot_path_trace(&skip);
                         continue;
                     }
                 }
@@ -661,5 +652,182 @@ fn main() {
     if let Err(e) = run_watcher(repo, once) {
         eprintln!("[WATCHER] {e}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_tree() -> (PathBuf, sddia_daemon_runtime::BusTopology) {
+        let root = std::env::temp_dir().join(format!(
+            "sddia-ew-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let top = sddia_daemon_runtime::BusTopology {
+            pending: root.join("pending"),
+            dead_letter: root.join("dead-letter"),
+            dead_letter_subscribers: root.join("dead-letter").join("subscribers"),
+            telemetry: root.join("telemetry"),
+            progress: root.join("progress"),
+            orchestration: root.join("orchestration"),
+            domain: root.join("domain"),
+        };
+        for d in [
+            &top.pending,
+            &top.dead_letter,
+            &top.dead_letter_subscribers,
+            &top.telemetry,
+            &top.orchestration,
+            &top.domain,
+        ] {
+            fs::create_dir_all(d).unwrap();
+        }
+        (root, top)
+    }
+
+    fn write_json(path: &Path, body: &str) {
+        fs::write(path, body).unwrap();
+    }
+
+    #[test]
+    fn skip_hot_path_never_emits_trace() {
+        for skip in [
+            "in-flight uuid=x",
+            "routed-ok pending file uuid=x",
+            "fractal-terminal uuid=x",
+            "max attempts (3)",
+            "max attempts + side-effect committed (3)",
+            "dead-letter kaizen",
+        ] {
+            assert!(
+                !watcher_skip_emits_hot_path_trace(skip),
+                "hot path must stay silent for {skip}"
+            );
+        }
+    }
+
+    #[test]
+    fn skip_in_flight() {
+        let (root, top) = test_tree();
+        let path = top.pending.join("u-if.json");
+        write_json(&path, "{}");
+        let mut book = RouteBook::new();
+        book.processing.insert("u-if".into());
+        let skip = watcher_skip_reason(
+            "u-if",
+            "pending/u-if.json",
+            "route-domain-event",
+            &path,
+            &book,
+            &root,
+            &top,
+        )
+        .expect("skip");
+        assert!(skip.starts_with("in-flight"));
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn skip_routed_ok_keeps_book_and_file() {
+        let (root, top) = test_tree();
+        let path = top.pending.join("u-ok.json");
+        write_json(&path, "{}");
+        let mut book = RouteBook::new();
+        book.routed_ok.insert("u-ok".into());
+        let skip = watcher_skip_reason(
+            "u-ok",
+            "pending/u-ok.json",
+            "route-domain-event",
+            &path,
+            &book,
+            &root,
+            &top,
+        )
+        .expect("skip");
+        assert!(skip.starts_with("routed-ok"));
+        assert!(book.routed_ok.contains("u-ok"));
+        assert!(path.is_file());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn skip_fractal_terminal() {
+        let (root, top) = test_tree();
+        let path = top.telemetry.join("u-ft.json");
+        write_json(
+            &path,
+            r#"{"delivery_state":{"a":"success","b":"skipped-already-delivered"}}"#,
+        );
+        let book = RouteBook::new();
+        let skip = watcher_skip_reason(
+            "u-ft",
+            "telemetry/u-ft.json",
+            "route-telemetry",
+            &path,
+            &book,
+            &root,
+            &top,
+        )
+        .expect("skip");
+        assert!(skip.starts_with("fractal-terminal"));
+        let none = watcher_skip_reason(
+            "u-ft",
+            "telemetry/u-ft.json",
+            "route-domain-event",
+            &path,
+            &book,
+            &root,
+            &top,
+        );
+        assert!(none.is_none(), "batch path must not classify fractal-terminal");
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn skip_max_attempts() {
+        let (root, top) = test_tree();
+        let path = top.pending.join("u-max.json");
+        write_json(&path, "{}");
+        let mut book = RouteBook::new();
+        book.attempts
+            .insert("pending/u-max.json".into(), MAX_ROUTE_ATTEMPTS);
+        let skip = watcher_skip_reason(
+            "u-max",
+            "pending/u-max.json",
+            "route-domain-event",
+            &path,
+            &book,
+            &root,
+            &top,
+        )
+        .expect("skip");
+        assert!(skip.starts_with("max attempts"));
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn skip_dead_letter_kaizen() {
+        let (root, top) = test_tree();
+        let path = top.pending.join("u-dl.json");
+        write_json(&path, "{}");
+        write_json(&top.dead_letter_subscribers.join("u-dl.witness.json"), "{}");
+        let book = RouteBook::new();
+        let skip = watcher_skip_reason(
+            "u-dl",
+            "pending/u-dl.json",
+            "route-domain-event",
+            &path,
+            &book,
+            &root,
+            &top,
+        )
+        .expect("skip");
+        assert_eq!(skip, "dead-letter kaizen");
+        let _ = fs::remove_dir_all(&root);
     }
 }
