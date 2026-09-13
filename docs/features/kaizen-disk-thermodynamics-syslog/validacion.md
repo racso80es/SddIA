@@ -8,8 +8,12 @@ persist_ref: docs/features/kaizen-disk-thermodynamics-syslog
 pbi_ref: docs/todos/done/[KAIZEN] Termodinámica de disco — inundación syslog del event-watcher y techos de log de instancia.md
 document_id: PBI-KAIZEN-DISK-THERMODYNAMICS-SYSLOG
 uuid: "9454e7eb-f397-4e36-abaf-91fd91cba802"
-global: PENDIENTE-CI
+global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/291
+ci_run_id: "34739412825"
+ci_run_url: https://github.com/racso80es/SddIA/actions/runs/34739412825
+ci_head_sha: "5a86f8d6e822417f153246e48859e464affb5589"
 checks:
   KA-DISK-1: APTO
   KA-DISK-2: APTO
@@ -18,8 +22,8 @@ checks:
   KA-DISK-5: APTO
   KA-DISK-6: APTO
   KA-DISK-7: APTO
-  KA-DISK-8: PENDIENTE-CI
-  CA-CI: PENDIENTE-CI
+  KA-DISK-8: APTO
+  CA-CI: APTO
 git_changes:
   - SddIA/daemons/event-watcher/src/main.rs
   - SddIA/templates/systemd/sddia-daemon@.service.template
@@ -37,4 +41,4 @@ Tests locales: `cargo test --offline -p event-watcher` (6 passed); `test-instanc
 
 KA-DISK-1…7 verificados en diff + tests. KA-DISK-6: cero toque a `ephemeral-cache-purger/` ni `purge_sandbox_cache.rs`.
 
-CA-CI / `global: APTO` prohibido hasta `run_id` verde del PR.
+CA-CI: run [34739412825](https://github.com/racso80es/SddIA/actions/runs/34739412825) sobre `5a86f8d6e822417f153246e48859e464affb5589` — `sddia-index-integrity`, `eda-iota-smoke-simulate`, `wasi-runtime-smoke`, `eda-bus-e2e-smoke`, `eda-iota-physical` en pass. Cero fail.
