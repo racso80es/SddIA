@@ -8,6 +8,8 @@ pbi_document_id: PBI-FIX-BUNDLE-CONSUMER-HERMETIC-LIBRARY
 global: APTO
 pbi_archived: true
 branch: fix/bundle-consumer-hermetic-daemon-library
+pr_url: https://github.com/racso80es/SddIA/pull/292
+evolution_id: 83d6eb73-0936-4acb-9f1e-5d519987f1ab
 ---
 
 # Validación
