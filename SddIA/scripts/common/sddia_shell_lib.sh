@@ -235,11 +235,29 @@ _sddia_daemon_elf_fresh_vs_source() {
   [[ -n "${em:-}" && -n "${sm:-}" && "$em" -ge "$sm" ]]
 }
 
+# Bundle consumer: MANIFEST.json del empaquetado; ELF en target/ es SSOT (sin aduana mtime↔fuente).
+_sddia_instance_is_hermetic_bundle() {
+  local repo_root="$1"
+  [[ -f "$repo_root/MANIFEST.json" ]]
+}
+
 # Release luego debug. MIME ELF + mtime ≥ fuente del crate. Fósil ⇒ no exec.
 _sddia_resolve_daemon_binary() {
   local repo_root="$1"
   local daemon="$2"
   local crate_dir candidate stale=0
+  if _sddia_instance_is_hermetic_bundle "$repo_root"; then
+    for candidate in \
+      "$repo_root/SddIA/target/release/${daemon}" \
+      "$repo_root/SddIA/target/debug/${daemon}"; do
+      if _sddia_is_native_elf "$candidate"; then
+        printf '%s\n' "$candidate"
+        return 0
+      fi
+    done
+    echo "[ERROR] Binario no encontrado para ${daemon} en bundle hermético bajo SddIA/target/{release|debug}/" >&2
+    return 1
+  fi
   if ! crate_dir="$(_sddia_daemon_crate_dir "$repo_root" "$daemon")"; then
     echo "[ERROR] Crate de ${daemon} no encontrado (SddIA/daemons|interfaces/${daemon})." >&2
     return 1
