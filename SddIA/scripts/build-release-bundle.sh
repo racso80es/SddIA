@@ -363,6 +363,20 @@ if [[ "$PROFILE" == "consumer" || "$PROFILE" == "consumidor" ]]; then
   rm -f "$STAGE/SddIA/target/release/github-bridge-watcher" \
         "$STAGE/SddIA/target/debug/github-bridge-watcher" \
         "$STAGE/SddIA/scripts/daemons/github-bridge-watcher.sh" 2>/dev/null || true
+  # Filtro C: library/codexes solo códice empaquetado + índice/contrato (no ingeniería S+)
+  if [[ -n "$CODEX" ]]; then
+    _codex_root="$STAGE/SddIA/library/codexes"
+    if [[ -d "$_codex_root" ]]; then
+      for _entry in "$_codex_root"/*; do
+        [[ -e "$_entry" ]] || continue
+        _base="$(basename "$_entry")"
+        case "$_base" in
+          index.md|codex-contract.md|"${CODEX}"|"${CODEX}.md") ;;
+          *) rm -rf "$_entry" ;;
+        esac
+      done
+    fi
+  fi
 fi
 
 # Códice solicitado (ya copiado vía library; anclar slug en manifiesto)
@@ -534,6 +548,15 @@ Ver norma \`SddIA/norms/sddia-distribution-protocol.md\`.
 - WUI: Forjar Proceso deshabilitado si \`SDDIA_RUNTIME_PROFILE=consumer\`.
 - Fracture: acciones de forja documental se omiten en runtime consumer.
 EOF
+
+# Filtro C: códices de ingeniería prohibidos en consumer
+if [[ "$PROFILE" == "consumer" || "$PROFILE" == "consumidor" ]]; then
+  if [[ -e "$STAGE/SddIA/library/codexes/codex-software-engineering.md" ]] \
+    || [[ -d "$STAGE/SddIA/library/codexes/codex-software-engineering" ]]; then
+    echo "[ERROR] Filtro C: codex-software-engineering en bundle consumer" >&2
+    exit 1
+  fi
+fi
 
 # Gate integridad: cero fuentes
 RS_LEFT="$(find "$STAGE" -name '*.rs' -type f 2>/dev/null | wc -l | tr -d ' ')"

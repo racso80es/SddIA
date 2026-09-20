@@ -16,7 +16,8 @@ for launcher in event-watcher telegram-watcher github-bridge-watcher event-sweep
 done
 
 tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
+bundle=""
+trap 'rm -rf "$tmp" "${bundle:-}"' EXIT
 mkdir -p "$tmp/SddIA/daemons/probe-daemon/src" "$tmp/SddIA/target/debug" "$tmp/SddIA/target/release"
 printf '[package]\nname = "probe-daemon"\nversion = "0.0.0"\nedition = "2021"\n' \
   > "$tmp/SddIA/daemons/probe-daemon/Cargo.toml"
@@ -51,5 +52,15 @@ got="$(_sddia_resolve_daemon_binary "$tmp" probe-daemon)" \
 if _sddia_resolve_daemon_binary "$tmp" missing-daemon >/dev/null 2>&1; then
   fail "crate ausente debía fallar"
 fi
+
+bundle="$(mktemp -d)"
+printf '{"profile":"consumer"}\n' > "$bundle/MANIFEST.json"
+mkdir -p "$bundle/SddIA/target/release"
+cp /bin/true "$bundle/SddIA/target/release/probe-daemon"
+chmod +x "$bundle/SddIA/target/release/probe-daemon"
+got="$(_sddia_resolve_daemon_binary "$bundle" probe-daemon)" \
+  || fail "bundle hermético sin crate debía servir ELF empaquetado"
+[[ "$got" == "$bundle/SddIA/target/release/probe-daemon" ]] \
+  || fail "bundle: esperado release empaquetado, got=$got"
 
 echo "OK daemon-binary-resolver"
