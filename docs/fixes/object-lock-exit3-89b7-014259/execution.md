@@ -42,7 +42,7 @@ cd SddIA && cargo test -p kalma2-bridge -- prosthetic_exit
 
 ## Evolution
 
-`sddia-qa evolution-register` → `c9c0206e-aed4-4e48-a17d-b28d1de43d46` (`EVOL_OK`, `alta`).
+`sddia-qa evolution-register` → `c9c0206e-aed4-4e48-a17d-b28d1de43d46` (`EVOL_OK`). La aduana DCC marcó `EVOL_MATERIAL_UNREGISTERED` porque `SddIA/actions/index.md` no estaba en `relacionado`. Misma ficha, `modificacion`, con el índice incluido.
 
 ## Cierre
 
