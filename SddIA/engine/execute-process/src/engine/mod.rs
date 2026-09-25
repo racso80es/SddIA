@@ -60,6 +60,7 @@ pub mod workspace;
 pub mod workspace_init;
 pub mod domain_profile;
 pub mod domain_authority;
+pub mod project_binding;
 pub mod cli_detach;
 pub mod verify_process_integrity;
 
@@ -190,6 +191,10 @@ pub fn run_process(
 
     if canonical == "instance-creator" {
         return handlers::instance_creator::run(repo, process_inputs);
+    }
+
+    if canonical == "forge-pbi" {
+        return handlers::forge_pbi::run(repo, process_inputs);
     }
 
     if canonical == "governance-daemon-manager" {

@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `ff8a0c37-a03d-4945-933c-8b54c03b9707` | 2026-09-25 | ABSTRACT-04: proyectos aislados, delivery_mode y forge-pbi en el códice software. | CANONICO | `SddIA/evolution/ff8a0c37-a03d-4945-933c-8b54c03b9707.md` |
 | `c9c0206e-aed4-4e48-a17d-b28d1de43d46` | 2026-09-25 | Suprime Kintsugi en reserva de objeto IOTA y en exit 3 de la prótesis Kalma2. Cubos léxicos Mayeuta 1.5.0. | CANONICO | `SddIA/evolution/c9c0206e-aed4-4e48-a17d-b28d1de43d46.md` |
 | `79b6cc26-3958-4704-a797-d87bf020ce6d` | 2026-09-25 | LogRateLimit en unidades systemd de instancia y reanclaje source_sha256 de daemons y tools. | CANONICO | `SddIA/evolution/79b6cc26-3958-4704-a797-d87bf020ce6d.md` |
 | `83d6eb73-0936-4acb-9f1e-5d519987f1ab` | 2026-09-20 | Bundle consumer: resolutor hermético MANIFEST + podado codexes Filtro C. | CANONICO | `SddIA/evolution/83d6eb73-0936-4acb-9f1e-5d519987f1ab.md` |

@@ -36,14 +36,20 @@ main() {
       continue
     fi
     if is_main_ref "$local_ref"; then
-      echo "$MAIN_GUARD_MSG" >&2
-      exit 1
+      if main_push_veto; then
+        echo "$MAIN_GUARD_MSG" >&2
+        exit 1
+      fi
+      continue
     fi
     local branch
     branch=$(ref_to_branch "$local_ref")
     if [[ -z "$branch" || "$branch" == "main" ]]; then
-      echo "$MAIN_GUARD_MSG" >&2
-      exit 1
+      if main_push_veto; then
+        echo "$MAIN_GUARD_MSG" >&2
+        exit 1
+      fi
+      continue
     fi
     if should_skip_pre_push_present "$branch"; then
       continue

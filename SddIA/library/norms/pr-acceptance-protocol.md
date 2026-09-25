@@ -1,7 +1,7 @@
 ---
 uuid: "7c18fe07-9567-4f06-8d2b-a58e04608171"
 name: "pr-acceptance-protocol"
-version: "1.0.0"
+version: "1.1.0"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
@@ -11,7 +11,7 @@ dependencies: []
 
 ## Directriz Core
 
-Antes de crear o aceptar cualquier Pull Request deben cumplirse condiciones obligatorias de calidad y gobernanza. Aplica a agentes en la acción `finalize-process`, desarrolladores locales antes de publicar rama, y pipelines CI/CD como condición de bloqueo.
+Antes de crear o aceptar cualquier Pull Request deben cumplirse condiciones obligatorias de calidad y gobernanza. Aplica cuando `delivery_mode` es `branch_pr`. Con `trunk_direct` no hay PR: la aduana es el gate pre-commit y esta norma no exige `accept-pr`. Aplica a agentes en la acción `finalize-process`, desarrolladores locales antes de publicar rama, y pipelines CI/CD como condición de bloqueo.
 
 ### Requisitos obligatorios
 

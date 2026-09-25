@@ -56,6 +56,21 @@ is_main_ref() {
   [[ "$(ref_to_branch "$1")" == "main" ]]
 }
 
+# Espejo de project_binding::main_push_allowed.
+# Core (cumulo presente) siempre veta. Cliente trunk_direct no veta.
+main_push_veto() {
+  local top manifest
+  top=$(git rev-parse --show-toplevel 2>/dev/null || printf '%s' "$REPO")
+  if [[ -f "$top/SddIA/core/cumulo.paths.json" ]]; then
+    return 0
+  fi
+  manifest="$top/.SddIA/project.md"
+  if [[ -f "$manifest" ]] && grep -Eq '^delivery_mode:[[:space:]]*["'\'']?trunk_direct["'\'']?[[:space:]]*$' "$manifest"; then
+    return 1
+  fi
+  return 0
+}
+
 branch_slug() {
   local name="$1"
   name="${name#"${name%%[![:space:]]*}"}"

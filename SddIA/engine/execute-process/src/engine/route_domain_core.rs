@@ -3,6 +3,7 @@
 use super::actions;
 use super::capsules::{invoke_capsule_json, invoke_tool_capsule_json};
 use super::ecst_validation::{load_event_class_schemas, validate_ecst_instance};
+use super::project_binding::plan_route_for_repo;
 use super::eda_bus_topology::{
     delegation_meta, dlt_threshold_ok, ensure_event_bus_topology, ensure_processing_header,
     github_pr_merged, inject_domain_entity_topology_defaults, infer_persist_ref_from_branch,
@@ -173,11 +174,11 @@ pub fn subscribers_for_event_type(repo: &Path, event_type: &str) -> Result<Vec<V
     let trimmed = text.strip_prefix('\u{feff}').unwrap_or(&text);
     let registry: Value = serde_json::from_str(trimmed)
         .map_err(|e| format!("cannot read event-subscriptions.json: {e}"))?;
-    Ok(registry
-        .get(event_type)
-        .and_then(|v| v.as_array())
-        .cloned()
-        .unwrap_or_default())
+    let plan = plan_route_for_repo(repo, &registry, event_type);
+    if plan.dead_letter_no_subscriber {
+        return Ok(Vec::new());
+    }
+    Ok(plan.subscribers)
 }
 
 fn fracture_event_content_hash(event_type: &str, payload: &Value) -> String {
@@ -1872,16 +1873,37 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
         }
     };
 
-    let subscribers: Vec<Value> = registry
-        .get(&event_type)
-        .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter(|sub| subscriber_applies_to_topology(sub, &origin_topology))
-                .cloned()
-                .collect()
-        })
-        .unwrap_or_default();
+    let planned = plan_route_for_repo(repo, &registry, &event_type);
+    if planned.dead_letter_no_subscriber {
+        let dl = repo.join(&bus.dead_letter).join(format!("{event_uuid}.json"));
+        let _ = write_json_atomic(
+            &dl,
+            &json!({
+                "event_uuid": event_uuid,
+                "event_type": event_type,
+                "state": "dead-letter",
+                "reason": "no_subscriber",
+                "parent_path": rel_event_path(repo, &event_path),
+            }),
+        );
+        return json!({
+            "success": true,
+            "exitCode": 0,
+            "data": {
+                "success": true,
+                "disposition": "dead-letter",
+                "reason": "no_subscriber",
+                "parent_path": rel_event_path(repo, &event_path),
+                "dead_letter_path": rel_event_path(repo, &dl),
+            },
+        });
+    }
+
+    let subscribers: Vec<Value> = planned
+        .subscribers
+        .into_iter()
+        .filter(|sub| subscriber_applies_to_topology(sub, &origin_topology))
+        .collect();
 
     let dispatch_mode = dispatch_mode_label();
     let mut delivery_status: HashMap<String, String> = HashMap::new();

@@ -2,6 +2,7 @@
 
 use super::capsules::invoke_git_manager;
 use super::domain_profile::resolve_execution_profile;
+use super::project_binding::{self, DeliveryMode};
 use super::git_porcelain;
 use super::workspace::{
     load_paths_config, resolve_documentation_features_path, resolve_documentation_fixes_path,
@@ -192,6 +193,18 @@ fn dirty_paths_outside_scope(
     Ok(dirty)
 }
 
+fn emit_scope_fracture(repo: &Path, detail: &str) {
+    let _ = super::route_domain_core::materialize_pending_domain_event(
+        repo,
+        "System_Fracture_Detected",
+        "workspace-init",
+        json!({
+            "friction_id": "F-PROJECT-SCOPE-ESCAPE",
+            "detail": detail,
+        }),
+    );
+}
+
 fn phase_requires_git_sync(phase: &Value) -> bool {
     if let Some(caps) = phase.get("requires_capability").and_then(|v| v.as_array()) {
         for c in caps {
@@ -232,6 +245,15 @@ fn phase_has_git_manager_delegate(phase: &Value) -> bool {
 pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, String> {
     let cfg = load_paths_config(repo)?;
     let profile = resolve_execution_profile(repo, inputs);
+    let bound = match project_binding::bind(repo, inputs) {
+        Ok(b) => b,
+        Err(e) => {
+            if e.starts_with("PROJECT_SCOPE_ESCAPE") {
+                emit_scope_fracture(repo, &e);
+            }
+            return Err(e);
+        }
+    };
     let task_name = workspace_task_name(inputs);
     let branch_name = inputs
         .get("branch_name")
@@ -252,9 +274,20 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
     if task_name.is_empty() && branch_name.is_none() {
         return Err("branch_name inválido".into());
     }
-    let branch_name = match branch_name {
-        Some(b) => canonicalize_branch_name(b, &process_label, &task_name),
-        None => format!("{}/{task_name}", default_branch_prefix(&process_label)),
+    let trunk = bound
+        .as_ref()
+        .map(|b| b.delivery_mode == DeliveryMode::TrunkDirect)
+        .unwrap_or(false);
+    let branch_name = if trunk {
+        bound
+            .as_ref()
+            .map(|b| b.default_branch.clone())
+            .unwrap_or_else(|| "main".into())
+    } else {
+        match branch_name {
+            Some(b) => canonicalize_branch_name(b, &process_label, &task_name),
+            None => format!("{}/{task_name}", default_branch_prefix(&process_label)),
+        }
     };
 
     let base_branch = inputs
@@ -276,6 +309,20 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         .filter(|s| !s.is_empty())
         .map(str::to_string)
         .unwrap_or_else(|| format!("{default_docs}/{task_name}"));
+
+    let persist_ref = if let Some(project) = &bound {
+        match project_binding::anchor_persist(&project.project_root, &persist_ref) {
+            Ok(path) => path.to_string_lossy().replace('\\', "/"),
+            Err(e) => {
+                if e.starts_with("PROJECT_SCOPE_ESCAPE") {
+                    emit_scope_fracture(repo, &e);
+                }
+                return Err(e);
+            }
+        }
+    } else {
+        persist_ref
+    };
 
     let refined = inputs
         .get("pbi_body")
@@ -404,6 +451,9 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         "objectives_path": objectives_rel,
         "git_steps": git_steps,
         "execution_profile": profile.to_json(),
+        "delivery_mode": bound.as_ref().map(|b| b.delivery_mode.as_str()),
+        "delivery_mode_source": bound.as_ref().map(|b| b.delivery_mode_source),
+        "project_root": bound.as_ref().map(|b| b.project_root.to_string_lossy().replace('\\', "/")),
     }))
 }
 

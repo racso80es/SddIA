@@ -119,6 +119,60 @@ pub fn resolve_process_path(repo: &Path, process_name: &str) -> Result<PathBuf, 
     Err(format!("Proceso no encontrado: {process_name}"))
 }
 
+/// Contrato ECST: `events_domain_roots` primero, luego `directories.events`.
+pub fn resolve_event_contract(repo: &Path, event_name: &str) -> Result<PathBuf, String> {
+    let cfg = load_paths_config(repo)?;
+    let dirs = cfg.get("directories");
+    let mut roots: Vec<PathBuf> = Vec::new();
+    if let Some(arr) = dirs
+        .and_then(|d| d.get("events_domain_roots"))
+        .and_then(|v| v.as_array())
+    {
+        for item in arr {
+            if let Some(rel) = item.as_str() {
+                let rel = rel.trim().trim_end_matches('/').replace('\\', "/");
+                if !rel.is_empty() {
+                    roots.push(repo.join(rel));
+                }
+            }
+        }
+    }
+    let core_rel = dirs
+        .and_then(|d| d.get("events"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().trim_end_matches('/').replace('\\', "/"))
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "SddIA/events".to_string());
+    roots.push(repo.join(core_rel));
+    let file = format!("{event_name}.md");
+    for root in roots {
+        if let Some(found) = find_named_md(&root, &file) {
+            return Ok(found);
+        }
+    }
+    Err(format!("Contrato de evento no encontrado: {event_name}"))
+}
+
+fn find_named_md(dir: &Path, file: &str) -> Option<PathBuf> {
+    if !dir.is_dir() {
+        return None;
+    }
+    let direct = dir.join(file);
+    if direct.is_file() {
+        return Some(direct);
+    }
+    let entries = std::fs::read_dir(dir).ok()?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            if let Some(found) = find_named_md(&path, file) {
+                return Some(found);
+            }
+        }
+    }
+    None
+}
+
 pub fn load_process_def(
     repo: &Path,
     process_name: &str,

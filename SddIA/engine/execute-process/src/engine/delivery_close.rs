@@ -4,6 +4,7 @@ use super::phase_capsules::{
     capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate,
     capsule_index_integrity_audit_gate, execute_delivery_close_phase,
 };
+use super::project_binding::{self, BoundProject};
 use super::route_domain_core::materialize_pending_domain_event;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
@@ -21,6 +22,40 @@ fn workspace_template(process_def: &ProcessDef) -> Result<String, String> {
         .map(str::to_string)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| "workspace_template ausente en definición del proceso".into())
+}
+
+fn trunk_direct_close(repo: &Path, bound: &BoundProject) -> Result<OrchestratorEnvelope, String> {
+    let event_path = materialize_pending_domain_event(
+        repo,
+        "Delivery_Committed",
+        "delivery-close-cycle",
+        json!({
+            "project_slug": bound.slug,
+            "default_branch": bound.default_branch,
+            "delivery_mode": "trunk_direct",
+        }),
+    )?;
+    Ok(OrchestratorEnvelope {
+        success: true,
+        status_code: 0,
+        data: Some(json!({
+            "delivery_mode": "trunk_direct",
+            "delivery_mode_source": bound.delivery_mode_source,
+            "event_type": "Delivery_Committed",
+            "event_path": event_path,
+            "omitted_processes": ["pull-request-review", "accept-pr"],
+            "project_root": bound.project_root.to_string_lossy().replace('\\', "/"),
+        })),
+        error: None,
+        execution_report: Some(json!({
+            "phases": [{
+                "phase_name": "Cierre trunk_direct",
+                "status": "executed",
+                "omitted": ["pull-request-review", "accept-pr"]
+            }]
+        })),
+        exit_code: 0,
+    })
 }
 
 fn delegates_are_only_agents(delegates: &[Value]) -> bool {
@@ -520,6 +555,12 @@ pub fn run(
     phases: &[Value],
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
+    if let Some(bound) = project_binding::bind(repo, process_inputs)? {
+        if project_binding::omits_pr_cycle(bound.delivery_mode) {
+            return trunk_direct_close(repo, &bound);
+        }
+    }
+
     validate_process_inputs(process_def, process_inputs, process_name)?;
 
     let toll_start = Some(Instant::now());

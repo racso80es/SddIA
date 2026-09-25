@@ -1,7 +1,7 @@
 ---
 uuid: "d4e5f6a7-b8c9-4012-d345-67890abcdef0"
 name: "pull-request-orchestration"
-version: "1.0.0"
+version: "1.1.0"
 entity_type: "norm"
 jurisdiction: "dedalo"
 ---
@@ -22,9 +22,9 @@ Queda **prohibido** enrutar `gh` a través de `git-manager`.
 
 ## 3. Presentación (cierre de entrega)
 
-La apertura de Pull Request hacia `main` se orquesta **exclusivamente** mediante el proceso **`delivery-close-cycle`** (resuelto vía Cúmulo: `directories.process_domain_roots` + `directories.process`; packing códice software tras ABSTRACT-03), ejecutado con `action:execute-process`.
+La apertura de Pull Request hacia `main` se orquesta **exclusivamente** mediante el proceso **`delivery-close-cycle`** cuando `delivery_mode` es `branch_pr` (default). Con `trunk_direct` el mismo proceso emite `Delivery_Committed` y **no** invoca `pull-request-review` ni `accept-pr`. El repositorio Core permanece `branch_pr`: el veto de push a `main` no se levanta aquí.
 
-Secuencia canónica dentro del proceso:
+Secuencia canónica dentro del proceso (`branch_pr`):
 
 1. **Publicación remota:** `skill:git-manager` → `push` de `branch_name` a `origin`.
 2. **Apertura en forja:** `skill:shell-executor` → `gh pr create` (o resolución de PR existente vía `gh pr view`).
