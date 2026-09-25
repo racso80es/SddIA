@@ -6,8 +6,8 @@ format: markdown
 version: "1.1.0"
 created: "2026-09-10"
 updated: "2026-09-25"
-status: pending
-refinement_status: refined
+status: done
+refinement_status: implemented
 priority: alta
 process: feature
 executor_vehicle: feature
