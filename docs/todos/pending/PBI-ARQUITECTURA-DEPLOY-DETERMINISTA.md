@@ -1,6 +1,6 @@
 ---
 document_id: PBI-ARQUITECTURA-DEPLOY-DETERMINISTA
-uuid: "GENERAR-UUID-V4-AL-MATERIALIZAR"
+uuid: "c154bea0-c4c1-457e-b070-f7dfd3bc5f1b"
 title: "[ARQUITECTURA] Orquestador Físico de Despliegue y Borrado (SddIA Installer)"
 format: markdown
 version: "1.0.0"
