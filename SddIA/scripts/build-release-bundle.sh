@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # build-release-bundle — empaquetado hermético perfil consumidor (F-06 / L-BUNDLE)
 # Uso:
-#   ./SddIA/scripts/build-release-bundle.sh [--out DIR] [--codex SLUG] [--profile consumer|engineering] [--skip-build]
+#   ./SddIA/scripts/build-release-bundle.sh [--out DIR] [--codex SLUG] [--profile consumer|engineering|full-node] [--skip-build] [--list-capsules]
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,6 +13,7 @@ OUT=""
 CODEX=""
 PROFILE="consumer"
 SKIP_BUILD=0
+LIST_CAPSULES=0
 PROFILE_BIN="release"
 
 while [[ $# -gt 0 ]]; do
@@ -21,6 +22,7 @@ while [[ $# -gt 0 ]]; do
     --codex) CODEX="${2:-}"; shift 2 ;;
     --profile) PROFILE="${2:-}"; shift 2 ;;
     --skip-build) SKIP_BUILD=1; shift ;;
+    --list-capsules) LIST_CAPSULES=1; shift ;;
     --debug) PROFILE_BIN="debug"; shift ;;
     -h|--help)
       sed -n '2,5p' "$0"
@@ -34,6 +36,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 PROFILE="$(echo "$PROFILE" | tr '[:upper:]' '[:lower:]')"
+case "$PROFILE" in
+  consumer|consumidor|engineering|full-node|full) ;;
+  *)
+    echo "[ERROR] profile desconocido: $PROFILE (consumer|engineering|full-node)" >&2
+    exit 1
+    ;;
+esac
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 if [[ -z "$OUT" ]]; then
   OUT="$REPO_ROOT/dist/sddia-release-${PROFILE}-${STAMP}"
@@ -105,6 +114,31 @@ fi
 _scan_md_for_tools "$REPO_ROOT/SddIA/core/event-domain-subscriptions.json"
 # Cadena Tormentosa: kalma2-bridge → aiua-stimulus-processing (Core; no está en el códice).
 _scan_md_for_tools "$REPO_ROOT/SddIA/process/aiua-stimulus-processing.md"
+
+_discover_all_native_capsules() {
+  local d toml name
+  local _nullglob
+  _nullglob="$(shopt -p nullglob || true)"
+  shopt -s nullglob
+  for d in tools skills daemons engine interfaces; do
+    for toml in "$REPO_ROOT/SddIA/$d"/*/Cargo.toml; do
+      name="$(basename "$(dirname "$toml")")"
+      _add_capsule "$name"
+    done
+  done
+  eval "$_nullglob"
+  _add_capsule "execute-process"
+  _add_capsule "kalma2-bridge"
+}
+
+if [[ "$PROFILE" == "full-node" || "$PROFILE" == "full" ]]; then
+  _discover_all_native_capsules
+fi
+
+if [[ "$LIST_CAPSULES" -eq 1 ]]; then
+  printf '%s\n' "${!CAPSULE_SET[@]}" | sort
+  exit 0
+fi
 
 echo "[bundle] out=${OUT}"
 echo "[bundle] profile=${PROFILE} cargo_profile=${PROFILE_BIN}"
