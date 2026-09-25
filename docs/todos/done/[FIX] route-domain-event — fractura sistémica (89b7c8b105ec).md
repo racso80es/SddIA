@@ -2,10 +2,10 @@
 document_id: PBI-FIX-FRACTURE-89b7c8b105ec
 title: "[FIX] route-domain-event — fractura sistémica"
 format: markdown
-version: "1.1.0"
+version: "1.1.1"
 created: "2026-09-09"
 updated: "2026-09-25"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 fracture_hash: 89b7c8b105ec
@@ -24,7 +24,7 @@ related:
   - SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
   - .SddIA/services/iota-publish-relay/publish-queue.mjs
   - docs/todos/done/[FIX] route-domain-event — fractura sistémica (60db1db67e49).md
-  - docs/todos/pending/[FIX] kalma2-bridge — fractura sistémica (0142599491fb).md
+  - docs/todos/done/[FIX] kalma2-bridge — fractura sistémica (0142599491fb).md
 related_pbis:
   - id: PBI-FIX-FRACTURE-60db1db67e49
     rol: "Ancestro de carrera de objeto propio. Predicado de gas y cola serial intactos. No reabrir."
@@ -84,11 +84,11 @@ Suprimir `System_Fracture_Detected` para esta firma. Subtipar el cubo DLT de May
 
 ## Criterio de cierre
 
-- [ ] **DLT-LOCK-CA1** Traza con `reserved for another transaction` no escribe `System_Fracture_Detected`. El stamp/`dlt_reanchor` de `stamp_batch_anchor_error` sigue. `config-missing` y «issues with transaction inputs» sin esta firma siguen emitiendo.
-- [ ] **DLT-LOCK-CA2** Predicados de red y de gas de `41717` / `60db1db67e49` intactos.
-- [ ] **MAYEUTA-LOCK-CA3** La misma traza → `process_fix`, texto de reserva de objeto. Sin `prompt_adjustment`, sin «Causa de transporte», sin «inputs permanentes».
-- [ ] Argos APTO en `validacion.md` tras CI verde del PR.
-- [ ] Este TODO en `docs/todos/done/` en la misma rama.
+- [x] **DLT-LOCK-CA1** Traza con `reserved for another transaction` no escribe `System_Fracture_Detected`. El stamp/`dlt_reanchor` de `stamp_batch_anchor_error` sigue. `config-missing` y «issues with transaction inputs» sin esta firma siguen emitiendo.
+- [x] **DLT-LOCK-CA2** Predicados de red y de gas de `41717` / `60db1db67e49` intactos.
+- [x] **MAYEUTA-LOCK-CA3** La misma traza → `process_fix`, texto de reserva de objeto. Sin `prompt_adjustment`, sin «Causa de transporte», sin «inputs permanentes».
+- [x] Argos APTO en `validacion.md` tras CI verde del PR.
+- [x] Este TODO en `docs/todos/done/` en la misma rama.
 
 ## Fuera de alcance
 

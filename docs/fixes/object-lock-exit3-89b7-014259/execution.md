@@ -46,4 +46,4 @@ cd SddIA && cargo test -p kalma2-bridge -- prosthetic_exit
 
 ## Cierre
 
-`validacion.md` APTO y PBI en `done/` después de CI verde del PR. No antes.
+`validacion.md` APTO (`pbi_archived: true`) y ambos PBI en `done/` tras el run [36101108875](https://github.com/racso80es/SddIA/actions/runs/36101108875).

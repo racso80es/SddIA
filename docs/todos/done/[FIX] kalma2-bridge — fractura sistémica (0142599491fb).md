@@ -2,10 +2,10 @@
 document_id: PBI-FIX-FRACTURE-0142599491fb
 title: "[FIX] kalma2-bridge — fractura sistémica"
 format: markdown
-version: "1.1.0"
+version: "1.1.1"
 created: "2026-09-09"
 updated: "2026-09-25"
-status: "abierto"
+status: "cerrado"
 priority: alta
 process: bug-fix
 fracture_hash: 0142599491fb
@@ -24,7 +24,7 @@ related:
   - SddIA/skills/mayeuta-llm/src/main.rs
   - SddIA/scripts/tools/kalma2-agent-runtime-cursor.py
   - docs/todos/done/[FIX] kalma2-bridge — fractura sistémica (64f37c7f7b34).md
-  - docs/todos/pending/[FIX] route-domain-event — fractura sistémica (89b7c8b105ec).md
+  - docs/todos/done/[FIX] route-domain-event — fractura sistémica (89b7c8b105ec).md
 related_pbis:
   - id: PBI-FIX-FRACTURE-64f37c7f7b34
     rol: "Ancestro ELF ausente. Traza distinta ('mayeuta-llm no encontrado'). No reabrir."
@@ -79,10 +79,10 @@ No emitir `System_Fracture_Detected` para el exit 3 de esta prótesis. Cubo léx
 
 ## Criterio de cierre
 
-- [ ] **KALMA-EXIT3-CA1** Exit 3 no llama a `emit_system_fracture`. Exit ≠ 0 y ≠ 3 sí.
-- [ ] **MAYEUTA-EXIT3-CA2** Traza `mayeuta-llm/prótesis exit 3` → `process_fix` que nombra infer/`SDDIA_LLM_REQUIRE_INFER`. No «requiere laudo humano». No `prompt_adjustment`.
-- [ ] Argos APTO en `validacion.md` tras CI verde del PR.
-- [ ] Este TODO en `docs/todos/done/` en la misma rama.
+- [x] **KALMA-EXIT3-CA1** Exit 3 no llama a `emit_system_fracture`. Exit ≠ 0 y ≠ 3 sí.
+- [x] **MAYEUTA-EXIT3-CA2** Traza `mayeuta-llm/prótesis exit 3` → `process_fix` que nombra infer/`SDDIA_LLM_REQUIRE_INFER`. No «requiere laudo humano». No `prompt_adjustment`.
+- [x] Argos APTO en `validacion.md` tras CI verde del PR.
+- [x] Este TODO en `docs/todos/done/` en la misma rama.
 
 ## Fuera de alcance
 
