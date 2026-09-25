@@ -107,6 +107,17 @@ fn is_dlt_transport_trace(error_trace: &str) -> bool {
         || t.contains("connection timed out")
 }
 
+fn is_dlt_object_lock_trace(error_trace: &str) -> bool {
+    error_trace
+        .to_lowercase()
+        .contains("reserved for another transaction")
+}
+
+/// Traza literal de `handle_chat` cuando la prótesis sale 3.
+fn is_prosthetic_infer_exit3_trace(error_trace: &str) -> bool {
+    error_trace.contains("mayeuta-llm/prótesis exit 3")
+}
+
 /// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section).
 pub fn analyze_fracture_kaizen(
     process_name: &str,
@@ -253,6 +264,19 @@ pub fn analyze_fracture_kaizen(
                  no emitir `System_Fracture_Detected`; `dlt_reanchor` absorbe."
                     .into(),
             ));
+        } else if is_dlt_object_lock_trace(error_trace) {
+            root_causes.push(
+                "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
+                 Un objeto está reservado por otra transacción (quórum). No es operador, ni transporte, \
+                 ni input permanente."
+                    .into(),
+            );
+            proposals.push((
+                "process_fix".into(),
+                "Si la firma `reserved for another transaction` está presente, no emitir \
+                 `System_Fracture_Detected`; `dlt_reanchor` absorbe."
+                    .into(),
+            ));
         } else if is_dlt_transport_trace(error_trace) {
             root_causes.push(
                 "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
@@ -361,6 +385,19 @@ pub fn analyze_fracture_kaizen(
             "prompt_adjustment".into(),
             "Ajustar instrucción operador IA: detener, emitir `System_Fracture_Detected`, \
              notificar al Vértice Biológico — no continuar entrega."
+                .into(),
+        ));
+    }
+
+    if is_prosthetic_infer_exit3_trace(error_trace) {
+        root_causes.push(
+            "Exit 3 de `mayeuta-llm`/prótesis en `sse_chat_stream`: fail-closed de infer con \
+             `SDDIA_LLM_REQUIRE_INFER` (CLI ausente, vacío o sin tokens). No es ELF ausente ni colapso del puente."
+                .into(),
+        );
+        proposals.push((
+            "process_fix".into(),
+            "No emitir `System_Fracture_Detected` para este exit. Otros exit ≠ 0 siguen fracturando."
                 .into(),
         ));
     }
@@ -630,6 +667,40 @@ mod tests {
         assert!(!section.contains("Ajustar instrucción operador"));
         assert!(!section.contains("prompt_adjustment"));
         assert!(!section.contains("Causa de transporte"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_dlt_object_lock_not_opaque() {
+        let (verdict, _, section, unclassified) = analyze_fracture_kaizen(
+            "route-domain-event",
+            "merkle-batch-preseal failed: iota-relay-publish-error: status=500 Failed to sign transaction by a quorum of validators because one or more of its objects is reserved for another transaction. Other transactions locking these objects:\n- 7R6vWf14dsfmfGtQKJXAcjagG5G5phFMYwTKtvUCKfTX (stake 35.14)",
+            "merkle-batch-preseal",
+            "execute-process",
+        );
+        assert_eq!(verdict, "process_fix");
+        assert!(!unclassified);
+        assert!(section.contains("reservado"));
+        assert!(section.contains("dlt_reanchor"));
+        assert!(!section.contains("Ajustar instrucción operador"));
+        assert!(!section.contains("prompt_adjustment"));
+        assert!(!section.contains("Causa de transporte"));
+        assert!(!section.contains("inputs permanentes"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_prosthetic_exit3_not_unclassified() {
+        let (verdict, _, section, unclassified) = analyze_fracture_kaizen(
+            "kalma2-bridge",
+            "mayeuta-llm/prótesis exit 3",
+            "sse_chat_stream",
+            "kalma2-bridge",
+        );
+        assert_eq!(verdict, "process_fix");
+        assert!(!unclassified);
+        assert!(section.contains("SDDIA_LLM_REQUIRE_INFER"));
+        assert!(!section.contains("requiere laudo humano"));
+        assert!(!section.contains("prompt_adjustment"));
+        assert!(!section.contains("Ajustar instrucción operador"));
     }
 
     #[test]
