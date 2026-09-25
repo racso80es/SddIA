@@ -7,7 +7,7 @@ version: "1.2.0"
 created: "2026-08-25"
 updated: "2026-09-25"
 refined: "2026-09-25"
-status: pending
+status: done
 priority: alta
 type: arquitectura
 process: feature

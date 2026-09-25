@@ -4,7 +4,7 @@ created: "2026-09-25"
 process: feature
 branch_name: feat/multi-llm-router
 persist_ref: docs/features/multi-llm-router
-pbi_ref: docs/todos/pending/PBI-MULTI-LLM-ROUTER.md
+pbi_ref: docs/todos/done/PBI-MULTI-LLM-ROUTER.md
 document_id: PBI-MULTI-LLM-ROUTER
 uuid: "d2e44083-ccdf-45af-b477-f6c71833fc31"
 execution_id: "31a62dff-7b1e-454f-9539-eccc0b16eb3a"
