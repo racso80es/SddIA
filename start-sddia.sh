@@ -11,9 +11,12 @@ cd "$REPO_ROOT"
 _sddia_ensure_hooks_path() {
   local expected="SddIA/scripts/qa/git-hooks"
   local current
-  current=$(git config --get core.hooksPath 2>/dev/null || true)
+  if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    return 0
+  fi
+  current=$(git -C "$REPO_ROOT" config --get core.hooksPath 2>/dev/null || true)
   if [[ "$current" != "$expected" ]]; then
-    git config core.hooksPath "$expected"
+    git -C "$REPO_ROOT" config core.hooksPath "$expected"
     echo "[SddIA] core.hooksPath -> ${expected}"
   fi
 }

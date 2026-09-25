@@ -38,6 +38,7 @@ test -f "$tmp/stage/SddIA/tools/llm-router.md" || fail "llm-router.md ausente"
 test -f "$tmp/stage/SddIA/tools/gemini-http-infer.md" || fail "gemini-http-infer.md ausente"
 test -f "$tmp/stage/SddIA/tools/thought-graph-access.md" || fail "thought-graph-access.md ausente"
 test -f "$tmp/stage/SddIA/skills/antigravity-cli-executor.md" || fail "antigravity-cli-executor.md ausente"
+test -f "$tmp/stage/SddIA/conscience/aiua_core.md" || fail "conscience/aiua_core.md ausente"
 
 for elf in llm-router gemini-http-infer antigravity-cli-executor thought-graph-access; do
   if [[ -x "$tmp/stage/SddIA/target/release/$elf" ]]; then

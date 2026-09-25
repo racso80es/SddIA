@@ -3,7 +3,7 @@ document_id: PBI-DT-PACIENTE0-DEPLOY-PROCESS
 uuid: "7bf2bf4c-361e-4967-a58d-89dee74ea60d"
 title: "[DEUDA] Paciente 0 — prompt de despliegue y proceso futuro"
 format: markdown
-version: "1.6.0"
+version: "1.7.0"
 status: deuda_tecnica
 type: deuda
 priority: alta
@@ -12,14 +12,14 @@ dispatch: false
 process_candidate: paciente0-deploy
 process_candidate_class: process
 created: "2026-08-25"
-updated: "2026-09-12"
+updated: "2026-09-25"
 instance_name_default: SddIA_AP
 config_source: /home/racso/Proyectos/.dev/.env
 instance_parent: /home/racso/Proyectos
 audits_path: docs/audits
-last_deploy_audit_ref: docs/audits/paciente0-deploy-20260826T120032Z.md
+last_deploy_audit_ref: docs/audits/paciente0-deploy-20260925T114629Z.md
 last_deploy_ola_verdict: OLA-MEJORA
-last_empirical_deploy_wave: 6
+last_empirical_deploy_wave: 10
 post_ola_friction_open: null
 fix_pbi_ref: docs/todos/done/[FIX] bundle consumidor — telegram-gateway ausente en grafo telegram-watcher.md
 fix_pbi_document_id: PBI-FIX-BUNDLE-TELEGRAM-GATEWAY
@@ -74,7 +74,7 @@ Documento **operativo + semilla de proceso**. Sirve como **prompt** para que Tek
 
 **Done de un ciclo de este prompt:** instancia viva + validaciones G* + **contraste valorativo** contra el último PBI Kaizen de despliegue Paciente 0 + auditoría bajo `paths.auditsPath` + PBI Kaizen **solo si** hay fricción nueva o regresión.
 
-**Hecho 2026-09-12:** no hay redeploy empírico de Paciente 0 posterior a la ola 6 (`docs/audits/paciente0-deploy-20260826T120032Z.md`, `forge_head` `117e461`). Los merges de forja posteriores **no** son olas de despliegue. La próxima ejecución de este prompt es la **ola 9**.
+**Hecho 2026-09-25:** última ola empírica anclada = **10** (`docs/audits/paciente0-deploy-20260925T114629Z.md`, OLA-MEJORA). Ola 6 permanece como antecesor anclado. Ola 9 (2026-09-20) **no anclada** (errata Q3). La próxima ejecución de este prompt es la **ola 11**.
 
 Censo post-ola 6 (no inventar recuentos): ~80 PRs mergeados en `main` desde `2026-08-26T12:00Z` hasta PR #290. Este PBI **no** cataloga rehab DCC/CI/`github-bridge`. Cataloga solo deltas que cambian bundle, bóveda, WUI, centinelas, gates o el procedimiento Vía C. Ventana v1.5.0 (PRs #268 a #290 = 23 números): #271 y #274 son documentales; no van a §4.2.
 
@@ -106,25 +106,29 @@ Censo post-ola 6 (no inventar recuentos): ~80 PRs mergeados en `main` desde `202
 | Citar `uuid` de PBI / `execution_id` como evolution | **Incoherencia (v1.5.0).** | Contrato de este prompt: `validacion.md` / `SddIA/evolution/{uuid}.md`. §4.2 v1.6.0 usa `id_cambio` de `Evolution_log`. |
 | «23 merges de forja posteriores» a la ola 6 | **Inexacto (v1.5.0).** | 23 = cardinalidad de números PR #268–#290. Post-ola 6 hay ~80 PRs. |
 | `blocks_on` / gate por `PBI-FIX-FRACTURE-0142599491fb` | **Exceso.** | Fractura forja `sse_chat_stream` / `mayeuta-llm` exit 3. Consumer no empaqueta `mayeuta-llm`. No bloquea ola 9. |
+| «Próxima ejecución = ola 9» (v1.6.0) | **Obsoleto.** | Ola 9 física 2026-09-20 no cristalizó (Q3=errata). Ola 10 anclada 2026-09-25. Próxima = **ola 11**. |
+| G3: ruta `/api/aiua/interact` = APTO funcional | **Insuficiente.** | Combustión = `success:true` + `thought_id` (G3 v2). 13 ELF + `SddIA/conscience/aiua_core.md`. |
+| G-bundle techo 9 ELF | **Obsoleto.** | `BINS_CONSUMIDOR` = **13** post-#298. + `user-preference-store` extra no tumba. |
+| `instance-creator` v1.3.0 / `sddia-distribution-protocol` v1.2.3 como únicas normas | **Incompleto.** | Creator **v1.4.0** (registry + perfil). ABSTRACT-04 + Filtro C #292. |
 
 ---
 
 ## 1. Prompt (copiar al Vértice Productivo)
 
 ```text
-Despliega Paciente 0 siguiendo este PBI (PBI-DT-PACIENTE0-DEPLOY-PROCESS v1.6.0).
+Despliega Paciente 0 siguiendo este PBI (PBI-DT-PACIENTE0-DEPLOY-PROCESS v1.7.0).
 
 Constantes:
 - Nombre de instancia por defecto: SddIA_AP
 - Raíz instancia: /home/racso/Proyectos/SddIA_AP  (salvo override explícito)
 - Configuración base: /home/racso/Proyectos/.dev/.env  (no inventar secretos; no loguearlos)
 - Forja: repo SddIA actual (preferir rama main salvo indicación)
-- Canal: Vía C — build-release-bundle (profile consumer, codex-kalma2-assistant v1.0.2, 9 ELF)
-          + instance-creator (skip_ignition) + ignición híbrida start-sddia.sh + systemd email-watcher@%f
+- Canal: Vía C — build-release-bundle (profile consumer, codex-kalma2-assistant v1.0.2, 13 ELF + conscience)
+          + instance-creator v1.4.0 (skip_ignition) + ignición híbrida start-sddia.sh + systemd email-watcher@%f
 - DA-3: ./sddia-run.sh (ELF nativo). DA-5: tras acuse JSON de execute-process, no poll de .events/
 - Prohibido parchear {instancia}/start-sddia.sh ni SddIA/ inyectado (sddia-distribution-protocol)
 
-Última ola empírica de redeploy: 6 (2026-08-26T12:00Z, OLA-MEJORA, forge_head 117e461). Esta ejecución = ola 9.
+Última ola empírica de redeploy: 10 (2026-09-25T11:46Z, OLA-MEJORA). Ola 9 no anclada (errata). Esta ejecución = ola 11.
 No inventar PRs/SHAs. Citar validacion.md / evolution UUID (Evolution_log), no execution_id ni uuid de PBI.
 
 Estado de mitigaciones en Core (forja, no redeploy):
@@ -189,7 +193,7 @@ No forjar el proceso paciente0-deploy en este estímulo.
 | `CODEX` | `codex-kalma2-assistant` v1.0.2 (`email-triage-gateway`, `email-noise-digest`, `email-digest-preference-reply`) |
 | `SENSORIAL` | `systemd` (`SDDIA_SENSORIAL_JURISDICTION`) |
 | `UNIT` | `sddia-email-watcher@$(systemd-escape -p "$INSTANCE_ROOT").service` |
-| `BINS_CONSUMIDOR` | 9 ELF: `execute-process`, `kalma2-bridge`, `event-watcher`, `event-sweeper`, `email-watcher`, `telegram-watcher`, `telegram-gateway`, `send-telegram-notification`, `iota-immutable-publisher` |
+| `BINS_CONSUMIDOR` | 13 ELF: 9 previos + `llm-router`, `gemini-http-infer`, `antigravity-cli-executor`, `thought-graph-access`. Creator v1.4.0 materializa `llm-registry.json` y `active-domain-profile.json`. |
 | `PROOFS_DLT` | `{eda_instance.proofs}/dlt-telemetry/` → `.SddIA/proofs/dlt-telemetry/` |
 | `HEARTBEAT_AUDIT` | `{daemons_instance.state}/heartbeat-audit.json` → `.SddIA/daemons/state/heartbeat-audit.json` |
 | `PREFERENCES_STORE` | `{instancia}/.SddIA/vector_store/user_preferences/` (`paths.userPreferencesStore`; JSON SSOT) |
@@ -232,7 +236,7 @@ Default Paciente 0 (consumer, sin forzar IOTA): G-dlt APTO con `skipped-config-m
 
 ## 3. Procedimiento de despliegue (pasos)
 
-Ejecutar en orden. Canal canónico: `SddIA/norms/sddia-distribution-protocol.md` v1.2.3 + `SddIA/process/instance-creator.md` v1.3.0.
+Ejecutar en orden. Canal canónico: `SddIA/norms/sddia-distribution-protocol.md` v1.2.3 + `SddIA/process/instance-creator.md` v1.4.0.
 
 ### 0 — Verificación de dependencias y orquestador (forja)
 
@@ -377,8 +381,10 @@ Esperado:
 | 6 Redeploy post-PR #194 | 2026-08-26 12:00Z | `AUDIT-PACIENTE0-DEPLOY-20260826T120032Z` | wipe; `main` + bundle 8 ELF (aún sin publisher) | **OLA-MEJORA**; G-telegram APTO; F-BUNDLE-06 cerrado en runtime |
 | 7 Centinelas sordos | 2026-08-26 | `AUDIT-PACIENTE0-CENTINELAS-EMAIL-SORDO-20260826` | diagnóstico runtime AP | Colisión plantillas home / wrappers cwd forja (`F-SYS-02`, `F-DEP-10`) |
 | 8 Aislamiento multi-instancia | 2026-08-26 | `kaizen-aislamiento-multi-instancia-20260826` | Core PR #193 + `instance-creator` v1.3.0 | `%f` universal; `_sddia_resolve_instance_root`; 0 `pkill` cruzado |
+| 9 (no anclada) | 2026-09-20 | — | física; audit/Kaizen no en `main` (Q3=errata) | No SSOT. Fricciones absorbidas en #292. |
+| 10 Redeploy post-códice + FIX #298 | 2026-09-25 11:46Z | `AUDIT-PACIENTE0-DEPLOY-20260925T114629Z` | wipe; 13 ELF + conscience; creator v1.4.0 | **OLA-MEJORA**; G3 v2 `success:true`; `faa18af8` |
 
-Cada nueva ejecución de **este prompt** es la **ola 9** (siguiente a §4.1). El contraste §6 la sitúa respecto al Kaizen de redeploy más reciente (`PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825`) **y** respecto a los deltas §4.2.
+Cada nueva ejecución de **este prompt** es la **ola 11** (siguiente a §4.1). El contraste §6 la sitúa respecto al Kaizen de redeploy más reciente (`PBI-KAIZEN-PACIENTE0-REDEPLOY-20260825`) **y** respecto a los deltas §4.2.
 
 ### 4.2 Deltas de forja posteriores a la ola 6 (no son olas de despliegue)
 
@@ -420,6 +426,14 @@ Citar `validacion.md` / `id_cambio` de `Evolution_log`. Prohibido SHA corto no a
 | 2026-09-11 | PR #288 · `4a402f77-9c77-45c8-8383-0a64dcfde71e` | `reply_markup` + `callback_query`; gateway XOR `text`/`callback_data`. |
 | 2026-09-12 | PR #289 · `7e4c1a90-2b6d-4f18-9c3a-5d8e0b1a2476` | `email-digest-preference-reply` en códice v1.0.2 (botonera `dpref`). |
 | 2026-09-12 | PR #290 · `89d3ce2b-4bde-49af-8945-8aeb9c4e84cf` | Tendón `delegar_habito` Kalma2 → `User_Preference_Change_Requested`. |
+| 2026-09-13 | PR #291 · `8e223315-114f-44c5-9683-2a5956731329` | `LogRateLimit` fábrica daemon; watcher silencia skips. |
+| 2026-09-20 | PR #292 · `83d6eb73-0936-4acb-9f1e-5d519987f1ab` | Bundle hermético `MANIFEST.json`; poda `library/codexes` + Filtro C fail-closed. |
+| 2026-09-25 | PR #294 · `79b6cc26-3958-4704-a797-d87bf020ce6d` | `LogRateLimit` unidades instancia; `source_sha256` reanclado. |
+| 2026-09-25 | PR #295 · `c9c0206e-aed4-4e48-a17d-b28d1de43d46` | Reserva IOTA / exit 3 prótesis no escalan a Kintsugi. |
+| 2026-09-25 | PR #296 · `ff8a0c37-a03d-4945-933c-8b54c03b9707` | ABSTRACT-04: códice software fuera del consumer. |
+| 2026-09-25 | PR #297 · `d2e44083-ccdf-45af-b477-f6c71833fc31` | `llm-router` + registro de oráculos. |
+| 2026-09-25 | PR #298 · `806c9463-4c82-4216-a246-d5650a8553e9` | 13 ELF Tormentosa; creator v1.4.0 registry+perfil; LogRateLimit email. |
+| 2026-09-25 | ola 10 · `faa18af8-60e1-4d3f-b824-990f89cee208` | Bundle empaqueta `SddIA/conscience`; `start-sddia` no exige git. |
 
 Forja-only (sin gate de instancia; no reabrir como fricción de ola): PR #272 (`0b3ef02b-debe-4532-91da-c265ed59942b`, F4c `gh`/`api.github.com`), PR #278 (`67a74480-f2b3-440d-a467-7dfe32726705`, triaje asíncrono de fracturas), PR #279 (`0d6cd80e-a292-4919-b99c-37d0568ee76e`, `ephemeral-cache-purger`).
 
@@ -432,10 +446,10 @@ No secretos. Fallo = NO APTO de ola (sigue §8).
 | ID | Check | Criterio APTO |
 |----|--------|----------------|
 | G0-config | `CONFIG_SOURCE` existe; staging copió vault | `vault_env_present`; claves IMAP/LLM **nombres** (no valores). IOTA **no** obligatoria. |
-| G-bundle | integridad artefacto | 0 `.rs`; 0 `Cargo.toml`; `PY_LEAK=no`; `MANIFEST.json`; 9 ELF §2; Filtro C sin `github-bridge-watcher`; `strings kalma2-bridge` contiene `api/aiua/interact`. `mayeuta-llm` no forma parte de `CONSUMER_BINS`; su presencia u ausencia **no** tumba este gate |
+| G-bundle | integridad artefacto | 0 `.rs`; 0 `Cargo.toml`; `PY_LEAK=no`; `MANIFEST.json`; **13 ELF** §2 + `SddIA/conscience/aiua_core.md`; Filtro C sin `github-bridge-watcher`; `handle_aiua_interact` en ELF (grep exacto de ruta puede fallar por literales adyacentes). `mayeuta-llm` no forma parte de `CONSUMER_BINS` |
 | G1 | topología | `.SddIA/`, `.events/{domain,orchestration,telemetry,pending}/`; `local.paths.json` no `{}`; `.SddIA/vector_store/user_preferences/` operable (o creable en primer `put_revision`) |
 | G2 | ley local | `constitution.json` `product=SddIA_AP`; códice `codex-kalma2-assistant` v1.0.2 en `.SddIA/library/codexes/` con los 3 procesos de `process_membership` |
-| G3 | WUI + EDA | HTTP 200 en `:${WUI_PORT}`; log ignición `route-domain` / `route-telemetry`; **0** `cargo build` en instancia bundle; preflight `[WARN] mayeuta-llm` = APTO de ignición. Tormentosa: ruta `/api/aiua/interact` presente. Chat `/api/chat` degradado sin `mayeuta-llm` **no** tumba G3. |
+| G3 | WUI + Aiúa | HTTP 200 en `:${WUI_PORT}`; **0** `cargo build` en instancia; preflight `[WARN] mayeuta-llm` = APTO. `POST /api/aiua/interact` → `success:true` + `thought_id` (G3 v2). `cápsula tool 'llm-router' no encontrada` = NO APTO. Chat `/api/chat` degradado **no** tumba G3. |
 | G3b | systemd | `sddia-{event-watcher,event-sweeper,kalma2-bridge,email-watcher,telegram-watcher}@%f` `active`; `WorkingDirectory=%f`; `ExecStart=%f/SddIA/...`. **No** exigir `iota-publish-relay` ni `github-bridge-watcher` en consumer. |
 | G4 | Filtro C | sin `github-bridge` activo; instancia sin `AGENT_RUNTIME_*`; sin `codex-software-engineering` en códices locales |
 | G-orch | resolución ELF | creator usó **release** (o cicatriz vigente); ignición descarta pines foráneos (`_sddia_discard_foreign_orchestrator_pin`); bundle no recompila |
@@ -553,16 +567,17 @@ Wizard UX (`DT-CONFIG-UX-ONBOARDING`). Mutación de genoma (ciclo `feature` del 
 | Ref | Uso |
 |-----|-----|
 | `SddIA/norms/sddia-distribution-protocol.md` | Vía C, bundle hermético, creator (v1.2.3) |
-| `SddIA/process/instance-creator.md` | Fases Topologia–Smoke, starter-kit, `%f` (v1.3.0) |
+| `SddIA/process/instance-creator.md` | Fases Topologia–Smoke, starter-kit, registry+perfil, `%f` (v1.4.0) |
 | `SddIA/process/daemon-heartbeat-audit.md` | Argos, `btime`, `host_reboot_stale_lock` (v1.2.0) |
 | `SddIA/process/telegram-gateway.md` | XOR `text`/`callback_data` (v1.0.2) |
 | `SddIA/library/codexes/codex-kalma2-assistant.md` | Códice asistente personal (v1.0.2) |
 | `SddIA/library/norms/todos-jurisdiction.md` | Jurisdicción `docs/todos/` (v1.1.0) |
 | `SddIA/core/cumulo.paths.json` | `auditsPath`, `eda_instance.proofs`, `daemons_instance.state`, `userPreferencesStore`, `vectorStore` |
 | `SddIA/scripts/common/sddia_shell_lib.sh` | `_sddia_resolve_orchestrator`, `_sddia_discard_foreign_orchestrator_pin`, `_sddia_require_protoc` |
-| `SddIA/scripts/build-release-bundle.sh` | `CONSUMER_BINS` (9 ELF). Sin flag `--seal-capsules`. |
+| `SddIA/scripts/build-release-bundle.sh` | `CONSUMER_BINS` (13 ELF) + `SddIA/conscience`. Sin flag `--seal-capsules`. |
 | `SddIA/evolution/Evolution_log.md` | SSOT de `id_cambio` citados en §4.2 |
-| `docs/audits/paciente0-deploy-20260826T120032Z.md` | Última ola empírica de redeploy (6) |
+| `docs/audits/paciente0-deploy-20260925T114629Z.md` | Última ola empírica de redeploy (10) |
+| `docs/audits/paciente0-deploy-20260826T120032Z.md` | Ola 6 (antecesor anclado) |
 | `docs/audits/paciente0-deploy-20260826T110203Z.md` | Ola 5 + post-ola Telegram |
 | `docs/audits/paciente0-centinelas-email-sordo-20260826.md` | Ola 7: colisión plantillas / wrappers |
 | `docs/audits/kaizen-aislamiento-multi-instancia-20260826.md` | Ola 8: `%f` universal |

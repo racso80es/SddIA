@@ -352,6 +352,7 @@ echo "[bundle] genoma sin fuentes de ingeniería…"
 # Core operativo
 for path in \
   SddIA/core \
+  SddIA/conscience \
   SddIA/CONSTITUTION_CORE.md \
   SddIA/norms \
   SddIA/process \
@@ -571,6 +572,7 @@ Ver norma \`SddIA/norms/sddia-distribution-protocol.md\`.
 - WUI: Forjar Proceso deshabilitado si \`SDDIA_RUNTIME_PROFILE=consumer\`.
 - Fracture: acciones de forja documental se omiten en runtime consumer.
 - Tormentosa: \`llm-router\` + adaptadores empaquetados; registro en \`.SddIA/llm-registry.json\`; \`agy\` es dependencia de host.
+- Consciencia: \`SddIA/conscience/aiua_core.md\` viaja en el bundle (Latido Aiúa).
 EOF
 
 # Filtro C: códices de ingeniería prohibidos en consumer
