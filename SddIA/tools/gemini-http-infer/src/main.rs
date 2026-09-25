@@ -91,6 +91,9 @@ fn resolve_thinking_level(req: &Value) -> Result<Option<String>, String> {
     if let Ok(raw) = required_str(req, "thinkingLevel") {
         return normalize_thinking_level(&raw).map(Some);
     }
+    if let Some(effort) = optional_str(req, "effort") {
+        return normalize_thinking_level(&effort).map(Some);
+    }
     match env::var("SDDIA_GEMINI_THINKING_LEVEL") {
         Ok(v) => {
             let t = v.trim();
@@ -121,14 +124,99 @@ fn generation_config(temperature: Option<f64>, thinking_level: Option<&str>) -> 
     Some(Value::Object(cfg))
 }
 
-fn generate_content_payload(prompt: &str, temperature: Option<f64>, thinking_level: Option<&str>) -> Value {
+fn generate_content_payload(
+    prompt: &str,
+    system_prompt: Option<&str>,
+    temperature: Option<f64>,
+    thinking_level: Option<&str>,
+) -> Value {
     let mut payload = json!({
         "contents": [{"parts": [{"text": prompt}]}]
     });
+    if let Some(sys) = system_prompt.filter(|s| !s.is_empty()) {
+        payload["systemInstruction"] = json!({"parts": [{"text": sys}]});
+    }
     if let Some(cfg) = generation_config(temperature, thinking_level) {
         payload["generationConfig"] = cfg;
     }
     payload
+}
+
+fn timeout_secs_from(req: &Value) -> u64 {
+    if let Some(ms) = req.get("timeout_ms").and_then(|v| v.as_u64()) {
+        return (ms / 1000).max(1).min(MAX_TIMEOUT_SECS);
+    }
+    timeout_secs()
+}
+
+fn optional_str(req: &Value, key: &str) -> Option<String> {
+    req.get(key)
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn classify_error_code(msg: &str) -> &'static str {
+    let l = msg.to_lowercase();
+    if l.contains("http-status-429") || l.contains("resource_exhausted") || l.contains("quota") {
+        return "rate_limited";
+    }
+    if l.contains("http-status-401") || l.contains("http-status-403") || l.contains("gemini_api_key ausente") {
+        return "auth";
+    }
+    if l.contains("http-status-503")
+        || l.contains("http-status-502")
+        || l.contains("http-status-500")
+        || l.contains("http-status-504")
+        || l.contains("gemini-model-unavailable")
+    {
+        return "upstream_unavailable";
+    }
+    if l.contains("timed out") || l.contains("timeout") {
+        return "timeout";
+    }
+    if l.contains("http-post-failed")
+        || l.contains("connection")
+        || l.contains("transport")
+        || l.contains("network")
+    {
+        return "network";
+    }
+    if l.contains("empty-candidate") || l.contains("invalid-json") || l.contains("body-not-json") {
+        return "malformed_response";
+    }
+    "unknown"
+}
+
+fn usage_from_body(body: &Value) -> (Option<i64>, Option<i64>) {
+    let prompt = body
+        .pointer("/usageMetadata/promptTokenCount")
+        .and_then(|v| v.as_i64());
+    let completion = body
+        .pointer("/usageMetadata/candidatesTokenCount")
+        .and_then(|v| v.as_i64());
+    (prompt, completion)
+}
+
+fn telemetry_receipt(
+    model: &str,
+    latency_ms: u64,
+    prompt_tokens: Option<i64>,
+    completion_tokens: Option<i64>,
+) -> Value {
+    let mut rec = json!({
+        "provider": ENTITY_ID,
+        "llm_model": model,
+        "provider_latency_ms": latency_ms,
+    });
+    if let Some(p) = prompt_tokens {
+        rec["prompt_tokens"] = json!(p);
+    }
+    if let Some(c) = completion_tokens {
+        rec["completion_tokens"] = json!(c);
+    }
+    rec
 }
 
 fn extract_text(body: &Value) -> Option<String> {
@@ -186,11 +274,13 @@ fn post_generate(
     model: &str,
     temperature: Option<f64>,
     thinking_level: Option<&str>,
+    timeout: u64,
+    system_prompt: Option<&str>,
 ) -> Result<Value, String> {
-    let payload = generate_content_payload(prompt, temperature, thinking_level);
+    let payload = generate_content_payload(prompt, system_prompt, temperature, thinking_level);
     let mut req = ureq::post(url)
         .set("Content-Type", "application/json")
-        .timeout(Duration::from_secs(timeout_secs()));
+        .timeout(Duration::from_secs(timeout));
     if let Some(key) = api_key {
         req = req.set("x-goog-api-key", key);
     }
@@ -214,10 +304,12 @@ fn post_generate(
             finish_reason(&body)
         ));
     }
+    let (pt, ct) = usage_from_body(&body);
     Ok(json!({
         "text": text,
         "raw_response": body,
-        "model": model
+        "model": model,
+        "telemetry_receipt": telemetry_receipt(model, 0, pt, ct)
     }))
 }
 
@@ -227,9 +319,13 @@ fn run(doc: &Value) -> Result<Value, String> {
     let model = resolve_model(req)?;
     let temperature = req.get("temperature").and_then(|v| v.as_f64());
     let thinking_level = resolve_thinking_level(req)?;
+    let timeout = timeout_secs_from(req);
+    let system_prompt = optional_str(req, "system_prompt");
 
     if lab_mock_outbound_enabled() && lab_mock_gemini_url().is_none() {
-        return Ok(mock_result(&prompt, &model));
+        let mut mock = mock_result(&prompt, &model);
+        mock["telemetry_receipt"] = telemetry_receipt(&model, 0, None, None);
+        return Ok(mock);
     }
 
     if let Some(mock_url) = lab_mock_gemini_url() {
@@ -240,6 +336,8 @@ fn run(doc: &Value) -> Result<Value, String> {
             &model,
             temperature,
             thinking_level.as_deref(),
+            timeout,
+            system_prompt.as_deref(),
         );
     }
 
@@ -257,18 +355,38 @@ fn run(doc: &Value) -> Result<Value, String> {
         &model,
         temperature,
         thinking_level.as_deref(),
+        timeout,
+        system_prompt.as_deref(),
     )
 }
 
 fn main() {
     let started = Instant::now();
     let doc = read_stdin_json();
+    let model = request_inner(&doc)
+        .get("model")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     match run(&doc) {
         Ok(mut result) => {
-            result["durationMs"] = json!(started.elapsed().as_millis() as u64);
+            let ms = started.elapsed().as_millis() as u64;
+            result["durationMs"] = json!(ms);
+            if result.get("telemetry_receipt").is_none() {
+                result["telemetry_receipt"] = telemetry_receipt(&model, ms, None, None);
+            } else {
+                result["telemetry_receipt"]["provider_latency_ms"] = json!(ms);
+            }
             emit_v2(true, 0, "ok", Some(result), None);
         }
-        Err(msg) => emit_v2(false, 1, "infer-failed", None, Some(&msg)),
+        Err(msg) => {
+            let ms = started.elapsed().as_millis() as u64;
+            let fail = json!({
+                "error_code": classify_error_code(&msg),
+                "telemetry_receipt": telemetry_receipt(&model, ms, None, None),
+            });
+            emit_v2(false, 1, "infer-failed", Some(fail), Some(&msg));
+        }
     }
 }
 
@@ -389,8 +507,37 @@ mod tests {
     #[test]
     fn generation_config_omitted_when_empty() {
         assert!(generation_config(None, None).is_none());
-        let payload = generate_content_payload("hola", None, None);
+        let payload = generate_content_payload("hola", None, None, None);
         assert!(payload.get("generationConfig").is_none());
+        assert!(payload.get("systemInstruction").is_none());
+    }
+
+    #[test]
+    fn classify_error_code_table() {
+        assert_eq!(classify_error_code("http-status-429: x"), "rate_limited");
+        assert_eq!(classify_error_code("http-status-503: x"), "upstream_unavailable");
+        assert_eq!(classify_error_code("http-status-401: x"), "auth");
+        assert_eq!(classify_error_code("http-post-failed: timed out"), "timeout");
+        assert_eq!(classify_error_code("gemini-empty-candidate: finishReason=X"), "malformed_response");
+        assert_eq!(classify_error_code("GEMINI_API_KEY ausente"), "auth");
+    }
+
+    #[test]
+    fn payload_includes_system_instruction() {
+        let p = generate_content_payload("u", Some("sys"), None, None);
+        assert_eq!(p["systemInstruction"]["parts"][0]["text"], "sys");
+    }
+
+    #[test]
+    fn timeout_ms_overrides_env() {
+        let req = json!({"timeout_ms": 5000});
+        assert_eq!(timeout_secs_from(&req), 5);
+    }
+
+    #[test]
+    fn effort_maps_to_thinking_level() {
+        let req = json!({"prompt": "x", "model": "m", "effort": "low"});
+        assert_eq!(resolve_thinking_level(&req).unwrap().as_deref(), Some("LOW"));
     }
 
     #[test]

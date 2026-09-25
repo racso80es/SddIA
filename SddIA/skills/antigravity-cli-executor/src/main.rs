@@ -36,6 +36,68 @@ fn request_inner(doc: &Value) -> &Value {
     doc.get("request").unwrap_or(doc)
 }
 
+fn optional_str(req: &Value, key: &str) -> Option<String> {
+    req.get(key)
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn classify_error_code(msg: &str) -> &'static str {
+    let l = msg.to_lowercase();
+    if l.contains("agy-timeout") {
+        return "timeout";
+    }
+    if l.contains("network issue") || l.contains("dial tcp") || l.contains("econn") {
+        return "network";
+    }
+    if l.contains("timed out") || l.contains("timeout") {
+        return "timeout";
+    }
+    if l.contains("429") || l.contains("quota") || l.contains("rate limit") {
+        return "rate_limited";
+    }
+    if l.contains("authentication required") || l.contains("not logged") {
+        return "auth";
+    }
+    if l.contains("unavailable") || l.contains("http-status-5") || l.contains("status=5") {
+        return "upstream_unavailable";
+    }
+    if l.contains("no es json") || l.contains("stdout vacío") {
+        return "malformed_response";
+    }
+    "unknown"
+}
+
+fn merge_llm_infer_params(req: &Value, params: &mut Value) {
+    if let Some(model) = optional_str(req, "model") {
+        params["model"] = json!(model);
+    }
+    if let Some(effort) = optional_str(req, "effort") {
+        params["effort"] = json!(effort);
+    }
+    if let Some(ms) = req.get("timeout_ms").and_then(|v| v.as_u64()) {
+        let secs = (ms / 1000).max(1);
+        params["print_timeout"] = json!(format!("{secs}s"));
+    }
+}
+
+fn compose_prompt(req: &Value, user: &str) -> String {
+    match optional_str(req, "system_prompt") {
+        Some(sys) => format!("{sys}\n\n{user}"),
+        None => user.to_string(),
+    }
+}
+
+fn telemetry_receipt(model: Option<&str>, latency_ms: u64) -> Value {
+    json!({
+        "provider": ENTITY_ID,
+        "llm_model": model,
+        "provider_latency_ms": latency_ms,
+    })
+}
+
 fn required_prompt(req: &Value) -> Result<String, String> {
     req.get("prompt")
         .and_then(|v| v.as_str())
@@ -245,8 +307,10 @@ fn mock_result(prompt: &str) -> Value {
 
 fn run(doc: &Value) -> Result<Value, String> {
     let req = request_inner(doc);
-    let prompt = required_prompt(req)?;
-    let params = req.get("parameters").cloned().unwrap_or_else(|| json!({}));
+    let user = required_prompt(req)?;
+    let prompt = compose_prompt(req, &user);
+    let mut params = req.get("parameters").cloned().unwrap_or_else(|| json!({}));
+    merge_llm_infer_params(req, &mut params);
     let allow_skip = truthy_env("SDDIA_AGY_ALLOW_SKIP_PERMISSIONS");
     let (argv, timeout) = build_argv(&prompt, &params, allow_skip)?;
 
@@ -272,12 +336,26 @@ fn run(doc: &Value) -> Result<Value, String> {
 fn main() {
     let started = Instant::now();
     let doc = read_stdin_json();
+    let req = request_inner(&doc);
+    let model = optional_str(req, "model").or_else(|| {
+        req.get("parameters")
+            .and_then(|p| optional_str(p, "model"))
+    });
     match run(&doc) {
         Ok(mut result) => {
-            result["durationMs"] = json!(started.elapsed().as_millis() as u64);
+            let ms = started.elapsed().as_millis() as u64;
+            result["durationMs"] = json!(ms);
+            result["telemetry_receipt"] = telemetry_receipt(model.as_deref(), ms);
             emit_v2(true, 0, "ok", Some(result), None);
         }
-        Err(msg) => emit_v2(false, 1, "agy-failed", None, Some(&msg)),
+        Err(msg) => {
+            let ms = started.elapsed().as_millis() as u64;
+            let fail = json!({
+                "error_code": classify_error_code(&msg),
+                "telemetry_receipt": telemetry_receipt(model.as_deref(), ms),
+            });
+            emit_v2(false, 1, "agy-failed", Some(fail), Some(&msg));
+        }
     }
 }
 
@@ -339,6 +417,32 @@ mod tests {
     fn map_auth_not_logged_into_antigravity() {
         let err = map_agy_result("", "You are not logged into Antigravity.").unwrap_err();
         assert!(err.contains("authentication required"));
+    }
+
+    #[test]
+    fn classify_agy_error_table() {
+        assert_eq!(classify_error_code("agy-timeout"), "timeout");
+        assert_eq!(classify_error_code("dial tcp: i/o timeout"), "network");
+        assert_eq!(classify_error_code("network issue connecting"), "network");
+        assert_eq!(classify_error_code("429 quota exceeded"), "rate_limited");
+        assert_eq!(classify_error_code("authentication required"), "auth");
+        assert_eq!(classify_error_code("agy stdout no es JSON: eof"), "malformed_response");
+    }
+
+    #[test]
+    fn merge_infer_fields_into_params() {
+        let req = json!({"prompt": "p", "model": "m1", "effort": "high", "timeout_ms": 15000});
+        let mut params = json!({});
+        merge_llm_infer_params(&req, &mut params);
+        assert_eq!(params["model"], "m1");
+        assert_eq!(params["effort"], "high");
+        assert_eq!(params["print_timeout"], "15s");
+    }
+
+    #[test]
+    fn compose_prompt_prefixes_system() {
+        let req = json!({"system_prompt": "SYS", "prompt": "u"});
+        assert_eq!(compose_prompt(&req, "u"), "SYS\n\nu");
     }
 
     #[test]

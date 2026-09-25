@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/capability-contracts/llm.infer.schema.json",
+  "title": "llm.infer",
+  "type": "object",
+  "required": ["success", "data"],
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "true si el adaptador devolvió texto utilizable"
+    },
+    "exitCode": {
+      "type": "integer",
+      "description": "0 si y solo si success === true (capsule-json-io 2.0)"
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "raw": { "description": "Sobre nativo del proveedor, opcional" },
+        "error_code": {
+          "type": "string",
+          "enum": [
+            "rate_limited",
+            "timeout",
+            "upstream_unavailable",
+            "auth",
+            "malformed_response",
+            "network",
+            "unknown"
+          ]
+        },
+        "telemetry_receipt": {
+          "type": "object",
+          "required": ["provider"],
+          "properties": {
+            "provider": { "type": "string", "minLength": 1 },
+            "llm_model": { "type": ["string", "null"] },
+            "prompt_tokens": { "type": "integer" },
+            "completion_tokens": { "type": "integer" },
+            "provider_latency_ms": { "type": "integer" }
+          },
+          "additionalProperties": true
+        },
+        "routing": {
+          "type": "object",
+          "description": "Solo tool:llm-router; attempts[] de saltos"
+        }
+      },
+      "additionalProperties": true
+    },
+    "error": {
+      "type": ["string", "null"]
+    }
+  },
+  "$defs": {
+    "request": {
+      "type": "object",
+      "required": ["prompt"],
+      "properties": {
+        "prompt": { "type": "string", "minLength": 1 },
+        "system_prompt": { "type": "string" },
+        "model": { "type": "string" },
+        "effort": { "type": "string", "enum": ["high", "medium", "low"] },
+        "timeout_ms": { "type": "integer", "minimum": 1000 },
+        "expected_format": { "type": "string", "enum": ["text", "json"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}

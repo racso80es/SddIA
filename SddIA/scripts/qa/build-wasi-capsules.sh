@@ -19,6 +19,7 @@ EXCLUDE=(
   kalma2-bridge
   antigravity-cli-executor
   gemini-http-infer
+  llm-router
   thought-graph-access
 )
 

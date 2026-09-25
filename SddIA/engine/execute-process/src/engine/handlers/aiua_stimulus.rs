@@ -1,6 +1,6 @@
 //! Handler nativo `aiua-stimulus-processing` — latido CLI de la Aiúa.
 
-use super::super::capsules::{invoke_capsule_json, invoke_tool_capsule_json};
+use super::super::capsules::invoke_tool_capsule_json;
 use super::super::workspace::load_paths_config;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -236,33 +236,50 @@ pub fn persist_thought_record(repo: &Path, inputs: &Value) -> Result<Value, Stri
     }))
 }
 
-fn infer_antigravity_cli(
+fn print_timeout_to_ms(raw: &str) -> Option<u64> {
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let (num, unit) = raw.split_at(raw.len().saturating_sub(1));
+    let n: u64 = num.parse().ok()?;
+    match unit {
+        "s" => Some(n.saturating_mul(1000)),
+        "m" => Some(n.saturating_mul(60_000)),
+        "h" => Some(n.saturating_mul(3_600_000)),
+        _ => None,
+    }
+}
+
+fn infer_via_router(
     repo: &Path,
     prompt: &str,
     model: &str,
     effort: &str,
     print_timeout: &str,
 ) -> Result<Value, String> {
-    let mut params = json!({
+    let mut request = json!({
+        "prompt": prompt,
         "effort": effort,
-        "print_timeout": print_timeout,
     });
     if !model.is_empty() {
-        params["model"] = json!(model);
+        request["model"] = json!(model);
     }
-    let cap = invoke_capsule_json(
+    if let Some(ms) = print_timeout_to_ms(print_timeout) {
+        request["timeout_ms"] = json!(ms);
+    }
+    let cap = invoke_tool_capsule_json(
         repo,
-        "antigravity-cli-executor",
+        "llm-router",
         &json!({
-            "request": {
-                "prompt": prompt,
-                "parameters": params,
-            }
+            "request": request,
+            "affinity": "aiua",
+            "repo_root": repo.to_string_lossy(),
         }),
         false,
     )?;
     if cap.exit_code != 0 || cap.body.get("success") == Some(&json!(false)) {
-        return Err(capsule_error(&cap.body, "agy-failed"));
+        return Err(capsule_error(&cap.body, "llm-router-failed"));
     }
     Ok(cap.body)
 }
@@ -298,7 +315,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .unwrap_or("")
         .to_string();
 
-    let infer_body = infer_antigravity_cli(
+    let infer_body = infer_via_router(
         repo,
         assembled_prompt,
         &model,
@@ -350,6 +367,17 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         model
     };
     let tokens = usage_tokens(&result);
+    let attempts_len = result
+        .pointer("/routing/attempts")
+        .or_else(|| infer_body.pointer("/result/routing/attempts"))
+        .and_then(|v| v.as_array())
+        .map(|a| a.len())
+        .unwrap_or(0);
+    let provider = result
+        .pointer("/telemetry_receipt/provider")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     let persisted = persist_thought_record(
         repo,
@@ -367,6 +395,9 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let mut telemetry = json!({
         "duration_ms": duration_ms,
         "model": infer_model,
+        "provider": provider,
+        "routing_attempts": attempts_len,
+        "cognitive-degraded": attempts_len > 0,
     });
     if let Some(t) = tokens {
         telemetry["tokens"] = t;
@@ -411,7 +442,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             "phases": [
                 {"phase_name": "Triaje-Contexto", "status": "executed", "handler": "retrieve-active-context"},
                 {"phase_name": "Inyeccion-Genomica", "status": "executed", "handler": "invoke-aiua-core"},
-                {"phase_name": "Combustion-Inferencia", "status": "executed", "handler": "antigravity-cli-executor"},
+                {"phase_name": "Combustion-Inferencia", "status": "executed", "handler": "llm-router"},
                 dispatch_phase,
                 {"phase_name": "Consolidacion-Memoria", "status": "executed", "handler": "persist-thought-record"},
             ]
@@ -504,6 +535,58 @@ mod tests {
         fs::copy(src, dest_dir.join(name)).unwrap();
     }
 
+    fn write_lab_registry(repo: &Path) {
+        fs::create_dir_all(repo.join(".SddIA")).unwrap();
+        fs::write(
+            repo.join(".SddIA/llm-registry.json"),
+            r#"{
+  "registry_version": "1.0.0",
+  "oracles": {
+    "oracle-agy": {
+      "adapter_ref": "skill:antigravity-cli-executor",
+      "model": "",
+      "affinity": ["aiua"],
+      "timeout_ms": 30000,
+      "fallback": "oracle-gemini",
+      "status": "active"
+    },
+    "oracle-gemini": {
+      "adapter_ref": "tool:gemini-http-infer",
+      "model": "",
+      "affinity": [],
+      "timeout_ms": 30000,
+      "fallback": null,
+      "status": "active"
+    }
+  }
+}"#,
+        )
+        .unwrap();
+    }
+
+    fn copy_router_stack(repo: &Path) -> bool {
+        let Some(agy) = workspace_debug_bin("antigravity-cli-executor") else {
+            return false;
+        };
+        let Some(router) = workspace_debug_bin("llm-router") else {
+            return false;
+        };
+        copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
+        copy_bin(&router, &repo.join("SddIA/target/debug"), "llm-router");
+        write_lab_registry(repo);
+        true
+    }
+
+    fn write_adapter_stub(dest_dir: &Path, name: &str, body: &str) {
+        use std::os::unix::fs::PermissionsExt;
+        fs::create_dir_all(dest_dir).unwrap();
+        let p = dest_dir.join(name);
+        fs::write(&p, format!("#!/bin/sh\n{body}\n")).unwrap();
+        let mut perms = fs::metadata(&p).unwrap().permissions();
+        perms.set_mode(0o755);
+        fs::set_permissions(&p, perms).unwrap();
+    }
+
     #[test]
     fn normalize_effort_accepts_case_insensitive_whitelist() {
         assert_eq!(normalize_effort("HIGH").unwrap(), "high");
@@ -541,9 +624,6 @@ mod tests {
         let Some(graph) = workspace_debug_bin("thought-graph-access") else {
             return;
         };
-        let Some(agy) = workspace_debug_bin("antigravity-cli-executor") else {
-            return;
-        };
         let dir = tempdir().unwrap();
         let repo = dir.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
@@ -560,7 +640,9 @@ mod tests {
         .unwrap();
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
         copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
-        copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
+        if !copy_router_stack(repo) {
+            return;
+        }
         let _lab = LAB_ENV.lock().unwrap();
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
         let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
@@ -619,9 +701,6 @@ mod tests {
         let Some(graph) = workspace_debug_bin("thought-graph-access") else {
             return;
         };
-        let Some(agy) = workspace_debug_bin("antigravity-cli-executor") else {
-            return;
-        };
         let dir = tempdir().unwrap();
         let repo = dir.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
@@ -647,7 +726,9 @@ mod tests {
         .unwrap();
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
         copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
-        copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
+        if !copy_router_stack(repo) {
+            return;
+        }
         let _lab = LAB_ENV.lock().unwrap();
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
         let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
@@ -688,9 +769,6 @@ mod tests {
         let Some(graph) = workspace_debug_bin("thought-graph-access") else {
             return;
         };
-        let Some(agy) = workspace_debug_bin("antigravity-cli-executor") else {
-            return;
-        };
         let dir = tempdir().unwrap();
         let repo = dir.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
@@ -715,7 +793,9 @@ mod tests {
         .unwrap();
         fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
         copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
-        copy_bin(&agy, &repo.join("SddIA/target/debug"), "antigravity-cli-executor");
+        if !copy_router_stack(repo) {
+            return;
+        }
         let _lab = LAB_ENV.lock().unwrap();
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
         let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
@@ -759,11 +839,59 @@ mod tests {
     }
 
     #[test]
-    fn process_genome_combustion_is_antigravity_cli() {
+    fn lab_rate_limited_primary_falls_back_to_gemini() {
+        let Some(graph) = workspace_debug_bin("thought-graph-access") else {
+            return;
+        };
+        let Some(router) = workspace_debug_bin("llm-router") else {
+            return;
+        };
+        let dir = tempdir().unwrap();
+        let repo = dir.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{
+  "directories": {"conscience": "SddIA/conscience"},
+  "paths": {"vectorStore": ".SddIA/vector_store/"},
+  "eda_bus": {"pending": "./.events/pending"}
+}"#,
+        )
+        .unwrap();
+        fs::write(repo.join("SddIA/conscience/aiua_core.md"), "# GENOMA\nley").unwrap();
+        copy_bin(&graph, &repo.join("SddIA/target/debug"), "thought-graph-access");
+        copy_bin(&router, &repo.join("SddIA/target/debug"), "llm-router");
+        write_lab_registry(repo);
+        write_adapter_stub(
+            &repo.join("SddIA/target/debug"),
+            "antigravity-cli-executor",
+            r#"printf '%s\n' '{"success":false,"exitCode":1,"error":"429","result":{"error_code":"rate_limited"}}'"#,
+        );
+        write_adapter_stub(
+            &repo.join("SddIA/target/debug"),
+            "gemini-http-infer",
+            r#"printf '%s\n' '{"success":true,"exitCode":0,"result":{"text":"ok-gemini","telemetry_receipt":{"provider":"gemini-http-infer"}}}'"#,
+        );
+        let _lab = LAB_ENV.lock().unwrap();
+        let out = run(repo, &json!({"prompt": "latido fallback", "model": "lab-flash"}));
+        let env = out.expect("latido fallback rate_limited");
+        assert!(env.success);
+        let data = env.data.expect("data");
+        assert_eq!(data["response"], "ok-gemini");
+        assert_eq!(data["telemetry"]["routing_attempts"], 1);
+        assert_eq!(data["telemetry"]["cognitive-degraded"], true);
+        assert_eq!(data["telemetry"]["provider"], "gemini-http-infer");
+    }
+
+    #[test]
+    fn process_genome_combustion_is_llm_router() {
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..");
         let text = fs::read_to_string(root.join("SddIA/process/aiua-stimulus-processing.md")).unwrap();
-        assert!(text.contains("skill:antigravity-cli-executor"));
+        assert!(text.contains("tool:llm-router"));
         assert!(text.contains("action:dispatch-aiua-intent"));
+        assert!(!text.contains("skill:antigravity-cli-executor"));
         assert!(!text.contains("tool:gemini-http-infer"));
         assert!(!text.contains("gemini-3.8-flash"));
     }

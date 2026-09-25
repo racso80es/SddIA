@@ -1,12 +1,12 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:2c55c34da4bf5d9f2c374830a835aa5687f8650f0b2c36de96a52ae4ca26ebca"
+hash_signature: "sha256:b0ad8622740292cf8d7937a81d5928b517a15501807d8061decf8a254ff80826"
 inputs:
-- prompt: string obligatorio
-- context_query: string opcional; default=prompt
-- model: string opcional; else SDDIA_GEMINI_MODEL
-- effort: string opcional; default=high
+- 'prompt: string obligatorio'
+- 'context_query: string opcional; default=prompt'
+- 'model: string opcional; override de oráculo del registro'
+- 'effort: string opcional; default=high'
 name: aiua-stimulus-processing
 outputs:
 - thought_id: string node_id SHA-256
@@ -22,8 +22,8 @@ phases:
   intent: Ensamblar request.prompt (genoma + recuerdos + estímulo). Sin HTTP.
   name: Inyeccion-Genomica
 - delegates_to:
-  - skill:antigravity-cli-executor
-  intent: Única llamada al LLM vía agy; Peaje Termodinámico del CLI.
+  - tool:llm-router
+  intent: 'Única llamada al LLM vía router de oráculos de instancia (affinity: aiua); Peaje Termodinámico del adaptador efectivo.'
   name: Combustion-Inferencia
 - delegates_to:
   - action:dispatch-aiua-intent
@@ -34,10 +34,10 @@ phases:
   intent: Persistir par estímulo/respuesta; el adaptador emite Thought_Persisted.
   name: Consolidacion-Memoria
 uuid: 6c595785-e386-402f-b570-0b2aa6343051
-version: 1.2.0
+version: 1.3.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # aiua-stimulus-processing
 
-Latido ontológico de la Aiúa: contexto LanceDB, inyección de genoma, combustión vía Antigravity CLI (skill:antigravity-cli-executor), despacho motor EDA opcional (action:dispatch-aiua-intent → eda_fractal.domain), persistencia de pensamiento. Sin agente titular. Sin Kalma2. Cero join a TQM.
+Latido ontológico de la Aiúa: contexto LanceDB, inyección de genoma, combustión vía tool:llm-router (affinity aiua; oráculos de instancia), despacho motor EDA opcional (action:dispatch-aiua-intent → eda_fractal.domain), persistencia de pensamiento. Sin agente titular. Sin Kalma2. Cero join a TQM.

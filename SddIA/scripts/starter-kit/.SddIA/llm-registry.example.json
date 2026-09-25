@@ -1,0 +1,21 @@
+{
+  "registry_version": "1.0.0",
+  "oracles": {
+    "oracle-agy": {
+      "adapter_ref": "skill:antigravity-cli-executor",
+      "model": "",
+      "affinity": ["aiua"],
+      "timeout_ms": 300000,
+      "fallback": "oracle-gemini",
+      "status": "active"
+    },
+    "oracle-gemini": {
+      "adapter_ref": "tool:gemini-http-infer",
+      "model": "",
+      "affinity": [],
+      "timeout_ms": 30000,
+      "fallback": null,
+      "status": "active"
+    }
+  }
+}
