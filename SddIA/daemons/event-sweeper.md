@@ -9,10 +9,10 @@ execution:
   entrypoint: SddIA/daemons/event-sweeper.sh
   heartbeat_interval_seconds: 30
   runtime: native-rust
-hash_signature: "sha256:bda8bb014c269960a8af696f07736a7318cd86dcbb97f21ba7ecf70cb9dc3754"
+hash_signature: sha256:bda8bb014c269960a8af696f07736a7318cd86dcbb97f21ba7ecf70cb9dc3754
 jurisdiction: Aislada — Ceguera Lógica. Solo inyecta eventos físicos en el bus
 name: event-sweeper
-source_sha256: sha256:2fd56b73315a41bd96ec4af27abf42988736a4e4a8834ce2aa06b48c2470fc0e
+source_sha256: sha256:9c0a1d4001196f754ac562c1cec4b7036e292fd3624a5504274777d8eaab7ff8
 telemetry_provided: true
 telemetry_schema:
 - uptime_seconds

@@ -7,12 +7,12 @@ context: ecosystem-evolution
 contract: tools-contract v1.2.0
 contract_ref: SddIA/tools/tools-contract.md
 domain_origin: SddIA
+hash_signature: sha256:ee764b1cb22c42cf4132061ee3b91947f6180432ec74bc92e1f039fca303e923
 implementation_path_ref: SddIA/tools/send-telegram-notification
 name: send-telegram-notification
-source_sha256: sha256:1097dec79cc8e73156a714b47dbb0529f7f676e2dd1da80c0da2b54d6a056c7e
+source_sha256: sha256:e7ceeb5e777558656d7701eb40ceab5ba015ef9c5d59ccf795a4f3498c9a8a87
 uuid: e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8
 version: 1.0.0
-hash_signature: "sha256:ee764b1cb22c42cf4132061ee3b91947f6180432ec74bc92e1f039fca303e923"
 ---
 
 # send-telegram-notification

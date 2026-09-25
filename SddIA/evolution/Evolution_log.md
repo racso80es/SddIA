@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `79b6cc26-3958-4704-a797-d87bf020ce6d` | 2026-09-25 | LogRateLimit en unidades systemd de instancia y reanclaje source_sha256 de daemons y tools. | CANONICO | `SddIA/evolution/79b6cc26-3958-4704-a797-d87bf020ce6d.md` |
 | `83d6eb73-0936-4acb-9f1e-5d519987f1ab` | 2026-09-20 | Bundle consumer: resolutor hermético MANIFEST + podado codexes Filtro C. | CANONICO | `SddIA/evolution/83d6eb73-0936-4acb-9f1e-5d519987f1ab.md` |
 | `8e223315-114f-44c5-9683-2a5956731329` | 2026-09-13 | event-watcher: silencio de skips en hot path de sondeo; LogRateLimit en fábrica systemd y unidad instancia. | CANONICO | `SddIA/evolution/8e223315-114f-44c5-9683-2a5956731329.md` |
 | `89d3ce2b-4bde-49af-8945-8aeb9c4e84cf` | 2026-09-12 | Tendón delegar_habito: NL Kalma2 → User_Preference_Change_Requested vía emit canónico; hash de subject_hint; P-MUTE-SENDER por candidatos From/asunto. | CANONICO | `SddIA/evolution/89d3ce2b-4bde-49af-8945-8aeb9c4e84cf.md` |
