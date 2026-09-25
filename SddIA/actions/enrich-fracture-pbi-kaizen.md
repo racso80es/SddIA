@@ -1,7 +1,7 @@
 ---
 uuid: "c4d5e6f7-a8b9-4012-c345-678901234567"
 name: "enrich-fracture-pbi-kaizen"
-version: "1.4.0"
+version: "1.5.0"
 contract: "actions-contract v1.2.0"
 context: "knowledge-management"
 capabilities:
@@ -23,7 +23,7 @@ outputs:
   - "message": "string; resultado del análisis Kaizen o no_target"
   - "reason": "string; enriched | no_target"
   - "evolution_verdict": "string|null; new_norm | refactor_tool | prompt_adjustment | process_fix"
-hash_signature: "sha256:ef22da114e0d5d1ef82d10eeb8950bd6014dc3e67fc3ce45f61bccdc7d176ec6"
+hash_signature: "sha256:0ab82805973f62844946b7cdef5b6e183703ac83d29290adab942d4f9982818f"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -64,8 +64,11 @@ Cubo EDA genómica: exigir contexto genómico **y** token huérfano/orphan; **no
 
 Cubo DLT (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`) **subtipado** (F-MAYEUTA-DLT-GENERIC):
 - firma `is not available for consumption` ∧ `current version:` → colisión de gas/inputs; `process_fix`; prohibido afirmar transporte.
+- firma `reserved for another transaction` → objeto reservado por otra transacción; `process_fix`; `dlt_reanchor` absorbe; prohibido transporte, `prompt_adjustment` e «inputs permanentes».
 - tokens de red (`ENETUNREACH`/`ETIMEDOUT`/`ENOTFOUND`) → transporte; `process_fix`.
 - resto → `process_fix` opaco; no afirmar transporte.
+
+Cubo prótesis exit 3: match **exclusivo** sobre `error_trace` con el literal `mayeuta-llm/prótesis exit 3`. Veredicto `process_fix`. Fail-closed de infer bajo `SDDIA_LLM_REQUIRE_INFER`. No es ELF ausente. No emitir `System_Fracture_Detected` para ese exit.
 
 **F-MAYEUTA-CATCHALL-FAILED:** el catch-all **no** incluye el token `failed`. Tokens restantes: `timeout` | `block` | `abort` | `colaps`. `{acción} failed:` sin cubo de dominio → fallback `process_fix` + «requiere laudo humano», nunca `prompt_adjustment` por verbo de fallo.
 
@@ -89,3 +92,5 @@ Envelope con `success`, `target_path`, `reason` (`enriched` | `no_target`), `evo
 * No usa `orphan`/`huérfan` sobre el blob concatenado para clasificar lock de centinela.
 * No invoca `llm:interact` / `mayeuta-llm` (laudo `L-ENRICH-KINTSUGI-DETERMINISTA`).
 * No usa `failed` en el catch-all de operador.
+* No trata `reserved for another transaction` como input permanente ni como prompt de operador.
+* No trata `mayeuta-llm/prótesis exit 3` como laudo humano sin clasificar.

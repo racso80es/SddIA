@@ -632,8 +632,18 @@ fn dlt_transient_gas_version_trace(causa: &str) -> bool {
     t.contains("is not available for consumption") && t.contains("current version:")
 }
 
+/// Quórum IOTA: objeto propio bloqueado por otra transacción. Hermano de la
+/// colisión de gas; otra cadena. No cubre «issues with transaction inputs» a secas.
+fn dlt_transient_object_lock_trace(causa: &str) -> bool {
+    causa
+        .to_lowercase()
+        .contains("reserved for another transaction")
+}
+
 fn dlt_transient_error_trace(causa: &str) -> bool {
-    dlt_transient_network_trace(causa) || dlt_transient_gas_version_trace(causa)
+    dlt_transient_network_trace(causa)
+        || dlt_transient_gas_version_trace(causa)
+        || dlt_transient_object_lock_trace(causa)
 }
 
 fn emit_dlt_batch_fracture(repo: &Path, causa: &str) {
@@ -2327,6 +2337,15 @@ mod blocking_tests {
         assert!(dlt_transient_error_trace(
             "Object ID 0x93e4 is not available for consumption, current version: 1"
         ));
+        assert!(dlt_transient_object_lock_trace(
+            "Failed to sign transaction by a quorum of validators because one or more of its objects is reserved for another transaction"
+        ));
+        assert!(!dlt_transient_object_lock_trace(
+            "Transaction execution failed due to issues with transaction inputs, please review"
+        ));
+        assert!(dlt_transient_error_trace(
+            "iota-relay-publish-error: status=500 reserved for another transaction"
+        ));
     }
 
     #[test]
@@ -2391,6 +2410,41 @@ mod blocking_tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn emit_dlt_batch_fracture_suppressed_on_object_lock() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"},"eda_instance":{"dlt_reanchor":".SddIA/dlt/reanchor-queue"}}"#,
+        )
+        .unwrap();
+        let causa = "merkle-batch-preseal failed: iota-relay-publish-error: status=500 Failed to sign transaction by a quorum of validators because one or more of its objects is reserved for another transaction. Other transactions locking these objects:\n- 7R6vWf14dsfmfGtQKJXAcjagG5G5phFMYwTKtvUCKfTX (stake 35.14)";
+        emit_dlt_batch_fracture(repo, causa);
+        let pending = repo.join(".events/pending");
+        if pending.is_dir() {
+            for ent in fs::read_dir(&pending).unwrap() {
+                let p = ent.unwrap().path();
+                if p.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
+                assert_ne!(
+                    body.get("event_type").and_then(|v| v.as_str()),
+                    Some("System_Fracture_Detected"),
+                    "object lock must not emit Kintsugi"
+                );
+            }
+        }
+        let ev_path = repo.join("evt.json");
+        fs::write(&ev_path, "{}").unwrap();
+        enqueue_dlt_reanchor(repo, "89b7c8b1-05ec-4000-8000-000000000001", &ev_path, causa);
+        let q = repo
+            .join(".SddIA/dlt/reanchor-queue/89b7c8b1-05ec-4000-8000-000000000001.json");
+        assert!(q.is_file());
     }
 
     #[test]

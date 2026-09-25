@@ -1247,6 +1247,11 @@ impl Read for SseLineReader {
     }
 }
 
+/// Exit 3 = fail-closed de infer (`SDDIA_LLM_REQUIRE_INFER`). No es colapso del puente.
+fn prosthetic_exit_emits_fracture(code: i32) -> bool {
+    code != 3
+}
+
 fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
     let mut buf = String::new();
     if req.as_reader().read_to_string(&mut buf).is_err() {
@@ -1407,15 +1412,15 @@ fn handle_chat(mut req: tiny_http::Request, repo: &Path) {
     match child.wait() {
         Ok(status) if status.success() => {}
         Ok(status) => {
-            emit_system_fracture(
-                repo,
-                "prosthetic_collapse",
-                &format!(
-                    "mayeuta-llm/prótesis exit {}",
-                    status.code().unwrap_or(1)
-                ),
-                "sse_chat_stream",
-            );
+            let code = status.code().unwrap_or(1);
+            if prosthetic_exit_emits_fracture(code) {
+                emit_system_fracture(
+                    repo,
+                    "prosthetic_collapse",
+                    &format!("mayeuta-llm/prótesis exit {code}"),
+                    "sse_chat_stream",
+                );
+            }
         }
         Err(e) => {
             emit_system_fracture(
@@ -2521,6 +2526,14 @@ mod tests {
             std::fs::create_dir_all(parent).unwrap();
         }
         std::fs::write(path, b"\x7fELF").unwrap();
+    }
+
+    #[test]
+    fn prosthetic_exit_3_does_not_emit_fracture() {
+        assert!(!prosthetic_exit_emits_fracture(3));
+        assert!(prosthetic_exit_emits_fracture(1));
+        assert!(prosthetic_exit_emits_fracture(2));
+        assert!(prosthetic_exit_emits_fracture(4));
     }
 
     #[test]

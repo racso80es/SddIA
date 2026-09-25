@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `c9c0206e-aed4-4e48-a17d-b28d1de43d46` | 2026-09-25 | Suprime Kintsugi en reserva de objeto IOTA y en exit 3 de la prótesis Kalma2. Cubos léxicos Mayeuta 1.5.0. | CANONICO | `SddIA/evolution/c9c0206e-aed4-4e48-a17d-b28d1de43d46.md` |
 | `79b6cc26-3958-4704-a797-d87bf020ce6d` | 2026-09-25 | LogRateLimit en unidades systemd de instancia y reanclaje source_sha256 de daemons y tools. | CANONICO | `SddIA/evolution/79b6cc26-3958-4704-a797-d87bf020ce6d.md` |
 | `83d6eb73-0936-4acb-9f1e-5d519987f1ab` | 2026-09-20 | Bundle consumer: resolutor hermético MANIFEST + podado codexes Filtro C. | CANONICO | `SddIA/evolution/83d6eb73-0936-4acb-9f1e-5d519987f1ab.md` |
 | `8e223315-114f-44c5-9683-2a5956731329` | 2026-09-13 | event-watcher: silencio de skips en hot path de sondeo; LogRateLimit en fábrica systemd y unidad instancia. | CANONICO | `SddIA/evolution/8e223315-114f-44c5-9683-2a5956731329.md` |
