@@ -8,8 +8,11 @@ persist_ref: docs/features/paciente0-redeploy-ola10-codex-extraction
 pbi_document_id: PBI-OPERATIVO-PACIENTE0-REDEPLOY-OLA10-CODEX-EXTRACTION
 pbi_ref: docs/todos/done/[OPERATIVO] Paciente 0 SddIA_AP — redeploy ola 10 post-extracción del códice de ingeniería de software.md
 execution_id: "3098fa27-fb71-48e7-8ee2-aab2bee2c468"
-global: PENDIENTE-CI
+global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/299
+ci_head: d7276fe00cadfbae80ac9d919d9832f5714fecc0
+ci_run: "36131366641"
 evolution_id: faa18af8-60e1-4d3f-b824-990f89cee208
 audit_ref: docs/audits/paciente0-deploy-20260925T114629Z.md
 checks:
@@ -24,7 +27,7 @@ checks:
   CA-AUDIT: APTO
   CA-DEUDA-1.7.0: APTO
   CA-DA5: APTO
-  CA-CI: PENDIENTE-CI
+  CA-CI: APTO
 git_changes:
   - docs/features/paciente0-redeploy-ola10-codex-extraction/
   - docs/audits/paciente0-deploy-20260925T114629Z.md
@@ -39,4 +42,4 @@ git_changes:
 
 # Validación — paciente0-redeploy-ola10-codex-extraction
 
-Gates locales APTO. `global` no es APTO hasta `run_id` CI verde (features-documentation-pattern v1.2.1).
+**APTO.** CI `sddia-index-qa` run `36131366641` verde en `d7276fe` (index-integrity, wasi-runtime-smoke, eda-iota-smoke-simulate, eda-bus-e2e-smoke, eda-iota-physical). PR https://github.com/racso80es/SddIA/pull/299.
