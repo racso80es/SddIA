@@ -36,4 +36,6 @@ sddia-qa evolution-rehash --id 806c9463-4c82-4216-a246-d5650a8553e9
 # sha256:feb135919449fcd3f39f9c60a78114bf3ed370969aa0fbc745c1c892f647d4fa
 ```
 
-`validacion.md` permanece `PENDIENTE-CI` hasta check verde del PR.
+## Entrega
+
+DCC `351c1ac3-4bdf-49a7-be3c-b7daa7e1279c` → PR #298. CI run `36129200795` verde en `e0a60e8`. `validacion.md` `global: APTO`.
