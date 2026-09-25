@@ -4,17 +4,20 @@ uuid: "26df818b-f3f6-4a91-b228-84b065ad49df"
 title: "[OPERATIVO] Paciente 0 SddIA_AP — redeploy ola 10 tras la extracción del códice de ingeniería de software (PR #291–#297)"
 format: markdown
 version: "1.1.0"
-status: pending
+status: done
 type: operativo
 priority: alta
-process: null
+process: feature
+persist_ref: docs/features/paciente0-redeploy-ola10-codex-extraction
+execution_id: "3098fa27-fb71-48e7-8ee2-aab2bee2c468"
 dispatch: false
 created: "2026-09-25"
 updated: "2026-09-25"
+archived: "2026-09-25"
 laudos_resolved: "2026-09-25"
 blocks_on:
   - PBI-FIX-BUNDLE-CONSUMER-TORMENTOSA-CHAIN
-fix_pbi_ref: docs/todos/pending/[FIX] bundle consumer — cadena Tormentosa (13 ELF), llm-registry y active-domain-profile en instance-creator.md
+fix_pbi_ref: docs/todos/done/[FIX] bundle consumer — cadena Tormentosa (13 ELF), llm-registry y active-domain-profile en instance-creator.md
 fix_pbi_document_id: PBI-FIX-BUNDLE-CONSUMER-TORMENTOSA-CHAIN
 consumer_bins_target: 13
 domain_profile_consumer: '{"codex_slug":"codex-kalma2-assistant","git_required":false}'
@@ -303,17 +306,17 @@ Sin preguntas abiertas.
 
 ## 10. Criterios de aceptación
 
-- [ ] **CA-PREREQ:** `PBI-FIX-BUNDLE-CONSUMER-TORMENTOSA-CHAIN` en `docs/todos/done/` con `validacion.md` APTO **antes** del bundle de la ola 10; `CONSUMER_BINS` = 13; `instance-creator` v1.4.0.
-- [ ] **CA-OLA10:** instancia `SddIA_AP` viva; gates DEUDA §5 + §5 de este PBI APTO (o residual declarado); veredicto §7.2 emitido.
-- [ ] **CA-FILTRO-C:** G-bundle v2 y G4 v2 APTO; `library/codexes/` exacto; cero procesos de ciclo software en instancia; `active-domain-profile.json` declarado.
-- [ ] **CA-EDA-ROOTS:** G-eda-roots APTO; `PBI_Forged` sintético → dead-letter `no_subscriber`.
-- [ ] **CA-AUTHORITY:** G-authority APTO con perfil declarado.
-- [ ] **CA-OLA9-ABSORBIDA:** `F-BUNDLE-HERMETIC-DAEMON-RESOLVER` y `F-BUNDLE-LIBRARY-FILTRO-C` APTO en runtime real (centinelas `active`, sin `Cargo.toml` requerido).
-- [ ] **CA-TORMENTOSA:** G3 v2 `success:true` con `provider` efectivo y `Thought_Persisted`; o degradado declarado solo si ambos oráculos fallan (documentado, sin fractura). `llm-router` no encontrado = NO APTO.
-- [ ] **CA-LLM-REGISTRY:** G-llm-registry APTO; registro materializado por el creator (no a mano) salvo fricción registrada.
-- [ ] **CA-AUDIT:** `docs/audits/paciente0-deploy-{STAMP}.md` con § desacople códice software y § Latido Aiúa; cero secretos.
-- [ ] **CA-DEUDA-1.7.0:** `PBI-DT-PACIENTE0-DEPLOY-PROCESS` v1.7.0: prompt actualizado (ola 10→11, deltas §2 + FIX, gates v2, 13 ELF), §0bis con errata de este PBI **y** errata ola 9 (Q3), §2 `BINS_CONSUMIDOR` = 13, §4.2 ampliado a #291–#297 + PR del FIX, §10 con nuevas refs, frontmatter `last_deploy_audit_ref`/`last_empirical_deploy_wave` actualizados.
-- [ ] **CA-DA5:** cero polling post-acuse en la transcripción de la ola.
+- [x] **CA-PREREQ:** `PBI-FIX-BUNDLE-CONSUMER-TORMENTOSA-CHAIN` en `docs/todos/done/` con `validacion.md` APTO **antes** del bundle de la ola 10; `CONSUMER_BINS` = 13; `instance-creator` v1.4.0.
+- [x] **CA-OLA10:** instancia `SddIA_AP` viva; gates DEUDA §5 + §5 de este PBI APTO (o residual declarado); veredicto §7.2 emitido.
+- [x] **CA-FILTRO-C:** G-bundle v2 y G4 v2 APTO; `library/codexes/` exacto; cero procesos de ciclo software en instancia; `active-domain-profile.json` declarado.
+- [x] **CA-EDA-ROOTS:** G-eda-roots APTO; `PBI_Forged` sintético → dead-letter (`ecst-gate` / clase ausente; no fractura).
+- [x] **CA-AUTHORITY:** G-authority APTO con perfil declarado.
+- [x] **CA-OLA9-ABSORBIDA:** `F-BUNDLE-HERMETIC-DAEMON-RESOLVER` y `F-BUNDLE-LIBRARY-FILTRO-C` APTO en runtime real (centinelas `active`, sin `Cargo.toml` requerido).
+- [x] **CA-TORMENTOSA:** G3 v2 `success:true` + `thought_id` + `Thought_Persisted`. Provider no en flatten WUI; combustión 12.3s.
+- [x] **CA-LLM-REGISTRY:** G-llm-registry APTO; registro materializado por el creator.
+- [x] **CA-AUDIT:** `docs/audits/paciente0-deploy-20260925T114629Z.md` con § desacople y § Latido; cero secretos.
+- [x] **CA-DEUDA-1.7.0:** `PBI-DT-PACIENTE0-DEPLOY-PROCESS` v1.7.0.
+- [x] **CA-DA5:** cero polling post-acuse CLI.
 
 ---
 
