@@ -7,7 +7,10 @@ version: "1.1.0"
 created: "2026-09-25"
 refined: "2026-09-25"
 laudos_resolved: "2026-09-25"
-status: pending
+status: done
+archived: "2026-09-25"
+pr_url: https://github.com/racso80es/SddIA/pull/296
+ci_run: https://github.com/racso80es/SddIA/actions/runs/36105527347
 priority: Alta
 process: feature
 feature_name: sddia-codex-agile-forge
