@@ -10,7 +10,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | system-vitality-probe | b215b373-f6d3-4fb1-9d55-60eb260df5cc | 1.0.0 | quality-assurance | — | Sondas deterministas de invariantes no-proceso y HTTP de Kal |
 | query-ecosystem-health | 2b337302-e794-46b8-ad4e-f65bafd21c94 | 1.0.0 | quality-assurance | — | Fusiona map-snapshot × territorio Argos/Radamanto/Cerbero y  |
 | compile-ecosystem-map-snapshot | e7f09165-c445-49ae-965d-41abb4738679 | 1.0.0 | ecosystem-evolution | — | Precompila inventario esperado (tools/skills/daemons) en map |
-| instance-creator | dead5ca7-c0b9-42ef-aad6-171991fb524f | 1.3.0 | ecosystem-evolution, filesystem-ops, system-operations | — | Despliegue hermético de instancia consumidor: topología .Sdd |
+| instance-creator | dead5ca7-c0b9-42ef-aad6-171991fb524f | 1.4.0 | ecosystem-evolution, filesystem-ops, system-operations | — | Despliegue hermético de instancia consumidor: topología .Sdd |
 | evolution-audit | 8f4b09da-e277-4fc2-9890-8a363fa8a96f | 1.0.0 | quality-assurance, filesystem-ops | — | Auditoría periódica del registro evolution: inventario, relevancia, validación y persistencia oficial. |
 | memory-evolution-ingest | eb50d05d-c8d8-4cb7-a7ed-4d296971cbe2 | 1.2.0 | ecosystem-evolution, event-routing | — | Ingesta Domain_Entity_Telemetry_Captured → vector_store/evolution |
 | user-preference-ingest | d4e5f6a7-b8c9-4d0e-1f2a-3b4c5ab005 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Ingesta User_Preference_Change_Requested → store preferencias |

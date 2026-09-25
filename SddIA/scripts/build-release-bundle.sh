@@ -50,6 +50,11 @@ CONSUMER_BINS=(
   telegram-gateway
   send-telegram-notification
   iota-immutable-publisher
+  # Cadena Tormentosa (laudo Q1 ola 10)
+  llm-router
+  gemini-http-infer
+  antigravity-cli-executor
+  thought-graph-access
 )
 
 # Capsules tool extraídas del códice / grafo eferente (F-06).
@@ -71,13 +76,15 @@ _add_capsule() {
 _scan_md_for_tools() {
   local file="$1"
   [[ -f "$file" ]] || return 0
-  # tool: foo | `send-telegram-notification` | tool/foo
+  # tool: foo | skill: bar | `send-telegram-notification`
   local hits
   hits="$(rg -oN 'tool:\s*[`"]?([a-z0-9][a-z0-9-]*)' -r '$1' "$file" 2>/dev/null || true)"
+  hits+=$'\n'"$(rg -oN 'skill:\s*[`"]?([a-z0-9][a-z0-9-]*)' -r '$1' "$file" 2>/dev/null || true)"
   hits+=$'\n'"$(rg -oN '`([a-z0-9]+-[a-z0-9-]+)`' -r '$1' "$file" 2>/dev/null || true)"
   while IFS= read -r hit; do
     [[ -z "$hit" ]] && continue
-    if [[ -f "$REPO_ROOT/SddIA/tools/${hit}.md" ]] || [[ -d "$REPO_ROOT/SddIA/tools/${hit}" ]]; then
+    if [[ -f "$REPO_ROOT/SddIA/tools/${hit}.md" ]] || [[ -d "$REPO_ROOT/SddIA/tools/${hit}" ]] \
+      || [[ -f "$REPO_ROOT/SddIA/skills/${hit}.md" ]] || [[ -d "$REPO_ROOT/SddIA/skills/${hit}" ]]; then
       _add_capsule "$hit"
     fi
   done <<< "$hits"
@@ -96,6 +103,8 @@ fi
 
 # Suscripciones eferentes típicas consumidor (Email_Triaged / Fracture telegram).
 _scan_md_for_tools "$REPO_ROOT/SddIA/core/event-domain-subscriptions.json"
+# Cadena Tormentosa: kalma2-bridge → aiua-stimulus-processing (Core; no está en el códice).
+_scan_md_for_tools "$REPO_ROOT/SddIA/process/aiua-stimulus-processing.md"
 
 echo "[bundle] out=${OUT}"
 echo "[bundle] profile=${PROFILE} cargo_profile=${PROFILE_BIN}"
@@ -110,6 +119,7 @@ _sddia_crate_root() {
     "$REPO_ROOT/SddIA/engine/${name}" \
     "$REPO_ROOT/SddIA/daemons/${name}" \
     "$REPO_ROOT/SddIA/tools/${name}" \
+    "$REPO_ROOT/SddIA/skills/${name}" \
     "$REPO_ROOT/SddIA/interfaces/${name}"; do
     if [[ -f "$d/Cargo.toml" ]]; then
       printf '%s\n' "$d"
@@ -228,10 +238,18 @@ fi
 mkdir -p "$OUT"
 
 if [[ "$SKIP_BUILD" -eq 1 ]]; then
-  echo "[bundle] --skip-build: auditando cicatriz SHA-256…"
-  for name in "${CONSUMER_BINS[@]}"; do
-    _sddia_verify_witness "$name" || exit 1
-  done
+  if [[ -n "${SDDIA_BUNDLE_SKIP_WITNESS:-}" ]]; then
+    echo "[bundle] --skip-build: SDDIA_BUNDLE_SKIP_WITNESS=1 (Filtro C / smoke; sin L-BUNDLE-STALE)"
+  else
+    echo "[bundle] --skip-build: auditando cicatriz SHA-256…"
+    for name in "${CONSUMER_BINS[@]}"; do
+      if [[ ! -x "$TARGET_SRC/$name" ]]; then
+        echo "[WARN] L-BUNDLE-STALE: ELF ausente en skip-build: $name" >&2
+        continue
+      fi
+      _sddia_verify_witness "$name" || exit 1
+    done
+  fi
 else
   echo "[bundle] compilando cápsulas nativas…"
   local_pkgs=()
@@ -239,6 +257,7 @@ else
     if [[ -f "$REPO_ROOT/SddIA/tools/${name}/Cargo.toml" ]] \
       || [[ -f "$REPO_ROOT/SddIA/daemons/${name}/Cargo.toml" ]] \
       || [[ -f "$REPO_ROOT/SddIA/engine/${name}/Cargo.toml" ]] \
+      || [[ -f "$REPO_ROOT/SddIA/skills/${name}/Cargo.toml" ]] \
       || [[ -f "$REPO_ROOT/SddIA/interfaces/${name}/Cargo.toml" ]] \
       || [[ "$name" == "execute-process" ]] \
       || [[ "$name" == "kalma2-bridge" ]]; then
@@ -295,9 +314,13 @@ MISSING=0
 for name in "${!CAPSULE_SET[@]}"; do
   _copy_bin "$name" || MISSING=$((MISSING + 1))
 done
-# Siempre exigir núcleo
-for must in execute-process kalma2-bridge event-watcher event-sweeper send-telegram-notification; do
+# Núcleo operativo + cadena Tormentosa (fail-closed en build real; skip-build incompleto = WARN).
+for must in execute-process kalma2-bridge event-watcher event-sweeper send-telegram-notification llm-router thought-graph-access; do
   if [[ ! -x "$STAGE/SddIA/target/release/$must" ]]; then
+    if [[ "$SKIP_BUILD" -eq 1 ]]; then
+      echo "[WARN] binario obligatorio ausente en skip-build: $must" >&2
+      continue
+    fi
     echo "[ERROR] binario obligatorio ausente en bundle: $must" >&2
     exit 1
   fi
@@ -547,6 +570,7 @@ Ver norma \`SddIA/norms/sddia-distribution-protocol.md\`.
 - Sin \`github-bridge-watcher\` en este paquete (\`profile=consumer\`).
 - WUI: Forjar Proceso deshabilitado si \`SDDIA_RUNTIME_PROFILE=consumer\`.
 - Fracture: acciones de forja documental se omiten en runtime consumer.
+- Tormentosa: \`llm-router\` + adaptadores empaquetados; registro en \`.SddIA/llm-registry.json\`; \`agy\` es dependencia de host.
 EOF
 
 # Filtro C: códices de ingeniería prohibidos en consumer

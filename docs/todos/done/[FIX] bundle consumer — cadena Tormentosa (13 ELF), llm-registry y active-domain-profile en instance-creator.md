@@ -6,13 +6,16 @@ format: markdown
 version: "1.0.0"
 created: "2026-09-25"
 updated: "2026-09-25"
-status: pending
+status: done
+archived: "2026-09-25"
 priority: alta
 type: fix
 process: bug-fix
 dispatch: false
 suggested_branch: fix/bundle-consumer-tormentosa-chain
+persist_ref: docs/fixes/bundle-consumer-tormentosa-chain
 persist_ref_suggested: docs/fixes/bundle-consumer-tormentosa-chain
+execution_id: "4480e892-4647-48c5-a1de-934800e768d7"
 spawned_by: PBI-OPERATIVO-PACIENTE0-REDEPLOY-OLA10-CODEX-EXTRACTION
 spawned_by_ref: docs/todos/pending/[OPERATIVO] Paciente 0 SddIA_AP — redeploy ola 10 post-extracción del códice de ingeniería de software.md
 derived_from:

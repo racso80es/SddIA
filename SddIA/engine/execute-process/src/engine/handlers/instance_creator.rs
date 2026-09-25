@@ -89,6 +89,80 @@ fn materialize_local_paths(repo: &Path, local_paths: &Path) -> Result<(), String
     Ok(())
 }
 
+fn materialize_llm_registry(repo: &Path, sddia: &Path) -> Result<Value, String> {
+    let dest = sddia.join("llm-registry.json");
+    if dest.is_file() {
+        return Ok(json!({ "llm_registry_materialized": false, "reason": "already-present" }));
+    }
+    let starter = repo.join("SddIA/scripts/starter-kit/.SddIA/llm-registry.example.json");
+    if !starter.is_file() {
+        return Ok(json!({
+            "llm_registry_materialized": false,
+            "reason": "starter-missing"
+        }));
+    }
+    copy_file(&starter, &dest)?;
+    Ok(json!({ "llm_registry_materialized": true }))
+}
+
+fn consumer_profile(profile: &str) -> bool {
+    matches!(profile, "consumer" | "consumidor")
+}
+
+fn resolve_codex_slug(instance_root: &Path, inputs: &Value) -> Option<String> {
+    if let Some(s) = str_opt(inputs, "codex_slug") {
+        return Some(s);
+    }
+    let manifest = instance_root.join("MANIFEST.json");
+    if !manifest.is_file() {
+        return None;
+    }
+    let raw = fs::read_to_string(&manifest).ok()?;
+    let v: Value = serde_json::from_str(&raw).ok()?;
+    v.get("codex")
+        .and_then(|c| c.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn materialize_domain_profile(
+    instance_root: &Path,
+    sddia: &Path,
+    profile: &str,
+    inputs: &Value,
+) -> Result<Value, String> {
+    if !consumer_profile(profile) {
+        return Ok(json!({
+            "domain_profile_materialized": false,
+            "reason": "not-consumer"
+        }));
+    }
+    let dest = sddia.join("active-domain-profile.json");
+    if dest.is_file() {
+        return Ok(json!({
+            "domain_profile_materialized": false,
+            "reason": "already-present"
+        }));
+    }
+    let Some(slug) = resolve_codex_slug(instance_root, inputs) else {
+        return Ok(json!({
+            "domain_profile_materialized": false,
+            "reason": "codex-unknown"
+        }));
+    };
+    let body = json!({
+        "codex_slug": slug,
+        "git_required": false
+    });
+    fs::write(&dest, format!("{}\n", serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?))
+        .map_err(|e| e.to_string())?;
+    Ok(json!({
+        "domain_profile_materialized": true,
+        "codex_slug": slug
+    }))
+}
+
 fn ensure_dir(p: &Path) -> Result<(), String> {
     fs::create_dir_all(p).map_err(|e| format!("mkdir {}: {e}", p.display()))
 }
@@ -336,6 +410,16 @@ fn run_smoke(repo: &Path, instance_root: &Path, skip_ignition: bool) -> Value {
     }
 
     checks.insert("local_qa_emitted".into(), json!(false));
+    checks.insert(
+        "llm_registry_present".into(),
+        json!(instance_root.join(".SddIA/llm-registry.json").is_file()),
+    );
+    checks.insert(
+        "domain_profile_present".into(),
+        json!(instance_root
+            .join(".SddIA/active-domain-profile.json")
+            .is_file()),
+    );
 
     if skip_ignition {
         checks.insert(
@@ -493,6 +577,8 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     }
     let local_paths = sddia.join("local.paths.json");
     materialize_local_paths(repo, &local_paths)?;
+    let llm_reg = materialize_llm_registry(repo, &sddia)?;
+    let domain_prof = materialize_domain_profile(&instance_root, &sddia, &profile, process_inputs)?;
     let events = instance_root.join(".events");
     for fam in ["pending", "domain", "orchestration", "telemetry", "dead-letter"] {
         ensure_dir(&events.join(fam))?;
@@ -500,7 +586,11 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     phases.push(phase(
         "Topologia",
         "executed",
-        json!({ "instance_root": instance_root.display().to_string() }),
+        json!({
+            "instance_root": instance_root.display().to_string(),
+            "llm_registry": llm_reg,
+            "domain_profile": domain_prof
+        }),
     ));
 
     // Vault
@@ -575,6 +665,8 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             "instance_root": instance_root.display().to_string(),
             "runtime_profile": profile,
             "vault_files_copied": vault_files,
+            "llm_registry": llm_reg,
+            "domain_profile": domain_prof,
             "smoke": smoke,
             "correlation_id": cid,
         })),
@@ -755,5 +847,194 @@ mod tests {
         let paths_txt = fs::read_to_string(instance.join(".SddIA/local.paths.json")).unwrap();
         assert_ne!(paths_txt.trim(), "{}");
         assert!(paths_txt.contains("local_tools"));
+    }
+
+    fn scaffold_creator_repo(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/templates/systemd")).unwrap();
+        fs::write(
+            repo.join("SddIA/templates/systemd/sddia-email-watcher@.service.template"),
+            "[Service]\nWorkingDirectory=%f\nExecStart=%f/SddIA/daemons/email-watcher.sh\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/templates/systemd/sddia-daemon@.service.template"),
+            "ExecStart=%f/SddIA/scripts/daemons/@@DAEMON_NAME@@.sh\nWorkingDirectory=%f\n",
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(repo.join("SddIA/core/cumulo.paths.json"), "{}").unwrap();
+        fs::create_dir_all(repo.join("SddIA/tools")).unwrap();
+        fs::write(
+            repo.join("SddIA/tools/send-telegram-notification.md"),
+            "---\nname: send-telegram-notification\n---\n",
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("SddIA/scripts/starter-kit/.SddIA")).unwrap();
+        fs::write(
+            repo.join("SddIA/scripts/starter-kit/.SddIA/llm-registry.example.json"),
+            r#"{"registry_version":"1.0.0","oracles":{"oracle-agy":{"adapter_ref":"skill:antigravity-cli-executor","affinity":["aiua"],"fallback":"oracle-gemini","status":"active"}}}"#,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn materializes_llm_registry_once() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        scaffold_creator_repo(repo);
+        let instance = repo.join("cliente-reg");
+        let env = run(
+            repo,
+            &json!({
+                "instance_root": instance.display().to_string(),
+                "runtime_profile": "consumer",
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env.success);
+        let dest = instance.join(".SddIA/llm-registry.json");
+        assert!(dest.is_file());
+        let first = fs::read_to_string(&dest).unwrap();
+        assert!(first.contains("oracle-agy"));
+        fs::write(&dest, "{\"keep\":true}\n").unwrap();
+        let env2 = run(
+            repo,
+            &json!({
+                "instance_root": instance.display().to_string(),
+                "runtime_profile": "consumer",
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env2.success);
+        assert_eq!(fs::read_to_string(&dest).unwrap().trim(), r#"{"keep":true}"#);
+        assert_eq!(
+            env2.data.as_ref().unwrap()["llm_registry"]["reason"],
+            "already-present"
+        );
+    }
+
+    #[test]
+    fn domain_profile_from_manifest_consumer() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        scaffold_creator_repo(repo);
+        let instance = repo.join("cliente-prof");
+        fs::create_dir_all(&instance).unwrap();
+        fs::write(
+            instance.join("MANIFEST.json"),
+            r#"{"codex":"codex-kalma2-assistant"}"#,
+        )
+        .unwrap();
+        let env = run(
+            repo,
+            &json!({
+                "instance_root": instance.display().to_string(),
+                "runtime_profile": "consumer",
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env.success);
+        let dest = instance.join(".SddIA/active-domain-profile.json");
+        let v: Value = serde_json::from_str(&fs::read_to_string(&dest).unwrap()).unwrap();
+        assert_eq!(v["codex_slug"], "codex-kalma2-assistant");
+        assert_eq!(v["git_required"], false);
+        let profile = crate::engine::domain_profile::resolve_execution_profile(&instance, &json!({}));
+        assert!(!crate::engine::domain_authority::has_software_authority(&profile));
+    }
+
+    #[test]
+    fn domain_profile_codex_unknown_without_manifest() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        scaffold_creator_repo(repo);
+        let instance = repo.join("cliente-noslug");
+        let env = run(
+            repo,
+            &json!({
+                "instance_root": instance.display().to_string(),
+                "runtime_profile": "consumer",
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env.success);
+        assert!(!instance.join(".SddIA/active-domain-profile.json").is_file());
+        assert_eq!(
+            env.data.as_ref().unwrap()["domain_profile"]["reason"],
+            "codex-unknown"
+        );
+    }
+
+    #[test]
+    fn domain_profile_skipped_on_forge_profile() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        scaffold_creator_repo(repo);
+        let instance = repo.join("forja");
+        fs::create_dir_all(&instance).unwrap();
+        fs::write(
+            instance.join("MANIFEST.json"),
+            r#"{"codex":"codex-kalma2-assistant"}"#,
+        )
+        .unwrap();
+        let env = run(
+            repo,
+            &json!({
+                "instance_root": instance.display().to_string(),
+                "runtime_profile": "forge",
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env.success);
+        assert!(!instance.join(".SddIA/active-domain-profile.json").is_file());
+        assert_eq!(
+            env.data.as_ref().unwrap()["domain_profile"]["reason"],
+            "not-consumer"
+        );
+    }
+
+    #[test]
+    fn domain_profile_never_overwrites() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        scaffold_creator_repo(repo);
+        let instance = repo.join("cliente-keep");
+        fs::create_dir_all(instance.join(".SddIA")).unwrap();
+        fs::write(
+            instance.join(".SddIA/active-domain-profile.json"),
+            r#"{"codex_slug":"keep-me","git_required":true}"#,
+        )
+        .unwrap();
+        fs::write(
+            instance.join("MANIFEST.json"),
+            r#"{"codex":"codex-kalma2-assistant"}"#,
+        )
+        .unwrap();
+        let env = run(
+            repo,
+            &json!({
+                "instance_root": instance.display().to_string(),
+                "runtime_profile": "consumer",
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env.success);
+        let raw = fs::read_to_string(instance.join(".SddIA/active-domain-profile.json")).unwrap();
+        assert!(raw.contains("keep-me"));
+        assert_eq!(
+            env.data.as_ref().unwrap()["domain_profile"]["reason"],
+            "already-present"
+        );
     }
 }
