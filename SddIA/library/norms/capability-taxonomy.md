@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.7"
+version: "1.0.8"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:13129a1f48dfecd9aa2e80640a8a7fcc0f390582176a06527d9a172c2df8cf47"
+hash_signature: "sha256:f03b9a2dbdb03585139ba0122eddff6769af26a060a8f9a20566d2b610cd5629"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -36,6 +36,10 @@ catalog:
     contract: "llm.interact"
     version: "1.0.0"
     description: "Interacción LLM gobernada vía skill mayeuta-llm (síntesis / clasificación de intención)."
+  - id: "llm:infer"
+    contract: "llm.infer"
+    version: "1.0.0"
+    description: "Inferencia cruda de proveedor LLM vía adaptador (tool:/skill:); error_code tipado; consumida por tool:llm-router. Ortogonal a llm:interact."
   - id: "gov:rbac"
     contract: "gov.rbac"
     version: "1.0.0"
@@ -77,6 +81,7 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `qa:probe` | `qa.probe` | 1.0.0 | Sonda Caos / auditoría empírica vía tools |
 | `audit:compliance` | `audit.compliance` | 1.0.0 | Cumplimiento termodinámico (Gobernanza; ≠ Caos) |
 | `llm:interact` | `llm.interact` | 1.0.0 | Interacción LLM vía mayeuta-llm |
+| `llm:infer` | `llm.infer` | 1.0.0 | Inferencia cruda de proveedor vía adaptador (≠ interact) |
 | `gov:rbac` | `gov.rbac` | 1.0.0 | Gobernanza RBAC Cerbero Self-Healing |
 | `channel:ingest` | `channel.ingest` | 1.0.0 | Ingesta canal Telegram → domain |
 | `agenda:persist` | `agenda.persist` | 1.0.0 | Agenda local de instancia vía agenda-manager |
@@ -90,4 +95,5 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 - El contrato I/O de cada capacidad vive bajo el path Cúmulo `capability_contracts` (`{contract}.schema.json`).
 - **Rigor taxonómico:** `qa:probe` (Caos/sonda) ≠ `audit:compliance` (Gobernanza/cumplimiento). Prohibido reuso cruzado.
 - **Rigor H11:** `gov:rbac` ≠ `audit:compliance`; `channel:ingest` ≠ `bus:route`.
-- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`.
+- **Rigor L-TERM:** `llm:infer` (adaptador / inferencia cruda) ≠ `llm:interact` (Mayeuta / síntesis e intención). Prohibido `provides llm:interact` en adaptadores de proveedor.
+- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`; PBI-MULTI-LLM-ROUTER `llm:infer`.

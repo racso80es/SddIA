@@ -1,5 +1,5 @@
 {
-  "version": "1.11.0",
+  "version": "1.11.1",
   "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
@@ -126,7 +126,8 @@
     }
   },
   "instance": {
-    "projects": ".SddIA/projects"
+    "projects": ".SddIA/projects",
+    "llm_registry": ".SddIA/llm-registry.json"
   },
   "codex_subscriptions": {
     "codex-software-engineering": "SddIA/library/codexes/codex-software-engineering/subscriptions.json"

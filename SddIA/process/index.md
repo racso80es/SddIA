@@ -6,7 +6,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
-| aiua-stimulus-processing | 6c595785-e386-402f-b570-0b2aa6343051 | 1.2.0 | ecosystem-evolution | — | Latido ontológico de la Aiúa: contexto LanceDB, inyección de |
+| aiua-stimulus-processing | 6c595785-e386-402f-b570-0b2aa6343051 | 1.3.0 | ecosystem-evolution | — | Latido ontológico de la Aiúa: contexto LanceDB, inyección de |
 | system-vitality-probe | b215b373-f6d3-4fb1-9d55-60eb260df5cc | 1.0.0 | quality-assurance | — | Sondas deterministas de invariantes no-proceso y HTTP de Kal |
 | query-ecosystem-health | 2b337302-e794-46b8-ad4e-f65bafd21c94 | 1.0.0 | quality-assurance | — | Fusiona map-snapshot × territorio Argos/Radamanto/Cerbero y  |
 | compile-ecosystem-map-snapshot | e7f09165-c445-49ae-965d-41abb4738679 | 1.0.0 | ecosystem-evolution | — | Precompila inventario esperado (tools/skills/daemons) en map |

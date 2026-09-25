@@ -228,6 +228,7 @@ Prohibido inventar `capability_id` fuera del Códice (**AC-NO-INVENT** / Filtro 
 | `qa:probe` | `qa.probe` | `tool:event-bus-audit` (tools caos/audit también `provides`) |
 | `audit:compliance` | `audit.compliance` | `skill:compliance-auditor` |
 | `llm:interact` | `llm.interact` | `skill:mayeuta-llm` |
+| `llm:infer` | `llm.infer` | adaptadores `gemini-http-infer` / `antigravity-cli-executor` (vía `tool:llm-router`) |
 
 **Rigor taxonómico:** `qa:probe` (Caos/sonda) ≠ `audit:compliance` (Gobernanza/cumplimiento). Prohibido reuso cruzado.
 

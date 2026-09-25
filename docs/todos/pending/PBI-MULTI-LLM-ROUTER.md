@@ -149,15 +149,19 @@ Familias de variables comentadas, vacías, sin slug: `SDDIA_LLM_REGISTRY_PATH?` 
 - Adaptador local (Ollama/vLLM) — Fase 2. El registro ya lo admite (`adapter_ref` nuevo + `BASE_URL` de familia).
 - Adaptador Cursor (`cursor-agent --print`) como oráculo del registro — solo si laudo; hoy es harness de fases `agent:`.
 
-## 5. Hipótesis a laudar en clarify (Mayeuta)
+## 5. Laudos (Vértice 2026-09-25)
 
-| ID | Pregunta | Propuesta v1.2.0 | Riesgo si se decide distinto |
-|----|----------|------------------|------------------------------|
-| **H-LOCUS** | ¿Router en el motor (`capability_di_resolver`/inyección) o cápsula Rust? | **Cápsula** `tool:llm-router`. Respeta «agentes orquestan, cápsulas ejecutan»; no reabre el resolver DI (1 provider por binding); es el binario al que una instancia puede apuntar `SDDIA_LLM_CLI_COMMAND` (H-MAYUTA-CLI). | Motor: nueva semántica `affinity` en `requires_capability`, reintento en la capa de inyección, contrato de proceso 1.5.0. Trabajo ×3. |
-| **H-TERM** | ¿Nuevo término `llm:infer` (adaptador) o bump `llm.interact` 1.1.0? | **Nuevo término** `llm:infer` / `llm.infer`: `llm:interact` es interacción gobernada (síntesis/intención, provider mayeuta-llm); `llm:infer` es inferencia cruda de proveedor. Evita ambigüedad del resolver (`CAPABILITY_PROVIDER_AMBIGUOUS`). Requiere laudo AC-NO-INVENT. | Bump: mezcla sobre de skill con sobre de adaptador; adaptadores pasarían a `provides llm:interact` (rompe L-ORTHOGONAL-INTERACT). |
-| **H-REGISTRY-LOCUS** | ¿Registro en `SddIA/core/` o `.SddIA/`? | Esquema en Core; **datos en `.SddIA/llm-registry.json`** (Cúmulo `instance.llm_registry`). | Core con slugs = F5. |
-| **H-EMIT** | ¿El router emite `Domain_Entity_Degraded`? | **No.** Devuelve `attempts[]` tipados; Radamanto decide degradación desde telemetría (umbral, no un fallo aislado). | Router emisor = acoplamiento a bus y falsos positivos por un 429. |
-| **H-AIUA-OVERRIDE** | ¿`inputs.model` de `aiua-stimulus-processing` sigue vivo? | Sí, como override explícito hacia el oráculo elegido; `SDDIA_GEMINI_MODEL` deja de ser el default del latido (lo pone el registro). | Romper `api-aiua-interact` que hoy puede pasar `model`. |
+| ID | Dictamen |
+|----|----------|
+| **L-TERM** | Término nuevo `llm:infer` / `llm.infer`. Adaptadores `provides: ["llm:infer"]`. `llm:interact` intacto. Bump 1.1.0 descartado (`CAPABILITY_PROVIDER_AMBIGUOUS`). |
+| **L-LOCUS** | Cápsula `tool:llm-router`. Motor / `capability_di_resolver` intacto. |
+| **L-VAULT** | Instancia: `oracle-agy` (`skill:antigravity-cli-executor`, `affinity: ["aiua"]`) → `oracle-gemini` (`tool:gemini-http-infer`). |
+| **L-REGISTRY** | Esquema Core; datos `.SddIA/llm-registry.json`. |
+| **L-EMIT** | Router no emite ECST; `attempts[]` + `telemetry_receipt`. |
+| **L-SALTO** | Salto solo `rate_limited \| timeout \| upstream_unavailable \| network`. |
+| **L-AIUA** | Latido → router, `affinity: "aiua"`. `inputs.model` = override. |
+| **L-LEGACY** | Request `llm.infer` + legacy en adaptadores. |
+| **L-ORTHO** | Sin reabrir tiers / `llm:interact` / kalma2-bridge. |
 
 ## 6. Criterios de aceptación
 

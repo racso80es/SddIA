@@ -43,7 +43,6 @@ Blueprint de ejecución. Fuentes Rust (`SddIA/tools/*/src`, `SddIA/skills/*/src`
 | Smoke live sin sesión `agy` o sin `GEMINI_API_KEY` | CA-AIUA se valida con stubs; smoke live = evidencia adicional no bloqueante |
 | WASI CI compila `tools/*` | El router no usa red ni FS fuera de lectura; si el job WASI lo rechaza, excluir con paridad `gemini-http-infer` y anotar en evolution |
 
-## Laudos pendientes que alteran el plan
+## Laudos (cerrados 2026-09-25)
 
-- `L-TERM` rechazado → T0 pasa a bump `llm.interact` 1.1.0 y T2 cambia `provides`. 
-- `L-LOCUS` rechazado → T3/T4 se sustituyen por trabajo en `capability_di_resolver` + capa de inyección (re-planificar).
+`L-TERM` = `llm:infer` nuevo. `L-LOCUS` = cápsula `tool:llm-router`. `L-VAULT` = `oracle-agy` → `oracle-gemini`. Plan inalterado.

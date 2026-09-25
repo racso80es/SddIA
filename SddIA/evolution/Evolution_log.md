@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `d2e44083-ccdf-45af-b477-f6c71833fc31` | 2026-09-25 | llm:infer + tool:llm-router + Aiúa 1.3.0 (L-TERM/L-LOCUS/L-VAULT agy→gemini). | CANONICO | `SddIA/evolution/d2e44083-ccdf-45af-b477-f6c71833fc31.md` |
 | `ff8a0c37-a03d-4945-933c-8b54c03b9707` | 2026-09-25 | ABSTRACT-04: proyectos aislados, delivery_mode y forge-pbi en el códice software. | CANONICO | `SddIA/evolution/ff8a0c37-a03d-4945-933c-8b54c03b9707.md` |
 | `c9c0206e-aed4-4e48-a17d-b28d1de43d46` | 2026-09-25 | Suprime Kintsugi en reserva de objeto IOTA y en exit 3 de la prótesis Kalma2. Cubos léxicos Mayeuta 1.5.0. | CANONICO | `SddIA/evolution/c9c0206e-aed4-4e48-a17d-b28d1de43d46.md` |
 | `79b6cc26-3958-4704-a797-d87bf020ce6d` | 2026-09-25 | LogRateLimit en unidades systemd de instancia y reanclaje source_sha256 de daemons y tools. | CANONICO | `SddIA/evolution/79b6cc26-3958-4704-a797-d87bf020ce6d.md` |

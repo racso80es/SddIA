@@ -26,6 +26,9 @@ docs/events/
 .SddIA/telemetry-compliance/
 .SddIA/cerbero/revoked_entities.json
 
+# Registro de oráculos LLM de instancia (L-VAULT; esquema en Core)
+.SddIA/llm-registry.json
+
 # Jerarquía de Bóvedas — secretos locales (no versionar)
 # Contenido de bóvedas (cualquier profundidad). No ignorar el directorio
 # entero: si se ignora el dir, git no puede re-incluir `.env.example` y

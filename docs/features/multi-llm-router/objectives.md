@@ -34,7 +34,7 @@ Que el latido de la Aiúa (y, después, cualquier consumidor de inferencia) no d
 
 ## Criterios de aceptación (este ciclo)
 
-Los CA del PBI v1.2.0 §6: `CA-CONTRACT`, `CA-REGISTRY`, `CA-ROUTER`, `CA-ADAPTERS`, `CA-AIUA`, `CA-ORTHO`, `CA-FAILSOFT`, `CA-GOV`, `CA-DOC`. Laudos aplicados: `L-LOCUS`, `L-TERM`, `L-REGISTRY`, `L-EMIT`, `L-SALTO`, `L-AIUA`, `L-LEGACY`, `L-ORTHO` (clarify.md). `global: APTO` solo con CI verde.
+Los CA del PBI v1.2.0 §6. Laudos ratificados 2026-09-25: `L-TERM`, `L-LOCUS`, `L-VAULT` (`oracle-agy` → `oracle-gemini`), `L-REGISTRY`, `L-EMIT`, `L-SALTO`, `L-AIUA`, `L-LEGACY`, `L-ORTHO`. `global: APTO` solo con CI verde.
 
 ## Ley aplicada
 

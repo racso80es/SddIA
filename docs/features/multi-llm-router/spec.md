@@ -80,8 +80,9 @@ Reglas: `adapter_ref` con prefijo `tool:`/`skill:` y nombre kebab-case existente
 
 - Cúmulo: `instance.llm_registry: ".SddIA/llm-registry.json"` (edición directa de `SddIA/core/cumulo.paths.json` — Core SSOT, no genoma protegido DA-2; verificar con `sddia-qa`).
 - Override: env `SDDIA_LLM_REGISTRY_PATH` (bóveda instancia).
-- Starter-kit: `SddIA/scripts/starter-kit/.SddIA/llm-registry.example.json` con dos oráculos (`primary` → `skill:antigravity-cli-executor`, `secondary` → `tool:gemini-http-infer`), `model: ""`, `fallback` cruzado solo en una dirección (`primary → secondary`, `secondary → null`).
-- `.gitignore`: `.SddIA/llm-registry.json` ya cubierto si `.SddIA/` entera lo está; verificar.
+- Starter-kit: `SddIA/scripts/starter-kit/.SddIA/llm-registry.example.json` con `oracle-agy` → `skill:antigravity-cli-executor` (`affinity: ["aiua"]`, `fallback: "oracle-gemini"`) y `oracle-gemini` → `tool:gemini-http-infer` (`fallback: null`); `model: ""`.
+- Instancia (L-VAULT, no genoma): `.SddIA/llm-registry.json` misma topología. Gitignored.
+- `.gitignore`: entrada explícita `.SddIA/llm-registry.json` (`.SddIA/` no se ignora entera).
 
 ## 3. Cápsula `tool:llm-router`
 
