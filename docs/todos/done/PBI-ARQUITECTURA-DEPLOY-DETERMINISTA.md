@@ -1,10 +1,10 @@
 ---
 document_id: PBI-ARQUITECTURA-DEPLOY-DETERMINISTA
-uuid: "GENERAR-UUID-V4-AL-MATERIALIZAR"
+uuid: "c154bea0-c4c1-457e-b070-f7dfd3bc5f1b"
 title: "[ARQUITECTURA] Orquestador Físico de Despliegue y Borrado (SddIA Installer)"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 priority: alta
 type: arquitectura
 process: feature
@@ -42,7 +42,7 @@ La ejecución del comando de destrucción (ej. `./sddia-installer.sh teardown`) 
 3.  **Wipe Físico:** Borrado recursivo (`rm -rf`) del directorio de la instancia (`/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA`).
 
 ## 5. Criterios de Aceptación (Protocolo de Acero)
-*   [ ] **Despliegue Atómico:** El script levanta la instancia completa en la ruta por defecto ejecutando un único comando, sin requerir prompts interactivos.
-*   [ ] **Payload Íntegro:** La instancia desplegada contiene la totalidad de las cápsulas compiladas en el directorio objetivo, verificable mediante inspección de binarios.
-*   [ ] **Teardown Limpio:** Tras ejecutar el borrado, no persisten procesos residuales (`kalma2-bridge`, `event-watcher`, etc.), las unidades systemd desaparecen del host y el directorio objetivo es eliminado.
-*   [ ] **Resiliencia de Sobreescritura:** Si se ejecuta el comando de despliegue sobre una ruta que ya contiene una instancia viva, el script debe abortar de forma segura o exigir un flag de fuerza explícito (`--force` para wipe previo).
+*   [x] **Despliegue Atómico:** `./sddia-installer.sh deploy` sin prompts; cadena bundle `full-node` + `instance-creator` + systemd `@%f`. Smoke dry-run + CI `sddia-installer-smoke`. Deploy live ruta PBI = fuera de gate.
+*   [x] **Payload Íntegro:** `--profile full-node --list-capsules` ⊇ CONSUMER_BINS + crate extra.
+*   [x] **Teardown Limpio:** `stop`+`disable` `@${ESC}`; locks PID; `rm -rf ROOT`. Exige `--force`. Dry-run esc coherente.
+*   [x] **Resiliencia de Sobreescritura:** destino vivo sin `--force` → exit 2.
