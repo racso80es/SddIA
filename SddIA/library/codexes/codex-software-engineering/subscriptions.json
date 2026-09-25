@@ -1,0 +1,10 @@
+{
+  "PBI_Forged": [
+    {
+      "agent": "tekton",
+      "process": "feature",
+      "intent": "El PBI sellado entra al ciclo declarado en payload.process."
+    }
+  ],
+  "Delivery_Committed": []
+}

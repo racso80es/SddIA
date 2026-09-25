@@ -5,6 +5,8 @@ version: "1.0.0"
 nature: "domain-codex"
 author: "tekton-abstract-02"
 target_environment: ["software-engineering", "git", "pull-request"]
+aliases:
+  - codex-agile-forge
 certification_grade: "Pendiente"
 process_membership:
   - feature
@@ -13,6 +15,7 @@ process_membership:
   - pull-request-review
   - accept-pr
   - delivery-close-cycle
+  - forge-pbi
 composition:
   - norm: "4c448c82-de41-460f-b24f-82a84fa5ed69"
     path: "../norms/features-documentation-pattern.md"

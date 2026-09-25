@@ -57,43 +57,61 @@ fn event_type_from_frontmatter(front: &str) -> Option<String> {
 }
 
 pub fn load_event_class_schemas(repo: &Path) -> HashMap<String, EventClassSchema> {
-    let events_dir = repo.join("SddIA/events");
-    let mut schemas = HashMap::new();
-    if !events_dir.is_dir() {
-        return schemas;
-    }
-    let mut paths = Vec::new();
-    collect_md_files(&events_dir, &mut paths);
-    paths.sort();
-    for path in paths {
-        if path.file_name().and_then(|n| n.to_str()) == Some("index.md")
-            || path.file_name().and_then(|n| n.to_str()) == Some("events-contract.md")
+    let mut dirs = vec![repo.join("SddIA/events")];
+    if let Ok(cfg) = crate::core::paths::load_paths_config(repo) {
+        if let Some(arr) = cfg
+            .get("directories")
+            .and_then(|d| d.get("events_domain_roots"))
+            .and_then(|v| v.as_array())
         {
+            for item in arr {
+                if let Some(rel) = item.as_str() {
+                    let rel = rel.trim().trim_end_matches('/');
+                    if !rel.is_empty() {
+                        dirs.push(repo.join(rel));
+                    }
+                }
+            }
+        }
+    }
+    let mut schemas = HashMap::new();
+    for events_dir in dirs {
+        if !events_dir.is_dir() {
             continue;
         }
-        let Ok(text) = fs::read_to_string(&path) else {
-            continue;
-        };
-        let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
-        if !text.starts_with("---") {
-            continue;
+        let mut paths = Vec::new();
+        collect_md_files(&events_dir, &mut paths);
+        paths.sort();
+        for path in paths {
+            if path.file_name().and_then(|n| n.to_str()) == Some("index.md")
+                || path.file_name().and_then(|n| n.to_str()) == Some("events-contract.md")
+            {
+                continue;
+            }
+            let Ok(text) = fs::read_to_string(&path) else {
+                continue;
+            };
+            let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
+            if !text.starts_with("---") {
+                continue;
+            }
+            let parts: Vec<&str> = text.splitn(3, "---").collect();
+            if parts.len() < 3 {
+                continue;
+            }
+            let Some(event_type) = event_type_from_frontmatter(parts[1]) else {
+                continue;
+            };
+            let body = parts[2];
+            schemas.insert(
+                event_type,
+                EventClassSchema {
+                    required: parse_payload_fields(body, "REQUIRED"),
+                    optional: parse_payload_fields(body, "OPTIONAL"),
+                    forbidden: parse_payload_fields(body, "FORBIDDEN"),
+                },
+            );
         }
-        let parts: Vec<&str> = text.splitn(3, "---").collect();
-        if parts.len() < 3 {
-            continue;
-        }
-        let Some(event_type) = event_type_from_frontmatter(parts[1]) else {
-            continue;
-        };
-        let body = parts[2];
-        schemas.insert(
-            event_type,
-            EventClassSchema {
-                required: parse_payload_fields(body, "REQUIRED"),
-                optional: parse_payload_fields(body, "OPTIONAL"),
-                forbidden: parse_payload_fields(body, "FORBIDDEN"),
-            },
-        );
     }
     schemas
 }
