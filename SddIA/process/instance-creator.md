@@ -4,7 +4,7 @@ context:
 - filesystem-ops
 - system-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:25207b0c9e8a97b31a629c38151ec87821ae7cd584cda793a472be26817d7d1f
+hash_signature: sha256:ada69320770bdfec9d488261be9090035aa66d645ef1f518b521c19ad07705db
 inputs:
 - instance_root: Ruta absoluta o relativa (al repo) de la carpeta instancia objetivo
 name: instance-creator
@@ -13,7 +13,7 @@ outputs:
 - smoke: Resultado del gate post-ignición
 - runtime_profile: Perfil aplicado
 phases:
-- intent: Crear/verificar arbol .SddIA/; overlay starter-kit; sustituir local.paths.json ausente, vacio o {}
+- intent: Crear/verificar arbol .SddIA/; overlay starter-kit; sustituir local.paths.json ausente, vacio o {}; materializar llm-registry.json y active-domain-profile.json (consumer) si ausentes
   name: Topologia
 - intent: Inyectar secretos desde vault/plantilla sin filtrar a logs
   name: Vault
@@ -24,7 +24,7 @@ phases:
 - intent: Preflight topologia (overlay no vacio); no emitir Local_QA_Requested; si skip_ignition no exigir route-domain*; si ignicion no skipped, route-domain-event success:true
   name: Smoke
 uuid: dead5ca7-c0b9-42ef-aad6-171991fb524f
-version: 1.3.0
+version: 1.4.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

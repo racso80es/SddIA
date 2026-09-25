@@ -34,6 +34,10 @@ grep -q 'LogRateLimitBurst=500' \
   "$ROOT/SddIA/templates/systemd/sddia-daemon@.service.template" || fail "factory LogRateLimitBurst"
 grep -q 'ExecStart=%f/SddIA/daemons/email-watcher.sh' \
   "$ROOT/SddIA/templates/systemd/sddia-email-watcher@.service.template" || fail "email ExecStart %f"
+grep -q 'LogRateLimitIntervalSec=30s' \
+  "$ROOT/SddIA/templates/systemd/sddia-email-watcher@.service.template" || fail "email LogRateLimitIntervalSec"
+grep -q 'LogRateLimitBurst=500' \
+  "$ROOT/SddIA/templates/systemd/sddia-email-watcher@.service.template" || fail "email LogRateLimitBurst"
 if grep -q '@@SDDIA_CORE_ROOT@@' "$ROOT/SddIA/templates/systemd/"*.template; then
   fail "CORE_ROOT residual en plantillas"
 fi
