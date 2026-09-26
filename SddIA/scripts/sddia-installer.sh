@@ -81,6 +81,10 @@ resolve_root() {
   fi
   ROOT="$(_abs "$candidate")"
   forge_abs="$(_abs "$FORGE_ROOT")"
+  home_abs="$(_abs "${HOME:-/home}")"
+  if [[ -z "$ROOT" || "$ROOT" == "/" || "$ROOT" == "/home" || "$ROOT" == "$home_abs" ]]; then
+    _die "ROOT inseguro ($ROOT). Abort." 1
+  fi
   if [[ "$ROOT" == "$forge_abs" || "$ROOT" == "$forge_abs"/* ]]; then
     _die "ROOT coincide o está bajo la forja ($forge_abs). Abort." 1
   fi
@@ -169,24 +173,53 @@ stop_lock_residuals() {
   shopt -u nullglob
 }
 
+_signal_matching_pids() {
+  local sig="$1"
+  local pid cwd exe cmd
+  for pid in /proc/[0-9]*; do
+    pid="${pid##*/}"
+    [[ "$pid" =~ ^[0-9]+$ ]] || continue
+    cwd="$(readlink -f "/proc/${pid}/cwd" 2>/dev/null || true)"
+    exe="$(readlink -f "/proc/${pid}/exe" 2>/dev/null || true)"
+    cmd="$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)"
+    if [[ "$cmd" == *"${ROOT}/start-sddia.sh"* ]] \
+      || [[ "$cwd" == "$ROOT" || "$cwd" == "${ROOT}/"* ]] \
+      || [[ "$exe" == "${ROOT}/"* ]]; then
+      kill "-${sig}" "$pid" 2>/dev/null || true
+    fi
+  done
+}
+
+signal_instance_procs() {
+  _signal_matching_pids TERM
+  _signal_matching_pids KILL
+}
+
 do_teardown() {
-  local unit
+  local unit stem
   echo "[installer] teardown root=$ROOT esc=$ESC" >&2
+  signal_instance_procs
   if command -v systemctl >/dev/null 2>&1; then
-    while IFS= read -r unit; do
-      [[ -z "$unit" ]] && continue
-      unit="${unit%% *}"
+    for stem in sddia-email-watcher sddia-event-watcher sddia-event-sweeper \
+      sddia-kalma2-bridge sddia-telegram-watcher sddia-github-bridge-watcher \
+      sddia-iota-publish-relay; do
+      unit="${stem}@${ESC}.service"
       systemctl --user stop "$unit" 2>/dev/null || true
       systemctl --user disable "$unit" 2>/dev/null || true
-    done < <(systemctl --user list-units --all --plain --no-legend "sddia-*@${ESC}.service" 2>/dev/null || true)
+      systemctl --user reset-failed "$unit" 2>/dev/null || true
+    done
     while IFS= read -r unit; do
       [[ -z "$unit" ]] && continue
       unit="${unit%% *}"
+      [[ "$unit" == *"@${ESC}.service" ]] || continue
+      systemctl --user stop "$unit" 2>/dev/null || true
       systemctl --user disable "$unit" 2>/dev/null || true
-    done < <(systemctl --user list-unit-files --plain --no-legend "sddia-*@${ESC}.service" 2>/dev/null || true)
+      systemctl --user reset-failed "$unit" 2>/dev/null || true
+    done < <(systemctl --user list-units --all --plain --no-legend "sddia-*@${ESC}.service" 2>/dev/null || true)
     systemctl --user daemon-reload 2>/dev/null || true
   fi
   stop_lock_residuals
+  signal_instance_procs
   if [[ -d "$ROOT" ]]; then
     rm -rf "$ROOT"
   fi
