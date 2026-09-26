@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a74a6ed5-f032-4a19-845e-e56877e76d9c` | 2026-09-26 | Norma sddia-installer-contract — destilación bilateral deploy/teardown | CANONICO | `SddIA/evolution/a74a6ed5-f032-4a19-845e-e56877e76d9c.md` |
 | `e0b636bf-099c-4907-a5d0-70e62e6c6f6e` | 2026-09-25 | Installer determinista deploy/teardown y perfil full-node en build-release-bundle | CANONICO | `SddIA/evolution/e0b636bf-099c-4907-a5d0-70e62e6c6f6e.md` |
 | `faa18af8-60e1-4d3f-b824-990f89cee208` | 2026-09-25 | Bundle consumer empaqueta SddIA/conscience; start-sddia no exige git en instancia wipe. | CANONICO | `SddIA/evolution/faa18af8-60e1-4d3f-b824-990f89cee208.md` |
 | `806c9463-4c82-4216-a246-d5650a8553e9` | 2026-09-25 | Bundle consumer: cadena Tormentosa 13 ELF, llm-registry y active-domain-profile (instance-creator 1.4.0), LogRateLimit email. | CANONICO | `SddIA/evolution/806c9463-4c82-4216-a246-d5650a8553e9.md` |

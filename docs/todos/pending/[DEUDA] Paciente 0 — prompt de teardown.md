@@ -11,6 +11,7 @@ process: null
 dispatch: false
 process_candidate: paciente0-undeploy
 process_candidate_class: process
+installer_contract_ref: SddIA/library/norms/sddia-installer-contract.md
 created: "2026-08-25"
 updated: "2026-08-28"
 instance_name_default: SddIA_AP
