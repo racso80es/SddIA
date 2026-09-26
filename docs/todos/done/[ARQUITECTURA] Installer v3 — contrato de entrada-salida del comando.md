@@ -4,7 +4,9 @@ uuid: "cb5483e7-4e39-4fb6-9c11-4a8285b957b7"
 title: "[ARQUITECTURA] Installer v3 — contrato de entrada-salida del comando (motor, fachada, progreso)"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
+pr_url: https://github.com/racso80es/SddIA/pull/303
+closed: "2026-09-26"
 priority: alta
 type: arquitectura
 process: refactorization
