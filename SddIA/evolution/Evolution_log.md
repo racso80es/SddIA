@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `68a5f478-ac39-4bf6-bd83-0d0f6fdc676c` | 2026-09-26 | Installer v3: envelope capsule-json-io, request-file, progreso JSONL, norm 1.2.0 | CANONICO | `SddIA/evolution/68a5f478-ac39-4bf6-bd83-0d0f6fdc676c.md` |
 | `b2deb46b-9d1f-47ef-8675-c26cd130aeb8` | 2026-09-26 | Installer v2 anti-fricción: vault, registro host, verify, eventos Instance_* y norm 1.1.0 | CANONICO | `SddIA/evolution/b2deb46b-9d1f-47ef-8675-c26cd130aeb8.md` |
 | `a74a6ed5-f032-4a19-845e-e56877e76d9c` | 2026-09-26 | Norma sddia-installer-contract — destilación bilateral deploy/teardown | CANONICO | `SddIA/evolution/a74a6ed5-f032-4a19-845e-e56877e76d9c.md` |
 | `e0b636bf-099c-4907-a5d0-70e62e6c6f6e` | 2026-09-25 | Installer determinista deploy/teardown y perfil full-node en build-release-bundle | CANONICO | `SddIA/evolution/e0b636bf-099c-4907-a5d0-70e62e6c6f6e.md` |

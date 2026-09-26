@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sddia.local/norms/sddia-installer-request.schema.json",
+  "title": "sddia-installer request",
+  "type": "object",
+  "required": ["request"],
+  "properties": {
+    "meta": { "type": "object" },
+    "request": {
+      "type": "object",
+      "required": ["command"],
+      "properties": {
+        "command": { "enum": ["deploy", "teardown"] },
+        "root": { "type": "string" },
+        "vault": { "type": "string" },
+        "codex": { "type": "string" },
+        "force": { "type": "boolean" },
+        "skip_build": { "type": "boolean" },
+        "dry_run": { "type": "boolean" },
+        "allow_shared_mailbox": { "type": "boolean" },
+        "verify": { "type": "boolean" },
+        "correlation_id": { "type": "string" },
+        "progress": { "enum": ["auto", "fd3", "stderr", "none"] },
+        "log_dir": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
