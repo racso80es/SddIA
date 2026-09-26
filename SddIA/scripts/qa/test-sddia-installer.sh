@@ -61,4 +61,28 @@ echo "$cons" | grep -qx "execute-process" || fail "consumer list-capsules roto"
 # 7) wrapper --help
 "$INSTALLER" --help >/dev/null || fail "wrapper --help"
 
+# 8) teardown sin --force → exit 3
+set +e
+"$INSTALLER" teardown --root "$SMOKE_ROOT" >/tmp/sddia-installer-tear3.err 2>&1
+tear_rc=$?
+set -e
+[[ "$tear_rc" -eq 3 ]] || fail "teardown sin --force rc=$tear_rc (esperado 3)"
+
+# 9) ROOT inseguro / y forja
+if "$INSTALLER" teardown --root / --dry-run >/dev/null 2>&1; then
+  fail "teardown --root / debía abortar"
+fi
+if "$INSTALLER" teardown --root "$FORGE_ABS" --force --dry-run >/dev/null 2>&1; then
+  fail "teardown --root FORGE debía abortar"
+fi
+
+# 10) teardown --force --dry-run sobre stub (no wipe real)
+mkdir -p "$SMOKE_ROOT/.SddIA"
+toutf="$("$INSTALLER" teardown --root "$SMOKE_ROOT" --force --dry-run)"
+[[ "$(echo "$toutf" | json_field command)" == "teardown" ]] || fail "force dry-run command"
+[[ "$(echo "$toutf" | json_field force)" == "True" || "$(echo "$toutf" | json_field force)" == "true" ]] \
+  || fail "force dry-run force!=true"
+test -d "$SMOKE_ROOT/.SddIA" || fail "dry-run no debe borrar ROOT"
+rm -rf "$SMOKE_ROOT"
+
 echo "OK test-sddia-installer"

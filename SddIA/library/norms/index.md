@@ -16,6 +16,7 @@ Contrato normativo de la familia: `norms-contract.md` (no constituye una norma t
 
 | Archivo fuente | uuid | name | version | scope | category |
 |----------------|------|------|---------|-------|----------|
+| `sddia-installer-contract.md` | `b1327ef3-5f07-4fba-9073-a72c5fdf97e2` | sddia-installer-contract | 1.0.0 | infrastructure | architecture |
 | `todos-jurisdiction.md` | `f0b8ce4a-2f79-4516-bee0-acfe0d25bd58` | todos-jurisdiction | 1.1.0 | agnostic | workflow |
 | `email-triage-matrix.md` | `3d8c7e09-6d98-422d-909f-5b233ba7fcf2` | email-triage-matrix | 1.1.0 | agnostic | workflow |
 | `capability-taxonomy.md` | `e9c66ec6-5b59-4aae-b9f2-91cc313fe295` | capability-taxonomy | 1.0.8 | agnostic | architecture |
@@ -37,4 +38,5 @@ Ninguno. `norms-contract.md` es el contrato de familia, no una fila del catálog
 - **Metadatos:** valores de la tabla copiados desde el YAML de cada norma al momento de indexación.
 - **2026-07-21:** alta `capability-taxonomy` (Códice de la Lengua / PBI-042).
 - **2026-09-25:** `capability-taxonomy` v1.0.8 — alta `llm:infer` (PBI-MULTI-LLM-ROUTER / L-TERM).
+
 
