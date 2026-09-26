@@ -4,7 +4,9 @@ uuid: "8cb95b4a-52f0-4030-91c1-8b937a425589"
 title: "[ARQUITECTURA] Installer v3 — UX de los ejecutables Deploy y Eliminar Cliente"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
+pr_url: https://github.com/racso80es/SddIA/pull/304
+closed: "2026-09-26"
 priority: alta
 type: arquitectura
 process: feature
