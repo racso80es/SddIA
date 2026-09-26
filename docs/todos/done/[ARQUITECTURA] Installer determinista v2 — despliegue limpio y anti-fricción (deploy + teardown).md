@@ -4,7 +4,7 @@ uuid: "bb30e934-7f1f-44cb-a51e-21c28ccf426b"
 title: "[ARQUITECTURA] Installer determinista v2 — despliegue limpio y anti-fricción (deploy + teardown)"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 priority: alta
 type: arquitectura
 process: feature
