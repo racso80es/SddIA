@@ -8,7 +8,10 @@ source "$ROOT/SddIA/scripts/common/sddia_shell_lib.sh"
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 INSTALLER="$ROOT/sddia-installer.sh"
+UI="$ROOT/SddIA/scripts/installer/sddia-installer-ui.sh"
+MOTOR="$ROOT/SddIA/scripts/sddia-installer.sh"
 [[ -x "$INSTALLER" ]] || fail "wrapper no ejecutable: $INSTALLER"
+[[ -x "$UI" ]] || fail "presentador no ejecutable: $UI"
 
 SMOKE_ROOT="/tmp/sddia-installer-smoke-$$"
 FORGE_ABS="$(realpath -m "$ROOT")"
@@ -139,5 +142,42 @@ for k in a:
   if k in ("live",): continue
   if a[k]!=b.get(k): raise SystemExit(f"diff {k}")' "$plan13" "$plan13b" || fail "request-file plan diverge"
 rm -f "$req"
+
+# 14) presentador sin TTY = envelope fachada
+out14="$("$UI" deploy --root "$SMOKE_ROOT" --dry-run 2>/dev/null | cat)"
+out14b="$("$INSTALLER" deploy --root "$SMOKE_ROOT" --dry-run)"
+python3 -c 'import json,sys; a=json.loads(sys.argv[1]); b=json.loads(sys.argv[2]);
+assert a.get("exitCode")==b.get("exitCode") and a.get("success")==b.get("success")' "$out14" "$out14b" \
+  || fail "UI sin TTY diverge de fachada"
+
+# 15) static-envelope teardown rechazado (simula cancelación)
+out15="$(python3 "$ROOT/SddIA/scripts/installer/installer_io.py" static-envelope \
+  --command teardown --root "$SMOKE_ROOT" --esc x --exit-code 3 \
+  --error-code TEARDOWN_REQUIRES_FORCE --message "cancelado")"
+echo "$out15" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["exitCode"]==3; assert d["result"]["error"]["code"]=="TEARDOWN_REQUIRES_FORCE"' \
+  || fail "static-envelope"
+
+# 16) shortcuts materializa e idempotencia
+sc_dest="/tmp/sddia-shortcuts-smoke-$$"
+mkdir -p "$sc_dest"
+"$INSTALLER" shortcuts --dest "$sc_dest" >/dev/null
+[[ -x "$sc_dest/SddIA_Deploy.sh" ]] || fail "falta Deploy shortcut"
+[[ -x "$sc_dest/SddIA_Eliminar_Cliente.sh" ]] || fail "falta Eliminar shortcut"
+grep -q 'sddia-installer-ui.sh' "$sc_dest/SddIA_Deploy.sh" || fail "Deploy no invoca UI"
+h1="$(sha256sum "$sc_dest/SddIA_Deploy.sh" | awk '{print $1}')"
+"$INSTALLER" shortcuts --dest "$sc_dest" >/dev/null
+h2="$(sha256sum "$sc_dest/SddIA_Deploy.sh" | awk '{print $1}')"
+[[ "$h1" == "$h2" ]] || fail "shortcuts no idempotente"
+rm -rf "$sc_dest"
+
+# 17) motor y fachada sin prompts interactivos (AC-13; while-read de systemctl permitido)
+for gate in "$MOTOR" "$INSTALLER"; do
+  if rg 'read -[sep]' "$gate" 2>/dev/null; then
+    fail "read interactivo prohibido en $gate"
+  fi
+  if rg -w 'select|zenity|whiptail' "$gate" 2>/dev/null; then
+    fail "prompt prohibido en $gate"
+  fi
+done
 
 echo "OK test-sddia-installer"

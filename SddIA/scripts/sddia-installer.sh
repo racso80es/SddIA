@@ -3,6 +3,7 @@
 # Uso:
 #   ./sddia-installer.sh deploy   [--root PATH] [--vault PATH] [--codex SLUG] [--force] [--skip-build] [--dry-run] [--allow-shared-mailbox]
 #   ./sddia-installer.sh teardown [--root PATH] [--force] [--dry-run]
+#   ./sddia-installer.sh shortcuts --dest DIR
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -83,12 +84,12 @@ _parse() {
   CMD="$(echo "$1" | tr '[:upper:]' '[:lower:]')"
   shift
   case "$CMD" in
-    deploy|teardown) ;;
+    deploy|teardown|shortcuts) ;;
     -h|--help)
-      sed -n '2,6p' "$0"
+      sed -n '2,7p' "$0"
       exit 0
       ;;
-    *) _die "comando desconocido: $CMD (deploy|teardown)" ;;
+    *) _die "comando desconocido: $CMD (deploy|teardown|shortcuts)" ;;
   esac
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -509,6 +510,7 @@ do_teardown() {
 
 enable_units() {
   local user_sd src base name launcher missing
+  local -a _units_enabled=() _units_skipped=()
   user_sd="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
   mkdir -p "$user_sd"
   src="$ROOT/.SddIA/systemd"
@@ -525,15 +527,66 @@ enable_units() {
   systemctl --user daemon-reload
   for name in event-watcher event-sweeper kalma2-bridge email-watcher telegram-watcher github-bridge-watcher iota-publish-relay; do
     launcher="$ROOT/SddIA/scripts/daemons/${name}.sh"
+    local unit_name="sddia-${name}@${ESC}.service"
     [[ -f "$launcher" ]] || continue
     missing="$(_unit_missing_keys "$name")"
     missing="${missing%,}"
     if [[ -n "$missing" ]]; then
-      echo "[installer] skip sddia-${name}@${ESC}.service (missing: ${missing})" >&2
+      echo "[installer] skip $unit_name (missing: ${missing})" >&2
+      _units_skipped+=("$unit_name")
       continue
     fi
-    echo "[installer] enable --now sddia-${name}@${ESC}.service" >&2
-    systemctl --user enable --now "sddia-${name}@${ESC}.service"
+    echo "[installer] enable --now $unit_name" >&2
+    systemctl --user enable --now "$unit_name"
+    _units_enabled+=("$unit_name")
+  done
+  if [[ -n "${INST_IO_STATE:-}" && -f "${INST_IO_STATE:-}" ]]; then
+    local units_blob
+    units_blob="$(python3 -c 'import json,sys; en=json.loads(sys.argv[1]); sk=json.loads(sys.argv[2]); print(json.dumps({"enabled":en,"skipped":sk}))' \
+      "$(printf '%s\n' "${_units_enabled[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')" \
+      "$(printf '%s\n' "${_units_skipped[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')")"
+    python3 "$_INST_IO_PY" set-field \
+      --state-file "$INST_IO_STATE" \
+      --field units \
+      --json-blob "$units_blob" >/dev/null
+  fi
+}
+
+materialize_shortcuts() {
+  local dest="$1" tmpl src_file dest_file rendered want_hash have_hash
+  [[ -n "$dest" ]] || _die "shortcuts exige --dest DIR"
+  mkdir -p "$dest"
+  src="$SCRIPT_DIR/installer/shortcuts"
+  for tmpl in SddIA_Deploy.sh SddIA_Eliminar_Cliente.sh; do
+    src_file="$src/$tmpl"
+    [[ -f "$src_file" ]] || _die "plantilla ausente: $src_file"
+    dest_file="$dest/$tmpl"
+    rendered="$(sed "s|__FORGE_ROOT__|$FORGE_ROOT|g" "$src_file")"
+    want_hash="$(printf '%s' "$rendered" | sha256sum | awk '{print $1}')"
+    if [[ -f "$dest_file" ]]; then
+      have_hash="$(sha256sum "$dest_file" | awk '{print $1}')"
+      if [[ "$want_hash" == "$have_hash" ]]; then
+        echo "[installer] shortcuts: $dest_file sin cambios" >&2
+        continue
+      fi
+    fi
+    printf '%s' "$rendered" >"$dest_file"
+    chmod +x "$dest_file"
+    echo "[installer] shortcuts: materializado $dest_file" >&2
+  done
+}
+
+_parse_shortcuts() {
+  SHORTCUTS_DEST=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dest) SHORTCUTS_DEST="${2:-}"; [[ -n "$SHORTCUTS_DEST" ]] || _die "--dest exige PATH"; shift 2 ;;
+      -h|--help)
+        sed -n '2,7p' "$0"
+        exit 0
+        ;;
+      *) _die "argumento desconocido en shortcuts: $1" ;;
+    esac
   done
 }
 
@@ -609,6 +662,11 @@ print(json.dumps(payload, separators=(",", ":")))
 }
 
 main() {
+  if [[ "${1:-}" == "shortcuts" ]]; then
+    _parse_shortcuts "${@:2}"
+    materialize_shortcuts "$SHORTCUTS_DEST"
+    exit 0
+  fi
   if [[ "${1:-}" == "--request-file" ]]; then
     local rf="${2:-}"
     [[ -f "$rf" ]] || { echo "[installer] ERROR: request-file ausente" >&2; exit 7; }

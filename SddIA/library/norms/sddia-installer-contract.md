@@ -1,7 +1,7 @@
 ---
 uuid: "b1327ef3-5f07-4fba-9073-a72c5fdf97e2"
 name: "sddia-installer-contract"
-version: "1.2.0"
+version: "1.3.0"
 nature: "tactical-norm"
 author: "tekton"
 scope: "infrastructure"
@@ -31,6 +31,19 @@ Installer v3 I/O: un envelope `capsule-json-io` 2.0 por stdout (`meta.entityId=s
 
 - **I-DEP-SINGLE-STDOUT:** un solo JSON en stdout por invocación (motor o fachada).
 - **I-UX-NOPROMPT-MOTOR:** motor y fachada sin `read`/`select`/`zenity`/`whiptail`.
+- **I-UX-PRESENTER:** interacción humana solo en `SddIA/scripts/installer/sddia-installer-ui.sh`.
+
+## Presentador (1.3.0)
+
+- Entrada: `sddia-installer-ui.sh deploy|teardown` → invoca la fachada `./sddia-installer.sh`; progreso por fd 3.
+- TTY: líneas `k/N — título` y resumen (resultado, puerto WUI, servicios, acta, log, duración); hold hasta tecla (`read -rsn1`, tope 600 s) salvo `--no-hold` o `SDDIA_INSTALLER_HOLD=0`.
+- Sin TTY: sin UI; stdout = envelope de la fachada; `exitCode` propagado.
+- Teardown TTY sin `--yes`: confirmar con la palabra `ELIMINAR` antes de `--force`; rechazo → envelope `TEARDOWN_REQUIRES_FORCE` sin motor.
+
+## Atajos generados (1.3.0)
+
+- `./sddia-installer.sh shortcuts --dest DIR` materializa desde `SddIA/scripts/installer/shortcuts/` (`SddIA_Deploy.sh`, `SddIA_Eliminar_Cliente.sh`) con `__FORGE_ROOT__` sustituido; idempotente por `sha256` (mismo criterio que plantillas systemd en `enable_units`).
+- `~/Aplicaciones/SddIA/` no es SSOT; regeneración en el host es paso de operador post-merge.
 
 Schemas: `sddia-installer-request.schema.json`, `sddia-installer-result.schema.json` (junto a esta norma).
 
