@@ -9,6 +9,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FORGE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=common/sddia_shell_lib.sh
 source "$SCRIPT_DIR/common/sddia_shell_lib.sh"
+# shellcheck source=installer/installer_io_lib.sh
+source "$SCRIPT_DIR/installer/installer_io_lib.sh"
 
 DEFAULT_ROOT="/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA"
 BUNDLE_PROFILE="full-node"
@@ -35,8 +37,34 @@ PLAN_VAULT_ROOT_SOURCE=""
 PLAN_VAULT_INSTANCE_SOURCE=""
 
 _die() {
+  local msg="$1"
   local code="${2:-1}"
-  echo "[installer] ERROR: $1" >&2
+  local err_code="${3:-}"
+  echo "[installer] ERROR: $msg" >&2
+  if [[ -n "${INST_IO_STATE:-}" && -f "$INST_IO_STATE" ]]; then
+    local ec="$err_code"
+    if [[ -z "$ec" ]]; then
+      case "$code" in
+        2) ec="ROOT_LIVE_REQUIRES_FORCE" ;;
+        3) ec="TEARDOWN_REQUIRES_FORCE" ;;
+        4) ec="MAILBOX_SHARED" ;;
+        5) ec="VERIFY_NOT_APTO" ;;
+        6) ec="STEP_FAILED" ;;
+        7) ec="REQUEST_INVALID" ;;
+        *) ec="INVALID_ARGS" ;;
+      esac
+    fi
+    python3 "$_INST_IO_PY" fail \
+      --state-file "$INST_IO_STATE" \
+      --exit-code "$code" \
+      --message "$msg" \
+      --error-code "$ec" >/dev/null 2>&1 || true
+    if [[ -z "${SDDIA_INSTALLER_SUPPRESS_STDOUT:-}" ]]; then
+      python3 "$_INST_IO_PY" emit --state-file "$INST_IO_STATE" --to-stdout 2>/dev/null || true
+    elif [[ -n "${SDDIA_INSTALLER_RESULT_FILE:-}" ]]; then
+      SDDIA_INSTALLER_SUPPRESS_STDOUT=1 python3 "$_INST_IO_PY" emit --state-file "$INST_IO_STATE" >/dev/null 2>&1 || true
+    fi
+  fi
   exit "$code"
 }
 
@@ -290,7 +318,7 @@ check_shared_mailbox() {
   local fp
   fp="$(_registry_python mailbox_fp "$HOST_REGISTRY" "$ROOT/.SddIA/.dev/.env")"
   if ! _registry_python check_mailbox "$HOST_REGISTRY" "$fp" "$ESC"; then
-    _die "mailbox_fingerprint compartido en host (exit 4; usar --allow-shared-mailbox)" 4
+    _die "mailbox_fingerprint compartido en host (exit 4; usar --allow-shared-mailbox)" 4 MAILBOX_SHARED
   fi
 }
 
@@ -367,39 +395,8 @@ p.write_text("\n".join(lines) + "\n")
 }
 
 emit_plan() {
-  local live_flag="${1:-0}"
-  local channel_json="{}"
-  if [[ -f "$WORK/vault/instance.SddIA.dev.env" ]]; then
-    channel_json="$(_registry_python channel_keys "$HOST_REGISTRY" "$WORK/vault/instance.SddIA.dev.env" \
-      "SDDIA_EMAIL_IMAP_SECRET,TELEGRAM_BOT_TOKEN,TELEGRAM_ALLOWED_CHAT_ID,IOTA_WALLET_SECRET,GEMINI_API_KEY,CURSOR_API_KEY")"
-  fi
-  python3 -c '
-import json, sys
-extra = json.loads(sys.argv[9]) if sys.argv[9] else {}
-print(json.dumps({
-    "command": sys.argv[1],
-    "root": sys.argv[2],
-    "esc": sys.argv[3],
-    "bundle_profile": sys.argv[4],
-    "vault_set": sys.argv[5] == "1",
-    "force": sys.argv[6] == "1",
-    "skip_build": sys.argv[7] == "1",
-    "dry_run": True,
-    "live": sys.argv[8] == "1",
-    "vault_root_source": sys.argv[10] or None,
-    "vault_instance_source": sys.argv[11] or None,
-    "wui_port": int(sys.argv[12]) if sys.argv[12] else None,
-    "port_source": sys.argv[13] or None,
-    "channel_keys_present": extra,
-}, separators=(",", ":")))
-' "$CMD" "$ROOT" "$ESC" "$BUNDLE_PROFILE" \
-    "$([[ -n "$VAULT_DIR" ]] && echo 1 || echo 0)" \
-    "$FORCE" "$SKIP_BUILD" "$live_flag" \
-    "$channel_json" \
-    "${PLAN_VAULT_ROOT_SOURCE:-}" \
-    "${PLAN_VAULT_INSTANCE_SOURCE:-}" \
-    "${PLAN_WUI_PORT:-}" \
-    "${PLAN_PORT_SOURCE:-}"
+  _io_set_plan_from_emit "${1:-0}"
+  python3 -c 'import json,sys; st=json.load(open(sys.argv[1])); print(json.dumps(st["plan"], separators=(",", ":")))' "$INST_IO_STATE"
 }
 
 _unit_missing_keys() {
@@ -541,15 +538,24 @@ enable_units() {
 }
 
 do_deploy() {
-  local inputs creator_bin
+  local inputs
   echo "[installer] deploy root=$ROOT profile=$BUNDLE_PROFILE" >&2
+  _io_step_begin validate_host
   validate_host
+  _io_step_end validate_host ok
   registry_reconcile
   if is_live && [[ "$FORCE" -eq 1 ]]; then
+    _io_step_begin teardown_previous
     do_teardown
     escape_root
+    _io_step_end teardown_previous ok
+  else
+    _io_step_begin teardown_previous
+    _io_step_end teardown_previous skipped not_live
   fi
+  _io_step_begin stage_vault
   stage_vault
+  _io_step_end stage_vault ok
   bundle_args=(--out "$ROOT" --profile "$BUNDLE_PROFILE")
   if [[ -n "$CODEX_FLAG" ]]; then
     bundle_args+=(--codex "$CODEX_FLAG")
@@ -557,10 +563,16 @@ do_deploy() {
   if [[ "$SKIP_BUILD" -eq 1 ]]; then
     bundle_args+=(--skip-build)
   fi
-  (
+  _io_step_begin build_bundle
+  if ! (
     cd "$FORGE_ROOT"
     ./SddIA/scripts/build-release-bundle.sh "${bundle_args[@]}"
-  )
+  ) >>"$INST_LOG" 2>&1; then
+    local rc=$? tail
+    tail="$(tail -n 20 "$INST_LOG" 2>/dev/null || true)"
+    _die "build-release-bundle falló (rc=$rc)" 6 STEP_FAILED
+  fi
+  _io_step_end build_bundle ok
   inputs="$(python3 -c '
 import json, sys
 payload = {
@@ -574,55 +586,97 @@ if len(sys.argv) > 3 and sys.argv[3]:
     payload["codex_slug"] = sys.argv[3]
 print(json.dumps(payload, separators=(",", ":")))
 ' "$ROOT" "${VAULT_DIR:-}" "${CODEX_FLAG:-}")"
-  (
+  _io_step_begin materialize_instance
+  if ! (
     cd "$FORGE_ROOT"
     ./sddia-run.sh --process instance-creator --inputs "$inputs"
-  )
+  ) >>"$INST_LOG" 2>&1; then
+    local rc=$?
+    _die "instance-creator falló (rc=$rc)" 6 STEP_FAILED
+  fi
+  _io_step_end materialize_instance ok
+  _io_step_begin check_mailbox
   check_shared_mailbox
+  _io_step_end check_mailbox ok
+  _io_step_begin enable_units
   enable_units
+  _io_step_end enable_units ok
+  _io_step_begin registry_upsert
   registry_upsert
+  _io_step_end registry_upsert ok
+  _io_set_registry upsert
   echo "[installer] deploy ok" >&2
 }
 
 main() {
+  if [[ "${1:-}" == "--request-file" ]]; then
+    local rf="${2:-}"
+    [[ -f "$rf" ]] || { echo "[installer] ERROR: request-file ausente" >&2; exit 7; }
+    local parsed req_json
+    req_json="$(cat "$rf")"
+    if ! parsed="$(python3 "$_INST_IO_PY" parse-request --request-json "$req_json" 2>/dev/null)"; then
+      echo "[installer] ERROR: request inválido" >&2
+      exit 7
+    fi
+    SDDIA_INSTALLER_CORRELATION_ID="$(echo "$parsed" | python3 -c 'import json,sys; print(json.load(sys.stdin)["meta"].get("correlation_id") or "")')"
+    SDDIA_INSTALLER_PROGRESS="$(echo "$parsed" | python3 -c 'import json,sys; print(json.load(sys.stdin)["meta"].get("progress") or "auto")')"
+    mapfile -t _REQ_ARGV < <(echo "$parsed" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(d["argv"]))')
+    set -- "${_REQ_ARGV[@]}"
+  fi
   _parse "$@"
-  _sddia_augment_operator_path
-  _sddia_load_vault "$FORGE_ROOT" || true
-  resolve_root
-  escape_root
   WORK="$(mktemp -d /tmp/sddia-installer.XXXXXX)"
   trap _cleanup EXIT
+  _io_init_session "$FORGE_ROOT" "$CMD" "$DRY_RUN" "$BUNDLE_PROFILE"
 
+  _io_step_begin validate_host
+  _sddia_augment_operator_path
+  _sddia_load_vault "$FORGE_ROOT" || true
+  _io_step_end validate_host ok
+
+  _io_step_begin resolve_target
+  resolve_root
+  escape_root
+  _io_set_context
   local live=0
   if is_live; then
     live=1
   fi
+  _io_step_end resolve_target ok
 
   if [[ "$CMD" == "deploy" ]]; then
+    _io_step_begin stage_vault
     stage_vault
+    _io_step_end stage_vault ok
   fi
 
   if [[ "$DRY_RUN" -eq 1 ]]; then
     if [[ "$CMD" == "deploy" && "$live" -eq 1 && "$FORCE" -eq 0 ]]; then
-      emit_plan 1
-      _die "destino vivo ($ROOT); exigir --force" 2
+      _io_set_plan_from_emit 1
+      _die "destino vivo ($ROOT); exigir --force" 2 ROOT_LIVE_REQUIRES_FORCE
     fi
-    emit_plan "$live"
+    _io_set_plan_from_emit "$live"
+    _io_success_emit "dry-run $CMD ok"
     exit 0
   fi
 
   if [[ "$CMD" == "deploy" ]]; then
     if [[ "$live" -eq 1 && "$FORCE" -eq 0 ]]; then
-      _die "destino vivo ($ROOT); exigir --force" 2
+      _die "destino vivo ($ROOT); exigir --force" 2 ROOT_LIVE_REQUIRES_FORCE
     fi
     do_deploy
+    _io_set_plan_from_emit 0
+    _io_success_emit "deploy ok en $ROOT"
     exit 0
   fi
 
   if [[ "$FORCE" -eq 0 ]]; then
-    _die "teardown exige --force (consentimiento no interactivo)" 3
+    _die "teardown exige --force (consentimiento no interactivo)" 3 TEARDOWN_REQUIRES_FORCE
   fi
+  _io_step_begin signal_procs
   do_teardown
+  _io_set_registry remove
+  _io_set_plan_from_emit 0
+  _io_success_emit "teardown ok"
 }
 
 main "$@"
