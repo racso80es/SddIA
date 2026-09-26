@@ -373,6 +373,41 @@ def cmd_merge_facade(args: argparse.Namespace) -> None:
     print(text)
 
 
+def cmd_static_envelope(args: argparse.Namespace) -> None:
+    """Envelope mínimo sin sesión (presentador: rechazo teardown sin motor)."""
+    exit_code = int(args.exit_code)
+    success = exit_code == 0
+    err = None
+    if not success:
+        err = {
+            "code": args.error_code or ERROR_CODES.get(exit_code, "INVALID_ARGS"),
+            "message": args.message,
+        }
+    env = {
+        "meta": {
+            "schemaVersion": "2.0",
+            "entityKind": "tool",
+            "entityId": ENTITY_ID,
+        },
+        "success": success,
+        "exitCode": exit_code,
+        "message": args.message,
+        "durationMs": 0,
+        "feedback": [],
+        "result": {
+            "command": args.command,
+            "root": args.root or None,
+            "esc": args.esc or None,
+            "plan": {},
+            "steps": [],
+            "units": {"enabled": [], "skipped": []},
+            "log_ref": None,
+            "error": err,
+        },
+    }
+    print(json.dumps(env, separators=(",", ":")))
+
+
 def cmd_parse_request(args: argparse.Namespace) -> None:
     """Normaliza request capsule a JSON de flags para el motor."""
     allowed = {
@@ -497,6 +532,15 @@ def main() -> None:
     pr = sub.add_parser("parse-request")
     pr.add_argument("--request-json", required=True)
     pr.set_defaults(func=cmd_parse_request)
+
+    se = sub.add_parser("static-envelope")
+    se.add_argument("--command", required=True)
+    se.add_argument("--root", default="")
+    se.add_argument("--esc", default="")
+    se.add_argument("--exit-code", required=True)
+    se.add_argument("--error-code", default="")
+    se.add_argument("--message", required=True)
+    se.set_defaults(func=cmd_static_envelope)
 
     args = p.parse_args()
     args.func(args)
