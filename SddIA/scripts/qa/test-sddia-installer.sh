@@ -85,4 +85,20 @@ toutf="$("$INSTALLER" teardown --root "$SMOKE_ROOT" --force --dry-run)"
 test -d "$SMOKE_ROOT/.SddIA" || fail "dry-run no debe borrar ROOT"
 rm -rf "$SMOKE_ROOT"
 
+# 11) dry-run deploy: vault compuesto + wui_port derivado
+out11="$("$INSTALLER" deploy --root "$SMOKE_ROOT" --dry-run)"
+vrs="$(echo "$out11" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("vault_root_source") or "")')"
+[[ -n "$vrs" ]] || fail "vault_root_source vacío en dry-run"
+vis="$(echo "$out11" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("vault_instance_source") or "")')"
+[[ "$vis" == "starter-kit" || -n "$vis" ]] || fail "vault_instance_source ausente"
+wp="$(echo "$out11" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("wui_port"))')"
+[[ "$wp" != "8765" && -n "$wp" ]] || fail "wui_port debe derivarse ≠ 8765 forja"
+ps="$(echo "$out11" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("port_source"))')"
+[[ "$ps" == "derived" ]] || fail "port_source=$ps"
+
+# 12) motor sin curl/ss (palabras completas)
+if rg -w 'curl|ss' "$ROOT/SddIA/scripts/sddia-installer.sh" 2>/dev/null; then
+  fail "motor installer contiene curl/ss"
+fi
+
 echo "OK test-sddia-installer"

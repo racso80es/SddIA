@@ -1,0 +1,13 @@
+{
+  "entity_class": "norm",
+  "entity_name": "sddia-installer-contract",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "tactical_norm_name": "sddia-installer-contract",
+    "tactical_norm_version": "1.1.0",
+    "norm_scope": "infrastructure",
+    "norm_category": "architecture",
+    "tactical_norm_author": "tekton",
+    "tactical_norm_friction": "Installer v2: bóveda compuesta, puerto derivado, unidades condicionales, verify fachada, registro host, códigos 4/5."
+  }
+}

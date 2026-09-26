@@ -5,6 +5,7 @@ pub mod ecosystem_health;
 pub mod daemon_kill_switch;
 pub mod governance_daemon;
 pub mod instance_creator;
+pub mod instance_health_verify;
 pub mod forge_pbi;
 pub mod kalma2;
 pub mod aiua_stimulus;

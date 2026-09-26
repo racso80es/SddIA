@@ -1,0 +1,18 @@
+{
+  "entity_class": "event",
+  "entity_name": "instance-deployed",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "event_name": "instance-deployed",
+    "event_family": "domain",
+    "event_type": "Instance_Deployed",
+    "event_context": "ecosystem-evolution",
+    "event_description": "Instancia materializada por installer deploy. Payload: root, esc, profile, manifest_created_at, verdict verify.",
+    "payload_required": ["root", "esc", "profile"],
+    "payload_optional": ["manifest_created_at", "verdict"],
+    "payload_forbidden": ["entity_id", "review_id"],
+    "emitter_agents": ["tekton"],
+    "event_version": "1.0.0",
+    "events_contract_version": "1.1.0"
+  }
+}

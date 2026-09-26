@@ -127,7 +127,8 @@
   },
   "instance": {
     "projects": ".SddIA/projects",
-    "llm_registry": ".SddIA/llm-registry.json"
+    "llm_registry": ".SddIA/llm-registry.json",
+    "host_registry": ".SddIA/instances.json"
   },
   "codex_subscriptions": {
     "codex-software-engineering": "SddIA/library/codexes/codex-software-engineering/subscriptions.json"

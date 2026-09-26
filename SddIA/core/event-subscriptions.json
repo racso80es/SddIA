@@ -126,5 +126,19 @@
       "tool": "iota-immutable-publisher",
       "intent": "Anclaje índice vectorial epigenético en DLT."
     }
+  ],
+  "Instance_Deployed": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA del despliegue de instancia vía installer."
+    }
+  ],
+  "Instance_Torn_Down": [
+    {
+      "agent": "cumulo",
+      "tool": "iota-immutable-publisher",
+      "intent": "Anclaje DLT IOTA del teardown de instancia vía installer."
+    }
   ]
 }

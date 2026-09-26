@@ -2446,7 +2446,7 @@ fn main() {
 
     let server = Server::http((Ipv4Addr::LOCALHOST, port)).unwrap_or_else(|e| {
         eprintln!("[kalma2-bridge] bind {port}: {e}");
-        std::process::exit(1);
+        std::process::exit(78);
     });
 
     eprintln!("[kalma2-bridge] activo en http://127.0.0.1:{port}");

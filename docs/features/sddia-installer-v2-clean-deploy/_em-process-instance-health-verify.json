@@ -1,0 +1,24 @@
+{
+  "entity_class": "process",
+  "entity_name": "instance-health-verify",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "process_name": "instance-health-verify",
+    "process_context": "quality-assurance",
+    "process_description": "Verificación post-deploy de instancia consumidor: unidades systemd habilitadas, NRestarts, WUI /api/status, perfil de dominio y bóveda. Emite acta en docs/audits.",
+    "process_contract_version": "1.4.0",
+    "process_phases": [
+      {
+        "name": "Verificar instancia",
+        "intent": "Handler nativo: systemctl, HTTP /api/status, acta instance-deploy-{ESC}-{ts}.md con verdict APTO|NO-APTO."
+      }
+    ],
+    "process_inputs": [
+      { "instance_root": "Ruta absoluta de la instancia desplegada" }
+    ],
+    "process_outputs": [
+      { "verdict": "APTO | NO-APTO" },
+      { "audit_path": "Ruta relativa del acta en docs/audits" }
+    ]
+  }
+}

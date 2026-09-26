@@ -1,0 +1,11 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/sddia-installer-v2-clean-deploy",
+  "branch_name": "feat/sddia-installer-v2-clean-deploy",
+  "target_branch": "main",
+  "pbi_ref": "docs/todos/pending/[ARQUITECTURA] Installer determinista v2 — despliegue limpio y anti-fricción (deploy + teardown).md",
+  "document_id": "PBI-ARQUITECTURA-INSTALLER-V2-DESPLIEGUE-LIMPIO",
+  "uuid": "bb30e934-7f1f-44cb-a51e-21c28ccf426b",
+  "pr_title": "feat(installer): v2 despliegue limpio — vault, puerto, verify y registro host",
+  "pr_body": "## Summary\n- Motor installer: bóveda compuesta, instances.json, puerto derivado, unidades condicionales y plantillas systemd frescas.\n- Fachada deploy: instance-health-verify + eventos Instance_Deployed/Torn_Down; contrato norm 1.1.0.\n- Handler Rust instance-health-verify; kalma2 bind exit 78; perfil dominio engineering en instance-creator.\n\n## Test plan\n- [x] SddIA/scripts/qa/test-sddia-installer.sh\n- [x] cargo test -p execute-process instance_creator\n- [x] execute-process --audit-eda-coverage --scan\n- [ ] CI sddia-installer-smoke + checks PR\n"
+}

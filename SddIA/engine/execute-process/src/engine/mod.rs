@@ -193,6 +193,10 @@ pub fn run_process(
         return handlers::instance_creator::run(repo, process_inputs);
     }
 
+    if canonical == "instance-health-verify" {
+        return handlers::instance_health_verify::run(repo, process_inputs);
+    }
+
     if canonical == "forge-pbi" {
         return handlers::forge_pbi::run(repo, process_inputs);
     }
