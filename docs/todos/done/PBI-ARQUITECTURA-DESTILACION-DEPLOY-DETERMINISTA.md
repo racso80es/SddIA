@@ -4,7 +4,7 @@ uuid: "d239cb31-a937-448c-941e-3808a3a28874"
 title: "[ARQUITECTURA] Destilación normativa del installer determinista (deploy + teardown)"
 format: markdown
 version: "1.2.0"
-status: pending
+status: done
 priority: alta
 type: arquitectura
 process: feature

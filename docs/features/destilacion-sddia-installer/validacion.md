@@ -3,8 +3,12 @@ feature_name: destilacion-sddia-installer
 created: "2026-09-26"
 process: feature
 branch: feat/destilacion-sddia-installer
-global: PENDIENTE-CI
-pbi_archived: false
+global: APTO
+pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/301
+ci_head: 04a05d13d5d87f3edecf19e28de40df130e25eed
+ci_run_pr: "36219270707"
+ci_run_push: "36219269410"
 execution_id: "4b9f0aaa-67f9-4213-8031-6dd9fc98dbcb"
 evolution_id: a74a6ed5-f032-4a19-845e-e56877e76d9c
 git_changes:
@@ -15,6 +19,7 @@ git_changes:
   - docs/todos/pending/[DEUDA] Paciente 0 — prompt de teardown.md
   - SddIA/evolution/a74a6ed5-f032-4a19-845e-e56877e76d9c.md
   - SddIA/evolution/Evolution_log.md
+  - docs/todos/done/PBI-ARQUITECTURA-DESTILACION-DEPLOY-DETERMINISTA.md
 checks:
   CA-NORM:
     verdict: APTO
@@ -38,10 +43,10 @@ checks:
     verdict: APTO
     evidence: deudas permanecen en pending/ con installer_contract_ref
   CA-CI:
-    verdict: PENDIENTE
-    evidence: post-PR run_id pendiente
+    verdict: APTO
+    evidence: "PR #301 runs 36219270707 (pull_request) y 36219269410 (push) success; sddia-installer-smoke pass."
 ---
 
 # Validación — destilacion-sddia-installer
 
-`global: APTO` y `accept-pr` bloqueados hasta CI verde del PR.
+CI post-PR verde. PBI archivado en `docs/todos/done/`. `accept-pr` autorizado.
