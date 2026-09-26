@@ -1,0 +1,18 @@
+{
+  "entity_class": "event",
+  "entity_name": "instance-torn-down",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "event_name": "instance-torn-down",
+    "event_family": "domain",
+    "event_type": "Instance_Torn_Down",
+    "event_context": "ecosystem-evolution",
+    "event_description": "Instancia destruida por installer teardown --force. Payload: root, esc, profile.",
+    "payload_required": ["root", "esc", "profile"],
+    "payload_optional": ["manifest_created_at"],
+    "payload_forbidden": ["entity_id", "review_id"],
+    "emitter_agents": ["tekton"],
+    "event_version": "1.0.0",
+    "events_contract_version": "1.1.0"
+  }
+}

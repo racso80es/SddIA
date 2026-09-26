@@ -109,6 +109,10 @@ fn consumer_profile(profile: &str) -> bool {
     matches!(profile, "consumer" | "consumidor")
 }
 
+fn engineering_profile(profile: &str) -> bool {
+    matches!(profile, "engineering" | "full-node")
+}
+
 fn resolve_codex_slug(instance_root: &Path, inputs: &Value) -> Option<String> {
     if let Some(s) = str_opt(inputs, "codex_slug") {
         return Some(s);
@@ -132,12 +136,6 @@ fn materialize_domain_profile(
     profile: &str,
     inputs: &Value,
 ) -> Result<Value, String> {
-    if !consumer_profile(profile) {
-        return Ok(json!({
-            "domain_profile_materialized": false,
-            "reason": "not-consumer"
-        }));
-    }
     let dest = sddia.join("active-domain-profile.json");
     if dest.is_file() {
         return Ok(json!({
@@ -145,21 +143,45 @@ fn materialize_domain_profile(
             "reason": "already-present"
         }));
     }
-    let Some(slug) = resolve_codex_slug(instance_root, inputs) else {
+
+    if consumer_profile(profile) {
+        let Some(slug) = resolve_codex_slug(instance_root, inputs) else {
+            return Ok(json!({
+                "domain_profile_materialized": false,
+                "reason": "codex-unknown"
+            }));
+        };
+        let body = json!({
+            "codex_slug": slug,
+            "git_required": false
+        });
+        fs::write(&dest, format!("{}\n", serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?))
+            .map_err(|e| e.to_string())?;
         return Ok(json!({
-            "domain_profile_materialized": false,
-            "reason": "codex-unknown"
+            "domain_profile_materialized": true,
+            "codex_slug": slug
         }));
-    };
-    let body = json!({
-        "codex_slug": slug,
-        "git_required": false
-    });
-    fs::write(&dest, format!("{}\n", serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?))
-        .map_err(|e| e.to_string())?;
+    }
+
+    if engineering_profile(profile) {
+        let slug = str_opt(inputs, "codex_slug")
+            .unwrap_or_else(|| "codex-software-engineering".to_string());
+        let body = json!({
+            "codex_slug": slug,
+            "git_required": true
+        });
+        fs::write(&dest, format!("{}\n", serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?))
+            .map_err(|e| e.to_string())?;
+        return Ok(json!({
+            "domain_profile_materialized": true,
+            "codex_slug": slug,
+            "git_required": true
+        }));
+    }
+
     Ok(json!({
-        "domain_profile_materialized": true,
-        "codex_slug": slug
+        "domain_profile_materialized": false,
+        "reason": "profile-unhandled"
     }))
 }
 
@@ -998,7 +1020,7 @@ mod tests {
         assert!(!instance.join(".SddIA/active-domain-profile.json").is_file());
         assert_eq!(
             env.data.as_ref().unwrap()["domain_profile"]["reason"],
-            "not-consumer"
+            "profile-unhandled"
         );
     }
 
