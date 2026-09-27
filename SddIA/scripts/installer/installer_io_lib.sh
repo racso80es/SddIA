@@ -122,6 +122,23 @@ _io_step() {
 _io_step_begin() { _io_step begin "$1"; }
 _io_step_end() { _io_step end "$1" "${2:-ok}" "${3:-}"; }
 
+_io_step_fail() {
+  local step_id="$1" rc="$2" msg="$3"
+  local tail=""
+  tail="$(tail -n 20 "$INST_LOG" 2>/dev/null || true)"
+  _io_step_end "$step_id" failed
+  python3 "$_INST_IO_PY" fail \
+    --state-file "$INST_IO_STATE" \
+    --exit-code 6 \
+    --message "$msg" \
+    --error-code STEP_FAILED \
+    --step "$step_id" \
+    --child-exit "$rc" \
+    --detail-tail "$tail" >/dev/null
+  python3 "$_INST_IO_PY" emit --state-file "$INST_IO_STATE" --to-stdout 2>/dev/null || true
+  exit 6
+}
+
 _io_success_emit() {
   local msg="$1"
   python3 "$_INST_IO_PY" success --state-file "$INST_IO_STATE" --message "$msg" >/dev/null
@@ -161,5 +178,5 @@ _io_set_registry() {
   python3 "$_INST_IO_PY" set-field \
     --state-file "$INST_IO_STATE" \
     --field registry \
-    --json-blob "$(python3 -c 'import json; print(json.dumps({"ref":"instance.host_registry","action":sys.argv[1]}))' "$action")" >/dev/null
+    --json-blob "$(python3 -c 'import json,sys; print(json.dumps({"ref":"instance.host_registry","action":sys.argv[1]}))' "$action")" >/dev/null
 }

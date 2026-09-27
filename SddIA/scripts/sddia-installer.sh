@@ -593,15 +593,24 @@ enable_units() {
       _units_skipped+=("$unit_name")
       continue
     fi
+    if [[ "${SDDIA_INSTALLER_LAB_SKIP_ENABLE:-}" == "1" ]]; then
+      echo "[installer] lab: skip enable --now $unit_name" >&2
+      _units_skipped+=("$unit_name")
+      continue
+    fi
     echo "[installer] enable --now $unit_name" >&2
     systemctl --user enable --now "$unit_name"
     _units_enabled+=("$unit_name")
   done
   if [[ -n "${INST_IO_STATE:-}" && -f "${INST_IO_STATE:-}" ]]; then
-    local units_blob
-    units_blob="$(python3 -c 'import json,sys; en=json.loads(sys.argv[1]); sk=json.loads(sys.argv[2]); print(json.dumps({"enabled":en,"skipped":sk}))' \
-      "$(printf '%s\n' "${_units_enabled[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')" \
-      "$(printf '%s\n' "${_units_skipped[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')")"
+    local units_blob en_json="[]" sk_json="[]"
+    if ((${#_units_enabled[@]} > 0)); then
+      en_json="$(printf '%s\n' "${_units_enabled[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+    fi
+    if ((${#_units_skipped[@]} > 0)); then
+      sk_json="$(printf '%s\n' "${_units_skipped[@]}" | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')"
+    fi
+    units_blob="$(python3 -c 'import json,sys; print(json.dumps({"enabled":json.loads(sys.argv[1]),"skipped":json.loads(sys.argv[2])}))' "$en_json" "$sk_json")"
     python3 "$_INST_IO_PY" set-field \
       --state-file "$INST_IO_STATE" \
       --field units \
@@ -674,13 +683,13 @@ do_deploy() {
     bundle_args+=(--skip-build)
   fi
   _io_step_begin build_bundle
-  if ! (
+  local rc=0
+  (
     cd "$FORGE_ROOT"
     ./SddIA/scripts/build-release-bundle.sh "${bundle_args[@]}"
-  ) >>"$INST_LOG" 2>&1; then
-    local rc=$? tail
-    tail="$(tail -n 20 "$INST_LOG" 2>/dev/null || true)"
-    _die "build-release-bundle falló (rc=$rc)" 6 STEP_FAILED
+  ) >>"$INST_LOG" 2>&1 || rc=$?
+  if [[ "$rc" -ne 0 ]]; then
+    _io_step_fail build_bundle "$rc" "build-release-bundle falló (rc=$rc)"
   fi
   _io_step_end build_bundle ok
   inputs="$(python3 -c '
@@ -730,6 +739,9 @@ main() {
     set -- "${_INST_RESOLVED_ARGV[@]}"
   fi
   _parse "$@"
+  if [[ -n "${SDDIA_INSTALLER_BUNDLE_PROFILE:-}" ]]; then
+    BUNDLE_PROFILE="$SDDIA_INSTALLER_BUNDLE_PROFILE"
+  fi
   WORK="$(mktemp -d /tmp/sddia-installer.XXXXXX)"
   trap _cleanup EXIT
   _io_init_session "$FORGE_ROOT" "$CMD" "$DRY_RUN" "$BUNDLE_PROFILE"

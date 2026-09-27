@@ -241,4 +241,6 @@ out22="$(printf '%s' "$(_req_body "/tmp/should-not-use")" | env SDDIA_SKIP_STDIN
 out22b="$("$INSTALLER" deploy --root "$SMOKE_ROOT" --dry-run)"
 _plan_cmp "$(echo "$out22" | env_plan)" "$(echo "$out22b" | env_plan)" || fail "SKIP_STDIN no respetado"
 
+bash "$ROOT/SddIA/scripts/qa/test-sddia-installer-lab.sh"
+
 echo "OK test-sddia-installer"
