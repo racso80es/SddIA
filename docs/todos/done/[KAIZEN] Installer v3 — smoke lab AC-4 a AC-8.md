@@ -4,7 +4,7 @@ uuid: "b93ca305-01e5-44ba-ab59-d4a70188d2e9"
 title: "[KAIZEN] Installer v3 — smoke lab AC-4 a AC-8"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 priority: media
 type: kaizen
 process: bug-fix
