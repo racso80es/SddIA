@@ -74,7 +74,7 @@ audit_cierre:
 spawned_pbis_residuales:
   - document_id: PBI-ARQUITECTURA-INSTALLER-V3-REQUEST-STDIN-ENV
     uuid: "f7b237b0-dd48-4b85-9834-d85067123115"
-    path: docs/todos/pending/[ARQUITECTURA] Installer v3 — entrada stdin y SDDIA_CAPSULE_REQUEST.md
+    path: docs/todos/done/[ARQUITECTURA] Installer v3 — entrada stdin y SDDIA_CAPSULE_REQUEST.md
   - document_id: PBI-KAIZEN-INSTALLER-V3-SMOKE-LAB-AC4-8
     uuid: "b93ca305-01e5-44ba-ab59-d4a70188d2e9"
     path: docs/todos/pending/[KAIZEN] Installer v3 — smoke lab AC-4 a AC-8.md
