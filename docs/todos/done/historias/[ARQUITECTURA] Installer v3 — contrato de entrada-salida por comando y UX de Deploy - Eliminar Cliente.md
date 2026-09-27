@@ -3,13 +3,14 @@ document_id: HU-INSTALLER-V3-IO-CONTRACT-UX
 uuid: "489f5b85-fa2f-4f0e-ae52-7278e039dff1"
 title: "[ARQUITECTURA] Installer v3 — contrato E/S por comando y UX de los ejecutables Deploy / Eliminar Cliente"
 format: markdown
-version: "1.1.0"
-status: "historia"
+version: "1.2.0"
+status: done
+closed: "2026-09-27"
 type: historia
 priority: alta
 context: "Forja SddIA / despliegue y retirada de instancias cliente (installer + atajos de escritorio)"
 created: "2026-09-26"
-updated: "2026-09-26"
+updated: "2026-09-27"
 source: "Petición del Vértice Biológico 2026-09-26, refinada contra el repo por Tekton"
 process_candidate: refactorization
 process_candidate_alt: feature
@@ -20,8 +21,8 @@ executables_observed:
   shortcut_teardown: /home/racso/Aplicaciones/SddIA/SddIA_Eliminar_Cliente.sh
 installer_contract_ref: SddIA/library/norms/sddia-installer-contract.md
 installer_contract_uuid: "b1327ef3-5f07-4fba-9073-a72c5fdf97e2"
-installer_contract_version_actual: "1.1.0"
-installer_contract_version_objetivo: "1.2.0"
+installer_contract_version_actual: "1.3.0"
+installer_contract_version_objetivo: "1.3.0"
 depends_on:
   - PBI-ARQUITECTURA-INSTALLER-V2-DESPLIEGUE-LIMPIO (done, PR #302)
 unblocks:
@@ -48,16 +49,43 @@ decisions_status: "baseline adoptado en los PBI hijos; D1 y D7 corregidas (Filtr
 spawned_pbis:
   - document_id: PBI-ARQUITECTURA-INSTALLER-V3-IO-CONTRACT
     uuid: "cb5483e7-4e39-4fb6-9c11-4a8285b957b7"
-    path: docs/todos/pending/[ARQUITECTURA] Installer v3 — contrato de entrada-salida del comando.md
+    path: docs/todos/done/[ARQUITECTURA] Installer v3 — contrato de entrada-salida del comando.md
     process: refactorization
     fases: "F0–F3"
+    pr: "https://github.com/racso80es/SddIA/pull/303"
+    status: done
   - document_id: PBI-ARQUITECTURA-INSTALLER-V3-UX-EJECUTABLES
     uuid: "8cb95b4a-52f0-4030-91c1-8b937a425589"
-    path: docs/todos/pending/[ARQUITECTURA] Installer v3 — UX de Deploy y Eliminar Cliente.md
+    path: docs/todos/done/[ARQUITECTURA] Installer v3 — UX de Deploy y Eliminar Cliente.md
     process: feature
     fases: "F4–F5"
-    blocked_by: PBI-ARQUITECTURA-INSTALLER-V3-IO-CONTRACT
+    pr: "https://github.com/racso80es/SddIA/pull/305"
+    status: done
+audit_cierre:
+  fecha: "2026-09-27"
+  veredicto: implementada_en_forja
+  evidencia:
+    - docs/features/sddia-installer-v3-io-contract/validacion.md (APTO, PR #303)
+    - docs/features/sddia-installer-v3-ux-executables/validacion.md (APTO, PR #305)
+    - SddIA/scripts/installer/sddia-installer-ui.sh
+    - SddIA/library/norms/sddia-installer-contract.md (1.3.0)
+  residuales_no_bloqueantes:
+    - "paciente0-deploy/undeploy y entidad tool (D7): fuera de alcance §5 — backlog propio (unblocks en frontmatter)"
+spawned_pbis_residuales:
+  - document_id: PBI-ARQUITECTURA-INSTALLER-V3-REQUEST-STDIN-ENV
+    uuid: "f7b237b0-dd48-4b85-9834-d85067123115"
+    path: docs/todos/pending/[ARQUITECTURA] Installer v3 — entrada stdin y SDDIA_CAPSULE_REQUEST.md
+  - document_id: PBI-KAIZEN-INSTALLER-V3-SMOKE-LAB-AC4-8
+    uuid: "b93ca305-01e5-44ba-ab59-d4a70188d2e9"
+    path: docs/todos/pending/[KAIZEN] Installer v3 — smoke lab AC-4 a AC-8.md
+  - document_id: PBI-KAIZEN-INSTALLER-V3-UI-TTY-EXPECT
+    uuid: "5fc72fba-4c31-4c2d-8342-7c84cafb59a3"
+    path: docs/todos/pending/[KAIZEN] Installer v3 — smoke TTY presentador (AC-9 y AC-11).md
+  - document_id: PBI-OPERATIVO-INSTALLER-V3-ATAJOS-HOST
+    uuid: "ab610ab9-9ce8-4efd-a8d1-1138b1aa73d1"
+    path: docs/todos/pending/[OPERATIVO] Installer v3 — regeneración atajos en Aplicaciones del host.md
 changelog:
+  - "1.2.0: cierre tras auditoría — PBI hijos en done/; historia en done/historias/; 4 PBI residuales en pending."
   - "1.1.0: descomposición en dos PBI (§11). Correcciones que el PBI de contrato fija como baseline: D1 schemas junto a la norma (capability-contracts es salida de capacidades); D7 aplazada (tools-contract §1 y tool-creator no caben con el CLI). Norma partida: 1.2.0 contrato, 1.3.0 UX."
 ---
 
