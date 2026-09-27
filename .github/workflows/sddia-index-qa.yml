@@ -28,9 +28,22 @@ env:
 jobs:
   sddia-installer-smoke:
     runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: "0"
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            SddIA/target
+          key: installer-smoke-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          restore-keys: |
+            installer-smoke-${{ runner.os }}-
       - name: installer dry-run smoke
+        timeout-minutes: 45
         run: bash SddIA/scripts/qa/test-sddia-installer.sh
 
   sddia-index-integrity:
