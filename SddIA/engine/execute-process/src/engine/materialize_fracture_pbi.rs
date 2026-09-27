@@ -5,6 +5,7 @@ use crate::core::fracture_pbi::{
     resolve_materialize, resolve_todos_pending_rel, scan_fracture_ledger,
     MaterializeReason,
 };
+use crate::core::fracture_signatures::load_fracture_catalog;
 use chrono::Utc;
 use serde_json::{json, Value};
 use std::fs;
@@ -63,6 +64,7 @@ fn build_pbi_body(
     persist_ref: Option<&str>,
     branch_name: Option<&str>,
     regression_of: Option<&str>,
+    friction_id: Option<&str>,
 ) -> String {
     let today = Utc::now().format("%Y-%m-%d").to_string();
     let mut related_lines = vec![
@@ -79,6 +81,9 @@ fn build_pbi_body(
     let regression_line = regression_of
         .map(|r| format!("regression_of: {r}\n"))
         .unwrap_or_default();
+    let friction_line = friction_id
+        .map(|f| format!("friction_id: {f}\n"))
+        .unwrap_or_default();
 
     format!(
         r#"---
@@ -93,7 +98,7 @@ process: bug-fix
 fracture_hash: {trace_hash}
 fracture_process: {fracture_process}
 incident_ref: "System_Fracture_Detected — {trace_hash}"
-{regression_line}related:
+{friction_line}{regression_line}related:
 {related}
 ---
 
@@ -124,6 +129,7 @@ _Pendiente de síntesis Mayeuta (Kintsugi async)._
 ## Criterio de cierre
 
 - [ ] Causa raíz resuelta
+- [ ] Caso añadido a `fracture-corpus` (firma esperada o `unclassified` justificado)
 - [ ] Argos APTO en `validacion.md` del fix
 - [ ] Este TODO movido a `docs/todos/done/`
 "#
@@ -150,6 +156,11 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
 
     let persist_ref = optional_str(inputs, "persist_ref");
     let branch_name = optional_str(inputs, "branch_name");
+    let friction_id = optional_str(inputs, "friction_id").filter(|id| {
+        load_fracture_catalog(repo)
+            .map(|c| c.catalog_contains_id(id))
+            .unwrap_or(false)
+    });
 
     match resolution.reason {
         MaterializeReason::AlreadyOpen | MaterializeReason::DedupedByProcess => {
@@ -185,6 +196,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 } else {
                     Some(predecessor)
                 },
+                friction_id.as_deref(),
             );
             fs::write(&target, body).map_err(|e| e.to_string())?;
             let rel_path = target
@@ -219,6 +231,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         persist_ref.as_deref(),
         branch_name.as_deref(),
         None,
+        friction_id.as_deref(),
     );
     fs::write(&target, body).map_err(|e| e.to_string())?;
 

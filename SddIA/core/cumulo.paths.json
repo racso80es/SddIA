@@ -4,7 +4,8 @@
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
     "manifest": "SddIA/sddia-core.manifest.json",
-    "pathsDefinition": "SddIA/core/cumulo.paths.json"
+    "pathsDefinition": "SddIA/core/cumulo.paths.json",
+    "fractureSignatures": "SddIA/core/fracture-signatures.json"
   },
   "capability_di": {
     "bindings": "SddIA/core/capability-bindings.md"

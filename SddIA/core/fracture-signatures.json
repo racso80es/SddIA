@@ -1,0 +1,372 @@
+{
+  "version": "1.0.0",
+  "signatures": [
+    {
+      "id": "F-DCC-GATE-EVOLUTION-BLOCK",
+      "consumers": ["dcc_suppress"],
+      "scope": {
+        "attempted_action": ["Aduana evolution", "Aduana EDA genómica"],
+        "status": ["blocked"]
+      },
+      "match": { "scope_only": true },
+      "fracture_policy": "suppress"
+    },
+    {
+      "id": "F-ARGOS-HEARTBEAT-STARVATION",
+      "consumers": ["mayeuta"],
+      "match": {
+        "all": [
+          "centinela ",
+          "omitió",
+          "ciclos consecutivos de daemon_heartbeat",
+          "umbral=",
+          "last_heartbeat="
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "Inanición de `Daemon_Heartbeat` con proceso vivo (el auditor no emite si el PID está muerto); no es muerte del centinela. `process_name` es `daemon_id`, no un proceso de `directories.process`.",
+        "verdict": "refactor_tool",
+        "proposal": "Emitir latido en worker / no bloquear el hilo de heartbeat (paridad keepalive de centinelas hermanos)."
+      }
+    },
+    {
+      "id": "F-ARGOS-ORPHAN-LOCK",
+      "consumers": ["mayeuta"],
+      "match": {
+        "all": [
+          "centinela ",
+          "lock huérfano",
+          "pid ",
+          "muerto",
+          "last_heartbeat="
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "Lock de centinela con PID muerto (ciclo de vida de daemon / sesión de host); no es entidad genómica huérfana de bus EDA. `process_name` es `daemon_id`.",
+        "verdict": "refactor_tool",
+        "proposal": "Discriminar lock anterior a `btime` del host frente a colapso en caliente; no ejecutar backfill `audit-entity-eda-coverage`."
+      }
+    },
+    {
+      "id": "F-DCC-SNAPSHOT-GITIGNORE",
+      "consumers": ["mayeuta"],
+      "match": {
+        "any_groups": [
+          {
+            "all": ["snapshot_dirty_skipped"],
+            "any": ["gitignore", "ignorad", "ignored by"]
+          },
+          {
+            "all": ["git add failed"],
+            "any": ["gitignore", "ignorad", "ignored by"]
+          }
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "Snapshot final invocó `git add -A` sobre un path cubierto por `.gitignore` (`**/.dev/*` / starter-kit `.SddIA/.dev`). El commit aborta; no es rama ausente ni recursión hook (`F-DCC-SNAPSHOT-GITIGNORE`).",
+        "verdict": "process_fix",
+        "proposal": "Omitir bóvedas `.dev` (salvo `.env.example`) del inventario de snapshot; `git-manager` commit no debe tumbar el lote si `git add` reporta path ignorado."
+      }
+    },
+    {
+      "id": "F-DCC-SYMBOLIC-HEAD-BRANCH",
+      "consumers": ["mayeuta"],
+      "match": {
+        "any": ["branch_symbolic_head"],
+        "any_groups": [
+          {
+            "all": ["head ref must be a branch"],
+            "any": ["branch_name=head", "--head head", "simbólico"]
+          }
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "`branch_name=HEAD` (ref simbólica) llegó a Apertura en forja (`gh pr create --head HEAD` → `Head ref must be a branch`). No es PAT ni rama no empujada.",
+        "verdict": "process_fix",
+        "proposal": "Resolver HEAD a la rama actual (`branch_list` `*`) antes del fan-out DCC; abortar si detached. El hook pre-push no debe reenviar `HEAD` literal."
+      }
+    },
+    {
+      "id": "F-DCC-WORKFLOW-SCOPE",
+      "consumers": ["dcc_suppress", "mayeuta"],
+      "scope": {
+        "attempted_action": ["Publicación remota"],
+        "status": ["failed", "blocked"]
+      },
+      "match": {
+        "all": ["without", "workflow", "scope"]
+      },
+      "fracture_policy": "suppress",
+      "phase_status": "blocked",
+      "operator_hint": "Unificar credential helper git→`gh` (`gh auth setup-git`). `gh auth refresh -s workflow` solo si git ya delega en gh.",
+      "diagnosis": {
+        "root_cause": "PAT de `git-manager` (HTTPS) sin scope `workflow` al tocar `.github/workflows/`; distinto del token `gh auth`. Colapso de credencial, no recursión hook (`F-DCC-WORKFLOW-SCOPE`).",
+        "verdict": "process_fix",
+        "proposal": "Unificar credential helper git→`gh` (`gh auth setup-git`). `gh auth refresh -s workflow` solo basta si git ya delega en gh. Envelope DCC `blocked` `F-DCC-WORKFLOW-SCOPE`; no reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`."
+      }
+    },
+    {
+      "id": "F-DCC-REMOTE-BRANCH-ABSENT",
+      "consumers": ["mayeuta"],
+      "excludes": ["F-DCC-SYMBOLIC-HEAD-BRANCH"],
+      "match": {
+        "any": ["head sha can't be blank", "head ref must be a branch"]
+      },
+      "diagnosis": {
+        "root_cause": "Rama ausente en origin tras push rechazado (`Head sha can't be blank` / `Head ref must be a branch`). DCC no abortó tras Publicación remota failed; no es recursión hook.",
+        "verdict": "process_fix",
+        "proposal": "Halt de Apertura/Sello/Higiene si Publicación remota es `failed`/`blocked` (genoma DCC ya lo exige)."
+      }
+    },
+    {
+      "id": "F-DCC-LAB-BINARY-MISSING",
+      "consumers": ["dcc_suppress", "mayeuta"],
+      "match": {
+        "any": [
+          "sddia-qa no encontrado",
+          "shell-executor wasm fallback marker"
+        ],
+        "any_groups": [
+          {
+            "all": ["cápsula skill", "no encontrada bajo sddia/target"]
+          }
+        ]
+      },
+      "fracture_policy": "suppress",
+      "diagnosis": {
+        "root_cause": "`shell-executor` WASM falló (sandbox WASI / working_directory / exec) y el fallback nativo faltó o el centinela interno se fugó. No es git push ni rama ausente.",
+        "verdict": "refactor_tool",
+        "proposal": "Saneamiento de `invoke_shell_executor`: no re-ejecutar WASM; error canónico si el ELF nativo falta; no emitir el centinela hacia DCC. Aduana `dcc_lab_binary_missing_trace` suprime Kintsugi."
+      }
+    },
+    {
+      "id": "F-DCC-PR-TITLE-METACHAR",
+      "consumers": ["dcc_suppress", "mayeuta"],
+      "scope": {
+        "attempted_action": ["Apertura en forja"],
+        "status": ["failed", "blocked"]
+      },
+      "match": {
+        "any": [
+          "pr_title_metachar",
+          "f-dcc-pr-title-metachar",
+          "pr_body_metachar",
+          "shell_metachar"
+        ],
+        "any_groups": [
+          {
+            "all": ["forbidden shell metacharacters", "arguments["]
+          }
+        ]
+      },
+      "report_friction_ids": ["F-DCC-PR-TITLE-METACHAR"],
+      "report_error_codes": ["PR_TITLE_METACHAR"],
+      "fracture_policy": "suppress",
+      "diagnosis": {
+        "root_cause": "`delivery-close-cycle` Apertura en forja: token argv rechazado por `shell-executor` (`pr_title` / `branch_name` / `--body-file`). No es recursión hook. No reabrir K2 `--body-file` (`F-DCC-PR-TITLE-METACHAR`).",
+        "verdict": "process_fix",
+        "proposal": "Preflight argv y sanear `pr_title`; códigos `PR_TITLE_METACHAR` ≠ `PR_BODY_METACHAR`. No relajar `assert_safe_token`. No reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`."
+      }
+    },
+    {
+      "id": "F-DLT-PUBLISH-ERROR",
+      "consumers": ["mayeuta"],
+      "match": {
+        "any": ["iota-relay-publish-error", "f-dlt-publish-error"]
+      },
+      "refine": [
+        "F-DLT-GAS-VERSION",
+        "F-DLT-OBJECT-LOCK",
+        "F-DLT-TRANSPORT",
+        "F-DLT-OPAQUE"
+      ],
+      "diagnosis": {
+        "root_cause": "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). Causa opaca (ni red transitoria ni colisión de versión de gas). No es operador.",
+        "verdict": "process_fix",
+        "proposal": "Opaco (`config-missing` / Move / inputs permanentes) sí fractura; no afirmar transporte."
+      }
+    },
+    {
+      "id": "F-DLT-GAS-VERSION",
+      "refine_only": true,
+      "consumers": ["mayeuta"],
+      "match": {
+        "all": ["is not available for consumption", "current version:"]
+      },
+      "diagnosis": {
+        "root_cause": "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). Colisión de versión de gas/inputs (`is not available for consumption` / `current version:`), no operador ni transporte hacia fullnode.",
+        "verdict": "process_fix",
+        "proposal": "Serializar `publishImmutableData` en el relay; si la firma de consumo/versión está presente, no emitir `System_Fracture_Detected`; `dlt_reanchor` absorbe."
+      }
+    },
+    {
+      "id": "F-DLT-OBJECT-LOCK",
+      "refine_only": true,
+      "consumers": ["mayeuta"],
+      "match": {
+        "all": ["reserved for another transaction"]
+      },
+      "diagnosis": {
+        "root_cause": "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). Un objeto está reservado por otra transacción (quórum). No es operador, ni transporte, ni input permanente.",
+        "verdict": "process_fix",
+        "proposal": "Si la firma `reserved for another transaction` está presente, no emitir `System_Fracture_Detected`; `dlt_reanchor` absorbe."
+      }
+    },
+    {
+      "id": "F-DLT-TRANSPORT",
+      "refine_only": true,
+      "consumers": ["mayeuta"],
+      "match": {
+        "any": [
+          "enetunreach",
+          "etimedout",
+          "enotfound",
+          "network is unreachable",
+          "connection timed out"
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). Causa de transporte (`err.cause`) hacia fullnode Testnet, no operador ni relay caído.",
+        "verdict": "process_fix",
+        "proposal": "Si `err.cause` es red transitoria (`ENETUNREACH`/`ETIMEDOUT`/`ENOTFOUND`), no emitir `System_Fracture_Detected`; `dlt_reanchor` absorbe. Opaco (config-missing / Move) sí fractura."
+      }
+    },
+    {
+      "id": "F-DLT-OPAQUE",
+      "refine_only": true,
+      "consumers": ["mayeuta"],
+      "match": { "scope_only": true },
+      "diagnosis": {
+        "root_cause": "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). Causa opaca (ni red transitoria ni colisión de versión de gas). No es operador.",
+        "verdict": "process_fix",
+        "proposal": "Opaco (`config-missing` / Move / inputs permanentes) sí fractura; no afirmar transporte."
+      }
+    },
+    {
+      "id": "F-DCC-HOOK-RECURSION",
+      "consumers": ["mayeuta"],
+      "match_surface": "hook_blob",
+      "excludes": [
+        "F-DCC-WORKFLOW-SCOPE",
+        "F-DCC-REMOTE-BRANCH-ABSENT",
+        "F-DCC-LAB-BINARY-MISSING",
+        "F-DCC-SNAPSHOT-GITIGNORE",
+        "F-DCC-SYMBOLIC-HEAD-BRANCH",
+        "F-DLT-PUBLISH-ERROR"
+      ],
+      "match": {
+        "any": [
+          "delivery-close-cycle failed for",
+          "recurs",
+          "re-entrada"
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "Recursión o re-entrada en la cadena hook Git ↔ proceso de cierre (`delivery-close-cycle`).",
+        "verdict": "refactor_tool",
+        "proposal": "Auditar por qué la guarda `SDDIA_HOOK_DELIVERY_CLOSE` no cortó la re-entrada; no reimplementarla. Verificar `in_delivery_close_cycle` en el subproceso `git-manager`."
+      }
+    },
+    {
+      "id": "F-EDA-GENOMIC-ORPHAN",
+      "consumers": ["mayeuta"],
+      "match_surface": "blob",
+      "excludes": ["F-ARGOS-ORPHAN-LOCK"],
+      "match": {
+        "genomic_context_any": [
+          "eda genómica",
+          "domain_entity_created",
+          "audit-entity-eda-coverage",
+          "entity-manager",
+          "ruido de sistema",
+          "orphan_count"
+        ],
+        "genomic_token_any": [
+          "orphan",
+          "ruido de sistema",
+          "eda genómica",
+          "huérfan",
+          "orphan_count"
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "Entidad genómica indexada sin correlato `Domain_Entity_Created` en bus EDA.",
+        "verdict": "refactor_tool",
+        "proposal": "Ejecutar backfill Fase C (`audit-entity-eda-coverage --emit`) o integrar sello en `entity-manager` create."
+      }
+    },
+    {
+      "id": "F-MAYEUTA-PROSTHETIC-EXIT3",
+      "consumers": ["mayeuta"],
+      "match": {
+        "all": ["mayeuta-llm/prótesis exit 3"]
+      },
+      "diagnosis": {
+        "root_cause": "Exit 3 de `mayeuta-llm`/prótesis en `sse_chat_stream`: fail-closed de infer con `SDDIA_LLM_REQUIRE_INFER` (CLI ausente, vacío o sin tokens). No es ELF ausente ni colapso del puente.",
+        "verdict": "process_fix",
+        "proposal": "No emitir `System_Fracture_Detected` para este exit. Otros exit ≠ 0 siguen fracturando."
+      }
+    },
+    {
+      "id": "F-DCC-PUSH-NON-FAST-FORWARD",
+      "consumers": ["mayeuta"],
+      "scope": {
+        "process_name": ["delivery-close-cycle"],
+        "attempted_action": ["Publicación remota"]
+      },
+      "match": {
+        "all": ["[rejected]"],
+        "any": ["non-fast-forward", "(fetch first)"]
+      },
+      "diagnosis": {
+        "root_cause": "Rama local detrás de origin; push rechazado por git con force:false.",
+        "verdict": "process_fix",
+        "proposal": "Sincronizar vía skill:git-manager (fetch + pull) y relanzar DCC. Prohibido git raw."
+      }
+    },
+    {
+      "id": "F-DCC-DNS-UNRESOLVED",
+      "consumers": ["dcc_suppress", "mayeuta"],
+      "scope": {
+        "attempted_action": ["Publicación remota", "Apertura en forja"],
+        "status": ["failed", "blocked"]
+      },
+      "match": {
+        "any": [
+          "could not resolve host",
+          "temporary failure in name resolution",
+          "name or service not known",
+          "network is unreachable",
+          "connection timed out",
+          "error connecting to api.github.com",
+          "check your internet connection or https://githubstatus.com"
+        ]
+      },
+      "fracture_policy": "suppress",
+      "phase_status": "blocked",
+      "diagnosis": {
+        "root_cause": "DNS o red transitoria hacia GitHub durante push o forja (`F-DCC-DNS-UNRESOLVED`). No es recursión hook ni auth.",
+        "verdict": "process_fix",
+        "proposal": "Envelope DCC `blocked` con `F-DCC-DNS-UNRESOLVED`; reintentar cuando la red resuelva. No escalar a Kintsugi."
+      }
+    },
+    {
+      "id": "F-DCC-HOOK-EVOL-OVERESCALATION",
+      "consumers": ["dcc_suppress", "mayeuta"],
+      "scope": {
+        "attempted_action": ["Publicación remota"],
+        "status": ["failed", "blocked"]
+      },
+      "match": {
+        "all": ["evolution gate (--range --if-touched) failed"]
+      },
+      "fracture_policy": "suppress",
+      "phase_status": "blocked",
+      "diagnosis": {
+        "root_cause": "Pre-push evolution gate bloqueó el push (`F-DCC-HOOK-EVOL-OVERESCALATION`). Aduana determinista, no colapso de runtime.",
+        "verdict": "process_fix",
+        "proposal": "Corregir material sin correlato evolution y relanzar DCC. No reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`."
+      }
+    }
+  ]
+}
