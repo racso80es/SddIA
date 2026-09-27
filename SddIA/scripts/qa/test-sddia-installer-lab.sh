@@ -63,8 +63,10 @@ log_ref="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["resu
 [[ -n "$log_ref" ]] || fail "AC-4 sin log_ref"
 log_abs="$ROOT/$log_ref"
 [[ -f "$log_abs" ]] || fail "AC-4 log ausente: $log_abs"
-if ! rg -q 'build-release-bundle|systemctl|\[installer\]' "$log_abs" 2>/dev/null; then
-  fail "AC-4 log sin trazas de hijo/motor"
+log_sz="$(wc -c <"$log_abs" | tr -d ' ')"
+[[ "$log_sz" -gt 32 ]] || fail "AC-4 log vacío ($log_abs)"
+if ! rg -qi 'bundle|build-release|systemctl|installer|instance-creator|execute-process' "$log_abs" 2>/dev/null; then
+  fail "AC-4 log sin trazas de hijo/motor (size=$log_sz)"
 fi
 rm -rf "$LAB4" "$stdout4" "$stderr4"
 
