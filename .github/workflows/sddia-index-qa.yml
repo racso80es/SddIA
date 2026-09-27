@@ -28,9 +28,27 @@ env:
 jobs:
   sddia-installer-smoke:
     runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: "0"
     steps:
       - uses: actions/checkout@v4
+      - name: Install protoc (lance-encoding)
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            SddIA/target
+          key: installer-smoke-${{ runner.os }}-${{ hashFiles('SddIA/Cargo.lock') }}
+          restore-keys: |
+            installer-smoke-${{ runner.os }}-
+      - name: Prebuild release (installer lab AC-4)
+        timeout-minutes: 40
+        run: bash SddIA/scripts/qa/prep-installer-lab-release.sh
       - name: installer dry-run smoke
+        timeout-minutes: 20
         run: bash SddIA/scripts/qa/test-sddia-installer.sh
 
   sddia-index-integrity:

@@ -258,6 +258,13 @@ def cmd_fail(args: argparse.Namespace) -> None:
     }
     if args.step:
         state["error"]["step"] = args.step
+        seen_fail = False
+        for s in state.get("steps", []):
+            if s.get("id") == args.step:
+                s["status"] = "failed"
+                seen_fail = True
+            elif seen_fail and s.get("status") == "not_run":
+                continue
     if args.child_exit:
         state["error"]["child_exit"] = int(args.child_exit)
     if args.detail_tail:

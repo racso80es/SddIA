@@ -77,7 +77,7 @@ spawned_pbis_residuales:
     path: docs/todos/done/[ARQUITECTURA] Installer v3 — entrada stdin y SDDIA_CAPSULE_REQUEST.md
   - document_id: PBI-KAIZEN-INSTALLER-V3-SMOKE-LAB-AC4-8
     uuid: "b93ca305-01e5-44ba-ab59-d4a70188d2e9"
-    path: docs/todos/pending/[KAIZEN] Installer v3 — smoke lab AC-4 a AC-8.md
+    path: docs/todos/done/[KAIZEN] Installer v3 — smoke lab AC-4 a AC-8.md
   - document_id: PBI-KAIZEN-INSTALLER-V3-UI-TTY-EXPECT
     uuid: "5fc72fba-4c31-4c2d-8342-7c84cafb59a3"
     path: docs/todos/pending/[KAIZEN] Installer v3 — smoke TTY presentador (AC-9 y AC-11).md

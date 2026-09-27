@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 102
+universe_total: 103
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6a4385ce-778f-4b29-b00d-69fb6059651e` | 2026-09-27 | Installer v3: smoke lab AC-4..AC-8, fallo build_bundle, fixes registry/units | CANONICO | `SddIA/evolution/6a4385ce-778f-4b29-b00d-69fb6059651e.md` |
 | `3f0266d0-549e-4d84-bc14-840850569eb9` | 2026-09-27 | Installer v3: stdin, SDDIA_CAPSULE_REQUEST, precedencia request; smoke AC-R1–R6 | CANONICO | `SddIA/evolution/3f0266d0-549e-4d84-bc14-840850569eb9.md` |
 | `61bb2c77-113b-43ec-8e0d-cda0472632e3` | 2026-09-26 | Installer v3 UX: presentador, ELIMINAR, shortcuts, norm 1.3.0 | CANONICO | `SddIA/evolution/61bb2c77-113b-43ec-8e0d-cda0472632e3.md` |
 | `68a5f478-ac39-4bf6-bd83-0d0f6fdc676c` | 2026-09-26 | Installer v3: envelope capsule-json-io, request-file, progreso JSONL, norm 1.2.0 | CANONICO | `SddIA/evolution/68a5f478-ac39-4bf6-bd83-0d0f6fdc676c.md` |

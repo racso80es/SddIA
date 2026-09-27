@@ -1,1 +1,30 @@
-{}
+{
+  "tmp-sddia\\x2dac4t": {
+    "created_at": "2026-09-27T05:30:36Z",
+    "mailbox_fingerprint": null,
+    "profile": "engineering",
+    "root": "/tmp/sddia-ac4t",
+    "wui_port": 8768
+  },
+  "tmp-sddia\\x2dinstaller\\x2dlab\\x2dac4\\x2d2812289": {
+    "created_at": "2026-09-27T05:30:26Z",
+    "mailbox_fingerprint": null,
+    "profile": "engineering",
+    "root": "/tmp/sddia-installer-lab-ac4-2812289",
+    "wui_port": 8767
+  },
+  "tmp-sddia\\x2dinstaller\\x2dlab\\x2dac4\\x2d2813413": {
+    "created_at": "2026-09-27T05:30:54Z",
+    "mailbox_fingerprint": null,
+    "profile": "engineering",
+    "root": "/tmp/sddia-installer-lab-ac4-2813413",
+    "wui_port": 8769
+  },
+  "tmp-sddia\\x2dlab\\x2deng": {
+    "created_at": "2026-09-27T05:29:50Z",
+    "mailbox_fingerprint": null,
+    "profile": "engineering",
+    "root": "/tmp/sddia-lab-eng",
+    "wui_port": 8766
+  }
+}
