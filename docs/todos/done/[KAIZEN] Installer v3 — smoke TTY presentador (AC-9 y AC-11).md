@@ -4,7 +4,7 @@ uuid: "5fc72fba-4c31-4c2d-8342-7c84cafb59a3"
 title: "[KAIZEN] Installer v3 — smoke TTY presentador (AC-9 y AC-11)"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 priority: baja
 type: kaizen
 process: bug-fix
