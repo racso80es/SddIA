@@ -32,8 +32,8 @@ jobs:
       CARGO_INCREMENTAL: "0"
     steps:
       - uses: actions/checkout@v4
-      - name: Install protoc (lance-encoding)
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - name: Install protoc and expect (installer smoke)
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler expect
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/cache@v4
         with:
