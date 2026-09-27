@@ -36,6 +36,7 @@ PLAN_WUI_PORT=""
 PLAN_PORT_SOURCE=""
 PLAN_VAULT_ROOT_SOURCE=""
 PLAN_VAULT_INSTANCE_SOURCE=""
+_INST_RESOLVED_ARGV=()
 
 _die() {
   local msg="$1"
@@ -76,6 +77,62 @@ _abs() {
 _cleanup() {
   if [[ -n "${WORK:-}" && -d "${WORK:-}" ]]; then
     rm -rf "$WORK"
+  fi
+}
+
+_emit_request_invalid() {
+  local msg="${1:-request inválido}"
+  python3 "$_INST_IO_PY" static-envelope \
+    --command deploy \
+    --exit-code 7 \
+    --error-code REQUEST_INVALID \
+    --message "$msg"
+  exit 7
+}
+
+_apply_request_body() {
+  local body="$1" parsed
+  if ! parsed="$(python3 "$_INST_IO_PY" parse-request --request-json "$body" 2>/dev/null)"; then
+    _emit_request_invalid "request inválido"
+  fi
+  SDDIA_INSTALLER_CORRELATION_ID="$(echo "$parsed" | python3 -c 'import json,sys; print(json.load(sys.stdin)["meta"].get("correlation_id") or "")')"
+  SDDIA_INSTALLER_PROGRESS="$(echo "$parsed" | python3 -c 'import json,sys; print(json.load(sys.stdin)["meta"].get("progress") or "auto")')"
+  mapfile -t _INST_RESOLVED_ARGV < <(echo "$parsed" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(d["argv"]))')
+}
+
+_read_stdin_request_json() {
+  if [[ "${SDDIA_SKIP_STDIN:-}" == "1" ]]; then
+    return 1
+  fi
+  if [[ -t 0 ]]; then
+    return 1
+  fi
+  local body
+  body="$(cat)"
+  body="${body//$'\r'/}"
+  local trimmed="${body#"${body%%[![:space:]]*}"}"
+  [[ -n "$trimmed" ]] || return 1
+  [[ "$trimmed" == "{"* ]] || _emit_request_invalid "stdin no es JSON de request"
+  printf '%s' "$body"
+}
+
+_resolve_request_entry() {
+  if [[ "${1:-}" == "--request-file" ]]; then
+    local rf="${2:-}"
+    if [[ -z "$rf" || ! -f "$rf" ]]; then
+      _emit_request_invalid "request-file ausente o ilegible"
+    fi
+    _apply_request_body "$(cat "$rf")"
+    return 0
+  fi
+  local from_stdin=""
+  if from_stdin="$(_read_stdin_request_json)"; then
+    _apply_request_body "$from_stdin"
+    return 0
+  fi
+  if [[ -n "${SDDIA_CAPSULE_REQUEST:-}" ]]; then
+    _apply_request_body "$SDDIA_CAPSULE_REQUEST"
+    return 0
   fi
 }
 
@@ -667,19 +724,10 @@ main() {
     materialize_shortcuts "$SHORTCUTS_DEST"
     exit 0
   fi
-  if [[ "${1:-}" == "--request-file" ]]; then
-    local rf="${2:-}"
-    [[ -f "$rf" ]] || { echo "[installer] ERROR: request-file ausente" >&2; exit 7; }
-    local parsed req_json
-    req_json="$(cat "$rf")"
-    if ! parsed="$(python3 "$_INST_IO_PY" parse-request --request-json "$req_json" 2>/dev/null)"; then
-      echo "[installer] ERROR: request inválido" >&2
-      exit 7
-    fi
-    SDDIA_INSTALLER_CORRELATION_ID="$(echo "$parsed" | python3 -c 'import json,sys; print(json.load(sys.stdin)["meta"].get("correlation_id") or "")')"
-    SDDIA_INSTALLER_PROGRESS="$(echo "$parsed" | python3 -c 'import json,sys; print(json.load(sys.stdin)["meta"].get("progress") or "auto")')"
-    mapfile -t _REQ_ARGV < <(echo "$parsed" | python3 -c 'import json,sys; d=json.load(sys.stdin); print("\n".join(d["argv"]))')
-    set -- "${_REQ_ARGV[@]}"
+  _INST_RESOLVED_ARGV=()
+  _resolve_request_entry "$@"
+  if [[ ${#_INST_RESOLVED_ARGV[@]} -gt 0 ]]; then
+    set -- "${_INST_RESOLVED_ARGV[@]}"
   fi
   _parse "$@"
   WORK="$(mktemp -d /tmp/sddia-installer.XXXXXX)"

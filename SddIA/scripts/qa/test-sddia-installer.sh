@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Smoke del orquestador físico (dry-run; cero systemctl enable).
 set -euo pipefail
+# Entorno del operador no debe anular argv en casos 1–17 (precedencia env > argv).
+unset SDDIA_CAPSULE_REQUEST SDDIA_SKIP_STDIN 2>/dev/null || true
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 # shellcheck source=../common/sddia_shell_lib.sh
 source "$ROOT/SddIA/scripts/common/sddia_shell_lib.sh"
@@ -179,5 +181,64 @@ for gate in "$MOTOR" "$INSTALLER"; do
     fail "prompt prohibido en $gate"
   fi
 done
+
+_req_body() {
+  local root="$1"
+  cat <<EOF
+{"meta":{"schemaVersion":"2.0","entityKind":"tool","entityId":"sddia-installer"},"request":{"command":"deploy","root":"$root","dry_run":true}}
+EOF
+}
+
+_plan_cmp() {
+  python3 -c 'import json,sys; a=json.loads(sys.argv[1]); b=json.loads(sys.argv[2]);
+for k in a:
+  if k in ("live",): continue
+  if a[k]!=b.get(k): raise SystemExit(f"diff {k}")' "$1" "$2"
+}
+
+# 18) AC-R1: stdin JSON equivale a --request-file
+req18="$(mktemp)"
+_req_body "$SMOKE_ROOT" >"$req18"
+out18a="$("$INSTALLER" --request-file "$req18")"
+out18b="$(printf '%s' "$(_req_body "$SMOKE_ROOT")" | "$INSTALLER")"
+_plan_cmp "$(echo "$out18a" | env_plan)" "$(echo "$out18b" | env_plan)" || fail "stdin vs request-file"
+rm -f "$req18"
+
+# 19) AC-R2: SDDIA_CAPSULE_REQUEST
+export SDDIA_CAPSULE_REQUEST
+SDDIA_CAPSULE_REQUEST="$(_req_body "$SMOKE_ROOT")"
+out19="$(env -u SDDIA_SKIP_STDIN "$INSTALLER")"
+unset SDDIA_CAPSULE_REQUEST
+out19b="$("$INSTALLER" deploy --root "$SMOKE_ROOT" --dry-run)"
+_plan_cmp "$(echo "$out19" | env_plan)" "$(echo "$out19b" | env_plan)" || fail "SDDIA_CAPSULE_REQUEST"
+
+# 20) AC-R3: --request-file gana sobre env
+root_a="/tmp/sddia-req-a-$$"
+root_b="/tmp/sddia-req-b-$$"
+req20="$(mktemp)"
+_req_body "$root_a" >"$req20"
+out20="$(SDDIA_CAPSULE_REQUEST="$(_req_body "$root_b")" "$INSTALLER" --request-file "$req20")"
+got20="$(echo "$out20" | env_plan | plan_field root)"
+[[ "$(realpath -m "$got20")" == "$(realpath -m "$root_a")" ]] || fail "request-file no ganó a env"
+unset SDDIA_CAPSULE_REQUEST
+rm -f "$req20"
+
+# 21) AC-R4: JSON inválido → envelope REQUEST_INVALID
+bad21="$(mktemp)"
+echo '{invalid' >"$bad21"
+set +e
+out21="$("$INSTALLER" --request-file "$bad21" 2>/dev/null)"
+rc21=$?
+set -e
+[[ "$rc21" -eq 7 ]] || fail "invalid request rc=$rc21"
+echo "$out21" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["exitCode"]==7; assert d["result"]["error"]["code"]=="REQUEST_INVALID"' \
+  || fail "invalid request envelope"
+rm -f "$bad21"
+
+# 22) AC-R6: SDDIA_SKIP_STDIN=1 ignora pipe JSON
+SDDIA_CAPSULE_REQUEST=""
+out22="$(printf '%s' "$(_req_body "/tmp/should-not-use")" | env SDDIA_SKIP_STDIN=1 "$INSTALLER" deploy --root "$SMOKE_ROOT" --dry-run)"
+out22b="$("$INSTALLER" deploy --root "$SMOKE_ROOT" --dry-run)"
+_plan_cmp "$(echo "$out22" | env_plan)" "$(echo "$out22b" | env_plan)" || fail "SKIP_STDIN no respetado"
 
 echo "OK test-sddia-installer"

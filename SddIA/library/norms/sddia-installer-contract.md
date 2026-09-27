@@ -12,7 +12,7 @@ hash_signature: "sha256:780962b169cca143418c855eaa3604132d2d1720b338c0243b286ba8
 
 ## Directriz Core
 
-Installer v3 I/O: un envelope `capsule-json-io` 2.0 por stdout (`meta.entityId=sddia-installer`); entrada por argv, `--request-file`, stdin JSON o `SDDIA_CAPSULE_REQUEST`; progreso JSONL (`@sddia-progress` en stderr o fd 3); logs en `instance.installer_logs` (Cúmulo). Hereda v2: bóveda compuesta, puerto derivado, unidades condicionales, verify en fachada, registro host.
+Installer v3 I/O: un envelope `capsule-json-io` 2.0 por stdout (`meta.entityId=sddia-installer`); entrada por argv, `--request-file`, stdin JSON o `SDDIA_CAPSULE_REQUEST` (precedencia: fichero > stdin > env > argv); con `SDDIA_SKIP_STDIN=1` no se lee stdin como request; stdin JSON solo si no es TTY (`capsule-json-io`); progreso JSONL (`@sddia-progress` en stderr o fd 3); logs en `instance.installer_logs` (Cúmulo). Hereda v2: bóveda compuesta, puerto derivado, unidades condicionales, verify en fachada, registro host.
 
 ## Códigos de salida
 
