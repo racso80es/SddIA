@@ -80,7 +80,7 @@ spawned_pbis_residuales:
     path: docs/todos/done/[KAIZEN] Installer v3 — smoke lab AC-4 a AC-8.md
   - document_id: PBI-KAIZEN-INSTALLER-V3-UI-TTY-EXPECT
     uuid: "5fc72fba-4c31-4c2d-8342-7c84cafb59a3"
-    path: docs/todos/pending/[KAIZEN] Installer v3 — smoke TTY presentador (AC-9 y AC-11).md
+    path: docs/todos/done/[KAIZEN] Installer v3 — smoke TTY presentador (AC-9 y AC-11).md
   - document_id: PBI-OPERATIVO-INSTALLER-V3-ATAJOS-HOST
     uuid: "ab610ab9-9ce8-4efd-a8d1-1138b1aa73d1"
     path: docs/todos/pending/[OPERATIVO] Installer v3 — regeneración atajos en Aplicaciones del host.md

@@ -243,4 +243,8 @@ _plan_cmp "$(echo "$out22" | env_plan)" "$(echo "$out22b" | env_plan)" || fail "
 
 bash "$ROOT/SddIA/scripts/qa/test-sddia-installer-lab.sh"
 
+if command -v expect >/dev/null 2>&1 && command -v script >/dev/null 2>&1; then
+  bash "$ROOT/SddIA/scripts/qa/test-sddia-installer-ui-tty.sh"
+fi
+
 echo "OK test-sddia-installer"

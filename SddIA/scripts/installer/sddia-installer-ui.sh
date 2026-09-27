@@ -217,20 +217,23 @@ _run_facade_tty() {
   ) &
 
   local child=$!
-  while IFS= read -r line <"$fifo" 2>/dev/null || true; do
-    [[ -z "$line" ]] && continue
-    local rendered
-    rendered="$(_print_step_line "$line" || true)"
-    if [[ -n "$rendered" ]]; then
-      if [[ "$rendered" == *": failed"* ]]; then
-        _color 1
-        echo "$rendered"
-        _color_reset
-      else
-        echo "$rendered"
+  (
+    exec 4<"$fifo"
+    while IFS= read -r line <&4; do
+      [[ -z "$line" ]] && continue
+      local rendered
+      rendered="$(_print_step_line "$line" || true)"
+      if [[ -n "$rendered" ]]; then
+        if [[ "$rendered" == *": failed"* ]]; then
+          _color 1
+          echo "$rendered"
+          _color_reset
+        else
+          echo "$rendered"
+        fi
       fi
-    fi
-  done &
+    done
+  ) &
   local reader=$!
 
   wait "$child" 2>/dev/null || true
