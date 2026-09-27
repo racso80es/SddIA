@@ -4,7 +4,7 @@ uuid: "ab610ab9-9ce8-4efd-a8d1-1138b1aa73d1"
 title: "[OPERATIVO] Installer v3 — regeneración atajos en Aplicaciones del host"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 priority: baja
 type: operativo
 process: feature
