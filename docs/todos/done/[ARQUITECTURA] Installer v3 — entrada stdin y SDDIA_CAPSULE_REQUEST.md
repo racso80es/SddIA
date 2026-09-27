@@ -4,7 +4,7 @@ uuid: "f7b237b0-dd48-4b85-9834-d85067123115"
 title: "[ARQUITECTURA] Installer v3 — entrada stdin y SDDIA_CAPSULE_REQUEST"
 format: markdown
 version: "1.1.0"
-status: pending
+status: done
 priority: media
 type: arquitectura
 process: refactorization
