@@ -39,15 +39,11 @@ LAB4="/tmp/sddia-installer-lab-ac4-$$"
 rm -rf "$LAB4"
 mkdir -p "$LAB4"
 export SDDIA_INSTALLER_LAB_SKIP_ENABLE=1
+export SDDIA_BUNDLE_SKIP_WITNESS=1
 export SDDIA_INSTALLER_BUNDLE_PROFILE=engineering
-lab_deploy_args=(deploy --root "$LAB4")
-if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-  # CI: sin ELF en target/release; bundle compila en el propio paso build_bundle.
-  :
-else
-  export SDDIA_BUNDLE_SKIP_WITNESS=1
-  lab_deploy_args+=(--skip-build)
-fi
+[[ -x "$ROOT/SddIA/target/release/execute-process" ]] \
+  || fail "AC-4: falta SddIA/target/release/execute-process (prep-installer-lab-release.sh)"
+lab_deploy_args=(deploy --root "$LAB4" --skip-build)
 stdout4="${LAB4}.stdout"
 stderr4="${LAB4}.stderr"
 set +e
