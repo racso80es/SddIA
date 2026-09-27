@@ -27,6 +27,7 @@ Clase ECST para colapso de un proceso o cápsula oficial SddIA. Dispara material
 - `persist_ref`
 - `branch_name`
 - `correlation_id`
+- `friction_id`
 
 ### FORBIDDEN
 - *(ninguno)*

@@ -3,6 +3,12 @@
 use crate::core::fracture_pbi::{
     fracture_trace_hash, resolve_enrich_target, scan_fracture_ledger, slugify_process_name,
 };
+use crate::core::fracture_signatures::{
+    build_match_surfaces, extract_evidence_lines, load_fracture_catalog,
+    resolve_refined_diagnosis, shared_default_catalog, signature_matches_mayeuta,
+    DccMatchContext, Diagnosis, FractureCatalog,
+};
+use std::collections::HashSet;
 use chrono::Utc;
 use serde_json::{json, Value};
 use std::fs;
@@ -27,434 +33,62 @@ fn optional_str(inputs: &Value, key: &str) -> Option<String> {
         .map(str::to_string)
 }
 
-/// Traza canónica Argos `emit_orphan_lock_fracture`. Match **solo** `error_trace`
-/// (F-MAYEUTA-ORPHAN-TOKEN-TRAP: no usar `orphan`/`huérfan` sobre el blob concatenado).
-fn is_orphan_lock_trace(error_trace: &str) -> bool {
-    error_trace.contains("Centinela ")
-        && error_trace.contains("lock huérfano")
-        && error_trace.contains("PID ")
-        && error_trace.contains("muerto")
-        && error_trace.contains("last_heartbeat=")
+fn verdict_label(v: &str) -> &str {
+    match v {
+        "new_norm" => "Nueva norma o endurecimiento normativo",
+        "refactor_tool" => "Refactor de herramienta / cápsula / handler lab",
+        "prompt_adjustment" => "Ajuste de prompt o regla operador IA",
+        "process_fix" => "Corrección de proceso oficial",
+        other => other,
+    }
 }
 
-/// Traza canónica Argos `emit_system_fracture`. Match **solo** `error_trace`
-/// (F-MAYEUTA-HB-TOKEN-TRAP: no usar `heartbeat`/`daemon`/`audit` sobre el blob concatenado).
-fn is_heartbeat_starvation_trace(error_trace: &str) -> bool {
-    error_trace.contains("Centinela ")
-        && error_trace.contains("omitió")
-        && error_trace.contains("ciclos consecutivos de Daemon_Heartbeat")
-        && error_trace.contains("umbral=")
-        && error_trace.contains("last_heartbeat=")
-}
-
-fn is_workflow_scope_trace(error_trace: &str) -> bool {
-    let t = error_trace.to_lowercase();
-    t.contains("without") && t.contains("workflow") && t.contains("scope")
-}
-
-fn is_remote_branch_absent_trace(error_trace: &str) -> bool {
-    let t = error_trace.to_lowercase();
-    t.contains("head sha can't be blank") || t.contains("head ref must be a branch")
-}
-
-fn is_snapshot_gitignore_trace(error_trace: &str) -> bool {
-    let t = error_trace.to_lowercase();
-    (t.contains("snapshot_dirty_skipped") || t.contains("git add failed"))
-        && (t.contains("gitignore") || t.contains("ignorad") || t.contains("ignored by"))
-}
-
-fn is_symbolic_head_branch_trace(error_trace: &str) -> bool {
-    let t = error_trace.to_lowercase();
-    t.contains("branch_symbolic_head")
-        || (t.contains("head ref must be a branch")
-            && (t.contains("branch_name=head") || t.contains("--head head") || t.contains("simbólico")))
-}
-
-fn is_shell_executor_wasm_fallback_trace(error_trace: &str) -> bool {
-    let t = error_trace.to_lowercase();
-    t.contains("shell-executor wasm fallback marker")
-        || (t.contains("cápsula skill")
-            && t.contains("shell-executor")
-            && t.contains("no encontrada bajo sddia/target"))
-}
-
-fn is_shell_metachar_fracture_trace(error_trace: &str) -> bool {
-    error_trace.contains("PR_TITLE_METACHAR")
-        || error_trace.contains("PR_BODY_METACHAR")
-        || error_trace.contains("SHELL_METACHAR")
-        || (error_trace.contains("forbidden shell metacharacters")
-            && error_trace.contains("arguments["))
-}
-
-/// Publish IOTA con relay vivo (`F-DLT-PUBLISH-ERROR`). Match **solo** `error_trace`
-/// (el blob concatenado incluye `failed` de `merkle-batch-preseal failed` y dispara el catch-all).
-fn is_dlt_publish_error_trace(error_trace: &str) -> bool {
-    let t = error_trace.to_lowercase();
-    t.contains("iota-relay-publish-error") || t.contains("f-dlt-publish-error")
-}
-
-fn is_dlt_gas_version_trace(error_trace: &str) -> bool {
-    let t = error_trace.to_lowercase();
-    t.contains("is not available for consumption") && t.contains("current version:")
-}
-
-fn is_dlt_transport_trace(error_trace: &str) -> bool {
-    let t = error_trace.to_lowercase();
-    t.contains("enetunreach")
-        || t.contains("etimedout")
-        || t.contains("enotfound")
-        || t.contains("network is unreachable")
-        || t.contains("connection timed out")
-}
-
-fn is_dlt_object_lock_trace(error_trace: &str) -> bool {
-    error_trace
-        .to_lowercase()
-        .contains("reserved for another transaction")
-}
-
-/// Traza literal de `handle_chat` cuando la prótesis sale 3.
-fn is_prosthetic_infer_exit3_trace(error_trace: &str) -> bool {
-    error_trace.contains("mayeuta-llm/prótesis exit 3")
-}
-
-/// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section).
-pub fn analyze_fracture_kaizen(
-    process_name: &str,
-    error_trace: &str,
-    attempted_action: &str,
-    agent_emitter: &str,
-) -> (String, String, String, bool) {
-    let blob = format!(
-        "{error_trace}\n{attempted_action}\n{process_name}",
+fn build_kaizen_section(
+    classification: &str,
+    primary_id: Option<&str>,
+    evidence: &[String],
+    secondary: &[String],
+    diagnosis: &Diagnosis,
+    verdict: &str,
+    extra_proposals: &[(String, String)],
+) -> String {
+    let root_md = format!("- {}", diagnosis.root_cause);
+    let mut meta = format!(
+        "- **Clasificación:** `{classification}`\n",
+        classification = classification
+    );
+    if let Some(id) = primary_id {
+        meta.push_str(&format!("- **Firma:** `{id}`\n"));
+    }
+    if !evidence.is_empty() {
+        let ev = evidence.join(" / ");
+        meta.push_str(&format!("- **Evidencia:** `{ev}`\n"));
+    }
+    if !secondary.is_empty() {
+        meta.push_str(&format!(
+            "- **Señales secundarias:** `{}`\n",
+            secondary.join("`, `")
+        ));
+    }
+    let proposal_md = std::iter::once(format!(
+        "- **{}:** {}",
+        verdict_label(verdict),
+        diagnosis.proposal
+    ))
+    .chain(
+        extra_proposals
+            .iter()
+            .map(|(v, p)| format!("- **{}:** {p}", verdict_label(v))),
     )
-    .to_lowercase();
-    let hook_blob = format!("{error_trace}\n{attempted_action}").to_lowercase();
+    .collect::<Vec<_>>()
+    .join("\n");
 
-    let mut root_causes: Vec<String> = Vec::new();
-    let mut proposals: Vec<(String, String)> = Vec::new();
-
-    let has_any = |tokens: &[&str]| tokens.iter().any(|t| blob.contains(t));
-    let has_any_in = |hay: &str, tokens: &[&str]| tokens.iter().any(|t| hay.contains(t));
-
-    if is_heartbeat_starvation_trace(error_trace) {
-        root_causes.push(
-            "Inanición de `Daemon_Heartbeat` con proceso vivo (el auditor no emite si el PID está muerto); \
-             no es muerte del centinela. `process_name` es `daemon_id`, no un proceso de `directories.process`."
-                .into(),
-        );
-        proposals.push((
-            "refactor_tool".into(),
-            "Emitir latido en worker / no bloquear el hilo de heartbeat (paridad keepalive de centinelas hermanos)."
-                .into(),
-        ));
-    }
-
-    if is_orphan_lock_trace(error_trace) {
-        root_causes.push(
-            "Lock de centinela con PID muerto (ciclo de vida de daemon / sesión de host); \
-             no es entidad genómica huérfana de bus EDA. `process_name` es `daemon_id`."
-                .into(),
-        );
-        proposals.push((
-            "refactor_tool".into(),
-            "Discriminar lock anterior a `btime` del host frente a colapso en caliente; \
-             no ejecutar backfill `audit-entity-eda-coverage`."
-                .into(),
-        ));
-    }
-
-    let credential_workflow = is_workflow_scope_trace(error_trace);
-    let snapshot_gitignore = is_snapshot_gitignore_trace(error_trace);
-    let symbolic_head = is_symbolic_head_branch_trace(error_trace);
-    let remote_branch_absent = is_remote_branch_absent_trace(error_trace) && !symbolic_head;
-    let shell_wasm_fallback = is_shell_executor_wasm_fallback_trace(error_trace);
-    let dlt_publish = is_dlt_publish_error_trace(error_trace);
-
-    if snapshot_gitignore {
-        root_causes.push(
-            "Snapshot final invocó `git add -A` sobre un path cubierto por `.gitignore` \
-             (`**/.dev/*` / starter-kit `.SddIA/.dev`). El commit aborta; no es rama ausente ni recursión hook (`F-DCC-SNAPSHOT-GITIGNORE`)."
-                .into(),
-        );
-        proposals.push((
-            "process_fix".into(),
-            "Omitir bóvedas `.dev` (salvo `.env.example`) del inventario de snapshot; \
-             `git-manager` commit no debe tumbar el lote si `git add` reporta path ignorado."
-                .into(),
-        ));
-    }
-    if symbolic_head {
-        root_causes.push(
-            "`branch_name=HEAD` (ref simbólica) llegó a Apertura en forja (`gh pr create --head HEAD` → `Head ref must be a branch`). No es PAT ni rama no empujada."
-                .into(),
-        );
-        proposals.push((
-            "process_fix".into(),
-            "Resolver HEAD a la rama actual (`branch_list` `*`) antes del fan-out DCC; abortar si detached. El hook pre-push no debe reenviar `HEAD` literal."
-                .into(),
-        ));
-    }
-
-    if credential_workflow {
-        root_causes.push(
-            "PAT de `git-manager` (HTTPS) sin scope `workflow` al tocar `.github/workflows/`; \
-             distinto del token `gh auth`. Colapso de credencial, no recursión hook (`F-DCC-WORKFLOW-SCOPE`)."
-                .into(),
-        );
-        proposals.push((
-            "process_fix".into(),
-            "Unificar credential helper git→`gh` (`gh auth setup-git`). \
-             `gh auth refresh -s workflow` solo basta si git ya delega en gh. \
-             Envelope DCC `blocked` `F-DCC-WORKFLOW-SCOPE`; no reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`."
-                .into(),
-        ));
-    }
-    if remote_branch_absent {
-        root_causes.push(
-            "Rama ausente en origin tras push rechazado (`Head sha can't be blank` / `Head ref must be a branch`). \
-             DCC no abortó tras Publicación remota failed; no es recursión hook."
-                .into(),
-        );
-        proposals.push((
-            "process_fix".into(),
-            "Halt de Apertura/Sello/Higiene si Publicación remota es `failed`/`blocked` (genoma DCC ya lo exige)."
-                .into(),
-        ));
-    }
-
-    if shell_wasm_fallback {
-        root_causes.push(
-            "`shell-executor` WASM falló (sandbox WASI / working_directory / exec) y el fallback nativo faltó o el centinela interno se fugó. No es git push ni rama ausente."
-                .into(),
-        );
-        proposals.push((
-            "refactor_tool".into(),
-            "Saneamiento de `invoke_shell_executor`: no re-ejecutar WASM; error canónico si el ELF nativo falta; no emitir el centinela hacia DCC. Aduana `dcc_lab_binary_missing_trace` suprime Kintsugi."
-                .into(),
-        ));
-    }
-
-    if is_shell_metachar_fracture_trace(error_trace) {
-        root_causes.push(
-            "`delivery-close-cycle` Apertura en forja: token argv rechazado por `shell-executor` \
-             (`pr_title` / `branch_name` / `--body-file`). No es recursión hook. \
-             No reabrir K2 `--body-file` (`F-DCC-PR-TITLE-METACHAR`)."
-                .into(),
-        );
-        proposals.push((
-            "process_fix".into(),
-            "Preflight argv y sanear `pr_title`; códigos `PR_TITLE_METACHAR` ≠ `PR_BODY_METACHAR`. \
-             No relajar `assert_safe_token`. No reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`."
-                .into(),
-        ));
-    }
-
-    if dlt_publish {
-        if is_dlt_gas_version_trace(error_trace) {
-            root_causes.push(
-                "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
-                 Colisión de versión de gas/inputs (`is not available for consumption` / `current version:`), \
-                 no operador ni transporte hacia fullnode."
-                    .into(),
-            );
-            proposals.push((
-                "process_fix".into(),
-                "Serializar `publishImmutableData` en el relay; si la firma de consumo/versión está presente, \
-                 no emitir `System_Fracture_Detected`; `dlt_reanchor` absorbe."
-                    .into(),
-            ));
-        } else if is_dlt_object_lock_trace(error_trace) {
-            root_causes.push(
-                "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
-                 Un objeto está reservado por otra transacción (quórum). No es operador, ni transporte, \
-                 ni input permanente."
-                    .into(),
-            );
-            proposals.push((
-                "process_fix".into(),
-                "Si la firma `reserved for another transaction` está presente, no emitir \
-                 `System_Fracture_Detected`; `dlt_reanchor` absorbe."
-                    .into(),
-            ));
-        } else if is_dlt_transport_trace(error_trace) {
-            root_causes.push(
-                "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
-                 Causa de transporte (`err.cause`) hacia fullnode Testnet, no operador ni relay caído."
-                    .into(),
-            );
-            proposals.push((
-                "process_fix".into(),
-                "Si `err.cause` es red transitoria (`ENETUNREACH`/`ETIMEDOUT`/`ENOTFOUND`), no emitir \
-                 `System_Fracture_Detected`; `dlt_reanchor` absorbe. Opaco (config-missing / Move) sí fractura."
-                    .into(),
-            ));
-        } else {
-            root_causes.push(
-                "HTTP 500 de publish IOTA con relay vivo (`iota-relay-publish-error` / `F-DLT-PUBLISH-ERROR`). \
-                 Causa opaca (ni red transitoria ni colisión de versión de gas). No es operador."
-                    .into(),
-            );
-            proposals.push((
-                "process_fix".into(),
-                "Opaco (`config-missing` / Move / inputs permanentes) sí fractura; no afirmar transporte."
-                    .into(),
-            ));
-        }
-    }
-
-    if !credential_workflow
-        && !remote_branch_absent
-        && !shell_wasm_fallback
-        && !snapshot_gitignore
-        && !symbolic_head
-        && has_any_in(
-        &hook_blob,
-        &[
-            "delivery-close-cycle failed for",
-            "recurs",
-            "re-entrada",
-        ],
-    ) {
-        root_causes.push(
-            "Recursión o re-entrada en la cadena hook Git ↔ proceso de cierre (`delivery-close-cycle`)."
-                .into(),
-        );
-        proposals.push((
-            "refactor_tool".into(),
-            "Auditar por qué la guarda `SDDIA_HOOK_DELIVERY_CLOSE` no cortó la re-entrada; \
-             no reimplementarla. Verificar `in_delivery_close_cycle` en el subproceso `git-manager`."
-                .into(),
-        ));
-    }
-    if has_any(&[
-        "gh ",
-        "gh pr",
-        "git push",
-        "git merge",
-        "bypass",
-        "skip_hooks",
-        "curl ",
-    ]) {
-        root_causes.push(
-            "Violación de jurisdicción delegada: terminal raw usada para evadir cápsula o proceso oficial."
-                .into(),
-        );
-        proposals.push((
-            "new_norm".into(),
-            "Reforzar `SddIA/norms/obediencia-procesos.md` § Ley de Jurisdicción Delegada; \
-             prohibir bypass silencioso ante fallo."
-                .into(),
-        ));
-    }
-    let genomic_ctx = has_any(&[
-        "eda genómica",
-        "domain_entity_created",
-        "audit-entity-eda-coverage",
-        "entity-manager",
-        "ruido de sistema",
-        "orphan_count",
-    ]);
-    if !is_orphan_lock_trace(error_trace)
-        && genomic_ctx
-        && has_any(&["orphan", "ruido de sistema", "eda genómica", "huérfan", "orphan_count"])
-    {
-        root_causes.push(
-            "Entidad genómica indexada sin correlato `Domain_Entity_Created` en bus EDA.".into(),
-        );
-        proposals.push((
-            "refactor_tool".into(),
-            "Ejecutar backfill Fase C (`audit-entity-eda-coverage --emit`) o integrar sello en \
-             `entity-manager` create."
-                .into(),
-        ));
-    }
-    if !credential_workflow
-        && !remote_branch_absent
-        && !shell_wasm_fallback
-        && !snapshot_gitignore
-        && !symbolic_head
-        && !dlt_publish
-        && has_any(&["timeout", "block", "abort", "colaps"])
-    {
-        root_causes.push(
-            "Bloqueo operativo sin escalado Kintsugi previo al intento de recuperación manual."
-                .into(),
-        );
-        proposals.push((
-            "prompt_adjustment".into(),
-            "Ajustar instrucción operador IA: detener, emitir `System_Fracture_Detected`, \
-             notificar al Vértice Biológico — no continuar entrega."
-                .into(),
-        ));
-    }
-
-    if is_prosthetic_infer_exit3_trace(error_trace) {
-        root_causes.push(
-            "Exit 3 de `mayeuta-llm`/prótesis en `sse_chat_stream`: fail-closed de infer con \
-             `SDDIA_LLM_REQUIRE_INFER` (CLI ausente, vacío o sin tokens). No es ELF ausente ni colapso del puente."
-                .into(),
-        );
-        proposals.push((
-            "process_fix".into(),
-            "No emitir `System_Fracture_Detected` para este exit. Otros exit ≠ 0 siguen fracturando."
-                .into(),
-        ));
-    }
-
-    let unclassified = root_causes.is_empty();
-    if unclassified {
-        root_causes.push(format!(
-            "Causa raíz no clasificada automáticamente para `{process_name}`; requiere laudo humano."
-        ));
-        proposals.push((
-            "process_fix".into(),
-            format!(
-                "Auditar proceso `{process_name}`, acción `{attempted_action}` y emisor `{agent_emitter}`."
-            ),
-        ));
-    }
-
-    let verdict_priority = [
-        "new_norm",
-        "refactor_tool",
-        "prompt_adjustment",
-        "process_fix",
-    ];
-    let mut verdict = proposals[0].0.clone();
-    for vp in verdict_priority {
-        if proposals.iter().any(|p| p.0 == vp) {
-            verdict = vp.to_string();
-            break;
-        }
-    }
-
-    fn verdict_label(v: &str) -> &str {
-        match v {
-            "new_norm" => "Nueva norma o endurecimiento normativo",
-            "refactor_tool" => "Refactor de herramienta / cápsula / handler lab",
-            "prompt_adjustment" => "Ajuste de prompt o regla operador IA",
-            "process_fix" => "Corrección de proceso oficial",
-            other => other,
-        }
-    }
-
-    let proposal_md = proposals
-        .iter()
-        .map(|(v, p)| format!("- **{}:** {p}", verdict_label(v)))
-        .collect::<Vec<_>>()
-        .join("\n");
-    let root_md = root_causes
-        .iter()
-        .map(|c| format!("- {c}"))
-        .collect::<Vec<_>>()
-        .join("\n");
-
-    let section = format!(
+    format!(
         r#"## Conclusión Analítica y Propuesta Evolutiva
 
 *(Síntesis Mayeuta — Kintsugi async)*
 
+{meta}
 ### Diagnóstico de causa raíz
 
 {root_md}
@@ -468,11 +102,137 @@ pub fn analyze_fracture_kaizen(
 {proposal_md}
 
 > Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar."#,
-        verdict_label = verdict_label(&verdict),
-    );
-
-    (verdict, root_md, section, unclassified)
+        verdict_label = verdict_label(verdict),
+    )
 }
+
+/// Paridad `execute-action.py::_analyze_fracture_kaizen` → (veredicto, root_md, section, unclassified).
+pub fn analyze_fracture_kaizen(
+    process_name: &str,
+    error_trace: &str,
+    attempted_action: &str,
+    agent_emitter: &str,
+) -> (String, String, String, bool) {
+    analyze_fracture_kaizen_with_options(
+        process_name,
+        error_trace,
+        attempted_action,
+        agent_emitter,
+        None,
+        None,
+    )
+}
+
+pub fn analyze_fracture_kaizen_with_options(
+    process_name: &str,
+    error_trace: &str,
+    attempted_action: &str,
+    agent_emitter: &str,
+    friction_id: Option<&str>,
+    catalog: Option<&FractureCatalog>,
+) -> (String, String, String, bool) {
+    let catalog = match catalog {
+        Some(c) => c,
+        None => shared_default_catalog(),
+    };
+    let surfaces = build_match_surfaces(process_name, error_trace, attempted_action, true);
+    let ctx = DccMatchContext {
+        process_name,
+        attempted_action,
+        status: "",
+        error_trace,
+        report_friction_id: None,
+        report_error_code: None,
+    };
+
+    if let Some(fid) = friction_id.filter(|id| catalog.catalog_contains_id(id)) {
+        let sig = catalog.get(fid).expect("catalog id");
+        let diagnosis = sig.diagnosis.clone().unwrap_or_else(|| Diagnosis {
+            root_cause: sig.id.clone(),
+            verdict: "process_fix".into(),
+            proposal: "Revisar catálogo.".into(),
+        });
+        let evidence = extract_evidence_lines(&surfaces.error_trace_norm, 2);
+        let section = build_kaizen_section(
+            "structured",
+            Some(fid),
+            &evidence,
+            &[],
+            &diagnosis,
+            &diagnosis.verdict,
+            &[],
+        );
+        let root_md = format!("- {}", diagnosis.root_cause);
+        return (diagnosis.verdict.clone(), root_md, section, false);
+    }
+
+    let mut matched: Vec<String> = Vec::new();
+    let mut matched_set = HashSet::new();
+    for sig in catalog.signatures() {
+        if sig.refine_only {
+            continue;
+        }
+        if signature_matches_mayeuta(catalog, sig, &surfaces, &ctx, &matched_set) {
+            matched.push(sig.id.clone());
+            matched_set.insert(sig.id.clone());
+        }
+    }
+
+    let unclassified = matched.is_empty();
+    if unclassified {
+        let root = format!(
+            "Causa raíz no clasificada automáticamente para `{process_name}`; requiere laudo humano."
+        );
+        let diagnosis = Diagnosis {
+            root_cause: root,
+            verdict: "process_fix".into(),
+            proposal: format!(
+                "Auditar proceso `{process_name}`, acción `{attempted_action}` y emisor `{agent_emitter}`."
+            ),
+        };
+        let section = build_kaizen_section(
+            "unclassified",
+            None,
+            &[],
+            &[],
+            &diagnosis,
+            "process_fix",
+            &[],
+        );
+        let root_md = format!("- {}", diagnosis.root_cause);
+        return ("process_fix".into(), root_md, section, true);
+    }
+
+    let primary_id = matched[0].clone();
+    let secondary = matched.iter().skip(1).cloned().collect::<Vec<_>>();
+    let primary_sig = catalog.get(&primary_id).expect("primary sig");
+    let (effective_id, diagnosis) = if !primary_sig.refine.is_empty() {
+        resolve_refined_diagnosis(catalog, primary_sig, &surfaces, &ctx)
+    } else {
+        (
+            primary_sig.id.clone(),
+            primary_sig.diagnosis.clone().unwrap_or_else(|| Diagnosis {
+                root_cause: primary_sig.id.clone(),
+                verdict: "process_fix".into(),
+                proposal: "Revisar catálogo.".into(),
+            }),
+        )
+    };
+    let verdict = diagnosis.verdict.clone();
+    let evidence = extract_evidence_lines(&surfaces.error_trace_norm, 2);
+    let section = build_kaizen_section(
+        "signature",
+        Some(&effective_id),
+        &evidence,
+        &secondary,
+        &diagnosis,
+        &verdict,
+        &[],
+    );
+    let root_md = format!("- {}", diagnosis.root_cause);
+    (verdict, root_md, section, false)
+}
+
 
 fn iso_now() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
@@ -553,11 +313,14 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     };
 
     let target = repo.join(&target_rel);
-    let (verdict, _, section, unclassified) = analyze_fracture_kaizen(
+    let friction_id = optional_str(inputs, "friction_id");
+    let (verdict, _, section, unclassified) = analyze_fracture_kaizen_with_options(
         &process_name,
         &error_trace,
         &attempted_action,
         &agent_emitter,
+        friction_id.as_deref(),
+        None,
     );
     let content = fs::read_to_string(&target).map_err(|e| e.to_string())?;
     fs::write(&target, upsert_fracture_kaizen_section(&content, &section))
@@ -798,13 +561,16 @@ mod tests {
 
     #[test]
     fn analyze_fracture_kaizen_bypass_new_norm() {
-        let (verdict, _, _, _) = analyze_fracture_kaizen(
+        let (verdict, _, section, unclassified) = analyze_fracture_kaizen(
             "feature",
             "operator used gh pr create",
             "delivery-close-cycle",
             "tekton",
         );
-        assert_eq!(verdict, "new_norm");
+        assert_eq!(verdict, "process_fix");
+        assert!(unclassified);
+        assert!(!section.contains("Violación de jurisdicción"));
+        assert!(!section.contains("new_norm"));
     }
 
     #[test]
@@ -893,11 +659,8 @@ mod tests {
 
         let out = run(repo, &inputs).expect("enrich");
         assert_eq!(out.get("success"), Some(&json!(true)));
-        // Fixture: "colapsó" → catch-all Kintsugi (`prompt_adjustment`), no cubo hook/orphan/EDA.
-        assert_eq!(
-            out.get("evolution_verdict"),
-            Some(&json!("prompt_adjustment"))
-        );
+        assert_eq!(out.get("evolution_verdict"), Some(&json!("process_fix")));
+        assert_eq!(out.get("unclassified"), Some(&json!(true)));
 
         let path = out
             .get("target_path")
@@ -1020,7 +783,102 @@ mod tests {
     }
 
     #[test]
-    fn enrich_classified_colaps_does_not_emit_clarification() {
+    #[test]
+    fn fracture_corpus_regression() {
+        let catalog = shared_default_catalog();
+        let cases: &[(&str, &str, &str, &str, &str, Option<&str>)] = &[
+            (
+                "4c01d65b972f",
+                "delivery-close-cycle",
+                "Publicación remota",
+                "execute-process",
+                "SddIA pre-push: SKIPPED (delivery-close-cycle guard)\n ! [rejected]        branch -> branch (non-fast-forward)\nerror: falló el empuje",
+                Some("F-DCC-PUSH-NON-FAST-FORWARD"),
+            ),
+            (
+                "d0cfd5b66ff1",
+                "delivery-close-cycle",
+                "Publicación remota",
+                "execute-process",
+                "fatal: Could not resolve host: github.com",
+                Some("F-DCC-DNS-UNRESOLVED"),
+            ),
+            (
+                "0c5268362b9a",
+                "delivery-close-cycle",
+                "Publicación remota",
+                "execute-process",
+                "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed",
+                Some("F-DCC-HOOK-EVOL-OVERESCALATION"),
+            ),
+            (
+                "01c9040df256",
+                "delivery-close-cycle",
+                "Apertura en forja",
+                "execute-process",
+                "gh_stderr=pull request create failed: GraphQL: Head sha can't be blank",
+                Some("F-DCC-REMOTE-BRANCH-ABSENT"),
+            ),
+            (
+                "6c0db1296181",
+                "email-watcher",
+                "daemon-heartbeat-audit",
+                "argos",
+                "Centinela email-watcher omitió 3 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-08-30T07:51:47Z",
+                Some("F-ARGOS-HEARTBEAT-STARVATION"),
+            ),
+            (
+                "63c439de23d0",
+                "telegram-watcher",
+                "daemon-heartbeat-audit",
+                "argos",
+                "Centinela telegram-watcher omitió 11 ciclos consecutivos de Daemon_Heartbeat (umbral=3). last_heartbeat=2026-08-11T07:45:50Z",
+                Some("F-ARGOS-HEARTBEAT-STARVATION"),
+            ),
+            (
+                "60db1db67e49",
+                "route-domain-event",
+                "merkle-batch-preseal",
+                "execute-process",
+                "merkle-batch-preseal failed: iota-relay-publish-error: is not available for consumption, current version: 1",
+                Some("F-DLT-GAS-VERSION"),
+            ),
+            (
+                "ca3d901fdc9a-ola1",
+                "delivery-close-cycle",
+                "Snapshot final",
+                "execute-process",
+                "cápsula skill 'git-manager' no encontrada bajo SddIA/target",
+                Some("F-DCC-LAB-BINARY-MISSING"),
+            ),
+        ];
+        for (label, process, action, emitter, trace, expected_sig) in cases {
+            let (verdict, _, section, unclassified) = analyze_fracture_kaizen_with_options(
+                process,
+                trace,
+                action,
+                emitter,
+                None,
+                Some(catalog),
+            );
+            assert!(!unclassified, "{label}: unclassified");
+            assert!(
+                section.contains(&format!("**Firma:** `{}`", expected_sig.unwrap())),
+                "{label}: section missing firma"
+            );
+            assert!(!section.contains("sin escalado Kintsugi"), "{label}");
+            if *label == "4c01d65b972f" {
+                assert_eq!(verdict, "process_fix");
+                assert!(!section.contains("Violación de jurisdicción"));
+            }
+            if *label == "6c0db1296181" || *label == "63c439de23d0" {
+                assert_eq!(verdict, "refactor_tool");
+            }
+        }
+    }
+
+    #[test]
+    fn enrich_colaps_unclassified_emits_clarification() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         setup_repo(repo);
@@ -1033,7 +891,7 @@ mod tests {
         });
         materialize_fracture_pbi::run(repo, &inputs).expect("materialize");
         let out = run(repo, &inputs).expect("enrich");
-        assert_eq!(out.get("unclassified"), Some(&json!(false)));
-        assert!(list_orch_events(repo).is_empty());
+        assert_eq!(out.get("unclassified"), Some(&json!(true)));
+        assert_eq!(list_orch_events(repo).len(), 1);
     }
 }

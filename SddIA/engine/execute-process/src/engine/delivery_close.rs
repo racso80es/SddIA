@@ -8,6 +8,10 @@ use super::project_binding::{self, BoundProject};
 use super::route_domain_core::materialize_pending_domain_event;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
+use crate::core::fracture_signatures::{
+    build_match_surfaces, shared_default_catalog, signature_matches_dcc_suppress,
+    DccMatchContext,
+};
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -311,35 +315,61 @@ fn dcc_friction_id(phase_name: &str, report: &Value) -> String {
     }
 }
 
-fn dcc_gate_block_suppresses_fracture(phase_name: &str, status: &str) -> bool {
-    status == "blocked"
-        && matches!(
-            phase_name,
-            "Aduana evolution" | "Aduana EDA genómica"
-        )
+fn dcc_match_ctx<'a>(
+    phase_name: &'a str,
+    status: &'a str,
+    error_trace: &'a str,
+    report: Option<&'a Value>,
+) -> DccMatchContext<'a> {
+    DccMatchContext {
+        process_name: "delivery-close-cycle",
+        attempted_action: phase_name,
+        status,
+        error_trace,
+        report_friction_id: report
+            .and_then(|r| r.get("friction_id"))
+            .and_then(|v| v.as_str()),
+        report_error_code: report
+            .and_then(|r| r.get("error_code"))
+            .and_then(|v| v.as_str()),
+    }
 }
 
-fn dcc_transient_network_trace(trace: &str) -> bool {
-    let t = trace.to_lowercase();
-    t.contains("could not resolve host")
-        || t.contains("temporary failure in name resolution")
-        || t.contains("name or service not known")
-        || t.contains("network is unreachable")
-        || t.contains("connection timed out")
-        || t.contains("error connecting to api.github.com")
-        || t.contains("check your internet connection or https://githubstatus.com")
+fn dcc_suppresses_signature(
+    signature_id: &str,
+    phase_name: &str,
+    status: &str,
+    error_trace: &str,
+    report: Option<&Value>,
+) -> bool {
+    let catalog = shared_default_catalog();
+    let surfaces =
+        build_match_surfaces("delivery-close-cycle", error_trace, phase_name, false);
+    let ctx = dcc_match_ctx(phase_name, status, error_trace, report);
+    catalog
+        .get(signature_id)
+        .map(|sig| signature_matches_dcc_suppress(catalog, sig, &ctx, &surfaces))
+        .unwrap_or(false)
+}
+
+fn dcc_gate_block_suppresses_fracture(phase_name: &str, status: &str) -> bool {
+    dcc_suppresses_signature(
+        "F-DCC-GATE-EVOLUTION-BLOCK",
+        phase_name,
+        status,
+        "",
+        None,
+    )
 }
 
 fn dcc_net_block_suppresses_fracture(phase_name: &str, status: &str, error_trace: &str) -> bool {
-    matches!(status, "failed" | "blocked")
-        && matches!(phase_name, "Publicación remota" | "Apertura en forja")
-        && dcc_transient_network_trace(error_trace)
-}
-
-fn dcc_hook_evol_gate_trace(trace: &str) -> bool {
-    trace
-        .to_lowercase()
-        .contains("evolution gate (--range --if-touched) failed")
+    dcc_suppresses_signature(
+        "F-DCC-DNS-UNRESOLVED",
+        phase_name,
+        status,
+        error_trace,
+        None,
+    )
 }
 
 fn dcc_hook_evol_block_suppresses_fracture(
@@ -347,14 +377,13 @@ fn dcc_hook_evol_block_suppresses_fracture(
     status: &str,
     error_trace: &str,
 ) -> bool {
-    matches!(status, "failed" | "blocked")
-        && phase_name == "Publicación remota"
-        && dcc_hook_evol_gate_trace(error_trace)
-}
-
-fn dcc_workflow_scope_trace(trace: &str) -> bool {
-    let t = trace.to_lowercase();
-    t.contains("without") && t.contains("workflow") && t.contains("scope")
+    dcc_suppresses_signature(
+        "F-DCC-HOOK-EVOL-OVERESCALATION",
+        phase_name,
+        status,
+        error_trace,
+        None,
+    )
 }
 
 fn dcc_workflow_scope_block_suppresses_fracture(
@@ -362,13 +391,13 @@ fn dcc_workflow_scope_block_suppresses_fracture(
     status: &str,
     error_trace: &str,
 ) -> bool {
-    matches!(status, "failed" | "blocked")
-        && phase_name == "Publicación remota"
-        && dcc_workflow_scope_trace(error_trace)
-}
-
-fn dcc_title_metachar_trace(trace: &str) -> bool {
-    trace.contains("PR_TITLE_METACHAR") || trace.contains("F-DCC-PR-TITLE-METACHAR")
+    dcc_suppresses_signature(
+        "F-DCC-WORKFLOW-SCOPE",
+        phase_name,
+        status,
+        error_trace,
+        None,
+    )
 }
 
 fn dcc_title_metachar_block_suppresses_fracture(
@@ -377,32 +406,27 @@ fn dcc_title_metachar_block_suppresses_fracture(
     error_trace: &str,
     report: &Value,
 ) -> bool {
-    matches!(status, "failed" | "blocked")
-        && phase_name == "Apertura en forja"
-        && (dcc_title_metachar_trace(error_trace)
-            || report.get("friction_id").and_then(|v| v.as_str())
-                == Some("F-DCC-PR-TITLE-METACHAR")
-            || report.get("error_code").and_then(|v| v.as_str()) == Some("PR_TITLE_METACHAR"))
-}
-
-/// Receta de compile (ELF/cápsula ausente) ≠ colapso ontológico. No `fail_soft`.
-fn dcc_lab_binary_missing_trace(trace: &str) -> bool {
-    let t = trace.to_lowercase();
-    if t.contains("sddia-qa no encontrado") {
-        return true;
-    }
-    if t.contains("shell-executor wasm fallback marker") {
-        return true;
-    }
-    t.contains("cápsula skill") && t.contains("no encontrada bajo sddia/target")
+    dcc_suppresses_signature(
+        "F-DCC-PR-TITLE-METACHAR",
+        phase_name,
+        status,
+        error_trace,
+        Some(report),
+    )
 }
 
 fn dcc_lab_binary_missing_suppresses_fracture(
-    _phase_name: &str,
+    phase_name: &str,
     status: &str,
     error_trace: &str,
 ) -> bool {
-    matches!(status, "failed" | "blocked") && dcc_lab_binary_missing_trace(error_trace)
+    dcc_suppresses_signature(
+        "F-DCC-LAB-BINARY-MISSING",
+        phase_name,
+        status,
+        error_trace,
+        None,
+    )
 }
 
 fn dcc_post_push_phase(phase_name: &str) -> bool {
@@ -746,22 +770,44 @@ mod tests {
 
     #[test]
     fn dcc_transient_network_trace_positives_and_pr_url_negative() {
-        assert!(dcc_transient_network_trace(
+        assert!(dcc_net_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
             "fatal: Could not resolve host: github.com"
         ));
-        assert!(dcc_transient_network_trace(
+        assert!(dcc_net_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
             "Temporary failure in name resolution"
         ));
-        assert!(dcc_transient_network_trace("Name or service not known"));
-        assert!(dcc_transient_network_trace("Network is unreachable"));
-        assert!(dcc_transient_network_trace("Connection timed out"));
-        assert!(dcc_transient_network_trace(
+        assert!(dcc_net_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
+            "Name or service not known"
+        ));
+        assert!(dcc_net_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
+            "Network is unreachable"
+        ));
+        assert!(dcc_net_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
+            "Connection timed out"
+        ));
+        assert!(dcc_net_block_suppresses_fracture(
+            "Apertura en forja",
+            "failed",
             "error connecting to api.github.com"
         ));
-        assert!(dcc_transient_network_trace(
+        assert!(dcc_net_block_suppresses_fracture(
+            "Apertura en forja",
+            "failed",
             "check your internet connection or https://githubstatus.com"
         ));
-        assert!(!dcc_transient_network_trace(
+        assert!(!dcc_net_block_suppresses_fracture(
+            "Apertura en forja",
+            "failed",
             "no se pudo resolver pr_url desde gh"
         ));
     }
@@ -862,13 +908,19 @@ mod tests {
 
     #[test]
     fn dcc_hook_evol_gate_trace_matches_canonical() {
-        assert!(dcc_hook_evol_gate_trace(
+        assert!(dcc_hook_evol_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
             "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed"
         ));
-        assert!(!dcc_hook_evol_gate_trace(
+        assert!(!dcc_hook_evol_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
             "SddIA pre-push: BLOCKED — delivery-close-cycle failed for feat/x"
         ));
-        assert!(!dcc_hook_evol_gate_trace(
+        assert!(!dcc_hook_evol_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
             "Could not resolve host: github.com"
         ));
     }
@@ -957,25 +1009,39 @@ mod tests {
 
     #[test]
     fn dcc_lab_binary_missing_trace_positives_and_negatives() {
-        assert!(dcc_lab_binary_missing_trace(
+        assert!(dcc_lab_binary_missing_suppresses_fracture(
+            "Aduana evolution",
+            "failed",
             "sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)"
         ));
-        assert!(dcc_lab_binary_missing_trace(
+        assert!(dcc_lab_binary_missing_suppresses_fracture(
+            "Aduana evolution",
+            "failed",
             "SddIA pre-commit: sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)"
         ));
-        assert!(dcc_lab_binary_missing_trace(
+        assert!(dcc_lab_binary_missing_suppresses_fracture(
+            "Snapshot final",
+            "failed",
             "cápsula skill 'git-manager' no encontrada bajo SddIA/target"
         ));
-        assert!(dcc_lab_binary_missing_trace(
+        assert!(dcc_lab_binary_missing_suppresses_fracture(
+            "Snapshot final",
+            "failed",
             "cápsula skill 'shell-executor' no encontrada bajo SddIA/target"
         ));
-        assert!(dcc_lab_binary_missing_trace(
+        assert!(dcc_lab_binary_missing_suppresses_fracture(
+            "Apertura en forja",
+            "failed",
             "shell-executor wasm fallback marker"
         ));
-        assert!(!dcc_lab_binary_missing_trace(
+        assert!(!dcc_lab_binary_missing_suppresses_fracture(
+            "Publicación remota",
+            "failed",
             "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed"
         ));
-        assert!(!dcc_lab_binary_missing_trace(
+        assert!(!dcc_lab_binary_missing_suppresses_fracture(
+            "Publicación remota",
+            "failed",
             "proveedor 'skill:git-manager' revocado en revoked_entities"
         ));
     }
