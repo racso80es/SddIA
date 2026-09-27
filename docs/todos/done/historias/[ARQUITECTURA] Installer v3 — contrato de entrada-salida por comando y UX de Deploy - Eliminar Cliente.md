@@ -83,7 +83,7 @@ spawned_pbis_residuales:
     path: docs/todos/done/[KAIZEN] Installer v3 — smoke TTY presentador (AC-9 y AC-11).md
   - document_id: PBI-OPERATIVO-INSTALLER-V3-ATAJOS-HOST
     uuid: "ab610ab9-9ce8-4efd-a8d1-1138b1aa73d1"
-    path: docs/todos/pending/[OPERATIVO] Installer v3 — regeneración atajos en Aplicaciones del host.md
+    path: docs/todos/done/[OPERATIVO] Installer v3 — regeneración atajos en Aplicaciones del host.md
 changelog:
   - "1.2.0: cierre tras auditoría — PBI hijos en done/; historia en done/historias/; 4 PBI residuales en pending."
   - "1.1.0: descomposición en dos PBI (§11). Correcciones que el PBI de contrato fija como baseline: D1 schemas junto a la norma (capability-contracts es salida de capacidades); D7 aplazada (tools-contract §1 y tool-creator no caben con el CLI). Norma partida: 1.2.0 contrato, 1.3.0 UX."
