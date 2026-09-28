@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `9e863e94-bc0a-449b-bf55-fe9b3e978eac` | 2026-09-28 | Workspace 1xN: MCP workspace-server, filesystem 2.0, project_slug Kalma2, software_forge y verify WUI | CANONICO | `SddIA/evolution/9e863e94-bc0a-449b-bf55-fe9b3e978eac.md` |
 | `4d2f8909-9cff-440c-a40b-392bf586de9f` | 2026-09-28 | DCC: push non-fast-forward → blocked F-DCC-PUSH-NON-FAST-FORWARD sin System_Fracture_Detected. | CANONICO | `SddIA/evolution/4d2f8909-9cff-440c-a40b-392bf586de9f.md` |
 | `9a1a11d4-67e3-4db4-854e-ad70915ed55e` | 2026-09-27 | Mayeuta: fracture-signatures SSOT, corpus de laudos y enrich determinista | CANONICO | `SddIA/evolution/9a1a11d4-67e3-4db4-854e-ad70915ed55e.md` |
 | `cc29cced-6068-4d71-a186-03a5f56b5388` | 2026-09-27 | Installer v3: smoke TTY presentador AC-T1..T3 (script/expect) | CANONICO | `SddIA/evolution/cc29cced-6068-4d71-a186-03a5f56b5388.md` |
