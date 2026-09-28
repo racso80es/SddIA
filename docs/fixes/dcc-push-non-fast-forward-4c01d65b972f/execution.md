@@ -35,3 +35,13 @@ cd SddIA && cargo test -p execute-process --lib -- dcc_non_ff dcc_fracture_suppr
 ```bash
 ./sddia-run.sh --process entity-manager --inputs-file .tmp/entity-manager-dcc-non-ff.json
 ```
+
+## delivery-close-cycle
+
+`execution_id`: `9a08a08c-36ab-4461-b15b-fa355e166891`. PR: https://github.com/racso80es/SddIA/pull/313
+
+Aduana evolution bloqueó en intento 1 (ruido snapshot); commit `3c50a89` revierte systemd/daemons/tools colaterales. Pre-push local `EVOL_OK` tras push.
+
+## Pendiente
+
+- CI verde en PR #313 (`head` `3c50a89`) → `accept-pr` + cierre.
