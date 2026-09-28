@@ -12,7 +12,7 @@ execution:
 hash_signature: sha256:bda8bb014c269960a8af696f07736a7318cd86dcbb97f21ba7ecf70cb9dc3754
 jurisdiction: Aislada — Ceguera Lógica. Solo inyecta eventos físicos en el bus
 name: event-sweeper
-source_sha256: sha256:29f415c7a78adea01b68723a179c6daaa8979e21bb96d5fb87f53b711334f46e
+source_sha256: sha256:9c0a1d4001196f754ac562c1cec4b7036e292fd3624a5504274777d8eaab7ff8
 telemetry_provided: true
 telemetry_schema:
 - uptime_seconds
