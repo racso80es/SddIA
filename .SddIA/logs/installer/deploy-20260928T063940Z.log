@@ -1,0 +1,239 @@
+[bundle] out=/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA
+[bundle] profile=full-node cargo_profile=release
+[bundle] capsules: kalma2-bridge sddia-workspace-server telegram-watcher io-choke iota-publish-relay github-raw-fetcher schema-corruptor iota-immutable-publisher llm-router telegram-gateway git-manager sddia-evolution-register event-bus-audit event-sweeper gemini-http-infer antigravity-cli-executor sandbox-breacher bus-operator cryptography-manager thought-graph-access event-watcher send-telegram-notification sddia-qa execute-process email-watcher github-bridge-watcher user-preference-store markdown-table-editor read-event-subscriptions shell-executor transit-event-payload filesystem-manager manage-event-receipt ephemeral-cache-purger mayeuta-llm wasi-poc
+[bundle] compilando cápsulas nativas…
+warning: unused import: `SocketAddr`
+ --> daemons/iota-publish-relay/src/main.rs:8:16
+  |
+8 | use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+  |                ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `load_last_uid` is never used
+   --> daemons/email-watcher/src/main.rs:195:4
+    |
+195 | fn load_last_uid(repo: &Path) -> u32 {
+    |    ^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+  --> tools/schema-corruptor/src/main.rs:17:9
+   |
+17 |     let mut result = json!({
+   |         ----^^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variant `Io` is never constructed
+ --> tools/sddia-workspace-server/src/sandbox.rs:6:5
+  |
+4 | pub enum SandboxError {
+  |          ------------ variant in this enum
+5 |     Escape(String),
+6 |     Io(String),
+  |     ^^
+  |
+  = note: `SandboxError` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `load_fracture_catalog`
+ --> engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs:7:51
+  |
+7 |     build_match_surfaces, extract_evidence_lines, load_fracture_catalog,
+  |                                                   ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::env`
+ --> skills/git-manager/src/main.rs:3:5
+  |
+3 | use std::env;
+  |     ^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+  --> skills/git-manager/src/main.rs:38:9
+   |
+38 |     let mut provided: HashSet<&str> = HashSet::from_iter(obj.keys().map(|k| k.as_str()));
+   |         ----^^^^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `path_in_allowlist` is never used
+   --> tools/ephemeral-cache-purger/src/jail.rs:402:8
+    |
+402 | pub fn path_in_allowlist(s: &str) -> bool {
+    |        ^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `emit_error`
+ --> tools/sandbox-breacher/src/main.rs:1:16
+  |
+1 | use sddia_io::{emit_error, emit_success, read_stdin_json};
+  |                ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+  --> tools/sandbox-breacher/src/main.rs:42:17
+   |
+42 |             let mut response = json!({
+   |                 ----^^^^^^^^
+   |                 |
+   |                 help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `catalog`
+   --> engine/execute-process/src/core/fracture_signatures.rs:358:5
+    |
+358 |     catalog: &FractureCatalog,
+    |     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_catalog`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `catalog`
+   --> engine/execute-process/src/core/fracture_signatures.rs:378:5
+    |
+378 |     catalog: &FractureCatalog,
+    |     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_catalog`
+
+warning: unused variable: `ctx`
+   --> engine/execute-process/src/core/fracture_signatures.rs:414:5
+    |
+414 |     ctx: &DccMatchContext<'_>,
+    |     ^^^ help: if this is intentional, prefix it with an underscore: `_ctx`
+
+warning: unused import: `serde_json::Value`
+ --> skills/cryptography-manager/src/main.rs:2:5
+  |
+2 | use serde_json::Value;
+  |     ^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `PathBuf`
+ --> skills/cryptography-manager/src/main.rs:6:23
+  |
+6 | use std::path::{Path, PathBuf};
+  |                       ^^^^^^^
+
+warning: unused variable: `pending_rel`
+   --> engine/execute-process/src/engine/handlers/phagocyte_recovered_fracture_pbis.rs:125:9
+    |
+125 |     let pending_rel = resolve_todos_pending_rel(repo)?;
+    |         ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_pending_rel`
+
+warning: variable does not need to be mutable
+  --> engine/execute-process/src/engine/handlers/instance_health_verify.rs:61:17
+   |
+61 |             let mut val = v.trim().trim_matches('"').to_string();
+   |                 ----^^^
+   |                 |
+   |                 help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `f5_handoff_when_merge_absent` is never used
+   --> engine/execute-process/src/engine/pull_request_review.rs:173:15
+    |
+173 | pub(crate) fn f5_handoff_when_merge_absent() -> (bool, &'static str) {
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `skipped_barrier_entry` is never used
+  --> engine/execute-process/src/engine/executor.rs:79:4
+   |
+79 | fn skipped_barrier_entry(phase: &Value, prior_status: &str) -> Value {
+   |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `signal_process_alive` is never used
+   --> engine/execute-process/src/engine/handlers/task_queue_manager.rs:130:4
+    |
+130 | fn signal_process_alive(pid: u32) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+   --> tools/io-choke/src/main.rs:105:13
+    |
+105 |         let mut out = json!({
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `flag_value` is never used
+  --> tools/sddia-qa/src/main.rs:44:4
+   |
+44 | fn flag_value<'a>(args: &'a [String], flag: &str) -> Option<&'a str> {
+   |    ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `resolve_execute_process` is never used
+ --> tools/sddia-qa/src/resolve.rs:5:8
+  |
+5 | pub fn resolve_execute_process(repo: &Path) -> Result<PathBuf, String> {
+  |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `repo_from_cwd` is never used
+  --> tools/sddia-qa/src/resolve.rs:35:8
+   |
+35 | pub fn repo_from_cwd() -> Result<PathBuf, String> {
+   |        ^^^^^^^^^^^^^
+
+[bundle] escribiendo testigos .sha256…
+[bundle] copiando binarios…
+  -> bin kalma2-bridge
+  -> bin sddia-workspace-server
+  -> bin telegram-watcher
+  -> bin io-choke
+  -> bin iota-publish-relay
+  -> bin github-raw-fetcher
+  -> bin schema-corruptor
+  -> bin iota-immutable-publisher
+  -> bin llm-router
+  -> bin telegram-gateway
+  -> bin git-manager
+  -> bin sddia-evolution-register
+  -> bin event-bus-audit
+  -> bin event-sweeper
+  -> bin gemini-http-infer
+  -> bin antigravity-cli-executor
+  -> bin sandbox-breacher
+  -> bin bus-operator
+  -> bin cryptography-manager
+  -> bin thought-graph-access
+  -> bin event-watcher
+  -> bin send-telegram-notification
+  -> bin sddia-qa
+  -> bin execute-process
+  -> bin email-watcher
+  -> bin github-bridge-watcher
+  -> bin user-preference-store
+  -> bin markdown-table-editor
+  -> bin read-event-subscriptions
+  -> bin shell-executor
+  -> bin transit-event-payload
+  -> bin filesystem-manager
+  -> bin manage-event-receipt
+  -> bin ephemeral-cache-purger
+  -> bin mayeuta-llm
+  -> bin wasi-poc
+[bundle] genoma sin fuentes de ingeniería…
+Input '$PWD' is not an absolute file system path, escaping is likely not going to be reversible.
+[bundle] OK → /home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA
+[bundle] ONBOARDING.md + MANIFEST.json escritos
+[bundle] bins= 36 capsules= 36
+[CONFIG] Jerarquía detectada: Aplicando SddIA/.dev/.env sobre .dev/.env
+{"success":true,"status_code":0,"data":{"correlation_id":"584fe9f3-c828-40ac-ad02-56debeda262d","domain_profile":{"codex_slug":"codex-software-engineering","domain_profile_materialized":true,"git_required":true},"instance_root":"/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA","llm_registry":{"llm_registry_materialized":true},"runtime_profile":"engineering","smoke":{"checks":{".SddIA":true,".SddIA/.dev":true,".SddIA/daemons/state":true,".events/domain":true,".events/orchestration":true,".events/pending":true,"domain_profile_present":true,"llm_registry_present":true,"local_paths_present":true,"local_qa_emitted":false,"route_domain":{"reason":"skip_ignition","skipped":true},"send_telegram_notification_md":true,"systemd_units":7,"vault_env_present":true},"mode":"native-topology+local-qa","note":"eda-local-topology-test binario ausente; smoke nativo (sin Local_QA_Requested)","success":true},"vault_files_copied":2},"execution_report":{"duration_ms":2,"phases":[{"domain_profile":{"codex_slug":"codex-software-engineering","domain_profile_materialized":true,"git_required":true},"handler":"instance-creator-native","instance_root":"/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA","llm_registry":{"llm_registry_materialized":true},"phase_name":"Topologia","status":"executed"},{"files_copied":2,"handler":"instance-creator-native","phase_name":"Vault","secrets_logged":false,"status":"executed","vault_source":"/tmp/sddia-installer.OjeEWo/vault"},{"factory_daemons":["event-watcher","event-sweeper","kalma2-bridge","telegram-watcher","github-bridge-watcher","iota-publish-relay"],"handler":"instance-creator-native","installed":true,"note":"systemctl --user enable --now sddia-<daemon>@$(systemd-escape -p instance_root).service","phase_name":"Systemd","status":"executed","units":["sddia-event-watcher@.service","sddia-event-sweeper@.service","sddia-kalma2-bridge@.service","sddia-telegram-watcher@.service","sddia-github-bridge-watcher@.service","sddia-iota-publish-relay@.service","sddia-email-watcher@.service"],"units_dir":"/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA/.SddIA/systemd"},{"handler":"instance-creator-native","phase_name":"Ignicion","skipped":true,"started":false,"status":"skipped"},{"checks":{".SddIA":true,".SddIA/.dev":true,".SddIA/daemons/state":true,".events/domain":true,".events/orchestration":true,".events/pending":true,"domain_profile_present":true,"llm_registry_present":true,"local_paths_present":true,"local_qa_emitted":false,"route_domain":{"reason":"skip_ignition","skipped":true},"send_telegram_notification_md":true,"systemd_units":7,"vault_env_present":true},"handler":"instance-creator-native","mode":"native-topology+local-qa","note":"eda-local-topology-test binario ausente; smoke nativo (sin Local_QA_Requested)","phase_name":"Smoke","status":"executed","success":true}],"process_name":"instance-creator"},"exitCode":0}
