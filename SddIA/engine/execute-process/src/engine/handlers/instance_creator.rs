@@ -153,7 +153,8 @@ fn materialize_domain_profile(
         };
         let body = json!({
             "codex_slug": slug,
-            "git_required": false
+            "git_required": false,
+            "software_forge": false
         });
         fs::write(&dest, format!("{}\n", serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?))
             .map_err(|e| e.to_string())?;
@@ -166,9 +167,14 @@ fn materialize_domain_profile(
     if engineering_profile(profile) {
         let slug = str_opt(inputs, "codex_slug")
             .unwrap_or_else(|| "codex-software-engineering".to_string());
+        let software_forge = inputs
+            .get("software_forge")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         let body = json!({
             "codex_slug": slug,
-            "git_required": true
+            "git_required": true,
+            "software_forge": software_forge
         });
         fs::write(&dest, format!("{}\n", serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?))
             .map_err(|e| e.to_string())?;
@@ -968,6 +974,49 @@ mod tests {
         assert_eq!(v["git_required"], false);
         let profile = crate::engine::domain_profile::resolve_execution_profile(&instance, &json!({}));
         assert!(!crate::engine::domain_authority::has_software_authority(&profile));
+    }
+
+    #[test]
+    fn engineering_domain_profile_software_forge_opt_in() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        scaffold_creator_repo(repo);
+        let instance = repo.join("eng-forge");
+        fs::create_dir_all(&instance).unwrap();
+        let env = run(
+            repo,
+            &json!({
+                "instance_root": instance.display().to_string(),
+                "runtime_profile": "engineering",
+                "software_forge": true,
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env.success);
+        let v: Value =
+            serde_json::from_str(&fs::read_to_string(instance.join(".SddIA/active-domain-profile.json")).unwrap())
+                .unwrap();
+        assert_eq!(v["software_forge"], true);
+
+        let instance2 = repo.join("eng-default");
+        fs::create_dir_all(&instance2).unwrap();
+        let env2 = run(
+            repo,
+            &json!({
+                "instance_root": instance2.display().to_string(),
+                "runtime_profile": "engineering",
+                "skip_smoke": true,
+                "skip_ignition": true,
+            }),
+        )
+        .unwrap();
+        assert!(env2.success);
+        let v2: Value =
+            serde_json::from_str(&fs::read_to_string(instance2.join(".SddIA/active-domain-profile.json")).unwrap())
+                .unwrap();
+        assert_eq!(v2["software_forge"], false);
     }
 
     #[test]

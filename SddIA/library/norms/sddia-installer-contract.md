@@ -1,7 +1,7 @@
 ---
 uuid: "b1327ef3-5f07-4fba-9073-a72c5fdf97e2"
 name: "sddia-installer-contract"
-version: "1.3.0"
+version: "1.4.0"
 nature: "tactical-norm"
 author: "tekton"
 scope: "infrastructure"
@@ -12,7 +12,15 @@ hash_signature: "sha256:780962b169cca143418c855eaa3604132d2d1720b338c0243b286ba8
 
 ## Directriz Core
 
-Installer v3 I/O: un envelope `capsule-json-io` 2.0 por stdout (`meta.entityId=sddia-installer`); entrada por argv, `--request-file`, stdin JSON o `SDDIA_CAPSULE_REQUEST` (precedencia: fichero > stdin > env > argv); con `SDDIA_SKIP_STDIN=1` no se lee stdin como request; stdin JSON solo si no es TTY (`capsule-json-io`); progreso JSONL (`@sddia-progress` en stderr o fd 3); logs en `instance.installer_logs` (Cúmulo). Hereda v2: bóveda compuesta, puerto derivado, unidades condicionales, verify en fachada, registro host.
+Installer v3 I/O: un envelope `capsule-json-io` 2.0 por stdout
+
+### Perfil de dominio (`software_forge`, 1.4.0)
+
+- `instance-creator` materializa `.SddIA/active-domain-profile.json` con `software_forge` (boolean).
+- **Default `false`** en perfiles `consumer` y `engineering`. La bóveda no concede autoridad.
+- **Opt-in** solo en deploy `runtime_profile: engineering` con `software_forge: true` en inputs del creator.
+- Perfil `consumer` ignora `software_forge: true` en inputs y persiste `false`.
+- `software_forge: true` habilita procesos software sobre **proyectos externos** (`inputs.project_slug`) cuando además `project.codex_slug == codex-software-engineering` (ver `domain_authority.rs`). (`meta.entityId=sddia-installer`); entrada por argv, `--request-file`, stdin JSON o `SDDIA_CAPSULE_REQUEST` (precedencia: fichero > stdin > env > argv); con `SDDIA_SKIP_STDIN=1` no se lee stdin como request; stdin JSON solo si no es TTY (`capsule-json-io`); progreso JSONL (`@sddia-progress` en stderr o fd 3); logs en `instance.installer_logs` (Cúmulo). Hereda v2: bóveda compuesta, puerto derivado, unidades condicionales, verify en fachada, registro host.
 
 ## Códigos de salida
 

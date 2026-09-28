@@ -5,6 +5,7 @@ contract: process-contract v1.4.0
 hash_signature: sha256:bd3d7326c2eccd70b5df392ec96dc87180aa7fd58af338626e22a45d986d5c4b
 inputs:
 - prompt: Texto del operador desde el cliente Kalma2
+- project_slug: (Opcional) Slug del proyecto registrado en `instance.projects`; ausente → Core-self
 minteo_maximo: null
 name: kalma2-interact
 outputs:
@@ -37,7 +38,7 @@ phases:
     version: '>=1.0.0'
 porcentaje_de_exito: null
 uuid: acdb6c88-f0d9-4e10-9d2f-7e4b5401a892
-version: 1.1.1
+version: 1.1.2
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -50,6 +51,7 @@ Proceso **Kalma2**: recibe `prompt` del cliente web y materializa `response` med
 | Input | Obligatorio |
 |-------|:-----------:|
 | `prompt` | Sí |
+| `project_slug` | No |
 
 | Output | Descripción |
 |--------|-------------|

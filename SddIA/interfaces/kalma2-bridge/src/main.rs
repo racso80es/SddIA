@@ -18,6 +18,8 @@ struct InteractReq {
     mode: Option<String>,
     #[serde(default)]
     process: Option<String>,
+    #[serde(default)]
+    project_slug: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -71,6 +73,63 @@ fn runtime_profile() -> String {
 
 fn runtime_profile_is_consumer() -> bool {
     matches!(runtime_profile().as_str(), "consumer" | "consumidor")
+}
+
+fn list_registered_project_slugs(repo: &Path) -> Vec<serde_json::Value> {
+    let dir = repo.join(".SddIA/projects");
+    let mut out = Vec::new();
+    let entries = match std::fs::read_dir(&dir) {
+        Ok(e) => e,
+        Err(_) => return out,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("md") {
+            continue;
+        }
+        let stem = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .trim();
+        if stem.is_empty() || stem == "index" {
+            continue;
+        }
+        let raw = std::fs::read_to_string(&path).unwrap_or_default();
+        let id = raw
+            .lines()
+            .find(|l| l.starts_with("id:"))
+            .and_then(|l| l.split(':').nth(1))
+            .map(|s| s.trim().trim_matches('"'))
+            .filter(|s| !s.is_empty())
+            .unwrap_or(stem);
+        out.push(serde_json::json!({
+            "slug": stem,
+            "id": id,
+            "label": id,
+        }));
+    }
+    out.sort_by(|a, b| {
+        a.get("slug")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .cmp(b.get("slug").and_then(|v| v.as_str()).unwrap_or(""))
+    });
+    out
+}
+
+fn handle_projects(req: tiny_http::Request, repo: &Path) {
+    let projects = list_registered_project_slugs(repo);
+    reply(
+        req,
+        200,
+        serde_json::json!({
+            "success": true,
+            "projects": projects,
+            "exit_code": 0
+        })
+        .to_string(),
+    );
 }
 
 fn handle_runtime_profile(req: tiny_http::Request) {
@@ -229,6 +288,7 @@ fn accept_execute(
     repo: &Path,
     prompt: &str,
     process: Option<&str>,
+    project_slug: Option<&str>,
 ) -> Result<AcceptedAck, AcceptSyncError> {
     let t0 = Instant::now();
     let bin = resolve_orchestrator(repo).map_err(AcceptSyncError::Orchestrator)?;
@@ -241,6 +301,9 @@ fn accept_execute(
     });
     if let Some(proc) = process.map(str::trim).filter(|s| !s.is_empty()) {
         inputs["process"] = serde_json::json!(proc);
+    }
+    if let Some(slug) = project_slug.map(str::trim).filter(|s| !s.is_empty()) {
+        inputs["project_slug"] = serde_json::json!(slug);
     }
     let inputs_json = inputs.to_string();
 
@@ -1053,8 +1116,8 @@ fn handle_status(req: tiny_http::Request, repo: &Path) {
     let Some(event_id) = event_id.filter(|s| !s.is_empty()) else {
         reply(
             req,
-            400,
-            r#"{"success":false,"message":"event_id requerido","exit_code":1}"#.into(),
+            200,
+            r#"{"success":true,"message":"liveness","exit_code":0}"#.into(),
         );
         return;
     };
@@ -1474,7 +1537,15 @@ fn handle_execute(mut req: tiny_http::Request, repo: &Path) {
         .as_deref()
         .map(str::trim)
         .filter(|s| !s.is_empty());
-    reply_accept_result(req, accept_execute(repo, parsed.prompt.trim(), process));
+    let project_slug = parsed
+        .project_slug
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    reply_accept_result(
+        req,
+        accept_execute(repo, parsed.prompt.trim(), process, project_slug),
+    );
 }
 
 fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
@@ -1513,7 +1584,15 @@ fn handle_interact(mut req: tiny_http::Request, repo: &Path) {
             .as_deref()
             .map(str::trim)
             .filter(|s| !s.is_empty());
-        reply_accept_result(req, accept_execute(repo, parsed.prompt.trim(), process));
+        let project_slug = parsed
+            .project_slug
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        reply_accept_result(
+            req,
+            accept_execute(repo, parsed.prompt.trim(), process, project_slug),
+        );
         return;
     }
     if mode == "chat" {
@@ -2415,6 +2494,7 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Post, "/api/email-quick-action") => handle_email_quick_action(req, &repo),
         (Method::Post, "/api/user-preference-change") => handle_user_preference_change(req, &repo),
         (Method::Get, "/api/status") => handle_status(req, &repo),
+        (Method::Get, "/api/projects") => handle_projects(req, &repo),
         (Method::Get, "/api/runtime-profile") => handle_runtime_profile(req),
         (Method::Get, "/api/email-inbox") => handle_email_inbox(req, &repo),
         (Method::Get, "/api/progress/stream") => handle_progress_stream(req, &repo),

@@ -245,10 +245,31 @@ async function enviarAiuaStimulus() {
   }
 }
 
+async function loadProjectSelector() {
+  const sel = $("project-select");
+  if (!sel) return;
+  try {
+    const r = await fetch("/api/projects");
+    const data = await r.json();
+    const projects = data.projects || [];
+    for (const p of projects) {
+      const slug = p.slug || p.id;
+      if (!slug) continue;
+      const opt = document.createElement("option");
+      opt.value = slug;
+      opt.textContent = p.label || slug;
+      sel.appendChild(opt);
+    }
+  } catch (_) {
+    /* selector queda solo con Core */
+  }
+}
+
 async function forjarProceso() {
   const out = $("output");
   const prompt = $("prompt").value.trim();
   if (!prompt) return;
+  const projectSlug = ($("project-select") && $("project-select").value) || "";
 
   closeProgressStream();
   setBusy(true);
@@ -259,7 +280,10 @@ async function forjarProceso() {
     const r = await fetch("/api/execute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({
+        prompt,
+        ...(projectSlug ? { project_slug: projectSlug } : {}),
+      }),
     });
     const data = await r.json();
     const payload = payloadOf(data);
@@ -465,6 +489,7 @@ async function loadSystemHealth() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  loadProjectSelector();
   $("chat").addEventListener("click", enviarChat);
   const aiuaBtn = $("aiua-pulse");
   if (aiuaBtn) aiuaBtn.addEventListener("click", enviarAiuaStimulus);

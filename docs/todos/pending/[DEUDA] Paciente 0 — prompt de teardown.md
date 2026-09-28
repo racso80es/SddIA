@@ -3,7 +3,7 @@ document_id: PBI-DT-PACIENTE0-UNDEPLOY-PROCESS
 uuid: "dddee1ff-aeac-400b-85df-70374d37c45d"
 title: "[DEUDA] Paciente 0 — prompt de teardown y proceso futuro"
 format: markdown
-version: "1.0.0"
+version: "1.1.0"
 status: deuda_tecnica
 type: deuda
 priority: alta
@@ -13,9 +13,12 @@ process_candidate: paciente0-undeploy
 process_candidate_class: process
 installer_contract_ref: SddIA/library/norms/sddia-installer-contract.md
 created: "2026-08-25"
-updated: "2026-08-28"
-instance_name_default: SddIA_AP
-instance_parent: /home/racso/Proyectos
+updated: "2026-09-28"
+instance_name_default: Asistencia_Tormentosa_SddIA
+instance_root_default: /home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA
+legacy_purge_root: /home/racso/Proyectos/SddIA_AP
+instance_parent: /home/racso/Aplicaciones
+nomenclature_ref: HU-KALMA2-PROJECT-WORKSPACE-SERVER-1xN v1.3.6
 config_source: /home/racso/Proyectos/.dev/.env
 companion_deploy_ref: docs/todos/pending/[DEUDA] Paciente 0 — prompt y proceso de despliegue.md
 companion_deploy_document_id: PBI-DT-PACIENTE0-DEPLOY-PROCESS
@@ -31,7 +34,9 @@ derived_from:
 
 ## 0. Propósito
 
-Documento **operativo + semilla de proceso**. Prompt para **apagar y borrar** un despliegue Paciente 0 (por defecto `SddIA_AP`) sin tocar la forja ni la bóveda `/home/racso/Proyectos/.dev`. Complementa `PBI-DT-PACIENTE0-DEPLOY-PROCESS`.
+Documento **operativo + semilla de proceso**. Prompt para **apagar y borrar** un despliegue Paciente 0 sin tocar la forja ni la bóveda `/home/racso/Proyectos/.dev`. Complementa `PBI-DT-PACIENTE0-DEPLOY-PROCESS`.
+
+**Nomenclatura (v1.1.0):** Paciente 0 vivo = `/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA`. **`/home/racso/Proyectos/SddIA_AP`** está **descatalogado** — la purga de ese árbol es **obligatoria** (HU 1×N, AC-OP-6) y usa este prompt con `INSTANCE_ROOT` explícito al legado. No confundir teardown del legado con teardown de Paciente 0 actual salvo laudo.
 
 **Done:** unidad systemd de la instancia `inactive`/`disabled`; cero procesos cuyo binario o cwd sea `{INSTANCE_ROOT}`; carpeta `{INSTANCE_ROOT}` inexistente; forja `SddIA` y `.dev` intactos.
 
@@ -44,9 +49,13 @@ El proceso Core `paciente0-undeploy` **no** está forjado (DA-2).
 ```text
 Limpia / elimina el despliegue Paciente 0 según PBI-DT-PACIENTE0-UNDEPLOY-PROCESS.
 
-Constantes:
-- Nombre por defecto: SddIA_AP
-- INSTANCE_ROOT: /home/racso/Proyectos/SddIA_AP  (salvo override)
+Constantes (purga legado descatalogado — caso habitual 2026-09-28):
+- Nombre legado: SddIA_AP
+- INSTANCE_ROOT: /home/racso/Proyectos/SddIA_AP
+
+Constantes (Paciente 0 SSOT — solo con laudo explícito; no sustituye redeploy installer):
+- Nombre: Asistencia_Tormentosa_SddIA
+- INSTANCE_ROOT: /home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA
 - No borrar: forja /home/racso/Proyectos/SddIA , bóveda /home/racso/Proyectos/.dev
 - No borrar plantillas systemd en ~/.config/systemd/user/sddia-*-watcher@.service ni sddia-kalma2-bridge@.service (compartidas; %f selecciona instancia)
 - No stop/disable unidades cuyo %f sea la FORJA (lab), solo la instancia

@@ -1,7 +1,7 @@
 ---
 uuid: "f4a5b6c7-d8e9-4f0a-1b2c-3d4e5f6a7b8c"
 name: "filesystem-manager"
-version: "1.1.0"
+version: "2.0.0"
 contract: "skills-contract v1.1.0"
 context: "filesystem-ops"
 capabilities:
@@ -11,6 +11,7 @@ capabilities:
   - "delete-file"
   - "create-directory"
   - "move-file"
+  - "patch-file"
 provides:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -19,28 +20,33 @@ provides:
     contract: "fs.persist"
     version: "1.0.0"
 inputs:
-  - "operation": "Enum estricto: [READ_FILE, WRITE_FILE, LIST_DIR, DELETE_FILE, CREATE_DIR, MOVE_FILE]"
-  - "target_path": "Ruta relativa al directorio raíz del proyecto"
-  - "content": "(Opcional) Cadena de texto o binario requerido para operaciones WRITE_FILE"
-  - "destination_path": "(Opcional) Ruta de destino para operaciones MOVE_FILE"
+  - "operation": "Enum estricto: [READ_FILE, WRITE_FILE, LIST_DIR, DELETE_FILE, CREATE_DIR, MOVE_FILE, PATCH_FILE]"
+  - "target_path": "Ruta relativa al directorio raíz del workspace (workspace_root o SDDIA_WORKSPACE_ROOT)"
+  - "content": "(Opcional) Cadena para WRITE_FILE o diff unificado para PATCH_FILE"
+  - "destination_path": "(Opcional) Ruta de destino para MOVE_FILE"
+  - "workspace_root": "(Opcional) Raíz absoluta del proyecto; default: SDDIA_WORKSPACE_ROOT o repo Core"
 outputs:
   - "exitCode": "0 para éxito, 1 para error"
-  - "data": "Contenido del archivo (READ_FILE) o array de strings con el listado (LIST_DIR)"
-  - "error_log": "Descripción detallada si exitCode es 1 (ej. 'File not found', 'Permission denied')"
+  - "data": "Contenido del archivo (READ_FILE) o array de strings (LIST_DIR)"
+  - "error_log": "Descripción detallada si exitCode es 1"
 ---
 
-# Skill: Filesystem Manager (Operaciones Core)
+# Skill: Filesystem Manager (cápsula física)
 
-## 1. Propósito y Naturaleza
-El `filesystem-manager` es la interfaz física principal con el disco duro del Vértice Biológico. Su misión es ejecutar la lectura, mutación y borrado de artefactos físicos dentro del perímetro autorizado, eliminando la necesidad de que el agente alucine comandos crudos de terminal como `cat`, `echo` o `mkdir`.
+## 1. Propósito
+Interfaz física con el disco bajo `workspace_root`, sin depender del IDE. Operaciones acotadas por Cerbero (`filesystem-ops`).
 
-## 2. Motor de Ejecución (Modalidad LLM-Native)
-Esta skill opera en modalidad *LLM-Native*. No posee una cápsula binaria externa asociada. La propia IA en el entorno de desarrollo actúa como el runtime de ejecución, debiendo traducir el JSON de `inputs` en la acción física nativa del IDE para interactuar con los archivos.
+## 2. Motor de ejecución
+Cápsula nativa **`filesystem-manager`**: `SddIA/target/{debug,release}/filesystem-manager`. JSON por stdin; respuesta JSON en stdout (`success`, `exitCode`, `data`).
 
-## 3. Lógica Operativa y Límites Termodinámicos
-Toda ejecución física que pase por esta skill (tras ser autorizada por Cerbero) debe cumplir los siguientes cortafuegos:
-* **Confinamiento de Espacio:** Queda estrictamente prohibida cualquier operación (lectura o escritura) sobre rutas absolutas del sistema operativo (ej. `/etc/`, `C:\Windows`) o intentos de *path traversal* (ej. `../../`). Toda ruta debe resolverse dentro del *workspace* del proyecto.
-* **Seguridad Antientrópica (Escritura):** Para operaciones `WRITE_FILE` sobre un archivo ya existente, el agente ejecutor debe haber realizado obligatoriamente un `READ_FILE` previo para tener el contexto de lo que va a sobrescribir. La sobrescritura ciega es un fallo letal.
+Invocación: `./sddia-run.sh` con DI hacia `skill:filesystem-manager`.
 
-## 4. Respuesta Paramétrica
-Una vez que el motor nativo del IDE completa o falla la acción física, debe devolver el control al hilo de pensamiento emitiendo estrictamente el esquema JSON definido en los `outputs`. La verbosidad humana está desactivada durante la emisión de resultados.
+Implementación: `SddIA/skills/filesystem-manager/`.
+
+## 3. Límites
+- Path traversal (`..`, rutas absolutas fuera de raíz) → `PROJECT_SCOPE_ESCAPE`.
+- `PATCH_FILE`: diff unificado; hunk que no casa → exit 1, fichero intacto.
+
+## 4. Referencias
+- `SddIA/norms/skill-io-filesystem-manager-frozen.md`
+- `SddIA/skills/skills-contract.md`

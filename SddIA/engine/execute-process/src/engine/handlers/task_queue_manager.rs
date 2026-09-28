@@ -704,8 +704,18 @@ fn dispatch_child(
     } else {
         None
     };
-    let child_inputs =
+    let mut child_inputs =
         build_child_inputs(repo, process, task_text, pbi.as_deref(), correlation_id)?;
+    if let Some(slug) = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if let Some(obj) = child_inputs.as_object_mut() {
+            obj.insert("project_slug".into(), json!(slug));
+        }
+    }
     let pbi_loaded = child_inputs.get("pbi_body").is_some();
     // O2 Kaizen: PEC awaiting_agents antes del hijo — UI sondea sin cortar en initialized.
     let early_pec = if let Some(cid) = correlation_id {
