@@ -2,7 +2,7 @@
 
 **Tipo:** Norma / Comportamiento
 **UUID:** 4c04f9ab-cf64-44b4-8db9-8d7d91e8432b
-**Versión:** 1.3
+**Versión:** 1.4
 **Seguridad:** Karma2Token
 
 ## Propósito
@@ -57,3 +57,11 @@ La ausencia de fractura en el runtime **no** autoriza bypass manual ni continuar
 3. Re-inyectar `delivery-close-cycle` tras laudo o credencial alineada. No es salto táctico silencioso.
 
 Referencias: `SddIA/events/domain/system-fracture-detected.md`, `docs/fixes/delivery-close-hook-eda-governance/`, PBI `[FIX] delivery-close-cycle`.
+
+### Push non-fast-forward (v1.4)
+
+`delivery-close-cycle` en **Publicación remota** con `status: blocked` y `friction_id: F-DCC-PUSH-NON-FAST-FORWARD` (rama local detrás de `origin`; git rechazó el push con `force: false`) es **desincronización operativa**, no colapso del Core.
+
+1. **Detener.** Prohibido `git pull` / `git push` / `git push --force` raw.
+2. Sincronizar vía `skill:git-manager` (`fetch` + `pull` de `origin` y la rama de trabajo); resolver conflictos si los hay.
+3. Re-inyectar `delivery-close-cycle` tras alinear la rama. No emitir `System_Fracture_Detected` para esta firma (motor DCC F4c).

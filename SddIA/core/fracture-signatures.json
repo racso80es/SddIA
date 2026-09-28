@@ -309,15 +309,18 @@
     },
     {
       "id": "F-DCC-PUSH-NON-FAST-FORWARD",
-      "consumers": ["mayeuta"],
+      "consumers": ["dcc_suppress", "mayeuta"],
       "scope": {
-        "process_name": ["delivery-close-cycle"],
-        "attempted_action": ["Publicación remota"]
+        "attempted_action": ["Publicación remota"],
+        "status": ["failed", "blocked"]
       },
       "match": {
         "all": ["[rejected]"],
         "any": ["non-fast-forward", "(fetch first)"]
       },
+      "fracture_policy": "suppress",
+      "phase_status": "blocked",
+      "operator_hint": "Sincronizar vía skill:git-manager (fetch + pull de origin y la rama de trabajo); resolver conflictos si los hay; relanzar delivery-close-cycle. Prohibido git pull / git push raw.",
       "diagnosis": {
         "root_cause": "Rama local detrás de origin; push rechazado por git con force:false.",
         "verdict": "process_fix",
