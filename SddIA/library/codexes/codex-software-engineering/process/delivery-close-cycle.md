@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - source-control
 contract: process-contract v1.4.0
-hash_signature: sha256:93448251c4ae3df5a6ed317c615f89bb46254bddae1d218a46ce4452a46e5241
+hash_signature: "sha256:93448251c4ae3df5a6ed317c615f89bb46254bddae1d218a46ce4452a46e5241"
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -76,6 +76,7 @@ Proceso paramétrico de **cierre de entrega** reutilizable desde `feature`, `bug
 
 1. `skill:git-manager` → `push` con `operation_payload_json`: `{ "remote": "origin", "branch": "<branch_name>", "force": false }`.
 2. Abortar si `success` es `false`.
+3. Push rechazado `non-fast-forward` / `(fetch first)` con `[rejected]`: envelope `status: blocked`, `friction_id: F-DCC-PUSH-NON-FAST-FORWARD`, `operator_hint` (sincronizar vía `skill:git-manager` fetch + pull). **No** `System_Fracture_Detected`.
 
 ## Fase Apertura en forja
 

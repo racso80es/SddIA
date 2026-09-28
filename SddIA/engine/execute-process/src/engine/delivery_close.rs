@@ -226,11 +226,17 @@ fn execute_phase(
                 if stamp_dcc_network_block(&mut entry, phase_name, &err) {
                     return entry;
                 }
+                if stamp_dcc_non_ff_block(&mut entry, phase_name, &err) {
+                    return entry;
+                }
                 entry
             }
             Err(e) => {
                 entry["error"] = json!(e);
                 if stamp_dcc_network_block(&mut entry, phase_name, &e) {
+                    return entry;
+                }
+                if stamp_dcc_non_ff_block(&mut entry, phase_name, &e) {
                     return entry;
                 }
                 if stamp_dcc_hook_evol_block(&mut entry, phase_name, &e) {
@@ -400,6 +406,20 @@ fn dcc_workflow_scope_block_suppresses_fracture(
     )
 }
 
+fn dcc_non_ff_block_suppresses_fracture(
+    phase_name: &str,
+    status: &str,
+    error_trace: &str,
+) -> bool {
+    dcc_suppresses_signature(
+        "F-DCC-PUSH-NON-FAST-FORWARD",
+        phase_name,
+        status,
+        error_trace,
+        None,
+    )
+}
+
 fn dcc_title_metachar_block_suppresses_fracture(
     phase_name: &str,
     status: &str,
@@ -523,6 +543,19 @@ fn stamp_dcc_workflow_scope_block(entry: &mut Value, phase_name: &str, error: &s
     true
 }
 
+/// F-DCC-PUSH-NON-FAST-FORWARD: rama local detrás de origin ≠ colapso Kintsugi.
+fn stamp_dcc_non_ff_block(entry: &mut Value, phase_name: &str, error: &str) -> bool {
+    if !dcc_non_ff_block_suppresses_fracture(phase_name, "failed", error) {
+        return false;
+    }
+    entry["status"] = json!("blocked");
+    entry["friction_id"] = json!("F-DCC-PUSH-NON-FAST-FORWARD");
+    entry["operator_hint"] = json!(
+        "Sincronizar vía skill:git-manager (fetch + pull de origin y la rama de trabajo); resolver conflictos si los hay; relanzar delivery-close-cycle. Prohibido git pull / git push raw."
+    );
+    true
+}
+
 pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
     for report in phase_reports {
         if report.get("fail_soft").and_then(|v| v.as_bool()) == Some(true) {
@@ -547,6 +580,9 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
             continue;
         }
         if dcc_workflow_scope_block_suppresses_fracture(phase_name, status, &error_trace) {
+            continue;
+        }
+        if dcc_non_ff_block_suppresses_fracture(phase_name, status, &error_trace) {
             continue;
         }
         if dcc_title_metachar_block_suppresses_fracture(phase_name, status, &error_trace, report) {
@@ -1005,6 +1041,98 @@ mod tests {
             .filter_map(|e| e.ok())
             .collect();
         assert!(pending.is_empty());
+    }
+
+    const TRACE_PUSH_NON_FF: &str = "SddIA pre-push: SKIPPED (delivery-close-cycle guard)\n ! [rejected]        branch -> branch (non-fast-forward)\nerror: falló el empuje";
+
+    #[test]
+    fn dcc_fracture_suppressed_on_push_non_fast_forward() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let mut entry = json!({
+            "phase_name": "Publicación remota",
+            "status": "failed",
+            "error": TRACE_PUSH_NON_FF,
+        });
+        assert!(stamp_dcc_non_ff_block(
+            &mut entry,
+            "Publicación remota",
+            TRACE_PUSH_NON_FF,
+        ));
+        assert_eq!(entry["status"], "blocked");
+        assert_eq!(entry["friction_id"], "F-DCC-PUSH-NON-FAST-FORWARD");
+        assert!(entry["operator_hint"].as_str().unwrap().contains("git-manager"));
+        emit_dcc_phase_fractures(repo, &[entry]);
+        assert_eq!(pending_fracture_count(repo), 0);
+    }
+
+    #[test]
+    fn dcc_non_ff_fetch_first_variant_suppressed() {
+        let trace = "! [rejected]        main -> main (fetch first)";
+        assert!(dcc_non_ff_block_suppresses_fracture(
+            "Publicación remota",
+            "failed",
+            trace,
+        ));
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        emit_dcc_phase_fractures(
+            repo,
+            &[json!({
+                "phase_name": "Publicación remota",
+                "status": "failed",
+                "error": trace,
+            })],
+        );
+        assert_eq!(pending_fracture_count(repo), 0);
+    }
+
+    #[test]
+    fn dcc_non_ff_not_suppressed_outside_remote_push_phase() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        emit_dcc_phase_fractures(
+            repo,
+            &[json!({
+                "phase_name": "Apertura en forja",
+                "status": "failed",
+                "error": TRACE_PUSH_NON_FF,
+            })],
+        );
+        assert_eq!(pending_fracture_count(repo), 1);
+        assert!(!dcc_non_ff_block_suppresses_fracture(
+            "Apertura en forja",
+            "failed",
+            TRACE_PUSH_NON_FF,
+        ));
+    }
+
+    #[test]
+    fn dcc_push_blocked_skips_post_push_phases_prior_push_not_ok() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let mut entry = json!({
+            "phase_name": "Publicación remota",
+            "status": "failed",
+            "error": TRACE_PUSH_NON_FF,
+        });
+        stamp_dcc_non_ff_block(&mut entry, "Publicación remota", TRACE_PUSH_NON_FF);
+        let reports = vec![
+            entry,
+            json!({
+                "phase_name": "Apertura en forja",
+                "status": "skipped",
+                "skipped": true,
+                "reason": "prior_push_not_ok",
+            }),
+        ];
+        emit_dcc_phase_fractures(repo, &reports);
+        assert_eq!(pending_fracture_count(repo), 0);
+        assert_eq!(reports[1]["reason"], "prior_push_not_ok");
     }
 
     #[test]
