@@ -341,13 +341,24 @@ fn agent_runtime_cwd(repo: &Path, project_root: Option<&str>) -> PathBuf {
     repo.to_path_buf()
 }
 
+fn resolve_runtime_executable(repo: &Path, bin: &str) -> PathBuf {
+    let trimmed = bin.trim();
+    let path = Path::new(trimmed);
+    if path.is_absolute() {
+        return path.to_path_buf();
+    }
+    repo.join(trimmed)
+}
+
 fn build_agent_command(
+    repo: &Path,
     bin: &str,
     args: &[String],
     cwd: &Path,
     depth: u32,
 ) -> Command {
-    let mut cmd = Command::new(bin);
+    let executable = resolve_runtime_executable(repo, bin);
+    let mut cmd = Command::new(&executable);
     cmd.args(args)
         .current_dir(cwd)
         .stdin(Stdio::piped())
@@ -643,7 +654,7 @@ pub fn invoke_agent_phase(
 
     let depth = agent_runtime_depth();
     let cwd = agent_runtime_cwd(repo, project_root.as_deref());
-    let mut child = match build_agent_command(&bin, &args, &cwd, depth).spawn() {
+    let mut child = match build_agent_command(repo, &bin, &args, &cwd, depth).spawn() {
         Ok(c) => c,
         Err(e) => {
             entry["status"] = json!("failed");

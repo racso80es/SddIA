@@ -137,6 +137,38 @@ fn execute_phase(
 ) -> Value {
     let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
 
+    if is_workspace_init_phase(phase, inputs, process_name) {
+        let mut entry = json!({
+            "phase_name": phase_name,
+            "delegates_to": phase.get("delegates_to").cloned().unwrap_or(json!([])),
+        });
+        match run_workspace_init(repo, inputs, process_name) {
+            Ok(result) => {
+                entry["status"] = json!("executed");
+                entry["handler"] = json!("workspace-init");
+                if let Some(steps) = result.get("git_steps") {
+                    entry["git_steps"] = steps.clone();
+                }
+                if let Some(op) = result.get("objectives_path") {
+                    entry["objectives_path"] = op.clone();
+                }
+                if let Some(bn) = result.get("branch_name") {
+                    entry["branch_name"] = bn.clone();
+                }
+                if let Some(obj) = state.as_object_mut() {
+                    obj.insert("workspace".into(), result.clone());
+                }
+                return entry;
+            }
+            Err(e) => {
+                entry["status"] = json!("failed");
+                entry["handler"] = json!("workspace-init");
+                entry["error"] = json!(e);
+                return entry;
+            }
+        }
+    }
+
     // R6: piloto EDA — emitir evento y omitir cadena sync DI (sin await del reactor).
     if super::capability_di_reactor::is_eda_pilot_phase(phase) {
         let mut entry = json!({
@@ -326,6 +358,7 @@ fn execute_phase_body(
             }
             Err(e) => {
                 entry["status"] = json!("failed");
+                entry["handler"] = json!("workspace-init");
                 entry["error"] = json!(e);
                 return entry;
             }
