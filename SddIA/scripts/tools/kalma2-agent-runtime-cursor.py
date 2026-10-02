@@ -138,6 +138,76 @@ def resolve_persist_ref(doc: dict[str, Any]) -> str:
     return ""
 
 
+def persist_dir(repo: Path, persist: str) -> Path:
+    p = Path(persist)
+    if p.is_absolute():
+        return p
+    return repo / persist
+
+
+def agent_runtime_cwd(doc: dict[str, Any]) -> Path:
+    repo = Path(doc.get("repo_root") or os.getcwd()).resolve()
+    if str(doc.get("project_root") or "").strip():
+        neutral = repo / ".SddIA/workspaces/.agent-runtime-neutral"
+        neutral.mkdir(parents=True, exist_ok=True)
+        return neutral
+    return repo
+
+
+def _ensure_approve_mcps(parts: list[str]) -> list[str]:
+    if "--approve-mcps" in parts:
+        return parts
+    out = list(parts)
+    insert_at = len(out)
+    for i, tok in enumerate(out):
+        if tok == "--print":
+            insert_at = i
+            break
+    out.insert(insert_at, "--approve-mcps")
+    return out
+
+
+def materialize_cursor_mcp_config(cwd: Path, servers: list[Any]) -> None:
+    """Escribe `.cursor/mcp.json` bajo cwd neutro para spawn MCP por fase (Workspace 1×N)."""
+    if not servers:
+        return
+    cursor_dir = cwd / ".cursor"
+    cursor_dir.mkdir(parents=True, exist_ok=True)
+    mcp_path = cursor_dir / "mcp.json"
+    payload: dict[str, Any] = {"mcpServers": {}}
+    if mcp_path.is_file():
+        try:
+            parsed = json.loads(mcp_path.read_text(encoding="utf-8"))
+            if isinstance(parsed.get("mcpServers"), dict):
+                payload["mcpServers"] = dict(parsed["mcpServers"])
+        except (json.JSONDecodeError, OSError):
+            pass
+    for raw in servers:
+        if not isinstance(raw, dict):
+            continue
+        name = str(raw.get("name") or "sddia-workspace-server").strip()
+        command = str(raw.get("command") or "").strip()
+        if not command:
+            continue
+        args = [str(a) for a in (raw.get("args") or []) if str(a).strip()]
+        entry: dict[str, Any] = {"command": command, "args": args}
+        env_keys = raw.get("env_keys") or []
+        if isinstance(env_keys, list):
+            env_map = {
+                str(k): os.environ[str(k)]
+                for k in env_keys
+                if str(k) in os.environ and os.environ[str(k)].strip()
+            }
+            if env_map:
+                entry["env"] = env_map
+        payload["mcpServers"][name] = entry
+    if payload["mcpServers"]:
+        mcp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
+
 def split_command(raw: str) -> list[str]:
     parts = shlex.split(raw.strip())
     if not parts:
@@ -340,7 +410,7 @@ def format_evidence_block(ev: dict[str, Any]) -> str:
 def append_runtime_evidence(repo: Path, persist: str, ev: dict[str, Any]) -> str | None:
     if not persist:
         return None
-    d = repo / persist
+    d = persist_dir(repo, persist)
     d.mkdir(parents=True, exist_ok=True)
     handoff = d / "_agent_handoff.md"
     if not handoff.exists():
@@ -361,7 +431,7 @@ def _handoff_has_apto_evidence(repo: Path, persist: str) -> bool:
     """Idempotencia: bloque previo con ambos checks APTO."""
     if not persist:
         return False
-    handoff = repo / persist / "_agent_handoff.md"
+    handoff = persist_dir(repo, persist) / "_agent_handoff.md"
     if not handoff.is_file():
         return False
     text = handoff.read_text(encoding="utf-8")
@@ -600,6 +670,20 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
         "",
     ]
 
+    project_root = str(doc.get("project_root") or "").strip()
+    mcp_servers = doc.get("mcp_servers")
+    if project_root and isinstance(mcp_servers, list) and mcp_servers:
+        parts.extend(
+            [
+                "## Workspace 1×N — aduana MCP (obligatorio)",
+                f"- `project_root` del piloto: `{project_root}` (no aparece en el prompt como ruta a escribir con Write directo).",
+                f"- Materializa artefactos bajo `{persist}` **solo** vía MCP `sddia-workspace-server` (`tools/call` / recursos del servidor).",
+                "- Prohibido Write/Shell/filesystem-manager fuera del MCP para rutas del piloto; cwd del CLI es neutro (Core).",
+                "- Tras escribir, confirma paths relativos al piloto (ej. `docs/fixes/...`).",
+                "",
+            ]
+        )
+
     agent_l = str(agent).lower()
     if agent_l == "argos" or "verific" in str(phase).lower():
         parts.extend(
@@ -662,7 +746,7 @@ def append_handoff(
 ) -> str | None:
     if not persist:
         return None
-    d = repo / persist
+    d = persist_dir(repo, persist)
     d.mkdir(parents=True, exist_ok=True)
     handoff = d / "_agent_handoff.md"
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -696,8 +780,10 @@ def append_handoff(
     return str(Path(persist) / "_agent_handoff.md")
 
 
-def run_cli(repo: Path, prompt: str, phase: str = "") -> tuple[bool, str, str]:
+def run_cli(cwd: Path, prompt: str, phase: str = "", *, use_mcp: bool = False) -> tuple[bool, str, str]:
     cmd = resolve_cli()
+    if use_mcp:
+        cmd = _ensure_approve_mcps(cmd)
     timeout = resolve_timeout_secs(phase)
     try:
         proc = subprocess.run(
@@ -705,7 +791,7 @@ def run_cli(repo: Path, prompt: str, phase: str = "") -> tuple[bool, str, str]:
             input=prompt.encode("utf-8"),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=str(repo),
+            cwd=str(cwd),
             timeout=timeout,
             check=False,
         )
@@ -1259,7 +1345,16 @@ def persist_chat_to_sqlite(
 
 def run_agent_phase(doc: dict[str, Any]) -> None:
     repo = Path(doc.get("repo_root") or os.getcwd()).resolve()
+    cwd = agent_runtime_cwd(doc)
     persist = resolve_persist_ref(doc)
+    mcp_servers = doc.get("mcp_servers")
+    use_mcp = bool(
+        str(doc.get("project_root") or "").strip()
+        and isinstance(mcp_servers, list)
+        and mcp_servers
+    )
+    if use_mcp:
+        materialize_cursor_mcp_config(cwd, list(mcp_servers))
     phase = doc.get("phase_name") or "?"
     process = doc.get("process_name") or "?"
     agents = doc.get("agents") or []
@@ -1302,7 +1397,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         ok, out, err = run_sdk(repo, prompt, resolved_model)
     else:
         # CLI: no se inventa --model (L-RESOLVE-SURFACE). El id queda en handoff para auditoría.
-        ok, out, err = run_cli(repo, prompt, str(phase))
+        ok, out, err = run_cli(cwd, prompt, str(phase), use_mcp=use_mcp)
 
     if ok:
         verdict = parse_agent_verdict(out or "")

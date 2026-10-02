@@ -565,13 +565,12 @@ pub fn invoke_agent_phase(
                 .map(|b| b.project_root.to_string_lossy().replace('\\', "/"))
         });
     let mcp_servers = if let Some(ref root) = project_root {
-        let server_bin = repo.join("SddIA/target/debug/sddia-workspace-server");
-        let command = if server_bin.is_file() {
-            server_bin.display().to_string()
+        let release_bin = repo.join("SddIA/target/release/sddia-workspace-server");
+        let debug_bin = repo.join("SddIA/target/debug/sddia-workspace-server");
+        let command = if release_bin.is_file() {
+            release_bin.display().to_string()
         } else {
-            repo.join("SddIA/target/release/sddia-workspace-server")
-                .display()
-                .to_string()
+            debug_bin.display().to_string()
         };
         let repo_s = repo.display().to_string();
         let mut args = vec![
