@@ -1,4 +1,5 @@
 ---
+
 feature_name: x
 created: "2026-07-20"
 updated: "2026-08-24T19:48:00Z"
@@ -58,8 +59,8 @@ blocking_findings:
   - CA7_kalma2_regression
 non_blocking_findings:
   - GIT_EVIDENCE_SESSION_SHELL
+execution_id: "6225f1ce-59e5-46dd-b33c-f6eb0d14f42f"
 ---
-
 # Validación — x (Argos · Verificación)
 
 ## Veredicto

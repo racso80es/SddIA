@@ -1,4 +1,5 @@
 ---
+
 feature_name: x
 created: "2026-07-23"
 updated: "2026-08-28T17:05:00Z"
@@ -8,7 +9,6 @@ agent: tekton
 agents: tekton
 persist_ref: docs/fixes/x
 branch_name: fix/x
-execution_id: "75bda8b4-372d-475e-8a20-f3acb48fb78b"
 correlation_id: "00de947d-9da4-4ba0-a595-0f930d95d2c1"
 pbi_ref: docs/todos/pending/[FIX] x.md
 status: blocked
@@ -16,8 +16,8 @@ exitCode: 1
 items: []
 design_verdict_upstream: blocked
 plan_emitted: false
+execution_id: "6225f1ce-59e5-46dd-b33c-f6eb0d14f42f"
 ---
-
 # Implementation — x (Tekton · Ejecución)
 
 ## Veredicto

@@ -1,4 +1,5 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
 updated: "2026-07-23"
@@ -15,8 +16,8 @@ forge: 0
 status: baseline_documental_lab
 t_gate: fail
 genome_mutated: false
+execution_id: "59e1035e-a63b-4e10-a908-29c213095b6e"
 ---
-
 # Implementation — plumb-cid
 
 ## Naturaleza

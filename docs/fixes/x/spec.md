@@ -1,4 +1,5 @@
 ---
+
 feature_name: x
 created: "2026-08-28"
 updated: "2026-08-28T17:00:00Z"
@@ -11,15 +12,14 @@ persist_ref: docs/fixes/x
 pbi_ref: docs/todos/pending/[FIX] x.md
 base: main
 scope: lab-cascade-voids
-execution_id: "75bda8b4-372d-475e-8a20-f3acb48fb78b"
 correlation_id: "00de947d-9da4-4ba0-a595-0f930d95d2c1"
 status: blocked
 design_verdict: blocked
 plan_emitted: false
 mayeuta_escalation: required
 uuid: 9f2c4e81-6a3b-4d5e-8c1f-0b7a2e9d4f63
+execution_id: "6225f1ce-59e5-46dd-b33c-f6eb0d14f42f"
 ---
-
 # Spec — x (Dedalo · Diseño del fix)
 
 ## Veredicto de diseño

@@ -1,4 +1,5 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
 updated: "2026-07-23"
@@ -17,8 +18,8 @@ correlation_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 phase: Diseño de Blueprint
 agents: dedalo
 laudo: lab-plumb-cid-evidence-only-no-domain-product
+execution_id: "59e1035e-a63b-4e10-a908-29c213095b6e"
 ---
-
 # Especificación — plumb-cid
 
 ## 1. Naturaleza del ciclo

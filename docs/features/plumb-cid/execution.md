@@ -1,4 +1,5 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
 updated: "2026-07-23"
@@ -10,7 +11,6 @@ pbi_ref: docs/todos/pending/[FEATURE] plumb-cid.md
 correlation_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 phase: Ejecución
 agents: tekton
-execution_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 items_applied:
   - T-GATE
   - T1
@@ -28,8 +28,8 @@ forge: 0
 t_gate: fail
 mcp_servers: []
 pbi_physical: absent
+execution_id: "59e1035e-a63b-4e10-a908-29c213095b6e"
 ---
-
 # Execution — plumb-cid
 
 ## Veredicto

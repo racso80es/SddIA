@@ -1,4 +1,5 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
 updated: "2026-07-23"
@@ -8,12 +9,11 @@ branch_name: feat/plumb-cid
 persist_ref: docs/features/plumb-cid
 pbi_ref: docs/todos/pending/[FEATURE] plumb-cid.md
 document_id: LAB-PLUMB-CID
-execution_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 correlation_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 phase: mayeuta-stabilization
 agents: mayeuta
+execution_id: "59e1035e-a63b-4e10-a908-29c213095b6e"
 ---
-
 # Clarificación — plumb-cid
 
 Transcript Mayeuta (2026-07-23). Semilla operador: «inicia feature docs/todos/pending/[FEATURE] plumb-cid.md» + orden Raw Kernel fase Estabilización (`correlation_id` a1b2c3d4-…).
