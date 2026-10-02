@@ -476,6 +476,11 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
     };
     fs::create_dir_all(&persist_dir).map_err(|e| e.to_string())?;
     let objectives_path = persist_dir.join("objectives.md");
+    let execution_id_meta = inputs
+        .get("execution_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
     if !objectives_path.is_file() {
         let created = Utc::now().format("%Y-%m-%d").to_string();
         let summary = if refined.trim().is_empty() {
@@ -486,17 +491,31 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         let pbi_line = pbi_ref_meta
             .map(|p| format!("pbi_ref: {p}\n"))
             .unwrap_or_default();
-        let execution_id_line = inputs
-            .get("execution_id")
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
+        let execution_id_line = execution_id_meta
             .map(|eid| format!("execution_id: \"{eid}\"\n"))
             .unwrap_or_default();
         let body = format!(
             "---\nfeature_name: {task_name}\ncreated: \"{created}\"\nprocess: {process_label}\nbranch_name: {branch_name}\npersist_ref: {persist_ref}\n{pbi_line}{execution_id_line}---\n\n# Objetivos — {task_name}\n\n## Misión\n\n{summary}\n\n## Alcance (manifiesto)\n\nInicialización de contexto vía orquestador nativo `execute-process` (laboratorio).\n\n## Ley aplicada\n\n- Git exclusivamente vía `skill:git-manager`.\n- Jerarquía: Acción → Agente → Skill → Tools.\n"
         );
         fs::write(&objectives_path, body).map_err(|e| e.to_string())?;
+    } else if let Some(eid) = execution_id_meta {
+        let text = fs::read_to_string(&objectives_path).map_err(|e| e.to_string())?;
+        let trimmed = text.trim_start();
+        if trimmed.starts_with("---") {
+            let rest = trimmed.strip_prefix("---").unwrap_or(trimmed);
+            if let Some(end) = rest.find("\n---") {
+                let fm = rest[..end].trim_end();
+                let body = rest[end + 4..].trim_start();
+                let mut lines: Vec<String> = fm
+                    .lines()
+                    .filter(|l| !l.trim_start().starts_with("execution_id:"))
+                    .map(|l| l.to_string())
+                    .collect();
+                lines.push(format!("execution_id: \"{eid}\""));
+                let updated = format!("---\n{}\n---\n{}", lines.join("\n"), body);
+                fs::write(&objectives_path, updated).map_err(|e| e.to_string())?;
+            }
+        }
     }
 
     let objectives_rel = objectives_path

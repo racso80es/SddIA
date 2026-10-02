@@ -89,6 +89,20 @@ fn split_command(raw: &str) -> Result<Vec<String>, String> {
     Ok(parts)
 }
 
+fn resolve_persist_dir_for_guard(repo: &Path, inputs: &Value, state: &Value) -> Option<String> {
+    let ref_val = resolve_persist_ref_value(inputs, state);
+    let s = ref_val.as_str().map(str::trim).filter(|s| !s.is_empty())?;
+    if Path::new(s).is_absolute() {
+        return Some(s.to_string());
+    }
+    if let Ok(Some(bound)) = project_binding::bind(repo, inputs) {
+        if let Ok(p) = project_binding::anchor_persist(&bound.project_root, s) {
+            return Some(p.to_string_lossy().replace('\\', "/"));
+        }
+    }
+    Some(s.to_string())
+}
+
 fn resolve_persist_ref_value(inputs: &Value, state: &Value) -> Value {
     // Tras workspace-init 1×N, `state.workspace.persist_ref` está anclado al piloto.
     if let Some(ws) = state
@@ -488,9 +502,9 @@ pub fn invoke_agent_phase(
     let persist_ref_val = resolve_persist_ref_value(inputs, state);
     if let (Some(live_id), Some(persist)) = (
         execution_id.as_deref(),
-        persist_ref_val.as_str().filter(|s| !s.is_empty()),
+        resolve_persist_dir_for_guard(repo, inputs, state),
     ) {
-        if let Err(conflicts) = check_persist_execution_id_conflict(repo, persist, live_id) {
+        if let Err(conflicts) = check_persist_execution_id_conflict(repo, &persist, live_id) {
             entry["status"] = json!("failed");
             entry["error"] = json!("persist-execution-id-conflict");
             entry["conflict_paths"] = json!(conflicts);
