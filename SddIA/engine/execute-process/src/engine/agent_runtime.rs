@@ -183,6 +183,71 @@ pub fn check_persist_execution_id_conflict(
     }
 }
 
+fn upsert_execution_id_in_markdown(text: &str, live_id: &str) -> Option<String> {
+    let trimmed = text.trim_start();
+    if !trimmed.starts_with("---") {
+        return None;
+    }
+    let rest = trimmed.strip_prefix("---")?;
+    let end = rest.find("\n---")?;
+    let fm = rest[..end].trim_end();
+    let body = rest[end + 4..].trim_start();
+    let mut lines: Vec<String> = fm
+        .lines()
+        .filter(|l| !l.trim_start().starts_with("execution_id:"))
+        .map(|l| l.to_string())
+        .collect();
+    lines.push(format!("execution_id: \"{live_id}\""));
+    Some(format!("---\n{}\n---\n{}", lines.join("\n"), body))
+}
+
+/// Reentrada bug-fix: alinea `execution_id` de ciclos previos al ciclo vivo (handoff excluido).
+pub fn reconcile_persist_execution_id_for_reentry(
+    repo: &Path,
+    persist_ref: &str,
+    live_id: &str,
+) -> usize {
+    let dir = if Path::new(persist_ref).is_absolute() {
+        PathBuf::from(persist_ref)
+    } else {
+        repo.join(persist_ref)
+    };
+    if !dir.is_dir() {
+        return 0;
+    }
+    let mut updated = 0usize;
+    let entries = match fs::read_dir(&dir) {
+        Ok(e) => e,
+        Err(_) => return 0,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+        if name == "_agent_handoff.md" || !name.ends_with(".md") {
+            continue;
+        }
+        let text = fs::read_to_string(&path).unwrap_or_default();
+        let fm = parse_frontmatter_from_str(&text).unwrap_or_default();
+        let existing = fm
+            .get("execution_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        if existing == Some(live_id) {
+            continue;
+        }
+        if let Some(updated_text) = upsert_execution_id_in_markdown(&text, live_id) {
+            if fs::write(&path, updated_text).is_ok() {
+                updated += 1;
+            }
+        }
+    }
+    updated
+}
+
 fn agent_names(delegates: &[Value]) -> Vec<String> {
     delegates
         .iter()
@@ -504,6 +569,7 @@ pub fn invoke_agent_phase(
         execution_id.as_deref(),
         resolve_persist_dir_for_guard(repo, inputs, state),
     ) {
+        reconcile_persist_execution_id_for_reentry(repo, &persist, live_id);
         if let Err(conflicts) = check_persist_execution_id_conflict(repo, &persist, live_id) {
             entry["status"] = json!("failed");
             entry["error"] = json!("persist-execution-id-conflict");
@@ -941,7 +1007,7 @@ mod tests {
     }
 
     #[test]
-    fn execution_id_conflict_detected() {
+    fn execution_id_reentry_refreshes_stale_frontmatter() {
         let _guard = env_lock();
         clear_agent_env();
         let dir = std::env::temp_dir().join(format!("sddia-agent-conf-{}", uuid::Uuid::new_v4()));
@@ -949,7 +1015,7 @@ mod tests {
         fs::create_dir_all(&persist).unwrap();
         fs::write(
             persist.join("plan.md"),
-            "---\nexecution_id: deadbeef-dead-beef-dead-beefdeadbeef\n---\n",
+            "---\nexecution_id: deadbeef-dead-beef-dead-beefdeadbeef\n---\n\nbody\n",
         )
         .unwrap();
         let script = mock_script(
@@ -968,9 +1034,36 @@ mod tests {
             None,
         );
         std::env::remove_var(ENV_CMD);
+        let plan = fs::read_to_string(persist.join("plan.md")).unwrap();
         let _ = fs::remove_dir_all(&dir);
-        assert_eq!(entry["status"], "failed");
-        assert_eq!(entry["error"], "persist-execution-id-conflict");
+        assert_eq!(entry["status"], "executed", "{entry}");
+        assert!(plan.contains(live));
+        assert!(!plan.contains("deadbeef-dead-beef-dead-beefdeadbeef"));
+    }
+
+    #[test]
+    fn reconcile_persist_execution_id_skips_handoff() {
+        let dir = std::env::temp_dir().join(format!("sddia-reconcile-{}", uuid::Uuid::new_v4()));
+        let persist = dir.join("docs/fixes/x");
+        fs::create_dir_all(&persist).unwrap();
+        fs::write(
+            persist.join("spec.md"),
+            "---\nexecution_id: old-old-old-old-old-old-old-old\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            persist.join("_agent_handoff.md"),
+            "---\nexecution_id: old-old-old-old-old-old-old-old\n---\n",
+        )
+        .unwrap();
+        let live = "80a3ca0d-80c5-4662-ab12-2afe757478c8";
+        let n = reconcile_persist_execution_id_for_reentry(&dir, "docs/fixes/x", live);
+        assert_eq!(n, 1);
+        let spec = fs::read_to_string(persist.join("spec.md")).unwrap();
+        let handoff = fs::read_to_string(persist.join("_agent_handoff.md")).unwrap();
+        let _ = fs::remove_dir_all(&dir);
+        assert!(spec.contains(live));
+        assert!(handoff.contains("old-old-old"));
     }
 
     #[test]

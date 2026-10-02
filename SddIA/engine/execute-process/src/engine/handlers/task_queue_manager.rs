@@ -359,6 +359,90 @@ fn single_flight_hit_envelope(
     }
 }
 
+const TQM_INVALID_CYCLE_ANCHOR: &str =
+    "tqm-dispatch-invalid-cycle-anchor: PR #N no es pbi_ref ni slug de ciclo; use fix_name o docs/todos/…";
+
+/// Ancla GitHub `PR #2` / `PR#2` (cadena completa), no paths `docs/todos/…`.
+fn is_pr_number_anchor(s: &str) -> bool {
+    let t = s.trim();
+    if t.len() < 4 || t.len() > 20 {
+        return false;
+    }
+    let bytes = t.as_bytes();
+    if bytes.len() < 3
+        || !(bytes[0] == b'P' || bytes[0] == b'p')
+        || !(bytes[1] == b'R' || bytes[1] == b'r')
+    {
+        return false;
+    }
+    let mut i = 2usize;
+    while i < bytes.len() && bytes[i] == b' ' {
+        i += 1;
+    }
+    if i >= bytes.len() || bytes[i] != b'#' {
+        return false;
+    }
+    i += 1;
+    while i < bytes.len() && bytes[i] == b' ' {
+        i += 1;
+    }
+    let digits = &t[i..];
+    !digits.is_empty() && digits.chars().all(|c| c.is_ascii_digit())
+}
+
+/// Primer token `PR #N` en texto libre (excluye prefijo `PPR`).
+fn pr_number_slug_from_text(text: &str) -> Option<String> {
+    let upper = text.to_ascii_uppercase();
+    let bytes = upper.as_bytes();
+    let mut pos = 0usize;
+    while pos + 2 < bytes.len() {
+        if bytes[pos] == b'P' && bytes[pos + 1] == b'R' {
+            if pos > 0 && bytes[pos - 1] == b'P' {
+                pos += 1;
+                continue;
+            }
+            let mut i = pos + 2;
+            while i < bytes.len() && bytes[i] == b' ' {
+                i += 1;
+            }
+            if i < bytes.len() && bytes[i] == b'#' {
+                i += 1;
+                while i < bytes.len() && bytes[i] == b' ' {
+                    i += 1;
+                }
+                let start = i;
+                while i < bytes.len() && bytes[i].is_ascii_digit() {
+                    i += 1;
+                }
+                if i > start {
+                    let n = &text[start..i];
+                    return Some(format!("pr{n}"));
+                }
+            }
+        }
+        pos += 1;
+    }
+    None
+}
+
+fn filter_pbi_ref(pbi_ref: Option<&str>) -> Option<&str> {
+    pbi_ref.filter(|p| !is_pr_number_anchor(p))
+}
+
+fn reject_pr_anchor_without_cycle_source(
+    task_text: &str,
+    had_explicit_slug: bool,
+    had_pbi_path: bool,
+) -> Result<(), String> {
+    if had_explicit_slug || had_pbi_path {
+        return Ok(());
+    }
+    if pr_number_slug_from_text(task_text).is_some() {
+        return Err(TQM_INVALID_CYCLE_ANCHOR.into());
+    }
+    Ok(())
+}
+
 /// Extrae `docs/todos/{pending|done}/….md` aunque el path contenga espacios.
 pub fn extract_pbi_path(text: &str) -> Option<String> {
     for anchor in ["docs/todos/pending/", "docs/todos/done/"] {
@@ -415,7 +499,7 @@ fn extract_explicit_cycle_slug(task_text: &str, key: &str) -> Option<String> {
 }
 
 fn derive_slug(pbi_ref: Option<&str>, task_text: &str) -> String {
-    let source = pbi_ref.unwrap_or(task_text);
+    let source = filter_pbi_ref(pbi_ref).unwrap_or(task_text);
     if let Some(open) = source.rfind('(') {
         if let Some(close) = source[open + 1..].find(')') {
             let inner = source[open + 1..open + 1 + close].trim();
@@ -425,7 +509,7 @@ fn derive_slug(pbi_ref: Option<&str>, task_text: &str) -> String {
         }
     }
     let from_text = extract_pbi_path(task_text);
-    if let Some(pbi) = pbi_ref.map(str::to_string).or(from_text) {
+    if let Some(pbi) = filter_pbi_ref(pbi_ref).map(str::to_string).or(from_text) {
         let name = pbi
             .rsplit('/')
             .next()
@@ -553,6 +637,9 @@ fn resolve_pbi_ref(inputs: &Value, task_text: &str) -> Option<String> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
     {
+        if is_pr_number_anchor(p) {
+            return None;
+        }
         return Some(p.to_string());
     }
     extract_pbi_path(task_text)
@@ -585,8 +672,9 @@ fn build_child_inputs(
     if let Some(c) = correlation_id.filter(|s| !s.is_empty()) {
         map.insert("correlation_id".into(), json!(c));
     }
+    let pbi_for_dispatch = filter_pbi_ref(pbi_ref);
     let mut suggested_branch: Option<String> = None;
-    if let Some(p) = pbi_ref.filter(|s| !s.is_empty()) {
+    if let Some(p) = pbi_for_dispatch.filter(|s| !s.is_empty()) {
         map.insert("pbi_ref".into(), json!(p));
         if let Some(body) = load_pbi_body(repo, p) {
             suggested_branch = extract_suggested_branch(&body);
@@ -599,11 +687,16 @@ fn build_child_inputs(
         "refactorization" => extract_explicit_cycle_slug(task_text, "refactor_name"),
         _ => None,
     };
-    let slug = suggested_branch
-        .as_deref()
-        .map(slug_from_branch)
-        .or(explicit_slug)
-        .unwrap_or_else(|| derive_slug(pbi_ref, task_text));
+    let had_explicit_slug = explicit_slug.is_some();
+    let had_pbi_path = pbi_for_dispatch.is_some() || extract_pbi_path(task_text).is_some();
+    let slug = if let Some(branch) = suggested_branch.as_deref() {
+        slug_from_branch(branch)
+    } else if let Some(es) = explicit_slug {
+        es
+    } else {
+        reject_pr_anchor_without_cycle_source(task_text, had_explicit_slug, had_pbi_path)?;
+        derive_slug(pbi_for_dispatch, task_text)
+    };
     map.insert("base_branch".into(), json!("main"));
 
     // Semilla de ciclo: preferir cuerpo PBI (misión) y conservar prompt como contexto.
@@ -611,7 +704,7 @@ fn build_child_inputs(
         Some(body) if !body.is_empty() => format!(
             "## Prompt operador\n{}\n\n## PBI adjunto (`{}`)\n{}",
             task_text,
-            pbi_ref.unwrap_or(""),
+            pbi_for_dispatch.unwrap_or(""),
             body
         ),
         _ => task_text.to_string(),
@@ -934,6 +1027,42 @@ mod tests {
         assert!(rel.contains("docs/todos/pending/"));
         let inert = "docs/todos/DeudaTecnica/[DEUDA] Escaneo lineal.md";
         assert!(!inert.contains("docs/todos/pending/"));
+    }
+
+    #[test]
+    fn pr_anchor_in_inputs_rejected_as_slug_incident_98be62a3() {
+        let err = build_child_inputs(
+            &Path::new("."),
+            "bug-fix",
+            "Continúa bug-fix tras merge PR #2 en BarcelonaXplorer (project_slug barcelonaxplorer)",
+            Some("PR #2"),
+            Some("98be62a3-0000-4000-8000-000000000000"),
+        )
+        .expect_err("must not derive pr2");
+        assert!(
+            err.contains("tqm-dispatch-invalid-cycle-anchor"),
+            "unexpected err: {err}"
+        );
+    }
+
+    #[test]
+    fn fix_name_wins_when_prompt_also_mentions_pr_number() {
+        let v = build_child_inputs(
+            &Path::new("."),
+            "bug-fix",
+            "fix_name e2e-workspace-1xn-ac9 — seguimiento tras PR #2",
+            Some("PR #2"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(v["fix_name"].as_str().unwrap(), "e2e-workspace-1xn-ac9");
+        assert!(
+            !v["persist_ref"]
+                .as_str()
+                .unwrap()
+                .ends_with("pr2"),
+            "persist must not land on pr2"
+        );
     }
 
     #[test]

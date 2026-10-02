@@ -3,14 +3,17 @@ document_id: HU-KALMA2-PROJECT-WORKSPACE-SERVER-1xN
 uuid: "d05b8d36-b0b2-494a-893c-52256447266d"
 title: "[ARQUITECTURA] Gobierno de proyectos externos desde Kalma2 — Workspace Server (MCP) 1×N"
 format: markdown
-version: "1.3.7"
-status: "en_ejecución"
-execution_branch: feature/kalma2-workspace-1xn-sequential
+version: "1.4.1"
+status: "cerrada"
+execution_branch: main
+closed: "2026-10-02"
+finalized: "2026-10-02"
 type: historia
 priority: alta
 context: "Cliente SddIA (Kalma2) / Proyectos cliente aislados (ABSTRACT-04)"
 created: "2026-09-26"
-updated: "2026-09-28"
+updated: "2026-10-02"
+forge_kaizen_pr: https://github.com/racso80es/SddIA/pull/315
 paciente0_ssot: "/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA"
 legacy_purge_target: "/home/racso/Proyectos/SddIA_AP"
 source: "Conversación técnica Racso ↔ Tormentosa 2026-09-26, refinada contra el repo por Tekton"
@@ -23,15 +26,21 @@ client_instances_observed:
   legacy_deprecated_purge: /home/racso/Proyectos/SddIA_AP
 audit_ref: docs/audits/instance-deploy-home-racso-Aplicaciones-Asistencia_Tormentosa_SddIA-20260928T184255Z.md
 audit_ref_baseline: docs/audits/installer-deploy-aplicaciones-20260926T113533Z.md
-decisions_status: dictaminadas (D1–D6, 2026-09-26); residuales asignados en §10
+decisions_status: dictaminadas (D1–D6, 2026-09-26); F0–F6 cerradas; kaizen §12 entregado (PR #315)
+epic_close:
+  forge_pr: https://github.com/racso80es/SddIA/pull/314
+  forge_merge: efb28737
+  kaizen_forge_pr: https://github.com/racso80es/SddIA/pull/315
+  pilot_pr: https://github.com/racso80es/BarcelonaXplorer/pull/2
+  pilot_merge: 1e6c03c4
+  ac9_correlation_id: 7e7f6c84-be03-424c-a786-57a9dabb8e1b
 spawned_pbis:
   - document_id: PBI-ARQUITECTURA-WS-PILOT-REGISTRY
     uuid: "a4a70f84-4caf-4aac-90df-af2edc206207"
-    path: "docs/todos/pending/[ARQUITECTURA] Workspace 1×N — contrato de proyecto y registro del piloto.md"
+    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — contrato de proyecto y registro del piloto.md"
     process: feature
     fases: F0
     status: done
-    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — contrato de proyecto y registro del piloto.md"
   - document_id: PBI-ARQUITECTURA-FS-MANAGER-PHYSICAL
     uuid: "d225d3ef-8e72-4fbc-9ee1-d25447ec6611"
     path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — filesystem-manager físico 2.0.0.md"
@@ -70,11 +79,25 @@ spawned_pbis:
     status: done
   - document_id: PBI-ARQUITECTURA-BX-KALMA2-E2E
     uuid: "f24ca269-ee5c-4ab7-b931-b66439bed985"
-    path: "docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md"
+    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md"
     process: bug-fix
     fases: F6
-    status: pending
+    status: done
+residual_forge_pbis: []
+kaizen_post_epic_pbis:
+  - document_id: PBI-KAIZEN-TQM-SLUG-PR-REF
+    uuid: "6c4e8a21-9b3d-4f17-a8e2-1d5f0c7b9e34"
+    path: "docs/todos/done/[KAIZEN] TQM — slug y pbi_ref no deben nacer de «PR #N».md"
+    forge_pr: https://github.com/racso80es/SddIA/pull/315
+    status: done
+  - document_id: PBI-KAIZEN-BUGFIX-REENTRY-DIRTY-LCONFLICT
+    uuid: "8a1f2c44-0e6b-4d91-b3a7-5c8e9d0f1a22"
+    path: "docs/todos/done/[KAIZEN] bug-fix reentrada — dirty persist y L-CONFLICT execution_id.md"
+    forge_pr: https://github.com/racso80es/SddIA/pull/315
+    status: done
 changelog:
+  - "1.4.1: Kaizen §12 cerrado en forja (PR #315): TQM anti «PR #N», reentrada git_reentry + reconcile execution_id. HU sin residuales de forja; queda solo redeploy Paciente 0 (operación)."
+  - "1.4.0: F0–F6 cerradas. AC-9 APTO (cid 7e7f6c84, BX PR #2 merge 1e6c03c4, forja PR #314 merge efb28737). G1–G6 cerradas. HU status cerrada. Residuales de forja: TQM slug «PR #N» y reentrada dirty/L-CONFLICT (§12)."
   - "1.3.7: PBI-OPERATIVO-APLICACIONES-FORGE-REDEPLOY → done (acta APTO 20260928T184255Z; purga SddIA_AP). G3 host cerrado. Pendiente único PBI: AC-9 E2E BarcelonaXplorer."
   - "1.3.6: Nomenclatura Paciente 0 = despliegue por defecto `/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA`. `/home/racso/Proyectos/SddIA_AP` descatalogado → purga obligatoria (PBI operativo AC-OP-6). G3/AC-8/§9 Ola 1 alineados. AC-9 desde Kalma2 de Paciente 0, no forja lab."
   - "1.3.5: PBI-ARQUITECTURA-AGENT-RUNTIME-MCP y PBI-ARQUITECTURA-SOFTWARE-FORGE-GATE → done. Pendientes: laudo operativo Aplicaciones + E2E AC-9 (validacion PENDIENTE/BLOQUEADO). 6/8 PBIs código cerrados."
@@ -133,7 +156,9 @@ La conversación origen contiene afirmaciones correctas mezcladas con inexactitu
 | Códices de dominio | `codex-software-engineering` (autoridad sobre `feature`/`bug-fix`/…), `codex-frontend-product-splus`, `codex-backend-admin-splus`, `codex-kalma2-assistant`. | `SddIA/library/codexes/` |
 | Piloto | `/home/racso/Proyectos/BarcelonaXplorer` existe, con `.SddIA/library/norms/` (normas locales) pero **sin** `.SddIA/project.md`. | `ls` verificado |
 
-### 2.2 Brechas reales (lo que impide hoy el objetivo)
+### 2.2 Brechas (línea base 2026-09-26)
+
+**Cierre 2026-10-02:** G1–G6 están **cerradas** (PBIs en `done/`, AC-9 APTO). La tabla conserva el diagnóstico de origen; el estado vigente está en §11.
 
 | ID | Brecha | Detalle |
 |----|--------|---------|
@@ -344,4 +369,28 @@ Dictamen recibido y contrastado con el repositorio. Cada decisión lleva su **ve
 | `PBI-OPERATIVO-APLICACIONES-FORGE-REDEPLOY` | — (laudo) | F5 host | AC-OP-1..6 | candado |
 | `PBI-ARQUITECTURA-BX-KALMA2-E2E` | `bug-fix` | F6 | AC-9 | los seis de código |
 
-Ola 1 en paralelo: piloto, filesystem, candado. **AC-9** se demuestra desde Kalma2 de **Paciente 0** (Aplicaciones) con host APTO; el redeploy/purga operativo no sustituye el código ya entregado pero sí es prerequisito de WUI estable. Rutas en `spawned_pbis`.
+Ola 1 en paralelo: piloto, filesystem, candado. **AC-9** demostrado desde Kalma2 de **Paciente 0** (2026-10-02). Los ocho PBI de esta tabla están en `done/`. Residuales de forja (no reabren F6): §12.
+
+## 11. Cierre del epic (2026-10-02)
+
+| Hito | Evidencia |
+|------|-----------|
+| F0–F5 | Ocho PBI de código/host en `docs/todos/done/` |
+| F6 / AC-9 | `correlation_id` `7e7f6c84-be03-424c-a786-57a9dabb8e1b`; BX `validacion.md` `global: APTO`; PR [#2](https://github.com/racso80es/BarcelonaXplorer/pull/2) merge `1e6c03c4` |
+| Forja | PR [#314](https://github.com/racso80es/SddIA/pull/314) merge `efb28737`; `docs/features/kalma2-bx-workspace-e2e/validacion.md` |
+| Kaizen §12 | PR [#315](https://github.com/racso80es/SddIA/pull/315); `docs/features/kaizen-tqm-slug-pr-ref/validacion.md` + `kaizen-bugfix-reentry-dirty-lconflict/validacion.md` APTO |
+| Piloto registrado | `.SddIA/projects/barcelonaxplorer.md` + `BarcelonaXplorer/.SddIA/project.md` (`contract_version` 1.1.0, `codex_slug: codex-software-engineering`) |
+| Selector / slug | F4 entregado; camino fiable = selector `barcelonaxplorer` + **Forjar Proceso** |
+
+§2.1–§2.2 describen la línea base del 2026-09-26. No sustituyen este cierre.
+
+## 12. Post-epic (kaizen forja — cerrado 2026-10-02)
+
+Residuales observados en reintentos AC-9. **Entregados** en PR [#315](https://github.com/racso80es/SddIA/pull/315); PBIs en `docs/todos/done/`; sin cola `pending` ligada a esta HU.
+
+| PBI | Forja motor | PR |
+|-----|-------------|-----|
+| `PBI-KAIZEN-TQM-SLUG-PR-REF` | `task_queue_manager.rs` | #315 |
+| `PBI-KAIZEN-BUGFIX-REENTRY-DIRTY-LCONFLICT` | `workspace_init.rs`, `agent_runtime.rs` | #315 |
+
+**Único seguimiento operativo (sin PBI):** tras merge de #315, redeploy `execute-process` en Paciente 0 (`/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA`) si el binario local es anterior al merge.
