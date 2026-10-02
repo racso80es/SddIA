@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 108
+universe_total: 109
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `26209dff-e413-4c6d-8838-5b785251356c` | 2026-10-02 | HU Tracker Linear — contexto RBAC, cápsula, EDA, Kalma2 y tracker-stamp | CANONICO | `SddIA/evolution/26209dff-e413-4c6d-8838-5b785251356c.md` |
 | `8a1f2c44-0e6b-4d91-b3a7-5c8e9d0f1a22` | 2026-10-02 | Kaizen bug-fix reentrada — git_reentry en workspace-init y reconcile execution_id | CANONICO | `SddIA/evolution/8a1f2c44-0e6b-4d91-b3a7-5c8e9d0f1a22.md` |
 | `6c4e8a21-9b3d-4f17-a8e2-1d5f0c7b9e34` | 2026-10-02 | Kaizen TQM — rechazo de ancla PR #N como pbi_ref y slug de ciclo | CANONICO | `SddIA/evolution/6c4e8a21-9b3d-4f17-a8e2-1d5f0c7b9e34.md` |
 | `740ef13e-8276-43d1-8642-55efc3fe9059` | 2026-10-02 | Workspace 1xN AC-9: workspace-init en residual_runner pre-DI; pull divergente soft-fail lab | CANONICO | `SddIA/evolution/740ef13e-8276-43d1-8642-55efc3fe9059.md` |
