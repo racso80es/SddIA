@@ -154,16 +154,20 @@ def agent_runtime_cwd(doc: dict[str, Any]) -> Path:
     return repo
 
 
-def _ensure_approve_mcps(parts: list[str]) -> list[str]:
-    if "--approve-mcps" in parts:
-        return parts
+def _ensure_mcp_cli_flags(parts: list[str]) -> list[str]:
+    """Headless Workspace 1×N: MCP exige --approve-mcps y -f (sin -f → tools rechazadas)."""
     out = list(parts)
     insert_at = len(out)
     for i, tok in enumerate(out):
         if tok == "--print":
             insert_at = i
             break
-    out.insert(insert_at, "--approve-mcps")
+    flags = set(out[1:])
+    if "--approve-mcps" not in flags:
+        out.insert(insert_at, "--approve-mcps")
+        insert_at += 1
+    if "-f" not in flags and "--force" not in flags:
+        out.insert(insert_at, "-f")
     return out
 
 
@@ -666,7 +670,6 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
         "- Evidencia git: preferir `./sddia-run.sh --tool git-manager` (JSON stdin) o evidencia ya materializada por handler nativo PPR; no depender del Shell IDE.",
         "- KM / docs/todos/: materializar semillas Kaizen solo como agent:cumulo (Cosecha Kaizen) o vía event Kaizen_Alert_Required; Tekton/Argos NO escriben TODOs bajo docs/todos/.",
         "- No inventes éxito: si no puedes materializar, dilo explícitamente.",
-        "- Trabaja en el repositorio local (cwd = repo_root).",
         "",
     ]
 
@@ -680,6 +683,13 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
                 f"- Materializa artefactos bajo `{persist}` **solo** vía MCP `sddia-workspace-server` (`tools/call` / recursos del servidor).",
                 "- Prohibido Write/Shell/filesystem-manager fuera del MCP para rutas del piloto; cwd del CLI es neutro (Core).",
                 "- Tras escribir, confirma paths relativos al piloto (ej. `docs/fixes/...`).",
+                "",
+            ]
+        )
+    else:
+        parts.extend(
+            [
+                "- Trabaja en el repositorio local (cwd = repo_root).",
                 "",
             ]
         )
@@ -783,7 +793,7 @@ def append_handoff(
 def run_cli(cwd: Path, prompt: str, phase: str = "", *, use_mcp: bool = False) -> tuple[bool, str, str]:
     cmd = resolve_cli()
     if use_mcp:
-        cmd = _ensure_approve_mcps(cmd)
+        cmd = _ensure_mcp_cli_flags(cmd)
     timeout = resolve_timeout_secs(phase)
     try:
         proc = subprocess.run(
