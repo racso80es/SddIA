@@ -8,6 +8,7 @@ pbi_ref: docs/todos/done/[DEUDA] Tracker — cuerpo Markdown en Linear.md
 document_id: PBI-DEUDA-LINEAR-CUERPO-MARKDOWN
 uuid: "b7c85f38-e6b7-4724-9cba-ea47b306c8c7"
 created: "2026-10-02"
+pr_url: "https://github.com/racso80es/SddIA/pull/316"
 ---
 
 # Validación — linear-issue-markdown-body
