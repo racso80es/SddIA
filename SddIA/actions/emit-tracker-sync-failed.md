@@ -27,6 +27,7 @@ outputs:
   - "target_path": "string"
 minteo_maximo: null
 porcentaje_de_exito: null
+hash_signature: "sha256:71aa7970cc08531dbddaeeb607cf66addcd42c4c44af5e78e3d9c48ba27e22d1"
 ---
 
 # Acción: emit-tracker-sync-failed

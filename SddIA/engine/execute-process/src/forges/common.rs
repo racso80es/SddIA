@@ -1290,7 +1290,8 @@ pub fn patch_hash_signature_refresh(artifact_path: &Path) -> Result<HashRefreshR
             .to_string()
     } else {
         let (yaml, body) = split_md_frontmatter(&text)?;
-        format!("---\n{yaml}hash_signature: \"{new_hash}\"\n---\n\n{body}")
+        let yaml = yaml.trim_end();
+        format!("---\n{yaml}\nhash_signature: \"{new_hash}\"\n---\n\n{body}")
     };
     fs::write(artifact_path, new_text).map_err(|e| e.to_string())?;
     Ok(HashRefreshResult {

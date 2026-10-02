@@ -110,7 +110,10 @@ fn parse_index_uuids(index_path: &Path) -> std::collections::HashMap<String, Str
     };
     let mut out = std::collections::HashMap::new();
     for line in text.lines() {
-        if !line.starts_with('|') || !line.contains('`') {
+        if !line.starts_with('|') {
+            continue;
+        }
+        if line.contains("---") || line.to_ascii_lowercase().starts_with("| name") {
             continue;
         }
         let uuids: Vec<_> = uuid_re.find_iter(line).map(|m| m.as_str().to_string()).collect();
@@ -219,4 +222,27 @@ pub fn remove_entity_coverage(repo: &Path, entity_uuid: &str) -> Result<(), Stri
         matrix.remove(entity_uuid);
     }
     save_coverage(repo, &data)
+}
+
+#[cfg(test)]
+mod index_parse_tests {
+    use super::parse_index_uuids;
+    use std::fs;
+    #[test]
+    fn parse_index_row_without_backticks() {
+        let dir = std::env::temp_dir().join(format!("eda-index-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let index = dir.join("index.md");
+        fs::write(
+            &index,
+            "| tracker-stamp | f2a3b4c5-d6e7-4890-a123-456789abcdef | 1.0.0 | tracker-operations | — | Sello. |\n",
+        )
+        .unwrap();
+        let map = parse_index_uuids(&index);
+        assert_eq!(
+            map.get("tracker-stamp").map(String::as_str),
+            Some("f2a3b4c5-d6e7-4890-a123-456789abcdef")
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
 }

@@ -23,6 +23,7 @@ outputs:
   - "target_path": "string"
 minteo_maximo: null
 porcentaje_de_exito: null
+hash_signature: "sha256:be754cf0517029238eddad56296fdf8addf974f71ecdd0ed27e7fef4d01f5d5a"
 ---
 
 # Acción: emit-work-initiated-event

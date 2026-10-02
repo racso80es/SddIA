@@ -1,5 +1,7 @@
 ---
 
+
+
 feature_name: plumb-cid
 created: "2026-07-23"
 updated: "2026-08-24T19:48:00Z"
@@ -77,7 +79,7 @@ non_blocking_findings:
   - GIT_EVIDENCE_VIA_GIT_MANAGER:APTO
   - RBAC_AUTHORING_KM_POLICY:APTO
   - TEKTON_HONEST_BLOCK:APTO
-execution_id: "59e1035e-a63b-4e10-a908-29c213095b6e"
+execution_id: "8d69c53d-42dc-4462-a95a-8a869f9d0726"
 ---
 # Validación — Verificación (Argos · feature)
 

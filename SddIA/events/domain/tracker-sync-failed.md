@@ -8,7 +8,7 @@ event_type: "Tracker_Sync_Failed"
 context: "tracker-operations"
 capabilities:
   - "tracker_sync_failed"
-hash_signature: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+hash_signature: "sha256:267be4b7373a9e1df08aaf50882792ea6cb075aedc193d887b48c9f9693d69c2"
 ---
 
 # Event: Tracker_Sync_Failed

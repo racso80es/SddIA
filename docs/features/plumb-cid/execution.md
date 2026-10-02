@@ -1,8 +1,7 @@
 ---
-
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-07-23"
+updated: "2026-10-02"
 process: feature
 document_id: LAB-PLUMB-CID
 branch_name: feat/plumb-cid
@@ -28,7 +27,7 @@ forge: 0
 t_gate: fail
 mcp_servers: []
 pbi_physical: absent
-execution_id: "59e1035e-a63b-4e10-a908-29c213095b6e"
+execution_id: "8d69c53d-42dc-4462-a95a-8a869f9d0726"
 ---
 # Execution — plumb-cid
 
@@ -44,7 +43,7 @@ Lab CID: T1 (auditoría frontmatter) y T2 (docs Tekton) materializados con evide
 |-------|-----------|-----------|
 | `./sddia-run.sh --tool git-manager` stdin JSON `operation_type=status` | **Rejected** | sin stdout |
 | Reintento + `request_smart_mode_approval` | **Rejected** | sin stdout |
-| MCP servers (git/shell/sddia) | **ausentes** | `GetMcpTools` catalog = `[]` |
+| MCP servers (git/shell/sddia) | **ausentes** | pattern search = `[]` |
 | Política `source-control` operable | **no verificable** | peaje Shell bloqueado |
 
 **Decisión:** AC-L-GIT = honesto `not_materialized`. Prohibido bypass Shell destructivo. T1/T2/T4 continúan (plan: fail → blocked; T1 aún audita CID local).
@@ -62,7 +61,7 @@ Lab CID: T1 (auditoría frontmatter) y T2 (docs Tekton) materializados con evide
 | Check | Resultado |
 |-------|-----------|
 | `persist_ref` = `docs/features/plumb-cid` | **ok** |
-| PBI `docs/todos/pending/[FEATURE] plumb-cid.md` | **absent** (gap KM; AC-L-PBI) |
+| PBI `docs/todos/pending/[FEATURE] plumb-cid.md` | **absent** (0 hits Glob `docs/todos/**/*plumb*`; gap KM; AC-L-PBI) |
 | Escritura Tekton bajo `docs/todos/` | **no** |
 
 ## T2 — Cascada documental Tekton

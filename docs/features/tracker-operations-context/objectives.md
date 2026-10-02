@@ -4,11 +4,14 @@
 
 
 
+
+
+
 feature_name: tracker-operations-context
 process: feature
 created: "2026-10-02"
 document_id: PBI-ARQUITECTURA-TRACKER-OPERATIONS-CONTEXT
-execution_id: "64787bbe-913a-4b6d-ab23-9585ba38ee94"
+execution_id: "c481a47e-2e62-4300-b13f-f79901edad82"
 ---
 # Objectives — tracker-operations-context
 

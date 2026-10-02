@@ -254,3 +254,153 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit"
 ```
+
+## 2026-10-02T18:06:30Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `64787bbe-913a-4b6d-ab23-9585ba38ee94`
+- correlation_id: `86a18f70-2345-4347-bfca-babc4df0bb2d`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] Tracker — contexto RBAC tracker-operations.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - FAIL_F5_VERDICT; F2_DOC_GATE NO_APTO (faltan spec/plan/implementation); pbi_archived true no absuelve
+
+### transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO`, `FAIL_F5_VERDICT`)
+
+- Archivo tocado: `docs/features/tracker-operations-context/validacion.md`
+- R1/R2 (copia bridge `native_state` idempotent-hit): `TECH_FORMAL_EXECUTE_PROCESS` / `GIT_EVIDENCE_VIA_GIT_MANAGER` **APTO**
+- R3 KM: **APTO** (0 writes Argos en `docs/todos/**`)
+- F2: **NO_APTO** — solo `objectives.md`; faltan `spec.md` / `plan.md` / `implementation.md`
+- F3/F4: **NO_APTO** (no materializados este CID; proxy R1 no levanta peaje)
+- F5: **NO_APTO** — aborta; `accept_pr_handoff` blocked (L-HANDOFF-F5)
+- `branch` **APTO** (HEAD = `feat/tracker-operations-context`); Shell git-manager Rejected — sin stdout inventado
+- PBI en `done/` (`pbi_archived: true`); no absuelve F2/F5
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-02T18:06:25Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-10-02T18:06:41Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `64787bbe-913a-4b6d-ab23-9585ba38ee94`
+- correlation_id: `86a18f70-2345-4347-bfca-babc4df0bb2d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `accept_pr_handoff: blocked` · `delivery_state: failed`
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO`, `FAIL_F5_VERDICT`)
+
+- Tocados: `validacion.md` (Veredicto y bloqueo) + apéndice en `_agent_handoff.md`
+- R1/R2 (copia bridge `native_state` / idempotent-hit @ 18:05:24Z): TECH/GIT **APTO** — sin inventar stdout
+- R3 KM: **APTO** (0 writes Argos en `docs/todos/**`)
+- F2→F5: **NO_APTO** — faltan `spec.md` / `plan.md` / `implementation.md`; F3/F4 no materializados
+- Shell `git-manager` Rejected; `branch` APTO vía `.git/HEAD`; PBI en `done/` no absuelve
+- `accept_pr_handoff: blocked` · `delivery_state: failed`
+```
+
+## 2026-10-02T18:07:17Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `c481a47e-2e62-4300-b13f-f79901edad82`
+- correlation_id: `e7de6cc2-50d6-429e-84b1-17e6549d6c13`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - PBI en `done/` (`pbi_archived: true`); no absuelve F2
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO`, `FAIL_F2_DOC`)
+
+- Tocado: `docs/features/tracker-operations-context/validacion.md`
+- R1/R2 (copia bridge `native_state` / handoff-formal-scan): TECH/GIT **APTO**
+- R3 KM: **APTO** (0 writes Argos en `docs/todos/**`)
+- F2: **NO_APTO** — solo `objectives.md`; faltan `spec.md` / `plan.md` / `implementation.md`
+- `branch` **APTO** (HEAD = `feat/tracker-operations-context`); sin stdout git-manager inventado
+- PBI en `done/` (`pbi_archived: true`); no absuelve F2
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-02T18:07:17Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-10-02T18:08:30Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `c481a47e-2e62-4300-b13f-f79901edad82`
+- correlation_id: `e7de6cc2-50d6-429e-84b1-17e6549d6c13`
+- pbi_ref: `docs/todos/done/[ARQUITECTURA] Tracker — contexto RBAC tracker-operations.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - FAIL_F5_VERDICT; F2_DOC_GATE NO_APTO (faltan spec/plan/implementation); pbi_archived true no absuelve
+
+### transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO`, `FAIL_F5_VERDICT`)
+
+- Archivo tocado: `docs/features/tracker-operations-context/validacion.md`
+- R1/R2 (copia bridge `native_state` idempotent-hit): `TECH_FORMAL_EXECUTE_PROCESS` / `GIT_EVIDENCE_VIA_GIT_MANAGER` **APTO**
+- R3 KM: **APTO** (0 writes Argos en `docs/todos/**`)
+- F2: **NO_APTO** — solo `objectives.md`; faltan `spec.md` / `plan.md` / `implementation.md`
+- F3/F4: **NO_APTO** (no materializados este CID; proxy R1 no levanta peaje)
+- F5: **NO_APTO** — aborta; `accept_pr_handoff` blocked (L-HANDOFF-F5)
+- `branch` **APTO** (HEAD = `feat/tracker-operations-context`); Shell git-manager Rejected — sin stdout inventado
+- PBI en `done/` (`pbi_archived: true`); no absuelve F2/F5
+```
+
+## 2026-10-02T18:08:11Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `c481a47e-2e62-4300-b13f-f79901edad82`
+- correlation_id: `e7de6cc2-50d6-429e-84b1-17e6549d6c13`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `accept_pr_handoff: blocked` · `delivery_state: failed`
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO`, `FAIL_F5_VERDICT`)
+
+- Tocados: `validacion.md` (Veredicto y bloqueo) + apéndice en `_agent_handoff.md`
+- R1/R2 (bridge `native_state` / idempotent-hit @ 18:07:17Z): TECH/GIT **APTO** — sin inventar stdout
+- R3 KM: **APTO** (0 writes Argos en `docs/todos/**`)
+- F2→F5: **NO_APTO** — faltan `spec.md` / `plan.md` / `implementation.md`; F3/F4 no materializados
+- Shell `git-manager` Rejected; `branch` APTO vía `.git/HEAD`; PBI en `done/` no absuelve
+- `accept_pr_handoff: blocked` · `delivery_state: failed`
+```
