@@ -90,19 +90,20 @@ fn split_command(raw: &str) -> Result<Vec<String>, String> {
 }
 
 fn resolve_persist_ref_value(inputs: &Value, state: &Value) -> Value {
+    // Tras workspace-init 1×N, `state.workspace.persist_ref` está anclado al piloto.
+    if let Some(ws) = state
+        .get("workspace")
+        .and_then(|w| w.get("persist_ref"))
+        .filter(|v| v.as_str().map(|s| !s.trim().is_empty()).unwrap_or(false))
+    {
+        return ws.clone();
+    }
     inputs
         .get("persist_ref")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(|s| json!(s))
-        .or_else(|| {
-            state
-                .get("workspace")
-                .and_then(|w| w.get("persist_ref"))
-                .cloned()
-                .filter(|v| v.as_str().map(|s| !s.trim().is_empty()).unwrap_or(false))
-        })
         .unwrap_or(Value::Null)
 }
 
@@ -129,7 +130,11 @@ pub fn check_persist_execution_id_conflict(
     persist_ref: &str,
     live_id: &str,
 ) -> Result<(), Vec<String>> {
-    let dir = repo.join(persist_ref);
+    let dir = if Path::new(persist_ref).is_absolute() {
+        PathBuf::from(persist_ref)
+    } else {
+        repo.join(persist_ref)
+    };
     if !dir.is_dir() {
         return Ok(());
     }
@@ -1118,11 +1123,11 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"evidence
             &json!({"workspace": {"persist_ref": "docs/features/from-ws"}}),
         );
         assert_eq!(from_ws, json!("docs/features/from-ws"));
-        let from_inputs = resolve_persist_ref_value(
+        let workspace_wins = resolve_persist_ref_value(
             &json!({"persist_ref": "docs/features/top"}),
             &json!({"workspace": {"persist_ref": "docs/features/from-ws"}}),
         );
-        assert_eq!(from_inputs, json!("docs/features/top"));
+        assert_eq!(workspace_wins, json!("docs/features/from-ws"));
         let missing = resolve_persist_ref_value(&json!({}), &json!({}));
         assert_eq!(missing, Value::Null);
     }
