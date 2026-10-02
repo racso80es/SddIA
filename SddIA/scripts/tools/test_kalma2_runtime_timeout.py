@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -95,6 +96,34 @@ class VerdictAndNetworkTests(unittest.TestCase):
         self.assertIn("docs/todos/pending/x.md", prompt)
         self.assertIn("hola semilla", prompt)
         self.assertNotIn("y" * 40, prompt)
+
+
+class GitEvidenceWorkspace1xNTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.rt = load_runtime()
+
+    def test_resolve_git_repository_path_prefers_pilot(self) -> None:
+        with tempfile.TemporaryDirectory() as pilot, tempfile.TemporaryDirectory() as core:
+            doc = {"project_root": pilot}
+            self.assertEqual(
+                self.rt.resolve_git_repository_path(doc, Path(core)),
+                Path(pilot).resolve(),
+            )
+
+    def test_transcript_git_manager_positive(self) -> None:
+        t = "Git piloto vía `skill:git-manager` en fix/foo: commits `00a3e46`"
+        self.assertTrue(self.rt._transcript_indicates_git_manager(t))
+        self.assertFalse(self.rt._transcript_indicates_git_manager("solo MCP fs_write"))
+
+    def test_parse_git_manager_stdout_envelope(self) -> None:
+        out = (
+            '[CONFIG] ignored\n'
+            '{"exitCode":0,"result":{"data":{"success":true},"exitCode":0,"success":true},"success":true}'
+        )
+        ok, body = self.rt._parse_git_manager_stdout(out)
+        self.assertTrue(ok)
+        self.assertTrue(body.get("success"))
 
 
 if __name__ == "__main__":

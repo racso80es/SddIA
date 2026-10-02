@@ -327,6 +327,61 @@ def is_evidence_gate(doc: dict[str, Any]) -> bool:
     return "verific" in phase
 
 
+def is_tekton_execution_phase(doc: dict[str, Any]) -> bool:
+    agents = [str(a).lower() for a in (doc.get("agents") or [])]
+    phase = str(doc.get("phase_name") or "").lower()
+    if any(a == "tekton" or a.endswith(":tekton") for a in agents):
+        return True
+    return phase.startswith("ejecuc")
+
+
+def resolve_git_repository_path(doc: dict[str, Any], core_repo: Path) -> Path:
+    """Workspace 1×N: evidencia git-manager sobre el piloto, no el Core."""
+    root = str(doc.get("project_root") or "").strip()
+    if root:
+        pilot = Path(root).resolve()
+        if pilot.is_dir():
+            return pilot
+    return core_repo.resolve()
+
+
+def _transcript_indicates_git_manager(text: str) -> bool:
+    if not text:
+        return False
+    low = text.lower()
+    markers = (
+        "git-manager",
+        "skill:git-manager",
+        "--tool git-manager",
+        "operation_type",
+    )
+    if not any(m in low for m in markers):
+        return False
+    if "rejected" in low and "git-manager" in low:
+        return False
+    return True
+
+
+def _parse_git_manager_stdout(out: str) -> tuple[bool, dict[str, Any]]:
+    for line in reversed(out.splitlines()):
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            body = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(body, dict):
+            continue
+        ok = bool(body.get("success")) or body.get("exitCode") == 0
+        nested = body.get("result")
+        if isinstance(nested, dict):
+            ok = ok or bool(nested.get("success")) or nested.get("exitCode") == 0
+        if ok:
+            return True, body
+    return False, {}
+
+
 def _as_bool(v: Any) -> bool:
     if isinstance(v, bool):
         return v
@@ -449,14 +504,32 @@ def _handoff_has_apto_evidence(repo: Path, persist: str) -> bool:
     )
 
 
-def _invoke_git_manager_status(repo: Path) -> tuple[bool, str, str]:
+def _handoff_latest_git_evidence_apto(repo: Path, persist: str) -> bool:
+    """Bloque machine más reciente ya certificó git-manager (p. ej. sesión Tekton)."""
+    if not persist:
+        return False
+    handoff = persist_dir(repo, persist) / "_agent_handoff.md"
+    if not handoff.is_file():
+        return False
+    text = handoff.read_text(encoding="utf-8")
+    if EVIDENCE_MARKER not in text:
+        return False
+    idx = text.rfind(EVIDENCE_MARKER)
+    return "GIT_EVIDENCE_VIA_GIT_MANAGER: APTO" in text[idx:]
+
+
+def _invoke_git_manager_status(
+    core_repo: Path,
+    repository_path: Path | None = None,
+) -> tuple[bool, str, str]:
     """Subprocess prótesis: ./sddia-run.sh --tool git-manager (no Shell IDE)."""
+    git_root = (repository_path or core_repo).resolve()
     payload = {
         "operation_type": "status",
-        "repository_path": str(repo.resolve()),
+        "repository_path": str(git_root),
         "operation_payload_json": {},
     }
-    script = repo / "sddia-run.sh"
+    script = core_repo / "sddia-run.sh"
     if not script.is_file():
         return False, "", "sddia-run.sh ausente"
     timeout = int(os.environ.get("SDDIA_EVIDENCE_TIMEOUT_SECS", "90") or "90")
@@ -466,7 +539,7 @@ def _invoke_git_manager_status(repo: Path) -> tuple[bool, str, str]:
             input=json.dumps(payload).encode("utf-8"),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=str(repo),
+            cwd=str(core_repo),
             timeout=timeout,
             check=False,
         )
@@ -476,20 +549,19 @@ def _invoke_git_manager_status(repo: Path) -> tuple[bool, str, str]:
         return False, "", f"timeout {timeout}s"
     out = proc.stdout.decode("utf-8", errors="replace").strip()
     err = proc.stderr.decode("utf-8", errors="replace").strip()
-    if proc.returncode != 0:
+    ok, body = _parse_git_manager_stdout(out)
+    if not ok and proc.returncode != 0:
         return False, out, err or f"exit {proc.returncode}"
-    # success: capsule JSON con success/exitCode
-    try:
-        body = json.loads(out.splitlines()[-1] if out else "{}")
-    except json.JSONDecodeError:
-        body = {}
-    ok = bool(body.get("success")) or body.get("exitCode") == 0
     if not ok and proc.returncode == 0 and out:
-        # Algunas cápsulas emiten envelope sin success explícito
         ok = "gitStdout" in out or '"data"' in out
-    digest_src = out[-800:] if out else err
+    if not ok:
+        hint = err or out or "git-manager failed"
+        if "[CONFIG]" in hint and out:
+            hint = (out.splitlines()[-1] if out else hint)[:200]
+        return False, "", hint[:240]
+    digest_src = json.dumps(body, ensure_ascii=False) if body else (out[-800:] if out else err)
     digest = hashlib.sha256(digest_src.encode("utf-8")).hexdigest()[:32]
-    return ok, digest, err if not ok else ""
+    return True, digest, ""
 
 
 def _invoke_formal_integrity(repo: Path) -> tuple[bool, str]:
@@ -519,6 +591,36 @@ def _invoke_formal_integrity(repo: Path) -> tuple[bool, str]:
     return False, (blob or f"exit {proc.returncode}")[:200]
 
 
+def materialize_tekton_git_evidence_from_transcript(
+    core_repo: Path,
+    persist: str,
+    doc: dict[str, Any],
+    transcript: str,
+) -> dict[str, Any] | None:
+    """Tras Tekton: si el transcript declara git-manager, materializa R2 en sesión (L-R2)."""
+    if not _transcript_indicates_git_manager(transcript):
+        return None
+    git_repo = resolve_git_repository_path(doc, core_repo)
+    ok, digest, err = _invoke_git_manager_status(core_repo, git_repo)
+    if not ok:
+        return None
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ev: dict[str, Any] = {
+        "schema": EVIDENCE_SCHEMA,
+        "materialized_at": ts,
+        "source": "tekton_session_subprocess",
+        "git_manager_invoked": True,
+        "formal_execute_process": False,
+        "TECH_FORMAL_EXECUTE_PROCESS": "NO_APTO",
+        "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
+        "evidence_materialized": True,
+        "git_evidence_digest": digest,
+        "notes": "tekton-transcript+git-manager-status",
+    }
+    append_runtime_evidence(core_repo, persist, ev)
+    return ev
+
+
 def materialize_runtime_evidence(
     repo: Path,
     persist: str,
@@ -527,6 +629,7 @@ def materialize_runtime_evidence(
     """Evidence Bridge R1/R2 (L-BRIDGE). No inventa APTO (L-MOCK / L-TRUTH)."""
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     native = _extract_native_evidence(doc)
+    git_repo = resolve_git_repository_path(doc, repo)
 
     if env_truthy("SDDIA_AGENT_RUNTIME_MOCK"):
         ev = {
@@ -551,6 +654,10 @@ def materialize_runtime_evidence(
     used_subprocess = False
     source = "none"
 
+    if not git_ok and _handoff_latest_git_evidence_apto(repo, persist):
+        git_ok = True
+        notes_parts.append("handoff-git-apto")
+
     if git_ok and formal_ok:
         source = "native_state"
         notes_parts.append("idempotent-hit")
@@ -561,7 +668,7 @@ def materialize_runtime_evidence(
         notes_parts.append("idempotent-hit-handoff")
     else:
         if not git_ok:
-            ok, dig, err = _invoke_git_manager_status(repo)
+            ok, dig, err = _invoke_git_manager_status(repo, git_repo)
             used_subprocess = True
             if ok:
                 git_ok = True
@@ -1427,6 +1534,11 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             message=message,
             transcript=out,
         )
+        tekton_git_ev: dict[str, Any] | None = None
+        if status == "executed" and is_tekton_execution_phase(doc):
+            tekton_git_ev = materialize_tekton_git_evidence_from_transcript(
+                repo, persist, doc, out or ""
+            )
         data_ok: dict[str, Any] = {
             "status": status,
             "message": message,
@@ -1436,6 +1548,8 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         }
         if evidence is not None:
             data_ok["runtime_evidence"] = evidence
+        elif tekton_git_ev is not None:
+            data_ok["runtime_evidence"] = tekton_git_ev
         emit(True, data_ok, None)
 
     # Red transitoria (DNS Node) → awaiting_agents; REQUIRE_CLI no reclasifica.
