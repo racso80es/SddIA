@@ -81,6 +81,43 @@ fn env_truthy(key: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn git_pull_divergence_soft_fail(err: &str) -> bool {
+    let e = err.to_lowercase();
+    e.contains("reconciliar")
+        || e.contains("diverg")
+        || e.contains("diverged")
+        || e.contains("non-fast-forward")
+}
+
+fn pull_base_step(
+    repo: &Path,
+    git_root: &Path,
+    base_branch: &str,
+    git_steps: &mut Vec<Value>,
+) -> Result<(), String> {
+    let pull = invoke_git_manager_for(
+        repo,
+        git_root,
+        "pull",
+        &json!({"remote": "origin", "branch": base_branch}),
+    );
+    match pull {
+        Ok(r) => git_steps.push(json!({"op": "pull_base", "result": r})),
+        Err(e) if env_truthy("SDDIA_LAB_ALLOW_DIRTY") && git_pull_divergence_soft_fail(&e) => {
+            git_steps.push(json!({
+                "op": "pull_base",
+                "result": {
+                    "skipped": true,
+                    "reason": "pull_diverged_lab_allow_dirty",
+                    "error": e,
+                }
+            }));
+        }
+        Err(e) => return Err(e),
+    }
+    Ok(())
+}
+
 /// Misión destilada: no volcar YAML+cuerpo del PBI (F7).
 fn distill_mission(raw: &str) -> String {
     let trimmed = raw.trim();
@@ -404,13 +441,7 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
 
         let offline = fetch.get("offline").and_then(|v| v.as_bool()) == Some(true);
         if !offline {
-            let pull = invoke_git_manager_for(
-                repo,
-                git_root,
-                "pull",
-                &json!({"remote": "origin", "branch": base_branch}),
-            )?;
-            git_steps.push(json!({"op": "pull_base", "result": pull}));
+            pull_base_step(repo, git_root, &base_branch, &mut git_steps)?;
         } else {
             git_steps.push(json!({
                 "op": "pull_base",
