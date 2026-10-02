@@ -1,6 +1,7 @@
 //! Autoridad de Códice de Dominio para process software-lifecycle (ABSTRACT-02).
 
 use super::domain_profile::{resolve_execution_profile, ExecutionProfile};
+use super::project_binding;
 use serde_json::Value;
 use std::fs;
 use std::path::Path;
@@ -96,6 +97,54 @@ pub fn has_software_authority(profile: &ExecutionProfile) -> bool {
     }
 }
 
+fn has_external_project_slug(inputs: &Value) -> bool {
+    inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .is_some_and(|s| !s.is_empty())
+}
+
+fn external_project_forge_allowed(
+    repo: &Path,
+    inputs: &Value,
+    profile: &ExecutionProfile,
+) -> Result<bool, DomainAuthorityDenial> {
+    let bound = match project_binding::bind(repo, inputs) {
+        Ok(Some(b)) => b,
+        Ok(None) => {
+            return Err(DomainAuthorityDenial {
+                code: DENY_CODE,
+                message: "project_slug presente pero binding vacío".into(),
+                process_name: String::new(),
+                profile_source: profile.source.to_string(),
+            });
+        }
+        Err(e) => {
+            return Err(DomainAuthorityDenial {
+                code: DENY_CODE,
+                message: e,
+                process_name: String::new(),
+                profile_source: profile.source.to_string(),
+            });
+        }
+    };
+    if bound.codex_slug != SOFTWARE_CODEX_SLUG {
+        return Ok(false);
+    }
+    if !profile.software_forge {
+        return Ok(false);
+    }
+    if profile
+        .codex_slug
+        .as_deref()
+        .is_some_and(|s| s == "codex-kalma2-assistant")
+    {
+        return Ok(false);
+    }
+    Ok(true)
+}
+
 pub fn assert_process_allowed(
     repo: &Path,
     process_name: &str,
@@ -105,7 +154,16 @@ pub fn assert_process_allowed(
         return Ok(());
     }
     let profile = resolve_execution_profile(repo, inputs);
-    if has_software_authority(&profile) {
+    if has_external_project_slug(inputs) {
+        match external_project_forge_allowed(repo, inputs, &profile) {
+            Ok(true) => return Ok(()),
+            Ok(false) => {}
+            Err(mut deny) => {
+                deny.process_name = process_name.to_string();
+                return Err(deny);
+            }
+        }
+    } else if has_software_authority(&profile) {
         return Ok(());
     }
     Err(DomainAuthorityDenial {
@@ -202,6 +260,121 @@ composition: []
                 "codex_slug": "codex-frontend-product-splus"
             }
         });
+        let err = assert_process_allowed(td.path(), "feature", &inputs).unwrap_err();
+        assert_eq!(err.code, DENY_CODE);
+    }
+
+    #[test]
+    fn external_project_requires_software_forge_and_codex() {
+        let td = tempfile::tempdir().unwrap();
+        write_codex(td.path(), &["feature"]);
+        fs::create_dir_all(td.path().join(".SddIA/projects")).unwrap();
+        let client = td.path().join("client");
+        fs::create_dir_all(client.join(".git")).unwrap();
+        fs::create_dir_all(client.join(".SddIA")).unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let manifest = format!(
+            r#"---
+id: demo
+uuid: "{uuid}"
+git_remote: https://example.invalid/x.git
+default_branch: main
+delivery_mode: branch_pr
+contract_version: "1.0.0"
+codex_slug: codex-software-engineering
+docs_layout:
+  features: docs/features
+  fixes: docs/fixes
+  todos_pending: docs/todos/pending
+  todos_done: docs/todos/done
+---
+"#
+        );
+        fs::write(client.join(".SddIA/project.md"), manifest).unwrap();
+        let index = format!(
+            r#"---
+id: demo
+uuid: "{uuid}"
+project_root: {root}
+manifest_ref: .SddIA/project.md
+codex_slug: codex-software-engineering
+status: active
+---
+"#,
+            root = client.display()
+        );
+        fs::write(td.path().join(".SddIA/projects/demo.md"), index).unwrap();
+        fs::create_dir_all(td.path().join(".SddIA")).unwrap();
+        fs::write(
+            td.path().join(".SddIA/active-domain-profile.json"),
+            r#"{"codex_slug":"codex-software-engineering","git_required":true,"software_forge":true}"#,
+        )
+        .unwrap();
+        let inputs = json!({"project_slug": "demo"});
+        assert!(assert_process_allowed(td.path(), "feature", &inputs).is_ok());
+
+        fs::write(
+            td.path().join(".SddIA/active-domain-profile.json"),
+            r#"{"codex_slug":"codex-software-engineering","git_required":true,"software_forge":false}"#,
+        )
+        .unwrap();
+        let err = assert_process_allowed(td.path(), "feature", &inputs).unwrap_err();
+        assert_eq!(err.code, DENY_CODE);
+    }
+
+    #[test]
+    fn kalma2_assistant_denied_even_with_project_slug() {
+        let td = tempfile::tempdir().unwrap();
+        write_codex(td.path(), &["feature"]);
+        fs::create_dir_all(td.path().join(".SddIA/projects")).unwrap();
+        let client = td.path().join("client");
+        fs::create_dir_all(client.join(".git")).unwrap();
+        fs::create_dir_all(client.join(".SddIA")).unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        fs::write(
+            client.join(".SddIA/project.md"),
+            format!(
+                r#"---
+id: demo
+uuid: "{uuid}"
+git_remote: https://example.invalid/x.git
+default_branch: main
+delivery_mode: branch_pr
+contract_version: "1.0.0"
+codex_slug: codex-software-engineering
+docs_layout:
+  features: docs/features
+  fixes: docs/fixes
+  todos_pending: docs/todos/pending
+  todos_done: docs/todos/done
+---
+"#
+            ),
+        )
+        .unwrap();
+        fs::write(
+            td.path().join(".SddIA/projects/demo.md"),
+            format!(
+                r#"---
+id: demo
+uuid: "{uuid}"
+project_root: {root}
+manifest_ref: .SddIA/project.md
+codex_slug: codex-software-engineering
+status: active
+---
+"#,
+                root = client.display()
+            ),
+        )
+        .unwrap();
+        fs::create_dir_all(td.path().join(".SddIA")).unwrap();
+        fs::write(
+            td.path().join(".SddIA/active-domain-profile.json"),
+            r#"{"codex_slug":"codex-kalma2-assistant","git_required":false,"software_forge":true}"#,
+        )
+        .unwrap();
+        let inputs = json!({"project_slug": "demo"});
         let err = assert_process_allowed(td.path(), "feature", &inputs).unwrap_err();
         assert_eq!(err.code, DENY_CODE);
     }

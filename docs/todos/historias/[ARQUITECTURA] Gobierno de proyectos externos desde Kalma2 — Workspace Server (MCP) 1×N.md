@@ -3,26 +3,87 @@ document_id: HU-KALMA2-PROJECT-WORKSPACE-SERVER-1xN
 uuid: "d05b8d36-b0b2-494a-893c-52256447266d"
 title: "[ARQUITECTURA] Gobierno de proyectos externos desde Kalma2 — Workspace Server (MCP) 1×N"
 format: markdown
-version: "1.1.0"
-status: "historia"
+version: "1.3.7"
+status: "en_ejecución"
+execution_branch: feature/kalma2-workspace-1xn-sequential
 type: historia
 priority: alta
 context: "Cliente SddIA (Kalma2) / Proyectos cliente aislados (ABSTRACT-04)"
 created: "2026-09-26"
-updated: "2026-09-26"
+updated: "2026-09-28"
+paciente0_ssot: "/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA"
+legacy_purge_target: "/home/racso/Proyectos/SddIA_AP"
 source: "Conversación técnica Racso ↔ Tormentosa 2026-09-26, refinada contra el repo por Tekton"
 process_candidate: feature
 project_pilot:
   slug: barcelonaxplorer
   project_root: /home/racso/Proyectos/BarcelonaXplorer
 client_instances_observed:
-  forge_candidate: /home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA
-  consumer_paciente0: /home/racso/Proyectos/SddIA_AP
-audit_ref: docs/audits/installer-deploy-aplicaciones-20260926T113533Z.md
-blocked_by:
-  - PBI-ARQUITECTURA-INSTALLER-V2-DESPLIEGUE-LIMPIO (fase F5)
-decisions_status: dictaminadas (D1–D6, 2026-09-26); residuales en §7 para Dédalo
+  paciente0_default_deployment: /home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA
+  legacy_deprecated_purge: /home/racso/Proyectos/SddIA_AP
+audit_ref: docs/audits/instance-deploy-home-racso-Aplicaciones-Asistencia_Tormentosa_SddIA-20260928T184255Z.md
+audit_ref_baseline: docs/audits/installer-deploy-aplicaciones-20260926T113533Z.md
+decisions_status: dictaminadas (D1–D6, 2026-09-26); residuales asignados en §10
+spawned_pbis:
+  - document_id: PBI-ARQUITECTURA-WS-PILOT-REGISTRY
+    uuid: "a4a70f84-4caf-4aac-90df-af2edc206207"
+    path: "docs/todos/pending/[ARQUITECTURA] Workspace 1×N — contrato de proyecto y registro del piloto.md"
+    process: feature
+    fases: F0
+    status: done
+    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — contrato de proyecto y registro del piloto.md"
+  - document_id: PBI-ARQUITECTURA-FS-MANAGER-PHYSICAL
+    uuid: "d225d3ef-8e72-4fbc-9ee1-d25447ec6611"
+    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — filesystem-manager físico 2.0.0.md"
+    process: feature
+    fases: "F2 (cápsula)"
+    status: done
+  - document_id: PBI-ARQUITECTURA-WS-SERVER
+    uuid: "e78e2a29-12fb-4175-99e8-2d360de5b4dc"
+    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — Workspace Server MCP.md"
+    process: feature
+    fases: "F1–F2 (adaptadores)"
+    status: done
+  - document_id: PBI-ARQUITECTURA-AGENT-RUNTIME-MCP
+    uuid: "b8b69287-6508-46d6-86c5-e63dac9f4867"
+    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — runtime de agentes con proyecto.md"
+    process: feature
+    fases: F3
+    status: done
+  - document_id: PBI-ARQUITECTURA-KALMA2-PROJECT-SLUG
+    uuid: "9177d689-2957-45e0-ba50-8772ec39750d"
+    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — transporte project_slug en Kalma2.md"
+    process: feature
+    fases: F4
+    status: done
+  - document_id: PBI-ARQUITECTURA-SOFTWARE-FORGE-GATE
+    uuid: "23cfb176-8394-4d98-8ec8-8dbfc4874f16"
+    path: "docs/todos/done/[ARQUITECTURA] Workspace 1×N — candado software_forge.md"
+    process: feature
+    fases: "F5 (código)"
+    status: done
+  - document_id: PBI-OPERATIVO-APLICACIONES-FORGE-REDEPLOY
+    uuid: "1c463a76-c874-4774-bdfa-8be23ab8c877"
+    path: "docs/todos/done/[OPERATIVO] Workspace 1×N — redeploy instancia forjadora Aplicaciones.md"
+    process: null
+    fases: "F5 (host)"
+    status: done
+  - document_id: PBI-ARQUITECTURA-BX-KALMA2-E2E
+    uuid: "f24ca269-ee5c-4ab7-b931-b66439bed985"
+    path: "docs/todos/pending/[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer.md"
+    process: bug-fix
+    fases: F6
+    status: pending
 changelog:
+  - "1.3.7: PBI-OPERATIVO-APLICACIONES-FORGE-REDEPLOY → done (acta APTO 20260928T184255Z; purga SddIA_AP). G3 host cerrado. Pendiente único PBI: AC-9 E2E BarcelonaXplorer."
+  - "1.3.6: Nomenclatura Paciente 0 = despliegue por defecto `/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA`. `/home/racso/Proyectos/SddIA_AP` descatalogado → purga obligatoria (PBI operativo AC-OP-6). G3/AC-8/§9 Ola 1 alineados. AC-9 desde Kalma2 de Paciente 0, no forja lab."
+  - "1.3.5: PBI-ARQUITECTURA-AGENT-RUNTIME-MCP y PBI-ARQUITECTURA-SOFTWARE-FORGE-GATE → done. Pendientes: laudo operativo Aplicaciones + E2E AC-9 (validacion PENDIENTE/BLOQUEADO). 6/8 PBIs código cerrados."
+  - "1.3.4: PBI-ARQUITECTURA-KALMA2-PROJECT-SLUG → done (selector, bridge, kalma2-interact 1.1.2, evento 1.1.0, TQM). 4/8 PBIs cerrados."
+  - "1.3.3: PBI-ARQUITECTURA-WS-SERVER → done (MCP stdio, tools-contract 1.6.0, adaptadores cápsula). Siguiente: runtime agente / project_slug cierre / software_forge norma."
+  - "1.3.2: PBI-ARQUITECTURA-FS-MANAGER-PHYSICAL → done (cápsula 2.0.0, norma congelada, validacion APTO). Siguiente en cola: PBI-ARQUITECTURA-WS-SERVER."
+  - "1.3.1: ejecución secuencial iniciada (rama feature/kalma2-workspace-1xn-sequential). PBI-ARQUITECTURA-WS-PILOT-REGISTRY → done. Código parcial: software_forge, project_slug E2E, agent_runtime project_root/mcp_servers stub. Pendientes: filesystem físico, Workspace Server MCP, laudo operativo, AC-9. HU permanece en historias/ hasta cierre del último PBI."
+  - "1.3.0: descomposición en 8 PBI (§10). D5 sin PBI (active_norm_pack ya existe). El laudo de Aplicaciones no bloquea F0 ni el AC-9 de código. Norma installer del candado: 1.3.0 → 1.4.0 (v3 ya mergeado)."
+  - "1.2.0: Revalidación Filtro A contra el repo (Tekton, 2026-09-28). (a) blocked_by apuntaba a PBI-ARQUITECTURA-INSTALLER-V2-DESPLIEGUE-LIMPIO, que está en docs/todos/done/ (status: done): bloqueo real = laudo operativo de redeploy de la instancia Aplicaciones + requisito de instalador nuevo para software_forge. (b) R-PROF-1 (ya entregado) solo fija codex_slug/git_required; NO materializa software_forge (campo inexistente hoy: rg software_forge = solo esta historia). (c) §7 D3: 'regla D4 legado' renombrada a regla de autoridad legado (has_software_authority) para no colisionar con la D4 (bóveda) de esta historia; el rótulo 'D4' es la etiqueta interna del comentario de domain_authority.rs. (d) §7 D2: el servidor MCP exige delivery de binario nativo (tools-contract §3), no wasm32-wasip1 (§8 bloquea subprocess); antigravity-cli-executor es skill (contrato paralelo), analogía y no precedente directo. (e) §7 D3: reencuadre de software_forge (autoridad de forja externa vs códice del propio Core; la bóveda .env nunca concede autoridad). (f) §4 reordenado (G Bóveda / H Ciclo). (g) cita textual de tools-contract §5 corregida ('por stdout o canal equivalente')."
   - "1.1.0: §7 pasa de abiertas a dictaminadas (D1 MCP stdio directo; D2 SddIA/tools; D3 autoridad por project.codex_slug con candado software_forge en active-domain-profile.json; D4 env_ref con precedencia real SO > proyecto > instancia > global; D5 active_norm_pack; D6 filesystem-manager 2.0.0 Rust). Correcciones Filtro A: candado no va en bóveda; precedencia SO no invertible; no existe contrato congelado de filesystem-manager; PATCH_FILE es ampliación; soporte MCP de backends no verificado en repo; tools-contract exige io_mode. AC-11..AC-15; §4 y §5 alineados."
   - "1.0.1: errata G3/§2.3 — la instancia de Aplicaciones existe (full-node, autoridad software legado, runtime agentes heredado) pero no está operativa (WUI en crash loop por puerto 8765, bóveda de forja copiada). Ver audit_ref."
 derived_from:
@@ -78,7 +139,7 @@ La conversación origen contiene afirmaciones correctas mezcladas con inexactitu
 |----|--------|---------|
 | G1 | **Sin runtime físico de filesystem headless** | `filesystem-manager` es *LLM-Native*: no tiene cápsula; "la propia IA en el entorno de desarrollo actúa como runtime". Sin IDE, ninguna cápsula gobernada escribe código en el proyecto. Es la brecha que Antigravity/Cursor tapan hoy. |
 | G2 | **El runtime de agentes ignora `project_root`** | `AGENT_PHASE` inyecta `repo_root` (Core), `workspace_path`, `persist_ref`, `inputs`; `build_agent_command` fija `current_dir(repo)` y el runtime Cursor hace `cwd=repo_root`. `project_root` sale de `workspace_init` al estado pero **no** llega al payload del agente. Tekton opera siempre sobre el Core. |
-| G3 | **La instancia con autoridad software no está operativa ni saneada** | Dos instancias desplegadas: (a) `SddIA_AP` (Paciente 0, consumer 13 ELF, `codex-kalma2-assistant`, `git_required:false`) → `DOMAIN_AUTHORITY_DENIED` para `feature`/`bug-fix`; el starter-kit prohíbe `SDDIA_AGENT_RUNTIME_COMMAND` en ella (Filtro C). **No** es forjador por diseño. (b) `/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA` (installer PR #300, full-node 34 ELF, perfil default legado → autoridad software **sí**, `SDDIA_AGENT_RUNTIME_COMMAND` heredado de la forja) → es la **candidata a forjadora**, pero su `kalma2-bridge` lleva ~15 900 reinicios por `bind 8765` ocupado por el bridge-lab de la forja, `telegram-watcher` e `iota-publish-relay` en crash loop, y su bóveda es copia de la global de la forja (secretos IMAP/Gemini duplicados, sin `SDDIA_CLIENT_PORT`). Sin `active-domain-profile.json` explícito. Auditoría: `docs/audits/installer-deploy-aplicaciones-20260926T113533Z.md`. |
+| G3 | **Cerrado (host 2026-09-28)** | **Paciente 0** = `/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA`. Legado `SddIA_AP` purgado. Verify installer **APTO** (`audit_ref`). Perfil `software_forge: true`, WUI `:8766`. Residual documental: cambio Core `instance-health-verify` → `/api/system-health` + liveness `/api/status` en `kalma2-bridge` (rama feature). |
 | G4 | **Kalma2 no transporta `project_slug`** | Ni `kalma2-interact` (input único `prompt`) ni la UI ni `Kalma2_Process_Requested` → `task-queue-manager` llevan el proyecto destino. |
 | G5 | **Proyecto piloto no registrado** | No existe `.SddIA/projects/barcelonaxplorer.md` en ninguna instancia ni `BarcelonaXplorer/.SddIA/project.md`. |
 | G6 | **No hay servidor ni cliente MCP en SddIA** | Cero implementación; en features previas el catálogo MCP visto desde el IDE fue `[]`. |
@@ -93,7 +154,7 @@ La conversación origen contiene afirmaciones correctas mezcladas con inexactitu
 | `env_file` del proyecto en el registro | La jerarquía de bóvedas es SSOT (`env_hierarchy`: `.dev/.env` global, `.SddIA/.dev/.env` instancia). Una bóveda por proyecto es una **extensión** del contrato (`env_ref`, dictaminada en §7 D4), no un hecho actual. |
 | Tools MCP `apply_patch`, `run_test_suite`, `git_checkpoint` como primitivas nuevas | Colisionan con `filesystem-manager`, `shell-executor` y `git-manager`. El servidor debe **exponer/adaptar** esas cápsulas y sus esquemas congelados (`skill-io-git-manager-frozen`, `skill-io-shell-executor-frozen`), no reimplementarlos (Filtro C). |
 | "Tekton ejecuta de forma encapsulada a través de cápsulas WASI / Rust nativo" | Tekton es un **agente LLM** cuyo runtime es `SDDIA_AGENT_RUNTIME_COMMAND` (hoy `cursor-agent`). Las cápsulas son las skills/tools que invoca. Prescindir del IDE ≠ prescindir del modelo: Tekton seguirá necesitando un backend LLM (`cursor-agent`, `agy`, `gemini-http-infer`). |
-| "Cliente SddIA desplegado (carpeta Aplicaciones)" | **Correcto con matiz** (errata propia de v1.0.0 corregida): `/home/racso/Aplicaciones/SddIA/` son solo atajos (`SddIA_Deploy.sh`, `SddIA_Eliminar_Cliente.sh` → forja); la instancia es `/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA/` (installer PR #300, full-node). Está **materializada pero no operativa** como asistente: WUI sin puerto, Telegram sin token (G3, auditoría). Paciente 0 (`SddIA_AP`) es una instancia distinta, consumer, sin autoridad software. |
+| "Cliente SddIA desplegado (carpeta Aplicaciones)" | **Correcto con matiz** (errata v1.0.0 corregida): `/home/racso/Aplicaciones/SddIA/` son solo atajos (`SddIA_Deploy.sh`, `SddIA_Eliminar_Cliente.sh` → forja); **Paciente 0** = `/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA/` (full-node, forjadora de proyectos externos con `software_forge`). Materializada; post-redeploy 2026-09-28 bridge OK, **WUI aún NO-APTO** (G3). `SddIA_AP` en `Proyectos/` fue nomenclatura obsoleta — **descatalogada**, purga obligatoria. |
 | "Auditoría de Argos y Radamanto sobre artefactos antes de consolidar" | Argos audita artefactos/código. Radamanto **no** evalúa diffs: consume telemetría agregada y gobierna estatus macroscópico (README § Argos vs Radamanto). |
 | "DLT / IOTA Rebased" | El repo referencia IOTA (`iota-immutable-publisher`); "Rebased" no aparece en ningún SSOT. Se cita solo como *anclaje DLT IOTA*. |
 | "Kalma2 negocia capacidades con el MCP Server" | El **frontend es inerte** (Dogma O3). La negociación MCP la hace el puente o el orquestador, nunca el navegador. |
@@ -143,9 +204,9 @@ Y el **cliente MCP** es el runtime de agentes (`SDDIA_AGENT_RUNTIME_COMMAND`): e
 - **C. `filesystem-manager` 2.0.0 físico en Rust** (D6, G1): mismo `uuid` y `provides`; enum ampliado con `PATCH_FILE`; norma congelada `skill-io-filesystem-manager-frozen` nueva; modalidad LLM-Native extinguida. Contención en `project_root` / `workspace_path`.
 - **D. Propagación de `project_root` al runtime de agentes** (G2): `AGENT_PHASE` incluye `project_root` y descriptor `mcp_servers`; el runtime Cursor/`agy` recibe el Workspace Server como **único** MCP server y `cwd` neutro (**no** Core). Smoke `initialize` por backend.
 - **E. Transporte de `project_slug` extremo a extremo** (G4): UI (selector inerte poblado desde `/api/status` o ruta nueva de lectura del índice), `kalma2-bridge`, `kalma2-interact`, `Kalma2_Process_Requested`, `task-queue-manager` → `feature`/`bug-fix` con `inputs.project_slug`.
-- **F. Autoridad e instancia forjadora** (G3, D3): `domain_authority.rs` resuelve por `project.codex_slug` con candado `software_forge: true` en `active-domain-profile.json`; instancia candidata `/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA` saneada según `PBI-ARQUITECTURA-INSTALLER-V2-DESPLIEGUE-LIMPIO` (puerto, bóveda compuesta, unidades condicionales, perfil explícito). **Paciente 0 / SddIA_AP no se muta** y sigue denegada.
-- **H. Bóveda de proyecto** (D4): el Workspace Server carga `env_ref` y la inyecta como entorno efímero solo a sus cápsulas hijas; precedencia real SO > proyecto > instancia > global.
-- **G. Ciclo real de verificación**: un `bug-fix` sobre BarcelonaXplorer desde Kalma2 que muta un fichero, pasa `qa_gates` y cierra según `delivery_mode`, sin Antigravity ni Cursor IDE abiertos.
+- **F. Autoridad e instancia forjadora** (G3, D3): `domain_authority.rs` resuelve por `project.codex_slug` con candado `software_forge: true` en `active-domain-profile.json`; **Paciente 0** (`/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA`) saneada por **laudo operativo de redeploy** + purga del legado `SddIA_AP` (`PBI-OPERATIVO-APLICACIONES-FORGE-REDEPLOY`). Installer v2/v3 en `done/`; `software_forge` vía installer **1.4.0** (`PBI-ARQUITECTURA-SOFTWARE-FORGE-GATE` cerrado).
+- **G. Bóveda de proyecto** (D4): el Workspace Server carga `env_ref` y la inyecta como entorno efímero solo a sus cápsulas hijas; precedencia real SO > proyecto > instancia > global.
+- **H. Ciclo real de verificación**: un `bug-fix` sobre BarcelonaXplorer desde Kalma2 que muta un fichero, pasa `qa_gates` y cierra según `delivery_mode`, sin Antigravity ni Cursor IDE abiertos.
 
 ### Fuera de alcance
 
@@ -164,7 +225,7 @@ Y el **cliente MCP** es el runtime de agentes (`SDDIA_AGENT_RUNTIME_COMMAND`): e
 | **F2 — Tools adaptadoras + filesystem físico** | `filesystem-manager` 2.0.0 Rust + norma congelada; `tools/list`, `tools/call`: `fs_*` (incl. `PATCH_FILE`) → `filesystem-manager`, `git_*` → `git-manager`, `run_check` → `shell-executor` con whitelist de `project.md`. Cerbero antes de cada `tools/call`. `Raw_Execution_Finished` por invocación. | G1, G6 |
 | **F3 — Runtime con proyecto** | `AGENT_PHASE` + `project_root` + `mcp_servers`; `kalma2-agent-runtime-cursor.py` monta el servidor MCP y `cwd` neutro; `antigravity-cli-executor` igual (sin `--add-dir` al proyecto). Smoke `initialize` MCP por backend; backend sin MCP = excluido para proyectos. | G2 |
 | **F4 — Kalma2 1×N** | Selector de proyecto inerte; `project_slug` en `/api/execute`, `kalma2-interact`, evento y `task-queue-manager`. | G4 |
-| **F5 — Autoridad e instancia forjadora** | `domain_authority.rs`: regla D3 (`project.codex_slug` ∧ `software_forge` ∧ perfil no-consumer); `active-domain-profile.json` con `software_forge`. Instancia de Aplicaciones saneada (depende de `PBI-ARQUITECTURA-INSTALLER-V2-DESPLIEGUE-LIMPIO`); WUI operativa; separada de SddIA_AP. | G3 |
+| **F5 — Autoridad e instancia forjadora** | `domain_authority.rs`: regla D3 (`project.codex_slug` ∧ `software_forge` ∧ perfil no-consumer); `active-domain-profile.json` con `software_forge` (installer 1.4.0). Paciente 0 en Aplicaciones: laudo + redeploy + **purga** de `/home/racso/Proyectos/SddIA_AP`; WUI operativa sin colisión de puertos. | G3 |
 | **F6 — Ciclo real** | `bug-fix` de BarcelonaXplorer end-to-end desde Kalma2; `validacion.md` APTO; evolución registrada. | Objetivo |
 
 ## 6. Criterios de aceptación
@@ -178,7 +239,7 @@ Y el **cliente MCP** es el runtime de agentes (`SDDIA_AGENT_RUNTIME_COMMAND`): e
 | AC-5 | `AGENT_PHASE` de una fase Tekton sobre `project_slug` registrado contiene `project_root` y `mcp_servers`; el proceso hijo del runtime **no** tiene `cwd` = Core. | Trazas del runtime. |
 | AC-6 | Desde Kalma2, con el selector en `BarcelonaXplorer`, «Forjar Proceso» → `Kalma2_Process_Requested.payload.project_slug = barcelonaxplorer` y `task-queue-manager` lo propaga a `bug-fix`. | Evento en bus. |
 | AC-7 | Sin `project_slug`, todo el comportamiento actual (Core sobre sí mismo) es idéntico (AC-CORE-SELF de ABSTRACT-04). | Suite existente verde. |
-| AC-8 | En SddIA_AP (perfil `codex-kalma2-assistant`) el ciclo sigue denegado (`DOMAIN_AUTHORITY_DENIED`); no se relaja el Filtro C del consumidor. | Test de perfil. |
+| AC-8 | Perfil de instancia `codex-kalma2-assistant` (consumer, Filtro C) sigue denegado (`DOMAIN_AUTHORITY_DENIED`); no se reabre autoridad software en despliegues consumer. El legado `SddIA_AP` no se reinstala. | Tests `domain_authority` + política de purga documentada. |
 | AC-9 | Ciclo `bug-fix` real: fichero de BarcelonaXplorer modificado, `qa_gates` verdes, commit/PR según `delivery_mode`, con Antigravity y Cursor IDE cerrados. | Evidencia en `validacion.md` + PR/commit. |
 | AC-10 | Alta de un segundo proyecto = crear dos `.md` (índice + manifiesto), sin cambios en Core. | Registro de proyecto ficticio en lab. |
 | AC-11 | (D3) Instancia con `software_forge: true` + `project.codex_slug: codex-software-engineering` → `allow`; misma instancia con `software_forge: false` o ausente → `DOMAIN_AUTHORITY_DENIED`; `project.codex_slug` ≠ software → deny aunque la instancia sea forjadora. | Tests unitarios `domain_authority.rs` (matriz 2×2×2). |
@@ -206,7 +267,8 @@ Dictamen recibido y contrastado con el repositorio. Cada decisión lleva su **ve
 
 | Precisión | Detalle |
 |-----------|---------|
-| `tools-contract` §5 exige *"un único envelope JSON por stdout"* | Un servidor MCP emite **N mensajes JSON-RPC** por sesión; viola la letra del contrato. Requisito: bump de `tools-contract` (o campo en el `{name}.md`) declarando `io_mode: mcp-stdio` como modalidad reconocida, con la obligación de que **cada `tools/call`** produzca internamente un envelope `capsule-json-io` auditable y un `Raw_Execution_Finished`. Precedente de excepción declarada: `antigravity-cli-executor` (spawn). |
+| `tools-contract` §5 exige *"un único envelope JSON (por stdout o canal equivalente)"* | Un servidor MCP emite **N mensajes JSON-RPC** por sesión; viola la letra del contrato. Requisito: bump de `tools-contract` (o campo en el `{name}.md`) declarando `io_mode: mcp-stdio` como modalidad reconocida, con la obligación de que **cada `tools/call`** produzca internamente un envelope `capsule-json-io` auditable y un `Raw_Execution_Finished`. Analogía (no precedente directo): `antigravity-cli-executor` (spawn) — es un `skill`, gobernado por `skills-contract` (contrato **paralelo**), no un `tool`. |
+| `tools-contract` §8 fija sustrato canónico Rust→`wasm32-wasip1` y **bloquea subprocess** bajo WASI | El servidor **spawnea cápsulas** (`git-manager`/`shell-executor`/`filesystem-manager`) y sirve **stdio persistente**: incompatible con la sandbox WASI. Delivery obligado: **binario nativo** (`tools-contract` §3 lo admite: "binario nativo `{name}`"), declarado como **desviación explícita** de §8 en el `{name}.md`. Residual para Dédalo (F1/F2). |
 | Ciclo de vida | Spawn por fase (`AGENT_PHASE`), muerte al cerrar la fase o por timeout de la barrera. Prohibido como servicio systemd persistente por proyecto. |
 
 ### D3 — Autoridad software: por `project.codex_slug` con candado en el perfil de instancia
@@ -215,10 +277,10 @@ Dictamen recibido y contrastado con el repositorio. Cada decisión lleva su **ve
 
 | Precisión | Detalle |
 |-----------|---------|
-| "flag de forja de software **en su bóveda**" | **Corregido**: el candado va en `.SddIA/active-domain-profile.json` (SSOT de autoridad ya leído por `resolve_execution_profile`), no en la bóveda (`.env` = secretos/config). Campo nuevo: `software_forge: true|false` (default `false`). Evita que una copia accidental de bóveda (fricción DT-INST-VAULT-STAGE, auditoría) conceda autoridad. |
+| "flag de forja de software **en su bóveda**" | **Corregido**: el candado va en `.SddIA/active-domain-profile.json` (SSOT de autoridad ya leído por `resolve_execution_profile`), no en la bóveda (`.env` = secretos/config; la bóveda **nunca** concede autoridad, así que "copia de bóveda" no era un vector de escalada). Campo nuevo `software_forge: true|false` (default `false`), **inexistente hoy en el repo** (`rg software_forge` = solo esta historia). Semántica real: distingue *autoridad de forja sobre proyectos externos* del mero `codex_slug: codex-software-engineering` que una instancia puede tener para su **propio** Core — sin él, cualquier instancia engineering forjaría sobre proyectos ajenos. |
 | Slug exigido en `project.md` | `has_software_authority` compara con `codex-software-engineering` **exactamente**. `BarcelonaXplorer/.SddIA/project.md` debe declarar `codex_slug: codex-software-engineering`; los códices de dominio (`codex-frontend-product-splus`, …) **no** son slugs de autoridad y viajan por D5. |
-| Regla resultante (`domain_authority.rs`) | Con `inputs.project_slug`: `allow` ⇔ `project.codex_slug == codex-software-engineering` **∧** perfil de instancia `software_forge == true` **∧** perfil de instancia `codex_slug ∉ {codex-kalma2-assistant, …cualquier slug ≠ software}`. Sin `project_slug`: regla D4 legado intacta (AC-7). Instancia `codex-kalma2-assistant` → `DOMAIN_AUTHORITY_DENIED` **siempre** (AC-8). |
-| Impacto en F5 | La instancia de Aplicaciones necesita `active-domain-profile.json` explícito con `software_forge: true`; el installer v2 (R-PROF-1 del PBI `PBI-ARQUITECTURA-INSTALLER-V2-DESPLIEGUE-LIMPIO`) lo materializa. Hoy la autoridad ahí es por regla legado, no por declaración. |
+| Regla resultante (`domain_authority.rs`) | Con `inputs.project_slug`: `allow` ⇔ `project.codex_slug == codex-software-engineering` **∧** perfil de instancia `software_forge == true` **∧** perfil de instancia `codex_slug ∉ {codex-kalma2-assistant, …cualquier slug ≠ software}`. Sin `project_slug`: regla de autoridad **legado** (`has_software_authority`) intacta (AC-7) — es la que el comentario de `domain_authority.rs` rotula internamente como "D4", **no** la D4 (bóveda) de esta historia. Instancia `codex-kalma2-assistant` → `DOMAIN_AUTHORITY_DENIED` **siempre** (AC-8). |
+| Impacto en F5 | La instancia de Aplicaciones necesita `active-domain-profile.json` explícito con `software_forge: true`. **`R-PROF-1` NO lo materializa**: ese requisito (installer v2, `PBI-ARQUITECTURA-INSTALLER-V2-DESPLIEGUE-LIMPIO`, ya en `done/`) solo fija `codex_slug`/`git_required` por perfil (`engineering` → `codex-software-engineering`). Se necesita un **requisito de instalador nuevo** (post v2/v3) que añada `software_forge`, más el **laudo operativo** de redeploy/saneo (fuera de PR, Vértice Biológico). Hoy la autoridad ahí es por regla legado, no por declaración. |
 
 ### D4 — Bóveda por proyecto: `{project_root}/.SddIA/.dev/.env` vía `env_ref`
 
@@ -245,11 +307,11 @@ Dictamen recibido y contrastado con el repositorio. Cada decisión lleva su **ve
 | "operaciones (read, write, **patch**, list)" | `PATCH_FILE` **no** está en el enum actual → es **ampliación** de contrato (bump **menor** 1.1.0 → 1.2.0 por operación nueva; el bump **mayor** lo justifica la extinción de la modalidad LLM-Native, cuerpo §2 del `{name}.md`). Resultado: `filesystem-manager` **2.0.0**, mismo `uuid` `f4a5b6c7-…`, `provides` intactos (`doc:closure`, `fs:persist`) para no romper `task-queue-manager`, `feature` y demás consumidores por `requires_capability`. Semántica de `PATCH_FILE`: diff unificado aplicado atómicamente; rechazo si el hunk no casa (sin escritura parcial). |
 | Contención | Raíz = `project_root` inyectado (o `workspace_path` en modo Core-self); canonicalización + rechazo de `..`/symlinks que escapen → `PROJECT_SCOPE_ESCAPE` (AC-2). Misma primitiva `assert_workspace_bound` ya usada por cápsulas de caos. |
 
-### Decisiones residuales (sin dictamen; Dédalo en F1/F2)
+### Decisiones residuales (sin dictamen; asignadas en §10)
 
-1. Nombre y forma exacta del campo `io_mode` en `tools-contract` (D2).
-2. Formato del descriptor `mcp_servers` en `AGENT_PHASE` (D1/F3): mínimo `{name, command, args, env_keys}` sin valores de secretos.
-3. Si `--add-dir` en `antigravity-cli-executor` se elimina por completo para proyectos (dejar solo MCP) o se mantiene como lectura redundante. Preferente: eliminar (riesgo §8, "backend salta el MCP").
+1. Nombre y forma exacta del campo `io_mode` en `tools-contract` (D2) → `PBI-ARQUITECTURA-WS-SERVER`.
+2. Formato del descriptor `mcp_servers` en `AGENT_PHASE` (D1/F3): mínimo `{name, command, args, env_keys}` sin valores de secretos → `PBI-ARQUITECTURA-AGENT-RUNTIME-MCP`.
+3. `--add-dir` en proyectos se elimina (riesgo §8). No queda como lectura redundante → `PBI-ARQUITECTURA-AGENT-RUNTIME-MCP`.
 
 ## 8. Riesgos
 
@@ -257,7 +319,7 @@ Dictamen recibido y contrastado con el repositorio. Cada decisión lleva su **ve
 |--------|-----------|
 | Backend LLM salta el MCP y escribe directamente (cursor-agent con acceso a disco). | `cwd` neutro/vacío, `--add-dir` ausente, permisos de fichero; el Workspace Server es la única superficie con `project_root`. Argos verifica que el diff provenga de tools auditadas (`Raw_Execution_Finished`). |
 | Duplicar registros (JSON nuevo vs `instance.projects`). | Prohibido por esta historia (§2.3). |
-| Ampliar autoridad software a SddIA_AP por comodidad. | AC-8 lo bloquea. |
+| Reinstalar consumer `SddIA_AP` o ampliar autoridad software a perfiles `codex-kalma2-assistant`. | AC-8 lo bloquea; Paciente 0 = Aplicaciones. |
 | Reimplementar git/shell en el servidor. | Adaptadores finos; esquemas congelados vigentes. |
 | Timeouts de fases largas (`SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION`). | Reusar barreras `kalma2-phase-barrier-timeout-persist`. |
 
@@ -266,3 +328,20 @@ Dictamen recibido y contrastado con el repositorio. Cada decisión lleva su **ve
 - Toda entidad nueva (`sddia-workspace-server`, cápsula filesystem, versiones de `kalma2-interact`, `feature`, evento) se forja vía `execute-process` → `entity-manager` / `*-creator`; prohibida la mutación manual del genoma.
 - Cierre documental en rama única (`task-closure-documental`): PBI a `done/`, `validacion.md` APTO.
 - Registro en `SddIA/evolution/` vinculando `uuid` de esta historia y de las entidades creadas.
+
+## 10. Descomposición en PBIs
+
+`historias/` no es cola (`todos-jurisdiction`). Cada fila es un PR. D5 no tiene PBI: `active_norm_pack` ya inyecta el códice; el servidor no lo reimplementa.
+
+| PBI | Proceso | Fases | AC | Bloqueado por |
+|-----|---------|-------|-----|----------------|
+| `PBI-ARQUITECTURA-WS-PILOT-REGISTRY` | `feature` | F0 | AC-10 | — |
+| `PBI-ARQUITECTURA-FS-MANAGER-PHYSICAL` | `feature` | F2 cápsula | AC-13, AC-2 escritura | — |
+| `PBI-ARQUITECTURA-SOFTWARE-FORGE-GATE` | `feature` | F5 código | AC-8, AC-11 | — |
+| `PBI-ARQUITECTURA-WS-SERVER` | `feature` | F1–F2 adaptadores | AC-2 lectura, AC-3, AC-4, AC-12, AC-14 | piloto + filesystem |
+| `PBI-ARQUITECTURA-KALMA2-PROJECT-SLUG` | `feature` | F4 | AC-6, AC-7, AC-1 UI | piloto |
+| `PBI-ARQUITECTURA-AGENT-RUNTIME-MCP` | `feature` | F3 | AC-5, AC-15, AC-1 runtime | servidor |
+| `PBI-OPERATIVO-APLICACIONES-FORGE-REDEPLOY` | — (laudo) | F5 host | AC-OP-1..6 | candado |
+| `PBI-ARQUITECTURA-BX-KALMA2-E2E` | `bug-fix` | F6 | AC-9 | los seis de código |
+
+Ola 1 en paralelo: piloto, filesystem, candado. **AC-9** se demuestra desde Kalma2 de **Paciente 0** (Aplicaciones) con host APTO; el redeploy/purga operativo no sustituye el código ya entregado pero sí es prerequisito de WUI estable. Rutas en `spawned_pbis`.

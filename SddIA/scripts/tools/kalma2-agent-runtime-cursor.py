@@ -138,6 +138,80 @@ def resolve_persist_ref(doc: dict[str, Any]) -> str:
     return ""
 
 
+def persist_dir(repo: Path, persist: str) -> Path:
+    p = Path(persist)
+    if p.is_absolute():
+        return p
+    return repo / persist
+
+
+def agent_runtime_cwd(doc: dict[str, Any]) -> Path:
+    repo = Path(doc.get("repo_root") or os.getcwd()).resolve()
+    if str(doc.get("project_root") or "").strip():
+        neutral = repo / ".SddIA/workspaces/.agent-runtime-neutral"
+        neutral.mkdir(parents=True, exist_ok=True)
+        return neutral
+    return repo
+
+
+def _ensure_mcp_cli_flags(parts: list[str]) -> list[str]:
+    """Headless Workspace 1×N: MCP exige --approve-mcps y -f (sin -f → tools rechazadas)."""
+    out = list(parts)
+    insert_at = len(out)
+    for i, tok in enumerate(out):
+        if tok == "--print":
+            insert_at = i
+            break
+    flags = set(out[1:])
+    if "--approve-mcps" not in flags:
+        out.insert(insert_at, "--approve-mcps")
+        insert_at += 1
+    if "-f" not in flags and "--force" not in flags:
+        out.insert(insert_at, "-f")
+    return out
+
+
+def materialize_cursor_mcp_config(cwd: Path, servers: list[Any]) -> None:
+    """Escribe `.cursor/mcp.json` bajo cwd neutro para spawn MCP por fase (Workspace 1×N)."""
+    if not servers:
+        return
+    cursor_dir = cwd / ".cursor"
+    cursor_dir.mkdir(parents=True, exist_ok=True)
+    mcp_path = cursor_dir / "mcp.json"
+    payload: dict[str, Any] = {"mcpServers": {}}
+    if mcp_path.is_file():
+        try:
+            parsed = json.loads(mcp_path.read_text(encoding="utf-8"))
+            if isinstance(parsed.get("mcpServers"), dict):
+                payload["mcpServers"] = dict(parsed["mcpServers"])
+        except (json.JSONDecodeError, OSError):
+            pass
+    for raw in servers:
+        if not isinstance(raw, dict):
+            continue
+        name = str(raw.get("name") or "sddia-workspace-server").strip()
+        command = str(raw.get("command") or "").strip()
+        if not command:
+            continue
+        args = [str(a) for a in (raw.get("args") or []) if str(a).strip()]
+        entry: dict[str, Any] = {"command": command, "args": args}
+        env_keys = raw.get("env_keys") or []
+        if isinstance(env_keys, list):
+            env_map = {
+                str(k): os.environ[str(k)]
+                for k in env_keys
+                if str(k) in os.environ and os.environ[str(k)].strip()
+            }
+            if env_map:
+                entry["env"] = env_map
+        payload["mcpServers"][name] = entry
+    if payload["mcpServers"]:
+        mcp_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
+
 def split_command(raw: str) -> list[str]:
     parts = shlex.split(raw.strip())
     if not parts:
@@ -253,6 +327,87 @@ def is_evidence_gate(doc: dict[str, Any]) -> bool:
     return "verific" in phase
 
 
+def is_tekton_execution_phase(doc: dict[str, Any]) -> bool:
+    agents = [str(a).lower() for a in (doc.get("agents") or [])]
+    phase = str(doc.get("phase_name") or "").lower()
+    if any(a == "tekton" or a.endswith(":tekton") for a in agents):
+        return True
+    return phase.startswith("ejecuc")
+
+
+def resolve_git_repository_path(doc: dict[str, Any], core_repo: Path) -> Path:
+    """Workspace 1×N: evidencia git-manager sobre el piloto, no el Core."""
+    root = str(doc.get("project_root") or "").strip()
+    if root:
+        pilot = Path(root).resolve()
+        if pilot.is_dir():
+            return pilot
+    return core_repo.resolve()
+
+
+def _transcript_indicates_git_manager(text: str) -> bool:
+    if not text:
+        return False
+    low = text.lower()
+    markers = (
+        "git-manager",
+        "skill:git-manager",
+        "--tool git-manager",
+        "operation_type",
+    )
+    if not any(m in low for m in markers):
+        return False
+    if "rejected" in low and "git-manager" in low:
+        return False
+    return True
+
+
+def _strip_config_stdout_lines(out: str) -> str:
+    """Cápsulas que loguean [CONFIG] en stdout antes del JSON envelope."""
+    kept: list[str] = []
+    for line in out.splitlines():
+        if line.strip().startswith("[CONFIG]"):
+            continue
+        kept.append(line)
+    return "\n".join(kept)
+
+
+def _parse_git_manager_stdout(out: str) -> tuple[bool, dict[str, Any]]:
+    cleaned = _strip_config_stdout_lines(out)
+    for blob in (cleaned, out):
+        for line in reversed(blob.splitlines()):
+            line = line.strip()
+            if not line.startswith("{"):
+                continue
+            try:
+                body = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(body, dict):
+                continue
+            ok = bool(body.get("success")) or body.get("exitCode") == 0
+            nested = body.get("result")
+            if isinstance(nested, dict):
+                ok = ok or bool(nested.get("success")) or nested.get("exitCode") == 0
+            if ok:
+                return True, body
+        brace = blob.find("{")
+        if brace >= 0:
+            tail = blob[brace:].strip()
+            try:
+                body = json.loads(tail)
+            except json.JSONDecodeError:
+                body = None
+            if isinstance(body, dict):
+                ok = bool(body.get("success")) or body.get("exitCode") == 0
+                nested = body.get("result")
+                if isinstance(nested, dict):
+                    ok = ok or bool(nested.get("success")) or nested.get("exitCode") == 0
+                if ok:
+                    return True, body
+    return False, {}
+
+
 def _as_bool(v: Any) -> bool:
     if isinstance(v, bool):
         return v
@@ -340,7 +495,7 @@ def format_evidence_block(ev: dict[str, Any]) -> str:
 def append_runtime_evidence(repo: Path, persist: str, ev: dict[str, Any]) -> str | None:
     if not persist:
         return None
-    d = repo / persist
+    d = persist_dir(repo, persist)
     d.mkdir(parents=True, exist_ok=True)
     handoff = d / "_agent_handoff.md"
     if not handoff.exists():
@@ -361,7 +516,7 @@ def _handoff_has_apto_evidence(repo: Path, persist: str) -> bool:
     """Idempotencia: bloque previo con ambos checks APTO."""
     if not persist:
         return False
-    handoff = repo / persist / "_agent_handoff.md"
+    handoff = persist_dir(repo, persist) / "_agent_handoff.md"
     if not handoff.is_file():
         return False
     text = handoff.read_text(encoding="utf-8")
@@ -375,14 +530,89 @@ def _handoff_has_apto_evidence(repo: Path, persist: str) -> bool:
     )
 
 
-def _invoke_git_manager_status(repo: Path) -> tuple[bool, str, str]:
+def _handoff_latest_git_evidence_apto(repo: Path, persist: str) -> bool:
+    """Bloque machine más reciente ya certificó git-manager (p. ej. sesión Tekton)."""
+    git_ok, _digest, _src = _handoff_best_git_evidence(repo, persist)
+    return git_ok
+
+
+def _parse_handoff_evidence_blocks(text: str) -> list[dict[str, str]]:
+    blocks: list[dict[str, str]] = []
+    pos = 0
+    while True:
+        idx = text.find(EVIDENCE_MARKER, pos)
+        if idx < 0:
+            break
+        start = text.find("```yaml", idx)
+        if start < 0:
+            break
+        end = text.find("```", start + 7)
+        if end < 0:
+            break
+        body = text[start + 7 : end].strip()
+        fields: dict[str, str] = {}
+        for line in body.splitlines():
+            if ":" not in line:
+                continue
+            key, val = line.split(":", 1)
+            fields[key.strip()] = val.strip().strip('"')
+        if fields:
+            blocks.append(fields)
+        pos = end + 3
+    return blocks
+
+
+def _handoff_best_git_evidence(
+    repo: Path, persist: str
+) -> tuple[bool, str | None, str | None]:
+    """Cualquier bloque machine con R2 APTO (prioriza tekton_session_subprocess)."""
+    if not persist:
+        return False, None, None
+    handoff = persist_dir(repo, persist) / "_agent_handoff.md"
+    if not handoff.is_file():
+        return False, None, None
+    blocks = _parse_handoff_evidence_blocks(handoff.read_text(encoding="utf-8"))
+    tekton_hit: tuple[bool, str | None, str | None] = (False, None, None)
+    latest_hit: tuple[bool, str | None, str | None] = (False, None, None)
+    for fields in blocks:
+        git_line = fields.get("GIT_EVIDENCE_VIA_GIT_MANAGER", "").upper()
+        if git_line != "APTO":
+            continue
+        digest = fields.get("git_evidence_digest") or None
+        src = fields.get("source") or None
+        latest_hit = (True, digest, src)
+        if src == "tekton_session_subprocess":
+            tekton_hit = (True, digest, src)
+    if tekton_hit[0]:
+        return tekton_hit
+    return latest_hit
+
+
+def _handoff_best_formal_evidence(repo: Path, persist: str) -> tuple[bool, str | None]:
+    if not persist:
+        return False, None
+    handoff = persist_dir(repo, persist) / "_agent_handoff.md"
+    if not handoff.is_file():
+        return False, None
+    blocks = _parse_handoff_evidence_blocks(handoff.read_text(encoding="utf-8"))
+    for fields in reversed(blocks):
+        if fields.get("TECH_FORMAL_EXECUTE_PROCESS", "").upper() == "APTO":
+            return True, fields.get("formal_evidence_detail") or None
+    return False, None
+
+
+def _invoke_git_manager_status(
+    core_repo: Path,
+    repository_path: Path | None = None,
+) -> tuple[bool, str, str]:
     """Subprocess prótesis: ./sddia-run.sh --tool git-manager (no Shell IDE)."""
+    git_root = (repository_path or core_repo).resolve()
     payload = {
         "operation_type": "status",
-        "repository_path": str(repo.resolve()),
+        "repository_path": str(git_root),
         "operation_payload_json": {},
     }
-    script = repo / "sddia-run.sh"
+    script = core_repo / "sddia-run.sh"
     if not script.is_file():
         return False, "", "sddia-run.sh ausente"
     timeout = int(os.environ.get("SDDIA_EVIDENCE_TIMEOUT_SECS", "90") or "90")
@@ -392,7 +622,7 @@ def _invoke_git_manager_status(repo: Path) -> tuple[bool, str, str]:
             input=json.dumps(payload).encode("utf-8"),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=str(repo),
+            cwd=str(core_repo),
             timeout=timeout,
             check=False,
         )
@@ -402,20 +632,21 @@ def _invoke_git_manager_status(repo: Path) -> tuple[bool, str, str]:
         return False, "", f"timeout {timeout}s"
     out = proc.stdout.decode("utf-8", errors="replace").strip()
     err = proc.stderr.decode("utf-8", errors="replace").strip()
-    if proc.returncode != 0:
-        return False, out, err or f"exit {proc.returncode}"
-    # success: capsule JSON con success/exitCode
-    try:
-        body = json.loads(out.splitlines()[-1] if out else "{}")
-    except json.JSONDecodeError:
-        body = {}
-    ok = bool(body.get("success")) or body.get("exitCode") == 0
-    if not ok and proc.returncode == 0 and out:
-        # Algunas cápsulas emiten envelope sin success explícito
-        ok = "gitStdout" in out or '"data"' in out
-    digest_src = out[-800:] if out else err
+    cleaned = _strip_config_stdout_lines(out)
+    ok, body = _parse_git_manager_stdout(out)
+    if not ok and proc.returncode != 0:
+        return False, cleaned or out, err or f"exit {proc.returncode}"
+    if not ok and proc.returncode == 0 and (cleaned or out):
+        blob = cleaned or out
+        ok = "gitStdout" in blob or '"data"' in blob
+    if not ok and proc.returncode == 0 and err:
+        ok, body = _parse_git_manager_stdout(err)
+    if not ok:
+        hint = err or cleaned or out or "git-manager failed"
+        return False, "", str(hint)[:240]
+    digest_src = json.dumps(body, ensure_ascii=False) if body else (out[-800:] if out else err)
     digest = hashlib.sha256(digest_src.encode("utf-8")).hexdigest()[:32]
-    return ok, digest, err if not ok else ""
+    return True, digest, ""
 
 
 def _invoke_formal_integrity(repo: Path) -> tuple[bool, str]:
@@ -445,6 +676,37 @@ def _invoke_formal_integrity(repo: Path) -> tuple[bool, str]:
     return False, (blob or f"exit {proc.returncode}")[:200]
 
 
+def materialize_tekton_git_evidence_from_transcript(
+    core_repo: Path,
+    persist: str,
+    doc: dict[str, Any],
+    transcript: str,
+) -> dict[str, Any] | None:
+    """Tras Tekton: materializa R2 en sesión (L-R2). Workspace 1×N: siempre si hay project_root."""
+    pilot = str(doc.get("project_root") or "").strip()
+    if not pilot and not _transcript_indicates_git_manager(transcript):
+        return None
+    git_repo = resolve_git_repository_path(doc, core_repo)
+    ok, digest, _err = _invoke_git_manager_status(core_repo, git_repo)
+    if not ok:
+        return None
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ev: dict[str, Any] = {
+        "schema": EVIDENCE_SCHEMA,
+        "materialized_at": ts,
+        "source": "tekton_session_subprocess",
+        "git_manager_invoked": True,
+        "formal_execute_process": False,
+        "TECH_FORMAL_EXECUTE_PROCESS": "NO_APTO",
+        "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
+        "evidence_materialized": True,
+        "git_evidence_digest": digest,
+        "notes": "tekton-transcript+git-manager-status",
+    }
+    append_runtime_evidence(core_repo, persist, ev)
+    return ev
+
+
 def materialize_runtime_evidence(
     repo: Path,
     persist: str,
@@ -453,6 +715,7 @@ def materialize_runtime_evidence(
     """Evidence Bridge R1/R2 (L-BRIDGE). No inventa APTO (L-MOCK / L-TRUTH)."""
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     native = _extract_native_evidence(doc)
+    git_repo = resolve_git_repository_path(doc, repo)
 
     if env_truthy("SDDIA_AGENT_RUNTIME_MOCK"):
         ev = {
@@ -477,6 +740,22 @@ def materialize_runtime_evidence(
     used_subprocess = False
     source = "none"
 
+    if not git_ok and _handoff_latest_git_evidence_apto(repo, persist):
+        git_ok = True
+        notes_parts.append("handoff-git-apto")
+
+    handoff_git, handoff_digest, handoff_src = _handoff_best_git_evidence(repo, persist)
+    if not git_ok and handoff_git:
+        git_ok = True
+        digest = digest or handoff_digest
+        notes_parts.append(f"handoff-git-scan:{handoff_src or '?'}")
+
+    handoff_formal, handoff_formal_detail = _handoff_best_formal_evidence(repo, persist)
+    if not formal_ok and handoff_formal:
+        formal_ok = True
+        formal_detail = formal_detail or handoff_formal_detail
+        notes_parts.append("handoff-formal-scan")
+
     if git_ok and formal_ok:
         source = "native_state"
         notes_parts.append("idempotent-hit")
@@ -487,7 +766,7 @@ def materialize_runtime_evidence(
         notes_parts.append("idempotent-hit-handoff")
     else:
         if not git_ok:
-            ok, dig, err = _invoke_git_manager_status(repo)
+            ok, dig, err = _invoke_git_manager_status(repo, git_repo)
             used_subprocess = True
             if ok:
                 git_ok = True
@@ -596,9 +875,31 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
         "- Evidencia git: preferir `./sddia-run.sh --tool git-manager` (JSON stdin) o evidencia ya materializada por handler nativo PPR; no depender del Shell IDE.",
         "- KM / docs/todos/: materializar semillas Kaizen solo como agent:cumulo (Cosecha Kaizen) o vía event Kaizen_Alert_Required; Tekton/Argos NO escriben TODOs bajo docs/todos/.",
         "- No inventes éxito: si no puedes materializar, dilo explícitamente.",
-        "- Trabaja en el repositorio local (cwd = repo_root).",
         "",
     ]
+
+    project_root = str(doc.get("project_root") or "").strip()
+    mcp_servers = doc.get("mcp_servers")
+    if project_root and isinstance(mcp_servers, list) and mcp_servers:
+        parts.extend(
+            [
+                "## Workspace 1×N — aduana MCP (obligatorio)",
+                f"- `project_root` del piloto: `{project_root}` (no aparece en el prompt como ruta a escribir con Write directo).",
+                f"- Materializa artefactos bajo `{persist}` **solo** vía MCP `sddia-workspace-server` (`tools/call` / recursos del servidor).",
+                "- Prohibido Write/Shell/filesystem-manager fuera del MCP para rutas del piloto; cwd del CLI es neutro (Core).",
+                "- Tras escribir, confirma paths relativos al piloto (ej. `docs/fixes/...`).",
+                "- **No reescribas** `{persist}/_agent_handoff.md` entero: el runtime añade secciones y evidencia machine; "
+                "si necesitas citar handoff, usa `fs_read` parcial o deja el fichero al runtime.",
+                "",
+            ]
+        )
+    else:
+        parts.extend(
+            [
+                "- Trabaja en el repositorio local (cwd = repo_root).",
+                "",
+            ]
+        )
 
     agent_l = str(agent).lower()
     if agent_l == "argos" or "verific" in str(phase).lower():
@@ -662,7 +963,7 @@ def append_handoff(
 ) -> str | None:
     if not persist:
         return None
-    d = repo / persist
+    d = persist_dir(repo, persist)
     d.mkdir(parents=True, exist_ok=True)
     handoff = d / "_agent_handoff.md"
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -696,8 +997,10 @@ def append_handoff(
     return str(Path(persist) / "_agent_handoff.md")
 
 
-def run_cli(repo: Path, prompt: str, phase: str = "") -> tuple[bool, str, str]:
+def run_cli(cwd: Path, prompt: str, phase: str = "", *, use_mcp: bool = False) -> tuple[bool, str, str]:
     cmd = resolve_cli()
+    if use_mcp:
+        cmd = _ensure_mcp_cli_flags(cmd)
     timeout = resolve_timeout_secs(phase)
     try:
         proc = subprocess.run(
@@ -705,7 +1008,7 @@ def run_cli(repo: Path, prompt: str, phase: str = "") -> tuple[bool, str, str]:
             input=prompt.encode("utf-8"),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=str(repo),
+            cwd=str(cwd),
             timeout=timeout,
             check=False,
         )
@@ -1259,7 +1562,16 @@ def persist_chat_to_sqlite(
 
 def run_agent_phase(doc: dict[str, Any]) -> None:
     repo = Path(doc.get("repo_root") or os.getcwd()).resolve()
+    cwd = agent_runtime_cwd(doc)
     persist = resolve_persist_ref(doc)
+    mcp_servers = doc.get("mcp_servers")
+    use_mcp = bool(
+        str(doc.get("project_root") or "").strip()
+        and isinstance(mcp_servers, list)
+        and mcp_servers
+    )
+    if use_mcp:
+        materialize_cursor_mcp_config(cwd, list(mcp_servers))
     phase = doc.get("phase_name") or "?"
     process = doc.get("process_name") or "?"
     agents = doc.get("agents") or []
@@ -1302,7 +1614,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         ok, out, err = run_sdk(repo, prompt, resolved_model)
     else:
         # CLI: no se inventa --model (L-RESOLVE-SURFACE). El id queda en handoff para auditoría.
-        ok, out, err = run_cli(repo, prompt, str(phase))
+        ok, out, err = run_cli(cwd, prompt, str(phase), use_mcp=use_mcp)
 
     if ok:
         verdict = parse_agent_verdict(out or "")
@@ -1322,6 +1634,11 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
             message=message,
             transcript=out,
         )
+        tekton_git_ev: dict[str, Any] | None = None
+        if status == "executed" and is_tekton_execution_phase(doc):
+            tekton_git_ev = materialize_tekton_git_evidence_from_transcript(
+                repo, persist, doc, out or ""
+            )
         data_ok: dict[str, Any] = {
             "status": status,
             "message": message,
@@ -1331,6 +1648,8 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         }
         if evidence is not None:
             data_ok["runtime_evidence"] = evidence
+        elif tekton_git_ev is not None:
+            data_ok["runtime_evidence"] = tekton_git_ev
         emit(True, data_ok, None)
 
     # Red transitoria (DNS Node) → awaiting_agents; REQUIRE_CLI no reclasifica.

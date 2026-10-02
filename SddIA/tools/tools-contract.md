@@ -1,5 +1,5 @@
 ---
-contract_version: "1.5.0"
+contract_version: "1.6.0"
 entity_type: "tool"
 jurisdiction: "Core SddIA (Interfaz) / Workspace (Delivery)"
 capabilities:
@@ -56,7 +56,8 @@ El **único puente** entre ambos es:
 Las Tools deben respetar un estándar de comunicación **machine-readable**:
 
 - **Entrada**: `request` (estructurado), idealmente por **stdin** o argumentos equivalentes (delivery decide).
-- **Salida**: un **único envelope JSON** (por stdout o canal equivalente) con:
+- **`io_mode`** (frontmatter `{name}.md`, v1.6.0): `capsule-json-io` (default) | `mcp-stdio`. En `mcp-stdio` la salida es **JSON-RPC 2.0** línea a línea (MCP); cada `tools/call` además deja un envelope `capsule-json-io` en el `workspace_path` de la fase y emite `Raw_Execution_Finished` en `./.events/telemetry/`.
+- **Salida** (`io_mode: capsule-json-io`, default): un **único envelope JSON** (por stdout o canal equivalente) con:
   - **`name`**: string — identificador kebab-case de la tool que emitió el resultado (**obligatorio** en implementaciones nuevas).
   - **`toolId`**: *(deprecado)* — alias legado del identificador; si aparece, **debe coincidir** con `name`. Los emisores nuevos no deben usar este campo.
   - **`success`**: boolean.
@@ -99,6 +100,7 @@ El sustrato canónico para nuevas tools en este workspace es **Rust compilado a 
 
 ## 9. Historial normativo (extracto)
 
+- **v1.6.0** — `io_mode: mcp-stdio` para tools MCP (stdio persistente, múltiples mensajes JSON-RPC); telemetría por `tools/call` documentada en §5.
 - **v1.5.0** — §3 paths Rust `SddIA/tools/` + `SddIA/target/`; retiro `scripts/tools/` operativo.
 - **v1.4.0** — §8 sustrato Rust/WASI canónico; `execution_substrate: rust-wasi` en frontmatter.
 - **v1.3.0** — §6 termodinámica declarativa (`telemetry_provided`, `telemetry_schema`).

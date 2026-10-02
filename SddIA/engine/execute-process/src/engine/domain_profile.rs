@@ -14,6 +14,7 @@ pub struct ExecutionProfile {
     pub codex_slug: Option<String>,
     pub codex_uuid: Option<String>,
     pub git_required: bool,
+    pub software_forge: bool,
     pub allowed_policies: Vec<String>,
     pub source: &'static str,
 }
@@ -24,6 +25,7 @@ impl Default for ExecutionProfile {
             codex_slug: None,
             codex_uuid: None,
             git_required: true,
+            software_forge: false,
             allowed_policies: Vec::new(),
             source: "default",
         }
@@ -49,6 +51,9 @@ impl ExecutionProfile {
         if let Some(b) = v.get("git_required").and_then(|x| x.as_bool()) {
             p.git_required = b;
         }
+        if let Some(b) = v.get("software_forge").and_then(|x| x.as_bool()) {
+            p.software_forge = b;
+        }
         if let Some(arr) = v.get("allowed_policies").and_then(|x| x.as_array()) {
             p.allowed_policies = arr
                 .iter()
@@ -64,6 +69,7 @@ impl ExecutionProfile {
             "codex_slug": self.codex_slug,
             "codex_uuid": self.codex_uuid,
             "git_required": self.git_required,
+            "software_forge": self.software_forge,
             "allowed_policies": self.allowed_policies,
             "source": self.source,
         })

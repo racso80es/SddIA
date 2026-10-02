@@ -164,7 +164,8 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let port = read_env_key(&env_path, "SDDIA_CLIENT_PORT")
         .and_then(|p| p.parse::<u16>().ok())
         .unwrap_or(8765);
-    let http_ok = match http_get_status("127.0.0.1", port, "/api/status") {
+    // `/api/status` exige `event_id` (poll de ejecución); liveness WUI = `/api/system-health`.
+    let http_ok = match http_get_status("127.0.0.1", port, "/api/system-health") {
         Ok(code) if (200..400).contains(&code) => true,
         Ok(code) => {
             apto = false;

@@ -1,7 +1,7 @@
 ---
 uuid: "458c34a8-9ad5-4a40-88c4-0be1e5d9598e"
 name: "kalma2-process-requested"
-version: "1.0.0"
+version: "1.1.0"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "Kalma2_Process_Requested"
@@ -23,6 +23,7 @@ Solicitud de proceso de ciclo de vida emitida desde la interfaz Kalma2 (`kalma2-
 
 ### OPTIONAL
 - `pbi_ref`
+- `project_slug` — slug del índice Core; propagado a `task-queue-manager` → `inputs.project_slug` del ciclo hijo
 - `process_inputs`
 
 ### FORBIDDEN

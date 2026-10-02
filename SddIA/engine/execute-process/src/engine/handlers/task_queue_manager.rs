@@ -389,6 +389,31 @@ fn sanitize_slug(raw: &str) -> String {
     }
 }
 
+/// `fix_name e2e-foo`, `fix_name: e2e-foo` (y análogos feature/refactor).
+fn extract_explicit_cycle_slug(task_text: &str, key: &str) -> Option<String> {
+    let hay = task_text.to_lowercase();
+    let key_l = key.to_lowercase();
+    let mut search_from = 0usize;
+    while let Some(rel) = hay[search_from..].find(&key_l) {
+        let i = search_from + rel;
+        let after_key = task_text[i + key.len()..].trim_start();
+        let after_key = after_key.strip_prefix(':').unwrap_or(after_key).trim_start();
+        if after_key.is_empty() {
+            search_from = i + key.len();
+            continue;
+        }
+        let end = after_key
+            .find(|c: char| !c.is_ascii_alphanumeric() && c != '-' && c != '_')
+            .unwrap_or(after_key.len());
+        let token = after_key[..end].trim_matches('-');
+        if !token.is_empty() {
+            return Some(sanitize_slug(token));
+        }
+        search_from = i + key.len();
+    }
+    None
+}
+
 fn derive_slug(pbi_ref: Option<&str>, task_text: &str) -> String {
     let source = pbi_ref.unwrap_or(task_text);
     if let Some(open) = source.rfind('(') {
@@ -568,9 +593,16 @@ fn build_child_inputs(
             map.insert("pbi_body".into(), json!(body));
         }
     }
+    let explicit_slug = match process {
+        "bug-fix" => extract_explicit_cycle_slug(task_text, "fix_name"),
+        "feature" => extract_explicit_cycle_slug(task_text, "feature_name"),
+        "refactorization" => extract_explicit_cycle_slug(task_text, "refactor_name"),
+        _ => None,
+    };
     let slug = suggested_branch
         .as_deref()
         .map(slug_from_branch)
+        .or(explicit_slug)
         .unwrap_or_else(|| derive_slug(pbi_ref, task_text));
     map.insert("base_branch".into(), json!("main"));
 
@@ -704,8 +736,18 @@ fn dispatch_child(
     } else {
         None
     };
-    let child_inputs =
+    let mut child_inputs =
         build_child_inputs(repo, process, task_text, pbi.as_deref(), correlation_id)?;
+    if let Some(slug) = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if let Some(obj) = child_inputs.as_object_mut() {
+            obj.insert("project_slug".into(), json!(slug));
+        }
+    }
     let pbi_loaded = child_inputs.get("pbi_body").is_some();
     // O2 Kaizen: PEC awaiting_agents antes del hijo — UI sondea sin cortar en initialized.
     let early_pec = if let Some(cid) = correlation_id {
@@ -892,6 +934,29 @@ mod tests {
         assert!(rel.contains("docs/todos/pending/"));
         let inert = "docs/todos/DeudaTecnica/[DEUDA] Escaneo lineal.md";
         assert!(!inert.contains("docs/todos/pending/"));
+    }
+
+    #[test]
+    fn explicit_fix_name_in_kalma2_prompt() {
+        let v = build_child_inputs(
+            &Path::new("."),
+            "bug-fix",
+            "Inicia bug-fix fix_name e2e-workspace-1xn-ac9. Crear docs/fixes/e2e-workspace-1xn-ac9/marker.md",
+            None,
+            Some("cid-ac9"),
+        )
+        .unwrap();
+        assert_eq!(v["fix_name"].as_str().unwrap(), "e2e-workspace-1xn-ac9");
+        assert_eq!(
+            v["branch_name"].as_str().unwrap(),
+            "fix/e2e-workspace-1xn-ac9"
+        );
+        assert!(
+            v["persist_ref"]
+                .as_str()
+                .unwrap()
+                .ends_with("e2e-workspace-1xn-ac9")
+        );
     }
 
     #[test]

@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 105
+universe_total: 106
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,9 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `740ef13e-8276-43d1-8642-55efc3fe9059` | 2026-10-02 | Workspace 1xN AC-9: workspace-init en residual_runner pre-DI; pull divergente soft-fail lab | CANONICO | `SddIA/evolution/740ef13e-8276-43d1-8642-55efc3fe9059.md` |
+| `23650a72-7a66-415d-a57c-a0e575a024d7` | 2026-10-01 | Workspace 1xN E2E: workspace-init pre-DI, git-manager capsule_repo vs git_repo, agent runtime path absoluto | CANONICO | `SddIA/evolution/23650a72-7a66-415d-a57c-a0e575a024d7.md` |
+| `9e863e94-bc0a-449b-bf55-fe9b3e978eac` | 2026-09-28 | Workspace 1xN: MCP workspace-server, filesystem 2.0, project_slug Kalma2, software_forge y verify WUI | CANONICO | `SddIA/evolution/9e863e94-bc0a-449b-bf55-fe9b3e978eac.md` |
 | `4d2f8909-9cff-440c-a40b-392bf586de9f` | 2026-09-28 | DCC: push non-fast-forward → blocked F-DCC-PUSH-NON-FAST-FORWARD sin System_Fracture_Detected. | CANONICO | `SddIA/evolution/4d2f8909-9cff-440c-a40b-392bf586de9f.md` |
 | `9a1a11d4-67e3-4db4-854e-ad70915ed55e` | 2026-09-27 | Mayeuta: fracture-signatures SSOT, corpus de laudos y enrich determinista | CANONICO | `SddIA/evolution/9a1a11d4-67e3-4db4-854e-ad70915ed55e.md` |
 | `cc29cced-6068-4d71-a186-03a5f56b5388` | 2026-09-27 | Installer v3: smoke TTY presentador AC-T1..T3 (script/expect) | CANONICO | `SddIA/evolution/cc29cced-6068-4d71-a186-03a5f56b5388.md` |

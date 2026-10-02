@@ -3,7 +3,7 @@ document_id: PBI-DT-PACIENTE0-DEPLOY-PROCESS
 uuid: "7bf2bf4c-361e-4967-a58d-89dee74ea60d"
 title: "[DEUDA] Paciente 0 — prompt de despliegue y proceso futuro"
 format: markdown
-version: "1.7.0"
+version: "1.8.0"
 status: deuda_tecnica
 type: deuda
 priority: alta
@@ -13,10 +13,13 @@ process_candidate: paciente0-deploy
 process_candidate_class: process
 installer_contract_ref: SddIA/library/norms/sddia-installer-contract.md
 created: "2026-08-25"
-updated: "2026-09-25"
-instance_name_default: SddIA_AP
+updated: "2026-09-28"
+instance_name_default: Asistencia_Tormentosa_SddIA
+instance_root_default: /home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA
+legacy_deprecated_purge: /home/racso/Proyectos/SddIA_AP
 config_source: /home/racso/Proyectos/.dev/.env
-instance_parent: /home/racso/Proyectos
+instance_parent: /home/racso/Aplicaciones
+nomenclature_ref: HU-KALMA2-PROJECT-WORKSPACE-SERVER-1xN v1.3.6
 audits_path: docs/audits
 last_deploy_audit_ref: docs/audits/paciente0-deploy-20260925T114629Z.md
 last_deploy_ola_verdict: OLA-MEJORA
@@ -73,7 +76,9 @@ derived_from:
 
 Documento **operativo + semilla de proceso**. Sirve como **prompt** para que Tekton (o el operador) redepliegue Paciente 0 de forma reproducible, y como **contrato mínimo** de un proceso Core futuro (`paciente0-deploy`) que aún **no** está forjado (DA-2: no crear `{name}.md` bajo `directories.process` desde este PBI).
 
-**Done de un ciclo de este prompt:** instancia viva + validaciones G* + **contraste valorativo** contra el último PBI Kaizen de despliegue Paciente 0 + auditoría bajo `paths.auditsPath` + PBI Kaizen **solo si** hay fricción nueva o regresión.
+**Done de un ciclo de este prompt:** instancia viva + validaciones G* + **contraste valorativo** contra el último PBI Kaizen de despliegue Paciente 0 + auditoría bajo `paths.auditsPath` + PBI Kaizen **solo si** hay fricción nueva o regresida.
+
+**Nomenclatura (v1.8.0, HU 1×N 1.3.6):** *Paciente 0* = despliegue por defecto del cliente SddIA vía installer en **`/home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA`**. La ruta **`/home/racso/Proyectos/SddIA_AP`** queda **descatalogada**; no es destino de nuevos deploys — solo **purga** (`PBI-DT-PACIENTE0-UNDEPLOY-PROCESS`). Las olas 1–10 en este documento describen el legado consumer; a partir de v1.8.0 el canal canónico de Paciente 0 sigue `sddia-installer-contract` (full-node / engineering), no la Vía C consumer salvo prueba explícita documentada.
 
 **Hecho 2026-09-25:** última ola empírica anclada = **10** (`docs/audits/paciente0-deploy-20260925T114629Z.md`, OLA-MEJORA). Ola 6 permanece como antecesor anclado. Ola 9 (2026-09-20) **no anclada** (errata Q3). La próxima ejecución de este prompt es la **ola 11**.
 
@@ -117,11 +122,12 @@ Censo post-ola 6 (no inventar recuentos): ~80 PRs mergeados en `main` desde `202
 ## 1. Prompt (copiar al Vértice Productivo)
 
 ```text
-Despliega Paciente 0 siguiendo este PBI (PBI-DT-PACIENTE0-DEPLOY-PROCESS v1.7.0).
+Despliega Paciente 0 siguiendo este PBI (PBI-DT-PACIENTE0-DEPLOY-PROCESS v1.8.0).
 
-Constantes:
-- Nombre de instancia por defecto: SddIA_AP
-- Raíz instancia: /home/racso/Proyectos/SddIA_AP  (salvo override explícito)
+Constantes (SSOT v1.8.0):
+- Nombre de instancia por defecto: Asistencia_Tormentosa_SddIA
+- Raíz instancia: /home/racso/Aplicaciones/Asistencia_Tormentosa_SddIA  (salvo override explícito)
+- Legado descatalogado (solo purga, no redeploy): /home/racso/Proyectos/SddIA_AP
 - Configuración base: /home/racso/Proyectos/.dev/.env  (no inventar secretos; no loguearlos)
 - Forja: repo SddIA actual (preferir rama main salvo indicación)
 - Canal: Vía C — build-release-bundle (profile consumer, codex-kalma2-assistant v1.0.2, 13 ELF + conscience)

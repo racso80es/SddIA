@@ -83,6 +83,7 @@ fn build_kalma2_process_event(
     pbi_ref: Option<&str>,
     raw_text: &str,
     correlation_id: Option<&str>,
+    project_slug: Option<&str>,
 ) -> Value {
     let event_id = correlation_id
         .map(str::trim)
@@ -96,6 +97,9 @@ fn build_kalma2_process_event(
     });
     if let Some(p) = pbi_ref.filter(|s| !s.is_empty()) {
         payload["pbi_ref"] = json!(p);
+    }
+    if let Some(slug) = project_slug.filter(|s| !s.is_empty()) {
+        payload["project_slug"] = json!(slug);
     }
     json!({
         "event_id": event_id,
@@ -210,6 +214,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     if intent == "execute" && confidence >= CONFIDENCE_THRESHOLD {
         let mut nested = nested_inputs;
         plumb_correlation_id(process_inputs, &mut nested);
+        plumb_project_slug(process_inputs, &mut nested);
         return emit_process_event(repo, prompt, &process_name, &nested, intent, confidence);
     }
 
@@ -229,6 +234,26 @@ fn heuristic_process_name(prompt: &str) -> Option<&'static str> {
         Some("refactorization")
     } else {
         None
+    }
+}
+
+fn plumb_project_slug(process_inputs: &Value, nested: &mut Value) {
+    if nested
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .is_some()
+    {
+        return;
+    }
+    if let Some(slug) = process_inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        nested["project_slug"] = json!(slug);
     }
 }
 
@@ -289,6 +314,7 @@ fn run_execute_deterministic(
         .cloned()
         .unwrap_or_else(|| json!({}));
     plumb_correlation_id(process_inputs, &mut nested);
+    plumb_project_slug(process_inputs, &mut nested);
     emit_process_event(repo, prompt, &process_name, &nested, "execute", 1.0)
 }
 
@@ -338,11 +364,17 @@ fn emit_process_event(
     let correlation_id = nested_inputs
         .get("correlation_id")
         .and_then(|v| v.as_str());
+    let project_slug = nested_inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
     let event = build_kalma2_process_event(
         process_name,
         pbi_ref.as_deref(),
         prompt,
         correlation_id,
+        project_slug,
     );
     let event_id = event
         .get("event_id")
@@ -425,6 +457,24 @@ mod tests {
     }
 
     #[test]
+    fn kalma2_event_carries_project_slug() {
+        let event = build_kalma2_process_event(
+            "bug-fix",
+            None,
+            "inicia fix docs/todos/pending/x.md",
+            None,
+            Some("barcelonaxplorer"),
+        );
+        assert_eq!(
+            event
+                .get("payload")
+                .and_then(|p| p.get("project_slug"))
+                .and_then(|v| v.as_str()),
+            Some("barcelonaxplorer")
+        );
+    }
+
+    #[test]
     fn kalma2_honors_preassigned_correlation_id() {
         let cid = "458c34a8-9ad5-4a40-88c4-0be1e5d9598e";
         let event = build_kalma2_process_event(
@@ -432,6 +482,7 @@ mod tests {
             None,
             "inicia feature docs/todos/pending/[FEATURE] x.md",
             Some(cid),
+            None,
         );
         assert_eq!(event.get("event_id").and_then(|v| v.as_str()), Some(cid));
         assert_eq!(
@@ -442,7 +493,7 @@ mod tests {
 
     #[test]
     fn kalma2_invalid_correlation_id_falls_back_to_new_uuid() {
-        let event = build_kalma2_process_event("feature", None, "x", Some("not-a-uuid"));
+        let event = build_kalma2_process_event("feature", None, "x", Some("not-a-uuid"), None);
         let eid = event.get("event_id").and_then(|v| v.as_str()).unwrap();
         assert!(Uuid::parse_str(eid).is_ok());
         assert_ne!(eid, "not-a-uuid");

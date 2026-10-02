@@ -396,24 +396,35 @@ pub fn invoke_tool(repo: &Path, tool_name: &str, payload: &Value) -> Result<Valu
 }
 
 pub fn invoke_git_manager(
-    repo: &Path,
+    capsule_repo: &Path,
+    operation_type: &str,
+    payload: &Value,
+) -> Result<Value, String> {
+    invoke_git_manager_for(capsule_repo, capsule_repo, operation_type, payload)
+}
+
+/// `capsule_repo`: resolución de ELF/WASM bajo la instancia Core. `git_repo`: workspace Git objetivo.
+pub fn invoke_git_manager_for(
+    capsule_repo: &Path,
+    git_repo: &Path,
     operation_type: &str,
     payload: &Value,
 ) -> Result<Value, String> {
     let req = json!({
         "operation_type": operation_type,
-        "repository_path": repo.canonicalize().unwrap_or_else(|_| repo.to_path_buf()).to_string_lossy(),
+        "repository_path": git_repo.canonicalize().unwrap_or_else(|_| git_repo.to_path_buf()).to_string_lossy(),
         "operation_payload_json": payload,
     });
     let stdin_payload = serde_json::to_string(&req).map_err(|e| e.to_string())?;
 
     fn run_git(
-        repo: &Path,
+        capsule_repo: &Path,
         kind: &str,
         path: &Path,
         stdin_payload: &str,
     ) -> Result<Value, String> {
-        let (stdout, stderr, _) = invoke_capsule_subprocess(repo, kind, path, stdin_payload)?;
+        let (stdout, stderr, _) =
+            invoke_capsule_subprocess(capsule_repo, kind, path, stdin_payload)?;
         if stdout.is_empty() {
             return Err(if stderr.is_empty() {
                 "git-manager sin salida".into()
@@ -424,20 +435,22 @@ pub fn invoke_git_manager(
         unwrap_git_manager_body(&parse_capsule_stdout(&stdout)?)
     }
 
-    let (kind, path) = resolve_capsule(repo, "git-manager", true, "skill")?;
+    let (kind, path) = resolve_capsule(capsule_repo, "git-manager", true, "skill")?;
     if kind.as_str() == "wasm" {
         let (stdout, stderr, _) =
-            invoke_capsule_subprocess(repo, "wasm", &path, &stdin_payload)?;
+            invoke_capsule_subprocess(capsule_repo, "wasm", &path, &stdin_payload)?;
         if blob_contains_markers(&format!("{stderr}\n{stdout}"), GIT_MANAGER_NATIVE_FALLBACK_MARKERS)
         {
-            if let Some(native) = capsule_paths::resolve_capsule_native(repo, "git-manager") {
-                return run_git(repo, "native", &native, &stdin_payload);
+            if let Some(native) = capsule_paths::resolve_capsule_native(capsule_repo, "git-manager") {
+                return run_git(capsule_repo, "native", &native, &stdin_payload);
             }
         }
         if stdout.is_empty() {
             if blob_contains_markers(&stderr, GIT_MANAGER_NATIVE_FALLBACK_MARKERS) {
-                if let Some(native) = capsule_paths::resolve_capsule_native(repo, "git-manager") {
-                    return run_git(repo, "native", &native, &stdin_payload);
+                if let Some(native) =
+                    capsule_paths::resolve_capsule_native(capsule_repo, "git-manager")
+                {
+                    return run_git(capsule_repo, "native", &native, &stdin_payload);
                 }
             }
             return Err(if stderr.is_empty() {
@@ -448,7 +461,7 @@ pub fn invoke_git_manager(
         }
         return unwrap_git_manager_body(&parse_capsule_stdout(&stdout)?);
     }
-    run_git(repo, "native", &path, &stdin_payload)
+    run_git(capsule_repo, "native", &path, &stdin_payload)
 }
 
 pub fn invoke_shell_executor(

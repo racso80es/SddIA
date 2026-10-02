@@ -1,6 +1,6 @@
 //! Inicialización de espacio de trabajo (git-manager + objectives.md).
 
-use super::capsules::invoke_git_manager;
+use super::capsules::invoke_git_manager_for;
 use super::domain_profile::resolve_execution_profile;
 use super::project_binding::{self, DeliveryMode};
 use super::git_porcelain;
@@ -10,7 +10,7 @@ use super::workspace::{
 use chrono::Utc;
 use serde_json::{json, Value};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 fn workspace_task_name(inputs: &Value) -> Option<String> {
     for key in ["feature_name", "fix_name", "refactor_name"] {
@@ -79,6 +79,43 @@ fn env_truthy(key: &str) -> bool {
     std::env::var(key)
         .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
         .unwrap_or(false)
+}
+
+fn git_pull_divergence_soft_fail(err: &str) -> bool {
+    let e = err.to_lowercase();
+    e.contains("reconciliar")
+        || e.contains("diverg")
+        || e.contains("diverged")
+        || e.contains("non-fast-forward")
+}
+
+fn pull_base_step(
+    repo: &Path,
+    git_root: &Path,
+    base_branch: &str,
+    git_steps: &mut Vec<Value>,
+) -> Result<(), String> {
+    let pull = invoke_git_manager_for(
+        repo,
+        git_root,
+        "pull",
+        &json!({"remote": "origin", "branch": base_branch}),
+    );
+    match pull {
+        Ok(r) => git_steps.push(json!({"op": "pull_base", "result": r})),
+        Err(e) if env_truthy("SDDIA_LAB_ALLOW_DIRTY") && git_pull_divergence_soft_fail(&e) => {
+            git_steps.push(json!({
+                "op": "pull_base",
+                "result": {
+                    "skipped": true,
+                    "reason": "pull_diverged_lab_allow_dirty",
+                    "error": e,
+                }
+            }));
+        }
+        Err(e) => return Err(e),
+    }
+    Ok(())
 }
 
 /// Misión destilada: no volcar YAML+cuerpo del PBI (F7).
@@ -167,14 +204,16 @@ fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
 }
 
 fn dirty_paths_outside_scope(
-    repo: &Path,
+    capsule_repo: &Path,
+    git_repo: &Path,
     persist_ref: &str,
     pbi_ref: Option<&str>,
 ) -> Result<Vec<String>, String> {
     if env_truthy("SDDIA_LAB_ALLOW_DIRTY") {
         return Ok(vec![]);
     }
-    let status = super::capsules::invoke_git_manager(repo, "status", &json!({}))?;
+    let status =
+        super::capsules::invoke_git_manager_for(capsule_repo, git_repo, "status", &json!({}))?;
     let stdout = status
         .get("gitStdout")
         .or_else(|| status.get("stdout"))
@@ -324,6 +363,21 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         persist_ref
     };
 
+    let git_root = bound
+        .as_ref()
+        .map(|b| b.project_root.as_path())
+        .unwrap_or(repo);
+
+    let persist_scope = bound
+        .as_ref()
+        .and_then(|b| {
+            Path::new(&persist_ref)
+                .strip_prefix(&b.project_root)
+                .ok()
+                .map(|p| p.to_string_lossy().replace('\\', "/"))
+        })
+        .unwrap_or_else(|| persist_ref.clone());
+
     let refined = inputs
         .get("pbi_body")
         .or_else(|| inputs.get("refined_requirements"))
@@ -359,7 +413,8 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             },
         }));
     } else {
-        let dirty = dirty_paths_outside_scope(repo, &persist_ref, pbi_ref_meta)?;
+        let dirty =
+            dirty_paths_outside_scope(repo, git_root, &persist_scope, pbi_ref_meta)?;
         if !dirty.is_empty() {
             let msg = format!(
                 "dirty-worktree: cambios fuera de persist_ref/pbi_ref: {}",
@@ -368,11 +423,17 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             return Err(msg);
         }
 
-        let fetch = invoke_git_manager(repo, "fetch", &json!({"remote": "origin", "prune": true}))?;
+        let fetch = invoke_git_manager_for(
+            repo,
+            git_root,
+            "fetch",
+            &json!({"remote": "origin", "prune": true}),
+        )?;
         git_steps.push(json!({"op": "fetch", "result": fetch}));
 
-        let checkout_base = invoke_git_manager(
+        let checkout_base = invoke_git_manager_for(
             repo,
+            git_root,
             "checkout",
             &json!({"branch_name": base_branch, "create_if_not_exists": false}),
         )?;
@@ -380,12 +441,7 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
 
         let offline = fetch.get("offline").and_then(|v| v.as_bool()) == Some(true);
         if !offline {
-            let pull = invoke_git_manager(
-                repo,
-                "pull",
-                &json!({"remote": "origin", "branch": base_branch}),
-            )?;
-            git_steps.push(json!({"op": "pull_base", "result": pull}));
+            pull_base_step(repo, git_root, &base_branch, &mut git_steps)?;
         } else {
             git_steps.push(json!({
                 "op": "pull_base",
@@ -393,16 +449,18 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             }));
         }
 
-        let checkout_feature = invoke_git_manager(
+        let checkout_feature = invoke_git_manager_for(
             repo,
+            git_root,
             "checkout",
             &json!({"branch_name": branch_name, "create_if_not_exists": true}),
         );
         match checkout_feature {
             Ok(r) => git_steps.push(json!({"op": "checkout_feature", "result": r})),
             Err(_) => {
-                let r = invoke_git_manager(
+                let r = invoke_git_manager_for(
                     repo,
+                    git_root,
                     "checkout",
                     &json!({"branch_name": branch_name, "create_if_not_exists": false}),
                 )?;
@@ -411,9 +469,18 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         }
     }
 
-    let persist_dir = repo.join(&persist_ref);
+    let persist_dir = if Path::new(&persist_ref).is_absolute() {
+        PathBuf::from(&persist_ref)
+    } else {
+        repo.join(&persist_ref)
+    };
     fs::create_dir_all(&persist_dir).map_err(|e| e.to_string())?;
     let objectives_path = persist_dir.join("objectives.md");
+    let execution_id_meta = inputs
+        .get("execution_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
     if !objectives_path.is_file() {
         let created = Utc::now().format("%Y-%m-%d").to_string();
         let summary = if refined.trim().is_empty() {
@@ -424,17 +491,31 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         let pbi_line = pbi_ref_meta
             .map(|p| format!("pbi_ref: {p}\n"))
             .unwrap_or_default();
-        let execution_id_line = inputs
-            .get("execution_id")
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
+        let execution_id_line = execution_id_meta
             .map(|eid| format!("execution_id: \"{eid}\"\n"))
             .unwrap_or_default();
         let body = format!(
             "---\nfeature_name: {task_name}\ncreated: \"{created}\"\nprocess: {process_label}\nbranch_name: {branch_name}\npersist_ref: {persist_ref}\n{pbi_line}{execution_id_line}---\n\n# Objetivos — {task_name}\n\n## Misión\n\n{summary}\n\n## Alcance (manifiesto)\n\nInicialización de contexto vía orquestador nativo `execute-process` (laboratorio).\n\n## Ley aplicada\n\n- Git exclusivamente vía `skill:git-manager`.\n- Jerarquía: Acción → Agente → Skill → Tools.\n"
         );
         fs::write(&objectives_path, body).map_err(|e| e.to_string())?;
+    } else if let Some(eid) = execution_id_meta {
+        let text = fs::read_to_string(&objectives_path).map_err(|e| e.to_string())?;
+        let trimmed = text.trim_start();
+        if trimmed.starts_with("---") {
+            let rest = trimmed.strip_prefix("---").unwrap_or(trimmed);
+            if let Some(end) = rest.find("\n---") {
+                let fm = rest[..end].trim_end();
+                let body = rest[end + 4..].trim_start();
+                let mut lines: Vec<String> = fm
+                    .lines()
+                    .filter(|l| !l.trim_start().starts_with("execution_id:"))
+                    .map(|l| l.to_string())
+                    .collect();
+                lines.push(format!("execution_id: \"{eid}\""));
+                let updated = format!("---\n{}\n---\n{}", lines.join("\n"), body);
+                fs::write(&objectives_path, updated).map_err(|e| e.to_string())?;
+            }
+        }
     }
 
     let objectives_rel = objectives_path
@@ -457,8 +538,16 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
     }))
 }
 
-/// Detector de fase Inicialización: acepta delegates post-DI, `requires_capability: proc:git-sync`
-/// o `resolved_provider` con `skill:git-manager` (I7 / L-SPLIT-A D4).
+fn input_non_empty_str(inputs: &Value, key: &str) -> bool {
+    inputs
+        .get(key)
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .is_some_and(|s| !s.is_empty())
+}
+
+/// Detector de fase Inicialización (I7 / L-SPLIT-A D4).
+/// Identidad de tarea primero; no exigir `delegates_to` post-DI para interceptar `workspace-init`.
 pub fn is_workspace_init_phase(phase: &Value, inputs: &Value, process_name: &str) -> bool {
     if !matches!(process_name, "feature" | "bug-fix" | "refactorization") {
         return false;
@@ -466,22 +555,12 @@ pub fn is_workspace_init_phase(phase: &Value, inputs: &Value, process_name: &str
     if phase.get("name").and_then(|v| v.as_str()) != Some("Inicialización de Espacio de Trabajo") {
         return false;
     }
-    if !phase_has_git_manager_delegate(phase) && !phase_requires_git_sync(phase) {
-        return false;
-    }
-    if workspace_task_name(inputs).is_some() {
-        return true;
-    }
-    if process_name == "bug-fix" {
-        let branch = inputs.get("branch_name").and_then(|v| v.as_str());
-        let persist = inputs.get("persist_ref").and_then(|v| v.as_str());
-        if branch.map(|s| !s.trim().is_empty()) == Some(true)
-            && persist.map(|s| !s.trim().is_empty()) == Some(true)
-        {
-            return true;
-        }
-    }
-    false
+    let has_identity = workspace_task_name(inputs).is_some()
+        || input_non_empty_str(inputs, "project_slug")
+        || (process_name == "bug-fix"
+            && input_non_empty_str(inputs, "branch_name")
+            && input_non_empty_str(inputs, "persist_ref"));
+    has_identity
 }
 
 #[cfg(test)]
@@ -521,6 +600,22 @@ mod tests {
         });
         let inputs = json!({ "feature_name": "demo-task" });
         assert!(is_workspace_init_phase(&phase, &inputs, "feature"));
+    }
+
+    #[test]
+    fn detector_accepts_bug_fix_with_project_slug_only() {
+        let phase = json!({
+            "name": "Inicialización de Espacio de Trabajo",
+            "requires_capability": [
+                { "id": "proc:git-sync", "contract": "proc.git_sync", "version": ">=1.0.0" }
+            ]
+        });
+        let inputs = json!({
+            "project_slug": "barcelonaxplorer",
+            "branch_name": "fix/demo",
+            "persist_ref": "docs/fixes/demo"
+        });
+        assert!(is_workspace_init_phase(&phase, &inputs, "bug-fix"));
     }
 
     #[test]

@@ -1,0 +1,18 @@
+[package]
+name = "sddia-workspace-server"
+version = "0.1.0"
+edition = "2021"
+description = "MCP stdio workspace server — resources + tool adapters"
+
+[[bin]]
+name = "sddia-workspace-server"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tempfile = "3"

@@ -5,10 +5,11 @@
 //! marcarse `simulated`.
 
 use crate::core::parser::{parse_frontmatter, parse_frontmatter_from_str};
+use super::project_binding;
 use serde_json::{json, Value};
 use std::fs;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 use std::thread;
 use std::time::Duration;
@@ -88,20 +89,35 @@ fn split_command(raw: &str) -> Result<Vec<String>, String> {
     Ok(parts)
 }
 
+fn resolve_persist_dir_for_guard(repo: &Path, inputs: &Value, state: &Value) -> Option<String> {
+    let ref_val = resolve_persist_ref_value(inputs, state);
+    let s = ref_val.as_str().map(str::trim).filter(|s| !s.is_empty())?;
+    if Path::new(s).is_absolute() {
+        return Some(s.to_string());
+    }
+    if let Ok(Some(bound)) = project_binding::bind(repo, inputs) {
+        if let Ok(p) = project_binding::anchor_persist(&bound.project_root, s) {
+            return Some(p.to_string_lossy().replace('\\', "/"));
+        }
+    }
+    Some(s.to_string())
+}
+
 fn resolve_persist_ref_value(inputs: &Value, state: &Value) -> Value {
+    // Tras workspace-init 1×N, `state.workspace.persist_ref` está anclado al piloto.
+    if let Some(ws) = state
+        .get("workspace")
+        .and_then(|w| w.get("persist_ref"))
+        .filter(|v| v.as_str().map(|s| !s.trim().is_empty()).unwrap_or(false))
+    {
+        return ws.clone();
+    }
     inputs
         .get("persist_ref")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(|s| json!(s))
-        .or_else(|| {
-            state
-                .get("workspace")
-                .and_then(|w| w.get("persist_ref"))
-                .cloned()
-                .filter(|v| v.as_str().map(|s| !s.trim().is_empty()).unwrap_or(false))
-        })
         .unwrap_or(Value::Null)
 }
 
@@ -128,7 +144,11 @@ pub fn check_persist_execution_id_conflict(
     persist_ref: &str,
     live_id: &str,
 ) -> Result<(), Vec<String>> {
-    let dir = repo.join(persist_ref);
+    let dir = if Path::new(persist_ref).is_absolute() {
+        PathBuf::from(persist_ref)
+    } else {
+        repo.join(persist_ref)
+    };
     if !dir.is_dir() {
         return Ok(());
     }
@@ -285,15 +305,81 @@ fn finish_agent_entry(mut entry: Value, process_name: &str, phase_name: &str) ->
     entry
 }
 
+const MCP_BACKEND_UNSUPPORTED: &str = "MCP_BACKEND_UNSUPPORTED";
+
+/// JSON-RPC `initialize` contra el binario del Workspace Server (stdio).
+fn smoke_mcp_stdio_server(command: &str, args: &[String]) -> Result<(), String> {
+    let init = json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "sddia-agent-runtime", "version": "1.0.0"},
+        },
+    });
+    let line = format!("{}\n", serde_json::to_string(&init).map_err(|e| e.to_string())?);
+    let mut cmd = Command::new(command);
+    cmd.args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
+    let mut child = cmd.spawn().map_err(|e| format!("mcp spawn: {e}"))?;
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin
+            .write_all(line.as_bytes())
+            .map_err(|e| format!("mcp stdin: {e}"))?;
+    }
+    let out = child
+        .wait_with_output()
+        .map_err(|e| format!("mcp wait: {e}"))?;
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let resp_line = stdout.lines().find(|l| !l.trim().is_empty()).unwrap_or("");
+    if resp_line.is_empty() {
+        return Err("mcp initialize: empty stdout".into());
+    }
+    let resp: Value = serde_json::from_str(resp_line)
+        .map_err(|e| format!("mcp initialize: invalid json: {e}"))?;
+    let caps = resp
+        .get("result")
+        .and_then(|r| r.get("capabilities"))
+        .ok_or_else(|| "mcp initialize: missing capabilities".to_string())?;
+    if caps.get("tools").is_none() || caps.get("resources").is_none() {
+        return Err("mcp initialize: capabilities.tools/resources missing".into());
+    }
+    Ok(())
+}
+
+fn agent_runtime_cwd(repo: &Path, project_root: Option<&str>) -> PathBuf {
+    if project_root.map(str::trim).is_some_and(|s| !s.is_empty()) {
+        let neutral = repo.join(".SddIA/workspaces/.agent-runtime-neutral");
+        let _ = std::fs::create_dir_all(&neutral);
+        return neutral;
+    }
+    repo.to_path_buf()
+}
+
+fn resolve_runtime_executable(repo: &Path, bin: &str) -> PathBuf {
+    let trimmed = bin.trim();
+    let path = Path::new(trimmed);
+    if path.is_absolute() {
+        return path.to_path_buf();
+    }
+    repo.join(trimmed)
+}
+
 fn build_agent_command(
+    repo: &Path,
     bin: &str,
     args: &[String],
-    repo: &Path,
+    cwd: &Path,
     depth: u32,
 ) -> Command {
-    let mut cmd = Command::new(bin);
+    let executable = resolve_runtime_executable(repo, bin);
+    let mut cmd = Command::new(&executable);
     cmd.args(args)
-        .current_dir(repo)
+        .current_dir(cwd)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -416,9 +502,9 @@ pub fn invoke_agent_phase(
     let persist_ref_val = resolve_persist_ref_value(inputs, state);
     if let (Some(live_id), Some(persist)) = (
         execution_id.as_deref(),
-        persist_ref_val.as_str().filter(|s| !s.is_empty()),
+        resolve_persist_dir_for_guard(repo, inputs, state),
     ) {
-        if let Err(conflicts) = check_persist_execution_id_conflict(repo, persist, live_id) {
+        if let Err(conflicts) = check_persist_execution_id_conflict(repo, &persist, live_id) {
             entry["status"] = json!("failed");
             entry["error"] = json!("persist-execution-id-conflict");
             entry["conflict_paths"] = json!(conflicts);
@@ -451,6 +537,110 @@ pub fn invoke_agent_phase(
         })
         .unwrap_or(Value::Null);
 
+    let project_root: Option<String> = state
+        .get("project_root")
+        .and_then(|v| v.as_str())
+        .or_else(|| {
+            state
+                .get("workspace")
+                .and_then(|w| w.get("project_root"))
+                .and_then(|v| v.as_str())
+        })
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            if inputs
+                .get("project_slug")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .is_none()
+            {
+                return None;
+            }
+            project_binding::bind(repo, inputs)
+                .ok()
+                .flatten()
+                .map(|b| b.project_root.to_string_lossy().replace('\\', "/"))
+        });
+    let mcp_servers = if let Some(ref root) = project_root {
+        let release_bin = repo.join("SddIA/target/release/sddia-workspace-server");
+        let debug_bin = repo.join("SddIA/target/debug/sddia-workspace-server");
+        let command = if release_bin.is_file() {
+            release_bin.display().to_string()
+        } else {
+            debug_bin.display().to_string()
+        };
+        let repo_s = repo.display().to_string();
+        let mut args = vec![
+            "--root".to_string(),
+            root.clone(),
+            "--sddia-repo".to_string(),
+            repo_s.clone(),
+            "--instance-root".to_string(),
+            repo_s,
+        ];
+        if let Some(ws) = state
+            .get("workspace_path")
+            .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path")))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            args.push("--workspace-path".to_string());
+            args.push(ws.to_string());
+        }
+        let env_keys: Vec<&str> = if inputs
+            .get("correlation_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .is_some()
+        {
+            vec!["SDDIA_CORRELATION_ID"]
+        } else {
+            vec![]
+        };
+        Some(json!([{
+            "name": "sddia-workspace-server",
+            "command": command,
+            "args": args,
+            "env_keys": env_keys,
+        }]))
+    } else {
+        None
+    };
+
+    if let Some(servers) = mcp_servers.as_ref().and_then(|v| v.as_array()) {
+        if !env_truthy("SDDIA_LAB_SKIP_MCP_SMOKE") {
+            for srv in servers {
+                let command = srv.get("command").and_then(|v| v.as_str());
+                if command.is_none() {
+                    entry["status"] = json!("failed");
+                    entry["error_code"] = json!(MCP_BACKEND_UNSUPPORTED);
+                    entry["error"] = json!("mcp_servers.command missing");
+                    return finish_agent_entry(entry, process_name, phase_name);
+                }
+                let args: Vec<String> = srv
+                    .get("args")
+                    .and_then(|v| v.as_array())
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|x| x.as_str().map(String::from))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                if let Err(e) = smoke_mcp_stdio_server(command.unwrap(), &args) {
+                    entry["status"] = json!("failed");
+                    entry["error_code"] = json!(MCP_BACKEND_UNSUPPORTED);
+                    entry["error"] = json!(format!("{MCP_BACKEND_UNSUPPORTED}: {e}"));
+                    return finish_agent_entry(entry, process_name, phase_name);
+                }
+            }
+        }
+    }
+
     let mut payload = json!({
         "operation": "AGENT_PHASE",
         "process_name": process_name,
@@ -467,6 +657,12 @@ pub fn invoke_agent_phase(
             .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path"))),
         "repo_root": repo.display().to_string(),
     });
+    if let Some(ref root) = project_root {
+        payload["project_root"] = json!(root);
+    }
+    if let Some(servers) = mcp_servers {
+        payload["mcp_servers"] = servers;
+    }
     inject_runtime_evidence_from_state(&mut payload, state);
     if let Some(di) = di_binding {
         if let Some(obj) = payload.as_object_mut() {
@@ -475,7 +671,8 @@ pub fn invoke_agent_phase(
     }
 
     let depth = agent_runtime_depth();
-    let mut child = match build_agent_command(&bin, &args, repo, depth).spawn() {
+    let cwd = agent_runtime_cwd(repo, project_root.as_deref());
+    let mut child = match build_agent_command(repo, &bin, &args, &cwd, depth).spawn() {
         Ok(c) => c,
         Err(e) => {
             entry["status"] = json!("failed");
@@ -939,11 +1136,11 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"evidence
             &json!({"workspace": {"persist_ref": "docs/features/from-ws"}}),
         );
         assert_eq!(from_ws, json!("docs/features/from-ws"));
-        let from_inputs = resolve_persist_ref_value(
+        let workspace_wins = resolve_persist_ref_value(
             &json!({"persist_ref": "docs/features/top"}),
             &json!({"workspace": {"persist_ref": "docs/features/from-ws"}}),
         );
-        assert_eq!(from_inputs, json!("docs/features/top"));
+        assert_eq!(workspace_wins, json!("docs/features/from-ws"));
         let missing = resolve_persist_ref_value(&json!({}), &json!({}));
         assert_eq!(missing, Value::Null);
     }
@@ -1061,6 +1258,51 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"tier-ok"
         assert_eq!(entry["note"], "deterministic-agent-no-llm");
         assert_eq!(entry["llm_profiles"]["cerbero"]["tier"], "none");
         assert!(!spawned);
+    }
+
+    #[test]
+    fn agent_runtime_cwd_is_neutral_when_project_bound() {
+        let repo = std::env::temp_dir().join(format!("sddia-cwd-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&repo).unwrap();
+        let cwd = agent_runtime_cwd(&repo, Some("/tmp/client-project"));
+        assert_ne!(cwd, repo);
+        assert!(cwd.ends_with(".agent-runtime-neutral"));
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn workspace_mcp_smoke_initialize_when_binary_present() {
+        let repo = find_repo_root_for_tests();
+        let bin = repo.join("SddIA/target/debug/sddia-workspace-server");
+        let release = repo.join("SddIA/target/release/sddia-workspace-server");
+        let command = if bin.is_file() {
+            bin.display().to_string()
+        } else if release.is_file() {
+            release.display().to_string()
+        } else {
+            return;
+        };
+        let td = tempfile::tempdir().unwrap();
+        let args = vec![
+            "--root".to_string(),
+            td.path().display().to_string(),
+            "--sddia-repo".to_string(),
+            repo.display().to_string(),
+        ];
+        smoke_mcp_stdio_server(&command, &args).expect("workspace server initialize smoke");
+    }
+
+    fn find_repo_root_for_tests() -> PathBuf {
+        let mut cur = std::env::current_dir().unwrap();
+        for _ in 0..8 {
+            if cur.join("SddIA/core/cumulo.paths.json").is_file() {
+                return cur;
+            }
+            if !cur.pop() {
+                break;
+            }
+        }
+        std::env::current_dir().unwrap()
     }
 
     #[test]

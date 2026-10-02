@@ -8,7 +8,8 @@ use serde_yaml::Value as YamlValue;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub const CONTRACT_VERSION: &str = "1.0.0";
+pub const CONTRACT_VERSION: &str = "1.1.0";
+const CONTRACT_VERSION_LEGACY: &str = "1.0.0";
 pub const CONTRACT_REL: &str =
     "SddIA/library/codexes/codex-software-engineering/contracts/project-config-contract.md";
 
@@ -40,6 +41,7 @@ pub struct BoundProject {
     pub slug: String,
     pub uuid: String,
     pub project_root: PathBuf,
+    pub codex_slug: String,
     pub delivery_mode: DeliveryMode,
     pub delivery_mode_source: &'static str,
     pub default_branch: String,
@@ -234,6 +236,14 @@ fn assert_git_isolation(project_root: &Path, others: &[PathBuf]) -> Result<(), S
     Ok(())
 }
 
+fn validate_env_ref(env_ref: &str) -> Result<(), String> {
+    let rel = env_ref.trim().trim_start_matches("./");
+    if rel.is_empty() || rel.contains("..") || Path::new(rel).is_absolute() {
+        return Err(format!("PROJECT_CONFIG_INVALID: env_ref '{env_ref}'"));
+    }
+    Ok(())
+}
+
 /// Sin `project_slug` → `Ok(None)` (repo auto-hospedado, sin cambio de flujo).
 pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String> {
     let Some(slug) = inputs
@@ -282,15 +292,23 @@ pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String>
         ));
     }
     let contract_version = yaml_str(&manifest_fm, "contract_version")?;
-    if contract_version != CONTRACT_VERSION {
+    if contract_version != CONTRACT_VERSION && contract_version != CONTRACT_VERSION_LEGACY {
         return Err(format!(
-            "PROJECT_CONFIG_INVALID: contract_version '{contract_version}' != {CONTRACT_VERSION}"
+            "PROJECT_CONFIG_INVALID: contract_version '{contract_version}' no admitida (1.0.0 | 1.1.0)"
         ));
+    }
+    if let Some(env_ref) = manifest_fm
+        .get("env_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        validate_env_ref(env_ref)?;
     }
     let _ = yaml_str(&manifest_fm, "id")?;
     let _ = yaml_str(&manifest_fm, "git_remote")?;
     let default_branch = yaml_str(&manifest_fm, "default_branch")?;
-    let _ = yaml_str(&manifest_fm, "codex_slug")?;
+    let manifest_codex_slug = yaml_str(&manifest_fm, "codex_slug")?;
     let docs = docs_from_manifest(&manifest_fm)?;
     let manifest_mode = yaml_str(&manifest_fm, "delivery_mode")?;
     let (delivery_mode, delivery_mode_source) =
@@ -307,6 +325,7 @@ pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String>
         slug: slug.to_string(),
         uuid: index_uuid,
         project_root,
+        codex_slug: manifest_codex_slug,
         delivery_mode,
         delivery_mode_source,
         default_branch,
@@ -447,6 +466,25 @@ mod tests {
         assert!(!main_push_allowed(false, DeliveryMode::BranchPr));
         assert!(omits_pr_cycle(DeliveryMode::TrunkDirect));
         assert!(!omits_pr_cycle(DeliveryMode::BranchPr));
+    }
+
+    #[test]
+    fn contract_accepts_1_1_0_and_rejects_bad_env_ref() {
+        let repo = tempfile::tempdir().unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let client = layout(repo.path(), uuid, "branch_pr");
+        let mut body = manifest_md(uuid, "branch_pr", "1.1.0");
+        body = body.replace("---\n", "---\nenv_ref: .SddIA/.dev/.env\n");
+        fs::write(client.join(".SddIA/project.md"), body).unwrap();
+        assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
+
+        let bad = manifest_md(uuid, "branch_pr", "1.1.0").replace(
+            "delivery_mode: branch_pr",
+            "delivery_mode: branch_pr\nenv_ref: ../.env",
+        );
+        fs::write(client.join(".SddIA/project.md"), bad).unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
+        assert!(err.contains("env_ref"), "{err}");
     }
 
     #[test]

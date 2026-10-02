@@ -69,6 +69,14 @@ pub(crate) fn sdlc_process_request_inputs(event: &Value) -> Result<Map<String, V
     {
         process_inputs.insert("task_text".into(), json!(raw));
     }
+    if let Some(slug) = payload_obj
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        process_inputs.insert("project_slug".into(), json!(slug));
+    }
     if let Some(extra) = payload_obj.get("process_inputs").and_then(|v| v.as_object()) {
         for (k, v) in extra {
             if !process_inputs.contains_key(k) {
@@ -2086,6 +2094,20 @@ mod blocking_tests {
         assert_eq!(
             mapped.get("correlation_id").unwrap(),
             "11111111-1111-4111-8111-111111111111"
+        );
+        let with_slug = json!({
+            "event_id": "11111111-1111-4111-8111-111111111111",
+            "event_type": "Kalma2_Process_Requested",
+            "payload": {
+                "process": "bug-fix",
+                "raw_text": "inicia fix",
+                "project_slug": "barcelonaxplorer"
+            }
+        });
+        let mapped_slug = sdlc_process_request_inputs(&with_slug).unwrap();
+        assert_eq!(
+            mapped_slug.get("project_slug").and_then(|v| v.as_str()),
+            Some("barcelonaxplorer")
         );
         let bad = json!({
             "event_id": "11111111-1111-4111-8111-111111111111",
