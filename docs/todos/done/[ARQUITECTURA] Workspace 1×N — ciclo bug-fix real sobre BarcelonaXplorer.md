@@ -3,8 +3,12 @@ document_id: PBI-ARQUITECTURA-BX-KALMA2-E2E
 uuid: "f24ca269-ee5c-4ab7-b931-b66439bed985"
 title: "[ARQUITECTURA] Workspace 1×N — ciclo bug-fix real sobre BarcelonaXplorer"
 format: markdown
-version: "1.1.0"
-status: pending
+version: "1.2.0"
+status: done
+closed: "2026-10-02"
+ac9_correlation_id: "7e7f6c84-be03-424c-a786-57a9dabb8e1b"
+bx_validacion_commit: f0981ed
+bx_pr_url: https://github.com/racso80es/BarcelonaXplorer/pull/2
 priority: alta
 type: arquitectura
 process: bug-fix

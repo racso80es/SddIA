@@ -125,6 +125,58 @@ class GitEvidenceWorkspace1xNTests(unittest.TestCase):
         self.assertTrue(ok)
         self.assertTrue(body.get("success"))
 
+    def test_handoff_best_git_prefers_tekton_block(self) -> None:
+        with tempfile.TemporaryDirectory() as pilot, tempfile.TemporaryDirectory() as core:
+            persist = str(Path(pilot) / "docs/fixes/x")
+            d = Path(persist)
+            d.mkdir(parents=True)
+            handoff = d / "_agent_handoff.md"
+            handoff.write_text(
+                "# log\n\n"
+                + self.rt.EVIDENCE_MARKER
+                + "\n\n```yaml\nGIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO\nsource: prosthesis_subprocess\n```\n\n"
+                + self.rt.EVIDENCE_MARKER
+                + "\n\n```yaml\nGIT_EVIDENCE_VIA_GIT_MANAGER: APTO\n"
+                "source: tekton_session_subprocess\n"
+                "git_evidence_digest: abcd1234\n```\n",
+                encoding="utf-8",
+            )
+            ok, digest, src = self.rt._handoff_best_git_evidence(Path(core), persist)
+            self.assertTrue(ok)
+            self.assertEqual(src, "tekton_session_subprocess")
+            self.assertEqual(digest, "abcd1234")
+
+    def test_materialize_runtime_evidence_merges_handoff_blocks(self) -> None:
+        with tempfile.TemporaryDirectory() as pilot, tempfile.TemporaryDirectory() as core:
+            core_path = Path(core)
+            (core_path / "sddia-run.sh").write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+            persist = str(Path(pilot) / "docs/fixes/x")
+            d = Path(persist)
+            d.mkdir(parents=True)
+            handoff = d / "_agent_handoff.md"
+            handoff.write_text(
+                "# log\n\n"
+                + self.rt.EVIDENCE_MARKER
+                + "\n\n```yaml\n"
+                "TECH_FORMAL_EXECUTE_PROCESS: APTO\n"
+                "GIT_EVIDENCE_VIA_GIT_MANAGER: NO_APTO\n"
+                "formal_evidence_detail: verify-process-integrity: OK\n"
+                "source: prosthesis_subprocess\n```\n\n"
+                + self.rt.EVIDENCE_MARKER
+                + "\n\n```yaml\n"
+                "GIT_EVIDENCE_VIA_GIT_MANAGER: APTO\n"
+                "source: tekton_session_subprocess\n"
+                "git_evidence_digest: deadbeef\n```\n",
+                encoding="utf-8",
+            )
+            doc = {
+                "project_root": pilot,
+                "persist_ref": persist,
+            }
+            ev = self.rt.materialize_runtime_evidence(core_path, persist, doc)
+            self.assertEqual(ev["GIT_EVIDENCE_VIA_GIT_MANAGER"], "APTO")
+            self.assertEqual(ev["TECH_FORMAL_EXECUTE_PROCESS"], "APTO")
+
 
 if __name__ == "__main__":
     sys.exit(0 if unittest.main(verbosity=2) else 1)

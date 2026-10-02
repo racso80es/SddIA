@@ -362,23 +362,49 @@ def _transcript_indicates_git_manager(text: str) -> bool:
     return True
 
 
+def _strip_config_stdout_lines(out: str) -> str:
+    """Cápsulas que loguean [CONFIG] en stdout antes del JSON envelope."""
+    kept: list[str] = []
+    for line in out.splitlines():
+        if line.strip().startswith("[CONFIG]"):
+            continue
+        kept.append(line)
+    return "\n".join(kept)
+
+
 def _parse_git_manager_stdout(out: str) -> tuple[bool, dict[str, Any]]:
-    for line in reversed(out.splitlines()):
-        line = line.strip()
-        if not line.startswith("{"):
-            continue
-        try:
-            body = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if not isinstance(body, dict):
-            continue
-        ok = bool(body.get("success")) or body.get("exitCode") == 0
-        nested = body.get("result")
-        if isinstance(nested, dict):
-            ok = ok or bool(nested.get("success")) or nested.get("exitCode") == 0
-        if ok:
-            return True, body
+    cleaned = _strip_config_stdout_lines(out)
+    for blob in (cleaned, out):
+        for line in reversed(blob.splitlines()):
+            line = line.strip()
+            if not line.startswith("{"):
+                continue
+            try:
+                body = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(body, dict):
+                continue
+            ok = bool(body.get("success")) or body.get("exitCode") == 0
+            nested = body.get("result")
+            if isinstance(nested, dict):
+                ok = ok or bool(nested.get("success")) or nested.get("exitCode") == 0
+            if ok:
+                return True, body
+        brace = blob.find("{")
+        if brace >= 0:
+            tail = blob[brace:].strip()
+            try:
+                body = json.loads(tail)
+            except json.JSONDecodeError:
+                body = None
+            if isinstance(body, dict):
+                ok = bool(body.get("success")) or body.get("exitCode") == 0
+                nested = body.get("result")
+                if isinstance(nested, dict):
+                    ok = ok or bool(nested.get("success")) or nested.get("exitCode") == 0
+                if ok:
+                    return True, body
     return False, {}
 
 
@@ -506,16 +532,73 @@ def _handoff_has_apto_evidence(repo: Path, persist: str) -> bool:
 
 def _handoff_latest_git_evidence_apto(repo: Path, persist: str) -> bool:
     """Bloque machine más reciente ya certificó git-manager (p. ej. sesión Tekton)."""
+    git_ok, _digest, _src = _handoff_best_git_evidence(repo, persist)
+    return git_ok
+
+
+def _parse_handoff_evidence_blocks(text: str) -> list[dict[str, str]]:
+    blocks: list[dict[str, str]] = []
+    pos = 0
+    while True:
+        idx = text.find(EVIDENCE_MARKER, pos)
+        if idx < 0:
+            break
+        start = text.find("```yaml", idx)
+        if start < 0:
+            break
+        end = text.find("```", start + 7)
+        if end < 0:
+            break
+        body = text[start + 7 : end].strip()
+        fields: dict[str, str] = {}
+        for line in body.splitlines():
+            if ":" not in line:
+                continue
+            key, val = line.split(":", 1)
+            fields[key.strip()] = val.strip().strip('"')
+        if fields:
+            blocks.append(fields)
+        pos = end + 3
+    return blocks
+
+
+def _handoff_best_git_evidence(
+    repo: Path, persist: str
+) -> tuple[bool, str | None, str | None]:
+    """Cualquier bloque machine con R2 APTO (prioriza tekton_session_subprocess)."""
     if not persist:
-        return False
+        return False, None, None
     handoff = persist_dir(repo, persist) / "_agent_handoff.md"
     if not handoff.is_file():
-        return False
-    text = handoff.read_text(encoding="utf-8")
-    if EVIDENCE_MARKER not in text:
-        return False
-    idx = text.rfind(EVIDENCE_MARKER)
-    return "GIT_EVIDENCE_VIA_GIT_MANAGER: APTO" in text[idx:]
+        return False, None, None
+    blocks = _parse_handoff_evidence_blocks(handoff.read_text(encoding="utf-8"))
+    tekton_hit: tuple[bool, str | None, str | None] = (False, None, None)
+    latest_hit: tuple[bool, str | None, str | None] = (False, None, None)
+    for fields in blocks:
+        git_line = fields.get("GIT_EVIDENCE_VIA_GIT_MANAGER", "").upper()
+        if git_line != "APTO":
+            continue
+        digest = fields.get("git_evidence_digest") or None
+        src = fields.get("source") or None
+        latest_hit = (True, digest, src)
+        if src == "tekton_session_subprocess":
+            tekton_hit = (True, digest, src)
+    if tekton_hit[0]:
+        return tekton_hit
+    return latest_hit
+
+
+def _handoff_best_formal_evidence(repo: Path, persist: str) -> tuple[bool, str | None]:
+    if not persist:
+        return False, None
+    handoff = persist_dir(repo, persist) / "_agent_handoff.md"
+    if not handoff.is_file():
+        return False, None
+    blocks = _parse_handoff_evidence_blocks(handoff.read_text(encoding="utf-8"))
+    for fields in reversed(blocks):
+        if fields.get("TECH_FORMAL_EXECUTE_PROCESS", "").upper() == "APTO":
+            return True, fields.get("formal_evidence_detail") or None
+    return False, None
 
 
 def _invoke_git_manager_status(
@@ -549,16 +632,18 @@ def _invoke_git_manager_status(
         return False, "", f"timeout {timeout}s"
     out = proc.stdout.decode("utf-8", errors="replace").strip()
     err = proc.stderr.decode("utf-8", errors="replace").strip()
+    cleaned = _strip_config_stdout_lines(out)
     ok, body = _parse_git_manager_stdout(out)
     if not ok and proc.returncode != 0:
-        return False, out, err or f"exit {proc.returncode}"
-    if not ok and proc.returncode == 0 and out:
-        ok = "gitStdout" in out or '"data"' in out
+        return False, cleaned or out, err or f"exit {proc.returncode}"
+    if not ok and proc.returncode == 0 and (cleaned or out):
+        blob = cleaned or out
+        ok = "gitStdout" in blob or '"data"' in blob
+    if not ok and proc.returncode == 0 and err:
+        ok, body = _parse_git_manager_stdout(err)
     if not ok:
-        hint = err or out or "git-manager failed"
-        if "[CONFIG]" in hint and out:
-            hint = (out.splitlines()[-1] if out else hint)[:200]
-        return False, "", hint[:240]
+        hint = err or cleaned or out or "git-manager failed"
+        return False, "", str(hint)[:240]
     digest_src = json.dumps(body, ensure_ascii=False) if body else (out[-800:] if out else err)
     digest = hashlib.sha256(digest_src.encode("utf-8")).hexdigest()[:32]
     return True, digest, ""
@@ -597,11 +682,12 @@ def materialize_tekton_git_evidence_from_transcript(
     doc: dict[str, Any],
     transcript: str,
 ) -> dict[str, Any] | None:
-    """Tras Tekton: si el transcript declara git-manager, materializa R2 en sesión (L-R2)."""
-    if not _transcript_indicates_git_manager(transcript):
+    """Tras Tekton: materializa R2 en sesión (L-R2). Workspace 1×N: siempre si hay project_root."""
+    pilot = str(doc.get("project_root") or "").strip()
+    if not pilot and not _transcript_indicates_git_manager(transcript):
         return None
     git_repo = resolve_git_repository_path(doc, core_repo)
-    ok, digest, err = _invoke_git_manager_status(core_repo, git_repo)
+    ok, digest, _err = _invoke_git_manager_status(core_repo, git_repo)
     if not ok:
         return None
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -657,6 +743,18 @@ def materialize_runtime_evidence(
     if not git_ok and _handoff_latest_git_evidence_apto(repo, persist):
         git_ok = True
         notes_parts.append("handoff-git-apto")
+
+    handoff_git, handoff_digest, handoff_src = _handoff_best_git_evidence(repo, persist)
+    if not git_ok and handoff_git:
+        git_ok = True
+        digest = digest or handoff_digest
+        notes_parts.append(f"handoff-git-scan:{handoff_src or '?'}")
+
+    handoff_formal, handoff_formal_detail = _handoff_best_formal_evidence(repo, persist)
+    if not formal_ok and handoff_formal:
+        formal_ok = True
+        formal_detail = formal_detail or handoff_formal_detail
+        notes_parts.append("handoff-formal-scan")
 
     if git_ok and formal_ok:
         source = "native_state"
@@ -790,6 +888,8 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
                 f"- Materializa artefactos bajo `{persist}` **solo** vía MCP `sddia-workspace-server` (`tools/call` / recursos del servidor).",
                 "- Prohibido Write/Shell/filesystem-manager fuera del MCP para rutas del piloto; cwd del CLI es neutro (Core).",
                 "- Tras escribir, confirma paths relativos al piloto (ej. `docs/fixes/...`).",
+                "- **No reescribas** `{persist}/_agent_handoff.md` entero: el runtime añade secciones y evidencia machine; "
+                "si necesitas citar handoff, usa `fs_read` parcial o deja el fichero al runtime.",
                 "",
             ]
         )
