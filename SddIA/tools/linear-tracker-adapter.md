@@ -11,7 +11,7 @@ capabilities:
   - "capsule-json-io"
 io_mode: "capsule-json-io"
 implementation_path_ref: "SddIA/tools/linear-tracker-adapter"
-hash_signature: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+hash_signature: "sha256:8722fcf349c933f3a7af8eb00f4fb1912591f48cef8c1944a787c3ccac3c46d7"
 ---
 
 # linear-tracker-adapter
