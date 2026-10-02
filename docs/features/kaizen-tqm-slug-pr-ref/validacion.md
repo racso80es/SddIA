@@ -12,6 +12,7 @@ uuid: "6c4e8a21-9b3d-4f17-a8e2-1d5f0c7b9e34"
 execution_id: "a1b2c3d4-e5f6-4789-a012-3456789abcde"
 global: APTO
 pbi_archived: true
+pr_url: https://github.com/racso80es/SddIA/pull/315
 checks:
   AC-1: APTO
   AC-2: APTO
