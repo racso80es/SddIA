@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a3b4c5d6-e7f8-4890-a123-456789abcd01` | 2026-10-02 | tracker-linear-markdown-sync + update_issue_description (OSC-13) | CANONICO | `SddIA/evolution/a3b4c5d6-e7f8-4890-a123-456789abcd01.md` |
 | `26209dff-e413-4c6d-8838-5b785251356c` | 2026-10-02 | HU Tracker Linear — contexto RBAC, cápsula, EDA, Kalma2 y tracker-stamp | CANONICO | `SddIA/evolution/26209dff-e413-4c6d-8838-5b785251356c.md` |
 | `8a1f2c44-0e6b-4d91-b3a7-5c8e9d0f1a22` | 2026-10-02 | Kaizen bug-fix reentrada — git_reentry en workspace-init y reconcile execution_id | CANONICO | `SddIA/evolution/8a1f2c44-0e6b-4d91-b3a7-5c8e9d0f1a22.md` |
 | `6c4e8a21-9b3d-4f17-a8e2-1d5f0c7b9e34` | 2026-10-02 | Kaizen TQM — rechazo de ancla PR #N como pbi_ref y slug de ciclo | CANONICO | `SddIA/evolution/6c4e8a21-9b3d-4f17-a8e2-1d5f0c7b9e34.md` |

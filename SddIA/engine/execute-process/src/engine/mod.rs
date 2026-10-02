@@ -257,6 +257,10 @@ pub fn run_process(
         return handlers::tracker_stamp::run(repo, process_inputs);
     }
 
+    if canonical == "tracker-linear-markdown-sync" {
+        return handlers::tracker_linear_markdown_sync::run(repo, process_inputs);
+    }
+
     if canonical == "entity-manager" {
         return entity_manager::run(repo, &process_def, &phases, process_inputs);
     }

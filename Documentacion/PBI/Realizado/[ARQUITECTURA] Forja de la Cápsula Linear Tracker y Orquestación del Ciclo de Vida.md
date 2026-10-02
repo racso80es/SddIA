@@ -1,6 +1,7 @@
 ---
 document_id: HU-SDDIA-TRACKER-LINEAR-001
 uuid: "26209dff-e413-4c6d-8838-5b785251356c"
+tracker_ref: OSC-5
 legacy_document_id: PBI-SDDIA-LINEAR-CORE-001
 title: "[ARQUITECTURA] Tracker de requerimientos por proyecto — cápsula Linear, backlog en Kalma2 y sello de estado HU/PBI"
 format: markdown

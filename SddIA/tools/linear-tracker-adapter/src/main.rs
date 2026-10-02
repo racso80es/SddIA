@@ -292,6 +292,14 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                 "url": format!("https://linear.app/issue/{issue_ref}#comment-lab-1"),
             }))
         }
+        "update_issue_description" => {
+            let issue_ref = required_str(inner, "issue_ref")?;
+            let description = required_str(inner, "description")?;
+            Ok(json!({
+                "issue_ref": issue_ref,
+                "description_bytes": description.len(),
+            }))
+        }
         other => Err(LinearFail {
             code: "LINEAR_GRAPHQL_ERROR",
             message: format!("operation no soportada: {other}"),
@@ -494,6 +502,43 @@ fn run_create_comment(req: &Value, url: &str, token: &str) -> Result<Value, Line
     }))
 }
 
+fn run_update_issue_description(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
+    let inner = request_inner(req);
+    let issue_ref = required_str(inner, "issue_ref")?;
+    let description = required_str(inner, "description")?;
+    let mutation = r#"mutation UpdateDesc($id: String!, $description: String!) {
+  issueUpdate(id: $id, input: { description: $description }) {
+    success
+    issue { identifier }
+  }
+}"#;
+    let resp = graphql_post(
+        url,
+        token,
+        mutation,
+        json!({ "id": issue_ref, "description": description }),
+    )?;
+    let success = resp
+        .pointer("/data/issueUpdate/success")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !success {
+        return Err(LinearFail {
+            code: "LINEAR_GRAPHQL_ERROR",
+            message: "issueUpdate description failed".into(),
+            exit: 1,
+        });
+    }
+    let ident = resp
+        .pointer("/data/issueUpdate/issue/identifier")
+        .and_then(|v| v.as_str())
+        .unwrap_or(&issue_ref);
+    Ok(json!({
+        "issue_ref": ident,
+        "description_bytes": description.len(),
+    }))
+}
+
 fn dispatch(req: &Value) -> Result<Value, LinearFail> {
     if lab_mock_outbound_enabled() && lab_mock_linear_url().is_none() {
         return lab_inline_mock(req);
@@ -511,6 +556,7 @@ fn dispatch(req: &Value) -> Result<Value, LinearFail> {
         "list_issues" => run_list_issues(req, &url, &token),
         "update_issue_state" => run_update_issue_state(req, &url, &token),
         "create_comment" => run_create_comment(req, &url, &token),
+        "update_issue_description" => run_update_issue_description(req, &url, &token),
         other => Err(LinearFail {
             code: "LINEAR_GRAPHQL_ERROR",
             message: format!("operation no soportada: {other}"),
