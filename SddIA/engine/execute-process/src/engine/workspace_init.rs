@@ -190,9 +190,12 @@ fn distill_mission(raw: &str) -> String {
 
 fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
     let norm = path.trim_start_matches("./");
-    if norm == persist_ref.trim_start_matches("./")
-        || norm.starts_with(&format!("{}/", persist_ref.trim_start_matches("./")))
-    {
+    let persist = persist_ref.trim_start_matches("./");
+    if norm == persist || norm.starts_with(&format!("{}/", persist)) {
+        return true;
+    }
+    // `git status` puede listar un directorio padre (`docs`) al crear `docs/fixes/…`.
+    if persist.starts_with(&format!("{}/", norm)) || persist == norm {
         return true;
     }
     if let Some(pbi) = pbi_ref {
@@ -201,6 +204,45 @@ fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
         }
     }
     false
+}
+
+fn current_branch_from_branch_list(stdout: &str) -> Option<String> {
+    for line in stdout.lines() {
+        let t = line.trim();
+        let Some(rest) = t.strip_prefix("* ") else {
+            continue;
+        };
+        let name = rest.split_whitespace().next().unwrap_or("");
+        if name.is_empty() || name.starts_with('(') {
+            continue;
+        }
+        return Some(name.to_string());
+    }
+    None
+}
+
+fn git_current_branch(capsule_repo: &Path, git_repo: &Path) -> Result<Option<String>, String> {
+    let status = invoke_git_manager_for(capsule_repo, git_repo, "status", &json!({}))?;
+    let stdout = status
+        .get("gitStdout")
+        .or_else(|| status.get("stdout"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    for line in stdout.lines() {
+        if let Some(b) = line.strip_prefix("On branch ") {
+            return Ok(Some(b.trim().to_string()));
+        }
+        if let Some(b) = line.strip_prefix("En la rama ") {
+            return Ok(Some(b.trim().to_string()));
+        }
+    }
+    let list = invoke_git_manager_for(capsule_repo, git_repo, "branch_list", &json!({}))?;
+    let list_out = list
+        .get("gitStdout")
+        .or_else(|| list.get("stdout"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    Ok(current_branch_from_branch_list(list_out))
 }
 
 fn dirty_paths_outside_scope(
@@ -423,6 +465,19 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             return Err(msg);
         }
 
+        let on_feature_branch = git_current_branch(repo, git_root)?
+            .map(|b| b == branch_name)
+            .unwrap_or(false);
+        if on_feature_branch {
+            git_steps.push(json!({
+                "op": "git_reentry",
+                "result": {
+                    "skipped": true,
+                    "reason": "already_on_branch_no_dirty_outside_scope",
+                    "branch_name": branch_name,
+                },
+            }));
+        } else {
         let fetch = invoke_git_manager_for(
             repo,
             git_root,
@@ -466,6 +521,7 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
                 )?;
                 git_steps.push(json!({"op": "checkout_feature_existing", "result": r}));
             }
+        }
         }
     }
 
@@ -768,6 +824,43 @@ mod tests {
         if !link.exists() {
             std::os::unix::fs::symlink(sddia_ws.join("target"), &link).expect("symlink target");
         }
+    }
+
+    #[test]
+    fn run_reentry_on_branch_skips_git_sync_when_dirty_only_in_persist() {
+        use std::process::Command;
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        link_capsule_target(root);
+        init_git_repo(root);
+        let branch = "fix/reentry-persist";
+        let persist = "docs/fixes/reentry-persist";
+        let status = Command::new("git")
+            .args(["checkout", "-b", branch])
+            .current_dir(root)
+            .status();
+        assert!(status.is_ok_and(|s| s.success()));
+        fs::create_dir_all(root.join(persist)).unwrap();
+        fs::write(root.join(persist).join("validacion.md"), "draft reentry\n").unwrap();
+
+        std::env::remove_var("SDDIA_LAB_ALLOW_DIRTY");
+        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+
+        let inputs = json!({
+            "fix_name": "reentry-persist",
+            "branch_name": branch,
+            "persist_ref": persist,
+            "execution_profile": { "git_required": true }
+        });
+        let out = run(root, &inputs, "bug-fix").expect("reentry init");
+        let steps = out["git_steps"].as_array().unwrap();
+        assert!(
+            steps
+                .iter()
+                .any(|s| s.get("op") == Some(&json!("git_reentry"))),
+            "steps: {steps:?}"
+        );
     }
 
     #[test]
