@@ -245,6 +245,18 @@ pub fn run_process(
         return capsule_invoke_smoke::run(repo, &canonical, &process_def, &phases, process_inputs);
     }
 
+    if canonical == "tracker-backlog-query" {
+        return handlers::tracker_backlog_query::run(repo, process_inputs);
+    }
+
+    if canonical == "tracker-sync-replay" {
+        return handlers::tracker_sync_replay::run(repo, process_inputs);
+    }
+
+    if canonical == "tracker-stamp" {
+        return handlers::tracker_stamp::run(repo, process_inputs);
+    }
+
     if canonical == "entity-manager" {
         return entity_manager::run(repo, &process_def, &phases, process_inputs);
     }

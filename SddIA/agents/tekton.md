@@ -9,6 +9,7 @@ allowed_policies:
   - "source-control"
   - "system-operations"
   - "chaos-engineering"
+  - "tracker-operations"
 hash_signature: "opcional_en_desarrollo"
 llm_profile:
   tier: "low"

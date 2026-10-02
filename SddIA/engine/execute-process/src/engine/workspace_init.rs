@@ -579,6 +579,40 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         .map(|p| p.to_string_lossy().replace('\\', "/"))
         .unwrap_or_else(|_| objectives_path.to_string_lossy().into_owned());
 
+    let mut work_initiated: Value = json!(null);
+    if matches!(process_name, "feature" | "bug-fix" | "refactorization")
+        && !env_truthy("SDDIA_LAB_SKIP_WORK_INITIATED")
+    {
+        let mut emit_inputs = json!({
+            "branch": branch_name,
+            "persist_ref": persist_ref,
+            "source_process": process_name,
+        });
+        if let Some(slug) = inputs
+            .get("project_slug")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            emit_inputs["project_slug"] = json!(slug);
+        }
+        if let Some(pbi) = pbi_ref_meta {
+            emit_inputs["pbi_ref"] = json!(pbi);
+            if let Some(tr) = tracker_ref_from_pbi(repo, pbi) {
+                emit_inputs["tracker_ref"] = json!(tr);
+            }
+        }
+        work_initiated = match super::actions::try_run_native(
+            repo,
+            "emit-work-initiated-event",
+            &emit_inputs,
+        ) {
+            Ok(Some(v)) => v,
+            Ok(None) => json!({"warn": "emit-work-initiated-event no nativo"}),
+            Err(e) => json!({"warn": e}),
+        };
+    }
+
     Ok(json!({
         "feature_name": task_name,
         "task_name": task_name,
@@ -587,11 +621,37 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         "persist_ref": persist_ref,
         "objectives_path": objectives_rel,
         "git_steps": git_steps,
+        "work_initiated": work_initiated,
         "execution_profile": profile.to_json(),
         "delivery_mode": bound.as_ref().map(|b| b.delivery_mode.as_str()),
         "delivery_mode_source": bound.as_ref().map(|b| b.delivery_mode_source),
         "project_root": bound.as_ref().map(|b| b.project_root.to_string_lossy().replace('\\', "/")),
     }))
+}
+
+fn tracker_ref_from_pbi(repo: &Path, pbi_rel: &str) -> Option<String> {
+    let path = if Path::new(pbi_rel).is_absolute() {
+        PathBuf::from(pbi_rel)
+    } else {
+        repo.join(pbi_rel)
+    };
+    let text = fs::read_to_string(path).ok()?;
+    let trimmed = text.trim_start();
+    if !trimmed.starts_with("---") {
+        return None;
+    }
+    let rest = trimmed.strip_prefix("---")?;
+    let end = rest.find("\n---")?;
+    for line in rest[..end].lines() {
+        let line = line.trim();
+        if let Some(val) = line.strip_prefix("tracker_ref:") {
+            let v = val.trim().trim_matches('"');
+            if !v.is_empty() {
+                return Some(v.to_string());
+            }
+        }
+    }
+    None
 }
 
 fn input_non_empty_str(inputs: &Value, key: &str) -> bool {

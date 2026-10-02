@@ -489,7 +489,7 @@ async function loadSystemHealth() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  loadProjectSelector();
+  loadProjectSelector().then(() => initBacklogPanel());
   $("chat").addEventListener("click", enviarChat);
   const aiuaBtn = $("aiua-pulse");
   if (aiuaBtn) aiuaBtn.addEventListener("click", enviarAiuaStimulus);
@@ -594,4 +594,70 @@ async function sendQuickAction(messageUid, action, sourceEventId, btn) {
   } finally {
     if (btn) btn.disabled = false;
   }
+}
+
+async function loadBacklog() {
+  const list = $("backlog-list");
+  const notice = $("backlog-notice");
+  if (!list) return;
+  const projectSlug = ($("project-select") && $("project-select").value) || "";
+  const kind = ($("backlog-kind") && $("backlog-kind").value) || "all";
+  const state = ($("backlog-state") && $("backlog-state").value) || "";
+  list.innerHTML = "";
+  if (notice) notice.classList.add("hidden");
+
+  const qs = new URLSearchParams();
+  if (projectSlug) qs.set("project_slug", projectSlug);
+  if (kind) qs.set("kind", kind);
+  if (state) qs.set("state", state);
+
+  try {
+    const r = await fetch(`/api/backlog?${qs.toString()}`);
+    const data = await r.json();
+    if (!r.ok || !data.success) {
+      list.innerHTML = `<li class="backlog-error">${data.message || r.status}</li>`;
+      return;
+    }
+    if (!data.tracker_configured) {
+      if (notice) notice.classList.remove("hidden");
+      return;
+    }
+    const items = data.items || [];
+    if (!items.length) {
+      list.innerHTML = "<li class=\"backlog-empty\">Sin issues con label hu/pbi</li>";
+      return;
+    }
+    for (const item of items) {
+      const li = document.createElement("li");
+      const id = item.id || "?";
+      const title = item.title || "";
+      const st = item.state || "";
+      const k = item.kind || "";
+      li.innerHTML = `<span class="backlog-id">${id}</span> <span class="backlog-kind">${k}</span> · ${title} <span class="backlog-state">(${st})</span>`;
+      if (item.url) {
+        const a = document.createElement("a");
+        a.href = item.url;
+        a.textContent = "Linear";
+        a.target = "_blank";
+        a.rel = "noopener";
+        li.appendChild(document.createTextNode(" "));
+        li.appendChild(a);
+      }
+      list.appendChild(li);
+    }
+  } catch (e) {
+    list.innerHTML = `<li class="backlog-error">${e}</li>`;
+  }
+}
+
+function initBacklogPanel() {
+  const sel = $("project-select");
+  const kind = $("backlog-kind");
+  const state = $("backlog-state");
+  const refresh = $("backlog-refresh");
+  if (sel) sel.addEventListener("change", () => loadBacklog());
+  if (kind) kind.addEventListener("change", () => loadBacklog());
+  if (state) state.addEventListener("change", () => loadBacklog());
+  if (refresh) refresh.addEventListener("click", () => loadBacklog());
+  loadBacklog();
 }

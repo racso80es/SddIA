@@ -1334,6 +1334,67 @@ pub(crate) fn dispatch_subscriber(
             return (sid, "failed".into(), Some(status), exit_code);
         }
 
+        if process_key == "tracker-stamp" {
+            let Some(path) = event_path else {
+                return (
+                    sid,
+                    "failed".into(),
+                    Some("event_file_path required for tracker-stamp".into()),
+                    1,
+                );
+            };
+            let rel = super::eda_bus_topology::rel_event_path(repo, path);
+            let process_inputs = json!({ "event_file_path": rel });
+            let (status, exit_code) =
+                dispatch_process_subscriber(repo, process_key, process_inputs);
+            if status == "success" {
+                return (sid, status, None, exit_code);
+            }
+            return (sid, "failed".into(), Some(status), exit_code);
+        }
+
+        if process_key == "tracker-sync-replay" {
+            let Some(path) = event_path else {
+                return (
+                    sid,
+                    "failed".into(),
+                    Some("event_file_path required for tracker-sync-replay".into()),
+                    1,
+                );
+            };
+            let rel = super::eda_bus_topology::rel_event_path(repo, path);
+            let mut process_inputs = serde_json::Map::new();
+            process_inputs.insert("event_file_path".into(), json!(rel));
+            if let Some(eid) = event.get("event_id").and_then(|v| v.as_str()) {
+                process_inputs.insert("event_id".into(), json!(eid));
+            }
+            for key in [
+                "issue_ref",
+                "operation",
+                "error_code",
+                "target_state",
+                "comment_kind",
+                "project_slug",
+                "pr_url",
+                "commit_sha",
+                "attempt",
+                "source_process",
+            ] {
+                if let Some(v) = payload_obj.get(key) {
+                    process_inputs.insert(key.to_string(), v.clone());
+                }
+            }
+            let (status, exit_code) = dispatch_process_subscriber(
+                repo,
+                process_key,
+                Value::Object(process_inputs),
+            );
+            if status == "success" {
+                return (sid, status, None, exit_code);
+            }
+            return (sid, "failed".into(), Some(status), exit_code);
+        }
+
         if process_key == "email-triage-gateway"
             || process_key == "email-quick-action-ingest"
             || process_key == "user-preference-ingest"

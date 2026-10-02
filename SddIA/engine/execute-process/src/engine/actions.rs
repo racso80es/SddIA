@@ -67,6 +67,107 @@ fn iso_timestamp() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
+fn emit_work_initiated(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    let branch = str_field(inputs, "branch").ok_or("branch es obligatorio")?;
+    let persist_ref = str_field(inputs, "persist_ref").ok_or("persist_ref es obligatorio")?;
+    let source_process = str_field(inputs, "source_process").ok_or("source_process es obligatorio")?;
+    if source_process != "feature"
+        && source_process != "bug-fix"
+        && source_process != "refactorization"
+    {
+        return Err(format!("source_process no admitido: {source_process}"));
+    }
+    let event_id = generate_uuid(repo)?;
+    let correlation_id = str_field(inputs, "correlation_id").unwrap_or_else(|| event_id.clone());
+    let mut payload = json!({
+        "branch": branch,
+        "persist_ref": persist_ref,
+        "source_process": source_process,
+        "occurred_at": iso_timestamp(),
+    });
+    for key in ["project_slug", "pbi_ref", "tracker_ref"] {
+        if let Some(v) = str_field(inputs, key) {
+            payload[key] = json!(v);
+        }
+    }
+    let event = json!({
+        "event_id": event_id,
+        "event_type": "Work_Initiated",
+        "timestamp": iso_timestamp(),
+        "emitter_agent": "workspace-init",
+        "correlation_id": correlation_id,
+        "payload": payload,
+        "delivery_state": {},
+    });
+    let seal = write_pending_event(repo, &event)?;
+    Ok(json!({
+        "success": true,
+        "event_id": seal.get("event_id"),
+        "target_path": seal.get("target_path"),
+        "event_type": "Work_Initiated",
+    }))
+}
+
+fn emit_tracker_sync_failed(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    let issue_ref = str_field(inputs, "issue_ref").ok_or("issue_ref es obligatorio")?;
+    let operation = str_field(inputs, "operation").ok_or("operation es obligatorio")?;
+    if operation != "update_issue_state" && operation != "create_comment" {
+        return Err(format!("operation no admitida: {operation}"));
+    }
+    let error_code = str_field(inputs, "error_code").ok_or("error_code es obligatorio")?;
+    let source_process = str_field(inputs, "source_process").ok_or("source_process es obligatorio")?;
+    let target_state = str_field(inputs, "target_state");
+    let comment_kind = str_field(inputs, "comment_kind");
+    match operation.as_str() {
+        "update_issue_state" if target_state.is_none() => {
+            return Err("target_state obligatorio para update_issue_state".into());
+        }
+        "create_comment" if comment_kind.is_none() => {
+            return Err("comment_kind obligatorio para create_comment".into());
+        }
+        _ => {}
+    }
+    let event_id = generate_uuid(repo)?;
+    let correlation_id = str_field(inputs, "correlation_id").unwrap_or_else(|| event_id.clone());
+    let mut payload = json!({
+        "issue_ref": issue_ref,
+        "operation": operation,
+        "error_code": error_code,
+        "source_process": source_process,
+        "occurred_at": iso_timestamp(),
+    });
+    if let Some(ts) = target_state {
+        payload["target_state"] = json!(ts);
+    }
+    if let Some(ck) = comment_kind {
+        payload["comment_kind"] = json!(ck);
+    }
+    for key in ["project_slug", "pr_url", "commit_sha"] {
+        if let Some(v) = str_field(inputs, key) {
+            payload[key] = json!(v);
+        }
+    }
+    if let Some(a) = inputs.get("attempt").and_then(|v| v.as_u64()) {
+        payload["attempt"] = json!(a);
+    }
+    let event = json!({
+        "event_id": event_id,
+        "event_type": "Tracker_Sync_Failed",
+        "timestamp": iso_timestamp(),
+        "emitter_agent": source_process,
+        "correlation_id": correlation_id,
+        "payload": payload,
+        "delivery_state": {},
+    });
+    let seal = write_pending_event(repo, &event)?;
+    Ok(json!({
+        "success": true,
+        "event_id": seal.get("event_id"),
+        "target_path": seal.get("target_path"),
+        "event_type": "Tracker_Sync_Failed",
+    }))
+}
+
 fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let branch = str_field(inputs, "branch").ok_or("branch es obligatorio (string)")?;
     let status = inputs
@@ -85,6 +186,9 @@ fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
     });
     if let Some(url) = str_field(inputs, "pr_url") {
         payload["pr_url"] = json!(url);
+    }
+    if let Some(tr) = str_field(inputs, "tracker_ref") {
+        payload["tracker_ref"] = json!(tr);
     }
     let mut event = json!({
         "event_id": event_id,
@@ -139,6 +243,9 @@ fn emit_pr_merged(repo: &Path, inputs: &Value) -> Result<Value, String> {
             }
         }
     }
+    if let Some(tr) = str_field(inputs, "tracker_ref") {
+        payload["tracker_ref"] = json!(tr);
+    }
     let event = json!({
         "event_id": event_id,
         "event_type": "PullRequest_Merged",
@@ -174,12 +281,15 @@ fn emit_pr_audited(repo: &Path, inputs: &Value) -> Result<Value, String> {
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    let payload = json!({
+    let mut payload = json!({
         "audit_event_reference": audit_event_reference,
         "target_entity_id": target_entity_id,
         "resolution": resolution,
         "violated_rules": violated_rules,
     });
+    if let Some(tr) = str_field(inputs, "tracker_ref") {
+        payload["tracker_ref"] = json!(tr);
+    }
     let mut event = json!({
         "event_id": event_id,
         "event_type": "PullRequest_Audited",
@@ -210,6 +320,8 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
     }
     let data = match action_name {
         "emit-pr-presented-event" => emit_pr_presented(repo, inputs)?,
+        "emit-work-initiated-event" => emit_work_initiated(repo, inputs)?,
+        "emit-tracker-sync-failed" => emit_tracker_sync_failed(repo, inputs)?,
         "emit-pr-merged-event" => emit_pr_merged(repo, inputs)?,
         "emit-pr-audited-event" => emit_pr_audited(repo, inputs)?,
         "emit-domain-mutation" => super::domain_mutation::run(repo, inputs)?,
@@ -234,4 +346,75 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
         _ => return Ok(None),
     };
     Ok(Some(data))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::repo::find_repo_root;
+    use std::fs;
+
+    #[test]
+    fn emit_work_initiated_writes_pending_without_provider_fields() {
+        let repo = find_repo_root().unwrap();
+        let pending = repo.join(".events/pending");
+        fs::create_dir_all(&pending).ok();
+        let before = fs::read_dir(&pending).map(|d| d.count()).unwrap_or(0);
+        let out = emit_work_initiated(
+            &repo,
+            &json!({
+                "branch": "feat/demo",
+                "persist_ref": "docs/features/demo",
+                "source_process": "feature",
+                "tracker_ref": "BX-1",
+            }),
+        )
+        .expect("emit");
+        assert_eq!(out.get("event_type"), Some(&json!("Work_Initiated")));
+        let after = fs::read_dir(&pending).map(|d| d.count()).unwrap_or(0);
+        assert!(after >= before);
+        let event_id = out.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let raw = fs::read_to_string(pending.join(format!("{event_id}.json"))).unwrap();
+        assert!(!raw.contains("team_key"));
+        assert!(!raw.contains("linear.app"));
+    }
+
+    #[test]
+    fn emit_work_initiated_fail_soft_invalid_source() {
+        let repo = find_repo_root().unwrap();
+        let err = emit_work_initiated(
+            &repo,
+            &json!({
+                "branch": "feat/demo",
+                "persist_ref": "docs/features/demo",
+                "source_process": "delivery-close-cycle",
+            }),
+        )
+        .unwrap_err();
+        assert!(err.contains("source_process"));
+    }
+
+    #[test]
+    fn emit_tracker_sync_failed_no_secrets_in_pending() {
+        let repo = find_repo_root().unwrap();
+        let out = emit_tracker_sync_failed(
+            &repo,
+            &json!({
+                "issue_ref": "BX-1",
+                "operation": "update_issue_state",
+                "target_state": "in_progress",
+                "error_code": "LINEAR_TRANSPORT",
+                "source_process": "tracker-stamp",
+            }),
+        )
+        .expect("emit");
+        assert_eq!(out.get("event_type"), Some(&json!("Tracker_Sync_Failed")));
+        let event_id = out.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let raw = fs::read_to_string(
+            repo.join(".events/pending").join(format!("{event_id}.json")),
+        )
+        .unwrap();
+        assert!(!raw.contains("LINEAR_API"));
+        assert!(raw.contains("LINEAR_TRANSPORT"));
+    }
 }
