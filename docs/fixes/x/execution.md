@@ -2,6 +2,9 @@
 
 
 
+
+
+
 feature_name: x
 created: "2026-07-23"
 updated: "2026-08-28T17:05:00Z"
@@ -16,7 +19,7 @@ pbi_ref: docs/todos/pending/[FIX] x.md
 status: blocked
 exitCode: 1
 items_applied: []
-execution_id: "42745eae-5a8d-4736-afb0-c8d216832c45"
+execution_id: "22e49d33-963d-42f6-87d0-b9255929e548"
 ---
 # Execution — x (Tekton · registro)
 

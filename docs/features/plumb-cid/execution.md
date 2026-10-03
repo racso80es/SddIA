@@ -1,7 +1,8 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-10-02"
+updated: "2026-10-03"
 process: feature
 document_id: LAB-PLUMB-CID
 branch_name: feat/plumb-cid
@@ -19,7 +20,7 @@ items_applied:
 status: blocked
 exitCode: 1
 verdict: blocked
-block_reason: "T-GATE Unlock source-control fallido — Shell IDE / ./sddia-run.sh --tool git-manager Rejected (intento + request_smart_mode_approval); MCP catalog []; sin stdout físico; AC-L-GIT = not_materialized; no se inventa evidencia"
+block_reason: "T-GATE Unlock source-control fallido — Shell IDE / ./sddia-run.sh --tool git-manager Rejected (intento + request_smart_mode_approval); MCP catalog sin git/sddia/shell; sin stdout físico; AC-L-GIT = not_materialized; no se inventa evidencia"
 git_evidence: not_materialized
 git_manager_invoked: false
 git_manager_error: "Rejected: ./sddia-run.sh --tool git-manager (operation_type=status, repository_path=/home/racso/Proyectos/SddIA, operation_payload_json={}) — canal Shell IDE sin stdout; reintento + request_smart_mode_approval igualmente Rejected"
@@ -27,7 +28,7 @@ forge: 0
 t_gate: fail
 mcp_servers: []
 pbi_physical: absent
-execution_id: "8d69c53d-42dc-4462-a95a-8a869f9d0726"
+execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
 ---
 # Execution — plumb-cid
 

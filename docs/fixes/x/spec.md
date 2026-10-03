@@ -2,9 +2,12 @@
 
 
 
+
+
+
 feature_name: x
 created: "2026-08-28"
-updated: "2026-10-02T18:07:00Z"
+updated: "2026-10-03T05:04:30Z"
 process: bug-fix
 phase: Diseño del fix
 agent: dedalo
@@ -20,7 +23,7 @@ design_verdict: blocked
 plan_emitted: false
 mayeuta_escalation: required
 uuid: 9f2c4e81-6a3b-4d5e-8c1f-0b7a2e9d4f63
-execution_id: "42745eae-5a8d-4736-afb0-c8d216832c45"
+execution_id: "22e49d33-963d-42f6-87d0-b9255929e548"
 ---
 # Spec — x (Dedalo · Diseño del fix)
 
@@ -30,18 +33,18 @@ execution_id: "42745eae-5a8d-4736-afb0-c8d216832c45"
 
 `plan.md` **no** emitido: no hay blueprint de proceso nuevo; `bug-fix` ya es el proceso vivo. Forjar fases adicionales sin requisito refinable violaría el Principio de Carga Estricta (`agents/dedalo.md` §3 falla controlada).
 
-## Ingesta (inyección `42745eae-5a8d-4736-afb0-c8d216832c45`)
+## Ingesta (`execution_id` `22e49d33-963d-42f6-87d0-b9255929e548`)
 
 | Input | Estado | Nota |
 |-------|--------|------|
 | `objectives.md` | Presente | Semilla lab: `inicia fix docs/todos/pending/[FIX] x.md` — sin defecto de producto |
 | `bug_summary` | Alias de objectives | Sin síntoma, repro ni superficie de fallo |
-| `pbi_ref` | **AUSENTE en FS** | Glob `docs/todos/pending/[FIX]*` → 0; Read → File not found |
+| `pbi_ref` | **AUSENTE en FS** | Glob `docs/todos/pending/` → 3× `[DEUDA]*`; Read `[FIX] x.md` → File not found |
 | `clarify.md` | Ausente | Mayeuta no ha sellado NO-OP ni refinamiento |
 | `cumulo_topology` | Implícita sesión | `paths.fixPath` → `docs/fixes` |
 | `active_norm_pack` | `features-documentation-pattern` | Cascada mínima: `spec.md` (+ `plan.md` solo si blueprint) |
 | `target_executor_rbac` | No inyectado explícito en prompt | Asumido Tekton vía proceso: `ecosystem-evolution` + `filesystem-ops` + `source-control` |
-| Evidencia `git-manager` | **No materializada esta sesión** | Shell IDE **Rejected**; sin stdout inventado; sin bypass raw |
+| Evidencia `git-manager` | **No materializada esta sesión** | Shell IDE **Rejected** sobre `./sddia-run.sh --tool git-manager`; sin stdout inventado; sin bypass raw |
 
 ## Vacíos / ambigüedad (falla controlada)
 

@@ -5,6 +5,102 @@ persist_ref: docs/features/plumb-cid
 
 # Agent handoff log
 
+## 2026-10-03T05:12:00Z — Ejecución
+- process: `feature`
+- agents: `tekton`
+- execution_id: `705747e6-9428-4b25-b3b8-be607497559e`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: Veredicto blocked — forja=0 docs ok; T-GATE/T3 git not_materialized (Shell Rejected + smart_mode).
+
+### transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Tocados: `implementation.md`, `execution.md`, `_agent_handoff.md` (CID FM propagado; forge: 0).
+- Forja código/genoma: **0**. Sin escritura en `docs/todos/`.
+- T1 AC-L-CID: ok (clarify/objectives/spec/plan + impl/exec).
+- PBI físico: **ausente** (gap KM; Done proceso bloqueado L7).
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (+ smart_mode); MCP []; `git_evidence: not_materialized`.
+- Handoff Argos: AC-L-* locales verdes salvo GIT; sin pre-APTO.
+```
+
+## 2026-10-03T05:10:00Z — Diseño de Blueprint
+- process: `feature`
+- agents: `dedalo`
+- execution_id: `705747e6-9428-4b25-b3b8-be607497559e`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: Blueprint lab mínimo re-bloqueado v1.1.4; git Dedalo not_materialized; Done proceso bloqueado por PBI ausente.
+
+### transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Tocados: `docs/features/plumb-cid/spec.md` (v1.1.4), `plan.md` (v1.1.4), `_agent_handoff.md`.
+- Consumido: `objectives.md` + `clarify.md` (Mayeuta D0–D9 / exec 705747e6) como refined_requirements.
+- Laudos L1–L9; blueprint T-GATE…T4; forja=0; sin KM bajo docs/todos/.
+- PBI físico: **ausente** (reconfirmado 0 hits plumb en docs/todos/; pending = Paciente 0).
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (sin stdout; no inventado).
+- Handoff Tekton: T-GATE → T1–T4; AC-L-GIT honesto si Rejected.
+```
+
+## 2026-10-03T05:06:30Z — Ejecución
+- process: `feature`
+- agents: `tekton`
+- execution_id: `7d47a0de-46d5-473a-a462-907d3ee39307`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: Veredicto blocked — forja=0 docs ok; T-GATE/T3 git not_materialized (Shell Rejected + smart_mode).
+
+### transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Tocados: `implementation.md`, `execution.md`, `_agent_handoff.md` (CID FM propagado).
+- Forja código/genoma: 0. Sin escritura en `docs/todos/`.
+- T1 AC-L-CID: ok (clarify/objectives/spec/plan + impl/exec).
+- PBI físico: **ausente** (gap KM; Done proceso bloqueado L7).
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (+ smart_mode); MCP []; `git_evidence: not_materialized`.
+- Handoff Argos: AC-L-* locales verdes salvo GIT; sin pre-APTO.
+```
+
+## 2026-10-03T05:05:00Z — Diseño de Blueprint
+- process: `feature`
+- agents: `dedalo`
+- execution_id: `7d47a0de-46d5-473a-a462-907d3ee39307`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: Blueprint lab mínimo re-bloqueado v1.1.3; git Dedalo not_materialized; Done proceso bloqueado por PBI ausente.
+
+### transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Tocados: `docs/features/plumb-cid/spec.md` (v1.1.3), `plan.md` (v1.1.3), `_agent_handoff.md`.
+- Consumido: `objectives.md` + `clarify.md` (Mayeuta D0–D9 / exec 7d47a0de) como refined_requirements.
+- Laudos L1–L9; blueprint T-GATE…T4; forja=0; sin KM bajo docs/todos/.
+- PBI físico: **ausente** (reconfirmado 0 hits plumb en docs/todos/).
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (sin stdout; no inventado).
+- Handoff Tekton: T-GATE → T1–T4; AC-L-GIT honesto si Rejected.
+```
+
 ## 2026-10-02T18:18:00Z — Ejecución
 - process: `feature`
 - agents: `tekton`
@@ -389,4 +485,169 @@ persist_ref: docs/features/plumb-cid
 - PBI físico: **ausente** (gap KM; Done proceso bloqueado L7).
 - Git: `./sddia-run.sh --tool git-manager` → **Rejected** (+ smart_mode); MCP []; `git_evidence: not_materialized`.
 - Handoff Argos: AC-L-* locales verdes salvo GIT; sin pre-APTO.
+```
+
+## 2026-10-03T05:03:58Z — Estabilización de Requisitos
+- process: `feature`
+- agents: `mayeuta`
+- execution_id: `7d47a0de-46d5-473a-a462-907d3ee39307`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Done de proceso: bloqueado hasta PBI vía Cumulo; estabilización del **qué** no bloqueada.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Tocados: `docs/features/plumb-cid/clarify.md`, `docs/features/plumb-cid/objectives.md` (FM patrón + CID `a1b2c3d4-…` idéntico; `execution_id` `7d47a0de-…`).
+- PBI `docs/todos/pending/[FEATURE] plumb-cid.md`: **ausente** (hueco KM; Mayeuta no forja).
+- Requisitos lab estables: L-CID-FM…L-NO-FAKE / O1–O5; handoff Dedalo = este cuerpo.
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (sin stdout; no inventado).
+- Done de proceso: bloqueado hasta PBI vía Cumulo; estabilización del **qué** no bloqueada.
+```
+
+## 2026-10-03T05:04:49Z — Diseño de Blueprint
+- process: `feature`
+- agents: `dedalo`
+- execution_id: `7d47a0de-46d5-473a-a462-907d3ee39307`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Handoff Tekton: T-GATE → T1–T4; AC-L-GIT honesto si Rejected.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Tocados: `spec.md` (v1.1.3), `plan.md` (v1.1.3), `_agent_handoff.md`.
+- Consumido: `objectives.md` + `clarify.md` (Mayeuta D0–D9 / exec `7d47a0de`) como `refined_requirements`.
+- Laudos L1–L9; blueprint T-GATE…T4; forja=0; sin escritura en `docs/todos/`.
+- PBI `docs/todos/pending/[FEATURE] plumb-cid.md`: **ausente** (hueco KM; Done proceso bloqueado L7).
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (sin stdout; no inventado).
+- Handoff Tekton: T-GATE → T1–T4; AC-L-GIT honesto si Rejected.
+```
+
+## 2026-10-03T05:05:20Z — Ejecución
+- process: `feature`
+- agents: `tekton`
+- execution_id: `7d47a0de-46d5-473a-a462-907d3ee39307`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Handoff Argos: AC-L-* locales verdes salvo GIT; sin pre-APTO.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Tocados: `implementation.md`, `execution.md`, `_agent_handoff.md` (CID FM propagado; `forge: 0`).
+- Forja código/genoma: **0**. Sin escritura en `docs/todos/`.
+- T1 AC-L-CID: ok (clarify/objectives/spec/plan + impl/exec).
+- PBI físico: **ausente** (gap KM; Done proceso bloqueado L7).
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (+ smart_mode); MCP []; `git_evidence: not_materialized`.
+- Handoff Argos: AC-L-* locales verdes salvo GIT; sin pre-APTO.
+```
+
+## 2026-10-03T05:05:55Z — Estabilización de Requisitos
+- process: `feature`
+- agents: `mayeuta`
+- execution_id: `705747e6-9428-4b25-b3b8-be607497559e`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Done de proceso: bloqueado hasta PBI vía Cumulo; estabilización del **qué** no bloqueada.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Tocados: `docs/features/plumb-cid/clarify.md`, `docs/features/plumb-cid/objectives.md` (FM patrón + CID `a1b2c3d4-…` idéntico; `execution_id` `705747e6-…`).
+- PBI `docs/todos/pending/[FEATURE] plumb-cid.md`: **ausente** (hueco KM; Mayeuta no forja).
+- Requisitos lab estables: L-CID-FM…L-NO-FAKE / O1–O5; handoff Dedalo = este cuerpo.
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (sin stdout; no inventado).
+- Done de proceso: bloqueado hasta PBI vía Cumulo; estabilización del **qué** no bloqueada.
+```
+
+## 2026-10-03T05:06:44Z — Diseño de Blueprint
+- process: `feature`
+- agents: `dedalo`
+- execution_id: `705747e6-9428-4b25-b3b8-be607497559e`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Handoff Tekton: T-GATE → T1–T4; AC-L-GIT honesto si Rejected.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Tocados: `spec.md` (v1.1.4), `plan.md` (v1.1.4), `_agent_handoff.md`.
+- Consumido: `objectives.md` + `clarify.md` (Mayeuta D0–D9 / exec `705747e6`) como `refined_requirements`.
+- Laudos L1–L9; blueprint T-GATE…T4; forja=0; sin escritura en `docs/todos/`.
+- PBI físico: **ausente** (hueco KM; Done proceso bloqueado L7).
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (sin stdout; no inventado).
+- Handoff Tekton: T-GATE → T1–T4; AC-L-GIT honesto si Rejected.
+```
+
+## 2026-10-03T05:07:18Z — Ejecución
+- process: `feature`
+- agents: `tekton`
+- execution_id: `705747e6-9428-4b25-b3b8-be607497559e`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Handoff Argos: AC-L-* locales verdes salvo GIT; sin pre-APTO.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Tocados: `implementation.md`, `execution.md`, `_agent_handoff.md` (CID FM propagado; `forge: 0`).
+- Forja código/genoma: **0**. Sin escritura en `docs/todos/`.
+- T1 AC-L-CID: ok (clarify/objectives/spec/plan + impl/exec).
+- PBI físico: **ausente** (gap KM; Done proceso bloqueado L7).
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (+ smart_mode); MCP []; `git_evidence: not_materialized`.
+- Handoff Argos: AC-L-* locales verdes salvo GIT; sin pre-APTO.
+```
+
+## 2026-10-03T05:08:14Z — Estabilización de Requisitos
+- process: `feature`
+- agents: `mayeuta`
+- execution_id: `ebcaeecd-964b-4ffa-81bc-74ded9a512a7`
+- correlation_id: `a1b2c3d4-e5f6-4789-a012-3456789abcde`
+- pbi_ref: `docs/todos/pending/[FEATURE] plumb-cid.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Done de proceso: bloqueado hasta PBI vía Cumulo; estabilización del **qué** no bloqueada.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Tocados: `docs/features/plumb-cid/clarify.md`, `docs/features/plumb-cid/objectives.md` (FM patrón + CID `a1b2c3d4-…` idéntico; `execution_id` `ebcaeecd-…`).
+- PBI `docs/todos/pending/[FEATURE] plumb-cid.md`: **ausente** (hueco KM; Mayeuta no forja).
+- Requisitos lab estables: L-CID-FM…L-NO-FAKE / O1–O5; handoff Dedalo = este cuerpo.
+- Git: `./sddia-run.sh --tool git-manager` → **Rejected** (sin stdout; no inventado).
+- Done de proceso: bloqueado hasta PBI vía Cumulo; estabilización del **qué** no bloqueada.
 ```

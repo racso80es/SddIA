@@ -1,7 +1,7 @@
 ---
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-10-02"
+updated: "2026-10-03"
 process: feature
 purpose: Estabilización Mayeuta — lab plumb correlation_id en cascada documental feature (kalma2-agent-runtime-cursor)
 branch_name: feat/plumb-cid
@@ -11,11 +11,11 @@ document_id: LAB-PLUMB-CID
 correlation_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 phase: mayeuta-stabilization
 agents: mayeuta
-execution_id: "8d69c53d-42dc-4462-a95a-8a869f9d0726"
+execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
 ---
 # Clarificación — plumb-cid
 
-Transcript Mayeuta (2026-10-02). Semilla operador: «inicia feature docs/todos/pending/[FEATURE] plumb-cid.md» + orden Raw Kernel fase Estabilización (`correlation_id` a1b2c3d4-…, `execution_id` 8d69c53d-…).
+Transcript Mayeuta (2026-10-03). Semilla operador: «inicia feature docs/todos/pending/[FEATURE] plumb-cid.md» + orden Raw Kernel fase Estabilización (`correlation_id` a1b2c3d4-…, `execution_id` ebcaeecd-…).
 
 Reafirmación sobre estabilizaciones previas: cascada documental ya materializada bajo `persist_ref`; esta sesión **no inventa** producto ni PBI; consolida el **qué** lab como `refined_requirements` para Dedalo.
 
@@ -32,7 +32,7 @@ Reafirmación sobre estabilizaciones previas: cascada documental ya materializad
 | Rama | `feat/plumb-cid` |
 | `persist_ref` | `docs/features/plumb-cid` |
 | `document_id` | `LAB-PLUMB-CID` |
-| PBI físico | **Ausente** en `docs/todos/pending/` y sin match `*plumb*` en `docs/todos/` (reconfirmado 2026-10-02 / exec 8d69c53d; pending = deudas Tracker / Paciente 0) |
+| PBI físico | **Ausente** en `docs/todos/pending/` y sin match `*plumb*` en `docs/todos/` (reconfirmado 2026-10-03 / exec ebcaeecd; Glob = 0 hits) |
 | Naturaleza ciclo | **Lab / humo de tubería** — plumb de `correlation_id` en artefactos Mayeuta; no producto de dominio nuevo |
 | Fase | Estabilización Mayeuta (esta sesión) → Dedalo consume este cuerpo |
 
@@ -45,7 +45,7 @@ Reafirmación sobre estabilizaciones previas: cascada documental ya materializad
 | Intención = iniciar feature `plumb-cid` | Artefactos bajo `docs/features/plumb-cid/` presentes (clarify/objectives + cascada posterior) | Fuente `raw_user_intent` válida |
 | PBI en `docs/todos/pending/[FEATURE] plumb-cid.md` | **No existe** (0 hits plumb-cid en `docs/todos/`) | **Hueco KM** — Mayeuta **no** forja PBI (solo Cumulo / `Kaizen_Alert_Required`) |
 | `correlation_id` inyectado | `a1b2c3d4-e5f6-4789-a012-3456789abcde` | Debe quedar **auditable** en frontmatter clarify/objectives |
-| `execution_id` | `8d69c53d-42dc-4462-a95a-8a869f9d0726` | Trazabilidad de sesión; no sustituye CID |
+| `execution_id` | `ebcaeecd-964b-4ffa-81bc-74ded9a512a7` | Trazabilidad de sesión; no sustituye CID |
 | Alcance producto amplio | Semilla no aporta dominio más allá del nombre | Alcance = **lab plumb CID** (meta-tubería runtime) |
 
 ---

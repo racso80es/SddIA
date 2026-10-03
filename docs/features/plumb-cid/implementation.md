@@ -1,7 +1,8 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-10-02"
+updated: "2026-10-03"
 process: feature
 document_id: LAB-PLUMB-CID
 branch_name: feat/plumb-cid
@@ -15,7 +16,7 @@ forge: 0
 status: baseline_documental_lab
 t_gate: fail
 genome_mutated: false
-execution_id: "8d69c53d-42dc-4462-a95a-8a869f9d0726"
+execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
 ---
 # Implementation — plumb-cid
 
