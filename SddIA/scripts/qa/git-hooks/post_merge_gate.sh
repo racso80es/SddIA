@@ -10,14 +10,20 @@ main() {
     exit 0
   fi
 
+  hook_timing_begin
+
   local head
   head=$(git_run symbolic-ref -q HEAD 2>/dev/null || true)
-  [[ "$head" == "refs/heads/main" ]] || exit 0
+  if [[ "$head" != "refs/heads/main" ]]; then
+    hook_timing_flush "post-merge"
+    exit 0
+  fi
 
   local source_branch
   source_branch=$(infer_merged_branch || true)
   if [[ -z "$source_branch" ]]; then
     echo "SddIA post-merge: no merge branch inferred — no-op" >&2
+    hook_timing_flush "post-merge"
     exit 0
   fi
 
@@ -28,9 +34,12 @@ main() {
     "$source_branch" "$author" "$correlation_id")
 
   if ! invoke_process "accept-pr" "$payload"; then
+    hook_timing_flush "post-merge" "$source_branch"
     echo "SddIA post-merge: BLOCKED — accept-pr failed for ${source_branch}" >&2
     exit 1
   fi
+
+  hook_timing_flush "post-merge" "$source_branch"
 }
 
 main "$@"

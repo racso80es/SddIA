@@ -28,6 +28,7 @@ pub mod eda_bus;
 pub mod eda_bus_topology;
 pub mod eda_coverage;
 pub mod ecst_validation;
+pub mod execution_workspace_report;
 pub mod executor;
 pub mod fractal;
     pub mod enrich_fracture_pbi_kaizen;

@@ -12,6 +12,7 @@ use super::route_fractal_core::{
     invoke_radamanto_batch, invoke_route_fractal, invoke_telemetry_compliance,
 };
 use super::telemetry_batch_stub::run_telemetry_batch_stub;
+use super::execution_workspace_report;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
 use super::workspace_init::{is_workspace_init_phase, run as run_workspace_init};
@@ -947,15 +948,24 @@ fn run_generic(
     let mut inputs_mut = process_inputs.clone();
     bootstrap_workspace(repo, process_name, &template, &mut inputs_mut, &mut state)?;
 
+    let correlation_id = inputs_mut
+        .get("correlation_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
     let mut phase_reports = Vec::new();
     for phase in phases {
-        phase_reports.push(execute_phase(
-            repo,
-            phase,
-            process_name,
-            process_def,
-            &inputs_mut,
-            &mut state,
+        let phase_t0 = Instant::now();
+        phase_reports.push(execution_workspace_report::inject_elapsed_ms(
+            execute_phase(
+                repo,
+                phase,
+                process_name,
+                process_def,
+                &inputs_mut,
+                &mut state,
+            ),
+            phase_t0.elapsed().as_millis() as i64,
         ));
     }
     // L-RESIDUAL-SYM / PPR #187: misma adjudicación retroactiva EDA que delivery_close::run.
@@ -1009,6 +1019,22 @@ fn run_generic(
             verdict.success,
         );
     }
+
+    let workspace_path = state
+        .get("workspace_path")
+        .or_else(|| state.get("workspace").and_then(|w| w.get("workspace_path")))
+        .and_then(|v| v.as_str());
+    let execution_id = state.get("execution_id").and_then(|v| v.as_str());
+    execution_workspace_report::try_persist_execution_report(
+        process_name,
+        thermodynamic::is_exempt(process_name),
+        workspace_path,
+        execution_id,
+        correlation_id,
+        status_code,
+        duration_ms,
+        &phase_reports,
+    );
 
     Ok(OrchestratorEnvelope {
         success: verdict.success,

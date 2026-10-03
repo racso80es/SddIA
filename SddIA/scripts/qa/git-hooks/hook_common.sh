@@ -196,6 +196,7 @@ invoke_process() {
   local tmp rc=0
   tmp=$(_write_ephemeral_json "hook-${process_name}" "$payload")
   export SDDIA_HOOK_DELIVERY_CLOSE=1
+  hook_timing_record_process "$process_name"
   "$SDDIA_EXECUTE_PROCESS_BIN" --process "$process_name" --inputs-file "$tmp" >&2 || rc=$?
   rm -f "$tmp"
   return "$rc"
@@ -234,4 +235,69 @@ infer_merged_branch() {
 
 resolve_orchestrator() {
   _sddia_resolve_orchestrator "$REPO"
+}
+
+resolve_eda_proofs_dir() {
+  local rel=".SddIA/proofs"
+  if [[ -f "$CUMULO_PATH" ]]; then
+    local parsed
+    parsed=$(sed -n 's/.*"proofs"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CUMULO_PATH" | head -1)
+    if [[ -n "$parsed" ]]; then
+      rel="${parsed#./}"
+    fi
+  fi
+  printf '%s\n' "$REPO/$rel"
+}
+
+hook_timing_now_ms() {
+  python3 -c 'import time; print(int(time.time() * 1000))'
+}
+
+HOOK_TIMING_START_MS=""
+HOOK_TIMING_INVOKED_JSON='[]'
+
+hook_timing_begin() {
+  HOOK_TIMING_START_MS=$(hook_timing_now_ms)
+  HOOK_TIMING_INVOKED_JSON='[]'
+}
+
+hook_timing_record_process() {
+  local name="$1"
+  [[ -n "$name" ]] || return 0
+  HOOK_TIMING_INVOKED_JSON=$(
+    python3 -c 'import json,sys; a=json.loads(sys.argv[1]); a.append(sys.argv[2]); print(json.dumps(a))' \
+      "$HOOK_TIMING_INVOKED_JSON" "$name"
+  )
+}
+
+append_hook_timing_jsonl() {
+  local hook_name="$1"
+  local branch="$2"
+  local total_ms="$3"
+  local invoked_json="${4:-[]}"
+  local proofs dir line recorded_at
+  proofs=$(resolve_eda_proofs_dir)
+  dir="$proofs/hook-timings"
+  mkdir -p "$dir"
+  recorded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || python3 -c 'from datetime import datetime,timezone; print(datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))')
+  line=$(
+    python3 -c 'import json,sys; print(json.dumps({"hook":sys.argv[1],"branch":sys.argv[2],"total_ms":int(sys.argv[3]),"invoked_processes":json.loads(sys.argv[4]),"delta_class":None,"attestation_hit":None,"recorded_at":sys.argv[5]}, separators=(",",":")))' \
+      "$hook_name" "$branch" "$total_ms" "$invoked_json" "$recorded_at"
+  )
+  printf '%s\n' "$line" >> "$dir/hook-timings.jsonl"
+}
+
+hook_timing_flush() {
+  local hook_name="$1"
+  local branch="${2:-}"
+  local end_ms total_ms
+  [[ -n "${HOOK_TIMING_START_MS:-}" ]] || return 0
+  end_ms=$(hook_timing_now_ms)
+  total_ms=$((end_ms - HOOK_TIMING_START_MS))
+  if [[ -z "$branch" ]]; then
+    branch=$(git_run symbolic-ref --short HEAD 2>/dev/null || printf '_unknown')
+  fi
+  append_hook_timing_jsonl "$hook_name" "$branch" "$total_ms" "$HOOK_TIMING_INVOKED_JSON"
+  HOOK_TIMING_START_MS=""
+  HOOK_TIMING_INVOKED_JSON='[]'
 }

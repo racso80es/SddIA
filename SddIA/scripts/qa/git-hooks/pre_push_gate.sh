@@ -6,6 +6,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hook_common.sh"
 
 run_evolution_gate() {
   resolve_sddia_qa || return 1
+  hook_timing_record_process "gate-evolution"
   if ! "$SDDIA_QA_BIN" gate-evolution --json --range --if-touched --sync-base; then
     echo "SddIA pre-push: BLOCKED — evolution gate (--range --if-touched) failed" >&2
     return 1
@@ -23,11 +24,16 @@ main() {
     exit 0
   fi
 
+  hook_timing_begin
+
   local stdin_text line local_ref local_sha remote_ref remote_sha
   # $(cat) recorta el \n final; el marcador conserva el payload de git pre-push.
   stdin_text=$(cat; printf x)
   stdin_text="${stdin_text%x}"
-  [[ -n "$stdin_text" ]] || exit 0
+  if [[ -z "$stdin_text" ]]; then
+    hook_timing_flush "pre-push"
+    exit 0
+  fi
 
   local branches=()
   while IFS='|' read -r local_ref local_sha remote_ref remote_sha || [[ -n "${local_ref:-}" ]]; do
@@ -37,6 +43,7 @@ main() {
     fi
     if is_main_ref "$local_ref"; then
       if main_push_veto; then
+        hook_timing_flush "pre-push"
         echo "$MAIN_GUARD_MSG" >&2
         exit 1
       fi
@@ -46,6 +53,7 @@ main() {
     branch=$(ref_to_branch "$local_ref")
     if [[ -z "$branch" || "$branch" == "main" ]]; then
       if main_push_veto; then
+        hook_timing_flush "pre-push"
         echo "$MAIN_GUARD_MSG" >&2
         exit 1
       fi
@@ -58,12 +66,17 @@ main() {
   done < <(printf '%s' "$stdin_text" | parse_pre_push_stdin)
 
   if pre_push_hook_runs_evolution_gate "${#branches[@]}"; then
-    run_evolution_gate || exit 1
+    run_evolution_gate || {
+      hook_timing_flush "pre-push" "_evolution_gate"
+      exit 1
+    }
+    hook_timing_flush "pre-push" "_evolution_gate"
     exit 0
   fi
 
-  local exit_code=0 branch persist_ref slug payload qa_payload
+  local exit_code=0 branch persist_ref slug payload qa_payload timing_branch=""
   for branch in "${branches[@]}"; do
+    timing_branch="$branch"
     qa_payload=$(printf '{"event_type":"Local_QA_Requested","blocking":true,"emitter_agent":"git-hook-pre-push","payload":{"branch":"%s"}}' "$branch")
     if ! invoke_process "route-domain-event" "$qa_payload"; then
       echo "SddIA pre-push: BLOCKED — Local_QA_Requested failed for ${branch}" >&2
@@ -87,6 +100,10 @@ main() {
     fi
   done
 
+  if [[ ${#branches[@]} -gt 1 ]]; then
+    timing_branch="_multi"
+  fi
+  hook_timing_flush "pre-push" "$timing_branch"
   exit "$exit_code"
 }
 
