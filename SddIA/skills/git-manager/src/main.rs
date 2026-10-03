@@ -217,7 +217,13 @@ fn handle(op: &str, repo: &Path, payload: &Value) -> (Value, i32) {
             assert_safe_token(branch, "branch_name");
 
             let (stdout, stderr, code) = if create {
-                run_git(repo, &["checkout", "-b", branch])
+                let verify_ref = format!("refs/heads/{branch}");
+                let (_, _, exists) = run_git(repo, &["show-ref", "--verify", "--quiet", &verify_ref]);
+                if exists == 0 {
+                    run_git(repo, &["checkout", branch])
+                } else {
+                    run_git(repo, &["checkout", "-b", branch])
+                }
             } else {
                 run_git(repo, &["checkout", branch])
             };
