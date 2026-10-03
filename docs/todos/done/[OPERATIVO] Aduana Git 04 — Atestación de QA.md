@@ -4,7 +4,7 @@ uuid: "8484cd0c-dee1-434b-a507-7278a16c61e3"
 title: "[OPERATIVO] Aduana Git 04 — Atestación de QA"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,7 +15,7 @@ hu_order: 4
 hu_order_total: 6
 historia_ref: "docs/todos/historias/[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia.md"
 historia_document_id: HU-MERGE-THERMODYNAMICS
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 blocked_by:
   - PBI-MERGE-THERMO-03-DELTA-PROFILE
 unblocks:

@@ -415,6 +415,7 @@ hook_timing_now_ms() {
 HOOK_TIMING_START_MS=""
 HOOK_TIMING_INVOKED_JSON='[]'
 HOOK_TIMING_DELTA_CLASS=""
+HOOK_TIMING_ATTESTATION_HIT=""
 
 hook_timing_begin() {
   HOOK_TIMING_START_MS=$(hook_timing_now_ms)
@@ -430,19 +431,63 @@ hook_timing_record_process() {
   )
 }
 
+qa_attestation_path() {
+  local branch="$1"
+  local slug proofs
+  slug=$(branch_slug "$branch")
+  proofs=$(resolve_eda_proofs_dir)
+  printf '%s/qa-attestations/%s.json' "$proofs" "$slug"
+}
+
+# Fail-closed: stdout no; return 0 si el atajo pre-push es válido (R-2, R-5).
+read_qa_attestation_hit() {
+  local branch="$1" local_sha="$2" delta_class="$3"
+  HOOK_TIMING_ATTESTATION_HIT="false"
+  local path tree
+  path=$(qa_attestation_path "$branch")
+  [[ -f "$path" ]] || return 1
+  tree=$(git_run rev-parse --verify "${local_sha}^{tree}" 2>/dev/null) || return 1
+  if python3 -c 'import json,sys,datetime; path,tree,delta=sys.argv[1],sys.argv[2],sys.argv[3] or None
+doc=json.load(open(path))
+if doc.get("schema")!="qa-attestation/1.0": raise SystemExit(1)
+if doc.get("verdict")!="aprobado": raise SystemExit(1)
+if doc.get("tree_sha")!=tree: raise SystemExit(1)
+issued=doc.get("issued_at"); ttl=int(doc.get("ttl_secs",86400))
+if not issued: raise SystemExit(1)
+dt=datetime.datetime.fromisoformat(issued.replace("Z","+00:00"))
+age=(datetime.datetime.now(datetime.timezone.utc)-dt).total_seconds()
+if age>ttl: raise SystemExit(1)
+prof=doc.get("qa_profile","full")
+if prof=="docs-only" and delta=="active": raise SystemExit(1)
+if prof not in ("full","docs-only"): raise SystemExit(1)
+' "$path" "$tree" "$delta_class"; then
+    HOOK_TIMING_ATTESTATION_HIT="true"
+    return 0
+  fi
+  return 1
+}
+
 append_hook_timing_jsonl() {
   local hook_name="$1"
   local branch="$2"
   local total_ms="$3"
   local invoked_json="${4:-[]}"
-  local proofs dir line recorded_at
+  local proofs dir line recorded_at att_hit
   proofs=$(resolve_eda_proofs_dir)
   dir="$proofs/hook-timings"
   mkdir -p "$dir"
   recorded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || python3 -c 'from datetime import datetime,timezone; print(datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))')
+  att_hit="${HOOK_TIMING_ATTESTATION_HIT:-}"
+  if [[ -z "$att_hit" ]]; then
+    att_hit=null
+  else
+    att_hit=$(
+      python3 -c 'import json,sys; v=sys.argv[1]; print(json.dumps(v=="true"))' "$att_hit"
+    )
+  fi
   line=$(
-    python3 -c 'import json,sys; dc=sys.argv[6] if len(sys.argv)>6 and sys.argv[6] else None; print(json.dumps({"hook":sys.argv[1],"branch":sys.argv[2],"total_ms":int(sys.argv[3]),"invoked_processes":json.loads(sys.argv[4]),"delta_class":dc,"attestation_hit":None,"recorded_at":sys.argv[5]}, separators=(",",":")))' \
-      "$hook_name" "$branch" "$total_ms" "$invoked_json" "$recorded_at" "${HOOK_TIMING_DELTA_CLASS:-}"
+    python3 -c 'import json,sys; dc=sys.argv[6] if len(sys.argv)>6 and sys.argv[6] else None; ah=json.loads(sys.argv[7]) if sys.argv[7] not in ("","null") else None; print(json.dumps({"hook":sys.argv[1],"branch":sys.argv[2],"total_ms":int(sys.argv[3]),"invoked_processes":json.loads(sys.argv[4]),"delta_class":dc,"attestation_hit":ah,"recorded_at":sys.argv[5]}, separators=(",",":")))' \
+      "$hook_name" "$branch" "$total_ms" "$invoked_json" "$recorded_at" "${HOOK_TIMING_DELTA_CLASS:-}" "$att_hit"
   )
   printf '%s\n' "$line" >> "$dir/hook-timings.jsonl"
 }

@@ -27,11 +27,17 @@ main() {
     exit 0
   fi
 
-  local author correlation_id payload
+  local author correlation_id payload att_path att_ref=""
   author=$(git_config user.email "unknown@sddia.local")
   correlation_id=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || echo "local-$(date +%s)")
-  payload=$(printf '{"source_branch":"%s","author":"%s","correlation_id":"%s","merge_already_done":true}' \
-    "$source_branch" "$author" "$correlation_id")
+  att_path=$(qa_attestation_path "$source_branch")
+  if [[ -f "$att_path" ]]; then
+    att_ref="${att_path#"$REPO"/}"
+  fi
+  payload=$(
+    python3 -c 'import json,sys; d={"source_branch":sys.argv[1],"author":sys.argv[2],"correlation_id":sys.argv[3],"merge_already_done":True}; r=sys.argv[4]; d["attestation_ref"]=r if r else None; print(json.dumps(d))' \
+      "$source_branch" "$author" "$correlation_id" "$att_ref"
+  )
 
   if ! invoke_process "accept-pr" "$payload"; then
     hook_timing_flush "post-merge" "$source_branch"

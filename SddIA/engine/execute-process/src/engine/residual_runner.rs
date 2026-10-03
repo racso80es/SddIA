@@ -1041,6 +1041,14 @@ fn run_generic(
         &phase_reports,
     );
 
+    if process_name == "pull-request-review" && verdict.success {
+        if let Ok(path) = super::qa_attestation::try_write_from_ppr(repo, &state, &inputs_mut) {
+            if let Some(obj) = data.as_object_mut() {
+                obj.insert("attestation_path".into(), json!(path.to_string_lossy()));
+            }
+        }
+    }
+
     Ok(OrchestratorEnvelope {
         success: verdict.success,
         status_code,

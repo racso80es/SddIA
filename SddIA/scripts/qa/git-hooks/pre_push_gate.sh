@@ -89,14 +89,16 @@ main() {
     else
       qa_profile="full"
     fi
-    qa_payload=$(
-      python3 -c 'import json,sys; print(json.dumps({"event_type":"Local_QA_Requested","blocking":True,"emitter_agent":"git-hook-pre-push","payload":{"branch":sys.argv[1],"qa_profile":sys.argv[2]}}))' \
-        "$branch" "$qa_profile"
-    )
-    if ! invoke_process "route-domain-event" "$qa_payload"; then
-      echo "SddIA pre-push: BLOCKED — Local_QA_Requested failed for ${branch}" >&2
-      exit_code=1
-      continue
+    if ! read_qa_attestation_hit "$branch" "$local_sha" "$delta_class"; then
+      qa_payload=$(
+        python3 -c 'import json,sys; print(json.dumps({"event_type":"Local_QA_Requested","blocking":True,"emitter_agent":"git-hook-pre-push","payload":{"branch":sys.argv[1],"qa_profile":sys.argv[2]}}))' \
+          "$branch" "$qa_profile"
+      )
+      if ! invoke_process "route-domain-event" "$qa_payload"; then
+        echo "SddIA pre-push: BLOCKED — Local_QA_Requested failed for ${branch}" >&2
+        exit_code=1
+        continue
+      fi
     fi
 
     persist_ref=$(resolve_persist_ref "$branch" || true)
