@@ -25,6 +25,7 @@ Clase ECST emitida cuando **Argos** finaliza el escrutinio determinista de una P
 
 ### OPTIONAL
 - `violated_rules` — array de strings con trazabilidad normativa (si aplica)
+- `tracker_ref` (identificador Linear del PBI; sello `tracker-stamp`)
 
 ### FORBIDDEN
 - Cualquier valor de `resolution` fuera de `PASS`, `REJECT`, `FLAG`

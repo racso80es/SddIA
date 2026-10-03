@@ -148,6 +148,95 @@ fn handle_runtime_profile(req: tiny_http::Request) {
     );
 }
 
+fn query_params(url: &str) -> std::collections::HashMap<String, String> {
+    let mut out = std::collections::HashMap::new();
+    let Some(qs) = url.split('?').nth(1) else {
+        return out;
+    };
+    for pair in qs.split('&') {
+        if let Some((k, v)) = pair.split_once('=') {
+            out.insert(k.to_string(), v.to_string());
+        } else if !pair.is_empty() {
+            out.insert(pair.to_string(), String::new());
+        }
+    }
+    out
+}
+
+fn handle_backlog(req: tiny_http::Request, repo: &Path) {
+    let params = query_params(req.url());
+    let mut inputs = serde_json::Map::new();
+    if let Some(slug) = params.get("project_slug").filter(|s| !s.trim().is_empty()) {
+        inputs.insert("project_slug".into(), serde_json::json!(slug.trim()));
+    }
+    let kind = params
+        .get("kind")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("all");
+    inputs.insert("kind".into(), serde_json::json!(kind));
+    if let Some(st) = params.get("state").filter(|s| !s.trim().is_empty()) {
+        inputs.insert("state".into(), serde_json::json!(st.trim()));
+    }
+
+    let bin = match resolve_orchestrator(repo) {
+        Ok(b) => b,
+        Err(message) => {
+            reply(
+                req,
+                503,
+                serde_json::json!({
+                    "success": false,
+                    "message": message,
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+            return;
+        }
+    };
+
+    let inputs_val = serde_json::Value::Object(inputs);
+    match run_orchestrator_inputs(repo, &bin, "tracker-backlog-query", &inputs_val) {
+        Ok(line) => {
+            let parsed: serde_json::Value = serde_json::from_str(&line).unwrap_or_else(|_| {
+                serde_json::json!({"success": false, "message": "respuesta motor no JSON"})
+            });
+            if parsed.get("success").and_then(|v| v.as_bool()) != Some(true) {
+                let msg = parsed
+                    .get("error")
+                    .or_else(|| parsed.get("message"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("consulta backlog falló");
+                reply(
+                    req,
+                    502,
+                    serde_json::json!({
+                        "success": false,
+                        "message": msg,
+                        "exit_code": parsed.get("exitCode").unwrap_or(&serde_json::json!(1)),
+                    })
+                    .to_string(),
+                );
+                return;
+            }
+            let data = parsed.get("data").cloned().unwrap_or(parsed);
+            reply(
+                req,
+                200,
+                serde_json::json!({
+                    "success": true,
+                    "exit_code": 0,
+                    "tracker_configured": data.get("tracker_configured").cloned().unwrap_or(serde_json::json!(false)),
+                    "items": data.get("items").cloned().unwrap_or(serde_json::json!([])),
+                })
+                .to_string(),
+            );
+        }
+        Err(raw) => reply(req, 502, raw),
+    }
+}
+
 fn resolve_orchestrator(repo: &Path) -> Result<PathBuf, String> {
     if let Ok(o) = std::env::var("SDDIA_EXECUTE_PROCESS_BIN") {
         let trimmed = o.trim();
@@ -2495,6 +2584,7 @@ fn dispatch(req: tiny_http::Request, repo: Arc<PathBuf>, ui_root: Arc<PathBuf>) 
         (Method::Post, "/api/user-preference-change") => handle_user_preference_change(req, &repo),
         (Method::Get, "/api/status") => handle_status(req, &repo),
         (Method::Get, "/api/projects") => handle_projects(req, &repo),
+        (Method::Get, "/api/backlog") => handle_backlog(req, &repo),
         (Method::Get, "/api/runtime-profile") => handle_runtime_profile(req),
         (Method::Get, "/api/email-inbox") => handle_email_inbox(req, &repo),
         (Method::Get, "/api/progress/stream") => handle_progress_stream(req, &repo),

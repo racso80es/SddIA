@@ -21,3 +21,7 @@ pub mod email_digest_preference_reply;
 pub mod email_quick_action;
 pub mod user_preference;
 pub mod telegram_gateway;
+pub mod tracker_backlog_query;
+pub mod tracker_linear_markdown_sync;
+pub mod tracker_sync_replay;
+pub mod tracker_stamp;

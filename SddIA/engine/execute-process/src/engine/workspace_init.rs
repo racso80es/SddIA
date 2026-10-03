@@ -579,6 +579,40 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         .map(|p| p.to_string_lossy().replace('\\', "/"))
         .unwrap_or_else(|_| objectives_path.to_string_lossy().into_owned());
 
+    let mut work_initiated: Value = json!(null);
+    if matches!(process_name, "feature" | "bug-fix" | "refactorization")
+        && !env_truthy("SDDIA_LAB_SKIP_WORK_INITIATED")
+    {
+        let mut emit_inputs = json!({
+            "branch": branch_name,
+            "persist_ref": persist_ref,
+            "source_process": process_name,
+        });
+        if let Some(slug) = inputs
+            .get("project_slug")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            emit_inputs["project_slug"] = json!(slug);
+        }
+        if let Some(pbi) = pbi_ref_meta {
+            emit_inputs["pbi_ref"] = json!(pbi);
+            if let Some(tr) = super::tracker_pbi_meta::tracker_ref_from_pbi(repo, pbi) {
+                emit_inputs["tracker_ref"] = json!(tr);
+            }
+        }
+        work_initiated = match super::actions::try_run_native(
+            repo,
+            "emit-work-initiated-event",
+            &emit_inputs,
+        ) {
+            Ok(Some(v)) => v,
+            Ok(None) => json!({"warn": "emit-work-initiated-event no nativo"}),
+            Err(e) => json!({"warn": e}),
+        };
+    }
+
     Ok(json!({
         "feature_name": task_name,
         "task_name": task_name,
@@ -587,6 +621,7 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         "persist_ref": persist_ref,
         "objectives_path": objectives_rel,
         "git_steps": git_steps,
+        "work_initiated": work_initiated,
         "execution_profile": profile.to_json(),
         "delivery_mode": bound.as_ref().map(|b| b.delivery_mode.as_str()),
         "delivery_mode_source": bound.as_ref().map(|b| b.delivery_mode_source),

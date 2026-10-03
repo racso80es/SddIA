@@ -8,8 +8,9 @@ use serde_yaml::Value as YamlValue;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub const CONTRACT_VERSION: &str = "1.1.0";
+pub const CONTRACT_VERSION: &str = "1.2.0";
 const CONTRACT_VERSION_LEGACY: &str = "1.0.0";
+const CONTRACT_VERSION_MID: &str = "1.1.0";
 pub const CONTRACT_REL: &str =
     "SddIA/library/codexes/codex-software-engineering/contracts/project-config-contract.md";
 
@@ -34,6 +35,15 @@ pub struct DocsLayout {
     pub fixes: String,
     pub todos_pending: String,
     pub todos_done: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TrackerConfig {
+    pub team_key: String,
+    pub project_id: Option<String>,
+    pub state_map: std::collections::BTreeMap<String, String>,
+    pub label_hu: String,
+    pub label_pbi: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,6 +173,77 @@ pub fn resolve_doc_path(project_root: &Path, rel: &str) -> Result<PathBuf, Strin
     Ok(full)
 }
 
+const TRACKER_STATE_KEYS: &[&str] = &[
+    "backlog",
+    "in_progress",
+    "in_review",
+    "done",
+    "cancelled",
+];
+
+fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
+    let Some(tracker) = fm.get("tracker") else {
+        return Ok(());
+    };
+    if !tracker.is_mapping() {
+        return Err("PROJECT_CONFIG_INVALID: tracker debe ser objeto".into());
+    }
+    let provider = tracker
+        .get("provider")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    if provider.is_none() {
+        return Ok(());
+    }
+    let p = provider.unwrap();
+    if p != "linear" {
+        return Err(format!(
+            "PROJECT_CONFIG_INVALID: tracker.provider '{p}' no admitido (linear)"
+        ));
+    }
+    let team = tracker
+        .get("team_key")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    if team.is_none() {
+        return Err(
+            "PROJECT_CONFIG_INVALID: tracker.team_key obligatorio con provider linear".into(),
+        );
+    }
+    if let Some(map) = tracker.get("state_map").and_then(|m| m.as_mapping()) {
+        for (k, v) in map {
+            let key = k.as_str().unwrap_or("");
+            if !TRACKER_STATE_KEYS.contains(&key) {
+                return Err(format!(
+                    "PROJECT_CONFIG_INVALID: tracker.state_map clave desconocida '{key}'"
+                ));
+            }
+            if !v.as_str().is_some_and(|s| !s.trim().is_empty()) {
+                return Err(format!(
+                    "PROJECT_CONFIG_INVALID: tracker.state_map.{key} vacío"
+                ));
+            }
+        }
+    }
+    if let Some(labels) = tracker.get("labels") {
+        if !labels.is_mapping() {
+            return Err("PROJECT_CONFIG_INVALID: tracker.labels debe ser objeto".into());
+        }
+        for key in ["hu", "pbi"] {
+            if let Some(v) = labels.get(key) {
+                if !v.as_str().is_some_and(|s| !s.trim().is_empty()) {
+                    return Err(format!(
+                        "PROJECT_CONFIG_INVALID: tracker.labels.{key} vacío"
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn anchor_persist(project_root: &Path, persist_ref: &str) -> Result<PathBuf, String> {
     let raw = Path::new(persist_ref.trim());
     if persist_ref.contains("..") {
@@ -236,6 +317,99 @@ fn assert_git_isolation(project_root: &Path, others: &[PathBuf]) -> Result<(), S
     Ok(())
 }
 
+pub fn tracker_config_from_manifest(fm: &YamlValue) -> Option<TrackerConfig> {
+    let tracker = fm.get("tracker")?;
+    if tracker.get("provider")?.as_str()? != "linear" {
+        return None;
+    }
+    let team_key = tracker
+        .get("team_key")?
+        .as_str()?
+        .trim()
+        .to_string();
+    if team_key.is_empty() {
+        return None;
+    }
+    let mut state_map = std::collections::BTreeMap::new();
+    if let Some(map) = tracker.get("state_map").and_then(|m| m.as_mapping()) {
+        for (k, v) in map {
+            if let (Some(key), Some(val)) = (k.as_str(), v.as_str()) {
+                if !key.is_empty() && !val.trim().is_empty() {
+                    state_map.insert(key.to_string(), val.trim().to_string());
+                }
+            }
+        }
+    }
+    let labels = tracker.get("labels");
+    let label_hu = labels
+        .and_then(|l| l.get("hu"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("hu")
+        .to_string();
+    let label_pbi = labels
+        .and_then(|l| l.get("pbi"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("pbi")
+        .to_string();
+    let project_id = tracker
+        .get("project_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    Some(TrackerConfig {
+        team_key,
+        project_id,
+        state_map,
+        label_hu,
+        label_pbi,
+    })
+}
+
+fn manifest_frontmatter_for_slug(repo: &Path, slug: &str) -> Result<YamlValue, String> {
+    let index_path = repo.join(projects_rel(repo)).join(format!("{slug}.md"));
+    if !index_path.is_file() {
+        return Err(format!("PROJECT_NOT_REGISTERED: {slug}"));
+    }
+    let index_fm = parse_yaml_fm(&fs::read_to_string(&index_path).map_err(|e| e.to_string())?)?;
+    let project_root = PathBuf::from(yaml_str(&index_fm, "project_root")?);
+    let manifest_ref = yaml_str(&index_fm, "manifest_ref")?;
+    let manifest_path = if Path::new(&manifest_ref).is_absolute() {
+        PathBuf::from(manifest_ref)
+    } else {
+        project_root.join(manifest_ref)
+    };
+    if !manifest_path.is_file() {
+        return Err(format!(
+            "PROJECT_CONFIG_INVALID: manifiesto ausente {}",
+            manifest_path.display()
+        ));
+    }
+    parse_yaml_fm(&fs::read_to_string(&manifest_path).map_err(|e| e.to_string())?)
+}
+
+/// Tracker del manifiesto del proyecto (`project_slug` en inputs). Sin slug → `None` (Core-self).
+pub fn tracker_config_for_inputs(repo: &Path, inputs: &Value) -> Result<Option<TrackerConfig>, String> {
+    let Some(slug) = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return Ok(None);
+    };
+    if slug.contains('/') || slug.contains("..") {
+        return Err(format!("PROJECT_CONFIG_INVALID: project_slug '{slug}'"));
+    }
+    let fm = manifest_frontmatter_for_slug(repo, slug)?;
+    validate_tracker_config(&fm)?;
+    Ok(tracker_config_from_manifest(&fm))
+}
+
 fn validate_env_ref(env_ref: &str) -> Result<(), String> {
     let rel = env_ref.trim().trim_start_matches("./");
     if rel.is_empty() || rel.contains("..") || Path::new(rel).is_absolute() {
@@ -292,9 +466,12 @@ pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String>
         ));
     }
     let contract_version = yaml_str(&manifest_fm, "contract_version")?;
-    if contract_version != CONTRACT_VERSION && contract_version != CONTRACT_VERSION_LEGACY {
+    if contract_version != CONTRACT_VERSION
+        && contract_version != CONTRACT_VERSION_MID
+        && contract_version != CONTRACT_VERSION_LEGACY
+    {
         return Err(format!(
-            "PROJECT_CONFIG_INVALID: contract_version '{contract_version}' no admitida (1.0.0 | 1.1.0)"
+            "PROJECT_CONFIG_INVALID: contract_version '{contract_version}' no admitida (1.0.0 | 1.1.0 | 1.2.0)"
         ));
     }
     if let Some(env_ref) = manifest_fm
@@ -310,6 +487,7 @@ pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String>
     let default_branch = yaml_str(&manifest_fm, "default_branch")?;
     let manifest_codex_slug = yaml_str(&manifest_fm, "codex_slug")?;
     let docs = docs_from_manifest(&manifest_fm)?;
+    validate_tracker_config(&manifest_fm)?;
     let manifest_mode = yaml_str(&manifest_fm, "delivery_mode")?;
     let (delivery_mode, delivery_mode_source) =
         resolve_delivery_mode(inputs, Some(&manifest_mode))?;
@@ -485,6 +663,31 @@ mod tests {
         fs::write(client.join(".SddIA/project.md"), bad).unwrap();
         let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
         assert!(err.contains("env_ref"), "{err}");
+    }
+
+    #[test]
+    fn contract_accepts_1_2_0_tracker_and_rejects_bad_provider() {
+        let repo = tempfile::tempdir().unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let client = layout(repo.path(), uuid, "branch_pr");
+        let mut body = manifest_md(uuid, "branch_pr", "1.2.0");
+        body = body.replace(
+            "docs_layout:",
+            "tracker:\n  provider: linear\n  team_key: BX\n  state_map:\n    backlog: Backlog\n    done: Done\ndocs_layout:",
+        );
+        fs::write(client.join(".SddIA/project.md"), &body).unwrap();
+        assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
+
+        let mut bad = body.clone();
+        bad = bad.replace("team_key: BX", "team_key: ");
+        fs::write(client.join(".SddIA/project.md"), bad).unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
+        assert!(err.contains("team_key"), "{err}");
+
+        let bad2 = body.replace("provider: linear", "provider: jira");
+        fs::write(client.join(".SddIA/project.md"), bad2).unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
+        assert!(err.contains("provider"), "{err}");
     }
 
     #[test]

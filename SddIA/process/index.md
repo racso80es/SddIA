@@ -54,4 +54,8 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | telegram-gateway | f5a6b7c8-d9e0-4f1a-b2c3-d4e5f6a7b8c9 | 1.0.2 | ecosystem-evolution, external-ingest | — | Aduana texto Telegram → eventos domain (`TelegramMessage_Received`, `Manual_Task_Requested`, `Kaizen_Idea_Captured`). |
 | telegram-fallback-responder | c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f | 1.0.1 | ecosystem-evolution, external-ingest | — | Triaje inverso Telegram: Filtro C → Mayeuta → `send-telegram-notification`. |
 | sync-client-assets | 0f6bf2ff-a067-46fb-9175-ee97e6a5dcd8 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Sincronización unidireccional repositorio maestro → instancia cliente: 4 fases (Manifiesto-Local, Reclamacion, Aduana-Integridad, Inyeccion). Aduana SHA-256 pre-escritura. |
+| tracker-linear-markdown-sync | a3b4c5d6-e7f8-4890-a123-456789abcd01 | 1.0.0 | tracker-operations | — | Volcado descripción Linear = cuerpo markdown (`tracker_ref`). |
+| tracker-backlog-query | d4e5f6a7-b8c9-4d0e-a12b-3b4c5d6e7f9a | 1.0.0 | tracker-operations | — | Listado HU/PBI vía linear-tracker-adapter (Kalma2 GET /api/backlog). |
+| tracker-sync-replay | e1f2a3b4-c5d6-4789-a012-3456789abc01 | 1.0.0 | tracker-operations | — | Suscriptor Tracker_Sync_Failed; replay fetch_issue + transición/comentario. |
+| tracker-stamp | f2a3b4c5-d6e7-4890-a123-456789abcdef | 1.0.0 | tracker-operations | — | Sello Linear ante eventos de ciclo de vida (fail-soft D5). |
 

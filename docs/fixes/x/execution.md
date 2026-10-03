@@ -1,4 +1,10 @@
 ---
+
+
+
+
+
+
 feature_name: x
 created: "2026-07-23"
 updated: "2026-08-28T17:05:00Z"
@@ -8,14 +14,13 @@ agent: tekton
 agents: tekton
 persist_ref: docs/fixes/x
 branch_name: fix/x
-execution_id: "75bda8b4-372d-475e-8a20-f3acb48fb78b"
 correlation_id: "00de947d-9da4-4ba0-a595-0f930d95d2c1"
 pbi_ref: docs/todos/pending/[FIX] x.md
 status: blocked
 exitCode: 1
 items_applied: []
+execution_id: "22e49d33-963d-42f6-87d0-b9255929e548"
 ---
-
 # Execution — x (Tekton · registro)
 
 1. Ingesta fase Ejecución: `persist_ref=docs/fixes/x`, `branch_name=fix/x`, `execution_id=75bda8b4-…`, `correlation_id=00de947d-…`.

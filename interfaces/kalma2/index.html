@@ -12,6 +12,29 @@
       <h1>Kalma2</h1>
       <p class="tagline">Cliente interactivo PoC — desacoplado de Cursor</p>
     </header>
+    <section class="backlog-panel" aria-label="Backlog tracker">
+      <h2>Backlog</h2>
+      <p id="backlog-notice" class="tagline hidden" role="status">Proyecto sin tracker configurado</p>
+      <div class="backlog-filters">
+        <label for="backlog-kind">Tipo</label>
+        <select id="backlog-kind" aria-label="Filtro tipo backlog">
+          <option value="all">Todos</option>
+          <option value="hu">HU</option>
+          <option value="pbi">PBI</option>
+        </select>
+        <label for="backlog-state">Estado</label>
+        <select id="backlog-state" aria-label="Filtro estado backlog">
+          <option value="">— cualquiera —</option>
+          <option value="backlog">backlog</option>
+          <option value="in_progress">in_progress</option>
+          <option value="in_review">in_review</option>
+          <option value="done">done</option>
+          <option value="cancelled">cancelled</option>
+        </select>
+        <button type="button" id="backlog-refresh" class="secondary">Recargar backlog</button>
+      </div>
+      <ul id="backlog-list" class="backlog-list" aria-live="polite"></ul>
+    </section>
     <label for="project-select">Proyecto (opcional)</label>
     <select id="project-select" aria-label="Proyecto registrado">
       <option value="">— Core (sin proyecto) —</option>

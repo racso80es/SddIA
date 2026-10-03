@@ -24,6 +24,7 @@ Clase ECST para presentación de PR en bus local. Suscriptores: aduana **`pull-r
 
 ### OPTIONAL
 - `pr_url`
+- `tracker_ref` (identificador Linear del PBI; sello `tracker-stamp`)
 - `repository` *(ruta oráculo remoto)*
 - `origin_agent` *(ej. `jules`, `delivery-close-cycle`)*
 - `dlt_anchor_address` *(digest u object_id IOTA — skip re-anclaje en route)*

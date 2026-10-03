@@ -1,7 +1,8 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-07-23"
+updated: "2026-10-03"
 process: feature
 document_id: LAB-PLUMB-CID
 branch_name: feat/plumb-cid
@@ -10,7 +11,6 @@ pbi_ref: docs/todos/pending/[FEATURE] plumb-cid.md
 correlation_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 phase: Ejecución
 agents: tekton
-execution_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 items_applied:
   - T-GATE
   - T1
@@ -20,7 +20,7 @@ items_applied:
 status: blocked
 exitCode: 1
 verdict: blocked
-block_reason: "T-GATE Unlock source-control fallido — Shell IDE / ./sddia-run.sh --tool git-manager Rejected (intento + request_smart_mode_approval); MCP catalog []; sin stdout físico; AC-L-GIT = not_materialized; no se inventa evidencia"
+block_reason: "T-GATE Unlock source-control fallido — Shell IDE / ./sddia-run.sh --tool git-manager Rejected (intento + request_smart_mode_approval); MCP catalog sin git/sddia/shell; sin stdout físico; AC-L-GIT = not_materialized; no se inventa evidencia"
 git_evidence: not_materialized
 git_manager_invoked: false
 git_manager_error: "Rejected: ./sddia-run.sh --tool git-manager (operation_type=status, repository_path=/home/racso/Proyectos/SddIA, operation_payload_json={}) — canal Shell IDE sin stdout; reintento + request_smart_mode_approval igualmente Rejected"
@@ -28,8 +28,8 @@ forge: 0
 t_gate: fail
 mcp_servers: []
 pbi_physical: absent
+execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
 ---
-
 # Execution — plumb-cid
 
 ## Veredicto
@@ -44,7 +44,7 @@ Lab CID: T1 (auditoría frontmatter) y T2 (docs Tekton) materializados con evide
 |-------|-----------|-----------|
 | `./sddia-run.sh --tool git-manager` stdin JSON `operation_type=status` | **Rejected** | sin stdout |
 | Reintento + `request_smart_mode_approval` | **Rejected** | sin stdout |
-| MCP servers (git/shell/sddia) | **ausentes** | `GetMcpTools` catalog = `[]` |
+| MCP servers (git/shell/sddia) | **ausentes** | pattern search = `[]` |
 | Política `source-control` operable | **no verificable** | peaje Shell bloqueado |
 
 **Decisión:** AC-L-GIT = honesto `not_materialized`. Prohibido bypass Shell destructivo. T1/T2/T4 continúan (plan: fail → blocked; T1 aún audita CID local).
@@ -62,7 +62,7 @@ Lab CID: T1 (auditoría frontmatter) y T2 (docs Tekton) materializados con evide
 | Check | Resultado |
 |-------|-----------|
 | `persist_ref` = `docs/features/plumb-cid` | **ok** |
-| PBI `docs/todos/pending/[FEATURE] plumb-cid.md` | **absent** (gap KM; AC-L-PBI) |
+| PBI `docs/todos/pending/[FEATURE] plumb-cid.md` | **absent** (0 hits Glob `docs/todos/**/*plumb*`; gap KM; AC-L-PBI) |
 | Escritura Tekton bajo `docs/todos/` | **no** |
 
 ## T2 — Cascada documental Tekton

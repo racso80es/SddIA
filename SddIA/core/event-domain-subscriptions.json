@@ -6,6 +6,11 @@
       "intent": "Aduana de Fricción post-presentación; gate antes de accept-pr."
     },
     {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello Linear in_review + comentario PR (tracker_ref en payload)."
+    },
+    {
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
       "intent": "Anclaje DLT IOTA Rebased."
@@ -17,6 +22,11 @@
     }
   ],
   "PullRequest_Merged": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello Linear done + comentario merge (tracker_ref)."
+    },
     {
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
@@ -305,6 +315,34 @@
       "agent": "cumulo",
       "tool": "iota-immutable-publisher",
       "intent": "Anclaje DLT IOTA del teardown de instancia vía installer."
+    }
+  ],
+  "Tracker_Sync_Failed": [
+    {
+      "agent": "tekton",
+      "process": "tracker-sync-replay",
+      "intent": "Reintento fail-soft de transición/comentario Linear (fetch_issue + orden §4.D)."
+    }
+  ],
+  "Work_Initiated": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello in_progress + comentario rama/persist_ref si tracker_ref presente."
+    }
+  ],
+  "PullRequest_Audited": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Comentario resolución auditoría PR (tracker_ref)."
+    }
+  ],
+  "PBI_Forged": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello backlog PBI + comentario document_id."
     }
   ]
 }

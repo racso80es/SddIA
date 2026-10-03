@@ -1,7 +1,7 @@
 ---
 uuid: "d8e9f0a1-b2c3-4d5e-6f7a-8b9c0d1e2f3a"
 name: "execution-contexts"
-version: "1.1.0"
+version: "1.2.0"
 entity_type: "norm"
 jurisdiction: "cerbero"
 ---
@@ -61,6 +61,12 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 * **Alcance:** Tools ofensivas que estresan contratos del ecosistema; toda I/O acotada al `workspace_path` inyectado por el orquestador.
 * **Cápsulas asociadas:** `io-choke`, `schema-corruptor`, `sandbox-breacher`.
 * **Restricción:** Prohibida lectura o escritura fuera del `workspace_path` declarado en el payload de invocación.
+
+### 2.10. `tracker-operations`
+* **Dominio:** Requerimientos en trackers externos (Linear, etc.).
+* **Alcance:** Leer, listar, transicionar estado y comentar issues vía adaptadores GraphQL ciegos.
+* **Fuera de alcance:** Crear o borrar issues, administración de equipos, webhooks.
+* **Cápsulas asociadas (Ejemplos):** `linear-tracker-adapter`.
 
 ---
 *Reporte de Integridad: Normativa forjada y registrada. Rutas actualizadas.*

@@ -199,6 +199,55 @@ button.secondary:not(:disabled):hover {
   display: none;
 }
 
+.backlog-panel {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.backlog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: end;
+  margin-bottom: 0.75rem;
+}
+
+.backlog-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.backlog-list li {
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+}
+
+.backlog-id {
+  font-family: ui-monospace, monospace;
+  opacity: 0.9;
+}
+
+.backlog-kind {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+#backlog-notice.hidden {
+  display: none;
+}
+
+.backlog-filters label {
+  margin: 0;
+}
+
+.backlog-filters select {
+  margin-right: 0.5rem;
+}
+
 .consciousness-mirror h2 {
   font-size: 1rem;
   margin: 1.25rem 0 0.5rem;

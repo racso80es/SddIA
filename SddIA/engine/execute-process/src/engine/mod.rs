@@ -61,6 +61,7 @@ pub mod workspace_init;
 pub mod domain_profile;
 pub mod domain_authority;
 pub mod project_binding;
+pub mod tracker_pbi_meta;
 pub mod cli_detach;
 pub mod verify_process_integrity;
 
@@ -243,6 +244,22 @@ pub fn run_process(
 
     if canonical == "capsule-invoke-smoke" {
         return capsule_invoke_smoke::run(repo, &canonical, &process_def, &phases, process_inputs);
+    }
+
+    if canonical == "tracker-backlog-query" {
+        return handlers::tracker_backlog_query::run(repo, process_inputs);
+    }
+
+    if canonical == "tracker-sync-replay" {
+        return handlers::tracker_sync_replay::run(repo, process_inputs);
+    }
+
+    if canonical == "tracker-stamp" {
+        return handlers::tracker_stamp::run(repo, process_inputs);
+    }
+
+    if canonical == "tracker-linear-markdown-sync" {
+        return handlers::tracker_linear_markdown_sync::run(repo, process_inputs);
     }
 
     if canonical == "entity-manager" {

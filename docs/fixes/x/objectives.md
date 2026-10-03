@@ -1,12 +1,18 @@
 ---
+
+
+
+
+
+
 feature_name: x
 created: "2026-07-20"
 process: bug-fix
 branch_name: fix/x
 persist_ref: docs/fixes/x
 pbi_ref: docs/todos/pending/[FIX] x.md
+execution_id: "22e49d33-963d-42f6-87d0-b9255929e548"
 ---
-
 # Objetivos — x
 
 ## Misión

@@ -1,7 +1,8 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-07-23"
+updated: "2026-10-03"
 process: feature
 document_id: LAB-PLUMB-CID
 branch_name: feat/plumb-cid
@@ -15,8 +16,8 @@ forge: 0
 status: baseline_documental_lab
 t_gate: fail
 genome_mutated: false
+execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
 ---
-
 # Implementation — plumb-cid
 
 ## Naturaleza
@@ -33,7 +34,7 @@ Lab de **tubería / humo documental** (spec L2 / L6). Happy path: **forja = 0** 
 
 | Artefacto | Acción |
 |-----------|--------|
-| `implementation.md` | Materializado (este archivo) |
+| `implementation.md` | Materializado (este archivo) — `items: []`, `forge: 0` |
 | `execution.md` | Materializado — veredicto + tabla AC-L-* |
 
 Baseline Mayeuta/Dedalo (`clarify.md`, `objectives.md`, `spec.md`, `plan.md`) **no reescrito** en forja; CID auditado en T1.
@@ -43,4 +44,4 @@ Baseline Mayeuta/Dedalo (`clarify.md`, `objectives.md`, `spec.md`, `plan.md`) **
 - Genoma indexado (`SddIA/{tools,skills,actions,process,agents,events,norms,library}`): **sin mutación**.
 - `docs/todos/`: **sin escritura** Tekton (L1 / AC-L-PBI).
 - Bypass Shell destructivo / inventar stdout `git-manager`: **no**.
-- Soft-dep F3 PPR #136 / pasarela async / DI / GesFer: **fuera** (L8).
+- Soft-dep F3 / Tracker / pasarela async / DI / GesFer: **fuera** (L8).

@@ -1334,6 +1334,67 @@ pub(crate) fn dispatch_subscriber(
             return (sid, "failed".into(), Some(status), exit_code);
         }
 
+        if process_key == "tracker-stamp" {
+            let Some(path) = event_path else {
+                return (
+                    sid,
+                    "failed".into(),
+                    Some("event_file_path required for tracker-stamp".into()),
+                    1,
+                );
+            };
+            let rel = super::eda_bus_topology::rel_event_path(repo, path);
+            let process_inputs = json!({ "event_file_path": rel });
+            let (status, exit_code) =
+                dispatch_process_subscriber(repo, process_key, process_inputs);
+            if status == "success" {
+                return (sid, status, None, exit_code);
+            }
+            return (sid, "failed".into(), Some(status), exit_code);
+        }
+
+        if process_key == "tracker-sync-replay" {
+            let Some(path) = event_path else {
+                return (
+                    sid,
+                    "failed".into(),
+                    Some("event_file_path required for tracker-sync-replay".into()),
+                    1,
+                );
+            };
+            let rel = super::eda_bus_topology::rel_event_path(repo, path);
+            let mut process_inputs = serde_json::Map::new();
+            process_inputs.insert("event_file_path".into(), json!(rel));
+            if let Some(eid) = event.get("event_id").and_then(|v| v.as_str()) {
+                process_inputs.insert("event_id".into(), json!(eid));
+            }
+            for key in [
+                "issue_ref",
+                "operation",
+                "error_code",
+                "target_state",
+                "comment_kind",
+                "project_slug",
+                "pr_url",
+                "commit_sha",
+                "attempt",
+                "source_process",
+            ] {
+                if let Some(v) = payload_obj.get(key) {
+                    process_inputs.insert(key.to_string(), v.clone());
+                }
+            }
+            let (status, exit_code) = dispatch_process_subscriber(
+                repo,
+                process_key,
+                Value::Object(process_inputs),
+            );
+            if status == "success" {
+                return (sid, status, None, exit_code);
+            }
+            return (sid, "failed".into(), Some(status), exit_code);
+        }
+
         if process_key == "email-triage-gateway"
             || process_key == "email-quick-action-ingest"
             || process_key == "user-preference-ingest"
@@ -2575,6 +2636,37 @@ mod blocking_tests {
         let err = validate_blocking_subscribers(&repo, "Local_QA_Requested", Some("agente-fantasma"))
             .expect_err("must fail");
         assert!(err.contains("agente destino"));
+    }
+
+    #[test]
+    fn witness_local_qa_a55f1d12_subscriber_exit_one() {
+        let repo = repo_root();
+        let path = repo.join(
+            ".events/dead-letter/subscribers/a55f1d12-003b-40d3-ae21-6e69d575c257.argos.pull-request-review.json",
+        );
+        assert!(
+            path.is_file(),
+            "witness OSC-12 requerido en repo (prepush-argos-qa-witness)"
+        );
+        let witness: Value =
+            serde_json::from_str(&fs::read_to_string(&path).unwrap()).expect("witness json");
+        assert_eq!(
+            witness.get("dispatch_mode").and_then(|v| v.as_str()),
+            Some("sync")
+        );
+        assert_eq!(
+            witness.pointer("/delegation/exit_code").and_then(|v| v.as_i64()),
+            Some(1)
+        );
+        assert_eq!(
+            witness.pointer("/delegation/target").and_then(|v| v.as_str()),
+            Some("pull-request-review")
+        );
+        let trace = witness
+            .get("error_trace")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert!(trace.contains("failed"), "trace: {trace}");
     }
 
     #[test]

@@ -1153,6 +1153,19 @@ pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let event_path = events_root.join(format!("{name}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
     if lifecycle == "update" && event_path.is_file() {
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&event_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         if let Some(replacements) = inputs.get("markdown_body_replacements") {
             let (entity_uuid, old_hash, new_hash, version) =
                 patch_artifact_body_replacements(&event_path, replacements)?;
@@ -2163,6 +2176,25 @@ NOTA_BACKFILL
         restore.set_readonly(false);
         let _ = fs::set_permissions(&idx, restore);
         std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+    }
+
+    #[test]
+    fn event_hash_refresh_update_on_repo_work_initiated() {
+        let repo = crate::core::repo::find_repo_root().expect("repo");
+        let path = repo.join("SddIA/events/domain/work-initiated.md");
+        assert!(path.is_file(), "missing {}", path.display());
+        let out = run_event_forge(
+            &repo,
+            &json!({
+                "entity_class": "event",
+                "lifecycle_operation": "update",
+                "event_name": "work-initiated",
+                "event_family": "domain",
+                "hash_refresh_only": true,
+            }),
+        )
+        .expect("hash refresh");
+        assert!(out.get("handoff_entity_uuid").is_some());
     }
 
     #[test]

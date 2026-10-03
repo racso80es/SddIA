@@ -208,7 +208,8 @@ mod tests {
         let ctx = parse_allowed_contexts(&text);
         assert!(ctx.contains(&"ecosystem-evolution".to_string()));
         assert!(ctx.contains(&"chaos-engineering".to_string()));
-        assert!(ctx.len() >= 9);
+        assert!(ctx.contains(&"tracker-operations".to_string()));
+        assert!(ctx.len() >= 10);
     }
 
     #[test]
@@ -218,6 +219,17 @@ mod tests {
             "validation_profile": "TOOL_DOMAIN",
             "tool_context": "chaos-engineering",
             "domain_origin": "core"
+        });
+        let out = run(&repo, &inputs).expect("valid tool");
+        assert_eq!(out.get("valid"), Some(&json!(true)));
+    }
+
+    #[test]
+    fn policy_validator_tracker_operations_tool_ok() {
+        let repo = find_repo_root().unwrap();
+        let inputs = json!({
+            "validation_profile": "TOOL_DOMAIN",
+            "tool_context": "tracker-operations",
         });
         let out = run(&repo, &inputs).expect("valid tool");
         assert_eq!(out.get("valid"), Some(&json!(true)));

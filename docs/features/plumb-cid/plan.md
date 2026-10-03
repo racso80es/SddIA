@@ -1,7 +1,8 @@
 ---
+
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-07-23"
+updated: "2026-10-03"
 process: feature
 phases: [T-GATE, T0, T1, T2, T3, T4]
 document_id: LAB-PLUMB-CID
@@ -11,12 +12,15 @@ pbi_ref: docs/todos/pending/[FEATURE] plumb-cid.md
 correlation_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 phase: Diseño de Blueprint
 agents: dedalo
-version_plan: "1.0.0"
+version_plan: "1.1.4"
+git_evidence_dedalo: not_materialized_shell_rejected
+execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
 ---
-
 # Plan — plumb-cid
 
 Blueprint de **evidencia CID + gates no-fake**. Sin producto de dominio; sin forja genoma; sin escritura en `docs/todos/` desde agentes de ejecución.
+
+Consumido: `objectives.md` / `clarify.md` (Mayeuta 2026-10-03, D0–D9, Q1–Q4, `execution_id` 705747e6-…) como `refined_requirements`.
 
 ## Fases
 
@@ -36,10 +40,10 @@ Blueprint de **evidencia CID + gates no-fake**. Sin producto de dominio; sin for
 - delegates_to:
   - skill:filesystem-manager
 - checklist:
-  - [x] Consumir `objectives.md` / `clarify.md` (D0–D8, Q1–Q4)
-  - [x] `spec.md` v1.0.0 laudos L1–L9
-  - [x] este `plan.md` v1.0.0 (T-GATE…T4)
-  - [x] Declarar git Dedalo `not_materialized` (sin source-control en RBAC agente)
+  - [x] Consumir `objectives.md` / `clarify.md` (D0–D9, Q1–Q4) — sesión 2026-10-03 / exec 705747e6
+  - [x] `spec.md` v1.1.4 laudos L1–L9
+  - [x] este `plan.md` v1.1.4 (T-GATE…T4)
+  - [x] Declarar git Dedalo `not_materialized` (Shell Rejected sin stdout)
 
 ### T1 — Auditoría plumb CID (baseline Mayeuta)
 - name: Verificar identidad CID
@@ -94,7 +98,7 @@ Blueprint de **evidencia CID + gates no-fake**. Sin producto de dominio; sin for
 ## Orden de ejecución
 
 ```text
-T0 (Dedalo) [hecho]
+T0 (Dedalo) [hecho 2026-10-03 / exec 705747e6]
   → T-GATE (git-manager unlock)
        → ok → T1 (audit CID) → T2 (docs Tekton) → T3 (git capture) → T4 (handoff Argos)
        → fail → execution.md blocked; T1 puede aún auditar CID local; AC-L-GIT = no verde
@@ -136,9 +140,9 @@ Si falta alguna política → abortar con causa; **prohibido** bypass raw destru
 |--------|------------|
 | IDE Rejected git-manager | T-GATE blocked; AC-L-GIT honesto |
 | PBI ausente | AC-L-PBI documentado; Done proceso bloqueado (L7); no forjar desde Tekton |
-| Tentación dominio / F3 #136 | Veto spec L8 |
+| Tentación dominio / Tracker / F3 | Veto spec L8 |
 | APTO narrativo | AC-DONE-LAB / L9 |
 
 ## Explicitamente no planificado
 
-Forja PBI desde Tekton · residual F3 PPR #136 · pasarela async PBI-044 · DI · GesFer · mutación genoma · `shell-executor` · inventar stdout git · bajar AC-L-* por Rejected.
+Forja PBI desde Tekton · residual Tracker / F3 · pasarela async · DI · GesFer · mutación genoma · `shell-executor` · inventar stdout git · bajar AC-L-* por Rejected.

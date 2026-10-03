@@ -8,6 +8,7 @@ allowed_policies:
   - "filesystem-ops"
   - "source-control"
   - "event-routing"
+  - "tracker-operations"
 hash_signature: "opcional_en_desarrollo"
 llm_profile:
   tier: "medium"

@@ -31,6 +31,7 @@ Contrato normativo de la familia: `tools-contract.md` (no constituye una tool ca
 | `send-telegram-notification.md` | `e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8` | send-telegram-notification | 1.0.0 | tools-contract v1.2.0 | ecosystem-evolution | `send-telegram-notification`, `telegram-send-message`, `capsule-json-io` |
 | `github-raw-fetcher.md` | `66daf19f-217a-4874-b417-99e5be2571f3` | github-raw-fetcher | 1.0.0 | tools-contract | system-operations | `github-raw-fetcher`, `asset-fetch`, `capsule-json-io` |
 | `sddia-workspace-server.md` | `e8f9a0b1-c2d3-4e4f-a5b6-c7d8e9f0a1b2` | sddia-workspace-server | 1.0.0 | tools-contract v1.6.0 | filesystem-ops | `workspace-mcp-stdio`, `project-resources`, `capsule-adapters` |
+| `linear-tracker-adapter.md` | `8f3c2a1b-9d4e-4f5a-b6c7-1234567890ab` | linear-tracker-adapter | 1.0.0 | tools-contract v1.6.0 | tracker-operations | `linear_tracker_adapter`, `capsule-json-io` |
 
 ## Archivos en carpeta no catalogados como tool
 

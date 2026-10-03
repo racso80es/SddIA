@@ -630,6 +630,21 @@ mod tests {
     }
 
     #[test]
+    fn event_creator_inputs_hash_refresh_materializes() {
+        let repo = crate::core::repo::find_repo_root().expect("repo");
+        let seed = json!({
+            "event_name": "work-initiated",
+            "event_family": "domain",
+            "lifecycle_operation": "update",
+            "hash_refresh_only": true,
+        });
+        let child = creator_inputs_from_entity("event", "work-initiated", "update", &seed).expect("inputs");
+        assert_eq!(child.get("hash_refresh_only").and_then(|v| v.as_bool()), Some(true));
+        let forge = materialize_by_inputs(&repo, &child).expect("forge");
+        assert!(forge.get("handoff_entity_uuid").is_some());
+    }
+
+    #[test]
     fn process_creator_inputs_propagate_contract_payload() {
         let inputs = creator_inputs_from_entity(
             "process",
