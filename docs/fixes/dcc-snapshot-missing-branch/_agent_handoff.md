@@ -351,3 +351,28 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit"
 ```
+
+## 2026-10-03T21:12:35Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `315249e6-8d1a-4850-8095-e5454a8a712e`
+- correlation_id: `51df9470-7660-454c-898f-1694d38e4542`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `branch` / `git_changes` / PBI `969f05933a46` en `done/`: **APTO**; código snapshot no absuelve F2
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `FAIL_F2_DOC`)
+
+- Tocado: `docs/fixes/dcc-snapshot-missing-branch/validacion.md`
+- R1/R2: `TECH_FORMAL` / `GIT_EVIDENCE` **APTO** (copia Evidence Bridge `native_state` · `idempotent-hit`; sin stdout inventado)
+- Shell `git-manager`: **Rejected** → `GIT_EVIDENCE_SESSION_SHELL` NO_APTO (no bloqueante)
+- R3 KM: **APTO** (0 writes bajo `docs/todos/**`)
+- F2: faltan `objectives`/`spec`/`plan`/`implementation` bajo `persist_ref`
+- F3/F4: `NO_EVIDENCE` (short-circuit); `accept_pr_handoff: blocked`
+- `branch` / `git_changes` / PBI `969f05933a46` en `done/`: **APTO**; código snapshot no absuelve F2
+```

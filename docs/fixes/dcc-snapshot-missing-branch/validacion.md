@@ -1,9 +1,9 @@
 ---
 feature_name: dcc-snapshot-missing-branch
 created: "2026-10-03"
-updated: "2026-10-03T21:12:00Z"
+updated: "2026-10-03T21:12:30Z"
 process: pull-request-review
-phase: Triaje documental
+phase: Veredicto y bloqueo
 agent: argos
 agents: argos
 branch: fix/dcc-snapshot-missing-branch
@@ -25,19 +25,19 @@ delivery_state: failed
 resolution: FAIL_F2_DOC
 accept_pr_handoff: false
 accept_pr_handoff_status: blocked
-accept_pr_block_reason: "FAIL_F2_DOC — persist_ref sin objectives/spec/plan/implementation; Triaje documental aborta"
+accept_pr_block_reason: "FAIL_F2_DOC — persist_ref sin objectives/spec/plan/implementation; Veredicto y bloqueo"
 authorization_status:
   exitCode: 1
   emitter_agent: argos
-  note: "FAIL_F2_DOC · Triaje documental · R1/R2 copia Evidence Bridge native_state · sin stdout inventado · Shell git-manager Rejected esta sesión"
+  note: "FAIL_F2_DOC · Veredicto y bloqueo · R1/R2 copia Evidence Bridge native_state · sin stdout inventado · Shell git-manager Rejected esta sesión"
 git_manager_invoked: false
 git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
 handoff_machine_file: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine+session) source=native_state notes=handoff-formal-scan; idempotent-hit; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; sin gitStdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Triaje documental CID 51df9470… · exec 315249e6…"
-scope: "PPR Triaje documental — rama fix/dcc-snapshot-missing-branch (CID 51df9470… · exec 315249e6…)"
+evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine+session) source=native_state notes=idempotent-hit; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; sin gitStdout inventado"
+shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 51df9470… · exec 315249e6…"
+scope: "PPR Veredicto y bloqueo — rama fix/dcc-snapshot-missing-branch (CID 51df9470… · exec 315249e6…)"
 checks:
   F2_DOC_GATE: NO_APTO
   DOC_OBJECTIVES: NO_APTO
@@ -85,17 +85,17 @@ non_blocking_findings:
   - F3_TECH_GATE
   - F4_RBAC_CERBERO
 situational_notes:
-  - "Fase Triaje documental · CID 51df9470-7660-454c-898f-1694d38e4542 · exec 315249e6-8d1a-4850-8095-e5454a8a712e"
-  - "Evidence Bridge machine/session: source=native_state · notes=handoff-formal-scan; idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)"
+  - "Fase Veredicto y bloqueo · CID 51df9470-7660-454c-898f-1694d38e4542 · exec 315249e6-8d1a-4850-8095-e5454a8a712e"
+  - "Evidence Bridge machine/session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)"
   - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS"
   - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
   - "PBI 969f05933a46 en done/; sin réplica pending/"
   - "DOC_EVOLUTION APTO: SddIA/evolution/969f0593-3a46-4d2b-86b7-ab63dccfix01.md presente"
   - "Código Snapshot: checkout create_if_not_exists true ante get_last_commit (phase_capsules.rs) — no absuelve F2"
-  - "F3/F4 NO_EVIDENCE (fuera de alcance Triaje documental / short-circuit F2)"
+  - "F3/F4 NO_EVIDENCE (short-circuit F2); accept_pr_handoff: blocked"
   - "BRANCH_WORKTREE_SYNC APTO: .git/HEAD = refs/heads/fix/dcc-snapshot-missing-branch (FS Read; no stdout git-manager)"
 ---
-# Validación — Triaje documental (Argos · pull-request-review)
+# Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
 
@@ -104,8 +104,8 @@ situational_notes:
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
 | F2 | Argos (doc) | **NO_APTO** | Sin `objectives`/`spec`/`plan`/`implementation` (+ YAML) |
-| F3 | execute-process | **NO_EVIDENCE** | fuera de fase / short-circuit F2 |
-| F4 | Cerbero | **NO_EVIDENCE** | fuera de fase / short-circuit F2 |
+| F3 | execute-process | **NO_EVIDENCE** | short-circuit F2 |
+| F4 | Cerbero | **NO_EVIDENCE** | short-circuit F2 |
 
 ## Evidence Bridge (R1 / R2 / R3)
 
@@ -118,11 +118,11 @@ Copia literal machine/session — **no** stdout Shell inventado:
 | `formal_execute_process` | `true` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
-| `notes` | `handoff-formal-scan; idempotent-hit` |
+| `notes` | `idempotent-hit` |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` |
 
-Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) + session inject (source=`native_state`).
+Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ 21:11:59Z + session inject (source=`native_state`).
 
 ## F2 — Persistido / reconfirmado
 
@@ -153,7 +153,7 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) + session inje
 
 ```json
 {
-  "phase": "Triaje documental",
+  "phase": "Veredicto y bloqueo",
   "global": "NO_APTO",
   "resolution": "FAIL_F2_DOC",
   "verdict": "requiere_cambios",
