@@ -1441,6 +1441,10 @@ pub(crate) fn dispatch_subscriber(
         );
         process_inputs.insert("author".into(), json!("eda-bus-watcher"));
 
+        if let Some(profile) = super::qa_profile::qa_profile_from_event_payload(event) {
+            process_inputs.insert("qa_profile".into(), json!(profile));
+        }
+
         let pr_url = payload_obj.get("pr_url").and_then(|v| v.as_str());
         if let Some(url) = pr_url.map(str::trim).filter(|s| !s.is_empty()) {
             process_inputs.insert("pr_url".into(), json!(url));

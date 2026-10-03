@@ -4,7 +4,7 @@ uuid: "78b27ec1-dcc9-49a7-bbbc-21db02500007"
 title: "[OPERATIVO] Aduana Git 03 — Triaje por delta y perfil docs-only"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,7 +15,7 @@ hu_order: 3
 hu_order_total: 6
 historia_ref: "docs/todos/historias/[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia.md"
 historia_document_id: HU-MERGE-THERMODYNAMICS
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 blocked_by:
   - PBI-MERGE-THERMO-02-NET-PRUNE
 unblocks:

@@ -2,6 +2,7 @@
 
 use super::capsules::invoke_git_manager;
 use super::invoke_orchestrator;
+use super::qa_profile::{is_docs_only_profile, PROFILE_DOCS_ONLY};
 use super::verify_process_integrity;
 use serde_json::{json, Value};
 use std::path::Path;
@@ -57,10 +58,57 @@ pub fn execute_pull_request_review_phase(
 ) -> Option<Result<Value, String>> {
     match phase_name {
         "Preparación de rama" => Some(prep_branch(repo, inputs, state)),
+        "Triaje documental" if is_docs_only_profile(inputs) => {
+            Some(documental_triage_deterministic(repo, inputs, state))
+        }
         "Triaje técnico" => Some(tech_triage(repo, inputs, state)),
         "Handoff materialización" => Some(handoff_accept_pr(repo, inputs, state)),
         _ => None,
     }
+}
+
+fn documental_triage_deterministic(
+    repo: &Path,
+    inputs: &Value,
+    state: &mut Value,
+) -> Result<Value, String> {
+    let persist = str_field(inputs, "persist_ref")
+        .or_else(|| str_field(inputs, "document_context"))
+        .unwrap_or_else(|| "docs/features".into());
+    let base = if Path::new(&persist).is_absolute() {
+        Path::new(&persist).to_path_buf()
+    } else {
+        repo.join(&persist)
+    };
+    let required = ["objectives.md", "spec.md", "plan.md", "implementation.md"];
+    let mut missing = Vec::new();
+    for name in required {
+        if !base.join(name).is_file() {
+            missing.push(name);
+        }
+    }
+    let ok = missing.is_empty();
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("qa_profile".into(), json!(PROFILE_DOCS_ONLY));
+        if ok {
+            obj.insert("verdict".into(), json!("aprobado"));
+            obj.insert("argos_verdict".into(), json!("pass"));
+        }
+    }
+    if !ok {
+        return Err(format!(
+            "Triaje documental docs-only: faltan artefactos en {}: {}",
+            base.display(),
+            missing.join(", ")
+        ));
+    }
+    Ok(json!({
+        "status": "executed",
+        "handler": "ppr-documental-deterministic",
+        "qa_profile": PROFILE_DOCS_ONLY,
+        "note": "deterministic-doc-triage",
+        "persist_ref": persist,
+    }))
 }
 
 fn prep_branch(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, String> {
@@ -175,6 +223,22 @@ pub(crate) fn f5_handoff_when_merge_absent() -> (bool, &'static str) {
 }
 
 fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, String> {
+    if is_docs_only_profile(inputs) {
+        if let Some(obj) = state.as_object_mut() {
+            obj.insert("accept_pr_handoff".into(), json!(false));
+            obj.insert("accept_pr_handoff_status".into(), json!("skipped"));
+        }
+        return Ok(json!({
+            "status": "executed",
+            "handler": "ppr-handoff-accept-pr",
+            "skipped": true,
+            "reason": "qa_profile_docs_only",
+            "note": "skipped-by-profile",
+            "qa_profile": PROFILE_DOCS_ONLY,
+            "accept_pr_handoff": false,
+            "accept_pr_handoff_status": "skipped",
+        }));
+    }
     if env_truthy("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF") {
         if let Some(obj) = state.as_object_mut() {
             obj.insert("accept_pr_handoff".into(), json!(false));

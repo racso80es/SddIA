@@ -10,6 +10,102 @@ HOOK_DELIVERY_CLOSE_ENV="SDDIA_HOOK_DELIVERY_CLOSE"
 BRANCH_PREFIXES=(feat/ fix/ refactor/ hotfix/)
 MAIN_GUARD_MSG="Violación de Soberanía: main solo muta mediante el proceso accept-pr (PR merge). Push bloqueado."
 
+# SSOT genoma (pre-commit + gate-evolution); ampliado HU merge-thermodynamics §2.1.
+GENOME_PREFIXES=(
+  "SddIA/skills/"
+  "SddIA/events/"
+  "SddIA/process/"
+  "SddIA/agents/"
+  "SddIA/tools/"
+  "SddIA/actions/"
+  "SddIA/library/norms/"
+  "SddIA/library/codexes/"
+  "SddIA/engine/"
+  "SddIA/scripts/"
+  "SddIA/core/"
+  "SddIA/norms/"
+  ".SddIA/"
+)
+
+path_is_passive() {
+  local path="$1"
+  [[ -n "$path" ]] || return 1
+  path="${path//\\//}"
+  if [[ "$path" == docs/* ]]; then
+    return 0
+  fi
+  if [[ "$path" == "README.md" ]]; then
+    return 1
+  fi
+  if [[ "$path" == *.md ]]; then
+    if [[ "$path" == SddIA/* || "$path" == .SddIA/* ]]; then
+      return 1
+    fi
+    return 0
+  fi
+  return 1
+}
+
+delta_paths_for_push() {
+  local remote_sha="$1"
+  local local_sha="$2"
+  if [[ -z "$local_sha" ]] || is_delete_push "$local_sha"; then
+    return 0
+  fi
+  if [[ -z "$remote_sha" ]] || [[ "$remote_sha" =~ ^0+$ ]]; then
+    if git_run rev-parse --verify --quiet origin/main >/dev/null 2>&1; then
+      git_run diff --name-only "origin/main...${local_sha}"
+      return 0
+    fi
+    if git_run rev-parse --verify --quiet main >/dev/null 2>&1; then
+      git_run diff --name-only "main...${local_sha}"
+      return 0
+    fi
+  else
+    git_run diff --name-only "${remote_sha}..${local_sha}"
+    return 0
+  fi
+  git_run diff --name-only "${local_sha}"
+}
+
+delta_class_for_paths() {
+  local paths="$1"
+  local path
+  if [[ -z "${paths//[[:space:]]/}" ]]; then
+    printf 'passive'
+    return 0
+  fi
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    if ! path_is_passive "$path"; then
+      printf 'active'
+      return 0
+    fi
+  done <<< "$paths"
+  printf 'passive'
+}
+
+staged_paths() {
+  git_run diff --cached --name-only --diff-filter=ACMR | while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    line="${line//\\//}"
+    printf '%s\n' "$line"
+  done
+}
+
+staged_touches_genome() {
+  local path prefix
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    for prefix in "${GENOME_PREFIXES[@]}"; do
+      if [[ "$path" == "$prefix"* ]]; then
+        return 0
+      fi
+    done
+  done < <(staged_paths)
+  return 1
+}
+
 # shellcheck source=/dev/null
 source "$REPO/SddIA/scripts/common/sddia_shell_lib.sh"
 _sddia_augment_operator_path
@@ -318,6 +414,7 @@ hook_timing_now_ms() {
 
 HOOK_TIMING_START_MS=""
 HOOK_TIMING_INVOKED_JSON='[]'
+HOOK_TIMING_DELTA_CLASS=""
 
 hook_timing_begin() {
   HOOK_TIMING_START_MS=$(hook_timing_now_ms)
@@ -344,8 +441,8 @@ append_hook_timing_jsonl() {
   mkdir -p "$dir"
   recorded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || python3 -c 'from datetime import datetime,timezone; print(datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))')
   line=$(
-    python3 -c 'import json,sys; print(json.dumps({"hook":sys.argv[1],"branch":sys.argv[2],"total_ms":int(sys.argv[3]),"invoked_processes":json.loads(sys.argv[4]),"delta_class":None,"attestation_hit":None,"recorded_at":sys.argv[5]}, separators=(",",":")))' \
-      "$hook_name" "$branch" "$total_ms" "$invoked_json" "$recorded_at"
+    python3 -c 'import json,sys; dc=sys.argv[6] if len(sys.argv)>6 and sys.argv[6] else None; print(json.dumps({"hook":sys.argv[1],"branch":sys.argv[2],"total_ms":int(sys.argv[3]),"invoked_processes":json.loads(sys.argv[4]),"delta_class":dc,"attestation_hit":None,"recorded_at":sys.argv[5]}, separators=(",",":")))' \
+      "$hook_name" "$branch" "$total_ms" "$invoked_json" "$recorded_at" "${HOOK_TIMING_DELTA_CLASS:-}"
   )
   printf '%s\n' "$line" >> "$dir/hook-timings.jsonl"
 }

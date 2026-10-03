@@ -25,6 +25,7 @@ Estímulo síncrono emitido por el hook `pre-push` vía enrutador fractal nativo
 ### OPTIONAL
 
 - `emitter_context`
+- `qa_profile` (`full` | `docs-only`; input declarado del proceso, no variable de entorno)
 
 ### FORBIDDEN
 

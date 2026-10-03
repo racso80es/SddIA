@@ -851,6 +851,11 @@ fn execute_phase_body_residual(
     }
 
     if delegates_are_only_agents(&delegates) {
+        if let Some(skipped) =
+            super::qa_profile::skip_agent_phase_entry(process_name, phase_name, inputs)
+        {
+            return skipped;
+        }
         if super::agent_runtime::is_configured() {
             let entry = super::agent_runtime::invoke_agent_phase(
                 repo,
