@@ -11,13 +11,15 @@
 
 
 
+
+
 feature_name: linear-hu-a-04-events
 created: "2026-10-03"
 process: feature
 branch_name: feat/linear-hu-a-04-events
 persist_ref: docs/features/linear-hu-a-04-events
 pbi_ref: docs/todos/pending/[OPERATIVO] Linear HU-A 04 — Eventos del ciclo directo.md
-execution_id: "a28dc160-6df0-4e5b-be5b-cb8d8d286c4b"
+execution_id: "b9e29d5a-ef18-44ab-9c23-f93a21a480ff"
 ---
 # Objetivos — linear-hu-a-04-events
 

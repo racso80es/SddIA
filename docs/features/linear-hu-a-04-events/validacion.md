@@ -1,5 +1,7 @@
 ---
 
+
+
 feature_name: linear-hu-a-04-events
 created: "2026-10-03"
 updated: "2026-10-03T21:28:00Z"
@@ -95,7 +97,7 @@ situational_notes:
   - "objectives.md pbi_ref aún apunta a pending/ (stale) — no absuelve F2"
   - "CODE_TOUCHPOINT: eventos domain + test linear_direct_cycle_events_ecst + Delivery_Committed 1.1.0 — no absuelve F2"
   - "F3/F4 NO_EVIDENCE (short-circuit F2); accept_pr_handoff: blocked"
-execution_id: "a28dc160-6df0-4e5b-be5b-cb8d8d286c4b"
+execution_id: "b9e29d5a-ef18-44ab-9c23-f93a21a480ff"
 ---
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
