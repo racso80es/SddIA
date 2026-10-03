@@ -2,9 +2,9 @@
 
 feature_name: linear-hu-a-04-events
 created: "2026-10-03"
-updated: "2026-10-03T21:27:30Z"
+updated: "2026-10-03T21:28:00Z"
 process: pull-request-review
-phase: Triaje documental
+phase: Veredicto y bloqueo
 agent: argos
 agents: argos
 branch: feat/linear-hu-a-04-events
@@ -24,19 +24,19 @@ delivery_state: failed
 resolution: FAIL_F2_DOC
 accept_pr_handoff: false
 accept_pr_handoff_status: blocked
-accept_pr_block_reason: "FAIL_F2_DOC — faltan spec.md y plan.md bajo persist_ref; Triaje documental"
+accept_pr_block_reason: "FAIL_F2_DOC — faltan spec.md y plan.md bajo persist_ref; Veredicto y bloqueo"
 authorization_status:
   exitCode: 1
   emitter_agent: argos
-  note: "FAIL_F2_DOC · Triaje documental · R1/R2 copia Evidence Bridge · sin stdout inventado · Shell git-manager Rejected · worktree = inject"
+  note: "FAIL_F2_DOC · Veredicto y bloqueo · R1/R2 copia Evidence Bridge · sin stdout inventado · Shell git-manager Rejected · worktree = inject"
 git_manager_invoked: false
 git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge; sin bypass raw"
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
 handoff_machine_file: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine+session) source=native_state; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; notes handoff-formal-scan; idempotent-hit; sin gitStdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Triaje documental CID 0a1f7e80… · exec 20c4cf93…"
-scope: "PPR Triaje documental — rama inject feat/linear-hu-a-04-events (CID 0a1f7e80… · exec 20c4cf93…)"
+evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine+session) source=native_state; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; notes idempotent-hit; sin gitStdout inventado"
+shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 0a1f7e80… · exec 20c4cf93…"
+scope: "PPR Veredicto y bloqueo — rama inject feat/linear-hu-a-04-events (CID 0a1f7e80… · exec 20c4cf93…)"
 checks:
   F2_DOC_GATE: NO_APTO
   DOC_OBJECTIVES: APTO
@@ -86,8 +86,8 @@ non_blocking_findings:
   - F3_TECH_GATE
   - F4_RBAC_CERBERO
 situational_notes:
-  - "Fase Triaje documental · CID 0a1f7e80-7719-4e19-86be-b6ba4f15476f · exec 20c4cf93-ebc0-4938-b9ef-05049ebafe4b"
-  - "Evidence Bridge machine/session: source=native_state · TECH/GIT APTO (copia; sin stdout inventado) · notes handoff-formal-scan; idempotent-hit"
+  - "Fase Veredicto y bloqueo · CID 0a1f7e80-7719-4e19-86be-b6ba4f15476f · exec 20c4cf93-ebc0-4938-b9ef-05049ebafe4b"
+  - "Evidence Bridge machine/session: source=native_state · TECH/GIT APTO (copia; sin stdout inventado) · notes idempotent-hit"
   - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (Glob/Read)"
   - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
   - "PBI-LINEAR-A-04-EVENTS en done/; sin réplica pending/"
@@ -95,9 +95,9 @@ situational_notes:
   - "objectives.md pbi_ref aún apunta a pending/ (stale) — no absuelve F2"
   - "CODE_TOUCHPOINT: eventos domain + test linear_direct_cycle_events_ecst + Delivery_Committed 1.1.0 — no absuelve F2"
   - "F3/F4 NO_EVIDENCE (short-circuit F2); accept_pr_handoff: blocked"
-execution_id: "1975f2a4-299e-498b-a315-297bb0911df4"
+execution_id: "a28dc160-6df0-4e5b-be5b-cb8d8d286c4b"
 ---
-# Validación — Triaje documental (Argos · pull-request-review)
+# Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
 
@@ -120,11 +120,11 @@ Copia literal machine/session — **no** stdout Shell inventado:
 | `formal_execute_process` | `true` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
-| `notes` | `handoff-formal-scan; idempotent-hit` |
+| `notes` | `idempotent-hit` |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` |
 
-Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ 2026-10-03T21:26:56Z + session inject (CID 0a1f7e80…).
+Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ 2026-10-03T21:27:33Z + session inject (CID 0a1f7e80… · exec 20c4cf93…).
 
 ## F2 — Persistido / reconfirmado
 
@@ -156,7 +156,7 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ 2026-10-03T2
 
 ```json
 {
-  "phase": "Triaje documental",
+  "phase": "Veredicto y bloqueo",
   "global": "NO_APTO",
   "resolution": "FAIL_F2_DOC",
   "verdict": "requiere_cambios",
