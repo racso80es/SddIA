@@ -1,4 +1,5 @@
 ---
+
 feature_name: merge-thermo-02-net-prune
 process: feature
 branch: feat/merge-thermo-02-net-prune
@@ -10,8 +11,8 @@ pbi_document_id: PBI-MERGE-THERMO-02-NET-PRUNE
 persist_ref: docs/features/merge-thermo-02-net-prune
 document_id: PBI-MERGE-THERMO-02-NET-PRUNE
 uuid: "84ac63fa-4369-43b1-8b09-fb3e5f963ff7"
+execution_id: "ddd321e1-0e81-4e0c-9a29-2651c869aa2a"
 ---
-
 # Validación — merge-thermo-02-net-prune
 
 | Check | Estado |
