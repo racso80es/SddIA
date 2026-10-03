@@ -10,6 +10,7 @@ pub mod daemons;
 pub mod accept_pr;
 pub mod pull_request_review;
 pub mod qa_profile;
+pub mod qa_attestation;
 pub mod entity_manager;
 pub mod delivery_close;
 pub mod cerbero_governance_react_core;

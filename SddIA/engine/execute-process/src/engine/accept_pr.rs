@@ -3,6 +3,7 @@
 use super::actions;
 use super::capsules::invoke_git_manager;
 use super::crypto_broker;
+use super::qa_attestation;
 use super::tracker_pbi_meta;
 use serde_json::{json, Value};
 use std::fs;
@@ -20,6 +21,14 @@ fn env_truthy(key: &str) -> bool {
     std::env::var(key)
         .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
         .unwrap_or(false)
+}
+
+fn truthy_flag(v: &Value, key: &str) -> bool {
+    match v.get(key) {
+        Some(Value::Bool(b)) => *b,
+        Some(Value::String(s)) => matches!(s.to_lowercase().as_str(), "true" | "1" | "yes" | "on"),
+        _ => false,
+    }
 }
 
 fn scan_presented_for_branch(repo: &Path, branch: &str) -> bool {
@@ -127,6 +136,17 @@ pub fn execute_accept_pr_phase(
             let Some(source) = str_field(inputs, "source_branch") else {
                 return Some(Err("source_branch es obligatorio para accept-pr".into()));
             };
+            if truthy_flag(inputs, "merge_already_done") {
+                if let Ok(hit) = qa_attestation::validate_for_accept_pr(repo, inputs) {
+                    return Some(Ok(json!({
+                        "status": "executed",
+                        "handler": "accept-genomic-audit",
+                        "attestation_hit": true,
+                        "note": format!("attested-by:{}", hit.execution_id),
+                        "presented_found": scan_presented_for_branch(repo, &source),
+                    })));
+                }
+            }
             let presented = scan_presented_for_branch(repo, &source);
             let orphan = !presented;
             if let Some(obj) = state.as_object_mut() {
@@ -306,6 +326,12 @@ pub fn execute_accept_pr_phase(
                 .and_then(|v| v.as_str())
                 .map(str::to_string)
                 .or_else(|| str_field(inputs, "source_branch"));
+            if let Some(ref branch) = source {
+                let removed = qa_attestation::remove_attestation_for_branch(repo, branch);
+                if let Some(obj) = state.as_object_mut() {
+                    obj.insert("attestation_removed".into(), json!(removed));
+                }
+            }
             let prev_skip = std::env::var("SDDIA_SKIP_HOOKS").ok();
             std::env::set_var("SDDIA_SKIP_HOOKS", "1");
             let push_data = invoke_git_manager(
