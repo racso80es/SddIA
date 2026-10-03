@@ -188,6 +188,50 @@ fn build_list_issues_query(include_label_filter: bool) -> &'static str {
     }
 }
 
+fn lab_fetch_issue_fixture(issue_ref: &str) -> Value {
+    let base = |state: &str, labels: &[&str], parent: Option<&str>, children: Vec<&str>| {
+        json!({
+            "id": format!("issue-uuid-{issue_ref}"),
+            "identifier": issue_ref,
+            "title": format!("lab mock {issue_ref}"),
+            "state": state,
+            "priority": 0,
+            "labels": labels,
+            "parent": parent,
+            "children": children,
+            "url": format!("https://linear.app/issue/{issue_ref}"),
+            "updated_at": "2026-10-02T00:00:00Z",
+        })
+    };
+    match issue_ref {
+        "LAB-PBI-OK" | "LAB-PBI-CYCLE" => {
+            base("Backlog", &["pbi"], Some("LAB-HU-1"), vec![])
+        }
+        "LAB-PBI-BADLABEL" => base("Backlog", &["hu"], Some("LAB-HU-1"), vec![]),
+        "LAB-PBI-BADPARENT" => base("Backlog", &["pbi"], Some("LAB-HU-OTHER"), vec![]),
+        "LAB-HU-1" => base("Backlog", &["hu"], None, vec!["LAB-PBI-OK", "LAB-PBI-CYCLE"]),
+        "LAB-HU-OTHER" => base("Backlog", &["hu"], None, vec![]),
+        "LAB-HU-AC9-READY" => base(
+            "In Progress",
+            &["hu"],
+            None,
+            vec!["LAB-PBI-CHILD-A", "LAB-PBI-CHILD-B", "LAB-PBI-MERGE-LAST"],
+        ),
+        "LAB-PBI-CHILD-A" | "LAB-PBI-CHILD-B" => {
+            base("Done", &["pbi"], Some("LAB-HU-AC9-READY"), vec![])
+        }
+        "LAB-PBI-MERGE-LAST" => base("In Review", &["pbi"], Some("LAB-HU-AC9-READY"), vec![]),
+        "LAB-PBI-CHILD-OPEN" => base("In Progress", &["pbi"], Some("LAB-HU-AC9-PENDING"), vec![]),
+        "LAB-HU-AC9-PENDING" => base(
+            "In Progress",
+            &["hu"],
+            None,
+            vec!["LAB-PBI-CHILD-OPEN", "LAB-PBI-CHILD-B"],
+        ),
+        _ => base("Backlog", &["hu"], None, vec![]),
+    }
+}
+
 fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
     let inner = request_inner(req);
     let op = required_str(inner, "operation")?;
@@ -201,18 +245,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                     exit: 1,
                 });
             }
-            Ok(json!({
-                "id": "issue-uuid-1",
-                "identifier": issue_ref,
-                "title": "lab mock issue",
-                "state": "Backlog",
-                "priority": 0,
-                "labels": ["hu"],
-                "parent": null,
-                "children": [],
-                "url": format!("https://linear.app/issue/{issue_ref}"),
-                "updated_at": "2026-10-02T00:00:00Z",
-            }))
+            Ok(lab_fetch_issue_fixture(&issue_ref))
         }
         "list_issues" => {
             let team_key = required_str(inner, "team_key")?;

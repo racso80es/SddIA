@@ -598,7 +598,7 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         }
         if let Some(pbi) = pbi_ref_meta {
             emit_inputs["pbi_ref"] = json!(pbi);
-            if let Some(tr) = tracker_ref_from_pbi(repo, pbi) {
+            if let Some(tr) = super::tracker_pbi_meta::tracker_ref_from_pbi(repo, pbi) {
                 emit_inputs["tracker_ref"] = json!(tr);
             }
         }
@@ -627,31 +627,6 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         "delivery_mode_source": bound.as_ref().map(|b| b.delivery_mode_source),
         "project_root": bound.as_ref().map(|b| b.project_root.to_string_lossy().replace('\\', "/")),
     }))
-}
-
-fn tracker_ref_from_pbi(repo: &Path, pbi_rel: &str) -> Option<String> {
-    let path = if Path::new(pbi_rel).is_absolute() {
-        PathBuf::from(pbi_rel)
-    } else {
-        repo.join(pbi_rel)
-    };
-    let text = fs::read_to_string(path).ok()?;
-    let trimmed = text.trim_start();
-    if !trimmed.starts_with("---") {
-        return None;
-    }
-    let rest = trimmed.strip_prefix("---")?;
-    let end = rest.find("\n---")?;
-    for line in rest[..end].lines() {
-        let line = line.trim();
-        if let Some(val) = line.strip_prefix("tracker_ref:") {
-            let v = val.trim().trim_matches('"');
-            if !v.is_empty() {
-                return Some(v.to_string());
-            }
-        }
-    }
-    None
 }
 
 fn input_non_empty_str(inputs: &Value, key: &str) -> bool {

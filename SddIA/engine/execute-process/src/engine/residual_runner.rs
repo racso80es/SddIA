@@ -851,7 +851,7 @@ fn execute_phase_body_residual(
 
     if delegates_are_only_agents(&delegates) {
         if super::agent_runtime::is_configured() {
-            return super::agent_runtime::invoke_agent_phase(
+            let entry = super::agent_runtime::invoke_agent_phase(
                 repo,
                 process_name,
                 phase_name,
@@ -862,6 +862,14 @@ fn execute_phase_body_residual(
                     crate::engine::capability_di_resolver::di_binding_object(b)
                 }),
             );
+            if process_name == "pull-request-review"
+                && entry.get("status").and_then(|v| v.as_str()) == Some("blocked")
+            {
+                if let Some(obj) = state.as_object_mut() {
+                    obj.insert("argos_verdict".into(), json!("block"));
+                }
+            }
+            return entry;
         }
         entry["status"] = json!("simulated");
         entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");

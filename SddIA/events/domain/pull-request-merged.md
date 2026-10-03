@@ -27,6 +27,7 @@ Clase ECST para sello post-merge en main. Ancla DLT via merge_commit_hash (40 he
 ### OPTIONAL
 - `pr_url`
 - `repository_name`
+- `tracker_ref` (identificador Linear del PBI; sello `tracker-stamp`)
 
 ### FORBIDDEN
 - `hash_signature`

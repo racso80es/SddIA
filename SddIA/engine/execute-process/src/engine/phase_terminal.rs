@@ -356,6 +356,19 @@ mod tests {
     }
 
     #[test]
+    fn ppr_blocked_phase_matches_witness_semantics() {
+        let reports = vec![json!({
+            "phase_name": "Veredicto y bloqueo",
+            "status": "blocked",
+            "handler": "agent-runtime",
+            "message": "FAIL_F2_DOC",
+        })];
+        let v = aggregate_execution_terminal(&reports, &json!({}));
+        assert!(!v.success);
+        assert_eq!(v.status_code, 1);
+    }
+
+    #[test]
     fn blocked_status_is_global_failure() {
         let reports = vec![json!({
             "phase_name": "Gate",

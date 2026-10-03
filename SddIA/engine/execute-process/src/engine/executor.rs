@@ -422,6 +422,13 @@ fn execute_phase_body(
                     .first()
                     .map(|b| super::capability_di_resolver::di_binding_object(b)),
             );
+            if process_name == "pull-request-review"
+                && agent_entry.get("status").and_then(|v| v.as_str()) == Some("blocked")
+            {
+                if let Some(obj) = state.as_object_mut() {
+                    obj.insert("argos_verdict".into(), json!("block"));
+                }
+            }
             if let Some(b) = resolved_bindings.first() {
                 agent_entry["di_binding"] = super::capability_di_resolver::di_binding_object(b);
                 agent_entry["resolved_provider"] = json!(b.provider);

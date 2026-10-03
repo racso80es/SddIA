@@ -2639,6 +2639,37 @@ mod blocking_tests {
     }
 
     #[test]
+    fn witness_local_qa_a55f1d12_subscriber_exit_one() {
+        let repo = repo_root();
+        let path = repo.join(
+            ".events/dead-letter/subscribers/a55f1d12-003b-40d3-ae21-6e69d575c257.argos.pull-request-review.json",
+        );
+        assert!(
+            path.is_file(),
+            "witness OSC-12 requerido en repo (prepush-argos-qa-witness)"
+        );
+        let witness: Value =
+            serde_json::from_str(&fs::read_to_string(&path).unwrap()).expect("witness json");
+        assert_eq!(
+            witness.get("dispatch_mode").and_then(|v| v.as_str()),
+            Some("sync")
+        );
+        assert_eq!(
+            witness.pointer("/delegation/exit_code").and_then(|v| v.as_i64()),
+            Some(1)
+        );
+        assert_eq!(
+            witness.pointer("/delegation/target").and_then(|v| v.as_str()),
+            Some("pull-request-review")
+        );
+        let trace = witness
+            .get("error_trace")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert!(trace.contains("failed"), "trace: {trace}");
+    }
+
+    #[test]
     fn local_qa_event_detection() {
         let ev = json!({
             "event_type": "Local_QA_Requested",

@@ -61,6 +61,7 @@ pub mod workspace_init;
 pub mod domain_profile;
 pub mod domain_authority;
 pub mod project_binding;
+pub mod tracker_pbi_meta;
 pub mod cli_detach;
 pub mod verify_process_integrity;
 

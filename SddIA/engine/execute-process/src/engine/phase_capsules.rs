@@ -968,6 +968,16 @@ pub fn capsule_delivery_emit_presented(
     if let Some(corr) = str_field(inputs, "correlation_id") {
         action_inputs["correlation_id"] = json!(corr);
     }
+    let persist_ref = str_field(inputs, "persist_ref").or_else(|| {
+        state
+            .get("workspace")
+            .and_then(|w| w.get("persist_ref"))
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+    });
+    if let Some(persist) = persist_ref.as_deref() {
+        super::tracker_pbi_meta::attach_tracker_ref_from_persist(repo, persist, &mut action_inputs);
+    }
     let seal = invoke_action(repo, "emit-pr-presented-event", &action_inputs)?;
     let handoff = state.get("handoff").cloned().unwrap_or(json!({}));
     let mut merged_handoff = handoff;

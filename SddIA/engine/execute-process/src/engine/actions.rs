@@ -395,6 +395,39 @@ mod tests {
     }
 
     #[test]
+    fn pr_emits_carry_tracker_ref_when_provided() {
+        let repo = find_repo_root().unwrap();
+        let pending = repo.join(".events/pending");
+        fs::create_dir_all(&pending).ok();
+        let presented = emit_pr_presented(
+            &repo,
+            &json!({
+                "branch": "feat/tracker-ref",
+                "status": "presented",
+                "pr_url": "https://github.com/o/r/pull/99",
+                "tracker_ref": "OSC-8",
+            }),
+        )
+        .expect("presented");
+        let pid = presented.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let raw_p = fs::read_to_string(pending.join(format!("{pid}.json"))).unwrap();
+        assert!(raw_p.contains("\"tracker_ref\":\"OSC-8\"") || raw_p.contains("\"tracker_ref\": \"OSC-8\""));
+
+        let merged = emit_pr_merged(
+            &repo,
+            &json!({
+                "source_branch": "feat/tracker-ref",
+                "merge_commit_hash": "a".repeat(40),
+                "tracker_ref": "OSC-8",
+            }),
+        )
+        .expect("merged");
+        let mid = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let raw_m = fs::read_to_string(pending.join(format!("{mid}.json"))).unwrap();
+        assert!(raw_m.contains("OSC-8"));
+    }
+
+    #[test]
     fn emit_tracker_sync_failed_no_secrets_in_pending() {
         let repo = find_repo_root().unwrap();
         let out = emit_tracker_sync_failed(

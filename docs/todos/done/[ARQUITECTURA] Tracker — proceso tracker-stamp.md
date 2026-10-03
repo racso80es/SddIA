@@ -88,3 +88,5 @@ Suscriptor táctico que, ante señales de dominio, actualiza estado y comentario
 ## 6. Dependencias
 
 Contrato, cápsula, sync-failed, `Work_Initiated` (orden §7 HU).
+
+Paridad HU (preflight, AC-9, cableado PR): `PBI-DEUDA-TRACKER-STAMP-PARIDAD`.
