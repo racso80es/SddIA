@@ -376,3 +376,53 @@ notes: "idempotent-hit"
 - F3/F4: `NO_EVIDENCE` (short-circuit); `accept_pr_handoff: blocked`
 - `branch` / `git_changes` / PBI `969f05933a46` en `done/`: **APTO**; código snapshot no absuelve F2
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-03T21:13:00Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-10-03T21:13:53Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `df8d7898-82c4-45bb-bacd-bf1f718de2e0`
+- correlation_id: `56d733b3-4d47-4083-a5ac-0a9fa2385a79`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `BRANCH_WORKTREE_SYNC` **NO_APTO**: `.git/HEAD` → `main` ≠ inject; PBI `969f05933a46` en `done/`
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO`, `FAIL_F2_DOC`)
+
+- Tocado: `docs/fixes/dcc-snapshot-missing-branch/validacion.md`
+- R1/R2: `TECH_FORMAL` / `GIT_EVIDENCE` **APTO** (copia Evidence Bridge `native_state`; sin stdout inventado)
+- Shell `git-manager`: Rejected → `GIT_EVIDENCE_SESSION_SHELL` NO_APTO (no bloqueante)
+- R3 KM: **APTO** (0 writes bajo `docs/todos/**`)
+- F2: faltan `objectives`/`spec`/`plan`/`implementation` bajo `persist_ref`
+- `BRANCH_WORKTREE_SYNC` **NO_APTO**: `.git/HEAD` → `main` ≠ inject; PBI `969f05933a46` en `done/`
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-03T21:13:53Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```

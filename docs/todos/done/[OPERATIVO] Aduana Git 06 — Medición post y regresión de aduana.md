@@ -4,7 +4,7 @@ uuid: "bdcc77c7-93db-4cde-a8c9-580db5d31fcc"
 title: "[OPERATIVO] Aduana Git 06 — Medición post y regresión de aduana"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
