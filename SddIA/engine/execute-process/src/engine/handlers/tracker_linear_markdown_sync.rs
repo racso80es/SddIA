@@ -1,6 +1,6 @@
 //! Proceso `tracker-linear-markdown-sync` — volcado de cuerpo Markdown a descripción Linear.
 
-use super::super::capsules::invoke_tool;
+use super::super::capsules::invoke_tool_for_process;
 use crate::core::parser::load_frontmatter_yaml;
 use crate::envelope::OrchestratorEnvelope;
 use regex::Regex;
@@ -76,7 +76,7 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str) -> Result<Value, Strin
         .unwrap_or(md_path)
         .to_string_lossy()
         .replace('\\', "/");
-    let tool_out = invoke_tool(
+    let tool_out = invoke_tool_for_process(
         repo,
         "linear-tracker-adapter",
         &json!({
@@ -86,6 +86,7 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str) -> Result<Value, Strin
                 "description": description,
             }
         }),
+        Some("tracker-linear-markdown-sync"),
     )?;
     Ok(json!({
         "markdown_path": rel,

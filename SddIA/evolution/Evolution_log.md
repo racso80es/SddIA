@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `b712c69f-53c3-442b-8f2d-8961c98b2ca7` | 2026-10-03 | HU-A 03: RBAC create_issue y execution-contexts 1.3.0 | CANONICO | `SddIA/evolution/b712c69f-53c3-442b-8f2d-8961c98b2ca7.md` |
 | `5ec21c63-111f-4982-8e3e-999ba6b53200` | 2026-10-03 | HU-A 02: linear-tracker-adapter create_issue 1.1.0 | CANONICO | `SddIA/evolution/5ec21c63-111f-4982-8e3e-999ba6b53200.md` |
 | `e1d1e40a-aed9-487b-b337-0df73c51344c` | 2026-10-03 | HU-A 01: contrato tracker 1.3.0 y binding done_gate git-only | CANONICO | `SddIA/evolution/e1d1e40a-aed9-487b-b337-0df73c51344c.md` |
 | `4393da04-37b3-44fe-9f95-688774a1b643` | 2026-10-02 | Escáner EDA: índice procesos sin backticks (OSC-9) | CANONICO | `SddIA/evolution/4393da04-37b3-44fe-9f95-688774a1b643.md` |

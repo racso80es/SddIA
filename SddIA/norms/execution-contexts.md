@@ -1,7 +1,7 @@
 ---
 uuid: "d8e9f0a1-b2c3-4d5e-6f7a-8b9c0d1e2f3a"
 name: "execution-contexts"
-version: "1.2.0"
+version: "1.3.0"
 entity_type: "norm"
 jurisdiction: "cerbero"
 ---
@@ -64,8 +64,8 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 
 ### 2.10. `tracker-operations`
 * **Dominio:** Requerimientos en trackers externos (Linear, etc.).
-* **Alcance:** Leer, listar, transicionar estado y comentar issues vía adaptadores GraphQL ciegos.
-* **Fuera de alcance:** Crear o borrar issues, administración de equipos, webhooks.
+* **Alcance:** Leer, listar, transicionar estado, comentar y **crear** issues vía adaptadores GraphQL ciegos.
+* **Fuera de alcance:** Borrar issues, administración de equipos o proyectos, webhooks.
 * **Cápsulas asociadas (Ejemplos):** `linear-tracker-adapter`.
 
 ---

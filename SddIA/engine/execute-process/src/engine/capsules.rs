@@ -383,6 +383,28 @@ fn unwrap_tool_envelope(body: Value) -> Value {
 }
 
 pub fn invoke_tool(repo: &Path, tool_name: &str, payload: &Value) -> Result<Value, String> {
+    invoke_tool_for_process(repo, tool_name, payload, None)
+}
+
+pub fn invoke_tool_for_process(
+    repo: &Path,
+    tool_name: &str,
+    payload: &Value,
+    process_name: Option<&str>,
+) -> Result<Value, String> {
+    if tool_name == super::tracker_operations_gate::LINEAR_TRACKER_TOOL {
+        let op = payload
+            .get("request")
+            .and_then(|r| r.get("operation"))
+            .and_then(|v| v.as_str());
+        if let Some(operation) = op {
+            super::tracker_operations_gate::gate_linear_tracker_operation(
+                repo,
+                process_name,
+                operation,
+            )?;
+        }
+    }
     let result = invoke_tool_capsule_json(repo, tool_name, payload, true)?;
     if result.exit_code != 0 || result.body.get("success") == Some(&json!(false)) {
         return Err(result

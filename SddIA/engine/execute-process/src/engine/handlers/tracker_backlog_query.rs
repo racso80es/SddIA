@@ -1,6 +1,6 @@
 //! Proceso `tracker-backlog-query` — listado Linear vía `linear-tracker-adapter` (síncrono).
 
-use super::super::capsules::invoke_tool;
+use super::super::capsules::invoke_tool_for_process;
 use super::super::project_binding::{self, TrackerConfig};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -131,10 +131,11 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         request["labels"] = json!([tc.label_pbi.clone()]);
     }
 
-    let tool_body = invoke_tool(
+    let tool_body = invoke_tool_for_process(
         repo,
         "linear-tracker-adapter",
         &json!({ "request": request }),
+        Some("tracker-backlog-query"),
     )?;
 
     let items = map_items(&tool_body, &tc, kind, state_filter.as_deref());

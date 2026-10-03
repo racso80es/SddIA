@@ -1,7 +1,7 @@
 //! Handler `tracker-stamp` — sello Linear ante eventos de dominio (fail-soft D5).
 
 use super::super::actions::try_run_native;
-use super::super::capsules::invoke_tool;
+use super::super::capsules::invoke_tool_for_process;
 use super::super::project_binding::{self, TrackerConfig};
 use super::super::tracker_pbi_meta;
 use crate::envelope::OrchestratorEnvelope;
@@ -92,7 +92,7 @@ fn expected_hu_for_payload(repo: &Path, payload: &Value) -> Option<String> {
 }
 
 fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
-    invoke_tool(
+    invoke_tool_for_process(
         repo,
         "linear-tracker-adapter",
         &json!({
@@ -101,6 +101,7 @@ fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
                 "issue_ref": issue_ref,
             }
         }),
+        Some("tracker-stamp"),
     )
 }
 
@@ -164,7 +165,7 @@ fn tool_update_state(
         .get(canonical)
         .cloned()
         .ok_or_else(|| format!("state_map sin {canonical}"))?;
-    invoke_tool(
+    invoke_tool_for_process(
         repo,
         "linear-tracker-adapter",
         &json!({
@@ -175,12 +176,13 @@ fn tool_update_state(
                 "team_key": tc.team_key,
             }
         }),
+        Some("tracker-stamp"),
     )?;
     Ok(())
 }
 
 fn tool_comment(repo: &Path, issue_ref: &str, body: &str) -> Result<(), String> {
-    invoke_tool(
+    invoke_tool_for_process(
         repo,
         "linear-tracker-adapter",
         &json!({
@@ -190,6 +192,7 @@ fn tool_comment(repo: &Path, issue_ref: &str, body: &str) -> Result<(), String> 
                 "body": body,
             }
         }),
+        Some("tracker-stamp"),
     )?;
     Ok(())
 }
