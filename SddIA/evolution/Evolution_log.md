@@ -9,6 +9,8 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `4393da04-37b3-44fe-9f95-688774a1b643` | 2026-10-02 | Escáner EDA: índice procesos sin backticks (OSC-9) | CANONICO | `SddIA/evolution/4393da04-37b3-44fe-9f95-688774a1b643.md` |
+| `1f389045-ef96-469c-858c-cca1f9d1b259` | 2026-10-02 | Backfill entity-manager genoma Tracker (OSC-6) | CANONICO | `SddIA/evolution/1f389045-ef96-469c-858c-cca1f9d1b259.md` |
 | `a3b4c5d6-e7f8-4890-a123-456789abcd01` | 2026-10-02 | tracker-linear-markdown-sync + update_issue_description (OSC-13) | CANONICO | `SddIA/evolution/a3b4c5d6-e7f8-4890-a123-456789abcd01.md` |
 | `26209dff-e413-4c6d-8838-5b785251356c` | 2026-10-02 | HU Tracker Linear — contexto RBAC, cápsula, EDA, Kalma2 y tracker-stamp | CANONICO | `SddIA/evolution/26209dff-e413-4c6d-8838-5b785251356c.md` |
 | `8a1f2c44-0e6b-4d91-b3a7-5c8e9d0f1a22` | 2026-10-02 | Kaizen bug-fix reentrada — git_reentry en workspace-init y reconcile execution_id | CANONICO | `SddIA/evolution/8a1f2c44-0e6b-4d91-b3a7-5c8e9d0f1a22.md` |
