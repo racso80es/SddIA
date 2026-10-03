@@ -1,7 +1,7 @@
 ---
 uuid: "d4e5f6a7-b8c9-4012-d345-67890abcdef0"
 name: "pull-request-orchestration"
-version: "1.1.0"
+version: "1.2.0"
 entity_type: "norm"
 jurisdiction: "dedalo"
 ---
@@ -38,7 +38,7 @@ Queda **prohibido**:
 
 ## 4. Merge / Aceptación (SSOT local)
 
-Toda fusión hacia la rama principal (`main`) en el entorno local del workspace debe orquestarse **estricta y exclusivamente** mediante el proceso **`SddIA/process/accept-pr.md`** (`process: accept-pr`), resuelto vía Cúmulo y ejecutado con `action:execute-process`.
+Toda fusión hacia la rama principal (`main`) en el entorno local del workspace debe orquestarse **estricta y exclusivamente** mediante el proceso **`accept-pr`** (`process: accept-pr`), resuelto vía Cúmulo (`process_domain_roots`; ubicación física actual: `SddIA/library/codexes/codex-software-engineering/process/accept-pr.md`) y ejecutado con `action:execute-process`.
 
 Queda **terminantemente prohibido**:
 
