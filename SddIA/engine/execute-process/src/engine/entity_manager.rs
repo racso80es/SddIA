@@ -431,6 +431,17 @@ fn filesystem_delete(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
     }))
 }
 
+fn handoff_has_prior_hash(handoff: &Value) -> bool {
+    handoff
+        .get("handoff_hash_signature_old")
+        .map(|v| {
+            v.as_str()
+                .map(|s| s.starts_with("sha256:") && s.len() > 7)
+                .unwrap_or(false)
+        })
+        .unwrap_or(false)
+}
+
 fn emit_domain_seal(repo: &Path, inputs: &Value, state: &Value) -> Result<Value, String> {
     let handoff = state.get("handoff").cloned().unwrap_or(json!({}));
     let seed = inputs.get("semantic_seed").cloned().unwrap_or(json!({}));
@@ -440,14 +451,31 @@ fn emit_domain_seal(repo: &Path, inputs: &Value, state: &Value) -> Result<Value,
         .or_else(|| seed.get("origin_topology"))
         .cloned()
         .unwrap_or_else(|| json!(if scope == "local" { "local" } else { "core" }));
+    let requested_lifecycle = inputs
+        .get("lifecycle_operation")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let emit_lifecycle = if requested_lifecycle == "update" && !handoff_has_prior_hash(&handoff) {
+        "create"
+    } else {
+        requested_lifecycle
+    };
+    let hash_signature_old = if emit_lifecycle == "create" {
+        Value::Null
+    } else {
+        handoff
+            .get("handoff_hash_signature_old")
+            .cloned()
+            .unwrap_or(Value::Null)
+    };
     let action_inputs = json!({
         "entity_class": inputs.get("entity_class"),
         "entity_name": inputs.get("entity_name"),
-        "lifecycle_operation": inputs.get("lifecycle_operation"),
+        "lifecycle_operation": emit_lifecycle,
         "entity_uuid": handoff.get("handoff_entity_uuid"),
         "version": handoff.get("handoff_version"),
         "hash_signature_new": handoff.get("handoff_hash_signature_new"),
-        "hash_signature_old": handoff.get("handoff_hash_signature_old"),
+        "hash_signature_old": hash_signature_old,
         "origin_topology": origin_topology,
         "emitter_agent": inputs.get("emitter_agent").unwrap_or(&json!("entity-manager")),
         "changes_summary": format!(
