@@ -1,19 +1,19 @@
 ---
-uuid: "b48cd041-efd3-4980-8013-a56b82b6889d"
+uuid: "ee0dcb22-a37f-4803-b91a-17eadc205d92"
 name: "hu-refined"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "HU_Refined"
-context: "ecosystem-evolution"
+context: "knowledge-management"
 capabilities:
   - "hu_refined"
-hash_signature: "sha256:f7c6b8d7d10fea288a3284ebb52342bddc57e20d0f6c6fe754eb2354bdbb005b"
+hash_signature: "sha256:f6c07eab5c9200b060b17847e188f5653e8d27b29711ebac601cca29be8350b3"
 ---
 
 # Event: HU_Refined
 
-Historia de usuario refinada; trigger hacia estado tracker todo (vía tracker-stamp en PBI A-08).
+HU refinada en historias/; trigger hacia todo vía tracker-stamp (PBI 08).
 
 ## Payload ECST
 
@@ -30,8 +30,7 @@ Historia de usuario refinada; trigger hacia estado tracker todo (vía tracker-st
 
 ### FORBIDDEN
 - `team_key`
-- `linear_workflow_state_id`
-- `linear_issue_url`
+- `hash_signature`
 
 ## Emisores autorizados
 

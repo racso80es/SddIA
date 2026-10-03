@@ -1,5 +1,5 @@
 ---
-uuid: "2011196d-9294-47d6-86e7-62586a4d711a"
+uuid: "528c21e8-3804-4a2a-bb26-574b3f39495c"
 name: "delivery-committed"
 version: "1.1.0"
 contract: "events-contract v1.1.0"
@@ -8,12 +8,12 @@ event_type: "Delivery_Committed"
 context: "source-control"
 capabilities:
   - "delivery_committed"
-hash_signature: "sha256:b36c6625bd9c2b588245c55a7eb67e37274e177c3bfbb75dd86cbd3cd340bf2b"
+hash_signature: "sha256:001ca841d2a114627c997b7838bf4e240983863e8eb362df2b86ea4f3cbe8eae"
 ---
 
 # Event: Delivery_Committed
 
-Cierre en trunk_direct o sello con metadatos de entrega (D7). No abre ni fusiona Pull Request.
+Cierre en trunk_direct. No abre ni fusiona Pull Request.
 
 ## Payload ECST
 

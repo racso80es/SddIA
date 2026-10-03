@@ -1,19 +1,19 @@
 ---
-uuid: "513d9379-2f33-4418-9ae5-79a8e4b9197e"
+uuid: "8fd2d4a2-21f8-484a-95b4-a732faa6ed98"
 name: "pbi-refined"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "PBI_Refined"
-context: "ecosystem-evolution"
+context: "knowledge-management"
 capabilities:
   - "pbi_refined"
-hash_signature: "sha256:f580c20edf0fda2fcaecb8e61e3bf5ff60cf9b3a377d465ec49063a6ea119e22"
+hash_signature: "sha256:1a6177d564c21127e9396befe640d23d653835b63f2a2b6d73eae9856739b52d"
 ---
 
 # Event: PBI_Refined
 
-PBI refinado en cola pending; único trigger hacia estado tracker todo (vía tracker-stamp en PBI A-08).
+PBI refinado en todos_pending; trigger hacia todo vía tracker-stamp (PBI 08).
 
 ## Payload ECST
 
@@ -30,8 +30,7 @@ PBI refinado en cola pending; único trigger hacia estado tracker todo (vía tra
 
 ### FORBIDDEN
 - `team_key`
-- `linear_workflow_state_id`
-- `linear_issue_url`
+- `hash_signature`
 
 ## Emisores autorizados
 

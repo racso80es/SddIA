@@ -1,19 +1,19 @@
 ---
-uuid: "0a45da02-c422-46ba-a2ab-3611eb02fc4d"
+uuid: "d203f467-082f-4cd6-895f-63736e5ab7b1"
 name: "pbi-cancelled"
 version: "1.0.0"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "PBI_Cancelled"
-context: "ecosystem-evolution"
+context: "knowledge-management"
 capabilities:
   - "pbi_cancelled"
-hash_signature: "sha256:7813d5620b61c7b145936a9c78969f54b35c404d0b7957953a31305211045ec5"
+hash_signature: "sha256:911f7819fface7b4a3f07f528dcc1a5b2469302274ee9531a8feac16f952d6fe"
 ---
 
 # Event: PBI_Cancelled
 
-PBI cancelado en cola; emisores task-queue-manager y Kalma2 (tracker-markdown-apply en HU-B).
+Cancelación de PBI; requiere reason y al menos tracker_ref o pbi_ref en emisión.
 
 ## Payload ECST
 
@@ -23,14 +23,11 @@ PBI cancelado en cola; emisores task-queue-manager y Kalma2 (tracker-markdown-ap
 ### OPTIONAL
 - `tracker_ref`
 - `pbi_ref`
-- `event_id`
-- `correlation_id`
-- `occurred_at`
+- `project_slug`
 
 ### FORBIDDEN
 - `team_key`
-- `linear_workflow_state_id`
-- `linear_issue_url`
+- `hash_signature`
 
 ## Emisores autorizados
 
