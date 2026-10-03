@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `97836b6f-ba20-4f99-93fa-6dfdbe6ae498` | 2026-10-03 | PBI-MERGE-THERMO-05: paridad documental aduana y test suscripciones domain | CANONICO | `SddIA/evolution/97836b6f-ba20-4f99-93fa-6dfdbe6ae498.md` |
 | `8484cd0c-dee1-434b-a507-7278a16c61e3` | 2026-10-03 | PBI-MERGE-THERMO-04: atestación QA, atajo pre-push y accept-pr genómico | CANONICO | `SddIA/evolution/8484cd0c-dee1-434b-a507-7278a16c61e3.md` |
 | `65f5b27b-a508-405d-9c44-7e6d5e116cf5` | 2026-10-03 | PBI-MERGE-THERMO-03: triaje delta, qa_profile docs-only, pre-commit condicional | CANONICO | `SddIA/evolution/65f5b27b-a508-405d-9c44-7e6d5e116cf5.md` |
 | `e6b8f56f-74e8-4ab8-9f50-656005bf65b8` | 2026-10-03 | PBI-MERGE-THERMO-02: poda red/binarios pre-push (bus→gh, fetch condicional, F-DEP-07, timeout hook) | CANONICO | `SddIA/evolution/e6b8f56f-74e8-4ab8-9f50-656005bf65b8.md` |

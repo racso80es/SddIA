@@ -4,7 +4,7 @@ uuid: "97836b6f-ba20-4f99-93fa-6dfdbe6ae498"
 title: "[OPERATIVO] Aduana Git 05 — Paridad documental de la aduana"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: media
@@ -15,7 +15,7 @@ hu_order: 5
 hu_order_total: 6
 historia_ref: "docs/todos/historias/[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia.md"
 historia_document_id: HU-MERGE-THERMODYNAMICS
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 unblocks:
   - PBI-MERGE-THERMO-06-E2E-MEASURE
 baseline_decisiones:
