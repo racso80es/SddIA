@@ -1,5 +1,5 @@
 ---
-document_id: PBI-FIX-FRACTURE-969f05933a46
+document_id: PBI-FIX-FRACTURE-187079f2d82d
 title: "[FIX] delivery-close-cycle — fractura sistémica"
 format: markdown
 version: "1.0.0"
@@ -7,9 +7,9 @@ created: "2026-10-03"
 status: "abierto"
 priority: alta
 process: bug-fix
-fracture_hash: 969f05933a46
+fracture_hash: 187079f2d82d
 fracture_process: delivery-close-cycle
-incident_ref: "System_Fracture_Detected — 969f05933a46"
+incident_ref: "System_Fracture_Detected — 187079f2d82d"
 related:
   - SddIA/norms/obediencia-procesos.md
   - SddIA/events/domain/system-fracture-detected.md
@@ -28,9 +28,7 @@ related:
 ## Traza de error
 
 ```
-fatal: argumento ambiguo 'feat/linear-hu-a-01-contract': revisión desconocida o ruta fuera del árbol de trabajo.
-Usa '--' para separar las rutas de las revisiones, de esta manera:
-'git <comando> [<revisión>...] -- [<archivo>...]'
+[SNAPSHOT_BRANCH_CHECKOUT] fatal: una rama llamada 'fix/dcc-snapshot-missing-branch' ya existe
 ```
 
 ## Mandato
@@ -53,7 +51,7 @@ Corregir la causa raíz del colapso. **Prohibido bypass raw** (`gh`, `git`, `cur
 
 ### Propuestas
 
-- **Corrección de proceso oficial:** Auditar proceso `delivery-close-cycle`, acción `Publicación remota` y emisor `execute-process`.
+- **Corrección de proceso oficial:** Auditar proceso `delivery-close-cycle`, acción `Snapshot final` y emisor `execute-process`.
 
 > Mayeuta transforma la fractura en deuda accionable; el Vértice Biológico valida antes de ejecutar.
 ## Criterio de cierre

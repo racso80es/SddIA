@@ -480,8 +480,28 @@ pub fn capsule_delivery_snapshot_final_with_repo(
     let branch = str_field(inputs, "branch_name")
         .ok_or("branch_name es obligatorio para Snapshot final")?;
 
-    let hash_before_data =
-        invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch}))?;
+    let branch_ref = format!("refs/heads/{}", branch);
+    let hash_before_data = match invoke_git_manager(
+        repo,
+        "get_last_commit",
+        &json!({"ref": branch_ref}),
+    ) {
+        Ok(d) => d,
+        Err(_) => {
+            if let Err(e) = invoke_git_manager(
+                repo,
+                "checkout",
+                &json!({"branch_name": branch, "create_if_not_exists": true}),
+            ) {
+                return Ok(delivery_phase_failed(
+                    "delivery-snapshot-final",
+                    "SNAPSHOT_BRANCH_CHECKOUT",
+                    &e,
+                ));
+            }
+            invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch_ref}))?
+        }
+    };
     let hash_before = git_commit_hash(&hash_before_data);
 
     let status_data = invoke_git_manager(repo, "status", &json!({}))?;
@@ -560,7 +580,7 @@ pub fn capsule_delivery_snapshot_final_with_repo(
     }
 
     let hash_after_data =
-        invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch}))?;
+        invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch_ref}))?;
     let hash_after = git_commit_hash(&hash_after_data);
 
     if hash_before == hash_after {
