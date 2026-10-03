@@ -4,7 +4,7 @@ title: "[FIX] delivery-close-cycle — fractura sistémica"
 format: markdown
 version: "1.0.0"
 created: "2026-10-03"
-status: "abierto"
+status: done
 priority: alta
 process: bug-fix
 fracture_hash: 969f05933a46

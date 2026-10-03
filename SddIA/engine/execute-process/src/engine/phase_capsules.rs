@@ -480,6 +480,19 @@ pub fn capsule_delivery_snapshot_final_with_repo(
     let branch = str_field(inputs, "branch_name")
         .ok_or("branch_name es obligatorio para Snapshot final")?;
 
+    // Rama declarada en DCC puede no existir localmente (p. ej. primer snapshot tras forja).
+    if let Err(e) = invoke_git_manager(
+        repo,
+        "checkout",
+        &json!({"branch_name": branch, "create_if_not_exists": true}),
+    ) {
+        return Ok(delivery_phase_failed(
+            "delivery-snapshot-final",
+            "SNAPSHOT_BRANCH_CHECKOUT",
+            &e,
+        ));
+    }
+
     let hash_before_data =
         invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch}))?;
     let hash_before = git_commit_hash(&hash_before_data);
