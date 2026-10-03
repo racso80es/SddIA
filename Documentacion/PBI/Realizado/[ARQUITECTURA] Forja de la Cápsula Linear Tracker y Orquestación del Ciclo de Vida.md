@@ -5,14 +5,15 @@ tracker_ref: OSC-5
 legacy_document_id: PBI-SDDIA-LINEAR-CORE-001
 title: "[ARQUITECTURA] Tracker de requerimientos por proyecto — cápsula Linear, backlog en Kalma2 y sello de estado HU/PBI"
 format: markdown
-version: "2.4.0"
+version: "2.5.0"
 type: historia
-status: cerrada
+status: implementada
 priority: alta
 created: "2026-10-01"
-updated: "2026-10-02"
+updated: "2026-10-03"
 closed: "2026-10-02"
-finalized: "2026-10-02"
+finalized: "2026-10-03"
+implementation_merge: "bd056b12506ef5a9dee5f3bcda7aeb25d1b20338"
 ubicacion: "Documentacion/PBI/Realizado/[ARQUITECTURA] Forja de la Cápsula Linear Tracker y Orquestación del Ciclo de Vida.md"
 process_candidate: feature
 decisions_status: "D1–D7 y D4.1 dictaminadas por Racso (2026-10-02)"
@@ -380,3 +381,15 @@ Investigación con entregable documental (informe + propuesta de HU), sin cambio
 | Linear | `LINEAR_API_TOKEN` disponible en bóveda instancia |
 
 `historias/` queda vacía de esta HU: la narrativa vive en `Documentacion/PBI/Realizado/`; la cola operativa no se mueve.
+
+## 10. Cierre de implementación (2026-10-03)
+
+| Campo | Valor |
+|-------|--------|
+| Merge en `main` | `bd056b1` (PR [#317](https://github.com/racso80es/SddIA/pull/317) sobre [#316](https://github.com/racso80es/SddIA/pull/316)) |
+| PBIs tracker | 15 entradas en `docs/todos/done/` (ARQUITECTURA, DEUDA, SPIKE); `docs/todos/pending/` sin pendientes de esta serie |
+| Genoma | `SddIA/tools/linear-tracker-adapter.md` + crate; procesos `tracker-backlog-query`, `tracker-stamp`, `tracker-sync-replay`, `tracker-linear-markdown-sync`; contexto `tracker-operations`; eventos `Work_Initiated` / `Tracker_Sync_Failed` |
+| Gate Done en Git | Sin migración (laudo spike D1): `feature-pbi-archive` y cierre documental en rama siguen vigentes |
+| Token SSOT | `LINEAR_API_TOKEN` (no `LINEAR_API_KEY`) |
+
+Criterios v1.0 de la historia esqueleto en `historias/` quedan **obsoletos** frente a este laudo (v2.x): contrato en `SddIA/tools/{name}.md`, orquestación vía procesos `tracker-*`, RBAC por contexto, no por catálogo Cerbero.

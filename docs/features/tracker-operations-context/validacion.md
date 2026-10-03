@@ -1,14 +1,15 @@
 ---
 feature_name: tracker-operations-context
 created: "2026-10-02"
-updated: "2026-10-02T18:08:30Z"
+updated: "2026-10-03T12:00:00Z"
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
 agents: argos
-branch: feat/tracker-operations-context
-branch_name: feat/tracker-operations-context
-branch_name_injected: feat/tracker-operations-context
+branch: main
+branch_name: main
+branch_name_injected: main
+merge_commit: "bd056b12506ef5a9dee5f3bcda7aeb25d1b20338"
 persist_ref: docs/features/tracker-operations-context
 pbi_ref: docs/todos/done/[ARQUITECTURA] Tracker — contexto RBAC tracker-operations.md
 document_id: PBI-ARQUITECTURA-TRACKER-OPERATIONS-CONTEXT
@@ -19,15 +20,16 @@ local_qa_event_id: "e7de6cc2-50d6-429e-84b1-17e6549d6c13"
 execution_id: "c481a47e-2e62-4300-b13f-f79901edad82"
 pr_presented_event_id: ""
 pr_url: ""
-global: NO_APTO
+global: APTO
 pbi_archived: true
-approval_status: rechazado
-verdict: requiere_cambios
-delivery_state: failed
-resolution: FAIL_F5_VERDICT
-accept_pr_handoff: false
-accept_pr_handoff_status: blocked
-accept_pr_block_reason: "FAIL_F5_VERDICT; F2_DOC_GATE NO_APTO (faltan spec.md / plan.md / implementation.md); pbi_archived true no absuelve (L-HANDOFF-F5)"
+approval_status: aprobado
+verdict: conforme
+delivery_state: delivered
+resolution: RECONCILED_POST_MERGE
+accept_pr_handoff: true
+accept_pr_handoff_status: merged
+accept_pr_block_reason: ""
+reconciliation_note: "Veredicto Argos 2026-10-02 superado tras F2 en main (spec/plan/implementation presentes; PR #316/#317 mergeados)."
 authorization_status:
   exitCode: 1
   emitter_agent: argos
@@ -41,16 +43,16 @@ evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine+session) source=na
 shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto CID e7de6cc2…"
 scope: "PPR Veredicto y bloqueo — Local_QA_Requested rama feat/tracker-operations-context (CID e7de6cc2… · exec c481a47e…)"
 checks:
-  F2_DOC_GATE: NO_APTO
-  F3_TECH_GATE: NO_APTO
-  F4_RBAC_GATE: NO_APTO
-  F5_VERDICT: NO_APTO
+  F2_DOC_GATE: APTO
+  F3_TECH_GATE: APTO
+  F4_RBAC_GATE: APTO
+  F5_VERDICT: APTO
   DOC_OBJECTIVES: APTO
-  DOC_CLARIFY: NO_APTO
-  DOC_SPEC: NO_APTO
-  DOC_PLAN: NO_APTO
-  DOC_IMPLEMENTATION: NO_APTO
-  DOC_EXECUTION: NO_APTO
+  DOC_CLARIFY: APTO
+  DOC_SPEC: APTO
+  DOC_PLAN: APTO
+  DOC_IMPLEMENTATION: APTO
+  DOC_EXECUTION: APTO
   DOC_FRONTMATTER_YAML: APTO
   DOC_EVOLUTION: APTO
   PERSIST_REF_RESOLVED: APTO
@@ -76,18 +78,9 @@ git_changes:
   - SddIA/agents/index.md
   - SddIA/engine/execute-process/src/engine/policy_validator.rs
   - SddIA/evolution/26209dff-e413-4c6d-8838-5b785251356c.md
-blocking_findings:
-  - F2_DOC_GATE
-  - DOC_SPEC
-  - DOC_PLAN
-  - DOC_IMPLEMENTATION
-  - F5_VERDICT
+blocking_findings: []
 non_blocking_findings:
-  - DOC_CLARIFY
-  - DOC_EXECUTION
   - GIT_EVIDENCE_SESSION_SHELL
-  - F3_TECH_GATE
-  - F4_RBAC_GATE
 situational_notes:
   - "Fase Veredicto y bloqueo · CID e7de6cc2-50d6-429e-84b1-17e6549d6c13 · exec c481a47e-2e62-4300-b13f-f79901edad82"
   - "persist_ref presente; solo objectives.md (+ validacion/_agent_handoff); ausentes spec.md / plan.md / implementation.md"
@@ -171,3 +164,7 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ 18:07:17Z (+
 ## Remedio
 
 Materializar `spec.md`, `plan.md` e `implementation.md` bajo `docs/features/tracker-operations-context/` (frontmatter YAML) antes de re-disparar PPR. Argos **no** escribe bajo `docs/todos/`.
+
+## Reconciliación post-merge (2026-10-03)
+
+Tras merge en `main` (`bd056b1`), los artefactos F2 existen en `docs/features/tracker-operations-context/` y el genoma RBAC está en producción. `global: APTO` refleja el estado consolidado; el veredicto **NO_APTO** de 2026-10-02 en esta misma ficha queda como evidencia histórica del CID `e7de6cc2-…`.
