@@ -62,6 +62,7 @@ pub mod domain_profile;
 pub mod domain_authority;
 pub mod project_binding;
 pub mod tracker_pbi_meta;
+pub mod tracker_operations_gate;
 pub mod cli_detach;
 pub mod verify_process_integrity;
 

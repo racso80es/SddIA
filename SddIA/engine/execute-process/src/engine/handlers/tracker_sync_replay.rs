@@ -1,6 +1,6 @@
 //! Handler `tracker-sync-replay` — reintento fail-soft de `Tracker_Sync_Failed`.
 
-use super::super::capsules::invoke_tool;
+use super::super::capsules::invoke_tool_for_process;
 use super::super::project_binding::{self, TrackerConfig};
 use crate::envelope::OrchestratorEnvelope;
 use sddia_io::outbound_lab::lab_mock_outbound_enabled;
@@ -104,7 +104,7 @@ pub fn replay_payload(
         None => return Err("tracker no configurado".into()),
     };
 
-    let fetch = invoke_tool(
+    let fetch = invoke_tool_for_process(
         repo,
         "linear-tracker-adapter",
         &json!({
@@ -113,6 +113,7 @@ pub fn replay_payload(
                 "issue_ref": issue_ref,
             }
         }),
+        Some("tracker-sync-replay"),
     )?;
 
     match operation.as_str() {
@@ -128,7 +129,7 @@ pub fn replay_payload(
                 .get(&target)
                 .cloned()
                 .ok_or_else(|| format!("state_map sin entrada para {target}"))?;
-            invoke_tool(
+            invoke_tool_for_process(
                 repo,
                 "linear-tracker-adapter",
                 &json!({
@@ -139,6 +140,7 @@ pub fn replay_payload(
                         "team_key": tc.team_key,
                     }
                 }),
+                Some("tracker-sync-replay"),
             )?;
             Ok("applied")
         }
@@ -152,7 +154,7 @@ pub fn replay_payload(
             if body.contains(&marker) {
                 // idempotencia: el cuerpo ya lleva marca única por event_id
             }
-            invoke_tool(
+            invoke_tool_for_process(
                 repo,
                 "linear-tracker-adapter",
                 &json!({
@@ -162,6 +164,7 @@ pub fn replay_payload(
                         "body": body,
                     }
                 }),
+                Some("tracker-sync-replay"),
             )?;
             Ok("applied")
         }

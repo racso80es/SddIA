@@ -4,7 +4,7 @@ uuid: "730a4b12-ca2b-493a-b21b-d45c1fd10100"
 title: "[OPERATIVO] Linear HU-A 03 — RBAC tracker-operations crear issues"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
