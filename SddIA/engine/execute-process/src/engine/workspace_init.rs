@@ -579,40 +579,6 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         .map(|p| p.to_string_lossy().replace('\\', "/"))
         .unwrap_or_else(|_| objectives_path.to_string_lossy().into_owned());
 
-    let mut work_initiated: Value = json!(null);
-    if matches!(process_name, "feature" | "bug-fix" | "refactorization")
-        && !env_truthy("SDDIA_LAB_SKIP_WORK_INITIATED")
-    {
-        let mut emit_inputs = json!({
-            "branch": branch_name,
-            "persist_ref": persist_ref,
-            "source_process": process_name,
-        });
-        if let Some(slug) = inputs
-            .get("project_slug")
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-        {
-            emit_inputs["project_slug"] = json!(slug);
-        }
-        if let Some(pbi) = pbi_ref_meta {
-            emit_inputs["pbi_ref"] = json!(pbi);
-            if let Some(tr) = super::tracker_pbi_meta::tracker_ref_from_pbi(repo, pbi) {
-                emit_inputs["tracker_ref"] = json!(tr);
-            }
-        }
-        work_initiated = match super::actions::try_run_native(
-            repo,
-            "emit-work-initiated-event",
-            &emit_inputs,
-        ) {
-            Ok(Some(v)) => v,
-            Ok(None) => json!({"warn": "emit-work-initiated-event no nativo"}),
-            Err(e) => json!({"warn": e}),
-        };
-    }
-
     Ok(json!({
         "feature_name": task_name,
         "task_name": task_name,
@@ -621,7 +587,7 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         "persist_ref": persist_ref,
         "objectives_path": objectives_rel,
         "git_steps": git_steps,
-        "work_initiated": work_initiated,
+        "work_initiated": json!(null),
         "execution_profile": profile.to_json(),
         "delivery_mode": bound.as_ref().map(|b| b.delivery_mode.as_str()),
         "delivery_mode_source": bound.as_ref().map(|b| b.delivery_mode_source),
@@ -635,6 +601,100 @@ fn input_non_empty_str(inputs: &Value, key: &str) -> bool {
         .and_then(|v| v.as_str())
         .map(str::trim)
         .is_some_and(|s| !s.is_empty())
+}
+
+/// Primera fase de ejecución Tekton (`agent:tekton` en `delegates_to`).
+pub fn phase_delegates_to_tekton(delegates: &[Value]) -> bool {
+    delegates
+        .iter()
+        .any(|d| d.as_str() == Some("agent:tekton"))
+}
+
+fn pbi_ref_from_inputs(inputs: &Value) -> Option<&str> {
+    inputs
+        .get("pbi_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+}
+
+/// Emisión fail-soft de `Work_Initiated` (D5). Payload estable respecto al cierre de init previo.
+pub fn emit_work_initiated_fail_soft(
+    repo: &Path,
+    process_name: &str,
+    inputs: &Value,
+) -> Value {
+    if !matches!(process_name, "feature" | "bug-fix" | "refactorization")
+        || env_truthy("SDDIA_LAB_SKIP_WORK_INITIATED")
+    {
+        return json!(null);
+    }
+    let branch = inputs
+        .get("branch_name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("");
+    let persist = inputs
+        .get("persist_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("");
+    if branch.is_empty() || persist.is_empty() {
+        return json!({"warn": "work_initiated: branch_name o persist_ref ausentes"});
+    }
+    let mut emit_inputs = json!({
+        "branch": branch,
+        "persist_ref": persist,
+        "source_process": process_name,
+    });
+    if let Some(slug) = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        emit_inputs["project_slug"] = json!(slug);
+    }
+    if let Some(pbi) = pbi_ref_from_inputs(inputs) {
+        emit_inputs["pbi_ref"] = json!(pbi);
+        if let Some(tr) = super::tracker_pbi_meta::tracker_ref_from_pbi(repo, pbi) {
+            emit_inputs["tracker_ref"] = json!(tr);
+        }
+    }
+    match super::actions::try_run_native(repo, "emit-work-initiated-event", &emit_inputs) {
+        Ok(Some(v)) => v,
+        Ok(None) => json!({"warn": "emit-work-initiated-event no nativo"}),
+        Err(e) => json!({"warn": e}),
+    }
+}
+
+/// Una sola emisión al entrar en la primera fase `agent:tekton` (HU-A 05 / D-B).
+pub fn maybe_emit_work_initiated_on_tekton_entry(
+    repo: &Path,
+    process_name: &str,
+    delegates: &[Value],
+    inputs: &Value,
+    state: &mut Value,
+    entry: &mut Value,
+) {
+    if !phase_delegates_to_tekton(delegates) {
+        return;
+    }
+    if state
+        .get("work_initiated_emitted")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return;
+    }
+    let wi = emit_work_initiated_fail_soft(repo, process_name, inputs);
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("work_initiated_emitted".into(), json!(true));
+        obj.insert("work_initiated".into(), wi.clone());
+    }
+    entry["work_initiated"] = wi;
 }
 
 /// Detector de fase Inicialización (I7 / L-SPLIT-A D4).
@@ -707,6 +767,64 @@ mod tests {
             "persist_ref": "docs/fixes/demo"
         });
         assert!(is_workspace_init_phase(&phase, &inputs, "bug-fix"));
+    }
+
+    #[test]
+    fn workspace_init_does_not_emit_work_initiated() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        std::env::set_var("SDDIA_LAB_SKIP_GIT", "1");
+        let inputs = json!({
+            "feature_name": "wi-defer",
+            "branch_name": "feat/wi-defer",
+            "persist_ref": "docs/features/wi-defer",
+            "refined_requirements": "AC-4c defer"
+        });
+        let out = run(root, &inputs, "feature").expect("run ok");
+        assert_eq!(out["work_initiated"], json!(null));
+        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+    }
+
+    #[test]
+    fn tekton_delegate_detector() {
+        assert!(phase_delegates_to_tekton(&[json!("agent:tekton")]));
+        assert!(!phase_delegates_to_tekton(&[json!("agent:argos")]));
+    }
+
+    #[test]
+    fn maybe_emit_work_initiated_only_once() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        std::env::set_var("SDDIA_LAB_SKIP_WORK_INITIATED", "1");
+        let inputs = json!({
+            "branch_name": "feat/wi-once",
+            "persist_ref": "docs/features/wi-once"
+        });
+        let mut state = json!({});
+        let mut entry = json!({});
+        let delegates = vec![json!("agent:tekton")];
+        maybe_emit_work_initiated_on_tekton_entry(
+            root,
+            "feature",
+            &delegates,
+            &inputs,
+            &mut state,
+            &mut entry,
+        );
+        assert_eq!(state["work_initiated_emitted"], json!(true));
+        entry = json!({});
+        maybe_emit_work_initiated_on_tekton_entry(
+            root,
+            "feature",
+            &delegates,
+            &inputs,
+            &mut state,
+            &mut entry,
+        );
+        assert!(entry.get("work_initiated").is_none());
+        std::env::remove_var("SDDIA_LAB_SKIP_WORK_INITIATED");
     }
 
     #[test]
