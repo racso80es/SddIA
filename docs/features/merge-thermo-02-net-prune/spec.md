@@ -1,5 +1,8 @@
 ---
 
+
+
+
 document_id: merge-thermo-02-net-prune
 uuid: "f3a2c1b0-9e8d-4f7a-b6c5-d4e3f2a1b0c9"
 title: "Aduana Git 02 — Poda red/binarios pre-push"
@@ -7,7 +10,7 @@ format: markdown
 version: "1.0.0"
 status: delivered
 pbi_ref: PBI-MERGE-THERMO-02-NET-PRUNE
-execution_id: "ddd321e1-0e81-4e0c-9a29-2651c869aa2a"
+execution_id: "bbf47a78-0bd5-41b4-9723-87e9e48ff3d7"
 ---
 # Alcance
 

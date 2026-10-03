@@ -1,11 +1,14 @@
 ---
 
+
+
+
 feature_name: merge-thermo-02-net-prune
 created: "2026-10-03"
 process: feature
 branch_name: feat/merge-thermo-02-net-prune
 persist_ref: docs/features/merge-thermo-02-net-prune
-execution_id: "ddd321e1-0e81-4e0c-9a29-2651c869aa2a"
+execution_id: "bbf47a78-0bd5-41b4-9723-87e9e48ff3d7"
 ---
 # Plan — merge-thermo-02-net-prune
 
