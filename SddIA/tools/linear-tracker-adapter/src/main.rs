@@ -333,6 +333,51 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                 "description_bytes": description.len(),
             }))
         }
+        "create_issue" => {
+            let team_key = required_str(inner, "team_key")?;
+            let title = required_str(inner, "title")?;
+            let labels: Vec<String> = inner
+                .get("labels")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|x| x.as_str().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default();
+            for name in &labels {
+                if name == "unknown-label" {
+                    return Err(LinearFail {
+                        code: "LINEAR_LABEL_UNKNOWN",
+                        message: format!("label not found: {name}"),
+                        exit: 1,
+                    });
+                }
+            }
+            if let Some(parent) = optional_str(inner, "parent_ref") {
+                if parent == "MISSING-PARENT" {
+                    return Err(LinearFail {
+                        code: "LINEAR_PARENT_NOT_FOUND",
+                        message: "parent issue not found".into(),
+                        exit: 1,
+                    });
+                }
+            }
+            if optional_str(inner, "state_name").as_deref() == Some("Unknown") {
+                return Err(LinearFail {
+                    code: "LINEAR_STATE_UNKNOWN",
+                    message: "workflow state not found".into(),
+                    exit: 1,
+                });
+            }
+            let ident = format!("{team_key}-42");
+            Ok(json!({
+                "issue_ref": ident,
+                "id": format!("issue-uuid-{ident}"),
+                "url": format!("https://linear.app/issue/{ident}"),
+                "title": title,
+            }))
+        }
         other => Err(LinearFail {
             code: "LINEAR_GRAPHQL_ERROR",
             message: format!("operation no soportada: {other}"),
@@ -412,56 +457,229 @@ fn run_list_issues(req: &Value, url: &str, token: &str) -> Result<Value, LinearF
     }))
 }
 
+fn resolve_workflow_state_id(
+    url: &str,
+    token: &str,
+    team_key: &str,
+    state_name: &str,
+) -> Result<String, LinearFail> {
+    let states_query = r#"query States($teamKey: String!) {
+  team(key: $teamKey) { states { nodes { id name } } }
+}"#;
+    let body = graphql_post(url, token, states_query, json!({ "teamKey": team_key }))?;
+    let nodes = body
+        .pointer("/data/team/states/nodes")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let matches: Vec<&Value> = nodes
+        .iter()
+        .filter(|n| n.get("name").and_then(|s| s.as_str()) == Some(state_name))
+        .collect();
+    match matches.len() {
+        0 => Err(LinearFail {
+            code: "LINEAR_STATE_UNKNOWN",
+            message: "workflow state not found".into(),
+            exit: 1,
+        }),
+        1 => matches[0]
+            .get("id")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+            .ok_or_else(|| LinearFail {
+                code: "LINEAR_GRAPHQL_ERROR",
+                message: "state id missing".into(),
+                exit: 1,
+            }),
+        _ => Err(LinearFail {
+            code: "LINEAR_STATE_AMBIGUOUS",
+            message: "multiple workflow states match".into(),
+            exit: 1,
+        }),
+    }
+}
+
+fn resolve_team_id(url: &str, token: &str, team_key: &str) -> Result<String, LinearFail> {
+    let query = r#"query Team($teamKey: String!) {
+  team(key: $teamKey) { id }
+}"#;
+    let body = graphql_post(url, token, query, json!({ "teamKey": team_key }))?;
+    let id = body
+        .pointer("/data/team/id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty());
+    id.map(str::to_string).ok_or_else(|| LinearFail {
+        code: "LINEAR_GRAPHQL_ERROR",
+        message: "team not found".into(),
+        exit: 1,
+    })
+}
+
+fn resolve_label_ids(
+    url: &str,
+    token: &str,
+    team_key: &str,
+    label_names: &[String],
+) -> Result<Vec<String>, LinearFail> {
+    if label_names.is_empty() {
+        return Ok(vec![]);
+    }
+    let query = r#"query TeamLabels($teamKey: String!) {
+  team(key: $teamKey) { labels { nodes { id name } } }
+}"#;
+    let body = graphql_post(url, token, query, json!({ "teamKey": team_key }))?;
+    let nodes = body
+        .pointer("/data/team/labels/nodes")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let mut ids = Vec::with_capacity(label_names.len());
+    for name in label_names {
+        let found: Vec<&Value> = nodes
+            .iter()
+            .filter(|n| n.get("name").and_then(|s| s.as_str()) == Some(name.as_str()))
+            .collect();
+        match found.len() {
+            0 => {
+                return Err(LinearFail {
+                    code: "LINEAR_LABEL_UNKNOWN",
+                    message: format!("label not found: {name}"),
+                    exit: 1,
+                });
+            }
+            1 => {
+                let id = found[0]
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| LinearFail {
+                        code: "LINEAR_GRAPHQL_ERROR",
+                        message: "label id missing".into(),
+                        exit: 1,
+                    })?;
+                ids.push(id.to_string());
+            }
+            _ => {
+                return Err(LinearFail {
+                    code: "LINEAR_GRAPHQL_ERROR",
+                    message: format!("ambiguous label: {name}"),
+                    exit: 1,
+                });
+            }
+        }
+    }
+    Ok(ids)
+}
+
+fn resolve_parent_id(url: &str, token: &str, parent_ref: &str) -> Result<String, LinearFail> {
+    let query = r#"query ParentIssue($ref: String!) {
+  issue(id: $ref) { id }
+}"#;
+    let body = graphql_post(url, token, query, json!({ "ref": parent_ref }))?;
+    let node = body.pointer("/data/issue");
+    if node.is_none() || node.is_some_and(|n| n.is_null()) {
+        return Err(LinearFail {
+            code: "LINEAR_PARENT_NOT_FOUND",
+            message: "parent issue not found".into(),
+            exit: 1,
+        });
+    }
+    node.and_then(|n| n.get("id"))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| LinearFail {
+            code: "LINEAR_PARENT_NOT_FOUND",
+            message: "parent issue not found".into(),
+            exit: 1,
+        })
+}
+
+fn run_create_issue(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
+    let inner = request_inner(req);
+    let team_key = required_str(inner, "team_key")?;
+    let title = required_str(inner, "title")?;
+    let description = optional_str(inner, "description");
+    let team_id = resolve_team_id(url, token, &team_key)?;
+    let label_names: Vec<String> = inner
+        .get("labels")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+    let label_ids = resolve_label_ids(url, token, &team_key, &label_names)?;
+    let parent_id = match optional_str(inner, "parent_ref") {
+        Some(p) => Some(resolve_parent_id(url, token, &p)?),
+        None => None,
+    };
+    let state_id = match optional_str(inner, "state_name") {
+        Some(s) => Some(resolve_workflow_state_id(url, token, &team_key, &s)?),
+        None => None,
+    };
+    let project_id = optional_str(inner, "project_id");
+    let priority = inner.get("priority").and_then(|v| v.as_i64());
+
+    let mut input = Map::new();
+    input.insert("teamId".into(), json!(team_id));
+    input.insert("title".into(), json!(title));
+    if let Some(d) = description {
+        input.insert("description".into(), json!(d));
+    }
+    if !label_ids.is_empty() {
+        input.insert("labelIds".into(), json!(label_ids));
+    }
+    if let Some(p) = parent_id {
+        input.insert("parentId".into(), json!(p));
+    }
+    if let Some(s) = state_id {
+        input.insert("stateId".into(), json!(s));
+    }
+    if let Some(p) = project_id {
+        input.insert("projectId".into(), json!(p));
+    }
+    if let Some(p) = priority {
+        input.insert("priority".into(), json!(p));
+    }
+
+    let mutation = r#"mutation IssueCreate($input: IssueCreateInput!) {
+  issueCreate(input: $input) {
+    success
+    issue { id identifier url }
+  }
+}"#;
+    let body = graphql_post(url, token, mutation, json!({ "input": Value::Object(input) }))?;
+    let success = body
+        .pointer("/data/issueCreate/success")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !success {
+        return Err(LinearFail {
+            code: "LINEAR_GRAPHQL_ERROR",
+            message: "issueCreate failed".into(),
+            exit: 1,
+        });
+    }
+    let issue = body.pointer("/data/issueCreate/issue").ok_or_else(|| LinearFail {
+        code: "LINEAR_GRAPHQL_ERROR",
+        message: "issueCreate issue missing".into(),
+        exit: 1,
+    })?;
+    Ok(json!({
+        "issue_ref": issue.get("identifier"),
+        "id": issue.get("id"),
+        "url": issue.get("url"),
+    }))
+}
+
 fn run_update_issue_state(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
     let inner = request_inner(req);
     let issue_ref = required_str(inner, "issue_ref")?;
     if let Some(state_name) = optional_str(inner, "state_name") {
         let team_key = required_str(inner, "team_key")?;
-        let states_query = r#"query States($teamKey: String!) {
-  team(key: $teamKey) { states { nodes { id name } } }
-}"#;
-        let body = graphql_post(
-            url,
-            token,
-            states_query,
-            json!({ "teamKey": team_key }),
-        )?;
-        let nodes = body
-            .pointer("/data/team/states/nodes")
-            .and_then(|v| v.as_array())
-            .cloned()
-            .unwrap_or_default();
-        let matches: Vec<&Value> = nodes
-            .iter()
-            .filter(|n| n.get("name").and_then(|s| s.as_str()) == Some(state_name.as_str()))
-            .collect();
-        match matches.len() {
-            0 => {
-                return Err(LinearFail {
-                    code: "LINEAR_STATE_UNKNOWN",
-                    message: "workflow state not found".into(),
-                    exit: 1,
-                })
-            }
-            1 => {
-                let state_id = matches[0]
-                    .get("id")
-                    .and_then(|v| v.as_str())
-                    .ok_or_else(|| LinearFail {
-                        code: "LINEAR_GRAPHQL_ERROR",
-                        message: "state id missing".into(),
-                        exit: 1,
-                    })?;
-                return apply_state_id(url, token, &issue_ref, state_id, &state_name);
-            }
-            _ => {
-                return Err(LinearFail {
-                    code: "LINEAR_STATE_AMBIGUOUS",
-                    message: "multiple workflow states match".into(),
-                    exit: 1,
-                })
-            }
-        }
+        let state_id = resolve_workflow_state_id(url, token, &team_key, &state_name)?;
+        return apply_state_id(url, token, &issue_ref, &state_id, &state_name);
     }
     let state_id = required_str(inner, "state_id")?;
     apply_state_id(url, token, &issue_ref, &state_id, &state_id)
@@ -588,6 +806,7 @@ fn dispatch(req: &Value) -> Result<Value, LinearFail> {
         "fetch_issue" => run_fetch_issue(req, &url, &token),
         "list_issues" => run_list_issues(req, &url, &token),
         "update_issue_state" => run_update_issue_state(req, &url, &token),
+        "create_issue" => run_create_issue(req, &url, &token),
         "create_comment" => run_create_comment(req, &url, &token),
         "update_issue_description" => run_update_issue_description(req, &url, &token),
         other => Err(LinearFail {
@@ -712,6 +931,84 @@ mod tests {
             let r = dispatch(&json!({"request": {"operation": "fetch_issue", "issue_ref": "BX-1"}})).unwrap();
             let blob = r.to_string();
             assert!(!blob.contains("super-secret-token"));
+            env::remove_var("LINEAR_API_TOKEN");
+        });
+    }
+
+    #[test]
+    fn create_issue_lab_ac0a() {
+        with_lab(|| {
+            let r = dispatch(&json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": "OSC",
+                    "title": "HU test",
+                    "description": "body",
+                    "labels": ["hu"],
+                    "parent_ref": "LAB-HU-1",
+                    "state_name": "Backlog"
+                }
+            }))
+            .unwrap();
+            assert_eq!(r.get("issue_ref"), Some(&json!("OSC-42")));
+            assert!(r.get("id").is_some());
+            assert!(r.get("url").is_some());
+        });
+    }
+
+    #[test]
+    fn create_issue_lab_errors_ac0a2() {
+        with_lab(|| {
+            let e = dispatch(&json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": "OSC",
+                    "title": "x",
+                    "labels": ["unknown-label"]
+                }
+            }))
+            .unwrap_err();
+            assert_eq!(e.code, "LINEAR_LABEL_UNKNOWN");
+
+            let e2 = dispatch(&json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": "OSC",
+                    "title": "x",
+                    "parent_ref": "MISSING-PARENT"
+                }
+            }))
+            .unwrap_err();
+            assert_eq!(e2.code, "LINEAR_PARENT_NOT_FOUND");
+
+            env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+            let e3 = dispatch(&json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": "OSC",
+                    "title": "x"
+                }
+            }))
+            .unwrap_err();
+            assert_eq!(e3.code, "LINEAR_AUTH_MISSING");
+            env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        });
+    }
+
+    #[test]
+    fn create_issue_envelope_no_token() {
+        with_lab(|| {
+            env::set_var("LINEAR_API_TOKEN", "secret-create-token");
+            let r = dispatch(&json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": "BX",
+                    "title": "t"
+                }
+            }))
+            .unwrap();
+            let blob = r.to_string();
+            assert!(!blob.contains("secret-create-token"));
             env::remove_var("LINEAR_API_TOKEN");
         });
     }

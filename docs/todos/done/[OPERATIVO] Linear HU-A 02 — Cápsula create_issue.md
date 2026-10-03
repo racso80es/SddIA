@@ -4,7 +4,7 @@ uuid: "101efc29-0ebf-4549-9ae6-00dc84758e0a"
 title: "[OPERATIVO] Linear HU-A 02 — Cápsula create_issue"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
