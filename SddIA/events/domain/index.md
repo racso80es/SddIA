@@ -22,6 +22,10 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 
 | Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |
 |----------------|------|------|------------|---------|----------|---------|--------------|
+| `pbi-cancelled.md` | `1dfdb877-ad6c-4fd5-b977-40aacdaa3fbd` | pbi-cancelled | PBI_Cancelled | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `pbi_cancelled` |
+| `hu-refined.md` | `75df5b43-cbfe-436d-a969-1453f80f1e33` | hu-refined | HU_Refined | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `hu_refined` |
+| `pbi-refined.md` | `2fbfdf71-b933-48e2-ae4a-8cfd750106ec` | pbi-refined | PBI_Refined | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `pbi_refined` |
+| `delivery-committed.md` | `bd875067-006e-4b30-b824-7d0073cabd31` | delivery-committed | Delivery_Committed | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `delivery_committed` |
 | `instance-torn-down.md` | `4ea892df-12a1-4c40-9b93-f2f3e559ea21` | instance-torn-down | Instance_Torn_Down | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `instance_torn_down` |
 | `instance-deployed.md` | `a71b0d84-9e7b-414e-b935-f054d9539508` | instance-deployed | Instance_Deployed | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `instance_deployed` |
 | `telegram-callback-received.md` | `e39a1c83-51ab-4a7c-81cf-5e10334afdee` | telegram-callback-received | TelegramCallback_Received | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `telegram_callback_received` |

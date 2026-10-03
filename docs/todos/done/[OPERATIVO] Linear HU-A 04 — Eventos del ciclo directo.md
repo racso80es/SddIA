@@ -4,7 +4,9 @@ uuid: "23005b41-5c43-401f-ab00-8fd380f25ec2"
 title: "[OPERATIVO] Linear HU-A 04 — Eventos del ciclo directo"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
+closed: "2026-10-03"
+execution_branch: feat/linear-hu-a-04-events
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,7 +17,7 @@ hu_order: 4
 hu_order_total: 9
 historia_ref: "docs/todos/historias/HU - [OPERATIVO] Linear — ciclo directo de HU y PBI.md"
 historia_document_id: HU-LINEAR-DIRECT-CYCLE
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 blocked_by:
   - PBI-LINEAR-A-01-CONTRACT
 unblocks:

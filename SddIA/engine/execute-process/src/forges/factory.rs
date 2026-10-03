@@ -11,7 +11,7 @@ use super::common::{
     norm_integrity_hash, generate_uuid,
 };
 use crate::core::paths::load_paths_config;
-use crate::core::resolver::{process_search_roots, resolve_process_path};
+use crate::core::resolver::{process_search_roots, resolve_event_contract, resolve_process_path};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -1146,11 +1146,27 @@ outputs:
     }))
 }
 
+fn resolve_event_artifact_path(
+    repo: &Path,
+    name: &str,
+    effective_family: &str,
+) -> (PathBuf, PathBuf) {
+    if let Ok(found) = resolve_event_contract(repo, name) {
+        let events_root = found
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| repo.join("SddIA/events").join(effective_family));
+        return (events_root, found);
+    }
+    let events_root = repo.join("SddIA/events").join(effective_family);
+    let event_path = events_root.join(format!("{name}.md"));
+    (events_root, event_path)
+}
+
 pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "event_name")?;
     let effective_family = resolve_effective_event_family(inputs)?;
-    let events_root = repo.join("SddIA/events").join(&effective_family);
-    let event_path = events_root.join(format!("{name}.md"));
+    let (events_root, event_path) = resolve_event_artifact_path(repo, &name, &effective_family);
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
     if lifecycle == "update" && event_path.is_file() {
         if inputs
@@ -1182,6 +1198,9 @@ pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
             }));
         }
     }
+    if lifecycle == "update" && !event_path.is_file() {
+        return Err(format!("update: no existe {}", event_path.display()));
+    }
     if lifecycle == "create" && event_path.is_file() {
         return Err(format!("Ya existe {}", event_path.display()));
     }
@@ -1196,7 +1215,21 @@ pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let payload_forbidden = inputs.get("payload_forbidden").cloned().unwrap_or_else(|| json!([]));
     let emitters = inputs.get("emitter_agents").cloned().unwrap_or_else(|| json!([]));
 
-    let event_uuid = generate_uuid(repo)?;
+    let (event_uuid, handoff_hash_signature_old) = if lifecycle == "update" && event_path.is_file() {
+        let fm = parse_frontmatter(&event_path)?;
+        let uuid = fm
+            .get("uuid")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+            .ok_or_else(|| format!("uuid ausente en {}", event_path.display()))?;
+        let old_hash = fm
+            .get("hash_signature")
+            .and_then(|v| v.as_str())
+            .map(str::to_string);
+        (uuid, old_hash)
+    } else {
+        (generate_uuid(repo)?, None)
+    };
     let hash_sig = sha256_canon(
         repo,
         &json!({
@@ -1283,7 +1316,7 @@ hash_signature: "{hash_sig}"
         "artifact_events_index": index_path.strip_prefix(repo).unwrap_or(&index_path).to_string_lossy().replace('\\', "/"),
         "handoff_entity_uuid": event_uuid,
         "handoff_hash_signature_new": hash_sig,
-        "handoff_hash_signature_old": null,
+        "handoff_hash_signature_old": handoff_hash_signature_old,
         "handoff_version": version,
     }))
 }
@@ -2176,6 +2209,45 @@ NOTA_BACKFILL
         restore.set_readonly(false);
         let _ = fs::set_permissions(&idx, restore);
         std::env::remove_var("SDDIA_FORGE_LAB_UUID");
+    }
+
+    #[test]
+    fn resolve_event_contract_prefers_codex_delivery_committed() {
+        let repo = crate::core::repo::find_repo_root().expect("repo");
+        let path = resolve_event_contract(&repo, "delivery-committed").expect("resolve");
+        let s = path.to_string_lossy();
+        assert!(
+            s.contains("codex-software-engineering"),
+            "expected codex path, got {s}"
+        );
+    }
+
+    #[test]
+    fn hash_refresh_delivery_committed_targets_codex() {
+        let repo = crate::core::repo::find_repo_root().expect("repo");
+        let stray = repo.join("SddIA/events/domain/delivery-committed.md");
+        let _ = fs::remove_file(&stray);
+        let codex = repo.join(
+            "SddIA/library/codexes/codex-software-engineering/events/delivery-committed.md",
+        );
+        assert!(codex.is_file(), "missing codex delivery-committed");
+        let out = run_event_forge(
+            &repo,
+            &json!({
+                "entity_class": "event",
+                "lifecycle_operation": "update",
+                "event_name": "delivery-committed",
+                "event_family": "domain",
+                "hash_refresh_only": true,
+            }),
+        )
+        .expect("hash refresh");
+        assert_eq!(
+            out.get("handoff_entity_uuid").and_then(|v| v.as_str()),
+            Some("b1c2d3e4-f5a6-4b7c-8d9e-0a1b2c3d4e5f")
+        );
+        let fm = crate::forges::common::parse_frontmatter(&codex).expect("fm");
+        assert!(fm.get("hash_signature").is_some());
     }
 
     #[test]

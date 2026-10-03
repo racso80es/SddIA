@@ -268,4 +268,86 @@ mod tests {
         let (ok, errors) = validate_ecst_instance(&event, Some(schema));
         assert!(ok, "{errors:?}");
     }
+
+    #[test]
+    fn linear_direct_cycle_events_minimal_and_forbidden_provider_fields() {
+        let repo = find_repo_root().unwrap();
+        let schemas = load_event_class_schemas(&repo);
+
+        let pbi_refined = schemas.get("PBI_Refined").expect("PBI_Refined");
+        let minimal_pbi = json!({
+            "event_type": "PBI_Refined",
+            "payload": {
+                "event_id": "00000000-0000-4000-8000-000000000001",
+                "correlation_id": "00000000-0000-4000-8000-000000000002",
+                "source_process": "refine-pbi",
+                "pbi_ref": "docs/todos/pending/x.md",
+                "occurred_at": "2026-10-03T12:00:00Z"
+            }
+        });
+        let (ok, errors) = validate_ecst_instance(&minimal_pbi, Some(pbi_refined));
+        assert!(ok, "{errors:?}");
+        let with_team_key = json!({
+            "event_type": "PBI_Refined",
+            "payload": {
+                "event_id": "00000000-0000-4000-8000-000000000001",
+                "correlation_id": "00000000-0000-4000-8000-000000000002",
+                "source_process": "refine-pbi",
+                "pbi_ref": "docs/todos/pending/x.md",
+                "occurred_at": "2026-10-03T12:00:00Z",
+                "team_key": "ENG"
+            }
+        });
+        let (ok, errors) = validate_ecst_instance(&with_team_key, Some(pbi_refined));
+        assert!(!ok, "team_key must be rejected: {errors:?}");
+
+        let hu_refined = schemas.get("HU_Refined").expect("HU_Refined");
+        let minimal_hu = json!({
+            "event_type": "HU_Refined",
+            "payload": {
+                "event_id": "00000000-0000-4000-8000-000000000003",
+                "correlation_id": "00000000-0000-4000-8000-000000000004",
+                "source_process": "refine-hu",
+                "hu_ref": "docs/todos/historias/hu.md",
+                "occurred_at": "2026-10-03T12:00:00Z"
+            }
+        });
+        let (ok, errors) = validate_ecst_instance(&minimal_hu, Some(hu_refined));
+        assert!(ok, "{errors:?}");
+
+        let cancelled = schemas.get("PBI_Cancelled").expect("PBI_Cancelled");
+        for payload in [
+            json!({ "reason": "obsolete", "pbi_ref": "docs/todos/pending/x.md" }),
+            json!({ "reason": "obsolete", "tracker_ref": "LIN-1" }),
+        ] {
+            let event = json!({ "event_type": "PBI_Cancelled", "payload": payload });
+            let (ok, errors) = validate_ecst_instance(&event, Some(cancelled));
+            assert!(ok, "{errors:?}");
+        }
+
+        let delivery = schemas.get("Delivery_Committed").expect("Delivery_Committed");
+        assert!(delivery.optional.contains(&"tracker_ref".to_string()));
+        let legacy = json!({
+            "event_type": "Delivery_Committed",
+            "payload": {
+                "project_slug": "core",
+                "default_branch": "main",
+                "delivery_mode": "trunk_direct"
+            }
+        });
+        let (ok, errors) = validate_ecst_instance(&legacy, Some(delivery));
+        assert!(ok, "{errors:?}");
+        let extended = json!({
+            "event_type": "Delivery_Committed",
+            "payload": {
+                "project_slug": "core",
+                "default_branch": "main",
+                "delivery_mode": "trunk_direct",
+                "tracker_ref": "LIN-9",
+                "commit_sha": "abc123"
+            }
+        });
+        let (ok, errors) = validate_ecst_instance(&extended, Some(delivery));
+        assert!(ok, "{errors:?}");
+    }
 }
