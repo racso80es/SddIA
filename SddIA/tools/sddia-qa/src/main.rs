@@ -9,6 +9,7 @@ mod validate_evolution_contract;
 mod verify_compiled_capsules;
 mod verify_tools_index;
 mod wasi_ci_smoke;
+mod workspace_prune;
 
 use execute_process::core::repo::find_repo_root;
 use execute_process::engine::eda_coverage;
@@ -33,6 +34,7 @@ Comandos:\n\
   migrate-evolution-history manifest|apply|verify|reindex [--json] [--write PATH] [--manifest PATH] [--lote L1|L2|L3|L4] [--dry-run]\n\
   gate-evolution [--json] [--range|--all] [--if-touched] [--sync-base] [--require-synced-base]\n\
   verify-hooks [--json] [--fix]\n\
+  workspace-prune --empty [--json]\n\
   evolution-rehash --id <uuid> [--json] [--dry-run]\n\
   evolution-register [--json] [--dry-run]\n"
 }
@@ -186,6 +188,14 @@ fn main() {
             has_flag(rest, "--json"),
             has_flag(rest, "--fix"),
         ),
+        "workspace-prune" => {
+            if !has_flag(rest, "--empty") {
+                eprintln!("workspace-prune requiere --empty");
+                1
+            } else {
+                workspace_prune::run(&repo, has_flag(rest, "--json"))
+            }
+        }
         "evolution-rehash" => gate_evolution::run_rehash(&repo, rest),
         "evolution-register" => gate_evolution::run_mutate(&repo, rest),
         other => {
