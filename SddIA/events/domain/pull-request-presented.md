@@ -23,6 +23,7 @@ Clase ECST para presentación de PR en bus local. Suscriptores: aduana **`pull-r
 - `status`
 
 ### OPTIONAL
+- `qa_profile` (`full` | `docs-only`; heredado de `Local_QA_Requested` / DCC)
 - `pr_url`
 - `tracker_ref` (identificador Linear del PBI; sello `tracker-stamp`)
 - `repository` *(ruta oráculo remoto)*

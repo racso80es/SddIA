@@ -629,6 +629,14 @@ pub fn run(
         "inputs": process_inputs,
         "asset_id": Uuid::new_v4().to_string(),
     });
+    if let Some(profile) = process_inputs
+        .get("qa_profile")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        state["qa_profile"] = json!(profile);
+    }
 
     let template = workspace_template(process_def)?;
     let mut inputs_mut = process_inputs.clone();

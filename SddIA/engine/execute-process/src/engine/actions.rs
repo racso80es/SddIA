@@ -190,6 +190,9 @@ fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
     if let Some(tr) = str_field(inputs, "tracker_ref") {
         payload["tracker_ref"] = json!(tr);
     }
+    if let Some(profile) = str_field(inputs, "qa_profile") {
+        payload["qa_profile"] = json!(profile);
+    }
     let mut event = json!({
         "event_id": event_id,
         "event_type": "PullRequest_Presented",

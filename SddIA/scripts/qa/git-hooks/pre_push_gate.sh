@@ -36,6 +36,7 @@ main() {
   fi
 
   local branches=()
+  local branch_shas=()
   while IFS='|' read -r local_ref local_sha remote_ref remote_sha || [[ -n "${local_ref:-}" ]]; do
     [[ -n "$local_ref" ]] || continue
     if is_delete_push "$local_sha"; then
@@ -63,6 +64,7 @@ main() {
       continue
     fi
     branches+=("$branch")
+    branch_shas+=("${branch}|${local_sha}|${remote_sha}")
   done < <(printf '%s' "$stdin_text" | parse_pre_push_stdin)
 
   if pre_push_hook_runs_evolution_gate "${#branches[@]}"; then
@@ -75,9 +77,22 @@ main() {
   fi
 
   local exit_code=0 branch persist_ref slug payload qa_payload timing_branch=""
-  for branch in "${branches[@]}"; do
+  local entry local_sha remote_sha paths delta_class qa_profile
+  for entry in "${branch_shas[@]}"; do
+    IFS='|' read -r branch local_sha remote_sha <<< "$entry"
     timing_branch="$branch"
-    qa_payload=$(printf '{"event_type":"Local_QA_Requested","blocking":true,"emitter_agent":"git-hook-pre-push","payload":{"branch":"%s"}}' "$branch")
+    paths=$(delta_paths_for_push "$remote_sha" "$local_sha" || true)
+    delta_class=$(delta_class_for_paths "$paths")
+    HOOK_TIMING_DELTA_CLASS="$delta_class"
+    if [[ "$delta_class" == "passive" ]]; then
+      qa_profile="docs-only"
+    else
+      qa_profile="full"
+    fi
+    qa_payload=$(
+      python3 -c 'import json,sys; print(json.dumps({"event_type":"Local_QA_Requested","blocking":True,"emitter_agent":"git-hook-pre-push","payload":{"branch":sys.argv[1],"qa_profile":sys.argv[2]}}))' \
+        "$branch" "$qa_profile"
+    )
     if ! invoke_process "route-domain-event" "$qa_payload"; then
       echo "SddIA pre-push: BLOCKED — Local_QA_Requested failed for ${branch}" >&2
       exit_code=1
@@ -86,13 +101,10 @@ main() {
 
     persist_ref=$(resolve_persist_ref "$branch" || true)
     slug=$(branch_slug "$branch")
-    if [[ -n "$persist_ref" ]]; then
-      payload=$(printf '{"source_process":"git-hook-pre-push","branch_name":"%s","pr_title":"feat: %s","pr_body":"Presentación automática vía hook pre-push (PBI-005 Ola B).","target_branch":"main","persist_ref":"%s"}' \
-        "$branch" "${slug:-$branch}" "$persist_ref")
-    else
-      payload=$(printf '{"source_process":"git-hook-pre-push","branch_name":"%s","pr_title":"feat: %s","pr_body":"Presentación automática vía hook pre-push (PBI-005 Ola B).","target_branch":"main","persist_ref":null}' \
-        "$branch" "${slug:-$branch}")
-    fi
+    payload=$(
+      python3 -c 'import json,sys; b,s,pref,q=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]; d={"source_process":"git-hook-pre-push","branch_name":b,"pr_title":f"feat: {s or b}","pr_body":"Presentación automática vía hook pre-push (PBI-005 Ola B).","target_branch":"main","qa_profile":q}; d["persist_ref"]=pref if pref else None; print(json.dumps(d))' \
+        "$branch" "${slug:-$branch}" "${persist_ref:-}" "$qa_profile"
+    )
 
     if ! invoke_process "delivery-close-cycle" "$payload"; then
       echo "SddIA pre-push: BLOCKED — delivery-close-cycle failed for ${branch}" >&2

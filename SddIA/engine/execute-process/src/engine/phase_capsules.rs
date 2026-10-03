@@ -968,6 +968,14 @@ pub fn capsule_delivery_emit_presented(
     if let Some(corr) = str_field(inputs, "correlation_id") {
         action_inputs["correlation_id"] = json!(corr);
     }
+    if let Some(profile) = str_field(inputs, "qa_profile").or_else(|| {
+        state
+            .get("qa_profile")
+            .and_then(|v| v.as_str())
+            .map(str::to_string)
+    }) {
+        action_inputs["qa_profile"] = json!(profile);
+    }
     let persist_ref = str_field(inputs, "persist_ref").or_else(|| {
         state
             .get("workspace")
