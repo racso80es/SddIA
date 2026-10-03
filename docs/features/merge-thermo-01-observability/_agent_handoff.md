@@ -153,3 +153,127 @@ notes: "idempotent-hit"
 - `branch` / `git_changes`: **APTO** (HEAD alineado FS; inventario path-assert).
 - Remedio: YAML mínimo en esos 3 artefactos; re-disparar PPR.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-03T16:05:13Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-03T16:05:22Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-10-03T16:05:50Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `b2fc9bbf-2ee0-4806-95c4-f618a94b4e42`
+- correlation_id: `1003bf97-4b7b-4e37-aaa5-5100ad1fe35d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Remedio: YAML mínimo en esos 3 artefactos; re-disparar PPR.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `FAIL_F2_DOC`)
+
+- Tocado: `docs/features/merge-thermo-01-observability/validacion.md` (Triaje documental · CID `1003bf97…` · exec `b2fc9bbf…`).
+- R1/R2: `TECH_FORMAL_EXECUTE_PROCESS` / `GIT_EVIDENCE_VIA_GIT_MANAGER` **APTO** (copia `native_state` @ 16:05:13Z); Shell git-manager Rejected — sin stdout inventado.
+- R3: `RBAC_AUTHORING_KM_POLICY` **APTO** (0 writes bajo `docs/todos/**`).
+- F2: `objectives`/`plan`/`implementation` **sin** frontmatter YAML → peaje documental fallido.
+- `branch` / `git_changes` / PBI done: **APTO**; no absuelven F2.
+- Remedio: YAML mínimo en esos 3 artefactos; re-disparar PPR.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-03T16:05:50Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-10-03T16:06:11Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `6870a8ea-d831-4d98-af8f-07d5d9875f2e`
+- correlation_id: `6s4S55wHkZpqTraBSPysRT7saNtLmcvZkEdMb7qv7451`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Remedio: YAML mínimo en esos 3 artefactos; re-disparar PPR.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `FAIL_F2_DOC`)
+
+- Tocado: `docs/features/merge-thermo-01-observability/validacion.md` (Triaje documental · exec `6870a8ea…`).
+- R1/R2: `TECH_FORMAL` / `GIT_EVIDENCE` **APTO** (copia `native_state` @ 16:05:22Z); Shell git-manager Rejected — sin stdout inventado.
+- R3 KM: **APTO** (0 writes Argos en `docs/todos/**`).
+- F2: `objectives`/`plan`/`implementation` sin frontmatter YAML; solo `spec.md` cumple.
+- `branch` / `git_changes` / PBI done: **APTO**; no absuelven F2.
+- Remedio: YAML mínimo en esos 3 artefactos; re-disparar PPR.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-03T16:06:12Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-10-03T16:06:30Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `b2fc9bbf-2ee0-4806-95c4-f618a94b4e42`
+- correlation_id: `1003bf97-4b7b-4e37-aaa5-5100ad1fe35d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Remedio: YAML mínimo en esos 3 artefactos; re-disparar PPR.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `FAIL_F5_VERDICT` ← `FAIL_F2_DOC_GATE`)
+
+- Tocado: `docs/features/merge-thermo-01-observability/validacion.md` (fase Veredicto y bloqueo · exec `b2fc9bbf…`).
+- R1/R2: `TECH_FORMAL` / `GIT_EVIDENCE` **APTO** (copia `native_state` @ 16:05:50Z); Shell git-manager Rejected — sin stdout inventado.
+- R3 KM: **APTO** (0 writes Argos en `docs/todos/**`).
+- F2→F5: `objectives`/`plan`/`implementation` sin frontmatter YAML; `accept_pr_handoff: blocked`; `delivery_state: failed`.
+- `branch` / `git_changes` / PBI done: **APTO**; no absuelven F2/F5.
+- Remedio: YAML mínimo en esos 3 artefactos; re-disparar PPR.
+```

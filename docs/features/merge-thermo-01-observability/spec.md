@@ -4,11 +4,16 @@
 
 
 
+
+
+
+
+
 feature_name: merge-thermo-01-observability
 created: "2026-10-03"
 process: feature
 pbi_document_id: PBI-MERGE-THERMO-01-OBSERVABILITY
-execution_id: "b30f44c1-3613-4d0b-9ab9-81141f122c35"
+execution_id: "b2fc9bbf-2ee0-4806-95c4-f618a94b4e42"
 ---
 # Especificación — observabilidad de aduana (PBI 01)
 
