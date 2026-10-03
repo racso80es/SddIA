@@ -11,6 +11,7 @@ mod verify_tools_index;
 mod wasi_ci_smoke;
 mod workspace_prune;
 mod verify_domain_subscription_parity;
+mod merge_thermo_timings;
 
 use execute_process::core::repo::find_repo_root;
 use execute_process::engine::eda_coverage;
@@ -38,7 +39,8 @@ Comandos:\n\
   workspace-prune --empty [--json]\n\
   evolution-rehash --id <uuid> [--json] [--dry-run]\n\
   evolution-register [--json] [--dry-run]\n\
-  verify-domain-subscription-parity [--json]\n"
+  verify-domain-subscription-parity [--json]\n\
+  merge-thermo-timings-report [--json]\n"
 }
 
 fn has_flag(args: &[String], flag: &str) -> bool {
@@ -202,6 +204,9 @@ fn main() {
         "evolution-register" => gate_evolution::run_mutate(&repo, rest),
         "verify-domain-subscription-parity" => {
             verify_domain_subscription_parity::run(&repo, has_flag(rest, "--json"))
+        }
+        "merge-thermo-timings-report" => {
+            merge_thermo_timings::run(&repo, has_flag(rest, "--json"))
         }
         other => {
             eprintln!("comando desconocido: {other}\n{}", usage());

@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `bdcc77c7-93db-4cde-a8c9-580db5d31fcc` | 2026-10-03 | PBI-MERGE-THERMO-06: medición post y regresión cierre HU termodinámica | CANONICO | `SddIA/evolution/bdcc77c7-93db-4cde-a8c9-580db5d31fcc.md` |
 | `99678e76-3cee-4ee8-8adb-67694ab77cc2` | 2026-10-03 | FIX DCC Snapshot: checkout rama antes de rev-parse (fractura 969f05933a46) | CANONICO | `SddIA/evolution/99678e76-3cee-4ee8-8adb-67694ab77cc2.md` |
 | `97836b6f-ba20-4f99-93fa-6dfdbe6ae498` | 2026-10-03 | PBI-MERGE-THERMO-05: paridad documental aduana y test suscripciones domain | CANONICO | `SddIA/evolution/97836b6f-ba20-4f99-93fa-6dfdbe6ae498.md` |
 | `8484cd0c-dee1-434b-a507-7278a16c61e3` | 2026-10-03 | PBI-MERGE-THERMO-04: atestación QA, atajo pre-push y accept-pr genómico | CANONICO | `SddIA/evolution/8484cd0c-dee1-434b-a507-7278a16c61e3.md` |
