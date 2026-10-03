@@ -2,7 +2,7 @@
 generated_by: kalma2-agent-runtime-cursor
 persist_ref: docs/features/tracker-hu-cierre-main
 persist_ref_injected: ""
-persist_ref_resolution: "conventional docs/<slug> → docs/features/<slug> (inyección vacía; sink Argos F5)"
+persist_ref_resolution: "conventional docs/<slug> → docs/features/<slug> (inyección vacía; sink Argos F2)"
 ---
 
 # Agent handoff log
@@ -11,13 +11,13 @@ persist_ref_resolution: "conventional docs/<slug> → docs/features/<slug> (inye
 
 ```yaml
 schema: kalma2-agent-runtime-evidence/v1
-materialized_at: "2026-10-03T11:25:00Z"
-source: native_state
+materialized_at: "2026-10-03T11:22:00Z"
+source: prosthesis_subprocess
 git_manager_invoked: true
 formal_execute_process: true
 TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
-notes: "idempotent-hit"
+notes: "(none)"
 ```
 
 ## 2026-10-03T11:20:00Z — Triaje documental
@@ -66,4 +66,28 @@ notes: "idempotent-hit"
 - F2→F5: **NO_APTO** — cascada documental ausente; handoff accept-pr bloqueado
 - `branch` **APTO** (HEAD = `docs/tracker-hu-cierre-main`); Shell git-manager Rejected
 - Evento: `Local_QA_Requested` CID a439b819…; `pbi_ref` vacío
+```
+
+## 2026-10-03T11:22:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `cc3f8612-3571-4fbf-8530-d13f35c663e3`
+- correlation_id: `41b3fb7a-73c6-4c66-83e7-d5203b2544e1`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `persist_ref` vacío; sink sin cascada F2; `global: NO_APTO`
+
+### transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO`, `FAIL_F2_DOC`)
+
+- Tocados: `docs/features/tracker-hu-cierre-main/validacion.md` (+ `_agent_handoff.md`)
+- R1/R2 (copia bridge session `prosthesis_subprocess` notes=(none)): TECH/GIT **APTO** — sin stdout inventado
+- R3 KM: **APTO** (Argos 0 writes en `docs/todos/**`)
+- F2: **NO_APTO** — faltan `objectives.md` / `spec.md` / `plan.md` / `implementation.md`
+- `branch` **APTO** (HEAD = `docs/tracker-hu-cierre-main`); Shell git-manager Rejected
+- Evento: `Local_QA_Requested` CID 41b3fb7a…; `pbi_ref` vacío
 ```
