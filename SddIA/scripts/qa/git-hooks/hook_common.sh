@@ -15,15 +15,37 @@ source "$REPO/SddIA/scripts/common/sddia_shell_lib.sh"
 _sddia_augment_operator_path
 
 resolve_sddia_qa() {
-  local candidate
-  for candidate in \
-    "$REPO/SddIA/target/debug/sddia-qa" \
-    "$REPO/SddIA/target/release/sddia-qa"; do
-    if [[ -x "$candidate" ]]; then
-      SDDIA_QA_BIN="$candidate"
-      return 0
+  if [[ -n "${SDDIA_QA_BIN:-}" ]] && _sddia_is_native_elf "$SDDIA_QA_BIN"; then
+    export SDDIA_QA_BIN
+    return 0
+  fi
+  local debug_bin release_bin d_ok=0 r_ok=0 dm rm_
+  debug_bin="$REPO/SddIA/target/debug/sddia-qa"
+  release_bin="$REPO/SddIA/target/release/sddia-qa"
+  if _sddia_is_native_elf "$debug_bin"; then d_ok=1; fi
+  if _sddia_is_native_elf "$release_bin"; then r_ok=1; fi
+  # F-DEP-07: release salvo debug estrictamente más nuevo.
+  if [[ "$d_ok" -eq 1 && "$r_ok" -eq 1 ]]; then
+    dm="$(_sddia_elf_mtime "$debug_bin")"
+    rm_="$(_sddia_elf_mtime "$release_bin")"
+    if [[ -n "$dm" && -n "$rm_" && "$dm" -gt "$rm_" ]]; then
+      SDDIA_QA_BIN="$debug_bin"
+    else
+      SDDIA_QA_BIN="$release_bin"
     fi
-  done
+    export SDDIA_QA_BIN
+    return 0
+  fi
+  if [[ "$r_ok" -eq 1 ]]; then
+    SDDIA_QA_BIN="$release_bin"
+    export SDDIA_QA_BIN
+    return 0
+  fi
+  if [[ "$d_ok" -eq 1 ]]; then
+    SDDIA_QA_BIN="$debug_bin"
+    export SDDIA_QA_BIN
+    return 0
+  fi
   echo "SddIA pre-commit: sddia-qa no encontrado (compilar: cd SddIA && cargo build -p sddia-qa)" >&2
   return 1
 }
@@ -158,10 +180,12 @@ gh_pr_merged_for_branch() {
 
 should_skip_pre_push_present() {
   local branch="$1"
+  if scan_presented_for_branch "$branch"; then
+    return 0
+  fi
   local state
   state=$(_gh_pr_state_for_branch "$branch")
-  [[ "$state" == "OPEN" || "$state" == "MERGED" ]] && return 0
-  scan_presented_for_branch "$branch"
+  [[ "$state" == "OPEN" || "$state" == "MERGED" ]]
 }
 
 git_run() {
@@ -193,12 +217,51 @@ invoke_process() {
   local process_name="$1"
   local payload="$2"
   _sddia_resolve_orchestrator "$REPO"
-  local tmp rc=0
+  local tmp err_file rc=0 phase_hint
   tmp=$(_write_ephemeral_json "hook-${process_name}" "$payload")
+  err_file=$(mktemp "${TMPDIR:-/tmp}/hook-${process_name}.XXXXXX.stderr")
   export SDDIA_HOOK_DELIVERY_CLOSE=1
+  export SDDIA_AGENT_RUNTIME_TIMEOUT_SECS="${SDDIA_AGENT_RUNTIME_TIMEOUT_SECS:-180}"
   hook_timing_record_process "$process_name"
-  "$SDDIA_EXECUTE_PROCESS_BIN" --process "$process_name" --inputs-file "$tmp" >&2 || rc=$?
-  rm -f "$tmp"
+  "$SDDIA_EXECUTE_PROCESS_BIN" --process "$process_name" --inputs-file "$tmp" 2>"$err_file" || rc=$?
+  if [[ -s "$err_file" ]]; then
+    cat "$err_file" >&2
+  fi
+  if [[ "$rc" -ne 0 ]]; then
+    phase_hint=$(
+      python3 - "$err_file" 2>/dev/null <<'PY' || true
+import json, re, sys
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+for line in reversed(text.splitlines()):
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        obj = json.loads(line)
+    except json.JSONDecodeError:
+        m = re.search(r'"phase_name"\s*:\s*"([^"]+)"', line)
+        if m:
+            print(m.group(1))
+            break
+        continue
+    v = obj.get("phase_name")
+    if isinstance(v, str) and v.strip():
+        print(v.strip())
+        sys.exit(0)
+    data = obj.get("data") if isinstance(obj.get("data"), dict) else {}
+    v = data.get("phase_name")
+    if isinstance(v, str) and v.strip():
+        print(v.strip())
+        sys.exit(0)
+PY
+    )
+    if [[ -n "$phase_hint" ]]; then
+      echo "SddIA hook: proceso «${process_name}» falló en fase «${phase_hint}» (exit ${rc})" >&2
+    else
+      echo "SddIA hook: proceso «${process_name}» falló (exit ${rc})" >&2
+    fi
+  fi
+  rm -f "$tmp" "$err_file"
   return "$rc"
 }
 
