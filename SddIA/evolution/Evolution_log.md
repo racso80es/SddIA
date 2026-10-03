@@ -9,7 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
-| `969f0593-3a46-4d2b-86b7-ab63dccfix01` | 2026-10-03 | FIX DCC Snapshot: checkout rama antes de rev-parse (fractura 969f05933a46) | CANONICO | `SddIA/evolution/969f0593-3a46-4d2b-86b7-ab63dccfix01.md` |
+| `99678e76-3cee-4ee8-8adb-67694ab77cc2` | 2026-10-03 | FIX DCC Snapshot: checkout rama antes de rev-parse (fractura 969f05933a46) | CANONICO | `SddIA/evolution/99678e76-3cee-4ee8-8adb-67694ab77cc2.md` |
 | `97836b6f-ba20-4f99-93fa-6dfdbe6ae498` | 2026-10-03 | PBI-MERGE-THERMO-05: paridad documental aduana y test suscripciones domain | CANONICO | `SddIA/evolution/97836b6f-ba20-4f99-93fa-6dfdbe6ae498.md` |
 | `8484cd0c-dee1-434b-a507-7278a16c61e3` | 2026-10-03 | PBI-MERGE-THERMO-04: atestación QA, atajo pre-push y accept-pr genómico | CANONICO | `SddIA/evolution/8484cd0c-dee1-434b-a507-7278a16c61e3.md` |
 | `65f5b27b-a508-405d-9c44-7e6d5e116cf5` | 2026-10-03 | PBI-MERGE-THERMO-03: triaje delta, qa_profile docs-only, pre-commit condicional | CANONICO | `SddIA/evolution/65f5b27b-a508-405d-9c44-7e6d5e116cf5.md` |
