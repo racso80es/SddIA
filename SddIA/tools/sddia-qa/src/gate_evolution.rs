@@ -146,12 +146,20 @@ fn resolve_base(
 ) -> Result<BaseResolution, String> {
     let mut fetch_outcome = None;
     if sync_base {
-        let fetch_result = git_timed(
-            repo,
-            &["fetch", "--no-tags", "origin", "main"],
-            SYNC_BUDGET_MS,
-        );
-        fetch_outcome = Some(map_fetch_outcome(fetch_result));
+        let skip_fetch = ref_exists(repo, "origin/main")
+            && ref_tracking_age_seconds(repo, "origin/main")
+                .map(|age| age <= STALE_REF_AGE_SECS)
+                .unwrap_or(false);
+        if skip_fetch {
+            fetch_outcome = Some("skipped");
+        } else {
+            let fetch_result = git_timed(
+                repo,
+                &["fetch", "--no-tags", "origin", "main"],
+                SYNC_BUDGET_MS,
+            );
+            fetch_outcome = Some(map_fetch_outcome(fetch_result));
+        }
     }
 
     let (mode, git_ref, age_seconds) = if ref_exists(repo, "origin/main") {
@@ -902,6 +910,89 @@ mod tests {
         assert!(
             elapsed < budget as u128 + 800,
             "elapsed {elapsed}ms exceeds budget margin"
+        );
+    }
+
+    #[test]
+    fn resolve_base_fresh_origin_main_skips_fetch_ca6() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let real_git = std::env::var("PATH")
+            .ok()
+            .and_then(|p| {
+                p.split(':')
+                    .map(PathBuf::from)
+                    .find(|d| d.join("git").is_file())
+            })
+            .map(|d| d.join("git"))
+            .filter(|p| p.is_file())
+            .expect("git en PATH");
+        let bin = repo.join("bin");
+        fs::create_dir_all(&bin).expect("bin dir");
+        let wrapper = bin.join("git");
+        fs::write(
+            &wrapper,
+            format!(
+                "#!/bin/sh\nif [ \"$1\" = \"fetch\" ]; then echo fetch-should-not-run >&2; exit 99; fi\nexec \"{}\" \"$@\"\n",
+                real_git.display()
+            ),
+        )
+        .expect("wrapper");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&wrapper, fs::Permissions::from_mode(0o755)).expect("chmod");
+        }
+        let path = format!(
+            "{}:{}",
+            bin.display(),
+            std::env::var("PATH").unwrap_or_default()
+        );
+        std::process::Command::new(&real_git)
+            .args(["init", "-b", "main"])
+            .current_dir(repo)
+            .env("PATH", &path)
+            .status()
+            .expect("git init");
+        for (k, v) in [("user.email", "ca6@test"), ("user.name", "ca6")] {
+            std::process::Command::new(&real_git)
+                .args(["config", k, v])
+                .current_dir(repo)
+                .env("PATH", &path)
+                .status()
+                .expect("git config");
+        }
+        std::process::Command::new(&real_git)
+            .args(["commit", "--allow-empty", "-m", "init"])
+            .current_dir(repo)
+            .env("PATH", &path)
+            .status()
+            .expect("commit");
+        std::process::Command::new(&real_git)
+            .args(["update-ref", "refs/remotes/origin/main", "HEAD"])
+            .current_dir(repo)
+            .env("PATH", &path)
+            .status()
+            .expect("origin/main ref");
+        let origin_ref = repo.join(".git/refs/remotes/origin/main");
+        let now = std::time::SystemTime::now();
+        let ref_body = fs::read_to_string(&origin_ref).expect("read ref");
+        fs::write(&origin_ref, ref_body).expect("rewrite ref");
+        fs::File::open(&origin_ref)
+            .and_then(|f| f.set_modified(now))
+            .expect("fresh mtime");
+        let prev_path = std::env::var("PATH").ok();
+        std::env::set_var("PATH", &path);
+        let start = Instant::now();
+        let base = resolve_base(repo, true, false).expect("resolve_base");
+        if let Some(p) = prev_path {
+            std::env::set_var("PATH", p);
+        }
+        assert_eq!(base.fetch_outcome, Some("skipped"));
+        assert_eq!(base.mode, "synced");
+        assert!(
+            start.elapsed().as_millis() < 500,
+            "fetch no debió ejecutarse"
         );
     }
 

@@ -976,6 +976,18 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         assert_eq!(entry["status"], "failed");
         assert_eq!(entry["error"], "agent-runtime-timeout");
+        assert_eq!(entry["phase_name"], "Estabilización de Requisitos");
+        assert_eq!(entry["timeout_secs"], 1);
+    }
+
+    #[test]
+    fn resolve_timeout_secs_honors_hook_env_180() {
+        let _guard = env_lock();
+        clear_agent_env();
+        std::env::set_var(ENV_TIMEOUT, "180");
+        assert_eq!(resolve_timeout_secs("Local QA"), 180);
+        std::env::remove_var(ENV_TIMEOUT);
+        assert_eq!(resolve_timeout_secs("Local QA"), DEFAULT_TIMEOUT_SECS);
     }
 
     #[test]

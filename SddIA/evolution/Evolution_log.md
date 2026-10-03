@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `e6b8f56f-74e8-4ab8-9f50-656005bf65b8` | 2026-10-03 | PBI-MERGE-THERMO-02: poda red/binarios pre-push (bus→gh, fetch condicional, F-DEP-07, timeout hook) | CANONICO | `SddIA/evolution/e6b8f56f-74e8-4ab8-9f50-656005bf65b8.md` |
 | `8652b541-cf43-4d49-9cad-cb36b3089456` | 2026-10-03 | PBI-MERGE-THERMO-01: observabilidad aduana Git (execution_report, workspace-prune, hook-timings) | CANONICO | `SddIA/evolution/8652b541-cf43-4d49-9cad-cb36b3089456.md` |
 | `b712c69f-53c3-442b-8f2d-8961c98b2ca7` | 2026-10-03 | HU-A 03: RBAC create_issue y execution-contexts 1.3.0 | CANONICO | `SddIA/evolution/b712c69f-53c3-442b-8f2d-8961c98b2ca7.md` |
 | `5ec21c63-111f-4982-8e3e-999ba6b53200` | 2026-10-03 | HU-A 02: linear-tracker-adapter create_issue 1.1.0 | CANONICO | `SddIA/evolution/5ec21c63-111f-4982-8e3e-999ba6b53200.md` |

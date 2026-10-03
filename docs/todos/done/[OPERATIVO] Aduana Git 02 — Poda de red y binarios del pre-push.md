@@ -4,7 +4,7 @@ uuid: "84ac63fa-4369-43b1-8b09-fb3e5f963ff7"
 title: "[OPERATIVO] Aduana Git 02 — Poda de red y binarios del pre-push"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,7 +15,7 @@ hu_order: 2
 hu_order_total: 6
 historia_ref: "docs/todos/historias/[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia.md"
 historia_document_id: HU-MERGE-THERMODYNAMICS
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 blocked_by:
   - PBI-MERGE-THERMO-01-OBSERVABILITY
 unblocks:
