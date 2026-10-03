@@ -8,9 +8,10 @@ use serde_yaml::Value as YamlValue;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub const CONTRACT_VERSION: &str = "1.2.0";
+pub const CONTRACT_VERSION: &str = "1.3.0";
 const CONTRACT_VERSION_LEGACY: &str = "1.0.0";
 const CONTRACT_VERSION_MID: &str = "1.1.0";
+const CONTRACT_VERSION_TRACKER: &str = "1.2.0";
 pub const CONTRACT_REL: &str =
     "SddIA/library/codexes/codex-software-engineering/contracts/project-config-contract.md";
 
@@ -175,11 +176,19 @@ pub fn resolve_doc_path(project_root: &Path, rel: &str) -> Result<PathBuf, Strin
 
 const TRACKER_STATE_KEYS: &[&str] = &[
     "backlog",
+    "todo",
     "in_progress",
     "in_review",
     "done",
     "cancelled",
 ];
+
+const TRACKER_LABEL_OPTIONAL_KEYS: &[&str] = &["fix", "kaizen", "deuda", "spike", "editable"];
+
+const DONE_GATE_VALUES: &[&str] = &["git", "linear", "both"];
+
+/// HU-A: `linear`/`both` declarados en contrato 1.3.0; validación activa en HU-B.
+const DONE_GATE_HU_A_ONLY_GIT: bool = true;
 
 fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
     let Some(tracker) = fm.get("tracker") else {
@@ -239,6 +248,32 @@ fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
                     ));
                 }
             }
+        }
+        for key in TRACKER_LABEL_OPTIONAL_KEYS {
+            if let Some(v) = labels.get(*key) {
+                if !v.as_str().is_some_and(|s| !s.trim().is_empty()) {
+                    return Err(format!(
+                        "PROJECT_CONFIG_INVALID: tracker.labels.{key} vacío"
+                    ));
+                }
+            }
+        }
+    }
+    if let Some(raw) = tracker
+        .get("done_gate")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if !DONE_GATE_VALUES.contains(&raw) {
+            return Err(format!(
+                "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' (git | linear | both)"
+            ));
+        }
+        if DONE_GATE_HU_A_ONLY_GIT && raw != "git" {
+            return Err(format!(
+                "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' no habilitado hasta HU-B (solo git)"
+            ));
         }
     }
     Ok(())
@@ -467,11 +502,12 @@ pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String>
     }
     let contract_version = yaml_str(&manifest_fm, "contract_version")?;
     if contract_version != CONTRACT_VERSION
+        && contract_version != CONTRACT_VERSION_TRACKER
         && contract_version != CONTRACT_VERSION_MID
         && contract_version != CONTRACT_VERSION_LEGACY
     {
         return Err(format!(
-            "PROJECT_CONFIG_INVALID: contract_version '{contract_version}' no admitida (1.0.0 | 1.1.0 | 1.2.0)"
+            "PROJECT_CONFIG_INVALID: contract_version '{contract_version}' no admitida (1.0.0 | 1.1.0 | 1.2.0 | 1.3.0)"
         ));
     }
     if let Some(env_ref) = manifest_fm
@@ -688,6 +724,35 @@ mod tests {
         fs::write(client.join(".SddIA/project.md"), bad2).unwrap();
         let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
         assert!(err.contains("provider"), "{err}");
+    }
+
+    #[test]
+    fn contract_accepts_1_3_0_tracker_todo_and_done_gate_git() {
+        let repo = tempfile::tempdir().unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let client = layout(repo.path(), uuid, "branch_pr");
+        let mut body = manifest_md(uuid, "branch_pr", "1.3.0");
+        body = body.replace(
+            "docs_layout:",
+            "tracker:\n  provider: linear\n  team_key: OSC\n  done_gate: git\n  state_map:\n    backlog: Backlog\n    todo: Todo\n    done: Done\n  labels:\n    hu: hu\n    pbi: pbi\n    editable: sddia-editable\ndocs_layout:",
+        );
+        fs::write(client.join(".SddIA/project.md"), &body).unwrap();
+        assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
+    }
+
+    #[test]
+    fn contract_1_3_0_rejects_done_gate_linear_until_hu_b() {
+        let repo = tempfile::tempdir().unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let client = layout(repo.path(), uuid, "branch_pr");
+        let mut body = manifest_md(uuid, "branch_pr", "1.3.0");
+        body = body.replace(
+            "docs_layout:",
+            "tracker:\n  provider: linear\n  team_key: OSC\n  done_gate: linear\n  state_map:\n    backlog: Backlog\ndocs_layout:",
+        );
+        fs::write(client.join(".SddIA/project.md"), &body).unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
+        assert!(err.contains("done_gate"), "{err}");
     }
 
     #[test]
