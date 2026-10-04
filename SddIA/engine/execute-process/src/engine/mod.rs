@@ -206,6 +206,14 @@ pub fn run_process(
         return handlers::forge_pbi::run(repo, process_inputs);
     }
 
+    if canonical == "refine-pbi" {
+        return handlers::refine::run_pbi(repo, process_inputs);
+    }
+
+    if canonical == "refine-hu" {
+        return handlers::refine::run_hu(repo, process_inputs);
+    }
+
     if canonical == "governance-daemon-manager" {
         return handlers::governance_daemon::run(repo, process_inputs);
     }

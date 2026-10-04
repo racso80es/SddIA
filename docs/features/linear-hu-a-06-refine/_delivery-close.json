@@ -1,0 +1,9 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/linear-hu-a-06-refine",
+  "branch_name": "feat/linear-hu-a-06-refine",
+  "pr_title": "feat(linear): HU-A 06 procesos refine-hu y refine-pbi",
+  "target_branch": "main",
+  "pbi_ref": "docs/todos/done/[OPERATIVO] Linear HU-A 06 — Procesos refine-hu y refine-pbi.md",
+  "pr_body": "## Summary\n- Procesos `refine-pbi` y `refine-hu` forjados vía entity-manager; handlers nativos con emisión `PBI_Refined` / `HU_Refined`.\n- `refine-hu`: `create_issue` idempotente si falta `tracker_ref`; fail-soft con `Tracker_Sync_Failed` (`operation: create_issue`).\n- Cerbero: políticas desde `context` escalar comma-separated (forjas process-creator).\n\n## Test plan\n- [x] `cd SddIA && cargo test -p execute-process refine`\n- [x] `cargo test -p execute-process refine_hu_allows_create_issue_gate --lib`\n"
+}

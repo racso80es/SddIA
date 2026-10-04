@@ -134,4 +134,11 @@ mod tests {
         gate_linear_tracker_operation(&repo, Some("tracker-stamp"), "create_issue")
             .expect("tracker-stamp tiene tracker-operations");
     }
+
+    #[test]
+    fn refine_hu_allows_create_issue_gate() {
+        let repo = find_repo_root().expect("repo");
+        gate_linear_tracker_operation(&repo, Some("refine-hu"), "create_issue")
+            .expect("refine-hu tiene tracker-operations");
+    }
 }

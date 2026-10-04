@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 111
+universe_total: 112
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a2c71e85-ad0c-4951-b688-ce80f6a471b2` | 2026-10-04 | HU-A 06: procesos refine-hu/refine-pbi y handlers pre-forja Linear | CANONICO | `SddIA/evolution/a2c71e85-ad0c-4951-b688-ce80f6a471b2.md` |
 | `77045bb1-c683-4f8c-a5cd-8a16877b180c` | 2026-10-04 | HU-A 05: Work_Initiated al entrar en Ejecución (agent:tekton) | CANONICO | `SddIA/evolution/77045bb1-c683-4f8c-a5cd-8a16877b180c.md` |
 | `5919b2ec-6212-4bf4-93a7-b98e4296bb23` | 2026-10-03 | HU-A 04: eventos ciclo directo Linear (PBI/HU refined, cancelled, Delivery_Committed 1.1.0) | CANONICO | `SddIA/evolution/5919b2ec-6212-4bf4-93a7-b98e4296bb23.md` |
 | `bdcc77c7-93db-4cde-a8c9-580db5d31fcc` | 2026-10-03 | PBI-MERGE-THERMO-06: medición post y regresión cierre HU termodinámica | CANONICO | `SddIA/evolution/bdcc77c7-93db-4cde-a8c9-580db5d31fcc.md` |

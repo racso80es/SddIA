@@ -1,0 +1,34 @@
+{
+  "entity_class": "process",
+  "entity_name": "refine-hu",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "process_name": "refine-hu",
+    "process_context": "knowledge-management, filesystem-ops, tracker-operations",
+    "process_description": "Refinamiento pre-forja de HU en historias/; create_issue si falta tracker_ref; sella refinada y emite HU_Refined.",
+    "process_contract_version": "1.4.0",
+    "process_phases": [
+      {
+        "name": "Refinamiento Mayeuta",
+        "intent": "Refina markdown en docs/todos/historias/."
+      },
+      {
+        "name": "Registro Linear",
+        "intent": "tool:linear-tracker-adapter create_issue con label hu si no hay tracker_ref y hay tracker en manifiesto."
+      },
+      {
+        "name": "Sellado Argos",
+        "intent": "status refinada, tracker_ref opcional; emite HU_Refined."
+      }
+    ],
+    "process_inputs": [
+      { "hu_ref": "Ruta relativa bajo historias/" },
+      { "project_slug": "Slug registrado" }
+    ],
+    "process_outputs": [
+      { "hu_ref": "Ruta sellada" },
+      { "tracker_ref": "Issue Linear si aplica" },
+      { "event_path": "JSON en eda_bus.pending" }
+    ]
+  }
+}

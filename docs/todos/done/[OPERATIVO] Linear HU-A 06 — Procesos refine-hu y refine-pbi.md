@@ -4,7 +4,7 @@ uuid: "2451a4af-19cf-435d-be13-c570785a5674"
 title: "[OPERATIVO] Linear HU-A 06 — Procesos refine-hu y refine-pbi"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta

@@ -1,0 +1,29 @@
+{
+  "entity_class": "process",
+  "entity_name": "refine-pbi",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "process_name": "refine-pbi",
+    "process_context": "knowledge-management, filesystem-ops",
+    "process_description": "Refinamiento pre-forja del markdown PBI en todos_pending; sella status refinado y emite PBI_Refined (handler nativo Tekton).",
+    "process_contract_version": "1.4.0",
+    "process_phases": [
+      {
+        "name": "Refinamiento Mayeuta",
+        "intent": "Refina el cuerpo del PBI en todos_pending sin tocar persist_ref ni done/."
+      },
+      {
+        "name": "Sellado Argos",
+        "intent": "Frontmatter status refinado y refined; emite PBI_Refined con source_process refine-pbi."
+      }
+    ],
+    "process_inputs": [
+      { "pbi_ref": "Ruta relativa del artefacto bajo todos_pending" },
+      { "project_slug": "Slug registrado en .SddIA/projects" }
+    ],
+    "process_outputs": [
+      { "pbi_ref": "Ruta relativa sellada" },
+      { "event_path": "JSON en eda_bus.pending" }
+    ]
+  }
+}
