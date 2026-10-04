@@ -12,6 +12,7 @@ mod wasi_ci_smoke;
 mod workspace_prune;
 mod verify_domain_subscription_parity;
 mod merge_thermo_timings;
+mod linear_direct_cycle_e2e_lab;
 
 use execute_process::core::repo::find_repo_root;
 use execute_process::engine::eda_coverage;
@@ -31,6 +32,7 @@ Comandos:\n\
   recalc-process-hash-signatures [--write] [--files STEM ...]\n\
   run-iota-ci-smoke [--simulate] [--require-physical] [--json]\n\
   run-eda-e2e-lab [--entity-class CLASS] [--entity-name NAME] [--json]\n\
+  run-linear-direct-cycle-e2e-lab [--json]\n\
   run-wasi-ci-smoke [--skip-e2e] [--json]\n\
   validate-evolution-contract [--json] [--universe audit-cut|official] [--audit-ref PATH] [--manifest PATH]\n\
   migrate-evolution-history manifest|apply|verify|reindex [--json] [--write PATH] [--manifest PATH] [--lote L1|L2|L3|L4] [--dry-run]\n\
@@ -183,6 +185,7 @@ fn main() {
         "recalc-process-hash-signatures" => run_recalc(&repo, rest),
         "run-iota-ci-smoke" => iota_ci_smoke::run(&repo, rest),
         "run-eda-e2e-lab" => eda_e2e_lab::run(&repo, rest),
+        "run-linear-direct-cycle-e2e-lab" => linear_direct_cycle_e2e_lab::run(&repo, rest),
         "run-wasi-ci-smoke" => wasi_ci_smoke::run(&repo, rest),
         "validate-evolution-contract" => validate_evolution_contract::run(&repo, rest),
         "migrate-evolution-history" => migrate_evolution_history::run(&repo, rest),

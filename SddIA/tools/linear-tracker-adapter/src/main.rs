@@ -1,3 +1,5 @@
+mod lab_state;
+
 use sddia_io::outbound_lab::{lab_mock_linear_url, lab_mock_outbound_enabled};
 use sddia_io::read_stdin_json;
 use serde_json::{json, Map, Value};
@@ -252,6 +254,13 @@ fn lab_fetch_issue_fixture(issue_ref: &str) -> Value {
 }
 
 fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
+    if env::var("SDDIA_LAB_RESET_STORE")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+    {
+        lab_state::lab_reset_store();
+        env::remove_var("SDDIA_LAB_RESET_STORE");
+    }
     let inner = request_inner(req);
     let op = required_str(inner, "operation")?;
     match op.as_str() {
@@ -263,6 +272,9 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                     message: "issue not found".into(),
                     exit: 1,
                 });
+            }
+            if let Some(stored) = lab_state::lab_fetch(&issue_ref) {
+                return Ok(stored);
             }
             Ok(lab_fetch_issue_fixture(&issue_ref))
         }
@@ -331,14 +343,27 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                 });
             }
             let issue_ref = required_str(inner, "issue_ref")?;
+            let state_name = inner
+                .get("state_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("In Progress");
+            if lab_state::lab_update_state(&issue_ref, state_name) {
+                return Ok(json!({
+                    "issue_ref": issue_ref,
+                    "previous_state": "Backlog",
+                    "state": state_name,
+                }));
+            }
             Ok(json!({
                 "issue_ref": issue_ref,
                 "previous_state": "Backlog",
-                "state": inner.get("state_name").or_else(|| inner.get("state_id")).cloned().unwrap_or(json!("In Progress")),
+                "state": state_name,
             }))
         }
         "create_comment" => {
             let issue_ref = required_str(inner, "issue_ref")?;
+            let body = optional_str(inner, "body").unwrap_or_default();
+            lab_state::lab_register_comment(&issue_ref, &body);
             Ok(json!({
                 "comment_id": "comment-lab-1",
                 "url": format!("https://linear.app/issue/{issue_ref}#comment-lab-1"),
@@ -389,7 +414,15 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                     exit: 1,
                 });
             }
-            let ident = format!("{team_key}-42");
+            let state_name = optional_str(inner, "state_name").unwrap_or_else(|| "Backlog".into());
+            let parent = optional_str(inner, "parent_ref");
+            let ident = lab_state::lab_create_issue(
+                &team_key,
+                &title,
+                &labels,
+                parent.as_deref(),
+                &state_name,
+            );
             Ok(json!({
                 "issue_ref": ident,
                 "id": format!("issue-uuid-{ident}"),
@@ -969,7 +1002,8 @@ mod tests {
                 }
             }))
             .unwrap();
-            assert_eq!(r.get("issue_ref"), Some(&json!("OSC-42")));
+            let ir = r.get("issue_ref").and_then(|v| v.as_str()).expect("issue_ref");
+            assert!(ir.starts_with("OSC-"));
             assert!(r.get("id").is_some());
             assert!(r.get("url").is_some());
         });

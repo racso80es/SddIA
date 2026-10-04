@@ -1,0 +1,9 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/linear-hu-a-09-e2e-lab",
+  "branch_name": "feat/linear-hu-a-09-e2e-lab",
+  "pr_title": "feat(linear): HU-A 09 E2E lab ciclo directo (AC-7..10)",
+  "target_branch": "main",
+  "pbi_ref": "docs/todos/done/[OPERATIVO] Linear HU-A 09 — E2E lab ciclo directo.md",
+  "pr_body": "## Summary\n- Suite lab `linear_direct_cycle_e2e` (mock Linear, store en disco).\n- `sddia-qa run-linear-direct-cycle-e2e-lab` + CI en `eda-bus-e2e-smoke`.\n- Desbloquea cola HU-B (outbound).\n\n## Test plan\n- [x] `cargo test -p execute-process linear_direct_cycle_e2e -- --test-threads=1`\n- [x] `sddia-qa run-linear-direct-cycle-e2e-lab --json`\n"
+}

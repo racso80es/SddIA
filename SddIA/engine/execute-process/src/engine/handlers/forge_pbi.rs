@@ -393,10 +393,14 @@ mod tests {
 
     fn with_lab<F: FnOnce()>(f: F) {
         let _g = lab_guard();
+        let repo = find_repo_root().expect("repo");
+        std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
         std::env::remove_var("LINEAR_API_TOKEN");
+        let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
         f();
         std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
     }
 
     #[test]
@@ -502,13 +506,13 @@ mod tests {
                 }),
             )
             .expect("run");
-            assert_eq!(
-                out.data
-                    .as_ref()
-                    .and_then(|d| d.get("tracker_ref"))
-                    .and_then(|v| v.as_str()),
-                Some("OSC-42")
-            );
+            let tr = out
+                .data
+                .as_ref()
+                .and_then(|d| d.get("tracker_ref"))
+                .and_then(|v| v.as_str())
+                .expect("tracker_ref");
+            assert!(tr.starts_with("OSC-"));
             let artifact = out
                 .data
                 .as_ref()
@@ -516,7 +520,7 @@ mod tests {
                 .and_then(|v| v.as_str())
                 .expect("path");
             let text = fs::read_to_string(client.join(artifact)).unwrap();
-            assert!(text.contains("tracker_ref: \"OSC-42\""));
+            assert!(text.contains(&format!("tracker_ref: \"{tr}\"")));
             cleanup_project_index(&core, slug);
         });
     }

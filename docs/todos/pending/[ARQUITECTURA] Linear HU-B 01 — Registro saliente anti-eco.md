@@ -16,12 +16,10 @@ hu_order_total: 6
 historia_ref: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
 historia_document_id: HU-LINEAR-SSOT-INVERSE
 cola_ejecucion: docs/todos/pending/
-blocked_by:
-  - PBI-LINEAR-A-09-E2E
 unblocks:
   - PBI-LINEAR-B-02-WATCHER
 baseline_decisiones:
-  - "HU 2 de 2: no se forja hasta PBI-LINEAR-A-09-E2E mergeado"
+  - "HU-A cerrada (PR #335); HU-B refinada — cola B-01 desbloqueada"
   - "D-F: el sensor ignora lo que SddIA acaba de escribir"
 ---
 

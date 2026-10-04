@@ -69,6 +69,9 @@ pub mod tracker_operations_gate;
 pub mod cli_detach;
 pub mod verify_process_integrity;
 
+#[cfg(test)]
+mod linear_direct_cycle_e2e;
+
 use crate::core::resolver::load_process_def;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};

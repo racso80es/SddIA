@@ -3,12 +3,18 @@ document_id: HU-LINEAR-DIRECT-CYCLE
 parent_hu: HU-LINEAR-SYNC-FLOW
 title: "HU - [OPERATIVO] Linear — ciclo directo de HU y PBI"
 format: markdown
-version: "1.1.0"
+version: "1.2.0"
 created: "2026-10-03"
-status: "refinada"
+status: done
+closed: "2026-10-04"
+merged_pr: 335
 hu_sequence: 1
 hu_sequence_total: 2
 successor_hu: HU-LINEAR-SSOT-INVERSE
+pbi_done: 9
+pbi_total: 9
+persist_ref: docs/features/linear-hu-a-09-e2e-lab
+pr_url: "https://github.com/racso80es/SddIA/pull/335"
 priority: "alta"
 process: "feature"
 base: "Documentacion/PBI/Realizado/[ARQUITECTURA] Forja de la Cápsula Linear Tracker y Orquestación del Ciclo de Vida.md"
@@ -33,21 +39,21 @@ Partición A de `HU-LINEAR-SYNC-FLOW` (§8 del documento padre, laudo 2026-10-03
 
 ## Orden
 
-**HU 1 de 2.** Sucesora: `HU-LINEAR-SSOT-INVERSE` (HU 2 de 2), bloqueada hasta el merge de esta HU y AC-7/AC-8 en verde (`PBI-LINEAR-A-09-E2E`).
+**HU 1 de 2 — cerrada.** Sucesora: `HU-LINEAR-SSOT-INVERSE` (HU 2 de 2), desbloqueada tras merge [#335](https://github.com/racso80es/SddIA/pull/335). Archivo en `docs/todos/done/historias/`.
 
-| Orden | PBI | Entrega |
-|------:|-----|---------|
-| 01 | `PBI-LINEAR-A-01-CONTRACT` | Contrato 1.3.0: `todo`, labels, `done_gate` solo `git`. |
-| 02 | `PBI-LINEAR-A-02-CREATE-ISSUE` | Cápsula `create_issue` 1.1.0. |
-| 03 | `PBI-LINEAR-A-03-RBAC-CREATE` | RBAC §2.10 → 1.3.0 (crear issues). |
-| 04 | `PBI-LINEAR-A-04-EVENTS` | `PBI_Refined`, `HU_Refined`, `PBI_Cancelled`, `Delivery_Committed` 1.1.0. |
-| 05 | `PBI-LINEAR-A-05-WORK-INITIATED` | Motor: `Work_Initiated` al entrar en Ejecución. |
-| 06 | `PBI-LINEAR-A-06-REFINE` | Procesos `refine-hu` y `refine-pbi`. |
-| 07 | `PBI-LINEAR-A-07-FORGE-PBI` | `forge-pbi` 1.1.0 registra el issue. |
-| 08 | `PBI-LINEAR-A-08-STAMP` | `tracker-stamp` / `tracker-sync-replay`: `todo`, `cancelled`, `trunk_direct`. |
-| 09 | `PBI-LINEAR-A-09-E2E` | E2E lab. Compuerta de la HU 2. |
+| Orden | PBI | Entrega | Estado |
+|------:|-----|---------|--------|
+| 01 | `PBI-LINEAR-A-01-CONTRACT` | Contrato 1.3.0: `todo`, labels, `done_gate` solo `git`. | done |
+| 02 | `PBI-LINEAR-A-02-CREATE-ISSUE` | Cápsula `create_issue` 1.1.0. | done |
+| 03 | `PBI-LINEAR-A-03-RBAC-CREATE` | RBAC §2.10 → 1.3.0 (crear issues). | done |
+| 04 | `PBI-LINEAR-A-04-EVENTS` | `PBI_Refined`, `HU_Refined`, `PBI_Cancelled`, `Delivery_Committed` 1.1.0. | done |
+| 05 | `PBI-LINEAR-A-05-WORK-INITIATED` | Motor: `Work_Initiated` al entrar en Ejecución. | done |
+| 06 | `PBI-LINEAR-A-06-REFINE` | Procesos `refine-hu` y `refine-pbi`. | done |
+| 07 | `PBI-LINEAR-A-07-FORGE-PBI` | `forge-pbi` 1.1.0 registra el issue. | done |
+| 08 | `PBI-LINEAR-A-08-STAMP` | `tracker-stamp` / `tracker-sync-replay`: `todo`, `cancelled`, `trunk_direct`. | done |
+| 09 | `PBI-LINEAR-A-09-E2E` | E2E lab. Compuerta de la HU 2. | done |
 
-`blocked_by` de cada PBI expresa dependencia dura; el número es el orden de forja. PBIs en `docs/todos/pending/`.
+Los nueve PBIs están en `docs/todos/done/`. Validación de cierre: `docs/features/linear-hu-a-09-e2e-lab/validacion.md` (`global: APTO`, `pbi_archived: true`).
 
 ## 1. Historia de usuario
 
@@ -181,3 +187,12 @@ AC-7 y AC-8 en verde son la **condición de desbloqueo** de `HU-LINEAR-SSOT-INVE
 
 - Equipo Linear de prueba con `WorkflowState` para los seis estados canónicos y labels `hu`, `pbi`, `fix`, `kaizen`, `deuda`, `spike`, `sddia-editable`.
 - `SddIA/evolution/`: superación de D6 de la HU base (emisión de `Work_Initiated`).
+
+## 8. Estado de cierre (2026-10-04)
+
+| Hito | Evidencia |
+|------|-----------|
+| Implementación 01–08 | PBIs en `docs/todos/done/`; features `linear-hu-a-01-contract` … `linear-hu-a-08-stamp`. |
+| AC-7…AC-10 | `cargo test -p execute-process linear_direct_cycle_e2e`; `sddia-qa run-linear-direct-cycle-e2e-lab`. |
+| Documental | `docs/features/linear-hu-a-09-e2e-lab/`; evolution `68e6ea3a-05c9-4236-85ad-66d452c19a93`. |
+| Cierre | Merge [PR #335](https://github.com/racso80es/SddIA/pull/335); `HU-LINEAR-SSOT-INVERSE` habilitada para forja. |
