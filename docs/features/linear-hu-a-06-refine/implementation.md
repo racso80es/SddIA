@@ -1,7 +1,9 @@
 ---
-feature_name: linear-hu-a-06-refine
----
 
+
+feature_name: linear-hu-a-06-refine
+execution_id: "f1a3412c-c178-4b24-a034-8cc8f53c2407"
+---
 # Implementación — HU-A 06
 
 - `refine-pbi`: valida `pbi_ref` bajo `todos_pending`, sella `status: refinado`, emite `PBI_Refined`.

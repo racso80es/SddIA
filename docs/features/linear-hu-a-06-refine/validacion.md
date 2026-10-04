@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: linear-hu-a-06-refine
 persist_ref: docs/features/linear-hu-a-06-refine
 pbi_ref: docs/todos/done/[OPERATIVO] Linear HU-A 06 — Procesos refine-hu y refine-pbi.md
@@ -6,8 +8,8 @@ document_id: PBI-LINEAR-A-06-REFINE
 branch: feat/linear-hu-a-06-refine
 global: APTO
 pbi_archived: true
+execution_id: "f1a3412c-c178-4b24-a034-8cc8f53c2407"
 ---
-
 # Validación — HU-A 06
 
 | Criterio | Estado |
