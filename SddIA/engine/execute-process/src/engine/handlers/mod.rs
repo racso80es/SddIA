@@ -7,6 +7,7 @@ pub mod governance_daemon;
 pub mod instance_creator;
 pub mod instance_health_verify;
 pub mod forge_pbi;
+pub mod refine;
 pub mod kalma2;
 pub mod aiua_stimulus;
 pub mod mayeuta;

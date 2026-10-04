@@ -6,6 +6,8 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
+| refine-hu | 417025aa-6c8f-49fb-a4e7-d32efe9c896b | 1.0.1 | knowledge-management, filesystem-ops, tracker-operations | — | Refinamiento pre-forja de HU en historias/; create_issue si  |
+| refine-pbi | d5ecaaed-ba8d-45a4-85f4-a1d7d1d4308a | 1.0.1 | knowledge-management, filesystem-ops | — | Refinamiento pre-forja del markdown PBI en todos_pending; se |
 | instance-health-verify | 44f1b64c-8a88-4d1e-a8f5-6280b4a44ce2 | 1.0.0 | quality-assurance | — | Verificación post-deploy de instancia consumidor: unidades s |
 | aiua-stimulus-processing | 6c595785-e386-402f-b570-0b2aa6343051 | 1.3.0 | ecosystem-evolution | — | Latido ontológico de la Aiúa: contexto LanceDB, inyección de |
 | system-vitality-probe | b215b373-f6d3-4fb1-9d55-60eb260df5cc | 1.0.0 | quality-assurance | — | Sondas deterministas de invariantes no-proceso y HTTP de Kal |

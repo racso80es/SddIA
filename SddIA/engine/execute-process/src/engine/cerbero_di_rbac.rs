@@ -147,6 +147,14 @@ pub fn resolve_requester_policies(process_def: &ProcessDef, process_inputs: &Val
             })
             .collect();
     }
+    if let Some(YamlValue::String(s)) = process_def.get("context") {
+        return s
+            .split(',')
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+            .map(str::to_string)
+            .collect();
+    }
     vec![]
 }
 
