@@ -14,10 +14,9 @@ struct Store {
 }
 
 fn store_path() -> PathBuf {
-    std::env::var("SDDIA_REPO_ROOT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| std::env::current_dir().unwrap_or_default())
-        .join(".SddIA/lab-linear-store.json")
+    // cwd = raíz del repo al invocar la cápsula (capsules.rs). Rutas absolutas vía
+    // SDDIA_REPO_ROOT no son escribibles en WASI con preopen `--dir=.`.
+    PathBuf::from(".SddIA/lab-linear-store.json")
 }
 
 fn load_store() -> Store {
