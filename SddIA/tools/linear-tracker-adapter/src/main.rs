@@ -221,6 +221,25 @@ fn lab_fetch_issue_fixture(issue_ref: &str) -> Value {
             base("Done", &["pbi"], Some("LAB-HU-AC9-READY"), vec![])
         }
         "LAB-PBI-MERGE-LAST" => base("In Review", &["pbi"], Some("LAB-HU-AC9-READY"), vec![]),
+        "LAB-PBI-FIXONLY" => base("Backlog", &["fix"], Some("LAB-HU-1"), vec![]),
+        "LAB-PBI-TODO" => base("Backlog", &["pbi"], Some("LAB-HU-TODO"), vec![]),
+        "LAB-HU-TODO" => base("Todo", &["hu"], None, vec!["LAB-PBI-TODO"]),
+        "LAB-HU-TODO-WI" => base("Todo", &["hu"], None, vec!["LAB-PBI-OK"]),
+        "LAB-PBI-DELIVERY" => base("In Progress", &["pbi"], Some("LAB-HU-DELIVERY"), vec![]),
+        "LAB-HU-DELIVERY" => base(
+            "In Progress",
+            &["hu"],
+            None,
+            vec!["LAB-PBI-DELIVERY", "LAB-PBI-CHILD-B"],
+        ),
+        "LAB-PBI-CANCEL-A" => base("In Progress", &["pbi"], Some("LAB-HU-CANCEL"), vec![]),
+        "LAB-PBI-CANCEL-B" => base("Done", &["pbi"], Some("LAB-HU-CANCEL"), vec![]),
+        "LAB-HU-CANCEL" => base(
+            "In Progress",
+            &["hu"],
+            None,
+            vec!["LAB-PBI-CANCEL-A", "LAB-PBI-CANCEL-B"],
+        ),
         "LAB-PBI-CHILD-OPEN" => base("In Progress", &["pbi"], Some("LAB-HU-AC9-PENDING"), vec![]),
         "LAB-HU-AC9-PENDING" => base(
             "In Progress",

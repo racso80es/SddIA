@@ -6,5 +6,32 @@
       "intent": "El PBI sellado entra al ciclo declarado en payload.process."
     }
   ],
-  "Delivery_Committed": []
+  "Delivery_Committed": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "PBI done + commit_sha; roll-up HU."
+    }
+  ],
+  "PBI_Refined": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Transición todo + comentario refinado."
+    }
+  ],
+  "HU_Refined": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "HU a todo + comentario refinado."
+    }
+  ],
+  "PBI_Cancelled": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Estado cancelled + archiva markdown."
+    }
+  ]
 }

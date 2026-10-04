@@ -4,6 +4,7 @@ use super::super::actions::try_run_native;
 use super::super::capsules::invoke_tool_for_process;
 use super::super::project_binding::{self, TrackerConfig};
 use super::super::tracker_pbi_meta;
+use super::tracker_sync_replay::should_discard_transition;
 use crate::envelope::OrchestratorEnvelope;
 use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
@@ -34,9 +35,11 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
         .to_string();
     let mut state_map = std::collections::BTreeMap::new();
     state_map.insert("backlog".into(), "Backlog".into());
+    state_map.insert("todo".into(), "Todo".into());
     state_map.insert("in_progress".into(), "In Progress".into());
     state_map.insert("in_review".into(), "In Review".into());
     state_map.insert("done".into(), "Done".into());
+    state_map.insert("cancelled".into(), "Cancelled".into());
     project_binding::TrackerConfig {
         team_key,
         project_id: None,
@@ -103,6 +106,14 @@ fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
         }),
         Some("tracker-stamp"),
     )
+}
+
+fn preflight_hu(repo: &Path, tc: &TrackerConfig, issue_ref: &str) -> Result<Value, String> {
+    let fetch = tool_fetch_issue(repo, issue_ref)?;
+    if !labels_contains(&fetch, &tc.label_hu) {
+        return Err("warn: issue sin label HU".into());
+    }
+    Ok(fetch)
 }
 
 fn preflight_pbi(
@@ -197,7 +208,7 @@ fn tool_comment(repo: &Path, issue_ref: &str, body: &str) -> Result<(), String> 
     Ok(())
 }
 
-fn maybe_promote_hu_from_backlog(
+fn maybe_promote_hu_when_work_starts(
     repo: &Path,
     tc: &TrackerConfig,
     pbi_fetch: &Value,
@@ -211,8 +222,91 @@ fn maybe_promote_hu_from_backlog(
         hu_fetch.get("state").and_then(|v| v.as_str()).unwrap_or(""),
         tc,
     );
-    if hu_state == "backlog" {
+    if hu_state == "in_progress" {
+        return Ok(());
+    }
+    if hu_state == "backlog" || hu_state == "todo" {
         tool_update_state(repo, tc, parent, "in_progress")?;
+    }
+    Ok(())
+}
+
+fn update_state_if_not_discarded(
+    repo: &Path,
+    tc: &TrackerConfig,
+    issue_ref: &str,
+    fetch: &Value,
+    canonical: &str,
+) -> Result<(), String> {
+    let current = linear_to_canonical(
+        fetch.get("state").and_then(|v| v.as_str()).unwrap_or(""),
+        tc,
+    );
+    if should_discard_transition(&current, canonical) {
+        return Ok(());
+    }
+    tool_update_state(repo, tc, issue_ref, canonical)
+}
+
+fn yaml_field_in_repo(repo: &Path, rel: &str, key: &str) -> Option<String> {
+    let path = repo.join(rel.trim_start_matches("./"));
+    let text = fs::read_to_string(path).ok()?;
+    let trimmed = text.trim_start();
+    if !trimmed.starts_with("---") {
+        return None;
+    }
+    let rest = trimmed.strip_prefix("---")?;
+    let end = rest.find("\n---")?;
+    for line in rest[..end].lines() {
+        let line = line.trim();
+        if let Some(val) = line.strip_prefix(&format!("{key}:")) {
+            let v = val.trim().trim_matches('"');
+            if !v.is_empty() {
+                return Some(v.to_string());
+            }
+        }
+    }
+    None
+}
+
+fn resolve_issue_ref(payload: &Value, repo: &Path) -> Option<String> {
+    if let Some(tr) = str_field(payload, "tracker_ref") {
+        return Some(tr);
+    }
+    if let Some(pbi) = str_field(payload, "pbi_ref") {
+        return tracker_pbi_meta::tracker_ref_from_pbi(repo, &pbi);
+    }
+    None
+}
+
+fn archive_cancelled_pbi(repo: &Path, payload: &Value) -> Result<(), String> {
+    let pbi_ref = str_field(payload, "pbi_ref").ok_or("pbi_ref requerido para archivar")?;
+    let slug = str_field(payload, "project_slug").ok_or("project_slug requerido")?;
+    let bound = project_binding::bind(repo, &json!({"project_slug": slug}))?
+        .ok_or("proyecto no vinculado")?;
+    let src = project_binding::resolve_doc_path(&bound.project_root, &pbi_ref)?;
+    if !src.is_file() {
+        return Ok(());
+    }
+    let done_dir =
+        project_binding::resolve_doc_path(&bound.project_root, &bound.docs.todos_done)?;
+    fs::create_dir_all(&done_dir).map_err(|e| e.to_string())?;
+    let file_name = src
+        .file_name()
+        .ok_or("pbi_ref sin nombre de archivo")?
+        .to_string_lossy()
+        .to_string();
+    let dest = done_dir.join(file_name);
+    let raw = fs::read_to_string(&src).map_err(|e| e.to_string())?;
+    let patched = if raw.contains("status:") {
+        raw.replace("status: pending", "status: cancelado")
+            .replace("status: refinado", "status: cancelado")
+    } else {
+        format!("---\nstatus: cancelado\n---\n\n{raw}")
+    };
+    fs::write(&dest, patched).map_err(|e| e.to_string())?;
+    if dest != src {
+        let _ = fs::remove_file(&src);
     }
     Ok(())
 }
@@ -231,6 +325,7 @@ fn maybe_complete_hu_when_children_done(
     if children.is_empty() {
         return Ok(());
     }
+    let mut any_done = false;
     for child in children {
         let child_ref = child
             .as_str()
@@ -238,12 +333,97 @@ fn maybe_complete_hu_when_children_done(
             .ok_or("child identifier inválido")?;
         let cf = tool_fetch_issue(repo, child_ref)?;
         let st = linear_to_canonical(cf.get("state").and_then(|v| v.as_str()).unwrap_or(""), tc);
-        if st != "done" {
-            return Ok(());
+        if st == "done" {
+            any_done = true;
+            continue;
+        }
+        if st == "cancelled" {
+            continue;
+        }
+        return Ok(());
+    }
+    if any_done {
+        tool_update_state(repo, tc, hu_ref, "done")?;
+    }
+    Ok(())
+}
+
+fn stamp_done_with_hu_roll_up(
+    repo: &Path,
+    tc: &TrackerConfig,
+    issue_ref: &str,
+    pbi_fetch: &Value,
+    payload: &Value,
+    comment: &str,
+    source: &str,
+) -> Result<bool, String> {
+    let run = |f: &dyn Fn() -> Result<(), String>| -> Result<(), String> {
+        if let Err(e) = f() {
+            emit_sync_failed(
+                repo,
+                source,
+                issue_ref,
+                "update_issue_state",
+                "LINEAR_GRAPHQL_ERROR",
+                payload,
+                Some("done"),
+                None,
+            );
+            return Err(format!("warn: {e}"));
+        }
+        Ok(())
+    };
+    run(&|| tool_update_state(repo, tc, issue_ref, "done"))?;
+    if let Some(hu_ref) = pbi_fetch.get("parent").and_then(|v| v.as_str()) {
+        if let Err(e) = maybe_complete_hu_when_children_done(repo, tc, hu_ref) {
+            emit_sync_failed(
+                repo,
+                source,
+                hu_ref,
+                "update_issue_state",
+                "LINEAR_GRAPHQL_ERROR",
+                payload,
+                Some("done"),
+                None,
+            );
+            return Err(format!("warn: {e}"));
         }
     }
-    tool_update_state(repo, tc, hu_ref, "done")?;
-    Ok(())
+    run(&|| tool_comment(repo, issue_ref, comment))?;
+    Ok(true)
+}
+
+fn stamp_todo_transition(
+    repo: &Path,
+    tc: &TrackerConfig,
+    issue_ref: &str,
+    fetch: &Value,
+    payload: &Value,
+    source: &str,
+    comment: &str,
+) -> Result<(bool, Option<String>), String> {
+    if tc.state_map.get("todo").is_none() {
+        return Ok((false, Some("warn: state_map sin todo".into())));
+    }
+    let run = |f: &dyn Fn() -> Result<(), String>| -> Result<(), String> {
+        if let Err(e) = f() {
+            emit_sync_failed(
+                repo,
+                source,
+                issue_ref,
+                "update_issue_state",
+                "LINEAR_GRAPHQL_ERROR",
+                payload,
+                Some("todo"),
+                None,
+            );
+            return Err(format!("warn: {e}"));
+        }
+        Ok(())
+    };
+    run(&|| update_state_if_not_discarded(repo, tc, issue_ref, fetch, "todo"))?;
+    run(&|| tool_comment(repo, issue_ref, comment))?;
+    Ok((true, None))
 }
 
 fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), String> {
@@ -253,19 +433,84 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
         .and_then(|p| p.as_object())
         .ok_or("payload inválido")?;
     let payload_val = Value::Object(payload.clone());
+    let source = "tracker-stamp";
 
-    let tracker_ref = str_field(&payload_val, "tracker_ref");
-    if tracker_ref.is_none() {
+    if event_type == "HU_Refined" {
+        let issue_ref = str_field(&payload_val, "tracker_ref");
+        if issue_ref.is_none() {
+            return Ok((false, Some("no-op: sin tracker_ref".into())));
+        }
+        let issue_ref = issue_ref.unwrap();
+        let tc = match tracker_for_payload(repo, &payload_val, &issue_ref)? {
+            Some(t) => t,
+            None => return Ok((false, Some("no-op: proyecto sin tracker".into()))),
+        };
+        let fetch = match preflight_hu(repo, &tc, &issue_ref) {
+            Ok(f) => f,
+            Err(w) if w.starts_with("warn:") => return Ok((false, Some(w))),
+            Err(e) => return Err(e),
+        };
+        let hu_ref = str_field(&payload_val, "hu_ref").unwrap_or_default();
+        let doc = yaml_field_in_repo(repo, &hu_ref, "document_id").unwrap_or_default();
+        let ver = yaml_field_in_repo(repo, &hu_ref, "version").unwrap_or_else(|| "1.0.0".into());
+        let comment = format!("HU refinada: {doc} v{ver}");
+        return stamp_todo_transition(repo, &tc, &issue_ref, &fetch, &payload_val, source, &comment);
+    }
+
+    if event_type == "PBI_Cancelled" {
+        let issue_ref = resolve_issue_ref(&payload_val, repo);
+        if issue_ref.is_none() {
+            return Ok((false, Some("no-op: sin tracker_ref ni pbi_ref resoluble".into())));
+        }
+        let issue_ref = issue_ref.unwrap();
+        let tc = match tracker_for_payload(repo, &payload_val, &issue_ref)? {
+            Some(t) => t,
+            None => return Ok((false, Some("no-op: proyecto sin tracker".into()))),
+        };
+        if tc.state_map.get("cancelled").is_none() {
+            return Ok((false, Some("warn: state_map sin cancelled".into())));
+        }
+        let pbi_fetch = match preflight_pbi(repo, &tc, &issue_ref, &payload_val) {
+            Ok(f) => f,
+            Err(w) if w.starts_with("warn:") => return Ok((false, Some(w))),
+            Err(e) => return Err(e),
+        };
+        let reason = str_field(&payload_val, "reason").unwrap_or_else(|| "sin motivo".into());
+        let run = |f: &dyn Fn() -> Result<(), String>| -> Result<(), String> {
+            if let Err(e) = f() {
+                emit_sync_failed(
+                    repo,
+                    source,
+                    &issue_ref,
+                    "update_issue_state",
+                    "LINEAR_GRAPHQL_ERROR",
+                    &payload_val,
+                    Some("cancelled"),
+                    None,
+                );
+                return Err(format!("warn: {e}"));
+            }
+            Ok(())
+        };
+        run(&|| {
+            update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "cancelled")
+        })?;
+        run(&|| tool_comment(repo, &issue_ref, &format!("PBI cancelado: {reason}")))?;
+        let _ = archive_cancelled_pbi(repo, &payload_val);
+        return Ok((true, None));
+    }
+
+    let issue_ref = resolve_issue_ref(&payload_val, repo);
+    if issue_ref.is_none() {
         return Ok((false, Some("no-op: sin tracker_ref".into())));
     }
-    let issue_ref = tracker_ref.unwrap();
+    let issue_ref = issue_ref.unwrap();
 
     let tc = match tracker_for_payload(repo, &payload_val, &issue_ref)? {
         Some(t) => t,
         None => return Ok((false, Some("no-op: proyecto sin tracker".into()))),
     };
 
-    let source = "tracker-stamp";
     let mut stamped = false;
 
     let pbi_fetch = match preflight_pbi(repo, &tc, &issue_ref, &payload_val) {
@@ -292,13 +537,28 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
     };
 
     match event_type.as_str() {
+        "PBI_Refined" => {
+            let pbi_ref = str_field(&payload_val, "pbi_ref").unwrap_or_default();
+            let doc = yaml_field_in_repo(repo, &pbi_ref, "document_id").unwrap_or_default();
+            let ver = yaml_field_in_repo(repo, &pbi_ref, "version").unwrap_or_else(|| "1.0.0".into());
+            let comment = format!("PBI refinado: {doc} v{ver}");
+            return stamp_todo_transition(
+                repo,
+                &tc,
+                &issue_ref,
+                &pbi_fetch,
+                &payload_val,
+                source,
+                &comment,
+            );
+        }
         "PBI_Forged" => {
             run(
                 repo,
                 "update_issue_state",
                 Some("backlog"),
                 None,
-                &|| tool_update_state(repo, &tc, &issue_ref, "backlog"),
+                &|| update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "backlog"),
             )?;
             let doc = str_field(&payload_val, "document_id").unwrap_or_default();
             run(
@@ -311,14 +571,20 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
             stamped = true;
         }
         "Work_Initiated" => {
-            run(
-                repo,
-                "update_issue_state",
-                Some("in_progress"),
-                None,
-                &|| tool_update_state(repo, &tc, &issue_ref, "in_progress"),
-            )?;
-            if let Err(e) = maybe_promote_hu_from_backlog(repo, &tc, &pbi_fetch) {
+            let pbi_state = linear_to_canonical(
+                pbi_fetch.get("state").and_then(|v| v.as_str()).unwrap_or(""),
+                &tc,
+            );
+            if pbi_state != "in_progress" {
+                run(
+                    repo,
+                    "update_issue_state",
+                    Some("in_progress"),
+                    None,
+                    &|| tool_update_state(repo, &tc, &issue_ref, "in_progress"),
+                )?;
+            }
+            if let Err(e) = maybe_promote_hu_when_work_starts(repo, &tc, &pbi_fetch) {
                 if !e.starts_with("parent ausente") {
                     emit_sync_failed(
                         repo,
@@ -381,39 +647,30 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
             stamped = true;
         }
         "PullRequest_Merged" => {
-            run(
-                repo,
-                "update_issue_state",
-                Some("done"),
-                None,
-                &|| tool_update_state(repo, &tc, &issue_ref, "done"),
-            )?;
-            if let Some(hu_ref) = pbi_fetch.get("parent").and_then(|v| v.as_str()) {
-                if let Err(e) = maybe_complete_hu_when_children_done(repo, &tc, hu_ref) {
-                    emit_sync_failed(
-                        repo,
-                        source,
-                        hu_ref,
-                        "update_issue_state",
-                        "LINEAR_GRAPHQL_ERROR",
-                        &payload_val,
-                        Some("done"),
-                        None,
-                    );
-                    return Err(format!("warn: {e}"));
-                }
-            }
             let merge = str_field(&payload_val, "merge_commit_hash")
                 .or_else(|| str_field(&payload_val, "hash_signature"))
                 .unwrap_or_default();
-            run(
+            stamped = stamp_done_with_hu_roll_up(
                 repo,
-                "create_comment",
-                None,
-                Some("pr-merged"),
-                &|| tool_comment(repo, &issue_ref, &format!("Merge: `{merge}`")),
+                &tc,
+                &issue_ref,
+                &pbi_fetch,
+                &payload_val,
+                &format!("Merge: `{merge}`"),
+                source,
             )?;
-            stamped = true;
+        }
+        "Delivery_Committed" => {
+            let sha = str_field(&payload_val, "commit_sha").unwrap_or_default();
+            stamped = stamp_done_with_hu_roll_up(
+                repo,
+                &tc,
+                &issue_ref,
+                &pbi_fetch,
+                &payload_val,
+                &format!("Delivery commit: `{sha}`"),
+                source,
+            )?;
         }
         other => return Ok((false, Some(format!("no-op: event_type {other}")))),
     }
@@ -518,6 +775,87 @@ mod tests {
                     "tracker_ref": "LAB-PBI-BADPARENT",
                     "branch": "feat/x",
                     "expected_hu_tracker_ref": "LAB-HU-1",
+                }
+            });
+            let (stamped, note) = stamp_event(&repo, &event).unwrap();
+            assert!(!stamped);
+            assert!(note.unwrap_or_default().contains("AC-18"));
+        });
+    }
+
+    #[test]
+    fn ac2_pbi_refined_moves_to_todo() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "PBI_Refined",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-OK",
+                    "pbi_ref": "docs/todos/pending/x.md",
+                }
+            });
+            let out = stamp_event(&repo, &event);
+            assert!(matches!(out, Ok((true, _))), "got {:?}", out);
+        });
+    }
+
+    #[test]
+    fn ac2b_hu_refined_moves_to_todo() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "HU_Refined",
+                "payload": {
+                    "tracker_ref": "LAB-HU-TODO",
+                    "hu_ref": "docs/todos/historias/hu.md",
+                }
+            });
+            let (stamped, _) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped);
+        });
+    }
+
+    #[test]
+    fn ac3_delivery_committed_done() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "Delivery_Committed",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-MERGE-LAST",
+                    "commit_sha": "deadbeef",
+                }
+            });
+            let (stamped, _) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped);
+        });
+    }
+
+    #[test]
+    fn ac4_pbi_cancelled() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "PBI_Cancelled",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-OK",
+                    "reason": "descartado",
+                }
+            });
+            let (stamped, _) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped);
+        });
+    }
+
+    #[test]
+    fn ac5_fix_label_without_pbi_warns() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "Work_Initiated",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-FIXONLY",
+                    "branch": "feat/x",
                 }
             });
             let (stamped, note) = stamp_event(&repo, &event).unwrap();

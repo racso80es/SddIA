@@ -1,0 +1,9 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/linear-hu-a-08-stamp",
+  "branch_name": "feat/linear-hu-a-08-stamp",
+  "pr_title": "feat(linear): HU-A 08 tracker-stamp todo, cancelled y trunk_direct",
+  "target_branch": "main",
+  "pbi_ref": "docs/todos/done/[OPERATIVO] Linear HU-A 08 — Sello todo, cancelled y trunk_direct.md",
+  "pr_body": "## Summary\n- `tracker-stamp` 1.1.0: refined/cancelled/delivery-committed, roll-up HU con hijos cancelled.\n- `tracker-sync-replay` 1.1.0: orden con `todo`, `cancelled` terminal.\n- `delivery-close-cycle`: payload `Delivery_Committed` 1.1.0 completo en trunk_direct.\n- Suscripciones EDA en `event-domain-subscriptions.json`.\n\n## Test plan\n- [x] `cargo test -p execute-process --lib tracker_stamp::tests -- --test-threads=1`\n- [x] `cargo test -p execute-process --lib tracker_sync_replay`\n"
+}

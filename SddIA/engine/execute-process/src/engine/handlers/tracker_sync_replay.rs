@@ -19,9 +19,10 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
 fn state_rank(canonical: &str) -> Option<i32> {
     match canonical {
         "backlog" => Some(0),
-        "in_progress" => Some(1),
-        "in_review" => Some(2),
-        "done" => Some(3),
+        "todo" => Some(1),
+        "in_progress" => Some(2),
+        "in_review" => Some(3),
+        "done" => Some(4),
         "cancelled" => Some(100),
         _ => None,
     }
@@ -69,9 +70,11 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
         .to_string();
     let mut state_map = std::collections::BTreeMap::new();
     state_map.insert("backlog".into(), "Backlog".into());
+    state_map.insert("todo".into(), "Todo".into());
     state_map.insert("in_progress".into(), "In Progress".into());
     state_map.insert("in_review".into(), "In Review".into());
     state_map.insert("done".into(), "Done".into());
+    state_map.insert("cancelled".into(), "Cancelled".into());
     TrackerConfig {
         team_key,
         project_id: None,
@@ -82,6 +85,9 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
 }
 
 pub fn should_discard_transition(current_canonical: &str, target: &str) -> bool {
+    if current_canonical == "cancelled" {
+        return true;
+    }
     let cur_rank = state_rank(current_canonical).unwrap_or(-1);
     let tgt_rank = state_rank(target).unwrap_or(-1);
     tgt_rank >= 0 && cur_rank >= tgt_rank
@@ -226,14 +232,22 @@ mod tests {
 
     #[test]
     fn state_rank_orders_cycle() {
-        assert!(state_rank("backlog").unwrap() < state_rank("in_progress").unwrap());
+        assert!(state_rank("backlog").unwrap() < state_rank("todo").unwrap());
+        assert!(state_rank("todo").unwrap() < state_rank("in_progress").unwrap());
         assert!(state_rank("in_review").unwrap() < state_rank("done").unwrap());
     }
 
     #[test]
     fn discard_when_issue_already_at_or_past_target() {
         assert!(should_discard_transition("in_review", "in_progress"));
+        assert!(should_discard_transition("in_progress", "todo"));
         assert!(should_discard_transition("done", "done"));
         assert!(!should_discard_transition("backlog", "in_progress"));
+        assert!(should_discard_transition("cancelled", "todo"));
+    }
+
+    #[test]
+    fn ac6_discards_todo_when_in_progress() {
+        assert!(should_discard_transition("in_progress", "todo"));
     }
 }
