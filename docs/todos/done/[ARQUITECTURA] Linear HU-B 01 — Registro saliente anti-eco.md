@@ -4,7 +4,7 @@ uuid: "6cc65ea4-6984-4e40-aa08-ab8b38ed6c8a"
 title: "[ARQUITECTURA] Linear HU-B 01 — Registro saliente anti-eco"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,7 +15,7 @@ hu_order: 1
 hu_order_total: 6
 historia_ref: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
 historia_document_id: HU-LINEAR-SSOT-INVERSE
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 unblocks:
   - PBI-LINEAR-B-02-WATCHER
 baseline_decisiones:
