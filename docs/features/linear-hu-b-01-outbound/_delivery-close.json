@@ -1,0 +1,9 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/linear-hu-b-01-outbound",
+  "branch_name": "feat/linear-hu-b-01-outbound",
+  "pr_title": "feat(linear): HU-B 01 registro saliente tracker-outbound anti-eco",
+  "target_branch": "main",
+  "pbi_ref": "docs/todos/pending/[ARQUITECTURA] Linear HU-B 01 — Registro saliente anti-eco.md",
+  "pr_body": "## Summary\n- Append JSONL en `.SddIA/state/tracker-outbound/` tras mutaciones Linear aceptadas.\n- Hook único en `invoke_tool_for_process` (stamp, replay, forge-pbi, refine-hu).\n\n## Test plan\n- [x] `cargo test -p execute-process --lib engine::tracker_outbound`\n"
+}

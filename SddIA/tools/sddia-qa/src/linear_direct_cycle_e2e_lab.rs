@@ -20,11 +20,31 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         Ok(o) => {
             let success = o.status.success();
             if json_out {
+                let stderr_tail: String = String::from_utf8_lossy(&o.stderr)
+                    .lines()
+                    .rev()
+                    .take(40)
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .rev()
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                let stdout_tail: String = String::from_utf8_lossy(&o.stdout)
+                    .lines()
+                    .rev()
+                    .take(40)
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .rev()
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 print_json_report(
                     &serde_json::json!({
                         "success": success,
                         "exitCode": if success { 0 } else { 1 },
                         "operation": "run-linear-direct-cycle-e2e-lab",
+                        "stderrTail": if stderr_tail.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(stderr_tail) },
+                        "stdoutTail": if stdout_tail.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(stdout_tail) },
                     }),
                     false,
                 );

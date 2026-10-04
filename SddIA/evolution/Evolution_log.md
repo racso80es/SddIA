@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 115
+universe_total: 117
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,8 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `3e5856b4-fafe-47b7-bf66-798196f6cd05` | 2026-10-04 | Fix lab store WASI para E2E linear (eda-bus-e2e-smoke) | CANONICO | `SddIA/evolution/3e5856b4-fafe-47b7-bf66-798196f6cd05.md` |
+| `184ec025-a716-4436-a500-b239ba8be921` | 2026-10-04 | HU-B 01: registro saliente tracker-outbound JSONL anti-eco | CANONICO | `SddIA/evolution/184ec025-a716-4436-a500-b239ba8be921.md` |
 | `68e6ea3a-05c9-4236-85ad-66d452c19a93` | 2026-10-04 | HU-A 09: E2E lab ciclo directo Linear AC-7..10 y store mock en disco | CANONICO | `SddIA/evolution/68e6ea3a-05c9-4236-85ad-66d452c19a93.md` |
 | `3b722c9a-4526-4967-b3a2-9e08ae51a073` | 2026-10-04 | HU-A 08: tracker-stamp todo/cancelled/trunk_direct y replay orden todo | CANONICO | `SddIA/evolution/3b722c9a-4526-4967-b3a2-9e08ae51a073.md` |
 | `eb513cfd-fc81-4920-8c08-2b0079b2eb95` | 2026-10-04 | HU-A 07: forge-pbi fase Linear create_issue y handler sellado con tracker_ref | CANONICO | `SddIA/evolution/eb513cfd-fc81-4920-8c08-2b0079b2eb95.md` |

@@ -113,6 +113,16 @@ fn has_wasmtime() -> bool {
     wasmtime_executable().is_some()
 }
 
+/// wasmtime no hereda el entorno del host; reenvía `SDDIA_*` (lab mock, repo root, etc.).
+fn inject_wasmtime_sddia_env(cmd: &mut Command) {
+    for key in std::env::vars()
+        .map(|(k, _)| k)
+        .filter(|k| k.starts_with("SDDIA_"))
+    {
+        cmd.arg("--env").arg(key);
+    }
+}
+
 fn resolve_capsule(
     repo: &Path,
     name: &str,
@@ -184,7 +194,9 @@ pub fn invoke_capsule_subprocess(
     let mut cmd = if kind == "wasm" {
         let wt = wt.expect("wasm kind implies wasmtime_executable");
         let mut c = Command::new(wt);
-        c.args(["run", "--dir=.", &bin.to_string_lossy()]);
+        c.arg("run");
+        inject_wasmtime_sddia_env(&mut c);
+        c.args(["--dir=.", &bin.to_string_lossy()]);
         c
     } else {
         Command::new(&bin)
@@ -414,7 +426,16 @@ pub fn invoke_tool_for_process(
             .unwrap_or("tool failed")
             .to_string());
     }
-    Ok(unwrap_tool_body(&result.body))
+    let body = unwrap_tool_body(&result.body);
+    if super::tracker_outbound::should_record_linear_tool(tool_name, payload) {
+        super::tracker_outbound::record_linear_outbound_after_success(
+            repo,
+            process_name,
+            payload,
+            &body,
+        );
+    }
+    Ok(body)
 }
 
 pub fn invoke_git_manager(
