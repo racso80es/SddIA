@@ -304,3 +304,77 @@ notes: "handoff-formal-scan; idempotent-hit"
 - Bloqueo F2: faltan `spec.md` y `plan.md` bajo `persist_ref`
 - Rama OK: worktree = `feat/linear-hu-b-01-outbound`; PBI sigue en `pending/`
 ```
+
+## 2026-10-04T09:00:46Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `1527ef43-cd28-4958-a5b6-69acf395cfcd`
+- correlation_id: `8a95f4d6-0767-4390-bf1a-8f09d5df92e4`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Rama OK: worktree = `feat/linear-hu-b-01-outbound`; PBI sigue en `pending/`
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `FAIL_F2_DOC`)
+
+- Tocado: `docs/features/linear-hu-b-01-outbound/validacion.md`
+- Evidence Bridge (copia): `TECH_FORMAL_EXECUTE_PROCESS` / `GIT_EVIDENCE_VIA_GIT_MANAGER` = **APTO** (`native_state`, idempotent-hit)
+- Shell `git-manager` → Rejected; `git_changes` por path-assert FS
+- `RBAC_AUTHORING_KM_POLICY` = **APTO** (0 writes Argos en `docs/todos/**`)
+- Bloqueo F2: faltan `spec.md` y `plan.md` bajo `persist_ref`
+- Rama OK: worktree = `feat/linear-hu-b-01-outbound`; PBI sigue en `pending/`
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-04T09:00:53Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-10-04T09:01:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `b864e54a-8717-492f-a7a3-c9a52087ed35`
+- correlation_id: `c2892fef-2e24-4423-9ad0-52f30898e8d8`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Rama OK: worktree = `feat/linear-hu-b-01-outbound`; PBI sigue en `pending/`
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `FAIL_F2_DOC`)
+
+- Tocado: `docs/features/linear-hu-b-01-outbound/validacion.md`
+- Evidence Bridge (copia): `TECH_FORMAL_EXECUTE_PROCESS` / `GIT_EVIDENCE_VIA_GIT_MANAGER` = **APTO** (`native_state`, idempotent-hit)
+- Shell `git-manager` → Rejected; `git_changes` por path-assert FS
+- `RBAC_AUTHORING_KM_POLICY` = **APTO** (0 writes Argos en `docs/todos/**`)
+- Bloqueo F2: faltan `spec.md` y `plan.md` bajo `persist_ref`
+- Rama OK: worktree = `feat/linear-hu-b-01-outbound`; PBI sigue en `pending/`
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-04T09:01:00Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```

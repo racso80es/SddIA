@@ -12,10 +12,13 @@
 
 
 
+
+
+
 feature_name: linear-hu-b-01-outbound
 document_id: PBI-LINEAR-B-01-OUTBOUND
 branch: feat/linear-hu-b-01-outbound
-execution_id: "4ab5e4fc-57c8-4d28-b9eb-f403fd99d74a"
+execution_id: "b864e54a-8717-492f-a7a3-c9a52087ed35"
 ---
 # Implementación — HU-B 01
 
