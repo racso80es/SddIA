@@ -1,3 +1,8 @@
+---
+feature_name: linear-hu-a-09-e2e-lab
+document_id: PBI-LINEAR-A-09-E2E
+branch: feat/linear-hu-a-09-e2e-lab
+---
 # Plan — HU-A 09
 
 1. `lab_state.rs` en `linear-tracker-adapter` (persistencia entre subprocess).

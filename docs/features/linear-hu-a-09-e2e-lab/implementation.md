@@ -1,3 +1,8 @@
+---
+feature_name: linear-hu-a-09-e2e-lab
+document_id: PBI-LINEAR-A-09-E2E
+branch: feat/linear-hu-a-09-e2e-lab
+---
 # Implementación — HU-A 09
 
 - `SddIA/tools/linear-tracker-adapter/src/lab_state.rs` — issues/comentarios mock en disco.
