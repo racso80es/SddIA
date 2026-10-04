@@ -15,7 +15,9 @@ use super::telemetry_batch_stub::run_telemetry_batch_stub;
 use super::execution_workspace_report;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
-use super::workspace_init::{is_workspace_init_phase, run as run_workspace_init};
+use super::workspace_init::{
+    is_workspace_init_phase, maybe_emit_work_initiated_on_tekton_entry, run as run_workspace_init,
+};
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
 use crate::envelope::OrchestratorEnvelope;
 use crate::forges::materialize_by_inputs;
@@ -856,8 +858,16 @@ fn execute_phase_body_residual(
         {
             return skipped;
         }
+        maybe_emit_work_initiated_on_tekton_entry(
+            repo,
+            process_name,
+            &delegates,
+            inputs,
+            state,
+            &mut entry,
+        );
         if super::agent_runtime::is_configured() {
-            let entry = super::agent_runtime::invoke_agent_phase(
+            let mut agent_entry = super::agent_runtime::invoke_agent_phase(
                 repo,
                 process_name,
                 phase_name,
@@ -869,13 +879,16 @@ fn execute_phase_body_residual(
                 }),
             );
             if process_name == "pull-request-review"
-                && entry.get("status").and_then(|v| v.as_str()) == Some("blocked")
+                && agent_entry.get("status").and_then(|v| v.as_str()) == Some("blocked")
             {
                 if let Some(obj) = state.as_object_mut() {
                     obj.insert("argos_verdict".into(), json!("block"));
                 }
             }
-            return entry;
+            if let Some(wi) = entry.get("work_initiated") {
+                agent_entry["work_initiated"] = wi.clone();
+            }
+            return agent_entry;
         }
         entry["status"] = json!("simulated");
         entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");
