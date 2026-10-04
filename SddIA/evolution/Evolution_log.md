@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 114
+universe_total: 115
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `68e6ea3a-05c9-4236-85ad-66d452c19a93` | 2026-10-04 | HU-A 09: E2E lab ciclo directo Linear AC-7..10 y store mock en disco | CANONICO | `SddIA/evolution/68e6ea3a-05c9-4236-85ad-66d452c19a93.md` |
 | `3b722c9a-4526-4967-b3a2-9e08ae51a073` | 2026-10-04 | HU-A 08: tracker-stamp todo/cancelled/trunk_direct y replay orden todo | CANONICO | `SddIA/evolution/3b722c9a-4526-4967-b3a2-9e08ae51a073.md` |
 | `eb513cfd-fc81-4920-8c08-2b0079b2eb95` | 2026-10-04 | HU-A 07: forge-pbi fase Linear create_issue y handler sellado con tracker_ref | CANONICO | `SddIA/evolution/eb513cfd-fc81-4920-8c08-2b0079b2eb95.md` |
 | `a2c71e85-ad0c-4951-b688-ce80f6a471b2` | 2026-10-04 | HU-A 06: procesos refine-hu/refine-pbi y handlers pre-forja Linear | CANONICO | `SddIA/evolution/a2c71e85-ad0c-4951-b688-ce80f6a471b2.md` |

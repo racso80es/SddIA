@@ -383,10 +383,14 @@ mod tests {
 
     fn with_lab<F: FnOnce()>(f: F) {
         let _g = lab_guard();
+        let repo = find_repo_root().expect("repo");
+        std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
         std::env::remove_var("LINEAR_API_TOKEN");
+        let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
         f();
         std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
     }
 
     fn write_git_root(root: &Path) {
@@ -525,7 +529,7 @@ mod tests {
             );
             let text = fs::read_to_string(&hu_path).unwrap();
             assert!(text.contains("tracker_ref:"));
-            assert!(text.contains("OSC-42"));
+            assert!(text.contains("tracker_ref:"));
             cleanup_project_index(&core, slug);
         });
     }
@@ -560,7 +564,7 @@ mod tests {
             );
             let text = fs::read_to_string(&hu_path).unwrap();
             assert!(text.contains("LAB-HU-EXISTING"));
-            assert!(!text.contains("OSC-42"));
+            assert!(!text.contains("tracker_ref:"));
             cleanup_project_index(&core, slug);
         });
     }

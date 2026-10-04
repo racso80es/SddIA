@@ -4,7 +4,7 @@ uuid: "eaa2f1ce-47d4-4d93-a794-84e06a481a0c"
 title: "[OPERATIVO] Linear HU-A 09 — E2E lab ciclo directo"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
