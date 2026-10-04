@@ -4,7 +4,9 @@ uuid: "7b3529df-97b5-4310-aa2a-2b2de12e7b5e"
 title: "[OPERATIVO] Linear HU-A 05 — Work_Initiated al entrar en Ejecución"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
+closed: "2026-10-04"
+execution_branch: feat/linear-hu-a-05-work-initiated
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,7 +17,7 @@ hu_order: 5
 hu_order_total: 9
 historia_ref: "docs/todos/historias/HU - [OPERATIVO] Linear — ciclo directo de HU y PBI.md"
 historia_document_id: HU-LINEAR-DIRECT-CYCLE
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 unblocks:
   - PBI-LINEAR-A-09-E2E
 baseline_decisiones:

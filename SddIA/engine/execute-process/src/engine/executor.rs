@@ -3,7 +3,9 @@
 use super::execution_workspace_report;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
-use super::workspace_init::{is_workspace_init_phase, run as run_workspace_init};
+use super::workspace_init::{
+    is_workspace_init_phase, maybe_emit_work_initiated_on_tekton_entry, run as run_workspace_init,
+};
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -416,6 +418,14 @@ fn execute_phase_body(
         {
             return skipped;
         }
+        maybe_emit_work_initiated_on_tekton_entry(
+            repo,
+            process_name,
+            &delegates,
+            inputs,
+            state,
+            &mut entry,
+        );
         if super::agent_runtime::is_configured() {
             let mut agent_entry = super::agent_runtime::invoke_agent_phase(
                 repo,
@@ -711,6 +721,13 @@ mod tests {
         assert_eq!(entry["reason"], "prior_agent_phase_not_executed");
         assert_eq!(entry["prior_status"], "failed");
         assert_eq!(entry["phase_name"], "Verificación");
+    }
+
+    #[test]
+    fn work_initiated_hooks_tekton_delegate_only() {
+        use crate::engine::workspace_init::phase_delegates_to_tekton;
+        assert!(phase_delegates_to_tekton(&[json!("agent:tekton")]));
+        assert!(!phase_delegates_to_tekton(&[json!("agent:dedalo")]));
     }
 
     #[test]
