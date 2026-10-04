@@ -414,7 +414,16 @@ pub fn invoke_tool_for_process(
             .unwrap_or("tool failed")
             .to_string());
     }
-    Ok(unwrap_tool_body(&result.body))
+    let body = unwrap_tool_body(&result.body);
+    if super::tracker_outbound::should_record_linear_tool(tool_name, payload) {
+        super::tracker_outbound::record_linear_outbound_after_success(
+            repo,
+            process_name,
+            payload,
+            &body,
+        );
+    }
+    Ok(body)
 }
 
 pub fn invoke_git_manager(
