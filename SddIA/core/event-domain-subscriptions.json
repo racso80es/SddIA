@@ -344,5 +344,33 @@
       "process": "tracker-stamp",
       "intent": "Sello backlog PBI + comentario document_id."
     }
+  ],
+  "PBI_Refined": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Transición Linear todo + comentario refinado (tracker_ref)."
+    }
+  ],
+  "HU_Refined": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Transición HU a todo + comentario refinado."
+    }
+  ],
+  "PBI_Cancelled": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Estado cancelled + comentario reason; archiva markdown."
+    }
+  ],
+  "Delivery_Committed": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "PBI done + commit_sha; roll-up HU como PullRequest_Merged."
+    }
   ]
 }

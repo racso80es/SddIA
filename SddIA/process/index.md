@@ -58,6 +58,6 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | sync-client-assets | 0f6bf2ff-a067-46fb-9175-ee97e6a5dcd8 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Sincronización unidireccional repositorio maestro → instancia cliente: 4 fases (Manifiesto-Local, Reclamacion, Aduana-Integridad, Inyeccion). Aduana SHA-256 pre-escritura. |
 | tracker-linear-markdown-sync | a3b4c5d6-e7f8-4890-a123-456789abcd01 | 1.0.0 | tracker-operations | — | Volcado descripción Linear = cuerpo markdown (`tracker_ref`). |
 | tracker-backlog-query | d4e5f6a7-b8c9-4d0e-a12b-3b4c5d6e7f9a | 1.0.0 | tracker-operations | — | Listado HU/PBI vía linear-tracker-adapter (Kalma2 GET /api/backlog). |
-| tracker-sync-replay | e1f2a3b4-c5d6-4789-a012-3456789abc01 | 1.0.0 | tracker-operations | — | Suscriptor Tracker_Sync_Failed; replay fetch_issue + transición/comentario. |
-| tracker-stamp | f2a3b4c5-d6e7-4890-a123-456789abcdef | 1.0.0 | tracker-operations | — | Sello Linear ante eventos de ciclo de vida (fail-soft D5). |
+| tracker-sync-replay | e1f2a3b4-c5d6-4789-a012-3456789abc01 | 1.1.0 | tracker-operations | — | Replay con orden backlog<todo<in_progress<…; cancelled terminal. |
+| tracker-stamp | f2a3b4c5-d6e7-4890-a123-456789abcdef | 1.1.0 | tracker-operations | — | Sello Linear: todo, cancelled, trunk_direct, ciclo PR (fail-soft D5). |
 

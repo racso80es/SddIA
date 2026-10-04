@@ -5,6 +5,7 @@ use super::phase_capsules::{
     capsule_index_integrity_audit_gate, execute_delivery_close_phase,
 };
 use super::project_binding::{self, BoundProject};
+use super::tracker_pbi_meta;
 use super::route_domain_core::materialize_pending_domain_event;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
@@ -28,16 +29,56 @@ fn workspace_template(process_def: &ProcessDef) -> Result<String, String> {
         .ok_or_else(|| "workspace_template ausente en definición del proceso".into())
 }
 
-fn trunk_direct_close(repo: &Path, bound: &BoundProject) -> Result<OrchestratorEnvelope, String> {
+fn delivery_committed_payload(
+    repo: &Path,
+    bound: &BoundProject,
+    process_inputs: &Value,
+) -> Value {
+    let mut payload = json!({
+        "project_slug": bound.slug,
+        "default_branch": bound.default_branch,
+        "delivery_mode": "trunk_direct",
+    });
+    for key in ["tracker_ref", "pbi_ref", "persist_ref", "commit_sha"] {
+        if let Some(v) = process_inputs
+            .get(key)
+            .and_then(|x| x.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            payload[key] = json!(v);
+        }
+    }
+    if payload.get("tracker_ref").is_none() {
+        if let Some(persist) = process_inputs
+            .get("persist_ref")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            if let Some(pbi) = tracker_pbi_meta::resolve_pbi_path_from_persist(repo, persist) {
+                if let Some(tr) = tracker_pbi_meta::tracker_ref_from_pbi(repo, &pbi) {
+                    payload["tracker_ref"] = json!(tr);
+                }
+                if payload.get("pbi_ref").is_none() {
+                    payload["pbi_ref"] = json!(pbi);
+                }
+            }
+        }
+    }
+    payload
+}
+
+fn trunk_direct_close(
+    repo: &Path,
+    bound: &BoundProject,
+    process_inputs: &Value,
+) -> Result<OrchestratorEnvelope, String> {
     let event_path = materialize_pending_domain_event(
         repo,
         "Delivery_Committed",
         "delivery-close-cycle",
-        json!({
-            "project_slug": bound.slug,
-            "default_branch": bound.default_branch,
-            "delivery_mode": "trunk_direct",
-        }),
+        delivery_committed_payload(repo, bound, process_inputs),
     )?;
     Ok(OrchestratorEnvelope {
         success: true,
@@ -617,7 +658,7 @@ pub fn run(
 ) -> Result<OrchestratorEnvelope, String> {
     if let Some(bound) = project_binding::bind(repo, process_inputs)? {
         if project_binding::omits_pr_cycle(bound.delivery_mode) {
-            return trunk_direct_close(repo, &bound);
+            return trunk_direct_close(repo, &bound, process_inputs);
         }
     }
 
