@@ -1,0 +1,43 @@
+{
+  "entity_class": "process",
+  "entity_name": "forge-pbi",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "process_name": "forge-pbi",
+    "process_jurisdiction": "domain",
+    "process_version": "1.1.3",
+    "process_context": [
+      "knowledge-management",
+      "filesystem-ops",
+      "tracker-operations"
+    ],
+    "process_description": "Línea de montaje PBI: recepción, registro Linear create_issue (hijo HU), sellado con tracker_ref; context tracker-operations.",
+    "process_contract_version": "1.4.0",
+    "process_phases": [
+      {
+        "name": "Recepcion",
+        "intent": "Mayeuta expande la idea (tier reflexivo en contrato de agente)."
+      },
+      {
+        "name": "Registro en tracker",
+        "intent": "tool:linear-tracker-adapter create_issue (labels pbi+tipo, parent_ref historia_ref); handler nativo Tekton."
+      },
+      {
+        "name": "Sellado",
+        "intent": "Argos sella pending con tracker_ref si aplica (tier balístico)."
+      }
+    ],
+    "process_inputs": [
+      { "raw_idea": "Idea en bruto" },
+      { "project_slug": "Slug en índice Core" },
+      { "process": "feature | bug-fix | refactorization" },
+      { "historia_ref": "Ruta HU en historias/ (tracker_ref padre)" },
+      { "tipo": "Opcional: kaizen | deuda | spike (además de process bug-fix → fix)" }
+    ],
+    "process_outputs": [
+      { "artifact_path": "PBI en todos_pending" },
+      { "tracker_ref": "Issue Linear si aplica" },
+      { "event_path": "PBI_Forged en pending" }
+    ]
+  }
+}

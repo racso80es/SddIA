@@ -521,6 +521,7 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                     explicit_ver.as_deref(),
                     inputs_patch,
                     workspace_template.as_deref(),
+                    inputs.get("process_context"),
                 )?;
                 if patch.old_version != patch.new_version {
                     update_process_index_version(

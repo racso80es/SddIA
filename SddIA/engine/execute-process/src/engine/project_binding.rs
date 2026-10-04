@@ -445,6 +445,37 @@ pub fn tracker_config_for_inputs(repo: &Path, inputs: &Value) -> Result<Option<T
     Ok(tracker_config_from_manifest(&fm))
 }
 
+/// Label opcional del manifiesto (`tracker.labels.{key}`). Sin slug o sin tracker → `None`.
+pub fn tracker_label_for_inputs(
+    repo: &Path,
+    inputs: &Value,
+    key: &str,
+) -> Result<Option<String>, String> {
+    let Some(slug) = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return Ok(None);
+    };
+    if slug.contains('/') || slug.contains("..") {
+        return Err(format!("PROJECT_CONFIG_INVALID: project_slug '{slug}'"));
+    }
+    let fm = manifest_frontmatter_for_slug(repo, slug)?;
+    Ok(tracker_label_from_manifest(&fm, key))
+}
+
+pub fn tracker_label_from_manifest(fm: &YamlValue, key: &str) -> Option<String> {
+    fm.get("tracker")
+        .and_then(|t| t.get("labels"))
+        .and_then(|l| l.get(key))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
 fn validate_env_ref(env_ref: &str) -> Result<(), String> {
     let rel = env_ref.trim().trim_start_matches("./");
     if rel.is_empty() || rel.contains("..") || Path::new(rel).is_absolute() {
