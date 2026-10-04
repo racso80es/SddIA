@@ -5,7 +5,9 @@ title: "HU - [OPERATIVO] Linear — ciclo directo de HU y PBI"
 format: markdown
 version: "1.2.0"
 created: "2026-10-03"
-status: "pendiente_merge"
+status: done
+closed: "2026-10-04"
+merged_pr: 335
 hu_sequence: 1
 hu_sequence_total: 2
 successor_hu: HU-LINEAR-SSOT-INVERSE
@@ -37,7 +39,7 @@ Partición A de `HU-LINEAR-SYNC-FLOW` (§8 del documento padre, laudo 2026-10-03
 
 ## Orden
 
-**HU 1 de 2.** Sucesora: `HU-LINEAR-SSOT-INVERSE` (HU 2 de 2). Compuerta técnica **cumplida** (AC-7…AC-10 en suite lab); queda **merge** de esta HU en `default_branch` ([PR #335](https://github.com/racso80es/SddIA/pull/335)).
+**HU 1 de 2 — cerrada.** Sucesora: `HU-LINEAR-SSOT-INVERSE` (HU 2 de 2), desbloqueada tras merge [#335](https://github.com/racso80es/SddIA/pull/335). Archivo en `docs/todos/done/historias/`.
 
 | Orden | PBI | Entrega | Estado |
 |------:|-----|---------|--------|
@@ -193,4 +195,4 @@ AC-7 y AC-8 en verde son la **condición de desbloqueo** de `HU-LINEAR-SSOT-INVE
 | Implementación 01–08 | PBIs en `docs/todos/done/`; features `linear-hu-a-01-contract` … `linear-hu-a-08-stamp`. |
 | AC-7…AC-10 | `cargo test -p execute-process linear_direct_cycle_e2e`; `sddia-qa run-linear-direct-cycle-e2e-lab`. |
 | Documental | `docs/features/linear-hu-a-09-e2e-lab/`; evolution `68e6ea3a-05c9-4236-85ad-66d452c19a93`. |
-| Pendiente | Merge [PR #335](https://github.com/racso80es/SddIA/pull/335) → desbloqueo formal de `HU-LINEAR-SSOT-INVERSE`. |
+| Cierre | Merge [PR #335](https://github.com/racso80es/SddIA/pull/335); `HU-LINEAR-SSOT-INVERSE` habilitada para forja. |

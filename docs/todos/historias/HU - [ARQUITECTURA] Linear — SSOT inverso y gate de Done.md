@@ -5,12 +5,12 @@ title: "HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done"
 format: markdown
 version: "1.1.1"
 created: "2026-10-03"
-status: "bloqueada"
+status: refinada
 hu_sequence: 2
 hu_sequence_total: 2
 predecessor_hu: HU-LINEAR-DIRECT-CYCLE
-blocked_by: HU-LINEAR-DIRECT-CYCLE
-unblock_condition: "Merge de HU-LINEAR-DIRECT-CYCLE en default_branch (PR #335); AC-7/AC-8 ya verdes en lab (PBI-LINEAR-A-09-E2E done)"
+predecessor_hu_ref: docs/todos/done/historias/HU - [OPERATIVO] Linear — ciclo directo de HU y PBI.md
+unblock_condition: "Cumplida 2026-10-04 (PR #335)"
 gate_technical_met: "2026-10-04"
 priority: "alta"
 process: "feature"
@@ -39,7 +39,7 @@ Partición B de `HU-LINEAR-SYNC-FLOW` (§8 del documento padre, laudo 2026-10-03
 
 ## Orden
 
-**HU 2 de 2.** Predecesora: `HU-LINEAR-DIRECT-CYCLE` (HU 1 de 2). La compuerta E2E (AC-7/AC-8) está **verde** (`PBI-LINEAR-A-09-E2E` en `done/`). Sigue **bloqueada** hasta el merge de la HU 1 ([PR #335](https://github.com/racso80es/SddIA/pull/335)); entonces arranca `PBI-LINEAR-B-01-OUTBOUND`.
+**HU 2 de 2.** Predecesora cerrada: `HU-LINEAR-DIRECT-CYCLE` ([done/historias](docs/todos/done/historias/HU%20-%20%5BOPERATIVO%5D%20Linear%20%E2%80%94%20ciclo%20directo%20de%20HU%20y%20PBI.md), PR #335). Cola activa: `PBI-LINEAR-B-01-OUTBOUND` en `pending/`.
 
 | Orden | PBI | Entrega |
 |------:|-----|---------|
@@ -50,7 +50,7 @@ Partición B de `HU-LINEAR-SYNC-FLOW` (§8 del documento padre, laudo 2026-10-03
 | 05 | `PBI-LINEAR-B-05-DONE-GATE` | `done_gate: linear\|both`, handler, pre-push, normas. |
 | 06 | `PBI-LINEAR-B-06-E2E` | E2E Core-self `done_gate: both`. Activación según F8.3. |
 
-PBIs en `docs/todos/pending/`. `PBI-LINEAR-B-01-OUTBOUND` declara `blocked_by: PBI-LINEAR-A-09-E2E` (cumplido en repo); el gate operativo restante es el merge de la HU 1.
+PBIs en `docs/todos/pending/` (orden B-01…B-06).
 
 ## 1. Historia de usuario
 

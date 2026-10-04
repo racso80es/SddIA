@@ -12,11 +12,11 @@ base: "Documentacion/PBI/Realizado/[ARQUITECTURA] Forja de la Cápsula Linear Tr
 children:
   - document_id: HU-LINEAR-DIRECT-CYCLE
     hu_sequence: 1
-    path: "docs/todos/historias/HU - [OPERATIVO] Linear — ciclo directo de HU y PBI.md"
+    path: "docs/todos/done/historias/HU - [OPERATIVO] Linear — ciclo directo de HU y PBI.md"
     scope: "F0–F6; D-A, D-B, D-C, D-D, D-E, D-J"
     pbi_order: "PBI-LINEAR-A-01-CONTRACT … PBI-LINEAR-A-09-E2E"
-    status: "pendiente_merge"
-    pr_url: "https://github.com/racso80es/SddIA/pull/335"
+    status: done
+    merged_pr: 335
   - document_id: HU-LINEAR-SSOT-INVERSE
     hu_sequence: 2
     path: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
@@ -76,7 +76,7 @@ related:
 | Decisiones | D-A, D-B, D-C, D-D, D-E, **D-J (a)**. | D-F, D-G, D-H, D-I. |
 | `project-config-contract` | **1.2.0 → 1.3.0** (único bump): `state_map.todo`, labels extendidas incl. `editable` inerte, `done_gate` declarado con solo `git` aceptado. | Sin bump: habilita `linear|both` en el validador y consume `editable`. |
 | `execution-contexts.md` §2.10 | **1.2.0 → 1.3.0**: crear issues. | **1.3.0 → 1.4.0**: recibir webhooks firmados. |
-| Dependencia | Línea base actual. | HU-A mergeada y AC-7/AC-8 (E2E lab) verdes. *(2026-10-04: lab verde; merge HU-A pendiente PR #335.)* |
+| Dependencia | Línea base actual. | HU-A mergeada y AC-7/AC-8 (E2E lab) verdes. *(Cerrada PR #335, 2026-10-04.)* |
 | Riesgo | Bajo-medio. | Alto. |
 | AC | AC-0a…AC-10. | AC-11…AC-23. |
 
