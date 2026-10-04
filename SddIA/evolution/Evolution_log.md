@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 110
+universe_total: 111
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `77045bb1-c683-4f8c-a5cd-8a16877b180c` | 2026-10-04 | HU-A 05: Work_Initiated al entrar en Ejecución (agent:tekton) | CANONICO | `SddIA/evolution/77045bb1-c683-4f8c-a5cd-8a16877b180c.md` |
 | `5919b2ec-6212-4bf4-93a7-b98e4296bb23` | 2026-10-03 | HU-A 04: eventos ciclo directo Linear (PBI/HU refined, cancelled, Delivery_Committed 1.1.0) | CANONICO | `SddIA/evolution/5919b2ec-6212-4bf4-93a7-b98e4296bb23.md` |
 | `bdcc77c7-93db-4cde-a8c9-580db5d31fcc` | 2026-10-03 | PBI-MERGE-THERMO-06: medición post y regresión cierre HU termodinámica | CANONICO | `SddIA/evolution/bdcc77c7-93db-4cde-a8c9-580db5d31fcc.md` |
 | `99678e76-3cee-4ee8-8adb-67694ab77cc2` | 2026-10-03 | FIX DCC Snapshot: checkout rama antes de rev-parse (fractura 969f05933a46) | CANONICO | `SddIA/evolution/99678e76-3cee-4ee8-8adb-67694ab77cc2.md` |
