@@ -13,7 +13,7 @@ process: feature
 dispatch: true
 hu_order: 6
 hu_order_total: 9
-historia_ref: "docs/todos/historias/HU - [OPERATIVO] Linear — ciclo directo de HU y PBI.md"
+historia_ref: "docs/todos/done/historias/HU - [OPERATIVO] Linear — ciclo directo de HU y PBI.md"
 historia_document_id: HU-LINEAR-DIRECT-CYCLE
 cola_ejecucion: docs/todos/pending/
 blocked_by:
