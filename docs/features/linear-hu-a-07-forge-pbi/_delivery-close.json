@@ -1,0 +1,9 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/linear-hu-a-07-forge-pbi",
+  "branch_name": "feat/linear-hu-a-07-forge-pbi",
+  "pr_title": "feat(linear): HU-A 07 forge-pbi registra issue en Linear",
+  "target_branch": "main",
+  "pbi_ref": "docs/todos/done/[OPERATIVO] Linear HU-A 07 — forge-pbi registra el issue.md",
+  "pr_body": "## Summary\n- Proceso dominio `forge-pbi` 1.1.3: fase «Registro en tracker», context `tracker-operations`.\n- Handler nativo: `create_issue` con labels pbi+tipo, `parent_ref` desde HU; fail-soft y `Tracker_Sync_Failed`.\n- Forja: `process_context` en `patch_process_phases_update`.\n\n## Test plan\n- [x] `cd SddIA && cargo test -p execute-process --lib forge_pbi`\n- [x] `cargo test -p execute-process forge_pbi_allows_create_issue_gate --lib`\n"
+}

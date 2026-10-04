@@ -306,6 +306,7 @@ pub fn patch_process_phases_update(
     process_version: Option<&str>,
     inputs: Option<&Value>,
     workspace_template: Option<&str>,
+    process_context: Option<&Value>,
 ) -> Result<ProcessPhasesPatchResult, String> {
     if !phases.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
         return Err("process_phases debe ser array no vacío".into());
@@ -348,6 +349,9 @@ pub fn patch_process_phases_update(
     }
     if let Some(wt) = workspace_template.filter(|s| !s.is_empty()) {
         map.insert("workspace_template".into(), Value::String(wt.to_string()));
+    }
+    if let Some(ctx) = process_context.filter(|c| !c.is_null()) {
+        map.insert("context".into(), ctx.clone());
     }
     map.insert("version".into(), Value::String(new_version.clone()));
     map.insert("hash_signature".into(), Value::String(new_hash.clone()));
