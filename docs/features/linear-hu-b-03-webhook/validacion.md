@@ -1,5 +1,6 @@
 ---
 
+
 feature_name: linear-hu-b-03-webhook
 created: "2026-10-12"
 updated: "2026-10-12T05:59:50Z"
@@ -97,7 +98,7 @@ situational_notes:
   - "spec.md pbi_ref aún apunta a pending/ (stale) — assert físico PBI solo en done/ status:done"
   - "CODE_TOUCHPOINT: linear_bridge_webhook + tracker_operations_gate ac_wh_1 + execution-contexts 1.4.0 — no absuelve F2"
   - "F3/F4 short-circuit por violación F2; F5_VERDICT_GATE NO_APTO; accept-pr handoff prohibido"
-execution_id: "6e4dea43-17e7-4532-ab3f-f66d2ea77d6e"
+execution_id: "e81b18e0-b9b0-4d76-91a6-d03b2c85e5a6"
 ---
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
