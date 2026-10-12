@@ -1,9 +1,19 @@
 ---
+
+
+
+
+
+
+
+
+
+
 feature_name: linear-hu-b-05-done-gate
 created: "2026-10-12"
 process: feature
+execution_id: "cf55985f-92be-4d08-9e24-33fd21f9bde3"
 ---
-
 # Plan
 
 1. `done_gate` en `project_binding` + módulo `engine/done_gate.rs`
