@@ -2,9 +2,16 @@
 document_id: HU-MERGE-THERMODYNAMICS
 title: "[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia"
 format: markdown
-version: "1.3.0"
+version: "1.4.0"
 created: "2026-10-03"
 refined: "2026-10-03"
+closed: "2026-10-12"
+status: done
+priority: alta
+process: feature
+pbi_done: 6
+pbi_total: 6
+persist_ref: docs/features/merge-thermo-06-e2e-measure
 decisions:
   - id: D-1
     verdict: "aduana ligera síncrona suficiente para qa_profile docs-only; sin doble aduana"
@@ -14,9 +21,6 @@ decisions:
     verdict: "la atestación se invalida en accept-pr Fase 4; no hay suscriptor nuevo de PullRequest_Merged"
     by: "Tekton"
     date: "2026-10-03"
-status: "refinada"
-priority: "alta"
-process: "feature"
 related:
   - SddIA/scripts/qa/git-hooks/hook_common.sh
   - SddIA/scripts/qa/git-hooks/pre_commit_gate.sh
@@ -44,6 +48,13 @@ antecedentes:
   - docs/features/prepush-argos-qa-witness
   - docs/features/kaizen-tekton-evolution-gate-no-poll
   - docs/features/evolution-registry-gate
+pbi_refs:
+  - docs/todos/done/[OPERATIVO] Aduana Git 01 — Observabilidad de aduana y baseline.md
+  - docs/todos/done/[OPERATIVO] Aduana Git 02 — Poda de red y binarios del pre-push.md
+  - docs/todos/done/[OPERATIVO] Aduana Git 03 — Triaje por delta y perfil docs-only.md
+  - docs/todos/done/[OPERATIVO] Aduana Git 04 — Atestación de QA.md
+  - docs/todos/done/[OPERATIVO] Aduana Git 05 — Paridad documental de la aduana.md
+  - docs/todos/done/[OPERATIVO] Aduana Git 06 — Medición post y regresión de aduana.md
 ---
 
 ### [OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia
@@ -202,3 +213,12 @@ Cada PBI cierra en su propia rama (`docs/todos/done/` + `validacion.md`). El 05 
 | 04 | `PBI-MERGE-THERMO-04-ATTESTATION` | Testigo `tree_sha` en `qa-attestations/`; fail-closed; salto de *Auditoría Genómica*; borrado en Fase 4 (D-2). | AC-2, AC-3, AC-4 |
 | 05 | `PBI-MERGE-THERMO-05-DOC-PARITY` | Rutas multi-root en la norma; tabla de `PullRequest_Merged` = JSON; test de paridad domain. | AC-10 |
 | 06 | `PBI-MERGE-THERMO-06-E2E-MEASURE` | 20 muestras post contra el baseline del 01 y pasada de regresión. | AC-7, AC-5 |
+
+#### 7. Cierre (2026-10-12)
+
+| Campo | Valor |
+|-------|-------|
+| Estado | `done` — 6/6 PBI en `docs/todos/done/` con `validation_global: APTO` |
+| Evidencia E2E | `docs/features/merge-thermo-06-e2e-measure/validacion.md` (`global: APTO`) |
+| Remediación F2 | PBI 01 y 04: frontmatter YAML en `objectives` / `plan` / `implementation`; `validacion.md` alineado a `features-documentation-pattern` v1.3.0 |
+| Deuda residual | R-6 PBI 04: bumps codex `pull-request-review` / `accept-pr` vía `entity-manager` si el gate lo exige en ciclo posterior |

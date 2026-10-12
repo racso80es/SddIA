@@ -1,3 +1,15 @@
+---
+feature_name: merge-thermo-01-observability
+created: "2026-10-03"
+process: feature
+items:
+  - execution_workspace_report.rs
+  - executor.rs
+  - residual_runner.rs
+  - workspace_prune.rs
+  - hook_common.sh
+execution_id: "b2fc9bbf-2ee0-4806-95c4-f618a94b4e42"
+---
 # Implementación
 
 | Componente | Ruta |
