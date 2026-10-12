@@ -1,5 +1,8 @@
 use chrono::Utc;
 use sddia_daemon_runtime::linear_bridge::assimilate_list_issues;
+use sddia_daemon_runtime::linear_bridge_webhook::{
+    spawn_lab_webhook_listener, WebhookProjectTarget,
+};
 use sddia_daemon_runtime::{find_repo_root, load_bus_topology, BusTopology, DaemonRuntime};
 use serde_json::{json, Value};
 use std::env;
@@ -11,6 +14,21 @@ use std::{thread, time::Duration};
 
 const DAEMON_NAME: &str = "linear-bridge-watcher";
 const HEARTBEAT_TICK_SECONDS: u64 = 10;
+
+fn webhook_bind_host() -> String {
+    env::var("SDDIA_LINEAR_WEBHOOK_BIND").unwrap_or_else(|_| "127.0.0.1".into())
+}
+
+fn webhook_port() -> u16 {
+    env::var("SDDIA_LINEAR_WEBHOOK_PORT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0)
+}
+
+fn webhook_secret() -> String {
+    env::var("LINEAR_WEBHOOK_SECRET").unwrap_or_default()
+}
 
 fn poll_seconds() -> u64 {
     env::var("SDDIA_LINEAR_BRIDGE_POLL_SECONDS")
@@ -216,6 +234,21 @@ fn main() {
     }
     let shared = Arc::new(Mutex::new(centinela));
     let _hb = spawn_heartbeat(Arc::clone(&shared), top.clone());
+    let wh_projects: Vec<WebhookProjectTarget> = discover_projects(&repo)
+        .into_iter()
+        .map(|p| WebhookProjectTarget {
+            slug: p.slug,
+            label_hu: p.label_hu,
+            label_pbi: p.label_pbi,
+        })
+        .collect();
+    let _wh = spawn_lab_webhook_listener(
+        repo.clone(),
+        webhook_bind_host(),
+        webhook_port(),
+        webhook_secret(),
+        wh_projects,
+    );
     eprintln!("[LINEAR-BRIDGE] polling cada {}s", poll_seconds());
     loop {
         poll_once(&repo);

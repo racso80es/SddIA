@@ -4,7 +4,7 @@ uuid: "0a41adec-30b2-4d02-8971-f03a2c06fec7"
 title: "[ARQUITECTURA] Linear HU-B 03 — RBAC webhooks y webhook de laboratorio"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,9 +15,8 @@ hu_order: 3
 hu_order_total: 6
 historia_ref: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
 historia_document_id: HU-LINEAR-SSOT-INVERSE
-cola_ejecucion: docs/todos/pending/
-blocked_by:
-  - PBI-LINEAR-B-02-WATCHER
+cola_ejecucion: docs/todos/done/
+blocked_by: []
 unblocks:
   - PBI-LINEAR-B-06-E2E
 baseline_decisiones:

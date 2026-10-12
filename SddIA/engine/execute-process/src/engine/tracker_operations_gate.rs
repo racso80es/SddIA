@@ -28,7 +28,7 @@ fn execution_contexts_path(repo: &Path) -> Result<std::path::PathBuf, String> {
     Ok(path)
 }
 
-/// §2.10: «crear issues» en alcance; borrado y webhooks siguen en fuera de alcance.
+/// §2.10: «crear issues» en alcance; borrado sigue en fuera de alcance (webhooks → 1.4.0 en alcance).
 pub fn tracker_section_allows_create_issues(markdown: &str) -> bool {
     let section = extract_tracker_section(markdown);
     let alcance_ok = section
@@ -40,9 +40,22 @@ pub fn tracker_section_allows_create_issues(markdown: &str) -> bool {
         .map(|l| l.to_lowercase())
         .unwrap_or_default();
     let fuera_excludes_create = fuera.contains("crear");
-    let webhooks_excluded = fuera.contains("webhook");
     let delete_excluded = fuera.contains("borrar");
-    alcance_ok && !fuera_excludes_create && webhooks_excluded && delete_excluded
+    alcance_ok && !fuera_excludes_create && delete_excluded
+}
+
+/// AC-WH-1: webhooks firmados en alcance; borrado y administración siguen excluidos.
+pub fn tracker_section_allows_signed_webhooks(markdown: &str) -> bool {
+    let section = extract_tracker_section(markdown).to_lowercase();
+    let alcance = section
+        .lines()
+        .find(|l| l.contains("**alcance:**"))
+        .unwrap_or("");
+    let fuera = section
+        .lines()
+        .find(|l| l.contains("**fuera de alcance:**"))
+        .unwrap_or("");
+    alcance.contains("webhook") && !fuera.contains("webhook") && fuera.contains("borrar")
 }
 
 fn extract_tracker_section(markdown: &str) -> String {
@@ -101,17 +114,34 @@ mod tests {
     use crate::core::repo::find_repo_root;
 
     #[test]
-    fn ac_rbac_3_norm_excludes_webhooks_and_delete() {
+    fn ac_rbac_3_norm_excludes_delete_keeps_create() {
         let repo = find_repo_root().expect("repo");
         let path = execution_contexts_path(&repo).unwrap();
         let text = fs::read_to_string(path).unwrap();
         assert!(
             tracker_section_allows_create_issues(&text),
-            "§2.10 debe permitir crear y seguir excluyendo webhooks/borrado"
+            "§2.10 debe permitir crear y seguir excluyendo borrado"
         );
         let section = extract_tracker_section(&text).to_lowercase();
-        assert!(section.contains("webhook"));
         assert!(section.contains("borrar"));
+    }
+
+    #[test]
+    fn ac_wh_1_norm_includes_signed_webhooks() {
+        let repo = find_repo_root().expect("repo");
+        let path = execution_contexts_path(&repo).unwrap();
+        let text = fs::read_to_string(path).unwrap();
+        assert!(
+            tracker_section_allows_signed_webhooks(&text),
+            "§2.10 1.4.0 debe incluir webhooks firmados y excluir borrado"
+        );
+        let section_lc = extract_tracker_section(&text).to_lowercase();
+        let fuera = section_lc
+            .lines()
+            .find(|l| l.contains("**fuera de alcance:**"))
+            .unwrap_or("");
+        assert!(!fuera.contains("webhook"));
+        assert!(fuera.contains("borrar") || fuera.contains("administración"));
     }
 
     #[test]

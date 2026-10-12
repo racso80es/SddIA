@@ -2,6 +2,7 @@ pub mod eda_bus;
 pub mod eda_sweep;
 pub mod github_bridge;
 pub mod linear_bridge;
+pub mod linear_bridge_webhook;
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
