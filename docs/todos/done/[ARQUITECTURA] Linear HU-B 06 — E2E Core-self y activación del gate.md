@@ -4,7 +4,7 @@ uuid: "f8080016-dabb-4227-90f6-4d7d799175b4"
 title: "[ARQUITECTURA] Linear HU-B 06 — E2E Core-self y activación del gate"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,10 +15,8 @@ hu_order: 6
 hu_order_total: 6
 historia_ref: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
 historia_document_id: HU-LINEAR-SSOT-INVERSE
-cola_ejecucion: docs/todos/pending/
-blocked_by:
-  - PBI-LINEAR-B-03-WEBHOOK
-  - PBI-LINEAR-B-05-DONE-GATE
+cola_ejecucion: docs/todos/done/
+blocked_by: []
 baseline_decisiones:
   - "D-I (a): el primer ciclo real es solo Core-self"
   - "F8.3: done_gate linear exige laudo del Vértice después del ciclo both limpio"

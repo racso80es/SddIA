@@ -1902,6 +1902,7 @@ dependencies = [
  "libc",
  "regex",
  "sddia-core-memory",
+ "sddia-daemon-runtime",
  "sddia-ecosystem-health",
  "sddia-infrastructure-lancedb-evolution",
  "sddia-infrastructure-lancedb-preferences",

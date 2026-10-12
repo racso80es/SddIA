@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 121
+universe_total: 122
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `be26a3c7-c3de-4296-b737-775157bba75b` | 2026-10-12 | HU-B 06: E2E lab done_gate both Core-self (AC-21..21d) | CANONICO | `SddIA/evolution/be26a3c7-c3de-4296-b737-775157bba75b.md` |
 | `e7d38268-3be2-4654-8e58-694e33221f7e` | 2026-10-12 | HU-B 05: done_gate linear|both, proofs y pre-push (AC-17..20, AC-23) | CANONICO | `SddIA/evolution/e7d38268-3be2-4654-8e58-694e33221f7e.md` |
 | `2e5cbb54-550a-4809-8086-0985e1bc0f54` | 2026-10-12 | HU-B 04: tracker-markdown-apply y suscripción Tracker_Issue_Changed (AC-14..16) | CANONICO | `SddIA/evolution/2e5cbb54-550a-4809-8086-0985e1bc0f54.md` |
 | `f1e2d3c4-b5a6-4789-9012-3456789abcde` | 2026-10-12 | HU-B 03: RBAC 1.4.0 webhooks lab y linear_bridge_webhook (AC-13/22/WH-1) | CANONICO | `SddIA/evolution/f1e2d3c4-b5a6-4789-9012-3456789abcde.md` |
