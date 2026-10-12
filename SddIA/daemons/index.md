@@ -16,6 +16,7 @@ Contrato normativo de la familia: `daemons-contract.md` (no constituye un Centin
 
 | Archivo fuente | uuid | name | version | contract | context | Capabilities | heartbeat_interval_seconds |
 |----------------|------|------|---------|----------|---------|--------------|----------------------------|
+| `linear-bridge-watcher.md` | `5171f316-d417-4e4d-99ee-884b8008bb01` | linear-bridge-watcher | 1.0.0 | daemons-contract v1.0.0 | tracker-operations | `linear-tracker-poll`, `eda-bus-inject` | 60 |
 | `kalma2-bridge.md` | `abdafa2f-bfea-4b30-ab2b-4fbafbdcb903` | kalma2-bridge | 1.0.0 | daemons-contract v1.0.0 | system-operations | `kalma2-http-bridge`, `daemon-heartbeat` | 30 |
 | `iota-publish-relay.md` | `78e94d53-0445-4394-b399-3e594cabc511` | iota-publish-relay | 1.0.0 | daemons-contract v1.0.0 | ecosystem-evolution | `iota-relay-supervise`, `dlt-publish-http` | 30 |
 | `event-watcher.md` | `f995cc89-22a7-488d-9b25-ddb1e5e3a4a4` | event-watcher | 1.1.0 | daemons-contract v1.0.0 | ecosystem-evolution | `eda-bus-watch`, `route-domain-event-delegate` | 30 |
@@ -30,7 +31,8 @@ Contrato normativo de la familia: `daemons-contract.md` (no constituye un Centin
 
 ## Integridad (última pasada)
 
-- **Sincronización:** 7 Centinelas catalogados (kalma2-bridge, iota-publish-relay, event-watcher, event-sweeper, telegram-watcher, github-bridge-watcher, email-watcher).
+- **Sincronización:** 8 Centinelas catalogados (linear-bridge-watcher, kalma2-bridge, iota-publish-relay, event-watcher, event-sweeper, telegram-watcher, github-bridge-watcher, email-watcher).
 - **Metadatos:** columnas alineadas a `daemons-contract.md` §11.
+
 
 

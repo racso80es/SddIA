@@ -22,6 +22,7 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 
 | Archivo fuente | uuid | name | event_type | version | contract | context | Capabilities |
 |----------------|------|------|------------|---------|----------|---------|--------------|
+| `tracker-issue-changed.md` | `394d59d7-b041-4fda-ba26-6dbacdd86369` | tracker-issue-changed | Tracker_Issue_Changed | 1.0.0 | events-contract v1.1.0 | tracker-operations | `tracker_issue_changed` |
 | `pbi-cancelled.md` | `1dfdb877-ad6c-4fd5-b977-40aacdaa3fbd` | pbi-cancelled | PBI_Cancelled | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `pbi_cancelled` |
 | `hu-refined.md` | `75df5b43-cbfe-436d-a969-1453f80f1e33` | hu-refined | HU_Refined | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `hu_refined` |
 | `pbi-refined.md` | `2fbfdf71-b933-48e2-ae4a-8cfd750106ec` | pbi-refined | PBI_Refined | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `pbi_refined` |
