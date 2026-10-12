@@ -22,6 +22,8 @@ telemetry_schema:
 
 # linear-bridge-watcher
 
-Sensor Linear: polling list_issues, materializa Tracker_Issue_Changed; anti-eco vía tracker-outbound; sin apply markdown.
+Sensor Linear: polling list_issues y POST webhook lab (bind local, firma HMAC); materializa Tracker_Issue_Changed (`source`: poll | webhook); anti-eco vía tracker-outbound; sin apply markdown.
+
+Variables lab (no en manifiesto): `SDDIA_LINEAR_WEBHOOK_PORT`, `SDDIA_LINEAR_WEBHOOK_BIND` (default `127.0.0.1`), `LINEAR_WEBHOOK_SECRET`.
 
 Forja: `daemon-creator` (porte nativo `run_daemon_forge`). UUID vía `action:crypto-broker`.

@@ -255,6 +255,7 @@ pub fn compose_tracker_issue_changed(
     issue_ref: &str,
     changes: Vec<Value>,
     linear_updated_at: Option<&str>,
+    source: &str,
 ) -> Value {
     let event_id = Uuid::new_v4().to_string();
     let occurred_at = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
@@ -264,7 +265,7 @@ pub fn compose_tracker_issue_changed(
         "project_slug": project_slug,
         "issue_ref": issue_ref,
         "changes": changes,
-        "source": "poll",
+        "source": source,
     });
     if let Some(lu) = linear_updated_at.filter(|s| !s.is_empty()) {
         payload["linear_updated_at"] = json!(lu);
@@ -299,6 +300,18 @@ pub fn assimilate_list_issues(
     items: &[Value],
     now: DateTime<Utc>,
 ) -> Result<(Vec<PathBuf>, WatcherState), String> {
+    assimilate_tracker_items(repo, project_slug, hu_label, pbi_label, items, now, "poll")
+}
+
+pub fn assimilate_tracker_items(
+    repo: &Path,
+    project_slug: &str,
+    hu_label: &str,
+    pbi_label: &str,
+    items: &[Value],
+    now: DateTime<Utc>,
+    source: &str,
+) -> Result<(Vec<PathBuf>, WatcherState), String> {
     let mut state = load_state(repo, project_slug);
     let mut emitted = Vec::new();
     for item in items {
@@ -324,6 +337,7 @@ pub fn assimilate_list_issues(
             &issue_ref,
             changes,
             new_snap.linear_updated_at.as_deref(),
+            source,
         );
         emitted.push(materialize_pending(repo, &bus_event)?);
     }
