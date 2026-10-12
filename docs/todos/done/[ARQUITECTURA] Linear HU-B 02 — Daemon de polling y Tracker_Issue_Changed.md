@@ -4,7 +4,7 @@ uuid: "dcc3f288-89d8-47a2-8add-85300ceb6cec"
 title: "[ARQUITECTURA] Linear HU-B 02 — Daemon de polling y Tracker_Issue_Changed"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,7 +15,7 @@ hu_order: 2
 hu_order_total: 6
 historia_ref: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
 historia_document_id: HU-LINEAR-SSOT-INVERSE
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 blocked_by: []
 unblocks:
   - PBI-LINEAR-B-03-WEBHOOK
