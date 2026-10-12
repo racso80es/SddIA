@@ -1,3 +1,17 @@
+---
+feature_name: merge-thermo-04-attestation
+created: "2026-10-03"
+process: feature
+items:
+  - qa_attestation.rs
+  - residual_runner.rs
+  - accept_pr.rs
+  - hook_common.sh
+  - pre_push_gate.sh
+  - post_merge_gate.sh
+  - test-merge-thermo-04-attestation.sh
+execution_id: "0d6b3391-7ae4-47bc-af51-b4c4f24c0295"
+---
 # Implementación
 
 | Componente | Cambio |

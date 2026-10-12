@@ -13,7 +13,8 @@ process: feature
 dispatch: true
 hu_order: 5
 hu_order_total: 6
-historia_ref: "docs/todos/historias/[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia.md"
+historia_ref: "docs/todos/done/historias/[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia.md"
+validation_global: APTO
 historia_document_id: HU-MERGE-THERMODYNAMICS
 cola_ejecucion: docs/todos/done/
 unblocks:

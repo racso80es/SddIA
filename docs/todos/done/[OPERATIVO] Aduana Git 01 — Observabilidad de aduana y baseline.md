@@ -3,9 +3,11 @@ document_id: PBI-MERGE-THERMO-01-OBSERVABILITY
 uuid: "8652b541-cf43-4d49-9cad-cb36b3089456"
 title: "[OPERATIVO] Aduana Git 01 — Observabilidad de aduana y baseline"
 format: markdown
-version: "1.0.0"
+version: "1.0.1"
 status: done
 persist_ref: docs/features/merge-thermo-01-observability
+validation_global: APTO
+f2_remediated: "2026-10-12"
 closed: "2026-10-03"
 created: "2026-10-03"
 author: tekton
@@ -15,9 +17,9 @@ process: feature
 dispatch: true
 hu_order: 1
 hu_order_total: 6
-historia_ref: "docs/todos/historias/[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia.md"
+historia_ref: "docs/todos/done/historias/[OPERATIVO] Optimización Termodinámica de Aduana Git: Merge de Alta Eficiencia.md"
 historia_document_id: HU-MERGE-THERMODYNAMICS
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 unblocks:
   - PBI-MERGE-THERMO-02-NET-PRUNE
   - PBI-MERGE-THERMO-06-E2E-MEASURE

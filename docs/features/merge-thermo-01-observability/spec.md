@@ -1,14 +1,4 @@
 ---
-
-
-
-
-
-
-
-
-
-
 feature_name: merge-thermo-01-observability
 created: "2026-10-03"
 process: feature
