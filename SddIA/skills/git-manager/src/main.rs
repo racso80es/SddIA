@@ -478,7 +478,8 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::git_add_rejected_as_ignored;
+    use super::{git_add_rejected_as_ignored, handle};
+    use serde_json::json;
 
     #[test]
     fn git_add_rejected_as_ignored_spanish_gitignore() {
@@ -495,6 +496,57 @@ mod tests {
     #[test]
     fn git_add_rejected_as_ignored_not_generic_fail() {
         assert!(!git_add_rejected_as_ignored("fatal: not a git repository"));
+    }
+
+    #[test]
+    fn checkout_create_if_not_exists_when_branch_exists_is_idempotent() {
+        use std::fs;
+        use std::process::Command;
+
+        let dir = std::env::temp_dir().join(format!(
+            "git-manager-checkout-exists-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("tmpdir");
+
+        let git = |args: &[&str]| {
+            let out = Command::new("git")
+                .args(args)
+                .current_dir(&dir)
+                .output()
+                .expect("git");
+            assert!(
+                out.status.success(),
+                "git {:?}: {}",
+                args,
+                String::from_utf8_lossy(&out.stderr)
+            );
+        };
+        git(&["init", "-b", "main"]);
+        fs::write(dir.join("f"), "x").unwrap();
+        git(&["add", "f"]);
+        git(&["commit", "-m", "init"]);
+        git(&["branch", "fix/dcc-snapshot-missing-branch"]);
+        git(&["checkout", "main"]);
+
+        let payload = json!({
+            "branch_name": "fix/dcc-snapshot-missing-branch",
+            "create_if_not_exists": true
+        });
+        let (data, code) = handle("checkout", &dir, &payload);
+        assert_eq!(code, 0, "checkout debe ser idempotente: {data:?}");
+        let stderr = data
+            .get("gitStderr")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let lower = stderr.to_lowercase();
+        assert!(
+            !lower.contains("ya existe") && !lower.contains("already exists"),
+            "stderr no debe ser fatal de -b: {stderr}"
+        );
+
+        let _ = fs::remove_dir_all(&dir);
     }
 }
 

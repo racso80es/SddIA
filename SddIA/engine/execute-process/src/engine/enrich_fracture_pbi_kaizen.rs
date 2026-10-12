@@ -526,6 +526,33 @@ mod tests {
     }
 
     #[test]
+    fn analyze_fracture_kaizen_snapshot_branch_exists_not_unclassified() {
+        let trace = "[SNAPSHOT_BRANCH_CHECKOUT] fatal: una rama llamada 'fix/dcc-snapshot-missing-branch' ya existe";
+        let (verdict, _, section, unclassified) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            trace,
+            "Snapshot final",
+            "execute-process",
+        );
+        assert_eq!(verdict, "process_fix");
+        assert!(!unclassified);
+        assert!(section.contains("F-DCC-SNAPSHOT-BRANCH-EXISTS"));
+        assert!(section.contains("show-ref") || section.contains("idempotente"));
+        assert!(!section.contains("requiere laudo humano"));
+    }
+
+    #[test]
+    fn analyze_fracture_kaizen_snapshot_missing_branch_sibling_not_branch_exists() {
+        let (_, _, section, _) = analyze_fracture_kaizen(
+            "delivery-close-cycle",
+            "fatal: argumento ambiguo 'feat/linear-hu-a-01-contract': revisión desconocida o ruta fuera del árbol de trabajo.",
+            "Snapshot final",
+            "execute-process",
+        );
+        assert!(!section.contains("F-DCC-SNAPSHOT-BRANCH-EXISTS"));
+    }
+
+    #[test]
     fn analyze_fracture_kaizen_shell_executor_wasm_fallback_not_head_sha() {
         let (verdict, _, section, _) = analyze_fracture_kaizen(
             "delivery-close-cycle",
@@ -850,6 +877,14 @@ mod tests {
                 "execute-process",
                 "cápsula skill 'git-manager' no encontrada bajo SddIA/target",
                 Some("F-DCC-LAB-BINARY-MISSING"),
+            ),
+            (
+                "187079f2d82d",
+                "delivery-close-cycle",
+                "Snapshot final",
+                "execute-process",
+                "[SNAPSHOT_BRANCH_CHECKOUT] fatal: una rama llamada 'fix/dcc-snapshot-missing-branch' ya existe",
+                Some("F-DCC-SNAPSHOT-BRANCH-EXISTS"),
             ),
         ];
         for (label, process, action, emitter, trace, expected_sig) in cases {
