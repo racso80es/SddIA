@@ -13,9 +13,9 @@ branch_worktree_observed: feat/linear-hu-b-02-watcher
 persist_ref: docs/features/linear-hu-b-02-watcher
 pbi_ref: docs/todos/pending/[ARQUITECTURA] Linear HU-B 02 — Daemon de polling y Tracker_Issue_Changed.md
 document_id: PBI-LINEAR-B-02-WATCHER
-correlation_id: "78c7d85a-f274-4c4c-8b49-ccc4a6532678"
-audit_event_reference: "78c7d85a-f274-4c4c-8b49-ccc4a6532678"
-execution_id: "6a962013-1872-4bee-a385-74565569c0e1"
+correlation_id: "c644d064-5159-47e0-a800-a1f051413041"
+audit_event_reference: "c644d064-5159-47e0-a800-a1f051413041"
+execution_id: "52aedf00-d315-4b3a-b0ad-23c1b660a761"
 global: NO_APTO
 pbi_archived: false
 approval_status: rechazado
@@ -24,27 +24,18 @@ delivery_state: failed
 resolution: FAIL_F4_RBAC
 accept_pr_handoff: false
 accept_pr_handoff_status: blocked
-accept_pr_block_reason: "FAIL_F4_RBAC — pull-request-review ∈ .SddIA/cerbero/revoked_entities.json (abrupt_success_rate_drop since 2026-10-02T18:42:59Z); Handoff accept-pr prohibido"
-authorization_status:
-  exitCode: 1
-  emitter_agent: argos
-  note: "FAIL_F4_RBAC · F2 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL) · F4 NO_APTO PPR∈revoked · Cerbero fase ausente este CID · accept-pr∉revoked pero handoff blocked por F4 · Shell git-manager Rejected — sin stdout inventado"
+accept_pr_block_reason: "FAIL_F4_RBAC — pull-request-review ∈ revoked_entities since 2026-10-02T18:42:59Z (abrupt_success_rate_drop); Veredicto y bloqueo aborta delivery"
 git_manager_invoked: false
 git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
 handoff_machine_file: present
 evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine+session) source=native_state; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; notes idempotent-hit; sin gitStdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 78c7d85a… · exec 6a962013…"
-revoked_entity_alert: "pull-request-review ∈ revoked since 2026-10-02T18:42:59Z (abrupt_success_rate_drop) — BLOQUEANTE F4; laterales L-LATERAL: delivery-close-cycle / feature / bug-fix / entity-manager / event-creator / refactorization ∈ revoked; accept-pr ∉ revoked"
-scope: "PPR Veredicto y bloqueo — rama inject feat/linear-hu-b-02-watcher (CID 78c7d85a… · exec 6a962013…)"
+shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID c644d064… · exec 52aedf00…"
+revoked_entity_alert: "pull-request-review (revoked, abrupt_success_rate_drop, since 2026-10-02T18:42:59Z) — F4 bloqueante; delivery-close-cycle (revoked since 2026-10-03T14:43:29Z) L-LATERAL; feature/bug-fix/entity-manager/event-creator/refactorization ∈ revoked L-LATERAL; Argos 0 writes KM"
+scope: "PPR Veredicto y bloqueo — rama inject feat/linear-hu-b-02-watcher (CID c644d064… · exec 52aedf00…)"
 checks:
   F2_DOC_GATE: APTO
-  F3_TECH_GATE: NO_APTO
-  F4_RBAC_CERBERO: NO_APTO
-  F4_RBAC_GATE: NO_APTO
-  F5_VERDICT_GATE: NO_APTO
-  PPR_VERDICT_ARGOS: NO_APTO
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: NO_APTO
   DOC_SPEC: APTO
@@ -63,7 +54,10 @@ checks:
   GIT_EVIDENCE_SESSION_SHELL: NO_APTO
   RBAC_AUTHORING_KM_POLICY: APTO
   RBAC_PROCESS_REGISTRY: NO_APTO
-  RBAC_CERBERO_CERT: NO_APTO
+  F3_TECH_GATE: NO_APTO
+  F4_RBAC_CERBERO: NO_APTO
+  F4_RBAC_GATE: NO_APTO
+  F5_VERDICT_GATE: NO_APTO
   PBI_DONE_PRESENT: NO_APTO
   PBI_PENDING_ABSENT: NO_APTO
   AC_DONE_PATH: NO_APTO
@@ -81,9 +75,11 @@ git_changes:
   - SddIA/sddia-daemon-runtime/src/linear_bridge.rs
   - SddIA/sddia-daemon-runtime/src/lib.rs
   - SddIA/daemons/index.md
+  - SddIA/events/domain/index.md
   - SddIA/evolution/a8f3c1d2-4e5b-4a6c-9d0e-1f2b3c4d5e6f.md
   - SddIA/evolution/Evolution_log.md
 blocking_findings:
+  - F4_RBAC_CERBERO
   - F4_RBAC_GATE
   - RBAC_PROCESS_REGISTRY
   - F5_VERDICT_GATE
@@ -92,37 +88,40 @@ non_blocking_findings:
   - DOC_CLARIFY
   - DOC_EXECUTION
   - F3_TECH_GATE
-  - RBAC_CERBERO_CERT
   - PBI_DONE_PRESENT
   - PBI_PENDING_ABSENT
   - AC_DONE_PATH
+  - REVOKED_ENTITY_ALERT_DCC
+  - REVOKED_ENTITY_ALERT_FEATURE
 situational_notes:
-  - "Fase Veredicto y bloqueo · CID 78c7d85a-f274-4c4c-8b49-ccc4a6532678 · exec 6a962013-1872-4bee-a385-74565569c0e1"
+  - "Fase Veredicto y bloqueo · CID c644d064-5159-47e0-a800-a1f051413041 · exec 52aedf00-d315-4b3a-b0ad-23c1b660a761"
   - "Evidence Bridge machine/session: source=native_state · TECH/GIT APTO (copia; sin stdout inventado) · notes idempotent-hit"
   - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (Glob/Read)"
+  - "F2 heredado/reconfirmado PASS_F2_DOC — objectives/spec/plan/implementation + YAML + evolution a8f3c1d2…"
+  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO)"
+  - "F4 bloqueante: .SddIA/cerbero/revoked_entities.json → pull-request-review ∈ revoked since 2026-10-02T18:42:59Z"
   - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
-  - "F2 heredado/reconfirmado: objectives/spec/plan/implementation + YAML; clarify/execution ausentes (no bloquean)"
-  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea solo (proxy TECH_FORMAL APTO)"
-  - "F4 bloqueante: pull-request-review ∈ revoked since 2026-10-02T18:42:59Z; Cerbero fase Certificación RBAC ausente este CID"
-  - "PBI-LINEAR-B-02-WATCHER aún en pending/ · pbi_archived: false — no absuelve F4"
-  - "CODE_TOUCHPOINT: daemon + evento + linear_bridge.rs (ac11_*/ac12_*) + evolution a8f3c1d2…"
-  - "accept_pr_handoff false/blocked — L-HANDOFF-F5 no aplica con F4 fallido"
+  - "PBI-LINEAR-B-02-WATCHER aún en pending/; pbi_archived false — no absuelve F4"
+  - "CODE_TOUCHPOINT: daemon + tracker-issue-changed + linear_bridge.rs (ac11_*/ac12_*) — no absuelve F4"
+  - "accept_pr_handoff blocked; Cosecha Cumulo downstream (rehab registro); Argos no siembra KM"
+authorization_status:
+  exitCode: 1
+  emitter_agent: argos
+  note: "FAIL_F4_RBAC · Veredicto y bloqueo · PPR∈revoked · R1/R2 copia Evidence Bridge · sin stdout inventado · Shell git-manager Rejected · worktree = inject"
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
 
-**NO_APTO** — `resolution: FAIL_F4_RBAC` · `verdict: rechazado` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked` · `F5_VERDICT_GATE: NO_APTO`.
-
-Violación bloqueante **F4**: `pull-request-review` ∈ `.SddIA/cerbero/revoked_entities.json` (`abrupt_success_rate_drop` since `2026-10-02T18:42:59Z`). F2 reconfirmado APTO; F3 proxy no bloqueante. Handoff `accept-pr` prohibido.
+**NO_APTO** — `resolution: FAIL_F4_RBAC` · `verdict: rechazado` · `delivery_state: failed` · `accept_pr_handoff: blocked`.
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
-| F2 | Argos (doc) | **APTO** | frontmatter YAML + `objectives`/`spec`/`plan`/`implementation` |
-| F3 | execute-process | **NO_APTO** | no bloqueante · proxy `TECH_FORMAL` (Evidence Bridge) |
-| F4 | Cerbero / registro | **NO_APTO** | `RBAC_PROCESS_REGISTRY` — PPR∈revoked |
-| F5 | Argos | **NO_APTO** | síntesis abortada por F4 |
+| F2 | Argos (doc) | **APTO** | heredado/reconfirmado · `PASS_F2_DOC` |
+| F3 | execute-process | **NO_APTO** | no bloqueante · proxy `TECH_FORMAL` |
+| F4 | Cerbero (FS) | **NO_APTO** | `pull-request-review` ∈ revoked |
+| F5 | Argos | **NO_APTO** | violación F4 → aborto delivery |
 
 ## Evidence Bridge (R1 / R2 / R3)
 
@@ -130,7 +129,7 @@ Copia literal machine/session — **no** stdout Shell inventado:
 
 | Campo | Valor |
 |-------|-------|
-| `source` | `native_state` (machine @ 2026-10-12T04:53:00Z + session inject) |
+| `source` | `native_state` (machine @ 2026-10-12T04:53:16Z + session inject) |
 | `git_manager_invoked` | `true` (bridge) · `false` (sesión Argos Shell) |
 | `formal_execute_process` | `true` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
@@ -139,7 +138,7 @@ Copia literal machine/session — **no** stdout Shell inventado:
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` |
 
-Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T04:53:00Z` + session inject (CID 78c7d85a… · exec 6a962013…).
+Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ 2026-10-12T04:53:16Z + session inject (CID c644d064… · exec 52aedf00…).
 
 ## Ingesta
 
@@ -147,12 +146,12 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T
 |-------|------------|
 | `persist_ref` | `docs/features/linear-hu-b-02-watcher` |
 | `pbi_ref` | `docs/todos/pending/[ARQUITECTURA] Linear HU-B 02 — Daemon de polling y Tracker_Issue_Changed.md` |
-| `correlation_id` | `78c7d85a-f274-4c4c-8b49-ccc4a6532678` |
+| `correlation_id` | `c644d064-5159-47e0-a800-a1f051413041` |
 | `branch` / `branch_name` | `feat/linear-hu-b-02-watcher` |
-| `execution_id` | `6a962013-1872-4bee-a385-74565569c0e1` |
+| `execution_id` | `52aedf00-d315-4b3a-b0ad-23c1b660a761` |
 | `document_id` | `PBI-LINEAR-B-02-WATCHER` |
 
-## F2 — Reconfirmado
+## F2 — reconfirmado
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
@@ -160,25 +159,22 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T
 | `DOC_SPEC` | **APTO** | `spec.md` + YAML |
 | `DOC_PLAN` | **APTO** | `plan.md` + YAML |
 | `DOC_IMPLEMENTATION` | **APTO** | `implementation.md` + YAML |
-| `DOC_CLARIFY` | **NO_APTO** | ausente (no bloquea) |
-| `DOC_EXECUTION` | **NO_APTO** | ausente (no bloquea F5; F3 proxy vía TECH_FORMAL) |
+| `DOC_CLARIFY` / `DOC_EXECUTION` | **NO_APTO** | ausentes (no bloquean F5 si F2 base OK) |
 | `DOC_FRONTMATTER_YAML` | **APTO** | artefactos base con `---` YAML |
-| `DOC_EVOLUTION` | **APTO** | `a8f3c1d2-4e5b-4a6c-9d0e-1f2b3c4d5e6f.md` + fila Evolution_log |
-| `F2_DOC_GATE` | **APTO** | criterios § Triaje documental cumplidos |
-| `CODE_TOUCHPOINT_PRESENT` | **APTO** | daemon + `tracker-issue-changed` + `linear_bridge.rs` (`ac11_*`/`ac12_*`) |
+| `DOC_EVOLUTION` | **APTO** | `a8f3c1d2-4e5b-4a6c-9d0e-1f2b3c4d5e6f.md` + fila `Evolution_log` |
+| `F2_DOC_GATE` | **APTO** | peaje documental cumplido |
+| `CODE_TOUCHPOINT_PRESENT` | **APTO** | daemon + evento + `linear_bridge.rs` (`ac11_*`/`ac12_*`) |
 
 ## F3 / F4 / F5
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
-| `F3_TECH_GATE` | **NO_APTO** | Triaje técnico no materializado este CID; **no bloquea** (R1 TECH_FORMAL APTO) |
-| `F4_RBAC_GATE` | **NO_APTO** | `pull-request-review` ∈ revoked since `2026-10-02T18:42:59Z` |
-| `RBAC_PROCESS_REGISTRY` | **NO_APTO** | FS `.SddIA/cerbero/revoked_entities.json` |
-| `RBAC_CERBERO_CERT` | **NO_APTO** | fase Certificación RBAC ausente este CID (refuerzo) |
-| `F5_VERDICT_GATE` | **NO_APTO** | aborta por violación F4 |
-| `RBAC_AUTHORING_KM_POLICY` | **APTO** | 0 writes Argos en `docs/todos/**` |
+| `F3_TECH_GATE` | **NO_APTO** | Triaje técnico no materializado este CID; proxy `TECH_FORMAL` APTO — no bloqueante |
+| `RBAC_PROCESS_REGISTRY` | **NO_APTO** | `.SddIA/cerbero/revoked_entities.json` → `pull-request-review` ∈ revoked since `2026-10-02T18:42:59Z` |
+| `F4_RBAC_CERBERO` / `F4_RBAC_GATE` | **NO_APTO** | peaje Cerbero fallido (proceso aduana revocado) |
+| `F5_VERDICT_GATE` | **NO_APTO** | cascada F4 → `delivery_state: failed` |
 
-## branch / git_changes / PBI
+## branch / git_changes / KM / PBI
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
@@ -186,16 +182,25 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T
 | `BRANCH_WORKTREE_SYNC` | **APTO** | `.git/HEAD` → `refs/heads/feat/linear-hu-b-02-watcher` (FS Read) |
 | `branch` | **APTO** | worktree = inject |
 | `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula) |
-| `PBI_DONE_PRESENT` | **NO_APTO** | PBI solo en `pending/` |
+| `RBAC_AUTHORING_KM_POLICY` | **APTO** | 0 writes Argos en `docs/todos/**` |
+| `PBI_DONE_PRESENT` | **NO_APTO** | PBI aún en `pending/` |
 | `PBI_PENDING_ABSENT` | **NO_APTO** | réplica pending presente |
 | `AC_DONE_PATH` | **NO_APTO** | `pbi_archived: false` |
 | `ACCEPT_PR_HANDOFF` | **NO_APTO** | blocked por F4 |
 
-`git_changes` por inventario path-assert FS. **No** es `gitStdout` de esta sesión.
-
 ## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
 
-**APTO** — 0 writes Argos bajo `docs/todos/**` esta fase. Sighting FS: PBI B-02 en `pending/` (autoría previa; no semilla nueva Argos). Forja Core ≠ este check.
+**APTO** — 0 writes Argos bajo `docs/todos/**` esta fase. Forja Core ≠ este check. Semilla rehab registro → Cosecha Cumulo / `Kaizen_Alert_Required` (no Argos).
+
+## Correction blueprint
+
+```yaml
+name: rehabilitar-pull-request-review-revoked-entities
+intent: Rehabilitar pull-request-review en revoked_entities (laudo/rehab) antes de re-disparar PPR; archivar PBI-LINEAR-B-02-WATCHER a done/ en el mismo PR.
+delegates_to:
+  - agent:cumulo
+  - action:execute-process
+```
 
 ## Dictamen
 
@@ -212,15 +217,11 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T
   "branch": "feat/linear-hu-b-02-watcher",
   "branch_worktree_observed": "feat/linear-hu-b-02-watcher",
   "document_id": "PBI-LINEAR-B-02-WATCHER",
-  "correlation_id": "78c7d85a-f274-4c4c-8b49-ccc4a6532678",
-  "execution_id": "6a962013-1872-4bee-a385-74565569c0e1",
+  "correlation_id": "c644d064-5159-47e0-a800-a1f051413041",
+  "execution_id": "52aedf00-d315-4b3a-b0ad-23c1b660a761",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
-  "blocking": ["F4_RBAC_GATE", "RBAC_PROCESS_REGISTRY", "F5_VERDICT_GATE"]
+  "blocking": ["F4_RBAC_CERBERO", "F4_RBAC_GATE", "RBAC_PROCESS_REGISTRY", "F5_VERDICT_GATE"]
 }
 ```
-
-## Remedio
-
-Rehabilitar `pull-request-review` en Cerbero/Radamanto (salida de `revoked_entities.json`) antes de re-peaje. Argos **no** escribe bajo `docs/todos/`. Handoff `accept-pr` **prohibido** este CID. Downstream Cosecha Kaizen puede materializar deuda de registro; no eleva `delivery_state`.
