@@ -28,3 +28,4 @@ libc = "0.2"
 
 [dev-dependencies]
 tempfile = "3.10"
+sddia-daemon-runtime = { path = "../../sddia-daemon-runtime" }
