@@ -3759,6 +3759,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "linear-bridge-watcher"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "sddia-daemon-runtime",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "linear-tracker-adapter"
 version = "0.1.0"
 dependencies = [

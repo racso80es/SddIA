@@ -16,8 +16,7 @@ hu_order_total: 6
 historia_ref: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
 historia_document_id: HU-LINEAR-SSOT-INVERSE
 cola_ejecucion: docs/todos/pending/
-blocked_by:
-  - PBI-LINEAR-B-01-OUTBOUND
+blocked_by: []
 unblocks:
   - PBI-LINEAR-B-03-WEBHOOK
   - PBI-LINEAR-B-04-MARKDOWN-APPLY

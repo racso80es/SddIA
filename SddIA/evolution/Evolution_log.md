@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 117
+universe_total: 118
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a8f3c1d2-4e5b-4a6c-9d0e-1f2b3c4d5e6f` | 2026-10-12 | HU-B 02: linear-bridge-watcher y Tracker_Issue_Changed (AC-11/12) | CANONICO | `SddIA/evolution/a8f3c1d2-4e5b-4a6c-9d0e-1f2b3c4d5e6f.md` |
 | `3e5856b4-fafe-47b7-bf66-798196f6cd05` | 2026-10-04 | Fix lab store WASI para E2E linear (eda-bus-e2e-smoke) | CANONICO | `SddIA/evolution/3e5856b4-fafe-47b7-bf66-798196f6cd05.md` |
 | `184ec025-a716-4436-a500-b239ba8be921` | 2026-10-04 | HU-B 01: registro saliente tracker-outbound JSONL anti-eco | CANONICO | `SddIA/evolution/184ec025-a716-4436-a500-b239ba8be921.md` |
 | `68e6ea3a-05c9-4236-85ad-66d452c19a93` | 2026-10-04 | HU-A 09: E2E lab ciclo directo Linear AC-7..10 y store mock en disco | CANONICO | `SddIA/evolution/68e6ea3a-05c9-4236-85ad-66d452c19a93.md` |
