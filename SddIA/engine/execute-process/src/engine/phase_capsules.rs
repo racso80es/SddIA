@@ -1247,6 +1247,35 @@ pub fn capsule_feature_pbi_archive(
             "reason": format!("global={g}"),
         }));
     }
+
+    let gate = super::done_gate::resolve_done_gate(repo, &persist_ref).unwrap_or(
+        super::project_binding::DoneGate::Git,
+    );
+    if gate != super::project_binding::DoneGate::Git {
+        match super::done_gate::check_linear_closure(repo, &persist_ref, gate) {
+            Ok(super::done_gate::LinearClosure::Satisfied) => {
+                return Ok(json!({
+                    "status": "executed",
+                    "handler": "feature-pbi-archive",
+                    "done_gate": gate.as_str(),
+                    "archive_deferred": true,
+                    "reason": "linear done_gate: archivado vía tracker-markdown-apply",
+                }));
+            }
+            Ok(super::done_gate::LinearClosure::Rejected { tracker_ref, state }) => {
+                return Err(format!(
+                    "DONE_GATE_LINEAR: tracker_ref {tracker_ref} en estado {state}; se exige done en Linear"
+                ));
+            }
+            Ok(super::done_gate::LinearClosure::FallbackGit { warn }) => {
+                if let Some(obj) = state.as_object_mut() {
+                    obj.insert("done_gate_warn".into(), json!(warn));
+                }
+            }
+            Err(e) => return Err(e),
+        }
+    }
+
     let archived = fm.get("pbi_archived");
     let ok_archived = matches!(archived, Some(v) if v.as_bool() == Some(true))
         || archived

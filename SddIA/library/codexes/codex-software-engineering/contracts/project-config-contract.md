@@ -46,7 +46,7 @@ Objeto `tracker` opcional. Ausente = proyecto sin tracker (Kalma2 responde `trac
 | `tracker.labels.deuda` | string | Default lógico `deuda`. |
 | `tracker.labels.spike` | string | Default lógico `spike`. |
 | `tracker.labels.editable` | string | Default lógico `sddia-editable`; opt-in edición de cuerpo desde Linear (HU-B). |
-| `tracker.done_gate` | string | `git` \| `linear` \| `both`; default `git`. En entregas HU-A el validador solo acepta `git` hasta laudo HU-B. |
+| `tracker.done_gate` | string | `git` \| `linear` \| `both`; default `git`. Validador HU-B 05+ acepta los tres; sin `tracker` → `git` forzado. |
 
 Prohibido incluir secretos (`LINEAR_*`) en el manifiesto.
 

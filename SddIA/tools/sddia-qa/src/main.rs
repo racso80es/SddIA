@@ -15,6 +15,7 @@ mod merge_thermo_timings;
 mod linear_direct_cycle_e2e_lab;
 
 use execute_process::core::repo::find_repo_root;
+use execute_process::engine::done_gate;
 use execute_process::engine::eda_coverage;
 use execute_process::engine::verify_process_integrity;
 use std::env;
@@ -42,7 +43,8 @@ Comandos:\n\
   evolution-rehash --id <uuid> [--json] [--dry-run]\n\
   evolution-register [--json] [--dry-run]\n\
   verify-domain-subscription-parity [--json]\n\
-  merge-thermo-timings-report [--json]\n"
+  merge-thermo-timings-report [--json]\n\
+  verify-tracker-done-pre-push --persist-ref PATH\n"
 }
 
 fn has_flag(args: &[String], flag: &str) -> bool {
@@ -210,6 +212,22 @@ fn main() {
         }
         "merge-thermo-timings-report" => {
             merge_thermo_timings::run(&repo, has_flag(rest, "--json"))
+        }
+        "verify-tracker-done-pre-push" => {
+            let pref = flag_value(rest, "--persist-ref");
+            match pref {
+                Some(p) => match done_gate::pre_push_check(&repo, Some(p)) {
+                    Ok(()) => 0,
+                    Err(e) => {
+                        eprintln!("{e}");
+                        2
+                    }
+                },
+                None => {
+                    eprintln!("verify-tracker-done-pre-push requiere --persist-ref");
+                    1
+                }
+            }
         }
         other => {
             eprintln!("comando desconocido: {other}\n{}", usage());

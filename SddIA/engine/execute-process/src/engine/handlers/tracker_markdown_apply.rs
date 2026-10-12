@@ -2,7 +2,7 @@
 
 use super::super::actions::try_run_native;
 use super::super::capsules::{invoke_git_manager_for, invoke_tool_for_process};
-use super::super::project_binding::{self, TrackerConfig};
+use super::super::project_binding::{self, DoneGate, TrackerConfig};
 use super::super::route_domain_core::materialize_pending_domain_event;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::{DateTime, Utc};
@@ -214,6 +214,7 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
         state_map,
         label_hu: "hu".into(),
         label_pbi: "pbi".into(),
+        done_gate: DoneGate::Git,
     }
 }
 
@@ -514,6 +515,14 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
                 YamlValue::String("tracker_state".into()),
                 YamlValue::String("done".into()),
             );
+            let dg = tc.done_gate;
+            if dg == DoneGate::Linear || dg == DoneGate::Both {
+                patch_map.insert(
+                    YamlValue::String("status".into()),
+                    YamlValue::String("done".into()),
+                );
+                moved_to_done = true;
+            }
         }
         other => {
             patch_map.insert(

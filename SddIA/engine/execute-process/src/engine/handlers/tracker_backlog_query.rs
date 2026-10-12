@@ -172,6 +172,7 @@ mod tests {
             state_map: Default::default(),
             label_hu: "hu".into(),
             label_pbi: "pbi".into(),
+            done_gate: project_binding::DoneGate::Git,
         };
         assert_eq!(
             issue_kind(&[json!("hu")], &tc),

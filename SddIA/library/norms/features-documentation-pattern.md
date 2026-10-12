@@ -1,7 +1,7 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.2.1"
+version: "1.3.0"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
@@ -38,7 +38,7 @@ La validación opcional `sddia_frontmatter_valid` aplica a los `.md` de tarea cu
 | `branch` | Sí | Rama de trabajo (`fix/*`, `feat/*`, `docs/*`) |
 | `checks` | Sí | Mapa de criterios de aceptación |
 | `git_changes` | Sí | Lista de paths tocados |
-| `pbi_archived` | Sí | `true` — PBI ya en `docs/todos/done/` **en esta rama** |
+| `pbi_archived` | Sí* | `true` — PBI en `docs/todos/done/` **en esta rama** (*obligatorio solo si `tracker.done_gate` es `git` o `both`; con `linear` el archivado puede llegar vía `tracker-markdown-apply`) |
 | `pr_url` | Recomendado | URL tras `delivery-close-cycle` (puede añadirse en el mismo PR antes del merge) |
 | `merged_pr` | No | Opcional auditoría; **no** gate de Done |
 | `merge_commit` | No | Inferible vía GitHub / `git log` |
@@ -48,8 +48,11 @@ La validación opcional `sddia_frontmatter_valid` aplica a los `.md` de tarea cu
 
 ```text
 Done = un único PR mergeado en main
-     + validacion.md APTO en el diff de ese PR (pbi_archived: true)
-     + PBI en docs/todos/done/ en esa misma rama
+     + validacion.md APTO en el diff de ese PR
+     + cierre documental según tracker.done_gate del manifiesto:
+       · git (default): pbi_archived: true + PBI en docs/todos/done/ en la rama del PR
+       · linear: issue en done en Linear + validacion APTO (PBI en done/ vía tracker-markdown-apply)
+       · both: git o linear según evidencia local / Linear (ver HU-B 05)
 ```
 
 ### CA de CI (GitHub Actions)

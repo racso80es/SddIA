@@ -1,7 +1,7 @@
 //! Handler `tracker-sync-replay` — reintento fail-soft de `Tracker_Sync_Failed`.
 
 use super::super::capsules::invoke_tool_for_process;
-use super::super::project_binding::{self, TrackerConfig};
+use super::super::project_binding::{self, DoneGate, TrackerConfig};
 use crate::envelope::OrchestratorEnvelope;
 use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
@@ -81,6 +81,7 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
         state_map,
         label_hu: "hu".into(),
         label_pbi: "pbi".into(),
+        done_gate: DoneGate::Git,
     }
 }
 

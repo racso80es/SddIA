@@ -228,6 +228,8 @@ fn lab_fetch_issue_fixture(issue_ref: &str) -> Value {
             base("Done", &["pbi"], Some("LAB-HU-AC9-READY"), vec![])
         }
         "LAB-PBI-MERGE-LAST" => base("In Review", &["pbi"], Some("LAB-HU-AC9-READY"), vec![]),
+        "LAB-DONE-GATE-DONE" => base("Done", &["pbi"], Some("LAB-HU-1"), vec![]),
+        "LAB-DONE-GATE-REVIEW" => base("In Review", &["pbi"], Some("LAB-HU-1"), vec![]),
         "LAB-PBI-FIXONLY" => base("Backlog", &["fix"], Some("LAB-HU-1"), vec![]),
         "LAB-PBI-TODO" => base("Backlog", &["pbi"], Some("LAB-HU-TODO"), vec![]),
         "LAB-HU-TODO" => base("Todo", &["hu"], None, vec!["LAB-PBI-TODO"]),
