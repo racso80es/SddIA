@@ -69,6 +69,23 @@
       }
     },
     {
+      "id": "F-DCC-SNAPSHOT-BRANCH-EXISTS",
+      "consumers": ["mayeuta"],
+      "match": {
+        "any_groups": [
+          {
+            "all": ["snapshot_branch_checkout"],
+            "any": ["ya existe", "already exists"]
+          }
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "Snapshot final llamó `git-manager checkout` con `create_if_not_exists: true` mientras `refs/heads/{branch}` ya existía; la cápsula hacía `checkout -b` sin `show-ref`. No es `rev-parse` ambiguo por rama ausente (`969f05933a46`).",
+        "verdict": "process_fix",
+        "proposal": "Checkout idempotente: verificar `refs/heads/` y usar `checkout` sin `-b` si el ref existe (`ad968d80`). Candado en tests y corpus `187079f2d82d`."
+      }
+    },
+    {
       "id": "F-DCC-SYMBOLIC-HEAD-BRANCH",
       "consumers": ["mayeuta"],
       "match": {
@@ -251,6 +268,7 @@
         "F-DCC-REMOTE-BRANCH-ABSENT",
         "F-DCC-LAB-BINARY-MISSING",
         "F-DCC-SNAPSHOT-GITIGNORE",
+        "F-DCC-SNAPSHOT-BRANCH-EXISTS",
         "F-DCC-SYMBOLIC-HEAD-BRANCH",
         "F-DLT-PUBLISH-ERROR"
       ],
