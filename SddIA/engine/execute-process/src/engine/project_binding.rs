@@ -38,6 +38,34 @@ pub struct DocsLayout {
     pub todos_done: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DoneGate {
+    Git,
+    Linear,
+    Both,
+}
+
+impl DoneGate {
+    pub fn parse(raw: &str) -> Result<Self, String> {
+        match raw.trim() {
+            "git" => Ok(Self::Git),
+            "linear" => Ok(Self::Linear),
+            "both" => Ok(Self::Both),
+            other => Err(format!(
+                "PROJECT_CONFIG_INVALID: tracker.done_gate '{other}' (git | linear | both)"
+            )),
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Git => "git",
+            Self::Linear => "linear",
+            Self::Both => "both",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TrackerConfig {
     pub team_key: String,
@@ -45,6 +73,7 @@ pub struct TrackerConfig {
     pub state_map: std::collections::BTreeMap<String, String>,
     pub label_hu: String,
     pub label_pbi: String,
+    pub done_gate: DoneGate,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -187,8 +216,8 @@ const TRACKER_LABEL_OPTIONAL_KEYS: &[&str] = &["fix", "kaizen", "deuda", "spike"
 
 const DONE_GATE_VALUES: &[&str] = &["git", "linear", "both"];
 
-/// HU-A: `linear`/`both` declarados en contrato 1.3.0; validación activa en HU-B.
-const DONE_GATE_HU_A_ONLY_GIT: bool = true;
+/// HU-B 05: validador acepta `linear` y `both`.
+const DONE_GATE_HU_A_ONLY_GIT: bool = false;
 
 fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
     let Some(tracker) = fm.get("tracker") else {
@@ -396,13 +425,49 @@ pub fn tracker_config_from_manifest(fm: &YamlValue) -> Option<TrackerConfig> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string);
+    let done_gate = tracker
+        .get("done_gate")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .and_then(|s| DoneGate::parse(s).ok())
+        .unwrap_or(DoneGate::Git);
     Some(TrackerConfig {
         team_key,
         project_id,
         state_map,
         label_hu,
         label_pbi,
+        done_gate,
     })
+}
+
+pub fn done_gate_from_manifest(fm: &YamlValue) -> Result<DoneGate, String> {
+    let tracker = fm.get("tracker");
+    if tracker.is_none() || !tracker.map(|t| t.is_mapping()).unwrap_or(false) {
+        return Ok(DoneGate::Git);
+    }
+    validate_tracker_config(fm)?;
+    Ok(tracker_config_from_manifest(fm)
+        .map(|t| t.done_gate)
+        .unwrap_or(DoneGate::Git))
+}
+
+/// `done_gate` del manifiesto; sin tracker → `git` forzado.
+pub fn done_gate_for_inputs(repo: &Path, inputs: &Value) -> Result<DoneGate, String> {
+    let Some(slug) = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return Ok(DoneGate::Git);
+    };
+    if slug.contains('/') || slug.contains("..") {
+        return Err(format!("PROJECT_CONFIG_INVALID: project_slug '{slug}'"));
+    }
+    let fm = manifest_frontmatter_for_slug(repo, slug)?;
+    done_gate_from_manifest(&fm)
 }
 
 fn manifest_frontmatter_for_slug(repo: &Path, slug: &str) -> Result<YamlValue, String> {
@@ -411,7 +476,12 @@ fn manifest_frontmatter_for_slug(repo: &Path, slug: &str) -> Result<YamlValue, S
         return Err(format!("PROJECT_NOT_REGISTERED: {slug}"));
     }
     let index_fm = parse_yaml_fm(&fs::read_to_string(&index_path).map_err(|e| e.to_string())?)?;
-    let project_root = PathBuf::from(yaml_str(&index_fm, "project_root")?);
+    let project_root_raw = PathBuf::from(yaml_str(&index_fm, "project_root")?);
+    let project_root = if project_root_raw.is_absolute() {
+        project_root_raw
+    } else {
+        repo.join(project_root_raw)
+    };
     let manifest_ref = yaml_str(&index_fm, "manifest_ref")?;
     let manifest_path = if Path::new(&manifest_ref).is_absolute() {
         PathBuf::from(manifest_ref)
@@ -772,7 +842,7 @@ mod tests {
     }
 
     #[test]
-    fn contract_1_3_0_rejects_done_gate_linear_until_hu_b() {
+    fn contract_1_3_0_accepts_done_gate_linear_after_hu_b() {
         let repo = tempfile::tempdir().unwrap();
         let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
         let client = layout(repo.path(), uuid, "branch_pr");
@@ -782,8 +852,9 @@ mod tests {
             "tracker:\n  provider: linear\n  team_key: OSC\n  done_gate: linear\n  state_map:\n    backlog: Backlog\ndocs_layout:",
         );
         fs::write(client.join(".SddIA/project.md"), &body).unwrap();
-        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
-        assert!(err.contains("done_gate"), "{err}");
+        assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
+        let dg = done_gate_for_inputs(repo.path(), &json!({"project_slug": "demo"})).unwrap();
+        assert_eq!(dg, DoneGate::Linear);
     }
 
     #[test]

@@ -2,7 +2,8 @@
 
 use super::super::actions::try_run_native;
 use super::super::capsules::invoke_tool_for_process;
-use super::super::project_binding::{self, TrackerConfig};
+use super::super::done_gate;
+use super::super::project_binding::{self, DoneGate, TrackerConfig};
 use super::super::tracker_pbi_meta;
 use super::tracker_sync_replay::should_discard_transition;
 use crate::envelope::OrchestratorEnvelope;
@@ -46,6 +47,7 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
         state_map,
         label_hu: "hu".into(),
         label_pbi: "pbi".into(),
+        done_gate: DoneGate::Git,
     }
 }
 
@@ -356,6 +358,7 @@ fn stamp_done_with_hu_roll_up(
     payload: &Value,
     comment: &str,
     source: &str,
+    commit_sha: &str,
 ) -> Result<bool, String> {
     let run = |f: &dyn Fn() -> Result<(), String>| -> Result<(), String> {
         if let Err(e) = f() {
@@ -390,6 +393,7 @@ fn stamp_done_with_hu_roll_up(
         }
     }
     run(&|| tool_comment(repo, issue_ref, comment))?;
+    let _ = done_gate::write_tracker_done_proof(repo, issue_ref, commit_sha, pbi_fetch);
     Ok(true)
 }
 
@@ -658,6 +662,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 &payload_val,
                 &format!("Merge: `{merge}`"),
                 source,
+                &merge,
             )?;
         }
         "Delivery_Committed" => {
@@ -670,6 +675,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 &payload_val,
                 &format!("Delivery commit: `{sha}`"),
                 source,
+                &sha,
             )?;
         }
         other => return Ok((false, Some(format!("no-op: event_type {other}")))),

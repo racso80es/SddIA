@@ -13,6 +13,7 @@ pub mod qa_profile;
 pub mod qa_attestation;
 pub mod entity_manager;
 pub mod delivery_close;
+pub mod done_gate;
 pub mod cerbero_governance_react_core;
 pub mod fix_tool_process_core;
 pub mod fractal_bus;

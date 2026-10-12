@@ -102,6 +102,17 @@ main() {
     fi
 
     persist_ref=$(resolve_persist_ref "$branch" || true)
+    if [[ -n "${persist_ref:-}" ]]; then
+      resolve_sddia_qa || {
+        exit_code=1
+        continue
+      }
+      if ! "$SDDIA_QA_BIN" verify-tracker-done-pre-push --persist-ref "$persist_ref"; then
+        echo "SddIA pre-push: BLOCKED — tracker done_gate (evidencia local)" >&2
+        exit_code=1
+        continue
+      fi
+    fi
     slug=$(branch_slug "$branch")
     payload=$(
       python3 -c 'import json,sys; b,s,pref,q=sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4]; d={"source_process":"git-hook-pre-push","branch_name":b,"pr_title":f"feat: {s or b}","pr_body":"Presentación automática vía hook pre-push (PBI-005 Ola B).","target_branch":"main","qa_profile":q}; d["persist_ref"]=pref if pref else None; print(json.dumps(d))' \
