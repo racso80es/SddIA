@@ -33,6 +33,7 @@ Cancelación de PBI; requiere reason y al menos tracker_ref o pbi_ref en emisió
 
 - `task-queue-manager`
 - `kalma2-interact`
+- `tracker-markdown-apply`
 
 ## Suscripciones
 

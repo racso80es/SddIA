@@ -4,7 +4,7 @@ uuid: "f3bacc6c-5d39-45a2-8428-cbdf08e89962"
 title: "[ARQUITECTURA] Linear HU-B 04 — tracker-markdown-apply"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 created: "2026-10-03"
 author: tekton
 priority: alta
@@ -15,9 +15,8 @@ hu_order: 4
 hu_order_total: 6
 historia_ref: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
 historia_document_id: HU-LINEAR-SSOT-INVERSE
-cola_ejecucion: docs/todos/pending/
-blocked_by:
-  - PBI-LINEAR-B-02-WATCHER
+cola_ejecucion: docs/todos/done/
+blocked_by: []
 unblocks:
   - PBI-LINEAR-B-05-DONE-GATE
 baseline_decisiones:

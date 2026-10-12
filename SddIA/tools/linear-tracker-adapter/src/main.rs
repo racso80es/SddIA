@@ -209,6 +209,11 @@ fn lab_fetch_issue_fixture(issue_ref: &str) -> Value {
         "LAB-PBI-OK" | "LAB-PBI-CYCLE" => {
             base("Backlog", &["pbi"], Some("LAB-HU-1"), vec![])
         }
+        "LAB-PBI-CANCEL" => base("Cancelled", &["pbi"], Some("LAB-HU-1"), vec![]),
+        "LAB-MD-APPLY-TITLE" => base("Backlog", &["pbi"], Some("LAB-HU-1"), vec![]),
+        "LAB-MD-APPLY-CANCEL" => base("Cancelled", &["pbi"], Some("LAB-HU-1"), vec![]),
+        "LAB-MD-APPLY-GIT" => base("Todo", &["pbi"], Some("LAB-HU-1"), vec![]),
+        "LAB-MD-APPLY-DIV" => base("Todo", &["pbi"], Some("LAB-HU-1"), vec![]),
         "LAB-PBI-BADLABEL" => base("Backlog", &["hu"], Some("LAB-HU-1"), vec![]),
         "LAB-PBI-BADPARENT" => base("Backlog", &["pbi"], Some("LAB-HU-OTHER"), vec![]),
         "LAB-HU-1" => base("Backlog", &["hu"], None, vec!["LAB-PBI-OK", "LAB-PBI-CYCLE"]),

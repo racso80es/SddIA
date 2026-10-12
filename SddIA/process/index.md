@@ -60,4 +60,5 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | tracker-backlog-query | d4e5f6a7-b8c9-4d0e-a12b-3b4c5d6e7f9a | 1.0.0 | tracker-operations | — | Listado HU/PBI vía linear-tracker-adapter (Kalma2 GET /api/backlog). |
 | tracker-sync-replay | e1f2a3b4-c5d6-4789-a012-3456789abc01 | 1.1.0 | tracker-operations | — | Replay con orden backlog<todo<in_progress<…; cancelled terminal. |
 | tracker-stamp | f2a3b4c5-d6e7-4890-a123-456789abcdef | 1.1.0 | tracker-operations | — | Sello Linear: todo, cancelled, trunk_direct, ciclo PR (fail-soft D5). |
+| tracker-markdown-apply | b7c8d9e0-f123-4567-89ab-cdef01234567 | 1.0.0 | tracker-operations, filesystem-ops, source-control | — | Réplica inversa Linear → markdown; rama tracker-sync (AC-14..16). |
 
