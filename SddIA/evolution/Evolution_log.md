@@ -9,7 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
-| `c8d9e0f1-2345-6789-abcd-ef0123456789` | 2026-10-12 | HU-B 04: tracker-markdown-apply y suscripción Tracker_Issue_Changed (AC-14..16) | CANONICO | `SddIA/evolution/c8d9e0f1-2345-6789-abcd-ef0123456789.md` |
+| `2e5cbb54-550a-4809-8086-0985e1bc0f54` | 2026-10-12 | HU-B 04: tracker-markdown-apply y suscripción Tracker_Issue_Changed (AC-14..16) | CANONICO | `SddIA/evolution/2e5cbb54-550a-4809-8086-0985e1bc0f54.md` |
 | `f1e2d3c4-b5a6-4789-9012-3456789abcde` | 2026-10-12 | HU-B 03: RBAC 1.4.0 webhooks lab y linear_bridge_webhook (AC-13/22/WH-1) | CANONICO | `SddIA/evolution/f1e2d3c4-b5a6-4789-9012-3456789abcde.md` |
 | `a8f3c1d2-4e5b-4a6c-9d0e-1f2b3c4d5e6f` | 2026-10-12 | HU-B 02: linear-bridge-watcher y Tracker_Issue_Changed (AC-11/12) | CANONICO | `SddIA/evolution/a8f3c1d2-4e5b-4a6c-9d0e-1f2b3c4d5e6f.md` |
 | `3e5856b4-fafe-47b7-bf66-798196f6cd05` | 2026-10-04 | Fix lab store WASI para E2E linear (eda-bus-e2e-smoke) | CANONICO | `SddIA/evolution/3e5856b4-fafe-47b7-bf66-798196f6cd05.md` |

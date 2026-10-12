@@ -1,9 +1,9 @@
 ---
 feature_name: linear-hu-b-04-markdown-apply
 created: "2026-10-12"
-updated: "2026-10-12T07:16:00Z"
+updated: "2026-10-12T07:18:00Z"
 process: pull-request-review
-phase: Veredicto y bloqueo
+phase: Triaje documental
 agent: argos
 agents: argos
 branch: feat/linear-hu-b-04-markdown-apply
@@ -13,34 +13,27 @@ branch_worktree_observed: feat/linear-hu-b-04-markdown-apply
 persist_ref: docs/features/linear-hu-b-04-markdown-apply
 pbi_ref: docs/todos/done/[ARQUITECTURA] Linear HU-B 04 — tracker-markdown-apply.md
 document_id: PBI-LINEAR-B-04-MARKDOWN-APPLY
-correlation_id: "22106d20-77bb-4b82-8d78-18f87259c626"
-audit_event_reference: "22106d20-77bb-4b82-8d78-18f87259c626"
+correlation_id: "7e1ff672-67fe-45fa-838b-d244d6cf0fc7"
+pr_presented_event_id: "7e1ff672-67fe-45fa-838b-d244d6cf0fc7"
+audit_event_reference: "7e1ff672-67fe-45fa-838b-d244d6cf0fc7"
+pr_url: https://github.com/racso80es/SddIA/pull/339
+execution_id: "d7d86b90-a53c-4ff1-980a-2233b8d2fa3f"
 global: APTO
 pbi_archived: true
 approval_status: aprobado
 verdict: aprobado
-delivery_state: success
-resolution: PASS_F5_VERDICT
-accept_pr_handoff: false
-accept_pr_handoff_status: skipped
-accept_pr_block_reason: "Local_QA_Requested (git-hook-pre-push) — sin PullRequest_Presented; handoff accept-pr no aplica"
-authorization_status:
-  exitCode: 0
-  emitter_agent: git-hook-pre-push
-  note: "PASS_F5_VERDICT · F2 heredado PASS_F2_DOC · F3 proxy Evidence Bridge TECH_FORMAL (verify-process-integrity: OK) · F4 R3 KM APTO · Local_QA sin accept-pr · Shell git-manager Rejected — R2 copia bridge; sin stdout inventado"
+delivery_state: pending_downstream_phases
+resolution: PASS_F2_DOC
 git_manager_invoked: false
 git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
 handoff_machine_file: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine) @ 2026-10-12T07:15:32Z source=native_state notes=idempotent-hit + session inject; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; herencia prosthesis_subprocess @ 2026-10-12T07:14:35Z formal_evidence_detail=verify-process-integrity: OK; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 22106d20… · exec 419510ba…"
-scope: "PPR Veredicto y bloqueo — Local_QA_Requested rama feat/linear-hu-b-04-markdown-apply (CID 22106d20… · exec 419510ba…)"
+evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine) source=native_state notes=handoff-formal-scan; idempotent-hit + session inject; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; herencia prosthesis_subprocess @ 2026-10-12T07:14:35Z formal_evidence_detail=verify-process-integrity: OK; Shell git-manager Rejected esta sesión Argos Triaje documental — sin stdout inventado"
+shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Triaje documental CID 7e1ff672… · exec d7d86b90…"
+scope: "PPR Triaje documental — PullRequest_Presented rama feat/linear-hu-b-04-markdown-apply (CID 7e1ff672… · exec d7d86b90…)"
 checks:
   F2_DOC_GATE: APTO
-  F3_TECH_GATE: APTO
-  F4_RBAC_GATE: APTO
-  F5_VERDICT_GATE: APTO
   DOC_OBJECTIVES: APTO
   DOC_CLARIFY: NO_APTO
   DOC_SPEC: APTO
@@ -59,13 +52,11 @@ checks:
   GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
   GIT_EVIDENCE_SESSION_SHELL: NO_APTO
   RBAC_AUTHORING_KM_POLICY: APTO
-  RBAC_PROCESS_REGISTRY: NO_APTO
   PBI_DONE_PRESENT: APTO
   PBI_PENDING_ABSENT: APTO
   AC_DONE_PATH: APTO
   CODE_TOUCHPOINT_PRESENT: APTO
   MERGE_ALREADY_OBSERVED: NO_APTO
-  ACCEPT_PR_HANDOFF: APTO
   branch: APTO
   git_changes: APTO
 git_changes:
@@ -75,7 +66,7 @@ git_changes:
   - SddIA/engine/execute-process/src/engine/handlers/tracker_markdown_apply.rs
   - SddIA/core/event-domain-subscriptions.json
   - SddIA/events/domain/pbi-cancelled.md
-  - SddIA/evolution/c8d9e0f1-2345-6789-abcd-ef0123456789.md
+  - SddIA/evolution/2e5cbb54-550a-4809-8086-0985e1bc0f54.md
   - SddIA/evolution/Evolution_log.md
 blocking_findings: []
 non_blocking_findings:
@@ -83,34 +74,28 @@ non_blocking_findings:
   - DOC_CLARIFY
   - DOC_EXECUTION
   - MERGE_ALREADY_OBSERVED
-  - RBAC_PROCESS_REGISTRY
 situational_notes:
-  - "Fase Veredicto y bloqueo · CID 22106d20-77bb-4b82-8d78-18f87259c626 · exec 419510ba-da0e-4792-a878-3f257d8a5ca2"
-  - "Evidence Bridge machine/session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado) · formal_evidence_detail heredado verify-process-integrity: OK"
+  - "Fase Triaje documental · CID 7e1ff672-67fe-45fa-838b-d244d6cf0fc7 · exec d7d86b90-a53c-4ff1-980a-2233b8d2fa3f"
+  - "Evidence Bridge machine/session: source=native_state · notes=handoff-formal-scan; idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado) · formal_evidence_detail heredado verify-process-integrity: OK"
   - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS + evolution.relacionado"
   - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
   - "PBI-LINEAR-B-04-MARKDOWN-APPLY en done/; pending solo B-05/B-06 (sin réplica B-04)"
-  - "F2 heredado PASS_F2_DOC · objectives/spec/plan/implementation + YAML APTO; clarify/execution ausentes (no bloquean)"
-  - "F3_TECH_GATE APTO vía proxy R1 Evidence Bridge (TECH_FORMAL + verify-process-integrity: OK); Triaje técnico cápsula no re-ejecutado esta sesión"
-  - "F4_RBAC_GATE APTO = R3 KM (sin writes ilegítimos); forja Core ≠ este check; Cerbero espacial genoma aparte"
-  - "RBAC_PROCESS_REGISTRY NO_APTO lateral — pull-request-review ∈ revoked_entities desde 2026-10-02T18:42:59Z (no bloquea F5 Local_QA)"
-  - "Evento: Local_QA_Requested · emitter git-hook-pre-push · payload.branch = inject → accept_pr_handoff skipped"
-  - "CODE_TOUCHPOINT: process + handler + subscription Tracker_Issue_Changed + emisor PBI_Cancelled"
-execution_id: "419510ba-da0e-4792-a878-3f257d8a5ca2"
+  - "F2: objectives/spec/plan/implementation + YAML APTO; clarify/execution ausentes (no bloquean)"
+  - "Evento: PullRequest_Presented · emitter delivery-close-cycle · payload.branch = inject · pr_url PR #339"
+  - "CODE_TOUCHPOINT: process + handler + subscription + emisor PBI_Cancelled"
 ---
-# Validación — Veredicto y bloqueo (Argos · pull-request-review)
+# Validación — Triaje documental (Argos · pull-request-review)
 
 ## Veredicto de fase
 
-**APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `F5_VERDICT_GATE: APTO`.  
-Sin violación bloqueante F2–F4. `accept_pr_handoff: false` / `skipped` — estímulo `Local_QA_Requested` (pre-push), no `PullRequest_Presented`.
+**APTO** — `resolution: PASS_F2_DOC` · `F2_DOC_GATE: APTO` · `verdict: aprobado`.  
+F3 (triaje técnico), F4 (Cerbero), Veredicto/bloqueo, Cosecha y Handoff quedan **fuera** de esta fase → `delivery_state: pending_downstream_phases`.
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
-| F2 | Argos (doc) | **APTO** | heredado · `PASS_F2_DOC` · cascada YAML |
-| F3 | Evidence Bridge / execute-process | **APTO** | proxy R1 `TECH_FORMAL` · `verify-process-integrity: OK` |
-| F4 | Argos R3 KM | **APTO** | `RBAC_AUTHORING_KM_POLICY` · 0 writes ilegítimos `docs/todos/**` |
-| F5 | Argos (veredicto) | **APTO** | síntesis · `PASS_F5_VERDICT` |
+| F2 | Argos (doc) | **APTO** | Frontmatter YAML + `objectives`/`spec`/`plan`/`implementation` |
+| F3 | execute-process | **pendiente** | fuera de jurisdicción Triaje documental |
+| F4 | Cerbero | **pendiente** | fuera de jurisdicción Triaje documental |
 
 ## Evidence Bridge (R1 / R2 / R3)
 
@@ -118,17 +103,17 @@ Copia literal machine/session — **no** stdout Shell inventado:
 
 | Campo | Valor |
 |-------|-------|
-| `source` | `native_state` (machine @ 2026-10-12T07:15:32Z + session inject) |
+| `source` | `native_state` (session inject + machine handoff) |
 | `git_manager_invoked` | `true` (bridge) · `false` (sesión Argos Shell) |
 | `formal_execute_process` | `true` |
 | `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
 | `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
-| `notes` | `idempotent-hit` |
+| `notes` | `handoff-formal-scan; idempotent-hit` |
 | herencia | `prosthesis_subprocess` @ 2026-10-12T07:14:35Z · `formal_evidence_detail=verify-process-integrity: OK` |
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` físico |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` esta fase |
 
-Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T07:15:32Z` + session inject (CID 22106d20… · exec 419510ba…).
+Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) + session inject (CID 7e1ff672… · exec d7d86b90…).
 
 ## Ingesta
 
@@ -136,13 +121,13 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T
 |-------|------------|
 | `persist_ref` | `docs/features/linear-hu-b-04-markdown-apply` |
 | `pbi_ref` (inyectado) | vacío → **resuelto** `docs/todos/done/[ARQUITECTURA] Linear HU-B 04 — tracker-markdown-apply.md` |
-| `correlation_id` | `22106d20-77bb-4b82-8d78-18f87259c626` |
-| Evento correlacionado | `.events/processing/22106d20-….json` · `Local_QA_Requested` · `emitter_agent: git-hook-pre-push` · `payload.branch` = rama inject |
+| `correlation_id` / Presented | `7e1ff672-67fe-45fa-838b-d244d6cf0fc7` |
+| Evento | `.events/processing/7e1ff672-….json` · `PullRequest_Presented` · `emitter_agent: delivery-close-cycle` · `payload.branch` = rama inject |
+| `pr_url` | `https://github.com/racso80es/SddIA/pull/339` |
 | `branch_name` (runtime) | `feat/linear-hu-b-04-markdown-apply` |
 | Evento Merged (este CID) | **ausente** |
-| F2 heredado | Triaje documental · `PASS_F2_DOC` · `global: APTO` |
 
-## F2 — Reconfirmado
+## F2 — Triaje documental
 
 | Check | Estado | Evidencia |
 |-------|--------|-----------|
@@ -155,18 +140,7 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T
 | `DOC_FRONTMATTER_YAML` | **APTO** | artefactos base con `---` YAML |
 | `DOC_EVOLUTION` | **APTO** | `c8d9e0f1-…` + fila `Evolution_log` |
 | `CODE_TOUCHPOINT_PRESENT` | **APTO** | process + handler + subscription + emisor `PBI_Cancelled` |
-| `F2_DOC_GATE` | **APTO** | peaje Triaje documental cumplido |
-
-## F3 / F4 / F5
-
-| Check | Estado | Evidencia |
-|-------|--------|-----------|
-| `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** | copia bridge · `verify-process-integrity: OK` |
-| `F3_TECH_GATE` | **APTO** | proxy R1; Triaje técnico cápsula no re-invocado esta sesión |
-| `RBAC_AUTHORING_KM_POLICY` | **APTO** | 0 writes Argos en `docs/todos/**` |
-| `F4_RBAC_GATE` | **APTO** | R3 KM; forja Core ≠ este check |
-| `RBAC_PROCESS_REGISTRY` | **NO_APTO** | `pull-request-review` ∈ revoked desde 2026-10-02 (lateral; no bloquea F5 Local_QA) |
-| `F5_VERDICT_GATE` | **APTO** | sin blocking F2–F4 |
+| `F2_DOC_GATE` | **APTO** | criterios proceso § Triaje documental cumplidos |
 
 ## branch / git_changes / PBI
 
@@ -182,8 +156,7 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) @ `2026-10-12T
 | `PBI_DONE_PRESENT` | **APTO** | done/ · `document_id: PBI-LINEAR-B-04-MARKDOWN-APPLY` · `status: done` |
 | `PBI_PENDING_ABSENT` | **APTO** | sin réplica B-04 en pending/ |
 | `AC_DONE_PATH` | **APTO** | done exclusivo + `pbi_archived: true` |
-| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `22106d20…` |
-| `ACCEPT_PR_HANDOFF` | **APTO** | `skipped` coherente con Local_QA |
+| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `7e1ff672…` |
 
 `git_changes` por inventario path-assert (`persist_ref` + PBI done + evolution `relacionado` + touchpoints). **No** es `gitStdout` de esta sesión.
 
@@ -197,19 +170,18 @@ Sighting FS: PBI entrega ya en `done/` (`author: tekton`, proceso `feature`) —
 
 ```json
 {
-  "phase": "Veredicto y bloqueo",
+  "phase": "Triaje documental",
   "global": "APTO",
-  "resolution": "PASS_F5_VERDICT",
+  "resolution": "PASS_F2_DOC",
   "verdict": "aprobado",
-  "delivery_state": "success",
-  "accept_pr_handoff": false,
-  "accept_pr_handoff_status": "skipped",
+  "delivery_state": "pending_downstream_phases",
   "pbi_archived": true,
   "branch": "feat/linear-hu-b-04-markdown-apply",
   "branch_worktree_observed": "feat/linear-hu-b-04-markdown-apply",
   "document_id": "PBI-LINEAR-B-04-MARKDOWN-APPLY",
-  "correlation_id": "22106d20-77bb-4b82-8d78-18f87259c626",
-  "execution_id": "419510ba-da0e-4792-a878-3f257d8a5ca2",
+  "correlation_id": "7e1ff672-67fe-45fa-838b-d244d6cf0fc7",
+  "execution_id": "d7d86b90-a53c-4ff1-980a-2233b8d2fa3f",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/339",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
@@ -219,4 +191,4 @@ Sighting FS: PBI entrega ya en `done/` (`author: tekton`, proceso `feature`) —
 
 ## Alcance
 
-Veredicto **no** materializa Cosecha Kaizen ni Handoff `accept-pr`. Estímulo Local_QA pre-push: peaje F5 OK para continuar push; merge soberano queda fuera de esta aduana. Argos **no** escribe bajo `docs/todos/`.
+Triaje documental **no** certifica F3/F4 ni reabre genoma. Downstream: Triaje técnico → Certificación RBAC → Veredicto → Cosecha → Handoff (`accept-pr`; sin merge directo en aduana). Argos **no** escribe bajo `docs/todos/`.

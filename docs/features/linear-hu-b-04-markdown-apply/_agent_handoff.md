@@ -151,3 +151,66 @@ notes: "idempotent-hit"
 - F2 heredado APTO; F3 proxy `verify-process-integrity: OK`; F4 = R3 KM
 - Local_QA pre-push → `accept_pr_handoff: skipped` · global **APTO**
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-12T07:17:20Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-12T07:17:52Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-10-12T07:18:08Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `d7d86b90-a53c-4ff1-980a-2233b8d2fa3f`
+- correlation_id: `7e1ff672-67fe-45fa-838b-d244d6cf0fc7`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Rama worktree = inject; PBI en `done/`; `global: APTO` · veredicto **ok**
+
+### Transcript (tail)
+
+```
+**Triaje documental OK** (`PASS_F2_DOC`).
+
+- Tocado: `docs/features/linear-hu-b-04-markdown-apply/validacion.md`
+- Evidence Bridge: `TECH_FORMAL` / `GIT_EVIDENCE_VIA_GIT_MANAGER` **APTO** (copia `native_state`; sin stdout inventado)
+- Shell `git-manager` Rejected → `GIT_EVIDENCE_SESSION_SHELL` NO_APTO (no bloquea)
+- F2: objectives/spec/plan/implementation + YAML **APTO**; clarify/execution ausentes (no bloquean)
+- KM: 0 writes Argos en `docs/todos/**` → `RBAC_AUTHORING_KM_POLICY` **APTO**
+- Rama worktree = inject; PBI en `done/`; `global: APTO` · veredicto **ok**
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-12T07:18:08Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
