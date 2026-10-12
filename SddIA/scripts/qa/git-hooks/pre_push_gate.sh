@@ -103,7 +103,11 @@ main() {
 
     persist_ref=$(resolve_persist_ref "$branch" || true)
     if [[ -n "${persist_ref:-}" ]]; then
-      if ! "$REPO_ROOT/SddIA/target/release/sddia-qa" verify-tracker-done-pre-push --persist-ref "$persist_ref"; then
+      resolve_sddia_qa || {
+        exit_code=1
+        continue
+      }
+      if ! "$SDDIA_QA_BIN" verify-tracker-done-pre-push --persist-ref "$persist_ref"; then
         echo "SddIA pre-push: BLOCKED — tracker done_gate (evidencia local)" >&2
         exit_code=1
         continue
