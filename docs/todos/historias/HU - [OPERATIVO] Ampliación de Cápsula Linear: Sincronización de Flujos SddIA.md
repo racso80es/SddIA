@@ -2,10 +2,12 @@
 document_id: HU-LINEAR-SYNC-FLOW
 title: "HU - [OPERATIVO] Ampliación de Cápsula Linear: Sincronización de Flujos SddIA"
 format: markdown
-version: "2.2.0"
+version: "2.3.0"
 created: "2026-10-03"
 refined: "2026-10-03"
+audited: "2026-10-12"
 status: "particionada"
+children_status: "ambas hijas forjadas (HU-A done 2026-10-04; HU-B done 2026-10-12)"
 priority: "alta"
 process: "feature"
 base: "Documentacion/PBI/Realizado/[ARQUITECTURA] Forja de la Cápsula Linear Tracker y Orquestación del Ciclo de Vida.md"
@@ -19,10 +21,14 @@ children:
     merged_pr: 335
   - document_id: HU-LINEAR-SSOT-INVERSE
     hu_sequence: 2
-    path: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
+    path: "docs/todos/done/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
     scope: "F7–F8; D-F, D-G, D-H, D-I"
-    blocked_by: HU-LINEAR-DIRECT-CYCLE
+    blocked_by: []
     pbi_order: "PBI-LINEAR-B-01-OUTBOUND … PBI-LINEAR-B-06-E2E"
+    status: done
+    closed: "2026-10-12"
+    merged_pr_range: "336-341"
+    residual: "done_gate linear no escrito: sin manifiesto Core en .SddIA/projects"
 related:
   - SddIA/core/cumulo.paths.json
 ---
@@ -76,7 +82,7 @@ related:
 | Decisiones | D-A, D-B, D-C, D-D, D-E, **D-J (a)**. | D-F, D-G, D-H, D-I. |
 | `project-config-contract` | **1.2.0 → 1.3.0** (único bump): `state_map.todo`, labels extendidas incl. `editable` inerte, `done_gate` declarado con solo `git` aceptado. | Sin bump: habilita `linear|both` en el validador y consume `editable`. |
 | `execution-contexts.md` §2.10 | **1.2.0 → 1.3.0**: crear issues. | **1.3.0 → 1.4.0**: recibir webhooks firmados. |
-| Dependencia | Línea base actual. | HU-A mergeada y AC-7/AC-8 (E2E lab) verdes. *(Cerrada PR #335, 2026-10-04.)* |
+| Dependencia | Línea base actual. **Cerrada** PR #335 (2026-10-04), PBI A-01…A-09 en `done/`. | HU-A mergeada. **Cerrada** PR #336–#341 (2026-10-12), PBI B-01…B-06 en `done/`. Residual: laudo F8.3.4 (`done_gate: linear` solo Core-self), no forjado. |
 | Riesgo | Bajo-medio. | Alto. |
 | AC | AC-0a…AC-10. | AC-11…AC-23. |
 
@@ -96,3 +102,12 @@ Razones del laudo: HU-B depende del cierre de HU-A (condición del spike `tracke
 | D-H | (a) Edición del cuerpo solo con `tracker.labels.editable`. |
 | D-I | (a) `done_gate: linear` solo Core-self en el primer ciclo. |
 | D-J | (a) `refine-hu` crea el issue de la HU si falta `tracker_ref`. |
+
+## 3. Auditoría de implementación (2026-10-12)
+
+Contraste de las hijas con los PBI en `docs/todos/done/` (ningún PBI Linear queda en `pending/`).
+
+| Hija | Forja | Qué quedó en el repo | Qué no |
+|------|--------|----------------------|--------|
+| HU-A | #335, A-01…A-09 | Ciclo directo mock: `create_issue`, RBAC 1.3.0, refine, stamp `todo`/`cancelled`/`trunk_direct`, E2E `linear_direct_cycle_e2e`. Contrato 1.3.0 con `done_gate` **solo `git` aceptado en esa HU**. | Inverso y gate Linear (cedido a HU-B). |
+| HU-B | #336–#341, B-01…B-06 | Anti-eco, watcher, webhook lab, `tracker-markdown-apply`, validador `linear\|both`, proofs pre-push, norma `features-documentation-pattern` 1.3.0, RBAC 1.4.0, E2E `linear_done_gate_both_e2e`. Default del motor: `git`. | Escribir `done_gate: linear` en el manifiesto Core-self. B-06 lo deja explícitamente detrás de laudo (F8.3 paso 4, D-I). |

@@ -13,7 +13,7 @@ process: feature
 dispatch: true
 hu_order: 1
 hu_order_total: 6
-historia_ref: "docs/todos/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
+historia_ref: "docs/todos/done/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
 historia_document_id: HU-LINEAR-SSOT-INVERSE
 cola_ejecucion: docs/todos/done/
 unblocks:

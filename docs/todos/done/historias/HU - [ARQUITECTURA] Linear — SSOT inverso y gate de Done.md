@@ -3,9 +3,15 @@ document_id: HU-LINEAR-SSOT-INVERSE
 parent_hu: HU-LINEAR-SYNC-FLOW
 title: "HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done"
 format: markdown
-version: "1.1.1"
+version: "1.2.0"
 created: "2026-10-03"
-status: refinada
+status: done
+closed: "2026-10-12"
+pbi_done: 6
+pbi_total: 6
+merged_pr_range: "336-341"
+archive_path: docs/todos/done/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md
+activation_linear: "no aplicada — el índice .SddIA/projects no registra un manifiesto del Core; D-I prohíbe escribir done_gate: linear en barcelonaxplorer o en fixtures de lab"
 hu_sequence: 2
 hu_sequence_total: 2
 predecessor_hu: HU-LINEAR-DIRECT-CYCLE
@@ -39,18 +45,16 @@ Partición B de `HU-LINEAR-SYNC-FLOW` (§8 del documento padre, laudo 2026-10-03
 
 ## Orden
 
-**HU 2 de 2.** Predecesora cerrada: `HU-LINEAR-DIRECT-CYCLE` ([done/historias](docs/todos/done/historias/HU%20-%20%5BOPERATIVO%5D%20Linear%20%E2%80%94%20ciclo%20directo%20de%20HU%20y%20PBI.md), PR #335). Cola activa: `PBI-LINEAR-B-01-OUTBOUND` en `pending/`.
+**HU 2 de 2 — cerrada (forja).** Predecesora: `HU-LINEAR-DIRECT-CYCLE` (PR #335). Los seis PBI están en `docs/todos/done/`. Queda fuera de la forja el paso 4 de F8.3 (laudo para escribir `done_gate: linear` en Core-self).
 
-| Orden | PBI | Entrega |
-|------:|-----|---------|
-| 01 | `PBI-LINEAR-B-01-OUTBOUND` | Registro saliente anti-eco. |
-| 02 | `PBI-LINEAR-B-02-WATCHER` | Daemon polling + evento `Tracker_Issue_Changed`. |
-| 03 | `PBI-LINEAR-B-03-WEBHOOK` | RBAC §2.10 → 1.4.0 y webhook lab. |
-| 04 | `PBI-LINEAR-B-04-MARKDOWN-APPLY` | Proceso `tracker-markdown-apply`. |
-| 05 | `PBI-LINEAR-B-05-DONE-GATE` | `done_gate: linear\|both`, handler, pre-push, normas. |
-| 06 | `PBI-LINEAR-B-06-E2E` | E2E Core-self `done_gate: both`. Activación según F8.3. |
-
-PBIs en `docs/todos/pending/` (orden B-01…B-06).
+| Orden | PBI | Entrega | PR | Estado |
+|------:|-----|---------|---:|--------|
+| 01 | `PBI-LINEAR-B-01-OUTBOUND` | Registro saliente anti-eco (`.SddIA/state/tracker-outbound/`). | [#336](https://github.com/racso80es/SddIA/pull/336) | done |
+| 02 | `PBI-LINEAR-B-02-WATCHER` | Daemon `linear-bridge-watcher` + `Tracker_Issue_Changed` (`source: poll`). | [#337](https://github.com/racso80es/SddIA/pull/337) | done |
+| 03 | `PBI-LINEAR-B-03-WEBHOOK` | RBAC §2.10 **1.4.0** y webhook lab (`source: webhook`). | [#338](https://github.com/racso80es/SddIA/pull/338) | done |
+| 04 | `PBI-LINEAR-B-04-MARKDOWN-APPLY` | Proceso `tracker-markdown-apply` (F7.3). | [#339](https://github.com/racso80es/SddIA/pull/339) | done |
+| 05 | `PBI-LINEAR-B-05-DONE-GATE` | Validador `git\|linear\|both`, proofs, pre-push, norma 1.3.0. | [#340](https://github.com/racso80es/SddIA/pull/340) | done |
+| 06 | `PBI-LINEAR-B-06-E2E` | E2E lab `done_gate: both` (AC-21…21d). No activa `linear`. | [#341](https://github.com/racso80es/SddIA/pull/341) | done |
 
 ## 1. Historia de usuario
 
@@ -69,7 +73,7 @@ PBIs en `docs/todos/pending/` (orden B-01…B-06).
 
 ### F7 — Sincronización inversa Linear → markdown (D-F, D-G, D-H)
 
-Hoy no existe escritura hacia el markdown: `tracker-linear-markdown-sync` vuelca markdown → descripción Linear.
+Línea base al abrir la HU: no había escritura Linear → markdown (`tracker-linear-markdown-sync` solo vuelca markdown → descripción Linear). La escritura inversa queda en F7.3, forjada en B-04.
 
 **F7.1 Sensor `linear-bridge-watcher`** (daemon, `daemons-contract` v1.0.0, vía `daemon-creator`; patrón `github-bridge-watcher`; `context: tracker-operations`):
 - Jurisdicción aislada, ceguera lógica: solo materializa eventos físicos en el bus. No decide negocio ni toca markdown.
@@ -168,4 +172,19 @@ Done = PR fusionado en default_branch (o Delivery_Committed en trunk_direct)
 
 - `HU-LINEAR-DIRECT-CYCLE` mergeada; AC-7/AC-8 verdes.
 - `LINEAR_WEBHOOK_SECRET` en `env_ref` del proyecto y túnel de laboratorio.
-- `SddIA/evolution/`: reapertura del laudo `tracker-done-gate` (UUID de `docs/features/tracker-done-gate/spec.md` o del PBI `[ARQUITECTURA] Tracker — gate Done según spike`).
+- `SddIA/evolution/`: reapertura del laudo `tracker-done-gate` (UUID de `docs/features/tracker-done-gate/spec.md` o del PBI `[ARQUITECTURA] Tracker — gate Done según spike`). Cumplido en B-05 (`e7d38268-3be2-4654-8e58-694e33221f7e`).
+
+## 8. Estado de cierre (2026-10-12)
+
+Auditoría contra `docs/todos/done/` y merges #336–#341. El alcance forjable (F7 + F8.1–F8.2 + ciclo lab F8.3 pasos 1–3) está en `main`. El paso 4 de F8.3 no se escribe en producto: no existe manifiesto del Core en el índice.
+
+| Bloque | Evidencia |
+|--------|-----------|
+| F7.1–F7.2 | B-01 + B-02: anti-eco, polling, evento `Tracker_Issue_Changed`. AC-11, AC-12. |
+| F7 webhook lab | B-03: firma HMAC, `source: webhook`, sin secreto en el evento. AC-13, AC-22. `execution-contexts.md` **1.4.0**. |
+| F7.3 | B-04: `tracker-markdown-apply` (estado, título, cuerpo con `editable`, prioridad, padre, divergencia, rama `tracker-sync/{slug}`). AC-14…AC-16. |
+| F8.1–F8.2 | B-05: validador acepta `git\|linear\|both` sin bump de `contract_version`; `feature-pbi-archive`; proofs `.SddIA/proofs/tracker-done/`; pre-push sin red; `features-documentation-pattern` **1.3.0** (movimiento de PBI condicional). AC-17…AC-20, AC-23. Evolution `e7d38268-…`. |
+| F8.3 pasos 1–3 | HU-A #335; F7 con default `git`; ciclo lab `done_gate: both` en B-06 (`linear_done_gate_both_e2e`, CI `run-linear-done-gate-both-e2e-lab`). AC-21…AC-21c. Evolution `be26a3c7-…`. Merge [#341](https://github.com/racso80es/SddIA/pull/341). |
+| F8.3 paso 4 | **No materializado.** Instrucción de cierre documental 2026-10-12. El índice `.SddIA/projects` no contiene un manifiesto del Core (entradas: `barcelonaxplorer`, fixtures `lab-done-gate*`). D-I prohíbe `done_gate: linear` fuera de Core-self. El fixture `lab-done-gate-project-both` sigue en `both`. El de `lab-done-gate` ya estaba en `linear` como fixture de AC-18, no como activación de producto. |
+
+Default operativo del motor: `done_gate: git` mientras el Core no tenga manifiesto `tracker`.
