@@ -26,3 +26,4 @@ pub mod tracker_backlog_query;
 pub mod tracker_linear_markdown_sync;
 pub mod tracker_sync_replay;
 pub mod tracker_stamp;
+pub mod tracker_markdown_apply;

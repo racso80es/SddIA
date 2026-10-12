@@ -41,4 +41,4 @@ Cambio detectado en issue Linear (poll o webhook lab); entrada a tracker-markdow
 
 ## Suscripciones
 
-Ver `SddIA/core/event-domain-subscriptions.json` → clave `Tracker_Issue_Changed`.
+Ver `SddIA/core/event-domain-subscriptions.json` → clave `Tracker_Issue_Changed` (`tracker-markdown-apply`).

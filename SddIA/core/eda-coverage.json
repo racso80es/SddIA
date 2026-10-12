@@ -786,6 +786,12 @@
       "last_emitted_event": "Kaizen_Idea_Captured",
       "last_hash": "sha256:pending-anchor-on-merge"
     },
+    "b7c8d9e0-f123-4567-89ab-cdef01234567": {
+      "correlation_timestamp": "2026-10-12T09:15:00.000Z",
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:10bbcbf48e4b5c3a7bd30883f28f0b84e20bf0be7f747d4863f1ac3cb68ff25c"
+    },
     "b8c3d1e2-f4a5-4a6b-8c7d-0e1f2a3b4c5d": {
       "correlation_timestamp": "2026-07-22T10:48:30.786Z",
       "is_covered": true,
