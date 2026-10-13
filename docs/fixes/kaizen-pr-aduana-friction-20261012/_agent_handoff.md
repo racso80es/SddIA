@@ -171,3 +171,30 @@ Desbloqueo: aprobar Shell → tests del plan + checkout `fix/kaizen-pr-aduana-fr
 - No inventé `validacion.md` APTO, PBI→`done/` ni DCC.
 - Desbloqueo: aprobar Shell → batería del plan → fase Argos/cierre.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-13T05:59:45Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-13T06:00:11Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-formal-scan; idempotent-hit"
+```

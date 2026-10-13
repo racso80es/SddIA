@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: kaizen-pr-aduana-friction-20261012
 created: "2026-10-13"
 process: bug-fix
@@ -33,8 +35,8 @@ git_changes:
   - SddIA/engine/execute-process/src/engine/route_domain_core.rs
   - SddIA/engine/execute-process/src/engine/thermodynamic.rs
   - docs/fixes/kaizen-pr-aduana-friction-20261012/
+execution_id: "5dcc8ba9-e1cc-4a09-a88f-b42de0a88b07"
 ---
-
 # Validación — Kaizen aduana PR (Argos)
 
 ## Veredicto

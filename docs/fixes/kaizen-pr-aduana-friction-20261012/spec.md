@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: kaizen-pr-aduana-friction-20261012
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -12,9 +14,9 @@ scope: pr-aduana-friction
 base: main
 design_status: sealed
 correlation_id: "d96571be-c2e1-4a07-96be-efb0d18b81d8"
-execution_id: "c71cb9cb-56cb-48e3-a6b8-69b45dddc156"
 agent: dedalo
 phase: Diseño del fix
+execution_id: "5dcc8ba9-e1cc-4a09-a88f-b42de0a88b07"
 ---
 # Spec — Aduana PR: corte LLM, dedupe Presented, persist_ref docs, sellos e higiene, PEC Telegram
 

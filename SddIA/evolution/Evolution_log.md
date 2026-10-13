@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `40f08486-fe02-40bf-ae12-6590dddb33b3` | 2026-10-13 | Kaizen aduana PR (ADU-CA1–14): barrier PPR, dedupe Presented, persist_ref docs/, PEC Telegram | CANONICO | `SddIA/evolution/40f08486-fe02-40bf-ae12-6590dddb33b3.md` |
 | `79ed140a-9a58-4e60-bf66-8b65021d9e6a` | 2026-10-12 | FIX fractura 187079f2d82d: firma F-DCC-SNAPSHOT-BRANCH-EXISTS y test checkout idempotente git-manager | CANONICO | `SddIA/evolution/79ed140a-9a58-4e60-bf66-8b65021d9e6a.md` |
 | `be26a3c7-c3de-4296-b737-775157bba75b` | 2026-10-12 | HU-B 06: E2E lab done_gate both Core-self (AC-21..21d) | CANONICO | `SddIA/evolution/be26a3c7-c3de-4296-b737-775157bba75b.md` |
 | `e7d38268-3be2-4654-8e58-694e33221f7e` | 2026-10-12 | HU-B 05: done_gate linear|both, proofs y pre-push (AC-17..20, AC-23) | CANONICO | `SddIA/evolution/e7d38268-3be2-4654-8e58-694e33221f7e.md` |
