@@ -123,3 +123,51 @@ Desbloqueo: aprobar Shell → tests del plan + checkout `fix/kaizen-pr-aduana-fr
 - No inventé `validacion.md` APTO, PBI→`done/` ni `delivery-close-cycle`.
 - Desbloqueo: aprobar Shell → batería del plan → fase Argos/cierre.
 ```
+
+## 2026-10-13T05:57:14Z — Diseño del fix
+- process: `bug-fix`
+- agents: `dedalo`
+- execution_id: `c71cb9cb-56cb-48e3-a6b8-69b45dddc156`
+- correlation_id: `d96571be-c2e1-4a07-96be-efb0d18b81d8`
+- pbi_ref: `docs/todos/pending/[KAIZEN] Aduana PR — corte LLM, dedupe Presented, persist_ref docs y sellos post-merge.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Verificación / `validacion.md` / PBI→done / DCC = fases posteriores.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Consumí `objectives.md` + PBI ADU-CA1–CA14; diseño sellado (`blueprint_process: false`).
+- Tocados: `docs/fixes/kaizen-pr-aduana-friction-20261012/{spec,plan,objectives}.md` (`correlation_id` `d96571be…`).
+- `spec.md`: L1–L6 con APIs reales + tabla CA para Argos; coherencia estática con árbol (sin inventar tests verdes).
+- `plan.md`: orden L3→L4→L5→L1→L6→L2; sin forja de genoma/proceso.
+- Shell IDE `Rejected` → sin evidencia `git-manager` (fase solo diseño).
+- Verificación / `validacion.md` / PBI→done / DCC = fases posteriores.
+```
+
+## 2026-10-13T05:58:44Z — Ejecución
+- process: `bug-fix`
+- agents: `tekton`
+- execution_id: `c71cb9cb-56cb-48e3-a6b8-69b45dddc156`
+- correlation_id: `d96571be-c2e1-4a07-96be-efb0d18b81d8`
+- pbi_ref: `docs/todos/pending/[KAIZEN] Aduana PR — corte LLM, dedupe Presented, persist_ref docs y sellos post-merge.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - Desbloqueo: aprobar Shell → batería del plan → fase Argos/cierre.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+- Código ADU-CA1–CA14 ya en rama (`344dbf70` + `2ebe43df`; tip FS `b9d258e9` en `fix/kaizen-pr-aduana-friction-20261012`).
+- Revisión estática L1–L6 OK vs spec/plan (barrier, dedupe, `docs/`, scan 3 dirs, higiene, PEC).
+- Tocados esta sesión: `implementation.md`, `execution.md` (correlation `d96571be…`).
+- Shell `Rejected` (padre, smart-mode, best-of-n) → sin `cargo test` ni `git-manager`.
+- No inventé `validacion.md` APTO, PBI→`done/` ni DCC.
+- Desbloqueo: aprobar Shell → batería del plan → fase Argos/cierre.
+```

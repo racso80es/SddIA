@@ -1,5 +1,4 @@
 ---
-
 feature_name: kaizen-pr-aduana-friction-20261012
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -19,16 +18,18 @@ phases:
   - l6-pec-telegram
   - l2-ppr-dedupe
   - tests-unit
-correlation_id: "77f88be2-3509-416f-a426-8e03df9591cb"
-execution_id: "13753665-38ae-4ac7-88c8-48264a7cefde"
+correlation_id: "d96571be-c2e1-4a07-96be-efb0d18b81d8"
+execution_id: "c71cb9cb-56cb-48e3-a6b8-69b45dddc156"
+agent: dedalo
+phase: Diseño del fix
 ---
 # Plan — kaizen-pr-aduana-friction-20261012
 
-Blueprint de **ejecución** (no proceso nuevo). Orden: L3 → L4 → L5 → L1 → L6 → L2 → batería unitaria. Genoma solo si L2 exigiera clase ECST (diseño sellado: no).
+Blueprint de **ejecución** (no proceso nuevo: `blueprint_process: false`). Orden: L3 → L4 → L5 → L1 → L6 → L2 → batería unitaria. Genoma solo si L2 exigiera clase ECST (diseño sellado: no).
 
 ## Fase L3 — `infer_persist_ref_from_branch`
 
-Archivo: `eda_bus_topology.rs`.
+Archivo: `SddIA/engine/execute-process/src/engine/eda_bus_topology.rs`.
 
 1. Rama `docs/{slug}`: candidatos features luego fixes; `is_dir`.
 2. Tests CA5/CA6.
@@ -45,9 +46,9 @@ Archivo: `accept_pr.rs` — `scan_presented_for_branch`.
 
 Archivo: `accept_pr.rs` — `is_remote_ref_absent_error` / `record_hygiene_remote`.
 
-1. Ref ausente → `ok: true`.
+1. Ref ausente → `ok: true` (`idempotent_absent`).
 2. `closed_branch` solo local ∧ remoto OK.
-3. Actualizar `t_a2_local_ok_closed_branch`; tests CA8/CA9.
+3. Alinear `t_a2_local_ok_closed_branch`; tests CA8/CA9.
 
 ## Fase L1 — Barrier Veredicto PPR
 
@@ -59,7 +60,7 @@ Archivo: `residual_runner.rs` — `ppr_verdict_skip_llm` / `ppr_documental_triag
 
 ## Fase L6 — PEC Telegram
 
-Archivos: `thermodynamic.rs` (`pec_notice_from_context`), `route_domain_core.rs` (`build_telegram_message_from_event`).
+Archivos: `thermodynamic.rs` (`pec_notice_from_context` / `project_pec_operator_fields`), `route_domain_core.rs` (`build_telegram_message_from_event`).
 
 1. Payload: branch, pr_url, notice (prioridad §3.6 PBI).
 2. Humanizador: contrato CA11–CA13.
@@ -69,7 +70,7 @@ Archivos: `thermodynamic.rs` (`pec_notice_from_context`), `route_domain_core.rs`
 
 Archivo: `route_domain_core.rs` — `try_acquire_ppr_dedupe` / proof `ppr-presented-dedupe/`.
 
-1. Clave `(branch, head_commit)`; fail-open si SHA irresoluble.
+1. Clave `(branch, head_commit)`; fail-open si SHA irresoluble o error FS no-AlreadyExists.
 2. Sin clase ECST nueva.
 3. Tests CA3/CA4.
 
@@ -83,4 +84,4 @@ cargo test -p execute-process --lib t_adu_ -- --test-threads=4
 
 ## Cierre (fuera de Diseño)
 
-Tekton: evidencia tests + rama vía git-manager → Argos `validacion.md` → PBI a `done/` → `delivery-close-cycle`.
+Tekton: evidencia tests + rama vía `skill:git-manager` → Argos `validacion.md` → PBI a `done/` → `delivery-close-cycle`.

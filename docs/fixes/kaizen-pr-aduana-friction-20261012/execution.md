@@ -1,5 +1,4 @@
 ---
-
 feature_name: kaizen-pr-aduana-friction-20261012
 created: "2026-10-13"
 updated: "2026-10-13"
@@ -9,11 +8,11 @@ persist_ref: docs/fixes/kaizen-pr-aduana-friction-20261012
 pbi_ref: docs/todos/pending/[KAIZEN] Aduana PR — corte LLM, dedupe Presented, persist_ref docs y sellos post-merge.md
 document_id: PBI-KAIZEN-PR-ADUANA-FRICTION-20261012
 uuid: "d8e1f3a4-5b6c-4d7e-8f9a-0b1c2d3e4f5a"
-correlation_id: "77f88be2-3509-416f-a426-8e03df9591cb"
+correlation_id: "d96571be-c2e1-4a07-96be-efb0d18b81d8"
 agent: tekton
 phase: Ejecución
 status: blocked
-execution_id: "13753665-38ae-4ac7-88c8-48264a7cefde"
+execution_id: "c71cb9cb-56cb-48e3-a6b8-69b45dddc156"
 ---
 # Execution — kaizen-pr-aduana-friction-20261012
 
@@ -21,18 +20,18 @@ execution_id: "13753665-38ae-4ac7-88c8-48264a7cefde"
 
 | Ítem | Estado |
 |------|--------|
-| Código L1–L6 (ADU-CA1–CA14) | **materializado y commiteado** en rama (`344dbf70` + `2ebe43df` HEAD) |
-| `implementation.md` | actualizado (este ciclo `77f88be2…`) |
-| Revisión estática vs `spec.md`/`plan.md` | L1–L6 presentes (barrier, dedupe, docs/, scan 3 dirs, higiene idempotente, PEC) |
-| `cargo test -p execute-process` (filtros ADU) | **no ejecutado** — Shell IDE `Rejected` (incl. smart-mode + subagente) |
+| Código L1–L6 (ADU-CA1–CA14) | **materializado** en commits `344dbf70` + `2ebe43df` (tip docs `b9d258e9`) |
+| Revisión estática vs `spec.md`/`plan.md` | L1–L6 símbolos y tests unitarios **presentes** en árbol |
+| `implementation.md` | actualizado (correlation `d96571be…`) |
+| `cargo test -p execute-process` (filtros ADU) | **no ejecutado** — Shell IDE `Rejected` (padre + smart-mode + best-of-n-runner) |
 | `git-manager` vía `./sddia-run.sh` | **no ejecutado** — misma causa |
-| Rama (evidencia FS, no cápsula) | `.git/HEAD` → `fix/kaizen-pr-aduana-friction-20261012` @ `2ebe43df…` |
+| Rama (evidencia FS, no cápsula) | `.git/HEAD` → `fix/kaizen-pr-aduana-friction-20261012` @ `b9d258e9…` |
 | Genoma nuevo | no requerido |
-| `validacion.md` / PBI→done / `delivery-close-cycle` | **no iniciados** — requieren tests verdes + Shell para DCC; no se inventa APTO |
+| `validacion.md` / PBI→done / `delivery-close-cycle` | **no iniciados** — fase Verificación/cierre; no se inventa APTO |
 
 ## Veredicto
 
-**blocked** — código y commits en rama confirmados por FS; falta evidencia ejecutable de batería unitaria y de `skill:git-manager`.
+**blocked** — código y commits confirmados por FS + grep estático; falta evidencia ejecutable de batería unitaria y de `skill:git-manager`.
 
 Desbloqueo (operador / Shell aprobado):
 
@@ -40,8 +39,8 @@ Desbloqueo (operador / Shell aprobado):
 cargo test -p execute-process --lib adu_ca -- --test-threads=4
 cargo test -p execute-process --lib telegram_message_for_pec -- --test-threads=4
 cargo test -p execute-process --lib t_adu_ -- --test-threads=4
-./sddia-run.sh --tool git-manager   # status / get_last_commit
-# luego fase Argos → validacion.md APTO → PBI done/ → delivery-close-cycle
+printf '%s\n' '{"action":"status"}' | ./sddia-run.sh --tool git-manager
+# luego Argos → validacion.md APTO → PBI done/ → delivery-close-cycle
 ```
 
 ## Diff lógico (resumen)

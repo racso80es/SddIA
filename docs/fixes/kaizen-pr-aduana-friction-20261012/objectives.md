@@ -1,5 +1,6 @@
 ---
 
+
 feature_name: kaizen-pr-aduana-friction-20261012
 created: "2026-10-13"
 process: bug-fix
@@ -7,8 +8,8 @@ branch_name: fix/kaizen-pr-aduana-friction-20261012
 persist_ref: docs/fixes/kaizen-pr-aduana-friction-20261012
 pbi_ref: docs/todos/pending/[KAIZEN] Aduana PR — corte LLM, dedupe Presented, persist_ref docs y sellos post-merge.md
 document_id: PBI-KAIZEN-PR-ADUANA-FRICTION-20261012
-correlation_id: "77f88be2-3509-416f-a426-8e03df9591cb"
-execution_id: "13753665-38ae-4ac7-88c8-48264a7cefde"
+correlation_id: "d96571be-c2e1-4a07-96be-efb0d18b81d8"
+execution_id: "c71cb9cb-56cb-48e3-a6b8-69b45dddc156"
 ---
 # Objetivos — kaizen-pr-aduana-friction-20261012
 
