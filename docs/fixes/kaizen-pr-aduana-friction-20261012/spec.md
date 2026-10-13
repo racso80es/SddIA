@@ -1,6 +1,8 @@
 ---
+
 feature_name: kaizen-pr-aduana-friction-20261012
 created: "2026-10-13"
+updated: "2026-10-13"
 process: bug-fix
 branch_name: fix/kaizen-pr-aduana-friction-20261012
 persist_ref: docs/fixes/kaizen-pr-aduana-friction-20261012
@@ -9,10 +11,10 @@ document_id: PBI-KAIZEN-PR-ADUANA-FRICTION-20261012
 uuid: "a7c3e91b-2f48-4d6a-9e1c-5b8d0f4a2c71"
 scope: pr-aduana-friction
 base: main
-execution_id: "37dc1867-9940-499b-99a7-1e4d2d933a0d"
-correlation_id: "834d80af-cd3f-49b5-958a-c4a7d62f6975"
+design_status: sealed
+correlation_id: "77f88be2-3509-416f-a426-8e03df9591cb"
+execution_id: "13753665-38ae-4ac7-88c8-48264a7cefde"
 ---
-
 # Spec — Aduana PR: corte LLM, dedupe Presented, persist_ref docs, sellos e higiene, PEC Telegram
 
 ## Problema
@@ -36,54 +38,43 @@ Audición PEC PR #344 (`docs/merge-thermo-hu-f2-close`): el `failed` de `pull-re
 
 **Alcance estrecho:** solo fase **«Veredicto y bloqueo»** de `pull-request-review` cuando el state ya registra bloqueo documental de Triaje.
 
-Punto de intervención preferente: `residual_runner::execute_phase` / bucle de `run_generic`, **antes** de `agent_runtime::invoke_agent_phase` para esa fase.
+**API de diseño (predicados):**
 
-**Predicado de corte (orden):**
+- `ppr_documental_triage_blocked(state)` — `documental_triage_blocked == true` **o** algún `phase_reports[]` con `phase_name == "Triaje documental"` ∧ `status == "blocked"`.
+- `ppr_verdict_skip_llm(process, phase, state)` — PPR ∧ fase `Veredicto y bloqueo` ∧ predicado anterior.
 
-1. `process_name == "pull-request-review"`.
-2. `phase_name` es la fase Veredicto (nombre canónico del proceso: `Veredicto y bloqueo`).
-3. Existe evidencia de Triaje documental `blocked` en `phase_reports` ya acumulados **o** en `state` (p. ej. `argos_verdict == "block"` ya escrito en L881–886 de `residual_runner`).
+**Punto de intervención:** `residual_runner::execute_phase`, **antes** de `agent_runtime::invoke_agent_phase`.
 
 **Comportamiento al cortar:**
 
 - No invocar runtime Argos.
-- Emitir entrada de fase `status: "blocked"` (determinista), sin payload LLM.
-- Dejar que Cerbero / Cosecha / Handoff sigan (baratos; handoff ya hace `skipped` / `verdict_not_aprobado`).
+- Emitir entrada de fase `status: "blocked"`, `handler: "ppr-verdict-barrier"`, `reason: "documental_triage_blocked"`.
+- Escribir `argos_verdict: "block"` en state.
+- Cerbero / Cosecha / Handoff siguen (handoff `skipped` / `verdict_not_aprobado`).
 - Agregación terminal conserva `status_code: 1` (peaje F2 intacto).
 
-**Prohibido:** mover PPR entero al executor de `feature`/`bug-fix` (saltaría Cerbero/Cosecha/Handoff).
+**Prohibido:** mover PPR entero al executor de `feature`/`bug-fix`.
 
-**Si Triaje no está `blocked`:** Veredicto delega en Argos como hoy (CA2).
-
-Helper compartido opcional con `executor::agent_phase_blocks_downstream` solo como predicado de status; la política de *qué* fases saltar es específica de PPR+Veredicto.
+**CA2:** si Triaje no está `blocked`, Veredicto delega en Argos.
 
 ### L2 — Dedupe Presented / Local_QA (ADU-CA3, ADU-CA4)
 
-**Lugar:** `route_domain_core::dispatch_subscriber` (o helper inmediato antes de `dispatch_process_subscriber` cuando `process_key == "pull-request-review"`). No abortar un PPR ya arrancado.
+**Lugar:** pre-`dispatch_process_subscriber` cuando el destino es `pull-request-review` (`route_domain_core`).
 
-**Clave de colapso:** `(branch, head_commit)` donde:
+**API:** `try_acquire_ppr_dedupe` / `release_ppr_dedupe`; clave `ppr_dedupe_hex(branch, head_commit)`.
 
 - `branch` = payload `branch` / `pr_branch`.
-- `head_commit` = SHA del tip de la rama en el momento del despacho (vía evidencia ya disponible en precheck / git-manager `get_last_commit` sobre el ref; si no resoluble → **no** deduplicar: fail-open al PPR).
+- `head_commit` = SHA tip; si irresoluble → **fail-open** (no deduplicar).
 
-**Hit (descartar):**
+**Hit:** skip de suscriptor con `reason: "ppr_dedupe_branch_commit"` + proof durable bajo `eda_instance.proofs` / namespace `ppr-presented-dedupe/`. Sin clase ECST nueva; genoma solo vía `entity-manager` si el rastro exigiera bus suscrito (no requerido).
 
-- Ya hay PPR en vuelo o completado reciente para la misma clave, **o**
-- Segundo `PullRequest_Presented` / `Local_QA_Requested` solapado con la misma clave.
-
-Envelope de descarte: `success`-equivalente a skip de suscriptor (`skipped` / status durable), `reason` explícito (p. ej. `ppr_dedupe_branch_commit`), ambos `event_id` si aplica.
-
-**Rastro durable (CA3 / TQM-CA8):** proof síncrono bajo `eda_instance.proofs` (mismo patrón `tqm-single-flight`) en namespace `ppr-presented-dedupe/`. No depender de evento con `purge_after: true` sin suscriptor.
-
-**Clase ECST:** solo si hace falta proyección bus ya suscrita; preferir proof. Genoma nuevo → `entity-manager`, no Write manual.
-
-**CA4:** commit distinto en la misma rama → clave distinta → despacho normal (cascada F2 puede pasar aduana).
+**CA4:** commit distinto → clave distinta → despacho normal.
 
 ### L3 — `persist_ref` prefijo `docs/` (ADU-CA5, ADU-CA6)
 
 Único punto: `eda_bus_topology::infer_persist_ref_from_branch`.
 
-Tras ramas `feat/` / `refactor/` / `fix/` (comportamiento actual intacto — CA6), añadir:
+Tras `feat/` / `refactor/` / `fix/` (CA6 intacto):
 
 ```text
 docs/{slug}  →  candidatos:
@@ -91,67 +82,53 @@ docs/{slug}  →  candidatos:
   2. {fixes_prefix}/{slug}      si is_dir
 ```
 
-Sin directorio → `None` (no inventar sink). Sufijo numérico (`BRANCH_NUMERIC_SUFFIX_RE`) aplica igual que en los otros prefijos si el slug lo lleva.
-
-No duplicar heurística en prompts Argos.
+Sin directorio → `None`. Sufijo numérico (`BRANCH_NUMERIC_SUFFIX_RE`) igual que otros prefijos. No duplicar heurística en prompts Argos.
 
 ### L4 — Escaneo Presented histórico (ADU-CA7)
 
-`accept_pr::scan_presented_for_branch`:
-
-- Barrer `.events/pending`, `.events/processed` y `.events/dead-letter` (rutas relativas al repo; si alguna carpeta no existe, continuar).
-- Mismo predicado: `event_type == PullRequest_Presented` ∧ `payload.branch == branch`.
-- `presented_found: true` si hay hit en cualquiera; `orphan_merge` / `traceability_anomaly: merge_huérfano` solo si ausencia en las tres.
+`accept_pr::scan_presented_for_branch`: barrer `.events/pending`, `processed`, `dead-letter`. Predicado: `PullRequest_Presented` ∧ `payload.branch == branch`. `orphan_merge` / `traceability_anomaly: merge_huérfano` solo si ausencia en las tres.
 
 ### L5 — Higiene remota idempotente (ADU-CA8, ADU-CA9)
 
-En `delete_branch_hygiene` / post-`record_hygiene_op` para scope `remote`:
-
-1. Si el `Err` (o stderr encapsulado) clasifica como **ref ausente** (`remote ref does not exist`, `ref remoto no existe`, variantes `error: unable to delete ... not found` / `remote ref does not exist`), reclasificar a `ok: true` (éxito idempotente). No tragar auth/red/ref protegida.
-2. `closed_branch = Some(branch)` **solo si** `local_ok && remote_ok` (tras reclasificación). Parcial → `hygiene_failure` con `operations`, sin `closed_branch`.
-3. L-HYGIENE-SOFT intacto: higiene no tumba `status_code` si merge+push salieron.
-
-Actualizar `t_a2_local_ok_closed_branch` y añadir casos: ref ausente → remote ok; fallo auth → hygiene_failure; local ok + remote fail → sin `closed_branch`.
+- Clasificador `is_remote_ref_absent_error` (stderr: `remote ref does not exist` / `ref remoto no existe` / variantes not found) → `ok: true`.
+- No tragar auth/red/ref protegida.
+- `closed_branch = Some(branch)` **solo si** `local_ok && remote_ok`.
+- L-HYGIENE-SOFT intacto.
 
 ### L6 — PEC Telegram legible (ADU-CA11–ADU-CA14)
 
-#### Emisor (`thermodynamic.rs` + PEC temprano TQM si conoce rama)
+**Emisor** (`thermodynamic.rs` / `pec_notice_from_context`): proyectar `branch` ← `source_branch` | `pr_branch` | `branch`; `pr_url`; `notice` con prioridad higiene incompleta > `merge_huérfano` > `merge ya materializado`; omitir `notice` si vacío. Conservar `failed_phase*`.
 
-Al armar payload `Process_Execution_Completed`, proyectar (si disponibles en `state` / `inputs`):
+**Humanizador** (`build_telegram_message_from_event` para PEC) — líneas omitiendo vacías:
 
-- `branch` ← primer no vacío de `source_branch` | `pr_branch` | `branch`
-- `pr_url` si existe
-- `notice` — **una** cadena, prioridad:
-  1. higiene incompleta (`survived_branch` + causa corta)
-  2. `merge_huérfano`
-  3. `merge ya materializado` (`merge_already_done` / equivalente)
-  4. vacío → omitir campo
-
-`failed_phase` / `failed_phase_error` ya se escriben en fallo; conservar.
-
-#### Humanizador (`build_telegram_message_from_event` para PEC)
-
-Líneas en orden, omitiendo vacías:
-
-1. `PEC {status}: {process_name}` — si `cycle_phase` ∉ {`completed`, `failed`} y ≠ `status`, sufijo ` ({cycle_phase})`
+1. `PEC {status}: {process_name}` — sufijo ` ({cycle_phase})` solo si cycle ∉ {`completed`,`failed`} y ≠ status
 2. `fase: {failed_phase}`
-3. `motivo: {failed_phase_error}` ≤120 chars
-4. `rama: {branch}` **o** si no hay rama `persist_ref: {persist_ref}`
+3. `motivo: {failed_phase_error}` ≤120
+4. `rama: {branch}` **o** `persist_ref: {persist_ref}`
 5. `pr_url` línea propia
-6. `aviso: {notice}` ≤120 si no vacío
-7. `correlation_id={…}` o `sin-correlation_id`
+6. `aviso: {notice}` ≤120
+7. `correlation_id=…` o `sin-correlation_id`
 
-Prohibido que el humanizador lea workspaces o `.events/`. `notice` no sustituye sellos `hygiene_failure` / `traceability_anomaly`.
+Prohibido que el humanizador lea workspaces o `.events/`.
 
-## Tests (ADU-CA10, ADU-CA14)
+## Criterios de aceptación (Argos)
 
-| Área | Casos mínimos |
-|------|----------------|
-| residual / PPR barrier | Triaje blocked → Veredicto sin invoke; Triaje OK → invoke |
-| `infer_persist_ref_from_branch` | `docs/slug`→features; fallback fixes; ausente→None; feat/fix/refactor regresion |
-| `scan_presented_for_branch` | hit en processed; hit en dead-letter; miss en las tres |
-| hygiene | ref ausente→ok; otro error→failure; closed_branch solo ambos ok |
-| Telegram | CA11 failed; CA12 cycle_phase; CA13 notice/sin notice; `telegram_message_for_pec_includes_correlation` verde |
+| ID | Predicado verificable | Medio |
+|----|----------------------|-------|
+| ADU-CA1 | Triaje documental blocked → Veredicto sin `invoke_agent_phase`; status blocked; handoff skipped; status_code 1 | unit `adu_ca1_*` |
+| ADU-CA2 | Triaje no blocked → Veredicto invoca Argos | unit `adu_ca2_*` |
+| ADU-CA3 | Dos Presented/Local_QA misma (rama, commit) → un PPR; descarte con reason + proof | unit `adu_ca3_*` |
+| ADU-CA4 | Commit distinto misma rama → no suprimido | unit `adu_ca4_*` |
+| ADU-CA5 | `docs/{slug}` → features\|fixes si dir existe; else None | unit `adu_ca5_*` |
+| ADU-CA6 | feat/fix/refactor sin regresión | unit `adu_ca6_*` |
+| ADU-CA7 | presented_found si hit en pending\|processed\|dead-letter | unit `t_adu_ca7_*` |
+| ADU-CA8 | ref remoto ausente → ok true, sin hygiene_failure | unit `t_adu_ca8_*` |
+| ADU-CA9 | otro error remoto → hygiene_failure; closed_branch solo local∧remoto; status_code 0 si merge+push (L-HYGIENE-SOFT) | unit `t_adu_ca9_*` + `t_a2_*` |
+| ADU-CA10 | Batería unitaria CA1–CA2 y CA5–CA9 presente | inventario tests |
+| ADU-CA11 | PEC failed: titular sin `failed/failed`; fase; motivo≤120; correlation | unit `adu_ca11_*` |
+| ADU-CA12 | completed sin ciclo en titular; awaiting_agents entre paréntesis | unit `adu_ca12_*` |
+| ADU-CA13 | Payload con branch/pr_url/notice; humanizador solo payload | unit `adu_ca13_*` |
+| ADU-CA14 | `telegram_message_for_pec_includes_correlation` verde + CA11–13 | unit + regresión |
 
 ## Fuera de alcance
 
@@ -159,7 +136,7 @@ Prohibido que el humanizador lea workspaces o `.events/`. `notice` no sustituye 
 - Argos LLM en Auditoría Genómica `merge_already_done`.
 - Reescribir O1 pre-push (complementa; no sustituye).
 
-## Criterios (mapeo)
+## Criterios (mapeo capa)
 
 | CA | Capa |
 |----|------|
