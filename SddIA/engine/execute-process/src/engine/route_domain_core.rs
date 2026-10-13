@@ -362,6 +362,12 @@ fn status_is_terminal_ok(status: &str) -> bool {
     status == "success" || status.starts_with("skipped")
 }
 
+/// TG-CA1/CA2: silencio selectivo PEC — solo `process_name` + `status` del payload.
+fn pec_telegram_silent(process_name: &str, status: &str) -> bool {
+    (process_name == "accept-pr" && status == "success")
+        || (process_name == "pull-request-review" && status == "failed")
+}
+
 fn build_telegram_message_from_event(event: &Value) -> Option<String> {
     let event_type = event.get("event_type").and_then(|v| v.as_str())?;
     let payload = event.get("payload").and_then(|v| v.as_object());
@@ -418,6 +424,9 @@ fn build_telegram_message_from_event(event: &Value) -> Option<String> {
                 .and_then(|p| p.get("status"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("success");
+            if pec_telegram_silent(pname, st) {
+                return None;
+            }
             let cycle = payload
                 .and_then(|p| p.get("cycle_phase"))
                 .and_then(|v| v.as_str());
@@ -3018,7 +3027,23 @@ mod blocking_tests {
     }
 
     #[test]
-    fn adu_ca11_pec_failed_has_fase_motivo_no_failed_slash() {
+    fn tg_ca1_pec_accept_pr_success_silent() {
+        let ev = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "accept-pr",
+                "correlation_id": "cid-2",
+                "status": "success",
+                "cycle_phase": "completed",
+                "branch": "fix/x",
+                "notice": "merge ya materializado"
+            }
+        });
+        assert!(build_telegram_message_from_event(&ev).is_none());
+    }
+
+    #[test]
+    fn tg_ca2_pec_ppr_failed_silent() {
         let ev = json!({
             "event_type": "Process_Execution_Completed",
             "payload": {
@@ -3031,8 +3056,85 @@ mod blocking_tests {
                 "branch": "docs/merge-thermo-hu-f2-close"
             }
         });
+        assert!(build_telegram_message_from_event(&ev).is_none());
+    }
+
+    #[test]
+    fn tg_ca3_pec_non_silent_adu_contract() {
+        // accept-pr failed — ADU-CA11
+        let failed_accept = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "accept-pr",
+                "correlation_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                "status": "failed",
+                "cycle_phase": "failed",
+                "failed_phase": "Fusión soberana",
+                "failed_phase_error": "CI rojo",
+                "branch": "fix/x"
+            }
+        });
+        let msg = build_telegram_message_from_event(&failed_accept).expect("msg");
+        assert!(msg.starts_with("PEC failed: accept-pr"));
+        assert!(!msg.contains("failed/failed"));
+        assert!(msg.contains("fase: Fusión soberana"));
+        assert!(msg.contains("motivo: CI rojo"));
+        assert!(msg.contains("rama: fix/x"));
+        assert!(msg.contains("correlation_id=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"));
+
+        // PPR success — no silencio
+        let ppr_ok = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "pull-request-review",
+                "correlation_id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+                "status": "success",
+                "cycle_phase": "completed"
+            }
+        });
+        let msg_ppr = build_telegram_message_from_event(&ppr_ok).expect("msg");
+        assert!(msg_ppr.starts_with("PEC success: pull-request-review"));
+        assert!(msg_ppr.contains("correlation_id=bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"));
+
+        // otro proceso — ADU-CA12/13
+        let other = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "feature",
+                "correlation_id": "cid-n",
+                "status": "success",
+                "cycle_phase": "completed",
+                "branch": "feat/x",
+                "pr_url": "https://github.com/o/r/pull/1",
+                "notice": "merge ya materializado",
+                "persist_ref": "docs/fixes/kaizen-pr-aduana-friction-20261012"
+            }
+        });
+        let msg_o = build_telegram_message_from_event(&other).expect("msg");
+        assert!(msg_o.starts_with("PEC success: feature\n"));
+        assert!(!msg_o.contains("(completed)"));
+        assert!(msg_o.contains("aviso: merge ya materializado"));
+        assert!(msg_o.contains("rama: feat/x"));
+        assert!(msg_o.contains("https://github.com/o/r/pull/1"));
+    }
+
+    #[test]
+    fn adu_ca11_pec_failed_has_fase_motivo_no_failed_slash() {
+        // Proceso no silenciado (TG-CA2 silencia PPR failed).
+        let ev = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "bug-fix",
+                "correlation_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                "status": "failed",
+                "cycle_phase": "failed",
+                "failed_phase": "Triaje documental",
+                "failed_phase_error": "FAIL_F2_DOC: faltan artefactos",
+                "branch": "docs/merge-thermo-hu-f2-close"
+            }
+        });
         let msg = build_telegram_message_from_event(&ev).expect("msg");
-        assert!(msg.starts_with("PEC failed: pull-request-review"));
+        assert!(msg.starts_with("PEC failed: bug-fix"));
         assert!(!msg.contains("failed/failed"));
         assert!(msg.contains("fase: Triaje documental"));
         assert!(msg.contains("motivo: FAIL_F2_DOC"));
@@ -3057,23 +3159,24 @@ mod blocking_tests {
         let completed = json!({
             "event_type": "Process_Execution_Completed",
             "payload": {
-                "process_name": "accept-pr",
+                "process_name": "feature",
                 "correlation_id": "cid-2",
                 "status": "success",
                 "cycle_phase": "completed"
             }
         });
         let msg2 = build_telegram_message_from_event(&completed).expect("msg");
-        assert!(msg2.starts_with("PEC success: accept-pr\n"));
+        assert!(msg2.starts_with("PEC success: feature\n"));
         assert!(!msg2.contains("(completed)"));
     }
 
     #[test]
     fn adu_ca13_notice_and_without_notice() {
+        // accept-pr success silenciado (TG-CA1); contrato notice en proceso no silenciado.
         let with_notice = json!({
             "event_type": "Process_Execution_Completed",
             "payload": {
-                "process_name": "accept-pr",
+                "process_name": "delivery-close-cycle",
                 "correlation_id": "cid-n",
                 "status": "success",
                 "cycle_phase": "completed",
@@ -3090,7 +3193,7 @@ mod blocking_tests {
         let no_notice = json!({
             "event_type": "Process_Execution_Completed",
             "payload": {
-                "process_name": "accept-pr",
+                "process_name": "delivery-close-cycle",
                 "correlation_id": "cid-0",
                 "status": "success",
                 "cycle_phase": "completed",

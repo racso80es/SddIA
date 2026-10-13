@@ -201,8 +201,9 @@ pub fn build_synthesis_prompt_with_git(event: &Value, git: Option<&CommitSummary
             ));
         }
     }
+    // TG-CA7: input idioma descartado; cláusula estable en castellano.
     format!(
-        "{PROMPT_KERNEL}\nReturn only business value of this merge. Do not restate hash, auditor, branch, or correlation.\nDo not invent files, commits, or intent absent from CONTEXT.\nCONTEXT:\n{}",
+        "{PROMPT_KERNEL}\nDevuelve solo el valor de negocio de este merge, en castellano.\nNo reiteres hash, auditor, rama ni correlación.\nNo inventes ficheros, commits ni intención ausentes del CONTEXT.\nCONTEXT:\n{}",
         ctx.join("\n")
     )
 }
@@ -222,30 +223,53 @@ pub fn truncate_synthesis(text: &str) -> String {
     }
 }
 
-pub fn assemble_humanized_message(static_msg: &str, synthesis: Option<&str>) -> String {
-    match synthesis.map(str::trim).filter(|s| !s.is_empty()) {
-        Some(s) => format!("{static_msg}\n\n🧠 Síntesis de Valor: {s}"),
-        None => static_msg.to_string(),
+/// Resultado tipado de síntesis (TG-CA4/CA5): Ready o omisión explícita.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SynthesisOutcome {
+    Ready(String),
+    OmittedInferUnavailable,
+    OmittedEmptyText,
+}
+
+impl SynthesisOutcome {
+    pub fn is_ready(&self) -> bool {
+        matches!(self, Self::Ready(_))
     }
 }
 
-fn synthesis_from_capsule(body: &Value) -> Option<String> {
-    let text = body
+pub fn assemble_humanized_message(static_msg: &str, outcome: &SynthesisOutcome) -> String {
+    let synthesis_line = match outcome {
+        SynthesisOutcome::Ready(s) => format!("🧠 Síntesis de Valor: {s}"),
+        SynthesisOutcome::OmittedInferUnavailable => {
+            "🧠 Síntesis de Valor: (omitida — inferencia no disponible)".into()
+        }
+        SynthesisOutcome::OmittedEmptyText => {
+            "🧠 Síntesis de Valor: (omitida — texto vacío)".into()
+        }
+    };
+    format!("{static_msg}\n\n{synthesis_line}")
+}
+
+fn synthesis_from_capsule(body: &Value) -> SynthesisOutcome {
+    let Some(text) = body
         .pointer("/result/text")
         .or_else(|| body.get("text"))
         .or_else(|| body.pointer("/result/result/text"))
         .and_then(|v| v.as_str())
         .map(str::trim)
-        .filter(|s| !s.is_empty())?;
+        .filter(|s| !s.is_empty())
+    else {
+        return SynthesisOutcome::OmittedEmptyText;
+    };
     let cut = truncate_synthesis(text);
     if cut.is_empty() {
-        None
+        SynthesisOutcome::OmittedEmptyText
     } else {
-        Some(cut)
+        SynthesisOutcome::Ready(cut)
     }
 }
 
-pub fn try_infer_synthesis(repo: &Path, event: &Value) -> Option<String> {
+pub fn try_infer_synthesis(repo: &Path, event: &Value) -> SynthesisOutcome {
     let merge_hash = payload_str(
         event.get("payload").and_then(|v| v.as_object()),
         "merge_commit_hash",
@@ -268,7 +292,7 @@ pub fn try_infer_synthesis(repo: &Path, event: &Value) -> Option<String> {
         {
             synthesis_from_capsule(&r.body)
         }
-        _ => None,
+        _ => SynthesisOutcome::OmittedInferUnavailable,
     }
 }
 
@@ -294,11 +318,11 @@ pub fn run_from_event(repo: &Path, event: &Value) -> Result<NotifyOutcome, Strin
     let Some(static_msg) = pr_merged_static_message(event) else {
         return Ok(NotifyOutcome::SkippedEmpty);
     };
-    let synthesis = try_infer_synthesis(repo, event);
-    let msg = assemble_humanized_message(&static_msg, synthesis.as_deref());
+    let outcome = try_infer_synthesis(repo, event);
+    let msg = assemble_humanized_message(&static_msg, &outcome);
     invoke_send_telegram(repo, &msg)?;
     Ok(NotifyOutcome::Sent {
-        synthesized: synthesis.is_some(),
+        synthesized: outcome.is_ready(),
     })
 }
 
@@ -352,6 +376,8 @@ mod tests {
         let p = build_synthesis_prompt(&fixture_event());
         assert!(p.contains("MAX 2 LINES"));
         assert!(p.contains("PENALIZE CONJECTURE"));
+        assert!(p.contains("en castellano"));
+        assert!(!p.contains("Return only business value"));
         assert!(p.contains("source_branch=feat/accept-pr-telegram-notify"));
         assert!(p.contains("merge_commit_hash=a1b2c3d4e5f6789012345678901234567890abcd"));
         assert!(p.contains("author=integration-operator"));
@@ -360,6 +386,14 @@ mod tests {
         assert!(!p.contains("commits/diffs"));
         assert!(!p.contains("SUBJECT:"));
         assert!(!p.contains("FILES:"));
+    }
+
+    #[test]
+    fn tg_ca4_prompt_castellano_no_english_business_value() {
+        let p = build_synthesis_prompt(&fixture_event());
+        assert!(p.contains("Devuelve solo el valor de negocio de este merge, en castellano."));
+        assert!(p.contains("No reiteres hash, auditor, rama ni correlación."));
+        assert!(!p.contains("Return only business value of this merge"));
     }
 
     #[test]
@@ -375,7 +409,7 @@ mod tests {
         };
         let p = build_synthesis_prompt_with_git(&fixture_event(), Some(&git));
         assert!(p.contains("PENALIZE CONJECTURE"));
-        assert!(p.contains("Do not invent files"));
+        assert!(p.contains("No inventes ficheros"));
         assert!(p.contains("SUBJECT: add capsule commit_summary"));
         assert!(p.contains("FILES: SddIA/skills/git-manager/src/main.rs, SddIA/norms/skill-io-git-manager-frozen.md"));
         assert!(!p.contains("invented.rs"));
@@ -427,26 +461,51 @@ mod tests {
     }
 
     #[test]
-    fn notify_humanized_assemble_failsoft_omits_synthesis() {
+    fn tg_ca5_assemble_omission_explicit() {
         let st = pr_merged_static_message(&fixture_event()).unwrap();
-        let only = assemble_humanized_message(&st, None);
-        assert!(!only.contains("Síntesis de Valor"));
-        assert!(only.contains("7f3a9c2e…"));
-        assert!(!only.contains("merge_huérfano"));
-        let with = assemble_humanized_message(&st, Some("Valor de negocio."));
-        assert!(with.contains("🧠 Síntesis de Valor: Valor de negocio."));
+        let unavailable =
+            assemble_humanized_message(&st, &SynthesisOutcome::OmittedInferUnavailable);
+        assert!(unavailable.contains("🧠 Síntesis de Valor: (omitida — inferencia no disponible)"));
+        assert!(unavailable.contains("7f3a9c2e…"));
+        assert!(!unavailable.contains("merge_huérfano"));
+
+        let empty = assemble_humanized_message(&st, &SynthesisOutcome::OmittedEmptyText);
+        assert!(empty.contains("🧠 Síntesis de Valor: (omitida — texto vacío)"));
+        assert!(empty.contains("✅ PR Fusionado"));
+    }
+
+    #[test]
+    fn tg_ca4_assemble_ready_synthesis() {
+        let st = pr_merged_static_message(&fixture_event()).unwrap();
+        let with = assemble_humanized_message(
+            &st,
+            &SynthesisOutcome::Ready("Valor de negocio en castellano.".into()),
+        );
+        assert!(with.contains("🧠 Síntesis de Valor: Valor de negocio en castellano."));
         assert!(with.contains("✅ PR Fusionado"));
+        // El cuerpo sintético no debe reiterar metadatos del estático (contrato de prompt).
+        let synth_tail = with
+            .split("🧠 Síntesis de Valor: ")
+            .nth(1)
+            .expect("síntesis");
+        assert!(!synth_tail.contains("a1b2c3d"));
+        assert!(!synth_tail.contains("feat/accept-pr-telegram-notify"));
+        assert!(!synth_tail.contains("Argos"));
+        assert!(!synth_tail.contains("7f3a9c2e"));
     }
 
     #[test]
     fn notify_humanized_synthesis_from_capsule_reads_result_text() {
         let body = json!({"success": true, "result": {"text": "  linea A\nlinea B\nlinea C  "}});
         assert_eq!(
-            synthesis_from_capsule(&body).as_deref(),
-            Some("linea A\nlinea B")
+            synthesis_from_capsule(&body),
+            SynthesisOutcome::Ready("linea A\nlinea B".into())
         );
         let empty = json!({"success": true, "result": {"text": "   "}});
-        assert!(synthesis_from_capsule(&empty).is_none());
+        assert_eq!(
+            synthesis_from_capsule(&empty),
+            SynthesisOutcome::OmittedEmptyText
+        );
     }
 
     #[test]
