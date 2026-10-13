@@ -142,3 +142,66 @@ execution_id: "3c792bba-cb4e-41d5-9d9e-02201cf6ebd5"
 - Shell IDE `Rejected`: sin `cargo test` ni checkout `fix/kaizen-telegram-pec-silence-value-es` (sigue `main`; ref ausente).
 - Falta evidencia unitaria + rama vía `git-manager` para desbloquear → Argos.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-13T15:37:13Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-13T15:37:22Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-10-13T15:39:00Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `19a1785f-ae5a-49af-8e21-22cacbba7b34`
+- correlation_id: `8b3148d6-6fd9-4b48-b690-26a65293fd6d`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - PBI en `done/`; `accept_pr_handoff: pending` (F3/F4 fuera de fase)
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (fase Triaje documental · `PASS_F2_DOC`)
+
+- Tocados: `docs/fixes/kaizen-telegram-pec-silence-value-es/validacion.md`
+- R1/R2: copia bridge `prosthesis_subprocess` → `TECH_FORMAL`/`GIT_EVIDENCE` **APTO** (sin stdout inventado; Shell git-manager Rejected)
+- R3 KM: **APTO** — 0 writes Argos bajo `docs/todos/**`
+- F2: objectives/spec/plan/implementation (+ YAML) **APTO**; worktree = inject `fix/kaizen-telegram-pec-silence-value-es`
+- PBI en `done/`; `accept_pr_handoff: pending` (F3/F4 fuera de fase)
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-13T15:39:00Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
