@@ -1,7 +1,7 @@
 //! Núcleo orquestador `route-domain-event` nativo (paridad `route_domain_event_core.py`).
 
 use super::actions;
-use super::capsules::{invoke_capsule_json, invoke_tool_capsule_json};
+use super::capsules::{invoke_capsule_json, invoke_git_manager, invoke_tool_capsule_json};
 use super::ecst_validation::{load_event_class_schemas, validate_ecst_instance};
 use super::project_binding::plan_route_for_repo;
 use super::eda_bus_topology::{
@@ -420,11 +420,66 @@ fn build_telegram_message_from_event(event: &Value) -> Option<String> {
                 .unwrap_or("success");
             let cycle = payload
                 .and_then(|p| p.get("cycle_phase"))
+                .and_then(|v| v.as_str());
+            // ADU-CA11/CA12: titular sin failed/failed; cycle solo si aporta.
+            let mut title = format!("PEC {st}: {pname}");
+            if let Some(c) = cycle {
+                if c != "completed" && c != "failed" && c != st {
+                    title.push_str(&format!(" ({c})"));
+                }
+            }
+            let mut lines = vec![title];
+            if let Some(fp) = payload
+                .and_then(|p| p.get("failed_phase"))
                 .and_then(|v| v.as_str())
-                .unwrap_or("completed");
-            Some(format!(
-                "PEC {st}/{cycle}: {pname}\ncorrelation_id={cid}"
-            ))
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                lines.push(format!("fase: {fp}"));
+            }
+            if let Some(err) = payload
+                .and_then(|p| p.get("failed_phase_error"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                let truncated: String = err.chars().take(120).collect();
+                lines.push(format!("motivo: {truncated}"));
+            }
+            if let Some(branch) = payload
+                .and_then(|p| p.get("branch"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                lines.push(format!("rama: {branch}"));
+            } else if let Some(pref) = payload
+                .and_then(|p| p.get("persist_ref"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                lines.push(format!("persist_ref: {pref}"));
+            }
+            if let Some(url) = payload
+                .and_then(|p| p.get("pr_url"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                lines.push(url.to_string());
+            }
+            if let Some(notice) = payload
+                .and_then(|p| p.get("notice"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                let truncated: String = notice.chars().take(120).collect();
+                lines.push(format!("aviso: {truncated}"));
+            }
+            lines.push(format!("correlation_id={cid}"));
+            Some(lines.join("\n"))
         }
         "Email_Triaged" => {
             let verdict = payload
@@ -1255,6 +1310,144 @@ fn dispatch_process_subscriber(
     }
 }
 
+const PPR_DEDUPE_NS: &str = "ppr-presented-dedupe";
+
+pub(crate) fn ppr_dedupe_hex(branch: &str, head_commit: &str) -> String {
+    let mut h = Sha256::new();
+    h.update(branch.as_bytes());
+    h.update(b"|");
+    h.update(head_commit.as_bytes());
+    format!("{:x}", h.finalize())
+}
+
+fn resolve_ppr_head_commit(repo: &Path, branch: &str) -> Option<String> {
+    for r in [branch.to_string(), format!("refs/heads/{branch}")] {
+        if let Ok(data) = invoke_git_manager(repo, "get_last_commit", &json!({ "ref": r })) {
+            if let Some(h) = data
+                .get("commitHash")
+                .or_else(|| data.get("commit_hash"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                return Some(h.to_string());
+            }
+        }
+    }
+    None
+}
+
+fn persist_ppr_dedupe_proof(
+    repo: &Path,
+    branch: &str,
+    head_commit: &str,
+    hex: &str,
+    kind: &str,
+    event: &Value,
+    holder_event_id: Option<&str>,
+) -> Result<PathBuf, String> {
+    let dir = resolve_eda_proofs_dir(repo).join(PPR_DEDUPE_NS);
+    fs::create_dir_all(&dir).map_err(|e| format!("ppr-dedupe mkdir: {e}"))?;
+    let suffix = if kind == "hit" {
+        let discarded = event
+            .get("event_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
+        format!("{hex}-discard-{discarded}.json")
+    } else {
+        format!("{hex}.json")
+    };
+    let path = dir.join(suffix);
+    let payload = json!({
+        "kind": format!("ppr-presented-dedupe-{kind}"),
+        "timestamp": Utc::now().to_rfc3339(),
+        "branch": branch,
+        "head_commit": head_commit,
+        "lock_hex": hex,
+        "holder_event_id": holder_event_id.filter(|s| !s.is_empty()),
+        "discarded_event_id": event.get("event_id").and_then(|v| v.as_str()).filter(|s| !s.is_empty()),
+        "event_type": event.get("event_type").and_then(|v| v.as_str()),
+        "reason": "ppr_dedupe_branch_commit",
+    });
+    fs::write(
+        &path,
+        serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| format!("ppr-dedupe proof write: {e}"))?;
+    Ok(path)
+}
+
+/// ADU-CA3/CA4: gate pre-dispatch. `Ok(Some(hex))` = acquired; `Ok(None)` = fail-open;
+/// `Err((status, reason, code))` = skip durable.
+pub(crate) fn try_acquire_ppr_dedupe(
+    repo: &Path,
+    branch: &str,
+    head_commit: &str,
+    event: &Value,
+) -> Result<Option<String>, (String, Option<String>, i32)> {
+    let hex = ppr_dedupe_hex(branch, head_commit);
+    let dir = resolve_eda_proofs_dir(repo).join(PPR_DEDUPE_NS);
+    let _ = fs::create_dir_all(&dir);
+    let proof_path = dir.join(format!("{hex}.json"));
+    let lock_path = dir.join(format!("{hex}.lock"));
+    if proof_path.is_file() || lock_path.is_file() {
+        let holder = fs::read_to_string(&lock_path).ok().or_else(|| {
+            fs::read_to_string(&proof_path)
+                .ok()
+                .and_then(|t| serde_json::from_str::<Value>(&t).ok())
+                .and_then(|v| {
+                    v.get("holder_event_id")
+                        .and_then(|x| x.as_str())
+                        .map(str::to_string)
+                })
+        });
+        let _ = persist_ppr_dedupe_proof(
+            repo,
+            branch,
+            head_commit,
+            &hex,
+            "hit",
+            event,
+            holder.as_deref(),
+        );
+        return Err((
+            "skipped-ppr-dedupe".into(),
+            Some("ppr_dedupe_branch_commit".into()),
+            0,
+        ));
+    }
+    match OpenOptions::new().write(true).create_new(true).open(&lock_path) {
+        Ok(mut f) => {
+            let eid = event.get("event_id").and_then(|v| v.as_str()).unwrap_or("");
+            let _ = writeln!(f, "{eid}");
+            Ok(Some(hex))
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            let _ = persist_ppr_dedupe_proof(repo, branch, head_commit, &hex, "hit", event, None);
+            Err((
+                "skipped-ppr-dedupe".into(),
+                Some("ppr_dedupe_branch_commit".into()),
+                0,
+            ))
+        }
+        Err(_) => Ok(None), // fail-open
+    }
+}
+
+pub(crate) fn release_ppr_dedupe(
+    repo: &Path,
+    branch: &str,
+    head_commit: &str,
+    hex: &str,
+    event: &Value,
+) {
+    let dir = resolve_eda_proofs_dir(repo).join(PPR_DEDUPE_NS);
+    let lock_path = dir.join(format!("{hex}.lock"));
+    let holder = event.get("event_id").and_then(|v| v.as_str());
+    let _ = persist_ppr_dedupe_proof(repo, branch, head_commit, hex, "complete", event, holder);
+    let _ = fs::remove_file(&lock_path);
+}
+
 pub(crate) fn dispatch_subscriber(
     repo: &Path,
     subscriber: &Value,
@@ -1485,6 +1678,31 @@ pub(crate) fn dispatch_subscriber(
                 .filter(|s| !s.is_empty())
                 .unwrap_or("docs/features");
             process_inputs.insert("document_context".into(), json!(doc_ctx));
+
+            // ADU-CA3/CA4: dedupe Presented/Local_QA por (rama, commit) pre-dispatch.
+            if let Some(head) = resolve_ppr_head_commit(repo, branch) {
+                match try_acquire_ppr_dedupe(repo, branch, &head, event) {
+                    Ok(Some(hex)) => {
+                        std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
+                        let (status, exit_code) = dispatch_process_subscriber(
+                            repo,
+                            process_key,
+                            Value::Object(process_inputs),
+                        );
+                        release_ppr_dedupe(repo, branch, &head, &hex, event);
+                        if status == "success" {
+                            return (sid, status, None, exit_code);
+                        }
+                        return (sid, "failed".into(), Some(status), exit_code);
+                    }
+                    Ok(None) => {
+                        // fail-open: SHA/lock irresoluble o error I/O → despacho normal
+                    }
+                    Err((status, reason, code)) => {
+                        return (sid, status, reason, code);
+                    }
+                }
+            }
         }
 
         std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
@@ -2795,6 +3013,176 @@ mod blocking_tests {
         assert!(msg.contains("feature"));
         assert!(msg.contains("e273713c-dd91-487b-8716-1bdc8c5da741"));
         assert!(msg.contains("success"));
+        assert!(msg.starts_with("PEC success: feature"));
+        assert!(!msg.contains("success/completed"));
+    }
+
+    #[test]
+    fn adu_ca11_pec_failed_has_fase_motivo_no_failed_slash() {
+        let ev = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "pull-request-review",
+                "correlation_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                "status": "failed",
+                "cycle_phase": "failed",
+                "failed_phase": "Triaje documental",
+                "failed_phase_error": "FAIL_F2_DOC: faltan artefactos",
+                "branch": "docs/merge-thermo-hu-f2-close"
+            }
+        });
+        let msg = build_telegram_message_from_event(&ev).expect("msg");
+        assert!(msg.starts_with("PEC failed: pull-request-review"));
+        assert!(!msg.contains("failed/failed"));
+        assert!(msg.contains("fase: Triaje documental"));
+        assert!(msg.contains("motivo: FAIL_F2_DOC"));
+        assert!(msg.contains("rama: docs/merge-thermo-hu-f2-close"));
+        assert!(msg.contains("correlation_id=aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"));
+    }
+
+    #[test]
+    fn adu_ca12_awaiting_agents_shown_completed_hidden() {
+        let awaiting = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "feature",
+                "correlation_id": "cid-1",
+                "status": "success",
+                "cycle_phase": "awaiting_agents"
+            }
+        });
+        let msg = build_telegram_message_from_event(&awaiting).expect("msg");
+        assert!(msg.contains("PEC success: feature (awaiting_agents)"));
+
+        let completed = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "accept-pr",
+                "correlation_id": "cid-2",
+                "status": "success",
+                "cycle_phase": "completed"
+            }
+        });
+        let msg2 = build_telegram_message_from_event(&completed).expect("msg");
+        assert!(msg2.starts_with("PEC success: accept-pr\n"));
+        assert!(!msg2.contains("(completed)"));
+    }
+
+    #[test]
+    fn adu_ca13_notice_and_without_notice() {
+        let with_notice = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "accept-pr",
+                "correlation_id": "cid-n",
+                "status": "success",
+                "cycle_phase": "completed",
+                "branch": "fix/x",
+                "pr_url": "https://github.com/o/r/pull/1",
+                "notice": "merge ya materializado"
+            }
+        });
+        let msg = build_telegram_message_from_event(&with_notice).expect("msg");
+        assert!(msg.contains("aviso: merge ya materializado"));
+        assert!(msg.contains("rama: fix/x"));
+        assert!(msg.contains("https://github.com/o/r/pull/1"));
+
+        let no_notice = json!({
+            "event_type": "Process_Execution_Completed",
+            "payload": {
+                "process_name": "accept-pr",
+                "correlation_id": "cid-0",
+                "status": "success",
+                "cycle_phase": "completed",
+                "persist_ref": "docs/fixes/kaizen-pr-aduana-friction-20261012"
+            }
+        });
+        let msg2 = build_telegram_message_from_event(&no_notice).expect("msg");
+        assert!(!msg2.contains("aviso:"));
+        assert!(msg2.contains("persist_ref: docs/fixes/kaizen-pr-aduana-friction-20261012"));
+    }
+
+    #[test]
+    fn adu_ca3_dedupe_same_key_skips_second() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        let branch = "docs/x";
+        let commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        let ev1 = json!({
+            "event_id": "11111111-1111-4111-8111-111111111111",
+            "event_type": "PullRequest_Presented",
+        });
+        let hex = try_acquire_ppr_dedupe(repo, branch, commit, &ev1)
+            .expect("acquire")
+            .expect("lock");
+        release_ppr_dedupe(repo, branch, commit, &hex, &ev1);
+        let ev2 = json!({
+            "event_id": "22222222-2222-4222-8222-222222222222",
+            "event_type": "PullRequest_Presented",
+        });
+        let skip = try_acquire_ppr_dedupe(repo, branch, commit, &ev2).expect_err("dedupe");
+        assert_eq!(skip.0, "skipped-ppr-dedupe");
+        assert_eq!(skip.1.as_deref(), Some("ppr_dedupe_branch_commit"));
+        assert_eq!(skip.2, 0);
+        let discard = resolve_eda_proofs_dir(repo)
+            .join("ppr-presented-dedupe")
+            .join(format!(
+                "{}-discard-22222222-2222-4222-8222-222222222222.json",
+                ppr_dedupe_hex(branch, commit)
+            ));
+        assert!(discard.is_file(), "proof durable del descarte");
+    }
+
+    #[test]
+    fn adu_ca4_different_commit_not_suppressed() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+        )
+        .unwrap();
+        let branch = "docs/x";
+        let ev1 = json!({"event_id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"});
+        let hex1 = try_acquire_ppr_dedupe(
+            repo,
+            branch,
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            &ev1,
+        )
+        .unwrap()
+        .unwrap();
+        release_ppr_dedupe(
+            repo,
+            branch,
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            &hex1,
+            &ev1,
+        );
+        let ev2 = json!({"event_id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc"});
+        let hex2 = try_acquire_ppr_dedupe(
+            repo,
+            branch,
+            "dddddddddddddddddddddddddddddddddddddddd",
+            &ev2,
+        )
+        .unwrap()
+        .unwrap();
+        assert_ne!(hex1, hex2);
+        release_ppr_dedupe(
+            repo,
+            branch,
+            "dddddddddddddddddddddddddddddddddddddddd",
+            &hex2,
+            &ev2,
+        );
     }
 
     #[test]

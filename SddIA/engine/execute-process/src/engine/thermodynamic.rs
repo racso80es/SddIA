@@ -30,6 +30,79 @@ fn env_truthy(key: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn truthy_flag(v: &Value, key: &str) -> bool {
+    match v.get(key) {
+        Some(Value::Bool(b)) => *b,
+        Some(Value::String(s)) => matches!(s.to_lowercase().as_str(), "true" | "1" | "yes" | "on"),
+        _ => false,
+    }
+}
+
+fn first_nonempty(vals: &[Option<&str>]) -> Option<String> {
+    vals.iter()
+        .flatten()
+        .map(|s| s.trim())
+        .find(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+/// ADU-CA13: branch desde source_branch | pr_branch | branch (inputs o state).
+pub(crate) fn pec_branch_from_context(state: &Value, inputs: &Value) -> Option<String> {
+    first_nonempty(&[
+        inputs.get("source_branch").and_then(|v| v.as_str()),
+        inputs.get("pr_branch").and_then(|v| v.as_str()),
+        inputs.get("branch").and_then(|v| v.as_str()),
+        state.get("source_branch").and_then(|v| v.as_str()),
+        state.get("pr_branch").and_then(|v| v.as_str()),
+        state.get("branch_name").and_then(|v| v.as_str()),
+    ])
+}
+
+/// ADU-CA13 §3.6: una sola notice — higiene > merge_huérfano > merge ya materializado.
+pub(crate) fn pec_notice_from_context(state: &Value, inputs: &Value) -> Option<String> {
+    if let Some(hf) = state.get("hygiene_failure") {
+        let branch = hf
+            .get("survived_branch")
+            .and_then(|v| v.as_str())
+            .unwrap_or("?");
+        let cause = hf
+            .get("operations")
+            .and_then(|v| v.as_array())
+            .and_then(|arr| {
+                arr.iter()
+                    .find(|op| op.get("ok") == Some(&json!(false)))
+                    .and_then(|op| op.get("error").and_then(|v| v.as_str()))
+            })
+            .unwrap_or("hygiene incompleta");
+        let cause_short: String = cause.chars().take(80).collect();
+        return Some(format!("hygiene incompleta ({branch}): {cause_short}"));
+    }
+    if state.get("orphan_merge").and_then(|v| v.as_bool()) == Some(true) {
+        return Some("merge_huérfano".into());
+    }
+    if truthy_flag(inputs, "merge_already_done")
+        || state.get("merge_already_done").and_then(|v| v.as_bool()) == Some(true)
+    {
+        return Some("merge ya materializado".into());
+    }
+    None
+}
+
+fn project_pec_operator_fields(payload: &mut Value, state: &Value, inputs: &Value) {
+    if let Some(branch) = pec_branch_from_context(state, inputs) {
+        payload["branch"] = json!(branch);
+    }
+    if let Some(url) = first_nonempty(&[
+        inputs.get("pr_url").and_then(|v| v.as_str()),
+        state.get("pr_url").and_then(|v| v.as_str()),
+    ]) {
+        payload["pr_url"] = json!(url);
+    }
+    if let Some(notice) = pec_notice_from_context(state, inputs) {
+        payload["notice"] = json!(notice);
+    }
+}
+
 /// Deriva `cycle_phase` desde `phase_reports` (laudo L5 kalma2-full-cycle).
 /// Solo aplica a procesos de ciclo de vida; resto → None (compat bridge).
 pub fn derive_cycle_phase(process_name: &str, phase_reports: Option<&Value>) -> Option<&'static str> {
@@ -259,6 +332,8 @@ pub fn run(
                 }
             }
         }
+        // ADU-CA13: proyección branch/pr_url/notice para humanizador Telegram.
+        project_pec_operator_fields(&mut payload, state, process_inputs);
         let orch_event = json!({
             "event_id": orch_id,
             "event_type": "Process_Execution_Completed",
@@ -480,5 +555,37 @@ mod tests {
         assert_eq!(ev["event_type"], "Process_Execution_Completed");
         assert_eq!(ev["payload"]["cycle_phase"], "awaiting_agents");
         assert_eq!(ev["payload"]["correlation_id"], "11111111-1111-4111-8111-111111111111");
+    }
+
+    #[test]
+    fn adu_ca13_notice_priority_hygiene_over_orphan() {
+        let state = json!({
+            "hygiene_failure": {
+                "survived_branch": "feat/x",
+                "operations": [{"scope": "remote", "ok": false, "error": "auth fail"}]
+            },
+            "orphan_merge": true
+        });
+        let inputs = json!({"merge_already_done": true, "source_branch": "feat/x"});
+        let notice = pec_notice_from_context(&state, &inputs).expect("notice");
+        assert!(notice.starts_with("hygiene incompleta (feat/x)"));
+        assert_eq!(
+            pec_branch_from_context(&state, &inputs).as_deref(),
+            Some("feat/x")
+        );
+    }
+
+    #[test]
+    fn adu_ca13_notice_orphan_then_merge_done() {
+        let state = json!({"orphan_merge": true});
+        assert_eq!(
+            pec_notice_from_context(&state, &json!({})).as_deref(),
+            Some("merge_huérfano")
+        );
+        assert_eq!(
+            pec_notice_from_context(&json!({}), &json!({"merge_already_done": true})).as_deref(),
+            Some("merge ya materializado")
+        );
+        assert!(pec_notice_from_context(&json!({}), &json!({})).is_none());
     }
 }
