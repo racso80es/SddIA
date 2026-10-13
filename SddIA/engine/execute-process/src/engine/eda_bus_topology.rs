@@ -597,6 +597,14 @@ pub fn infer_persist_ref_from_branch(repo: &Path, branch: &str) -> Option<String
         if let Some(caps) = BRANCH_NUMERIC_SUFFIX_RE.captures(slug) {
             candidates.push(format!("{fixes_prefix}/{}", &caps["base"]));
         }
+    } else if let Some(slug) = b.strip_prefix("docs/") {
+        // ADU-CA5: docs/{slug} → features primero, fixes en defecto; sin dir → None.
+        candidates.push(format!("{features_prefix}/{slug}"));
+        candidates.push(format!("{fixes_prefix}/{slug}"));
+        if let Some(caps) = BRANCH_NUMERIC_SUFFIX_RE.captures(slug) {
+            candidates.push(format!("{features_prefix}/{}", &caps["base"]));
+            candidates.push(format!("{fixes_prefix}/{}", &caps["base"]));
+        }
     }
     let mut seen = HashSet::new();
     for ref_path in candidates {
@@ -1129,4 +1137,66 @@ pub fn rel_event_path(repo: &Path, event_path: &Path) -> String {
                 .map(|r| r.to_string_lossy().replace('\\', "/"))
         })
         .unwrap_or_else(|| event_path.to_string_lossy().replace('\\', "/"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn write_minimal_paths(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"documentation":"docs"}}"#,
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn adu_ca5_docs_prefix_features_then_fixes() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        write_minimal_paths(repo);
+        fs::create_dir_all(repo.join("docs/features/merge-thermo-hu-f2-close")).unwrap();
+        assert_eq!(
+            infer_persist_ref_from_branch(repo, "docs/merge-thermo-hu-f2-close").as_deref(),
+            Some("docs/features/merge-thermo-hu-f2-close")
+        );
+
+        let tmp2 = tempfile::tempdir().unwrap();
+        let repo2 = tmp2.path();
+        write_minimal_paths(repo2);
+        fs::create_dir_all(repo2.join("docs/fixes/kaizen-pr-aduana-friction-20261012")).unwrap();
+        assert_eq!(
+            infer_persist_ref_from_branch(repo2, "docs/kaizen-pr-aduana-friction-20261012")
+                .as_deref(),
+            Some("docs/fixes/kaizen-pr-aduana-friction-20261012")
+        );
+
+        let tmp3 = tempfile::tempdir().unwrap();
+        let repo3 = tmp3.path();
+        write_minimal_paths(repo3);
+        assert!(infer_persist_ref_from_branch(repo3, "docs/missing-slug").is_none());
+    }
+
+    #[test]
+    fn adu_ca6_feat_fix_refactor_unchanged() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        write_minimal_paths(repo);
+        fs::create_dir_all(repo.join("docs/features/alpha")).unwrap();
+        fs::create_dir_all(repo.join("docs/fixes/beta")).unwrap();
+        assert_eq!(
+            infer_persist_ref_from_branch(repo, "feat/alpha").as_deref(),
+            Some("docs/features/alpha")
+        );
+        assert_eq!(
+            infer_persist_ref_from_branch(repo, "refactor/alpha").as_deref(),
+            Some("docs/features/alpha")
+        );
+        assert_eq!(
+            infer_persist_ref_from_branch(repo, "fix/beta").as_deref(),
+            Some("docs/fixes/beta")
+        );
+    }
 }

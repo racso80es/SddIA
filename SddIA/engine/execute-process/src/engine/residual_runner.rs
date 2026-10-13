@@ -32,6 +32,31 @@ const CHAOS_AUDIT: &[&str] = &[
     "audit-sandbox-isolation-rbac",
 ];
 
+/// ADU-CA1/CA2: evidencia de Triaje documental `blocked` (flag o phase_reports).
+pub(crate) fn ppr_documental_triage_blocked(state: &Value) -> bool {
+    if state
+        .get("documental_triage_blocked")
+        .and_then(|v| v.as_bool())
+        == Some(true)
+    {
+        return true;
+    }
+    if let Some(arr) = state.get("phase_reports").and_then(|v| v.as_array()) {
+        return arr.iter().any(|p| {
+            p.get("phase_name").and_then(|v| v.as_str()) == Some("Triaje documental")
+                && p.get("status").and_then(|v| v.as_str()) == Some("blocked")
+        });
+    }
+    false
+}
+
+/// Solo fase «Veredicto y bloqueo» de PPR cuando el triaje documental ya bloqueó.
+pub(crate) fn ppr_verdict_skip_llm(process_name: &str, phase_name: &str, state: &Value) -> bool {
+    process_name == "pull-request-review"
+        && phase_name == "Veredicto y bloqueo"
+        && ppr_documental_triage_blocked(state)
+}
+
 fn route_fractal_fn(process_name: &str) -> Option<&'static str> {
     match process_name {
         "route-telemetry" => Some("route_telemetry_event"),
@@ -858,6 +883,17 @@ fn execute_phase_body_residual(
         {
             return skipped;
         }
+        // ADU-CA1: Veredicto determinista tras Triaje documental blocked (sin 2ª sesión LLM).
+        if ppr_verdict_skip_llm(process_name, phase_name, state) {
+            entry["status"] = json!("blocked");
+            entry["handler"] = json!("ppr-verdict-barrier");
+            entry["reason"] = json!("documental_triage_blocked");
+            entry["note"] = json!("Veredicto determinista: Triaje documental blocked; sin invoke Argos");
+            if let Some(obj) = state.as_object_mut() {
+                obj.insert("argos_verdict".into(), json!("block"));
+            }
+            return entry;
+        }
         maybe_emit_work_initiated_on_tekton_entry(
             repo,
             process_name,
@@ -883,6 +919,9 @@ fn execute_phase_body_residual(
             {
                 if let Some(obj) = state.as_object_mut() {
                     obj.insert("argos_verdict".into(), json!("block"));
+                    if phase_name == "Triaje documental" {
+                        obj.insert("documental_triage_blocked".into(), json!(true));
+                    }
                 }
             }
             if let Some(wi) = entry.get("work_initiated") {
@@ -985,6 +1024,8 @@ fn run_generic(
             ),
             phase_t0.elapsed().as_millis() as i64,
         ));
+        // Exponer reports acumulados para barrier Veredicto (ADU-CA1).
+        state["phase_reports"] = json!(phase_reports);
     }
     // L-RESIDUAL-SYM / PPR #187: misma adjudicación retroactiva EDA que delivery_close::run.
     if process_name == "delivery-close-cycle" {
@@ -1073,4 +1114,63 @@ fn run_generic(
         })),
         exit_code: status_code,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn adu_ca1_verdict_skips_when_documental_blocked() {
+        let state = json!({
+            "documental_triage_blocked": true,
+            "phase_reports": [
+                {"phase_name": "Triaje documental", "status": "blocked"}
+            ]
+        });
+        assert!(ppr_verdict_skip_llm(
+            "pull-request-review",
+            "Veredicto y bloqueo",
+            &state
+        ));
+    }
+
+    #[test]
+    fn adu_ca2_verdict_invokes_when_documental_ok() {
+        let state = json!({
+            "phase_reports": [
+                {"phase_name": "Triaje documental", "status": "executed"}
+            ]
+        });
+        assert!(!ppr_verdict_skip_llm(
+            "pull-request-review",
+            "Veredicto y bloqueo",
+            &state
+        ));
+        assert!(!ppr_verdict_skip_llm(
+            "pull-request-review",
+            "Triaje documental",
+            &json!({"documental_triage_blocked": true})
+        ));
+        assert!(!ppr_verdict_skip_llm(
+            "feature",
+            "Veredicto y bloqueo",
+            &json!({"documental_triage_blocked": true})
+        ));
+    }
+
+    #[test]
+    fn adu_ca1_phase_reports_alone_suffice() {
+        let state = json!({
+            "phase_reports": [
+                {"phase_name": "Triaje documental", "status": "blocked"}
+            ]
+        });
+        assert!(ppr_documental_triage_blocked(&state));
+        assert!(ppr_verdict_skip_llm(
+            "pull-request-review",
+            "Veredicto y bloqueo",
+            &state
+        ));
+    }
 }

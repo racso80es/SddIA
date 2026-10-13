@@ -31,37 +31,48 @@ fn truthy_flag(v: &Value, key: &str) -> bool {
     }
 }
 
-fn scan_presented_for_branch(repo: &Path, branch: &str) -> bool {
-    let pending = repo.join(".events/pending");
-    if !pending.is_dir() {
-        return false;
-    }
-    let Ok(entries) = fs::read_dir(&pending) else {
-        return false;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+/// ADU-CA7: Presented histórico en pending + processed + dead-letter.
+pub(crate) fn scan_presented_for_branch(repo: &Path, branch: &str) -> bool {
+    for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
+        let dir = repo.join(rel);
+        if !dir.is_dir() {
             continue;
         }
-        let Ok(text) = fs::read_to_string(&path) else {
+        let Ok(entries) = fs::read_dir(&dir) else {
             continue;
         };
-        let Ok(event) = serde_json::from_str::<Value>(&text) else {
-            continue;
-        };
-        if event.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
-            continue;
-        }
-        let payload_branch = event
-            .get("payload")
-            .and_then(|p| p.get("branch"))
-            .and_then(|v| v.as_str());
-        if payload_branch == Some(branch) {
-            return true;
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let Ok(text) = fs::read_to_string(&path) else {
+                continue;
+            };
+            let Ok(event) = serde_json::from_str::<Value>(&text) else {
+                continue;
+            };
+            if event.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
+                continue;
+            }
+            let payload_branch = event
+                .get("payload")
+                .and_then(|p| p.get("branch"))
+                .and_then(|v| v.as_str());
+            if payload_branch == Some(branch) {
+                return true;
+            }
         }
     }
     false
+}
+
+/// ADU-CA8: ausencia del ref remoto = éxito idempotente del delete.
+pub(crate) fn is_remote_ref_absent_error(err: &str) -> bool {
+    let e = err.to_ascii_lowercase();
+    e.contains("remote ref does not exist")
+        || e.contains("ref remoto no existe")
+        || (e.contains("unable to delete") && (e.contains("not found") || e.contains("does not exist")))
 }
 
 /// Payload canónico local (`remote: false`) — L-DELETE-PAYLOAD / accept-pr.md § Fase 4.
@@ -92,6 +103,24 @@ pub(crate) fn record_hygiene_op(
     }
 }
 
+fn record_hygiene_remote(
+    operations: &mut Vec<Value>,
+    result: Result<Value, String>,
+) -> bool {
+    match result {
+        Ok(v) => record_hygiene_op(operations, "remote", Ok(v)),
+        Err(e) if is_remote_ref_absent_error(&e) => {
+            operations.push(json!({
+                "scope": "remote",
+                "ok": true,
+                "idempotent_absent": true,
+            }));
+            true
+        }
+        Err(e) => record_hygiene_op(operations, "remote", Err(e)),
+    }
+}
+
 fn delete_branch_hygiene(repo: &Path, branch: &str) -> (Option<String>, Option<Value>) {
     if env_truthy("SDDIA_LAB_SKIP_BRANCH_DELETE") {
         return (None, None);
@@ -102,12 +131,12 @@ fn delete_branch_hygiene(repo: &Path, branch: &str) -> (Option<String>, Option<V
         "local",
         invoke_git_manager(repo, "delete_branch", &delete_branch_local_payload(branch)),
     );
-    let remote_ok = record_hygiene_op(
+    let remote_ok = record_hygiene_remote(
         &mut operations,
-        "remote",
         invoke_git_manager(repo, "delete_branch", &delete_branch_remote_payload(branch)),
     );
-    let closed = if local_ok {
+    // ADU-CA9: closed_branch solo si local ∧ remoto OK (tras reclasificación CA8).
+    let closed = if local_ok && remote_ok {
         Some(branch.to_string())
     } else {
         None
@@ -502,13 +531,91 @@ mod tests {
     fn t_a2_local_ok_closed_branch() {
         let mut ops = Vec::new();
         let local_ok = record_hygiene_op(&mut ops, "local", Ok(json!({})));
-        let _ = record_hygiene_op(&mut ops, "remote", Ok(json!({})));
-        let closed = if local_ok {
+        let remote_ok = record_hygiene_op(&mut ops, "remote", Ok(json!({})));
+        let closed = if local_ok && remote_ok {
             Some("feat/w".to_string())
         } else {
             None
         };
         assert_eq!(closed.as_deref(), Some("feat/w"));
+    }
+
+    #[test]
+    fn t_adu_ca8_remote_absent_is_ok() {
+        assert!(is_remote_ref_absent_error(
+            "error: unable to delete 'docs/x': remote ref does not exist"
+        ));
+        assert!(is_remote_ref_absent_error("ref remoto no existe"));
+        assert!(!is_remote_ref_absent_error("Permission denied (publickey)"));
+        let mut ops = Vec::new();
+        let local_ok = record_hygiene_op(&mut ops, "local", Ok(json!({})));
+        let remote_ok = record_hygiene_remote(
+            &mut ops,
+            Err("error: unable to delete 'feat/z': remote ref does not exist".into()),
+        );
+        assert!(local_ok && remote_ok);
+        assert_eq!(ops[1]["ok"], true);
+        assert_eq!(ops[1]["idempotent_absent"], true);
+        let closed = if local_ok && remote_ok {
+            Some("feat/z".to_string())
+        } else {
+            None
+        };
+        assert_eq!(closed.as_deref(), Some("feat/z"));
+    }
+
+    #[test]
+    fn t_adu_ca9_remote_auth_fail_no_closed_branch() {
+        let mut ops = Vec::new();
+        let local_ok = record_hygiene_op(&mut ops, "local", Ok(json!({})));
+        let remote_ok =
+            record_hygiene_remote(&mut ops, Err("Permission denied (publickey)".into()));
+        assert!(local_ok);
+        assert!(!remote_ok);
+        let closed = if local_ok && remote_ok {
+            Some("feat/z".to_string())
+        } else {
+            None
+        };
+        assert!(closed.is_none());
+        assert_eq!(ops[1]["ok"], false);
+    }
+
+    #[test]
+    fn t_adu_ca7_scan_presented_processed_and_dead_letter() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let branch = "docs/merge-thermo-hu-f2-close";
+        assert!(!scan_presented_for_branch(repo, branch));
+
+        let processed = repo.join(".events/processed");
+        fs::create_dir_all(&processed).unwrap();
+        fs::write(
+            processed.join("presented.json"),
+            serde_json::to_string(&json!({
+                "event_type": "PullRequest_Presented",
+                "payload": {"branch": branch}
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        assert!(scan_presented_for_branch(repo, branch));
+
+        let tmp2 = tempfile::tempdir().unwrap();
+        let repo2 = tmp2.path();
+        let dl = repo2.join(".events/dead-letter");
+        fs::create_dir_all(&dl).unwrap();
+        fs::write(
+            dl.join("presented.json"),
+            serde_json::to_string(&json!({
+                "event_type": "PullRequest_Presented",
+                "payload": {"branch": branch}
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        assert!(scan_presented_for_branch(repo2, branch));
+        assert!(!scan_presented_for_branch(repo2, "other-branch"));
     }
 
     #[test]
