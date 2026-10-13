@@ -38,12 +38,12 @@ fn truthy_flag(v: &Value, key: &str) -> bool {
     }
 }
 
-fn first_nonempty<'a>(vals: &[Option<&'a str>]) -> Option<&'a str> {
+fn first_nonempty(vals: &[Option<&str>]) -> Option<String> {
     vals.iter()
         .flatten()
         .map(|s| s.trim())
         .find(|s| !s.is_empty())
-        .copied()
+        .map(str::to_string)
 }
 
 /// ADU-CA13: branch desde source_branch | pr_branch | branch (inputs o state).
@@ -56,7 +56,6 @@ pub(crate) fn pec_branch_from_context(state: &Value, inputs: &Value) -> Option<S
         state.get("pr_branch").and_then(|v| v.as_str()),
         state.get("branch_name").and_then(|v| v.as_str()),
     ])
-    .map(str::to_string)
 }
 
 /// ADU-CA13 §3.6: una sola notice — higiene > merge_huérfano > merge ya materializado.
