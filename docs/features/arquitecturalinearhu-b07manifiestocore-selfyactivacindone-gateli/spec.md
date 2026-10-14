@@ -1,4 +1,5 @@
 ---
+
 feature_name: arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli
 created: "2026-10-14"
 process: feature
@@ -19,7 +20,7 @@ impacts_doc: true
 phase: blueprint
 agents: dedalo
 core_manifest_uuid: "7c4e2a91-8b3f-4d6e-a1c0-9e5f2b8d0473"
-execution_id: "f351761b-9b35-4e44-bd81-ae99fd259679"
+execution_id: "0061cd1b-fe5e-46d6-80f1-cd4db92a8559"
 ---
 # Spec — HU-B 07 Manifiesto Core-self y `done_gate: linear`
 

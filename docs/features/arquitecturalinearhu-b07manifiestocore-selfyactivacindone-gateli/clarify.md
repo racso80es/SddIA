@@ -1,4 +1,5 @@
 ---
+
 feature_name: arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli
 created: "2026-10-14"
 purpose: estabilizacion-requisitos-mayeuta
@@ -11,7 +12,7 @@ pbi_uuid: "9b4e7c12-5a38-4f19-8d64-3e2f1a9c0b85"
 correlation_id: "fd2db080-dbf3-44ab-b70f-63b90d748455"
 phase: estabilizacion-requisitos
 agents: mayeuta
-execution_id: "f351761b-9b35-4e44-bd81-ae99fd259679"
+execution_id: "0061cd1b-fe5e-46d6-80f1-cd4db92a8559"
 ---
 # Clarify — HU-B 07 Core-self `done_gate: linear`
 

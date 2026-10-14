@@ -274,3 +274,16 @@ execution_id: "f351761b-9b35-4e44-bd81-ae99fd259679"
 - HEAD: `docs/cerrar-pbi-kalma2-branch-before-mutate` (no la rama del spec).
 - Desbloqueo: terminal operativo → checkout feat → T4 → T5.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-14T18:08:58Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```

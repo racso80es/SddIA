@@ -1,4 +1,5 @@
 ---
+
 feature_name: arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli
 created: "2026-10-14"
 process: feature
@@ -9,7 +10,7 @@ correlation_id: "fd2db080-dbf3-44ab-b70f-63b90d748455"
 branch_name: feat/arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli
 phase: execution
 agents: tekton
-execution_id: "f351761b-9b35-4e44-bd81-ae99fd259679"
+execution_id: "0061cd1b-fe5e-46d6-80f1-cd4db92a8559"
 ---
 # Implementación — HU-B 07 Core-self `done_gate: linear`
 

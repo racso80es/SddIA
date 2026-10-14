@@ -1,4 +1,5 @@
 ---
+
 feature_name: arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli
 created: "2026-10-14"
 process: feature
@@ -10,7 +11,7 @@ branch_name: feat/arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gate
 phase: execution
 agents: tekton
 verdict: blocked
-execution_id: "f351761b-9b35-4e44-bd81-ae99fd259679"
+execution_id: "0061cd1b-fe5e-46d6-80f1-cd4db92a8559"
 ---
 # Ejecución — HU-B 07
 
