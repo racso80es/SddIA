@@ -287,3 +287,39 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 formal_evidence_detail: "verify-process-integrity: OK"
 ```
+
+## 2026-10-14T18:11:35Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `0061cd1b-fe5e-46d6-80f1-cd4db92a8559`
+- correlation_id: `7U3euBf7ve4ZW1Z7iPd9owEDzDRCsZ24UTmiyABNwTQD`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual no bloqueante F2: `DOC_EVOLUTION`, T4/T5 Tekton `blocked` (fuera de jurisdicción Triaje documental).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` / `global: APTO`)
+
+- Escrito `docs/features/arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli/validacion.md`.
+- R1/R2: copia Evidence Bridge `prosthesis_subprocess` → TECH/GIT **APTO** (sin stdout inventado; Shell git-manager Rejected).
+- R3 KM: **APTO** — 0 writes Argos bajo `docs/todos/**`.
+- F2: cascada objectives/clarify/spec/plan/implementation/execution + YAML **APTO**; worktree = rama inject (FS `.git/HEAD`).
+- Residual no bloqueante F2: `DOC_EVOLUTION`, T4/T5 Tekton `blocked` (fuera de jurisdicción Triaje documental).
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-10-14T18:11:36Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
