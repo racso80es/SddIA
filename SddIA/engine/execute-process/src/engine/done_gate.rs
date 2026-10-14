@@ -126,7 +126,17 @@ pub fn project_slug_from_persist(repo: &Path, persist_ref: &str) -> String {
 pub fn resolve_done_gate(repo: &Path, persist_ref: &str) -> Result<DoneGate, String> {
     let slug = project_slug_from_persist(repo, persist_ref);
     let inputs = json!({ "project_slug": slug });
-    project_binding::done_gate_for_inputs(repo, &inputs)
+    let gate = project_binding::done_gate_for_inputs(repo, &inputs)?;
+    // L-DEGRADE / AC-21: Linear|Both sin tracker_ref → Git (no-op features locales).
+    if matches!(gate, DoneGate::Linear | DoneGate::Both)
+        && tracker_ref_from_persist(repo, persist_ref).is_none()
+    {
+        eprintln!(
+            "warn: done_gate degraded to git: tracker_ref ausente (persist_ref={persist_ref}, slug={slug})"
+        );
+        return Ok(DoneGate::Git);
+    }
+    Ok(gate)
 }
 
 /// Pre-push: con `linear`, exige proof local (sin red). Con `git`/`both`+proof, no bloquea por proof.
@@ -329,6 +339,14 @@ mod tests {
         let repo = find_repo_root().expect("repo");
         let persist = "docs/features/linear-hu-b-05-done-gate";
         let val = repo.join(persist).join("validacion.md");
+        let original = fs::read(&val).expect("validacion original");
+        struct Restore(PathBuf, Vec<u8>);
+        impl Drop for Restore {
+            fn drop(&mut self) {
+                let _ = fs::write(&self.0, &self.1);
+            }
+        }
+        let _restore = Restore(val.clone(), original);
         fs::write(
             &val,
             "---\nfeature_name: linear-hu-b-05-done-gate\nglobal: APTO\npbi_archived: false\nbranch: feat/x\n---\n\n# v\n",
@@ -351,5 +369,87 @@ mod tests {
         let repo = find_repo_root().expect("repo");
         let g = resolve_done_gate(&repo, "docs/features/_fixture-done-gate-lab").unwrap();
         assert_eq!(g, DoneGate::Linear);
+    }
+
+    fn write_core_linear_layout(repo: &Path, uuid: &str) {
+        fs::create_dir_all(repo.join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.join(".SddIA/projects/core.md"),
+            format!(
+                "---\nid: core\nuuid: \"{uuid}\"\nproject_root: .\nmanifest_ref: .SddIA/project.md\ncodex_slug: codex-software-engineering\nstatus: active\n---\n\n# core\n"
+            ),
+        )
+        .unwrap();
+        fs::write(
+            repo.join(".SddIA/project.md"),
+            format!(
+                "---\nid: core\nuuid: \"{uuid}\"\ngit_remote: https://example.invalid/core.git\ndefault_branch: main\ndelivery_mode: branch_pr\ncontract_version: \"1.3.0\"\ncodex_slug: codex-software-engineering\ntracker:\n  provider: linear\n  team_key: OSC\n  done_gate: linear\n  state_map:\n    backlog: Backlog\n    done: Done\ndocs_layout:\n  features: docs/features\n  fixes: docs/fixes\n  todos_pending: docs/todos/pending\n  todos_done: docs/todos/done\n---\n\n# core\n"
+            ),
+        )
+        .unwrap();
+        // Marcador mínimo de Core para project_slug_from_persist → "core".
+        fs::create_dir_all(repo.join("SddIA")).unwrap();
+        fs::write(repo.join("SddIA/CONSTITUTION_CORE.md"), "# x\n").unwrap();
+    }
+
+    #[test]
+    fn resolve_core_linear_with_tracker_ref() {
+        let tmp = TempDir::new().unwrap();
+        let repo = tmp.path();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        write_core_linear_layout(repo, uuid);
+        let persist = "docs/features/_t-core-linear";
+        fs::create_dir_all(repo.join(persist)).unwrap();
+        fs::write(
+            repo.join(persist).join("objectives.md"),
+            "---\nfeature_name: t\nproject_slug: core\ntracker_ref: OSC-999\n---\n\n# o\n",
+        )
+        .unwrap();
+        let g = resolve_done_gate(repo, persist).unwrap();
+        assert_eq!(g, DoneGate::Linear);
+        let err = pre_push_check(repo, Some(persist)).unwrap_err();
+        assert!(err.contains("DONE_GATE_LINEAR") || err.contains("OSC-999"), "{err}");
+        write_tracker_done_proof(repo, "OSC-999", "deadbeef", &json!({ "state": "Done" })).unwrap();
+        assert!(pre_push_check(repo, Some(persist)).is_ok());
+    }
+
+    #[test]
+    fn resolve_core_degrades_without_tracker_ref() {
+        let tmp = TempDir::new().unwrap();
+        let repo = tmp.path();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        write_core_linear_layout(repo, uuid);
+        let persist = "docs/features/_t-core-no-tracker";
+        fs::create_dir_all(repo.join(persist)).unwrap();
+        fs::write(
+            repo.join(persist).join("objectives.md"),
+            "---\nfeature_name: t\nproject_slug: core\n---\n\n# o\n",
+        )
+        .unwrap();
+        let g = resolve_done_gate(repo, persist).unwrap();
+        assert_eq!(g, DoneGate::Git);
+        assert!(pre_push_check(repo, Some(persist)).is_ok());
+    }
+
+    #[test]
+    fn di_other_projects_unchanged() {
+        let repo = find_repo_root().expect("repo");
+        let bx = project_binding::done_gate_for_inputs(
+            &repo,
+            &json!({ "project_slug": "barcelonaxplorer" }),
+        );
+        // Puede fallar si el checkout externo no existe en CI; solo asertar si resuelve.
+        if let Ok(g) = bx {
+            assert_ne!(g, DoneGate::Linear, "D-I: barcelonaxplorer no debe ser linear");
+        }
+        let both = project_binding::done_gate_for_inputs(
+            &repo,
+            &json!({ "project_slug": "lab-done-gate-both" }),
+        )
+        .expect("lab-done-gate-both");
+        assert_eq!(both, DoneGate::Both);
+        let core = project_binding::done_gate_for_inputs(&repo, &json!({ "project_slug": "core" }))
+            .expect("core registrado");
+        assert_eq!(core, DoneGate::Linear);
     }
 }

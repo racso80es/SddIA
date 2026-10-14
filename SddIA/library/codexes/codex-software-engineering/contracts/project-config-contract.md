@@ -13,7 +13,9 @@ El Core valida **forma**. No interpreta semántica de negocio.
 
 ## Índice Core `.SddIA/projects/{slug}.md`
 
-Obligatorios: `id`, `uuid`, `project_root` (absoluto), `manifest_ref`, `codex_slug`, `status` (`active`|`inactive`).
+Obligatorios: `id`, `uuid`, `project_root`, `manifest_ref`, `codex_slug`, `status` (`active`|`inactive`).
+
+`project_root`: ruta absoluta al checkout del proyecto. Excepción Core-self (`id: core`): se admite el literal `.` (o `./`), resuelto por el motor a la raíz del repositorio Core. Slugs no-`core` siguen exigiendo ruta absoluta.
 
 ## Manifiesto `{project_root}/.SddIA/project.md`
 
