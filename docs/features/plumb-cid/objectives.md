@@ -1,7 +1,7 @@
 ---
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-10-03"
+updated: "2026-10-14"
 process: feature
 branch_name: feat/plumb-cid
 persist_ref: docs/features/plumb-cid
@@ -13,7 +13,7 @@ agents: mayeuta
 status: requirements_stable
 pbi_status: absent_pending_path
 git_evidence_mayeuta: not_materialized_shell_rejected
-execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
+execution_id: "5f06c07e-7655-44b2-bc02-967d7d4e0e77"
 ---
 # Objetivos — plumb-cid
 
@@ -31,7 +31,7 @@ Estabilizar y materializar el lab **plumb-cid**: demostrar trazabilidad auditabl
 |--------|-------|
 | Plumb documental CID (frontmatter clarify/objectives) | Inventar feature de negocio / dominio |
 | `persist_ref` = `docs/features/plumb-cid` (`featurePath`) | Escribir `docs/todos/` (Mayeuta/Tekton/Argos) |
-| Documentar gap PBI ausente (reconfirmado 2026-10-03 / exec ebcaeecd) | Absorber deudas Tracker / F3 git-manager residual |
+| Documentar gap PBI ausente (reconfirmado 2026-10-14 / exec 5f06c07e) | Absorber deudas Tracker / F3 git-manager residual |
 | Handoff Dedalo (`refined_requirements`) | Reabrir pasarela Kalma2 / DI / GesFer |
 | Intento evidencia vía `skill:git-manager` | Bypass Shell destructivo / inventar stdout |
 
@@ -54,13 +54,13 @@ Runtime (cid inyectado)
   → Tekton/Argos: materializar solo si runtime permite; sin fake
 ```
 
-## Estado de estabilización (2026-10-03 / execution ebcaeecd-…)
+## Estado de estabilización (2026-10-14 / execution 5f06c07e-…)
 
 | Vector | Estado |
 |--------|--------|
 | L-CID-FM / O1 | Cumplido — CID idéntico en FM de ambos artefactos |
 | L-PERSIST / O2 | Cumplido — patrón documental bajo `persist_ref` |
-| L-PBI-GAP / O3 | Documentado — PBI físico **ausente** (Glob 0 hits `*plumb*` en `docs/todos/`) |
+| L-PBI-GAP / O3 | Documentado — PBI físico **ausente** (pending = 3 no-plumb; Grep FEATURE plumb = 0) |
 | L-GIT / O4 | **No materializado** — `./sddia-run.sh --tool git-manager` → Rejected (sin stdout) |
 | L-NO-FAKE / O5 | Vigente — ausencia ≠ éxito |
 
@@ -81,7 +81,7 @@ Runtime (cid inyectado)
 ## Ley aplicada
 
 - `.cursorrules` §4–§5 (cápsulas JSON; agnosticismo Core)
-- `features-documentation-pattern` v1.2.1
+- `features-documentation-pattern` v1.3.0
 - Proceso `feature` — fase Estabilización → Dedalo consume este cuerpo como `refined_requirements`
 - Clarificaciones D0–D9 y laudos Q1–Q4 en `clarify.md`
 
@@ -91,4 +91,4 @@ Runtime (cid inyectado)
 - PBI referenciado (ausente): `docs/todos/pending/[FEATURE] plumb-cid.md`
 - Runtime: `kalma2-agent-runtime-cursor`
 - Semilla cruda init: «inicia feature docs/todos/pending/[FEATURE] plumb-cid.md»
-- `execution_id`: `ebcaeecd-964b-4ffa-81bc-74ded9a512a7`
+- `execution_id`: `5f06c07e-7655-44b2-bc02-967d7d4e0e77`

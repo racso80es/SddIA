@@ -2,7 +2,7 @@
 
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-10-03"
+updated: "2026-10-14"
 process: feature
 phases: [T-GATE, T0, T1, T2, T3, T4]
 document_id: LAB-PLUMB-CID
@@ -12,15 +12,15 @@ pbi_ref: docs/todos/pending/[FEATURE] plumb-cid.md
 correlation_id: a1b2c3d4-e5f6-4789-a012-3456789abcde
 phase: Diseño de Blueprint
 agents: dedalo
-version_plan: "1.1.4"
+version_plan: "1.1.7"
 git_evidence_dedalo: not_materialized_shell_rejected
-execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
+execution_id: "5f06c07e-7655-44b2-bc02-967d7d4e0e77"
 ---
 # Plan — plumb-cid
 
 Blueprint de **evidencia CID + gates no-fake**. Sin producto de dominio; sin forja genoma; sin escritura en `docs/todos/` desde agentes de ejecución.
 
-Consumido: `objectives.md` / `clarify.md` (Mayeuta 2026-10-03, D0–D9, Q1–Q4, `execution_id` 705747e6-…) como `refined_requirements`.
+Consumido: `objectives.md` / `clarify.md` (Mayeuta 2026-10-14, D0–D9, Q1–Q4, `execution_id` 5f06c07e-…) como `refined_requirements`.
 
 ## Fases
 
@@ -40,9 +40,9 @@ Consumido: `objectives.md` / `clarify.md` (Mayeuta 2026-10-03, D0–D9, Q1–Q4,
 - delegates_to:
   - skill:filesystem-manager
 - checklist:
-  - [x] Consumir `objectives.md` / `clarify.md` (D0–D9, Q1–Q4) — sesión 2026-10-03 / exec 705747e6
-  - [x] `spec.md` v1.1.4 laudos L1–L9
-  - [x] este `plan.md` v1.1.4 (T-GATE…T4)
+  - [x] Consumir `objectives.md` / `clarify.md` (D0–D9, Q1–Q4) — sesión 2026-10-14 / exec 5f06c07e
+  - [x] `spec.md` v1.1.7 laudos L1–L9
+  - [x] este `plan.md` v1.1.7 (T-GATE…T4)
   - [x] Declarar git Dedalo `not_materialized` (Shell Rejected sin stdout)
 
 ### T1 — Auditoría plumb CID (baseline Mayeuta)
@@ -98,7 +98,7 @@ Consumido: `objectives.md` / `clarify.md` (Mayeuta 2026-10-03, D0–D9, Q1–Q4,
 ## Orden de ejecución
 
 ```text
-T0 (Dedalo) [hecho 2026-10-03 / exec 705747e6]
+T0 (Dedalo) [hecho 2026-10-14 / exec 5f06c07e]
   → T-GATE (git-manager unlock)
        → ok → T1 (audit CID) → T2 (docs Tekton) → T3 (git capture) → T4 (handoff Argos)
        → fail → execution.md blocked; T1 puede aún auditar CID local; AC-L-GIT = no verde

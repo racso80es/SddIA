@@ -1,13 +1,7 @@
 ---
-
-
-
-
-
-
 feature_name: x
 created: "2026-08-28"
-updated: "2026-10-03T05:04:30Z"
+updated: "2026-10-14T16:17:00Z"
 process: bug-fix
 phase: Diseño del fix
 agent: dedalo
@@ -23,7 +17,7 @@ design_verdict: blocked
 plan_emitted: false
 mayeuta_escalation: required
 uuid: 9f2c4e81-6a3b-4d5e-8c1f-0b7a2e9d4f63
-execution_id: "22e49d33-963d-42f6-87d0-b9255929e548"
+execution_id: "3e49f1f9-184f-4379-943e-666b83d2bc46"
 ---
 # Spec — x (Dedalo · Diseño del fix)
 
@@ -33,13 +27,13 @@ execution_id: "22e49d33-963d-42f6-87d0-b9255929e548"
 
 `plan.md` **no** emitido: no hay blueprint de proceso nuevo; `bug-fix` ya es el proceso vivo. Forjar fases adicionales sin requisito refinable violaría el Principio de Carga Estricta (`agents/dedalo.md` §3 falla controlada).
 
-## Ingesta (`execution_id` `22e49d33-963d-42f6-87d0-b9255929e548`)
+## Ingesta (`execution_id` `3e49f1f9-184f-4379-943e-666b83d2bc46`)
 
 | Input | Estado | Nota |
 |-------|--------|------|
 | `objectives.md` | Presente | Semilla lab: `inicia fix docs/todos/pending/[FIX] x.md` — sin defecto de producto |
 | `bug_summary` | Alias de objectives | Sin síntoma, repro ni superficie de fallo |
-| `pbi_ref` | **AUSENTE en FS** | Glob `docs/todos/pending/` → 3× `[DEUDA]*`; Read `[FIX] x.md` → File not found |
+| `pbi_ref` | **AUSENTE en FS** | Read `[FIX] x.md` → File not found; glob `docs/todos/pending/[FIX]*` → 0 — **no** sustituible por Dedalo |
 | `clarify.md` | Ausente | Mayeuta no ha sellado NO-OP ni refinamiento |
 | `cumulo_topology` | Implícita sesión | `paths.fixPath` → `docs/fixes` |
 | `active_norm_pack` | `features-documentation-pattern` | Cascada mínima: `spec.md` (+ `plan.md` solo si blueprint) |
@@ -58,7 +52,7 @@ execution_id: "22e49d33-963d-42f6-87d0-b9255929e548"
 
 ## Lo que NO es este fix
 
-- No es remediación de ningún PBI R1 concurrente ni de deuda tracker/centinelas.
+- No es remediación del PBI concurrente `[FIX] Kalma2 — rama antes de mutar…` (ni ningún otro pending).
 - No autoriza mutación de genoma (`SddIA/tools|skills|actions|process|agents|…`).
 - No autoriza escritura bajo `docs/todos/` (RBAC KM: solo Cúmulo / evento Kaizen).
 - No inventa éxito ni criterios de producto ad hoc.

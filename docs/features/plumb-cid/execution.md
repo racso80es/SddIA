@@ -2,7 +2,7 @@
 
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-10-03"
+updated: "2026-10-14"
 process: feature
 document_id: LAB-PLUMB-CID
 branch_name: feat/plumb-cid
@@ -28,7 +28,7 @@ forge: 0
 t_gate: fail
 mcp_servers: []
 pbi_physical: absent
-execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
+execution_id: "5f06c07e-7655-44b2-bc02-967d7d4e0e77"
 ---
 # Execution — plumb-cid
 
@@ -62,7 +62,7 @@ Lab CID: T1 (auditoría frontmatter) y T2 (docs Tekton) materializados con evide
 | Check | Resultado |
 |-------|-----------|
 | `persist_ref` = `docs/features/plumb-cid` | **ok** |
-| PBI `docs/todos/pending/[FEATURE] plumb-cid.md` | **absent** (0 hits Glob `docs/todos/**/*plumb*`; gap KM; AC-L-PBI) |
+| PBI `docs/todos/pending/[FEATURE] plumb-cid.md` | **absent** (pending = 3 no-plumb; Glob FEATURE plumb = 0; gap KM; AC-L-PBI) |
 | Escritura Tekton bajo `docs/todos/` | **no** |
 
 ## T2 — Cascada documental Tekton
