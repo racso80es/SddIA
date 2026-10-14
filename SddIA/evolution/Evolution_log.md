@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a3c5accf-54fd-45ed-9b1e-fdf444e836e6` | 2026-10-14 | Kalma2: rama de trabajo antes del gate dirty, barrier de init fallida y estado sin regreso a la espera | CANONICO | `SddIA/evolution/a3c5accf-54fd-45ed-9b1e-fdf444e836e6.md` |
 | `017e51c6-4ee9-477a-b38e-a178b295960c` | 2026-10-13 | Telegram: silencio PEC accept-pr/PPR y síntesis de valor en castellano | CANONICO | `SddIA/evolution/017e51c6-4ee9-477a-b38e-a178b295960c.md` |
 | `40f08486-fe02-40bf-ae12-6590dddb33b3` | 2026-10-13 | Kaizen aduana PR (ADU-CA1–14): barrier PPR, dedupe Presented, persist_ref docs/, PEC Telegram | CANONICO | `SddIA/evolution/40f08486-fe02-40bf-ae12-6590dddb33b3.md` |
 | `79ed140a-9a58-4e60-bf66-8b65021d9e6a` | 2026-10-12 | FIX fractura 187079f2d82d: firma F-DCC-SNAPSHOT-BRANCH-EXISTS y test checkout idempotente git-manager | CANONICO | `SddIA/evolution/79ed140a-9a58-4e60-bf66-8b65021d9e6a.md` |

@@ -147,6 +147,7 @@ fn emit_phase_progress(
         moment,
         status,
         Some("sync-client-assets"),
+        None,
     );
 }
 
