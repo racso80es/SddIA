@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a46a02f7-769d-43b5-b576-43787cb8cc95` | 2026-10-14 | Core-self: manifiesto project_root `.` y done_gate linear; sin tracker_ref degrada a Git (F8.3 paso 4) | CANONICO | `SddIA/evolution/a46a02f7-769d-43b5-b576-43787cb8cc95.md` |
 | `828b27ed-507a-4f13-b722-e4b5c7e66423` | 2026-10-14 | Reanclaje source_sha256 de daemons y tools, y foto de salud del ecosistema | CANONICO | `SddIA/evolution/828b27ed-507a-4f13-b722-e4b5c7e66423.md` |
 | `a3c5accf-54fd-45ed-9b1e-fdf444e836e6` | 2026-10-14 | Kalma2: rama de trabajo antes del gate dirty, barrier de init fallida y estado sin regreso a la espera | CANONICO | `SddIA/evolution/a3c5accf-54fd-45ed-9b1e-fdf444e836e6.md` |
 | `017e51c6-4ee9-477a-b38e-a178b295960c` | 2026-10-13 | Telegram: silencio PEC accept-pr/PPR y síntesis de valor en castellano | CANONICO | `SddIA/evolution/017e51c6-4ee9-477a-b38e-a178b295960c.md` |
