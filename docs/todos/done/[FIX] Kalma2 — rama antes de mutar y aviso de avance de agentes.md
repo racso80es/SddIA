@@ -5,11 +5,14 @@ title: "[FIX] Kalma2 — rama antes de mutar y aviso de avance de agentes"
 format: markdown
 version: "1.0.0"
 created: "2026-10-13"
-status: pending
+status: done
 priority: alta
 process: bug-fix
 dispatch: true
 suggested_branch: fix/kalma2-branch-before-mutate
+persist_ref: docs/fixes/kalma2-branch-before-mutate
+pr_url: https://github.com/racso80es/SddIA/pull/347
+closed: "2026-10-14"
 source_audit: docs/audits/kalma2-pbi-telegram-pec-silence-20261013.md
 incident_correlation_id: "09a61ea3-b2d9-43c3-b65d-b815385e9a22"
 friction_ids:
