@@ -24,11 +24,11 @@ children:
     path: "docs/todos/done/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md"
     scope: "F7–F8; D-F, D-G, D-H, D-I"
     blocked_by: []
-    pbi_order: "PBI-LINEAR-B-01-OUTBOUND … PBI-LINEAR-B-06-E2E"
-    status: done
+    pbi_order: "PBI-LINEAR-B-01-OUTBOUND … PBI-LINEAR-B-07-CORE-SELF-GATE"
+    status: in_progress
     closed: "2026-10-12"
     merged_pr_range: "336-341"
-    residual: "done_gate linear no escrito: sin manifiesto Core en .SddIA/projects"
+    residual: "PBI-LINEAR-B-07-CORE-SELF-GATE en docs/todos/pending/ (manifiesto Core-self y activación done_gate: linear)"
 related:
   - SddIA/core/cumulo.paths.json
 ---

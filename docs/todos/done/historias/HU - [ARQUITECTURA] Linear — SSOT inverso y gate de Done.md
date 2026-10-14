@@ -8,10 +8,10 @@ created: "2026-10-03"
 status: done
 closed: "2026-10-12"
 pbi_done: 6
-pbi_total: 6
+pbi_total: 7
 merged_pr_range: "336-341"
 archive_path: docs/todos/done/historias/HU - [ARQUITECTURA] Linear — SSOT inverso y gate de Done.md
-activation_linear: "no aplicada — el índice .SddIA/projects no registra un manifiesto del Core; D-I prohíbe escribir done_gate: linear en barcelonaxplorer o en fixtures de lab"
+activation_linear: "PBI-LINEAR-B-07-CORE-SELF-GATE en docs/todos/pending/ — manifiesto Core-self en .SddIA/projects/core.md y activación done_gate: linear (F8.3 paso 4 / D-I)"
 hu_sequence: 2
 hu_sequence_total: 2
 predecessor_hu: HU-LINEAR-DIRECT-CYCLE
@@ -55,6 +55,7 @@ Partición B de `HU-LINEAR-SYNC-FLOW` (§8 del documento padre, laudo 2026-10-03
 | 04 | `PBI-LINEAR-B-04-MARKDOWN-APPLY` | Proceso `tracker-markdown-apply` (F7.3). | [#339](https://github.com/racso80es/SddIA/pull/339) | done |
 | 05 | `PBI-LINEAR-B-05-DONE-GATE` | Validador `git\|linear\|both`, proofs, pre-push, norma 1.3.0. | [#340](https://github.com/racso80es/SddIA/pull/340) | done |
 | 06 | `PBI-LINEAR-B-06-E2E` | E2E lab `done_gate: both` (AC-21…21d). No activa `linear`. | [#341](https://github.com/racso80es/SddIA/pull/341) | done |
+| 07 | `PBI-LINEAR-B-07-CORE-SELF-GATE` | Manifiesto Core-self (`.SddIA/projects/core.md`) y activación `done_gate: linear` (F8.3 paso 4 / D-I). | — | pending |
 
 ## 1. Historia de usuario
 

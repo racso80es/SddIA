@@ -356,13 +356,27 @@ fn registered_roots(projects_dir: &Path, except_slug: &str) -> Result<Vec<PathBu
 }
 
 fn assert_git_isolation(project_root: &Path, others: &[PathBuf]) -> Result<(), String> {
+    assert_git_isolation_for_slug(project_root, others, None)
+}
+
+/// L-ISOLATION: al enlazar `core`, raíces relativas de fixtures en el índice no
+/// participan en la comparación (relativa↔absoluta produce falsos positivos).
+fn assert_git_isolation_for_slug(
+    project_root: &Path,
+    others: &[PathBuf],
+    bound_slug: Option<&str>,
+) -> Result<(), String> {
     if !git_root_marker(project_root) {
         return Err(format!(
             "PROJECT_GIT_INVALID: {} sin .git propio",
             project_root.display()
         ));
     }
+    let skip_relative = bound_slug == Some("core");
     for other in others {
+        if skip_relative && !other.is_absolute() {
+            continue;
+        }
         if project_root.starts_with(other) && project_root != other {
             return Err(format!(
                 "PROJECT_GIT_INVALID: {} anidado en {}",
@@ -574,14 +588,24 @@ pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String>
     }
     let index_fm = parse_yaml_fm(&fs::read_to_string(&index_path).map_err(|e| e.to_string())?)?;
     let index_uuid = yaml_str(&index_fm, "uuid")?;
-    let project_root = PathBuf::from(yaml_str(&index_fm, "project_root")?);
-    if !project_root.is_absolute() {
-        return Err("PROJECT_CONFIG_INVALID: project_root no absoluto".into());
-    }
+    let index_id = yaml_str(&index_fm, "id")?;
+    let project_root_raw = yaml_str(&index_fm, "project_root")?;
+    let project_root_raw_trim = project_root_raw.trim();
+    // L-ROOT: solo Core-self admite `project_root: .` → raíz del repo.
+    let project_root = if (slug == "core" || index_id == "core")
+        && (project_root_raw_trim == "." || project_root_raw_trim == "./")
+    {
+        repo.to_path_buf()
+    } else {
+        let p = PathBuf::from(project_root_raw_trim);
+        if !p.is_absolute() {
+            return Err("PROJECT_CONFIG_INVALID: project_root no absoluto".into());
+        }
+        p
+    };
     let manifest_ref = yaml_str(&index_fm, "manifest_ref")?;
     let _ = yaml_str(&index_fm, "codex_slug")?;
     let _ = yaml_str(&index_fm, "status")?;
-    let _ = yaml_str(&index_fm, "id")?;
 
     let manifest_path = if Path::new(&manifest_ref).is_absolute() {
         PathBuf::from(&manifest_ref)
@@ -634,7 +658,7 @@ pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String>
     }
 
     let others = registered_roots(index_path.parent().unwrap_or(repo), slug)?;
-    assert_git_isolation(&project_root, &others)?;
+    assert_git_isolation_for_slug(&project_root, &others, Some(slug))?;
 
     Ok(Some(BoundProject {
         slug: slug.to_string(),
@@ -966,6 +990,60 @@ mod tests {
         assert_eq!(bound.delivery_mode_source, "project");
     }
 
+    fn core_index_md(uuid: &str, root: &str) -> String {
+        format!(
+            "---\nid: core\nuuid: \"{uuid}\"\nproject_root: {root}\nmanifest_ref: .SddIA/project.md\ncodex_slug: codex-software-engineering\nstatus: active\n---\n\n# core\n"
+        )
+    }
+
+    fn core_manifest_md(uuid: &str) -> String {
+        format!(
+            "---\nid: core\nuuid: \"{uuid}\"\ngit_remote: https://example.invalid/core.git\ndefault_branch: main\ndelivery_mode: branch_pr\ncontract_version: \"1.3.0\"\ncodex_slug: codex-software-engineering\ntracker:\n  provider: linear\n  team_key: OSC\n  done_gate: linear\n  state_map:\n    backlog: Backlog\n    done: Done\ndocs_layout:\n  features: docs/features\n  fixes: docs/fixes\n  todos_pending: docs/todos/pending\n  todos_done: docs/todos/done\n---\n\n# core\n"
+        )
+    }
+
+    #[test]
+    fn bind_core_dot_project_root() {
+        let repo = tempfile::tempdir().unwrap();
+        write_git_root(repo.path());
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        fs::create_dir_all(repo.path().join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.path().join(".SddIA/projects/core.md"),
+            core_index_md(uuid, "."),
+        )
+        .unwrap();
+        fs::write(repo.path().join(".SddIA/project.md"), core_manifest_md(uuid)).unwrap();
+        let bound = bind(repo.path(), &json!({"project_slug": "core"}))
+            .unwrap()
+            .unwrap();
+        assert_eq!(bound.project_root, repo.path());
+        assert_eq!(bound.slug, "core");
+        let dg = done_gate_for_inputs(repo.path(), &json!({"project_slug": "core"})).unwrap();
+        assert_eq!(dg, DoneGate::Linear);
+    }
+
+    #[test]
+    fn bind_external_rejects_relative() {
+        let repo = tempfile::tempdir().unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let client = repo.path().join("client-demo");
+        write_git_root(&client);
+        fs::create_dir_all(client.join(".SddIA")).unwrap();
+        fs::write(client.join(".SddIA/project.md"), manifest_md(uuid, "branch_pr", "1.0.0")).unwrap();
+        fs::create_dir_all(repo.path().join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.path().join(".SddIA/projects/demo.md"),
+            "---\nid: demo\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: .\nmanifest_ref: .SddIA/project.md\ncodex_slug: codex-software-engineering\nstatus: active\n---\n\n# demo\n",
+        )
+        .unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
+        assert!(
+            err.contains("project_root no absoluto"),
+            "{err}"
+        );
+    }
+
     #[test]
     fn codex_event_without_authority_is_no_subscriber() {
         let core = json!({"Local_QA_Requested": []});
@@ -976,8 +1054,7 @@ mod tests {
         let allowed = plan_route(&core, Some(&codex), true, "PBI_Forged");
         assert!(!allowed.dead_letter_no_subscriber);
         assert_eq!(allowed.subscribers.len(), 1);
-        let sweep = plan_route(&core, Some(&codex), false, "Local_QA_Requested");
-        assert!(!sweep.dead_letter_no_subscriber);
+        let sweep = plan_route(&core, Some(&codex), false, "Local_QA_Requested");        assert!(!sweep.dead_letter_no_subscriber);
         assert!(sweep.subscribers.is_empty());
     }
 }
