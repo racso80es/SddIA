@@ -2,11 +2,11 @@
 
 feature_name: plumb-cid
 created: "2026-07-23"
-updated: "2026-10-14"
+updated: "2026-10-03"
 process: feature
 base: main
 scope: lab-plumb-correlation-id-cascada-documental
-version_spec: "1.1.7"
+version_spec: "1.1.4"
 uuid: c3d4e5f6-a7b8-4c9d-0e1f-23456789abcd
 status: dedalo_locked
 document_id: LAB-PLUMB-CID
@@ -20,7 +20,7 @@ agents: dedalo
 laudo: lab-plumb-cid-evidence-only-no-domain-product
 git_evidence_dedalo: not_materialized_shell_rejected
 refined_requirements_source: docs/features/plumb-cid/objectives.md
-execution_id: "5f06c07e-7655-44b2-bc02-967d7d4e0e77"
+execution_id: "ebcaeecd-964b-4ffa-81bc-74ded9a512a7"
 ---
 # Especificación — plumb-cid
 
@@ -30,7 +30,7 @@ execution_id: "5f06c07e-7655-44b2-bc02-967d7d4e0e77"
 
 ```text
 Runtime (cid inyectado; persist_ref → workspace)
-  → Mayeuta: clarify.md + objectives.md (cid en frontmatter)  [hecho 2026-10-14 / exec 5f06c07e]
+  → Mayeuta: clarify.md + objectives.md (cid en frontmatter)  [hecho 2026-10-03 / exec 705747e6]
   → Dedalo: spec.md + plan.md (este ciclo)                    [en curso]
   → Tekton: implementation.md + execution.md + evidencia git
   → Argos: validacion.md solo con evidencia física (no-fake)
@@ -40,12 +40,12 @@ Runtime (cid inyectado; persist_ref → workspace)
 
 ## 2. Entrada estabilizada (`refined_requirements`)
 
-Fuente: `objectives.md` (O-PLUMB-CID, O1–O5, L-CID-FM…L-NO-FAKE) + laudos Mayeuta D0–D9 / Q1–Q4 en `clarify.md` (transcript 2026-10-14, `execution_id` 5f06c07e-…). Semilla cruda: «inicia feature docs/todos/pending/[FEATURE] plumb-cid.md».
+Fuente: `objectives.md` (O-PLUMB-CID, O1–O5, L-CID-FM…L-NO-FAKE) + laudos Mayeuta D0–D9 / Q1–Q4 en `clarify.md` (transcript 2026-10-03, `execution_id` 705747e6-…). Semilla cruda: «inicia feature docs/todos/pending/[FEATURE] plumb-cid.md».
 
-| Hecho | Estado al diseño (2026-10-14 / Dedalo 5f06c07e) |
+| Hecho | Estado al diseño (2026-10-03 / Dedalo 705747e6) |
 |-------|------------------------------------------------|
-| `clarify.md` + `objectives.md` con mismo `correlation_id` | Presente (Mayeuta ok / exec 5f06c07e) |
-| PBI `docs/todos/pending/[FEATURE] plumb-cid.md` | **Ausente** (pending = 3 ficheros no-plumb; grep/Glob FEATURE plumb en `docs/todos/` = 0) |
+| `clarify.md` + `objectives.md` con mismo `correlation_id` | Presente (Mayeuta ok / exec 705747e6) |
+| PBI `docs/todos/pending/[FEATURE] plumb-cid.md` | **Ausente** (0 hits `*plumb*` en `docs/todos/`; pending = Paciente 0; hueco KM) |
 | Evidencia git Dedalo vía `./sddia-run.sh --tool git-manager` | **No materializada** (Shell Rejected; sin stdout) |
 | Cascada previa Tekton/Argos | Existe baseline; este Dedalo **re-bloquea** blueprint frente a Mayeuta estabilizado; no inventa nuevo producto |
 
@@ -59,7 +59,7 @@ Fuente: `objectives.md` (O-PLUMB-CID, O1–O5, L-CID-FM…L-NO-FAKE) + laudos Ma
 | **L4** | ¿Git en diseño Dedalo? | Dedalo **no** exige `source-control` en RBAC agente; evidencia git = fase Tekton (T-GATE/T3). Esta sesión: **declarar no materializado** | Q3; intento Rejected |
 | **L5** | CID canónico | `a1b2c3d4-e5f6-4789-a012-3456789abcde` — idéntico machine-readable en frontmatter de toda la cascada tocada | AC-L-CID / O1 |
 | **L6** | Forja código / genoma | **Forja=0** salvo fallo demonstrable fuera de alcance; **prohibido** mutar `SddIA/{tools,skills,actions,process,agents,events,norms,library}` | Lab tubería |
-| **L7** | Cierre documental Done | Exige PBI físico archivado + `validacion.md` APTO + `pbi_archived: true`. Con PBI ausente → **Done documental bloqueado**; lab CID puede verificar AC-L-* sin fingir Done | features-documentation-pattern v1.3.0 |
+| **L7** | Cierre documental Done | Exige PBI físico archivado + `validacion.md` APTO + `pbi_archived: true`. Con PBI ausente → **Done documental bloqueado**; lab CID puede verificar AC-L-* sin fingir Done | features-documentation-pattern v1.2.1 |
 | **L8** | Soft-dep F3 / Tracker residual | **Fuera** de alcance | D2 / D7 |
 | **L9** | APTO narrativo | Prohibido. Sin stdout/artefacto → `blocked` / `NO_APTO` | AC-DONE-LAB / L-NO-FAKE |
 
@@ -69,7 +69,7 @@ Fuente: `objectives.md` (O-PLUMB-CID, O1–O5, L-CID-FM…L-NO-FAKE) + laudos Ma
 |-----------|-------|-----------------|------|
 | `clarify.md` | Mayeuta | Sí (baseline) | CID en FM |
 | `objectives.md` | Mayeuta | Sí (baseline) | CID en FM; fuente `refined_requirements` |
-| `spec.md` | Dedalo | Sí | Este documento (v1.1.7) |
+| `spec.md` | Dedalo | Sí | Este documento (v1.1.4) |
 | `plan.md` | Dedalo | Sí | Blueprint T-GATE…T4 |
 | `implementation.md` | Tekton | Sí | `items: []` / baseline documental si forja=0 |
 | `execution.md` | Tekton | Sí | Tabla evidencia CID + resultado git-manager o blocked |
@@ -126,4 +126,4 @@ Si el runtime **no** otorga `source-control`: T-GATE → blocked honesto; **proh
 
 ## 8. Veredicto Dedalo
 
-**ok** — requisitos lab estables (Mayeuta D9 / exec 5f06c07e); blueprint mínimo viable frente a RBAC Tekton (`filesystem-ops` + `source-control`). Hueco PBI = bloqueo de Done documental, no de diseño. Evidencia git Dedalo: **not_materialized** (Shell Rejected IDE/cápsula, sin stdout).
+**ok** — requisitos lab estables (Mayeuta D9 / exec 705747e6); blueprint mínimo viable frente a RBAC Tekton (`filesystem-ops` + `source-control`). Hueco PBI = bloqueo de Done documental, no de diseño. Evidencia git Dedalo: **not_materialized** (Shell Rejected IDE/cápsula, sin stdout).

@@ -1,7 +1,7 @@
 {
   "compiled_at": "2026-08-29T13:28:55.854435857+00:00",
   "exit_code": 0,
-  "fused_at": "2026-10-14T16:02:19.410867054+00:00",
+  "fused_at": "2026-10-02T17:55:13.932032831+00:00",
   "map_status": "ok",
   "rows": [
     {
@@ -203,17 +203,6 @@
       "uuid": ""
     },
     {
-      "color": "green",
-      "family": "tool",
-      "id": "agent-creator",
-      "missed_cycles": 0,
-      "on_map": false,
-      "reason": "off_map",
-      "revoked": false,
-      "thermo_status": "healthy",
-      "uuid": ""
-    },
-    {
       "color": "red",
       "family": "tool",
       "id": "bug-fix",
@@ -258,6 +247,17 @@
       "uuid": "96679492-4f06-4bbc-ae46-00100fb73c94"
     },
     {
+      "color": "gray",
+      "family": "tool",
+      "id": "emit-pr-audited-event",
+      "missed_cycles": 0,
+      "on_map": false,
+      "reason": "off_map",
+      "revoked": false,
+      "thermo_status": "healthy",
+      "uuid": ""
+    },
+    {
       "color": "red",
       "family": "tool",
       "id": "entity-manager",
@@ -280,14 +280,14 @@
       "uuid": "31fce110-1622-489c-a816-112849e22adb"
     },
     {
-      "color": "red",
+      "color": "green",
       "family": "tool",
       "id": "event-creator",
       "missed_cycles": 0,
       "on_map": false,
       "reason": "off_map",
-      "revoked": true,
-      "thermo_status": null,
+      "revoked": false,
+      "thermo_status": "healthy",
       "uuid": ""
     },
     {
@@ -311,6 +311,17 @@
       "revoked": false,
       "thermo_status": null,
       "uuid": "66daf19f-217a-4874-b417-99e5be2571f3"
+    },
+    {
+      "color": "green",
+      "family": "tool",
+      "id": "instance-health-verify",
+      "missed_cycles": 0,
+      "on_map": false,
+      "reason": "off_map",
+      "revoked": false,
+      "thermo_status": "healthy",
+      "uuid": ""
     },
     {
       "color": "gray",
