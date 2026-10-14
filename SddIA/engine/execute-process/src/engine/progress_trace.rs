@@ -60,15 +60,64 @@ fn severity_for_moment(moment: &str, phase_status: Option<&str>) -> &'static str
     "info"
 }
 
-fn build_message(phase_name_raw: &str, moment: &str, phase_status: Option<&str>) -> String {
+fn build_message(
+    phase_name_raw: &str,
+    moment: &str,
+    phase_status: Option<&str>,
+    verdict: Option<&str>,
+) -> String {
+    let verdict = verdict.map(str::trim).filter(|s| !s.is_empty());
     match moment {
         "start" => format!("Inicio fase: {phase_name_raw}"),
         "end" => {
             let st = phase_status.unwrap_or("unknown");
-            format!("Fin fase: {phase_name_raw} (status={st})")
+            match verdict {
+                Some(v) => format!("Fin fase: {phase_name_raw} (status={st}). {v}"),
+                None => format!("Fin fase: {phase_name_raw} (status={st})"),
+            }
         }
         _ => format!("Hito fase: {phase_name_raw}"),
     }
+}
+
+/// Veredicto corto: `message` de fase, texto de handoff, o `error`.
+pub fn short_verdict(entry: &Value, handoff: Option<&Value>) -> Option<String> {
+    fn clip(raw: &str) -> String {
+        raw.trim().chars().take(240).collect()
+    }
+    if let Some(message) = entry
+        .get("message")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        return Some(clip(message));
+    }
+    if let Some(handoff) = handoff {
+        if let Some(message) = handoff
+            .as_str()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            return Some(clip(message));
+        }
+        for key in ["message", "summary", "verdict", "note"] {
+            if let Some(message) = handoff
+                .get(key)
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                return Some(clip(message));
+            }
+        }
+    }
+    entry
+        .get("error")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(clip)
 }
 
 fn write_ptc_best_effort(repo: &Path, correlation_id: &str, envelope: &Value) {
@@ -101,27 +150,29 @@ pub fn emit_progress_trace(
     moment: &str,
     phase_status: Option<&str>,
     process_name: Option<&str>,
+    verdict: Option<&str>,
 ) {
     let cid = correlation_id.trim();
     if cid.is_empty() {
         return;
     }
 
-    let (phase_ui, unknown) = map_phase_name(phase_name_raw);
-    let message = build_message(phase_name_raw, moment, phase_status);
+    let (phase_ui, _unknown) = map_phase_name(phase_name_raw);
+    let message = build_message(phase_name_raw, moment, phase_status, verdict);
     if message.trim().is_empty() {
         return;
     }
 
     let mut metadata = serde_json::Map::new();
-    if unknown {
-        metadata.insert("phase_name_raw".into(), json!(phase_name_raw));
-    }
+    metadata.insert("phase_name_raw".into(), json!(phase_name_raw));
     if let Some(pn) = process_name.filter(|s| !s.is_empty()) {
         metadata.insert("process_name".into(), json!(pn));
     }
     if let Some(st) = phase_status.filter(|s| !s.is_empty()) {
         metadata.insert("phase_status".into(), json!(st));
+    }
+    if let Some(v) = verdict.map(str::trim).filter(|s| !s.is_empty()) {
+        metadata.insert("verdict".into(), json!(v));
     }
     metadata.insert("moment".into(), json!(moment));
 
@@ -171,6 +222,7 @@ mod tests {
             "start",
             None,
             Some("feature"),
+            None,
         );
         assert!(!base.join(".events/progress").exists());
         let _ = std::fs::remove_dir_all(base);
@@ -195,6 +247,7 @@ mod tests {
             "start",
             None,
             Some("feature"),
+            None,
         );
         let progress_dir = repo.join(".events/progress").join(cid);
         assert!(progress_dir.is_dir());
@@ -228,7 +281,43 @@ mod tests {
             "end",
             Some("failed"),
             None,
+            None,
         );
         let _ = std::fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn end_message_includes_agent_verdict() {
+        let with = build_message(
+            "Ejecución",
+            "end",
+            Some("blocked"),
+            Some("Shell IDE Rejected"),
+        );
+        assert!(with.contains("status=blocked"));
+        assert!(with.contains("Shell IDE Rejected"));
+        assert_eq!(
+            build_message("Ejecución", "end", Some("executed"), None),
+            "Fin fase: Ejecución (status=executed)"
+        );
+    }
+
+    #[test]
+    fn short_verdict_prefers_phase_message_then_handoff() {
+        let entry = json!({"message": "Listo para Tekton", "error": "no"});
+        assert_eq!(
+            short_verdict(&entry, Some(&json!({"message": "handoff"}))).as_deref(),
+            Some("Listo para Tekton")
+        );
+        let blocked = json!({"error": "dirty-worktree: fuera"});
+        assert_eq!(
+            short_verdict(&blocked, None).as_deref(),
+            Some("dirty-worktree: fuera")
+        );
+        let handoff_only = json!({});
+        assert_eq!(
+            short_verdict(&handoff_only, Some(&json!({"summary": "mutación en main"}))).as_deref(),
+            Some("mutación en main")
+        );
     }
 }

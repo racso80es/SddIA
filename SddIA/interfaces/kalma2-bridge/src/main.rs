@@ -854,10 +854,105 @@ fn find_pec_by_correlation(orch_dir: &Path, correlation_id: &str) -> Option<serd
     best
 }
 
+struct PhaseEndNotice {
+    phase_name: String,
+    status: String,
+    verdict: String,
+}
+
+fn phase_end_from_trace(body: &serde_json::Value) -> Option<(String, PhaseEndNotice)> {
+    let meta = body.get("metadata")?.as_object()?;
+    if meta.get("moment").and_then(|v| v.as_str()) != Some("end") {
+        return None;
+    }
+    let status = meta
+        .get("phase_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if status != "executed" && status != "blocked" {
+        return None;
+    }
+    let phase_name = meta
+        .get("phase_name_raw")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .or_else(|| body.get("phase").and_then(|v| v.as_str()))
+        .unwrap_or("fase")
+        .to_string();
+    let verdict = meta
+        .get("verdict")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let timestamp = body
+        .get("timestamp")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    Some((
+        timestamp,
+        PhaseEndNotice {
+            phase_name,
+            status: status.to_string(),
+            verdict,
+        },
+    ))
+}
+
+fn latest_phase_end_in(dir: &Path) -> Option<PhaseEndNotice> {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return None;
+    };
+    let mut best: Option<(String, PhaseEndNotice)> = None;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let Some(body) = read_json_file(&path) else {
+            continue;
+        };
+        let Some((ts, notice)) = phase_end_from_trace(&body) else {
+            continue;
+        };
+        let replace = match &best {
+            None => true,
+            Some((prev, _)) => ts >= *prev,
+        };
+        if replace {
+            best = Some((ts, notice));
+        }
+    }
+    best.map(|(_, notice)| notice)
+}
+
+fn latest_phase_end(repo: &Path, correlation_id: &str) -> Option<PhaseEndNotice> {
+    latest_phase_end_in(&load_progress_path(repo).join(correlation_id))
+}
+
+fn phase_end_projection(end: &PhaseEndNotice) -> (&'static str, String) {
+    let st = if end.status == "blocked" {
+        "blocked"
+    } else {
+        "executed"
+    };
+    let message = if end.verdict.is_empty() {
+        format!("Fase «{}» {}.", end.phase_name, end.status)
+    } else {
+        format!(
+            "Fase «{}» {}. {}",
+            end.phase_name, end.status, end.verdict
+        )
+    };
+    (st, message)
+}
+
 fn project_status(
     domain: Option<&serde_json::Value>,
     in_dead_letter: bool,
     pec: Option<&serde_json::Value>,
+    phase_end: Option<&PhaseEndNotice>,
 ) -> (&'static str, String) {
     if let Some(pec) = pec {
         let st = pec
@@ -883,6 +978,11 @@ fn project_status(
             .and_then(|p| p.get("cycle_phase"))
             .and_then(|v| v.as_str())
             .unwrap_or("completed");
+        if matches!(cycle, "awaiting_agents" | "initialized") {
+            if let Some(end) = phase_end {
+                return phase_end_projection(end);
+            }
+        }
         return match cycle {
             "initialized" => (
                 "initialized",
@@ -980,7 +1080,8 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
 
     let in_dead = domain_hit.as_ref().map(|h| h.2).unwrap_or(false);
     let domain_val = domain_hit.as_ref().map(|h| &h.1);
-    let (status, message) = project_status(domain_val, in_dead, pec.as_ref());
+    let phase_end = latest_phase_end(repo, event_id);
+    let (status, message) = project_status(domain_val, in_dead, pec.as_ref(), phase_end.as_ref());
 
     let delivery_status = domain_val
         .and_then(|b| b.get("delivery_state"))
@@ -2799,7 +2900,7 @@ mod tests {
         let pec = serde_json::json!({
             "payload": {"status": "success", "process_name": "task-queue-manager"}
         });
-        let (st, _) = project_status(None, false, Some(&pec));
+        let (st, _) = project_status(None, false, Some(&pec), None);
         assert_eq!(st, "completed");
     }
 
@@ -2812,7 +2913,7 @@ mod tests {
                 "cycle_phase": "initialized"
             }
         });
-        let (st, msg) = project_status(None, false, Some(&pec));
+        let (st, msg) = project_status(None, false, Some(&pec), None);
         assert_eq!(st, "initialized");
         assert!(msg.contains("arrancado"));
     }
@@ -2826,8 +2927,61 @@ mod tests {
                 "cycle_phase": "awaiting_agents"
             }
         });
-        let (st, _) = project_status(None, false, Some(&pec));
+        let (st, _) = project_status(None, false, Some(&pec), None);
         assert_eq!(st, "awaiting_agents");
+    }
+
+    #[test]
+    fn project_status_phase_end_survives_later_awaiting_agents_pec() {
+        let pec = serde_json::json!({
+            "payload": {
+                "status": "success",
+                "process_name": "bug-fix",
+                "cycle_phase": "awaiting_agents"
+            }
+        });
+        let dir = std::env::temp_dir().join(format!("sddia-phase-end-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("design.json"),
+            serde_json::json!({
+                "timestamp": "2026-10-13T15:19:20Z",
+                "phase": "plan",
+                "message": "Fin fase: Diseño del fix (status=executed). Listo para Tekton",
+                "metadata": {
+                    "moment": "end",
+                    "phase_status": "executed",
+                    "phase_name_raw": "Diseño del fix",
+                    "verdict": "Listo para Tekton"
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("exec.json"),
+            serde_json::json!({
+                "timestamp": "2026-10-13T15:19:31Z",
+                "phase": "implementation",
+                "message": "Fin fase: Ejecución (status=blocked). Shell IDE Rejected",
+                "metadata": {
+                    "moment": "end",
+                    "phase_status": "blocked",
+                    "phase_name_raw": "Ejecución",
+                    "verdict": "Shell IDE Rejected"
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let end = latest_phase_end_in(&dir).expect("phase end");
+        let (st, msg) = project_status(None, false, Some(&pec), Some(&end));
+        assert_eq!(st, "blocked");
+        assert!(msg.contains("Ejecución"));
+        assert!(msg.contains("blocked"));
+        assert!(msg.contains("Shell IDE Rejected"));
+        assert!(!msg.contains("en espera de agentes"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
@@ -3001,7 +3155,7 @@ mod tests {
                 "iota-immutable-publisher": "skipped-lab-no-credentials"
             }
         });
-        let (st, _) = project_status(Some(&domain), false, None);
+        let (st, _) = project_status(Some(&domain), false, None, None);
         assert_eq!(st, "routed");
     }
 

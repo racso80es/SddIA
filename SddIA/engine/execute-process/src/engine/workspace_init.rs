@@ -245,6 +245,56 @@ fn git_current_branch(capsule_repo: &Path, git_repo: &Path) -> Result<Option<Str
     Ok(current_branch_from_branch_list(list_out))
 }
 
+fn local_branch_exists(
+    capsule_repo: &Path,
+    git_repo: &Path,
+    branch_name: &str,
+) -> Result<bool, String> {
+    let list = invoke_git_manager_for(capsule_repo, git_repo, "branch_list", &json!({}))?;
+    let Some(branches) = list.get("branches").and_then(|v| v.as_array()) else {
+        return Ok(false);
+    };
+    Ok(branches.iter().any(|line| {
+        let raw = line.as_str().unwrap_or("").trim();
+        let rest = raw.strip_prefix('*').unwrap_or(raw).trim();
+        if rest.starts_with("remotes/") {
+            return false;
+        }
+        rest.split_whitespace().next() == Some(branch_name)
+    }))
+}
+
+/// Primer paso git de la inicialización: aislar `branch_name` antes del gate dirty.
+fn checkout_work_branch(
+    capsule_repo: &Path,
+    git_repo: &Path,
+    branch_name: &str,
+) -> Result<Value, String> {
+    let created = invoke_git_manager_for(
+        capsule_repo,
+        git_repo,
+        "checkout",
+        &json!({"branch_name": branch_name, "create_if_not_exists": true}),
+    );
+    match created {
+        Ok(r) => Ok(json!({"op": "checkout_feature", "result": r})),
+        Err(create_err) => {
+            let existing = invoke_git_manager_for(
+                capsule_repo,
+                git_repo,
+                "checkout",
+                &json!({"branch_name": branch_name, "create_if_not_exists": false}),
+            );
+            match existing {
+                Ok(r) => Ok(json!({"op": "checkout_feature_existing", "result": r})),
+                Err(existing_err) => Err(format!(
+                    "checkout-work-branch: {branch_name}: {create_err}; {existing_err}"
+                )),
+            }
+        }
+    }
+}
+
 fn dirty_paths_outside_scope(
     capsule_repo: &Path,
     git_repo: &Path,
@@ -455,8 +505,16 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             },
         }));
     } else {
-        let dirty =
-            dirty_paths_outside_scope(repo, git_root, &persist_scope, pbi_ref_meta)?;
+        // Lectura previa. El primer paso que aísla la rama de trabajo va antes del gate.
+        let on_feature_branch = git_current_branch(repo, git_root)?
+            .map(|b| b == branch_name)
+            .unwrap_or(false);
+        let branch_existed = local_branch_exists(repo, git_root, &branch_name)?;
+
+        let checkout_step = checkout_work_branch(repo, git_root, &branch_name)?;
+        git_steps.push(checkout_step);
+
+        let dirty = dirty_paths_outside_scope(repo, git_root, &persist_scope, pbi_ref_meta)?;
         if !dirty.is_empty() {
             let msg = format!(
                 "dirty-worktree: cambios fuera de persist_ref/pbi_ref: {}",
@@ -465,9 +523,6 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
             return Err(msg);
         }
 
-        let on_feature_branch = git_current_branch(repo, git_root)?
-            .map(|b| b == branch_name)
-            .unwrap_or(false);
         if on_feature_branch {
             git_steps.push(json!({
                 "op": "git_reentry",
@@ -478,50 +533,44 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
                 },
             }));
         } else {
-        let fetch = invoke_git_manager_for(
-            repo,
-            git_root,
-            "fetch",
-            &json!({"remote": "origin", "prune": true}),
-        )?;
-        git_steps.push(json!({"op": "fetch", "result": fetch}));
+            let fetch = invoke_git_manager_for(
+                repo,
+                git_root,
+                "fetch",
+                &json!({"remote": "origin", "prune": true}),
+            )?;
+            git_steps.push(json!({"op": "fetch", "result": fetch}));
 
-        let checkout_base = invoke_git_manager_for(
-            repo,
-            git_root,
-            "checkout",
-            &json!({"branch_name": base_branch, "create_if_not_exists": false}),
-        )?;
-        git_steps.push(json!({"op": "checkout_base", "result": checkout_base}));
+            let checkout_base = invoke_git_manager_for(
+                repo,
+                git_root,
+                "checkout",
+                &json!({"branch_name": base_branch, "create_if_not_exists": false}),
+            )?;
+            git_steps.push(json!({"op": "checkout_base", "result": checkout_base}));
 
-        let offline = fetch.get("offline").and_then(|v| v.as_bool()) == Some(true);
-        if !offline {
-            pull_base_step(repo, git_root, &base_branch, &mut git_steps)?;
-        } else {
-            git_steps.push(json!({
-                "op": "pull_base",
-                "result": {"skipped": true, "reason": "offline_fetch", "offline": true}
-            }));
-        }
+            let offline = fetch.get("offline").and_then(|v| v.as_bool()) == Some(true);
+            if !offline {
+                pull_base_step(repo, git_root, &base_branch, &mut git_steps)?;
+            } else {
+                git_steps.push(json!({
+                    "op": "pull_base",
+                    "result": {"skipped": true, "reason": "offline_fetch", "offline": true}
+                }));
+            }
 
-        let checkout_feature = invoke_git_manager_for(
-            repo,
-            git_root,
-            "checkout",
-            &json!({"branch_name": branch_name, "create_if_not_exists": true}),
-        );
-        match checkout_feature {
-            Ok(r) => git_steps.push(json!({"op": "checkout_feature", "result": r})),
-            Err(_) => {
-                let r = invoke_git_manager_for(
+            if !branch_existed {
+                // El alta inicial nació del HEAD previo al pull. Se recrea sobre la base ya actualizada.
+                let deleted = invoke_git_manager_for(
                     repo,
                     git_root,
-                    "checkout",
-                    &json!({"branch_name": branch_name, "create_if_not_exists": false}),
+                    "delete_branch",
+                    &json!({"branch_name": branch_name, "remote": false, "force": true}),
                 )?;
-                git_steps.push(json!({"op": "checkout_feature_existing", "result": r}));
+                git_steps.push(json!({"op": "delete_new_feature_before_recreate", "result": deleted}));
             }
-        }
+            let checkout_feature = checkout_work_branch(repo, git_root, &branch_name)?;
+            git_steps.push(checkout_feature);
         }
     }
 
@@ -1018,6 +1067,7 @@ mod tests {
 
     #[test]
     fn run_dirty_outside_scope_aborts_without_system_fracture() {
+        use std::process::Command;
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);
@@ -1046,5 +1096,131 @@ mod tests {
             0,
             "F-DIRTY-WORKTREE must not emit System_Fracture_Detected"
         );
+        let head = Command::new("git")
+            .args(["rev-parse", "--abbrev-ref", "HEAD"])
+            .current_dir(root)
+            .output()
+            .expect("rev-parse");
+        let head = String::from_utf8_lossy(&head.stdout);
+        assert_eq!(head.trim(), "fix/dirty-scope-test");
+        assert!(
+            !root
+                .join("docs/fixes/dirty-scope-test/objectives.md")
+                .is_file(),
+            "el gate dirty aborta antes de mutar persist_ref"
+        );
+    }
+
+    #[test]
+    fn run_checkout_failure_stops_before_base_and_persist() {
+        use std::process::Command;
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        link_capsule_target(root);
+        init_git_repo(root);
+        std::env::remove_var("SDDIA_LAB_ALLOW_DIRTY");
+        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+
+        let inputs = json!({
+            "fix_name": "bad-branch",
+            "branch_name": "fix/bad..name",
+            "persist_ref": "docs/fixes/bad-branch",
+            "base_branch": "main",
+            "execution_profile": { "git_required": true }
+        });
+        let err = run(root, &inputs, "bug-fix").expect_err("checkout abort");
+        assert!(
+            err.starts_with("checkout-work-branch:"),
+            "unexpected err: {err}"
+        );
+        let verify = Command::new("git")
+            .args(["rev-parse", "--verify", "--quiet", "refs/heads/fix/bad..name"])
+            .current_dir(root)
+            .status();
+        assert!(verify.is_ok_and(|s| !s.success()));
+        assert!(!root.join("docs/fixes/bad-branch/objectives.md").is_file());
+    }
+
+    #[test]
+    fn run_clean_tree_checks_out_work_branch_before_base_sync() {
+        use std::process::Command;
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path().join("repo");
+        let origin = td.path().join("origin.git");
+        fs::create_dir_all(&root).unwrap();
+        write_cumulo(&root);
+        link_capsule_target(&root);
+        init_git_repo(&root);
+        let rename = Command::new("git")
+            .args(["branch", "-M", "main"])
+            .current_dir(&root)
+            .status();
+        assert!(rename.is_ok_and(|s| s.success()));
+        let bare = Command::new("git")
+            .args(["init", "--bare", "-b", "main"])
+            .arg(&origin)
+            .status();
+        assert!(bare.is_ok_and(|s| s.success()));
+        for args in [
+            &["remote", "add", "origin", origin.to_str().unwrap()][..],
+            &["push", "-u", "origin", "HEAD:main"][..],
+            &["config", "pull.ff", "only"][..],
+        ] {
+            let status = Command::new("git").args(args).current_dir(&root).status();
+            assert!(status.is_ok_and(|s| s.success()), "git {:?}", args);
+        }
+        let other = td.path().join("other");
+        let clone = Command::new("git")
+            .args(["clone", origin.to_str().unwrap(), other.to_str().unwrap()])
+            .status();
+        assert!(clone.is_ok_and(|s| s.success()));
+        for args in [
+            &["config", "user.email", "wsinit@test.local"][..],
+            &["config", "user.name", "wsinit-test"][..],
+        ] {
+            let status = Command::new("git").args(args).current_dir(&other).status();
+            assert!(status.is_ok_and(|s| s.success()));
+        }
+        fs::write(other.join("advance.txt"), "b\n").unwrap();
+        for args in [&["add", "."][..], &["commit", "-m", "advance"][..], &["push"][..]] {
+            let status = Command::new("git").args(args).current_dir(&other).status();
+            assert!(status.is_ok_and(|s| s.success()), "git {:?}", args);
+        }
+
+        std::env::remove_var("SDDIA_LAB_ALLOW_DIRTY");
+        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+        let branch = "fix/ca1-clean";
+        let inputs = json!({
+            "fix_name": "ca1-clean",
+            "branch_name": branch,
+            "persist_ref": "docs/fixes/ca1-clean",
+            "base_branch": "main",
+            "execution_profile": { "git_required": true }
+        });
+        let out = run(&root, &inputs, "bug-fix").expect("clean init");
+        let steps = out["git_steps"].as_array().unwrap();
+        assert_eq!(steps[0]["op"], json!("checkout_feature"), "steps: {steps:?}");
+        assert!(
+            steps.iter().any(|s| s.get("op") == Some(&json!("checkout_base"))),
+            "steps: {steps:?}"
+        );
+        let head = Command::new("git")
+            .args(["rev-parse", "--abbrev-ref", "HEAD"])
+            .current_dir(&root)
+            .output()
+            .expect("head");
+        assert_eq!(String::from_utf8_lossy(&head.stdout).trim(), branch);
+        let tip = Command::new("git")
+            .args(["rev-parse", branch, "main"])
+            .current_dir(&root)
+            .output()
+            .expect("tips");
+        let tips = String::from_utf8_lossy(&tip.stdout);
+        let mut lines = tips.lines();
+        let feature_tip = lines.next().unwrap_or("");
+        let main_tip = lines.next().unwrap_or("");
+        assert_eq!(feature_tip, main_tip, "la rama nueva queda sobre la base actualizada");
+        assert!(!feature_tip.is_empty());
     }
 }

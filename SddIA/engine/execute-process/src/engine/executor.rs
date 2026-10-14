@@ -96,6 +96,37 @@ fn skipped_barrier_entry_reason(phase: &Value, prior_status: &str, reason: &str)
     })
 }
 
+fn barrier_from_phase_entry(
+    entry: &Value,
+    agent_only: bool,
+    phase_name: &str,
+    process_name: &str,
+    repo: &Path,
+    inputs: &Value,
+) -> Option<(String, &'static str)> {
+    let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if entry.get("handler").and_then(|v| v.as_str()) == Some("workspace-init") && status == "failed"
+    {
+        return Some(("failed".to_string(), "workspace_init_failed"));
+    }
+    if !agent_only {
+        return None;
+    }
+    if agent_phase_blocks_downstream(status) {
+        return Some((status.to_string(), "prior_agent_phase_not_executed"));
+    }
+    if stop_after_design() && is_dedalo_design_phase(phase_name) && status == "executed" {
+        return Some(("executed".to_string(), "stop_after"));
+    }
+    if simulated_relay_blocks_close(process_name, status, repo, inputs) {
+        return Some((
+            "awaiting_agents".to_string(),
+            "prior_agent_phase_not_executed",
+        ));
+    }
+    None
+}
+
 fn stop_after_design() -> bool {
     std::env::var("SDDIA_TQM_STOP_AFTER")
         .map(|s| s.trim().eq_ignore_ascii_case("design"))
@@ -555,6 +586,7 @@ pub fn run_generic(
                 "start",
                 None,
                 Some(process_name),
+                None,
             );
         }
         let phase_t0 = Instant::now();
@@ -571,6 +603,8 @@ pub fn run_generic(
         );
         if let Some(cid) = correlation_id {
             let status = entry.get("status").and_then(|v| v.as_str());
+            let verdict =
+                super::progress_trace::short_verdict(&entry, state.get("handoff"));
             super::progress_trace::emit_progress_trace(
                 repo,
                 cid,
@@ -579,23 +613,19 @@ pub fn run_generic(
                 "end",
                 status,
                 Some(process_name),
+                verdict.as_deref(),
             );
         }
-        if agent_only {
-            let status = entry.get("status").and_then(|v| v.as_str()).unwrap_or("");
-            if agent_phase_blocks_downstream(status) {
-                barrier_prior = Some(status.to_string());
-                barrier_reason = "prior_agent_phase_not_executed";
-            } else if stop_after_design()
-                && is_dedalo_design_phase(phase_name)
-                && status == "executed"
-            {
-                barrier_prior = Some("executed".to_string());
-                barrier_reason = "stop_after";
-            } else if simulated_relay_blocks_close(process_name, status, repo, &inputs_mut) {
-                barrier_prior = Some("awaiting_agents".to_string());
-                barrier_reason = "prior_agent_phase_not_executed";
-            }
+        if let Some((prior, reason)) = barrier_from_phase_entry(
+            &entry,
+            agent_only,
+            phase_name,
+            process_name,
+            repo,
+            &inputs_mut,
+        ) {
+            barrier_prior = Some(prior);
+            barrier_reason = reason;
         }
         phase_reports.push(entry);
     }
@@ -884,6 +914,72 @@ mod tests {
             ]
         );
         assert_eq!(barrier.as_deref(), Some("awaiting_agents"));
+    }
+
+    #[test]
+    fn workspace_init_failed_skips_design_execution_and_verification() {
+        struct Phase {
+            name: &'static str,
+            agent: bool,
+            entry: Value,
+        }
+        let phases = [
+            Phase {
+                name: "Inicialización de Espacio de Trabajo",
+                agent: false,
+                entry: json!({"handler": "workspace-init", "status": "failed", "error": "dirty-worktree"}),
+            },
+            Phase {
+                name: "Diseño del fix",
+                agent: true,
+                entry: json!({"status": "would-run"}),
+            },
+            Phase {
+                name: "Ejecución",
+                agent: true,
+                entry: json!({"status": "would-run"}),
+            },
+            Phase {
+                name: "Verificación",
+                agent: true,
+                entry: json!({"status": "would-run"}),
+            },
+        ];
+        let mut barrier: Option<String> = None;
+        let mut out: Vec<(&str, &str)> = Vec::new();
+        for phase in &phases {
+            if barrier.is_some() && (phase.agent || is_verify_or_close_phase(phase.name)) {
+                out.push((phase.name, "skipped"));
+                continue;
+            }
+            let status = phase
+                .entry
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            out.push((phase.name, status));
+            if let Some((prior, reason)) = barrier_from_phase_entry(
+                &phase.entry,
+                phase.agent,
+                phase.name,
+                "bug-fix",
+                Path::new("/tmp"),
+                &json!({}),
+            ) {
+                assert_eq!(reason, "workspace_init_failed");
+                barrier = Some(prior);
+            }
+        }
+        assert_eq!(
+            out,
+            vec![
+                ("Inicialización de Espacio de Trabajo", "failed"),
+                ("Diseño del fix", "skipped"),
+                ("Ejecución", "skipped"),
+                ("Verificación", "skipped"),
+            ]
+        );
+        assert_eq!(barrier.as_deref(), Some("failed"));
     }
 
     #[test]
