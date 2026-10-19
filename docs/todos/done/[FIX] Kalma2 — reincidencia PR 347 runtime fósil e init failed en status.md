@@ -5,7 +5,7 @@ title: "[FIX] Kalma2 — reincidencia PR #347: runtime fósil, init failed en st
 format: markdown
 version: "1.0.0"
 created: "2026-10-14"
-status: pending
+status: done
 priority: alta
 process: bug-fix
 dispatch: true
