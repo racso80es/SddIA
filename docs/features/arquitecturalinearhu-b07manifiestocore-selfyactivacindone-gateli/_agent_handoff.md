@@ -323,3 +323,49 @@ TECH_FORMAL_EXECUTE_PROCESS: APTO
 GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 notes: "idempotent-hit"
 ```
+
+## 2026-10-14T18:15:00Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `0061cd1b-fe5e-46d6-80f1-cd4db92a8559`
+- correlation_id: `7U3euBf7ve4ZW1Z7iPd9owEDzDRCsZ24UTmiyABNwTQD`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `FAIL_F5_VERDICT` ← `FAIL_F4_RBAC` · PPR∈revoked · `accept_pr_handoff` blocked · sin writes KM.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`FAIL_F5_VERDICT` / `global: NO_APTO`)
+
+- Escrito `docs/features/arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli/validacion.md` (phase Veredicto y bloqueo).
+- R1/R2: copia Evidence Bridge `native_state` notes=idempotent-hit → TECH/GIT **APTO** (sin stdout inventado; Shell git-manager Rejected).
+- R3 KM: **APTO** — 0 writes Argos bajo `docs/todos/**`.
+- F2 heredado `PASS_F2_DOC` APTO; F3 NO_APTO no bloqueante; F4 **NO_APTO BLOQUEANTE** (PPR∈revoked since 2026-10-02T18:42:59Z).
+- `delivery_state: failed` · `accept_pr_handoff: false`/`blocked` (L-HANDOFF-F5).
+```
+
+## 2026-10-14T18:14:04Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `0061cd1b-fe5e-46d6-80f1-cd4db92a8559`
+- correlation_id: `7U3euBf7ve4ZW1Z7iPd9owEDzDRCsZ24UTmiyABNwTQD`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `delivery_state: failed` · `accept_pr_handoff: blocked` (L-HANDOFF-F5).
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`FAIL_F5_VERDICT` / `global: NO_APTO`)
+
+- Tocados: `validacion.md` (phase Veredicto y bloqueo) + `_agent_handoff.md` (entrada F5).
+- R1/R2: copia Evidence Bridge `native_state`/`idempotent-hit` → TECH/GIT **APTO** (Shell `git-manager` Rejected; sin stdout inventado).
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`.
+- F2 heredado APTO; F3 NO_APTO no bloqueante; F4 **NO_APTO** — `pull-request-review` ∈ revoked since `2026-10-02T18:42:59Z`.
+- `delivery_state: failed` · `accept_pr_handoff: blocked` (L-HANDOFF-F5).
+```
