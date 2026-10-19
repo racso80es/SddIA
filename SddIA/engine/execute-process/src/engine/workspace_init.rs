@@ -264,6 +264,36 @@ fn local_branch_exists(
     }))
 }
 
+/// Si el gate dirty aborta después de crear la rama, volver a `prior_branch`
+/// y borrar la rama nueva cuando no existía.
+fn rollback_stranded_work_branch(
+    capsule_repo: &Path,
+    git_repo: &Path,
+    prior_branch: Option<&str>,
+    branch_name: &str,
+    branch_existed: bool,
+) -> Result<(), String> {
+    if let Some(prior) = prior_branch {
+        if prior != branch_name {
+            invoke_git_manager_for(
+                capsule_repo,
+                git_repo,
+                "checkout",
+                &json!({"branch_name": prior, "create_if_not_exists": false}),
+            )?;
+        }
+    }
+    if !branch_existed {
+        invoke_git_manager_for(
+            capsule_repo,
+            git_repo,
+            "delete_branch",
+            &json!({"branch_name": branch_name, "remote": false, "force": true}),
+        )?;
+    }
+    Ok(())
+}
+
 /// Primer paso git de la inicialización: aislar `branch_name` antes del gate dirty.
 fn checkout_work_branch(
     capsule_repo: &Path,
@@ -506,9 +536,8 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         }));
     } else {
         // Lectura previa. El primer paso que aísla la rama de trabajo va antes del gate.
-        let on_feature_branch = git_current_branch(repo, git_root)?
-            .map(|b| b == branch_name)
-            .unwrap_or(false);
+        let prior_branch = git_current_branch(repo, git_root)?;
+        let on_feature_branch = prior_branch.as_deref() == Some(branch_name.as_str());
         let branch_existed = local_branch_exists(repo, git_root, &branch_name)?;
 
         let checkout_step = checkout_work_branch(repo, git_root, &branch_name)?;
@@ -520,6 +549,15 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
                 "dirty-worktree: cambios fuera de persist_ref/pbi_ref: {}",
                 dirty.join(", ")
             );
+            if let Err(restore_err) = rollback_stranded_work_branch(
+                repo,
+                git_root,
+                prior_branch.as_deref(),
+                &branch_name,
+                branch_existed,
+            ) {
+                return Err(format!("{msg}; rollback: {restore_err}"));
+            }
             return Err(msg);
         }
 
@@ -1075,6 +1113,12 @@ mod tests {
         fs::create_dir_all(root.join(".events/pending")).unwrap();
         init_git_repo(root);
         fs::write(root.join("outside-dirty.txt"), "dirty\n").unwrap();
+        let prior_out = Command::new("git")
+            .args(["rev-parse", "--abbrev-ref", "HEAD"])
+            .current_dir(root)
+            .output()
+            .expect("rev-parse prior");
+        let prior = String::from_utf8_lossy(&prior_out.stdout).trim().to_string();
 
         std::env::remove_var("SDDIA_LAB_ALLOW_DIRTY");
         std::env::remove_var("SDDIA_LAB_SKIP_GIT");
@@ -1102,7 +1146,13 @@ mod tests {
             .output()
             .expect("rev-parse");
         let head = String::from_utf8_lossy(&head.stdout);
-        assert_eq!(head.trim(), "fix/dirty-scope-test");
+        assert_eq!(head.trim(), prior);
+        let show = Command::new("git")
+            .args(["show-ref", "--verify", "--quiet", "refs/heads/fix/dirty-scope-test"])
+            .current_dir(root)
+            .status()
+            .expect("show-ref");
+        assert!(!show.success(), "la rama nueva debe borrarse tras el abort dirty");
         assert!(
             !root
                 .join("docs/fixes/dirty-scope-test/objectives.md")

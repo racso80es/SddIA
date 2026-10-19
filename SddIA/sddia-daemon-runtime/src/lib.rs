@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -420,6 +420,27 @@ impl Drop for DaemonRuntime {
     }
 }
 
+fn elf_mtime(path: &Path) -> Option<SystemTime> {
+    std::fs::metadata(path).and_then(|m| m.modified()).ok()
+}
+
+/// F-DEP-07: `target/debug/execute-process` solo si es estrictamente más nuevo que release.
+pub fn resolve_execute_process_elf(repo: &Path) -> Option<PathBuf> {
+    let debug = repo.join("SddIA/target/debug/execute-process");
+    let release = repo.join("SddIA/target/release/execute-process");
+    match (debug.is_file(), release.is_file()) {
+        (true, true) => {
+            let debug_newer = elf_mtime(&debug)
+                .zip(elf_mtime(&release))
+                .is_some_and(|(d, r)| d > r);
+            Some(if debug_newer { debug } else { release })
+        }
+        (true, false) => Some(debug),
+        (false, true) => Some(release),
+        (false, false) => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -509,5 +530,32 @@ mod tests {
         assert_eq!(side_status(&rt.repo), "alive");
         rt.shutdown();
         let _ = fs::remove_dir_all(base);
+    }
+
+    fn touch_elf(path: &Path, when: SystemTime) {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        fs::write(path, b"\x7fELF").unwrap();
+        let file = fs::File::options().write(true).open(path).unwrap();
+        file.set_modified(when).unwrap();
+    }
+
+    #[test]
+    fn resolve_execute_process_elf_skips_older_debug() {
+        let root = std::env::temp_dir().join(format!("daemon-orch-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let now = SystemTime::now();
+        touch_elf(
+            &root.join("SddIA/target/debug/execute-process"),
+            now - Duration::from_secs(90),
+        );
+        touch_elf(
+            &root.join("SddIA/target/release/execute-process"),
+            now - Duration::from_secs(5),
+        );
+        let got = resolve_execute_process_elf(&root).unwrap();
+        assert!(got.ends_with("release/execute-process"), "{got:?}");
+        let _ = fs::remove_dir_all(&root);
     }
 }

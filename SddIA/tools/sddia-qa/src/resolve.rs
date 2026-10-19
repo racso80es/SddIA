@@ -9,13 +9,7 @@ pub fn resolve_execute_process(repo: &Path) -> Result<PathBuf, String> {
             return Ok(PathBuf::from(p));
         }
     }
-    for rel in ["SddIA/target/debug/execute-process", "SddIA/target/release/execute-process"] {
-        let c = repo.join(rel);
-        if c.is_file() {
-            return Ok(c);
-        }
-    }
-    Err("execute-process no encontrado (cd SddIA && cargo build -p execute-process)".into())
+    execute_process::engine::invoke_orchestrator::resolve_orchestrator_bin(repo)
 }
 
 pub fn resolve_event_watcher(repo: &Path) -> Result<PathBuf, String> {

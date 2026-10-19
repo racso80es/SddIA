@@ -247,11 +247,7 @@ fn resolve_orchestrator(repo: &Path) -> Result<PathBuf, String> {
                 .ok_or_else(|| "orquestador configurado no es un binario ELF nativo".into());
         }
     }
-    for rel in [
-        "SddIA/target/debug/execute-process",
-        "SddIA/target/release/execute-process",
-    ] {
-        let candidate = repo.join(rel);
+    if let Some(candidate) = sddia_daemon_runtime::resolve_execute_process_elf(repo) {
         if is_native_elf(&candidate) {
             return Ok(candidate);
         }
@@ -869,7 +865,7 @@ fn phase_end_from_trace(body: &serde_json::Value) -> Option<(String, PhaseEndNot
         .get("phase_status")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if status != "executed" && status != "blocked" {
+    if status != "executed" && status != "blocked" && status != "failed" {
         return None;
     }
     let phase_name = meta
@@ -879,12 +875,7 @@ fn phase_end_from_trace(body: &serde_json::Value) -> Option<(String, PhaseEndNot
         .or_else(|| body.get("phase").and_then(|v| v.as_str()))
         .unwrap_or("fase")
         .to_string();
-    let verdict = meta
-        .get("verdict")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_string();
+    let verdict = trace_end_detail(meta, body);
     let timestamp = body
         .get("timestamp")
         .and_then(|v| v.as_str())
@@ -931,11 +922,30 @@ fn latest_phase_end(repo: &Path, correlation_id: &str) -> Option<PhaseEndNotice>
     latest_phase_end_in(&load_progress_path(repo).join(correlation_id))
 }
 
+fn trace_end_detail(
+    meta: &serde_json::Map<String, serde_json::Value>,
+    body: &serde_json::Value,
+) -> String {
+    for key in ["verdict", "error"] {
+        if let Some(text) = meta.get(key).and_then(|v| v.as_str()) {
+            let trimmed = text.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+    body.get("error")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string()
+}
+
 fn phase_end_projection(end: &PhaseEndNotice) -> (&'static str, String) {
-    let st = if end.status == "blocked" {
-        "blocked"
-    } else {
-        "executed"
+    let st = match end.status.as_str() {
+        "blocked" => "blocked",
+        "failed" => "failed",
+        _ => "executed",
     };
     let message = if end.verdict.is_empty() {
         format!("Fase «{}» {}.", end.phase_name, end.status)
@@ -1189,6 +1199,34 @@ fn sse_progress_frame(body: &str) -> Vec<u8> {
     format!("event: progress\ndata: {body}\n\n").into_bytes()
 }
 
+/// `tiny_http` 0.12 usa `chunked_transfer::Encoder` con bloque de 8192 y sin
+/// `flush_after_write`. `Request::respond` solo hace flush al terminar `raw_print`,
+/// y un `Read` SSE no devuelve 0. Un frame menor que el bloque no sale al socket
+/// hasta que una escritura posterior desborda el encoder.
+const TINY_HTTP_CHUNK: usize = 8192;
+
+fn pad_sse_chunk_flush(pending: &mut Vec<u8>) {
+    if pending.is_empty() {
+        return;
+    }
+    if pending.len() >= TINY_HTTP_CHUNK + 1 && pending.len() % TINY_HTTP_CHUNK == 1 {
+        return;
+    }
+    let chunks = pending.len().div_ceil(TINY_HTTP_CHUNK);
+    let mut target = chunks * TINY_HTTP_CHUNK + 1;
+    if target <= pending.len() {
+        target += TINY_HTTP_CHUNK;
+    }
+    let need = target - pending.len();
+    pending.push(b':');
+    if need > 2 {
+        pending.extend(std::iter::repeat(b' ').take(need - 2));
+    }
+    if need >= 2 {
+        pending.push(b'\n');
+    }
+}
+
 struct ProgressStreamReader {
     corr_dir: PathBuf,
     seen: HashSet<String>,
@@ -1226,6 +1264,7 @@ impl ProgressStreamReader {
                 }
             }
         }
+        pad_sse_chunk_flush(&mut self.pending);
     }
 }
 
@@ -1251,6 +1290,7 @@ impl Read for ProgressStreamReader {
             }
             if self.last_ping.elapsed() >= Duration::from_secs(15) {
                 self.pending.extend_from_slice(b": ping\n\n");
+                pad_sse_chunk_flush(&mut self.pending);
                 self.last_ping = Instant::now();
                 continue;
             }
@@ -2570,6 +2610,7 @@ impl TelemetryStreamReader {
                 }
             }
             self.replay_done = true;
+            pad_sse_chunk_flush(&mut self.pending);
             return;
         }
         for ev in list_cognitive_events(&self.repo, 5) {
@@ -2591,6 +2632,7 @@ impl TelemetryStreamReader {
                 self.seen.insert(key);
             }
         }
+        pad_sse_chunk_flush(&mut self.pending);
     }
 }
 
@@ -2616,6 +2658,7 @@ impl Read for TelemetryStreamReader {
             }
             if self.last_ping.elapsed() >= Duration::from_secs(15) {
                 self.pending.extend_from_slice(b": ping\n\n");
+                pad_sse_chunk_flush(&mut self.pending);
                 self.last_ping = Instant::now();
                 continue;
             }
@@ -2982,6 +3025,94 @@ mod tests {
         assert!(msg.contains("Shell IDE Rejected"));
         assert!(!msg.contains("en espera de agentes"));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn project_status_failed_phase_overrides_awaiting_agents_pec() {
+        let pec = serde_json::json!({
+            "payload": {
+                "status": "success",
+                "process_name": "bug-fix",
+                "cycle_phase": "awaiting_agents"
+            }
+        });
+        let dir = std::env::temp_dir().join(format!("sddia-phase-failed-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("init.json"),
+            serde_json::json!({
+                "timestamp": "2026-10-14T17:43:08Z",
+                "phase": "workspace-init",
+                "metadata": {
+                    "moment": "end",
+                    "phase_status": "failed",
+                    "phase_name_raw": "Inicialización de Espacio de Trabajo",
+                    "error": "dirty-worktree: fuera de alcance"
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let end = latest_phase_end_in(&dir).expect("failed phase end");
+        let (st, msg) = project_status(None, false, Some(&pec), Some(&end));
+        assert_eq!(st, "failed");
+        assert!(msg.contains("Inicialización de Espacio de Trabajo"), "{msg}");
+        assert!(msg.contains("dirty-worktree"), "{msg}");
+        assert!(!msg.contains("en espera de agentes"), "{msg}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn progress_stream_replay_arrives_on_first_read() {
+        let dir = std::env::temp_dir().join(format!("sddia-sse-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("a.json"),
+            serde_json::json!({"timestamp":"2026-10-14T17:43:01Z","phase":"workspace-init","message":"fase-init"}).to_string(),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("b.json"),
+            serde_json::json!({"timestamp":"2026-10-14T17:43:02Z","phase":"plan","message":"fase-plan"}).to_string(),
+        )
+        .unwrap();
+        let mut reader = ProgressStreamReader::new(dir.clone());
+        let started = Instant::now();
+        let mut buf = vec![0u8; 64 * 1024];
+        let n = reader.read(&mut buf).unwrap();
+        assert!(started.elapsed() < Duration::from_secs(1), "replay tardó {:?}", started.elapsed());
+        assert!(n >= TINY_HTTP_CHUNK + 1, "n={n}");
+        assert_eq!(n % TINY_HTTP_CHUNK, 1, "n={n}");
+        let text = std::str::from_utf8(&buf[..n]).unwrap();
+        assert!(text.contains("fase-init"), "{text}");
+        assert!(text.contains("fase-plan"), "{text}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn resolve_orchestrator_prefers_newer_release_elf() {
+        let _lock = MAYEUTA_RESOLVE_LOCK.lock().unwrap();
+        let prev = std::env::var("SDDIA_EXECUTE_PROCESS_BIN").ok();
+        std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN");
+        let root = std::env::temp_dir().join(format!("kalma2-orch-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let now = std::time::SystemTime::now();
+        for (rel, when) in [
+            ("SddIA/target/debug/execute-process", now - Duration::from_secs(90)),
+            ("SddIA/target/release/execute-process", now - Duration::from_secs(5)),
+        ] {
+            let path = root.join(rel);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(&path, b"\x7fELF-test").unwrap();
+            let file = std::fs::File::options().write(true).open(&path).unwrap();
+            file.set_modified(when).unwrap();
+        }
+        let got = resolve_orchestrator(&root).unwrap();
+        assert!(got.ends_with("release/execute-process"), "{got:?}");
+        let _ = std::fs::remove_dir_all(&root);
+        if let Some(v) = prev {
+            std::env::set_var("SDDIA_EXECUTE_PROCESS_BIN", v);
+        }
     }
 
     #[test]

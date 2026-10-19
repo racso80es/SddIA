@@ -4,6 +4,11 @@ use serde_json::Value;
 use std::path::Path;
 use std::process::Command;
 
+fn elf_mtime(path: &Path) -> Option<std::time::SystemTime> {
+    std::fs::metadata(path).and_then(|m| m.modified()).ok()
+}
+
+/// F-DEP-07: debug solo si su mtime es estrictamente posterior al de release.
 pub fn resolve_orchestrator_bin(repo: &Path) -> Result<std::path::PathBuf, String> {
     if let Ok(p) = std::env::var("SDDIA_EXECUTE_PROCESS_BIN") {
         let p = p.trim();
@@ -11,13 +16,25 @@ pub fn resolve_orchestrator_bin(repo: &Path) -> Result<std::path::PathBuf, Strin
             return Ok(std::path::PathBuf::from(p));
         }
     }
-    for rel in ["SddIA/target/debug/execute-process", "SddIA/target/release/execute-process"] {
-        let candidate = repo.join(rel);
-        if candidate.is_file() {
-            return Ok(candidate);
+    let debug = repo.join("SddIA/target/debug/execute-process");
+    let release = repo.join("SddIA/target/release/execute-process");
+    let chosen = match (debug.is_file(), release.is_file()) {
+        (true, true) => {
+            let debug_newer = elf_mtime(&debug)
+                .zip(elf_mtime(&release))
+                .is_some_and(|(d, r)| d > r);
+            if debug_newer { debug } else { release }
         }
-    }
-    Err("binario execute-process no encontrado (compilar: cd SddIA && cargo build -p execute-process)".into())
+        (true, false) => debug,
+        (false, true) => release,
+        (false, false) => {
+            return Err(
+                "binario execute-process no encontrado (compilar: cd SddIA && cargo build -p execute-process)"
+                    .into(),
+            );
+        }
+    };
+    Ok(chosen)
 }
 
 pub fn invoke_process(repo: &Path, process_name: &str, inputs: &Value) -> Result<Value, String> {
@@ -81,4 +98,71 @@ pub fn invoke_process_full_with_env(
         return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
     }
     serde_json::from_str(line).map_err(|e| format!("JSON envelope: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::sync::Mutex;
+    use std::time::{Duration, SystemTime};
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn touch(path: &std::path::Path, when: SystemTime) {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        fs::write(path, b"elf").unwrap();
+        let file = fs::File::options().write(true).open(path).unwrap();
+        file.set_modified(when).unwrap();
+    }
+
+    #[test]
+    fn prefers_release_when_debug_is_older() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let prev = std::env::var("SDDIA_EXECUTE_PROCESS_BIN").ok();
+        std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN");
+        let root = std::env::temp_dir().join(format!("orch-rel-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let now = SystemTime::now();
+        touch(
+            &root.join("SddIA/target/debug/execute-process"),
+            now - Duration::from_secs(120),
+        );
+        touch(
+            &root.join("SddIA/target/release/execute-process"),
+            now - Duration::from_secs(10),
+        );
+        let got = resolve_orchestrator_bin(&root).unwrap();
+        assert!(got.ends_with("release/execute-process"), "{got:?}");
+        let _ = fs::remove_dir_all(&root);
+        if let Some(v) = prev {
+            std::env::set_var("SDDIA_EXECUTE_PROCESS_BIN", v);
+        }
+    }
+
+    #[test]
+    fn prefers_debug_when_strictly_newer() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let prev = std::env::var("SDDIA_EXECUTE_PROCESS_BIN").ok();
+        std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN");
+        let root = std::env::temp_dir().join(format!("orch-dbg-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let now = SystemTime::now();
+        touch(
+            &root.join("SddIA/target/release/execute-process"),
+            now - Duration::from_secs(120),
+        );
+        touch(
+            &root.join("SddIA/target/debug/execute-process"),
+            now - Duration::from_secs(10),
+        );
+        let got = resolve_orchestrator_bin(&root).unwrap();
+        assert!(got.ends_with("debug/execute-process"), "{got:?}");
+        let _ = fs::remove_dir_all(&root);
+        if let Some(v) = prev {
+            std::env::set_var("SDDIA_EXECUTE_PROCESS_BIN", v);
+        }
+    }
 }
