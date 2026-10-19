@@ -1,22 +1,90 @@
 ---
 feature_name: kalma2-reincidence-stale-runtime-and-failed-projection
 created: "2026-10-19"
-process: bug-fix
+updated: "2026-10-19T14:50:00Z"
+process: pull-request-review
+phase: Veredicto y bloqueo
+agent: argos
+agents: argos
 branch: fix/kalma2-reincidence-stale-runtime-and-failed-projection
+branch_name: fix/kalma2-reincidence-stale-runtime-and-failed-projection
+branch_name_injected: fix/kalma2-reincidence-stale-runtime-and-failed-projection
+branch_worktree_observed: fix/kalma2-reincidence-stale-runtime-and-failed-projection
 persist_ref: docs/fixes/kalma2-reincidence-stale-runtime-and-failed-projection
 pbi_ref: docs/todos/done/[FIX] Kalma2 — reincidencia PR 347 runtime fósil e init failed en status.md
+pbi_ref_injected: ""
 document_id: PBI-FIX-KALMA2-REINCIDENCE-STALE-RUNTIME-AND-FAILED-PROJECTION
 uuid: "e3b27269-6736-4735-ba6f-fd94bb87d1c2"
-global: APTO
+correlation_id: "7c9603c6-8f93-40f6-be0b-fdea7093104c"
+pr_presented_event_id: "7c9603c6-8f93-40f6-be0b-fdea7093104c"
+audit_event_reference: "7c9603c6-8f93-40f6-be0b-fdea7093104c"
+pr_url: https://github.com/racso80es/SddIA/pull/352
+execution_id: "c213e83f-599a-434e-b9d3-0eae5c8aae07"
+source_process: bug-fix
+global: NO_APTO
 pbi_archived: true
+approval_status: rechazado
+verdict: rechazado
+delivery_state: failed
+resolution: FAIL_F5_VERDICT
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+accept_pr_block_reason: "FAIL_F5_VERDICT ← FAIL_F4_RBAC — pull-request-review ∈ revoked since 2026-10-02T18:42:59Z (abrupt_success_rate_drop); handoff accept-pr prohibido"
+authorization_status:
+  exitCode: 1
+  emitter_agent: argos
+  note: "FAIL_F5_VERDICT ← FAIL_F4_RBAC · Veredicto y bloqueo · R1/R2 copia Evidence Bridge session native_state notes=idempotent-hit · sin stdout inventado · Shell git-manager Rejected esta sesión · PPR∈revoked FS Cerbero"
+git_manager_invoked: false
+git_manager_error: "cápsula no invocable en esta sesión Argos Veredicto (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
+git_evidence_source: native_state-evidence-bridge
+formal_execute_process: true
+formal_evidence_detail: "verify-process-integrity: OK (heredado bridge prosthesis_subprocess @ 2026-10-19T14:45:55Z)"
+handoff_machine_file: present
+evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine+session) source=native_state notes=idempotent-hit @ 2026-10-19T14:47:35Z; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado"
+shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 7c9603c6… · exec c213e83f…"
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-10-02T18:42:59Z) BLOQUEANTE F4; delivery-close-cycle (since 2026-10-03T14:43:29Z) L-LATERAL; bug-fix/feature/entity-manager/event-creator/refactorization revoked laterales; accept-pr∉revoked"
+scope: "PPR Veredicto y bloqueo — PullRequest_Presented rama fix/kalma2-reincidence-stale-runtime-and-failed-projection (CID 7c9603c6… · exec c213e83f…)"
 checks:
-  R-CA1: APTO
-  R-CA2: APTO
-  R-CA3: APTO
-  R-CA4: APTO
-  R-CA5: APTO
-  R-CA6: APTO
+  F2_DOC_GATE: APTO
+  F3_TECH_GATE: NO_APTO
+  F4_RBAC_GATE: NO_APTO
+  F5_VERDICT: NO_APTO
+  F5_VERDICT_GATE: NO_APTO
+  DOC_OBJECTIVES: APTO
+  DOC_CLARIFY: NO_APTO
+  DOC_SPEC: APTO
+  DOC_PLAN: NO_APTO
+  DOC_IMPLEMENTATION: APTO
+  DOC_EXECUTION: APTO
+  DOC_FRONTMATTER_YAML: APTO
+  DOC_EVOLUTION: APTO
+  DOC_VALIDACION_WRITTEN: APTO
+  PERSIST_REF_RESOLVED: APTO
+  HANDOFF_MACHINE_FILE: APTO
+  HANDOFF_EVIDENCE_BLOCK: APTO
+  BRANCH_RUNTIME_INJECT: APTO
+  BRANCH_ECST_ALIGN: APTO
+  BRANCH_WORKTREE_SYNC: APTO
+  TECH_FORMAL_EXECUTE_PROCESS: APTO
+  GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+  GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+  RBAC_AUTHORING_KM_POLICY: APTO
+  RBAC_PROCESS_REGISTRY: NO_APTO
+  RBAC_EMITTER_NOT_REVOKED: APTO
+  PBI_DONE_PRESENT: APTO
+  PBI_PENDING_ABSENT: APTO
+  PBI_STATUS_FIELD_DONE: APTO
+  AC_DONE_PATH: APTO
+  CODE_TOUCHPOINT_PRESENT: APTO
+  MERGE_ALREADY_OBSERVED: NO_APTO
+  ACCEPT_PR_HANDOFF: NO_APTO
+  L_HANDOFF_F5: APTO
+  ARGOS_NO_KM_WRITE: APTO
+  branch: APTO
+  git_changes: APTO
 git_changes:
+  - docs/fixes/kalma2-reincidence-stale-runtime-and-failed-projection/
+  - docs/todos/done/[FIX] Kalma2 — reincidencia PR 347 runtime fósil e init failed en status.md
   - SddIA/interfaces/kalma2-bridge/src/main.rs
   - SddIA/engine/execute-process/src/engine/workspace_init.rs
   - SddIA/engine/execute-process/src/engine/invoke_orchestrator.rs
@@ -26,30 +94,151 @@ git_changes:
   - SddIA/sddia-daemon-runtime/src/github_bridge.rs
   - SddIA/daemons/telegram-watcher/src/main.rs
   - SddIA/daemons/event-watcher/src/main.rs
-  - SddIA/daemons/event-watcher.md
   - SddIA/daemons/event-sweeper/src/main.rs
-  - SddIA/daemons/event-sweeper.md
   - SddIA/tools/sddia-qa/src/resolve.rs
   - start-sddia.sh
-  - docs/fixes/kalma2-reincidence-stale-runtime-and-failed-projection/
-  - docs/todos/done/[FIX] Kalma2 — reincidencia PR 347 runtime fósil e init failed en status.md
-  - docs/features/arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli/_agent_handoff.md
-  - docs/features/arquitecturalinearhu-b07manifiestocore-selfyactivacindone-gateli/validacion.md
+  - SddIA/evolution/10113091-ff81-405f-90f4-b29c379b18f6.md
+  - SddIA/evolution/Evolution_log.md
+blocking_findings:
+  - F5_VERDICT
+  - F4_RBAC_GATE
+  - RBAC_PROCESS_REGISTRY
+non_blocking_findings:
+  - GIT_EVIDENCE_SESSION_SHELL
+  - F3_TECH_GATE
+  - DOC_CLARIFY
+  - DOC_PLAN
+  - MERGE_ALREADY_OBSERVED
+  - DOC_OBJECTIVES_PBI_REF_STALE
+  - REVOKED_ENTITY_ALERT_DCC
+  - REVOKED_ENTITY_ALERT_BUG_FIX
+  - REVOKED_ENTITY_ALERT_FEATURE
+  - REVOKED_ENTITY_ALERT_ENTITY_MANAGER
+  - REVOKED_ENTITY_ALERT_EVENT_CREATOR
+  - REVOKED_ENTITY_ALERT_REFACTORIZATION
+situational_notes:
+  - "Fase Veredicto y bloqueo · CID 7c9603c6-8f93-40f6-be0b-fdea7093104c · exec c213e83f-599a-434e-b9d3-0eae5c8aae07"
+  - "Evidence Bridge machine/session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado) @ 2026-10-19T14:47:35Z"
+  - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS + evolution.relacionado + touchpoints implementation.md"
+  - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
+  - "F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — cascada bug-fix objectives/spec/implementation/execution OK"
+  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md tests)"
+  - "F4_RBAC_GATE NO_APTO BLOQUEANTE — .SddIA/cerbero/revoked_entities.json · pull-request-review ∈ revoked since 2026-10-02T18:42:59Z"
+  - "Sin pending rehab PPR para since 2026-10-02T18:42:59Z; Cúmulo Cosecha puede seed — Argos no escribe KM"
+  - "PBI-FIX-KALMA2-REINCIDENCE-STALE-RUNTIME-AND-FAILED-PROJECTION en done/ status:done; pending/ sin réplica; pbi_archived true no absuelve F4/F5"
+  - "PR #352 abierto (MERGE_ALREADY_OBSERVED NO_APTO); HEAD worktree fix/kalma2-reincidence-stale-runtime-and-failed-projection (FS .git/HEAD)"
+  - "Residual no bloqueante: objectives.md pbi_ref aún apunta a pending/ (PBI ya en done/)"
+  - "accept_pr_handoff false/blocked (L-HANDOFF-F5) · accept-pr∉revoked pero peaje F4 falla"
+  - "CODE_TOUCHPOINT: kalma2-bridge phase_end failed + workspace_init rollback + invoke_orchestrator mtime + start-sddia.sh witnesses"
 ---
+# Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
-# Validación — reincidencia PR #347
+## Veredicto de fase
 
-**Veredicto global: APTO.**
+**NO_APTO** — `resolution: FAIL_F5_VERDICT` ← `FAIL_F4_RBAC` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked`.
 
-| ID | Criterio | Estado | Evidencia |
-|----|----------|--------|-----------|
-| R-CA1 | `phase_status: failed` pisa `awaiting_agents` | APTO | `project_status_failed_phase_overrides_awaiting_agents_pec` |
-| R-CA2 | Rollback de rama nueva si `dirty-worktree` aborta | APTO | `run_dirty_outside_scope_aborts_without_system_fracture` |
-| R-CA3 | Debug solo si es más nuevo que release; testigos en `start-sddia.sh` | APTO | Tests de mtime en orquestador, puente y daemon-runtime. Sellado release de `execute-process` y `kalma2-bridge` |
-| R-CA4 | Replay SSE en la primera lectura | APTO | `progress_stream_replay_arrives_on_first_read` |
-| R-CA5 | Binarios recompilados y puente reciclado | APTO | PID 26035 → 38851; `exe` = `SddIA/target/release/kalma2-bridge` |
-| R-CA6 | Tests unitarios de los dos huecos | APTO | Los siete tests del ciclo, 0 fallos |
+| Gate | Delegado | Estado | Criterio |
+|------|----------|--------|----------|
+| F2 | Argos (doc) | **APTO** | heredado · `PASS_F2_DOC` · cascada bug-fix |
+| F3 | execute-process | **NO_APTO** | no bloqueante · proxy `TECH_FORMAL` + `execution.md` |
+| F4 | Cerbero (FS) | **NO_APTO** | `RBAC_PROCESS_REGISTRY` · PPR∈revoked |
+| F5 | Argos | **NO_APTO** | violación F4 bloqueante → aborta materialización |
 
-## Cierre documental
+## Evidence Bridge (R1 / R2 / R3)
 
-PBI en `docs/todos/done/` con `status: done`. `pbi_archived: true`.
+Copia literal machine/session — **no** stdout Shell inventado:
+
+| Campo | Valor |
+|-------|-------|
+| `schema` | `kalma2-agent-runtime-evidence/v1` |
+| `materialized_at` | `2026-10-19T14:47:35Z` |
+| `source` | `native_state` (session inject + machine handoff) |
+| `git_manager_invoked` | `true` (bridge) · `false` (sesión Argos Shell) |
+| `formal_execute_process` | `true` |
+| `formal_evidence_detail` | `verify-process-integrity: OK` (heredado prosthesis @ 14:45:55Z) |
+| `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
+| `notes` | `idempotent-hit` |
+| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` físico |
+| `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` esta fase |
+
+Bloque: `_agent_handoff.md` § Runtime evidence (machine) source=`native_state` + session inject (CID 7c9603c6… · exec c213e83f…).
+
+## Ingesta
+
+| Input | Resolución |
+|-------|------------|
+| `persist_ref` | `docs/fixes/kalma2-reincidence-stale-runtime-and-failed-projection` |
+| `pbi_ref` (inyectado) | vacío → **resuelto** `docs/todos/done/[FIX] Kalma2 — reincidencia PR 347 runtime fósil e init failed en status.md` |
+| `correlation_id` / Presented | `7c9603c6-8f93-40f6-be0b-fdea7093104c` |
+| `execution_id` | `c213e83f-599a-434e-b9d3-0eae5c8aae07` |
+| `pr_url` | `https://github.com/racso80es/SddIA/pull/352` |
+| `branch_name` (runtime) | `fix/kalma2-reincidence-stale-runtime-and-failed-projection` |
+| `source_process` | `bug-fix` |
+| Evento Merged (este CID) | **ausente** |
+| Cerbero FS | `.SddIA/cerbero/revoked_entities.json` · PPR∈revoked |
+
+## Peajes F2 → F5
+
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `F2_DOC_GATE` | **APTO** | objectives/spec/implementation/execution + YAML; evolution `10113091-…`; Triaje documental `PASS_F2_DOC` |
+| `F3_TECH_GATE` | **NO_APTO** | Triaje técnico no materializado este CID; **no bloquea** (R1 TECH_FORMAL APTO + tests en `execution.md`) |
+| `F4_RBAC_GATE` | **NO_APTO** | `pull-request-review` ∈ revoked `since 2026-10-02T18:42:59Z` (`abrupt_success_rate_drop`) |
+| `RBAC_PROCESS_REGISTRY` | **NO_APTO** | mismo peaje Cerbero FS |
+| `F5_VERDICT` / `F5_VERDICT_GATE` | **NO_APTO** | violación F4 ⇒ `delivery_state: failed` |
+| `ACCEPT_PR_HANDOFF` / `L_HANDOFF_F5` | **NO_APTO** / **APTO** | handoff blocked; regla L-HANDOFF-F5 respetada |
+
+## branch / git_changes / PBI
+
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge `native_state` (copia) |
+| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | Shell Rejected; sin `gitStdout` |
+| `BRANCH_RUNTIME_INJECT` | **APTO** | `fix/kalma2-reincidence-stale-runtime-and-failed-projection` |
+| `BRANCH_ECST_ALIGN` | **APTO** | rama inject = worktree observado |
+| `BRANCH_WORKTREE_SYNC` | **APTO** | `.git/HEAD` → `refs/heads/fix/kalma2-reincidence-stale-runtime-and-failed-projection` (FS; **no** stdout git-manager) |
+| `branch` | **APTO** | worktree = inject |
+| `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula) |
+| `PBI_DONE_PRESENT` | **APTO** | done/ · `document_id: PBI-FIX-KALMA2-REINCIDENCE-STALE-RUNTIME-AND-FAILED-PROJECTION` · `status: done` |
+| `PBI_PENDING_ABSENT` | **APTO** | sin réplica en pending/ |
+| `AC_DONE_PATH` | **APTO** | done exclusivo + `pbi_archived: true` |
+| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `7c9603c6…` / PR #352 abierto |
+
+`git_changes` por inventario path-assert (`persist_ref` + PBI done + evolution `relacionado` + touchpoints). **No** es `gitStdout` de esta sesión. Fuera de alcance del fix: docs HU-B07 sucios (declarado en `implementation.md`).
+
+## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
+
+**APTO** — 0 writes Argos bajo `docs/todos/**` esta fase.
+
+Sighting FS: PBI entrega ya en `done/` (`status: done`, proceso `bug-fix`) — no es semilla Kaizen nueva de esta aduana. Hallazgo F4 (PPR revoked) → Cúmulo Cosecha / `Kaizen_Alert_Required`; Argos **no** materializa TODO. Forja Core ≠ este check.
+
+## Dictamen
+
+```json
+{
+  "phase": "Veredicto y bloqueo",
+  "global": "NO_APTO",
+  "resolution": "FAIL_F5_VERDICT",
+  "verdict": "rechazado",
+  "delivery_state": "failed",
+  "accept_pr_handoff": false,
+  "accept_pr_handoff_status": "blocked",
+  "accept_pr_block_reason": "FAIL_F5_VERDICT ← FAIL_F4_RBAC — pull-request-review ∈ revoked since 2026-10-02T18:42:59Z",
+  "pbi_archived": true,
+  "branch": "fix/kalma2-reincidence-stale-runtime-and-failed-projection",
+  "branch_worktree_observed": "fix/kalma2-reincidence-stale-runtime-and-failed-projection",
+  "document_id": "PBI-FIX-KALMA2-REINCIDENCE-STALE-RUNTIME-AND-FAILED-PROJECTION",
+  "correlation_id": "7c9603c6-8f93-40f6-be0b-fdea7093104c",
+  "execution_id": "c213e83f-599a-434e-b9d3-0eae5c8aae07",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/352",
+  "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
+  "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
+  "RBAC_AUTHORING_KM_POLICY": "APTO",
+  "blocking": ["F5_VERDICT", "F4_RBAC_GATE", "RBAC_PROCESS_REGISTRY"]
+}
+```
+
+## Alcance
+
+Veredicto y bloqueo **aborta** materialización (`accept-pr` blocked). Downstream Cosecha Kaizen puede mapear deuda PPR-revoked; Handoff no procede con `delivery_state: failed`. Sin merge directo en aduana. Argos **no** escribe bajo `docs/todos/`.

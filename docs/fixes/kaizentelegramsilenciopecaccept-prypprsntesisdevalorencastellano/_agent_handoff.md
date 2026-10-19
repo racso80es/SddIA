@@ -57,3 +57,27 @@ GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
 formal_evidence_detail: "verify-process-integrity: OK"
 notes: "handoff-git-apto"
 ```
+
+## 2026-10-19T14:46:50Z — Verificación
+- process: `bug-fix`
+- agents: `argos`
+- execution_id: `79a76eb1-d990-4050-845d-65123e6d455a`
+- correlation_id: `09a61ea3-b2d9-43c3-b65d-b815385e9a22`
+- pbi_ref: `docs/todos/pending/[KAIZEN] Telegram — silencio PEC accept-pr y PPR, síntesis de valor en castellano.md`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - PBI ya en `docs/todos/done/` → `pbi_archived: true`; rama worktree no acreditada vía git-manager
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked (`global: NO_APTO`).**
+
+- Escrito: `docs/fixes/kaizentelegramsilenciopecaccept-prypprsntesisdevalorencastellano/validacion.md`
+- Evidence Bridge (copia): `TECH_FORMAL` / `GIT_EVIDENCE_VIA_GIT_MANAGER` **APTO**; Shell `git-manager` **Rejected** (sin stdout inventado)
+- `RBAC_AUTHORING_KM_POLICY` **APTO** (0 writes KM)
+- Cascada de este `persist_ref`: solo handoff; faltan `implementation.md`/`execution.md`/`spec.md` pese a claim Tekton → bloquea APTO
+- TG-CA1–7 **APTO** por paridad estática en árbol (+ correlato PR #346); batería no reejecutada
+- PBI ya en `docs/todos/done/` → `pbi_archived: true`; rama worktree no acreditada vía git-manager
+```

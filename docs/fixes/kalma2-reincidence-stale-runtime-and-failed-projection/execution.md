@@ -1,9 +1,9 @@
 ---
+
 feature_name: kalma2-reincidence-stale-runtime-and-failed-projection
 created: "2026-10-19"
 process: bug-fix
 branch_name: fix/kalma2-reincidence-stale-runtime-and-failed-projection
-execution_id: "381178a8-8a56-4a06-a8ce-d47be87242f2"
 items_applied:
   - phase-end-failed
   - dirty-branch-rollback
@@ -11,8 +11,8 @@ items_applied:
   - sse-chunk-flush
   - witness-seal
   - rebuild-and-recycle
+execution_id: "c213e83f-599a-434e-b9d3-0eae5c8aae07"
 ---
-
 # Ejecución — reincidencia PR #347
 
 ## Tests

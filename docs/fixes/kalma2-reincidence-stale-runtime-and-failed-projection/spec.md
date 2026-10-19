@@ -1,13 +1,13 @@
 ---
+
 feature_name: kalma2-reincidence-stale-runtime-and-failed-projection
 created: "2026-10-15"
 process: bug-fix
 base: main
 scope: R-CA1..R-CA6
 branch_name: fix/kalma2-reincidence-stale-runtime-and-failed-projection
-execution_id: "381178a8-8a56-4a06-a8ce-d47be87242f2"
+execution_id: "c213e83f-599a-434e-b9d3-0eae5c8aae07"
 ---
-
 # Spec — reincidencia PR #347
 
 ## Diagnóstico

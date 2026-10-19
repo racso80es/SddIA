@@ -1,13 +1,13 @@
 ---
+
 feature_name: kalma2-reincidence-stale-runtime-and-failed-projection
 created: "2026-10-15"
 process: bug-fix
 branch_name: fix/kalma2-reincidence-stale-runtime-and-failed-projection
 persist_ref: docs/fixes/kalma2-reincidence-stale-runtime-and-failed-projection
 pbi_ref: docs/todos/pending/[FIX] Kalma2 — reincidencia PR 347 runtime fósil e init failed en status.md
-execution_id: "381178a8-8a56-4a06-a8ce-d47be87242f2"
+execution_id: "c213e83f-599a-434e-b9d3-0eae5c8aae07"
 ---
-
 # Objetivos — kalma2-reincidence-stale-runtime-and-failed-projection
 
 ## Misión

@@ -1,4 +1,5 @@
 ---
+
 feature_name: kalma2-reincidence-stale-runtime-and-failed-projection
 created: "2026-10-15"
 process: bug-fix
@@ -9,8 +10,8 @@ items:
   - orchestrator-mtime
   - sse-chunk-flush
   - witness-seal
+execution_id: "c213e83f-599a-434e-b9d3-0eae5c8aae07"
 ---
-
 # Implementación — reincidencia PR #347
 
 ## Touchpoints
