@@ -79,13 +79,8 @@ fn execute_process_bin(repo: &Path) -> PathBuf {
             return PathBuf::from(p);
         }
     }
-    for rel in ["SddIA/target/debug/execute-process", "SddIA/target/release/execute-process"] {
-        let candidate = repo.join(rel);
-        if candidate.is_file() {
-            return candidate;
-        }
-    }
-    repo.join("SddIA/target/debug/execute-process")
+    sddia_daemon_runtime::resolve_execute_process_elf(repo)
+        .unwrap_or_else(|| repo.join("SddIA/target/debug/execute-process"))
 }
 
 fn rel_event_path(repo: &Path, event_path: &Path) -> String {

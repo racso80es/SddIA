@@ -92,8 +92,7 @@ pub fn seal_one(
     write_witness: bool,
 ) -> Result<Value, String> {
     let digest = compute_capsule_source_digest(repo, name)?;
-    let genome = resolve_capsule_genome(repo, name)
-        .ok_or_else(|| format!("genome ausente para '{name}'"))?;
+    let genome = resolve_capsule_genome(repo, name);
     let elf = resolve_elf(repo, name, profile)
         .ok_or_else(|| format!("ELF ausente: {name} (profile={profile})"))?;
 
@@ -102,9 +101,11 @@ pub fn seal_one(
         "profile": profile,
         "source_sha256": digest,
         "elf_path": elf.strip_prefix(repo).unwrap_or(&elf).to_string_lossy().replace('\\', "/"),
-        "genome_path": genome.strip_prefix(repo).unwrap_or(&genome).to_string_lossy().replace('\\', "/"),
         "dry_run": dry_run,
     });
+    if let Some(g) = &genome {
+        out["genome_path"] = json!(g.strip_prefix(repo).unwrap_or(g).to_string_lossy().replace('\\', "/"));
+    }
 
     if dry_run {
         out["status"] = json!("dry-run");
@@ -112,6 +113,7 @@ pub fn seal_one(
     }
 
     if write_genome {
+        let genome = genome.ok_or_else(|| format!("genome ausente para '{name}'"))?;
         patch_genome_source_sha256(&genome, &digest)?;
         out["genome_patched"] = json!(true);
     }

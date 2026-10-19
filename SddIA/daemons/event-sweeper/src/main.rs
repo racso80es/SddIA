@@ -91,16 +91,8 @@ fn execute_process_bin(repo: &std::path::Path) -> std::path::PathBuf {
             return std::path::PathBuf::from(p);
         }
     }
-    for rel in [
-        "SddIA/target/debug/execute-process",
-        "SddIA/target/release/execute-process",
-    ] {
-        let candidate = repo.join(rel);
-        if candidate.is_file() {
-            return candidate;
-        }
-    }
-    repo.join("SddIA/target/debug/execute-process")
+    sddia_daemon_runtime::resolve_execute_process_elf(repo)
+        .unwrap_or_else(|| repo.join("SddIA/target/debug/execute-process"))
 }
 
 /// Probe periódico de invariantes no-proceso + HTTP Kalma2.

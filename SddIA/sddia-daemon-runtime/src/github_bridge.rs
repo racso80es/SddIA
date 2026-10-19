@@ -226,13 +226,10 @@ pub fn resolve_execute_process_bin(repo: &Path) -> Result<PathBuf, String> {
             return Ok(PathBuf::from(p));
         }
     }
-    for rel in ["SddIA/target/debug/execute-process", "SddIA/target/release/execute-process"] {
-        let candidate = repo.join(rel);
-        if candidate.is_file() {
-            return Ok(candidate);
-        }
-    }
-    Err("binario execute-process no encontrado (compilar: cd SddIA && cargo build -p execute-process)".into())
+    crate::resolve_execute_process_elf(repo).ok_or_else(|| {
+        "binario execute-process no encontrado (compilar: cd SddIA && cargo build -p execute-process)"
+            .into()
+    })
 }
 
 fn simulate_iota_enabled() -> bool {

@@ -84,10 +84,18 @@ fn resolve_capsule_crate_dir(repo: &Path, name: &str) -> Option<PathBuf> {
             return Some(p);
         }
     }
-    if name == "execute-process" || name == "kalma2-bridge" {
-        let p = repo.join("SddIA/engine").join(name);
+    if name == "execute-process" {
+        let p = repo.join("SddIA/engine/execute-process");
         if p.join("Cargo.toml").is_file() {
             return Some(p);
+        }
+    }
+    if name == "kalma2-bridge" {
+        for rel in ["SddIA/interfaces/kalma2-bridge", "SddIA/engine/kalma2-bridge"] {
+            let p = repo.join(rel);
+            if p.join("Cargo.toml").is_file() {
+                return Some(p);
+            }
         }
     }
     None
