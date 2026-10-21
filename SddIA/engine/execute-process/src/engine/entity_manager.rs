@@ -574,6 +574,14 @@ pub fn run(
                 entry["note"] = json!("fase omitida fuera de delete");
             }
         } else if phase_name == "Sello universal" {
+            if state
+                .pointer("/handoff/skip_domain_seal")
+                .and_then(|v| v.as_bool())
+                == Some(true)
+            {
+                entry["status"] = json!("skipped");
+                entry["note"] = json!("contrato de eventos sin sello de entidad");
+            } else {
             match emit_domain_seal(repo, &inputs_mut, &state) {
                 Ok(seal) => {
                     entry["status"] = json!("executed");
@@ -589,6 +597,7 @@ pub fn run(
                     entry["error"] = json!(e);
                     failed = true;
                 }
+            }
             }
         } else {
             entry["status"] = json!("simulated");

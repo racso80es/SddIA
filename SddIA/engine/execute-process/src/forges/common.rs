@@ -1188,7 +1188,17 @@ pub fn patch_norm_content_update(
         .unwrap_or_else(|| canonical_artifact_hash(&text));
 
     if let Some(replacements) = inputs.get("markdown_body_replacements") {
-        let (_, _, new_hash, _) = patch_artifact_body_replacements(norm_path, replacements)?;
+        let (_, _, mut new_hash, _) = patch_artifact_body_replacements(norm_path, replacements)?;
+        if let Some(ver) = optional_str(inputs, "tactical_norm_version") {
+            let text = fs::read_to_string(norm_path).map_err(|e| e.to_string())?;
+            static RE_VER: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+            let re = RE_VER.get_or_init(|| Regex::new(r#"(?m)^version:\s*.+$"#).expect("re"));
+            let bumped = re
+                .replace(&text, format!("version: \"{ver}\""))
+                .to_string();
+            fs::write(norm_path, bumped).map_err(|e| e.to_string())?;
+            new_hash = patch_hash_signature_refresh(norm_path)?.new_hash;
+        }
         return Ok(NormContentPatchResult {
             entity_uuid,
             old_hash,

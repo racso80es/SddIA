@@ -8,7 +8,7 @@ event_type: "Kalma2_Process_Requested"
 context: "ecosystem-evolution"
 capabilities:
   - "kalma2_process_requested"
-hash_signature: "sha256:pending-anchor-on-merge"
+hash_signature: "sha256:4365978c9cc7a76d9531e88ac01f70480325ca5f3611bb56ad8352447429d4c1"
 ---
 
 # Event: Kalma2_Process_Requested
@@ -33,6 +33,10 @@ Solicitud de proceso de ciclo de vida emitida desde la interfaz Kalma2 (`kalma2-
 
 - Proceso **`kalma2-interact`**
 
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
+
 ## Suscripciones
 
-Ver `SddIA/core/event-domain-subscriptions.json`: `task-queue-manager` (despacho) + `iota-immutable-publisher` (DLT).
+Ver `SddIA/core/event-domain-subscriptions.json`: `task-queue-manager` (despacho). Sin ancla IOTA.

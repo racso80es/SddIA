@@ -8,7 +8,7 @@ event_type: "Domain_Entity_Created"
 context: "ecosystem-evolution"
 capabilities:
   - "domain_entity_created"
-hash_signature: "sha256:7df0d2d33a8ac664cd3eeef5955e4ca538a03a48c25d830c4a254c74c489c67d"
+hash_signature: "sha256:e379020389ff4bddd291813b1c71ce3d3de186ebc29694691c7cc1a4f299c2f5"
 ---
 
 # Event: Domain_Entity_Created
@@ -39,6 +39,10 @@ Mutación genómica create. hash_signature_new REQUIRED; payload_schema_hash OPT
 
 - `emit-domain-mutation`
 - `entity-manager`
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

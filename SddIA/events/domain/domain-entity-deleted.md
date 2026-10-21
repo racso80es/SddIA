@@ -8,7 +8,7 @@ event_type: "Domain_Entity_Deleted"
 context: "ecosystem-evolution"
 capabilities:
   - "domain_entity_deleted"
-hash_signature: "sha256:81e6ccf86cd911e48b1a40f585c42cbc733fbcbc32ff4204914e5e07b5097a4a"
+hash_signature: "sha256:832127188eebae9e26b9b08da6186f387b1e797d4222b4970860710c66c7e1b1"
 ---
 
 # Event: Domain_Entity_Deleted
@@ -38,6 +38,10 @@ Mutación genómica delete. hash_signature_old REQUIRED; hash_signature_new debe
 
 - `emit-domain-mutation`
 - `entity-manager`
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

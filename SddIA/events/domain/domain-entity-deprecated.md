@@ -9,7 +9,7 @@ context: "quality-assurance"
 capabilities:
   - "domain_entity_deprecated"
   - "self_healing_death"
-hash_signature: "sha256:pending-anchor-on-merge"
+hash_signature: "sha256:879c5ff4604412f4fa266004bb79a50a946a664772059715250e5f9cfac20c9d"
 ---
 
 # Event: Domain_Entity_Deprecated
@@ -33,6 +33,10 @@ Muerte definitiva de entidad tras superar `max_recovery_attempts`.
 ## Emisores autorizados
 
 - Agente **`radamanto`** (vía `radamanto-batch`)
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

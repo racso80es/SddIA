@@ -9,7 +9,7 @@ context: "quality-assurance"
 capabilities:
   - "domain_entity_degraded"
   - "self_healing_trigger"
-hash_signature: "sha256:pending-anchor-on-merge"
+hash_signature: "sha256:0d1057f7be6d4053a4e36b357a578606cf67a50b65155a6fc4d38583b910c166"
 ---
 
 # Event: Domain_Entity_Degraded
@@ -39,6 +39,10 @@ Degradación de estatus S+ Grade de una entidad de dominio. Emisor exclusivo: **
 ## Emisores autorizados
 
 - Agente **`radamanto`** (vía `radamanto-batch`)
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

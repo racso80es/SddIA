@@ -5,7 +5,7 @@ title: "[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT"
 format: markdown
 version: "1.0.0"
 created: "2026-10-21"
-status: pending
+status: done
 priority: alta
 type: arquitectura
 process: feature

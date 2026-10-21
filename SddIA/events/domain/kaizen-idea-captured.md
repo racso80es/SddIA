@@ -8,7 +8,7 @@ event_type: "Kaizen_Idea_Captured"
 context: "ecosystem-evolution"
 capabilities:
   - "kaizen_idea_captured"
-hash_signature: "sha256:pending-anchor-on-merge"
+hash_signature: "sha256:cd7a16d5a59d3821878f594a61c5f96f9b2527bbc0d19c36c4766fbcec463fb6"
 ---
 
 # Event: Kaizen_Idea_Captured
@@ -31,6 +31,10 @@ Idea Kaizen capturada vía patrón `TODO:` o `IDEA:` en Telegram.
 ## Emisores autorizados
 
 - Proceso **`telegram-gateway`**
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

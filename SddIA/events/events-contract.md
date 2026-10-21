@@ -1,5 +1,5 @@
 ---
-contract_version: "1.1.0"
+contract_version: "1.2.0"
 entity_type: "event"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -109,6 +109,8 @@ flowchart TB
 | `target_branch` | REQUIRED | Fijado a `"main"` en emisor canónico |
 | `author` | REQUIRED | — |
 | `security_clearance` | REQUIRED | Bloque auditoría |
+| `participating_agents` | OPTIONAL | Agentes que intervinieron. Cada elemento declara `uuid`, `name`, `version`, `role`. Ausente: el ancla sigue. Presente: entra en el digest. |
+| `authorizer` | OPTIONAL | Autorizador del merge. Ausente: el ancla sigue. Presente: entra en el digest. |
 
 ### 5.2 Mutaciones genómicas — `Domain_Entity_Created`
 
@@ -139,6 +141,14 @@ Variantes **Updated** y **Deleted** se documentan en sus Clases; heredan la dist
 **Auditoría Argos:** Clase sin `event_family` válido o con discordancia carpeta/cabecera → incumplimiento contractual.
 
 **Instancia ECST:** el envelope JSON no incluye `event_family` en v1.1.0; la familia se infiere de la Clase al enrutar (Fase 3).
+
+## 6.1 Frontera de auditoría DLT
+
+`dlt_audit_scope` es un enum de la Clase: `local_only` | `external_public_interest`.
+
+Una Clase que no declara el enum es `local_only`. Solo `external_public_interest` invoca `iota-immutable-publisher` y, con el store activo (`dual` o `redb`), deja `tx_hash` en `dlt_audit_seals`. En filesystem el recibo sigue en el testigo del evento y el store no se abre.
+
+`PullRequest_Merged` y `System_Immunity_Certified` son `external_public_interest`. El resto del bus, incluida `Domain_Entity_Telemetry_Captured`, permanece `local_only`: la telemetría conserva su prueba local y no llama al publisher.
 
 ## 7. Índice y trazabilidad
 

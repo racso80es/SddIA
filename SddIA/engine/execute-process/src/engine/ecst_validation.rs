@@ -433,4 +433,44 @@ mod tests {
         let (ok, errors) = validate_ecst_instance(&extended, Some(delivery));
         assert!(ok, "{errors:?}");
     }
+
+    #[test]
+    fn pull_request_merged_accepts_agents_present_or_absent() {
+        let repo = find_repo_root().unwrap();
+        let schemas = load_event_class_schemas(&repo);
+        let schema = schemas.get("PullRequest_Merged").expect("clase");
+        assert!(schema.optional.iter().any(|f| f == "participating_agents"));
+        assert!(schema.optional.iter().any(|f| f == "authorizer"));
+        let required = json!({
+            "source_branch": "feat/x",
+            "target_branch": "main",
+            "merge_commit_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "author": "racso",
+            "security_clearance": "core"
+        });
+        let mut with_agents = required.clone();
+        with_agents["participating_agents"] = json!([
+            {"uuid": "u", "name": "tekton", "version": "1.0.0", "role": "executor"}
+        ]);
+        with_agents["authorizer"] = json!("racso");
+        let doc = crate::engine::dlt_telemetry_anchor::external_anchor_document(&json!({
+            "event_id": "e",
+            "event_type": "PullRequest_Merged",
+            "payload": with_agents.clone()
+        }));
+        assert!(doc["payload"].get("participating_agents").is_some());
+        assert_eq!(doc["payload"]["authorizer"], "racso");
+        let bare = crate::engine::dlt_telemetry_anchor::external_anchor_document(&json!({
+            "event_id": "e",
+            "event_type": "PullRequest_Merged",
+            "payload": required.clone()
+        }));
+        assert!(bare["payload"].get("participating_agents").is_none());
+        assert!(bare["payload"].get("merge_commit_hash").is_some());
+        for payload in [required, with_agents] {
+            let event = json!({"event_type": "PullRequest_Merged", "payload": payload});
+            let (ok, errors) = validate_ecst_instance(&event, Some(schema));
+            assert!(ok, "{errors:?}");
+        }
+    }
 }

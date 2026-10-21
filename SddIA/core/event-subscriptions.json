@@ -6,23 +6,12 @@
       "intent": "Aduana de Fricción post-presentación; gate antes de accept-pr."
     },
     {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA Rebased."
-    },
-    {
       "agent": "argos",
       "tool": "send-telegram-notification",
       "intent": "Notificación humana táctica en Telegram (Táctica del Refugio)."
     }
   ],
-  "PullRequest_Audited": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT trazabilidad auditoría Argos."
-    }
-  ],
+  "PullRequest_Audited": [],
   "PullRequest_Merged": [
     {
       "agent": "cumulo",
@@ -41,12 +30,6 @@
       "action": "sync-entity-index",
       "applies_to_origin_topology": ["core"],
       "intent": "Reconciliación idempotente del index.md canónico."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "applies_to_origin_topology": ["core"],
-      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
   "Domain_Entity_Updated": [
@@ -55,12 +38,6 @@
       "action": "sync-entity-index",
       "applies_to_origin_topology": ["core"],
       "intent": "Reconciliación idempotente del index.md canónico."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "applies_to_origin_topology": ["core"],
-      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
   "Domain_Entity_Deleted": [
@@ -69,12 +46,6 @@
       "action": "sync-entity-index",
       "applies_to_origin_topology": ["core"],
       "intent": "Reconciliación idempotente del index.md canónico."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "applies_to_origin_topology": ["core"],
-      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
   "Domain_Entity_Telemetry_Captured": [
@@ -82,11 +53,6 @@
       "agent": "cumulo",
       "process": "memory-evolution-ingest",
       "intent": "Indexar snapshot de ejecución en LanceDB vía EvolutionProxy / vector_store/evolution."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT inmutable de snapshot de telemetría en IOTA Rebased."
     }
   ],
   "System_Fracture_Detected": [
@@ -113,32 +79,8 @@
       "intent": "Materializar cicatriz Kaizen documental en docs/todos/pending/ (único suscriptor legítimo)."
     }
   ],
-  "Thought_Persisted": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje traza grafo de pensamiento en DLT."
-    }
-  ],
-  "Vector_Memory_Indexed": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje índice vectorial epigenético en DLT."
-    }
-  ],
-  "Instance_Deployed": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA del despliegue de instancia vía installer."
-    }
-  ],
-  "Instance_Torn_Down": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA del teardown de instancia vía installer."
-    }
-  ]
+  "Thought_Persisted": [],
+  "Vector_Memory_Indexed": [],
+  "Instance_Deployed": [],
+  "Instance_Torn_Down": []
 }

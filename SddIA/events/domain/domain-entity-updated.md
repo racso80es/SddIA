@@ -8,7 +8,7 @@ event_type: "Domain_Entity_Updated"
 context: "ecosystem-evolution"
 capabilities:
   - "domain_entity_updated"
-hash_signature: "sha256:ab9e37a0a1be908e9edd96e7e394622fe9aece8ea8452893320bf8851224883a"
+hash_signature: "sha256:a374151286eaab216110ecbfd6852d2213c377467f475f1f84887f804f75bb73"
 ---
 
 # Event: Domain_Entity_Updated
@@ -40,6 +40,10 @@ Mutación genómica update. hash_signature_old y hash_signature_new REQUIRED; pa
 
 - `emit-domain-mutation`
 - `entity-manager`
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

@@ -8,7 +8,7 @@ event_type: "Instance_Torn_Down"
 context: "ecosystem-evolution"
 capabilities:
   - "instance_torn_down"
-hash_signature: "sha256:8c34637e1ce5adde8935766d835ae7098618d791aeb8c8d1b02fbfb2d3512e37"
+hash_signature: "sha256:b162d52061bb7f946f2edca657026f8fee1c3b5c9a8a6d5b772e89c383e3672a"
 ---
 
 # Event: Instance_Torn_Down
@@ -32,6 +32,10 @@ Instancia destruida por installer teardown --force. Payload: root, esc, profile.
 ## Emisores autorizados
 
 - `tekton`
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 
