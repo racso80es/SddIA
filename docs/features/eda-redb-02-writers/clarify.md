@@ -1,9 +1,10 @@
 ---
+
 feature_name: eda-redb-02-writers
 created: "2026-10-21"
 purpose: decisiones del corte SDDIA_EVENT_STORE
+execution_id: "bae36c51-f0b9-4f08-b7c8-572155ae2b93"
 ---
-
 # Clarify — eda-redb-02-writers
 
 - `filesystem` (ausente o desconocido) no abre `events.redb`.

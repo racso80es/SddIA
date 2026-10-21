@@ -1,29 +1,227 @@
 ---
 feature_name: eda-redb-02-writers
+created: "2026-10-21"
+updated: "2026-10-21T06:04:00Z"
+process: pull-request-review
+phase: Veredicto y bloqueo
+agent: argos
+agents: argos
 branch: feat/eda-redb-02-writers
-global: APTO
+branch_name: feat/eda-redb-02-writers
+branch_name_injected: feat/eda-redb-02-writers
+branch_worktree_observed: feat/eda-redb-02-writers
+persist_ref: docs/features/eda-redb-02-writers
+pbi_ref: "docs/todos/done/[ARQUITECTURA] EDA Redb 02 — Escritores del bus según SDDIA_EVENT_STORE.md"
+pbi_ref_injected: ""
+document_id: PBI-EDA-REDB-02-WRITERS
+correlation_id: "950a223d-c020-47c1-a6ed-1cfab53e663e"
+pr_presented_event_id: "950a223d-c020-47c1-a6ed-1cfab53e663e"
+audit_event_reference: "950a223d-c020-47c1-a6ed-1cfab53e663e"
+execution_id: "bae36c51-f0b9-4f08-b7c8-572155ae2b93"
+source_process: feature
+global: NO_APTO
 pbi_archived: true
+approval_status: rechazado
+verdict: rechazado
+delivery_state: failed
+resolution: FAIL_F5_VERDICT
+accept_pr_handoff: false
+accept_pr_handoff_status: blocked
+accept_pr_block_reason: "FAIL_F5_VERDICT ← FAIL_F4_RBAC — pull-request-review ∈ revoked since 2026-10-02T18:42:59Z (abrupt_success_rate_drop); handoff accept-pr prohibido"
+authorization_status:
+  exitCode: 1
+  emitter_agent: argos
+  note: "FAIL_F5_VERDICT ← FAIL_F4_RBAC · Veredicto y bloqueo · R1/R2 copia Evidence Bridge session native_state notes=idempotent-hit · sin stdout inventado · Shell git-manager Rejected esta sesión · PPR∈revoked FS Cerbero"
+git_manager_invoked: false
+git_manager_error: "cápsula no invocable en esta sesión Argos Veredicto (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw"
+git_evidence_source: native_state-evidence-bridge
+formal_execute_process: true
+formal_evidence_detail: "verify-process-integrity: OK (bridge prior prosthesis_subprocess @ 2026-10-21T06:00:52Z; session native_state idempotent-hit)"
+handoff_machine_file: present
+evidence_bridge_notes: "R1/R2 copia Runtime evidence (session+machine) source=native_state notes=idempotent-hit @ 2026-10-21T06:02:44Z; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado"
+shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 950a223d… · exec bae36c51…"
+revoked_entity_alert: "pull-request-review (revoked abrupt_success_rate_drop since 2026-10-02T18:42:59Z) BLOQUEANTE F4; delivery-close-cycle (since 2026-10-03T14:43:29Z) L-LATERAL; bug-fix/feature/entity-manager/event-creator/refactorization revoked laterales"
+scope: "PPR Veredicto y bloqueo — PullRequest_Presented rama feat/eda-redb-02-writers (CID 950a223d… · exec bae36c51…)"
 checks:
-  - id: AC-1
-    result: APTO
-    note: "SDDIA_EVENT_STORE=redb materializa Domain_Entity_Created en events y no crea JSON bajo .events/"
-  - id: AC-3
-    result: APTO
-    note: "filesystem escribe el JSON y no abre events.redb. Paridad de suscripciones error_count 0. eda_e2e_lab no ejecutado."
-  - id: CA-04
-    result: APTO
-    note: "dual deja el mismo event_id en fichero y en events; argos y cumulo son dos filas."
-  - id: CA-05
-    result: APTO
-    note: "progress_traces con seq 0 y 1. El side-channel de heartbeats no es una fila."
+  F2_DOC_GATE: APTO
+  F3_TECH_GATE: NO_APTO
+  F4_RBAC_GATE: NO_APTO
+  F5_VERDICT: NO_APTO
+  F5_VERDICT_GATE: NO_APTO
+  DOC_OBJECTIVES: APTO
+  DOC_CLARIFY: APTO
+  DOC_SPEC: APTO
+  DOC_PLAN: APTO
+  DOC_IMPLEMENTATION: APTO
+  DOC_EXECUTION: APTO
+  DOC_FRONTMATTER_YAML: APTO
+  DOC_EVOLUTION: APTO
+  DOC_VALIDACION_WRITTEN: APTO
+  PERSIST_REF_RESOLVED: APTO
+  HANDOFF_MACHINE_FILE: APTO
+  HANDOFF_EVIDENCE_BLOCK: APTO
+  BRANCH_RUNTIME_INJECT: APTO
+  BRANCH_WORKTREE_SYNC: APTO
+  TECH_FORMAL_EXECUTE_PROCESS: APTO
+  GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+  GIT_EVIDENCE_SESSION_SHELL: NO_APTO
+  RBAC_AUTHORING_KM_POLICY: APTO
+  RBAC_PROCESS_REGISTRY: NO_APTO
+  RBAC_EMITTER_NOT_REVOKED: APTO
+  PBI_DONE_PRESENT: APTO
+  PBI_PENDING_ABSENT: APTO
+  AC_DONE_PATH: APTO
+  CODE_TOUCHPOINT_PRESENT: APTO
+  ACCEPT_PR_HANDOFF: NO_APTO
+  L_HANDOFF_F5: APTO
+  ARGOS_NO_KM_WRITE: APTO
+  MERGE_ALREADY_OBSERVED: NO_APTO
+  branch: APTO
+  git_changes: APTO
 git_changes:
   - SddIA/sddia-event-store/
   - SddIA/engine/execute-process/
   - SddIA/sddia-daemon-runtime/
+  - SddIA/Cargo.toml
   - SddIA/Cargo.lock
+  - SddIA/evolution/a0b91379-217b-418f-a917-04d0549d77ae.md
+  - SddIA/evolution/Evolution_log.md
   - docs/features/eda-redb-02-writers/
+  - "docs/todos/done/[ARQUITECTURA] EDA Redb 02 — Escritores del bus según SDDIA_EVENT_STORE.md"
+blocking_findings:
+  - F5_VERDICT
+  - F4_RBAC_GATE
+  - RBAC_PROCESS_REGISTRY
+non_blocking_findings:
+  - GIT_EVIDENCE_SESSION_SHELL
+  - F3_TECH_GATE
+  - DOC_PBI_REF_STALE_IN_PACK
+  - MERGE_ALREADY_OBSERVED
+  - REVOKED_ENTITY_ALERT_DCC
+  - REVOKED_ENTITY_ALERT_BUG_FIX
+  - REVOKED_ENTITY_ALERT_FEATURE
+  - REVOKED_ENTITY_ALERT_ENTITY_MANAGER
+  - REVOKED_ENTITY_ALERT_EVENT_CREATOR
+  - REVOKED_ENTITY_ALERT_REFACTORIZATION
+situational_notes:
+  - "Fase Veredicto y bloqueo · CID 950a223d-c020-47c1-a6ed-1cfab53e663e · exec bae36c51-f0b9-4f08-b7c8-572155ae2b93"
+  - "Evidence Bridge session/machine: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)"
+  - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS + evolution.relacionado"
+  - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
+  - "F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — objectives/clarify/spec/plan/implementation/execution + YAML OK"
+  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md CA documentados)"
+  - "F4_RBAC_GATE NO_APTO BLOQUEANTE — .SddIA/cerbero/revoked_entities.json · pull-request-review ∈ revoked since 2026-10-02T18:42:59Z"
+  - "PBI-EDA-REDB-02-WRITERS en done/; sin réplica 02 en pending/; PBI 03–07 + HU madre pending = semillas (fuera alcance este PR)"
+  - "CODE_TOUCHPOINT: gate.rs + upsert_delivery + event_store_writers + daemon dep path"
+  - "objectives.md cita pbi_ref pending (stale; no bloquea F5)"
+  - "accept_pr_handoff false/blocked (L-HANDOFF-F5) · peaje F4 falla"
 ---
+# Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
-# Validación — eda-redb-02-writers
+## Veredicto de fase
 
-El PBI está en `docs/todos/done/` en esta rama. `pbi_archived` es true.
+**NO_APTO** — `resolution: FAIL_F5_VERDICT` ← `FAIL_F4_RBAC` · `delivery_state: failed` · `accept_pr_handoff: false`/`blocked`.
+
+| Gate | Delegado | Estado | Criterio |
+|------|----------|--------|----------|
+| F2 | Argos (doc) | **APTO** | heredado · `PASS_F2_DOC` · cascada feature |
+| F3 | execute-process | **NO_APTO** | no bloqueante · proxy `TECH_FORMAL` + `execution.md` |
+| F4 | Cerbero (FS) | **NO_APTO** | `RBAC_PROCESS_REGISTRY` · PPR∈revoked |
+| F5 | Argos | **NO_APTO** | violación F4 bloqueante → aborta materialización |
+
+## Evidence Bridge (R1 / R2 / R3)
+
+Copia literal session → machine — **no** stdout Shell inventado:
+
+| Campo | Valor |
+|-------|-------|
+| `schema` | `kalma2-agent-runtime-evidence/v1` |
+| `materialized_at` | `2026-10-21T06:02:44Z` |
+| `source` | `native_state` (session inject + machine) |
+| `git_manager_invoked` | `true` (bridge) · `false` (sesión Argos Shell) |
+| `formal_execute_process` | `true` |
+| `TECH_FORMAL_EXECUTE_PROCESS` | **APTO** |
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** |
+| `notes` | `idempotent-hit` |
+| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` físico |
+| `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` esta fase |
+
+Bloque: session Runtime evidence (prompt) → `_agent_handoff.md` § Runtime evidence (machine) `@ 2026-10-21T06:02:44Z` (+ prior `prosthesis_subprocess` `@ 06:00:52Z`).
+
+## Ingesta
+
+| Input | Resolución |
+|-------|------------|
+| `persist_ref` | `docs/features/eda-redb-02-writers` |
+| `pbi_ref` (inyectado) | vacío → **resuelto** `docs/todos/done/[ARQUITECTURA] EDA Redb 02 — Escritores del bus según SDDIA_EVENT_STORE.md` |
+| `correlation_id` / Presented | `950a223d-c020-47c1-a6ed-1cfab53e663e` |
+| `execution_id` | `bae36c51-f0b9-4f08-b7c8-572155ae2b93` |
+| `branch_name` (runtime) | `feat/eda-redb-02-writers` |
+| Worktree HEAD (FS) | `refs/heads/feat/eda-redb-02-writers` |
+| `source_process` | `feature` |
+| Cerbero FS | `.SddIA/cerbero/revoked_entities.json` · PPR∈revoked |
+| Evento Merged (este CID) | **ausente** / no observado |
+
+## Peajes F2 → F5
+
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `F2_DOC_GATE` | **APTO** | objectives/clarify/spec/plan/implementation/execution + YAML; Triaje documental `PASS_F2_DOC` |
+| `F3_TECH_GATE` | **NO_APTO** | Triaje técnico no materializado este CID; **no bloquea** (R1 TECH_FORMAL APTO; CA en `execution.md`) |
+| `F4_RBAC_GATE` | **NO_APTO** | `pull-request-review` ∈ revoked `since 2026-10-02T18:42:59Z` (`abrupt_success_rate_drop`) |
+| `RBAC_PROCESS_REGISTRY` | **NO_APTO** | mismo peaje Cerbero FS |
+| `F5_VERDICT` / `F5_VERDICT_GATE` | **NO_APTO** | violación F4 ⇒ `delivery_state: failed` |
+| `ACCEPT_PR_HANDOFF` / `L_HANDOFF_F5` | **NO_APTO** / **APTO** | handoff blocked; regla L-HANDOFF-F5 respetada |
+
+## branch / git_changes / PBI
+
+| Check | Estado | Evidencia |
+|-------|--------|-----------|
+| `GIT_EVIDENCE_VIA_GIT_MANAGER` | **APTO** | Evidence Bridge `native_state` (copia) |
+| `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** | Shell Rejected; sin `gitStdout` |
+| `BRANCH_RUNTIME_INJECT` | **APTO** | `feat/eda-redb-02-writers` |
+| `BRANCH_WORKTREE_SYNC` | **APTO** | `.git/HEAD` → `refs/heads/feat/eda-redb-02-writers` (FS; **no** stdout git-manager) |
+| `branch` | **APTO** | worktree = inject |
+| `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula) |
+| `PBI_DONE_PRESENT` | **APTO** | done/ · `document_id: PBI-EDA-REDB-02-WRITERS` · `status: done` |
+| `PBI_PENDING_ABSENT` | **APTO** | sin réplica 02 en pending/ |
+| `AC_DONE_PATH` | **APTO** | done exclusivo + `pbi_archived: true` |
+| `CODE_TOUCHPOINT_PRESENT` | **APTO** | `gate.rs` / `upsert_delivery` / `event_store_writers` / dep daemon |
+| `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para `950a223d…` |
+
+`git_changes` por inventario path-assert (`persist_ref` + PBI done + evolution `relacionado` + crates). **No** es `gitStdout` de esta sesión.
+
+## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
+
+**APTO** — 0 writes Argos bajo `docs/todos/**` esta fase.
+
+Sighting FS: PBI-02 ya en `done/` (cierre proceso `feature`). Pendientes 03–07 + HU madre = semillas fuera del alcance de este PR. Hallazgo F4 (PPR revoked) → Cúmulo Cosecha / `Kaizen_Alert_Required`; Argos **no** materializa TODO. Forja Core ≠ este check.
+
+## Dictamen
+
+```json
+{
+  "phase": "Veredicto y bloqueo",
+  "global": "NO_APTO",
+  "resolution": "FAIL_F5_VERDICT",
+  "verdict": "rechazado",
+  "delivery_state": "failed",
+  "accept_pr_handoff": false,
+  "accept_pr_handoff_status": "blocked",
+  "accept_pr_block_reason": "FAIL_F5_VERDICT ← FAIL_F4_RBAC — pull-request-review ∈ revoked since 2026-10-02T18:42:59Z",
+  "pbi_archived": true,
+  "branch": "feat/eda-redb-02-writers",
+  "branch_worktree_observed": "feat/eda-redb-02-writers",
+  "document_id": "PBI-EDA-REDB-02-WRITERS",
+  "correlation_id": "950a223d-c020-47c1-a6ed-1cfab53e663e",
+  "execution_id": "bae36c51-f0b9-4f08-b7c8-572155ae2b93",
+  "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
+  "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
+  "RBAC_AUTHORING_KM_POLICY": "APTO",
+  "blocking": ["F5_VERDICT", "F4_RBAC_GATE", "RBAC_PROCESS_REGISTRY"]
+}
+```
+
+## Alcance
+
+Veredicto y bloqueo **aborta** materialización (`accept-pr` blocked). Downstream Cosecha Kaizen puede mapear deuda PPR-revoked; Handoff no procede con `delivery_state: failed`. Sin merge directo en aduana. Argos **no** escribe bajo `docs/todos/`.

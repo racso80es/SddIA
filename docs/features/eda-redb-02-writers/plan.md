@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-02-writers
 created: "2026-10-21"
 phases:
@@ -6,8 +7,8 @@ phases:
   - escritores del orquestador
   - escritores del daemon
   - tests AC-1, AC-3, CA-04, CA-05
+execution_id: "bae36c51-f0b9-4f08-b7c8-572155ae2b93"
 ---
-
 # Plan — eda-redb-02-writers
 
 1. `upsert_delivery` y `gate.rs` en `sddia-event-store`.

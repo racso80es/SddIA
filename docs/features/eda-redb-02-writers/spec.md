@@ -1,10 +1,11 @@
 ---
+
 feature_name: eda-redb-02-writers
 created: "2026-10-21"
 base: main
 scope: escritores del bus
+execution_id: "bae36c51-f0b9-4f08-b7c8-572155ae2b93"
 ---
-
 # Spec — eda-redb-02-writers
 
 La compuerta vive en `sddia-event-store::gate`. Lee `SDDIA_EVENT_STORE` y no consulta Cúmulo.

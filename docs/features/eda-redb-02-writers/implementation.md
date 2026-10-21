@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-02-writers
 created: "2026-10-21"
 items:
@@ -6,8 +7,8 @@ items:
   - SddIA/sddia-event-store/src/lib.rs
   - SddIA/engine/execute-process
   - SddIA/sddia-daemon-runtime
+execution_id: "bae36c51-f0b9-4f08-b7c8-572155ae2b93"
 ---
-
 # Implementation — eda-redb-02-writers
 
 `EventStore::upsert_delivery` crea o sustituye el par `(event_id, subscriber_id)` si el evento existe.
