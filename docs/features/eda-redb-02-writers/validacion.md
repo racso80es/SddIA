@@ -2,7 +2,7 @@
 feature_name: eda-redb-02-writers
 branch: feat/eda-redb-02-writers
 global: APTO
-pbi_archived: false
+pbi_archived: true
 checks:
   - id: AC-1
     result: APTO
@@ -26,4 +26,4 @@ git_changes:
 
 # Validación — eda-redb-02-writers
 
-El PBI sigue en `docs/todos/pending/`. `pbi_archived` queda en false hasta el cierre documental de la rama.
+El PBI está en `docs/todos/done/` en esta rama. `pbi_archived` es true.
