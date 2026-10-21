@@ -49,6 +49,7 @@ pub fn cleanup_eda_bus_event(repo: &Path, bus: &EventBusTopology, event_id: &str
             let _ = fs::remove_file(p);
         }
     }
+    execute_process::engine::eda_bus_topology::purge_store_event(repo, event_id);
 }
 
 pub fn cleanup_lab_entity_forge(

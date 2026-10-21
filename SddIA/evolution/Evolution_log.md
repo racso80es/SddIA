@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `f7cbbba0-0a34-4abc-bb24-2a0f10eac639` | 2026-10-21 | Lectores del bus, SSE y CLI de inspección usan el store cuando está habilitado; el gate de arranque lee el side-channel de heartbeats. | CANONICO | `SddIA/evolution/f7cbbba0-0a34-4abc-bb24-2a0f10eac639.md` |
 | `f167f5f8-0788-48c8-8c90-3b0bab33df07` | 2026-10-21 | El watcher reclama entregas pending del store, despacha por tier y dispara las sondas de vitalidad. | CANONICO | `SddIA/evolution/f167f5f8-0788-48c8-8c90-3b0bab33df07.md` |
 | `a0b91379-217b-418f-a917-04d0549d77ae` | 2026-10-21 | Escritores del bus segun SDDIA_EVENT_STORE. PBI-EDA-REDB-02-WRITERS. | CANONICO | `SddIA/evolution/a0b91379-217b-418f-a917-04d0549d77ae.md` |
 | `b8dfedbb-d68d-47c9-a983-9e27f96d3d90` | 2026-10-21 | Store transaccional sddia-event-store (redb 2.6.4) para el bus EDA. PBI-EDA-REDB-01-STORE. | CANONICO | `SddIA/evolution/b8dfedbb-d68d-47c9-a983-9e27f96d3d90.md` |

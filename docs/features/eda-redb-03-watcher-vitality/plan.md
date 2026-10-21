@@ -1,11 +1,12 @@
 ---
+
 feature_name: eda-redb-03-watcher-vitality
 created: "2026-10-21"
 process: feature
 document_id: PBI-EDA-REDB-03-WATCHER-VITALITY
 uuid: "9b4e7c25-8a1d-4e63-b5f0-2d8c6a1e4f97"
+execution_id: "d707b171-c91f-4933-a68b-0415c19a390d"
 ---
-
 # Plan — eda-redb-03-watcher-vitality
 
 1. `list_pending_deliveries` en `sddia-event-store`.

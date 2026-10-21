@@ -487,32 +487,22 @@ from pathlib import Path
 
 repo = Path(sys.argv[1])
 required = sys.argv[2:]
-tel = repo / ".events" / "telemetry"
-if not tel.is_dir():
+heartbeats = repo / ".SddIA" / "daemons" / "state" / "heartbeats"
+if not heartbeats.is_dir():
     sys.exit(0)
 
-latest = {name: None for name in required}  # name -> (mtime, rel)
-for path in tel.glob("*.json"):
+for name in required:
+    path = heartbeats / f"{name}.json"
+    if not path.is_file():
+        continue
     try:
         body = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         continue
-    if body.get("event_type") != "Daemon_Heartbeat":
+    declared = body.get("daemon_name")
+    if declared not in (None, name):
         continue
-    payload = body.get("payload") or {}
-    name = payload.get("daemon_name")
-    if name not in latest:
-        continue
-    mtime = path.stat().st_mtime
-    prev = latest[name]
-    if prev is None or mtime > prev[0]:
-        rel = path.relative_to(repo).as_posix()
-        latest[name] = (mtime, rel)
-
-for name in required:
-    entry = latest.get(name)
-    if entry:
-        print(entry[1])
+    print(path.relative_to(repo).as_posix())
 PY
 )
 }
@@ -524,7 +514,7 @@ _wait_required_heartbeats() {
 
     echo "[SddIA] Esperando Daemon_Heartbeat auditado de obligatorios..."
     for ((i = 1; i <= attempts; i++)); do
-        # 1) Ingestar latidos recientes desde telemetry (gate no depende solo del fan-out).
+        # 1) Ingestar latidos del canal lateral (gate no lee .events/telemetry).
         _ingest_telemetry_heartbeats
         # 2) Sweep Argos (staleness / fracturas; no bloqueante si falla el orquestador).
         if [[ -x ./sddia-run.sh ]]; then

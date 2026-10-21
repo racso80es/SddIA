@@ -612,6 +612,33 @@ pub fn audit_telemetry_file(repo: &Path, rel_path: &str) -> Result<Value, String
         serde_json::from_str(&fs::read_to_string(&event_path).map_err(|e| e.to_string())?)
             .map_err(|e| e.to_string())?;
 
+    if body.get("source").and_then(|v| v.as_str()) == Some("side-channel") {
+        let name = body
+            .get("daemon_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .ok_or("side-channel sin daemon_name")?;
+        let payload = json!({
+            "daemon_name": name,
+            "timestamp": body.get("timestamp"),
+            "pid": body.get("pid"),
+            "status": body.get("status").cloned().unwrap_or(json!("alive")),
+        });
+        let mut state = load_state(repo);
+        let event_ts = body.get("timestamp").and_then(|v| v.as_str());
+        record_heartbeat_at(&mut state, repo, &payload, event_ts);
+        let _ = ingest_regime(repo, &mut state)?;
+        save_state(repo, &state)?;
+        let audit = audit_staleness(repo)?;
+        return Ok(json!({
+            "ok": true,
+            "status": "audited",
+            "source": "side-channel",
+            "fractures_emitted": audit.fractures,
+            "daemon_name": name,
+        }));
+    }
+
     if body.get("event_type").and_then(|v| v.as_str()) != Some("Daemon_Heartbeat") {
         stamp_delivery_state(&event_path, SUBSCRIBER_KEY, "skipped");
         return Ok(json!({"ok": true, "status": "skipped", "reason": "wrong_event_type"}));
@@ -931,5 +958,38 @@ mod tests {
             !lock_path.is_file(),
             "lock muerto pre-boot debe depurarse"
         );
+    }
+
+    #[test]
+    fn side_channel_heartbeat_is_audited_without_telemetry() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+        )
+        .unwrap();
+        let hb = repo.join(".SddIA/daemons/state/heartbeats");
+        std::fs::create_dir_all(&hb).unwrap();
+        std::fs::write(
+            hb.join("event-watcher.json"),
+            r#"{"daemon_name":"event-watcher","pid":1,"timestamp":"2026-10-21T06:00:00Z","status":"alive","source":"side-channel"}"#,
+        )
+        .unwrap();
+        let out = audit_telemetry_file(
+            repo,
+            ".SddIA/daemons/state/heartbeats/event-watcher.json",
+        )
+        .unwrap();
+        assert_eq!(out["source"], "side-channel");
+        assert_eq!(out["daemon_name"], "event-watcher");
+        let state: Value = serde_json::from_str(
+            &std::fs::read_to_string(repo.join(".SddIA/daemons/state/heartbeat-audit.json")).unwrap(),
+        )
+        .unwrap();
+        assert!(state["daemons"]["event-watcher"]["last_heartbeat_at"].is_string());
+        assert!(!repo.join(".events/telemetry").exists());
     }
 }

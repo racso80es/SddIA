@@ -1849,6 +1849,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "regex",
+ "sddia-event-store",
  "sddia-io",
  "serde",
  "serde_json",
@@ -2943,6 +2944,7 @@ dependencies = [
  "ctrlc",
  "sddia-daemon-runtime",
  "sddia-ecosystem-health",
+ "sddia-event-store",
  "serde",
  "serde_json",
  "tiny_http",
