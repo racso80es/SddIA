@@ -8,7 +8,7 @@ event_type: "Instance_Deployed"
 context: "ecosystem-evolution"
 capabilities:
   - "instance_deployed"
-hash_signature: "sha256:082fbbd6a17e0dc23a2d04565c9a38ebbbdb80802987ceef4632c1edc45c7f88"
+hash_signature: "sha256:321ed54724f5969f2ba6fd4f4b25510b6be53c72f35135c65ff8781571322b33"
 ---
 
 # Event: Instance_Deployed
@@ -33,6 +33,10 @@ Instancia materializada por installer deploy. Payload: root, esc, profile, manif
 ## Emisores autorizados
 
 - `tekton`
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

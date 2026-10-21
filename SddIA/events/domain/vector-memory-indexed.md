@@ -8,7 +8,7 @@ event_type: "Vector_Memory_Indexed"
 context: "ecosystem-evolution"
 capabilities:
   - "vector_memory_indexed"
-hash_signature: "sha256:b93f620239dd646be8c2ed2631e959ec122a203c9d1d24b703c0a90b613279ee"
+hash_signature: "sha256:a8bc0af7ef78d20c254c7ed551240c34e584c34fc1ced6c7164ccd9afe0b69f4"
 ---
 
 # Event: Vector_Memory_Indexed
@@ -35,6 +35,10 @@ Registro vectorial indexado en LanceDB tras captura epigenética o chunk semánt
 
 - `evolution-proxy-service`
 - `lancedb-evolution-adapter`
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

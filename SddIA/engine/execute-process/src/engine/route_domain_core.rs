@@ -13,8 +13,10 @@ use super::eda_bus_topology::{
     write_processing_witness, ECST_GATE_SUBSCRIBER, EventBusTopology,
 };
 use super::dlt_telemetry_anchor::{
-    apply_digest_to_delivery_state, digest_is_valid, is_iota_config_error, is_telemetry_captured,
-    persist_dlt_telemetry_proof, stamp_digest_on_event_file, telemetry_iota_skip_config, SKIP_STATUS,
+    apply_digest_to_delivery_state, digest_is_valid, external_anchor_document,
+    is_external_public_interest, is_iota_config_error, is_telemetry_captured,
+    local_telemetry_digest, persist_dlt_telemetry_proof, persist_external_dlt_seal,
+    stamp_digest_on_event_file, telemetry_iota_skip_config, SKIP_STATUS,
 };
 use super::invoke_orchestrator::{invoke_process_full, resolve_orchestrator_bin};
 use chrono::Utc;
@@ -1228,7 +1230,7 @@ fn invoke_iota_publisher(repo: &Path, event: &Value) -> (bool, String, i32, Opti
     let payload = json!({
         "action": "publish_immutable_data",
         "network": "testnet",
-        "payload": serde_json::to_string(event).unwrap_or_default(),
+        "payload": serde_json::to_string(&external_anchor_document(event)).unwrap_or_default(),
     });
     let _timeout = iota_timeout_seconds();
     let repo = repo.to_path_buf();
@@ -1797,6 +1799,25 @@ pub(crate) fn dispatch_subscriber(
         if is_backfill_emitter(emitter) {
             return (sid, "skipped-backfill".into(), None, 0);
         }
+        let event_type = event
+            .get("event_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if is_telemetry_captured(event) {
+            let digest = local_telemetry_digest(event);
+            apply_digest_to_delivery_state(event, &digest);
+            if let Some(path) = event_path {
+                stamp_digest_on_event_file(path, &digest);
+            }
+            if let Err(e) = persist_dlt_telemetry_proof(repo, event, &digest) {
+                return (sid, "failed".into(), Some(e), 1);
+            }
+            return (sid, "success".into(), None, 0);
+        }
+        if !is_external_public_interest(&event_type) {
+            return (sid, "skipped-local-only".into(), None, 0);
+        }
         if payload
             .get("dlt_anchor_address")
             .and_then(|v| v.as_str())
@@ -1865,6 +1886,13 @@ pub(crate) fn dispatch_subscriber(
                 if is_telemetry_captured(event) {
                     if let Err(e) = persist_dlt_telemetry_proof(repo, event, d) {
                         return (sid, "failed".into(), Some(e), 1);
+                    }
+                }
+                if is_external_public_interest(&event_type) {
+                    if let Some(id) = event.get("event_id").and_then(|v| v.as_str()) {
+                        if let Err(e) = persist_external_dlt_seal(repo, id, d) {
+                            return (sid, "failed".into(), Some(e), 1);
+                        }
                     }
                 }
             } else if let Some(ds) = event.get_mut("delivery_state").and_then(|v| v.as_object_mut()) {
@@ -3600,10 +3628,11 @@ mod blocking_tests {
         match prev_mock { Some(v) => std::env::set_var("SDDIA_LAB_MOCK_IOTA_URL", v), None => std::env::remove_var("SDDIA_LAB_MOCK_IOTA_URL") }
         match prev_sec { Some(v) => std::env::set_var("IOTA_WALLET_SECRET", v), None => std::env::remove_var("IOTA_WALLET_SECRET") }
         match prev_rel { Some(v) => std::env::set_var("IOTA_PUBLISH_RELAY_URL", v), None => std::env::remove_var("IOTA_PUBLISH_RELAY_URL") }
-        assert_eq!(status, "skipped-config-missing");
-        assert!(err.as_deref().unwrap_or("").contains("config-missing"));
+        assert_eq!(status, "success", "{err:?}");
         assert_eq!(code, 0);
-        assert!(!repo.join(".SddIA/proofs/dlt-telemetry/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.json").is_file());
+        let digest = event["delivery_state"]["transaction_digest"].as_str().unwrap_or("");
+        assert!(digest.starts_with("local-"), "{digest}");
+        assert!(repo.join(".SddIA/proofs/dlt-telemetry/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.json").is_file());
     }
 
     #[test]
@@ -3641,7 +3670,7 @@ mod blocking_tests {
         assert_eq!(status, "success", "{err:?}");
         assert_eq!(code, 0);
         let digest = event["delivery_state"]["transaction_digest"].as_str().unwrap_or("");
-        assert!(digest.starts_with("lab-sim-"), "{digest}");
+        assert!(digest.starts_with("local-"), "{digest}");
         assert_ne!(digest, "batched-digest");
         let proof: Value = serde_json::from_str(
             &fs::read_to_string(
@@ -3672,7 +3701,7 @@ mod blocking_tests {
         let tmp = tempfile::tempdir().unwrap();
         let mut event = json!({
             "event_id": "bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee",
-            "event_type": "PullRequest_Presented",
+            "event_type": "PullRequest_Merged",
             "payload": {"source_branch": "feat/x"},
             "delivery_state": {}
         });
@@ -3689,6 +3718,135 @@ mod blocking_tests {
         assert_eq!(status, "failed");
         assert_ne!(code, 0);
         assert_ne!(status, "skipped-config-missing");
+    }
+
+    #[test]
+    fn local_only_events_do_not_invoke_iota_and_external_seals_the_store() {
+        let _g = super::super::dlt_telemetry_anchor::IOTA_ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let prev_sim = std::env::var("SDDIA_LAB_SIMULATE_IOTA").ok();
+        std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
+        let sub = json!({"agent":"cumulo","tool":"iota-immutable-publisher"});
+        for event_type in [
+            "Raw_Execution_Finished",
+            "PullRequest_Presented",
+            "Domain_Entity_Created",
+            "Domain_Entity_Updated",
+            "Domain_Entity_Deleted",
+            "Domain_Entity_Degraded",
+            "Domain_Entity_Restored",
+            "Domain_Entity_Deprecated",
+            "TelegramMessage_Received",
+            "Manual_Task_Requested",
+            "Kalma2_Process_Requested",
+            "Kaizen_Idea_Captured",
+            "Thought_Persisted",
+            "Vector_Memory_Indexed",
+            "Instance_Deployed",
+            "Instance_Torn_Down",
+        ] {
+            let tmp = tempfile::tempdir().unwrap();
+            let mut event = json!({
+                "event_id": "cccccccc-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                "event_type": event_type,
+                "payload": {"source_branch": "feat/x"},
+                "delivery_state": {}
+            });
+            let (_sid, status, err, code) =
+                dispatch_subscriber(tmp.path(), &sub, &mut event, false, None);
+            assert_eq!(status, "skipped-local-only", "{event_type} {err:?}");
+            assert_eq!(code, 0);
+            assert!(event["delivery_state"].get("transaction_digest").is_none());
+        }
+        let tele_tmp = tempfile::tempdir().unwrap();
+        let mut tele = json!({
+            "event_id": "ffffffff-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+            "event_type": "Domain_Entity_Telemetry_Captured",
+            "payload": {"entity_type": "tool", "entity_id": "x"},
+            "delivery_state": {}
+        });
+        let (_sid, status, err, code) =
+            dispatch_subscriber(tele_tmp.path(), &sub, &mut tele, false, None);
+        assert_eq!(status, "success", "{err:?}");
+        assert_eq!(code, 0);
+        let tele_digest = tele["delivery_state"]["transaction_digest"].as_str().unwrap();
+        assert!(tele_digest.starts_with("local-"), "{tele_digest}");
+        assert!(!tele_digest.starts_with("lab-sim-"));
+
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let fs_tmp = tempfile::tempdir().unwrap();
+        let mut fs_event = json!({
+            "event_id": "eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+            "event_type": "PullRequest_Merged",
+            "payload": {
+                "source_branch": "feat/x",
+                "target_branch": "main",
+                "merge_commit_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "author": "racso",
+                "security_clearance": "core"
+            },
+            "delivery_state": {}
+        });
+        let (_sid, status, err, code) =
+            dispatch_subscriber(fs_tmp.path(), &sub, &mut fs_event, false, None);
+        assert_eq!(status, "success", "{err:?}");
+        assert_eq!(code, 0);
+        assert!(fs_event["delivery_state"]["transaction_digest"]
+            .as_str()
+            .unwrap()
+            .starts_with("lab-sim-"));
+        assert!(!sddia_event_store::runtime_db_path(fs_tmp.path()).exists());
+
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let db = sddia_event_store::runtime_db_path(repo);
+        fs::create_dir_all(db.parent().unwrap()).unwrap();
+        let event_id = "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        {
+            let store = sddia_event_store::EventStore::open(&db).unwrap();
+            store
+                .insert_event(
+                    &sddia_event_store::StoredEvent {
+                        event_id: event_id.into(),
+                        family: sddia_event_store::Family::Domain,
+                        event_type: "PullRequest_Merged".into(),
+                        created_at: 10,
+                        ecst: json!({"event_id": event_id, "event_type": "PullRequest_Merged"}),
+                    },
+                    &["cumulo"],
+                )
+                .unwrap();
+        }
+        let mut event = json!({
+            "event_id": event_id,
+            "event_type": "PullRequest_Merged",
+            "payload": {
+                "source_branch": "feat/x",
+                "target_branch": "main",
+                "merge_commit_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "author": "racso",
+                "security_clearance": "core",
+                "participating_agents": [{"uuid": "u", "name": "tekton", "version": "1.0.0", "role": "executor"}],
+                "authorizer": "racso"
+            },
+            "delivery_state": {}
+        });
+        let (_sid, status, err, code) = dispatch_subscriber(repo, &sub, &mut event, false, None);
+        assert_eq!(status, "success", "{err:?}");
+        assert_eq!(code, 0);
+        let digest = event["delivery_state"]["transaction_digest"].as_str().unwrap();
+        assert!(digest.starts_with("lab-sim-"), "{digest}");
+        let store = sddia_event_store::EventStore::open(&db).unwrap();
+        let seal = store.get_seal(event_id).unwrap().expect("sello");
+        assert_eq!(seal.tx_hash, digest);
+        assert_eq!(seal.scope, "external_public_interest");
+        sddia_event_store::override_store_mode(None);
+        match prev_sim {
+            Some(v) => std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v),
+            None => std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA"),
+        }
     }
 }
 
@@ -3747,6 +3905,7 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
         for sub in subscribers {
             if subscriber_applies_to_topology(&sub, &origin_topology)
                 && sub.get("tool").and_then(|v| v.as_str()) == Some("iota-immutable-publisher")
+                && is_external_public_interest(event_type)
             {
                 needs_anchor = true;
                 break;

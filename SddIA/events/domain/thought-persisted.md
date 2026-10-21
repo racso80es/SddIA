@@ -8,7 +8,7 @@ event_type: "Thought_Persisted"
 context: "ecosystem-evolution"
 capabilities:
   - "thought_persisted"
-hash_signature: "sha256:9c5767eca80111ffe2087b52e6244b8b6dd795eff6bee3285bf8d5c95607b82c"
+hash_signature: "sha256:d48d056b9cd993c276996fcb818b1541e30aa0c54b247b3c42f013d9fc506756"
 ---
 
 # Event: Thought_Persisted
@@ -34,6 +34,10 @@ Mutación persistida en grafo de pensamiento espacial tras triaje vectorial exit
 
 - `thought-triage-service`
 - `lancedb-thought-repo`
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

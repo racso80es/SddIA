@@ -8,7 +8,7 @@ event_type: "TelegramMessage_Received"
 context: "ecosystem-evolution"
 capabilities:
   - "telegram_message_received"
-hash_signature: "sha256:pending-anchor-on-merge"
+hash_signature: "sha256:80eb0e3bb4e1625f28df5c2cefa09137206bdcdc5306693cebdd149edfa11e98"
 ---
 
 # Event: TelegramMessage_Received
@@ -31,6 +31,10 @@ Estímulo aferente crudo desde Telegram antes del triaje estructurado. Alimenta 
 ## Emisores autorizados
 
 - Proceso **`telegram-gateway`**
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

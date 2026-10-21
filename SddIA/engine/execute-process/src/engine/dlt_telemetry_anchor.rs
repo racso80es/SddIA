@@ -3,7 +3,8 @@
 use super::eda_bus_topology::write_json_atomic;
 use super::persist_pec_correlation_proof::resolve_eda_proofs_dir;
 use chrono::Utc;
-use sddia_event_store::{copy_dlt_seal, store_mode, writes_store};
+use sddia_event_store::{runtime_db_path, store_mode, writes_store, DltSeal, EventStore};
+use sha2::{Digest, Sha256};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
@@ -18,6 +19,60 @@ pub const SKIP_STATUS: &str = "skipped-config-missing";
 
 pub fn is_telemetry_captured(event: &Value) -> bool {
     event.get("event_type").and_then(|v| v.as_str()) == Some(EVENT_TYPE)
+}
+
+pub fn is_external_public_interest(event_type: &str) -> bool {
+    matches!(
+        event_type,
+        "PullRequest_Merged" | "System_Immunity_Certified"
+    )
+}
+
+/// Documento que entra al publisher. Los opcionales presentes viajan; si faltan, el ancla sigue.
+pub fn external_anchor_document(event: &Value) -> Value {
+    json!({
+        "event_id": event.get("event_id"),
+        "event_type": event.get("event_type"),
+        "payload": event.get("payload").cloned().unwrap_or(json!({})),
+    })
+}
+
+pub fn local_telemetry_digest(event: &Value) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(
+        event
+            .get("event_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or(""),
+    );
+    hasher.update(
+        event
+            .get("payload")
+            .map(|p| p.to_string())
+            .unwrap_or_default(),
+    );
+    format!("local-{:x}", hasher.finalize())
+}
+
+pub fn persist_external_dlt_seal(
+    repo: &Path,
+    event_id: &str,
+    tx_hash: &str,
+) -> Result<(), String> {
+    if !writes_store(store_mode()) {
+        return Ok(());
+    }
+    let store = EventStore::open(runtime_db_path(repo)).map_err(|e| e.to_string())?;
+    store
+        .seal_dlt(
+            event_id,
+            &DltSeal {
+                tx_hash: tx_hash.to_string(),
+                digest: tx_hash.to_string(),
+                scope: "external_public_interest".into(),
+            },
+        )
+        .map_err(|e| e.to_string())
 }
 
 pub fn is_iota_config_error(feedback: &str) -> bool {
@@ -120,9 +175,6 @@ pub fn persist_dlt_telemetry_proof(
         "anchored_at": Utc::now().to_rfc3339(),
     });
     write_json_atomic(&path, &body)?;
-    if writes_store(store_mode()) {
-        let _ = copy_dlt_seal(repo, event_id, digest);
-    }
     Ok(path
         .strip_prefix(repo)
         .unwrap_or(&path)

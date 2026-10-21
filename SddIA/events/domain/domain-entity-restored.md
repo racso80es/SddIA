@@ -9,7 +9,7 @@ context: "quality-assurance"
 capabilities:
   - "domain_entity_restored"
   - "self_healing_redemption"
-hash_signature: "sha256:pending-anchor-on-merge"
+hash_signature: "sha256:ce6e74ddb0920765a821a1922ebc1ed18bdb9dd04037af9c43b5d731a95c8162"
 ---
 
 # Event: Domain_Entity_Restored
@@ -36,6 +36,10 @@ Redención de entidad previamente degradada. **Solo Radamanto** emite tras conso
 ## Emisores autorizados
 
 - Agente **`radamanto`** (vía `radamanto-batch` — único emisor)
+
+## Auditoría DLT
+
+`dlt_audit_scope: local_only`.
 
 ## Suscripciones
 

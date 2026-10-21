@@ -9,7 +9,7 @@ context: "quality-assurance"
 capabilities:
   - "system_immunity_certified"
   - "chaos_immunity_dlt"
-hash_signature: "sha256:pending-anchor-on-merge"
+hash_signature: "sha256:510dfadf6c5271c08870a4c4bac12c58cb0171ee010dc6dbd4221d131b3ed722"
 ---
 
 # Event: System_Immunity_Certified
@@ -40,6 +40,14 @@ Certificación de **inmunidad sistémica** tras campaña Suite exitosa y manifie
 
 - Proceso **`execute-suite`** (handler lab `run_execute_suite`)
 
+## Auditoría DLT
+
+`dlt_audit_scope: external_public_interest`.
+
 ## Suscripciones
+
+| Suscriptor | Agente | Intent |
+| :--- | :--- | :--- |
+| `iota-immutable-publisher` | radamanto | Sellar certificación de inmunidad en DLT (exclusividad Radamanto, D0.4). |
 
 Ver `event-domain-subscriptions.json` → `System_Immunity_Certified`.

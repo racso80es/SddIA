@@ -1,9 +1,10 @@
 ---
 uuid: "d4e5f6a7-b8c9-4012-d345-67890abcdef0"
 name: "pull-request-orchestration"
-version: "1.2.0"
+version: "1.3.0"
 entity_type: "norm"
 jurisdiction: "dedalo"
+hash_signature: "sha256:1bbd4b53cd2c343ce95fd364b4bd9bca24b1b344887b1f130adb0fa72bd289cc"
 ---
 
 # Orquestación de Pull Request (no es skill atómica)
@@ -47,6 +48,8 @@ Queda **terminantemente prohibido**:
 * Considerar `gh pr merge` como vía canónica de consolidación local hacia `main` salvo evolución explícita de esta norma.
 
 La **Única Fuente de Verdad (SSOT)** para la consolidación de código en `main` es `accept-pr`.
+
+La aceptación (`PullRequest_Merged`) es el ancla externa de interés público. Los `Domain_Entity_*` del mismo cambio no salen a IOTA; su digest puede residir dentro del sello de merge.
 
 ## 5. Responsabilidades
 

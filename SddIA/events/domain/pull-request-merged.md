@@ -8,7 +8,7 @@ event_type: "PullRequest_Merged"
 context: "dlt-auditing"
 capabilities:
   - "pull_request_merged"
-hash_signature: "sha256:f2ee61c93b873d62e6d464da434214d79473ca066ff26257888977c638556c12"
+hash_signature: "sha256:c0de678b5ba1b1080526445b78c230c20a0944faec12cb3e9f7df70f77121e9f"
 ---
 
 # Event: PullRequest_Merged
@@ -28,6 +28,8 @@ Clase ECST para sello post-merge en main. Ancla DLT via merge_commit_hash (40 he
 - `pr_url`
 - `repository_name`
 - `tracker_ref` (identificador Linear del PBI; sello `tracker-stamp`)
+- `participating_agents` (agentes que intervinieron: `uuid`, `name`, `version`, `role`)
+- `authorizer`
 
 ### FORBIDDEN
 - `hash_signature`
@@ -36,6 +38,10 @@ Clase ECST para sello post-merge en main. Ancla DLT via merge_commit_hash (40 he
 
 - `emit-pr-merged-event`
 - `accept-pr`
+
+## Auditoría DLT
+
+`dlt_audit_scope: external_public_interest`.
 
 ## Suscripciones
 

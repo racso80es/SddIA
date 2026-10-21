@@ -791,7 +791,13 @@ hash_signature: "{hash_sig}"
 
 pub fn run_norm_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "tactical_norm_name")?;
-    let norm_path = repo.join("SddIA/library/norms").join(format!("{name}.md"));
+    let library_path = repo.join("SddIA/library/norms").join(format!("{name}.md"));
+    let operational_path = repo.join("SddIA/norms").join(format!("{name}.md"));
+    let norm_path = if library_path.is_file() {
+        library_path
+    } else {
+        operational_path
+    };
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
     if lifecycle == "update" && norm_path.is_file() {
@@ -799,6 +805,11 @@ pub fn run_norm_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
         if patch.old_version != patch.new_version {
             update_library_norm_index_version(
                 &repo.join("SddIA/library/norms/index.md"),
+                &name,
+                &patch.new_version,
+            )?;
+            update_library_norm_index_version(
+                &repo.join("SddIA/norms/index.md"),
                 &name,
                 &patch.new_version,
             )?;
@@ -1170,6 +1181,38 @@ pub fn run_event_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let effective_family = resolve_effective_event_family(inputs)?;
     let (events_root, event_path) = resolve_event_artifact_path(repo, &name, &effective_family);
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    if lifecycle == "update" && name == "events-contract" && event_path.is_file() {
+        let version = str_field(inputs, "events_contract_version", "1.2.0");
+        let text = fs::read_to_string(&event_path).map_err(|e| e.to_string())?;
+        let (yaml, body) = split_md_frontmatter(&text).unwrap_or((String::new(), text.clone()));
+        let new_body = if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            apply_markdown_body_replacements(&body, replacements)?
+        } else {
+            body
+        };
+        let new_yaml = {
+            static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+            let re = RE.get_or_init(|| regex::Regex::new(r#"(?m)^contract_version:\s*.+$"#).expect("re"));
+            if yaml.contains("contract_version:") {
+                re.replace(&yaml, format!("contract_version: \"{version}\""))
+                    .to_string()
+            } else {
+                yaml
+            }
+        };
+        let joined = if new_yaml.is_empty() {
+            new_body
+        } else {
+            format!("---\n{new_yaml}---\n{new_body}")
+        };
+        fs::write(&event_path, joined).map_err(|e| e.to_string())?;
+        return Ok(json!({
+            "artifact_event_md": event_path.strip_prefix(repo).unwrap_or(&event_path).to_string_lossy().replace('\\', "/"),
+            "handoff_entity_uuid": "events-contract",
+            "handoff_version": version,
+            "skip_domain_seal": true,
+        }));
+    }
     if lifecycle == "update" && event_path.is_file() {
         if inputs
             .get("hash_refresh_only")

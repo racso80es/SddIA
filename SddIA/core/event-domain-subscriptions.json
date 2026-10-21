@@ -11,11 +11,6 @@
       "intent": "Sello Linear in_review + comentario PR (tracker_ref en payload)."
     },
     {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA Rebased."
-    },
-    {
       "agent": "argos",
       "tool": "send-telegram-notification",
       "intent": "Notificación humana táctica en Telegram (Táctica del Refugio)."
@@ -50,12 +45,6 @@
       "process": "compile-ecosystem-map-snapshot",
       "applies_to_origin_topology": ["core"],
       "intent": "Refrescar map-snapshot del Espejo de Consciencia tras mutación genómica."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "applies_to_origin_topology": ["core"],
-      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
   "Domain_Entity_Updated": [
@@ -70,12 +59,6 @@
       "process": "compile-ecosystem-map-snapshot",
       "applies_to_origin_topology": ["core"],
       "intent": "Refrescar map-snapshot del Espejo de Consciencia tras mutación genómica."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "applies_to_origin_topology": ["core"],
-      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
   "Domain_Entity_Telemetry_Captured": [
@@ -83,11 +66,6 @@
       "agent": "cumulo",
       "process": "memory-evolution-ingest",
       "intent": "Indexar snapshot de ejecución en LanceDB vía EvolutionProxy / vector_store/evolution."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT inmutable de snapshot de telemetría en IOTA Rebased."
     }
   ],
   "Domain_Entity_Deleted": [
@@ -102,12 +80,6 @@
       "process": "compile-ecosystem-map-snapshot",
       "applies_to_origin_topology": ["core"],
       "intent": "Refrescar map-snapshot del Espejo de Consciencia tras mutación genómica."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "applies_to_origin_topology": ["core"],
-      "intent": "Anclaje DLT IOTA Rebased (solo core)."
     }
   ],
   "System_Fracture_Detected": [
@@ -151,11 +123,6 @@
       "agent": "dedalo",
       "process": "fix-tool-process",
       "intent": "Reparación sandbox para entity_type tool/skill."
-    },
-    {
-      "agent": "radamanto",
-      "tool": "iota-immutable-publisher",
-      "intent": "Sellar degradación en DLT (exclusividad Radamanto)."
     }
   ],
   "Domain_Entity_Restored": [
@@ -163,11 +130,6 @@
       "agent": "cerbero",
       "process": "cerbero-governance-react",
       "intent": "Rehabilitar RBAC tras redención Radamanto."
-    },
-    {
-      "agent": "radamanto",
-      "tool": "iota-immutable-publisher",
-      "intent": "Sellar redención en DLT (exclusividad Radamanto)."
     }
   ],
   "Domain_Entity_Deprecated": [
@@ -175,11 +137,6 @@
       "agent": "cerbero",
       "process": "cerbero-governance-react",
       "intent": "Bloqueo permanente."
-    },
-    {
-      "agent": "radamanto",
-      "tool": "iota-immutable-publisher",
-      "intent": "Sellar obsolescencia en DLT."
     }
   ],
   "Suite_Execution_Requested": [
@@ -243,30 +200,14 @@
       "agent": "mayeuta",
       "process": "telegram-fallback-responder",
       "intent": "Red de seguridad sensorial: Triaje inverso para entropía no estructurada."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA del estímulo sensorial Telegram."
     }
   ],
-  "Manual_Task_Requested": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA de tarea manual capturada desde canal externo."
-    }
-  ],
+  "Manual_Task_Requested": [],
   "Kalma2_Process_Requested": [
     {
       "agent": "tekton",
       "process": "task-queue-manager",
       "intent": "Triaje soberano + despacho del proceso solicitado desde Kalma2."
-    },
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA de la solicitud de proceso desde Kalma2."
     }
   ],
   "Aiua_Process_Requested": [
@@ -276,47 +217,17 @@
       "intent": "Despacho del ciclo SDLC solicitado por el latido de la Aiúa."
     }
   ],
-  "Kaizen_Idea_Captured": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA de idea Kaizen capturada vía patrón TODO:/IDEA:."
-    }
-  ],
-  "Thought_Persisted": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje traza grafo de pensamiento en DLT."
-    }
-  ],
+  "Kaizen_Idea_Captured": [],
+  "Thought_Persisted": [],
   "CapabilityDi_Requested": [
     {
       "agent": "cumulo",
       "intent": "Piloto DI async — reactor engine capability_di_reactor (non-blocking)."
     }
   ],
-  "Vector_Memory_Indexed": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje índice vectorial epigenético en DLT."
-    }
-  ],
-  "Instance_Deployed": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA del despliegue de instancia vía installer."
-    }
-  ],
-  "Instance_Torn_Down": [
-    {
-      "agent": "cumulo",
-      "tool": "iota-immutable-publisher",
-      "intent": "Anclaje DLT IOTA del teardown de instancia vía installer."
-    }
-  ],
+  "Vector_Memory_Indexed": [],
+  "Instance_Deployed": [],
+  "Instance_Torn_Down": [],
   "Tracker_Sync_Failed": [
     {
       "agent": "tekton",
