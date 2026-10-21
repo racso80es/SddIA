@@ -6,7 +6,7 @@ contract: "agents-contract v1.0.0"
 allowed_policies:
   - "knowledge-management"
   - "filesystem-ops"
-hash_signature: "opcional_en_desarrollo"
+hash_signature: "sha256:8356b721f039ef275c756cc61c8cc84a079eb92b74a084b2d378dbc224546deb"
 llm_profile:
   tier: "high"
   description: "Mayéutica, refinamiento de requisitos y síntesis de intenciones"
@@ -18,6 +18,7 @@ inputs:
 outputs:
   - "clarification_transcript_md"
   - "thermodynamic_stable_requirement_md"
+cognitive_role_descriptor: "Estabilización de requisitos y auditoría Kaizen de fracturas"
 ---
 
 # Agente Mayeuta: Filtro Antientrópico y Analista de Requisitos

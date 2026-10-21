@@ -7,7 +7,7 @@ allowed_policies:
   - "ecosystem-evolution"
   - "knowledge-management"
   - "filesystem-ops"
-hash_signature: "opcional_en_desarrollo"
+hash_signature: "sha256:f8c44970e4d32a9f1320fcc0d6d2ed8c4343082b51e16c35aa776fed25ccdb0d"
 llm_profile:
   tier: "high"
   description: "Diseño arquitectónico y especificación formal de procesos"
@@ -19,6 +19,7 @@ inputs:
 outputs:
   - "technical_specification_md"
   - "process_blueprint_md"
+cognitive_role_descriptor: "Diseño de especificación y blueprint de proceso"
 ---
 
 # Agente Dedalo: Nodo de Diseño y Planificación

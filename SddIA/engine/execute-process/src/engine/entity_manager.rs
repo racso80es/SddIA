@@ -217,9 +217,8 @@ fn creator_inputs_from_entity(
             }
             merge_maps(&base, fields)
         }
-        "agent" => merge_maps(
-            &base,
-            Map::from_iter([
+        "agent" => {
+            let mut fields = Map::from_iter([
                 ("agent_name".into(), seed_field(seed, "agent_name", json!(entity_name))),
                 ("allowed_policies".into(), seed_field(seed, "allowed_policies", json!(["ecosystem-evolution"]))),
                 ("agent_inputs".into(), seed_field(seed, "agent_inputs", json!([]))),
@@ -229,8 +228,12 @@ fn creator_inputs_from_entity(
                     seed_field(seed, "agent_purpose", json!(format!("Agente {entity_name}"))),
                 ),
                 ("agents_contract_version".into(), seed_field(seed, "agents_contract_version", json!("1.0.0"))),
-            ]),
-        ),
+            ]);
+            if let Some(v) = seed.get("cognitive_role_descriptor") {
+                fields.insert("cognitive_role_descriptor".into(), v.clone());
+            }
+            merge_maps(&base, fields)
+        }
         "norm" => merge_maps(
             &base,
             Map::from_iter([

@@ -712,6 +712,62 @@ pub fn run_process_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     ))
 }
 
+fn upsert_yaml_line(yaml: &str, key: &str, value: &str) -> String {
+    let line = format!("{key}: \"{value}\"");
+    if yaml.contains(&format!("{key}:")) {
+        let re = regex::Regex::new(&format!(r"(?m)^{key}:\s*.+$")).expect("re");
+        re.replace(yaml, line).to_string()
+    } else if yaml.ends_with('\n') {
+        format!("{yaml}{line}\n")
+    } else {
+        format!("{yaml}\n{line}\n")
+    }
+}
+
+fn append_table_cell(line: &str, cell: &str) -> String {
+    let trimmed = line.trim_end().trim_end_matches('|').trim_end();
+    format!("{trimmed} | {cell} |")
+}
+
+fn refresh_agent_hash_line_delimited(path: &Path) -> Result<super::common::HashRefreshResult, String> {
+    let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
+    if !text.contains("hash_signature:") {
+        let (yaml, body) = split_md_frontmatter(&text).ok_or("frontmatter ausente")?;
+        let yaml = yaml.trim_end_matches('\n');
+        let joined = format!("---\n{yaml}\nhash_signature: \"sha256:pending\"\n---\n{body}");
+        fs::write(path, joined).map_err(|e| e.to_string())?;
+    }
+    patch_hash_signature_refresh(path)
+}
+
+fn upsert_cognitive_role_index(index_path: &Path, name: &str, descriptor: &str) -> Result<(), String> {
+    let text = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+    let mut lines: Vec<String> = text.lines().map(str::to_string).collect();
+    let header_at = lines
+        .iter()
+        .position(|l| l.contains("| Archivo fuente |") && l.contains("Allowed policies"))
+        .ok_or("cabecera de catálogo ausente")?;
+    if !lines[header_at].contains("Cognitive role") {
+        lines[header_at] = append_table_cell(&lines[header_at], "Cognitive role");
+        if header_at + 1 < lines.len() && lines[header_at + 1].contains("---") {
+            lines[header_at + 1] = append_table_cell(&lines[header_at + 1], "----------------");
+        }
+    }
+    let marker = format!("| `{name}.md` |");
+    let row_at = lines
+        .iter()
+        .position(|l| l.contains(&marker))
+        .ok_or_else(|| format!("fila de catálogo ausente: {name}"))?;
+    if !lines[row_at].contains(descriptor) {
+        lines[row_at] = append_table_cell(&lines[row_at], descriptor);
+    }
+    let mut out = lines.join("\n");
+    if text.ends_with('\n') {
+        out.push('\n');
+    }
+    fs::write(index_path, out).map_err(|e| e.to_string())
+}
+
 pub fn run_agent_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "agent_name")?;
     let agent_path = repo.join("SddIA/agents").join(format!("{name}.md"));
@@ -719,18 +775,66 @@ pub fn run_agent_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     if let Some(skip) = idempotent_forge_handoff(&agent_path, &lifecycle)? {
         return Ok(skip);
     }
-    if lifecycle == "update" && agent_path.is_file() {
-        let replacements = inputs
-            .get("markdown_body_replacements")
-            .ok_or("agent update requiere markdown_body_replacements (prohibido reescribir carta)")?;
-        let (entity_uuid, old_hash, new_hash, version) =
-            patch_artifact_body_replacements(&agent_path, replacements)?;
+    if lifecycle == "update" && name == "agents-contract" && agent_path.is_file() {
+        let version = str_field(inputs, "agents_contract_version", "1.2.0");
+        let text = fs::read_to_string(&agent_path).map_err(|e| e.to_string())?;
+        let (yaml, body) = split_md_frontmatter(&text).unwrap_or((String::new(), text.clone()));
+        let new_body = if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            apply_markdown_body_replacements(&body, replacements)?
+        } else {
+            body
+        };
+        let new_yaml = upsert_yaml_line(&yaml, "contract_version", &version);
+        let joined = if new_yaml.is_empty() {
+            new_body
+        } else {
+            format!("---\n{new_yaml}---\n{new_body}")
+        };
+        fs::write(&agent_path, joined).map_err(|e| e.to_string())?;
         return Ok(json!({
-            "handoff_entity_uuid": entity_uuid,
-            "handoff_hash_signature_new": new_hash,
-            "handoff_hash_signature_old": old_hash,
+            "artifact_agent_md": agent_path.strip_prefix(repo).unwrap_or(&agent_path).to_string_lossy().replace('\\', "/"),
+            "handoff_entity_uuid": "agents-contract",
             "handoff_version": version,
+            "skip_domain_seal": true,
         }));
+    }
+    if lifecycle == "update" && agent_path.is_file() {
+        if let Some(descriptor) = inputs
+            .get("cognitive_role_descriptor")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            let text = fs::read_to_string(&agent_path).map_err(|e| e.to_string())?;
+            let (yaml, body) =
+                split_md_frontmatter(&text).ok_or("frontmatter ausente en agente")?;
+            let new_yaml = upsert_yaml_line(&yaml, "cognitive_role_descriptor", descriptor);
+            fs::write(&agent_path, format!("---\n{new_yaml}---\n{body}"))
+                .map_err(|e| e.to_string())?;
+            upsert_cognitive_role_index(&repo.join("SddIA/agents/index.md"), &name, descriptor)?;
+        }
+        if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            let (entity_uuid, old_hash, new_hash, version) =
+                patch_artifact_body_replacements(&agent_path, replacements)?;
+            return Ok(json!({
+                "handoff_entity_uuid": entity_uuid,
+                "handoff_hash_signature_new": new_hash,
+                "handoff_hash_signature_old": old_hash,
+                "handoff_version": version,
+            }));
+        }
+        if inputs.get("cognitive_role_descriptor").is_some() {
+            let patch = refresh_agent_hash_line_delimited(&agent_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        return Err(
+            "agent update requiere markdown_body_replacements o cognitive_role_descriptor".into(),
+        );
     }
 
     let policies = inputs
@@ -2441,5 +2545,87 @@ NOTA_BACKFILL
 
         std::env::remove_var("SDDIA_FORGE_LAB_UUID");
         std::env::remove_var("SDDIA_FORGE_LAB_SHA256");
+    }
+
+    #[test]
+    fn cognitive_role_index_does_not_add_a_row() {
+        let dir = std::env::temp_dir().join(format!("eda-redb-06-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("SddIA/agents")).unwrap();
+        fs::write(
+            dir.join("SddIA/agents/cerbero.md"),
+            "---\nuuid: \"u\"\nname: \"cerbero\"\nversion: \"1.0.0\"\nallowed_policies:\n  - \"knowledge-management\"\nllm_profile:\n  tier: \"none\"\n---\n\n# Agente\n",
+        )
+        .unwrap();
+        let index = dir.join("SddIA/agents/index.md");
+        fs::write(
+            &index,
+            "# x\n\n| Archivo fuente | uuid | name | version | contract | Allowed policies |\n|----------------|------|------|---------|----------|------------------|\n| `cerbero.md` | `u` | cerbero | 1.0.0 | agents-contract v1.0.0 | `knowledge-management` |\n",
+        )
+        .unwrap();
+        let before = fs::read_to_string(&index)
+            .unwrap()
+            .lines()
+            .filter(|l| l.contains("`cerbero.md`"))
+            .count();
+        run_agent_forge(
+            &dir,
+            &json!({
+                "agent_name": "cerbero",
+                "lifecycle_operation": "update",
+                "cognitive_role_descriptor": "Peaje RBAC determinista",
+            }),
+        )
+        .expect("descriptor");
+        let text = fs::read_to_string(dir.join("SddIA/agents/cerbero.md")).unwrap();
+        assert!(text.contains("cognitive_role_descriptor: \"Peaje RBAC determinista\""));
+        assert!(text.contains("tier: \"none\""));
+        assert!(text.contains("knowledge-management"));
+        let index_text = fs::read_to_string(&index).unwrap();
+        let after = index_text
+            .lines()
+            .filter(|l| l.contains("`cerbero.md`"))
+            .count();
+        assert_eq!(before, after);
+        assert!(index_text.contains("Cognitive role"));
+        assert!(index_text.contains("Peaje RBAC determinista"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn catalog_cognitive_roles_match_the_contract() {
+        let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let contract = fs::read_to_string(repo.join("SddIA/agents/agents-contract.md")).unwrap();
+        assert!(contract.contains("contract_version: \"1.2.0\""));
+        let index = fs::read_to_string(repo.join("SddIA/agents/index.md")).unwrap();
+        let rows = index
+            .lines()
+            .filter(|l| l.trim_start().starts_with('|') && l.contains(".md`"))
+            .count();
+        assert_eq!(rows, 7);
+        assert!(!index.to_lowercase().contains("aiua"));
+        assert!(!index.to_lowercase().contains("aiúa"));
+        for (name, tier, desc) in [
+            ("cerbero", "none", "Peaje RBAC determinista"),
+            ("cumulo", "none", "SSOT de topología e índices"),
+            ("radamanto", "none", "Actuario de umbrales sobre telemetría"),
+            ("argos", "medium", "Juez de artefactos; síntesis solo tras evidencia de cápsulas"),
+            ("tekton", "low", "Ejecución táctica según especificación"),
+            ("dedalo", "high", "Diseño de especificación y blueprint de proceso"),
+            ("mayeuta", "high", "Estabilización de requisitos y auditoría Kaizen de fracturas"),
+        ] {
+            let body = fs::read_to_string(repo.join(format!("SddIA/agents/{name}.md"))).unwrap();
+            let delims = body.lines().filter(|l| l.trim() == "---").count();
+            assert_eq!(delims, 2, "{name}");
+            assert!(body.contains(&format!("cognitive_role_descriptor: \"{desc}\"")), "{name}");
+            assert!(body.contains(&format!("tier: \"{tier}\"")), "{name}");
+            assert!(index.contains(desc), "{name}");
+        }
+        let constitution = fs::read_to_string(repo.join("SddIA/CONSTITUTION_CORE.md")).unwrap();
+        assert!(constitution.contains("Filtro C (Necesidad)"));
+        assert!(constitution.contains("Filtro A (Lógica)"));
+        assert!(constitution.contains("Filtro B (Esencia)"));
+        assert!(constitution.contains("Protocolo de Acero"));
+        assert!(constitution.contains("Cicatriz Rúnica"));
     }
 }

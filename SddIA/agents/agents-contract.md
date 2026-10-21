@@ -1,5 +1,5 @@
 ---
-contract_version: "1.1.0"
+contract_version: "1.2.0"
 entity_type: "agent"
 jurisdiction: "Core SddIA"
 ---
@@ -45,3 +45,13 @@ llm_profile:
 * `high` / `medium` / `low`: el orquestador inyecta el nodo en el payload `AGENT_PHASE` (`llm_profiles`).
 * `none`: agente determinista. Una fase cuyos delegados son solo `none` **no** spawnea `SDDIA_AGENT_RUNTIME_COMMAND`.
 * Agentes sin el bloque: no se inventa un tier cognitivo. `cerbero`, `cumulo` y `radamanto` se tratan como `none` si el bloque falta.
+
+## 6. Descriptor de rol cognitivo (`cognitive_role_descriptor`, opcional)
+
+Campo YAML opcional. Una línea, vocabulario industrial. No sustituye a `llm_profile`.
+
+```yaml
+cognitive_role_descriptor: "una línea, vocabulario industrial"
+```
+
+El catálogo de `agents/index.md` reproduce el descriptor en la columna **Cognitive role**. La Aiúa no es una fila de ese catálogo.

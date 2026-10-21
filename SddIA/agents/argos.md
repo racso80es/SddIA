@@ -9,7 +9,7 @@ allowed_policies:
   - "source-control"
   - "event-routing"
   - "tracker-operations"
-hash_signature: "opcional_en_desarrollo"
+hash_signature: "sha256:69bded9172269e5e033db04a73a1799798d4bbb5d010c6d4a1f479ec6d790eab"
 llm_profile:
   tier: "medium"
   description: "Síntesis de audit_report_md y correction_blueprint_md tras evidencia de cápsulas"
@@ -22,6 +22,7 @@ outputs:
   - "audit_report_md"
   - "approval_status"
   - "correction_blueprint_md"
+cognitive_role_descriptor: "Juez de artefactos; síntesis solo tras evidencia de cápsulas"
 ---
 
 # Agente Argos: Orquestador de Verificación y Juez de Artefactos
