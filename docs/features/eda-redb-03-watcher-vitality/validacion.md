@@ -7,9 +7,9 @@ uuid: "9b4e7c25-8a1d-4e63-b5f0-2d8c6a1e4f97"
 branch: feat/eda-redb-03-watcher-vitality
 branch_name: feat/eda-redb-03-watcher-vitality
 persist_ref: docs/features/eda-redb-03-watcher-vitality
-pbi_ref: "docs/todos/pending/[ARQUITECTURA] EDA Redb 03 — Watcher y sondas de vitalidad.md"
+pbi_ref: "docs/todos/done/[ARQUITECTURA] EDA Redb 03 — Watcher y sondas de vitalidad.md"
 global: APTO
-pbi_archived: false
+pbi_archived: true
 ---
 
 # Validación — eda-redb-03-watcher-vitality
