@@ -1,0 +1,10 @@
+[package]
+name = "sddia-event-store"
+version = "0.1.0"
+edition = "2021"
+description = "Store transaccional ACID del bus de eventos. La ruta del fichero la inyecta el llamador."
+
+[dependencies]
+redb = "=2.6.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
