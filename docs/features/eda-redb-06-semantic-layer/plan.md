@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-06-semantic-layer
 created: "2026-10-21"
 phases:
@@ -6,8 +7,8 @@ phases:
   - catálogo
   - restricción
   - pruebas
+execution_id: "14475d25-826d-4732-b88e-922c924b7344"
 ---
-
 # Plan — eda-redb-06-semantic-layer
 
 1. Extender `run_agent_forge` para el descriptor y para `agents-contract` sin sello.

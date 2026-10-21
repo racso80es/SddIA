@@ -1,10 +1,11 @@
 ---
+
 feature_name: eda-redb-06-semantic-layer
 created: "2026-10-21"
 document_id: PBI-EDA-REDB-06-SEMANTIC-LAYER
 pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md
+execution_id: "14475d25-826d-4732-b88e-922c924b7344"
 ---
-
 # Clarify — eda-redb-06-semantic-layer
 
 `cognitive_role_descriptor` es una línea de vocabulario industrial. No sustituye a `llm_profile`.
