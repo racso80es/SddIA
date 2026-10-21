@@ -38,4 +38,4 @@ cargo clippy -p sddia-event-store --all-targets -- -D warnings
 
 ## Cierre
 
-PBI en `docs/todos/done/`. Cierre remoto vía `delivery-close-cycle`. La HU y los PBI 02–07 quedan fuera de este diff.
+PBI en `docs/todos/done/`. Primer `delivery-close-cycle` (`0b8b33f5-6cba-44e9-86de-92c6ccc08c14`) abrió https://github.com/racso80es/SddIA/pull/353 y bloqueó la aduana evolution: `SddIA/Cargo.lock` sin correlato. La corrección añade esa ruta al alta `b8dfedbb-d68d-47c9-a983-9e27f96d3d90`. La HU y los PBI 02–07 quedan fuera de este diff.

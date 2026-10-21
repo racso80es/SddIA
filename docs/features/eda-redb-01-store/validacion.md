@@ -7,6 +7,7 @@ global: APTO
 pbi_archived: true
 document_id: PBI-EDA-REDB-01-STORE
 execution_id: "2567be4f-95cf-44fe-8bf8-01a568046cce"
+pr_url: "https://github.com/racso80es/SddIA/pull/353"
 checks:
   AC-2: APTO
   CA-01: APTO
