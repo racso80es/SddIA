@@ -283,6 +283,9 @@ pub fn list_witnesses(
     state_key: &str,
     event_uuid: &str,
 ) -> Vec<PathBuf> {
+    if writes_store(store_mode()) {
+        return list_store_witnesses(repo, state_key, event_uuid);
+    }
     let folder_key = resolve_witness_key(state_key);
     let folder = match folder_key {
         "processing_subscribers" => resolve_bus_path(repo, &bus.processing_subscribers),
@@ -311,6 +314,45 @@ pub fn list_witnesses(
         .collect();
     paths.sort();
     paths
+}
+
+fn list_store_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
+    let want = match resolve_witness_key(state_key) {
+        "processing_subscribers" => DeliveryStatus::Pending,
+        "processed_subscribers" => DeliveryStatus::Success,
+        "dead_letter_subscribers" => DeliveryStatus::Failed,
+        _ => return Vec::new(),
+    };
+    let db = runtime_db_path(repo);
+    if !db.is_file() {
+        return Vec::new();
+    }
+    let Ok(store) = EventStore::open(&db) else {
+        return Vec::new();
+    };
+    let Ok(rows) = store.list_deliveries() else {
+        return Vec::new();
+    };
+    let mut paths: Vec<PathBuf> = rows
+        .into_iter()
+        .filter(|(id, _, status)| id == event_uuid && *status == want)
+        .map(|(_, subscriber, _)| PathBuf::from(format!("{event_uuid}.{subscriber}.json")))
+        .collect();
+    paths.sort();
+    paths
+}
+
+pub fn purge_store_event(repo: &Path, event_id: &str) {
+    if !writes_store(store_mode()) {
+        return;
+    }
+    let db = runtime_db_path(repo);
+    if !db.is_file() {
+        return;
+    }
+    if let Ok(store) = EventStore::open(&db) {
+        let _ = store.purge_event(event_id);
+    }
 }
 
 fn witness_exists(

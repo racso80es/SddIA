@@ -200,6 +200,30 @@ impl EventStore {
         })
     }
 
+    /// Todas las filas de `subscriber_delivery`. No incluye el ECST.
+    pub fn list_deliveries(&self) -> Result<Vec<(String, String, DeliveryStatus)>, StoreError> {
+        self.read_tx(|txn| {
+            let table = match txn.open_table(SUBSCRIBER_DELIVERY) {
+                Ok(table) => table,
+                Err(err) if table_missing(&err) => return Ok(Vec::new()),
+                Err(err) => return Err(backend(err)),
+            };
+            let mut rows = Vec::new();
+            let range = table.range::<&(&str, &str)>(..).map_err(backend)?;
+            for row in range {
+                let (key, value) = row.map_err(backend)?;
+                let witness: DeliveryWitness = decode(value.value())?;
+                let (event_id, subscriber_id) = key.value();
+                rows.push((
+                    event_id.to_string(),
+                    subscriber_id.to_string(),
+                    witness.status,
+                ));
+            }
+            Ok(rows)
+        })
+    }
+
     pub fn seal_dlt(&self, event_id: &str, seal: &DltSeal) -> Result<(), StoreError> {
         let event_id = required_token(event_id, "event_id")?;
         let tx_hash = required_token(&seal.tx_hash, "tx_hash")?;
@@ -352,6 +376,24 @@ impl EventStore {
         self.read_tx(|txn| read_row(txn, DEAD_LETTER_INDEX, &event_id))
     }
 
+    pub fn list_dead_letters(&self) -> Result<Vec<(String, DeadLetter)>, StoreError> {
+        self.read_tx(|txn| {
+            let table = match txn.open_table(DEAD_LETTER_INDEX) {
+                Ok(table) => table,
+                Err(err) if table_missing(&err) => return Ok(Vec::new()),
+                Err(err) => return Err(backend(err)),
+            };
+            let mut rows = Vec::new();
+            let range = table.range::<&str>(..).map_err(backend)?;
+            for row in range {
+                let (key, value) = row.map_err(backend)?;
+                let letter: DeadLetter = decode(value.value())?;
+                rows.push((key.value().to_string(), letter));
+            }
+            Ok(rows)
+        })
+    }
+
     /// Borra `dead_letter_index` y deja el testigo del suscriptor fallido en `pending`.
     pub fn replay(&self, event_id: &str) -> Result<(), StoreError> {
         let event_id = required_token(event_id, "event_id")?;
@@ -396,6 +438,68 @@ impl EventStore {
             }
             Ok(())
         })
+    }
+
+    /// Quita el evento, sus testigos y su dead-letter. `false` si no había fila.
+    pub fn purge_event(&self, event_id: &str) -> Result<bool, StoreError> {
+        let event_id = required_token(event_id, "event_id")?;
+        let mut removed = false;
+        self.commit_write(|txn| {
+            if let Ok(mut events) = txn.open_table(EVENTS) {
+                if events.remove(event_id.as_str()).map_err(backend)?.is_some() {
+                    removed = true;
+                }
+            }
+            if let Ok(mut index) = txn.open_table(FAMILY_INDEX) {
+                let keys: Vec<(String, i64, String)> = {
+                    let range = index
+                        .range::<&(&str, i64, &str)>(..)
+                        .map_err(backend)?;
+                    let mut found = Vec::new();
+                    for row in range {
+                        let (key, _) = row.map_err(backend)?;
+                        let (family, created_at, id) = key.value();
+                        if id == event_id {
+                            found.push((family.to_string(), created_at, id.to_string()));
+                        }
+                    }
+                    found
+                };
+                for (family, created_at, id) in keys {
+                    let _ = index
+                        .remove((family.as_str(), created_at, id.as_str()))
+                        .map_err(backend)?;
+                    removed = true;
+                }
+            }
+            if let Ok(mut deliveries) = txn.open_table(SUBSCRIBER_DELIVERY) {
+                let keys: Vec<(String, String)> = {
+                    let range = deliveries.range::<&(&str, &str)>(..).map_err(backend)?;
+                    let mut found = Vec::new();
+                    for row in range {
+                        let (key, _) = row.map_err(backend)?;
+                        let (id, subscriber) = key.value();
+                        if id == event_id {
+                            found.push((id.to_string(), subscriber.to_string()));
+                        }
+                    }
+                    found
+                };
+                for (id, subscriber) in keys {
+                    let _ = deliveries
+                        .remove((id.as_str(), subscriber.as_str()))
+                        .map_err(backend)?;
+                    removed = true;
+                }
+            }
+            if let Ok(mut letters) = txn.open_table(DEAD_LETTER_INDEX) {
+                if letters.remove(event_id.as_str()).map_err(backend)?.is_some() {
+                    removed = true;
+                }
+            }
+            Ok(())
+        })?;
+        Ok(removed)
     }
 
     fn commit_write(

@@ -552,8 +552,68 @@ fn scan_witness_dir(
     }
 }
 
+fn audit_state_from_store(repo: &Path) -> ScanState {
+    let mut state = ScanState::default();
+    let db = sddia_event_store::runtime_db_path(repo);
+    if !db.is_file() {
+        return state;
+    }
+    let Ok(store) = sddia_event_store::EventStore::open(&db) else {
+        return state;
+    };
+    for (family, bucket) in [
+        (sddia_event_store::Family::Domain, "domain"),
+        (sddia_event_store::Family::Orchestration, "orchestration"),
+        (sddia_event_store::Family::Telemetry, "telemetry"),
+    ] {
+        let Ok(rows) = store.list_family(family) else {
+            continue;
+        };
+        state.counts.insert(bucket.into(), rows.len() as u64);
+        for row in rows {
+            *state.counts_by_type.entry(row.event_type).or_insert(0) += 1;
+            state.event_ids.insert(row.event_id);
+        }
+    }
+    if let Ok(letters) = store.list_dead_letters() {
+        state
+            .counts
+            .insert("dead-letter".into(), letters.len() as u64);
+        for (_id, letter) in letters {
+            *state
+                .dead_letter_errors
+                .entry(letter.cause)
+                .or_insert(0) += 1;
+        }
+    }
+    if let Ok(rows) = store.list_deliveries() {
+        let mut failed = 0u64;
+        let mut pending = 0u64;
+        let mut success = 0u64;
+        for (_id, _sid, status) in rows {
+            match status {
+                sddia_event_store::DeliveryStatus::Failed => failed += 1,
+                sddia_event_store::DeliveryStatus::Pending => pending += 1,
+                sddia_event_store::DeliveryStatus::Success => success += 1,
+                sddia_event_store::DeliveryStatus::Skipped => {}
+            }
+        }
+        state
+            .counts
+            .insert("dead-letter/subscribers".into(), failed);
+        state
+            .counts
+            .insert("processing/subscribers".into(), pending);
+        state.counts.insert("processed/subscribers".into(), success);
+    }
+    state
+}
+
 fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusPaths), String> {
     let paths = resolve_bus_paths(repo)?;
+    if sddia_event_store::writes_store(sddia_event_store::store_mode()) {
+        return Ok((audit_state_from_store(repo), paths));
+    }
     let known_types = load_known_event_types(repo);
     let mut state = ScanState::default();
     let mut stale_pending = Vec::new();
@@ -1090,5 +1150,41 @@ mod tests {
         assert!(!is_fracture_stale_detail(
             "event_type=PullRequest_Presented; pending age 26h > threshold 24h"
         ));
+    }
+
+    #[test]
+    fn store_audit_counts_dead_letter_without_json_files() {
+        let dir = std::env::temp_dir().join(format!(
+            "eba-04-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join("SddIA/core")).unwrap();
+        fs::write(
+            dir.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending","processing":".events/processing","processed":".events/processed","dead_letter":".events/dead-letter"}}"#,
+        )
+        .unwrap();
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let db = sddia_event_store::runtime_db_path(&dir);
+        fs::create_dir_all(db.parent().unwrap()).unwrap();
+        let store = sddia_event_store::EventStore::open(&db).unwrap();
+        let event = sddia_event_store::StoredEvent {
+            event_id: "evt-dl".into(),
+            family: sddia_event_store::Family::Domain,
+            event_type: "Domain_Probe".into(),
+            created_at: 10,
+            ecst: serde_json::json!({"event_id": "evt-dl", "event_type": "Domain_Probe"}),
+        };
+        store.insert_event(&event, &["sub-a"]).unwrap();
+        store.dead_letter("evt-dl", "boom", "sub-a").unwrap();
+        drop(store);
+        let (state, _) = run_audit(&dir, 24).unwrap();
+        sddia_event_store::override_store_mode(None);
+        assert_eq!(state.counts.get("dead-letter").copied(), Some(1));
+        assert_eq!(state.dead_letter_errors.get("boom").copied(), Some(1));
+        assert!(!dir.join(".events").exists());
+        let _ = fs::remove_dir_all(&dir);
     }
 }

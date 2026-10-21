@@ -29,6 +29,7 @@ pub mod crypto_broker;
 pub mod domain_mutation;
 pub mod eda_bus;
 pub mod eda_bus_topology;
+pub mod event_store_query;
 pub mod eda_coverage;
 pub mod ecst_validation;
 pub mod execution_workspace_report;
