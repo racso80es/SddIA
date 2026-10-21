@@ -8,6 +8,7 @@ TARGET="${WASI_TARGET:-wasm32-wasip1}"
 # Native-only crates: orchestrator, QA aduana, centinelas sensoriales (IMAP/TLS, etc.).
 # kalma2-bridge: órgano HTTP nativo (`ctrlc` / tiny_http); no cápsula WASI.
 # gemini-http-infer / thought-graph-access: host nativo (HTTP / LanceDB); no wasm32-wasip1.
+# event-bus-audit: CLI nativo del store redb. redb 2.6.4 activa feature(wasi_ext) en target_os=wasi.
 EXCLUDE=(
   execute-process
   sddia-qa
@@ -20,6 +21,7 @@ EXCLUDE=(
   gemini-http-infer
   llm-router
   thought-graph-access
+  event-bus-audit
 )
 
 packages=()
