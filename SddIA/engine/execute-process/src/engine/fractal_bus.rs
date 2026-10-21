@@ -4,6 +4,9 @@ use super::eda_bus_topology::{safe_remove_path, subscriber_id, write_json_atomic
 use super::workspace::load_paths_config;
 use crate::core::parser::parse_frontmatter;
 use chrono::Utc;
+use sddia_event_store::{
+    delivery_status_from_label, record_witness, store_mode, writes_filesystem, writes_store,
+};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::fs;
@@ -127,7 +130,28 @@ pub fn load_telemetry_compliance_config(repo: &Path) -> Result<HashMap<String, S
 }
 
 pub fn stamp_fractal_delivery_state(event_path: &Path, subscriber_key: &str, status: &str) {
-    if !event_path.is_file() {
+    let mode = store_mode();
+    if writes_store(mode) {
+        if let (Some(repo), Some(event_id)) = (
+            repo_root_from_event(event_path),
+            event_path.file_stem().and_then(|stem| stem.to_str()),
+        ) {
+            if record_witness(
+                &repo,
+                event_id,
+                subscriber_key,
+                delivery_status_from_label(status),
+                &json!({}),
+            )
+            .is_err()
+            {
+                return;
+            }
+        } else if !writes_filesystem(mode) {
+            return;
+        }
+    }
+    if !writes_filesystem(mode) || !event_path.is_file() {
         return;
     }
     let Ok(text) = fs::read_to_string(event_path) else {
@@ -149,6 +173,17 @@ pub fn stamp_fractal_delivery_state(event_path: &Path, subscriber_key: &str, sta
         ds.insert(subscriber_key.to_string(), json!(status));
         let _ = write_json_atomic(event_path, &body);
     }
+}
+
+fn repo_root_from_event(path: &Path) -> Option<PathBuf> {
+    let mut cur = path.parent();
+    while let Some(dir) = cur {
+        if dir.file_name().and_then(|name| name.to_str()) == Some(".events") {
+            return dir.parent().map(Path::to_path_buf);
+        }
+        cur = dir.parent();
+    }
+    None
 }
 
 pub fn delivery_stamp_terminal_ok(status: &str) -> bool {

@@ -5,6 +5,10 @@ use super::workspace::{
 };
 use chrono::Utc;
 use regex::Regex;
+use sddia_event_store::{
+    delivery_status_from_label, load_dispatched_event, record_witness, runtime_db_path, store_mode,
+    writes_filesystem, writes_store, DeliveryStatus, EventStore,
+};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -357,19 +361,31 @@ pub fn write_processing_witness(
     event_type: &str,
     dispatch_mode: &str,
 ) -> Result<PathBuf, String> {
+    let witness = json!({
+        "event_uuid": event_uuid,
+        "subscriber": subscriber_name,
+        "state": "processing",
+        "started_at": iso_now(),
+        "event_type": event_type,
+        "dispatch_mode": dispatch_mode,
+    });
+    let mode = store_mode();
+    if writes_store(mode) {
+        record_witness(
+            repo,
+            event_uuid,
+            subscriber_name,
+            DeliveryStatus::Pending,
+            &witness,
+        )
+        .map_err(|err| err.to_string())?;
+    }
+    if !writes_filesystem(mode) {
+        return Ok(runtime_db_path(repo));
+    }
     let dest = resolve_bus_path(repo, &bus.processing_subscribers)
         .join(witness_filename(event_uuid, subscriber_name));
-    write_json_atomic(
-        &dest,
-        &json!({
-            "event_uuid": event_uuid,
-            "subscriber": subscriber_name,
-            "state": "processing",
-            "started_at": iso_now(),
-            "event_type": event_type,
-            "dispatch_mode": dispatch_mode,
-        }),
-    )?;
+    write_json_atomic(&dest, &witness)?;
     Ok(dest)
 }
 
@@ -409,6 +425,30 @@ pub fn promote_witness(
     } else {
         (&bus.dead_letter_subscribers, "dead_letter")
     };
+    let mode = store_mode();
+    if writes_store(mode) {
+        let status = delivery_status_from_label(if to_state == "processed" {
+            "processed"
+        } else {
+            "dead-letter"
+        });
+        let witness = extra.cloned().unwrap_or_else(|| json!({}));
+        record_witness(repo, event_uuid, subscriber_name, status, &witness)
+            .map_err(|err| err.to_string())?;
+        if status == DeliveryStatus::Failed {
+            let store = EventStore::open(runtime_db_path(repo)).map_err(|err| err.to_string())?;
+            let cause = witness
+                .get("error_trace")
+                .and_then(|v| v.as_str())
+                .unwrap_or("dead-letter");
+            store
+                .dead_letter(event_uuid, cause, subscriber_name)
+                .map_err(|err| err.to_string())?;
+        }
+    }
+    if !writes_filesystem(mode) {
+        return Ok(runtime_db_path(repo));
+    }
     let src = resolve_bus_path(repo, &bus.processing_subscribers)
         .join(witness_filename(event_uuid, subscriber_name));
     let dest = resolve_bus_path(repo, to_key).join(witness_filename(event_uuid, subscriber_name));
@@ -979,15 +1019,9 @@ pub fn try_sweep_event(
 ) -> Value {
     let base = json!({"event_uuid": event_uuid, "purged": false});
     let pending_path = resolve_bus_path(repo, &bus.pending).join(format!("{event_uuid}.json"));
-    if !pending_path.is_file() {
-        return merge_sweep(base, json!({"status": "absent"}));
-    }
-
-    let event: Value = match fs::read_to_string(&pending_path) {
-        Ok(text) => match serde_json::from_str(&text) {
-            Ok(v) => v,
-            Err(_) => return merge_sweep(base, json!({"status": "invalid-json"})),
-        },
+    let event: Value = match load_dispatched_event(repo, event_uuid, &pending_path) {
+        Ok(Some(event)) => event,
+        Ok(None) => return merge_sweep(base, json!({"status": "absent"})),
         Err(_) => return merge_sweep(base, json!({"status": "invalid-json"})),
     };
 

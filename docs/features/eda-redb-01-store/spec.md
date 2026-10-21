@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-01-store
 created: "2026-10-21"
 process: feature
@@ -7,9 +8,8 @@ scope: eda-redb-01-store
 version_spec: "1.0.0"
 document_id: PBI-EDA-REDB-01-STORE
 uuid: "3f8c1a62-7d4e-4b91-8a27-6c5e0d9f1b34"
-execution_id: "2567be4f-95cf-44fe-8bf8-01a568046cce"
+execution_id: "82b4551a-3443-457b-8650-b3a0b6b6447a"
 ---
-
 # Especificación — eda-redb-01-store
 
 ## 1. Crate

@@ -1,6 +1,9 @@
 //! Utilidades del bus EDA (paridad parcial `eda_bus_utils.py`).
 
 use super::workspace::load_paths_config;
+use sddia_event_store::{
+    record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store,
+};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -104,7 +107,8 @@ pub fn find_existing_domain_event(
             continue;
         };
         if payload.get("entity_uuid").and_then(|v| v.as_str()) == Some(entity_uuid)
-            && payload.get("lifecycle_operation").and_then(|v| v.as_str()) == Some(lifecycle_operation)
+            && payload.get("lifecycle_operation").and_then(|v| v.as_str())
+                == Some(lifecycle_operation)
         {
             return Ok(Some(serde_json::json!({
                 "event_id": body.get("event_id"),
@@ -157,24 +161,36 @@ fn ensure_fractal_bus_topology(
     Ok(fractal)
 }
 
-pub fn write_fractal_event(
-    repo: &Path,
-    event: &Value,
-    family: &str,
-) -> Result<Value, String> {
+pub fn write_fractal_event(repo: &Path, event: &Value, family: &str) -> Result<Value, String> {
     if !FRACTAL_FAMILIES.contains(&family) {
         return Err(format!("invalid event family: {family}"));
     }
-    let fractal = ensure_fractal_bus_topology(repo)?;
-    let rel = fractal
-        .get(family)
-        .ok_or_else(|| format!("fractal family not configured: {family}"))?;
     let event_id = event
         .get("event_id")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .ok_or("event_id required")?;
+    let mode = store_mode();
+    if writes_store(mode) {
+        record_ecst(repo, family, event).map_err(|err| err.to_string())?;
+    }
+    if !writes_filesystem(mode) {
+        let target = runtime_db_path(repo);
+        return Ok(json!({
+            "event_id": event_id,
+            "target_path": target
+                .strip_prefix(repo)
+                .unwrap_or(&target)
+                .to_string_lossy()
+                .replace('\\', "/"),
+            "family": family,
+        }));
+    }
+    let fractal = ensure_fractal_bus_topology(repo)?;
+    let rel = fractal
+        .get(family)
+        .ok_or_else(|| format!("fractal family not configured: {family}"))?;
     let target = resolve_bus_path(repo, rel).join(format!("{event_id}.json"));
     let text = serde_json::to_string_pretty(event).map_err(|e| e.to_string())?;
     fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;

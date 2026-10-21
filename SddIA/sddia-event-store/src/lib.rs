@@ -2,6 +2,7 @@
 //! El llamador inyecta la ruta; este crate no consulta `cumulo.paths.json`.
 
 mod error;
+mod gate;
 mod model;
 
 use std::collections::HashSet;
@@ -12,6 +13,11 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 pub use error::StoreError;
+pub use gate::{
+    append_progress_monotonic, copy_dlt_seal, delivery_status_from_label, load_dispatched_event,
+    mode_from_name, override_store_mode, path_is_heartbeat_sidechannel, record_ecst,
+    record_witness, runtime_db_path, store_mode, writes_filesystem, writes_store, StoreMode,
+};
 pub use model::{DeadLetter, DeliveryStatus, DeliveryWitness, DltSeal, Family, StoredEvent};
 
 use error::{backend, table_missing};
@@ -115,6 +121,30 @@ impl EventStore {
                     "sin testigo para {event_id}/{subscriber_id}"
                 )));
             }
+            let _ = deliveries
+                .insert(
+                    (event_id.as_str(), subscriber_id.as_str()),
+                    bytes.as_slice(),
+                )
+                .map_err(backend)?;
+            Ok(())
+        })
+    }
+
+    /// Crea el par o sustituye el testigo. El evento tiene que existir.
+    pub fn upsert_delivery(
+        &self,
+        event_id: &str,
+        subscriber_id: &str,
+        status: DeliveryStatus,
+        witness: serde_json::Value,
+    ) -> Result<(), StoreError> {
+        let event_id = required_token(event_id, "event_id")?;
+        let subscriber_id = required_token(subscriber_id, "subscriber_id")?;
+        let bytes = encode(&DeliveryWitness { status, witness })?;
+        self.commit_write(|txn| {
+            require_event(txn, &event_id)?;
+            let mut deliveries = txn.open_table(SUBSCRIBER_DELIVERY).map_err(backend)?;
             let _ = deliveries
                 .insert(
                     (event_id.as_str(), subscriber_id.as_str()),

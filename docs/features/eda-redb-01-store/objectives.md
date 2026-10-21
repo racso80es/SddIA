@@ -1,17 +1,17 @@
 ---
+
 feature_name: eda-redb-01-store
 created: "2026-10-21"
 process: feature
 branch_name: feat/eda-redb-01-store
 persist_ref: docs/features/eda-redb-01-store
 pbi_ref: "docs/todos/pending/[ARQUITECTURA] EDA Redb 01 — Store transaccional sddia-event-store.md"
-execution_id: "2567be4f-95cf-44fe-8bf8-01a568046cce"
 document_id: PBI-EDA-REDB-01-STORE
 pbi_uuid: "3f8c1a62-7d4e-4b91-8a27-6c5e0d9f1b34"
 status: in-progress
 mayeuta_verdict: ok
+execution_id: "82b4551a-3443-457b-8650-b3a0b6b6447a"
 ---
-
 # Objetivos — eda-redb-01-store
 
 ## Misión

@@ -1,16 +1,16 @@
 ---
+
 feature_name: eda-redb-01-store
 created: "2026-10-21"
 process: feature
 branch_name: feat/eda-redb-01-store
 persist_ref: docs/features/eda-redb-01-store
-execution_id: "2567be4f-95cf-44fe-8bf8-01a568046cce"
 items_applied:
   - crate-sddia-event-store
   - workspace-member
   - tests-ac2-ca01-ca02
+execution_id: "82b4551a-3443-457b-8650-b3a0b6b6447a"
 ---
-
 # Ejecución — eda-redb-01-store
 
 ## Init

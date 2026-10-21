@@ -2,6 +2,7 @@
 
 use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic};
 use chrono::{DateTime, Utc};
+use sddia_event_store::{record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -286,6 +287,13 @@ pub fn materialize_pending(repo: &Path, bus_event: &Value) -> Result<PathBuf, St
         .get("event_id")
         .and_then(|v| v.as_str())
         .ok_or("event_id ausente")?;
+    let mode = store_mode();
+    if writes_store(mode) {
+        record_ecst(repo, "domain", bus_event).map_err(|err| err.to_string())?;
+    }
+    if !writes_filesystem(mode) {
+        return Ok(runtime_db_path(repo));
+    }
     let target = bus.pending.join(format!("{event_id}.json"));
     write_json_atomic(&target, bus_event)?;
     Ok(target)

@@ -3,6 +3,7 @@
 use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic, EdBusPaths};
 use crate::{write_fractal_event, BusTopology};
 use chrono::Utc;
+use sddia_event_store::{record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
@@ -356,8 +357,26 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
         .ok_or_else(|| "event_id inválido para materialización".to_string())?;
     let bus = ensure_event_bus_topology(repo)?;
     let target = bus.pending.join(format!("{event_id}.json"));
-    if target.is_file() {
+    let mode = store_mode();
+    if writes_filesystem(mode) && target.is_file() {
         return Ok(None);
+    }
+    if writes_store(mode) {
+        let db = runtime_db_path(repo);
+        if !writes_filesystem(mode) && db.is_file() {
+            let store = sddia_event_store::EventStore::open(&db).map_err(|err| err.to_string())?;
+            if store
+                .get_event(event_id)
+                .map_err(|err| err.to_string())?
+                .is_some()
+            {
+                return Ok(None);
+            }
+        }
+        record_ecst(repo, "domain", bus_event).map_err(|err| err.to_string())?;
+    }
+    if !writes_filesystem(mode) {
+        return Ok(Some(runtime_db_path(repo)));
     }
     write_json_atomic(&target, bus_event)?;
     Ok(Some(target))

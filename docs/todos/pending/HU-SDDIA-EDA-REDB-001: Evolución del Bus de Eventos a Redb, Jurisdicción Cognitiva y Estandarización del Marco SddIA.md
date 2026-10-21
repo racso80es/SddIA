@@ -1,168 +1,274 @@
+---
+document_id: HU-SDDIA-EDA-REDB-001
+uuid: "7c4e9a12-8b3d-4f61-a9e0-2d5c6b8f1a47"
+title: "[ARQUITECTURA] Evolución del Bus de Eventos a Redb, Jurisdicción Cognitiva y Estandarización del Marco SddIA"
+format: markdown
+version: "1.1.1"
+created: "2026-10-16"
+refined: "2026-10-21"
+updated: "2026-10-21"
+status: refinada
+refinement_status: refinado
+spawned_pbis:
+  - PBI-EDA-REDB-01-STORE
+  - PBI-EDA-REDB-02-WRITERS
+  - PBI-EDA-REDB-03-WATCHER-VITALITY
+  - PBI-EDA-REDB-04-READERS
+  - PBI-EDA-REDB-05-DLT-FRONTIER
+  - PBI-EDA-REDB-06-SEMANTIC-LAYER
+  - PBI-EDA-REDB-07-CUTOVER
+priority: alta
+type: arquitectura
+process: feature
+author: "Vértice Biológico (Racso)"
+refinement_notes: "v1.1.0 reescribe v1.0.0 contra el repositorio (Filtro A). El artefacto vive en docs/todos/pending/, no en historias/; refine-hu no aplica (hu_ref exige historias/). Sin tracker_ref."
+related:
+  - SddIA/core/cumulo.paths.json
+  - SddIA/core/event-domain-subscriptions.json
+  - SddIA/core/eda-coverage.json
+  - SddIA/Cargo.toml
+  - SddIA/sddia-daemon-runtime/
+  - SddIA/engine/execute-process/src/engine/eda_bus.rs
+  - SddIA/engine/execute-process/src/engine/eda_bus_topology.rs
+  - SddIA/engine/execute-process/src/engine/route_domain_core.rs
+  - SddIA/engine/execute-process/src/engine/fractal.rs
+  - SddIA/engine/execute-process/src/engine/dlt_telemetry_anchor.rs
+  - SddIA/daemons/event-watcher/
+  - SddIA/daemons/event-sweeper/
+  - SddIA/daemons/event-sweeper.md
+  - SddIA/tools/event-bus-audit/
+  - SddIA/tools/iota-immutable-publisher/
+  - SddIA/tools/sddia-qa/src/eda_e2e_lab.rs
+  - SddIA/tools/sddia-qa/src/verify_domain_subscription_parity.rs
+  - SddIA/interfaces/kalma2-bridge/src/main.rs
+  - SddIA/agents/agents-contract.md
+  - SddIA/agents/index.md
+  - SddIA/events/events-contract.md
+  - SddIA/norms/pull-request-orchestration.md
+  - SddIA/CONSTITUTION_CORE.md
+  - README.md
+  - start-sddia.sh
+  - .gitignore
+---
+
 # [ARQUITECTURA] HU-SDDIA-EDA-REDB-001: Evolución del Bus de Eventos a Redb, Jurisdicción Cognitiva y Estandarización del Marco SddIA
 
-- **Identificador:** `HU-SDDIA-EDA-REDB-001`
-- **Estatus:** `Pendiente / Teórico`
-- **Fecha de Emisión:** `2026-10-16`
-- **Autor:** `Vértice Biológico (Racso) & Tormentosa`
-- **Referencias Normativas:** `SddIA/CONSTITUTION_CORE.md`, `SddIA/core/cumulo.paths.json`, `SddIA/events/events-contract.md`, `SddIA/norms/capsule-json-io.md`, `SddIA/norms/pull-request-orchestration.md`
+**Versión:** 1.1.0 (refinada 2026-10-21 contra el repositorio)  
+**Proceso candidato:** `feature`  
+**Línea base:** bus dual en disco (`.events/` vía `eda_bus` + `eda_fractal`). Cero coincidencias de `redb` en el repo.
 
----
+## 0. Filtro A — correcciones sobre v1.0.0
 
-## 1. Matriz de Indexación Tridimensional
+| # | Afirmación v1.0.0 | Realidad verificada | Efecto |
+| :--- | :--- | :--- | :--- |
+| H1 | `SddIA/scripts/daemons/event-sweeper.py` se elimina | No existe. Centinela Rust `SddIA/daemons/event-sweeper/` (ficha `event-sweeper.md`, UUID `3eafa012-2b71-47e5-b47e-467b59a3fd52`), launchers `event-sweeper.sh` / `.bat`, unidad `sddia-event-sweeper@.service`. `REQUIRED_DAEMONS=(event-watcher event-sweeper)` en `start-sddia.sh`. El bucle además invoca `daemon-heartbeat-audit --inputs '{"sweep":true}'` (~30 s) y `system-vitality-probe` (default 300 s). | La baja del sweeper exige **transferir** esas dos sondas a `event-watcher` antes de tocar índices, `eda-coverage.json` y el arranque. |
+| H2 | Crate `SddIA/crates/sddia-redb-bus` **o** `sddia-event-store` | No hay directorio `SddIA/crates/`. Members del workspace: `sddia-io`, `sddia-core`, `sddia-daemon-runtime`, `user-preference-core`, `infrastructure/adapters/*`, `engine/*`, `daemons/*`, `tools/*`, `interfaces/*`. | Un solo nombre: crate compartido `SddIA/sddia-event-store` (miembro nuevo de `SddIA/Cargo.toml`), consumido por `execute-process` y `sddia-daemon-runtime`. No es adaptador hexagonal de LanceDB. |
+| H3 | El bus es una cola de ficheros que leen watcher y sweeper | Coexisten **dos** topologías en `cumulo.paths.json`: `eda_bus` (`pending`, `processing` + `subscribers`, `processed` + `subscribers`, `dead-letter`) y `eda_fractal` (`telemetry`, `orchestration`, `domain`, `progress`, `dead-letter` con `delivery_state` mutado in-place). Lectores extra: `event-bus-audit`, `sddia-qa` (`eda_e2e_lab.rs`), `kalma2-bridge` (SSE sobre `.events/progress/{correlation_id}`, domain, orchestration, telemetry), ingest de `Daemon_Heartbeat` en `start-sddia.sh`, emisores en `sddia-daemon-runtime`. Side-channel de vitalidad: `.SddIA/daemons/state/heartbeats/` (fuera del fan-out). | El esquema `redb` unifica testigos V3+ y el mapa fractal. `progress` y el side-channel de heartbeats tienen laudo propio (§3). |
+| H4 | DLT solo en `PullRequest_Merged` y `System_Immunity_Certified`; variables `IOTA_WALLET_SECRET` e `IOTA_ANCHOR_PACKAGE_ID` | `iota-immutable-publisher` está suscrito a **18** eventos de dominio (14 vía `cumulo`, 4 vía `radamanto`). El publisher exige `IOTA_WALLET_SECRET` y, en producción, `IOTA_PUBLISH_RELAY_URL` (centinela `iota-publish-relay`) o simulación `SDDIA_LAB_SIMULATE_IOTA` / `SDDIA_LAB_MOCK_IOTA_URL`. `IOTA_ANCHOR_PACKAGE_ID` no aparece en el tool. `dlt_telemetry_anchor.rs` persiste prueba local de `Domain_Entity_Telemetry_Captured` en `.SddIA/proofs/dlt-telemetry/`. Paridad tabla Markdown ↔ JSON: `verify_domain_subscription_parity.rs`. | La frontera DLT es una **baja explícita de 16 suscriptores**, no un comentario. El ancla pública de gobernanza de activos se pliega al sello de `PullRequest_Merged` (§5). |
+| H5 | Todo suscriptor «evalúa y decide de forma no determinista» | `agents-contract` v1.1.0: `llm_profile.tier`. Cognitivos: `mayeuta`/`dedalo` `high`, `argos` `medium` (solo síntesis; L-ARGOS-SYNTHESIS), `tekton` `low`. Deterministas `none` (prohibido spawn LLM): `cerbero`, `cumulo`, `radamanto`. Catálogo: 7 filas en `SddIA/agents/index.md`. | Tres planos, no dos (§2). Cerbero sigue siendo peaje RBAC, no juez cognitivo. |
+| H6 | `CONSTITUTION_CORE.md` se reescribe «sin metáforas» | Parámetro de restricción (`.cursorrules` §7). §3.1 cita `.events/`, `pending/` y `subscribers/`. Invariantes vigentes: Filtros C, A, B; Protocolo de Acero; Cicatriz Rúnica; jurisdicción de la Aiúa (`paths.directories.conscience` / `aiua_core.md`), que **no** es uno de los 7 agentes. | Se añade la doble capa semántica. No se derogan filtros ni se rebautiza la Aiúa como agente de catálogo. |
+| H7 | 4 PBI de ≤3 ficheros, incluyendo `execute_process_capsules.py` y `SddIA/crates/` | Esos paths no existen. La superficie real cruza orquestador, runtime de daemons, puente Kalma2, QA, arranque y genoma (DA-2: `entity-manager` para `events/`, `agents/`, `norms/`, `daemons/`). | Siete PBI por crate y por frontera, no por cuota de ficheros (§8). |
 
-- **Naturaleza:** Refactorización de Infraestructura EDA, Gobernanza Cognitiva de IA y Saneamiento Documental.
-- **Entorno:** `SddIA Core` (Workspace Rust / Crate de Persistencia `redb` / Contratos de Agentes y Eventos / Capa de Auditoría DLT IOTA).
-- **Entropía Asimilada:** Destilado de la simbiosis directa tras someter la arquitectura de SddIA al Protocolo de Acero, separando la alegoría filosófica de la eficiencia técnica para consolidar un motor universal de interacciones automáticas de IA.
+## 1. Historia
 
----
+**Como** arquitecto de gobernanza del Core SddIA,  
+**quiero** sustituir la cola de ficheros `.events/` por un store embebido ACID (`redb`), separar transporte ciego, guardrails deterministas y jurisdicción cognitiva, y restringir el anclaje IOTA a hitos de interés público,  
+**para** eliminar carreras de fan-out y el barrido de huérfanos sin apagar las sondas de vitalidad, sin atribuir juicio LLM a Cerbero/Cúmulo/Radamanto, y sin anclar en DLT estímulos que deben permanecer en la instancia.
 
-## 2. Descripción General y Alcance Funcional
+## 2. Tres planos
 
-**Como** Arquitecto de Gobernanza del ecosistema SddIA,  
-**Quiero** migrar el bus de eventos basado en archivos JSON sueltos (`.events/`) hacia un motor transaccional embebido en Rust puro (**`redb`**), delimitar la frontera entre el transporte determinista y la jurisdicción cognitiva de los agentes, estandarizar el vocabulario de arquitectura cognitiva y restringir el sellado en DLT (IOTA) exclusivamente a hitos auditables de interés general (como la consolidación de un PR),  
-**Para** eliminar los cuellos de botella de E/S en disco y demonios limpiadores (`event-sweeper`), garantizar que las decisiones de negocio y manejo de anomalías recaigan siempre sobre entidades de IA bajo políticas estrictas de seguridad/privacidad/responsabilidad, y facilitar la adopción y auditoría externa de la Librería SddIA tanto en código como en su documentación viva.
+| Plano | Quién | Qué hace | Qué tiene prohibido |
+| :--- | :--- | :--- | :--- |
+| Transporte (data plane) | `sddia-event-store`, `execute-process`, `event-watcher` | Validar ECST, insertar, fan-out transaccional, testigo por suscriptor, dead-letter, replay | Decidir negocio, invocar LLM, interpretar normas |
+| Guardrails (`tier: none`) | Cerbero (RBAC en `cerbero_di_rbac.rs`), Cúmulo (topología SSOT), Radamanto (umbrales) | Política exacta ya escrita en genoma o en código determinista | Spawn de `SDDIA_AGENT_RUNTIME_COMMAND` |
+| Control cognitivo | Mayeuta `high`, Dédalo `high`, Argos `medium` (síntesis post-evidencia), Tekton `low` (forja según spec) | Ambigüedad, diseño, triaje, Kaizen/Kintsugi, ejecución táctica | Argos no sustituye linters/tests (L-ARGOS-SYNTHESIS). Tekton no decide arquitectura |
 
-### Pilares de Ajuste Arquitectónico
+**Zero-Trust de contexto:** el payload inyectado a un agente cognitivo queda acotado al `workspace_path` y a las `allowed_policies` que Cerbero ya autorizó. PoLP y DLP son ese acotamiento, no un filtro nuevo.
 
-1. **Soberanía Cognitiva vs. Transporte Determinista (*Control Plane* vs. *Data Plane*):**
-   - Los binarios e infraestructura en Rust (`execute-process`, `event-watcher`) operan exclusivamente como **Plano de Transporte (Data Plane)**: validan esquemas, verifican permisos estáticos (RBAC) y garantizan la entrega transaccional en `redb` sin tomar decisiones de dominio.
-   - La **Jurisdicción de Decisión (Control Plane)** recae innegociablemente sobre los Agentes cognitivos. Ante ambigüedades, excepciones de negocio o enrutamientos semánticos complejos, el transporte despierta al Agente titular para que evalúe el contexto bajo sus políticas de responsabilidad.
-2. **Sustitución del Bus de Ficheros por `redb` (Rust Embedded Database):**
-   - Se erradica el antipatrón *Filesystem as a Queue* (`.events/telemetry/`, `.events/orchestration/`, `.events/domain/`, `pending/`, `processed/`, `dead-letter/`).
-   - Se implementa una base de datos transaccional ACID en Rust puro mediante el crate **`redb`** alojada en `.SddIA/runtime/events.redb` (ignorada en Git).
-   - Se definen tablas tipadas por familia (`telemetry_events`, `orchestration_events`, `domain_events`) y estado de entrega (`delivery_state`), eliminando condiciones de carrera en *fan-out* y suprimiendo la necesidad del proceso `event-sweeper`.
-3. **Políticas de Privacidad, Seguridad y Responsabilidad (*Zero-Trust Context*):**
-   - El aislamiento de contexto actúa como mecanismo de **Prevención de Fuga de Datos (DLP)** y **Mínimo Privilegio (PoLP)**: ningún agente o modelo externo recibe datos fuera del `workspace_path` y del alcance autorizado por `Cerbero`.
-4. **Doble Capa Semántica (Vocabulario de Arquitectura Cognitiva):**
-   - Se mantiene la identidad estructural cognitiva de los nodos (`Mayeuta`, `Dédalo`, `Cerbero`, `Tekton`, `Argos`, `Radamanto`, `Cúmulo`), pero se incorpora en todos los contratos y documentación su **Descriptor Técnico Estándar** libre de jerga dramática o metafísica para garantizar legibilidad industrial y *compliance*.
-5. **Frontera de Auditoría en DLT (Interno vs. Interés General):**
-   - **Excluidos de DLT (100% Local en `events.redb`):** Telemetría de ejecución (`Raw_Execution_Finished`), eventos de orquestación interna y pruebas locales.
-   - **Incluidos en DLT (IOTA Rebased):** Hechos externos de interés general y *compliance* que certifican **quién** (UUID y versión del Agente + autorizador) y **qué** (hash criptográfico del cambio) altera el estado productivo, específicamente `PullRequest_Merged` (aceptación de cambios) y `System_Immunity_Certified` (certificación pública de activos).
+## 3. Motor `redb`
 
----
+### 3.1 Ubicación
 
-## 3. Separación de Responsabilidades (Vértice Biológico vs. Sistema)
+| Pieza | Valor |
+| :--- | :--- |
+| Crate | `SddIA/sddia-event-store` (`crate_name`: `sddia-event-store`) |
+| Workspace | alta en `members` de `SddIA/Cargo.toml` |
+| Fichero | `.SddIA/runtime/events.redb` (gitignored, junto con `*.redb` y lock de `redb`) |
+| Concurrencia | `redb`: N lectores, **una** transacción de escritura a la vez. El fan-out deja de ser N escrituras sobre el mismo JSON; cada testigo es un commit de la clave `(event_id, subscriber_id)`. No es lock-free. |
+| Cutover | `SDDIA_EVENT_STORE=filesystem\|dual\|redb`. Default `filesystem` hasta CA del PBI 07. `dual` escribe store y fichero; lee del store si la clave existe. |
 
-### Tareas del Vértice Biológico (Prerrequisitos / Validación)
-1. **Aprobación de Topología SSOT:** Autorizar la baja de las rutas de carpetas `.events/*` y `event-sweeper` en `SddIA/core/cumulo.paths.json` a favor del archivo único `.SddIA/runtime/events.redb`.
-2. **Credenciales de Auditoría Externa (Opcional en local, requerido en CI/Release):** Mantener en `.SddIA/.dev/.env` las variables `IOTA_WALLET_SECRET` e `IOTA_ANCHOR_PACKAGE_ID` exclusivamente para los flujos de cierre de PR (`PullRequest_Merged`) y certificación.
+### 3.2 Tablas
 
-### Responsabilidades del Sistema (SddIA Core)
-1. Gestionar de forma transaccional y concurrente la lectura/escritura de eventos en `events.redb` mediante un nuevo crate compartido (`SddIA/crates/sddia-redb-bus` o integrado en `sddia-io`).
-2. Exponer subcomandos en el CLI nativo para inspeccionar el estado del bus (`query-events`, `inspect-dead-letter`) dado que ya no serán archivos JSON legibles a simple vista en el explorador de archivos.
-3. Actualizar sincronizadamente el código fuente, los contratos del genoma y la documentación viva del repositorio.
+| Tabla | Clave | Valor | Sustituye |
+| :--- | :--- | :--- | :--- |
+| `events` | `event_id` (UUID) | ECST canónico + `family` (`telemetry`\|`orchestration`\|`domain`) + `event_type` + `created_at` | Padre `.events/**/{id}.json` |
+| `family_index` | `(family, created_at, event_id)` | vacío | Listados por carpeta |
+| `subscriber_delivery` | `(event_id, subscriber_id)` | `pending`\|`success`\|`failed`\|`skipped` + witness JSON | Testigos `{id}.{sub}.json` **y** mapa `delivery_state` fractal |
+| `dead_letter_index` | `event_id` | causa + `failed_subscriber_id` | `.events/dead-letter/` |
+| `dlt_audit_seals` | `event_id` | `tx_hash`, digest, `scope` | Recibo hoy mezclado en el JSON / proofs |
+| `progress_traces` | `(correlation_id, seq)` | frame JSON de fase | `.events/progress/{correlation_id}/*` que hoy lee `kalma2-bridge` (`/api/progress/stream`) |
 
----
+Suscripciones **siguen** en JSON de genoma (`event-domain-subscriptions.json`, `event-telemetry-subscriptions.json`, `event-orchestration-subscriptions.json`). `redb` no es SSOT de suscriptores.
 
-## 4. Coreografía y Flujo Operativo (Mermaid)
+### 3.3 Lo que no entra en el fan-out
+
+- **Heartbeats de centinela (Vía C):** `.SddIA/daemons/state/heartbeats/{daemon}.json` permanece en disco. `start-sddia.sh` deja de escanear `.events/telemetry/*.json` buscando `Daemon_Heartbeat` para el gate de arranque; lee el side-channel.
+- **Proofs de instancia:** `eda_instance.proofs` (`.SddIA/proofs`, incluidos `dlt-telemetry`, `qa-attestations`, `pec-correlation`) no se mudan a `redb`.
+- **Genoma de eventos:** `SddIA/events/` y `eda_instance.customization` (`.SddIA/events`) no son cola runtime.
+
+### 3.4 Sondas que hoy viven en el sweeper
+
+Antes de borrar `event-sweeper`:
+
+1. `daemon-heartbeat-audit` con `{"sweep":true}` pasa al tick de `event-watcher`.
+2. `system-vitality-probe` pasa al mismo tick (periodo `SDDIA_VITALITY_PROBE_SECONDS`, default 300). `probe_bus_topology` hoy exige que existan las hojas directorio de `eda_fractal`; con store `redb` valida el fichero `events.redb` y las claves de suscripciones, no carpetas.
+3. `start-sddia.sh`: sacar `event-sweeper` de `REQUIRED_DAEMONS`, del sello de cápsulas y de `sddia-event-sweeper@.service`. Baja de ficha e `index.md` / `eda-coverage.json` vía `entity-manager` (`daemon-creator`), no a mano.
+
+### 3.5 CLI
+
+Subcomandos del binario de orquestación (no un binario nuevo): `query-events`, `inspect-dead-letter`, `replay-dead-letter`. Salida JSON por stdout (`capsule-json-io`).
+
+## 4. Coreografía
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant CLI as Transporte Rust (CLI / Watcher)
-    participant REDB as Motor Transaccional (events.redb)
-    participant CER as Cerbero (Policy & Privacy Guardrail)
-    participant AG as Agente Cognitivo (Mayeuta / Dédalo / Argos)
-    participant IOTA as DLT Externa (iota-immutable-publisher)
+    participant CLI as Transporte (execute-process / event-watcher)
+    participant REDB as sddia-event-store (events.redb)
+    participant CER as Cerbero tier none
+    participant DET as Cúmulo o Radamanto tier none
+    participant AG as Cognitivo (Mayeuta / Dédalo / Argos / Tekton)
+    participant IOTA as iota-publish-relay → iota-immutable-publisher
 
-    Note over CLI,REDB: 1. Plano de Transporte Determinista (ACID, O(1))
-    CLI->>REDB: Inicia transacción Write (Inserta Evento en tabla family)
-    REDB-->>CLI: Commit OK (event_id, delivery_state: Pending)
-
-    Note over CLI,AG: 2. Plano de Jurisdicción Cognitiva (Soberanía IA)
-    CLI->>CER: Verifica contexto RBAC y alcance de privacidad (DLP)
-    CER-->>CLI: Contexto Autorizado (workspace_path acotado)
-    CLI->>AG: Despierta Agente Suscriptor (Inyecta ECST desde redb)
-    AG->>AG: Evalúa contenido y toma decisión cognitiva (No determinista)
-    AG-->>CLI: Emite Veredicto / Artefacto JSON (capsule-json-io)
-
-    CLI->>REDB: Actualiza delivery_state (Processed / DeadLetter)
-
-    Note over CLI,IOTA: 3. Frontera de Auditoría (Solo Interés General)
-    alt Evento Interno (Telemetry / Orchestration / PR_Presented)
-        CLI->>REDB: Permanece 100% en registro local (Sin coste de red)
-    else Evento de Interés General (PullRequest_Merged / Certificación)
-        CLI->>IOTA: Ancla Hash de cambio + UUID/Versión de Agente + Autor
-        IOTA-->>CLI: Recibo Inmutable (tx_hash)
-        CLI->>REDB: Sella referencia DLT en registro de dominio
+    CLI->>REDB: Write tx insert events + subscriber_delivery=pending
+    REDB-->>CLI: Commit event_id
+    CLI->>CER: Peaje RBAC del suscriptor (allowed_policies)
+    alt tier none
+        CER-->>CLI: Allow o deny sin LLM
+        CLI->>DET: Handler determinista (proceso o tool)
+        DET-->>CLI: Envelope JSON
+    else tier high, medium o low
+        CER-->>CLI: Allow + workspace_path acotado
+        CLI->>AG: AGENT_PHASE (ECST leído de redb, sin path de fichero)
+        AG-->>CLI: Envelope JSON
+    end
+    CLI->>REDB: Write tx subscriber_delivery success, failed o dead_letter
+    alt dlt_audit_scope = external_public_interest
+        CLI->>IOTA: Digest + participating_agents + authorizer
+        IOTA-->>CLI: tx_hash
+        CLI->>REDB: dlt_audit_seals
+    else local_only
+        CLI->>REDB: Sin red
     end
 ```
 
----
+## 5. Frontera DLT
 
-## 5. Impacto en Ficheros y Documentación Viva (Mapa de Mutación)
+Enum nuevo en `events-contract` (bump vía `entity-manager`): `dlt_audit_scope: local_only | external_public_interest`. Default de eventos no listados: `local_only`.
 
-### A. Cambios en Código e Infraestructura (Ficheros)
-| Ruta / Componente | Acción Técnica |
+**Se mantienen** (scope `external_public_interest`):
+
+| Evento | Suscriptor que se conserva | Enriquecimiento |
+| :--- | :--- | :--- |
+| `PullRequest_Merged` | `cumulo` / `tool:iota-immutable-publisher` | Payload OPTIONAL `participating_agents[]` (`uuid`, `name`, `version`, `role`) y `authorizer`. El digest puede incluir la raíz de los `Domain_Entity_*` del mismo `correlation_id` ya persistidos en `events`. |
+| `System_Immunity_Certified` | `radamanto` / `tool:iota-immutable-publisher` | Sin cambio de payload REQUIRED |
+
+**Pasan a `local_only`** (baja del suscriptor `iota-immutable-publisher`; el resto de suscriptores de cada clave no se toca):
+
+| Evento | Agente del ancla que se retira |
 | :--- | :--- |
-| `SddIA/Cargo.toml` y crate `sddia-event-store` | Añadir dependencia `redb` y definir esquemas de tablas (`telemetry`, `orchestration`, `domain`, `subscriptions_state`). |
-| `SddIA/daemons/event-watcher/` | Refactorizar para escuchar notificaciones o hacer *polling* ligero sobre tablas `redb` en lugar de escanear directorios `.events/pending/`. |
-| `SddIA/scripts/daemons/event-sweeper.py` | **Deprecación y eliminación física.** Las transacciones ACID y el borrado por clave en `redb` hacen obsoleto el barrido de archivos huérfanos. |
-| `.gitignore` | Sustituir reglas de carpetas `.events/` dispersas por la exclusión de `.SddIA/runtime/*.redb` y `.SddIA/runtime/*.lock`. |
+| `PullRequest_Presented` | cumulo |
+| `Domain_Entity_Created` | cumulo |
+| `Domain_Entity_Updated` | cumulo |
+| `Domain_Entity_Deleted` | cumulo |
+| `Domain_Entity_Telemetry_Captured` | cumulo |
+| `Domain_Entity_Degraded` | radamanto |
+| `Domain_Entity_Restored` | radamanto |
+| `Domain_Entity_Deprecated` | radamanto |
+| `TelegramMessage_Received` | cumulo |
+| `Manual_Task_Requested` | cumulo |
+| `Kalma2_Process_Requested` | cumulo |
+| `Kaizen_Idea_Captured` | cumulo |
+| `Thought_Persisted` | cumulo |
+| `Vector_Memory_Indexed` | cumulo |
+| `Instance_Deployed` | cumulo |
+| `Instance_Torn_Down` | cumulo |
 
-### B. Cambios en Genoma y Documentación Viva (Contratos y Markdown)
-| Documento | Ajuste Documental y Semántico |
+`Domain_Entity_Telemetry_Captured` sigue escribiendo proof local en `.SddIA/proofs/dlt-telemetry/` (`dlt_telemetry_anchor.rs`). Deja de llamar a IOTA. `verify_domain_subscription_parity` debe quedar en verde tras el bump de cada `{evento}.md`.
+
+Transporte IOTA sin rediseño: `IOTA_WALLET_SECRET` + `IOTA_PUBLISH_RELAY_URL` (o simulación de lab). No se introduce `IOTA_ANCHOR_PACKAGE_ID`.
+
+## 6. Doble capa semántica
+
+Campo nuevo opcional `cognitive_role_descriptor` (texto industrial, una línea). Exige `agents-contract` **1.1.0 → 1.2.0** y bump de los siete `{name}.md` vía `entity-manager`. No altera `uuid`, `allowed_policies` ni `llm_profile.tier`.
+
+| Entidad | Tier vigente | Descriptor |
+| :--- | :--- | :--- |
+| Cerbero | `none` | Peaje RBAC determinista |
+| Cúmulo | `none` | SSOT de topología e índices |
+| Radamanto | `none` | Actuario de umbrales sobre telemetría |
+| Argos | `medium` | Juez de artefactos; síntesis solo tras evidencia de cápsulas |
+| Tekton | `low` | Ejecución táctica según especificación |
+| Dédalo | `high` | Diseño de especificación y blueprint de proceso |
+| Mayeuta | `high` | Estabilización de requisitos y auditoría Kaizen de fracturas |
+| Aiúa | fuera del catálogo de agentes | Jurisdicción ética constitucional (`aiua_core.md`) |
+
+`CONSTITUTION_CORE.md` §3.1 sustituye la frase de bus en ficheros por store `redb` + testigo `subscriber_delivery`, y conserva Filtros C, A, B, Protocolo de Acero y Cicatriz Rúnica. `README.md` (sección de eventos, diagrama de centinelas, frontera DLT) se alinea en el mismo PR documental. `cumulo.paths.json`: `eda_bus` y `eda_fractal` pasan a apuntar al fichero `events.redb` y a nombres de tabla; las claves `*_subscriptions` no cambian de ruta.
+
+## 7. Criterios de aceptación
+
+| ID | Criterio | Verificación |
+| :--- | :--- | :--- |
+| AC-1 | Con `SDDIA_EVENT_STORE=redb`, un ECST de dominio persiste en `events` y no crea `.json` bajo `.events/`. | Test `sddia-event-store` + `route-domain-event`. |
+| AC-2 | Dos suscriptores del mismo `event_id` cierran `subscriber_delivery` sin perder el testigo del otro. | Test de transacciones secuenciales sobre una sola write-tx de `redb`. |
+| AC-3 | `SDDIA_EVENT_STORE=filesystem` deja la suite EDA actual en verde (`eda_e2e_lab`, paridad de suscripciones). | Regresión. |
+| AC-4 | Suscriptor `tier: none` no spawnea runtime LLM. Suscriptor `high`/`medium`/`low` recibe ECST desde `redb` y `workspace_path` acotado. | Test de dispatch. |
+| AC-5 | `Raw_Execution_Finished`, `PullRequest_Presented` y los 16 eventos de la tabla §5 no llaman a IOTA. `PullRequest_Merged` y `System_Immunity_Certified` sí, con `tx_hash` en `dlt_audit_seals`. | Test publisher mock + `SDDIA_LAB_SIMULATE_IOTA`. |
+| AC-6 | `PullRequest_Merged` acepta `participating_agents` y `authorizer` como OPTIONAL. Ausentes → ancla igual que hoy (fail-open de enriquecimiento, no de ancla). | Test de schema ECST. |
+| AC-7 | `daemon-heartbeat-audit` sweep y `system-vitality-probe` corren con `event-sweeper` ausente del proceso. | Test de tick de `event-watcher`. |
+| AC-8 | SSE `/api/progress/stream` emite frames leídos de `progress_traces`. | Test `kalma2-bridge`. |
+| AC-9 | `query-events`, `inspect-dead-letter`, `replay-dead-letter` devuelven envelope JSON. Replay mueve la clave de `dead_letter_index` a `pending` lógico. | Test CLI. |
+| AC-10 | Paridad Markdown ↔ `event-domain-subscriptions.json` en verde. Cero `iota-immutable-publisher` fuera de las dos claves de §5. | `sddia-qa` paridad. |
+| AC-11 | `cognitive_role_descriptor` presente en los 7 agentes; `llm_profile.tier` intacto; `agents-contract` 1.2.0. Constitución conserva los tres filtros. | `rg` + frontmatter. |
+| AC-12 | Cutover `redb`: `.gitignore` ignora `.SddIA/runtime/*.redb`; `event-sweeper` fuera de `REQUIRED_DAEMONS` y del catálogo de daemons; `probe_bus_topology` no exige directorios `eda_fractal`. | Arranque lab + sonda. |
+
+## 8. PBI
+
+Genoma (`events/`, `agents/`, `norms/`, `daemons/`) solo vía `execute-process` → `entity-manager`. Un PR por PBI. Orden: 01 bloquea 02; 02 bloquea 03, 04 y 05; 06 va en paralelo; 07 cierra cuando 03, 04, 05 y 06 están mergeados.
+
+Materializados el 2026-10-21 en `docs/todos/pending/`. `dispatch: false`. Un PR por fila.
+
+| Orden | PBI | Artefacto | AC |
+| ---: | :--- | :--- | :--- |
+| 01 | `PBI-EDA-REDB-01-STORE` | `[ARQUITECTURA] EDA Redb 01 — Store transaccional sddia-event-store.md` | AC-2 |
+| 02 | `PBI-EDA-REDB-02-WRITERS` | `[ARQUITECTURA] EDA Redb 02 — Escritores del bus según SDDIA_EVENT_STORE.md` | AC-1, AC-3 |
+| 03 | `PBI-EDA-REDB-03-WATCHER-VITALITY` | `[ARQUITECTURA] EDA Redb 03 — Watcher y sondas de vitalidad.md` | AC-4, AC-7 |
+| 04 | `PBI-EDA-REDB-04-READERS` | `[ARQUITECTURA] EDA Redb 04 — Lectores, SSE y CLI de inspección.md` | AC-8, AC-9 |
+| 05 | `PBI-EDA-REDB-05-DLT-FRONTIER` | `[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT.md` | AC-5, AC-6, AC-10 |
+| 06 | `PBI-EDA-REDB-06-SEMANTIC-LAYER` | `[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md` | AC-11 |
+| 07 | `PBI-EDA-REDB-07-CUTOVER` | `[ARQUITECTURA] EDA Redb 07 — Cutover a redb y baja de event-sweeper.md` | AC-12 |
+
+## 9. Fuera de alcance
+
+- Sustituir LanceDB (`vector_store`, preferencias, thoughts, evolution).
+- Mover proofs (`.SddIA/proofs`) o heartbeats de centinela al fichero `redb`.
+- Rediseñar `iota-publish-relay` o la cápsula `iota-immutable-publisher` más allá de dejar de invocarla en los 16 eventos.
+- Autenticación multiusuario.
+- Derogar Filtros C, A, B, Protocolo de Acero o Cicatriz Rúnica.
+- Mutación manual de genoma.
+
+## 10. Laudos
+
+| ID | Laudo |
 | :--- | :--- |
-| `SddIA/core/cumulo.paths.json` | Actualizar claves `eda_fractal` y `eda_bus` para apuntar a `.SddIA/runtime/events.redb` y sus tablas lógicas. |
-| `README.md` | 1. Actualizar sección **Eventos: genoma, runtime e instancia** reemplazando rutas `/.events/` por el motor `redb`.<br>2. Eliminar `event-sweeper` de los diagramas.<br>3. Incorporar la tabla de **Doble Capa Semántica** (Nombres del Panteón + Descriptores Técnicos de Arquitectura Cognitiva).<br>4. Explicitar la frontera de DLT (local vs. `PullRequest_Merged`). |
-| `SddIA/CONSTITUTION_CORE.md` | Refinar el vocabulario eliminando metáforas biológicas/dramáticas e institucionalizando los 4 pilares operativos: Seguridad (RBAC), Privacidad (DLP por workspace), Responsabilidad (Jurisdicción Cognitiva) y Auditoría (Redb local + DLT en entregas). |
-| `SddIA/events/events-contract.md` y `SddIA/events/index.md` | Añadir atributo booleano o enum `dlt_audit_scope: "local_only" | "external_public_interest"` en el contrato YAML de eventos, marcando `PullRequest_Merged` y `System_Immunity_Certified` como `external_public_interest`. |
-| `SddIA/agents/*.md` y `SddIA/agents/index.md` | Añadir en el frontmatter YAML de cada agente el campo `cognitive_role_descriptor` (ej. `Cerbero`: *"Policy, Privacy & RBAC Guardrail"*; `Mayeuta`: *"Intent & Requirements Clarifier"*). |
-| `SddIA/norms/pull-request-orchestration.md` | Documentar que la aceptación de un PR (`PullRequest_Merged`) es el disparador obligatorio de auditoría externa que vincula el hash del cambio con los UUIDs de los agentes intervinientes. |
+| L-REDB-01 | Store = crate `SddIA/sddia-event-store`. Prohibido `SddIA/crates/`. |
+| L-REDB-02 | Cutover por `SDDIA_EVENT_STORE`; prohibido big-bang que apague el bus de ficheros en el PBI 01. |
+| L-REDB-03 | Write-tx única de `redb`. El beneficio es ACID por clave de testigo, no escritura paralela. |
+| L-REDB-04 | Heartbeats Vía C y proofs quedan en disco. |
+| L-REDB-05 | `progress_traces` sustituye `.events/progress/` porque `kalma2-bridge` depende de esos frames. |
+| L-REDB-06 | Sondas del sweeper se mudan a `event-watcher` antes de la baja del daemon. |
+| L-REDB-07 | DLT externo = solo `PullRequest_Merged` y `System_Immunity_Certified`. Los otros 16 anclajes IOTA actuales bajan. Gobernanza de activos queda en `events` y puede entrar al digest del merge. |
+| L-REDB-08 | Jurisdicción cognitiva no cubre `tier: none`. Tres planos (§2). |
+| L-REDB-09 | Doble capa = campo `cognitive_role_descriptor` + párrafo constitucional. No reescribe la identidad ni los filtros. |
 
----
-
-## 6. Gobernanza S+ Grade y Criterios de Aceptación (Gherkin)
-
-### Reglas de Gobernanza Aplicables
-- **Cuarteto de Oráculos:** Compilación limpia en Rust (`cargo check --workspace`), tests unitarios de concurrencia sobre `redb` (`cargo test`), validación de paridad documental con `Cúmulo` y cero regresiones en el contrato `capsule-json-io.md`.
-- **Ley de Genoma Protegido (DA-2):** Toda modificación sobre `SddIA/events/*`, `SddIA/agents/*` y `SddIA/norms/*` debe mantener la integridad de sus UUIDs v4 e índices `index.md`.
-
-### Escenarios de Aceptación (Gherkin)
-
-```gherkin
-Funcionalidad: Bus de Eventos Transaccional en Redb y Gobernanza Cognitiva
-
-  Escenario 1: Escritura y Fan-Out concurrente en Redb sin archivos en disco
-    Dado que el motor SddIA ejecuta una acción que emite un evento de telemetría u orquestación
-    Cuando el plano de transporte registra el evento
-    Entonces se persiste mediante una transacción ACID en ".SddIA/runtime/events.redb"
-    Y no se crea ningún archivo ".json" suelto en el árbol de directorios del repositorio
-    Y múltiples suscriptores pueden actualizar su "delivery_state" concurrentemente sin bloqueos ni corrupción.
-
-  Escenario 2: Preservación de la Jurisdicción Cognitiva frente al transporte determinista
-    Dado un evento de dominio con una anomalía o requerimiento de decisión semántica
-    Cuando el demonio "event-watcher" o el orquestador detecta el registro en "redb"
-    Entonces el binario Rust se limita a verificar el esquema y el peaje RBAC con Cerbero
-    Y delega el juicio de resolución despertando al Agente cognitivo correspondiente sin aplicar lógica de negocio cableada.
-
-  Escenario 3: Frontera de Auditoría DLT exclusiva para hitos de interés general
-    Dado el flujo completo de ciclo de vida de un cambio en el repositorio
-    Cuando se emiten eventos internos como "Raw_Execution_Finished" o "PullRequest_Presented"
-    Entonces estos quedan registrados únicamente en la base de datos local "events.redb" sin invocar la red IOTA
-    Pero cuando se consolida el evento externo "PullRequest_Merged"
-    Entonces el sistema invoca "iota-immutable-publisher" registrando el hash del PR, la versión/UUID de los agentes participantes y el autorizador.
-
-  Escenario 4: Paridad entre Código y Documentación Viva con Vocabulario Cognitivo Estándar
-    Dado el repositorio actualizado tras la migración a "redb"
-    Cuando el auditor Argos verifica la coherencia documental
-    Entonces "README.md", "cumulo.paths.json" y "events-contract.md" reflejan la arquitectura "redb" sin referencias activas a "event-sweeper"
-    Y todos los contratos de agentes incluyen su descriptor técnico de arquitectura cognitiva libre de ambigüedad metafísica.
-```
-
----
-
-## 7. Desglose Propuesto en PBIs (Regla de <= 3 Archivos Adyacentes)
-
-1. **`PBI-1 [INFRA]: Crate sddia-redb-bus y Esquema Transaccional de Eventos`**
-   - *Alcance:* Creación del crate en Rust con `redb`, definición de tablas (`telemetry`, `orchestration`, `domain`), funciones CRUD ACID y tests de concurrencia.
-   - *Archivos:* `SddIA/Cargo.toml`, `SddIA/crates/sddia-redb-bus/Cargo.toml`, `SddIA/crates/sddia-redb-bus/src/lib.rs`.
-2. **`PBI-2 [CORE]: Integración de Redb en Orquestador/Watcher y Retirada de event-sweeper`**
-   - *Alcance:* Conectar `execute-process` y `event-watcher` al crate `sddia-redb-bus`, añadir comando CLI de consulta de eventos y eliminar `event-sweeper`.
-   - *Archivos:* `SddIA/daemons/event-watcher/src/main.rs`, `SddIA/scripts/qa/execute_process_capsules.py` (o crate orquestador Rust), `.gitignore`.
-3. **`PBI-3 [DLT-GOV]: Frontera de Auditoría Externa en Eventos de Dominio`**
-   - *Alcance:* Ajustar el contrato de eventos y las suscripciones para que solo `PullRequest_Merged` y `System_Immunity_Certified` disparen el sellado en IOTA.
-   - *Archivos:* `SddIA/events/events-contract.md`, `SddIA/core/event-domain-subscriptions.json`, `SddIA/norms/pull-request-orchestration.md`.
-4. **`PBI-4 [DOC-ONT]: Actualización de SSOT, README y Descriptores de Arquitectura Cognitiva`**
-   - *Alcance:* Actualizar topología en `cumulo.paths.json`, documentar la arquitectura `redb` y tabla de descriptores cognitivos en `README.md` y `CONSTITUTION_CORE.md`.
-   - *Archivos:* `SddIA/core/cumulo.paths.json`, `README.md`, `SddIA/CONSTITUTION_CORE.md`.
+<!-- refined:mayeuta -->
