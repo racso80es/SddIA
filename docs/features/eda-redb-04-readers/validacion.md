@@ -4,11 +4,11 @@ created: "2026-10-21"
 branch: feat/eda-redb-04-readers
 branch_name: feat/eda-redb-04-readers
 persist_ref: docs/features/eda-redb-04-readers
-pbi_ref: docs/todos/pending/[ARQUITECTURA] EDA Redb 04 — Lectores, SSE y CLI de inspección.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 04 — Lectores, SSE y CLI de inspección.md
 document_id: PBI-EDA-REDB-04-READERS
 execution_id: "88fb5a6e-ed41-49ab-ab64-dcf602f60e4a"
 global: APTO
-pbi_archived: false
+pbi_archived: true
 checks:
   AC-8: APTO
   AC-9: APTO
@@ -38,4 +38,4 @@ AC-9: en `filesystem` los tres flags devuelven `EVENT_STORE_DISABLED` y no crean
 
 CA-07: `side_channel_heartbeat_is_audited_without_telemetry` audita `.SddIA/daemons/state/heartbeats/event-watcher.json` con `.events/telemetry/` ausente. `_ingest_telemetry_heartbeats` lista ese directorio.
 
-El PBI sigue en pending. `pbi_archived` permanece false hasta el cierre documental.
+El PBI está en `docs/todos/done/` en esta rama. `pbi_archived: true`.

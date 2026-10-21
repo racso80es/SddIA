@@ -4,7 +4,7 @@ created: "2026-10-21"
 process: feature
 branch_name: feat/eda-redb-04-readers
 persist_ref: docs/features/eda-redb-04-readers
-pbi_ref: docs/todos/pending/[ARQUITECTURA] EDA Redb 04 — Lectores, SSE y CLI de inspección.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 04 — Lectores, SSE y CLI de inspección.md
 document_id: PBI-EDA-REDB-04-READERS
 execution_id: "88fb5a6e-ed41-49ab-ab64-dcf602f60e4a"
 ---
