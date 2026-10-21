@@ -3,7 +3,7 @@ document_id: HU-SDDIA-EDA-REDB-001
 uuid: "7c4e9a12-8b3d-4f61-a9e0-2d5c6b8f1a47"
 title: "[ARQUITECTURA] Evolución del Bus de Eventos a Redb, Jurisdicción Cognitiva y Estandarización del Marco SddIA"
 format: markdown
-version: "1.1.1"
+version: "1.1.2"
 created: "2026-10-16"
 refined: "2026-10-21"
 updated: "2026-10-21"
@@ -53,7 +53,7 @@ related:
 
 # [ARQUITECTURA] HU-SDDIA-EDA-REDB-001: Evolución del Bus de Eventos a Redb, Jurisdicción Cognitiva y Estandarización del Marco SddIA
 
-**Versión:** 1.1.0 (refinada 2026-10-21 contra el repositorio)  
+**Versión:** 1.1.2 (estado de los siete PBI, 2026-10-21). El contrato de §1–§7 sigue siendo el de 1.1.0.  
 **Proceso candidato:** `feature`  
 **Línea base:** bus dual en disco (`.events/` vía `eda_bus` + `eda_fractal`). Cero coincidencias de `redb` en el repo.
 
@@ -236,17 +236,17 @@ Campo nuevo opcional `cognitive_role_descriptor` (texto industrial, una línea).
 
 Genoma (`events/`, `agents/`, `norms/`, `daemons/`) solo vía `execute-process` → `entity-manager`. Un PR por PBI. Orden: 01 bloquea 02; 02 bloquea 03, 04 y 05; 06 va en paralelo; 07 cierra cuando 03, 04, 05 y 06 están mergeados.
 
-Materializados el 2026-10-21 en `docs/todos/pending/`. `dispatch: false`. Un PR por fila.
+Los siete están implementados. 01–06 están mergeados y viven en `docs/todos/done/`. 07 está archivado en `docs/todos/done/` en `feat/eda-redb-07-cutover` y presentado; el merge no está sellado. Esta HU sigue en `pending`.
 
-| Orden | PBI | Artefacto | AC |
-| ---: | :--- | :--- | :--- |
-| 01 | `PBI-EDA-REDB-01-STORE` | `[ARQUITECTURA] EDA Redb 01 — Store transaccional sddia-event-store.md` | AC-2 |
-| 02 | `PBI-EDA-REDB-02-WRITERS` | `[ARQUITECTURA] EDA Redb 02 — Escritores del bus según SDDIA_EVENT_STORE.md` | AC-1, AC-3 |
-| 03 | `PBI-EDA-REDB-03-WATCHER-VITALITY` | `[ARQUITECTURA] EDA Redb 03 — Watcher y sondas de vitalidad.md` | AC-4, AC-7 |
-| 04 | `PBI-EDA-REDB-04-READERS` | `[ARQUITECTURA] EDA Redb 04 — Lectores, SSE y CLI de inspección.md` | AC-8, AC-9 |
-| 05 | `PBI-EDA-REDB-05-DLT-FRONTIER` | `[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT.md` | AC-5, AC-6, AC-10 |
-| 06 | `PBI-EDA-REDB-06-SEMANTIC-LAYER` | `[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md` | AC-11 |
-| 07 | `PBI-EDA-REDB-07-CUTOVER` | `[ARQUITECTURA] EDA Redb 07 — Cutover a redb y baja de event-sweeper.md` | AC-12 |
+| Orden | PBI | Artefacto | AC | Estado | PR |
+| ---: | :--- | :--- | :--- | :--- | :--- |
+| 01 | `PBI-EDA-REDB-01-STORE` | `docs/todos/done/[ARQUITECTURA] EDA Redb 01 — Store transaccional sddia-event-store.md` | AC-2 | mergeado | https://github.com/racso80es/SddIA/pull/353 |
+| 02 | `PBI-EDA-REDB-02-WRITERS` | `docs/todos/done/[ARQUITECTURA] EDA Redb 02 — Escritores del bus según SDDIA_EVENT_STORE.md` | AC-1, AC-3 | mergeado | https://github.com/racso80es/SddIA/pull/354 |
+| 03 | `PBI-EDA-REDB-03-WATCHER-VITALITY` | `docs/todos/done/[ARQUITECTURA] EDA Redb 03 — Watcher y sondas de vitalidad.md` | AC-4, AC-7 | mergeado | https://github.com/racso80es/SddIA/pull/355 |
+| 04 | `PBI-EDA-REDB-04-READERS` | `docs/todos/done/[ARQUITECTURA] EDA Redb 04 — Lectores, SSE y CLI de inspección.md` | AC-8, AC-9 | mergeado | https://github.com/racso80es/SddIA/pull/356 |
+| 05 | `PBI-EDA-REDB-05-DLT-FRONTIER` | `docs/todos/done/[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT.md` | AC-5, AC-6, AC-10 | mergeado | https://github.com/racso80es/SddIA/pull/357 |
+| 06 | `PBI-EDA-REDB-06-SEMANTIC-LAYER` | `docs/todos/done/[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md` | AC-11 | mergeado | https://github.com/racso80es/SddIA/pull/358 |
+| 07 | `PBI-EDA-REDB-07-CUTOVER` | `docs/todos/done/[ARQUITECTURA] EDA Redb 07 — Cutover a redb y baja de event-sweeper.md` | AC-12 | presentado | https://github.com/racso80es/SddIA/pull/359 |
 
 ## 9. Fuera de alcance
 
