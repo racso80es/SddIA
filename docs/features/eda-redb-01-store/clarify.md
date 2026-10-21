@@ -1,16 +1,16 @@
 ---
+
 feature_name: eda-redb-01-store
 created: "2026-10-21"
 process: feature
 purpose: Estabilización del store transaccional. Laudos L-REDB-01 y L-REDB-03.
 version_clarify: "1.0.0"
-execution_id: "2567be4f-95cf-44fe-8bf8-01a568046cce"
 pbi_ref: "docs/todos/pending/[ARQUITECTURA] EDA Redb 01 — Store transaccional sddia-event-store.md"
 document_id: PBI-EDA-REDB-01-STORE
 pbi_uuid: "3f8c1a62-7d4e-4b91-8a27-6c5e0d9f1b34"
 pbi_version: "1.0.0"
+execution_id: "82b4551a-3443-457b-8650-b3a0b6b6447a"
 ---
-
 # Clarificación — eda-redb-01-store
 
 Init: `./sddia-run.sh --process feature` + `SDDIA_AGENT_RELAY_IDE=1` + skips archive/delivery + `SDDIA_LAB_ALLOW_DIRTY=1`. `execution_id` `2567be4f-95cf-44fe-8bf8-01a568046cce`. Rama `feat/eda-redb-01-store`. Mayeuta simulated; Dedalo…DCC phase-barrier. Relevo IDE.
