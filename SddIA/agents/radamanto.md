@@ -16,6 +16,8 @@ outputs:
 llm_profile:
   tier: "none"
   description: "Actuario de umbrales; prohibido LLM"
+cognitive_role_descriptor: "Actuario de umbrales sobre telemetría"
+hash_signature: "sha256:bf68de4cc0fb4c626c046a545bd7dc9a384073b8a1ae85dd4e0cebeee5b65570"
 ---
 
 # Agente Radamanto: Certificador / Actuario

@@ -1,10 +1,11 @@
 ---
+
 feature_name: eda-redb-05-dlt-frontier
 created: "2026-10-21"
 base: iota-immutable-publisher
 scope: frontera DLT
+execution_id: "9270731e-5df9-4984-967a-f52cbb394132"
 ---
-
 # Spec — eda-redb-05-dlt-frontier
 
 ## Despacho

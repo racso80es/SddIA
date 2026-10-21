@@ -6,7 +6,7 @@ contract: "agents-contract v1.0.0"
 allowed_policies:
   - "knowledge-management"
   - "ecosystem-evolution"
-hash_signature: "opcional_en_desarrollo"
+hash_signature: "sha256:453e85e9c9322a1975543f7b76fbb3074e882d6ead79ae4fe883014cede57fe3"
 llm_profile:
   tier: "none"
   description: "Topología y SSOT; prohibido LLM"
@@ -18,6 +18,7 @@ outputs:
   - "mapeo_ssot_validado"
   - "reporte_de_integridad_documental"
   - "actualizacion_de_rutas"
+cognitive_role_descriptor: "SSOT de topología e índices"
 ---
 
 # Agente Cúmulo: Gestor Documental y SSOT

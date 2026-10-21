@@ -38,6 +38,18 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 
 Definición operativa de **Event**: *contrato inmutable de comunicación asíncrona; señal con propósito que opera bajo coreografía pura.* Toda Clase declara `event_family`: `{ telemetry, orchestration, domain }` (enum estricto en [`events-contract.md`](SddIA/events/events-contract.md)).
 
+El runtime objetivo es el store `redb` en `.SddIA/runtime/events.redb` (tablas `events` y `subscriber_delivery`). El bus de ficheros bajo `./.events/` permanece hasta el cutover del PBI 07. La frontera DLT es `local_only` por defecto: solo `PullRequest_Merged` y `System_Immunity_Certified` anclan en IOTA.
+
+| Agente | Tier | Descriptor |
+| :--- | :--- | :--- |
+| cerbero | `none` | Peaje RBAC determinista |
+| cumulo | `none` | SSOT de topología e índices |
+| radamanto | `none` | Actuario de umbrales sobre telemetría |
+| argos | `medium` | Juez de artefactos; síntesis solo tras evidencia de cápsulas |
+| tekton | `low` | Ejecución táctica según especificación |
+| dedalo | `high` | Diseño de especificación y blueprint de proceso |
+| mayeuta | `high` | Estabilización de requisitos y auditoría Kaizen de fracturas |
+
 Programas de referencia: [Telemetría Reactiva EDA S+ Grade](docs/features/telemetria-reactiva-eda-fase0/impact-analysis.md) (Fases 0–6); [Inmunidad, Caos S+ Grade y ED Suite](docs/features/inmunidad-caos-fase0/impact-analysis.md) (Fases 0–5).
 
 #### Trinidad de Estímulos

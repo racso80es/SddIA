@@ -1,10 +1,11 @@
 ---
+
 feature_name: eda-redb-05-dlt-frontier
 created: "2026-10-21"
 document_id: PBI-EDA-REDB-05-DLT-FRONTIER
 pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT.md
+execution_id: "9270731e-5df9-4984-967a-f52cbb394132"
 ---
-
 # Clarify — eda-redb-05-dlt-frontier
 
 `events-contract` 1.2.0 declara `dlt_audit_scope`: `local_only` | `external_public_interest`. Una clase que no declara el enum es `local_only`.

@@ -14,15 +14,15 @@ Contrato normativo de la familia: `agents-contract.md` (no constituye un agente 
 
 ## Catálogo de definiciones (`{name}.md`)
 
-| Archivo fuente | uuid | name | version | contract | Allowed policies |
-|----------------|------|------|---------|----------|------------------|
-| `cerbero.md` | `e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b` | cerbero | 1.0.0 | agents-contract v1.0.0 | `knowledge-management` |
-| `cumulo.md` | `8f7d6c5b-4a01-4e56-9a2b-e98e4d2a1c3f` | cumulo | 1.0.0 | agents-contract v1.0.0 | `knowledge-management`, `ecosystem-evolution` |
-| `tekton.md` | `b3a4c5d6-7e8f-9a0b-1c2d-3e4f5a6b7c8d` | tekton | 1.2.0 | agents-contract v1.1.0 | `ecosystem-evolution`, `filesystem-ops`, `source-control`, `system-operations`, `chaos-engineering`, `tracker-operations` |
-| `argos.md` | `bd3b1d76-3734-4fbb-b447-ad5e4a5e4907` | argos | 1.0.0 | agents-contract v1.0.0 | `quality-assurance`, `filesystem-ops`, `source-control`, `event-routing`, `tracker-operations` |
-| `dedalo.md` | `9e60e48e-43be-463d-999e-d3dbd83924af` | dedalo | 1.0.0 | agents-contract v1.0.0 | `ecosystem-evolution`, `knowledge-management`, `filesystem-ops` |
-| `mayeuta.md` | `db1acdb5-23b9-490e-a339-dc511091e959` | mayeuta | 1.0.0 | agents-contract v1.0.0 | `knowledge-management`, `filesystem-ops` |
-| `radamanto.md` | `4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a` | radamanto | 1.1.0 | agents-contract v1.0.0 | `quality-assurance`, `ecosystem-evolution` |
+| Archivo fuente | uuid | name | version | contract | Allowed policies | Cognitive role |
+|----------------|------|------|---------|----------|------------------ | ---------------- |
+| `cerbero.md` | `e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b` | cerbero | 1.0.0 | agents-contract v1.0.0 | `knowledge-management` | Peaje RBAC determinista |
+| `cumulo.md` | `8f7d6c5b-4a01-4e56-9a2b-e98e4d2a1c3f` | cumulo | 1.0.0 | agents-contract v1.0.0 | `knowledge-management`, `ecosystem-evolution` | SSOT de topología e índices |
+| `tekton.md` | `b3a4c5d6-7e8f-9a0b-1c2d-3e4f5a6b7c8d` | tekton | 1.2.0 | agents-contract v1.1.0 | `ecosystem-evolution`, `filesystem-ops`, `source-control`, `system-operations`, `chaos-engineering`, `tracker-operations` | Ejecución táctica según especificación |
+| `argos.md` | `bd3b1d76-3734-4fbb-b447-ad5e4a5e4907` | argos | 1.0.0 | agents-contract v1.0.0 | `quality-assurance`, `filesystem-ops`, `source-control`, `event-routing`, `tracker-operations` | Juez de artefactos; síntesis solo tras evidencia de cápsulas |
+| `dedalo.md` | `9e60e48e-43be-463d-999e-d3dbd83924af` | dedalo | 1.0.0 | agents-contract v1.0.0 | `ecosystem-evolution`, `knowledge-management`, `filesystem-ops` | Diseño de especificación y blueprint de proceso |
+| `mayeuta.md` | `db1acdb5-23b9-490e-a339-dc511091e959` | mayeuta | 1.0.0 | agents-contract v1.0.0 | `knowledge-management`, `filesystem-ops` | Estabilización de requisitos y auditoría Kaizen de fracturas |
+| `radamanto.md` | `4d5e6f7a-8b9c-4d0e-1f2a-3b4c5d6e7f8a` | radamanto | 1.1.0 | agents-contract v1.0.0 | `quality-assurance`, `ecosystem-evolution` | Actuario de umbrales sobre telemetría |
 
 ## Archivos en carpeta no catalogados como agente
 

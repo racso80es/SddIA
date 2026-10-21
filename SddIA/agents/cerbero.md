@@ -14,6 +14,8 @@ outputs:
 llm_profile:
   tier: "none"
   description: "RBAC determinista; prohibido LLM"
+cognitive_role_descriptor: "Peaje RBAC determinista"
+hash_signature: "sha256:06fb97e854eefba4827d30a8682bd9c12b42a25fb2f55d816308d19f1f041e91"
 ---
 
 # Agente Cerbero: Motor de Gobernanza y Compliance

@@ -10,7 +10,7 @@ allowed_policies:
   - "system-operations"
   - "chaos-engineering"
   - "tracker-operations"
-hash_signature: "opcional_en_desarrollo"
+hash_signature: "sha256:34bf62699a046d68ef1b3085586eba7a4beb922db6f68300148d086bdc988eba"
 llm_profile:
   tier: "low"
   description: "Forja táctica según especificación; sin decisiones de arquitectura"
@@ -25,6 +25,7 @@ outputs:
 touchpoints:
   - "on_phase_complete": "Detener ejecución y solicitar validación del Vértice Biológico/Control"
   - "on_critical_error": "Abortar proceso y solicitar clarificación, prohibido el reintento ciego superior a 3 ciclos"
+cognitive_role_descriptor: "Ejecución táctica según especificación"
 ---
 
 # Agente Tekton: Motor de Ejecución (IA Obrera)
