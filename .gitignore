@@ -9,8 +9,10 @@
 .tools/
 .venv/
 
-# Bus de eventos runtime Ola C V3 (padre inmutable + testigos suscriptor)
+# Bus de eventos runtime Ola C V3 (residuo local; la cola viva es events.redb)
 /.events/
+.SddIA/runtime/*.redb
+.SddIA/runtime/*.redb.*
 
 # Legacy bus runtime (migración desde docs/events/)
 docs/events/

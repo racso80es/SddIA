@@ -272,7 +272,7 @@ pub fn load_eda_pending(repo: &Path) -> Result<String, String> {
     }
     let cfg = load_cumulo(repo)?;
     if let Some(bus) = cfg.get("event_bus").and_then(|v| v.as_str()) {
-        if !bus.trim().is_empty() {
+        if sddia_event_store::is_filesystem_rel(bus) {
             return Ok(format!("{}/pending", bus.trim().trim_end_matches('/')));
         }
     }
@@ -281,7 +281,7 @@ pub fn load_eda_pending(repo: &Path) -> Result<String, String> {
         .and_then(|b| b.get("pending"))
         .and_then(|v| v.as_str())
     {
-        if !pending.trim().is_empty() {
+        if sddia_event_store::is_filesystem_rel(pending) {
             return Ok(pending.trim().trim_start_matches("./").replace('\\', "/"));
         }
     }

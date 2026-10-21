@@ -190,6 +190,34 @@ pub fn append_row(index_path: &Path, row: &str, name: &str) -> Result<(), String
         .map_err(|e| e.to_string())
 }
 
+/// Quita la fila `` `{name}.md` `` del catálogo. Idempotente si no está.
+pub fn remove_catalog_row(index_path: &Path, name: &str) -> Result<bool, String> {
+    if !index_path.is_file() {
+        return Ok(false);
+    }
+    let needle = format!("`{name}.md`");
+    let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+    let mut removed = false;
+    let kept: Vec<&str> = idx
+        .lines()
+        .filter(|line| {
+            let hit = line.contains(&needle);
+            if hit {
+                removed = true;
+            }
+            !hit
+        })
+        .collect();
+    if removed {
+        let mut out = kept.join("\n");
+        if idx.ends_with('\n') {
+            out.push('\n');
+        }
+        fs::write(index_path, out).map_err(|e| e.to_string())?;
+    }
+    Ok(removed)
+}
+
 /// Sincroniza el censo del pie de `daemons/index.md` con las filas del catálogo (L-INDEX-CENSUS).
 pub fn sync_daemons_index_census(index_path: &Path) -> Result<(), String> {
     if !index_path.is_file() {

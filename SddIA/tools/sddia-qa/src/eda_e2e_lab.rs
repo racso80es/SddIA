@@ -128,11 +128,6 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
                 return Ok(());
             }
             let pending = repo.join(rel_path);
-            if !pending.is_file() {
-                report["success"] = serde_json::Value::Bool(false);
-                report["error"] = format!("pending no encontrado: {rel_path}").into();
-                return Ok(());
-            }
             let route_result = route_event(repo, rel_path)?;
             report["steps"]
                 .as_array_mut()

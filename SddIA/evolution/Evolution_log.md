@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `36588064-c783-4b1b-933c-bb254fbb10ff` | 2026-10-21 | El default del bus pasa a redb y event-sweeper sale del catálogo. | CANONICO | `SddIA/evolution/36588064-c783-4b1b-933c-bb254fbb10ff.md` |
 | `19f4d00d-606a-40fd-8566-f4f7753903d7` | 2026-10-21 | Los siete agentes declaran cognitive_role_descriptor sin cambiar tier; el contrato de agentes pasa a 1.2.0. | CANONICO | `SddIA/evolution/19f4d00d-606a-40fd-8566-f4f7753903d7.md` |
 | `77de71cf-18b1-44e0-84ae-ab9e9b6574fd` | 2026-10-21 | Solo PullRequest_Merged y System_Immunity_Certified anclan en IOTA; la telemetría conserva su prueba local. | CANONICO | `SddIA/evolution/77de71cf-18b1-44e0-84ae-ab9e9b6574fd.md` |
 | `f7cbbba0-0a34-4abc-bb24-2a0f10eac639` | 2026-10-21 | Lectores del bus, SSE y CLI de inspección usan el store cuando está habilitado; el gate de arranque lee el side-channel de heartbeats. | CANONICO | `SddIA/evolution/f7cbbba0-0a34-4abc-bb24-2a0f10eac639.md` |

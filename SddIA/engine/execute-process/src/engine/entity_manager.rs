@@ -432,6 +432,11 @@ fn filesystem_delete(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
         "handoff_version": version,
     });
     std::fs::remove_file(&artifact).map_err(|e| e.to_string())?;
+    if class == "daemon" {
+        let index = repo.join(&rel_dir).join("index.md");
+        crate::forges::common::remove_catalog_row(&index, &name)?;
+        crate::forges::common::sync_daemons_index_census(&index)?;
+    }
     merge_handoff(state, &handoff);
     Ok(json!({
         "deleted": artifact.strip_prefix(repo).unwrap_or(&artifact).to_string_lossy().replace('\\', "/"),

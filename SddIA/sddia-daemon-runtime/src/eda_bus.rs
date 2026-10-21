@@ -48,23 +48,30 @@ fn rel_to_abs(repo: &Path, rel: PathBuf) -> PathBuf {
 }
 
 pub fn load_eda_bus(repo: &Path) -> EdBusPaths {
-    let env_bus = env::var("EVENT_BUS_PATH").unwrap_or_default();
-    let mut paths = if env_bus.trim().is_empty() {
+    let env_raw = env::var("EVENT_BUS_PATH").unwrap_or_default();
+    let env_bus = if sddia_event_store::is_filesystem_rel(&env_raw) {
+        env_raw.trim().to_string()
+    } else {
+        String::new()
+    };
+    let mut paths = if env_bus.is_empty() {
         bus_defaults_from_root(".events")
     } else {
         bus_defaults_from_root(&env_bus)
     };
 
-    if env_bus.trim().is_empty() {
+    if env_bus.is_empty() {
         if let Ok(cfg) = super::load_cumulo(repo) {
             if let Some(eb) = cfg.get("event_bus").and_then(|v| v.as_str()) {
-                if !eb.trim().is_empty() {
+                if sddia_event_store::is_filesystem_rel(eb) {
                     paths = bus_defaults_from_root(eb);
                 }
             }
             if let Some(bus) = cfg.get("eda_bus").and_then(|v| v.as_object()) {
                 if let Some(p) = bus.get("pending").and_then(|v| v.as_str()) {
-                    paths.pending = PathBuf::from(normalize_rel(p));
+                    if sddia_event_store::is_filesystem_rel(p) {
+                        paths.pending = PathBuf::from(normalize_rel(p));
+                    }
                 }
                 for (key, sub_key) in [
                     ("processing", "processing_subscribers"),
@@ -72,6 +79,9 @@ pub fn load_eda_bus(repo: &Path) -> EdBusPaths {
                     ("dead_letter", "dead_letter_subscribers"),
                 ] {
                     if let Some(p) = bus.get(key).and_then(|v| v.as_str()) {
+                        if !sddia_event_store::is_filesystem_rel(p) {
+                            continue;
+                        }
                         let norm = normalize_rel(p);
                         match key {
                             "processing" => paths.processing = PathBuf::from(&norm),

@@ -40,11 +40,11 @@ impl Drop for TempRepo {
 }
 
 #[test]
-fn mode_names_default_to_filesystem() {
-    assert_eq!(mode_from_name(None), StoreMode::Filesystem);
-    assert_eq!(mode_from_name(Some("")), StoreMode::Filesystem);
+fn mode_names_default_to_redb() {
+    assert_eq!(mode_from_name(None), StoreMode::Redb);
+    assert_eq!(mode_from_name(Some("")), StoreMode::Redb);
+    assert_eq!(mode_from_name(Some("unknown")), StoreMode::Redb);
     assert_eq!(mode_from_name(Some("filesystem")), StoreMode::Filesystem);
-    assert_eq!(mode_from_name(Some("unknown")), StoreMode::Filesystem);
     assert_eq!(mode_from_name(Some("dual")), StoreMode::Dual);
     assert_eq!(mode_from_name(Some("redb")), StoreMode::Redb);
 }

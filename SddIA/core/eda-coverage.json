@@ -198,12 +198,6 @@
       "last_emitted_event": "Domain_Entity_Updated",
       "last_hash": "sha256:82acf00d3e934b68fb26da5b3c0e9d5aef8a008ab2f8fb77b94f2cfaaf39dbc3"
     },
-    "3eafa012-2b71-47e5-b47e-467b59a3fd52": {
-      "correlation_timestamp": "2026-08-31T13:21:43.477Z",
-      "is_covered": true,
-      "last_emitted_event": "Domain_Entity_Updated",
-      "last_hash": "sha256:bda8bb014c269960a8af696f07736a7318cd86dcbb97f21ba7ecf70cb9dc3754"
-    },
     "417025aa-6c8f-49fb-a4e7-d32efe9c896b": {
       "correlation_timestamp": "2026-10-04T04:54:13.544Z",
       "is_covered": true,

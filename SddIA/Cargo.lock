@@ -1878,14 +1878,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "event-sweeper"
-version = "0.1.0"
-dependencies = [
- "sddia-daemon-runtime",
- "serde_json",
-]
-
-[[package]]
 name = "event-watcher"
 version = "0.1.0"
 dependencies = [

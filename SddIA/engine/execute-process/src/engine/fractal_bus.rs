@@ -217,7 +217,7 @@ pub fn load_fractal_dead_letter_dir(repo: &Path) -> PathBuf {
         .get("eda_fractal")
         .and_then(|f| f.get("dead_letter"))
         .and_then(|v| v.as_str())
-        .filter(|s| !s.trim().is_empty())
+        .filter(|s| sddia_event_store::is_filesystem_rel(s))
     {
         let trimmed = dl.trim().trim_start_matches("./");
         return repo.join(trimmed);
@@ -226,7 +226,7 @@ pub fn load_fractal_dead_letter_dir(repo: &Path) -> PathBuf {
         .get("eda_bus")
         .and_then(|b| b.get("dead_letter"))
         .and_then(|v| v.as_str())
-        .filter(|s| !s.trim().is_empty())
+        .filter(|s| sddia_event_store::is_filesystem_rel(s))
     {
         let trimmed = dl.trim().trim_start_matches("./");
         return repo.join(trimmed);

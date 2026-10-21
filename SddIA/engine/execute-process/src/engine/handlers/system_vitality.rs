@@ -82,27 +82,57 @@ fn probe_bus_topology(repo: &Path) -> ProbeResult {
             };
         }
     };
-    let Some(fractal) = cfg.get("eda_fractal").and_then(|v| v.as_object()) else {
+    let mut subscriptions: Vec<String> = Vec::new();
+    if let Some(rel) = cfg
+        .get("eda_bus")
+        .and_then(|b| b.get("subscriptions"))
+        .and_then(|v| v.as_str())
+    {
+        subscriptions.push(rel.to_string());
+    }
+    if let Some(fractal) = cfg.get("eda_fractal").and_then(|v| v.as_object()) {
+        for (key, val) in fractal {
+            if !key.ends_with("_subscriptions") {
+                continue;
+            }
+            if let Some(rel) = val.as_str() {
+                subscriptions.push(rel.to_string());
+            }
+        }
+    }
+    if subscriptions.is_empty() {
         return ProbeResult {
             id: "bus.topology",
             ok: false,
-            cause: "eda_fractal ausente en cumulo.paths.json".into(),
+            cause: "claves de suscripción ausentes en cumulo.paths.json".into(),
         };
-    };
-    for (key, val) in fractal {
-        if key.ends_with("_subscriptions") {
-            continue;
-        }
-        let Some(rel) = val.as_str() else { continue };
-        if rel.ends_with(".json") || rel.ends_with(".md") {
-            continue;
-        }
+    }
+    for rel in &subscriptions {
         let path = repo.join(rel.trim().trim_start_matches("./"));
-        if !path.exists() {
+        if !path.is_file() {
             return ProbeResult {
                 id: "bus.topology",
                 ok: false,
-                cause: format!("hoja eda_fractal.{key} ausente: {rel}"),
+                cause: format!("suscripción ausente: {rel}"),
+            };
+        }
+    }
+    if sddia_event_store::writes_store(sddia_event_store::store_mode()) {
+        let db = sddia_event_store::runtime_db_path(repo);
+        if let Some(parent) = db.parent() {
+            if let Err(e) = fs::create_dir_all(parent) {
+                return ProbeResult {
+                    id: "bus.topology",
+                    ok: false,
+                    cause: format!("runtime redb: {e}"),
+                };
+            }
+        }
+        if let Err(e) = sddia_event_store::EventStore::open(&db) {
+            return ProbeResult {
+                id: "bus.topology",
+                ok: false,
+                cause: format!("events.redb no abre: {e}"),
             };
         }
     }
@@ -450,5 +480,46 @@ mod tests {
         .unwrap();
         let r = probe_cerbero_config(repo);
         assert!(r.ok, "{}", r.cause);
+    }
+
+    #[test]
+    fn bus_topology_green_without_fractal_directories() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        for name in [
+            "event-domain-subscriptions.json",
+            "event-telemetry-subscriptions.json",
+            "event-orchestration-subscriptions.json",
+        ] {
+            std::fs::write(repo.join("SddIA/core").join(name), "{}\n").unwrap();
+        }
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{
+  "event_bus": ".SddIA/runtime/events.redb",
+  "eda_bus": {
+    "store": ".SddIA/runtime/events.redb",
+    "events": "events",
+    "subscriptions": "SddIA/core/event-domain-subscriptions.json"
+  },
+  "eda_fractal": {
+    "store": ".SddIA/runtime/events.redb",
+    "events": "events",
+    "telemetry_subscriptions": "SddIA/core/event-telemetry-subscriptions.json",
+    "orchestration_subscriptions": "SddIA/core/event-orchestration-subscriptions.json",
+    "domain_subscriptions": "SddIA/core/event-domain-subscriptions.json"
+  }
+}
+"#,
+        )
+        .unwrap();
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let r = probe_bus_topology(repo);
+        sddia_event_store::override_store_mode(None);
+        assert!(r.ok, "{}", r.cause);
+        assert!(!repo.join(".events/telemetry").exists());
+        assert!(!repo.join(".events/domain").exists());
+        assert!(repo.join(".SddIA/runtime/events.redb").is_file());
     }
 }

@@ -24,7 +24,7 @@ Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema
 | Componente | Rol | Ruta de arranque |
 |------------|-----|------------------|
 | **Servicios de Red** | Puente local hacia IOTA Rebased (Relay) | `.SddIA/services/iota-publish-relay/server.mjs` (Node.js) |
-| **Centinelas obligatorios** | Bus EDA y barrido de pendientes | `SddIA/scripts/daemons/event-watcher.sh`, `event-sweeper.sh` |
+| **Centinelas obligatorios** | Bus EDA sobre `events.redb` | `SddIA/scripts/daemons/event-watcher.sh` |
 | **Centinelas opcionales** | Telegram y GitHub bridge | `SddIA/scripts/daemons/telegram-watcher.sh`, `github-bridge-watcher.sh` |
 | **Centinela sensorial (condicional)** | Correo IMAP read-only → `Email_Received` | `SddIA/scripts/daemons/email-watcher.sh` si `SDDIA_EMAIL_IMAP_HOST` está en bóveda |
 | **Kalma2** | UI + `POST /api/interact` | `SddIA/target/{debug,release}/kalma2-bridge` |
@@ -71,7 +71,7 @@ flowchart TD
 
 ```bash
 (cd SddIA && cargo build -p kalma2-bridge -p execute-process \
-  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher -p email-watcher)
+  -p event-watcher -p telegram-watcher -p github-bridge-watcher -p email-watcher)
 ./start-sddia.sh
 ```
 
@@ -101,7 +101,7 @@ Variables de entorno:
 
 ```bash
 (cd SddIA && cargo build -p kalma2-bridge -p execute-process \
-  -p event-watcher -p event-sweeper -p telegram-watcher -p github-bridge-watcher -p email-watcher)
+  -p event-watcher -p telegram-watcher -p github-bridge-watcher -p email-watcher)
 ```
 
 - Bundle UI en `interfaces/kalma2/`.
@@ -109,7 +109,7 @@ Variables de entorno:
 
 ## Garantía de ejecución nativa
 
-- Los dos centinelas obligatorios deben iniciar como ELF nativo; el fallo de cualquiera cancela la ignición antes de lanzar Kalma2.
+- El centinela obligatorio `event-watcher` debe iniciar como ELF nativo; su fallo cancela la ignición antes de lanzar Kalma2.
 - Los centinelas opcionales no alteran la condición de éxito de los obligatorios.
 - El arranque muestra la ruta del ELF resuelto para cada componente. La prioridad es `debug` y después `release`, coherente con `cargo build` del uso documentado.
 - `SDDIA_KALMA2_BRIDGE_BIN` y `SDDIA_EXECUTE_PROCESS_BIN` solo admiten binarios ELF ejecutables; un script Python u otro wrapper es rechazado explícitamente.
@@ -126,7 +126,7 @@ Variables de entorno:
 ## Verificación rápida
 
 ```bash
-pgrep -x event-watcher && pgrep -x event-sweeper
+pgrep -x event-watcher
 pgrep -x kalma2-bridge
 curl -sf -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8765/
 curl -sf -XPOST http://127.0.0.1:8765/api/interact -H 'Content-Type: application/json' -d '{"prompt":"hola"}'

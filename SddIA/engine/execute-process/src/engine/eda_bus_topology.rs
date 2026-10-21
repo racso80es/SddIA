@@ -77,29 +77,34 @@ fn bus_defaults_from_root(event_bus: &str) -> EventBusTopology {
 }
 
 pub fn load_event_bus_topology(repo: &Path) -> Result<EventBusTopology, String> {
-    let env_bus = std::env::var("EVENT_BUS_PATH").unwrap_or_default();
-    let mut defaults = if env_bus.trim().is_empty() {
+    let env_raw = std::env::var("EVENT_BUS_PATH").unwrap_or_default();
+    let env_bus = if sddia_event_store::is_filesystem_rel(&env_raw) {
+        env_raw.trim().to_string()
+    } else {
+        String::new()
+    };
+    let mut defaults = if env_bus.is_empty() {
         bus_defaults_from_root(".events")
     } else {
         bus_defaults_from_root(&env_bus)
     };
 
     let cfg = load_paths_config(repo).unwrap_or(json!({}));
-    if env_bus.trim().is_empty() {
+    if env_bus.is_empty() {
         if let Some(eb) = cfg.get("event_bus").and_then(|v| v.as_str()) {
-            if !eb.trim().is_empty() {
+            if sddia_event_store::is_filesystem_rel(eb) {
                 defaults = bus_defaults_from_root(eb);
             }
         }
         if let Some(bus) = cfg.get("eda_bus").and_then(|v| v.as_object()) {
             if let Some(p) = bus.get("pending").and_then(|v| v.as_str()) {
-                if !p.is_empty() {
+                if sddia_event_store::is_filesystem_rel(p) {
                     defaults.pending = normalize_rel(p);
                 }
             }
             for key in ["processing", "processed", "dead_letter"] {
                 if let Some(rel) = bus.get(key).and_then(|v| v.as_str()) {
-                    if !rel.is_empty() {
+                    if sddia_event_store::is_filesystem_rel(rel) {
                         let norm = normalize_rel(rel);
                         let subs = format!("{}/subscribers", norm.trim_end_matches('/'));
                         match key {
