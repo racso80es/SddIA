@@ -45,4 +45,4 @@ No se cambia `SddIA/sddia-event-store/Cargo.toml`, `.github/workflows/sddia-inde
 
 `SddIA/scripts/qa/build-wasi-capsules.sh` exit 0. La salida no contiene `could not compile redb`.
 
-`SddIA/scripts/` no es prefijo material de `gate-evolution` (los prefijos salen de `directories` en Cúmulo y `docs/` no empieza por `SddIA/`). El delta esperado del rango es `L-SELF / sin material`.
+Todo path bajo `SddIA/` fuera de `directories.evolution` es material para el veredicto. El correlato es el alta `4a6499e4-1a65-4aed-bd9f-e1be6b51b196`, emitida por `sddia-qa evolution-register`, con `relacionado` apuntando al script.

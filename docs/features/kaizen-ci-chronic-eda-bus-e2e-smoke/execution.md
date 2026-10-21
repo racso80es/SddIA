@@ -33,3 +33,7 @@ Tercera pasada, `clang` 18.1.3 ya en el host, mismo `CARGO_TARGET_DIR`:
 ```
 
 `Finished dev profile` en 21.49s. La salida no contiene `redb` ni `could not compile redb`.
+
+## Evolution
+
+`sddia-qa evolution-register` operación `alta`. `id_cambio` `4a6499e4-1a65-4aed-bd9f-e1be6b51b196`. `hash_integrity` `sha256:98edc8aadf3626ea436ccf18485e3c4614d804ba8c620975d0c53d30ed865dad`. El primer `delivery-close-cycle` dejó el PR [#360](https://github.com/racso80es/SddIA/pull/360) y bloqueó en `EVOL_MATERIAL_UNREGISTERED` sobre `build-wasi-capsules.sh`.

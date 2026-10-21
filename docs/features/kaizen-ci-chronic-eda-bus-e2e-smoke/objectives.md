@@ -32,7 +32,7 @@ Sacar `event-bus-audit` del build `wasm32-wasip1` de `build-wasi-capsules.sh` pa
 | CA2 | El script termina en 0 y la salida no contiene `could not compile redb`. |
 | CA3 | Job `eda-bus-e2e-smoke` success en el PR. Sin run verde, no hay `global: APTO`. |
 | CA4 | `wasi-runtime-smoke` success en el mismo run. El resto no pasa a failure por este diff. |
-| CA5 | Diff limitado al `EXCLUDE`, a esta cascada y al PBI. Pin `redb`, toolchain, fuente de `event-bus-audit` y ledger intactos. |
+| CA5 | Diff limitado al `EXCLUDE`, al alta evolution que correlaciona el script, a esta cascada y al PBI. Pin `redb`, toolchain, fuente de `event-bus-audit` y ledger intactos. |
 
 ## Fuera de alcance
 

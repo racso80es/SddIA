@@ -10,6 +10,7 @@ document_id: PBI-KAIZEN-CI-CHRONIC-EDA-BUS-E2E-SMOKE
 uuid: "f2bbed15-2cca-49ae-a439-aff1a935e43b"
 global: PENDIENTE-CI
 pbi_archived: false
+pr_url: https://github.com/racso80es/SddIA/pull/360
 execution_id: "0db56ca9-0fe4-4e81-96cd-88f5c52fcdd4"
 checks:
   CA1: APTO
@@ -19,6 +20,8 @@ checks:
   CA5: APTO
 git_changes:
   - SddIA/scripts/qa/build-wasi-capsules.sh
+  - SddIA/evolution/4a6499e4-1a65-4aed-bd9f-e1be6b51b196.md
+  - SddIA/evolution/Evolution_log.md
   - docs/features/kaizen-ci-chronic-eda-bus-e2e-smoke/
   - docs/todos/pending/[KAIZEN] CI crónica — eda-bus-e2e-smoke.md
 ---
@@ -33,4 +36,4 @@ CA3: sin run `pull_request` verde de `eda-bus-e2e-smoke`. `global` no es `APTO`.
 
 CA4: el mismo run aún no existe. `wasi-runtime-smoke` queda pendiente en ese run.
 
-CA5: el working tree antes del cierre son el script, esta cascada y el PBI en `pending/`. Pin de `redb`, toolchain, fuente de `event-bus-audit` y ledger no entran en el diff.
+CA5: el cierre añade el script, el alta evolution `4a6499e4-1a65-4aed-bd9f-e1be6b51b196`, el índice, esta cascada y el PBI en `pending/`. Pin de `redb`, toolchain, fuente de `event-bus-audit` y ledger no entran en el diff.

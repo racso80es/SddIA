@@ -86,7 +86,7 @@ Añadir `event-bus-audit` a `EXCLUDE` de `SddIA/scripts/qa/build-wasi-capsules.s
 | CA2 | `SddIA/scripts/qa/build-wasi-capsules.sh` termina con exit 0 en local antes del push. La salida no contiene `could not compile redb`. |
 | CA3 | Run `pull_request` de `sddia-index-qa` sobre el head del PR: job `eda-bus-e2e-smoke` en success. Sin `run_id` verde, `validacion.md` queda `PENDIENTE-CI` y `global` no es `APTO`. |
 | CA4 | En ese mismo run, `wasi-runtime-smoke` queda en success. Los otros jobs del workflow no pasan a failure por este diff. |
-| CA5 | Diff limitado al `EXCLUDE` del script, a la cascada `docs/features/kaizen-ci-chronic-eda-bus-e2e-smoke/` y a este PBI. Sin cambiar el pin de `redb`, el toolchain del workflow, el fuente de `event-bus-audit` ni el ledger Radamanto. |
+| CA5 | Diff limitado al `EXCLUDE` del script, al registro evolution `4a6499e4-1a65-4aed-bd9f-e1be6b51b196` que lo correlaciona, a la cascada `docs/features/kaizen-ci-chronic-eda-bus-e2e-smoke/` y a este PBI. Sin cambiar el pin de `redb`, el toolchain del workflow, el fuente de `event-bus-audit` ni el ledger Radamanto. |
 
 ## 5. Fuera de alcance
 
