@@ -81,7 +81,11 @@ fn seed_field(seed: &Value, key: &str, default: Value) -> Value {
 
 fn with_forge_seed_optionals(mut out: Value, seed: &Value) -> Value {
     if let Value::Object(map) = &mut out {
-        for key in ["hash_refresh_only", "markdown_body_replacements"] {
+        for key in [
+            "hash_refresh_only",
+            "markdown_body_replacements",
+            "daemon_declaration_patch",
+        ] {
             if let Some(v) = seed.get(key) {
                 map.insert(key.into(), v.clone());
             }

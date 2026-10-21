@@ -1,14 +1,14 @@
 ---
+
 feature_name: eda-redb-02-writers
 created: "2026-10-21"
-execution_id: "38364dd5-cf84-4b94-a1b0-9d9b78ea98ca"
 items_applied:
   - gate y upsert
   - escritores execute-process
   - escritores daemon-runtime
   - tests del corte
+execution_id: "bae36c51-f0b9-4f08-b7c8-572155ae2b93"
 ---
-
 # Execution — eda-redb-02-writers
 
 Rama `feat/eda-redb-02-writers` desde `main` (`4f1153c8`), execution `38364dd5-cf84-4b94-a1b0-9d9b78ea98ca`.

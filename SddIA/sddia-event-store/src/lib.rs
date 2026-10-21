@@ -178,6 +178,28 @@ impl EventStore {
         })
     }
 
+    /// Pares `(event_id, subscriber_id)` en `Pending`. No devuelve el ECST.
+    pub fn list_pending_deliveries(&self) -> Result<Vec<(String, String)>, StoreError> {
+        self.read_tx(|txn| {
+            let table = match txn.open_table(SUBSCRIBER_DELIVERY) {
+                Ok(table) => table,
+                Err(err) if table_missing(&err) => return Ok(Vec::new()),
+                Err(err) => return Err(backend(err)),
+            };
+            let mut pending = Vec::new();
+            let range = table.range::<&(&str, &str)>(..).map_err(backend)?;
+            for row in range {
+                let (key, value) = row.map_err(backend)?;
+                let witness: DeliveryWitness = decode(value.value())?;
+                if witness.status == DeliveryStatus::Pending {
+                    let (event_id, subscriber_id) = key.value();
+                    pending.push((event_id.to_string(), subscriber_id.to_string()));
+                }
+            }
+            Ok(pending)
+        })
+    }
+
     pub fn seal_dlt(&self, event_id: &str, seal: &DltSeal) -> Result<(), StoreError> {
         let event_id = required_token(event_id, "event_id")?;
         let tx_hash = required_token(&seal.tx_hash, "tx_hash")?;

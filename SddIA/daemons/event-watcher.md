@@ -8,8 +8,8 @@ execution:
   entrypoint: SddIA/daemons/event-watcher.sh
   heartbeat_interval_seconds: 30
   runtime: native-rust
-hash_signature: sha256:8fffedc6e00bc0f9d70c3723ee7c98ba0c5e083e19a2cdaa400e30ad6aa42fa6
-jurisdiction: Aislada — Ceguera Lógica. Solo inyecta eventos físicos en el bus
+hash_signature: "sha256:9092012a71130071f2fd2525e4ba673d2c37e367d805d5264720d4b576a87a44"
+jurisdiction: Aislada — Ceguera Lógica. Reclama ids pending del store o ficheros .events/pending y delega el despacho. No abre el ECST. El tick dispara daemon-heartbeat-audit y system-vitality-probe.
 name: event-watcher
 source_sha256: sha256:93d2e370f714b2e659fe18c078a0a876963b589c586ec0fa7dddd55dad75f717
 telemetry_provided: true
@@ -18,9 +18,9 @@ telemetry_schema:
 - pid
 - status
 uuid: f995cc89-22a7-488d-9b25-ddb1e5e3a4a4
-version: 1.1.0
+version: 1.2.0
 ---
 
 # event-watcher
 
-Centinela EDA: monitoriza `.events/pending/` y delega en `route-domain-event` vía `execute-process`. Binario Rust en `SddIA/target/{release|debug}/event-watcher`; launcher `SddIA/daemons/event-watcher.sh`. Emite `Daemon_Heartbeat` cada 30s.
+Centinela EDA. En filesystem drena `.events/pending/`. En dual o redb reclama pares pending del store y delega `route-domain-event` sin abrir el ECST. El tick dispara `daemon-heartbeat-audit` (`sweep`) y `system-vitality-probe`. Binario Rust en `SddIA/target/{release|debug}/event-watcher`; launcher `SddIA/daemons/event-watcher.sh`. Emite `Daemon_Heartbeat` cada 30s.

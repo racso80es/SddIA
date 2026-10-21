@@ -253,6 +253,30 @@ pub fn validate_di_rbac(
     Ok(())
 }
 
+/// Workspace de un despacho cognitivo. Cerbero niega la ruta si el agente está revocado.
+pub fn authorize_dispatch_workspace(
+    repo: &Path,
+    agent: &str,
+    event_id: &str,
+) -> Result<PathBuf, String> {
+    let agent = agent.trim();
+    let event_id = event_id.trim();
+    if agent.is_empty() || event_id.is_empty() {
+        return Err("workspace cognitivo sin agente o evento".into());
+    }
+    for id in [format!("agent:{agent}"), agent.to_string()] {
+        if is_entity_revoked(repo, &id)? {
+            return Err(format!("cerbero revocó {id}"));
+        }
+    }
+    let path = repo
+        .join(".SddIA/workspaces/eda-dispatch")
+        .join(event_id)
+        .join(agent);
+    fs::create_dir_all(&path).map_err(|e| e.to_string())?;
+    Ok(path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

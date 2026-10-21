@@ -1,13 +1,13 @@
 ---
+
 feature_name: eda-redb-02-writers
 created: "2026-10-21"
 process: feature
 branch_name: feat/eda-redb-02-writers
 persist_ref: docs/features/eda-redb-02-writers
 pbi_ref: docs/todos/pending/[ARQUITECTURA] EDA Redb 02 — Escritores del bus según SDDIA_EVENT_STORE.md
-execution_id: "38364dd5-cf84-4b94-a1b0-9d9b78ea98ca"
+execution_id: "bae36c51-f0b9-4f08-b7c8-572155ae2b93"
 ---
-
 # Objetivos — eda-redb-02-writers
 
 ## Misión

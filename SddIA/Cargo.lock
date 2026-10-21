@@ -1889,6 +1889,7 @@ name = "event-watcher"
 version = "0.1.0"
 dependencies = [
  "sddia-daemon-runtime",
+ "sddia-event-store",
  "serde_json",
 ]
 

@@ -18,7 +18,9 @@ use super::dlt_telemetry_anchor::{
 };
 use super::invoke_orchestrator::{invoke_process_full, resolve_orchestrator_bin};
 use chrono::Utc;
-use sddia_event_store::{record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store};
+use sddia_event_store::{
+    load_dispatched_event, record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store,
+};
 use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -1525,6 +1527,12 @@ pub(crate) fn dispatch_subscriber(
         }
     }
 
+    let agent_name = agent.unwrap();
+    let store_backed = event_path.is_some_and(|path| !path.is_file());
+    if store_backed && agent_tier_is_cognitive(repo, agent_name) {
+        return dispatch_cognitive_subscriber(repo, &sid, agent_name, event);
+    }
+
     if let Some(process_name) = subscriber.get("process").and_then(|v| v.as_str()) {
         let process_key = process_name.trim();
         if process_key.is_empty() {
@@ -1942,6 +1950,108 @@ pub(crate) fn dispatch_subscriber(
     )
 }
 
+fn agent_tier_is_cognitive(repo: &Path, agent: &str) -> bool {
+    matches!(
+        agent_llm_tier(repo, agent).as_str(),
+        "high" | "medium" | "low"
+    )
+}
+
+/// Tier declarado en `SddIA/agents/{agent}.md`. Sin bloque, no se inventa uno cognitivo.
+fn agent_llm_tier(repo: &Path, agent: &str) -> String {
+    let path = repo.join("SddIA/agents").join(format!("{agent}.md"));
+    let Ok(text) = fs::read_to_string(&path) else {
+        return "none".into();
+    };
+    let front = text
+        .strip_prefix("---")
+        .and_then(|rest| rest.split_once("\n---"))
+        .map(|(yaml, _)| yaml)
+        .unwrap_or("");
+    let mut in_profile = false;
+    for line in front.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("llm_profile:") {
+            in_profile = true;
+            continue;
+        }
+        if in_profile {
+            if !line.starts_with([' ', '\t']) && !trimmed.is_empty() {
+                break;
+            }
+            if let Some(rest) = trimmed.strip_prefix("tier:") {
+                let tier = rest.trim().trim_matches(|c| c == '"' || c == '\'');
+                return match tier {
+                    "high" | "medium" | "low" | "none" => tier.to_string(),
+                    _ => "none".into(),
+                };
+            }
+        }
+    }
+    "none".into()
+}
+
+fn dispatch_cognitive_subscriber(
+    repo: &Path,
+    sid: &str,
+    agent: &str,
+    event: &Value,
+) -> (String, String, Option<String>, i32) {
+    let event_id = event
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown");
+    let workspace = match super::cerbero_di_rbac::authorize_dispatch_workspace(repo, agent, event_id)
+    {
+        Ok(path) => path,
+        Err(e) => return (sid.to_string(), "failed".into(), Some(e), 1),
+    };
+    let cmd = match std::env::var("SDDIA_AGENT_RUNTIME_COMMAND") {
+        Ok(value) if !value.trim().is_empty() => value,
+        _ => {
+            return (
+                sid.to_string(),
+                "failed".into(),
+                Some("runtime cognitivo ausente".into()),
+                1,
+            );
+        }
+    };
+    let payload = json!({
+        "operation": "AGENT_PHASE",
+        "agents": [format!("agent:{agent}")],
+        "ecst": event,
+        "workspace_path": workspace,
+    });
+    let mut child = match Command::new(&cmd)
+        .current_dir(repo)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+    {
+        Ok(child) => child,
+        Err(e) => return (sid.to_string(), "failed".into(), Some(e.to_string()), 1),
+    };
+    if let Some(stdin) = child.stdin.as_mut() {
+        let _ = stdin.write_all(payload.to_string().as_bytes());
+    }
+    drop(child.stdin.take());
+    match child.wait_with_output() {
+        Ok(out) if out.status.success() => (sid.to_string(), "success".into(), None, 0),
+        Ok(out) => {
+            let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
+            (
+                sid.to_string(),
+                "failed".into(),
+                Some(err),
+                out.status.code().unwrap_or(1),
+            )
+        }
+        Err(e) => (sid.to_string(), "failed".into(), Some(e.to_string()), 1),
+    }
+}
+
 fn write_dead_letter_fallback(
     path: &Path,
     event_uuid: &str,
@@ -2082,18 +2192,53 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
     };
     let event_path = event_path.canonicalize().unwrap_or(event_path);
 
-    if !event_path.is_file() {
-        return json!({
-            "success": false,
-            "exitCode": 1,
-            "data": null,
-            "error": format!("event file not found: {}", event_path.display()),
-        });
-    }
-
-    let mut event: Value = match fs::read_to_string(&event_path) {
-        Ok(text) => match serde_json::from_str(&text) {
-            Ok(v) => v,
+    let from_store = !event_path.is_file();
+    let mut event: Value = if from_store {
+        if !writes_store(store_mode()) {
+            return json!({
+                "success": false,
+                "exitCode": 1,
+                "data": null,
+                "error": format!("event file not found: {}", event_path.display()),
+            });
+        }
+        let stem = event_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_string();
+        match load_dispatched_event(repo, &stem, &event_path) {
+            Ok(Some(loaded)) => loaded,
+            Ok(None) => {
+                return json!({
+                    "success": false,
+                    "exitCode": 1,
+                    "data": null,
+                    "error": format!("event file not found: {}", event_path.display()),
+                });
+            }
+            Err(e) => {
+                return json!({
+                    "success": false,
+                    "exitCode": 1,
+                    "data": null,
+                    "error": format!("store load: {e}"),
+                });
+            }
+        }
+    } else {
+        match fs::read_to_string(&event_path) {
+            Ok(text) => match serde_json::from_str(&text) {
+                Ok(v) => v,
+                Err(e) => {
+                    return json!({
+                        "success": false,
+                        "exitCode": 1,
+                        "data": null,
+                        "error": format!("invalid event JSON: {e}"),
+                    });
+                }
+            },
             Err(e) => {
                 return json!({
                     "success": false,
@@ -2102,14 +2247,6 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
                     "error": format!("invalid event JSON: {e}"),
                 });
             }
-        },
-        Err(e) => {
-            return json!({
-                "success": false,
-                "exitCode": 1,
-                "data": null,
-                "error": format!("invalid event JSON: {e}"),
-            });
         }
     };
 
@@ -2177,15 +2314,19 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
         });
     }
 
-    let processing_header = match ensure_processing_header(repo, &bus, &event_uuid, &event_path) {
-        Ok(p) => p,
-        Err(e) => {
-            return json!({
-                "success": false,
-                "exitCode": 1,
-                "data": null,
-                "error": e,
-            });
+    let processing_header = if from_store {
+        runtime_db_path(repo)
+    } else {
+        match ensure_processing_header(repo, &bus, &event_uuid, &event_path) {
+            Ok(p) => p,
+            Err(e) => {
+                return json!({
+                    "success": false,
+                    "exitCode": 1,
+                    "data": null,
+                    "error": e,
+                });
+            }
         }
     };
 
@@ -3649,4 +3790,97 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
     }
 
     json!({ "success": true, "exitCode": 0, "data": results })
+}
+
+#[cfg(test)]
+mod tier_dispatch {
+    use super::dispatch_subscriber;
+    use serde_json::json;
+    use std::fs;
+    use std::path::Path;
+
+    fn write_exec(path: &Path, body: &str) {
+        fs::write(path, body).unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
+    }
+
+    fn agent_md(root: &Path, name: &str, tier: &str) {
+        let dir = root.join("SddIA/agents");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(
+            dir.join(format!("{name}.md")),
+            format!("---\nname: {name}\nllm_profile:\n  tier: \"{tier}\"\n---\n"),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn tier_none_does_not_spawn_and_cognitive_receives_ecst_and_workspace() {
+        let root = std::env::temp_dir().join(format!(
+            "sddia-tier-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        agent_md(&root, "cerbero", "none");
+        agent_md(&root, "argos", "high");
+        let event_id = "22222222-2222-4222-8222-222222222222";
+        let mut event = json!({
+            "event_id": event_id,
+            "event_type": "Domain_Probe",
+            "payload": { "note": "ecst-desde-store" }
+        });
+        let missing = root.join(".events/pending").join(format!("{event_id}.json"));
+        let marker = root.join("spawned");
+        let stdin_path = root.join("stdin.json");
+        let none_bin = root.join("none.sh");
+        write_exec(
+            &none_bin,
+            "#!/bin/sh\ntouch \"$SDDIA_TIER_MARKER\"\nexit 0\n",
+        );
+        let prev_cmd = std::env::var("SDDIA_AGENT_RUNTIME_COMMAND").ok();
+        let prev_marker = std::env::var("SDDIA_TIER_MARKER").ok();
+        std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", &none_bin);
+        std::env::set_var("SDDIA_TIER_MARKER", &marker);
+        let none_sub = json!({"agent": "cerbero"});
+        let (_sid, status, _err, _code) =
+            dispatch_subscriber(&root, &none_sub, &mut event, false, Some(&missing));
+        assert_eq!(status, "failed");
+        assert!(!marker.exists(), "tier none spawneó el runtime");
+        assert!(!root
+            .join(".SddIA/workspaces/eda-dispatch")
+            .join(event_id)
+            .join("cerbero")
+            .is_dir());
+
+        let high_bin = root.join("high.sh");
+        write_exec(&high_bin, "#!/bin/sh\ncat > \"$SDDIA_TIER_STDIN\"\nexit 0\n");
+        std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", &high_bin);
+        std::env::set_var("SDDIA_TIER_STDIN", &stdin_path);
+        let high_sub = json!({"agent": "argos"});
+        let (_sid, status, err, code) =
+            dispatch_subscriber(&root, &high_sub, &mut event, false, Some(&missing));
+        assert_eq!(status, "success", "{err:?} code={code}");
+        let body = fs::read_to_string(&stdin_path).unwrap();
+        assert!(body.contains("AGENT_PHASE"));
+        assert!(body.contains(event_id));
+        assert!(body.contains("ecst-desde-store"));
+        let workspace = root
+            .join(".SddIA/workspaces/eda-dispatch")
+            .join(event_id)
+            .join("argos");
+        assert!(workspace.is_dir());
+        assert!(body.contains(&workspace.to_string_lossy().to_string()));
+        match prev_cmd {
+            Some(v) => std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", v),
+            None => std::env::remove_var("SDDIA_AGENT_RUNTIME_COMMAND"),
+        }
+        match prev_marker {
+            Some(v) => std::env::set_var("SDDIA_TIER_MARKER", v),
+            None => std::env::remove_var("SDDIA_TIER_MARKER"),
+        }
+        std::env::remove_var("SDDIA_TIER_STDIN");
+        let _ = fs::remove_dir_all(&root);
+    }
 }

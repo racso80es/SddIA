@@ -100,4 +100,13 @@ fn dual_keeps_two_subscriber_rows() {
         DeliveryStatus::Pending
     );
     assert!(store.get_delivery("evt-1", "otro").unwrap().is_none());
+    let mut pending = store.list_pending_deliveries().unwrap();
+    pending.sort();
+    assert_eq!(
+        pending,
+        vec![
+            ("evt-1".into(), "argos".into()),
+            ("evt-1".into(), "cumulo".into()),
+        ]
+    );
 }
