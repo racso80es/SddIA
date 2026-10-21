@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-04-readers
 created: "2026-10-21"
 process: feature
@@ -6,9 +7,8 @@ branch_name: feat/eda-redb-04-readers
 persist_ref: docs/features/eda-redb-04-readers
 pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 04 — Lectores, SSE y CLI de inspección.md
 document_id: PBI-EDA-REDB-04-READERS
-execution_id: "88fb5a6e-ed41-49ab-ab64-dcf602f60e4a"
+execution_id: "06f21693-9776-4537-a9fe-00cc76dda132"
 ---
-
 # Objetivos — eda-redb-04-readers
 
 ## Misión

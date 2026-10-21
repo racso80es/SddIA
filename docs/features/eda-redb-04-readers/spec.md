@@ -1,10 +1,11 @@
 ---
+
 feature_name: eda-redb-04-readers
 created: "2026-10-21"
 base: sddia-event-store
 scope: lectores SSE CLI heartbeats
+execution_id: "06f21693-9776-4537-a9fe-00cc76dda132"
 ---
-
 # Spec — eda-redb-04-readers
 
 ## Store

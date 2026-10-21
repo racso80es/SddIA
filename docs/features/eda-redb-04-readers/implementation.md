@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-04-readers
 created: "2026-10-21"
 items:
@@ -10,8 +11,8 @@ items:
   - SddIA/tools/sddia-qa/src/lab_teardown.rs
   - SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
   - start-sddia.sh
+execution_id: "06f21693-9776-4537-a9fe-00cc76dda132"
 ---
-
 # Implementation — eda-redb-04-readers
 
 Touchpoints aplicados en la rama `feat/eda-redb-04-readers`. El modo por defecto del store no cambia. No hay bump de ficha.

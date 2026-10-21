@@ -1,9 +1,10 @@
 ---
+
 feature_name: eda-redb-04-readers
 created: "2026-10-21"
 purpose: "Decisiones de lectura del store y del gate de heartbeats"
+execution_id: "06f21693-9776-4537-a9fe-00cc76dda132"
 ---
-
 # Clarify — eda-redb-04-readers
 
 ## Decisiones
