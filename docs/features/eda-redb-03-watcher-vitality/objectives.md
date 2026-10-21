@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-03-watcher-vitality
 created: "2026-10-21"
 process: feature
@@ -7,9 +8,8 @@ persist_ref: docs/features/eda-redb-03-watcher-vitality
 pbi_ref: "docs/todos/pending/[ARQUITECTURA] EDA Redb 03 — Watcher y sondas de vitalidad.md"
 document_id: PBI-EDA-REDB-03-WATCHER-VITALITY
 pbi_uuid: "9b4e7c25-8a1d-4e63-b5f0-2d8c6a1e4f97"
-execution_id: "d98986bf-33c4-456e-be1c-f7541111c994"
+execution_id: "d707b171-c91f-4933-a68b-0415c19a390d"
 ---
-
 # Objetivos — eda-redb-03-watcher-vitality
 
 ## Misión
