@@ -4,11 +4,11 @@ created: "2026-10-21"
 branch: feat/eda-redb-06-semantic-layer
 branch_name: feat/eda-redb-06-semantic-layer
 persist_ref: docs/features/eda-redb-06-semantic-layer
-pbi_ref: docs/todos/pending/[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md
 document_id: PBI-EDA-REDB-06-SEMANTIC-LAYER
 execution_id: "8aa2812e-0456-4679-ae2d-18956c57c085"
 global: APTO
-pbi_archived: false
+pbi_archived: true
 checks:
   AC-11: APTO
   CA-08: APTO

@@ -2,7 +2,7 @@
 feature_name: eda-redb-06-semantic-layer
 created: "2026-10-21"
 document_id: PBI-EDA-REDB-06-SEMANTIC-LAYER
-pbi_ref: docs/todos/pending/[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md
 ---
 
 # Clarify — eda-redb-06-semantic-layer
