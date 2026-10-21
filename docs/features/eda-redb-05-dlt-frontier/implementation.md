@@ -1,9 +1,10 @@
 ---
+
 feature_name: eda-redb-05-dlt-frontier
 created: "2026-10-21"
 branch_name: feat/eda-redb-05-dlt-frontier
+execution_id: "9270731e-5df9-4984-967a-f52cbb394132"
 ---
-
 # Implementación — eda-redb-05-dlt-frontier
 
 El despacho vive en `route_domain_core` y `dlt_telemetry_anchor`. La telemetría calcula un digest local y escribe la prueba sin `copy_dlt_seal`. El ancla externa abre `events.redb` solo si `writes_store`.

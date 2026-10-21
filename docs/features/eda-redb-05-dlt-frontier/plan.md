@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-05-dlt-frontier
 created: "2026-10-21"
 phases:
@@ -6,8 +7,8 @@ phases:
   - suscripciones
   - fichas
   - pruebas
+execution_id: "9270731e-5df9-4984-967a-f52cbb394132"
 ---
-
 # Plan — eda-redb-05-dlt-frontier
 
 1. Cortar el publisher en el despacho salvo las dos clases externas, y sellar solo esas cuando el store escribe.
