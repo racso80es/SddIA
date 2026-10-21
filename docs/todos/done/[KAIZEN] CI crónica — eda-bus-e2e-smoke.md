@@ -6,7 +6,8 @@ format: markdown
 version: 1.1.0
 created: 2026-10-21
 updated: 2026-10-21
-status: refinado
+status: done
+refinement_status: implemented
 priority: alta
 process: feature
 executor_vehicle: feature
