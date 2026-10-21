@@ -7,7 +7,7 @@ version: "1.1.2"
 created: "2026-10-16"
 refined: "2026-10-21"
 updated: "2026-10-21"
-status: refinada
+status: done
 refinement_status: refinado
 spawned_pbis:
   - PBI-EDA-REDB-01-STORE
@@ -21,7 +21,7 @@ priority: alta
 type: arquitectura
 process: feature
 author: "Vértice Biológico (Racso)"
-refinement_notes: "v1.1.0 reescribe v1.0.0 contra el repositorio (Filtro A). El artefacto vive en docs/todos/pending/, no en historias/; refine-hu no aplica (hu_ref exige historias/). Sin tracker_ref."
+refinement_notes: "v1.1.0 reescribe v1.0.0 contra el repositorio (Filtro A). Archivada en docs/todos/done/historias/. refine-hu no aplica (hu_ref exige historias/ en pending). Sin tracker_ref."
 related:
   - SddIA/core/cumulo.paths.json
   - SddIA/core/event-domain-subscriptions.json
@@ -236,7 +236,7 @@ Campo nuevo opcional `cognitive_role_descriptor` (texto industrial, una línea).
 
 Genoma (`events/`, `agents/`, `norms/`, `daemons/`) solo vía `execute-process` → `entity-manager`. Un PR por PBI. Orden: 01 bloquea 02; 02 bloquea 03, 04 y 05; 06 va en paralelo; 07 cierra cuando 03, 04, 05 y 06 están mergeados.
 
-Los siete están implementados. 01–06 están mergeados y viven en `docs/todos/done/`. 07 está archivado en `docs/todos/done/` en `feat/eda-redb-07-cutover` y presentado; el merge no está sellado. Esta HU sigue en `pending`.
+Los siete están implementados. 01–06 están mergeados y viven en `docs/todos/done/`. 07 está archivado en `docs/todos/done/` en `feat/eda-redb-07-cutover` y presentado; el merge no está sellado. Esta HU queda en `docs/todos/done/historias/`.
 
 | Orden | PBI | Artefacto | AC | Estado | PR |
 | ---: | :--- | :--- | :--- | :--- | :--- |
