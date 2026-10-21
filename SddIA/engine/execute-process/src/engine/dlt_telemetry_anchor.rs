@@ -3,6 +3,7 @@
 use super::eda_bus_topology::write_json_atomic;
 use super::persist_pec_correlation_proof::resolve_eda_proofs_dir;
 use chrono::Utc;
+use sddia_event_store::{copy_dlt_seal, store_mode, writes_store};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
@@ -119,6 +120,9 @@ pub fn persist_dlt_telemetry_proof(
         "anchored_at": Utc::now().to_rfc3339(),
     });
     write_json_atomic(&path, &body)?;
+    if writes_store(store_mode()) {
+        let _ = copy_dlt_seal(repo, event_id, digest);
+    }
     Ok(path
         .strip_prefix(repo)
         .unwrap_or(&path)

@@ -1,6 +1,7 @@
 //! Emisión best-effort de Progress Trace Capsule (PTC) bajo `eda_fractal.progress`.
 
 use chrono::Utc;
+use sddia_event_store::{append_progress_monotonic, store_mode, writes_filesystem, writes_store};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
@@ -8,13 +9,23 @@ use uuid::Uuid;
 
 pub fn map_phase_name(raw: &str) -> (&'static str, bool) {
     let lower = raw.to_lowercase();
-    if lower.contains("inicialización") || lower.contains("inicializacion") || lower.contains("init") {
+    if lower.contains("inicialización")
+        || lower.contains("inicializacion")
+        || lower.contains("init")
+    {
         return ("spec", false);
     }
-    if raw.starts_with("Clarify") || lower.contains("estabilización de requisitos") || lower.contains("estabilizacion de requisitos") {
+    if raw.starts_with("Clarify")
+        || lower.contains("estabilización de requisitos")
+        || lower.contains("estabilizacion de requisitos")
+    {
         return ("clarify", false);
     }
-    if lower.contains("diseño de blueprint") || lower.contains("diseno de blueprint") || lower.contains("diseño del fix") || lower.contains("diseno del fix") {
+    if lower.contains("diseño de blueprint")
+        || lower.contains("diseno de blueprint")
+        || lower.contains("diseño del fix")
+        || lower.contains("diseno del fix")
+    {
         return ("plan", false);
     }
     if raw == "Ejecución" || raw == "Ejecucion" {
@@ -94,11 +105,7 @@ pub fn short_verdict(entry: &Value, handoff: Option<&Value>) -> Option<String> {
         return Some(clip(message));
     }
     if let Some(handoff) = handoff {
-        if let Some(message) = handoff
-            .as_str()
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-        {
+        if let Some(message) = handoff.as_str().map(str::trim).filter(|s| !s.is_empty()) {
             return Some(clip(message));
         }
         for key in ["message", "summary", "verdict", "note"] {
@@ -121,6 +128,13 @@ pub fn short_verdict(entry: &Value, handoff: Option<&Value>) -> Option<String> {
 }
 
 fn write_ptc_best_effort(repo: &Path, correlation_id: &str, envelope: &Value) {
+    let mode = store_mode();
+    if writes_store(mode) {
+        let _ = append_progress_monotonic(repo, correlation_id, envelope);
+    }
+    if !writes_filesystem(mode) {
+        return;
+    }
     let progress_rel = super::fractal::load_progress_dir(repo);
     let trace_id = envelope
         .get("trace_id")
@@ -263,11 +277,7 @@ mod tests {
         let repo = base.join("repo");
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         let cfg = repo.join("SddIA/core/cumulo.paths.json");
-        std::fs::write(
-            &cfg,
-            r#"{"eda_fractal":{"progress":"./.events/progress"}}"#,
-        )
-        .unwrap();
+        std::fs::write(&cfg, r#"{"eda_fractal":{"progress":"./.events/progress"}}"#).unwrap();
         // Bloquear escritura: progress es un archivo, no directorio.
         let blocked = repo.join(".events/progress");
         std::fs::create_dir_all(blocked.parent().unwrap()).unwrap();

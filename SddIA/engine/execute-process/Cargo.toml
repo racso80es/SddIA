@@ -18,6 +18,7 @@ sddia-infrastructure-lancedb-preferences = { path = "../../infrastructure/adapte
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
+sddia-event-store = { path = "../../sddia-event-store" }
 regex = "1.10"
 uuid = { version = "1.8", features = ["v4"] }
 chrono = { version = "0.4", features = ["clock"] }

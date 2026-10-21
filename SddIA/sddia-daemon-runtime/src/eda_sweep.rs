@@ -1,5 +1,6 @@
 use crate::eda_bus::{ensure_event_bus_topology, header_path, load_registry, EdBusPaths};
 use crate::{ensure_fractal_dirs, load_bus_topology, BusTopology};
+use sddia_event_store::load_dispatched_event;
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -338,13 +339,12 @@ pub fn try_sweep_event(
 ) -> Result<Value, String> {
     let mut base = json!({"event_uuid": event_uuid, "purged": false});
     let pending_path = bus.pending.join(format!("{event_uuid}.json"));
-    if !pending_path.is_file() {
-        base["status"] = json!("absent");
-        return Ok(base);
-    }
-
-    let event: Value = match fs::read_to_string(&pending_path) {
-        Ok(raw) => serde_json::from_str(&raw).map_err(|_| "invalid-json")?,
+    let event: Value = match load_dispatched_event(repo, event_uuid, &pending_path) {
+        Ok(Some(event)) => event,
+        Ok(None) => {
+            base["status"] = json!("absent");
+            return Ok(base);
+        }
         Err(_) => {
             base["status"] = json!("invalid-json");
             return Ok(base);

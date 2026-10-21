@@ -1,5 +1,8 @@
 //! Emisión de eventos fractales en `./.events/*`.
 
+use sddia_event_store::{
+    record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store,
+};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
@@ -52,6 +55,23 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family_dir: &str) -> Resu
         .get("event_id")
         .and_then(|v| v.as_str())
         .ok_or("event_id required")?;
+    let family = family_dir.split('/').next_back().unwrap_or("telemetry");
+    let mode = store_mode();
+    if writes_store(mode) {
+        record_ecst(repo, family, event).map_err(|err| err.to_string())?;
+    }
+    if !writes_filesystem(mode) {
+        let target = runtime_db_path(repo);
+        return Ok(json!({
+            "event_id": event_id,
+            "target_path": target
+                .strip_prefix(repo)
+                .unwrap_or(&target)
+                .to_string_lossy()
+                .replace('\\', "/"),
+            "family": family,
+        }));
+    }
     let target = repo.join(family_dir).join(format!("{event_id}.json"));
     if let Some(parent) = target.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -65,6 +85,6 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family_dir: &str) -> Resu
             .unwrap_or(&target)
             .to_string_lossy()
             .replace('\\', "/"),
-        "family": family_dir.split('/').last().unwrap_or("telemetry"),
+        "family": family,
     }))
 }

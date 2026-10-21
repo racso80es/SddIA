@@ -18,6 +18,7 @@ use super::dlt_telemetry_anchor::{
 };
 use super::invoke_orchestrator::{invoke_process_full, resolve_orchestrator_bin};
 use chrono::Utc;
+use sddia_event_store::{record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store};
 use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
@@ -201,7 +202,7 @@ fn fracture_event_content_hash(event_type: &str, payload: &Value) -> String {
 }
 
 fn write_pending_domain_event_file(
-    _repo: &Path,
+    repo: &Path,
     pending_dir: &Path,
     event_type: &str,
     emitter_agent: &str,
@@ -221,10 +222,27 @@ fn write_pending_domain_event_file(
         "payload": payload,
         "delivery_state": {},
     });
-    let text = serde_json::to_string_pretty(&event).map_err(|e| e.to_string())?;
+    let mode = store_mode();
+    if let Some(hash12) = content_hash.as_deref() {
+        let target = pending_dir.join(format!("{hash12}.json"));
+        if writes_filesystem(mode) && target.is_file() {
+            return Ok(target);
+        }
+    }
+    if writes_store(mode) {
+        if content_hash.is_some() && !writes_filesystem(mode) && fracture_already_stored(repo, &event)?
+        {
+            return Ok(runtime_db_path(repo));
+        }
+        record_ecst(repo, "domain", &event).map_err(|err| err.to_string())?;
+    }
+    if !writes_filesystem(mode) {
+        return Ok(runtime_db_path(repo));
+    }
 
     if let Some(hash12) = content_hash {
         let target = pending_dir.join(format!("{hash12}.json"));
+        let text = serde_json::to_string_pretty(&event).map_err(|e| e.to_string())?;
         match OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -243,6 +261,30 @@ fn write_pending_domain_event_file(
     let target = pending_dir.join(format!("{event_uuid}.json"));
     write_json_atomic(&target, &event)?;
     Ok(target)
+}
+
+fn fracture_already_stored(repo: &Path, event: &Value) -> Result<bool, String> {
+    let path = runtime_db_path(repo);
+    if !path.is_file() {
+        return Ok(false);
+    }
+    let event_type = event
+        .get("event_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let payload = event.get("payload").cloned().unwrap_or(json!({}));
+    let hash = fracture_event_content_hash(event_type, &payload);
+    let store = sddia_event_store::EventStore::open(path).map_err(|err| err.to_string())?;
+    let listed = store
+        .list_family(sddia_event_store::Family::Domain)
+        .map_err(|err| err.to_string())?;
+    Ok(listed.into_iter().any(|stored| {
+        stored.event_type == event_type
+            && fracture_event_content_hash(
+                &stored.event_type,
+                &stored.ecst.get("payload").cloned().unwrap_or(json!({})),
+            ) == hash
+    }))
 }
 
 pub fn materialize_pending_domain_event(
