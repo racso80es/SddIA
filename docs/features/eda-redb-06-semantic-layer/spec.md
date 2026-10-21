@@ -1,10 +1,11 @@
 ---
+
 feature_name: eda-redb-06-semantic-layer
 created: "2026-10-21"
 base: agents-contract
 scope: descriptor cognitivo
+execution_id: "14475d25-826d-4732-b88e-922c924b7344"
 ---
-
 # Spec — eda-redb-06-semantic-layer
 
 ## Contrato

@@ -23,10 +23,18 @@ thread_local! {
 
 pub fn mode_from_name(name: Option<&str>) -> StoreMode {
     match name.map(str::trim).filter(|s| !s.is_empty()) {
+        Some("filesystem") => StoreMode::Filesystem,
         Some("dual") => StoreMode::Dual,
-        Some("redb") => StoreMode::Redb,
-        _ => StoreMode::Filesystem,
+        _ => StoreMode::Redb,
     }
+}
+
+/// Ruta de directorio o fichero. Un nombre de tabla o `*.redb` no lo es.
+pub fn is_filesystem_rel(raw: &str) -> bool {
+    let s = raw.trim();
+    !s.is_empty()
+        && !s.ends_with(".redb")
+        && (s.contains('/') || s.contains('\\') || s.starts_with('.'))
 }
 
 pub fn store_mode() -> StoreMode {

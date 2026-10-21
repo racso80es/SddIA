@@ -34,14 +34,17 @@ pub fn load_eda_bus(repo: &Path) -> Result<EdaBusPaths, String> {
     let pending = bus
         .and_then(|b| b.get("pending"))
         .and_then(|v| v.as_str())
+        .filter(|s| sddia_event_store::is_filesystem_rel(s))
         .unwrap_or("./.events/pending");
     let processing = bus
         .and_then(|b| b.get("processing"))
         .and_then(|v| v.as_str())
+        .filter(|s| sddia_event_store::is_filesystem_rel(s))
         .unwrap_or("./.events/processing");
     let processed = bus
         .and_then(|b| b.get("processed"))
         .and_then(|v| v.as_str())
+        .filter(|s| sddia_event_store::is_filesystem_rel(s))
         .unwrap_or("./.events/processed");
     Ok(EdaBusPaths {
         pending: resolve_bus_path(repo, pending),
@@ -139,7 +142,7 @@ pub fn load_eda_fractal(repo: &Path) -> Result<std::collections::HashMap<String,
     if let Some(fractal) = cfg.get("eda_fractal").and_then(|v| v.as_object()) {
         for (key, value) in fractal {
             if let Some(rel) = value.as_str() {
-                if !rel.trim().is_empty() {
+                if sddia_event_store::is_filesystem_rel(rel) {
                     defaults.insert(key.clone(), normalize_rel(rel));
                 }
             }

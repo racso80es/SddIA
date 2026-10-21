@@ -7,7 +7,7 @@ source "$ROOT/SddIA/scripts/common/sddia_shell_lib.sh"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
-for launcher in event-watcher telegram-watcher github-bridge-watcher event-sweeper email-watcher iota-publish-relay; do
+for launcher in event-watcher telegram-watcher github-bridge-watcher email-watcher iota-publish-relay; do
   grep -q '_sddia_resolve_daemon_binary' "$ROOT/SddIA/daemons/${launcher}.sh" \
     || fail "launcher ${launcher}.sh no usa _sddia_resolve_daemon_binary"
   if grep -q 'NATIVE_DEBUG' "$ROOT/SddIA/daemons/${launcher}.sh"; then

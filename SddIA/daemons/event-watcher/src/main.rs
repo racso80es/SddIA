@@ -601,6 +601,38 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
             } else {
                 paths.sort();
             }
+            if process_name == "route-domain-event"
+                && sddia_event_store::store_mode() == sddia_event_store::StoreMode::Redb
+            {
+                let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
+                for path in &paths {
+                    let event_uuid = path
+                        .file_stem()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned();
+                    if b.routed_ok.contains(&event_uuid) {
+                        continue;
+                    }
+                    let rel = rel_event_path(&repo, path);
+                    let event = json!({
+                        "event_id": format!("residual-{event_uuid}"),
+                        "event_type": "System_Fracture_Detected",
+                        "emitter_agent": "event-watcher",
+                        "payload": {
+                            "process_name": "event-watcher",
+                            "friction_id": "F-EDA-RESIDUAL-FILESYSTEM",
+                            "error_trace": format!("residual {rel} con store redb; no reinyectado"),
+                            "attempted_action": "route-domain-event",
+                        },
+                        "delivery_state": {},
+                    });
+                    let _ = sddia_event_store::record_ecst(&repo, "domain", &event);
+                    b.routed_ok.insert(event_uuid);
+                    eprintln!("[WATCHER] residual {rel}: fractura F-EDA-RESIDUAL-FILESYSTEM");
+                }
+                continue;
+            }
             if process_name == "route-domain-event" {
                 let mut eligible: Vec<(PathBuf, String, String, String)> = Vec::new();
                 {
@@ -1069,6 +1101,49 @@ mod tests {
         );
         assert!(!logged.contains(secret), "el watcher leyó el ECST: {logged}");
         assert!(!root.join(".events/pending").join(format!("{event_id}.json")).is_file());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn residual_pending_json_is_a_fracture_and_is_not_routed() {
+        let _lock = WATCHER_ENV.lock().unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "sddia-ew-residual-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(root.join(".events/pending")).unwrap();
+        fs::write(
+            root.join(".events/pending/ca12-residual.json"),
+            r#"{"event_id":"ca12-residual","secret":"no-reinject"}"#,
+        )
+        .unwrap();
+        let log = root.join("argv.log");
+        let bin = mock_bin(&root);
+        let _bin = push_env("SDDIA_EXECUTE_PROCESS_BIN", bin.to_str().unwrap());
+        let _log = push_env("WATCHER_LOG", log.to_str().unwrap());
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        run_watcher(root.clone(), true).expect("tick");
+        sddia_event_store::override_store_mode(None);
+        let logged = fs::read_to_string(&log).unwrap_or_default();
+        assert!(
+            !logged.contains("ca12-residual.json"),
+            "reinyectó el residual: {logged}"
+        );
+        assert!(root.join(".events/pending/ca12-residual.json").is_file());
+        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&root))
+            .expect("open");
+        let rows = store
+            .list_family(sddia_event_store::Family::Domain)
+            .expect("family");
+        assert!(rows.iter().any(|row| {
+            row.ecst.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
+                && row.ecst.get("payload").and_then(|p| p.get("friction_id")).and_then(|v| v.as_str())
+                    == Some("F-EDA-RESIDUAL-FILESYSTEM")
+        }));
         let _ = fs::remove_dir_all(&root);
     }
 

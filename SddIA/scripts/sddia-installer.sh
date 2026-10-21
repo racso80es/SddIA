@@ -582,7 +582,7 @@ enable_units() {
     shopt -u nullglob
   fi
   systemctl --user daemon-reload
-  for name in event-watcher event-sweeper kalma2-bridge email-watcher telegram-watcher github-bridge-watcher iota-publish-relay; do
+  for name in event-watcher kalma2-bridge email-watcher telegram-watcher github-bridge-watcher iota-publish-relay; do
     launcher="$ROOT/SddIA/scripts/daemons/${name}.sh"
     local unit_name="sddia-${name}@${ESC}.service"
     [[ -f "$launcher" ]] || continue

@@ -5,7 +5,9 @@ pub mod linear_bridge;
 pub mod linear_bridge_webhook;
 
 use chrono::Utc;
-use sddia_event_store::{record_ecst, store_mode, writes_filesystem, writes_store};
+use sddia_event_store::{
+    is_filesystem_rel, record_ecst, store_mode, writes_filesystem, writes_store,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
@@ -122,9 +124,11 @@ pub fn load_bus_topology(repo: &Path) -> BusTopology {
     let mut top = defaults(repo);
     if let Some(bus) = bus {
         if let Some(p) = bus.get("pending").and_then(|v| v.as_str()) {
-            top.pending = rel_path(repo, p);
+            if is_filesystem_rel(p) {
+                top.pending = rel_path(repo, p);
+            }
         }
-        if let Some(dl) = bus.get("dead_letter").and_then(|v| v.as_str()) {
+        if let Some(dl) = bus.get("dead_letter").and_then(|v| v.as_str()).filter(|s| is_filesystem_rel(s)) {
             let dl_norm = dl.trim_end_matches('/');
             top.dead_letter = rel_path(repo, dl_norm);
             top.dead_letter_subscribers =
@@ -139,11 +143,13 @@ pub fn load_bus_topology(repo: &Path) -> BusTopology {
             ("domain", &mut top.domain),
         ] {
             if let Some(p) = fractal.get(key).and_then(|v| v.as_str()) {
-                *dest = rel_path(repo, p);
+                if is_filesystem_rel(p) {
+                    *dest = rel_path(repo, p);
+                }
             }
         }
         // Laudo B: eda_fractal.dead_letter prevalece sobre eda_bus.dead_letter
-        if let Some(dl) = fractal.get("dead_letter").and_then(|v| v.as_str()) {
+        if let Some(dl) = fractal.get("dead_letter").and_then(|v| v.as_str()).filter(|s| is_filesystem_rel(s)) {
             let dl_norm = dl.trim_end_matches('/');
             top.dead_letter = rel_path(repo, dl_norm);
             top.dead_letter_subscribers =

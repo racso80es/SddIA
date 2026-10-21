@@ -12,7 +12,6 @@ EXCLUDE=(
   execute-process
   sddia-qa
   event-watcher
-  event-sweeper
   email-watcher
   telegram-watcher
   github-bridge-watcher

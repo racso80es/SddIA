@@ -53,7 +53,6 @@ CONSUMER_BINS=(
   execute-process
   kalma2-bridge
   event-watcher
-  event-sweeper
   email-watcher
   telegram-watcher
   telegram-gateway
@@ -298,7 +297,7 @@ else
       local_pkgs+=("-p" "$name")
     fi
   done
-  local_pkgs+=(-p execute-process -p kalma2-bridge -p event-watcher -p event-sweeper -p email-watcher -p telegram-watcher -p telegram-gateway -p send-telegram-notification)
+  local_pkgs+=(-p execute-process -p kalma2-bridge -p event-watcher -p email-watcher -p telegram-watcher -p telegram-gateway -p send-telegram-notification)
   (
     cd "$REPO_ROOT/SddIA"
     if [[ "$PROFILE_BIN" == "release" ]]; then
@@ -349,7 +348,7 @@ for name in "${!CAPSULE_SET[@]}"; do
   _copy_bin "$name" || MISSING=$((MISSING + 1))
 done
 # Núcleo operativo + cadena Tormentosa (fail-closed en build real; skip-build incompleto = WARN).
-for must in execute-process kalma2-bridge event-watcher event-sweeper send-telegram-notification llm-router thought-graph-access; do
+for must in execute-process kalma2-bridge event-watcher send-telegram-notification llm-router thought-graph-access; do
   if [[ ! -x "$STAGE/SddIA/target/release/$must" ]]; then
     if [[ "$SKIP_BUILD" -eq 1 ]]; then
       echo "[WARN] binario obligatorio ausente en skip-build: $must" >&2
@@ -460,7 +459,7 @@ if [[ -x "$STAGE/SddIA/target/release/telegram-watcher" ]]; then
 fi
 
 # F-DEP-03 / L-BUNDLE-PY: centinelas sin orquestador .py
-for name in execute-process event-watcher event-sweeper email-watcher telegram-watcher kalma2-bridge; do
+for name in execute-process event-watcher email-watcher telegram-watcher kalma2-bridge; do
   bin="$STAGE/SddIA/target/release/$name"
   [[ -x "$bin" ]] || continue
   if strings "$bin" 2>/dev/null | grep -F -q "execute-process.py"; then
@@ -557,12 +556,11 @@ Crear \`{instancia}/.SddIA/.dev/.env\` (prevalece sobre \`.dev/.env\` raíz):
 
 Plantillas: \`SddIA/templates/systemd/\` (\`WorkingDirectory=%f\`, \`EnvironmentFile=%f/.SddIA/.dev/.env\`).
 
-Fábrica \`sddia-daemon@.service.template\` → unidades \`sddia-{event-watcher,event-sweeper,kalma2-bridge,…}@.service\` en \`.SddIA/systemd/\`. Enable:
+Fábrica \`sddia-daemon@.service.template\` → unidades \`sddia-{event-watcher,kalma2-bridge,…}@.service\` en \`.SddIA/systemd/\`. Enable:
 
 \`\`\`bash
 ESC="$(systemd-escape -p "\$PWD")"
 systemctl --user enable --now "sddia-event-watcher@\${ESC}.service"
-systemctl --user enable --now "sddia-event-sweeper@\${ESC}.service"
 systemctl --user enable --now "sddia-kalma2-bridge@\${ESC}.service"
 \`\`\`
 

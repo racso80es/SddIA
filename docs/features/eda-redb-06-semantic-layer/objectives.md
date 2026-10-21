@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-redb-06-semantic-layer
 created: "2026-10-21"
 process: feature
@@ -6,9 +7,8 @@ branch_name: feat/eda-redb-06-semantic-layer
 persist_ref: docs/features/eda-redb-06-semantic-layer
 pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 06 — Doble capa semántica.md
 document_id: PBI-EDA-REDB-06-SEMANTIC-LAYER
-execution_id: "8aa2812e-0456-4679-ae2d-18956c57c085"
+execution_id: "14475d25-826d-4732-b88e-922c924b7344"
 ---
-
 # Objetivos — eda-redb-06-semantic-layer
 
 ## Misión

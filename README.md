@@ -38,7 +38,7 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 
 Definición operativa de **Event**: *contrato inmutable de comunicación asíncrona; señal con propósito que opera bajo coreografía pura.* Toda Clase declara `event_family`: `{ telemetry, orchestration, domain }` (enum estricto en [`events-contract.md`](SddIA/events/events-contract.md)).
 
-El runtime objetivo es el store `redb` en `.SddIA/runtime/events.redb` (tablas `events` y `subscriber_delivery`). El bus de ficheros bajo `./.events/` permanece hasta el cutover del PBI 07. La frontera DLT es `local_only` por defecto: solo `PullRequest_Merged` y `System_Immunity_Certified` anclan en IOTA.
+El runtime por defecto es el store `redb` en `.SddIA/runtime/events.redb` (tablas `events`, `subscriber_delivery`, `dead_letter_index`, `progress_traces`, `dlt_audit_seals`). `SDDIA_EVENT_STORE=filesystem` o `dual` es un escape explícito. La frontera DLT es `local_only` por defecto: solo `PullRequest_Merged` y `System_Immunity_Certified` anclan en IOTA.
 
 | Agente | Tier | Descriptor |
 | :--- | :--- | :--- |
@@ -85,7 +85,7 @@ SSOT: [`cumulo.paths.json`](SddIA/core/cumulo.paths.json) → `eda_fractal.*`. D
 | `./.events/orchestration/` | Latencia mínima; línea de montaje | [`route-orchestration`](SddIA/process/route-orchestration.md) | [`event-orchestration-subscriptions.json`](SddIA/core/event-orchestration-subscriptions.json) |
 | `./.events/domain/` | Gobernanza; Cerbero / Cúmulo / procesos reactivos | [`route-domain`](SddIA/process/route-domain.md) | [`event-domain-subscriptions.json`](SddIA/core/event-domain-subscriptions.json) |
 
-Telemetría con **fan-out** (p. ej. `radamanto-batch` + `telemetry-compliance-audit`): cada consumidor sella `delivery_state`; la purga física del JSON pertenece solo a la infraestructura (`route-telemetry` o `event-sweeper`). Tras consumo OK, Radamanto emite chispa domain `Domain_Entity_Telemetry_Captured` (suscriptor: `memory-evolution-ingest`).
+Telemetría con **fan-out** (p. ej. `radamanto-batch` + `telemetry-compliance-audit`): cada consumidor sella `delivery_state`; la purga del testigo pertenece a `route-telemetry`. Tras consumo OK, Radamanto emite chispa domain `Domain_Entity_Telemetry_Captured` (suscriptor: `memory-evolution-ingest`).
 
 #### Pipeline dominio legacy (V3+)
 
@@ -103,22 +103,18 @@ Coexistencia gradual (D0.2): eventos dominio legacy y flujos como `PullRequest_P
 
 ```mermaid
 flowchart LR
-  EM[Emisor] --> P[pending]
-  P --> W[event-watcher]
+  EM[Emisor] --> REDB[(events.redb)]
+  REDB --> W[event-watcher]
   W --> RDE[process route-domain-event]
-  RDE --> PROC[processing + testigos]
-  PROC --> OUT[processed / dead-letter]
-  OUT --> SW[event-sweeper]
-  SW --> PURGE[purga pending]
+  RDE --> REDB
 ```
 
 | Paso | Componente | Responsabilidad |
 |------|------------|-----------------|
-| 1 | Emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | Escriben ECST en `.events/pending/` |
-| 2 | `event-watcher` (binario Rust) | Monitoriza `pending/`; delega en `route-domain-event` |
-| 3 | **`route-domain-event`** | Gate ECST; fan-out async; purga `pending/` al consenso |
-| 4 | Suscriptores | Trabajo de dominio; testigos con `result_status` |
-| 5 | `event-sweeper` (binario Rust) | Purga residual; alerta Kaizen si hay `dead-letter/` |
+| 1 | Emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | Insertan el ECST en `events` y `subscriber_delivery=pending` |
+| 2 | `event-watcher` (binario Rust) | Drena entregas `pending` del store; delega en `route-domain-event` |
+| 3 | **`route-domain-event`** | Gate ECST; fan-out; cierra `subscriber_delivery` |
+| 4 | Suscriptores | Trabajo de dominio; testigo en el store |
 
 **Invocación manual (laboratorio):**
 

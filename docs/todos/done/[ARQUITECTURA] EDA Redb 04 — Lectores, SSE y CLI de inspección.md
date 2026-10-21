@@ -10,7 +10,7 @@ priority: alta
 type: arquitectura
 process: feature
 dispatch: false
-historia_ref: "docs/todos/pending/HU-SDDIA-EDA-REDB-001: Evolución del Bus de Eventos a Redb, Jurisdicción Cognitiva y Estandarización del Marco SddIA.md"
+historia_ref: "docs/todos/done/historias/HU-SDDIA-EDA-REDB-001: Evolución del Bus de Eventos a Redb, Jurisdicción Cognitiva y Estandarización del Marco SddIA.md"
 historia_document_id: HU-SDDIA-EDA-REDB-001
 historia_uuid: "7c4e9a12-8b3d-4f61-a9e0-2d5c6b8f1a47"
 suggested_branch: feat/eda-redb-04-readers

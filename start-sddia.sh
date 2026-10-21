@@ -31,7 +31,7 @@ KALMA_PORT="${SDDIA_CLIENT_PORT:-8765}"
 KALMA_HOST="127.0.0.1"
 KALMA_URL="http://${KALMA_HOST}:${KALMA_PORT}"
 DAEMON_LAUNCHER_DIR="SddIA/scripts/daemons"
-REQUIRED_DAEMONS=(event-watcher event-sweeper)
+REQUIRED_DAEMONS=(event-watcher)
 # Perfil runtime (L-PROFILE): consumer | engineering. Default lab = engineering.
 RUNTIME_PROFILE="$(echo "${SDDIA_RUNTIME_PROFILE:-engineering}" | tr '[:upper:]' '[:lower:]')"
 EMAIL_DAEMON="email-watcher"
@@ -148,7 +148,6 @@ _ensure_orchestrator() {
         iota-publish-relay
         kalma2-bridge
         event-watcher
-        event-sweeper
         send-telegram-notification
         telegram-gateway
         telegram-watcher
@@ -179,7 +178,7 @@ _ensure_orchestrator() {
     local ep_bin
     for ep_bin in "$target_dir/debug/execute-process" "$target_dir/release/execute-process"; do
         if [[ -x "$ep_bin" ]]; then
-            CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":true,"write_witness":true,"names":["iota-immutable-publisher","event-watcher","event-sweeper","send-telegram-notification","telegram-gateway"]}' >/dev/null 2>&1 \
+            CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":true,"write_witness":true,"names":["iota-immutable-publisher","event-watcher","send-telegram-notification","telegram-gateway"]}' >/dev/null 2>&1 \
                 || echo "  -> [WARN] --seal-capsules parcial (revisar genomas/testigos)"
             # Skills DCC: testigo ELF; write_genome=false (DA-2).
             CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["git-manager","shell-executor","sddia-evolution-register"]}' >/dev/null 2>&1 \
@@ -349,7 +348,7 @@ _materialize_systemd_units() {
     local name body
     mkdir -p "$dest"
     if [[ -f "$factory" ]]; then
-        for name in event-watcher event-sweeper kalma2-bridge telegram-watcher github-bridge-watcher iota-publish-relay; do
+        for name in event-watcher kalma2-bridge telegram-watcher github-bridge-watcher iota-publish-relay; do
             body="$(cat "$factory")"
             body="${body//@@DAEMON_NAME@@/$name}"
             printf '%s\n' "$body" >"$dest/sddia-${name}@.service"
@@ -400,7 +399,6 @@ _systemd_ignite() {
     _sync_user_systemd_units || return 1
 
     _enable_instance_unit "sddia-event-watcher" || return 1
-    _enable_instance_unit "sddia-event-sweeper" || return 1
     _enable_instance_unit "sddia-kalma2-bridge" || return 1
 
     if [[ -n "${SDDIA_EMAIL_IMAP_HOST:-}" || "$SENSORIAL_SYSTEMD" -eq 1 ]]; then
