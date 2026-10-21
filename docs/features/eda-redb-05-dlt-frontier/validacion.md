@@ -4,11 +4,11 @@ created: "2026-10-21"
 branch: feat/eda-redb-05-dlt-frontier
 branch_name: feat/eda-redb-05-dlt-frontier
 persist_ref: docs/features/eda-redb-05-dlt-frontier
-pbi_ref: docs/todos/pending/[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT.md
 document_id: PBI-EDA-REDB-05-DLT-FRONTIER
 execution_id: "9584e62d-e512-47bd-8341-7d1df48ae998"
 global: APTO
-pbi_archived: false
+pbi_archived: true
 checks:
   AC-5: APTO
   AC-6: APTO

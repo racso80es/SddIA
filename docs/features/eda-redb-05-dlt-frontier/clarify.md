@@ -2,7 +2,7 @@
 feature_name: eda-redb-05-dlt-frontier
 created: "2026-10-21"
 document_id: PBI-EDA-REDB-05-DLT-FRONTIER
-pbi_ref: docs/todos/pending/[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] EDA Redb 05 — Frontera de auditoría DLT.md
 ---
 
 # Clarify — eda-redb-05-dlt-frontier
