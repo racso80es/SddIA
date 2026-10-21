@@ -1306,6 +1306,85 @@ pub fn patch_hash_signature_refresh(artifact_path: &Path) -> Result<HashRefreshR
     })
 }
 
+/// Cambia `version` y `jurisdiction` de un Centinela sin regenerar el UUID.
+pub fn patch_daemon_declaration(
+    artifact_path: &Path,
+    index_path: &Path,
+    daemon_name: &str,
+    version: &str,
+    jurisdiction: &str,
+) -> Result<(String, String, String, String), String> {
+    let version = version.trim();
+    let jurisdiction = jurisdiction.trim();
+    if version.is_empty() || jurisdiction.is_empty() {
+        return Err("version o jurisdiction vacíos".into());
+    }
+    let text = fs::read_to_string(artifact_path).map_err(|e| e.to_string())?;
+    let (yaml, body) = split_md_frontmatter(&text)?;
+    let fm_val: Value = serde_yaml::from_str(&yaml).map_err(|e| e.to_string())?;
+    let map = match fm_val {
+        Value::Object(m) => m,
+        _ => return Err("frontmatter no es objeto YAML".into()),
+    };
+    let entity_uuid = map
+        .get("uuid")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if entity_uuid.is_empty() {
+        return Err("uuid ausente en frontmatter".into());
+    }
+    let old_hash = map
+        .get("hash_signature")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let version_re = Regex::new(r"(?m)^version:\s*.+$").map_err(|e| e.to_string())?;
+    let jurisdiction_re = Regex::new(r"(?m)^jurisdiction:\s*.+$").map_err(|e| e.to_string())?;
+    if !version_re.is_match(&yaml) || !jurisdiction_re.is_match(&yaml) {
+        return Err("version o jurisdiction ausente en frontmatter".into());
+    }
+    let yaml_version = version_re
+        .replace(&yaml, format!("version: {version}"))
+        .into_owned();
+    let yaml_new = jurisdiction_re
+        .replace(&yaml_version, format!("jurisdiction: {jurisdiction}"))
+        .into_owned();
+    let draft = join_md_frontmatter(&yaml_new, &body);
+    let new_hash = canonical_artifact_hash(&draft);
+    let hash_re = Regex::new(r"(?m)^hash_signature:\s*.+$").map_err(|e| e.to_string())?;
+    let yaml_hashed = if yaml_new.contains("hash_signature:") {
+        hash_re
+            .replace(&yaml_new, format!("hash_signature: \"{new_hash}\""))
+            .into_owned()
+    } else {
+        format!("{yaml_new}\nhash_signature: \"{new_hash}\"")
+    };
+    fs::write(artifact_path, join_md_frontmatter(&yaml_hashed, &body)).map_err(|e| e.to_string())?;
+    if index_path.is_file() {
+        let idx = fs::read_to_string(index_path).map_err(|e| e.to_string())?;
+        let needle = format!("| `{daemon_name}.md` |");
+        let mut out_lines = Vec::new();
+        for line in idx.lines() {
+            if line.contains(&needle) {
+                let parts: Vec<&str> = line.split('|').collect();
+                if parts.len() >= 9 {
+                    let mut cells: Vec<String> = parts.iter().map(|s| (*s).to_string()).collect();
+                    cells[4] = format!(" {version} ");
+                    out_lines.push(cells.join("|"));
+                    continue;
+                }
+            }
+            out_lines.push(line.to_string());
+        }
+        if idx.ends_with('\n') {
+            out_lines.push(String::new());
+        }
+        fs::write(index_path, out_lines.join("\n")).map_err(|e| e.to_string())?;
+    }
+    Ok((entity_uuid, old_hash, new_hash, version.to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1457,5 +1536,41 @@ phases:
             let (old, new) = refresh_process_hash(&p).expect("refresh");
             eprintln!("{}: {:?} -> {}", name, old, new);
         }
+    }
+
+    #[test]
+    fn patch_daemon_declaration_keeps_uuid_and_bumps_index_version() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let artifact = tmp.path().join("event-watcher.md");
+        let index = tmp.path().join("index.md");
+        fs::write(
+            &artifact,
+            "---\nuuid: f995cc89-22a7-488d-9b25-ddb1e5e3a4a4\nname: event-watcher\nversion: 1.1.0\nhash_signature: sha256:old\njurisdiction: Aislada\n---\n\n# event-watcher\n",
+        )
+        .unwrap();
+        fs::write(
+            &index,
+            "| `event-watcher.md` | `f995cc89-22a7-488d-9b25-ddb1e5e3a4a4` | event-watcher | 1.1.0 | daemons-contract v1.0.0 | ecosystem-evolution | `eda-bus-watch` | 30 |\n",
+        )
+        .unwrap();
+        let (uuid, old, new_hash, version) = patch_daemon_declaration(
+            &artifact,
+            &index,
+            "event-watcher",
+            "1.2.0",
+            "Aislada — reclama ids y no abre el ECST",
+        )
+        .expect("patch");
+        assert_eq!(uuid, "f995cc89-22a7-488d-9b25-ddb1e5e3a4a4");
+        assert_eq!(old, "sha256:old");
+        assert_eq!(version, "1.2.0");
+        assert!(new_hash.starts_with("sha256:"));
+        assert_ne!(new_hash, "sha256:old");
+        let text = fs::read_to_string(&artifact).unwrap();
+        assert!(text.contains("version: 1.2.0"));
+        assert!(text.contains("jurisdiction: Aislada — reclama ids y no abre el ECST"));
+        assert!(text.contains("f995cc89-22a7-488d-9b25-ddb1e5e3a4a4"));
+        let idx = fs::read_to_string(&index).unwrap();
+        assert!(idx.contains("| 1.2.0 |"));
     }
 }

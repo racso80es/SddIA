@@ -8,6 +8,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use std::{thread, time::Duration};
 
 const POLL_SECONDS: u64 = 2;
@@ -19,6 +20,14 @@ const HEARTBEAT_EMIT_FAIL_BUDGET: u32 = 5;
 const PHYSICAL_ROUTE_CHUNK: usize = 50;
 /// Tope de rutas en vuelo (evita inanición: pending largo no bloquea domain/telemetry).
 const MAX_IN_FLIGHT_ROUTES: usize = 16;
+/// Misma cadencia que el sweeper. El watcher la dispara aunque ese proceso no corra.
+const HEARTBEAT_AUDIT_SWEEP_SECONDS: u64 = 30;
+
+struct ProbeClock {
+    last_audit: Instant,
+    last_vitality: Instant,
+    vitality_secs: u64,
+}
 
 struct RouteBook {
     processing: HashSet<String>,
@@ -153,6 +162,125 @@ fn has_dead_letter_witnesses(
         // fallback: glob pattern uuid.*.json under dead_letter if subscribers nested differently
         let dl_root = repo.join(".events/dead-letter");
         dl_root.join("subscribers").join(format!("{event_uuid}.json")).is_file()
+    }
+}
+
+fn parse_vitality_probe_seconds(raw: Option<&str>) -> u64 {
+    match raw.map(str::trim).filter(|s| !s.is_empty()) {
+        None => 300,
+        Some(s) => match s.parse::<u64>() {
+            Ok(n) if n >= 30 => n,
+            _ => 30,
+        },
+    }
+}
+
+fn probe_clock_due_now() -> ProbeClock {
+    let vitality_secs =
+        parse_vitality_probe_seconds(env::var("SDDIA_VITALITY_PROBE_SECONDS").ok().as_deref());
+    ProbeClock {
+        last_audit: Instant::now() - Duration::from_secs(HEARTBEAT_AUDIT_SWEEP_SECONDS),
+        last_vitality: Instant::now() - Duration::from_secs(vitality_secs),
+        vitality_secs,
+    }
+}
+
+fn invoke_named_probe(repo: &Path, process: &str, inputs: &str, label: &str) {
+    let runner = execute_process_bin(repo);
+    match Command::new(&runner)
+        .args(["--process", process, "--inputs", inputs])
+        .current_dir(repo)
+        .output()
+    {
+        Ok(out) if out.status.success() => {}
+        Ok(out) => {
+            let err = String::from_utf8_lossy(&out.stderr);
+            let so = String::from_utf8_lossy(&out.stdout);
+            eprintln!(
+                "[WATCHER] {label}: {}",
+                if !err.trim().is_empty() {
+                    err.trim()
+                } else {
+                    so.trim()
+                }
+            );
+        }
+        Err(e) => eprintln!("[WATCHER] {label} spawn: {e}"),
+    }
+}
+
+fn tick_probes(repo: &Path, clock: &mut ProbeClock) {
+    if clock.last_audit.elapsed() >= Duration::from_secs(HEARTBEAT_AUDIT_SWEEP_SECONDS) {
+        invoke_named_probe(
+            repo,
+            "daemon-heartbeat-audit",
+            r#"{"sweep":true}"#,
+            "daemon-heartbeat-audit",
+        );
+        clock.last_audit = Instant::now();
+    }
+    if clock.last_vitality.elapsed() >= Duration::from_secs(clock.vitality_secs) {
+        invoke_named_probe(repo, "system-vitality-probe", "{}", "system-vitality-probe");
+        clock.last_vitality = Instant::now();
+    }
+}
+
+/// Ids con entrega `pending`. No lee el ECST. Un fichero pending ya presente lo deja al barrido.
+fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
+    if !sddia_event_store::writes_store(sddia_event_store::store_mode()) {
+        return;
+    }
+    let db = sddia_event_store::runtime_db_path(repo);
+    if !db.is_file() {
+        return;
+    }
+    let Ok(store) = sddia_event_store::EventStore::open(&db) else {
+        return;
+    };
+    let Ok(rows) = store.list_pending_deliveries() else {
+        return;
+    };
+    let mut seen = HashSet::new();
+    for (event_id, _subscriber_id) in rows {
+        if !seen.insert(event_id.clone()) {
+            continue;
+        }
+        let path = top.pending.join(format!("{event_id}.json"));
+        if path.is_file() {
+            continue;
+        }
+        let rel = format!(".events/pending/{event_id}.json");
+        let key = rel.clone();
+        {
+            let Ok(mut b) = book.lock() else {
+                return;
+            };
+            if b.processing.contains(&event_id) || b.routed_ok.contains(&event_id) {
+                continue;
+            }
+            if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
+                return;
+            }
+            b.processing.insert(event_id.clone());
+            *b.attempts.entry(key.clone()).or_insert(0) += 1;
+        }
+        let repo_c = repo.to_path_buf();
+        let book_c = Arc::clone(book);
+        let uuid_c = event_id;
+        let path_c = path;
+        thread::spawn(move || {
+            let out = invoke_route_process(&repo_c, &rel, "route-domain-event");
+            if let Ok(mut b) = book_c.lock() {
+                apply_route_outcome_fractal(
+                    &mut b,
+                    "route-domain-event",
+                    &path_c,
+                    &uuid_c,
+                    &key,
+                    &out,
+                );
+            }
+        });
     }
 }
 
@@ -438,6 +566,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
         Some(spawn_heartbeat_worker(Arc::clone(&shared), top.clone()))
     };
     let targets = watch_targets(&repo, &top);
+    let mut probes = probe_clock_due_now();
     if once {
         println!(
             "[WATCHER] Iniciado. roots= {:?}",
@@ -450,6 +579,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
         );
     }
     loop {
+        tick_probes(&repo, &mut probes);
         {
             let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
             prune_routed_ok(&mut b, &targets);
@@ -600,6 +730,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 });
             }
         }
+        claim_store_pending(&repo, &top, &book);
         {
             let mut rt = shared
                 .lock()
@@ -823,6 +954,148 @@ mod tests {
         )
         .expect("skip");
         assert_eq!(skip, "dead-letter kaizen");
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    static WATCHER_ENV: Mutex<()> = Mutex::new(());
+
+    struct EnvGuard {
+        key: &'static str,
+        prev: Option<String>,
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            match &self.prev {
+                Some(value) => env::set_var(self.key, value),
+                None => env::remove_var(self.key),
+            }
+        }
+    }
+
+    fn push_env(key: &'static str, value: &str) -> EnvGuard {
+        let prev = env::var(key).ok();
+        env::set_var(key, value);
+        EnvGuard { key, prev }
+    }
+
+    fn mock_bin(dir: &Path) -> PathBuf {
+        let path = dir.join("mock-execute.sh");
+        fs::write(
+            &path,
+            "#!/bin/sh\nprintf '%s\\n' \"$@\" >> \"$WATCHER_LOG\"\nprintf '\\n' >> \"$WATCHER_LOG\"\nexit 0\n",
+        )
+        .unwrap();
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
+        path
+    }
+
+    #[test]
+    fn filesystem_pending_is_routed_without_opening_the_store() {
+        let _lock = WATCHER_ENV.lock().unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "sddia-ew-fs-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(root.join(".events/pending")).unwrap();
+        let body = r#"{"event_id":"ca06","secret":"ecst-fichero-no-va-en-argv"}"#;
+        fs::write(root.join(".events/pending/ca06.json"), body).unwrap();
+        let log = root.join("argv.log");
+        let bin = mock_bin(&root);
+        let _bin = push_env("SDDIA_EXECUTE_PROCESS_BIN", bin.to_str().unwrap());
+        let _log = push_env("WATCHER_LOG", log.to_str().unwrap());
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        run_watcher(root.clone(), true).expect("tick");
+        sddia_event_store::override_store_mode(None);
+        let logged = fs::read_to_string(&log).unwrap_or_default();
+        assert!(
+            logged.contains(".events/pending/ca06.json"),
+            "argv={logged}"
+        );
+        assert!(!logged.contains("ecst-fichero-no-va-en-argv"));
+        assert!(!root.join(".SddIA/runtime/events.redb").is_file());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn redb_claim_delegates_the_id_without_reading_the_ecst() {
+        let _lock = WATCHER_ENV.lock().unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "sddia-ew-db-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(root.join(".SddIA/runtime")).unwrap();
+        let event_id = "ac4-claim";
+        let secret = "ecst-secreto-no-leido";
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&root))
+            .expect("open");
+        store
+            .insert_event(
+                &sddia_event_store::StoredEvent {
+                    event_id: event_id.into(),
+                    family: sddia_event_store::Family::Domain,
+                    event_type: "Domain_Probe".into(),
+                    created_at: 1,
+                    ecst: serde_json::json!({
+                        "event_id": event_id,
+                        "event_type": "Domain_Probe",
+                        "payload": { "secret": secret }
+                    }),
+                },
+                &["agent:argos"],
+            )
+            .expect("insert");
+        drop(store);
+        let log = root.join("argv.log");
+        let bin = mock_bin(&root);
+        let _bin = push_env("SDDIA_EXECUTE_PROCESS_BIN", bin.to_str().unwrap());
+        let _log = push_env("WATCHER_LOG", log.to_str().unwrap());
+        run_watcher(root.clone(), true).expect("tick");
+        sddia_event_store::override_store_mode(None);
+        let logged = fs::read_to_string(&log).unwrap_or_default();
+        assert!(
+            logged.contains(&format!(".events/pending/{event_id}.json")),
+            "argv={logged}"
+        );
+        assert!(!logged.contains(secret), "el watcher leyó el ECST: {logged}");
+        assert!(!root.join(".events/pending").join(format!("{event_id}.json")).is_file());
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn one_tick_fires_both_probes_without_the_sweeper() {
+        let _lock = WATCHER_ENV.lock().unwrap();
+        let root = std::env::temp_dir().join(format!(
+            "sddia-ew-pr-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let log = root.join("argv.log");
+        let bin = mock_bin(&root);
+        let _bin = push_env("SDDIA_EXECUTE_PROCESS_BIN", bin.to_str().unwrap());
+        let _log = push_env("WATCHER_LOG", log.to_str().unwrap());
+        let mut clock = probe_clock_due_now();
+        tick_probes(&root, &mut clock);
+        let logged = fs::read_to_string(&log).unwrap();
+        assert!(logged.contains("daemon-heartbeat-audit"));
+        assert!(logged.contains(r#"{"sweep":true}"#));
+        assert!(logged.contains("system-vitality-probe"));
+        assert!(logged.contains("{}"));
+        assert!(!logged.contains("event-sweeper"));
         let _ = fs::remove_dir_all(&root);
     }
 }

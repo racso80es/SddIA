@@ -4,6 +4,7 @@ use super::common::{
     append_row, apply_markdown_body_replacements, capability_name, dependencies_from_inputs,
     format_dependencies_yaml, handoff_create, idempotent_forge_handoff, optional_str,
     parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
+    patch_daemon_declaration,
     patch_artifact_body_replacements, patch_hash_signature_refresh, patch_norm_content_update,
     patch_process_phases_update, refresh_process_hash, repo_tool_base, required_str, sha256_canon,
     str_field, sync_action_index_row, sync_daemons_index_census, sync_event_family_class_count,
@@ -1403,6 +1404,32 @@ pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 patched = true;
             }
         }
+        if inputs
+            .get("daemon_declaration_patch")
+            .and_then(|v| v.as_bool())
+            == Some(true)
+        {
+            let declared_version = str_field(inputs, "daemon_version", "1.0.0");
+            let jurisdiction = str_field(
+                inputs,
+                "daemon_jurisdiction",
+                "Aislada — Ceguera Lógica. Solo inyecta eventos físicos en el bus",
+            );
+            let r = patch_daemon_declaration(
+                &daemon_path,
+                &daemons_root.join("index.md"),
+                &name,
+                &declared_version,
+                &jurisdiction,
+            )?;
+            entity_uuid = r.0;
+            if old_hash.is_empty() {
+                old_hash = r.1;
+            }
+            new_hash = r.2;
+            version = r.3;
+            patched = true;
+        }
         let extra_caps: Vec<String> = inputs
             .get("daemon_capabilities")
             .and_then(|v| v.as_array())
@@ -1429,6 +1456,11 @@ pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
             new_hash = r.2;
             version = r.3;
             patched = true;
+        }
+        if !patched {
+            return Err(
+                "update de daemon sin parche; no se regenera el UUID".into(),
+            );
         }
         if patched {
             return Ok(json!({
