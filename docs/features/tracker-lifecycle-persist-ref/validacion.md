@@ -26,6 +26,8 @@ git_changes:
   - docs/features/tracker-lifecycle-persist-ref/validacion.md
   - docs/todos/done/[ARQUITECTURA] HU-003 PBI-04 — tracker lifecycle.md
   - docs/features/tracker-lifecycle-stamp/validacion.md
+  - SddIA/evolution/a1c3e8d2-6b47-4f19-9c05-7e2d4b8a91f6.md
+  - SddIA/evolution/Evolution_log.md
 ---
 
 # Validación — tracker-lifecycle-persist-ref
