@@ -4,7 +4,7 @@ uuid: "c62ed63e-28b5-4a6b-b742-90661afcfed8"
 title: "[ARQUITECTURA] Tracker lifecycle — traza persist_ref por señal"
 format: markdown
 version: "1.0.0"
-status: pending
+status: done
 priority: alta
 type: arquitectura
 process: feature
@@ -15,7 +15,7 @@ historia_document_id: HU-SDDIA-TRACKER-LIFECYCLE-DI-003
 created: "2026-10-22"
 author: tekton
 updated: "2026-10-22"
-cola_ejecucion: docs/todos/pending/
+cola_ejecucion: docs/todos/done/
 blocked_by:
   - PBI-ARQUITECTURA-TRACKER-LIFECYCLE-03
 unblocks: []

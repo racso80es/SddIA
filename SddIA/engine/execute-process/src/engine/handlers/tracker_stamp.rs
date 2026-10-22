@@ -1068,4 +1068,77 @@ mod tests {
         assert!(!stamped);
         assert!(note.unwrap_or_default().contains("provider file"));
     }
+
+    #[test]
+    fn work_initiated_records_persist_ref_without_done() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let log = repo.join(".SddIA/state/tracker-outbound/LAB-PBI-OK.jsonl");
+            let before = std::fs::read_to_string(&log).unwrap_or_default();
+            let event = json!({
+                "event_type": "Work_Initiated",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-OK",
+                    "branch": "feat/persist-ref",
+                    "persist_ref": "docs/features/tracker-lifecycle-persist-ref",
+                    "expected_hu_tracker_ref": "LAB-HU-1"
+                }
+            });
+            let (stamped, _) = stamp_event(&repo, &event).expect("sello");
+            assert!(stamped);
+            let after = std::fs::read_to_string(&log).unwrap_or_default();
+            let fresh = after.trim_start_matches(&before);
+            assert!(fresh.contains("\"operation\":\"update_issue_state\""));
+            assert!(fresh.contains("\"operation\":\"create_comment\""));
+            assert!(!fresh.contains("\"done\""));
+        });
+    }
+
+    #[test]
+    fn file_provider_work_initiated_skips_comment() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        write_file(
+            root,
+            "SddIA/core/cumulo.paths.json",
+            r#"{ "instance": { "projects": ".SddIA/projects" } }"#,
+        );
+        write_file(
+            root,
+            ".SddIA/projects/demo.md",
+            "---\nmanifest_ref: .SddIA/project.md\nproject_root: .\n---\n",
+        );
+        write_file(
+            root,
+            ".SddIA/project.md",
+            "---\ntracker:\n  provider: file\n---\n",
+        );
+        let event = json!({
+            "event_type": "Work_Initiated",
+            "payload": {
+                "project_slug": "demo",
+                "tracker_ref": "OSC-1",
+                "branch": "feat/x",
+                "persist_ref": "docs/features/x"
+            }
+        });
+        let (stamped, note) = stamp_event(root, &event).expect("file");
+        assert!(!stamped);
+        assert!(note.unwrap_or_default().contains("provider file"));
+        assert!(!root.join(".SddIA/state/tracker-outbound/OSC-1.jsonl").is_file());
+    }
+
+    #[test]
+    fn forge_processes_keep_tracker_context_out() {
+        let repo = find_repo_root().expect("repo");
+        for rel in [
+            "SddIA/library/codexes/codex-software-engineering/process/feature.md",
+            "SddIA/library/codexes/codex-software-engineering/process/bug-fix.md",
+            "SddIA/library/codexes/codex-software-engineering/process/refactorization.md",
+        ] {
+            let text = std::fs::read_to_string(repo.join(rel)).expect(rel);
+            assert!(!text.contains("tracker-operations"), "{rel}");
+            assert!(!text.contains("tool:"), "{rel}");
+        }
+    }
 }
