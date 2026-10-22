@@ -1,9 +1,10 @@
 ---
 uuid: "d8e9f0a1-b2c3-4d5e-6f7a-8b9c0d1e2f3a"
 name: "execution-contexts"
-version: "1.4.0"
+version: "1.0.1"
 entity_type: "norm"
 jurisdiction: "cerbero"
+hash_signature: "sha256:5781fb047962cc909031a1492771d70c5409789dadcdb019b7d4a5c0f24ba2b8"
 ---
 
 # Normativa de Contextos de Ejecución (RBAC Simbiótico)
@@ -66,7 +67,7 @@ Toda Entidad Operativa debe declarar su pertenencia a uno de estos contextos. Cu
 * **Dominio:** Requerimientos en trackers externos (Linear, etc.).
 * **Alcance:** Leer, listar, transicionar estado, comentar y **crear** issues vía adaptadores GraphQL ciegos; **recibir webhooks firmados** en laboratorio (bind local, HMAC `Linear-Signature`, sin endpoint público).
 * **Fuera de alcance:** Borrar issues, administración de equipos o proyectos.
-* **Cápsulas asociadas (Ejemplos):** `linear-tracker-adapter`, centinela `linear-bridge-watcher` (POST lab).
+* **Cápsulas asociadas (Ejemplos):** capacidad `tracker:lifecycle`; proveedor vigente `linear-tracker-adapter`; centinela `linear-bridge-watcher` (POST lab).
 
 ---
 *Reporte de Integridad: Normativa forjada y registrada. Rutas actualizadas.*

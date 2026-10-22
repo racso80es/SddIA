@@ -404,7 +404,8 @@ pub fn invoke_tool_for_process(
     payload: &Value,
     process_name: Option<&str>,
 ) -> Result<Value, String> {
-    if tool_name == super::tracker_operations_gate::LINEAR_TRACKER_TOOL {
+    let lifecycle = super::handlers::tracker_stamp::lifecycle_tool_name(repo).ok();
+    if lifecycle.as_deref() == Some(tool_name) {
         let op = payload
             .get("request")
             .and_then(|r| r.get("operation"))

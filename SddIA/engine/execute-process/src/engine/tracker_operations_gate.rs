@@ -1,4 +1,4 @@
-//! Cerbero: alcance `tracker-operations` vs operaciones de `linear-tracker-adapter` (HU-A 03).
+//! Cerbero: alcance `tracker-operations` vs el provider resuelto de `tracker:lifecycle`.
 
 use super::cerbero_di_rbac::resolve_requester_policies;
 use super::workspace::load_paths_config;
@@ -8,7 +8,6 @@ use std::fs;
 use std::path::Path;
 
 const EXECUTION_CONTEXTS_FILE: &str = "execution-contexts.md";
-pub const LINEAR_TRACKER_TOOL: &str = "linear-tracker-adapter";
 
 pub fn operation_requires_tracker_context(operation: &str) -> bool {
     operation == "create_issue"
