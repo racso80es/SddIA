@@ -2,7 +2,7 @@
 context:
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: "sha256:212e94d7feae9eaa4146e288ae729edbe6bbbb561c05b5138c1f51dbd92a681d"
+hash_signature: sha256:b4558aa7b6810446ce5e4271afc646c51dfefba43fcf2527e1c30e6b91e75305
 inputs:
 - event_file_path: Ruta relativa al JSON ECST en pending (desde route-domain)
 - issue_ref: Identificador Linear (payload)
@@ -17,13 +17,11 @@ name: tracker-sync-replay
 outputs:
 - replay_status: applied | discarded | failed
 phases:
-- delegates_to:
-  - tool:linear-tracker-adapter
-  intent: fetch_issue y reaplicar si el ciclo avanza (orden backlog<todo<in_progress<…; cancelled terminal).
+- intent: fetch_issue y reaplicar si el ciclo avanza, usando el provider resuelto de tracker:lifecycle. Con file no hay replay.
   name: Replay Linear
 porcentaje_de_exito: null
 uuid: e1f2a3b4-c5d6-4789-a012-3456789abc01
-version: 1.1.0
+version: 1.0.1
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
