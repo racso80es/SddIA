@@ -12,6 +12,77 @@ use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 
+fn file_sink(repo: &Path, payload: &Value) -> Result<bool, String> {
+    let Some(slug) = str_field(payload, "project_slug") else {
+        return Ok(false);
+    };
+    let cfg = crate::core::paths::load_paths_config(repo).map_err(|e| e.to_string())?;
+    let projects = cfg
+        .pointer("/instance/projects")
+        .and_then(|v| v.as_str())
+        .unwrap_or(".SddIA/projects");
+    let index = repo
+        .join(projects.trim().trim_start_matches("./"))
+        .join(format!("{slug}.md"));
+    if !index.is_file() {
+        return Ok(false);
+    }
+    let index_fm = crate::core::parser::parse_frontmatter(&index).map_err(|e| e.to_string())?;
+    let manifest_ref = index_fm
+        .get("manifest_ref")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    let project_root = index_fm
+        .get("project_root")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if manifest_ref.is_empty() {
+        return Ok(false);
+    }
+    let manifest = if project_root == "." || project_root == "./" || project_root.is_empty() {
+        repo.join(manifest_ref.trim_start_matches("./"))
+    } else {
+        Path::new(project_root).join(manifest_ref.trim_start_matches("./"))
+    };
+    if !manifest.is_file() {
+        return Ok(false);
+    }
+    let fm = crate::core::parser::parse_frontmatter(&manifest).map_err(|e| e.to_string())?;
+    Ok(fm
+        .get("tracker")
+        .and_then(|t| t.get("provider"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        == Some("file"))
+}
+
+fn lifecycle_tool_name(repo: &Path) -> Result<String, String> {
+    let phase = json!({
+        "requires_capability": [{
+            "id": "tracker:lifecycle",
+            "contract": "tracker.lifecycle",
+            "version": ">=1.0.0"
+        }]
+    });
+    let bindings = super::super::capability_di_resolver::resolve_phase_bindings(repo, &phase)
+        .map_err(|e| e.message)?;
+    let provider = bindings
+        .first()
+        .map(|b| b.provider.clone())
+        .ok_or_else(|| "sin fila tracker:lifecycle".to_string())?;
+    let name = provider
+        .split_once(':')
+        .map(|(_, n)| n)
+        .unwrap_or(provider.as_str())
+        .trim();
+    if name.is_empty() {
+        return Err("provider tracker:lifecycle vacío".into());
+    }
+    Ok(name.to_string())
+}
+
 fn str_field(v: &Value, key: &str) -> Option<String> {
     v.get(key)
         .and_then(|x| x.as_str())
@@ -99,7 +170,7 @@ fn expected_hu_for_payload(repo: &Path, payload: &Value) -> Option<String> {
 fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
     invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &lifecycle_tool_name(repo)?,
         &json!({
             "request": {
                 "operation": "fetch_issue",
@@ -180,7 +251,7 @@ fn tool_update_state(
         .ok_or_else(|| format!("state_map sin {canonical}"))?;
     invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &lifecycle_tool_name(repo)?,
         &json!({
             "request": {
                 "operation": "update_issue_state",
@@ -197,7 +268,7 @@ fn tool_update_state(
 fn tool_comment(repo: &Path, issue_ref: &str, body: &str) -> Result<(), String> {
     invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &lifecycle_tool_name(repo)?,
         &json!({
             "request": {
                 "operation": "create_comment",
@@ -438,6 +509,9 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
         .ok_or("payload inválido")?;
     let payload_val = Value::Object(payload.clone());
     let source = "tracker-stamp";
+    if file_sink(repo, &payload_val)? {
+        return Ok((false, Some("no-op: provider file".into())));
+    }
 
     if event_type == "HU_Refined" {
         let issue_ref = str_field(&payload_val, "tracker_ref");
@@ -904,5 +978,94 @@ mod tests {
                 assert!(stamped, "expected stamp for {etype}");
             }
         });
+    }
+
+    fn write_file(dir: &std::path::Path, rel: &str, body: &str) {
+        let p = dir.join(rel);
+        if let Some(parent) = p.parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::write(p, body).unwrap();
+    }
+
+    #[test]
+    fn ac2_state_stamp_uses_live_op_and_schema() {
+        with_lab(|| {
+            std::env::remove_var("SDDIA_LAB_SKIP_CAPABILITY_DI");
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "PBI_Refined",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-OK",
+                    "pbi_ref": "docs/todos/pending/x.md",
+                }
+            });
+            let (stamped, _) = stamp_event(&repo, &event).expect("sello");
+            assert!(stamped);
+            let tool = lifecycle_tool_name(&repo).expect("provider");
+            let raw = super::super::super::capsules::invoke_tool_capsule_json(
+                &repo,
+                &tool,
+                &json!({
+                    "request": {
+                        "operation": "update_issue_state",
+                        "issue_ref": "LAB-PBI-OK",
+                        "state_name": "Todo",
+                        "team_key": "LAB"
+                    }
+                }),
+                true,
+            )
+            .expect("stdout");
+            assert_eq!(raw.exit_code, 0);
+            let phase = json!({
+                "requires_capability": [{
+                    "id": "tracker:lifecycle",
+                    "contract": "tracker.lifecycle",
+                    "version": ">=1.0.0"
+                }]
+            });
+            let bindings =
+                super::super::super::capability_di_resolver::resolve_phase_bindings(&repo, &phase)
+                    .expect("binding");
+            super::super::super::capability_di_output_validator::validate_output_payload(
+                &repo,
+                &bindings[0],
+                &raw.body,
+            )
+            .expect("schema");
+        });
+    }
+
+    #[test]
+    fn file_provider_skips_capsule() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        write_file(
+            root,
+            "SddIA/core/cumulo.paths.json",
+            r#"{ "instance": { "projects": ".SddIA/projects" } }"#,
+        );
+        write_file(
+            root,
+            ".SddIA/projects/demo.md",
+            "---\nmanifest_ref: .SddIA/project.md\nproject_root: .\n---\n",
+        );
+        write_file(
+            root,
+            ".SddIA/project.md",
+            "---\ntracker:\n  provider: file\n---\n",
+        );
+        let event = json!({
+            "event_type": "PBI_Refined",
+            "payload": {
+                "project_slug": "demo",
+                "tracker_ref": "OSC-1",
+                "pbi_ref": "docs/todos/pending/x.md"
+            }
+        });
+        let (stamped, note) = stamp_event(root, &event).expect("file");
+        assert!(!stamped);
+        assert!(note.unwrap_or_default().contains("provider file"));
     }
 }
