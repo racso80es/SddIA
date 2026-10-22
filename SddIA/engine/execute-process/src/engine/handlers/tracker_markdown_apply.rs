@@ -181,9 +181,10 @@ fn labels_has_editable(fetch: &Value, editable_label: &str) -> bool {
 }
 
 fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
+    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
     invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &tool,
         &json!({
             "request": {
                 "operation": "fetch_issue",

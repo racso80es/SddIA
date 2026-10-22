@@ -58,9 +58,10 @@ pub fn read_tracker_done_proof(repo: &Path, tracker_ref: &str) -> Option<Value> 
 }
 
 pub fn fetch_issue(repo: &Path, issue_ref: &str, source_process: &str) -> Result<Value, String> {
+    let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
     invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &tool,
         &json!({
             "request": {
                 "operation": "fetch_issue",
