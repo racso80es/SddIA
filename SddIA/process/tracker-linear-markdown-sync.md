@@ -2,7 +2,7 @@
 context:
 - tracker-operations
 contract: process-contract v1.4.0
-hash_signature: "sha256:8b1aa7e9b1134da18a9acf003cb009dbe4fc266f84e469c903c5d84ecfd0edda"
+hash_signature: sha256:4b86a5b79e6fe76f8467511d110a50cd51df209011c6e2431193691f91277690
 inputs:
 - sync_all: Volcar todos los .md con tracker_ref en pending/done/Realizado (default true)
 minteo_maximo: null
@@ -11,13 +11,11 @@ outputs:
 - synced_count: Número de issues actualizados
 - synced: Detalle por archivo
 phases:
-- delegates_to:
-  - tool:linear-tracker-adapter
-  intent: update_issue_description con cuerpo completo del markdown (secretos redactados).
+- intent: update_issue_description con el provider resuelto de tracker:lifecycle. Con file es no-op y no crea ficheros de backlog.
   name: Volcado descripción Linear
 porcentaje_de_exito: null
 uuid: a3b4c5d6-e7f8-4890-a123-456789abcd01
-version: 1.0.0
+version: 1.0.1
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

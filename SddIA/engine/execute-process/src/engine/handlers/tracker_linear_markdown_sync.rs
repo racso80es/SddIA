@@ -1,6 +1,7 @@
 //! Proceso `tracker-linear-markdown-sync` — volcado de cuerpo Markdown a descripción Linear.
 
 use super::super::capsules::invoke_tool_for_process;
+use super::super::project_binding;
 use crate::core::parser::load_frontmatter_yaml;
 use crate::envelope::OrchestratorEnvelope;
 use regex::Regex;
@@ -76,9 +77,10 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str) -> Result<Value, Strin
         .unwrap_or(md_path)
         .to_string_lossy()
         .replace('\\', "/");
+    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
     let tool_out = invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &tool,
         &json!({
             "request": {
                 "operation": "update_issue_description",
@@ -97,6 +99,21 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str) -> Result<Value, Strin
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
+    if project_binding::tracker_config_for_inputs(repo, process_inputs)?.is_none() {
+        return Ok(OrchestratorEnvelope {
+            success: true,
+            status_code: 0,
+            data: Some(json!({
+                "synced_count": 0,
+                "synced": [],
+                "skipped": [],
+                "reason": "provider file",
+            })),
+            error: None,
+            execution_report: None,
+            exit_code: 0,
+        });
+    }
     let mut synced = Vec::new();
     let mut skipped = Vec::new();
 
