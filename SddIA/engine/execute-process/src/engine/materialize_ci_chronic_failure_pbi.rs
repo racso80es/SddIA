@@ -142,6 +142,51 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let slug = slugify_job_name(&job_name);
     let document_id = chronic_document_id(&slug);
 
+    if let Some(tc) = super::project_binding::tracker_config_for_inputs(repo, inputs)? {
+        let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
+        let listed = super::capsules::invoke_tool_for_process(
+            repo,
+            &tool,
+            &json!({ "request": { "operation": "list_issues", "team_key": tc.team_key } }),
+            Some("materialize-ci-chronic-failure-pbi"),
+        )?;
+        if let Some(items) = listed.get("items").and_then(|v| v.as_array()) {
+            for item in items {
+                if item.get("title").and_then(|v| v.as_str()).unwrap_or("").contains(&document_id) {
+                    let id = item.get("identifier").and_then(|v| v.as_str()).unwrap_or("");
+                    return Ok(json!({
+                        "success": true,
+                        "status": "already_open_or_done",
+                        "target_path": id,
+                        "issue_ref": id,
+                        "document_id": document_id,
+                    }));
+                }
+            }
+        }
+        let created = super::capsules::invoke_tool_for_process(
+            repo,
+            &tool,
+            &json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": tc.team_key,
+                    "title": format!("CI crónica {document_id}"),
+                    "description": format!("{workflow_name} {job_name} fallos={failure_count}"),
+                    "labels": ["pbi"],
+                }
+            }),
+            Some("materialize-ci-chronic-failure-pbi"),
+        )?;
+        let id = created.get("issue_ref").and_then(|v| v.as_str()).unwrap_or("");
+        return Ok(json!({
+            "success": true,
+            "status": "materialized",
+            "target_path": id,
+            "issue_ref": id,
+            "document_id": document_id,
+        }));
+    }
     if let Some(existing) = find_pbi_by_document_id(repo, &document_id) {
         let rel = existing
             .strip_prefix(repo)
