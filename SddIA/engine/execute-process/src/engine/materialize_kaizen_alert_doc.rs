@@ -196,6 +196,54 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let alert_justification = required_str(inputs, "alert_justification")?;
     let files = parse_implicated_files(inputs)?;
 
+    if let Some(tc) = super::project_binding::tracker_config_for_inputs(repo, inputs)? {
+        let hash8 = kaizen_alert_doc_hash(&review_id, &files);
+        let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
+        let listed = super::capsules::invoke_tool_for_process(
+            repo,
+            &tool,
+            &json!({ "request": { "operation": "list_issues", "team_key": tc.team_key } }),
+            Some("materialize-kaizen-alert-doc"),
+        )?;
+        if let Some(items) = listed.get("items").and_then(|v| v.as_array()) {
+            for item in items {
+                if item.get("title").and_then(|v| v.as_str()).unwrap_or("").contains(&hash8) {
+                    let id = item.get("identifier").and_then(|v| v.as_str()).unwrap_or("");
+                    return Ok(json!({
+                        "success": true,
+                        "target_path": id,
+                        "issue_ref": id,
+                        "message": "issue Kaizen ya existente",
+                        "hash8": hash8,
+                    }));
+                }
+            }
+        }
+        let label = super::project_binding::tracker_label_for_inputs(repo, inputs, "kaizen")?
+            .unwrap_or_else(|| "kaizen".into());
+        let created = super::capsules::invoke_tool_for_process(
+            repo,
+            &tool,
+            &json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": tc.team_key,
+                    "title": format!("Kaizen {hash8}"),
+                    "description": alert_justification,
+                    "labels": [label],
+                }
+            }),
+            Some("materialize-kaizen-alert-doc"),
+        )?;
+        let id = created.get("issue_ref").and_then(|v| v.as_str()).unwrap_or("");
+        return Ok(json!({
+            "success": true,
+            "target_path": id,
+            "issue_ref": id,
+            "message": "issue Kaizen materializado",
+            "hash8": hash8,
+        }));
+    }
     let hash8 = kaizen_alert_doc_hash(&review_id, &files);
     let todo_name = format!("PENDING_AUDIT_DOC_{hash8}.md");
     let pending_dir = repo.join("docs/todos/pending");
