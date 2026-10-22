@@ -427,7 +427,7 @@ pub fn invoke_tool_for_process(
             .to_string());
     }
     let body = unwrap_tool_body(&result.body);
-    if super::tracker_outbound::should_record_linear_tool(tool_name, payload) {
+    if super::tracker_outbound::should_record_linear_tool(repo, tool_name, payload) {
         super::tracker_outbound::record_linear_outbound_after_success(
             repo,
             process_name,
