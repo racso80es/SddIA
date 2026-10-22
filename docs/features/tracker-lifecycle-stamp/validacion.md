@@ -1,7 +1,7 @@
 ---
 feature_name: tracker-lifecycle-stamp
 created: "2026-10-22"
-updated: "2026-10-22T20:17:00+02:00"
+updated: "2026-10-22T20:18:30+02:00"
 process: feature
 branch: feat/tracker-lifecycle-stamp
 global: NO_APTO
@@ -14,13 +14,13 @@ checks:
     note: "Grep IDE: 0 hits de linear-tracker-adapter en tracker-stamp.md y tracker_stamp.rs. No sustituye rg/cápsula (L-ARGOS-SYNTHESIS)."
   AC-2:
     status: BLOQUEADO
-    note: "Fuente contiene ac2_state_stamp_uses_live_op_and_schema y update_issue_state; Shell rechazado → cargo test / sello live no ejecutables."
+    note: "Fuente contiene ac2_state_stamp_uses_live_op_and_schema y update_issue_state; Shell Rejected → cargo test / sello live no ejecutables."
   AC-3:
     status: PENDIENTE-CAPSULA
     note: "Lectura estática: tracker-stamp.md context: [tracker-operations]; requires_capability tracker:lifecycle. Sin evidencia de cápsula."
   runtime_integrity:
     status: FAIL
-    note: "Handoff Kalma2: process/phase/persist_ref/branch_name/execution_id/pbi_ref/correlation_id vacíos (?). Shell IDE Rejected; ./sddia-run.sh, skill:git-manager y action:execute-process no invocables."
+    note: "Handoff Kalma2: process/phase/persist_ref/branch_name/execution_id/pbi_ref/correlation_id vacíos (?). Shell IDE Rejected (pwd/echo y echo probe); ./sddia-run.sh, skill:git-manager y action:execute-process no invocables. Reintento Argos #2."
 git_changes: []
 approval_status: rejected
 integrity_failure: true
@@ -30,16 +30,16 @@ integrity_failure: true
 
 ## Veredicto
 
-**NO_APTO** — fallo de integridad Argos (sección 3 / L-ARGOS-SYNTHESIS). Sin `active_norm_pack` inyectado ni cápsulas ejecutables.
+**NO_APTO** — fallo de integridad Argos (sección 3 / L-ARGOS-SYNTHESIS). Sin `active_norm_pack` inyectado ni cápsulas ejecutables. Reintento tras validación previa: mismo bloqueo.
 
 ## Evidencia
 
 | Fuente | Resultado |
 |--------|-----------|
-| Shell / `./sddia-run.sh` | Rejected (probe `echo` incluido) |
+| Shell / `./sddia-run.sh` | Rejected (`pwd && echo SHELL_OK`; `echo probe`) |
 | `skill:git-manager` | No invocado |
 | Grep IDE `linear-tracker-adapter` | 0 matches en proceso + handler |
-| Lectura `tracker-stamp.md` | `context: tracker-operations`; `requires_capability: tracker:lifecycle` |
+| Lectura `tracker-stamp.md` | `context: tracker-operations`; `requires_capability: tracker:lifecycle`; hash `sha256:2cf44164…` |
 | `execution.md` (claim Tekton) | Afirma tests ok; Argos no re-ejecuta → no acredita AC-2 |
 | PBI | `docs/todos/done/...PBI-03...` (`status: done`); cierre documental APTO pendiente |
 
@@ -63,4 +63,4 @@ phases:
 
 ## Bloqueo
 
-Reinyectar handoff con `process: feature`, `phase: Verificación`, `persist_ref: docs/features/tracker-lifecycle-stamp`, `branch_name: feat/tracker-lifecycle-stamp` y Shell/CLI operativo. Prohibido declarar APTO sin stdout de cápsulas.
+Reinyectar handoff con `process: feature`, `phase: Verificación`, `persist_ref: docs/features/tracker-lifecycle-stamp`, `branch_name: feat/tracker-lifecycle-stamp`, `execution_id: 1d8790f8-abfe-4880-a3a5-ec0c9093812b`, `pbi_ref` del PBI-03 y Shell/CLI operativo. Prohibido declarar APTO sin stdout de cápsulas.
