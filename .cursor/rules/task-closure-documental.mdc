@@ -11,19 +11,23 @@ Al cerrar un `bug-fix`, `feature` o `refactorization`:
 
 ```text
 Done = un único PR mergeado en main
-     + validacion.md APTO en el diff de ese PR (pbi_archived: true)
-     + PBI en docs/todos/done/ en esa misma rama
+     + validacion.md APTO en el diff de ese PR
+     + cierre según tracker.provider:
+       · file: pbi_archived: true + PBI en docs/todos/done/ en la rama del PR
+       · linear: issue en state_map.done + validacion APTO, sin fichero nuevo en pending/ ni done/
 ```
 
 ## Pasos obligatorios (pre-merge, en la rama del PR)
 
-1. Mover PBI de `docs/todos/pending/` → `docs/todos/done/` (mismo `document_id`).
-2. Completar `{persist_ref}/validacion.md` — `global: APTO`, `pbi_archived: true`, `branch` coherente.
-3. Incluir esos cambios en el **mismo PR** que el código (antes de merge).
+1. Con provider `file`, mover el PBI de `docs/todos/pending/` → `docs/todos/done/` (mismo `document_id`).
+2. Completar `{persist_ref}/validacion.md` — `global: APTO`, `branch` coherente. Con `file`, `pbi_archived: true`.
+3. Con provider `linear`, el issue queda en `state_map.done`. No se pide el fichero en `done/`.
+4. Incluir esos cambios en el **mismo PR** que el código (antes de merge).
 
 ## Prohibido
 
 - Exigir `merged_pr` / `merge_commit` obligatorios en `validacion.md` para declarar Done.
+- `done_gate: both` como camino de cierre.
 - Abrir un segundo PR `docs/cerrar-pbi-*` solo para documentación post-merge.
 - Push directo a `main` con cierre documental (bloqueado por pre-push; usar un PR único).
 
