@@ -1,7 +1,10 @@
 ---
-context: knowledge-management, filesystem-ops, tracker-operations
+context:
+- knowledge-management
+- filesystem-ops
+- tracker-operations
 contract: process-contract v1.4.0
-hash_signature: sha256:b8b61105318a865e8bc3e66e17a84e0078dc6e37bc6c9a6e52bb58bd99814867
+hash_signature: sha256:8fd9db43da44115fdab343c33f17c227d001a4d36027c67347ca1d55d182b128
 inputs:
 - hu_ref: Ruta relativa bajo historias/
 - project_slug: Slug registrado
@@ -13,12 +16,12 @@ outputs:
 phases:
 - intent: Refina markdown en docs/todos/historias/.
   name: Refinamiento Mayeuta
-- intent: tool:linear-tracker-adapter create_issue con label hu si no hay tracker_ref y hay tracker en manifiesto.
+- intent: el provider resuelto de tracker:lifecycle hace create_issue con label hu si no hay tracker_ref y el provider efectivo es linear. Con file no hay create_issue.
   name: Registro Linear
 - intent: status refinada, tracker_ref opcional; emite HU_Refined.
   name: Sellado Argos
 uuid: 417025aa-6c8f-49fb-a4e7-d32efe9c896b
-version: 1.0.1
+version: 1.0.2
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

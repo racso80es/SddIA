@@ -58,7 +58,7 @@ fn file_sink(repo: &Path, payload: &Value) -> Result<bool, String> {
         == Some("file"))
 }
 
-fn lifecycle_tool_name(repo: &Path) -> Result<String, String> {
+pub(crate) fn lifecycle_tool_name(repo: &Path) -> Result<String, String> {
     let phase = json!({
         "requires_capability": [{
             "id": "tracker:lifecycle",

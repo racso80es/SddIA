@@ -6,7 +6,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
-| refine-hu | 417025aa-6c8f-49fb-a4e7-d32efe9c896b | 1.0.1 | knowledge-management, filesystem-ops, tracker-operations | — | Refinamiento pre-forja de HU en historias/; create_issue si  |
+| refine-hu | 417025aa-6c8f-49fb-a4e7-d32efe9c896b | 1.0.2 | knowledge-management, filesystem-ops, tracker-operations | — | Refinamiento pre-forja de HU en historias/; create_issue si  |
 | refine-pbi | d5ecaaed-ba8d-45a4-85f4-a1d7d1d4308a | 1.0.1 | knowledge-management, filesystem-ops | — | Refinamiento pre-forja del markdown PBI en todos_pending; se |
 | instance-health-verify | 44f1b64c-8a88-4d1e-a8f5-6280b4a44ce2 | 1.0.0 | quality-assurance | — | Verificación post-deploy de instancia consumidor: unidades s |
 | aiua-stimulus-processing | 6c595785-e386-402f-b570-0b2aa6343051 | 1.3.0 | ecosystem-evolution | — | Latido ontológico de la Aiúa: contexto LanceDB, inyección de |
@@ -61,4 +61,3 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | tracker-sync-replay | e1f2a3b4-c5d6-4789-a012-3456789abc01 | 1.1.0 | tracker-operations | — | Replay con orden backlog<todo<in_progress<…; cancelled terminal. |
 | tracker-stamp | f2a3b4c5-d6e7-4890-a123-456789abcdef | 1.1.0 | tracker-operations | — | Sello Linear: todo, cancelled, trunk_direct, ciclo PR (fail-soft D5). |
 | tracker-markdown-apply | b7c8d9e0-f123-4567-89ab-cdef01234567 | 1.0.0 | tracker-operations, filesystem-ops, source-control | — | Réplica inversa Linear → markdown; rama tracker-sync (AC-14..16). |
-

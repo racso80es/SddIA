@@ -215,9 +215,10 @@ fn try_create_hu_issue(
     if let Some(state) = backlog_state_name(tc) {
         request["state_name"] = json!(state);
     }
+    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
     let tool_body = invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &tool,
         &json!({ "request": request }),
         Some(PROCESS_HU),
     )?;
