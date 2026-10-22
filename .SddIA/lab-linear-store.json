@@ -1,0 +1,32 @@
+{
+  "audit_log": [
+    "comment:LAB-PBI-OK:PBI refinado:  v1.0.0",
+    "comment:LAB-PBI-OK:PBI refinado:  v1.0.0",
+    "comment:LAB-HU-TODO:HU refinada:  v1.0.0",
+    "comment:LAB-PBI-MERGE-LAST:Delivery commit: `deadbeef`",
+    "comment:LAB-PBI-OK:PBI cancelado: descartado",
+    "comment:LAB-PBI-CYCLE:Work iniciado — rama `feat/lab` · persist ``",
+    "comment:LAB-PBI-CYCLE:PR presentado: https://github.com/o/r/pull/1",
+    "comment:LAB-PBI-MERGE-LAST:Merge: `abc123deadbeef`"
+  ],
+  "comments": {
+    "LAB-HU-TODO": [
+      "HU refinada:  v1.0.0"
+    ],
+    "LAB-PBI-CYCLE": [
+      "Work iniciado — rama `feat/lab` · persist ``",
+      "PR presentado: https://github.com/o/r/pull/1"
+    ],
+    "LAB-PBI-MERGE-LAST": [
+      "Delivery commit: `deadbeef`",
+      "Merge: `abc123deadbeef`"
+    ],
+    "LAB-PBI-OK": [
+      "PBI refinado:  v1.0.0",
+      "PBI refinado:  v1.0.0",
+      "PBI cancelado: descartado"
+    ]
+  },
+  "issues": {},
+  "next_id": 100
+}

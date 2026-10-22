@@ -1,0 +1,6 @@
+{"event_id":"7a2b5070-65f5-4fce-80b0-7cd793fe743a","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-22T18:14:46Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"7f9edeec-cb7f-4e6f-ac32-18efffb166ee","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-22T18:14:48Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"63ddd544-d753-4291-b669-1c25bbec8ee0","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-22T18:14:50Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"8672cf3b-82b0-4e89-bdff-d87283b91688","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-22T18:14:52Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"2fdc98e5-2098-4280-a85d-529ccb685ad3","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-22T18:15:09Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"a7be6013-c8a0-44a7-8f2d-3a268a6c3270","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-22T18:15:11Z","operation":"create_comment","source_process":"tracker-stamp"}

@@ -1,0 +1,4 @@
+{"event_id":"7b0bd1ad-fb7c-43f2-b22c-166177c102bd","issue_ref":"LAB-PBI-MERGE-LAST","occurred_at":"2026-10-22T18:14:59Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"d8c88af0-ab46-4b65-a995-3daabbcfc787","issue_ref":"LAB-PBI-MERGE-LAST","occurred_at":"2026-10-22T18:15:06Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"c967d8c4-91c7-48d7-ae21-c50fe50e5b0b","issue_ref":"LAB-PBI-MERGE-LAST","occurred_at":"2026-10-22T18:15:29Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"8f3cb190-a166-49e5-90bb-9491960ae6cf","issue_ref":"LAB-PBI-MERGE-LAST","occurred_at":"2026-10-22T18:15:36Z","operation":"create_comment","source_process":"tracker-stamp"}
