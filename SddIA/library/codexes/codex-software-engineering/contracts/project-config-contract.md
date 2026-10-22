@@ -1,13 +1,13 @@
 ---
 uuid: "e7b1c4a2-6f08-4d3e-9a55-1c8e2b7d0f44"
 name: "project-config-contract"
-version: "1.3.0"
+version: "1.4.0"
 contract_version: "1.3.0"
 nature: "configuration-contract"
 codex: "codex-software-engineering"
 ---
 
-# Contrato de configuración de proyecto v1.3.0
+# Contrato de configuración de proyecto v1.4.0
 
 El Core valida **forma**. No interpreta semántica de negocio.
 
@@ -37,8 +37,8 @@ Objeto `tracker` opcional. Ausente = proyecto sin tracker (Kalma2 responde `trac
 
 | Campo | Tipo | Reglas |
 |-------|------|--------|
-| `tracker.provider` | string | Solo `linear`. |
-| `tracker.team_key` | string | Obligatorio si hay `provider`. |
+| `tracker.provider` | string | `file` \| `linear`. Objeto `tracker` ausente o `provider` ausente ⇒ provider efectivo `file`. Otro valor invalida el manifiesto. |
+| `tracker.team_key` | string | Obligatorio solo con `provider: linear`. |
 | `tracker.project_id` | string | Opcional; acota a un Linear Project. |
 | `tracker.state_map` | object | Claves ∈ `{backlog, todo, in_progress, in_review, done, cancelled}`; valores = nombre de WorkflowState del equipo. `todo` opcional. |
 | `tracker.labels.hu` | string | Default lógico `hu`. |
@@ -48,7 +48,7 @@ Objeto `tracker` opcional. Ausente = proyecto sin tracker (Kalma2 responde `trac
 | `tracker.labels.deuda` | string | Default lógico `deuda`. |
 | `tracker.labels.spike` | string | Default lógico `spike`. |
 | `tracker.labels.editable` | string | Default lógico `sddia-editable`; opt-in edición de cuerpo desde Linear (HU-B). |
-| `tracker.done_gate` | string | `git` \| `linear` \| `both`; default `git`. Validador HU-B 05+ acepta los tres; sin `tracker` → `git` forzado. |
+| `tracker.done_gate` | string | `git` \| `linear`. `both` no es valor. Debe coincidir con el provider (`file`/`git`, `linear`/`linear`). Un valor contradictorio invalida el manifiesto. Sin `tracker` el provider efectivo es `file` y el cierre es el fichero. |
 
 Prohibido incluir secretos (`LINEAR_*`) en el manifiesto.
 
