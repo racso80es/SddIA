@@ -2,7 +2,7 @@
 uuid: "c4a8f2e1-7b3d-4e9a-a1c6-5d8f0b2e4a71"
 id: capability-bindings
 name: capability-bindings
-version: "1.6.0"
+version: "1.7.0"
 nature: "runtime-ssot"
 scope: "agnostic"
 bindings:
@@ -58,6 +58,10 @@ bindings:
     contract: "asset.fetch"
     provider: "tool:github-raw-fetcher"
     provider_version: ">=1.0.0"
+  - capability_id: "tracker:lifecycle"
+    contract: "tracker.lifecycle"
+    provider: "tool:linear-tracker-adapter"
+    provider_version: ">=1.0.0"
 ---
 
 # Capability bindings (SSOT DI)
@@ -70,3 +74,4 @@ Mapa **capability → artefacto canónico** para resolución ciega (PBI-042 Hito
 - H9: `qa:probe` canónico `tool:event-bus-audit`; procesos con otro tool que `provides` la misma cap resuelven por preferencia de `delegates_to`.
 - H9-D: `audit:compliance` ≠ `qa:probe` (Gobernanza vs Caos).
 - H11: `gov:rbac` → `skill:rbac-governor`; `channel:ingest` → `tool:telegram-gateway`.
+- `tracker:lifecycle` → `tool:linear-tracker-adapter`. Una sola fila. El resolver la usa cuando el provider efectivo es `linear`; con `file` no hay `di_binding` (parser del manifiesto, PBI 14).

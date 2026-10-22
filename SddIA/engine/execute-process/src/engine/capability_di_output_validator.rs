@@ -138,6 +138,7 @@ mod tests {
     use super::*;
     use serde_json::json;
     use std::io::Write;
+    use std::path::PathBuf;
 
     fn write_file(dir: &Path, rel: &str, body: &str) {
         let p = dir.join(rel);
@@ -202,6 +203,62 @@ mod tests {
         let err = validate_output_payload(td.path(), &binding(), &payload).unwrap_err();
         assert_eq!(err.code, OutputValidatorCode::SchemaMismatch);
         assert_eq!(err.code.as_str(), "CONTRACT_OUTPUT_SCHEMA_MISMATCH");
+    }
+
+    #[test]
+    fn ac_tracker_lifecycle_emit_v2_body() {
+        std::env::remove_var(SKIP_ENV);
+        let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../..")
+            .canonicalize()
+            .expect("repo");
+        let binding = ResolvedBinding {
+            capability_id: "tracker:lifecycle".into(),
+            contract: "tracker.lifecycle".into(),
+            provider: "tool:linear-tracker-adapter".into(),
+            provider_md_rel: "x".into(),
+            contract_schema_rel: "x".into(),
+            version: "1.0.0".into(),
+        };
+        let ok = json!({
+            "meta": {
+                "schemaVersion": "2.0",
+                "entityKind": "tool",
+                "entityId": "linear-tracker-adapter"
+            },
+            "success": true,
+            "exitCode": 0,
+            "message": "linear-tracker-adapter ok",
+            "result": {"id": "OSC-1"}
+        });
+        validate_output_payload(&repo, &binding, &ok).expect("cuerpo emit_v2 de éxito");
+        let fail_body = json!({
+            "meta": {"schemaVersion": "2.0", "entityKind": "tool", "entityId": "linear-tracker-adapter"},
+            "success": false,
+            "exitCode": 1,
+            "message": "request.issue_id obligatorio",
+            "error": {"code": "LINEAR_GRAPHQL_ERROR", "message": "request.issue_id obligatorio"}
+        });
+        validate_output_payload(&repo, &binding, &fail_body).expect("fallo emit_v2 también es stdout real");
+        let missing = json!({"message": "sin success ni exitCode", "result": {}});
+        let err = validate_output_payload(&repo, &binding, &missing).unwrap_err();
+        assert_eq!(err.code, OutputValidatorCode::SchemaMismatch);
+
+        let phase = json!({
+            "requires_capability": [{
+                "id": "tracker:lifecycle",
+                "contract": "tracker.lifecycle",
+                "version": ">=1.0.0"
+            }]
+        });
+        let gate = super::super::capability_di_gate::validate_phase_capability_di(
+            &repo, &phase, "tracker-lifecycle-contract",
+        )
+        .unwrap_err();
+        assert_eq!(
+            gate.code,
+            super::super::capability_di_gate::DiGateCode::CapabilityProviderMismatch
+        );
     }
 
     #[test]

@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.8"
+version: "1.0.9"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:f03b9a2dbdb03585139ba0122eddff6769af26a060a8f9a20566d2b610cd5629"
+hash_signature: "sha256:4cf09806f229ac1d4ca0c3131bb054a2db06c715bce28d549310a1d111e1ceab"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -60,6 +60,10 @@ catalog:
     contract: "memory.pref_query"
     version: "1.0.0"
     description: "Consulta opt-in de preferencias activas del usuario vía user-preference-store."
+  - id: "tracker:lifecycle"
+    contract: "tracker.lifecycle"
+    version: "1.0.0"
+    description: "Ciclo de vida de un ítem de gestión. La salida auditada es el stdout de emit_v2 (success, exitCode, message, result)."
 ---
 
 ## Directriz Core
@@ -87,6 +91,7 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `agenda:persist` | `agenda.persist` | 1.0.0 | Agenda local de instancia vía agenda-manager |
 | `memory:pref-write` | `memory.pref_write` | 1.0.0 | Escritura preferencias usuario (store local) |
 | `memory:pref-query` | `memory.pref_query` | 1.0.0 | Consulta opt-in preferencias activas |
+| `tracker:lifecycle` | `tracker.lifecycle` | 1.0.0 | Ciclo de vida de un ítem de gestión; stdout `emit_v2` |
 
 ## Restricciones Duras
 
@@ -96,4 +101,5 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 - **Rigor taxonómico:** `qa:probe` (Caos/sonda) ≠ `audit:compliance` (Gobernanza/cumplimiento). Prohibido reuso cruzado.
 - **Rigor H11:** `gov:rbac` ≠ `audit:compliance`; `channel:ingest` ≠ `bus:route`.
 - **Rigor L-TERM:** `llm:infer` (adaptador / inferencia cruda) ≠ `llm:interact` (Mayeuta / síntesis e intención). Prohibido `provides llm:interact` en adaptadores de proveedor.
+- **Rigor tracker:** el id es `tracker:lifecycle` (`dominio:verbo`). El contrato es `tracker.lifecycle`. Prohibido el id `tracker.lifecycle`.
 - Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`; PBI-MULTI-LLM-ROUTER `llm:infer`.
