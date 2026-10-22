@@ -312,8 +312,48 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         }
     };
 
-    let target = repo.join(&target_rel);
     let friction_id = optional_str(inputs, "friction_id");
+    if let Some(issue) = optional_str(inputs, "tracker_ref") {
+        if super::project_binding::tracker_config_for_inputs(repo, inputs)?.is_some() {
+            let (verdict, _, section, unclassified) = analyze_fracture_kaizen_with_options(
+                &process_name,
+                &error_trace,
+                &attempted_action,
+                &agent_emitter,
+                friction_id.as_deref(),
+                None,
+            );
+            let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
+            super::capsules::invoke_tool_for_process(
+                repo,
+                &tool,
+                &json!({
+                    "request": {
+                        "operation": "create_comment",
+                        "issue_ref": issue,
+                        "body": section,
+                    }
+                }),
+                Some("enrich-fracture-pbi-kaizen"),
+            )?;
+            return Ok(json!({
+                "success": true,
+                "target_path": issue,
+                "issue_ref": issue,
+                "message": "issue enriquecido",
+                "evolution_verdict": verdict,
+                "unclassified": unclassified,
+            }));
+        }
+    }
+    let target = repo.join(&target_rel);
+    if super::project_binding::tracker_config_for_inputs(repo, inputs)?.is_some() && !target.is_file() {
+        return Ok(json!({
+            "success": true,
+            "reason": "no_target",
+            "message": "no_target",
+        }));
+    }
     let (verdict, _, section, unclassified) = analyze_fracture_kaizen_with_options(
         &process_name,
         &error_trace,
