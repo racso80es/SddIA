@@ -516,7 +516,7 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
                 YamlValue::String("done".into()),
             );
             let dg = tc.done_gate;
-            if dg == DoneGate::Linear || dg == DoneGate::Both {
+            if dg == DoneGate::Linear {
                 patch_map.insert(
                     YamlValue::String("status".into()),
                     YamlValue::String("done".into()),

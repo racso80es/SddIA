@@ -42,7 +42,6 @@ pub struct DocsLayout {
 pub enum DoneGate {
     Git,
     Linear,
-    Both,
 }
 
 impl DoneGate {
@@ -50,9 +49,8 @@ impl DoneGate {
         match raw.trim() {
             "git" => Ok(Self::Git),
             "linear" => Ok(Self::Linear),
-            "both" => Ok(Self::Both),
             other => Err(format!(
-                "PROJECT_CONFIG_INVALID: tracker.done_gate '{other}' (git | linear | both)"
+                "PROJECT_CONFIG_INVALID: tracker.done_gate '{other}' (git | linear)"
             )),
         }
     }
@@ -61,7 +59,6 @@ impl DoneGate {
         match self {
             Self::Git => "git",
             Self::Linear => "linear",
-            Self::Both => "both",
         }
     }
 }
@@ -214,10 +211,23 @@ const TRACKER_STATE_KEYS: &[&str] = &[
 
 const TRACKER_LABEL_OPTIONAL_KEYS: &[&str] = &["fix", "kaizen", "deuda", "spike", "editable"];
 
-const DONE_GATE_VALUES: &[&str] = &["git", "linear", "both"];
+const DONE_GATE_VALUES: &[&str] = &["git", "linear"];
 
-/// HU-B 05: validador acepta `linear` y `both`.
-const DONE_GATE_HU_A_ONLY_GIT: bool = false;
+fn effective_provider(tracker: &YamlValue) -> Result<&'static str, String> {
+    match tracker
+        .get("provider")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        None => Ok("file"),
+        Some("file") => Ok("file"),
+        Some("linear") => Ok("linear"),
+        Some(p) => Err(format!(
+            "PROJECT_CONFIG_INVALID: tracker.provider '{p}' no admitido (file | linear)"
+        )),
+    }
+}
 
 fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
     let Some(tracker) = fm.get("tracker") else {
@@ -226,26 +236,13 @@ fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
     if !tracker.is_mapping() {
         return Err("PROJECT_CONFIG_INVALID: tracker debe ser objeto".into());
     }
-    let provider = tracker
-        .get("provider")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty());
-    if provider.is_none() {
-        return Ok(());
-    }
-    let p = provider.unwrap();
-    if p != "linear" {
-        return Err(format!(
-            "PROJECT_CONFIG_INVALID: tracker.provider '{p}' no admitido (linear)"
-        ));
-    }
+    let provider = effective_provider(tracker)?;
     let team = tracker
         .get("team_key")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty());
-    if team.is_none() {
+    if provider == "linear" && team.is_none() {
         return Err(
             "PROJECT_CONFIG_INVALID: tracker.team_key obligatorio con provider linear".into(),
         );
@@ -296,12 +293,14 @@ fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
     {
         if !DONE_GATE_VALUES.contains(&raw) {
             return Err(format!(
-                "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' (git | linear | both)"
+                "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' (git | linear)"
             ));
         }
-        if DONE_GATE_HU_A_ONLY_GIT && raw != "git" {
+        let coherent = (provider == "linear" && raw == "linear")
+            || (provider == "file" && raw == "git");
+        if !coherent {
             return Err(format!(
-                "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' no habilitado hasta HU-B (solo git)"
+                "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' contradice provider '{provider}'"
             ));
         }
     }
@@ -859,10 +858,14 @@ mod tests {
         let mut body = manifest_md(uuid, "branch_pr", "1.3.0");
         body = body.replace(
             "docs_layout:",
-            "tracker:\n  provider: linear\n  team_key: OSC\n  done_gate: git\n  state_map:\n    backlog: Backlog\n    todo: Todo\n    done: Done\n  labels:\n    hu: hu\n    pbi: pbi\n    editable: sddia-editable\ndocs_layout:",
+            "tracker:\n  provider: file\n  done_gate: git\n  state_map:\n    backlog: Backlog\n    todo: Todo\n    done: Done\n  labels:\n    hu: hu\n    pbi: pbi\n    editable: sddia-editable\ndocs_layout:",
         );
         fs::write(client.join(".SddIA/project.md"), &body).unwrap();
         assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
+        let contradict = body.replace("done_gate: git", "done_gate: linear");
+        fs::write(client.join(".SddIA/project.md"), contradict).unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
+        assert!(err.contains("contradice"), "{err}");
     }
 
     #[test]
@@ -879,6 +882,27 @@ mod tests {
         assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
         let dg = done_gate_for_inputs(repo.path(), &json!({"project_slug": "demo"})).unwrap();
         assert_eq!(dg, DoneGate::Linear);
+    }
+
+    #[test]
+    fn file_default_and_rejects_both_and_contradiction() {
+        let repo = tempfile::tempdir().unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let client = layout(repo.path(), uuid, "branch_pr");
+        let body = manifest_md(uuid, "branch_pr", "1.3.0");
+        fs::write(client.join(".SddIA/project.md"), &body).unwrap();
+        assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
+        assert_eq!(
+            done_gate_for_inputs(repo.path(), &json!({"project_slug": "demo"})).unwrap(),
+            DoneGate::Git
+        );
+        let both = body.replace(
+            "docs_layout:",
+            "tracker:\n  provider: linear\n  team_key: OSC\n  done_gate: both\ndocs_layout:",
+        );
+        fs::write(client.join(".SddIA/project.md"), both).unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
+        assert!(err.contains("done_gate"), "{err}");
     }
 
     #[test]

@@ -1,6 +1,5 @@
-//! Gate de Done (`tracker.done_gate`): git | linear | both (HU-B 05).
+//! Gate de Done (`tracker.done_gate`): git | linear.
 
-use super::actions::try_run_native;
 use super::capsules::invoke_tool_for_process;
 use super::project_binding::{self, DoneGate, TrackerConfig};
 use chrono::Utc;
@@ -128,7 +127,7 @@ pub fn resolve_done_gate(repo: &Path, persist_ref: &str) -> Result<DoneGate, Str
     let inputs = json!({ "project_slug": slug });
     let gate = project_binding::done_gate_for_inputs(repo, &inputs)?;
     // L-DEGRADE / AC-21: Linear|Both sin tracker_ref → Git (no-op features locales).
-    if matches!(gate, DoneGate::Linear | DoneGate::Both)
+    if matches!(gate, DoneGate::Linear)
         && tracker_ref_from_persist(repo, persist_ref).is_none()
     {
         eprintln!(
@@ -154,9 +153,6 @@ pub fn pre_push_check(repo: &Path, persist_ref: Option<&str>) -> Result<(), Stri
     if read_tracker_done_proof(repo, &tracker_ref).is_some() {
         return Ok(());
     }
-    if gate == DoneGate::Both {
-        return Ok(());
-    }
     Err(format!(
         "DONE_GATE_LINEAR: falta evidencia local {} para tracker_ref {}",
         proof_path(repo, &tracker_ref).display(),
@@ -173,33 +169,16 @@ pub enum LinearClosure {
 pub fn check_linear_closure(
     repo: &Path,
     persist_ref: &str,
-    gate: DoneGate,
+    _gate: DoneGate,
 ) -> Result<LinearClosure, String> {
     let tracker_ref = tracker_ref_from_persist(repo, persist_ref)
         .ok_or_else(|| "DONE_GATE: tracker_ref no resuelto".to_string())?;
-    let slug = project_slug_from_persist(repo, persist_ref);
-    let inputs = json!({ "project_slug": slug });
+    let inputs = json!({ "project_slug": project_slug_from_persist(repo, persist_ref) });
     let tc = project_binding::tracker_config_for_inputs(repo, &inputs)?
         .ok_or_else(|| "DONE_GATE: proyecto sin tracker".to_string())?;
 
     let fetch = match fetch_issue(repo, &tracker_ref, "feature-pbi-archive") {
         Ok(v) => v,
-        Err(e) if gate == DoneGate::Both => {
-            let _ = try_run_native(
-                repo,
-                "emit-tracker-sync-failed",
-                &json!({
-                    "issue_ref": tracker_ref,
-                    "operation": "fetch_issue",
-                    "error_code": "LINEAR_UNAVAILABLE",
-                    "source_process": "feature-pbi-archive",
-                    "project_slug": slug,
-                }),
-            );
-            return Ok(LinearClosure::FallbackGit {
-                warn: format!("warn: Linear caído, fallback git: {e}"),
-            });
-        }
         Err(e) => return Err(e),
     };
 
@@ -445,9 +424,8 @@ mod tests {
         let both = project_binding::done_gate_for_inputs(
             &repo,
             &json!({ "project_slug": "lab-done-gate-both" }),
-        )
-        .expect("lab-done-gate-both");
-        assert_eq!(both, DoneGate::Both);
+        );
+        assert!(both.is_err(), "done_gate both deja de ser legal");
         let core = project_binding::done_gate_for_inputs(&repo, &json!({ "project_slug": "core" }))
             .expect("core registrado");
         assert_eq!(core, DoneGate::Linear);
