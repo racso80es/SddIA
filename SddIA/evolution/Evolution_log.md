@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `75b4d30c-520e-446d-9b0f-6539ed14d4f2` | 2026-10-22 | El adaptador declara tracker:lifecycle y el anti-eco registra según la fila de binding. | CANONICO | `SddIA/evolution/75b4d30c-520e-446d-9b0f-6539ed14d4f2.md` |
 | `2c882ecf-0c03-48a9-9259-8de9a15a2a74` | 2026-10-22 | Alta de la capacidad tracker:lifecycle y del contrato tracker.lifecycle alineado a emit_v2. | CANONICO | `SddIA/evolution/2c882ecf-0c03-48a9-9259-8de9a15a2a74.md` |
 | `4a6499e4-1a65-4aed-bd9f-e1be6b51b196` | 2026-10-21 | Excluir event-bus-audit del build WASI stable: redb 2.6.4 exige feature(wasi_ext). | CANONICO | `SddIA/evolution/4a6499e4-1a65-4aed-bd9f-e1be6b51b196.md` |
 | `36588064-c783-4b1b-933c-bb254fbb10ff` | 2026-10-21 | El default del bus pasa a redb y event-sweeper sale del catálogo. | CANONICO | `SddIA/evolution/36588064-c783-4b1b-933c-bb254fbb10ff.md` |
