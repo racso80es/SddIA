@@ -1,31 +1,27 @@
 ---
 feature_name: tracker-lifecycle-stamp
 created: "2026-10-22"
+updated: "2026-10-22T20:17:00+02:00"
 process: feature
 branch: feat/tracker-lifecycle-stamp
 global: NO_APTO
 pbi_archived: false
 execution_id: "1d8790f8-abfe-4880-a3a5-ec0c9093812b"
-pbi_ref: docs/todos/pending/[ARQUITECTURA] HU-003 PBI-03 — tracker lifecycle.md
+pbi_ref: docs/todos/done/[ARQUITECTURA] HU-003 PBI-03 — tracker lifecycle.md
 checks:
   AC-1:
     status: PENDIENTE-CAPSULA
-    note: "Inspección estática Grep IDE: 0 hits de linear-tracker-adapter en tracker-stamp.md y tracker_stamp.rs. Sin rg vía cápsula/Shell (runtime bloqueado)."
+    note: "Grep IDE: 0 hits de linear-tracker-adapter en tracker-stamp.md y tracker_stamp.rs. No sustituye rg/cápsula (L-ARGOS-SYNTHESIS)."
   AC-2:
     status: BLOQUEADO
-    note: "Sin Shell: no se pudo ejecutar cargo test ac2_state_stamp_uses_live_op_and_schema ni sello live con provider linear + validate_output_payload."
+    note: "Fuente contiene ac2_state_stamp_uses_live_op_and_schema y update_issue_state; Shell rechazado → cargo test / sello live no ejecutables."
   AC-3:
     status: PENDIENTE-CAPSULA
-    note: "Lectura estática: tracker-stamp.md declara context: [tracker-operations]. Sin evidencia de cápsula/git-manager."
+    note: "Lectura estática: tracker-stamp.md context: [tracker-operations]; requires_capability tracker:lifecycle. Sin evidencia de cápsula."
   runtime_integrity:
     status: FAIL
-    note: "Kalma2 inyectó process/phase/persist_ref/branch vacíos (?). Shell IDE rechazado; git-manager y execute-process no invocables."
-git_changes:
-  - SddIA/process/tracker-stamp.md
-  - SddIA/engine/execute-process/src/engine/handlers/tracker_stamp.rs
-  - docs/features/tracker-lifecycle-stamp/objectives.md
-  - docs/features/tracker-lifecycle-stamp/validacion.md
-  - docs/todos/pending/[ARQUITECTURA] HU-003 PBI-03 — tracker lifecycle.md
+    note: "Handoff Kalma2: process/phase/persist_ref/branch_name/execution_id/pbi_ref/correlation_id vacíos (?). Shell IDE Rejected; ./sddia-run.sh, skill:git-manager y action:execute-process no invocables."
+git_changes: []
 approval_status: rejected
 integrity_failure: true
 ---
@@ -34,17 +30,18 @@ integrity_failure: true
 
 ## Veredicto
 
-**NO_APTO** — fallo de integridad Argos (L-ARGOS-SYNTHESIS / falla controlada).
+**NO_APTO** — fallo de integridad Argos (sección 3 / L-ARGOS-SYNTHESIS). Sin `active_norm_pack` inyectado ni cápsulas ejecutables.
 
 ## Evidencia
 
 | Fuente | Resultado |
 |--------|-----------|
-| Shell / `./sddia-run.sh` | Rechazado por runtime; sin stdout de cápsulas |
-| `skill:git-manager` | No invocado (depende de Shell/CLI) |
-| Grep IDE `linear-tracker-adapter` | 0 matches en los dos ficheros (no sustituye AC-1 capsule) |
-| Lectura `tracker-stamp.md` | `requires_capability: tracker:lifecycle`; `context: tracker-operations` |
-| Cascada documental | Solo `objectives.md` presente pre-auditoría; faltan clarify/spec/plan/implementation/execution |
+| Shell / `./sddia-run.sh` | Rejected (probe `echo` incluido) |
+| `skill:git-manager` | No invocado |
+| Grep IDE `linear-tracker-adapter` | 0 matches en proceso + handler |
+| Lectura `tracker-stamp.md` | `context: tracker-operations`; `requires_capability: tracker:lifecycle` |
+| `execution.md` (claim Tekton) | Afirma tests ok; Argos no re-ejecuta → no acredita AC-2 |
+| PBI | `docs/todos/done/...PBI-03...` (`status: done`); cierre documental APTO pendiente |
 
 ## correction_blueprint_md
 
@@ -59,11 +56,11 @@ phases:
     delegates_to:
       - skill:git-manager
   - name: Re-verificación AC
-    intent: AC-1 rg; AC-2 cargo test ac2_state_stamp_uses_live_op_and_schema; AC-3 context.
+    intent: AC-1 ausencia linear-tracker-adapter; AC-2 cargo test ac2_state_stamp_uses_live_op_and_schema; AC-3 context tracker-operations.
     delegates_to:
       - agent:argos
 ```
 
 ## Bloqueo
 
-No se declara APTO sin evidencia determinista de cápsulas. Reinyectar handoff Kalma2 con `process: feature`, `phase: Verificación`, `persist_ref`, `branch_name` y Shell operativo.
+Reinyectar handoff con `process: feature`, `phase: Verificación`, `persist_ref: docs/features/tracker-lifecycle-stamp`, `branch_name: feat/tracker-lifecycle-stamp` y Shell/CLI operativo. Prohibido declarar APTO sin stdout de cápsulas.
