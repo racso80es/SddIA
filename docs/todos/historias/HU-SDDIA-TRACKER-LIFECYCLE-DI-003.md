@@ -213,9 +213,9 @@ Estímulo humano en Linear: el watcher, si no hay eco, emite `Tracker_Issue_Chan
 
 ---
 
-## 7. Desglose (≤ 3 ficheros por PBI)
+## 7. Desglose
 
-Ficheros en `docs/todos/pending/`. `document_id`: `PBI-ARQUITECTURA-TRACKER-LIFECYCLE-01` … `20`, mismo ordinal que esta lista. Mutación de genoma solo dentro de una feature, vía `entity-manager`.
+Los PBI 01–04 están cerrados, uno por ordinal. Los ordinales 05–20 son tareas de un solo PBI: `PBI-ARQUITECTURA-TRACKER-LIFECYCLE-05` (`docs/todos/pending/[ARQUITECTURA] HU-003 PBI-05 — tracker lifecycle.md`). Mutación de genoma solo dentro de una feature, vía `entity-manager`.
 
 1. **Contrato de la capacidad.** Alta de id, fila de binding y schema alineado a `emit_v2`.  
    `SddIA/library/norms/capability-taxonomy.md`  
@@ -296,4 +296,4 @@ Ficheros en `docs/todos/pending/`. `document_id`: `PBI-ARQUITECTURA-TRACKER-LIFE
 20. **Manifiestos Linear explícitos.** Core-self conserva `provider: linear` en `.SddIA/project.md`. Paciente 0 queda declarado en `/home/racso/Proyectos/SddIA_AP/.SddIA/project.md` (checkout fuera de este workspace). Ninguno de los dos hereda el default `file`.  
     `.SddIA/project.md`
 
-Los PBI 5, 6 y 16–19, cuando el provider efectivo es `linear`, no crean ficheros en `docs/todos/pending/` ni `docs/todos/done/`. Con `file`, sí. `historias/` no es ese bucket: esta historia no lo vacía. El barrido 5–12 espera la fila de binding del PBI 1. Ningún PBI abre `tracker-operations` en `feature`, `bug-fix` o `refactorization`.
+Las tareas T05, T06 y T16–T19, cuando el provider efectivo es `linear`, no crean ficheros en `docs/todos/pending/` ni `docs/todos/done/`. Con `file`, sí. `historias/` no es ese bucket: esta historia no lo vacía. El barrido T05–T12 espera la fila de binding del PBI 01. Ninguna tarea abre `tracker-operations` en `feature`, `bug-fix` o `refactorization`.
