@@ -38,11 +38,12 @@ git_changes:
   - .SddIA/project.md
 argos_integrity:
   shell: blocked
-  head_ref: refs/heads/main
+  head_ref: refs/heads/docs/ciclo-documental-fricciones
   feature_branch_local: absent
   feature_branch_remote: refs/remotes/origin/feat/tracker-lifecycle-sink@91ef2e8cb3ad4682c1cac56180c76772eb1588c6
-  reaudit: "2026-10-23T08:16+02:00"
+  reaudit: "2026-10-23T08:23+02:00"
   handoff: "process/phase/? vacíos; persist_ref/branch/execution_id/pbi_ref/correlation_id vacíos"
+  reaudit_note: "turno kalma2 vacío; Grep T05/T06/T11/T12 + HEAD/remoto/T20 reconfirmados; Shell Rejected (echo/sddia-run); sin cápsulas; L-ARGOS-SYNTHESIS"
 ---
 
 # Validación — tracker-lifecycle-sink (agent:argos)
@@ -53,27 +54,29 @@ argos_integrity:
 
 Handoff runtime: `process/phase/?` vacíos; metadatos de sesión vacíos. Contexto inferido desde artefactos materializados: `process: feature` · fase **Verificación** · `persist_ref: docs/features/tracker-lifecycle-sink` · `branch_name: feat/tracker-lifecycle-sink` · `pbi_ref` = PBI-05 pendiente.
 
-## Evidencia física (re-auditoría 2026-10-23T08:16+02:00)
+## Evidencia física (re-auditoría 2026-10-23T08:23+02:00)
 
 | Fuente | Resultado |
 |--------|-----------|
-| Grep `LINEAR_TRACKER_TOOL` en árbol (excl. docs de auditoría/PBI/HU) | 0 en motor/normas de peaje; solo historia/PBI/docs feature (T11 AC-1) |
-| Grep `linear-tracker-adapter` en `refine.rs` / `forge_pbi.rs` / watcher `main.rs` / `capsules.rs` | 0 matches (T05/T06/T12) |
+| Grep `LINEAR_TRACKER_TOOL` en `SddIA/` | 0 matches (T11 AC-1) |
+| Grep `linear-tracker-adapter` en `handlers/refine.rs`, `forge_pbi.rs`, `refine-hu.md`, `forge-pbi.md`, watcher `main.rs` | 0 matches (T05/T06/T12) |
 | `execution-contexts.md` | cita `tracker:lifecycle` + ejemplo adaptador (T11 R-3) |
 | `process/index.md` fila backlog | nombra `tracker:lifecycle` (T07 AC-2) |
 | `.SddIA/project.md` Core-self | `provider: linear`, `team_key: OSC`, `done_gate: linear` (T20 R-1) |
-| `/home/racso/Proyectos/SddIA_AP` | **inexistente** (Glob 0) — T20 R-2 |
-| `task-closure-documental.mdc` | Done partido file\|linear; prohíbe `done_gate: both` (T15) |
-| `todos-jurisdiction.md` | nombra las 4 acciones canónicas de sumidero (T13 R-3) |
+| `/home/racso/Proyectos/SddIA_AP` | **inexistente** (Glob path does not exist) — T20 R-2 |
+| `task-closure-documental.mdc` | prohíbe `done_gate: both` (T15) |
+| `library/norms/todos-jurisdiction.md` | path resuelto; jurisdicción file vs linear (T13) |
 | Símbolos test en fuente | presentes (`file_default_and_rejects_both…`, materialize_*_idempotent, `ci_chronic_materialize_*`) |
-| `cargo test` / `./sddia-run.sh --tool git-manager` | **no ejecutados** — Shell IDE `Rejected` (sin stdout/exit; reintentos) |
-| HEAD workspace | `.git/HEAD` → `refs/heads/main`; sin ref local `feat/tracker-lifecycle-sink`; remoto `@91ef2e8c…` |
+| `cargo test` / `./sddia-run.sh --tool git-manager` | **no ejecutados** — Shell IDE `Rejected` (probe `echo` + `sddia-run`) |
+| HEAD workspace | `.git/HEAD` → `refs/heads/docs/ciclo-documental-fricciones`; sin ref local `feat/tracker-lifecycle-sink`; remoto `@91ef2e8c…` |
+| `execution.md` | afirma tests pasados — **no admite** como evidencia de cápsula (L-ARGOS-SYNTHESIS) |
+| PBI | permanece en `docs/todos/pending/[ARQUITECTURA] HU-003 PBI-05 — tracker lifecycle.md` |
 
 ## Causas de rechazo
 
 1. **T20 NO_APTO:** Paciente 0 no está en disco; el PBI prohíbe fabricar el manifiesto en este repo y prohíbe cerrar la tarea sin él.
 2. **cápsulas runtime sin evidencia:** sin stdout/exit de tests ni git-manager, Argos no sella T14/T16–T19 como APTO (L-ARGOS-SYNTHESIS).
-3. **integridad de workspace:** auditoría exigida sobre `feat/tracker-lifecycle-sink` con HEAD en `main` y sin ref local de la feature.
+3. **integridad de workspace:** auditoría exigida sobre `feat/tracker-lifecycle-sink`; HEAD en `docs/ciclo-documental-fricciones` y sin ref local de la feature.
 4. **handoff incompleto:** `process`/`phase`/`execution_id`/`correlation_id` no materializados por el runtime.
 
 ## correction_blueprint_md
