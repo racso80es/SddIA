@@ -31,7 +31,6 @@ supersedes:
   - PBI-ARQUITECTURA-TRACKER-LIFECYCLE-17
   - PBI-ARQUITECTURA-TRACKER-LIFECYCLE-18
   - PBI-ARQUITECTURA-TRACKER-LIFECYCLE-19
-  - PBI-ARQUITECTURA-TRACKER-LIFECYCLE-20
 blocked_by:
   - PBI-ARQUITECTURA-TRACKER-LIFECYCLE-01
   - PBI-ARQUITECTURA-TRACKER-LIFECYCLE-02
@@ -70,14 +69,13 @@ files:
   - SddIA/engine/execute-process/src/engine/materialize_kaizen_alert_doc.rs
   - SddIA/actions/materialize-ci-chronic-failure-pbi.md
   - SddIA/engine/execute-process/src/engine/materialize_ci_chronic_failure_pbi.rs
-  - .SddIA/project.md
 ---
 
 # [ARQUITECTURA] Tracker lifecycle — sumidero file|linear
 
-Historia: `HU-SDDIA-TRACKER-LIFECYCLE-DI-003` §7.5–§7.20.
+Historia: `HU-SDDIA-TRACKER-LIFECYCLE-DI-003` §7.5–§7.19.
 
-Los PBI 01–04 están en `docs/todos/done/`. Este PBI absorbe los antiguos 05–20. Cada uno es una tarea. El orden de ejecución es el de la tabla: T13 y T14 abren el resto.
+Los PBI 01–04 están en `docs/todos/done/`. Este PBI absorbe los antiguos 05–19. Cada uno es una tarea. T20 no forma parte de este PBI. El orden de ejecución es el de la tabla: T13 y T14 abren el resto.
 
 Ninguna tarea abre `tracker-operations` en `feature`, `bug-fix` o `refactorization`. Con provider `linear`, T05, T06 y T16–T19 no crean ficheros en `docs/todos/pending/` ni en `docs/todos/done/`. Con `file`, sí. `historias/` no es esa cola.
 
@@ -100,9 +98,8 @@ Ninguna tarea abre `tracker-operations` en `feature`, `bug-fix` o `refactorizati
 | T17 | 17 | El enriquecido edita ese mismo sumidero. |
 | T18 | 18 | La alerta Kaizen elige sumidero. |
 | T19 | 19 | El fallo crónico de CI elige sumidero. |
-| T20 | 20 | Core-self y Paciente 0 quedan en `linear` explícito. |
 
-Dependencias internas: T14 después de T13. T15 después de T13. T05, T06, T09, T10, T11, T12, T16, T18, T19 y T20 después de T14. T17 después de T16. T10 también después de T13. T07 y T08 no esperan a T14.
+Dependencias internas: T14 después de T13. T15 después de T13. T05, T06, T09, T10, T11, T12, T16, T18 y T19 después de T14. T17 después de T16. T10 también después de T13. T07 y T08 no esperan a T14.
 
 ## T13 — Tres normas del sumidero
 
@@ -261,13 +258,3 @@ R-1: `file` escribe el PBI en `docs/todos/pending/`. R-2: `linear` hace `create_
 AC-1: un solo sumidero por ejecución. AC-2: `file` no llama a la cápsula.
 
 Ficheros: `materialize-ci-chronic-failure-pbi.md`, `materialize_ci_chronic_failure_pbi.rs`.
-
-## T20 — Manifiestos Linear explícitos
-
-`uuid` heredado `e1d4445d-20ad-400f-b23e-fc115e2cdd84`. Después de T14.
-
-R-1: `.SddIA/project.md` de Core-self mantiene `provider: linear` y `team_key: OSC`. T14 lo acepta. R-2: si `/home/racso/Proyectos/SddIA_AP/.SddIA/project.md` existe, `tracker.provider` es `linear` con `team_key` y `state_map`. Si el checkout no está, la tarea no se cierra: no se fabrica el fichero dentro de este repo. R-3: ninguno de los dos omite `provider`.
-
-AC-1: `project_binding` acepta Core-self. AC-2: Core-self no queda con provider efectivo `file`. AC-3: Paciente 0, cuando el fichero está en disco, valida como `linear`.
-
-Fichero en este repo: `.SddIA/project.md`.
