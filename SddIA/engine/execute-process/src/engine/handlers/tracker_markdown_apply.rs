@@ -180,7 +180,7 @@ fn labels_has_editable(fetch: &Value, editable_label: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
+fn tool_fetch_issue(repo: &Path, issue_ref: &str, project_id: Option<&str>) -> Result<Value, String> {
     let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
     invoke_tool_for_process(
         repo,
@@ -189,6 +189,7 @@ fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
             "request": {
                 "operation": "fetch_issue",
                 "issue_ref": issue_ref,
+                "project_id": project_id,
             }
         }),
         Some(PROCESS_NAME),
@@ -421,7 +422,7 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
         }
     };
 
-    let fetch = tool_fetch_issue(repo, &issue_ref)?;
+    let fetch = tool_fetch_issue(repo, &issue_ref, tc.project_id.as_deref())?;
     let linear_state = fetch
         .get("state")
         .and_then(|v| v.as_str())

@@ -1,5 +1,6 @@
 ---
 document_id: PBI-ARQUITECTURA-TRACKER-LIFECYCLE-05
+tracker_ref: OSC-19
 uuid: "9635ef7a-00e5-4183-91a6-6ce68b5071c4"
 title: "[ARQUITECTURA] Tracker lifecycle — sumidero file|linear"
 format: markdown

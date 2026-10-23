@@ -167,7 +167,7 @@ fn expected_hu_for_payload(repo: &Path, payload: &Value) -> Option<String> {
     None
 }
 
-fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
+fn tool_fetch_issue(repo: &Path, issue_ref: &str, project_id: Option<&str>) -> Result<Value, String> {
     invoke_tool_for_process(
         repo,
         &lifecycle_tool_name(repo)?,
@@ -175,6 +175,7 @@ fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
             "request": {
                 "operation": "fetch_issue",
                 "issue_ref": issue_ref,
+                "project_id": project_id,
             }
         }),
         Some("tracker-stamp"),
@@ -182,7 +183,7 @@ fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
 }
 
 fn preflight_hu(repo: &Path, tc: &TrackerConfig, issue_ref: &str) -> Result<Value, String> {
-    let fetch = tool_fetch_issue(repo, issue_ref)?;
+    let fetch = tool_fetch_issue(repo, issue_ref, tc.project_id.as_deref())?;
     if !labels_contains(&fetch, &tc.label_hu) {
         return Err("warn: issue sin label HU".into());
     }
@@ -195,7 +196,7 @@ fn preflight_pbi(
     issue_ref: &str,
     payload: &Value,
 ) -> Result<Value, String> {
-    let fetch = tool_fetch_issue(repo, issue_ref)?;
+    let fetch = tool_fetch_issue(repo, issue_ref, tc.project_id.as_deref())?;
     if !labels_contains(&fetch, &tc.label_pbi) {
         return Err("warn: AC-18 — issue sin label PBI".into());
     }
@@ -258,6 +259,7 @@ fn tool_update_state(
                 "issue_ref": issue_ref,
                 "state_name": state_name,
                 "team_key": tc.team_key,
+                "project_id": tc.project_id,
             }
         }),
         Some("tracker-stamp"),
@@ -265,7 +267,7 @@ fn tool_update_state(
     Ok(())
 }
 
-fn tool_comment(repo: &Path, issue_ref: &str, body: &str) -> Result<(), String> {
+fn tool_comment(repo: &Path, issue_ref: &str, body: &str, project_id: Option<&str>) -> Result<(), String> {
     invoke_tool_for_process(
         repo,
         &lifecycle_tool_name(repo)?,
@@ -274,6 +276,7 @@ fn tool_comment(repo: &Path, issue_ref: &str, body: &str) -> Result<(), String> 
                 "operation": "create_comment",
                 "issue_ref": issue_ref,
                 "body": body,
+                "project_id": project_id,
             }
         }),
         Some("tracker-stamp"),
@@ -290,7 +293,7 @@ fn maybe_promote_hu_when_work_starts(
         .get("parent")
         .and_then(|v| v.as_str())
         .ok_or("parent ausente en PBI")?;
-    let hu_fetch = tool_fetch_issue(repo, parent)?;
+    let hu_fetch = tool_fetch_issue(repo, parent, tc.project_id.as_deref())?;
     let hu_state = linear_to_canonical(
         hu_fetch.get("state").and_then(|v| v.as_str()).unwrap_or(""),
         tc,
@@ -389,7 +392,7 @@ fn maybe_complete_hu_when_children_done(
     tc: &TrackerConfig,
     hu_ref: &str,
 ) -> Result<(), String> {
-    let hu_fetch = tool_fetch_issue(repo, hu_ref)?;
+    let hu_fetch = tool_fetch_issue(repo, hu_ref, tc.project_id.as_deref())?;
     let children = hu_fetch
         .get("children")
         .and_then(|v| v.as_array())
@@ -404,7 +407,7 @@ fn maybe_complete_hu_when_children_done(
             .as_str()
             .or_else(|| child.get("identifier").and_then(|v| v.as_str()))
             .ok_or("child identifier inválido")?;
-        let cf = tool_fetch_issue(repo, child_ref)?;
+        let cf = tool_fetch_issue(repo, child_ref, tc.project_id.as_deref())?;
         let st = linear_to_canonical(cf.get("state").and_then(|v| v.as_str()).unwrap_or(""), tc);
         if st == "done" {
             any_done = true;
@@ -463,7 +466,7 @@ fn stamp_done_with_hu_roll_up(
             return Err(format!("warn: {e}"));
         }
     }
-    run(&|| tool_comment(repo, issue_ref, comment))?;
+    run(&|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref()))?;
     let _ = done_gate::write_tracker_done_proof(repo, issue_ref, commit_sha, pbi_fetch);
     Ok(true)
 }
@@ -497,7 +500,7 @@ fn stamp_todo_transition(
         Ok(())
     };
     run(&|| update_state_if_not_discarded(repo, tc, issue_ref, fetch, "todo"))?;
-    run(&|| tool_comment(repo, issue_ref, comment))?;
+    run(&|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref()))?;
     Ok((true, None))
 }
 
@@ -573,7 +576,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
         run(&|| {
             update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "cancelled")
         })?;
-        run(&|| tool_comment(repo, &issue_ref, &format!("PBI cancelado: {reason}")))?;
+        run(&|| tool_comment(repo, &issue_ref, &format!("PBI cancelado: {reason}"), tc.project_id.as_deref()))?;
         let _ = archive_cancelled_pbi(repo, &payload_val);
         return Ok((true, None));
     }
@@ -644,7 +647,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "create_comment",
                 None,
                 Some("pbi-forged"),
-                &|| tool_comment(repo, &issue_ref, &format!("PBI forjado: {doc}")),
+                &|| tool_comment(repo, &issue_ref, &format!("PBI forjado: {doc}"), tc.project_id.as_deref()),
             )?;
             stamped = true;
         }
@@ -689,6 +692,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                         repo,
                         &issue_ref,
                         &format!("Work iniciado — rama `{branch}` · persist `{persist}`"),
+                        tc.project_id.as_deref(),
                     )
                 },
             )?;
@@ -708,7 +712,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "create_comment",
                 None,
                 Some("pr-presented"),
-                &|| tool_comment(repo, &issue_ref, &format!("PR presentado: {pr}")),
+                &|| tool_comment(repo, &issue_ref, &format!("PR presentado: {pr}"), tc.project_id.as_deref()),
             )?;
             stamped = true;
         }
@@ -720,7 +724,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "create_comment",
                 None,
                 Some("pr-audited"),
-                &|| tool_comment(repo, &issue_ref, &format!("Auditoría PR: {resolution}")),
+                &|| tool_comment(repo, &issue_ref, &format!("Auditoría PR: {resolution}"), tc.project_id.as_deref()),
             )?;
             stamped = true;
         }

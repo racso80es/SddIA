@@ -202,7 +202,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         let listed = super::capsules::invoke_tool_for_process(
             repo,
             &tool,
-            &json!({ "request": { "operation": "list_issues", "team_key": tc.team_key } }),
+            &json!({ "request": { "operation": "list_issues", "team_key": tc.team_key, "project_id": tc.project_id } }),
             Some("materialize-kaizen-alert-doc"),
         )?;
         if let Some(items) = listed.get("items").and_then(|v| v.as_array()) {
@@ -228,6 +228,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "request": {
                     "operation": "create_issue",
                     "team_key": tc.team_key,
+                    "project_id": tc.project_id,
                     "title": format!("Kaizen {hash8}"),
                     "description": alert_justification,
                     "labels": [label],

@@ -1,5 +1,6 @@
 ---
 document_id: PBI-ARQUITECTURA-TRACKER-LIFECYCLE-01
+tracker_ref: OSC-15
 uuid: "1b17e6fa-a8f3-4ce3-91a4-7aff1954a910"
 title: "[ARQUITECTURA] Tracker lifecycle — contrato tracker:lifecycle"
 format: markdown

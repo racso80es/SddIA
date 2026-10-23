@@ -1,5 +1,6 @@
 ---
 document_id: PBI-ARQUITECTURA-TRACKER-LIFECYCLE-02
+tracker_ref: OSC-16
 uuid: "4b7aae4b-1fc6-477f-be07-d03216258493"
 title: "[ARQUITECTURA] Tracker lifecycle — provides y anti-eco del adaptador"
 format: markdown

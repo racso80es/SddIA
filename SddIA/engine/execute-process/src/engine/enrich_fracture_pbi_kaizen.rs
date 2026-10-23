@@ -314,7 +314,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
 
     let friction_id = optional_str(inputs, "friction_id");
     if let Some(issue) = optional_str(inputs, "tracker_ref") {
-        if super::project_binding::tracker_config_for_inputs(repo, inputs)?.is_some() {
+        if let Some(tc) = super::project_binding::tracker_config_for_inputs(repo, inputs)? {
             let (verdict, _, section, unclassified) = analyze_fracture_kaizen_with_options(
                 &process_name,
                 &error_trace,
@@ -332,6 +332,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                         "operation": "create_comment",
                         "issue_ref": issue,
                         "body": section,
+                        "project_id": tc.project_id,
                     }
                 }),
                 Some("enrich-fracture-pbi-kaizen"),

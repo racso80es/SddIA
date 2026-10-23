@@ -147,7 +147,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         let listed = super::capsules::invoke_tool_for_process(
             repo,
             &tool,
-            &json!({ "request": { "operation": "list_issues", "team_key": tc.team_key } }),
+            &json!({ "request": { "operation": "list_issues", "team_key": tc.team_key, "project_id": tc.project_id } }),
             Some("materialize-ci-chronic-failure-pbi"),
         )?;
         if let Some(items) = listed.get("items").and_then(|v| v.as_array()) {
@@ -171,6 +171,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "request": {
                     "operation": "create_issue",
                     "team_key": tc.team_key,
+                    "project_id": tc.project_id,
                     "title": format!("CI crónica {document_id}"),
                     "description": format!("{workflow_name} {job_name} fallos={failure_count}"),
                     "labels": ["pbi"],

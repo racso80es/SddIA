@@ -78,12 +78,13 @@ fn resolve_adapter_bin(repo: &Path) -> Option<std::path::PathBuf> {
     None
 }
 
-fn invoke_list_issues(repo: &Path, team_key: &str) -> Option<Vec<Value>> {
+fn invoke_list_issues(repo: &Path, team_key: &str, project_id: Option<&str>) -> Option<Vec<Value>> {
     let bin = resolve_adapter_bin(repo)?;
     let req = json!({
         "request": {
             "operation": "list_issues",
             "team_key": team_key,
+            "project_id": project_id,
         }
     });
     let mut cmd = Command::new(&bin);
@@ -162,6 +163,7 @@ fn manifest_has_tracker(manifest: &str) -> bool {
 struct ProjectTarget {
     slug: String,
     team_key: String,
+    project_id: Option<String>,
     label_hu: String,
     label_pbi: String,
 }
@@ -201,11 +203,13 @@ fn discover_projects(repo: &Path) -> Vec<ProjectTarget> {
             continue;
         }
         let team_key = yaml_tracker_field(&manifest, "team_key").unwrap_or_else(|| "OSC".into());
+        let project_id = yaml_tracker_field(&manifest, "project_id");
         let label_hu = yaml_tracker_field(&manifest, "hu").unwrap_or_else(|| "hu".into());
         let label_pbi = yaml_tracker_field(&manifest, "pbi").unwrap_or_else(|| "pbi".into());
         out.push(ProjectTarget {
             slug,
             team_key,
+            project_id,
             label_hu,
             label_pbi,
         });
@@ -216,7 +220,7 @@ fn discover_projects(repo: &Path) -> Vec<ProjectTarget> {
 fn poll_once(repo: &Path) {
     let now = Utc::now();
     for proj in discover_projects(repo) {
-        let Some(items) = invoke_list_issues(repo, &proj.team_key) else {
+        let Some(items) = invoke_list_issues(repo, &proj.team_key, proj.project_id.as_deref()) else {
             eprintln!("[LINEAR-BRIDGE] list_issues falló para {}", proj.slug);
             continue;
         };

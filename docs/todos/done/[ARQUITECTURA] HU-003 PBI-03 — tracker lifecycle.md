@@ -1,5 +1,6 @@
 ---
 document_id: PBI-ARQUITECTURA-TRACKER-LIFECYCLE-03
+tracker_ref: OSC-17
 uuid: "85caf44d-e5d0-4c30-8303-bcb825610f92"
 title: "[ARQUITECTURA] Tracker lifecycle — tracker-stamp por capacidad"
 format: markdown

@@ -69,7 +69,7 @@ fn scan_dirs(repo: &Path) -> Vec<PathBuf> {
     out
 }
 
-fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str) -> Result<Value, String> {
+fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str, project_id: Option<&str>) -> Result<Value, String> {
     let raw = fs::read_to_string(md_path).map_err(|e| e.to_string())?;
     let description = scrub_secrets(&raw);
     let rel = md_path
@@ -86,6 +86,7 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str) -> Result<Value, Strin
                 "operation": "update_issue_description",
                 "issue_ref": issue_ref,
                 "description": description,
+                "project_id": project_id,
             }
         }),
         Some("tracker-linear-markdown-sync"),
@@ -99,7 +100,8 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str) -> Result<Value, Strin
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
-    if project_binding::tracker_config_for_inputs(repo, process_inputs)?.is_none() {
+    let tc = project_binding::tracker_config_for_inputs(repo, process_inputs)?;
+    if tc.is_none() {
         return Ok(OrchestratorEnvelope {
             success: true,
             status_code: 0,
@@ -125,7 +127,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         if !md_path.is_file() {
             return Err(format!("markdown_path no encontrado: {}", md_path.display()));
         }
-        synced.push(sync_one(repo, &md_path, &issue_ref)?);
+        synced.push(sync_one(repo, &md_path, &issue_ref, tc.as_ref().and_then(|c| c.project_id.as_deref()))?);
     } else {
         let sync_all = process_inputs
             .get("sync_all")
@@ -138,7 +140,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             let Some(issue_ref) = tracker_ref_from_md(&md) else {
                 continue;
             };
-            match sync_one(repo, &md, &issue_ref) {
+            match sync_one(repo, &md, &issue_ref, tc.as_ref().and_then(|c| c.project_id.as_deref())) {
                 Ok(v) => synced.push(v),
                 Err(e) => skipped.push(json!({
                     "markdown_path": md.strip_prefix(repo).unwrap_or(&md).to_string_lossy().replace('\\', "/"),

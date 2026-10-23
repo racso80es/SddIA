@@ -57,7 +57,12 @@ pub fn read_tracker_done_proof(repo: &Path, tracker_ref: &str) -> Option<Value> 
     serde_json::from_str(&text).ok()
 }
 
-pub fn fetch_issue(repo: &Path, issue_ref: &str, source_process: &str) -> Result<Value, String> {
+pub fn fetch_issue(
+    repo: &Path,
+    issue_ref: &str,
+    source_process: &str,
+    project_id: Option<&str>,
+) -> Result<Value, String> {
     let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
     invoke_tool_for_process(
         repo,
@@ -66,6 +71,7 @@ pub fn fetch_issue(repo: &Path, issue_ref: &str, source_process: &str) -> Result
             "request": {
                 "operation": "fetch_issue",
                 "issue_ref": issue_ref,
+                "project_id": project_id,
             }
         }),
         Some(source_process),
@@ -178,7 +184,7 @@ pub fn check_linear_closure(
     let tc = project_binding::tracker_config_for_inputs(repo, &inputs)?
         .ok_or_else(|| "DONE_GATE: proyecto sin tracker".to_string())?;
 
-    let fetch = match fetch_issue(repo, &tracker_ref, "feature-pbi-archive") {
+    let fetch = match fetch_issue(repo, &tracker_ref, "feature-pbi-archive", tc.project_id.as_deref()) {
         Ok(v) => v,
         Err(e) => return Err(e),
     };

@@ -1,0 +1,9 @@
+{
+  "audit_log": [
+    "create:OSC-101:en proyecto",
+    "archive:OSC-101"
+  ],
+  "comments": {},
+  "issues": {},
+  "next_id": 101
+}

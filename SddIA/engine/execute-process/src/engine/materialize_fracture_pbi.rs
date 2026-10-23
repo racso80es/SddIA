@@ -48,6 +48,7 @@ fn lifecycle_call(
 fn find_issue_with_marker(
     repo: &Path,
     team_key: &str,
+    project_id: Option<&str>,
     marker: &str,
 ) -> Result<Option<String>, String> {
     let listed = lifecycle_call(
@@ -55,6 +56,7 @@ fn find_issue_with_marker(
         json!({
             "operation": "list_issues",
             "team_key": team_key,
+            "project_id": project_id,
         }),
         "materialize-fracture-pbi",
     )?;
@@ -254,7 +256,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 .unwrap_or("");
             let filename = display_filename_regression(&process_name, &trace_hash, n);
             if let Some(tc) = &linear {
-                if let Some(existing) = find_issue_with_marker(repo, &tc.team_key, &trace_hash)? {
+                if let Some(existing) = find_issue_with_marker(repo, &tc.team_key, tc.project_id.as_deref(), &trace_hash)? {
                     return Ok(json!({
                         "success": true,
                         "target_path": existing,
@@ -320,7 +322,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
 
     let filename = display_filename_fix(&process_name, &trace_hash);
     if let Some(tc) = &linear {
-        if let Some(existing) = find_issue_with_marker(repo, &tc.team_key, &trace_hash)? {
+        if let Some(existing) = find_issue_with_marker(repo, &tc.team_key, tc.project_id.as_deref(), &trace_hash)? {
             return Ok(json!({
                 "success": true,
                 "target_path": existing,

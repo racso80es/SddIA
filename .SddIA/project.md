@@ -8,7 +8,8 @@ contract_version: "1.3.0"
 codex_slug: codex-software-engineering
 tracker:
   provider: linear
-  team_key: OSC
+  team_key: AUT
+  project_id: P-OSC-1
   done_gate: linear
   state_map:
     backlog: Backlog
