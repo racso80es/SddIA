@@ -5,7 +5,7 @@ title: "[FIX] Argos escribe validacion.md en main y el init rechaza el árbol"
 format: markdown
 version: "1.0.0"
 created: "2026-10-23"
-status: pending
+status: done
 priority: alta
 process: bug-fix
 dispatch: true
