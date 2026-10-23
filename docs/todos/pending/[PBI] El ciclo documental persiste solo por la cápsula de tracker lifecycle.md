@@ -103,6 +103,7 @@ El proceso llama un verbo de `tracker:lifecycle`. La cápsula inyectada persiste
 - Actualizar el intent de esa fase en los tres procesos para fijar ese comportamiento.
 - Cada commit actualiza el documento de la fase (`execution.md` bajo `persist_ref`) con la tarea y el identificador del commit, de modo que quede registrado que la tarea fue forjada.
 - El mismo commit actualiza el PBI de trabajo: la tarea queda marcada como forjada en el fichero y, por el mismo cuerpo, en la issue.
+- Estado: forjada. El identificador del commit se anota en `execution.md` de este `persist_ref`.
 - **Snapshot final** de `delivery-close-cycle` no parte las tareas. Solo consolida lo que siga sin commit.
 
 ## Fuera de este corte
