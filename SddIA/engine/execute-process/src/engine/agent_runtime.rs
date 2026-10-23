@@ -121,6 +121,39 @@ fn resolve_persist_ref_value(inputs: &Value, state: &Value) -> Value {
         .unwrap_or(Value::Null)
 }
 
+/// Antes del sello de Verificación: si la ref local no existe, checkout vía git-manager.
+/// Sin `.git` (tests de payload) no hay rama que cambiar.
+fn ensure_verification_branch(repo: &Path, branch: &str) -> Result<(), String> {
+    if !repo.join(".git").exists() {
+        return Ok(());
+    }
+    let list = super::capsules::invoke_git_manager_for(repo, repo, "branch_list", &json!({}))?;
+    let local = list
+        .get("branches")
+        .and_then(|v| v.as_array())
+        .map(|branches| {
+            branches.iter().any(|line| {
+                let raw = line.as_str().unwrap_or("").trim();
+                let rest = raw.strip_prefix('*').unwrap_or(raw).trim();
+                if rest.starts_with("remotes/") {
+                    return false;
+                }
+                rest.split_whitespace().next() == Some(branch)
+            })
+        })
+        .unwrap_or(false);
+    if local {
+        return Ok(());
+    }
+    super::capsules::invoke_git_manager_for(
+        repo,
+        repo,
+        "checkout",
+        &json!({"branch_name": branch, "create_if_not_exists": false}),
+    )?;
+    Ok(())
+}
+
 fn resolve_execution_id(inputs: &Value, state: &Value) -> Option<String> {
     inputs
         .get("execution_id")
@@ -736,6 +769,27 @@ pub fn invoke_agent_phase(
         }
     }
 
+    if phase_name == "Verificación" {
+        let branch = branch_name
+            .as_str()
+            .map(str::trim)
+            .filter(|s| !s.is_empty());
+        if branch.is_none() || execution_id.is_none() {
+            entry["status"] = json!("failed");
+            entry["error_code"] = json!("verification-handoff-incomplete");
+            entry["error"] = json!(
+                "handoff de Verificación sin branch o execution_id; no se escribe validacion.md"
+            );
+            return finish_agent_entry(entry, process_name, phase_name);
+        }
+        if let Err(e) = ensure_verification_branch(repo, branch.expect("branch")) {
+            entry["status"] = json!("failed");
+            entry["error_code"] = json!("verification-branch-checkout");
+            entry["error"] = json!(e);
+            return finish_agent_entry(entry, process_name, phase_name);
+        }
+    }
+
     let depth = agent_runtime_depth();
     let cwd = agent_runtime_cwd(repo, project_root.as_deref());
     let mut child = match build_agent_command(repo, &bin, &args, &cwd, depth).spawn() {
@@ -1133,6 +1187,97 @@ mod tests {
     }
 
     #[test]
+    fn verification_handoff_without_branch_does_not_spawn() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-vh-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join("spawned");
+        let script = mock_script(
+            &dir,
+            &format!("#!/bin/sh\ntouch {}\nexit 0\n", marker.display()),
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "bug-fix",
+            "Verificación",
+            &[json!("agent:argos")],
+            &json!({"persist_ref": "docs/fixes/x", "execution_id": "live-id"}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        assert_eq!(entry["error_code"], "verification-handoff-incomplete", "{entry}");
+        assert!(!marker.exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn verification_handoff_without_execution_id_does_not_spawn() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-ve-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join("spawned");
+        let script = mock_script(
+            &dir,
+            &format!("#!/bin/sh\ntouch {}\nexit 0\n", marker.display()),
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "refactorization",
+            "Verificación",
+            &[json!("agent:argos")],
+            &json!({"persist_ref": "docs/features/x", "branch_name": "feat/x"}),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        assert_eq!(entry["status"], "failed", "{entry}");
+        assert!(!marker.exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn verification_missing_local_ref_fails_before_spawn_when_checkout_unavailable() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-vc-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let init = std::process::Command::new("git")
+            .args(["init"])
+            .current_dir(&dir)
+            .output()
+            .expect("git init");
+        assert!(init.status.success());
+        let marker = dir.join("spawned");
+        let script = mock_script(
+            &dir,
+            &format!("#!/bin/sh\ntouch {}\nexit 0\n", marker.display()),
+        );
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "bug-fix",
+            "Verificación",
+            &[json!("agent:argos")],
+            &json!({
+                "persist_ref": "docs/fixes/x",
+                "branch_name": "fix/absent-local",
+                "execution_id": "live-id"
+            }),
+            &json!({}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        assert_eq!(entry["error_code"], "verification-branch-checkout", "{entry}");
+        assert!(!marker.exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
     fn branch_name_coalesces_from_pr_branch() {
         let _guard = env_lock();
         clear_agent_env();
@@ -1219,7 +1364,7 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"evidence
             "pull-request-review",
             "Verificación",
             &[json!("agent:argos")],
-            &json!({"persist_ref": "docs/features/x", "branch_name": "feat/x"}),
+            &json!({"persist_ref": "docs/features/x", "branch_name": "feat/x", "execution_id": "live-id"}),
             &json!({
                 "git_manager_invoked": true,
                 "tech_triage_formal": true,
