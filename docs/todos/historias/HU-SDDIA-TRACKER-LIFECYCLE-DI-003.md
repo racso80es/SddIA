@@ -1,6 +1,7 @@
 # [ARQUITECTURA] HU-SDDIA-TRACKER-LIFECYCLE-DI: Puerto `tracker:lifecycle` y ciclo de gestión sobre el tracker de instancia
 
 **Identificador:** `HU-SDDIA-TRACKER-LIFECYCLE-DI-003`  
+**tracker_ref:** `OSC-14`  
 **Estatus:** `Pendiente`  
 **Fecha:** `2026-10-22`  
 **Sustituye:** `HU-SDDIA-CAPABILITY-DI-TRACKER-002` y `HU-SDDIA-LINEAR-DOC-LIFECYCLE-001` (retiradas; contenían citas `[cite:…]`, ids y rutas inexistentes).  

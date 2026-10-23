@@ -1,5 +1,6 @@
 ---
 document_id: PBI-ARQUITECTURA-TRACKER-LIFECYCLE-04
+tracker_ref: OSC-18
 uuid: "c62ed63e-28b5-4a6b-b742-90661afcfed8"
 title: "[ARQUITECTURA] Tracker lifecycle — traza persist_ref por señal"
 format: markdown

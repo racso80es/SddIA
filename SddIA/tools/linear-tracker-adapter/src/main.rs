@@ -171,19 +171,23 @@ fn graphql_post(url: &str, token: &str, query: &str, variables: Value) -> Result
 fn build_list_issues_query(include_label_filter: bool) -> &'static str {
     if include_label_filter {
         r#"query ListIssues($teamKey: String!, $first: Int!, $after: String, $labels: [String!]) {
-  team(key: $teamKey) {
-    issues(first: $first, after: $after, filter: { labels: { name: { in: $labels } } }) {
-      nodes { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } }
-      pageInfo { hasNextPage endCursor }
+  teams(filter: { key: { eq: $teamKey } }) {
+    nodes {
+      issues(first: $first, after: $after, filter: { labels: { name: { in: $labels } } }) {
+        nodes { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } }
+        pageInfo { hasNextPage endCursor }
+      }
     }
   }
 }"#
     } else {
         r#"query ListIssues($teamKey: String!, $first: Int!, $after: String) {
-  team(key: $teamKey) {
-    issues(first: $first, after: $after) {
-      nodes { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } }
-      pageInfo { hasNextPage endCursor }
+  teams(filter: { key: { eq: $teamKey } }) {
+    nodes {
+      issues(first: $first, after: $after) {
+        nodes { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } }
+        pageInfo { hasNextPage endCursor }
+      }
     }
   }
 }"#
@@ -502,11 +506,11 @@ fn run_list_issues(req: &Value, url: &str, token: &str) -> Result<Value, LinearF
 
     let body = graphql_post(url, token, query, Value::Object(variables))?;
     let issues = body
-        .pointer("/data/team/issues/nodes")
+        .pointer("/data/teams/nodes/0/issues/nodes")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    let page = body.pointer("/data/team/issues/pageInfo").cloned().unwrap_or(json!({}));
+    let page = body.pointer("/data/teams/nodes/0/issues/pageInfo").cloned().unwrap_or(json!({}));
     let items: Vec<Value> = issues.iter().map(issue_reduced).collect();
     Ok(json!({
         "items": items,
@@ -524,11 +528,11 @@ fn resolve_workflow_state_id(
     state_name: &str,
 ) -> Result<String, LinearFail> {
     let states_query = r#"query States($teamKey: String!) {
-  team(key: $teamKey) { states { nodes { id name } } }
+  teams(filter: { key: { eq: $teamKey } }) { nodes { states { nodes { id name } } } }
 }"#;
     let body = graphql_post(url, token, states_query, json!({ "teamKey": team_key }))?;
     let nodes = body
-        .pointer("/data/team/states/nodes")
+        .pointer("/data/teams/nodes/0/states/nodes")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
@@ -561,11 +565,11 @@ fn resolve_workflow_state_id(
 
 fn resolve_team_id(url: &str, token: &str, team_key: &str) -> Result<String, LinearFail> {
     let query = r#"query Team($teamKey: String!) {
-  team(key: $teamKey) { id }
+  teams(filter: { key: { eq: $teamKey } }) { nodes { id } }
 }"#;
     let body = graphql_post(url, token, query, json!({ "teamKey": team_key }))?;
     let id = body
-        .pointer("/data/team/id")
+        .pointer("/data/teams/nodes/0/id")
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty());
     id.map(str::to_string).ok_or_else(|| LinearFail {
@@ -585,11 +589,11 @@ fn resolve_label_ids(
         return Ok(vec![]);
     }
     let query = r#"query TeamLabels($teamKey: String!) {
-  team(key: $teamKey) { labels { nodes { id name } } }
+  teams(filter: { key: { eq: $teamKey } }) { nodes { labels { nodes { id name } } } }
 }"#;
     let body = graphql_post(url, token, query, json!({ "teamKey": team_key }))?;
     let nodes = body
-        .pointer("/data/team/labels/nodes")
+        .pointer("/data/teams/nodes/0/labels/nodes")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
