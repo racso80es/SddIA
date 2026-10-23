@@ -121,16 +121,35 @@ fn issue_reduced(node: &Value) -> Value {
 fn graphql_post(url: &str, token: &str, query: &str, variables: Value) -> Result<Value, LinearFail> {
     let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(30)).build();
     let payload = json!({ "query": query, "variables": variables });
-    let resp = agent
+    let resp = match agent
         .post(url)
         .set("Content-Type", "application/json")
         .set("Authorization", token)
         .send_json(payload)
-        .map_err(|e| LinearFail {
-            code: "LINEAR_TRANSPORT",
-            message: format!("http-post-failed: {e}"),
-            exit: 1,
-        })?;
+    {
+        Ok(resp) => resp,
+        Err(ureq::Error::Status(status, resp)) => {
+            let text = resp.into_string().unwrap_or_default();
+            let snippet: String = text.chars().take(500).collect();
+            let code = match status {
+                429 => "LINEAR_RATE_LIMITED",
+                401 | 403 => "LINEAR_AUTH_REJECTED",
+                _ => "LINEAR_TRANSPORT",
+            };
+            return Err(LinearFail {
+                code,
+                message: format!("http-status-{status}: {snippet}"),
+                exit: 1,
+            });
+        }
+        Err(e) => {
+            return Err(LinearFail {
+                code: "LINEAR_TRANSPORT",
+                message: format!("http-post-failed: {e}"),
+                exit: 1,
+            });
+        }
+    };
     let status = resp.status();
     let body: Value = resp.into_json().map_err(|e| LinearFail {
         code: "LINEAR_TRANSPORT",
