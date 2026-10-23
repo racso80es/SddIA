@@ -448,6 +448,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
             let issue_ref = required_str(inner, "issue_ref")?;
             lab_enforce_project(inner, &issue_ref)?;
             let description = required_str(inner, "description")?;
+            lab_state::lab_set_description(&issue_ref, &description);
             Ok(json!({
                 "issue_ref": issue_ref,
                 "description_bytes": description.len(),
@@ -526,6 +527,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                 parent.as_deref(),
                 &state_name,
                 optional_str(inner, "project_id").as_deref(),
+                optional_str(inner, "description").as_deref().unwrap_or(""),
             );
             Ok(json!({
                 "issue_ref": ident,

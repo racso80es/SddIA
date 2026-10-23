@@ -95,32 +95,39 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     let kind = parse_kind(process_inputs.get("kind").and_then(|v| v.as_str()))?;
     let state_filter = str_field(process_inputs, "state");
 
-    let tracker = match super::super::tracker_lifecycle_port::substrate(repo, process_inputs)? {
-        super::super::tracker_lifecycle_port::Substrate::Local => None,
-        super::super::tracker_lifecycle_port::Substrate::Remote(tc) => Some(tc),
-    };
-    if tracker.is_none() {
-        let items = super::super::tracker_lifecycle_port::backlog_items(repo, kind)?;
+    let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, process_inputs)?;
+    if tool == "file-tracker-adapter" {
+        let body = file_tracker_adapter::dispatch(
+            repo,
+            &json!({
+                "request": {
+                    "operation": "list_issues",
+                    "kind": kind,
+                    "project_slug": process_inputs.get("project_slug").cloned().unwrap_or(json!(null)),
+                }
+            }),
+        )?;
         return Ok(OrchestratorEnvelope {
             success: true,
             status_code: 0,
             data: Some(json!({
                 "tracker_configured": false,
-                "items": items,
+                "items": body.get("items").cloned().unwrap_or(json!([])),
             })),
             error: None,
             execution_report: Some(json!({
                 "phases": [{
                     "phase_name": "Consulta backlog",
-                    "status": "skipped",
+                    "status": "executed",
                     "handler": "tracker-backlog-query",
-                    "reason": "sin tracker en manifiesto",
+                    "tool": "file-tracker-adapter",
                 }]
             })),
             exit_code: 0,
         });
     }
-    let tc = tracker.unwrap();
+    let tc = super::super::project_binding::tracker_config_for_inputs(repo, process_inputs)?
+        .ok_or("sin tracker en manifiesto")?;
 
     let mut request = json!({
         "operation": "list_issues",

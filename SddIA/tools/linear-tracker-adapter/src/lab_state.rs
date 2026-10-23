@@ -120,6 +120,14 @@ pub fn lab_register_comment(issue_ref: &str, body: &str) {
     persist_store(&s);
 }
 
+pub fn lab_set_description(issue_ref: &str, description: &str) {
+    let mut s = store().lock().unwrap();
+    if let Some(issue) = s.issues.get_mut(issue_ref) {
+        issue["description"] = json!(description);
+    }
+    persist_store(&s);
+}
+
 pub fn lab_create_issue(
     team_key: &str,
     title: &str,
@@ -127,6 +135,7 @@ pub fn lab_create_issue(
     parent_ref: Option<&str>,
     state_name: &str,
     project_id: Option<&str>,
+    description: &str,
 ) -> String {
     let mut s = store().lock().unwrap();
     s.next_id += 1;
@@ -143,6 +152,7 @@ pub fn lab_create_issue(
         "url": format!("https://linear.app/issue/{ident}"),
         "updated_at": "2026-10-04T00:00:00Z",
         "project_id": project_id,
+        "description": description,
     });
     s.issues.insert(ident.clone(), issue);
     if let Some(parent) = parent_ref {

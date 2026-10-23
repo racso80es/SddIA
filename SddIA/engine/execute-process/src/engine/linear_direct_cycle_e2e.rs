@@ -175,27 +175,32 @@ fn run_branch_pr_cycle(repo: &Path, slug: &str) -> (String, String) {
             "raw_idea": "PBI lab E2E",
             "process": "feature",
             "historia_ref": hu_rel,
+            "parent_ref": hu_tracker,
         }),
     )
     .expect("forge-pbi");
-    let pbi_rel = forge
-        .data
-        .as_ref()
-        .and_then(|d| d.get("artifact_path"))
-        .and_then(|v| v.as_str())
-        .expect("artifact_path");
     let pbi_tracker = forge
         .data
         .as_ref()
         .and_then(|d| d.get("tracker_ref"))
         .and_then(|v| v.as_str())
-        .expect("tracker_ref PBI");
+        .expect("tracker_ref PBI")
+        .to_string();
     let document_id = forge
         .data
         .as_ref()
         .and_then(|d| d.get("document_id"))
         .and_then(|v| v.as_str())
-        .unwrap_or("PBI");
+        .unwrap_or("PBI")
+        .to_string();
+    let pbi_rel = format!("docs/todos/pending/{document_id}.md");
+    let pbi_path = repo.join(format!("_linear_e2e_{slug}")).join(&pbi_rel);
+    fs::create_dir_all(pbi_path.parent().unwrap()).unwrap();
+    fs::write(
+        &pbi_path,
+        format!("---\ndocument_id: {document_id}\ntracker_ref: \"{pbi_tracker}\"\nstatus: pending\n---\n\n# {document_id}\n"),
+    )
+    .unwrap();
 
     stamp(
         repo,
@@ -308,6 +313,7 @@ mod tests {
                     "raw_idea": "trunk",
                     "process": "feature",
                     "historia_ref": hu_rel,
+                    "parent_ref": hu_tracker,
                 }),
             )
             .expect("forge");
@@ -316,13 +322,22 @@ mod tests {
                 .as_ref()
                 .and_then(|d| d.get("tracker_ref"))
                 .and_then(|v| v.as_str())
-                .expect("pbi tr");
-            let pbi_rel = forge
+                .expect("pbi tr")
+                .to_string();
+            let document_id = forge
                 .data
                 .as_ref()
-                .and_then(|d| d.get("artifact_path"))
+                .and_then(|d| d.get("document_id"))
                 .and_then(|v| v.as_str())
-                .expect("path");
+                .unwrap_or("PBI-X");
+            let pbi_rel = format!("docs/todos/pending/{document_id}.md");
+            let pbi_path = repo.join(format!("_linear_e2e_{slug}")).join(&pbi_rel);
+            fs::create_dir_all(pbi_path.parent().unwrap()).unwrap();
+            fs::write(
+                &pbi_path,
+                format!("---\ndocument_id: {document_id}\ntracker_ref: \"{pbi_tr}\"\nstatus: pending\n---\n\n# {document_id}\n"),
+            )
+            .unwrap();
 
             stamp(
                 &repo,
@@ -416,12 +431,20 @@ mod tests {
                         == Some(false)
             );
 
-            let pbi_rel = forge
+            let document_id = forge
                 .data
                 .as_ref()
-                .and_then(|d| d.get("artifact_path"))
+                .and_then(|d| d.get("document_id"))
                 .and_then(|v| v.as_str())
-                .expect("pbi");
+                .expect("document_id");
+            let pbi_rel = format!("docs/todos/pending/{document_id}.md");
+            let pbi_path = repo.join(format!("_linear_e2e_{slug}")).join(&pbi_rel);
+            fs::create_dir_all(pbi_path.parent().unwrap()).unwrap();
+            fs::write(
+                &pbi_path,
+                format!("---\ndocument_id: {document_id}\nstatus: pending\n---\n\n# {document_id}\n"),
+            )
+            .unwrap();
             let pbi = refine::run_pbi(
                 &repo,
                 &json!({ "project_slug": slug, "pbi_ref": pbi_rel }),

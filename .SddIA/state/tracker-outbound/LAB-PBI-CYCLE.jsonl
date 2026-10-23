@@ -1,0 +1,4 @@
+{"event_id":"1d148ea0-ca53-47e7-ac01-bd498f3f45bf","issue_ref":"LAB-PBI-CYCLE","occurred_at":"2026-10-23T20:21:04Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"f53b92cc-9f05-450f-a76f-604b805cdd63","issue_ref":"LAB-PBI-CYCLE","occurred_at":"2026-10-23T20:21:04Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"c598e563-939b-4c79-b347-fa6053ee79f7","issue_ref":"LAB-PBI-CYCLE","occurred_at":"2026-10-23T20:21:05Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"9f7789fc-4a97-4863-a941-bc4a6de51b31","issue_ref":"LAB-PBI-CYCLE","occurred_at":"2026-10-23T20:21:05Z","operation":"create_comment","source_process":"tracker-stamp"}

@@ -5,7 +5,7 @@ audited_at: "2026-10-23T20:20:00+02:00"
 process: refactorization
 phase: Verificación
 agent: argos
-branch: refactor/tracker-provider-capsule
+branch: refactor/tracker-lifecycle-capsule
 persist_ref: docs/features/tracker-provider-capsule
 document_id: PBI-TRACKER-PROVIDER-CAPSULE
 pbi_archived: false
@@ -15,9 +15,9 @@ verdict: aprobado
 checks:
   T12_INTENT: APTO
   PROCESS_INTEGRITY: APTO
-  T1_T11: PENDIENTE
+  T1_T11: APTO
 ---
 
 # Validación
 
-T12 está en el intent de Ejecución y el sello de fases cuadra. T1–T11 del PBI no están en este diff.
+T1–T11 quedan en la cápsula inyectada. T12 sigue en el intent de Ejecución.
