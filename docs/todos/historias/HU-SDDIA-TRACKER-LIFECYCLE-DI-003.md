@@ -105,9 +105,7 @@ Los artefactos de forja siguen en `paths.featurePath` (`docs/features`) y `paths
 
    3. **`todos-jurisdiction`.** `pending/` y `done/` son la cola despachable solo con provider `file`. Con `linear` el task-queue-manager no exige un path bajo esos prefijos: el ancla es el `tracker_ref`. La prohibición de reimplementar `fracture_pbi` / `materialize-fracture-pbi` / `enrich-fracture-pbi-kaizen` se sustituye por esta: esas acciones siguen siendo las únicas canónicas y eligen sumidero según el provider efectivo. Con `file` escriben en `pending/` como hoy. Con `linear` llaman `create_issue` y no crean el Markdown. Lo mismo para `materialize-kaizen-alert-doc` y `materialize-ci-chronic-failure-pbi`. `tracker-markdown-apply` deja de volcar un issue Linear a esos buckets.
 
-   **Manifiestos que han de quedar en `linear`.** No heredan el default `file`.
-   - Core-self: `.SddIA/project.md` del repositorio SddIA ya declara `provider: linear`, `team_key: OSC` y `done_gate: linear`. Se mantiene `provider: linear`. El `done_gate` explícito sobra en cuanto el provider lo deriva; no se cambia a `file`.
-   - Paciente 0: instancia documentada en `/home/racso/Proyectos/SddIA_AP` (kaizen de redeploy). Ese checkout no está en este workspace y no hay ficha en `.SddIA/projects/`. La historia obliga a que su `.SddIA/project.md` declare `provider: linear` con `team_key` y `state_map`. No se afirma el contenido actual del fichero.
+   **Manifiesto Core-self.** `.SddIA/project.md` del repositorio SddIA ya declara `provider: linear`, `team_key: OSC` y `done_gate: linear`. Se mantiene `provider: linear`. El `done_gate` explícito sobra en cuanto el provider lo deriva; no se cambia a `file`. El checkout de Paciente 0 queda fuera de esta historia.
 
 8. **Schema de salida contra el stdout real.** `tracker.lifecycle.schema.json` valida `cap.body` tal como lo emite `emit_v2`. Copiar `doc.closure.schema.json` (`exitCode` + `data`) rechazaría la cápsula actual. `additionalProperties` permitido. Desajuste = dead-letter, no éxito silencioso.
 
@@ -202,20 +200,17 @@ Estímulo humano en Linear: el watcher, si no hay eco, emite `Tracker_Issue_Chan
 **cuando** terminan los PBI 3 y 5–12,  
 **entonces** ninguno de esos ficheros contiene el literal `linear-tracker-adapter`. `done_gate.rs` y `handlers/tracker_markdown_apply.rs` siguen llamando `fetch_issue` (y el resto de operaciones vigentes) con el nombre salido del binding cuando el provider efectivo es `linear`. Sin objeto `tracker`, `refine-hu` y `forge-pbi` usan el sumidero `file` (§3.7) y no llaman a la cápsula. El watcher, con provider `linear`, arranca el binario del provider resuelto; con `file` no arranca. En `SddIA/process/`, `SddIA/library/codexes/`, `SddIA/engine/` y `SddIA/daemons/` el literal solo puede quedar en la lista de identidad de §1. En `SddIA/norms/` solo queda el ejemplo de §2.10.
 
-### Escenario 7 — Core-self y Paciente 0 en Linear
+### Escenario 7 — Core-self en Linear
 
 **Dado** `.SddIA/project.md` del repositorio SddIA con `provider: linear`,  
 **cuando** Cúmulo materializa una fractura o un PBI nuevo,  
-**entonces** el alta es un `create_issue` y el árbol no gana un fichero bajo `docs/todos/pending/` ni `docs/todos/done/`.  
-**Dado** el manifiesto de Paciente 0 en `/home/racso/Proyectos/SddIA_AP/.SddIA/project.md`,  
-**cuando** se valida contra el contrato bumpeado,  
-**entonces** `tracker.provider` es `linear` y el manifiesto no hereda el default `file`.
+**entonces** el alta es un `create_issue` y el árbol no gana un fichero bajo `docs/todos/pending/` ni `docs/todos/done/`.
 
 ---
 
 ## 7. Desglose
 
-Los PBI 01–04 están cerrados, uno por ordinal. Los ordinales 05–20 son tareas de un solo PBI: `PBI-ARQUITECTURA-TRACKER-LIFECYCLE-05` (`docs/todos/pending/[ARQUITECTURA] HU-003 PBI-05 — tracker lifecycle.md`). Mutación de genoma solo dentro de una feature, vía `entity-manager`.
+Los PBI 01–04 están cerrados, uno por ordinal. Los ordinales 05–19 son tareas de un solo PBI: `PBI-ARQUITECTURA-TRACKER-LIFECYCLE-05` (`docs/todos/pending/[ARQUITECTURA] HU-003 PBI-05 — tracker lifecycle.md`). El ordinal 20 no es tarea de este PBI. Mutación de genoma solo dentro de una feature, vía `entity-manager`.
 
 1. **Contrato de la capacidad.** Alta de id, fila de binding y schema alineado a `emit_v2`.  
    `SddIA/library/norms/capability-taxonomy.md`  
@@ -292,8 +287,5 @@ Los PBI 01–04 están cerrados, uno por ordinal. Los ordinales 05–20 son tare
 19. **Fallo crónico de CI.**  
     `SddIA/actions/materialize-ci-chronic-failure-pbi.md`  
     `SddIA/engine/execute-process/src/engine/materialize_ci_chronic_failure_pbi.rs`
-
-20. **Manifiestos Linear explícitos.** Core-self conserva `provider: linear` en `.SddIA/project.md`. Paciente 0 queda declarado en `/home/racso/Proyectos/SddIA_AP/.SddIA/project.md` (checkout fuera de este workspace). Ninguno de los dos hereda el default `file`.  
-    `.SddIA/project.md`
 
 Las tareas T05, T06 y T16–T19, cuando el provider efectivo es `linear`, no crean ficheros en `docs/todos/pending/` ni `docs/todos/done/`. Con `file`, sí. `historias/` no es ese bucket: esta historia no lo vacía. El barrido T05–T12 espera la fila de binding del PBI 01. Ninguna tarea abre `tracker-operations` en `feature`, `bug-fix` o `refactorization`.

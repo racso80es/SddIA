@@ -7,4 +7,4 @@ branch: feat/tracker-lifecycle-sink
 
 # Ejecución
 
-Tests del parser y de la materialización en fichero pasaron (`file_default_and_rejects_both_and_contradiction`, `materialize_fracture_pbi_creates_and_idempotent`, `materialize_kaizen_alert_doc_creates_and_idempotent`, `ci_chronic_materialize_creates_and_idempotent`). El watcher compiló. Paciente 0 no está en disco.
+Stdout íntegro de los cuatro tests: `test-stdout.md` (exit 0, 4 passed). El watcher compiló.
