@@ -168,30 +168,37 @@ fn graphql_post(url: &str, token: &str, query: &str, variables: Value) -> Result
     Ok(body)
 }
 
-fn build_list_issues_query(include_label_filter: bool) -> &'static str {
+fn build_list_issues_query(include_label_filter: bool, include_project: bool) -> String {
+    let mut vars = "$teamKey: String!, $first: Int!, $after: String".to_string();
+    let mut filter_parts = Vec::new();
     if include_label_filter {
-        r#"query ListIssues($teamKey: String!, $first: Int!, $after: String, $labels: [String!]) {
-  teams(filter: { key: { eq: $teamKey } }) {
-    nodes {
-      issues(first: $first, after: $after, filter: { labels: { name: { in: $labels } } }) {
-        nodes { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } }
-        pageInfo { hasNextPage endCursor }
-      }
+        vars.push_str(", $labels: [String!]");
+        filter_parts.push("labels: { name: { in: $labels } }");
     }
-  }
-}"#
+    if include_project {
+        vars.push_str(", $projectId: String!");
+        filter_parts.push("project: { id: { eq: $projectId } }");
+    }
+    let issues = if filter_parts.is_empty() {
+        "issues(first: $first, after: $after)".to_string()
     } else {
-        r#"query ListIssues($teamKey: String!, $first: Int!, $after: String) {
-  teams(filter: { key: { eq: $teamKey } }) {
-    nodes {
-      issues(first: $first, after: $after) {
-        nodes { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } }
-        pageInfo { hasNextPage endCursor }
-      }
-    }
-  }
-}"#
-    }
+        format!(
+            "issues(first: $first, after: $after, filter: {{ {} }})",
+            filter_parts.join(", ")
+        )
+    };
+    format!(
+        r#"query ListIssues({vars}) {{
+  teams(filter: {{ key: {{ eq: $teamKey }} }}) {{
+    nodes {{
+      {issues} {{
+        nodes {{ id identifier title priority url updatedAt state {{ name }} labels {{ nodes {{ name }} }} parent {{ identifier }} children {{ nodes {{ identifier }} }} }}
+        pageInfo {{ hasNextPage endCursor }}
+      }}
+    }}
+  }}
+}}"#
+    )
 }
 
 fn lab_fetch_issue_fixture(issue_ref: &str) -> Value {
@@ -389,6 +396,14 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                 "description_bytes": description.len(),
             }))
         }
+        "update_issue_project" => {
+            let issue_ref = required_str(inner, "issue_ref")?;
+            let project_id = required_str(inner, "project_id")?;
+            Ok(json!({
+                "issue_ref": issue_ref,
+                "project_id": project_id,
+            }))
+        }
         "create_issue" => {
             let team_key = required_str(inner, "team_key")?;
             let title = required_str(inner, "title")?;
@@ -493,7 +508,8 @@ fn run_list_issues(req: &Value, url: &str, token: &str) -> Result<Value, LinearF
         .filter(|v| !v.is_empty());
 
     let include_labels = label_filter.is_some();
-    let query = build_list_issues_query(include_labels);
+    let project_id = optional_str(inner, "project_id");
+    let query = build_list_issues_query(include_labels, project_id.is_some());
     let mut variables = Map::new();
     variables.insert("teamKey".into(), json!(team_key));
     variables.insert("first".into(), json!(first));
@@ -503,8 +519,11 @@ fn run_list_issues(req: &Value, url: &str, token: &str) -> Result<Value, LinearF
     if let Some(labels) = label_filter {
         variables.insert("labels".into(), json!(labels));
     }
+    if let Some(pid) = project_id {
+        variables.insert("projectId".into(), json!(pid));
+    }
 
-    let body = graphql_post(url, token, query, Value::Object(variables))?;
+    let body = graphql_post(url, token, &query, Value::Object(variables))?;
     let issues = body
         .pointer("/data/teams/nodes/0/issues/nodes")
         .and_then(|v| v.as_array())
@@ -749,6 +768,39 @@ fn run_update_issue_state(req: &Value, url: &str, token: &str) -> Result<Value, 
     apply_state_id(url, token, &issue_ref, &state_id, &state_id)
 }
 
+fn run_update_issue_project(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
+    let inner = request_inner(req);
+    let issue_ref = required_str(inner, "issue_ref")?;
+    let project_id = required_str(inner, "project_id")?;
+    let mutation = r#"mutation UpdateProject($id: String!, $projectId: String!) {
+  issueUpdate(id: $id, input: { projectId: $projectId }) {
+    success
+    issue { identifier }
+  }
+}"#;
+    let body = graphql_post(
+        url,
+        token,
+        mutation,
+        json!({ "id": issue_ref, "projectId": project_id }),
+    )?;
+    let success = body
+        .pointer("/data/issueUpdate/success")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !success {
+        return Err(LinearFail {
+            code: "LINEAR_GRAPHQL_ERROR",
+            message: "issueUpdate project failed".into(),
+            exit: 1,
+        });
+    }
+    Ok(json!({
+        "issue_ref": issue_ref,
+        "project_id": project_id,
+    }))
+}
+
 fn apply_state_id(
     url: &str,
     token: &str,
@@ -870,6 +922,7 @@ fn dispatch(req: &Value) -> Result<Value, LinearFail> {
         "fetch_issue" => run_fetch_issue(req, &url, &token),
         "list_issues" => run_list_issues(req, &url, &token),
         "update_issue_state" => run_update_issue_state(req, &url, &token),
+        "update_issue_project" => run_update_issue_project(req, &url, &token),
         "create_issue" => run_create_issue(req, &url, &token),
         "create_comment" => run_create_comment(req, &url, &token),
         "update_issue_description" => run_update_issue_description(req, &url, &token),
@@ -949,9 +1002,10 @@ mod tests {
 
     #[test]
     fn list_issues_query_includes_label_filter() {
-        let q = build_list_issues_query(true);
+        let q = build_list_issues_query(true, false);
         assert!(q.contains("labels: { name: { in: $labels } }"));
-        let q2 = build_list_issues_query(false);
+        let q2 = build_list_issues_query(false, true);
+        assert!(q2.contains("project: { id: { eq: $projectId } }"));
         assert!(!q2.contains("$labels"));
     }
 
