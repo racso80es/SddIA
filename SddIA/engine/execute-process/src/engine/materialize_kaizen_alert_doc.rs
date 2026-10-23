@@ -51,7 +51,8 @@ pub fn kaizen_alert_content_fingerprint(alert_kind: &str, implicated_files: &[St
 }
 
 fn kaizen_todo_path(repo: &Path, hash8: &str) -> PathBuf {
-    repo.join("docs/todos/pending")
+    super::tracker_lifecycle_port::pending_dir(repo)
+        .unwrap_or_else(|_| repo.join("docs/todos/pending"))
         .join(format!("PENDING_AUDIT_DOC_{hash8}.md"))
 }
 
@@ -94,7 +95,7 @@ fn find_open_kaizen_audit_doc(
     alert_kind: &str,
     implicated_files: &[String],
 ) -> Option<PathBuf> {
-    let pending = repo.join("docs/todos/pending");
+    let pending = super::tracker_lifecycle_port::pending_dir(repo).ok()?;
     if !pending.is_dir() {
         return None;
     }
@@ -247,7 +248,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     }
     let hash8 = kaizen_alert_doc_hash(&review_id, &files);
     let todo_name = format!("PENDING_AUDIT_DOC_{hash8}.md");
-    let pending_dir = repo.join("docs/todos/pending");
+    let pending_dir = super::tracker_lifecycle_port::pending_dir(repo)?;
     fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
     let target = kaizen_todo_path(repo, &hash8);
     let rel_path = target

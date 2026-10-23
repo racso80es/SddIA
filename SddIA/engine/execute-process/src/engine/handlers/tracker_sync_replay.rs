@@ -1,7 +1,7 @@
 //! Handler `tracker-sync-replay` — reintento fail-soft de `Tracker_Sync_Failed`.
 
 use super::super::capsules::invoke_tool_for_process;
-use super::super::project_binding::{self, DoneGate, TrackerConfig};
+use super::super::project_binding::{DoneGate, TrackerConfig};
 use crate::envelope::OrchestratorEnvelope;
 use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
@@ -105,10 +105,12 @@ pub fn replay_payload(
     if let Some(slug) = str_field(payload, "project_slug") {
         inputs["project_slug"] = json!(slug);
     }
-    let tc = match project_binding::tracker_config_for_inputs(repo, &inputs)? {
-        Some(t) => t,
-        None if lab_mock_outbound_enabled() => lab_tracker_fallback(&issue_ref),
-        None => return Ok("discarded"),
+    let tc = match super::super::tracker_lifecycle_port::substrate(repo, &inputs)? {
+        super::super::tracker_lifecycle_port::Substrate::Remote(t) => t,
+        super::super::tracker_lifecycle_port::Substrate::Local if lab_mock_outbound_enabled() => {
+            lab_tracker_fallback(&issue_ref)
+        }
+        super::super::tracker_lifecycle_port::Substrate::Local => return Ok("discarded"),
     };
 
     let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
@@ -203,7 +205,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             error: None,
             execution_report: Some(json!({
                 "phases": [{
-                    "phase_name": "Replay Linear",
+                    "phase_name": "Replay de sincronización",
                     "status": "executed",
                     "handler": "tracker-sync-replay",
                 }]

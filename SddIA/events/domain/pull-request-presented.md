@@ -9,7 +9,7 @@ context: "ecosystem-evolution"
 capabilities:
   - "pull_request_presented"
   - "dlt_oracle_route"
-hash_signature: "sha256:901a3ef53bf7aae27b38ef1868d270958f0a6fb19dcaade78f5eee5240d8b572"
+hash_signature: "sha256:87f2a0bde8f9a43e1e91a4d9e8db1cb69e8df15544b93f13124842b3e8d69950"
 ---
 
 # Event: PullRequest_Presented
@@ -25,7 +25,7 @@ Clase ECST para presentación de PR en bus local. Suscriptores: aduana **`pull-r
 ### OPTIONAL
 - `qa_profile` (`full` | `docs-only`; heredado de `Local_QA_Requested` / DCC)
 - `pr_url`
-- `tracker_ref` (identificador Linear del PBI; sello `tracker-stamp`)
+- `tracker_ref` (identificador opaco; sello `tracker-stamp`)
 - `repository` *(ruta oráculo remoto)*
 - `origin_agent` *(ej. `jules`, `delivery-close-cycle`)*
 - `dlt_anchor_address` *(digest u object_id IOTA — skip re-anclaje en route)*

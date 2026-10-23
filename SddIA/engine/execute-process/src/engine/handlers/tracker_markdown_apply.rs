@@ -1,4 +1,4 @@
-//! Handler `tracker-markdown-apply` — Linear → markdown local (HU-B 04).
+//! Handler `tracker-markdown-apply` — réplica local del ítem remoto.
 
 use super::super::actions::try_run_native;
 use super::super::capsules::{invoke_git_manager_for, invoke_tool_for_process};
@@ -94,27 +94,7 @@ fn occurred_not_after_stored(stored: &str, incoming: &str) -> bool {
 }
 
 fn scan_tracker_markdowns(repo: &Path) -> Vec<PathBuf> {
-    let rel_dirs = [
-        "docs/todos/pending",
-        "docs/todos/done",
-        "docs/todos/historias",
-        "Documentacion/PBI/Realizado",
-    ];
-    let mut out = Vec::new();
-    for rel in rel_dirs {
-        let dir = repo.join(rel);
-        let Ok(rd) = fs::read_dir(&dir) else {
-            continue;
-        };
-        for ent in rd.filter_map(|e| e.ok()) {
-            let p = ent.path();
-            if p.extension().and_then(|x| x.to_str()) == Some("md") {
-                out.push(p);
-            }
-        }
-    }
-    out.sort();
-    out
+    super::super::tracker_lifecycle_port::management_markdowns(repo).unwrap_or_default()
 }
 
 pub fn resolve_markdown_by_tracker_ref(repo: &Path, issue_ref: &str) -> Option<PathBuf> {
@@ -136,7 +116,7 @@ pub fn resolve_markdown_by_tracker_ref(repo: &Path, issue_ref: &str) -> Option<P
 }
 
 fn resolve_hu_ref_by_tracker(repo: &Path, parent_tracker: &str) -> Option<String> {
-    let dir = repo.join("docs/todos/historias");
+    let dir = super::super::tracker_lifecycle_port::stories_dir(repo).ok()?;
     let Ok(rd) = fs::read_dir(&dir) else {
         return None;
     };
@@ -399,16 +379,13 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
     }
 
     let inputs = json!({ "project_slug": project_slug });
-    let tc = project_binding::tracker_config_for_inputs(repo, &inputs)
-        .ok()
-        .flatten()
-        .or_else(|| {
-            if lab_mock_outbound_enabled() {
-                Some(lab_tracker_fallback(&issue_ref))
-            } else {
-                None
-            }
-        });
+    let tc = match super::super::tracker_lifecycle_port::substrate(repo, &inputs) {
+        Ok(super::super::tracker_lifecycle_port::Substrate::Remote(tc)) => Some(tc),
+        Ok(super::super::tracker_lifecycle_port::Substrate::Local) if lab_mock_outbound_enabled() => {
+            Some(lab_tracker_fallback(&issue_ref))
+        }
+        _ => None,
+    };
     let tc = match tc {
         Some(t) => t,
         None => {
@@ -518,7 +495,7 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
                 YamlValue::String("done".into()),
             );
             let dg = tc.done_gate;
-            if dg == DoneGate::Linear {
+            if super::super::tracker_lifecycle_port::local_replica_closes(dg) {
                 patch_map.insert(
                     YamlValue::String("status".into()),
                     YamlValue::String("done".into()),
@@ -544,7 +521,7 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
 
     let mut final_path = md_path.clone();
     if moved_to_done {
-        let done_dir = repo.join("docs/todos/done");
+        let done_dir = super::super::tracker_lifecycle_port::done_dir(repo)?;
         fs::create_dir_all(&done_dir).map_err(|e| e.to_string())?;
         let fname = md_path.file_name().ok_or("sin nombre")?;
         let target = done_dir.join(fname);

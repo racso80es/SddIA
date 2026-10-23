@@ -1,4 +1,4 @@
-//! Sellado lab de `forge-pbi`: formato físico, registro Linear (HU-A 07), sin inventar negocio.
+//! Sellado lab de `forge-pbi`: formato físico y registro en el tracker.
 
 use super::super::capsules::invoke_tool_for_process;
 use super::super::project_binding::{self, resolve_doc_path, TrackerConfig};
@@ -82,8 +82,8 @@ fn resolve_hu_path(bound: &project_binding::BoundProject, hu_ref: &str) -> Resul
         .strip_prefix(&bound.project_root)
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default();
-    if !rel.contains("historias") {
-        return Err("FORGE_SCOPE: historia_ref debe residir bajo historias/".into());
+    if !super::super::tracker_lifecycle_port::ref_is_story(&rel) {
+        return Err("FORGE_SCOPE: historia_ref debe residir en el bucket de historias".into());
     }
     if !full.is_file() {
         return Err(format!("FORGE_NOT_FOUND: {}", full.display()));
@@ -197,8 +197,9 @@ fn tracker_registration_phase(
     title: &str,
     description: &str,
 ) -> TrackerPhase {
-    let tracker_cfg = match project_binding::tracker_config_for_inputs(repo, inputs) {
-        Ok(v) => v,
+    let tracker_cfg = match super::super::tracker_lifecycle_port::substrate(repo, inputs) {
+        Ok(super::super::tracker_lifecycle_port::Substrate::Local) => None,
+        Ok(super::super::tracker_lifecycle_port::Substrate::Remote(tc)) => Some(tc),
         Err(e) => {
             return TrackerPhase {
                 tracker_ref: None,

@@ -9,7 +9,7 @@ context: "quality-assurance"
 capabilities:
   - "pull_request_audited"
   - "argos_verdict_ecst"
-hash_signature: "sha256:b12f541439b490b282cef9c8fcf338c685c18f2a24bc5ec122f14c3a208876dd"
+hash_signature: "sha256:c72111db20922a4adb5f477d3b0e895855b92f7d06891855477f4c16888a96b4"
 ---
 
 # Event: PullRequest_Audited
@@ -25,7 +25,7 @@ Clase ECST emitida cuando **Argos** finaliza el escrutinio determinista de una P
 
 ### OPTIONAL
 - `violated_rules` — array de strings con trazabilidad normativa (si aplica)
-- `tracker_ref` (identificador Linear del PBI; sello `tracker-stamp`)
+- `tracker_ref` (identificador opaco; sello `tracker-stamp`)
 
 ### FORBIDDEN
 - Cualquier valor de `resolution` fuera de `PASS`, `REJECT`, `FLAG`

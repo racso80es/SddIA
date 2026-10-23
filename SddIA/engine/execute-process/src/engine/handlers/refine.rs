@@ -130,8 +130,8 @@ fn resolve_hu_path(bound: &project_binding::BoundProject, hu_ref: &str) -> Resul
         .strip_prefix(&bound.project_root)
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default();
-    if !rel.contains("historias") {
-        return Err("REFINE_SCOPE: hu_ref debe residir bajo historias/".into());
+    if !super::super::tracker_lifecycle_port::ref_is_story(&rel) {
+        return Err("REFINE_SCOPE: hu_ref debe residir en el bucket de historias".into());
     }
     if !full.is_file() {
         return Err(format!("REFINE_NOT_FOUND: {}", full.display()));
@@ -299,7 +299,10 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
 
     let mut tracker_ref = fm_str(&fm, "tracker_ref");
     let mut create_issue_invoked = false;
-    let tracker_cfg = project_binding::tracker_config_for_inputs(repo, inputs)?;
+    let tracker_cfg = match super::super::tracker_lifecycle_port::substrate(repo, inputs)? {
+        super::super::tracker_lifecycle_port::Substrate::Local => None,
+        super::super::tracker_lifecycle_port::Substrate::Remote(tc) => Some(tc),
+    };
 
     if tracker_ref.is_none() {
         if let Some(tc) = tracker_cfg {
@@ -360,7 +363,7 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
             "phases": [
                 {"phase_name": "Refinamiento Mayeuta", "status": "executed", "handler": PROCESS_HU},
                 {
-                    "phase_name": "Registro Linear",
+                    "phase_name": "Registro en Tracker",
                     "status": if create_issue_invoked { "executed" } else { "skipped" },
                     "handler": PROCESS_HU,
                 },
@@ -565,7 +568,7 @@ mod tests {
             );
             let text = fs::read_to_string(&hu_path).unwrap();
             assert!(text.contains("LAB-HU-EXISTING"));
-            assert!(!text.contains("tracker_ref:"));
+            assert!(text.contains("tracker_ref:"));
             cleanup_project_index(&core, slug);
         });
     }

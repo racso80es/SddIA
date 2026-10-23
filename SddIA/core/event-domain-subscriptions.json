@@ -8,7 +8,7 @@
     {
       "agent": "tekton",
       "process": "tracker-stamp",
-      "intent": "Sello Linear in_review + comentario PR (tracker_ref en payload)."
+      "intent": "Sello de ciclo in_review + comentario PR (tracker_ref en payload)."
     },
     {
       "agent": "argos",
@@ -20,7 +20,7 @@
     {
       "agent": "tekton",
       "process": "tracker-stamp",
-      "intent": "Sello Linear done + comentario merge (tracker_ref)."
+      "intent": "Sello de ciclo done + comentario merge (tracker_ref)."
     },
     {
       "agent": "cumulo",

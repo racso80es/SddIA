@@ -1320,7 +1320,10 @@ pub fn capsule_feature_pbi_archive(
         .unwrap_or(&pbi_path)
         .to_string_lossy()
         .replace('\\', "/");
-    if rel.starts_with("docs/todos/done/") {
+    let layout = super::tracker_lifecycle_port::todo_layout(repo)?;
+    let pending_prefix = format!("{}/", layout.pending.trim_end_matches('/'));
+    let done_prefix = format!("{}/", layout.done.trim_end_matches('/'));
+    if rel.starts_with(&done_prefix) {
         if let Some(obj) = state.as_object_mut() {
             obj.insert("pbi_archived_path".into(), json!(rel));
         }
@@ -1331,15 +1334,15 @@ pub fn capsule_feature_pbi_archive(
             "pbi_path": rel,
         }));
     }
-    if !rel.contains("docs/todos/pending/") {
+    if !rel.contains(&pending_prefix) {
         return Ok(json!({
             "status": "executed",
             "handler": "feature-pbi-archive",
             "skipped": true,
-            "reason": format!("PBI fuera de pending/: {rel}"),
+            "reason": format!("PBI fuera del bucket abierto: {rel}"),
         }));
     }
-    let done_dir = repo.join("docs/todos/done");
+    let done_dir = repo.join(&layout.done);
     std::fs::create_dir_all(&done_dir).map_err(|e| e.to_string())?;
     let dest = done_dir.join(pbi_path.file_name().ok_or("nombre PBI inválido")?);
     if dest.is_file() {

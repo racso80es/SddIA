@@ -11,7 +11,7 @@ minteo_maximo: null
 name: tracker-markdown-apply
 outputs:
 - applied: boolean
-- markdown_path: Ruta relativa del markdown actualizado
+- tracker_ref: Identificador opaco del ítem actualizado
 phases:
 - delegates_to:
   - skill:git-manager
@@ -19,10 +19,10 @@ phases:
   name: Persistencia tracker-sync
 porcentaje_de_exito: null
 uuid: b7c8d9e0-f123-4567-89ab-cdef01234567
-version: 1.0.0
+version: 1.0.1
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # tracker-markdown-apply
 
-Suscriptor de `Tracker_Issue_Changed`. Handler nativo (sin LLM). Réplica issue → markdown local; fail-soft con `Tracker_Sync_Failed` si divergencia.
+Suscriptor de `Tracker_Issue_Changed`. Handler nativo (sin LLM). La réplica al sumidero la hace la implementación de `tracker:lifecycle`. Fail-soft con `Tracker_Sync_Failed` si divergencia.
