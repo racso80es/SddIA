@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `baf5a921-874d-4e88-8059-35a47bc706f3` | 2026-10-23 | La cápsula Linear acota consulta, edición y archivo al project_id configurado. | CANONICO | `SddIA/evolution/baf5a921-874d-4e88-8059-35a47bc706f3.md` |
 | `484733f0-557e-4660-a84d-585632b1c72d` | 2026-10-23 | Verificación no sella validacion.md sin branch ni execution_id. | CANONICO | `SddIA/evolution/484733f0-557e-4660-a84d-585632b1c72d.md` |
 | `94980ba1-0a1e-4a16-9e8f-5cef4a2da5ce` | 2026-10-23 | Sumidero file o linear segun el provider del manifiesto. | CANONICO | `SddIA/evolution/94980ba1-0a1e-4a16-9e8f-5cef4a2da5ce.md` |
 | `a1c3e8d2-6b47-4f19-9c05-7e2d4b8a91f6` | 2026-10-22 | Prueba de que Work_Initiated traza persist_ref sin pasar el issue a done. | CANONICO | `SddIA/evolution/a1c3e8d2-6b47-4f19-9c05-7e2d4b8a91f6.md` |
