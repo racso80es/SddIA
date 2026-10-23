@@ -10,6 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 sddia-io = { path = "../../sddia-io" }
+file-tracker-adapter = { path = "../../tools/file-tracker-adapter" }
 sddia-ecosystem-health = { path = "../../ecosystem-health" }
 user-preference-core = { path = "../../user-preference-core" }
 sddia-core-memory = { path = "../../core/memory" }

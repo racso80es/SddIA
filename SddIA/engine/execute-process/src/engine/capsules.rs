@@ -404,6 +404,9 @@ pub fn invoke_tool_for_process(
     payload: &Value,
     process_name: Option<&str>,
 ) -> Result<Value, String> {
+    if tool_name == "file-tracker-adapter" {
+        return file_tracker_adapter::dispatch(repo, payload);
+    }
     let lifecycle = super::handlers::tracker_stamp::lifecycle_tool_name(repo).ok();
     if lifecycle.as_deref() == Some(tool_name) {
         let op = payload

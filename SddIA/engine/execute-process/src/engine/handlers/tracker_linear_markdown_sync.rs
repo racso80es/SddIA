@@ -80,25 +80,30 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str, project_id: Option<&st
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
-    let tc = match super::super::tracker_lifecycle_port::substrate(repo, process_inputs)? {
-        super::super::tracker_lifecycle_port::Substrate::Local => None,
-        super::super::tracker_lifecycle_port::Substrate::Remote(cfg) => Some(cfg),
-    };
-    if tc.is_none() {
+    let tool_name = super::tracker_stamp::lifecycle_tool_name_for(repo, process_inputs)?;
+    if tool_name == "file-tracker-adapter" {
+        let fetched = file_tracker_adapter::dispatch(repo, &json!({
+            "request": {
+                "operation": "fetch_issue",
+                "project_slug": process_inputs.get("project_slug"),
+                "issue_ref": process_inputs.get("issue_ref").or_else(|| process_inputs.get("markdown_path")),
+            }
+        }));
         return Ok(OrchestratorEnvelope {
             success: true,
             status_code: 0,
             data: Some(json!({
-                "synced_count": 0,
+                "synced_count": if fetched.is_ok() { 1 } else { 0 },
                 "synced": [],
                 "skipped": [],
-                "reason": "sumidero local",
+                "provider": "file",
             })),
             error: None,
             execution_report: None,
             exit_code: 0,
         });
     }
+    let tc = super::super::project_binding::tracker_config_for_inputs(repo, process_inputs)?;
     let mut synced = Vec::new();
     let mut skipped = Vec::new();
 

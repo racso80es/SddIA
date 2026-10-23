@@ -10,3 +10,4 @@ branch: refactor/tracker-provider-capsule
 | :--- | :--- | :--- |
 | Cambios locales (PBI + cuerpo HTTP) | forjada | `29ababb7` |
 | T12 — commit por tarea en Ejecución | forjada | `669a0386` |
+| T1–T11 — cápsula de fichero | forjada | se anota al cerrar este commit |

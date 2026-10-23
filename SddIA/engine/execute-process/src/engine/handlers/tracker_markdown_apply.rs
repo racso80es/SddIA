@@ -379,12 +379,10 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
     }
 
     let inputs = json!({ "project_slug": project_slug });
-    let tc = match super::super::tracker_lifecycle_port::substrate(repo, &inputs) {
-        Ok(super::super::tracker_lifecycle_port::Substrate::Remote(tc)) => Some(tc),
-        Ok(super::super::tracker_lifecycle_port::Substrate::Local) if lab_mock_outbound_enabled() => {
-            Some(lab_tracker_fallback(&issue_ref))
-        }
-        _ => None,
+    let tc = match super::super::project_binding::tracker_config_for_inputs(repo, &inputs)? {
+        Some(tc) => Some(tc),
+        None if lab_mock_outbound_enabled() => Some(lab_tracker_fallback(&issue_ref)),
+        None => None,
     };
     let tc = match tc {
         Some(t) => t,

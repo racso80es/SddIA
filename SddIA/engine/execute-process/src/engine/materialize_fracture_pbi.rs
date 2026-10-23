@@ -302,7 +302,16 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 },
                 friction_id.as_deref(),
             );
-            fs::write(&target, body).map_err(|e| e.to_string())?;
+            let _ = file_tracker_adapter::dispatch(
+                repo,
+                &json!({
+                    "request": {
+                        "operation": "create_issue",
+                        "title": filename,
+                        "description": body,
+                    }
+                }),
+            )?;
             let rel_path = target
                 .strip_prefix(repo)
                 .unwrap_or(&target)
@@ -364,7 +373,16 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         None,
         friction_id.as_deref(),
     );
-    fs::write(&target, body).map_err(|e| e.to_string())?;
+    let _ = file_tracker_adapter::dispatch(
+        repo,
+        &json!({
+            "request": {
+                "operation": "create_issue",
+                "title": filename,
+                "description": body,
+            }
+        }),
+    )?;
 
     let rel_path = target
         .strip_prefix(repo)

@@ -16,6 +16,16 @@ fn file_sink(repo: &Path, payload: &Value) -> Result<bool, String> {
     super::super::tracker_lifecycle_port::manifest_provider_is_local(repo, payload)
 }
 
+pub(crate) fn lifecycle_tool_name_for(repo: &Path, inputs: &Value) -> Result<String, String> {
+    if super::super::tracker_lifecycle_port::manifest_provider_is_local(repo, inputs)? {
+        return Ok("file-tracker-adapter".into());
+    }
+    match super::super::project_binding::tracker_config_for_inputs(repo, inputs)? {
+        Some(_) => lifecycle_tool_name(repo),
+        None => Ok("file-tracker-adapter".into()),
+    }
+}
+
 pub(crate) fn lifecycle_tool_name(repo: &Path) -> Result<String, String> {
     let phase = json!({
         "requires_capability": [{
@@ -85,12 +95,10 @@ fn tracker_for_payload(repo: &Path, payload: &Value, issue_ref: &str) -> Result<
     if let Some(slug) = str_field(payload, "project_slug") {
         inputs["project_slug"] = json!(slug);
     }
-    match super::super::tracker_lifecycle_port::substrate(repo, &inputs)? {
-        super::super::tracker_lifecycle_port::Substrate::Remote(t) => Ok(Some(t)),
-        super::super::tracker_lifecycle_port::Substrate::Local if lab_mock_outbound_enabled() => {
-            Ok(Some(lab_tracker_fallback(issue_ref)))
-        }
-        super::super::tracker_lifecycle_port::Substrate::Local => Ok(None),
+    match super::super::project_binding::tracker_config_for_inputs(repo, &inputs)? {
+        Some(t) => Ok(Some(t)),
+        None if lab_mock_outbound_enabled() => Ok(Some(lab_tracker_fallback(issue_ref))),
+        None => Ok(None),
     }
 }
 

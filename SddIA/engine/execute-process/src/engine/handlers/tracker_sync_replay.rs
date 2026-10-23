@@ -105,15 +105,24 @@ pub fn replay_payload(
     if let Some(slug) = str_field(payload, "project_slug") {
         inputs["project_slug"] = json!(slug);
     }
-    let tc = match super::super::tracker_lifecycle_port::substrate(repo, &inputs)? {
-        super::super::tracker_lifecycle_port::Substrate::Remote(t) => t,
-        super::super::tracker_lifecycle_port::Substrate::Local if lab_mock_outbound_enabled() => {
-            lab_tracker_fallback(&issue_ref)
-        }
-        super::super::tracker_lifecycle_port::Substrate::Local => return Ok("discarded"),
-    };
-
-    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
+    let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, &inputs)?;
+    if tool == "file-tracker-adapter" {
+        let _ = file_tracker_adapter::dispatch(
+            repo,
+            &json!({
+                "request": {
+                    "operation": operation,
+                    "issue_ref": issue_ref,
+                    "project_slug": inputs.get("project_slug"),
+                    "state_name": payload.get("state_name"),
+                    "description": payload.get("description"),
+                }
+            }),
+        )?;
+        return Ok("replayed");
+    }
+    let tc = super::super::project_binding::tracker_config_for_inputs(repo, &inputs)?
+        .unwrap_or_else(|| lab_tracker_fallback(&issue_ref));
     let fetch = invoke_tool_for_process(
         repo,
         &tool,

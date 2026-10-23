@@ -197,9 +197,20 @@ fn tracker_registration_phase(
     title: &str,
     description: &str,
 ) -> TrackerPhase {
-    let tracker_cfg = match super::super::tracker_lifecycle_port::substrate(repo, inputs) {
-        Ok(super::super::tracker_lifecycle_port::Substrate::Local) => None,
-        Ok(super::super::tracker_lifecycle_port::Substrate::Remote(tc)) => Some(tc),
+    let parent = match str_field(inputs, "parent_ref") {
+        Some(p) => p,
+        None => {
+            let href = str_field(inputs, "historia_ref").unwrap_or_else(|| "local:missing-parent_ref".into());
+            let _ = emit_create_issue_failed(repo, &href, "PARENT_REF_REQUIRED", &bound.slug);
+            return TrackerPhase {
+                tracker_ref: None,
+                invoked: false,
+                skipped_reason: Some("parent_ref ausente".into()),
+            };
+        }
+    };
+    let tool = match super::tracker_stamp::lifecycle_tool_name_for(repo, inputs) {
+        Ok(t) => t,
         Err(e) => {
             return TrackerPhase {
                 tracker_ref: None,
@@ -208,67 +219,77 @@ fn tracker_registration_phase(
             };
         }
     };
-    if tracker_cfg.is_none() {
+    if tool == "file-tracker-adapter"
+        && super::super::project_binding::tracker_config_for_inputs(repo, inputs)
+            .ok()
+            .flatten()
+            .is_none()
+        && !super::super::tracker_lifecycle_port::manifest_provider_is_local(repo, inputs)
+            .unwrap_or(false)
+    {
         return TrackerPhase {
             tracker_ref: None,
             invoked: false,
             skipped_reason: Some("sin tracker en manifiesto".into()),
         };
     }
-    let tc = tracker_cfg.unwrap();
-    let historia_ref = str_field(inputs, "historia_ref");
-    let parent = match historia_ref {
-        Some(href) => match hu_parent_tracker_ref(bound, &href) {
-            Ok(Some(p)) => p,
-            Ok(None) => {
-                let _ = emit_create_issue_failed(
-                    repo,
-                    &href,
-                    "LINEAR_PARENT_NOT_FOUND",
-                    &bound.slug,
-                );
-                return TrackerPhase {
-                    tracker_ref: None,
-                    invoked: false,
-                    skipped_reason: Some("HU sin tracker_ref".into()),
-                };
-            }
+    let tc = super::super::project_binding::tracker_config_for_inputs(repo, inputs)
+        .ok()
+        .flatten();
+    let labels = if let Some(tc) = &tc {
+        match build_pbi_labels(repo, inputs, tc, process) {
+            Ok(l) => l,
             Err(e) => {
-                let _ = emit_create_issue_failed(repo, &href, &e, &bound.slug);
                 return TrackerPhase {
                     tracker_ref: None,
                     invoked: false,
                     skipped_reason: Some(e),
                 };
             }
-        },
-        None => {
-            let _ = emit_create_issue_failed(
-                repo,
-                "local:missing-historia_ref",
-                "LINEAR_PARENT_NOT_FOUND",
-                &bound.slug,
-            );
-            return TrackerPhase {
-                tracker_ref: None,
-                invoked: false,
-                skipped_reason: Some("historia_ref ausente".into()),
-            };
         }
+    } else {
+        vec!["pbi".into()]
     };
-    match try_create_pbi_issue(repo, &tc, inputs, process, title, description, &parent) {
-        Ok(issue_ref) => TrackerPhase {
-            tracker_ref: Some(issue_ref),
-            invoked: true,
-            skipped_reason: None,
-        },
+    let mut request = json!({
+        "operation": "create_issue",
+        "title": title,
+        "description": description,
+        "labels": labels,
+        "parent_ref": parent,
+        "project_slug": bound.slug,
+    });
+    if let Some(tc) = &tc {
+        request["team_key"] = json!(tc.team_key);
+        if let Some(pid) = &tc.project_id {
+            request["project_id"] = json!(pid);
+        }
+        if let Some(state) = backlog_state_name(tc) {
+            request["state_name"] = json!(state);
+        }
+    }
+    match invoke_tool_for_process(repo, &tool, &json!({ "request": request }), Some(PROCESS_NAME)) {
+        Ok(body) => {
+            let issue_ref = body
+                .get("issue_ref")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string);
+            match issue_ref {
+                Some(issue_ref) => TrackerPhase {
+                    tracker_ref: Some(issue_ref),
+                    invoked: true,
+                    skipped_reason: None,
+                },
+                None => TrackerPhase {
+                    tracker_ref: None,
+                    invoked: true,
+                    skipped_reason: Some("sin tracker_ref".into()),
+                },
+            }
+        }
         Err(code) => {
-            let err_code = if code.len() > 120 {
-                code.chars().take(120).collect()
-            } else {
-                code.clone()
-            };
-            let _ = emit_create_issue_failed(repo, &parent, &err_code, &bound.slug);
+            let _ = emit_create_issue_failed(repo, &parent, &code, &bound.slug);
             TrackerPhase {
                 tracker_ref: None,
                 invoked: true,
@@ -293,25 +314,10 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .unwrap_or("feature");
     let bound = project_binding::bind(repo, inputs)?
         .ok_or("project_slug requerido para forge-pbi")?;
-    let pending_dir = resolve_doc_path(&bound.project_root, &bound.docs.todos_pending)?;
-    fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
     let document_id = format!("PBI-{}", &Uuid::new_v4().to_string()[..8]);
     let entity_uuid = Uuid::new_v4().to_string();
     let created = Utc::now().format("%Y-%m-%d").to_string();
-    let slug = format!(
-        "{}-{}",
-        process,
-        entity_uuid.split('-').next().unwrap_or("pbi")
-    );
     let title = document_id.clone();
-    let tracker = tracker_registration_phase(
-        repo,
-        &bound,
-        inputs,
-        process,
-        &title,
-        raw_idea,
-    );
     let mut fm_lines = format!(
         "document_id: {document_id}\nuuid: \"{entity_uuid}\"\nstatus: pending\nprocess: {process}\ncreated: \"{created}\"\nproject_slug: {slug_project}\ndelivery_mode: {mode}\ndelivery_mode_source: {source}",
         slug_project = bound.slug,
@@ -321,23 +327,50 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     if let Some(href) = str_field(inputs, "historia_ref") {
         fm_lines.push_str(&format!("\nhistoria_ref: \"{href}\""));
     }
+    let draft = format!("---\n{fm_lines}\n---\n\n# {document_id}\n\n{raw_idea}\n");
+    let tracker = tracker_registration_phase(
+        repo,
+        &bound,
+        inputs,
+        process,
+        &title,
+        &draft,
+    );
+    let body = if let Some(tr) = &tracker.tracker_ref {
+        let with_ref = format!("{fm_lines}\ntracker_ref: \"{tr}\"");
+        format!("---\n{with_ref}\n---\n\n# {document_id}\n\n{raw_idea}\n")
+    } else {
+        draft.clone()
+    };
     if let Some(tr) = &tracker.tracker_ref {
-        fm_lines.push_str(&format!("\ntracker_ref: \"{tr}\""));
+        let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, inputs)?;
+        let _ = invoke_tool_for_process(
+            repo,
+            &tool,
+            &json!({
+                "request": {
+                    "operation": "update_issue_description",
+                    "issue_ref": tr,
+                    "description": body,
+                    "project_slug": bound.slug,
+                }
+            }),
+            Some(PROCESS_NAME),
+        );
     }
-    let body = format!("---\n{fm_lines}\n---\n\n# {document_id}\n\n{raw_idea}\n");
-    let path = pending_dir.join(format!("{slug}.md"));
-    fs::write(&path, body).map_err(|e| e.to_string())?;
-    let rel = path.to_string_lossy().replace('\\', "/");
+    let mut event_payload = json!({
+        "document_id": document_id,
+        "project_slug": bound.slug,
+        "process": process,
+    });
+    if let Some(tr) = &tracker.tracker_ref {
+        event_payload["tracker_ref"] = json!(tr);
+    }
     let event_rel = materialize_pending_domain_event(
         repo,
         "PBI_Forged",
         PROCESS_NAME,
-        json!({
-            "document_id": document_id,
-            "project_slug": bound.slug,
-            "process": process,
-            "artifact_path": rel,
-        }),
+        event_payload,
     )?;
     let registro_status = if tracker.invoked {
         if tracker.tracker_ref.is_some() {
@@ -349,7 +382,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         "skipped"
     };
     let mut data = json!({
-        "artifact_path": rel,
         "document_id": document_id,
         "uuid": entity_uuid,
         "event_path": event_rel,
@@ -504,7 +536,7 @@ mod tests {
                     "project_slug": slug,
                     "raw_idea": "idea lab",
                     "process": "bug-fix",
-                    "historia_ref": "docs/todos/historias/ac-forge-hu.md",
+                    "parent_ref": "LAB-HU-1",
                 }),
             )
             .expect("run");
@@ -515,14 +547,14 @@ mod tests {
                 .and_then(|v| v.as_str())
                 .expect("tracker_ref");
             assert!(tr.starts_with("OSC-"));
-            let artifact = out
-                .data
-                .as_ref()
-                .and_then(|d| d.get("artifact_path"))
-                .and_then(|v| v.as_str())
-                .expect("path");
-            let text = fs::read_to_string(client.join(artifact)).unwrap();
-            assert!(text.contains(&format!("tracker_ref: \"{tr}\"")));
+            assert!(out.data.as_ref().and_then(|d| d.get("artifact_path")).is_none());
+            let pending = client.join("docs/todos/pending");
+            if pending.is_dir() {
+                for ent in std::fs::read_dir(&pending).unwrap().flatten() {
+                    let name = ent.file_name().to_string_lossy().to_string();
+                    assert!(!name.starts_with("bug-fix-"), "{name}");
+                }
+            }
             cleanup_project_index(&core, slug);
         });
     }

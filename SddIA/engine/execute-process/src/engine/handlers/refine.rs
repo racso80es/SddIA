@@ -254,9 +254,19 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
         sealed
     };
     let fm = parse_fm(&sealed)?;
-    fs::write(&path, &sealed).map_err(|e| e.to_string())?;
-    let tracker_ref = fm_str(&fm, "tracker_ref");
     let rel = rel_path(&bound.project_root, &path);
+    file_tracker_adapter::dispatch(
+        repo,
+        &json!({
+            "request": {
+                "operation": "update_issue_description",
+                "project_slug": bound.slug,
+                "issue_ref": rel,
+                "description": sealed,
+            }
+        }),
+    )?;
+    let tracker_ref = fm_str(&fm, "tracker_ref");
     let event_rel = emit_refined(
         repo,
         "PBI_Refined",
@@ -299,10 +309,7 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
 
     let mut tracker_ref = fm_str(&fm, "tracker_ref");
     let mut create_issue_invoked = false;
-    let tracker_cfg = match super::super::tracker_lifecycle_port::substrate(repo, inputs)? {
-        super::super::tracker_lifecycle_port::Substrate::Local => None,
-        super::super::tracker_lifecycle_port::Substrate::Remote(tc) => Some(tc),
-    };
+    let tracker_cfg = super::super::project_binding::tracker_config_for_inputs(repo, inputs)?;
 
     if tracker_ref.is_none() {
         if let Some(tc) = tracker_cfg {
@@ -336,7 +343,17 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
         let (fm_text, _) = split_frontmatter(&sealed)?;
         sealed = format!("---\n{fm_text}---\n\n{}", refined_body.trim_start());
     }
-    fs::write(&path, sealed).map_err(|e| e.to_string())?;
+    file_tracker_adapter::dispatch(
+        repo,
+        &json!({
+            "request": {
+                "operation": "update_issue_description",
+                "project_slug": bound.slug,
+                "issue_ref": rel,
+                "description": sealed,
+            }
+        }),
+    )?;
 
     let event_rel = emit_refined(
         repo,
