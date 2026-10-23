@@ -126,6 +126,7 @@ pub fn lab_create_issue(
     labels: &[String],
     parent_ref: Option<&str>,
     state_name: &str,
+    project_id: Option<&str>,
 ) -> String {
     let mut s = store().lock().unwrap();
     s.next_id += 1;
@@ -141,6 +142,7 @@ pub fn lab_create_issue(
         "children": [],
         "url": format!("https://linear.app/issue/{ident}"),
         "updated_at": "2026-10-04T00:00:00Z",
+        "project_id": project_id,
     });
     s.issues.insert(ident.clone(), issue);
     if let Some(parent) = parent_ref {
@@ -165,6 +167,24 @@ pub fn lab_update_state(issue_ref: &str, state_name: &str) -> bool {
         issue["state"] = json!(state_name);
         s.audit_log
             .push(format!("state:{issue_ref}:{state_name}"));
+        persist_store(&s);
+        return true;
+    }
+    false
+}
+
+pub fn lab_set_project(issue_ref: &str, project_id: &str) {
+    let mut s = store().lock().unwrap();
+    if let Some(issue) = s.issues.get_mut(issue_ref) {
+        issue["project_id"] = json!(project_id);
+        persist_store(&s);
+    }
+}
+
+pub fn lab_archive(issue_ref: &str) -> bool {
+    let mut s = store().lock().unwrap();
+    if s.issues.remove(issue_ref).is_some() {
+        s.audit_log.push(format!("archive:{issue_ref}"));
         persist_store(&s);
         return true;
     }

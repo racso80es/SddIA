@@ -272,6 +272,28 @@ fn lab_fetch_issue_fixture(issue_ref: &str) -> Value {
     }
 }
 
+fn project_mismatch(issue_ref: &str) -> LinearFail {
+    LinearFail {
+        code: "LINEAR_PROJECT_MISMATCH",
+        message: format!("issue {issue_ref} fuera del proyecto"),
+        exit: 1,
+    }
+}
+
+fn lab_enforce_project(inner: &Value, issue_ref: &str) -> Result<(), LinearFail> {
+    let Some(pid) = optional_str(inner, "project_id") else {
+        return Ok(());
+    };
+    if let Some(stored) = lab_state::lab_fetch(issue_ref) {
+        if let Some(sp) = stored.get("project_id").and_then(|v| v.as_str()) {
+            if !sp.is_empty() && sp != pid {
+                return Err(project_mismatch(issue_ref));
+            }
+        }
+    }
+    Ok(())
+}
+
 fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
     if env::var("SDDIA_LAB_RESET_STORE")
         .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
@@ -285,6 +307,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
     match op.as_str() {
         "fetch_issue" => {
             let issue_ref = required_str(inner, "issue_ref")?;
+            lab_enforce_project(inner, &issue_ref)?;
             if issue_ref == "MISSING-1" {
                 return Err(LinearFail {
                     code: "LINEAR_NOT_FOUND",
@@ -299,8 +322,9 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
         }
         "list_issues" => {
             let team_key = required_str(inner, "team_key")?;
+            let project_id = optional_str(inner, "project_id");
             let labels = inner.get("labels").and_then(|v| v.as_array());
-            let items = if labels.map(|a| !a.is_empty()).unwrap_or(false) {
+            let mut items = if labels.map(|a| !a.is_empty()).unwrap_or(false) {
                 vec![json!({
                     "id": "i1",
                     "identifier": format!("{team_key}-1"),
@@ -341,12 +365,24 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                     }),
                 ]
             };
+            if let Some(pid) = project_id {
+                for item in &mut items {
+                    if item.get("project_id").and_then(|v| v.as_str()).is_none() {
+                        item["project_id"] = json!(pid);
+                    }
+                }
+                items.retain(|item| {
+                    item.get("project_id").and_then(|v| v.as_str()) == Some(pid.as_str())
+                });
+            }
             Ok(json!({
                 "items": items,
                 "page_info": { "has_next_page": false, "end_cursor": null }
             }))
         }
         "update_issue_state" => {
+            let issue_ref_scope = optional_str(inner, "issue_ref").unwrap_or_default();
+            lab_enforce_project(inner, &issue_ref_scope)?;
             if optional_str(inner, "state_name").as_deref() == Some("Ambiguous") {
                 return Err(LinearFail {
                     code: "LINEAR_STATE_AMBIGUOUS",
@@ -381,6 +417,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
         }
         "create_comment" => {
             let issue_ref = required_str(inner, "issue_ref")?;
+            lab_enforce_project(inner, &issue_ref)?;
             let body = optional_str(inner, "body").unwrap_or_default();
             lab_state::lab_register_comment(&issue_ref, &body);
             Ok(json!({
@@ -390,6 +427,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
         }
         "update_issue_description" => {
             let issue_ref = required_str(inner, "issue_ref")?;
+            lab_enforce_project(inner, &issue_ref)?;
             let description = required_str(inner, "description")?;
             Ok(json!({
                 "issue_ref": issue_ref,
@@ -399,9 +437,28 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
         "update_issue_project" => {
             let issue_ref = required_str(inner, "issue_ref")?;
             let project_id = required_str(inner, "project_id")?;
+            lab_state::lab_set_project(&issue_ref, &project_id);
             Ok(json!({
                 "issue_ref": issue_ref,
                 "project_id": project_id,
+            }))
+        }
+        "archive_issue" => {
+            let issue_ref = required_str(inner, "issue_ref")?;
+            let project_id = required_str(inner, "project_id")?;
+            lab_enforce_project(inner, &issue_ref)?;
+            if lab_state::lab_fetch(&issue_ref).is_none() {
+                return Err(LinearFail {
+                    code: "LINEAR_NOT_FOUND",
+                    message: "issue not found".into(),
+                    exit: 1,
+                });
+            }
+            lab_state::lab_archive(&issue_ref);
+            Ok(json!({
+                "issue_ref": issue_ref,
+                "project_id": project_id,
+                "archived": true,
             }))
         }
         "create_issue" => {
@@ -449,6 +506,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                 &labels,
                 parent.as_deref(),
                 &state_name,
+                optional_str(inner, "project_id").as_deref(),
             );
             Ok(json!({
                 "issue_ref": ident,
@@ -465,11 +523,34 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
     }
 }
 
+fn ensure_issue_in_project(
+    url: &str,
+    token: &str,
+    issue_ref: &str,
+    project_id: Option<&str>,
+) -> Result<(), LinearFail> {
+    let Some(expected) = project_id else {
+        return Ok(());
+    };
+    let query = r#"query IssueProject($ref: String!) {
+  issue(id: $ref) { project { id } }
+}"#;
+    let body = graphql_post(url, token, query, json!({ "ref": issue_ref }))?;
+    let actual = body
+        .pointer("/data/issue/project/id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if actual != expected {
+        return Err(project_mismatch(issue_ref));
+    }
+    Ok(())
+}
+
 fn run_fetch_issue(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
     let inner = request_inner(req);
     let issue_ref = required_str(inner, "issue_ref")?;
     let query = r#"query FetchIssue($ref: String!) {
-  issue(id: $ref) { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } }
+  issue(id: $ref) { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } project { id } }
 }"#;
     let mut variables = Map::new();
     variables.insert("ref".into(), json!(issue_ref));
@@ -487,6 +568,15 @@ fn run_fetch_issue(req: &Value, url: &str, token: &str) -> Result<Value, LinearF
             message: "issue not found".into(),
             exit: 1,
         });
+    }
+    if let Some(expected) = optional_str(inner, "project_id") {
+        let actual = node
+            .pointer("/project/id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if actual != expected {
+            return Err(project_mismatch(&issue_ref));
+        }
     }
     Ok(issue_reduced(node))
 }
@@ -759,6 +849,7 @@ fn run_create_issue(req: &Value, url: &str, token: &str) -> Result<Value, Linear
 fn run_update_issue_state(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
     let inner = request_inner(req);
     let issue_ref = required_str(inner, "issue_ref")?;
+    ensure_issue_in_project(url, token, &issue_ref, optional_str(inner, "project_id").as_deref())?;
     if let Some(state_name) = optional_str(inner, "state_name") {
         let team_key = required_str(inner, "team_key")?;
         let state_id = resolve_workflow_state_id(url, token, &team_key, &state_name)?;
@@ -845,6 +936,7 @@ fn apply_state_id(
 fn run_create_comment(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
     let inner = request_inner(req);
     let issue_ref = required_str(inner, "issue_ref")?;
+    ensure_issue_in_project(url, token, &issue_ref, optional_str(inner, "project_id").as_deref())?;
     let body_md = required_str(inner, "body")?;
     let mutation = r#"mutation Comment($issueId: String!, $body: String!) {
   commentCreate(input: { issueId: $issueId, body: $body }) {
@@ -872,6 +964,7 @@ fn run_create_comment(req: &Value, url: &str, token: &str) -> Result<Value, Line
 fn run_update_issue_description(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
     let inner = request_inner(req);
     let issue_ref = required_str(inner, "issue_ref")?;
+    ensure_issue_in_project(url, token, &issue_ref, optional_str(inner, "project_id").as_deref())?;
     let description = required_str(inner, "description")?;
     let mutation = r#"mutation UpdateDesc($id: String!, $description: String!) {
   issueUpdate(id: $id, input: { description: $description }) {
@@ -906,6 +999,33 @@ fn run_update_issue_description(req: &Value, url: &str, token: &str) -> Result<V
     }))
 }
 
+fn run_archive_issue(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
+    let inner = request_inner(req);
+    let issue_ref = required_str(inner, "issue_ref")?;
+    let project_id = required_str(inner, "project_id")?;
+    ensure_issue_in_project(url, token, &issue_ref, Some(project_id.as_str()))?;
+    let mutation = r#"mutation Archive($id: String!) {
+  issueArchive(id: $id) { success }
+}"#;
+    let body = graphql_post(url, token, mutation, json!({ "id": issue_ref }))?;
+    let success = body
+        .pointer("/data/issueArchive/success")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !success {
+        return Err(LinearFail {
+            code: "LINEAR_GRAPHQL_ERROR",
+            message: "issueArchive failed".into(),
+            exit: 1,
+        });
+    }
+    Ok(json!({
+        "issue_ref": issue_ref,
+        "project_id": project_id,
+        "archived": true,
+    }))
+}
+
 fn dispatch(req: &Value) -> Result<Value, LinearFail> {
     if lab_mock_outbound_enabled() && lab_mock_linear_url().is_none() {
         return lab_inline_mock(req);
@@ -926,6 +1046,7 @@ fn dispatch(req: &Value) -> Result<Value, LinearFail> {
         "create_issue" => run_create_issue(req, &url, &token),
         "create_comment" => run_create_comment(req, &url, &token),
         "update_issue_description" => run_update_issue_description(req, &url, &token),
+        "archive_issue" => run_archive_issue(req, &url, &token),
         other => Err(LinearFail {
             code: "LINEAR_GRAPHQL_ERROR",
             message: format!("operation no soportada: {other}"),
@@ -1129,6 +1250,52 @@ mod tests {
             let blob = r.to_string();
             assert!(!blob.contains("secret-create-token"));
             env::remove_var("LINEAR_API_TOKEN");
+        });
+    }
+
+    #[test]
+    fn project_scope_blocks_edit_and_archive() {
+        with_lab(|| {
+            env::set_var("SDDIA_LAB_RESET_STORE", "1");
+            let created = dispatch(&json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": "OSC",
+                    "title": "en proyecto",
+                    "project_id": "P-OSC-1"
+                }
+            }))
+            .unwrap();
+            let issue_ref = created.get("issue_ref").and_then(|v| v.as_str()).unwrap();
+            let mismatch = dispatch(&json!({
+                "request": {
+                    "operation": "update_issue_state",
+                    "issue_ref": issue_ref,
+                    "state_name": "Todo",
+                    "team_key": "OSC",
+                    "project_id": "OTHER"
+                }
+            }))
+            .unwrap_err();
+            assert_eq!(mismatch.code, "LINEAR_PROJECT_MISMATCH");
+            let archived = dispatch(&json!({
+                "request": {
+                    "operation": "archive_issue",
+                    "issue_ref": issue_ref,
+                    "project_id": "P-OSC-1"
+                }
+            }))
+            .unwrap();
+            assert_eq!(archived.get("archived"), Some(&json!(true)));
+            let gone = dispatch(&json!({
+                "request": {
+                    "operation": "archive_issue",
+                    "issue_ref": issue_ref,
+                    "project_id": "P-OSC-1"
+                }
+            }))
+            .unwrap_err();
+            assert_eq!(gone.code, "LINEAR_NOT_FOUND");
         });
     }
 }

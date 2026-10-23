@@ -119,6 +119,7 @@ pub fn replay_payload(
             "request": {
                 "operation": "fetch_issue",
                 "issue_ref": issue_ref,
+                "project_id": tc.project_id,
             }
         }),
         Some("tracker-sync-replay"),
@@ -146,6 +147,7 @@ pub fn replay_payload(
                         "issue_ref": issue_ref,
                         "state_name": state_name,
                         "team_key": tc.team_key,
+                        "project_id": tc.project_id,
                     }
                 }),
                 Some("tracker-sync-replay"),
@@ -170,6 +172,7 @@ pub fn replay_payload(
                         "operation": "create_comment",
                         "issue_ref": issue_ref,
                         "body": body,
+                        "project_id": tc.project_id,
                     }
                 }),
                 Some("tracker-sync-replay"),
