@@ -17,6 +17,7 @@ global: APTO
 pbi_archived: false
 approval_status: aprobado
 verdict: aprobado
+pr_url: https://github.com/racso80es/SddIA/pull/374
 git_manager_invoked: true
 git_evidence_source: skill:git-manager
 branch_worktree_observed: refactor/tracker-process-decouple
