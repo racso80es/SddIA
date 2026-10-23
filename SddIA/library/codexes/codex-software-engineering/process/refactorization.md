@@ -8,7 +8,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:97976e9b0bbe022ff1c3a2803b3030f26dac9da64f0a976c4108283ea677a30f
+hash_signature: "sha256:ca67f5963414711d0765eb58af1194ad6417527ca14f9e61d98c1202fa778d54"
 inputs:
 - refactor_goal: Propósito central de la refactorización
 - refined_constraints: Restricciones de alcance complementarias y límites
@@ -37,7 +37,7 @@ phases:
   delegates_to:
   - agent:dedalo
 - name: Ejecución
-  intent: 'Tekton materializa los cambios. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.'
+  intent: 'Tekton materializa los cambios. Un commit por tarea del plan.md vía git-manager. Cada commit anota la tarea y el identificador en execution.md y marca la tarea como forjada en el PBI de trabajo. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.'
   delegates_to:
   - agent:tekton
 - name: Verificación

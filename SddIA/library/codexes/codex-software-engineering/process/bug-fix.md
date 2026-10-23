@@ -8,7 +8,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: sha256:3a99e75db1d2de217ed455bf3a96f2cf6cef14bf08b41880f9e7cd9cc0d4be2a
+hash_signature: "sha256:84f84236d9b1d69192b7a46628693e5ba36ecce0dd3aed8ce644c6fbde2957a9"
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
@@ -32,7 +32,7 @@ phases:
   delegates_to:
   - agent:dedalo
 - name: Ejecución
-  intent: 'Tekton materializa las correcciones. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.'
+  intent: 'Tekton materializa las correcciones. Un commit por tarea del plan.md vía git-manager. Cada commit anota la tarea y el identificador en execution.md y marca la tarea como forjada en el PBI de trabajo. Debe generar obligatoriamente implementation.md y execution.md con frontmatter válido según el patrón documental activo en persist_ref.'
   delegates_to:
   - agent:tekton
 - name: Verificación
