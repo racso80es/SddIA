@@ -2,15 +2,9 @@ name: sddia-index-qa
 
 on:
   push:
-    branches:
-      - main
-      - "feat/**"
-      - "fix/**"
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
-      - "feat/**"
-      - "fix/**"
+    branches: [ main ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
