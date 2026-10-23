@@ -38,12 +38,39 @@ fn poll_seconds() -> u64 {
         .unwrap_or(60)
 }
 
+fn lifecycle_tool_name(repo: &Path) -> Option<String> {
+    let text = fs::read_to_string(repo.join("SddIA/core/capability-bindings.md")).ok()?;
+    let mut seen = false;
+    for line in text.lines() {
+        if line.contains("capability_id:") && line.contains("tracker:lifecycle") {
+            seen = true;
+            continue;
+        }
+        if seen && line.contains("provider:") {
+            let raw = line.split("provider:").nth(1)?.trim().trim_matches('"');
+            let name = raw.split(':').nth(1).unwrap_or(raw).trim().trim_matches('"');
+            if name.is_empty() {
+                return None;
+            }
+            return Some(name.to_string());
+        }
+    }
+    None
+}
+
+fn core_provider_file(repo: &Path) -> bool {
+    let text = fs::read_to_string(repo.join(".SddIA/project.md")).unwrap_or_default();
+    let Some(rest) = text.split("tracker:").nth(1) else {
+        return true;
+    };
+    let block = rest.split("docs_layout:").next().unwrap_or(rest);
+    !block.contains("provider: linear")
+}
+
 fn resolve_adapter_bin(repo: &Path) -> Option<std::path::PathBuf> {
+    let name = lifecycle_tool_name(repo)?;
     for profile in ["release", "debug"] {
-        let p = repo
-            .join("SddIA/target")
-            .join(profile)
-            .join("linear-tracker-adapter");
+        let p = repo.join("SddIA/target").join(profile).join(&name);
         if p.is_file() {
             return Some(p);
         }
@@ -226,6 +253,10 @@ fn spawn_heartbeat(centinela: Arc<Mutex<DaemonRuntime>>, top: BusTopology) -> th
 
 fn main() {
     let repo = find_repo_root().expect("repo root");
+    if core_provider_file(&repo) {
+        eprintln!("[LINEAR-BRIDGE] provider file: sin poll ni webhook");
+        return;
+    }
     let top = load_bus_topology(&repo);
     let mut centinela = DaemonRuntime::new(repo.clone(), DAEMON_NAME);
     if let Err(e) = centinela.bootstrap(&top) {

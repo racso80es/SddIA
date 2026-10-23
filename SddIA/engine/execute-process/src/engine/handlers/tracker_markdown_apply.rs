@@ -181,9 +181,10 @@ fn labels_has_editable(fetch: &Value, editable_label: &str) -> bool {
 }
 
 fn tool_fetch_issue(repo: &Path, issue_ref: &str) -> Result<Value, String> {
+    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
     invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &tool,
         &json!({
             "request": {
                 "operation": "fetch_issue",
@@ -516,7 +517,7 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
                 YamlValue::String("done".into()),
             );
             let dg = tc.done_gate;
-            if dg == DoneGate::Linear || dg == DoneGate::Both {
+            if dg == DoneGate::Linear {
                 patch_map.insert(
                     YamlValue::String("status".into()),
                     YamlValue::String("done".into()),

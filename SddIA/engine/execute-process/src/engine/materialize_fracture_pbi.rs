@@ -26,6 +26,79 @@ fn required_str(inputs: &Value, key: &str) -> Result<String, String> {
     }
 }
 
+fn issue_ref_of(body: &Value) -> Result<String, String> {
+    body.get("issue_ref")
+        .or_else(|| body.get("identifier"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| "LINEAR_CREATE_ISSUE_EMPTY: sin issue_ref".into())
+}
+
+fn lifecycle_call(
+    repo: &Path,
+    request: Value,
+    process: &str,
+) -> Result<Value, String> {
+    let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
+    super::capsules::invoke_tool_for_process(repo, &tool, &json!({ "request": request }), Some(process))
+}
+
+fn find_issue_with_marker(
+    repo: &Path,
+    team_key: &str,
+    marker: &str,
+) -> Result<Option<String>, String> {
+    let listed = lifecycle_call(
+        repo,
+        json!({
+            "operation": "list_issues",
+            "team_key": team_key,
+        }),
+        "materialize-fracture-pbi",
+    )?;
+    let items = listed.get("items").and_then(|v| v.as_array());
+    let Some(items) = items else {
+        return Ok(None);
+    };
+    for item in items {
+        let title = item.get("title").and_then(|v| v.as_str()).unwrap_or("");
+        if title.contains(marker) {
+            if let Ok(id) = issue_ref_of(item) {
+                return Ok(Some(id));
+            }
+            if let Some(id) = item.get("identifier").and_then(|v| v.as_str()) {
+                return Ok(Some(id.to_string()));
+            }
+        }
+    }
+    Ok(None)
+}
+
+fn create_fracture_issue(
+    repo: &Path,
+    tc: &super::project_binding::TrackerConfig,
+    inputs: &Value,
+    title: &str,
+    description: &str,
+) -> Result<String, String> {
+    let label = super::project_binding::tracker_label_for_inputs(repo, inputs, "fix")?
+        .unwrap_or_else(|| "fix".into());
+    let mut request = json!({
+        "operation": "create_issue",
+        "team_key": tc.team_key,
+        "title": title,
+        "description": description,
+        "labels": [label],
+    });
+    if let Some(pid) = &tc.project_id {
+        request["project_id"] = json!(pid);
+    }
+    let body = lifecycle_call(repo, request, "materialize-fracture-pbi")?;
+    issue_ref_of(&body)
+}
+
 fn optional_str(inputs: &Value, key: &str) -> Option<String> {
     inputs
         .get(key)
@@ -154,6 +227,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     emit_resolver_telemetry(repo, &scan);
     let resolution = resolve_materialize(&scan, &trace_hash, &fracture_process);
 
+    let linear = super::project_binding::tracker_config_for_inputs(repo, inputs)?;
     let persist_ref = optional_str(inputs, "persist_ref");
     let branch_name = optional_str(inputs, "branch_name");
     let friction_id = optional_str(inputs, "friction_id").filter(|id| {
@@ -179,6 +253,34 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 .as_deref()
                 .unwrap_or("");
             let filename = display_filename_regression(&process_name, &trace_hash, n);
+            if let Some(tc) = &linear {
+                if let Some(existing) = find_issue_with_marker(repo, &tc.team_key, &trace_hash)? {
+                    return Ok(json!({
+                        "success": true,
+                        "target_path": existing,
+                        "issue_ref": existing,
+                        "reason": "already_open",
+                        "message": "already_open",
+                        "trace_hash": trace_hash,
+                    }));
+                }
+                let issue = create_fracture_issue(
+                    repo,
+                    tc,
+                    inputs,
+                    &format!("{filename} {trace_hash}"),
+                    &error_trace,
+                )?;
+                return Ok(json!({
+                    "success": true,
+                    "target_path": issue,
+                    "issue_ref": issue,
+                    "reason": "regression_opened",
+                    "message": "regression_opened",
+                    "canonical_ref": resolution.canonical_ref,
+                    "trace_hash": trace_hash,
+                }));
+            }
             let target = pending_dir.join(&filename);
             let body = build_pbi_body(
                 &process_name,
@@ -217,6 +319,33 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     }
 
     let filename = display_filename_fix(&process_name, &trace_hash);
+    if let Some(tc) = &linear {
+        if let Some(existing) = find_issue_with_marker(repo, &tc.team_key, &trace_hash)? {
+            return Ok(json!({
+                "success": true,
+                "target_path": existing,
+                "issue_ref": existing,
+                "reason": "already_open",
+                "message": "already_open",
+                "trace_hash": trace_hash,
+            }));
+        }
+        let issue = create_fracture_issue(
+            repo,
+            tc,
+            inputs,
+            &format!("{filename} {trace_hash}"),
+            &error_trace,
+        )?;
+        return Ok(json!({
+            "success": true,
+            "target_path": issue,
+            "issue_ref": issue,
+            "reason": "materialized",
+            "message": "materialized",
+            "trace_hash": trace_hash,
+        }));
+    }
     let target = pending_dir.join(&filename);
     let document_id = format!("PBI-FIX-FRACTURE-{trace_hash}");
     let body = build_pbi_body(

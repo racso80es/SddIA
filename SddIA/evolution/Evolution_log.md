@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `94980ba1-0a1e-4a16-9e8f-5cef4a2da5ce` | 2026-10-23 | Sumidero file o linear segun el provider del manifiesto. | CANONICO | `SddIA/evolution/94980ba1-0a1e-4a16-9e8f-5cef4a2da5ce.md` |
 | `a1c3e8d2-6b47-4f19-9c05-7e2d4b8a91f6` | 2026-10-22 | Prueba de que Work_Initiated traza persist_ref sin pasar el issue a done. | CANONICO | `SddIA/evolution/a1c3e8d2-6b47-4f19-9c05-7e2d4b8a91f6.md` |
 | `f74e7f14-5c3e-4fd7-a524-1fb9c84b4921` | 2026-10-22 | tracker-stamp pide tracker:lifecycle y el sello invoca el provider de la fila. Con provider file no hay cápsula. | CANONICO | `SddIA/evolution/f74e7f14-5c3e-4fd7-a524-1fb9c84b4921.md` |
 | `75b4d30c-520e-446d-9b0f-6539ed14d4f2` | 2026-10-22 | El adaptador declara tracker:lifecycle y el anti-eco registra según la fila de binding. | CANONICO | `SddIA/evolution/75b4d30c-520e-446d-9b0f-6539ed14d4f2.md` |

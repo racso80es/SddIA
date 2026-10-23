@@ -1,13 +1,14 @@
 ---
 uuid: "4c448c82-de41-460f-b24f-82a84fa5ed69"
 name: "features-documentation-pattern"
-version: "1.3.0"
+version: "1.3.1"
 nature: "tactical-norm"
 author: "norm-creator"
 scope: "agnostic"
 category: "workflow"
 dependencies: []
-hash_signature: "sha256:627e2ddf30c82a7d4eb851f0a81c31bc68a7a3fe048973d6a0e9d65c0169225f"---
+hash_signature: "sha256:a28d9e1e5f64f3a42aca060c2cedca892c8caa4d65d3aa3ceb0c542b1b62dde7"
+---
 
 ## Directriz Core
 
@@ -38,7 +39,7 @@ La validación opcional `sddia_frontmatter_valid` aplica a los `.md` de tarea cu
 | `branch` | Sí | Rama de trabajo (`fix/*`, `feat/*`, `docs/*`) |
 | `checks` | Sí | Mapa de criterios de aceptación |
 | `git_changes` | Sí | Lista de paths tocados |
-| `pbi_archived` | Sí* | `true` — PBI en `docs/todos/done/` **en esta rama** (*obligatorio solo si `tracker.done_gate` es `git` o `both`; con `linear` el archivado puede llegar vía `tracker-markdown-apply`) |
+| `pbi_archived` | Sí* | Con provider `file`: `true` y el PBI en `docs/todos/done/` en esta rama. Con provider `linear`: el issue está en `state_map.done` y no se exige fichero nuevo en `pending/` ni `done/`. `validacion.md` APTO sigue en ambos. |
 | `pr_url` | Recomendado | URL tras `delivery-close-cycle` (puede añadirse en el mismo PR antes del merge) |
 | `merged_pr` | No | Opcional auditoría; **no** gate de Done |
 | `merge_commit` | No | Inferible vía GitHub / `git log` |
@@ -49,10 +50,9 @@ La validación opcional `sddia_frontmatter_valid` aplica a los `.md` de tarea cu
 ```text
 Done = un único PR mergeado en main
      + validacion.md APTO en el diff de ese PR
-     + cierre documental según tracker.done_gate del manifiesto:
-       · git (default): pbi_archived: true + PBI en docs/todos/done/ en la rama del PR
-       · linear: issue en done en Linear + validacion APTO (PBI en done/ vía tracker-markdown-apply)
-       · both: git o linear según evidencia local / Linear (ver HU-B 05)
+     + cierre según tracker.provider:
+       · file: pbi_archived: true + PBI en docs/todos/done/ en la rama del PR
+       · linear: issue en state_map.done + validacion APTO, sin fichero nuevo en pending/ ni done/
 ```
 
 ### CA de CI (GitHub Actions)

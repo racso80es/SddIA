@@ -1,10 +1,38 @@
-//! Proceso `tracker-backlog-query` — listado Linear vía `linear-tracker-adapter` (síncrono).
+//! Proceso `tracker-backlog-query` — listado vía `tracker:lifecycle` o ficheros locales.
 
 use super::super::capsules::invoke_tool_for_process;
 use super::super::project_binding::{self, TrackerConfig};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
+use std::fs;
 use std::path::Path;
+
+fn file_backlog_items(repo: &Path, kind: &str) -> Vec<Value> {
+    let mut items = Vec::new();
+    for bucket in ["docs/todos/pending", "docs/todos/done"] {
+        let dir = repo.join(bucket);
+        let Ok(rd) = fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in rd.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("md") {
+                continue;
+            }
+            let name = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+            let item_kind = if name.contains("HU-") { "hu" } else { "pbi" };
+            if kind != "all" && kind != item_kind {
+                continue;
+            }
+            items.push(json!({
+                "kind": item_kind,
+                "title": name,
+                "path": path.strip_prefix(repo).unwrap_or(&path).to_string_lossy().replace('\\', "/"),
+            }));
+        }
+    }
+    items
+}
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
     v.get(key)
@@ -97,12 +125,13 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 
     let tracker = project_binding::tracker_config_for_inputs(repo, process_inputs)?;
     if tracker.is_none() {
+        let items = file_backlog_items(repo, kind);
         return Ok(OrchestratorEnvelope {
             success: true,
             status_code: 0,
             data: Some(json!({
                 "tracker_configured": false,
-                "items": [],
+                "items": items,
             })),
             error: None,
             execution_report: Some(json!({
@@ -131,9 +160,10 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         request["labels"] = json!([tc.label_pbi.clone()]);
     }
 
+    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
     let tool_body = invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &tool,
         &json!({ "request": request }),
         Some("tracker-backlog-query"),
     )?;
@@ -153,7 +183,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
                 "phase_name": "Consulta backlog",
                 "status": "executed",
                 "handler": "tracker-backlog-query",
-                "tool": "linear-tracker-adapter",
+                "tool": "tracker:lifecycle",
             }]
         })),
         exit_code: 0,

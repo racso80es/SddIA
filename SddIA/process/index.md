@@ -6,7 +6,7 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
-| refine-hu | 417025aa-6c8f-49fb-a4e7-d32efe9c896b | 1.0.1 | knowledge-management, filesystem-ops, tracker-operations | — | Refinamiento pre-forja de HU en historias/; create_issue si  |
+| refine-hu | 417025aa-6c8f-49fb-a4e7-d32efe9c896b | 1.0.2 | knowledge-management, filesystem-ops, tracker-operations | — | Refinamiento pre-forja de HU en historias/; create_issue si  |
 | refine-pbi | d5ecaaed-ba8d-45a4-85f4-a1d7d1d4308a | 1.0.1 | knowledge-management, filesystem-ops | — | Refinamiento pre-forja del markdown PBI en todos_pending; se |
 | instance-health-verify | 44f1b64c-8a88-4d1e-a8f5-6280b4a44ce2 | 1.0.0 | quality-assurance | — | Verificación post-deploy de instancia consumidor: unidades s |
 | aiua-stimulus-processing | 6c595785-e386-402f-b570-0b2aa6343051 | 1.3.0 | ecosystem-evolution | — | Latido ontológico de la Aiúa: contexto LanceDB, inyección de |
@@ -56,9 +56,8 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | telegram-gateway | f5a6b7c8-d9e0-4f1a-b2c3-d4e5f6a7b8c9 | 1.0.2 | ecosystem-evolution, external-ingest | — | Aduana texto Telegram → eventos domain (`TelegramMessage_Received`, `Manual_Task_Requested`, `Kaizen_Idea_Captured`). |
 | telegram-fallback-responder | c9d0e1f2-a3b4-4c5d-6e7f-8a9b0c1d2e3f | 1.0.1 | ecosystem-evolution, external-ingest | — | Triaje inverso Telegram: Filtro C → Mayeuta → `send-telegram-notification`. |
 | sync-client-assets | 0f6bf2ff-a067-46fb-9175-ee97e6a5dcd8 | 1.0.0 | ecosystem-evolution, knowledge-management | — | Sincronización unidireccional repositorio maestro → instancia cliente: 4 fases (Manifiesto-Local, Reclamacion, Aduana-Integridad, Inyeccion). Aduana SHA-256 pre-escritura. |
-| tracker-linear-markdown-sync | a3b4c5d6-e7f8-4890-a123-456789abcd01 | 1.0.0 | tracker-operations | — | Volcado descripción Linear = cuerpo markdown (`tracker_ref`). |
-| tracker-backlog-query | d4e5f6a7-b8c9-4d0e-a12b-3b4c5d6e7f9a | 1.0.0 | tracker-operations | — | Listado HU/PBI vía linear-tracker-adapter (Kalma2 GET /api/backlog). |
-| tracker-sync-replay | e1f2a3b4-c5d6-4789-a012-3456789abc01 | 1.1.0 | tracker-operations | — | Replay con orden backlog<todo<in_progress<…; cancelled terminal. |
+| tracker-linear-markdown-sync | a3b4c5d6-e7f8-4890-a123-456789abcd01 | 1.0.1 | tracker-operations | — | Volcado descripción Linear = cuerpo markdown (`tracker_ref`). |
+| tracker-backlog-query | d4e5f6a7-b8c9-4d0e-a12b-3b4c5d6e7f9a | 1.0.1 | tracker-operations | — | Listado HU/PBI vía tracker:lifecycle (Kalma2 GET /api/backlog). |
+| tracker-sync-replay | e1f2a3b4-c5d6-4789-a012-3456789abc01 | 1.0.1 | tracker-operations | — | Replay con orden backlog<todo<in_progress<…; cancelled terminal. |
 | tracker-stamp | f2a3b4c5-d6e7-4890-a123-456789abcdef | 1.1.0 | tracker-operations | — | Sello Linear: todo, cancelled, trunk_direct, ciclo PR (fail-soft D5). |
 | tracker-markdown-apply | b7c8d9e0-f123-4567-89ab-cdef01234567 | 1.0.0 | tracker-operations, filesystem-ops, source-control | — | Réplica inversa Linear → markdown; rama tracker-sync (AC-14..16). |
-

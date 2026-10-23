@@ -108,12 +108,13 @@ pub fn replay_payload(
     let tc = match project_binding::tracker_config_for_inputs(repo, &inputs)? {
         Some(t) => t,
         None if lab_mock_outbound_enabled() => lab_tracker_fallback(&issue_ref),
-        None => return Err("tracker no configurado".into()),
+        None => return Ok("discarded"),
     };
 
+    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
     let fetch = invoke_tool_for_process(
         repo,
-        "linear-tracker-adapter",
+        &tool,
         &json!({
             "request": {
                 "operation": "fetch_issue",
@@ -138,7 +139,7 @@ pub fn replay_payload(
                 .ok_or_else(|| format!("state_map sin entrada para {target}"))?;
             invoke_tool_for_process(
                 repo,
-                "linear-tracker-adapter",
+                &tool,
                 &json!({
                     "request": {
                         "operation": "update_issue_state",
@@ -163,7 +164,7 @@ pub fn replay_payload(
             }
             invoke_tool_for_process(
                 repo,
-                "linear-tracker-adapter",
+                &tool,
                 &json!({
                     "request": {
                         "operation": "create_comment",
