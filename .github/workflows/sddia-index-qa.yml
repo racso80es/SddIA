@@ -1,5 +1,7 @@
 name: sddia-index-qa
 
+# Push solo en main. Un commit en otra rama no entra aquí.
+# El PR (opened/synchronize) sí corre, una vez: el grupo es el número de PR.
 on:
   push:
     branches: [ main ]
@@ -7,9 +9,8 @@ on:
     branches: [ main ]
 
 concurrency:
-  # Agrupa por PR o por rama; si subes un commit nuevo al PR, cancela el anterior al instante.
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -21,12 +22,13 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # =========================================================================
-  # JOB 1: Integridad Nativa + LanceDB + IOTA (Simulado y Físico)
-  # Compila el workspace UNA sola vez y ejecuta todas las pruebas nativas.
-  # =========================================================================
-  sddia-native-suite:
-    name: Native Integrity & IOTA Smoke
+  # ---------------------------------------------------------------------
+  # Compilación. Los checks de abajo no compilan: descargan estos bins.
+  # Un fallo de un check no marca el otro. Si el build falla, los checks
+  # que lo necesitan se omiten.
+  # ---------------------------------------------------------------------
+  native-build:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,14 +41,125 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: "SddIA -> target"
-          key: native-workspace
+          shared-key: native-debug
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
 
       - name: Build native workspace
         working-directory: SddIA
         run: cargo build --workspace
 
+      - name: Upload native bins
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-debug-bins
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            SddIA/target/debug/sddia-qa
+            SddIA/target/debug/event-watcher
+            SddIA/target/debug/execute-process
+            SddIA/target/debug/iota-immutable-publisher
+
+  wasi-build:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install protoc (lance-encoding)
+        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+
+      - name: Cache wasmtime
+        id: cache-wasmtime
+        uses: actions/cache@v4
+        with:
+          path: ~/.wasmtime/bin
+          key: wasmtime-${{ runner.os }}-${{ env.WASMTIME_VERSION }}
+
+      - name: Download wasmtime if not cached
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          case "$(uname -m)" in
+            x86_64) arch="x86_64-linux" ;;
+            aarch64|arm64) arch="aarch64-linux" ;;
+            *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
+          esac
+          dest="$HOME/.wasmtime/bin"
+          mkdir -p "$dest"
+          tarball="wasmtime-${WASMTIME_VERSION}-${arch}.tar.xz"
+          url="https://github.com/bytecodealliance/wasmtime/releases/download/${WASMTIME_VERSION}/${tarball}"
+          curl -sSfL "$url" -o "/tmp/${tarball}"
+          tar -xJf "/tmp/${tarball}" -C /tmp
+          install -m 755 "/tmp/wasmtime-${WASMTIME_VERSION}-${arch}/wasmtime" "$dest/wasmtime"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "SddIA -> target"
+          shared-key: wasi-e2e
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
+
+      - name: Build WASI capsules (skills/tools)
+        run: SddIA/scripts/qa/build-wasi-capsules.sh
+
+      - name: Build nativos (centinelas + orquestador + QA + linear adapter)
+        working-directory: SddIA
+        run: |
+          cargo build -p event-watcher -p execute-process -p sddia-qa
+          cargo build --release -p linear-tracker-adapter
+
+      - name: Upload WASI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasi-runtime
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            SddIA/target/wasm32-wasip1/debug/
+            SddIA/target/debug/sddia-qa
+            SddIA/target/debug/event-watcher
+            SddIA/target/debug/execute-process
+            SddIA/target/release/linear-tracker-adapter
+
+  # ---------------------------------------------------------------------
+  # Checks. El nombre del check es el id del job (protección de rama).
+  # ---------------------------------------------------------------------
+  sddia-index-integrity:
+    needs: native-build
+    if: >-
+      needs.native-build.result == 'success' &&
+      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install protoc (lance-encoding)
+        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "SddIA -> target"
+          shared-key: native-debug
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
+          save-if: "false"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-debug-bins
+          path: SddIA/target/debug
+
       - name: Verify tools, processes & capsules
         run: |
+          chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/debug/iota-immutable-publisher
           SddIA/target/debug/sddia-qa verify-tools-index
           SddIA/target/debug/sddia-qa verify-process-integrity
           SddIA/target/debug/sddia-qa verify-compiled-capsules
@@ -57,16 +170,44 @@ jobs:
           cargo test -p sddia-evolution-register -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution
           cargo test -p execute-process --test memory_evolution_ingest
 
+  eda-iota-smoke-simulate:
+    needs: native-build
+    if: >-
+      needs.native-build.result == 'success' &&
+      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-debug-bins
+          path: SddIA/target/debug
+
       - name: run-iota-ci-smoke (simulate)
         env:
           SDDIA_LAB_SIMULATE_IOTA: "1"
-        run: SddIA/target/debug/sddia-qa run-iota-ci-smoke --simulate --json
+        run: |
+          chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/debug/iota-immutable-publisher
+          SddIA/target/debug/sddia-qa run-iota-ci-smoke --simulate --json
+
+  eda-iota-physical:
+    needs: native-build
+    if: >-
+      needs.native-build.result == 'success' &&
+      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-debug-bins
+          path: SddIA/target/debug
 
       - name: run-iota-ci-smoke (physical)
-        if: >-
-          (github.event_name == 'pull_request' || github.ref == 'refs/heads/main') &&
-          (github.event_name != 'pull_request' ||
-           github.event.pull_request.head.repo.full_name == github.repository)
         env:
           IOTA_WALLET_SECRET: ${{ secrets.IOTA_WALLET_SECRET }}
         run: |
@@ -74,28 +215,21 @@ jobs:
             echo "IOTA_WALLET_SECRET no configurado — omitiendo anclaje físico Testnet"
             exit 0
           fi
+          chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/debug/iota-immutable-publisher
           SddIA/target/debug/sddia-qa run-iota-ci-smoke --require-physical --json
 
-  # =========================================================================
-  # JOB 2: WASI Runtime + Evolution Gate + EDA Bus E2E
-  # Compila las cápsulas WASI y los daemons UNA sola vez para ambos tests.
-  # =========================================================================
-  wasi-and-eda-e2e-suite:
-    name: WASI Runtime & EDA Bus E2E
+  wasi-runtime-smoke:
+    needs: wasi-build
+    if: >-
+      needs.wasi-build.result == 'success' &&
+      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install protoc (lance-encoding)
-        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-wasip1
-
-      - name: Install wasmtime (Cached)
+      - name: Cache wasmtime
         id: cache-wasmtime
         uses: actions/cache@v4
         with:
@@ -120,23 +254,21 @@ jobs:
           install -m 755 "/tmp/wasmtime-${WASMTIME_VERSION}-${arch}/wasmtime" "$dest/wasmtime"
 
       - name: Add wasmtime to PATH
-        run: |
-          echo "$HOME/.wasmtime/bin" >> "$GITHUB_PATH"
-          "$HOME/.wasmtime/bin/wasmtime" --version
+        run: echo "$HOME/.wasmtime/bin" >> "$GITHUB_PATH"
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: actions/download-artifact@v4
         with:
-          workspaces: "SddIA -> target"
-          key: wasi-and-e2e
+          name: wasi-runtime
+          path: wasi-runtime
 
-      - name: Build WASI capsules (skills/tools)
-        run: SddIA/scripts/qa/build-wasi-capsules.sh
-
-      - name: Build nativos (centinelas + orquestador + QA + linear adapter)
-        working-directory: SddIA
+      - name: Place WASI artifacts
         run: |
-          cargo build -p event-watcher -p execute-process -p sddia-qa
-          cargo build --release -p linear-tracker-adapter
+          set -euo pipefail
+          mkdir -p SddIA/target/wasm32-wasip1/debug SddIA/target/debug SddIA/target/release
+          cp -a wasi-runtime/wasm32-wasip1/debug/. SddIA/target/wasm32-wasip1/debug/
+          cp -a wasi-runtime/debug/. SddIA/target/debug/
+          cp -a wasi-runtime/release/. SddIA/target/release/
+          chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/release/linear-tracker-adapter
 
       - name: WASI CI smoke
         env:
@@ -149,12 +281,60 @@ jobs:
       - name: Evolution gate (delta & universe)
         run: |
           git fetch --no-tags origin main
-          cargo test -p sddia-evolution-register --manifest-path SddIA/Cargo.toml
           SddIA/target/debug/sddia-qa gate-evolution --json --range --require-synced-base
           SddIA/target/debug/sddia-qa gate-evolution --json --all
 
+  eda-bus-e2e-smoke:
+    needs: wasi-build
+    if: >-
+      needs.wasi-build.result == 'success' &&
+      (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache wasmtime
+        id: cache-wasmtime
+        uses: actions/cache@v4
+        with:
+          path: ~/.wasmtime/bin
+          key: wasmtime-${{ runner.os }}-${{ env.WASMTIME_VERSION }}
+
+      - name: Download wasmtime if not cached
+        if: steps.cache-wasmtime.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          case "$(uname -m)" in
+            x86_64) arch="x86_64-linux" ;;
+            aarch64|arm64) arch="aarch64-linux" ;;
+            *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
+          esac
+          dest="$HOME/.wasmtime/bin"
+          mkdir -p "$dest"
+          tarball="wasmtime-${WASMTIME_VERSION}-${arch}.tar.xz"
+          url="https://github.com/bytecodealliance/wasmtime/releases/download/${WASMTIME_VERSION}/${tarball}"
+          curl -sSfL "$url" -o "/tmp/${tarball}"
+          tar -xJf "/tmp/${tarball}" -C /tmp
+          install -m 755 "/tmp/wasmtime-${WASMTIME_VERSION}-${arch}/wasmtime" "$dest/wasmtime"
+
+      - name: Add wasmtime to PATH
+        run: echo "$HOME/.wasmtime/bin" >> "$GITHUB_PATH"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: wasi-runtime
+          path: wasi-runtime
+
+      - name: Place WASI artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p SddIA/target/wasm32-wasip1/debug SddIA/target/debug SddIA/target/release
+          cp -a wasi-runtime/wasm32-wasip1/debug/. SddIA/target/wasm32-wasip1/debug/
+          cp -a wasi-runtime/debug/. SddIA/target/debug/
+          cp -a wasi-runtime/release/. SddIA/target/release/
+          chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/release/linear-tracker-adapter
+
       - name: EDA E2E & Linear labs (simulate/mock)
-        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
         env:
           SDDIA_LAB_SIMULATE_IOTA: "1"
           SDDIA_LAB_SIMULATE_SYNC_INDEX: "1"
@@ -164,12 +344,8 @@ jobs:
           SddIA/target/debug/sddia-qa run-linear-direct-cycle-e2e-lab --json
           SddIA/target/debug/sddia-qa run-linear-done-gate-both-e2e-lab --json
 
-  # =========================================================================
-  # JOB 3: Installer Release Smoke
-  # Se mantiene en paralelo porque compila en modo --release.
-  # =========================================================================
   sddia-installer-smoke:
-    name: Installer Release Smoke
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -182,7 +358,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: "SddIA -> target"
-          key: installer-release
+          shared-key: installer-release
+          add-job-id-key: "false"
 
       - name: Prebuild release (installer lab AC-4)
         timeout-minutes: 40
