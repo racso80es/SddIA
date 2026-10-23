@@ -23,7 +23,7 @@ pub fn substrate(repo: &Path, inputs: &Value) -> Result<Substrate, String> {
 
 /// La réplica local se cierra cuando el manifiesto pide el sello en el tracker.
 pub fn local_replica_closes(gate: DoneGate) -> bool {
-    matches!(gate, DoneGate::Linear)
+    matches!(gate, DoneGate::Linear | DoneGate::Both)
 }
 
 pub struct TodoLayout {

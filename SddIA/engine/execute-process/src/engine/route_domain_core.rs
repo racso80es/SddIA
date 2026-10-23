@@ -2278,6 +2278,17 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
         }
     };
 
+    if writes_store(store_mode()) {
+        if let Err(err) = record_ecst(repo, "domain", &event) {
+            return json!({
+                "success": false,
+                "exitCode": 1,
+                "data": null,
+                "error": format!("record_ecst: {err}"),
+            });
+        }
+    }
+
     let event_type = match event.get("event_type").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
         Some(et) => et.to_string(),
         None => {

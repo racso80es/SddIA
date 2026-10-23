@@ -134,7 +134,7 @@ pub fn resolve_done_gate(repo: &Path, persist_ref: &str) -> Result<DoneGate, Str
     let inputs = json!({ "project_slug": slug });
     let gate = project_binding::done_gate_for_inputs(repo, &inputs)?;
     // L-DEGRADE / AC-21: Linear|Both sin tracker_ref → Git (no-op features locales).
-    if matches!(gate, DoneGate::Linear)
+    if matches!(gate, DoneGate::Linear | DoneGate::Both)
         && tracker_ref_from_persist(repo, persist_ref).is_none()
     {
         eprintln!(

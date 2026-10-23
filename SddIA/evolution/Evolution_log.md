@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 123
+universe_total: 124
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `9fd5823b-8383-400e-a842-752359c4ba45` | 2026-10-23 | El enrutado registra el evento antes del testigo y done_gate vuelve a admitir both. | CANONICO | `SddIA/evolution/9fd5823b-8383-400e-a842-752359c4ba45.md` |
 | `c1f0fed3-0bf8-4bee-bf3b-c3a70fcf09b4` | 2026-10-23 | La fase Ejecución deja un commit por tarea y lo anota en el PBI de trabajo. | CANONICO | `SddIA/evolution/c1f0fed3-0bf8-4bee-bf3b-c3a70fcf09b4.md` |
 | `0cb0e520-bd14-4d81-a46d-ff357987ce3b` | 2026-10-23 | El ciclo lee el backlog en la implementación de tracker:lifecycle; los procesos y la glosa ECST dejan de nombrar el producto. | CANONICO | `SddIA/evolution/0cb0e520-bd14-4d81-a46d-ff357987ce3b.md` |
 | `baf5a921-874d-4e88-8059-35a47bc706f3` | 2026-10-23 | La cápsula Linear acota consulta, edición y archivo al project_id configurado. | CANONICO | `SddIA/evolution/baf5a921-874d-4e88-8059-35a47bc706f3.md` |

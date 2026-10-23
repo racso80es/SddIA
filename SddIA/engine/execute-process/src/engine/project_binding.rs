@@ -42,6 +42,7 @@ pub struct DocsLayout {
 pub enum DoneGate {
     Git,
     Linear,
+    Both,
 }
 
 impl DoneGate {
@@ -49,8 +50,9 @@ impl DoneGate {
         match raw.trim() {
             "git" => Ok(Self::Git),
             "linear" => Ok(Self::Linear),
+            "both" => Ok(Self::Both),
             other => Err(format!(
-                "PROJECT_CONFIG_INVALID: tracker.done_gate '{other}' (git | linear)"
+                "PROJECT_CONFIG_INVALID: tracker.done_gate '{other}' (git | linear | both)"
             )),
         }
     }
@@ -59,6 +61,7 @@ impl DoneGate {
         match self {
             Self::Git => "git",
             Self::Linear => "linear",
+            Self::Both => "both",
         }
     }
 }
@@ -211,7 +214,7 @@ const TRACKER_STATE_KEYS: &[&str] = &[
 
 const TRACKER_LABEL_OPTIONAL_KEYS: &[&str] = &["fix", "kaizen", "deuda", "spike", "editable"];
 
-const DONE_GATE_VALUES: &[&str] = &["git", "linear"];
+const DONE_GATE_VALUES: &[&str] = &["git", "linear", "both"];
 
 fn effective_provider(tracker: &YamlValue) -> Result<&'static str, String> {
     match tracker
@@ -293,10 +296,10 @@ fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
     {
         if !DONE_GATE_VALUES.contains(&raw) {
             return Err(format!(
-                "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' (git | linear)"
+                "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' (git | linear | both)"
             ));
         }
-        let coherent = (provider == "linear" && raw == "linear")
+        let coherent = (provider == "linear" && (raw == "linear" || raw == "both"))
             || (provider == "file" && raw == "git");
         if !coherent {
             return Err(format!(
