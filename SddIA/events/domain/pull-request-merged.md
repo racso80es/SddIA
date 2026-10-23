@@ -8,7 +8,7 @@ event_type: "PullRequest_Merged"
 context: "dlt-auditing"
 capabilities:
   - "pull_request_merged"
-hash_signature: "sha256:c0de678b5ba1b1080526445b78c230c20a0944faec12cb3e9f7df70f77121e9f"
+hash_signature: "sha256:574da295344125a3618274f92ecf82b5344a84430adbd125650cbdccf3b5d5f0"
 ---
 
 # Event: PullRequest_Merged
@@ -27,7 +27,7 @@ Clase ECST para sello post-merge en main. Ancla DLT via merge_commit_hash (40 he
 ### OPTIONAL
 - `pr_url`
 - `repository_name`
-- `tracker_ref` (identificador Linear del PBI; sello `tracker-stamp`)
+- `tracker_ref` (identificador opaco; sello `tracker-stamp`)
 - `participating_agents` (agentes que intervinieron: `uuid`, `name`, `version`, `role`)
 - `authorizer`
 
@@ -47,7 +47,7 @@ Clase ECST para sello post-merge en main. Ancla DLT via merge_commit_hash (40 he
 
 | Suscriptor | Agente | Intent |
 | :--- | :--- | :--- |
-| `tracker-stamp` | tekton | Sello Linear done + comentario merge (tracker_ref). |
+| `tracker-stamp` | tekton | Sello de ciclo done + comentario merge (tracker_ref). |
 | `iota-immutable-publisher` | cumulo | Anclaje DLT IOTA Rebased. |
 | `notify-humanized-pr-merged` | argos | Resumen ejecutivo post-merge: metadatos estáticos + síntesis de valor (fail-soft LLM). |
 

@@ -8,12 +8,12 @@ event_type: "Tracker_Sync_Failed"
 context: "tracker-operations"
 capabilities:
   - "tracker_sync_failed"
-hash_signature: "sha256:267be4b7373a9e1df08aaf50882792ea6cb075aedc193d887b48c9f9693d69c2"
+hash_signature: "sha256:80f2cf7288d72ff66310d031e33b36c5c6bccd3890db0029e60bbb5db9a60484"
 ---
 
 # Event: Tracker_Sync_Failed
 
-Deuda de sincronización con Linear tras fail-soft en `tracker-stamp`. Suscriptor: `tracker-sync-replay`.
+Deuda de sincronización del tracker tras fail-soft en `tracker-stamp`. Suscriptor: `tracker-sync-replay`.
 
 ## Payload ECST
 
@@ -35,8 +35,8 @@ Deuda de sincronización con Linear tras fail-soft en `tracker-stamp`. Suscripto
 - `attempt` (entero; default lógico 0)
 
 ### FORBIDDEN
-- Token API Linear
-- Cuerpo HTTP de respuesta de Linear
+- Token API del proveedor
+- Cuerpo HTTP de respuesta del proveedor
 
 ## Emisores autorizados
 

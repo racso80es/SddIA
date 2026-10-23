@@ -60,8 +60,8 @@ fn document_id_in_frontmatter(raw: &str, want: &str) -> bool {
 }
 
 fn find_pbi_by_document_id(repo: &Path, document_id: &str) -> Option<PathBuf> {
-    for dir in ["docs/todos/pending", "docs/todos/done"] {
-        let path = repo.join(dir);
+    let dirs = super::tracker_lifecycle_port::management_bucket_dirs(repo).unwrap_or_default();
+    for path in dirs {
         if !path.is_dir() {
             continue;
         }
@@ -202,7 +202,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         }));
     }
 
-    let pending = repo.join("docs/todos/pending");
+    let pending = super::tracker_lifecycle_port::pending_dir(repo)?;
     fs::create_dir_all(&pending).map_err(|e| e.to_string())?;
     let filename = format!("[KAIZEN] CI crónica — {slug}.md");
     let target = pending.join(&filename);

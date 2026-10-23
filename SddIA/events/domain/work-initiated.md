@@ -8,7 +8,7 @@ event_type: "Work_Initiated"
 context: "ecosystem-evolution"
 capabilities:
   - "work_initiated"
-hash_signature: "sha256:f58cd676c70994e0fd50573c5b497f3af8d98375689be374c0f4e0deb36ea644"
+hash_signature: "sha256:d741267eb2df2509fd87501c6d90acbdfb9272c990336ab104afe4386aba9c64"
 ---
 
 # Event: Work_Initiated
@@ -26,12 +26,12 @@ Señal al cerrar la inicialización de espacio de trabajo (`feature` | `bug-fix`
 ### OPTIONAL
 - `project_slug`
 - `pbi_ref` (ruta relativa del PBI)
-- `tracker_ref` (cadena opaca, p. ej. identificador Linear)
+- `tracker_ref` (identificador opaco)
 
 ### FORBIDDEN
 - `team_key`
 - ids de `WorkflowState`
-- URLs de Linear
+- URLs del proveedor
 
 ## Emisores autorizados
 

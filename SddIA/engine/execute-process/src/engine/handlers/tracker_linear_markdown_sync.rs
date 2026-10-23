@@ -1,7 +1,6 @@
-//! Proceso `tracker-linear-markdown-sync` — volcado de cuerpo Markdown a descripción Linear.
+//! Proceso `tracker-description-sync` — volcado de cuerpo a la descripción del ítem.
 
 use super::super::capsules::invoke_tool_for_process;
-use super::super::project_binding;
 use crate::core::parser::load_frontmatter_yaml;
 use crate::envelope::OrchestratorEnvelope;
 use regex::Regex;
@@ -47,26 +46,7 @@ fn tracker_ref_from_md(path: &Path) -> Option<String> {
 }
 
 fn scan_dirs(repo: &Path) -> Vec<PathBuf> {
-    let rels = [
-        "docs/todos/pending",
-        "docs/todos/done",
-        "Documentacion/PBI/Realizado",
-    ];
-    let mut out = Vec::new();
-    for rel in rels {
-        let dir = repo.join(rel);
-        let Ok(rd) = fs::read_dir(&dir) else {
-            continue;
-        };
-        for ent in rd.filter_map(|e| e.ok()) {
-            let p = ent.path();
-            if p.extension().and_then(|x| x.to_str()) == Some("md") {
-                out.push(p);
-            }
-        }
-    }
-    out.sort();
-    out
+    super::super::tracker_lifecycle_port::management_markdowns(repo).unwrap_or_default()
 }
 
 fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str, project_id: Option<&str>) -> Result<Value, String> {
@@ -89,7 +69,7 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str, project_id: Option<&st
                 "project_id": project_id,
             }
         }),
-        Some("tracker-linear-markdown-sync"),
+        Some("tracker-description-sync"),
     )?;
     Ok(json!({
         "markdown_path": rel,
@@ -100,7 +80,10 @@ fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str, project_id: Option<&st
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
-    let tc = project_binding::tracker_config_for_inputs(repo, process_inputs)?;
+    let tc = match super::super::tracker_lifecycle_port::substrate(repo, process_inputs)? {
+        super::super::tracker_lifecycle_port::Substrate::Local => None,
+        super::super::tracker_lifecycle_port::Substrate::Remote(cfg) => Some(cfg),
+    };
     if tc.is_none() {
         return Ok(OrchestratorEnvelope {
             success: true,
@@ -109,7 +92,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
                 "synced_count": 0,
                 "synced": [],
                 "skipped": [],
-                "reason": "provider file",
+                "reason": "sumidero local",
             })),
             error: None,
             execution_report: None,
@@ -163,9 +146,9 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         error: None,
         execution_report: Some(json!({
             "phases": [{
-                "phase_name": "Volcado Markdown → Linear",
+                "phase_name": "Volcado de descripción",
                 "status": "executed",
-                "handler": "tracker-linear-markdown-sync",
+                "handler": "tracker-description-sync",
             }]
         })),
         exit_code: 0,

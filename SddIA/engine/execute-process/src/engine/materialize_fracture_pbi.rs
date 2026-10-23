@@ -206,7 +206,7 @@ _Pendiente de síntesis Mayeuta (Kintsugi async)._
 - [ ] Causa raíz resuelta
 - [ ] Caso añadido a `fracture-corpus` (firma esperada o `unclassified` justificado)
 - [ ] Argos APTO en `validacion.md` del fix
-- [ ] Este TODO movido a `docs/todos/done/`
+- [ ] Este ítem cerrado en el sumidero del proveedor
 "#
     )
 }

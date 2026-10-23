@@ -1,4 +1,4 @@
-//! Handler `tracker-stamp` — sello Linear ante eventos de dominio (fail-soft D5).
+//! Handler `tracker-stamp` — sello de ciclo ante eventos de dominio (fail-soft D5).
 
 use super::super::actions::try_run_native;
 use super::super::capsules::invoke_tool_for_process;
@@ -13,49 +13,7 @@ use std::fs;
 use std::path::Path;
 
 fn file_sink(repo: &Path, payload: &Value) -> Result<bool, String> {
-    let Some(slug) = str_field(payload, "project_slug") else {
-        return Ok(false);
-    };
-    let cfg = crate::core::paths::load_paths_config(repo).map_err(|e| e.to_string())?;
-    let projects = cfg
-        .pointer("/instance/projects")
-        .and_then(|v| v.as_str())
-        .unwrap_or(".SddIA/projects");
-    let index = repo
-        .join(projects.trim().trim_start_matches("./"))
-        .join(format!("{slug}.md"));
-    if !index.is_file() {
-        return Ok(false);
-    }
-    let index_fm = crate::core::parser::parse_frontmatter(&index).map_err(|e| e.to_string())?;
-    let manifest_ref = index_fm
-        .get("manifest_ref")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim();
-    let project_root = index_fm
-        .get("project_root")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim();
-    if manifest_ref.is_empty() {
-        return Ok(false);
-    }
-    let manifest = if project_root == "." || project_root == "./" || project_root.is_empty() {
-        repo.join(manifest_ref.trim_start_matches("./"))
-    } else {
-        Path::new(project_root).join(manifest_ref.trim_start_matches("./"))
-    };
-    if !manifest.is_file() {
-        return Ok(false);
-    }
-    let fm = crate::core::parser::parse_frontmatter(&manifest).map_err(|e| e.to_string())?;
-    Ok(fm
-        .get("tracker")
-        .and_then(|t| t.get("provider"))
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        == Some("file"))
+    super::super::tracker_lifecycle_port::manifest_provider_is_local(repo, payload)
 }
 
 pub(crate) fn lifecycle_tool_name(repo: &Path) -> Result<String, String> {
@@ -127,10 +85,12 @@ fn tracker_for_payload(repo: &Path, payload: &Value, issue_ref: &str) -> Result<
     if let Some(slug) = str_field(payload, "project_slug") {
         inputs["project_slug"] = json!(slug);
     }
-    match project_binding::tracker_config_for_inputs(repo, &inputs)? {
-        Some(t) => Ok(Some(t)),
-        None if lab_mock_outbound_enabled() => Ok(Some(lab_tracker_fallback(issue_ref))),
-        None => Ok(None),
+    match super::super::tracker_lifecycle_port::substrate(repo, &inputs)? {
+        super::super::tracker_lifecycle_port::Substrate::Remote(t) => Ok(Some(t)),
+        super::super::tracker_lifecycle_port::Substrate::Local if lab_mock_outbound_enabled() => {
+            Ok(Some(lab_tracker_fallback(issue_ref)))
+        }
+        super::super::tracker_lifecycle_port::Substrate::Local => Ok(None),
     }
 }
 
@@ -513,7 +473,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
     let payload_val = Value::Object(payload.clone());
     let source = "tracker-stamp";
     if file_sink(repo, &payload_val)? {
-        return Ok((false, Some("no-op: provider file".into())));
+        return Ok((false, Some("no-op: sumidero local".into())));
     }
 
     if event_type == "HU_Refined" {
@@ -775,7 +735,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             error: note.as_ref().filter(|n| n.starts_with("warn:")).cloned(),
             execution_report: Some(json!({
                 "phases": [{
-                    "phase_name": "Sello Linear",
+                    "phase_name": "Sello de ciclo",
                     "status": "executed",
                     "handler": "tracker-stamp",
                 }]
@@ -789,7 +749,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             error: Some(warn),
             execution_report: Some(json!({
                 "phases": [{
-                    "phase_name": "Sello Linear",
+                    "phase_name": "Sello de ciclo",
                     "status": "warn",
                     "handler": "tracker-stamp",
                 }]
@@ -1070,7 +1030,7 @@ mod tests {
         });
         let (stamped, note) = stamp_event(root, &event).expect("file");
         assert!(!stamped);
-        assert!(note.unwrap_or_default().contains("provider file"));
+        assert!(note.unwrap_or_default().contains("sumidero local"));
     }
 
     #[test]
@@ -1128,7 +1088,7 @@ mod tests {
         });
         let (stamped, note) = stamp_event(root, &event).expect("file");
         assert!(!stamped);
-        assert!(note.unwrap_or_default().contains("provider file"));
+        assert!(note.unwrap_or_default().contains("sumidero local"));
         assert!(!root.join(".SddIA/state/tracker-outbound/OSC-1.jsonl").is_file());
     }
 

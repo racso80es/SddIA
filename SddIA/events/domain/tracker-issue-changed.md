@@ -8,12 +8,12 @@ event_type: "Tracker_Issue_Changed"
 context: "tracker-operations"
 capabilities:
   - "tracker_issue_changed"
-hash_signature: "sha256:2e0826c70da1dbafccfc85841cbcb786462efd825ccb616cc8bc78016acb0064"
+hash_signature: "sha256:a748a39e0346deb375482f47c95a938d0deb70d292d82660079e32d096a402f9"
 ---
 
 # Event: Tracker_Issue_Changed
 
-Cambio detectado en issue Linear (poll o webhook lab); entrada a tracker-markdown-apply.
+Cambio detectado en el ítem del tracker; entrada a tracker-markdown-apply.
 
 ## Payload ECST
 
