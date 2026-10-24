@@ -38,6 +38,16 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
         .get("event_id")
         .and_then(|v| v.as_str())
         .ok_or("event_id required")?;
+    let mode = sddia_event_store::store_mode();
+    if sddia_event_store::writes_store(mode) {
+        sddia_event_store::record_ecst(repo, "domain", event).map_err(|err| err.to_string())?;
+    }
+    if !sddia_event_store::writes_filesystem(mode) {
+        return Ok(json!({
+            "event_id": event_id,
+            "target_path": format!(".events/pending/{event_id}.json"),
+        }));
+    }
     let cfg = load_paths_config(repo)?;
     let pending_rel = cfg
         .get("eda_bus")
@@ -359,6 +369,7 @@ mod tests {
 
     #[test]
     fn emit_work_initiated_writes_pending_without_provider_fields() {
+        let _guard = filesystem_guard();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -377,7 +388,7 @@ mod tests {
         let after = fs::read_dir(&pending).map(|d| d.count()).unwrap_or(0);
         assert!(after >= before);
         let event_id = out.get("event_id").and_then(|v| v.as_str()).unwrap();
-        let raw = fs::read_to_string(pending.join(format!("{event_id}.json"))).unwrap();
+        let raw = emitted_body(&repo, event_id);
         assert!(!raw.contains("team_key"));
         assert!(!raw.contains("linear.app"));
     }
@@ -399,6 +410,7 @@ mod tests {
 
     #[test]
     fn pr_emits_carry_tracker_ref_when_provided() {
+        let _guard = filesystem_guard();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -413,7 +425,7 @@ mod tests {
         )
         .expect("presented");
         let pid = presented.get("event_id").and_then(|v| v.as_str()).unwrap();
-        let raw_p = fs::read_to_string(pending.join(format!("{pid}.json"))).unwrap();
+        let raw_p = emitted_body(&repo, pid);
         assert!(raw_p.contains("\"tracker_ref\":\"OSC-8\"") || raw_p.contains("\"tracker_ref\": \"OSC-8\""));
 
         let merged = emit_pr_merged(
@@ -426,12 +438,13 @@ mod tests {
         )
         .expect("merged");
         let mid = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
-        let raw_m = fs::read_to_string(pending.join(format!("{mid}.json"))).unwrap();
+        let raw_m = emitted_body(&repo, mid);
         assert!(raw_m.contains("OSC-8"));
     }
 
     #[test]
     fn emit_tracker_sync_failed_no_secrets_in_pending() {
+        let _guard = filesystem_guard();
         let repo = find_repo_root().unwrap();
         let out = emit_tracker_sync_failed(
             &repo,
@@ -446,11 +459,89 @@ mod tests {
         .expect("emit");
         assert_eq!(out.get("event_type"), Some(&json!("Tracker_Sync_Failed")));
         let event_id = out.get("event_id").and_then(|v| v.as_str()).unwrap();
-        let raw = fs::read_to_string(
-            repo.join(".events/pending").join(format!("{event_id}.json")),
-        )
-        .unwrap();
+        let raw = emitted_body(&repo, event_id);
         assert!(!raw.contains("LINEAR_API"));
         assert!(raw.contains("LINEAR_TRANSPORT"));
+    }
+
+    fn emitted_body(repo: &Path, event_id: &str) -> String {
+        let file = repo.join(".events/pending").join(format!("{event_id}.json"));
+        if file.is_file() {
+            return fs::read_to_string(file).unwrap();
+        }
+        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(repo))
+            .expect("store");
+        let row = store.get_event(event_id).expect("read").expect("fila");
+        serde_json::to_string(&row.ecst).unwrap()
+    }
+
+    struct ModeGuard;
+    impl Drop for ModeGuard {
+        fn drop(&mut self) {
+            sddia_event_store::override_store_mode(None);
+        }
+    }
+
+    fn filesystem_guard() -> ModeGuard {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        ModeGuard
+    }
+
+    fn temp_repo() -> std::path::PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "sddia-alta-{}-{}",
+            std::process::id(),
+            Uuid::new_v4()
+        ));
+        fs::create_dir_all(path.join("SddIA/core")).unwrap();
+        fs::write(
+            path.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+        )
+        .unwrap();
+        path
+    }
+
+    #[test]
+    fn merged_alta_inserts_store_row_before_route() {
+        let _guard = ModeGuard;
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let repo = temp_repo();
+        let merged = emit_pr_merged(
+            &repo,
+            &json!({
+                "source_branch": "fix/pr-merged-witness-store",
+                "merge_commit_hash": "b".repeat(40),
+                "tracker_ref": "MAN-23",
+            }),
+        )
+        .expect("merged");
+        let id = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
+        assert!(!repo.join(".events/pending").join(format!("{id}.json")).is_file());
+        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&repo))
+            .unwrap();
+        let row = store.get_event(id).unwrap().expect("fila antes de enrutar");
+        assert_eq!(row.event_type, "PullRequest_Merged");
+        assert!(row.ecst.to_string().contains("MAN-23"));
+        let _ = fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn merged_alta_filesystem_writes_json_and_skips_store() {
+        let _guard = ModeGuard;
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let repo = temp_repo();
+        let merged = emit_pr_merged(
+            &repo,
+            &json!({
+                "source_branch": "fix/x",
+                "merge_commit_hash": "c".repeat(40),
+            }),
+        )
+        .expect("merged");
+        let id = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
+        assert!(repo.join(".events/pending").join(format!("{id}.json")).is_file());
+        assert!(!sddia_event_store::runtime_db_path(&repo).is_file());
+        let _ = fs::remove_dir_all(&repo);
     }
 }

@@ -1003,6 +1003,9 @@ pub fn capsule_delivery_emit_presented(
             .and_then(|v| v.as_str())
             .map(str::to_string)
     });
+    if let Some(tr) = str_field(inputs, "tracker_ref") {
+        action_inputs["tracker_ref"] = json!(tr);
+    }
     if let Some(persist) = persist_ref.as_deref() {
         super::tracker_pbi_meta::attach_tracker_ref_from_persist(repo, persist, &mut action_inputs);
     }
@@ -1556,6 +1559,9 @@ pub fn capsule_feature_invoke_delivery_close(
     });
     if let Some(body) = str_field(inputs, "pr_body") {
         child_inputs["pr_body"] = json!(body);
+    }
+    if let Some(tr) = str_field(inputs, "tracker_ref") {
+        child_inputs["tracker_ref"] = json!(tr);
     }
     if let Some(url) = str_field(inputs, "pr_url") {
         child_inputs["pr_url"] = json!(url);
