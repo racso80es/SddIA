@@ -2086,6 +2086,7 @@ fn write_dead_letter_fallback(
     sid: &str,
     event_type: &str,
     error_trace: &str,
+    delegation_status: &str,
 ) {
     let _ = write_json_atomic(
         path,
@@ -2096,6 +2097,7 @@ fn write_dead_letter_fallback(
             "started_at": super::eda_bus_topology::iso_now(),
             "failed_at": super::eda_bus_topology::iso_now(),
             "error_trace": error_trace,
+            "result_status": delegation_status,
             "event_type": event_type,
         }),
     );
@@ -2171,7 +2173,7 @@ fn handle_subscriber(
         )
     };
 
-    let (sid, status) = if promote_result.is_err() {
+    let (sid, status) = if let Err(promote_err) = promote_result {
         let dead = repo
             .join(&bus.dead_letter_subscribers)
             .join(format!("{event_uuid}.{sid}.json"));
@@ -2180,9 +2182,10 @@ fn handle_subscriber(
             event_uuid,
             &sid,
             event_type,
-            &promote_result.err().unwrap_or_default(),
+            &promote_err,
+            &status,
         );
-        (sid, "failed".into())
+        (sid, status)
     } else {
         (sid, status)
     };
@@ -3858,6 +3861,62 @@ mod blocking_tests {
             Some(v) => std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v),
             None => std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA"),
         }
+    }
+
+    #[test]
+    fn promote_failure_keeps_delegation_status() {
+        struct Reset;
+        impl Drop for Reset {
+            fn drop(&mut self) {
+                sddia_event_store::override_store_mode(None);
+            }
+        }
+        let _reset = Reset;
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let bus = EventBusTopology {
+            pending: ".events/pending".into(),
+            processing: ".events/processing".into(),
+            processing_subscribers: ".events/processing/subscribers".into(),
+            processed: ".events/processed".into(),
+            processed_subscribers: ".events/processed/subscribers".into(),
+            dead_letter: ".events/dead-letter".into(),
+            dead_letter_subscribers: ".events/dead-letter/subscribers".into(),
+            subscriptions: "SddIA/core/event-domain-subscriptions.json".into(),
+        };
+        let event_uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let mut event = json!({
+            "event_id": event_uuid,
+            "event_type": "Domain_Entity_Created",
+            "payload": {"origin_topology": "core"},
+            "delivery_state": {}
+        });
+        let subscriber = json!({
+            "agent": "tekton",
+            "applies_to_origin_topology": ["nowhere"]
+        });
+        let (sid, status) = handle_subscriber(
+            repo,
+            &bus,
+            &subscriber,
+            &mut event,
+            event_uuid,
+            "Domain_Entity_Created",
+            &repo.join(".events/pending/missing.json"),
+            &json!({}),
+            "core",
+            "sync",
+            false,
+        );
+        assert_eq!(sid, "tekton");
+        assert_eq!(status, "skipped-topology");
+        let dead = repo
+            .join(".events/dead-letter/subscribers")
+            .join(format!("{event_uuid}.tekton.json"));
+        let raw = fs::read_to_string(&dead).expect("dead-letter");
+        assert!(raw.contains("skipped-topology"), "{raw}");
+        assert!(raw.contains("sin evento"), "{raw}");
     }
 }
 
