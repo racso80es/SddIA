@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `24e1818c-7d30-48e7-b2ec-526ff235c254` | 2026-10-24 | El alta de PullRequest_Merged inserta la fila, el fallback conserva la delegación y el merge de ciclo lleva tracker_ref. | CANONICO | `SddIA/evolution/24e1818c-7d30-48e7-b2ec-526ff235c254.md` |
 | `a7c3e1d4-6b28-4f90-9c11-2d8e5a0b7f63` | 2026-10-23 | La cápsula de fichero persiste tracker:lifecycle y los handlers dejan el sumidero. | CANONICO | `SddIA/evolution/a7c3e1d4-6b28-4f90-9c11-2d8e5a0b7f63.md` |
 | `9fd5823b-8383-400e-a842-752359c4ba45` | 2026-10-23 | El enrutado registra el evento antes del testigo y done_gate vuelve a admitir both. | CANONICO | `SddIA/evolution/9fd5823b-8383-400e-a842-752359c4ba45.md` |
 | `c1f0fed3-0bf8-4bee-bf3b-c3a70fcf09b4` | 2026-10-23 | La fase Ejecución deja un commit por tarea y lo anota en el PBI de trabajo. | CANONICO | `SddIA/evolution/c1f0fed3-0bf8-4bee-bf3b-c3a70fcf09b4.md` |
