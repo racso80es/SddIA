@@ -35,11 +35,28 @@ pub fn resolve_pbi_path_from_persist(repo: &Path, persist_ref: &str) -> Option<S
     None
 }
 
+fn tracker_ref_already(action_inputs: &Value) -> bool {
+    action_inputs
+        .get("tracker_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .is_some_and(|s| !s.is_empty())
+}
+
 pub fn attach_tracker_ref_from_persist(repo: &Path, persist_ref: &str, action_inputs: &mut Value) {
-    if let Some(pbi) = resolve_pbi_path_from_persist(repo, persist_ref) {
-        if let Some(tr) = tracker_ref_from_pbi(repo, &pbi) {
+    if !tracker_ref_already(action_inputs) {
+        if let Some(tr) = tracker_ref_on_objectives(repo, persist_ref) {
             if let Some(obj) = action_inputs.as_object_mut() {
                 obj.insert("tracker_ref".into(), json!(tr));
+            }
+        }
+    }
+    if let Some(pbi) = resolve_pbi_path_from_persist(repo, persist_ref) {
+        if !tracker_ref_already(action_inputs) {
+            if let Some(tr) = tracker_ref_from_pbi(repo, &pbi) {
+                if let Some(obj) = action_inputs.as_object_mut() {
+                    obj.insert("tracker_ref".into(), json!(tr));
+                }
             }
         }
         if let Some(hu) = expected_hu_tracker_ref_from_pbi(repo, &pbi) {
@@ -50,15 +67,28 @@ pub fn attach_tracker_ref_from_persist(repo: &Path, persist_ref: &str, action_in
     }
 }
 
-/// Hereda `tracker_ref` del `PullRequest_Presented` pendiente para la misma rama.
+fn tracker_ref_on_objectives(repo: &Path, persist_ref: &str) -> Option<String> {
+    let path = resolve_repo_path(repo, persist_ref).join("objectives.md");
+    let text = fs::read_to_string(path).ok()?;
+    yaml_field(&text, "tracker_ref")
+}
+
+/// Hereda `tracker_ref` del `PullRequest_Presented` de la misma rama.
+/// Mira pending, processed y la fila del store: el sello de merge llega cuando el presentado ya no está en pending.
 pub fn tracker_ref_from_presented_for_branch(repo: &Path, branch: &str) -> Option<String> {
-    let pending = repo.join(".events/pending");
-    if !pending.is_dir() {
+    for rel in [".events/pending", ".events/processed"] {
+        if let Some(tr) = tracker_ref_in_dir(&repo.join(rel), branch) {
+            return Some(tr);
+        }
+    }
+    tracker_ref_in_store(repo, branch)
+}
+
+fn tracker_ref_in_dir(dir: &Path, branch: &str) -> Option<String> {
+    if !dir.is_dir() {
         return None;
     }
-    let Ok(entries) = fs::read_dir(&pending) else {
-        return None;
-    };
+    let entries = fs::read_dir(dir).ok()?;
     for entry in entries.flatten() {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("json") {
@@ -70,23 +100,48 @@ pub fn tracker_ref_from_presented_for_branch(repo: &Path, branch: &str) -> Optio
         let Ok(event) = serde_json::from_str::<Value>(&text) else {
             continue;
         };
-        if event.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
-            continue;
-        }
-        let payload = event.get("payload")?;
-        if payload.get("branch").and_then(|v| v.as_str()) != Some(branch) {
-            continue;
-        }
-        if let Some(tr) = payload
-            .get("tracker_ref")
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-        {
-            return Some(tr.to_string());
+        if let Some(tr) = tracker_ref_of_presented(&event, branch) {
+            return Some(tr);
         }
     }
     None
+}
+
+fn tracker_ref_in_store(repo: &Path, branch: &str) -> Option<String> {
+    if !sddia_event_store::writes_store(sddia_event_store::store_mode()) {
+        return None;
+    }
+    let db = sddia_event_store::runtime_db_path(repo);
+    if !db.is_file() {
+        return None;
+    }
+    let store = sddia_event_store::EventStore::open(db).ok()?;
+    let rows = store.list_family(sddia_event_store::Family::Domain).ok()?;
+    for row in rows {
+        if row.event_type != "PullRequest_Presented" {
+            continue;
+        }
+        if let Some(tr) = tracker_ref_of_presented(&row.ecst, branch) {
+            return Some(tr);
+        }
+    }
+    None
+}
+
+fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {
+    if event.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
+        return None;
+    }
+    let payload = event.get("payload")?;
+    if payload.get("branch").and_then(|v| v.as_str()) != Some(branch) {
+        return None;
+    }
+    payload
+        .get("tracker_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
 }
 
 fn resolve_repo_path(repo: &Path, rel: &str) -> PathBuf {
@@ -151,6 +206,39 @@ mod tests {
         assert_eq!(
             expected_hu_tracker_ref_from_pbi(&dir, "pbi.md").as_deref(),
             Some("OSC-5")
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn objectives_tracker_ref_feeds_the_seal() {
+        let dir = std::env::temp_dir().join(format!("pbi-obj-{}", std::process::id()));
+        let persist = dir.join("docs/fixes/demo");
+        fs::create_dir_all(&persist).unwrap();
+        fs::write(
+            persist.join("objectives.md"),
+            "---\ntracker_ref: MAN-23\n---\n# obj\n",
+        )
+        .unwrap();
+        let mut inputs = json!({});
+        attach_tracker_ref_from_persist(&dir, "docs/fixes/demo", &mut inputs);
+        assert_eq!(inputs["tracker_ref"], "MAN-23");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn presented_in_processed_still_yields_tracker_ref() {
+        let dir = std::env::temp_dir().join(format!("pbi-proc-{}", std::process::id()));
+        let processed = dir.join(".events/processed");
+        fs::create_dir_all(&processed).unwrap();
+        fs::write(
+            processed.join("presented.json"),
+            r#"{"event_type":"PullRequest_Presented","payload":{"branch":"fix/pr-merged-witness-store","tracker_ref":"MAN-23"}}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            tracker_ref_from_presented_for_branch(&dir, "fix/pr-merged-witness-store").as_deref(),
+            Some("MAN-23")
         );
         let _ = fs::remove_dir_all(&dir);
     }

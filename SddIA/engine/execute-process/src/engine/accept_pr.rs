@@ -314,7 +314,11 @@ pub fn execute_accept_pr_phase(
                 action_inputs["traceability_note"] =
                     json!("Fusión física sin PullRequest_Presented previo en bus local");
             }
-            if let Some(tr) = tracker_pbi_meta::tracker_ref_from_presented_for_branch(repo, source) {
+            if let Some(tr) = str_field(inputs, "tracker_ref") {
+                action_inputs["tracker_ref"] = json!(tr);
+            } else if let Some(tr) =
+                tracker_pbi_meta::tracker_ref_from_presented_for_branch(repo, source)
+            {
                 action_inputs["tracker_ref"] = json!(tr);
             } else if let Some(persist) = str_field(inputs, "persist_ref") {
                 tracker_pbi_meta::attach_tracker_ref_from_persist(repo, &persist, &mut action_inputs);
