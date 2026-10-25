@@ -7,6 +7,8 @@ global: APTO
 pbi_archived: false
 tracker_ref: AUT-13
 pr_url: https://github.com/racso80es/SddIA/pull/386
+merged_pr: https://github.com/racso80es/SddIA/pull/386
+merge_commit: 15b2945b
 ci_run: https://github.com/racso80es/SddIA/actions/runs/40217143680
 ci_installer_run: https://github.com/racso80es/SddIA/actions/runs/40217146356
 ci_head: 1b6802ac6029031466685cac92ca0c1f689835da
@@ -31,7 +33,7 @@ git_changes:
 ---
 # Validación — AUT-13
 
-`done_gate` linear: `pbi_archived: false`; cierre del issue tras merge.
+`done_gate` linear: issue **AUT-13** en Done; descripción Linear actualizada con laudo instalador (`paths` en PR y push `main`).
 
 ## Local
 
