@@ -236,6 +236,39 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         &title,
         &draft,
     );
+    let tracker_required = project_binding::tracker_config_for_inputs(repo, inputs)
+        .ok()
+        .flatten()
+        .is_some();
+    if tracker_required && tracker.invoked && tracker.tracker_ref.is_none() {
+        let code = tracker
+            .skipped_reason
+            .clone()
+            .unwrap_or_else(|| "TRACKER_REF_MISSING".into());
+        return Ok(OrchestratorEnvelope {
+            success: false,
+            status_code: 1,
+            data: Some(json!({
+                "document_id": document_id,
+                "uuid": entity_uuid,
+                "create_issue_invoked": true,
+                "tracker_registration_error": code,
+            })),
+            error: Some(code),
+            execution_report: Some(json!({
+                "phases": [
+                    {"phase_name": "Recepcion", "status": "executed", "agent_tier": "reflexivo"},
+                    {
+                        "phase_name": "Registro en tracker",
+                        "status": "failed",
+                        "handler": PROCESS_NAME,
+                        "note": tracker.skipped_reason,
+                    },
+                ]
+            })),
+            exit_code: 1,
+        });
+    }
     let body = if let Some(tr) = &tracker.tracker_ref {
         let with_ref = format!("{fm_lines}\ntracker_ref: \"{tr}\"");
         format!("---\n{with_ref}\n---\n\n# {document_id}\n\n{raw_idea}\n")

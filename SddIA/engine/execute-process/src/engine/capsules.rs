@@ -21,7 +21,50 @@ const WASM_NATIVE_FALLBACK_MARKERS: &[&str] = &[
     "no se pudo marcar read-only",
     "wasi environment cannot establish outbound",
     "outbound http connections",
+    "linear_auth_missing",
+    "linear_auth_rejected",
+    "linear_api_token",
 ];
+
+/// Texto agregado de fallo de cápsula tool/skill (incluye `error.code` objeto v2).
+fn capsule_failure_blob(body: &Value) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    if let Some(msg) = body.get("message").and_then(|v| v.as_str()) {
+        parts.push(msg.to_string());
+    }
+    match body.get("error") {
+        Some(Value::String(s)) => parts.push(s.clone()),
+        Some(obj) => {
+            if let Some(code) = obj.get("code").and_then(|v| v.as_str()) {
+                parts.push(code.to_string());
+            }
+            if let Some(msg) = obj.get("message").and_then(|v| v.as_str()) {
+                parts.push(msg.to_string());
+            }
+        }
+        None => {}
+    }
+    parts.join(" ")
+}
+
+/// Mensaje canónico para `invoke_tool_for_process` (prefiere código Linear u otro `error.code`).
+pub fn tool_invoke_error_message(body: &Value) -> String {
+    if let Some(obj) = body.get("error").and_then(|v| v.as_object()) {
+        if let Some(code) = obj.get("code").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+            return code.to_string();
+        }
+        if let Some(msg) = obj.get("message").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+            return msg.to_string();
+        }
+    }
+    if let Some(s) = body.get("error").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        return s.to_string();
+    }
+    if let Some(msg) = body.get("message").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        return msg.to_string();
+    }
+    "tool failed".to_string()
+}
 
 const GIT_MANAGER_NATIVE_FALLBACK_MARKERS: &[&str] = &[
     "failed to execute git",
@@ -358,11 +401,7 @@ fn invoke_capsule_json_labeled(
         && capsule_paths::resolve_capsule_native(repo, name).is_some()
         && (result.body.get("success") != Some(&json!(true)) || result.exit_code != 0)
     {
-        let err_blob = format!(
-            "{} {}",
-            result.body.get("error").and_then(|v| v.as_str()).unwrap_or(""),
-            result.body.get("message").and_then(|v| v.as_str()).unwrap_or("")
-        );
+        let err_blob = capsule_failure_blob(&result.body);
         if blob_contains_markers(&err_blob, WASM_NATIVE_FALLBACK_MARKERS) {
             return invoke_capsule_json_labeled(repo, name, payload, false, entity_label);
         }
@@ -423,13 +462,7 @@ pub fn invoke_tool_for_process(
     }
     let result = invoke_tool_capsule_json(repo, tool_name, payload, true)?;
     if result.exit_code != 0 || result.body.get("success") == Some(&json!(false)) {
-        let err = result.body.get("error");
-        let msg = err
-            .and_then(|v| v.as_str())
-            .or_else(|| err.and_then(|v| v.get("message")).and_then(|m| m.as_str()))
-            .or_else(|| result.body.get("message").and_then(|v| v.as_str()))
-            .unwrap_or("tool failed");
-        return Err(msg.to_string());
+        return Err(tool_invoke_error_message(&result.body));
     }
     let body = unwrap_tool_body(&result.body);
     if super::tracker_outbound::should_record_linear_tool(repo, tool_name, payload) {
@@ -601,6 +634,18 @@ mod tests {
             wasmtime_candidate_paths().contains(&want),
             "GitHub Desktop PATH no incluye ~/.wasmtime/bin"
         );
+    }
+
+    #[test]
+    fn tool_invoke_error_message_surfaces_linear_auth_code() {
+        let body = json!({
+            "success": false,
+            "message": "LINEAR_API_TOKEN ausente",
+            "error": { "code": "LINEAR_AUTH_MISSING", "message": "LINEAR_API_TOKEN ausente" }
+        });
+        assert_eq!(tool_invoke_error_message(&body), "LINEAR_AUTH_MISSING");
+        let blob = capsule_failure_blob(&body);
+        assert!(blob_contains_markers(&blob, WASM_NATIVE_FALLBACK_MARKERS));
     }
 
     #[test]
