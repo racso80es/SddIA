@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `5350b4ce-e44c-4a90-90a0-746a5a40a7d9` | 2026-10-25 | MAN-21. El resolvedor elige la implementación de tracker:lifecycle según tracker.provider. | CANONICO | `SddIA/evolution/5350b4ce-e44c-4a90-90a0-746a5a40a7d9.md` |
 | `9ce54472-0237-4d31-beb2-02de1a63d6eb` | 2026-10-25 | AUT-4: el artefacto de CI publica los binarios que verify-compiled-capsules exige. | CANONICO | `SddIA/evolution/9ce54472-0237-4d31-beb2-02de1a63d6eb.md` |
 | `24e1818c-7d30-48e7-b2ec-526ff235c254` | 2026-10-24 | El alta de PullRequest_Merged inserta la fila, el fallback conserva la delegación y el merge de ciclo lleva tracker_ref. | CANONICO | `SddIA/evolution/24e1818c-7d30-48e7-b2ec-526ff235c254.md` |
 | `a7c3e1d4-6b28-4f90-9c11-2d8e5a0b7f63` | 2026-10-23 | La cápsula de fichero persiste tracker:lifecycle y los handlers dejan el sumidero. | CANONICO | `SddIA/evolution/a7c3e1d4-6b28-4f90-9c11-2d8e5a0b7f63.md` |

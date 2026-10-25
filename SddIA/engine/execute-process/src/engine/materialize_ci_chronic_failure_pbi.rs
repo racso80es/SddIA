@@ -1,7 +1,6 @@
 //! Handler nativo `materialize-ci-chronic-failure-pbi` — PBI Kaizen por cuota CI crónica.
 
 use serde_json::{json, Value};
-use std::fs;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
@@ -40,49 +39,16 @@ pub fn chronic_document_id(job_slug: &str) -> String {
     format!("PBI-KAIZEN-CI-CHRONIC-{}", job_slug.to_uppercase())
 }
 
-fn document_id_in_frontmatter(raw: &str, want: &str) -> bool {
-    let Some(rest) = raw.strip_prefix("---") else {
-        return false;
-    };
-    let Some(end) = rest.find("\n---") else {
-        return false;
-    };
-    for line in rest[..end].lines() {
-        let trimmed = line.trim();
-        if let Some(val) = trimmed.strip_prefix("document_id:") {
-            let got = val.trim().trim_matches('"').trim_matches('\'');
-            if got == want {
-                return true;
-            }
-        }
-    }
-    false
-}
-
 fn find_pbi_by_document_id(repo: &Path, document_id: &str) -> Option<PathBuf> {
-    let dirs = super::tracker_lifecycle_port::management_bucket_dirs(repo).unwrap_or_default();
-    for path in dirs {
-        if !path.is_dir() {
-            continue;
-        }
-        let Ok(rd) = fs::read_dir(&path) else {
-            continue;
-        };
-        let mut files: Vec<PathBuf> = rd.filter_map(|e| e.ok().map(|e| e.path())).collect();
-        files.sort();
-        for p in files {
-            if p.extension().and_then(|e| e.to_str()) != Some("md") {
-                continue;
-            }
-            let Ok(raw) = fs::read_to_string(&p) else {
-                continue;
-            };
-            if document_id_in_frontmatter(&raw, document_id) {
-                return Some(p);
-            }
-        }
-    }
-    None
+    let body = file_tracker_adapter::dispatch(
+        repo,
+        &json!({
+            "request": { "operation": "fetch_issue", "issue_ref": document_id }
+        }),
+    )
+    .ok()?;
+    let rel = body.get("artifact_path").and_then(|v| v.as_str())?;
+    Some(repo.join(rel))
 }
 
 fn build_pbi_body(
@@ -202,16 +168,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         }));
     }
 
-    let pending = super::tracker_lifecycle_port::pending_dir(repo)?;
-    fs::create_dir_all(&pending).map_err(|e| e.to_string())?;
     let filename = format!("[KAIZEN] CI crónica — {slug}.md");
-    let target = pending.join(&filename);
-    let rel = target
-        .strip_prefix(repo)
-        .unwrap_or(&target)
-        .to_string_lossy()
-        .replace('\\', "/");
-
     let uuid = Uuid::new_v4().to_string();
     let body = build_pbi_body(
         &document_id,
@@ -225,7 +182,21 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         &sample_check_run_id,
         &repository,
     );
-    fs::write(&target, body).map_err(|e| e.to_string())?;
+    let created = super::tracker_lifecycle_port::invoke(
+        repo,
+        inputs,
+        json!({
+            "operation": "create_issue",
+            "title": filename,
+            "description": body,
+        }),
+        "materialize-ci-chronic-failure-pbi",
+    )?;
+    let rel = created
+        .get("artifact_path")
+        .and_then(|v| v.as_str())
+        .unwrap_or(filename.as_str())
+        .to_string();
 
     Ok(json!({
         "success": true,

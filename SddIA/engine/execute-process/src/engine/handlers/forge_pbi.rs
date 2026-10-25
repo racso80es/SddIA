@@ -1,13 +1,11 @@
 //! Sellado lab de `forge-pbi`: formato físico y registro en el tracker.
 
 use super::super::capsules::invoke_tool_for_process;
-use super::super::project_binding::{self, resolve_doc_path, TrackerConfig};
+use super::super::project_binding::{self, TrackerConfig};
 use super::super::route_domain_core::materialize_pending_domain_event;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
 use serde_json::{json, Value};
-use serde_yaml::Value as YamlValue;
-use std::fs;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
@@ -16,36 +14,6 @@ const PROCESS_NAME: &str = "forge-pbi";
 fn str_field(inputs: &Value, key: &str) -> Option<String> {
     inputs
         .get(key)
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-}
-
-fn split_frontmatter(raw: &str) -> Result<(String, String), String> {
-    let mut lines = raw.lines();
-    if lines.next() != Some("---") {
-        return Err("FORGE_INVALID: sin frontmatter".into());
-    }
-    let mut fm = String::new();
-    for line in lines.by_ref() {
-        if line == "---" {
-            let body: String = lines.collect::<Vec<_>>().join("\n");
-            return Ok((fm, body));
-        }
-        fm.push_str(line);
-        fm.push('\n');
-    }
-    Err("FORGE_INVALID: frontmatter sin cierre".into())
-}
-
-fn parse_fm(text: &str) -> Result<YamlValue, String> {
-    let (fm, _) = split_frontmatter(text)?;
-    serde_yaml::from_str(&fm).map_err(|e| format!("FORGE_INVALID: yaml {e}"))
-}
-
-fn fm_str(fm: &YamlValue, key: &str) -> Option<String> {
-    fm.get(key)
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -74,31 +42,6 @@ pub fn tipo_label_key(inputs: &Value, process: &str) -> Option<&'static str> {
         return Some("fix");
     }
     None
-}
-
-fn resolve_hu_path(bound: &project_binding::BoundProject, hu_ref: &str) -> Result<PathBuf, String> {
-    let full = resolve_doc_path(&bound.project_root, hu_ref)?;
-    let rel = full
-        .strip_prefix(&bound.project_root)
-        .map(|p| p.to_string_lossy().to_string())
-        .unwrap_or_default();
-    if !super::super::tracker_lifecycle_port::ref_is_story(&rel) {
-        return Err("FORGE_SCOPE: historia_ref debe residir en el bucket de historias".into());
-    }
-    if !full.is_file() {
-        return Err(format!("FORGE_NOT_FOUND: {}", full.display()));
-    }
-    Ok(full)
-}
-
-fn hu_parent_tracker_ref(
-    bound: &project_binding::BoundProject,
-    historia_ref: &str,
-) -> Result<Option<String>, String> {
-    let path = resolve_hu_path(bound, historia_ref)?;
-    let raw = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let fm = parse_fm(&raw)?;
-    Ok(fm_str(&fm, "tracker_ref"))
 }
 
 fn emit_create_issue_failed(
@@ -143,46 +86,6 @@ fn build_pbi_labels(
     Ok(labels)
 }
 
-fn try_create_pbi_issue(
-    repo: &Path,
-    tc: &TrackerConfig,
-    inputs: &Value,
-    process: &str,
-    title: &str,
-    description: &str,
-    parent_ref: &str,
-) -> Result<String, String> {
-    let labels = build_pbi_labels(repo, inputs, tc, process)?;
-    let mut request = json!({
-        "operation": "create_issue",
-        "team_key": tc.team_key,
-        "title": title,
-        "description": description,
-        "labels": labels,
-        "parent_ref": parent_ref,
-    });
-    if let Some(pid) = &tc.project_id {
-        request["project_id"] = json!(pid);
-    }
-    if let Some(state) = backlog_state_name(tc) {
-        request["state_name"] = json!(state);
-    }
-    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
-    let tool_body = invoke_tool_for_process(
-        repo,
-        &tool,
-        &json!({ "request": request }),
-        Some(PROCESS_NAME),
-    )?;
-    tool_body
-        .get("issue_ref")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-        .ok_or_else(|| "LINEAR_CREATE_ISSUE_EMPTY: sin issue_ref".into())
-}
-
 struct TrackerPhase {
     tracker_ref: Option<String>,
     invoked: bool,
@@ -219,14 +122,10 @@ fn tracker_registration_phase(
             };
         }
     };
-    if tool == "file-tracker-adapter"
-        && super::super::project_binding::tracker_config_for_inputs(repo, inputs)
-            .ok()
-            .flatten()
-            .is_none()
-        && !super::super::tracker_lifecycle_port::manifest_provider_is_local(repo, inputs)
-            .unwrap_or(false)
-    {
+    if matches!(
+        super::super::tracker_lifecycle_port::resolve_target(repo, inputs),
+        Ok(super::super::tracker_lifecycle_port::LifecycleTarget::Unconfigured)
+    ) {
         return TrackerPhase {
             tracker_ref: None,
             invoked: false,
@@ -417,6 +316,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
     use crate::core::repo::find_repo_root;
     use std::sync::{Mutex, OnceLock};
 

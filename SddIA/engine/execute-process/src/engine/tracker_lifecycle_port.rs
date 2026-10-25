@@ -65,15 +65,15 @@ pub fn is_remote(repo: &Path, inputs: &Value) -> Result<bool, String> {
     Ok(super::project_binding::tracker_config_for_inputs(repo, inputs)?.is_some())
 }
 
-/// Proveedor de fichero declarado en el índice de proyecto del payload.
-pub fn manifest_provider_is_local(repo: &Path, payload: &Value) -> Result<bool, String> {
+/// `tracker.provider` del manifiesto del `project_slug`. `None` si no hay clave.
+pub fn manifest_provider(repo: &Path, payload: &Value) -> Result<Option<String>, String> {
     let Some(slug) = payload
         .get("project_slug")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
     else {
-        return Ok(false);
+        return Ok(None);
     };
     let cfg = load_paths_config(repo)?;
     let projects = cfg
@@ -84,7 +84,7 @@ pub fn manifest_provider_is_local(repo: &Path, payload: &Value) -> Result<bool, 
         .join(projects.trim().trim_start_matches("./"))
         .join(format!("{slug}.md"));
     if !index.is_file() {
-        return Ok(false);
+        return Ok(None);
     }
     let index_fm = crate::core::parser::parse_frontmatter(&index).map_err(|e| e.to_string())?;
     let manifest_ref = index_fm
@@ -98,7 +98,7 @@ pub fn manifest_provider_is_local(repo: &Path, payload: &Value) -> Result<bool, 
         .unwrap_or("")
         .trim();
     if manifest_ref.is_empty() {
-        return Ok(false);
+        return Ok(None);
     }
     let manifest = if project_root == "." || project_root == "./" || project_root.is_empty() {
         repo.join(manifest_ref.trim_start_matches("./"))
@@ -106,7 +106,7 @@ pub fn manifest_provider_is_local(repo: &Path, payload: &Value) -> Result<bool, 
         Path::new(project_root).join(manifest_ref.trim_start_matches("./"))
     };
     if !manifest.is_file() {
-        return Ok(false);
+        return Ok(None);
     }
     let fm = crate::core::parser::parse_frontmatter(&manifest).map_err(|e| e.to_string())?;
     Ok(fm
@@ -114,7 +114,84 @@ pub fn manifest_provider_is_local(repo: &Path, payload: &Value) -> Result<bool, 
         .and_then(|t| t.get("provider"))
         .and_then(|v| v.as_str())
         .map(str::trim)
-        == Some("file"))
+        .filter(|s| !s.is_empty())
+        .map(str::to_string))
+}
+
+/// Proveedor de fichero declarado en el índice de proyecto del payload.
+pub fn manifest_provider_is_local(repo: &Path, payload: &Value) -> Result<bool, String> {
+    Ok(manifest_provider(repo, payload)?.as_deref() == Some("file"))
+}
+
+/// Implementación de `tracker.lifecycle` elegida por `tracker.provider`.
+pub enum LifecycleTarget {
+    File,
+    Remote { tool: String },
+    Unconfigured,
+}
+
+fn remote_tool_name(repo: &Path) -> Result<String, String> {
+    let phase = json!({
+        "requires_capability": [{
+            "id": "tracker:lifecycle",
+            "contract": "tracker.lifecycle",
+            "version": ">=1.0.0"
+        }]
+    });
+    let bindings = super::capability_di_resolver::resolve_phase_bindings(repo, &phase)
+        .map_err(|e| e.message)?;
+    let provider = bindings
+        .first()
+        .map(|b| b.provider.clone())
+        .ok_or_else(|| "sin fila tracker:lifecycle".to_string())?;
+    let name = provider
+        .split_once(':')
+        .map(|(_, n)| n)
+        .unwrap_or(provider.as_str())
+        .trim();
+    if name.is_empty() {
+        return Err("provider tracker:lifecycle vacío".into());
+    }
+    Ok(name.to_string())
+}
+
+pub fn resolve_target(repo: &Path, inputs: &Value) -> Result<LifecycleTarget, String> {
+    match manifest_provider(repo, inputs)?.as_deref() {
+        Some("linear") => Ok(LifecycleTarget::Remote {
+            tool: remote_tool_name(repo)?,
+        }),
+        Some("file") => Ok(LifecycleTarget::File),
+        Some(other) => Err(format!("tracker.provider no admitido: {other}")),
+        None => Ok(LifecycleTarget::Unconfigured),
+    }
+}
+
+/// Pide un verbo. `file` y la ausencia de provider no instancian la cápsula remota.
+/// `linear` no abre el árbol de backlog.
+pub fn invoke(
+    repo: &Path,
+    inputs: &Value,
+    mut request: Value,
+    process: &str,
+) -> Result<Value, String> {
+    if let Some(obj) = request.as_object_mut() {
+        if !obj.contains_key("project_slug") {
+            if let Some(slug) = inputs.get("project_slug").filter(|v| !v.is_null()) {
+                obj.insert("project_slug".into(), slug.clone());
+            }
+        }
+    }
+    match resolve_target(repo, inputs)? {
+        LifecycleTarget::Remote { tool } => super::capsules::invoke_tool_for_process(
+            repo,
+            &tool,
+            &json!({ "request": request }),
+            Some(process),
+        ),
+        LifecycleTarget::File | LifecycleTarget::Unconfigured => {
+            file_tracker_adapter::dispatch(repo, &json!({ "request": request }))
+        }
+    }
 }
 
 pub fn pending_dir(repo: &Path) -> Result<PathBuf, String> {
@@ -265,5 +342,164 @@ mod tests {
         assert!(is_remote(repo, &json!({"project_slug": "lab-remote"})).unwrap());
         assert!(local_replica_closes(DoneGate::Linear));
         assert!(!local_replica_closes(DoneGate::Git));
+    }
+
+    fn verb_request(op: &str, issue_ref: &str) -> Value {
+        match op {
+            "create_issue" => json!({
+                "operation": "create_issue",
+                "title": "PBI-VERB",
+                "description": "---\ndocument_id: PBI-VERB\nstatus: pending\n---\n\n# v\n",
+                "team_key": "MAN",
+                "labels": ["pbi"],
+            }),
+            "list_issues" => json!({
+                "operation": "list_issues",
+                "team_key": "MAN",
+                "kind": "all",
+            }),
+            "fetch_issue" => json!({
+                "operation": "fetch_issue",
+                "issue_ref": issue_ref,
+                "team_key": "MAN",
+            }),
+            "update_issue_state" => json!({
+                "operation": "update_issue_state",
+                "issue_ref": issue_ref,
+                "state_name": "In Progress",
+                "team_key": "MAN",
+            }),
+            "update_issue_description" => json!({
+                "operation": "update_issue_description",
+                "issue_ref": issue_ref,
+                "description": "---\ndocument_id: PBI-VERB\nstatus: refinado\n---\n\n# v\n",
+                "team_key": "MAN",
+            }),
+            "create_comment" => json!({
+                "operation": "create_comment",
+                "issue_ref": issue_ref,
+                "body": "nota",
+                "team_key": "MAN",
+            }),
+            other => panic!("verbo {other}"),
+        }
+    }
+
+    #[test]
+    fn resolver_file_does_not_open_remote_and_linear_does_not_open_backlog() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"todos":{"pending":"cola/abiertos","done":"cola/cerrados"}}}"#,
+        )
+        .unwrap();
+        project_pair(repo, "lab-file", "tracker:\n  provider: file\n");
+        let file_target = resolve_target(repo, &json!({"project_slug": "lab-file"})).unwrap();
+        assert!(matches!(file_target, LifecycleTarget::File));
+        let created = invoke(
+            repo,
+            &json!({"project_slug": "lab-file"}),
+            verb_request("create_issue", "PBI-VERB"),
+            "verb-test",
+        )
+        .unwrap();
+        assert_eq!(created["issue_ref"], "PBI-VERB");
+        assert!(repo.join("cola/abiertos/PBI-VERB.md").is_file());
+
+        project_pair(
+            repo,
+            "lab-absent",
+            "",
+        );
+        let absent = resolve_target(repo, &json!({"project_slug": "lab-absent"})).unwrap();
+        assert!(matches!(absent, LifecycleTarget::Unconfigured));
+    }
+
+    #[test]
+    fn same_verb_input_on_file_and_linear() {
+        let verbs = [
+            "create_issue",
+            "list_issues",
+            "fetch_issue",
+            "update_issue_state",
+            "update_issue_description",
+            "create_comment",
+        ];
+        let td = tempfile::tempdir().unwrap();
+        let file_repo = td.path();
+        fs::create_dir_all(file_repo.join("SddIA/core")).unwrap();
+        fs::write(
+            file_repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"todos":{"pending":"cola/abiertos","done":"cola/cerrados"}}}"#,
+        )
+        .unwrap();
+        project_pair(file_repo, "lab-file", "tracker:\n  provider: file\n");
+        let file_inputs = json!({"project_slug": "lab-file"});
+        let mut file_ref = "PBI-VERB".to_string();
+        for op in verbs {
+            let req = verb_request(op, &file_ref);
+            let out = invoke(file_repo, &file_inputs, req, "tracker-stamp").unwrap_or_else(|e| {
+                panic!("file {op}: {e}")
+            });
+            if op == "create_issue" {
+                file_ref = out["issue_ref"].as_str().unwrap().to_string();
+            }
+            assert!(out.is_object(), "{op}");
+        }
+        assert!(!file_repo.join("SddIA/target").exists());
+
+        let core = crate::core::repo::find_repo_root().expect("repo");
+        let slug = "verb-linear-man21";
+        let prev = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        std::env::remove_var("SDDIA_LAB_MOCK_LINEAR_URL");
+        std::env::remove_var("SDDIA_LINEAR_API_URL");
+        std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        std::env::set_var("SDDIA_LAB_RESET_STORE", "1");
+        std::env::set_var("SDDIA_REPO_ROOT", core.to_string_lossy().as_ref());
+        fs::create_dir_all(core.join(".SddIA/projects")).unwrap();
+        fs::write(
+            core.join(".SddIA/projects").join(format!("{slug}.md")),
+            format!(
+                "---\nid: {slug}\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: \".\"\nmanifest_ref: .SddIA/{slug}.md\n---\n"
+            ),
+        )
+        .unwrap();
+        fs::write(
+            core.join(".SddIA").join(format!("{slug}.md")),
+            "---\nid: verb-linear\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\ngit_remote: https://example.invalid/lab.git\ndefault_branch: main\ndelivery_mode: branch_pr\ncontract_version: \"1.4.0\"\ncodex_slug: codex-software-engineering\ntracker:\n  provider: linear\n  team_key: MAN\n  state_map:\n    done: Done\ndocs_layout:\n  features: docs/features\n  fixes: docs/fixes\n  todos_pending: docs/todos/pending\n  todos_done: docs/todos/done\n---\n",
+        )
+        .unwrap();
+        let linear_inputs = json!({"project_slug": slug});
+        let target = resolve_target(&core, &linear_inputs).unwrap();
+        assert!(matches!(target, LifecycleTarget::Remote { .. }));
+        let sentinel = core.join("docs/todos/pending/PBI-VERB.md");
+        let sentinel_existed = sentinel.exists();
+        let mut linear_ref = String::new();
+        for op in verbs {
+            let req = if op == "create_issue" {
+                verb_request(op, "")
+            } else if op == "list_issues" {
+                verb_request(op, "")
+            } else {
+                verb_request(op, &linear_ref)
+            };
+            let out = invoke(&core, &linear_inputs, req, "tracker-stamp").unwrap_or_else(|e| {
+                panic!("linear {op}: {e}")
+            });
+            if op == "create_issue" {
+                linear_ref = out["issue_ref"].as_str().unwrap().to_string();
+                assert!(linear_ref.starts_with("MAN-"), "{linear_ref}");
+            }
+        }
+        assert_eq!(sentinel.exists(), sentinel_existed);
+        let _ = fs::remove_file(core.join(".SddIA/projects").join(format!("{slug}.md")));
+        let _ = fs::remove_file(core.join(".SddIA").join(format!("{slug}.md")));
+        if let Some(v) = prev {
+            std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v);
+        } else {
+            std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        }
     }
 }

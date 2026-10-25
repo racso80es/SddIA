@@ -423,12 +423,13 @@ pub fn invoke_tool_for_process(
     }
     let result = invoke_tool_capsule_json(repo, tool_name, payload, true)?;
     if result.exit_code != 0 || result.body.get("success") == Some(&json!(false)) {
-        return Err(result
-            .body
-            .get("error")
+        let err = result.body.get("error");
+        let msg = err
             .and_then(|v| v.as_str())
-            .unwrap_or("tool failed")
-            .to_string());
+            .or_else(|| err.and_then(|v| v.get("message")).and_then(|m| m.as_str()))
+            .or_else(|| result.body.get("message").and_then(|v| v.as_str()))
+            .unwrap_or("tool failed");
+        return Err(msg.to_string());
     }
     let body = unwrap_tool_body(&result.body);
     if super::tracker_outbound::should_record_linear_tool(repo, tool_name, payload) {

@@ -1,7 +1,7 @@
 //! Procesos `refine-pbi` y `refine-hu` — refinamiento pre-forja y emisión ECST (HU-A 06).
 
 use super::super::capsules::invoke_tool_for_process;
-use super::super::project_binding::{self, resolve_doc_path, TrackerConfig};
+use super::super::project_binding::{self, TrackerConfig};
 use super::super::route_domain_core::materialize_pending_domain_event;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
@@ -90,60 +90,6 @@ fn title_from_hu(fm: &YamlValue, body: &str) -> String {
         }
     }
     "HU".to_string()
-}
-
-fn resolve_pbi_path(bound: &project_binding::BoundProject, pbi_ref: &str) -> Result<PathBuf, String> {
-    let pending_root =
-        resolve_doc_path(&bound.project_root, &bound.docs.todos_pending)?;
-    let full = if Path::new(pbi_ref).is_absolute() {
-        let p = PathBuf::from(pbi_ref);
-        if !p.starts_with(&bound.project_root) {
-            return Err("PROJECT_SCOPE_ESCAPE: pbi_ref".into());
-        }
-        p
-    } else {
-        resolve_doc_path(&bound.project_root, pbi_ref)?
-    };
-    if !full.starts_with(&pending_root) {
-        return Err(format!(
-            "REFINE_SCOPE: pbi_ref debe estar bajo {}",
-            bound.docs.todos_pending
-        ));
-    }
-    if !full.is_file() {
-        return Err(format!("REFINE_NOT_FOUND: {}", full.display()));
-    }
-    Ok(full)
-}
-
-fn resolve_hu_path(bound: &project_binding::BoundProject, hu_ref: &str) -> Result<PathBuf, String> {
-    let full = if Path::new(hu_ref).is_absolute() {
-        let p = PathBuf::from(hu_ref);
-        if !p.starts_with(&bound.project_root) {
-            return Err("PROJECT_SCOPE_ESCAPE: hu_ref".into());
-        }
-        p
-    } else {
-        resolve_doc_path(&bound.project_root, hu_ref)?
-    };
-    let rel = full
-        .strip_prefix(&bound.project_root)
-        .map(|p| p.to_string_lossy().to_string())
-        .unwrap_or_default();
-    if !super::super::tracker_lifecycle_port::ref_is_story(&rel) {
-        return Err("REFINE_SCOPE: hu_ref debe residir en el bucket de historias".into());
-    }
-    if !full.is_file() {
-        return Err(format!("REFINE_NOT_FOUND: {}", full.display()));
-    }
-    Ok(full)
-}
-
-fn rel_path(project_root: &Path, path: &Path) -> String {
-    path.strip_prefix(project_root)
-        .unwrap_or(path)
-        .to_string_lossy()
-        .replace('\\', "/")
 }
 
 fn emit_refined(
@@ -235,8 +181,21 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
     let pbi_ref = str_field(inputs, "pbi_ref").ok_or("pbi_ref requerido")?;
     let bound = project_binding::bind(repo, inputs)?
         .ok_or("project_slug requerido para refine-pbi")?;
-    let path = resolve_pbi_path(&bound, &pbi_ref)?;
-    let raw = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let fetched = super::super::tracker_lifecycle_port::invoke(
+        repo,
+        inputs,
+        json!({
+            "operation": "fetch_issue",
+            "issue_ref": pbi_ref,
+            "project_slug": bound.slug,
+        }),
+        PROCESS_PBI,
+    )?;
+    let raw = fetched
+        .get("description")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| format!("REFINE_NOT_FOUND: {pbi_ref}"))?
+        .to_string();
     let (_, body) = split_frontmatter(&raw)?;
     let refined_body = mayeuta_touch_body(&body);
     let refined_date = Utc::now().format("%Y-%m-%d").to_string();
@@ -254,17 +213,17 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
         sealed
     };
     let fm = parse_fm(&sealed)?;
-    let rel = rel_path(&bound.project_root, &path);
-    file_tracker_adapter::dispatch(
+    let rel = pbi_ref.clone();
+    super::super::tracker_lifecycle_port::invoke(
         repo,
-        &json!({
-            "request": {
-                "operation": "update_issue_description",
-                "project_slug": bound.slug,
-                "issue_ref": rel,
-                "description": sealed,
-            }
+        inputs,
+        json!({
+            "operation": "update_issue_description",
+            "project_slug": bound.slug,
+            "issue_ref": rel,
+            "description": sealed,
         }),
+        PROCESS_PBI,
     )?;
     let tracker_ref = fm_str(&fm, "tracker_ref");
     let event_rel = emit_refined(
@@ -300,18 +259,44 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
     let hu_ref = str_field(inputs, "hu_ref").ok_or("hu_ref requerido")?;
     let bound = project_binding::bind(repo, inputs)?
         .ok_or("project_slug requerido para refine-hu")?;
-    let path = resolve_hu_path(&bound, &hu_ref)?;
-    let rel = rel_path(&bound.project_root, &path);
-    let raw = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let fm = parse_fm(&raw)?;
+    let rel = hu_ref.clone();
+    let target = super::super::tracker_lifecycle_port::resolve_target(repo, inputs)?;
+    let remote = matches!(
+        target,
+        super::super::tracker_lifecycle_port::LifecycleTarget::Remote { .. }
+    );
+    let fetched = super::super::tracker_lifecycle_port::invoke(
+        repo,
+        inputs,
+        json!({
+            "operation": "fetch_issue",
+            "issue_ref": hu_ref,
+            "project_slug": bound.slug,
+        }),
+        PROCESS_HU,
+    );
+    let (raw, fm) = if let Ok(body) = &fetched {
+        if let Some(desc) = body.get("description").and_then(|v| v.as_str()) {
+            let fm = parse_fm(desc).unwrap_or(YamlValue::Null);
+            (desc.to_string(), fm)
+        } else if remote {
+            ("---\nstatus: pending\n---\n\n".to_string(), YamlValue::Null)
+        } else {
+            return Err(format!("REFINE_NOT_FOUND: {hu_ref}"));
+        }
+    } else if remote {
+        ("---\nstatus: pending\n---\n\n".to_string(), YamlValue::Null)
+    } else {
+        return Err(fetched.err().unwrap_or_else(|| format!("REFINE_NOT_FOUND: {hu_ref}")));
+    };
     let (_, body) = split_frontmatter(&raw)?;
     let refined_body = mayeuta_touch_body(&body);
 
-    let mut tracker_ref = fm_str(&fm, "tracker_ref");
+    let mut tracker_ref = fm_str(&fm, "tracker_ref").or_else(|| str_field(inputs, "tracker_ref"));
     let mut create_issue_invoked = false;
     let tracker_cfg = super::super::project_binding::tracker_config_for_inputs(repo, inputs)?;
 
-    if tracker_ref.is_none() {
+    if tracker_ref.is_none() && remote {
         if let Some(tc) = tracker_cfg {
             let title = title_from_hu(&fm, &body);
             let description = refined_body.chars().take(8000).collect::<String>();
@@ -343,17 +328,19 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
         let (fm_text, _) = split_frontmatter(&sealed)?;
         sealed = format!("---\n{fm_text}---\n\n{}", refined_body.trim_start());
     }
-    file_tracker_adapter::dispatch(
-        repo,
-        &json!({
-            "request": {
+    if !remote {
+        super::super::tracker_lifecycle_port::invoke(
+            repo,
+            inputs,
+            json!({
                 "operation": "update_issue_description",
                 "project_slug": bound.slug,
                 "issue_ref": rel,
                 "description": sealed,
-            }
-        }),
-    )?;
+            }),
+            PROCESS_HU,
+        )?;
+    }
 
     let event_rel = emit_refined(
         repo,
@@ -548,9 +535,13 @@ mod tests {
                     .and_then(|v| v.as_bool()),
                 Some(true)
             );
-            let text = fs::read_to_string(&hu_path).unwrap();
-            assert!(text.contains("tracker_ref:"));
-            assert!(text.contains("tracker_ref:"));
+            let tr = out
+                .data
+                .as_ref()
+                .and_then(|d| d.get("tracker_ref"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            assert!(tr.starts_with("OSC-"), "{tr}");
             cleanup_project_index(&core, slug);
         });
     }
@@ -573,6 +564,7 @@ mod tests {
                 &json!({
                     "project_slug": slug,
                     "hu_ref": "docs/todos/historias/ac-0c-idem.md",
+                    "tracker_ref": "LAB-HU-EXISTING",
                 }),
             )
             .expect("run_hu");

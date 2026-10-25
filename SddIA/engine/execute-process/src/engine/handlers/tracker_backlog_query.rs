@@ -1,6 +1,5 @@
 //! Proceso `tracker-backlog-query` — listado vía `tracker:lifecycle` o ficheros locales.
 
-use super::super::capsules::invoke_tool_for_process;
 use super::super::project_binding::{self, TrackerConfig};
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -95,8 +94,11 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
     let kind = parse_kind(process_inputs.get("kind").and_then(|v| v.as_str()))?;
     let state_filter = str_field(process_inputs, "state");
 
-    let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, process_inputs)?;
-    if tool == "file-tracker-adapter" {
+    let local = !matches!(
+        super::super::tracker_lifecycle_port::resolve_target(repo, process_inputs)?,
+        super::super::tracker_lifecycle_port::LifecycleTarget::Remote { .. }
+    );
+    if local {
         let body = file_tracker_adapter::dispatch(
             repo,
             &json!({
@@ -142,12 +144,11 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         request["labels"] = json!([tc.label_pbi.clone()]);
     }
 
-    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
-    let tool_body = invoke_tool_for_process(
+    let tool_body = super::super::tracker_lifecycle_port::invoke(
         repo,
-        &tool,
-        &json!({ "request": request }),
-        Some("tracker-backlog-query"),
+        process_inputs,
+        request,
+        "tracker-backlog-query",
     )?;
 
     let items = map_items(&tool_body, &tc, kind, state_filter.as_deref());
