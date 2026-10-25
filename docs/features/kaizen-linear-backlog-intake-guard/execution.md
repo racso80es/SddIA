@@ -12,4 +12,6 @@ branch_name: feat/kaizen-linear-backlog-intake-guard
 - T1–T4 materializados en un único corte Tekton.
 - Smoke: `SddIA/scripts/qa/test-linear-todos-intake-gate.sh`.
 - Simulación pre-commit: fichero nuevo en `docs/todos/pending/` → BLOCKED.
-- PR https://github.com/racso80es/SddIA/pull/389 (DCC inicial bloqueó evolution; registro `d48f4421-71c8-4dce-b0b7-4a814d047a9b`).
+- PR https://github.com/racso80es/SddIA/pull/389 merge `eb7692dd` (2026-10-25).
+- Cierre documental APTO: PR https://github.com/racso80es/SddIA/pull/390.
+- Linear AUT-14 → Done; proof local `.SddIA/proofs/tracker-done/AUT-14.json`.
