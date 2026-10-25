@@ -32,3 +32,9 @@ cd SddIA && cargo test -p execute-process --lib -- \
 ```
 
 FIX-CA2: `same_verb_input_on_file_and_linear`.
+
+## Cierre de entrega
+
+`delivery-close-cycle` `execution_id` `6ac3c0b3-9c0f-4def-b73d-80dd7b263139`. Snapshot `557d6332`. PR https://github.com/racso80es/SddIA/pull/382. `PullRequest_Presented` `9824b73b-98f4-4d74-82b6-dd390f5b2dbc`.
+
+La fase **Aduana evolution** bloqueó (`EVOL_MATERIAL_UNREGISTERED`) por `relacionado` incompleto. `sddia-qa evolution-register` `modificacion` sobre `5350b4ce-e44c-4a90-90a0-746a5a40a7d9` (prefijos `execute-process`, adapters). Commit `e5fab9d0`; `gate-evolution --range` → delta cubierto.

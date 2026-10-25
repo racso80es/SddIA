@@ -10,6 +10,8 @@ persist_ref: docs/fixes/tracker-source-by-provider
 document_id: PBI-FIX-TRACKER-SOURCE-BY-PROVIDER
 tracker_ref: MAN-21
 pbi_archived: false
+pr_url: https://github.com/racso80es/SddIA/pull/382
+execution_id: "6ac3c0b3-9c0f-4def-b73d-80dd7b263139"
 global: APTO
 approval_status: aprobado
 verdict: aprobado
