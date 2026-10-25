@@ -23,7 +23,7 @@ Reducir recompilaciones redundantes (LanceDB, labs Linear, artefactos WASI) y po
 | C2 | Labs Linear con `cargo test -p execute-process --lib …` |
 | C3 | Un solo `cargo test` LanceDB + caché `native-test-lance` |
 | C4 | Job `changes` + condicionales `lance_memory` / `linear_e2e` |
-| C5 | Workflow `sddia-installer-qa.yml`; `prep-installer-lab-release.sh` solo `execute-process` |
+| C5 | Workflow `sddia-installer-qa.yml` (`paths` en PR y push `main`); `prep-installer-lab-release.sh` acotado |
 
 ## Criterios
 

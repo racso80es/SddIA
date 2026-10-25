@@ -1,9 +1,14 @@
 name: sddia-installer-qa
 
-# Push a main: smoke completo (guardián). PR: solo si el diff toca instalador / scripts / orquestador.
+# PR y push a main: solo si el commit toca instalador / scripts / orquestador (mismas rutas).
 on:
   push:
     branches: [main]
+    paths:
+      - "sddia-installer.sh"
+      - "SddIA/scripts/**"
+      - "SddIA/engine/execute-process/**"
+      - ".github/workflows/sddia-installer-qa.yml"
   pull_request:
     branches: [main]
     paths:

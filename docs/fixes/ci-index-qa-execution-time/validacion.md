@@ -47,3 +47,5 @@ En este PR el diff activa `lance_memory` y `linear_e2e` (suite completa de índi
 ## CI — instalador
 
 Run [40217146356](https://github.com/racso80es/SddIA/actions/runs/40217146356): job **`sddia-installer-smoke` success** (~19m23s) tras prep acotado (`1b6802ac`). AC-2 sellado.
+
+`sddia-installer-qa.yml`: mismos `paths` en `pull_request` y `push` a `main` (no smoke en cada push sin tocar superficie instalador).
