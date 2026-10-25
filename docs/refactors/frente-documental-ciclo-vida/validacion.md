@@ -6,6 +6,7 @@ branch: refactor/frente-documental-ciclo-vida
 global: APTO
 pbi_archived: false
 tracker_ref: AUT-5
+pr_url: https://github.com/racso80es/SddIA/pull/383
 execution_id: "c3a91f2e-7d4b-4e1a-9f06-8b2d4e5f1a0c"
 checks:
   AC-1: APTO

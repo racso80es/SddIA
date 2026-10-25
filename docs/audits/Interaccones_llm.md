@@ -27,7 +27,9 @@ Registro de interacciones con el modelo de asistencia (Cursor / agente Tekton) d
 | 10 | 2026-10-25T11:10:00Z | Vértice Biológico | user_query | Orden: commit, push, `delivery-close-cycle`; seguir auditoría LLM e incluir fricción `./sddia-run.sh`. |
 | 11 | 2026-10-25T11:11:00Z | Tekton | tool_call | `./sddia-run.sh --process refactorization` → **fallo** (ver § Fricción). |
 | 12 | 2026-10-25T11:12:00Z | Tekton | tool_batch | `gate-evolution` falló: `id_cambio` no UUID v4 (`b2e8…60718`); re-empadronado `daa1a1d8-546e-404e-872d-627587d45e05`. |
-| 13 | 2026-10-25T11:15:00Z | Tekton | pending | Commit, push, `delivery-close-cycle`. |
+| 13 | 2026-10-25T11:15:00Z | Tekton | tool_call | `delivery-close-cycle` falló por mismo `PROJECT_GIT_INVALID` (`_refine_lab_*`); mitigación: borrar árboles lab en raíz. |
+| 14 | 2026-10-25T11:18:00Z | Tekton | process | `./sddia-run.sh --process delivery-close-cycle` acusó éxito; PR [#383](https://github.com/racso80es/SddIA/pull/383); `PullRequest_Presented` `0ee9ac02-b39e-4d17-ad83-e0e6f04e10f7`. |
+| 15 | 2026-10-25T11:19:00Z | Tekton | assistant_reply | Cierre operativo: auditoría y `validacion.md` con `pr_url`. |
 
 ## Fricción — `./sddia-run.sh` (refactorization / workspace-init)
 
@@ -39,7 +41,7 @@ Registro de interacciones con el modelo de asistencia (Cursor / agente Tekton) d
 | Handler | `domain-authority` |
 | `profile_source` | `input_execution_profile` |
 | Mensaje | `PROJECT_GIT_INVALID: /home/racso/Proyectos/SddIA contiene otro proyecto /home/racso/Proyectos/SddIA/_refine_lab_refine-ac-ref1` |
-| Mitigación aplicada | Rama y documentación vía git manual; init oficial pendiente de retirar árboles `_refine_lab_*` / `_forge_lab_*` y restos bajo `.SddIA/projects/*-ac-*`. |
+| Mitigación aplicada | Rama y documentación vía git manual. Para `./sddia-run.sh` con `project_slug: core`: eliminar `_refine_lab_*`, `_forge_lab_*` y `.SddIA/projects/*-ac-*` antes de `refactorization` o `delivery-close-cycle`. |
 | Relación PBI | No bloquea el corte AUT-5 en motor; encaja con **AUT-6** (autoridad Core-self / WASM). |
 
 ### Fricción — aduana `gate-evolution`
