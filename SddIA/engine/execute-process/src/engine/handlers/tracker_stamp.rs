@@ -10,7 +10,7 @@ use crate::envelope::OrchestratorEnvelope;
 use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 fn file_sink(repo: &Path, payload: &Value) -> Result<bool, String> {
     Ok(matches!(
@@ -151,6 +151,142 @@ fn tool_fetch_issue(repo: &Path, issue_ref: &str, project_id: Option<&str>) -> R
         }),
         Some("tracker-stamp"),
     )
+}
+
+fn tool_update_description(
+    repo: &Path,
+    issue_ref: &str,
+    description: &str,
+    tc: &TrackerConfig,
+    project_slug: Option<&str>,
+) -> Result<(), String> {
+    let mut req = json!({
+        "operation": "update_issue_description",
+        "issue_ref": issue_ref,
+        "description": description,
+    });
+    if let Some(pid) = tc.project_id.as_deref() {
+        req["project_id"] = json!(pid);
+    }
+    if let Some(slug) = project_slug {
+        req["project_slug"] = json!(slug);
+    }
+    invoke_tool_for_process(
+        repo,
+        &lifecycle_tool_name(repo)?,
+        &json!({ "request": req }),
+        Some("tracker-stamp"),
+    )
+    .map(|_| ())
+}
+
+fn sync_item_tracker_column_remote(
+    repo: &Path,
+    payload: &Value,
+    issue_ref: &str,
+    column: &str,
+    tc: &TrackerConfig,
+) -> Result<(), String> {
+    let fetch = tool_fetch_issue(repo, issue_ref, tc.project_id.as_deref())?;
+    let desc = fetch
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if desc.trim().is_empty() {
+        return Ok(());
+    }
+    let patched = super::super::item_lifecycle_frontmatter::seal_markdown(
+        desc,
+        &super::super::item_lifecycle_frontmatter::yaml_patch_tracker_column(column),
+    )?;
+    if patched == desc {
+        return Ok(());
+    }
+    tool_update_description(
+        repo,
+        issue_ref,
+        &patched,
+        tc,
+        str_field(payload, "project_slug").as_deref(),
+    )
+}
+
+fn patch_local_markdown_column(path: &Path, column: &str) -> Result<(), String> {
+    let raw = fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let patched = super::super::item_lifecycle_frontmatter::seal_markdown(
+        &raw,
+        &super::super::item_lifecycle_frontmatter::yaml_patch_tracker_column(column),
+    )?;
+    fs::write(path, patched).map_err(|e| e.to_string())
+}
+
+fn resolve_local_item_path(repo: &Path, payload: &Value) -> Option<PathBuf> {
+    if let Some(pbi) = str_field(payload, "pbi_ref") {
+        if let Some(slug) = str_field(payload, "project_slug") {
+            if let Ok(Some(bound)) =
+                project_binding::bind(repo, &json!({ "project_slug": slug }))
+            {
+                if let Ok(path) = project_binding::resolve_doc_path(&bound.project_root, &pbi) {
+                    if path.is_file() {
+                        return Some(path);
+                    }
+                }
+            }
+        }
+        let direct = repo.join(pbi.trim_start_matches("./"));
+        if direct.is_file() {
+            return Some(direct);
+        }
+    }
+    if let Some(tr) = str_field(payload, "tracker_ref") {
+        if let Some(path) =
+            super::tracker_markdown_apply::resolve_markdown_by_tracker_ref(repo, &tr)
+        {
+            if path.is_file() {
+                return Some(path);
+            }
+        }
+    }
+    if let Some(hu) = str_field(payload, "hu_ref") {
+        let direct = repo.join(hu.trim_start_matches("./"));
+        if direct.is_file() {
+            return Some(direct);
+        }
+    }
+    if let Some(persist) = str_field(payload, "persist_ref") {
+        if let Some(pbi) = tracker_pbi_meta::resolve_pbi_path_from_persist(repo, &persist) {
+            let direct = repo.join(pbi.trim_start_matches("./"));
+            if direct.is_file() {
+                return Some(direct);
+            }
+        }
+    }
+    None
+}
+
+fn stamp_file_sink_event(
+    repo: &Path,
+    event_type: &str,
+    payload: &Value,
+) -> Result<(bool, Option<String>), String> {
+    use super::super::item_lifecycle_frontmatter::{
+        COLUMN_BACKLOG, COLUMN_CANCELLED, COLUMN_DONE, COLUMN_IN_PROGRESS, COLUMN_IN_REVIEW,
+        COLUMN_TODO,
+    };
+    let column = match event_type {
+        "PBI_Forged" => COLUMN_BACKLOG,
+        "PBI_Refined" | "HU_Refined" => COLUMN_TODO,
+        "Work_Initiated" => COLUMN_IN_PROGRESS,
+        "PullRequest_Presented" => COLUMN_IN_REVIEW,
+        "PullRequest_Merged" | "Delivery_Committed" => COLUMN_DONE,
+        "PBI_Cancelled" => COLUMN_CANCELLED,
+        _ => return Ok((false, Some(format!("no-op: event_type {event_type} (file)")))),
+    };
+    let path = resolve_local_item_path(repo, payload).ok_or_else(|| {
+        "warn: sumidero file sin ruta de ítem".to_string()
+    })?;
+    patch_local_markdown_column(&path, column)?;
+    Ok((true, None))
 }
 
 fn preflight_hu(repo: &Path, tc: &TrackerConfig, issue_ref: &str) -> Result<Value, String> {
@@ -345,11 +481,13 @@ fn archive_cancelled_pbi(repo: &Path, payload: &Value) -> Result<(), String> {
         .to_string();
     let dest = done_dir.join(file_name);
     let raw = fs::read_to_string(&src).map_err(|e| e.to_string())?;
-    let patched = if raw.contains("status:") {
-        raw.replace("status: pending", "status: cancelado")
-            .replace("status: refinado", "status: cancelado")
+    let patched = if raw.trim_start().starts_with("---") {
+        super::super::item_lifecycle_frontmatter::seal_markdown(
+            &raw,
+            &super::super::item_lifecycle_frontmatter::yaml_patch_cancelled(),
+        )?
     } else {
-        format!("---\nstatus: cancelado\n---\n\n{raw}")
+        format!("---\ntracker_column: cancelled\nrefinement: refined\n---\n\n{raw}")
     };
     fs::write(&dest, patched).map_err(|e| e.to_string())?;
     if dest != src {
@@ -439,6 +577,13 @@ fn stamp_done_with_hu_roll_up(
     }
     run(&|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref()))?;
     let _ = done_gate::write_tracker_done_proof(repo, issue_ref, commit_sha, pbi_fetch);
+    let _ = sync_item_tracker_column_remote(
+        repo,
+        payload,
+        issue_ref,
+        super::super::item_lifecycle_frontmatter::COLUMN_DONE,
+        tc,
+    );
     Ok(true)
 }
 
@@ -472,6 +617,13 @@ fn stamp_todo_transition(
     };
     run(&|| update_state_if_not_discarded(repo, tc, issue_ref, fetch, "todo"))?;
     run(&|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref()))?;
+    let _ = sync_item_tracker_column_remote(
+        repo,
+        payload,
+        issue_ref,
+        super::super::item_lifecycle_frontmatter::COLUMN_TODO,
+        tc,
+    );
     Ok((true, None))
 }
 
@@ -484,7 +636,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
     let payload_val = Value::Object(payload.clone());
     let source = "tracker-stamp";
     if file_sink(repo, &payload_val)? {
-        return Ok((false, Some("no-op: sumidero local".into())));
+        return stamp_file_sink_event(repo, &event_type, &payload_val);
     }
 
     if event_type == "HU_Refined" {
@@ -620,6 +772,13 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 Some("pbi-forged"),
                 &|| tool_comment(repo, &issue_ref, &format!("PBI forjado: {doc}"), tc.project_id.as_deref()),
             )?;
+            let _ = sync_item_tracker_column_remote(
+                repo,
+                &payload_val,
+                &issue_ref,
+                super::super::item_lifecycle_frontmatter::COLUMN_BACKLOG,
+                &tc,
+            );
             stamped = true;
         }
         "Work_Initiated" => {
@@ -667,6 +826,13 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                     )
                 },
             )?;
+            let _ = sync_item_tracker_column_remote(
+                repo,
+                &payload_val,
+                &issue_ref,
+                super::super::item_lifecycle_frontmatter::COLUMN_IN_PROGRESS,
+                &tc,
+            );
             stamped = true;
         }
         "PullRequest_Presented" => {
@@ -685,6 +851,13 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 Some("pr-presented"),
                 &|| tool_comment(repo, &issue_ref, &format!("PR presentado: {pr}"), tc.project_id.as_deref()),
             )?;
+            let _ = sync_item_tracker_column_remote(
+                repo,
+                &payload_val,
+                &issue_ref,
+                super::super::item_lifecycle_frontmatter::COLUMN_IN_REVIEW,
+                &tc,
+            );
             stamped = true;
         }
         "PullRequest_Audited" => {
@@ -1013,7 +1186,7 @@ mod tests {
     }
 
     #[test]
-    fn file_provider_skips_capsule() {
+    fn file_provider_stamps_column_on_pbi_refined() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
         write_file(
@@ -1031,6 +1204,11 @@ mod tests {
             ".SddIA/project.md",
             "---\ntracker:\n  provider: file\n---\n",
         );
+        write_file(
+            root,
+            "docs/todos/pending/x.md",
+            "---\ntracker_column: backlog\nrefinement: pending\n---\n\n# x\n",
+        );
         let event = json!({
             "event_type": "PBI_Refined",
             "payload": {
@@ -1040,8 +1218,10 @@ mod tests {
             }
         });
         let (stamped, note) = stamp_event(root, &event).expect("file");
-        assert!(!stamped);
-        assert!(note.unwrap_or_default().contains("sumidero local"));
+        assert!(stamped);
+        assert!(note.is_none());
+        let text = std::fs::read_to_string(root.join("docs/todos/pending/x.md")).unwrap();
+        assert!(text.contains("tracker_column: todo"));
     }
 
     #[test]
@@ -1070,7 +1250,7 @@ mod tests {
     }
 
     #[test]
-    fn file_provider_work_initiated_skips_comment() {
+    fn file_provider_work_initiated_stamps_column_without_capsule() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
         write_file(
@@ -1088,6 +1268,16 @@ mod tests {
             ".SddIA/project.md",
             "---\ntracker:\n  provider: file\n---\n",
         );
+        write_file(
+            root,
+            "docs/features/x/objectives.md",
+            "---\npbi_ref: docs/todos/pending/wi.md\n---\n\n# obj\n",
+        );
+        write_file(
+            root,
+            "docs/todos/pending/wi.md",
+            "---\ntracker_column: todo\nrefinement: refined\n---\n\n# wi\n",
+        );
         let event = json!({
             "event_type": "Work_Initiated",
             "payload": {
@@ -1098,8 +1288,10 @@ mod tests {
             }
         });
         let (stamped, note) = stamp_event(root, &event).expect("file");
-        assert!(!stamped);
-        assert!(note.unwrap_or_default().contains("sumidero local"));
+        assert!(stamped);
+        assert!(note.is_none());
+        let text = std::fs::read_to_string(root.join("docs/todos/pending/wi.md")).unwrap();
+        assert!(text.contains("tracker_column: in_progress"));
         assert!(!root.join(".SddIA/state/tracker-outbound/OSC-1.jsonl").is_file());
     }
 

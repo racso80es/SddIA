@@ -13,3 +13,6 @@
 {"event_id":"1445d620-2369-42be-9660-c0a4f873c814","issue_ref":"OSC-101","occurred_at":"2026-10-23T20:19:15Z","operation":"create_issue","source_process":"forge-pbi"}
 {"event_id":"dd1cbed3-7973-4e25-883e-b854b54c549f","issue_ref":"OSC-101","occurred_at":"2026-10-23T20:19:15Z","operation":"update_issue_description","source_process":"forge-pbi"}
 {"event_id":"5392f060-11a8-4c4b-8011-b94944b38bfc","issue_ref":"OSC-101","occurred_at":"2026-10-23T20:20:52Z","operation":"create_issue","source_process":"refine-hu"}
+{"event_id":"438be168-8865-4d5d-a163-488cf460d992","issue_ref":"OSC-101","occurred_at":"2026-10-25T10:56:45Z","operation":"create_issue","source_process":"refine-hu"}
+{"event_id":"d5ff2b70-fb38-463f-904f-266c1bf8700d","issue_ref":"OSC-101","occurred_at":"2026-10-25T10:56:46Z","operation":"create_issue","source_process":"forge-pbi"}
+{"event_id":"af7cd05a-de0f-49c3-abf6-ffda8fd57dde","issue_ref":"OSC-101","occurred_at":"2026-10-25T10:56:46Z","operation":"update_issue_description","source_process":"forge-pbi"}

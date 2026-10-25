@@ -217,8 +217,9 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let entity_uuid = Uuid::new_v4().to_string();
     let created = Utc::now().format("%Y-%m-%d").to_string();
     let title = document_id.clone();
+    let lifecycle_fm = super::super::item_lifecycle_frontmatter::forge_frontmatter_lines();
     let mut fm_lines = format!(
-        "document_id: {document_id}\nuuid: \"{entity_uuid}\"\nstatus: pending\nprocess: {process}\ncreated: \"{created}\"\nproject_slug: {slug_project}\ndelivery_mode: {mode}\ndelivery_mode_source: {source}",
+        "document_id: {document_id}\nuuid: \"{entity_uuid}\"\n{lifecycle_fm}\nprocess: {process}\ncreated: \"{created}\"\nproject_slug: {slug_project}\ndelivery_mode: {mode}\ndelivery_mode_source: {source}",
         slug_project = bound.slug,
         mode = bound.delivery_mode.as_str(),
         source = bound.delivery_mode_source,
