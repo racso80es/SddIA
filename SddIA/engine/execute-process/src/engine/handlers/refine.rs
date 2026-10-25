@@ -181,6 +181,11 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
     let pbi_ref = str_field(inputs, "pbi_ref").ok_or("pbi_ref requerido")?;
     let bound = project_binding::bind(repo, inputs)?
         .ok_or("project_slug requerido para refine-pbi")?;
+    let target = super::super::tracker_lifecycle_port::resolve_target(repo, inputs)?;
+    let remote = matches!(
+        target,
+        super::super::tracker_lifecycle_port::LifecycleTarget::Remote { .. }
+    );
     let fetched = super::super::tracker_lifecycle_port::invoke(
         repo,
         inputs,
@@ -190,12 +195,23 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
             "project_slug": bound.slug,
         }),
         PROCESS_PBI,
-    )?;
+    );
+    let local_path = super::super::project_binding::resolve_doc_path(&bound.project_root, &pbi_ref).ok();
+    let local_raw = local_path.as_ref().and_then(|p| {
+        if p.is_file() {
+            fs::read_to_string(p).ok()
+        } else {
+            None
+        }
+    });
     let raw = fetched
-        .get("description")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| format!("REFINE_NOT_FOUND: {pbi_ref}"))?
-        .to_string();
+        .as_ref()
+        .ok()
+        .and_then(|body| body.get("description").and_then(|v| v.as_str()))
+        .filter(|s| s.contains("---"))
+        .map(str::to_string)
+        .or(local_raw)
+        .ok_or_else(|| format!("REFINE_NOT_FOUND: {pbi_ref}"))?;
     let (_, body) = split_frontmatter(&raw)?;
     let refined_body = mayeuta_touch_body(&body);
     let refined_date = Utc::now().format("%Y-%m-%d").to_string();
@@ -214,17 +230,29 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
     };
     let fm = parse_fm(&sealed)?;
     let rel = pbi_ref.clone();
-    super::super::tracker_lifecycle_port::invoke(
-        repo,
-        inputs,
-        json!({
-            "operation": "update_issue_description",
-            "project_slug": bound.slug,
-            "issue_ref": rel,
-            "description": sealed,
-        }),
-        PROCESS_PBI,
-    )?;
+    if let Some(path) = local_path.as_ref() {
+        if path.is_file() {
+            fs::write(path, &sealed).map_err(|e| e.to_string())?;
+        }
+    }
+    let issue_ref = if remote {
+        fm_str(&fm, "tracker_ref")
+    } else {
+        Some(rel.clone())
+    };
+    if let Some(issue_ref) = issue_ref {
+        super::super::tracker_lifecycle_port::invoke(
+            repo,
+            inputs,
+            json!({
+                "operation": "update_issue_description",
+                "project_slug": bound.slug,
+                "issue_ref": issue_ref,
+                "description": sealed,
+            }),
+            PROCESS_PBI,
+        )?;
+    }
     let tracker_ref = fm_str(&fm, "tracker_ref");
     let event_rel = emit_refined(
         repo,
@@ -328,7 +356,26 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
         let (fm_text, _) = split_frontmatter(&sealed)?;
         sealed = format!("---\n{fm_text}---\n\n{}", refined_body.trim_start());
     }
-    if !remote {
+    if let Ok(path) = super::super::project_binding::resolve_doc_path(&bound.project_root, &rel) {
+        if path.is_file() {
+            fs::write(&path, &sealed).map_err(|e| e.to_string())?;
+        }
+    }
+    if remote {
+        if let Some(tr) = &tracker_ref {
+            super::super::tracker_lifecycle_port::invoke(
+                repo,
+                inputs,
+                json!({
+                    "operation": "update_issue_description",
+                    "project_slug": bound.slug,
+                    "issue_ref": tr,
+                    "description": sealed,
+                }),
+                PROCESS_HU,
+            )?;
+        }
+    } else {
         super::super::tracker_lifecycle_port::invoke(
             repo,
             inputs,
@@ -542,6 +589,9 @@ mod tests {
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
             assert!(tr.starts_with("OSC-"), "{tr}");
+            let text = fs::read_to_string(&hu_path).unwrap();
+            assert!(text.contains("tracker_ref:"), "{text}");
+            assert!(text.contains(tr), "{text}");
             cleanup_project_index(&core, slug);
         });
     }
