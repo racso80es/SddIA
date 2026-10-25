@@ -1,12 +1,13 @@
 ---
+
 feature_name: pr-merged-witness-store
 created: "2026-10-24"
 process: bug-fix
 base: main
 scope: alta de PullRequest_Merged, promoción de testigo y tracker_ref de ciclo
 tracker_ref: MAN-23
+execution_id: "f0d1f9df-997e-4739-b698-2771dc57867a"
 ---
-
 # Spec — testigo de merge en el store
 
 ## Hecho cerrado

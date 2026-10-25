@@ -1,4 +1,5 @@
 ---
+
 feature_name: pr-merged-witness-store
 created: "2026-10-24"
 process: bug-fix
@@ -8,8 +9,8 @@ items:
   - SddIA/engine/execute-process/src/engine/accept_pr.rs
   - SddIA/engine/execute-process/src/engine/phase_capsules.rs
   - SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs
+execution_id: "f0d1f9df-997e-4739-b698-2771dc57867a"
 ---
-
 # Implementación
 
 La alta de acción usa la misma compuerta que la mutación de dominio: store si `writes_store`, JSON si `writes_filesystem`.
