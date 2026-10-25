@@ -4,6 +4,7 @@ created: "2026-10-25"
 process: bug-fix
 branch: fix/linear-e2e-hu-tracker-ref
 global: APTO
+pr_url: https://github.com/racso80es/SddIA/pull/384
 pbi_archived: false
 checks:
   AC-7: APTO
