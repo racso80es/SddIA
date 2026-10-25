@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "SddIA/scripts/qa/cursor-guard-todos.sh",
+        "matcher": "Write|StrReplace",
+        "failClosed": false
+      }
+    ]
+  }
+}

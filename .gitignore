@@ -73,3 +73,7 @@ __pycache__/
 
 target/
 /.SddIA/inbox
+
+# Artefactos de laboratorio refine/forge (contaminación contextual Glob)
+/_refine_lab_*/
+/_forge_lab_*/

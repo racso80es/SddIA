@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `d48f4421-71c8-4dce-b0b7-4a814d047a9b` | 2026-10-25 | AUT-14: blindaje intake backlog linear — norma IDE, pre-commit y hook Cursor. | CANONICO | `SddIA/evolution/d48f4421-71c8-4dce-b0b7-4a814d047a9b.md` |
 | `38da86e2-a12e-4bce-af6e-aea49afb252c` | 2026-10-25 | Kaizen: higiene rustc release en execute-process (prep installer lab). | CANONICO | `SddIA/evolution/38da86e2-a12e-4bce-af6e-aea49afb252c.md` |
 | `3fbd8870-5fac-4234-a5c9-5e9d1a678cf3` | 2026-10-25 | AUT-13: poda por diff y menos recompilación en sddia-index-qa. | CANONICO | `SddIA/evolution/3fbd8870-5fac-4234-a5c9-5e9d1a678cf3.md` |
 | `2c699f38-53a6-41a6-a9c2-2d2b74661b24` | 2026-10-25 | AUT-3 higiene de compilados Rust en daemons y tools | CANONICO | `SddIA/evolution/2c699f38-53a6-41a6-a9c2-2d2b74661b24.md` |
