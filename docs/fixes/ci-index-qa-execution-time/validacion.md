@@ -7,8 +7,9 @@ global: APTO
 pbi_archived: false
 tracker_ref: AUT-13
 pr_url: https://github.com/racso80es/SddIA/pull/386
-ci_run: https://github.com/racso80es/SddIA/actions/runs/40213880824
-ci_head: 556fecd1e6f700c7c83c69e549e3dfae9c6440f5
+ci_run: https://github.com/racso80es/SddIA/actions/runs/40217143680
+ci_installer_run: https://github.com/racso80es/SddIA/actions/runs/40217146356
+ci_head: 1b6802ac6029031466685cac92ca0c1f689835da
 checks:
   AC-1: APTO
   AC-2: APTO
@@ -39,10 +40,10 @@ git_changes:
 
 ## CI — `sddia-index-qa`
 
-Run [40213880824](https://github.com/racso80es/SddIA/actions/runs/40213880824), `headSha` `556fecd1`. Jobs en **success**: `changes`, `native-build`, `wasi-build`, `sddia-index-integrity`, `eda-iota-smoke-simulate`, `eda-iota-physical`, `wasi-runtime-smoke`, `eda-bus-e2e-smoke`.
+Run [40217143680](https://github.com/racso80es/SddIA/actions/runs/40217143680), `headSha` `1b6802ac`. Jobs en **success**: `changes`, `native-build`, `wasi-build`, `sddia-index-integrity` (~56s), `eda-iota-smoke-simulate`, `eda-iota-physical`, `wasi-runtime-smoke`, `eda-bus-e2e-smoke` (~1m13s).
 
 En este PR el diff activa `lance_memory` y `linear_e2e` (suite completa de índice); la poda estrecha (AC-5 sin tocar motor/memoria) queda para un PR documental futuro.
 
 ## CI — instalador
 
-Workflow `sddia-installer-qa` disparado en el PR (paths del fix). AC-2 cubierto por workflow dedicado + `prep-installer-lab-release.sh` acotado; smoke validado en el mismo ciclo de revisión del PR.
+Run [40217146356](https://github.com/racso80es/SddIA/actions/runs/40217146356): job **`sddia-installer-smoke` success** (~19m23s) tras prep acotado (`1b6802ac`). AC-2 sellado.
