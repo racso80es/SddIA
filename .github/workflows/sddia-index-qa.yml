@@ -20,8 +20,27 @@ env:
   WASMTIME_VERSION: v48.0.1
   CARGO_INCREMENTAL: "0"
   CARGO_TERM_COLOR: always
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_PROFILE_DEV_STRIP: debuginfo
 
 jobs:
+  changes:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      lance_memory: ${{ steps.classify.outputs.lance_memory }}
+      linear_e2e: ${{ steps.classify.outputs.linear_e2e }}
+      installer: ${{ steps.classify.outputs.installer }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify diff (PR) or full suite (push main)
+        id: classify
+        run: bash SddIA/scripts/qa/classify-sddia-index-qa-changes.sh
+
   # ---------------------------------------------------------------------
   # Compilación. Los checks de abajo no compilan: descargan estos bins.
   # Un fallo de un check no marca el otro. Si el build falla, los checks
@@ -113,43 +132,39 @@ jobs:
           cargo build -p event-watcher -p execute-process -p sddia-qa
           cargo build --release -p linear-tracker-adapter
 
+      - name: Stage WASI runtime artifact (wasm only + native bins)
+        run: |
+          set -euo pipefail
+          stage="SddIA/target/wasi-runtime-artifact"
+          rm -rf "$stage"
+          mkdir -p "$stage/wasm32-wasip1/debug" "$stage/debug" "$stage/release"
+          shopt -s nullglob
+          for wasm in SddIA/target/wasm32-wasip1/debug/*.wasm; do
+            cp "$wasm" "$stage/wasm32-wasip1/debug/"
+          done
+          cp SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process "$stage/debug/"
+          cp SddIA/target/release/linear-tracker-adapter "$stage/release/"
+
       - name: Upload WASI artifacts
         uses: actions/upload-artifact@v4
         with:
           name: wasi-runtime
           retention-days: 1
           if-no-files-found: error
-          path: |
-            SddIA/target/wasm32-wasip1/debug/
-            SddIA/target/debug/sddia-qa
-            SddIA/target/debug/event-watcher
-            SddIA/target/debug/execute-process
-            SddIA/target/release/linear-tracker-adapter
+          path: SddIA/target/wasi-runtime-artifact/
 
   # ---------------------------------------------------------------------
   # Checks. El nombre del check es el id del job (protección de rama).
   # ---------------------------------------------------------------------
   sddia-index-integrity:
-    needs: native-build
+    needs: [native-build, changes]
     if: >-
       needs.native-build.result == 'success' &&
+      needs.changes.result == 'success' &&
       (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install protoc (lance-encoding)
-        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "SddIA -> target"
-          shared-key: native-debug
-          add-job-id-key: "false"
-          cache-workspace-crates: "true"
-          save-if: "false"
 
       - uses: actions/download-artifact@v4
         with:
@@ -163,11 +178,26 @@ jobs:
           SddIA/target/debug/sddia-qa verify-process-integrity
           SddIA/target/debug/sddia-qa verify-compiled-capsules
 
+      - name: Install protoc (lance-encoding)
+        if: needs.changes.outputs.lance_memory == 'true'
+        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        if: needs.changes.outputs.lance_memory == 'true'
+
+      - uses: Swatinem/rust-cache@v2
+        if: needs.changes.outputs.lance_memory == 'true'
+        with:
+          workspaces: "SddIA -> target"
+          shared-key: native-test-lance
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
+
       - name: Evolution-register & LanceDB integration tests
+        if: needs.changes.outputs.lance_memory == 'true'
         working-directory: SddIA
         run: |
-          cargo test -p sddia-evolution-register -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution
-          cargo test -p execute-process --test memory_evolution_ingest
+          cargo test -p sddia-evolution-register -p sddia-core-memory -p sddia-infrastructure-lancedb-thought -p sddia-infrastructure-lancedb-evolution -p execute-process --test memory_evolution_ingest
 
   eda-iota-smoke-simulate:
     needs: native-build
@@ -284,15 +314,17 @@ jobs:
           SddIA/target/debug/sddia-qa gate-evolution --json --all
 
   eda-bus-e2e-smoke:
-    needs: wasi-build
+    needs: [wasi-build, changes]
     if: >-
       needs.wasi-build.result == 'success' &&
+      needs.changes.result == 'success' &&
       (github.event_name == 'pull_request' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Install protoc (lance-encoding)
+        if: needs.changes.outputs.linear_e2e == 'true'
         run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev
 
       - name: Cache wasmtime
@@ -336,37 +368,30 @@ jobs:
           cp -a wasi-runtime/release/. SddIA/target/release/
           chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/release/linear-tracker-adapter
 
-      - name: EDA E2E & Linear labs (simulate/mock)
+      - uses: dtolnay/rust-toolchain@stable
+        if: needs.changes.outputs.linear_e2e == 'true'
+
+      - uses: Swatinem/rust-cache@v2
+        if: needs.changes.outputs.linear_e2e == 'true'
+        with:
+          workspaces: "SddIA -> target"
+          shared-key: native-test-lance
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
+
+      - name: EDA E2E lab (simulate/mock)
+        env:
+          SDDIA_LAB_SIMULATE_IOTA: "1"
+          SDDIA_LAB_SIMULATE_SYNC_INDEX: "1"
+          SDDIA_LAB_ROUTE_SYNC: "1"
+        run: SddIA/target/debug/sddia-qa run-eda-e2e-lab --entity-class tool --json
+
+      - name: Linear E2E labs (mock)
+        if: needs.changes.outputs.linear_e2e == 'true'
         env:
           SDDIA_LAB_SIMULATE_IOTA: "1"
           SDDIA_LAB_SIMULATE_SYNC_INDEX: "1"
           SDDIA_LAB_ROUTE_SYNC: "1"
         run: |
-          SddIA/target/debug/sddia-qa run-eda-e2e-lab --entity-class tool --json
           SddIA/target/debug/sddia-qa run-linear-direct-cycle-e2e-lab --json
           SddIA/target/debug/sddia-qa run-linear-done-gate-both-e2e-lab --json
-
-  sddia-installer-smoke:
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install protoc and expect
-        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev expect
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "SddIA -> target"
-          shared-key: installer-release
-          add-job-id-key: "false"
-
-      - name: Prebuild release (installer lab AC-4)
-        timeout-minutes: 40
-        run: bash SddIA/scripts/qa/prep-installer-lab-release.sh
-
-      - name: Installer dry-run smoke
-        timeout-minutes: 20
-        run: bash SddIA/scripts/qa/test-sddia-installer.sh
