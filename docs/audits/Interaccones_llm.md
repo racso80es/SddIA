@@ -26,7 +26,8 @@ Registro de interacciones con el modelo de asistencia (Cursor / agente Tekton) d
 | 9 | 2026-10-25T11:08:00Z | Tekton | assistant_reply | Entrega resumen al Vértice Biológico (sin commit/push salvo orden). |
 | 10 | 2026-10-25T11:10:00Z | Vértice Biológico | user_query | Orden: commit, push, `delivery-close-cycle`; seguir auditoría LLM e incluir fricción `./sddia-run.sh`. |
 | 11 | 2026-10-25T11:11:00Z | Tekton | tool_call | `./sddia-run.sh --process refactorization` → **fallo** (ver § Fricción). |
-| 12 | 2026-10-25T11:12:00Z | Tekton | pending | `gate-evolution`, commit acotado, `delivery-close-cycle`, actualizar filas 12+ en esta tabla. |
+| 12 | 2026-10-25T11:12:00Z | Tekton | tool_batch | `gate-evolution` falló: `id_cambio` no UUID v4 (`b2e8…60718`); re-empadronado `daa1a1d8-546e-404e-872d-627587d45e05`. |
+| 13 | 2026-10-25T11:15:00Z | Tekton | pending | Commit, push, `delivery-close-cycle`. |
 
 ## Fricción — `./sddia-run.sh` (refactorization / workspace-init)
 
@@ -40,6 +41,14 @@ Registro de interacciones con el modelo de asistencia (Cursor / agente Tekton) d
 | Mensaje | `PROJECT_GIT_INVALID: /home/racso/Proyectos/SddIA contiene otro proyecto /home/racso/Proyectos/SddIA/_refine_lab_refine-ac-ref1` |
 | Mitigación aplicada | Rama y documentación vía git manual; init oficial pendiente de retirar árboles `_refine_lab_*` / `_forge_lab_*` y restos bajo `.SddIA/projects/*-ac-*`. |
 | Relación PBI | No bloquea el corte AUT-5 en motor; encaja con **AUT-6** (autoridad Core-self / WASM). |
+
+### Fricción — aduana `gate-evolution`
+
+| Campo | Valor |
+|-------|--------|
+| Síntoma | `EVOL_MATERIAL_UNREGISTERED` en handlers pese a `relacionado` con prefijo `SddIA/engine/execute-process/`. |
+| Causa | `id_cambio` del fichero evolution **no era UUID v4** (grupo de versión `3c6d`); `is_record_file` excluía el registro de correladores. |
+| Corrección | Nuevo registro `daa1a1d8-546e-404e-872d-627587d45e05.md` + fila en `Evolution_log.md`. |
 
 Entrada JSON usada: `project_slug: core`, `execution_profile.software_forge: true`, `codex_slug: codex-software-engineering`, `branch_name: refactor/frente-documental-ciclo-vida`, `tracker_ref: AUT-5`.
 
