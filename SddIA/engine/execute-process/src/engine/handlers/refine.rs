@@ -199,13 +199,8 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
     let (_, body) = split_frontmatter(&raw)?;
     let refined_body = mayeuta_touch_body(&body);
     let refined_date = Utc::now().format("%Y-%m-%d").to_string();
-    let sealed = seal_markdown(
-        &raw,
-        &serde_yaml::from_str(&format!(
-            "status: refinado\nrefined: \"{refined_date}\""
-        ))
-        .map_err(|e| e.to_string())?,
-    )?;
+    let patch = super::super::item_lifecycle_frontmatter::yaml_patch_refinement_refined(&refined_date);
+    let sealed = super::super::item_lifecycle_frontmatter::seal_markdown(&raw, &patch)?;
     let sealed = if refined_body != body {
         let (fm, _) = split_frontmatter(&sealed)?;
         format!("---\n{fm}---\n\n{}", refined_body.trim_start())
@@ -318,12 +313,16 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
     }
 
     let refined_date = Utc::now().format("%Y-%m-%d").to_string();
-    let mut patch_lines = format!("status: refinada\nrefined: \"{refined_date}\"");
+    let mut patch_lines = super::super::item_lifecycle_frontmatter::yaml_patch_refinement_refined(&refined_date);
     if let Some(tr) = &tracker_ref {
-        patch_lines.push_str(&format!("\ntracker_ref: \"{tr}\""));
+        if let Some(map) = patch_lines.as_mapping_mut() {
+            map.insert(
+                YamlValue::String("tracker_ref".into()),
+                YamlValue::String(tr.clone()),
+            );
+        }
     }
-    let patch: YamlValue = serde_yaml::from_str(&patch_lines).map_err(|e| e.to_string())?;
-    let mut sealed = seal_markdown(&raw, &patch)?;
+    let mut sealed = super::super::item_lifecycle_frontmatter::seal_markdown(&raw, &patch_lines)?;
     if refined_body != body {
         let (fm_text, _) = split_frontmatter(&sealed)?;
         sealed = format!("---\n{fm_text}---\n\n{}", refined_body.trim_start());
@@ -470,7 +469,9 @@ mod tests {
             Some("refinado")
         );
         let text = fs::read_to_string(&pbi_path).unwrap();
-        assert!(text.contains("status: refinado"));
+        assert!(text.contains("tracker_column: todo"));
+        assert!(text.contains("refinement: refined"));
+        assert!(!text.contains("status: refinado"));
         assert!(out.data.as_ref().and_then(|d| d.get("event_path")).is_some());
         cleanup_project_index(&core, slug);
     }
@@ -503,7 +504,8 @@ mod tests {
             Some(false)
         );
         let text = fs::read_to_string(&hu_path).unwrap();
-        assert!(text.contains("status: refinada"));
+        assert!(text.contains("tracker_column: todo"));
+        assert!(text.contains("refinement: refined"));
         cleanup_project_index(&core, slug);
     }
 

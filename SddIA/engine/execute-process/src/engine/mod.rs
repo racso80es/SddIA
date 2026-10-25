@@ -24,6 +24,7 @@ pub mod radamanto_batch_core;
 pub mod memory_evolution_ingest_core;
 pub mod telemetry_batch_stub;
 pub mod telemetry_compliance_core;
+pub mod item_lifecycle_frontmatter;
 pub mod invoke_orchestrator;
 pub mod crypto_broker;
 pub mod domain_mutation;
