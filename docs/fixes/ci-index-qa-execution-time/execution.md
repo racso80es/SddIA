@@ -30,4 +30,8 @@ Rama (lectura `.git/HEAD`): `fix/ci-index-qa-execution-time`.
 
 AC-1..AC-6: código en working tree alineado a spec C1–C5. AC-7 parcial: cascada docs sí; evolution anclado + commits git-manager = **PENDIENTE-SHELL**. Evidencia CI (run_id) = fase Argos / Actions.
 
-Registro evolution provisional `c8e4a19f-2d7b-4f31-9a56-e0b3c7d8142a.md` existe con stub de hash **no conforme** (sesión sin Shell). Antes de push/CI: `sddia-qa evolution-rehash --id c8e4a19f-2d7b-4f31-9a56-e0b3c7d8142a` y fila en `Evolution_log.md`.
+## Cierre (merge)
+
+- PR [#386](https://github.com/racso80es/SddIA/pull/386) → `15b2945b`.
+- Laudo instalador: `paths` idénticos en `pull_request` y `push` `main` (`6943b166`); doc `clarify-installer-smoke.md`.
+- Linear AUT-13: descripción actualizada (2026-10-25) con comportamiento `sddia-installer-smoke`.

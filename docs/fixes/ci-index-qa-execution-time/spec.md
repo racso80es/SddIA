@@ -13,7 +13,7 @@ persist_ref: docs/fixes/ci-index-qa-execution-time
 
 ## Misión
 
-Reducir recompilaciones redundantes (LanceDB, labs Linear, artefactos WASI) y podar pasos pesados en `pull_request` sin romper los cinco jobs de `KNOWN_SDDIA_QA_JOBS` ni el guardián de `push` a `main`.
+Reducir recompilaciones redundantes (LanceDB, labs Linear, artefactos WASI) y podar pasos pesados en `pull_request` sin romper los cinco jobs de `KNOWN_SDDIA_QA_JOBS`. Guardián de suite íntegra en `push` a `main` solo en `sddia-index-qa`. `sddia-installer-smoke` en workflow aparte con `paths` en PR y push (ver `clarify-installer-smoke.md`).
 
 ## Corte
 
