@@ -10,6 +10,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         "test",
         "-p",
         "execute-process",
+        "--lib",
         "linear_done_gate_both_e2e",
         "--",
         "--test-threads=1",
