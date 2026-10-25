@@ -284,6 +284,20 @@ pub fn upsert_fracture_kaizen_section(content: &str, section: &str) -> String {
     }
 }
 
+fn enrich_notice(base: &str, fallback: Option<&str>) -> String {
+    match fallback {
+        Some(err) => format!("{base}; catálogo por defecto: {err}"),
+        None => base.to_string(),
+    }
+}
+
+fn catalog_for_enrich(repo: &Path) -> (FractureCatalog, Option<String>) {
+    match load_fracture_catalog(repo) {
+        Ok(catalog) => (catalog, None),
+        Err(err) => (shared_default_catalog().clone(), Some(err)),
+    }
+}
+
 /// Ejecuta `enrich-fracture-pbi-kaizen` (paridad `execute-action.py::_run_enrich_fracture_pbi_kaizen`).
 pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let process_name = required_str(inputs, "process_name")?;
@@ -312,6 +326,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         }
     };
 
+    let (catalog, catalog_fallback) = catalog_for_enrich(repo);
     let friction_id = optional_str(inputs, "friction_id");
     if let Some(issue) = optional_str(inputs, "tracker_ref") {
         if let Some(tc) = super::project_binding::tracker_config_for_inputs(repo, inputs)? {
@@ -321,7 +336,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 &attempted_action,
                 &agent_emitter,
                 friction_id.as_deref(),
-                None,
+                Some(&catalog),
             );
             let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
             super::capsules::invoke_tool_for_process(
@@ -341,7 +356,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "success": true,
                 "target_path": issue,
                 "issue_ref": issue,
-                "message": "issue enriquecido",
+                "message": enrich_notice("issue enriquecido", catalog_fallback.as_deref()),
                 "evolution_verdict": verdict,
                 "unclassified": unclassified,
             }));
@@ -361,7 +376,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         &attempted_action,
         &agent_emitter,
         friction_id.as_deref(),
-        None,
+        Some(&catalog),
     );
     let content = fs::read_to_string(&target).map_err(|e| e.to_string())?;
     fs::write(&target, upsert_fracture_kaizen_section(&content, &section))
@@ -381,7 +396,10 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "target_path": target_rel,
-        "message": "PBI enriquecido con síntesis Kaizen",
+        "message": enrich_notice(
+            "PBI enriquecido con síntesis Kaizen",
+            catalog_fallback.as_deref(),
+        ),
         "evolution_verdict": verdict,
         "unclassified": unclassified,
     }))
@@ -851,7 +869,6 @@ mod tests {
     }
 
     #[test]
-    #[test]
     fn fracture_corpus_regression() {
         let catalog = shared_default_catalog();
         let cases: &[(&str, &str, &str, &str, &str, Option<&str>)] = &[
@@ -969,5 +986,86 @@ mod tests {
         let out = run(repo, &inputs).expect("enrich");
         assert_eq!(out.get("unclassified"), Some(&json!(true)));
         assert_eq!(list_orch_events(repo).len(), 1);
+    }
+
+    fn write_pbi(repo: &Path, rel: &str) {
+        let path = repo.join(rel);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, "# pbi\n").unwrap();
+    }
+
+    #[test]
+    fn enrich_uses_repo_catalog_and_announces_load_fallback() {
+        let distinct = tempfile::tempdir().expect("tempdir");
+        let repo = distinct.path();
+        setup_repo(repo);
+        let catalog_path = repo.join("SddIA/core/fracture-signatures.json");
+        fs::write(
+            &catalog_path,
+            r#"{"version":"1","signatures":[{"id":"F-KZ-REPO","consumers":["mayeuta"],"match":{"all":["kz-repo-token"]},"diagnosis":{"root_cause":"KZ-REPO-ROOT","verdict":"process_fix","proposal":"KZ-REPO-PROPOSAL-UNIQUE"}}]}"#,
+        )
+        .unwrap();
+        let rel = "docs/todos/pending/kz-repo.md";
+        write_pbi(repo, rel);
+        let out = run(
+            repo,
+            &json!({
+                "process_name": "delivery-close-cycle",
+                "error_trace": "kz-repo-token",
+                "agent_emitter": "execute-process",
+                "attempted_action": "Publicación remota",
+                "cumulo_pbi_path": rel,
+            }),
+        )
+        .expect("enrich");
+        let body = fs::read_to_string(repo.join(rel)).unwrap();
+        assert!(body.contains("KZ-REPO-PROPOSAL-UNIQUE"));
+        assert_eq!(
+            out.get("message").and_then(|v| v.as_str()),
+            Some("PBI enriquecido con síntesis Kaizen")
+        );
+
+        let missing = tempfile::tempdir().expect("tempdir");
+        let repo = missing.path();
+        setup_repo(repo);
+        let rel = "docs/todos/pending/kz-default.md";
+        write_pbi(repo, rel);
+        let trace = "SddIA pre-push: BLOCKED — delivery-close-cycle failed for feat/x";
+        let out = run(
+            repo,
+            &json!({
+                "process_name": "delivery-close-cycle",
+                "error_trace": trace,
+                "agent_emitter": "execute-process",
+                "attempted_action": "Publicación remota",
+                "cumulo_pbi_path": rel,
+            }),
+        )
+        .expect("enrich");
+        let body = fs::read_to_string(repo.join(rel)).unwrap();
+        assert!(body.contains("Recursión o re-entrada"));
+        assert_eq!(out.get("evolution_verdict").and_then(|v| v.as_str()), Some("refactor_tool"));
+
+        let broken = tempfile::tempdir().expect("tempdir");
+        let repo = broken.path();
+        setup_repo(repo);
+        fs::write(repo.join("SddIA/core/fracture-signatures.json"), "{").unwrap();
+        let rel = "docs/todos/pending/kz-broken.md";
+        write_pbi(repo, rel);
+        let out = run(
+            repo,
+            &json!({
+                "process_name": "delivery-close-cycle",
+                "error_trace": trace,
+                "agent_emitter": "execute-process",
+                "attempted_action": "Publicación remota",
+                "cumulo_pbi_path": rel,
+            }),
+        )
+        .expect("enrich");
+        let message = out.get("message").and_then(|v| v.as_str()).unwrap_or("");
+        assert!(message.contains("catálogo por defecto"), "{message}");
+        let body = fs::read_to_string(repo.join(rel)).unwrap();
+        assert!(body.contains("Recursión o re-entrada"));
     }
 }

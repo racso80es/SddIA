@@ -1,6 +1,8 @@
 //! Proceso `tracker-backlog-query` — listado vía `tracker:lifecycle` o ficheros locales.
 
-use super::super::project_binding::{self, TrackerConfig};
+#[cfg(test)]
+use super::super::project_binding;
+use super::super::project_binding::TrackerConfig;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
 use std::path::Path;

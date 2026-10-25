@@ -496,6 +496,8 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
         sealed = format!("---\n{fm_text}---\n\n{}", body.trim_start());
     }
     let mut final_path = md_path.clone();
+    // La réplica ya resuelta vive en el bucket del Core (`resolve_markdown_by_tracker_ref`
+    // no lleva `project_slug`). El slug elige el tracker remoto y la rama sync.
     if moved_to_done {
         let state_name = if canonical == "cancelled" { "cancelled" } else { "done" };
         file_tracker_adapter::dispatch(
@@ -504,7 +506,6 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
                 "request": {
                     "operation": "update_issue_state",
                     "issue_ref": issue_ref,
-                    "project_slug": project_slug,
                     "state_name": state_name,
                 }
             }),
@@ -519,7 +520,6 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
             "request": {
                 "operation": "update_issue_description",
                 "issue_ref": issue_ref,
-                "project_slug": project_slug,
                 "description": sealed,
             }
         }),

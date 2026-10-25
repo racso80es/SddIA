@@ -70,26 +70,6 @@ pub fn merge_source_tree_sha(repo: &Path) -> Result<String, String> {
     tree_sha_for_commit(repo, "HEAD")
 }
 
-fn instance_requires_hmac(repo: &Path) -> bool {
-    let path = repo.join(".SddIA/instances.json");
-    let Ok(text) = fs::read_to_string(&path) else {
-        return false;
-    };
-    let Ok(v) = serde_json::from_str::<Value>(&text) else {
-        return false;
-    };
-    v.as_object()
-        .map(|m| {
-            m.values().any(|inst| {
-                inst.get("profile")
-                    .and_then(|p| p.as_str())
-                    .map(|s| s.eq_ignore_ascii_case("multiuser"))
-                    .unwrap_or(false)
-            })
-        })
-        .unwrap_or(false)
-}
-
 fn parse_issued_at(s: &str) -> Option<DateTime<Utc>> {
     DateTime::parse_from_rfc3339(s)
         .ok()
@@ -213,7 +193,7 @@ pub fn try_write_from_ppr(repo: &Path, state: &Value, inputs: &Value) -> Result<
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("mkdir attestations: {e}"))?;
     }
-    let mut doc = json!({
+    let doc = json!({
         "schema": SCHEMA,
         "branch": branch,
         "head_sha": head_sha,
@@ -225,7 +205,6 @@ pub fn try_write_from_ppr(repo: &Path, state: &Value, inputs: &Value) -> Result<
         "correlation_id": correlation_id,
         "execution_id": execution_id,
     });
-    let _ = instance_requires_hmac(repo);
     let text = serde_json::to_string_pretty(&doc).map_err(|e| e.to_string())?;
     fs::write(&path, text).map_err(|e| format!("write attestation: {e}"))?;
     Ok(path)

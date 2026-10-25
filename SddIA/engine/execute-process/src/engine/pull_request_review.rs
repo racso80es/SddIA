@@ -217,11 +217,6 @@ pub(crate) fn is_accept_pr_block_err(err: &str) -> bool {
         || e.contains("entity revoked")
 }
 
-/// Convención F5: MERGE ausente ⇒ no `accept_pr_handoff: true` (L-HANDOFF-F5 / T-A3-NO-TRUE-PENDING).
-pub(crate) fn f5_handoff_when_merge_absent() -> (bool, &'static str) {
-    (false, "pending")
-}
-
 fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, String> {
     if is_docs_only_profile(inputs) {
         if let Some(obj) = state.as_object_mut() {
@@ -400,11 +395,21 @@ mod tests {
 
     #[test]
     fn t_a3_no_true_pending_f5_convention() {
-        let (handoff, status) = f5_handoff_when_merge_absent();
-        assert!(!handoff);
-        assert_eq!(status, "pending");
-        // MERGE ausente ⇒ never true (L-HANDOFF-F5).
-        assert_ne!((true, "pending"), (handoff, status));
+        let dir = std::env::temp_dir().join(format!("sddia-ppr-f5-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let prev = std::env::var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF").ok();
+        std::env::remove_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF");
+        let mut state = json!({ "verdict": "aprobado" });
+        let inputs = json!({ "pr_branch": "fix/kaizen-rust-compile-audit" });
+        let out = handoff_accept_pr(&dir, &inputs, &mut state).unwrap();
+        assert_ne!(out["accept_pr_handoff"], json!(true));
+        assert_ne!(state["accept_pr_handoff"], json!(true));
+        if let Some(v) = prev {
+            std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", v);
+        } else {
+            std::env::remove_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

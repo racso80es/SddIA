@@ -104,12 +104,6 @@ pub fn lab_reset_store() {
     let _ = fs::remove_file(store_path());
 }
 
-pub fn lab_audit_append(fragment: &str) {
-    let mut s = store().lock().unwrap();
-    s.audit_log.push(fragment.to_string());
-    persist_store(&s);
-}
-
 pub fn lab_register_comment(issue_ref: &str, body: &str) {
     let mut s = store().lock().unwrap();
     s.comments
