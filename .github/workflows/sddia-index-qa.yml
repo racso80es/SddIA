@@ -49,17 +49,16 @@ jobs:
         working-directory: SddIA
         run: cargo build --workspace
 
+      - name: Stage native bins
+        run: bash SddIA/scripts/qa/stage-native-debug-bins.sh
+
       - name: Upload native bins
         uses: actions/upload-artifact@v4
         with:
           name: native-debug-bins
           retention-days: 1
           if-no-files-found: error
-          path: |
-            SddIA/target/debug/sddia-qa
-            SddIA/target/debug/event-watcher
-            SddIA/target/debug/execute-process
-            SddIA/target/debug/iota-immutable-publisher
+          path: SddIA/target/native-debug-bins/
 
   wasi-build:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
