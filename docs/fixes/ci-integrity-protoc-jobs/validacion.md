@@ -23,6 +23,8 @@ git_changes:
   - docs/fixes/ci-integrity-protoc-jobs/implementation.md
   - docs/fixes/ci-integrity-protoc-jobs/execution.md
   - docs/fixes/ci-integrity-protoc-jobs/validacion.md
+  - SddIA/evolution/9ce54472-0237-4d31-beb2-02de1a63d6eb.md
+  - SddIA/evolution/Evolution_log.md
 ---
 # Validación — AUT-4
 
@@ -37,3 +39,5 @@ El descubrimiento del script incluye los 34 nombres ausentes en el run 401633806
 ## CI
 
 AC-1, AC-2 y AC-3 se ven en el workflow de GitHub Actions. Sin run verde de este head, `global` no es `APTO`.
+
+El primer `delivery-close-cycle` bloqueó la aduana evolution (`EVOL_MATERIAL_UNREGISTERED`) y aun así abrió el PR. El registro `9ce54472-0237-4d31-beb2-02de1a63d6eb` cubre `SddIA/scripts/qa/stage-native-debug-bins.sh`.
