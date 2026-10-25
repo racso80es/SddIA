@@ -366,42 +366,6 @@ fn emit_scope_fracture(repo: &Path, detail: &str) {
     );
 }
 
-fn phase_requires_git_sync(phase: &Value) -> bool {
-    if let Some(caps) = phase.get("requires_capability").and_then(|v| v.as_array()) {
-        for c in caps {
-            let id = c.get("id").and_then(|x| x.as_str()).or_else(|| c.as_str());
-            if id == Some("proc:git-sync") {
-                return true;
-            }
-        }
-    }
-    false
-}
-
-fn phase_has_git_manager_delegate(phase: &Value) -> bool {
-    if let Some(delegates) = phase.get("delegates_to").and_then(|v| v.as_array()) {
-        if delegates
-            .iter()
-            .any(|d| d.as_str() == Some("skill:git-manager"))
-        {
-            return true;
-        }
-    }
-    if let Some(providers) = phase.get("resolved_provider").and_then(|v| v.as_array()) {
-        if providers
-            .iter()
-            .any(|d| d.as_str() == Some("skill:git-manager"))
-        {
-            return true;
-        }
-    }
-    if let Some(p) = phase.get("resolved_provider").and_then(|v| v.as_str()) {
-        if p == "skill:git-manager" {
-            return true;
-        }
-    }
-    false
-}
 
 pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, String> {
     let cfg = load_paths_config(repo)?;

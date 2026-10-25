@@ -126,14 +126,9 @@ fn proc_starttime(_pid: u32) -> Option<String> {
     None
 }
 
-#[cfg(unix)]
+#[cfg(all(unix, not(target_os = "linux")))]
 fn signal_process_alive(pid: u32) -> bool {
     unsafe { libc::kill(pid as i32, 0) == 0 }
-}
-
-#[cfg(not(unix))]
-fn signal_process_alive(_pid: u32) -> bool {
-    false
 }
 
 fn liveness_supported() -> bool {
