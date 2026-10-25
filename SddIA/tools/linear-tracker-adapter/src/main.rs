@@ -104,6 +104,7 @@ fn issue_reduced(node: &Value) -> Value {
         "id": node.get("id"),
         "identifier": node.get("identifier"),
         "title": node.get("title"),
+        "description": node.get("description"),
         "state": node.pointer("/state/name"),
         "priority": node.get("priority"),
         "labels": labels,
@@ -571,7 +572,7 @@ fn run_fetch_issue(req: &Value, url: &str, token: &str) -> Result<Value, LinearF
     let inner = request_inner(req);
     let issue_ref = required_str(inner, "issue_ref")?;
     let query = r#"query FetchIssue($ref: String!) {
-  issue(id: $ref) { id identifier title priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } project { id } }
+  issue(id: $ref) { id identifier title description priority url updatedAt state { name } labels { nodes { name } } parent { identifier } children { nodes { identifier } } project { id } }
 }"#;
     let mut variables = Map::new();
     variables.insert("ref".into(), json!(issue_ref));

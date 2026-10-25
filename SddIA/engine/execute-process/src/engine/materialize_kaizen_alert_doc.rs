@@ -50,12 +50,6 @@ pub fn kaizen_alert_content_fingerprint(alert_kind: &str, implicated_files: &[St
     format!("{:x}", hasher.finalize())[..12].to_string()
 }
 
-fn kaizen_todo_path(repo: &Path, hash8: &str) -> PathBuf {
-    super::tracker_lifecycle_port::pending_dir(repo)
-        .unwrap_or_else(|_| repo.join("docs/todos/pending"))
-        .join(format!("PENDING_AUDIT_DOC_{hash8}.md"))
-}
-
 fn parse_table_cell(raw: &str, field: &str) -> Option<String> {
     let needle = format!("| `{field}` |");
     for line in raw.lines() {
@@ -248,19 +242,29 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     }
     let hash8 = kaizen_alert_doc_hash(&review_id, &files);
     let todo_name = format!("PENDING_AUDIT_DOC_{hash8}.md");
-    let pending_dir = super::tracker_lifecycle_port::pending_dir(repo)?;
-    fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
-    let target = kaizen_todo_path(repo, &hash8);
-    let rel_path = target
-        .strip_prefix(repo)
-        .unwrap_or(&target)
-        .to_string_lossy()
-        .replace('\\', "/");
-
-    if target.is_file() {
+    let listed = super::tracker_lifecycle_port::invoke(
+        repo,
+        inputs,
+        json!({"operation": "list_issues", "kind": "all"}),
+        "materialize-kaizen-alert-doc",
+    )
+    .unwrap_or(json!({ "items": [] }));
+    let already = listed
+        .get("items")
+        .and_then(|v| v.as_array())
+        .map(|items| {
+            items.iter().any(|item| {
+                item.get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .contains(&hash8)
+            })
+        })
+        .unwrap_or(false);
+    if already {
         return Ok(json!({
             "success": true,
-            "target_path": rel_path,
+            "target_path": todo_name,
             "message": "TODO Kaizen ya existente (idempotente)",
             "hash8": hash8,
         }));
@@ -305,7 +309,21 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         &impacts_cell,
         &hits_md,
     );
-    fs::write(&target, body).map_err(|e| e.to_string())?;
+    let created = super::tracker_lifecycle_port::invoke(
+        repo,
+        inputs,
+        json!({
+            "operation": "create_issue",
+            "title": todo_name,
+            "description": body,
+        }),
+        "materialize-kaizen-alert-doc",
+    )?;
+    let rel_path = created
+        .get("artifact_path")
+        .and_then(|v| v.as_str())
+        .unwrap_or(todo_name.as_str())
+        .to_string();
 
     Ok(json!({
         "success": true,

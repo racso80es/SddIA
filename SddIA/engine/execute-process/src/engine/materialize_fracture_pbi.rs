@@ -2,13 +2,12 @@
 
 use crate::core::fracture_pbi::{
     display_filename_fix, display_filename_regression,
-    resolve_materialize, resolve_todos_pending_rel, scan_fracture_ledger,
+    resolve_materialize, scan_fracture_ledger,
     MaterializeReason,
 };
 use crate::core::fracture_signatures::load_fracture_catalog;
 use chrono::Utc;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -221,10 +220,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let trace_hash = fracture_trace_hash(&error_trace);
     let fracture_process = slugify_process_name(&process_name);
 
-    let pending_rel = resolve_todos_pending_rel(repo)?;
-    let pending_dir = repo.join(&pending_rel);
-    fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
-
     let scan = scan_fracture_ledger(repo)?;
     emit_resolver_telemetry(repo, &scan);
     let resolution = resolve_materialize(&scan, &trace_hash, &fracture_process);
@@ -283,7 +278,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                     "trace_hash": trace_hash,
                 }));
             }
-            let target = pending_dir.join(&filename);
             let body = build_pbi_body(
                 &process_name,
                 &error_trace,
@@ -302,21 +296,21 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 },
                 friction_id.as_deref(),
             );
-            let _ = file_tracker_adapter::dispatch(
+            let created = super::tracker_lifecycle_port::invoke(
                 repo,
-                &json!({
-                    "request": {
-                        "operation": "create_issue",
-                        "title": filename,
-                        "description": body,
-                    }
+                inputs,
+                json!({
+                    "operation": "create_issue",
+                    "title": filename,
+                    "description": body,
                 }),
+                "materialize-fracture-pbi",
             )?;
-            let rel_path = target
-                .strip_prefix(repo)
-                .unwrap_or(&target)
-                .to_string_lossy()
-                .replace('\\', "/");
+            let rel_path = created
+                .get("artifact_path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             return Ok(json!({
                 "success": true,
                 "target_path": rel_path,
@@ -357,7 +351,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
             "trace_hash": trace_hash,
         }));
     }
-    let target = pending_dir.join(&filename);
     let document_id = format!("PBI-FIX-FRACTURE-{trace_hash}");
     let body = build_pbi_body(
         &process_name,
@@ -373,22 +366,21 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         None,
         friction_id.as_deref(),
     );
-    let _ = file_tracker_adapter::dispatch(
+    let created = super::tracker_lifecycle_port::invoke(
         repo,
-        &json!({
-            "request": {
-                "operation": "create_issue",
-                "title": filename,
-                "description": body,
-            }
+        inputs,
+        json!({
+            "operation": "create_issue",
+            "title": filename,
+            "description": body,
         }),
+        "materialize-fracture-pbi",
     )?;
-
-    let rel_path = target
-        .strip_prefix(repo)
-        .unwrap_or(&target)
-        .to_string_lossy()
-        .replace('\\', "/");
+    let rel_path = created
+        .get("artifact_path")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     Ok(json!({
         "success": true,

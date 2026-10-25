@@ -13,16 +13,19 @@ use std::fs;
 use std::path::Path;
 
 fn file_sink(repo: &Path, payload: &Value) -> Result<bool, String> {
-    super::super::tracker_lifecycle_port::manifest_provider_is_local(repo, payload)
+    Ok(matches!(
+        super::super::tracker_lifecycle_port::resolve_target(repo, payload)?,
+        super::super::tracker_lifecycle_port::LifecycleTarget::File
+    ))
 }
 
 pub(crate) fn lifecycle_tool_name_for(repo: &Path, inputs: &Value) -> Result<String, String> {
-    if super::super::tracker_lifecycle_port::manifest_provider_is_local(repo, inputs)? {
-        return Ok("file-tracker-adapter".into());
-    }
-    match super::super::project_binding::tracker_config_for_inputs(repo, inputs)? {
-        Some(_) => lifecycle_tool_name(repo),
-        None => Ok("file-tracker-adapter".into()),
+    match super::super::tracker_lifecycle_port::resolve_target(repo, inputs)? {
+        super::super::tracker_lifecycle_port::LifecycleTarget::Remote { tool } => Ok(tool),
+        super::super::tracker_lifecycle_port::LifecycleTarget::File
+        | super::super::tracker_lifecycle_port::LifecycleTarget::Unconfigured => {
+            Ok("file-tracker-adapter".into())
+        }
     }
 }
 

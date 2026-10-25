@@ -93,49 +93,29 @@ fn occurred_not_after_stored(stored: &str, incoming: &str) -> bool {
     }
 }
 
-fn scan_tracker_markdowns(repo: &Path) -> Vec<PathBuf> {
-    super::super::tracker_lifecycle_port::management_markdowns(repo).unwrap_or_default()
-}
-
 pub fn resolve_markdown_by_tracker_ref(repo: &Path, issue_ref: &str) -> Option<PathBuf> {
-    let want = issue_ref.trim();
-    for path in scan_tracker_markdowns(repo) {
-        let raw = match fs::read_to_string(&path) {
-            Ok(x) => x,
-            Err(_) => continue,
-        };
-        let fm = match parse_fm(&raw) {
-            Ok(x) => x,
-            Err(_) => continue,
-        };
-        if fm_str(&fm, "tracker_ref").as_deref() == Some(want) {
-            return Some(path);
-        }
-    }
-    None
+    let body = file_tracker_adapter::dispatch(
+        repo,
+        &json!({
+            "request": { "operation": "fetch_issue", "issue_ref": issue_ref }
+        }),
+    )
+    .ok()?;
+    let rel = body.get("artifact_path").and_then(|v| v.as_str())?;
+    Some(repo.join(rel))
 }
 
 fn resolve_hu_ref_by_tracker(repo: &Path, parent_tracker: &str) -> Option<String> {
-    let dir = super::super::tracker_lifecycle_port::stories_dir(repo).ok()?;
-    let Ok(rd) = fs::read_dir(&dir) else {
-        return None;
-    };
-    for ent in rd.filter_map(|e| e.ok()) {
-        let p = ent.path();
-        if p.extension().and_then(|x| x.to_str()) != Some("md") {
-            continue;
-        }
-        let raw = fs::read_to_string(&p).ok()?;
-        let fm = parse_fm(&raw).ok()?;
-        if fm_str(&fm, "tracker_ref").as_deref() == Some(parent_tracker) {
-            let rel = match p.strip_prefix(repo) {
-                Ok(x) => x.to_string_lossy().replace('\\', "/"),
-                Err(_) => p.to_string_lossy().replace('\\', "/"),
-            };
-            return Some(rel);
-        }
-    }
-    None
+    let body = file_tracker_adapter::dispatch(
+        repo,
+        &json!({
+            "request": { "operation": "fetch_issue", "issue_ref": parent_tracker }
+        }),
+    )
+    .ok()?;
+    body.get("artifact_path")
+        .and_then(|v| v.as_str())
+        .map(str::to_string)
 }
 
 fn linear_priority_to_fm(p: i64) -> &'static str {
@@ -515,19 +495,35 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
         let (fm_text, _) = split_frontmatter(&sealed)?;
         sealed = format!("---\n{fm_text}---\n\n{}", body.trim_start());
     }
-    fs::write(&md_path, &sealed).map_err(|e| e.to_string())?;
-
     let mut final_path = md_path.clone();
     if moved_to_done {
-        let done_dir = super::super::tracker_lifecycle_port::done_dir(repo)?;
-        fs::create_dir_all(&done_dir).map_err(|e| e.to_string())?;
-        let fname = md_path.file_name().ok_or("sin nombre")?;
-        let target = done_dir.join(fname);
-        if target != md_path {
-            fs::rename(&md_path, &target).map_err(|e| e.to_string())?;
-            final_path = target;
+        let state_name = if canonical == "cancelled" { "cancelled" } else { "done" };
+        file_tracker_adapter::dispatch(
+            repo,
+            &json!({
+                "request": {
+                    "operation": "update_issue_state",
+                    "issue_ref": issue_ref,
+                    "project_slug": project_slug,
+                    "state_name": state_name,
+                }
+            }),
+        )?;
+        if let Some(moved) = resolve_markdown_by_tracker_ref(repo, &issue_ref) {
+            final_path = moved;
         }
     }
+    file_tracker_adapter::dispatch(
+        repo,
+        &json!({
+            "request": {
+                "operation": "update_issue_description",
+                "issue_ref": issue_ref,
+                "project_slug": project_slug,
+                "description": sealed,
+            }
+        }),
+    )?;
 
     let rel = final_path
         .strip_prefix(repo)
@@ -677,12 +673,10 @@ mod tests {
             fm_str(&parse_fm(&raw).unwrap(), "tracker_ref").as_deref(),
             Some("LAB-MD-RESOLVE-SMOKE")
         );
-        let n = scan_tracker_markdowns(&repo).len();
         assert!(
             resolve_markdown_by_tracker_ref(&repo, "LAB-MD-RESOLVE-SMOKE").is_some(),
-            "repo={} scan_count={}",
-            repo.display(),
-            n
+            "repo={}",
+            repo.display()
         );
         let _ = fs::remove_file(path);
     }

@@ -27,6 +27,7 @@ struct Layout {
     root: PathBuf,
     pending: String,
     done: String,
+    stories: String,
 }
 
 fn layout(repo: &Path, req: &Value) -> Result<Layout, String> {
@@ -42,7 +43,22 @@ fn layout(repo: &Path, req: &Value) -> Result<Layout, String> {
         let done = cumulo_todo(repo, "done").unwrap_or_else(|| "docs/todos/done".into());
         (repo.to_path_buf(), pending, done)
     };
-    Ok(Layout { root, pending, done })
+    let stories = stories_rel(&pending);
+    Ok(Layout {
+        root,
+        pending,
+        done,
+        stories,
+    })
+}
+
+fn stories_rel(pending: &str) -> String {
+    let parent = Path::new(pending)
+        .parent()
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "docs/todos".into());
+    format!("{parent}/historias")
 }
 
 fn project_layout(repo: &Path, slug: &str) -> Result<(PathBuf, String, String), String> {
@@ -108,7 +124,7 @@ fn find_by_ref(layout: &Layout, issue_ref: &str) -> Option<PathBuf> {
         let p = layout.root.join(issue_ref.trim_start_matches("./"));
         return p.is_file().then_some(p);
     }
-    for rel in [&layout.pending, &layout.done] {
+    for rel in [&layout.pending, &layout.done, &layout.stories] {
         let dir = layout.root.join(rel);
         let Ok(rd) = fs::read_dir(&dir) else {
             continue;
@@ -200,9 +216,15 @@ fn fetch_issue(repo: &Path, req: &Value) -> Result<Value, String> {
     let path = find_by_ref(&layout, issue_ref).ok_or_else(|| format!("no está en el bucket: {issue_ref}"))?;
     let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
     let fm = frontmatter(&text).unwrap_or(Value::Null);
+    let artifact_path = path
+        .strip_prefix(&layout.root)
+        .unwrap_or(&path)
+        .to_string_lossy()
+        .replace('\\', "/");
     Ok(json!({
         "issue_ref": issue_ref,
         "description": text,
+        "artifact_path": artifact_path,
         "title": fm.get("title").and_then(|v| v.as_str()).unwrap_or(issue_ref),
         "state": fm.get("status").and_then(|v| v.as_str()).unwrap_or("pending"),
     }))
@@ -215,7 +237,14 @@ fn list_issues(repo: &Path, req: &Value) -> Result<Value, String> {
         .and_then(|v| v.as_str())
         .unwrap_or("all");
     let mut items = Vec::new();
-    for rel in [&layout.pending, &layout.done] {
+    let buckets: Vec<&String> = if kind == "hu" {
+        vec![&layout.stories, &layout.pending, &layout.done]
+    } else if kind == "all" {
+        vec![&layout.pending, &layout.done, &layout.stories]
+    } else {
+        vec![&layout.pending, &layout.done]
+    };
+    for rel in buckets {
         let dir = layout.root.join(rel);
         let Ok(rd) = fs::read_dir(&dir) else {
             continue;

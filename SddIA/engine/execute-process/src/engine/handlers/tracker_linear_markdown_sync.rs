@@ -1,12 +1,9 @@
 //! Proceso `tracker-description-sync` — volcado de cuerpo a la descripción del ítem.
 
-use super::super::capsules::invoke_tool_for_process;
-use crate::core::parser::load_frontmatter_yaml;
 use crate::envelope::OrchestratorEnvelope;
+use std::path::Path;
 use regex::Regex;
 use serde_json::{json, Value};
-use std::fs;
-use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
@@ -36,105 +33,120 @@ fn scrub_secrets(raw: &str) -> String {
     out
 }
 
-fn tracker_ref_from_md(path: &Path) -> Option<String> {
-    let fm = load_frontmatter_yaml(path).ok()?;
-    fm.get("tracker_ref")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-}
-
-fn scan_dirs(repo: &Path) -> Vec<PathBuf> {
-    super::super::tracker_lifecycle_port::management_markdowns(repo).unwrap_or_default()
-}
-
-fn sync_one(repo: &Path, md_path: &Path, issue_ref: &str, project_id: Option<&str>) -> Result<Value, String> {
-    let raw = fs::read_to_string(md_path).map_err(|e| e.to_string())?;
-    let description = scrub_secrets(&raw);
-    let rel = md_path
-        .strip_prefix(repo)
-        .unwrap_or(md_path)
-        .to_string_lossy()
-        .replace('\\', "/");
-    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
-    let tool_out = invoke_tool_for_process(
-        repo,
-        &tool,
-        &json!({
-            "request": {
+pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
+    let tc = super::super::project_binding::tracker_config_for_inputs(repo, process_inputs)?;
+    if let (Some(issue_ref), Some(body)) = (
+        str_field(process_inputs, "tracker_ref").or_else(|| str_field(process_inputs, "issue_ref")),
+        str_field(process_inputs, "body"),
+    ) {
+        let description = scrub_secrets(&body);
+        let tool_out = super::super::tracker_lifecycle_port::invoke(
+            repo,
+            process_inputs,
+            json!({
                 "operation": "update_issue_description",
                 "issue_ref": issue_ref,
                 "description": description,
-                "project_id": project_id,
-            }
-        }),
-        Some("tracker-description-sync"),
-    )?;
-    Ok(json!({
-        "markdown_path": rel,
-        "issue_ref": issue_ref,
-        "description_bytes": description.len(),
-        "tool": tool_out,
-    }))
-}
-
-pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
-    let tool_name = super::tracker_stamp::lifecycle_tool_name_for(repo, process_inputs)?;
-    if tool_name == "file-tracker-adapter" {
-        let fetched = file_tracker_adapter::dispatch(repo, &json!({
-            "request": {
-                "operation": "fetch_issue",
-                "project_slug": process_inputs.get("project_slug"),
-                "issue_ref": process_inputs.get("issue_ref").or_else(|| process_inputs.get("markdown_path")),
-            }
-        }));
+                "project_id": tc.as_ref().and_then(|c| c.project_id.clone()),
+            }),
+            "tracker-description-sync",
+        )?;
         return Ok(OrchestratorEnvelope {
             success: true,
             status_code: 0,
             data: Some(json!({
-                "synced_count": if fetched.is_ok() { 1 } else { 0 },
-                "synced": [],
+                "synced_count": 1,
+                "synced": [{ "issue_ref": issue_ref, "tool": tool_out }],
                 "skipped": [],
-                "provider": "file",
             })),
             error: None,
             execution_report: None,
             exit_code: 0,
         });
     }
-    let tc = super::super::project_binding::tracker_config_for_inputs(repo, process_inputs)?;
     let mut synced = Vec::new();
     let mut skipped = Vec::new();
+    let project_id = tc.as_ref().and_then(|c| c.project_id.clone());
+    let team_key = tc.as_ref().map(|c| c.team_key.clone());
 
-    if let (Some(md_rel), Some(issue_ref)) = (
-        str_field(process_inputs, "markdown_path"),
-        str_field(process_inputs, "issue_ref"),
-    ) {
-        let md_path = repo.join(md_rel.trim_start_matches("./"));
-        if !md_path.is_file() {
-            return Err(format!("markdown_path no encontrado: {}", md_path.display()));
+    let push_one = |issue_ref: &str,
+                    synced: &mut Vec<Value>,
+                    skipped: &mut Vec<Value>|
+     -> Result<(), String> {
+        let fetched = super::super::tracker_lifecycle_port::invoke(
+            repo,
+            process_inputs,
+            json!({
+                "operation": "fetch_issue",
+                "issue_ref": issue_ref,
+                "project_id": project_id,
+            }),
+            "tracker-description-sync",
+        );
+        let fetched = match fetched {
+            Ok(v) => v,
+            Err(e) => {
+                skipped.push(json!({"issue_ref": issue_ref, "error": e}));
+                return Ok(());
+            }
+        };
+        let Some(desc) = fetched.get("description").and_then(|v| v.as_str()) else {
+            skipped.push(json!({"issue_ref": issue_ref, "error": "sin description"}));
+            return Ok(());
+        };
+        let description = scrub_secrets(desc);
+        match super::super::tracker_lifecycle_port::invoke(
+            repo,
+            process_inputs,
+            json!({
+                "operation": "update_issue_description",
+                "issue_ref": issue_ref,
+                "description": description,
+                "project_id": project_id,
+            }),
+            "tracker-description-sync",
+        ) {
+            Ok(tool) => synced.push(json!({"issue_ref": issue_ref, "tool": tool})),
+            Err(e) => skipped.push(json!({"issue_ref": issue_ref, "error": e})),
         }
-        synced.push(sync_one(repo, &md_path, &issue_ref, tc.as_ref().and_then(|c| c.project_id.as_deref()))?);
+        Ok(())
+    };
+
+    if let Some(issue_ref) = str_field(process_inputs, "issue_ref")
+        .or_else(|| str_field(process_inputs, "markdown_path"))
+        .or_else(|| str_field(process_inputs, "tracker_ref"))
+    {
+        push_one(&issue_ref, &mut synced, &mut skipped)?;
     } else {
         let sync_all = process_inputs
             .get("sync_all")
             .and_then(|v| v.as_bool())
             .unwrap_or(true);
         if !sync_all {
-            return Err("sync_all=false sin markdown_path+issue_ref".into());
+            return Err("sync_all=false sin tracker_ref".into());
         }
-        for md in scan_dirs(repo) {
-            let Some(issue_ref) = tracker_ref_from_md(&md) else {
-                continue;
-            };
-            match sync_one(repo, &md, &issue_ref, tc.as_ref().and_then(|c| c.project_id.as_deref())) {
-                Ok(v) => synced.push(v),
-                Err(e) => skipped.push(json!({
-                    "markdown_path": md.strip_prefix(repo).unwrap_or(&md).to_string_lossy().replace('\\', "/"),
-                    "issue_ref": issue_ref,
-                    "error": e,
-                })),
+        let listed = super::super::tracker_lifecycle_port::invoke(
+            repo,
+            process_inputs,
+            json!({
+                "operation": "list_issues",
+                "team_key": team_key,
+                "project_id": project_id,
+                "kind": "all",
+            }),
+            "tracker-description-sync",
+        )?;
+        if let Some(items) = listed.get("items").and_then(|v| v.as_array()) {
+            for item in items {
+                let Some(issue_ref) = item
+                    .get("issue_ref")
+                    .or_else(|| item.get("identifier"))
+                    .or_else(|| item.get("path"))
+                    .and_then(|v| v.as_str())
+                else {
+                    continue;
+                };
+                push_one(issue_ref, &mut synced, &mut skipped)?;
             }
         }
     }
