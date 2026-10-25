@@ -6,6 +6,7 @@ branch: fix/wasm-linear-tracker-auth-fallback
 global: APTO
 pbi_archived: false
 tracker_ref: AUT-11
+pr_url: https://github.com/racso80es/SddIA/pull/391
 checks:
   AC-1: APTO
   AC-2: APTO
