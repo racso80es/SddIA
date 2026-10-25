@@ -10,6 +10,20 @@ main() {
     exit 0
   fi
 
+  if tracker_provider_is_linear; then
+    local blocked
+    blocked=$(staged_added_todos_bucket_paths || true)
+    if [[ -n "${blocked//[[:space:]]/}" ]]; then
+      echo "SddIA pre-commit: BLOCKED — tracker.provider=linear prohíbe alta de ficheros en docs/todos/{pending,done}/" >&2
+      while IFS= read -r path; do
+        [[ -n "$path" ]] || continue
+        echo "  - $path" >&2
+      done <<< "$blocked"
+      linear_todos_intake_blocked_message >&2
+      exit 1
+    fi
+  fi
+
   resolve_orchestrator
 
   if ! "$SDDIA_EXECUTE_PROCESS_BIN" --verify-process-integrity; then

@@ -27,6 +27,94 @@ GENOME_PREFIXES=(
   ".SddIA/"
 )
 
+project_manifest_path() {
+  printf '%s/.SddIA/project.md' "$REPO"
+}
+
+# Devuelve "linear" si el manifiesto declara tracker.provider: linear; vacío si no aplica.
+manifest_tracker_provider() {
+  local manifest="$1"
+  [[ -f "$manifest" ]] || return 0
+  python3 - "$manifest" <<'PY' || return 0
+import re, sys
+text = open(sys.argv[1], encoding="utf-8").read()
+m = re.search(
+    r"^tracker:\s*\n((?:[ \t].*\n)*)",
+    text,
+    re.MULTILINE,
+)
+if not m:
+    sys.exit(0)
+block = m.group(1)
+pm = re.search(r"^\s*provider:\s*(\S+)\s*$", block, re.MULTILINE)
+if pm:
+    print(pm.group(1).strip().strip("\"'"))
+PY
+}
+
+tracker_provider_is_linear() {
+  local provider
+  provider=$(manifest_tracker_provider "$(project_manifest_path)" || true)
+  [[ "$provider" == "linear" ]]
+}
+
+# Rutas docs/todos/{pending,done} según docs_layout del manifiesto (defaults Core-self).
+manifest_todos_bucket_prefixes() {
+  local manifest="$1"
+  python3 - "$manifest" <<'PY' || true
+import re, sys
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+pending = "docs/todos/pending"
+done = "docs/todos/done"
+m = re.search(r"^docs_layout:\s*\n((?:[ \t].*\n)*)", text, re.MULTILINE)
+if m:
+    block = m.group(1)
+    for key, default in (("todos_pending", pending), ("todos_done", done)):
+        km = re.search(rf"^\s*{key}:\s*(\S+)\s*$", block, re.MULTILINE)
+        if km:
+            if key == "todos_pending":
+                pending = km.group(1).strip().strip("\"'")
+            else:
+                done = km.group(1).strip().strip("\"'")
+for p in (pending, done):
+    p = p.rstrip("/")
+    print(p)
+PY
+}
+
+path_under_todos_bucket() {
+  local path="$1"
+  local manifest prefixes prefix
+  [[ -n "$path" ]] || return 1
+  path="${path//\\//}"
+  manifest=$(project_manifest_path)
+  while IFS= read -r prefix; do
+    [[ -n "$prefix" ]] || continue
+    prefix="${prefix%/}"
+    if [[ "$path" == "$prefix"/* || "$path" == "$prefix" ]]; then
+      return 0
+    fi
+  done < <(manifest_todos_bucket_prefixes "$manifest")
+  return 1
+}
+
+staged_added_todos_bucket_paths() {
+  local path
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    if path_under_todos_bucket "$path"; then
+      printf '%s\n' "$path"
+    fi
+  done < <(git_run diff --cached --name-only --diff-filter=A)
+}
+
+linear_todos_intake_blocked_message() {
+  cat <<'EOF'
+BLOCKED — tracker.provider=linear prohíbe alta de ficheros en docs/todos/{pending,done}/.
+Registra el backlog en Linear (forge-pbi / refine-pbi / linear-tracker-adapter --prefer-native).
+EOF
+}
+
 path_is_passive() {
   local path="$1"
   [[ -n "$path" ]] || return 1
