@@ -8,7 +8,7 @@ use chrono::Utc;
 use serde_json::{json, Value};
 use serde_yaml::Value as YamlValue;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use uuid::Uuid;
 
 const PROCESS_PBI: &str = "refine-pbi";
@@ -51,21 +51,6 @@ fn fm_str(fm: &YamlValue, key: &str) -> Option<String> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string)
-}
-
-fn seal_markdown(raw: &str, patch: &YamlValue) -> Result<String, String> {
-    let (fm_text, body) = split_frontmatter(raw)?;
-    let mut fm: YamlValue = serde_yaml::from_str(&fm_text).map_err(|e| e.to_string())?;
-    if let Some(map) = patch.as_mapping() {
-        for (k, v) in map {
-            if let Some(key) = k.as_str() {
-                fm[key] = v.clone();
-            }
-        }
-    }
-    let new_fm = serde_yaml::to_string(&fm).map_err(|e| e.to_string())?;
-    let body = body.trim_start_matches('\n');
-    Ok(format!("---\n{new_fm}---\n\n{body}"))
 }
 
 fn mayeuta_touch_body(body: &str) -> String {
@@ -428,6 +413,7 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
 mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
+    use std::path::PathBuf;
     use std::sync::{Mutex, OnceLock};
 
     fn lab_guard() -> std::sync::MutexGuard<'static, ()> {

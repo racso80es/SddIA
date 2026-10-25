@@ -357,10 +357,6 @@ fn registered_roots(projects_dir: &Path, except_slug: &str) -> Result<Vec<PathBu
     Ok(out)
 }
 
-fn assert_git_isolation(project_root: &Path, others: &[PathBuf]) -> Result<(), String> {
-    assert_git_isolation_for_slug(project_root, others, None)
-}
-
 /// L-ISOLATION: al enlazar `core`, raíces relativas de fixtures en el índice no
 /// participan en la comparación (relativa↔absoluta produce falsos positivos).
 fn assert_git_isolation_for_slug(
