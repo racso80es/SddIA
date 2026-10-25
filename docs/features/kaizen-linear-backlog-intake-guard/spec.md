@@ -2,7 +2,6 @@
 feature_name: kaizen-linear-backlog-intake-guard
 created: "2026-10-25"
 process: feature
-tracker_ref: AUT-14
 ---
 
 # Spec — intake guard linear

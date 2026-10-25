@@ -2,8 +2,6 @@
 feature_name: kaizen-linear-backlog-intake-guard
 created: "2026-10-25"
 process: feature
-tracker_ref: AUT-14
-parent_ref: AUT-5
 persist_ref: docs/features/kaizen-linear-backlog-intake-guard
 branch_name: feat/kaizen-linear-backlog-intake-guard
 document_id: PBI-KAIZEN-LINEAR-BACKLOG-INTAKE-GUARD
@@ -11,6 +9,8 @@ uuid: "4e81d3a2-7c90-4b15-9f23-6a18c40e5b91"
 ---
 
 # Objetivos — kaizen-linear-backlog-intake-guard
+
+Linear: **AUT-14** (hijo de AUT-5). `tracker_ref` en frontmatter solo en `validacion.md` hasta cierre (pre-push `done_gate`).
 
 ## Misión
 
