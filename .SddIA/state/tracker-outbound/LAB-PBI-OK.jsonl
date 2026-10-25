@@ -6,3 +6,11 @@
 {"event_id":"85f1c94d-6672-45c8-9778-64eb8daf01c7","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-23T20:21:04Z","operation":"create_comment","source_process":"tracker-stamp"}
 {"event_id":"642d2c41-e0ac-494c-af3f-bb491ce2c3b3","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-23T20:21:06Z","operation":"update_issue_state","source_process":"tracker-stamp"}
 {"event_id":"9e045c99-0cae-4cb5-91d4-9fc2c0a734e1","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-23T20:21:06Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"7521fab1-8116-4b5f-90d4-45b66ed2ff48","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-25T10:56:47Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"54387c68-14a2-4928-8b43-b77d5cf5f783","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-25T10:56:47Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"a08da782-8086-4254-8dce-887606a98230","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-25T10:56:48Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"491e6a05-e24e-4feb-8508-b1fb867332d2","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-25T10:56:48Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"d678b31e-a55a-468e-8d95-62aeaed7ce30","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-25T10:56:52Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"123f8399-4014-433b-ab32-d04f9b58e15d","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-25T10:56:52Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"067ef758-6356-4678-ba63-86bcda07d738","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-25T10:56:57Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"2df9c64b-26d8-4c51-9f57-0db3c7ae20c2","issue_ref":"LAB-PBI-OK","occurred_at":"2026-10-25T10:56:58Z","operation":"create_comment","source_process":"tracker-stamp"}
