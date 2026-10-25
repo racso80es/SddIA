@@ -1,4 +1,5 @@
 ---
+
 feature_name: pr-merged-witness-store
 created: "2026-10-24"
 process: bug-fix
@@ -9,8 +10,8 @@ phases:
     title: El fallback no pisa la delegación
   - id: T3
     title: tracker_ref en el merge de ciclo
+execution_id: "f0d1f9df-997e-4739-b698-2771dc57867a"
 ---
-
 # Plan
 
 | Id | Tarea | Hecho |

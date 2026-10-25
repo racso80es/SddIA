@@ -1,14 +1,14 @@
 ---
+
 feature_name: pr-merged-witness-store
 created: "2026-10-24"
 process: bug-fix
 branch_name: fix/pr-merged-witness-store
 persist_ref: /home/racso/Proyectos/SddIA/docs/fixes/pr-merged-witness-store
-execution_id: "3c55315d-5753-4655-85df-49b9e199c4c1"
 tracker_ref: MAN-23
 document_id: PBI-FIX-PR-MERGED-WITNESS-STORE
+execution_id: "f0d1f9df-997e-4739-b698-2771dc57867a"
 ---
-
 # Objetivos — pr-merged-witness-store
 
 ## Misión
