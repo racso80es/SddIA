@@ -3,6 +3,7 @@ feature_name: kaizen-linear-backlog-intake-guard
 branch: feat/kaizen-linear-backlog-intake-guard
 global: NO_APTO
 tracker_ref: AUT-14
+pr_url: https://github.com/racso80es/SddIA/pull/389
 checks:
   AC-1: APTO
   AC-2: APTO
@@ -19,6 +20,7 @@ git_changes:
   - SddIA/scripts/qa/git-hooks/pre_commit_gate.sh
   - SddIA/scripts/qa/test-linear-todos-intake-gate.sh
   - docs/features/kaizen-linear-backlog-intake-guard/
+  - SddIA/evolution/d48f4421-71c8-4dce-b0b7-4a814d047a9b.md
 pbi_archived: false
 ---
 
