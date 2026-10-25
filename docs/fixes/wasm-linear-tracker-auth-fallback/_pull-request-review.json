@@ -1,0 +1,9 @@
+{
+  "pr_branch": "fix/wasm-linear-tracker-auth-fallback",
+  "pr_id_or_path": "391",
+  "correlation_id": "d5d695d5-cee6-4f9c-b080-f9823e5989df",
+  "persist_ref": "docs/fixes/wasm-linear-tracker-auth-fallback",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/391",
+  "code_diff": "origin/main...HEAD",
+  "tasks_path": "docs/todos"
+}

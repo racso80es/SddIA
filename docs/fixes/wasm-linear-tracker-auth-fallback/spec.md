@@ -1,4 +1,5 @@
 ---
+
 feature_name: wasm-linear-tracker-auth-fallback
 created: "2026-10-25"
 process: bug-fix
@@ -8,6 +9,7 @@ document_id: PBI-ab4c1ddb
 uuid: ab4c1ddb-0a29-446d-b331-9ae9f6689467
 branch_name: fix/wasm-linear-tracker-auth-fallback
 persist_ref: docs/fixes/wasm-linear-tracker-auth-fallback
+execution_id: "480762f7-058e-410d-841c-d3750e90b3bb"
 ---
 # Spec — AUT-11 (WASM linear-tracker-adapter sin `LINEAR_API_TOKEN`)
 

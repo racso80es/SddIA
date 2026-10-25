@@ -1,4 +1,5 @@
 ---
+
 feature_name: wasm-linear-tracker-auth-fallback
 created: "2026-10-25"
 process: bug-fix
@@ -18,6 +19,7 @@ git_changes:
   - docs/fixes/wasm-linear-tracker-auth-fallback/
   - SddIA/evolution/7c4e9f12-8a3b-4d5e-9f0a-1b2c3d4e5f60.md
   - SddIA/evolution/Evolution_log.md
+execution_id: "480762f7-058e-410d-841c-d3750e90b3bb"
 ---
 # Validación — AUT-11
 

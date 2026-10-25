@@ -1,9 +1,11 @@
 ---
+
 feature_name: wasm-linear-tracker-auth-fallback
 created: "2026-10-25"
 process: bug-fix
 tracker_ref: AUT-11
 branch_name: fix/wasm-linear-tracker-auth-fallback
+execution_id: "480762f7-058e-410d-841c-d3750e90b3bb"
 ---
 # Ejecución — AUT-11
 
