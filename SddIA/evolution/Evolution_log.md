@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `316703fc-3d9c-43f6-8b7f-fd68f812dbe2` | 2026-10-25 | El refinamiento linear vuelve a sellar el markdown local y la descripción del issue. | CANONICO | `SddIA/evolution/316703fc-3d9c-43f6-8b7f-fd68f812dbe2.md` |
 | `5350b4ce-e44c-4a90-90a0-746a5a40a7d9` | 2026-10-25 | MAN-21. El resolvedor elige la implementación de tracker:lifecycle según tracker.provider. | CANONICO | `SddIA/evolution/5350b4ce-e44c-4a90-90a0-746a5a40a7d9.md` |
 | `9ce54472-0237-4d31-beb2-02de1a63d6eb` | 2026-10-25 | AUT-4: el artefacto de CI publica los binarios que verify-compiled-capsules exige. | CANONICO | `SddIA/evolution/9ce54472-0237-4d31-beb2-02de1a63d6eb.md` |
 | `24e1818c-7d30-48e7-b2ec-526ff235c254` | 2026-10-24 | El alta de PullRequest_Merged inserta la fila, el fallback conserva la delegación y el merge de ciclo lleva tracker_ref. | CANONICO | `SddIA/evolution/24e1818c-7d30-48e7-b2ec-526ff235c254.md` |
