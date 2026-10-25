@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `3fbd8870-5fac-4234-a5c9-5e9d1a678cf3` | 2026-10-25 | AUT-13: poda por diff y menos recompilación en sddia-index-qa. | CANONICO | `SddIA/evolution/3fbd8870-5fac-4234-a5c9-5e9d1a678cf3.md` |
 | `2c699f38-53a6-41a6-a9c2-2d2b74661b24` | 2026-10-25 | AUT-3 higiene de compilados Rust en daemons y tools | CANONICO | `SddIA/evolution/2c699f38-53a6-41a6-a9c2-2d2b74661b24.md` |
 | `316703fc-3d9c-43f6-8b7f-fd68f812dbe2` | 2026-10-25 | El refinamiento linear vuelve a sellar el markdown local y la descripción del issue. | CANONICO | `SddIA/evolution/316703fc-3d9c-43f6-8b7f-fd68f812dbe2.md` |
 | `daa1a1d8-546e-404e-872d-627587d45e05` | 2026-10-25 | AUT-5: frontmatter tracker_column y refinement en forge, refine y tracker-stamp. | CANONICO | `SddIA/evolution/daa1a1d8-546e-404e-872d-627587d45e05.md` |
