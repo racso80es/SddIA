@@ -4,7 +4,6 @@ feature_name: wasm-linear-tracker-auth-fallback
 created: "2026-10-25"
 process: bug-fix
 base: main
-tracker_ref: AUT-11
 document_id: PBI-ab4c1ddb
 uuid: ab4c1ddb-0a29-446d-b331-9ae9f6689467
 branch_name: fix/wasm-linear-tracker-auth-fallback
