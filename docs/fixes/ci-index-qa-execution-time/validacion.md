@@ -6,6 +6,7 @@ branch: fix/ci-index-qa-execution-time
 global: PENDIENTE-CI
 pbi_archived: false
 tracker_ref: AUT-13
+pr_url: https://github.com/racso80es/SddIA/pull/386
 checks:
   AC-1: APTO
   AC-2: APTO
