@@ -5,7 +5,7 @@ use sddia_daemon_runtime::{find_repo_root, load_bus_topology, DaemonRuntime};
 use std::env;
 use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
-use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
+use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};

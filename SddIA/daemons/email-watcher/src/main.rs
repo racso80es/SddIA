@@ -192,6 +192,7 @@ fn load_state(repo: &Path) -> EmailWatcherState {
     }
 }
 
+#[cfg(test)]
 fn load_last_uid(repo: &Path) -> u32 {
     load_state(repo).last_uid
 }

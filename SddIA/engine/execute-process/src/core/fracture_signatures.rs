@@ -355,7 +355,7 @@ pub struct DccMatchContext<'a> {
 }
 
 pub fn signature_matches_mayeuta(
-    catalog: &FractureCatalog,
+    _catalog: &FractureCatalog,
     sig: &SignatureEntry,
     surfaces: &MatchSurfaces,
     ctx: &DccMatchContext<'_>,
@@ -375,7 +375,7 @@ pub fn signature_matches_mayeuta(
 }
 
 pub fn signature_matches_dcc_suppress(
-    catalog: &FractureCatalog,
+    _catalog: &FractureCatalog,
     sig: &SignatureEntry,
     ctx: &DccMatchContext<'_>,
     surfaces: &MatchSurfaces,
@@ -416,7 +416,9 @@ pub fn resolve_refined_diagnosis(
     for child_id in &parent.refine {
         if let Some(child) = catalog.get(child_id) {
             let hay = surface_text(child, surfaces);
-            if ast_matches(hay, &child.match_ast, surfaces) {
+            if ast_matches(hay, &child.match_ast, surfaces)
+                && scope_matches(&child.scope, ctx)
+            {
                 if let Some(d) = child.diagnosis.clone() {
                     return (child.id.clone(), d);
                 }
@@ -432,6 +434,49 @@ pub fn resolve_refined_diagnosis(
             proposal: "Revisar catálogo.".into(),
         });
     (parent.id.clone(), d)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn refined_child_requires_scope() {
+        let dir = tempfile::tempdir().unwrap();
+        let repo = dir.path();
+        let path = repo.join("SddIA/core/fracture-signatures.json");
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(
+            &path,
+            r#"{"version":"1","signatures":[{"id":"PARENT","consumers":["mayeuta"],"match":{"all":["parent-token"]},"refine":["CHILD"],"diagnosis":{"root_cause":"parent-root","verdict":"process_fix","proposal":"parent-proposal"}},{"id":"CHILD","consumers":["mayeuta"],"refine_only":true,"scope":{"process_name":["scoped-process"]},"match":{"all":["child-token"]},"diagnosis":{"root_cause":"child-root","verdict":"process_fix","proposal":"child-proposal"}}]}"#,
+        )
+        .unwrap();
+        let catalog = load_fracture_catalog(repo).unwrap();
+        let parent = catalog.get("PARENT").unwrap().clone();
+        let surfaces = build_match_surfaces("other", "child-token", "act", false);
+        let outside = DccMatchContext {
+            process_name: "other",
+            attempted_action: "act",
+            status: "",
+            error_trace: "child-token",
+            report_friction_id: None,
+            report_error_code: None,
+        };
+        let (id, _) = resolve_refined_diagnosis(&catalog, &parent, &surfaces, &outside);
+        assert_eq!(id, "PARENT");
+        let inside = DccMatchContext {
+            process_name: "scoped-process",
+            attempted_action: "act",
+            status: "",
+            error_trace: "child-token",
+            report_friction_id: None,
+            report_error_code: None,
+        };
+        let (id, diagnosis) = resolve_refined_diagnosis(&catalog, &parent, &surfaces, &inside);
+        assert_eq!(id, "CHILD");
+        assert_eq!(diagnosis.root_cause, "child-root");
+    }
 }
 
 pub fn extract_evidence_lines(error_trace_norm: &str, max_lines: usize) -> Vec<String> {

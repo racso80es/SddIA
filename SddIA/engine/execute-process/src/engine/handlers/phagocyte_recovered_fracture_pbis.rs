@@ -118,6 +118,12 @@ fn today_ola_suffix() -> String {
     Utc::now().format("%Y%m%d").to_string()
 }
 
+fn rel_under_pending(rel_path: &str, pending_rel: &str) -> bool {
+    let rel = rel_path.trim().trim_start_matches("./");
+    let pending = pending_rel.trim().trim_end_matches('/');
+    rel == pending || rel.starts_with(&format!("{pending}/"))
+}
+
 fn apply_documental(
     repo: &Path,
     candidates: &[PhagocyteCandidate],
@@ -130,6 +136,9 @@ fn apply_documental(
     let closed = Utc::now().format("%Y-%m-%d").to_string();
 
     for c in candidates {
+        if !rel_under_pending(&c.rel_path, &pending_rel) {
+            continue;
+        }
         let src = repo.join(&c.rel_path);
         if !src.is_file() {
             continue;
@@ -307,5 +316,40 @@ mod tests {
         let c = find_phagocyte_candidates(repo).unwrap();
         assert_eq!(c.len(), 1);
         assert_eq!(c[0].fracture_process, "event-watcher");
+    }
+
+    fn candidate(rel: &str) -> PhagocyteCandidate {
+        PhagocyteCandidate {
+            rel_path: rel.into(),
+            document_id: "PBI-FIX-FRACTURE-x".into(),
+            fracture_process: "event-watcher".into(),
+            trace_last_heartbeat: "2026-08-19T08:00:00Z".into(),
+            lock_started_at: "2026-08-26T06:19:32Z".into(),
+            reason: "trace_before_lock",
+        }
+    }
+
+    #[test]
+    fn apply_documental_skips_outside_pending() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"todos":{"pending":"docs/todos/pending","done":"docs/todos/done"}}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        fs::create_dir_all(repo.join("docs/elsewhere")).unwrap();
+        let outside = "docs/elsewhere/out.md";
+        let inside = "docs/todos/pending/in.md";
+        fs::write(repo.join(outside), "---\nstatus: pending\n---\n\nbody\n").unwrap();
+        fs::write(repo.join(inside), "---\nstatus: pending\n---\n\nbody\n").unwrap();
+        let applied = apply_documental(repo, &[candidate(outside), candidate(inside)]).unwrap();
+        assert_eq!(applied, vec![inside.to_string()]);
+        assert!(repo.join(outside).is_file());
+        assert!(!repo.join(inside).is_file());
+        assert!(repo.join("docs/todos/done/in.md").is_file());
+        assert!(!repo.join("docs/todos/done/out.md").exists());
     }
 }

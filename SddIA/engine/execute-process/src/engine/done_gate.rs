@@ -9,14 +9,6 @@ use std::path::{Path, PathBuf};
 
 pub const PROOF_DIR_REL: &str = ".SddIA/proofs/tracker-done";
 
-fn str_field(v: &Value, key: &str) -> Option<String> {
-    v.get(key)
-        .and_then(|x| x.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-}
-
 fn proof_filename(tracker_ref: &str) -> String {
     tracker_ref
         .chars()

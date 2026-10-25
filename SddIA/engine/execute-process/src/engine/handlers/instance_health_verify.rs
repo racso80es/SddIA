@@ -58,7 +58,7 @@ fn read_env_key(env_path: &Path, key: &str) -> Option<String> {
         }
         let (k, v) = line.split_once('=')?;
         if k.trim() == key {
-            let mut val = v.trim().trim_matches('"').to_string();
+            let val = v.trim().trim_matches('"').to_string();
             if !val.is_empty() {
                 return Some(val);
             }

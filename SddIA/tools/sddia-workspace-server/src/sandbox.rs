@@ -44,7 +44,7 @@ pub fn resolve_under_root(root: &Path, rel: &str) -> Result<PathBuf, SandboxErro
     if joined.exists() {
         let canon = joined
             .canonicalize()
-            .map_err(|e| SandboxError::Escape(e.to_string()))?;
+            .map_err(|e| SandboxError::Io(e.to_string()))?;
         if !canon.starts_with(&root_canon) {
             return Err(SandboxError::Escape(format!("'{rel}'")));
         }
@@ -71,4 +71,34 @@ pub fn parse_project_uri(uri: &str) -> Option<(String, String)> {
         return Some(("docs".into(), key.to_string()));
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
+    use std::os::unix::io::AsRawFd;
+
+    #[test]
+    fn parent_dir_is_escape() {
+        let dir = tempfile::tempdir().unwrap();
+        let err = resolve_under_root(dir.path(), "../secret").unwrap_err();
+        assert_eq!(err.code(), "PROJECT_SCOPE_ESCAPE");
+    }
+
+    #[test]
+    fn canonicalize_failure_on_existing_path_is_io() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let gone = root.join("gone");
+        let mut file = File::create(&gone).unwrap();
+        writeln!(file, "x").unwrap();
+        let fd = file.as_raw_fd();
+        std::fs::remove_file(&gone).unwrap();
+        std::os::unix::fs::symlink(format!("/proc/self/fd/{fd}"), root.join("link")).unwrap();
+        let err = resolve_under_root(root, "link").unwrap_err();
+        assert_eq!(err.code(), "SANDBOX_IO");
+        drop(file);
+    }
 }

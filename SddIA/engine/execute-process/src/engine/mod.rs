@@ -76,6 +76,7 @@ pub mod verify_process_integrity;
 
 #[cfg(test)]
 mod linear_direct_cycle_e2e;
+#[cfg(test)]
 mod linear_done_gate_both_e2e;
 
 use crate::core::resolver::load_process_def;

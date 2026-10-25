@@ -1,16 +1,5 @@
-use execute_process::core::repo::find_repo_root;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-
-pub fn resolve_execute_process(repo: &Path) -> Result<PathBuf, String> {
-    if let Ok(p) = std::env::var("SDDIA_EXECUTE_PROCESS_BIN") {
-        let p = p.trim();
-        if !p.is_empty() {
-            return Ok(PathBuf::from(p));
-        }
-    }
-    execute_process::engine::invoke_orchestrator::resolve_orchestrator_bin(repo)
-}
 
 pub fn resolve_event_watcher(repo: &Path) -> Result<PathBuf, String> {
     for rel in ["SddIA/target/debug/event-watcher", "SddIA/target/release/event-watcher"] {
@@ -24,10 +13,6 @@ pub fn resolve_event_watcher(repo: &Path) -> Result<PathBuf, String> {
         return Ok(sh);
     }
     Err("event-watcher no encontrado".into())
-}
-
-pub fn repo_from_cwd() -> Result<PathBuf, String> {
-    find_repo_root()
 }
 
 pub fn run_json_cmd(cmd: &mut Command) -> Result<serde_json::Value, String> {

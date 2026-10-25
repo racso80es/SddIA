@@ -715,7 +715,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
         None => return Ok((false, Some("no-op: proyecto sin tracker".into()))),
     };
 
-    let mut stamped = false;
+    let stamped;
 
     let pbi_fetch = match preflight_pbi(repo, &tc, &issue_ref, &payload_val) {
         Ok(f) => f,

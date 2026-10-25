@@ -79,6 +79,7 @@ fn simulated_relay_blocks_close(
         && !persist_validacion_exists(repo, inputs)
 }
 
+#[cfg(test)]
 fn skipped_barrier_entry(phase: &Value, prior_status: &str) -> Value {
     skipped_barrier_entry_reason(phase, prior_status, "prior_agent_phase_not_executed")
 }

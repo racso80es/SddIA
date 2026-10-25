@@ -94,6 +94,17 @@ pub fn should_discard_transition(current_canonical: &str, target: &str) -> bool 
     tgt_rank >= 0 && cur_rank >= tgt_rank
 }
 
+fn resolve_replay_tracker(
+    configured: Option<TrackerConfig>,
+    issue_ref: &str,
+) -> Result<TrackerConfig, String> {
+    match configured {
+        Some(tc) => Ok(tc),
+        None if lab_mock_outbound_enabled() => Ok(lab_tracker_fallback(issue_ref)),
+        None => Err("replay: sin tracker y sin SDDIA_LAB_MOCK_OUTBOUND".into()),
+    }
+}
+
 pub fn replay_payload(
     repo: &Path,
     event_id: &str,
@@ -126,8 +137,10 @@ pub fn replay_payload(
         return Ok("replayed");
     }
     let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, &inputs)?;
-    let tc = super::super::project_binding::tracker_config_for_inputs(repo, &inputs)?
-        .unwrap_or_else(|| lab_tracker_fallback(&issue_ref));
+    let tc = resolve_replay_tracker(
+        super::super::project_binding::tracker_config_for_inputs(repo, &inputs)?,
+        &issue_ref,
+    )?;
     let fetch = invoke_tool_for_process(
         repo,
         &tool,
@@ -270,5 +283,21 @@ mod tests {
     #[test]
     fn ac6_discards_todo_when_in_progress() {
         assert!(should_discard_transition("in_progress", "todo"));
+    }
+
+    #[test]
+    fn replay_fallback_only_with_lab_mock() {
+        let prev = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        let err = resolve_replay_tracker(None, "AUT-3").unwrap_err();
+        assert!(err.contains("sin SDDIA_LAB_MOCK_OUTBOUND"));
+        std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        let tc = resolve_replay_tracker(None, "AUT-3").unwrap();
+        assert_eq!(tc.team_key, "AUT");
+        if let Some(v) = prev {
+            std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v);
+        } else {
+            std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        }
     }
 }
