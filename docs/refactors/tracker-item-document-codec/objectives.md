@@ -1,4 +1,5 @@
 ---
+
 feature_name: tracker-item-document-codec
 created: "2026-10-26"
 process: refactorization
@@ -6,8 +7,8 @@ branch_name: refactor/tracker-item-document-codec
 persist_ref: docs/refactors/tracker-item-document-codec
 tracker_ref: AUT-15
 document_id: PBI-e1d15344
+execution_id: "5fdff8ff-4df3-43d7-a1a9-aed1f9d7a85c"
 ---
-
 # Objetivos — codec de documento de ítem en tracker
 
 ## Misión (AUT-15)
