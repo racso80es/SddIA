@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `df4df940-ab8e-42d4-934c-c3330596f1d1` | 2026-10-26 | AUT-15: codec tracker_item_document y fence Linear en refine/stamp. | CANONICO | `SddIA/evolution/df4df940-ab8e-42d4-934c-c3330596f1d1.md` |
 | `7c4e9f12-8a3b-4d5e-9f0a-1b2c3d4e5f60` | 2026-10-25 | AUT-11: fallback nativo tras LINEAR_AUTH_MISSING en WASM; forge-pbi sin éxito sin tracker_ref. | CANONICO | `SddIA/evolution/7c4e9f12-8a3b-4d5e-9f0a-1b2c3d4e5f60.md` |
 | `d48f4421-71c8-4dce-b0b7-4a814d047a9b` | 2026-10-25 | AUT-14: blindaje intake backlog linear — norma IDE, pre-commit y hook Cursor. | CANONICO | `SddIA/evolution/d48f4421-71c8-4dce-b0b7-4a814d047a9b.md` |
 | `38da86e2-a12e-4bce-af6e-aea49afb252c` | 2026-10-25 | Kaizen: higiene rustc release en execute-process (prep installer lab). | CANONICO | `SddIA/evolution/38da86e2-a12e-4bce-af6e-aea49afb252c.md` |
