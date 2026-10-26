@@ -7,8 +7,10 @@ mod model;
 
 use std::collections::HashSet;
 use std::path::Path;
+use std::thread;
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use redb::{Database, ReadableTable, TableDefinition};
+use redb::{Database, DatabaseError, ReadableTable, TableDefinition};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -32,15 +34,67 @@ const DLT_AUDIT_SEALS: TableDefinition<&str, &[u8]> = TableDefinition::new("dlt_
 const PROGRESS_TRACES: TableDefinition<(&str, u64), &[u8]> =
     TableDefinition::new("progress_traces");
 
+const DEFAULT_OPEN_BUDGET_MS: u64 = 2000;
+
+fn open_budget_ms() -> u64 {
+    match std::env::var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS") {
+        Ok(raw) => match raw.parse::<u64>() {
+            Ok(n) if n > 0 => n,
+            _ => DEFAULT_OPEN_BUDGET_MS,
+        },
+        Err(_) => DEFAULT_OPEN_BUDGET_MS,
+    }
+}
+
+fn is_lock_contention(err: &DatabaseError) -> bool {
+    matches!(err, DatabaseError::DatabaseAlreadyOpen)
+        || err.to_string().contains("Database already open")
+}
+
+fn lock_backoff_ms(attempt: u32) -> u64 {
+    let base = 5u64 << attempt.min(6);
+    let jitter = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| (d.subsec_nanos() as u64) % 16)
+        .unwrap_or(0)
+        .saturating_add(1);
+    base.saturating_add(jitter)
+}
+
 pub struct EventStore {
     db: Database,
 }
 
 impl EventStore {
     /// Abre el fichero o lo crea si no existe. No crea directorios padre.
+    /// Ante `DatabaseAlreadyOpen` reintenta con backoff+jitter hasta
+    /// `SDDIA_EVENT_STORE_OPEN_BUDGET_MS` (default 2000). Agotado → `Locked`.
     pub fn open(path: impl AsRef<Path>) -> Result<Self, StoreError> {
-        let db = Database::create(path).map_err(backend)?;
-        Ok(Self { db })
+        let path = path.as_ref();
+        let budget = Duration::from_millis(open_budget_ms());
+        let start = Instant::now();
+        let mut attempt: u32 = 0;
+        let mut last_lock;
+        loop {
+            match Database::create(path) {
+                Ok(db) => return Ok(Self { db }),
+                Err(err) if is_lock_contention(&err) => {
+                    last_lock = err.to_string();
+                    let elapsed = start.elapsed();
+                    if elapsed >= budget {
+                        return Err(StoreError::Locked(last_lock));
+                    }
+                    let remaining = budget.saturating_sub(elapsed).as_millis() as u64;
+                    let sleep_ms = lock_backoff_ms(attempt).min(remaining);
+                    if sleep_ms == 0 {
+                        return Err(StoreError::Locked(last_lock));
+                    }
+                    thread::sleep(Duration::from_millis(sleep_ms));
+                    attempt = attempt.saturating_add(1);
+                }
+                Err(err) => return Err(backend(err)),
+            }
+        }
     }
 
     /// Evento, índice de familia y N filas `pending` en la misma write-tx.

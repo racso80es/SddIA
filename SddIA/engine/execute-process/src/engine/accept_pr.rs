@@ -31,8 +31,14 @@ fn truthy_flag(v: &Value, key: &str) -> bool {
     }
 }
 
-/// ADU-CA7: Presented histórico en pending + processed + dead-letter.
+/// ADU-CA7: Presented histórico en pending + processed + dead-letter;
+/// en modo store también consulta `events.redb` (Family::Domain).
 pub(crate) fn scan_presented_for_branch(repo: &Path, branch: &str) -> bool {
+    if sddia_event_store::writes_store(sddia_event_store::store_mode())
+        && tracker_pbi_meta::presented_in_store(repo, branch)
+    {
+        return true;
+    }
     for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
         let dir = repo.join(rel);
         if !dir.is_dir() {
@@ -620,6 +626,46 @@ mod tests {
         .unwrap();
         assert!(scan_presented_for_branch(repo2, branch));
         assert!(!scan_presented_for_branch(repo2, "other-branch"));
+    }
+
+    /// REDB-CA3: Presented solo en store + modo redb → true.
+    #[test]
+    fn t_redb_ca3_scan_presented_from_store_only() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let branch = "fix/eda-redb-lock";
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let db = sddia_event_store::runtime_db_path(repo);
+        if let Some(parent) = db.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        let store = sddia_event_store::EventStore::open(&db).expect("open");
+        let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let ecst = json!({
+            "event_id": event_id,
+            "event_type": "PullRequest_Presented",
+            "payload": {"branch": branch, "tracker_ref": "AUT-16"},
+        });
+        store
+            .insert_event(
+                &sddia_event_store::StoredEvent {
+                    event_id: event_id.into(),
+                    family: sddia_event_store::Family::Domain,
+                    event_type: "PullRequest_Presented".into(),
+                    created_at: 1,
+                    ecst,
+                },
+                &[],
+            )
+            .expect("insert");
+        drop(store);
+        assert!(
+            scan_presented_for_branch(repo, branch),
+            "debe ver Presented solo en store"
+        );
+        assert!(!scan_presented_for_branch(repo, "other-branch"));
+        assert!(!repo.join(".events").exists());
+        sddia_event_store::override_store_mode(None);
     }
 
     #[test]
