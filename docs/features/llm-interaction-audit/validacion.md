@@ -22,4 +22,6 @@ pbi_archived: false
 
 | Orquestador `SddIA/target/debug/execute-process` | PASS (build repo target) |
 
-Cierre: `delivery-close-cycle` en rama.
+pr_url: https://github.com/racso80es/SddIA/pull/393
+
+Cierre Linear post-merge (`done_gate: linear`).
