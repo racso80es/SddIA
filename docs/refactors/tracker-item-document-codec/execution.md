@@ -1,12 +1,16 @@
 ---
 
+
+
 feature_name: tracker-item-document-codec
 created: "2026-10-26"
 process: refactorization
 items_applied:
   - "Codec tracker_item_document + normalize Linear fence"
   - "refine-pbi AUT-15 sellado en laboratorio"
-execution_id: "5fdff8ff-4df3-43d7-a1a9-aed1f9d7a85c"
+  - "clarify.md + plan.md (relevo IDE tras MCP headless blocked)"
+  - "execution_id ff7464c1-fe32-4067-8fb5-4bf1ccd55cb2"
+execution_id: "ff7464c1-fe32-4067-8fb5-4bf1ccd55cb2"
 ---
 # Execution
 

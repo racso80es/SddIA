@@ -1,5 +1,7 @@
 ---
 
+
+
 feature_name: tracker-item-document-codec
 created: "2026-10-26"
 process: refactorization
@@ -20,7 +22,7 @@ git_changes:
   - SddIA/engine/execute-process/src/engine/handlers/refine.rs
   - SddIA/engine/execute-process/src/engine/mod.rs
   - docs/refactors/tracker-item-document-codec/
-execution_id: "5fdff8ff-4df3-43d7-a1a9-aed1f9d7a85c"
+execution_id: "ff7464c1-fe32-4067-8fb5-4bf1ccd55cb2"
 ---
 # Validación — AUT-15 (parcial)
 

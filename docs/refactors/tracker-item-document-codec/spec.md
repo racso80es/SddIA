@@ -1,10 +1,12 @@
 ---
 
+
+
 feature_name: tracker-item-document-codec
 created: "2026-10-26"
 process: refactorization
 tracker_ref: AUT-15
-execution_id: "5fdff8ff-4df3-43d7-a1a9-aed1f9d7a85c"
+execution_id: "ff7464c1-fe32-4067-8fb5-4bf1ccd55cb2"
 ---
 # Spec — tracker item document codec
 
