@@ -6,7 +6,7 @@ branch_name: refactor/tracker-item-document-codec
 persist_ref: docs/refactors/tracker-item-document-codec
 tracker_ref: AUT-15
 document_id: PBI-e1d15344
-execution_id: "ff7464c1-fe32-4067-8fb5-4bf1ccd55cb2"
+execution_id: "c735784c-a9b0-45b0-9f98-982cf3609d7d"
 ---
 
 # Objetivos — codec de documento de ítem en tracker
