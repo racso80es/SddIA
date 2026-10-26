@@ -1,0 +1,12 @@
+{"event_id":"a90dd0a5-2c9b-478c-bafa-badfeb3d1927","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:20:10Z","operation":"create_issue","source_process":"tracker-stamp"}
+{"event_id":"904ff585-6352-4947-8eb7-cfc16de65fa9","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:20:11Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"52ff249a-cf4b-413f-9080-0df7012f1cd6","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:20:11Z","operation":"update_issue_description","source_process":"tracker-stamp"}
+{"event_id":"9ee2f1e2-6391-47d6-91a2-de2fcd252777","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:20:12Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"ff067e7b-0eb4-4519-81cf-4394f2b612b3","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:20:35Z","operation":"create_issue","source_process":"tracker-stamp"}
+{"event_id":"f760412c-3646-4e6a-86fc-c3afd52b1154","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:20:36Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"9232f333-718c-4928-aeb3-f71d53d9900c","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:20:36Z","operation":"update_issue_description","source_process":"tracker-stamp"}
+{"event_id":"eda0ef7f-caa3-4103-803a-991b6bc625bf","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:20:37Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"5913badd-2c61-4c55-92aa-4e615830cf41","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:21:44Z","operation":"create_issue","source_process":"tracker-stamp"}
+{"event_id":"07588e87-ad12-4f8d-83ee-ebd5ed0adf19","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:21:44Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"4c1e75a2-4887-4a69-b458-989def736b58","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:21:45Z","operation":"update_issue_description","source_process":"tracker-stamp"}
+{"event_id":"375bc7a2-db49-4538-bb1b-06315c4c82eb","issue_ref":"MAN-101","occurred_at":"2026-10-26T17:21:45Z","operation":"create_comment","source_process":"tracker-stamp"}
