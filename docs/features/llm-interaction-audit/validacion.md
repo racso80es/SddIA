@@ -6,9 +6,13 @@ branch: feat/llm-interaction-audit
 tracker_ref: AUT-7
 global: APTO
 pbi_archived: false
+pr_url: https://github.com/racso80es/SddIA/pull/393
+merged_pr: https://github.com/racso80es/SddIA/pull/393
+merge_commit: bd45b3aeaef215db2142734c09db5988ee263a25
+closed: "2026-10-26"
 ---
 
-# Validación — AUT-7 (rama)
+# Validación — AUT-7
 
 | Check | Estado |
 | --- | --- |
@@ -22,6 +26,4 @@ pbi_archived: false
 
 | Orquestador `SddIA/target/debug/execute-process` | PASS (build repo target) |
 
-pr_url: https://github.com/racso80es/SddIA/pull/393
-
-Cierre Linear post-merge (`done_gate: linear`).
+Cierre Linear (`done_gate: linear`): issue AUT-7 en Done; PR #393 mergeado.
