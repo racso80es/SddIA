@@ -1,6 +1,7 @@
 //! Motor residual nativo — reemplaza `delegate_python` / capsules bridge.
 
 use super::accept_pr::execute_accept_pr_phase;
+use super::handlers;
 use super::pull_request_review::{execute_pull_request_review_phase, is_ppr_fail_soft_friction};
 use super::invoke_orchestrator::invoke_process_full;
 use super::phase_capsules::{
@@ -664,6 +665,28 @@ fn execute_phase_body_residual(
         .cloned()
         .unwrap_or_default();
 
+    if process_name == "llm-interaction-audit" && phase_name == "Registro" {
+        match handlers::llm_interaction_audit::run(repo, inputs) {
+            Ok(env) => {
+                entry["status"] = json!(if env.success { "executed" } else { "failed" });
+                entry["handler"] = json!("llm-interaction-audit-native");
+                if let Some(d) = env.data {
+                    entry["result"] = d;
+                }
+                if let Some(e) = env.error {
+                    entry["error"] = json!(e);
+                }
+                return entry;
+            }
+            Err(e) => {
+                entry["status"] = json!("failed");
+                entry["handler"] = json!("llm-interaction-audit-native");
+                entry["error"] = json!(e);
+                return entry;
+            }
+        }
+    }
+
     if is_workspace_init_phase(phase, inputs, process_name) {
         match run_workspace_init(repo, inputs, process_name) {
             Ok(result) => {
@@ -956,6 +979,9 @@ pub fn run(
     phases: &[Value],
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
+    if process_name == "llm-interaction-audit" {
+        return handlers::llm_interaction_audit::run(repo, process_inputs);
+    }
     if route_fractal_fn(process_name).is_some() {
         return run_route_fractal_process(repo, process_name, process_inputs);
     }
