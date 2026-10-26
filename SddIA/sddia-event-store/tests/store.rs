@@ -1,8 +1,9 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::thread;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 static TEMP_SEQ: AtomicU64 = AtomicU64::new(1);
 
@@ -329,4 +330,108 @@ fn workspace_member_and_no_crates_dir() {
     let text = fs::read_to_string(&workspace).unwrap();
     assert!(text.contains("\"sddia-event-store\""));
     assert!(!manifest_dir.join("../crates").exists());
+}
+
+/// `flock` es por proceso: el titular tiene que ser otro proceso.
+fn spawn_flock_holder(db: &Path, ready: &Path) -> std::process::Child {
+    Command::new("python3")
+        .arg("-c")
+        .arg(
+            "import fcntl,os,sys,time\n\
+             fd=os.open(sys.argv[1], os.O_RDWR)\n\
+             fcntl.flock(fd, fcntl.LOCK_EX|fcntl.LOCK_NB)\n\
+             open(sys.argv[2],'w').close()\n\
+             time.sleep(60)\n",
+        )
+        .arg(db)
+        .arg(ready)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("python3 flock")
+}
+
+fn wait_ready(ready: &Path) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while !ready.is_file() {
+        assert!(Instant::now() < deadline, "el titular no señaló el lock");
+        thread::sleep(Duration::from_millis(20));
+    }
+}
+
+/// REDB-CA1: B obtiene Ok si A libera dentro del presupuesto.
+#[test]
+fn open_retries_until_holder_releases() {
+    let db = TempDb::new();
+    let _ = EventStore::open(&db.path).expect("seed");
+    let ready = db.path.with_extension("ready");
+    let mut holder = spawn_flock_holder(&db.path, &ready);
+    wait_ready(&ready);
+    std::env::set_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS", "1500");
+    let path = db.path.clone();
+    let started = Instant::now();
+    let opener = thread::spawn(move || EventStore::open(&path));
+    thread::sleep(Duration::from_millis(120));
+    let _ = holder.kill();
+    let _ = holder.wait();
+    let result = opener.join().expect("opener");
+    let elapsed = started.elapsed();
+    std::env::remove_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS");
+    let _ = fs::remove_file(&ready);
+    if let Err(err) = &result {
+        panic!("esperado Ok tras liberar: {err}");
+    }
+    assert!(elapsed < Duration::from_millis(1500), "{elapsed:?}");
+}
+
+/// REDB-CA2: sin liberar → Locked dentro del presupuesto.
+#[test]
+fn open_returns_locked_when_budget_exhausted() {
+    let db = TempDb::new();
+    let _ = EventStore::open(&db.path).expect("seed");
+    let ready = db.path.with_extension("ready");
+    let mut holder = spawn_flock_holder(&db.path, &ready);
+    wait_ready(&ready);
+    std::env::set_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS", "250");
+    let started = Instant::now();
+    let err = match EventStore::open(&db.path) {
+        Ok(_) => panic!("debe fallar por lock"),
+        Err(err) => err,
+    };
+    let elapsed = started.elapsed();
+    std::env::remove_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS");
+    let _ = holder.kill();
+    let _ = holder.wait();
+    let _ = fs::remove_file(&ready);
+    assert!(
+        matches!(err, StoreError::Locked(_)),
+        "esperado Locked, got {err:?}"
+    );
+    assert!(elapsed < Duration::from_millis(2000), "{elapsed:?}");
+}
+
+#[test]
+fn open_non_lock_error_does_not_retry() {
+    let missing_parent = std::env::temp_dir().join(format!(
+        "sddia-no-parent-{}-{}/events.redb",
+        std::process::id(),
+        TEMP_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::env::set_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS", "2000");
+    let started = Instant::now();
+    let err = match EventStore::open(&missing_parent) {
+        Ok(_) => panic!("padre ausente"),
+        Err(err) => err,
+    };
+    let elapsed = started.elapsed();
+    std::env::remove_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS");
+    assert!(
+        matches!(err, StoreError::Backend(_)),
+        "esperado Backend sin reintento, got {err:?}"
+    );
+    assert!(
+        elapsed < Duration::from_millis(500),
+        "no debe agotar presupuesto: {elapsed:?}"
+    );
 }

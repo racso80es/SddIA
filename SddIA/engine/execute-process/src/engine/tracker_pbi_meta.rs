@@ -107,25 +107,54 @@ fn tracker_ref_in_dir(dir: &Path, branch: &str) -> Option<String> {
     None
 }
 
+/// Presented en `Family::Domain` del store para `branch` (modo con escritura a store).
+pub(crate) fn presented_in_store(repo: &Path, branch: &str) -> bool {
+    visit_presented_in_store(repo, |event| {
+        event
+            .get("payload")
+            .and_then(|p| p.get("branch"))
+            .and_then(|v| v.as_str())
+            == Some(branch)
+    })
+}
+
 fn tracker_ref_in_store(repo: &Path, branch: &str) -> Option<String> {
+    let mut found = None;
+    visit_presented_in_store(repo, |event| {
+        if let Some(tr) = tracker_ref_of_presented(event, branch) {
+            found = Some(tr);
+            true
+        } else {
+            false
+        }
+    });
+    found
+}
+
+/// Recorre `PullRequest_Presented` en `Family::Domain`. `pred` true → corta.
+fn visit_presented_in_store(repo: &Path, mut pred: impl FnMut(&Value) -> bool) -> bool {
     if !sddia_event_store::writes_store(sddia_event_store::store_mode()) {
-        return None;
+        return false;
     }
     let db = sddia_event_store::runtime_db_path(repo);
     if !db.is_file() {
-        return None;
+        return false;
     }
-    let store = sddia_event_store::EventStore::open(db).ok()?;
-    let rows = store.list_family(sddia_event_store::Family::Domain).ok()?;
+    let Ok(store) = sddia_event_store::EventStore::open(db) else {
+        return false;
+    };
+    let Ok(rows) = store.list_family(sddia_event_store::Family::Domain) else {
+        return false;
+    };
     for row in rows {
         if row.event_type != "PullRequest_Presented" {
             continue;
         }
-        if let Some(tr) = tracker_ref_of_presented(&row.ecst, branch) {
-            return Some(tr);
+        if pred(&row.ecst) {
+            return true;
         }
     }
-    None
+    false
 }
 
 fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {

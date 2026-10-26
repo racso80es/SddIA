@@ -1,7 +1,9 @@
 //! Handler nativo `system-vitality-probe`.
 
-use super::super::daemons::{iso_now, load_eda_pending, load_cumulo, state_dir, write_json_atomic};
+use super::super::daemons::{iso_now, state_dir, write_json_atomic};
+use super::super::fractal::{load_fractal_dirs, write_fractal_event};
 use crate::envelope::OrchestratorEnvelope;
+use sddia_event_store::StoreError;
 use serde_json::{json, Value};
 use std::fs;
 use std::io::{Read, Write};
@@ -39,18 +41,6 @@ fn load_probe_state(repo: &Path) -> Value {
 
 fn save_probe_state(repo: &Path, state: &Value) -> Result<(), String> {
     write_json_atomic(&state_path(repo)?, state)
-}
-
-fn telemetry_dir(repo: &Path) -> std::path::PathBuf {
-    load_cumulo(repo)
-        .ok()
-        .and_then(|m| m.get("eda_fractal").cloned())
-        .and_then(|f| f.get("telemetry").and_then(|v| v.as_str()).map(str::to_string))
-        .map(|rel| {
-            let t = rel.trim().trim_start_matches("./");
-            repo.join(t)
-        })
-        .unwrap_or_else(|| repo.join(".events/telemetry"))
 }
 
 fn probe_bus_topology(repo: &Path) -> ProbeResult {
@@ -129,6 +119,14 @@ fn probe_bus_topology(repo: &Path) -> ProbeResult {
             }
         }
         if let Err(e) = sddia_event_store::EventStore::open(&db) {
+            // REDB-CA5: contención agotada ≠ fractura de topología.
+            if matches!(e, StoreError::Locked(_)) {
+                return ProbeResult {
+                    id: "bus.topology",
+                    ok: true,
+                    cause: "store ocupado".into(),
+                };
+            }
             return ProbeResult {
                 id: "bus.topology",
                 ok: false,
@@ -338,14 +336,12 @@ fn emit_vitality_event(repo: &Path, probes: &[ProbeResult], verdict: &str) -> Re
             "red_probe_ids": probes.iter().filter(|p| !p.ok).map(|p| p.id).collect::<Vec<_>>(),
         },
     });
-    let dir = telemetry_dir(repo);
-    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    write_json_atomic(&dir.join(format!("{event_id}.json")), &event)?;
+    let (tele_dir, _, _, _) = load_fractal_dirs(repo);
+    write_fractal_event(repo, &event, &tele_dir)?;
     Ok(event_id)
 }
 
 fn emit_probe_fracture(repo: &Path, probe: &ProbeResult) -> Result<Value, String> {
-    let pending = load_eda_pending(repo)?;
     let event_id = Uuid::new_v4().to_string();
     let event = json!({
         "event_id": event_id,
@@ -360,14 +356,11 @@ fn emit_probe_fracture(repo: &Path, probe: &ProbeResult) -> Result<Value, String
             "friction_id": format!("F-VITALIDAD-{}", probe.id.replace('.', "-").to_uppercase()),
         },
     });
-    let target = repo.join(&pending).join(format!("{event_id}.json"));
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    write_json_atomic(&target, &event)?;
+    let (_, _, domain_dir, _) = load_fractal_dirs(repo);
+    let seal = write_fractal_event(repo, &event, &domain_dir)?;
     Ok(json!({
-        "event_id": event_id,
-        "target_path": target.strip_prefix(repo).unwrap_or(&target).to_string_lossy().replace('\\', "/"),
+        "event_id": seal.get("event_id").cloned().unwrap_or(json!(event_id)),
+        "target_path": seal.get("target_path").cloned().unwrap_or(json!("")),
         "probe_id": probe.id,
     }))
 }
@@ -521,5 +514,109 @@ mod tests {
         assert!(!repo.join(".events/telemetry").exists());
         assert!(!repo.join(".events/domain").exists());
         assert!(repo.join(".SddIA/runtime/events.redb").is_file());
+    }
+
+    /// REDB-CA4: modo redb — emisiones de vitalidad/fractura no crean JSON en `.events/`.
+    #[test]
+    fn redb_ca4_vitality_and_fracture_go_to_store() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let probes = vec![ProbeResult {
+            id: "cerbero.config",
+            ok: false,
+            cause: "test rojo".into(),
+        }];
+        let event_id = emit_vitality_event(repo, &probes, "degraded").expect("vitality");
+        let seal = emit_probe_fracture(repo, &probes[0]).expect("fracture");
+        assert!(!repo.join(".events/telemetry").exists());
+        assert!(!repo.join(".events/pending").exists());
+        assert!(!repo.join(".events/domain").exists());
+        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(repo))
+            .expect("open");
+        let tele = store
+            .list_family(sddia_event_store::Family::Telemetry)
+            .expect("tele");
+        assert!(
+            tele.iter().any(|r| r.event_id == event_id),
+            "vitality en telemetry"
+        );
+        let domain = store
+            .list_family(sddia_event_store::Family::Domain)
+            .expect("domain");
+        let fracture_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
+        assert!(
+            domain.iter().any(|r| r.event_id == fracture_id),
+            "fracture en domain"
+        );
+        sddia_event_store::override_store_mode(None);
+    }
+
+    /// REDB-CA5: Locked → ok sin fractura de topología.
+    #[test]
+    fn redb_ca5_locked_store_is_green_topology() {
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        for name in [
+            "event-domain-subscriptions.json",
+            "event-telemetry-subscriptions.json",
+            "event-orchestration-subscriptions.json",
+        ] {
+            std::fs::write(repo.join("SddIA/core").join(name), "{}\n").unwrap();
+        }
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{
+  "eda_bus": {
+    "store": ".SddIA/runtime/events.redb",
+    "subscriptions": "SddIA/core/event-domain-subscriptions.json"
+  },
+  "eda_fractal": {
+    "telemetry_subscriptions": "SddIA/core/event-telemetry-subscriptions.json",
+    "orchestration_subscriptions": "SddIA/core/event-orchestration-subscriptions.json",
+    "domain_subscriptions": "SddIA/core/event-domain-subscriptions.json"
+  }
+}
+"#,
+        )
+        .unwrap();
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let db = sddia_event_store::runtime_db_path(repo);
+        if let Some(parent) = db.parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        let _ = sddia_event_store::EventStore::open(&db).expect("seed");
+        let ready = db.with_extension("ready");
+        let mut holder = std::process::Command::new("python3")
+            .arg("-c")
+            .arg(
+                "import fcntl,os,sys,time\n\
+                 fd=os.open(sys.argv[1], os.O_RDWR)\n\
+                 fcntl.flock(fd, fcntl.LOCK_EX|fcntl.LOCK_NB)\n\
+                 open(sys.argv[2],'w').close()\n\
+                 time.sleep(60)\n",
+            )
+            .arg(&db)
+            .arg(&ready)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .expect("python3 flock");
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while !ready.is_file() {
+            assert!(std::time::Instant::now() < deadline, "sin lock");
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        std::env::set_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS", "200");
+        let r = probe_bus_topology(repo);
+        std::env::remove_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS");
+        let _ = holder.kill();
+        let _ = holder.wait();
+        let _ = std::fs::remove_file(&ready);
+        sddia_event_store::override_store_mode(None);
+        assert!(r.ok, "{}", r.cause);
+        assert_eq!(r.cause, "store ocupado");
     }
 }
