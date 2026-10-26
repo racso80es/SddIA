@@ -42,6 +42,38 @@ pub fn yaml_patch_cancelled() -> YamlValue {
     .expect("patch cancelado")
 }
 
+/// Convierte descripciones de tracker (p. ej. bloque `yaml` de Linear) al formato `---` / cuerpo.
+pub fn normalize_item_markdown(raw: &str) -> Result<String, String> {
+    let trimmed = raw.trim_start();
+    if trimmed.starts_with("---") {
+        return Ok(raw.to_string());
+    }
+    if !trimmed.starts_with("```") {
+        return Err("ITEM_FM: sin frontmatter reconocible".into());
+    }
+    let after_ticks = trimmed
+        .strip_prefix("```")
+        .ok_or_else(|| "ITEM_FM: fence inválido".to_string())?;
+    let yaml_start = after_ticks
+        .strip_prefix("yaml")
+        .or_else(|| after_ticks.strip_prefix("yml"))
+        .ok_or_else(|| "ITEM_FM: fence sin yaml".to_string())?
+        .trim_start_matches(['\r', '\n']);
+    let close = yaml_start
+        .find("```")
+        .ok_or_else(|| "ITEM_FM: fence sin cierre".to_string())?;
+    let fm_text = yaml_start[..close].trim();
+    let body = yaml_start[close + 3..].trim_start_matches(['\r', '\n']);
+    if fm_text.is_empty() {
+        return Err("ITEM_FM: yaml vacío".into());
+    }
+    if body.is_empty() {
+        Ok(format!("---\n{fm_text}\n---\n"))
+    } else {
+        Ok(format!("---\n{fm_text}\n---\n\n{body}"))
+    }
+}
+
 fn split_frontmatter(raw: &str) -> Result<(String, String), String> {
     let mut lines = raw.lines();
     if lines.next() != Some("---") {
@@ -67,19 +99,11 @@ fn strip_legacy_status(fm: &mut YamlValue) {
 
 /// Fusiona `patch` en el frontmatter y elimina `status` legado (pending / refinado / refinada).
 pub fn seal_markdown(raw: &str, patch: &YamlValue) -> Result<String, String> {
-    let (fm_text, body) = split_frontmatter(raw)?;
-    let mut fm: YamlValue = serde_yaml::from_str(&fm_text).map_err(|e| e.to_string())?;
-    strip_legacy_status(&mut fm);
-    if let Some(map) = patch.as_mapping() {
-        for (k, v) in map {
-            if let Some(key) = k.as_str() {
-                fm[key] = v.clone();
-            }
-        }
-    }
-    let new_fm = serde_yaml::to_string(&fm).map_err(|e| e.to_string())?;
-    let body = body.trim_start_matches('\n');
-    Ok(format!("---\n{new_fm}---\n\n{body}"))
+    super::tracker_item_document::seal_item_description(
+        raw,
+        patch,
+        super::tracker_item_document::TrackerDescriptionDialect::FileMarkdown,
+    )
 }
 
 #[cfg(test)]
@@ -109,5 +133,16 @@ mod tests {
         let out = seal_markdown(raw, &yaml_patch_tracker_column(COLUMN_IN_PROGRESS)).unwrap();
         assert!(out.contains("tracker_column: in_progress"));
         assert!(out.contains("refinement: refined"));
+    }
+
+    #[test]
+    fn seal_markdown_accepts_linear_yaml_fence() {
+        let raw = "```yaml\ndocument_id: X\ntracker_column: backlog\nrefinement: pending\n```\n\n# cuerpo\n";
+        let patch = yaml_patch_refinement_refined("2026-10-26");
+        let out = seal_markdown(raw, &patch).unwrap();
+        assert!(out.starts_with("---"));
+        assert!(out.contains("tracker_column: todo"));
+        assert!(out.contains("refinement: refined"));
+        assert!(out.contains("# cuerpo"));
     }
 }

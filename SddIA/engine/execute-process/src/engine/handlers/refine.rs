@@ -189,13 +189,18 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
             None
         }
     });
-    let raw = fetched
+    let from_remote = fetched
         .as_ref()
         .ok()
         .and_then(|body| body.get("description").and_then(|v| v.as_str()))
-        .filter(|s| s.contains("---"))
-        .map(str::to_string)
-        .or(local_raw)
+        .and_then(|s| {
+            super::super::item_lifecycle_frontmatter::normalize_item_markdown(s).ok()
+        });
+    let from_local = local_raw.as_ref().and_then(|s| {
+        super::super::item_lifecycle_frontmatter::normalize_item_markdown(s).ok()
+    });
+    let raw = from_remote
+        .or(from_local)
         .ok_or_else(|| format!("REFINE_NOT_FOUND: {pbi_ref}"))?;
     let (_, body) = split_frontmatter(&raw)?;
     let refined_body = mayeuta_touch_body(&body);
@@ -285,8 +290,10 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
     );
     let (raw, fm) = if let Ok(body) = &fetched {
         if let Some(desc) = body.get("description").and_then(|v| v.as_str()) {
-            let fm = parse_fm(desc).unwrap_or(YamlValue::Null);
-            (desc.to_string(), fm)
+            let canonical = super::super::item_lifecycle_frontmatter::normalize_item_markdown(desc)
+                .unwrap_or_else(|_| desc.to_string());
+            let fm = parse_fm(&canonical).unwrap_or(YamlValue::Null);
+            (canonical, fm)
         } else if remote {
             ("---\nstatus: pending\n---\n\n".to_string(), YamlValue::Null)
         } else {
