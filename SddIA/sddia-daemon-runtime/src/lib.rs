@@ -208,8 +208,12 @@ pub fn write_fractal_event(repo: &Path, top: &BusTopology, event: &Value, family
         .filter(|s| !s.trim().is_empty())
         .ok_or_else(|| "event_id requerido".to_string())?;
     let mode = store_mode();
+    let mut stamped = event.clone();
+    if family == "domain" {
+        sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+    }
     if writes_store(mode) {
-        record_ecst(repo, family, event).map_err(|err| err.to_string())?;
+        record_ecst(repo, family, &stamped).map_err(|err| err.to_string())?;
     }
     if !writes_filesystem(mode) {
         return Ok(());
@@ -221,7 +225,7 @@ pub fn write_fractal_event(repo: &Path, top: &BusTopology, event: &Value, family
         other => return Err(format!("familia inválida: {other}")),
     };
     let target = dir.join(format!("{event_id}.json"));
-    write_json_atomic(&target, event)
+    write_json_atomic(&target, &stamped)
 }
 
 pub fn pid_alive(pid: u32) -> bool {

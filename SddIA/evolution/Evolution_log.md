@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 129
+universe_total: 130
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6d31bac8-278a-45f3-b582-d5af8d1ce4f6` | 2026-10-26 | AUT-17: el alta de dominio siembra entregas desde el catálogo. | CANONICO | `SddIA/evolution/6d31bac8-278a-45f3-b582-d5af8d1ce4f6.md` |
 | `2028f56e-b89f-4b60-b9e1-4fb0bc7642ee` | 2026-10-26 | AUT-16 reintento de lock en events.redb; Presented y vitalidad leen el store. | CANONICO | `SddIA/evolution/2028f56e-b89f-4b60-b9e1-4fb0bc7642ee.md` |
 | `a03b37f2-9561-4ed4-bddf-ea88215c3a7a` | 2026-10-26 | AUT-7 proceso llm-interaction-audit y registro bajo auditsPath. | CANONICO | `SddIA/evolution/a03b37f2-9561-4ed4-bddf-ea88215c3a7a.md` |
 | `df4df940-ab8e-42d4-934c-c3330596f1d1` | 2026-10-26 | AUT-15: codec tracker_item_document y fence Linear en refine/stamp. | CANONICO | `SddIA/evolution/df4df940-ab8e-42d4-934c-c3330596f1d1.md` |

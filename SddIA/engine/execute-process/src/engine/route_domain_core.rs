@@ -218,7 +218,7 @@ fn write_pending_domain_event_file(
         None
     };
     let event_uuid = Uuid::new_v4().to_string();
-    let event = json!({
+    let mut event = json!({
         "event_id": event_uuid,
         "event_type": event_type,
         "timestamp": Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
@@ -226,6 +226,7 @@ fn write_pending_domain_event_file(
         "payload": payload,
         "delivery_state": {},
     });
+    sddia_eda_catalog::stamp_published_event(repo, &mut event)?;
     let mode = store_mode();
     if let Some(hash12) = content_hash.as_deref() {
         let target = pending_dir.join(format!("{hash12}.json"));
@@ -2282,6 +2283,14 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
     };
 
     if writes_store(store_mode()) {
+        if let Err(err) = sddia_eda_catalog::stamp_published_event(repo, &mut event) {
+            return json!({
+                "success": false,
+                "exitCode": 1,
+                "data": null,
+                "error": err,
+            });
+        }
         if let Err(err) = record_ecst(repo, "domain", &event) {
             return json!({
                 "success": false,

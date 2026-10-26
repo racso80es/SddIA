@@ -1,0 +1,9 @@
+[package]
+name = "sddia-eda-catalog"
+version = "0.1.0"
+edition = "2021"
+description = "Plan de entregas del bus de dominio a partir del catálogo de suscripciones."
+
+[dependencies]
+sddia-event-store = { path = "../sddia-event-store" }
+serde_json = "1.0"
