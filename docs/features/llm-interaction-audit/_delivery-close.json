@@ -1,0 +1,8 @@
+{
+  "source_process": "feature",
+  "persist_ref": "docs/features/llm-interaction-audit",
+  "branch_name": "feat/llm-interaction-audit",
+  "pr_title": "feat(audit): proceso llm-interaction-audit activable por issue (AUT-7)",
+  "target_branch": "main",
+  "pr_body": "## Summary\n- Proceso `llm-interaction-audit` forjado vía `entity-manager` (handler nativo, `paths.auditsPath/{tracker_ref}.md`).\n- Flag `llm_audit: active|inactive` leído del ítem Linear; dedup de filas; sección Fricción en KO de ciclos lifecycle.\n- Linear AUT-7; documentación en `docs/features/llm-interaction-audit/`.\n\n## Test plan\n- [x] `CARGO_TARGET_DIR=SddIA/target cargo test -p execute-process llm_interaction_audit --lib`\n- [x] `probe_active` + `record_interaction` con `llm_audit: active` → `docs/audits/AUT-7.md`\n\nLinear: AUT-7"
+}

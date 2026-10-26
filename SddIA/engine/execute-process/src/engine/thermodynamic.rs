@@ -355,6 +355,15 @@ pub fn run(
         }
     }
 
+    super::llm_interaction_audit::maybe_record_friction_on_failure(
+        repo,
+        process_name,
+        process_inputs,
+        state,
+        success,
+        exit_code,
+    );
+
     result
 }
 

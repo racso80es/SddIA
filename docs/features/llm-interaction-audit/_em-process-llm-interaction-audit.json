@@ -1,0 +1,31 @@
+{
+  "entity_class": "process",
+  "entity_name": "llm-interaction-audit",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "process_name": "llm-interaction-audit",
+    "process_version": "1.0.0",
+    "process_context": "quality-assurance, filesystem-ops, tracker-operations",
+    "process_description": "Registro opt-in de interacciones LLM y fricción de ./sddia-run.sh bajo paths.auditsPath/{tracker_ref}.md cuando llm_audit: active en el ítem Linear.",
+    "process_contract_version": "1.4.0",
+    "process_jurisdiction": "core",
+    "process_phases": [
+      {
+        "name": "Registro",
+        "intent": "Handler nativo: record_interaction, record_friction, probe_active. No escribe si llm_audit inactive."
+      }
+    ],
+    "process_inputs": [
+      { "tracker_ref": "Identificador opaco AUT-n" },
+      { "operation": "record_interaction | record_friction | probe_active" },
+      { "timestamp": "date-time (record_interaction)" },
+      { "rol": "actor" },
+      { "tipo": "user_query | tool_call | ..." },
+      { "resumen": "una línea" }
+    ],
+    "process_outputs": [
+      { "written": "boolean o skipped con reason" },
+      { "path": "ruta relativa del audit md" }
+    ]
+  }
+}
