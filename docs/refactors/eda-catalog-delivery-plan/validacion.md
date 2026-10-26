@@ -5,6 +5,7 @@ process: refactorization
 branch: refactor/eda-catalog-delivery-plan
 global: NO_APTO
 tracker_ref: AUT-17
+pr_url: https://github.com/racso80es/SddIA/pull/397
 pbi_archived: false
 checks:
   AC-1: APTO
