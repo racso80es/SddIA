@@ -234,6 +234,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
     if !db.is_file() {
         return;
     }
+    let _ = sddia_eda_catalog::reconcile_unstamped(repo);
     let Ok(store) = sddia_event_store::EventStore::open(&db) else {
         return;
     };
@@ -615,7 +616,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                         continue;
                     }
                     let rel = rel_event_path(&repo, path);
-                    let event = json!({
+                    let mut event = json!({
                         "event_id": format!("residual-{event_uuid}"),
                         "event_type": "System_Fracture_Detected",
                         "emitter_agent": "event-watcher",
@@ -627,7 +628,9 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                         },
                         "delivery_state": {},
                     });
-                    let _ = sddia_event_store::record_ecst(&repo, "domain", &event);
+                    if sddia_eda_catalog::stamp_published_event(&repo, &mut event).is_ok() {
+                        let _ = sddia_event_store::record_ecst(&repo, "domain", &event);
+                    }
                     b.routed_ok.insert(event_uuid);
                     eprintln!("[WATCHER] residual {rel}: fractura F-EDA-RESIDUAL-FILESYSTEM");
                 }
@@ -1116,6 +1119,12 @@ mod tests {
                 .as_nanos()
         ));
         fs::create_dir_all(root.join(".events/pending")).unwrap();
+        fs::create_dir_all(root.join("SddIA/core")).unwrap();
+        fs::write(
+            root.join("SddIA/core/event-domain-subscriptions.json"),
+            "{}\n",
+        )
+        .unwrap();
         fs::write(
             root.join(".events/pending/ca12-residual.json"),
             r#"{"event_id":"ca12-residual","secret":"no-reinject"}"#,

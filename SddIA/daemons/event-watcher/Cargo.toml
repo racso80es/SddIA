@@ -10,4 +10,5 @@ path = "src/main.rs"
 [dependencies]
 sddia-daemon-runtime = { path = "../../sddia-daemon-runtime" }
 sddia-event-store = { path = "../../sddia-event-store" }
+sddia-eda-catalog = { path = "../../sddia-eda-catalog" }
 serde_json = "1.0"

@@ -110,3 +110,34 @@ fn dual_keeps_two_subscriber_rows() {
         ]
     );
 }
+
+#[test]
+fn domain_without_plan_is_rejected() {
+    let repo = TempRepo::new();
+    override_store_mode(Some(StoreMode::Redb));
+    let event = serde_json::json!({
+        "event_id": "evt-empty",
+        "event_type": "PBI_Refined",
+        "delivery_state": {}
+    });
+    let err = record_ecst(&repo.path, "domain", &event).unwrap_err();
+    assert!(err.to_string().contains("EDA_DELIVERY_PLAN_MISSING"));
+}
+
+#[test]
+fn success_label_is_not_pending() {
+    let repo = TempRepo::new();
+    override_store_mode(Some(StoreMode::Redb));
+    let event = serde_json::json!({
+        "event_id": "evt-ok",
+        "event_type": "PBI_Refined",
+        "delivery_state": {"tekton.tracker-stamp": "success"}
+    });
+    record_ecst(&repo.path, "domain", &event).unwrap();
+    let store = EventStore::open(runtime_db_path(&repo.path)).unwrap();
+    assert_eq!(
+        store.get_delivery("evt-ok", "tekton.tracker-stamp").unwrap().unwrap().status,
+        DeliveryStatus::Success
+    );
+    assert!(store.list_pending_deliveries().unwrap().is_empty());
+}

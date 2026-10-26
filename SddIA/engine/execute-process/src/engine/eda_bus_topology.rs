@@ -209,21 +209,7 @@ fn header_path_repo(repo: &Path, bus: &EventBusTopology, state: &str, event_uuid
 }
 
 pub fn subscriber_id(subscriber: &Value) -> String {
-    let agent = subscriber
-        .get("agent")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .unwrap_or("unknown");
-    for key in ["process", "action", "tool"] {
-        if let Some(v) = subscriber.get(key).and_then(|x| x.as_str()) {
-            let t = v.trim();
-            if !t.is_empty() {
-                return format!("{agent}.{t}");
-            }
-        }
-    }
-    agent.to_string()
+    sddia_eda_catalog::subscriber_id(subscriber)
 }
 
 fn witness_filename(event_uuid: &str, subscriber_name: &str) -> String {
@@ -577,26 +563,11 @@ fn in_flight_subscriber_names(
 }
 
 pub fn resolve_origin_topology(payload: &Value) -> String {
-    payload
-        .get("origin_topology")
-        .and_then(|v| v.as_str())
-        .filter(|s| *s == "core" || *s == "local")
-        .unwrap_or("core")
-        .to_string()
+    sddia_eda_catalog::resolve_origin_topology(payload)
 }
 
 pub fn subscriber_applies_to_topology(subscriber: &Value, origin_topology: &str) -> bool {
-    let applies = subscriber
-        .get("applies_to_origin_topology")
-        .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|x| x.as_str())
-                .map(str::to_string)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_else(|| vec!["core".to_string()]);
-    applies.is_empty() || applies.iter().any(|t| t == origin_topology)
+    sddia_eda_catalog::subscriber_applies_to_topology(subscriber, origin_topology)
 }
 
 pub fn inject_domain_entity_topology_defaults(event: &mut Value) {

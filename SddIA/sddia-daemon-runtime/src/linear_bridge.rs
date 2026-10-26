@@ -288,14 +288,16 @@ pub fn materialize_pending(repo: &Path, bus_event: &Value) -> Result<PathBuf, St
         .and_then(|v| v.as_str())
         .ok_or("event_id ausente")?;
     let mode = store_mode();
+    let mut stamped = bus_event.clone();
+    sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     if writes_store(mode) {
-        record_ecst(repo, "domain", bus_event).map_err(|err| err.to_string())?;
+        record_ecst(repo, "domain", &stamped).map_err(|err| err.to_string())?;
     }
     if !writes_filesystem(mode) {
         return Ok(runtime_db_path(repo));
     }
     let target = bus.pending.join(format!("{event_id}.json"));
-    write_json_atomic(&target, bus_event)?;
+    write_json_atomic(&target, &stamped)?;
     Ok(target)
 }
 
@@ -360,6 +362,12 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("linear-bridge-{}", Uuid::new_v4()));
         fs::create_dir_all(dir.join(".events/pending")).unwrap();
         fs::create_dir_all(dir.join(OUTBOUND_DIR)).unwrap();
+        fs::create_dir_all(dir.join("SddIA/core")).unwrap();
+        fs::write(
+            dir.join("SddIA/core/event-domain-subscriptions.json"),
+            r#"{"Tracker_Issue_Changed":[{"agent":"tekton","process":"tracker-stamp"}]}"#,
+        )
+        .unwrap();
         dir
     }
 

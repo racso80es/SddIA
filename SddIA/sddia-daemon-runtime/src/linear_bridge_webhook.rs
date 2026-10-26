@@ -226,6 +226,12 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("linear-wh-{}", Uuid::new_v4()));
         fs::create_dir_all(dir.join(".events/pending")).unwrap();
         fs::create_dir_all(dir.join(".SddIA/state/tracker-outbound")).unwrap();
+        fs::create_dir_all(dir.join("SddIA/core")).unwrap();
+        fs::write(
+            dir.join("SddIA/core/event-domain-subscriptions.json"),
+            r#"{"Tracker_Issue_Changed":[{"agent":"tekton","process":"tracker-stamp"}]}"#,
+        )
+        .unwrap();
         dir
     }
 

@@ -175,8 +175,12 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family: &str) -> Result<V
         .filter(|s| !s.is_empty())
         .ok_or("event_id required")?;
     let mode = store_mode();
+    let mut stamped = event.clone();
+    if family == "domain" {
+        sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+    }
     if writes_store(mode) {
-        record_ecst(repo, family, event).map_err(|err| err.to_string())?;
+        record_ecst(repo, family, &stamped).map_err(|err| err.to_string())?;
     }
     if !writes_filesystem(mode) {
         let target = runtime_db_path(repo);
@@ -195,7 +199,7 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family: &str) -> Result<V
         .get(family)
         .ok_or_else(|| format!("fractal family not configured: {family}"))?;
     let target = resolve_bus_path(repo, rel).join(format!("{event_id}.json"));
-    let text = serde_json::to_string_pretty(event).map_err(|e| e.to_string())?;
+    let text = serde_json::to_string_pretty(&stamped).map_err(|e| e.to_string())?;
     fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
     Ok(json!({
         "event_id": event_id,

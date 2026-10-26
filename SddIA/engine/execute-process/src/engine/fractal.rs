@@ -57,8 +57,12 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family_dir: &str) -> Resu
         .ok_or("event_id required")?;
     let family = family_dir.split('/').next_back().unwrap_or("telemetry");
     let mode = store_mode();
+    let mut stamped = event.clone();
+    if family == "domain" {
+        sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+    }
     if writes_store(mode) {
-        record_ecst(repo, family, event).map_err(|err| err.to_string())?;
+        record_ecst(repo, family, &stamped).map_err(|err| err.to_string())?;
     }
     if !writes_filesystem(mode) {
         let target = runtime_db_path(repo);
@@ -76,7 +80,7 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family_dir: &str) -> Resu
     if let Some(parent) = target.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    let text = serde_json::to_string_pretty(event).map_err(|e| e.to_string())?;
+    let text = serde_json::to_string_pretty(&stamped).map_err(|e| e.to_string())?;
     fs::write(&target, text).map_err(|e| e.to_string())?;
     Ok(json!({
         "event_id": event_id,

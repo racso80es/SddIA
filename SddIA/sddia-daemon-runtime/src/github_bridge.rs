@@ -373,12 +373,16 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
                 return Ok(None);
             }
         }
-        record_ecst(repo, "domain", bus_event).map_err(|err| err.to_string())?;
+        let mut stamped = bus_event.clone();
+        sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+        record_ecst(repo, "domain", &stamped).map_err(|err| err.to_string())?;
     }
     if !writes_filesystem(mode) {
         return Ok(Some(runtime_db_path(repo)));
     }
-    write_json_atomic(&target, bus_event)?;
+    let mut stamped = bus_event.clone();
+    sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+    write_json_atomic(&target, &stamped)?;
     Ok(Some(target))
 }
 
@@ -449,6 +453,11 @@ mod tests {
         let base = std::env::temp_dir().join(format!("sddia-gh-bridge-ci-{}", Uuid::new_v4()));
         fs::create_dir_all(base.join("SddIA/core")).unwrap();
         fs::write(
+            base.join("SddIA/core/event-domain-subscriptions.json"),
+            r#"{"CI_Job_Failed":[{"agent":"argos","process":"event-bus-audit"}],"PullRequest_Presented":[{"agent":"tekton","process":"tracker-stamp"}]}"#,
+        )
+        .unwrap();
+        fs::write(
             base.join("SddIA/core/cumulo.paths.json"),
             r#"{"eda_fractal":{"telemetry":".events/telemetry"}}"#,
         )
@@ -470,6 +479,16 @@ mod tests {
                 if let Ok(raw) = fs::read_to_string(&p) {
                     if let Ok(v) = serde_json::from_str::<Value>(&raw) {
                         out.push(v);
+                    }
+                }
+            }
+        }
+        if out.is_empty() {
+            let db = sddia_event_store::runtime_db_path(repo);
+            if db.is_file() {
+                if let Ok(store) = sddia_event_store::EventStore::open(db) {
+                    if let Ok(rows) = store.list_family(sddia_event_store::Family::Telemetry) {
+                        out.extend(rows.into_iter().map(|row| row.ecst));
                     }
                 }
             }

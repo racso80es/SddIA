@@ -691,28 +691,10 @@ pub fn plan_route(
     authority: bool,
     event_type: &str,
 ) -> RoutePlan {
-    let empty = Value::Null;
-    let codex = codex.unwrap_or(&empty);
-    let in_codex = codex.get(event_type).is_some();
-    let in_core = core.get(event_type).is_some();
-    if in_codex && !in_core && !authority {
-        return RoutePlan {
-            subscribers: Vec::new(),
-            dead_letter_no_subscriber: true,
-        };
-    }
-    let mut subscribers = Vec::new();
-    if let Some(arr) = core.get(event_type).and_then(|v| v.as_array()) {
-        subscribers.extend(arr.iter().cloned());
-    }
-    if authority {
-        if let Some(arr) = codex.get(event_type).and_then(|v| v.as_array()) {
-            subscribers.extend(arr.iter().cloned());
-        }
-    }
+    let planned = sddia_eda_catalog::plan_route(core, codex, authority, event_type);
     RoutePlan {
-        subscribers,
-        dead_letter_no_subscriber: false,
+        subscribers: planned.subscribers,
+        dead_letter_no_subscriber: planned.dead_letter_no_subscriber,
     }
 }
 

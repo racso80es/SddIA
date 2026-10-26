@@ -1882,6 +1882,7 @@ name = "event-watcher"
 version = "0.1.0"
 dependencies = [
  "sddia-daemon-runtime",
+ "sddia-eda-catalog",
  "sddia-event-store",
  "serde_json",
 ]
@@ -1899,6 +1900,7 @@ dependencies = [
  "sddia-core-memory",
  "sddia-daemon-runtime",
  "sddia-ecosystem-health",
+ "sddia-eda-catalog",
  "sddia-event-store",
  "sddia-infrastructure-lancedb-evolution",
  "sddia-infrastructure-lancedb-preferences",
@@ -5224,6 +5226,7 @@ dependencies = [
  "hex",
  "hmac",
  "libc",
+ "sddia-eda-catalog",
  "sddia-event-store",
  "serde",
  "serde_json",
@@ -5240,6 +5243,14 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
+]
+
+[[package]]
+name = "sddia-eda-catalog"
+version = "0.1.0"
+dependencies = [
+ "sddia-event-store",
+ "serde_json",
 ]
 
 [[package]]

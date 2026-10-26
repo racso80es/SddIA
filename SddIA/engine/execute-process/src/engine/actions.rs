@@ -39,8 +39,10 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
         .and_then(|v| v.as_str())
         .ok_or("event_id required")?;
     let mode = sddia_event_store::store_mode();
+    let mut stamped = event.clone();
+    sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     if sddia_event_store::writes_store(mode) {
-        sddia_event_store::record_ecst(repo, "domain", event).map_err(|err| err.to_string())?;
+        sddia_event_store::record_ecst(repo, "domain", &stamped).map_err(|err| err.to_string())?;
     }
     if !sddia_event_store::writes_filesystem(mode) {
         return Ok(json!({
@@ -61,7 +63,7 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
     };
     fs::create_dir_all(&pending).map_err(|e| e.to_string())?;
     let target = pending.join(format!("{event_id}.json"));
-    let text = serde_json::to_string_pretty(event).map_err(|e| e.to_string())?;
+    let text = serde_json::to_string_pretty(&stamped).map_err(|e| e.to_string())?;
     fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
     Ok(json!({
         "event_id": event_id,

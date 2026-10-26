@@ -91,10 +91,11 @@ pub fn record_ecst(repo: &Path, family: &str, event: &Value) -> Result<(), Store
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .unwrap_or("unknown");
-    let subscribers = subscriber_ids(event);
-    let refs: Vec<&str> = subscribers.iter().map(String::as_str).collect();
+    let entries = delivery_entries(family, event)?;
+    let ids: Vec<String> = entries.iter().map(|(id, _)| id.clone()).collect();
+    let refs: Vec<&str> = ids.iter().map(String::as_str).collect();
     let stored = StoredEvent {
-        event_id,
+        event_id: event_id.clone(),
         family,
         event_type: event_type.to_string(),
         created_at: now_millis(),
@@ -103,7 +104,15 @@ pub fn record_ecst(repo: &Path, family: &str, event: &Value) -> Result<(), Store
     let store = open_store(repo)?;
     match store.insert_event(&stored, &refs) {
         Err(StoreError::Conflict(_)) => Ok(()),
-        other => other,
+        Err(err) => Err(err),
+        Ok(()) => {
+            for (id, status) in &entries {
+                if *status != DeliveryStatus::Pending {
+                    store.set_delivery(&event_id, id, *status, serde_json::json!({}))?;
+                }
+            }
+            Ok(())
+        }
     }
 }
 
@@ -230,23 +239,32 @@ fn event_token(event: &Value, field: &str) -> Result<String, StoreError> {
         .ok_or_else(|| StoreError::Invalid(format!("{field} vacío")))
 }
 
-fn subscriber_ids(event: &Value) -> Vec<String> {
-    event
-        .get("delivery_state")
-        .and_then(|v| v.as_object())
-        .map(|map| {
-            map.keys()
-                .filter_map(|key| {
-                    let token = key.trim();
-                    if token.is_empty() {
-                        None
-                    } else {
-                        Some(token.to_string())
-                    }
-                })
-                .collect()
-        })
-        .unwrap_or_default()
+const DELIVERY_META_KEYS: &[&str] = &["last_batch_anchor_error", "transaction_digest"];
+
+fn delivery_entries(
+    family: Family,
+    event: &Value,
+) -> Result<Vec<(String, DeliveryStatus)>, StoreError> {
+    let map = event.get("delivery_state").and_then(|v| v.as_object());
+    let disposition = map
+        .and_then(|state| state.get("_disposition"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let mut entries = Vec::new();
+    if let Some(map) = map {
+        for (key, value) in map {
+            let token = key.trim();
+            if token.is_empty() || token.starts_with('_') || DELIVERY_META_KEYS.contains(&token) {
+                continue;
+            }
+            let label = value.as_str().unwrap_or("pending");
+            entries.push((token.to_string(), delivery_status_from_label(label)));
+        }
+    }
+    if family == Family::Domain && entries.is_empty() && disposition != "no_subscriber" {
+        return Err(StoreError::Invalid("EDA_DELIVERY_PLAN_MISSING".into()));
+    }
+    Ok(entries)
 }
 
 fn now_millis() -> i64 {
