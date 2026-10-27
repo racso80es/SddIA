@@ -9,7 +9,7 @@ codex_slug: codex-software-engineering
 tracker:
   provider: linear
   team_key: AUT
-  project_id: P-OSC-1
+  project_id: 359ebe2e-311b-46f9-8623-fa665179bac3
   done_gate: linear
   state_map:
     backlog: Backlog
