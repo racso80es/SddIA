@@ -135,6 +135,7 @@ pub fn run_process(
     if let Err(deny) =
         domain_authority::assert_process_allowed(repo, &canonical, process_inputs)
     {
+        domain_authority::emit_fracture_for_denial(repo, &deny, process_inputs);
         return Ok(OrchestratorEnvelope {
             success: false,
             status_code: 1,

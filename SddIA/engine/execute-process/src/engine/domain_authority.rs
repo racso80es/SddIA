@@ -2,7 +2,8 @@
 
 use super::domain_profile::{resolve_execution_profile, ExecutionProfile};
 use super::project_binding;
-use serde_json::Value;
+use super::route_domain_core::materialize_pending_domain_event;
+use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 
@@ -19,6 +20,48 @@ pub const SOFTWARE_PROCESS_MEMBERSHIP: &[&str] = &[
 ];
 
 pub const DENY_CODE: &str = "DOMAIN_AUTHORITY_DENIED";
+
+pub const FRICTION_PROJECT_GIT_INVALID: &str = "F-DOMAIN-PROJECT-GIT-INVALID";
+pub const FRICTION_AUTHORITY_DENIED: &str = "F-DOMAIN-AUTHORITY-DENIED";
+
+/// `friction_id` estable según criterio AUT-8.
+pub fn friction_id_for_denial_message(message: &str) -> &'static str {
+    if message.starts_with("PROJECT_GIT_INVALID") {
+        FRICTION_PROJECT_GIT_INVALID
+    } else {
+        FRICTION_AUTHORITY_DENIED
+    }
+}
+
+/// Colapso mudo prohibido (`obediencia-procesos`): fractura antes del envelope de deny.
+pub fn emit_fracture_for_denial(
+    repo: &Path,
+    deny: &DomainAuthorityDenial,
+    process_inputs: &Value,
+) {
+    let friction_id = friction_id_for_denial_message(&deny.message);
+    let mut payload = json!({
+        "process_name": deny.process_name,
+        "error_trace": deny.to_error_string(),
+        "agent_emitter": "domain-authority",
+        "attempted_action": deny.process_name,
+        "friction_id": friction_id,
+    });
+    if let Some(slug) = process_inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        payload["project_slug"] = json!(slug);
+    }
+    let _ = materialize_pending_domain_event(
+        repo,
+        "System_Fracture_Detected",
+        "domain-authority",
+        payload,
+    );
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DomainAuthorityDenial {
@@ -387,5 +430,57 @@ status: active
             "execution_profile": { "git_required": false }
         });
         assert!(assert_process_allowed(td.path(), "entity-manager", &inputs).is_ok());
+    }
+
+    #[test]
+    fn friction_id_project_git_invalid_prefix() {
+        assert_eq!(
+            friction_id_for_denial_message("PROJECT_GIT_INVALID: nested"),
+            FRICTION_PROJECT_GIT_INVALID
+        );
+        assert_eq!(
+            friction_id_for_denial_message("process 'x' requiere Códice"),
+            FRICTION_AUTHORITY_DENIED
+        );
+    }
+
+    #[test]
+    fn emit_fracture_on_deny_materializes_system_fracture() {
+        use sddia_event_store::{override_store_mode, Family, StoreMode};
+
+        struct Guard;
+        impl Drop for Guard {
+            fn drop(&mut self) {
+                override_store_mode(None);
+            }
+        }
+        let _g = Guard;
+        override_store_mode(Some(StoreMode::Redb));
+
+        let td = tempfile::tempdir().unwrap();
+        write_codex(td.path(), &["feature"]);
+        fs::create_dir_all(td.path().join(".SddIA/runtime")).unwrap();
+        let inputs = json!({
+            "execution_profile": { "git_required": false },
+            "project_slug": "core",
+        });
+        let deny = assert_process_allowed(td.path(), "feature", &inputs).unwrap_err();
+        emit_fracture_for_denial(td.path(), &deny, &inputs);
+
+        let store = sddia_event_store::EventStore::open(
+            sddia_event_store::runtime_db_path(td.path()),
+        )
+        .expect("open store");
+        let listed = store.list_family(Family::Domain).expect("list");
+        let fractures: Vec<_> = listed
+            .iter()
+            .filter(|e| e.event_type == "System_Fracture_Detected")
+            .collect();
+        assert_eq!(fractures.len(), 1, "deny sin fractura = colapso mudo");
+        let friction = fractures[0]
+            .ecst
+            .pointer("/payload/friction_id")
+            .and_then(|v| v.as_str());
+        assert_eq!(friction, Some(FRICTION_AUTHORITY_DENIED));
     }
 }
