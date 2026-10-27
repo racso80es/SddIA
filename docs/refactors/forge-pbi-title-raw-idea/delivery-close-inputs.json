@@ -1,0 +1,8 @@
+{
+  "source_process": "refactorization",
+  "persist_ref": "docs/refactors/forge-pbi-title-raw-idea",
+  "branch_name": "refactor/forge-pbi-title-raw-idea",
+  "target_branch": "main",
+  "pr_title": "refactor(forge-pbi): título destilado desde raw_idea (AUT-28)",
+  "pr_body": "## Summary\n- `distill_title_from_raw_idea` determinista (encabezado `#`, primera línea útil, tope 120).\n- `create_issue` y H1 del cuerpo usan la frase; `document_id` solo en frontmatter.\n- `RAW_IDEA_TITLE_EMPTY` sin alta en tracker.\n\n## Test plan\n- [x] `cargo test -p execute-process --lib forge_pbi::`\n\nLinear: AUT-28"
+}

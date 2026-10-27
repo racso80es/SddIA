@@ -10,6 +10,8 @@ use std::path::Path;
 use uuid::Uuid;
 
 const PROCESS_NAME: &str = "forge-pbi";
+const TITLE_MAX_LEN: usize = 120;
+pub const RAW_IDEA_TITLE_EMPTY: &str = "RAW_IDEA_TITLE_EMPTY";
 
 fn str_field(inputs: &Value, key: &str) -> Option<String> {
     inputs
@@ -67,6 +69,79 @@ fn emit_create_issue_failed(
 
 fn backlog_state_name(tc: &TrackerConfig) -> Option<String> {
     tc.state_map.get("backlog").cloned()
+}
+
+fn is_fence_line(line: &str) -> bool {
+    let t = line.trim();
+    t.starts_with("```") || t == "---"
+}
+
+fn is_skipped_body_line(line: &str) -> bool {
+    let t = line.trim();
+    if t.is_empty() {
+        return true;
+    }
+    if is_fence_line(line) {
+        return true;
+    }
+    if t.starts_with('|') || t.starts_with('>') || t.starts_with('-') {
+        return true;
+    }
+    if t.contains(':') && !t.starts_with('#') {
+        let before_colon = t.split(':').next().unwrap_or("").trim();
+        if !before_colon.is_empty()
+            && before_colon
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        {
+            return true;
+        }
+    }
+    false
+}
+
+fn collapse_internal_spaces(s: &str) -> String {
+    s.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn truncate_title(phrase: &str) -> String {
+    let collapsed = collapse_internal_spaces(phrase);
+    if collapsed.chars().count() <= TITLE_MAX_LEN {
+        return collapsed;
+    }
+    let prefix: String = collapsed.chars().take(TITLE_MAX_LEN).collect();
+    if let Some(idx) = prefix.rfind(' ') {
+        prefix[..idx].trim().to_string()
+    } else {
+        prefix
+    }
+}
+
+/// Título determinista para `create_issue` y H1 del cuerpo (AUT-28).
+pub fn distill_title_from_raw_idea(raw_idea: &str) -> Result<String, &'static str> {
+    for line in raw_idea.lines() {
+        let t = line.trim();
+        if t.starts_with("# ") {
+            let heading = t.trim_start_matches('#').trim();
+            if !heading.is_empty() {
+                let out = truncate_title(heading);
+                if out.is_empty() {
+                    return Err(RAW_IDEA_TITLE_EMPTY);
+                }
+                return Ok(out);
+            }
+        }
+    }
+    for line in raw_idea.lines() {
+        if is_skipped_body_line(line) {
+            continue;
+        }
+        let out = truncate_title(line.trim());
+        if !out.is_empty() {
+            return Ok(out);
+        }
+    }
+    Err(RAW_IDEA_TITLE_EMPTY)
 }
 
 fn build_pbi_labels(
@@ -202,9 +277,24 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let raw_idea = inputs
         .get("raw_idea")
         .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
         .ok_or("raw_idea requerido")?;
+    let title = match distill_title_from_raw_idea(raw_idea) {
+        Ok(t) => t,
+        Err(code) => {
+            return Ok(OrchestratorEnvelope {
+                success: false,
+                status_code: 1,
+                data: None,
+                error: Some(code.to_string()),
+                execution_report: Some(json!({
+                    "phases": [
+                        {"phase_name": "Recepcion", "status": "failed", "agent_tier": "reflexivo", "note": code},
+                    ]
+                })),
+                exit_code: 1,
+            });
+        }
+    };
     let process = inputs
         .get("process")
         .and_then(|v| v.as_str())
@@ -216,7 +306,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let document_id = format!("PBI-{}", &Uuid::new_v4().to_string()[..8]);
     let entity_uuid = Uuid::new_v4().to_string();
     let created = Utc::now().format("%Y-%m-%d").to_string();
-    let title = document_id.clone();
     let lifecycle_fm = super::super::item_lifecycle_frontmatter::forge_frontmatter_lines();
     let mut fm_lines = format!(
         "document_id: {document_id}\nuuid: \"{entity_uuid}\"\n{lifecycle_fm}\nprocess: {process}\ncreated: \"{created}\"\nproject_slug: {slug_project}\ndelivery_mode: {mode}\ndelivery_mode_source: {source}",
@@ -227,7 +316,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     if let Some(href) = str_field(inputs, "historia_ref") {
         fm_lines.push_str(&format!("\nhistoria_ref: \"{href}\""));
     }
-    let draft = format!("---\n{fm_lines}\n---\n\n# {document_id}\n\n{raw_idea}\n");
+    let draft = format!("---\n{fm_lines}\n---\n\n# {title}\n\n{raw_idea}\n");
     let tracker = tracker_registration_phase(
         repo,
         &bound,
@@ -271,7 +360,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     }
     let body = if let Some(tr) = &tracker.tracker_ref {
         let with_ref = format!("{fm_lines}\ntracker_ref: \"{tr}\"");
-        format!("---\n{with_ref}\n---\n\n# {document_id}\n\n{raw_idea}\n")
+        format!("---\n{with_ref}\n---\n\n# {title}\n\n{raw_idea}\n")
     } else {
         draft.clone()
     };
@@ -370,6 +459,41 @@ mod tests {
         f();
         std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
         let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
+    }
+
+    #[test]
+    fn distill_title_ac1_plain_phrase() {
+        let got = distill_title_from_raw_idea("El puente no adjunta tracker_ref.")
+            .expect("title");
+        assert_eq!(got, "El puente no adjunta tracker_ref.");
+    }
+
+    #[test]
+    fn distill_title_ac2_heading_wins_over_prose() {
+        let raw = "# Frase de encabezado\n\nTexto que no debe ser el título.";
+        let got = distill_title_from_raw_idea(raw).expect("title");
+        assert_eq!(got, "Frase de encabezado");
+    }
+
+    #[test]
+    fn distill_title_ac3_truncates_at_word_boundary() {
+        let raw = "palabra ".repeat(25);
+        let got = distill_title_from_raw_idea(raw.trim()).expect("title");
+        assert!(got.chars().count() <= TITLE_MAX_LEN);
+        assert!(!got.ends_with("palab"));
+        assert!(got.ends_with("palabra"));
+    }
+
+    #[test]
+    fn distill_title_ac4_empty_or_useless() {
+        assert_eq!(
+            distill_title_from_raw_idea("   \n\n"),
+            Err(RAW_IDEA_TITLE_EMPTY)
+        );
+        assert_eq!(
+            distill_title_from_raw_idea("- solo viñeta\n| col |"),
+            Err(RAW_IDEA_TITLE_EMPTY)
+        );
     }
 
     #[test]

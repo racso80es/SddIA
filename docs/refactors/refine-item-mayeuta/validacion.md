@@ -42,18 +42,18 @@ git_changes:
 
 `approval_status: integrity_failure` · `global: NO_APTO`
 
-Causa: sin stdout de cápsulas en este turno; L-ARGOS-SYNTHESIS prohíbe sustituir tests/QA/git por inferencia LLM. Cascada oficial `phase_reports.json` (execution_id `51caf6b7-…`): Estabilización=`blocked`; Verificación=`skipped` (`prior_agent_phase_not_executed`). Norma `features-documentation-pattern`: `CI-GITHUB: PENDIENTE-CI` impide `global: APTO`.
+Causa: sin stdout de cápsulas en este turno; L-ARGOS-SYNTHESIS prohíbe sustituir tests/QA/git por inferencia LLM. Inyección kalma2 con `process: ?` / `phase: ?` / campos vacíos; contrato inferido `refactorization` / `Verificación` / `agent:argos` (execution_id `51caf6b7-…`, AUT-19). Norma documental: `CI-GITHUB: PENDIENTE-CI` impide `global: APTO`.
 
 ## Evidencia disponible (insuficiente)
 
 | Fuente | Hallazgo |
 |--------|----------|
-| Filesystem (Read/Glob) | Existen handler, genoma, plan/spec/execution bajo `persist_ref`; no sustituye cápsulas |
-| Cápsulas (`sddia-run` / `sddia-qa` / `cargo test`) | **No ejecutables**: Shell IDE Rejected; MCP `sddia-workspace-server` ausente |
+| Filesystem (Read/Glob) | Existen clarify/objectives/spec/plan/execution/implementation bajo `persist_ref`; no sustituye cápsulas |
+| Cápsulas (`sddia-run` / `sddia-qa` / `cargo test`) | **No ejecutables**: Shell IDE Rejected (×2); MCP `sddia-workspace-server` ausente |
 | `git-manager` | Sin acuse JSON este turno (Shell Rejected) |
-| Workspace | `.SddIA/workspaces/refactorization/51caf6b7-…/phase_reports.json` no sella Verificación |
+| Workspace | `.SddIA/workspaces/refactorization/51caf6b7-…/` no resoluble vía Glob (0 hits) |
 
-`execution.md` cita tests OK en otro ciclo; **no re-corroborado** aquí → no se eleva a APTO.
+`execution.md` cita tests OK y PR #404 en otro ciclo; **no re-corroborado** aquí → no se eleva a APTO.
 
 ## correction_blueprint_md
 

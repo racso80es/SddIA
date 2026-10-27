@@ -34,3 +34,7 @@
 {"event_id":"b36e173a-52cc-4772-b24b-897ae90719f2","issue_ref":"OSC-101","occurred_at":"2026-10-25T16:55:17Z","operation":"create_comment","source_process":"tracker-stamp"}
 {"event_id":"1d99d0e4-909e-4db2-acc6-0c078dc8b3ce","issue_ref":"OSC-101","occurred_at":"2026-10-25T16:55:19Z","operation":"update_issue_state","source_process":"tracker-stamp"}
 {"event_id":"469158e0-272a-4a85-92fd-7424b7b107b0","issue_ref":"OSC-101","occurred_at":"2026-10-25T16:55:20Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"56ed8d51-45f5-4880-97c1-f08daad17a2e","issue_ref":"OSC-101","occurred_at":"2026-10-27T16:50:39Z","operation":"create_issue","source_process":"forge-pbi"}
+{"event_id":"c8fd8bd4-8d8c-400e-94ab-d3b6dcf3a0e0","issue_ref":"OSC-101","occurred_at":"2026-10-27T16:50:39Z","operation":"update_issue_description","source_process":"forge-pbi"}
+{"event_id":"187bc8e1-59c2-4577-b82d-0c74a6d448b5","issue_ref":"OSC-101","occurred_at":"2026-10-27T16:50:59Z","operation":"create_issue","source_process":"forge-pbi"}
+{"event_id":"6b4d06dd-0cbc-4ff2-9ff7-d868c87464dd","issue_ref":"OSC-101","occurred_at":"2026-10-27T16:50:59Z","operation":"update_issue_description","source_process":"forge-pbi"}
