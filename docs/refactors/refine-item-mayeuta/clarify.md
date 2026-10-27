@@ -34,3 +34,15 @@ Relevo: subproceso `cursor-agent` sin `sddia-workspace-server` en catálogo MCP;
 ## Sello Estabilización (2026-10-27T15:43Z)
 
 Reinyección Mayeuta con inyección `process/phase: ?`. Veredicto **ok**: transcript y requisito termodinámico ya materializados bajo `persist_ref`; sin nuevas decisiones de alcance. MCP workspace ausente no bloquea el sello documental (artefactos en disco).
+
+## Re-sello Estabilización (2026-10-27T16:45Z)
+
+Nueva inyección Mayeuta (`process/phase: ?`). Laudos L-FORM…L-FORGE vigentes; sin preguntas abiertas. Veredicto **ok**. Cascada posterior (Dedalo/Tekton/Argos) y peaje Shell/MCP quedan fuera de esta fase.
+
+## Re-sello Estabilización (2026-10-27T16:46Z)
+
+Reinyección Mayeuta (`process/phase: ?`; agent:mayeuta). Transcript + requisito estable intactos; L-FORM…L-FORGE sin cambio. MCP `sddia-workspace-server` ausente — no bloquea sello documental. Veredicto **ok**.
+
+## Re-sello Estabilización (2026-10-27T16:47Z)
+
+Reinyección Mayeuta (`process/phase: ?`; agent:mayeuta). Contrato inferido: `refactorization` / Estabilización / AUT-19 (`51caf6b7-…`). `clarify.md` + `objectives.md` vigentes; L-FORM…L-FORGE sin nuevas decisiones. MCP `sddia-workspace-server` → Server not found; catálogo dinámico sin sddia — no bloquea sello documental. Veredicto **ok**.
