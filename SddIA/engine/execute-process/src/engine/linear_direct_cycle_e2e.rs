@@ -1,5 +1,6 @@
 //! Suite lab AC-7..AC-10 — ciclo directo Linear (mock, sin red).
 
+use super::capsules::invoke_tool_for_process;
 use super::handlers::forge_pbi;
 use super::handlers::refine;
 use super::handlers::tracker_stamp;
@@ -63,6 +64,30 @@ fn register_project(core: &Path, slug: &str, tracker: bool, delivery_mode: &str)
 fn cleanup(core: &Path, slug: &str) {
     let _ = fs::remove_file(core.join(".SddIA/projects").join(format!("{slug}.md")));
     let _ = fs::remove_dir_all(core.join(format!("_linear_e2e_{slug}")));
+}
+
+fn lab_create_hu_issue(repo: &Path, title: &str) -> String {
+    let tool_body = invoke_tool_for_process(
+        repo,
+        "linear-tracker-adapter",
+        &json!({
+            "request": {
+                "operation": "create_issue",
+                "team_key": "OSC",
+                "title": title,
+                "description": format!("---\n---\n\n# {title}\n"),
+                "labels": ["hu"],
+                "state_name": "Backlog"
+            }
+        }),
+        Some("refine-item"),
+    )
+    .expect("lab create_issue HU");
+    tool_body
+        .get("issue_ref")
+        .and_then(|v| v.as_str())
+        .expect("issue_ref")
+        .to_string()
 }
 
 fn stamp(repo: &Path, event_type: &str, payload: Value) -> bool {
@@ -141,9 +166,12 @@ fn run_branch_pr_cycle(repo: &Path, slug: &str) -> (String, String) {
     let hu_rel = "docs/todos/historias/hu-e2e.md";
     let hu_path = repo.join(format!("_linear_e2e_{slug}")).join(hu_rel);
     fs::create_dir_all(hu_path.parent().unwrap()).unwrap();
+    let hu_tracker_seed = lab_create_hu_issue(repo, "HU E2E");
     fs::write(
         &hu_path,
-        "---\ndocument_id: HU-E2E\nstatus: pending\n---\n\n# HU E2E\n",
+        format!(
+            "---\ndocument_id: HU-E2E\nstatus: pending\ntracker_ref: \"{hu_tracker_seed}\"\n---\n\n# HU E2E\n"
+        ),
     )
     .unwrap();
 
@@ -290,7 +318,14 @@ mod tests {
             let hu_rel = "docs/todos/historias/hu-trunk.md";
             let hu_path = repo.join(format!("_linear_e2e_{slug}")).join(hu_rel);
             fs::create_dir_all(hu_path.parent().unwrap()).unwrap();
-            fs::write(&hu_path, "---\nstatus: pending\n---\n\n# HU\n").unwrap();
+            let hu_tracker_seed = lab_create_hu_issue(&repo, "HU");
+            fs::write(
+                &hu_path,
+                format!(
+                    "---\nstatus: pending\ntracker_ref: \"{hu_tracker_seed}\"\n---\n\n# HU\n"
+                ),
+            )
+            .unwrap();
 
             refine::run_hu(
                 &repo,

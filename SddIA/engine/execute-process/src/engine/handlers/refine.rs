@@ -127,6 +127,22 @@ fn backlog_state_name(tc: &TrackerConfig) -> Option<String> {
     tc.state_map.get("backlog").cloned()
 }
 
+/// Con tracker remoto, si `fetch_issue` no resuelve el `hu_ref` como issue, leer el fichero local.
+fn load_local_item_markdown(
+    project_root: &Path,
+    rel: &str,
+) -> Option<(String, YamlValue)> {
+    let path = project_binding::resolve_doc_path(project_root, rel).ok()?;
+    if !path.is_file() {
+        return None;
+    }
+    let disk = fs::read_to_string(&path).ok()?;
+    let canonical = super::super::item_lifecycle_frontmatter::normalize_item_markdown(&disk)
+        .unwrap_or(disk);
+    let fm = parse_fm(&canonical).unwrap_or(YamlValue::Null);
+    Some((canonical, fm))
+}
+
 fn try_create_hu_issue(
     repo: &Path,
     tc: &TrackerConfig,
@@ -295,12 +311,16 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
             let fm = parse_fm(&canonical).unwrap_or(YamlValue::Null);
             (canonical, fm)
         } else if remote {
-            ("---\nstatus: pending\n---\n\n".to_string(), YamlValue::Null)
+            load_local_item_markdown(&bound.project_root, &rel).unwrap_or_else(|| {
+                ("---\nstatus: pending\n---\n\n".to_string(), YamlValue::Null)
+            })
         } else {
             return Err(format!("REFINE_NOT_FOUND: {hu_ref}"));
         }
     } else if remote {
-        ("---\nstatus: pending\n---\n\n".to_string(), YamlValue::Null)
+        load_local_item_markdown(&bound.project_root, &rel).unwrap_or_else(|| {
+            ("---\nstatus: pending\n---\n\n".to_string(), YamlValue::Null)
+        })
     } else {
         return Err(fetched.err().unwrap_or_else(|| format!("REFINE_NOT_FOUND: {hu_ref}")));
     };
