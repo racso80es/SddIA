@@ -257,7 +257,7 @@ mod tests {
             "payload": {
                 "event_id": "00000000-0000-4000-8000-000000000001",
                 "correlation_id": "00000000-0000-4000-8000-000000000002",
-                "source_process": "refine-pbi",
+                "source_process": "refine-item",
                 "pbi_ref": "docs/todos/pending/x.md",
                 "occurred_at": "2026-10-03T12:00:00Z"
             }
@@ -269,7 +269,7 @@ mod tests {
             "payload": {
                 "event_id": "00000000-0000-4000-8000-000000000001",
                 "correlation_id": "00000000-0000-4000-8000-000000000002",
-                "source_process": "refine-pbi",
+                "source_process": "refine-item",
                 "pbi_ref": "docs/todos/pending/x.md",
                 "occurred_at": "2026-10-03T12:00:00Z",
                 "team_key": "OSC"
@@ -285,7 +285,7 @@ mod tests {
             "payload": {
                 "event_id": "00000000-0000-4000-8000-000000000003",
                 "correlation_id": "00000000-0000-4000-8000-000000000004",
-                "source_process": "refine-hu",
+                "source_process": "refine-item",
                 "hu_ref": "docs/todos/historias/hu.md",
                 "occurred_at": "2026-10-03T12:00:00Z"
             }
@@ -363,7 +363,7 @@ mod tests {
             "payload": {
                 "event_id": "00000000-0000-4000-8000-000000000001",
                 "correlation_id": "00000000-0000-4000-8000-000000000002",
-                "source_process": "refine-pbi",
+                "source_process": "refine-item",
                 "pbi_ref": "docs/todos/pending/x.md",
                 "occurred_at": "2026-10-03T12:00:00Z"
             }
@@ -375,7 +375,7 @@ mod tests {
             "payload": {
                 "event_id": "00000000-0000-4000-8000-000000000001",
                 "correlation_id": "00000000-0000-4000-8000-000000000002",
-                "source_process": "refine-pbi",
+                "source_process": "refine-item",
                 "pbi_ref": "docs/todos/pending/x.md",
                 "occurred_at": "2026-10-03T12:00:00Z",
                 "team_key": "ENG"
@@ -390,7 +390,7 @@ mod tests {
             "payload": {
                 "event_id": "00000000-0000-4000-8000-000000000003",
                 "correlation_id": "00000000-0000-4000-8000-000000000004",
-                "source_process": "refine-hu",
+                "source_process": "refine-item",
                 "hu_ref": "docs/todos/historias/hu.md",
                 "occurred_at": "2026-10-03T12:00:00Z"
             }

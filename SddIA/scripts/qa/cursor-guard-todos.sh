@@ -15,7 +15,7 @@ deny() {
   msg=$(linear_todos_intake_blocked_message | tr '\n' ' ')
   python3 -c 'import json,sys; print(json.dumps({"permission":"deny","user_message":sys.argv[1],"agent_message":sys.argv[2]}))' \
     "$msg" \
-    "Con provider linear usa forge-pbi / refine-pbi en Linear; no escribas en docs/todos/pending ni docs/todos/done."
+    "Con provider linear usa forge-pbi / refine-item en Linear; no escribas en docs/todos/pending ni docs/todos/done."
   exit 2
 }
 

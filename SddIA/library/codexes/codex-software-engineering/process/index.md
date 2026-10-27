@@ -4,6 +4,7 @@ Packing de dominio (`directories.process_domain_roots`). Resolución: domain-fir
 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
+| refine-item | bb8e8704-80fa-4523-9cec-043a63fe0499 | 1.0.0 | knowledge-management, filesystem-ops, tracker-operations | — | Refinamiento unificado de ítems de backlog: preparación YAML |
 | feature | 1b4fa69f-4299-47ca-b2ed-380f2263239c | 1.2.0 | ecosystem-evolution, filesystem-ops, source-control | — | Proceso V5 para desarrollo de **features**: cadena **Inicialización → Mayeuta → Dedalo → Tekton → Argos → delivery-close-cycle** (`source_process: feature`). Puente documental a `features-documentation-pattern` bajo `persist_ref`. Sustituye el linaje legacy `spec/clarify/planning/...` purgado. |
 | bug-fix | ac8d078c-9785-490b-9f43-ad310fe9df9d | 1.2.0 | ecosystem-evolution, filesystem-ops, source-control | — | Proceso V5 para **corrección de defectos**: cadena **Inicialización → Diseño del fix → Tekton → Argos → delivery-close-cycle** (`source_process: bug-fix`). Subconjunto documental bajo `persist_ref`; Mayeuta opcional si triaje ambiguo. |
 | refactorization | ae01e3ff-af68-4b94-90b3-97e5c03d75ee | 1.2.0 | ecosystem-evolution, filesystem-ops, source-control | — | Proceso V5 para **refactorización**: cadena **Inicialización → Estabilización de alcance → Diseño de refactor → Tekton → Argos → delivery-close-cycle** (`source_process: refactorization`). Puente a `features-documentation-pattern` bajo `persist_ref`; sin nueva capacidad funcional. |
@@ -11,3 +12,4 @@ Packing de dominio (`directories.process_domain_roots`). Resolución: domain-fir
 | accept-pr | bd81c878-5e1c-4fe5-b204-85c9136d8bc7 | 1.0.0 | pr-lifecycle, source-control, filesystem-ops | — | Aceptación local soberana: Argos → merge a main → emit-pr-merged-event → push main y limpieza de rama origen. |
 | delivery-close-cycle | 5417c92c-da7f-4d46-b245-55cf1b17961a | 1.4.0 | ecosystem-evolution | — | Cierre de entrega: snapshot, Argos/EDA, push, `gh` vía shell-executor, sello **PullRequest_Presented**, higiene local. Merge solo en `accept-pr`. |
 | forge-pbi | c4e8a1b2-7d3f-4a96-8c15-2f6e9b0d4a71 | 1.0.1 | knowledge-management, filesystem-ops | — | Línea de montaje de PBI: recepción de caos, expansión por tier reflexivo, sellado por tier balístico. Sin nombre de modelo literal. |
+

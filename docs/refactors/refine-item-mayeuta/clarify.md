@@ -30,3 +30,7 @@ Relevo: subproceso `cursor-agent` sin `sddia-workspace-server` en catálogo MCP;
 
 - HU padre: AUT-18.
 - PBI: AUT-19 (`refinement: refined` en tracker; cuerpo ampliado 2026-10-27 con L-FORM).
+
+## Sello Estabilización (2026-10-27T15:43Z)
+
+Reinyección Mayeuta con inyección `process/phase: ?`. Veredicto **ok**: transcript y requisito termodinámico ya materializados bajo `persist_ref`; sin nuevas decisiones de alcance. MCP workspace ausente no bloquea el sello documental (artefactos en disco).

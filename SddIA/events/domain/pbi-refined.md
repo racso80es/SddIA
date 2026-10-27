@@ -8,7 +8,7 @@ event_type: "PBI_Refined"
 context: "knowledge-management"
 capabilities:
   - "pbi_refined"
-hash_signature: "sha256:1a6177d564c21127e9396befe640d23d653835b63f2a2b6d73eae9856739b52d"
+hash_signature: "sha256:d00e87b3d1ec9df1dca2d52e5697114a84f9e7c45468199e85d0d1ad1da1b84f"
 ---
 
 # Event: PBI_Refined
@@ -34,7 +34,7 @@ PBI refinado en todos_pending; trigger hacia todo vía tracker-stamp (PBI 08).
 
 ## Emisores autorizados
 
-- `refine-pbi`
+- `refine-item`
 
 ## Suscripciones
 

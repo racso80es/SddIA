@@ -1,0 +1,36 @@
+{
+  "entity_class": "codex",
+  "entity_name": "codex-software-engineering",
+  "lifecycle_operation": "update",
+  "project_slug": "core",
+  "semantic_seed": {
+    "domain_codex_slug": "codex-software-engineering",
+    "domain_codex_version": "1.1.0",
+    "markdown_body_replacements": [
+      {
+        "from": "version: \"1.0.0\"",
+        "to": "version: \"1.1.0\""
+      },
+      {
+        "from": "  - forge-pbi\ncomposition:",
+        "to": "  - forge-pbi\n  - refine-item\ncomposition:"
+      },
+      {
+        "from": "  - norm: \"7c18fe07-9567-4f06-8d2b-a58e04608171\"\n    path: \"../norms/pr-acceptance-protocol.md\"\nhash_signature:",
+        "to": "  - norm: \"7c18fe07-9567-4f06-8d2b-a58e04608171\"\n    path: \"../norms/pr-acceptance-protocol.md\"\n  - norm: \"028fb30f-66e7-4811-bfc6-960c808b9517\"\n    path: \"../norms/backlog-item-refinement.md\"\nhash_signature:"
+      },
+      {
+        "from": "Normas tácticas: documentación atómica de tareas, patrones plan→implementación→ejecución, y protocolo de aceptación de PR.",
+        "to": "Normas tácticas: documentación atómica de tareas, patrones plan→implementación→ejecución, protocolo de aceptación de PR y refinamiento unificado de backlog (`backlog-item-refinement`)."
+      },
+      {
+        "from": "3. **`patterns-in-planning-implementation-execution`**: precedencia de `pattern_id` en implementación/ejecución.",
+        "to": "3. **`patterns-in-planning-implementation-execution`**: precedencia de `pattern_id` en implementación/ejecución.\n4. **`backlog-item-refinement`**: proceso canónico `refine-item`; prohibido `refine-pbi` / `refine-hu`."
+      },
+      {
+        "from": "| `delivery-close-cycle` | Cierre entrega / PR |\n\nRelocalización",
+        "to": "| `delivery-close-cycle` | Cierre entrega / PR |\n| `forge-pbi` | Alta PBI en tracker |\n| `refine-item` | Refinamiento Mayeuta + DoR |\n\nRelocalización"
+      }
+    ]
+  }
+}
