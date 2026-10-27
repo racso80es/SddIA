@@ -11,6 +11,7 @@ pub const REASON_ENGINE_DERIVED: &str = "EVOL_ENGINE_DERIVED";
 pub const REASON_INVALID: &str = "EVOL_RECORD_INVALID";
 pub const REASON_NOT_INDEXED: &str = "EVOL_NOT_INDEXED";
 pub const REASON_HASH: &str = "EVOL_HASH_MISMATCH";
+pub const REASON_ID_NOT_UUID_V4: &str = "EVOL_ID_NOT_UUID_V4";
 pub const REASON_DUPLICATE: &str = "EVOL_DUPLICATE";
 pub const REASON_ATOMICITY: &str = "EVOL_ATOMICITY";
 pub const REASON_CUMULO: &str = "EVOL_CUMULO";
@@ -169,15 +170,63 @@ fn is_borrador(rec: &Value) -> bool {
     )
 }
 
+fn is_excluded_evolution_md_fname(fname: &str) -> bool {
+    fname.eq_ignore_ascii_case("evolution_contract.md")
+        || fname.eq_ignore_ascii_case("Evolution_log.md")
+}
+
+fn is_borrador_fname(fname: &str) -> bool {
+    fname.contains("-temp") || fname.contains("analisis-temp")
+}
+
+fn record_for_diff_path<'a>(records: &'a [Value], path: &str) -> Option<&'a Value> {
+    records
+        .iter()
+        .find(|r| r.get("path").and_then(|v| v.as_str()) == Some(path))
+}
+
+/// Ficheros `.md` de evolution en el diff cuyo stem no es UUID v4 (AUT-9).
+fn invalid_evolution_stem_findings(
+    paths: &[String],
+    evo: &str,
+    records: &[Value],
+) -> Vec<Value> {
+    let mut out = Vec::new();
+    for p in paths {
+        if !path_under(p, evo) || !p.ends_with(".md") {
+            continue;
+        }
+        let fname = p.rsplit('/').next().unwrap_or("");
+        if is_excluded_evolution_md_fname(fname) || is_borrador_fname(fname) {
+            continue;
+        }
+        if let Some(rec) = record_for_diff_path(records, p) {
+            if is_borrador(rec) {
+                continue;
+            }
+        }
+        let stem = fname.trim_end_matches(".md");
+        if is_uuid_v4(stem) {
+            continue;
+        }
+        out.push(json!({
+            "path": p,
+            "reason_code": REASON_ID_NOT_UUID_V4,
+            "detail": format!(
+                "{fname}: stem no es UUID v4 (id_cambio debe coincidir con el nombre del fichero)"
+            ),
+        }));
+    }
+    out
+}
+
 fn is_record_file(path: &str, evo: &str) -> bool {
     let p = path.replace('\\', "/");
     if !path_under(&p, evo) || !p.ends_with(".md") {
         return false;
     }
     let fname = p.rsplit('/').next().unwrap_or("");
-    if fname.eq_ignore_ascii_case("evolution_contract.md")
-        || fname.eq_ignore_ascii_case("Evolution_log.md")
-    {
+    if is_excluded_evolution_md_fname(fname) {
         return false;
     }
     let stem = fname.trim_end_matches(".md");
@@ -524,6 +573,15 @@ fn verdict(request: &Value) -> Envelope {
         return err_result(code, "registro del diff inválido", json!(findings));
     }
 
+    let stem_findings = invalid_evolution_stem_findings(&paths, &evo, &records);
+    if !stem_findings.is_empty() {
+        return err_result(
+            REASON_ID_NOT_UUID_V4,
+            "evolution en diff con stem no UUID v4",
+            json!(stem_findings),
+        );
+    }
+
     if material.is_empty() {
         return ok_result(
             json!({
@@ -864,6 +922,36 @@ mod tests {
             env.result["reason_codes"][0],
             REASON_UNREGISTERED
         );
+    }
+
+    #[test]
+    fn non_v4_stem_in_diff_reports_id_not_uuid_v4() {
+        let bad = "SddIA/evolution/b2e8c3d4-e29b-33c6-a716-446655440000.md";
+        let req = json!({
+            "operation": "verdict",
+            "diff": {"paths": [{"path": bad, "status": "M"}]},
+            "registry": registry(vec![], &[])
+        });
+        let env = execute(&req);
+        assert!(!env.success);
+        assert_eq!(env.result["reason_codes"][0], REASON_ID_NOT_UUID_V4);
+        assert_ne!(env.result["reason_codes"][0], REASON_UNREGISTERED);
+    }
+
+    #[test]
+    fn non_v4_stem_precedes_material_unregistered() {
+        let bad = "SddIA/evolution/b2e8c3d4-e29b-33c6-a716-446655440000.md";
+        let req = json!({
+            "operation": "verdict",
+            "diff": {"paths": [
+                {"path": bad, "status": "M"},
+                {"path": "SddIA/norms/foo.md", "status": "M"}
+            ]},
+            "registry": registry(vec![], &[])
+        });
+        let env = execute(&req);
+        assert!(!env.success);
+        assert_eq!(env.result["reason_codes"][0], REASON_ID_NOT_UUID_V4);
     }
 
     #[test]
