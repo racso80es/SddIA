@@ -165,10 +165,10 @@ mod tests {
     }
 
     #[test]
-    fn refine_hu_allows_create_issue_gate() {
+    fn refine_item_allows_create_issue_gate() {
         let repo = find_repo_root().expect("repo");
-        gate_linear_tracker_operation(&repo, Some("refine-hu"), "create_issue")
-            .expect("refine-hu tiene tracker-operations");
+        gate_linear_tracker_operation(&repo, Some("refine-item"), "create_issue")
+            .expect("refine-item tiene tracker-operations");
     }
 
     #[test]

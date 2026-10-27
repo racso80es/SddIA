@@ -7,8 +7,6 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | Name | UUID | Versión | Context | Aliases | Descripción |
 |------|------|---------|---------|---------|-------------|
 | llm-interaction-audit | 21d1c95c-e4e3-41cf-b225-c323459b58ca | 1.0.0 | quality-assurance, filesystem-ops, tracker-operations | — | Registro opt-in de interacciones LLM y fricción de ./sddia-r |
-| refine-hu | 417025aa-6c8f-49fb-a4e7-d32efe9c896b | 1.0.3 | knowledge-management, filesystem-ops, tracker-operations | — | Alta opaca. Registro en Tracker, un create_issue. |
-| refine-pbi | d5ecaaed-ba8d-45a4-85f4-a1d7d1d4308a | 1.0.2 | knowledge-management, filesystem-ops, tracker-operations | — | pbi_ref opaco. Sello en workspace, persistencia por tracker:lifecycle. |
 | instance-health-verify | 44f1b64c-8a88-4d1e-a8f5-6280b4a44ce2 | 1.0.0 | quality-assurance | — | Verificación post-deploy de instancia consumidor: unidades s |
 | aiua-stimulus-processing | 6c595785-e386-402f-b570-0b2aa6343051 | 1.3.0 | ecosystem-evolution | — | Latido ontológico de la Aiúa: contexto LanceDB, inyección de |
 | system-vitality-probe | b215b373-f6d3-4fb1-9d55-60eb260df5cc | 1.0.0 | quality-assurance | — | Sondas deterministas de invariantes no-proceso y HTTP de Kal |
@@ -62,4 +60,6 @@ Contrato de familia: `process-contract.md` (no constituye un proceso ejecutable 
 | tracker-sync-replay | e1f2a3b4-c5d6-4789-a012-3456789abc01 | 1.0.2 | tracker-operations | — | Replay de sincronización. Un fetch_issue y reaplicación. |
 | tracker-stamp | f2a3b4c5-d6e7-4890-a123-456789abcdef | 1.1.1 | tracker-operations | — | Sello de ciclo vía tracker:lifecycle (fail-soft D5). |
 | tracker-markdown-apply | b7c8d9e0-f123-4567-89ab-cdef01234567 | 1.0.1 | tracker-operations, filesystem-ops, source-control | — | Réplica del ítem por tracker:lifecycle. |
+
+
 

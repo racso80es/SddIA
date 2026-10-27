@@ -111,7 +111,7 @@ staged_added_todos_bucket_paths() {
 linear_todos_intake_blocked_message() {
   cat <<'EOF'
 BLOCKED — tracker.provider=linear prohíbe alta de ficheros en docs/todos/{pending,done}/.
-Registra el backlog en Linear (forge-pbi / refine-pbi / linear-tracker-adapter --prefer-native).
+Registra el backlog en Linear (forge-pbi / refine-item / linear-tracker-adapter --prefer-native).
 EOF
 }
 

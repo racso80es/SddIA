@@ -6,7 +6,7 @@ contract: "agents-contract v1.0.0"
 allowed_policies:
   - "knowledge-management"
   - "filesystem-ops"
-hash_signature: "sha256:8356b721f039ef275c756cc61c8cc84a079eb92b74a084b2d378dbc224546deb"
+hash_signature: "sha256:11191748becb8d032739112b9e2cddc7e47fbb453a0c9ed6ee7613e9a8055ea6"
 llm_profile:
   tier: "high"
   description: "Mayéutica, refinamiento de requisitos y síntesis de intenciones"
@@ -50,10 +50,15 @@ Si ambas están vacías o son inútiles, Mayeuta **aborta** con causa explícita
 
 Al escalar a **Dedalo**, el runtime debe **reinyectar** no solo el contenido de `thermodynamic_stable_requirement_md` como `refined_requirements`, sino también **`cumulo_topology`**, **`active_norm_pack`** y **`target_executor_rbac`** según el contrato de dicho agente, salvo norma explícita que defina otro empaquetado.
 
+## 3.2. Contrato `refine-item`
+
+Cuando el proceso invocante es **`refine-item`**, el runtime inyecta `backlog_item_md` (copia canónica del ítem), `dor_profile` (tipo y criterios DoR) y espera `refinement_verdict_json` en el workspace junto a `item.refined.md` y `clarify.md`.
+
 ## 4. Salidas
 
 * **`clarification_transcript_md`:** Historial auditable del ciclo de clarificación.
 * **`thermodynamic_stable_requirement_md`:** Requisito estable, alineado al pack activo y a la topología; entrada lógica al nodo Dedalo.
+* **`refinement_verdict_json`:** Veredicto (`refined` | `needs_clarification`) y `open_questions` para sellado condicional.
 
 ## 5. Límites
 

@@ -220,11 +220,25 @@ pub fn run_process(
     }
 
     if canonical == "refine-pbi" {
-        return handlers::refine::run_pbi(repo, process_inputs);
+        return Ok(handlers::refine_item::process_renamed(
+            repo,
+            process_inputs,
+            "refine-pbi",
+            "pbi_ref",
+        ));
     }
 
     if canonical == "refine-hu" {
-        return handlers::refine::run_hu(repo, process_inputs);
+        return Ok(handlers::refine_item::process_renamed(
+            repo,
+            process_inputs,
+            "refine-hu",
+            "hu_ref",
+        ));
+    }
+
+    if canonical == "refine-item" {
+        return handlers::refine_item::run(repo, process_inputs);
     }
 
     if canonical == "governance-daemon-manager" {

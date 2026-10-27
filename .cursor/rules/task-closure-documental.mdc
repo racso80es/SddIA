@@ -12,9 +12,9 @@ Antes de crear o refinar un PBI, bug, HU o kaizen en el repositorio Core-self:
 1. Leer `tracker.provider` en `.SddIA/project.md` (SSOT de instancia).
 2. Con **`provider: linear`**:
    - **Prohibido** usar `Write` / `StrReplace` (u otra mutación IDE) bajo `docs/todos/pending/` o `docs/todos/done/` (rutas efectivas según `docs_layout` del manifiesto).
-   - El alta y el refinamiento viven en **Linear**: `./sddia-run.sh --process forge-pbi` y `./sddia-run.sh --process refine-pbi` (o `linear-tracker-adapter` nativo con `--prefer-native` en lab).
+   - El alta y el refinamiento viven en **Linear**: `./sddia-run.sh --process forge-pbi` y `./sddia-run.sh --process refine-item` (o `linear-tracker-adapter` nativo con `--prefer-native` en lab).
    - El frontmatter YAML (`tracker_column`, `refinement`, `tracker_ref`, …) se sella en el **`description`** del issue, no en un fichero local de cola.
-3. Con **`provider: file`** (o sin objeto `tracker`): la cola local `docs/todos/pending/` sigue siendo la vía canónica de forja/refino según procesos `forge-pbi` / `refine-pbi`.
+3. Con **`provider: file`** (o sin objeto `tracker`): la cola local `docs/todos/pending/` sigue siendo la vía canónica de forja/refino según procesos `forge-pbi` / `refine-item`.
 
 La aduana Git (`pre_commit_gate.sh`) y el hook Cursor (`.cursor/hooks.json`) refuerzan esta regla en caliente.
 

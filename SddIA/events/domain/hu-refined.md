@@ -8,7 +8,7 @@ event_type: "HU_Refined"
 context: "knowledge-management"
 capabilities:
   - "hu_refined"
-hash_signature: "sha256:f6c07eab5c9200b060b17847e188f5653e8d27b29711ebac601cca29be8350b3"
+hash_signature: "sha256:897fa8481182756d73071a77e17bcf3f4f145ef03aad4e302cceedbea3e62699"
 ---
 
 # Event: HU_Refined
@@ -34,7 +34,7 @@ HU refinada en historias/; trigger hacia todo vía tracker-stamp (PBI 08).
 
 ## Emisores autorizados
 
-- `refine-hu`
+- `refine-item`
 
 ## Suscripciones
 

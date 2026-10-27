@@ -1,5 +1,11 @@
 {
   "coverage_matrix": {
+    "028fb30f-66e7-4811-bfc6-960c808b9517": {
+      "correlation_timestamp": "2026-10-27T16:33:43.036Z",
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:25b7bf51e3e29ec632df2c7ab0378487ab44fd0c852eaae39a1089c22410a629"
+    },
     "04f0bc4e-ef1f-4431-a445-398f1820db07": {
       "correlation_timestamp": "2026-05-25T17:39:10+00:00",
       "is_covered": true,
@@ -209,12 +215,6 @@
       "is_covered": true,
       "last_emitted_event": "Domain_Entity_Updated",
       "last_hash": "sha256:82acf00d3e934b68fb26da5b3c0e9d5aef8a008ab2f8fb77b94f2cfaaf39dbc3"
-    },
-    "417025aa-6c8f-49fb-a4e7-d32efe9c896b": {
-      "correlation_timestamp": "2026-10-23T17:00:17.471Z",
-      "is_covered": true,
-      "last_emitted_event": "Domain_Entity_Updated",
-      "last_hash": "sha256:636356b4f7c45681de8707ffb0ca354389aca82024180c6a87661b21b27c36cd"
     },
     "43d84426-7bb6-4179-91a0-aee13581bff6": {
       "correlation_timestamp": "2026-08-19T15:27:14.026Z",
@@ -517,10 +517,10 @@
       "last_hash": "sha256:453e85e9c9322a1975543f7b76fbb3074e882d6ead79ae4fe883014cede57fe3"
     },
     "8fd2d4a2-21f8-484a-95b4-a732faa6ed98": {
-      "correlation_timestamp": "2026-10-03T21:23:57.658Z",
+      "correlation_timestamp": "2026-10-27T16:34:39.019Z",
       "is_covered": true,
-      "last_emitted_event": "Domain_Entity_Created",
-      "last_hash": "sha256:1a6177d564c21127e9396befe640d23d653835b63f2a2b6d73eae9856739b52d"
+      "last_emitted_event": "Domain_Entity_Updated",
+      "last_hash": "sha256:d00e87b3d1ec9df1dca2d52e5697114a84f9e7c45468199e85d0d1ad1da1b84f"
     },
     "93d23720-d79a-412f-a85d-ab9b2d9862bd": {
       "correlation_timestamp": "2026-05-25T17:39:06+00:00",
@@ -625,10 +625,10 @@
       "last_hash": "sha256:40248bdbce57cb886b2c390648038aab1cb1a95026d74fb0a73eafaa3e1ab358"
     },
     "a69d04b0-1d07-49ef-bcbf-6850e4a70ae2": {
-      "correlation_timestamp": "2026-08-09T15:22:53.704Z",
+      "correlation_timestamp": "2026-10-27T16:34:25.606Z",
       "is_covered": true,
-      "last_emitted_event": "Domain_Entity_Created",
-      "last_hash": "sha256:5d29a780a95405fb44173e985757f38369041e0757e22b5365737cfd5f93636d"
+      "last_emitted_event": "Domain_Entity_Updated",
+      "last_hash": "sha256:d504dcaef5a7994c8dc800860130d9ca39e75d129c745ae175f40ff127aa5d5e"
     },
     "a6b7c8d9-e0f1-4a2b-c3d4-e5f6a7b8c9d0": {
       "correlation_timestamp": "2026-10-21T07:41:03.098Z",
@@ -852,6 +852,12 @@
       "last_emitted_event": "Domain_Entity_Updated",
       "last_hash": "sha256:3212efbe9fa3292eb87b8cd96300b7b328f352a89313914d20b8dca1cc9c8ef2"
     },
+    "bb8e8704-80fa-4523-9cec-043a63fe0499": {
+      "correlation_timestamp": "2026-10-27T16:33:52.640Z",
+      "is_covered": true,
+      "last_emitted_event": "Domain_Entity_Created",
+      "last_hash": "sha256:13d38e58fa170d6c770354b9a6c00131f040c627b8317eff006d55e3d6095227"
+    },
     "bd3b1d76-3734-4fbb-b447-ad5e4a5e4907": {
       "correlation_timestamp": "2026-10-21T07:52:50.605Z",
       "is_covered": true,
@@ -1056,12 +1062,6 @@
       "last_emitted_event": "Suite_Execution_Requested",
       "last_hash": "sha256:pending-anchor-on-merge"
     },
-    "d5ecaaed-ba8d-45a4-85f4-a1d7d1d4308a": {
-      "correlation_timestamp": "2026-10-23T17:00:17.581Z",
-      "is_covered": true,
-      "last_emitted_event": "Domain_Entity_Updated",
-      "last_hash": "sha256:a4b8be4ddb9a6c1de5d53011c71cf1d9f0a403bc1743b2c400c3e4157a6b36b4"
-    },
     "d7e6f5a4-b3c2-4109-8765-43210abcdef0": {
       "correlation_timestamp": "2026-05-25T17:39:09+00:00",
       "is_covered": true,
@@ -1081,10 +1081,10 @@
       "last_hash": "sha256:5781fb047962cc909031a1492771d70c5409789dadcdb019b7d4a5c0f24ba2b8"
     },
     "db1acdb5-23b9-490e-a339-dc511091e959": {
-      "correlation_timestamp": "2026-10-21T07:52:51.743Z",
+      "correlation_timestamp": "2026-10-27T16:35:03.559Z",
       "is_covered": true,
-      "last_emitted_event": "Domain_Entity_Created",
-      "last_hash": "sha256:8356b721f039ef275c756cc61c8cc84a079eb92b74a084b2d378dbc224546deb"
+      "last_emitted_event": "Domain_Entity_Updated",
+      "last_hash": "sha256:11191748becb8d032739112b9e2cddc7e47fbb453a0c9ed6ee7613e9a8055ea6"
     },
     "dd9e13b2-fc07-40d2-95f5-b50ebd535a9e": {
       "correlation_timestamp": "2026-07-22T11:16:13.969Z",
@@ -1201,10 +1201,10 @@
       "last_hash": "sha256:0aa0ee978b64c34f55d8384eb70476a6f734f7220cbcf0b936c238493f6f5e75"
     },
     "ee0dcb22-a37f-4803-b91a-17eadc205d92": {
-      "correlation_timestamp": "2026-10-03T21:23:57.721Z",
+      "correlation_timestamp": "2026-10-27T16:34:39.541Z",
       "is_covered": true,
-      "last_emitted_event": "Domain_Entity_Created",
-      "last_hash": "sha256:f6c07eab5c9200b060b17847e188f5653e8d27b29711ebac601cca29be8350b3"
+      "last_emitted_event": "Domain_Entity_Updated",
+      "last_hash": "sha256:897fa8481182756d73071a77e17bcf3f4f145ef03aad4e302cceedbea3e62699"
     },
     "f0b8ce4a-2f79-4516-bee0-acfe0d25bd58": {
       "correlation_timestamp": "2026-10-22T20:08:16.370Z",

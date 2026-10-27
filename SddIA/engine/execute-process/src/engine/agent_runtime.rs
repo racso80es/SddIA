@@ -19,7 +19,9 @@ const ENV_RELAY: &str = "SDDIA_AGENT_RELAY_IDE";
 const ENV_DEPTH: &str = "SDDIA_AGENT_RUNTIME_DEPTH";
 const ENV_TIMEOUT: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS";
 const ENV_TIMEOUT_EXEC: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION";
+const ENV_TIMEOUT_REFINE: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_REFINAMIENTO";
 const DEFAULT_TIMEOUT_SECS: u64 = 660;
+const DEFAULT_TIMEOUT_REFINE_SECS: u64 = 900;
 const KILL_GRACE_MS: u64 = 500;
 const DETERMINISTIC_AGENTS: &[&str] = &["cerbero", "cumulo", "radamanto"];
 
@@ -51,6 +53,14 @@ pub fn is_configured() -> bool {
 
 fn resolve_timeout_secs(phase_name: &str) -> u64 {
     let phase_l = phase_name.to_lowercase();
+    if phase_l.contains("refinamiento mayeuta") {
+        if let Ok(v) = std::env::var(ENV_TIMEOUT_REFINE) {
+            if let Ok(n) = v.trim().parse::<u64>() {
+                return n;
+            }
+        }
+        return DEFAULT_TIMEOUT_REFINE_SECS;
+    }
     if phase_l.starts_with("ejecuc") {
         if let Ok(v) = std::env::var(ENV_TIMEOUT_EXEC) {
             if let Ok(n) = v.trim().parse::<u64>() {

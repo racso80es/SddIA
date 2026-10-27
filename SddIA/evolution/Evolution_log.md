@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `74585763-bb9f-4835-8cb3-bbeeb3794a77` | 2026-10-27 | AUT-19: refine-item motor + genoma (norma, códice 1.1.0, ECST, create_issue HU). | CANONICO | `SddIA/evolution/74585763-bb9f-4835-8cb3-bbeeb3794a77.md` |
 | `6d0e423c-f418-416c-9878-7d19eaf2ee7e` | 2026-10-27 | AUT-8: System_Fracture_Detected en DOMAIN_AUTHORITY_DENIED; emit_fracture_for_denial en domain_authority. | CANONICO | `SddIA/evolution/6d0e423c-f418-416c-9878-7d19eaf2ee7e.md` |
 | `03eb13b4-f7d5-419a-99e9-e374f342eed2` | 2026-10-27 | AUT-9: gate-evolution EVOL_ID_NOT_UUID_V4 para stems evolution no v4; cápsula sddia-evolution-register. | CANONICO | `SddIA/evolution/03eb13b4-f7d5-419a-99e9-e374f342eed2.md` |
 | `661ea2a3-f28c-4abe-822c-432e3204358b` | 2026-10-26 | tracker-stamp lee el evento en events.redb si el JSON pending no existe. | CANONICO | `SddIA/evolution/661ea2a3-f28c-4abe-822c-432e3204358b.md` |
