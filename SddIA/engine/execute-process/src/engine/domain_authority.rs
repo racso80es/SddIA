@@ -14,6 +14,7 @@ pub const SOFTWARE_PROCESS_MEMBERSHIP: &[&str] = &[
     "feature",
     "bug-fix",
     "refactorization",
+    "refine-item",
     "pull-request-review",
     "accept-pr",
     "delivery-close-cycle",

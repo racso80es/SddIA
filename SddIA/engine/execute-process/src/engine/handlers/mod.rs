@@ -9,6 +9,7 @@ pub mod instance_health_verify;
 pub mod forge_pbi;
 pub mod llm_interaction_audit;
 pub mod refine;
+pub mod refine_item;
 pub mod kalma2;
 pub mod aiua_stimulus;
 pub mod mayeuta;
