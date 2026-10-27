@@ -15,3 +15,4 @@ items_applied:
 - Rama `refactor/refine-item-mayeuta`, PR [#404](https://github.com/racso80es/SddIA/pull/404).
 - Tests locales: `cargo test -p execute-process refine_item`, `ecst_validation`, `refine_item_allows_create_issue_gate` — OK.
 - E2E `linear_direct_cycle` legacy `refine::` pendiente migración a `refine-item` (no bloquea cierre documental de genoma).
+- DCC `execution_id` `902acb0b-01aa-428a-ad60-9f7581e65f8b`; snapshot `fa9fd75e`; `PullRequest_Presented` `0b042147-6e14-40db-97e0-671ed0dceef0`.
