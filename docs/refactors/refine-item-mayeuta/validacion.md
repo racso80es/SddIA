@@ -48,12 +48,12 @@ Causa: sin stdout de cápsulas en este turno; L-ARGOS-SYNTHESIS prohíbe sustitu
 
 | Fuente | Hallazgo |
 |--------|----------|
-| Filesystem (Read/Glob) | Existen `handlers/refine_item/*`, `refine-item.md`, norma DoR, códice 1.1.0, alias `refine-pbi`/`refine-hu` ausentes, evolution + cascada documental bajo `persist_ref` |
-| Cápsulas (`sddia-run` / `sddia-qa` / `cargo test`) | **No ejecutables**: Shell IDE Rejected (×3); MCP `sddia-workspace-server` ausente del catálogo |
-| `git-manager` | Sin acuse JSON este turno |
+| Filesystem (Read/Glob) | Existen handler, genoma, plan/spec/execution bajo `persist_ref`; no sustituye cápsulas |
+| Cápsulas (`sddia-run` / `sddia-qa` / `cargo test`) | **No ejecutables**: Shell IDE Rejected; MCP `sddia-workspace-server` ausente |
+| `git-manager` | Sin acuse JSON este turno (Shell Rejected) |
 | Workspace | `.SddIA/workspaces/refactorization/51caf6b7-…/phase_reports.json` no sella Verificación |
 
-APTO previo en este archivo **no re-corroborado**; se retira hasta evidencia determinista.
+`execution.md` cita tests OK en otro ciclo; **no re-corroborado** aquí → no se eleva a APTO.
 
 ## correction_blueprint_md
 
@@ -61,10 +61,10 @@ APTO previo en este archivo **no re-corroborado**; se retira hasta evidencia det
 name: reabrir-verificacion-argos-aut19
 intent: Restaurar peaje de cápsulas y re-sellar Argos con evidencia física
 delegates_to:
-  - tool:shell-executor   # habilitar Shell/`./sddia-run.sh` en runtime
-  - tool:git-manager      # status/diff rama refactor/refine-item-mayeuta
-  - action:execute-process # cargo/tests vía peaje; sddia-qa si aplica
-  - agent:argos           # reinyectar Verificación con process/phase explícitos
+  - tool:shell-executor
+  - tool:git-manager
+  - action:execute-process
+  - agent:argos
 ```
 
-Desbloqueo: aprobar MCP workspace + Shell → cápsulas QA/tests + `git-manager` → run CI con `run_id`/URL → reinyectar `refactorization` / `Verificación` / `agent:argos`.
+Desbloqueo: aprobar MCP workspace + Shell → cápsulas QA/tests + `git-manager` → CI con `run_id`/URL → reinyectar `refactorization` / `Verificación` / `agent:argos` con process/phase/persist_ref explícitos.
