@@ -8,7 +8,8 @@ document_id: PBI-39b3d861
 branch: refactor/forge-pbi-title-raw-idea
 global: APTO
 pbi_archived: false
-execution_id: "a8e4c1d2-3f5b-4a9e-8c7d-1e2f0a9b4c6d"
+execution_id: "406fe518-20f9-4af5-85b3-81f6c5ee8231"
+pr_url: https://github.com/racso80es/SddIA/pull/405
 tracker_ref: AUT-28
 checks:
   AC-1: APTO
@@ -19,6 +20,8 @@ checks:
 git_changes:
   - SddIA/engine/execute-process/src/engine/handlers/forge_pbi.rs
   - docs/refactors/forge-pbi-title-raw-idea/
+  - SddIA/evolution/ec196b20-0039-44c1-acc7-f54443c1432b.md
+  - SddIA/evolution/Evolution_log.md
 ---
 
 # Validación — AUT-28
