@@ -10,7 +10,7 @@ domain_origin: SddIA
 hash_signature: sha256:ee764b1cb22c42cf4132061ee3b91947f6180432ec74bc92e1f039fca303e923
 implementation_path_ref: SddIA/tools/send-telegram-notification
 name: send-telegram-notification
-source_sha256: sha256:9daecfbf099a6cefc7cbc6177d7067993c59b384e3d3e1630547d6291b0454b7
+source_sha256: sha256:55a544613684c2ddc879afec98712e410fd9d147e65c980d246ac9dd63588c51
 uuid: e4f5a6b7-c8d9-4e0f-a1b2-c3d4e5f6a7b8
 version: 1.0.0
 ---
