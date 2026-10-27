@@ -64,9 +64,28 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
 
 fn load_event(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let rel = str_field(inputs, "event_file_path").ok_or("event_file_path requerido")?;
-    let path = repo.join(rel.trim_start_matches("./"));
-    let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    serde_json::from_str(&text).map_err(|e| e.to_string())
+    let trimmed = rel.trim_start_matches("./");
+    let raw = PathBuf::from(trimmed);
+    let path = if raw.is_absolute() {
+        raw
+    } else {
+        repo.join(trimmed)
+    };
+    if path.is_file() {
+        let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+        return serde_json::from_str(&text).map_err(|e| e.to_string());
+    }
+    // El bus en modo redb no materializa `.events/pending/{id}.json`.
+    // El nombre del fichero sintético es el event_id.
+    let event_id = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| format!("event file not found: {}", path.display()))?;
+    sddia_event_store::load_dispatched_event(repo, event_id, &path)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("event file not found: {}", path.display()))
 }
 
 fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
@@ -112,30 +131,6 @@ fn linear_to_canonical(linear_state: &str, tc: &TrackerConfig) -> String {
         }
     }
     linear_state.to_string()
-}
-
-fn labels_contains(fetch: &Value, label: &str) -> bool {
-    fetch
-        .get("labels")
-        .and_then(|v| v.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|x| x.as_str())
-                .any(|n| n.eq_ignore_ascii_case(label))
-        })
-        .unwrap_or(false)
-}
-
-fn expected_hu_for_payload(repo: &Path, payload: &Value) -> Option<String> {
-    if let Some(h) = str_field(payload, "expected_hu_tracker_ref") {
-        return Some(h);
-    }
-    if let Some(persist) = str_field(payload, "persist_ref") {
-        if let Some(pbi) = tracker_pbi_meta::resolve_pbi_path_from_persist(repo, &persist) {
-            return tracker_pbi_meta::expected_hu_tracker_ref_from_pbi(repo, &pbi);
-        }
-    }
-    None
 }
 
 fn tool_fetch_issue(repo: &Path, issue_ref: &str, project_id: Option<&str>) -> Result<Value, String> {
@@ -287,33 +282,6 @@ fn stamp_file_sink_event(
     })?;
     patch_local_markdown_column(&path, column)?;
     Ok((true, None))
-}
-
-fn preflight_hu(repo: &Path, tc: &TrackerConfig, issue_ref: &str) -> Result<Value, String> {
-    let fetch = tool_fetch_issue(repo, issue_ref, tc.project_id.as_deref())?;
-    if !labels_contains(&fetch, &tc.label_hu) {
-        return Err("warn: issue sin label HU".into());
-    }
-    Ok(fetch)
-}
-
-fn preflight_pbi(
-    repo: &Path,
-    tc: &TrackerConfig,
-    issue_ref: &str,
-    payload: &Value,
-) -> Result<Value, String> {
-    let fetch = tool_fetch_issue(repo, issue_ref, tc.project_id.as_deref())?;
-    if !labels_contains(&fetch, &tc.label_pbi) {
-        return Err("warn: AC-18 — issue sin label PBI".into());
-    }
-    if let Some(expected) = expected_hu_for_payload(repo, payload) {
-        let parent = fetch.get("parent").and_then(|v| v.as_str());
-        if parent != Some(expected.as_str()) {
-            return Err("warn: AC-18 — parent no coincide con HU esperada".into());
-        }
-    }
-    Ok(fetch)
 }
 
 fn emit_sync_failed(
@@ -649,11 +617,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
             Some(t) => t,
             None => return Ok((false, Some("no-op: proyecto sin tracker".into()))),
         };
-        let fetch = match preflight_hu(repo, &tc, &issue_ref) {
-            Ok(f) => f,
-            Err(w) if w.starts_with("warn:") => return Ok((false, Some(w))),
-            Err(e) => return Err(e),
-        };
+        let fetch = tool_fetch_issue(repo, &issue_ref, tc.project_id.as_deref())?;
         let hu_ref = str_field(&payload_val, "hu_ref").unwrap_or_default();
         let doc = yaml_field_in_repo(repo, &hu_ref, "document_id").unwrap_or_default();
         let ver = yaml_field_in_repo(repo, &hu_ref, "version").unwrap_or_else(|| "1.0.0".into());
@@ -674,11 +638,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
         if tc.state_map.get("cancelled").is_none() {
             return Ok((false, Some("warn: state_map sin cancelled".into())));
         }
-        let pbi_fetch = match preflight_pbi(repo, &tc, &issue_ref, &payload_val) {
-            Ok(f) => f,
-            Err(w) if w.starts_with("warn:") => return Ok((false, Some(w))),
-            Err(e) => return Err(e),
-        };
+        let pbi_fetch = tool_fetch_issue(repo, &issue_ref, tc.project_id.as_deref())?;
         let reason = str_field(&payload_val, "reason").unwrap_or_else(|| "sin motivo".into());
         let run = |f: &dyn Fn() -> Result<(), String>| -> Result<(), String> {
             if let Err(e) = f() {
@@ -717,11 +677,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
 
     let stamped;
 
-    let pbi_fetch = match preflight_pbi(repo, &tc, &issue_ref, &payload_val) {
-        Ok(f) => f,
-        Err(w) if w.starts_with("warn:") => return Ok((false, Some(w))),
-        Err(e) => return Err(e),
-    };
+    let pbi_fetch = tool_fetch_issue(repo, &issue_ref, tc.project_id.as_deref())?;
 
     let run = |repo: &Path,
                op: &str,
@@ -976,7 +932,7 @@ mod tests {
     }
 
     #[test]
-    fn ac18_bad_label_no_writes() {
+    fn stamp_ignores_missing_pbi_label() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
@@ -987,14 +943,13 @@ mod tests {
                     "persist_ref": "docs/features/demo",
                 }
             });
-            let (stamped, note) = stamp_event(&repo, &event).unwrap();
-            assert!(!stamped);
-            assert!(note.unwrap_or_default().contains("AC-18"));
+            let (stamped, _) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped);
         });
     }
 
     #[test]
-    fn ac18_bad_parent_no_writes() {
+    fn stamp_ignores_hu_parent_mismatch() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
@@ -1005,9 +960,8 @@ mod tests {
                     "expected_hu_tracker_ref": "LAB-HU-1",
                 }
             });
-            let (stamped, note) = stamp_event(&repo, &event).unwrap();
-            assert!(!stamped);
-            assert!(note.unwrap_or_default().contains("AC-18"));
+            let (stamped, _) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped);
         });
     }
 
@@ -1076,7 +1030,7 @@ mod tests {
     }
 
     #[test]
-    fn ac5_fix_label_without_pbi_warns() {
+    fn stamp_ignores_fix_label_without_pbi() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
@@ -1086,9 +1040,8 @@ mod tests {
                     "branch": "feat/x",
                 }
             });
-            let (stamped, note) = stamp_event(&repo, &event).unwrap();
-            assert!(!stamped);
-            assert!(note.unwrap_or_default().contains("AC-18"));
+            let (stamped, _) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped);
         });
     }
 

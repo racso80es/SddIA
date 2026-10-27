@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 130
+universe_total: 132
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,8 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `661ea2a3-f28c-4abe-822c-432e3204358b` | 2026-10-26 | tracker-stamp lee el evento en events.redb si el JSON pending no existe. | CANONICO | `SddIA/evolution/661ea2a3-f28c-4abe-822c-432e3204358b.md` |
+| `4d075e8e-1c2e-460b-afac-6f80e613395c` | 2026-10-26 | tracker-stamp deja de exigir label y parent de la HU. | CANONICO | `SddIA/evolution/4d075e8e-1c2e-460b-afac-6f80e613395c.md` |
 | `6d31bac8-278a-45f3-b582-d5af8d1ce4f6` | 2026-10-26 | AUT-17: el alta de dominio siembra entregas desde el catálogo. | CANONICO | `SddIA/evolution/6d31bac8-278a-45f3-b582-d5af8d1ce4f6.md` |
 | `2028f56e-b89f-4b60-b9e1-4fb0bc7642ee` | 2026-10-26 | AUT-16 reintento de lock en events.redb; Presented y vitalidad leen el store. | CANONICO | `SddIA/evolution/2028f56e-b89f-4b60-b9e1-4fb0bc7642ee.md` |
 | `a03b37f2-9561-4ed4-bddf-ea88215c3a7a` | 2026-10-26 | AUT-7 proceso llm-interaction-audit y registro bajo auditsPath. | CANONICO | `SddIA/evolution/a03b37f2-9561-4ed4-bddf-ea88215c3a7a.md` |
