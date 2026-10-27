@@ -8,10 +8,10 @@ execution:
   entrypoint: SddIA/daemons/event-watcher.sh
   heartbeat_interval_seconds: 30
   runtime: native-rust
-hash_signature: "sha256:9092012a71130071f2fd2525e4ba673d2c37e367d805d5264720d4b576a87a44"
+hash_signature: sha256:9092012a71130071f2fd2525e4ba673d2c37e367d805d5264720d4b576a87a44
 jurisdiction: Aislada — Ceguera Lógica. Reclama ids pending del store o ficheros .events/pending y delega el despacho. No abre el ECST. El tick dispara daemon-heartbeat-audit y system-vitality-probe.
 name: event-watcher
-source_sha256: sha256:93d2e370f714b2e659fe18c078a0a876963b589c586ec0fa7dddd55dad75f717
+source_sha256: sha256:bf49843ef8706fe85b2cffc89fa7645d4c41c0ee06b88b0670f81112208ddd71
 telemetry_provided: true
 telemetry_schema:
 - uptime_seconds

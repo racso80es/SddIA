@@ -119,6 +119,7 @@ Fail-hard sobre el **delta inyectado** (`gate-evolution` sin flags, o `--range`)
 |--------|-------------|------|
 | `EVOL_OK` | Veredicto apto (incl. L-SELF, idempotencia) | 0 |
 | `EVOL_MATERIAL_UNREGISTERED` | Path material sin correlato en registros del diff | ≠0 |
+| `EVOL_ID_NOT_UUID_V4` | `.md` bajo evolution en el diff con stem que no es UUID v4 (no confundir con material sin registro) | ≠0 |
 | `EVOL_RECORD_INVALID` | Registro del diff no canónico | ≠0 |
 | `EVOL_NOT_INDEXED` | Detalle del diff sin fila en índice | ≠0 |
 | `EVOL_HASH_MISMATCH` | `hash_integrity` formato inválido, placeholder o ≠ recompute | ≠0 |
