@@ -648,8 +648,13 @@ pub fn bind(repo: &Path, inputs: &Value) -> Result<Option<BoundProject>, String>
     let docs = docs_from_manifest(&manifest_fm)?;
     validate_tracker_config(&manifest_fm)?;
     let manifest_mode = yaml_str(&manifest_fm, "delivery_mode")?;
-    let (delivery_mode, delivery_mode_source) =
-        resolve_delivery_mode(inputs, Some(&manifest_mode))?;
+    // D-I (a): Core-self no admite `inputs.delivery_mode: trunk_direct` (evita
+    // Delivery_Committed + sello Done con PR abierto en branch_pr).
+    let (delivery_mode, delivery_mode_source) = if slug == "core" && repo_is_core(repo) {
+        (parse_delivery_mode(&manifest_mode)?, "project")
+    } else {
+        resolve_delivery_mode(inputs, Some(&manifest_mode))?
+    };
 
     if delivery_mode == DeliveryMode::TrunkDirect && env_flag("SDDIA_SKIP_HOOKS") {
         return Err("TRUNK_HOOKS_REQUIRED: trunk_direct prohíbe SDDIA_SKIP_HOOKS".into());
@@ -1026,6 +1031,34 @@ mod tests {
         assert_eq!(bound.slug, "core");
         let dg = done_gate_for_inputs(repo.path(), &json!({"project_slug": "core"})).unwrap();
         assert_eq!(dg, DoneGate::Linear);
+    }
+
+    #[test]
+    fn bind_core_ignores_inputs_trunk_direct_override() {
+        let repo = tempfile::tempdir().unwrap();
+        write_git_root(repo.path());
+        fs::create_dir_all(repo.path().join("SddIA/core")).unwrap();
+        fs::write(
+            repo.path().join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{}}"#,
+        )
+        .unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        fs::create_dir_all(repo.path().join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.path().join(".SddIA/projects/core.md"),
+            core_index_md(uuid, "."),
+        )
+        .unwrap();
+        fs::write(repo.path().join(".SddIA/project.md"), core_manifest_md(uuid)).unwrap();
+        let bound = bind(
+            repo.path(),
+            &json!({"project_slug": "core", "delivery_mode": "trunk_direct"}),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(bound.delivery_mode, DeliveryMode::BranchPr);
+        assert_eq!(bound.delivery_mode_source, "project");
     }
 
     #[test]

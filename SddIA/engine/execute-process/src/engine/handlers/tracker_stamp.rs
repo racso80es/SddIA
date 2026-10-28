@@ -844,6 +844,16 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
             )?;
         }
         "Delivery_Committed" => {
+            let mode = str_field(&payload_val, "delivery_mode").unwrap_or_default();
+            if mode != "trunk_direct" {
+                return Ok((
+                    false,
+                    Some(
+                        "no-op: Delivery_Committed fuera de trunk_direct (Done solo tras merge en branch_pr)"
+                            .into(),
+                    ),
+                ));
+            }
             let sha = str_field(&payload_val, "commit_sha").unwrap_or_default();
             stamped = stamp_done_with_hu_roll_up(
                 repo,
@@ -1006,10 +1016,29 @@ mod tests {
                 "payload": {
                     "tracker_ref": "LAB-PBI-MERGE-LAST",
                     "commit_sha": "deadbeef",
+                    "delivery_mode": "trunk_direct",
                 }
             });
             let (stamped, _) = stamp_event(&repo, &event).unwrap();
             assert!(stamped);
+        });
+    }
+
+    #[test]
+    fn delivery_committed_without_trunk_direct_no_ops() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "Delivery_Committed",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-MERGE-LAST",
+                    "commit_sha": "deadbeef",
+                    "delivery_mode": "branch_pr",
+                }
+            });
+            let (stamped, note) = stamp_event(&repo, &event).unwrap();
+            assert!(!stamped);
+            assert!(note.unwrap_or_default().contains("trunk_direct"));
         });
     }
 

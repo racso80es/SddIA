@@ -406,6 +406,7 @@ mod tests {
                     "tracker_ref": pbi_tr,
                     "commit_sha": "deadbeef",
                     "project_slug": slug,
+                    "delivery_mode": "trunk_direct",
                 }),
             ));
             assert_no_secrets(&repo);

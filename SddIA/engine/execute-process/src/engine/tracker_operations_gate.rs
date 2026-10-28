@@ -3,7 +3,7 @@
 use super::cerbero_di_rbac::resolve_requester_policies;
 use super::workspace::load_paths_config;
 use crate::core::resolver::load_process_def;
-use serde_json::json;
+use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 
@@ -79,6 +79,37 @@ fn extract_tracker_section(markdown: &str) -> String {
 }
 
 /// Gate Cerbero antes de invocar la cápsula Linear.
+fn request_inner<'a>(payload: &'a Value) -> Option<&'a Value> {
+    payload.get("request").or(Some(payload))
+}
+
+/// Done en Linear solo vía `tracker-stamp` (PullRequest_Merged | Delivery_Committed trunk_direct)
+/// o replay fail-soft (`tracker-sync-replay`).
+pub fn gate_linear_done_state_transition(
+    process_name: Option<&str>,
+    operation: &str,
+    payload: &Value,
+) -> Result<(), String> {
+    if operation != "update_issue_state" {
+        return Ok(());
+    }
+    let inner = request_inner(payload).ok_or("TRACKER_DONE_GUARD: sin request")?;
+    let state_name = inner
+        .get("state_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if !state_name.eq_ignore_ascii_case("done") {
+        return Ok(());
+    }
+    let proc = process_name.unwrap_or("");
+    if proc == "tracker-stamp" || proc == "tracker-sync-replay" {
+        return Ok(());
+    }
+    Err(format!(
+        "TRACKER_DONE_GUARD: update_issue_state Done prohibido para proceso '{proc}'"
+    ))
+}
+
 pub fn gate_linear_tracker_operation(
     repo: &Path,
     process_name: Option<&str>,
@@ -111,6 +142,25 @@ pub fn gate_linear_tracker_operation(
 mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
+
+    #[test]
+    fn done_state_transition_blocked_outside_tracker_stamp() {
+        let err = gate_linear_done_state_transition(
+            Some("bug-fix"),
+            "update_issue_state",
+            &json!({"request": {"operation": "update_issue_state", "state_name": "Done"}}),
+        )
+        .unwrap_err();
+        assert!(err.contains("TRACKER_DONE_GUARD"));
+        assert!(
+            gate_linear_done_state_transition(
+                Some("tracker-stamp"),
+                "update_issue_state",
+                &json!({"request": {"state_name": "Done"}}),
+            )
+            .is_ok()
+        );
+    }
 
     #[test]
     fn ac_rbac_3_norm_excludes_delete_keeps_create() {

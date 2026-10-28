@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 132
+universe_total: 133
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6a4a49f0-24e8-446a-b5e5-f20c9bd68319` | 2026-10-28 | AUT-12: guard Done Linear; Core delivery_mode; TRACKER_DONE_GUARD | CANONICO | `SddIA/evolution/6a4a49f0-24e8-446a-b5e5-f20c9bd68319.md` |
 | `ec196b20-0039-44c1-acc7-f54443c1432b` | 2026-10-27 | AUT-28: forge-pbi destila title desde raw_idea | CANONICO | `SddIA/evolution/ec196b20-0039-44c1-acc7-f54443c1432b.md` |
 | `74585763-bb9f-4835-8cb3-bbeeb3794a77` | 2026-10-27 | AUT-19: refine-item motor + genoma (norma, códice 1.1.0, ECST, create_issue HU). | CANONICO | `SddIA/evolution/74585763-bb9f-4835-8cb3-bbeeb3794a77.md` |
 | `6d0e423c-f418-416c-9878-7d19eaf2ee7e` | 2026-10-27 | AUT-8: System_Fracture_Detected en DOMAIN_AUTHORITY_DENIED; emit_fracture_for_denial en domain_authority. | CANONICO | `SddIA/evolution/6d0e423c-f418-416c-9878-7d19eaf2ee7e.md` |
