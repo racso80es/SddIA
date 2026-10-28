@@ -453,6 +453,11 @@ pub fn invoke_tool_for_process(
             .and_then(|r| r.get("operation"))
             .and_then(|v| v.as_str());
         if let Some(operation) = op {
+            super::tracker_operations_gate::gate_linear_done_state_transition(
+                process_name,
+                operation,
+                payload,
+            )?;
             super::tracker_operations_gate::gate_linear_tracker_operation(
                 repo,
                 process_name,
