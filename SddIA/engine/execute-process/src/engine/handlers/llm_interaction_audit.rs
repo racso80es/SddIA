@@ -1,8 +1,8 @@
 //! Handler nativo `llm-interaction-audit` — append de filas y fricción bajo `paths.auditsPath`.
 
 use super::super::llm_interaction_audit::{
-    append_friction, append_interaction, fetch_llm_audit_active, resolve_tracker_ref, FrictionRow,
-    InteractionRow,
+    append_friction, append_interaction, fetch_llm_audit_active, normalize_entity_type,
+    resolve_tracker_ref, FrictionRow, InteractionRow,
 };
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
@@ -26,11 +26,12 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         let tracker_ref = resolve_tracker_ref(inputs).ok_or_else(|| "tracker_ref requerido".to_string())?;
         match op {
             "record_interaction" => {
+                let entity_type = normalize_entity_type(&str_field(inputs, "entity_type")?)?;
                 let row = InteractionRow {
+                    entity_type,
+                    entity_id: str_field(inputs, "entity_id")?,
+                    invoked_by: str_field(inputs, "invoked_by")?,
                     timestamp: str_field(inputs, "timestamp")?,
-                    rol: str_field(inputs, "rol")?,
-                    tipo: str_field(inputs, "tipo")?,
-                    resumen: str_field(inputs, "resumen")?,
                 };
                 append_interaction(repo, &tracker_ref, &row, true)
             }

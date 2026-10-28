@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `7aa147dd-feef-4896-9ba0-41945bccdc24` | 2026-10-28 | AUT-10: auditoría sesión LLM karma2 interaction_audit en execute-process | CANONICO | `SddIA/evolution/7aa147dd-feef-4896-9ba0-41945bccdc24.md` |
 | `6a4a49f0-24e8-446a-b5e5-f20c9bd68319` | 2026-10-28 | AUT-12: guard Done Linear; Core delivery_mode; TRACKER_DONE_GUARD | CANONICO | `SddIA/evolution/6a4a49f0-24e8-446a-b5e5-f20c9bd68319.md` |
 | `ec196b20-0039-44c1-acc7-f54443c1432b` | 2026-10-27 | AUT-28: forge-pbi destila title desde raw_idea | CANONICO | `SddIA/evolution/ec196b20-0039-44c1-acc7-f54443c1432b.md` |
 | `74585763-bb9f-4835-8cb3-bbeeb3794a77` | 2026-10-27 | AUT-19: refine-item motor + genoma (norma, códice 1.1.0, ECST, create_issue HU). | CANONICO | `SddIA/evolution/74585763-bb9f-4835-8cb3-bbeeb3794a77.md` |

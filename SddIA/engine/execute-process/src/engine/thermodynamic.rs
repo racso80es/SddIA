@@ -364,6 +364,14 @@ pub fn run(
         exit_code,
     );
 
+    super::llm_interaction_audit::maybe_record_process_peaje(
+        repo,
+        process_name,
+        process_inputs,
+        success,
+        exit_code,
+    );
+
     result
 }
 
