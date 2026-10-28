@@ -9,16 +9,30 @@ use serde_json::{json, Value};
 use serde_yaml::Value as YamlValue;
 use std::fs;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 pub const FM_LLMA_AUDIT: &str = "llm_audit";
 const ACTIVE: &str = "active";
 const INACTIVE: &str = "inactive";
 
+const KARMA2_ENTITY_TYPES: &[&str] = &["skill", "tool", "action", "process"];
+
 pub struct InteractionRow {
+    pub entity_type: String,
+    pub entity_id: String,
+    pub invoked_by: String,
     pub timestamp: String,
-    pub rol: String,
-    pub tipo: String,
-    pub resumen: String,
+}
+
+pub fn normalize_entity_type(raw: &str) -> Result<String, String> {
+    let t = raw.trim().to_lowercase();
+    if KARMA2_ENTITY_TYPES.contains(&t.as_str()) {
+        Ok(t)
+    } else {
+        Err(format!(
+            "entity_type inválido: '{raw}' (esperado skill|tool|action|process)"
+        ))
+    }
 }
 
 pub struct FrictionRow {
@@ -102,44 +116,63 @@ pub fn fetch_llm_audit_active(repo: &Path, tracker_ref: &str) -> Result<bool, St
     Ok(llm_audit_mode_from_description(desc)? == ACTIVE)
 }
 
-fn row_key(timestamp: &str, resumen: &str) -> String {
-    format!("{}|{}", timestamp.trim(), resumen.trim())
+fn row_key(row: &InteractionRow) -> String {
+    format!(
+        "{}|{}|{}|{}",
+        row.entity_type.trim(),
+        row.entity_id.trim(),
+        row.invoked_by.trim(),
+        row.timestamp.trim()
+    )
 }
 
 fn parse_existing_rows(body: &str) -> std::collections::HashSet<String> {
     let mut keys = std::collections::HashSet::new();
+    let karma2 = body.contains("entity_type") && body.contains("invoked_by");
     for line in body.lines() {
         let line = line.trim();
-        if !line.starts_with('|') || line.contains("---") || line.contains("Timestamp") {
+        if !line.starts_with('|') || line.contains("---") {
+            continue;
+        }
+        if line.contains("Timestamp") || line.contains("entity_type") {
             continue;
         }
         let cols: Vec<&str> = line.split('|').map(str::trim).filter(|s| !s.is_empty()).collect();
-        if cols.len() >= 4 {
+        if karma2 && cols.len() >= 4 {
+            keys.insert(format!(
+                "{}|{}|{}|{}",
+                cols[0].to_lowercase(),
+                cols[1],
+                cols[2],
+                cols[3]
+            ));
+        } else if !karma2 && cols.len() >= 4 {
             let (ts, resumen) = if cols.len() >= 5 {
                 (cols[1], cols[4])
             } else {
                 (cols[0], cols[3])
             };
-            if resumen != "Resumen" && !ts.contains("---") {
-                keys.insert(row_key(ts, resumen));
+            if resumen != "Resumen" {
+                keys.insert(format!("legacy|{ts}|{resumen}"));
             }
         }
     }
     keys
 }
 
-fn ensure_audit_shell(repo: &Path, path: &Path, tracker_ref: &str) -> Result<(), String> {
+fn ensure_audit_shell(_repo: &Path, path: &Path, tracker_ref: &str) -> Result<(), String> {
     if path.is_file() {
         return Ok(());
     }
     fs::create_dir_all(path.parent().unwrap()).map_err(|e| e.to_string())?;
     let created = Utc::now().format("%Y-%m-%d").to_string();
+    let doc_uuid = Uuid::new_v4();
     let content = format!(
-        "---\nid: llm-interaction-audit-{tracker_ref}\n\
+        "---\nuuid: \"{doc_uuid}\"\nid: llm-interaction-audit-{tracker_ref}\n\
 type: audit\nversion: \"1.0.0\"\ntracker_ref: {tracker_ref}\n\
 process: llm-interaction-audit\ncreated: \"{created}\"\n---\n\n\
 # Auditoría de interacciones LLM — {tracker_ref}\n\n\
-| Timestamp (UTC) | Rol | Tipo | Resumen |\n\
+| entity_type | entity_id | invoked_by | timestamp |\n\
 | --- | --- | --- | --- |\n"
     );
     fs::write(path, content).map_err(|e| e.to_string())?;
@@ -158,8 +191,9 @@ pub fn append_interaction(
     let path = audit_path(repo, tracker_ref)?;
     ensure_audit_shell(repo, &path, tracker_ref)?;
     let mut text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    normalize_entity_type(&row.entity_type)?;
     let keys = parse_existing_rows(&text);
-    let key = row_key(&row.timestamp, &row.resumen);
+    let key = row_key(row);
     if keys.contains(&key) {
         return Ok(json!({
             "skipped": true,
@@ -169,9 +203,10 @@ pub fn append_interaction(
     }
     let line = format!(
         "| {} | {} | {} | {} |\n",
-        row.timestamp, row.rol, row.tipo, row.resumen
+        row.entity_type, row.entity_id, row.invoked_by, row.timestamp
     );
-    if let Some(idx) = text.find("| --- | --- | --- | --- |") {
+    let sep = "| --- | --- | --- | --- |";
+    if let Some(idx) = text.find(sep) {
         let insert_at = text[idx..]
             .find('\n')
             .map(|o| idx + o + 1)
@@ -267,6 +302,39 @@ pub fn maybe_record_friction_on_failure(
     let _ = append_friction(repo, &tracker_ref, &friction, true);
 }
 
+/// Registra el peaje de un ciclo lifecycle cuando `llm_audit: active`.
+pub fn maybe_record_process_peaje(
+    repo: &Path,
+    process_name: &str,
+    process_inputs: &Value,
+    _success: bool,
+    _exit_code: i32,
+) {
+    if !matches!(process_name, "feature" | "bug-fix" | "refactorization") {
+        return;
+    }
+    let tracker_ref = match resolve_tracker_ref(process_inputs).or_else(|| {
+        process_inputs
+            .get("persist_ref")
+            .and_then(|v| v.as_str())
+            .and_then(|persist| {
+                super::tracker_pbi_meta::resolve_pbi_path_from_persist(repo, persist)
+            })
+            .and_then(|pbi| super::tracker_pbi_meta::tracker_ref_from_pbi(repo, &pbi))
+    }) {
+        Some(t) => t,
+        None => return,
+    };
+    let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
+    let row = InteractionRow {
+        entity_type: "process".into(),
+        entity_id: process_name.to_string(),
+        invoked_by: "execute-process".into(),
+        timestamp,
+    };
+    let _ = append_interaction(repo, &tracker_ref, &row, true);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -295,14 +363,59 @@ mod tests {
         .unwrap();
         fs::create_dir_all(repo.join("docs/audits")).unwrap();
         let row = InteractionRow {
+            entity_type: "process".into(),
+            entity_id: "feature".into(),
+            invoked_by: "execute-process".into(),
             timestamp: "2026-10-26T12:00:00Z".into(),
-            rol: "Tekton".into(),
-            tipo: "tool_call".into(),
-            resumen: "test".into(),
         };
         let r1 = append_interaction(repo, "LAB-1", &row, false).unwrap();
         assert_eq!(r1.get("written"), Some(&json!(true)));
         let r2 = append_interaction(repo, "LAB-1", &row, false).unwrap();
         assert_eq!(r2.get("reason"), Some(&json!("duplicate_row")));
+    }
+
+    #[test]
+    fn shell_has_uuid_v4_and_karma2_header() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"auditsPath":"docs/audits"}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("docs/audits")).unwrap();
+        let row = InteractionRow {
+            entity_type: "tool".into(),
+            entity_id: "git-manager".into(),
+            invoked_by: "tekton".into(),
+            timestamp: "2026-10-28T18:00:01Z".into(),
+        };
+        append_interaction(repo, "AUT-10", &row, false).unwrap();
+        let text = fs::read_to_string(repo.join("docs/audits/AUT-10.md")).unwrap();
+        assert!(text.contains("uuid:"));
+        assert!(text.contains("entity_type"));
+        assert!(text.contains("| tool | git-manager | tekton | 2026-10-28T18:00:01Z |"));
+    }
+
+    #[test]
+    fn rejects_invalid_entity_type() {
+        let td = tempfile::tempdir().unwrap();
+        let repo = td.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"auditsPath":"docs/audits"}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("docs/audits")).unwrap();
+        let row = InteractionRow {
+            entity_type: "agent".into(),
+            entity_id: "x".into(),
+            invoked_by: "y".into(),
+            timestamp: "2026-10-28T18:00:00Z".into(),
+        };
+        assert!(normalize_entity_type("process").is_ok());
+        assert!(append_interaction(repo, "LAB-1", &row, false).is_err());
     }
 }
