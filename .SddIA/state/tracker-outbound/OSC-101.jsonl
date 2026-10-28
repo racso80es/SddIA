@@ -38,3 +38,4 @@
 {"event_id":"c8fd8bd4-8d8c-400e-94ab-d3b6dcf3a0e0","issue_ref":"OSC-101","occurred_at":"2026-10-27T16:50:39Z","operation":"update_issue_description","source_process":"forge-pbi"}
 {"event_id":"187bc8e1-59c2-4577-b82d-0c74a6d448b5","issue_ref":"OSC-101","occurred_at":"2026-10-27T16:50:59Z","operation":"create_issue","source_process":"forge-pbi"}
 {"event_id":"6b4d06dd-0cbc-4ff2-9ff7-d868c87464dd","issue_ref":"OSC-101","occurred_at":"2026-10-27T16:50:59Z","operation":"update_issue_description","source_process":"forge-pbi"}
+{"event_id":"36851e73-9f9b-4873-a36e-c6c6496e3942","issue_ref":"OSC-101","occurred_at":"2026-10-28T18:38:02Z","operation":"create_issue","source_process":"refine-item"}
