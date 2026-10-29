@@ -9,6 +9,7 @@ tracker_ref: AUT-33
 document_id: PBI-497d7023
 execution_id: "c214dcd6-4e70-4c23-bfc7-8931780582df"
 pbi_archived: false
+pr_url: https://github.com/racso80es/SddIA/pull/408
 checks:
   domain-authority-test: APTO
   refine-item-gate-smoke: APTO
