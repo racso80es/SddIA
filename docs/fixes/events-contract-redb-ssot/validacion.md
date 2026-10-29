@@ -6,6 +6,7 @@ branch: fix/events-contract-redb-ssot
 global: APTO
 tracker_ref: AUT-45
 pbi_archived: false
+pr_url: https://github.com/racso80es/SddIA/pull/411
 checks:
   AC-CONTRACT: APTO
   AC-STORE-IDEM: APTO
