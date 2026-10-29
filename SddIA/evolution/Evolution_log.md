@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `eecdc114-9e4b-4784-9fb8-3853d1160c2d` | 2026-10-29 | AUT-35: refine-item remoto sella tracker_ref desde fetch_issue; elimina create_issue HU duplicado. | CANONICO | `SddIA/evolution/eecdc114-9e4b-4784-9fb8-3853d1160c2d.md` |
 | `8f9c9a07-384d-4157-9929-fa0f2965692c` | 2026-10-29 | AUT-33: perfil instancia software_forge Core-self; test domain_authority project_slug core. | CANONICO | `SddIA/evolution/8f9c9a07-384d-4157-9929-fa0f2965692c.md` |
 | `7aa147dd-feef-4896-9ba0-41945bccdc24` | 2026-10-28 | AUT-10: auditoría sesión LLM karma2 interaction_audit en execute-process | CANONICO | `SddIA/evolution/7aa147dd-feef-4896-9ba0-41945bccdc24.md` |
 | `6a4a49f0-24e8-446a-b5e5-f20c9bd68319` | 2026-10-28 | AUT-12: guard Done Linear; Core delivery_mode; TRACKER_DONE_GUARD | CANONICO | `SddIA/evolution/6a4a49f0-24e8-446a-b5e5-f20c9bd68319.md` |

@@ -1,0 +1,66 @@
+{
+  "entity_class": "process",
+  "entity_name": "refine-item",
+  "lifecycle_operation": "update",
+  "project_slug": "core",
+  "semantic_seed": {
+    "process_name": "refine-item",
+    "process_jurisdiction": "domain",
+    "process_version": "1.1.0",
+    "process_context": [
+      "knowledge-management",
+      "filesystem-ops",
+      "tracker-operations"
+    ],
+    "process_description": "Refinamiento unificado: preparación, Mayeuta, DoR, sellado tracker_ref desde issue leído (sin create_issue remoto), sellado Argos y evento PBI_Refined/HU_Refined.",
+    "process_contract_version": "1.4.0",
+    "workspace_template": ".SddIA/workspaces/{process_name}/{execution_id}/",
+    "process_phases": [
+      {
+        "name": "Preparación",
+        "intent": "fetch_issue, ensure_canonical_markdown, brief.json en workspace."
+      },
+      {
+        "name": "Refinamiento Mayeuta",
+        "intent": "invoke_agent_phase; verdict.json e item.refined.md."
+      },
+      {
+        "name": "Validación DoR",
+        "intent": "dor.rs por item_type antes de sellado."
+      },
+      {
+        "name": "Registro en Tracker",
+        "intent": "Sustrato remoto: tracker_ref desde snap.identifier si falta en frontmatter; status conflict si FM diverge. Sin create_issue.",
+        "requires_capability": [
+          {
+            "contract": "tracker.lifecycle",
+            "id": "tracker:lifecycle",
+            "version": ">=1.0.0"
+          }
+        ]
+      },
+      {
+        "name": "Sellado Argos",
+        "intent": "update_issue_description, refinement refined, emite PBI_Refined o HU_Refined con source_process refine-item."
+      }
+    ],
+    "process_inputs": [
+      { "item_ref": "Referencia opaca del ítem en el gestor activo" },
+      { "project_slug": "Slug registrado" },
+      { "execution_id": "Opcional; workspace .SddIA/workspaces/refine-item/{execution_id}/" }
+    ],
+    "process_outputs": [
+      { "item_ref": "Referencia opaca sellada" },
+      { "item_type": "hu|pbi|fix|kaizen|deuda|spike" },
+      { "tracker_ref": "Opcional" },
+      { "event_path": "JSON en eda_bus.pending" },
+      { "status": "refined|needs_clarification|awaiting_agents|conflict" }
+    ],
+    "markdown_body_replacements": [
+      {
+        "from": "registro HU opcional",
+        "to": "sellado tracker_ref desde issue leído (sin alta remota)"
+      }
+    ]
+  }
+}

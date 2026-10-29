@@ -740,3 +740,137 @@ execution_id: "51caf6b7-c386-447b-a380-edf5e8c97d73"
 6. Archivos: solo este apéndice de handoff.
 7. Desbloqueo: aprobar Shell+MCP + reinyectar con process/phase/persist_ref explícitos.
 ```
+
+## 2026-10-29T17:38:00Z — Ejecución (reinyección incompleta)
+- process: `refactorization` (inferido; inyección `process: ?`)
+- phase: `Ejecución` (inferida; inyección `phase: ?`)
+- agents: `tekton`
+- execution_id: `51caf6b7-c386-447b-a380-edf5e8c97d73`
+- persist_ref: `docs/refactors/refine-item-mayeuta`
+- branch_name: `refactor/refine-item-mayeuta`
+- pbi_ref: `AUT-19` / `PBI-f9627b0b`
+- correlation_id: ``
+- runtime: kalma2-agent-runtime-cursor
+- status: `blocked`
+- message: Shell Rejected + MCP workspace ausente; sin git-manager; no materialización Tekton.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+1. Inyección `process: ?` / `phase: ?` / persist_ref vacío; contrato inferido handoff (AUT-19, 51caf6b7-…).
+2. Cascada documental presente; `validacion.md` NO_APTO (integrity_failure / NO_EVIDENCIA_CAPSULA).
+3. Shell IDE Rejected (`./sddia-run.sh --tool git-manager`); MCP `sddia-workspace-server` → Server not found; catálogo solo `cursor`.
+4. Sin acuse JSON → no commit, no peaje, no re-sello; no inventar éxito sobre execution.md / WIP `refine_item/run.rs`.
+5. Snapshot git_status (inicio sesión): `run.rs` modificado + outbound AUT-35…43 — fuera de peaje sellable sin Shell.
+6. Archivos de código/genoma: **ninguno**; solo este apéndice de handoff.
+7. Desbloqueo: aprobar Shell+MCP → git-manager + peaje → reinyectar con process/phase/persist_ref explícitos.
+```
+
+## 2026-10-29T17:39:00Z — Ejecución (reinyección incompleta)
+- process: `refactorization` (inferido; inyección `process: ?`)
+- phase: `Ejecución` (inferida; inyección `phase: ?`)
+- agents: `tekton`
+- execution_id: `51caf6b7-c386-447b-a380-edf5e8c97d73`
+- persist_ref: `docs/refactors/refine-item-mayeuta`
+- branch_name: `refactor/refine-item-mayeuta`
+- pbi_ref: `AUT-19` / `PBI-f9627b0b`
+- correlation_id: ``
+- runtime: kalma2-agent-runtime-cursor
+- status: `blocked`
+- message: Shell Rejected (×2) + MCP workspace ausente; sin git-manager; no materialización Tekton.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+1. Inyección `process: ?` / `phase: ?` / persist_ref vacío; contrato inferido handoff (AUT-19, 51caf6b7-…).
+2. Cascada documental presente (clarify/objectives/spec/plan/execution); `validacion.md` NO_APTO (integrity_failure / NO_EVIDENCIA_CAPSULA).
+3. Shell IDE Rejected (status + `./sddia-run.sh --tool git-manager`); MCP `sddia-workspace-server` → Server not found; GetDynamicTools `sddia|workspace|git` → 0 matches; catálogo solo `cursor`.
+4. Sin acuse JSON → no commit, no peaje, no re-sello; no inventar éxito sobre execution.md / WIP `refine_item/run.rs`.
+5. Snapshot git_status (inicio sesión): `run.rs` modificado + outbound AUT-35…43 — fuera de peaje sellable sin Shell.
+6. Archivos de código/genoma: **ninguno**; solo este apéndice de handoff.
+7. Desbloqueo: aprobar Shell+MCP → git-manager + peaje → reinyectar con process/phase/persist_ref explícitos.
+```
+
+## 2026-10-29T17:39:00Z — Ejecución (reinyección incompleta)
+- process: `refactorization` (inferido; inyección `process: ?`)
+- phase: `Ejecución` (inferida; inyección `phase: ?`)
+- agents: `tekton`
+- execution_id: `51caf6b7-c386-447b-a380-edf5e8c97d73`
+- persist_ref: `docs/refactors/refine-item-mayeuta`
+- branch_name: `refactor/refine-item-mayeuta`
+- pbi_ref: `AUT-19` / `PBI-f9627b0b`
+- correlation_id: ``
+- runtime: kalma2-agent-runtime-cursor
+- status: `blocked`
+- message: Shell Rejected + MCP workspace ausente; sin git-manager; no materialización Tekton.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+1. Inyección `process: ?` / `phase: ?` / persist_ref vacío; contrato inferido handoff (AUT-19, 51caf6b7-…).
+2. Cascada documental presente (clarify/objectives/spec/plan/execution/implementation); `validacion.md` NO_APTO (integrity_failure / NO_EVIDENCIA_CAPSULA).
+3. Shell IDE Rejected (`./sddia-run.sh --tool git-manager`); MCP `sddia-workspace-server` → Server not found; GetDynamicTools `sddia|workspace` → 0 matches.
+4. Sin acuse JSON → no commit, no peaje, no re-sello; no inventar éxito sobre execution.md / WIP `refine_item/run.rs`.
+5. Snapshot git_status (inicio sesión): `run.rs` modificado + outbound AUT-35…43 — fuera de peaje sellable sin Shell.
+6. Archivos de código/genoma: **ninguno**; solo este apéndice de handoff.
+7. Desbloqueo: aprobar Shell+MCP → git-manager + peaje → reinyectar con process/phase/persist_ref explícitos.
+```
+
+## 2026-10-29T17:39:00Z — Ejecución (reinyección incompleta)
+- process: `refactorization` (inferido; inyección `process: ?`)
+- phase: `Ejecución` (inferida; inyección `phase: ?`)
+- agents: `tekton`
+- execution_id: `51caf6b7-c386-447b-a380-edf5e8c97d73`
+- persist_ref: `docs/refactors/refine-item-mayeuta`
+- branch_name: `refactor/refine-item-mayeuta`
+- pbi_ref: `AUT-19` / `PBI-f9627b0b`
+- correlation_id: ``
+- runtime: kalma2-agent-runtime-cursor
+- status: `blocked`
+- message: Shell Rejected (×3, incl. smart-mode) + MCP workspace ausente; sin git-manager; no materialización.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+1. Inyección `process: ?` / `phase: ?` / campos vacíos; contrato inferido handoff+objectives (AUT-19, 51caf6b7-…).
+2. Cascada: clarify/objectives/spec/plan/execution/implementation presentes; `validacion.md` NO_APTO (integrity_failure).
+3. Shell IDE Rejected ×3 (`status`, `git-manager`, retry `request_smart_mode_approval`); GetDynamicTools `sddia|workspace|git` → 0; catálogo solo `cursor`.
+4. Sin acuse JSON → no commit, no peaje, no re-sello; no inventar éxito sobre WIP `refine_item/run.rs` ni execution.md.
+5. Snapshot git_status (inicio): `run.rs` modificado + outbound AUT-35…43 — no sellable sin Shell.
+6. Archivos código/genoma: **ninguno**; solo este apéndice de handoff.
+7. Desbloqueo: aprobar Shell+MCP → git-manager + peaje → reinyectar con process/phase/persist_ref explícitos.
+```
+
+## 2026-10-29T17:39:00Z — Ejecución (reinyección incompleta)
+- process: `refactorization` (inferido; inyección `process: ?`)
+- phase: `Ejecución` (inferida; inyección `phase: ?`)
+- agents: `tekton`
+- execution_id: `51caf6b7-c386-447b-a380-edf5e8c97d73`
+- persist_ref: `docs/refactors/refine-item-mayeuta`
+- branch_name: `refactor/refine-item-mayeuta`
+- pbi_ref: `AUT-19` / `PBI-f9627b0b`
+- correlation_id: ``
+- runtime: kalma2-agent-runtime-cursor
+- status: `blocked`
+- message: Shell Rejected + MCP workspace ausente; sin git-manager; no materialización Tekton.
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked**
+
+1. Inyección `process: ?` / `phase: ?` / persist_ref vacío; contrato inferido handoff (AUT-19, 51caf6b7-…).
+2. Diseño presente (spec/plan/execution); `validacion.md` NO_APTO (integrity_failure / NO_EVIDENCIA_CAPSULA); plan marca T4 pendiente de APTO.
+3. Shell IDE Rejected (`./sddia-run.sh --tool git-manager`); MCP `sddia-workspace-server` → Server not found; catálogo dinámico solo `cursor`.
+4. Sin acuse JSON → no commit, no peaje, no re-sello WIP `refine_item/run.rs`; no inventar éxito.
+5. Archivos de código/genoma: **ninguno**; solo este apéndice de handoff.
+6. Desbloqueo: aprobar Shell+MCP → git-manager + peaje → reinyectar con process/phase/persist_ref explícitos.
+```
