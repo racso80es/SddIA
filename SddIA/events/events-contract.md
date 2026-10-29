@@ -41,7 +41,7 @@ El cuerpo Markdown debe incluir, como mínimo:
 | Plano | Ubicación SSOT | Naturaleza | Versionado |
 |-------|----------------|------------|------------|
 | **Clase de Evento** | `SddIA/events/{event_family}/{name}.md` | Contrato funcional, genoma | Sí (Git) |
-| **Instancia ECST** | `.events/{pending,processing,processed,dead-letter}/` + `{estado}/subscribers/` (testigos) | JSON volátil, runtime | No (`/.events/` en `.gitignore`) |
+| **Instancia ECST** | Modo `filesystem`: `.events/{pending,processing,processed,dead-letter}/` + testigos en `{estado}/subscribers/`. Modo **`redb`** (default): `.SddIA/runtime/events.redb` (tablas `events`, `subscriber_delivery`, …). Modo **`dual`**: store + espejo FS transitorio. La ruta lógica `.events/pending/{event_id}.json` sigue siendo el identificador que reciben suscriptores; en `redb` el fichero puede no existir. | JSON volátil, runtime | No (`/.events/` en `.gitignore`; DB fuera de Git) |
 | **Personalización** | `.SddIA/events/` (`eda_instance.customization`) | Overrides Vía C | No |
 
 Toda ruta operativa se resuelve vía `cumulo.paths.json`. Prohibido hardcodear literales fuera del SSOT inyectado.
@@ -73,29 +73,36 @@ Toda instancia persistida en el bus debe ser JSON UTF-8 con la forma:
 
 ## 4. Ciclo de vida del bus (Ola C V3+)
 
-Resolución vía `event_bus` + `eda_bus` en `cumulo.paths.json`:
+Resolución vía `event_bus` / `eda_bus` en `cumulo.paths.json`. Modo de almacenamiento: variable de entorno `SDDIA_EVENT_STORE` → `filesystem` | `dual` | **`redb`** (default si ausente o desconocido; ver `sddia-event-store/src/gate.rs`).
+
+| Modo | Padre ECST | Estado de entrega por suscriptor | Testigos FS |
+|------|------------|----------------------------------|-------------|
+| `redb` | Tabla `events` en `.SddIA/runtime/events.redb` | SSOT: tabla `subscriber_delivery` | No (salvo sidechannels) |
+| `filesystem` | JSON inmutable en `eda_bus.pending` | Testigos bajo `processing/processed/dead-letter/subscribers/` | Sí |
+| `dual` | Store + JSON pending | Store **y** testigos FS durante transición | Sí |
 
 ```mermaid
 flowchart TB
-  EM[Emisor action/process] --> P["pending/ padre inmutable"]
-  P --> W[event-watcher]
+  EM[Emisor action/process] --> STORE["events.redb (redb/dual)"]
+  EM --> P["pending/ JSON (filesystem/dual)"]
+  STORE --> W[event-watcher / pending redb]
+  P --> W
   W --> RDE[process route-domain-event]
-  RDE --> PH["processing/ cabecera + subscribers/ testigos"]
-  PH --> OK["processed/ cabecera + subscribers/"]
-  PH --> DL["dead-letter/ cabecera + subscribers/"]
-  OK --> SW[event-sweeper]
-  SW -->|consenso| PURGE[purga pending + processing]
-  DL --> KZ[alerta Kaizen]
+  RDE --> DEL["subscriber_delivery + testigos FS si dual/filesystem"]
+  RDE --> SUB[Suscriptores catálogo]
+  SUB --> DEL
+  DEL --> SW[event-sweeper / purge store]
 ```
 
-1. Emisores escriben el padre ECST en `eda_bus.pending` (`.events/pending/`).
-2. `event-watcher` (Centinela Rust) invoca `execute-process --process route-domain-event` por cada JSON nuevo en `pending/`.
-3. El orquestador materializa cabecera en `processing/` y testigos en `processing/subscribers/`.
-4. Fan-out **asíncrono** a suscriptores (`event-subscriptions.json`); promoción de testigos a `processed/subscribers/` o `dead-letter/subscribers/` con metadata de resultado.
-5. Réplicas de cabecera en `processed/` o `dead-letter/` según consenso por suscriptor; purga de `processing/` al cerrar todos.
-6. Tras consenso de suscriptores, `route-domain-event` invoca `try_sweep_event()` para purgar el padre en `pending/` de forma inmediata (éxito) o terminalizarlo en estado Kaizen cuando todos los suscriptores están cerrados pero existe testigo en `dead-letter/subscribers/` (`status: kaizen-finalized`).
-7. `event-sweeper` (Centinela Rust) actúa como recolector periódico de eventos stale o no cerrados en el paso anterior; alerta Kaizen activa si hay `dead-letter/` con padre aún en `pending/`; eventos `kaizen-finalized` conservan cabecera y testigos DL sin copia en `pending/`.
-8. **`PullRequest_Presented` → `pull-request-review`:** antes del subprocess, `resolve_pull_request_lifecycle` (gh → rama remota → ref `pull/N/head`) activa `merge_already_done` si el PR ya está mergeado; evita dead-letter por checkout cuando la rama fue podada post-merge.
+1. Emisores registran el ECST con `record_ecst` / `materialize_pending_domain_event`: en **`redb`** solo store; en **`filesystem`** JSON en `eda_bus.pending`; en **`dual`** ambos.
+2. `event-watcher` reclama entregas **`Pending`** en store y/o detecta JSON en `pending/`; invoca `route-domain-event` con `event_file_path` lógico (`.events/pending/{event_id}.json`) aunque el fichero no exista en `redb`.
+3. `route-domain-event` carga el ECST desde fichero si existe; si no, desde store (`load_dispatched_event`). Valida contra la Clase catalogada.
+4. Fan-out asíncrono a suscriptores (`event-subscriptions.json`). Cada intento actualiza `subscriber_delivery` cuando el store está activo; en `filesystem`/`dual` también materializa testigos JSON bajo `processing/subscribers/`.
+5. Resultado por suscriptor: `success`, `failed` o `skipped-<motivo>` en la respuesta del router; en store se persisten como `DeliveryStatus` (`success`, `failed`, `skipped`). **Prohibido** registrar `success` cuando el handler no produjo efecto (laudo AUT-20).
+6. Idempotencia ante re-enrutado: `terminal_witness_exists` consulta entrega terminal en **`subscriber_delivery`** (modo store) **y/o** testigo en `processed_subscribers` / `dead_letter_subscribers` (modo FS).
+7. Dead-letter: índice `dead_letter_index` en store y/o cabecera en `dead-letter/`; replay vía `EventStore::replay` / CLI `--replay-dead-letter`. Reintentos del watcher: hasta 3 intentos por clave de ruta.
+8. `event-sweeper` sigue siendo recolector de artefactos FS stale en modos con fichero; en **`redb`** puro la purga del padre y filas terminales es responsabilidad del store y de `try_sweep_event` / `purge_store_event`.
+9. **`PullRequest_Presented` → `pull-request-review`:** antes del subprocess, `resolve_pull_request_lifecycle` (gh → rama remota → ref `pull/N/head`) activa `merge_already_done` si el PR ya está mergeado; evita dead-letter por checkout cuando la rama fue podada post-merge.
 
 ## 5. Aseguramiento forense de payload (laudo Ola C)
 

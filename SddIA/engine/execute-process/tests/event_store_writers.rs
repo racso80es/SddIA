@@ -166,3 +166,43 @@ fn progress_frames_land_in_the_store() {
     assert_eq!(frames[1].0, 1);
     let _ = fs::remove_dir_all(&repo);
 }
+
+#[test]
+fn terminal_witness_exists_redb_without_fs_witness() {
+    use execute_process::engine::eda_bus_topology::{
+        load_event_bus_topology, terminal_witness_exists,
+    };
+
+    let _guard = ModeGuard;
+    override_store_mode(Some(StoreMode::Redb));
+    let repo = temp_repo();
+    materialize_pending_domain_event(
+        &repo,
+        "PBI_Refined",
+        "refine-item",
+        json!({"pbi_ref": "AUT-45"}),
+    )
+    .expect("materialize");
+    let store = EventStore::open(runtime_db_path(&repo)).unwrap();
+    let rows = store
+        .list_family(sddia_event_store::Family::Domain)
+        .unwrap();
+    assert_eq!(rows.len(), 1);
+    let event_id = rows[0].event_id.clone();
+    store
+        .upsert_delivery(
+            &event_id,
+            "tracker-stamp",
+            sddia_event_store::DeliveryStatus::Success,
+            json!({"ok": true}),
+        )
+        .expect("upsert");
+    drop(store);
+    let bus = load_event_bus_topology(&repo).unwrap();
+    assert!(
+        terminal_witness_exists(&repo, &bus, &event_id, "tracker-stamp"),
+        "store Success debe contar como terminal sin testigo FS"
+    );
+    assert!(json_files(&repo.join(".events")).is_empty());
+    let _ = fs::remove_dir_all(&repo);
+}

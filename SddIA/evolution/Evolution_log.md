@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `f8a3c2d1-9e4b-4a7f-8c6d-5e4f3a2b1c0d` | 2026-10-29 | AUT-45: events-contract redb; terminal_witness_exists + subscriber_delivery. | CANONICO | `SddIA/evolution/f8a3c2d1-9e4b-4a7f-8c6d-5e4f3a2b1c0d.md` |
 | `0e89b4e6-51ed-47f4-9bf0-1ceb22a6e351` | 2026-10-29 | MAN-25: aduana paridad binario/fuente para execute-process y kalma2-bridge (sddia-runtime-parity, gates WUI/salud/accept-pr). | CANONICO | `SddIA/evolution/0e89b4e6-51ed-47f4-9bf0-1ceb22a6e351.md` |
 | `eecdc114-9e4b-4784-9fb8-3853d1160c2d` | 2026-10-29 | AUT-35: refine-item remoto sella tracker_ref desde fetch_issue; elimina create_issue HU duplicado. | CANONICO | `SddIA/evolution/eecdc114-9e4b-4784-9fb8-3853d1160c2d.md` |
 | `8f9c9a07-384d-4157-9929-fa0f2965692c` | 2026-10-29 | AUT-33: perfil instancia software_forge Core-self; test domain_authority project_slug core. | CANONICO | `SddIA/evolution/8f9c9a07-384d-4157-9929-fa0f2965692c.md` |
