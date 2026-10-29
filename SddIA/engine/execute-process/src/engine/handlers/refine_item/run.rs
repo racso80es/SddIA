@@ -4,9 +4,8 @@ use super::dor;
 use super::prepare::{
     ensure_canonical_markdown, item_type_from_fm, parse_properties, FetchSnapshot,
 };
-use crate::engine::capsules::invoke_tool_for_process;
 use crate::engine::item_lifecycle_frontmatter;
-use crate::engine::project_binding::{self, TrackerConfig};
+use crate::engine::project_binding;
 use crate::engine::tracker_lifecycle_port;
 use crate::engine::agent_runtime::invoke_agent_phase;
 use crate::engine::item_lifecycle_frontmatter::{
@@ -66,58 +65,6 @@ fn fm_str(fm: &YamlValue, key: &str) -> Option<String> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .map(str::to_string)
-}
-
-fn title_from_item(fm: &YamlValue, body: &str) -> String {
-    if let Some(t) = fm_str(fm, "title") {
-        return t;
-    }
-    for line in body.lines() {
-        let t = line.trim();
-        if t.starts_with("# ") {
-            return t.trim_start_matches('#').trim().to_string();
-        }
-    }
-    "HU".to_string()
-}
-
-fn backlog_state_name(tc: &TrackerConfig) -> Option<String> {
-    tc.state_map.get("backlog").cloned()
-}
-
-fn try_create_hu_issue(
-    repo: &Path,
-    tc: &TrackerConfig,
-    title: &str,
-    description: &str,
-) -> Result<String, String> {
-    let mut request = json!({
-        "operation": "create_issue",
-        "team_key": tc.team_key,
-        "title": title,
-        "description": description,
-        "labels": [tc.label_hu.clone()],
-    });
-    if let Some(pid) = &tc.project_id {
-        request["project_id"] = json!(pid);
-    }
-    if let Some(state) = backlog_state_name(tc) {
-        request["state_name"] = json!(state);
-    }
-    let tool = super::super::tracker_stamp::lifecycle_tool_name(repo)?;
-    let tool_body = invoke_tool_for_process(
-        repo,
-        &tool,
-        &json!({ "request": request }),
-        Some(PROCESS),
-    )?;
-    tool_body
-        .get("issue_ref")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-        .ok_or_else(|| "LINEAR_CREATE_ISSUE_EMPTY: sin issue_ref".into())
 }
 
 fn emit_refined(
@@ -284,7 +231,25 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let (fm, body) = parse_properties(&canonical)?;
     let item_type = item_type_from_fm(&fm, &snap.labels);
     let mut tracker_ref = fm_str(&fm, "tracker_ref");
-    let mut issue_target = tracker_ref
+    if remote {
+        if let Some(fm_tr) = tracker_ref.as_ref() {
+            if !fm_tr.eq_ignore_ascii_case(&snap.identifier) {
+                return Ok(envelope_status(
+                    &item_ref,
+                    &item_type,
+                    tracker_ref.as_deref(),
+                    &execution_id,
+                    &ws,
+                    "conflict",
+                    &[],
+                    None,
+                ));
+            }
+        } else {
+            tracker_ref = Some(snap.identifier.clone());
+        }
+    }
+    let issue_target = tracker_ref
         .clone()
         .or_else(|| Some(item_ref.clone()))
         .unwrap_or_else(|| snap.identifier.clone());
@@ -449,17 +414,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             &open_questions,
             None,
         ));
-    }
-
-    if item_type == "hu" && remote && tracker_ref.is_none() {
-        if let Some(tc) = tracker_cfg.as_ref() {
-            let title = title_from_item(&fm, &refined_body);
-            let description = refined_body.chars().take(8000).collect::<String>();
-            if let Ok(issue_ref) = try_create_hu_issue(repo, tc, &title, &description) {
-                tracker_ref = Some(issue_ref.clone());
-                issue_target = issue_ref;
-            }
-        }
     }
 
     let refined_date = Utc::now().format("%Y-%m-%d").to_string();
