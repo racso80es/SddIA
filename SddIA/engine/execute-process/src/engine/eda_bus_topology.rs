@@ -6,8 +6,8 @@ use super::workspace::{
 use chrono::Utc;
 use regex::Regex;
 use sddia_event_store::{
-    delivery_status_from_label, load_dispatched_event, record_witness, runtime_db_path, store_mode,
-    writes_filesystem, writes_store, DeliveryStatus, EventStore,
+    delivery_status_from_label, delivery_terminal_in_store, load_dispatched_event, record_witness,
+    runtime_db_path, store_mode, writes_filesystem, writes_store, DeliveryStatus, EventStore,
 };
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -371,6 +371,15 @@ pub fn terminal_witness_exists(
     event_uuid: &str,
     subscriber_name: &str,
 ) -> bool {
+    let mode = store_mode();
+    if writes_store(mode) {
+        if delivery_terminal_in_store(repo, event_uuid, subscriber_name).unwrap_or(false) {
+            return true;
+        }
+        if !writes_filesystem(mode) {
+            return false;
+        }
+    }
     witness_exists(
         repo,
         bus,

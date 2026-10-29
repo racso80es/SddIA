@@ -130,6 +130,22 @@ pub fn record_witness(
     store.upsert_delivery(event_id, subscriber_id, status, witness.clone())
 }
 
+/// Entrega terminal en `subscriber_delivery` (Success, Failed o Skipped).
+pub fn delivery_terminal_in_store(
+    repo: &Path,
+    event_id: &str,
+    subscriber_id: &str,
+) -> Result<bool, StoreError> {
+    if !writes_store(store_mode()) {
+        return Ok(false);
+    }
+    let store = open_store(repo)?;
+    Ok(match store.get_delivery(event_id, subscriber_id)? {
+        Some(w) => w.status != DeliveryStatus::Pending,
+        None => false,
+    })
+}
+
 pub fn append_progress_monotonic(
     repo: &Path,
     correlation_id: &str,

@@ -19,7 +19,8 @@ pub use gate::{
     append_progress_monotonic, copy_dlt_seal, delivery_status_from_label, load_dispatched_event,
     is_filesystem_rel, mode_from_name, override_store_mode, path_is_heartbeat_sidechannel,
     record_ecst,
-    record_witness, runtime_db_path, store_mode, writes_filesystem, writes_store, StoreMode,
+    delivery_terminal_in_store, record_witness, runtime_db_path, store_mode, writes_filesystem,
+    writes_store, StoreMode,
 };
 pub use model::{DeadLetter, DeliveryStatus, DeliveryWitness, DltSeal, Family, StoredEvent};
 
