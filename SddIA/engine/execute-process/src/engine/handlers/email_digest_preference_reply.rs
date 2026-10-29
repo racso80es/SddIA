@@ -62,13 +62,7 @@ fn load_event(repo: &Path, process_inputs: &Value) -> Result<Value, String> {
         .map(str::trim)
         .filter(|s| !s.is_empty())
     {
-        let path = if Path::new(rel).is_absolute() {
-            PathBuf::from(rel)
-        } else {
-            repo.join(rel)
-        };
-        let raw = fs::read_to_string(&path).map_err(|e| format!("leer evento: {e}"))?;
-        return serde_json::from_str(&raw).map_err(|e| format!("JSON evento: {e}"));
+        return super::super::ecst_input_loader::load_ecst_from_rel(repo, rel);
     }
     let callback_data = process_inputs
         .get("callback_data")

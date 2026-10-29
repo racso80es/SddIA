@@ -469,12 +469,20 @@ pub fn promote_witness(
     };
     let mode = store_mode();
     if writes_store(mode) {
-        let status = delivery_status_from_label(if to_state == "processed" {
-            "processed"
-        } else {
-            "dead-letter"
-        });
-        let witness = extra.cloned().unwrap_or_else(|| json!({}));
+        let label = extra
+            .and_then(|e| e.get("result_status").and_then(|v| v.as_str()))
+            .unwrap_or(if to_state == "processed" {
+                "success"
+            } else {
+                "dead-letter"
+            });
+        let status = delivery_status_from_label(label);
+        let mut witness = extra.cloned().unwrap_or_else(|| json!({}));
+        if let Some(obj) = witness.as_object_mut() {
+            if label.starts_with("skipped") {
+                obj.insert("skip_reason".to_string(), json!(label));
+            }
+        }
         record_witness(repo, event_uuid, subscriber_name, status, &witness)
             .map_err(|err| err.to_string())?;
         if status == DeliveryStatus::Failed {

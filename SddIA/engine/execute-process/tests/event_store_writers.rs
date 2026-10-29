@@ -168,6 +168,62 @@ fn progress_frames_land_in_the_store() {
 }
 
 #[test]
+fn terminal_witness_exists_redb_skipped_without_fs_witness() {
+    use execute_process::engine::eda_bus_topology::{
+        load_event_bus_topology, promote_witness, terminal_witness_exists,
+    };
+
+    let _guard = ModeGuard;
+    override_store_mode(Some(StoreMode::Redb));
+    let repo = temp_repo();
+    materialize_pending_domain_event(
+        &repo,
+        "Work_Initiated",
+        "feature",
+        json!({"branch": "feat/x"}),
+    )
+    .expect("materialize");
+    let store = EventStore::open(runtime_db_path(&repo)).unwrap();
+    let event_id = store
+        .list_family(sddia_event_store::Family::Domain)
+        .unwrap()[0]
+        .event_id
+        .clone();
+    drop(store);
+    let bus = load_event_bus_topology(&repo).unwrap();
+    write_processing_witness(
+        &repo,
+        &bus,
+        &event_id,
+        "tracker-stamp",
+        "Work_Initiated",
+        "async",
+    )
+    .unwrap();
+    promote_witness(
+        &repo,
+        &bus,
+        &event_id,
+        "tracker-stamp",
+        "processed",
+        Some(&json!({
+            "result_status": "skipped-no-tracker-ref",
+            "skip_reason": "skipped-no-tracker-ref",
+        })),
+        None,
+    )
+    .unwrap();
+    assert!(
+        terminal_witness_exists(&repo, &bus, &event_id, "tracker-stamp"),
+        "Skipped en store debe ser terminal"
+    );
+    let store = EventStore::open(runtime_db_path(&repo)).unwrap();
+    let row = store.get_delivery(&event_id, "tracker-stamp").unwrap().unwrap();
+    assert_eq!(row.status, sddia_event_store::DeliveryStatus::Skipped);
+    let _ = fs::remove_dir_all(&repo);
+}
+
+#[test]
 fn terminal_witness_exists_redb_without_fs_witness() {
     use execute_process::engine::eda_bus_topology::{
         load_event_bus_topology, terminal_witness_exists,

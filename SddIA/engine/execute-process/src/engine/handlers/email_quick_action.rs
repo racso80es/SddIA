@@ -52,22 +52,7 @@ fn persist_proof(repo: &Path, event: &Value) -> Result<PathBuf, String> {
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
-    let rel = process_inputs
-        .get("event_file_path")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or("event_file_path requerido")?;
-    let path: PathBuf = {
-        let p = Path::new(rel);
-        if p.is_absolute() {
-            p.to_path_buf()
-        } else {
-            repo.join(rel)
-        }
-    };
-    let raw = fs::read_to_string(&path).map_err(|e| format!("leer evento: {e}"))?;
-    let event: Value = serde_json::from_str(&raw).map_err(|e| format!("JSON evento: {e}"))?;
+    let event = super::super::ecst_input_loader::load_ecst_from_inputs(repo, process_inputs)?;
     let payload = event.get("payload").cloned().unwrap_or(json!({}));
     let uid = payload
         .get("message_uid")

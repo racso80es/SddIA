@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `9c4e2a1b-8d7f-4e6c-9a3b-2f1e0d9c8b7a` | 2026-10-29 | AUT-46: ecst_input_loader, delivery_status tracker-stamp, subscriber_delivery Skipped. | CANONICO | `SddIA/evolution/9c4e2a1b-8d7f-4e6c-9a3b-2f1e0d9c8b7a.md` |
 | `f8a3c2d1-9e4b-4a7f-8c6d-5e4f3a2b1c0d` | 2026-10-29 | AUT-45: events-contract redb; terminal_witness_exists + subscriber_delivery. | CANONICO | `SddIA/evolution/f8a3c2d1-9e4b-4a7f-8c6d-5e4f3a2b1c0d.md` |
 | `0e89b4e6-51ed-47f4-9bf0-1ceb22a6e351` | 2026-10-29 | MAN-25: aduana paridad binario/fuente para execute-process y kalma2-bridge (sddia-runtime-parity, gates WUI/salud/accept-pr). | CANONICO | `SddIA/evolution/0e89b4e6-51ed-47f4-9bf0-1ceb22a6e351.md` |
 | `eecdc114-9e4b-4784-9fb8-3853d1160c2d` | 2026-10-29 | AUT-35: refine-item remoto sella tracker_ref desde fetch_issue; elimina create_issue HU duplicado. | CANONICO | `SddIA/evolution/eecdc114-9e4b-4784-9fb8-3853d1160c2d.md` |

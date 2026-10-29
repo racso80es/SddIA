@@ -409,6 +409,10 @@ fn status_is_terminal_ok(status: &str) -> bool {
     status == "success" || status.starts_with("skipped")
 }
 
+fn process_dispatch_terminal(status: &str) -> bool {
+    status == "success" || status.starts_with("skipped")
+}
+
 /// TG-CA1/CA2: silencio selectivo PEC — solo `process_name` + `status` del payload.
 fn pec_telegram_silent(process_name: &str, status: &str) -> bool {
     (process_name == "accept-pr" && status == "success")
@@ -1349,6 +1353,15 @@ fn dispatch_process_subscriber(
                 } else {
                     1
                 }) as i32;
+            if let Some(ds) = envelope
+                .get("data")
+                .and_then(|d| d.get("delivery_status"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                return (ds.to_string(), exit_code);
+            }
             let ok = envelope.get("success").and_then(|v| v.as_bool()) == Some(true) && exit_code == 0;
             if ok {
                 ("success".into(), 0)
@@ -1565,7 +1578,7 @@ pub(crate) fn dispatch_subscriber(
             };
             let (status, exit_code) =
                 dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
-            if status == "success" {
+            if process_dispatch_terminal(&status) {
                 return (sid, status, None, exit_code);
             }
             return (sid, "failed".into(), Some(status), exit_code);
@@ -1583,7 +1596,7 @@ pub(crate) fn dispatch_subscriber(
             }
             let (status, exit_code) =
                 dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
-            if status == "success" {
+            if process_dispatch_terminal(&status) {
                 return (sid, status, None, exit_code);
             }
             return (sid, "failed".into(), Some(status), exit_code);
@@ -1602,7 +1615,7 @@ pub(crate) fn dispatch_subscriber(
             let process_inputs = json!({ "event_file_path": rel });
             let (status, exit_code) =
                 dispatch_process_subscriber(repo, process_key, process_inputs);
-            if status == "success" {
+            if process_dispatch_terminal(&status) {
                 return (sid, status, None, exit_code);
             }
             return (sid, "failed".into(), Some(status), exit_code);
@@ -1644,7 +1657,7 @@ pub(crate) fn dispatch_subscriber(
                 process_key,
                 Value::Object(process_inputs),
             );
-            if status == "success" {
+            if process_dispatch_terminal(&status) {
                 return (sid, status, None, exit_code);
             }
             return (sid, "failed".into(), Some(status), exit_code);
@@ -1668,7 +1681,7 @@ pub(crate) fn dispatch_subscriber(
             process_inputs.insert("event_file_path".into(), json!(rel));
             let (status, exit_code) =
                 dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
-            if status == "success" {
+            if process_dispatch_terminal(&status) {
                 return (sid, status, None, exit_code);
             }
             return (sid, "failed".into(), Some(status), exit_code);
@@ -1752,7 +1765,7 @@ pub(crate) fn dispatch_subscriber(
                             Value::Object(process_inputs),
                         );
                         release_ppr_dedupe(repo, branch, &head, &hex, event);
-                        if status == "success" {
+                        if process_dispatch_terminal(&status) {
                             return (sid, status, None, exit_code);
                         }
                         return (sid, "failed".into(), Some(status), exit_code);
@@ -1770,7 +1783,7 @@ pub(crate) fn dispatch_subscriber(
         std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
         let (status, exit_code) =
             dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
-        if status == "success" {
+        if process_dispatch_terminal(&status) {
             return (sid, status, None, exit_code);
         }
         return (sid, "failed".into(), Some(status), exit_code);
