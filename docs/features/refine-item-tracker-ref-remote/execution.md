@@ -15,6 +15,7 @@ execution_id: "3876e61f-1e04-4140-abbd-702c0ebb416f"
 3. Parche motor según `spec.md`.
 4. Tests: `cargo test -p execute-process --lib handlers::refine_item`.
 5. Evolution `eecdc114-9e4b-4784-9fb8-3853d1160c2d` (`sddia-qa evolution-register`).
-6. PR [#409](https://github.com/racso80es/SddIA/pull/409); `delivery-close-cycle` parcial (push OK; evolution bloqueó en primer intento, corregido en commit siguiente).
+6. Genoma `refine-item.md` v1.1.0 vía `entity-manager` (`a9b7a4b2` cuerpo, `e1a48705` fases Registro); eventos `Domain_Entity_Updated` `57c9555b`, `b50868c4`.
+7. PR [#409](https://github.com/racso80es/SddIA/pull/409); `delivery-close-cycle` parcial en primer push (evolution ya corregido).
 
-Pendiente: genoma `refine-item.md` vía `entity-manager`; CI verde; cierre Linear AUT-35 post-merge.
+Pendiente: CI verde; cierre Linear AUT-35 post-merge.
