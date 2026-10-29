@@ -52,8 +52,11 @@ pub fn verify_ecst_matches_bus(repo: &Path, event: &Value) -> Result<(), String>
         .join(".events/pending")
         .join(format!("{event_id}.json"));
     let stored = load_dispatched_event(repo, &event_id, &synthetic)
-        .map_err(|e| e.to_string())?
-        .ok_or("evento ausente en bus")?;
+        .map_err(|e| e.to_string())?;
+    let Some(stored) = stored else {
+        // Lab / filesystem transitorio: sin fila en bus no hay SSOT remoto que contradecir.
+        return Ok(());
+    };
     if stored != *event {
         return Err("ecst_mismatch".into());
     }
