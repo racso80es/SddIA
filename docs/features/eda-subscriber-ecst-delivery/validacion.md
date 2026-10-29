@@ -14,6 +14,7 @@ checks:
   AC-OBJECTIVES: PRESENT
   capsules-qa: PASS
   git-evidence: PASS
+pr_url: "https://github.com/racso80es/SddIA/pull/412"
 ---
 
 # Validación — AUT-46

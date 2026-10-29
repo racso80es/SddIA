@@ -15,6 +15,4 @@ pbi_ref: AUT-46
 
 ## Pendiente de cierre
 
-- Test de integración por suscriptor en redb sin `.events/` (markdown-apply, route fractal).
-- Test de concurrencia N≥4 en `route-domain-event` (AC5).
-- `delivery-close-cycle` + PR + validacion APTO.
+- Merge PR #412 y `accept-pr` → Done AUT-46 en Linear.
