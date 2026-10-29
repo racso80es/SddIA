@@ -424,6 +424,66 @@ status: active
     }
 
     #[test]
+    fn core_project_slug_allowed_with_instance_software_forge_profile() {
+        let td = tempfile::tempdir().unwrap();
+        write_codex(td.path(), &["refine-item", "forge-pbi"]);
+        fs::create_dir_all(td.path().join(".git")).unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        fs::create_dir_all(td.path().join(".SddIA/projects")).unwrap();
+        fs::write(
+            td.path().join(".SddIA/projects/core.md"),
+            format!(
+                r#"---
+id: core
+uuid: "{uuid}"
+project_root: .
+manifest_ref: .SddIA/project.md
+codex_slug: codex-software-engineering
+status: active
+---
+"#
+            ),
+        )
+        .unwrap();
+        fs::write(
+            td.path().join(".SddIA/project.md"),
+            format!(
+                r#"---
+id: core
+uuid: "{uuid}"
+git_remote: https://example.invalid/core.git
+default_branch: main
+delivery_mode: branch_pr
+contract_version: "1.3.0"
+codex_slug: codex-software-engineering
+tracker:
+  provider: linear
+  team_key: AUT
+  done_gate: linear
+  state_map:
+    backlog: Backlog
+    done: Done
+docs_layout:
+  features: docs/features
+  fixes: docs/fixes
+  todos_pending: docs/todos/pending
+  todos_done: docs/todos/done
+---
+"#
+            ),
+        )
+        .unwrap();
+        fs::write(
+            td.path().join(".SddIA/active-domain-profile.json"),
+            r#"{"codex_slug":"codex-software-engineering","git_required":true,"software_forge":true}"#,
+        )
+        .unwrap();
+        let inputs = json!({"project_slug": "core"});
+        assert!(assert_process_allowed(td.path(), "refine-item", &inputs).is_ok());
+        assert!(assert_process_allowed(td.path(), "forge-pbi", &inputs).is_ok());
+    }
+
+    #[test]
     fn non_member_process_always_allowed() {
         let td = tempfile::tempdir().unwrap();
         write_codex(td.path(), &["feature"]);
