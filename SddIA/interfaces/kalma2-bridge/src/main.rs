@@ -367,6 +367,7 @@ struct AcceptedAck {
 enum AcceptSyncError {
     Orchestrator(String),
     Spawn(String),
+    StaleRuntime(Vec<String>),
 }
 
 fn accept_execute(
@@ -376,6 +377,28 @@ fn accept_execute(
     project_slug: Option<&str>,
 ) -> Result<AcceptedAck, AcceptSyncError> {
     let t0 = Instant::now();
+    if !sddia_runtime_parity::allow_stale_runtime() {
+        let bridge_live = std::env::current_exe().ok();
+        let orchestrator = sddia_daemon_runtime::resolve_execute_process_elf(repo);
+        let parity = sddia_runtime_parity::assess_runtime_binary_parity(
+            repo,
+            bridge_live.as_deref(),
+            orchestrator.as_deref(),
+        )
+        .map_err(|e| AcceptSyncError::Orchestrator(e))?;
+        if parity.get("ok").and_then(|v| v.as_bool()) != Some(true) {
+            let stale: Vec<String> = parity
+                .get("stale")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|x| x.as_str().map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default();
+            return Err(AcceptSyncError::StaleRuntime(stale));
+        }
+    }
     let bin = resolve_orchestrator(repo).map_err(AcceptSyncError::Orchestrator)?;
     let correlation_id = Uuid::new_v4().to_string();
 
@@ -426,6 +449,20 @@ fn accepted_body(ack: &AcceptedAck) -> String {
 fn reply_accept_result(req: tiny_http::Request, result: Result<AcceptedAck, AcceptSyncError>) {
     match result {
         Ok(ack) => reply(req, 202, accepted_body(&ack)),
+        Err(AcceptSyncError::StaleRuntime(stale)) => {
+            reply(
+                req,
+                409,
+                serde_json::json!({
+                    "success": false,
+                    "code": "STALE_RUNTIME_BINARY",
+                    "message": "binario vivo desalineado respecto al árbol actual",
+                    "stale": stale,
+                    "exit_code": 1
+                })
+                .to_string(),
+            );
+        }
         Err(AcceptSyncError::Orchestrator(message)) | Err(AcceptSyncError::Spawn(message)) => {
             reply(
                 req,
@@ -3580,6 +3617,23 @@ mod tests {
             handler_body.contains("\"accepted\": true") || handler_body.contains("\"accepted\":true"),
             "response body debe incluir accepted:true"
         );
+    }
+
+    #[test]
+    fn stale_runtime_gate_409_in_production() {
+        let src = include_str!("main.rs");
+        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        assert!(prod.contains("STALE_RUNTIME_BINARY"));
+        assert!(prod.contains("AcceptSyncError::StaleRuntime"));
+        assert!(prod.contains("sddia_runtime_parity::assess_runtime_binary_parity"));
+        assert!(prod.contains("sddia_runtime_parity::allow_stale_runtime"));
+    }
+
+    #[test]
+    fn system_health_fuses_runtime_binary_parity() {
+        let src = include_str!("../../../ecosystem-health/src/lib.rs");
+        assert!(src.contains("runtime_binary_parity"));
+        assert!(src.contains("assess_runtime_binary_parity"));
     }
 
     #[test]

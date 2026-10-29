@@ -672,6 +672,30 @@ pub fn fuse_ecosystem_health(repo: &Path, opts: FuseOptions) -> Result<Value, St
         response["warning"] = json!("map-snapshot ausente; ejecutar compile-ecosystem-map-snapshot");
     }
 
+    let bridge_live = std::env::current_exe().ok();
+    let orchestrator = sddia_daemon_runtime::resolve_execute_process_elf(repo);
+    let parity = sddia_runtime_parity::assess_runtime_binary_parity(
+        repo,
+        bridge_live.as_deref(),
+        orchestrator.as_deref(),
+    )
+    .unwrap_or_else(|e| {
+        json!({
+            "ok": false,
+            "stale": [format!("assess_error:{e}")],
+            "organs": sddia_runtime_parity::LIVE_ORGANS,
+        })
+    });
+    let parity_ok = parity.get("ok").and_then(|v| v.as_bool()) == Some(true);
+    response["runtime_binary_parity"] = parity.clone();
+    if !parity_ok {
+        if response.get("map_status").and_then(|v| v.as_str()) == Some("ok") {
+            response["map_status"] = json!("DEGRADED");
+        } else if map_status != "error" {
+            response["map_status"] = json!("DEGRADED");
+        }
+    }
+
     if opts.persist {
         let path = ecosystem_health_path(repo, &cfg);
         if let Err(e) = write_json_atomic(&path, &response) {

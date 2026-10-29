@@ -196,6 +196,32 @@ fn tech_triage(repo: &Path, inputs: &Value, state: &mut Value) -> Result<Value, 
         ));
     }
 
+    if let Some(persist) = str_field(inputs, "persist_ref") {
+        if super::validacion_runtime_parity::persist_requires_runtime_parity_smoke(repo, &persist) {
+            match super::validacion_runtime_parity::check_runtime_binary_parity_gate(repo) {
+                Ok(parity) if parity.get("ok").and_then(|v| v.as_bool()) == Some(true) => {
+                    checks["runtime_binary_parity"] = json!("APTO");
+                    if let Some(obj) = state.as_object_mut() {
+                        obj.insert("runtime_binary_parity".into(), parity);
+                    }
+                }
+                Ok(parity) => {
+                    checks["runtime_binary_parity"] = json!("NO_APTO");
+                    return Err(format!(
+                        "Triaje técnico: runtime_binary_parity no ok: {}",
+                        parity.get("stale").cloned().unwrap_or(json!([]))
+                    ));
+                }
+                Err(e) => {
+                    checks["runtime_binary_parity"] = json!("NO_APTO");
+                    return Err(format!("Triaje técnico: runtime_binary_parity: {e}"));
+                }
+            }
+        } else {
+            checks["runtime_binary_parity"] = json!("SKIPPED");
+        }
+    }
+
     Ok(json!({
         "status": "executed",
         "handler": "ppr-tech-triage",

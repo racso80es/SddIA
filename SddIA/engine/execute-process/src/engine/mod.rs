@@ -8,6 +8,8 @@ pub mod capsules;
 pub mod git_porcelain;
 pub mod daemons;
 pub mod accept_pr;
+pub mod runtime_recycle;
+pub mod validacion_runtime_parity;
 pub mod pull_request_review;
 pub mod qa_profile;
 pub mod qa_attestation;

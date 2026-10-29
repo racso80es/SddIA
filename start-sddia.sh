@@ -172,8 +172,9 @@ _ensure_orchestrator() {
     fi
     local rel_ep="$target_dir/release/execute-process"
     if [[ -x "$rel_ep" ]]; then
-        CARGO_TARGET_DIR="$target_dir" "$rel_ep" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["execute-process","kalma2-bridge"]}' >/dev/null 2>&1 \
-            || echo "  -> [WARN] testigo .sha256 execute-process/kalma2-bridge (release) parcial"
+        if ! CARGO_TARGET_DIR="$target_dir" "$rel_ep" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["execute-process","kalma2-bridge"]}'; then
+            echo "  -> [WARN] testigo .sha256 execute-process/kalma2-bridge (release) parcial"
+        fi
     fi
     local ep_bin
     for ep_bin in "$target_dir/debug/execute-process" "$target_dir/release/execute-process"; do
@@ -193,8 +194,9 @@ _ensure_orchestrator() {
     fi
     local dbg_ep="$target_dir/debug/execute-process"
     if [[ -x "$dbg_ep" ]]; then
-        CARGO_TARGET_DIR="$target_dir" "$dbg_ep" --seal-capsules --inputs '{"profile":"debug","write_genome":false,"write_witness":true,"names":["execute-process"]}' >/dev/null 2>&1 \
-            || echo "  -> [WARN] testigo .sha256 execute-process (debug) parcial"
+        if ! CARGO_TARGET_DIR="$target_dir" "$dbg_ep" --seal-capsules --inputs '{"profile":"debug","write_genome":false,"write_witness":true,"names":["execute-process"]}'; then
+            echo "  -> [WARN] testigo .sha256 execute-process (debug) parcial"
+        fi
     fi
     _sddia_resolve_orchestrator "$REPO_ROOT" || return 1
     echo "  -> orquestador: ${SDDIA_EXECUTE_PROCESS_BIN}"

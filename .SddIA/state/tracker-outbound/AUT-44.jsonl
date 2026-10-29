@@ -1,0 +1,2 @@
+{"event_id":"44ad00b7-1640-40d2-bf79-877a10fed388","issue_ref":"AUT-44","occurred_at":"2026-10-29T18:05:25Z","operation":"create_issue","source_process":"refine-item"}
+{"event_id":"90b18495-53e7-4bdc-a3ce-f89e77e8ac7c","issue_ref":"AUT-44","occurred_at":"2026-10-29T18:05:25Z","operation":"update_issue_description","source_process":"refine-item"}
