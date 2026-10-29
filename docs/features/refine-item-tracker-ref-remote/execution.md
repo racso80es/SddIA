@@ -18,4 +18,4 @@ execution_id: "3876e61f-1e04-4140-abbd-702c0ebb416f"
 6. Genoma `refine-item.md` v1.1.0 vía `entity-manager` (`a9b7a4b2` cuerpo, `e1a48705` fases Registro); eventos `Domain_Entity_Updated` `57c9555b`, `b50868c4`.
 7. PR [#409](https://github.com/racso80es/SddIA/pull/409); `delivery-close-cycle` parcial en primer push (evolution ya corregido).
 
-Pendiente: CI verde; cierre Linear AUT-35 post-merge.
+Pendiente: `accept-pr` tras sello CI en `validacion.md`.
