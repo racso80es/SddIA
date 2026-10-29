@@ -547,10 +547,7 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
 }
 
 fn load_event(repo: &Path, inputs: &Value) -> Result<Value, String> {
-    let rel = str_field(inputs, "event_file_path").ok_or("event_file_path requerido")?;
-    let path = repo.join(rel.trim_start_matches("./"));
-    let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    serde_json::from_str(&text).map_err(|e| e.to_string())
+    super::super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {

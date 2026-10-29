@@ -33,6 +33,7 @@ pub mod invoke_orchestrator;
 pub mod crypto_broker;
 pub mod domain_mutation;
 pub mod eda_bus;
+pub mod ecst_input_loader;
 pub mod eda_bus_topology;
 pub mod event_store_query;
 pub mod eda_coverage;

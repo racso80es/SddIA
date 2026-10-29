@@ -70,13 +70,8 @@ pub fn ingest_domain_event_file(repo: &Path, rel_path: &str) -> Value {
 }
 
 fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
+    let body = super::ecst_input_loader::load_ecst_from_rel(repo, rel_path)?;
     let event_path = repo.join(rel_path.trim());
-    if !event_path.is_file() {
-        return Err(format!("no existe: {rel_path}"));
-    }
-    let body: Value =
-        serde_json::from_str(&fs::read_to_string(&event_path).map_err(|e| e.to_string())?)
-            .map_err(|e| format!("JSON inválido: {e}"))?;
 
     let event_type = body
         .get("event_type")

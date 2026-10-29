@@ -63,29 +63,7 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
 }
 
 fn load_event(repo: &Path, inputs: &Value) -> Result<Value, String> {
-    let rel = str_field(inputs, "event_file_path").ok_or("event_file_path requerido")?;
-    let trimmed = rel.trim_start_matches("./");
-    let raw = PathBuf::from(trimmed);
-    let path = if raw.is_absolute() {
-        raw
-    } else {
-        repo.join(trimmed)
-    };
-    if path.is_file() {
-        let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        return serde_json::from_str(&text).map_err(|e| e.to_string());
-    }
-    // El bus en modo redb no materializa `.events/pending/{id}.json`.
-    // El nombre del fichero sintético es el event_id.
-    let event_id = path
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| format!("event file not found: {}", path.display()))?;
-    sddia_event_store::load_dispatched_event(repo, event_id, &path)
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| format!("event file not found: {}", path.display()))
+    super::super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)
 }
 
 fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
@@ -872,39 +850,120 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
     Ok((stamped, None))
 }
 
+fn payload_expects_tracker_stamp(payload: &Value) -> bool {
+    ["pbi_ref", "hu_ref", "persist_ref"]
+        .iter()
+        .any(|k| {
+            payload
+                .get(*k)
+                .and_then(|v| v.as_str())
+                .map(|s| !s.trim().is_empty())
+                .unwrap_or(false)
+        })
+}
+
+/// Estado de entrega para `route-domain-event` (AUT-46).
+pub(crate) fn classify_stamp_delivery(
+    stamped: bool,
+    note: Option<&str>,
+    event: &Value,
+) -> (String, i32) {
+    if stamped {
+        return ("success".into(), 0);
+    }
+    let note = note.unwrap_or("");
+    if note.starts_with("warn:") {
+        return ("failed".into(), 1);
+    }
+    if !note.starts_with("no-op:") {
+        return ("failed".into(), 1);
+    }
+    let payload = event.get("payload").cloned().unwrap_or(json!({}));
+    if note.contains("sin tracker_ref") {
+        if payload_expects_tracker_stamp(&payload) {
+            return ("failed".into(), 1);
+        }
+        return ("skipped-no-tracker-ref".into(), 0);
+    }
+    if note.contains("proyecto sin tracker") {
+        return ("skipped-no-tracker-config".into(), 0);
+    }
+    if note.contains("trunk_direct") || note.contains("branch_pr") {
+        return ("skipped-delivery-mode".into(), 0);
+    }
+    if note.contains("event_type") {
+        return ("skipped-event-type".into(), 0);
+    }
+    if note.contains("pbi_ref") || note.contains("resoluble") {
+        return ("failed".into(), 1);
+    }
+    ("skipped-no-op".into(), 0)
+}
+
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
     let event = load_event(repo, process_inputs)?;
-    match stamp_event(repo, &event) {
-        Ok((stamped, note)) => Ok(OrchestratorEnvelope {
-            success: true,
-            status_code: 0,
+    if let Err(reason) = super::super::ecst_input_loader::verify_ecst_matches_bus(repo, &event) {
+        let delivery_status = "failed-bus-mismatch".to_string();
+        return Ok(OrchestratorEnvelope {
+            success: false,
+            status_code: 1,
             data: Some(json!({
-                "stamped": stamped,
-                "note": note,
+                "stamped": false,
+                "delivery_status": delivery_status,
+                "reason": reason,
             })),
-            error: note.as_ref().filter(|n| n.starts_with("warn:")).cloned(),
+            error: Some(reason),
             execution_report: Some(json!({
                 "phases": [{
                     "phase_name": "Sello de ciclo",
-                    "status": "executed",
+                    "status": "failed",
                     "handler": "tracker-stamp",
                 }]
             })),
-            exit_code: 0,
-        }),
+            exit_code: 1,
+        });
+    }
+    match stamp_event(repo, &event) {
+        Ok((stamped, note)) => {
+            let (delivery_status, exit_code) =
+                classify_stamp_delivery(stamped, note.as_deref(), &event);
+            let ok = delivery_status == "success";
+            Ok(OrchestratorEnvelope {
+                success: ok,
+                status_code: exit_code,
+                data: Some(json!({
+                    "stamped": stamped,
+                    "note": note,
+                    "delivery_status": delivery_status,
+                })),
+                error: note.as_ref().filter(|n| n.starts_with("warn:")).cloned(),
+                execution_report: Some(json!({
+                    "phases": [{
+                        "phase_name": "Sello de ciclo",
+                        "status": if ok { "executed" } else if delivery_status.starts_with("skipped") { "skipped" } else { "failed" },
+                        "handler": "tracker-stamp",
+                    }]
+                })),
+                exit_code,
+            })
+        }
         Err(warn) if warn.starts_with("warn:") => Ok(OrchestratorEnvelope {
-            success: true,
-            status_code: 0,
-            data: Some(json!({ "stamped": false, "warn": warn })),
-            error: Some(warn),
+            success: false,
+            status_code: 1,
+            data: Some(json!({
+                "stamped": false,
+                "warn": warn,
+                "delivery_status": "failed",
+            })),
+            error: Some(warn.clone()),
             execution_report: Some(json!({
                 "phases": [{
                     "phase_name": "Sello de ciclo",
-                    "status": "warn",
+                    "status": "failed",
                     "handler": "tracker-stamp",
                 }]
             })),
-            exit_code: 0,
+            exit_code: 1,
         }),
         Err(e) => Err(e),
     }
@@ -927,6 +986,28 @@ mod tests {
         std::env::remove_var("LINEAR_API_TOKEN");
         f();
         std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+    }
+
+    #[test]
+    fn classify_no_op_without_tracker_ref_is_skipped() {
+        let event = json!({
+            "event_type": "Work_Initiated",
+            "payload": { "branch": "feat/x" }
+        });
+        let (status, code) = classify_stamp_delivery(false, Some("no-op: sin tracker_ref"), &event);
+        assert_eq!(status, "skipped-no-tracker-ref");
+        assert_eq!(code, 0);
+    }
+
+    #[test]
+    fn classify_no_op_missing_ref_with_pbi_is_failed() {
+        let event = json!({
+            "event_type": "PBI_Refined",
+            "payload": { "pbi_ref": "docs/x.md" }
+        });
+        let (status, code) = classify_stamp_delivery(false, Some("no-op: sin tracker_ref"), &event);
+        assert_eq!(status, "failed");
+        assert_eq!(code, 1);
     }
 
     #[test]
