@@ -23,7 +23,7 @@ checks:
   kalma2-bridge-runtime-tests: APTO
   execute-process-validacion-runtime-parity: APTO
   gate-evolution: APTO
-  CI-GITHUB: PENDIENTE
+  CI-GITHUB: APTO
 git_changes:
   - SddIA/sddia-runtime-parity/
   - SddIA/ecosystem-health/
@@ -53,4 +53,4 @@ https://github.com/racso80es/SddIA/pull/410
 
 ## CI
 
-Pendiente de run GitHub sobre HEAD de la rama.
+Verde en HEAD `e036eece` — [sddia-index-qa run 40932241998](https://github.com/racso80es/SddIA/actions/runs/40932241998) (checks SUCCESS).
