@@ -1905,6 +1905,7 @@ dependencies = [
  "sddia-infrastructure-lancedb-evolution",
  "sddia-infrastructure-lancedb-preferences",
  "sddia-io",
+ "sddia-runtime-parity",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -2948,6 +2949,7 @@ dependencies = [
  "sddia-daemon-runtime",
  "sddia-ecosystem-health",
  "sddia-event-store",
+ "sddia-runtime-parity",
  "serde",
  "serde_json",
  "tiny_http",
@@ -5240,6 +5242,8 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "regex",
+ "sddia-daemon-runtime",
+ "sddia-runtime-parity",
  "serde",
  "serde_json",
  "tempfile",
@@ -5335,6 +5339,18 @@ dependencies = [
  "serde_yaml",
  "tempfile",
  "uuid",
+]
+
+[[package]]
+name = "sddia-runtime-parity"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
 ]
 
 [[package]]

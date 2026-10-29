@@ -360,6 +360,27 @@ pub fn execute_accept_pr_phase(
             })))
         }
         "Sincronización y Limpieza" => {
+            if let Some(merge_hash) = state
+                .get("merge_commit_hash")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+            {
+                match super::runtime_recycle::maybe_recycle_after_merge(repo, merge_hash) {
+                    Ok(recycle) => {
+                        if let Some(obj) = state.as_object_mut() {
+                            obj.insert("runtime_recycle".into(), recycle);
+                        }
+                    }
+                    Err(e) => {
+                        if let Some(obj) = state.as_object_mut() {
+                            obj.insert(
+                                "runtime_recycle_error".into(),
+                                json!(e),
+                            );
+                        }
+                    }
+                }
+            }
             let source = state
                 .get("source_branch")
                 .and_then(|v| v.as_str())

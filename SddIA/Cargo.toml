@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "sddia-io",
     "sddia-event-store",
+    "sddia-runtime-parity",
     "sddia-eda-catalog",
     "sddia-core",
     "ecosystem-health",
