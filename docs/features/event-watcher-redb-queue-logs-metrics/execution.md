@@ -16,8 +16,9 @@ execution_id: "d126f8ae-c6c7-4507-8b11-cfc1199daa3a"
 
 ## Tekton
 
-- [x] Instrumentación `claim_store_pending` + logs de ruta (commit en rama).
-- [ ] Argos / DCC (pendiente relevo o runtime agente).
+- [x] Instrumentación `claim_store_pending` + logs de ruta (commit `ff7fb4b8`).
+- [x] `cargo test -p event-watcher` — 11 passed.
+- [ ] Argos formal / DCC (relevo IDE con `validacion.md` APTO lab).
 
 ## Verificación prevista
 
