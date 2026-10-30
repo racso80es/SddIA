@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `b919fa85-c552-497f-9179-b03e17772a92` | 2026-10-30 | AUT-29: forge-pbi conserva tracker_ref si PBI_Forged queda en lock y no duplica el raw_idea. | CANONICO | `SddIA/evolution/b919fa85-c552-497f-9179-b03e17772a92.md` |
 | `254e4344-dbf5-4493-b5c1-d37d4174905e` | 2026-10-30 | AUT-53: accept-pr sella solo el persist_ref y no borra la rama sin merge. | CANONICO | `SddIA/evolution/254e4344-dbf5-4493-b5c1-d37d4174905e.md` |
 | `262f3fb1-cfab-4716-a08f-ee9e0acd74d2` | 2026-10-30 | AUT-25: el puente lee tracker_ref del head y no precarga delivery_state. | CANONICO | `SddIA/evolution/262f3fb1-cfab-4716-a08f-ee9e0acd74d2.md` |
 | `d5fbe8a2-0b49-458d-bc5f-5d3f1e2025ef` | 2026-10-30 | AUT-6: bind(core) tolera labs absolutos anidados (_refine_lab_*, _forge_lab_*, docs/_fixtures) en assert_git_isolation. | CANONICO | `SddIA/evolution/d5fbe8a2-0b49-458d-bc5f-5d3f1e2025ef.md` |
