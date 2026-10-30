@@ -15,4 +15,5 @@ execution_id: "652511ad-2740-49f1-8ef5-ef9397fadefe"
 2. `core_nested_index_exempt` + hook en `assert_git_isolation_for_slug` (labs `_refine_lab_*` / `_forge_lab_*` y `docs/_fixtures` absolutos anidados).
 3. Tests `bind_core_tolerates_absolute_refine_lab_in_index`, `bind_core_still_rejects_absolute_nested_real_project`; alineación test `done_gate`/`provider` (linear+git → contradice).
 4. `cargo test -p execute-process project_binding:: --lib` — 17/17 OK.
-5. Pendiente: `sddia-qa evolution-register`, `delivery-close-cycle`, PR.
+5. `sddia-qa evolution-register` alta `d5fbe8a2-0b49-458d-bc5f-5d3f1e2025ef`.
+6. `delivery-close-cycle` — PR https://github.com/racso80es/SddIA/pull/423 (aduana evolution pendiente en primer intento; re-push con evolution).
