@@ -48,7 +48,13 @@ git_changes:
   - docs/audits/eda-doc-drift-eda-store-io-gate-261030.md
   - docs/features/eda-store-io-gate/plan-doc-drift-261030.md
   - docs/features/eda-store-io-gate/execution-doc-drift.md
+  - docs/features/eda-store-io-gate/gen-test-matrix-table.sh
+  - docs/features/eda-store-io-gate/_lab/gen_test_matrix_table.py
   - SddIA/engine/execute-process/src/engine/entity_manager.rs
+  - SddIA/engine/execute-process/tests/common/mod.rs
+  - SddIA/engine/execute-process/tests/eda_store_io_matrix_pending.rs
+  - SddIA/engine/execute-process/tests/eda_store_io_matrix_fractal.rs
+  - docs/features/eda-store-io-gate/spec-test-matrix.md
   - SddIA/actions/emit-pr-presented-event.md
   - SddIA/actions/emit-pr-audited-event.md
   - SddIA/actions/emit-pr-resealed-event.md
@@ -61,7 +67,7 @@ doc_drift:
   P1: APTO
   P2: APTO
   P3: APTO
-  P4: pendiente
+  P4: APTO
 ---
 
 # Validación
@@ -74,18 +80,18 @@ doc_drift:
 | P1 | APTO (forja acciones + event-watcher) |
 | P2 | APTO (codex + events/index) |
 | P3 | APTO |
-| P4 | pendiente |
+| P4 | APTO (gen-test-matrix-table + TM-8 smoke) |
 
 | Prueba | Resultado |
 |--------|-----------|
 | `cargo test -p execute-process --test eda_store_io_matrix_pending` | 3 passed |
 | `cargo test -p execute-process --test eda_store_io_matrix_fractal` | 5 passed |
 | `cargo test -p sddia-event-store --test gate` | 7 passed (incluye publish redb/filesystem) |
-| `orphan_lock_redb_does_not_write_pending_json` | passed |
+| `cargo test -p execute-process --test eda_store_io_matrix_pending tm8_presented` | 1 passed (TM-8 fan-out) |
 | `orphan_lock_dead_pid_emits_fracture_once` (filesystem) | passed |
 | `ac_r6_emit_pending_non_blocking` / `ac_r6_drain_resolved_ecst_ack` | passed |
 
-TM-8: stamp + `publish_ecst` en matriz; sin assert explícito de `list_pending_deliveries` por suscriptor.
+TM-8: `tm8_presented_has_pending_subscriber_rows_after_stamp` + tabla § Cobertura generada (`gen-test-matrix-table.sh`); fan-out exhaustivo por tipo sigue **parcial**.
 
 AC-W4: installer publica con `--publish-ecst`; sin binario y modo `redb` no escribe `.events/`.
 

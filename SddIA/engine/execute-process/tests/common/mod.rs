@@ -268,6 +268,36 @@ pub fn roundtrip_publish_load(
     });
 }
 
+/// TM-8: tras stamp + publish en redb, filas Pending en subscriber_delivery para fan-out real.
+pub fn assert_pending_subscriber_deliveries(repo: &Path, event_type: &str, min_rows: usize) {
+    with_mode(StoreMode::Redb, || {
+        let mut event = build_event(event_type);
+        stamp_published_event(repo, &mut event)
+            .unwrap_or_else(|e| panic!("stamp {event_type}: {e}"));
+        let event_id = event["event_id"].as_str().unwrap().to_string();
+        publish_ecst(
+            repo,
+            "pending",
+            &event,
+            Some(&repo.join(".events/pending")),
+        )
+        .unwrap_or_else(|e| panic!("publish {event_type}: {e}"));
+        let store =
+            sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(repo))
+                .expect("open store");
+        let pending = store.list_pending_deliveries().expect("list_pending");
+        let for_event: Vec<_> = pending
+            .iter()
+            .filter(|(id, _)| id == &event_id)
+            .collect();
+        assert!(
+            for_event.len() >= min_rows,
+            "{event_type}: expected >={min_rows} pending deliveries for {event_id}, got {}",
+            for_event.len()
+        );
+    });
+}
+
 pub fn cleanup(repo: &Path) {
     let _ = fs::remove_dir_all(repo);
 }

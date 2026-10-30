@@ -126,5 +126,6 @@ export SDDIA_EVENT_STORE=redb   # o filesystem / dual por ola
 cargo test -p sddia-event-store --test gate
 cargo test -p execute-process --test eda_store_io_matrix_pending -- --test-threads=1
 cargo test -p execute-process --test eda_store_io_matrix_fractal -- --test-threads=1
-cargo test -p event-watcher -- --test-threads=1
+cargo test -p execute-process --test eda_store_io_matrix_pending tm8_presented -- --test-threads=1
+./docs/features/eda-store-io-gate/gen-test-matrix-table.sh
 ```

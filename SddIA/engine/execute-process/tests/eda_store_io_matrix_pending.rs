@@ -3,7 +3,8 @@
 mod common;
 
 use common::{
-    cleanup, lab_repo, pending_bus_event_types, roundtrip_publish_load, with_mode,
+    assert_pending_subscriber_deliveries, cleanup, lab_repo, pending_bus_event_types,
+    roundtrip_publish_load, with_mode,
 };
 use sddia_event_store::{load_domain_ecsts, StoreMode};
 
@@ -72,5 +73,12 @@ fn pending_bus_matrix_dual_stratified() {
             event_type,
         );
     }
+    cleanup(&repo);
+}
+
+#[test]
+fn tm8_presented_has_pending_subscriber_rows_after_stamp() {
+    let repo = lab_repo();
+    assert_pending_subscriber_deliveries(&repo, "PullRequest_Presented", 1);
     cleanup(&repo);
 }

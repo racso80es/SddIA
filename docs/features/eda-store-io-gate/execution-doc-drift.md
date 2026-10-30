@@ -21,6 +21,11 @@ items_applied:
 
 `hook_common.sh` solo resuelve rutas por defecto; no es emisor ECST.
 
-## Comandos forja
+## P4 — Matriz generada
 
-Una invocación por entidad; acuse JSON = éxito (DA-5).
+```bash
+./docs/features/eda-store-io-gate/gen-test-matrix-table.sh
+cd SddIA && CARGO_TARGET_DIR=target cargo test -p execute-process --test eda_store_io_matrix_pending tm8_presented -- --test-threads=1
+```
+
+Salida: bloque `MATRIX-COVERAGE` en `spec-test-matrix.md`. Test `tm8_presented_has_pending_subscriber_rows_after_stamp` (TM-8 no exhaustivo).

@@ -84,9 +84,69 @@ Generación de filas: script de lab (opcional) que liste claves JSON ≠ tests m
 | 3 | `daemons/event-watcher` (claim fractal; smoke parcial vía route en ola 2) | `cargo test -p event-watcher` | parcial |
 | 4 | `dual` subset en `eda_store_io_matrix_pending` | mismo binario | `ed9137a8` (6 tipos) |
 
-## Cobertura actual (rama)
+<!-- MATRIX-COVERAGE:START — generado 2026-10-30; no editar a mano -->
+## Cobertura actual (generada)
 
-Ver `execution-test-matrix.md`. TM-8 (`list_pending_deliveries` por suscriptor): no automatizado.
+Comando: `./docs/features/eda-store-io-gate/gen-test-matrix-table.sh`
+
+Resumen: **48** `event_type` distintos · pending_bus **41** · telemetría **4** · orquestación **4**
+
+Gaps PTC explícitos (fuera matriz ECST): side-channel latidos; `progress_traces` — ver `objectives-test-matrix.md`.
+
+| `event_type` | Registro(s) | TM-1 | TM-2 | TM-3 | TM-4 | TM-5 | TM-6 | TM-7 | TM-8 |
+|--------------|-------------|------|------|------|------|------|------|------|------|
+| `Aiua_Process_Requested` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `CI_Chronic_Failure_Detected` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `CI_Job_Failed` | telemetry-subscriptions | — | APTO | — | — | — | — | fan-out | parcial |
+| `CapabilityDi_Requested` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Daemon_Heartbeat` | telemetry-subscriptions | — | APTO | — | — | APTO | — | fan-out | parcial |
+| `Delivery_Committed` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Domain_Entity_Created` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | APTO | fan-out | parcial |
+| `Domain_Entity_Degraded` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Domain_Entity_Deleted` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Domain_Entity_Deprecated` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Domain_Entity_Restored` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Domain_Entity_Telemetry_Captured` | subscriptions, domain-subscriptions | APTO | — | — | APTO | APTO | gap | fan-out | parcial |
+| `Domain_Entity_Updated` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Email_Quick_Action_Requested` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Email_Received` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Email_Triaged` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Fracture_Clarification_Requested` | orchestration-subscriptions | — | — | APTO | — | — | — | fan-out | parcial |
+| `Fracture_Pbi_Materialized` | subscriptions, domain-subscriptions | APTO | — | — | APTO | APTO | gap | fan-out | parcial |
+| `HU_Refined` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Instance_Deployed` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | gap | APTO | N/A |
+| `Instance_Torn_Down` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | gap | APTO | N/A |
+| `Kaizen_Alert_Required` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | APTO | fan-out | parcial |
+| `Kaizen_Idea_Captured` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | APTO | N/A |
+| `Kalma2_Process_Requested` | domain-subscriptions | APTO | — | — | APTO | APTO | gap | fan-out | parcial |
+| `Local_QA_Requested` | domain-subscriptions | APTO | — | APTO | APTO | APTO | gap | fan-out | parcial |
+| `Manual_Task_Requested` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | APTO | N/A |
+| `PBI_Cancelled` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `PBI_Forged` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `PBI_Refined` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Process_Execution_Completed` | orchestration-subscriptions | — | — | APTO | — | — | — | fan-out | parcial |
+| `PullRequest_Audited` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | gap | APTO | N/A |
+| `PullRequest_Merged` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `PullRequest_Presented` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | APTO | fan-out | APTO |
+| `PullRequest_Resealed` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | gap | APTO | N/A |
+| `Raw_Execution_Finished` | telemetry-subscriptions | — | APTO | — | — | APTO | — | fan-out | parcial |
+| `Suite_Execution_Requested` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `System_Fracture_Detected` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | APTO | fan-out | parcial |
+| `System_Immunity_Certified` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `System_Vitality_Probed` | — | — | APTO | — | — | — | — | APTO | N/A |
+| `TQM_Dispatch_Discarded` | — | — | — | APTO | — | — | — | APTO | N/A |
+| `TelegramCallback_Received` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `TelegramMessage_Received` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Thought_Persisted` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | APTO | APTO | N/A |
+| `Tracker_Issue_Changed` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Tracker_Sync_Failed` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `User_Preference_Change_Requested` | domain-subscriptions | APTO | — | — | muestra | APTO | gap | fan-out | parcial |
+| `Vector_Memory_Indexed` | subscriptions, domain-subscriptions | APTO | — | — | muestra | APTO | gap | APTO | N/A |
+| `Work_Initiated` | domain-subscriptions | APTO | — | — | muestra | APTO | APTO | fan-out | parcial |
+
+Leyenda: **APTO** = cubierto por test de integración en rama; **muestra** = subconjunto fractal domain; **parcial** = patrón no exhaustivo; **fan-out** = tiene suscriptores; **N/A** = sin suscriptores (TM-7).
+<!-- MATRIX-COVERAGE:END -->
+
 
 ## Definition of Done (matriz)
 

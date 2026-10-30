@@ -6,7 +6,7 @@ process: feature
 branch_name: Kaicen_Auditoria_Eventos_261030
 persist_ref: docs/features/eda-store-io-gate
 status: IMPLEMENTED
-implementation_status: "P0–P3 en rama; P4 (tabla TM-8) pendiente"
+implementation_status: "P0–P4 en rama"
 parent_audit: docs/audits/eda-doc-drift-eda-store-io-gate-261030.md
 phases:
   - id: P0
