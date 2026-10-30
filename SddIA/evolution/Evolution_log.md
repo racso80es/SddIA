@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `464af566-a7df-4d5a-b561-cd10393248b8` | 2026-10-30 | AUT-47: peaje LLM lifecycle en thermodynamic_toll y resolve_tracker_ref_for_lifecycle. | CANONICO | `SddIA/evolution/464af566-a7df-4d5a-b561-cd10393248b8.md` |
 | `5f45d470-4a52-429b-b1ff-f88a8490076c` | 2026-10-30 | Reanclaje source_sha256 de cuatro capsulas tras la ignicion start-sddia. | CANONICO | `SddIA/evolution/5f45d470-4a52-429b-b1ff-f88a8490076c.md` |
 | `9483cf60-beac-484b-88b7-70a4ab90df58` | 2026-10-30 | AUT-39: sello diff validacion en delivery-close-cycle v1.6.0. | CANONICO | `SddIA/evolution/9483cf60-beac-484b-88b7-70a4ab90df58.md` |
 | `a7c4e2b1-9f3d-4a8e-b6c5-d1e0f9a8b7c6` | 2026-10-30 | AUT-40: verify-diff-digest y job CI sddia-diff-digest. | CANONICO | `SddIA/evolution/a7c4e2b1-9f3d-4a8e-b6c5-d1e0f9a8b7c6.md` |
