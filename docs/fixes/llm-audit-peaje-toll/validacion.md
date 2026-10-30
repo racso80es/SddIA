@@ -11,9 +11,9 @@ global: APTO
 pbi_archived: false
 branch: fix/llm-audit-peaje-toll
 validated_base_sha: c37e26721367061cb20225a5a66743a5bcb13776
-validated_head_sha: 6b5135ad68970e97e87aca7fa8e28added9c9ba4
-validated_tree_sha: 4886fc2b12756b7ac52b8790ca9acda8eebbe6ce
-diff_digest: sha256:26e83f20df7d1d071e7b9a51cb4a5d426737bc8f60306c54478902c67593cdab
+validated_head_sha: 22bbc69a0ab55c8247b345df9f2756112f537ac0
+validated_tree_sha: bf19bc8c2f77e6a60448eaafc1da73944cd2e324
+diff_digest: sha256:8b3d0231b6e1effb27f4aff0361aa9b8c0c2074f2b92145477e0c15bb6ba23ec
 ---
 
 # Validación — llm-audit-peaje-toll (AUT-47)
