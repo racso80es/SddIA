@@ -3,9 +3,13 @@ feature_name: dcc-pre-pr-qa-gate
 created: "2026-10-30"
 process: feature
 pbi_ref: AUT-38
-branch: feat/dcc-pre-pr-qa-gate
+branch: main
 global: APTO
 pbi_archived: false
+pr_url: https://github.com/racso80es/SddIA/pull/414
+merged_pr: "414"
+merge_commit: ac69ebf1
+closed: "2026-10-30"
 ---
 
 # Validación
