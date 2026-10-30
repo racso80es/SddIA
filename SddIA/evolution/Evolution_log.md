@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `af240f72-24c2-4cda-afc1-6b01cd917f13` | 2026-10-30 | AUT-56: gate SDDIA_EVENT_STORE, matriz I/O EDA, kaizen bus redb y sellos validacion PR #430. | CANONICO | `SddIA/evolution/af240f72-24c2-4cda-afc1-6b01cd917f13.md` |
 | `709f566b-6aed-4802-98d1-1ad56915277f` | 2026-10-30 | AUT-32: observabilidad claim_store_pending en event-watcher redb. | CANONICO | `SddIA/evolution/709f566b-6aed-4802-98d1-1ad56915277f.md` |
 | `d86d77aa-ab9e-4ca8-9268-c45902d92857` | 2026-10-30 | Kaizen: pbi_ref opaco → tracker_ref en PullRequest_Merged (accept-pr). | CANONICO | `SddIA/evolution/d86d77aa-ab9e-4ca8-9268-c45902d92857.md` |
 | `b0af2c4f-5419-480b-9561-4b22d1dc455d` | 2026-10-30 | AUT-30: la fractura elige el sumidero del proveedor y no escribe backlog sin tracker. | CANONICO | `SddIA/evolution/b0af2c4f-5419-480b-9561-4b22d1dc455d.md` |

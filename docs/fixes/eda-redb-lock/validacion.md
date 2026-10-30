@@ -19,6 +19,10 @@ git_changes:
   - SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs
   - SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs
   - docs/fixes/eda-redb-lock/
+validated_base_sha: d906cc8e843effdb991cecd3190080a2c073d738
+validated_head_sha: c2bfdc425e9037e03849a6be40d509ee055f0cbd
+validated_tree_sha: 8486e4e6dbd03fd70343519940f5207d83864e36
+diff_digest: sha256:77cb707666197c491f2d7aaf31509b33a655aad7fc1209e72ad124294da7c974
 ---
 
 # Validación — AUT-16

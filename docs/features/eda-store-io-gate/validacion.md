@@ -73,6 +73,10 @@ doc_drift:
   P2: APTO
   P3: APTO
   P4: APTO
+validated_base_sha: d906cc8e843effdb991cecd3190080a2c073d738
+validated_head_sha: c2bfdc425e9037e03849a6be40d509ee055f0cbd
+validated_tree_sha: 8486e4e6dbd03fd70343519940f5207d83864e36
+diff_digest: sha256:333861ae7c6475b90dbc367f9ebea9fed7ca24a73b262200a8b150cc8159f3a1
 ---
 
 # Validación
