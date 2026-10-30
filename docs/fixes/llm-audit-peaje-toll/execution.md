@@ -13,3 +13,5 @@ execution_id: "92c4a026-cd98-4fe3-954f-5b1ab0ef60ce"
 2. `bug-fix` workspace-init `92c4a026-cd98-4fe3-954f-5b1ab0ef60ce`, rama `fix/llm-audit-peaje-toll`.
 3. Parche peaje + tests.
 4. `cargo test -p execute-process llm_interaction_audit --lib`.
+5. Parche `verify_diff_seal_ci` acotado al diff del PR (CI `sddia-diff-digest`).
+6. PR https://github.com/racso80es/SddIA/pull/422
