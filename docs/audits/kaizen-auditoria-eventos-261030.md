@@ -19,6 +19,7 @@ status: APPLIED_LOCAL
 ## Notas
 
 - En modo **`redb`** (default), el SSOT de cola y entregas es `.SddIA/runtime/events.redb`; `.events/pending/` no debe acumular ECST nuevos.
+- Bóvedas (2026-10-30): `.dev/.env` y `.SddIA/.dev/.env` fijan `SDDIA_EVENT_STORE=redb` y `SDDIA_EVENT_STORE_OPEN_BUDGET_MS=2000`; plantillas en `.dev/.env.example` y `.dev/.env.test.example`.
 - `pending/` ya estaba vacío antes del archivo final; el backlog histórico (~500+ JSON) había sido depurado en la misma ventana de kaizen.
 - Tras el reset, recompilar y levantar `event-watcher` si el launcher reporta ELF fósil (`cargo build -p event-watcher`).
 
