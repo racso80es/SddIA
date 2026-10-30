@@ -74,9 +74,9 @@ doc_drift:
   P3: APTO
   P4: APTO
 validated_base_sha: d906cc8e843effdb991cecd3190080a2c073d738
-validated_head_sha: bbcf1a998b988683ad08d58571140cbbdb16df02
-validated_tree_sha: f2895c56578418382da76e0e4e9703ebea94f1b3
-diff_digest: sha256:ebd18660bbad45c412f43586f8794c02c81f21ee19f8cb7f53cc837036d105e6
+validated_head_sha: 6e8c6f11b8502e3095b6b94cf36f72e84bc453d1
+validated_tree_sha: 2adec7cd3a62bc3ac180a873b6aa85654cc660a3
+diff_digest: sha256:feb8178f5674cefe587f8d83850ea2c02e17a5fb918a47e4e92713a532b7027c
 ---
 
 # Validación
