@@ -1,5 +1,6 @@
 //! Atestaciones QA locales (`qa-attestation/1.0`) — HU merge-thermodynamics PBI-04.
 
+use super::git_porcelain;
 use super::persist_pec_correlation_proof::resolve_eda_proofs_dir;
 use super::qa_profile::{PROFILE_DOCS_ONLY, PROFILE_FULL};
 use chrono::{DateTime, Utc};
@@ -210,6 +211,72 @@ pub fn try_write_from_ppr(repo: &Path, state: &Value, inputs: &Value) -> Result<
     Ok(path)
 }
 
+fn persist_validacion_rel(repo: &Path, persist_ref: &str) -> String {
+    let trimmed = persist_ref.trim();
+    let rel = if Path::new(trimmed).is_absolute() {
+        Path::new(trimmed)
+            .strip_prefix(repo)
+            .map(|p| p.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_else(|_| trimmed.to_string())
+    } else {
+        trimmed.trim_start_matches("./").to_string()
+    };
+    format!("{}/validacion.md", rel.trim_end_matches('/'))
+}
+
+/// Rutas sucias fuera de `{persist_ref}/validacion.md` (gate pre-PR AUT-38 / AUT-36 CA-2).
+pub fn worktree_violations_except_validacion(
+    repo: &Path,
+    persist_ref: &str,
+) -> Result<Vec<String>, String> {
+    let allowed = persist_validacion_rel(repo, persist_ref);
+    let out = Command::new("git")
+        .args(["status", "--porcelain"])
+        .current_dir(repo)
+        .output()
+        .map_err(|e| format!("git status: {e}"))?;
+    if !out.status.success() {
+        return Err(format!(
+            "git status failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
+    }
+    let mut violations = Vec::new();
+    for line in String::from_utf8_lossy(&out.stdout).lines() {
+        let Some(path) = git_porcelain::porcelain_path_from_line(line) else {
+            continue;
+        };
+        if path == allowed {
+            continue;
+        }
+        violations.push(path);
+    }
+    Ok(violations)
+}
+
+pub fn validate_attestation_for_branch_head(
+    repo: &Path,
+    branch: &str,
+) -> Result<AttestationHit, String> {
+    let head_sha = git_output(
+        repo,
+        &[
+            "rev-parse",
+            "--verify",
+            &format!("refs/heads/{branch}"),
+        ],
+    )
+    .or_else(|_| git_output(repo, &["rev-parse", "--verify", "HEAD"]))?;
+    let tree_sha = tree_sha_for_commit(repo, &head_sha)?;
+    let path = attestation_path_for_branch(repo, branch);
+    let hit = validate_attestation_file(&path, &tree_sha, None)?;
+    Ok(AttestationHit {
+        execution_id: hit.execution_id,
+        qa_profile: hit.qa_profile,
+        path,
+    })
+}
+
 pub fn validate_for_accept_pr(
     repo: &Path,
     inputs: &Value,
@@ -298,5 +365,45 @@ mod tests {
         let mut doc = doc;
         doc["verdict"] = json!("rechazado");
         assert!(validate_attestation_value(&doc, "t", None).is_err());
+    }
+
+    #[test]
+    fn worktree_allows_only_validacion_in_persist() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        std::process::Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(repo)
+            .status()
+            .expect("git init");
+        std::process::Command::new("git")
+            .args(["config", "user.email", "t@t"])
+            .current_dir(repo)
+            .status()
+            .ok();
+        std::process::Command::new("git")
+            .args(["config", "user.name", "t"])
+            .current_dir(repo)
+            .status()
+            .ok();
+        let persist = repo.join("docs/features/x");
+        fs::create_dir_all(&persist).unwrap();
+        fs::write(persist.join("validacion.md"), "v\n").unwrap();
+        std::process::Command::new("git")
+            .args(["add", "docs/features/x/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .expect("git add");
+        std::process::Command::new("git")
+            .args(["commit", "-qm", "seed"])
+            .current_dir(repo)
+            .status()
+            .expect("git commit");
+        fs::write(repo.join("other.txt"), "dirty\n").unwrap();
+        let v = worktree_violations_except_validacion(repo, "docs/features/x").expect("status");
+        assert_eq!(v, vec!["other.txt".to_string()]);
+        fs::remove_file(repo.join("other.txt")).unwrap();
+        let v2 = worktree_violations_except_validacion(repo, "docs/features/x").expect("clean");
+        assert!(v2.is_empty());
     }
 }
