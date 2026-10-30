@@ -12,9 +12,9 @@ pbi_archived: false
 branch: fix/core-git-isolation-lab-absolute
 pr_url: https://github.com/racso80es/SddIA/pull/423
 validated_base_sha: afc722d821c9f991511e527a99b3193864cc090c
-validated_head_sha: 0bb9f308bd43efec2689280e9eb271617bab21c6
-validated_tree_sha: 24aa338d5b985fdf35c8416a2af82da01b9369ca
-diff_digest: sha256:9b9c567a5a50913c74452a4250651ff1a02e3613e0973a360d98b1112e68a053
+validated_head_sha: 2be92c19c6e4a3d6470edb4271bc6fc8e5195a9d
+validated_tree_sha: bfd806d8593fbc937f59d4e1bea0324c79ec093b
+diff_digest: sha256:c8d63c10fbb98048128bb3c610829206ef42b0c0729d492ea3d083d80d6a7f1c
 ---
 
 # Validación — AUT-6
