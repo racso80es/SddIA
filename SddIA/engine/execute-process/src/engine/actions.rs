@@ -225,6 +225,64 @@ fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
     }))
 }
 
+fn emit_pr_resealed(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    let correlation_id = str_field(inputs, "correlation_id")
+        .filter(|s| !s.is_empty())
+        .ok_or("correlation_id es obligatorio (string)")?;
+    let validated_head_sha = str_field(inputs, "validated_head_sha")
+        .filter(|s| !s.is_empty())
+        .ok_or("validated_head_sha es obligatorio (string)")?;
+    let diff_digest = str_field(inputs, "diff_digest")
+        .filter(|s| !s.is_empty())
+        .ok_or("diff_digest es obligatorio (string)")?;
+    let event_id = generate_uuid(repo)?;
+    let mut payload = json!({
+        "correlation_id": correlation_id,
+        "validated_head_sha": validated_head_sha,
+        "diff_digest": diff_digest,
+    });
+    if let Some(branch) = str_field(inputs, "branch") {
+        payload["branch"] = json!(branch);
+    }
+    let event = json!({
+        "event_id": event_id,
+        "event_type": "PullRequest_Resealed",
+        "timestamp": iso_timestamp(),
+        "emitter_agent": inputs.get("emitter_agent").unwrap_or(&json!("emit-pr-resealed-event")),
+        "correlation_id": correlation_id,
+        "payload": payload,
+        "delivery_state": {},
+    });
+    let seal = write_pending_event(repo, &event)?;
+    Ok(json!({
+        "success": true,
+        "event_id": seal.get("event_id"),
+        "target_path": seal.get("target_path"),
+        "event_type": "PullRequest_Resealed",
+    }))
+}
+
+/// AUT-43: emite `PullRequest_Resealed` correlacionado al `PullRequest_Presented` de la rama.
+pub fn emit_pr_resealed_after_branch_reseal(
+    repo: &Path,
+    branch: &str,
+    validated_head_sha: &str,
+    diff_digest: &str,
+) -> Result<Value, String> {
+    let correlation_id = super::tracker_pbi_meta::presented_event_id_for_branch(repo, branch)
+        .ok_or_else(|| format!("PullRequest_Presented ausente para rama {branch}"))?;
+    emit_pr_resealed(
+        repo,
+        &json!({
+            "correlation_id": correlation_id,
+            "validated_head_sha": validated_head_sha,
+            "diff_digest": diff_digest,
+            "branch": branch,
+            "emitter_agent": "git-hook-pre-push",
+        }),
+    )
+}
+
 fn emit_pr_merged(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let merge_hash = str_field(inputs, "merge_commit_hash")
         .or_else(|| str_field(inputs, "hash_signature"))
@@ -335,6 +393,7 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
     }
     let data = match action_name {
         "emit-pr-presented-event" => emit_pr_presented(repo, inputs)?,
+        "emit-pr-resealed-event" => emit_pr_resealed(repo, inputs)?,
         "emit-work-initiated-event" => emit_work_initiated(repo, inputs)?,
         "emit-tracker-sync-failed" => emit_tracker_sync_failed(repo, inputs)?,
         "emit-pr-merged-event" => emit_pr_merged(repo, inputs)?,
@@ -442,6 +501,54 @@ mod tests {
         let mid = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
         let raw_m = emitted_body(&repo, mid);
         assert!(raw_m.contains("OSC-8"));
+    }
+
+    #[test]
+    fn emit_resealed_links_presented_event_id() {
+        let _guard = filesystem_guard();
+        let repo = find_repo_root().unwrap();
+        let pending = repo.join(".events/pending");
+        fs::create_dir_all(&pending).ok();
+        let presented = emit_pr_presented(
+            &repo,
+            &json!({
+                "branch": "feat/reseal-ev",
+                "status": "presented",
+            }),
+        )
+        .expect("presented");
+        let pid = presented
+            .get("event_id")
+            .and_then(|v| v.as_str())
+            .unwrap()
+            .to_string();
+        let resealed = emit_pr_resealed(
+            &repo,
+            &json!({
+                "correlation_id": pid.clone(),
+                "validated_head_sha": "abc123",
+                "diff_digest": "sha256:deadbeef",
+                "branch": "feat/reseal-ev",
+            }),
+        )
+        .expect("resealed");
+        let rid = resealed.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let raw = emitted_body(&repo, rid);
+        assert!(raw.contains("PullRequest_Resealed"));
+        assert!(raw.contains(&pid));
+        assert!(raw.contains("sha256:deadbeef"));
+
+        let via_branch = super::emit_pr_resealed_after_branch_reseal(
+            &repo,
+            "feat/reseal-ev",
+            "def456",
+            "sha256:cafe",
+        )
+        .expect("after branch");
+        let rid2 = via_branch.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let raw2 = emitted_body(&repo, rid2);
+        assert!(raw2.contains("def456"));
+        assert!(raw2.contains(&pid));
     }
 
     #[test]

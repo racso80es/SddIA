@@ -222,6 +222,26 @@ mod tests {
     }
 
     #[test]
+    fn pull_request_resealed_required_fields() {
+        let repo = find_repo_root().unwrap();
+        let schemas = load_event_class_schemas(&repo);
+        let schema = schemas.get("PullRequest_Resealed").expect("schema");
+        assert!(schema.required.contains(&"correlation_id".to_string()));
+        assert!(schema.required.contains(&"validated_head_sha".to_string()));
+        assert!(schema.required.contains(&"diff_digest".to_string()));
+        let event = json!({
+            "event_type": "PullRequest_Resealed",
+            "payload": {
+                "correlation_id": "11111111-1111-4111-8111-111111111111",
+                "validated_head_sha": "abc",
+                "diff_digest": "sha256:abc",
+            }
+        });
+        let (ok, errors) = validate_ecst_instance(&event, Some(schema));
+        assert!(ok, "{errors:?}");
+    }
+
+    #[test]
     fn validates_domain_entity_created_payload() {
         let repo = find_repo_root().unwrap();
         let schemas = load_event_class_schemas(&repo);

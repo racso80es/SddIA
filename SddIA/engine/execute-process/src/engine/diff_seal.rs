@@ -368,6 +368,7 @@ pub enum ResealOutcome {
     /// `validacion.md` sellado y commiteado.
     Committed {
         diff_digest: String,
+        validated_head_sha: String,
     },
 }
 
@@ -417,8 +418,20 @@ pub fn reseal_validacion_for_branch(
         }
         return Err(format!("git commit re-sello: {stderr}"));
     }
+    let new_head = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(repo)
+        .output()
+        .map_err(|e| format!("git rev-parse HEAD: {e}"))?;
+    if !new_head.status.success() {
+        return Err("git rev-parse HEAD tras re-sello falló".into());
+    }
+    let validated_head_sha = String::from_utf8_lossy(&new_head.stdout)
+        .trim()
+        .to_string();
     Ok(ResealOutcome::Committed {
         diff_digest: computed.diff_digest,
+        validated_head_sha,
     })
 }
 
