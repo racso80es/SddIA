@@ -1,12 +1,16 @@
 ---
 feature_name: runtime-seal-tracker-outbound-20261030
-created: "2026-10-30"
+created: 2026-10-30
 process: bug-fix
 branch: docs/runtime-seal-tracker-outbound-20261030
 branch_name: docs/runtime-seal-tracker-outbound-20261030
 persist_ref: docs/audits/runtime-seal-tracker-outbound-20261030
 global: APTO
 pbi_archived: false
+validated_base_sha: 57504543583527d230362561d4763b08fdbd9d98
+validated_head_sha: 701f3cf59eeedb5c7f463c9d9bb6049633925b14
+validated_tree_sha: 4596face9b78deb37a6699393e9b0d322e311c7f
+diff_digest: sha256:3ef1976a489baf74c44e1ef3517257025b9aa05fa61730027fbb00202d0755b1
 ---
 
 # Validación — bitácora tracker-stamp y reanclaje de ignición
