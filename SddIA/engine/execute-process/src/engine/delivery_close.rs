@@ -4,6 +4,7 @@ use super::phase_capsules::{
     capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate,
     capsule_index_integrity_audit_gate, execute_delivery_close_phase,
 };
+use super::qa_attestation;
 use super::project_binding::{self, BoundProject};
 use super::tracker_pbi_meta;
 use super::route_domain_core::materialize_pending_domain_event;
@@ -198,6 +199,10 @@ fn execute_phase(
         "delegates_to": delegates,
     });
 
+    if phase_name == "Gate pre-PR QA" {
+        return capsule_gate_pre_pr_qa(repo, inputs, state);
+    }
+
     if phase_name == "Aduana EDA genómica" {
         match capsule_eda_genomic_audit_gate(repo, inputs, state) {
             Ok(gate) => {
@@ -342,6 +347,101 @@ fn execute_phase(
     entry
 }
 
+fn env_truthy_dcc(key: &str) -> bool {
+    std::env::var(key)
+        .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+        .unwrap_or(false)
+}
+
+fn str_field_dcc(inputs: &Value, key: &str) -> Option<String> {
+    inputs
+        .get(key)
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn resolve_dcc_branch(inputs: &Value) -> Option<String> {
+    str_field_dcc(inputs, "branch_name").or_else(|| str_field_dcc(inputs, "pr_branch"))
+}
+
+fn resolve_dcc_persist_ref(inputs: &Value) -> Option<String> {
+    str_field_dcc(inputs, "persist_ref")
+}
+
+/// Gate QA + árbol cerrado antes de Publicación remota (AUT-38 / AUT-36 CA-1 CA-2).
+fn capsule_gate_pre_pr_qa(repo: &Path, inputs: &Value, state: &Value) -> Value {
+    let mut entry = json!({
+        "phase_name": "Gate pre-PR QA",
+        "delegates_to": [],
+        "handler": "delivery-close-cycle",
+    });
+    if env_truthy_dcc("SDDIA_LAB_SKIP_PRE_PR_QA_GATE") {
+        entry["status"] = json!("executed");
+        entry["note"] = json!("SDDIA_LAB_SKIP_PRE_PR_QA_GATE");
+        return entry;
+    }
+    let branch = resolve_dcc_branch(inputs)
+        .or_else(|| {
+            state
+                .get("inputs")
+                .and_then(|i| i.get("branch_name"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "HEAD".into());
+    let persist = resolve_dcc_persist_ref(inputs).or_else(|| {
+        state
+            .get("inputs")
+            .and_then(|i| i.get("persist_ref"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    });
+    let Some(persist_ref) = persist else {
+        entry["status"] = json!("blocked");
+        entry["friction_id"] = json!("worktree_not_closed");
+        entry["message"] = json!("persist_ref requerido para gate pre-PR");
+        return entry;
+    };
+    match qa_attestation::worktree_violations_except_validacion(repo, &persist_ref) {
+        Ok(violations) if violations.is_empty() => {}
+        Ok(violations) => {
+            entry["status"] = json!("blocked");
+            entry["friction_id"] = json!("worktree_not_closed");
+            entry["message"] = json!(format!(
+                "árbol no cerrado: {}",
+                violations.join(", ")
+            ));
+            entry["dirty_paths"] = json!(violations);
+            return entry;
+        }
+        Err(e) => {
+            entry["status"] = json!("failed");
+            entry["error"] = json!(e);
+            return entry;
+        }
+    }
+    match qa_attestation::validate_attestation_for_branch_head(repo, &branch) {
+        Ok(hit) => {
+            entry["status"] = json!("executed");
+            entry["qa_attestation_path"] = json!(hit.path.to_string_lossy());
+            entry["qa_profile"] = json!(hit.qa_profile);
+            entry["execution_id"] = json!(hit.execution_id);
+        }
+        Err(detail) => {
+            entry["status"] = json!("blocked");
+            entry["friction_id"] = json!("qa_attestation_required");
+            entry["message"] = json!(detail);
+        }
+    }
+    entry
+}
+
 fn dcc_friction_id(phase_name: &str, report: &Value) -> String {
     if let Some(id) = report.get("friction_id").and_then(|v| v.as_str()) {
         return id.to_string();
@@ -406,6 +506,16 @@ fn dcc_gate_block_suppresses_fracture(phase_name: &str, status: &str) -> bool {
         status,
         "",
         None,
+    )
+}
+
+fn dcc_pre_pr_qa_block_suppresses_fracture(report: &Value) -> bool {
+    if report.get("status").and_then(|v| v.as_str()) != Some("blocked") {
+        return false;
+    }
+    matches!(
+        report.get("friction_id").and_then(|v| v.as_str()),
+        Some("qa_attestation_required") | Some("worktree_not_closed")
     )
 }
 
@@ -632,6 +742,9 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
         if dcc_lab_binary_missing_suppresses_fracture(phase_name, status, &error_trace) {
             continue;
         }
+        if dcc_pre_pr_qa_block_suppresses_fracture(report) {
+            continue;
+        }
         let friction_id = dcc_friction_id(phase_name, report);
         let payload = json!({
             "process_name": "delivery-close-cycle",
@@ -815,6 +928,37 @@ mod tests {
             &json!({"pr_url": "https://github.com/x/y/pull/1"}),
         );
         assert!(entry.get("fail_soft").is_none());
+    }
+
+    #[test]
+    fn sync_dcc_process_hash_signature() {
+        let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let md = repo.join(
+            "SddIA/library/codexes/codex-software-engineering/process/delivery-close-cycle.md",
+        );
+        crate::forges::common::refresh_process_hash(&md).expect("refresh hash");
+        assert!(
+            crate::engine::verify_process_integrity::verify(&repo).is_ok(),
+            "verify after hash refresh"
+        );
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_pre_pr_qa_gate_block() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Gate pre-PR QA",
+            "status": "blocked",
+            "friction_id": "qa_attestation_required",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
     }
 
     #[test]

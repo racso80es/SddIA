@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - source-control
 contract: process-contract v1.4.0
-hash_signature: "sha256:93448251c4ae3df5a6ed317c615f89bb46254bddae1d218a46ce4452a46e5241"
+hash_signature: "sha256:90c4f8d2559c8b6d96724a50c781e8e66983a3ebcee5f158e6291ade4b9484ce"
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -40,6 +40,8 @@ phases:
   - agent:argos
   intent: Invocar sddia-qa verify-process-integrity y verify-tools-index; bloquear si alguno falla.
   name: Aduana integridad índices
+- intent: Exigir atestación QA aprobada para el tree_sha de HEAD y árbol cerrado (salvo validacion.md en persist_ref) antes del push.
+  name: Gate pre-PR QA
 - delegates_to:
   - skill:git-manager
   intent: Publicar la rama de trabajo en origin antes de abrir el PR.
@@ -62,7 +64,7 @@ phases:
   name: Higiene local
 porcentaje_de_exito: null
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
-version: 1.4.0
+version: 1.5.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -103,6 +105,7 @@ Salidas propagadas al envelope del proceso: `event_id`, `target_path`, `pr_url`.
 * La fase **Impacto SddIA condicional** debe evaluarse como no-op documentado cuando no aplique (`source_process` distinto de `feature` / `bug-fix` / `refactorization`, o sin cambios bajo `SddIA/`), sin bloquear el resto del ciclo.
 * **Aduana evolution:** ejecutar `SddIA/target/debug/sddia-qa gate-evolution --json --range --sync-base`. Bloquear si `EVOL_MATERIAL_UNREGISTERED` / `EVOL_HASH_MISMATCH`. No emitir `System_Fracture_Detected` (gate accionable, F4b). CI usa `--require-synced-base` (AEL-CA13).
 * **Aduana integridad índices:** ejecutar `SddIA/target/debug/sddia-qa verify-process-integrity` y `verify-tools-index` antes de la publicación remota; veredicto `block` si alguno falla (paridad job CI `sddia-index-integrity`).
+* **Gate pre-PR QA:** antes de Publicación remota, comprobar atestación `qa-attestation/1.0` con `verdict: aprobado` y `tree_sha` de HEAD, y `git status --porcelain` vacío salvo `{persist_ref}/validacion.md`. Envelope `status: blocked` con `friction_id: qa_attestation_required` o `worktree_not_closed`. No `System_Fracture_Detected`. Lab: `SDDIA_LAB_SKIP_PRE_PR_QA_GATE`.
 * **Aduana EDA genómica:** ejecutar `SddIA/target/debug/sddia-qa audit-eda-coverage --scan --json` (o `./sddia-run.sh --audit-eda-coverage --scan --json`). Si `orphan_count > 0` (entidad indexada sin `Domain_Entity_Created` correlacionado), Argos emite **Ruido de Sistema** con veredicto `block`. **Excepción `backfill-manifest.json`:** si `{persist_ref}/backfill-manifest.json` declara `correlation_id` y **no** tiene `merkle_anchored: true`, el gate degrada el veredicto a `warn` con `argos_noise: "backfill Fase C en curso"`. El backfill canónico sigue siendo `entity-manager` → `emit-domain-mutation` con sello `--anchor-merkle` al cierre.
 * Todas las rutas y políticas se resuelven exclusivamente vía `cumulo.paths.json` y normas enlazadas (`git-operations`, `pull-request-orchestration`).
 
