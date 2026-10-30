@@ -105,6 +105,9 @@ fn trunk_direct_close(
 }
 
 fn delegates_are_only_agents(delegates: &[Value]) -> bool {
+    if delegates.is_empty() {
+        return false;
+    }
     delegates.iter().all(|d| {
         d.as_str()
             .map(|s| s.starts_with("agent:"))
