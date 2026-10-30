@@ -94,6 +94,8 @@ fn tracker_for_payload(repo: &Path, payload: &Value, issue_ref: &str) -> Result<
     let mut inputs = json!({});
     if let Some(slug) = str_field(payload, "project_slug") {
         inputs["project_slug"] = json!(slug);
+    } else if super::super::project_binding::repo_is_core(repo) {
+        inputs["project_slug"] = json!("core");
     }
     match super::super::project_binding::tracker_config_for_inputs(repo, &inputs)? {
         Some(t) => Ok(Some(t)),
