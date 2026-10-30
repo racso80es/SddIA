@@ -1,6 +1,8 @@
 ---
 feature_name: eda-store-io-gate
 branch: Kaicen_Auditoria_Eventos_261030
+tracker_ref: AUT-56
+kaizen_ref: docs/audits/kaizen-eda-store-io-gate-261030.md
 global: APTO
 pbi_archived: false
 checks:
@@ -62,6 +64,9 @@ git_changes:
   - SddIA/actions/index.md
   - SddIA/daemons/event-watcher.md
   - SddIA/events/index.md
+  - .gitignore
+  - docs/audits/kaizen-eda-store-io-gate-261030.md
+  - docs/audits/kaizen-auditoria-eventos-261030.md
 doc_drift:
   P0: APTO
   P1: APTO
@@ -95,4 +100,4 @@ TM-8: `tm8_presented_has_pending_subscriber_rows_after_stamp` + tabla § Cobertu
 
 AC-W4: installer publica con `--publish-ecst`; sin binario y modo `redb` no escribe `.events/`.
 
-Tracker Linear: `pbi_archived` no aplica hasta issue en `done`. Este `global: APTO` cubre la verificación local de la rama, no el cierre del issue.
+Tracker Linear: issue kaizen roll-up **[AUT-56](https://linear.app/oscar-perez/issue/AUT-56/kaizen-gate-io-bus-eda-y-cierre-rama-261030)** (hijo **AUT-20**). `pbi_archived` no aplica hasta issue en `done`. Este `global: APTO` cubre la verificación local de la rama, no el cierre del issue.

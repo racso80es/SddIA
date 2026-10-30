@@ -23,6 +23,8 @@ status: APPLIED_LOCAL
 - `pending/` ya estaba vacío antes del archivo final; el backlog histórico (~500+ JSON) había sido depurado en la misma ventana de kaizen.
 - Tras el reset, recompilar y levantar `event-watcher` si el launcher reporta ELF fósil (`cargo build -p event-watcher`).
 - Cierre I/O gate en rama `Kaicen_Auditoria_Eventos_261030`: `docs/features/eda-store-io-gate/` + auditoría deriva doc `eda-doc-drift-eda-store-io-gate-261030.md`.
+- Roll-up kaizen / issue Linear: `docs/audits/kaizen-eda-store-io-gate-261030.md`.
+- `.gitignore` ignora `.SddIA/runtime/archive/` y `*.log` (evidencia local, no PR).
 
 ## Referencias
 
