@@ -31,9 +31,9 @@ git_changes:
 - SddIA/core/event-subscriptions.json
 - docs/features/fracture-provider-sink/
 validated_base_sha: df1ac9b65767e0d6c96cfc22f1ed48d9416f5665
-validated_head_sha: 89aca238267af8422bb63fdd48a935cf2631f1c7
-validated_tree_sha: b08a751d67e2375581cebd7b3378626017461d21
-diff_digest: sha256:7fd59caf157bbd1f1b4d9ee727da1eafc9c605a65bea06e189eae7aec5e50244
+validated_head_sha: d58ff322dfa17aa04f08f222e010231b30678f84
+validated_tree_sha: a767c0be49b19a5a373bc535267328e3e5808a2d
+diff_digest: sha256:297724825071002491443a0f10f90ba09b04b810cf27f5707a577273d0d9cbf9
 ---
 
 # Validación — AUT-30
