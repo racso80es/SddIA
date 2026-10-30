@@ -1,9 +1,9 @@
 //! Sello de diff en `{persist_ref}/validacion.md` (AUT-36 CA-3 / AUT-39).
 
-use crate::core::parser::{load_frontmatter_yaml, parse_frontmatter};
+use crate::core::parser::{load_frontmatter_yaml, parse_frontmatter, parse_frontmatter_from_str};
 use crate::engine::item_lifecycle_frontmatter::seal_markdown;
 use crate::engine::qa_attestation::tree_sha_for_commit;
-use serde_json::{json, Value};
+use serde_json::{json, Value as JsonValue};
 use serde_yaml::Value as YamlValue;
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -65,40 +65,237 @@ pub fn compute_diff_seal(
         ],
     )
     .or_else(|_| git_output(repo, &["rev-parse", "--verify", "HEAD"]))?;
-    let tree_sha = tree_sha_for_commit(repo, &head_sha)?;
+    compute_diff_seal_at_head(repo, &head_sha, target_branch, persist_ref)
+}
+
+pub fn compute_diff_seal_at_head(
+    repo: &Path,
+    head_sha: &str,
+    target_branch: &str,
+    persist_ref: &str,
+) -> Result<DiffSeal, String> {
+    let tree_sha = tree_sha_for_commit(repo, head_sha)?;
     let merge_base = git_output(
         repo,
         &[
             "merge-base",
             &format!("origin/{target_branch}"),
-            &head_sha,
+            head_sha,
         ],
     )
-    .or_else(|_| {
-        git_output(
-            repo,
-            &["merge-base", target_branch, &head_sha],
-        )
-    })?;
-    let exclude = validacion_rel(repo, persist_ref);
-    let diff_text = git_output(
-        repo,
-        &[
-            "diff",
-            &format!("{merge_base}..{head_sha}"),
-            "--",
-            ".",
-            &format!(":(exclude){exclude}"),
-        ],
-    )?;
-    let mut hasher = Sha256::new();
-    hasher.update(diff_text.as_bytes());
+    .or_else(|_| git_output(repo, &["merge-base", target_branch, head_sha]))?;
+    let digest = recompute_digest_excluding_validacion(repo, &merge_base, head_sha, persist_ref)?;
     Ok(DiffSeal {
         validated_base_sha: merge_base,
-        validated_head_sha: head_sha,
+        validated_head_sha: head_sha.to_string(),
         validated_tree_sha: tree_sha,
-        diff_digest: format!("sha256:{:x}", hasher.finalize()),
+        diff_digest: digest,
     })
+}
+
+const SEAL_KEYS: [&str; 4] = [
+    "validated_base_sha",
+    "validated_head_sha",
+    "validated_tree_sha",
+    "diff_digest",
+];
+
+fn load_frontmatter_at(
+    repo: &Path,
+    head_sha: &str,
+    rel: &str,
+) -> Result<std::collections::HashMap<String, YamlValue>, String> {
+    let raw = git_output(repo, &["show", &format!("{head_sha}:{rel}")])?;
+    parse_frontmatter_from_str(&raw)
+}
+
+pub fn read_seal_from_validacion_at(
+    repo: &Path,
+    head_sha: &str,
+    persist_ref: &str,
+) -> Result<Option<DiffSeal>, String> {
+    let rel = validacion_rel(repo, persist_ref);
+    let fm = match load_frontmatter_at(repo, head_sha, &rel) {
+        Ok(f) => f,
+        Err(_) => return Ok(None),
+    };
+    let mut any = false;
+    let mut values: [String; 4] = std::array::from_fn(|_| String::new());
+    for (i, key) in SEAL_KEYS.iter().enumerate() {
+        if let Some(v) = fm.get(*key).and_then(|x| x.as_str()) {
+            let t = v.trim();
+            if !t.is_empty() {
+                any = true;
+                values[i] = t.to_string();
+            }
+        }
+    }
+    if !any {
+        return Ok(None);
+    }
+    Ok(Some(DiffSeal {
+        validated_base_sha: values[0].clone(),
+        validated_head_sha: values[1].clone(),
+        validated_tree_sha: values[2].clone(),
+        diff_digest: values[3].clone(),
+    }))
+}
+
+pub fn read_seal_from_validacion(
+    repo: &Path,
+    persist_ref: &str,
+) -> Result<Option<DiffSeal>, String> {
+    let head = git_output(repo, &["rev-parse", "HEAD"])?;
+    read_seal_from_validacion_at(repo, &head, persist_ref)
+}
+
+pub fn validacion_requires_ci_seal_check_at(
+    repo: &Path,
+    head_sha: &str,
+    persist_ref: &str,
+) -> Result<bool, String> {
+    let rel = validacion_rel(repo, persist_ref);
+    let fm = match load_frontmatter_at(repo, head_sha, &rel) {
+        Ok(f) => f,
+        Err(_) => return Ok(false),
+    };
+    if read_seal_from_validacion_at(repo, head_sha, persist_ref)?.is_some() {
+        return Ok(true);
+    }
+    let global_v = fm
+        .get("global")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .eq_ignore_ascii_case("APTO");
+    Ok(global_v)
+}
+
+pub fn validacion_requires_ci_seal_check(
+    repo: &Path,
+    persist_ref: &str,
+) -> Result<bool, String> {
+    let head = git_output(repo, &["rev-parse", "HEAD"])?;
+    validacion_requires_ci_seal_check_at(repo, &head, persist_ref)
+}
+
+pub fn verify_diff_seal_at_head(
+    repo: &Path,
+    head_sha: &str,
+    target_branch: &str,
+    persist_ref: &str,
+) -> Result<(), String> {
+    if !validacion_requires_ci_seal_check_at(repo, head_sha, persist_ref)? {
+        return Ok(());
+    }
+    let path = validacion_rel(repo, persist_ref);
+    let fm = load_frontmatter_at(repo, head_sha, &path)?;
+    for key in SEAL_KEYS {
+        let present = fm
+            .get(key)
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .is_some();
+        if !present {
+            return Err(format!(
+                "{path}: falta campo de sello `{key}` (AUT-40 / AUT-36 CA-4)"
+            ));
+        }
+    }
+    let sealed = read_seal_from_validacion_at(repo, head_sha, persist_ref)?
+        .ok_or_else(|| format!("{path}: sello incompleto"))?;
+    let computed_at_tip =
+        compute_diff_seal_at_head(repo, head_sha, target_branch, persist_ref)?;
+    if sealed.diff_digest != computed_at_tip.diff_digest {
+        return Err(format!(
+            "{path}: diff_digest no coincide (sellado={}, recalculado={})",
+            sealed.diff_digest, computed_at_tip.diff_digest
+        ));
+    }
+    if sealed.validated_base_sha != computed_at_tip.validated_base_sha {
+        return Err(format!(
+            "{path}: validated_base_sha no coincide (sellado={}, actual={})",
+            sealed.validated_base_sha, computed_at_tip.validated_base_sha
+        ));
+    }
+    let anchor = sealed.validated_head_sha.trim();
+    if anchor != head_sha {
+        let mb = git_output(
+            repo,
+            &["merge-base", anchor, head_sha],
+        )?;
+        if mb != anchor {
+            return Err(format!(
+                "{path}: validated_head_sha {anchor} no es ancestro de HEAD {head_sha}"
+            ));
+        }
+    }
+    let tree_at_anchor = tree_sha_for_commit(repo, anchor)?;
+    if sealed.validated_tree_sha != tree_at_anchor {
+        return Err(format!(
+            "{path}: validated_tree_sha no coincide (sellado={}, árbol en {anchor}={tree_at_anchor})",
+            sealed.validated_tree_sha
+        ));
+    }
+    Ok(())
+}
+
+/// `persist_ref` relativos bajo `docs/{features,fixes,refactors}/` con `validacion.md` en HEAD.
+pub fn list_persist_refs_with_validacion(repo: &Path, head_sha: &str) -> Result<Vec<String>, String> {
+    let out = git_output(
+        repo,
+        &[
+            "ls-tree",
+            "-r",
+            "--name-only",
+            head_sha,
+            "--",
+            "docs/features",
+            "docs/fixes",
+            "docs/refactors",
+        ],
+    )?;
+    let mut refs: Vec<String> = out
+        .lines()
+        .filter(|l| l.ends_with("/validacion.md"))
+        .map(|l| l.trim_end_matches("/validacion.md").to_string())
+        .collect();
+    refs.sort();
+    refs.dedup();
+    Ok(refs)
+}
+
+pub fn verify_diff_seal_ci(
+    repo: &Path,
+    head_sha: &str,
+    target_branch: &str,
+) -> Result<JsonValue, String> {
+    let persist_refs = list_persist_refs_with_validacion(repo, head_sha)?;
+    let mut checked = Vec::new();
+    let mut skipped = Vec::new();
+    let mut errors = Vec::new();
+    for persist_ref in persist_refs {
+        match validacion_requires_ci_seal_check_at(repo, head_sha, &persist_ref) {
+            Ok(true) => {
+                match verify_diff_seal_at_head(repo, head_sha, target_branch, &persist_ref) {
+                    Ok(()) => checked.push(persist_ref),
+                    Err(e) => errors.push(json!({"persist_ref": persist_ref, "error": e})),
+                }
+            }
+            Ok(false) => skipped.push(persist_ref),
+            Err(e) => errors.push(json!({"persist_ref": persist_ref, "error": e})),
+        }
+    }
+    let ok = errors.is_empty();
+    Ok(json!({
+        "ok": ok,
+        "head_sha": head_sha,
+        "target_branch": target_branch,
+        "checked": checked,
+        "skipped": skipped,
+        "errors": errors,
+    }))
 }
 
 pub fn validacion_ready_for_seal(repo: &Path, persist_ref: &str) -> Result<(), String> {
@@ -163,7 +360,7 @@ pub fn recompute_digest_excluding_validacion(
     Ok(format!("sha256:{:x}", hasher.finalize()))
 }
 
-pub fn seal_patch_json(seal: &DiffSeal) -> Value {
+pub fn seal_patch_json(seal: &DiffSeal) -> JsonValue {
     json!({
         "validated_base_sha": seal.validated_base_sha,
         "validated_head_sha": seal.validated_head_sha,
@@ -306,5 +503,155 @@ mod tests {
             fm.get("validated_head_sha").and_then(|v| v.as_str()),
             Some(seal.validated_head_sha.as_str())
         );
+    }
+
+    #[test]
+    fn ci_verify_fails_when_apto_without_seal_fields() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        init_repo_main_feat(repo, "feat/z", "docs/features/z");
+        fs::write(
+            repo.join("docs/features/z/validacion.md"),
+            "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/z/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "val"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let err = verify_diff_seal_at_head(repo, &head, "main", "docs/features/z").unwrap_err();
+        assert!(err.contains("validated_base_sha"));
+    }
+
+    #[test]
+    fn ci_verify_fails_on_digest_mismatch() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        init_repo_main_feat(repo, "feat/w", "docs/features/w");
+        fs::write(
+            repo.join("docs/features/w/validacion.md"),
+            "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        fs::write(repo.join("code.txt"), "v2\n").unwrap();
+        Command::new("git")
+            .args(["add", "code.txt"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "change"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let seal = compute_diff_seal_at_head(repo, &head, "main", "docs/features/w").unwrap();
+        apply_diff_seal_to_validacion(repo, "docs/features/w", &seal).unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/w/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "seal"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        fs::write(repo.join("code.txt"), "v3\n").unwrap();
+        Command::new("git")
+            .args(["add", "code.txt"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "drift"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head2 = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let err =
+            verify_diff_seal_at_head(repo, &head2, "main", "docs/features/w").unwrap_err();
+        assert!(err.contains("diff_digest") || err.contains("validated_head_sha"));
+    }
+
+    #[test]
+    fn ci_verify_passes_when_seal_matches() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        init_repo_main_feat(repo, "feat/v", "docs/features/v");
+        fs::write(
+            repo.join("docs/features/v/validacion.md"),
+            "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/v/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "val"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let seal = compute_diff_seal_at_head(repo, &head, "main", "docs/features/v").unwrap();
+        apply_diff_seal_to_validacion(repo, "docs/features/v", &seal).unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/v/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "seal"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        verify_diff_seal_at_head(repo, &head, "main", "docs/features/v").expect("match");
+    }
+
+    fn init_repo_main_feat(repo: &Path, branch: &str, persist: &str) {
+        Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(repo)
+            .status()
+            .expect("init");
+        for key in [("user.email", "t@t"), ("user.name", "t")] {
+            Command::new("git")
+                .args(["config", key.0, key.1])
+                .current_dir(repo)
+                .status()
+                .ok();
+        }
+        fs::create_dir_all(repo.join(persist)).unwrap();
+        fs::write(repo.join("code.txt"), "v1\n").unwrap();
+        Command::new("git")
+            .args(["add", "."])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "base"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["branch", "-M", "main"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["checkout", "-qb", branch])
+            .current_dir(repo)
+            .status()
+            .unwrap();
     }
 }

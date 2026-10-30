@@ -395,3 +395,29 @@ jobs:
         run: |
           SddIA/target/debug/sddia-qa run-linear-direct-cycle-e2e-lab --json
           SddIA/target/debug/sddia-qa run-linear-done-gate-both-e2e-lab --json
+
+  sddia-diff-digest:
+    needs: native-build
+    if: >-
+      needs.native-build.result == 'success' &&
+      github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-debug-bins
+          path: SddIA/target/debug
+
+      - name: Fetch base branch for merge-base
+        run: git fetch --no-tags origin "${{ github.base_ref }}"
+
+      - name: verify-diff-digest (AUT-40)
+        run: |
+          chmod +x SddIA/target/debug/sddia-qa
+          SddIA/target/debug/sddia-qa verify-diff-digest --json \
+            --head "${{ github.event.pull_request.head.sha }}" \
+            --target-branch "${{ github.base_ref }}"
