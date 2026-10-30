@@ -291,6 +291,47 @@ pub fn related_todo_from_objectives(repo: &Path, persist_ref: &str) -> Option<St
     resolve_pbi_path_from_persist(repo, persist_ref)
 }
 
+/// Identificador de issue (`AUT-45`), no ruta de fichero PBI.
+pub fn looks_like_issue_identifier(s: &str) -> bool {
+    let s = s.trim();
+    if s.is_empty() || s.contains('/') || s.contains('\\') || s.ends_with(".md") {
+        return false;
+    }
+    let Some((prefix, rest)) = s.split_once('-') else {
+        return false;
+    };
+    !prefix.is_empty()
+        && prefix.chars().all(|c| c.is_ascii_alphabetic())
+        && !rest.is_empty()
+        && rest.chars().all(|c| c.is_ascii_digit())
+}
+
+/// Resolución de `tracker_ref` para peaje lifecycle (inputs + objectives, AUT-47).
+pub fn resolve_tracker_ref_for_lifecycle(repo: &Path, process_inputs: &Value) -> Option<String> {
+    for key in ["tracker_ref", "pbi_ref", "issue_ref"] {
+        if let Some(s) = process_inputs.get(key).and_then(|v| v.as_str()) {
+            let t = s.trim();
+            if !t.is_empty() {
+                return Some(t.to_string());
+            }
+        }
+    }
+    let persist = process_inputs.get("persist_ref")?.as_str()?.trim();
+    if persist.is_empty() {
+        return None;
+    }
+    if let Some(tr) = tracker_ref_on_objectives(repo, persist) {
+        return Some(tr);
+    }
+    if let Some(pbi_rel) = resolve_pbi_path_from_persist(repo, persist) {
+        if looks_like_issue_identifier(&pbi_rel) {
+            return Some(pbi_rel);
+        }
+        return tracker_ref_from_pbi(repo, &pbi_rel);
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -316,6 +357,49 @@ mod tests {
         assert_eq!(
             expected_hu_tracker_ref_from_pbi(&dir, "pbi.md").as_deref(),
             Some("OSC-5")
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn looks_like_issue_identifier_rejects_paths() {
+        assert!(looks_like_issue_identifier("AUT-46"));
+        assert!(!looks_like_issue_identifier("docs/todos/pending/x.md"));
+        assert!(!looks_like_issue_identifier("AUT-46-extra"));
+    }
+
+    #[test]
+    fn resolve_lifecycle_from_objectives_tracker_ref_only() {
+        let dir = std::env::temp_dir().join(format!("pbi-lc-{}", std::process::id()));
+        let persist = dir.join("docs/fixes/demo");
+        fs::create_dir_all(&persist).unwrap();
+        fs::write(
+            persist.join("objectives.md"),
+            "---\ntracker_ref: AUT-12\n---\n# obj\n",
+        )
+        .unwrap();
+        let inputs = json!({"persist_ref": "docs/fixes/demo"});
+        assert_eq!(
+            resolve_tracker_ref_for_lifecycle(&dir, &inputs).as_deref(),
+            Some("AUT-12")
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn resolve_lifecycle_pbi_ref_as_identifier_not_path() {
+        let dir = std::env::temp_dir().join(format!("pbi-id-{}", std::process::id()));
+        let persist = dir.join("docs/features/demo");
+        fs::create_dir_all(&persist).unwrap();
+        fs::write(
+            persist.join("objectives.md"),
+            "---\npbi_ref: AUT-46\n---\n# obj\n",
+        )
+        .unwrap();
+        let inputs = json!({"persist_ref": "docs/features/demo"});
+        assert_eq!(
+            resolve_tracker_ref_for_lifecycle(&dir, &inputs).as_deref(),
+            Some("AUT-46")
         );
         let _ = fs::remove_dir_all(&dir);
     }

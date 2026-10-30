@@ -364,13 +364,16 @@ pub fn run(
         exit_code,
     );
 
-    super::llm_interaction_audit::maybe_record_process_peaje(
+    let peaje = super::llm_interaction_audit::maybe_record_process_peaje(
         repo,
         process_name,
         process_inputs,
         success,
         exit_code,
     );
+    if !peaje.is_null() {
+        result["llm_process_peaje"] = peaje;
+    }
 
     result
 }
