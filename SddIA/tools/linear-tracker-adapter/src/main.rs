@@ -212,7 +212,7 @@ fn build_list_issues_query(include_label_filter: bool, include_project: bool) ->
   teams(filter: {{ key: {{ eq: $teamKey }} }}) {{
     nodes {{
       {issues} {{
-        nodes {{ id identifier title priority url updatedAt state {{ name }} labels {{ nodes {{ name }} }} parent {{ identifier }} children {{ nodes {{ identifier }} }} }}
+        nodes {{ id identifier title description priority url updatedAt state {{ name }} labels {{ nodes {{ name }} }} parent {{ identifier }} children {{ nodes {{ identifier }} }} }}
         pageInfo {{ hasNextPage endCursor }}
       }}
     }}
@@ -387,6 +387,23 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                     }),
                 ]
             };
+            let prefix = format!("{team_key}-");
+            for stored in lab_state::lab_list_issues() {
+                let id = stored
+                    .get("identifier")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if !id.starts_with(&prefix) {
+                    continue;
+                }
+                if items
+                    .iter()
+                    .any(|item| item.get("identifier").and_then(|v| v.as_str()) == Some(id))
+                {
+                    continue;
+                }
+                items.push(stored);
+            }
             if let Some(pid) = project_id {
                 for item in &mut items {
                     if item.get("project_id").and_then(|v| v.as_str()).is_none() {

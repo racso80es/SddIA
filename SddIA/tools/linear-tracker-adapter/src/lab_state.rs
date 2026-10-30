@@ -165,6 +165,17 @@ pub fn lab_register_comment(issue_ref: &str, body: &str) {
     persist_store(&s);
 }
 
+pub fn lab_list_issues() -> Vec<Value> {
+    let s = store().lock().unwrap();
+    let mut items: Vec<Value> = s.issues.values().cloned().collect();
+    items.sort_by(|a, b| {
+        let ia = a.get("identifier").and_then(|v| v.as_str()).unwrap_or("");
+        let ib = b.get("identifier").and_then(|v| v.as_str()).unwrap_or("");
+        ia.cmp(ib)
+    });
+    items
+}
+
 pub fn lab_set_description(issue_ref: &str, description: &str) {
     let mut s = store().lock().unwrap();
     if let Some(issue) = s.issues.get_mut(issue_ref) {

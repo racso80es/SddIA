@@ -1545,7 +1545,8 @@ pub(crate) fn dispatch_subscriber(
 
     let agent_name = agent.unwrap();
     let store_backed = event_path.is_some_and(|path| !path.is_file());
-    if store_backed && agent_tier_is_cognitive(repo, agent_name) {
+    let declares_native = subscriber_declares_native(subscriber);
+    if store_backed && agent_tier_is_cognitive(repo, agent_name) && !declares_native {
         return dispatch_cognitive_subscriber(repo, &sid, agent_name, event);
     }
 
@@ -1990,6 +1991,20 @@ pub(crate) fn dispatch_subscriber(
         Some("no process/action/tool configured".into()),
         1,
     )
+}
+
+fn subscriber_declares_native(subscriber: &Value) -> bool {
+    for key in ["action", "tool"] {
+        if subscriber
+            .get(key)
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .is_some_and(|s| !s.is_empty())
+        {
+            return true;
+        }
+    }
+    false
 }
 
 fn agent_tier_is_cognitive(repo: &Path, agent: &str) -> bool {

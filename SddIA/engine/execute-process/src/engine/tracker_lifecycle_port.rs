@@ -67,6 +67,7 @@ pub fn is_remote(repo: &Path, inputs: &Value) -> Result<bool, String> {
 
 /// `tracker.provider` del manifiesto del `project_slug`. `None` si no hay clave.
 pub fn manifest_provider(repo: &Path, payload: &Value) -> Result<Option<String>, String> {
+    let payload = super::project_binding::inputs_with_self_hosted_slug(repo, payload)?;
     let Some(slug) = payload
         .get("project_slug")
         .and_then(|v| v.as_str())
@@ -166,14 +167,16 @@ pub fn resolve_target(repo: &Path, inputs: &Value) -> Result<LifecycleTarget, St
     }
 }
 
-/// Pide un verbo. `file` y la ausencia de provider no instancian la cápsula remota.
+/// Pide un verbo. `file` no instancia la cápsula remota.
 /// `linear` no abre el árbol de backlog.
+/// `Unconfigured` no es alias de fichero.
 pub fn invoke(
     repo: &Path,
     inputs: &Value,
     mut request: Value,
     process: &str,
 ) -> Result<Value, String> {
+    let inputs = super::project_binding::inputs_with_self_hosted_slug(repo, inputs)?;
     if let Some(obj) = request.as_object_mut() {
         if !obj.contains_key("project_slug") {
             if let Some(slug) = inputs.get("project_slug").filter(|v| !v.is_null()) {
@@ -181,16 +184,20 @@ pub fn invoke(
             }
         }
     }
-    match resolve_target(repo, inputs)? {
+    match resolve_target(repo, &inputs)? {
         LifecycleTarget::Remote { tool } => super::capsules::invoke_tool_for_process(
             repo,
             &tool,
             &json!({ "request": request }),
             Some(process),
         ),
-        LifecycleTarget::File | LifecycleTarget::Unconfigured => {
+        LifecycleTarget::File => {
             file_tracker_adapter::dispatch(repo, &json!({ "request": request }))
         }
+        LifecycleTarget::Unconfigured => Err(
+            "TRACKER_UNCONFIGURED: sin tracker.provider resuelto; no se escribe backlog local"
+                .into(),
+        ),
     }
 }
 
@@ -415,6 +422,14 @@ mod tests {
         );
         let absent = resolve_target(repo, &json!({"project_slug": "lab-absent"})).unwrap();
         assert!(matches!(absent, LifecycleTarget::Unconfigured));
+        let err = invoke(
+            repo,
+            &json!({"project_slug": "lab-absent"}),
+            verb_request("create_issue", "PBI-VERB"),
+            "verb-test",
+        )
+        .unwrap_err();
+        assert!(err.contains("TRACKER_UNCONFIGURED"));
     }
 
     #[test]

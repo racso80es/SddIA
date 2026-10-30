@@ -35,69 +35,104 @@ fn issue_ref_of(body: &Value) -> Result<String, String> {
         .ok_or_else(|| "LINEAR_CREATE_ISSUE_EMPTY: sin issue_ref".into())
 }
 
-fn lifecycle_call(
-    repo: &Path,
-    request: Value,
-    process: &str,
-) -> Result<Value, String> {
-    let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
-    super::capsules::invoke_tool_for_process(repo, &tool, &json!({ "request": request }), Some(process))
+fn description_has_hash(item: &Value, hash: &str) -> bool {
+    let marker = format!("fracture_hash: {hash}");
+    item.get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .contains(&marker)
 }
 
-fn find_issue_with_marker(
-    repo: &Path,
-    team_key: &str,
-    project_id: Option<&str>,
-    marker: &str,
-) -> Result<Option<String>, String> {
-    let listed = lifecycle_call(
-        repo,
-        json!({
-            "operation": "list_issues",
-            "team_key": team_key,
-            "project_id": project_id,
-        }),
-        "materialize-fracture-pbi",
-    )?;
-    let items = listed.get("items").and_then(|v| v.as_array());
-    let Some(items) = items else {
-        return Ok(None);
-    };
+fn state_of(item: &Value) -> String {
+    item.get("state")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string()
+}
+
+/// `Open` si hay una issue no cerrada con el hash. `ClosedOnly` si todas las coincidencias están en Done o Cancelled.
+enum RemoteHashHit {
+    Open(String),
+    ClosedOnly,
+    None,
+}
+
+fn classify_remote_hash(
+    items: &[Value],
+    hash: &str,
+    done_state: &str,
+    cancelled_state: Option<&str>,
+) -> RemoteHashHit {
+    let mut saw_closed = false;
     for item in items {
-        let title = item.get("title").and_then(|v| v.as_str()).unwrap_or("");
-        if title.contains(marker) {
+        if !description_has_hash(item, hash) {
+            continue;
+        }
+        let state = state_of(item);
+        let closed = state == done_state || cancelled_state.is_some_and(|c| state == c);
+        if !closed {
             if let Ok(id) = issue_ref_of(item) {
-                return Ok(Some(id));
+                return RemoteHashHit::Open(id);
             }
-            if let Some(id) = item.get("identifier").and_then(|v| v.as_str()) {
-                return Ok(Some(id.to_string()));
-            }
+        } else {
+            saw_closed = true;
         }
     }
-    Ok(None)
+    if saw_closed {
+        RemoteHashHit::ClosedOnly
+    } else {
+        RemoteHashHit::None
+    }
 }
 
-fn create_fracture_issue(
+fn list_remote_issues(
     repo: &Path,
-    tc: &super::project_binding::TrackerConfig,
     inputs: &Value,
-    title: &str,
-    description: &str,
-) -> Result<String, String> {
-    let label = super::project_binding::tracker_label_for_inputs(repo, inputs, "fix")?
-        .unwrap_or_else(|| "fix".into());
-    let mut request = json!({
-        "operation": "create_issue",
-        "team_key": tc.team_key,
-        "title": title,
-        "description": description,
-        "labels": [label],
-    });
-    if let Some(pid) = &tc.project_id {
-        request["project_id"] = json!(pid);
+    tc: &super::project_binding::TrackerConfig,
+) -> Result<Vec<Value>, String> {
+    let mut items = Vec::new();
+    let mut after: Option<String> = None;
+    for _ in 0..10 {
+        let mut request = json!({
+            "operation": "list_issues",
+            "team_key": tc.team_key,
+            "project_id": tc.project_id,
+        });
+        if let Some(cursor) = &after {
+            request["after"] = json!(cursor);
+        }
+        let listed = super::tracker_lifecycle_port::invoke(
+            repo,
+            inputs,
+            request,
+            "materialize-fracture-pbi",
+        )?;
+        if let Some(arr) = listed.get("items").and_then(|v| v.as_array()) {
+            items.extend(arr.iter().cloned());
+        }
+        let more = listed
+            .pointer("/page_info/has_next_page")
+            .and_then(|v| v.as_bool())
+            == Some(true);
+        let cursor = listed
+            .pointer("/page_info/end_cursor")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string);
+        if !more {
+            break;
+        }
+        let Some(cursor) = cursor else {
+            break;
+        };
+        if after.as_deref() == Some(cursor.as_str()) {
+            break;
+        }
+        after = Some(cursor);
     }
-    let body = lifecycle_call(repo, request, "materialize-fracture-pbi")?;
-    issue_ref_of(&body)
+    Ok(items)
 }
 
 fn optional_str(inputs: &Value, key: &str) -> Option<String> {
@@ -139,6 +174,8 @@ fn build_pbi_body(
     branch_name: Option<&str>,
     regression_of: Option<&str>,
     friction_id: Option<&str>,
+    tracker_column: Option<&str>,
+    refinement: Option<&str>,
 ) -> String {
     let today = Utc::now().format("%Y-%m-%d").to_string();
     let mut related_lines = vec![
@@ -158,6 +195,12 @@ fn build_pbi_body(
     let friction_line = friction_id
         .map(|f| format!("friction_id: {f}\n"))
         .unwrap_or_default();
+    let tracker_line = match (tracker_column, refinement) {
+        (Some(column), Some(refine)) => {
+            format!("tracker_column: {column}\nrefinement: {refine}\n")
+        }
+        _ => String::new(),
+    };
 
     format!(
         r#"---
@@ -172,7 +215,7 @@ process: bug-fix
 fracture_hash: {trace_hash}
 fracture_process: {fracture_process}
 incident_ref: "System_Fracture_Detected — {trace_hash}"
-{friction_line}{regression_line}related:
+{friction_line}{regression_line}{tracker_line}related:
 {related}
 ---
 
@@ -210,29 +253,249 @@ _Pendiente de síntesis Mayeuta (Kintsugi async)._
     )
 }
 
-/// Ejecuta `materialize-fracture-pbi` (paridad `execute-action.py::_run_materialize_fracture_pbi`).
+fn emit_materialized_fact(
+    repo: &Path,
+    inputs: &Value,
+    target: &str,
+    reason: &str,
+    trace_hash: &str,
+    remote: bool,
+) -> bool {
+    let mut payload = json!({
+        "process_name": inputs.get("process_name"),
+        "error_trace": inputs.get("error_trace"),
+        "agent_emitter": inputs.get("agent_emitter"),
+        "attempted_action": inputs.get("attempted_action"),
+        "target_path": target,
+        "trace_hash": trace_hash,
+        "reason": reason,
+    });
+    if let Some(obj) = payload.as_object_mut() {
+        for key in ["project_slug", "persist_ref", "branch_name", "friction_id"] {
+            if let Some(v) = inputs.get(key).filter(|v| !v.is_null()) {
+                obj.insert(key.into(), v.clone());
+            }
+        }
+        if remote {
+            obj.insert("tracker_ref".into(), json!(target));
+        }
+    }
+    super::route_domain_core::materialize_pending_domain_event(
+        repo,
+        "Fracture_Pbi_Materialized",
+        "materialize-fracture-pbi",
+        payload,
+    )
+    .is_ok()
+}
+
+fn finish(
+    repo: &Path,
+    inputs: &Value,
+    target: String,
+    reason: &str,
+    trace_hash: &str,
+    remote: bool,
+    extra: Value,
+) -> Value {
+    let fact_emitted = emit_materialized_fact(repo, inputs, &target, reason, trace_hash, remote);
+    let mut out = json!({
+        "success": true,
+        "target_path": target,
+        "reason": reason,
+        "message": reason,
+        "trace_hash": trace_hash,
+        "fact_emitted": fact_emitted,
+    });
+    if remote {
+        out["issue_ref"] = json!(out["target_path"].as_str().unwrap_or(""));
+        out["tracker_ref"] = out["target_path"].clone();
+    }
+    if let (Some(obj), Some(extra_obj)) = (out.as_object_mut(), extra.as_object()) {
+        for (k, v) in extra_obj {
+            obj.insert(k.clone(), v.clone());
+        }
+    }
+    out
+}
+
+/// Ejecuta `materialize-fracture-pbi`.
 pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
-    let process_name = required_str(inputs, "process_name")?;
-    let error_trace = required_str(inputs, "error_trace")?;
-    let agent_emitter = required_str(inputs, "agent_emitter")?;
-    let attempted_action = required_str(inputs, "attempted_action")?;
+    let bound = super::project_binding::inputs_with_self_hosted_slug(repo, inputs)?;
+    let process_name = required_str(&bound, "process_name")?;
+    let error_trace = required_str(&bound, "error_trace")?;
+    let agent_emitter = required_str(&bound, "agent_emitter")?;
+    let attempted_action = required_str(&bound, "attempted_action")?;
 
     let trace_hash = fracture_trace_hash(&error_trace);
     let fracture_process = slugify_process_name(&process_name);
-
-    let scan = scan_fracture_ledger(repo)?;
-    emit_resolver_telemetry(repo, &scan);
-    let resolution = resolve_materialize(&scan, &trace_hash, &fracture_process);
-
-    let linear = super::project_binding::tracker_config_for_inputs(repo, inputs)?;
-    let persist_ref = optional_str(inputs, "persist_ref");
-    let branch_name = optional_str(inputs, "branch_name");
-    let friction_id = optional_str(inputs, "friction_id").filter(|id| {
+    let persist_ref = optional_str(&bound, "persist_ref");
+    let branch_name = optional_str(&bound, "branch_name");
+    let friction_id = optional_str(&bound, "friction_id").filter(|id| {
         load_fracture_catalog(repo)
             .map(|c| c.catalog_contains_id(id))
             .unwrap_or(false)
     });
 
+    match super::tracker_lifecycle_port::resolve_target(repo, &bound)? {
+        super::tracker_lifecycle_port::LifecycleTarget::Remote { .. } => run_remote(
+            repo,
+            &bound,
+            &process_name,
+            &error_trace,
+            &agent_emitter,
+            &attempted_action,
+            &trace_hash,
+            &fracture_process,
+            persist_ref.as_deref(),
+            branch_name.as_deref(),
+            friction_id.as_deref(),
+        ),
+        super::tracker_lifecycle_port::LifecycleTarget::File => run_file(
+            repo,
+            &bound,
+            &process_name,
+            &error_trace,
+            &agent_emitter,
+            &attempted_action,
+            &trace_hash,
+            &fracture_process,
+            persist_ref.as_deref(),
+            branch_name.as_deref(),
+            friction_id.as_deref(),
+        ),
+        super::tracker_lifecycle_port::LifecycleTarget::Unconfigured => Err(
+            "TRACKER_UNCONFIGURED: sin tracker.provider resuelto; no se escribe backlog local"
+                .into(),
+        ),
+    }
+}
+
+fn run_remote(
+    repo: &Path,
+    inputs: &Value,
+    process_name: &str,
+    error_trace: &str,
+    agent_emitter: &str,
+    attempted_action: &str,
+    trace_hash: &str,
+    fracture_process: &str,
+    persist_ref: Option<&str>,
+    branch_name: Option<&str>,
+    friction_id: Option<&str>,
+) -> Result<Value, String> {
+    let tc = super::project_binding::tracker_config_for_inputs(repo, inputs)?
+        .ok_or_else(|| "TRACKER_UNCONFIGURED: provider linear sin TrackerConfig".to_string())?;
+    let done_state = tc
+        .state_map
+        .get("done")
+        .cloned()
+        .unwrap_or_else(|| "Done".into());
+    let cancelled = tc.state_map.get("cancelled").cloned();
+    let backlog = tc
+        .state_map
+        .get("backlog")
+        .cloned()
+        .unwrap_or_else(|| "Backlog".into());
+    let items = list_remote_issues(repo, inputs, &tc)?;
+    let regression = match classify_remote_hash(
+        &items,
+        trace_hash,
+        &done_state,
+        cancelled.as_deref(),
+    ) {
+        RemoteHashHit::Open(id) => {
+            return Ok(json!({
+                "success": true,
+                "target_path": id,
+                "issue_ref": id,
+                "tracker_ref": id,
+                "reason": "already_open",
+                "message": "already_open",
+                "trace_hash": trace_hash,
+            }));
+        }
+        RemoteHashHit::ClosedOnly => true,
+        RemoteHashHit::None => false,
+    };
+    let title_prefix = if regression { "[REGRESIÓN]" } else { "[FIX]" };
+    let title = format!("{title_prefix} {process_name} — fractura sistémica");
+    let n = 1u32;
+    let document_id = if regression {
+        format!("PBI-FIX-FRACTURE-{trace_hash}-R{n}")
+    } else {
+        format!("PBI-FIX-FRACTURE-{trace_hash}")
+    };
+    let body = build_pbi_body(
+        process_name,
+        error_trace,
+        agent_emitter,
+        attempted_action,
+        trace_hash,
+        fracture_process,
+        &document_id,
+        title_prefix,
+        persist_ref,
+        branch_name,
+        None,
+        friction_id,
+        Some("backlog"),
+        Some("pending"),
+    );
+    let label_pbi = super::project_binding::tracker_label_for_inputs(repo, inputs, "pbi")?
+        .unwrap_or_else(|| "pbi".into());
+    let label_fix = super::project_binding::tracker_label_for_inputs(repo, inputs, "fix")?
+        .unwrap_or_else(|| "fix".into());
+    let mut request = json!({
+        "operation": "create_issue",
+        "team_key": tc.team_key,
+        "title": title,
+        "description": body,
+        "labels": [label_pbi, label_fix],
+        "state_name": backlog,
+    });
+    if let Some(pid) = &tc.project_id {
+        request["project_id"] = json!(pid);
+    }
+    let created = super::tracker_lifecycle_port::invoke(
+        repo,
+        inputs,
+        request,
+        "materialize-fracture-pbi",
+    )?;
+    let issue = issue_ref_of(&created)?;
+    let reason = if regression {
+        "regression_opened"
+    } else {
+        "materialized"
+    };
+    Ok(finish(
+        repo,
+        inputs,
+        issue,
+        reason,
+        trace_hash,
+        true,
+        json!({}),
+    ))
+}
+
+fn run_file(
+    repo: &Path,
+    inputs: &Value,
+    process_name: &str,
+    error_trace: &str,
+    agent_emitter: &str,
+    attempted_action: &str,
+    trace_hash: &str,
+    fracture_process: &str,
+    persist_ref: Option<&str>,
+    branch_name: Option<&str>,
+    friction_id: Option<&str>,
+) -> Result<Value, String> {
+    let scan = scan_fracture_ledger(repo)?;
+    emit_resolver_telemetry(repo, &scan);
+    let resolution = resolve_materialize(&scan, trace_hash, fracture_process);
     match resolution.reason {
         MaterializeReason::AlreadyOpen | MaterializeReason::DedupedByProcess => {
             return Ok(json!({
@@ -245,56 +508,27 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         MaterializeReason::RegressionOpened => {
             let n = resolution.regression_n.unwrap_or(1);
             let document_id = format!("PBI-FIX-FRACTURE-{trace_hash}-R{n}");
-            let predecessor = resolution
-                .predecessor_document_id
-                .as_deref()
-                .unwrap_or("");
-            let filename = display_filename_regression(&process_name, &trace_hash, n);
-            if let Some(tc) = &linear {
-                if let Some(existing) = find_issue_with_marker(repo, &tc.team_key, tc.project_id.as_deref(), &trace_hash)? {
-                    return Ok(json!({
-                        "success": true,
-                        "target_path": existing,
-                        "issue_ref": existing,
-                        "reason": "already_open",
-                        "message": "already_open",
-                        "trace_hash": trace_hash,
-                    }));
-                }
-                let issue = create_fracture_issue(
-                    repo,
-                    tc,
-                    inputs,
-                    &format!("{filename} {trace_hash}"),
-                    &error_trace,
-                )?;
-                return Ok(json!({
-                    "success": true,
-                    "target_path": issue,
-                    "issue_ref": issue,
-                    "reason": "regression_opened",
-                    "message": "regression_opened",
-                    "canonical_ref": resolution.canonical_ref,
-                    "trace_hash": trace_hash,
-                }));
-            }
+            let predecessor = resolution.predecessor_document_id.as_deref().unwrap_or("");
+            let filename = display_filename_regression(process_name, trace_hash, n);
             let body = build_pbi_body(
-                &process_name,
-                &error_trace,
-                &agent_emitter,
-                &attempted_action,
-                &trace_hash,
-                &fracture_process,
+                process_name,
+                error_trace,
+                agent_emitter,
+                attempted_action,
+                trace_hash,
+                fracture_process,
                 &document_id,
                 "[REGRESIÓN]",
-                persist_ref.as_deref(),
-                branch_name.as_deref(),
+                persist_ref,
+                branch_name,
                 if predecessor.is_empty() {
                     None
                 } else {
                     Some(predecessor)
                 },
-                friction_id.as_deref(),
+                friction_id,
+                None,
+                None,
             );
             let created = super::tracker_lifecycle_port::invoke(
                 repo,
@@ -311,60 +545,39 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            return Ok(json!({
-                "success": true,
-                "target_path": rel_path,
-                "reason": "regression_opened",
-                "message": "regression_opened",
-                "canonical_ref": resolution.canonical_ref,
-                "trace_hash": trace_hash,
-            }));
+            return Ok(finish(
+                repo,
+                inputs,
+                rel_path,
+                "regression_opened",
+                trace_hash,
+                false,
+                json!({
+                    "canonical_ref": resolution.canonical_ref,
+                    "regression_n": n,
+                }),
+            ));
         }
         MaterializeReason::Materialized => {}
     }
 
-    let filename = display_filename_fix(&process_name, &trace_hash);
-    if let Some(tc) = &linear {
-        if let Some(existing) = find_issue_with_marker(repo, &tc.team_key, tc.project_id.as_deref(), &trace_hash)? {
-            return Ok(json!({
-                "success": true,
-                "target_path": existing,
-                "issue_ref": existing,
-                "reason": "already_open",
-                "message": "already_open",
-                "trace_hash": trace_hash,
-            }));
-        }
-        let issue = create_fracture_issue(
-            repo,
-            tc,
-            inputs,
-            &format!("{filename} {trace_hash}"),
-            &error_trace,
-        )?;
-        return Ok(json!({
-            "success": true,
-            "target_path": issue,
-            "issue_ref": issue,
-            "reason": "materialized",
-            "message": "materialized",
-            "trace_hash": trace_hash,
-        }));
-    }
+    let filename = display_filename_fix(process_name, trace_hash);
     let document_id = format!("PBI-FIX-FRACTURE-{trace_hash}");
     let body = build_pbi_body(
-        &process_name,
-        &error_trace,
-        &agent_emitter,
-        &attempted_action,
-        &trace_hash,
-        &fracture_process,
+        process_name,
+        error_trace,
+        agent_emitter,
+        attempted_action,
+        trace_hash,
+        fracture_process,
         &document_id,
         "[FIX]",
-        persist_ref.as_deref(),
-        branch_name.as_deref(),
+        persist_ref,
+        branch_name,
         None,
-        friction_id.as_deref(),
+        friction_id,
+        None,
+        None,
     );
     let created = super::tracker_lifecycle_port::invoke(
         repo,
@@ -381,14 +594,15 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-
-    Ok(json!({
-        "success": true,
-        "target_path": rel_path,
-        "reason": "materialized",
-        "message": "materialized",
-        "trace_hash": trace_hash,
-    }))
+    Ok(finish(
+        repo,
+        inputs,
+        rel_path,
+        "materialized",
+        trace_hash,
+        false,
+        json!({}),
+    ))
 }
 
 #[cfg(test)]
@@ -406,6 +620,17 @@ mod tests {
         fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
         fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
         fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
+        fs::create_dir_all(repo.join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.join(".SddIA/projects/lab.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: .\nmanifest_ref: .SddIA/project.md\nstatus: active\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join(".SddIA/project.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\ngit_remote: https://example.invalid/lab.git\ndefault_branch: main\ndelivery_mode: branch_pr\ncontract_version: \"1.3.0\"\ncodex_slug: codex-software-engineering\ntracker:\n  provider: file\n---\n",
+        )
+        .unwrap();
     }
 
     fn write_closed_done(repo: &Path, hash: &str, process: &str) {
@@ -601,5 +826,152 @@ process: bug-fix
             .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("md"))
             .count();
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn unconfigured_does_not_write_markdown() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"paths":{"todos":{"pending":"docs/todos/pending","done":"docs/todos/done"}}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        let err = run(
+            repo,
+            &json!({
+                "process_name": "event-watcher",
+                "error_trace": "sin proveedor",
+                "agent_emitter": "domain-authority",
+                "attempted_action": "forge-pbi",
+            }),
+        )
+        .unwrap_err();
+        assert!(err.contains("TRACKER_UNCONFIGURED"));
+        let count = fs::read_dir(repo.join("docs/todos/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .count();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn remote_hash_open_blocks_and_done_only_is_regression() {
+        let hash = "abc123def456";
+        let open = json!({"identifier": "AUT-1", "description": format!("fracture_hash: {hash}\n"), "state": "Backlog"});
+        let done = json!({"identifier": "AUT-2", "description": format!("fracture_hash: {hash}\n"), "state": "Done"});
+        let other = json!({"identifier": "AUT-3", "description": "fracture_hash: fff\n", "state": "Backlog"});
+        assert!(matches!(
+            classify_remote_hash(&[open, other.clone()], hash, "Done", Some("Cancelled")),
+            RemoteHashHit::Open(_)
+        ));
+        assert!(matches!(
+            classify_remote_hash(&[done, other.clone()], hash, "Done", Some("Cancelled")),
+            RemoteHashHit::ClosedOnly
+        ));
+        assert!(matches!(
+            classify_remote_hash(&[other], hash, "Done", Some("Cancelled")),
+            RemoteHashHit::None
+        ));
+    }
+
+    #[test]
+    fn self_hosted_linear_ignores_orphan_markdown() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let core = crate::core::repo::find_repo_root().expect("repo");
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        let native = core.join("SddIA/target");
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            format!(
+                r#"{{
+  "paths": {{"todos": {{"pending": "docs/todos/pending", "done": "docs/todos/done"}}}},
+  "directories": {{"norms": "SddIA/norms"}},
+  "capability_di": {{"bindings": "SddIA/core/capability-bindings.md"}},
+  "compiled_capsules": {{
+    "native_root": "{}",
+    "wasm_root": "{}/wasm32-wasip1",
+    "profiles": ["debug", "release"]
+  }}
+}}"#,
+                native.display(),
+                native.display()
+            ),
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/capability-bindings.md"),
+            "---\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nname: capability-bindings\nversion: \"1.0.0\"\nbindings:\n  - capability_id: \"tracker:lifecycle\"\n    contract: \"tracker.lifecycle\"\n    provider: \"tool:linear-tracker-adapter\"\n    provider_version: \">=1.0.0\"\n---\n",
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("SddIA/norms")).unwrap();
+        fs::write(
+            repo.join("SddIA/norms/execution-contexts.md"),
+            "### 2.10. Tracker\n**Alcance:** crear issues.\n**Fuera de alcance:** borrar issues.\n",
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("SddIA/actions")).unwrap();
+        fs::write(
+            repo.join("SddIA/actions/materialize-fracture-pbi.md"),
+            "---\nname: materialize-fracture-pbi\n---\n",
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("SddIA/tools")).unwrap();
+        fs::copy(
+            core.join("SddIA/tools/linear-tracker-adapter.md"),
+            repo.join("SddIA/tools/linear-tracker-adapter.md"),
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
+        fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
+        fs::write(
+            repo.join("docs/todos/pending/huerfano.md"),
+            "---\nfracture_hash: pendiente\nfracture_process: event-watcher\nstatus: abierto\n---\n",
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.join(".SddIA/projects/lab.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: .\nmanifest_ref: .SddIA/project.md\nstatus: active\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join(".SddIA/project.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\ngit_remote: https://example.invalid/lab.git\ndefault_branch: main\ndelivery_mode: branch_pr\ncontract_version: \"1.3.0\"\ncodex_slug: codex-software-engineering\ntracker:\n  provider: linear\n  team_key: LAB\n  project_id: proj-lab\n  state_map:\n    backlog: Backlog\n    done: Done\n    cancelled: Cancelled\n  labels:\n    pbi: pbi\n    fix: fix\n---\n",
+        )
+        .unwrap();
+        let prev = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        std::env::set_var("SDDIA_LAB_RESET_STORE", "1");
+        let inputs = json!({
+            "process_name": "event-watcher",
+            "error_trace": "fractura sin slug AUT-30",
+            "agent_emitter": "domain-authority",
+            "attempted_action": "forge-pbi",
+        });
+        let out = run(repo, &inputs).expect("linear sin slug");
+        std::env::remove_var("SDDIA_LAB_RESET_STORE");
+        assert_eq!(out["reason"], "materialized");
+        let issue = out["target_path"].as_str().unwrap();
+        assert!(!issue.contains('/'), "{issue}");
+        assert_eq!(out["fact_emitted"], true);
+        let again = run(repo, &inputs).expect("dedupe");
+        assert_eq!(again["reason"], "already_open");
+        assert_eq!(again["target_path"], out["target_path"]);
+        let md = fs::read_dir(repo.join("docs/todos/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("md"))
+            .count();
+        assert_eq!(md, 1, "el huerfano no veta y no nace otro markdown");
+        match prev {
+            Some(v) => std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v),
+            None => std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND"),
+        }
     }
 }

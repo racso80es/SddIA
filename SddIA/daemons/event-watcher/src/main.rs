@@ -235,13 +235,22 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
         return;
     }
     let _ = sddia_eda_catalog::reconcile_unstamped(repo);
-    let Ok(store) = sddia_event_store::EventStore::open(&db) else {
-        return;
+    let store = match sddia_event_store::EventStore::open(&db) {
+        Ok(store) => store,
+        Err(err) => {
+            eprintln!("[WATCHER] events.redb no abre: {err}");
+            return;
+        }
     };
-    let Ok(rows) = store.list_pending_deliveries() else {
-        return;
+    let rows = match store.list_pending_deliveries() {
+        Ok(rows) => rows,
+        Err(err) => {
+            eprintln!("[WATCHER] events.redb list_pending: {err}");
+            return;
+        }
     };
     let mut seen = HashSet::new();
+    let mut launches: Vec<(String, std::path::PathBuf, String)> = Vec::new();
     for (event_id, _subscriber_id) in rows {
         if !seen.insert(event_id.clone()) {
             continue;
@@ -251,24 +260,28 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
             continue;
         }
         let rel = format!(".events/pending/{event_id}.json");
-        let key = rel.clone();
+        let key = rel;
         {
             let Ok(mut b) = book.lock() else {
-                return;
+                eprintln!("[WATCHER] book lock: no se reclama {event_id}");
+                break;
             };
             if b.processing.contains(&event_id) || b.routed_ok.contains(&event_id) {
                 continue;
             }
             if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
-                return;
+                break;
             }
             b.processing.insert(event_id.clone());
             *b.attempts.entry(key.clone()).or_insert(0) += 1;
         }
+        launches.push((event_id, path, key));
+    }
+    drop(store);
+    for (uuid_c, path_c, key) in launches {
         let repo_c = repo.to_path_buf();
         let book_c = Arc::clone(book);
-        let uuid_c = event_id;
-        let path_c = path;
+        let rel = format!(".events/pending/{uuid_c}.json");
         thread::spawn(move || {
             let out = invoke_route_process(&repo_c, &rel, "route-domain-event");
             if let Ok(mut b) = book_c.lock() {

@@ -1,0 +1,2 @@
+{"event_id":"037885ff-9cfb-4ce3-9a82-166ffcae0193","issue_ref":"AUT-30","occurred_at":"2026-10-30T12:54:40Z","operation":"update_issue_description","source_process":"tracker-description-sync"}
+{"event_id":"f60e3e74-c11c-4745-8450-a2eb96c89ce5","issue_ref":"AUT-30","occurred_at":"2026-10-30T12:54:44Z","operation":"update_issue_state","source_process":"tracker-sync-replay"}

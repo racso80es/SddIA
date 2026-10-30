@@ -60,17 +60,19 @@
     {
       "agent": "cumulo",
       "action": "materialize-fracture-pbi",
-      "intent": "Gestor de Deuda Técnica: materializar PBI (el Qué ha fallado) en docs/todos/pending/."
-    },
-    {
-      "agent": "mayeuta",
-      "action": "enrich-fracture-pbi-kaizen",
-      "intent": "Auditor de Fricción Kaizen: diagnosticar causa raíz (el Por Qué) y enriquecer PBI con propuesta evolutiva."
+      "intent": "Gestor de Deuda Técnica: materializar PBI en el sumidero del proveedor y emitir la referencia opaca."
     },
     {
       "agent": "argos",
       "tool": "send-telegram-notification",
       "intent": "Alerta fractura en Telegram al Vértice Biológico."
+    }
+  ],
+  "Fracture_Pbi_Materialized": [
+    {
+      "agent": "mayeuta",
+      "action": "enrich-fracture-pbi-kaizen",
+      "intent": "Auditor de Fricción Kaizen: suscribe la referencia opaca y enriquece ese sumidero."
     }
   ],
   "Kaizen_Alert_Required": [

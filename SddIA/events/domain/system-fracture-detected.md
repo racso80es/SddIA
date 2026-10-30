@@ -41,7 +41,7 @@ Clase ECST para colapso de un proceso o cápsula oficial SddIA. Dispara material
 
 | Orden | Agente | Acción | Rol Kintsugi |
 |-------|--------|--------|--------------|
-| 1 | **Cúmulo** | `materialize-fracture-pbi` | Materializa PBI — el **Qué** ha fallado |
-| 2 | **Mayeuta** | `enrich-fracture-pbi-kaizen` | Síntesis analítica — el **Por Qué** y propuesta evolutiva |
+| 1 | **Cúmulo** | `materialize-fracture-pbi` | Materializa PBI — el **Qué** ha fallado — y emite `Fracture_Pbi_Materialized` |
+| 2 | **Mayeuta** | `enrich-fracture-pbi-kaizen` | Suscribe `Fracture_Pbi_Materialized` (la referencia opaca), no esta clase |
 
 Ver `SddIA/core/event-subscriptions.json` → clave `System_Fracture_Detected`.

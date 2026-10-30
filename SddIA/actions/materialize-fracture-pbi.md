@@ -18,7 +18,7 @@ inputs:
   - "branch_name": "string; rama en contexto si aplica (opcional)"
 outputs:
   - "success": "boolean"
-  - "target_path": "string; ruta del PBI abierto o materializado en docs/todos/pending/"
+  - "target_path": "string; referencia opaca del alta (ruta bajo el bucket del proveedor file, o identificador de issue con provider linear)"
   - "message": "string; sinónimo legado de reason"
   - "reason": "string; already_open | deduped_by_process | regression_opened | materialized"
   - "canonical_ref": "string|null; ruta del PBI cerrado en done/ cuando reason=regression_opened"
@@ -33,7 +33,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Acción canónica del Agente **Cúmulo** ante `System_Fracture_Detected`. Materializa o resuelve un PBI `bug-fix` en `docs/todos/pending/` según el **genoma YAML** (`fracture_hash`, `fracture_process`) en `pending/` y `done/`. El nombre de fichero es presentación; el motor no parsea prefijos `[FIX]`/`[REGRESIÓN]`.
+Acción canónica del Agente **Cúmulo** ante `System_Fracture_Detected`. Elige el sumidero según `tracker.provider` del proyecto resuelto (slug del payload o índice auto-hospedado). `linear` crea la issue por `tracker:lifecycle` y devuelve el identificador en `target_path`. `file` materializa el markdown en el bucket de Cúmulo. Sin provider resuelto no escribe fichero. El nombre de fichero, cuando hay fichero, es presentación; el motor no parsea prefijos `[FIX]`/`[REGRESIÓN]`.
 
 ## 2. Orquestación
 

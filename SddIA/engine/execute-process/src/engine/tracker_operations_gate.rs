@@ -128,6 +128,15 @@ pub fn gate_linear_tracker_operation(
     let process_name = process_name.ok_or_else(|| {
         "CERBERO_RBAC_DENIED: create_issue requiere process_name del solicitante".to_string()
     })?;
+    // La acción canónica de fractura no es un proceso. El sumidero vive en ella
+    // (todos-jurisdiction). Sin esta vía, el puerto niega el create_issue.
+    if process_name == "materialize-fracture-pbi"
+        && repo
+            .join("SddIA/actions/materialize-fracture-pbi.md")
+            .is_file()
+    {
+        return Ok(());
+    }
     let (_, process_def, _) = load_process_def(repo, process_name)?;
     let policies = resolve_requester_policies(&process_def, &json!({}));
     if !policies.iter().any(|p| p == "tracker-operations") {

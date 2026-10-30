@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `b0af2c4f-5419-480b-9561-4b22d1dc455d` | 2026-10-30 | AUT-30: la fractura elige el sumidero del proveedor y no escribe backlog sin tracker. | CANONICO | `SddIA/evolution/b0af2c4f-5419-480b-9561-4b22d1dc455d.md` |
 | `719b372b-3b7f-46e1-8cd8-fa5de0dae306` | 2026-10-30 | AUT-29: forge-pbi reusa la hija por forge_key sin ledger y el lab exige el adaptador nativo. | CANONICO | `SddIA/evolution/719b372b-3b7f-46e1-8cd8-fa5de0dae306.md` |
 | `b919fa85-c552-497f-9179-b03e17772a92` | 2026-10-30 | AUT-29: forge-pbi conserva tracker_ref si PBI_Forged queda en lock y no duplica el raw_idea. | CANONICO | `SddIA/evolution/b919fa85-c552-497f-9179-b03e17772a92.md` |
 | `254e4344-dbf5-4493-b5c1-d37d4174905e` | 2026-10-30 | AUT-53: accept-pr sella solo el persist_ref y no borra la rama sin merge. | CANONICO | `SddIA/evolution/254e4344-dbf5-4493-b5c1-d37d4174905e.md` |

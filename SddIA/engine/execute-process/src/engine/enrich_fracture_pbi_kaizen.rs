@@ -305,37 +305,22 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let agent_emitter = required_str(inputs, "agent_emitter")?;
     let attempted_action = required_str(inputs, "attempted_action")?;
 
+    let bound = super::project_binding::inputs_with_self_hosted_slug(repo, inputs)?;
     let trace_hash = fracture_trace_hash(&error_trace);
     let fracture_process = slugify_process_name(&process_name);
-    let scan = scan_fracture_ledger(repo)?;
 
-    let target_rel = match resolve_enrich_target(
-        repo,
-        &scan,
-        optional_str(inputs, "cumulo_pbi_path").as_deref(),
-        &trace_hash,
-        &fracture_process,
-    ) {
-        Some(rel) => rel,
-        None => {
-            return Ok(json!({
-                "success": true,
-                "reason": "no_target",
-                "message": "no_target",
-            }));
-        }
-    };
-
-    let (catalog, catalog_fallback) = catalog_for_enrich(repo);
-    let friction_id = optional_str(inputs, "friction_id");
-    if let Some(issue) = optional_str(inputs, "tracker_ref") {
-        if let Some(tc) = super::project_binding::tracker_config_for_inputs(repo, inputs)? {
+    if let Some(issue) = optional_str(&bound, "tracker_ref").or_else(|| {
+        optional_str(&bound, "target_path")
+            .filter(|p| !p.contains('/') && !p.ends_with(".md"))
+    }) {
+        if let Some(tc) = super::project_binding::tracker_config_for_inputs(repo, &bound)? {
+            let (catalog, catalog_fallback) = catalog_for_enrich(repo);
             let (verdict, _, section, unclassified) = analyze_fracture_kaizen_with_options(
                 &process_name,
                 &error_trace,
                 &attempted_action,
                 &agent_emitter,
-                friction_id.as_deref(),
+                optional_str(&bound, "friction_id").as_deref(),
                 Some(&catalog),
             );
             let tool = super::handlers::tracker_stamp::lifecycle_tool_name(repo)?;
@@ -362,8 +347,33 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
             }));
         }
     }
+
+    let scan = scan_fracture_ledger(repo)?;
+    let hinted = optional_str(&bound, "cumulo_pbi_path").or_else(|| {
+        optional_str(&bound, "target_path").filter(|p| p.contains('/') || p.ends_with(".md"))
+    });
+
+    let target_rel = match resolve_enrich_target(
+        repo,
+        &scan,
+        hinted.as_deref(),
+        &trace_hash,
+        &fracture_process,
+    ) {
+        Some(rel) => rel,
+        None => {
+            return Ok(json!({
+                "success": true,
+                "reason": "no_target",
+                "message": "no_target",
+            }));
+        }
+    };
+
+    let (catalog, catalog_fallback) = catalog_for_enrich(repo);
+    let friction_id = optional_str(&bound, "friction_id");
     let target = repo.join(&target_rel);
-    if super::project_binding::tracker_config_for_inputs(repo, inputs)?.is_some() && !target.is_file() {
+    if super::project_binding::tracker_config_for_inputs(repo, &bound)?.is_some() && !target.is_file() {
         return Ok(json!({
             "success": true,
             "reason": "no_target",
@@ -420,6 +430,17 @@ mod tests {
         .unwrap();
         fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
         fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
+        fs::create_dir_all(repo.join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.join(".SddIA/projects/lab.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: .\nmanifest_ref: .SddIA/project.md\nstatus: active\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join(".SddIA/project.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\ngit_remote: https://example.invalid/lab.git\ndefault_branch: main\ndelivery_mode: branch_pr\ncontract_version: \"1.3.0\"\ncodex_slug: codex-software-engineering\ntracker:\n  provider: file\n---\n",
+        )
+        .unwrap();
     }
 
     #[test]
