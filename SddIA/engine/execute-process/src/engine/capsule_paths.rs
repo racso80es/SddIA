@@ -68,7 +68,28 @@ pub fn load_compiled_capsule_roots(repo: &Path) -> Result<CompiledCapsuleRoots, 
 
 fn resolve_capsule_native_legacy(repo: &Path, name: &str) -> Option<PathBuf> {
     let roots = load_compiled_capsule_roots(repo).ok()?;
-    for profile in &roots.profiles {
+    // Lab mock: preferir debug sobre release para no enganchar ELF release fosilizado
+    // (p. ej. linear-tracker-adapter sin description / store) en `cargo test`.
+    let lab = std::env::var("SDDIA_LAB_MOCK_OUTBOUND")
+        .map(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+        .unwrap_or(false);
+    let profiles: Vec<&str> = if lab {
+        let mut ordered: Vec<&str> = Vec::new();
+        for want in ["debug", "release"] {
+            if roots.profiles.iter().any(|p| p == want) {
+                ordered.push(want);
+            }
+        }
+        for p in &roots.profiles {
+            if !ordered.iter().any(|o| o == p) {
+                ordered.push(p.as_str());
+            }
+        }
+        ordered
+    } else {
+        roots.profiles.iter().map(|p| p.as_str()).collect()
+    };
+    for profile in profiles {
         let p = roots.native_root.join(profile).join(name);
         if p.is_file() {
             return Some(p);

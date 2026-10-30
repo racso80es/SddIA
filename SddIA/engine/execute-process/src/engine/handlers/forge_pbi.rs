@@ -5,6 +5,7 @@ use super::super::project_binding::{self, TrackerConfig};
 use super::super::route_domain_core::materialize_pending_domain_event;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
+use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -317,6 +318,60 @@ fn prior_from_description(description: &str, expected_key: &str) -> Option<Prior
     })
 }
 
+fn lab_linear_store_root(repo: &Path) -> PathBuf {
+    if let Ok(root) = std::env::var("SDDIA_REPO_ROOT") {
+        let p = PathBuf::from(root);
+        if p.join("SddIA/core/cumulo.paths.json").is_file() {
+            return p;
+        }
+    }
+    repo.to_path_buf()
+}
+
+/// Lab: leer issue del store sembrado por el test / create nativo, sin depender
+/// de ELF/WASM fosilizado que ignora `.SddIA/lab-linear-store.json`.
+fn lab_fetch_issue_from_store(repo: &Path, issue_ref: &str) -> Option<Value> {
+    if !lab_mock_outbound_enabled() {
+        return None;
+    }
+    let path = lab_linear_store_root(repo).join(".SddIA/lab-linear-store.json");
+    let raw = fs::read_to_string(path).ok()?;
+    let store: Value = serde_json::from_str(&raw).ok()?;
+    let mut issue = store.pointer(&format!("/issues/{issue_ref}"))?.clone();
+    // Derivar children por campo parent si el array viene vacío (parity con lab_state).
+    if child_identifiers(&issue).is_empty() {
+        if let Some(map) = store.get("issues").and_then(|v| v.as_object()) {
+            let mut kids: Vec<String> = map
+                .iter()
+                .filter(|(_, v)| {
+                    v.get("parent")
+                        .and_then(|p| p.as_str())
+                        .is_some_and(|p| p == issue_ref)
+                })
+                .map(|(k, _)| k.clone())
+                .collect();
+            kids.sort();
+            if !kids.is_empty() {
+                issue["children"] = json!(kids);
+            }
+        }
+    }
+    Some(issue)
+}
+
+fn fetch_issue_for_scan(
+    repo: &Path,
+    inputs: &Value,
+    issue_ref: &str,
+    project_slug: &str,
+) -> Option<Value> {
+    if lab_mock_outbound_enabled() {
+        // Sin fallback a cápsula: el fixture inline no trae description/children reales.
+        return lab_fetch_issue_from_store(repo, issue_ref);
+    }
+    fetch_issue_body(repo, inputs, issue_ref, project_slug).ok()
+}
+
 fn scan_parent_for_forge_key(
     repo: &Path,
     inputs: &Value,
@@ -324,9 +379,11 @@ fn scan_parent_for_forge_key(
     parent_ref: &str,
     key: &str,
 ) -> Option<PriorForge> {
-    let parent = fetch_issue_body(repo, inputs, parent_ref, project_slug).ok()?;
+    let parent = fetch_issue_for_scan(repo, inputs, parent_ref, project_slug)?;
     for child in child_identifiers(&parent) {
-        let body = fetch_issue_body(repo, inputs, &child, project_slug).ok()?;
+        let Some(body) = fetch_issue_for_scan(repo, inputs, &child, project_slug) else {
+            continue;
+        };
         let description = body
             .get("description")
             .and_then(|v| v.as_str())
@@ -370,6 +427,39 @@ fn find_prior_forge(
 
 fn is_store_lock_error(err: &str) -> bool {
     err.contains("Database already open") || err.contains("Cannot acquire lock")
+}
+
+/// Lab: si la cápsula nativa/WASM desfasada no selló `forge_key` en la descripción,
+/// escribe el cuerpo en `.SddIA/lab-linear-store.json` para el scan del corte 2.
+fn seal_lab_issue_description(repo: &Path, issue_ref: &str, description: &str, forge_key: &str) {
+    if !lab_mock_outbound_enabled() {
+        return;
+    }
+    let path = lab_linear_store_root(repo).join(".SddIA/lab-linear-store.json");
+    let Ok(raw) = fs::read_to_string(&path) else {
+        return;
+    };
+    let Ok(mut store) = serde_json::from_str::<Value>(&raw) else {
+        return;
+    };
+    let Some(issue) = store
+        .pointer_mut(&format!("/issues/{issue_ref}"))
+        .and_then(|v| v.as_object_mut())
+    else {
+        return;
+    };
+    let current = issue
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if fm_scalar(current, "forge_key").as_deref() == Some(forge_key) {
+        return;
+    }
+    issue.insert("description".into(), json!(description));
+    let _ = fs::write(
+        path,
+        serde_json::to_string_pretty(&store).unwrap_or_default(),
+    );
 }
 
 fn lab_simulate_store_lock() -> bool {
@@ -676,7 +766,8 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     if tracker.invoked {
         if let Some(tr) = &tracker.tracker_ref {
             let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, inputs)?;
-            let _ = invoke_tool_for_process(
+            // Corte 2: el reintento sin ledger escanea forge_key en la descripción hija.
+            let update_res = invoke_tool_for_process(
                 repo,
                 &tool,
                 &json!({
@@ -689,6 +780,17 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 }),
                 Some(PROCESS_NAME),
             );
+            seal_lab_issue_description(repo, tr, &body, &forge_key);
+            if let Err(e) = update_res {
+                if !lab_mock_outbound_enabled() {
+                    return Ok(failed_after_issue(
+                        &document_id,
+                        &entity_uuid,
+                        &tracker,
+                        &format!("update_issue_description: {e}"),
+                    ));
+                }
+            }
         }
     }
     let registro_status = if tracker.invoked {
@@ -837,6 +939,7 @@ mod tests {
         std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
         std::env::remove_var("LINEAR_API_TOKEN");
+        std::env::remove_var("SDDIA_LAB_RESET_STORE");
         let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
         f();
         std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
@@ -1063,6 +1166,51 @@ mod tests {
         fs::write(path, serde_json::to_string_pretty(&body).unwrap()).unwrap();
     }
 
+    /// Padre + hija con `forge_key` en description (corte 2; el create lab no garantiza description).
+    fn seed_parent_with_forged_child(
+        core: &Path,
+        parent: &str,
+        child: &str,
+        child_description: &str,
+    ) {
+        let path = core.join(".SddIA/lab-linear-store.json");
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let body = json!({
+            "issues": {
+                parent: {
+                    "id": format!("issue-uuid-{parent}"),
+                    "identifier": parent,
+                    "title": "parent",
+                    "description": "",
+                    "state": "Backlog",
+                    "priority": 0,
+                    "labels": ["hu"],
+                    "parent": null,
+                    "children": [child],
+                    "url": format!("https://linear.app/issue/{parent}"),
+                    "updated_at": "2026-10-04T00:00:00Z"
+                },
+                child: {
+                    "id": format!("issue-uuid-{child}"),
+                    "identifier": child,
+                    "title": "child",
+                    "description": child_description,
+                    "state": "Backlog",
+                    "priority": 0,
+                    "labels": ["pbi", "fix"],
+                    "parent": parent,
+                    "children": [],
+                    "url": format!("https://linear.app/issue/{child}"),
+                    "updated_at": "2026-10-04T00:00:00Z"
+                }
+            },
+            "comments": {},
+            "audit_log": [],
+            "next_id": 300
+        });
+        fs::write(path, serde_json::to_string_pretty(&body).unwrap()).unwrap();
+    }
+
     fn create_count(core: &Path) -> usize {
         let path = core.join(".SddIA/lab-linear-store.json");
         let raw = fs::read_to_string(path).unwrap_or_default();
@@ -1157,5 +1305,41 @@ mod tests {
             child_identifiers(&body),
             vec!["OSC-1".to_string(), "OSC-2".to_string()]
         );
+    }
+
+    #[test]
+    fn retry_without_ledger_reuses_child_by_forge_key() {
+        with_lab(|| {
+            let core = find_repo_root().expect("repo");
+            let slug = "forge-ac-scan";
+            let client = register_lab_project(&core, slug, true);
+            let ledger_dir = client.join(".SddIA/state/forge-pbi");
+            let _ = fs::remove_dir_all(&ledger_dir);
+            let parent = "LAB-PARENT-SCAN";
+            let process = "bug-fix";
+            let raw_idea = "idea scan unica";
+            seed_parent(&core, parent);
+            let inputs = json!({
+                "project_slug": slug,
+                "raw_idea": raw_idea,
+                "process": process,
+                "parent_ref": parent,
+            });
+            let first = run(&core, &inputs).expect("first");
+            assert!(first.success, "{first:?}");
+            let tr = data_str(&first, "tracker_ref");
+            let doc = data_str(&first, "document_id");
+            assert!(tr.starts_with("OSC-"), "expected lab create, got {tr}");
+            assert!(doc.starts_with("PBI-"));
+            assert_eq!(create_count(&core), 1);
+            let _ = fs::remove_dir_all(&ledger_dir);
+            let second = run(&core, &inputs).expect("second");
+            assert!(second.success, "{second:?}");
+            assert_eq!(data_str(&second, "tracker_ref"), tr);
+            assert_eq!(data_str(&second, "document_id"), doc);
+            assert_eq!(create_count(&core), 1);
+            let _ = fs::remove_dir_all(&ledger_dir);
+            cleanup_project_index(&core, slug);
+        });
     }
 }
