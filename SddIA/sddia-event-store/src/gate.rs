@@ -186,6 +186,102 @@ pub fn copy_dlt_seal(repo: &Path, event_id: &str, tx_hash: &str) -> Result<(), S
     )
 }
 
+#[derive(Clone, Debug)]
+pub struct PublishSeal {
+    pub event_id: String,
+    pub target_path: PathBuf,
+    pub logical_rel: String,
+}
+
+/// Persiste un ECST ya sellado. `fs_dir` solo se usa si el modo escribe fichero.
+pub fn publish_ecst(
+    repo: &Path,
+    family: &str,
+    event: &Value,
+    fs_dir: Option<&Path>,
+) -> Result<PublishSeal, StoreError> {
+    let event_id = event_token(event, "event_id")?;
+    let mode = store_mode();
+    if writes_store(mode) {
+        record_ecst(repo, family, event)?;
+    }
+    let logical_rel = logical_event_rel(family, &event_id);
+    if writes_filesystem(mode) {
+        let dir = fs_dir.ok_or_else(|| {
+            StoreError::Invalid("fs_dir requerido cuando el modo escribe fichero".into())
+        })?;
+        fs::create_dir_all(dir).map_err(|err| StoreError::Backend(err.to_string()))?;
+        let target = dir.join(format!("{event_id}.json"));
+        let text = serde_json::to_string_pretty(event)
+            .map_err(|err| StoreError::Backend(err.to_string()))?;
+        fs::write(&target, format!("{text}\n")).map_err(|err| StoreError::Backend(err.to_string()))?;
+        return Ok(PublishSeal {
+            event_id,
+            target_path: target,
+            logical_rel,
+        });
+    }
+    if !writes_store(mode) {
+        return Err(StoreError::Invalid("modo sin destino de escritura".into()));
+    }
+    Ok(PublishSeal {
+        event_id,
+        target_path: runtime_db_path(repo),
+        logical_rel,
+    })
+}
+
+/// ECST de dominio: store si `writes_store`, JSON de `fs_dirs` si `writes_filesystem`.
+/// En `dual` la fila del store gana por `event_id`.
+pub fn load_domain_ecsts(repo: &Path, fs_dirs: &[PathBuf]) -> Result<Vec<Value>, StoreError> {
+    let mode = store_mode();
+    let mut out = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    if writes_store(mode) {
+        let store = open_store(repo)?;
+        for row in store.list_family(crate::Family::Domain)? {
+            if let Some(id) = row.ecst.get("event_id").and_then(|v| v.as_str()) {
+                seen.insert(id.to_string());
+            }
+            out.push(row.ecst);
+        }
+    }
+    if writes_filesystem(mode) {
+        for dir in fs_dirs {
+            if !dir.is_dir() {
+                continue;
+            }
+            let entries = fs::read_dir(dir).map_err(|err| StoreError::Backend(err.to_string()))?;
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                    continue;
+                }
+                let Some(body) = read_event_file(&path)? else {
+                    continue;
+                };
+                if let Some(id) = body.get("event_id").and_then(|v| v.as_str()) {
+                    if !seen.insert(id.to_string()) {
+                        continue;
+                    }
+                }
+                out.push(body);
+            }
+        }
+    }
+    Ok(out)
+}
+
+fn logical_event_rel(family: &str, event_id: &str) -> String {
+    let folder = match family.trim().to_ascii_lowercase().as_str() {
+        "telemetry" => "telemetry",
+        "orchestration" => "orchestration",
+        "domain" => "domain",
+        _ => "pending",
+    };
+    format!(".events/{folder}/{event_id}.json")
+}
+
 /// `redb` lee solo el store. `dual` usa la fila si existe y, si no, el fichero.
 pub fn load_dispatched_event(
     repo: &Path,

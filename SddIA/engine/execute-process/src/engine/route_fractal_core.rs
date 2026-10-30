@@ -13,6 +13,7 @@ use super::memory_evolution_ingest_core::ingest_domain_event_file;
 use super::radamanto_batch_core::process_telemetry_file;
 use super::route_domain_core::dispatch_subscriber;
 use super::telemetry_compliance_core::audit_telemetry_compliance;
+use sddia_event_store::{load_dispatched_event, store_mode, writes_store};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
@@ -243,28 +244,52 @@ fn route_fractal_event(
     };
     let event_path = event_path.canonicalize().unwrap_or(event_path);
 
-    if !event_path.is_file() {
+    let event: Value = if event_path.is_file() {
+        match fs::read_to_string(&event_path)
+            .map_err(|e| e.to_string())
+            .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
+        {
+            Ok(v) => v,
+            Err(e) => {
+                return json!({
+                    "success": false,
+                    "exitCode": 1,
+                    "data": null,
+                    "error": format!("invalid event JSON: {e}"),
+                });
+            }
+        }
+    } else if writes_store(store_mode()) {
+        let event_id = event_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("");
+        match load_dispatched_event(repo, event_id, &event_path) {
+            Ok(Some(v)) => v,
+            Ok(None) => {
+                return json!({
+                    "success": false,
+                    "exitCode": 1,
+                    "data": null,
+                    "error": format!("event file not found: {}", event_path.display()),
+                });
+            }
+            Err(e) => {
+                return json!({
+                    "success": false,
+                    "exitCode": 1,
+                    "data": null,
+                    "error": format!("store: {e}"),
+                });
+            }
+        }
+    } else {
         return json!({
             "success": false,
             "exitCode": 1,
             "data": null,
             "error": format!("event file not found: {}", event_path.display()),
         });
-    }
-
-    let event: Value = match fs::read_to_string(&event_path)
-        .map_err(|e| e.to_string())
-        .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
-    {
-        Ok(v) => v,
-        Err(e) => {
-            return json!({
-                "success": false,
-                "exitCode": 1,
-                "data": null,
-                "error": format!("invalid event JSON: {e}"),
-            });
-        }
     };
 
     let event_type = match event.get("event_type").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {

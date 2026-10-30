@@ -71,26 +71,12 @@ fn load_fixture(repo: &Path) -> Result<Value, String> {
 }
 
 fn write_pending(repo: &Path, bus: &EventBusTopology, event: &Value) -> Result<String, String> {
-    let event_id = event
-        .get("event_id")
-        .and_then(|v| v.as_str())
-        .ok_or("event_id requerido")?;
-    let pending = repo.join(&bus.pending);
-    fs::create_dir_all(&pending).map_err(|e| e.to_string())?;
-    let dest = pending.join(format!("{event_id}.json"));
-    fs::write(
-        &dest,
-        format!(
-            "{}\n",
-            serde_json::to_string_pretty(event).map_err(|e| e.to_string())?
-        ),
-    )
-    .map_err(|e| e.to_string())?;
-    Ok(dest
-        .strip_prefix(repo)
-        .unwrap_or(&dest)
-        .to_string_lossy()
-        .replace('\\', "/"))
+    let mut stamped = event.clone();
+    sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+    let pending = repo.join(bus.pending.trim().trim_start_matches("./"));
+    let seal = sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&pending))
+        .map_err(|err| err.to_string())?;
+    Ok(seal.logical_rel)
 }
 
 fn route_event(repo: &Path, rel_path: &str) -> Result<Value, String> {

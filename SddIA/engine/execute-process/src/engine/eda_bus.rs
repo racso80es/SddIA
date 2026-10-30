@@ -96,13 +96,10 @@ pub fn find_existing_domain_event(
     lifecycle_operation: &str,
     event_type: &str,
 ) -> Result<Option<Value>, String> {
-    for path in iter_bus_event_files(repo)? {
-        let Ok(text) = fs::read_to_string(&path) else {
-            continue;
-        };
-        let Ok(body) = serde_json::from_str::<Value>(&text) else {
-            continue;
-        };
+    let bus = load_eda_bus(repo)?;
+    let dirs = [bus.pending, bus.processing, bus.processed];
+    let rows = sddia_event_store::load_domain_ecsts(repo, &dirs).map_err(|err| err.to_string())?;
+    for body in rows {
         if body.get("event_type").and_then(|v| v.as_str()) != Some(event_type) {
             continue;
         }
@@ -110,16 +107,15 @@ pub fn find_existing_domain_event(
             continue;
         };
         if payload.get("entity_uuid").and_then(|v| v.as_str()) == Some(entity_uuid)
-            && payload.get("lifecycle_operation").and_then(|v| v.as_str())
-                == Some(lifecycle_operation)
+            && payload.get("lifecycle_operation").and_then(|v| v.as_str()) == Some(lifecycle_operation)
         {
+            let event_id = body
+                .get("event_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             return Ok(Some(serde_json::json!({
                 "event_id": body.get("event_id"),
-                "target_path": path
-                    .strip_prefix(repo)
-                    .unwrap_or(&path)
-                    .to_string_lossy()
-                    .replace('\\', "/"),
+                "target_path": format!(".events/pending/{event_id}.json"),
                 "event_type": body.get("event_type"),
             })));
         }

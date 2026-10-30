@@ -10,6 +10,42 @@ use serde_json::{json, Value};
 
 pub const EVENT_STORE_DISABLED: &str = "EVENT_STORE_DISABLED";
 
+pub fn publish_cli(repo: &Path, inputs: &Value) -> (i32, Value) {
+    let family = inputs
+        .get("family")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("pending");
+    let mut event = inputs.get("event").cloned().unwrap_or_else(|| inputs.clone());
+    if event.get("event_id").and_then(|v| v.as_str()).unwrap_or("").is_empty() {
+        return fail("event_id requerido");
+    }
+    if matches!(family, "pending" | "domain") {
+        if let Err(err) = sddia_eda_catalog::stamp_published_event(repo, &mut event) {
+            return fail(err);
+        }
+    }
+    let fs_rel = inputs
+        .get("fs_dir")
+        .and_then(|v| v.as_str())
+        .unwrap_or(match family {
+            "telemetry" => ".events/telemetry",
+            "orchestration" => ".events/orchestration",
+            "domain" => ".events/domain",
+            _ => ".events/pending",
+        });
+    let fs_dir = repo.join(fs_rel.trim().trim_start_matches("./"));
+    match sddia_event_store::publish_ecst(repo, family, &event, Some(&fs_dir)) {
+        Ok(seal) => ok(json!({
+            "event_id": seal.event_id,
+            "logical_rel": seal.logical_rel,
+            "target_path": seal.target_path.to_string_lossy(),
+        })),
+        Err(err) => fail(err.to_string()),
+    }
+}
+
 pub fn run(repo: &Path, flag: &str, inputs: &Value) -> (i32, Value) {
     if !writes_store(store_mode()) {
         return (

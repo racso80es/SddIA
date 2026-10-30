@@ -6,6 +6,8 @@ edition = "2021"
 
 [dependencies]
 sddia-core-memory = { path = "../../../core/memory" }
+sddia-event-store = { path = "../../../sddia-event-store" }
+sddia-eda-catalog = { path = "../../../sddia-eda-catalog" }
 serde_json = "1.0"
 lancedb = "=0.37.1"
 tokio = { version = "1", features = ["rt-multi-thread"] }

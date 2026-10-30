@@ -40,6 +40,9 @@ pub(crate) fn scan_presented_for_branch(repo: &Path, branch: &str) -> bool {
     {
         return true;
     }
+    if !sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+        return false;
+    }
     for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
         let dir = repo.join(rel);
         if !dir.is_dir() {

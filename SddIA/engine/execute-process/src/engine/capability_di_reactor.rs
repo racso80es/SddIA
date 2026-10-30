@@ -5,7 +5,7 @@ use super::capability_di_resolver::{self, ResolvedBinding};
 use super::cerbero_di_envelope;
 use super::cerbero_di_rbac::{self, resolve_requester_policies};
 use super::eda_bus_topology::{
-    ensure_event_bus_topology, iso_now, load_event_bus_topology, write_json_atomic,
+    ensure_event_bus_topology, iso_now, load_event_bus_topology,
 };
 use crate::core::resolver::ProcessDef;
 use serde_json::{json, Value};
@@ -77,8 +77,11 @@ pub fn emit_di_requested(
         },
         "delivery_state": {}
     });
-    let path = pending_dir(repo)?.join(format!("{event_id}.json"));
-    write_json_atomic(&path, &event)?;
+    let mut stamped = event;
+    sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+    let dir = pending_dir(repo)?;
+    sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&dir))
+        .map_err(|err| err.to_string())?;
     Ok(event_id)
 }
 
@@ -199,32 +202,81 @@ fn emit_di_resolved(repo: &Path, request_event_id: &str, outcome: &ChainOutcome)
         },
         "delivery_state": { "ecst_ack": true }
     });
-    let path = processed_dir(repo)?.join(format!("{event_id}.json"));
-    write_json_atomic(&path, &event)
+    let mut stamped = event;
+    sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+    let dir = processed_dir(repo)?;
+    sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&dir))
+        .map_err(|err| err.to_string())?;
+    Ok(())
 }
 
 /// Procesa eventos `CapabilityDi_Requested` pendientes (helper test/CI).
 pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Value, String> {
-    let pending = pending_dir(repo)?;
-    if !pending.is_dir() {
+    let mode = sddia_event_store::store_mode();
+    let mut batch: Vec<(Value, Option<PathBuf>)> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    if sddia_event_store::writes_store(mode) {
+        if let Ok(rows) = sddia_event_store::load_domain_ecsts(repo, &[]) {
+            for event in rows {
+                if event.get("event_type").and_then(|v| v.as_str()) != Some("CapabilityDi_Requested") {
+                    continue;
+                }
+                let event_id = event
+                    .get("event_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                if event_id.is_empty() || !seen.insert(event_id.clone()) {
+                    continue;
+                }
+                if sddia_event_store::delivery_terminal_in_store(
+                    repo,
+                    &event_id,
+                    "capability-di-reactor",
+                )
+                .unwrap_or(false)
+                {
+                    continue;
+                }
+                batch.push((event, None));
+            }
+        }
+    }
+    if sddia_event_store::writes_filesystem(mode) {
+        let pending = pending_dir(repo)?;
+        if pending.is_dir() {
+            let entries: Vec<PathBuf> = fs::read_dir(&pending)
+                .map_err(|e| e.to_string())?
+                .flatten()
+                .map(|e| e.path())
+                .filter(|p| p.is_file())
+                .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
+                .collect();
+            for path in entries {
+                let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+                let event: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+                if event.get("event_type").and_then(|v| v.as_str()) != Some("CapabilityDi_Requested")
+                {
+                    continue;
+                }
+                let event_id = event
+                    .get("event_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                if event_id.is_empty() || !seen.insert(event_id) {
+                    continue;
+                }
+                batch.push((event, Some(path)));
+            }
+        }
+    }
+    if batch.is_empty() {
         return Ok(json!({"processed": 0}));
     }
     let mut processed = 0;
     let mut last = json!({});
-    let entries: Vec<PathBuf> = fs::read_dir(&pending)
-        .map_err(|e| e.to_string())?
-        .flatten()
-        .map(|e| e.path())
-            .filter(|p| p.is_file())
-        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("json"))
-        .collect();
-
-    for path in entries {
-        let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        let event: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-        if event.get("event_type").and_then(|v| v.as_str()) != Some("CapabilityDi_Requested") {
-            continue;
-        }
+    for (event, path) in batch {
         let event_id = event
             .get("event_id")
             .and_then(|v| v.as_str())
@@ -246,7 +298,18 @@ pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Va
         });
         let outcome = run_sync_chain(repo, &phase, process_name, process_def, &inputs);
         emit_di_resolved(repo, &event_id, &outcome)?;
-        fs::remove_file(&path).ok();
+        if sddia_event_store::writes_store(mode) {
+            let _ = sddia_event_store::record_witness(
+                repo,
+                &event_id,
+                "capability-di-reactor",
+                sddia_event_store::DeliveryStatus::Success,
+                &json!({}),
+            );
+        }
+        if let Some(path) = path {
+            fs::remove_file(&path).ok();
+        }
         processed += 1;
         last = json!({
             "request_event_id": event_id,
@@ -365,6 +428,7 @@ outputs:
 
     #[test]
     fn ac_r6_emit_pending_non_blocking() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
         let td = fixture_repo();
         std::env::set_var(EDA_PILOT_ENV, "1");
         let phase = json!({
@@ -394,10 +458,12 @@ outputs:
             .unwrap_or(0);
         assert_eq!(processed_json, 0, "orquestador no espera reactor");
         std::env::remove_var(EDA_PILOT_ENV);
+        sddia_event_store::override_store_mode(None);
     }
 
     #[test]
     fn ac_r6_drain_resolved_ecst_ack() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
         let td = fixture_repo();
         let phase = json!({
             "name": "lab",

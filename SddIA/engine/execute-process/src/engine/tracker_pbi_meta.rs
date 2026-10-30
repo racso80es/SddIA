@@ -81,9 +81,11 @@ fn tracker_ref_on_objectives(repo: &Path, persist_ref: &str) -> Option<String> {
 /// Hereda `tracker_ref` del `PullRequest_Presented` de la misma rama.
 /// Mira pending, processed y la fila del store: el sello de merge llega cuando el presentado ya no está en pending.
 pub fn tracker_ref_from_presented_for_branch(repo: &Path, branch: &str) -> Option<String> {
-    for rel in [".events/pending", ".events/processed"] {
-        if let Some(tr) = tracker_ref_in_dir(&repo.join(rel), branch) {
-            return Some(tr);
+    if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+        for rel in [".events/pending", ".events/processed"] {
+            if let Some(tr) = tracker_ref_in_dir(&repo.join(rel), branch) {
+                return Some(tr);
+            }
         }
     }
     tracker_ref_in_store(repo, branch)
@@ -181,8 +183,10 @@ fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {
 /// `event_id` del `PullRequest_Presented` más reciente para `branch` (pending, processed, store).
 pub fn presented_event_id_for_branch(repo: &Path, branch: &str) -> Option<String> {
     let mut best: Option<(String, String)> = None;
-    for rel in [".events/pending", ".events/processed"] {
-        presented_ids_in_dir(&repo.join(rel), branch, &mut best);
+    if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+        for rel in [".events/pending", ".events/processed"] {
+            presented_ids_in_dir(&repo.join(rel), branch, &mut best);
+        }
     }
     presented_ids_in_store(repo, branch, &mut best);
     best.map(|(_, id)| id)
