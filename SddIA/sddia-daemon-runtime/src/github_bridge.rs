@@ -204,19 +204,108 @@ fn iso_now() -> String {
     Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
+fn frontmatter_field(text: &str, key: &str) -> Option<String> {
+    let rest = text.trim_start().strip_prefix("---")?;
+    let end = rest.find("\n---")?;
+    let prefix = format!("{key}:");
+    for line in rest[..end].lines() {
+        let line = line.trim();
+        if let Some(val) = line.strip_prefix(&prefix) {
+            let v = val.trim().trim_matches('"').trim_matches('\'');
+            if !v.is_empty() {
+                return Some(v.to_string());
+            }
+        }
+    }
+    None
+}
+
+fn valid_git_sha(sha: &str) -> bool {
+    (7..=40).contains(&sha.len()) && sha.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+fn git_stdout(repo: &Path, args: &[String]) -> Option<String> {
+    let out = Command::new("git")
+        .args(args)
+        .current_dir(repo)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    String::from_utf8(out.stdout).ok()
+}
+
+/// `objectives.md` del commit cabeza cuyo `branch_name` coincide con la rama del PR.
+fn objectives_refs_at_head(repo: &Path, sha: &str, branch: &str) -> Option<(Option<String>, Option<String>)> {
+    if !valid_git_sha(sha) || branch.is_empty() {
+        return None;
+    }
+    let listing = git_stdout(
+        repo,
+        &["ls-tree".into(), "-r".into(), "--name-only".into(), sha.into()],
+    )?;
+    for path in listing.lines() {
+        let path = path.trim();
+        if path.is_empty() || path.contains("..") || !path.ends_with("objectives.md") {
+            continue;
+        }
+        let spec = format!("{sha}:{path}");
+        let Some(text) = git_stdout(repo, &["show".into(), spec]) else {
+            continue;
+        };
+        if frontmatter_field(&text, "branch_name").as_deref() != Some(branch) {
+            continue;
+        }
+        let tracker = frontmatter_field(&text, "tracker_ref");
+        let pbi = frontmatter_field(&text, "pbi_ref");
+        if tracker.is_some() || pbi.is_some() {
+            return Some((tracker, pbi));
+        }
+    }
+    None
+}
+
+/// Copia `tracker_ref` / `pbi_ref` desde el blob del head. Si el commit no está o no declara la rama, el PR sale igual.
+pub fn attach_tracker_from_head(repo: &Path, pr: &Value) -> Value {
+    let mut out = pr.clone();
+    let sha = pr.get("head_sha").and_then(|v| v.as_str()).unwrap_or("");
+    let branch = pr.get("branch").and_then(|v| v.as_str()).unwrap_or("");
+    let Some((tracker, pbi)) = objectives_refs_at_head(repo, sha, branch) else {
+        return out;
+    };
+    if let Some(obj) = out.as_object_mut() {
+        if let Some(tr) = tracker {
+            obj.insert("tracker_ref".into(), json!(tr));
+        }
+        if let Some(pbi) = pbi {
+            obj.insert("pbi_ref".into(), json!(pbi));
+        }
+    }
+    out
+}
+
 pub fn compose_pre_anchor_event(pr: &Value) -> Value {
+    let mut payload = json!({
+        "repository": pr.get("repository").and_then(|v| v.as_str()).unwrap_or(""),
+        "branch": pr.get("branch").and_then(|v| v.as_str()).unwrap_or(""),
+        "pr_url": pr.get("pr_url").and_then(|v| v.as_str()).unwrap_or(""),
+        "status": "presented",
+        "origin_agent": pr.get("origin_agent").and_then(|v| v.as_str()).unwrap_or("jules"),
+        "signer_identity_rbac": SIGNER_RBAC,
+    });
+    for key in ["tracker_ref", "pbi_ref"] {
+        if let Some(v) = pr.get(key).and_then(|x| x.as_str()).filter(|s| !s.is_empty()) {
+            payload[key] = json!(v);
+        }
+    }
     json!({
         "event_type": "PullRequest_Presented",
         "timestamp": iso_now(),
         "emitter_agent": "github-bridge-watcher",
-        "payload": {
-            "repository": pr.get("repository").and_then(|v| v.as_str()).unwrap_or(""),
-            "branch": pr.get("branch").and_then(|v| v.as_str()).unwrap_or(""),
-            "pr_url": pr.get("pr_url").and_then(|v| v.as_str()).unwrap_or(""),
-            "status": "presented",
-            "origin_agent": pr.get("origin_agent").and_then(|v| v.as_str()).unwrap_or("jules"),
-            "signer_identity_rbac": SIGNER_RBAC,
-        }
+        "payload": payload,
     })
 }
 
@@ -341,10 +430,7 @@ pub fn build_bus_event(pre_event: &Value, transaction_digest: &str, object_id: O
         "timestamp": pre_event.get("timestamp").and_then(|v| v.as_str()).unwrap_or(iso_now().as_str()),
         "emitter_agent": pre_event.get("emitter_agent").and_then(|v| v.as_str()).unwrap_or("github-bridge-watcher"),
         "payload": Value::Object(payload),
-        "delivery_state": {
-            "argos": "pending",
-            "cumulo": "success",
-        }
+        "delivery_state": {},
     })
 }
 
@@ -418,7 +504,8 @@ pub fn process_pr(repo: &Path, pr: &Value, state: &mut BridgeState) -> Result<bo
 
     eprintln!("[GITHUB-BRIDGE] Procesando PR remoto: {pr_url}");
     load_wallet_secret(repo);
-    let pre_event = compose_pre_anchor_event(pr);
+    let enriched = attach_tracker_from_head(repo, pr);
+    let pre_event = compose_pre_anchor_event(&enriched);
     let (digest, _object_id, err) = publish_with_retries(repo, &pre_event);
     let Some(digest) = digest else {
         let dl = write_fallback_dead_letter(repo, pr, err.as_deref().unwrap_or("iota publish failed"))?;
@@ -566,5 +653,107 @@ mod tests {
     fn unknown_job_maps_workflow_github_actions() {
         assert_eq!(workflow_name_for_job("sddia-index-integrity"), "sddia-index-qa");
         assert_eq!(workflow_name_for_job("custom-job"), "github-actions");
+    }
+
+    #[test]
+    fn build_bus_event_leaves_delivery_state_empty() {
+        let pre = compose_pre_anchor_event(&json!({
+            "repository": "racso80es/SddIA",
+            "branch": "fix/x",
+            "pr_url": "https://github.com/racso80es/SddIA/pull/1",
+            "tracker_ref": "AUT-25",
+            "pbi_ref": "docs/fixes/demo/objectives.md",
+        }));
+        assert_eq!(pre["payload"]["tracker_ref"], "AUT-25");
+        assert_eq!(pre["payload"]["pbi_ref"], "docs/fixes/demo/objectives.md");
+        let bus = build_bus_event(&pre, "digest-1", None);
+        assert_eq!(bus["delivery_state"], json!({}));
+        assert_eq!(bus["payload"]["dlt_anchor_address"], "digest-1");
+        assert_eq!(bus["payload"]["tracker_ref"], "AUT-25");
+    }
+
+    #[test]
+    fn materialize_stamps_catalog_plan() {
+        let (base, _) = fixture_repo();
+        fs::write(
+            base.join("SddIA/core/event-domain-subscriptions.json"),
+            r#"{"PullRequest_Presented":[
+                {"agent":"argos","process":"pull-request-review"},
+                {"agent":"tekton","process":"tracker-stamp"},
+                {"agent":"argos","tool":"send-telegram-notification"}
+            ]}"#,
+        )
+        .unwrap();
+        let pre = compose_pre_anchor_event(&json!({
+            "repository": "racso80es/SddIA",
+            "branch": "fix/x",
+            "pr_url": "https://github.com/racso80es/SddIA/pull/9",
+        }));
+        let bus = build_bus_event(&pre, "digest-catalog", None);
+        materialize_to_bus(&base, &bus).unwrap();
+        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&base)).unwrap();
+        let row = store.get_event("digest-catalog").unwrap().expect("event");
+        let ds = row.ecst.get("delivery_state").unwrap();
+        assert_eq!(ds["tekton.tracker-stamp"], "pending");
+        assert_eq!(ds["argos.pull-request-review"], "pending");
+        assert_eq!(ds["argos.send-telegram-notification"], "pending");
+        assert!(ds.get("argos").is_none());
+        assert!(ds.get("cumulo").is_none());
+        let _ = fs::remove_dir_all(base);
+    }
+
+    fn git_ok(repo: &Path, args: &[&str]) {
+        let status = Command::new("git")
+            .args(args)
+            .current_dir(repo)
+            .env("GIT_AUTHOR_NAME", "t")
+            .env("GIT_AUTHOR_EMAIL", "t@example.com")
+            .env("GIT_COMMITTER_NAME", "t")
+            .env("GIT_COMMITTER_EMAIL", "t@example.com")
+            .status()
+            .unwrap();
+        assert!(status.success(), "git {args:?}");
+    }
+
+    #[test]
+    fn attach_tracker_reads_objectives_at_head() {
+        let base = std::env::temp_dir().join(format!("sddia-gh-bridge-git-{}", Uuid::new_v4()));
+        fs::create_dir_all(base.join("docs/fixes/other")).unwrap();
+        fs::create_dir_all(base.join("docs/fixes/demo")).unwrap();
+        git_ok(&base, &["init"]);
+        fs::write(
+            base.join("docs/fixes/other/objectives.md"),
+            "---\nbranch_name: fix/other\ntracker_ref: AUT-1\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            base.join("docs/fixes/demo/objectives.md"),
+            "---\nbranch_name: fix/demo\ntracker_ref: AUT-25\npbi_ref: docs/fixes/demo/item.md\n---\n",
+        )
+        .unwrap();
+        git_ok(&base, &["add", "."]);
+        git_ok(&base, &["commit", "-m", "obj"]);
+        let sha = git_stdout(
+            &base,
+            &["rev-parse".into(), "HEAD".into()],
+        )
+        .unwrap();
+        let sha = sha.trim();
+        let pr = json!({
+            "repository": "racso80es/SddIA",
+            "branch": "fix/demo",
+            "head_sha": sha,
+            "pr_url": "https://github.com/racso80es/SddIA/pull/2",
+        });
+        let enriched = attach_tracker_from_head(&base, &pr);
+        assert_eq!(enriched["tracker_ref"], "AUT-25");
+        assert_eq!(enriched["pbi_ref"], "docs/fixes/demo/item.md");
+        let miss = json!({
+            "branch": "fix/absent",
+            "head_sha": sha,
+        });
+        let plain = attach_tracker_from_head(&base, &miss);
+        assert!(plain.get("tracker_ref").is_none());
+        let _ = fs::remove_dir_all(base);
     }
 }
