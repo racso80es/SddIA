@@ -22,6 +22,8 @@ related:
 
 # Plan — Cerrar I/O de eventos fuera del gate
 
+> **Implementación:** commits `189dc7dd` (I/O) y `ed9137a8` (matriz tests) en rama `Kaicen_Auditoria_Eventos_261030`. Las tablas siguientes describen el diseño ejecutado; verbos en pasado donde el diff ya está en la rama.
+
 Continúa EDA Redb 02 (escritores) y 04 (lectores). Esos PBI cubrieron el tronco (`record_ecst`, `claim_store_pending`, `load_dispatched_event` de dominio). Este plan cierra los **call sites que aún ignoran `StoreMode`**.
 
 Alta de trabajo: `tracker.provider=linear` → `./sddia-run.sh --process forge-pbi` (no fichero en `docs/todos/`). Genoma (`*.md` de tool/process) solo vía `entity-manager` si una ficha cambia de contrato.
@@ -76,7 +78,7 @@ Latidos: el side-channel sigue siendo la vía de `daemon-heartbeat-audit` (`star
 |-----------|--------|
 | `sddia-installer.sh` `_emit_instance_event` | Dejar de `mkdir` + JSON ciego. Invocar `execute-process` / binario que use `publish_ecst`, o leer `SDDIA_EVENT_STORE` y en `redb` no escribir FS. |
 | `SddIA/tools/sddia-qa` `iota_ci_smoke::write_pending` | Mismo gate (herramienta de lab: en `redb` inserta store). |
-| Scripts bajo `docs/` y `SddIA/scripts/qa/*` que fabrican `.events/pending` | Marcarlos **lab-only** con `SDDIA_EVENT_STORE=filesystem` en el shebang/comentario de invocación. No son runtime de instancia. |
+| Scripts bajo `docs/` y `SddIA/scripts/qa/*` que fabrican `.events/pending` | Inventario lab: `execution-doc-drift.md` (P3-2). Prefijar `SDDIA_EVENT_STORE=filesystem` en invocación. |
 
 ## Fase 5 — Pruebas
 

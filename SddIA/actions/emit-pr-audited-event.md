@@ -1,9 +1,9 @@
 ---
 uuid: "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"
 name: "emit-pr-audited-event"
-version: "1.0.0"
+version: "1.0.2"
 contract: "actions-contract v1.2.0"
-context: "quality-assurance"
+context: "ecosystem-evolution"
 capabilities:
   - "pr-audited-event-emission"
   - "event-bus-pending-write"
@@ -21,6 +21,7 @@ outputs:
   - "event_id": "string; UUID v4 del evento minteado"
   - "target_path": "string; ruta relativa del JSON en pending/"
   - "audit_event_reference": "string; referencia depositada en payload"
+hash_signature: "sha256:c5d433797305c6842af528ffa6ebf563bf1458c3fd74f4b83c34e050067f728e"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -29,7 +30,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Emitir la instancia ECST **PullRequest_Audited** en `eda_bus.pending` conforme a `SddIA/events/domain/pull-request-audited.md`. No enruta el bus ni notifica suscriptores; solo mintea `event_id` y persiste el JSON en pending.
+Emitir la instancia ECST **PullRequest_Audited** en `eda_bus.pending` conforme a `SddIA/events/domain/pull-request-audited.md`. No enruta el bus ni notifica suscriptores; solo mintea `event_id` y registra el ECST (medio según `events-contract.md` §4).
 
 **Invariante:** el invocante típico es la fase **Veredicto y bloqueo** de `pull-request-review` con `emitter_agent: argos`.
 
@@ -68,9 +69,9 @@ Gate **Cerbero** previo por `context`. Rutas vía `cumulo.paths.json`.
 }
 ```
 
-### Paso 4 — Persistencia (`skill:filesystem-manager`)
+### Paso 4 — Persistencia
 
-Escribir `{eda_bus.pending}/<event_id>.json`.
+Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`dual` el runtime persiste vía `write_pending_event` en `.SddIA/runtime/events.redb` (sin fichero bajo `.events/pending/` en `redb` puro). En `filesystem`, JSON en `{eda_bus.pending}/<event_id>.json` (resoluble vía `cumulo.paths.json`). El `target_path` devuelto puede ser la ruta lógica `.events/pending/<event_id>.json` aunque el fichero no exista en `redb`.
 
 ### Paso 5 — Cierre (stdout)
 

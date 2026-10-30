@@ -1,7 +1,7 @@
 ---
 uuid: "a1b2c3d4-e5f6-4789-a012-3456789abcde"
 name: "emit-pr-presented-event"
-version: "1.1.1"
+version: "1.1.3"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -20,6 +20,7 @@ outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
   - "target_path": "string; ruta relativa del JSON en pending/"
+hash_signature: "sha256:12c6d44924d8f1477c0d1ce783b90ca35bf57f0b1277815883decc41aaf7c508"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -28,7 +29,7 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Emitir la instancia ECST **PullRequest_Presented** en `eda_bus.pending` conforme a `SddIA/events/domain/pull-request-presented.md`. No abre PR en GitHub, no ejecuta `push` ni enruta el bus; solo mintea `event_id` y persiste el JSON en pending.
+Emitir la instancia ECST **PullRequest_Presented** en `eda_bus.pending` conforme a `SddIA/events/domain/pull-request-presented.md`. No abre PR en GitHub, no ejecuta `push` ni enruta el bus; solo mintea `event_id` y registra el ECST (medio según `events-contract.md` §4).
 
 **Invariante:** el invocante típico es el proceso **`delivery-close-cycle`** tras la fase «Apertura en forja»; debe pasar `emitter_agent: delivery-close-cycle` y `pr_url` cuando esté disponible.
 
@@ -67,9 +68,9 @@ Gate **Cerbero** previo por `context`. Rutas vía `cumulo.paths.json`.
 }
 ```
 
-### Paso 4 — Persistencia (`skill:filesystem-manager`)
+### Paso 4 — Persistencia
 
-Escribir `{eda_bus.pending}/<event_id>.json`.
+Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`dual` el runtime persiste vía `write_pending_event` en `.SddIA/runtime/events.redb` (sin fichero bajo `.events/pending/` en `redb` puro). En `filesystem`, JSON en `{eda_bus.pending}/<event_id>.json` (resoluble vía `cumulo.paths.json`). El `target_path` devuelto puede ser la ruta lógica `.events/pending/<event_id>.json` aunque el fichero no exista en `redb`.
 
 ### Paso 5 — Cierre (stdout)
 

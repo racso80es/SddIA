@@ -45,9 +45,36 @@ git_changes:
   - SddIA/engine/execute-process/tests/eda_store_io_matrix_fractal.rs
   - docs/features/eda-store-io-gate/plan-test-matrix.md
   - docs/features/eda-store-io-gate/execution-test-matrix.md
+  - docs/audits/eda-doc-drift-eda-store-io-gate-261030.md
+  - docs/features/eda-store-io-gate/plan-doc-drift-261030.md
+  - docs/features/eda-store-io-gate/execution-doc-drift.md
+  - SddIA/engine/execute-process/src/engine/entity_manager.rs
+  - SddIA/actions/emit-pr-presented-event.md
+  - SddIA/actions/emit-pr-audited-event.md
+  - SddIA/actions/emit-pr-resealed-event.md
+  - SddIA/actions/emit-pr-merged-event.md
+  - SddIA/actions/index.md
+  - SddIA/daemons/event-watcher.md
+  - SddIA/events/index.md
+doc_drift:
+  P0: APTO
+  P1: APTO
+  P2: APTO
+  P3: APTO
+  P4: pendiente
 ---
 
 # Validación
+
+## Deriva documental (plan-doc-drift)
+
+| Fase | Estado |
+|------|--------|
+| P0 | APTO |
+| P1 | APTO (forja acciones + event-watcher) |
+| P2 | APTO (codex + events/index) |
+| P3 | APTO |
+| P4 | pendiente |
 
 | Prueba | Resultado |
 |--------|-----------|

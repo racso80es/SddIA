@@ -23,7 +23,7 @@ audit_ref: docs/audits/eda-events-redb-vs-filesystem-20261026.md
 |----|---------|-----------|
 | D1 | `EventStore::open` = un solo `Database::create` sin reintento → `StoreError::Backend("Database already open. Cannot acquire lock.")` bajo daemons concurrentes | Sello Presentación ECST / peaje termodinámico (PR #393–#394); sonda `bus.topology` |
 | D2 | `accept_pr::scan_presented_for_branch` solo escanea `.events/{pending,processed,dead-letter}`; en `redb` el Presented no deja fichero → `presented_found: false` / `orphan_merge` | PR #395: Presented `2a83c124-…` en store, accept-pr ciego |
-| D3 | `system_vitality::{emit_vitality_event,emit_probe_fracture}` escriben `.events/` con `write_json_atomic`; watcher en `redb` marca `F-EDA-RESIDUAL-FILESYSTEM` | Fractura `2a1c1a30-…` atrapada en pending |
+| D3 | **Histórico (pre-CA4):** `system_vitality` escribía `.events/` con `write_json_atomic`; watcher en `redb` marcaba residual. **Estado:** emisión vía `write_fractal_event` / gate (`redb_ca4_*`, `eda-store-io-gate`). | Evidencia pre-lock `2a1c1a30-…` |
 | D4 | `probe_bus_topology` trata cualquier fallo de `open` como rojo → `F-VITALIDAD-BUS-TOPOLOGY` por lock transitorio | Misma traza |
 
 `tracker_pbi_meta::tracker_ref_in_store` ya lee `Family::Domain` del store; `scan_presented_for_branch` no.

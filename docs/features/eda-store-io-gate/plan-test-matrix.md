@@ -26,11 +26,8 @@ Implementación **después** del commit `189dc7dd` (fachada I/O). Tracker `linea
 
 ## Fase A — Harness y trazabilidad
 
-1. Crear módulo compartido `execute-process/tests/support/eda_store_lab.rs` (o inline en primer integration test):
-   - `lab_repo()` clona artefactos core desde `find_repo_root()`.
-   - `with_mode(mode, || { ... })`.
-   - `roundtrip_publish_load(family, event_type, fs_rel_dir, mode)`.
-2. Tabla Markdown autogenerada (script bajo `docs/features/eda-store-io-gate/` **solo documental**, ejecutable en CI opcional) que cruce:
+1. **Hecho:** `SddIA/engine/execute-process/tests/common/mod.rs` — `lab_repo()`, `roundtrip_publish_load`, tipos pending = unión de suscripciones.
+2. Tabla Markdown autogenerada (script bajo `docs/features/eda-store-io-gate/` **solo documental**, ejecutable en CI opcional) — **pendiente**; cobertura narrada en `execution-test-matrix.md`:
    - Claves de los cuatro JSON de suscripción.
    - Filas del códice `events/*/index.md`.
    - Columna `test_fn` (vacía → backlog).

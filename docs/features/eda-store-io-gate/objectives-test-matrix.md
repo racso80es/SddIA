@@ -9,9 +9,13 @@ persist_ref: docs/features/eda-store-io-gate
 
 # Objetivos — Matriz de tests I/O por tipo de evento
 
-## Problema
+## Problema (origen)
 
-Tras `publish_ecst` y el cierre de emisores residuales, la cobertura automatizada sigue siendo **puntual** (pocos `event_type`, un modo, rutas concretas). El códice declara **48 Clases ECST** (`SddIA/events/index.md`); los registros de suscripción definen qué tipos entran al bus **pending** vs **fractal**.
+Antes de la matriz (commit `ed9137a8`), la cobertura era puntual: pocos `event_type`, un modo, rutas concretas. El códice declara **48 Clases ECST** (`SddIA/events/index.md`); los registros de suscripción definen qué tipos entran al bus **pending** vs **fractal**.
+
+## Estado (rama `Kaicen_Auditoria_Eventos_261030`)
+
+Integración `eda_store_io_matrix_pending` (unión suscripciones pending + domain, modos redb/filesystem/dual parcial) y `eda_store_io_matrix_fractal` (telemetría, orquestación, muestra domain, smoke route). TM-8 (fan-out por suscriptor) sigue **parcial** — ver `validacion.md`.
 
 ## Objetivo
 

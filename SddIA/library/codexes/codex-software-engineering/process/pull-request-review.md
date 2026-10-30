@@ -8,7 +8,7 @@ context:
 - quality-assurance
 - source-control
 - pr-lifecycle
-hash_signature: sha256:4b00ee00bd61afd10725b139c07902033d83256441d841ca4a4c573b98b2688f
+hash_signature: "sha256:4b00ee00bd61afd10725b139c07902033d83256441d841ca4a4c573b98b2688f"
 inputs:
 - pr_id_or_path: Identificador o ruta lógica del PR
 - pr_branch: Rama asociada al PR
@@ -70,7 +70,7 @@ Proceso V5 **Aduana de Fricción** reactiva al estímulo **`PullRequest_Presente
 
 ## Disparo EDA
 
-1. `delivery-close-cycle` emite **`PullRequest_Presented`** en `eda_bus.pending`.
+1. `delivery-close-cycle` emite **`PullRequest_Presented`** vía gate store/FS según `SDDIA_EVENT_STORE` (ruta lógica `eda_bus.pending`).
 2. Proceso **`route-domain-event`** / watcher despacha suscriptor **`pull-request-review`** (agente **Argos**).
 3. La aduana evalúa; **`delivery_state: failed`** bloquea materialización downstream.
 
@@ -89,7 +89,7 @@ Reglas **no bloqueantes** (fricción suave); el sensor no invoca agentes.
 | ID | Regla |
 |----|-------|
 | **DIA-1** | Invocar sensor DIA `audit-doc-parity` (contrato en `docs/features/norma-paridad-documental/`) con `persist_ref`, refs git y salida JSON |
-| **DIA-2** | Si `alert_required: true`, depositar evento **`Kaizen_Alert_Required`** en `eda_bus.pending`; **prohibido** `delivery_state: failed` por DIA |
+| **DIA-2** | Si `alert_required: true`, depositar **`Kaizen_Alert_Required`** vía gate (`event-bus-audit` / store en `redb`); **prohibido** `delivery_state: failed` por DIA |
 | **DIA-3** | El sensor no delega a Cúmulo; persistencia Kaizen DIA **exclusivamente** vía evento `Kaizen_Alert_Required` → suscriptor `agent:cumulo` (`materialize-kaizen-alert-doc`) |
 
 Prefijos monitorizados por defecto: `SddIA/core/`, `SddIA/process/`, `SddIA/scripts/qa/`, `README.md`.

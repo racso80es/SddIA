@@ -1,9 +1,9 @@
 ---
 uuid: "c0d71f2b-c1c1-4c56-8f74-2f4f41b24c4f"
 name: "emit-pr-merged-event"
-version: "1.1.0"
+version: "1.1.2"
 contract: "actions-contract v1.2.0"
-context: "dlt-auditing"
+context: "ecosystem-evolution"
 capabilities:
   - "pr-merged-event-emission"
   - "event-bus-pending-write"
@@ -19,6 +19,7 @@ outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
   - "target_path": "string; ruta relativa al workspace del JSON persistido en pending/"
+hash_signature: "sha256:10e18e8344238c62eb9eceb0195af8690592c48411c64251a683aadf86d0c5e2"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -85,15 +86,9 @@ Gate **Cerbero** previo por `context` de cada cápsula. Rutas vía `cumulo.paths
 }
 ```
 
-### Paso 4 — Persistencia (`skill:filesystem-manager`)
+### Paso 4 — Persistencia
 
-| Campo | Valor |
-| :--- | :--- |
-| `operation` | `WRITE_FILE` |
-| `target_path` | `{eda_bus.pending}/<event_id>.json` |
-| `content` | JSON UTF-8 del Paso 3 |
-
-- Resolver `eda_bus.pending` desde `cumulo.paths.json`. Si falta el directorio, invocar antes `CREATE_DIR`.
+Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`dual` el runtime persiste vía `write_pending_event` en `.SddIA/runtime/events.redb` (sin fichero bajo `.events/pending/` en `redb` puro). En `filesystem`, invocar `skill:filesystem-manager` con `WRITE_FILE` a `{eda_bus.pending}/<event_id>.json` (crear directorio vía `CREATE_DIR` si falta). El `target_path` devuelto puede ser la ruta lógica `.events/pending/<event_id>.json` aunque el fichero no exista en `redb`.
 
 ### Paso 5 — Cierre (stdout)
 

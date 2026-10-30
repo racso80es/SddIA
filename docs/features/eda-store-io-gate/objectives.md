@@ -8,9 +8,13 @@ persist_ref: docs/features/eda-store-io-gate
 
 # Objetivos — I/O de eventos solo vía `SDDIA_EVENT_STORE`
 
-## Problema
+## Problema (origen)
 
-Con `SDDIA_EVENT_STORE=redb` (default de `gate.rs` y bóveda de instancia) el SSOT es `.SddIA/runtime/events.redb`. Varios emisores y lectores siguen tocando `.events/` sin consultar `writes_store` / `writes_filesystem`. Efecto: JSON residual, `F-EDA-RESIDUAL-FILESYSTEM`, idempotencia ciega al store, y telemetría fractal persistida en redb que el watcher no consume.
+Con `SDDIA_EVENT_STORE=redb` (default de `gate.rs` y bóveda de instancia) el SSOT es `.SddIA/runtime/events.redb`. Antes del corte de esta feature, varios emisores y lectores tocaban `.events/` sin consultar `writes_store` / `writes_filesystem` (JSON residual, idempotencia ciega, fractal en store no consumido por el watcher).
+
+## Estado en rama
+
+Implementado en `189dc7dd` (fachada + call sites + fractal claim) y verificado en `validacion.md` (`global: APTO`). Higiene Kaizen del bus: `docs/audits/kaizen-auditoria-eventos-261030.md`. Deriva documental residual: `docs/audits/eda-doc-drift-eda-store-io-gate-261030.md`.
 
 ## Objetivo
 

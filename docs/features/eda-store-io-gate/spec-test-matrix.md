@@ -74,15 +74,19 @@ Generación de filas: script de lab (opcional) que liste claves JSON ≠ tests m
 | `Daemon_Heartbeat` | thermodynamic / side-channel | watcher claim + side-channel tests |
 | `Process_Execution_Completed` | thermodynamic PEC | **gap** |
 
-## Ubicación de tests (propuesta)
+## Ubicación de tests
 
-| Ola | Crate / path | Comando |
-|-----|--------------|---------|
-| 0 | `sddia-event-store/tests/gate.rs` | `cargo test -p sddia-event-store --test gate` |
-| 1 | `engine/execute-process/tests/eda_store_io_matrix_pending.rs` (nuevo) | `cargo test -p execute-process --test eda_store_io_matrix_pending` |
-| 2 | `engine/execute-process/tests/eda_store_io_matrix_fractal.rs` (nuevo) | `cargo test -p execute-process --test eda_store_io_matrix_fractal` |
-| 3 | `daemons/event-watcher` (tests existentes + 1 fila por familia claim) | `cargo test -p event-watcher` |
-| 4 | `dual` subset en `eda_store_io_matrix_pending` con `StoreMode::Dual` | mismo binario de test |
+| Ola | Crate / path | Comando | Rama |
+|-----|--------------|---------|------|
+| 0 | `sddia-event-store/tests/gate.rs` | `cargo test -p sddia-event-store --test gate` | main / rama |
+| 1 | `engine/execute-process/tests/eda_store_io_matrix_pending.rs` + `tests/common/mod.rs` | `cargo test -p execute-process --test eda_store_io_matrix_pending -- --test-threads=1` | `ed9137a8` |
+| 2 | `engine/execute-process/tests/eda_store_io_matrix_fractal.rs` | `cargo test -p execute-process --test eda_store_io_matrix_fractal -- --test-threads=1` | `ed9137a8` |
+| 3 | `daemons/event-watcher` (claim fractal; smoke parcial vía route en ola 2) | `cargo test -p event-watcher` | parcial |
+| 4 | `dual` subset en `eda_store_io_matrix_pending` | mismo binario | `ed9137a8` (6 tipos) |
+
+## Cobertura actual (rama)
+
+Ver `execution-test-matrix.md`. TM-8 (`list_pending_deliveries` por suscriptor): no automatizado.
 
 ## Definition of Done (matriz)
 
