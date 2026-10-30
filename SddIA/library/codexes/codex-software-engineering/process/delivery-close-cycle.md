@@ -3,7 +3,7 @@ context:
 - ecosystem-evolution
 - source-control
 contract: process-contract v1.4.0
-hash_signature: "sha256:90c4f8d2559c8b6d96724a50c781e8e66983a3ebcee5f158e6291ade4b9484ce"
+hash_signature: "sha256:2478e088a8870e265766adde0e5e5ef585be025022c19d8de90880be7aa65ccd"
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -42,6 +42,8 @@ phases:
   name: Aduana integridad índices
 - intent: Exigir atestación QA aprobada para el tree_sha de HEAD y árbol cerrado (salvo validacion.md en persist_ref) antes del push.
   name: Gate pre-PR QA
+- intent: Tras global APTO en validacion.md, sellar validated_*_sha y diff_digest (excluyendo validacion.md del digest) y commitear antes del push inicial.
+  name: Sello diff validacion
 - delegates_to:
   - skill:git-manager
   intent: Publicar la rama de trabajo en origin antes de abrir el PR.
@@ -64,7 +66,7 @@ phases:
   name: Higiene local
 porcentaje_de_exito: null
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
-version: 1.5.0
+version: 1.6.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -106,6 +108,7 @@ Salidas propagadas al envelope del proceso: `event_id`, `target_path`, `pr_url`.
 * **Aduana evolution:** ejecutar `SddIA/target/debug/sddia-qa gate-evolution --json --range --sync-base`. Bloquear si `EVOL_MATERIAL_UNREGISTERED` / `EVOL_HASH_MISMATCH`. No emitir `System_Fracture_Detected` (gate accionable, F4b). CI usa `--require-synced-base` (AEL-CA13).
 * **Aduana integridad índices:** ejecutar `SddIA/target/debug/sddia-qa verify-process-integrity` y `verify-tools-index` antes de la publicación remota; veredicto `block` si alguno falla (paridad job CI `sddia-index-integrity`).
 * **Gate pre-PR QA:** antes de Publicación remota, comprobar atestación `qa-attestation/1.0` con `verdict: aprobado` y `tree_sha` de HEAD, y `git status --porcelain` vacío salvo `{persist_ref}/validacion.md`. Envelope `status: blocked` con `friction_id: qa_attestation_required` o `worktree_not_closed`. No `System_Fracture_Detected`. Lab: `SDDIA_LAB_SKIP_PRE_PR_QA_GATE`.
+* **Sello diff validacion:** tras gate pre-PR, exigir `global: APTO` en `{persist_ref}/validacion.md`; escribir `validated_base_sha`, `validated_head_sha`, `validated_tree_sha`, `diff_digest` (sha256 del diff merge-base..HEAD excluyendo `{persist_ref}/validacion.md`); commitear vía `skill:git-manager` en el mismo push inicial. Fricciones `validacion_not_apto`, `diff_seal_commit_failed` sin fractura. Lab: `SDDIA_LAB_SKIP_DIFF_SEAL`. El informe Argos se sella en la fase Verificación de `feature`; `pull-request-review` no reescribe el sello de diff.
 * **Aduana EDA genómica:** ejecutar `SddIA/target/debug/sddia-qa audit-eda-coverage --scan --json` (o `./sddia-run.sh --audit-eda-coverage --scan --json`). Si `orphan_count > 0` (entidad indexada sin `Domain_Entity_Created` correlacionado), Argos emite **Ruido de Sistema** con veredicto `block`. **Excepción `backfill-manifest.json`:** si `{persist_ref}/backfill-manifest.json` declara `correlation_id` y **no** tiene `merkle_anchored: true`, el gate degrada el veredicto a `warn` con `argos_noise: "backfill Fase C en curso"`. El backfill canónico sigue siendo `entity-manager` → `emit-domain-mutation` con sello `--anchor-merkle` al cierre.
 * Todas las rutas y políticas se resuelven exclusivamente vía `cumulo.paths.json` y normas enlazadas (`git-operations`, `pull-request-orchestration`).
 
@@ -122,6 +125,8 @@ Variables de entorno para cápsulas físicas sin efectos destructivos por defect
 | `SDDIA_LAB_SKIP_HIGIENE` | Omite checkout/delete en Higiene local |
 | `SDDIA_LAB_SKIP_INDEX_INTEGRITY` | Omite Aduana integridad índices (`verify-process-integrity` + `verify-tools-index`) |
 | `SDDIA_LAB_SKIP_EVOLUTION_GATE` | Omite Aduana evolution (`gate-evolution --range --sync-base`) |
+| `SDDIA_LAB_SKIP_PRE_PR_QA_GATE` | Omite Gate pre-PR QA |
+| `SDDIA_LAB_SKIP_DIFF_SEAL` | Omite Sello diff validacion |
 | `SDDIA_LAB_DELETE_FEATURE_BRANCH` | Si `1`, intenta borrar rama tras sello (solo lab explícito) |
 
 **Anti-recursión hook (Ola B):** el hook pre-push omite re-entrada si `SDDIA_HOOK_DELIVERY_CLOSE=1` (inyectado por `invoke_process`; guarda `in_delivery_close_cycle`). La fase Publicación remota puede fijar `SDDIA_SKIP_HOOKS=1` **solo** en el subproceso `git-manager` cuando `source_process == git-hook-pre-push`. El gate evolution del hook **no** corre si hay ramas nuevas (delega en este proceso); corre si no hay ramas nuevas (PR OPEN).

@@ -13,6 +13,7 @@ pub mod validacion_runtime_parity;
 pub mod pull_request_review;
 pub mod qa_profile;
 pub mod qa_attestation;
+pub mod diff_seal;
 pub mod entity_manager;
 pub mod delivery_close;
 pub mod done_gate;
