@@ -1,3 +1,6 @@
 {"event_id":"8fe4914a-83e4-4268-b569-950948348d0f","issue_ref":"AUT-42","occurred_at":"2026-10-29T17:37:57Z","operation":"create_issue","source_process":"forge-pbi"}
 {"event_id":"54995dd6-e6f9-4eec-997f-799cd6e58da6","issue_ref":"AUT-42","occurred_at":"2026-10-29T17:37:57Z","operation":"update_issue_description","source_process":"forge-pbi"}
 {"event_id":"86a9b801-022e-486c-992e-705a78143339","issue_ref":"AUT-42","occurred_at":"2026-10-29T17:38:45Z","operation":"update_issue_description","source_process":"refine-item"}
+{"event_id":"1b9bdae9-3b53-467c-9715-0b967a8d318e","issue_ref":"AUT-42","occurred_at":"2026-10-30T06:50:47Z","operation":"update_issue_state","source_process":"tracker-stamp"}
+{"event_id":"b54d4b91-4fea-4cc1-833f-f2c844ed9b83","issue_ref":"AUT-42","occurred_at":"2026-10-30T06:50:48Z","operation":"create_comment","source_process":"tracker-stamp"}
+{"event_id":"b1a759af-d57b-44b8-abb6-bbe8673ba71f","issue_ref":"AUT-42","occurred_at":"2026-10-30T06:50:49Z","operation":"update_issue_description","source_process":"tracker-stamp"}
