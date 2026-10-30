@@ -722,7 +722,7 @@ fn write_pending_kaizen(
     implicated: &[String],
 ) -> Result<Value, String> {
     let event_id = Uuid::new_v4().to_string();
-    let event = json!({
+    let mut event = json!({
         "event_id": event_id,
         "event_type": "Kaizen_Alert_Required",
         "timestamp": Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
@@ -736,13 +736,23 @@ fn write_pending_kaizen(
         },
         "delivery_state": {}
     });
-    fs::create_dir_all(&paths.pending).map_err(|e| e.to_string())?;
-    let target = paths.pending.join(format!("{event_id}.json"));
-    let text = serde_json::to_string_pretty(&event).map_err(|e| e.to_string())?;
-    fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
+    sddia_eda_catalog::stamp_published_event(repo, &mut event).map_err(|e| e.to_string())?;
+    let mode = sddia_event_store::store_mode();
+    if sddia_event_store::writes_store(mode) {
+        sddia_event_store::record_ecst(repo, "domain", &event).map_err(|e| e.to_string())?;
+    }
+    let target_path = if sddia_event_store::writes_filesystem(mode) {
+        fs::create_dir_all(&paths.pending).map_err(|e| e.to_string())?;
+        let target = paths.pending.join(format!("{event_id}.json"));
+        let text = serde_json::to_string_pretty(&event).map_err(|e| e.to_string())?;
+        fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
+        rel_path(repo, &target)
+    } else {
+        format!(".events/pending/{event_id}.json")
+    };
     Ok(json!({
         "event_id": event_id,
-        "target_path": rel_path(repo, &target)
+        "target_path": target_path
     }))
 }
 
@@ -1185,6 +1195,83 @@ mod tests {
         assert_eq!(state.counts.get("dead-letter").copied(), Some(1));
         assert_eq!(state.dead_letter_errors.get("boom").copied(), Some(1));
         assert!(!dir.join(".events").exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    fn test_repo_bus_paths(repo: &Path) -> BusPaths {
+        BusPaths {
+            pending: repo.join(".events/pending"),
+            processing: repo.join(".events/processing"),
+            processed: repo.join(".events/processed"),
+            dead_letter: repo.join(".events/dead-letter"),
+            processing_subscribers: repo.join(".events/processing/subscribers"),
+            processed_subscribers: repo.join(".events/processed/subscribers"),
+            dead_letter_subscribers: repo.join(".events/dead-letter/subscribers"),
+            telemetry: repo.join(".events/telemetry"),
+            orchestration: repo.join(".events/orchestration"),
+            domain: repo.join(".events/domain"),
+        }
+    }
+
+    fn seed_kaizen_test_repo(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        let subs = include_str!("../../../core/event-subscriptions.json");
+        fs::write(repo.join("SddIA/core/event-subscriptions.json"), subs).unwrap();
+    }
+
+    /// EBA-REDB-01: Kaizen en redb no crea JSON pending.
+    #[test]
+    fn kaizen_emit_redb_uses_store_not_pending_file() {
+        let dir = std::env::temp_dir().join(format!(
+            "eba-kaizen-redb-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        seed_kaizen_test_repo(&dir);
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let paths = test_repo_bus_paths(&dir);
+        let seal = write_pending_kaizen(
+            &dir,
+            &paths,
+            "rev-test",
+            "justification",
+            &[".events/foo.json".into()],
+        )
+        .unwrap();
+        let event_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
+        assert!(
+            !dir.join(".events/pending").join(format!("{event_id}.json")).is_file(),
+            "redb no debe escribir pending FS"
+        );
+        let store =
+            sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&dir)).unwrap();
+        let row = store.get_event(event_id).unwrap().expect("evento en store");
+        assert_eq!(row.event_type, "Kaizen_Alert_Required");
+        sddia_event_store::override_store_mode(None);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// EBA-FS-01: filesystem sigue escribiendo pending.
+    #[test]
+    fn kaizen_emit_filesystem_writes_pending_json() {
+        let dir = std::env::temp_dir().join(format!(
+            "eba-kaizen-fs-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        seed_kaizen_test_repo(&dir);
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let paths = test_repo_bus_paths(&dir);
+        let seal = write_pending_kaizen(&dir, &paths, "rev", "j", &[]).unwrap();
+        let event_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
+        assert!(
+            dir.join(".events/pending")
+                .join(format!("{event_id}.json"))
+                .is_file()
+        );
+        sddia_event_store::override_store_mode(None);
         let _ = fs::remove_dir_all(&dir);
     }
 }

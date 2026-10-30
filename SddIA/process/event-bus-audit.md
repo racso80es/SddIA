@@ -29,7 +29,7 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 # event-bus-audit
 
-Proceso on-demand de auditoría empírica del bus EDA. Inspecciona `./.events/` (pending, processing, processed, dead-letter y familias fractales telemetry/orchestration/domain), valida coherencia ECST, detecta anomalías (staleness, huérfanos, tipos desconocidos) y genera informe. Emite `Kaizen_Alert_Required` en `eda_bus.pending` solo si `circuit_alert` o hay pending estancados que no sean `System_Fracture_Detected`. El volumen histórico de dead-letter no dispara Kaizen.
+Proceso on-demand de auditoría empírica del bus EDA. Con `SDDIA_EVENT_STORE=redb` el censo lee `events.redb`; con `filesystem` escanea `./.events/`. Valida coherencia ECST, detecta anomalías y genera informe. Emite `Kaizen_Alert_Required` vía gate del store (no JSON residual en `redb`) solo si `emit_kaizen_alert` y (`circuit_alert` o pending estancados accionables no fractura). El volumen histórico de dead-letter no dispara Kaizen.
 
 ```bash
 # Auditoría completa con emisión Kaizen (default)
