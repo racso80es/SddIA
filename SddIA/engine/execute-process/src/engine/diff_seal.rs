@@ -427,8 +427,10 @@ pub fn validate_for_accept_pr_merge(
             to_check.push(t.to_string());
         }
     }
-    for p in list_persist_refs_with_validacion(repo, &head)? {
-        if !to_check.contains(&p) {
+    // Con persist_ref del ciclo no se barre el árbol: un fixture APTO sin sello
+    // abortaba la fusión de cualquier rama (AUT-53).
+    if to_check.is_empty() {
+        for p in list_persist_refs_with_validacion(repo, &head)? {
             to_check.push(p);
         }
     }

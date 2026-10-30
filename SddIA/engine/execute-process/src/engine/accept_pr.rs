@@ -371,6 +371,15 @@ pub fn execute_accept_pr_phase(
             })))
         }
         "Sincronización y Limpieza" => {
+            if !accept_pr_physical_threshold_crossed(state) {
+                return Some(Ok(json!({
+                    "status": "executed",
+                    "handler": "accept-sync-cleanup",
+                    "skipped": true,
+                    "reason": "merge_commit_hash ausente",
+                    "closed_branch": null,
+                })));
+            }
             if let Some(merge_hash) = state
                 .get("merge_commit_hash")
                 .and_then(|v| v.as_str())
@@ -526,6 +535,24 @@ pub(crate) fn adjudicate_sync_fail_soft_post_merge(phase_reports: &mut [Value], 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sync_skips_hygiene_without_merge_commit() {
+        let repo = std::env::temp_dir();
+        let mut state = json!({});
+        let inputs = json!({"source_branch": "fix/x"});
+        let out = execute_accept_pr_phase(
+            &repo,
+            "Sincronización y Limpieza",
+            &inputs,
+            &mut state,
+        )
+        .expect("fase")
+        .expect("ok");
+        assert_eq!(out["skipped"], true);
+        assert_eq!(out["reason"], "merge_commit_hash ausente");
+        assert!(state.get("closed_branch").is_none());
+    }
 
     #[test]
     fn sync_accept_pr_process_hash_signature() {
