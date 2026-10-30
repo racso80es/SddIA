@@ -10,6 +10,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
 | `709f566b-6aed-4802-98d1-1ad56915277f` | 2026-10-30 | AUT-32: observabilidad claim_store_pending en event-watcher redb. | CANONICO | `SddIA/evolution/709f566b-6aed-4802-98d1-1ad56915277f.md` |
+| `d86d77aa-ab9e-4ca8-9268-c45902d92857` | 2026-10-30 | Kaizen: pbi_ref opaco → tracker_ref en PullRequest_Merged (accept-pr). | CANONICO | `SddIA/evolution/d86d77aa-ab9e-4ca8-9268-c45902d92857.md` |
 | `b0af2c4f-5419-480b-9561-4b22d1dc455d` | 2026-10-30 | AUT-30: la fractura elige el sumidero del proveedor y no escribe backlog sin tracker. | CANONICO | `SddIA/evolution/b0af2c4f-5419-480b-9561-4b22d1dc455d.md` |
 | `719b372b-3b7f-46e1-8cd8-fa5de0dae306` | 2026-10-30 | AUT-29: forge-pbi reusa la hija por forge_key sin ledger y el lab exige el adaptador nativo. | CANONICO | `SddIA/evolution/719b372b-3b7f-46e1-8cd8-fa5de0dae306.md` |
 | `b919fa85-c552-497f-9179-b03e17772a92` | 2026-10-30 | AUT-29: forge-pbi conserva tracker_ref si PBI_Forged queda en lock y no duplica el raw_idea. | CANONICO | `SddIA/evolution/b919fa85-c552-497f-9179-b03e17772a92.md` |
