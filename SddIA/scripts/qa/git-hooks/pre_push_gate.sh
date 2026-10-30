@@ -13,6 +13,52 @@ run_evolution_gate() {
   fi
 }
 
+# AUT-42: push sobre PR OPEN — QA + re-sello (sin delivery-close-cycle).
+handle_pre_push_pr_open() {
+  local branch="$1" local_sha="$2" remote_sha="$3"
+  local paths delta_class qa_profile qa_payload persist_ref
+  paths=$(delta_paths_for_push "$remote_sha" "$local_sha" || true)
+  delta_class=$(delta_class_for_paths "$paths")
+  HOOK_TIMING_DELTA_CLASS="$delta_class"
+  if [[ "$delta_class" == "passive" ]]; then
+    qa_profile="docs-only"
+  else
+    qa_profile="full"
+  fi
+  if [[ "$delta_class" == "active" ]]; then
+    run_evolution_gate || return 1
+  fi
+  if ! read_qa_attestation_hit "$branch" "$local_sha" "$delta_class"; then
+    qa_payload=$(
+      python3 -c 'import json,sys; print(json.dumps({"event_type":"Local_QA_Requested","blocking":True,"emitter_agent":"git-hook-pre-push","payload":{"branch":sys.argv[1],"qa_profile":sys.argv[2]}}))' \
+        "$branch" "$qa_profile"
+    )
+    if ! invoke_process "route-domain-event" "$qa_payload"; then
+      echo "SddIA pre-push: BLOCKED — Local_QA_Requested failed for ${branch} (PR OPEN)" >&2
+      return 1
+    fi
+    if ! read_qa_attestation_hit "$branch" "$local_sha" "$delta_class"; then
+      echo "SddIA pre-push: BLOCKED — QA no aprobada; no se publica sello vigente (${branch})" >&2
+      return 1
+    fi
+  fi
+  persist_ref=$(resolve_persist_ref "$branch" || true)
+  if [[ -z "${persist_ref:-}" ]]; then
+    return 0
+  fi
+  resolve_sddia_qa || return 1
+  hook_timing_record_process "reseal-diff-validacion"
+  if ! "$SDDIA_QA_BIN" reseal-diff-validacion --json \
+    --branch "$branch" \
+    --persist-ref "$persist_ref" \
+    --head "$local_sha" \
+    --target-branch "main"; then
+    echo "SddIA pre-push: BLOCKED — reseal-diff-validacion failed for ${branch}" >&2
+    return 1
+  fi
+  return 0
+}
+
 main() {
   if skip_hooks; then
     echo "SddIA pre-push: SKIPPED (SDDIA_SKIP_HOOKS=1)" >&2
@@ -26,6 +72,7 @@ main() {
 
   hook_timing_begin
 
+  local exit_code=0
   local stdin_text line local_ref local_sha remote_ref remote_sha
   # $(cat) recorta el \n final; el marcador conserva el payload de git pre-push.
   stdin_text=$(cat; printf x)
@@ -61,11 +108,19 @@ main() {
       continue
     fi
     if should_skip_pre_push_present "$branch"; then
+      if gh_pr_open_for_branch "$branch"; then
+        handle_pre_push_pr_open "$branch" "$local_sha" "$remote_sha" || exit_code=1
+      fi
       continue
     fi
     branches+=("$branch")
     branch_shas+=("${branch}|${local_sha}|${remote_sha}")
   done < <(printf '%s' "$stdin_text" | parse_pre_push_stdin)
+
+  if [[ ${#branches[@]} -eq 0 ]]; then
+    hook_timing_flush "pre-push"
+    exit "$exit_code"
+  fi
 
   if pre_push_hook_runs_evolution_gate "${#branches[@]}"; then
     run_evolution_gate || {

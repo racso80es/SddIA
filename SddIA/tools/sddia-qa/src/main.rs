@@ -10,6 +10,7 @@ mod verify_compiled_capsules;
 mod verify_tools_index;
 mod wasi_ci_smoke;
 mod workspace_prune;
+mod reseal_diff_validacion;
 mod verify_diff_digest;
 mod verify_domain_subscription_parity;
 mod merge_thermo_timings;
@@ -48,7 +49,8 @@ Comandos:\n\
   verify-domain-subscription-parity [--json]\n\
   merge-thermo-timings-report [--json]\n\
   verify-tracker-done-pre-push --persist-ref PATH\n\
-  verify-diff-digest [--json] [--head SHA] [--target-branch NAME]\n"
+  verify-diff-digest [--json] [--head SHA] [--target-branch NAME]\n\
+  reseal-diff-validacion [--json] --persist-ref PATH [--branch NAME] [--head SHA] [--target-branch NAME]\n"
 }
 
 fn has_flag(args: &[String], flag: &str) -> bool {
@@ -235,6 +237,7 @@ fn main() {
             }
         }
         "verify-diff-digest" => verify_diff_digest::run(&repo, rest),
+        "reseal-diff-validacion" => reseal_diff_validacion::run(&repo, rest),
         other => {
             eprintln!("comando desconocido: {other}\n{}", usage());
             1
