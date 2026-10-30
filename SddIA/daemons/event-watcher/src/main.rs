@@ -1,12 +1,14 @@
 use sddia_daemon_runtime::{
     ensure_bus_dirs, find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
 };
+use sddia_event_store::StoreMode;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use std::{thread, time::Duration};
@@ -22,6 +24,52 @@ const PHYSICAL_ROUTE_CHUNK: usize = 50;
 const MAX_IN_FLIGHT_ROUTES: usize = 16;
 /// Misma cadencia que el sweeper. El watcher la dispara aunque ese proceso no corra.
 const HEARTBEAT_AUDIT_SWEEP_SECONDS: u64 = 30;
+/// Volcado de contadores acumulados en log de claim (AUT-32).
+const CLAIM_METRICS_EVERY_N_TICKS: u64 = 15;
+
+static METRIC_ROUTES_CLAIMED: AtomicU64 = AtomicU64::new(0);
+static METRIC_ROUTES_OK: AtomicU64 = AtomicU64::new(0);
+static METRIC_ROUTES_FAIL: AtomicU64 = AtomicU64::new(0);
+static CLAIM_TICK_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+fn store_mode_label(mode: StoreMode) -> &'static str {
+    match mode {
+        StoreMode::Redb => "redb",
+        StoreMode::Dual => "dual",
+        StoreMode::Filesystem => "filesystem",
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+struct ClaimTickStats {
+    pending_rows: usize,
+    claimed: u32,
+    skipped_file: u32,
+    skipped_book: u32,
+    skipped_inflight: u32,
+    open_failed: u32,
+}
+
+fn log_claim_tick(store_label: &str, stats: ClaimTickStats) {
+    println!(
+        "[WATCHER] claim_store_pending store={store_label} pending_rows={} claimed={} skipped_file={} skipped_book={} skipped_inflight={} open_failed={}",
+        stats.pending_rows,
+        stats.claimed,
+        stats.skipped_file,
+        stats.skipped_book,
+        stats.skipped_inflight,
+        stats.open_failed,
+    );
+    let tick = CLAIM_TICK_COUNTER.fetch_add(1, Ordering::Relaxed) + 1;
+    if tick % CLAIM_METRICS_EVERY_N_TICKS == 0 {
+        println!(
+            "[WATCHER] claim_metrics cumulative routes_claimed={} routes_ok={} routes_fail={}",
+            METRIC_ROUTES_CLAIMED.load(Ordering::Relaxed),
+            METRIC_ROUTES_OK.load(Ordering::Relaxed),
+            METRIC_ROUTES_FAIL.load(Ordering::Relaxed),
+        );
+    }
+}
 
 struct ProbeClock {
     last_audit: Instant,
@@ -227,17 +275,24 @@ fn tick_probes(repo: &Path, clock: &mut ProbeClock) {
 
 /// Ids con entrega `pending`. No lee el ECST. Un fichero pending ya presente lo deja al barrido.
 fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
-    if !sddia_event_store::writes_store(sddia_event_store::store_mode()) {
+    let mode = sddia_event_store::store_mode();
+    if !sddia_event_store::writes_store(mode) {
         return;
     }
+    let store_label = store_mode_label(mode);
     let db = sddia_event_store::runtime_db_path(repo);
     if !db.is_file() {
         return;
     }
-    let _ = sddia_eda_catalog::reconcile_unstamped(repo);
+    if let Err(err) = sddia_eda_catalog::reconcile_unstamped(repo) {
+        eprintln!("[WATCHER] reconcile_unstamped: {err}");
+    }
+    let mut stats = ClaimTickStats::default();
     let store = match sddia_event_store::EventStore::open(&db) {
         Ok(store) => store,
         Err(err) => {
+            stats.open_failed = 1;
+            log_claim_tick(store_label, stats);
             eprintln!("[WATCHER] events.redb no abre: {err}");
             return;
         }
@@ -249,14 +304,17 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
             return;
         }
     };
+    stats.pending_rows = rows.len();
     let mut seen = HashSet::new();
     let mut launches: Vec<(String, std::path::PathBuf, String)> = Vec::new();
     for (event_id, _subscriber_id) in rows {
         if !seen.insert(event_id.clone()) {
+            stats.skipped_book += 1;
             continue;
         }
         let path = top.pending.join(format!("{event_id}.json"));
         if path.is_file() {
+            stats.skipped_file += 1;
             continue;
         }
         let rel = format!(".events/pending/{event_id}.json");
@@ -267,23 +325,43 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
                 break;
             };
             if b.processing.contains(&event_id) || b.routed_ok.contains(&event_id) {
+                stats.skipped_book += 1;
                 continue;
             }
             if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
+                stats.skipped_inflight += 1;
                 break;
             }
             b.processing.insert(event_id.clone());
             *b.attempts.entry(key.clone()).or_insert(0) += 1;
         }
+        stats.claimed += 1;
         launches.push((event_id, path, key));
     }
     drop(store);
+    log_claim_tick(store_label, stats);
     for (uuid_c, path_c, key) in launches {
+        METRIC_ROUTES_CLAIMED.fetch_add(1, Ordering::Relaxed);
         let repo_c = repo.to_path_buf();
         let book_c = Arc::clone(book);
         let rel = format!(".events/pending/{uuid_c}.json");
+        let event_id_log = uuid_c.clone();
         thread::spawn(move || {
+            println!(
+                "[WATCHER] route spawn event_id={event_id_log} subscriber=route-domain-event"
+            );
+            let t0 = Instant::now();
             let out = invoke_route_process(&repo_c, &rel, "route-domain-event");
+            let elapsed_ms = t0.elapsed().as_millis();
+            let exit = out.status.code().unwrap_or(-1);
+            if out.status.success() {
+                METRIC_ROUTES_OK.fetch_add(1, Ordering::Relaxed);
+            } else {
+                METRIC_ROUTES_FAIL.fetch_add(1, Ordering::Relaxed);
+            }
+            println!(
+                "[WATCHER] route done event_id={event_id_log} subscriber=route-domain-event elapsed_ms={elapsed_ms} exit={exit}"
+            );
             if let Ok(mut b) = book_c.lock() {
                 apply_route_outcome_fractal(
                     &mut b,
@@ -866,6 +944,13 @@ mod tests {
 
     fn write_json(path: &Path, body: &str) {
         fs::write(path, body).unwrap();
+    }
+
+    #[test]
+    fn store_mode_label_maps_redb() {
+        assert_eq!(store_mode_label(StoreMode::Redb), "redb");
+        assert_eq!(store_mode_label(StoreMode::Dual), "dual");
+        assert_eq!(store_mode_label(StoreMode::Filesystem), "filesystem");
     }
 
     #[test]
