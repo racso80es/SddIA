@@ -558,7 +558,7 @@ pub fn apply_diff_seal_to_validacion(
     Ok(path)
 }
 
-/// Recalcula digest excluyendo validacion.md (test de no autorreferencia).
+/// Recalcula digest excluyendo `validacion.md` del `persist_ref` y el resto bajo `docs/` (AUT-40 multi-scope).
 pub fn recompute_digest_excluding_validacion(
     repo: &Path,
     base_sha: &str,
@@ -574,6 +574,8 @@ pub fn recompute_digest_excluding_validacion(
             "--",
             ".",
             &format!(":(exclude){exclude}"),
+            // Evita acoplamiento entre sellos de distintos persist_ref en el mismo PR.
+            ":(exclude)docs/**/validacion.md",
         ],
     )?;
     let mut hasher = Sha256::new();
