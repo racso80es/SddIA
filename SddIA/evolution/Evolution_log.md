@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `9483cf60-beac-484b-88b7-70a4ab90df58` | 2026-10-30 | AUT-39: sello diff validacion en delivery-close-cycle v1.6.0. | CANONICO | `SddIA/evolution/9483cf60-beac-484b-88b7-70a4ab90df58.md` |
 | `ab7998a1-6d81-4f54-bad1-66a23fabcd62` | 2026-10-30 | AUT-38: gate pre-PR QA y árbol cerrado en delivery-close-cycle v1.5.0. | CANONICO | `SddIA/evolution/ab7998a1-6d81-4f54-bad1-66a23fabcd62.md` |
 | `9c4e2a1b-8d7f-4e6c-9a3b-2f1e0d9c8b7a` | 2026-10-29 | AUT-46: ecst_input_loader, delivery_status tracker-stamp, subscriber_delivery Skipped. | CANONICO | `SddIA/evolution/9c4e2a1b-8d7f-4e6c-9a3b-2f1e0d9c8b7a.md` |
 | `f8a3c2d1-9e4b-4a7f-8c6d-5e4f3a2b1c0d` | 2026-10-29 | AUT-45: events-contract redb; terminal_witness_exists + subscriber_delivery. | CANONICO | `SddIA/evolution/f8a3c2d1-9e4b-4a7f-8c6d-5e4f3a2b1c0d.md` |

@@ -1,10 +1,12 @@
 //! Proceso `delivery-close-cycle` nativo (P5 — fases skill/tool/action).
 
+use super::capsules::invoke_git_manager;
 use super::phase_capsules::{
     capsule_eda_genomic_audit_gate, capsule_evolution_audit_gate,
     capsule_index_integrity_audit_gate, execute_delivery_close_phase,
 };
 use super::qa_attestation;
+use super::diff_seal;
 use super::project_binding::{self, BoundProject};
 use super::tracker_pbi_meta;
 use super::route_domain_core::materialize_pending_domain_event;
@@ -204,6 +206,10 @@ fn execute_phase(
 
     if phase_name == "Gate pre-PR QA" {
         return capsule_gate_pre_pr_qa(repo, inputs, state);
+    }
+
+    if phase_name == "Sello diff validacion" {
+        return capsule_diff_seal_validacion(repo, inputs, state);
     }
 
     if phase_name == "Aduana EDA genómica" {
@@ -445,6 +451,95 @@ fn capsule_gate_pre_pr_qa(repo: &Path, inputs: &Value, state: &Value) -> Value {
     entry
 }
 
+/// Sella `diff_digest` y SHAs en `{persist_ref}/validacion.md` y commitea antes del push (AUT-39 / AUT-36 CA-3).
+fn capsule_diff_seal_validacion(repo: &Path, inputs: &Value, state: &Value) -> Value {
+    let mut entry = json!({
+        "phase_name": "Sello diff validacion",
+        "delegates_to": [],
+        "handler": "delivery-close-cycle",
+    });
+    if env_truthy_dcc("SDDIA_LAB_SKIP_DIFF_SEAL") {
+        entry["status"] = json!("executed");
+        entry["note"] = json!("SDDIA_LAB_SKIP_DIFF_SEAL");
+        return entry;
+    }
+    let branch = resolve_dcc_branch(inputs)
+        .or_else(|| {
+            state
+                .get("inputs")
+                .and_then(|i| i.get("branch_name"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "HEAD".into());
+    let persist = resolve_dcc_persist_ref(inputs).or_else(|| {
+        state
+            .get("inputs")
+            .and_then(|i| i.get("persist_ref"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    });
+    let Some(persist_ref) = persist else {
+        entry["status"] = json!("blocked");
+        entry["friction_id"] = json!("validacion_not_apto");
+        entry["message"] = json!("persist_ref requerido para sello diff");
+        return entry;
+    };
+    if let Err(e) = diff_seal::validacion_ready_for_seal(repo, &persist_ref) {
+        entry["status"] = json!("blocked");
+        entry["friction_id"] = json!("validacion_not_apto");
+        entry["message"] = json!(e);
+        return entry;
+    }
+    let target_branch = str_field_dcc(inputs, "target_branch").unwrap_or_else(|| "main".into());
+    let seal = match diff_seal::compute_diff_seal(repo, &branch, &target_branch, &persist_ref) {
+        Ok(s) => s,
+        Err(e) => {
+            entry["status"] = json!("failed");
+            entry["error"] = json!(e);
+            return entry;
+        }
+    };
+    if let Err(e) = diff_seal::apply_diff_seal_to_validacion(repo, &persist_ref, &seal) {
+        entry["status"] = json!("failed");
+        entry["error"] = json!(e);
+        return entry;
+    }
+    let rel = format!(
+        "{}/validacion.md",
+        persist_ref.trim().trim_start_matches("./").trim_end_matches('/')
+    );
+    match invoke_git_manager(
+        repo,
+        "commit",
+        &json!({
+            "message": "delivery-close: sello diff validacion",
+            "files": [rel],
+        }),
+    ) {
+        Ok(data) => {
+            entry["status"] = json!("executed");
+            entry["diff_digest"] = json!(seal.diff_digest);
+            entry["validated_head_sha"] = json!(seal.validated_head_sha);
+            entry["validated_base_sha"] = json!(seal.validated_base_sha);
+            entry["validated_tree_sha"] = json!(seal.validated_tree_sha);
+            if let Some(h) = data.get("commit_hash").and_then(|v| v.as_str()) {
+                entry["seal_commit_hash"] = json!(h);
+            }
+        }
+        Err(e) => {
+            entry["status"] = json!("blocked");
+            entry["friction_id"] = json!("diff_seal_commit_failed");
+            entry["message"] = json!(e);
+        }
+    }
+    entry
+}
+
 fn dcc_friction_id(phase_name: &str, report: &Value) -> String {
     if let Some(id) = report.get("friction_id").and_then(|v| v.as_str()) {
         return id.to_string();
@@ -518,7 +613,10 @@ fn dcc_pre_pr_qa_block_suppresses_fracture(report: &Value) -> bool {
     }
     matches!(
         report.get("friction_id").and_then(|v| v.as_str()),
-        Some("qa_attestation_required") | Some("worktree_not_closed")
+        Some("qa_attestation_required")
+            | Some("worktree_not_closed")
+            | Some("validacion_not_apto")
+            | Some("diff_seal_commit_failed")
     )
 }
 
@@ -955,6 +1053,24 @@ mod tests {
             "phase_name": "Gate pre-PR QA",
             "status": "blocked",
             "friction_id": "qa_attestation_required",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_diff_seal_block() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Sello diff validacion",
+            "status": "blocked",
+            "friction_id": "validacion_not_apto",
         })];
         emit_dcc_phase_fractures(repo, &reports);
         let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
