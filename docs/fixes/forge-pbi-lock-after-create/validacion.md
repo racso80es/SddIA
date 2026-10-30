@@ -24,6 +24,10 @@ git_changes:
 - SddIA/tools/linear-tracker-adapter/src/lab_state.rs
 - SddIA/tools/linear-tracker-adapter/src/main.rs
 - docs/fixes/forge-pbi-lock-after-create/
+validated_base_sha: 4ef0d08c63deee4ff6b370288c9e396b18f840e4
+validated_head_sha: bb9bbd682cb71b7f479022c83c6a1a1d73bc51ca
+validated_tree_sha: 283f366fa6100926d3075f948bfa40c8d32cfcda
+diff_digest: sha256:fa5f2df7a24dcca3375d8b62055a112c972ebdc19ac09a1d237c90301fe6140e
 ---
 
 # Validación — seguimiento AUT-29
