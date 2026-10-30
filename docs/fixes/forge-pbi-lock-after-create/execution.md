@@ -28,3 +28,20 @@ Argos ~13:16+01 (Verificación, inyección `?`): Shell+Task peaje muerto → `va
 ## Tekton 13:17+01 (kalma2; inyección `process/phase=?`)
 
 Peaje Shell IDE Rejected ×2; Task `best-of-n-runner` `shell_ok: false`; MCP sddia ausente. **No** re-ejecutado cargo ni `git-manager` este turno — claims §3–4 **no** reafirmados aquí. Grep estático: `retry_without_ledger_reuses_child_by_forge_key` + lab-nativo presentes. Veredicto turno: **blocked**.
+
+## Argos ~13:21+01 (Verificación; inyección `process/phase=?`)
+
+Cascada inferida: `bug-fix` / Verificación / AUT-29 / `docs/fixes/forge-pbi-lock-after-create`.
+FS: `.git/HEAD` → **`main`** (`df1ac9b6…`); ref `fix/forge-pbi-scan-sin-ledger` **ausente** (BRANCH_REF NO_APTO).
+Shell Rejected ×2 (probe + smart-mode vacío); Task `best-of-n-runner` `09385c39` `shell_ok: false`. MCP sddia ausente.
+Sin stdout `cargo`/`git-manager`. Blueprint Grep: lock/scan + `seal_lab_issue_description` presentes.
+`validacion.md` → **NO_APTO** / `integridad_bloqueada` (L-ARGOS-SYNTHESIS). Veredicto: **blocked**.
+
+## Argos ~13:23+01 (Verificación; inyección `process/phase=?`)
+
+Cascada inferida: `bug-fix` / Verificación / AUT-29 / `docs/fixes/forge-pbi-lock-after-create`.
+FS `.git/HEAD` → `refs/heads/main`; ref `fix/forge-pbi-scan-sin-ledger` **ausente** (`BRANCH_TOPOLOGY: NO_APTO`).
+Shell Rejected ×2; Task peajes `ad270ab8` / `4578887a` → `shell_ok: false`. MCP sddia ausente.
+Sin stdout `git-manager`/`cargo test`. Blueprint Grep: lock/scan + `seal_lab_issue_description` (no QA).
+Incidental NO peaje: terminal `725278` ~12:01Z fail `retry_without_ledger…` (OSC-202≠OSC-201).
+`validacion.md` → **NO_APTO** / `integridad_bloqueada`. Veredicto: **blocked**.

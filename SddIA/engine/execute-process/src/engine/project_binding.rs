@@ -141,6 +141,93 @@ fn projects_rel(repo: &Path) -> String {
         .unwrap_or_else(|| ".SddIA/projects".to_string())
 }
 
+/// Índice cuyo `project_root` es este repo (`.` / `./`).
+/// Cero hits → `None`. Varios → el único `status: active`; si no, error.
+pub fn self_hosted_project_slug(repo: &Path) -> Result<Option<String>, String> {
+    let dir = repo.join(projects_rel(repo));
+    let Ok(rd) = fs::read_dir(&dir) else {
+        return Ok(None);
+    };
+    let mut hits: Vec<(String, bool)> = Vec::new();
+    for ent in rd.flatten() {
+        let path = ent.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("md") {
+            continue;
+        }
+        let Ok(text) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(fm) = parse_yaml_fm(&text) else {
+            continue;
+        };
+        let root = fm
+            .get("project_root")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim();
+        if root != "." && root != "./" {
+            continue;
+        }
+        let id = fm
+            .get("id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+            .or_else(|| path.file_stem().and_then(|s| s.to_str()).map(str::to_string));
+        let Some(id) = id else {
+            continue;
+        };
+        let active = fm.get("status").and_then(|v| v.as_str()).map(str::trim) == Some("active");
+        hits.push((id, active));
+    }
+    hits.sort_by(|a, b| a.0.cmp(&b.0));
+    hits.dedup_by(|a, b| a.0 == b.0);
+    match hits.len() {
+        0 => Ok(None),
+        1 => Ok(Some(hits[0].0.clone())),
+        _ => {
+            let active: Vec<String> = hits
+                .iter()
+                .filter(|(_, on)| *on)
+                .map(|(id, _)| id.clone())
+                .collect();
+            if active.len() == 1 {
+                Ok(Some(active[0].clone()))
+            } else {
+                let names = hits
+                    .iter()
+                    .map(|(id, _)| id.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                Err(format!(
+                    "PROJECT_CONFIG_INVALID: varios índices auto-hospedados ({names})"
+                ))
+            }
+        }
+    }
+}
+
+/// Copia `inputs` e inyecta el slug auto-hospedado cuando el payload no trae `project_slug`.
+pub fn inputs_with_self_hosted_slug(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    let has = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .is_some_and(|s| !s.is_empty());
+    if has {
+        return Ok(inputs.clone());
+    }
+    let Some(slug) = self_hosted_project_slug(repo)? else {
+        return Ok(inputs.clone());
+    };
+    let mut cloned = inputs.clone();
+    if let Some(obj) = cloned.as_object_mut() {
+        obj.insert("project_slug".into(), json!(slug));
+    }
+    Ok(cloned)
+}
+
 fn split_frontmatter(raw: &str) -> Result<(String, String), String> {
     let mut lines = raw.lines();
     if lines.next() != Some("---") {

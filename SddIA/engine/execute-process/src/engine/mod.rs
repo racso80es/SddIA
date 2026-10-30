@@ -139,7 +139,12 @@ pub fn run_process(
     if let Err(deny) =
         domain_authority::assert_process_allowed(repo, &canonical, process_inputs)
     {
-        domain_authority::emit_fracture_for_denial(repo, &deny, process_inputs);
+        let fracture_err =
+            domain_authority::emit_fracture_for_denial(repo, &deny, process_inputs).err();
+        let mut error = deny.to_error_string();
+        if let Some(err) = &fracture_err {
+            error = format!("{error} | fractura no depositada: {err}");
+        }
         return Ok(OrchestratorEnvelope {
             success: false,
             status_code: 1,
@@ -148,8 +153,10 @@ pub fn run_process(
                 "process_name": deny.process_name,
                 "profile_source": deny.profile_source,
                 "handler": "domain-authority",
+                "fracture_deposited": fracture_err.is_none(),
+                "fracture_error": fracture_err,
             })),
-            error: Some(deny.to_error_string()),
+            error: Some(error),
             execution_report: Some(json!({
                 "phases": [{
                     "phase_name": "Domain Authority",

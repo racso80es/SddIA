@@ -48,6 +48,7 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | `tracker-sync-failed.md` | `a9b8c7d6-e5f4-4321-b987-6543210fedcc` | tracker-sync-failed | Tracker_Sync_Failed | 1.0.0 | events-contract v1.1.0 | tracker-operations | `tracker_sync_failed` |
 | `pull-request-merged.md` | `cfb8ce66-784e-4826-8a0a-a20c671e3a60` | pull-request-merged | PullRequest_Merged | 1.0.0 | events-contract v1.1.0 | dlt-auditing | `pull_request_merged` |
 | `system-fracture-detected.md` | `f8e3a1b2-c4d5-4e6f-9a0b-1c2d3e4f5a6b` | system-fracture-detected | System_Fracture_Detected | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `system_fracture_detected` |
+| `fracture-pbi-materialized.md` | `6f4c2a81-9d3e-4b17-8a55-c0e1d2f3a4b5` | fracture-pbi-materialized | Fracture_Pbi_Materialized | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `fracture_pbi_materialized` |
 | `kaizen-alert-required.md` | `a9b8c7d6-e5f4-4321-a987-6543210fedcb` | kaizen-alert-required | Kaizen_Alert_Required | 1.1.0 | events-contract v1.1.0 | quality-assurance | `kaizen_alert_required`, `doc_parity_debt` |
 | `domain-entity-degraded.md` | `7a1b2c3d-4e5f-4a6b-8c9d-0e1f2a3b4c5d` | domain-entity-degraded | Domain_Entity_Degraded | 1.0.0 | events-contract v1.1.0 | quality-assurance | `domain_entity_degraded`, `self_healing_trigger` |
 | `domain-entity-restored.md` | `8b2c3d4e-5f6a-4b7c-9d0e-1f2a3b4c5d6e` | domain-entity-restored | Domain_Entity_Restored | 1.0.0 | events-contract v1.1.0 | quality-assurance | `domain_entity_restored`, `self_healing_redemption` |

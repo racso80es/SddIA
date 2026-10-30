@@ -39,7 +39,7 @@ pub fn emit_fracture_for_denial(
     repo: &Path,
     deny: &DomainAuthorityDenial,
     process_inputs: &Value,
-) {
+) -> Result<(), String> {
     let friction_id = friction_id_for_denial_message(&deny.message);
     let mut payload = json!({
         "process_name": deny.process_name,
@@ -56,12 +56,13 @@ pub fn emit_fracture_for_denial(
     {
         payload["project_slug"] = json!(slug);
     }
-    let _ = materialize_pending_domain_event(
+    materialize_pending_domain_event(
         repo,
         "System_Fracture_Detected",
         "domain-authority",
         payload,
-    );
+    )
+    .map(|_| ())
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -526,7 +527,7 @@ docs_layout:
             "project_slug": "core",
         });
         let deny = assert_process_allowed(td.path(), "feature", &inputs).unwrap_err();
-        emit_fracture_for_denial(td.path(), &deny, &inputs);
+        emit_fracture_for_denial(td.path(), &deny, &inputs).expect("fractura depositada");
 
         let store = sddia_event_store::EventStore::open(
             sddia_event_store::runtime_db_path(td.path()),
