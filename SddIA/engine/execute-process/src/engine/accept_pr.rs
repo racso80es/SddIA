@@ -3,6 +3,7 @@
 use super::actions;
 use super::capsules::invoke_git_manager;
 use super::crypto_broker;
+use super::diff_seal;
 use super::qa_attestation;
 use super::tracker_pbi_meta;
 use serde_json::{json, Value};
@@ -238,6 +239,16 @@ pub fn execute_accept_pr_phase(
                     "reason": "merge_already_done",
                     "merge_commit_hash": merge_hash,
                 })));
+            }
+            let target_branch = str_field(inputs, "target_branch").unwrap_or_else(|| "main".into());
+            let persist = str_field(inputs, "persist_ref");
+            if let Err(e) = diff_seal::validate_for_accept_pr_merge(
+                repo,
+                &source,
+                &target_branch,
+                persist.as_deref(),
+            ) {
+                return Some(Err(format!("diff_seal_mismatch: {e}")));
             }
             if let Err(e) = invoke_git_manager(
                 repo,
@@ -515,6 +526,19 @@ pub(crate) fn adjudicate_sync_fail_soft_post_merge(phase_reports: &mut [Value], 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sync_accept_pr_process_hash_signature() {
+        let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+        let md = repo.join(
+            "SddIA/library/codexes/codex-software-engineering/process/accept-pr.md",
+        );
+        crate::forges::common::refresh_process_hash(&md).expect("refresh hash");
+        assert!(
+            crate::engine::verify_process_integrity::verify(&repo).is_ok(),
+            "verify after hash refresh"
+        );
+    }
 
     #[test]
     fn t_a2_canon_two_payloads_bool_force() {

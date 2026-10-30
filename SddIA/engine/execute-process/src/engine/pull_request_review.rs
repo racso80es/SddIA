@@ -315,6 +315,9 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
     if let Some(url) = str_field(inputs, "pr_url") {
         child["pr_url"] = json!(url);
     }
+    if let Some(p) = str_field(inputs, "persist_ref") {
+        child["persist_ref"] = json!(p);
+    }
     if truthy_flag(inputs, "merge_already_done") || truthy_flag(state, "merge_already_done") {
         child["merge_already_done"] = json!(true);
     }

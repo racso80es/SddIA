@@ -298,6 +298,67 @@ pub fn verify_diff_seal_ci(
     }))
 }
 
+fn resolve_branch_head_sha(repo: &Path, branch: &str) -> Result<String, String> {
+    git_output(
+        repo,
+        &[
+            "rev-parse",
+            "--verify",
+            &format!("refs/heads/{branch}"),
+        ],
+    )
+    .or_else(|_| {
+        git_output(
+            repo,
+            &["rev-parse", "--verify", &format!("origin/{branch}")],
+        )
+    })
+}
+
+fn lab_skip_diff_seal_accept() -> bool {
+    for key in ["SDDIA_LAB_SKIP_DIFF_SEAL_ACCEPT", "SDDIA_LAB_SKIP_DIFF_SEAL"] {
+        if std::env::var(key)
+            .map(|v| matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+            .unwrap_or(false)
+        {
+            return true;
+        }
+    }
+    false
+}
+
+/// Gate AUT-41: bloquea merge en `accept-pr` si el sello no cubre el diff actual de la rama origen.
+pub fn validate_for_accept_pr_merge(
+    repo: &Path,
+    source_branch: &str,
+    target_branch: &str,
+    persist_ref_explicit: Option<&str>,
+) -> Result<(), String> {
+    if lab_skip_diff_seal_accept() {
+        return Ok(());
+    }
+    let head = resolve_branch_head_sha(repo, source_branch)?;
+    let mut to_check: Vec<String> = Vec::new();
+    if let Some(p) = persist_ref_explicit {
+        let t = p.trim().trim_start_matches("./");
+        if !t.is_empty() {
+            to_check.push(t.to_string());
+        }
+    }
+    for p in list_persist_refs_with_validacion(repo, &head)? {
+        if !to_check.contains(&p) {
+            to_check.push(p);
+        }
+    }
+    for persist in to_check {
+        if !validacion_requires_ci_seal_check_at(repo, &head, &persist)? {
+            continue;
+        }
+        verify_diff_seal_at_head(repo, &head, target_branch, &persist)?;
+    }
+    Ok(())
+}
+
 pub fn validacion_ready_for_seal(repo: &Path, persist_ref: &str) -> Result<(), String> {
     let path = repo.join(validacion_rel(repo, persist_ref));
     if !path.is_file() {
@@ -616,6 +677,54 @@ mod tests {
             .unwrap();
         let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
         verify_diff_seal_at_head(repo, &head, "main", "docs/features/v").expect("match");
+    }
+
+    #[test]
+    fn accept_pr_merge_blocks_when_seal_stale() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        init_repo_main_feat(repo, "feat/ap", "docs/features/ap");
+        fs::write(
+            repo.join("docs/features/ap/validacion.md"),
+            "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/ap/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "val"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let seal = compute_diff_seal_at_head(repo, &head, "main", "docs/features/ap").unwrap();
+        apply_diff_seal_to_validacion(repo, "docs/features/ap", &seal).unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/ap/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "seal"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        fs::write(repo.join("code.txt"), "drift\n").unwrap();
+        Command::new("git")
+            .args(["add", "code.txt"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "drift"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let err = validate_for_accept_pr_merge(repo, "feat/ap", "main", None).unwrap_err();
+        assert!(err.contains("diff_digest") || err.contains("validated_head_sha"));
     }
 
     fn init_repo_main_feat(repo: &Path, branch: &str, persist: &str) {
