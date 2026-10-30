@@ -359,6 +359,69 @@ pub fn validate_for_accept_pr_merge(
     Ok(())
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ResealOutcome {
+    /// Sin `global: APTO` ni campos de sello previos.
+    SkippedNoScope,
+    /// Digest ya alineado con HEAD.
+    Unchanged,
+    /// `validacion.md` sellado y commiteado.
+    Committed {
+        diff_digest: String,
+    },
+}
+
+/// AUT-42: actualiza sello en working tree y commitea (pre-push PR OPEN).
+pub fn reseal_validacion_for_branch(
+    repo: &Path,
+    head_sha: &str,
+    branch: &str,
+    target_branch: &str,
+    persist_ref: &str,
+) -> Result<ResealOutcome, String> {
+    if lab_skip_diff_seal_accept() {
+        return Ok(ResealOutcome::SkippedNoScope);
+    }
+    if !validacion_requires_ci_seal_check_at(repo, head_sha, persist_ref)? {
+        return Ok(ResealOutcome::SkippedNoScope);
+    }
+    validacion_ready_for_seal(repo, persist_ref)?;
+    let computed = compute_diff_seal_at_head(repo, head_sha, target_branch, persist_ref)?;
+    if let Some(sealed) = read_seal_from_validacion_at(repo, head_sha, persist_ref)? {
+        if sealed.diff_digest == computed.diff_digest
+            && sealed.validated_base_sha == computed.validated_base_sha
+        {
+            return Ok(ResealOutcome::Unchanged);
+        }
+    }
+    apply_diff_seal_to_validacion(repo, persist_ref, &computed)?;
+    let rel = validacion_rel(repo, persist_ref);
+    let add = Command::new("git")
+        .args(["add", &rel])
+        .current_dir(repo)
+        .status()
+        .map_err(|e| format!("git add: {e}"))?;
+    if !add.success() {
+        return Err("git add validacion.md falló".into());
+    }
+    let msg = format!("pre-push: re-sello diff validacion ({branch})");
+    let commit = Command::new("git")
+        .args(["commit", "-m", &msg])
+        .current_dir(repo)
+        .output()
+        .map_err(|e| format!("git commit: {e}"))?;
+    if !commit.status.success() {
+        let stderr = String::from_utf8_lossy(&commit.stderr);
+        if stderr.contains("nothing to commit") {
+            return Ok(ResealOutcome::Unchanged);
+        }
+        return Err(format!("git commit re-sello: {stderr}"));
+    }
+    Ok(ResealOutcome::Committed {
+        diff_digest: computed.diff_digest,
+    })
+}
+
 pub fn validacion_ready_for_seal(repo: &Path, persist_ref: &str) -> Result<(), String> {
     let path = repo.join(validacion_rel(repo, persist_ref));
     if !path.is_file() {
@@ -725,6 +788,61 @@ mod tests {
             .unwrap();
         let err = validate_for_accept_pr_merge(repo, "feat/ap", "main", None).unwrap_err();
         assert!(err.contains("diff_digest") || err.contains("validated_head_sha"));
+    }
+
+    #[test]
+    fn reseal_commits_when_digest_changes() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        init_repo_main_feat(repo, "feat/r", "docs/features/r");
+        fs::write(
+            repo.join("docs/features/r/validacion.md"),
+            "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/r/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "val"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let seal = compute_diff_seal_at_head(repo, &head, "main", "docs/features/r").unwrap();
+        apply_diff_seal_to_validacion(repo, "docs/features/r", &seal).unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/r/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "seal"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        fs::write(repo.join("code.txt"), "drift\n").unwrap();
+        Command::new("git")
+            .args(["add", "code.txt"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "drift"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head2 = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        match reseal_validacion_for_branch(repo, &head2, "feat/r", "main", "docs/features/r")
+            .expect("reseal")
+        {
+            ResealOutcome::Committed { .. } => {}
+            other => panic!("expected committed, got {other:?}"),
+        }
+        let fm = parse_frontmatter(&repo.join("docs/features/r/validacion.md")).unwrap();
+        assert!(fm.get("diff_digest").and_then(|v| v.as_str()).is_some());
     }
 
     fn init_repo_main_feat(repo: &Path, branch: &str, persist: &str) {
