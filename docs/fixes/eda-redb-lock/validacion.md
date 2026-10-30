@@ -1,6 +1,6 @@
 ---
 feature_name: eda-redb-lock
-created: "2026-10-26"
+created: 2026-10-26
 process: bug-fix
 branch: fix/eda-redb-lock
 tracker_ref: AUT-16
@@ -14,15 +14,15 @@ checks:
   REDB-CA5: APTO
   REDB-CA6: APTO
 git_changes:
-  - SddIA/sddia-event-store/
-  - SddIA/engine/execute-process/src/engine/accept_pr.rs
-  - SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs
-  - SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs
-  - docs/fixes/eda-redb-lock/
+- SddIA/sddia-event-store/
+- SddIA/engine/execute-process/src/engine/accept_pr.rs
+- SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs
+- SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs
+- docs/fixes/eda-redb-lock/
 validated_base_sha: d906cc8e843effdb991cecd3190080a2c073d738
-validated_head_sha: c2bfdc425e9037e03849a6be40d509ee055f0cbd
-validated_tree_sha: 8486e4e6dbd03fd70343519940f5207d83864e36
-diff_digest: sha256:77cb707666197c491f2d7aaf31509b33a655aad7fc1209e72ad124294da7c974
+validated_head_sha: 5addeba4b2326f52a7f22ca1841bae5287eda308
+validated_tree_sha: 8091c52045bd3a1264a25134d37b059b802f6f69
+diff_digest: sha256:288708e3ed3f7d78a7592baa69d451d0989b44636df6f7b1c57bf14edb4e9ed7
 ---
 
 # Validación — AUT-16
