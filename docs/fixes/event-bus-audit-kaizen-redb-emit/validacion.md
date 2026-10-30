@@ -4,9 +4,9 @@ global: APTO
 branch: Kaicen_Auditoria_Eventos_261030
 persist_ref: docs/fixes/event-bus-audit-kaizen-redb-emit
 validated_base_sha: d906cc8e843effdb991cecd3190080a2c073d738
-validated_head_sha: 9391d8794132d8a262afefb7e67462f08cc18fad
-validated_tree_sha: 9a1aac182df5ff85f4ac98814309fc0ef6e7cf73
-diff_digest: sha256:77ceba5db459c923c22f88b92c079437313d2bfbd0d9ad0d9c352f8c0df53268
+validated_head_sha: 978cae42a1dec809223b781b8d8e281b77804ae0
+validated_tree_sha: bd0b5aaf506231d64635185b5821dbf81cfc2d24
+diff_digest: sha256:2b120790a0d21b87f1655f909bfb288ef736d332f0ddf04e4b6ed2a2d8b0526c
 ---
 
 # Validación — event-bus-audit Kaizen redb emit
