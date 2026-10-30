@@ -11,9 +11,9 @@ global: APTO
 pbi_archived: false
 branch: fix/bridge-presented-tracker-ref
 validated_base_sha: 84c2ee24a6a696c600ac57a52e612efa0b0ada93
-validated_head_sha: 512fc06206d21dfd6bde8826da77a2824e59e768
-validated_tree_sha: fe8fb8d50c2c284c3ee22d857dc239d3d85e8ec8
-diff_digest: sha256:c73f0ee04c84d539b5cc93fb818efd51db79274fa8f5592478a5dc5eef5d99a0
+validated_head_sha: 45982210259ac9aecd50c7f15283299ac94e2cc7
+validated_tree_sha: cf94ee7549c27e4c72a938aefec98269eb2e36ad
+diff_digest: sha256:3f35bc580442921b618d21e42a95abf56ab8c6b1ef1607dccff00ccd660e0af4
 ---
 
 # Validación — bridge-presented-tracker-ref (AUT-25)
