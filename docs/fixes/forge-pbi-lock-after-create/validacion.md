@@ -27,20 +27,18 @@ validated_tree_sha: null
 diff_digest: null
 ---
 
-# Validación — seguimiento AUT-29 (Argos)
+# Validación — seguimiento AUT-29
 
-**Veredicto sesión ~13:23+01:** `NO_APTO` / `integridad_bloqueada` (L-ARGOS-SYNTHESIS).
+**Veredicto sesión ~17:18+01 (Tekton, re-inyección):** `NO_APTO` / `integridad_bloqueada` — peaje Ejecución bloqueado; sin síntesis Argos nueva.
 
-Sin stdout/exit code de cápsulas en esta sesión. Claims históricos (14/14, SHAs previos) **no** equivalen a evidencia viva.
+Inyección kalma2 `agent:tekton` con `process`/`phase`/`persist_ref`/`branch_name`/`execution_id`/`pbi_ref`/`correlation_id` vacíos. Cascada legado FS **no** aceptada como contrato. Sin stdout/exit code de cápsulas. Claims históricos **no** equivalen a evidencia viva.
 
 | Check | Resultado |
 |-------|-----------|
-| INJECTION_CONTRACT | `process`/`phase`/`persist_ref`/refs vacíos (`?`) — cascada inferida desde FS / handoff |
-| CAPSULE_CHANNEL | Shell IDE Rejected (probe + smart-mode); Task `best-of-n-runner` `4578887a` `shell_ok: false`; MCP sddia ausente |
-| BRANCH_TOPOLOGY | `.git/HEAD` → `refs/heads/main`; `fix/forge-pbi-scan-sin-ledger` **ausente** en `packed-refs` / refs locales — divergencia vs `branch_name` documental |
+| INJECTION_CONTRACT | refs inyección `?`/vacío — legado handoff **no** peaje |
+| CAPSULE_CHANNEL | Shell Rejected; MCP sddia/git-manager/execute-process ausentes |
+| BRANCH_TOPOLOGY | `.git/HEAD` → `refs/heads/main` (`a541f810…`); `fix/forge-pbi-scan-sin-ledger` **ausente** |
 | `cargo test -p execute-process forge_pbi --lib` | **SIN_EVIDENCIA** (esta corrida) |
-| CA-LOCK / CA-IDEMPOTENT / CA-SCAN-REUSE / CA-DOMAIN | **SIN_EVIDENCIA** — no reafirmados |
-| Blueprint Grep | `forge_key` / `seal_lab_issue_description` / `retry_without_ledger_reuses_child_by_forge_key` presentes en `forge_pbi.rs` — **no** sustituyen cápsula QA |
-| Incidental (NO peaje) | Terminal histórico `725278` (~12:01Z): `forge_pbi` 12 ok / 1 fail (`retry_without_ledger…` OSC-202≠OSC-201, exit 101) — **no** gate de esta sesión |
+| CA-LOCK / CA-IDEMPOTENT / CA-SCAN-REUSE / CA-DOMAIN | **SIN_EVIDENCIA** |
 
 `pbi_archived: false` — `done_gate: linear`; AUT-29 ya cerrado en merge previo; este corte es seguimiento.

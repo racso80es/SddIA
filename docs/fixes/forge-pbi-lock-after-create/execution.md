@@ -45,3 +45,21 @@ Shell Rejected ×2; Task peajes `ad270ab8` / `4578887a` → `shell_ok: false`. M
 Sin stdout `git-manager`/`cargo test`. Blueprint Grep: lock/scan + `seal_lab_issue_description` (no QA).
 Incidental NO peaje: terminal `725278` ~12:01Z fail `retry_without_ledger…` (OSC-202≠OSC-201).
 `validacion.md` → **NO_APTO** / `integridad_bloqueada`. Veredicto: **blocked**.
+
+## Argos ~16:54+01 (Verificación; inyección total vacía)
+
+Inyección: `process`/`phase`/`persist_ref`/`branch_name`/`execution_id`/`pbi_ref`/`correlation_id` = `?`/vacío — **INJECTION_CONTRACT NO_APTO** (legado handoff no aceptado).
+FS: `.git/HEAD` → `main` @ `a541f810…`; `fix/forge-pbi-scan-sin-ledger` ausente.
+Shell Rejected ×3; Task `9b1a8106` `shell_ok: false`; MCP sddia ausente. Sin cápsulas.
+`validacion.md` → **NO_APTO** / `integridad_bloqueada`. Veredicto: **blocked**.
+
+## Tekton ~17:18+01 (kalma2; inyección total vacía)
+
+Inyección: `process`/`phase`/`persist_ref`/`branch_name`/`execution_id`/`pbi_ref`/`correlation_id` = `?`/vacío — **INJECTION_CONTRACT NO_APTO** (legado FS no aceptado).
+FS: `.git/HEAD` → `main` @ `a541f810…`; `fix/forge-pbi-scan-sin-ledger` ausente (`BRANCH_TOPOLOGY: NO_APTO`).
+Shell Rejected (probe); MCP sddia/git-manager/execute-process ausentes (GetDynamicTools 0). Sin cargo / `sddia-run` / mutación genoma. Claims §3–4 **no** reafirmados.
+`validacion.md` se mantiene **NO_APTO** / `integridad_bloqueada`. Veredicto turno: **blocked**.
+
+## Tekton ~17:18+01 (kalma2; re-inyección total vacía)
+
+Misma inyección vacía. FS: `main` @ `a541f810…`; rama fix ausente. Shell Rejected; MCP sddia ausente. Sin cápsulas. Sin genoma. Sin docs/todos/. Veredicto: **blocked**.

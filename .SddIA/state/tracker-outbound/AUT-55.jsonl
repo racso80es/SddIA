@@ -1,0 +1,2 @@
+{"event_id":"5f12a3d5-85da-450f-835b-a0c4022cb54d","issue_ref":"AUT-55","occurred_at":"2026-10-30T16:18:11Z","operation":"create_issue","source_process":"forge-pbi"}
+{"event_id":"44694079-4aee-4c62-831e-570b2ca78978","issue_ref":"AUT-55","occurred_at":"2026-10-30T16:18:11Z","operation":"update_issue_description","source_process":"forge-pbi"}
