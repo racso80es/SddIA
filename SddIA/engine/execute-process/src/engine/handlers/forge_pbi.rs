@@ -6,7 +6,9 @@ use super::super::route_domain_core::materialize_pending_domain_event;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
 use serde_json::{json, Value};
-use std::path::Path;
+use sha2::{Digest, Sha256};
+use std::fs;
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 const PROCESS_NAME: &str = "forge-pbi";
@@ -167,6 +169,275 @@ struct TrackerPhase {
     skipped_reason: Option<String>,
 }
 
+struct PriorForge {
+    tracker_ref: String,
+    document_id: String,
+    uuid: String,
+    event_sealed: bool,
+}
+
+enum ForgedEmit {
+    Sealed(String),
+    Pending,
+}
+
+fn forge_identity_key(project_slug: &str, parent_ref: &str, process: &str, raw_idea: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(project_slug.as_bytes());
+    hasher.update([0xff]);
+    hasher.update(parent_ref.as_bytes());
+    hasher.update([0xff]);
+    hasher.update(process.as_bytes());
+    hasher.update([0xff]);
+    hasher.update(raw_idea.as_bytes());
+    hex::encode(hasher.finalize())
+}
+
+fn forge_ledger_path(project_root: &Path, key: &str) -> PathBuf {
+    project_root
+        .join(".SddIA/state/forge-pbi")
+        .join(format!("{key}.json"))
+}
+
+fn read_ledger(project_root: &Path, key: &str) -> Option<PriorForge> {
+    let raw = fs::read_to_string(forge_ledger_path(project_root, key)).ok()?;
+    let v: Value = serde_json::from_str(&raw).ok()?;
+    let tracker_ref = v
+        .get("tracker_ref")
+        .and_then(|x| x.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())?
+        .to_string();
+    let document_id = v
+        .get("document_id")
+        .and_then(|x| x.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())?
+        .to_string();
+    let uuid = v
+        .get("uuid")
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string();
+    let event_sealed = v
+        .get("event_sealed")
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false);
+    Some(PriorForge {
+        tracker_ref,
+        document_id,
+        uuid,
+        event_sealed,
+    })
+}
+
+fn write_ledger(project_root: &Path, key: &str, prior: &PriorForge) -> Result<(), String> {
+    let path = forge_ledger_path(project_root, key);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let body = json!({
+        "forge_key": key,
+        "tracker_ref": prior.tracker_ref,
+        "document_id": prior.document_id,
+        "uuid": prior.uuid,
+        "event_sealed": prior.event_sealed,
+    });
+    fs::write(
+        path,
+        serde_json::to_string_pretty(&body).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())
+}
+
+fn fm_scalar(description: &str, key: &str) -> Option<String> {
+    let prefix = format!("{key}:");
+    for line in description.lines() {
+        let t = line.trim();
+        let Some(rest) = t.strip_prefix(&prefix) else {
+            continue;
+        };
+        let v = rest.trim().trim_matches('"').trim();
+        if !v.is_empty() {
+            return Some(v.to_string());
+        }
+    }
+    None
+}
+
+fn child_identifiers(body: &Value) -> Vec<String> {
+    let Some(arr) = body.get("children").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+    arr.iter()
+        .filter_map(|node| {
+            node.as_str()
+                .map(str::to_string)
+                .or_else(|| {
+                    node.get("identifier")
+                        .and_then(|v| v.as_str())
+                        .map(str::to_string)
+                })
+        })
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+fn fetch_issue_body(
+    repo: &Path,
+    inputs: &Value,
+    issue_ref: &str,
+    project_slug: &str,
+) -> Result<Value, String> {
+    let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, inputs)?;
+    invoke_tool_for_process(
+        repo,
+        &tool,
+        &json!({
+            "request": {
+                "operation": "fetch_issue",
+                "issue_ref": issue_ref,
+                "project_slug": project_slug,
+            }
+        }),
+        Some(PROCESS_NAME),
+    )
+}
+
+fn prior_from_description(description: &str, expected_key: &str) -> Option<PriorForge> {
+    let key = fm_scalar(description, "forge_key")?;
+    if key != expected_key {
+        return None;
+    }
+    Some(PriorForge {
+        tracker_ref: fm_scalar(description, "tracker_ref").unwrap_or_default(),
+        document_id: fm_scalar(description, "document_id")?,
+        uuid: fm_scalar(description, "uuid").unwrap_or_default(),
+        event_sealed: false,
+    })
+}
+
+fn scan_parent_for_forge_key(
+    repo: &Path,
+    inputs: &Value,
+    project_slug: &str,
+    parent_ref: &str,
+    key: &str,
+) -> Option<PriorForge> {
+    let parent = fetch_issue_body(repo, inputs, parent_ref, project_slug).ok()?;
+    for child in child_identifiers(&parent) {
+        let body = fetch_issue_body(repo, inputs, &child, project_slug).ok()?;
+        let description = body
+            .get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let Some(mut prior) = prior_from_description(description, key) else {
+            continue;
+        };
+        if prior.tracker_ref.is_empty() {
+            prior.tracker_ref = body
+                .get("identifier")
+                .and_then(|v| v.as_str())
+                .unwrap_or(child.as_str())
+                .to_string();
+        }
+        if prior.tracker_ref.is_empty() {
+            continue;
+        }
+        return Some(prior);
+    }
+    None
+}
+
+fn find_prior_forge(
+    repo: &Path,
+    project_root: &Path,
+    inputs: &Value,
+    project_slug: &str,
+    parent_ref: &str,
+    key: &str,
+) -> Option<PriorForge> {
+    if let Some(prior) = read_ledger(project_root, key) {
+        return Some(prior);
+    }
+    if parent_ref.is_empty() {
+        return None;
+    }
+    let prior = scan_parent_for_forge_key(repo, inputs, project_slug, parent_ref, key)?;
+    let _ = write_ledger(project_root, key, &prior);
+    Some(prior)
+}
+
+fn is_store_lock_error(err: &str) -> bool {
+    err.contains("Database already open") || err.contains("Cannot acquire lock")
+}
+
+fn lab_simulate_store_lock() -> bool {
+    std::env::var("SDDIA_LAB_SIMULATE_STORE_LOCK")
+        .map(|v| {
+            matches!(
+                v.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        })
+        .unwrap_or(false)
+}
+
+fn emit_pbi_forged(repo: &Path, payload: Value) -> Result<ForgedEmit, String> {
+    if lab_simulate_store_lock() {
+        return Ok(ForgedEmit::Pending);
+    }
+    match materialize_pending_domain_event(repo, "PBI_Forged", PROCESS_NAME, payload) {
+        Ok(path) => Ok(ForgedEmit::Sealed(path)),
+        Err(e) if is_store_lock_error(&e) => Ok(ForgedEmit::Pending),
+        Err(e) => Err(e),
+    }
+}
+
+fn success_envelope(
+    document_id: &str,
+    entity_uuid: &str,
+    tracker: &TrackerPhase,
+    bound: &project_binding::BoundProject,
+    event_path: Option<String>,
+    pending: bool,
+    registro_status: &str,
+) -> OrchestratorEnvelope {
+    let mut data = json!({
+        "document_id": document_id,
+        "uuid": entity_uuid,
+        "event_path": event_path,
+        "create_issue_invoked": tracker.invoked,
+        "delivery_mode": bound.delivery_mode.as_str(),
+        "delivery_mode_source": bound.delivery_mode_source,
+        "tier_policy": "agent-contract",
+        "pbi_forged_pending": pending,
+    });
+    if let Some(tr) = &tracker.tracker_ref {
+        data["tracker_ref"] = json!(tr);
+    }
+    let sellado = if pending { "pending" } else { "executed" };
+    OrchestratorEnvelope {
+        success: true,
+        status_code: 0,
+        data: Some(data),
+        error: None,
+        execution_report: Some(json!({
+            "phases": [
+                {"phase_name": "Recepcion", "status": "executed", "agent_tier": "reflexivo"},
+                {
+                    "phase_name": "Registro en tracker",
+                    "status": registro_status,
+                    "handler": PROCESS_NAME,
+                    "note": tracker.skipped_reason,
+                },
+                {"phase_name": "Sellado", "status": sellado, "agent_tier": "balistico"}
+            ]
+        })),
+        exit_code: 0,
+    }
+}
+
 fn tracker_registration_phase(
     repo: &Path,
     bound: &project_binding::BoundProject,
@@ -303,8 +574,26 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .unwrap_or("feature");
     let bound = project_binding::bind(repo, inputs)?
         .ok_or("project_slug requerido para forge-pbi")?;
-    let document_id = format!("PBI-{}", &Uuid::new_v4().to_string()[..8]);
-    let entity_uuid = Uuid::new_v4().to_string();
+    let parent_for_key = str_field(inputs, "parent_ref").unwrap_or_default();
+    let forge_key = forge_identity_key(&bound.slug, &parent_for_key, process, raw_idea);
+    // Ledger siempre; scan de hijas solo si hay parent_ref (spec AUT-29 cortes 2–3).
+    let prior = find_prior_forge(
+        repo,
+        &bound.project_root,
+        inputs,
+        &bound.slug,
+        &parent_for_key,
+        &forge_key,
+    );
+    let document_id = prior
+        .as_ref()
+        .map(|p| p.document_id.clone())
+        .unwrap_or_else(|| format!("PBI-{}", &Uuid::new_v4().to_string()[..8]));
+    let entity_uuid = prior
+        .as_ref()
+        .map(|p| p.uuid.clone())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
     let created = Utc::now().format("%Y-%m-%d").to_string();
     let lifecycle_fm = super::super::item_lifecycle_frontmatter::forge_frontmatter_lines();
     let mut fm_lines = format!(
@@ -316,15 +605,17 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     if let Some(href) = str_field(inputs, "historia_ref") {
         fm_lines.push_str(&format!("\nhistoria_ref: \"{href}\""));
     }
+    fm_lines.push_str(&format!("\nforge_key: \"{forge_key}\""));
     let draft = format!("---\n{fm_lines}\n---\n\n# {title}\n\n{raw_idea}\n");
-    let tracker = tracker_registration_phase(
-        repo,
-        &bound,
-        inputs,
-        process,
-        &title,
-        &draft,
-    );
+    let tracker = if prior.is_some() {
+        TrackerPhase {
+            tracker_ref: prior.as_ref().map(|p| p.tracker_ref.clone()),
+            invoked: false,
+            skipped_reason: Some("idempotent-reuse".into()),
+        }
+    } else {
+        tracker_registration_phase(repo, &bound, inputs, process, &title, &draft)
+    };
     let tracker_required = project_binding::tracker_config_for_inputs(repo, inputs)
         .ok()
         .flatten()
@@ -364,36 +655,42 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     } else {
         draft.clone()
     };
-    if let Some(tr) = &tracker.tracker_ref {
-        let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, inputs)?;
-        let _ = invoke_tool_for_process(
-            repo,
-            &tool,
-            &json!({
-                "request": {
-                    "operation": "update_issue_description",
-                    "issue_ref": tr,
-                    "description": body,
-                    "project_slug": bound.slug,
-                }
-            }),
-            Some(PROCESS_NAME),
-        );
+    if prior.is_none() {
+        if let Some(tr) = &tracker.tracker_ref {
+            let fresh = PriorForge {
+                tracker_ref: tr.clone(),
+                document_id: document_id.clone(),
+                uuid: entity_uuid.clone(),
+                event_sealed: false,
+            };
+            if let Err(e) = write_ledger(&bound.project_root, &forge_key, &fresh) {
+                return Ok(failed_after_issue(
+                    &document_id,
+                    &entity_uuid,
+                    &tracker,
+                    &e,
+                ));
+            }
+        }
     }
-    let mut event_payload = json!({
-        "document_id": document_id,
-        "project_slug": bound.slug,
-        "process": process,
-    });
-    if let Some(tr) = &tracker.tracker_ref {
-        event_payload["tracker_ref"] = json!(tr);
+    if tracker.invoked {
+        if let Some(tr) = &tracker.tracker_ref {
+            let tool = super::tracker_stamp::lifecycle_tool_name_for(repo, inputs)?;
+            let _ = invoke_tool_for_process(
+                repo,
+                &tool,
+                &json!({
+                    "request": {
+                        "operation": "update_issue_description",
+                        "issue_ref": tr,
+                        "description": body,
+                        "project_slug": bound.slug,
+                    }
+                }),
+                Some(PROCESS_NAME),
+            );
+        }
     }
-    let event_rel = materialize_pending_domain_event(
-        repo,
-        "PBI_Forged",
-        PROCESS_NAME,
-        event_payload,
-    )?;
     let registro_status = if tracker.invoked {
         if tracker.tracker_ref.is_some() {
             "executed"
@@ -403,37 +700,122 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     } else {
         "skipped"
     };
-    let mut data = json!({
-        "document_id": document_id,
-        "uuid": entity_uuid,
-        "event_path": event_rel,
-        "create_issue_invoked": tracker.invoked,
-        "delivery_mode": bound.delivery_mode.as_str(),
-        "delivery_mode_source": bound.delivery_mode_source,
-        "tier_policy": "agent-contract",
-    });
-    if let Some(tr) = &tracker.tracker_ref {
-        data["tracker_ref"] = json!(tr);
+    if tracker.tracker_ref.is_some() {
+        let already_sealed = prior.as_ref().is_some_and(|p| p.event_sealed);
+        if already_sealed {
+            return Ok(success_envelope(
+                &document_id,
+                &entity_uuid,
+                &tracker,
+                &bound,
+                None,
+                false,
+                registro_status,
+            ));
+        }
+        let mut event_payload = json!({
+            "document_id": document_id,
+            "project_slug": bound.slug,
+            "process": process,
+        });
+        if let Some(tr) = &tracker.tracker_ref {
+            event_payload["tracker_ref"] = json!(tr);
+        }
+        match emit_pbi_forged(repo, event_payload) {
+            Ok(ForgedEmit::Sealed(path)) => {
+                if let Some(tr) = &tracker.tracker_ref {
+                    let sealed = PriorForge {
+                        tracker_ref: tr.clone(),
+                        document_id: document_id.clone(),
+                        uuid: entity_uuid.clone(),
+                        event_sealed: true,
+                    };
+                    let _ = write_ledger(&bound.project_root, &forge_key, &sealed);
+                }
+                let event_path = if path.is_empty() { None } else { Some(path) };
+                return Ok(success_envelope(
+                    &document_id,
+                    &entity_uuid,
+                    &tracker,
+                    &bound,
+                    event_path,
+                    false,
+                    registro_status,
+                ));
+            }
+            Ok(ForgedEmit::Pending) => {
+                return Ok(success_envelope(
+                    &document_id,
+                    &entity_uuid,
+                    &tracker,
+                    &bound,
+                    None,
+                    true,
+                    registro_status,
+                ));
+            }
+            Err(e) => {
+                return Ok(failed_after_issue(
+                    &document_id,
+                    &entity_uuid,
+                    &tracker,
+                    &e,
+                ));
+            }
+        }
     }
-    Ok(OrchestratorEnvelope {
-        success: true,
-        status_code: 0,
-        data: Some(data),
-        error: None,
+    let event_rel = materialize_pending_domain_event(
+        repo,
+        "PBI_Forged",
+        PROCESS_NAME,
+        json!({
+            "document_id": document_id,
+            "project_slug": bound.slug,
+            "process": process,
+        }),
+    )?;
+    Ok(success_envelope(
+        &document_id,
+        &entity_uuid,
+        &tracker,
+        &bound,
+        Some(event_rel),
+        false,
+        registro_status,
+    ))
+}
+
+fn failed_after_issue(
+    document_id: &str,
+    entity_uuid: &str,
+    tracker: &TrackerPhase,
+    error: &str,
+) -> OrchestratorEnvelope {
+    OrchestratorEnvelope {
+        success: false,
+        status_code: 1,
+        data: Some(json!({
+            "document_id": document_id,
+            "uuid": entity_uuid,
+            "tracker_ref": tracker.tracker_ref,
+            "create_issue_invoked": tracker.invoked,
+            "pbi_forged_pending": false,
+        })),
+        error: Some(error.to_string()),
         execution_report: Some(json!({
             "phases": [
                 {"phase_name": "Recepcion", "status": "executed", "agent_tier": "reflexivo"},
                 {
                     "phase_name": "Registro en tracker",
-                    "status": registro_status,
+                    "status": "executed",
                     "handler": PROCESS_NAME,
                     "note": tracker.skipped_reason,
                 },
-                {"phase_name": "Sellado", "status": "executed", "agent_tier": "balistico"}
+                {"phase_name": "Sellado", "status": "failed", "agent_tier": "balistico", "note": error}
             ]
         })),
-        exit_code: 0,
-    })
+        exit_code: 1,
+    }
 }
 
 #[cfg(test)]
@@ -644,5 +1026,136 @@ mod tests {
                 .is_none());
             cleanup_project_index(&core, slug);
         });
+    }
+
+    fn data_str(out: &OrchestratorEnvelope, key: &str) -> String {
+        out.data
+            .as_ref()
+            .and_then(|d| d.get(key))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string()
+    }
+
+    fn seed_parent(core: &Path, ident: &str) {
+        let path = core.join(".SddIA/lab-linear-store.json");
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let body = json!({
+            "issues": {
+                ident: {
+                    "id": format!("issue-uuid-{ident}"),
+                    "identifier": ident,
+                    "title": "parent",
+                    "description": "",
+                    "state": "Backlog",
+                    "priority": 0,
+                    "labels": ["hu"],
+                    "parent": null,
+                    "children": [],
+                    "url": format!("https://linear.app/issue/{ident}"),
+                    "updated_at": "2026-10-04T00:00:00Z"
+                }
+            },
+            "comments": {},
+            "audit_log": [],
+            "next_id": 200
+        });
+        fs::write(path, serde_json::to_string_pretty(&body).unwrap()).unwrap();
+    }
+
+    fn create_count(core: &Path) -> usize {
+        let path = core.join(".SddIA/lab-linear-store.json");
+        let raw = fs::read_to_string(path).unwrap_or_default();
+        let v: Value = serde_json::from_str(&raw).unwrap_or(json!({}));
+        v.get("audit_log")
+            .and_then(|a| a.as_array())
+            .map(|a| {
+                a.iter()
+                    .filter(|x| x.as_str().unwrap_or("").starts_with("create:"))
+                    .count()
+            })
+            .unwrap_or(0)
+    }
+
+    #[test]
+    fn store_lock_classifier_matches_redb_message() {
+        assert!(is_store_lock_error(
+            "Database already open. Cannot acquire lock."
+        ));
+        assert!(!is_store_lock_error("raw_idea requerido"));
+    }
+
+    #[test]
+    fn forge_key_stable_for_same_raw_idea() {
+        let a = forge_identity_key("core", "AUT-5", "bug-fix", "idea");
+        let b = forge_identity_key("core", "AUT-5", "bug-fix", "idea");
+        let c = forge_identity_key("core", "AUT-5", "bug-fix", "otra");
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn lock_after_create_returns_ids_and_retry_same_issue() {
+        struct FlagGuard;
+        impl Drop for FlagGuard {
+            fn drop(&mut self) {
+                std::env::remove_var("SDDIA_LAB_SIMULATE_STORE_LOCK");
+            }
+        }
+        let _flag = FlagGuard;
+        with_lab(|| {
+            std::env::set_var("SDDIA_LAB_SIMULATE_STORE_LOCK", "1");
+            let core = find_repo_root().expect("repo");
+            let slug = "forge-ac-lock";
+            let client = register_lab_project(&core, slug, true);
+            let _ = fs::remove_dir_all(client.join(".SddIA/state/forge-pbi"));
+            seed_parent(&core, "LAB-PARENT-LOCK");
+            let inputs = json!({
+                "project_slug": slug,
+                "raw_idea": "misma idea lock",
+                "process": "bug-fix",
+                "parent_ref": "LAB-PARENT-LOCK",
+            });
+            let first = run(&core, &inputs).expect("first");
+            assert!(first.success, "{first:?}");
+            let tr = data_str(&first, "tracker_ref");
+            let doc = data_str(&first, "document_id");
+            assert!(!tr.is_empty());
+            assert!(doc.starts_with("PBI-"));
+            assert_eq!(
+                first
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.get("pbi_forged_pending"))
+                    .and_then(|v| v.as_bool()),
+                Some(true)
+            );
+            assert_eq!(create_count(&core), 1);
+            std::env::remove_var("SDDIA_LAB_SIMULATE_STORE_LOCK");
+            let second = run(&core, &inputs).expect("second");
+            assert!(second.success, "{second:?}");
+            assert_eq!(data_str(&second, "tracker_ref"), tr);
+            assert_eq!(data_str(&second, "document_id"), doc);
+            assert_eq!(create_count(&core), 1);
+            let _ = fs::remove_dir_all(client.join(".SddIA/state/forge-pbi"));
+            cleanup_project_index(&core, slug);
+        });
+    }
+
+    #[test]
+    fn prior_from_child_description_matches_forge_key() {
+        let key = forge_identity_key("core", "AUT-5", "bug-fix", "idea");
+        let desc = format!(
+            "---\ndocument_id: PBI-abc\nuuid: \"u-1\"\nforge_key: \"{key}\"\n---\n\n# t\n"
+        );
+        let prior = prior_from_description(&desc, &key).expect("prior");
+        assert_eq!(prior.document_id, "PBI-abc");
+        assert_eq!(prior.uuid, "u-1");
+        assert!(prior_from_description(&desc, "otra").is_none());
+        let body = json!({"children": ["OSC-1", {"identifier": "OSC-2"}]});
+        assert_eq!(
+            child_identifiers(&body),
+            vec!["OSC-1".to_string(), "OSC-2".to_string()]
+        );
     }
 }
