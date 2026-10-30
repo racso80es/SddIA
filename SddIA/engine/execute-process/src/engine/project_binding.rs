@@ -357,6 +357,31 @@ fn registered_roots(projects_dir: &Path, except_slug: &str) -> Result<Vec<PathBu
     Ok(out)
 }
 
+/// Labs efímeros y fixtures documentales bajo Core-self (AUT-6).
+fn core_nested_index_exempt(other: &Path, core_root: &Path) -> bool {
+    let rel: &Path = if other.is_absolute() {
+        match other.strip_prefix(core_root) {
+            Ok(r) => r,
+            Err(_) => return false,
+        }
+    } else {
+        other
+    };
+    if rel.as_os_str().is_empty() {
+        return false;
+    }
+    if let Some(first) = rel.components().next() {
+        use std::path::Component;
+        if let Component::Normal(name) = first {
+            let s = name.to_string_lossy();
+            if s.starts_with("_refine_lab_") || s.starts_with("_forge_lab_") {
+                return true;
+            }
+        }
+    }
+    rel.starts_with("docs/_fixtures") || rel.starts_with("docs\\_fixtures")
+}
+
 /// L-ISOLATION: al enlazar `core`, raíces relativas de fixtures en el índice no
 /// participan en la comparación (relativa↔absoluta produce falsos positivos).
 fn assert_git_isolation_for_slug(
@@ -373,6 +398,9 @@ fn assert_git_isolation_for_slug(
     let skip_relative = bound_slug == Some("core");
     for other in others {
         if skip_relative && !other.is_absolute() {
+            continue;
+        }
+        if skip_relative && core_nested_index_exempt(other, project_root) {
             continue;
         }
         if project_root.starts_with(other) && project_root != other {
@@ -882,13 +910,13 @@ mod tests {
             done_gate_for_inputs(repo.path(), &json!({"project_slug": "demo"})).unwrap(),
             DoneGate::Git
         );
-        let both = body.replace(
+        let contradict = body.replace(
             "docs_layout:",
-            "tracker:\n  provider: linear\n  team_key: OSC\n  done_gate: both\ndocs_layout:",
+            "tracker:\n  provider: linear\n  team_key: OSC\n  done_gate: git\ndocs_layout:",
         );
-        fs::write(client.join(".SddIA/project.md"), both).unwrap();
+        fs::write(client.join(".SddIA/project.md"), contradict).unwrap();
         let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
-        assert!(err.contains("done_gate"), "{err}");
+        assert!(err.contains("contradice"), "{err}");
     }
 
     #[test]
@@ -1031,6 +1059,75 @@ mod tests {
         assert_eq!(bound.slug, "core");
         let dg = done_gate_for_inputs(repo.path(), &json!({"project_slug": "core"})).unwrap();
         assert_eq!(dg, DoneGate::Linear);
+    }
+
+    #[test]
+    fn bind_core_tolerates_absolute_refine_lab_in_index() {
+        let repo = tempfile::tempdir().unwrap();
+        write_git_root(repo.path());
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        fs::create_dir_all(repo.path().join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.path().join(".SddIA/projects/core.md"),
+            core_index_md(uuid, "."),
+        )
+        .unwrap();
+        fs::write(repo.path().join(".SddIA/project.md"), core_manifest_md(uuid)).unwrap();
+        let lab = repo.path().join("_refine_lab_ac-abs");
+        write_git_root(&lab);
+        fs::create_dir_all(lab.join(".SddIA")).unwrap();
+        fs::write(
+            lab.join(".SddIA/project.md"),
+            manifest_md(uuid, "branch_pr", "1.3.0"),
+        )
+        .unwrap();
+        fs::write(
+            repo.path().join(".SddIA/projects/refine-ac-abs.md"),
+            format!(
+                "---\nid: refine-ac-abs\nuuid: \"bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: \"{}\"\nmanifest_ref: .SddIA/project.md\ncodex_slug: codex-software-engineering\nstatus: active\n---\n",
+                lab.display()
+            ),
+        )
+        .unwrap();
+        assert!(
+            bind(repo.path(), &json!({"project_slug": "core"})).is_ok(),
+            "core bind debe tolerar índice lab absoluto anidado"
+        );
+    }
+
+    #[test]
+    fn bind_core_still_rejects_absolute_nested_real_project() {
+        let repo = tempfile::tempdir().unwrap();
+        write_git_root(repo.path());
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        fs::create_dir_all(repo.path().join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.path().join(".SddIA/projects/core.md"),
+            core_index_md(uuid, "."),
+        )
+        .unwrap();
+        fs::write(repo.path().join(".SddIA/project.md"), core_manifest_md(uuid)).unwrap();
+        let client = repo.path().join("client-nested");
+        write_git_root(&client);
+        fs::create_dir_all(client.join(".SddIA")).unwrap();
+        fs::write(
+            client.join(".SddIA/project.md"),
+            manifest_md(uuid, "branch_pr", "1.0.0"),
+        )
+        .unwrap();
+        fs::write(
+            repo.path().join(".SddIA/projects/nested-client.md"),
+            format!(
+                "---\nid: nested-client\nuuid: \"cccccccc-dddd-4eee-8fff-000000000001\"\nproject_root: \"{}\"\nmanifest_ref: .SddIA/project.md\ncodex_slug: codex-software-engineering\nstatus: active\n---\n",
+                client.display()
+            ),
+        )
+        .unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "core"})).unwrap_err();
+        assert!(
+            err.contains("PROJECT_GIT_INVALID") && err.contains("contiene otro proyecto"),
+            "{err}"
+        );
     }
 
     #[test]

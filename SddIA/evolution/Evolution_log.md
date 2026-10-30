@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `d5fbe8a2-0b49-458d-bc5f-5d3f1e2025ef` | 2026-10-30 | AUT-6: bind(core) tolera labs absolutos anidados (_refine_lab_*, _forge_lab_*, docs/_fixtures) en assert_git_isolation. | CANONICO | `SddIA/evolution/d5fbe8a2-0b49-458d-bc5f-5d3f1e2025ef.md` |
 | `464af566-a7df-4d5a-b561-cd10393248b8` | 2026-10-30 | AUT-47: peaje LLM lifecycle en thermodynamic_toll y resolve_tracker_ref_for_lifecycle. | CANONICO | `SddIA/evolution/464af566-a7df-4d5a-b561-cd10393248b8.md` |
 | `5f45d470-4a52-429b-b1ff-f88a8490076c` | 2026-10-30 | Reanclaje source_sha256 de cuatro capsulas tras la ignicion start-sddia. | CANONICO | `SddIA/evolution/5f45d470-4a52-429b-b1ff-f88a8490076c.md` |
 | `9483cf60-beac-484b-88b7-70a4ab90df58` | 2026-10-30 | AUT-39: sello diff validacion en delivery-close-cycle v1.6.0. | CANONICO | `SddIA/evolution/9483cf60-beac-484b-88b7-70a4ab90df58.md` |
