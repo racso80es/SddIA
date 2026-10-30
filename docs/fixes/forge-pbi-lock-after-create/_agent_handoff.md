@@ -10,6 +10,118 @@ pbi_ref: AUT-29
 
 # Agent handoff — forge-pbi-lock-after-create
 
+## 2026-10-30T17:18+01:00 — Tekton (re-inyección vacía; fase ?)
+
+- process: `?` / phase: `?` / agents: `agent:tekton`
+- execution_id / persist_ref / branch_name / pbi_ref / correlation_id: **vacíos**
+- legado legible (NO contrato): `docs/fixes/forge-pbi-lock-after-create` / `b7f670f6-…` / AUT-29 / `fix/forge-pbi-scan-sin-ledger`
+- observed_head: `.git/HEAD` → `refs/heads/main` (`a541f8101516bee85c2fbd1aab59ce6d27872a02`); ref fix **ausente** (packed-refs)
+- runtime: kalma2-agent-runtime-cursor
+- status: `blocked`
+- message: INJECTION_CONTRACT NO_APTO. Shell Rejected (probe). MCP sddia/git-manager/execute-process ausentes. Sin stdout cápsulas. Sin mutación genoma. Sin docs/todos/. Sin inventar éxito.
+
+### correction_blueprint_md
+
+```yaml
+name: restore-tekton-injection-and-capsule-channel
+intent: Rehabilitar peaje Ejecución con contrato de inyección completo
+delegates_to:
+  - action:execute-process
+  - tool:git-manager
+```
+
+Requisito operador: Shell IDE o MCP SddIA; re-inyectar refs completos; materializar/checkout `fix/forge-pbi-scan-sin-ledger` si el corte sigue vivo.
+
+### transcript (tail)
+
+```
+Veredicto: blocked
+1. INJECTION_CONTRACT NO_APTO
+2. CAPSULE_CHANNEL NO_APTO
+3. BRANCH_TOPOLOGY NO_APTO
+4. Archivos: validacion.md, _agent_handoff.md, execution.md
+```
+
+## 2026-10-30T17:18+01:00 — Tekton (inyección vacía; fase ?)
+
+- process: `?` (inyección; legado `bug-fix` solo desde handoff — **no aceptado como contrato**)
+- phase: `?` (inyección vacía; contrato `agent:tekton`)
+- agents: `agent:tekton`
+- execution_id: `` / persist_ref: `` / branch_name: `` / pbi_ref: `` / correlation_id: ``
+- legado legible (NO contrato): `docs/fixes/forge-pbi-lock-after-create` / `b7f670f6-…` / AUT-29
+- observed_head: `.git/HEAD` → `refs/heads/main` (`a541f8101516bee85c2fbd1aab59ce6d27872a02`); ref `fix/forge-pbi-scan-sin-ledger` **ausente** (packed-refs)
+- runtime: kalma2-agent-runtime-cursor
+- status: `blocked`
+- message: INJECTION_CONTRACT NO_APTO (todos los refs vacíos). Shell Rejected ×2 (probe). MCP sddia/git-manager/execute-process ausentes (GetDynamicTools 0 matches). Sin stdout `git-manager`/`cargo`/`sddia-run`. Sin mutación genoma. Sin docs/todos/. Sin inventar éxito.
+
+### correction_blueprint_md
+
+```yaml
+name: restore-tekton-injection-and-capsule-channel
+intent: Rehabilitar peaje Ejecución con contrato de inyección completo
+delegates_to:
+  - action:execute-process  # peaje QA / forge_pbi tests
+  - tool:git-manager        # evidencia git sin Shell IDE
+```
+
+Requisito operador: rehabilitar Shell IDE o MCP SddIA; re-inyectar `agent:tekton` con `process`/`phase`/`persist_ref`/`branch_name`/`execution_id`/`pbi_ref` completos; materializar/checkout `fix/forge-pbi-scan-sin-ledger` si el corte sigue vivo.
+
+### transcript (tail)
+
+```
+Veredicto: blocked
+1. INJECTION_CONTRACT NO_APTO (process/phase/refs ?/vacío).
+2. CAPSULE_CHANNEL NO_APTO (Shell Rejected; MCP sddia ausente).
+3. BRANCH_TOPOLOGY NO_APTO (HEAD=main; fix branch ausente).
+4. Archivos: validacion.md, _agent_handoff.md, execution.md.
+```
+
+## 2026-10-30T16:54+01:00 — Argos (Verificación; inyección vacía)
+
+- process: `?` (inyección; legado `bug-fix` solo desde handoff — **no aceptado como contrato**)
+- phase: `Verificación` (inferida; inyección `phase: ?`; contrato `agent:argos`)
+- agents: `agent:argos`
+- execution_id: `` / persist_ref: `` / branch_name: `` / pbi_ref: `` / correlation_id: ``
+- legado legible (NO contrato): `docs/fixes/forge-pbi-lock-after-create` / `b7f670f6-…` / AUT-29
+- observed_head: `.git/HEAD` → `refs/heads/main` (`a541f8101516bee85c2fbd1aab59ce6d27872a02`); ref `fix/forge-pbi-scan-sin-ledger` **ausente** (packed-refs)
+- runtime: kalma2-agent-runtime-cursor
+- status: `blocked`
+- approval_status: `integridad_bloqueada`
+- global: `NO_APTO`
+- message: INJECTION_CONTRACT NO_APTO (todos los refs vacíos). Shell Rejected ×3 (probe + status + smart-mode). Task `9b1a8106` `shell_ok: false`. MCP sddia ausente. Sin stdout `git-manager`/`cargo`/`execute-process`. Sin docs/todos/. Sin inventar éxito.
+
+### audit_report_md (sesión)
+
+| Input | Estado |
+|-------|--------|
+| `target_artifacts_refs` | **Vacío** en inyección; legado FS no re-resuelto vía Cúmulo en vivo |
+| `acceptance_criteria` | No inyectados; legibles solo en legado `spec.md` — **no peaje** |
+| Cápsulas de verificación | **No ejecutables** (Shell Rejected; Task peaje muerto; sin MCP sddia) |
+| Evidencia física sesión | **Vacía** |
+| Topología git FS | HEAD=`main` @ `a541f810…`; rama documental ausente |
+
+### correction_blueprint_md
+
+```yaml
+name: restore-argos-injection-and-capsule-channel
+intent: Rehabilitar peaje Verificación con contrato de inyección completo
+delegates_to:
+  - action:execute-process  # peaje QA / forge_pbi tests
+  - tool:git-manager        # evidencia git sin Shell IDE
+```
+
+Requisito operador: rehabilitar Shell IDE o MCP SddIA; re-inyectar `agent:argos` con `process`/`phase`/`persist_ref`/`branch_name`/`execution_id`/`pbi_ref` completos.
+
+### transcript (tail)
+
+```
+Veredicto: blocked
+1. INJECTION_CONTRACT NO_APTO (process/phase/refs ?/vacío).
+2. CAPSULE_CHANNEL NO_APTO (Shell+Task peaje muerto; sin MCP).
+3. BRANCH_TOPOLOGY NO_APTO (HEAD=main; fix branch ausente).
+4. Archivos: validacion.md, _agent_handoff.md, execution.md.
+```
+
 ## 2026-10-30T13:23+01:00 — Argos (Verificación; inyección incompleta)
 
 - process: `bug-fix` (inferido; inyección `process: ?`)
