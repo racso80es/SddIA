@@ -1,14 +1,14 @@
 ---
 uuid: bd81c878-5e1c-4fe5-b204-85c9136d8bc7
 name: accept-pr
-version: 1.0.1
+version: 1.0.2
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - pr-lifecycle
 - source-control
 - filesystem-ops
-hash_signature: sha256:f7a6ef21856490f3ac9b69133f948dcf54066d3a05fa7c5dc1019fdd3a289938
+hash_signature: "sha256:f7a6ef21856490f3ac9b69133f948dcf54066d3a05fa7c5dc1019fdd3a289938"
 inputs:
 - source_branch: Rama feature a fusionar hacia main (validada por git-operations antes de invocar)
 - author: Autor del merge para el evento PullRequest_Merged
@@ -57,6 +57,8 @@ Proceso de **aceptación local soberana** de Pull Requests: auditoría Argos, me
 Tekton presenta a **Argos** la rama `source_branch`, diff y normas activas (`pr-acceptance-protocol`, `git-operations`). Si el veredicto es rechazo o fricción letal, `verdict: abortado` y `status_code: 1` sin mutar `main`.
 
 ## Fase 2 — Fusión Soberana
+
+Antes del merge, si `{persist_ref}/validacion.md` exige sello (`global: APTO` o campos `validated_*` / `diff_digest`), `accept-pr` recalcula el digest (misma exclusión de `validacion.md` que DCC AUT-39) y aborta con `diff_seal_mismatch` si no coincide. Lab: `SDDIA_LAB_SKIP_DIFF_SEAL_ACCEPT` o `SDDIA_LAB_SKIP_DIFF_SEAL`.
 
 1. `skill:git-manager` → `checkout` sobre `main` (`create_if_not_exists: false`).
 2. `skill:git-manager` → `merge` con `operation_payload_json`: `{ "branch_name": "<source_branch>", "no_ff": true }` (requiere norma congelada y cápsula con operación `merge`).
