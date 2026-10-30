@@ -173,6 +173,87 @@ fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+/// `event_id` del `PullRequest_Presented` más reciente para `branch` (pending, processed, store).
+pub fn presented_event_id_for_branch(repo: &Path, branch: &str) -> Option<String> {
+    let mut best: Option<(String, String)> = None;
+    for rel in [".events/pending", ".events/processed"] {
+        presented_ids_in_dir(&repo.join(rel), branch, &mut best);
+    }
+    presented_ids_in_store(repo, branch, &mut best);
+    best.map(|(_, id)| id)
+}
+
+fn presented_ids_in_dir(dir: &Path, branch: &str, best: &mut Option<(String, String)>) {
+    if !dir.is_dir() {
+        return;
+    }
+    let entries = match fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let Ok(text) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(event) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
+        consider_presented_event_id(&event, branch, best);
+    }
+}
+
+fn presented_ids_in_store(repo: &Path, branch: &str, best: &mut Option<(String, String)>) {
+    if !sddia_event_store::writes_store(sddia_event_store::store_mode()) {
+        return;
+    }
+    let db = sddia_event_store::runtime_db_path(repo);
+    if !db.is_file() {
+        return;
+    }
+    let Ok(store) = sddia_event_store::EventStore::open(db) else {
+        return;
+    };
+    let Ok(rows) = store.list_family(sddia_event_store::Family::Domain) else {
+        return;
+    };
+    for row in rows {
+        if row.event_type != "PullRequest_Presented" {
+            continue;
+        }
+        consider_presented_event_id(&row.ecst, branch, best);
+    }
+}
+
+fn consider_presented_event_id(event: &Value, branch: &str, best: &mut Option<(String, String)>) {
+    if event.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
+        return;
+    }
+    let payload = match event.get("payload") {
+        Some(p) => p,
+        None => return,
+    };
+    if payload.get("branch").and_then(|v| v.as_str()) != Some(branch) {
+        return;
+    }
+    let Some(event_id) = event.get("event_id").and_then(|v| v.as_str()) else {
+        return;
+    };
+    let ts = event
+        .get("timestamp")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    match best {
+        None => *best = Some((ts, event_id.to_string())),
+        Some((prev_ts, _)) if ts >= *prev_ts => *best = Some((ts, event_id.to_string())),
+        _ => {}
+    }
+}
+
 fn resolve_repo_path(repo: &Path, rel: &str) -> PathBuf {
     let rel = rel.trim();
     if Path::new(rel).is_absolute() {
@@ -269,6 +350,29 @@ mod tests {
             tracker_ref_from_presented_for_branch(&dir, "fix/pr-merged-witness-store").as_deref(),
             Some("MAN-23")
         );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn presented_event_id_from_pending_json() {
+        let dir = std::env::temp_dir().join(format!("pbi-pres-id-{}", std::process::id()));
+        let pending = dir.join(".events/pending");
+        fs::create_dir_all(&pending).unwrap();
+        fs::write(
+            pending.join("p1.json"),
+            r#"{"event_id":"11111111-1111-4111-8111-111111111111","event_type":"PullRequest_Presented","timestamp":"2026-10-30T06:00:00Z","payload":{"branch":"feat/x"}}"#,
+        )
+        .unwrap();
+        fs::write(
+            pending.join("p2.json"),
+            r#"{"event_id":"22222222-2222-4222-8222-222222222222","event_type":"PullRequest_Presented","timestamp":"2026-10-30T07:00:00Z","payload":{"branch":"feat/x"}}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            presented_event_id_for_branch(&dir, "feat/x").as_deref(),
+            Some("22222222-2222-4222-8222-222222222222")
+        );
+        assert!(presented_event_id_for_branch(&dir, "feat/other").is_none());
         let _ = fs::remove_dir_all(&dir);
     }
 }

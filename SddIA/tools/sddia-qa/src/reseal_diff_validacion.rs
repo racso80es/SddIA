@@ -1,5 +1,7 @@
 //! AUT-42: re-sello de validacion.md en push sobre PR OPEN (pre-push).
+//! AUT-43: emite PullRequest_Resealed tras re-sello commiteado.
 
+use execute_process::engine::actions;
 use execute_process::engine::diff_seal::{self, ResealOutcome};
 use std::path::Path;
 use std::process::Command;
@@ -37,6 +39,21 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         persist_ref,
     ) {
         Ok(outcome) => {
+            if let ResealOutcome::Committed {
+                ref diff_digest,
+                ref validated_head_sha,
+            } = outcome
+            {
+                if let Err(e) = actions::emit_pr_resealed_after_branch_reseal(
+                    repo,
+                    branch,
+                    validated_head_sha,
+                    diff_digest,
+                ) {
+                    eprintln!("reseal-diff-validacion: emit PullRequest_Resealed: {e}");
+                    return 2;
+                }
+            }
             let report = match &outcome {
                 ResealOutcome::SkippedNoScope => serde_json::json!({
                     "outcome": "skipped_no_scope",
@@ -44,9 +61,13 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
                 ResealOutcome::Unchanged => serde_json::json!({
                     "outcome": "unchanged",
                 }),
-                ResealOutcome::Committed { diff_digest } => serde_json::json!({
+                ResealOutcome::Committed {
+                    diff_digest,
+                    validated_head_sha,
+                } => serde_json::json!({
                     "outcome": "committed",
                     "diff_digest": diff_digest,
+                    "validated_head_sha": validated_head_sha,
                 }),
             };
             if json_out {

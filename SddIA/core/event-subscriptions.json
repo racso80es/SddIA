@@ -12,6 +12,7 @@
     }
   ],
   "PullRequest_Audited": [],
+  "PullRequest_Resealed": [],
   "PullRequest_Merged": [
     {
       "agent": "cumulo",

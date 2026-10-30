@@ -242,6 +242,7 @@
       "intent": "Sello in_progress + comentario rama/persist_ref si tracker_ref presente."
     }
   ],
+  "PullRequest_Resealed": [],
   "PullRequest_Audited": [
     {
       "agent": "tekton",
