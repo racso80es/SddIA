@@ -12,6 +12,14 @@ checks:
   AC-F1: APTO
   AC-F2: APTO
   AC-N1: APTO
+  TM-1: APTO
+  TM-2: APTO
+  TM-3: APTO
+  TM-4: APTO
+  TM-5: APTO
+  TM-6: APTO
+  TM-7: APTO
+  TM-8: parcial
 git_changes:
   - SddIA/sddia-event-store/src/gate.rs
   - SddIA/sddia-event-store/src/lib.rs
@@ -32,16 +40,25 @@ git_changes:
   - SddIA/tools/sddia-qa/src/iota_ci_smoke.rs
   - SddIA/tools/sddia-qa/Cargo.toml
   - sddia-installer.sh
+  - SddIA/engine/execute-process/tests/common/mod.rs
+  - SddIA/engine/execute-process/tests/eda_store_io_matrix_pending.rs
+  - SddIA/engine/execute-process/tests/eda_store_io_matrix_fractal.rs
+  - docs/features/eda-store-io-gate/plan-test-matrix.md
+  - docs/features/eda-store-io-gate/execution-test-matrix.md
 ---
 
 # Validación
 
 | Prueba | Resultado |
 |--------|-----------|
+| `cargo test -p execute-process --test eda_store_io_matrix_pending` | 3 passed |
+| `cargo test -p execute-process --test eda_store_io_matrix_fractal` | 5 passed |
 | `cargo test -p sddia-event-store --test gate` | 7 passed (incluye publish redb/filesystem) |
 | `orphan_lock_redb_does_not_write_pending_json` | passed |
 | `orphan_lock_dead_pid_emits_fracture_once` (filesystem) | passed |
 | `ac_r6_emit_pending_non_blocking` / `ac_r6_drain_resolved_ecst_ack` | passed |
+
+TM-8: stamp + `publish_ecst` en matriz; sin assert explícito de `list_pending_deliveries` por suscriptor.
 
 AC-W4: installer publica con `--publish-ecst`; sin binario y modo `redb` no escribe `.events/`.
 

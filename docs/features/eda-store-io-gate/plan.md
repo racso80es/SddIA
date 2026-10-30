@@ -12,6 +12,7 @@ phases:
   - consumo fractal desde store
   - installer y scripts
   - pruebas AC
+  - matriz por event_type (ver plan-test-matrix.md)
 related:
   - docs/audits/eda-events-redb-vs-filesystem-20261026.md
   - docs/features/eda-redb-02-writers/plan.md
