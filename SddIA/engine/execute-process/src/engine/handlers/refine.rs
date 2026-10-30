@@ -236,8 +236,14 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
             fs::write(path, &sealed).map_err(|e| e.to_string())?;
         }
     }
+    let local_only = matches!(
+        target,
+        super::super::tracker_lifecycle_port::LifecycleTarget::Unconfigured
+    );
     let issue_ref = if remote {
         fm_str(&fm, "tracker_ref")
+    } else if local_only {
+        None
     } else {
         Some(rel.clone())
     };
@@ -294,17 +300,28 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
         target,
         super::super::tracker_lifecycle_port::LifecycleTarget::Remote { .. }
     );
-    let fetched = super::super::tracker_lifecycle_port::invoke(
-        repo,
-        inputs,
-        json!({
-            "operation": "fetch_issue",
-            "issue_ref": hu_ref,
-            "project_slug": bound.slug,
-        }),
-        PROCESS_HU,
+    let local_only = matches!(
+        target,
+        super::super::tracker_lifecycle_port::LifecycleTarget::Unconfigured
     );
-    let (raw, fm) = if let Ok(body) = &fetched {
+    let fetched = if local_only {
+        Err(String::new())
+    } else {
+        super::super::tracker_lifecycle_port::invoke(
+            repo,
+            inputs,
+            json!({
+                "operation": "fetch_issue",
+                "issue_ref": hu_ref,
+                "project_slug": bound.slug,
+            }),
+            PROCESS_HU,
+        )
+    };
+    let (raw, fm) = if local_only {
+        load_local_item_markdown(&bound.project_root, &rel)
+            .ok_or_else(|| format!("REFINE_NOT_FOUND: {hu_ref}"))?
+    } else if let Ok(body) = &fetched {
         if let Some(desc) = body.get("description").and_then(|v| v.as_str()) {
             let canonical = super::super::item_lifecycle_frontmatter::normalize_item_markdown(desc)
                 .unwrap_or_else(|_| desc.to_string());
@@ -386,6 +403,8 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
                 PROCESS_HU,
             )?;
         }
+    } else if local_only {
+        // El markdown local ya quedó sellado. Unconfigured no abre el adaptador de fichero.
     } else {
         super::super::tracker_lifecycle_port::invoke(
             repo,
