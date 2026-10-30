@@ -266,15 +266,95 @@ pub fn list_persist_refs_with_validacion(repo: &Path, head_sha: &str) -> Result<
     Ok(refs)
 }
 
+fn merge_base_for_ci(
+    repo: &Path,
+    head_sha: &str,
+    target_branch: &str,
+) -> Result<String, String> {
+    git_output(
+        repo,
+        &[
+            "merge-base",
+            &format!("origin/{target_branch}"),
+            head_sha,
+        ],
+    )
+    .or_else(|_| git_output(repo, &["merge-base", target_branch, head_sha]))
+}
+
+/// Raíz `docs/{features,fixes,refactors}/<slug>` a partir de una ruta tocada en el diff.
+pub fn persist_ref_from_docs_path(path: &str) -> Option<String> {
+    let p = path.trim().replace('\\', "/");
+    for prefix in ["docs/features/", "docs/fixes/", "docs/refactors/"] {
+        if let Some(rest) = p.strip_prefix(prefix) {
+            let slug = rest.split('/').next()?.trim();
+            if slug.is_empty() {
+                return None;
+            }
+            return Some(format!("{prefix}{slug}"));
+        }
+    }
+    None
+}
+
+/// `persist_ref` con al menos un fichero bajo `docs/` modificado en `base..head`.
+pub fn persist_refs_touched_in_range(
+    repo: &Path,
+    base_sha: &str,
+    head_sha: &str,
+) -> Result<Vec<String>, String> {
+    let out = git_output(
+        repo,
+        &[
+            "diff",
+            "--name-only",
+            base_sha,
+            head_sha,
+            "--",
+            "docs/features",
+            "docs/fixes",
+            "docs/refactors",
+        ],
+    )?;
+    let mut refs: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    for line in out.lines() {
+        if let Some(r) = persist_ref_from_docs_path(line) {
+            refs.insert(r);
+        }
+    }
+    Ok(refs.into_iter().collect())
+}
+
 pub fn verify_diff_seal_ci(
     repo: &Path,
     head_sha: &str,
     target_branch: &str,
 ) -> Result<JsonValue, String> {
-    let persist_refs = list_persist_refs_with_validacion(repo, head_sha)?;
+    let merge_base = merge_base_for_ci(repo, head_sha, target_branch)?;
+    let touched = persist_refs_touched_in_range(repo, &merge_base, head_sha)?;
+    let with_validacion: std::collections::HashSet<String> =
+        list_persist_refs_with_validacion(repo, head_sha)?
+            .into_iter()
+            .collect();
+    let persist_refs: Vec<String> = touched
+        .into_iter()
+        .filter(|p| with_validacion.contains(p))
+        .collect();
     let mut checked = Vec::new();
     let mut skipped = Vec::new();
     let mut errors = Vec::new();
+    if persist_refs.is_empty() {
+        return Ok(json!({
+            "ok": true,
+            "head_sha": head_sha,
+            "target_branch": target_branch,
+            "merge_base": merge_base,
+            "checked": checked,
+            "skipped": skipped,
+            "errors": errors,
+            "scope": "persist_ref tocados en merge-base..head con validacion.md"
+        }));
+    }
     for persist_ref in persist_refs {
         match validacion_requires_ci_seal_check_at(repo, head_sha, &persist_ref) {
             Ok(true) => {
@@ -292,9 +372,11 @@ pub fn verify_diff_seal_ci(
         "ok": ok,
         "head_sha": head_sha,
         "target_branch": target_branch,
+        "merge_base": merge_base,
         "checked": checked,
         "skipped": skipped,
         "errors": errors,
+        "scope": "persist_ref tocados en merge-base..head con validacion.md"
     }))
 }
 
@@ -893,5 +975,14 @@ mod tests {
             .current_dir(repo)
             .status()
             .unwrap();
+    }
+
+    #[test]
+    fn persist_ref_from_docs_path_extracts_slug() {
+        assert_eq!(
+            persist_ref_from_docs_path("docs/fixes/foo/spec.md").as_deref(),
+            Some("docs/fixes/foo")
+        );
+        assert!(persist_ref_from_docs_path("SddIA/x.rs").is_none());
     }
 }
