@@ -53,7 +53,12 @@ pub fn attach_tracker_ref_from_persist(repo: &Path, persist_ref: &str, action_in
     }
     if let Some(pbi) = resolve_pbi_path_from_persist(repo, persist_ref) {
         if !tracker_ref_already(action_inputs) {
-            if let Some(tr) = tracker_ref_from_pbi(repo, &pbi) {
+            let tr = if looks_like_issue_identifier(&pbi) {
+                Some(pbi.clone())
+            } else {
+                tracker_ref_from_pbi(repo, &pbi)
+            };
+            if let Some(tr) = tr {
                 if let Some(obj) = action_inputs.as_object_mut() {
                     obj.insert("tracker_ref".into(), json!(tr));
                 }
@@ -417,6 +422,22 @@ mod tests {
         let mut inputs = json!({});
         attach_tracker_ref_from_persist(&dir, "docs/fixes/demo", &mut inputs);
         assert_eq!(inputs["tracker_ref"], "MAN-23");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn attach_opaque_pbi_ref_from_objectives_for_merged_seal() {
+        let dir = std::env::temp_dir().join(format!("pbi-attach-id-{}", std::process::id()));
+        let persist = dir.join("docs/features/demo");
+        fs::create_dir_all(&persist).unwrap();
+        fs::write(
+            persist.join("objectives.md"),
+            "---\npbi_ref: AUT-32\n---\n# obj\n",
+        )
+        .unwrap();
+        let mut inputs = json!({});
+        attach_tracker_ref_from_persist(&dir, "docs/features/demo", &mut inputs);
+        assert_eq!(inputs["tracker_ref"], "AUT-32");
         let _ = fs::remove_dir_all(&dir);
     }
 
