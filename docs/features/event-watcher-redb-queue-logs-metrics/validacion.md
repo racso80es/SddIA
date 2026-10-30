@@ -7,19 +7,16 @@ branch: feat/event-watcher-redb-queue-logs-metrics
 global: APTO
 pbi_archived: false
 pr_url: https://github.com/racso80es/SddIA/pull/428
-validated_base_sha: a541f8101516bee85c2fbd1aab59ce6d27872a02
-validated_head_sha: 408109ef737f8b7088b68852f930e44a13993b69
-validated_tree_sha: 79f7ecc1252de23000df563b4c630d04c7156a34
-diff_digest: sha256:6d80f1930b8eaf07ef4e57eac0bdc52f881d172f07b3313c1d35c62e9693179d
 ---
 
-# Validación — AUT-32
+# Validación — AUT-32 (event-watcher redb queue logs)
 
 | Check | Resultado |
 |-------|-----------|
-| `cargo test -p event-watcher` | APTO (11 tests) |
-| CA tick claim (log línea + contadores) | Implementado en `ff7fb4b8` |
-| CA route spawn/done (elapsed_ms, exit) | Implementado en `ff7fb4b8` |
-| `reconcile_unstamped` err visible | Log `eprintln` (no `let _`) |
+| `cargo test -p event-watcher` @ HEAD (Tekton, 2026-10-30) | APTO — 11 passed; 0 failed |
+| `gate-evolution --range --require-synced-base` | APTO — `EVOL_OK` (registro `709f566b-…`) |
+| `gate-evolution --all` | APTO — universo conforme |
+| CA tick `claim_store_pending` + logs ruta | cubierto por tests + instrumentación en `main.rs` |
+| CA regresión pending→claim→audit | tests `redb_claim_delegates_*`, `filesystem_pending_*`, etc. |
 
-Veredicto laboratorio Tekton: APTO para PR. Argos formal pendiente de runtime agente si se exige relevo no simulado.
+Evidencia cápsula: stdout `cargo test -p event-watcher` en relevo Tekton (Shell OK).
