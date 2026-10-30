@@ -93,6 +93,15 @@ pub fn llm_audit_mode_from_description(description: &str) -> Result<&'static str
     Ok(llm_audit_from_fm(&fm))
 }
 
+/// Peaje lifecycle: solo `llm_audit: inactive` bloquea; ausente equivale a active (AUT-47).
+pub fn lifecycle_peaje_audit_blocked(description: &str) -> Result<bool, String> {
+    let fm = fm_from_description(description)?;
+    Ok(matches!(
+        fm.get(FM_LLMA_AUDIT).and_then(|v| v.as_str()).map(str::trim),
+        Some(INACTIVE)
+    ))
+}
+
 pub fn resolve_tracker_ref(inputs: &Value) -> Option<String> {
     for key in ["tracker_ref", "pbi_ref", "issue_ref"] {
         if let Some(s) = inputs.get(key).and_then(|v| v.as_str()) {
@@ -103,6 +112,12 @@ pub fn resolve_tracker_ref(inputs: &Value) -> Option<String> {
         }
     }
     None
+}
+
+fn resolve_tracker_ref_for_peaje(repo: &Path, process_inputs: &Value) -> Option<String> {
+    resolve_tracker_ref(process_inputs).or_else(|| {
+        super::tracker_pbi_meta::resolve_tracker_ref_for_lifecycle(repo, process_inputs)
+    })
 }
 
 pub fn fetch_llm_audit_active(repo: &Path, tracker_ref: &str) -> Result<bool, String> {
@@ -263,16 +278,7 @@ pub fn maybe_record_friction_on_failure(
     if !matches!(process_name, "feature" | "bug-fix" | "refactorization") {
         return;
     }
-    let tracker_ref = resolve_tracker_ref(process_inputs).or_else(|| {
-        process_inputs
-            .get("persist_ref")
-            .and_then(|v| v.as_str())
-            .and_then(|persist| {
-                super::tracker_pbi_meta::resolve_pbi_path_from_persist(repo, persist)
-            })
-            .and_then(|pbi| super::tracker_pbi_meta::tracker_ref_from_pbi(repo, &pbi))
-    });
-    let tracker_ref = match tracker_ref {
+    let tracker_ref = match resolve_tracker_ref_for_peaje(repo, process_inputs) {
         Some(t) => t,
         None => return,
     };
@@ -302,29 +308,68 @@ pub fn maybe_record_friction_on_failure(
     let _ = append_friction(repo, &tracker_ref, &friction, true);
 }
 
-/// Registra el peaje de un ciclo lifecycle cuando `llm_audit: active`.
+/// Registra el peaje de un ciclo lifecycle; resultado observable en `thermodynamic_toll.llm_process_peaje`.
 pub fn maybe_record_process_peaje(
     repo: &Path,
     process_name: &str,
     process_inputs: &Value,
     _success: bool,
     _exit_code: i32,
-) {
+) -> Value {
     if !matches!(process_name, "feature" | "bug-fix" | "refactorization") {
-        return;
+        return json!(null);
     }
-    let tracker_ref = match resolve_tracker_ref(process_inputs).or_else(|| {
-        process_inputs
-            .get("persist_ref")
-            .and_then(|v| v.as_str())
-            .and_then(|persist| {
-                super::tracker_pbi_meta::resolve_pbi_path_from_persist(repo, persist)
-            })
-            .and_then(|pbi| super::tracker_pbi_meta::tracker_ref_from_pbi(repo, &pbi))
-    }) {
-        Some(t) => t,
-        None => return,
+    let Some(tracker_ref) = resolve_tracker_ref_for_peaje(repo, process_inputs) else {
+        return json!({"skipped": true, "reason": "no_tracker_ref"});
     };
+    let project_id = match project_binding::tracker_config_for_inputs(repo, process_inputs) {
+        Ok(cfg) => cfg.and_then(|tc| tc.project_id),
+        Err(e) => {
+            return json!({
+                "tracker_ref": tracker_ref,
+                "error": e,
+            });
+        }
+    };
+    let issue = match fetch_issue(
+        repo,
+        &tracker_ref,
+        "llm-interaction-audit",
+        project_id.as_deref(),
+    ) {
+        Ok(i) => i,
+        Err(e) => {
+            return json!({
+                "tracker_ref": tracker_ref,
+                "error": e,
+            });
+        }
+    };
+    let desc = match issue.get("description").and_then(|v| v.as_str()) {
+        Some(d) => d,
+        None => {
+            return json!({
+                "tracker_ref": tracker_ref,
+                "error": "fetch_issue sin description",
+            });
+        }
+    };
+    match lifecycle_peaje_audit_blocked(desc) {
+        Ok(true) => {
+            return json!({
+                "tracker_ref": tracker_ref,
+                "skipped": true,
+                "reason": "llm_audit_inactive",
+            });
+        }
+        Ok(false) => {}
+        Err(e) => {
+            return json!({
+                "tracker_ref": tracker_ref,
+                "error": e,
+            });
+        }
+    }
     let timestamp = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
     let row = InteractionRow {
         entity_type: "process".into(),
@@ -332,12 +377,35 @@ pub fn maybe_record_process_peaje(
         invoked_by: "execute-process".into(),
         timestamp,
     };
-    let _ = append_interaction(repo, &tracker_ref, &row, true);
+    match append_interaction(repo, &tracker_ref, &row, false) {
+        Ok(mut v) => {
+            if let Some(obj) = v.as_object_mut() {
+                obj.insert("tracker_ref".into(), json!(tracker_ref));
+            }
+            v
+        }
+        Err(e) => json!({
+            "tracker_ref": tracker_ref,
+            "error": e,
+        }),
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn lifecycle_peaje_absent_llm_audit_is_not_blocked() {
+        let raw = "---\ntracker_ref: X\n---\n\n# b\n";
+        assert!(!lifecycle_peaje_audit_blocked(raw).unwrap());
+    }
+
+    #[test]
+    fn lifecycle_peaje_inactive_is_blocked() {
+        let raw = "---\nllm_audit: inactive\ntracker_ref: X\n---\n\n# b\n";
+        assert!(lifecycle_peaje_audit_blocked(raw).unwrap());
+    }
 
     #[test]
     fn inactive_without_field() {
