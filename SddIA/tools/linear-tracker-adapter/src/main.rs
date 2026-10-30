@@ -321,6 +321,8 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
     {
         lab_state::lab_reset_store();
         env::remove_var("SDDIA_LAB_RESET_STORE");
+    } else {
+        lab_state::reload_store_from_disk();
     }
     let inner = request_inner(req);
     let op = required_str(inner, "operation")?;

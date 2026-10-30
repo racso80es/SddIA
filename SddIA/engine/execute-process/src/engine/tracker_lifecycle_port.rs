@@ -501,5 +501,6 @@ mod tests {
         } else {
             std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
         }
+        std::env::remove_var("SDDIA_LAB_RESET_STORE");
     }
 }

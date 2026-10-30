@@ -3,7 +3,7 @@ feature_name: forge-pbi-lock-after-create
 created: "2026-10-30"
 process: bug-fix
 base: main
-branch_name: fix/forge-pbi-lock-after-create
+branch_name: fix/forge-pbi-scan-sin-ledger
 persist_ref: docs/fixes/forge-pbi-lock-after-create
 pbi_ref: AUT-29
 tracker_ref: AUT-29
@@ -21,7 +21,7 @@ La autoridad de dominio con `project_slug=core` queda cubierta por `.SddIA/activ
 ## Corte
 
 1. Identidad estable `forge_key` (sha256 de `project_slug`, `parent_ref`, `process`, `raw_idea`) en el frontmatter de la descripción.
-2. Antes de `create_issue`, reutilizar issue previa: ledger `.SddIA/state/forge-pbi/{forge_key}.json` en la raíz del proyecto, o hija del padre cuya descripción lleve el mismo `forge_key`. El mock de laboratorio no persiste `description`; el reuso remoto se cubre con el parser. El reuso que evita el segundo `create_issue` queda en el test de ledger.
+2. Antes de `create_issue`, reutilizar issue previa: ledger `.SddIA/state/forge-pbi/{forge_key}.json` en la raíz del proyecto, o hija del padre cuya descripción lleve el mismo `forge_key`. El mock inline (`lab_state`) persiste `description`, `children` y `update_issue_description`. Con `SDDIA_LAB_MOCK_OUTBOUND=1`, `invoke_tool_for_process` usa el binario **nativo** de `linear-tracker-adapter` para que `fetch_issue` lea `.SddIA/lab-linear-store.json` (evita WASM desfasado que caía al fixture sin hijos). Test `retry_without_ledger_reuses_child_by_forge_key`: primer alta, borrar solo el ledger, segundo `forge-pbi` → mismo `tracker_ref` y un solo `create_issue`.
 3. El ledger se escribe en cuanto hay `tracker_ref`, antes de emitir el evento.
 4. Si la emisión de `PBI_Forged` falla por lock y ya hay `tracker_ref`, el envelope es éxito con `document_id`, `tracker_ref` y `pbi_forged_pending: true`. El evento queda para el reintento (mismo `raw_idea`).
 5. Otro error de emisión, con issue ya creada, devuelve fallo pero conserva `tracker_ref` y `document_id`.

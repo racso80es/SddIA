@@ -94,6 +94,57 @@ fn store() -> &'static Mutex<Store> {
     S.get_or_init(|| Mutex::new(load_store()))
 }
 
+/// Sincroniza el mutex con el JSON en disco (p. ej. seeds del test vía `fs::write`).
+pub fn reload_store_from_disk() {
+    if !store_path().is_file() {
+        return;
+    }
+    let fresh = load_store();
+    let mut s = store().lock().unwrap();
+    *s = fresh;
+}
+
+fn child_refs_by_parent(parent_ref: &str, issues: &HashMap<String, Value>) -> Vec<String> {
+    let mut out: Vec<String> = issues
+        .iter()
+        .filter(|(_, issue)| {
+            issue
+                .get("parent")
+                .and_then(|v| v.as_str())
+                .is_some_and(|p| p == parent_ref)
+        })
+        .map(|(k, _)| k.clone())
+        .collect();
+    out.sort();
+    out
+}
+
+fn merge_children_field(issue: &mut Value, derived: &[String]) {
+    if derived.is_empty() {
+        return;
+    }
+    let existing: Vec<String> = issue
+        .get("children")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|node| {
+                    node.as_str()
+                        .map(str::to_string)
+                        .or_else(|| {
+                            node.get("identifier")
+                                .and_then(|v| v.as_str())
+                                .map(str::to_string)
+                        })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    if existing.is_empty() {
+        issue["children"] = json!(derived);
+    }
+}
+
 pub fn lab_reset_store() {
     let mut s = store().lock().unwrap();
     s.issues.clear();
@@ -150,6 +201,25 @@ pub fn lab_create_issue(
     });
     s.issues.insert(ident.clone(), issue);
     if let Some(parent) = parent_ref {
+        if !s.issues.contains_key(parent) {
+            s.issues.insert(
+                parent.to_string(),
+                json!({
+                    "id": format!("issue-uuid-{parent}"),
+                    "identifier": parent,
+                    "title": format!("lab parent {parent}"),
+                    "state": state_name,
+                    "priority": 0,
+                    "labels": ["hu"],
+                    "parent": null,
+                    "children": [],
+                    "url": format!("https://linear.app/issue/{parent}"),
+                    "updated_at": "2026-10-04T00:00:00Z",
+                    "project_id": project_id,
+                    "description": "",
+                }),
+            );
+        }
         if let Some(p) = s.issues.get_mut(parent) {
             if let Some(arr) = p.get("children").and_then(|c| c.as_array()) {
                 let mut kids = arr.clone();
@@ -197,5 +267,8 @@ pub fn lab_archive(issue_ref: &str) -> bool {
 
 pub fn lab_fetch(issue_ref: &str) -> Option<Value> {
     let s = store().lock().unwrap();
-    s.issues.get(issue_ref).cloned()
+    let mut issue = s.issues.get(issue_ref).cloned()?;
+    let derived = child_refs_by_parent(issue_ref, &s.issues);
+    merge_children_field(&mut issue, &derived);
+    Some(issue)
 }

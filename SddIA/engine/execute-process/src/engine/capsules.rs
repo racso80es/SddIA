@@ -2,6 +2,7 @@
 
 use super::actions;
 use super::capsule_paths;
+use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -465,7 +466,26 @@ pub fn invoke_tool_for_process(
             )?;
         }
     }
-    let result = invoke_tool_capsule_json(repo, tool_name, payload, true)?;
+    // Lab inline mock persiste en `.SddIA/lab-linear-store.json`. Bajo mock, WASM
+    // desfasado cae al fixture sin `description`/`children` y rompe el scan por
+    // forge_key (AUT-29). Exigir nativo: sin fallback silencioso a WASM.
+    let lab_linear = lab_mock_outbound_enabled() && tool_name == "linear-tracker-adapter";
+    if lab_linear {
+        match capsule_paths::resolve_capsule_native_checked(repo, tool_name) {
+            Ok(_) => {}
+            Err(capsule_paths::CapsuleResolveError::NotFound) => {
+                return Err(
+                    "lab mock: cápsula nativa linear-tracker-adapter requerida (AUT-29); sin fallback WASM"
+                        .into(),
+                );
+            }
+            Err(capsule_paths::CapsuleResolveError::StaleHash { message }) => {
+                return Err(message);
+            }
+        }
+    }
+    let prefer_wasm = !lab_linear;
+    let result = invoke_tool_capsule_json(repo, tool_name, payload, prefer_wasm)?;
     if result.exit_code != 0 || result.body.get("success") == Some(&json!(false)) {
         return Err(tool_invoke_error_message(&result.body));
     }
