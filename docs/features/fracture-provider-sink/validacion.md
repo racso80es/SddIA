@@ -1,35 +1,39 @@
 ---
 feature_name: fracture-provider-sink
-created: "2026-10-30"
+created: 2026-10-30
 process: refactorization
 phase: Verificación
 branch: refactor/fracture-provider-sink
 global: APTO
 tracker_ref: AUT-30
-execution_id: "478e05bc-92e4-47e8-a473-fe6a4ac1c4db"
+execution_id: 478e05bc-92e4-47e8-a473-fe6a4ac1c4db
 pbi_archived: false
 checks:
   materialize-enrich-port-deny: APTO
   event-watcher-check: APTO
 git_changes:
-  - SddIA/engine/execute-process/src/engine/materialize_fracture_pbi.rs
-  - SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
-  - SddIA/engine/execute-process/src/engine/tracker_lifecycle_port.rs
-  - SddIA/engine/execute-process/src/engine/project_binding.rs
-  - SddIA/engine/execute-process/src/engine/route_domain_core.rs
-  - SddIA/engine/execute-process/src/engine/domain_authority.rs
-  - SddIA/engine/execute-process/src/engine/mod.rs
-  - SddIA/engine/execute-process/src/engine/tracker_operations_gate.rs
-  - SddIA/daemons/event-watcher/src/main.rs
-  - SddIA/tools/linear-tracker-adapter/src/main.rs
-  - SddIA/tools/linear-tracker-adapter/src/lab_state.rs
-  - SddIA/actions/materialize-fracture-pbi.md
-  - SddIA/events/domain/fracture-pbi-materialized.md
-  - SddIA/events/domain/system-fracture-detected.md
-  - SddIA/events/domain/index.md
-  - SddIA/core/event-domain-subscriptions.json
-  - SddIA/core/event-subscriptions.json
-  - docs/features/fracture-provider-sink/
+- SddIA/engine/execute-process/src/engine/materialize_fracture_pbi.rs
+- SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
+- SddIA/engine/execute-process/src/engine/tracker_lifecycle_port.rs
+- SddIA/engine/execute-process/src/engine/project_binding.rs
+- SddIA/engine/execute-process/src/engine/route_domain_core.rs
+- SddIA/engine/execute-process/src/engine/domain_authority.rs
+- SddIA/engine/execute-process/src/engine/mod.rs
+- SddIA/engine/execute-process/src/engine/tracker_operations_gate.rs
+- SddIA/daemons/event-watcher/src/main.rs
+- SddIA/tools/linear-tracker-adapter/src/main.rs
+- SddIA/tools/linear-tracker-adapter/src/lab_state.rs
+- SddIA/actions/materialize-fracture-pbi.md
+- SddIA/events/domain/fracture-pbi-materialized.md
+- SddIA/events/domain/system-fracture-detected.md
+- SddIA/events/domain/index.md
+- SddIA/core/event-domain-subscriptions.json
+- SddIA/core/event-subscriptions.json
+- docs/features/fracture-provider-sink/
+validated_base_sha: df1ac9b65767e0d6c96cfc22f1ed48d9416f5665
+validated_head_sha: 89aca238267af8422bb63fdd48a935cf2631f1c7
+validated_tree_sha: b08a751d67e2375581cebd7b3378626017461d21
+diff_digest: sha256:7fd59caf157bbd1f1b4d9ee727da1eafc9c605a65bea06e189eae7aec5e50244
 ---
 
 # Validación — AUT-30
