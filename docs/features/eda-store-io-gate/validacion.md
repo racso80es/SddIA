@@ -23,50 +23,50 @@ checks:
   TM-7: APTO
   TM-8: parcial
 git_changes:
-  - SddIA/sddia-event-store/src/gate.rs
-  - SddIA/sddia-event-store/src/lib.rs
-  - SddIA/sddia-event-store/tests/gate.rs
-  - SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
-  - SddIA/engine/execute-process/src/engine/capability_di_reactor.rs
-  - SddIA/engine/execute-process/src/engine/eda_bus.rs
-  - SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs
-  - SddIA/engine/execute-process/src/engine/accept_pr.rs
-  - SddIA/engine/execute-process/src/engine/route_fractal_core.rs
-  - SddIA/engine/execute-process/src/engine/event_store_query.rs
-  - SddIA/engine/execute-process/src/main.rs
-  - SddIA/daemons/event-watcher/src/main.rs
-  - SddIA/interfaces/kalma2-bridge/src/main.rs
-  - SddIA/interfaces/kalma2-bridge/Cargo.toml
-  - SddIA/infrastructure/adapters/lancedb_thought_repo/src/lib.rs
-  - SddIA/infrastructure/adapters/lancedb_thought_repo/Cargo.toml
-  - SddIA/tools/sddia-qa/src/iota_ci_smoke.rs
-  - SddIA/tools/sddia-qa/Cargo.toml
-  - sddia-installer.sh
-  - SddIA/engine/execute-process/tests/common/mod.rs
-  - SddIA/engine/execute-process/tests/eda_store_io_matrix_pending.rs
-  - SddIA/engine/execute-process/tests/eda_store_io_matrix_fractal.rs
-  - docs/features/eda-store-io-gate/plan-test-matrix.md
-  - docs/features/eda-store-io-gate/execution-test-matrix.md
-  - docs/audits/eda-doc-drift-eda-store-io-gate-261030.md
-  - docs/features/eda-store-io-gate/plan-doc-drift-261030.md
-  - docs/features/eda-store-io-gate/execution-doc-drift.md
-  - docs/features/eda-store-io-gate/gen-test-matrix-table.sh
-  - docs/features/eda-store-io-gate/_lab/gen_test_matrix_table.py
-  - SddIA/engine/execute-process/src/engine/entity_manager.rs
-  - SddIA/engine/execute-process/tests/common/mod.rs
-  - SddIA/engine/execute-process/tests/eda_store_io_matrix_pending.rs
-  - SddIA/engine/execute-process/tests/eda_store_io_matrix_fractal.rs
-  - docs/features/eda-store-io-gate/spec-test-matrix.md
-  - SddIA/actions/emit-pr-presented-event.md
-  - SddIA/actions/emit-pr-audited-event.md
-  - SddIA/actions/emit-pr-resealed-event.md
-  - SddIA/actions/emit-pr-merged-event.md
-  - SddIA/actions/index.md
-  - SddIA/daemons/event-watcher.md
-  - SddIA/events/index.md
-  - .gitignore
-  - docs/audits/kaizen-eda-store-io-gate-261030.md
-  - docs/audits/kaizen-auditoria-eventos-261030.md
+- SddIA/sddia-event-store/src/gate.rs
+- SddIA/sddia-event-store/src/lib.rs
+- SddIA/sddia-event-store/tests/gate.rs
+- SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
+- SddIA/engine/execute-process/src/engine/capability_di_reactor.rs
+- SddIA/engine/execute-process/src/engine/eda_bus.rs
+- SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs
+- SddIA/engine/execute-process/src/engine/accept_pr.rs
+- SddIA/engine/execute-process/src/engine/route_fractal_core.rs
+- SddIA/engine/execute-process/src/engine/event_store_query.rs
+- SddIA/engine/execute-process/src/main.rs
+- SddIA/daemons/event-watcher/src/main.rs
+- SddIA/interfaces/kalma2-bridge/src/main.rs
+- SddIA/interfaces/kalma2-bridge/Cargo.toml
+- SddIA/infrastructure/adapters/lancedb_thought_repo/src/lib.rs
+- SddIA/infrastructure/adapters/lancedb_thought_repo/Cargo.toml
+- SddIA/tools/sddia-qa/src/iota_ci_smoke.rs
+- SddIA/tools/sddia-qa/Cargo.toml
+- sddia-installer.sh
+- SddIA/engine/execute-process/tests/common/mod.rs
+- SddIA/engine/execute-process/tests/eda_store_io_matrix_pending.rs
+- SddIA/engine/execute-process/tests/eda_store_io_matrix_fractal.rs
+- docs/features/eda-store-io-gate/plan-test-matrix.md
+- docs/features/eda-store-io-gate/execution-test-matrix.md
+- docs/audits/eda-doc-drift-eda-store-io-gate-261030.md
+- docs/features/eda-store-io-gate/plan-doc-drift-261030.md
+- docs/features/eda-store-io-gate/execution-doc-drift.md
+- docs/features/eda-store-io-gate/gen-test-matrix-table.sh
+- docs/features/eda-store-io-gate/_lab/gen_test_matrix_table.py
+- SddIA/engine/execute-process/src/engine/entity_manager.rs
+- SddIA/engine/execute-process/tests/common/mod.rs
+- SddIA/engine/execute-process/tests/eda_store_io_matrix_pending.rs
+- SddIA/engine/execute-process/tests/eda_store_io_matrix_fractal.rs
+- docs/features/eda-store-io-gate/spec-test-matrix.md
+- SddIA/actions/emit-pr-presented-event.md
+- SddIA/actions/emit-pr-audited-event.md
+- SddIA/actions/emit-pr-resealed-event.md
+- SddIA/actions/emit-pr-merged-event.md
+- SddIA/actions/index.md
+- SddIA/daemons/event-watcher.md
+- SddIA/events/index.md
+- .gitignore
+- docs/audits/kaizen-eda-store-io-gate-261030.md
+- docs/audits/kaizen-auditoria-eventos-261030.md
 doc_drift:
   P0: APTO
   P1: APTO
@@ -74,9 +74,9 @@ doc_drift:
   P3: APTO
   P4: APTO
 validated_base_sha: d906cc8e843effdb991cecd3190080a2c073d738
-validated_head_sha: c2bfdc425e9037e03849a6be40d509ee055f0cbd
-validated_tree_sha: 8486e4e6dbd03fd70343519940f5207d83864e36
-diff_digest: sha256:333861ae7c6475b90dbc367f9ebea9fed7ca24a73b262200a8b150cc8159f3a1
+validated_head_sha: d005c51a6ba6da8dfe1cf5d7c9fda8c757244fa9
+validated_tree_sha: fb9f27e231c96248e1213f19bedd4cebba2dde69
+diff_digest: sha256:87d1aa65b4005b193f212d5631dfdde6647f829dddfcf6ca111114a97e08bf4c
 ---
 
 # Validación
