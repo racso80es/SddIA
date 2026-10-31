@@ -965,6 +965,14 @@ mod tests {
                 "[SNAPSHOT_BRANCH_CHECKOUT] fatal: una rama llamada 'fix/dcc-snapshot-missing-branch' ya existe",
                 Some("F-DCC-SNAPSHOT-BRANCH-EXISTS"),
             ),
+            (
+                "51dc7bdfd2fe",
+                "delivery-close-cycle",
+                "Snapshot final",
+                "execute-process",
+                "[SNAPSHOT_DIRTY_SKIPPED] hash_after == hash_before; snapshot no consolidó WIP",
+                Some("F-DCC-SNAPSHOT-HASH-STUCK"),
+            ),
         ];
         for (label, process, action, emitter, trace, expected_sig) in cases {
             let (verdict, _, section, unclassified) = analyze_fracture_kaizen_with_options(

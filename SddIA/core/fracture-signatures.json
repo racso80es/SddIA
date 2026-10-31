@@ -86,6 +86,18 @@
       }
     },
     {
+      "id": "F-DCC-SNAPSHOT-HASH-STUCK",
+      "consumers": ["mayeuta"],
+      "match": {
+        "all": ["hash_after == hash_before", "snapshot no consolidó"]
+      },
+      "diagnosis": {
+        "root_cause": "Snapshot final comparó solo `refs/heads/{branch_name}` mientras HEAD estaba en otra rama, o el commit no avanzó ningún ref pese a éxito de cápsula (`51dc7bdfd2fe` / AUT-22). No es gitignore (`F-DCC-SNAPSHOT-GITIGNORE`) ni checkout `-b` duplicado (`F-DCC-SNAPSHOT-BRANCH-EXISTS`).",
+        "verdict": "process_fix",
+        "proposal": "Guardia `branch_list` antes del commit (`SNAPSHOT_BRANCH_MISMATCH`); exigir avance de HEAD y del ref de rama; adjuntar stdout del commit en el fallo."
+      }
+    },
+    {
       "id": "F-DCC-SYMBOLIC-HEAD-BRANCH",
       "consumers": ["mayeuta"],
       "match": {
@@ -269,6 +281,7 @@
         "F-DCC-LAB-BINARY-MISSING",
         "F-DCC-SNAPSHOT-GITIGNORE",
         "F-DCC-SNAPSHOT-BRANCH-EXISTS",
+        "F-DCC-SNAPSHOT-HASH-STUCK",
         "F-DCC-SYMBOLIC-HEAD-BRANCH",
         "F-DLT-PUBLISH-ERROR"
       ],
