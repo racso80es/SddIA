@@ -3,8 +3,8 @@
 use std::path::Path;
 
 use sddia_event_store::{
-    runtime_db_path, store_mode, writes_store, DeadLetter, EventStore, Family, StoreError,
-    StoredEvent,
+    runtime_db_path, store_mode, writes_store, DeadLetter, DeliveryStatus, EventStore, Family,
+    StoreError, StoredEvent,
 };
 use serde_json::{json, Value};
 
@@ -63,6 +63,7 @@ pub fn run(repo: &Path, flag: &str, inputs: &Value) -> (i32, Value) {
         "--query-events" => query_events(repo, inputs),
         "--inspect-dead-letter" => inspect_dead_letter(repo),
         "--replay-dead-letter" => replay_dead_letter(repo, inputs),
+        "--reset-subscriber-delivery" => reset_subscriber_delivery(repo, inputs),
         other => (
             1,
             json!({
@@ -206,6 +207,47 @@ fn replay_dead_letter(repo: &Path, inputs: &Value) -> (i32, Value) {
     };
     match store.replay(event_id) {
         Ok(()) => ok(json!({ "event_id": event_id, "replayed": true })),
+        Err(err) => fail(err.to_string()),
+    }
+}
+
+/// Re-enrutado operativo (AUT-21 T7): deja un suscriptor en `Pending` sin borrar el ECST.
+fn reset_subscriber_delivery(repo: &Path, inputs: &Value) -> (i32, Value) {
+    let Some(event_id) = inputs
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return fail("event_id requerido");
+    };
+    let Some(subscriber_id) = inputs
+        .get("subscriber_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    else {
+        return fail("subscriber_id requerido");
+    };
+    let store = match open_store(repo) {
+        Ok(store) => store,
+        Err(err) => return fail(err.to_string()),
+    };
+    let witness = json!({
+        "replay": "reset-subscriber-delivery",
+        "reason": inputs.get("reason").cloned().unwrap_or(json!("AUT-21-T7")),
+    });
+    match store.upsert_delivery(
+        event_id,
+        subscriber_id,
+        DeliveryStatus::Pending,
+        witness,
+    ) {
+        Ok(()) => ok(json!({
+            "event_id": event_id,
+            "subscriber_id": subscriber_id,
+            "status": "pending",
+        })),
         Err(err) => fail(err.to_string()),
     }
 }

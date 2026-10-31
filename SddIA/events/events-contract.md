@@ -1,5 +1,5 @@
 ---
-contract_version: "1.2.0"
+contract_version: "1.2.1"
 entity_type: "event"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -69,7 +69,7 @@ Toda instancia persistida en el bus debe ser JSON UTF-8 con la forma:
 | `emitter_agent` | Sí | Identificador del emisor indexado |
 | `correlation_id` | No | UUID v4; solo si aplica saga causal |
 | `payload` | Sí | Objeto; forma gobernada por la Clase |
-| `delivery_state` | No | **Legacy Ola A** — prohibido mutar tras emisión en V3; trazabilidad vía testigos de suscriptor |
+| `delivery_state` | No | **Foto del alta (Ola A)** — copia del estado en emisión; **no** es SSOT de entrega. Prohibido mutar tras emisión en V3. Estado vivo por suscriptor: **`subscriber_delivery`** (store) o testigos FS |
 
 ## 4. Ciclo de vida del bus (Ola C V3+)
 
@@ -96,7 +96,7 @@ flowchart TB
 
 1. Emisores registran el ECST con `record_ecst` / `materialize_pending_domain_event`: en **`redb`** solo store; en **`filesystem`** JSON en `eda_bus.pending`; en **`dual`** ambos.
 2. `event-watcher` reclama entregas **`Pending`** en store y/o detecta JSON en `pending/`; invoca `route-domain-event` con `event_file_path` lógico (`.events/pending/{event_id}.json`) aunque el fichero no exista en `redb`.
-3. `route-domain-event` carga el ECST desde fichero si existe; si no, desde store (`load_dispatched_event`). Valida contra la Clase catalogada.
+3. `route-domain-event` carga el ECST desde fichero si existe; si no, desde store (`load_dispatched_event`). En fan-out, los suscriptores con `process`/`action`/`tool` reciben el ECST en línea (`event` + `event_id` en stdin JSON); `event_file_path` es compatibilidad lab. Valida contra la Clase catalogada.
 4. Fan-out asíncrono a suscriptores (`event-subscriptions.json`). Cada intento actualiza `subscriber_delivery` cuando el store está activo; en `filesystem`/`dual` también materializa testigos JSON bajo `processing/subscribers/`.
 5. Resultado por suscriptor: `success`, `failed` o `skipped-<motivo>` en la respuesta del router; en store se persisten como `DeliveryStatus` (`success`, `failed`, `skipped`). **Prohibido** registrar `success` cuando el handler no produjo efecto (laudo AUT-20).
 6. Idempotencia ante re-enrutado: `terminal_witness_exists` consulta entrega terminal en **`subscriber_delivery`** (modo store) **y/o** testigo en `processed_subscribers` / `dead_letter_subscribers` (modo FS).

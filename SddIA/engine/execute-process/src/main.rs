@@ -371,7 +371,12 @@ fn main() {
         }
     }
 
-    if let Some(flag) = ["--query-events", "--inspect-dead-letter", "--replay-dead-letter"]
+    if let Some(flag) = [
+        "--query-events",
+        "--inspect-dead-letter",
+        "--replay-dead-letter",
+        "--reset-subscriber-delivery",
+    ]
         .into_iter()
         .find(|flag| args.iter().any(|arg| arg == *flag))
     {

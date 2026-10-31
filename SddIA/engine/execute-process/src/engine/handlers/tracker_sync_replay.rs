@@ -5,7 +5,6 @@ use super::super::project_binding::{DoneGate, TrackerConfig};
 use crate::envelope::OrchestratorEnvelope;
 use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
@@ -42,16 +41,7 @@ fn sync_marker(event_id: &str) -> String {
 }
 
 fn load_event(repo: &Path, inputs: &Value) -> Result<Value, String> {
-    if let Some(rel) = str_field(inputs, "event_file_path") {
-        let path = repo.join(rel.trim_start_matches("./"));
-        let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        return serde_json::from_str(&text).map_err(|e| e.to_string());
-    }
-    let event_id = str_field(inputs, "event_id").ok_or("event_id o event_file_path requerido")?;
-    Ok(json!({
-        "event_id": event_id,
-        "payload": inputs.get("payload").cloned().unwrap_or_else(|| inputs.clone()),
-    }))
+    super::super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)
 }
 
 fn payload_from_event(event: &Value) -> Result<&Value, String> {

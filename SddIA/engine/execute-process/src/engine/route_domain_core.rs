@@ -1517,6 +1517,23 @@ pub(crate) fn release_ppr_dedupe(
     let _ = fs::remove_file(&lock_path);
 }
 
+fn build_ecst_subscriber_inputs(
+    repo: &Path,
+    event: &Value,
+    event_path: Option<&Path>,
+) -> Map<String, Value> {
+    let mut process_inputs = Map::new();
+    process_inputs.insert("event".into(), event.clone());
+    if let Some(eid) = event.get("event_id").and_then(|v| v.as_str()) {
+        process_inputs.insert("event_id".into(), json!(eid));
+    }
+    if let Some(path) = event_path {
+        let rel = rel_event_path(repo, path);
+        process_inputs.insert("event_file_path".into(), json!(rel));
+    }
+    process_inputs
+}
+
 pub(crate) fn dispatch_subscriber(
     repo: &Path,
     subscriber: &Value,
@@ -1604,18 +1621,9 @@ pub(crate) fn dispatch_subscriber(
         }
 
         if process_key == "tracker-stamp" {
-            let Some(path) = event_path else {
-                return (
-                    sid,
-                    "failed".into(),
-                    Some("event_file_path required for tracker-stamp".into()),
-                    1,
-                );
-            };
-            let rel = super::eda_bus_topology::rel_event_path(repo, path);
-            let process_inputs = json!({ "event_file_path": rel });
+            let process_inputs = build_ecst_subscriber_inputs(repo, event, event_path);
             let (status, exit_code) =
-                dispatch_process_subscriber(repo, process_key, process_inputs);
+                dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
             if process_dispatch_terminal(&status) {
                 return (sid, status, None, exit_code);
             }
@@ -1623,20 +1631,7 @@ pub(crate) fn dispatch_subscriber(
         }
 
         if process_key == "tracker-sync-replay" {
-            let Some(path) = event_path else {
-                return (
-                    sid,
-                    "failed".into(),
-                    Some("event_file_path required for tracker-sync-replay".into()),
-                    1,
-                );
-            };
-            let rel = super::eda_bus_topology::rel_event_path(repo, path);
-            let mut process_inputs = serde_json::Map::new();
-            process_inputs.insert("event_file_path".into(), json!(rel));
-            if let Some(eid) = event.get("event_id").and_then(|v| v.as_str()) {
-                process_inputs.insert("event_id".into(), json!(eid));
-            }
+            let mut process_inputs = build_ecst_subscriber_inputs(repo, event, event_path);
             for key in [
                 "issue_ref",
                 "operation",
@@ -1669,17 +1664,7 @@ pub(crate) fn dispatch_subscriber(
             || process_key == "user-preference-ingest"
             || process_key == "email-digest-preference-reply"
         {
-            let Some(path) = event_path else {
-                return (
-                    sid,
-                    "failed".into(),
-                    Some(format!("event_file_path required for {process_key}")),
-                    1,
-                );
-            };
-            let rel = super::eda_bus_topology::rel_event_path(repo, path);
-            let mut process_inputs = Map::new();
-            process_inputs.insert("event_file_path".into(), json!(rel));
+            let process_inputs = build_ecst_subscriber_inputs(repo, event, event_path);
             let (status, exit_code) =
                 dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
             if process_dispatch_terminal(&status) {
