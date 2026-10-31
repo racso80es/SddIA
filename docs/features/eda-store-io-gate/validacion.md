@@ -73,6 +73,7 @@ doc_drift:
   P2: APTO
   P3: APTO
   P4: APTO
+pr_url: https://github.com/racso80es/SddIA/pull/430
 validated_base_sha: d906cc8e843effdb991cecd3190080a2c073d738
 validated_head_sha: ca3e187386665fd051d8473245feb4c01061f032
 validated_tree_sha: 0d043409c8075817491394c174995190c002569c
@@ -104,4 +105,4 @@ TM-8: `tm8_presented_has_pending_subscriber_rows_after_stamp` + tabla § Cobertu
 
 AC-W4: installer publica con `--publish-ecst`; sin binario y modo `redb` no escribe `.events/`.
 
-Tracker Linear: issue kaizen roll-up **[AUT-56](https://linear.app/oscar-perez/issue/AUT-56/kaizen-gate-io-bus-eda-y-cierre-rama-261030)** (hijo **AUT-20**). `pbi_archived` no aplica hasta issue en `done`. Este `global: APTO` cubre la verificación local de la rama, no el cierre del issue.
+Tracker Linear: issue kaizen roll-up **[AUT-56](https://linear.app/oscar-perez/issue/AUT-56/kaizen-gate-io-bus-eda-y-cierre-rama-261030)** (hijo **AUT-20**). **PR [#430](https://github.com/racso80es/SddIA/pull/430):** CI verde (incl. `sddia-diff-digest`, `wasi-runtime-smoke`), mergeable. **Done** del issue tras merge a `main` y state `done` en Linear (`pbi_archived` no aplica con provider linear).
