@@ -552,15 +552,252 @@ fn scan_witness_dir(
     }
 }
 
-fn audit_state_from_store(repo: &Path) -> ScanState {
+const CORE_DOMAIN_REGISTRY: &str = "SddIA/core/event-domain-subscriptions.json";
+const CODEX_REGISTRY: &str = "SddIA/library/codexes/codex-software-engineering/subscriptions.json";
+
+fn software_codex_authority(repo: &Path) -> bool {
+    let Ok(text) = fs::read_to_string(repo.join(".SddIA/project.md")) else {
+        return false;
+    };
+    text.lines().any(|line| {
+        let trimmed = line.trim();
+        trimmed.starts_with("codex_slug:") && trimmed.contains("codex-software-engineering")
+    })
+}
+
+fn load_json_file(path: &Path) -> Result<Value, String> {
+    let text = fs::read_to_string(path).map_err(|e| e.to_string())?;
+    serde_json::from_str(text.trim_start_matches('\u{feff}')).map_err(|e| e.to_string())
+}
+
+fn load_domain_subscription_registries(
+    repo: &Path,
+) -> Result<(Value, Option<Value>, bool), String> {
+    let core = load_json_file(&repo.join(CORE_DOMAIN_REGISTRY))?;
+    let authority = software_codex_authority(repo);
+    let codex = if authority {
+        let path = repo.join(CODEX_REGISTRY);
+        if path.is_file() {
+            Some(load_json_file(&path)?)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    Ok((core, codex, authority))
+}
+
+fn agent_llm_tier(repo: &Path, agent: &str) -> Option<String> {
+    let path = repo.join("SddIA/agents").join(format!("{agent}.md"));
+    let text = fs::read_to_string(&path).ok()?;
+    let fm = text.split("---").nth(1)?;
+    let re = Regex::new(r"(?m)^\s*tier:\s*([a-z]+)\s*$").ok()?;
+    re.captures(fm).map(|c| c[1].to_string())
+}
+
+fn tier_is_cognitive(tier: &str) -> bool {
+    matches!(tier, "high" | "medium" | "low")
+}
+
+fn split_subscriber_id(id: &str) -> (&str, Option<&str>) {
+    match id.split_once('.') {
+        Some((agent, capsule)) if !capsule.is_empty() => (agent, Some(capsule)),
+        _ => (id, None),
+    }
+}
+
+fn eda_dispatch_workspace_empty(repo: &Path, event_id: &str, agent: &str) -> bool {
+    let dir = repo
+        .join(".SddIA/workspaces/eda-dispatch")
+        .join(event_id)
+        .join(agent);
+    if !dir.is_dir() {
+        return true;
+    }
+    fs::read_dir(&dir)
+        .map(|mut e| e.next().is_none())
+        .unwrap_or(true)
+}
+
+fn tracker_ref_from_ecst(ecst: &Value) -> Option<&str> {
+    ecst.pointer("/payload/tracker_ref")
+        .or_else(|| ecst.get("tracker_ref"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+}
+
+fn tracker_outbound_exists(repo: &Path, tracker_ref: &str) -> bool {
+    repo.join(".SddIA/state/tracker-outbound")
+        .join(format!("{tracker_ref}.jsonl"))
+        .is_file()
+}
+
+fn collect_residual_fractures(
+    rows: &[sddia_event_store::StoredEvent],
+) -> Vec<(String, String)> {
+    rows
+        .iter()
+        .filter(|r| r.event_type == "System_Fracture_Detected")
+        .filter_map(|r| {
+            let friction = r
+                .ecst
+                .pointer("/payload/friction_id")
+                .and_then(|v| v.as_str());
+            if friction != Some("F-EDA-RESIDUAL-FILESYSTEM") {
+                return None;
+            }
+            let trace = r
+                .ecst
+                .pointer("/payload/error_trace")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            Some((r.event_id.clone(), trace))
+        })
+        .collect()
+}
+
+fn audit_residual_pending_files(
+    repo: &Path,
+    pending: &Path,
+    fractures: &[(String, String)],
+    state: &mut ScanState,
+) {
+    if !pending.is_dir() {
+        return;
+    }
+    let Ok(entries) = fs::read_dir(pending) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let rel = rel_path(repo, &path);
+        let fname = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("");
+        let mut detail = rel.clone();
+        for (event_id, trace) in fractures {
+            if trace.contains(fname) || trace.contains(&rel) {
+                detail = format!(
+                    "{rel}; fracture_event_id={event_id}; friction_id=F-EDA-RESIDUAL-FILESYSTEM"
+                );
+                break;
+            }
+        }
+        state.anomalies.push(Anomaly {
+            kind: "residual_filesystem".into(),
+            path: rel.clone(),
+            detail,
+        });
+    }
+}
+
+fn audit_domain_delivery_signals(
+    repo: &Path,
+    domain_rows: &[sddia_event_store::StoredEvent],
+    deliveries: &[(String, String, sddia_event_store::DeliveryStatus)],
+    state: &mut ScanState,
+) {
+    let Ok((core, codex, authority)) = load_domain_subscription_registries(repo) else {
+        return;
+    };
+    let mut by_event: HashMap<String, Vec<(String, sddia_event_store::DeliveryStatus)>> =
+        HashMap::new();
+    for (event_id, subscriber_id, status) in deliveries {
+        if subscriber_id.starts_with('_') || subscriber_id.trim().is_empty() {
+            continue;
+        }
+        by_event
+            .entry(event_id.clone())
+            .or_default()
+            .push((subscriber_id.clone(), *status));
+    }
+
+    for row in domain_rows {
+        let payload = row.ecst.get("payload").unwrap_or(&row.ecst);
+        let origin = sddia_eda_catalog::resolve_origin_topology(payload);
+        let plan =
+            sddia_eda_catalog::plan_route(&core, codex.as_ref(), authority, &row.event_type);
+        let expected: HashSet<String> = plan
+            .subscribers
+            .iter()
+            .filter(|s| sddia_eda_catalog::subscriber_applies_to_topology(s, &origin))
+            .map(sddia_eda_catalog::subscriber_id)
+            .collect();
+
+        let actual_rows = by_event.get(&row.event_id).cloned().unwrap_or_default();
+        let actual: HashSet<String> = actual_rows.iter().map(|(sid, _)| sid.clone()).collect();
+
+        for sid in actual.difference(&expected) {
+            state.anomalies.push(Anomaly {
+                kind: "delivery_fuera_de_catalogo".into(),
+                path: row.event_id.clone(),
+                detail: sid.clone(),
+            });
+        }
+        for sid in expected.difference(&actual) {
+            state.anomalies.push(Anomaly {
+                kind: "suscriptor_sin_fila".into(),
+                path: row.event_id.clone(),
+                detail: sid.clone(),
+            });
+        }
+
+        for (subscriber_id, status) in &actual_rows {
+            if *status != sddia_event_store::DeliveryStatus::Success {
+                continue;
+            }
+            let (agent, capsule) = split_subscriber_id(subscriber_id);
+            let Some(tier) = agent_llm_tier(repo, agent) else {
+                continue;
+            };
+            if !tier_is_cognitive(&tier) {
+                continue;
+            }
+            if !eda_dispatch_workspace_empty(repo, &row.event_id, agent) {
+                continue;
+            }
+            if capsule == Some("tracker-stamp") {
+                if let Some(tr) = tracker_ref_from_ecst(&row.ecst) {
+                    if tracker_outbound_exists(repo, tr) {
+                        continue;
+                    }
+                }
+            }
+            state.anomalies.push(Anomaly {
+                kind: "success_sin_efecto".into(),
+                path: row.event_id.clone(),
+                detail: format!("{subscriber_id}; tier={tier}"),
+            });
+        }
+    }
+}
+
+fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
     let mut state = ScanState::default();
     let db = sddia_event_store::runtime_db_path(repo);
     if !db.is_file() {
         return state;
     }
-    let Ok(store) = sddia_event_store::EventStore::open(&db) else {
-        return state;
+    let store = match sddia_event_store::EventStore::open(&db) {
+        Ok(s) => s,
+        Err(err) => {
+            state.anomalies.push(Anomaly {
+                kind: "store_unavailable".into(),
+                path: rel_path(repo, &db),
+                detail: err.to_string(),
+            });
+            return state;
+        }
     };
+
+    let mut domain_rows = Vec::new();
     for (family, bucket) in [
         (sddia_event_store::Family::Domain, "domain"),
         (sddia_event_store::Family::Orchestration, "orchestration"),
@@ -571,8 +808,11 @@ fn audit_state_from_store(repo: &Path) -> ScanState {
         };
         state.counts.insert(bucket.into(), rows.len() as u64);
         for row in rows {
-            *state.counts_by_type.entry(row.event_type).or_insert(0) += 1;
-            state.event_ids.insert(row.event_id);
+            *state.counts_by_type.entry(row.event_type.clone()).or_insert(0) += 1;
+            state.event_ids.insert(row.event_id.clone());
+            if family == sddia_event_store::Family::Domain {
+                domain_rows.push(row);
+            }
         }
     }
     if let Ok(letters) = store.list_dead_letters() {
@@ -586,17 +826,19 @@ fn audit_state_from_store(repo: &Path) -> ScanState {
                 .or_insert(0) += 1;
         }
     }
+    let mut all_deliveries = Vec::new();
     if let Ok(rows) = store.list_deliveries() {
         let mut failed = 0u64;
         let mut pending = 0u64;
         let mut success = 0u64;
-        for (_id, _sid, status) in rows {
+        for (event_id, subscriber_id, status) in &rows {
             match status {
                 sddia_event_store::DeliveryStatus::Failed => failed += 1,
                 sddia_event_store::DeliveryStatus::Pending => pending += 1,
                 sddia_event_store::DeliveryStatus::Success => success += 1,
                 sddia_event_store::DeliveryStatus::Skipped => {}
             }
+            all_deliveries.push((event_id.clone(), subscriber_id.clone(), *status));
         }
         state
             .counts
@@ -606,13 +848,18 @@ fn audit_state_from_store(repo: &Path) -> ScanState {
             .insert("processing/subscribers".into(), pending);
         state.counts.insert("processed/subscribers".into(), success);
     }
+
+    audit_domain_delivery_signals(repo, &domain_rows, &all_deliveries, &mut state);
+    let fractures = collect_residual_fractures(&domain_rows);
+    audit_residual_pending_files(repo, &bus_paths.pending, &fractures, &mut state);
+
     state
 }
 
 fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusPaths), String> {
     let paths = resolve_bus_paths(repo)?;
     if sddia_event_store::writes_store(sddia_event_store::store_mode()) {
-        return Ok((audit_state_from_store(repo), paths));
+        return Ok((audit_state_from_store(repo, &paths), paths));
     }
     let known_types = load_known_event_types(repo);
     let mut state = ScanState::default();
@@ -767,11 +1014,31 @@ fn build_report_md(
         String::new(),
         format!("Generado: {}", Utc::now().format("%Y-%m-%dT%H:%M:%SZ")),
         String::new(),
+    ];
+    if anomalies
+        .iter()
+        .any(|a| a.kind == "store_unavailable")
+    {
+        lines.push("## Store no disponible".into());
+        lines.push(String::new());
+        for a in anomalies
+            .iter()
+            .filter(|a| a.kind == "store_unavailable")
+        {
+            lines.push(format!("- `{}`: {}", a.path, a.detail));
+        }
+        lines.push(String::new());
+        lines.push(
+            "Los conteos siguientes no representan un bus vacío; la base no pudo abrirse.".into(),
+        );
+        lines.push(String::new());
+    }
+    lines.extend([
         "## Conteos por estado".into(),
         String::new(),
         "| Estado | Cantidad |".into(),
         "|--------|----------|".into(),
-    ];
+    ]);
     for (k, v) in &summary.counts {
         lines.push(format!("| `{k}` | {v} |"));
     }
@@ -1271,6 +1538,270 @@ mod tests {
                 .join(format!("{event_id}.json"))
                 .is_file()
         );
+        sddia_event_store::override_store_mode(None);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    fn seed_aut27_minimal_repo(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::create_dir_all(repo.join("SddIA/agents")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending","processing":".events/processing","processed":".events/processed","dead_letter":".events/dead-letter"}}"#,
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/core/event-domain-subscriptions.json"),
+            include_str!("../../../core/event-domain-subscriptions.json"),
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/agents/tekton.md"),
+            "---\nname: tekton\nllm_profile:\n  tier: low\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("SddIA/agents/argos.md"),
+            "---\nname: argos\nllm_profile:\n  tier: medium\n---\n",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn store_unavailable_emits_anomaly_not_silent_empty_scan() {
+        let dir = std::env::temp_dir().join(format!(
+            "eba-store-unavail-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        seed_aut27_minimal_repo(&dir);
+        let db = sddia_event_store::runtime_db_path(&dir);
+        fs::create_dir_all(db.parent().unwrap()).unwrap();
+        fs::write(&db, b"not-a-redb-database").unwrap();
+        let paths = test_repo_bus_paths(&dir);
+        let state = audit_state_from_store(&dir, &paths);
+        assert!(
+            state
+                .anomalies
+                .iter()
+                .any(|a| a.kind == "store_unavailable"),
+            "{:?}",
+            state.anomalies
+        );
+        let md = build_report_md(
+            &AuditSummary {
+                counts: BTreeMap::new(),
+                counts_by_type: BTreeMap::new(),
+                stale_pending_count: 0,
+                orphan_witness_count: 0,
+                structural_error_count: 0,
+                dead_letter_count: 0,
+                dead_letter_witness_count: 0,
+                non_ecst_sink_count: 0,
+                actionable_stale_pending_count: 0,
+                fracture_stale_pending_count: 0,
+            },
+            &state.anomalies,
+            &BTreeMap::new(),
+            &[],
+        );
+        assert!(md.contains("Store no disponible"));
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn redb_audit_marks_success_sin_efecto_and_tracker_outbound_shield() {
+        let dir = std::env::temp_dir().join(format!(
+            "eba-success-efecto-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        seed_aut27_minimal_repo(&dir);
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let db = sddia_event_store::runtime_db_path(&dir);
+        fs::create_dir_all(db.parent().unwrap()).unwrap();
+        let store = sddia_event_store::EventStore::open(&db).unwrap();
+        let event_id = "3803aeae-7a1e-4c15-b02f-8c72d16fd8ff";
+        let ecst = json!({
+            "event_id": event_id,
+            "event_type": "PullRequest_Merged",
+            "payload": { "tracker_ref": "AUT-8" }
+        });
+        let event = sddia_event_store::StoredEvent {
+            event_id: event_id.into(),
+            family: sddia_event_store::Family::Domain,
+            event_type: "PullRequest_Merged".into(),
+            created_at: 1,
+            ecst: ecst.clone(),
+        };
+        store
+            .insert_event(
+                &event,
+                &["argos.notify-humanized-pr-merged", "tekton.tracker-stamp"],
+            )
+            .unwrap();
+        store
+            .set_delivery(
+                event_id,
+                "argos.notify-humanized-pr-merged",
+                sddia_event_store::DeliveryStatus::Success,
+                json!({}),
+            )
+            .unwrap();
+        store
+            .set_delivery(
+                event_id,
+                "tekton.tracker-stamp",
+                sddia_event_store::DeliveryStatus::Success,
+                json!({}),
+            )
+            .unwrap();
+        drop(store);
+
+        let paths = test_repo_bus_paths(&dir);
+        let state = audit_state_from_store(&dir, &paths);
+        let efecto: Vec<_> = state
+            .anomalies
+            .iter()
+            .filter(|a| a.kind == "success_sin_efecto")
+            .collect();
+        assert_eq!(efecto.len(), 2, "{:?}", state.anomalies);
+
+        fs::create_dir_all(dir.join(".SddIA/state/tracker-outbound")).unwrap();
+        fs::write(dir.join(".SddIA/state/tracker-outbound/AUT-8.jsonl"), "{}\n").unwrap();
+        let state2 = audit_state_from_store(&dir, &paths);
+        let tekton_marked = state2.anomalies.iter().any(|a| {
+            a.kind == "success_sin_efecto" && a.detail.starts_with("tekton.tracker-stamp")
+        });
+        let argos_marked = state2.anomalies.iter().any(|a| {
+            a.kind == "success_sin_efecto" && a.detail.starts_with("argos.notify-humanized")
+        });
+        assert!(!tekton_marked);
+        assert!(argos_marked);
+        sddia_event_store::override_store_mode(None);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn redb_audit_catalog_mismatch_on_presented() {
+        let dir = std::env::temp_dir().join(format!(
+            "eba-catalog-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        seed_aut27_minimal_repo(&dir);
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let db = sddia_event_store::runtime_db_path(&dir);
+        fs::create_dir_all(db.parent().unwrap()).unwrap();
+        let store = sddia_event_store::EventStore::open(&db).unwrap();
+        let event_id = "BVLgK63NjKvYhH1Zt4LGPE2KbrSCAhQaBTnJmfng8xCU";
+        let event = sddia_event_store::StoredEvent {
+            event_id: event_id.into(),
+            family: sddia_event_store::Family::Domain,
+            event_type: "PullRequest_Presented".into(),
+            created_at: 1,
+            ecst: json!({
+                "event_id": event_id,
+                "event_type": "PullRequest_Presented",
+                "payload": {}
+            }),
+        };
+        store.insert_event(&event, &["argos", "cumulo"]).unwrap();
+        store
+            .set_delivery(
+                event_id,
+                "argos",
+                sddia_event_store::DeliveryStatus::Success,
+                json!({}),
+            )
+            .unwrap();
+        store
+            .set_delivery(
+                event_id,
+                "cumulo",
+                sddia_event_store::DeliveryStatus::Success,
+                json!({}),
+            )
+            .unwrap();
+        drop(store);
+
+        let paths = test_repo_bus_paths(&dir);
+        let state = audit_state_from_store(&dir, &paths);
+        assert!(state.anomalies.iter().any(|a| {
+            a.kind == "delivery_fuera_de_catalogo" && a.detail == "argos"
+        }));
+        assert!(state.anomalies.iter().any(|a| {
+            a.kind == "delivery_fuera_de_catalogo" && a.detail == "cumulo"
+        }));
+        for expected in [
+            "argos.pull-request-review",
+            "tekton.tracker-stamp",
+            "argos.send-telegram-notification",
+        ] {
+            assert!(
+                state.anomalies.iter().any(|a| {
+                    a.kind == "suscriptor_sin_fila" && a.detail == expected
+                }),
+                "falta suscriptor_sin_fila {expected}: {:?}",
+                state.anomalies
+            );
+        }
+        sddia_event_store::override_store_mode(None);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn redb_audit_residual_pending_with_fracture_trace() {
+        let dir = std::env::temp_dir().join(format!(
+            "eba-residual-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        seed_aut27_minimal_repo(&dir);
+        fs::create_dir_all(dir.join(".events/pending")).unwrap();
+        let pending_name = "orphan-pending.json";
+        fs::write(
+            dir.join(".events/pending").join(pending_name),
+            r#"{"event_id":"x"}"#,
+        )
+        .unwrap();
+
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let db = sddia_event_store::runtime_db_path(&dir);
+        fs::create_dir_all(db.parent().unwrap()).unwrap();
+        let store = sddia_event_store::EventStore::open(&db).unwrap();
+        let fracture_id = "residual-fracture-1";
+        let trace = format!("residual .events/pending/{pending_name} con store redb");
+        let fracture = sddia_event_store::StoredEvent {
+            event_id: fracture_id.into(),
+            family: sddia_event_store::Family::Domain,
+            event_type: "System_Fracture_Detected".into(),
+            created_at: 2,
+            ecst: json!({
+                "event_id": fracture_id,
+                "event_type": "System_Fracture_Detected",
+                "payload": {
+                    "friction_id": "F-EDA-RESIDUAL-FILESYSTEM",
+                    "error_trace": trace
+                }
+            }),
+        };
+        store.insert_event(&fracture, &[]).unwrap();
+        drop(store);
+
+        let paths = test_repo_bus_paths(&dir);
+        let state = audit_state_from_store(&dir, &paths);
+        let residual = state
+            .anomalies
+            .iter()
+            .find(|a| a.kind == "residual_filesystem")
+            .expect("residual_filesystem");
+        assert!(residual.detail.contains("F-EDA-RESIDUAL-FILESYSTEM"));
+        assert!(residual.detail.contains(fracture_id));
         sddia_event_store::override_store_mode(None);
         let _ = fs::remove_dir_all(&dir);
     }
