@@ -217,6 +217,49 @@ fn filter_snapshot_commit_files(
         .collect()
 }
 
+/// Rama local marcada con `*` en salida `git branch -v` (`branch_list`). `None` si detached o sin línea activa.
+pub(crate) fn parse_star_branch_from_branch_list(git_stdout: &str) -> Option<String> {
+    for line in git_stdout.lines() {
+        let t = line.trim();
+        if !t.starts_with('*') {
+            continue;
+        }
+        let rest = t.trim_start_matches('*').trim();
+        if rest.is_empty() {
+            return None;
+        }
+        let lower = rest.to_lowercase();
+        if lower.contains("head detached") {
+            return None;
+        }
+        let name = rest.split_whitespace().next()?;
+        return Some(name.to_string());
+    }
+    None
+}
+
+pub(crate) fn snapshot_branch_aligned(current: Option<&str>, branch_name: &str) -> bool {
+    current.is_some_and(|c| c.eq_ignore_ascii_case(branch_name))
+}
+
+/// Tras snapshot commit: ambos refs deben avanzar respecto a `before` (hex 40).
+pub(crate) fn snapshot_hash_advanced(
+    before: Option<&str>,
+    head_after: Option<&str>,
+    branch_after: Option<&str>,
+) -> bool {
+    let Some(b) = before.filter(|s| s.len() == 40) else {
+        return false;
+    };
+    let Some(h) = head_after.filter(|s| s.len() == 40) else {
+        return false;
+    };
+    let Some(br) = branch_after.filter(|s| s.len() == 40) else {
+        return false;
+    };
+    h != b && br != b
+}
+
 fn porcelain_excluding_preserved_untracked_todos(porcelain: &str, pbi_ref: Option<&str>) -> String {
     porcelain
         .lines()
@@ -551,7 +594,24 @@ pub fn capsule_delivery_snapshot_final_with_repo(
     }
     let files_count = files.len();
 
-    if let Err(e) = invoke_git_manager(
+    let branch_list_data = invoke_git_manager(repo, "branch_list", &json!({}))?;
+    let branch_stdout = branch_list_data
+        .get("gitStdout")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let current_branch = parse_star_branch_from_branch_list(branch_stdout);
+    if !snapshot_branch_aligned(current_branch.as_deref(), &branch) {
+        let detail = current_branch
+            .map(|c| format!("current={c}"))
+            .unwrap_or_else(|| "current=(detached o sin rama activa)".into());
+        return Ok(delivery_phase_failed(
+            "delivery-snapshot-final",
+            "SNAPSHOT_BRANCH_MISMATCH",
+            &format!("{detail}; expected={branch}"),
+        ));
+    }
+
+    let commit_data = match invoke_git_manager(
         repo,
         "commit",
         &json!({
@@ -559,12 +619,26 @@ pub fn capsule_delivery_snapshot_final_with_repo(
             "files": files,
         }),
     ) {
-        return Ok(delivery_phase_failed(
-            "delivery-snapshot-final",
-            "SNAPSHOT_DIRTY_SKIPPED",
-            &e,
-        ));
-    }
+        Ok(d) => d,
+        Err(e) => {
+            return Ok(delivery_phase_failed(
+                "delivery-snapshot-final",
+                "SNAPSHOT_DIRTY_SKIPPED",
+                &e,
+            ));
+        }
+    };
+    let commit_log = format!(
+        "{}{}",
+        commit_data
+            .get("gitStdout")
+            .and_then(|v| v.as_str())
+            .unwrap_or(""),
+        commit_data
+            .get("gitStderr")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+    );
 
     let status_after_data = invoke_git_manager(repo, "status", &json!({}))?;
     let porcelain_after = porcelain_excluding_preserved_untracked_todos(
@@ -582,12 +656,23 @@ pub fn capsule_delivery_snapshot_final_with_repo(
     let hash_after_data =
         invoke_git_manager(repo, "get_last_commit", &json!({"ref": branch_ref}))?;
     let hash_after = git_commit_hash(&hash_after_data);
+    let head_after_data = invoke_git_manager(repo, "get_last_commit", &json!({"ref": "HEAD"}))?;
+    let hash_head_after = git_commit_hash(&head_after_data);
 
-    if hash_before == hash_after {
+    let before_hex = hash_before.as_ref().and_then(|v| v.as_str());
+    let head_hex = hash_head_after.as_ref().and_then(|v| v.as_str());
+    let branch_hex = hash_after.as_ref().and_then(|v| v.as_str());
+    if !snapshot_hash_advanced(before_hex, head_hex, branch_hex) {
+        let mut msg = "hash_after == hash_before; snapshot no consolidó WIP".to_string();
+        let log_trim = commit_log.trim();
+        if !log_trim.is_empty() {
+            msg.push_str("; git: ");
+            msg.push_str(log_trim);
+        }
         return Ok(delivery_phase_failed(
             "delivery-snapshot-final",
             "SNAPSHOT_DIRTY_SKIPPED",
-            "hash_after == hash_before; snapshot no consolidó WIP",
+            &msg,
         ));
     }
 
@@ -1798,6 +1883,46 @@ mod delivery_close_kaizen_tests {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .starts_with("[SNAPSHOT_DIRTY_SKIPPED]")
+        );
+    }
+
+    #[test]
+    fn parse_star_branch_from_branch_list_local() {
+        let stdout = "* Fix_Events_Multiple abc1234 msg\n  main def5678\n";
+        assert_eq!(
+            parse_star_branch_from_branch_list(stdout).as_deref(),
+            Some("Fix_Events_Multiple")
+        );
+        let detached = "* (HEAD detached at abc1234)\n";
+        assert!(parse_star_branch_from_branch_list(detached).is_none());
+    }
+
+    #[test]
+    fn snapshot_branch_aligned_requires_exact_name() {
+        assert!(snapshot_branch_aligned(Some("fix/foo"), "fix/foo"));
+        assert!(!snapshot_branch_aligned(Some("main"), "fix/foo"));
+        assert!(!snapshot_branch_aligned(None, "fix/foo"));
+    }
+
+    #[test]
+    fn snapshot_hash_advanced_requires_both_refs_move() {
+        let b = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        let h = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        assert!(snapshot_hash_advanced(Some(b), Some(h), Some(h)));
+        assert!(!snapshot_hash_advanced(Some(b), Some(b), Some(h)));
+        assert!(!snapshot_hash_advanced(Some(b), Some(h), Some(b)));
+    }
+
+    #[test]
+    fn snapshot_branch_mismatch_sets_error_code() {
+        let entry = delivery_phase_failed(
+            "delivery-snapshot-final",
+            "SNAPSHOT_BRANCH_MISMATCH",
+            "current=main; expected=fix/x",
+        );
+        assert_eq!(
+            entry.get("error_code").and_then(|v| v.as_str()),
+            Some("SNAPSHOT_BRANCH_MISMATCH")
         );
     }
 
