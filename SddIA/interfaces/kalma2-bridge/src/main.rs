@@ -1612,11 +1612,11 @@ fn emit_system_fracture(
             "fracture_kind": fracture_kind,
         }
     });
-    let target = pending.join(format!("{event_id}.json"));
-    let _ = std::fs::write(
-        &target,
-        serde_json::to_string_pretty(&event).unwrap_or_else(|_| "{}".into()),
-    );
+    let mut stamped = event;
+    if sddia_eda_catalog::stamp_published_event(repo, &mut stamped).is_err() {
+        return;
+    }
+    let _ = sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&pending));
 }
 
 fn chrono_like_now() -> String {

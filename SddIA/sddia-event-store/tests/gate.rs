@@ -4,8 +4,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use sddia_event_store::{
-    append_progress_monotonic, mode_from_name, override_store_mode, path_is_heartbeat_sidechannel,
-    record_ecst, runtime_db_path, DeliveryStatus, EventStore, Family, StoreMode,
+    append_progress_monotonic, load_domain_ecsts, mode_from_name, override_store_mode,
+    path_is_heartbeat_sidechannel, publish_ecst, record_ecst, runtime_db_path, DeliveryStatus,
+    EventStore, Family, StoreMode,
 };
 
 static TEMP_SEQ: AtomicU64 = AtomicU64::new(1);
@@ -140,4 +141,37 @@ fn success_label_is_not_pending() {
         DeliveryStatus::Success
     );
     assert!(store.list_pending_deliveries().unwrap().is_empty());
+}
+
+fn sealed(id: &str) -> serde_json::Value {
+    serde_json::json!({
+        "event_id": id,
+        "event_type": "System_Fracture_Detected",
+        "delivery_state": {"_disposition": "no_subscriber"}
+    })
+}
+
+#[test]
+fn publish_redb_writes_store_not_file() {
+    let repo = TempRepo::new();
+    override_store_mode(Some(StoreMode::Redb));
+    let dir = repo.path.join(".events/pending");
+    let seal = publish_ecst(&repo.path, "pending", &sealed("evt-r"), Some(&dir)).unwrap();
+    assert!(!dir.join("evt-r.json").exists());
+    assert_eq!(seal.logical_rel, ".events/pending/evt-r.json");
+    let rows = load_domain_ecsts(&repo.path, &[dir]).unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["event_id"], "evt-r");
+}
+
+#[test]
+fn publish_filesystem_writes_file_not_store() {
+    let repo = TempRepo::new();
+    override_store_mode(Some(StoreMode::Filesystem));
+    let dir = repo.path.join(".events/pending");
+    publish_ecst(&repo.path, "pending", &sealed("evt-f"), Some(&dir)).unwrap();
+    assert!(dir.join("evt-f.json").is_file());
+    assert!(!runtime_db_path(&repo.path).exists());
+    let rows = load_domain_ecsts(&repo.path, &[dir]).unwrap();
+    assert_eq!(rows.len(), 1);
 }

@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use std::{thread, time::Duration};
 
 const POLL_SECONDS: u64 = 2;
@@ -376,6 +376,114 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
     }
 }
 
+const FRACTAL_CLAIM_WINDOW_MS: i64 = 6 * 60 * 60 * 1000;
+const FRACTAL_CLAIM_CAP: usize = 16;
+const FRACTAL_CLAIM_SUB: &str = "event-watcher.fractal-claim";
+
+fn now_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0)
+}
+
+/// Reclama telemetría y orquestación recientes que no tienen testigo de claim.
+fn claim_store_fractal(repo: &Path, book: &SharedBook) {
+    if !fractal_watch_enabled() {
+        return;
+    }
+    let mode = sddia_event_store::store_mode();
+    if !sddia_event_store::writes_store(mode) {
+        return;
+    }
+    let db = sddia_event_store::runtime_db_path(repo);
+    if !db.is_file() {
+        return;
+    }
+    let store = match sddia_event_store::EventStore::open(&db) {
+        Ok(store) => store,
+        Err(err) => {
+            eprintln!("[WATCHER] fractal claim: {err}");
+            return;
+        }
+    };
+    let now = now_millis();
+    let families = [
+        (
+            sddia_event_store::Family::Telemetry,
+            "route-telemetry",
+            ".events/telemetry",
+        ),
+        (
+            sddia_event_store::Family::Orchestration,
+            "route-orchestration",
+            ".events/orchestration",
+        ),
+    ];
+    let mut launches: Vec<(String, String, String)> = Vec::new();
+    for (family, process_name, prefix) in families {
+        let Ok(mut rows) = store.list_family(family) else {
+            continue;
+        };
+        rows.sort_by_key(|row| std::cmp::Reverse(row.created_at));
+        let mut taken = 0usize;
+        for row in rows {
+            if taken >= FRACTAL_CLAIM_CAP {
+                break;
+            }
+            if now.saturating_sub(row.created_at) > FRACTAL_CLAIM_WINDOW_MS {
+                continue;
+            }
+            let terminal = store
+                .get_delivery(&row.event_id, FRACTAL_CLAIM_SUB)
+                .ok()
+                .flatten()
+                .is_some_and(|w| w.status != sddia_event_store::DeliveryStatus::Pending);
+            if terminal {
+                continue;
+            }
+            let Ok(mut b) = book.lock() else {
+                break;
+            };
+            if b.processing.contains(&row.event_id) || b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
+                continue;
+            }
+            let event_id = row.event_id.clone();
+            b.processing.insert(event_id.clone());
+            drop(b);
+            taken += 1;
+            launches.push((
+                event_id.clone(),
+                process_name.to_string(),
+                format!("{prefix}/{event_id}.json"),
+            ));
+        }
+    }
+    drop(store);
+    for (event_id, process_name, rel) in launches {
+        let repo_c = repo.to_path_buf();
+        let book_c = Arc::clone(book);
+        let path_c = repo.join(&rel);
+        let uuid_c = event_id.clone();
+        let process_c = process_name.clone();
+        thread::spawn(move || {
+            let out = invoke_route_process(&repo_c, &rel, &process_c);
+            if out.status.success() {
+                let _ = sddia_event_store::record_witness(
+                    &repo_c,
+                    &uuid_c,
+                    FRACTAL_CLAIM_SUB,
+                    sddia_event_store::DeliveryStatus::Success,
+                    &json!({}),
+                );
+            }
+            if let Ok(mut b) = book_c.lock() {
+                apply_route_outcome_fractal(&mut b, &process_c, &path_c, &uuid_c, &rel, &out);
+            }
+        });
+    }
+}
+
 fn invoke_route_process(repo: &Path, rel_path: &str, process_name: &str) -> Output {
     let runner = execute_process_bin(repo);
     let payload = json!({ "event_file_path": rel_path }).to_string();
@@ -727,6 +835,43 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 }
                 continue;
             }
+            if sddia_event_store::store_mode() == sddia_event_store::StoreMode::Redb
+                && matches!(
+                    process_name.as_str(),
+                    "route-telemetry" | "route-domain" | "route-orchestration"
+                )
+            {
+                let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
+                for path in &paths {
+                    let event_uuid = path
+                        .file_stem()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned();
+                    if b.routed_ok.contains(&event_uuid) {
+                        continue;
+                    }
+                    let rel = rel_event_path(&repo, path);
+                    let mut event = json!({
+                        "event_id": format!("residual-{event_uuid}"),
+                        "event_type": "System_Fracture_Detected",
+                        "emitter_agent": "event-watcher",
+                        "payload": {
+                            "process_name": "event-watcher",
+                            "friction_id": "F-EDA-RESIDUAL-FRACTAL",
+                            "error_trace": format!("residual {rel} con store redb; no reinyectado"),
+                            "attempted_action": process_name,
+                        },
+                        "delivery_state": {},
+                    });
+                    if sddia_eda_catalog::stamp_published_event(&repo, &mut event).is_ok() {
+                        let _ = sddia_event_store::record_ecst(&repo, "domain", &event);
+                    }
+                    b.routed_ok.insert(event_uuid);
+                    eprintln!("[WATCHER] residual {rel}: fractura F-EDA-RESIDUAL-FRACTAL");
+                }
+                continue;
+            }
             if process_name == "route-domain-event" {
                 let mut eligible: Vec<(PathBuf, String, String, String)> = Vec::new();
                 {
@@ -857,6 +1002,7 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
             }
         }
         claim_store_pending(&repo, &top, &book);
+        claim_store_fractal(&repo, &book);
         {
             let mut rt = shared
                 .lock()

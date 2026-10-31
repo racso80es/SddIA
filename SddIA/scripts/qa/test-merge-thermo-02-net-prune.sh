@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # PBI-MERGE-THERMO-02: bus→gh, F-DEP-07 sddia-qa, skip present sin gh.
+# Lab-only: siembra `.events/` con SDDIA_EVENT_STORE=filesystem (no es runtime redb).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
@@ -12,6 +13,7 @@ fail() {
   exit 1
 }
 
+export SDDIA_EVENT_STORE=filesystem
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 

@@ -97,5 +97,6 @@ Merge y push exitosos con higiene fallida: proceso `verdict: aprobado`, `status_
 
 ## Notas
 
+* **Store SSOT:** `target_path` es ruta lógica; en `redb` el ECST vive en `events.redb` (`SddIA/events/events-contract.md` §4). ADU-CA7: `scan_presented_for_branch` consulta store si `writes_store(SDDIA_EVENT_STORE)`.
 * `context: pr-lifecycle` debe registrarse en `execution-contexts.md` y políticas del invocante.
 * Prohibido `gh pr merge` como sustituto del merge soberano local en este proceso salvo evolución explícita de la norma.

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Smoke S5 / AC2 — colapso de prótesis / watchdog SSE → System_Fracture_Detected.
+# Lab-only. La fractura del bridge usa publish_ecst (modo SDDIA_EVENT_STORE).
 # No usa kill -9 externo: el hang + SDDIA_LLM_SSE_TIMEOUT_SECS dispara el watchdog del bridge.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"

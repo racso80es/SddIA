@@ -25,5 +25,5 @@ Contrato normativo: [`events-contract.md`](events-contract.md) (raíz; no es Cla
 
 - **Total Clases:** 48 ECST (40 domain + 4 telemetry + 4 orchestration).
 - **Raíz:** solo `events-contract.md`, este `index.md` y subcarpetas `{telemetry,orchestration,domain}/`.
-- **Runtime:** instancias V3+ en `eda_bus.pending` para dominio legacy (D0.2); rutas fractal `./.events/{family}/`.
+- **Runtime:** default `SDDIA_EVENT_STORE=redb` → SSOT `.SddIA/runtime/events.redb` (`events-contract.md` §4). Rutas lógicas: dominio legacy `eda_bus.pending` (`.events/pending/{id}.json` puede no existir en disco); fractal `./.events/{family}/` o store según modo.
 - **Telemetría activa:** `Raw_Execution_Finished` → Radamanto → `Domain_Entity_Telemetry_Captured` → `memory-evolution-ingest` (no confundir con CRUD `Domain_Entity_Updated`).

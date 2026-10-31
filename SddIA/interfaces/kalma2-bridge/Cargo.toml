@@ -17,4 +17,5 @@ sddia-ecosystem-health = { path = "../../ecosystem-health" }
 sddia-runtime-parity = { path = "../../sddia-runtime-parity" }
 sddia-daemon-runtime = { path = "../../sddia-daemon-runtime" }
 sddia-event-store = { path = "../../sddia-event-store" }
+sddia-eda-catalog = { path = "../../sddia-eda-catalog" }
 ctrlc = "3.4"

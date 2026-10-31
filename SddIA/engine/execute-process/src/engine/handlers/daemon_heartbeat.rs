@@ -150,11 +150,27 @@ fn emit_system_fracture(
             "missed_cycles": missed_cycles,
         },
     });
-    let target = repo.join(&pending).join(format!("{event_id}.json"));
-    write_json_atomic(&target, &event)?;
+    persist_domain_event(repo, &pending, &event)
+}
+
+fn persist_domain_event(repo: &Path, pending_rel: &str, event: &Value) -> Result<Value, String> {
+    let mut stamped = event.clone();
+    sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+    let dir = repo.join(pending_rel.trim().trim_start_matches("./"));
+    let seal = sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&dir))
+        .map_err(|err| err.to_string())?;
+    let target_path = if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+        seal.target_path
+            .strip_prefix(repo)
+            .unwrap_or(&seal.target_path)
+            .to_string_lossy()
+            .replace('\\', "/")
+    } else {
+        seal.logical_rel
+    };
     Ok(json!({
-        "event_id": event_id,
-        "target_path": target.strip_prefix(repo).unwrap_or(&target).to_string_lossy().replace('\\', "/"),
+        "event_id": seal.event_id,
+        "target_path": target_path,
     }))
 }
 
@@ -204,15 +220,11 @@ fn emit_orphan_lock_fracture(
             "orphan_pid": pid,
         },
     });
-    let target = repo.join(&pending).join(format!("{event_id}.json"));
-    write_json_atomic(&target, &event)?;
+    let seal = persist_domain_event(repo, &pending, &event)?;
     entry.insert("classification".into(), json!("orphan_lock"));
     entry.insert("fracture_event_id".into(), json!(event_id));
     daemons.insert(daemon_id.to_string(), Value::Object(entry));
-    Ok(Some(json!({
-        "event_id": event_id,
-        "target_path": target.strip_prefix(repo).unwrap_or(&target).to_string_lossy().replace('\\', "/"),
-    })))
+    Ok(Some(seal))
 }
 
 fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Option<&str>) {
@@ -856,6 +868,7 @@ mod tests {
 
     #[test]
     fn orphan_lock_dead_pid_emits_fracture_once() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
         let dir = tempfile::TempDir::new().unwrap();
         let repo = dir.path();
         std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
@@ -884,6 +897,36 @@ mod tests {
             "idempotente: {:?}",
             audit2.fractures
         );
+        sddia_event_store::override_store_mode(None);
+    }
+
+    #[test]
+    fn orphan_lock_redb_does_not_write_pending_json() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let dir = tempfile::TempDir::new().unwrap();
+        let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            repo.join("SddIA/daemons/kalma2-bridge.md"),
+            "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\nname: kalma2-bridge\nexecution:\n  heartbeat_interval_seconds: 30\n---\n",
+        )
+        .unwrap();
+        crate::engine::daemons::write_lock(repo, "kalma2-bridge", 999_999, 30).unwrap();
+        let audit = audit_staleness(repo).unwrap();
+        let eid = audit.fractures[0]["event_id"].as_str().unwrap();
+        assert!(
+            !repo.join(".events/pending").join(format!("{eid}.json")).is_file(),
+            "redb no deja JSON pending"
+        );
+        let rows = sddia_event_store::load_domain_ecsts(repo, &[]).unwrap();
+        assert!(rows.iter().any(|e| e["event_id"] == eid));
+        sddia_event_store::override_store_mode(None);
     }
 
     #[test]

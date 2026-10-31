@@ -206,9 +206,6 @@ fn emit_thought_persisted(
     thought: &ThoughtNode,
     store_path: &str,
 ) -> Result<(), MemoryStoreError> {
-    std::fs::create_dir_all(pending_dir).map_err(|e| MemoryStoreError::Io {
-        reason: e.to_string(),
-    })?;
     let event_id = uuid::Uuid::new_v4().to_string();
     let status = thought
         .metadata
@@ -229,12 +226,26 @@ fn emit_thought_persisted(
         },
         "delivery_state": {},
     });
-    let target = pending_dir.join(format!("{event_id}.json"));
-    let text = serde_json::to_string_pretty(&event).map_err(|e| MemoryStoreError::Io {
-        reason: e.to_string(),
+    let parent = pending_dir.parent();
+    let repo = if parent.and_then(|dir| dir.file_name()).and_then(|n| n.to_str()) == Some(".events")
+    {
+        parent.and_then(|dir| dir.parent())
+    } else {
+        parent
+    };
+    let Some(repo) = repo else {
+        return Err(MemoryStoreError::Io {
+            reason: "pending_dir no cuelga de {repo}/.events".into(),
+        });
+    };
+    let mut stamped = event;
+    sddia_eda_catalog::stamp_published_event(repo, &mut stamped).map_err(|e| MemoryStoreError::Io {
+        reason: e,
     })?;
-    std::fs::write(&target, text).map_err(|e| MemoryStoreError::Io {
-        reason: e.to_string(),
+    sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(pending_dir)).map_err(|e| {
+        MemoryStoreError::Io {
+            reason: e.to_string(),
+        }
     })?;
     Ok(())
 }
@@ -516,6 +527,7 @@ mod tests {
 
     #[test]
     fn store_thought_emits_thought_persisted_when_bus_configured() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
         let dir = tempdir().unwrap();
         let pending = dir.path().join("pending");
         let repo = LanceDbThoughtRepo::open_with_bus(
@@ -536,6 +548,7 @@ mod tests {
         assert_eq!(body["event_type"], "Thought_Persisted");
         assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
         assert_eq!(body["payload"]["node_id"], n.node_id);
+        sddia_event_store::override_store_mode(None);
         assert_eq!(body["payload"]["parent_id"], "");
         assert_eq!(body["payload"]["status"], "ACTIVE");
         assert!(body["payload"].get("biological_vertex_output").is_none());

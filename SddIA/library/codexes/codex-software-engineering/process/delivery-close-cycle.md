@@ -74,7 +74,7 @@ workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 
 Proceso paramétrico de **cierre de entrega** reutilizable desde `feature`, `bug-fix` y `refactorization`. Encadena snapshot git, evaluación condicional de impacto en el Core SddIA, publicación remota, apertura de PR en forja, sello **PullRequest_Presented** e higiene local.
 
-**Simetría fractal (presentación):** el merge soberano y el sello **PullRequest_Merged** pertenecen exclusivamente a `accept-pr` + `emit-pr-merged-event`, no a este proceso.
+**Emisión Presented:** vía `action:emit-pr-presented-event` / `write_pending_event` según `SDDIA_EVENT_STORE` (`events-contract.md` §4). **Simetría fractal (presentación):** el merge soberano y el sello **PullRequest_Merged** pertenecen exclusivamente a `accept-pr` + `emit-pr-merged-event`, no a este proceso.
 
 ## Fase Publicación remota
 

@@ -10,6 +10,8 @@ path = "src/main.rs"
 
 [dependencies]
 execute-process = { path = "../../engine/execute-process" }
+sddia-event-store = { path = "../../sddia-event-store" }
+sddia-eda-catalog = { path = "../../sddia-eda-catalog" }
 sddia-evolution-register = { path = "../../skills/sddia-evolution-register" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

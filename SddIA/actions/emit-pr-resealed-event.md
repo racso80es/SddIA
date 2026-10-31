@@ -1,7 +1,7 @@
 ---
 uuid: "e8f9a0b1-c2d3-4e5f-9a0b-1c2d3e4f5a6b"
 name: "emit-pr-resealed-event"
-version: "1.0.0"
+version: "1.0.2"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -19,6 +19,7 @@ outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
   - "target_path": "string; ruta relativa del JSON en pending/"
+hash_signature: "sha256:9febcad42d4cef7e32cbb7ef50ad9fa312d126ee2c0d65da776a88ee40f41617"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -49,7 +50,7 @@ Conforme a `SddIA/events/domain/pull-request-resealed.md`.
 
 ### Paso 4 — Persistencia
 
-Escribir `{eda_bus.pending}/<event_id>.json`.
+Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`dual` el runtime persiste vía `write_pending_event` en `.SddIA/runtime/events.redb` (sin fichero bajo `.events/pending/` en `redb` puro). En `filesystem`, JSON en `{eda_bus.pending}/<event_id>.json` (resoluble vía `cumulo.paths.json`). El `target_path` devuelto puede ser la ruta lógica `.events/pending/<event_id>.json` aunque el fichero no exista en `redb`.
 
 ### Paso 5 — Cierre (stdout)
 

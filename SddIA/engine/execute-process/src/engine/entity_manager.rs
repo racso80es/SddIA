@@ -169,6 +169,9 @@ fn creator_inputs_from_entity(
                 "action_version",
                 "action_body",
                 "action_capabilities",
+                "action_inputs",
+                "action_outputs",
+                "orchestration_logic",
             ] {
                 if let Some(value) = seed.get(optional_key) {
                     fields.insert(optional_key.into(), value.clone());

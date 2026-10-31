@@ -9,9 +9,12 @@ related_prs:
   - "https://github.com/racso80es/SddIA/pull/393"
   - "https://github.com/racso80es/SddIA/pull/394"
 status: FINDINGS_OPEN
+supersession_note: "2026-10-30 — Hallazgos B/C y escritores residuales mitigados en rama Kaicen_Auditoria_Eventos_261030 (eda-redb-lock + eda-store-io-gate). Ver docs/audits/eda-doc-drift-eda-store-io-gate-261030.md. Evidencia §3 es snapshot del workspace 2026-10-26."
 ---
 
 # Auditoría — Situación del Bus de Eventos (`events.redb` vs `.events/`)
+
+> **Nota 2026-10-30:** Informe empírico del **2026-10-26**. No sustituye `docs/features/eda-store-io-gate/validacion.md` ni el addendum `eda-doc-drift-eda-store-io-gate-261030.md`. La matriz §5 refleja el código **antes** del cierre de I/O en la rama actual.
 
 ## 1. Resumen Ejecutivo
 

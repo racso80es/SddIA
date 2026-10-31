@@ -1,10 +1,10 @@
 ---
 feature_name: eda-redb-lock
-created: "2026-10-26"
+created: 2026-10-26
 process: bug-fix
 branch: fix/eda-redb-lock
 tracker_ref: AUT-16
-global: APTO
+global: REVISAR
 pbi_archived: false
 checks:
   REDB-CA1: APTO
@@ -14,11 +14,11 @@ checks:
   REDB-CA5: APTO
   REDB-CA6: APTO
 git_changes:
-  - SddIA/sddia-event-store/
-  - SddIA/engine/execute-process/src/engine/accept_pr.rs
-  - SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs
-  - SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs
-  - docs/fixes/eda-redb-lock/
+- SddIA/sddia-event-store/
+- SddIA/engine/execute-process/src/engine/accept_pr.rs
+- SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs
+- SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs
+- docs/fixes/eda-redb-lock/
 ---
 
 # Validación — AUT-16

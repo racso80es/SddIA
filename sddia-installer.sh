@@ -28,11 +28,10 @@ _emit_instance_event() {
   if [[ -f "$root/MANIFEST.json" ]]; then
     manifest_at="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("created_at",""))' "$root/MANIFEST.json" 2>/dev/null || true)"
   fi
-  local pending="$REPO_ROOT/.events/pending/${event_id}.json"
-  mkdir -p "$(dirname "$pending")"
-  python3 -c '
+  local doc logical ep
+  doc="$(python3 -c '
 import json, sys
-event_id, etype, root, esc, profile, manifest_at, verdict, out = sys.argv[1:]
+event_id, etype, root, esc, profile, manifest_at, verdict = sys.argv[1:]
 payload = {"root": root, "esc": esc, "profile": profile, "manifest_created_at": manifest_at or None}
 if verdict:
     payload["verdict"] = verdict
@@ -43,11 +42,31 @@ doc = {
     "emitter_agent": "tekton",
     "payload": payload,
 }
-open(out, "w").write(json.dumps(doc, indent=2) + "\n")
-' "$event_id" "$event_type" "$root" "$esc" "$profile" "$manifest_at" "$verdict" "$pending"
+print(json.dumps({"family": "pending", "event": doc}))
+' "$event_id" "$event_type" "$root" "$esc" "$profile" "$manifest_at" "$verdict")"
+  logical=".events/pending/${event_id}.json"
+  ep=""
+  for candidate in "$REPO_ROOT/SddIA/target/release/execute-process" "$REPO_ROOT/SddIA/target/debug/execute-process"; do
+    if [[ -x "$candidate" ]]; then
+      ep="$candidate"
+      break
+    fi
+  done
+  if [[ -n "$ep" ]]; then
+    (cd "$REPO_ROOT" && "$ep" --publish-ecst --inputs "$doc") || true
+  else
+    local mode="${SDDIA_EVENT_STORE:-redb}"
+    if [[ "$mode" == "filesystem" || "$mode" == "dual" ]]; then
+      local pending="$REPO_ROOT/$logical"
+      mkdir -p "$(dirname "$pending")"
+      python3 -c 'import json,sys; open(sys.argv[2],"w").write(json.dumps(json.loads(sys.argv[1])["event"], indent=2)+"\n")' "$doc" "$pending"
+    else
+      echo "[installer] execute-process ausente; no se escribe .events/ en modo ${mode}" >&2
+    fi
+  fi
   (
     cd "$REPO_ROOT"
-    route_json="$(./sddia-run.sh --process route-domain-event --inputs "$(python3 -c 'import json,sys; print(json.dumps({"event_file_path": sys.argv[1]}))' "${pending#$REPO_ROOT/}")")"
+    route_json="$(./sddia-run.sh --process route-domain-event --inputs "$(python3 -c 'import json,sys; print(json.dumps({"event_file_path": sys.argv[1]}))' "$logical")")"
     echo "$route_json"
   ) || true
 }

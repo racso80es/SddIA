@@ -13,6 +13,8 @@
 /.events/
 .SddIA/runtime/*.redb
 .SddIA/runtime/*.redb.*
+.SddIA/runtime/archive/
+.SddIA/runtime/*.log
 
 # Legacy bus runtime (migración desde docs/events/)
 docs/events/
