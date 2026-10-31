@@ -1979,7 +1979,7 @@ pub(crate) fn dispatch_subscriber(
 }
 
 fn subscriber_declares_native(subscriber: &Value) -> bool {
-    for key in ["action", "tool"] {
+    for key in ["process", "action", "tool"] {
         if subscriber
             .get(key)
             .and_then(|v| v.as_str())
@@ -4049,6 +4049,16 @@ mod tier_dispatch {
     use serde_json::json;
     use std::fs;
     use std::path::Path;
+    use std::sync::{Mutex, OnceLock};
+
+    static TIER_DISPATCH_ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+
+    fn tier_env_lock() -> std::sync::MutexGuard<'static, ()> {
+        TIER_DISPATCH_ENV_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .unwrap()
+    }
 
     fn write_exec(path: &Path, body: &str) {
         fs::write(path, body).unwrap();
@@ -4068,6 +4078,7 @@ mod tier_dispatch {
 
     #[test]
     fn tier_none_does_not_spawn_and_cognitive_receives_ecst_and_workspace() {
+        let _guard = tier_env_lock();
         let root = std::env::temp_dir().join(format!(
             "sddia-tier-{}-{}",
             std::process::id(),
@@ -4132,6 +4143,78 @@ mod tier_dispatch {
             None => std::env::remove_var("SDDIA_TIER_MARKER"),
         }
         std::env::remove_var("SDDIA_TIER_STDIN");
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn store_backed_native_capsule_does_not_use_cognitive_runtime() {
+        let _guard = tier_env_lock();
+        let root = std::env::temp_dir().join(format!(
+            "sddia-tier-native-{}-{}",
+            std::process::id(),
+            uuid::Uuid::new_v4()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        agent_md(&root, "tekton", "low");
+        agent_md(&root, "argos", "medium");
+        agent_md(&root, "cumulo", "none");
+        let event_id = "33333333-3333-4333-8333-333333333333";
+        let mut event = json!({
+            "event_id": event_id,
+            "event_type": "PullRequest_Merged",
+            "payload": {
+                "source_branch": "feat/test",
+                "merge_commit_hash": "0123456789abcdef0123456789abcdef01234567",
+                "author": "tester"
+            }
+        });
+        let missing = root.join(".events/pending").join(format!("{event_id}.json"));
+        let marker = root.join("cognitive_spawned");
+        let spawn_bin = root.join("spawn.sh");
+        write_exec(
+            &spawn_bin,
+            "#!/bin/sh\ntouch \"$SDDIA_TIER_MARKER\"\nexit 0\n",
+        );
+        let prev_cmd = std::env::var("SDDIA_AGENT_RUNTIME_COMMAND").ok();
+        let prev_marker = std::env::var("SDDIA_TIER_MARKER").ok();
+        std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", &spawn_bin);
+        std::env::set_var("SDDIA_TIER_MARKER", &marker);
+
+        let process_sub = json!({"agent": "tekton", "process": "tracker-stamp"});
+        let (_sid, status, err, code) =
+            dispatch_subscriber(&root, &process_sub, &mut event, false, Some(&missing));
+        assert_eq!(status, "failed", "{err:?} code={code}");
+        assert!(
+            err.as_deref()
+                .is_some_and(|e| e.contains("orquestador execute-process no encontrado")),
+            "{err:?}"
+        );
+        assert!(!marker.exists(), "process nativo spawneó AGENT_PHASE");
+
+        let action_sub = json!({
+            "agent": "argos",
+            "action": "notify-humanized-pr-merged"
+        });
+        let (_sid, status, _err, code) =
+            dispatch_subscriber(&root, &action_sub, &mut event, false, Some(&missing));
+        assert_ne!(status, "success", "action no debe acusar success del runtime cognitivo");
+        assert_ne!(code, 0);
+        assert!(!marker.exists(), "action nativa spawneó AGENT_PHASE");
+
+        let none_process_sub = json!({"agent": "cumulo", "process": "tracker-stamp"});
+        let (_sid, status, err, _code) =
+            dispatch_subscriber(&root, &none_process_sub, &mut event, false, Some(&missing));
+        assert_eq!(status, "failed", "{err:?}");
+        assert!(!marker.exists(), "process tier none spawneó AGENT_PHASE");
+
+        match prev_cmd {
+            Some(v) => std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", v),
+            None => std::env::remove_var("SDDIA_AGENT_RUNTIME_COMMAND"),
+        }
+        match prev_marker {
+            Some(v) => std::env::set_var("SDDIA_TIER_MARKER", v),
+            None => std::env::remove_var("SDDIA_TIER_MARKER"),
+        }
         let _ = fs::remove_dir_all(&root);
     }
 }
