@@ -1,6 +1,6 @@
 ---
 feature_name: route-domain-test-progress-marks
-created: "2026-11-01"
+created: 2026-11-01
 process: feature
 branch: Fix_Events_Multiple
 persist_ref: docs/features/route-domain-test-progress-marks
@@ -13,8 +13,12 @@ checks:
   AUT59-L2-CALL-SITES: APTO
   AUT59-METRIC-OBSERVABILITY: APTO
 git_changes:
-  - SddIA/engine/execute-process/tests/eda_subscriber_ecst_redb.rs
-  - docs/features/route-domain-test-progress-marks/
+- SddIA/engine/execute-process/tests/eda_subscriber_ecst_redb.rs
+- docs/features/route-domain-test-progress-marks/
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: 7a83fe9a063ed72a8c5b73b0a978559db53a6eda
+validated_tree_sha: 7eb81ef91323e0298d1c5c273429cf885214afb5
+diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
 ---
 
 # Validación — AUT-59
