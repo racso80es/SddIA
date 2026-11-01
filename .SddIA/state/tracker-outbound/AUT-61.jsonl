@@ -1,0 +1,3 @@
+{"event_id":"79b41f13-4fd6-4bcc-baff-950ad4b2e514","issue_ref":"AUT-61","occurred_at":"2026-11-01T16:01:07Z","operation":"create_issue","source_process":"forge-pbi"}
+{"event_id":"04505c71-38b7-4df7-97a0-f773514dec55","issue_ref":"AUT-61","occurred_at":"2026-11-01T16:01:08Z","operation":"update_issue_description","source_process":"forge-pbi"}
+{"event_id":"df7a8865-67bf-4da7-903b-706e2af50993","issue_ref":"AUT-61","occurred_at":"2026-11-01T16:01:20Z","operation":"update_issue_description","source_process":"refine-item"}
