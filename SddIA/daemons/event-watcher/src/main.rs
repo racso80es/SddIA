@@ -284,8 +284,21 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
     if !db.is_file() {
         return;
     }
-    if let Err(err) = sddia_eda_catalog::reconcile_unstamped(repo) {
-        eprintln!("[WATCHER] reconcile_unstamped: {err}");
+    match sddia_eda_catalog::reconcile_unstamped(repo) {
+        Ok(report) => {
+            let open = report.open_cause.as_deref().unwrap_or("ok");
+            println!(
+                "[WATCHER] reconcile_unstamped elapsed_ms={} domain_rows={} delivery_rows={} touched={} open={open}",
+                report.elapsed_ms,
+                report.domain_rows,
+                report.delivery_rows,
+                report.touched,
+            );
+            if let Some(cause) = &report.open_cause {
+                eprintln!("[WATCHER] reconcile_unstamped: {cause}");
+            }
+        }
+        Err(err) => eprintln!("[WATCHER] reconcile_unstamped: {err}"),
     }
     let mut stats = ClaimTickStats::default();
     let store = match sddia_event_store::EventStore::open(&db) {

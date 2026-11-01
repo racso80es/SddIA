@@ -16,8 +16,8 @@ impl fmt::Display for StoreError {
             StoreError::Invalid(message)
             | StoreError::NotFound(message)
             | StoreError::Conflict(message)
-            | StoreError::Locked(message)
-            | StoreError::Backend(message) => f.write_str(message),
+            |             StoreError::Locked(message) => write!(f, "StoreError::Locked: {message}"),
+            StoreError::Backend(message) => f.write_str(message),
         }
     }
 }

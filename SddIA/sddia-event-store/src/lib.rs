@@ -47,6 +47,11 @@ fn open_budget_ms() -> u64 {
     }
 }
 
+/// Presupuesto de reintento de `EventStore::open` (env `SDDIA_EVENT_STORE_OPEN_BUDGET_MS`, default 2000).
+pub fn event_store_open_budget_ms() -> u64 {
+    open_budget_ms()
+}
+
 fn is_lock_contention(err: &DatabaseError) -> bool {
     matches!(err, DatabaseError::DatabaseAlreadyOpen)
         || err.to_string().contains("Database already open")
