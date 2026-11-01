@@ -23,10 +23,10 @@ git_changes:
 - docs/fixes/refine-item-mayeuta-envelope/
 - docs/audits/AUT-37.md
 - .SddIA/state/tracker-outbound/AUT-37.jsonl
-validated_base_sha: "2d14642644f1acd7ebfa1fa32bac0f941f817736"
-validated_head_sha: "6ac2b651c54bbbab8f5b14cb1cc4eb6aaabb7fa4"
-validated_tree_sha: "520520befed83c2b688eaaf303c1320b1414b6ab"
-diff_digest: "sha256:0971d1c7bde471cbf30ba394620c0c3513f6cd6c3ee32f41c29969fe93134121"
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: 62a62d41e1a14d68657d134d307e683f5f61c0e3
+validated_tree_sha: 072fba07ffd09bcac5c848f04a0f87cdda7d6ecc
+diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
 ---
 
 # Validación — AUT-37
