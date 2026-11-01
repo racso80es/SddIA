@@ -1,6 +1,6 @@
 ---
 feature_name: aut20-ecst-router-verify
-created: "2026-11-01"
+created: 2026-11-01
 process: bug-fix
 branch: Fix_Events_Multiple
 persist_ref: docs/fixes/aut20-ecst-router-verify
@@ -15,14 +15,18 @@ checks:
   AUT57-L4-LIB-TESTS: APTO
   AUT57-INTEGRATION-EDA-ECST: APTO
 git_changes:
-  - SddIA/engine/execute-process/src/engine/route_domain_core.rs
-  - SddIA/engine/execute-process/src/engine/mod.rs
-  - SddIA/engine/execute-process/src/engine/memory_evolution_ingest_core.rs
-  - SddIA/engine/execute-process/src/engine/fix_tool_process_core.rs
-  - SddIA/engine/execute-process/src/engine/handlers/tracker_sync_replay.rs
-  - SddIA/engine/execute-process/src/engine/handlers/tracker_markdown_apply.rs
-  - SddIA/engine/execute-process/tests/eda_subscriber_ecst_redb.rs
-  - docs/fixes/aut20-ecst-router-verify/
+- SddIA/engine/execute-process/src/engine/route_domain_core.rs
+- SddIA/engine/execute-process/src/engine/mod.rs
+- SddIA/engine/execute-process/src/engine/memory_evolution_ingest_core.rs
+- SddIA/engine/execute-process/src/engine/fix_tool_process_core.rs
+- SddIA/engine/execute-process/src/engine/handlers/tracker_sync_replay.rs
+- SddIA/engine/execute-process/src/engine/handlers/tracker_markdown_apply.rs
+- SddIA/engine/execute-process/tests/eda_subscriber_ecst_redb.rs
+- docs/fixes/aut20-ecst-router-verify/
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: 61c523b2dd18f87ae2ed80846f782253c2007db4
+validated_tree_sha: adb10b707cf70c27c4803a0411c3d87efce4375a
+diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
 ---
 
 # Validación — AUT-57
