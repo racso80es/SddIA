@@ -6,7 +6,7 @@ branch_name: feat/kaizen-disk-thermodynamics-retention
 persist_ref: docs/features/kaizen-disk-thermodynamics-retention
 tracker_ref: AUT-49
 pbi_uuid: "0d2c4bf9-8837-4842-89f2-5a0f874b203d"
-status: PLANNING
+status: IMPLEMENTED-L6-PENDING-CI
 phases:
   - L0-docs-seal
   - L1-crate-jail

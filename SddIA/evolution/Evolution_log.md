@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `b2e8f4a1-3c6d-4e90-8f7a-1d9c0e5b6a72` | 2026-11-01 | AUT-49: repo-retention-purger + purge-repo-retention (slices target/.events/scratch/dist). | CANONICO | `SddIA/evolution/b2e8f4a1-3c6d-4e90-8f7a-1d9c0e5b6a72.md` |
 | `c8f3a1b2-4d5e-6f78-9abc-def012345678` | 2026-10-31 | AUT-22: guardia rama snapshot, avance HEAD+ref, firma F-DCC-SNAPSHOT-HASH-STUCK (`51dc7bdfd2fe`). | CANONICO | `SddIA/evolution/c8f3a1b2-4d5e-6f78-9abc-def012345678.md` |
 | `1d37df2e-c11b-4ec1-8816-5b86dc19d5c1` | 2026-10-31 | AUT-21: events-contract delivery_state foto del alta; despacho ECST en línea a suscriptores. | CANONICO | `SddIA/evolution/1d37df2e-c11b-4ec1-8816-5b86dc19d5c1.md` |
 | `af240f72-24c2-4cda-afc1-6b01cd917f13` | 2026-10-30 | AUT-56: gate SDDIA_EVENT_STORE, matriz I/O EDA, kaizen bus redb y sellos validacion PR #430. | CANONICO | `SddIA/evolution/af240f72-24c2-4cda-afc1-6b01cd917f13.md` |
