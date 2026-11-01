@@ -23,6 +23,38 @@ impl Drop for ModeGuard {
         override_store_mode(None);
         std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
         std::env::remove_var("SDDIA_LAB_SKIP_CAPABILITY_DI");
+        std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN");
+    }
+}
+
+fn lab_execute_process_bin() -> PathBuf {
+    let root = find_repo_root().expect("repo root");
+    let bin = root.join("SddIA/target/debug/execute-process");
+    assert!(
+        bin.is_file(),
+        "compile execute-process: cd SddIA && cargo build -p execute-process"
+    );
+    bin
+}
+
+fn copy_tree(src: &Path, dst: &Path) {
+    if !src.is_dir() {
+        return;
+    }
+    fs::create_dir_all(dst).expect("create_dir_all");
+    for entry in fs::read_dir(src).expect("read_dir") {
+        let entry = entry.expect("dir entry");
+        let target = dst.join(entry.file_name());
+        if entry.file_type().expect("file_type").is_dir() {
+            copy_tree(&entry.path(), &target);
+        } else {
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent).ok();
+            }
+            fs::copy(entry.path(), &target).unwrap_or_else(|e| {
+                panic!("copy {} -> {}: {e}", entry.path().display(), target.display())
+            });
+        }
     }
 }
 
@@ -47,8 +79,35 @@ fn temp_repo_with_bus_skeleton() -> PathBuf {
         }
         fs::copy(&src, &dst).unwrap_or_else(|e| panic!("copy {rel}: {e}"));
     }
+    let events_src = root.join("SddIA/events");
+    if events_src.is_dir() {
+        copy_tree(&events_src, &repo.join("SddIA/events"));
+    }
     fs::create_dir_all(repo.join(".events/pending")).unwrap();
     repo
+}
+
+fn telegram_route_test_payload(text: &str) -> serde_json::Value {
+    json!({
+        "text": text,
+        "chat_id": "lab-chat-99",
+        "source": "telegram-gateway",
+    })
+}
+
+fn assert_delivery_not_ecst_gate_only(
+    ds: &serde_json::Map<String, serde_json::Value>,
+    out: &serde_json::Value,
+) {
+    let ecst_only = ds.len() == 1
+        && ds
+            .get("ecst-gate")
+            .and_then(|v| v.as_str())
+            .is_some_and(|s| s == "failed");
+    assert!(
+        !ecst_only,
+        "router stopped at ECST gate only: {ds:?} out={out}"
+    );
 }
 
 fn seed_store_only_pending_rel(
@@ -287,14 +346,15 @@ fn route_domain_telegram_responder_receives_ecst_path() {
     override_store_mode(Some(StoreMode::Redb));
     std::env::set_var("SDDIA_LAB_ROUTE_SYNC", "1");
     std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+    std::env::set_var(
+        "SDDIA_EXECUTE_PROCESS_BIN",
+        lab_execute_process_bin().to_string_lossy().as_ref(),
+    );
     let repo = temp_repo_with_bus_skeleton();
     let rel = seed_store_only_pending_rel(
         &repo,
         "TelegramMessage_Received",
-        json!({
-            "text": "triaje lab",
-            "chat_id": "99",
-        }),
+        telegram_route_test_payload("triaje lab"),
     );
     route_domain_test_progress_mark("enter", "TelegramMessage_Received", &rel);
     let out = route_domain_event(&repo, &rel, false);
@@ -304,6 +364,7 @@ fn route_domain_telegram_responder_receives_ecst_path() {
         .and_then(|v| v.as_object())
         .cloned()
         .unwrap_or_default();
+    assert_delivery_not_ecst_gate_only(&ds, &out);
     for (sid, status) in &ds {
         let s = status.as_str().unwrap_or("");
         assert!(
@@ -367,16 +428,26 @@ fn route_domain_telegram_empty_text_still_skipped() {
     let rel = seed_store_only_pending_rel(
         &repo,
         "TelegramMessage_Received",
-        json!({ "text": "   " }),
+        telegram_route_test_payload("   "),
     );
     route_domain_test_progress_mark("enter", "TelegramMessage_Received", &rel);
     let out = route_domain_event(&repo, &rel, false);
     route_domain_test_progress_mark("leave", "TelegramMessage_Received", &rel);
+    let err = out.get("error").and_then(|v| v.as_str()).unwrap_or("");
+    assert!(
+        !err.contains("event_type not cataloged"),
+        "ECST catalog missing in temp repo: {err} out={out}"
+    );
+    assert!(
+        !err.contains("missing required payload"),
+        "payload should satisfy class: {err} out={out}"
+    );
     let ds = out
         .pointer("/data/delivery_status")
         .and_then(|v| v.as_object())
         .cloned()
         .unwrap_or_default();
+    assert_delivery_not_ecst_gate_only(&ds, &out);
     let mut saw_skip = false;
     for (sid, status) in &ds {
         let s = status.as_str().unwrap_or("");

@@ -1761,14 +1761,6 @@ pub(crate) fn dispatch_subscriber(
         if process_key.is_empty() {
             return (sid, "failed".into(), Some("empty process".into()), 1);
         }
-        if resolve_orchestrator_bin(repo).is_err() {
-            return (
-                sid,
-                "failed".into(),
-                Some("orquestador execute-process no encontrado".into()),
-                1,
-            );
-        }
         let Some(payload_obj) = payload.as_object() else {
             return (sid, "failed".into(), Some("payload must be object".into()), 1);
         };
@@ -1787,6 +1779,14 @@ pub(crate) fn dispatch_subscriber(
                 return (sid, "failed".into(), Some(reason), exit_code);
             }
             AssembleProcessInputs::Invoke(mut process_inputs) => {
+                if resolve_orchestrator_bin(repo).is_err() {
+                    return (
+                        sid,
+                        "failed".into(),
+                        Some("orquestador execute-process no encontrado".into()),
+                        1,
+                    );
+                }
                 if process_key == "pull-request-review" {
                     let pr_url = payload_obj.get("pr_url").and_then(|v| v.as_str());
                     let branch = payload_obj
