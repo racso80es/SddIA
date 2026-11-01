@@ -18,9 +18,9 @@ git_changes:
 - SddIA/engine/execute-process/tests/eda_subscriber_ecst_redb.rs
 - docs/fixes/aut20-ecst-residual-dispatch/
 validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: 1365fe96055a40cbf30ef6839cb2516854d60dda
-validated_tree_sha: 61894aedd13ebce55932d21f11f843b18d5927f9
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: fe0ddda83c680f9e98c67aa641128a656c0da961
+validated_tree_sha: 4b5abdfee627f9db772399b6476e34d815f33261
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-58
