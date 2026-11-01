@@ -1,17 +1,17 @@
 ---
 feature_name: event-bus-audit-store-signals
-created: "2026-10-31"
+created: 2026-10-31
 process: bug-fix
 branch_name: Fix_Events_Multiple
 persist_ref: docs/fixes/event-bus-audit-store-signals
 tracker_ref: AUT-27
-execution_id: "6cd0a99f-1d58-43ee-8e30-31e9e13a090b"
+execution_id: 6cd0a99f-1d58-43ee-8e30-31e9e13a090b
 global: APTO
 pbi_archived: false
 branch: Fix_Events_Multiple
 approval_status: aprobado
 verdict: aprobado
-validated_base_sha: b754c0696dadad87ec20c6524930f32371ad630c
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
 checks:
   AUT27-T1-STORE-UNAVAILABLE: APTO
   AUT27-T2-CATALOG-CROSS: APTO
@@ -19,9 +19,12 @@ checks:
   AUT27-T4-REGRESSION: APTO
   AUT27-LIVE-REDB-PROBE: APTO
 git_changes:
-  - SddIA/tools/event-bus-audit/src/main.rs
-  - docs/fixes/event-bus-audit-store-signals/
-  - docs/audits/AUT-27.md
+- SddIA/tools/event-bus-audit/src/main.rs
+- docs/fixes/event-bus-audit-store-signals/
+- docs/audits/AUT-27.md
+validated_head_sha: 1d4644ab714cfcf4a42ee5320d040d037e6ffff4
+validated_tree_sha: 5534d78cbea23501558bb988df18d96c837fe79e
+diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
 ---
 
 # Validación — AUT-27
