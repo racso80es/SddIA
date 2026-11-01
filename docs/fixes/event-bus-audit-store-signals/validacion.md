@@ -11,7 +11,7 @@ pbi_archived: false
 branch: Fix_Events_Multiple
 approval_status: aprobado
 verdict: aprobado
-validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_base_sha: "2d14642644f1acd7ebfa1fa32bac0f941f817736"
 checks:
   AUT27-T1-STORE-UNAVAILABLE: APTO
   AUT27-T2-CATALOG-CROSS: APTO
@@ -22,9 +22,9 @@ git_changes:
 - SddIA/tools/event-bus-audit/src/main.rs
 - docs/fixes/event-bus-audit-store-signals/
 - docs/audits/AUT-27.md
-validated_head_sha: 1d4644ab714cfcf4a42ee5320d040d037e6ffff4
-validated_tree_sha: 5534d78cbea23501558bb988df18d96c837fe79e
-diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
+validated_head_sha: "6ac2b651c54bbbab8f5b14cb1cc4eb6aaabb7fa4"
+validated_tree_sha: "520520befed83c2b688eaaf303c1320b1414b6ab"
+diff_digest: "sha256:0971d1c7bde471cbf30ba394620c0c3513f6cd6c3ee32f41c29969fe93134121"
 ---
 
 # Validación — AUT-27

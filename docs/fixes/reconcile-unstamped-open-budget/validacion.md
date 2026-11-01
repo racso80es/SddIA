@@ -25,10 +25,10 @@ git_changes:
 - docs/fixes/reconcile-unstamped-open-budget/
 - docs/audits/AUT-55.md
 - .SddIA/state/tracker-outbound/AUT-55.jsonl
-validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: f74138a24bfc975755777e9221ba4cfe0cf2aa4c
-validated_tree_sha: 2c99c631467b608f9f74ebc313d45577d9970d09
-diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
+validated_base_sha: "2d14642644f1acd7ebfa1fa32bac0f941f817736"
+validated_head_sha: "6ac2b651c54bbbab8f5b14cb1cc4eb6aaabb7fa4"
+validated_tree_sha: "520520befed83c2b688eaaf303c1320b1414b6ab"
+diff_digest: "sha256:0971d1c7bde471cbf30ba394620c0c3513f6cd6c3ee32f41c29969fe93134121"
 ---
 
 # Validación — AUT-55

@@ -11,7 +11,7 @@ pbi_archived: false
 branch: Fix_Events_Multiple
 approval_status: aprobado
 verdict: aprobado
-validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_base_sha: "2d14642644f1acd7ebfa1fa32bac0f941f817736"
 checks:
   AUT26-T1-NATIVE-PREDICATE-PROCESS: APTO
   AUT26-T2-TIER-DISPATCH-REGRESSION: APTO
@@ -20,9 +20,9 @@ git_changes:
 - SddIA/engine/execute-process/src/engine/route_domain_core.rs
 - docs/fixes/cognitive-tier-native-dispatch/
 - docs/audits/AUT-26.md
-validated_head_sha: e5b08bb9065567ea9472540978bbcf6601605f32
-validated_tree_sha: d9de611b148befeb0610910053856e60277cc22e
-diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
+validated_head_sha: "6ac2b651c54bbbab8f5b14cb1cc4eb6aaabb7fa4"
+validated_tree_sha: "520520befed83c2b688eaaf303c1320b1414b6ab"
+diff_digest: "sha256:0971d1c7bde471cbf30ba394620c0c3513f6cd6c3ee32f41c29969fe93134121"
 ---
 
 # Validación — AUT-26
