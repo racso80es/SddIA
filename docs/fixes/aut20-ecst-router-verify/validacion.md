@@ -24,9 +24,9 @@ git_changes:
 - SddIA/engine/execute-process/tests/eda_subscriber_ecst_redb.rs
 - docs/fixes/aut20-ecst-router-verify/
 validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: 0334c03b6cabd2b1d7425f19db84350ce85087d3
-validated_tree_sha: a4d96b33c8b5bf1f2b441dfedfbadbd5e5c72c1e
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: 061527d5e2b99dbe79ae1f054338305bf06a2626
+validated_tree_sha: b1973369eb870af6768756f15ced3831d974b393
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-57
