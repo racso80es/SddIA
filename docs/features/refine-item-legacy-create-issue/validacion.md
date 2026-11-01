@@ -25,9 +25,9 @@ git_changes:
 - SddIA/engine/execute-process/src/engine/handlers/refine_item/mod.rs
 - docs/features/refine-item-legacy-create-issue/
 - docs/audits/AUT-35.md
-validated_head_sha: 2773cf7a6ea6764cdfc9e2da63fd3f4b00d2c44b
-validated_tree_sha: 5e95979a6c60768682b7e2e4b1690b4d95196c9a
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: bcbab9ee4eb6dc3d85bc69718b3efa50fe1f92c6
+validated_tree_sha: 8a08bb1bcf3f0e3ea30db3489309c7c868a07b45
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-35
