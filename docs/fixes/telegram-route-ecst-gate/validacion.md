@@ -4,10 +4,10 @@ branch: Fix_Events_Multiple
 tracker_ref: AUT-60
 global: APTO
 pbi_archived: false
-validated_base_sha: "2d14642644f1acd7ebfa1fa32bac0f941f817736"
-validated_head_sha: "6ac2b651c54bbbab8f5b14cb1cc4eb6aaabb7fa4"
-validated_tree_sha: "520520befed83c2b688eaaf303c1320b1414b6ab"
-diff_digest: "sha256:0971d1c7bde471cbf30ba394620c0c3513f6cd6c3ee32f41c29969fe93134121"
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: e91a7c5519aa34176269af8a963310bf241cb17b
+validated_tree_sha: eb3d8417a550799fd8a713af8053e89f3e8624cf
+diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
 ---
 
 # Validación — AUT-60
