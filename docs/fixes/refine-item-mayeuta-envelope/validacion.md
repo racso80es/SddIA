@@ -1,11 +1,11 @@
 ---
 feature_name: refine-item-mayeuta-envelope
-created: "2026-11-01"
+created: 2026-11-01
 process: bug-fix
 branch_name: Fix_Events_Multiple
 persist_ref: docs/fixes/refine-item-mayeuta-envelope
 tracker_ref: AUT-37
-execution_id: "1f6f7316-ed62-4ded-922a-6b95fbb9d44a"
+execution_id: 1f6f7316-ed62-4ded-922a-6b95fbb9d44a
 global: APTO
 pbi_archived: false
 branch: Fix_Events_Multiple
@@ -16,13 +16,17 @@ checks:
   AUT37-T2-TRANSCRIPT: APTO
   AUT37-T3-EVOLUTION: APTO
 git_changes:
-  - SddIA/engine/execute-process/src/engine/agent_runtime.rs
-  - SddIA/scripts/tools/kalma2-agent-runtime-cursor.py
-  - SddIA/scripts/tools/test_kalma2_runtime_timeout.py
-  - SddIA/evolution/c3d4e5f6-a7b8-4901-8c2d-3e4f5a6b7c8d.md
-  - docs/fixes/refine-item-mayeuta-envelope/
-  - docs/audits/AUT-37.md
-  - .SddIA/state/tracker-outbound/AUT-37.jsonl
+- SddIA/engine/execute-process/src/engine/agent_runtime.rs
+- SddIA/scripts/tools/kalma2-agent-runtime-cursor.py
+- SddIA/scripts/tools/test_kalma2_runtime_timeout.py
+- SddIA/evolution/c3d4e5f6-a7b8-4901-8c2d-3e4f5a6b7c8d.md
+- docs/fixes/refine-item-mayeuta-envelope/
+- docs/audits/AUT-37.md
+- .SddIA/state/tracker-outbound/AUT-37.jsonl
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: cf804889be6a6cb0ef79f1d40761122b19b86567
+validated_tree_sha: 786d37022a30299041b4f4773b6de20cc317e29a
+diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
 ---
 
 # Validación — AUT-37
