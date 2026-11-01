@@ -1,11 +1,11 @@
 ---
 feature_name: dcc-presented-seal-contract
-created: "2026-11-01"
+created: 2026-11-01
 process: bug-fix
 branch_name: Fix_Events_Multiple
 persist_ref: docs/fixes/dcc-presented-seal-contract
 tracker_ref: AUT-48
-execution_id: "9e85f016-c9be-46de-af20-92455e7817b8"
+execution_id: 9e85f016-c9be-46de-af20-92455e7817b8
 global: APTO
 pbi_archived: false
 branch: Fix_Events_Multiple
@@ -16,11 +16,15 @@ checks:
   AUT48-T2-EVOLUTION: APTO
   AUT48-REGRESSION-TEST: APTO
 git_changes:
-  - SddIA/library/codexes/codex-software-engineering/process/delivery-close-cycle.md
-  - SddIA/library/codexes/codex-software-engineering/process/index.md
-  - SddIA/evolution/20628bfd-f3f1-4dff-9409-4ef70e82c985.md
-  - SddIA/evolution/Evolution_log.md
-  - docs/fixes/dcc-presented-seal-contract/
+- SddIA/library/codexes/codex-software-engineering/process/delivery-close-cycle.md
+- SddIA/library/codexes/codex-software-engineering/process/index.md
+- SddIA/evolution/20628bfd-f3f1-4dff-9409-4ef70e82c985.md
+- SddIA/evolution/Evolution_log.md
+- docs/fixes/dcc-presented-seal-contract/
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: 62c8dda4789234802bb3c18823255b0f9cf95f60
+validated_tree_sha: b555d14386d13d8fd747045a3361595b0315d8c5
+diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
 ---
 
 # Validación — AUT-48
