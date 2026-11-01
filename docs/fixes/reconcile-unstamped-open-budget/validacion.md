@@ -1,11 +1,11 @@
 ---
 feature_name: reconcile-unstamped-open-budget
-created: "2026-11-01"
+created: 2026-11-01
 process: bug-fix
 branch_name: Fix_Events_Multiple
 persist_ref: docs/fixes/reconcile-unstamped-open-budget
 tracker_ref: AUT-55
-execution_id: "decb2cc8-7efb-4462-8de0-df6f9c772a66"
+execution_id: decb2cc8-7efb-4462-8de0-df6f9c772a66
 global: APTO
 pbi_archived: false
 branch: Fix_Events_Multiple
@@ -16,15 +16,19 @@ checks:
   AUT55-T2-TICK-LOCKED-DISPLAY: APTO
   AUT55-T3-EVOLUTION: APTO
 git_changes:
-  - SddIA/sddia-eda-catalog/src/lib.rs
-  - SddIA/daemons/event-watcher/src/main.rs
-  - SddIA/sddia-event-store/src/error.rs
-  - SddIA/sddia-event-store/src/lib.rs
-  - SddIA/sddia-event-store/tests/store.rs
-  - SddIA/evolution/d4e5f6a7-b8c9-4012-9d3e-4f5a6b7c8d9e.md
-  - docs/fixes/reconcile-unstamped-open-budget/
-  - docs/audits/AUT-55.md
-  - .SddIA/state/tracker-outbound/AUT-55.jsonl
+- SddIA/sddia-eda-catalog/src/lib.rs
+- SddIA/daemons/event-watcher/src/main.rs
+- SddIA/sddia-event-store/src/error.rs
+- SddIA/sddia-event-store/src/lib.rs
+- SddIA/sddia-event-store/tests/store.rs
+- SddIA/evolution/d4e5f6a7-b8c9-4012-9d3e-4f5a6b7c8d9e.md
+- docs/fixes/reconcile-unstamped-open-budget/
+- docs/audits/AUT-55.md
+- .SddIA/state/tracker-outbound/AUT-55.jsonl
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: f74138a24bfc975755777e9221ba4cfe0cf2aa4c
+validated_tree_sha: 2c99c631467b608f9f74ebc313d45577d9970d09
+diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
 ---
 
 # Validación — AUT-55
