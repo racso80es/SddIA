@@ -13,10 +13,10 @@ pub enum StoreError {
 impl fmt::Display for StoreError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            StoreError::Invalid(message)
-            | StoreError::NotFound(message)
-            | StoreError::Conflict(message)
-            |             StoreError::Locked(message) => write!(f, "StoreError::Locked: {message}"),
+            StoreError::Invalid(message) => write!(f, "StoreError::Invalid: {message}"),
+            StoreError::NotFound(message) => write!(f, "StoreError::NotFound: {message}"),
+            StoreError::Conflict(message) => write!(f, "StoreError::Conflict: {message}"),
+            StoreError::Locked(message) => write!(f, "StoreError::Locked: {message}"),
             StoreError::Backend(message) => f.write_str(message),
         }
     }

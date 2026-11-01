@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 139
+universe_total: 140
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `a1b2c3d4-e5f6-4789-a012-3456789abcde` | 2026-11-01 | AUT-50: alta backlog — forge-pbi, list_issues, forge-hu, refine lock. | CANONICO | `SddIA/evolution/a1b2c3d4-e5f6-4789-a012-3456789abcde.md` |
 | `20628bfd-f3f1-4dff-9409-4ef70e82c985` | 2026-11-01 | AUT-48: DCC v1.6.1 sello Presentación alineado con F-DCC-PR-URL-MISSING. | CANONICO | `SddIA/evolution/20628bfd-f3f1-4dff-9409-4ef70e82c985.md` |
 | `d4e5f6a7-b8c9-4012-9d3e-4f5a6b7c8d9e` | 2026-11-01 | AUT-55: reconcile_unstamped suelta store; log tick y Display Locked. | CANONICO | `SddIA/evolution/d4e5f6a7-b8c9-4012-9d3e-4f5a6b7c8d9e.md` |
 | `c3d4e5f6-a7b8-4901-8c2d-3e4f5a6b7c8d` | 2026-11-01 | AUT-37: data.message a entry.error y transcript en fallo CLI refine-item. | CANONICO | `SddIA/evolution/c3d4e5f6-a7b8-4901-8c2d-3e4f5a6b7c8d.md` |
