@@ -1,6 +1,7 @@
 //! AUT-46 — suscriptores leen ECST desde redb sin fichero pending; concurrencia sin Locked.
 
 use std::fs;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Barrier};
 use std::thread;
@@ -67,6 +68,26 @@ fn seed_store_only_pending_rel(
         fs::remove_file(&pending).expect("remove pending mirror");
     }
     format!(".events/pending/{event_id}.json")
+}
+
+/// Marcas de avance AUT-59: stderr (flush) + append en checkout `.tmp/route-domain-test-progress.log`.
+fn route_domain_test_progress_mark(phase: &str, event_type: &str, rel: &str) {
+    let line = format!("route_domain_test phase={phase} event_type={event_type} rel={rel}\n");
+    let _ = io::stderr().write_all(line.as_bytes());
+    let _ = io::stderr().flush();
+    let checkout = find_repo_root().expect("repo root");
+    let log_path = checkout.join(".tmp/route-domain-test-progress.log");
+    if let Some(parent) = log_path.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    if let Ok(mut f) = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_path)
+    {
+        let _ = f.write_all(line.as_bytes());
+        let _ = f.flush();
+    }
 }
 
 #[test]
@@ -241,7 +262,9 @@ fn route_domain_tracker_markdown_apply_not_blocked_by_missing_branch() {
             "changes": [],
         }),
     );
+    route_domain_test_progress_mark("enter", "Tracker_Issue_Changed", &rel);
     let out = route_domain_event(&repo, &rel, false);
+    route_domain_test_progress_mark("leave", "Tracker_Issue_Changed", &rel);
     let ds = out
         .pointer("/data/delivery_status")
         .and_then(|v| v.as_object())
@@ -273,7 +296,9 @@ fn route_domain_telegram_responder_receives_ecst_path() {
             "chat_id": "99",
         }),
     );
+    route_domain_test_progress_mark("enter", "TelegramMessage_Received", &rel);
     let out = route_domain_event(&repo, &rel, false);
+    route_domain_test_progress_mark("leave", "TelegramMessage_Received", &rel);
     let ds = out
         .pointer("/data/delivery_status")
         .and_then(|v| v.as_object())
@@ -310,7 +335,9 @@ fn route_domain_kalma2_task_queue_not_blocked_before_handler() {
             "raw_text": "lab task",
         }),
     );
+    route_domain_test_progress_mark("enter", "Kalma2_Process_Requested", &rel);
     let out = route_domain_event(&repo, &rel, false);
+    route_domain_test_progress_mark("leave", "Kalma2_Process_Requested", &rel);
     let ds = out
         .pointer("/data/delivery_status")
         .and_then(|v| v.as_object())
@@ -342,7 +369,9 @@ fn route_domain_telegram_empty_text_still_skipped() {
         "TelegramMessage_Received",
         json!({ "text": "   " }),
     );
+    route_domain_test_progress_mark("enter", "TelegramMessage_Received", &rel);
     let out = route_domain_event(&repo, &rel, false);
+    route_domain_test_progress_mark("leave", "TelegramMessage_Received", &rel);
     let ds = out
         .pointer("/data/delivery_status")
         .and_then(|v| v.as_object())
@@ -379,7 +408,9 @@ fn route_domain_memory_evolution_not_blocked_by_missing_branch() {
             "execution_metrics": { "success_status": true, "duration_ms": 1, "exit_code": 0 },
         }),
     );
+    route_domain_test_progress_mark("enter", "Domain_Entity_Telemetry_Captured", &rel);
     let out = route_domain_event(&repo, &rel, false);
+    route_domain_test_progress_mark("leave", "Domain_Entity_Telemetry_Captured", &rel);
     let ds = out
         .pointer("/data/delivery_status")
         .and_then(|v| v.as_object())
