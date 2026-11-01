@@ -1785,6 +1785,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         else:
             status = "failed"
             message = err_s or "runtime falló"
+    write_workspace_transcript(doc, out or message)
     handoff = append_handoff(
         repo,
         persist,
