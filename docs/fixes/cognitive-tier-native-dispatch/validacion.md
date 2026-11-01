@@ -20,9 +20,9 @@ git_changes:
 - SddIA/engine/execute-process/src/engine/route_domain_core.rs
 - docs/fixes/cognitive-tier-native-dispatch/
 - docs/audits/AUT-26.md
-validated_head_sha: 69e81a0f11481aa1f2416797193d9404dc7871a6
-validated_tree_sha: 71b13d1e2c94ed6da707c19006ee5f08e6e89b47
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: 96a622ec05c02f70be009ae08200efcf78bd8b08
+validated_tree_sha: 4a6f7d1027ba782957f4e23fb621294a9673ca48
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-26
