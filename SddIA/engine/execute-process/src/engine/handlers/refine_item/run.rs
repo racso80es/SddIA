@@ -23,6 +23,42 @@ use uuid::Uuid;
 const PROCESS: &str = "refine-item";
 const PHASE_MAYEUTA: &str = "Refinamiento Mayeuta";
 
+fn agent_entry_detail(entry: &Value) -> &str {
+    entry
+        .get("error")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            entry
+                .get("message")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+        })
+        .unwrap_or("sin detalle")
+}
+
+fn emit_mayeuta_fracture(repo: &Path, detail: &str) {
+    let _ = materialize_pending_domain_event(
+        repo,
+        "System_Fracture_Detected",
+        PROCESS,
+        json!({
+            "detail": detail,
+            "phase": PHASE_MAYEUTA,
+            "source_process": PROCESS,
+        }),
+    );
+}
+
+fn mayeuta_failure(repo: &Path, status: &str, entry: &Value) -> Result<OrchestratorEnvelope, String> {
+    let detail = format!(
+        "refine-item: fase Mayeuta {status}: {}",
+        agent_entry_detail(entry)
+    );
+    emit_mayeuta_fracture(repo, &detail);
+    Err(detail)
+}
+
 fn str_field(inputs: &Value, key: &str) -> Option<String> {
     inputs
         .get(key)
@@ -289,13 +325,17 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             ));
         }
         if status == "blocked" || status == "failed" {
-            return Err(format!(
-                "refine-item: fase Mayeuta {status}: {}",
-                agent_entry
-                    .get("error")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("sin detalle")
-            ));
+            return mayeuta_failure(repo, status, &agent_entry);
+        }
+        if status == "executed" && !verdict_path.is_file() {
+            return mayeuta_failure(
+                repo,
+                "failed",
+                &json!({
+                    "error": "executed sin verdict.json",
+                    "message": agent_entry.get("message"),
+                }),
+            );
         }
         if !verdict_path.is_file() {
             return Ok(envelope_status(

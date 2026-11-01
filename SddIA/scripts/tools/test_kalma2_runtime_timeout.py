@@ -63,6 +63,7 @@ class VerdictAndNetworkTests(unittest.TestCase):
         t = "Veredicto: ok\n...\nVeredicto: blocked\n"
         self.assertEqual(self.rt.parse_agent_verdict(t), "blocked")
         self.assertEqual(self.rt.parse_agent_verdict("veredicto: OK"), "ok")
+        self.assertEqual(self.rt.parse_agent_verdict("Veredicto: **blocked**"), "blocked")
         self.assertIsNone(self.rt.parse_agent_verdict("sin marca"))
 
     def test_enotfound_is_transient_not_failed_soft_config(self) -> None:
