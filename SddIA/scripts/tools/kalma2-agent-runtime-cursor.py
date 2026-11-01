@@ -80,15 +80,29 @@ NETWORK_TRANSIENT_MARKERS = (
     "could not resolve host",
 )
 
-_VERDICT_RE = re.compile(r"veredicto\s*:\s*(ok|blocked)", re.IGNORECASE)
+_VERDICT_RE = re.compile(
+    r"veredicto\s*:\s*(?:[*`_]+|\s)*(ok|blocked)(?:[*`_]+|\s)*",
+    re.IGNORECASE,
+)
 
 
 def parse_agent_verdict(transcript: str) -> str | None:
-    """Última ocurrencia `Veredicto: ok|blocked` (case-insensitive)."""
+    """Última ocurrencia `Veredicto: ok|blocked` (case-insensitive; tolera énfasis Markdown)."""
     last: str | None = None
     for m in _VERDICT_RE.finditer(transcript or ""):
         last = m.group(1).lower()
     return last
+
+
+def is_refine_item_mayeuta_handoff(process: str, phase: str, agent: str = "") -> bool:
+    p = (process or "").strip()
+    if p != "refine-item":
+        return False
+    ph = (phase or "").lower()
+    if "refinamiento mayeuta" in ph:
+        return True
+    a = (agent or "").lower()
+    return a in ("mayeuta", "agent:mayeuta") or a.endswith(":mayeuta")
 
 
 def is_soft_config_error(err: str) -> bool:
@@ -145,13 +159,81 @@ def persist_dir(repo: Path, persist: str) -> Path:
     return repo / persist
 
 
+def mcp_cli_workspace_root() -> Path:
+    override = (os.environ.get("SDDIA_AGENT_MCP_WS_ROOT") or "").strip()
+    if override:
+        base = Path(override)
+    else:
+        home = (os.environ.get("HOME") or "").strip()
+        base = Path(home) / ".cache" / "sddia-agent-mcp" if home else Path("/tmp/sddia-agent-mcp")
+    base.mkdir(parents=True, exist_ok=True)
+    return base
+
+
 def agent_runtime_cwd(doc: dict[str, Any]) -> Path:
     repo = Path(doc.get("repo_root") or os.getcwd()).resolve()
-    if str(doc.get("project_root") or "").strip():
+    project_root = str(doc.get("project_root") or "").strip()
+    mcp_servers = doc.get("mcp_servers")
+    use_mcp = bool(project_root and isinstance(mcp_servers, list) and mcp_servers)
+    if use_mcp:
+        eid = resolve_execution_id(doc) or uuid.uuid4().hex[:12]
+        ws = mcp_cli_workspace_root() / eid
+        ws.mkdir(parents=True, exist_ok=True)
+        return ws
+    if project_root:
         neutral = repo / ".SddIA/workspaces/.agent-runtime-neutral"
         neutral.mkdir(parents=True, exist_ok=True)
         return neutral
     return repo
+
+
+def _ensure_workspace_flag(parts: list[str], workspace: Path) -> list[str]:
+    out = list(parts)
+    flags = set(out[1:])
+    if "--workspace" in flags:
+        return out
+    insert_at = len(out)
+    for i, tok in enumerate(out):
+        if tok == "--print":
+            insert_at = i
+            break
+    out.insert(insert_at, str(workspace))
+    out.insert(insert_at, "--workspace")
+    return out
+
+
+def smoke_cursor_mcp_list(workspace: Path) -> str | None:
+    """Humo: cursor-agent debe ver sddia-workspace-server en el workspace de fase."""
+    cmd = resolve_cli()
+    if not cmd:
+        return "CLI agente no resuelto"
+    base = cmd[0]
+    proc = subprocess.run(
+        [base, "--workspace", str(workspace), "mcp", "list"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=45,
+        check=False,
+    )
+    blob = (proc.stdout.decode("utf-8", errors="replace") + proc.stderr.decode("utf-8", errors="replace")).strip()
+    if "No MCP servers configured" in blob:
+        return blob or "No MCP servers configured"
+    if "sddia-workspace-server" not in blob:
+        return blob or "mcp list sin sddia-workspace-server"
+    return None
+
+
+def write_workspace_transcript(doc: dict[str, Any], transcript: str) -> None:
+    if not transcript:
+        return
+    if resolve_persist_ref(doc):
+        return
+    ws = str(doc.get("workspace_path") or "").strip()
+    if not ws:
+        return
+    path = Path(ws)
+    path.mkdir(parents=True, exist_ok=True)
+    (path / "transcript.md").write_text(transcript, encoding="utf-8")
 
 
 def _ensure_mcp_cli_flags(parts: list[str]) -> list[str]:
@@ -291,6 +373,14 @@ def resolve_phase_model(doc: dict[str, Any]) -> str:
 
 def role_brief(agent: str, phase: str, process: str) -> str:
     a = (agent or "").lower()
+    if is_refine_item_mayeuta_handoff(process, phase, agent):
+        return (
+            f"Actúa como Mayeuta en proceso `{process}` (handoff refine-item). "
+            "Lee `item.md` en workspace_path. Escribe `verdict.json` "
+            "(verdict: refined|needs_clarification; open_questions opcional) e "
+            "`item.refined.md` (cuerpo DoR) en el mismo workspace_path. "
+            "No uses clarify.md ni objectives.md."
+        )
     if a == "mayeuta" or "estabil" in phase.lower():
         return (
             f"Actúa como Mayeuta en proceso `{process}`. "
@@ -855,6 +945,10 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
         branch = str(inputs.get("branch_name") or inputs.get("pr_branch") or "")
 
     execution_id = resolve_execution_id(doc)
+    workspace_path = str(doc.get("workspace_path") or "").strip()
+    if not workspace_path and isinstance(inputs, dict):
+        workspace_path = str(inputs.get("workspace_path") or "").strip()
+    refine_handoff = is_refine_item_mayeuta_handoff(str(process), str(phase), str(agent))
 
     brief = role_brief(str(agent), str(phase), str(process))
     parts = [
@@ -864,6 +958,7 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
         f"- process: {process}",
         f"- phase: {phase}",
         f"- agents: {', '.join(str(a) for a in agents)}",
+        f"- workspace_path: {workspace_path}",
         f"- persist_ref: {persist}",
         f"- branch_name: {branch}",
         f"- execution_id: {execution_id}",
@@ -880,7 +975,17 @@ def build_prompt(doc: dict[str, Any], evidence: dict[str, Any] | None = None) ->
 
     project_root = str(doc.get("project_root") or "").strip()
     mcp_servers = doc.get("mcp_servers")
-    if project_root and isinstance(mcp_servers, list) and mcp_servers:
+    if refine_handoff and workspace_path:
+        parts.extend(
+            [
+                "## refine-item — handoff Mayeuta",
+                f"- Entrada: `{workspace_path}/item.md`.",
+                f"- Salidas obligatorias: `{workspace_path}/verdict.json` e `{workspace_path}/item.refined.md`.",
+                "- Puedes escribir en workspace_path con las herramientas del agente (no exiges persist_ref).",
+                "",
+            ]
+        )
+    elif project_root and isinstance(mcp_servers, list) and mcp_servers:
         parts.extend(
             [
                 "## Workspace 1×N — aduana MCP (obligatorio)",
@@ -1001,6 +1106,7 @@ def run_cli(cwd: Path, prompt: str, phase: str = "", *, use_mcp: bool = False) -
     cmd = resolve_cli()
     if use_mcp:
         cmd = _ensure_mcp_cli_flags(cmd)
+        cmd = _ensure_workspace_flag(cmd, cwd)
     timeout = resolve_timeout_secs(phase)
     try:
         proc = subprocess.run(
@@ -1572,6 +1678,15 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
     )
     if use_mcp:
         materialize_cursor_mcp_config(cwd, list(mcp_servers))
+        if not env_truthy("SDDIA_LAB_SKIP_MCP_SMOKE"):
+            mcp_err = smoke_cursor_mcp_list(cwd)
+            if mcp_err:
+                emit(
+                    False,
+                    {"status": "failed", "message": mcp_err},
+                    mcp_err,
+                )
+                return
     phase = doc.get("phase_name") or "?"
     process = doc.get("process_name") or "?"
     agents = doc.get("agents") or []
@@ -1620,6 +1735,7 @@ def run_agent_phase(doc: dict[str, Any]) -> None:
         verdict = parse_agent_verdict(out or "")
         status = "blocked" if verdict == "blocked" else "executed"
         message = (out.splitlines()[-1] if out else "ok")[:500]
+        write_workspace_transcript(doc, out or "")
         handoff = append_handoff(
             repo,
             persist,
