@@ -25,9 +25,9 @@ git_changes:
 - SddIA/evolution/e31a186c-7851-4d8b-a9c0-31f0dc01a931.md
 - docs/fixes/dcc-pr-url-presented-gate/
 - docs/audits/AUT-31.md
-validated_head_sha: fa5e7dc8aaeb968806b4cd998d648548a8c93a17
-validated_tree_sha: 6e022d59b4bb641ece854169d430a712c7e6e3a9
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: c454ab3296f8f925cf6ac03fafd1d94389bb3a2e
+validated_tree_sha: 668174ef990711d0f9d4f4ac5262aef104d5623c
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-31
