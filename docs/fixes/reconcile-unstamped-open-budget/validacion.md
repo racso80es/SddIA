@@ -26,9 +26,9 @@ git_changes:
 - docs/audits/AUT-55.md
 - .SddIA/state/tracker-outbound/AUT-55.jsonl
 validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: 393dd445fe9f4e7981e384e69c3ef001d10bb9af
-validated_tree_sha: e3da8baf3d7091e2cb52252b8e7e1b5f6b3ef4db
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: d09c4d9634aacf4c634e9f6776b23c8dadfe21b5
+validated_tree_sha: f2d03bf07d9b3089fb45533167c62c309d4d2d6d
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-55
