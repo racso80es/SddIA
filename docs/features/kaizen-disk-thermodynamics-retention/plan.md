@@ -95,6 +95,10 @@ Dependencias crate: `sddia-event-store` (modo + open store read-only), `sddia-da
 
 Un commit por fase L1…L5 mínimo; anotar id de tarea en `execution.md`. Prohibido mezclar forja genoma y docs de cierre en el mismo commit sin trazabilidad.
 
+## Defecto L2 — cerrado 2026-11-01
+
+Slice A en `slice_target.rs`: generación por hash (`.rlib` + `.rmeta`), hold-incomplete, incremental por subdirs de crate. `live.rs`: apply aborta con `PROC_UNREADABLE` si `/proc` no es legible. `cargo test -p repo-retention-purger`: 13 passed.
+
 ## Fuera de este plan
 
 - Daemon periódico (tick) — opcional post-MVP si el operador lo pide.

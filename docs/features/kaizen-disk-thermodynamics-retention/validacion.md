@@ -38,11 +38,11 @@ git_changes:
 
 ## Local
 
-- `cargo test -p repo-retention-purger`: 11 passed.
+- `cargo test -p repo-retention-purger`: **13 passed** (L2 slice A: generación por hash, hold-incomplete, incremental por crate, `PROC_UNREADABLE`).
 - `sddia-qa verify-tools-index`: OK.
 - `cargo check -p execute-process`: OK (warnings preexistentes).
 
-KA-RET-1…7 cubiertos por tests de jail, deps, events filesystem vacío, digest, native flag en plan. KA-RET-6/7: lógica en `live.rs` / `slice_misc` (sin test E2E watcher en CI aún).
+KA-RET-1…7 cubiertos por tests de jail, deps por **hash de generación** (`.rlib`+`.rmeta`), hold-incomplete, events filesystem vacío, digest, native flag en plan. KA-RET-6/7: `live.rs` aborta apply con `PROC_UNREADABLE` si `/proc` no es legible.
 
 ## Pendiente (KA-RET-8 / CA-CI)
 

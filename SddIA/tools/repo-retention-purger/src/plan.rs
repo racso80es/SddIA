@@ -1,7 +1,7 @@
 //! Plan JSON, digest y apply acusado.
 
 use crate::jail::{assert_candidate_jail, canonical_repo_root, JailError};
-use crate::live::{cargo_build_active_on_target, event_watcher_active};
+use crate::live::{cargo_build_gate, event_watcher_gate, ProcGate};
 use crate::lock::{acquire_runtime_lock, LockError};
 use crate::slice_events;
 use crate::slice_misc;
@@ -43,6 +43,7 @@ pub enum PlanError {
     ApplyWithoutSimulate,
     CargoActive,
     WatcherActive,
+    ProcUnreadable,
 }
 
 impl PlanError {
@@ -62,6 +63,10 @@ impl PlanError {
             PlanError::CargoActive => (
                 "CARGO_ACTIVE",
                 "cargo/rustc activo sobre SddIA/target".into(),
+            ),
+            PlanError::ProcUnreadable => (
+                "PROC_UNREADABLE",
+                "/proc no legible; apply abortado (fail-closed)".into(),
             ),
             PlanError::WatcherActive => (
                 "WATCHER_ACTIVE",
@@ -178,8 +183,12 @@ pub fn apply_plan(req: &PlanRequest, plan: &Value) -> Result<Value, PlanError> {
         .and_then(|v| v.as_str())
         .unwrap_or("");
     let repo = PathBuf::from(repo_s);
-    if !req.skip_live_check && cargo_build_active_on_target(&repo) {
-        return Err(PlanError::CargoActive);
+    if !req.skip_live_check {
+        match cargo_build_gate(&repo) {
+            ProcGate::Blocked => return Err(PlanError::CargoActive),
+            ProcGate::ProcUnreadable => return Err(PlanError::ProcUnreadable),
+            ProcGate::Clear => {}
+        }
     }
     let candidates: Vec<PlanCandidate> = plan
         .get("candidates")
@@ -188,8 +197,12 @@ pub fn apply_plan(req: &PlanRequest, plan: &Value) -> Result<Value, PlanError> {
     let purging_events = candidates
         .iter()
         .any(|c| !c.kept && c.policy.starts_with("events-fs"));
-    if !req.skip_live_check && purging_events && event_watcher_active() {
-        return Err(PlanError::WatcherActive);
+    if !req.skip_live_check && purging_events {
+        match event_watcher_gate() {
+            ProcGate::Blocked => return Err(PlanError::WatcherActive),
+            ProcGate::ProcUnreadable => return Err(PlanError::ProcUnreadable),
+            ProcGate::Clear => {}
+        }
     }
     let _lock = acquire_runtime_lock(&repo).map_err(PlanError::Lock)?;
     let mut purged_files = 0u64;

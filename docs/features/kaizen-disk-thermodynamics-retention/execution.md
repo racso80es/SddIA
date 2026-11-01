@@ -10,6 +10,7 @@ items_applied:
   - L1-entity-manager-tool
   - L2-L4-slices-crate
   - L5-entity-manager-action
+  - L2-defecto-hash-generation-2026-11-01
 ---
 
 # Ejecución — kaizen-disk-thermodynamics-retention
@@ -45,6 +46,14 @@ echo '{"simulate_only":true,"repo_root":"'"$(pwd)"'"}' | \
 ```
 
 (Requiere binario `repo-retention-purger` compilado en `SddIA/target/debug/`.)
+
+## L2 — corrección slice A (2026-11-01)
+
+Paridad con operador `clean-project-ephemeral-cargo-deps.py` (AUT-79):
+
+- `slice_target.rs`: agrupación por hash; tests `dep_generation_keeps_rlib_and_rmeta`, `dep_hold_incomplete_generation`, `incremental_keeps_two_sessions_per_crate`.
+- `live.rs` + `plan.rs`: `PROC_UNREADABLE` aborta apply (fail-closed).
+- Verificación: `cd SddIA && cargo test -p repo-retention-purger` → 13 passed.
 
 ## Cierre
 

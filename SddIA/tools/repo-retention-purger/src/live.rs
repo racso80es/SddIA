@@ -7,11 +7,18 @@ pub fn target_dir_for_repo(repo: &Path) -> PathBuf {
     repo.join("SddIA/target")
 }
 
-pub fn cargo_build_active_on_target(repo: &Path) -> bool {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProcGate {
+    Clear,
+    Blocked,
+    ProcUnreadable,
+}
+
+pub fn cargo_build_gate(repo: &Path) -> ProcGate {
     let target = target_dir_for_repo(repo);
     let target_canon = target.canonicalize().unwrap_or(target);
     let Ok(entries) = fs::read_dir("/proc") else {
-        return false;
+        return ProcGate::ProcUnreadable;
     };
     for entry in entries.flatten() {
         let Ok(name) = entry.file_name().into_string() else {
@@ -48,20 +55,24 @@ pub fn cargo_build_active_on_target(repo: &Path) -> bool {
                 let p = PathBuf::from(dir);
                 let canon = p.canonicalize().unwrap_or(p);
                 if canon == target_canon || canon.starts_with(&target_canon) {
-                    return true;
+                    return ProcGate::Blocked;
                 }
             }
         }
         if lower.contains("sddia/target") || cmd.contains("SddIA/target") {
-            return true;
+            return ProcGate::Blocked;
         }
     }
-    false
+    ProcGate::Clear
 }
 
-pub fn event_watcher_active() -> bool {
+pub fn cargo_build_active_on_target(repo: &Path) -> bool {
+    matches!(cargo_build_gate(repo), ProcGate::Blocked)
+}
+
+pub fn event_watcher_gate() -> ProcGate {
     let Ok(entries) = fs::read_dir("/proc") else {
-        return false;
+        return ProcGate::ProcUnreadable;
     };
     for entry in entries.flatten() {
         let cmdline_path = entry.path().join("cmdline");
@@ -70,8 +81,12 @@ pub fn event_watcher_active() -> bool {
         };
         let blob = String::from_utf8_lossy(&raw);
         if blob.contains("event-watcher") {
-            return true;
+            return ProcGate::Blocked;
         }
     }
-    false
+    ProcGate::Clear
+}
+
+pub fn event_watcher_active() -> bool {
+    matches!(event_watcher_gate(), ProcGate::Blocked)
 }
