@@ -1,11 +1,11 @@
 ---
 feature_name: aut-50-backlog-alta
-created: "2026-11-01"
+created: 2026-11-01
 process: bug-fix
 branch_name: Fix_Events_Multiple_02
 persist_ref: docs/fixes/aut-50-backlog-alta
 tracker_ref: AUT-50
-execution_id: "82abfda6-47a2-41f6-855f-bddbc8546bda"
+execution_id: 82abfda6-47a2-41f6-855f-bddbc8546bda
 global: APTO
 pbi_archived: false
 branch: Fix_Events_Multiple_02
@@ -27,6 +27,10 @@ git_changes:
 - SddIA/library/codexes/codex-software-engineering/process/forge-hu.md
 - SddIA/evolution/a1b2c3d4-e5f6-4789-a012-3456789abcde.md
 - docs/fixes/aut-50-backlog-alta/
+validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
+validated_head_sha: 2689a5f8b58593fc1f2ec2a2229d076b81df5344
+validated_tree_sha: 5ec46239a19b9de15b59ac4c4d2255aa1f2981fb
+diff_digest: sha256:6f32515f5921ad766fae55bdbbc0035ea8ab7a00176eea40ba2df995d8a60d55
 ---
 
 # Validación — AUT-50
