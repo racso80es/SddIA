@@ -23,6 +23,7 @@ serde_json = "1.0"
 serde_yaml = "0.9"
 sddia-event-store = { path = "../../sddia-event-store" }
 sddia-eda-catalog = { path = "../../sddia-eda-catalog" }
+repo-retention-purger = { path = "../../tools/repo-retention-purger" }
 regex = "1.10"
 uuid = { version = "1.8", features = ["v4"] }
 chrono = { version = "0.4", features = ["clock"] }

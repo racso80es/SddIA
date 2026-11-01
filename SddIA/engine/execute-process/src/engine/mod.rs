@@ -62,6 +62,7 @@ pub mod capability_di_reactor;
 pub mod cerbero_di_rbac;
 pub mod cerbero_di_envelope;
 pub mod purge_sandbox_cache;
+pub mod purge_repo_retention;
 pub mod sync_entity_index;
 pub mod suite_execution_requested;
 pub mod aiua_intent;

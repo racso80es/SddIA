@@ -1,0 +1,12 @@
+{
+  "entity_class": "action",
+  "entity_name": "purge-repo-retention",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "action_name": "purge-repo-retention",
+    "action_context": "filesystem-ops",
+    "action_inputs": ["simulate_only", "repo_root", "plan_digest", "older_than_hours", "skip_live_check"],
+    "action_outputs": ["success", "dry_run", "purge"],
+    "orchestration_logic": "Dos tiempos sobre tool:repo-retention-purger. simulate_only → plan JSON; si no, apply con plan_digest acusado y gate jail sobre candidatos."
+  }
+}
