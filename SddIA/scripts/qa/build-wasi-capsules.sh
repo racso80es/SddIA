@@ -22,6 +22,7 @@ EXCLUDE=(
   llm-router
   thought-graph-access
   event-bus-audit
+  repo-retention-purger
 )
 
 packages=()
