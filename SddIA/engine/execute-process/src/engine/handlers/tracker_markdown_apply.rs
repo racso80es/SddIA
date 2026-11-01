@@ -552,6 +552,25 @@ fn load_event(repo: &Path, inputs: &Value) -> Result<Value, String> {
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
     let event = load_event(repo, process_inputs)?;
+    if let Err(reason) = super::super::ecst_input_loader::verify_ecst_matches_bus(repo, &event) {
+        return Ok(OrchestratorEnvelope {
+            success: false,
+            status_code: 1,
+            data: Some(json!({
+                "delivery_status": "failed-bus-mismatch",
+                "reason": reason,
+            })),
+            error: Some(reason.clone()),
+            execution_report: Some(json!({
+                "phases": [{
+                    "phase_name": "markdown-apply",
+                    "status": "failed",
+                    "handler": PROCESS_NAME,
+                }]
+            })),
+            exit_code: 1,
+        });
+    }
     if event.get("event_type").and_then(|v| v.as_str()) != Some("Tracker_Issue_Changed") {
         return Err("event_type debe ser Tracker_Issue_Changed".into());
     }
@@ -748,6 +767,66 @@ mod tests {
             assert_eq!(git.get("branch"), Some(&json!("tracker-sync/core")));
             assert_ne!(git.get("branch"), Some(&json!("main")));
             let _ = fs::remove_file(path);
+        });
+    }
+
+    #[test]
+    fn run_rejects_tampered_inline_event_against_store() {
+        use crate::engine::route_domain_core::materialize_pending_domain_event;
+        use sddia_event_store::{override_store_mode, StoreMode};
+
+        struct Guard;
+        impl Drop for Guard {
+            fn drop(&mut self) {
+                override_store_mode(None);
+            }
+        }
+        let _g = Guard;
+        override_store_mode(Some(StoreMode::Redb));
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            materialize_pending_domain_event(
+                &repo,
+                "Tracker_Issue_Changed",
+                "test",
+                json!({
+                    "issue_ref": "LAB-MD-BUS",
+                    "project_slug": "core",
+                    "occurred_at": "2026-10-29T12:00:00Z",
+                    "changes": [],
+                }),
+            )
+            .expect("materialize");
+            let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&repo))
+                .expect("open");
+            let rows = store.list_family(sddia_event_store::Family::Domain).expect("list");
+            let event_id = rows.last().expect("row").event_id.clone();
+            drop(store);
+            let rel = format!(".events/pending/{event_id}.json");
+            let pending = repo.join(&rel);
+            if pending.is_file() {
+                fs::remove_file(&pending).ok();
+            }
+            let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(&repo, &rel).expect("load");
+            let mut tampered = stored.clone();
+            tampered["payload"]["issue_ref"] = json!("LAB-TAMPER");
+            let env = run(
+                &repo,
+                &json!({
+                    "event": tampered,
+                    "event_id": stored.get("event_id").cloned().unwrap_or(json!("")),
+                    "project_slug": "core",
+                }),
+            )
+            .expect("run");
+            assert!(!env.success);
+            assert_eq!(
+                env.data
+                    .as_ref()
+                    .and_then(|d| d.get("delivery_status"))
+                    .and_then(|v| v.as_str()),
+                Some("failed-bus-mismatch")
+            );
         });
     }
 }

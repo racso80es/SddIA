@@ -95,13 +95,7 @@ fn run_memory_evolution_ingest(
     repo: &Path,
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
-    let rel = process_inputs
-        .get("event_file_path")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or("event_file_path requerido")?;
-    let result = memory_evolution_ingest_core::ingest_domain_event_file(repo, rel);
+    let result = memory_evolution_ingest_core::ingest_from_process_inputs(repo, process_inputs);
     let ok = result.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
     let status_code = if ok { 0 } else { 1 };
     Ok(OrchestratorEnvelope {
@@ -275,6 +269,63 @@ pub fn run_process(
 
     if canonical == "compile-ecosystem-map-snapshot" {
         return handlers::ecosystem_health::run_compile_map(repo, process_inputs);
+    }
+
+    if canonical == "cerbero-governance-react" {
+        let event = crate::engine::ecst_input_loader::load_ecst_from_inputs(repo, process_inputs)?;
+        let result = cerbero_governance_react_core::react_to_domain_event(repo, &event);
+        let ok = result.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+        return Ok(OrchestratorEnvelope {
+            success: ok,
+            status_code: if ok { 0 } else { 1 },
+            data: Some(result.clone()),
+            error: if ok {
+                None
+            } else {
+                result
+                    .get("error")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string)
+            },
+            execution_report: Some(json!({
+                "process_name": "cerbero-governance-react",
+                "phases": [{
+                    "phase_name": "Reacción RBAC gobernanza",
+                    "status": if ok { "executed" } else { "failed" },
+                    "handler": "cerbero-governance-react-core",
+                    "result": result,
+                }],
+            })),
+            exit_code: if ok { 0 } else { 1 },
+        });
+    }
+
+    if canonical == "fix-tool-process" {
+        let result = fix_tool_process_core::process_fix_tool_from_inputs(repo, process_inputs);
+        let ok = result.get("ok").and_then(|v| v.as_bool()).unwrap_or(false);
+        return Ok(OrchestratorEnvelope {
+            success: ok,
+            status_code: if ok { 0 } else { 1 },
+            data: Some(result.clone()),
+            error: if ok {
+                None
+            } else {
+                result
+                    .get("error")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string)
+            },
+            execution_report: Some(json!({
+                "process_name": "fix-tool-process",
+                "phases": [{
+                    "phase_name": "Preparación sandbox",
+                    "status": if ok { "executed" } else { "failed" },
+                    "handler": "fix-tool-process-core",
+                    "result": result,
+                }],
+            })),
+            exit_code: if ok { 0 } else { 1 },
+        });
     }
 
     if canonical == "query-ecosystem-health" {

@@ -34,6 +34,7 @@ fn temp_repo_with_bus_skeleton() -> PathBuf {
     ));
     fs::create_dir_all(&repo).unwrap();
     for rel in [
+        ".SddIA/project.md",
         "SddIA/core/cumulo.paths.json",
         "SddIA/core/event-domain-subscriptions.json",
         "SddIA/core/capability-bindings.md",
@@ -221,4 +222,70 @@ fn record_ecst_concurrent_writes_same_db_without_locked() {
         }
     }
     let _ = fs::remove_dir_all(repo.as_ref());
+}
+
+#[test]
+fn route_domain_tracker_markdown_apply_not_blocked_by_missing_branch() {
+    let _guard = ModeGuard;
+    override_store_mode(Some(StoreMode::Redb));
+    std::env::set_var("SDDIA_LAB_ROUTE_SYNC", "1");
+    std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+    let repo = temp_repo_with_bus_skeleton();
+    let rel = seed_store_only_pending_rel(
+        &repo,
+        "Tracker_Issue_Changed",
+        json!({
+            "issue_ref": "LAB-PBI-OK",
+            "project_slug": "core",
+            "occurred_at": "2026-10-29T12:00:00Z",
+            "changes": [],
+        }),
+    );
+    let out = route_domain_event(&repo, &rel, false);
+    let ds = out
+        .pointer("/data/delivery_status")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    for (sid, status) in &ds {
+        let s = status.as_str().unwrap_or("");
+        assert!(
+            !s.contains("branch missing in payload"),
+            "sid={sid} status={s} out={out}"
+        );
+    }
+    std::env::remove_var("SDDIA_LAB_ROUTE_SYNC");
+    let _ = fs::remove_dir_all(&repo);
+}
+
+#[test]
+fn route_domain_memory_evolution_not_blocked_by_missing_branch() {
+    let _guard = ModeGuard;
+    override_store_mode(Some(StoreMode::Redb));
+    std::env::set_var("SDDIA_LAB_ROUTE_SYNC", "1");
+    let repo = temp_repo_with_bus_skeleton();
+    let rel = seed_store_only_pending_rel(
+        &repo,
+        "Domain_Entity_Telemetry_Captured",
+        json!({
+            "entity_id": "ent-route-redb",
+            "entity_type": "process",
+            "execution_metrics": { "success_status": true, "duration_ms": 1, "exit_code": 0 },
+        }),
+    );
+    let out = route_domain_event(&repo, &rel, false);
+    let ds = out
+        .pointer("/data/delivery_status")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    for (sid, status) in &ds {
+        let s = status.as_str().unwrap_or("");
+        assert!(
+            !s.contains("branch missing in payload"),
+            "sid={sid} status={s} out={out}"
+        );
+    }
+    std::env::remove_var("SDDIA_LAB_ROUTE_SYNC");
+    let _ = fs::remove_dir_all(&repo);
 }

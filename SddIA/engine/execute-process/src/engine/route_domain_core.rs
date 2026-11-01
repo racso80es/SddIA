@@ -1517,7 +1517,7 @@ pub(crate) fn release_ppr_dedupe(
     let _ = fs::remove_file(&lock_path);
 }
 
-fn build_ecst_subscriber_inputs(
+pub(crate) fn build_ecst_subscriber_inputs(
     repo: &Path,
     event: &Value,
     event_path: Option<&Path>,
@@ -1673,12 +1673,78 @@ pub(crate) fn dispatch_subscriber(
             return (sid, "failed".into(), Some(status), exit_code);
         }
 
+        if process_key == "execute-suite" {
+            let suite_id = payload_obj
+                .get("suite_id")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty());
+            let Some(suite_id) = suite_id else {
+                return (
+                    sid,
+                    "failed".into(),
+                    Some("suite_id missing in payload".into()),
+                    1,
+                );
+            };
+            let mut process_inputs = build_ecst_subscriber_inputs(repo, event, event_path);
+            process_inputs.insert("suite_id".into(), json!(suite_id));
+            if let Some(strategy) = payload_obj
+                .get("execution_strategy")
+                .and_then(|v| v.as_str())
+            {
+                if strategy == "fail_fast" || strategy == "run_all" {
+                    process_inputs.insert("execution_strategy".into(), json!(strategy));
+                }
+            }
+            if let Some(asset_id) = payload_obj
+                .get("asset_id")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
+                process_inputs.insert("asset_id".into(), json!(asset_id));
+            }
+            let (status, exit_code) =
+                dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
+            if process_dispatch_terminal(&status) {
+                return (sid, status, None, exit_code);
+            }
+            return (sid, "failed".into(), Some(status), exit_code);
+        }
+
+        if matches!(
+            process_key,
+            "compile-ecosystem-map-snapshot"
+                | "memory-evolution-ingest"
+                | "tracker-markdown-apply"
+                | "cerbero-governance-react"
+                | "fix-tool-process"
+        ) {
+            let process_inputs = build_ecst_subscriber_inputs(repo, event, event_path);
+            let (status, exit_code) =
+                dispatch_process_subscriber(repo, process_key, Value::Object(process_inputs));
+            if process_dispatch_terminal(&status) {
+                return (sid, status, None, exit_code);
+            }
+            return (sid, "failed".into(), Some(status), exit_code);
+        }
+
+        if process_key != "pull-request-review" {
+            return (
+                sid,
+                "failed".into(),
+                Some(format!("process sin despacho ECST: {process_key}")),
+                1,
+            );
+        }
+
         let branch = payload_obj.get("branch").and_then(|v| v.as_str()).map(str::trim);
         let Some(branch) = branch.filter(|s| !s.is_empty()) else {
             return (sid, "failed".into(), Some("branch missing in payload".into()), 1);
         };
 
-        let mut process_inputs = Map::new();
+        let mut process_inputs = build_ecst_subscriber_inputs(repo, event, event_path);
         process_inputs.insert("pr_branch".into(), json!(branch));
         // G4: alias runtime Kalma2 / agent_runtime (branch_name).
         process_inputs.insert("branch_name".into(), json!(branch));
@@ -1704,8 +1770,7 @@ pub(crate) fn dispatch_subscriber(
             process_inputs.insert("pr_url".into(), json!(url));
         }
 
-        if process_key == "pull-request-review" {
-            if !is_local_qa_event(event) {
+        if !is_local_qa_event(event) {
                 let (ok, err, lifecycle) =
                     pull_request_review_precheck(repo, branch, pr_url, &payload);
                 if !ok {
@@ -1717,10 +1782,10 @@ pub(crate) fn dispatch_subscriber(
                 if lifecycle.get("merged") == Some(&json!(true)) {
                     process_inputs.insert("merge_already_done".into(), json!(true));
                 }
-            } else {
-                process_inputs.insert("local_qa".into(), json!(true));
-            }
-        } else if let Some(url) = pr_url.map(str::trim).filter(|s| !s.is_empty()) {
+        } else {
+            process_inputs.insert("local_qa".into(), json!(true));
+        }
+        if let Some(url) = pr_url.map(str::trim).filter(|s| !s.is_empty()) {
             if github_pr_merged(url) {
                 process_inputs.insert("merge_already_done".into(), json!(true));
             }
@@ -1730,38 +1795,36 @@ pub(crate) fn dispatch_subscriber(
             process_inputs.insert("persist_ref".into(), json!(inferred));
         }
 
-        if process_key == "pull-request-review" {
-            process_inputs.insert("code_diff".into(), json!("origin/main...HEAD"));
+        process_inputs.insert("code_diff".into(), json!("origin/main...HEAD"));
             process_inputs.insert("tasks_path".into(), json!("docs/todos"));
             let doc_ctx = process_inputs
                 .get("persist_ref")
                 .and_then(|v| v.as_str())
                 .filter(|s| !s.is_empty())
                 .unwrap_or("docs/features");
-            process_inputs.insert("document_context".into(), json!(doc_ctx));
+        process_inputs.insert("document_context".into(), json!(doc_ctx));
 
-            // ADU-CA3/CA4: dedupe Presented/Local_QA por (rama, commit) pre-dispatch.
-            if let Some(head) = resolve_ppr_head_commit(repo, branch) {
-                match try_acquire_ppr_dedupe(repo, branch, &head, event) {
-                    Ok(Some(hex)) => {
-                        std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
-                        let (status, exit_code) = dispatch_process_subscriber(
-                            repo,
-                            process_key,
-                            Value::Object(process_inputs),
-                        );
-                        release_ppr_dedupe(repo, branch, &head, &hex, event);
-                        if process_dispatch_terminal(&status) {
-                            return (sid, status, None, exit_code);
-                        }
-                        return (sid, "failed".into(), Some(status), exit_code);
+        // ADU-CA3/CA4: dedupe Presented/Local_QA por (rama, commit) pre-dispatch.
+        if let Some(head) = resolve_ppr_head_commit(repo, branch) {
+            match try_acquire_ppr_dedupe(repo, branch, &head, event) {
+                Ok(Some(hex)) => {
+                    std::env::set_var("SDDIA_LAB_SKIP_ACCEPT_PR_HANDOFF", "0");
+                    let (status, exit_code) = dispatch_process_subscriber(
+                        repo,
+                        process_key,
+                        Value::Object(process_inputs),
+                    );
+                    release_ppr_dedupe(repo, branch, &head, &hex, event);
+                    if process_dispatch_terminal(&status) {
+                        return (sid, status, None, exit_code);
                     }
-                    Ok(None) => {
-                        // fail-open: SHA/lock irresoluble o error I/O → despacho normal
-                    }
-                    Err((status, reason, code)) => {
-                        return (sid, status, reason, code);
-                    }
+                    return (sid, "failed".into(), Some(status), exit_code);
+                }
+                Ok(None) => {
+                    // fail-open: SHA/lock irresoluble o error I/O → despacho normal
+                }
+                Err((status, reason, code)) => {
+                    return (sid, status, reason, code);
                 }
             }
         }
@@ -3939,6 +4002,45 @@ mod blocking_tests {
         let raw = fs::read_to_string(&dead).expect("dead-letter");
         assert!(raw.contains("skipped-topology"), "{raw}");
         assert!(raw.contains("sin evento"), "{raw}");
+    }
+
+    #[test]
+    fn domain_process_catalog_inputs_include_ecst() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        let event = json!({
+            "event_id": "11111111-1111-4111-8111-111111111111",
+            "event_type": "Work_Initiated",
+            "payload": { "branch": "feat/x" },
+        });
+        let path = repo.join(".events/pending/11111111-1111-4111-8111-111111111111.json");
+        const KEYS: &[&str] = &[
+            "pull-request-review",
+            "tracker-stamp",
+            "compile-ecosystem-map-snapshot",
+            "memory-evolution-ingest",
+            "cerbero-governance-react",
+            "fix-tool-process",
+            "execute-suite",
+            "email-triage-gateway",
+            "email-quick-action-ingest",
+            "user-preference-ingest",
+            "email-digest-preference-reply",
+            "telegram-fallback-responder",
+            "task-queue-manager",
+            "tracker-sync-replay",
+            "tracker-markdown-apply",
+        ];
+        for key in KEYS {
+            let inputs = build_ecst_subscriber_inputs(&repo, &event, Some(&path));
+            assert_eq!(inputs.get("event"), Some(&event), "process={key}");
+            assert_eq!(
+                inputs.get("event_id").and_then(|v| v.as_str()),
+                Some("11111111-1111-4111-8111-111111111111"),
+                "process={key}"
+            );
+            assert!(inputs.get("event_file_path").is_some(), "process={key}");
+        }
     }
 }
 

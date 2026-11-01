@@ -69,8 +69,37 @@ pub fn ingest_domain_event_file(repo: &Path, rel_path: &str) -> Value {
     }
 }
 
+/// Entrada de proceso (`event` / `event_id` / `event_file_path`); AUT-57.
+pub fn ingest_from_process_inputs(repo: &Path, inputs: &Value) -> Value {
+    match ingest_from_inputs(repo, inputs) {
+        Ok(v) => v,
+        Err(e) => json!({"ok": false, "error": e}),
+    }
+}
+
+fn ingest_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    let body = super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)?;
+    let rel = inputs
+        .get("event_file_path")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| {
+            body.get("event_id")
+                .and_then(|v| v.as_str())
+                .map(|id| format!(".events/pending/{id}.json"))
+                .unwrap_or_else(|| ".events/pending/unknown.json".into())
+        });
+    ingest_ecst_body(repo, &body, &rel)
+}
+
 fn ingest_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
     let body = super::ecst_input_loader::load_ecst_from_rel(repo, rel_path)?;
+    ingest_ecst_body(repo, &body, rel_path)
+}
+
+fn ingest_ecst_body(repo: &Path, body: &Value, rel_path: &str) -> Result<Value, String> {
     let event_path = repo.join(rel_path.trim());
 
     let event_type = body
