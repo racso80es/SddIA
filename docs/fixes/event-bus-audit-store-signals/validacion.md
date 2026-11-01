@@ -22,9 +22,9 @@ git_changes:
 - SddIA/tools/event-bus-audit/src/main.rs
 - docs/fixes/event-bus-audit-store-signals/
 - docs/audits/AUT-27.md
-validated_head_sha: 5694e1f6348313cf9d2ed480fe78e19541bc826c
-validated_tree_sha: d50b36af50fc198da776db33287c70ba14896560
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: 564a51d370e44138454d12c8744ae5e37c32d2b7
+validated_tree_sha: e8099cb72f011caead430086796edc557a18f0c0
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-27
