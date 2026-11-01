@@ -687,6 +687,21 @@ fn dcc_title_metachar_block_suppresses_fracture(
     )
 }
 
+fn dcc_pr_url_missing_block_suppresses_fracture(
+    phase_name: &str,
+    status: &str,
+    error_trace: &str,
+    report: &Value,
+) -> bool {
+    dcc_suppresses_signature(
+        "F-DCC-PR-URL-MISSING",
+        phase_name,
+        status,
+        error_trace,
+        Some(report),
+    )
+}
+
 fn dcc_lab_binary_missing_suppresses_fracture(
     phase_name: &str,
     status: &str,
@@ -838,6 +853,9 @@ pub(crate) fn emit_dcc_phase_fractures(repo: &Path, phase_reports: &[Value]) {
             continue;
         }
         if dcc_title_metachar_block_suppresses_fracture(phase_name, status, &error_trace, report) {
+            continue;
+        }
+        if dcc_pr_url_missing_block_suppresses_fracture(phase_name, status, &error_trace, report) {
             continue;
         }
         if dcc_lab_binary_missing_suppresses_fracture(phase_name, status, &error_trace) {
@@ -1592,6 +1610,26 @@ mod tests {
             "error_code": "PR_TITLE_METACHAR",
             "friction_id": "F-DCC-PR-TITLE-METACHAR",
             "error": "[PR_TITLE_METACHAR] arguments[3] contains forbidden shell metacharacters",
+        })];
+        emit_dcc_phase_fractures(repo, &reports);
+        let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .collect();
+        assert!(pending.is_empty());
+    }
+
+    #[test]
+    fn dcc_fracture_suppressed_on_sello_pr_url_missing() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        let reports = vec![json!({
+            "phase_name": "Sello Presentación ECST",
+            "status": "blocked",
+            "error_code": "PR_URL_MISSING",
+            "friction_id": "F-DCC-PR-URL-MISSING",
+            "error": "[PR_URL_MISSING] pr_url obligatorio para Sello Presentación ECST; traza 186c785103d8",
         })];
         emit_dcc_phase_fractures(repo, &reports);
         let pending: Vec<_> = fs::read_dir(repo.join(".events/pending"))

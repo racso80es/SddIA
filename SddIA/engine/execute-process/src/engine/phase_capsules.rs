@@ -91,8 +91,93 @@ fn friction_for_delivery_error_code(code: &str) -> Option<&'static str> {
         "PR_TITLE_METACHAR" => Some("F-DCC-PR-TITLE-METACHAR"),
         "PR_BODY_METACHAR" => Some("F-DCC-PR-BODY-METACHAR"),
         "SHELL_METACHAR" => Some("F-DCC-SHELL-METACHAR"),
+        "PR_URL_MISSING" => Some("F-DCC-PR-URL-MISSING"),
         _ => None,
     }
+}
+
+const DCC_FORJA_GH_ATTEMPTED: &str = "dcc_forja_gh_attempted";
+const DCC_FORJA_BLOCKED_BEFORE_GH: &str = "dcc_forja_blocked_before_gh";
+
+fn mark_dcc_forja_blocked_before_gh(state: &mut Value) {
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert(DCC_FORJA_BLOCKED_BEFORE_GH.into(), json!(true));
+    }
+}
+
+fn mark_dcc_forja_gh_attempted(state: &mut Value) {
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert(DCC_FORJA_GH_ATTEMPTED.into(), json!(true));
+    }
+}
+
+fn pr_url_from_state_or_inputs(state: &Value, inputs: &Value) -> Option<String> {
+    if let Some(u) = state
+        .get("pr_url")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        return Some(u.to_string());
+    }
+    inputs
+        .get("pr_url")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn try_gh_pr_view_url(repo: &Path, branch: &str) -> Option<String> {
+    if branch.is_empty() || !is_shell_token_safe(branch) {
+        return None;
+    }
+    let view = invoke_shell_executor(
+        repo,
+        "gh",
+        &[
+            "pr".into(),
+            "view".into(),
+            branch.to_string(),
+            "--json".into(),
+            "url".into(),
+            "-q".into(),
+            ".url".into(),
+        ],
+    )
+    .ok()?;
+    view.get("stdout")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+/// Sello Presentación: preset → `gh pr view` solo si forja quedó blocked antes de `gh` y no intentó view tras create.
+fn resolve_pr_url_for_presented_seal(
+    repo: &Path,
+    branch: &str,
+    state: &Value,
+    inputs: &Value,
+) -> Option<String> {
+    if let Some(u) = pr_url_from_state_or_inputs(state, inputs) {
+        return Some(u);
+    }
+    if state
+        .get(DCC_FORJA_GH_ATTEMPTED)
+        .and_then(|v| v.as_bool())
+        == Some(true)
+    {
+        return None;
+    }
+    if state
+        .get(DCC_FORJA_BLOCKED_BEFORE_GH)
+        .and_then(|v| v.as_bool())
+        != Some(true)
+    {
+        return None;
+    }
+    try_gh_pr_view_url(repo, branch)
 }
 
 fn format_delivery_error(error_code: &str, msg: &str) -> String {
@@ -859,6 +944,7 @@ pub fn capsule_delivery_gh_pr(
     let branch = str_field(inputs, "branch_name")
         .ok_or("branch_name es obligatorio para Apertura en forja")?;
     if branch.eq_ignore_ascii_case("head") {
+        mark_dcc_forja_blocked_before_gh(state);
         return Ok(delivery_phase_blocked(
             "delivery-gh-pr",
             "BRANCH_SYMBOLIC_HEAD",
@@ -896,6 +982,7 @@ pub fn capsule_delivery_gh_pr(
     let title_raw = delivery_pr_title(inputs);
     let title = sanitize_shell_argv_token(&title_raw);
     if title.is_empty() || !is_shell_token_safe(&title) {
+        mark_dcc_forja_blocked_before_gh(state);
         let mut blocked = delivery_phase_blocked(
             "delivery-gh-pr",
             "PR_TITLE_METACHAR",
@@ -907,6 +994,7 @@ pub fn capsule_delivery_gh_pr(
         return Ok(blocked);
     }
     if !is_shell_token_safe(&branch) {
+        mark_dcc_forja_blocked_before_gh(state);
         let mut blocked = delivery_phase_blocked(
             "delivery-gh-pr",
             "SHELL_METACHAR",
@@ -917,6 +1005,7 @@ pub fn capsule_delivery_gh_pr(
         return Ok(blocked);
     }
     if !is_shell_token_safe(&target) {
+        mark_dcc_forja_blocked_before_gh(state);
         let mut blocked = delivery_phase_blocked(
             "delivery-gh-pr",
             "SHELL_METACHAR",
@@ -941,6 +1030,7 @@ pub fn capsule_delivery_gh_pr(
         let body_path = match write_pr_body_file(&body_dir, &body) {
             Ok(p) => p,
             Err(e) => {
+                mark_dcc_forja_blocked_before_gh(state);
                 return Ok(delivery_phase_failed(
                     "delivery-gh-pr",
                     "PR_BODY_METACHAR",
@@ -968,8 +1058,10 @@ pub fn capsule_delivery_gh_pr(
             &format!("arguments[{i}] no pasa preflight de token seguro"),
         );
         blocked["argv_index"] = json!(i);
+        mark_dcc_forja_blocked_before_gh(state);
         return Ok(blocked);
     }
+    mark_dcc_forja_gh_attempted(state);
     let data = match invoke_shell_executor(repo, "gh", &args) {
         Ok(d) => d,
         Err(e) => {
@@ -982,50 +1074,14 @@ pub fn capsule_delivery_gh_pr(
     let stdout = data.get("stdout").and_then(|v| v.as_str()).unwrap_or("");
     let stderr = data.get("stderr").and_then(|v| v.as_str()).unwrap_or("");
     let mut pr_url = parse_gh_pr_url(stdout).or_else(|| parse_gh_pr_url(stderr));
-    let mut view_stdout = String::new();
-    let mut view_stderr = String::new();
     if pr_url.is_none() {
-        let view = invoke_shell_executor(
-            repo,
-            "gh",
-            &[
-                "pr".into(),
-                "view".into(),
-                branch.clone(),
-                "--json".into(),
-                "url".into(),
-                "-q".into(),
-                ".url".into(),
-            ],
-        )?;
-        view_stdout = view
-            .get("stdout")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .chars()
-            .take(500)
-            .collect();
-        view_stderr = view
-            .get("stderr")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .chars()
-            .take(500)
-            .collect();
-        pr_url = view
-            .get("stdout")
-            .and_then(|v| v.as_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .map(str::to_string);
+        pr_url = try_gh_pr_view_url(repo, &branch);
     }
     let pr_url = pr_url.ok_or_else(|| {
         format!(
-            "no se pudo resolver pr_url desde gh; gh_stdout={}; gh_stderr={}; view_stdout={}; view_stderr={}",
+            "no se pudo resolver pr_url desde gh; gh_stdout={}; gh_stderr={}",
             stdout.chars().take(500).collect::<String>(),
             stderr.chars().take(500).collect::<String>(),
-            view_stdout,
-            view_stderr,
         )
     })?;
     if let Some(obj) = state.as_object_mut() {
@@ -1055,21 +1111,22 @@ pub fn capsule_delivery_emit_presented(
 ) -> Result<Value, String> {
     let branch = str_field(inputs, "branch_name")
         .ok_or("branch_name es obligatorio para Sello Presentación ECST")?;
+    let Some(pr_url) = resolve_pr_url_for_presented_seal(repo, &branch, state, inputs) else {
+        return Ok(delivery_phase_blocked(
+            "delivery-emit-pr-presented",
+            "PR_URL_MISSING",
+            "pr_url obligatorio para Sello Presentación ECST (evita PullRequest_Presented incompleto → DLT Argos/IOTA); traza 186c785103d8",
+        ));
+    };
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("pr_url".into(), json!(pr_url.clone()));
+    }
     let mut action_inputs = json!({
         "branch": branch,
         "status": inputs.get("status").unwrap_or(&json!("presented")),
         "emitter_agent": "delivery-close-cycle",
+        "pr_url": pr_url,
     });
-    let pr_url = state
-        .get("pr_url")
-        .and_then(|v| v.as_str())
-        .or_else(|| inputs.get("pr_url").and_then(|v| v.as_str()))
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or(
-            "pr_url obligatorio para Sello Presentación ECST (evita PullRequest_Presented incompleto → DLT Argos/IOTA)",
-        )?;
-    action_inputs["pr_url"] = json!(pr_url);
     if let Some(corr) = str_field(inputs, "correlation_id") {
         action_inputs["correlation_id"] = json!(corr);
     }
@@ -1709,13 +1766,60 @@ mod emit_presented_tests {
     }
 
     #[test]
-    fn emit_presented_rejects_missing_pr_url() {
+    fn resolve_pr_url_prefers_state_over_inputs() {
         let repo = repo_root();
-        let inputs = json!({"branch_name": "fix/demo"});
+        let state = json!({"pr_url": "https://github.com/o/r/pull/31"});
+        let inputs = json!({"pr_url": "https://github.com/o/r/pull/0"});
+        let got = pr_url_from_state_or_inputs(&state, &inputs);
+        assert_eq!(got.as_deref(), Some("https://github.com/o/r/pull/31"));
+    }
+
+    #[test]
+    fn presented_seal_skips_gh_view_without_forja_blocked_flag() {
+        let repo = repo_root();
+        let state = json!({});
+        let inputs = json!({});
+        assert!(
+            resolve_pr_url_for_presented_seal(&repo, "fix/no-pr-aut31", &state, &inputs).is_none()
+        );
+    }
+
+    #[test]
+    fn presented_seal_skips_gh_view_when_forja_already_attempted_gh() {
+        let repo = repo_root();
+        let state = json!({
+            "dcc_forja_blocked_before_gh": true,
+            "dcc_forja_gh_attempted": true,
+        });
+        let inputs = json!({});
+        assert!(
+            resolve_pr_url_for_presented_seal(&repo, "fix/no-pr-aut31", &state, &inputs).is_none()
+        );
+    }
+
+    #[test]
+    fn presented_seal_uses_state_pr_url_without_gh() {
+        let repo = repo_root();
+        let state = json!({"pr_url": "https://github.com/o/r/pull/99"});
+        let inputs = json!({});
+        let got =
+            resolve_pr_url_for_presented_seal(&repo, "fix/unused", &state, &inputs).unwrap();
+        assert_eq!(got, "https://github.com/o/r/pull/99");
+    }
+
+    #[test]
+    fn emit_presented_blocks_missing_pr_url() {
+        let repo = repo_root();
+        let inputs = json!({"branch_name": "fix/demo-no-pr-aut31-186c785103d8"});
         let mut state = json!({});
-        let err = capsule_delivery_emit_presented(&repo, &inputs, &mut state)
-            .expect_err("must require pr_url");
+        let out = capsule_delivery_emit_presented(&repo, &inputs, &mut state)
+            .expect("missing pr_url must Ok(blocked), not Err");
+        assert_eq!(out["status"], "blocked");
+        assert_eq!(out["error_code"], "PR_URL_MISSING");
+        assert_eq!(out["friction_id"], "F-DCC-PR-URL-MISSING");
+        let err = out["error"].as_str().unwrap_or("");
         assert!(err.contains("pr_url obligatorio"), "got: {err}");
+        assert!(err.contains("186c785103d8"), "got: {err}");
     }
 }
 
