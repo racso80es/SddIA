@@ -16,9 +16,9 @@ git_changes:
 - SddIA/engine/execute-process/tests/eda_subscriber_ecst_redb.rs
 - docs/features/route-domain-test-progress-marks/
 validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: 93c58b2de7d38f46dd2af914dfe4d850ce08411c
-validated_tree_sha: 854dcf2c8b232050e1af49ffcc7b22d220b78159
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: 20e699fa44a2ef0f00f71bb84490068127ac9c80
+validated_tree_sha: bcc87c0b32d31f15f868cda0ce42da1e0534d639
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-59
