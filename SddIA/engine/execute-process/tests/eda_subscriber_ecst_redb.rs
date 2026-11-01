@@ -259,6 +259,112 @@ fn route_domain_tracker_markdown_apply_not_blocked_by_missing_branch() {
 }
 
 #[test]
+fn route_domain_telegram_responder_receives_ecst_path() {
+    let _guard = ModeGuard;
+    override_store_mode(Some(StoreMode::Redb));
+    std::env::set_var("SDDIA_LAB_ROUTE_SYNC", "1");
+    std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+    let repo = temp_repo_with_bus_skeleton();
+    let rel = seed_store_only_pending_rel(
+        &repo,
+        "TelegramMessage_Received",
+        json!({
+            "text": "triaje lab",
+            "chat_id": "99",
+        }),
+    );
+    let out = route_domain_event(&repo, &rel, false);
+    let ds = out
+        .pointer("/data/delivery_status")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    for (sid, status) in &ds {
+        let s = status.as_str().unwrap_or("");
+        assert!(
+            s != "skipped-empty-text",
+            "sid={sid} status={s} out={out}"
+        );
+        assert!(
+            !s.contains("process sin despacho ECST"),
+            "sid={sid} status={s} out={out}"
+        );
+    }
+    std::env::remove_var("SDDIA_LAB_ROUTE_SYNC");
+    let _ = fs::remove_dir_all(&repo);
+}
+
+#[test]
+fn route_domain_kalma2_task_queue_not_blocked_before_handler() {
+    let _guard = ModeGuard;
+    override_store_mode(Some(StoreMode::Redb));
+    std::env::set_var("SDDIA_LAB_ROUTE_SYNC", "1");
+    std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+    let repo = temp_repo_with_bus_skeleton();
+    let rel = seed_store_only_pending_rel(
+        &repo,
+        "Kalma2_Process_Requested",
+        json!({
+            "process": "bug-fix",
+            "project_slug": "core",
+            "raw_text": "lab task",
+        }),
+    );
+    let out = route_domain_event(&repo, &rel, false);
+    let ds = out
+        .pointer("/data/delivery_status")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    for (sid, status) in &ds {
+        let s = status.as_str().unwrap_or("");
+        assert!(
+            !s.contains("proceso no permitido"),
+            "sid={sid} status={s} out={out}"
+        );
+        assert!(
+            !s.contains("process sin despacho ECST"),
+            "sid={sid} status={s} out={out}"
+        );
+    }
+    std::env::remove_var("SDDIA_LAB_ROUTE_SYNC");
+    let _ = fs::remove_dir_all(&repo);
+}
+
+#[test]
+fn route_domain_telegram_empty_text_still_skipped() {
+    let _guard = ModeGuard;
+    override_store_mode(Some(StoreMode::Redb));
+    std::env::set_var("SDDIA_LAB_ROUTE_SYNC", "1");
+    let repo = temp_repo_with_bus_skeleton();
+    let rel = seed_store_only_pending_rel(
+        &repo,
+        "TelegramMessage_Received",
+        json!({ "text": "   " }),
+    );
+    let out = route_domain_event(&repo, &rel, false);
+    let ds = out
+        .pointer("/data/delivery_status")
+        .and_then(|v| v.as_object())
+        .cloned()
+        .unwrap_or_default();
+    let mut saw_skip = false;
+    for (sid, status) in &ds {
+        let s = status.as_str().unwrap_or("");
+        if s == "skipped-empty-text" {
+            saw_skip = true;
+        }
+        assert!(
+            !s.contains("process sin despacho ECST"),
+            "sid={sid} status={s} out={out}"
+        );
+    }
+    assert!(saw_skip, "expected skipped-empty-text in {ds:?}");
+    std::env::remove_var("SDDIA_LAB_ROUTE_SYNC");
+    let _ = fs::remove_dir_all(&repo);
+}
+
+#[test]
 fn route_domain_memory_evolution_not_blocked_by_missing_branch() {
     let _guard = ModeGuard;
     override_store_mode(Some(StoreMode::Redb));
