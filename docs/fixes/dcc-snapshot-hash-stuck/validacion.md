@@ -25,9 +25,9 @@ git_changes:
 - SddIA/evolution/Evolution_log.md
 - docs/fixes/dcc-snapshot-hash-stuck/
 validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: 756e8261313d7e47f1325026976fbe26bc371234
-validated_tree_sha: bdff41f88bb26c5b8761426b7641ba2e8b75ec69
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: 081c75e542ca411d92a8ed8f726ab903648eefea
+validated_tree_sha: f2f7b42cc87c989673fea1f4f2d87a45ee7630b6
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-22 (`51dc7bdfd2fe`)
