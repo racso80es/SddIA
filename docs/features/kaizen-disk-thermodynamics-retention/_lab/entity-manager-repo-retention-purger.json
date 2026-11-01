@@ -1,0 +1,15 @@
+{
+  "entity_class": "tool",
+  "entity_name": "repo-retention-purger",
+  "lifecycle_operation": "create",
+  "semantic_seed": {
+    "scope": "core",
+    "tool_name": "repo-retention-purger",
+    "tool_context": "filesystem-ops",
+    "domain_origin": "SddIA",
+    "tools_contract_version": "1.5.0",
+    "execution_logic": "Cápsula nativa: plan JSON (simulate) y apply acusado por plan_digest. Jail repo-root; slices target, residuo .events FS en redb, scratch, dist. Envelope sddia-io.",
+    "dependencies": ["sddia-io", "sddia-event-store", "serde", "serde_json", "sha2"],
+    "tool_outputs": ["plan_digest", "candidates", "bytes_reclaimable", "errors"]
+  }
+}

@@ -4928,6 +4928,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "repo-retention-purger"
+version = "1.0.0"
+dependencies = [
+ "hex",
+ "sddia-event-store",
+ "sddia-io",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+]
+
+[[package]]
 name = "reqwest"
 version = "0.12.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
