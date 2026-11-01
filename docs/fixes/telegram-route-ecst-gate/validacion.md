@@ -5,9 +5,9 @@ tracker_ref: AUT-60
 global: APTO
 pbi_archived: false
 validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: e91a7c5519aa34176269af8a963310bf241cb17b
-validated_tree_sha: eb3d8417a550799fd8a713af8053e89f3e8624cf
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: c682cce544302c0fcabcb9acde43d094cdc9555c
+validated_tree_sha: ba5f84ba576acde35df7112b943dadaf2314e117
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-60
