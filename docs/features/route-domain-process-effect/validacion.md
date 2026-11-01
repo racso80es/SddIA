@@ -3,6 +3,10 @@ global: APTO
 branch: Fix_Events_Multiple
 tracker_ref: AUT-61
 pbi_archived: false
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: d1bd517209e888cd658adaf37828d380c28dfb76
+validated_tree_sha: 0596fb7903931b0106e9d00286d67129c037c5dd
+diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
 ---
 
 # Validación — AUT-61
