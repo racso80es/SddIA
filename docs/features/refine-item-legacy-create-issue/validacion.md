@@ -11,7 +11,7 @@ pbi_archived: false
 branch: Fix_Events_Multiple
 approval_status: aprobado
 verdict: aprobado
-validated_base_sha: "2d14642644f1acd7ebfa1fa32bac0f941f817736"
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
 checks:
   AUT35-T1-LEGACY-CREATE-ISSUE-REMOVED: APTO
   AUT35-T2-TRACKER-REF-PREDICATE: APTO
@@ -25,9 +25,9 @@ git_changes:
 - SddIA/engine/execute-process/src/engine/handlers/refine_item/mod.rs
 - docs/features/refine-item-legacy-create-issue/
 - docs/audits/AUT-35.md
-validated_head_sha: "6ac2b651c54bbbab8f5b14cb1cc4eb6aaabb7fa4"
-validated_tree_sha: "520520befed83c2b688eaaf303c1320b1414b6ab"
-diff_digest: "sha256:0971d1c7bde471cbf30ba394620c0c3513f6cd6c3ee32f41c29969fe93134121"
+validated_head_sha: 2773cf7a6ea6764cdfc9e2da63fd3f4b00d2c44b
+validated_tree_sha: 5e95979a6c60768682b7e2e4b1690b4d95196c9a
+diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
 ---
 
 # Validación — AUT-35
