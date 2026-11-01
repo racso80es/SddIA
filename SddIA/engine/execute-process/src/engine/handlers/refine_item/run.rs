@@ -1,6 +1,7 @@
 //! Orquestación `refine-item`.
 
 use super::dor;
+use super::tracker_ref::{resolve_remote_tracker_ref, RemoteTrackerRefResolution};
 use super::prepare::{
     ensure_canonical_markdown, item_type_from_fm, parse_properties, FetchSnapshot,
 };
@@ -268,8 +269,8 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     let item_type = item_type_from_fm(&fm, &snap.labels);
     let mut tracker_ref = fm_str(&fm, "tracker_ref");
     if remote {
-        if let Some(fm_tr) = tracker_ref.as_ref() {
-            if !fm_tr.eq_ignore_ascii_case(&snap.identifier) {
+        match resolve_remote_tracker_ref(tracker_ref.as_deref(), &snap.identifier) {
+            RemoteTrackerRefResolution::Conflict => {
                 return Ok(envelope_status(
                     &item_ref,
                     &item_type,
@@ -281,8 +282,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                     None,
                 ));
             }
-        } else {
-            tracker_ref = Some(snap.identifier.clone());
+            RemoteTrackerRefResolution::Seal(tr) => tracker_ref = Some(tr),
         }
     }
     let issue_target = tracker_ref

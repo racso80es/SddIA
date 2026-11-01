@@ -1,7 +1,6 @@
 //! Procesos `refine-pbi` y `refine-hu` — refinamiento pre-forja y emisión ECST (HU-A 06).
 
-use super::super::capsules::invoke_tool_for_process;
-use super::super::project_binding::{self, TrackerConfig};
+use super::super::project_binding;
 use super::super::route_domain_core::materialize_pending_domain_event;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
@@ -64,19 +63,6 @@ fn mayeuta_touch_body(body: &str) -> String {
     format!("{body}\n\n{MARKER}\n")
 }
 
-fn title_from_hu(fm: &YamlValue, body: &str) -> String {
-    if let Some(t) = fm_str(fm, "title") {
-        return t;
-    }
-    for line in body.lines() {
-        let t = line.trim();
-        if t.starts_with("# ") {
-            return t.trim_start_matches('#').trim().to_string();
-        }
-    }
-    "HU".to_string()
-}
-
 fn emit_refined(
     repo: &Path,
     event_type: &str,
@@ -102,31 +88,6 @@ fn emit_refined(
     materialize_pending_domain_event(repo, event_type, source_process, payload)
 }
 
-fn emit_create_issue_failed(
-    repo: &Path,
-    issue_ref: &str,
-    error_code: &str,
-    project_slug: &str,
-) -> Result<(), String> {
-    let event_id = Uuid::new_v4().to_string();
-    let payload = json!({
-        "issue_ref": issue_ref,
-        "operation": "create_issue",
-        "error_code": error_code,
-        "source_process": PROCESS_HU,
-        "occurred_at": Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
-        "project_slug": project_slug,
-        "event_id": event_id,
-        "correlation_id": event_id,
-    });
-    materialize_pending_domain_event(repo, "Tracker_Sync_Failed", PROCESS_HU, payload)?;
-    Ok(())
-}
-
-fn backlog_state_name(tc: &TrackerConfig) -> Option<String> {
-    tc.state_map.get("backlog").cloned()
-}
-
 /// Con tracker remoto, si `fetch_issue` no resuelve el `hu_ref` como issue, leer el fichero local.
 fn load_local_item_markdown(
     project_root: &Path,
@@ -141,41 +102,6 @@ fn load_local_item_markdown(
         .unwrap_or(disk);
     let fm = parse_fm(&canonical).unwrap_or(YamlValue::Null);
     Some((canonical, fm))
-}
-
-fn try_create_hu_issue(
-    repo: &Path,
-    tc: &TrackerConfig,
-    title: &str,
-    description: &str,
-) -> Result<String, String> {
-    let mut request = json!({
-        "operation": "create_issue",
-        "team_key": tc.team_key,
-        "title": title,
-        "description": description,
-        "labels": [tc.label_hu.clone()],
-    });
-    if let Some(pid) = &tc.project_id {
-        request["project_id"] = json!(pid);
-    }
-    if let Some(state) = backlog_state_name(tc) {
-        request["state_name"] = json!(state);
-    }
-    let tool = super::tracker_stamp::lifecycle_tool_name(repo)?;
-    let tool_body = invoke_tool_for_process(
-        repo,
-        &tool,
-        &json!({ "request": request }),
-        Some(PROCESS_HU),
-    )?;
-    tool_body
-        .get("issue_ref")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-        .ok_or_else(|| "LINEAR_CREATE_ISSUE_EMPTY: sin issue_ref".into())
 }
 
 pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> {
@@ -344,30 +270,8 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
     let (_, body) = split_frontmatter(&raw)?;
     let refined_body = mayeuta_touch_body(&body);
 
-    let mut tracker_ref = fm_str(&fm, "tracker_ref").or_else(|| str_field(inputs, "tracker_ref"));
-    let mut create_issue_invoked = false;
-    let tracker_cfg = super::super::project_binding::tracker_config_for_inputs(repo, inputs)?;
-
-    if tracker_ref.is_none() && remote {
-        if let Some(tc) = tracker_cfg {
-            let title = title_from_hu(&fm, &body);
-            let description = refined_body.chars().take(8000).collect::<String>();
-            match try_create_hu_issue(repo, &tc, &title, &description) {
-                Ok(issue_ref) => {
-                    create_issue_invoked = true;
-                    tracker_ref = Some(issue_ref);
-                }
-                Err(code) => {
-                    let err_code = if code.len() > 120 {
-                        code.chars().take(120).collect()
-                    } else {
-                        code
-                    };
-                    let _ = emit_create_issue_failed(repo, &rel, &err_code, &bound.slug);
-                }
-            }
-        }
-    }
+    let tracker_ref = fm_str(&fm, "tracker_ref").or_else(|| str_field(inputs, "tracker_ref"));
+    let create_issue_invoked = false;
 
     let refined_date = Utc::now().format("%Y-%m-%d").to_string();
     let mut patch_lines = super::super::item_lifecycle_frontmatter::yaml_patch_refinement_refined(&refined_date);
@@ -614,18 +518,18 @@ mod tests {
                     .as_ref()
                     .and_then(|d| d.get("create_issue_invoked"))
                     .and_then(|v| v.as_bool()),
-                Some(true)
+                Some(false)
             );
-            let tr = out
-                .data
-                .as_ref()
-                .and_then(|d| d.get("tracker_ref"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
-            assert!(tr.starts_with("OSC-"), "{tr}");
+            assert!(
+                out.data
+                    .as_ref()
+                    .and_then(|d| d.get("tracker_ref"))
+                    .and_then(|v| v.as_str())
+                    .is_none()
+            );
             let text = fs::read_to_string(&hu_path).unwrap();
-            assert!(text.contains("tracker_ref:"), "{text}");
-            assert!(text.contains(tr), "{text}");
+            assert!(text.contains("refinement: refined"), "{text}");
+            assert!(!text.contains("tracker_ref:"), "{text}");
             cleanup_project_index(&core, slug);
         });
     }
