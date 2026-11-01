@@ -225,6 +225,10 @@ pub fn run_process(
         return handlers::forge_pbi::run(repo, process_inputs);
     }
 
+    if canonical == "forge-hu" {
+        return handlers::forge_hu::run(repo, process_inputs);
+    }
+
     if canonical == "refine-pbi" {
         return Ok(handlers::refine_item::process_renamed(
             repo,
