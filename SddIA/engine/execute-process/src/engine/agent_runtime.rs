@@ -921,6 +921,22 @@ pub fn invoke_agent_phase(
     {
         entry["error"] = json!(err);
     }
+    if matches!(normalized, "blocked" | "failed") {
+        let has_error = entry
+            .get("error")
+            .and_then(|v| v.as_str())
+            .map(|s| !s.is_empty())
+            .unwrap_or(false);
+        if !has_error {
+            if let Some(msg) = data
+                .get("message")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+            {
+                entry["error"] = json!(msg);
+            }
+        }
+    }
     if !out.status.success() && normalized == "executed" {
         entry["status"] = json!("failed");
         entry["error"] = json!(format!(
@@ -1219,6 +1235,36 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
 
         assert_eq!(entry["status"], "blocked", "{entry}");
+        assert!(entry.get("error").is_none() || entry["error"].as_str() == Some(""));
+    }
+
+    #[test]
+    fn blocked_propagates_data_message_to_entry_error() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-rt-blmsg-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(
+            &dir,
+            "#!/bin/sh\ncat >/dev/null\necho '{\"success\":true,\"data\":{\"status\":\"blocked\",\"message\":\"motivo-x\"}}'\n",
+        );
+
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "refine-item",
+            "Refinamiento Mayeuta",
+            &[json!("agent:mayeuta")],
+            &json!({"item_ref": "AUT-37", "project_slug": "core"}),
+            &json!({"workspace_path": dir.join("ws")}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+
+        assert_eq!(entry["status"], "blocked", "{entry}");
+        assert_eq!(entry["message"], "motivo-x");
+        assert_eq!(entry["error"], "motivo-x");
     }
 
     #[test]
