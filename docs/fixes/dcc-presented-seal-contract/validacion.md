@@ -22,9 +22,9 @@ git_changes:
 - SddIA/evolution/Evolution_log.md
 - docs/fixes/dcc-presented-seal-contract/
 validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: cc2104d57bc8067624eb3d16b0fc393794c9c396
-validated_tree_sha: 04216d99ceed96c24230584c66e0d3a38571c969
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: 46f1e2a11e2ba35f8d494679c4dfee4790a8d002
+validated_tree_sha: 216033eb639341323cd303aab9143e97f50da772
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-48
