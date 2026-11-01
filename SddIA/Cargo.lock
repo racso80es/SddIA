@@ -1898,6 +1898,7 @@ dependencies = [
  "jsonschema",
  "libc",
  "regex",
+ "repo-retention-purger",
  "sddia-core-memory",
  "sddia-daemon-runtime",
  "sddia-ecosystem-health",

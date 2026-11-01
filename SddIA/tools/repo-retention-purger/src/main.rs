@@ -22,6 +22,10 @@ fn parse_request(v: &Value) -> PlanRequest {
             .and_then(|x| x.as_str())
             .map(str::to_string),
         older_than_hours: v.get("older_than_hours").and_then(|x| x.as_f64()),
+        skip_live_check: v
+            .get("skip_live_check")
+            .and_then(|x| x.as_bool())
+            .unwrap_or(false),
     })
 }
 
