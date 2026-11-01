@@ -1,6 +1,6 @@
 ---
 feature_name: dcc-snapshot-hash-stuck
-created: "2026-10-31"
+created: 2026-10-31
 process: bug-fix
 branch_name: Fix_Events_Multiple
 persist_ref: docs/fixes/dcc-snapshot-hash-stuck
@@ -18,12 +18,16 @@ checks:
   AUT22-C3-FRACTURE-SIGNATURE-CORPUS: APTO
   DOC_CASCADE: APTO
 git_changes:
-  - SddIA/engine/execute-process/src/engine/phase_capsules.rs
-  - SddIA/core/fracture-signatures.json
-  - SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
-  - SddIA/evolution/c8f3a1b2-4d5e-6f78-9abc-def012345678.md
-  - SddIA/evolution/Evolution_log.md
-  - docs/fixes/dcc-snapshot-hash-stuck/
+- SddIA/engine/execute-process/src/engine/phase_capsules.rs
+- SddIA/core/fracture-signatures.json
+- SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs
+- SddIA/evolution/c8f3a1b2-4d5e-6f78-9abc-def012345678.md
+- SddIA/evolution/Evolution_log.md
+- docs/fixes/dcc-snapshot-hash-stuck/
+validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
+validated_head_sha: 363946775619326823d9391df2df520661febfe8
+validated_tree_sha: 9577f7adafcb0473e49b39fc7476dd8d4a3c6a75
+diff_digest: sha256:4ee930499400b410983193f3b69382d074fc338896fe74c42a18218624c27688
 ---
 
 # Validación — AUT-22 (`51dc7bdfd2fe`)
