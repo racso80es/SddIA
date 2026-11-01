@@ -24,9 +24,9 @@ git_changes:
 - docs/audits/AUT-37.md
 - .SddIA/state/tracker-outbound/AUT-37.jsonl
 validated_base_sha: 2d14642644f1acd7ebfa1fa32bac0f941f817736
-validated_head_sha: 62a62d41e1a14d68657d134d307e683f5f61c0e3
-validated_tree_sha: 072fba07ffd09bcac5c848f04a0f87cdda7d6ecc
-diff_digest: sha256:c0b4d4f5ea07ed2983bcd69e199a4ec738633dcd36ba72ab4163d223ace5ffb2
+validated_head_sha: 4475dbdfaa2b033c43f1c061f4215a0a822fbd2c
+validated_tree_sha: 2f92aeb55b3b14565e76717f23ad345517b96171
+diff_digest: sha256:ea4f358486c5b8f6856c1f2b323241030545cb39c5b7a4540e491c8f97717103
 ---
 
 # Validación — AUT-37
