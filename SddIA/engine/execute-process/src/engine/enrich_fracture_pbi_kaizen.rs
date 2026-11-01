@@ -965,6 +965,22 @@ mod tests {
                 "[SNAPSHOT_BRANCH_CHECKOUT] fatal: una rama llamada 'fix/dcc-snapshot-missing-branch' ya existe",
                 Some("F-DCC-SNAPSHOT-BRANCH-EXISTS"),
             ),
+            (
+                "51dc7bdfd2fe",
+                "delivery-close-cycle",
+                "Snapshot final",
+                "execute-process",
+                "[SNAPSHOT_DIRTY_SKIPPED] hash_after == hash_before; snapshot no consolidó WIP",
+                Some("F-DCC-SNAPSHOT-HASH-STUCK"),
+            ),
+            (
+                "186c785103d8",
+                "delivery-close-cycle",
+                "Sello Presentación ECST",
+                "execute-process",
+                "pr_url obligatorio para Sello Presentación ECST (evita PullRequest_Presented incompleto → DLT Argos/IOTA)",
+                Some("F-DCC-PR-URL-MISSING"),
+            ),
         ];
         for (label, process, action, emitter, trace, expected_sig) in cases {
             let (verdict, _, section, unclassified) = analyze_fracture_kaizen_with_options(

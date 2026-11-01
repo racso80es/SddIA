@@ -459,11 +459,42 @@ fn smoke_mcp_stdio_server(command: &str, args: &[String]) -> Result<(), String> 
     Ok(())
 }
 
-fn agent_runtime_cwd(repo: &Path, project_root: Option<&str>) -> PathBuf {
+fn mcp_workspace_cache_root() -> PathBuf {
+    if let Ok(v) = std::env::var("SDDIA_AGENT_MCP_WS_ROOT") {
+        let t = v.trim();
+        if !t.is_empty() {
+            return PathBuf::from(t);
+        }
+    }
+    std::env::var("HOME")
+        .map(|h| PathBuf::from(h).join(".cache/sddia-agent-mcp"))
+        .unwrap_or_else(|_| std::env::temp_dir().join("sddia-agent-mcp"))
+}
+
+fn workspace_server_binary(repo: &Path) -> PathBuf {
+    let release = repo.join("SddIA/target/release/sddia-workspace-server");
+    let debug = repo.join("SddIA/target/debug/sddia-workspace-server");
+    let mtime = |p: &Path| p.metadata().ok().and_then(|m| m.modified().ok());
+    match (release.is_file(), debug.is_file()) {
+        (true, false) => release,
+        (false, true) => debug,
+        (true, true) => match (mtime(&release), mtime(&debug)) {
+            (Some(rt), Some(dt)) if dt > rt => debug,
+            _ => release,
+        },
+        _ => debug,
+    }
+}
+
+fn agent_runtime_cwd(repo: &Path, project_root: Option<&str>, execution_id: Option<&str>) -> PathBuf {
     if project_root.map(str::trim).is_some_and(|s| !s.is_empty()) {
-        let neutral = repo.join(".SddIA/workspaces/.agent-runtime-neutral");
-        let _ = std::fs::create_dir_all(&neutral);
-        return neutral;
+        let eid = execution_id
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("default");
+        let ws = mcp_workspace_cache_root().join(eid);
+        let _ = std::fs::create_dir_all(&ws);
+        return ws;
     }
     repo.to_path_buf()
 }
@@ -674,13 +705,7 @@ pub fn invoke_agent_phase(
                 .map(|b| b.project_root.to_string_lossy().replace('\\', "/"))
         });
     let mcp_servers = if let Some(ref root) = project_root {
-        let release_bin = repo.join("SddIA/target/release/sddia-workspace-server");
-        let debug_bin = repo.join("SddIA/target/debug/sddia-workspace-server");
-        let command = if release_bin.is_file() {
-            release_bin.display().to_string()
-        } else {
-            debug_bin.display().to_string()
-        };
+        let command = workspace_server_binary(repo).display().to_string();
         let repo_s = repo.display().to_string();
         let mut args = vec![
             "--root".to_string(),
@@ -801,7 +826,7 @@ pub fn invoke_agent_phase(
     }
 
     let depth = agent_runtime_depth();
-    let cwd = agent_runtime_cwd(repo, project_root.as_deref());
+    let cwd = agent_runtime_cwd(repo, project_root.as_deref(), execution_id.as_deref());
     let mut child = match build_agent_command(repo, &bin, &args, &cwd, depth).spawn() {
         Ok(c) => c,
         Err(e) => {
@@ -895,6 +920,22 @@ pub fn invoke_agent_phase(
         .filter(|s| !s.is_empty())
     {
         entry["error"] = json!(err);
+    }
+    if matches!(normalized, "blocked" | "failed") {
+        let has_error = entry
+            .get("error")
+            .and_then(|v| v.as_str())
+            .map(|s| !s.is_empty())
+            .unwrap_or(false);
+        if !has_error {
+            if let Some(msg) = data
+                .get("message")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+            {
+                entry["error"] = json!(msg);
+            }
+        }
     }
     if !out.status.success() && normalized == "executed" {
         entry["status"] = json!("failed");
@@ -1194,6 +1235,36 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
 
         assert_eq!(entry["status"], "blocked", "{entry}");
+        assert!(entry.get("error").is_none() || entry["error"].as_str() == Some(""));
+    }
+
+    #[test]
+    fn blocked_propagates_data_message_to_entry_error() {
+        let _guard = env_lock();
+        clear_agent_env();
+        let dir = std::env::temp_dir().join(format!("sddia-agent-rt-blmsg-{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
+        let script = mock_script(
+            &dir,
+            "#!/bin/sh\ncat >/dev/null\necho '{\"success\":true,\"data\":{\"status\":\"blocked\",\"message\":\"motivo-x\"}}'\n",
+        );
+
+        std::env::set_var(ENV_CMD, script.display().to_string());
+        let entry = invoke_agent_phase(
+            &dir,
+            "refine-item",
+            "Refinamiento Mayeuta",
+            &[json!("agent:mayeuta")],
+            &json!({"item_ref": "AUT-37", "project_slug": "core"}),
+            &json!({"workspace_path": dir.join("ws")}),
+            None,
+        );
+        std::env::remove_var(ENV_CMD);
+        let _ = fs::remove_dir_all(&dir);
+
+        assert_eq!(entry["status"], "blocked", "{entry}");
+        assert_eq!(entry["message"], "motivo-x");
+        assert_eq!(entry["error"], "motivo-x");
     }
 
     #[test]
@@ -1521,12 +1592,13 @@ print(json.dumps({"success":True,"data":{"status":"executed","message":"tier-ok"
     }
 
     #[test]
-    fn agent_runtime_cwd_is_neutral_when_project_bound() {
+    fn agent_runtime_cwd_is_outside_repo_when_project_bound() {
         let repo = std::env::temp_dir().join(format!("sddia-cwd-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&repo).unwrap();
-        let cwd = agent_runtime_cwd(&repo, Some("/tmp/client-project"));
+        let cwd = agent_runtime_cwd(&repo, Some("/tmp/client-project"), Some("exec-test-id"));
         assert_ne!(cwd, repo);
-        assert!(cwd.ends_with(".agent-runtime-neutral"));
+        assert!(cwd.ends_with("exec-test-id"));
+        assert!(!cwd.starts_with(&repo));
         let _ = fs::remove_dir_all(&repo);
     }
 

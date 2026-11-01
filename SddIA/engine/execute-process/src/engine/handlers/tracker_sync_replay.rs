@@ -5,7 +5,6 @@ use super::super::project_binding::{DoneGate, TrackerConfig};
 use crate::envelope::OrchestratorEnvelope;
 use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
@@ -42,16 +41,7 @@ fn sync_marker(event_id: &str) -> String {
 }
 
 fn load_event(repo: &Path, inputs: &Value) -> Result<Value, String> {
-    if let Some(rel) = str_field(inputs, "event_file_path") {
-        let path = repo.join(rel.trim_start_matches("./"));
-        let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        return serde_json::from_str(&text).map_err(|e| e.to_string());
-    }
-    let event_id = str_field(inputs, "event_id").ok_or("event_id o event_file_path requerido")?;
-    Ok(json!({
-        "event_id": event_id,
-        "payload": inputs.get("payload").cloned().unwrap_or_else(|| inputs.clone()),
-    }))
+    super::super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)
 }
 
 fn payload_from_event(event: &Value) -> Result<&Value, String> {
@@ -214,6 +204,25 @@ pub fn replay_payload(
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
     let event = load_event(repo, process_inputs)?;
+    if let Err(reason) = super::super::ecst_input_loader::verify_ecst_matches_bus(repo, &event) {
+        return Ok(OrchestratorEnvelope {
+            success: false,
+            status_code: 1,
+            data: Some(json!({
+                "delivery_status": "failed-bus-mismatch",
+                "reason": reason,
+            })),
+            error: Some(reason.clone()),
+            execution_report: Some(json!({
+                "phases": [{
+                    "phase_name": "Replay de sincronización",
+                    "status": "failed",
+                    "handler": "tracker-sync-replay",
+                }]
+            })),
+            exit_code: 1,
+        });
+    }
     let event_id = str_field(&event, "event_id").ok_or("event_id ausente")?;
     let payload = payload_from_event(&event)?;
     let attempt = payload
@@ -283,6 +292,72 @@ mod tests {
     #[test]
     fn ac6_discards_todo_when_in_progress() {
         assert!(should_discard_transition("in_progress", "todo"));
+    }
+
+    #[test]
+    fn run_rejects_tampered_inline_event_against_store() {
+        use crate::core::repo::find_repo_root;
+        use crate::engine::route_domain_core::materialize_pending_domain_event;
+        use sddia_event_store::{override_store_mode, StoreMode};
+        use std::fs;
+
+        struct Guard;
+        impl Drop for Guard {
+            fn drop(&mut self) {
+                override_store_mode(None);
+                std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+            }
+        }
+        let _g = Guard;
+        override_store_mode(Some(StoreMode::Redb));
+        std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        let repo = find_repo_root().expect("repo");
+        let rel = {
+            materialize_pending_domain_event(
+                &repo,
+                "Tracker_Sync_Failed",
+                "test",
+                json!({
+                    "issue_ref": "AUT-99",
+                    "operation": "update_issue_state",
+                    "target_state": "todo",
+                    "attempt": 0,
+                }),
+            )
+            .expect("materialize");
+            let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&repo))
+                .expect("open");
+            let rows = store
+                .list_family(sddia_event_store::Family::Domain)
+                .expect("list");
+            let event_id = rows.last().expect("row").event_id.clone();
+            drop(store);
+            let pending = repo.join(".events/pending").join(format!("{event_id}.json"));
+            if pending.is_file() {
+                fs::remove_file(&pending).ok();
+            }
+            format!(".events/pending/{event_id}.json")
+        };
+        let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(&repo, &rel).expect("load");
+        let mut tampered = stored.clone();
+        tampered["payload"]["issue_ref"] = json!("AUT-TAMPER");
+        let env = run(
+            &repo,
+            &json!({
+                "event": tampered,
+                "event_id": stored.get("event_id").cloned().unwrap_or(json!("")),
+                "project_slug": "core",
+            }),
+        )
+        .expect("run");
+        assert!(!env.success);
+        assert_eq!(
+            env.data
+                .as_ref()
+                .and_then(|d| d.get("delivery_status"))
+                .and_then(|v| v.as_str()),
+            Some("failed-bus-mismatch")
+        );
     }
 
     #[test]

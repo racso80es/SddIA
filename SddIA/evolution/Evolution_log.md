@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 133
+universe_total: 139
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,14 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `20628bfd-f3f1-4dff-9409-4ef70e82c985` | 2026-11-01 | AUT-48: DCC v1.6.1 sello Presentación alineado con F-DCC-PR-URL-MISSING. | CANONICO | `SddIA/evolution/20628bfd-f3f1-4dff-9409-4ef70e82c985.md` |
+| `d4e5f6a7-b8c9-4012-9d3e-4f5a6b7c8d9e` | 2026-11-01 | AUT-55: reconcile_unstamped suelta store; log tick y Display Locked. | CANONICO | `SddIA/evolution/d4e5f6a7-b8c9-4012-9d3e-4f5a6b7c8d9e.md` |
+| `c3d4e5f6-a7b8-4901-8c2d-3e4f5a6b7c8d` | 2026-11-01 | AUT-37: data.message a entry.error y transcript en fallo CLI refine-item. | CANONICO | `SddIA/evolution/c3d4e5f6-a7b8-4901-8c2d-3e4f5a6b7c8d.md` |
+| `a4b2c3d1-e5f6-4789-a012-3456789abcd0` | 2026-11-01 | AUT-34: handoff Mayeuta refine-item (prompt, MCP, veredicto, fractura). | CANONICO | `SddIA/evolution/a4b2c3d1-e5f6-4789-a012-3456789abcd0.md` |
+| `e31a186c-7851-4d8b-a9c0-31f0dc01a931` | 2026-11-01 | AUT-31: sello Presentación blocked F-DCC-PR-URL-MISSING. | CANONICO | `SddIA/evolution/e31a186c-7851-4d8b-a9c0-31f0dc01a931.md` |
+| `b2e8f4a1-3c6d-4e90-8f7a-1d9c0e5b6a72` | 2026-11-01 | AUT-49: repo-retention-purger + purge-repo-retention (slices target/.events/scratch/dist). | CANONICO | `SddIA/evolution/b2e8f4a1-3c6d-4e90-8f7a-1d9c0e5b6a72.md` |
+| `c8f3a1b2-4d5e-4f78-9abc-def012345678` | 2026-10-31 | AUT-22: guardia rama snapshot, avance HEAD+ref, firma F-DCC-SNAPSHOT-HASH-STUCK (`51dc7bdfd2fe`). | CANONICO | `SddIA/evolution/c8f3a1b2-4d5e-4f78-9abc-def012345678.md` |
+| `1d37df2e-c11b-4ec1-8816-5b86dc19d5c1` | 2026-10-31 | AUT-21: events-contract delivery_state foto del alta; despacho ECST en línea a suscriptores. | CANONICO | `SddIA/evolution/1d37df2e-c11b-4ec1-8816-5b86dc19d5c1.md` |
 | `af240f72-24c2-4cda-afc1-6b01cd917f13` | 2026-10-30 | AUT-56: gate SDDIA_EVENT_STORE, matriz I/O EDA, kaizen bus redb y sellos validacion PR #430. | CANONICO | `SddIA/evolution/af240f72-24c2-4cda-afc1-6b01cd917f13.md` |
 | `709f566b-6aed-4802-98d1-1ad56915277f` | 2026-10-30 | AUT-32: observabilidad claim_store_pending en event-watcher redb. | CANONICO | `SddIA/evolution/709f566b-6aed-4802-98d1-1ad56915277f.md` |
 | `d86d77aa-ab9e-4ca8-9268-c45902d92857` | 2026-10-30 | Kaizen: pbi_ref opaco → tracker_ref en PullRequest_Merged (accept-pr). | CANONICO | `SddIA/evolution/d86d77aa-ab9e-4ca8-9268-c45902d92857.md` |

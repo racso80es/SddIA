@@ -1,9 +1,7 @@
 ---
-context:
-- ecosystem-evolution
-- source-control
+context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:2478e088a8870e265766adde0e5e5ef585be025022c19d8de90880be7aa65ccd"
+hash_signature: sha256:2478e088a8870e265766adde0e5e5ef585be025022c19d8de90880be7aa65ccd
 inputs:
 - source_process: 'Origen del flujo: feature | bug-fix | refactorization'
 - persist_ref: Carpeta de tarea / referencia de persistencia acordada en el ciclo
@@ -66,7 +64,7 @@ phases:
   name: Higiene local
 porcentaje_de_exito: null
 uuid: 5417c92c-da7f-4d46-b245-55cf1b17961a
-version: 1.6.0
+version: 1.6.1
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -97,8 +95,10 @@ Invocar **`action:emit-pr-presented-event`** con:
 | `branch` | `branch_name` del proceso |
 | `status` | `"presented"` |
 | `emitter_agent` | `"delivery-close-cycle"` |
-| `pr_url` | salida de la fase anterior (opcional en payload ECST v1.1) |
+| `pr_url` | `state.pr_url`, `inputs.pr_url` o `gh pr view` si la forja quedó `blocked` antes de `gh` |
 | `correlation_id` | input del proceso si el orquestador lo inyecta |
+
+Sin URL resoluble: envelope `status: blocked`, `friction_id: F-DCC-PR-URL-MISSING`; no se emite `PullRequest_Presented`.
 
 Salidas propagadas al envelope del proceso: `event_id`, `target_path`, `pr_url`.
 

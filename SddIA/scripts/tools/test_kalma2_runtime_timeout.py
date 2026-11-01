@@ -63,6 +63,7 @@ class VerdictAndNetworkTests(unittest.TestCase):
         t = "Veredicto: ok\n...\nVeredicto: blocked\n"
         self.assertEqual(self.rt.parse_agent_verdict(t), "blocked")
         self.assertEqual(self.rt.parse_agent_verdict("veredicto: OK"), "ok")
+        self.assertEqual(self.rt.parse_agent_verdict("Veredicto: **blocked**"), "blocked")
         self.assertIsNone(self.rt.parse_agent_verdict("sin marca"))
 
     def test_enotfound_is_transient_not_failed_soft_config(self) -> None:
@@ -145,6 +146,31 @@ class GitEvidenceWorkspace1xNTests(unittest.TestCase):
             self.assertTrue(ok)
             self.assertEqual(src, "tekton_session_subprocess")
             self.assertEqual(digest, "abcd1234")
+
+    def test_write_workspace_transcript_without_persist(self) -> None:
+        with tempfile.TemporaryDirectory() as ws:
+            doc = {"persist_ref": "", "workspace_path": ws}
+            self.rt.write_workspace_transcript(doc, "stdout-line")
+            self.assertEqual((Path(ws) / "transcript.md").read_text(encoding="utf-8"), "stdout-line")
+
+    def test_write_workspace_transcript_skips_when_persist_set(self) -> None:
+        with tempfile.TemporaryDirectory() as ws:
+            doc = {"persist_ref": "docs/fixes/x", "workspace_path": ws}
+            self.rt.write_workspace_transcript(doc, "stdout-line")
+            self.assertFalse((Path(ws) / "transcript.md").exists())
+
+    def test_refine_blocked_verdict_transcript_in_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as ws:
+            transcript = "Resumen\nVeredicto: blocked\n"
+            doc = {
+                "process_name": "refine-item",
+                "phase_name": "Refinamiento Mayeuta",
+                "persist_ref": "",
+                "workspace_path": ws,
+            }
+            self.rt.write_workspace_transcript(doc, transcript)
+            text = (Path(ws) / "transcript.md").read_text(encoding="utf-8")
+            self.assertIn("Veredicto: blocked", text)
 
     def test_materialize_runtime_evidence_merges_handoff_blocks(self) -> None:
         with tempfile.TemporaryDirectory() as pilot, tempfile.TemporaryDirectory() as core:

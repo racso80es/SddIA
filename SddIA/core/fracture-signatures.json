@@ -86,6 +86,18 @@
       }
     },
     {
+      "id": "F-DCC-SNAPSHOT-HASH-STUCK",
+      "consumers": ["mayeuta"],
+      "match": {
+        "all": ["hash_after == hash_before", "snapshot no consolidó"]
+      },
+      "diagnosis": {
+        "root_cause": "Snapshot final comparó solo `refs/heads/{branch_name}` mientras HEAD estaba en otra rama, o el commit no avanzó ningún ref pese a éxito de cápsula (`51dc7bdfd2fe` / AUT-22). No es gitignore (`F-DCC-SNAPSHOT-GITIGNORE`) ni checkout `-b` duplicado (`F-DCC-SNAPSHOT-BRANCH-EXISTS`).",
+        "verdict": "process_fix",
+        "proposal": "Guardia `branch_list` antes del commit (`SNAPSHOT_BRANCH_MISMATCH`); exigir avance de HEAD y del ref de rama; adjuntar stdout del commit en el fallo."
+      }
+    },
+    {
       "id": "F-DCC-SYMBOLIC-HEAD-BRANCH",
       "consumers": ["mayeuta"],
       "match": {
@@ -186,6 +198,30 @@
       }
     },
     {
+      "id": "F-DCC-PR-URL-MISSING",
+      "consumers": ["dcc_suppress", "mayeuta"],
+      "scope": {
+        "attempted_action": ["Sello Presentación ECST"],
+        "status": ["failed", "blocked"]
+      },
+      "match": {
+        "any": [
+          "pr_url obligatorio",
+          "f-dcc-pr-url-missing",
+          "pr_url_missing",
+          "186c785103d8"
+        ]
+      },
+      "report_friction_ids": ["F-DCC-PR-URL-MISSING"],
+      "report_error_codes": ["PR_URL_MISSING"],
+      "fracture_policy": "suppress",
+      "diagnosis": {
+        "root_cause": "`delivery-close-cycle` Sello Presentación ECST sin `pr_url` recuperable (`state`/`inputs`/`gh pr view`). Antes: `Err` → `System_Fracture_Detected` con ECST incompleto (traza `186c785103d8`). No es metachar de título ni fallo de forja.",
+        "verdict": "process_fix",
+        "proposal": "Envelope DCC `blocked` `PR_URL_MISSING` / `F-DCC-PR-URL-MISSING`; recuperar URL vía helper compartido. No emitir `PullRequest_Presented` incompleto ni reabrir Kintsugi por este hueco."
+      }
+    },
+    {
       "id": "F-DLT-PUBLISH-ERROR",
       "consumers": ["mayeuta"],
       "match": {
@@ -269,7 +305,9 @@
         "F-DCC-LAB-BINARY-MISSING",
         "F-DCC-SNAPSHOT-GITIGNORE",
         "F-DCC-SNAPSHOT-BRANCH-EXISTS",
+        "F-DCC-SNAPSHOT-HASH-STUCK",
         "F-DCC-SYMBOLIC-HEAD-BRANCH",
+        "F-DCC-PR-URL-MISSING",
         "F-DLT-PUBLISH-ERROR"
       ],
       "match": {

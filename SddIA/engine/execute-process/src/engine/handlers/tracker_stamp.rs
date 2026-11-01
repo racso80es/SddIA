@@ -63,7 +63,7 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
 }
 
 fn load_event(repo: &Path, inputs: &Value) -> Result<Value, String> {
-    super::super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)
+    super::super::ecst_input_loader::load_ecst_for_handler(repo, inputs)
 }
 
 fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {

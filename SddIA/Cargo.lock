@@ -1898,6 +1898,7 @@ dependencies = [
  "jsonschema",
  "libc",
  "regex",
+ "repo-retention-purger",
  "sddia-core-memory",
  "sddia-daemon-runtime",
  "sddia-ecosystem-health",
@@ -4925,6 +4926,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "663ba70707f96e871406fe10d68128412e619b06d1d47cb91c3a4c6501176240"
 dependencies = [
  "bytecheck",
+]
+
+[[package]]
+name = "repo-retention-purger"
+version = "1.0.0"
+dependencies = [
+ "hex",
+ "sddia-event-store",
+ "sddia-io",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
 ]
 
 [[package]]

@@ -412,6 +412,14 @@ fn open_returns_locked_when_budget_exhausted() {
 }
 
 #[test]
+fn locked_display_names_variant() {
+    let err = StoreError::Locked("Database already open. Cannot acquire lock.".into());
+    let text = err.to_string();
+    assert!(text.starts_with("StoreError::Locked: "));
+    assert!(text.contains("Database already open"));
+}
+
+#[test]
 fn open_non_lock_error_does_not_retry() {
     let missing_parent = std::env::temp_dir().join(format!(
         "sddia-no-parent-{}-{}/events.redb",

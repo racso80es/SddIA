@@ -23,12 +23,14 @@ fn with_lab<F: FnOnce()>(f: F) {
     let repo = find_repo_root().expect("repo");
     std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
     std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+    std::env::set_var("SDDIA_EVENT_STORE", "filesystem");
     std::env::set_var("SDDIA_TRACKER_MARKDOWN_APPLY_SKIP_GIT", "1");
     std::env::remove_var("LINEAR_API_TOKEN");
     let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
     f();
     std::env::remove_var("SDDIA_TRACKER_MARKDOWN_APPLY_SKIP_GIT");
     std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+    std::env::remove_var("SDDIA_EVENT_STORE");
     let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
 }
 

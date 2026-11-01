@@ -56,13 +56,19 @@ fn skipped(reason: &str, phases: Vec<Value>) -> OrchestratorEnvelope {
 }
 
 fn load_event(repo: &Path, process_inputs: &Value) -> Result<Value, String> {
-    if let Some(rel) = process_inputs
-        .get("event_file_path")
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-    {
-        return super::super::ecst_input_loader::load_ecst_from_rel(repo, rel);
+    let has_ecst_source = process_inputs.get("event").map(|v| v.is_object()) == Some(true)
+        || process_inputs
+            .get("event_id")
+            .and_then(|v| v.as_str())
+            .map(|s| !s.trim().is_empty())
+            == Some(true)
+        || process_inputs
+            .get("event_file_path")
+            .and_then(|v| v.as_str())
+            .map(|s| !s.trim().is_empty())
+            == Some(true);
+    if has_ecst_source {
+        return super::super::ecst_input_loader::load_ecst_from_inputs(repo, process_inputs);
     }
     let callback_data = process_inputs
         .get("callback_data")

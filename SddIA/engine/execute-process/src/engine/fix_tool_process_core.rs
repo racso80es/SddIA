@@ -98,15 +98,21 @@ pub fn process_fix_tool(repo: &Path, rel_path: &str) -> Value {
     }
 }
 
-fn process_fix_tool_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
-    let event_path = repo.join(rel_path.trim());
-    if !event_path.is_file() {
-        return Err(format!("no existe: {rel_path}"));
+pub fn process_fix_tool_from_inputs(repo: &Path, inputs: &Value) -> Value {
+    match super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)
+        .and_then(|event| process_event_for_fix_tool(repo, &event))
+    {
+        Ok(v) => v,
+        Err(e) => json!({"ok": false, "error": e}),
     }
-    let event: Value =
-        serde_json::from_str(&fs::read_to_string(&event_path).map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
+}
 
+fn process_fix_tool_inner(repo: &Path, rel_path: &str) -> Result<Value, String> {
+    let event = super::ecst_input_loader::load_ecst_from_rel(repo, rel_path)?;
+    process_event_for_fix_tool(repo, &event)
+}
+
+fn process_event_for_fix_tool(repo: &Path, event: &Value) -> Result<Value, String> {
     if event.get("event_type").and_then(|v| v.as_str()) != Some("Domain_Entity_Degraded") {
         return Err("solo Domain_Entity_Degraded inicia fix-tool-process".into());
     }
