@@ -1,0 +1,14 @@
+{
+  "audit_log": [
+    "comment:LAB-HU-FORGED:HU forjada: HU-LAB-1",
+    "comment:LAB-HU-FORGED:HU forjada: HU-LAB-1"
+  ],
+  "comments": {
+    "LAB-HU-FORGED": [
+      "HU forjada: HU-LAB-1",
+      "HU forjada: HU-LAB-1"
+    ]
+  },
+  "issues": {},
+  "next_id": 100
+}
