@@ -1,4 +1,5 @@
 ---
+
 feature_name: aut-52-refine-fracture-route
 created: "2026-11-02"
 process: bug-fix
@@ -9,9 +10,8 @@ persist_ref: docs/fixes/aut-52-refine-fracture-route
 pbi_ref: AUT-52
 tracker_ref: AUT-52
 uuid: c55f04de-f956-4f1e-89ab-580b2c5bab34
-execution_id: "00df8b64-e5b1-42e0-be0f-5d684f7eefc9"
+execution_id: "f2880068-385c-4403-8c31-9d11bd4b08a1"
 ---
-
 # Implementation — aut-52-refine-fracture-route
 
 ## C1 — `refine_item/run.rs`
@@ -42,3 +42,8 @@ execution_id: "00df8b64-e5b1-42e0-be0f-5d684f7eefc9"
 ## Evolution
 
 - `SddIA/evolution/c55f04de-f956-4f1e-89ab-580b2c5bab34.md` + fila en `Evolution_log.md`.
+- Corpus `tests/fixtures/fracture-corpus/684ebbf7-refine-route-redb.json`.
+
+## Estado código
+
+Entregado en commit `49e02b5c` (esta pasada alinea doc post re-refino `ca843b5c`).

@@ -1,7 +1,7 @@
 ---
 feature_name: aut-52-refine-fracture-route
 created: "2026-11-02"
-updated: "2026-11-02T15:00:00Z"
+updated: "2026-11-02T16:50:00Z"
 process: bug-fix
 phase: Veredicto
 agent: tekton
@@ -9,11 +9,12 @@ branch: Fix_Events_Multiple_02
 branch_name: Fix_Events_Multiple_02
 persist_ref: docs/fixes/aut-52-refine-fracture-route
 tracker_ref: AUT-52
-execution_id: "00df8b64-e5b1-42e0-be0f-5d684f7eefc9"
+execution_id: "f2880068-385c-4403-8c31-9d11bd4b08a1"
+code_commit: "49e02b5c"
 global: APTO
 pbi_archived: false
 source_process: bug-fix
-scope: "AUT-52 C1–C5 en rama Fix_Events_Multiple_02 (working tree; commit pendiente Racso)"
+scope: "AUT-52 C1–C5 — código 49e02b5c; doc alineado post re-refino ca843b5c / diseño f2880068"
 checks:
   DOC_OBJECTIVES: APTO
   DOC_SPEC: APTO
@@ -30,8 +31,10 @@ checks:
   AUT52_CA7: APTO
   AUT52_CA8: NO_APTO
   TECH_CARGO_AUT52: APTO
+fracture_corpus:
+  artifact: SddIA/engine/execute-process/tests/fixtures/fracture-corpus/684ebbf7-refine-route-redb.json
+  status: anchored
 ---
-
 # Validación — aut-52-refine-fracture-route
 
 ## Veredicto
@@ -47,7 +50,7 @@ checks:
 | AUT52-CA3 | APTO | Rechazo `.redb`; batch `success: false` |
 | AUT52-CA4 | NO_APTO | Requiere bus + evento en store (lab manual post-merge) |
 | AUT52-CA5 | APTO | Test `aut52_tool_invoke_error_message_includes_linear_transport_detail` |
-| AUT52-CA6 | APTO | Firma `F-REFINE-ITEM-REDB-LOCK`; corpus dedicado diferido (evolution describe incidente) |
+| AUT52-CA6 | APTO | Firma `F-REFINE-ITEM-REDB-LOCK` + corpus `684ebbf7-refine-route-redb.json` |
 | AUT52-CA7 | APTO | `materialize_fracture_pbi::run_remote` sin regresión (build_pbi_body + labels) |
 | AUT52-CA8 | NO_APTO | Tracker Linear Done pendiente laudo humano |
 

@@ -94,3 +94,29 @@ notes: "idempotent-hit — copiado de Runtime evidence (session) inject PPR Vere
 - `accept_pr_handoff: pending` (Presented 27eb10f9…).
 - Veredicto fase: **ok**
 ```
+
+## 2026-11-02T15:49:07Z — Diseño del fix
+- process: `bug-fix`
+- agents: `dedalo`
+- execution_id: `f2880068-385c-4403-8c31-9d11bd4b08a1`
+- correlation_id: ``
+- pbi_ref: `AUT-52`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: **Veredicto:** ok
+
+### Transcript (tail)
+
+```
+Diseño Dedalo cerrado: `spec.md` materializado; `plan.md` solo como secuencia de cortes (sin blueprint genómico).
+
+**Archivos**
+- `docs/fixes/aut-52-refine-fracture-route/objectives.md` — leído y alineado
+- `docs/fixes/aut-52-refine-fracture-route/spec.md` — escrito (F1–F5, C1–C5, CA1–CA8)
+- `docs/fixes/aut-52-refine-fracture-route/plan.md` — secuencia Tekton (no códice nuevo)
+
+**Núcleo:** path virtual con `event_id` (no devolver `events.redb`), batch honesto, fractura de lock sin segundo open, `LINEAR_TRANSPORT` con mensaje HTTP, firma `F-REFINE-ITEM-REDB-LOCK`.
+
+**Veredicto:** ok
+```
