@@ -241,6 +241,18 @@ pub fn verify_diff_seal_at_head(
     Ok(())
 }
 
+/// Slug bajo `docs/{features,fixes,refactors}/` cuyo nombre empieza por `_fixture-` (lab; AUT-54).
+pub(crate) fn persist_ref_is_lab_fixture(persist_ref: &str) -> bool {
+    let p = persist_ref.trim().trim_start_matches("./").replace('\\', "/");
+    for prefix in ["docs/features/", "docs/fixes/", "docs/refactors/"] {
+        if let Some(rest) = p.strip_prefix(prefix) {
+            let slug = rest.split('/').next().unwrap_or("");
+            return slug.starts_with("_fixture-");
+        }
+    }
+    false
+}
+
 /// `persist_ref` relativos bajo `docs/{features,fixes,refactors}/` con `validacion.md` en HEAD.
 pub fn list_persist_refs_with_validacion(repo: &Path, head_sha: &str) -> Result<Vec<String>, String> {
     let out = git_output(
@@ -431,6 +443,9 @@ pub fn validate_for_accept_pr_merge(
     // abortaba la fusión de cualquier rama (AUT-53).
     if to_check.is_empty() {
         for p in list_persist_refs_with_validacion(repo, &head)? {
+            if persist_ref_is_lab_fixture(&p) {
+                continue;
+            }
             to_check.push(p);
         }
     }
@@ -982,6 +997,100 @@ mod tests {
         let err =
             validate_for_accept_pr_merge(repo, "feat/ap", "main", Some(persist)).unwrap_err();
         assert!(err.contains("diff_digest") || err.contains("validated_head_sha"));
+    }
+
+    #[test]
+    fn aut54_legacy_sweep_skips_lab_fixture_apto_without_seal() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let fixture = "docs/features/_fixture-done-gate-lab";
+        init_repo_main_feat(repo, "feat/audit", "docs/features/only-real");
+        fs::create_dir_all(repo.join(fixture)).unwrap();
+        fs::write(
+            repo.join(fixture).join("validacion.md"),
+            "---\nglobal: APTO\n---\n\n# fixture\n",
+        )
+        .unwrap();
+        Command::new("git")
+            .args(["add", "."])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "fixture"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        validate_for_accept_pr_merge(repo, "feat/audit", "main", None)
+            .expect("legacy barrido no debe fallar solo por fixture _fixture-*");
+    }
+
+    #[test]
+    fn aut54_legacy_sweep_still_checks_non_fixture_persist() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let persist = "docs/features/ap";
+        init_repo_main_feat(repo, "feat/ap", persist);
+        let fixture = "docs/features/_fixture-done-gate-lab";
+        fs::create_dir_all(repo.join(fixture)).unwrap();
+        fs::write(
+            repo.join(fixture).join("validacion.md"),
+            "---\nglobal: APTO\n---\n\n# fixture\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("docs/features/ap/validacion.md"),
+            "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        Command::new("git")
+            .args(["add", "."])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "val"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let seal = compute_diff_seal_at_head(repo, &head, "main", persist).unwrap();
+        apply_diff_seal_to_validacion(repo, persist, &seal).unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/ap/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "seal"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        fs::write(repo.join("code.txt"), "drift\n").unwrap();
+        Command::new("git")
+            .args(["add", "code.txt"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "drift"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let err = validate_for_accept_pr_merge(repo, "feat/ap", "main", None).unwrap_err();
+        assert!(
+            !err.contains("_fixture-"),
+            "error must not blame fixture: {err}"
+        );
+        assert!(err.contains("diff_digest") || err.contains("validated_head_sha"));
+    }
+
+    #[test]
+    fn persist_ref_is_lab_fixture_detects_slug() {
+        assert!(persist_ref_is_lab_fixture(
+            "docs/features/_fixture-done-gate-lab"
+        ));
+        assert!(!persist_ref_is_lab_fixture("docs/features/real-fix"));
     }
 
     #[test]
