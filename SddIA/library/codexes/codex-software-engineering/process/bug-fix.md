@@ -8,7 +8,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: "sha256:84f84236d9b1d69192b7a46628693e5ba36ecce0dd3aed8ce644c6fbde2957a9"
+hash_signature: "sha256:4534b16788f800b747c57c6cde22171e716e69b8a889c564fb19125843bf2d26"
 inputs:
 - bug_summary: Semilla o reporte del defecto detectado
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, directorios)
@@ -40,7 +40,7 @@ phases:
   delegates_to:
   - agent:argos
 - name: Cierre documental en rama
-  intent: 'Antes del merge: mover PBI a docs/todos/done/ en la rama del PR; validacion.md con pbi_archived true según features-documentation-pattern v1.2.0 (sin merged_pr obligatorio).'
+  intent: 'Antes del merge: cierre según tracker.provider y features-documentation-pattern v1.3.1 — provider file: mover PBI a docs/todos/done/ y validacion.md con pbi_archived true; provider linear: issue en state_map.done y validacion APTO, sin ficheros nuevos en docs/todos/pending ni done/. Prohibido merged_pr obligatorio ni segundo PR documental.'
   requires_capability:
   - id: doc:closure
     contract: doc.closure
@@ -79,25 +79,24 @@ La última fase invoca `execute-process` apuntando a `delivery-close-cycle` con 
 
 ## Cierre documental en rama (obligatorio, pre-merge)
 
-**Antes** de `delivery-close-cycle` y del merge en `main`, en la **misma rama** del fix:
+Antes de `delivery-close-cycle` y del merge en `main`, en la **misma rama** del PR, según `tracker.provider` (`.SddIA/project.md`) y `features-documentation-pattern` v1.3.1:
 
-| Paso | Acción | Artefacto |
-|------|--------|-----------|
-| 1 | Archivar PBI | `docs/todos/pending/` → `docs/todos/done/` (conservar `document_id`) |
-| 2 | Cerrar validación Argos | `{persist_ref}/validacion.md` → `global: APTO`, `pbi_archived: true` |
-| 3 | Incluir en el PR único | Diff de código + documentación + PBI en `done/` |
+| Provider | Pasos |
+|----------|--------|
+| **file** | Mover PBI `docs/todos/pending/` → `docs/todos/done/`; `validacion.md` con `global: APTO` y `pbi_archived: true` |
+| **linear** | Issue en `state_map.done`; `validacion.md` APTO en `persist_ref`; **prohibido** crear ficheros nuevos en `docs/todos/pending/` ni `docs/todos/done/` |
 
 **Definición operativa de Done:**
 
 ```text
 Done = un único PR mergeado en main
-     + validacion.md APTO en ese PR (pbi_archived: true)
-     + PBI en docs/todos/done/ en esa misma rama
+     + validacion.md APTO en el diff de ese PR
+     + cierre según tracker.provider (v1.3.1)
 ```
 
-Prohibido depender de un segundo PR `docs/cerrar-pbi-*` para campos que solo existen tras el merge (`merged_pr`, `merge_commit`). La trazabilidad del merge se obtiene de GitHub / git.
+Prohibido depender de un segundo PR `docs/cerrar-pbi-*` para campos que solo existen tras el merge (`merged_pr`, `merge_commit`).
 
-*Referencia normativa:* `features-documentation-pattern` v1.2.0 § Validación en fase única; regla Cursor `task-closure-documental`.
+*Referencia normativa:* `features-documentation-pattern` v1.3.1 § Validación en fase única; regla Cursor `task-closure-documental`.
 
 ## Perfil laboratorio vs runtime IDE
 

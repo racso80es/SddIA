@@ -8,7 +8,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: "sha256:357730359f4a4aa11a854fe781c6ef6ec0df2516eb4aca71ba8a52e200a2e5c8"
+hash_signature: "sha256:b32aa15b89a6b2d003090aa1276c93e6b86135dcf5a4d963a491839d645a9837"
 inputs:
 - feature_name: Nombre kebab-case o etiqueta humana de la feature
 - refined_requirements: Requisitos crudos o semi-refinados de entrada
@@ -45,7 +45,7 @@ phases:
   delegates_to:
   - agent:argos
 - name: Cierre documental en rama
-  intent: 'Antes del merge: mover PBI a docs/todos/done/ en la rama del PR; validacion.md con pbi_archived true según features-documentation-pattern v1.2.0 (sin merged_pr obligatorio).'
+  intent: 'Antes del merge: cierre según tracker.provider y features-documentation-pattern v1.3.1 — provider file: mover PBI a docs/todos/done/ y validacion.md con pbi_archived true; provider linear: issue en state_map.done y validacion APTO, sin ficheros nuevos en docs/todos/pending ni done/. Prohibido merged_pr obligatorio ni segundo PR documental.'
   requires_capability:
   - id: doc:closure
     contract: doc.closure
@@ -83,7 +83,7 @@ La última fase invoca la acción `execute-process` apuntando al `process_name` 
 
 ## Cierre documental en rama (obligatorio, pre-merge)
 
-Misma regla que `bug-fix` § Cierre documental en rama: PBI en `docs/todos/done/` y `validacion.md` con `pbi_archived: true` **en la rama del PR**, sin segundo PR documental a `main`. Ver `features-documentation-pattern` v1.2.0.
+Misma regla que `bug-fix` § Cierre documental en rama: ramificar por `tracker.provider` según `features-documentation-pattern` v1.3.1 (file → move + `pbi_archived`; linear → `state_map.done` + proofs, sin nuevos `docs/todos/`). Un único PR; sin segundo PR documental a `main`.
 
 ## Perfil laboratorio vs runtime IDE
 
