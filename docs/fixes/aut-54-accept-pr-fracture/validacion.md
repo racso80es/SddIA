@@ -30,9 +30,9 @@ debt_c4:
 - System_Fracture_Detected en fail-path accept-pr (opcional)
 - dedupe materialize-fracture-pbi por proceso (AUT-52/54)
 validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
-validated_head_sha: e9e0a991f12699b882e5454e4d3930bdf22b0a86
-validated_tree_sha: 5435ff3030d796b40e3be55bd06ae539b8656b83
-diff_digest: sha256:abd8fa8f91f4914f6322ed43598875d490769a56473325628bb6a5b83e2d3d97
+validated_head_sha: 98480aef9b9e19db81a528939effee11b8a0cc28
+validated_tree_sha: 33f8348623dd8421b802667e1f9c6b37f7d953ab
+diff_digest: sha256:637c4186c73dff6285d4837c3e05d2bb7daaed7d66a51e55d9d165012f2708d5
 ---
 
 # Validación — aut-54-accept-pr-fracture
