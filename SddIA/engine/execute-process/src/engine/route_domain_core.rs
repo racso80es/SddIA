@@ -2741,6 +2741,38 @@ mod blocking_tests {
     }
 
     #[test]
+    fn aut63_kaizen_idea_captured_l_a4_intentional_sink_routes() {
+        let repo = repo_root();
+        let event_id = "a4630000-0000-4000-8000-000000000004";
+        let rel = format!(".events/pending/{event_id}.json");
+        let abs = repo.join(&rel);
+        if let Some(parent) = abs.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        let body = json!({
+            "event_id": event_id,
+            "event_type": "Kaizen_Idea_Captured",
+            "payload": {
+                "idea_text": "revisar auditorias",
+                "source": "telegram",
+                "raw_text": "TODO: revisar auditorias"
+            },
+            "delivery_state": {}
+        });
+        fs::write(&abs, serde_json::to_string_pretty(&body).unwrap()).expect("write event");
+        let out = route_domain_event(&repo, &rel, false);
+        let _ = fs::remove_file(&abs);
+        assert_eq!(out.get("success"), Some(&json!(true)), "{out}");
+        assert_eq!(out.get("exitCode"), Some(&json!(0)));
+        let delivery = out
+            .pointer("/data/delivery_status")
+            .and_then(|v| v.as_object())
+            .map(|m| m.is_empty())
+            .unwrap_or(false);
+        assert!(delivery, "expected empty delivery_status (sink), got {out}");
+    }
+
+    #[test]
     fn aiua_process_requested_maps_like_kalma2() {
         let event = json!({
             "event_id": "11111111-1111-4111-8111-111111111111",

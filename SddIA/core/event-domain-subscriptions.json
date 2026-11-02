@@ -259,6 +259,13 @@
       "intent": "Sello backlog PBI + comentario document_id."
     }
   ],
+  "HU_Forged": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello backlog HU + comentario idempotente HU forjada: {document_id|tracker_ref}."
+    }
+  ],
   "PBI_Refined": [
     {
       "agent": "tekton",
