@@ -1,9 +1,30 @@
+---
+id: ciclo-vida-software-sddia
+type: audit
+version: "1.2.0"
+created: "2026-11-02"
+updated: "2026-11-02"
+status: current
+supersedes: "1.1.0"
+frozen_copy: docs/audits/ciclo-vida-software-sddia-v1.0.0.md
+tracker_ref: AUT-63
+---
+
 # Ciclo de vida de software en SddIA
 
 Informe de visibilidad para operadores, agentes y revisión humana.  
-Fecha de corte: 2026-11-02. Instancia de referencia: Core-self (`.SddIA/project.md`).
+Fecha de corte del cuerpo narrativo: 2026-11-02. Instancia de referencia: Core-self (`.SddIA/project.md`).  
+Versión **1.2.0** (esta). La **1.0.0** queda congelada en `docs/audits/ciclo-vida-software-sddia-v1.0.0.md`. La **1.1.0** quedó superseded por esta revisión (AUT-63 merge).
 
 Este documento describe **qué existe**, **quién lo mueve**, **cómo se conectan las piezas** y **qué le ocurre al documento** (fichero Markdown o issue de tracker). No sustituye los contratos: si hay conflicto, mandan el proceso `.md`, el motor `execute-process` y el manifiesto del proyecto.
+
+## Control de versión
+
+| Versión | Qué cambia |
+| --- | --- |
+| 1.0.0 | Corte inicial. §9 lista cinco límites, cuatro de ellos asimetrías genoma/código. |
+| 1.1.0 | Misma fotografía del código. §9 numera hallazgos A1–A5, liga A1–A4 al fix AUT-63 y declara el estado objetivo sin afirmar que el genoma ya está alineado. |
+| 1.2.0 | Tras merge AUT-63 (rama `Fix_Events_Multiple_02`): §9 marca A1–A4 **alineados** en genoma/código; A5 sin cambio. |
 
 ---
 
