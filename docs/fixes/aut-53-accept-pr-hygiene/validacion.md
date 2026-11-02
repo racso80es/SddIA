@@ -34,9 +34,9 @@ fracture_corpus:
   status: unclassified
   rationale: Familia PBI c291912fe9a5 (AUT-54); daño PR 424 documentado en docs/fixes/bridge-presented-tracker-ref/execution.md; dedupe materialize-fracture-pbi fuera de alcance.
 validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
-validated_head_sha: e9e0a991f12699b882e5454e4d3930bdf22b0a86
-validated_tree_sha: 5435ff3030d796b40e3be55bd06ae539b8656b83
-diff_digest: sha256:abd8fa8f91f4914f6322ed43598875d490769a56473325628bb6a5b83e2d3d97
+validated_head_sha: 581270afa91745553dad63f5dd2b21de655a0197
+validated_tree_sha: d9053d756b6ce8a6afbf9761887d94038f539936
+diff_digest: sha256:637c4186c73dff6285d4837c3e05d2bb7daaed7d66a51e55d9d165012f2708d5
 ---
 
 # Validación — aut-53-accept-pr-hygiene
