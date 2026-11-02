@@ -47,10 +47,10 @@ git_changes:
 - docs/audits/ciclo-vida-software-sddia-v1.0.0.md
 - docs/audits/ciclo-vida-software-sddia.md
 - docs/fixes/aut-63-lifecycle-genome-parity/
-validated_head_sha: e9e0a991f12699b882e5454e4d3930bdf22b0a86
+validated_head_sha: 59277af49b1c7a1e90bc34a1437c56f8a8a9328a
 validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
-validated_tree_sha: 5435ff3030d796b40e3be55bd06ae539b8656b83
-diff_digest: sha256:abd8fa8f91f4914f6322ed43598875d490769a56473325628bb6a5b83e2d3d97
+validated_tree_sha: 4f8efedfb6b2ccb058bc8da95c7520c964301414
+diff_digest: sha256:637c4186c73dff6285d4837c3e05d2bb7daaed7d66a51e55d9d165012f2708d5
 ---
 
 # Validación — AUT-63
