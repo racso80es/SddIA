@@ -119,9 +119,9 @@ situational_notes:
 - accept_pr_handoff skipped — lab verify sin Presented; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
 - Instancia .SddIA/cerbero|radamanto|proofs gitignore — fuera del diff PR (L-REHAB-INST)
 validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
-validated_head_sha: c40a1755b43f1771f9ae5d3470651612c5fdb5cc
-validated_tree_sha: e49ee96c84be04fcfa70c7d9d8521b52366e3a7f
-diff_digest: sha256:a63bb5ba3266128f98bf8ad11346786e80938ad685b877790eb8abf31d8c01c2
+validated_head_sha: 3f96ae657508063d140a0900bd41ce3fa90df70e
+validated_tree_sha: 46b0cda942988e2d082b447cd897c14d51da8ce4
+diff_digest: sha256:a40fe92cf26b26991031d2b63ed21f4ba01fbd8b9a2c6c69c795c103bfd5f350
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
