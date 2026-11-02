@@ -115,11 +115,13 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .ok_or("TRACKER_REF_MISSING")?;
 
     let event_id = Uuid::new_v4().to_string();
+    let document_id = format!("HU-{}", tracker_ref.replace('/', "-"));
     let payload = json!({
         "event_id": event_id,
         "correlation_id": event_id,
         "source_process": PROCESS_NAME,
         "tracker_ref": tracker_ref,
+        "document_id": document_id,
         "project_slug": bound.slug,
         "occurred_at": Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
     });

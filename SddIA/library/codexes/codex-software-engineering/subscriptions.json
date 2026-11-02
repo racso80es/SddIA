@@ -6,6 +6,13 @@
       "intent": "El PBI sellado entra al ciclo declarado en payload.process."
     }
   ],
+  "HU_Forged": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello backlog HU + comentario idempotente (paridad PBI_Forged)."
+    }
+  ],
   "Delivery_Committed": [
     {
       "agent": "tekton",

@@ -250,6 +250,7 @@ fn stamp_file_sink_event(
     };
     let column = match event_type {
         "PBI_Forged" => COLUMN_BACKLOG,
+        "HU_Forged" => COLUMN_BACKLOG,
         "PBI_Refined" | "HU_Refined" => COLUMN_TODO,
         "Work_Initiated" => COLUMN_IN_PROGRESS,
         "PullRequest_Presented" => COLUMN_IN_REVIEW,
@@ -707,6 +708,33 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 None,
                 Some("pbi-forged"),
                 &|| tool_comment(repo, &issue_ref, &format!("PBI forjado: {doc}"), tc.project_id.as_deref()),
+            )?;
+            let _ = sync_item_tracker_column_remote(
+                repo,
+                &payload_val,
+                &issue_ref,
+                super::super::item_lifecycle_frontmatter::COLUMN_BACKLOG,
+                &tc,
+            );
+            stamped = true;
+        }
+        "HU_Forged" => {
+            run(
+                repo,
+                "update_issue_state",
+                Some("backlog"),
+                None,
+                &|| update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "backlog"),
+            )?;
+            let doc = str_field(&payload_val, "document_id")
+                .or_else(|| str_field(&payload_val, "tracker_ref"))
+                .unwrap_or_default();
+            run(
+                repo,
+                "create_comment",
+                None,
+                Some("hu-forged"),
+                &|| tool_comment(repo, &issue_ref, &format!("HU forjada: {doc}"), tc.project_id.as_deref()),
             )?;
             let _ = sync_item_tracker_column_remote(
                 repo,
@@ -1358,6 +1386,22 @@ mod tests {
         let text = std::fs::read_to_string(root.join("docs/todos/pending/wi.md")).unwrap();
         assert!(text.contains("tracker_column: in_progress"));
         assert!(!root.join(".SddIA/state/tracker-outbound/OSC-1.jsonl").is_file());
+    }
+
+    #[test]
+    fn aut63_hu_forged_backlog_stamp() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "HU_Forged",
+                "payload": {
+                    "tracker_ref": "LAB-HU-FORGED",
+                    "document_id": "HU-LAB-1",
+                }
+            });
+            let (stamped, note) = stamp_event(&repo, &event).expect("stamp");
+            assert!(stamped, "note={note:?}");
+        });
     }
 
     #[test]
