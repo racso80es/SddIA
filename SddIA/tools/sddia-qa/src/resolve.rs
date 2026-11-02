@@ -30,11 +30,15 @@ pub fn run_json_cmd(cmd: &mut Command) -> Result<serde_json::Value, String> {
     let body: serde_json::Value =
         serde_json::from_str(line).map_err(|e| format!("JSON: {e}"))?;
     if body.get("success") == Some(&serde_json::json!(false)) {
-        return Err(body
+        let detail = body
+            .pointer("/data/delivery_status")
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "n/a".into());
+        let base = body
             .get("error")
             .and_then(|v| v.as_str())
-            .unwrap_or("comando falló")
-            .to_string());
+            .unwrap_or("comando falló");
+        return Err(format!("{base} (delivery_status={detail})"));
     }
     Ok(body)
 }

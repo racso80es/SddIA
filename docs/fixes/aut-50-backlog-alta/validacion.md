@@ -28,9 +28,9 @@ git_changes:
 - SddIA/evolution/a1b2c3d4-e5f6-4789-a012-3456789abcde.md
 - docs/fixes/aut-50-backlog-alta/
 validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
-validated_head_sha: 1025c59afbaf2922580b3a1bc7958d0d7b9f5d33
-validated_tree_sha: 936e44fafdd1ad51b7be1cc578b524dfe6155f52
-diff_digest: sha256:6f32515f5921ad766fae55bdbbc0035ea8ab7a00176eea40ba2df995d8a60d55
+validated_head_sha: 8ec499c21fad77675e449f0afaf108b5ca639e42
+validated_tree_sha: 2e64e23a786475db54c364fc32fb546f7ab158df
+diff_digest: sha256:0ab853a7b655c3989e81de6dfe11ffdcc17f9a5c47e2160e202c83697699d864
 ---
 
 # Validación — AUT-50

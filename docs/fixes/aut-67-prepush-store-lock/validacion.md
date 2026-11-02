@@ -1,7 +1,7 @@
 ---
 feature_name: aut-67-prepush-store-lock
-created: "2026-11-02"
-updated: "2026-11-02T17:38:00Z"
+created: 2026-11-02
+updated: 2026-11-02T17:38:00Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -11,16 +11,16 @@ branch_name: Fix_Events_Multiple_02
 branch_name_injected: Fix_Events_Multiple_02
 branch_worktree_observed: Fix_Events_Multiple_02
 persist_ref: docs/fixes/aut-67-prepush-store-lock
-persist_ref_injected: ""
-persist_ref_resolution: "inyección vacía → cascada bug-fix docs/fixes/aut-67-prepush-store-lock (objectives + forge AUT-67)"
-pbi_ref: ""
-pbi_ref_injected: ""
+persist_ref_injected: ''
+persist_ref_resolution: inyección vacía → cascada bug-fix docs/fixes/aut-67-prepush-store-lock (objectives + forge AUT-67)
+pbi_ref: ''
+pbi_ref_injected: ''
 document_id: PBI-3d736171
 tracker_ref: AUT-67
 uuid: e46d8e0c-b9fa-4d18-a035-99e9cf66ac07
-correlation_id: "90568351-c261-4899-8dd5-024dfa4fdbc3"
-audit_event_reference: "90568351-c261-4899-8dd5-024dfa4fdbc3"
-execution_id: "27d77b0b-1e20-499c-b77a-e8d2cef93264"
+correlation_id: 90568351-c261-4899-8dd5-024dfa4fdbc3
+audit_event_reference: 90568351-c261-4899-8dd5-024dfa4fdbc3
+execution_id: 27d77b0b-1e20-499c-b77a-e8d2cef93264
 source_process: bug-fix
 global: APTO
 pbi_archived: false
@@ -30,29 +30,29 @@ delivery_state: success
 resolution: PASS_F5_VERDICT
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: "Presented PR #432; MERGE ausente este CID — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)"
+accept_pr_block_reason: 'Presented PR #432; MERGE ausente este CID — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)'
 authorization_status:
   exitCode: 0
   emitter_agent: argos
-  note: "PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL+execution) · PPR∉revoked/permanent (rehab AUT-62) · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · accept_pr_handoff pending (L-HANDOFF-F5)"
+  note: PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL+execution) · PPR∉revoked/permanent (rehab AUT-62) · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · accept_pr_handoff pending (L-HANDOFF-F5)
 git_manager_invoked: false
-git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session native_state; sin bypass raw"
+git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session native_state; sin bypass raw
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
-formal_evidence_detail: "session Runtime evidence source=native_state · TECH/GIT APTO · notes=idempotent-hit; machine sellado en _agent_handoff.md @ Veredicto 2026-11-02T17:38:00Z"
+formal_evidence_detail: session Runtime evidence source=native_state · TECH/GIT APTO · notes=idempotent-hit; machine sellado en _agent_handoff.md @ Veredicto 2026-11-02T17:38:00Z
 handoff_machine_file: absent_pre
 handoff_evidence_block_pre: absent
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (session) source=native_state notes=idempotent-hit @ Veredicto y bloqueo; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; workspace PPR 27d77b0b… vacío (machine ausente pre-fase); Shell git-manager Rejected — sin stdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 90568351… · exec 27d77b0b…"
-head_commit_sha_fs: "20b59549c52ae5983261eba6411d261b2fa8c996"
-workspace_path_injected: ".SddIA/workspaces/pull-request-review/27d77b0b-1e20-499c-b77a-e8d2cef93264/"
+evidence_bridge_notes: R1/R2 copia Runtime evidence (session) source=native_state notes=idempotent-hit @ Veredicto y bloqueo; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; workspace PPR 27d77b0b… vacío (machine ausente pre-fase); Shell git-manager Rejected — sin stdout inventado
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 90568351… · exec 27d77b0b…
+head_commit_sha_fs: 20b59549c52ae5983261eba6411d261b2fa8c996
+workspace_path_injected: .SddIA/workspaces/pull-request-review/27d77b0b-1e20-499c-b77a-e8d2cef93264/
 workspace_materialized: false
 pr_url: https://github.com/racso80es/SddIA/pull/432
-qa_attestation_sighted: ".SddIA/proofs/qa-attestations/Fix_Events_Multiple_02.json"
-qa_attestation_head_sha_sighted: "48f8beff5a8b7572a9353c50428fbea8c2d4b197"
-qa_attestation_correlation_sighted: "a40b2537-4c01-428c-b459-849f0ca851b1"
-revoked_entity_alert: "delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent (rehab AUT-62); accept-pr∉revoked"
-scope: "PPR Veredicto y bloqueo — rama Fix_Events_Multiple_02 (CID 90568351… · exec 27d77b0b… · AUT-67 · PR #432)"
+qa_attestation_sighted: .SddIA/proofs/qa-attestations/Fix_Events_Multiple_02.json
+qa_attestation_head_sha_sighted: 48f8beff5a8b7572a9353c50428fbea8c2d4b197
+qa_attestation_correlation_sighted: a40b2537-4c01-428c-b459-849f0ca851b1
+revoked_entity_alert: delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent (rehab AUT-62); accept-pr∉revoked
+scope: 'PPR Veredicto y bloqueo — rama Fix_Events_Multiple_02 (CID 90568351… · exec 27d77b0b… · AUT-67 · PR #432)'
 checks:
   F2_DOC_GATE: APTO
   F3_TECH_GATE: NO_APTO
@@ -93,48 +93,53 @@ checks:
   branch: APTO
   git_changes: APTO
 git_changes:
-  - docs/fixes/aut-67-prepush-store-lock/
-  - docs/audits/AUT-67.md
-  - SddIA/daemons/event-watcher/src/main.rs
-  - SddIA/scripts/qa/git-hooks/hook_common.sh
-  - SddIA/scripts/qa/git-hooks/pre_push_gate.sh
-  - SddIA/scripts/qa/test-aut-67-prepush-store-lock.sh
-  - SddIA/evolution/e46d8e0c-b9fa-4d18-a035-99e9cf66ac07.md
-  - SddIA/evolution/Evolution_log.md
+- docs/fixes/aut-67-prepush-store-lock/
+- docs/audits/AUT-67.md
+- SddIA/daemons/event-watcher/src/main.rs
+- SddIA/scripts/qa/git-hooks/hook_common.sh
+- SddIA/scripts/qa/git-hooks/pre_push_gate.sh
+- SddIA/scripts/qa/test-aut-67-prepush-store-lock.sh
+- SddIA/evolution/e46d8e0c-b9fa-4d18-a035-99e9cf66ac07.md
+- SddIA/evolution/Evolution_log.md
 blocking_findings: []
 non_blocking_findings:
-  - PERSIST_REF_INJECTED
-  - DOC_CLARIFY
-  - GIT_EVIDENCE_SESSION_SHELL
-  - WSPACE_MATERIALIZED
-  - HANDOFF_MACHINE_FILE
-  - F3_TECH_GATE
-  - MERGE_ALREADY_OBSERVED
-  - ACCEPT_PR_HANDOFF
-  - QA_ATTESTATION_HEAD_MATCH
-  - REVOKED_ENTITY_ALERT_DCC
-  - REVOKED_ENTITY_ALERT_BUG_FIX
-  - REVOKED_ENTITY_ALERT_FEATURE
-  - REVOKED_ENTITY_ALERT_ENTITY_MANAGER
-  - REVOKED_ENTITY_ALERT_EVENT_CREATOR
-  - REVOKED_ENTITY_ALERT_REFACTORIZATION
+- PERSIST_REF_INJECTED
+- DOC_CLARIFY
+- GIT_EVIDENCE_SESSION_SHELL
+- WSPACE_MATERIALIZED
+- HANDOFF_MACHINE_FILE
+- F3_TECH_GATE
+- MERGE_ALREADY_OBSERVED
+- ACCEPT_PR_HANDOFF
+- QA_ATTESTATION_HEAD_MATCH
+- REVOKED_ENTITY_ALERT_DCC
+- REVOKED_ENTITY_ALERT_BUG_FIX
+- REVOKED_ENTITY_ALERT_FEATURE
+- REVOKED_ENTITY_ALERT_ENTITY_MANAGER
+- REVOKED_ENTITY_ALERT_EVENT_CREATOR
+- REVOKED_ENTITY_ALERT_REFACTORIZATION
 situational_notes:
-  - "Fase Veredicto y bloqueo · CID 90568351-c261-4899-8dd5-024dfa4fdbc3 · exec 27d77b0b-1e20-499c-b77a-e8d2cef93264"
-  - "Evidence Bridge session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)"
-  - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (cascada + touchpoints + evolution)"
-  - "persist_ref inject vacío; resuelto docs/fixes/aut-67-prepush-store-lock"
-  - "Workspace PPR 27d77b0b… no materializado — WSPACE_MATERIALIZED / HANDOFF_MACHINE_FILE NO_APTO no bloqueante; session inject usado"
-  - "F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — cascada bug-fix objectives/spec/plan/implementation/execution + YAML + evolution e46d8e0c-… OK"
-  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md)"
-  - "F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent (rehab AUT-62)"
-  - "DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix"
-  - "CODE_TOUCHPOINT_PRESENT APTO — routes_block_store_claim / invoke_local_qa_route_domain_event / STORE_LOCK_CONTENTION sighted FS"
-  - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
-  - "tracker linear AUT-67 · 0 hits docs/todos/** · pending/ vacío · pbi_archived false"
-  - "BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/Fix_Events_Multiple_02 @ 20b59549… (FS Read; no gitStdout)"
-  - "qa-attestation sighted head_sha 48f8beff… ≠ HEAD FS 20b59549… → QA_ATTESTATION_HEAD_MATCH NO_APTO residual no bloqueante"
-  - "accept_pr_handoff pending — Presented PR #432; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)"
+- Fase Veredicto y bloqueo · CID 90568351-c261-4899-8dd5-024dfa4fdbc3 · exec 27d77b0b-1e20-499c-b77a-e8d2cef93264
+- 'Evidence Bridge session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)'
+- Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (cascada + touchpoints + evolution)
+- persist_ref inject vacío; resuelto docs/fixes/aut-67-prepush-store-lock
+- Workspace PPR 27d77b0b… no materializado — WSPACE_MATERIALIZED / HANDOFF_MACHINE_FILE NO_APTO no bloqueante; session inject usado
+- F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — cascada bug-fix objectives/spec/plan/implementation/execution + YAML + evolution e46d8e0c-… OK
+- F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md)
+- F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent (rehab AUT-62)
+- DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix
+- CODE_TOUCHPOINT_PRESENT APTO — routes_block_store_claim / invoke_local_qa_route_domain_event / STORE_LOCK_CONTENTION sighted FS
+- Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO
+- tracker linear AUT-67 · 0 hits docs/todos/** · pending/ vacío · pbi_archived false
+- 'BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/Fix_Events_Multiple_02 @ 20b59549… (FS Read; no gitStdout)'
+- qa-attestation sighted head_sha 48f8beff… ≠ HEAD FS 20b59549… → QA_ATTESTATION_HEAD_MATCH NO_APTO residual no bloqueante
+- 'accept_pr_handoff pending — Presented PR #432; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)'
+validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
+validated_head_sha: 8ec499c21fad77675e449f0afaf108b5ca639e42
+validated_tree_sha: 2e64e23a786475db54c364fc32fb546f7ab158df
+diff_digest: sha256:0ab853a7b655c3989e81de6dfe11ffdcc17f9a5c47e2160e202c83697699d864
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase

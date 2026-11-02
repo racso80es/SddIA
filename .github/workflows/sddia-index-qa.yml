@@ -216,6 +216,7 @@ jobs:
       - name: run-iota-ci-smoke (simulate)
         env:
           SDDIA_LAB_SIMULATE_IOTA: "1"
+          SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM: "1"
         run: |
           chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/debug/iota-immutable-publisher
           SddIA/target/debug/sddia-qa run-iota-ci-smoke --simulate --json

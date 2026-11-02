@@ -1,7 +1,7 @@
 ---
 feature_name: aut-52-refine-fracture-route
-created: "2026-11-02"
-updated: "2026-11-02T16:50:00Z"
+created: 2026-11-02
+updated: 2026-11-02T16:50:00Z
 process: bug-fix
 phase: Veredicto
 agent: tekton
@@ -9,12 +9,12 @@ branch: Fix_Events_Multiple_02
 branch_name: Fix_Events_Multiple_02
 persist_ref: docs/fixes/aut-52-refine-fracture-route
 tracker_ref: AUT-52
-execution_id: "f2880068-385c-4403-8c31-9d11bd4b08a1"
-code_commit: "49e02b5c"
+execution_id: f2880068-385c-4403-8c31-9d11bd4b08a1
+code_commit: 49e02b5c
 global: APTO
 pbi_archived: false
 source_process: bug-fix
-scope: "AUT-52 C1–C5 — código 49e02b5c; doc alineado post re-refino ca843b5c / diseño f2880068"
+scope: AUT-52 C1–C5 — código 49e02b5c; doc alineado post re-refino ca843b5c / diseño f2880068
 checks:
   DOC_OBJECTIVES: APTO
   DOC_SPEC: APTO
@@ -34,7 +34,12 @@ checks:
 fracture_corpus:
   artifact: SddIA/engine/execute-process/tests/fixtures/fracture-corpus/684ebbf7-refine-route-redb.json
   status: anchored
+validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
+validated_head_sha: 8ec499c21fad77675e449f0afaf108b5ca639e42
+validated_tree_sha: 2e64e23a786475db54c364fc32fb546f7ab158df
+diff_digest: sha256:0ab853a7b655c3989e81de6dfe11ffdcc17f9a5c47e2160e202c83697699d864
 ---
+
 # Validación — aut-52-refine-fracture-route
 
 ## Veredicto

@@ -1,7 +1,7 @@
 ---
 feature_name: aut-53-accept-pr-hygiene
-created: "2026-11-02"
-updated: "2026-11-02T15:35:00Z"
+created: 2026-11-02
+updated: 2026-11-02T15:35:00Z
 process: bug-fix
 phase: Veredicto
 agent: tekton
@@ -9,11 +9,11 @@ branch: Fix_Events_Multiple_02
 branch_name: Fix_Events_Multiple_02
 persist_ref: docs/fixes/aut-53-accept-pr-hygiene
 tracker_ref: AUT-53
-execution_id: "c2dd1bc0-3556-4149-90ed-52cf13d44b8c"
+execution_id: c2dd1bc0-3556-4149-90ed-52cf13d44b8c
 global: APTO
 pbi_archived: false
 source_process: bug-fix
-scope: "AUT-53 verificación baseline + tests + contrato accept-pr v1.0.3"
+scope: AUT-53 verificación baseline + tests + contrato accept-pr v1.0.3
 checks:
   DOC_OBJECTIVES: APTO
   DOC_SPEC: APTO
@@ -32,7 +32,11 @@ checks:
   TECH_CARGO_AUT53: APTO
 fracture_corpus:
   status: unclassified
-  rationale: "Familia PBI c291912fe9a5 (AUT-54); daño PR 424 documentado en docs/fixes/bridge-presented-tracker-ref/execution.md; dedupe materialize-fracture-pbi fuera de alcance."
+  rationale: Familia PBI c291912fe9a5 (AUT-54); daño PR 424 documentado en docs/fixes/bridge-presented-tracker-ref/execution.md; dedupe materialize-fracture-pbi fuera de alcance.
+validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
+validated_head_sha: 8ec499c21fad77675e449f0afaf108b5ca639e42
+validated_tree_sha: 2e64e23a786475db54c364fc32fb546f7ab158df
+diff_digest: sha256:0ab853a7b655c3989e81de6dfe11ffdcc17f9a5c47e2160e202c83697699d864
 ---
 
 # Validación — aut-53-accept-pr-hygiene

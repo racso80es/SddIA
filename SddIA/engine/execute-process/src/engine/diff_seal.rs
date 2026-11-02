@@ -421,6 +421,13 @@ fn lab_skip_diff_seal_accept() -> bool {
     false
 }
 
+fn reseal_no_commit() -> bool {
+    matches!(
+        std::env::var("SDDIA_RESEAL_NO_COMMIT").as_deref(),
+        Ok(v) if matches!(v.to_lowercase().as_str(), "1" | "true" | "yes" | "on")
+    )
+}
+
 /// Gate AUT-41: bloquea merge en `accept-pr` si el sello no cubre el diff actual de la rama origen.
 pub fn validate_for_accept_pr_merge(
     repo: &Path,
@@ -495,6 +502,12 @@ pub fn reseal_validacion_for_branch(
         }
     }
     apply_diff_seal_to_validacion(repo, persist_ref, &computed)?;
+    if reseal_no_commit() {
+        return Ok(ResealOutcome::Committed {
+            diff_digest: computed.diff_digest,
+            validated_head_sha: head_sha.to_string(),
+        });
+    }
     let rel = validacion_rel(repo, persist_ref);
     let add = Command::new("git")
         .args(["add", &rel])
