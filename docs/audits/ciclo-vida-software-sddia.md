@@ -603,7 +603,7 @@ Un check de CI no puede contarse como APTO sin `run_id` o URL de run verde. Si f
 
 | Evento | Emisor | Suscriptor(es) en catálogo | Efecto sobre issue / fichero |
 | --- | --- | --- | --- |
-| `HU_Forged` | `forge-hu` | *(ninguno)* | La HU ya quedó en Backlog al hacer `create_issue`. |
+| `HU_Forged` | `forge-hu` | `tekton.tracker-stamp` | Sello backlog + comentario idempotente (paridad `PBI_Forged`). |
 | `PBI_Forged` | `forge-pbi` | `tekton.tracker-stamp` | Backlog + `tracker_column: backlog` + comentario `document_id`. |
 | `HU_Refined` | `refine-item` | `tekton.tracker-stamp` | Todo + `tracker_column: todo` + comentario versión. |
 | `PBI_Refined` | `refine-item` | `tekton.tracker-stamp` | Todo + `tracker_column: todo` + comentario versión. |
@@ -641,10 +641,22 @@ Un check de CI no puede contarse como APTO sin `run_id` o URL de run verde. Si f
 
 ---
 
-## 9. Límites y asimetrías detectadas en la auditoría del código
+## 9. Límites y asimetrías (post AUT-63, v1.2.0)
 
-1. **Catálogo vs código en `Kaizen_Alert_Required`:** el texto de `SddIA/core/event-domain-subscriptions.json` y de `SddIA/actions/materialize-kaizen-alert-doc.md` dice que siempre se escribe en `docs/todos/pending/`. En realidad, `materialize_kaizen_alert_doc.rs` comprueba primero si el proyecto tiene `tracker` configurado y, en Core-self, crea el issue `Kaizen {hash8}` en Linear.
-2. **Descripción de fase 6 en los `.md` de proceso vs `done_gate: linear`:** el intent de la fase «Cierre documental en rama» en `feature.md`, `bug-fix.md` y `refactorization.md` sigue redactado para el caso `file` («mover PBI a `docs/todos/done/`… `pbi_archived: true`»). En Core-self con `done_gate: linear`, la norma `features-documentation-pattern` v1.3.1 y la regla `task-closure-documental` mandan: no se crean ni mueven ficheros en `docs/todos/`; el gate lee el estado de Linear y la prueba `.SddIA/proofs/tracker-done/`.
-3. **`HU_Forged` sin suscriptor en `tracker-stamp`:** a diferencia de `PBI_Forged`, `HU_Forged` no figura en `event-domain-subscriptions.json`. La HU queda en Backlog porque `forge-hu` pasa `state_name = state_map.backlog` en el `create_issue` inicial, pero no recibe un segundo sellado ni comentario por `tracker-stamp`.
-4. **`Kaizen_Idea_Captured` sin suscriptor:** `telegram-gateway` puede emitirlo, pero en `event-domain-subscriptions.json` tiene lista de suscriptores vacía (`[]`); no dispara `forge-pbi` por sí solo.
+Fotografía **vigente** tras olas A1–A4 (genoma + handlers al corte de esta versión). A5 sigue siendo límite de lectura del laboratorio.
+
+| ID | Hallazgo histórico (v1.0.0) | Estado v1.2.0 |
+| --- | --- | --- |
+| A1 | Prosa de solo `docs/todos/pending/` vs dual tracker/file en Rust. | **Alineado:** catálogo, acción y Cúmulo describen issue `Kaizen {hash8}` o `PENDING_AUDIT_DOC_{hash8}.md`. |
+| A2 | Fase «Cierre documental en rama» solo redactada para provider `file`. | **Alineado:** intents + prosa ramifican `tracker.provider` según `features-documentation-pattern` v1.3.1; `hash_signature` refrescado. |
+| A3 | `HU_Forged` sin suscriptor `tracker-stamp`. | **Alineado:** suscripción + handler espejo `PBI_Forged` + códice `hu-forged.md`. |
+| A4 | `Kaizen_Idea_Captured` con `[]` sin contrato explícito. | **Alineado:** sumidero documentado + test route `L-A4-SINK`. |
+| A5 | `success: true` de laboratorio ≠ agentes ejecutados. | **Sin cambio.** Inspeccionar `execution_report.phases[].status`. |
+
+Notas de implementación (referencia rápida):
+
+1. **`Kaizen_Alert_Required`:** `materialize_kaizen_alert_doc.rs` elige tracker vs fichero; el genoma ya no contradice ese dual.
+2. **Cierre documental:** Core-self (`done_gate: linear`) no exige mover PBI a `docs/todos/done/`; la fase 6 del códice SE lo declara explícitamente.
+3. **`HU_Forged`:** `forge-hu` emite sello; `tracker-stamp` confirma backlog y comentario idempotente.
+4. **`Kaizen_Idea_Captured`:** suscriptores vacíos intencionales; sweep OK; no auto-forja.
 5. **Laboratorio vs ejecución real:** un envelope con `success: true` en laboratorio no implica que Mayeuta, Dedalo, Tekton o Argos hayan ejecutado lógica de agente; hay que inspeccionar `execution_report.phases[].status` (`simulated` vs `executed`).
