@@ -1,7 +1,7 @@
 ---
 feature_name: aut-67-prepush-store-lock
 created: "2026-11-02"
-updated: "2026-11-02T17:26:00Z"
+updated: "2026-11-02T17:32:00Z"
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -18,9 +18,9 @@ pbi_ref_injected: ""
 document_id: PBI-3d736171
 tracker_ref: AUT-67
 uuid: e46d8e0c-b9fa-4d18-a035-99e9cf66ac07
-correlation_id: "aeecb4e8-1762-4f09-97b6-647bb1c7414f"
-audit_event_reference: "aeecb4e8-1762-4f09-97b6-647bb1c7414f"
-execution_id: "0e71cbd1-dcec-4fc0-b8b6-acfdf9a009b5"
+correlation_id: "a40b2537-4c01-428c-b459-849f0ca851b1"
+audit_event_reference: "a40b2537-4c01-428c-b459-849f0ca851b1"
+execution_id: "ff03581d-f278-49f5-9ea4-e35c013b886b"
 source_process: bug-fix
 global: APTO
 pbi_archived: false
@@ -30,29 +30,28 @@ delivery_state: success
 resolution: PASS_F5_VERDICT
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: "Veredicto APTO — handoff accept-pr diferido a fase Handoff materialización (Presented aeecb4e8… · PR #432); L-HANDOFF-F5: no true sin consumed"
+accept_pr_block_reason: "Veredicto aprobado · Presented a40b2537… · MERGE ausente — handoff accept-pr diferido a fase Handoff materialización (L-HANDOFF-F5); accept_pr_handoff false hasta consumed"
 authorization_status:
   exitCode: 0
   emitter_agent: argos
-  note: "PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL+execution) · PPR∉revoked/permanent post-rehab AUT-62 · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · accept_pr_handoff pending"
+  note: "PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL+execution) · PPR∉revoked/permanent post-rehab AUT-62 · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · accept_pr_handoff pending (Presented PR #432)"
 git_manager_invoked: false
 git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session native_state; sin bypass raw"
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
-formal_evidence_detail: "session Runtime evidence source=native_state · TECH/GIT APTO · notes=idempotent-hit; Triaje heredado prosthesis_subprocess @ 2026-11-02T17:24:00Z"
+formal_evidence_detail: "session Runtime evidence source=native_state · TECH/GIT APTO · notes=idempotent-hit; machine sellado en _agent_handoff.md @ 2026-11-02T17:32:00Z"
 handoff_machine_file: present
 handoff_evidence_block_pre: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (session) source=native_state notes=idempotent-hit @ Veredicto; machine Triaje prosthesis_subprocess presente; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión Argos Veredicto — sin stdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID aeecb4e8… · exec 0e71cbd1…"
-head_commit_sha_fs: "c4569b3335b8d203c5eb32df22b5e6be1c7c49d2"
-workspace_path_injected: ".SddIA/workspaces/pull-request-review/0e71cbd1-dcec-4fc0-b8b6-acfdf9a009b5/"
+evidence_bridge_notes: "R1/R2 copia Runtime evidence (session) source=native_state notes=idempotent-hit @ Veredicto y bloqueo; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected esta sesión — sin stdout inventado"
+shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID a40b2537… · exec ff03581d…"
+head_commit_sha_fs: "48f8beff5a8b7572a9353c50428fbea8c2d4b197"
+workspace_path_injected: ".SddIA/workspaces/pull-request-review/ff03581d-f278-49f5-9ea4-e35c013b886b/"
 workspace_materialized: false
 pr_url: https://github.com/racso80es/SddIA/pull/432
-qa_attestation_sighted: ".SddIA/proofs/qa-attestations/Fix_Events_Multiple_02.json"
-qa_attestation_head_sha_sighted: "c86ec3de41e26ed1e193b888ff70aaa3f3bfcdb5"
-qa_attestation_correlation_sighted: "aut62-verify-ppr"
+qa_attestation_sighted: ""
+qa_attestation_head_sha_sighted: ""
 revoked_entity_alert: "delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent (rehab AUT-62); accept-pr∉revoked"
-scope: "PPR Veredicto y bloqueo — rama Fix_Events_Multiple_02 (CID aeecb4e8… · exec 0e71cbd1… · AUT-67 · PR #432)"
+scope: "PPR Veredicto y bloqueo — rama Fix_Events_Multiple_02 (CID a40b2537… · exec ff03581d… · AUT-67 · PR #432)"
 checks:
   F2_DOC_GATE: APTO
   F3_TECH_GATE: NO_APTO
@@ -87,7 +86,6 @@ checks:
   ARGOS_NO_KM_WRITE: APTO
   CODE_TOUCHPOINT_PRESENT: APTO
   WSPACE_MATERIALIZED: NO_APTO
-  QA_ATTESTATION_HEAD_MATCH: NO_APTO
   MERGE_ALREADY_OBSERVED: NO_APTO
   ACCEPT_PR_HANDOFF: NO_APTO
   L_HANDOFF_F5: APTO
@@ -109,7 +107,6 @@ non_blocking_findings:
   - GIT_EVIDENCE_SESSION_SHELL
   - WSPACE_MATERIALIZED
   - F3_TECH_GATE
-  - QA_ATTESTATION_HEAD_MATCH
   - MERGE_ALREADY_OBSERVED
   - ACCEPT_PR_HANDOFF
   - REVOKED_ENTITY_ALERT_DCC
@@ -119,28 +116,28 @@ non_blocking_findings:
   - REVOKED_ENTITY_ALERT_EVENT_CREATOR
   - REVOKED_ENTITY_ALERT_REFACTORIZATION
 situational_notes:
-  - "Fase Veredicto y bloqueo · CID aeecb4e8-1762-4f09-97b6-647bb1c7414f · exec 0e71cbd1-dcec-4fc0-b8b6-acfdf9a009b5"
+  - "Fase Veredicto y bloqueo · CID a40b2537-4c01-428c-b459-849f0ca851b1 · exec ff03581d-f278-49f5-9ea4-e35c013b886b"
   - "Evidence Bridge session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)"
-  - "Machine Triaje prosthesis_subprocess presente en _agent_handoff.md; Veredicto sella machine native_state/idempotent-hit"
   - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (cascada + touchpoints + evolution)"
   - "persist_ref inject vacío; resuelto docs/fixes/aut-67-prepush-store-lock"
-  - "Workspace PPR 0e71cbd1… no materializado — WSPACE_MATERIALIZED NO_APTO no bloqueante"
-  - "F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — cascada bug-fix + YAML + evolution e46d8e0c-… OK"
-  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md T0–T1)"
-  - "F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent (rehab AUT-62)"
-  - "F5_VERDICT APTO — sin blocking_findings F2/F4; delivery_state success"
-  - "QA_ATTESTATION_HEAD_MATCH NO_APTO — attestation head c86ec3de… ≠ worktree c4569b33… (stale aut62-verify-ppr); residual no bloquea F5"
-  - "accept_pr_handoff pending — Presented aeecb4e8… / PR #432; L-HANDOFF-F5 respetado (false hasta consumed)"
+  - "Workspace PPR ff03581d… no materializado — WSPACE_MATERIALIZED NO_APTO no bloqueante"
+  - "F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — objectives/spec/plan/implementation/execution + YAML + evolution e46d8e0c-… OK"
+  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md cargo test + test-aut-67)"
+  - "F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent (rehab AUT-62); accept-pr∉revoked"
+  - "DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix"
+  - "CODE_TOUCHPOINT_PRESENT APTO — routes_block_store_claim / invoke_local_qa_route_domain_event / STORE_LOCK_CONTENTION sighted FS"
   - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
   - "tracker linear AUT-67 · 0 hits docs/todos/** · pbi_archived false"
-  - "BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/Fix_Events_Multiple_02 @ c4569b33… (FS Read; no gitStdout)"
+  - "BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/Fix_Events_Multiple_02 @ 48f8beff… (FS Read; no gitStdout)"
+  - "MERGE_ALREADY_OBSERVED NO_APTO — sin PullRequest_Merged este CID; accept_pr_handoff false/pending (L-HANDOFF-F5)"
+  - "pr_url https://github.com/racso80es/SddIA/pull/432 · Presented a40b2537… — handoff accept-pr procede en fase posterior"
 ---
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
 
 **APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `F5_VERDICT_GATE: APTO`.  
-`accept_pr_handoff: false` / `pending` (Presented `aeecb4e8…` · PR #432 → fase Handoff).
+`accept_pr_handoff: false` / `pending` (Presented PR #432; MERGE ausente — L-HANDOFF-F5).
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
@@ -165,7 +162,7 @@ Copia literal session — **no** stdout Shell inventado:
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` físico |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` esta fase |
 
-Bloque: `_agent_handoff.md` § Runtime evidence (machine) Triaje `prosthesis_subprocess` + session Veredicto `native_state`/`idempotent-hit` (CID aeecb4e8… · exec 0e71cbd1…).
+Bloque: `_agent_handoff.md` § Runtime evidence (machine) sellado `native_state` (CID a40b2537… · exec ff03581d…).
 
 ## Ingesta
 
@@ -173,15 +170,15 @@ Bloque: `_agent_handoff.md` § Runtime evidence (machine) Triaje `prosthesis_sub
 |-------|------------|
 | `persist_ref` (inyectado) | vacío → **resuelto** `docs/fixes/aut-67-prepush-store-lock` |
 | `pbi_ref` (inyectado) | vacío · tracker Linear `AUT-67` / `document_id: PBI-3d736171` |
-| `correlation_id` | `aeecb4e8-1762-4f09-97b6-647bb1c7414f` (ECST Presented) |
-| `execution_id` | `0e71cbd1-dcec-4fc0-b8b6-acfdf9a009b5` |
+| `correlation_id` | `a40b2537-4c01-428c-b459-849f0ca851b1` (ECST Presented) |
+| `execution_id` | `ff03581d-f278-49f5-9ea4-e35c013b886b` |
 | `branch_name` (runtime) | `Fix_Events_Multiple_02` |
-| Worktree HEAD (FS) | `refs/heads/Fix_Events_Multiple_02` @ `c4569b33…` (= inject) |
+| Worktree HEAD (FS) | `refs/heads/Fix_Events_Multiple_02` @ `48f8beff…` |
 | Workspace PPR | **no materializado** |
 | `pr_url` | `https://github.com/racso80es/SddIA/pull/432` |
 | Tracker | `linear` · sin fichero KM AUT-67 |
+| Evento Merged (este CID) | **ausente** |
 | Cerbero FS | PPR **ausente** de `revoked` y `permanent` |
-| QA attestation | presente · head **desfasado** vs worktree |
 
 ## Peajes F2 → F5
 
@@ -192,8 +189,7 @@ Bloque: `_agent_handoff.md` § Runtime evidence (machine) Triaje `prosthesis_sub
 | `F4_RBAC_GATE` | **APTO** | `pull-request-review` ∉ revoked/permanent post-rehab AUT-62 |
 | `RBAC_PROCESS_REGISTRY` | **APTO** | mismo peaje Cerbero FS |
 | `F5_VERDICT` / `F5_VERDICT_GATE` | **APTO** | sin `blocking_findings` F2/F4 |
-| `QA_ATTESTATION_HEAD_MATCH` | **NO_APTO** | attestation `c86ec3de…` ≠ HEAD `c4569b33…` — residual no bloquea F5 |
-| `ACCEPT_PR_HANDOFF` / `L_HANDOFF_F5` | **NO_APTO** / **APTO** | pending Presented; regla L-HANDOFF respetada |
+| `ACCEPT_PR_HANDOFF` / `L_HANDOFF_F5` | **NO_APTO** / **APTO** | pending Presented; MERGE ausente; regla L-HANDOFF respetada |
 
 ## branch / git_changes / KM
 
@@ -207,7 +203,7 @@ Bloque: `_agent_handoff.md` § Runtime evidence (machine) Triaje `prosthesis_sub
 | `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula) |
 | `TRACKER_LINEAR_NO_KM_FILE` | **APTO** | provider `linear` · 0 ficheros AUT-67 bajo `docs/todos/` |
 | `PBI_PENDING_ABSENT` | **APTO** | sin semilla AUT-67 en pending/ |
-| `WSPACE_MATERIALIZED` | **NO_APTO** | dir exec vacío / ausente |
+| `WSPACE_MATERIALIZED` | **NO_APTO** | dir exec `ff03581d…` ausente |
 | `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para este CID |
 
 `git_changes` por inventario path-assert (`persist_ref` + audit + evolution + touchpoints T1–T3). **No** es `gitStdout` de esta sesión.
@@ -227,15 +223,16 @@ Bloque: `_agent_handoff.md` § Runtime evidence (machine) Triaje `prosthesis_sub
   "delivery_state": "success",
   "accept_pr_handoff": false,
   "accept_pr_handoff_status": "pending",
-  "accept_pr_block_reason": "handoff diferido a Handoff materialización (Presented aeecb4e8… · PR #432)",
+  "accept_pr_block_reason": "Presented a40b2537… · MERGE ausente — handoff accept-pr diferido (L-HANDOFF-F5)",
   "pbi_archived": false,
   "branch": "Fix_Events_Multiple_02",
   "branch_worktree_observed": "Fix_Events_Multiple_02",
-  "head_commit_sha_fs": "c4569b3335b8d203c5eb32df22b5e6be1c7c49d2",
+  "head_commit_sha_fs": "48f8beff5a8b7572a9353c50428fbea8c2d4b197",
   "document_id": "PBI-3d736171",
   "tracker_ref": "AUT-67",
-  "correlation_id": "aeecb4e8-1762-4f09-97b6-647bb1c7414f",
-  "execution_id": "0e71cbd1-dcec-4fc0-b8b6-acfdf9a009b5",
+  "correlation_id": "a40b2537-4c01-428c-b459-849f0ca851b1",
+  "execution_id": "ff03581d-f278-49f5-9ea4-e35c013b886b",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/432",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
@@ -246,7 +243,7 @@ Bloque: `_agent_handoff.md` § Runtime evidence (machine) Triaje `prosthesis_sub
 
 ## Alcance
 
-Veredicto y bloqueo **aprueba** peajes F2/F4. Residual: F3 ausente, attestation HEAD desfasada, workspace PPR no materializado, Shell git-manager Rejected — no abortan F5. Sin merge directo en aduana. Argos **no** escribe bajo `docs/todos/`.
+Veredicto y bloqueo **aprueba** peajes F2/F4. Residual no bloqueante: F3 ausente (proxy TECH_FORMAL), `clarify.md` ausente, workspace PPR no materializado, Shell git-manager Rejected, MERGE ausente. Sin merge directo en aduana. Argos **no** escribe bajo `docs/todos/`. Handoff `accept-pr` queda `pending` para fase posterior.
 
 ## approval_status
 
