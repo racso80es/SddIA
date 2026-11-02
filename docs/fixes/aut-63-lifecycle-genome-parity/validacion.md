@@ -1,6 +1,6 @@
 ---
 feature_name: aut-63-lifecycle-genome-parity
-created: "2026-11-02"
+created: 2026-11-02
 process: bug-fix
 branch: Fix_Events_Multiple_02
 branch_name: Fix_Events_Multiple_02
@@ -9,7 +9,7 @@ pbi_ref: AUT-63
 document_id: PBI-b0d4af60
 tracker_ref: AUT-63
 uuid: 72169010-d232-41f9-a877-44beb83dafc2
-execution_id: "a6a8c74c-89df-46a7-ab0d-74d3ddb18814"
+execution_id: a6a8c74c-89df-46a7-ab0d-74d3ddb18814
 global: APTO
 pbi_archived: false
 checks:
@@ -46,7 +46,10 @@ git_changes:
 - docs/audits/ciclo-vida-software-sddia-v1.0.0.md
 - docs/audits/ciclo-vida-software-sddia.md
 - docs/fixes/aut-63-lifecycle-genome-parity/
-validated_head_sha: 0bd4289aaf65513f9e09ceeb09df0a60cb6bda9b
+validated_head_sha: eed6fb1535d92c8d0c62cf364e71a4f2af343280
+validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
+validated_tree_sha: 262c0f79ef523fa27a978ff3f8c5bf6ecd7b7806
+diff_digest: sha256:cc7a9318049f6d31ca2ab6e56ac3700747572d9f626dca9459817814a3d1b9a9
 ---
 
 # Validación — AUT-63
