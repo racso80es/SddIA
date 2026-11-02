@@ -1,8 +1,18 @@
 {
-  "compiled_at": "2026-08-29T13:28:55.854435857+00:00",
+  "compiled_at": "2026-11-02T14:57:35.554845100+00:00",
   "compiler": "compile-ecosystem-map-snapshot",
   "families": {
     "daemon": [
+      {
+        "family": "daemon",
+        "id": "linear-bridge-watcher",
+        "uuid": "5171f316-d417-4e4d-99ee-884b8008bb01"
+      },
+      {
+        "family": "daemon",
+        "id": "kalma2-bridge",
+        "uuid": "abdafa2f-bfea-4b30-ab2b-4fbafbdcb903"
+      },
       {
         "family": "daemon",
         "id": "iota-publish-relay",
@@ -12,11 +22,6 @@
         "family": "daemon",
         "id": "event-watcher",
         "uuid": "f995cc89-22a7-488d-9b25-ddb1e5e3a4a4"
-      },
-      {
-        "family": "daemon",
-        "id": "event-sweeper",
-        "uuid": "3eafa012-2b71-47e5-b47e-467b59a3fd52"
       },
       {
         "family": "daemon",
@@ -72,6 +77,11 @@
       },
       {
         "family": "skill",
+        "id": "antigravity-cli-executor",
+        "uuid": "d8b07e6f-1cc0-4b6f-a789-02ade10471f5"
+      },
+      {
+        "family": "skill",
         "id": "shell-executor",
         "uuid": "93d23720-d79a-412f-a85d-ab9b2d9862bd"
       },
@@ -87,6 +97,31 @@
       }
     ],
     "tool": [
+      {
+        "family": "tool",
+        "id": "repo-retention-purger",
+        "uuid": "e9f12a4f-f6b1-4ad3-af03-634c8cc9707c"
+      },
+      {
+        "family": "tool",
+        "id": "llm-router",
+        "uuid": "3836c0da-ef32-419b-9a73-89afed4a93ac"
+      },
+      {
+        "family": "tool",
+        "id": "ephemeral-cache-purger",
+        "uuid": "8929eeea-5e5b-402a-aafa-4a9b429acaec"
+      },
+      {
+        "family": "tool",
+        "id": "thought-graph-access",
+        "uuid": "e61d4096-b610-4eaf-a6f6-823153a30a6b"
+      },
+      {
+        "family": "tool",
+        "id": "gemini-http-infer",
+        "uuid": "7a8da3ad-4916-4ee3-8407-aa1ecdc7ecba"
+      },
       {
         "family": "tool",
         "id": "telegram-gateway",
@@ -136,6 +171,16 @@
         "family": "tool",
         "id": "github-raw-fetcher",
         "uuid": "66daf19f-217a-4874-b417-99e5be2571f3"
+      },
+      {
+        "family": "tool",
+        "id": "sddia-workspace-server",
+        "uuid": "e8f9a0b1-c2d3-4e4f-a5b6-c7d8e9f0a1b2"
+      },
+      {
+        "family": "tool",
+        "id": "linear-tracker-adapter",
+        "uuid": "8f3c2a1b-9d4e-4f5a-b6c7-1234567890ab"
       }
     ]
   }
