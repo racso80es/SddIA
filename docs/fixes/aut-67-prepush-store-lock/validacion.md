@@ -135,9 +135,9 @@ situational_notes:
 - qa-attestation sighted head_sha 48f8beff… ≠ HEAD FS 20b59549… → QA_ATTESTATION_HEAD_MATCH NO_APTO residual no bloqueante
 - 'accept_pr_handoff pending — Presented PR #432; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)'
 validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
-validated_head_sha: e9e0a991f12699b882e5454e4d3930bdf22b0a86
-validated_tree_sha: 5435ff3030d796b40e3be55bd06ae539b8656b83
-diff_digest: sha256:abd8fa8f91f4914f6322ed43598875d490769a56473325628bb6a5b83e2d3d97
+validated_head_sha: 4ddec07cfca241cd474626839e73e1d6e287987a
+validated_tree_sha: 47545d9709c400475cf815af1847e6e5eaf60d37
+diff_digest: sha256:637c4186c73dff6285d4837c3e05d2bb7daaed7d66a51e55d9d165012f2708d5
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
