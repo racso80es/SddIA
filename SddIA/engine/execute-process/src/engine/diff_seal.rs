@@ -890,6 +890,101 @@ mod tests {
     }
 
     #[test]
+    fn aut53_scoped_persist_ref_ignores_sibling_fixture_apto_without_seal() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let cycle = "docs/fixes/cycle-ap";
+        init_repo_main_feat(repo, "fix/cycle", cycle);
+        let fixture = "docs/features/_fixture-done-gate-lab";
+        fs::create_dir_all(repo.join(fixture)).unwrap();
+        fs::write(
+            repo.join(fixture).join("validacion.md"),
+            "---\nglobal: APTO\npbi_archived: false\n---\n\n# fixture\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join("docs/fixes/cycle-ap/validacion.md"),
+            "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        Command::new("git")
+            .args(["add", "."])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "val"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let seal = compute_diff_seal_at_head(repo, &head, "main", cycle).unwrap();
+        apply_diff_seal_to_validacion(repo, cycle, &seal).unwrap();
+        Command::new("git")
+            .args(["add", "docs/fixes/cycle-ap/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "seal"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        validate_for_accept_pr_merge(repo, "fix/cycle", "main", Some(cycle))
+            .expect("hermano fixture APTO sin sello no debe abortar el ciclo");
+    }
+
+    #[test]
+    fn aut53_scoped_persist_ref_still_blocks_stale_seal_on_cycle() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let persist = "docs/features/ap";
+        init_repo_main_feat(repo, "feat/ap", persist);
+        fs::write(
+            repo.join("docs/features/ap/validacion.md"),
+            "---\nglobal: APTO\n---\n\n# ok\n",
+        )
+        .unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/ap/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "val"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let head = git_output(repo, &["rev-parse", "HEAD"]).unwrap();
+        let seal = compute_diff_seal_at_head(repo, &head, "main", persist).unwrap();
+        apply_diff_seal_to_validacion(repo, persist, &seal).unwrap();
+        Command::new("git")
+            .args(["add", "docs/features/ap/validacion.md"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "seal"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        fs::write(repo.join("code.txt"), "drift\n").unwrap();
+        Command::new("git")
+            .args(["add", "code.txt"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        Command::new("git")
+            .args(["commit", "-qm", "drift"])
+            .current_dir(repo)
+            .status()
+            .unwrap();
+        let err =
+            validate_for_accept_pr_merge(repo, "feat/ap", "main", Some(persist)).unwrap_err();
+        assert!(err.contains("diff_digest") || err.contains("validated_head_sha"));
+    }
+
+    #[test]
     fn reseal_commits_when_digest_changes() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
