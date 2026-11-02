@@ -26,6 +26,7 @@ checks:
   DOC_PLAN: APTO
   TECH_AUT63_TESTS: APTO
   TRACKER_LINEAR_NO_KM_FILE: APTO
+pr_url: https://github.com/racso80es/SddIA/pull/432
 git_changes:
 - SddIA/actions/materialize-kaizen-alert-doc.md
 - SddIA/agents/cumulo.instructions.json
@@ -71,3 +72,5 @@ diff_digest: sha256:cc7a9318049f6d31ca2ab6e56ac3700747572d9f626dca9459817814a3d1
 | AC7 | `SddIA/evolution/72169010-d232-41f9-a877-44beb83dafc2.md` | OK |
 
 Comando agregado: `cd SddIA/engine/execute-process && cargo test aut63 --lib` — 2/2 verde.
+
+**PR:** https://github.com/racso80es/SddIA/pull/432 — `PullRequest_Presented` emitido en primer DCC (evolution gate corregido en commits posteriores).

@@ -49,4 +49,4 @@ cargo test aut63 --lib  (execute-process)
 |------|--------|
 | `implementation.md` | Sellado |
 | `validacion.md` `global: APTO` | Sellado (linear, `pbi_archived: false`) |
-| `delivery-close-cycle` | Ver acuse JSON / `pr_url` en frontmatter tras DCC |
+| `delivery-close-cycle` | PR https://github.com/racso80es/SddIA/pull/432; evolution gate EVOL_OK tras rehash |
