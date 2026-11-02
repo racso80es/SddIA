@@ -15,6 +15,7 @@ items_applied:
   - A3
   - A4
   - T6
+  - T7
 ---
 
 # execution — aut-63-lifecycle-genome-parity
@@ -41,3 +42,11 @@ items_applied:
 ```text
 cargo test aut63 --lib  (execute-process)
 ```
+
+## T7 — Cascada cierre
+
+| Paso | Estado |
+|------|--------|
+| `implementation.md` | Sellado |
+| `validacion.md` `global: APTO` | Sellado (linear, `pbi_archived: false`) |
+| `delivery-close-cycle` | Ver acuse JSON / `pr_url` en frontmatter tras DCC |
