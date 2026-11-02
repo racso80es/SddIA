@@ -35,9 +35,9 @@ fracture_corpus:
   artifact: SddIA/engine/execute-process/tests/fixtures/fracture-corpus/684ebbf7-refine-route-redb.json
   status: anchored
 validated_base_sha: c86fec895b9878cd6d80007553c161789561a93c
-validated_head_sha: 415285837fa6c322c26bf24a24891ba88f970406
-validated_tree_sha: 25576cd2ada2512ac9846a098f3151efa50803f5
-diff_digest: sha256:637c4186c73dff6285d4837c3e05d2bb7daaed7d66a51e55d9d165012f2708d5
+validated_head_sha: 1c343804feddff7e5d1e1393401f8b695f4133d9
+validated_tree_sha: c9cce56e69f8f35bec7554c035e61a82b4336c78
+diff_digest: sha256:a63bb5ba3266128f98bf8ad11346786e80938ad685b877790eb8abf31d8c01c2
 ---
 
 # Validación — aut-52-refine-fracture-route
