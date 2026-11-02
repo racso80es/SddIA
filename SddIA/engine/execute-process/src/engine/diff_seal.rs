@@ -497,6 +497,7 @@ pub fn reseal_validacion_for_branch(
     if let Some(sealed) = read_seal_from_validacion_at(repo, head_sha, persist_ref)? {
         if sealed.diff_digest == computed.diff_digest
             && sealed.validated_base_sha == computed.validated_base_sha
+            && sealed.validated_head_sha == computed.validated_head_sha
         {
             return Ok(ResealOutcome::Unchanged);
         }
