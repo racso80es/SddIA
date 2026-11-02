@@ -54,4 +54,4 @@ Evolution `69228e55-be56-4578-8bf3-1207b4eb31a2` + `Evolution_log.md`.
 |------|-----------|
 | PPR lab (`aut62-verify-ppr`) | `success: true`, `exitCode: 0` · `F4_RBAC_GATE: APTO` · `F5_VERDICT: APTO` · `delivery_state: success` · sin `FAIL_F4_RBAC` por PPR revocado |
 | Cerbero post-T3 | `pull-request-review` ∉ `revoked` / `permanent` |
-| Gate pre-PR QA (predicado) | `validate_attestation_for_branch_head` + atestación `qa-attestation/1.0` al `tree_sha` de HEAD (ver validacion.md) |
+| Gate pre-PR QA (predicado) | `read_qa_attestation_hit` OK tras atestación al `tree_sha` de HEAD `51df85b0` (DCC completo no ejecutado: proceso revocado) |

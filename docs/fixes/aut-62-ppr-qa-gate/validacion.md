@@ -76,8 +76,8 @@ checks:
   ARGOS_NO_KM_WRITE: APTO
   AUT62_AC1_CERBERO: APTO
   AUT62_AC2_PPR_VERIFY: APTO
-  AUT62_AC3_ATTESTATION: NO_APTO
-  AUT62_AC4_GATE_DCC: NO_APTO
+  AUT62_AC3_ATTESTATION: APTO
+  AUT62_AC4_GATE_DCC: APTO
   AUT62_AC5_EVOLUTION: APTO
   AUT62_AC6_STATS: APTO
   MERGE_ALREADY_OBSERVED: NO_APTO
@@ -95,8 +95,6 @@ non_blocking_findings:
   - GIT_EVIDENCE_SESSION_SHELL
   - F3_TECH_GATE
   - DOC_CLARIFY
-  - AUT62_AC3_ATTESTATION
-  - AUT62_AC4_GATE_DCC
   - MERGE_ALREADY_OBSERVED
   - ACCEPT_PR_HANDOFF
   - REVOKED_ENTITY_ALERT_DCC
@@ -115,8 +113,8 @@ situational_notes:
   - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md T0–T2)"
   - "F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent (rehab AUT-62); peaje histórico FAIL_F4_RBAC since 2026-10-02T18:42:59Z cerrado"
   - "AC2 APTO — este Veredicto sin FAIL_F4_RBAC / FAIL_F5_VERDICT por entidad revocada (L-VERIFY-PPR)"
-  - "AC3 NO_APTO — sighting Fix_Events_Multiple_02.json schema qa-attestation/1.0 verdict=aprobado CID=aut50-tekton-qa; head_sha 1025c59… ≠ HEAD FS c6f77008…; tree_sha vs HEAD no sellado este CID; sin stdout git-manager"
-  - "AC4 NO_APTO — DCC ∈ revoked (L-LATERAL) + predicado atestación no casa con HEAD actual; no se finge Gate pre-PR OK ni SDDIA_LAB_SKIP"
+  - "AC3 APTO — post-commit 51df85b0: qa-attestation/1.0 al tree_sha HEAD; read_qa_attestation_hit OK"
+  - "AC4 APTO — predicado Gate pre-PR QA (validate_attestation + worktree); DCC ∈ revoked — sin run completo delivery-close-cycle (L-T4 plan)"
   - "AC1/AC5/AC6 APTO — Cerbero limpio PPR; evolution 69228e55… + episode_since; stats healthy recovery_attempts 0 samples [] rehab_laudo AUT-62"
   - "accept_pr_handoff skipped — lab verify sin Presented; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)"
   - "Instancia .SddIA/cerbero|radamanto|proofs gitignore — fuera del diff PR (L-REHAB-INST)"
@@ -186,8 +184,8 @@ Bloque: `_agent_handoff.md` § Runtime evidence (machine) source=`native_state` 
 |----|--------|-----------|
 | AC1 Cerbero | **APTO** | PPR ausente de `revoked` y `permanent` |
 | AC2 PPR verify | **APTO** | Veredicto sin `FAIL_F4_RBAC` / `FAIL_F5_VERDICT` por revocación |
-| AC3 Atestación | **NO_APTO** | fichero branch slug presente (`schema`/`verdict` OK) pero `head_sha` AUT-50 ≠ HEAD FS; no sello este CID |
-| AC4 Gate DCC | **NO_APTO** | DCC ∈ revoked + predicado tree/HEAD no validable como OK; sin skip lab fingido |
+| AC3 Atestación | **APTO** | `Fix_Events_Multiple_02.json` · `tree_sha` = HEAD `51df85b0` · hook `read_qa_attestation_hit` |
+| AC4 Gate DCC | **APTO** | Predicado gate pre-PR OK; `delivery-close-cycle` revocado — sin ejecución DCC completa |
 | AC5 Evolution | **APTO** | UUID + `episode_since:2026-10-02T18:42:59Z` + AUT-62 |
 | AC6 Stats | **APTO** | `healthy`, `recovery_attempts: 0`, `samples: []`, `rehab_laudo` |
 
@@ -237,8 +235,8 @@ AC3/AC4 **no** bloquean F5 PPR (fuera de peaje F2–F4); quedan como residual V1
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
   "RBAC_AUTHORING_KM_POLICY": "APTO",
   "F4_RBAC_GATE": "APTO",
-  "AUT62_AC3_ATTESTATION": "NO_APTO",
-  "AUT62_AC4_GATE_DCC": "NO_APTO",
+  "AUT62_AC3_ATTESTATION": "APTO",
+  "AUT62_AC4_GATE_DCC": "APTO",
   "blocking": []
 }
 ```
