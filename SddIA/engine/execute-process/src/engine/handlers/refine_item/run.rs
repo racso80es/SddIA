@@ -69,6 +69,7 @@ fn emit_store_lock_fracture(repo: &Path, detail: &str) {
             "phase": "Sellado Argos",
             "source_process": PROCESS,
             "error_code": STORE_LOCK_CONTENTION,
+            "friction_id": "F-REFINE-ITEM-REDB-LOCK",
         }),
     );
 }

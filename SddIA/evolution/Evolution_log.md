@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 141
+universe_total: 142
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `c55f04de-f956-4f1e-89ab-580b2c5bab34` | 2026-11-02 | AUT-52: refine-item lock redb — fractura sidechannel, route path virtual, LINEAR_TRANSPORT, firma F-REFINE-ITEM-REDB-LOCK. | CANONICO | `SddIA/evolution/c55f04de-f956-4f1e-89ab-580b2c5bab34.md` |
 | `69228e55-be56-4578-8bf3-1207b4eb31a2` | 2026-11-02 | AUT-62: rehab instancia PPR revocado (Cerbero + Radamanto) gate pre-PR QA. | CANONICO | `SddIA/evolution/69228e55-be56-4578-8bf3-1207b4eb31a2.md` |
 | `a1b2c3d4-e5f6-4789-a012-3456789abcde` | 2026-11-01 | AUT-50: alta backlog — forge-pbi, list_issues, forge-hu, refine lock. | CANONICO | `SddIA/evolution/a1b2c3d4-e5f6-4789-a012-3456789abcde.md` |
 | `20628bfd-f3f1-4dff-9409-4ef70e82c985` | 2026-11-01 | AUT-48: DCC v1.6.1 sello Presentación alineado con F-DCC-PR-URL-MISSING. | CANONICO | `SddIA/evolution/20628bfd-f3f1-4dff-9409-4ef70e82c985.md` |

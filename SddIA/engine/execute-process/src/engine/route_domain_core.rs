@@ -205,6 +205,54 @@ fn fracture_event_content_hash(event_type: &str, payload: &Value) -> String {
     format!("{:x}", hasher.finalize())[..12].to_string()
 }
 
+fn pending_virtual_event_path(pending_dir: &Path, event_id: &str) -> PathBuf {
+    pending_dir.join(format!("{event_id}.json"))
+}
+
+pub(crate) fn is_runtime_db_event_path(repo: &Path, path: &Path) -> bool {
+    if path == runtime_db_path(repo) {
+        return true;
+    }
+    path.file_name()
+        .and_then(|n| n.to_str())
+        .is_some_and(|n| n == "events.redb")
+}
+
+fn store_lock_error_msg(err: &str) -> bool {
+    err.contains("Database already open") || err.contains("Cannot acquire lock")
+}
+
+fn find_fracture_stored_event_id(repo: &Path, event: &Value) -> Result<Option<String>, String> {
+    let path = runtime_db_path(repo);
+    if !path.is_file() {
+        return Ok(None);
+    }
+    let event_type = event
+        .get("event_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let payload = event.get("payload").cloned().unwrap_or(json!({}));
+    let hash = fracture_event_content_hash(event_type, &payload);
+    let store = sddia_event_store::EventStore::open(path).map_err(|err| err.to_string())?;
+    let listed = store
+        .list_family(sddia_event_store::Family::Domain)
+        .map_err(|err| err.to_string())?;
+    Ok(listed.into_iter().find_map(|stored| {
+        if stored.event_type != event_type {
+            return None;
+        }
+        let stored_hash = fracture_event_content_hash(
+            &stored.event_type,
+            &stored.ecst.get("payload").cloned().unwrap_or(json!({})),
+        );
+        if stored_hash == hash {
+            Some(stored.event_id)
+        } else {
+            None
+        }
+    }))
+}
+
 fn write_pending_domain_event_file(
     repo: &Path,
     pending_dir: &Path,
@@ -235,14 +283,26 @@ fn write_pending_domain_event_file(
         }
     }
     if writes_store(mode) {
-        if content_hash.is_some() && !writes_filesystem(mode) && fracture_already_stored(repo, &event)?
-        {
-            return Ok(runtime_db_path(repo));
+        if content_hash.is_some() && !writes_filesystem(mode) {
+            if let Some(existing_id) = find_fracture_stored_event_id(repo, &event)? {
+                return Ok(pending_virtual_event_path(pending_dir, &existing_id));
+            }
         }
-        record_ecst(repo, "domain", &event).map_err(|err| err.to_string())?;
+        match record_ecst(repo, "domain", &event) {
+            Ok(()) => {}
+            Err(err) => {
+                let err_s = err.to_string();
+                if event_type == "System_Fracture_Detected" && store_lock_error_msg(&err_s) {
+                    let target = pending_dir.join(format!("{event_uuid}.json"));
+                    write_json_atomic(&target, &event)?;
+                    return Ok(target);
+                }
+                return Err(err_s);
+            }
+        }
     }
     if !writes_filesystem(mode) {
-        return Ok(runtime_db_path(repo));
+        return Ok(pending_virtual_event_path(pending_dir, &event_uuid));
     }
 
     if let Some(hash12) = content_hash {
@@ -269,27 +329,7 @@ fn write_pending_domain_event_file(
 }
 
 fn fracture_already_stored(repo: &Path, event: &Value) -> Result<bool, String> {
-    let path = runtime_db_path(repo);
-    if !path.is_file() {
-        return Ok(false);
-    }
-    let event_type = event
-        .get("event_type")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let payload = event.get("payload").cloned().unwrap_or(json!({}));
-    let hash = fracture_event_content_hash(event_type, &payload);
-    let store = sddia_event_store::EventStore::open(path).map_err(|err| err.to_string())?;
-    let listed = store
-        .list_family(sddia_event_store::Family::Domain)
-        .map_err(|err| err.to_string())?;
-    Ok(listed.into_iter().any(|stored| {
-        stored.event_type == event_type
-            && fracture_event_content_hash(
-                &stored.event_type,
-                &stored.ecst.get("payload").cloned().unwrap_or(json!({})),
-            ) == hash
-    }))
+    Ok(find_fracture_stored_event_id(repo, event)?.is_some())
 }
 
 pub fn materialize_pending_domain_event(
@@ -2313,6 +2353,15 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
     };
     let event_path = event_path.canonicalize().unwrap_or(event_path);
 
+    if is_runtime_db_event_path(repo, &event_path) {
+        return json!({
+            "success": false,
+            "exitCode": 1,
+            "data": null,
+            "error": "event path must not be runtime events.redb; use pending/{event_id}.json",
+        });
+    }
+
     let from_store = !event_path.is_file();
     let mut event: Value = if from_store {
         if !writes_store(store_mode()) {
@@ -4167,6 +4216,7 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
     let mut uuids_to_anchor = vec![];
     let mut event_paths_by_uuid: HashMap<String, PathBuf> = HashMap::new();
     let mut results = vec![];
+    let mut batch_errors: Vec<String> = vec![];
 
     for path_str in &event_file_paths {
         let raw_path = PathBuf::from(path_str);
@@ -4176,17 +4226,52 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
             repo.join(&raw_path)
         };
 
-        let Ok(text) = fs::read_to_string(&event_path) else {
+        if is_runtime_db_event_path(repo, &event_path) {
+            batch_errors.push(format!(
+                "refusing runtime db as event JSON: {}",
+                event_path.display()
+            ));
             continue;
-        };
-        let Ok(event) = serde_json::from_str::<Value>(&text) else {
-            continue;
+        }
+
+        let event = if !event_path.is_file() {
+            if !writes_store(store_mode()) {
+                batch_errors.push(format!("event file not found: {path_str}"));
+                continue;
+            }
+            let stem = event_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("");
+            match load_dispatched_event(repo, stem, &event_path) {
+                Ok(Some(v)) => v,
+                Ok(None) => {
+                    batch_errors.push(format!("event not in store: {path_str}"));
+                    continue;
+                }
+                Err(e) => {
+                    batch_errors.push(format!("store load: {e}"));
+                    continue;
+                }
+            }
+        } else {
+            let Ok(text) = fs::read_to_string(&event_path) else {
+                batch_errors.push(format!("event file not readable: {path_str}"));
+                continue;
+            };
+            let Ok(parsed) = serde_json::from_str::<Value>(&text) else {
+                batch_errors.push(format!("invalid event JSON: {path_str}"));
+                continue;
+            };
+            parsed
         };
 
         let Some(event_type) = event.get("event_type").and_then(|v| v.as_str()) else {
+            batch_errors.push(format!("missing event_type: {path_str}"));
             continue;
         };
         let Some(event_uuid) = event.get("event_id").and_then(|v| v.as_str()) else {
+            batch_errors.push(format!("missing event_id: {path_str}"));
             continue;
         };
         event_paths_by_uuid.insert(event_uuid.to_string(), event_path.clone());
@@ -4238,11 +4323,29 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
 
     for path_str in &event_file_paths {
         let out = route_domain_event(repo, path_str, true);
+        let ok = out.get("success").and_then(|v| v.as_bool()) == Some(true)
+            && out.get("exitCode").and_then(|v| v.as_i64()).unwrap_or(1) == 0;
+        if !ok {
+            if let Some(err) = out.get("error").and_then(|v| v.as_str()) {
+                batch_errors.push(err.to_string());
+            } else {
+                batch_errors.push(format!("route failed: {path_str}"));
+            }
+        }
         results.push(out);
 
         let raw_path = PathBuf::from(path_str);
         let event_uuid = raw_path.file_stem().unwrap_or_default().to_string_lossy();
         let _sweep = try_sweep_event(repo, &bus, &event_uuid, Some(&registry));
+    }
+
+    if !batch_errors.is_empty() {
+        return json!({
+            "success": false,
+            "exitCode": 1,
+            "error": batch_errors.join("; "),
+            "data": results,
+        });
     }
 
     json!({ "success": true, "exitCode": 0, "data": results })
@@ -4421,5 +4524,42 @@ mod tier_dispatch {
             None => std::env::remove_var("SDDIA_TIER_MARKER"),
         }
         let _ = fs::remove_dir_all(&root);
+    }
+}
+
+#[cfg(test)]
+mod aut52_route_redb {
+    use super::is_runtime_db_event_path;
+    use super::runtime_db_path;
+    use serde_json::json;
+    use std::fs;
+    use std::path::Path;
+
+    #[test]
+    fn aut52_runtime_db_path_is_detected() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let db = runtime_db_path(repo);
+        fs::write(&db, b"").unwrap();
+        assert!(is_runtime_db_event_path(repo, &db));
+        assert!(!is_runtime_db_event_path(
+            repo,
+            &Path::new(".events/pending/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.json")
+        ));
+    }
+
+    #[test]
+    fn aut52_route_domain_batch_rejects_redb_path() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let db = runtime_db_path(repo);
+        fs::write(&db, b"").unwrap();
+        let rel = db.strip_prefix(repo).unwrap().to_string_lossy().to_string();
+        let out = super::route_domain_batch(repo, vec![rel]);
+        assert_eq!(out.get("success"), Some(&json!(false)));
+        assert_eq!(out.get("exitCode"), Some(&json!(1)));
     }
 }

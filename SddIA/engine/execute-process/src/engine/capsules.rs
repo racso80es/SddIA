@@ -51,11 +51,22 @@ fn capsule_failure_blob(body: &Value) -> String {
 /// Mensaje canónico para `invoke_tool_for_process` (prefiere código Linear u otro `error.code`).
 pub fn tool_invoke_error_message(body: &Value) -> String {
     if let Some(obj) = body.get("error").and_then(|v| v.as_object()) {
-        if let Some(code) = obj.get("code").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
-            return code.to_string();
+        let code = obj
+            .get("code")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty());
+        let msg = obj
+            .get("message")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty());
+        if code == Some("LINEAR_AUTH_MISSING") {
+            return code.unwrap().to_string();
         }
-        if let Some(msg) = obj.get("message").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
-            return msg.to_string();
+        match (code, msg) {
+            (Some(c), Some(m)) => return format!("{c}: {m}"),
+            (Some(c), None) => return c.to_string(),
+            (None, Some(m)) => return m.to_string(),
+            (None, None) => {}
         }
     }
     if let Some(s) = body.get("error").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
@@ -671,6 +682,21 @@ mod tests {
         assert_eq!(tool_invoke_error_message(&body), "LINEAR_AUTH_MISSING");
         let blob = capsule_failure_blob(&body);
         assert!(blob_contains_markers(&blob, WASM_NATIVE_FALLBACK_MARKERS));
+    }
+
+    #[test]
+    fn aut52_tool_invoke_error_message_includes_linear_transport_detail() {
+        let body = json!({
+            "success": false,
+            "error": {
+                "code": "LINEAR_TRANSPORT",
+                "message": "http-status-503: upstream unavailable"
+            }
+        });
+        assert_eq!(
+            tool_invoke_error_message(&body),
+            "LINEAR_TRANSPORT: http-status-503: upstream unavailable"
+        );
     }
 
     #[test]

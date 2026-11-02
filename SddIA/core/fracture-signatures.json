@@ -426,6 +426,26 @@
         "verdict": "process_fix",
         "proposal": "Corregir material sin correlato evolution y relanzar DCC. No reimplementar `SDDIA_HOOK_DELIVERY_CLOSE`."
       }
+    },
+    {
+      "id": "F-REFINE-ITEM-REDB-LOCK",
+      "consumers": ["mayeuta", "cumulo"],
+      "scope": {
+        "process_name": ["refine-item"],
+        "report_error_codes": ["STORE_LOCK_CONTENTION"]
+      },
+      "match": {
+        "any": [
+          "Database already open",
+          "Cannot acquire lock",
+          "STORE_LOCK_CONTENTION"
+        ]
+      },
+      "diagnosis": {
+        "root_cause": "Contención de lock en `.SddIA/runtime/events.redb` durante sellado `refine-item`; fractura debe ser observable sin segundo open bloqueante.",
+        "verdict": "process_fix",
+        "proposal": "Sidechannel FS o path virtual `pending/{event_id}.json` + router honesto (AUT-52); no multi-handle redb."
+      }
     }
   ]
 }
