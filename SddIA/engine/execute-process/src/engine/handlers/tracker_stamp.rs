@@ -77,6 +77,7 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
     state_map.insert("backlog".into(), "Backlog".into());
     state_map.insert("todo".into(), "Todo".into());
     state_map.insert("in_progress".into(), "In Progress".into());
+    state_map.insert("in_validation".into(), "In Validation".into());
     state_map.insert("in_review".into(), "In Review".into());
     state_map.insert("done".into(), "Done".into());
     state_map.insert("cancelled".into(), "Cancelled".into());
@@ -253,6 +254,7 @@ fn stamp_file_sink_event(
         "HU_Forged" => COLUMN_BACKLOG,
         "PBI_Refined" | "HU_Refined" => COLUMN_TODO,
         "Work_Initiated" => COLUMN_IN_PROGRESS,
+        "Validation_Started" => super::super::item_lifecycle_frontmatter::COLUMN_IN_VALIDATION,
         "PullRequest_Presented" => COLUMN_IN_REVIEW,
         "PullRequest_Merged" | "Delivery_Committed" => COLUMN_DONE,
         "PBI_Cancelled" => COLUMN_CANCELLED,
@@ -836,6 +838,54 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
             );
             stamped = true;
         }
+        "Validation_Started" => {
+            if tc.state_map.get("in_validation").is_none() {
+                return Ok((
+                    false,
+                    Some("warn: state_map sin in_validation".into()),
+                ));
+            }
+            run(
+                repo,
+                "update_issue_state",
+                Some("in_validation"),
+                None,
+                &|| {
+                    update_state_if_not_discarded(
+                        repo,
+                        &tc,
+                        &issue_ref,
+                        &pbi_fetch,
+                        "in_validation",
+                        source,
+                    )
+                },
+            )?;
+            let persist = str_field(&payload_val, "persist_ref").unwrap_or_default();
+            run(
+                repo,
+                "create_comment",
+                None,
+                Some("validation-started"),
+                &|| {
+                    tool_comment(
+                        repo,
+                        &issue_ref,
+                        &format!("Validación Argos iniciada — persist `{persist}`"),
+                        tc.project_id.as_deref(),
+                        source,
+                    )
+                },
+            )?;
+            let _ = sync_item_tracker_column_remote(
+                repo,
+                &payload_val,
+                &issue_ref,
+                super::super::item_lifecycle_frontmatter::COLUMN_IN_VALIDATION,
+                &tc,
+            );
+            stamped = true;
+        }
         "PullRequest_Presented" => {
             run(
                 repo,
@@ -1204,6 +1254,22 @@ mod tests {
         let (stamped, note) = stamp_event(repo, &event).unwrap_or((false, None));
         assert!(!stamped);
         assert!(note.unwrap_or_default().contains("tracker_ref"));
+    }
+
+    #[test]
+    fn stamp_validation_started_in_lab() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "Validation_Started",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-OK",
+                    "persist_ref": "docs/features/demo",
+                }
+            });
+            let (stamped, _) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped);
+        });
     }
 
     #[test]

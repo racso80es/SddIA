@@ -33,7 +33,7 @@ fn with_lab<F: FnOnce()>(f: F) {
 
 fn manifest(tracker: bool, delivery_mode: &str) -> String {
     let tracker_block = if tracker {
-        "tracker:\n  provider: linear\n  team_key: OSC\n  state_map:\n    backlog: Backlog\n    todo: Todo\n    in_progress: In Progress\n    in_review: In Review\n    done: Done\n  labels:\n    hu: hu\n    pbi: pbi\n    fix: fix\n"
+        "tracker:\n  provider: linear\n  team_key: OSC\n  state_map:\n    backlog: Backlog\n    todo: Todo\n    in_progress: In Progress\n    in_validation: In Validation\n    in_review: In Review\n    done: Done\n  labels:\n    hu: hu\n    pbi: pbi\n    fix: fix\n"
     } else {
         ""
     };

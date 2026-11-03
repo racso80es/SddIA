@@ -244,6 +244,13 @@
       "intent": "Sello in_progress + comentario rama/persist_ref si tracker_ref presente."
     }
   ],
+  "Validation_Started": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello in_validation + comentario inicio validación Argos."
+    }
+  ],
   "PullRequest_Resealed": [],
   "PullRequest_Audited": [
     {

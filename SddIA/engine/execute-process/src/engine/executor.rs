@@ -4,8 +4,9 @@ use super::execution_workspace_report;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
 use super::workspace_init::{
-    is_workspace_init_phase, maybe_emit_work_initiated_on_tekton_entry,
-    merge_work_initiated_workspace_success, run as run_workspace_init,
+    is_workspace_init_phase, maybe_emit_validation_started_after_tekton_agent,
+    maybe_emit_work_initiated_on_tekton_entry, merge_work_initiated_workspace_success,
+    run as run_workspace_init,
 };
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
 use crate::envelope::OrchestratorEnvelope;
@@ -483,6 +484,20 @@ fn execute_phase_body(
                 agent_entry["di_binding"] = super::capability_di_resolver::di_binding_object(b);
                 agent_entry["resolved_provider"] = json!(b.provider);
             }
+            let agent_status = agent_entry
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            maybe_emit_validation_started_after_tekton_agent(
+                repo,
+                process_name,
+                &delegates,
+                &agent_status,
+                inputs,
+                state,
+                &mut agent_entry,
+            );
             return agent_entry;
         }
         entry["status"] = json!("simulated");

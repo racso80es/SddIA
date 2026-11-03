@@ -15,6 +15,7 @@ tracker:
     backlog: Backlog
     todo: Todo
     in_progress: In Progress
+    in_validation: In Validation
     in_review: In Review
     done: Done
     cancelled: Cancelled

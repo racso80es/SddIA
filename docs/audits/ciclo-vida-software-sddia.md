@@ -103,6 +103,7 @@ flowchart TB
 
   FE & BF & RF -->|clarify…validacion| EXP
   FE & BF & RF -->|Fase 1 ok: Work_Initiated| BUS
+  FE & BF & RF -->|Tekton executed: Validation_Started| BUS
   FE & BF & RF --> DCC
   DCC -->|push + gh pr create| GIT
   DCC -->|PullRequest_Presented| BUS
@@ -113,7 +114,7 @@ flowchart TB
   APR -->|merge + push main| GIT
   APR -->|PullRequest_Merged| BUS
 
-  BUS -->|PBI_Forged, Refined, Work_Initiated, Presented, Audited, Merged, Cancelled| TS
+  BUS -->|PBI_Forged, Refined, Work_Initiated, Validation_Started, Presented, Audited, Merged, Cancelled| TS
   TS -->|estado + comentario + tracker_column| TRK
   TS -->|fallo remoto: Tracker_Sync_Failed| BUS
   BUS --> TSR --> TRK
@@ -125,7 +126,7 @@ flowchart TB
 
 ### Quién habla con quién
 
-El proceso de entrega (`feature`, `bug-fix`, `refactorization`) **no habla con Linear**. No tiene el contexto `tracker-operations`. Solo escribe en git, en `persist_ref` y en el bus (`Work_Initiated` y, a través de `delivery-close-cycle`, `PullRequest_Presented`). Todo el trato con el tracker en el camino de ida pasa por **` forge-hu`**, **`forge-pbi`**, **`refine-item`** y **`tracker-stamp`**.
+El proceso de entrega (`feature`, `bug-fix`, `refactorization`) **no habla con Linear**. No tiene el contexto `tracker-operations`. Solo escribe en git, en `persist_ref` y en el bus (`Work_Initiated`, `Validation_Started` y, a través de `delivery-close-cycle`, `PullRequest_Presented`). Todo el trato con el tracker en el camino de ida pasa por **` forge-hu`**, **`forge-pbi`**, **`refine-item`** y **`tracker-stamp`**.
 
 ```mermaid
 sequenceDiagram
@@ -161,6 +162,9 @@ sequenceDiagram
   E->>P: clarify.md, objectives.md, spec.md, plan.md
   Note over E: Fase Ejecución (agent:tekton) sin reemitir Work_Initiated
   E->>P: implementation.md, execution.md (1 commit/tarea)
+  E->>Bus: Validation_Started (persist_ref, tracker_ref)
+  Bus->>S: Validation_Started
+  S->>T: In Validation + comentario Argos
   E->>P: Argos → validacion.md (global: APTO)
 
   E->>D: Fase final
@@ -252,12 +256,13 @@ Claves canónicas (`tracker.state_map`). En Linear Core-self el nombre visible e
 | --- | --- | --- | --- |
 | 0 | `backlog` | Backlog | Ítem creado, aún no listo para coger. |
 | 1 | `todo` | Todo | Refinado (DoR). Listo para arrancar la entrega. |
-| 2 | `in_progress` | In Progress | La ejecución Tekton ha empezado. |
-| 3 | `in_review` | In Review | Hay PR presentado. |
-| 4 | `done` | Done | Entrega fusionada (o commit en tronco directo). |
+| 2 | `in_progress` | In Progress | Tras Fase 1: `Work_Initiated`. Tekton codifica. |
+| 3 | `in_validation` | In Validation | Tras fase Tekton ejecutada: `Validation_Started`. Argos valida. |
+| 4 | `in_review` | In Review | Hay PR presentado. |
+| 5 | `done` | Done | Entrega fusionada (o commit en tronco directo). |
 | 100 | `cancelled` | Cancelled | Ítem anulado. El markdown, si existe, se archiva. |
 
-**Regla anti-retroceso:** `tracker-stamp` y `tracker-sync-replay` usan ese rango para no atrasar un issue si un evento llega tarde. Si el ítem ya está en `in_progress`, un `todo` rezagado se descarta. Si está en `in_review`, un `in_progress` rezagado se descarta.
+**Regla anti-retroceso:** `tracker-stamp` y `tracker-sync-replay` usan ese rango para no atrasar un issue si un evento llega tarde. Si el ítem ya está en `in_progress`, un `todo` rezagado se descarta. Si está en `in_validation`, un `in_progress` rezagado se descarta. Si está en `in_review`, un `in_validation` o `in_progress` rezagado se descarta.
 
 `refinement` es otro eje y no es una columna: `pending` al forjar, `refined` al pasar el DoR. No usar `status: pending` como sustituto de columna.
 
@@ -362,6 +367,19 @@ Efectos de `Work_Initiated` cuando sí hay referencia:
 - Modo fichero: parchea `tracker_column: in_progress` en el `.md` sin moverlo de `docs/todos/pending/`.
 
 Lab: `SDDIA_LAB_SKIP_WORK_INITIATED` suprime el evento.
+
+### 4.3bis Validación — el paso a In Validation (AUT-66)
+
+Tras cerrar la fase `agent:tekton` con `status: executed` (no `failed` ni `simulated` de laboratorio que no ejecutó código), el motor emite **una sola vez** `Validation_Started` (fail-soft).
+
+Efectos cuando hay `tracker_ref` resoluble (misma cadena que `Work_Initiated`):
+
+- Issue PBI → **In Validation**.
+- Comentario `Validación Argos iniciada — persist …`.
+- Descripción: `tracker_column: in_validation`.
+- Modo fichero: parchea `tracker_column: in_validation` en el `.md` en `docs/todos/pending/`.
+
+`PullRequest_Presented` sigue pudiendo avanzar desde `in_validation` a `in_review`.
 
 ### 4.4 Verificación, sello de diff y cierre documental (antes del PR)
 
@@ -539,6 +557,7 @@ Esa cicatriz **no** arranca sola `feature` / `bug-fix` / `refactorization`. Hay 
 | `forge-pbi` + `PBI_Forged` | Backlog | `tracker_column: backlog`, `refinement: pending` | `PBI forjado: <document_id>` |
 | `refine-item` + `PBI/HU_Refined` | Todo | `tracker_column: todo`, `refinement: refined`, `refined: "<fecha>"` + cuerpo con secciones DoR | `PBI/HU refinado: <doc> v<ver>` |
 | `Work_Initiated` | In Progress (y HU padre → In Progress) | `tracker_column: in_progress` | `Work iniciado — rama … · persist …` |
+| `Validation_Started` | In Validation | `tracker_column: in_validation` | `Validación Argos iniciada — persist …` |
 | `PullRequest_Presented` | In Review | `tracker_column: in_review` | `PR presentado: <pr_url>` |
 | `PullRequest_Audited` | (sin cambio) | (sin cambio) | `Auditoría PR: <resolution>` |
 | `PullRequest_Merged` / `Delivery_Committed` | Done (y roll-up HU → Done si procede) | `tracker_column: done` | Comentario merge + `.SddIA/proofs/tracker-done/{tracker_ref}.json` |
@@ -565,6 +584,7 @@ Si `tracker-stamp` falla al hablar con Linear, no rompe el proceso de entrega ni
 | `PBI_Forged` | `backlog` | `docs/todos/pending/` |
 | `PBI_Refined` / `HU_Refined` | `todo` | sigue en `pending/` |
 | `Work_Initiated` | `in_progress` | sigue en `pending/` |
+| `Validation_Started` | `in_validation` | sigue en `pending/` |
 | `PullRequest_Presented` | `in_review` | sigue en `pending/` |
 | `PullRequest_Merged` / `Delivery_Committed` | `done` | pasa a `docs/todos/done/` (en Fase 6 del proceso, dentro de la rama del PR) |
 | `PBI_Cancelled` | `cancelled` | pasa a `docs/todos/done/` |
@@ -608,6 +628,7 @@ Un check de CI no puede contarse como APTO sin `run_id` o URL de run verde. Si f
 | `HU_Refined` | `refine-item` | `tekton.tracker-stamp` | Todo + `tracker_column: todo` + comentario versión. |
 | `PBI_Refined` | `refine-item` | `tekton.tracker-stamp` | Todo + `tracker_column: todo` + comentario versión. |
 | `Work_Initiated` | Motor (cierre Fase 1 / `workspace-init`) | `tekton.tracker-stamp` | PBI → In Progress (`tracker_column: in_progress`) + comentario rama/`persist_ref` + HU padre → In Progress. |
+| `Validation_Started` | Motor (cierre fase Tekton `executed`) | `tekton.tracker-stamp` | PBI → In Validation (`tracker_column: in_validation`) + comentario inicio validación Argos. |
 | `PullRequest_Presented` | `delivery-close-cycle` | `argos.pull-request-review`, `tekton.tracker-stamp`, `argos.send-telegram-notification` | PBI → In Review (`tracker_column: in_review`) + comentario URL; arranca la aduana del PR. |
 | `PullRequest_Resealed` | Resellado de rama | *(ninguno)* | Actualiza la correlación del sello de diff en el store para `accept-pr`. |
 | `PullRequest_Audited` | Aduana PR | `tekton.tracker-stamp` | Comentario con la resolución; no cambia columna. |
@@ -631,6 +652,7 @@ Un check de CI no puede contarse como APTO sin `run_id` o URL de run verde. Si f
 | ¿Está lista para coger? | Columna **Todo** y `refinement: refined` en la descripción. |
 | ¿Por qué `refine-item` no la pasó a Todo? | Mirar `status` del envelope: `needs_clarification` (preguntas de Mayeuta), `conflict` (`tracker_ref` divergente) o huecos de secciones DoR. |
 | ¿Alguien está codificando? | Columna **In Progress**. Comentario `Work iniciado — rama … · persist …`. |
+| ¿Argos está validando? | Columna **In Validation**. Comentario `Validación Argos iniciada — persist …`. |
 | ¿Dónde está el diseño y la validación? | Carpeta citada en ese comentario (`docs/features/`, `docs/fixes/` o `docs/refactors/`). |
 | ¿Hay PR? | Columna **In Review** y comentario con URL. |
 | ¿Ha tenido efecto real el sello en Linear? | Existe rastro en `.SddIA/state/tracker-outbound/{tracker_ref}.jsonl`. |

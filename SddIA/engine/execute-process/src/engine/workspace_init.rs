@@ -773,6 +773,88 @@ pub fn maybe_emit_work_initiated_on_tekton_entry(
     }
 }
 
+/// Emisión fail-soft de `Validation_Started` (AUT-66) tras Tekton ejecutado.
+pub fn emit_validation_started_fail_soft(
+    repo: &Path,
+    process_name: &str,
+    inputs: &Value,
+) -> Value {
+    if !matches!(process_name, "feature" | "bug-fix" | "refactorization") {
+        return json!(null);
+    }
+    let persist = inputs
+        .get("persist_ref")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("");
+    if persist.is_empty() {
+        return json!({"warn": "validation_started: persist_ref ausente"});
+    }
+    let mut emit_inputs = json!({
+        "persist_ref": persist,
+        "source_process": process_name,
+    });
+    if let Some(slug) = inputs
+        .get("project_slug")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        emit_inputs["project_slug"] = json!(slug);
+    }
+    if let Some(branch) = inputs
+        .get("branch_name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        emit_inputs["branch"] = json!(branch);
+    }
+    if let Some(pbi) = pbi_ref_from_inputs(inputs) {
+        emit_inputs["pbi_ref"] = json!(pbi);
+        if let Some(tr) = super::tracker_pbi_meta::tracker_ref_from_pbi(repo, pbi) {
+            emit_inputs["tracker_ref"] = json!(tr);
+        }
+    }
+    match super::actions::try_run_native(repo, "emit-validation-started-event", &emit_inputs) {
+        Ok(Some(v)) => v,
+        Ok(None) => json!({"warn": "emit-validation-started-event no nativo"}),
+        Err(e) => json!({"warn": e}),
+    }
+}
+
+/// Una sola emisión al cerrar con éxito la fase `agent:tekton`.
+pub fn maybe_emit_validation_started_after_tekton_agent(
+    repo: &Path,
+    process_name: &str,
+    delegates: &[Value],
+    agent_status: &str,
+    inputs: &Value,
+    state: &mut Value,
+    entry: &mut Value,
+) {
+    if !phase_delegates_to_tekton(delegates) || agent_status != "executed" {
+        return;
+    }
+    if state
+        .get("validation_started_emitted")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        if let Some(vs) = state.get("validation_started") {
+            entry["validation_started"] = vs.clone();
+        }
+        return;
+    }
+    let vs = emit_validation_started_fail_soft(repo, process_name, inputs);
+    if let Some(obj) = state.as_object_mut() {
+        obj.insert("validation_started_emitted".into(), json!(true));
+        obj.insert("validation_started".into(), vs.clone());
+    }
+    entry["validation_started"] = vs;
+}
+
 /// Detector de fase Inicialización (I7 / L-SPLIT-A D4).
 /// Identidad de tarea primero; no exigir `delegates_to` post-DI para interceptar `workspace-init`.
 pub fn is_workspace_init_phase(phase: &Value, inputs: &Value, process_name: &str) -> bool {
@@ -920,6 +1002,61 @@ mod tests {
             &mut entry,
         );
         assert!(entry.get("work_initiated").is_none());
+    }
+
+    #[test]
+    fn maybe_emit_validation_started_once_on_tekton_executed() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        let mut state = json!({});
+        let mut entry = json!({"status": "executed"});
+        let delegates = vec![json!("agent:tekton")];
+        let inputs = json!({
+            "persist_ref": "docs/features/demo",
+            "branch_name": "feat/demo",
+        });
+        maybe_emit_validation_started_after_tekton_agent(
+            root,
+            "feature",
+            &delegates,
+            "executed",
+            &inputs,
+            &mut state,
+            &mut entry,
+        );
+        assert_eq!(state["validation_started_emitted"], json!(true));
+        assert!(entry.get("validation_started").is_some());
+        let first = entry["validation_started"].clone();
+        maybe_emit_validation_started_after_tekton_agent(
+            root,
+            "feature",
+            &delegates,
+            "executed",
+            &inputs,
+            &mut state,
+            &mut entry,
+        );
+        assert_eq!(entry["validation_started"], first);
+    }
+
+    #[test]
+    fn maybe_emit_validation_started_skips_simulated() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        let mut state = json!({});
+        let mut entry = json!({"status": "simulated"});
+        maybe_emit_validation_started_after_tekton_agent(
+            root,
+            "feature",
+            &[json!("agent:tekton")],
+            "simulated",
+            &json!({"persist_ref": "docs/features/demo"}),
+            &mut state,
+            &mut entry,
+        );
+        assert!(state.get("validation_started_emitted").is_none());
     }
 
     #[test]

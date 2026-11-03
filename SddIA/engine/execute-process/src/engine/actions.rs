@@ -120,6 +120,45 @@ fn emit_work_initiated(repo: &Path, inputs: &Value) -> Result<Value, String> {
     }))
 }
 
+fn emit_validation_started(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    let persist_ref = str_field(inputs, "persist_ref").ok_or("persist_ref es obligatorio")?;
+    let source_process = str_field(inputs, "source_process").ok_or("source_process es obligatorio")?;
+    if source_process != "feature"
+        && source_process != "bug-fix"
+        && source_process != "refactorization"
+    {
+        return Err(format!("source_process no admitido: {source_process}"));
+    }
+    let event_id = generate_uuid(repo)?;
+    let correlation_id = str_field(inputs, "correlation_id").unwrap_or_else(|| event_id.clone());
+    let mut payload = json!({
+        "persist_ref": persist_ref,
+        "source_process": source_process,
+        "occurred_at": iso_timestamp(),
+    });
+    for key in ["project_slug", "pbi_ref", "tracker_ref", "branch"] {
+        if let Some(v) = str_field(inputs, key) {
+            payload[key] = json!(v);
+        }
+    }
+    let event = json!({
+        "event_id": event_id,
+        "event_type": "Validation_Started",
+        "timestamp": iso_timestamp(),
+        "emitter_agent": "execute-process",
+        "correlation_id": correlation_id,
+        "payload": payload,
+        "delivery_state": {},
+    });
+    let seal = write_pending_event(repo, &event)?;
+    Ok(json!({
+        "success": true,
+        "event_id": seal.get("event_id"),
+        "target_path": seal.get("target_path"),
+        "event_type": "Validation_Started",
+    }))
+}
+
 fn emit_tracker_sync_failed(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let issue_ref = str_field(inputs, "issue_ref").ok_or("issue_ref es obligatorio")?;
     let operation = str_field(inputs, "operation").ok_or("operation es obligatorio")?;
@@ -395,6 +434,7 @@ pub fn try_run_native(repo: &Path, action_name: &str, inputs: &Value) -> Result<
         "emit-pr-presented-event" => emit_pr_presented(repo, inputs)?,
         "emit-pr-resealed-event" => emit_pr_resealed(repo, inputs)?,
         "emit-work-initiated-event" => emit_work_initiated(repo, inputs)?,
+        "emit-validation-started-event" => emit_validation_started(repo, inputs)?,
         "emit-tracker-sync-failed" => emit_tracker_sync_failed(repo, inputs)?,
         "emit-pr-merged-event" => emit_pr_merged(repo, inputs)?,
         "emit-pr-audited-event" => emit_pr_audited(repo, inputs)?,
@@ -453,6 +493,24 @@ mod tests {
         let raw = emitted_body(&repo, event_id);
         assert!(!raw.contains("team_key"));
         assert!(!raw.contains("linear.app"));
+    }
+
+    #[test]
+    fn emit_validation_started_writes_pending() {
+        let _guard = filesystem_guard();
+        let repo = find_repo_root().unwrap();
+        let pending = repo.join(".events/pending");
+        fs::create_dir_all(&pending).ok();
+        let out = emit_validation_started(
+            &repo,
+            &json!({
+                "persist_ref": "docs/features/demo",
+                "source_process": "feature",
+                "tracker_ref": "AUT-66",
+            }),
+        )
+        .expect("emit");
+        assert_eq!(out.get("event_type"), Some(&json!("Validation_Started")));
     }
 
     #[test]

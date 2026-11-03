@@ -32,6 +32,7 @@ Contrato normativo de la familia: `actions-contract.md` (no constituye una acci�
 | emit-pr-merged-event | c0d71f2b-c1c1-4c56-8f74-2f4f41b24c4f | 1.1.2 | ecosystem-evolution | Emite PullRequest_Merged en bus; medio store/FS según SDDIA_EVENT_STORE (cumulo.paths). | `pr-merged-event-emission`, `event-bus-pending-write`, `delegate-git-manager`, `delegate-crypto-broker`, `delegate-filesystem-manager` |
 | emit-pr-presented-event | a1b2c3d4-e5f6-4789-a012-3456789abcde | 1.1.3 | ecosystem-evolution | Emite PullRequest_Presented; persistencia según SDDIA_EVENT_STORE (events-contract §4). | `pr-presented-event-emission`, `event-bus-pending-write`, `delegate-crypto-broker`, `delegate-filesystem-manager` |
 | emit-work-initiated-event | c8d9e0f1-a2b3-4c5d-8e7f-6a5b4c3d2e1f | 1.0.0 | ecosystem-evolution | Emite Work_Initiated tras workspace-init (feature/bug-fix/refactorization). | `work-initiated-event-emission`, `event-bus-pending-write`, `delegate-crypto-broker`, `delegate-filesystem-manager` |
+| emit-validation-started-event | e84218a8-7e40-4436-8ae7-a3fcc3396ad7 | 1.0.1 | ecosystem-evolution | Emite Validation_Started tras fase Tekton ejecutada (feature/bug-fix/refactorization). | `validation-started-event-emission`, `event-bus-pending-write`, `delegate-crypto-broker`, `delegate-filesystem-manager` |
 | emit-tracker-sync-failed | b0c1d2e3-f4a5-4678-9012-3456789abcde | 1.0.0 | tracker-operations | Emite Tracker_Sync_Failed en pending/ (fail-soft Linear). | `tracker-sync-failed-emission`, `event-bus-pending-write`, `delegate-crypto-broker`, `delegate-filesystem-manager` |
 | emit-pr-audited-event | d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a | 1.0.2 | ecosystem-evolution | Emite PullRequest_Audited; persistencia según SDDIA_EVENT_STORE (events-contract §4). | `pr-audited-event-emission`, `event-bus-pending-write`, `delegate-crypto-broker`, `delegate-filesystem-manager` |
 | emit-pr-resealed-event | e8f9a0b1-c2d3-4e5f-9a0b-1c2d3e4f5a6b | 1.0.2 | ecosystem-evolution | Emite PullRequest_Resealed; persistencia según SDDIA_EVENT_STORE (events-contract §4). | `pr-resealed-event-emission`, `event-bus-pending-write`, `delegate-crypto-broker`, `delegate-filesystem-manager` |
@@ -52,4 +53,3 @@ Ninguno. `actions-contract.md` es el contrato de familia, no una fila del catál
 
 - **Sincronización:** diez definiciones de acción con identidad atómica; reflejadas en sendas filas del catálogo.
 - **Metadatos:** valores de la tabla (incl. **Capabilities**) copiados desde el YAML de cada `{name}.md` al momento de indexación.
-
