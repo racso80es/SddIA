@@ -25,9 +25,9 @@ checks:
   TRACKER_LINEAR_NO_KM_FILE: APTO
 pr_url: https://github.com/racso80es/SddIA/pull/433
 validated_base_sha: 01bb719dabe321c6bea7c6b4ac6963cde6566ff0
-validated_head_sha: b36ef3694c3f832e3c0be3748bbaead6d83fda40
-validated_tree_sha: 11028b9e02c92352162f4020cf8016b370e80f8a
-diff_digest: sha256:3e1286f5f4ffc83b3c0aa02ed6af7b6e86953274198ab96b9956d41de0ef1400
+validated_head_sha: d3ad183e76c7af5ee989e44251d19a7fbc8a2a5c
+validated_tree_sha: 084219204be6e48df186f187e6c98404df66c5c6
+diff_digest: sha256:2145282b43ffa4ce2df2dba2cb1d83a3d6da6184401054e96c51af541e2ceb13
 ---
 
 # Validación — AUT-70
