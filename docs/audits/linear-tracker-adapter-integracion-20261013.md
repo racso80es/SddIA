@@ -101,8 +101,8 @@ El índice `.SddIA/projects` no contiene un manifiesto del Core. Entradas actual
 |-----------|-------------------|--------|
 | `fetch_issue` | `issue_ref` | Issue. |
 | `list_issues` | `team_key`; opcionales `labels[]`, `project_id` | Lista. |
-| `update_issue_state` | `issue_ref`, `state_name`, `team_key` | Transición al WorkflowState resuelto por nombre. |
-| `create_issue` | `team_key`, `title`, `description`, `labels[]`; opcionales `parent_ref`, `project_id`, `state_name`, `priority` | `issue_ref`, `id`, `url`. |
+| `update_issue_state` | `issue_ref`, `state_name`; `team_key` legacy (ignorado si hay issue) | Transición al WorkflowState del **equipo del issue**, resuelto por nombre (case-insensitive). |
+| `create_issue` | `team_key`, `title`, `description`, `labels[]`; opcionales `parent_ref`, `project_id`, `state_name`, `priority` | Equipo efectivo = padre si hay `parent_ref`, si no `team_key`. Labels/estado en ese equipo. |
 | `create_comment` | Issue + cuerpo | Comentario. |
 | `update_issue_description` | Issue + descripción | Descripción sustituida. No crea issues. |
 
