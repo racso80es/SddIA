@@ -2067,17 +2067,21 @@ pub(crate) fn dispatch_subscriber(
             return (sid, "failed".into(), Some("payload must be object".into()), 1);
         };
         let inputs = Value::Object(payload_obj.clone());
-        if let Ok(Some(data)) = actions::try_run_native(repo, action, &inputs) {
-            let ok = data.get("success").and_then(|v| v.as_bool()).unwrap_or(true);
-            if ok {
-                return (sid, "success".into(), None, 0);
+        match actions::try_run_native(repo, action, &inputs) {
+            Ok(Some(data)) => {
+                let ok = data.get("success").and_then(|v| v.as_bool()).unwrap_or(true);
+                if ok {
+                    return (sid, "success".into(), None, 0);
+                }
+                let err = data
+                    .get("error")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("action failed")
+                    .to_string();
+                return (sid, "failed".into(), Some(err), 1);
             }
-            let err = data
-                .get("error")
-                .and_then(|v| v.as_str())
-                .unwrap_or("action failed")
-                .to_string();
-            return (sid, "failed".into(), Some(err), 1);
+            Ok(None) => {}
+            Err(e) => return (sid, "failed".into(), Some(e), 1),
         }
         match invoke_execute_action(repo, action, &inputs) {
             Ok((true, _, _)) => return (sid, "success".into(), None, 0),
@@ -4556,6 +4560,40 @@ mod tier_dispatch {
             None => std::env::remove_var("SDDIA_TIER_MARKER"),
         }
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn aut70_native_action_err_surfaces_without_fallback() {
+        let _lock = tier_env_lock();
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        fs::create_dir_all(root.join("SddIA/core")).unwrap();
+        fs::write(
+            root.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"documentation":"docs"}}"#,
+        )
+        .unwrap();
+        let sub = json!({
+            "agent": "execute-process",
+            "action": "emit-work-initiated-event"
+        });
+        let mut event = json!({
+            "event_type": "Test_Native_Err",
+            "payload": {
+                "branch": "feat/x",
+                "persist_ref": "docs/x",
+                "source_process": "not-a-process"
+            }
+        });
+        let (_sid, status, err, code) =
+            dispatch_subscriber(root, &sub, &mut event, false, None);
+        assert_eq!(status, "failed");
+        assert_eq!(code, 1);
+        assert!(
+            err.as_deref()
+                .is_some_and(|e| e.contains("source_process")),
+            "{err:?}"
+        );
     }
 }
 

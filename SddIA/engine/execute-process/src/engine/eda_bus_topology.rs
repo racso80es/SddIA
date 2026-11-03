@@ -1100,6 +1100,25 @@ pub fn try_sweep_event(
             && applicable_set.is_subset(&terminals)
             && applicable_set.is_disjoint(&in_flight)
         {
+            if event_type == "System_Fracture_Detected" {
+                let materialize = "cumulo.materialize-fracture-pbi";
+                let processed = processed_subscriber_names(repo, bus, event_uuid);
+                if !processed.contains(materialize) {
+                    let dead_names: Vec<_> = dead
+                        .iter()
+                        .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_string))
+                        .collect();
+                    return merge_sweep(
+                        base,
+                        json!({
+                            "status": "fracture-unmaterialized",
+                            "purged": false,
+                            "event_type": event_type,
+                            "dead_letter_witnesses": dead_names,
+                        }),
+                    );
+                }
+            }
             let finalized = finalize_kaizen_terminal(
                 repo,
                 bus,
@@ -1267,5 +1286,48 @@ mod tests {
             infer_persist_ref_from_branch(repo, "fix/beta").as_deref(),
             Some("docs/fixes/beta")
         );
+    }
+
+    #[test]
+    fn aut70_fracture_dead_letter_not_kaizen_finalized() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        write_minimal_paths(repo);
+        let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-000000000001";
+        let bus = ensure_event_bus_topology(repo).unwrap();
+        let pending = resolve_bus_path(repo, &bus.pending).join(format!("{event_id}.json"));
+        fs::create_dir_all(pending.parent().unwrap()).unwrap();
+        write_json_atomic(
+            &pending,
+            &json!({
+                "event_id": event_id,
+                "event_type": "System_Fracture_Detected",
+                "payload": { "origin_topology": "core" }
+            }),
+        )
+        .unwrap();
+        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
+        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
+        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
+            .join(format!("{event_id}.cumulo.materialize-fracture-pbi.json"));
+        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
+        let tele = resolve_bus_path(repo, &bus.processed_subscribers)
+            .join(format!("{event_id}.argos.send-telegram-notification.json"));
+        write_json_atomic(&tele, &json!({"status": "success"})).unwrap();
+        let registry = json!({
+            "System_Fracture_Detected": [
+                {"agent": "cumulo", "action": "materialize-fracture-pbi"},
+                {"agent": "argos", "tool": "send-telegram-notification"}
+            ]
+        });
+        let sweep = try_sweep_event(repo, &bus, event_id, Some(&registry));
+        sddia_event_store::override_store_mode(None);
+        assert_eq!(
+            sweep.get("status").and_then(|v| v.as_str()),
+            Some("fracture-unmaterialized")
+        );
+        assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(false));
+        assert!(pending.is_file());
     }
 }
