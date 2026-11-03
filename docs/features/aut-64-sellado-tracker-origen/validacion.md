@@ -21,7 +21,8 @@ correlation_id: fd14a3fa-1f34-49e8-8b24-658947403247
 audit_event_reference: fd14a3fa-1f34-49e8-8b24-658947403247
 execution_id: fada92cf-9ee5-4fbd-b89d-501fd6c3507b
 source_process: refactorization
-global: APTO
+global: NO_APTO
+ppr_verdict: aprobado
 pbi_archived: false
 approval_status: aprobado
 verdict: aprobado
@@ -129,10 +130,6 @@ situational_notes:
 - Hermanos en rama (AUT-65 docs incompletos) no son el tip; no se auditan como persist_ref de este CID
 - Proof ppr-presented-dedupe lock 1628a598… contiene CID fd14a3fa… (Presented sighted; sin pr_url local)
 - accept_pr_handoff pending — Presented sighted; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
-validated_base_sha: 01bb719dabe321c6bea7c6b4ac6963cde6566ff0
-validated_head_sha: fae2064a3e6eb5adcda0891a7db7e54d242b066a
-validated_tree_sha: cab62019c5591fa782eea21cbdd59d151a108572
-diff_digest: sha256:0ca4547a8897f718e317301b0999322e6c5011783d416d7e720fcfffa1512627
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
