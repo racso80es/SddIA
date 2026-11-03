@@ -59,6 +59,9 @@ pub fn persist_external_dlt_seal(
     event_id: &str,
     tx_hash: &str,
 ) -> Result<(), String> {
+    if lab_simulate_iota_enabled() {
+        return Ok(());
+    }
     if !writes_store(store_mode()) {
         return Ok(());
     }
@@ -275,9 +278,12 @@ mod tests {
     }
 
     #[test]
-    fn persist_proof_rejects_batched() {
+    fn persist_external_skips_seal_under_lab_simulate() {
+        let _g = IOTA_ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let prev = std::env::var("SDDIA_LAB_SIMULATE_IOTA").ok();
+        std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
         let tmp = tempfile::tempdir().unwrap();
-        let event = json!({"event_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"});
-        assert!(persist_dlt_telemetry_proof(tmp.path(), &event, "batched-digest").is_err());
+        assert!(persist_external_dlt_seal(tmp.path(), "ev-1", "lab-sim-deadbeef").is_ok());
+        restore("SDDIA_LAB_SIMULATE_IOTA", prev);
     }
 }

@@ -128,6 +128,8 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
             }
         } else if simulate {
             std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
+            // CI checkout sin .dev/.env: default redb + seal_dlt en simulación rompe el smoke.
+            std::env::set_var("SDDIA_EVENT_STORE", "filesystem");
         }
 
         let event = load_fixture(repo)?;
