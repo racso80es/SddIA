@@ -45,6 +45,7 @@ Chispas ontológicas (Nivel 3): verdad objetiva del ecosistema (PR, mutaciones g
 | `domain-entity-created.md` | `1f518278-7a3d-4160-b757-a3661d263ec3` | domain-entity-created | Domain_Entity_Created | 1.1.0 | events-contract v1.1.0 | ecosystem-evolution | `domain_entity_created` |
 | `pull-request-presented.md` | `5e488ae6-7cb2-4a2c-9725-4a7d4ce239ea` | pull-request-presented | PullRequest_Presented | 1.2.0 | events-contract v1.1.0 | ecosystem-evolution | `pull_request_presented`, `dlt_oracle_route` |
 | `work-initiated.md` | `b7c8d9e0-f1a2-4b3c-8d7e-6f5a4b3c2d1e` | work-initiated | Work_Initiated | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `work_initiated` |
+| `validation-started.md` | `0b51c028-38f8-4c53-a994-30c2949e55b6` | validation-started | Validation_Started | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `validation_started` |
 | `tracker-sync-failed.md` | `a9b8c7d6-e5f4-4321-b987-6543210fedcc` | tracker-sync-failed | Tracker_Sync_Failed | 1.0.0 | events-contract v1.1.0 | tracker-operations | `tracker_sync_failed` |
 | `pull-request-merged.md` | `cfb8ce66-784e-4826-8a0a-a20c671e3a60` | pull-request-merged | PullRequest_Merged | 1.0.0 | events-contract v1.1.0 | dlt-auditing | `pull_request_merged` |
 | `system-fracture-detected.md` | `f8e3a1b2-c4d5-4e6f-9a0b-1c2d3e4f5a6b` | system-fracture-detected | System_Fracture_Detected | 1.0.0 | events-contract v1.1.0 | ecosystem-evolution | `system_fracture_detected` |

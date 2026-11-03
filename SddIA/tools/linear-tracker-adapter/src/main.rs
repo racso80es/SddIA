@@ -66,6 +66,91 @@ fn required_str(req: &Value, key: &str) -> Result<String, LinearFail> {
     })
 }
 
+/// AUT-68: comparación de nombres Linear (estados, labels) sin distinguir mayúsculas.
+fn name_eq_ignore_case(a: &str, b: &str) -> bool {
+    a.eq_ignore_ascii_case(b)
+}
+
+fn team_key_from_issue_identifier(issue_ref: &str) -> Option<String> {
+    issue_ref
+        .split('-')
+        .next()
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn resolve_issue_team_key(url: &str, token: &str, issue_ref: &str) -> Result<String, LinearFail> {
+    let query = r#"query IssueTeam($ref: String!) {
+  issue(id: $ref) { team { key } }
+}"#;
+    let body = graphql_post(url, token, query, json!({ "ref": issue_ref }))?;
+    if body.pointer("/data/issue").is_none() || body.pointer("/data/issue").is_some_and(|n| n.is_null()) {
+        return Err(LinearFail {
+            code: "LINEAR_NOT_FOUND",
+            message: "issue not found".into(),
+            exit: 1,
+        });
+    }
+    body.pointer("/data/issue/team/key")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| LinearFail {
+            code: "LINEAR_GRAPHQL_ERROR",
+            message: "issue team missing".into(),
+            exit: 1,
+        })
+}
+
+fn lab_team_label_catalog(team_key: &str) -> &'static [&'static str] {
+    match team_key {
+        "MAN" => &["Hu", "Pbi", "Fix"],
+        "AUT" => &["HU", "Pbi", "Bug", "Kaizen"],
+        "OSC" => &["hu", "pbi", "fix"],
+        _ => &["hu", "pbi", "other"],
+    }
+}
+
+fn lab_validate_labels(team_key: &str, label_names: &[String]) -> Result<(), LinearFail> {
+    let catalog = lab_team_label_catalog(team_key);
+    for name in label_names {
+        if name == "unknown-label" {
+            return Err(LinearFail {
+                code: "LINEAR_LABEL_UNKNOWN",
+                message: format!("label not found on team {team_key}: {name}"),
+                exit: 1,
+            });
+        }
+        if !catalog
+            .iter()
+            .any(|c| name_eq_ignore_case(c, name))
+        {
+            return Err(LinearFail {
+                code: "LINEAR_LABEL_UNKNOWN",
+                message: format!("label not found on team {team_key}: {name}"),
+                exit: 1,
+            });
+        }
+    }
+    Ok(())
+}
+
+fn lab_effective_team_key(inner: &Value, fallback_team: &str) -> String {
+    if let Some(parent) = optional_str(inner, "parent_ref") {
+        if let Some(stored) = lab_state::lab_fetch(&parent) {
+            if let Some(id) = stored.get("identifier").and_then(|v| v.as_str()) {
+                if let Some(t) = team_key_from_issue_identifier(id) {
+                    return t;
+                }
+            }
+        }
+        if let Some(t) = team_key_from_issue_identifier(&parent) {
+            return t;
+        }
+    }
+    fallback_team.to_string()
+}
+
 fn graphql_url() -> String {
     env::var("SDDIA_LINEAR_API_URL")
         .ok()
@@ -503,6 +588,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
         }
         "create_issue" => {
             let team_key = required_str(inner, "team_key")?;
+            let effective_team = lab_effective_team_key(inner, &team_key);
             let title = required_str(inner, "title")?;
             let labels: Vec<String> = inner
                 .get("labels")
@@ -513,15 +599,7 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
                         .collect()
                 })
                 .unwrap_or_default();
-            for name in &labels {
-                if name == "unknown-label" {
-                    return Err(LinearFail {
-                        code: "LINEAR_LABEL_UNKNOWN",
-                        message: format!("label not found: {name}"),
-                        exit: 1,
-                    });
-                }
-            }
+            lab_validate_labels(&effective_team, &labels)?;
             if let Some(parent) = optional_str(inner, "parent_ref") {
                 if parent == "MISSING-PARENT" {
                     return Err(LinearFail {
@@ -534,14 +612,14 @@ fn lab_inline_mock(req: &Value) -> Result<Value, LinearFail> {
             if optional_str(inner, "state_name").as_deref() == Some("Unknown") {
                 return Err(LinearFail {
                     code: "LINEAR_STATE_UNKNOWN",
-                    message: "workflow state not found".into(),
+                    message: format!("workflow state not found on team {effective_team}: Unknown"),
                     exit: 1,
                 });
             }
             let state_name = optional_str(inner, "state_name").unwrap_or_else(|| "Backlog".into());
             let parent = optional_str(inner, "parent_ref");
             let ident = lab_state::lab_create_issue(
-                &team_key,
+                &effective_team,
                 &title,
                 &labels,
                 parent.as_deref(),
@@ -688,12 +766,16 @@ fn resolve_workflow_state_id(
         .unwrap_or_default();
     let matches: Vec<&Value> = nodes
         .iter()
-        .filter(|n| n.get("name").and_then(|s| s.as_str()) == Some(state_name))
+        .filter(|n| {
+            n.get("name")
+                .and_then(|s| s.as_str())
+                .is_some_and(|n| name_eq_ignore_case(n, state_name))
+        })
         .collect();
     match matches.len() {
         0 => Err(LinearFail {
             code: "LINEAR_STATE_UNKNOWN",
-            message: "workflow state not found".into(),
+            message: format!("workflow state not found on team {team_key}: {state_name}"),
             exit: 1,
         }),
         1 => matches[0]
@@ -751,13 +833,17 @@ fn resolve_label_ids(
     for name in label_names {
         let found: Vec<&Value> = nodes
             .iter()
-            .filter(|n| n.get("name").and_then(|s| s.as_str()) == Some(name.as_str()))
+            .filter(|n| {
+                n.get("name")
+                    .and_then(|s| s.as_str())
+                    .is_some_and(|ln| name_eq_ignore_case(ln, name))
+            })
             .collect();
         match found.len() {
             0 => {
                 return Err(LinearFail {
                     code: "LINEAR_LABEL_UNKNOWN",
-                    message: format!("label not found: {name}"),
+                    message: format!("label not found on team {team_key}: {name}"),
                     exit: 1,
                 });
             }
@@ -810,10 +896,15 @@ fn resolve_parent_id(url: &str, token: &str, parent_ref: &str) -> Result<String,
 
 fn run_create_issue(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
     let inner = request_inner(req);
-    let team_key = required_str(inner, "team_key")?;
+    let fallback_team = required_str(inner, "team_key")?;
+    let effective_team = if let Some(parent_ref) = optional_str(inner, "parent_ref") {
+        resolve_issue_team_key(url, token, &parent_ref)?
+    } else {
+        fallback_team.clone()
+    };
     let title = required_str(inner, "title")?;
     let description = optional_str(inner, "description");
-    let team_id = resolve_team_id(url, token, &team_key)?;
+    let team_id = resolve_team_id(url, token, &effective_team)?;
     let label_names: Vec<String> = inner
         .get("labels")
         .and_then(|v| v.as_array())
@@ -823,13 +914,13 @@ fn run_create_issue(req: &Value, url: &str, token: &str) -> Result<Value, Linear
                 .collect()
         })
         .unwrap_or_default();
-    let label_ids = resolve_label_ids(url, token, &team_key, &label_names)?;
+    let label_ids = resolve_label_ids(url, token, &effective_team, &label_names)?;
     let parent_id = match optional_str(inner, "parent_ref") {
         Some(p) => Some(resolve_parent_id(url, token, &p)?),
         None => None,
     };
     let state_id = match optional_str(inner, "state_name") {
-        Some(s) => Some(resolve_workflow_state_id(url, token, &team_key, &s)?),
+        Some(s) => Some(resolve_workflow_state_id(url, token, &effective_team, &s)?),
         None => None,
     };
     let project_id = optional_str(inner, "project_id");
@@ -892,8 +983,8 @@ fn run_update_issue_state(req: &Value, url: &str, token: &str) -> Result<Value, 
     let issue_ref = required_str(inner, "issue_ref")?;
     ensure_issue_in_project(url, token, &issue_ref, optional_str(inner, "project_id").as_deref())?;
     if let Some(state_name) = optional_str(inner, "state_name") {
-        let team_key = required_str(inner, "team_key")?;
-        let state_id = resolve_workflow_state_id(url, token, &team_key, &state_name)?;
+        let effective_team = resolve_issue_team_key(url, token, &issue_ref)?;
+        let state_id = resolve_workflow_state_id(url, token, &effective_team, &state_name)?;
         return apply_state_id(url, token, &issue_ref, &state_id, &state_name);
     }
     let state_id = required_str(inner, "state_id")?;
@@ -904,7 +995,7 @@ fn run_update_issue_project(req: &Value, url: &str, token: &str) -> Result<Value
     let inner = request_inner(req);
     let issue_ref = required_str(inner, "issue_ref")?;
     let project_id = required_str(inner, "project_id")?;
-    let mutation = r#"mutation UpdateProject($id: String!, $projectId: String!) {
+    let mutation = r#"mutation UpdateProject($id: ID!, $projectId: ID!) {
   issueUpdate(id: $id, input: { projectId: $projectId }) {
     success
     issue { identifier }
@@ -940,7 +1031,7 @@ fn apply_state_id(
     state_id: &str,
     state_label: &str,
 ) -> Result<Value, LinearFail> {
-    let mutation = r#"mutation UpdateState($id: String!, $stateId: String!) {
+    let mutation = r#"mutation UpdateState($id: ID!, $stateId: ID!) {
   issueUpdate(id: $id, input: { stateId: $stateId }) {
     success
     issue { identifier state { name } }
@@ -1119,6 +1210,7 @@ mod tests {
         env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
         env::remove_var("LINEAR_API_TOKEN");
         env::remove_var("SDDIA_LAB_MOCK_LINEAR_URL");
+        lab_state::lab_reset_store();
         f();
         env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
     }
@@ -1234,7 +1326,7 @@ mod tests {
             }))
             .unwrap();
             let ir = r.get("issue_ref").and_then(|v| v.as_str()).expect("issue_ref");
-            assert!(ir.starts_with("OSC-"));
+            assert!(ir.starts_with("LAB-"), "child debe heredar equipo del padre LAB-HU-1, got {ir}");
             assert!(r.get("id").is_some());
             assert!(r.get("url").is_some());
         });
@@ -1253,6 +1345,8 @@ mod tests {
             }))
             .unwrap_err();
             assert_eq!(e.code, "LINEAR_LABEL_UNKNOWN");
+            assert!(e.message.contains("OSC"));
+            assert!(e.message.contains("unknown-label"));
 
             let e2 = dispatch(&json!({
                 "request": {
@@ -1341,5 +1435,63 @@ mod tests {
             .unwrap_err();
             assert_eq!(gone.code, "LINEAR_NOT_FOUND");
         });
+    }
+
+    #[test]
+    fn aut68_name_eq_ignore_case() {
+        assert!(name_eq_ignore_case("Pbi", "pbi"));
+        assert!(name_eq_ignore_case("Todo", "todo"));
+        assert!(!name_eq_ignore_case("Fix", "Bug"));
+    }
+
+    #[test]
+    fn aut68_create_child_uses_parent_team_and_insensitive_pbi() {
+        with_lab(|| {
+            env::set_var("SDDIA_LAB_RESET_STORE", "1");
+            let r = dispatch(&json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": "AUT",
+                    "title": "PBI hijo MAN",
+                    "labels": ["pbi"],
+                    "parent_ref": "MAN-HU-1"
+                }
+            }))
+            .unwrap();
+            let ir = r.get("issue_ref").and_then(|v| v.as_str()).expect("issue_ref");
+            assert!(ir.starts_with("MAN-"), "expected MAN team prefix, got {ir}");
+            lab_state::lab_reset_store();
+            env::remove_var("SDDIA_LAB_RESET_STORE");
+        });
+    }
+
+    #[test]
+    fn aut68_missing_label_names_team() {
+        with_lab(|| {
+            env::set_var("SDDIA_LAB_RESET_STORE", "1");
+            let e = dispatch(&json!({
+                "request": {
+                    "operation": "create_issue",
+                    "team_key": "AUT",
+                    "title": "kaizen en MAN",
+                    "labels": ["kaizen"],
+                    "parent_ref": "MAN-HU-1"
+                }
+            }))
+            .unwrap_err();
+            assert_eq!(e.code, "LINEAR_LABEL_UNKNOWN");
+            assert!(e.message.contains("MAN"));
+            assert!(e.message.contains("kaizen"));
+            lab_state::lab_reset_store();
+            env::remove_var("SDDIA_LAB_RESET_STORE");
+        });
+    }
+
+    #[test]
+    fn aut70_update_mutations_declare_id() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.rs");
+        let text = std::fs::read_to_string(path).expect("main.rs");
+        assert!(text.contains("mutation UpdateProject($id: ID!, $projectId: ID!)"));
+        assert!(text.contains("mutation UpdateState($id: ID!, $stateId: ID!)"));
     }
 }

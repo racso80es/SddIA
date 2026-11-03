@@ -1,6 +1,7 @@
 //! Handler nativo `notify-humanized-pr-merged` — estático ola 1 + síntesis Gemini fail-soft.
 
 use super::capsules::{invoke_capsule_json, invoke_git_manager, invoke_tool_capsule_json};
+use sddia_io::outbound_lab::truthy_env;
 use serde_json::{json, Value};
 use std::env;
 use std::path::Path;
@@ -318,6 +319,12 @@ pub fn run_from_event(repo: &Path, event: &Value) -> Result<NotifyOutcome, Strin
     let Some(static_msg) = pr_merged_static_message(event) else {
         return Ok(NotifyOutcome::SkippedEmpty);
     };
+    // CI/lab: smoke iota y jobs sin credenciales Telegram (paridad send-telegram-notification).
+    if truthy_env("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM") {
+        return Ok(NotifyOutcome::Sent {
+            synthesized: false,
+        });
+    }
     let outcome = try_infer_synthesis(repo, event);
     let msg = assemble_humanized_message(&static_msg, &outcome);
     invoke_send_telegram(repo, &msg)?;

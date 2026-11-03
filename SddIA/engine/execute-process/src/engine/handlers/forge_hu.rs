@@ -125,6 +125,31 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         "project_slug": bound.slug,
         "occurred_at": Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
     });
+    let comment = format!("HU forjada: {document_id}");
+    let seal_payload = json!({
+        "document_id": document_id,
+        "project_slug": bound.slug,
+        "tracker_ref": tracker_ref,
+    });
+    if let Err(e) = super::tracker_stamp::seal_forged_backlog_at_origin(
+        repo,
+        inputs,
+        &tracker_ref,
+        &seal_payload,
+        &comment,
+        PROCESS_NAME,
+    ) {
+        if !e.starts_with("warn:") {
+            return Ok(OrchestratorEnvelope {
+                success: false,
+                status_code: 1,
+                data: Some(json!({ "tracker_ref": tracker_ref })),
+                error: Some(e),
+                execution_report: None,
+                exit_code: 1,
+            });
+        }
+    }
     let event_path = materialize_pending_domain_event(repo, "HU_Forged", PROCESS_NAME, payload)?;
 
     Ok(OrchestratorEnvelope {

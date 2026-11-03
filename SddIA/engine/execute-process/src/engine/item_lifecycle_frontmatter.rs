@@ -12,6 +12,7 @@ pub const REFINEMENT_REFINED: &str = "refined";
 pub const COLUMN_BACKLOG: &str = "backlog";
 pub const COLUMN_TODO: &str = "todo";
 pub const COLUMN_IN_PROGRESS: &str = "in_progress";
+pub const COLUMN_IN_VALIDATION: &str = "in_validation";
 pub const COLUMN_IN_REVIEW: &str = "in_review";
 pub const COLUMN_DONE: &str = "done";
 pub const COLUMN_CANCELLED: &str = "cancelled";

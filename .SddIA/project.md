@@ -15,16 +15,17 @@ tracker:
     backlog: Backlog
     todo: Todo
     in_progress: In Progress
+    in_validation: In Validation
     in_review: In Review
     done: Done
     cancelled: Cancelled
   labels:
-    hu: hu
-    pbi: pbi
-    fix: fix
-    kaizen: kaizen
-    deuda: deuda
-    spike: spike
+    hu: HU
+    pbi: Pbi
+    fix: Bug
+    kaizen: Kaizen
+    deuda: Deuda
+    spike: Spike
     editable: sddia-editable
 docs_layout:
   features: docs/features

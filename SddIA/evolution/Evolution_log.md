@@ -9,6 +9,11 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `e78539e3-e993-498c-a0dd-f565574d43d4` | 2026-11-03 | AUT-64: sellado tracker en origen forge/refine; EDA sin tracker-stamp en Forged/Refined. | CANONICO | `SddIA/evolution/e78539e3-e993-498c-a0dd-f565574d43d4.md` |
+| `a9f2c1e0-8d4b-4f6a-9e1c-2b3d4e5f6a70` | 2026-11-03 | AUT-65: Work_Initiated al cierre Fase 1 delivery; Tekton no reemite. | CANONICO | `SddIA/evolution/a9f2c1e0-8d4b-4f6a-9e1c-2b3d4e5f6a70.md` |
+| `c4e8f2a1-9b3d-4e7c-a5f6-1d2e3f4a5b6c` | 2026-11-03 | AUT-66: Validation_Started + columna in_validation en tracker y EDA. | CANONICO | `SddIA/evolution/c4e8f2a1-9b3d-4e7c-a5f6-1d2e3f4a5b6c.md` |
+| `f3a91c2e-7d4b-4a8e-9c1d-2e5f6a7b8c9d` | 2026-11-03 | AUT-68: adapter Linear resuelve equipo desde issue/padre. | CANONICO | `SddIA/evolution/f3a91c2e-7d4b-4a8e-9c1d-2e5f6a7b8c9d.md` |
+| `a8d4e1f2-3c5b-4d9a-8e7f-1b2c3d4e5f6a` | 2026-11-03 | AUT-70: ID! GraphQL, Err nativo en router, sweep fractura. | CANONICO | `SddIA/evolution/a8d4e1f2-3c5b-4d9a-8e7f-1b2c3d4e5f6a.md` |
 | `e46d8e0c-b9fa-4d18-a035-99e9cf66ac07` | 2026-11-02 | AUT-67: pre-push reintenta Local_QA ante lock; watcher difiere claim con rutas en vuelo. | CANONICO | `SddIA/evolution/e46d8e0c-b9fa-4d18-a035-99e9cf66ac07.md` |
 | `72169010-d232-41f9-a877-44beb83dafc2` | 2026-11-02 | AUT-63: paridad ciclo de vida genoma A1-A4 (Kaizen dual, done_gate, HU stamp, sumidero Idea). | CANONICO | `SddIA/evolution/72169010-d232-41f9-a877-44beb83dafc2.md` |
 | `c55f04de-f956-4f1e-89ab-580b2c5bab34` | 2026-11-02 | AUT-52: refine-item lock redb — fractura sidechannel, route path virtual, LINEAR_TRANSPORT, firma F-REFINE-ITEM-REDB-LOCK. | CANONICO | `SddIA/evolution/c55f04de-f956-4f1e-89ab-580b2c5bab34.md` |

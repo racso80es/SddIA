@@ -294,6 +294,7 @@ const TRACKER_STATE_KEYS: &[&str] = &[
     "backlog",
     "todo",
     "in_progress",
+    "in_validation",
     "in_review",
     "done",
     "cancelled",

@@ -218,6 +218,7 @@ jobs:
           SDDIA_LAB_SIMULATE_IOTA: "1"
           SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM: "1"
           SDDIA_LAB_MOCK_OUTBOUND: "1"
+          SDDIA_EVENT_STORE: filesystem
         run: |
           chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/debug/iota-immutable-publisher
           SddIA/target/debug/sddia-qa run-iota-ci-smoke --simulate --json

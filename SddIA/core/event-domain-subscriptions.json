@@ -244,6 +244,13 @@
       "intent": "Sello in_progress + comentario rama/persist_ref si tracker_ref presente."
     }
   ],
+  "Validation_Started": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello in_validation + comentario inicio validación Argos."
+    }
+  ],
   "PullRequest_Resealed": [],
   "PullRequest_Audited": [
     {
@@ -252,34 +259,10 @@
       "intent": "Comentario resolución auditoría PR (tracker_ref)."
     }
   ],
-  "PBI_Forged": [
-    {
-      "agent": "tekton",
-      "process": "tracker-stamp",
-      "intent": "Sello backlog PBI + comentario document_id."
-    }
-  ],
-  "HU_Forged": [
-    {
-      "agent": "tekton",
-      "process": "tracker-stamp",
-      "intent": "Sello backlog HU + comentario idempotente HU forjada: {document_id|tracker_ref}."
-    }
-  ],
-  "PBI_Refined": [
-    {
-      "agent": "tekton",
-      "process": "tracker-stamp",
-      "intent": "Transición Linear todo + comentario refinado (tracker_ref)."
-    }
-  ],
-  "HU_Refined": [
-    {
-      "agent": "tekton",
-      "process": "tracker-stamp",
-      "intent": "Transición HU a todo + comentario refinado."
-    }
-  ],
+  "PBI_Forged": [],
+  "HU_Forged": [],
+  "PBI_Refined": [],
+  "HU_Refined": [],
   "PBI_Cancelled": [
     {
       "agent": "tekton",

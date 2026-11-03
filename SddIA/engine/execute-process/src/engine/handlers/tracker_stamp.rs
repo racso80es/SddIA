@@ -77,6 +77,7 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
     state_map.insert("backlog".into(), "Backlog".into());
     state_map.insert("todo".into(), "Todo".into());
     state_map.insert("in_progress".into(), "In Progress".into());
+    state_map.insert("in_validation".into(), "In Validation".into());
     state_map.insert("in_review".into(), "In Review".into());
     state_map.insert("done".into(), "Done".into());
     state_map.insert("cancelled".into(), "Cancelled".into());
@@ -253,6 +254,7 @@ fn stamp_file_sink_event(
         "HU_Forged" => COLUMN_BACKLOG,
         "PBI_Refined" | "HU_Refined" => COLUMN_TODO,
         "Work_Initiated" => COLUMN_IN_PROGRESS,
+        "Validation_Started" => super::super::item_lifecycle_frontmatter::COLUMN_IN_VALIDATION,
         "PullRequest_Presented" => COLUMN_IN_REVIEW,
         "PullRequest_Merged" | "Delivery_Committed" => COLUMN_DONE,
         "PBI_Cancelled" => COLUMN_CANCELLED,
@@ -300,6 +302,7 @@ fn tool_update_state(
     tc: &TrackerConfig,
     issue_ref: &str,
     canonical: &str,
+    source_process: &str,
 ) -> Result<(), String> {
     let state_name = tc
         .state_map
@@ -318,12 +321,18 @@ fn tool_update_state(
                 "project_id": tc.project_id,
             }
         }),
-        Some("tracker-stamp"),
+        Some(source_process),
     )?;
     Ok(())
 }
 
-fn tool_comment(repo: &Path, issue_ref: &str, body: &str, project_id: Option<&str>) -> Result<(), String> {
+fn tool_comment(
+    repo: &Path,
+    issue_ref: &str,
+    body: &str,
+    project_id: Option<&str>,
+    source_process: &str,
+) -> Result<(), String> {
     invoke_tool_for_process(
         repo,
         &lifecycle_tool_name(repo)?,
@@ -335,7 +344,7 @@ fn tool_comment(repo: &Path, issue_ref: &str, body: &str, project_id: Option<&st
                 "project_id": project_id,
             }
         }),
-        Some("tracker-stamp"),
+        Some(source_process),
     )?;
     Ok(())
 }
@@ -358,7 +367,7 @@ fn maybe_promote_hu_when_work_starts(
         return Ok(());
     }
     if hu_state == "backlog" || hu_state == "todo" {
-        tool_update_state(repo, tc, parent, "in_progress")?;
+        tool_update_state(repo, tc, parent, "in_progress", "tracker-stamp")?;
     }
     Ok(())
 }
@@ -369,6 +378,7 @@ fn update_state_if_not_discarded(
     issue_ref: &str,
     fetch: &Value,
     canonical: &str,
+    source_process: &str,
 ) -> Result<(), String> {
     let current = linear_to_canonical(
         fetch.get("state").and_then(|v| v.as_str()).unwrap_or(""),
@@ -377,7 +387,7 @@ fn update_state_if_not_discarded(
     if should_discard_transition(&current, canonical) {
         return Ok(());
     }
-    tool_update_state(repo, tc, issue_ref, canonical)
+    tool_update_state(repo, tc, issue_ref, canonical, source_process)
 }
 
 fn yaml_field_in_repo(repo: &Path, rel: &str, key: &str) -> Option<String> {
@@ -477,7 +487,7 @@ fn maybe_complete_hu_when_children_done(
         return Ok(());
     }
     if any_done {
-        tool_update_state(repo, tc, hu_ref, "done")?;
+        tool_update_state(repo, tc, hu_ref, "done", "tracker-stamp")?;
     }
     Ok(())
 }
@@ -508,7 +518,7 @@ fn stamp_done_with_hu_roll_up(
         }
         Ok(())
     };
-    run(&|| tool_update_state(repo, tc, issue_ref, "done"))?;
+    run(&|| tool_update_state(repo, tc, issue_ref, "done", source))?;
     if let Some(hu_ref) = pbi_fetch.get("parent").and_then(|v| v.as_str()) {
         if let Err(e) = maybe_complete_hu_when_children_done(repo, tc, hu_ref) {
             emit_sync_failed(
@@ -524,7 +534,7 @@ fn stamp_done_with_hu_roll_up(
             return Err(format!("warn: {e}"));
         }
     }
-    run(&|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref()))?;
+    run(&|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref(), source))?;
     let _ = done_gate::write_tracker_done_proof(repo, issue_ref, commit_sha, pbi_fetch);
     let _ = sync_item_tracker_column_remote(
         repo,
@@ -564,8 +574,8 @@ fn stamp_todo_transition(
         }
         Ok(())
     };
-    run(&|| update_state_if_not_discarded(repo, tc, issue_ref, fetch, "todo"))?;
-    run(&|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref()))?;
+    run(&|| update_state_if_not_discarded(repo, tc, issue_ref, fetch, "todo", source))?;
+    run(&|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref(), source))?;
     let _ = sync_item_tracker_column_remote(
         repo,
         payload,
@@ -586,6 +596,16 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
     let source = "tracker-stamp";
     if file_sink(repo, &payload_val)? {
         return stamp_file_sink_event(repo, &event_type, &payload_val);
+    }
+
+    if matches!(
+        event_type.as_str(),
+        "PBI_Forged" | "HU_Forged" | "PBI_Refined" | "HU_Refined"
+    ) {
+        return Ok((
+            false,
+            Some("no-op: sellado en origen (forge/refine)".into()),
+        ));
     }
 
     if event_type == "HU_Refined" {
@@ -638,9 +658,15 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
             Ok(())
         };
         run(&|| {
-            update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "cancelled")
+            update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "cancelled", source)
         })?;
-        run(&|| tool_comment(repo, &issue_ref, &format!("PBI cancelado: {reason}"), tc.project_id.as_deref()))?;
+        run(&|| tool_comment(
+            repo,
+            &issue_ref,
+            &format!("PBI cancelado: {reason}"),
+            tc.project_id.as_deref(),
+            source,
+        ))?;
         let _ = archive_cancelled_pbi(repo, &payload_val);
         return Ok((true, None));
     }
@@ -699,7 +725,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "update_issue_state",
                 Some("backlog"),
                 None,
-                &|| update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "backlog"),
+                &|| update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "backlog", source),
             )?;
             let doc = str_field(&payload_val, "document_id").unwrap_or_default();
             run(
@@ -707,7 +733,13 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "create_comment",
                 None,
                 Some("pbi-forged"),
-                &|| tool_comment(repo, &issue_ref, &format!("PBI forjado: {doc}"), tc.project_id.as_deref()),
+                &|| tool_comment(
+                    repo,
+                    &issue_ref,
+                    &format!("PBI forjado: {doc}"),
+                    tc.project_id.as_deref(),
+                    source,
+                ),
             )?;
             let _ = sync_item_tracker_column_remote(
                 repo,
@@ -724,7 +756,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "update_issue_state",
                 Some("backlog"),
                 None,
-                &|| update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "backlog"),
+                &|| update_state_if_not_discarded(repo, &tc, &issue_ref, &pbi_fetch, "backlog", source),
             )?;
             let doc = str_field(&payload_val, "document_id")
                 .or_else(|| str_field(&payload_val, "tracker_ref"))
@@ -734,7 +766,13 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "create_comment",
                 None,
                 Some("hu-forged"),
-                &|| tool_comment(repo, &issue_ref, &format!("HU forjada: {doc}"), tc.project_id.as_deref()),
+                &|| tool_comment(
+                    repo,
+                    &issue_ref,
+                    &format!("HU forjada: {doc}"),
+                    tc.project_id.as_deref(),
+                    source,
+                ),
             )?;
             let _ = sync_item_tracker_column_remote(
                 repo,
@@ -756,7 +794,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                     "update_issue_state",
                     Some("in_progress"),
                     None,
-                    &|| tool_update_state(repo, &tc, &issue_ref, "in_progress"),
+                    &|| tool_update_state(repo, &tc, &issue_ref, "in_progress", source),
                 )?;
             }
             if let Err(e) = maybe_promote_hu_when_work_starts(repo, &tc, &pbi_fetch) {
@@ -787,6 +825,7 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                         &issue_ref,
                         &format!("Work iniciado — rama `{branch}` · persist `{persist}`"),
                         tc.project_id.as_deref(),
+                        source,
                     )
                 },
             )?;
@@ -799,13 +838,61 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
             );
             stamped = true;
         }
+        "Validation_Started" => {
+            if tc.state_map.get("in_validation").is_none() {
+                return Ok((
+                    false,
+                    Some("warn: state_map sin in_validation".into()),
+                ));
+            }
+            run(
+                repo,
+                "update_issue_state",
+                Some("in_validation"),
+                None,
+                &|| {
+                    update_state_if_not_discarded(
+                        repo,
+                        &tc,
+                        &issue_ref,
+                        &pbi_fetch,
+                        "in_validation",
+                        source,
+                    )
+                },
+            )?;
+            let persist = str_field(&payload_val, "persist_ref").unwrap_or_default();
+            run(
+                repo,
+                "create_comment",
+                None,
+                Some("validation-started"),
+                &|| {
+                    tool_comment(
+                        repo,
+                        &issue_ref,
+                        &format!("Validación Argos iniciada — persist `{persist}`"),
+                        tc.project_id.as_deref(),
+                        source,
+                    )
+                },
+            )?;
+            let _ = sync_item_tracker_column_remote(
+                repo,
+                &payload_val,
+                &issue_ref,
+                super::super::item_lifecycle_frontmatter::COLUMN_IN_VALIDATION,
+                &tc,
+            );
+            stamped = true;
+        }
         "PullRequest_Presented" => {
             run(
                 repo,
                 "update_issue_state",
                 Some("in_review"),
                 None,
-                &|| tool_update_state(repo, &tc, &issue_ref, "in_review"),
+                &|| tool_update_state(repo, &tc, &issue_ref, "in_review", source),
             )?;
             let pr = str_field(&payload_val, "pr_url").unwrap_or_default();
             run(
@@ -813,7 +900,13 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "create_comment",
                 None,
                 Some("pr-presented"),
-                &|| tool_comment(repo, &issue_ref, &format!("PR presentado: {pr}"), tc.project_id.as_deref()),
+                &|| tool_comment(
+                    repo,
+                    &issue_ref,
+                    &format!("PR presentado: {pr}"),
+                    tc.project_id.as_deref(),
+                    source,
+                ),
             )?;
             let _ = sync_item_tracker_column_remote(
                 repo,
@@ -832,7 +925,13 @@ fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), Str
                 "create_comment",
                 None,
                 Some("pr-audited"),
-                &|| tool_comment(repo, &issue_ref, &format!("Auditoría PR: {resolution}"), tc.project_id.as_deref()),
+                &|| tool_comment(
+                    repo,
+                    &issue_ref,
+                    &format!("Auditoría PR: {resolution}"),
+                    tc.project_id.as_deref(),
+                    source,
+                ),
             )?;
             stamped = true;
         }
@@ -928,6 +1027,111 @@ pub(crate) fn classify_stamp_delivery(
         return ("failed".into(), 1);
     }
     ("skipped-no-op".into(), 0)
+}
+
+/// Sellado atómico post-refino en origen (AUT-64): Todo + comentario tras descripción sellada.
+pub(crate) fn seal_refined_todo_at_origin(
+    repo: &Path,
+    inputs: &Value,
+    issue_ref: &str,
+    payload: &Value,
+    comment: &str,
+    source_process: &str,
+) -> Result<(), String> {
+    if file_sink(repo, payload)? {
+        let event_type = if str_field(payload, "hu_ref").is_some() {
+            "HU_Refined"
+        } else {
+            "PBI_Refined"
+        };
+        let (ok, note) = stamp_file_sink_event(repo, event_type, payload)?;
+        if ok {
+            return Ok(());
+        }
+        if let Some(n) = note {
+            return Err(n);
+        }
+        return Ok(());
+    }
+    let Some(tc) = super::super::project_binding::tracker_config_for_inputs(repo, inputs)? else {
+        return Ok(());
+    };
+    let fetch = tool_fetch_issue(repo, issue_ref, tc.project_id.as_deref())?;
+    match stamp_todo_transition(
+        repo,
+        &tc,
+        issue_ref,
+        &fetch,
+        payload,
+        source_process,
+        comment,
+    ) {
+        Ok((true, _)) => Ok(()),
+        Ok((false, Some(note))) if note.starts_with("warn:") => Err(note),
+        Ok((false, _)) => Ok(()),
+        Err(e) => Err(e),
+    }
+}
+
+/// Sellado atómico post-alta en origen (AUT-64): backlog + comentario tras `create_issue`.
+pub(crate) fn seal_forged_backlog_at_origin(
+    repo: &Path,
+    inputs: &Value,
+    issue_ref: &str,
+    payload: &Value,
+    comment: &str,
+    source_process: &str,
+) -> Result<(), String> {
+    if file_sink(repo, payload)? {
+        let event_type = if str_field(payload, "document_id")
+            .map(|d| d.starts_with("HU-"))
+            .unwrap_or(false)
+        {
+            "HU_Forged"
+        } else {
+            "PBI_Forged"
+        };
+        let (ok, note) = stamp_file_sink_event(repo, event_type, payload)?;
+        if ok {
+            return Ok(());
+        }
+        if let Some(n) = note {
+            return Err(n);
+        }
+        return Ok(());
+    }
+    let Some(tc) = super::super::project_binding::tracker_config_for_inputs(repo, inputs)? else {
+        return Ok(());
+    };
+    let fetch = tool_fetch_issue(repo, issue_ref, tc.project_id.as_deref())?;
+    let run =
+        |op: &str, target: Option<&str>, f: &dyn Fn() -> Result<(), String>| -> Result<(), String> {
+            if let Err(e) = f() {
+                emit_sync_failed(
+                    repo,
+                    source_process,
+                    issue_ref,
+                    op,
+                    "LINEAR_GRAPHQL_ERROR",
+                    payload,
+                    target,
+                    None,
+                );
+                return Err(format!("warn: {e}"));
+            }
+            Ok(())
+        };
+    run(
+        "update_issue_state",
+        Some("backlog"),
+        &|| update_state_if_not_discarded(repo, &tc, issue_ref, &fetch, "backlog", source_process),
+    )?;
+    run(
+        "create_comment",
+        None,
+        &|| tool_comment(repo, issue_ref, comment, tc.project_id.as_deref(), source_process),
+    )?;
+    Ok(())
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
@@ -1053,6 +1257,22 @@ mod tests {
     }
 
     #[test]
+    fn stamp_validation_started_in_lab() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "Validation_Started",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-OK",
+                    "persist_ref": "docs/features/demo",
+                }
+            });
+            let (stamped, _) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped);
+        });
+    }
+
+    #[test]
     fn stamp_ignores_missing_pbi_label() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
@@ -1087,7 +1307,7 @@ mod tests {
     }
 
     #[test]
-    fn ac2_pbi_refined_moves_to_todo() {
+    fn ac2_pbi_refined_delegated_to_origin() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
@@ -1097,13 +1317,41 @@ mod tests {
                     "pbi_ref": "docs/todos/pending/x.md",
                 }
             });
-            let out = stamp_event(&repo, &event);
-            assert!(matches!(out, Ok((true, _))), "got {:?}", out);
+            let (stamped, note) = stamp_event(&repo, &event).unwrap();
+            assert!(!stamped);
+            assert!(
+                note.as_ref()
+                    .map(|s| s.as_str())
+                    .unwrap_or_default()
+                    .contains("origen"),
+                "note={note:?}"
+            );
         });
     }
 
     #[test]
-    fn ac2b_hu_refined_moves_to_todo() {
+    fn ac2_origin_seal_moves_pbi_refined_to_todo() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let inputs = json!({});
+            let payload = json!({
+                "tracker_ref": "LAB-PBI-OK",
+                "pbi_ref": "docs/todos/pending/x.md",
+            });
+            seal_refined_todo_at_origin(
+                &repo,
+                &inputs,
+                "LAB-PBI-OK",
+                &payload,
+                "PBI refinado: x v1.0.0",
+                "refine-item",
+            )
+            .expect("seal");
+        });
+    }
+
+    #[test]
+    fn ac2b_hu_refined_delegated_to_origin() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
@@ -1113,8 +1361,14 @@ mod tests {
                     "hu_ref": "docs/todos/historias/hu.md",
                 }
             });
-            let (stamped, _) = stamp_event(&repo, &event).unwrap();
-            assert!(stamped);
+            let (stamped, note) = stamp_event(&repo, &event).unwrap();
+            assert!(!stamped);
+            assert!(
+                note.as_ref()
+                    .map(|s| s.as_str())
+                    .unwrap_or_default()
+                    .contains("origen")
+            );
         });
     }
 
@@ -1234,15 +1488,20 @@ mod tests {
         with_lab(|| {
             std::env::remove_var("SDDIA_LAB_SKIP_CAPABILITY_DI");
             let repo = find_repo_root().expect("repo");
-            let event = json!({
-                "event_type": "PBI_Refined",
-                "payload": {
-                    "tracker_ref": "LAB-PBI-OK",
-                    "pbi_ref": "docs/todos/pending/x.md",
-                }
+            let inputs = json!({});
+            let payload = json!({
+                "tracker_ref": "LAB-PBI-OK",
+                "pbi_ref": "docs/todos/pending/x.md",
             });
-            let (stamped, _) = stamp_event(&repo, &event).expect("sello");
-            assert!(stamped);
+            seal_refined_todo_at_origin(
+                &repo,
+                &inputs,
+                "LAB-PBI-OK",
+                &payload,
+                "PBI refinado: x v1.0.0",
+                "refine-item",
+            )
+            .expect("seal");
             let tool = lifecycle_tool_name(&repo).expect("provider");
             let raw = super::super::super::capsules::invoke_tool_capsule_json(
                 &repo,
@@ -1310,9 +1569,16 @@ mod tests {
                 "pbi_ref": "docs/todos/pending/x.md"
             }
         });
-        let (stamped, note) = stamp_event(root, &event).expect("file");
-        assert!(stamped);
-        assert!(note.is_none());
+        let inputs = json!({ "project_slug": "demo" });
+        seal_refined_todo_at_origin(
+            root,
+            &inputs,
+            "OSC-1",
+            event.get("payload").unwrap(),
+            "PBI refinado: x v1.0.0",
+            "refine-item",
+        )
+        .expect("file seal");
         let text = std::fs::read_to_string(root.join("docs/todos/pending/x.md")).unwrap();
         assert!(text.contains("tracker_column: todo"));
     }
@@ -1392,15 +1658,20 @@ mod tests {
     fn aut63_hu_forged_backlog_stamp() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
-            let event = json!({
-                "event_type": "HU_Forged",
-                "payload": {
-                    "tracker_ref": "LAB-HU-FORGED",
-                    "document_id": "HU-LAB-1",
-                }
+            let inputs = json!({});
+            let payload = json!({
+                "tracker_ref": "LAB-HU-FORGED",
+                "document_id": "HU-LAB-1",
             });
-            let (stamped, note) = stamp_event(&repo, &event).expect("stamp");
-            assert!(stamped, "note={note:?}");
+            seal_forged_backlog_at_origin(
+                &repo,
+                &inputs,
+                "LAB-HU-FORGED",
+                &payload,
+                "HU forjada: HU-LAB-1",
+                "forge-hu",
+            )
+            .expect("seal");
         });
     }
 

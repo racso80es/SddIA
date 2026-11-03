@@ -20,8 +20,9 @@ fn state_rank(canonical: &str) -> Option<i32> {
         "backlog" => Some(0),
         "todo" => Some(1),
         "in_progress" => Some(2),
-        "in_review" => Some(3),
-        "done" => Some(4),
+        "in_validation" => Some(3),
+        "in_review" => Some(4),
+        "done" => Some(5),
         "cancelled" => Some(100),
         _ => None,
     }
@@ -277,12 +278,16 @@ mod tests {
     fn state_rank_orders_cycle() {
         assert!(state_rank("backlog").unwrap() < state_rank("todo").unwrap());
         assert!(state_rank("todo").unwrap() < state_rank("in_progress").unwrap());
+        assert!(state_rank("in_progress").unwrap() < state_rank("in_validation").unwrap());
+        assert!(state_rank("in_validation").unwrap() < state_rank("in_review").unwrap());
         assert!(state_rank("in_review").unwrap() < state_rank("done").unwrap());
     }
 
     #[test]
     fn discard_when_issue_already_at_or_past_target() {
         assert!(should_discard_transition("in_review", "in_progress"));
+        assert!(should_discard_transition("in_validation", "in_progress"));
+        assert!(!should_discard_transition("in_progress", "in_validation"));
         assert!(should_discard_transition("in_progress", "todo"));
         assert!(should_discard_transition("done", "done"));
         assert!(!should_discard_transition("backlog", "in_progress"));

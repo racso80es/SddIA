@@ -185,6 +185,26 @@ pub fn run_pbi(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Stri
             }),
             PROCESS_PBI,
         )?;
+        let doc_id = fm_str(&fm, "document_id").unwrap_or_else(|| rel.clone());
+        let ver = fm_str(&fm, "version").unwrap_or_else(|| "1.0.0".into());
+        let comment = format!("PBI refinado: {doc_id} v{ver}");
+        let seal_payload = json!({
+            "project_slug": bound.slug,
+            "tracker_ref": issue_ref,
+            "pbi_ref": rel,
+        });
+        if let Err(e) = super::tracker_stamp::seal_refined_todo_at_origin(
+            repo,
+            inputs,
+            &issue_ref,
+            &seal_payload,
+            &comment,
+            PROCESS_PBI,
+        ) {
+            if !e.starts_with("warn:") {
+                return Err(e);
+            }
+        }
     }
     let tracker_ref = fm_str(&fm, "tracker_ref");
     let event_rel = emit_refined(
@@ -321,6 +341,37 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
             }),
             PROCESS_HU,
         )?;
+    }
+
+    let sealed_fm = parse_fm(&sealed)?;
+    let issue_for_seal = if remote {
+        tracker_ref.as_deref()
+    } else if local_only {
+        None
+    } else {
+        Some(rel.as_str())
+    };
+    if let Some(issue_ref) = issue_for_seal {
+        let doc_id = fm_str(&sealed_fm, "document_id").unwrap_or_else(|| rel.clone());
+        let ver = fm_str(&sealed_fm, "version").unwrap_or_else(|| "1.0.0".into());
+        let comment = format!("HU refinada: {doc_id} v{ver}");
+        let seal_payload = json!({
+            "project_slug": bound.slug,
+            "tracker_ref": issue_ref,
+            "hu_ref": rel,
+        });
+        if let Err(e) = super::tracker_stamp::seal_refined_todo_at_origin(
+            repo,
+            inputs,
+            issue_ref,
+            &seal_payload,
+            &comment,
+            PROCESS_HU,
+        ) {
+            if !e.starts_with("warn:") {
+                return Err(e);
+            }
+        }
     }
 
     let event_rel = emit_refined(

@@ -534,6 +534,36 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             }),
             PROCESS,
         )?;
+        let fm_yaml: YamlValue =
+            serde_yaml::from_str(&fm_text).map_err(|e| format!("frontmatter ilegible: {e}"))?;
+        let doc_id = fm_str(&fm_yaml, "document_id").unwrap_or_else(|| item_ref.clone());
+        let ver = fm_str(&fm_yaml, "version").unwrap_or_else(|| "1.0.0".into());
+        let comment = if item_type == "hu" {
+            format!("HU refinada: {doc_id} v{ver}")
+        } else {
+            format!("PBI refinado: {doc_id} v{ver}")
+        };
+        let mut seal_payload = json!({
+            "project_slug": bound.slug,
+            "tracker_ref": issue_target,
+        });
+        if item_type == "hu" {
+            seal_payload["hu_ref"] = json!(item_ref);
+        } else {
+            seal_payload["pbi_ref"] = json!(item_ref);
+        }
+        if let Err(e) = super::super::tracker_stamp::seal_refined_todo_at_origin(
+            repo,
+            inputs,
+            &issue_target,
+            &seal_payload,
+            &comment,
+            PROCESS,
+        ) {
+            if !e.starts_with("warn:") {
+                return Err(e);
+            }
+        }
     }
 
     let event_type = if item_type == "hu" {

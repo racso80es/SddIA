@@ -8,7 +8,7 @@ use std::path::Path;
 use std::process::Command;
 use uuid::Uuid;
 
-use crate::resolve::{has_flag, print_json_report, resolve_event_watcher, run_json_cmd};
+use crate::resolve::{has_flag, print_json_report, resolve_event_watcher};
 
 const FIXTURE_REL: &str = "docs/features/e1-iota-ci/_smoke-iota-ci-merged.json";
 const IOTA_SUBSCRIBER: &str = "cumulo.iota-immutable-publisher";
@@ -79,11 +79,42 @@ fn write_pending(repo: &Path, bus: &EventBusTopology, event: &Value) -> Result<S
     Ok(seal.logical_rel)
 }
 
-fn route_event(repo: &Path, rel_path: &str) -> Result<Value, String> {
+fn route_event(repo: &Path, rel_path: &str, simulate_lab: bool) -> Result<Value, String> {
     let watcher = resolve_event_watcher(repo)?;
     let mut cmd = Command::new(&watcher);
     cmd.args(["--event-file-path", rel_path]).current_dir(repo);
-    run_json_cmd(&mut cmd)
+    if simulate_lab {
+        cmd.env("SDDIA_LAB_SIMULATE_IOTA", "1");
+        cmd.env("SDDIA_EVENT_STORE", "filesystem");
+        cmd.env("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM", "1");
+        cmd.env("SDDIA_LAB_MOCK_OUTBOUND", "1");
+    }
+    let output = cmd
+        .output()
+        .map_err(|e| format!("spawn event-watcher: {e}"))?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let line = stdout.trim().lines().last().unwrap_or("");
+    if line.is_empty() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(if stderr.trim().is_empty() {
+            "event-watcher sin salida JSON".into()
+        } else {
+            stderr.trim().to_string()
+        });
+    }
+    let body: Value = serde_json::from_str(line).map_err(|e| format!("JSON event-watcher: {e}"))?;
+    if body.get("success") == Some(&json!(false)) {
+        let err = body
+            .get("error")
+            .and_then(|v| v.as_str())
+            .unwrap_or("route-domain-event failed");
+        let ds = body
+            .pointer("/data/delivery_status")
+            .cloned()
+            .unwrap_or(json!({}));
+        return Err(format!("{err}; delivery_status={ds}"));
+    }
+    Ok(body)
 }
 
 fn cleanup_smoke(repo: &Path, bus: &EventBusTopology, event_id: &str) {
@@ -128,6 +159,8 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
             }
         } else if simulate {
             std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
+            // CI checkout sin .dev/.env: default redb + seal_dlt en simulación rompe el smoke.
+            std::env::set_var("SDDIA_EVENT_STORE", "filesystem");
         }
 
         let event = load_fixture(repo)?;
@@ -139,7 +172,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
         let bus = ensure_event_bus_topology(repo)?;
         let rel = write_pending(repo, &bus, &event)?;
 
-        let route_out = route_event(repo, &rel)?;
+        let route_out = route_event(repo, &rel, simulate)?;
         let data = route_out.get("data").cloned().unwrap_or(json!({}));
         let delivery_status = data.get("delivery_status").cloned().unwrap_or(json!({}));
         let cumulo_status = delivery_status.get(IOTA_SUBSCRIBER).and_then(|v| v.as_str());

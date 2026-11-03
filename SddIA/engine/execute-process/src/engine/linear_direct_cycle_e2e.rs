@@ -33,7 +33,7 @@ fn with_lab<F: FnOnce()>(f: F) {
 
 fn manifest(tracker: bool, delivery_mode: &str) -> String {
     let tracker_block = if tracker {
-        "tracker:\n  provider: linear\n  team_key: OSC\n  state_map:\n    backlog: Backlog\n    todo: Todo\n    in_progress: In Progress\n    in_review: In Review\n    done: Done\n  labels:\n    hu: hu\n    pbi: pbi\n    fix: fix\n"
+        "tracker:\n  provider: linear\n  team_key: OSC\n  state_map:\n    backlog: Backlog\n    todo: Todo\n    in_progress: In Progress\n    in_validation: In Validation\n    in_review: In Review\n    done: Done\n  labels:\n    hu: hu\n    pbi: pbi\n    fix: fix\n"
     } else {
         ""
     };
@@ -188,16 +188,6 @@ fn run_branch_pr_cycle(repo: &Path, slug: &str) -> (String, String) {
     let hu_text = fs::read_to_string(&hu_path).unwrap();
     let hu_tracker = yaml_field(&hu_text, "tracker_ref").expect("tracker_ref HU");
 
-    stamp(
-        repo,
-        "HU_Refined",
-        json!({
-            "tracker_ref": hu_tracker,
-            "hu_ref": hu_rel,
-            "project_slug": slug,
-        }),
-    );
-
     let forge = forge_pbi::run(
         repo,
         &json!({
@@ -232,17 +222,6 @@ fn run_branch_pr_cycle(repo: &Path, slug: &str) -> (String, String) {
     )
     .unwrap();
 
-    stamp(
-        repo,
-        "PBI_Forged",
-        json!({
-            "tracker_ref": pbi_tracker,
-            "document_id": document_id,
-            "project_slug": slug,
-            "expected_hu_tracker_ref": hu_tracker,
-        }),
-    );
-
     refine::run_pbi(
         repo,
         &json!({
@@ -251,16 +230,6 @@ fn run_branch_pr_cycle(repo: &Path, slug: &str) -> (String, String) {
         }),
     )
     .expect("refine-pbi");
-
-    assert!(stamp(
-        repo,
-        "PBI_Refined",
-        json!({
-            "tracker_ref": pbi_tracker,
-            "pbi_ref": pbi_rel,
-            "project_slug": slug,
-        }),
-    ));
 
     assert!(stamp(
         repo,
@@ -337,12 +306,6 @@ mod tests {
             let hu_tracker = yaml_field(&fs::read_to_string(&hu_path).unwrap(), "tracker_ref")
                 .expect("hu tracker");
 
-            stamp(
-                &repo,
-                "HU_Refined",
-                json!({ "tracker_ref": hu_tracker, "hu_ref": hu_rel }),
-            );
-
             let forge = forge_pbi::run(
                 &repo,
                 &json!({
@@ -376,21 +339,11 @@ mod tests {
             )
             .unwrap();
 
-            stamp(
-                &repo,
-                "PBI_Forged",
-                json!({ "tracker_ref": pbi_tr, "document_id": "PBI-X" }),
-            );
             refine::run_pbi(
                 &repo,
                 &json!({ "project_slug": slug, "pbi_ref": pbi_rel }),
             )
             .expect("refine-pbi");
-            stamp(
-                &repo,
-                "PBI_Refined",
-                json!({ "tracker_ref": pbi_tr, "pbi_ref": pbi_rel }),
-            );
             stamp(
                 &repo,
                 "Work_Initiated",
