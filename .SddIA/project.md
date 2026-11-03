@@ -21,7 +21,7 @@ tracker:
   labels:
     hu: HU
     pbi: Pbi
-    fix: Fix
+    fix: Bug
     kaizen: Kaizen
     deuda: Deuda
     spike: Spike
