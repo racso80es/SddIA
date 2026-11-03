@@ -858,6 +858,31 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         if let Some(tr) = &tracker.tracker_ref {
             event_payload["tracker_ref"] = json!(tr);
         }
+        if let Some(tr) = &tracker.tracker_ref {
+            let comment = format!("PBI forjado: {document_id}");
+            let seal_payload = json!({
+                "document_id": document_id,
+                "project_slug": bound.slug,
+                "tracker_ref": tr,
+            });
+            if let Err(e) = super::tracker_stamp::seal_forged_backlog_at_origin(
+                repo,
+                inputs,
+                tr,
+                &seal_payload,
+                &comment,
+                PROCESS_NAME,
+            ) {
+                if !e.starts_with("warn:") {
+                    return Ok(failed_after_issue(
+                        &document_id,
+                        &entity_uuid,
+                        &tracker,
+                        &e,
+                    ));
+                }
+            }
+        }
         match emit_pbi_forged(repo, event_payload) {
             Ok(ForgedEmit::Sealed(path)) => {
                 if let Some(tr) = &tracker.tracker_ref {
