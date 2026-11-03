@@ -416,7 +416,7 @@ fn resolve_issue_ref(payload: &Value, repo: &Path) -> Option<String> {
         return Some(tr);
     }
     if let Some(pbi) = str_field(payload, "pbi_ref") {
-        return tracker_pbi_meta::tracker_ref_from_pbi(repo, &pbi);
+        return tracker_pbi_meta::resolve_tracker_ref_from_pbi_ref(repo, &pbi);
     }
     None
 }
@@ -1286,6 +1286,23 @@ mod tests {
             });
             let (stamped, _) = stamp_event(&repo, &event).unwrap();
             assert!(stamped);
+        });
+    }
+
+    #[test]
+    fn work_initiated_stamps_with_opaque_pbi_ref_only() {
+        with_lab(|| {
+            let repo = find_repo_root().expect("repo");
+            let event = json!({
+                "event_type": "Work_Initiated",
+                "payload": {
+                    "pbi_ref": "BX-9",
+                    "branch": "fix/aut-74-workspace-server-target-path",
+                    "persist_ref": "docs/fixes/aut-74-workspace-server-target-path",
+                }
+            });
+            let (stamped, note) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped, "note={note:?}");
         });
     }
 

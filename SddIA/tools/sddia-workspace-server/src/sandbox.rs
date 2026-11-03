@@ -4,6 +4,7 @@ use std::path::{Component, Path, PathBuf};
 pub enum SandboxError {
     Escape(String),
     Io(String),
+    InvalidArgument(String),
 }
 
 impl SandboxError {
@@ -11,12 +12,13 @@ impl SandboxError {
         match self {
             Self::Escape(_) => "PROJECT_SCOPE_ESCAPE",
             Self::Io(_) => "SANDBOX_IO",
+            Self::InvalidArgument(_) => "URI_PATH_MISSING",
         }
     }
 
     pub fn message(&self) -> String {
         match self {
-            Self::Escape(m) | Self::Io(m) => m.clone(),
+            Self::Escape(m) | Self::Io(m) | Self::InvalidArgument(m) => m.clone(),
         }
     }
 }

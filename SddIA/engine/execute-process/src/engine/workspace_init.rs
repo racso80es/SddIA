@@ -718,7 +718,7 @@ pub fn emit_work_initiated_fail_soft(
     }
     if let Some(pbi) = pbi_ref_from_inputs(inputs) {
         emit_inputs["pbi_ref"] = json!(pbi);
-        if let Some(tr) = super::tracker_pbi_meta::tracker_ref_from_pbi(repo, pbi) {
+        if let Some(tr) = super::tracker_pbi_meta::resolve_tracker_ref_from_pbi_ref(repo, pbi) {
             emit_inputs["tracker_ref"] = json!(tr);
         }
     }
@@ -813,7 +813,7 @@ pub fn emit_validation_started_fail_soft(
     }
     if let Some(pbi) = pbi_ref_from_inputs(inputs) {
         emit_inputs["pbi_ref"] = json!(pbi);
-        if let Some(tr) = super::tracker_pbi_meta::tracker_ref_from_pbi(repo, pbi) {
+        if let Some(tr) = super::tracker_pbi_meta::resolve_tracker_ref_from_pbi_ref(repo, pbi) {
             emit_inputs["tracker_ref"] = json!(tr);
         }
     }

@@ -10,6 +10,18 @@ pub fn tracker_ref_from_pbi(repo: &Path, pbi_rel: &str) -> Option<String> {
     yaml_field(&text, "tracker_ref")
 }
 
+/// Resuelve `tracker_ref` desde `pbi_ref` de ciclo: identificador opaco (`AUT-74`) o frontmatter de fichero PBI.
+pub fn resolve_tracker_ref_from_pbi_ref(repo: &Path, pbi_rel: &str) -> Option<String> {
+    let pbi_rel = pbi_rel.trim();
+    if pbi_rel.is_empty() {
+        return None;
+    }
+    if looks_like_issue_identifier(pbi_rel) {
+        return Some(pbi_rel.to_string());
+    }
+    tracker_ref_from_pbi(repo, pbi_rel)
+}
+
 pub fn expected_hu_tracker_ref_from_pbi(repo: &Path, pbi_rel: &str) -> Option<String> {
     let path = resolve_repo_path(repo, pbi_rel);
     let text = fs::read_to_string(path).ok()?;
@@ -333,10 +345,7 @@ pub fn resolve_tracker_ref_for_lifecycle(repo: &Path, process_inputs: &Value) ->
         return Some(tr);
     }
     if let Some(pbi_rel) = resolve_pbi_path_from_persist(repo, persist) {
-        if looks_like_issue_identifier(&pbi_rel) {
-            return Some(pbi_rel);
-        }
-        return tracker_ref_from_pbi(repo, &pbi_rel);
+        return resolve_tracker_ref_from_pbi_ref(repo, &pbi_rel);
     }
     None
 }
@@ -373,8 +382,20 @@ mod tests {
     #[test]
     fn looks_like_issue_identifier_rejects_paths() {
         assert!(looks_like_issue_identifier("AUT-46"));
+        assert!(looks_like_issue_identifier("AUT-74"));
         assert!(!looks_like_issue_identifier("docs/todos/pending/x.md"));
         assert!(!looks_like_issue_identifier("AUT-46-extra"));
+    }
+
+    #[test]
+    fn resolve_tracker_ref_from_opaque_pbi_ref_without_file() {
+        let dir = std::env::temp_dir().join(format!("pbi-opaque-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        assert_eq!(
+            resolve_tracker_ref_from_pbi_ref(&dir, "AUT-74").as_deref(),
+            Some("AUT-74")
+        );
+        let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
