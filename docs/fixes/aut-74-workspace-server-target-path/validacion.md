@@ -1,7 +1,7 @@
 ---
 feature_name: aut-74-workspace-server-target-path
 created: 2026-11-03
-updated: 2026-11-03T18:42:00Z
+updated: 2026-11-03T19:51:30Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -18,11 +18,12 @@ pbi_ref_injected: ''
 document_id: AUT-74
 tracker_ref: AUT-74
 uuid: 3c9bff2a-fd75-44bb-be23-da7798eb5e5c
-correlation_id: c347faf3-ff87-4602-826b-71c32f131326
-audit_event_reference: c347faf3-ff87-4602-826b-71c32f131326
-execution_id: dd4f1ae7-e72e-49fb-9943-f84cbee18120
+correlation_id: debug-local-qa
+audit_event_reference: debug-local-qa
+execution_id: "0d64f24c-1a3c-4165-a31e-fccae85c5ad3"
 source_process: bug-fix
 global: APTO
+ppr_verdict: aprobado
 pbi_archived: false
 approval_status: aprobado
 verdict: aprobado
@@ -30,7 +31,7 @@ delivery_state: success
 resolution: PASS_F5_VERDICT
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: 'Presented PR #434; MERGE ausente este CID — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)'
+accept_pr_block_reason: PR #434 Presented sighted (pr_url local); MERGE ausente este CID — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)
 authorization_status:
   exitCode: 0
   emitter_agent: argos
@@ -39,17 +40,17 @@ git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session/machine native_state; sin bypass raw
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
-formal_evidence_detail: session Runtime evidence source=native_state · TECH/GIT APTO · notes=idempotent-hit; machine sellado en _agent_handoff.md @ Veredicto
+formal_evidence_detail: session Runtime evidence source=native_state · TECH/GIT APTO · notes=idempotent-hit; machine sellado en _agent_handoff.md @ Veredicto 2026-11-03T19:51:30Z
 handoff_machine_file: present
 handoff_evidence_block_pre: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence (machine+session) source=native_state notes=idempotent-hit @ Veredicto y bloqueo; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected — sin stdout inventado
-shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID c347faf3… · exec dd4f1ae7…
-head_commit_sha_fs: 9bb62a6655af3095952f2977368edcd2ff930dca
-workspace_path_injected: .SddIA/workspaces/pull-request-review/dd4f1ae7-e72e-49fb-9943-f84cbee18120/
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID debug-local-qa · exec 0d64f24c…
+head_commit_sha_fs: cd34348eb5754ead5b23f2d95f514f6d8bdd71c7
+workspace_path_injected: .SddIA/workspaces/pull-request-review/0d64f24c-1a3c-4165-a31e-fccae85c5ad3/
 workspace_materialized: false
 pr_url: https://github.com/racso80es/SddIA/pull/434
 revoked_entity_alert: delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent (rehab AUT-62); accept-pr∉revoked
-scope: 'PPR Veredicto y bloqueo — rama fix/aut-74-workspace-server-target-path (CID c347faf3… · exec dd4f1ae7… · AUT-74 · PR #434)'
+scope: 'PPR Veredicto y bloqueo — rama fix/aut-74-workspace-server-target-path (CID debug-local-qa · exec 0d64f24c… · AUT-74)'
 checks:
   F2_DOC_GATE: APTO
   F3_TECH_GATE: NO_APTO
@@ -114,31 +115,27 @@ non_blocking_findings:
 - REVOKED_ENTITY_ALERT_EVENT_CREATOR
 - REVOKED_ENTITY_ALERT_REFACTORIZATION
 situational_notes:
-- Fase Veredicto y bloqueo · CID c347faf3-ff87-4602-826b-71c32f131326 · exec dd4f1ae7-e72e-49fb-9943-f84cbee18120
+- Fase Veredicto y bloqueo · CID debug-local-qa · exec 0d64f24c-1a3c-4165-a31e-fccae85c5ad3
 - 'Evidence Bridge machine/session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)'
 - Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (cascada + touchpoints + evolution)
 - persist_ref inject docs/fixes/aut-74-workspace-server-target-path · cascada bug-fix completa
-- Workspace PPR dd4f1ae7… no materializado — WSPACE_MATERIALIZED NO_APTO no bloqueante; handoff machine presente
-- F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — cascada bug-fix objectives/spec/plan/implementation/execution + YAML + evolution e57d1f05-… OK
+- Workspace PPR 0d64f24c… no materializado — WSPACE_MATERIALIZED NO_APTO no bloqueante; handoff machine presente
+- F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — objectives/spec/plan/implementation/execution + YAML + evolution e57d1f05-… OK
+- DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix
 - F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md)
 - F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent (rehab AUT-62)
-- DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix
 - CODE_TOUCHPOINT_PRESENT APTO — TOOL_ARGS_MISSING / schema_target_path / TARGET_PATH_EMPTY / URI_PATH_MISSING sighted FS
 - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO
-- tracker linear AUT-74 · 0 hits docs/todos/** · pending/ vacío · pbi_archived false (done_gate: linear)
-- 'BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/fix/aut-74-workspace-server-target-path @ 9bb62a66… (FS Read; no gitStdout)'
-- 'accept_pr_handoff pending — Presented PR #434; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)'
-validated_base_sha: 55d3561df2db08b88de92e783d9bef33a29358ec
-validated_head_sha: b669ed6db393c8b0104bddb6f30a2e59e2af18a4
-validated_tree_sha: d64531181047295afa029c24152ea9bb8ff577c3
-diff_digest: sha256:ac4a744d53d36590343461b55f0f8fc32b9f02027508690b9841a0b5846c6dfc
+- tracker linear AUT-74 · 0 hits docs/todos/** · pending/ sin AUT-74 · pbi_archived false (done_gate: linear)
+- 'BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/fix/aut-74-workspace-server-target-path @ cd34348e… (FS Read; no gitStdout)'
+- PR #434 Presented · pr_url local · MERGE ausente → accept_pr_handoff pending (L-HANDOFF-F5)
 ---
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
 
 **APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `F5_VERDICT_GATE: APTO`.  
-`accept_pr_handoff: false` / `pending` (Presented PR #434; MERGE ausente; L-HANDOFF-F5).
+`accept_pr_handoff: false` / `pending` (PR #434 Presented; MERGE ausente; L-HANDOFF-F5).
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
@@ -154,7 +151,7 @@ Copia literal machine/session — **no** stdout Shell inventado:
 | Campo | Valor |
 |-------|-------|
 | `schema` | `kalma2-agent-runtime-evidence/v1` |
-| `source` | `native_state` (session + machine Veredicto) |
+| `source` | `native_state` (session + machine handoff) |
 | `notes` | `idempotent-hit` |
 | `git_manager_invoked` | `true` (bridge) · `false` (sesión Argos Shell) |
 | `formal_execute_process` | `true` |
@@ -163,7 +160,7 @@ Copia literal machine/session — **no** stdout Shell inventado:
 | `GIT_EVIDENCE_SESSION_SHELL` | **NO_APTO** — `./sddia-run.sh --tool git-manager` → Shell Rejected; sin `gitStdout` físico |
 | `RBAC_AUTHORING_KM_POLICY` | **APTO** — Argos 0 writes bajo `docs/todos/**` esta fase |
 
-Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) source=`native_state` notes=`idempotent-hit` (CID c347faf3… · exec dd4f1ae7…).
+Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) source=`native_state` notes=`idempotent-hit`.
 
 ## Ingesta
 
@@ -171,15 +168,16 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) source=`native
 |-------|------------|
 | `persist_ref` (inyectado) | `docs/fixes/aut-74-workspace-server-target-path` |
 | `pbi_ref` (inyectado) | vacío · tracker Linear `AUT-74` |
-| `correlation_id` | `c347faf3-ff87-4602-826b-71c32f131326` |
-| `execution_id` | `dd4f1ae7-e72e-49fb-9943-f84cbee18120` |
+| `correlation_id` | `debug-local-qa` |
+| `execution_id` | `0d64f24c-1a3c-4165-a31e-fccae85c5ad3` |
 | `branch_name` (runtime) | `fix/aut-74-workspace-server-target-path` |
-| Worktree HEAD (FS) | `refs/heads/fix/aut-74-workspace-server-target-path` @ `9bb62a66…` |
+| Worktree HEAD (FS) | `refs/heads/fix/aut-74-workspace-server-target-path` @ `cd34348e…` |
 | Workspace PPR | **no materializado** |
 | `pr_url` | `https://github.com/racso80es/SddIA/pull/434` |
 | Evento Merged (este CID) | **ausente** |
 | Tracker | `linear` · sin fichero KM AUT-74 |
 | Cerbero FS | PPR **ausente** de `revoked` y `permanent` |
+| Presented | PR #434 sighted (`github_bridge_state` + `execution.md`) |
 
 ## Peajes F2 → F5
 
@@ -203,11 +201,11 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) source=`native
 | `branch` | **APTO** | worktree = inject |
 | `git_changes` | **APTO** | path-assert FS (no `gitStdout` cápsula) |
 | `TRACKER_LINEAR_NO_KM_FILE` | **APTO** | provider `linear` · 0 ficheros AUT-74 bajo `docs/todos/` |
-| `PBI_PENDING_ABSENT` | **APTO** | `docs/todos/pending/` vacío |
-| `WSPACE_MATERIALIZED` | **NO_APTO** | dir exec `dd4f1ae7…` ausente/vacío |
+| `PBI_PENDING_ABSENT` | **APTO** | sin hits AUT-74 en `docs/todos/pending/` |
+| `WSPACE_MATERIALIZED` | **NO_APTO** | dir exec `0d64f24c…` ausente/vacío |
 | `MERGE_ALREADY_OBSERVED` | **NO_APTO** | sin `PullRequest_Merged` para este CID |
 
-`git_changes` por inventario path-assert (`persist_ref` + touchpoints + evolution). **No** es `gitStdout` de esta sesión.
+`git_changes` por inventario path-assert (`persist_ref` + touchpoints + evolution). **No** es `gitStdout` de esta sesión. Sin `validated_*` / `diff_digest` inventados.
 
 ## R3 — KM (`RBAC_AUTHORING_KM_POLICY`)
 
@@ -224,15 +222,15 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) source=`native
   "delivery_state": "success",
   "accept_pr_handoff": false,
   "accept_pr_handoff_status": "pending",
-  "accept_pr_block_reason": "Presented PR #434; MERGE ausente — L-HANDOFF-F5",
+  "accept_pr_block_reason": "PR #434 Presented; MERGE ausente — L-HANDOFF-F5",
   "pbi_archived": false,
   "branch": "fix/aut-74-workspace-server-target-path",
   "branch_worktree_observed": "fix/aut-74-workspace-server-target-path",
-  "head_commit_sha_fs": "9bb62a6655af3095952f2977368edcd2ff930dca",
+  "head_commit_sha_fs": "cd34348eb5754ead5b23f2d95f514f6d8bdd71c7",
   "document_id": "AUT-74",
   "tracker_ref": "AUT-74",
-  "correlation_id": "c347faf3-ff87-4602-826b-71c32f131326",
-  "execution_id": "dd4f1ae7-e72e-49fb-9943-f84cbee18120",
+  "correlation_id": "debug-local-qa",
+  "execution_id": "0d64f24c-1a3c-4165-a31e-fccae85c5ad3",
   "pr_url": "https://github.com/racso80es/SddIA/pull/434",
   "TECH_FORMAL_EXECUTE_PROCESS": "APTO",
   "GIT_EVIDENCE_VIA_GIT_MANAGER": "APTO",
@@ -244,10 +242,10 @@ Bloque machine: `_agent_handoff.md` § Runtime evidence (machine) source=`native
 
 ## Alcance
 
-Veredicto y bloqueo **aprueba** peajes F2/F4. Residual no bloqueante: `clarify.md` ausente, workspace PPR no materializado, Shell git-manager Rejected, F3 diferido, MERGE ausente → handoff `pending`. Sin merge directo en aduana. Argos **no** escribe bajo `docs/todos/`.
+Veredicto y bloqueo **aprueba** peajes F2/F4. Residual no bloqueante: `clarify.md` ausente, workspace PPR no materializado, Shell git-manager Rejected, F3 diferido, lateral `bug-fix∈revoked`, MERGE ausente → handoff `pending`. Sin merge directo en aduana. Argos **no** escribe bajo `docs/todos/`.
 
 ## approval_status
 
 ```text
-aprobado
+aprobado · PASS_F5_VERDICT · accept_pr_handoff=pending (L-HANDOFF-F5)
 ```

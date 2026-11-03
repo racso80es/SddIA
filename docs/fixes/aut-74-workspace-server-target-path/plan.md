@@ -1,12 +1,15 @@
 ---
 
+
+
+
 feature_name: aut-74-workspace-server-target-path
 created: "2026-11-03"
 process: bug-fix
 branch_name: fix/aut-74-workspace-server-target-path
 persist_ref: docs/fixes/aut-74-workspace-server-target-path
 pbi_ref: AUT-74
-execution_id: "dd4f1ae7-e72e-49fb-9943-f84cbee18120"
+execution_id: "0d64f24c-1a3c-4165-a31e-fccae85c5ad3"
 ---
 # Plan — aut-74-workspace-server-target-path
 

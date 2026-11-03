@@ -1,5 +1,8 @@
 ---
 
+
+
+
 feature_name: aut-74-workspace-server-target-path
 process: bug-fix
 created: "2026-11-03"
@@ -8,7 +11,7 @@ tracker_ref: AUT-74
 uuid: 3c9bff2a-fd75-44bb-be23-da7798eb5e5c
 persist_ref: docs/fixes/aut-74-workspace-server-target-path
 branch_name: fix/aut-74-workspace-server-target-path
-execution_id: "dd4f1ae7-e72e-49fb-9943-f84cbee18120"
+execution_id: "0d64f24c-1a3c-4165-a31e-fccae85c5ad3"
 ---
 # Implementación — aut-74-workspace-server-target-path
 
