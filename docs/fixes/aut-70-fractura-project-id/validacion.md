@@ -23,6 +23,10 @@ checks:
   DOC_PLAN: APTO
   TECH_AUT70_TESTS: APTO
   TRACKER_LINEAR_NO_KM_FILE: APTO
+validated_base_sha: 01bb719dabe321c6bea7c6b4ac6963cde6566ff0
+validated_head_sha: be69d40a389c3a3731adfba047c172be51bfee47
+validated_tree_sha: c8a6c5c76d006265a0bbc92d61b6c4c85416ea74
+diff_digest: sha256:a2e321319d322addd1938dab912a4f96d91839f2a93880ec552f1ce627d16d4e
 ---
 
 # Validación — AUT-70
