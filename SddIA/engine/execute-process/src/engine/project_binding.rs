@@ -280,7 +280,10 @@ fn docs_from_manifest(fm: &YamlValue) -> Result<DocsLayout, String> {
 
 pub fn resolve_doc_path(project_root: &Path, rel: &str) -> Result<PathBuf, String> {
     let rel = rel.trim().trim_start_matches("./");
-    if rel.is_empty() || rel.contains("..") || Path::new(rel).is_absolute() {
+    if rel.is_empty() {
+        return Err("DOC_PATH_EMPTY: relative path required".into());
+    }
+    if rel.contains("..") || Path::new(rel).is_absolute() {
         return Err(format!("PROJECT_SCOPE_ESCAPE: layout '{rel}'"));
     }
     let full = project_root.join(rel);

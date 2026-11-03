@@ -55,7 +55,7 @@ fn resolve_workspace_root(doc: &Value) -> PathBuf {
 fn resolve_under_root(root: &Path, rel: &str) -> Result<PathBuf, String> {
     let rel = rel.trim().trim_start_matches("./");
     if rel.is_empty() {
-        return Err("PROJECT_SCOPE_ESCAPE: empty path".into());
+        return Err("TARGET_PATH_EMPTY".into());
     }
     if Path::new(rel).is_absolute() {
         return Err(format!("PROJECT_SCOPE_ESCAPE: absolute '{rel}'"));
@@ -329,6 +329,24 @@ mod tests {
         let td = TempDir::new().unwrap();
         let root = td.path();
         assert!(resolve_under_root(root, "../etc/passwd").is_err());
+    }
+
+    #[test]
+    fn empty_target_path_is_not_scope_escape() {
+        let td = TempDir::new().unwrap();
+        let root = td.path();
+        let err = resolve_under_root(root, "").unwrap_err();
+        assert_eq!(err, "TARGET_PATH_EMPTY");
+        assert!(!err.contains("PROJECT_SCOPE_ESCAPE"));
+    }
+
+    #[test]
+    fn dot_lists_project_root() {
+        let td = TempDir::new().unwrap();
+        let root = td.path();
+        fs::write(root.join("marker.txt"), "x").unwrap();
+        let path = resolve_under_root(root, ".").unwrap();
+        assert_eq!(path, root);
     }
 
     #[test]

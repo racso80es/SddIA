@@ -137,6 +137,9 @@ impl WorkspaceServer {
                 serde_json::to_string(&entries).map_err(|e| e.to_string())?
             }
             "file" => {
+                if arg.is_empty() {
+                    return Err("URI_PATH_MISSING: project file path required".into());
+                }
                 let path = resolve_under_root(root, &arg).map_err(sandbox_err)?;
                 fs::read_to_string(&path).map_err(|e| e.to_string())?
             }
@@ -166,15 +169,15 @@ impl WorkspaceServer {
 
     fn method_tools_list(&self) -> Result<Value, String> {
         let tools = [
-            tool_def("fs_read", "READ_FILE on target_path"),
-            tool_def("fs_write", "WRITE_FILE"),
-            tool_def("fs_list", "LIST_DIR"),
-            tool_def("fs_delete", "DELETE_FILE"),
-            tool_def("fs_mkdir", "CREATE_DIR"),
-            tool_def("fs_move", "MOVE_FILE"),
-            tool_def("fs_patch", "PATCH_FILE unified diff"),
-            tool_def("git_status", "git-manager status"),
-            tool_def("run_check", "shell-executor whitelisted command"),
+            tool_def_fs_target("fs_read", "READ_FILE on target_path"),
+            tool_def_fs_write("fs_write", "WRITE_FILE"),
+            tool_def_fs_target("fs_list", "LIST_DIR"),
+            tool_def_fs_target("fs_delete", "DELETE_FILE"),
+            tool_def_fs_target("fs_mkdir", "CREATE_DIR"),
+            tool_def_fs_move("fs_move", "MOVE_FILE"),
+            tool_def_fs_write("fs_patch", "PATCH_FILE unified diff"),
+            tool_def_empty("git_status", "git-manager status"),
+            tool_def_run_check("run_check", "shell-executor whitelisted command"),
         ];
         Ok(json!({ "tools": tools }))
     }
@@ -194,16 +197,24 @@ impl WorkspaceServer {
         let (body, exit, ms) = match name {
             "fs_read" | "fs_write" | "fs_list" | "fs_delete" | "fs_mkdir" | "fs_move" | "fs_patch" => {
                 let op = fs_op(name);
+                let fs_inputs = match validate_fs_tool_args(name, &args) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        let err_body = json!({"error": e});
+                        let _ = self.finish_tool(name, &args, &err_body, 1, 0);
+                        return Ok(tool_error(&e));
+                    }
+                };
                 let mut req = json!({
                     "operation": op,
-                    "target_path": args.get("target_path").and_then(|v| v.as_str()).unwrap_or(""),
+                    "target_path": fs_inputs.target_path,
                     "workspace_root": root.to_string_lossy(),
                 });
-                if let Some(c) = args.get("content") {
-                    req["content"] = c.clone();
+                if let Some(c) = fs_inputs.content {
+                    req["content"] = json!(c);
                 }
-                if let Some(d) = args.get("destination_path") {
-                    req["destination_path"] = d.clone();
+                if let Some(d) = fs_inputs.destination_path {
+                    req["destination_path"] = json!(d);
                 }
                 invoke_skill(&self.cfg.sddia_repo, "filesystem-manager", &req, &self.child_env)?
             }
@@ -271,12 +282,132 @@ impl WorkspaceServer {
     }
 }
 
-fn tool_def(name: &str, desc: &str) -> Value {
+fn tool_def_empty(name: &str, desc: &str) -> Value {
     json!({
         "name": name,
         "description": desc,
         "inputSchema": {"type": "object", "properties": {}},
     })
+}
+
+fn tool_def_run_check(name: &str, desc: &str) -> Value {
+    json!({
+        "name": name,
+        "description": desc,
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "executable": {"type": "string"},
+                "arguments": {"type": "array", "items": {"type": "string"}},
+            },
+            "required": ["executable"],
+        },
+    })
+}
+
+fn schema_target_path_only() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "target_path": {
+                "type": "string",
+                "description": "Path relative to project root (. = root)",
+            },
+        },
+        "required": ["target_path"],
+    })
+}
+
+fn schema_target_path_and_content() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "target_path": {"type": "string"},
+            "content": {"type": "string"},
+        },
+        "required": ["target_path", "content"],
+    })
+}
+
+fn schema_target_path_and_destination() -> Value {
+    json!({
+        "type": "object",
+        "properties": {
+            "target_path": {"type": "string"},
+            "destination_path": {"type": "string"},
+        },
+        "required": ["target_path", "destination_path"],
+    })
+}
+
+fn tool_def_fs_target(name: &str, desc: &str) -> Value {
+    json!({
+        "name": name,
+        "description": desc,
+        "inputSchema": schema_target_path_only(),
+    })
+}
+
+fn tool_def_fs_write(name: &str, desc: &str) -> Value {
+    json!({
+        "name": name,
+        "description": desc,
+        "inputSchema": schema_target_path_and_content(),
+    })
+}
+
+fn tool_def_fs_move(name: &str, desc: &str) -> Value {
+    json!({
+        "name": name,
+        "description": desc,
+        "inputSchema": schema_target_path_and_destination(),
+    })
+}
+
+struct FsToolInputs<'a> {
+    target_path: &'a str,
+    content: Option<&'a str>,
+    destination_path: Option<&'a str>,
+}
+
+fn require_non_empty_str<'a>(args: &'a Value, key: &str) -> Result<&'a str, String> {
+    match args.get(key).and_then(|v| v.as_str()) {
+        None => Err(format!("TOOL_ARGS_MISSING: {key} required")),
+        Some(s) if s.trim().is_empty() => Err(format!("TOOL_ARGS_MISSING: {key} required")),
+        Some(s) => Ok(s),
+    }
+}
+
+fn validate_fs_tool_args<'a>(tool: &str, args: &'a Value) -> Result<FsToolInputs<'a>, String> {
+    match tool {
+        "fs_read" | "fs_list" | "fs_delete" | "fs_mkdir" => {
+            let target_path = require_non_empty_str(args, "target_path")?;
+            Ok(FsToolInputs {
+                target_path,
+                content: None,
+                destination_path: None,
+            })
+        }
+        "fs_write" | "fs_patch" => {
+            let target_path = require_non_empty_str(args, "target_path")?;
+            let content = require_non_empty_str(args, "content")?;
+            Ok(FsToolInputs {
+                target_path,
+                content: Some(content),
+                destination_path: None,
+            })
+        }
+        "fs_move" => {
+            let target_path = require_non_empty_str(args, "target_path")?;
+            let destination_path = require_non_empty_str(args, "destination_path")?;
+            Ok(FsToolInputs {
+                target_path,
+                content: None,
+                destination_path: Some(destination_path),
+            })
+        }
+        _ => Err(format!("unknown fs tool: {tool}")),
+    }
 }
 
 fn tool_error(msg: &str) -> Value {
@@ -324,11 +455,8 @@ mod tests {
     use std::fs;
     use tempfile::TempDir;
 
-    #[test]
-    fn resource_read_rejects_escape() {
-        let td = TempDir::new().unwrap();
-        let root = td.path();
-        let server = WorkspaceServer {
+    fn test_server(root: &Path) -> WorkspaceServer {
+        WorkspaceServer {
             cfg: ServerConfig {
                 project_root: root.to_path_buf(),
                 sddia_repo: root.to_path_buf(),
@@ -339,7 +467,57 @@ mod tests {
             child_env: HashMap::new(),
             allowed_executables: HashSet::new(),
             docs_paths: std::collections::HashMap::new(),
-        };
+        }
+    }
+
+    #[test]
+    fn fs_read_schema_in_tools_list() {
+        let td = TempDir::new().unwrap();
+        let server = test_server(td.path());
+        let tools = server.method_tools_list().unwrap();
+        let fs_read = tools["tools"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["name"] == "fs_read")
+            .unwrap();
+        let schema = &fs_read["inputSchema"];
+        assert!(schema["properties"]["target_path"].is_object());
+        assert_eq!(
+            schema["required"].as_array().unwrap()[0].as_str().unwrap(),
+            "target_path"
+        );
+    }
+
+    #[test]
+    fn fs_list_missing_target_path_is_tool_args_missing() {
+        let td = TempDir::new().unwrap();
+        let server = test_server(td.path());
+        let out = server
+            .method_tools_call(&json!({"name": "fs_list", "arguments": {}}))
+            .unwrap();
+        assert_eq!(out["isError"], true);
+        let text = out["content"][0]["text"].as_str().unwrap();
+        assert!(text.contains("TOOL_ARGS_MISSING"));
+        assert!(!text.contains("PROJECT_SCOPE_ESCAPE"));
+    }
+
+    #[test]
+    fn resource_read_empty_file_uri_is_not_escape() {
+        let td = TempDir::new().unwrap();
+        let server = test_server(td.path());
+        let err = server
+            .method_resources_read(&json!({"uri": "project://file/"}))
+            .unwrap_err();
+        assert!(err.contains("URI_PATH_MISSING"));
+        assert!(!err.contains("PROJECT_SCOPE_ESCAPE"));
+    }
+
+    #[test]
+    fn resource_read_rejects_escape() {
+        let td = TempDir::new().unwrap();
+        let root = td.path();
+        let server = test_server(root);
         let err = server
             .method_resources_read(&json!({"uri": "project://file/../secret"}))
             .unwrap_err();
