@@ -1,7 +1,7 @@
 ---
 uuid: 1b4fa69f-4299-47ca-b2ed-380f2263239c
 name: feature
-version: 1.3.2
+version: 1.3.3
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -71,9 +71,10 @@ Todos los artefactos `.md` generados bajo esta directriz deberán incluir obliga
 ## Handoff en Runtime y Reglas de Orquestación
 
 1. **Inicialización Git:** El orquestador inyectará incondicionalmente la variable `repository_path` (ruta absoluta resuelta por Cúmulo) en el `stdin` de `skill:git-manager` para asegurar el cumplimiento de su contrato congelado.
-2. **Precedencia de Entrada:** El input `refined_requirements` (semilla cruda) es consumido exclusivamente en la fase de Estabilización.
-3. **Mapeo de Contextos (Dedalo y Tekton):** Tras la estabilización, el runtime extraerá el contenido físico (cuerpo Markdown) de `objectives.md` para inyectarlo como la variable `refined_requirements` hacia Dedalo. Adicionalmente, el runtime inyectará `target_executor_rbac` para Dedalo y mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
-4. **Ejecución y Verificación:** Los documentos `clarify.md`, `spec.md` y `plan.md` actúan como contexto de solo lectura para la fase de Ejecución. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el contexto unificado de `objectives.md` y `spec.md`.
+2. **Ignición tracker (AUT-65):** Al cerrar con éxito la Fase 1, el motor emite una sola vez `Work_Initiated` (fail-soft) con `branch_name`, `persist_ref` y resolución `tracker_ref`/`pbi_ref`. `tracker-stamp` pasa el PBI a In Progress antes de Mayeuta y Dedalo.
+3. **Precedencia de Entrada:** El input `refined_requirements` (semilla cruda) es consumido exclusivamente en la fase de Estabilización.
+4. **Mapeo de Contextos (Dedalo y Tekton):** Tras la estabilización, el runtime extraerá el contenido físico (cuerpo Markdown) de `objectives.md` para inyectarlo como la variable `refined_requirements` hacia Dedalo. Adicionalmente, el runtime inyectará `target_executor_rbac` para Dedalo y mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
+5. **Ejecución y Verificación:** Los documentos `clarify.md`, `spec.md` y `plan.md` actúan como contexto de solo lectura para la fase de Ejecución. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el contexto unificado de `objectives.md` y `spec.md`.
 
 ## Cierre y Sellado
 

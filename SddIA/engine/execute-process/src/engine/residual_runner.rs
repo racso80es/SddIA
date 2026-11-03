@@ -17,7 +17,8 @@ use super::execution_workspace_report;
 use super::thermodynamic;
 use super::workspace::bootstrap_workspace;
 use super::workspace_init::{
-    is_workspace_init_phase, maybe_emit_work_initiated_on_tekton_entry, run as run_workspace_init,
+    is_workspace_init_phase, maybe_emit_work_initiated_on_tekton_entry,
+    merge_work_initiated_workspace_success, run as run_workspace_init,
 };
 use crate::core::resolver::{validate_process_inputs, ProcessDef};
 use crate::envelope::OrchestratorEnvelope;
@@ -480,6 +481,7 @@ fn execute_phase(
                 if let Some(obj) = state.as_object_mut() {
                     obj.insert("workspace".into(), result.clone());
                 }
+                merge_work_initiated_workspace_success(&result, state, &mut entry);
                 return entry;
             }
             Err(e) => {
@@ -704,6 +706,7 @@ fn execute_phase_body_residual(
                 if let Some(obj) = state.as_object_mut() {
                     obj.insert("workspace".into(), result.clone());
                 }
+                merge_work_initiated_workspace_success(&result, state, &mut entry);
                 return entry;
             }
             Err(e) => {
@@ -921,7 +924,6 @@ fn execute_phase_body_residual(
             repo,
             process_name,
             &delegates,
-            inputs,
             state,
             &mut entry,
         );

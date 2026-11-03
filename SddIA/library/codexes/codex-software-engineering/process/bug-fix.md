@@ -1,7 +1,7 @@
 ---
 uuid: ac8d078c-9785-490b-9f43-ad310fe9df9d
 name: bug-fix
-version: 1.4.2
+version: 1.4.3
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -68,8 +68,9 @@ Todos los artefactos `.md` incluirán el bloque de frontmatter de la norma, inye
 ## Handoff en Runtime y Reglas de Orquestación
 
 1. **Inicialización Git:** El orquestador inyectará `repository_path` en el `stdin` de `skill:git-manager`.
-2. **Precedencia de Entrada (Dedalo y Tekton):** La semilla `bug_summary` es consumida en la fase de Diseño del fix. Si existió una intervención opcional de Mayeuta, Dedalo leerá el cuerpo de `objectives.md` como alias para su análisis; de lo contrario, consumirá directamente el `bug_summary`. Adicionalmente, se inyectará `target_executor_rbac` para Dedalo y se mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
-3. **Ejecución y Verificación:** `spec.md` (y `plan.md` de existir) actúan como contexto de solo lectura para Tekton. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el `spec.md` complementado con los parámetros de regresión implícitos en el `bug_summary`.
+2. **Ignición tracker (AUT-65):** Tras Fase 1 exitosa, una sola emisión `Work_Initiated` (fail-soft) con `branch_name`, `persist_ref` y `tracker_ref`/`pbi_ref`; el tablero pasa a In Progress antes del Diseño del fix.
+3. **Precedencia de Entrada (Dedalo y Tekton):** La semilla `bug_summary` es consumida en la fase de Diseño del fix. Si existió una intervención opcional de Mayeuta, Dedalo leerá el cuerpo de `objectives.md` como alias para su análisis; de lo contrario, consumirá directamente el `bug_summary`. Adicionalmente, se inyectará `target_executor_rbac` para Dedalo y se mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
+4. **Ejecución y Verificación:** `spec.md` (y `plan.md` de existir) actúan como contexto de solo lectura para Tekton. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el `spec.md` complementado con los parámetros de regresión implícitos en el `bug_summary`.
 
 ## Cierre y Sellado
 

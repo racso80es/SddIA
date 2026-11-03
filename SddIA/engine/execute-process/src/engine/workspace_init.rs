@@ -630,6 +630,13 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         .map(|p| p.to_string_lossy().replace('\\', "/"))
         .unwrap_or_else(|_| objectives_path.to_string_lossy().into_owned());
 
+    let delivery_process = matches!(process_name, "feature" | "bug-fix" | "refactorization");
+    let work_initiated = if delivery_process {
+        emit_work_initiated_fail_soft(repo, process_name, inputs)
+    } else {
+        json!(null)
+    };
+
     Ok(json!({
         "feature_name": task_name,
         "task_name": task_name,
@@ -638,7 +645,8 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         "persist_ref": persist_ref,
         "objectives_path": objectives_rel,
         "git_steps": git_steps,
-        "work_initiated": json!(null),
+        "work_initiated": work_initiated,
+        "work_initiated_emitted": delivery_process,
         "execution_profile": profile.to_json(),
         "delivery_mode": bound.as_ref().map(|b| b.delivery_mode.as_str()),
         "delivery_mode_source": bound.as_ref().map(|b| b.delivery_mode_source),
@@ -721,12 +729,33 @@ pub fn emit_work_initiated_fail_soft(
     }
 }
 
-/// Una sola emisión al entrar en la primera fase `agent:tekton` (HU-A 05 / D-B).
+/// Propaga el sello `Work_Initiated` (AUT-65) desde el resultado de Fase 1 al estado de la ejecución.
+pub fn merge_work_initiated_workspace_success(
+    result: &Value,
+    state: &mut Value,
+    entry: &mut Value,
+) {
+    if !result
+        .get("work_initiated_emitted")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+    {
+        return;
+    }
+    if let Some(wi) = result.get("work_initiated") {
+        entry["work_initiated"] = wi.clone();
+        if let Some(obj) = state.as_object_mut() {
+            obj.insert("work_initiated_emitted".into(), json!(true));
+            obj.insert("work_initiated".into(), wi.clone());
+        }
+    }
+}
+
+/// AUT-65: la emisión ocurre al cerrar Fase 1; aquí solo se propaga al informe de fase Tekton.
 pub fn maybe_emit_work_initiated_on_tekton_entry(
-    repo: &Path,
-    process_name: &str,
+    _repo: &Path,
+    _process_name: &str,
     delegates: &[Value],
-    inputs: &Value,
     state: &mut Value,
     entry: &mut Value,
 ) {
@@ -738,14 +767,10 @@ pub fn maybe_emit_work_initiated_on_tekton_entry(
         .and_then(|v| v.as_bool())
         .unwrap_or(false)
     {
-        return;
+        if let Some(wi) = state.get("work_initiated") {
+            entry["work_initiated"] = wi.clone();
+        }
     }
-    let wi = emit_work_initiated_fail_soft(repo, process_name, inputs);
-    if let Some(obj) = state.as_object_mut() {
-        obj.insert("work_initiated_emitted".into(), json!(true));
-        obj.insert("work_initiated".into(), wi.clone());
-    }
-    entry["work_initiated"] = wi;
 }
 
 /// Detector de fase Inicialización (I7 / L-SPLIT-A D4).
@@ -821,20 +846,42 @@ mod tests {
     }
 
     #[test]
-    fn workspace_init_does_not_emit_work_initiated() {
+    fn workspace_init_emits_work_initiated_after_phase1() {
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);
         std::env::set_var("SDDIA_LAB_SKIP_GIT", "1");
+        std::env::remove_var("SDDIA_LAB_SKIP_WORK_INITIATED");
         let inputs = json!({
-            "feature_name": "wi-defer",
-            "branch_name": "feat/wi-defer",
-            "persist_ref": "docs/features/wi-defer",
-            "refined_requirements": "AC-4c defer"
+            "feature_name": "wi-phase1",
+            "branch_name": "feat/wi-phase1",
+            "persist_ref": "docs/features/wi-phase1",
+            "refined_requirements": "AUT-65 ignition"
         });
         let out = run(root, &inputs, "feature").expect("run ok");
+        assert_eq!(out["work_initiated_emitted"], json!(true));
+        assert_eq!(out["work_initiated"]["success"], json!(true));
+        assert_eq!(out["work_initiated"]["event_type"], json!("Work_Initiated"));
+        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+    }
+
+    #[test]
+    fn workspace_init_respects_lab_skip_work_initiated() {
+        let td = tempfile::tempdir().unwrap();
+        let root = td.path();
+        write_cumulo(root);
+        std::env::set_var("SDDIA_LAB_SKIP_GIT", "1");
+        std::env::set_var("SDDIA_LAB_SKIP_WORK_INITIATED", "1");
+        let inputs = json!({
+            "feature_name": "wi-skip",
+            "branch_name": "feat/wi-skip",
+            "persist_ref": "docs/features/wi-skip",
+        });
+        let out = run(root, &inputs, "feature").expect("run ok");
+        assert_eq!(out["work_initiated_emitted"], json!(true));
         assert_eq!(out["work_initiated"], json!(null));
         std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+        std::env::remove_var("SDDIA_LAB_SKIP_WORK_INITIATED");
     }
 
     #[test]
@@ -844,38 +891,35 @@ mod tests {
     }
 
     #[test]
-    fn maybe_emit_work_initiated_only_once() {
+    fn maybe_emit_work_initiated_only_propagates_after_phase1() {
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);
-        std::env::set_var("SDDIA_LAB_SKIP_WORK_INITIATED", "1");
-        let inputs = json!({
-            "branch_name": "feat/wi-once",
-            "persist_ref": "docs/features/wi-once"
+        let wi = json!({"success": true, "event_type": "Work_Initiated"});
+        let mut state = json!({
+            "work_initiated_emitted": true,
+            "work_initiated": wi,
         });
-        let mut state = json!({});
         let mut entry = json!({});
         let delegates = vec![json!("agent:tekton")];
         maybe_emit_work_initiated_on_tekton_entry(
             root,
             "feature",
             &delegates,
-            &inputs,
             &mut state,
             &mut entry,
         );
-        assert_eq!(state["work_initiated_emitted"], json!(true));
+        assert_eq!(entry["work_initiated"], wi);
+        state["work_initiated_emitted"] = json!(false);
         entry = json!({});
         maybe_emit_work_initiated_on_tekton_entry(
             root,
             "feature",
             &delegates,
-            &inputs,
             &mut state,
             &mut entry,
         );
         assert!(entry.get("work_initiated").is_none());
-        std::env::remove_var("SDDIA_LAB_SKIP_WORK_INITIATED");
     }
 
     #[test]

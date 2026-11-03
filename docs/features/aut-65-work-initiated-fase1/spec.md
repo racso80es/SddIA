@@ -9,11 +9,11 @@ pbi_ref: AUT-65
 
 # Especificación — AUT-65
 
-## Estado actual
+## Estado actual (pre-AUT-65)
 
-`emit_work_initiated_fail_soft` vive en `workspace_init.rs` y solo corre desde `maybe_emit_work_initiated_on_tekton_entry` (`executor.rs`, `residual_runner.rs`). El test `workspace_init_does_not_emit_work_initiated` afirma que Fase 1 no emite.
+Histórico: `emit_work_initiated_fail_soft` solo corría desde `maybe_emit_work_initiated_on_tekton_entry`.
 
-## Estado destino
+## Estado destino (AUT-65 implementado)
 
 | Momento | Emisión |
 |---|---|

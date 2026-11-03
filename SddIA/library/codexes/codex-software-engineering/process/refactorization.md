@@ -1,7 +1,7 @@
 ---
 uuid: ae01e3ff-af68-4b94-90b3-97e5c03d75ee
 name: refactorization
-version: 1.2.2
+version: 1.2.3
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -69,9 +69,10 @@ Los agentes V5 producen salidas *lógicas*. Este proceso impone un mapeo estrict
 ## Handoff en Runtime y Reglas de Orquestación
 
 1. **Inicialización Git:** El orquestador inyectará incondicionalmente la variable `repository_path` en el `stdin` de `skill:git-manager`.
-2. **Precedencia de Entrada:** Las semillas `refactor_goal` y `refined_constraints` son consumidas exclusivamente en la fase de Estabilización de alcance.
-3. **Mapeo de Contextos (Dedalo y Tekton):** Tras la estabilización, el runtime extraerá el contenido físico de `objectives.md` para inyectarlo como variable central hacia Dedalo. Adicionalmente, se inyectará `target_executor_rbac` para Dedalo y se mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
-4. **Ejecución y Verificación:** `clarify.md`, `spec.md` y `plan.md` actúan como contexto de solo lectura para Tekton. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el contexto unificado de `objectives.md` y `spec.md`.
+2. **Ignición tracker (AUT-65):** Tras Fase 1 exitosa, una sola emisión `Work_Initiated` (fail-soft) con `branch_name`, `persist_ref` y `tracker_ref`/`pbi_ref`; Mayeuta y Dedalo operan con el ítem ya en In Progress.
+3. **Precedencia de Entrada:** Las semillas `refactor_goal` y `refined_constraints` son consumidas exclusivamente en la fase de Estabilización de alcance.
+4. **Mapeo de Contextos (Dedalo y Tekton):** Tras la estabilización, el runtime extraerá el contenido físico de `objectives.md` para inyectarlo como variable central hacia Dedalo. Adicionalmente, se inyectará `target_executor_rbac` para Dedalo y se mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
+5. **Ejecución y Verificación:** `clarify.md`, `spec.md` y `plan.md` actúan como contexto de solo lectura para Tekton. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el contexto unificado de `objectives.md` y `spec.md`.
 
 ## Cierre y Sellado
 

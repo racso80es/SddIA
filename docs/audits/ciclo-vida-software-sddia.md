@@ -102,7 +102,7 @@ flowchart TB
   RI -->|update description + PBI/HU_Refined| BUS
 
   FE & BF & RF -->|clarify…validacion| EXP
-  FE & BF & RF -->|entra Tekton: Work_Initiated| BUS
+  FE & BF & RF -->|Fase 1 ok: Work_Initiated| BUS
   FE & BF & RF --> DCC
   DCC -->|push + gh pr create| GIT
   DCC -->|PullRequest_Presented| BUS
@@ -154,12 +154,12 @@ sequenceDiagram
   S->>T: estado Todo + comentario
 
   Op->>E: arranca proceso (rama + persist_ref)
-  Note over E,T: Fase git, Mayeuta y Dedalo NO tocan la columna (sigue Todo)
-  E->>P: clarify.md, objectives.md, spec.md, plan.md
-  Note over E: Entra fase Ejecución (agent:tekton)
   E->>Bus: Work_Initiated (branch, persist_ref, tracker_ref)
   Bus->>S: Work_Initiated
   S->>T: In Progress + comentario + promueve HU padre
+  Note over E,T: Mayeuta y Dedalo operan con ítem In Progress
+  E->>P: clarify.md, objectives.md, spec.md, plan.md
+  Note over E: Fase Ejecución (agent:tekton) sin reemitir Work_Initiated
   E->>P: implementation.md, execution.md (1 commit/tarea)
   E->>P: Argos → validacion.md (global: APTO)
 
@@ -607,7 +607,7 @@ Un check de CI no puede contarse como APTO sin `run_id` o URL de run verde. Si f
 | `PBI_Forged` | `forge-pbi` | `tekton.tracker-stamp` | Backlog + `tracker_column: backlog` + comentario `document_id`. |
 | `HU_Refined` | `refine-item` | `tekton.tracker-stamp` | Todo + `tracker_column: todo` + comentario versión. |
 | `PBI_Refined` | `refine-item` | `tekton.tracker-stamp` | Todo + `tracker_column: todo` + comentario versión. |
-| `Work_Initiated` | Motor (entrada a `agent:tekton`) | `tekton.tracker-stamp` | PBI → In Progress (`tracker_column: in_progress`) + comentario rama/`persist_ref` + HU padre → In Progress. |
+| `Work_Initiated` | Motor (cierre Fase 1 / `workspace-init`) | `tekton.tracker-stamp` | PBI → In Progress (`tracker_column: in_progress`) + comentario rama/`persist_ref` + HU padre → In Progress. |
 | `PullRequest_Presented` | `delivery-close-cycle` | `argos.pull-request-review`, `tekton.tracker-stamp`, `argos.send-telegram-notification` | PBI → In Review (`tracker_column: in_review`) + comentario URL; arranca la aduana del PR. |
 | `PullRequest_Resealed` | Resellado de rama | *(ninguno)* | Actualiza la correlación del sello de diff en el store para `accept-pr`. |
 | `PullRequest_Audited` | Aduana PR | `tekton.tracker-stamp` | Comentario con la resolución; no cambia columna. |
@@ -637,7 +637,7 @@ Un check de CI no puede contarse como APTO sin `run_id` o URL de run verde. Si f
 | ¿Está cerrada? | Columna **Done**, PR mergeado en `main`, `validacion.md` con `global: APTO` en ese PR y `.SddIA/proofs/tracker-done/{tracker_ref}.json`. |
 | ¿Es un bug? | Etiqueta `fix` y `process: bug-fix` en el alta. Expediente bajo `docs/fixes/`. |
 | ¿Es un kaizen? | Etiqueta `kaizen`. El expediente depende del proceso con el que se ejecute, no del nombre kaizen. |
-| ¿Por qué el tablero no se movió al lanzar el proceso? | 1) Fase 1 (git), Mayeuta y Dedalo no emiten `Work_Initiated`; espera a Tekton. 2) Si no se inyectó `tracker_ref` ni `pbi_ref` con `tracker_ref`, `tracker-stamp` hace no-op. |
+| ¿Por qué el tablero no se movió al lanzar el proceso? | 1) Fase 1 falló o faltan `branch_name`/`persist_ref` en inputs. 2) `SDDIA_LAB_SKIP_WORK_INITIATED` activo. 3) Sin `tracker_ref` ni `pbi_ref` resoluble, `tracker-stamp` hace no-op. |
 
 ---
 
