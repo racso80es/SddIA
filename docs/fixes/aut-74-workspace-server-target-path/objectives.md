@@ -1,13 +1,13 @@
 ---
+
 feature_name: aut-74-workspace-server-target-path
 created: "2026-11-03"
 process: bug-fix
 branch_name: fix/aut-74-workspace-server-target-path
 persist_ref: /home/racso/Proyectos/SddIA/docs/fixes/aut-74-workspace-server-target-path
 pbi_ref: AUT-74
-execution_id: "6c811ed9-8c0d-45d5-8801-4386b54821df"
+execution_id: "dd4f1ae7-e72e-49fb-9943-f84cbee18120"
 ---
-
 # Objetivos — aut-74-workspace-server-target-path
 
 ## Misión

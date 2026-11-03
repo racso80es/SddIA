@@ -1,11 +1,11 @@
 ---
+
 feature_name: aut-74-workspace-server-target-path
 process: bug-fix
 created: "2026-11-03"
 pbi_ref: AUT-74
-execution_id: "6c811ed9-8c0d-45d5-8801-4386b54821df"
+execution_id: "dd4f1ae7-e72e-49fb-9943-f84cbee18120"
 ---
-
 # Ejecución — AUT-74
 
 Rama `fix/aut-74-workspace-server-target-path` · `persist_ref` `docs/fixes/aut-74-workspace-server-target-path`.
