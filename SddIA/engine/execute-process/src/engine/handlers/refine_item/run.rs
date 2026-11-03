@@ -51,6 +51,40 @@ fn emit_mayeuta_fracture(repo: &Path, detail: &str) {
     );
 }
 
+pub(crate) const STORE_LOCK_CONTENTION: &str = "STORE_LOCK_CONTENTION";
+
+fn is_store_lock_error(err: &str) -> bool {
+    err.contains("Database already open")
+        || err.contains("Cannot acquire lock")
+        || err.contains(STORE_LOCK_CONTENTION)
+}
+
+fn emit_store_lock_fracture(repo: &Path, detail: &str) {
+    let _ = materialize_pending_domain_event(
+        repo,
+        "System_Fracture_Detected",
+        PROCESS,
+        json!({
+            "detail": detail,
+            "phase": "Sellado Argos",
+            "source_process": PROCESS,
+            "error_code": STORE_LOCK_CONTENTION,
+            "friction_id": "F-REFINE-ITEM-REDB-LOCK",
+        }),
+    );
+}
+
+fn lab_simulate_store_lock() -> bool {
+    std::env::var("SDDIA_LAB_SIMULATE_STORE_LOCK")
+        .map(|v| {
+            matches!(
+                v.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        })
+        .unwrap_or(false)
+}
+
 fn mayeuta_failure(repo: &Path, status: &str, entry: &Value) -> Result<OrchestratorEnvelope, String> {
     let detail = format!(
         "refine-item: fase Mayeuta {status}: {}",
@@ -280,6 +314,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                     "conflict",
                     &[],
                     None,
+                    false,
                 ));
             }
             RemoteTrackerRefResolution::Seal(tr) => tracker_ref = Some(tr),
@@ -322,6 +357,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 "awaiting_agents",
                 &[],
                 None,
+                false,
             ));
         }
         if status == "blocked" || status == "failed" {
@@ -347,6 +383,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 "awaiting_agents",
                 &[],
                 None,
+                false,
             ));
         }
     }
@@ -367,6 +404,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                 "conflict",
                 &[],
                 None,
+                false,
             ));
         }
     }
@@ -453,6 +491,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             "needs_clarification",
             &open_questions,
             None,
+            false,
         ));
     }
 
@@ -502,13 +541,38 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     } else {
         "PBI_Refined"
     };
-    let event_path = emit_refined(
-        repo,
-        event_type,
-        &item_ref,
-        &bound.slug,
-        tracker_ref.as_deref(),
-    )?;
+    let event_path = if lab_simulate_store_lock() {
+        emit_store_lock_fracture(repo, "SDDIA_LAB_SIMULATE_STORE_LOCK");
+        None
+    } else {
+        match emit_refined(
+            repo,
+            event_type,
+            &item_ref,
+            &bound.slug,
+            tracker_ref.as_deref(),
+        ) {
+            Ok(path) => Some(path),
+            Err(e) if is_store_lock_error(&e) => {
+                emit_store_lock_fracture(repo, &e);
+                if remote {
+                    return Ok(envelope_status(
+                        &item_ref,
+                        &item_type,
+                        tracker_ref.as_deref(),
+                        &execution_id,
+                        &ws,
+                        "refined",
+                        &[],
+                        None,
+                        true,
+                    ));
+                }
+                return Err(STORE_LOCK_CONTENTION.to_string());
+            }
+            Err(e) => return Err(e),
+        }
+    };
 
     Ok(envelope_status(
         &item_ref,
@@ -518,7 +582,8 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         &ws,
         "refined",
         &[],
-        Some(event_path),
+        event_path,
+        lab_simulate_store_lock() && remote,
     ))
 }
 
@@ -531,20 +596,25 @@ fn envelope_status(
     status: &str,
     open_questions: &[String],
     event_path: Option<String>,
+    refined_event_pending: bool,
 ) -> OrchestratorEnvelope {
+    let mut data = json!({
+        "item_ref": item_ref,
+        "item_type": item_type,
+        "tracker_ref": tracker_ref,
+        "execution_id": execution_id,
+        "workspace_path": ws.to_string_lossy(),
+        "status": status,
+        "open_questions": open_questions,
+        "event_path": event_path,
+    });
+    if refined_event_pending {
+        data["refined_event_pending"] = json!(true);
+    }
     OrchestratorEnvelope {
         success: true,
         status_code: 0,
-        data: Some(json!({
-            "item_ref": item_ref,
-            "item_type": item_type,
-            "tracker_ref": tracker_ref,
-            "execution_id": execution_id,
-            "workspace_path": ws.to_string_lossy(),
-            "status": status,
-            "open_questions": open_questions,
-            "event_path": event_path,
-        })),
+        data: Some(data),
         error: None,
         execution_report: Some(json!({
             "phases": [

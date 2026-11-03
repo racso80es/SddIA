@@ -449,6 +449,61 @@ PY
   return "$rc"
 }
 
+# AUT-67: stderr de execute-process con contención de events.redb.
+hook_stderr_is_store_lock_contentions() {
+  local err_file="$1"
+  python3 - "$err_file" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+needles = (
+    "StoreError::Locked",
+    "Database already open",
+    "Cannot acquire lock",
+    "STORE_LOCK_CONTENTION",
+)
+sys.exit(0 if any(n in text for n in needles) else 1)
+PY
+}
+
+# Local_QA_Requested vía route-domain-event; reintento ante lock (presupuesto del hook).
+# Exit 0 ok; 1 fallo de ruta no-lock; 2 STORE_LOCK_CONTENTION agotado.
+invoke_local_qa_route_domain_event() {
+  local payload="$1"
+  local budget_ms="${SDDIA_PREPUSH_STORE_LOCK_RETRY_MS:-15000}"
+  local sleep_ms="${SDDIA_PREPUSH_STORE_LOCK_RETRY_SLEEP_MS:-250}"
+  local start_ms now_ms rc
+  _sddia_resolve_orchestrator "$REPO"
+  start_ms=$(hook_timing_now_ms)
+  while true; do
+    local tmp err_file rc=0
+    tmp=$(_write_ephemeral_json "hook-route-domain-event" "$payload")
+    err_file=$(mktemp "${TMPDIR:-/tmp}/hook-route-domain-event.XXXXXX.stderr")
+    export SDDIA_HOOK_DELIVERY_CLOSE=1
+    export SDDIA_AGENT_RUNTIME_TIMEOUT_SECS="${SDDIA_AGENT_RUNTIME_TIMEOUT_SECS:-180}"
+    hook_timing_record_process "route-domain-event"
+    "$SDDIA_EXECUTE_PROCESS_BIN" --process "route-domain-event" --inputs-file "$tmp" 2>"$err_file" || rc=$?
+    if [[ "$rc" -eq 0 ]]; then
+      rm -f "$tmp" "$err_file"
+      return 0
+    fi
+    if [[ -s "$err_file" ]]; then
+      cat "$err_file" >&2
+    fi
+    if ! hook_stderr_is_store_lock_contentions "$err_file"; then
+      rm -f "$tmp" "$err_file"
+      echo "SddIA hook: proceso «route-domain-event» falló (exit ${rc})" >&2
+      return 1
+    fi
+    rm -f "$tmp" "$err_file"
+    now_ms=$(hook_timing_now_ms)
+    if (( now_ms - start_ms >= budget_ms )); then
+      echo "SddIA pre-push: STORE_LOCK_CONTENTION — events.redb no disponible tras ${budget_ms}ms (Local_QA_Requested)" >&2
+      return 2
+    fi
+    python3 -c "import time; time.sleep(${sleep_ms} / 1000.0)"
+  done
+}
+
 parse_pre_push_stdin() {
   local line local_ref local_sha remote_ref remote_sha
   while IFS= read -r line || [[ -n "$line" ]]; do

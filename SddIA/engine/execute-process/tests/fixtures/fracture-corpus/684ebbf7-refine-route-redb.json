@@ -1,0 +1,11 @@
+{
+  "label": "684ebbf7-refine-route-redb",
+  "fracture_family": "F-REFINE-ITEM-REDB-LOCK",
+  "event_id": "684ebbf7-b030-4d87-ae81-aa21f7e87432",
+  "process_name": "refine-item",
+  "attempted_action": "route-domain-event",
+  "agent_emitter": "execute-process",
+  "error_trace": "route-domain-event success true data null; events.redb path as JSON; subscribers pending materialize-fracture-pbi enrich-fracture-pbi-kaizen send-telegram-notification",
+  "expected_signature": "F-REFINE-ITEM-REDB-LOCK",
+  "note": "Incidente AUT-52 / AUT-25 sellado; integración re-route CA4 fuera de unit tests."
+}

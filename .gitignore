@@ -30,6 +30,9 @@ docs/events/
 .SddIA/telemetry-compliance/
 .SddIA/cerbero/revoked_entities.json
 
+# Registro saliente anti-eco Linear (HU-B 01; append JSONL por issue_ref)
+.SddIA/state/tracker-outbound/
+
 # Registro de oráculos LLM de instancia (L-VAULT; esquema en Core)
 .SddIA/llm-registry.json
 

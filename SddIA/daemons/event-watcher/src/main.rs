@@ -97,6 +97,11 @@ impl RouteBook {
     }
 }
 
+/// AUT-67: no abrir `events.redb` para claim mientras hijos `route-*` siguen en vuelo.
+fn routes_block_store_claim(book: &RouteBook) -> bool {
+    book.in_flight() > 0
+}
+
 type SharedBook = Arc<Mutex<RouteBook>>;
 
 fn spawn_heartbeat_worker(
@@ -284,6 +289,15 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
     if !db.is_file() {
         return;
     }
+    if let Ok(b) = book.lock() {
+        if routes_block_store_claim(&b) {
+            eprintln!(
+                "[WATCHER] claim_store_pending deferred: in_flight={}",
+                b.in_flight()
+            );
+            return;
+        }
+    }
     match sddia_eda_catalog::reconcile_unstamped(repo) {
         Ok(report) => {
             let open = report.open_cause.as_deref().unwrap_or("ok");
@@ -412,6 +426,15 @@ fn claim_store_fractal(repo: &Path, book: &SharedBook) {
     let db = sddia_event_store::runtime_db_path(repo);
     if !db.is_file() {
         return;
+    }
+    if let Ok(b) = book.lock() {
+        if routes_block_store_claim(&b) {
+            eprintln!(
+                "[WATCHER] claim_store_fractal deferred: in_flight={}",
+                b.in_flight()
+            );
+            return;
+        }
     }
     let store = match sddia_event_store::EventStore::open(&db) {
         Ok(store) => store,
@@ -1127,6 +1150,15 @@ mod tests {
                 "hot path must stay silent for {skip}"
             );
         }
+    }
+
+    #[test]
+    fn store_claim_deferred_while_routes_in_flight() {
+        let book = RouteBook::new();
+        assert!(!routes_block_store_claim(&book));
+        let mut busy = RouteBook::new();
+        busy.processing.insert("route-child".into());
+        assert!(routes_block_store_claim(&busy));
     }
 
     #[test]

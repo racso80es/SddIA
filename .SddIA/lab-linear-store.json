@@ -1,22 +1,12 @@
 {
   "audit_log": [
-    "comment:LAB-PBI-OK:Work iniciado — rama `feat/x` · persist `docs/features/x`",
-    "comment:LAB-PBI-OK:Work iniciado — rama `feat/x` · persist `docs/features/x`",
-    "comment:LAB-PBI-OK:Work iniciado — rama `feat/x` · persist `docs/features/x`",
-    "comment:LAB-PBI-OK:Work iniciado — rama `feat/x` · persist `docs/features/x`",
-    "comment:LAB-PBI-OK:Work iniciado — rama `feat/x` · persist `docs/features/x`",
-    "comment:LAB-PBI-OK:Work iniciado — rama `feat/x` · persist `docs/features/x`",
-    "comment:LAB-PBI-OK:Work iniciado — rama `feat/x` · persist `docs/features/x`"
+    "comment:LAB-HU-FORGED:HU forjada: HU-LAB-1",
+    "comment:LAB-HU-FORGED:HU forjada: HU-LAB-1"
   ],
   "comments": {
-    "LAB-PBI-OK": [
-      "Work iniciado — rama `feat/x` · persist `docs/features/x`",
-      "Work iniciado — rama `feat/x` · persist `docs/features/x`",
-      "Work iniciado — rama `feat/x` · persist `docs/features/x`",
-      "Work iniciado — rama `feat/x` · persist `docs/features/x`",
-      "Work iniciado — rama `feat/x` · persist `docs/features/x`",
-      "Work iniciado — rama `feat/x` · persist `docs/features/x`",
-      "Work iniciado — rama `feat/x` · persist `docs/features/x`"
+    "LAB-HU-FORGED": [
+      "HU forjada: HU-LAB-1",
+      "HU forjada: HU-LAB-1"
     ]
   },
   "issues": {},

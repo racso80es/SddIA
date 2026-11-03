@@ -25,6 +25,29 @@ fn str_field(inputs: &Value, key: &str) -> Option<String> {
         .map(str::to_string)
 }
 
+/// Identificador opaco de issue (p. ej. `AUT-50`), no rutas locales.
+pub(crate) fn is_tracker_issue_ref(value: &str) -> bool {
+    let value = value.trim();
+    if value.is_empty() || value.contains('/') || value.contains('\\') {
+        return false;
+    }
+    let Some((team, rest)) = value.split_once('-') else {
+        return false;
+    };
+    !team.is_empty()
+        && team.chars().all(|c| c.is_ascii_alphabetic())
+        &&     !rest.is_empty()
+        && rest
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
+pub(crate) fn resolve_parent_ref(inputs: &Value) -> Option<String> {
+    str_field(inputs, "parent_ref").or_else(|| {
+        str_field(inputs, "historia_ref").filter(|h| is_tracker_issue_ref(h))
+    })
+}
+
 /// Clave de `tracker.labels.*` según R-3 (HU-A 07).
 pub fn tipo_label_key(inputs: &Value, process: &str) -> Option<&'static str> {
     let raw = inputs
@@ -536,15 +559,17 @@ fn tracker_registration_phase(
     title: &str,
     description: &str,
 ) -> TrackerPhase {
-    let parent = match str_field(inputs, "parent_ref") {
+    let parent = match resolve_parent_ref(inputs) {
         Some(p) => p,
         None => {
-            let href = str_field(inputs, "historia_ref").unwrap_or_else(|| "local:missing-parent_ref".into());
+            let href = str_field(inputs, "historia_ref")
+                .or_else(|| str_field(inputs, "parent_ref"))
+                .unwrap_or_else(|| "local:missing-parent_ref".into());
             let _ = emit_create_issue_failed(repo, &href, "PARENT_REF_REQUIRED", &bound.slug);
             return TrackerPhase {
                 tracker_ref: None,
                 invoked: false,
-                skipped_reason: Some("parent_ref ausente".into()),
+                skipped_reason: Some("PARENT_REF_REQUIRED".into()),
             };
         }
     };
@@ -664,7 +689,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .unwrap_or("feature");
     let bound = project_binding::bind(repo, inputs)?
         .ok_or("project_slug requerido para forge-pbi")?;
-    let parent_for_key = str_field(inputs, "parent_ref").unwrap_or_default();
+    let parent_for_key = resolve_parent_ref(inputs).unwrap_or_default();
     let forge_key = forge_identity_key(&bound.slug, &parent_for_key, process, raw_idea);
     // Ledger siempre; scan de hijas solo si hay parent_ref (spec AUT-29 cortes 2–3).
     let prior = find_prior_forge(
@@ -710,34 +735,44 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         .ok()
         .flatten()
         .is_some();
-    if tracker_required && tracker.invoked && tracker.tracker_ref.is_none() {
-        let code = tracker
-            .skipped_reason
-            .clone()
-            .unwrap_or_else(|| "TRACKER_REF_MISSING".into());
-        return Ok(OrchestratorEnvelope {
-            success: false,
-            status_code: 1,
-            data: Some(json!({
-                "document_id": document_id,
-                "uuid": entity_uuid,
-                "create_issue_invoked": true,
-                "tracker_registration_error": code,
-            })),
-            error: Some(code),
-            execution_report: Some(json!({
-                "phases": [
-                    {"phase_name": "Recepcion", "status": "executed", "agent_tier": "reflexivo"},
-                    {
-                        "phase_name": "Registro en tracker",
-                        "status": "failed",
-                        "handler": PROCESS_NAME,
-                        "note": tracker.skipped_reason,
-                    },
-                ]
-            })),
-            exit_code: 1,
-        });
+    if tracker_required {
+        let has_tracker_ref = tracker.tracker_ref.is_some()
+            || prior
+                .as_ref()
+                .is_some_and(|p| !p.tracker_ref.is_empty());
+        if !has_tracker_ref {
+            let code = tracker.skipped_reason.clone().unwrap_or_else(|| {
+                if tracker.invoked {
+                    "TRACKER_REF_MISSING".into()
+                } else {
+                    "PARENT_REF_REQUIRED".into()
+                }
+            });
+            let reg_status = if tracker.invoked { "failed" } else { "failed" };
+            return Ok(OrchestratorEnvelope {
+                success: false,
+                status_code: 1,
+                data: Some(json!({
+                    "document_id": document_id,
+                    "uuid": entity_uuid,
+                    "create_issue_invoked": tracker.invoked,
+                    "tracker_registration_error": code,
+                })),
+                error: Some(code.clone()),
+                execution_report: Some(json!({
+                    "phases": [
+                        {"phase_name": "Recepcion", "status": "executed", "agent_tier": "reflexivo"},
+                        {
+                            "phase_name": "Registro en tracker",
+                            "status": reg_status,
+                            "handler": PROCESS_NAME,
+                            "note": tracker.skipped_reason,
+                        },
+                    ]
+                })),
+                exit_code: 1,
+            });
+        }
     }
     let body = if let Some(tr) = &tracker.tracker_ref {
         let with_ref = format!("{fm_lines}\ntracker_ref: \"{tr}\"");
@@ -1104,14 +1139,11 @@ mod tests {
     }
 
     #[test]
-    fn ac_0b2_hu_without_tracker_ref_still_forges() {
+    fn aut50_ca1_tracker_without_usable_parent_fails() {
         with_lab(|| {
             let core = find_repo_root().expect("repo");
-            let slug = "forge-ac-0b2-hu";
-            let client = register_lab_project(&core, slug, true);
-            let hu_path = client.join("docs/todos/historias/no-tracker.md");
-            fs::create_dir_all(hu_path.parent().unwrap()).unwrap();
-            fs::write(&hu_path, "---\nstatus: pending\n---\n\n# HU\n").unwrap();
+            let slug = "forge-aut50-ca1";
+            register_lab_project(&core, slug, true);
             let out = run(
                 &core,
                 &json!({
@@ -1122,11 +1154,37 @@ mod tests {
                 }),
             )
             .expect("run");
-            assert!(out
+            assert!(!out.success);
+            assert_eq!(out.error.as_deref(), Some("PARENT_REF_REQUIRED"));
+            cleanup_project_index(&core, slug);
+        });
+    }
+
+    #[test]
+    fn aut50_ca2_historia_ref_issue_used_as_parent() {
+        with_lab(|| {
+            let core = find_repo_root().expect("repo");
+            let slug = "forge-aut50-ca2";
+            register_lab_project(&core, slug, true);
+            seed_parent(&core, "LAB-HU-1");
+            let out = run(
+                &core,
+                &json!({
+                    "project_slug": slug,
+                    "raw_idea": "idea lab",
+                    "process": "bug-fix",
+                    "historia_ref": "LAB-HU-1",
+                }),
+            )
+            .expect("run");
+            assert!(out.success);
+            let tr = out
                 .data
                 .as_ref()
                 .and_then(|d| d.get("tracker_ref"))
-                .is_none());
+                .and_then(|v| v.as_str())
+                .expect("tracker_ref");
+            assert!(tr.starts_with("OSC-"));
             cleanup_project_index(&core, slug);
         });
     }

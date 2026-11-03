@@ -196,7 +196,7 @@ fn build_list_issues_query(include_label_filter: bool, include_project: bool) ->
         filter_parts.push("labels: { name: { in: $labels } }");
     }
     if include_project {
-        vars.push_str(", $projectId: String!");
+        vars.push_str(", $projectId: ID!");
         filter_parts.push("project: { id: { eq: $projectId } }");
     }
     let issues = if filter_parts.is_empty() {
@@ -212,7 +212,7 @@ fn build_list_issues_query(include_label_filter: bool, include_project: bool) ->
   teams(filter: {{ key: {{ eq: $teamKey }} }}) {{
     nodes {{
       {issues} {{
-        nodes {{ id identifier title description priority url updatedAt state {{ name }} labels {{ nodes {{ name }} }} parent {{ identifier }} children {{ nodes {{ identifier }} }} }}
+        nodes {{ id identifier title description priority url updatedAt state {{ name }} labels {{ nodes {{ name }} }} parent {{ identifier }} }}
         pageInfo {{ hasNextPage endCursor }}
       }}
     }}
@@ -625,7 +625,7 @@ fn run_fetch_issue(req: &Value, url: &str, token: &str) -> Result<Value, LinearF
 fn run_list_issues(req: &Value, url: &str, token: &str) -> Result<Value, LinearFail> {
     let inner = request_inner(req);
     let team_key = required_str(inner, "team_key")?;
-    let first = inner.get("first").and_then(|v| v.as_u64()).unwrap_or(50).min(100) as i64;
+    let first = inner.get("first").and_then(|v| v.as_u64()).unwrap_or(20).min(100) as i64;
     let after = optional_str(inner, "after");
     let label_filter: Option<Vec<String>> = inner
         .get("labels")
@@ -1166,9 +1166,12 @@ mod tests {
     fn list_issues_query_includes_label_filter() {
         let q = build_list_issues_query(true, false);
         assert!(q.contains("labels: { name: { in: $labels } }"));
+        assert!(!q.contains("children { nodes"));
         let q2 = build_list_issues_query(false, true);
         assert!(q2.contains("project: { id: { eq: $projectId } }"));
+        assert!(q2.contains("$projectId: ID!"));
         assert!(!q2.contains("$labels"));
+        assert!(!q2.contains("children { nodes"));
     }
 
     #[test]

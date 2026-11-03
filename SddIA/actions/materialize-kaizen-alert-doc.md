@@ -1,7 +1,7 @@
 ---
 uuid: "d7e6f5a4-b3c2-4109-8765-43210abcdef0"
 name: "materialize-kaizen-alert-doc"
-version: "1.1.0"
+version: "1.2.0"
 contract: "actions-contract v1.2.0"
 context: "quality-assurance"
 capabilities:
@@ -18,7 +18,8 @@ inputs:
   - "impacts_doc": "boolean | null; valor DIA resuelto (opcional)"
 outputs:
   - "success": "boolean"
-  - "target_path": "string; ruta del TODO en docs/todos/pending/"
+  - "target_path": "string; issue_ref (tracker) o ruta relativa del TODO en docs/todos/pending/"
+  - "issue_ref": "string; identificador Linear cuando aplica (opcional en modo file)"
   - "message": "string; resultado (nuevo | idempotente)"
 minteo_maximo: null
 porcentaje_de_exito: null
@@ -28,7 +29,14 @@ porcentaje_de_exito: null
 
 ## 1. Propósito
 
-Acción canónica del Agente **Cúmulo** ante `Kaizen_Alert_Required`. Materializa la cicatriz Kaizen `PENDING_AUDIT_DOC_{hash8}.md` en `docs/todos/pending/`. Plantilla **polimórfica** según `alert_kind`: `doc_parity` → checklist DIA; `event-bus-audit` (u otro técnico) → checklist de bus, sin prosa de fuga documental.
+Acción canónica del Agente **Cúmulo** ante `Kaizen_Alert_Required`. Materializa la cicatriz Kaizen con política **dual** (paridad `materialize_kaizen_alert_doc.rs`):
+
+| Modo | Destino |
+|------|---------|
+| Proyecto con `tracker` en manifiesto | Issue `Kaizen {hash8}` (label kaizen) vía operaciones de lifecycle |
+| Sin tracker | `PENDING_AUDIT_DOC_{hash8}.md` en `docs/todos/pending/` |
+
+Plantilla **polimórfica** según `alert_kind`: `doc_parity` → checklist DIA; `event-bus-audit` (u otro técnico) → checklist de bus, sin prosa de fuga documental.
 
 ## 2. Orquestación
 
@@ -42,7 +50,9 @@ Campos obligatorios: `review_id`, `alert_justification`, `implicated_files` (arr
 
 ### Paso 3 — Persistencia
 
-Markdown con tabla `review_id`, `alert_justification`, `implicated_files`, `persist_ref` (si presente) y checklist según `alert_kind` (DIA o bus). Idempotencia abierta: casilla DIA o de bus sin marcar + misma huella `alert_kind`+files.
+**Con tracker:** crear o reutilizar issue `Kaizen {hash8}`; `target_path`/`issue_ref` = identificador del issue.
+
+**Sin tracker:** Markdown bajo `docs/todos/pending/` con tabla `review_id`, `alert_justification`, `implicated_files`, `persist_ref` (si presente) y checklist según `alert_kind` (DIA o bus). Idempotencia abierta: casilla DIA o de bus sin marcar + misma huella `alert_kind`+files.
 
 ### Paso 4 — Cierre (stdout)
 

@@ -105,7 +105,7 @@
     {
       "agent": "cumulo",
       "action": "materialize-kaizen-alert-doc",
-      "intent": "Materializar cicatriz Kaizen documental en docs/todos/pending/ (único suscriptor legítimo)."
+      "intent": "Dual: con tracker → issue Kaizen {hash8}; sin tracker → PENDING_AUDIT_DOC_{hash8}.md en docs/todos/pending/. Único suscriptor legítimo (materialize-kaizen-alert-doc.rs)."
     }
   ],
   "CI_Chronic_Failure_Detected": [
@@ -257,6 +257,13 @@
       "agent": "tekton",
       "process": "tracker-stamp",
       "intent": "Sello backlog PBI + comentario document_id."
+    }
+  ],
+  "HU_Forged": [
+    {
+      "agent": "tekton",
+      "process": "tracker-stamp",
+      "intent": "Sello backlog HU + comentario idempotente HU forjada: {document_id|tracker_ref}."
     }
   ],
   "PBI_Refined": [

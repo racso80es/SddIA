@@ -35,7 +35,7 @@ const DLT_AUDIT_SEALS: TableDefinition<&str, &[u8]> = TableDefinition::new("dlt_
 const PROGRESS_TRACES: TableDefinition<(&str, u64), &[u8]> =
     TableDefinition::new("progress_traces");
 
-const DEFAULT_OPEN_BUDGET_MS: u64 = 2000;
+const DEFAULT_OPEN_BUDGET_MS: u64 = 10_000;
 
 fn open_budget_ms() -> u64 {
     match std::env::var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS") {

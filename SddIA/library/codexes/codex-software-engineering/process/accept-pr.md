@@ -1,7 +1,7 @@
 ---
 uuid: bd81c878-5e1c-4fe5-b204-85c9136d8bc7
 name: accept-pr
-version: 1.0.2
+version: 1.0.4
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -60,6 +60,8 @@ Tekton presenta a **Argos** la rama `source_branch`, diff y normas activas (`pr-
 
 Antes del merge, si `{persist_ref}/validacion.md` exige sello (`global: APTO` o campos `validated_*` / `diff_digest`), `accept-pr` recalcula el digest (misma exclusión de `validacion.md` que DCC AUT-39) y aborta con `diff_seal_mismatch` si no coincide. Lab: `SDDIA_LAB_SKIP_DIFF_SEAL_ACCEPT` o `SDDIA_LAB_SKIP_DIFF_SEAL`.
 
+**Scope del sello (AUT-53):** si el input `persist_ref` del ciclo viene informado (no vacío), la verificación se limita **solo** a ese path. No se barre el árbol buscando otros `validacion.md` bajo `docs/features|fixes|refactors` (un fixture hermano APTO sin sello no debe abortar la fusión del ciclo). Sin `persist_ref` explícito, se conserva el fallback legacy: listado de persist refs con `validacion.md` en HEAD, **excluyendo** slugs lab `_fixture-*` (AUT-54).
+
 1. `skill:git-manager` → `checkout` sobre `main` (`create_if_not_exists: false`).
 2. `skill:git-manager` → `merge` con `operation_payload_json`: `{ "branch_name": "<source_branch>", "no_ff": true }` (requiere norma congelada y cápsula con operación `merge`).
 3. Persistir `merge_commit_hash` desde salida de merge o `get_last_commit` con `ref: HEAD`.
@@ -77,6 +79,8 @@ Invocar **`action:emit-pr-merged-event`** con:
 `repository_path` desde `cumulo_topology`. Salidas: `success`, `event_id`, `target_path`.
 
 ## Fase 4 — Sincronización y Limpieza
+
+**Umbral físico (AUT-53):** push de `main` y delete local/remoto de la rama origen **solo** si `merge_commit_hash` quedó persistido tras Fusión Soberana exitosa. Si la fusión abortó (p. ej. `diff_seal_mismatch`) y no hay hash, la fase devuelve `skipped: true`, `reason: merge_commit_hash ausente`, sin delete remoto ni local de higiene.
 
 1. `skill:git-manager` → `push` (`remote: origin`, `branch: main`, `force: false`). Si falla, abortar fase sin ejecutar delete.
 2. Eliminar rama origen **local**: `delete_branch` con `{ "branch_name": "<source_branch>", "remote": false, "force": false }` → `git branch -d`.

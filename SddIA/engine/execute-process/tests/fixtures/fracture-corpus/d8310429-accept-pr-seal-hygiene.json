@@ -1,0 +1,11 @@
+{
+  "label": "d8310429-accept-pr-seal-hygiene",
+  "fracture_family": "c291912fe9a5",
+  "execution_id": "d8310429-7fd7-4b0d-861a-c39e18e1eae5",
+  "process_name": "accept-pr",
+  "attempted_action": "Fusión Soberana",
+  "agent_emitter": "tekton",
+  "error_trace": "diff_seal_mismatch: docs/features/_fixture-done-gate-lab/validacion.md validated_base_sha; Sincronización y Limpieza branch_deleted_remote: true merge_commit_hash ausente",
+  "expected_signature": null,
+  "note": "Familia accept-pr seal sweep + higiene post-aborto; unclassified hasta firma catalogada (AUT-54)."
+}

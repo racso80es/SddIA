@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 139
+universe_total: 144
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,11 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `e46d8e0c-b9fa-4d18-a035-99e9cf66ac07` | 2026-11-02 | AUT-67: pre-push reintenta Local_QA ante lock; watcher difiere claim con rutas en vuelo. | CANONICO | `SddIA/evolution/e46d8e0c-b9fa-4d18-a035-99e9cf66ac07.md` |
+| `72169010-d232-41f9-a877-44beb83dafc2` | 2026-11-02 | AUT-63: paridad ciclo de vida genoma A1-A4 (Kaizen dual, done_gate, HU stamp, sumidero Idea). | CANONICO | `SddIA/evolution/72169010-d232-41f9-a877-44beb83dafc2.md` |
+| `c55f04de-f956-4f1e-89ab-580b2c5bab34` | 2026-11-02 | AUT-52: refine-item lock redb — fractura sidechannel, route path virtual, LINEAR_TRANSPORT, firma F-REFINE-ITEM-REDB-LOCK. | CANONICO | `SddIA/evolution/c55f04de-f956-4f1e-89ab-580b2c5bab34.md` |
+| `69228e55-be56-4578-8bf3-1207b4eb31a2` | 2026-11-02 | AUT-62: rehab instancia PPR revocado (Cerbero + Radamanto) gate pre-PR QA. | CANONICO | `SddIA/evolution/69228e55-be56-4578-8bf3-1207b4eb31a2.md` |
+| `a1b2c3d4-e5f6-4789-a012-3456789abcde` | 2026-11-01 | AUT-50: alta backlog — forge-pbi, list_issues, forge-hu, refine lock. | CANONICO | `SddIA/evolution/a1b2c3d4-e5f6-4789-a012-3456789abcde.md` |
 | `20628bfd-f3f1-4dff-9409-4ef70e82c985` | 2026-11-01 | AUT-48: DCC v1.6.1 sello Presentación alineado con F-DCC-PR-URL-MISSING. | CANONICO | `SddIA/evolution/20628bfd-f3f1-4dff-9409-4ef70e82c985.md` |
 | `d4e5f6a7-b8c9-4012-9d3e-4f5a6b7c8d9e` | 2026-11-01 | AUT-55: reconcile_unstamped suelta store; log tick y Display Locked. | CANONICO | `SddIA/evolution/d4e5f6a7-b8c9-4012-9d3e-4f5a6b7c8d9e.md` |
 | `c3d4e5f6-a7b8-4901-8c2d-3e4f5a6b7c8d` | 2026-11-01 | AUT-37: data.message a entry.error y transcript en fallo CLI refine-item. | CANONICO | `SddIA/evolution/c3d4e5f6-a7b8-4901-8c2d-3e4f5a6b7c8d.md` |

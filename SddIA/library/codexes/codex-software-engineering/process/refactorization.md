@@ -8,7 +8,7 @@ context:
 - ecosystem-evolution
 - filesystem-ops
 - source-control
-hash_signature: "sha256:ca67f5963414711d0765eb58af1194ad6417527ca14f9e61d98c1202fa778d54"
+hash_signature: "sha256:2937419479f9dd7cb020137ef0a0025759f234f7e4e8e7bbf50f69311ee39e13"
 inputs:
 - refactor_goal: Propósito central de la refactorización
 - refined_constraints: Restricciones de alcance complementarias y límites
@@ -45,7 +45,7 @@ phases:
   delegates_to:
   - agent:argos
 - name: Cierre documental en rama
-  intent: 'Antes del merge: mover PBI a docs/todos/done/ en la rama del PR; validacion.md con pbi_archived true según features-documentation-pattern v1.2.0 (sin merged_pr obligatorio).'
+  intent: 'Antes del merge: cierre según tracker.provider y features-documentation-pattern v1.3.1 — provider file: mover PBI a docs/todos/done/ y validacion.md con pbi_archived true; provider linear: issue en state_map.done y validacion APTO, sin ficheros nuevos en docs/todos/pending ni done/. Prohibido merged_pr obligatorio ni segundo PR documental.'
   requires_capability:
   - id: doc:closure
     contract: doc.closure

@@ -58,7 +58,7 @@ Ante el evento de dominio **`Kaizen_Alert_Required`** (paridad documental DIA), 
 
 | Mandato | Detalle |
 |---------|---------|
-| Materializar | TODO `PENDING_AUDIT_DOC_{hash8}.md` en `docs/todos/pending/` |
+| Materializar | **Dual:** issue `Kaizen {hash8}` si hay tracker; si no, TODO `PENDING_AUDIT_DOC_{hash8}.md` en `docs/todos/pending/` |
 | Acción | `materialize-kaizen-alert-doc` |
 | Idempotencia | `hash8 = SHA256(review_id + sorted(implicated_files))[:8]` |
 | No bloqueo | La materialización **no** altera `delivery_state` de la aduana emisora |
