@@ -129,8 +129,8 @@ situational_notes:
 - 'BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/fix/aut-74-workspace-server-target-path @ fedfb169… (FS Read; no gitStdout)'
 - 'accept_pr_handoff pending — Presented PR #434; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)'
 validated_base_sha: 55d3561df2db08b88de92e783d9bef33a29358ec
-validated_head_sha: a724ae58f39c8bf6b2517245d7aeb7efea4b7df0
-validated_tree_sha: c4c32958322485cc886d0b2fc8fb3371266779e6
+validated_head_sha: 7ca741ee4719e6a660a27e7d15e19957e639f329
+validated_tree_sha: f8b35faf478fb23032d346a74e81a0aec322383b
 diff_digest: sha256:2c61b708aa527ecf9d6e6dae0f0c1db458e6cec25ee2542cb8cb2c0ded4fc5b8
 ---
 
