@@ -14,6 +14,7 @@ pub const COLUMN_TODO: &str = "todo";
 pub const COLUMN_IN_PROGRESS: &str = "in_progress";
 pub const COLUMN_IN_VALIDATION: &str = "in_validation";
 pub const COLUMN_IN_REVIEW: &str = "in_review";
+pub const COLUMN_VALIDATED: &str = "validated";
 pub const COLUMN_DONE: &str = "done";
 pub const COLUMN_CANCELLED: &str = "cancelled";
 
@@ -34,6 +35,65 @@ pub fn yaml_patch_refinement_refined(refined_date: &str) -> YamlValue {
 pub fn yaml_patch_tracker_column(column: &str) -> YamlValue {
     serde_yaml::from_str(&format!("{FM_TRACKER_COLUMN}: {column}"))
         .expect("patch columna")
+}
+
+fn yaml_patch_column_and_lines(column: &str, lines: &str) -> YamlValue {
+    let mut block = format!("{FM_TRACKER_COLUMN}: {column}");
+    if !lines.trim().is_empty() {
+        block.push('\n');
+        block.push_str(lines.trim());
+    }
+    serde_yaml::from_str(&block).expect("patch lifecycle")
+}
+
+pub fn yaml_patch_forge_closed(forge_date: &str, forge_by: &str) -> YamlValue {
+    yaml_patch_column_and_lines(
+        COLUMN_IN_VALIDATION,
+        &format!("forge_date: \"{forge_date}\"\nforge_by: \"{forge_by}\""),
+    )
+}
+
+pub fn yaml_patch_validation_apto(validated_date: &str, validated_by: &str) -> YamlValue {
+    yaml_patch_column_and_lines(
+        COLUMN_VALIDATED,
+        &format!(
+            "validated_status: apto\nvalidated_date: \"{validated_date}\"\nvalidated_by: \"{validated_by}\""
+        ),
+    )
+}
+
+pub fn yaml_patch_validation_no_apto(validated_date: &str, validated_by: &str) -> YamlValue {
+    yaml_patch_column_and_lines(
+        COLUMN_IN_PROGRESS,
+        &format!(
+            "validated_status: no apto\nvalidated_date: \"{validated_date}\"\nvalidated_by: \"{validated_by}\""
+        ),
+    )
+}
+
+pub fn yaml_patch_pr_opened(in_review_date: &str, in_review_by: &str) -> YamlValue {
+    yaml_patch_column_and_lines(
+        COLUMN_IN_REVIEW,
+        &format!("in_review_date: \"{in_review_date}\"\nin_review_by: \"{in_review_by}\""),
+    )
+}
+
+pub fn yaml_patch_review_ci_green(done_date: &str, done_by: &str) -> YamlValue {
+    yaml_patch_column_and_lines(
+        COLUMN_DONE,
+        &format!("done_status: ok\ndone_date: \"{done_date}\"\ndone_by: \"{done_by}\""),
+    )
+}
+
+pub fn yaml_patch_review_ci_red(done_date: &str, done_by: &str) -> YamlValue {
+    yaml_patch_column_and_lines(
+        COLUMN_IN_PROGRESS,
+        &format!("done_status: false\ndone_date: \"{done_date}\"\ndone_by: \"{done_by}\""),
+    )
+}
+
+pub fn yaml_patch_forge_started() -> YamlValue {
+    yaml_patch_tracker_column(COLUMN_IN_PROGRESS)
 }
 
 pub fn yaml_patch_cancelled() -> YamlValue {

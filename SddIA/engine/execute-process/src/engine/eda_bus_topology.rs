@@ -1046,6 +1046,111 @@ fn merge_sweep(base: Value, extra: Value) -> Value {
     out
 }
 
+const TRACKER_STAMP_SUBSCRIBER: &str = "tekton.tracker-stamp";
+
+fn payload_str_field(payload: &Value, key: &str) -> Option<String> {
+    payload
+        .get(key)
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
+fn payload_tracker_ref(repo: &Path, payload: &Value) -> Option<String> {
+    if let Some(tr) = payload_str_field(payload, "tracker_ref") {
+        return Some(tr);
+    }
+    if let Some(pbi) = payload_str_field(payload, "pbi_ref") {
+        if let Some(tr) = super::tracker_pbi_meta::resolve_tracker_ref_from_pbi_ref(repo, &pbi) {
+            return Some(tr);
+        }
+        return Some(pbi);
+    }
+    payload_str_field(payload, "item_ref")
+}
+
+fn event_requires_tracker_done_seal(event_type: &str, payload: &Value) -> bool {
+    match event_type {
+        "PullRequest_Merged" => true,
+        "Delivery_Committed" => {
+            payload.get("delivery_mode").and_then(|v| v.as_str()) == Some("trunk_direct")
+        }
+        _ => false,
+    }
+}
+
+fn dead_letter_includes_tracker_stamp(dead: &[PathBuf], event_uuid: &str) -> bool {
+    let needle = format!("{event_uuid}.{TRACKER_STAMP_SUBSCRIBER}.json");
+    dead.iter().any(|p| {
+        p.file_name()
+            .and_then(|n| n.to_str())
+            .map(|n| n == needle.as_str())
+            .unwrap_or(false)
+    })
+}
+
+fn pending_tracker_sync_failed_for_ref(
+    repo: &Path,
+    bus: &EventBusTopology,
+    tracker_ref: &str,
+) -> bool {
+    let pending_dir = resolve_bus_path(repo, &bus.pending);
+    let Ok(entries) = fs::read_dir(&pending_dir) else {
+        return false;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
+            continue;
+        }
+        let Ok(text) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(event) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
+        if event.get("event_type").and_then(|v| v.as_str()) != Some("Tracker_Sync_Failed") {
+            continue;
+        }
+        let payload = event.get("payload").cloned().unwrap_or(json!({}));
+        if payload_tracker_ref(repo, &payload).as_deref() == Some(tracker_ref) {
+            return true;
+        }
+        if payload_str_field(&payload, "issue_ref").as_deref() == Some(tracker_ref) {
+            return true;
+        }
+    }
+    false
+}
+
+/// `true` cuando el barrido puede tratar el sello Done como reconciliado (o no aplica).
+fn tracker_stamp_done_reconciled(
+    repo: &Path,
+    bus: &EventBusTopology,
+    event_type: &str,
+    payload: &Value,
+    dead: &[PathBuf],
+    event_uuid: &str,
+) -> bool {
+    if !event_requires_tracker_done_seal(event_type, payload) {
+        return true;
+    }
+    if !dead_letter_includes_tracker_stamp(dead, event_uuid) {
+        return true;
+    }
+    let Some(tracker_ref) = payload_tracker_ref(repo, payload) else {
+        return false;
+    };
+    if super::done_gate::read_tracker_done_proof(repo, &tracker_ref).is_some() {
+        return true;
+    }
+    if pending_tracker_sync_failed_for_ref(repo, bus, &tracker_ref) {
+        return false;
+    }
+    false
+}
+
 pub fn try_sweep_event(
     repo: &Path,
     bus: &EventBusTopology,
@@ -1118,6 +1223,28 @@ pub fn try_sweep_event(
                         }),
                     );
                 }
+            }
+            if !tracker_stamp_done_reconciled(
+                repo,
+                bus,
+                &event_type,
+                &payload,
+                &dead,
+                event_uuid,
+            ) {
+                let dead_names: Vec<_> = dead
+                    .iter()
+                    .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(str::to_string))
+                    .collect();
+                return merge_sweep(
+                    base,
+                    json!({
+                        "status": "tracker-stamp-unreconciled",
+                        "purged": false,
+                        "event_type": event_type,
+                        "dead_letter_witnesses": dead_names,
+                    }),
+                );
             }
             let finalized = finalize_kaizen_terminal(
                 repo,
@@ -1329,5 +1456,99 @@ mod tests {
         );
         assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(false));
         assert!(pending.is_file());
+    }
+
+    fn write_pr_merged_pending(repo: &Path, bus: &EventBusTopology, event_id: &str, tracker_ref: &str) -> PathBuf {
+        let pending = resolve_bus_path(repo, &bus.pending).join(format!("{event_id}.json"));
+        fs::create_dir_all(pending.parent().unwrap()).unwrap();
+        write_json_atomic(
+            &pending,
+            &json!({
+                "event_id": event_id,
+                "event_type": "PullRequest_Merged",
+                "payload": {
+                    "origin_topology": "core",
+                    "tracker_ref": tracker_ref,
+                    "merge_commit_hash": "abc123"
+                }
+            }),
+        )
+        .unwrap();
+        pending
+    }
+
+    fn pr_merged_registry() -> Value {
+        json!({
+            "PullRequest_Merged": [
+                {"agent": "tekton", "process": "tracker-stamp"},
+                {"agent": "cumulo", "tool": "iota-immutable-publisher"},
+                {"agent": "argos", "action": "notify-humanized-pr-merged"}
+            ]
+        })
+    }
+
+    #[test]
+    fn aut72_tracker_stamp_dead_letter_not_kaizen_finalized() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        write_minimal_paths(repo);
+        let event_id = "bbbbbbbb-bbbb-4ccc-8ddd-000000000002";
+        let bus = ensure_event_bus_topology(repo).unwrap();
+        let pending = write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
+        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
+        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
+        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
+            .join(format!("{event_id}.{TRACKER_STAMP_SUBSCRIBER}.json"));
+        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
+        for sub in ["cumulo.iota-immutable-publisher", "argos.notify-humanized-pr-merged"] {
+            let p = resolve_bus_path(repo, &bus.processed_subscribers)
+                .join(format!("{event_id}.{sub}.json"));
+            write_json_atomic(&p, &json!({"status": "success"})).unwrap();
+        }
+        let sweep = try_sweep_event(repo, &bus, event_id, Some(&pr_merged_registry()));
+        sddia_event_store::override_store_mode(None);
+        assert_eq!(
+            sweep.get("status").and_then(|v| v.as_str()),
+            Some("tracker-stamp-unreconciled")
+        );
+        assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(false));
+        assert!(pending.is_file());
+    }
+
+    #[test]
+    fn aut72_tracker_stamp_dead_letter_kaizen_finalized_with_proof() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        write_minimal_paths(repo);
+        let event_id = "cccccccc-bbbb-4ccc-8ddd-000000000003";
+        let bus = ensure_event_bus_topology(repo).unwrap();
+        let pending = write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
+        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
+        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
+        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
+            .join(format!("{event_id}.{TRACKER_STAMP_SUBSCRIBER}.json"));
+        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
+        for sub in ["cumulo.iota-immutable-publisher", "argos.notify-humanized-pr-merged"] {
+            let p = resolve_bus_path(repo, &bus.processed_subscribers)
+                .join(format!("{event_id}.{sub}.json"));
+            write_json_atomic(&p, &json!({"status": "success"})).unwrap();
+        }
+        crate::engine::done_gate::write_tracker_done_proof(
+            repo,
+            "AUT-72",
+            "abc123",
+            &json!({"state": "Done"}),
+        )
+        .unwrap();
+        let sweep = try_sweep_event(repo, &bus, event_id, Some(&pr_merged_registry()));
+        sddia_event_store::override_store_mode(None);
+        assert_eq!(
+            sweep.get("status").and_then(|v| v.as_str()),
+            Some("kaizen-finalized")
+        );
+        assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(true));
+        assert!(!pending.is_file());
     }
 }

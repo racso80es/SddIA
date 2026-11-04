@@ -1170,9 +1170,15 @@ pub fn capsule_delivery_emit_presented(
             obj.insert("target_path".into(), tp.clone());
         }
     }
+    let lifecycle_pr = super::lifecycle_phase_action::apply_pr_opened_fail_soft(
+        repo,
+        inputs,
+        "delivery-close-cycle",
+    );
     let mut entry = json!({
         "status": "executed",
         "handler": "delivery-emit-pr-presented",
+        "lifecycle_pr_opened": lifecycle_pr,
     });
     if let Some(obj) = seal.as_object() {
         for (k, v) in obj {

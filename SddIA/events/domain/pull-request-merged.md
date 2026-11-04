@@ -1,14 +1,14 @@
 ---
 uuid: "cfb8ce66-784e-4826-8a0a-a20c671e3a60"
 name: "pull-request-merged"
-version: "1.1.0"
+version: "1.1.1"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "PullRequest_Merged"
 context: "dlt-auditing"
 capabilities:
   - "pull_request_merged"
-hash_signature: "sha256:574da295344125a3618274f92ecf82b5344a84430adbd125650cbdccf3b5d5f0"
+hash_signature: "sha256:95e17deb76960b7efcce90cc8616d380848551f8ced2ca9c613530ac469c848d"
 ---
 
 # Event: PullRequest_Merged
@@ -27,7 +27,7 @@ Clase ECST para sello post-merge en main. Ancla DLT via merge_commit_hash (40 he
 ### OPTIONAL
 - `pr_url`
 - `repository_name`
-- `tracker_ref` (identificador opaco; sello `tracker-stamp`)
+- `tracker_ref` (identificador opaco; columna **Done** vía `lifecycle_phase_action` `review_ci_green` en `accept-pr`, no vía `tracker-stamp`)
 - `participating_agents` (agentes que intervinieron: `uuid`, `name`, `version`, `role`)
 - `authorizer`
 
@@ -47,7 +47,7 @@ Clase ECST para sello post-merge en main. Ancla DLT via merge_commit_hash (40 he
 
 | Suscriptor | Agente | Intent |
 | :--- | :--- | :--- |
-| `tracker-stamp` | tekton | Sello de ciclo done + comentario merge (tracker_ref). |
+| `tracker-stamp` | tekton | AUT-75: no-op de columna (sellado en origen). Comentario merge fail-soft si aplica. |
 | `iota-immutable-publisher` | cumulo | Anclaje DLT IOTA Rebased. |
 | `notify-humanized-pr-merged` | argos | Resumen ejecutivo post-merge: metadatos estáticos + síntesis de valor (fail-soft LLM). |
 

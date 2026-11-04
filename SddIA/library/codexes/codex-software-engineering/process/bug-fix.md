@@ -1,7 +1,7 @@
 ---
 uuid: ac8d078c-9785-490b-9f43-ad310fe9df9d
 name: bug-fix
-version: 1.4.3
+version: 1.4.4
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -68,16 +68,17 @@ Todos los artefactos `.md` incluirán el bloque de frontmatter de la norma, inye
 ## Handoff en Runtime y Reglas de Orquestación
 
 1. **Inicialización Git:** El orquestador inyectará `repository_path` en el `stdin` de `skill:git-manager`.
-2. **Ignición tracker (AUT-65):** Tras Fase 1 exitosa, una sola emisión `Work_Initiated` (fail-soft) con `branch_name`, `persist_ref` y `tracker_ref`/`pbi_ref`; el tablero pasa a In Progress antes del Diseño del fix.
-3. **Validación tracker (AUT-66):** Tras la fase Tekton con `status: executed`, una sola emisión `Validation_Started` (fail-soft); el tablero pasa a In Validation antes de Argos y del cierre documental.
-4. **Precedencia de Entrada (Dedalo y Tekton):** La semilla `bug_summary` es consumida en la fase de Diseño del fix. Si existió una intervención opcional de Mayeuta, Dedalo leerá el cuerpo de `objectives.md` como alias para su análisis; de lo contrario, consumirá directamente el `bug_summary`. Adicionalmente, se inyectará `target_executor_rbac` para Dedalo y se mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
-5. **Ejecución y Verificación:** `spec.md` (y `plan.md` de existir) actúan como contexto de solo lectura para Tekton. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el `spec.md` complementado con los parámetros de regresión implícitos en el `bug_summary`.
+2. **Ignición tracker (AUT-65 / AUT-75):** Tras Fase 1 exitosa, `workspace-init` aplica `lifecycle_phase_action` (`forge_started` → In Progress). Puede emitirse `Work_Initiated` fail-soft para el bus; **no** mueve columna — el writer es la acción de fase.
+3. **Forja → In Validation (AUT-75):** Al entrar en Verificación, si `persist_ref` contiene `implementation.md` y `execution.md`, el motor aplica `forge_closed` (`forge_date`, `forge_by`), aunque Ejecución haya quedado `simulated` o `skipped`. No se emite `Validation_Started` tras Tekton.
+4. **Argos y PR (AUT-75):** `validacion.md` con `global: APTO` → **Validated**; otro global → In Progress (`validated_status: no apto`). DCC (sello presentación) → In Review (`pr_opened`). `accept-pr` → Done (`review_ci_green`); handoff PPR no aprobado → In Progress (`review_ci_red`). Metadatos en frontmatter del issue. Requiere estado **Validated** en workflow Linear (instancia).
+5. **Precedencia de Entrada (Dedalo y Tekton):** La semilla `bug_summary` es consumida en la fase de Diseño del fix. Si existió una intervención opcional de Mayeuta, Dedalo leerá el cuerpo de `objectives.md` como alias para su análisis; de lo contrario, consumirá directamente el `bug_summary`. Adicionalmente, se inyectará `target_executor_rbac` para Dedalo y se mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
+6. **Ejecución y Verificación:** `spec.md` (y `plan.md` de existir) actúan como contexto de solo lectura para Tekton. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el `spec.md` complementado con los parámetros de regresión implícitos en el `bug_summary`.
 
 ## Cierre y Sellado
 
 La última fase invoca `execute-process` apuntando a `delivery-close-cycle` con sus `process_inputs` inyectados (`source_process: bug-fix`, `persist_ref` y `branch_name`). El subproceso asume la propagación del `pr_url`.
 
-*Nota de Arquitectura EDA:* El Sello Criptográfico (`PullRequest_Merged`) es un evento asíncrono y desacoplado post-fusión. La escritura eventual de `finalize-process.md` queda supeditada a la evolución del subproceso de cierre.
+*Nota de Arquitectura EDA (AUT-75):* `PullRequest_Presented` y `PullRequest_Merged` siguen emitiéndose para anclaje del bus. **In Review** y **Done** los aplica `lifecycle_phase_action` en DCC (`pr_opened`) y `accept-pr` (`review_ci_green`). `tracker-stamp` hace no-op de columna en `Work_Initiated`, `Validation_Started`, `PullRequest_Presented` y `PullRequest_Merged`. La escritura eventual de `finalize-process.md` queda supeditada a la evolución del subproceso de cierre.
 
 ## Cierre documental en rama (obligatorio, pre-merge)
 

@@ -1,0 +1,9 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/fixes/aut-75-lifecycle-state-actions",
+  "branch_name": "Fix_Events_Multiple_03",
+  "tracker_ref": "AUT-75",
+  "target_branch": "main",
+  "pr_title": "fix(AUT-75): lifecycle_phase_action writer + paridad genoma ciclo",
+  "pr_body": "## Summary\n- Writer único de estado/metadatos del ciclo vía `lifecycle_phase_action` (forge, validación, PR, CI).\n- `tracker-stamp` no-op de columna en `Work_Initiated`, `Validation_Started`, `PullRequest_Presented`, `PullRequest_Merged`.\n- `state_map.validated` + paridad narrativa procesos/eventos/suscripciones (D1–D6).\n- Auditoría ciclo v1.3.0.\n\n## Test plan\n- [x] `cd SddIA && cargo test -p execute-process --lib aut75`\n\nLinear: AUT-75\n"
+}

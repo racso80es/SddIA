@@ -288,6 +288,12 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
             obj.insert("accept_pr_handoff".into(), json!(false));
             obj.insert("accept_pr_handoff_status".into(), json!("skipped"));
         }
+        let lifecycle_ci = super::lifecycle_phase_action::apply_review_ci_fail_soft(
+            repo,
+            inputs,
+            false,
+            "pull-request-review",
+        );
         return Ok(json!({
             "status": "executed",
             "handler": "ppr-handoff-accept-pr",
@@ -295,6 +301,7 @@ fn handoff_accept_pr(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
             "reason": "verdict_not_aprobado",
             "accept_pr_handoff": false,
             "accept_pr_handoff_status": "skipped",
+            "lifecycle_review_ci": lifecycle_ci,
         }));
     }
 

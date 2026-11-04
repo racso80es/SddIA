@@ -16,6 +16,7 @@ tracker:
     todo: Todo
     in_progress: In Progress
     in_validation: In Validation
+    validated: Validated
     in_review: In Review
     done: Done
     cancelled: Cancelled

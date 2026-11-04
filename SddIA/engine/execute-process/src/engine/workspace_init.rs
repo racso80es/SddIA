@@ -637,6 +637,12 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         json!(null)
     };
 
+    let lifecycle_forge_started = if delivery_process {
+        super::lifecycle_phase_action::apply_forge_started_fail_soft(repo, inputs, process_name)
+    } else {
+        json!(null)
+    };
+
     Ok(json!({
         "feature_name": task_name,
         "task_name": task_name,
@@ -647,6 +653,7 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         "git_steps": git_steps,
         "work_initiated": work_initiated,
         "work_initiated_emitted": delivery_process,
+        "lifecycle_forge_started": lifecycle_forge_started,
         "execution_profile": profile.to_json(),
         "delivery_mode": bound.as_ref().map(|b| b.delivery_mode.as_str()),
         "delivery_mode_source": bound.as_ref().map(|b| b.delivery_mode_source),
@@ -824,35 +831,16 @@ pub fn emit_validation_started_fail_soft(
     }
 }
 
-/// Una sola emisión al cerrar con éxito la fase `agent:tekton`.
+/// AUT-75: In Validation la escribe `lifecycle_phase_action` al entrar en Verificación.
 pub fn maybe_emit_validation_started_after_tekton_agent(
-    repo: &Path,
-    process_name: &str,
-    delegates: &[Value],
-    agent_status: &str,
-    inputs: &Value,
-    state: &mut Value,
-    entry: &mut Value,
+    _repo: &Path,
+    _process_name: &str,
+    _delegates: &[Value],
+    _agent_status: &str,
+    _inputs: &Value,
+    _state: &mut Value,
+    _entry: &mut Value,
 ) {
-    if !phase_delegates_to_tekton(delegates) || agent_status != "executed" {
-        return;
-    }
-    if state
-        .get("validation_started_emitted")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false)
-    {
-        if let Some(vs) = state.get("validation_started") {
-            entry["validation_started"] = vs.clone();
-        }
-        return;
-    }
-    let vs = emit_validation_started_fail_soft(repo, process_name, inputs);
-    if let Some(obj) = state.as_object_mut() {
-        obj.insert("validation_started_emitted".into(), json!(true));
-        obj.insert("validation_started".into(), vs.clone());
-    }
-    entry["validation_started"] = vs;
 }
 
 /// Detector de fase Inicialización (I7 / L-SPLIT-A D4).
@@ -1005,7 +993,7 @@ mod tests {
     }
 
     #[test]
-    fn maybe_emit_validation_started_once_on_tekton_executed() {
+    fn maybe_emit_validation_started_is_aut75_noop() {
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);
@@ -1025,19 +1013,8 @@ mod tests {
             &mut state,
             &mut entry,
         );
-        assert_eq!(state["validation_started_emitted"], json!(true));
-        assert!(entry.get("validation_started").is_some());
-        let first = entry["validation_started"].clone();
-        maybe_emit_validation_started_after_tekton_agent(
-            root,
-            "feature",
-            &delegates,
-            "executed",
-            &inputs,
-            &mut state,
-            &mut entry,
-        );
-        assert_eq!(entry["validation_started"], first);
+        assert!(state.get("validation_started_emitted").is_none());
+        assert!(entry.get("validation_started").is_none());
     }
 
     #[test]

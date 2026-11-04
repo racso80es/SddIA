@@ -340,9 +340,15 @@ pub fn execute_accept_pr_phase(
                 tracker_pbi_meta::tracker_ref_from_presented_for_branch(repo, source)
             {
                 action_inputs["tracker_ref"] = json!(tr);
-            } else if let Some(persist) = str_field(inputs, "persist_ref") {
+            } else             if let Some(persist) = str_field(inputs, "persist_ref") {
                 tracker_pbi_meta::attach_tracker_ref_from_persist(repo, &persist, &mut action_inputs);
             }
+            let lifecycle_done = super::lifecycle_phase_action::apply_review_ci_fail_soft(
+                repo,
+                inputs,
+                true,
+                "accept-pr",
+            );
             let seal = match actions::try_run_native(repo, "emit-pr-merged-event", &action_inputs) {
                 Ok(Some(s)) => s,
                 Ok(None) => {
@@ -371,6 +377,7 @@ pub fn execute_accept_pr_phase(
                 "event_id": seal.get("event_id"),
                 "target_path": seal.get("target_path"),
                 "event_type": seal.get("event_type"),
+                "lifecycle_review_ci": lifecycle_done,
             })))
         }
         "Sincronización y Limpieza" => {
