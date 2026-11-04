@@ -31,10 +31,10 @@ SDDIA_AGENT_RELAY_IDE=1 SDDIA_LAB_ALLOW_DIRTY=1 SDDIA_LAB_SKIP_PBI_ARCHIVE=1 SDD
 | `clarify.md` | sellado |
 | `spec.md` | sellado |
 | `plan.md` | sellado |
-| `implementation.md` | pendiente Tekton T1+ |
-| `validacion.md` | pendiente Argos |
+| `implementation.md` | sellado |
+| `validacion.md` | APTO (Argos) |
 
-## Verificación prevista (Tekton)
+## Verificación (Tekton)
 
 ```bash
 cd SddIA && cargo test -p execute-process --lib aut72
@@ -51,9 +51,8 @@ Resultado: **2 passed** (2026-11-04).
 | T3 watcher | sin cambio (no emite `kaizen-finalized` con nuevo status) |
 | T4 tests `aut72_*` | verde |
 
-Detalle: `implementation.md`.
+Detalle: `implementation.md`, `validacion.md`.
 
 ## Pendiente (T5)
 
-- `validacion.md` Argos APTO
-- `delivery-close-cycle` + PR + Linear Done
+- `delivery-close-cycle` + PR + Linear Done (post-merge issue AUT-72)
