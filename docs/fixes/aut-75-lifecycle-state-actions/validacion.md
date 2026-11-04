@@ -25,8 +25,9 @@ git_changes:
 - SddIA/core/event-domain-subscriptions.json
 - SddIA/evolution/f7e2a1b0-9c3d-4e5f-a6b7-8c9d0e1f2a3b.md
 validated_base_sha: 260b0aec0062fb06e3a1305bd1c7be33dbd2f08f
-validated_head_sha: d464d98b0b8389f1d52f0529c6f229da4a8d48f2
-validated_tree_sha: 8bfe8b5064001487f63c7a0b8272d695af6ea616
+validated_head_sha: 43243b6c022df0f3449c56109f56fba822e4bb91
+validated_tree_sha: f508150def710afdea0d49ea6ced532a505dbd7a
+pr_url: https://github.com/racso80es/SddIA/pull/435
 diff_digest: sha256:d466e0dcfade0da025e8fe0434dfc1c3490433ddc99af3d4f0775e0a12170998
 ---
 
@@ -48,6 +49,6 @@ Cuatro tests de writer + `aut75_genome_narrative_parity` + no-op Validation_Star
 
 Estado de workflow Linear **Validated** en equipo AUT antes de transicionar issues reales con `validation_apto`.
 
-## Pendiente (T8)
+## Cierre
 
-`delivery-close-cycle`, PR único, Linear Done post-merge.
+PR https://github.com/racso80es/SddIA/pull/435 — Linear AUT-75 → **Done** tras merge.

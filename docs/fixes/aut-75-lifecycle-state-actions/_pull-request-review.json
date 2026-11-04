@@ -1,0 +1,9 @@
+{
+  "pr_branch": "Fix_Events_Multiple_03",
+  "pr_id_or_path": "435",
+  "correlation_id": "e6bd0372-60b5-414e-b235-9f9cdcf7e75d",
+  "persist_ref": "docs/fixes/aut-75-lifecycle-state-actions",
+  "pr_url": "https://github.com/racso80es/SddIA/pull/435",
+  "code_diff": "origin/main...HEAD",
+  "tracker_ref": "AUT-75"
+}
