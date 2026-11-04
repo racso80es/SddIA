@@ -1,6 +1,6 @@
 ---
 feature_name: aut-72-tracker-stamp-sweep-kaizen
-created: "2026-11-04"
+created: 2026-11-04
 process: bug-fix
 branch: Fix_Events_Multiple_03
 branch_name: Fix_Events_Multiple_03
@@ -9,7 +9,7 @@ pbi_ref: AUT-72
 tracker_ref: AUT-72
 document_id: PBI-c66c2160
 uuid: b42cf4d8-9801-4b44-8f1f-e8b9c9647aa2
-execution_id: "523a4752-c526-488d-aaa0-d9a12b1275c6"
+execution_id: 523a4752-c526-488d-aaa0-d9a12b1275c6
 source_process: bug-fix
 global: APTO
 pbi_archived: false
@@ -24,8 +24,10 @@ checks:
   DOC_PLAN: APTO
   TECH_AUT72_TESTS: APTO
   TRACKER_LINEAR_NO_KM_FILE: APTO
-validated_base_sha: d154ac1d44acbe2a81a1a54bd6b0f899f8e251d5
-validated_head_sha: 613cafa6813c6b1032cc4c830222976c095ff7bb
+validated_base_sha: 260b0aec0062fb06e3a1305bd1c7be33dbd2f08f
+validated_head_sha: ea714c838b4404e936b85d67a55bcae708efc137
+validated_tree_sha: a07596294db5963103f893927456e03e78938137
+diff_digest: sha256:addef323f6e5649e70e81040f6b91c27ac5ecbd73a1f3a0dca4024dfd861c442
 ---
 
 # Validación — AUT-72
