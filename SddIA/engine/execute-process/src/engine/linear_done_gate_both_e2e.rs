@@ -1,5 +1,6 @@
 //! Suite lab AC-21 — ciclo inverso `done_gate: both` (mock Linear, sin red).
 
+use super::capsules::invoke_tool_for_process;
 use super::handlers::tracker_markdown_apply::{apply_tracker_issue_changed, sync_branch_name};
 use super::handlers::tracker_stamp;
 use crate::core::repo::find_repo_root;
@@ -73,7 +74,22 @@ fn fixture_pbi(repo: &Path) -> PathBuf {
     path
 }
 
-fn stamp_merged(repo: &Path, tracker_ref: &str) {
+/// AUT-75: Done lo sella `lifecycle_phase_action` en accept-pr; el lab simula el outbound anti-eco.
+fn merge_done_lab_setup(repo: &Path, tracker_ref: &str) {
+    invoke_tool_for_process(
+        repo,
+        "linear-tracker-adapter",
+        &json!({
+            "request": {
+                "operation": "update_issue_state",
+                "issue_ref": tracker_ref,
+                "state_key": "done",
+                "team_key": "LAB",
+            }
+        }),
+        Some("accept-pr"),
+    )
+    .expect("lab update_issue_state done");
     let event_id = format!("ac21-{}", uuid::Uuid::new_v4());
     let rel = format!(".events/pending/{event_id}.json");
     fs::create_dir_all(repo.join(".events/pending")).ok();
@@ -95,7 +111,11 @@ fn stamp_merged(repo: &Path, tracker_ref: &str) {
         .and_then(|d| d.get("stamped"))
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    assert!(stamped, "stamp data={:?} err={:?}", out.data, out.error);
+    assert!(
+        !stamped,
+        "PullRequest_Merged debe ser no-op en tracker-stamp (AUT-75): {:?}",
+        out.data
+    );
 }
 
 fn tracker_done_event(linear_updated_at: &str) -> Value {
@@ -168,7 +188,7 @@ mod tests {
             let fname = pending.file_name().unwrap().to_owned();
             assert!(pending.starts_with(repo.join("docs/todos/pending")));
 
-            stamp_merged(&repo, ISSUE_REF);
+            merge_done_lab_setup(&repo, ISSUE_REF);
 
             let lu = Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string();
             let event = tracker_done_event(&lu);
@@ -203,7 +223,7 @@ mod tests {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let _pending = fixture_pbi(&repo);
-            stamp_merged(&repo, ISSUE_REF);
+            merge_done_lab_setup(&repo, ISSUE_REF);
             let ob = outbound_path(&repo, ISSUE_REF);
             assert!(ob.is_file(), "sello debe registrar outbound anti-eco");
             let raw = fs::read_to_string(&ob).unwrap();
