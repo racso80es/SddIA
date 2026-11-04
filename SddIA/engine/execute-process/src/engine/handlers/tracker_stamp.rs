@@ -502,6 +502,19 @@ fn stamp_done_with_hu_roll_up(
     source: &str,
     commit_sha: &str,
 ) -> Result<bool, String> {
+    let linear_state = pbi_fetch.get("state").and_then(|v| v.as_str()).unwrap_or("");
+    if done_gate::linear_to_canonical(linear_state, tc) == "done" {
+        if done_gate::read_tracker_done_proof(repo, issue_ref).is_none() && !commit_sha.is_empty()
+        {
+            let _ = done_gate::write_tracker_done_proof(
+                repo,
+                issue_ref,
+                commit_sha,
+                pbi_fetch,
+            );
+        }
+        return Ok(true);
+    }
     let run = |f: &dyn Fn() -> Result<(), String>| -> Result<(), String> {
         if let Err(e) = f() {
             emit_sync_failed(

@@ -37,5 +37,23 @@ SDDIA_AGENT_RELAY_IDE=1 SDDIA_LAB_ALLOW_DIRTY=1 SDDIA_LAB_SKIP_PBI_ARCHIVE=1 SDD
 ## Verificación prevista (Tekton)
 
 ```bash
-cd SddIA && cargo test -p execute-process aut72
+cd SddIA && cargo test -p execute-process --lib aut72
 ```
+
+Resultado: **2 passed** (2026-11-04).
+
+## T1–T4 (Tekton)
+
+| Tarea | Estado |
+| --- | --- |
+| T1 guard `try_sweep_event` | hecho |
+| T2 idempotencia `stamp_done_with_hu_roll_up` | hecho |
+| T3 watcher | sin cambio (no emite `kaizen-finalized` con nuevo status) |
+| T4 tests `aut72_*` | verde |
+
+Detalle: `implementation.md`.
+
+## Pendiente (T5)
+
+- `validacion.md` Argos APTO
+- `delivery-close-cycle` + PR + Linear Done
