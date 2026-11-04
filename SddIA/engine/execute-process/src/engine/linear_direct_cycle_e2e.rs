@@ -4,6 +4,7 @@ use super::capsules::invoke_tool_for_process;
 use super::handlers::forge_pbi;
 use super::handlers::refine;
 use super::handlers::tracker_stamp;
+use super::lifecycle_phase_action;
 use crate::core::repo::find_repo_root;
 use serde_json::{json, Value};
 use std::fs;
@@ -104,20 +105,20 @@ fn stamp(repo: &Path, event_type: &str, payload: Value) -> bool {
     fs::write(repo.join(&rel), serde_json::to_string(&event).unwrap()).unwrap();
     let out = tracker_stamp::run(repo, &json!({ "event_file_path": rel }))
         .expect("tracker-stamp");
-    let stamped = out
-        .data
+    out.data
         .as_ref()
         .and_then(|d| d.get("stamped"))
         .and_then(|v| v.as_bool())
-        .unwrap_or(false);
-    if !stamped {
-        panic!(
-            "stamp {event_type} no aplicado: data={:?} error={:?}",
-            out.data,
-            out.error
-        );
-    }
-    stamped
+        .unwrap_or(false)
+}
+
+/// AUT-75: column writer vía fase; el bus puede emitir eventos sin mover estado en tracker-stamp.
+fn assert_lifecycle(out: &Value, label: &str) {
+    assert_eq!(
+        out.get("success"),
+        Some(&json!(true)),
+        "{label}: {out:?}"
+    );
 }
 
 fn yaml_field(text: &str, key: &str) -> Option<String> {
@@ -231,34 +232,82 @@ fn run_branch_pr_cycle(repo: &Path, slug: &str) -> (String, String) {
     )
     .expect("refine-pbi");
 
-    assert!(stamp(
-        repo,
-        "Work_Initiated",
-        json!({
-            "tracker_ref": pbi_tracker,
-            "branch": "feat/linear-e2e",
-            "persist_ref": "docs/features/linear-e2e-lab",
-            "expected_hu_tracker_ref": hu_tracker,
-        }),
-    ));
+    assert_lifecycle(
+        &lifecycle_phase_action::apply_forge_started_fail_soft(
+            repo,
+            &json!({
+                "project_slug": slug,
+                "tracker_ref": pbi_tracker,
+                "pbi_ref": pbi_rel,
+                "branch_name": "feat/linear-e2e",
+                "persist_ref": "docs/features/linear-e2e-lab",
+            }),
+            "linear-e2e-lab",
+        ),
+        "forge_started",
+    );
+    assert!(
+        !stamp(
+            repo,
+            "Work_Initiated",
+            json!({
+                "tracker_ref": pbi_tracker,
+                "branch": "feat/linear-e2e",
+                "persist_ref": "docs/features/linear-e2e-lab",
+                "expected_hu_tracker_ref": hu_tracker,
+            }),
+        ),
+        "Work_Initiated debe ser no-op en tracker-stamp (AUT-75)"
+    );
 
-    assert!(stamp(
-        repo,
-        "PullRequest_Presented",
-        json!({
-            "tracker_ref": pbi_tracker,
-            "pr_url": "https://github.com/o/r/pull/99",
-        }),
-    ));
+    assert_lifecycle(
+        &lifecycle_phase_action::apply_pr_opened_fail_soft(
+            repo,
+            &json!({
+                "project_slug": slug,
+                "tracker_ref": pbi_tracker,
+                "pbi_ref": pbi_rel,
+            }),
+            "linear-e2e-lab",
+        ),
+        "pr_opened",
+    );
+    assert!(
+        !stamp(
+            repo,
+            "PullRequest_Presented",
+            json!({
+                "tracker_ref": pbi_tracker,
+                "pr_url": "https://github.com/o/r/pull/99",
+            }),
+        ),
+        "PullRequest_Presented no-op stamp"
+    );
 
-    assert!(stamp(
-        repo,
-        "PullRequest_Merged",
-        json!({
-            "tracker_ref": pbi_tracker,
-            "merge_commit_hash": "abc123deadbeefcafe0000000000000000000000",
-        }),
-    ));
+    assert_lifecycle(
+        &lifecycle_phase_action::apply_review_ci_fail_soft(
+            repo,
+            &json!({
+                "project_slug": slug,
+                "tracker_ref": pbi_tracker,
+                "pbi_ref": pbi_rel,
+            }),
+            true,
+            "accept-pr",
+        ),
+        "review_ci_green",
+    );
+    assert!(
+        !stamp(
+            repo,
+            "PullRequest_Merged",
+            json!({
+                "tracker_ref": pbi_tracker,
+                "merge_commit_hash": "abc123deadbeefcafe0000000000000000000000",
+            }),
+        ),
+        "PullRequest_Merged no-op stamp"
+    );
 
     (hu_tracker, pbi_tracker.to_string())
 }
@@ -344,15 +393,32 @@ mod tests {
                 &json!({ "project_slug": slug, "pbi_ref": pbi_rel }),
             )
             .expect("refine-pbi");
-            stamp(
-                &repo,
-                "Work_Initiated",
-                json!({
-                    "tracker_ref": pbi_tr,
-                    "branch": "main",
-                    "persist_ref": "docs/features/x",
-                    "expected_hu_tracker_ref": hu_tracker,
-                }),
+            assert_lifecycle(
+                &lifecycle_phase_action::apply_forge_started_fail_soft(
+                    &repo,
+                    &json!({
+                        "project_slug": slug,
+                        "tracker_ref": pbi_tr,
+                        "pbi_ref": pbi_rel,
+                        "branch_name": "main",
+                        "persist_ref": "docs/features/x",
+                    }),
+                    "linear-e2e-lab",
+                ),
+                "forge_started",
+            );
+            assert!(
+                !stamp(
+                    &repo,
+                    "Work_Initiated",
+                    json!({
+                        "tracker_ref": pbi_tr,
+                        "branch": "main",
+                        "persist_ref": "docs/features/x",
+                        "expected_hu_tracker_ref": hu_tracker,
+                    }),
+                ),
+                "Work_Initiated no-op"
             );
             assert!(stamp(
                 &repo,
