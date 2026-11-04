@@ -25,8 +25,8 @@ git_changes:
 - SddIA/core/event-domain-subscriptions.json
 - SddIA/evolution/f7e2a1b0-9c3d-4e5f-a6b7-8c9d0e1f2a3b.md
 validated_base_sha: 260b0aec0062fb06e3a1305bd1c7be33dbd2f08f
-validated_head_sha: 43243b6c022df0f3449c56109f56fba822e4bb91
-validated_tree_sha: f508150def710afdea0d49ea6ced532a505dbd7a
+validated_head_sha: 9ef15f651868e47f90f5ea7c46cf4d304fb0c392
+validated_tree_sha: 181f40bbfe1613cfab9c1ecac099d59f7480b08d
 pr_url: https://github.com/racso80es/SddIA/pull/435
 diff_digest: sha256:d466e0dcfade0da025e8fe0434dfc1c3490433ddc99af3d4f0775e0a12170998
 ---

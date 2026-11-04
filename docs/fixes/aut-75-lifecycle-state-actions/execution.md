@@ -47,7 +47,7 @@ cd SddIA && cargo test -p execute-process aut75
 | `delivery-close-cycle` | `execution_id` `72a6a600-16a3-4bee-81bc-09f9123385f7` |
 | `PullRequest_Presented` | `e6bd0372-60b5-414e-b235-9f9cdcf7e75d` |
 | PR | https://github.com/racso80es/SddIA/pull/435 |
-| Evolution gate | `43243b6c` (EVOL_OK tras correlato `f7e2a1b0`) |
+| PPR (atestación push) | `d47ad7b3-2404-4a47-90ab-ffc087f99cf4` (triaje técnico APTO; Argos simulated en IDE) |
 
 Aduana evolution falló en primer DCC (frontmatter no canónico); corregido en commits posteriores. Linear **AUT-75** → Done tras merge del PR (provider `linear`).
 
