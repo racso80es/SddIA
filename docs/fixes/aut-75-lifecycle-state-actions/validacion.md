@@ -25,10 +25,10 @@ git_changes:
 - SddIA/core/event-domain-subscriptions.json
 - SddIA/evolution/f7e2a1b0-9c3d-4e5f-a6b7-8c9d0e1f2a3b.md
 validated_base_sha: 260b0aec0062fb06e3a1305bd1c7be33dbd2f08f
-validated_head_sha: dabd9c4d49b80c90c6408f4060d581489aaa3eaa
-validated_tree_sha: b93aeab1faeeb9eb18d23ea28db1a90015ff20f2
+validated_head_sha: a94ae6507b4d2b72d6e16ff251e934cdc82a18fa
+validated_tree_sha: 28a27160532668644b221debbafb215511176a8c
 pr_url: https://github.com/racso80es/SddIA/pull/435
-diff_digest: sha256:addef323f6e5649e70e81040f6b91c27ac5ecbd73a1f3a0dca4024dfd861c442
+diff_digest: sha256:61495fe472e7bf511afcaa04944f0f3569dec3afc4fcb749195cf362cc6f0642
 ---
 
 # Validación — AUT-75
