@@ -1,6 +1,6 @@
 ---
 feature_name: aut-75-lifecycle-state-actions
-created: "2026-11-04"
+created: 2026-11-04
 process: bug-fix
 branch_name: Fix_Events_Multiple_03
 persist_ref: docs/fixes/aut-75-lifecycle-state-actions
@@ -10,20 +10,24 @@ checks:
   aut75_unit: passed
   cargo_test_execute_process_aut75: passed
 git_changes:
-  - SddIA/engine/execute-process/src/engine/lifecycle_phase_action.rs
-  - SddIA/engine/execute-process/src/engine/item_lifecycle_frontmatter.rs
-  - SddIA/engine/execute-process/src/engine/executor.rs
-  - SddIA/engine/execute-process/src/engine/workspace_init.rs
-  - SddIA/engine/execute-process/src/engine/handlers/tracker_stamp.rs
-  - SddIA/engine/execute-process/src/engine/phase_capsules.rs
-  - SddIA/engine/execute-process/src/engine/pull_request_review.rs
-  - SddIA/engine/execute-process/src/engine/accept_pr.rs
-  - .SddIA/project.md
-  - docs/fixes/aut-75-lifecycle-state-actions/genome-alignment-inventory.md
-  - SddIA/library/codexes/codex-software-engineering/process/{feature,bug-fix,refactorization}.md
-  - SddIA/events/domain/{work-initiated,validation-started,pull-request-presented,pull-request-merged}.md
-  - SddIA/core/event-domain-subscriptions.json
-  - SddIA/evolution/f7e2a1b0-9c3d-4e5f-a6b7-8c9d0e1f2a3b.md
+- SddIA/engine/execute-process/src/engine/lifecycle_phase_action.rs
+- SddIA/engine/execute-process/src/engine/item_lifecycle_frontmatter.rs
+- SddIA/engine/execute-process/src/engine/executor.rs
+- SddIA/engine/execute-process/src/engine/workspace_init.rs
+- SddIA/engine/execute-process/src/engine/handlers/tracker_stamp.rs
+- SddIA/engine/execute-process/src/engine/phase_capsules.rs
+- SddIA/engine/execute-process/src/engine/pull_request_review.rs
+- SddIA/engine/execute-process/src/engine/accept_pr.rs
+- .SddIA/project.md
+- docs/fixes/aut-75-lifecycle-state-actions/genome-alignment-inventory.md
+- SddIA/library/codexes/codex-software-engineering/process/{feature,bug-fix,refactorization}.md
+- SddIA/events/domain/{work-initiated,validation-started,pull-request-presented,pull-request-merged}.md
+- SddIA/core/event-domain-subscriptions.json
+- SddIA/evolution/f7e2a1b0-9c3d-4e5f-a6b7-8c9d0e1f2a3b.md
+validated_base_sha: 260b0aec0062fb06e3a1305bd1c7be33dbd2f08f
+validated_head_sha: d464d98b0b8389f1d52f0529c6f229da4a8d48f2
+validated_tree_sha: 8bfe8b5064001487f63c7a0b8272d695af6ea616
+diff_digest: sha256:d466e0dcfade0da025e8fe0434dfc1c3490433ddc99af3d4f0775e0a12170998
 ---
 
 # Validación — AUT-75
