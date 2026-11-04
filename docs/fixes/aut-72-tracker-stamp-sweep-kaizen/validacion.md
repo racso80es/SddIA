@@ -25,8 +25,8 @@ checks:
   TECH_AUT72_TESTS: APTO
   TRACKER_LINEAR_NO_KM_FILE: APTO
 validated_base_sha: 260b0aec0062fb06e3a1305bd1c7be33dbd2f08f
-validated_head_sha: ea714c838b4404e936b85d67a55bcae708efc137
-validated_tree_sha: a07596294db5963103f893927456e03e78938137
+validated_head_sha: 734bfcb83a98ecd41f4fba760b5e51b44c4efd79
+validated_tree_sha: 460604a9107ff0bf0937c365326aa97203854af7
 diff_digest: sha256:addef323f6e5649e70e81040f6b91c27ac5ecbd73a1f3a0dca4024dfd861c442
 ---
 
