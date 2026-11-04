@@ -1,7 +1,7 @@
 ---
 uuid: 1b4fa69f-4299-47ca-b2ed-380f2263239c
 name: feature
-version: 1.3.3
+version: 1.3.4
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -71,17 +71,18 @@ Todos los artefactos `.md` generados bajo esta directriz deberán incluir obliga
 ## Handoff en Runtime y Reglas de Orquestación
 
 1. **Inicialización Git:** El orquestador inyectará incondicionalmente la variable `repository_path` (ruta absoluta resuelta por Cúmulo) en el `stdin` de `skill:git-manager` para asegurar el cumplimiento de su contrato congelado.
-2. **Ignición tracker (AUT-65):** Al cerrar con éxito la Fase 1, el motor emite una sola vez `Work_Initiated` (fail-soft) con `branch_name`, `persist_ref` y resolución `tracker_ref`/`pbi_ref`. `tracker-stamp` pasa el PBI a In Progress antes de Mayeuta y Dedalo.
-3. **Validación tracker (AUT-66):** Al cerrar con éxito la fase `agent:tekton` (`status: executed`), una sola emisión `Validation_Started` (fail-soft) mueve el PBI a In Validation antes de Argos y del cierre documental.
-4. **Precedencia de Entrada:** El input `refined_requirements` (semilla cruda) es consumido exclusivamente en la fase de Estabilización.
-5. **Mapeo de Contextos (Dedalo y Tekton):** Tras la estabilización, el runtime extraerá el contenido físico (cuerpo Markdown) de `objectives.md` para inyectarlo como la variable `refined_requirements` hacia Dedalo. Adicionalmente, el runtime inyectará `target_executor_rbac` para Dedalo y mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
-6. **Ejecución y Verificación:** Los documentos `clarify.md`, `spec.md` y `plan.md` actúan como contexto de solo lectura para la fase de Ejecución. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el contexto unificado de `objectives.md` y `spec.md`.
+2. **Ignición tracker (AUT-65 / AUT-75):** Tras Fase 1 exitosa, `workspace-init` aplica `lifecycle_phase_action` (`forge_started` → In Progress). Puede emitirse `Work_Initiated` fail-soft para el bus; **no** mueve columna — el writer es la acción de fase.
+3. **Forja → In Validation (AUT-75):** Al entrar en Verificación, si `persist_ref` contiene `implementation.md` y `execution.md`, el motor aplica `forge_closed` (`forge_date`, `forge_by`), aunque Ejecución haya quedado `simulated` o `skipped`. No se emite `Validation_Started` tras Tekton.
+4. **Argos y PR (AUT-75):** `validacion.md` con `global: APTO` → **Validated**; otro global → In Progress (`validated_status: no apto`). DCC (sello presentación) → In Review (`pr_opened`). `accept-pr` → Done (`review_ci_green`); handoff PPR no aprobado → In Progress (`review_ci_red`). Metadatos en frontmatter del issue. Requiere estado **Validated** en workflow Linear (instancia).
+5. **Precedencia de Entrada:** El input `refined_requirements` (semilla cruda) es consumido exclusivamente en la fase de Estabilización.
+6. **Mapeo de Contextos (Dedalo y Tekton):** Tras la estabilización, el runtime extraerá el contenido físico (cuerpo Markdown) de `objectives.md` para inyectarlo como la variable `refined_requirements` hacia Dedalo. Adicionalmente, el runtime inyectará `target_executor_rbac` para Dedalo y mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
+7. **Ejecución y Verificación:** Los documentos `clarify.md`, `spec.md` y `plan.md` actúan como contexto de solo lectura para la fase de Ejecución. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el contexto unificado de `objectives.md` y `spec.md`.
 
 ## Cierre y Sellado
 
 La última fase invoca la acción `execute-process` apuntando al `process_name` canónico `delivery-close-cycle`, inyectando sus `process_inputs` correspondientes (`persist_ref`, `branch_name` y `source_process: feature`). Este subproceso asume el snapshot final, la evaluación de impacto en el Core SddIA y la apertura de la Pull Request, propagando el `pr_url` hacia los outputs de este proceso padre.
 
-*Nota de Arquitectura EDA:* El sello **`PullRequest_Presented`** lo emite el subproceso `delivery-close-cycle` vía `emit-pr-presented-event`. El sello **`PullRequest_Merged`** pertenece exclusivamente a `accept-pr` post-fusión. La escritura eventual de `finalize-process.md` recae en la evolución del subproceso de cierre.
+*Nota de Arquitectura EDA (AUT-75):* `PullRequest_Presented` y `PullRequest_Merged` siguen emitiéndose para anclaje del bus. **In Review** y **Done** los aplica `lifecycle_phase_action` en DCC (`pr_opened`) y `accept-pr` (`review_ci_green`). `tracker-stamp` hace no-op de columna en `Work_Initiated`, `Validation_Started`, `PullRequest_Presented` y `PullRequest_Merged`. La escritura eventual de `finalize-process.md` recae en la evolución del subproceso de cierre.
 
 ## Cierre documental en rama (obligatorio, pre-merge)
 

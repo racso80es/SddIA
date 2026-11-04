@@ -8,7 +8,7 @@
     {
       "agent": "tekton",
       "process": "tracker-stamp",
-      "intent": "Sello de ciclo in_review + comentario PR (tracker_ref en payload)."
+      "intent": "AUT-75: no-op columna In Review (sellado en origen vía lifecycle_phase_action pr_opened). Comentario PR fail-soft si tracker_ref en payload."
     },
     {
       "agent": "argos",
@@ -20,7 +20,7 @@
     {
       "agent": "tekton",
       "process": "tracker-stamp",
-      "intent": "Sello de ciclo done + comentario merge (tracker_ref)."
+      "intent": "AUT-75: no-op columna Done (sellado en origen vía lifecycle_phase_action review_ci_green). Comentario merge fail-soft si tracker_ref."
     },
     {
       "agent": "cumulo",
@@ -241,14 +241,14 @@
     {
       "agent": "tekton",
       "process": "tracker-stamp",
-      "intent": "Sello in_progress + comentario rama/persist_ref si tracker_ref presente."
+      "intent": "AUT-75: no-op columna In Progress (sellado en origen vía lifecycle_phase_action forge_started). Comentario fail-soft si tracker_ref presente."
     }
   ],
   "Validation_Started": [
     {
       "agent": "tekton",
       "process": "tracker-stamp",
-      "intent": "Sello in_validation + comentario inicio validación Argos."
+      "intent": "AUT-75: no-op columna In Validation (sellado en origen vía lifecycle_phase_action forge_closed). Comentario fail-soft si aplica."
     }
   ],
   "PullRequest_Resealed": [],

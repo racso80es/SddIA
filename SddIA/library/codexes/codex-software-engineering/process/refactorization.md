@@ -1,7 +1,7 @@
 ---
 uuid: ae01e3ff-af68-4b94-90b3-97e5c03d75ee
 name: refactorization
-version: 1.2.3
+version: 1.2.4
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -69,14 +69,15 @@ Los agentes V5 producen salidas *lógicas*. Este proceso impone un mapeo estrict
 ## Handoff en Runtime y Reglas de Orquestación
 
 1. **Inicialización Git:** El orquestador inyectará incondicionalmente la variable `repository_path` en el `stdin` de `skill:git-manager`.
-2. **Ignición tracker (AUT-65):** Tras Fase 1 exitosa, una sola emisión `Work_Initiated` (fail-soft) con `branch_name`, `persist_ref` y `tracker_ref`/`pbi_ref`; Mayeuta y Dedalo operan con el ítem ya en In Progress.
-3. **Validación tracker (AUT-66):** Tras la fase Tekton con `status: executed`, una sola emisión `Validation_Started` (fail-soft); el tablero pasa a In Validation antes de Argos y del cierre documental.
-4. **Precedencia de Entrada:** Las semillas `refactor_goal` y `refined_constraints` son consumidas exclusivamente en la fase de Estabilización de alcance.
-5. **Mapeo de Contextos (Dedalo y Tekton):** Tras la estabilización, el runtime extraerá el contenido físico de `objectives.md` para inyectarlo como variable central hacia Dedalo. Adicionalmente, se inyectará `target_executor_rbac` para Dedalo y se mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
-6. **Ejecución y Verificación:** `clarify.md`, `spec.md` y `plan.md` actúan como contexto de solo lectura para Tekton. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el contexto unificado de `objectives.md` y `spec.md`.
+2. **Ignición tracker (AUT-65 / AUT-75):** Tras Fase 1 exitosa, `workspace-init` aplica `lifecycle_phase_action` (`forge_started` → In Progress). Puede emitirse `Work_Initiated` fail-soft para el bus; **no** mueve columna — el writer es la acción de fase.
+3. **Forja → In Validation (AUT-75):** Al entrar en Verificación, si `persist_ref` contiene `implementation.md` y `execution.md`, el motor aplica `forge_closed` (`forge_date`, `forge_by`), aunque Ejecución haya quedado `simulated` o `skipped`. No se emite `Validation_Started` tras Tekton.
+4. **Argos y PR (AUT-75):** `validacion.md` con `global: APTO` → **Validated**; otro global → In Progress (`validated_status: no apto`). DCC (sello presentación) → In Review (`pr_opened`). `accept-pr` → Done (`review_ci_green`); handoff PPR no aprobado → In Progress (`review_ci_red`). Metadatos en frontmatter del issue. Requiere estado **Validated** en workflow Linear (instancia).
+5. **Precedencia de Entrada:** Las semillas `refactor_goal` y `refined_constraints` son consumidas exclusivamente en la fase de Estabilización de alcance.
+6. **Mapeo de Contextos (Dedalo y Tekton):** Tras la estabilización, el runtime extraerá el contenido físico de `objectives.md` para inyectarlo como variable central hacia Dedalo. Adicionalmente, se inyectará `target_executor_rbac` para Dedalo y se mapeará `active_norm_pack` al input `active_norms` exigido por el contrato de Tekton.
+7. **Ejecución y Verificación:** `clarify.md`, `spec.md` y `plan.md` actúan como contexto de solo lectura para Tekton. Posteriormente, Argos derivará sus `acceptance_criteria` consumiendo el contexto unificado de `objectives.md` y `spec.md`.
 
 ## Cierre y Sellado
 
 La última fase invoca la acción `execute-process` apuntando a `delivery-close-cycle`, inyectando sus `process_inputs` correspondientes (`persist_ref`, `branch_name` y `source_process: refactorization`). El subproceso asume el snapshot final y la propagación del `pr_url`.
 
-*Nota de Arquitectura EDA:* La emisión del Sello Criptográfico (`PullRequest_Merged`) pertenece a la jurisdicción del bus de eventos post-fusión, estrictamente desvinculado de la apertura de este PR. La escritura eventual de `finalize-process.md` recae en la evolución del subproceso de cierre o en el runtime padre.
+*Nota de Arquitectura EDA (AUT-75):* `PullRequest_Merged` sigue emitiéndose post-fusión para anclaje del bus. **Done** lo aplica `lifecycle_phase_action` (`review_ci_green`) en `accept-pr`. `tracker-stamp` hace no-op de columna en `Work_Initiated`, `Validation_Started`, `PullRequest_Presented` y `PullRequest_Merged`. La escritura eventual de `finalize-process.md` recae en la evolución del subproceso de cierre o en el runtime padre.

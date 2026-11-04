@@ -1,7 +1,7 @@
 ---
 uuid: "5e488ae6-7cb2-4a2c-9725-4a7d4ce239ea"
 name: "pull-request-presented"
-version: "1.2.0"
+version: "1.2.1"
 contract: "events-contract v1.1.0"
 event_family: "domain"
 event_type: "PullRequest_Presented"
@@ -9,7 +9,7 @@ context: "ecosystem-evolution"
 capabilities:
   - "pull_request_presented"
   - "dlt_oracle_route"
-hash_signature: "sha256:87f2a0bde8f9a43e1e91a4d9e8db1cb69e8df15544b93f13124842b3e8d69950"
+hash_signature: "sha256:4bc0aefe91a8f4d66abd28107a366c7b0be157863c5d90a7915c48a2c3286ba4"
 ---
 
 # Event: PullRequest_Presented
@@ -25,7 +25,7 @@ Clase ECST para presentación de PR en bus local. Suscriptores: aduana **`pull-r
 ### OPTIONAL
 - `qa_profile` (`full` | `docs-only`; heredado de `Local_QA_Requested` / DCC)
 - `pr_url`
-- `tracker_ref` (identificador opaco; sello `tracker-stamp`)
+- `tracker_ref` (identificador opaco; columna **In Review** vía `lifecycle_phase_action` `pr_opened`, no vía `tracker-stamp`)
 - `repository` *(ruta oráculo remoto)*
 - `origin_agent` *(ej. `jules`, `delivery-close-cycle`)*
 - `dlt_anchor_address` *(digest u object_id IOTA — skip re-anclaje en route)*

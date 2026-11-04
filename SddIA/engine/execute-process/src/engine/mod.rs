@@ -69,6 +69,7 @@ pub mod aiua_intent;
 pub mod user_preference_change_requested;
 pub mod telemetry_receipt;
 pub mod thermodynamic;
+pub mod lifecycle_phase_action;
 pub mod workspace;
 pub mod workspace_init;
 pub mod domain_profile;

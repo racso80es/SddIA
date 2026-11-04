@@ -79,6 +79,7 @@ fn lab_tracker_fallback(issue_ref: &str) -> TrackerConfig {
     state_map.insert("in_progress".into(), "In Progress".into());
     state_map.insert("in_validation".into(), "In Validation".into());
     state_map.insert("in_review".into(), "In Review".into());
+    state_map.insert("validated".into(), "Validated".into());
     state_map.insert("done".into(), "Done".into());
     state_map.insert("cancelled".into(), "Cancelled".into());
     project_binding::TrackerConfig {
@@ -599,8 +600,17 @@ fn stamp_todo_transition(
     Ok((true, None))
 }
 
-fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), String> {
+pub(crate) fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), String> {
     let event_type = str_field(event, "event_type").unwrap_or_default();
+    if matches!(
+        event_type.as_str(),
+        "Work_Initiated" | "Validation_Started" | "PullRequest_Presented" | "PullRequest_Merged"
+    ) {
+        return Ok((
+            false,
+            Some("no-op: sellado en origen (lifecycle phase action)".into()),
+        ));
+    }
     let payload = event
         .get("payload")
         .and_then(|p| p.as_object())
@@ -1628,13 +1638,12 @@ mod tests {
                     "expected_hu_tracker_ref": "LAB-HU-1"
                 }
             });
-            let (stamped, _) = stamp_event(&repo, &event).expect("sello");
-            assert!(stamped);
+            let (stamped, note) = stamp_event(&repo, &event).expect("sello");
+            assert!(!stamped);
+            assert!(note.as_deref().unwrap_or("").contains("sellado en origen"));
             let after = std::fs::read_to_string(&log).unwrap_or_default();
             let fresh = after.trim_start_matches(&before);
-            assert!(fresh.contains("\"operation\":\"update_issue_state\""));
-            assert!(fresh.contains("\"operation\":\"create_comment\""));
-            assert!(!fresh.contains("\"done\""));
+            assert!(fresh.is_empty() || !fresh.contains("\"operation\":\"update_issue_state\""));
         });
     }
 
@@ -1677,10 +1686,10 @@ mod tests {
             }
         });
         let (stamped, note) = stamp_event(root, &event).expect("file");
-        assert!(stamped);
-        assert!(note.is_none());
+        assert!(!stamped);
+        assert!(note.as_deref().unwrap_or("").contains("sellado en origen"));
         let text = std::fs::read_to_string(root.join("docs/todos/pending/wi.md")).unwrap();
-        assert!(text.contains("tracker_column: in_progress"));
+        assert!(text.contains("tracker_column: todo"));
         assert!(!root.join(".SddIA/state/tracker-outbound/OSC-1.jsonl").is_file());
     }
 
@@ -1703,6 +1712,49 @@ mod tests {
             )
             .expect("seal");
         });
+    }
+
+    #[test]
+    fn aut75_genome_narrative_parity() {
+        let repo = find_repo_root().expect("repo");
+        for rel in [
+            "SddIA/library/codexes/codex-software-engineering/process/feature.md",
+            "SddIA/library/codexes/codex-software-engineering/process/bug-fix.md",
+            "SddIA/library/codexes/codex-software-engineering/process/refactorization.md",
+        ] {
+            let text = std::fs::read_to_string(repo.join(rel)).expect(rel);
+            assert!(
+                text.contains("lifecycle_phase_action"),
+                "{rel} debe documentar lifecycle_phase_action (AUT-75)"
+            );
+            assert!(
+                !text.contains("Validación tracker (AUT-66):"),
+                "{rel} no debe conservar handoff AUT-66 como writer"
+            );
+            assert!(
+                text.contains("tracker-stamp` hace no-op"),
+                "{rel} debe documentar no-op tracker-stamp"
+            );
+        }
+        let subs = std::fs::read_to_string(
+            repo.join("SddIA/core/event-domain-subscriptions.json"),
+        )
+        .expect("subs");
+        for key in [
+            "Work_Initiated",
+            "Validation_Started",
+            "PullRequest_Presented",
+            "PullRequest_Merged",
+        ] {
+            let needle = format!("\"{key}\"");
+            let pos = subs.find(&needle).expect("clave subs");
+            let end = (pos + 500).min(subs.len());
+            let slice = &subs[pos..end];
+            assert!(
+                slice.contains("AUT-75") && slice.contains("no-op"),
+                "{key} intent debe mencionar AUT-75 no-op"
+            );
+        }
     }
 
     #[test]

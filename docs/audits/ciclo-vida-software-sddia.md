@@ -1,20 +1,20 @@
 ---
 id: ciclo-vida-software-sddia
 type: audit
-version: "1.2.0"
+version: "1.3.0"
 created: "2026-11-02"
-updated: "2026-11-02"
+updated: "2026-11-04"
 status: current
-supersedes: "1.1.0"
+supersedes: "1.2.0"
 frozen_copy: docs/audits/ciclo-vida-software-sddia-v1.0.0.md
-tracker_ref: AUT-63
+tracker_ref: AUT-75
 ---
 
 # Ciclo de vida de software en SddIA
 
 Informe de visibilidad para operadores, agentes y revisión humana.  
-Fecha de corte del cuerpo narrativo: 2026-11-02. Instancia de referencia: Core-self (`.SddIA/project.md`).  
-Versión **1.2.0** (esta). La **1.0.0** queda congelada en `docs/audits/ciclo-vida-software-sddia-v1.0.0.md`. La **1.1.0** quedó superseded por esta revisión (AUT-63 merge).
+Fecha de corte del cuerpo narrativo: 2026-11-04 (§ AUT-75). Instancia de referencia: Core-self (`.SddIA/project.md`).  
+Versión **1.3.0** (esta). La **1.2.0** queda superseded. La **1.0.0** congelada en `docs/audits/ciclo-vida-software-sddia-v1.0.0.md`.
 
 Este documento describe **qué existe**, **quién lo mueve**, **cómo se conectan las piezas** y **qué le ocurre al documento** (fichero Markdown o issue de tracker). No sustituye los contratos: si hay conflicto, mandan el proceso `.md`, el motor `execute-process` y el manifiesto del proyecto.
 
@@ -25,6 +25,7 @@ Este documento describe **qué existe**, **quién lo mueve**, **cómo se conecta
 | 1.0.0 | Corte inicial. §9 lista cinco límites, cuatro de ellos asimetrías genoma/código. |
 | 1.1.0 | Misma fotografía del código. §9 numera hallazgos A1–A5, liga A1–A4 al fix AUT-63 y declara el estado objetivo sin afirmar que el genoma ya está alineado. |
 | 1.2.0 | Tras merge AUT-63 (rama `Fix_Events_Multiple_02`): §9 marca A1–A4 **alineados** en genoma/código; A5 sin cambio. |
+| 1.3.0 | AUT-75: el **writer** de estado del ítem en hitos de entrega es la **acción de fase** (`lifecycle_phase_action`), no el suscriptor `tracker-stamp`. Nombres **In Validation** y **Validated** en `state_map`. Los eventos `Work_Initiated`, `Validation_Started`, `PullRequest_Presented` y `PullRequest_Merged` pueden seguir emitiéndose; `tracker-stamp` hace no-op de columna en esos tipos. |
 
 ---
 
@@ -41,7 +42,7 @@ En Core-self hoy:
 
 - `tracker.provider: linear` (equipo `AUT`)
 - `done_gate: linear`
-- `state_map`: Backlog, Todo, In Progress, In Review, Done, Cancelled
+- `state_map`: Backlog, Todo, In Progress, **In Validation**, **Validated**, In Review, Done, Cancelled
 - Etiquetas: `hu`, `pbi`, `fix`, `kaizen`, `deuda`, `spike`, `editable` (`sddia-editable`)
 
 Con **Linear**, el alta y el refino **no** crean ficheros nuevos en `docs/todos/pending/` ni en `docs/todos/done/`. El cuerpo canónico del ítem va en la **descripción del issue** (YAML). Los ficheros históricos en `docs/todos/` siguen siendo archivo, no la cola viva.
@@ -126,7 +127,7 @@ flowchart TB
 
 ### Quién habla con quién
 
-El proceso de entrega (`feature`, `bug-fix`, `refactorization`) **no habla con Linear**. No tiene el contexto `tracker-operations`. Solo escribe en git, en `persist_ref` y en el bus (`Work_Initiated`, `Validation_Started` y, a través de `delivery-close-cycle`, `PullRequest_Presented`). Todo el trato con el tracker en el camino de ida pasa por **` forge-hu`**, **`forge-pbi`**, **`refine-item`** y **`tracker-stamp`**.
+El proceso de entrega (`feature`, `bug-fix`, `refactorization`) **no habla con Linear** directamente. Escribe git, `persist_ref` y puede emitir eventos al bus. Los **estados** del issue (Todo → In Progress → In Validation → Validated → In Review → Done) los aplica **`lifecycle_phase_action`** en el cierre de fase correspondiente (init, entrada a Verificación, lectura de `validacion.md`, sello de PR en DCC, merge en accept-pr). **`tracker-stamp`** sigue atendiendo otros eventos y replay; en AUT-75 no mueve columna ante `Work_Initiated`, `Validation_Started`, `PullRequest_Presented` ni `PullRequest_Merged`.
 
 ```mermaid
 sequenceDiagram

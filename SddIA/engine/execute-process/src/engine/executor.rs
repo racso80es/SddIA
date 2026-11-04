@@ -50,6 +50,23 @@ fn is_verify_or_close_phase(phase_name: &str) -> bool {
     )
 }
 
+fn verification_allowed_despite_barrier(
+    phase_name: &str,
+    process_name: &str,
+    repo: &Path,
+    inputs: &Value,
+) -> bool {
+    if phase_name != "Verificación" || !process_has_doc_cascade_delivery(process_name) {
+        return false;
+    }
+    super::lifecycle_phase_action::persist_forge_artifacts_ready(repo, inputs)
+        || persist_validacion_exists(repo, inputs)
+}
+
+fn attach_lifecycle_json(entry: &mut Value, key: &str, value: Value) {
+    entry[key] = value;
+}
+
 fn agent_phase_blocks_downstream(status: &str) -> bool {
     matches!(
         status,
@@ -454,6 +471,23 @@ fn execute_phase_body(
         {
             return skipped;
         }
+        if phase_name == "Verificación" && process_has_doc_cascade_delivery(process_name) {
+            if let Some(lc) = super::lifecycle_phase_action::maybe_apply_forge_closed(
+                repo,
+                inputs,
+                "argos-preflight",
+            ) {
+                attach_lifecycle_json(&mut entry, "lifecycle_forge_closed", lc);
+            }
+        }
+        if phase_name == "Cierre documental en rama" && process_has_doc_cascade_delivery(process_name)
+        {
+            if let Some(lc) =
+                super::lifecycle_phase_action::maybe_apply_validation_from_validacion(repo, inputs, "argos")
+            {
+                attach_lifecycle_json(&mut entry, "lifecycle_validation", lc);
+            }
+        }
         maybe_emit_work_initiated_on_tekton_entry(
             repo,
             process_name,
@@ -498,10 +532,28 @@ fn execute_phase_body(
                 state,
                 &mut agent_entry,
             );
+            if phase_name == "Verificación" && process_has_doc_cascade_delivery(process_name) {
+                if let Some(lc) =
+                    super::lifecycle_phase_action::maybe_apply_validation_from_validacion(
+                        repo,
+                        inputs,
+                        "argos",
+                    )
+                {
+                    agent_entry["lifecycle_validation"] = lc;
+                }
+            }
             return agent_entry;
         }
         entry["status"] = json!("simulated");
         entry["note"] = json!("agentes IDE; sin SDDIA_AGENT_RUNTIME_COMMAND");
+        if phase_name == "Verificación" && process_has_doc_cascade_delivery(process_name) {
+            if let Some(lc) =
+                super::lifecycle_phase_action::maybe_apply_validation_from_validacion(repo, inputs, "argos")
+            {
+                entry["lifecycle_validation"] = lc;
+            }
+        }
         return entry;
     }
 
@@ -585,7 +637,15 @@ pub fn run_generic(
         let phase_name = phase.get("name").and_then(|v| v.as_str()).unwrap_or("");
         let agent_only = delegates_are_only_agents(&phase_delegates(phase));
         if let Some(prior) = barrier_prior.as_deref() {
-            if agent_only || is_verify_or_close_phase(phase_name) {
+            let skip = if agent_only {
+                true
+            } else if verification_allowed_despite_barrier(phase_name, process_name, repo, &inputs_mut)
+            {
+                false
+            } else {
+                is_verify_or_close_phase(phase_name)
+            };
+            if skip {
                 phase_reports.push(skipped_barrier_entry_reason(
                     phase,
                     prior,
