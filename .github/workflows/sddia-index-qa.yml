@@ -358,6 +358,20 @@ jobs:
       - name: Add wasmtime to PATH
         run: echo "$HOME/.wasmtime/bin" >> "$GITHUB_PATH"
 
+      # Linear E2E recompila deps vía rust-cache; debe ejecutarse ANTES de copiar los bins
+      # del artefacto wasi-runtime. Si rust-cache va después, restaura target/ y borra
+      # SddIA/target/debug/sddia-qa → exit 127 en el lab E2E (AUT — orden job eda-bus-e2e-smoke).
+      - uses: dtolnay/rust-toolchain@stable
+        if: needs.changes.outputs.linear_e2e == 'true'
+
+      - uses: Swatinem/rust-cache@v2
+        if: needs.changes.outputs.linear_e2e == 'true'
+        with:
+          workspaces: "SddIA -> target"
+          shared-key: native-test-lance
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
+
       - uses: actions/download-artifact@v4
         with:
           name: wasi-runtime
@@ -371,17 +385,7 @@ jobs:
           cp -a wasi-runtime/debug/. SddIA/target/debug/
           cp -a wasi-runtime/release/. SddIA/target/release/
           chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/release/linear-tracker-adapter
-
-      - uses: dtolnay/rust-toolchain@stable
-        if: needs.changes.outputs.linear_e2e == 'true'
-
-      - uses: Swatinem/rust-cache@v2
-        if: needs.changes.outputs.linear_e2e == 'true'
-        with:
-          workspaces: "SddIA -> target"
-          shared-key: native-test-lance
-          add-job-id-key: "false"
-          cache-workspace-crates: "true"
+          test -f SddIA/target/debug/sddia-qa
 
       - name: EDA E2E lab (simulate/mock)
         env:
