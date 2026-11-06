@@ -1,4 +1,5 @@
 ---
+
 feature_name: lifecycle-phase-state-name
 created: "2026-11-06"
 process: bug-fix
@@ -9,12 +10,11 @@ sighting_branch: fix/lifecycle-phase-state-name
 persist_ref: docs/fixes/lifecycle-phase-state-name
 document_id: PBI-adfcf4cf
 uuid: adfcf4cf-ae0e-4dea-95ca-ac91e8e1071d
-execution_id: "090e6ae4-6227-4ab7-b25c-64dab6741fe4"
 tracker_ref: AUT-79
 status: dedalo_locked
 sighting: "DCC AUT-76 lifecycle_pr_opened LINEAR_GRAPHQL_ERROR request.state_id obligatorio"
+execution_id: "298b8d71-7851-424f-bcab-060e8eb71165"
 ---
-
 # Spec — lifecycle-phase-state-name
 
 ## 1. Misión
