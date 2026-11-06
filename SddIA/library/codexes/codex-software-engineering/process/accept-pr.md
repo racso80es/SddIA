@@ -1,7 +1,7 @@
 ---
 uuid: bd81c878-5e1c-4fe5-b204-85c9136d8bc7
 name: accept-pr
-version: 1.0.4
+version: 1.0.5
 contract: process-contract v1.4.0
 workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
@@ -77,6 +77,8 @@ Invocar **`action:emit-pr-merged-event`** con:
 | `correlation_id` | input del proceso |
 
 `repository_path` desde `cumulo_topology`. Salidas: `success`, `event_id`, `target_path`.
+
+**Milestone `ReviewCiGreen` (tracker remoto, merge externo / `merge_already_done`):** antes del hito de ciclo de vida en la misma fase, el motor enriquece una copia de inputs con el mismo criterio que el sello: `tracker_ref` desde `PullRequest_Presented` de la rama, `persist_ref` inferido desde `source_branch` (`infer_persist_ref_from_branch`) y `tracker_ref` desde `{persist_ref}/objectives.md` si aún falta. Así `apply_review_ci_fail_soft` no queda en `tracker_ref ausente` cuando el merge en GitHub ya está hecho y solo faltaba contexto en los inputs mínimos del hook/post-merge.
 
 ## Fase 4 — Sincronización y Limpieza
 
