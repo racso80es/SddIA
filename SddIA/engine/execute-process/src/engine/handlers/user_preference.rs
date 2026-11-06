@@ -5,8 +5,7 @@ use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
 use serde_json::{json, Value};
 use sddia_infrastructure_lancedb_preferences::LanceDbPreferenceAdapter;
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub use user_preference_core::*;
 
@@ -235,6 +234,7 @@ fn ok_ingest_envelope(
 mod tests {
     use super::*;
     use std::fs;
+    use std::path::PathBuf;
 
     fn setup_repo(tmp: &Path) {
         fs::create_dir_all(tmp.join("SddIA/core")).unwrap();

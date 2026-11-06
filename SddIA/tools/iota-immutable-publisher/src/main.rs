@@ -1,10 +1,17 @@
+use sddia_io::{emit_error, read_stdin_json};
+
+#[cfg(not(target_arch = "wasm32"))]
 use sddia_io::outbound_lab::{
     find_repo_root_from_cwd, lab_mock_iota_url, lab_sim_digest, lab_simulate_iota_enabled,
     load_iota_wallet_secret,
 };
-use sddia_io::{emit_error, emit_success, read_stdin_json};
+#[cfg(not(target_arch = "wasm32"))]
+use sddia_io::emit_success;
+#[cfg(not(target_arch = "wasm32"))]
 use serde_json::{json, Value};
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Duration;
+#[cfg(not(target_arch = "wasm32"))]
 use sha2::Digest;
 
 #[cfg(target_arch = "wasm32")]

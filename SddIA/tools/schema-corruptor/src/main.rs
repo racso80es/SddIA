@@ -14,7 +14,7 @@ fn main() {
         return;
     }
 
-    let mut result = json!({
+    let result = json!({
         "corruption_mode": mode
     });
 

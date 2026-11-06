@@ -135,29 +135,6 @@ pub fn normalize_item_markdown(raw: &str) -> Result<String, String> {
     }
 }
 
-fn split_frontmatter(raw: &str) -> Result<(String, String), String> {
-    let mut lines = raw.lines();
-    if lines.next() != Some("---") {
-        return Err("ITEM_FM: sin frontmatter".into());
-    }
-    let mut fm = String::new();
-    for line in lines.by_ref() {
-        if line == "---" {
-            let body: String = lines.collect::<Vec<_>>().join("\n");
-            return Ok((fm, body));
-        }
-        fm.push_str(line);
-        fm.push('\n');
-    }
-    Err("ITEM_FM: frontmatter sin cierre".into())
-}
-
-fn strip_legacy_status(fm: &mut YamlValue) {
-    if let Some(map) = fm.as_mapping_mut() {
-        map.remove("status");
-    }
-}
-
 /// Fusiona `patch` en el frontmatter y elimina `status` legado (pending / refinado / refinada).
 pub fn seal_markdown(raw: &str, patch: &YamlValue) -> Result<String, String> {
     super::tracker_item_document::seal_item_description(

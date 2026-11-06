@@ -1,7 +1,14 @@
+use sddia_io::{emit_error, read_stdin_json};
+
+#[cfg(not(target_arch = "wasm32"))]
 use sddia_io::outbound_lab::{lab_mock_outbound_enabled, lab_mock_telegram_url, truthy_env};
-use sddia_io::{emit_error, emit_success, read_stdin_json};
+#[cfg(not(target_arch = "wasm32"))]
+use sddia_io::emit_success;
+#[cfg(not(target_arch = "wasm32"))]
 use serde_json::{json, Value};
+#[cfg(not(target_arch = "wasm32"))]
 use std::env;
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Duration;
 
 #[cfg(target_arch = "wasm32")]
@@ -85,6 +92,7 @@ fn run(req: &Value) -> Result<Value, String> {
     send_telegram(&token, &chat_id, message, parse_mode, reply_markup.as_deref())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn serialize_reply_markup(raw: Option<&Value>) -> Result<Option<String>, String> {
     let Some(v) = raw else {
         return Ok(None);

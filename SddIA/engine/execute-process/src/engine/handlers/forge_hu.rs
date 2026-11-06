@@ -12,15 +12,6 @@ use uuid::Uuid;
 
 const PROCESS_NAME: &str = "forge-hu";
 
-fn str_field(inputs: &Value, key: &str) -> Option<String> {
-    inputs
-        .get(key)
-        .and_then(|v| v.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-}
-
 fn backlog_state_name(tc: &TrackerConfig) -> Option<String> {
     tc.state_map.get("backlog").cloned()
 }

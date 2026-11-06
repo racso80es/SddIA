@@ -328,10 +328,6 @@ fn write_pending_domain_event_file(
     Ok(target)
 }
 
-fn fracture_already_stored(repo: &Path, event: &Value) -> Result<bool, String> {
-    Ok(find_fracture_stored_event_id(repo, event)?.is_some())
-}
-
 pub fn materialize_pending_domain_event(
     repo: &Path,
     event_type: &str,

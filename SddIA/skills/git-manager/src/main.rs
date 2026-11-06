@@ -1,6 +1,5 @@
 use sddia_io::{emit_error, emit_success, read_stdin_json};
 use serde_json::{json, Value};
-use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::collections::HashSet;
@@ -35,7 +34,7 @@ fn assert_safe_token(token: &str, field: &str) {
 
 fn payload_exact(payload: &Value, op: &str, expected: &[&str]) {
     let obj = payload.as_object().unwrap_or_else(|| fail("payload must be an object"));
-    let mut provided: HashSet<&str> = HashSet::from_iter(obj.keys().map(|k| k.as_str()));
+    let provided: HashSet<&str> = HashSet::from_iter(obj.keys().map(|k| k.as_str()));
     let expected_set: HashSet<&str> = HashSet::from_iter(expected.iter().cloned());
     if provided != expected_set {
         fail(&format!("{} payload keys must exactly match {:?}", op, expected));

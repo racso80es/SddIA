@@ -399,6 +399,7 @@ pub fn plan_purge(
     })
 }
 
+#[cfg(test)]
 pub fn path_in_allowlist(s: &str) -> bool {
     allow_re().is_match(s.trim_end_matches('/')) || allow_re().is_match(s)
 }

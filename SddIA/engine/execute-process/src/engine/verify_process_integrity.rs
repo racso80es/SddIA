@@ -169,7 +169,6 @@ pub fn run_cli(repo: &Path) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
     use tempfile::TempDir;
 
     #[test]

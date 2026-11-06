@@ -1773,7 +1773,7 @@ mod emit_presented_tests {
 
     #[test]
     fn resolve_pr_url_prefers_state_over_inputs() {
-        let repo = repo_root();
+        let _repo = repo_root();
         let state = json!({"pr_url": "https://github.com/o/r/pull/31"});
         let inputs = json!({"pr_url": "https://github.com/o/r/pull/0"});
         let got = pr_url_from_state_or_inputs(&state, &inputs);
@@ -2053,7 +2053,7 @@ mod evolution_audit_ca12_tests {
     use super::capsule_evolution_audit_gate;
     use serde_json::json;
     use std::fs;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::process::Command;
     use uuid::Uuid;
 
@@ -2066,7 +2066,7 @@ mod evolution_audit_ca12_tests {
     }
 
     #[cfg(not(unix))]
-    fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
+    fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
         fs::create_dir_all(dst)?;
         for entry in fs::read_dir(src)? {
             let entry = entry?;
@@ -2267,7 +2267,7 @@ mod index_integrity_audit_tests {
     use super::capsule_index_integrity_audit_gate;
     use serde_json::json;
     use std::fs;
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::process::Command;
     use uuid::Uuid;
 

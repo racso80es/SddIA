@@ -138,7 +138,9 @@ impl WorkspaceServer {
             }
             "file" => {
                 if arg.is_empty() {
-                    return Err("URI_PATH_MISSING: project file path required".into());
+                    return Err(sandbox_err(SandboxError::InvalidArgument(
+                        "project file path required".into(),
+                    )));
                 }
                 let path = resolve_under_root(root, &arg).map_err(sandbox_err)?;
                 fs::read_to_string(&path).map_err(|e| e.to_string())?

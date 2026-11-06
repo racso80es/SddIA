@@ -102,7 +102,7 @@ fn main() {
     if write_result.is_ok() {
         emit_error("escritura no bloqueada — io-choke no aplicó asfixia", 2);
     } else {
-        let mut out = json!({
+        let out = json!({
             "message": "asfixia E/S simulada",
             "io_choked": true,
             "target": target.to_string_lossy()

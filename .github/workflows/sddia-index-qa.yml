@@ -23,6 +23,7 @@ env:
   CARGO_PROFILE_DEV_DEBUG: "0"
   CARGO_PROFILE_TEST_DEBUG: "0"
   CARGO_PROFILE_DEV_STRIP: debuginfo
+  RUSTFLAGS: "-Dwarnings"
 
 jobs:
   changes:

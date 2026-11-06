@@ -9,7 +9,6 @@ use sddia_core_memory::ports::EvolutionStore;
 use sddia_core_memory::services::inference_binding::LocalHashingEmbedder;
 use sddia_core_memory::services::inference_binding::SemanticInference;
 use sddia_infrastructure_lancedb_evolution::{LanceDbEvolutionAdapter, TABLE_EVOLUTION};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 pub const MEMORY_EVOLUTION_INGEST_SUBSCRIBER_KEY: &str = "cumulo.memory-evolution-ingest";

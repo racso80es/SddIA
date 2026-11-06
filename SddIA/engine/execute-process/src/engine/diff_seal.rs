@@ -1,6 +1,8 @@
 //! Sello de diff en `{persist_ref}/validacion.md` (AUT-36 CA-3 / AUT-39).
 
-use crate::core::parser::{load_frontmatter_yaml, parse_frontmatter, parse_frontmatter_from_str};
+use crate::core::parser::{load_frontmatter_yaml, parse_frontmatter_from_str};
+#[cfg(test)]
+use crate::core::parser::parse_frontmatter;
 use crate::engine::item_lifecycle_frontmatter::seal_markdown;
 use crate::engine::qa_attestation::tree_sha_for_commit;
 use serde_json::{json, Value as JsonValue};
