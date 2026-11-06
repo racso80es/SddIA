@@ -27,9 +27,9 @@ git_changes:
 - SddIA/infrastructure/adapters/
 - docs/features/eda-event-manager-additive/
 validated_base_sha: 54dcdfc746a518a5ada4cc1c6d261b25d1b889b8
-validated_head_sha: 8b65bd77c9f9d571a724378cbb75fc29306d0be2
-validated_tree_sha: 086c192de52b0b1eb40e5e0f44007f104f981f7a
-diff_digest: sha256:c98307f91276b1bac85b2db863e194b71ee175a317e498601b04f09eaa72cafa
+validated_head_sha: 6af246cb2e7faf24083437932f2bda84fc7a7aa2
+validated_tree_sha: 350c9d546f967ae9a84cd651594d702d54236e5e
+diff_digest: sha256:fac7f60281ec83390f6bf2ab9b8098b2997e36c9f4b10ecb4919bb07853e5a4f
 ---
 
 # Validación — MAN-32
