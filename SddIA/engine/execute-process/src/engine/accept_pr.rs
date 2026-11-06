@@ -4,6 +4,7 @@ use super::actions;
 use super::capsules::invoke_git_manager;
 use super::crypto_broker;
 use super::diff_seal;
+use super::eda_bus_topology;
 use super::qa_attestation;
 use super::tracker_pbi_meta;
 use serde_json::{json, Value};
@@ -30,6 +31,40 @@ fn truthy_flag(v: &Value, key: &str) -> bool {
         Some(Value::String(s)) => matches!(s.to_lowercase().as_str(), "true" | "1" | "yes" | "on"),
         _ => false,
     }
+}
+
+/// Paridad `emit-pr-merged-event` / lifecycle (`apply_review_ci_fail_soft`): enriquece inputs
+/// con `tracker_ref` y `persist_ref` resolubles desde rama o docs del ciclo (merge ya materializado).
+pub(crate) fn enrich_inputs_for_lifecycle_stamp(repo: &Path, inputs: &Value, source_branch: &str) -> Value {
+    let mut out = inputs.clone();
+    if str_field(&out, "tracker_ref").is_none() {
+        if let Some(tr) =
+            tracker_pbi_meta::tracker_ref_from_presented_for_branch(repo, source_branch)
+        {
+            if let Some(obj) = out.as_object_mut() {
+                obj.insert("tracker_ref".into(), json!(tr));
+            }
+        }
+    }
+    if str_field(&out, "persist_ref").is_none() {
+        if let Some(p) = eda_bus_topology::infer_persist_ref_from_branch(repo, source_branch) {
+            if let Some(obj) = out.as_object_mut() {
+                obj.insert("persist_ref".into(), json!(p));
+            }
+        }
+    }
+    if str_field(&out, "tracker_ref").is_none() {
+        if let Some(p) = str_field(&out, "persist_ref") {
+            let mut tmp = json!({});
+            tracker_pbi_meta::attach_tracker_ref_from_persist(repo, &p, &mut tmp);
+            if let Some(tr) = str_field(&tmp, "tracker_ref") {
+                if let Some(obj) = out.as_object_mut() {
+                    obj.insert("tracker_ref".into(), json!(tr));
+                }
+            }
+        }
+    }
+    out
 }
 
 /// ADU-CA7: Presented histórico en pending + processed + dead-letter;
@@ -343,9 +378,10 @@ pub fn execute_accept_pr_phase(
             } else             if let Some(persist) = str_field(inputs, "persist_ref") {
                 tracker_pbi_meta::attach_tracker_ref_from_persist(repo, &persist, &mut action_inputs);
             }
+            let lifecycle_inputs = enrich_inputs_for_lifecycle_stamp(repo, inputs, source);
             let lifecycle_done = super::lifecycle_phase_action::apply_review_ci_fail_soft(
                 repo,
-                inputs,
+                &lifecycle_inputs,
                 true,
                 "accept-pr",
             );
@@ -675,6 +711,7 @@ mod tests {
 
     #[test]
     fn t_adu_ca7_scan_presented_processed_and_dead_letter() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let branch = "docs/merge-thermo-hu-f2-close";
@@ -708,6 +745,7 @@ mod tests {
         .unwrap();
         assert!(scan_presented_for_branch(repo2, branch));
         assert!(!scan_presented_for_branch(repo2, "other-branch"));
+        sddia_event_store::override_store_mode(None);
     }
 
     /// REDB-CA3: Presented solo en store + modo redb → true.
@@ -801,6 +839,77 @@ mod tests {
         assert_eq!(reports[0]["fail_soft"], true);
         let v = crate::engine::phase_terminal::aggregate_execution_terminal(&reports, &state);
         assert!(v.success);
+    }
+
+    /// Kaizen: `merge_already_done` + sin tracker_ref en inputs → enriquecer desde persist/docs.
+    #[test]
+    fn enrich_inputs_infers_tracker_from_persist_when_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"documentation":"docs"}}"#,
+        )
+        .unwrap();
+        let slug = "lifecycle-enrich-accept-pr";
+        let persist = format!("docs/features/{slug}");
+        fs::create_dir_all(repo.join(&persist)).unwrap();
+        fs::write(
+            repo.join(format!("{persist}/objectives.md")),
+            "---\ntracker_ref: AUT-ENRICH-01\n---\n# o\n",
+        )
+        .unwrap();
+        let inputs = json!({});
+        let out = enrich_inputs_for_lifecycle_stamp(repo, &inputs, &format!("feat/{slug}"));
+        assert_eq!(
+            out.get("persist_ref").and_then(|v| v.as_str()),
+            Some(persist.as_str())
+        );
+        assert_eq!(
+            out.get("tracker_ref").and_then(|v| v.as_str()),
+            Some("AUT-ENRICH-01")
+        );
+    }
+
+    #[test]
+    fn enrich_inputs_prefers_presented_tracker_ref() {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"directories":{"documentation":"docs"}}"#,
+        )
+        .unwrap();
+        let branch = "feat/lifecycle-presented-ref";
+        let processed = repo.join(".events/processed");
+        fs::create_dir_all(&processed).unwrap();
+        fs::write(
+            processed.join("p.json"),
+            serde_json::to_string(&json!({
+                "event_type": "PullRequest_Presented",
+                "payload": {"branch": branch, "tracker_ref": "MAN-PRESENTED"}
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let slug = "lifecycle-presented-ref";
+        let persist = format!("docs/features/{slug}");
+        fs::create_dir_all(repo.join(&persist)).unwrap();
+        fs::write(
+            repo.join(format!("{persist}/objectives.md")),
+            "---\ntracker_ref: AUT-WOULD-LOSE\n---\n",
+        )
+        .unwrap();
+        let inputs = json!({});
+        let out = enrich_inputs_for_lifecycle_stamp(repo, &inputs, branch);
+        assert_eq!(
+            out.get("tracker_ref").and_then(|v| v.as_str()),
+            Some("MAN-PRESENTED")
+        );
+        sddia_event_store::override_store_mode(None);
     }
 
     #[test]
