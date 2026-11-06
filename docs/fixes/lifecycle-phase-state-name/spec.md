@@ -10,6 +10,7 @@ persist_ref: docs/fixes/lifecycle-phase-state-name
 document_id: PBI-adfcf4cf
 uuid: adfcf4cf-ae0e-4dea-95ca-ac91e8e1071d
 execution_id: "090e6ae4-6227-4ab7-b25c-64dab6741fe4"
+tracker_ref: AUT-79
 status: dedalo_locked
 sighting: "DCC AUT-76 lifecycle_pr_opened LINEAR_GRAPHQL_ERROR request.state_id obligatorio"
 ---
@@ -40,7 +41,7 @@ sighting: "DCC AUT-76 lifecycle_pr_opened LINEAR_GRAPHQL_ERROR request.state_id 
 | **L-CAP** | No enseñar `state_key` al adaptador Linear. |
 | **L-FILE** | `apply_file` sigue con clave canónica. |
 | **L-VEH** | `bug-fix`. Sin mutación de genoma de proceso. Sin `entity-manager`. |
-| **L-PR** | Ítem nuevo. No mezclar en PR #438. Sin `docs/todos/`. `tracker_ref` Linear pendiente de `forge-pbi`. |
+| **L-PR** | Ítem nuevo. No mezclar en PR #438. Sin `docs/todos/`. `tracker_ref`: AUT-79. |
 
 ## 4. Criterios de aceptación
 
