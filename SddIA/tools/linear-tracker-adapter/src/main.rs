@@ -995,7 +995,7 @@ fn run_update_issue_project(req: &Value, url: &str, token: &str) -> Result<Value
     let inner = request_inner(req);
     let issue_ref = required_str(inner, "issue_ref")?;
     let project_id = required_str(inner, "project_id")?;
-    let mutation = r#"mutation UpdateProject($id: ID!, $projectId: ID!) {
+    let mutation = r#"mutation UpdateProject($id: String!, $projectId: ID!) {
   issueUpdate(id: $id, input: { projectId: $projectId }) {
     success
     issue { identifier }
@@ -1031,7 +1031,7 @@ fn apply_state_id(
     state_id: &str,
     state_label: &str,
 ) -> Result<Value, LinearFail> {
-    let mutation = r#"mutation UpdateState($id: ID!, $stateId: ID!) {
+    let mutation = r#"mutation UpdateState($id: String!, $stateId: String) {
   issueUpdate(id: $id, input: { stateId: $stateId }) {
     success
     issue { identifier state { name } }
@@ -1491,7 +1491,7 @@ mod tests {
     fn aut70_update_mutations_declare_id() {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/main.rs");
         let text = std::fs::read_to_string(path).expect("main.rs");
-        assert!(text.contains("mutation UpdateProject($id: ID!, $projectId: ID!)"));
-        assert!(text.contains("mutation UpdateState($id: ID!, $stateId: ID!)"));
+        assert!(text.contains("mutation UpdateProject($id: String!, $projectId: ID!)"));
+        assert!(text.contains("mutation UpdateState($id: String!, $stateId: String)"));
     }
 }
