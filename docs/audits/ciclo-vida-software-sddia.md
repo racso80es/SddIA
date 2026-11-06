@@ -259,11 +259,12 @@ Claves canónicas (`tracker.state_map`). En Linear Core-self el nombre visible e
 | 1 | `todo` | Todo | Refinado (DoR). Listo para arrancar la entrega. |
 | 2 | `in_progress` | In Progress | Tras Fase 1: `Work_Initiated`. Tekton codifica. |
 | 3 | `in_validation` | In Validation | Tras fase Tekton ejecutada: `Validation_Started`. Argos valida. |
-| 4 | `in_review` | In Review | Hay PR presentado. |
-| 5 | `done` | Done | Entrega fusionada (o commit en tronco directo). |
+| 4 | `validated` | Validated | `validacion.md` con `global: APTO`. Listo para DCC / PR. |
+| 5 | `in_review` | In Review | Hay PR presentado. |
+| 6 | `done` | Done | Entrega fusionada (o commit en tronco directo). |
 | 100 | `cancelled` | Cancelled | Ítem anulado. El markdown, si existe, se archiva. |
 
-**Regla anti-retroceso:** `tracker-stamp` y `tracker-sync-replay` usan ese rango para no atrasar un issue si un evento llega tarde. Si el ítem ya está en `in_progress`, un `todo` rezagado se descarta. Si está en `in_validation`, un `in_progress` rezagado se descarta. Si está en `in_review`, un `in_validation` o `in_progress` rezagado se descarta.
+**Regla anti-retroceso:** `tracker-stamp` y `tracker-sync-replay` usan ese rango para no atrasar un issue si un evento llega tarde. Si el ítem ya está en `in_progress`, un `todo` rezagado se descarta. Si está en `in_validation`, un `in_progress` rezagado se descarta. Si está en `validated`, un `in_validation` rezagado se descarta. Si está en `in_review`, un `validated`, `in_validation` o `in_progress` rezagado se descarta.
 
 `refinement` es otro eje y no es una columna: `pending` al forjar, `refined` al pasar el DoR. No usar `status: pending` como sustituto de columna.
 

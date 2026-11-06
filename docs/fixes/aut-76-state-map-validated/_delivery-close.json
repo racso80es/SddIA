@@ -1,0 +1,10 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/fixes/aut-76-state-map-validated",
+  "branch_name": "fix/aut-76-state-map-validated",
+  "tracker_ref": "AUT-76",
+  "project_slug": "core",
+  "target_branch": "main",
+  "pr_title": "fix(AUT-76): admitir state_map.validated en aduana de manifiesto",
+  "pr_body": "## Summary\n- Domain Authority acepta `tracker.state_map.validated` (laudo AUT-75 L-STATE).\n- Anti-retroceso: `validated=4`, `in_review=5`, `done=6`.\n- `project-config-contract` 1.5.0 declara `in_validation` y `validated`.\n- Auditoría ciclo §3.4 alineada.\n\n## Test plan\n- [x] `cargo test -p execute-process --lib contract_accepts_state_map_validated_and_rejects_unknown_key`\n- [x] `cargo test -p execute-process --lib state_rank_orders_cycle`\n- [x] `cargo test -p execute-process --lib discard_when_issue_already_at_or_past_target`\n- [x] `refine-item` AUT-76 ya no falla por `clave desconocida 'validated'`\n\nLinear: AUT-76\n"
+}
