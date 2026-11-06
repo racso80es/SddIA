@@ -1,5 +1,9 @@
 ---
 
+
+
+
+
 feature_name: linear-update-state-graphql-types
 created: "2026-11-06"
 process: bug-fix
