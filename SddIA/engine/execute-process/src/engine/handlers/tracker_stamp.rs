@@ -298,6 +298,25 @@ fn emit_sync_failed(
     let _ = try_run_native(repo, "emit-tracker-sync-failed", &emit_in);
 }
 
+pub(crate) fn update_issue_state_request(
+    tc: &TrackerConfig,
+    issue_ref: &str,
+    canonical: &str,
+) -> Result<Value, String> {
+    let state_name = tc
+        .state_map
+        .get(canonical)
+        .cloned()
+        .ok_or_else(|| format!("state_map sin {canonical}"))?;
+    Ok(json!({
+        "operation": "update_issue_state",
+        "issue_ref": issue_ref,
+        "state_name": state_name,
+        "team_key": tc.team_key,
+        "project_id": tc.project_id,
+    }))
+}
+
 fn tool_update_state(
     repo: &Path,
     tc: &TrackerConfig,
@@ -305,23 +324,11 @@ fn tool_update_state(
     canonical: &str,
     source_process: &str,
 ) -> Result<(), String> {
-    let state_name = tc
-        .state_map
-        .get(canonical)
-        .cloned()
-        .ok_or_else(|| format!("state_map sin {canonical}"))?;
+    let req = update_issue_state_request(tc, issue_ref, canonical)?;
     invoke_tool_for_process(
         repo,
         &lifecycle_tool_name(repo)?,
-        &json!({
-            "request": {
-                "operation": "update_issue_state",
-                "issue_ref": issue_ref,
-                "state_name": state_name,
-                "team_key": tc.team_key,
-                "project_id": tc.project_id,
-            }
-        }),
+        &json!({ "request": req }),
         Some(source_process),
     )?;
     Ok(())
@@ -1243,6 +1250,39 @@ mod tests {
         std::env::remove_var("LINEAR_API_TOKEN");
         f();
         std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+    }
+
+    fn sample_tc(with_review: bool) -> TrackerConfig {
+        let mut state_map = std::collections::BTreeMap::new();
+        state_map.insert("backlog".into(), "Backlog".into());
+        if with_review {
+            state_map.insert("in_review".into(), "In Review".into());
+        }
+        TrackerConfig {
+            team_key: "AUT".into(),
+            project_id: Some("proj-1".into()),
+            state_map,
+            label_hu: "HU".into(),
+            label_pbi: "Pbi".into(),
+            done_gate: DoneGate::Linear,
+        }
+    }
+
+    #[test]
+    fn update_issue_state_request_maps_canonical_to_linear_name() {
+        let req = update_issue_state_request(&sample_tc(true), "AUT-76", "in_review").unwrap();
+        assert_eq!(req["operation"], "update_issue_state");
+        assert_eq!(req["issue_ref"], "AUT-76");
+        assert_eq!(req["state_name"], "In Review");
+        assert_eq!(req["team_key"], "AUT");
+        assert_eq!(req["project_id"], "proj-1");
+        assert!(req.get("state_key").is_none());
+    }
+
+    #[test]
+    fn update_issue_state_request_errors_when_map_lacks_key() {
+        let err = update_issue_state_request(&sample_tc(false), "AUT-76", "in_review").unwrap_err();
+        assert!(err.contains("state_map sin in_review"), "{err}");
     }
 
     #[test]

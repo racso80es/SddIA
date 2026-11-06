@@ -257,14 +257,7 @@ fn tool_update_state(
     issue_ref: &str,
     state_key: &str,
 ) -> Result<(), String> {
-    let mut req = json!({
-        "operation": "update_issue_state",
-        "issue_ref": issue_ref,
-        "state_key": state_key,
-    });
-    if let Some(pid) = tc.project_id.as_deref() {
-        req["project_id"] = json!(pid);
-    }
+    let req = tracker_stamp::update_issue_state_request(tc, issue_ref, state_key)?;
     super::capsules::invoke_tool_for_process(
         repo,
         &tracker_stamp::lifecycle_tool_name(repo)?,
@@ -558,5 +551,23 @@ mod tests {
         }
         let text = fs::read_to_string(root.join("docs/todos/pending/wi.md")).unwrap();
         assert!(text.contains("tracker_column: todo"));
+    }
+
+    #[test]
+    fn pr_opened_remote_request_uses_linear_state_name() {
+        let mut state_map = std::collections::BTreeMap::new();
+        state_map.insert("in_review".into(), "In Review".into());
+        let tc = TrackerConfig {
+            team_key: "AUT".into(),
+            project_id: None,
+            state_map,
+            label_hu: "HU".into(),
+            label_pbi: "Pbi".into(),
+            done_gate: project_binding::DoneGate::Linear,
+        };
+        let req = tracker_stamp::update_issue_state_request(&tc, "AUT-76", "in_review").unwrap();
+        assert_eq!(req["state_name"], "In Review");
+        assert_eq!(req["team_key"], "AUT");
+        assert!(req.get("state_key").is_none());
     }
 }
