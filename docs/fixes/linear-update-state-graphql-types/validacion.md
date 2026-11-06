@@ -124,8 +124,8 @@ situational_notes:
 - accept_pr_handoff pending — MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
 execution_id: e18aea80-b261-411a-8a10-a791a3b6cf47
 validated_base_sha: 46ce1b1f5703a2ea5163bf3a4b0f9e9f00bdb5a7
-validated_head_sha: d9463bff8e4586c5ee0c8bc16b825f2ef68b6f42
-validated_tree_sha: 0f8f921efe886476784fca2dce62e79944e0923a
+validated_head_sha: 8b9c6217f302015e6c33135a7322ee0bdecbda29
+validated_tree_sha: 473565ed64fed0e1170f158bf30a1ca2414596a3
 diff_digest: sha256:23a94dc214cf14ed8a82e1e59da05e1f2a2c2e44bd7ad82a9468af2705e2947d
 ---
 
