@@ -22,8 +22,8 @@ git_changes:
 - SddIA/evolution/Evolution_log.md
 - docs/fixes/lifecycle-phase-state-name/
 validated_base_sha: 4e3fb78a897dc111e2f4e7a856ef371bfd054838
-validated_head_sha: 95307a6331edb16536091d4c3058cd8492969c89
-validated_tree_sha: 20b5c073e3749f724b24cddf5676edc00e652547
+validated_head_sha: 97561cd1b03ea9c750fcb7f0e6c361ac8d05668b
+validated_tree_sha: 24ae98c834f5fd2d2aaf29d4868dcb9426e17b56
 diff_digest: sha256:38047ba6076e73f1202b415fcf7b0227d0b1c95cd04762d0387c5abf0c16bb46
 ---
 
