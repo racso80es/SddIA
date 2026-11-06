@@ -1,6 +1,6 @@
 ---
 feature_name: eda-event-manager-additive
-created: "2026-11-06"
+created: 2026-11-06
 process: feature
 phase: Verificación
 branch: feat/eda-event-manager-additive
@@ -8,7 +8,7 @@ branch_name: feat/eda-event-manager-additive
 persist_ref: docs/features/eda-event-manager-additive
 pbi_ref: MAN-32
 tracker_ref: MAN-32
-execution_id: "5513eab2-a948-4e5b-9476-3ff561266b95"
+execution_id: 5513eab2-a948-4e5b-9476-3ff561266b95
 global: APTO
 pbi_archived: false
 checks:
@@ -18,14 +18,18 @@ checks:
   AC-4-external-capsule-e2e: APTO
   cargo-test-event-manager-crates: APTO
 git_changes:
-  - SddIA/Cargo.toml
-  - SddIA/sddia-core/
-  - SddIA/library/norms/capability-contracts/eda.event_manager.v1.schema.json
-  - SddIA/library/norms/capability-taxonomy.md
-  - SddIA/library/norms/index.md
-  - SddIA/core/capability-bindings.md
-  - SddIA/infrastructure/adapters/
-  - docs/features/eda-event-manager-additive/
+- SddIA/Cargo.toml
+- SddIA/sddia-core/
+- SddIA/library/norms/capability-contracts/eda.event_manager.v1.schema.json
+- SddIA/library/norms/capability-taxonomy.md
+- SddIA/library/norms/index.md
+- SddIA/core/capability-bindings.md
+- SddIA/infrastructure/adapters/
+- docs/features/eda-event-manager-additive/
+validated_base_sha: 54dcdfc746a518a5ada4cc1c6d261b25d1b889b8
+validated_head_sha: ff8bd0db3a608599eda68c10ae6a54bc5fafbae7
+validated_tree_sha: 8c69fe2e467fa557ce87476f0233fde42437f068
+diff_digest: sha256:0c67125487598267ac4565786a43f3feabf5652ab90567f915aa2f088effd28c
 ---
 
 # Validación — MAN-32
