@@ -8,9 +8,9 @@ branch: refactor/rust-warning-gate
 global: APTO
 pbi_archived: false
 validated_base_sha: 9f6360a14e296e1a8805ecc54b97ea93ecd0d1a3
-validated_head_sha: 0a0b91df73ef1af9b5e7d61de7317243a9dfd27f
-validated_tree_sha: 296573cc2059004019bf301b9f318612814ca285
-diff_digest: sha256:73992f2a40e8f81bed1febdb60a194a29c6ce0b219f1b46abbc50a7f8b3fffdb
+validated_head_sha: feb2c1e0f010c0c2f8da8a97e4125aac82b1caa7
+validated_tree_sha: d4a7e1d34b67367fbe4ca946a651bf91fdca8158
+diff_digest: sha256:16553e90c70f061d0a6e58deb7b4dd5ce246db0e3c2c3e16742a8233a0cdc99e
 ---
 
 # Validación — rust-warning-gate
