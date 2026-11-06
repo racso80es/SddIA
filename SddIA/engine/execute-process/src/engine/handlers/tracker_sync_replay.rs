@@ -2,6 +2,7 @@
 
 use super::super::capsules::invoke_tool_for_process;
 use super::super::project_binding::{DoneGate, TrackerConfig};
+use super::tracker_stamp;
 use crate::envelope::OrchestratorEnvelope;
 use sddia_io::outbound_lab::lab_mock_outbound_enabled;
 use serde_json::{json, Value};
@@ -154,23 +155,11 @@ pub fn replay_payload(
             if should_discard_transition(&current, &target) {
                 return Ok("discarded");
             }
-            let state_name = tc
-                .state_map
-                .get(&target)
-                .cloned()
-                .ok_or_else(|| format!("state_map sin entrada para {target}"))?;
+            let req = tracker_stamp::update_issue_state_request(&tc, &issue_ref, &target)?;
             invoke_tool_for_process(
                 repo,
                 &tool,
-                &json!({
-                    "request": {
-                        "operation": "update_issue_state",
-                        "issue_ref": issue_ref,
-                        "state_name": state_name,
-                        "team_key": tc.team_key,
-                        "project_id": tc.project_id,
-                    }
-                }),
+                &json!({ "request": req }),
                 Some("tracker-sync-replay"),
             )?;
             Ok("applied")

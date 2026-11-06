@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 145
+universe_total: 148
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,8 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `2bb70d0e-b01c-4d8c-b972-d58de1be6a57` | 2026-11-06 | TRACKER_DONE_GUARD admite accept-pr (ReviewCiGreen). | CANONICO | `SddIA/evolution/2bb70d0e-b01c-4d8c-b972-d58de1be6a57.md` |
+| `41e8eac1-a71c-4275-99a1-04eb87134576` | 2026-11-06 | lifecycle_phase_action alinea update_issue_state con tracker-stamp (state_name via state_map). | CANONICO | `SddIA/evolution/41e8eac1-a71c-4275-99a1-04eb87134576.md` |
 | `6f997575-80ab-431f-ae2a-9fa296eb69f6` | 2026-11-06 | AUT-76: state_map.validated en aduana, rango anti-retroceso y contrato 1.5.0. | CANONICO | `SddIA/evolution/6f997575-80ab-431f-ae2a-9fa296eb69f6.md` |
 | `f7e2a1b0-9c3d-4e5f-a6b7-8c9d0e1f2a3b` | 2026-11-04 | AUT-75: paridad narrativa genoma (procesos patch, eventos, intents no-op tracker-stamp). | CANONICO | `SddIA/evolution/f7e2a1b0-9c3d-4e5f-a6b7-8c9d0e1f2a3b.md` |
 | `e57d1f05-b30d-4566-8193-090e2793e9b8` | 2026-11-03 | AUT-74: esquema MCP target_path, TARGET_PATH_EMPTY/URI_PATH_MISSING y cableado Work_Initiated pbi_ref opaco. | CANONICO | `SddIA/evolution/e57d1f05-b30d-4566-8193-090e2793e9b8.md` |

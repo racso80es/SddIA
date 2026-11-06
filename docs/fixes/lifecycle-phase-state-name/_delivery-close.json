@@ -1,0 +1,9 @@
+{
+  "source_process": "bug-fix",
+  "persist_ref": "docs/fixes/lifecycle-phase-state-name",
+  "branch_name": "fix/lifecycle-phase-state-name",
+  "project_slug": "core",
+  "target_branch": "main",
+  "pr_title": "fix: lifecycle_phase_action envía state_name como tracker-stamp",
+  "pr_body": "## Summary\n- Helper único `update_issue_state_request`: clave canónica → `state_name` Linear.\n- `lifecycle_phase_action` y `tracker-sync-replay` dejan de construir un dialecto con `state_key`.\n- Cierra la fricción DCC AUT-76 (`request.state_id obligatorio`).\n\n## Test plan\n- [x] `cargo test -p execute-process --lib update_issue_state_request_maps_canonical_to_linear_name`\n- [x] `cargo test -p execute-process --lib update_issue_state_request_errors_when_map_lacks_key`\n- [x] `cargo test -p execute-process --lib pr_opened_remote_request_uses_linear_state_name`\n- [x] `cargo test -p execute-process --lib aut75`\n"
+}

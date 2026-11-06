@@ -83,8 +83,8 @@ fn request_inner<'a>(payload: &'a Value) -> Option<&'a Value> {
     payload.get("request").or(Some(payload))
 }
 
-/// Done en Linear solo vía `tracker-stamp` (PullRequest_Merged | Delivery_Committed trunk_direct)
-/// o replay fail-soft (`tracker-sync-replay`).
+/// Done en Linear solo vía `tracker-stamp` (PullRequest_Merged | Delivery_Committed trunk_direct),
+/// replay fail-soft (`tracker-sync-replay`) o `accept-pr` (ReviewCiGreen, AUT-75, post-merge).
 pub fn gate_linear_done_state_transition(
     process_name: Option<&str>,
     operation: &str,
@@ -102,7 +102,7 @@ pub fn gate_linear_done_state_transition(
         return Ok(());
     }
     let proc = process_name.unwrap_or("");
-    if proc == "tracker-stamp" || proc == "tracker-sync-replay" {
+    if proc == "tracker-stamp" || proc == "tracker-sync-replay" || proc == "accept-pr" {
         return Ok(());
     }
     Err(format!(
@@ -169,6 +169,21 @@ mod tests {
             )
             .is_ok()
         );
+        assert!(
+            gate_linear_done_state_transition(
+                Some("accept-pr"),
+                "update_issue_state",
+                &json!({"request": {"state_name": "Done"}}),
+            )
+            .is_ok()
+        );
+        let blocked = gate_linear_done_state_transition(
+            Some("lifecycle-phase-action"),
+            "update_issue_state",
+            &json!({"request": {"state_name": "Done"}}),
+        )
+        .unwrap_err();
+        assert!(blocked.contains("TRACKER_DONE_GUARD"));
     }
 
     #[test]

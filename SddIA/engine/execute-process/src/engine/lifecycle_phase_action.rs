@@ -256,20 +256,14 @@ fn tool_update_state(
     tc: &TrackerConfig,
     issue_ref: &str,
     state_key: &str,
+    process_name: &str,
 ) -> Result<(), String> {
-    let mut req = json!({
-        "operation": "update_issue_state",
-        "issue_ref": issue_ref,
-        "state_key": state_key,
-    });
-    if let Some(pid) = tc.project_id.as_deref() {
-        req["project_id"] = json!(pid);
-    }
+    let req = tracker_stamp::update_issue_state_request(tc, issue_ref, state_key)?;
     super::capsules::invoke_tool_for_process(
         repo,
         &tracker_stamp::lifecycle_tool_name(repo)?,
         &json!({ "request": req }),
-        Some(SOURCE),
+        Some(process_name),
     )
     .map(|_| ())
 }
@@ -281,6 +275,7 @@ fn apply_remote(
     state_key: &str,
     tc: &TrackerConfig,
     comment: &str,
+    process_name: &str,
 ) -> Result<Value, String> {
     if tc.state_map.get(state_key).is_none() {
         return Ok(json!({
@@ -308,7 +303,7 @@ fn apply_remote(
         tc,
         str_field(payload, "project_slug").as_deref(),
     )?;
-    if let Err(e) = tool_update_state(repo, tc, &issue_ref, state_key) {
+    if let Err(e) = tool_update_state(repo, tc, &issue_ref, state_key, process_name) {
         return Ok(json!({"success": false, "error": e}));
     }
     let _ = super::capsules::invoke_tool_for_process(
@@ -338,6 +333,11 @@ pub fn apply_milestone(
     let (_column, patch) = milestone_column_and_patch(milestone, actor);
     let state_key = state_key_for_column(_column);
     let comment = format!("lifecycle: {milestone:?} ({actor})");
+    let process_name = if actor.trim().is_empty() {
+        SOURCE
+    } else {
+        actor
+    };
     let target = tracker_lifecycle_port::resolve_target(repo, &payload);
     let result = match target {
         Ok(tracker_lifecycle_port::LifecycleTarget::File) => {
@@ -345,7 +345,15 @@ pub fn apply_milestone(
         }
         Ok(tracker_lifecycle_port::LifecycleTarget::Remote { .. }) => {
             match project_binding::tracker_config_for_inputs(repo, &payload) {
-                Ok(Some(tc)) => apply_remote(repo, &payload, &patch, state_key, &tc, &comment),
+                Ok(Some(tc)) => apply_remote(
+                    repo,
+                    &payload,
+                    &patch,
+                    state_key,
+                    &tc,
+                    &comment,
+                    process_name,
+                ),
                 Ok(None) => Ok(json!({"success": false, "error": "sin tracker config"})),
                 Err(e) => Err(e),
             }
@@ -558,5 +566,23 @@ mod tests {
         }
         let text = fs::read_to_string(root.join("docs/todos/pending/wi.md")).unwrap();
         assert!(text.contains("tracker_column: todo"));
+    }
+
+    #[test]
+    fn pr_opened_remote_request_uses_linear_state_name() {
+        let mut state_map = std::collections::BTreeMap::new();
+        state_map.insert("in_review".into(), "In Review".into());
+        let tc = TrackerConfig {
+            team_key: "AUT".into(),
+            project_id: None,
+            state_map,
+            label_hu: "HU".into(),
+            label_pbi: "Pbi".into(),
+            done_gate: project_binding::DoneGate::Linear,
+        };
+        let req = tracker_stamp::update_issue_state_request(&tc, "AUT-76", "in_review").unwrap();
+        assert_eq!(req["state_name"], "In Review");
+        assert_eq!(req["team_key"], "AUT");
+        assert!(req.get("state_key").is_none());
     }
 }
