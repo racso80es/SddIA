@@ -2,8 +2,15 @@
 name = "sddia-core"
 version = "0.1.0"
 edition = "2021"
-description = "Shared Kernel — jurisdicción Core ciega (reexporta sddia-io)"
+description = "Shared Kernel — jurisdicción Core ciega (reexporta sddia-io + ports EventManager)"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
 sddia-io = { path = "../sddia-io" }
+semver = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+
+[dev-dependencies]
+tempfile = "3.10"

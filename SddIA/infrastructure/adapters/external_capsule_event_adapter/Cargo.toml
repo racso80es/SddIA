@@ -1,0 +1,18 @@
+[package]
+name = "sddia-infrastructure-external-capsule-event"
+version = "1.0.0"
+edition = "2021"
+description = "ExternalCapsuleEventAdapter — EventManager vía stdin/stdout (eda.event_manager v1)"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+sddia-core = { path = "../../../sddia-core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+tempfile = "3.10"
+
+[[bin]]
+name = "eda-event-manager-capsule-dummy"
+path = "src/bin/capsule_dummy.rs"

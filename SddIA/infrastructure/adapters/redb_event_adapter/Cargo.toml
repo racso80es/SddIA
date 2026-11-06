@@ -1,0 +1,15 @@
+[package]
+name = "sddia-infrastructure-redb-event"
+version = "1.0.0"
+edition = "2021"
+description = "RedbEventAdapter — EventManagerPort ACID (eda.event_manager v1)"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+sddia-core = { path = "../../../sddia-core" }
+redb = "=2.6.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+tempfile = "3.10"
