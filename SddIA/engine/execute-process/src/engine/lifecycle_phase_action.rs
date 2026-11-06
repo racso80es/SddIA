@@ -256,13 +256,14 @@ fn tool_update_state(
     tc: &TrackerConfig,
     issue_ref: &str,
     state_key: &str,
+    process_name: &str,
 ) -> Result<(), String> {
     let req = tracker_stamp::update_issue_state_request(tc, issue_ref, state_key)?;
     super::capsules::invoke_tool_for_process(
         repo,
         &tracker_stamp::lifecycle_tool_name(repo)?,
         &json!({ "request": req }),
-        Some(SOURCE),
+        Some(process_name),
     )
     .map(|_| ())
 }
@@ -274,6 +275,7 @@ fn apply_remote(
     state_key: &str,
     tc: &TrackerConfig,
     comment: &str,
+    process_name: &str,
 ) -> Result<Value, String> {
     if tc.state_map.get(state_key).is_none() {
         return Ok(json!({
@@ -301,7 +303,7 @@ fn apply_remote(
         tc,
         str_field(payload, "project_slug").as_deref(),
     )?;
-    if let Err(e) = tool_update_state(repo, tc, &issue_ref, state_key) {
+    if let Err(e) = tool_update_state(repo, tc, &issue_ref, state_key, process_name) {
         return Ok(json!({"success": false, "error": e}));
     }
     let _ = super::capsules::invoke_tool_for_process(
@@ -331,6 +333,11 @@ pub fn apply_milestone(
     let (_column, patch) = milestone_column_and_patch(milestone, actor);
     let state_key = state_key_for_column(_column);
     let comment = format!("lifecycle: {milestone:?} ({actor})");
+    let process_name = if actor.trim().is_empty() {
+        SOURCE
+    } else {
+        actor
+    };
     let target = tracker_lifecycle_port::resolve_target(repo, &payload);
     let result = match target {
         Ok(tracker_lifecycle_port::LifecycleTarget::File) => {
@@ -338,7 +345,15 @@ pub fn apply_milestone(
         }
         Ok(tracker_lifecycle_port::LifecycleTarget::Remote { .. }) => {
             match project_binding::tracker_config_for_inputs(repo, &payload) {
-                Ok(Some(tc)) => apply_remote(repo, &payload, &patch, state_key, &tc, &comment),
+                Ok(Some(tc)) => apply_remote(
+                    repo,
+                    &payload,
+                    &patch,
+                    state_key,
+                    &tc,
+                    &comment,
+                    process_name,
+                ),
                 Ok(None) => Ok(json!({"success": false, "error": "sin tracker config"})),
                 Err(e) => Err(e),
             }

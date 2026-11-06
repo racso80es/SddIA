@@ -42,6 +42,7 @@ sighting: "DCC AUT-76 lifecycle_pr_opened LINEAR_GRAPHQL_ERROR request.state_id 
 | **L-FILE** | `apply_file` sigue con clave canónica. |
 | **L-VEH** | `bug-fix`. Sin mutación de genoma de proceso. Sin `entity-manager`. |
 | **L-PR** | Ítem nuevo. No mezclar en PR #438. Sin `docs/todos/`. `tracker_ref`: AUT-79. |
+| **L-DONE** | `TRACKER_DONE_GUARD` admite `accept-pr` (ReviewCiGreen post-merge, AUT-75). El dialecto `state_name` hace visible Done; `state_key` lo eludía. Prohibido allowlist de `lifecycle-phase-action`. |
 
 ## 4. Criterios de aceptación
 
