@@ -1,4 +1,5 @@
 ---
+
 feature_name: lifecycle-phase-state-name
 created: "2026-11-06"
 process: bug-fix
@@ -8,9 +9,8 @@ branch_name: fix/lifecycle-phase-state-name
 persist_ref: docs/fixes/lifecycle-phase-state-name
 document_id: PBI-adfcf4cf
 uuid: adfcf4cf-ae0e-4dea-95ca-ac91e8e1071d
-execution_id: "090e6ae4-6227-4ab7-b25c-64dab6741fe4"
+execution_id: "298b8d71-7851-424f-bcab-060e8eb71165"
 ---
-
 # Implementación — lifecycle-phase-state-name
 
 ## T1 — Helper único
