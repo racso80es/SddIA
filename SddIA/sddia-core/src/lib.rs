@@ -2,8 +2,12 @@
 //!
 //! Jurisdicción ciega: sin dominio de cliente. Reexporta la tubería I/O
 //! canónica (`sddia-io`) y markers documentales de jurisdicción.
+//! Expone el puerto aditivo `ports::event_manager` (PBI-EDA-001).
 
 pub use sddia_io::*;
+
+/// Puertos del Shared Kernel (hexágono; sin deps de adapters).
+pub mod ports;
 
 /// Markers de jurisdicción Core (documentales / compilador, sin I/O de red).
 pub mod jurisdiction {

@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.9"
+version: "1.0.10"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:4cf09806f229ac1d4ca0c3131bb054a2db06c715bce28d549310a1d111e1ceab"
+hash_signature: "sha256:391acf0a7e0cffd8af731e4fcdc2ced4f969c2ddfc982f2602347ce8073894e1"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -64,6 +64,10 @@ catalog:
     contract: "tracker.lifecycle"
     version: "1.0.0"
     description: "Ciclo de vida de un ítem de gestión. La salida auditada es el stdout de emit_v2 (success, exitCode, message, result)."
+  - id: "eda:event-manager"
+    contract: "eda.event_manager"
+    version: "1.0.0"
+    description: "Gestión aditiva de ciclo de vida de eventos (publish/claim/delivery/DLQ/trace) vía EventManagerPort."
 ---
 
 ## Directriz Core
@@ -92,6 +96,7 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `memory:pref-write` | `memory.pref_write` | 1.0.0 | Escritura preferencias usuario (store local) |
 | `memory:pref-query` | `memory.pref_query` | 1.0.0 | Consulta opt-in preferencias activas |
 | `tracker:lifecycle` | `tracker.lifecycle` | 1.0.0 | Ciclo de vida de un ítem de gestión; stdout `emit_v2` |
+| `eda:event-manager` | `eda.event_manager` | 1.0.0 | Gestión aditiva ciclo de vida eventos vía EventManagerPort |
 
 ## Restricciones Duras
 
@@ -102,4 +107,5 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 - **Rigor H11:** `gov:rbac` ≠ `audit:compliance`; `channel:ingest` ≠ `bus:route`.
 - **Rigor L-TERM:** `llm:infer` (adaptador / inferencia cruda) ≠ `llm:interact` (Mayeuta / síntesis e intención). Prohibido `provides llm:interact` en adaptadores de proveedor.
 - **Rigor tracker:** el id es `tracker:lifecycle` (`dominio:verbo`). El contrato es `tracker.lifecycle`. Prohibido el id `tracker.lifecycle`.
-- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`; PBI-MULTI-LLM-ROUTER `llm:infer`.
+- **Rigor eda:** el id es `eda:event-manager` (`dominio:verbo`). El contrato es `eda.event_manager`. Prohibido el id `eda.event_manager` en `catalog`.
+- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`; PBI-MULTI-LLM-ROUTER `llm:infer`; PBI-EDA-001 / MAN-32 `eda:event-manager`.
