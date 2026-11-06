@@ -1,6 +1,6 @@
 ---
 feature_name: aut-76-state-map-validated
-created: "2026-11-06"
+created: 2026-11-06
 process: bug-fix
 branch: fix/aut-76-state-map-validated
 branch_name: fix/aut-76-state-map-validated
@@ -8,7 +8,7 @@ persist_ref: docs/fixes/aut-76-state-map-validated
 pbi_ref: AUT-76
 document_id: PBI-222b4def
 uuid: 222b4def-325a-4645-80d3-fbb15bf7d34b
-execution_id: "6c28414f-8a36-4f66-b9e3-4969dc642978"
+execution_id: 6c28414f-8a36-4f66-b9e3-4969dc642978
 global: APTO
 checks:
   ca1_bind_validated: APTO
@@ -26,6 +26,10 @@ git_changes:
 - SddIA/evolution/6f997575-80ab-431f-ae2a-9fa296eb69f6.md
 - SddIA/evolution/Evolution_log.md
 - docs/fixes/aut-76-state-map-validated/
+validated_base_sha: 4e3fb78a897dc111e2f4e7a856ef371bfd054838
+validated_head_sha: 3ff70d8a68c9e6298f52cebfb2a80183fd45b094
+validated_tree_sha: e61ac87e84ffd0270d5ddf6795678e6de06640d1
+diff_digest: sha256:972b638c258a1c880267d1d39095add82414b751bef4ebd59fa7e9cbd4573dab
 ---
 
 # Validación — AUT-76
