@@ -298,6 +298,7 @@ const TRACKER_STATE_KEYS: &[&str] = &[
     "todo",
     "in_progress",
     "in_validation",
+    "validated",
     "in_review",
     "done",
     "cancelled",
@@ -987,6 +988,28 @@ mod tests {
         assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
         let dg = done_gate_for_inputs(repo.path(), &json!({"project_slug": "demo"})).unwrap();
         assert_eq!(dg, DoneGate::Linear);
+    }
+
+    #[test]
+    fn contract_accepts_state_map_validated_and_rejects_unknown_key() {
+        let repo = tempfile::tempdir().unwrap();
+        let uuid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let client = layout(repo.path(), uuid, "branch_pr");
+        let mut body = manifest_md(uuid, "branch_pr", "1.3.0");
+        body = body.replace(
+            "docs_layout:",
+            "tracker:\n  provider: linear\n  team_key: AUT\n  done_gate: linear\n  state_map:\n    backlog: Backlog\n    in_validation: In Validation\n    validated: Validated\n    in_review: In Review\n    done: Done\ndocs_layout:",
+        );
+        fs::write(client.join(".SddIA/project.md"), &body).unwrap();
+        assert!(bind(repo.path(), &json!({"project_slug": "demo"})).is_ok());
+
+        let bad = body.replace("validated: Validated", "bogus: Bogus");
+        fs::write(client.join(".SddIA/project.md"), bad).unwrap();
+        let err = bind(repo.path(), &json!({"project_slug": "demo"})).unwrap_err();
+        assert!(
+            err.contains("clave desconocida 'bogus'"),
+            "{err}"
+        );
     }
 
     #[test]
