@@ -1,4 +1,5 @@
 ---
+
 feature_name: linear-update-state-graphql-types
 created: "2026-11-06"
 process: bug-fix
@@ -7,11 +8,10 @@ agents: dedalo
 phases: T0-T6
 branch_name: fix/linear-update-state-graphql-types
 persist_ref: docs/fixes/linear-update-state-graphql-types
-execution_id: "0cc0f2fe-6a6f-45cd-86db-4cf7837a846c"
 document_id: PBI-cd8405c2
 uuid: cd8405c2-2394-4d3e-b846-ab2ffc5f38cc
+execution_id: "65f1bd41-ca2d-4139-83b3-edc774251e56"
 ---
-
 # Plan — linear-update-state-graphql-types
 
 Parada actual (**L0**): `objectives.md`, `spec.md`, `plan.md`. Rama: `fix/linear-update-state-graphql-types`. Base: `main`.

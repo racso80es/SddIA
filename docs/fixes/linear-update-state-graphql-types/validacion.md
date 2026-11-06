@@ -1,4 +1,5 @@
 ---
+
 feature_name: linear-update-state-graphql-types
 created: "2026-11-06"
 process: bug-fix
@@ -20,8 +21,8 @@ git_changes:
   - SddIA/evolution/f8c1a2e3-4d5b-4c6d-a7e8-f9a0b1c2d3e4.md
   - SddIA/evolution/Evolution_log.md
   - docs/fixes/linear-update-state-graphql-types/
+execution_id: "65f1bd41-ca2d-4139-83b3-edc774251e56"
 ---
-
 # Validación — linear-update-state-graphql-types
 
 ## Criterios
