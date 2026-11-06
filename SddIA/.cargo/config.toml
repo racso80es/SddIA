@@ -1,0 +1,3 @@
+# Alineado con SddIA/norms/rust-warning-gate.md y CI (sddia-index-qa).
+[build]
+rustflags = ["-Dwarnings"]

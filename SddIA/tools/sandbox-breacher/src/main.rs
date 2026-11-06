@@ -1,4 +1,4 @@
-use sddia_io::{emit_error, emit_success, read_stdin_json};
+use sddia_io::{emit_success, read_stdin_json};
 use serde_json::json;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -39,7 +39,7 @@ fn main() {
     let ws_raw = match req.get("workspace_path").and_then(|v| v.as_str()) {
         Some(s) if !s.trim().is_empty() => s.trim(),
         _ => {
-            let mut response = json!({
+            let response = json!({
                 "success": false,
                 "exitCode": 1,
                 "message": "workspace_path obligatorio",

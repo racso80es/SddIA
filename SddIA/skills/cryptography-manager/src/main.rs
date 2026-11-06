@@ -1,9 +1,8 @@
 use sddia_io::{read_stdin_json, emit_success, emit_error};
-use serde_json::Value;
 use sha2::{Sha256, Digest};
 use std::env;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 fn sha256_bytes(data: &[u8]) -> String {
     let mut hasher = Sha256::new();

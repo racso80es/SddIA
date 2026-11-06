@@ -41,11 +41,6 @@ fn split_frontmatter(raw: &str) -> Result<(String, String), String> {
     Err("frontmatter sin cierre".into())
 }
 
-fn parse_fm(text: &str) -> Result<YamlValue, String> {
-    let (fm, _) = split_frontmatter(text)?;
-    serde_yaml::from_str(&fm).map_err(|e| e.to_string())
-}
-
 fn fm_str(fm: &YamlValue, key: &str) -> Option<String> {
     fm.get(key)
         .and_then(|v| v.as_str())

@@ -6,7 +6,7 @@ use super::super::user_preference_change_requested;
 use crate::envelope::OrchestratorEnvelope;
 use serde_json::{json, Value};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 const STATE_FILE: &str = "email-noise-digest.json";
 const NS: &str = "dpref:";

@@ -1,6 +1,6 @@
 ---
 contrato_version: "1.1.1"
-universe_total: 150
+universe_total: 151
 source_audit: docs/audits/evolution/2026-08-11.md
 migration_manifest: docs/features/evolution-history-normalization/migration-manifest.json
 ---
@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `2964deff-504d-4ea4-b380-2adc45368198` | 2026-11-06 | Gate warnings Rust: norma rust-warning-gate, RUSTFLAGS CI, .cargo/config, higiene workspace. | CANONICO | `SddIA/evolution/2964deff-504d-4ea4-b380-2adc45368198.md` |
 | `f8c1a2e3-4d5b-4c6d-a7e8-f9a0b1c2d3e4` | 2026-11-06 | linear-tracker-adapter: issueUpdate id String, stateId String; MAN-27 refine. | CANONICO | `SddIA/evolution/f8c1a2e3-4d5b-4c6d-a7e8-f9a0b1c2d3e4.md` |
 | `2bb70d0e-b01c-4d8c-b972-d58de1be6a57` | 2026-11-06 | TRACKER_DONE_GUARD admite accept-pr (ReviewCiGreen). | CANONICO | `SddIA/evolution/2bb70d0e-b01c-4d8c-b972-d58de1be6a57.md` |
 | `41e8eac1-a71c-4275-99a1-04eb87134576` | 2026-11-06 | lifecycle_phase_action alinea update_issue_state con tracker-stamp (state_name via state_map). | CANONICO | `SddIA/evolution/41e8eac1-a71c-4275-99a1-04eb87134576.md` |

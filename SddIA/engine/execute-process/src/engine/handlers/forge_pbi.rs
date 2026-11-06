@@ -1249,51 +1249,6 @@ mod tests {
         fs::write(path, serde_json::to_string_pretty(&body).unwrap()).unwrap();
     }
 
-    /// Padre + hija con `forge_key` en description (corte 2; el create lab no garantiza description).
-    fn seed_parent_with_forged_child(
-        core: &Path,
-        parent: &str,
-        child: &str,
-        child_description: &str,
-    ) {
-        let path = core.join(".SddIA/lab-linear-store.json");
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        let body = json!({
-            "issues": {
-                parent: {
-                    "id": format!("issue-uuid-{parent}"),
-                    "identifier": parent,
-                    "title": "parent",
-                    "description": "",
-                    "state": "Backlog",
-                    "priority": 0,
-                    "labels": ["hu"],
-                    "parent": null,
-                    "children": [child],
-                    "url": format!("https://linear.app/issue/{parent}"),
-                    "updated_at": "2026-10-04T00:00:00Z"
-                },
-                child: {
-                    "id": format!("issue-uuid-{child}"),
-                    "identifier": child,
-                    "title": "child",
-                    "description": child_description,
-                    "state": "Backlog",
-                    "priority": 0,
-                    "labels": ["pbi", "fix"],
-                    "parent": parent,
-                    "children": [],
-                    "url": format!("https://linear.app/issue/{child}"),
-                    "updated_at": "2026-10-04T00:00:00Z"
-                }
-            },
-            "comments": {},
-            "audit_log": [],
-            "next_id": 300
-        });
-        fs::write(path, serde_json::to_string_pretty(&body).unwrap()).unwrap();
-    }
-
     fn create_count(core: &Path) -> usize {
         let path = core.join(".SddIA/lab-linear-store.json");
         let raw = fs::read_to_string(path).unwrap_or_default();
