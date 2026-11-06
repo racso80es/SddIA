@@ -1,5 +1,4 @@
 ---
-
 feature_name: lifecycle-phase-state-name
 created: 2026-11-06
 updated: 2026-11-06T10:05:00Z
@@ -27,9 +26,9 @@ git_changes:
 - SddIA/evolution/Evolution_log.md
 - docs/fixes/lifecycle-phase-state-name/
 validated_base_sha: 8aa6170be59b8cb60a5ffc67c5ccb6e00c07df09
-validated_head_sha: 685ef7004f25192bfa56d157cda0e629aca3bca6
-validated_tree_sha: ""
-diff_digest: ""
+validated_head_sha: f017dd59c7459eea67e7d77e40d9fd6611fcc64e
+validated_tree_sha: c620a41029e095d9c342cb6cd4302473c742fec3
+diff_digest: sha256:21cc0eb86c0978fec60152c74044983217968bc63672b1e9160d1e0ce6eb8443
 ---
 
 # Validación — lifecycle-phase-state-name
