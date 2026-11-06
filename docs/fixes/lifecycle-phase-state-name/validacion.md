@@ -125,9 +125,9 @@ situational_notes:
 - 'BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/fix/lifecycle-phase-state-name @ 97561cd1… (FS Read; no gitStdout)'
 - accept_pr_handoff pending — pr_url/Presented ausente en artefactos; MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
 validated_base_sha: 4e3fb78a897dc111e2f4e7a856ef371bfd054838
-validated_head_sha: 77cfbb8d934275e2bc87894a459881008373607b
-validated_tree_sha: eb6c5703b5e382bad6ae5ef3e9a41302f34a0d42
-diff_digest: sha256:9d7112ca4cec7fa53f5b97ecf321a6297fc0ea4f2d01f0ba150061ea04b00b8d
+validated_head_sha: 0b5390620694f061fc8f0cc885adc109d43cd1f3
+validated_tree_sha: 0e034b2ef69487b6ad347903d7b3aeeea971cbe0
+diff_digest: sha256:eeb8476200768888cd710fda43c8890499ac8c8b39469854070e9b5f96566832
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
