@@ -1,7 +1,7 @@
 ---
 feature_name: linear-update-state-graphql-types
-created: "2026-11-06"
-updated: "2026-11-06T11:03:00Z"
+created: 2026-11-06
+updated: 2026-11-06T11:03:00Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -13,13 +13,13 @@ branch_worktree_observed: fix/linear-update-state-graphql-types
 persist_ref: docs/fixes/linear-update-state-graphql-types
 persist_ref_injected: docs/fixes/linear-update-state-graphql-types
 persist_ref_resolution: inject = cascada bug-fix docs/fixes/linear-update-state-graphql-types
-pbi_ref: ""
-pbi_ref_injected: ""
+pbi_ref: ''
+pbi_ref_injected: ''
 document_id: PBI-cd8405c2
 uuid: cd8405c2-2394-4d3e-b846-ab2ffc5f38cc
-correlation_id: "90ad9a41-77af-4531-9958-26405b3dadc2"
-audit_event_reference: "90ad9a41-77af-4531-9958-26405b3dadc2"
-execution_id: "65f1bd41-ca2d-4139-83b3-edc774251e56"
+correlation_id: 90ad9a41-77af-4531-9958-26405b3dadc2
+audit_event_reference: 90ad9a41-77af-4531-9958-26405b3dadc2
+execution_id: 65f1bd41-ca2d-4139-83b3-edc774251e56
 source_process: bug-fix
 global: APTO
 pbi_archived: false
@@ -29,26 +29,26 @@ delivery_state: success
 resolution: PASS_F5_VERDICT
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: "MERGE ECST ausente este CID — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)"
+accept_pr_block_reason: MERGE ECST ausente este CID — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)
 authorization_status:
   exitCode: 0
   emitter_agent: argos
-  note: "PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL+execution) · PPR∉revoked/permanent · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · BRANCH_WORKTREE_SYNC APTO · accept_pr_handoff pending (L-HANDOFF-F5)"
+  note: PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL+execution) · PPR∉revoked/permanent · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · BRANCH_WORKTREE_SYNC APTO · accept_pr_handoff pending (L-HANDOFF-F5)
 git_manager_invoked: false
-git_manager_error: "cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session/machine native_state; sin bypass raw"
+git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge session/machine native_state; sin bypass raw
 git_evidence_source: native_state-evidence-bridge
 formal_execute_process: true
-formal_evidence_detail: "session Runtime evidence source=native_state · TECH/GIT APTO · notes=idempotent-hit; machine sellado en _agent_handoff.md @ 2026-11-06T11:02:33Z"
+formal_evidence_detail: session Runtime evidence source=native_state · TECH/GIT APTO · notes=idempotent-hit; machine sellado en _agent_handoff.md @ 2026-11-06T11:02:33Z
 handoff_machine_file: present
 handoff_evidence_block_pre: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine+session) source=native_state notes=idempotent-hit @ Veredicto y bloqueo; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected — sin stdout inventado"
-shell_git_manager_session: "Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 90ad9a41… · exec 65f1bd41…"
-head_commit_sha_fs: "bd2cabb7a1b78e809b85e4a17b030752da9e35c8"
-workspace_path_injected: ".SddIA/workspaces/pull-request-review/65f1bd41-ca2d-4139-83b3-edc774251e56/"
+evidence_bridge_notes: R1/R2 copia Runtime evidence (machine+session) source=native_state notes=idempotent-hit @ Veredicto y bloqueo; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; Shell git-manager Rejected — sin stdout inventado
+shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 90ad9a41… · exec 65f1bd41…
+head_commit_sha_fs: bd2cabb7a1b78e809b85e4a17b030752da9e35c8
+workspace_path_injected: .SddIA/workspaces/pull-request-review/65f1bd41-ca2d-4139-83b3-edc774251e56/
 workspace_materialized: false
-revoked_entity_alert: "delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent; accept-pr∉revoked"
-pr_url: ""
-scope: "PPR Veredicto y bloqueo — rama inject fix/linear-update-state-graphql-types (CID 90ad9a41… · exec 65f1bd41… · PBI-cd8405c2)"
+revoked_entity_alert: delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent; accept-pr∉revoked
+pr_url: ''
+scope: PPR Veredicto y bloqueo — rama inject fix/linear-update-state-graphql-types (CID 90ad9a41… · exec 65f1bd41… · PBI-cd8405c2)
 checks:
   F2_DOC_GATE: APTO
   F3_TECH_GATE: NO_APTO
@@ -88,42 +88,47 @@ checks:
   branch: APTO
   git_changes: APTO
 git_changes:
-  - SddIA/tools/linear-tracker-adapter/src/main.rs
-  - SddIA/tools/linear-tracker-adapter.md
-  - SddIA/tools/index.md
-  - SddIA/evolution/f8c1a2e3-4d5b-4c6d-a7e8-f9a0b1c2d3e4.md
-  - SddIA/evolution/Evolution_log.md
-  - docs/fixes/linear-update-state-graphql-types/
+- SddIA/tools/linear-tracker-adapter/src/main.rs
+- SddIA/tools/linear-tracker-adapter.md
+- SddIA/tools/index.md
+- SddIA/evolution/f8c1a2e3-4d5b-4c6d-a7e8-f9a0b1c2d3e4.md
+- SddIA/evolution/Evolution_log.md
+- docs/fixes/linear-update-state-graphql-types/
 blocking_findings: []
 non_blocking_findings:
-  - DOC_CLARIFY
-  - GIT_EVIDENCE_SESSION_SHELL
-  - WSPACE_MATERIALIZED
-  - F3_TECH_GATE
-  - MERGE_ALREADY_OBSERVED
-  - ACCEPT_PR_HANDOFF
-  - REVOKED_ENTITY_ALERT_DCC
-  - REVOKED_ENTITY_ALERT_BUG_FIX
-  - REVOKED_ENTITY_ALERT_FEATURE
-  - REVOKED_ENTITY_ALERT_ENTITY_MANAGER
-  - REVOKED_ENTITY_ALERT_EVENT_CREATOR
-  - REVOKED_ENTITY_ALERT_REFACTORIZATION
+- DOC_CLARIFY
+- GIT_EVIDENCE_SESSION_SHELL
+- WSPACE_MATERIALIZED
+- F3_TECH_GATE
+- MERGE_ALREADY_OBSERVED
+- ACCEPT_PR_HANDOFF
+- REVOKED_ENTITY_ALERT_DCC
+- REVOKED_ENTITY_ALERT_BUG_FIX
+- REVOKED_ENTITY_ALERT_FEATURE
+- REVOKED_ENTITY_ALERT_ENTITY_MANAGER
+- REVOKED_ENTITY_ALERT_EVENT_CREATOR
+- REVOKED_ENTITY_ALERT_REFACTORIZATION
 situational_notes:
-  - "Fase Veredicto y bloqueo · CID 90ad9a41-77af-4531-9958-26405b3dadc2 · exec 65f1bd41-ca2d-4139-83b3-edc774251e56"
-  - "Evidence Bridge machine/session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)"
-  - "Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (cascada + touchpoints + evolution)"
-  - "persist_ref inject docs/fixes/linear-update-state-graphql-types · cascada bug-fix completa"
-  - "Workspace PPR 65f1bd41… no materializado — WSPACE_MATERIALIZED NO_APTO no bloqueante; handoff machine presente"
-  - "F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — objectives/spec/plan/implementation/execution + YAML + evolution f8c1a2e3-… OK"
-  - "F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md)"
-  - "F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent"
-  - "DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix"
-  - "CODE_TOUCHPOINT_PRESENT APTO — UpdateState($id: String!, $stateId: String) + UpdateProject($id: String!, $projectId: ID!) + test aut70 (main.rs) · tool.md/index 1.1.1"
-  - "Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO"
-  - "tracker.provider: linear · 0 hits PBI-cd8405c2 / linear-update-state bajo docs/todos/** · pending/ vacío · pbi_archived false (done_gate: linear)"
-  - "BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/fix/linear-update-state-graphql-types @ bd2cabb7… (FS Read; no gitStdout)"
-  - "accept_pr_handoff pending — MERGE ECST ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)"
+- Fase Veredicto y bloqueo · CID 90ad9a41-77af-4531-9958-26405b3dadc2 · exec 65f1bd41-ca2d-4139-83b3-edc774251e56
+- 'Evidence Bridge machine/session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)'
+- Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (cascada + touchpoints + evolution)
+- persist_ref inject docs/fixes/linear-update-state-graphql-types · cascada bug-fix completa
+- Workspace PPR 65f1bd41… no materializado — WSPACE_MATERIALIZED NO_APTO no bloqueante; handoff machine presente
+- F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — objectives/spec/plan/implementation/execution + YAML + evolution f8c1a2e3-… OK
+- F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md)
+- F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent
+- DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix
+- 'CODE_TOUCHPOINT_PRESENT APTO — UpdateState($id: String!, $stateId: String) + UpdateProject($id: String!, $projectId: ID!) + test aut70 (main.rs) · tool.md/index 1.1.1'
+- Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO
+- 'tracker.provider: linear · 0 hits PBI-cd8405c2 / linear-update-state bajo docs/todos/** · pending/ vacío · pbi_archived false (done_gate: linear)'
+- 'BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/fix/linear-update-state-graphql-types @ bd2cabb7… (FS Read; no gitStdout)'
+- accept_pr_handoff pending — MERGE ECST ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
+validated_base_sha: 46ce1b1f5703a2ea5163bf3a4b0f9e9f00bdb5a7
+validated_head_sha: d8160b56b6d1c22a85e12411a8e85c399dba9073
+validated_tree_sha: dac3bd95c9d914299457139c915455d54f7e2419
+diff_digest: sha256:c3914634110c59ffab2f4c0e0194149db6cc45b667c5e93e45a30b98b9a8d5e1
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
