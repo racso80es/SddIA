@@ -1,13 +1,13 @@
 ---
 uuid: "e7b1c4a2-6f08-4d3e-9a55-1c8e2b7d0f44"
 name: "project-config-contract"
-version: "1.4.0"
+version: "1.5.0"
 contract_version: "1.3.0"
 nature: "configuration-contract"
 codex: "codex-software-engineering"
 ---
 
-# Contrato de configuración de proyecto v1.4.0
+# Contrato de configuración de proyecto v1.5.0
 
 El Core valida **forma**. No interpreta semántica de negocio.
 
@@ -40,7 +40,7 @@ Objeto `tracker` opcional. Ausente = proyecto sin tracker (Kalma2 responde `trac
 | `tracker.provider` | string | `file` \| `linear`. Objeto `tracker` ausente o `provider` ausente ⇒ provider efectivo `file`. Otro valor invalida el manifiesto. |
 | `tracker.team_key` | string | Obligatorio solo con `provider: linear`. |
 | `tracker.project_id` | string | Opcional; acota a un Linear Project. |
-| `tracker.state_map` | object | Claves ∈ `{backlog, todo, in_progress, in_review, done, cancelled}`; valores = nombre de WorkflowState del equipo. `todo` opcional. |
+| `tracker.state_map` | object | Claves ∈ `{backlog, todo, in_progress, in_validation, validated, in_review, done, cancelled}`; valores = nombre de WorkflowState del equipo. `todo`, `in_validation` y `validated` opcionales. |
 | `tracker.labels.hu` | string | Default lógico `hu`. |
 | `tracker.labels.pbi` | string | Default lógico `pbi`. |
 | `tracker.labels.fix` | string | Default lógico `fix`. |

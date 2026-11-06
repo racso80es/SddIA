@@ -21,8 +21,9 @@ fn state_rank(canonical: &str) -> Option<i32> {
         "todo" => Some(1),
         "in_progress" => Some(2),
         "in_validation" => Some(3),
-        "in_review" => Some(4),
-        "done" => Some(5),
+        "validated" => Some(4),
+        "in_review" => Some(5),
+        "done" => Some(6),
         "cancelled" => Some(100),
         _ => None,
     }
@@ -279,8 +280,12 @@ mod tests {
         assert!(state_rank("backlog").unwrap() < state_rank("todo").unwrap());
         assert!(state_rank("todo").unwrap() < state_rank("in_progress").unwrap());
         assert!(state_rank("in_progress").unwrap() < state_rank("in_validation").unwrap());
-        assert!(state_rank("in_validation").unwrap() < state_rank("in_review").unwrap());
+        assert!(state_rank("in_validation").unwrap() < state_rank("validated").unwrap());
+        assert!(state_rank("validated").unwrap() < state_rank("in_review").unwrap());
         assert!(state_rank("in_review").unwrap() < state_rank("done").unwrap());
+        assert_eq!(state_rank("validated"), Some(4));
+        assert_eq!(state_rank("in_review"), Some(5));
+        assert_eq!(state_rank("done"), Some(6));
     }
 
     #[test]
@@ -288,6 +293,10 @@ mod tests {
         assert!(should_discard_transition("in_review", "in_progress"));
         assert!(should_discard_transition("in_validation", "in_progress"));
         assert!(!should_discard_transition("in_progress", "in_validation"));
+        assert!(!should_discard_transition("in_validation", "validated"));
+        assert!(should_discard_transition("validated", "in_validation"));
+        assert!(!should_discard_transition("validated", "in_review"));
+        assert!(should_discard_transition("in_review", "validated"));
         assert!(should_discard_transition("in_progress", "todo"));
         assert!(should_discard_transition("done", "done"));
         assert!(!should_discard_transition("backlog", "in_progress"));
