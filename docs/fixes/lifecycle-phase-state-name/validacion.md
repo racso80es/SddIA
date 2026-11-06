@@ -1,13 +1,13 @@
 ---
 feature_name: lifecycle-phase-state-name
-created: "2026-11-06"
+created: 2026-11-06
 process: bug-fix
 branch: fix/lifecycle-phase-state-name
 branch_name: fix/lifecycle-phase-state-name
 persist_ref: docs/fixes/lifecycle-phase-state-name
 document_id: PBI-adfcf4cf
 uuid: adfcf4cf-ae0e-4dea-95ca-ac91e8e1071d
-execution_id: "090e6ae4-6227-4ab7-b25c-64dab6741fe4"
+execution_id: 090e6ae4-6227-4ab7-b25c-64dab6741fe4
 global: APTO
 checks:
   ca1_payload_state_name: APTO
@@ -21,6 +21,10 @@ git_changes:
 - SddIA/evolution/41e8eac1-a71c-4275-99a1-04eb87134576.md
 - SddIA/evolution/Evolution_log.md
 - docs/fixes/lifecycle-phase-state-name/
+validated_base_sha: 4e3fb78a897dc111e2f4e7a856ef371bfd054838
+validated_head_sha: 95307a6331edb16536091d4c3058cd8492969c89
+validated_tree_sha: 20b5c073e3749f724b24cddf5676edc00e652547
+diff_digest: sha256:38047ba6076e73f1202b415fcf7b0227d0b1c95cd04762d0387c5abf0c16bb46
 ---
 
 # Validación — lifecycle-phase-state-name
