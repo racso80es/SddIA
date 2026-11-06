@@ -20,7 +20,7 @@ tracker_ref: AUT-79
 uuid: adfcf4cf-ae0e-4dea-95ca-ac91e8e1071d
 correlation_id: 1e5e706c-c792-4dd9-89ba-f29972f3baa9
 audit_event_reference: 1e5e706c-c792-4dd9-89ba-f29972f3baa9
-execution_id: "298b8d71-7851-424f-bcab-060e8eb71165"
+execution_id: 298b8d71-7851-424f-bcab-060e8eb71165
 source_process: bug-fix
 global: APTO
 pbi_archived: false
@@ -30,7 +30,7 @@ delivery_state: success
 resolution: PASS_F5_VERDICT
 accept_pr_handoff: false
 accept_pr_handoff_status: pending
-accept_pr_block_reason: 'MERGE ECST ausente este CID; worktree main / ref fix ausente — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)'
+accept_pr_block_reason: MERGE ECST ausente este CID; worktree main / ref fix ausente — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)
 authorization_status:
   exitCode: 0
   emitter_agent: argos
@@ -126,11 +126,12 @@ situational_notes:
 - tracker linear AUT-79 · 0 hits docs/todos/** · pending/ sin AUT-79 · pbi_archived false (done_gate: linear)
 - 'BRANCH_WORKTREE_SYNC NO_APTO: .git/HEAD → refs/heads/main @ 46ce1b1f…; refs/heads/fix/lifecycle-phase-state-name ausente (FS) — no bloquea F5'
 - accept_pr_handoff pending — MERGE ECST ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
-validated_base_sha: 8aa6170be59b8cb60a5ffc67c5ccb6e00c07df09
-validated_head_sha: f017dd59c7459eea67e7d77e40d9fd6611fcc64e
-validated_tree_sha: c620a41029e095d9c342cb6cd4302473c742fec3
-diff_digest: sha256:21cc0eb86c0978fec60152c74044983217968bc63672b1e9160d1e0ce6eb8443
+validated_base_sha: 46ce1b1f5703a2ea5163bf3a4b0f9e9f00bdb5a7
+validated_head_sha: e3e7bfb159c0e76b6c27ae733e9f6bf3d4842405
+validated_tree_sha: 8d50f8faddb35f759d971279811c8f7fd627b4f1
+diff_digest: sha256:23a94dc214cf14ed8a82e1e59da05e1f2a2c2e44bd7ad82a9468af2705e2947d
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
