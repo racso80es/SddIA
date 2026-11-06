@@ -156,6 +156,7 @@ _ensure_orchestrator() {
         sddia-qa
         shell-executor
         sddia-evolution-register
+        linear-tracker-adapter
     )
     if ! _sddia_require_protoc; then
         return 1
@@ -172,32 +173,19 @@ _ensure_orchestrator() {
     fi
     local rel_ep="$target_dir/release/execute-process"
     if [[ -x "$rel_ep" ]]; then
-        if ! CARGO_TARGET_DIR="$target_dir" "$rel_ep" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["execute-process","kalma2-bridge"]}'; then
-            echo "  -> [WARN] testigo .sha256 execute-process/kalma2-bridge (release) parcial"
+        if ! CARGO_TARGET_DIR="$target_dir" "$rel_ep" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["execute-process","kalma2-bridge","linear-tracker-adapter"]}'; then
+            echo "  -> [WARN] testigo .sha256 execute-process/kalma2-bridge/linear-tracker-adapter (release) parcial"
         fi
     fi
-    local ep_bin
-    for ep_bin in "$target_dir/debug/execute-process" "$target_dir/release/execute-process"; do
-        if [[ -x "$ep_bin" ]]; then
-            CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":true,"write_witness":true,"names":["iota-immutable-publisher","event-watcher","send-telegram-notification","telegram-gateway"]}' >/dev/null 2>&1 \
-                || echo "  -> [WARN] --seal-capsules parcial (revisar genomas/testigos)"
-            # Skills DCC: testigo ELF; write_genome=false (DA-2).
-            CARGO_TARGET_DIR="$target_dir" "$ep_bin" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["git-manager","shell-executor","sddia-evolution-register"]}' >/dev/null 2>&1 \
-                || echo "  -> [WARN] --seal-capsules skills DCC parcial (testigo; genoma intacto)"
-            break
-        fi
-    done
+    # Un solo perfil release; Cargo recompila solo si la huella de fuente/deps cambió.
+    if [[ -x "$rel_ep" ]]; then
+        CARGO_TARGET_DIR="$target_dir" "$rel_ep" --seal-capsules --inputs '{"profile":"release","write_genome":true,"write_witness":true,"names":["iota-immutable-publisher","event-watcher","send-telegram-notification","telegram-gateway"]}' >/dev/null 2>&1 \
+            || echo "  -> [WARN] --seal-capsules parcial (revisar genomas/testigos)"
+        # Skills DCC: testigo ELF; write_genome=false (DA-2).
+        CARGO_TARGET_DIR="$target_dir" "$rel_ep" --seal-capsules --inputs '{"profile":"release","write_genome":false,"write_witness":true,"names":["git-manager","shell-executor","sddia-evolution-register"]}' >/dev/null 2>&1 \
+            || echo "  -> [WARN] --seal-capsules skills DCC parcial (testigo; genoma intacto)"
+    fi
     export SDDIA_CAPSULE_ANCHOR="${SDDIA_CAPSULE_ANCHOR:-1}"
-    if ! (cd "$REPO_ROOT/SddIA" && CARGO_TARGET_DIR="$target_dir" cargo build -p execute-process -p git-manager -p sddia-qa -p shell-executor -p sddia-evolution-register); then
-        echo "  -> [ERROR] cargo build -p execute-process -p git-manager -p sddia-qa -p shell-executor -p sddia-evolution-register (debug) falló." >&2
-        return 1
-    fi
-    local dbg_ep="$target_dir/debug/execute-process"
-    if [[ -x "$dbg_ep" ]]; then
-        if ! CARGO_TARGET_DIR="$target_dir" "$dbg_ep" --seal-capsules --inputs '{"profile":"debug","write_genome":false,"write_witness":true,"names":["execute-process"]}'; then
-            echo "  -> [WARN] testigo .sha256 execute-process (debug) parcial"
-        fi
-    fi
     _sddia_resolve_orchestrator "$REPO_ROOT" || return 1
     echo "  -> orquestador: ${SDDIA_EXECUTE_PROCESS_BIN}"
 }

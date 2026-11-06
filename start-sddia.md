@@ -2,12 +2,16 @@
 id: start-sddia
 uuid: d5aae800-06b0-4acc-b0fc-476d8e241eb1
 type: process
-version: 1.4.1
+version: 1.4.3
 ---
 
 # Ignición del ecosistema SddIA (`start-sddia.sh`)
 
 Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema Nervioso EDA), el centinela **email-watcher** (si IMAP configurado) y el puente **Kalma2** (binario Rust `kalma2-bridge`). Vive en la raíz del repositorio como artefacto de **instancia**.
+
+**v1.4.3:** la lista release de ignición incluye `linear-tracker-adapter` (cápsula `tracker:lifecycle` / `materialize-fracture-pbi`); testigo `.sha256` junto a orquestador y bridge.
+
+**v1.4.2:** ignición Core-self = un único `cargo build --release` (lista fija de paquetes) en `SddIA/target`; sin segundo build debug. Cargo decide recompilar por huella; ignición repetida sin cambios de fuente suele terminar en `Finished` al instante. Orquestador y centinelas alineados a release (F-DEP-07 salvo debug lab más nuevo que release).
 
 **v1.4.1:** `ExecStart=%f/SddIA/…` (molde user universal; no path de host). Cleanup lab: PID de lock de `$REPO_ROOT`, cero `pkill -x`.
 
@@ -17,7 +21,7 @@ Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema
 
 **v1.2.2:** integra `email-watcher` como centinela opcional condicionado a `SDDIA_EMAIL_IMAP_HOST` en bóveda (`.SddIA/.dev/.env` prevalece sobre `.dev/.env`).
 
-**v1.2.1:** ignición recompila `execute-process` en `SddIA/target` (`CARGO_TARGET_DIR` explícito) y exporta `SDDIA_EXECUTE_PROCESS_BIN` a los centinelas. Evita ELF stale de caché sandbox / `target` ajeno.
+**v1.2.1:** ignición compila en `SddIA/target` (`CARGO_TARGET_DIR` explícito) y exporta `SDDIA_EXECUTE_PROCESS_BIN`. Evita ELF stale de caché sandbox / `target` ajeno.
 
 ## Objetivo
 
@@ -27,7 +31,7 @@ Script de arranque unificado del nodo local: levanta los **Centinelas** (Sistema
 | **Centinelas obligatorios** | Bus EDA sobre `events.redb` | `SddIA/scripts/daemons/event-watcher.sh` |
 | **Centinelas opcionales** | Telegram y GitHub bridge | `SddIA/scripts/daemons/telegram-watcher.sh`, `github-bridge-watcher.sh` |
 | **Centinela sensorial (condicional)** | Correo IMAP read-only → `Email_Received` | `SddIA/scripts/daemons/email-watcher.sh` si `SDDIA_EMAIL_IMAP_HOST` está en bóveda |
-| **Kalma2** | UI + `POST /api/interact` | `SddIA/target/{debug,release}/kalma2-bridge` |
+| **Kalma2** | UI + `POST /api/interact` | `SddIA/target/release/kalma2-bridge` (fallback debug si falta release) |
 
 ## Separación genoma / instancia
 
@@ -59,10 +63,10 @@ flowchart TD
 ```
 
 1. Ancla `REPO_ROOT` y carga bóveda (`_sddia_load_vault`) para que `kalma2-bridge`/`mayeuta-llm` hereden `SDDIA_LLM_*`.
-2. `cargo build -p execute-process` con `CARGO_TARGET_DIR=$REPO/SddIA/target`; exporta `SDDIA_EXECUTE_PROCESS_BIN`.
+2. Un `cargo build --release` (centinelas, bridge, orquestador, `linear-tracker-adapter`, `sddia-qa`, …) con `CARGO_TARGET_DIR=$REPO/SddIA/target`; `--seal-capsules` perfil release; exporta `SDDIA_EXECUTE_PROCESS_BIN` (F-DEP-07).
 3. Lanza centinelas vía `SddIA/scripts/daemons/<name>.sh`.
 4. Si `SDDIA_EMAIL_IMAP_HOST` está definido tras `_sddia_load_vault`, lanza `email-watcher` (fallo no bloquea ignición; emite `[WARN]`).
-5. Resuelve y arranca `kalma2-bridge` nativo ELF (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/{debug,release}/`).
+5. Resuelve y arranca `kalma2-bridge` nativo ELF (`SDDIA_KALMA2_BRIDGE_BIN` o `SddIA/target/release/`, luego debug).
 6. Health check HTTP en `http://127.0.0.1:8765/`.
 7. Gate: `daemon-heartbeat-audit` confirma latidos frescos de obligatorios (`missed_cycles < 3`).
 8. `wait` hasta señal de terminación; cleanup elimina locks en `.SddIA/daemons/status/` (incl. `email-watcher.lock`).
@@ -70,9 +74,13 @@ flowchart TD
 ## Uso
 
 ```bash
-(cd SddIA && cargo build -p kalma2-bridge -p execute-process \
-  -p event-watcher -p telegram-watcher -p github-bridge-watcher -p email-watcher)
 ./start-sddia.sh
+```
+
+La ignición compila lo necesario en release. Atajo lab (sin pasar por el script):
+
+```bash
+cd SddIA && CARGO_TARGET_DIR=target cargo build --release -p execute-process -p event-watcher -p kalma2-bridge
 ```
 
 Variables de entorno:
@@ -99,27 +107,23 @@ Variables de entorno:
 
 ## Requisitos previos
 
-```bash
-(cd SddIA && cargo build -p kalma2-bridge -p execute-process \
-  -p event-watcher -p telegram-watcher -p github-bridge-watcher -p email-watcher)
-```
-
 - Bundle UI en `interfaces/kalma2/`.
+- `protoc` en PATH (LanceDB / `execute-process`; la ignición lo exige).
 - `curl` para health check y `file` para validar ejecutables ELF nativos.
 
 ## Garantía de ejecución nativa
 
 - El centinela obligatorio `event-watcher` debe iniciar como ELF nativo; su fallo cancela la ignición antes de lanzar Kalma2.
 - Los centinelas opcionales no alteran la condición de éxito de los obligatorios.
-- El arranque muestra la ruta del ELF resuelto para cada componente. La prioridad es `debug` y después `release`, coherente con `cargo build` del uso documentado.
+- El arranque muestra la ruta del ELF resuelto. Centinelas y bridge: `release` y luego `debug` (`_sddia_resolve_daemon_binary`). Orquestador: F-DEP-07 (`release` salvo debug estrictamente más nuevo).
 - `SDDIA_KALMA2_BRIDGE_BIN` y `SDDIA_EXECUTE_PROCESS_BIN` solo admiten binarios ELF ejecutables; un script Python u otro wrapper es rechazado explícitamente.
 
 ## Diagnóstico
 
 | Síntoma | Acción |
 |---------|--------|
-| `kalma2-bridge no encontrado` | `cargo build -p kalma2-bridge` |
-| `orquestador no encontrado` (POST) | `cargo build -p execute-process` |
+| `kalma2-bridge no encontrado` | `cd SddIA && CARGO_TARGET_DIR=target cargo build --release -p kalma2-bridge` |
+| `orquestador no encontrado` (POST) | `cd SddIA && CARGO_TARGET_DIR=target cargo build --release -p execute-process` |
 | Centinela no arranca | `.SddIA/daemons/logs/<name>.log` |
 | `Error IOTA: Connection refused (os error 111)` | Revisar `.SddIA/services/iota-publish-relay/relay.log` |
 
