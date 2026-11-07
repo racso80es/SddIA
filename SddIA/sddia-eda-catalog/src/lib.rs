@@ -1,14 +1,10 @@
 //! Plan de entregas. El store no lee el catálogo; este crate sí, y solo las rutas fijas del core.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
-use std::time::Instant;
 
 use serde_json::{json, Map, Value};
-use sddia_event_store::{
-    DeliveryStatus, EventStore, Family, StoreError, event_store_open_budget_ms, runtime_db_path,
-};
 
 const CORE_REGISTRY: &str = "SddIA/core/event-domain-subscriptions.json";
 const CODEX_REGISTRY: &str =
@@ -204,147 +200,9 @@ pub struct ReconcileUnstampedReport {
     pub open_cause: Option<String>,
 }
 
-enum ReconcileWrite {
-    Upsert {
-        event_id: String,
-        subscriber_id: String,
-    },
-    SkipOrphan {
-        event_id: String,
-        subscriber_id: String,
-    },
-}
-
-/// Siembra entregas que el alta dejó vacías y apaga filas cuyo id no está en el catálogo.
-pub fn reconcile_unstamped(repo: &Path) -> Result<ReconcileUnstampedReport, String> {
-    let mut report = ReconcileUnstampedReport::default();
-    let registry_path = repo.join(CORE_REGISTRY);
-    if !registry_path.is_file() {
-        return Ok(report);
-    }
-    let db = runtime_db_path(repo);
-    if !db.is_file() {
-        return Ok(report);
-    }
-    let registry = load_json(&registry_path)?;
-    let authority = software_authority(repo);
-    let codex = if authority {
-        let path = repo.join(CODEX_REGISTRY);
-        if path.is_file() {
-            Some(load_json(&path)?)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-
-    let read_start = Instant::now();
-    let store = match EventStore::open(&db) {
-        Ok(store) => store,
-        Err(err) => {
-            report.elapsed_ms = read_start.elapsed().as_millis() as u64;
-            report.open_cause = Some(err.to_string());
-            return Ok(report);
-        }
-    };
-    let events = store
-        .list_family(Family::Domain)
-        .map_err(|err| err.to_string())?;
-    let deliveries = store.list_deliveries().map_err(|err| err.to_string())?;
-    report.domain_rows = events.len();
-    report.delivery_rows = deliveries.len();
-    drop(store);
-
-    let mut by_event: HashMap<String, Vec<(String, DeliveryStatus)>> = HashMap::new();
-    for (event_id, subscriber_id, status) in deliveries {
-        by_event
-            .entry(event_id)
-            .or_default()
-            .push((subscriber_id, status));
-    }
-
-    let mut writes: Vec<ReconcileWrite> = Vec::new();
-    for event in &events {
-        let payload = event
-            .ecst
-            .get("payload")
-            .cloned()
-            .unwrap_or_else(|| json!({}));
-        let plan = plan_route(&registry, codex.as_ref(), authority, &event.event_type);
-        let planned: HashSet<String> = if plan.dead_letter_no_subscriber {
-            HashSet::new()
-        } else {
-            applicable_ids(&plan, &payload).into_iter().collect()
-        };
-        let existing = by_event.get(&event.event_id).cloned().unwrap_or_default();
-        if existing.is_empty() {
-            for id in planned {
-                writes.push(ReconcileWrite::Upsert {
-                    event_id: event.event_id.clone(),
-                    subscriber_id: id,
-                });
-            }
-            continue;
-        }
-        for (subscriber_id, status) in existing {
-            if status == DeliveryStatus::Pending && !planned.contains(&subscriber_id) {
-                writes.push(ReconcileWrite::SkipOrphan {
-                    event_id: event.event_id.clone(),
-                    subscriber_id,
-                });
-            }
-        }
-    }
-
-    report.elapsed_ms = read_start.elapsed().as_millis() as u64;
-    if writes.is_empty() {
-        return Ok(report);
-    }
-    let budget_ms = event_store_open_budget_ms();
-    if report.elapsed_ms >= budget_ms {
-        return Ok(report);
-    }
-
-    let store = match EventStore::open(&db) {
-        Ok(store) => store,
-        Err(err) => {
-            report.open_cause = Some(err.to_string());
-            return Ok(report);
-        }
-    };
-    for action in writes {
-        match action {
-            ReconcileWrite::Upsert {
-                event_id,
-                subscriber_id,
-            } => {
-                store
-                    .upsert_delivery(&event_id, &subscriber_id, DeliveryStatus::Pending, json!({}))
-                    .map_err(store_err)?;
-                report.touched += 1;
-            }
-            ReconcileWrite::SkipOrphan {
-                event_id,
-                subscriber_id,
-            } => {
-                store
-                    .set_delivery(
-                        &event_id,
-                        &subscriber_id,
-                        DeliveryStatus::Skipped,
-                        json!({"reconcile": "orphan"}),
-                    )
-                    .map_err(store_err)?;
-                report.touched += 1;
-            }
-        }
-    }
-    Ok(report)
-}
-
-fn store_err(err: StoreError) -> String {
-    err.to_string()
+/// Legacy `subscriber_delivery` eliminado en cutover EventManager 1.1 — no-op.
+pub fn reconcile_unstamped(_repo: &Path) -> Result<ReconcileUnstampedReport, String> {
+    Ok(ReconcileUnstampedReport::default())
 }
 
 #[cfg(test)]
@@ -422,25 +280,9 @@ mod tests {
     }
 
     #[test]
-    fn reconcile_missing_registry_does_not_open_store() {
+    fn reconcile_is_noop_under_event_manager() {
         let repo = tempfile_repo();
         let report = reconcile_unstamped(&repo).unwrap();
         assert_eq!(report, ReconcileUnstampedReport::default());
-    }
-
-    #[test]
-    fn reconcile_empty_store_reports_zero_rows() {
-        let repo = tempfile_repo();
-        write_registry(&repo, r#"{"PBI_Refined":[{"agent":"tekton","process":"tracker-stamp"}]}"#);
-        let db = runtime_db_path(&repo);
-        if let Some(parent) = db.parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-        EventStore::open(&db).unwrap();
-        let report = reconcile_unstamped(&repo).unwrap();
-        assert!(report.open_cause.is_none());
-        assert_eq!(report.domain_rows, 0);
-        assert_eq!(report.delivery_rows, 0);
-        assert_eq!(report.touched, 0);
     }
 }

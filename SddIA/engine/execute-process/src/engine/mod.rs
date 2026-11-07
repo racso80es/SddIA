@@ -36,6 +36,7 @@ pub mod domain_mutation;
 pub mod eda_bus;
 pub mod ecst_input_loader;
 pub mod eda_bus_topology;
+pub mod eda_port;
 pub mod event_store_query;
 pub mod eda_coverage;
 pub mod ecst_validation;
@@ -130,6 +131,7 @@ pub fn run_process(
     process_name: &str,
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
+    eda_port::install_productive_port(repo)?;
     let (canonical, process_def, phases) = load_process_def(repo, process_name)?;
 
     if let Err(deny) =

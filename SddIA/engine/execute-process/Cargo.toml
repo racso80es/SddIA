@@ -21,7 +21,8 @@ sddia-infrastructure-lancedb-preferences = { path = "../../infrastructure/adapte
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
-sddia-event-store = { path = "../../sddia-event-store" }
+sddia-core = { path = "../../sddia-core" }
+sddia-event-manager-host = { path = "../../sddia-event-manager-host" }
 sddia-eda-catalog = { path = "../../sddia-eda-catalog" }
 repo-retention-purger = { path = "../../tools/repo-retention-purger" }
 regex = "1.10"

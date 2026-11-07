@@ -10,8 +10,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryStatus,
-    DualVersionManifest, EventManagerError, EventManagerPort, HandshakeVersionRequest,
-    HandshakeVersionResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult,
+    DualVersionManifest, EventManagerError, EventManagerPort, GetEventRequest, GetEventResult,
+    HandshakeVersionRequest, HandshakeVersionResult, ListedDlqEvent, ListDlqRequest, ListDlqResult,
+    ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult,
+    MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
     RecordDeliveryRequest, ReplayDlqRequest, CONTRACT_ID, CONTRACT_VERSION,
 };
 use sddia_core::ports::event_manager::version_gate;
@@ -370,6 +372,130 @@ impl EventManagerPort for RedbEventAdapter {
             contract_version: CONTRACT_VERSION.to_string(),
             compatible: true,
         })
+    }
+
+    fn get_event(&self, req: GetEventRequest) -> Result<GetEventResult, EventManagerError> {
+        let txn = self.db.begin_read().map_err(storage)?;
+        let events = txn.open_table(EVENTS).map_err(storage)?;
+        let leases = txn.open_table(LEASES).map_err(storage)?;
+        if let Some(v) = events.get(req.event_id.as_str()).map_err(storage)? {
+            let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
+            return Ok(GetEventResult {
+                event_id: stored.event_id,
+                ecst: stored.ecst,
+                trace_id: stored.trace_id,
+            });
+        }
+        if let Some(v) = txn.open_table(DLQ).map_err(storage)?.get(req.event_id.as_str()).map_err(storage)? {
+            let rec: DlqRec = serde_json::from_slice(v.value()).map_err(json_err)?;
+            return Ok(GetEventResult {
+                event_id: rec.event.event_id,
+                ecst: rec.event.ecst,
+                trace_id: rec.event.trace_id,
+            });
+        }
+        let _ = leases;
+        Err(EventManagerError::NotFound(req.event_id))
+    }
+
+    fn list_pending(
+        &self,
+        req: ListPendingRequest,
+    ) -> Result<ListPendingResult, EventManagerError> {
+        self.expire_leases()?;
+        let limit = req.limit.unwrap_or(u32::MAX) as usize;
+        let txn = self.db.begin_read().map_err(storage)?;
+        let events = txn.open_table(EVENTS).map_err(storage)?;
+        let leases = txn.open_table(LEASES).map_err(storage)?;
+        let mut out = Vec::new();
+        for item in events.iter().map_err(storage)? {
+            if out.len() >= limit {
+                break;
+            }
+            let (k, v) = item.map_err(storage)?;
+            let id = k.value();
+            if leases.get(id).map_err(storage)?.is_some() {
+                continue;
+            }
+            let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
+            out.push(ListedPendingEvent {
+                event_id: stored.event_id,
+                ecst: stored.ecst,
+                trace_id: stored.trace_id,
+            });
+        }
+        Ok(ListPendingResult { events: out })
+    }
+
+    fn list_dlq(&self, req: ListDlqRequest) -> Result<ListDlqResult, EventManagerError> {
+        let limit = req.limit.unwrap_or(u32::MAX) as usize;
+        let txn = self.db.begin_read().map_err(storage)?;
+        let dlq = txn.open_table(DLQ).map_err(storage)?;
+        let mut out = Vec::new();
+        for item in dlq.iter().map_err(storage)? {
+            if out.len() >= limit {
+                break;
+            }
+            let (k, v) = item.map_err(storage)?;
+            let rec: DlqRec = serde_json::from_slice(v.value()).map_err(json_err)?;
+            out.push(ListedDlqEvent {
+                event_id: k.value().to_string(),
+                reason: rec.reason,
+                ecst: rec.event.ecst,
+            });
+        }
+        Ok(ListDlqResult { events: out })
+    }
+
+    fn list_traces(&self, req: ListTracesRequest) -> Result<ListTracesResult, EventManagerError> {
+        let frames = self.load_traces(&req.trace_id)?;
+        Ok(ListTracesResult { frames })
+    }
+
+    fn purge_event(&self, req: PurgeEventRequest) -> Result<(), EventManagerError> {
+        let txn = self.db.begin_write().map_err(storage)?;
+        {
+            let mut events = txn.open_table(EVENTS).map_err(storage)?;
+            let mut leases = txn.open_table(LEASES).map_err(storage)?;
+            let mut dlq = txn.open_table(DLQ).map_err(storage)?;
+            let mut traces = txn.open_table(TRACES).map_err(storage)?;
+            let mut deliveries = txn.open_table(DELIVERIES).map_err(storage)?;
+            let removed_event = events.remove(req.event_id.as_str()).map_err(storage)?.is_some();
+            let removed_dlq = dlq.remove(req.event_id.as_str()).map_err(storage)?.is_some();
+            if !removed_event && !removed_dlq {
+                return Err(EventManagerError::NotFound(req.event_id.clone()));
+            }
+            let _ = leases.remove(req.event_id.as_str()).map_err(storage)?;
+            let prefix = format!("{}:", req.event_id);
+            let delivery_keys: Vec<String> = deliveries
+                .iter()
+                .map_err(storage)?
+                .filter_map(|item| {
+                    item.ok().and_then(|(k, _)| {
+                        let key = k.value().to_string();
+                        if key.starts_with(&prefix) || key.contains(req.event_id.as_str()) {
+                            Some(key)
+                        } else {
+                            None
+                        }
+                    })
+                })
+                .collect();
+            for key in delivery_keys {
+                let _ = deliveries.remove(key.as_str()).map_err(storage)?;
+            }
+            let trace_keys: Vec<String> = traces
+                .iter()
+                .map_err(storage)?
+                .filter_map(|item| item.ok().map(|(k, _)| k.value().to_string()))
+                .filter(|tid| tid.contains(req.event_id.as_str()))
+                .collect();
+            for key in trace_keys {
+                let _ = traces.remove(key.as_str()).map_err(storage)?;
+            }
+        }
+        txn.commit().map_err(storage)?;
+        Ok(())
     }
 }
 

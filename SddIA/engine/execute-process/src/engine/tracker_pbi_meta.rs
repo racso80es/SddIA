@@ -93,7 +93,7 @@ fn tracker_ref_on_objectives(repo: &Path, persist_ref: &str) -> Option<String> {
 /// Hereda `tracker_ref` del `PullRequest_Presented` de la misma rama.
 /// Mira pending, processed, dead-letter (paridad `scan_presented_for_branch`) y el store.
 pub fn tracker_ref_from_presented_for_branch(repo: &Path, branch: &str) -> Option<String> {
-    if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+    if false {
         for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
             if let Some(tr) = tracker_ref_in_dir(&repo.join(rel), branch) {
                 return Some(tr);
@@ -152,24 +152,14 @@ fn tracker_ref_in_store(repo: &Path, branch: &str) -> Option<String> {
 
 /// Recorre `PullRequest_Presented` en `Family::Domain`. `pred` true → corta.
 fn visit_presented_in_store(repo: &Path, mut pred: impl FnMut(&Value) -> bool) -> bool {
-    if !sddia_event_store::writes_store(sddia_event_store::store_mode()) {
-        return false;
-    }
-    let db = sddia_event_store::runtime_db_path(repo);
-    if !db.is_file() {
-        return false;
-    }
-    let Ok(store) = sddia_event_store::EventStore::open(db) else {
+    let Ok(rows) = crate::engine::eda_port::load_domain_ecsts(repo, 5000) else {
         return false;
     };
-    let Ok(rows) = store.list_family(sddia_event_store::Family::Domain) else {
-        return false;
-    };
-    for row in rows {
-        if row.event_type != "PullRequest_Presented" {
+    for ecst in rows {
+        if ecst.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
             continue;
         }
-        if pred(&row.ecst) {
+        if pred(&ecst) {
             return true;
         }
     }
@@ -195,7 +185,7 @@ fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {
 /// `event_id` del `PullRequest_Presented` más reciente para `branch` (pending, processed, store).
 pub fn presented_event_id_for_branch(repo: &Path, branch: &str) -> Option<String> {
     let mut best: Option<(String, String)> = None;
-    if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+    if false {
         for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
             presented_ids_in_dir(&repo.join(rel), branch, &mut best);
         }
@@ -228,24 +218,14 @@ fn presented_ids_in_dir(dir: &Path, branch: &str, best: &mut Option<(String, Str
 }
 
 fn presented_ids_in_store(repo: &Path, branch: &str, best: &mut Option<(String, String)>) {
-    if !sddia_event_store::writes_store(sddia_event_store::store_mode()) {
-        return;
-    }
-    let db = sddia_event_store::runtime_db_path(repo);
-    if !db.is_file() {
-        return;
-    }
-    let Ok(store) = sddia_event_store::EventStore::open(db) else {
+    let Ok(rows) = crate::engine::eda_port::load_domain_ecsts(repo, 5000) else {
         return;
     };
-    let Ok(rows) = store.list_family(sddia_event_store::Family::Domain) else {
-        return;
-    };
-    for row in rows {
-        if row.event_type != "PullRequest_Presented" {
+    for ecst in rows {
+        if ecst.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
             continue;
         }
-        consider_presented_event_id(&row.ecst, branch, best);
+        consider_presented_event_id(&ecst, branch, best);
     }
 }
 

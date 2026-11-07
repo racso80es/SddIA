@@ -66,7 +66,7 @@ catalog:
     description: "Ciclo de vida de un ítem de gestión. La salida auditada es el stdout de emit_v2 (success, exitCode, message, result)."
   - id: "eda:event-manager"
     contract: "eda.event_manager"
-    version: "1.0.0"
+    version: "1.1.0"
     description: "Gestión aditiva de ciclo de vida de eventos (publish/claim/delivery/DLQ/trace) vía EventManagerPort."
 ---
 
@@ -96,7 +96,7 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `memory:pref-write` | `memory.pref_write` | 1.0.0 | Escritura preferencias usuario (store local) |
 | `memory:pref-query` | `memory.pref_query` | 1.0.0 | Consulta opt-in preferencias activas |
 | `tracker:lifecycle` | `tracker.lifecycle` | 1.0.0 | Ciclo de vida de un ítem de gestión; stdout `emit_v2` |
-| `eda:event-manager` | `eda.event_manager` | 1.0.0 | Gestión aditiva ciclo de vida eventos vía EventManagerPort |
+| `eda:event-manager` | `eda.event_manager` | 1.1.0 | Gestión aditiva ciclo de vida eventos vía EventManagerPort |
 
 ## Restricciones Duras
 
