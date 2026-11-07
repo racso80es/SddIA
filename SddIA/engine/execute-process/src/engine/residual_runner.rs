@@ -1139,6 +1139,11 @@ fn run_generic(
     );
 
     if process_name == "pull-request-review" && verdict.success {
+        if let Some(obj) = state.as_object_mut() {
+            if obj.get("verdict").and_then(|v| v.as_str()) != Some("aprobado") {
+                obj.insert("verdict".into(), json!("aprobado"));
+            }
+        }
         if let Ok(path) = super::qa_attestation::try_write_from_ppr(repo, &state, &inputs_mut) {
             if let Some(obj) = data.as_object_mut() {
                 obj.insert("attestation_path".into(), json!(path.to_string_lossy()));

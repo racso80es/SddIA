@@ -170,8 +170,55 @@ fn resolve_pr_branch(inputs: &Value, state: &Value) -> Option<String> {
         .or_else(|| str_field(state, "branch_name"))
 }
 
+fn yaml_frontmatter_field(text: &str, key: &str) -> Option<String> {
+    let mut lines = text.lines();
+    if lines.next()? != "---" {
+        return None;
+    }
+    let prefix = format!("{key}:");
+    for line in lines {
+        if line.trim() == "---" {
+            break;
+        }
+        if let Some(v) = line.strip_prefix(prefix.as_str()) {
+            return Some(v.trim().trim_matches('"').to_string());
+        }
+    }
+    None
+}
+
+/// PPR full-profile: Argos sella `validacion.md` pero no siempre propaga `state.verdict`.
+fn ppr_verdict_aprobado(repo: &Path, state: &Value, inputs: &Value) -> bool {
+    if state.get("verdict").and_then(|v| v.as_str()) == Some("aprobado") {
+        return true;
+    }
+    if state.get("argos_verdict").and_then(|v| v.as_str()) == Some("pass") {
+        return true;
+    }
+    let persist = str_field(inputs, "persist_ref").or_else(|| str_field(state, "persist_ref"));
+    let Some(persist) = persist else {
+        return false;
+    };
+    let path = repo.join(persist.trim_start_matches("./")).join("validacion.md");
+    let Ok(text) = fs::read_to_string(&path) else {
+        return false;
+    };
+    let global = yaml_frontmatter_field(&text, "global").unwrap_or_default();
+    if !global.eq_ignore_ascii_case("APTO") {
+        return false;
+    }
+    for key in ["ppr_verdict", "verdict", "approval_status"] {
+        if let Some(v) = yaml_frontmatter_field(&text, key) {
+            if v.eq_ignore_ascii_case("aprobado") {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 pub fn try_write_from_ppr(repo: &Path, state: &Value, inputs: &Value) -> Result<PathBuf, String> {
-    if state.get("verdict").and_then(|v| v.as_str()) != Some("aprobado") {
+    if !ppr_verdict_aprobado(repo, state, inputs) {
         return Err("verdict not aprobado".into());
     }
     let branch = resolve_pr_branch(inputs, state)
@@ -365,6 +412,22 @@ mod tests {
         let mut doc = doc;
         doc["verdict"] = json!("rechazado");
         assert!(validate_attestation_value(&doc, "t", None).is_err());
+    }
+
+    #[test]
+    fn ppr_verdict_from_validacion_frontmatter() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = tmp.path();
+        let persist = "docs/features/x";
+        fs::create_dir_all(repo.join(persist)).unwrap();
+        fs::write(
+            repo.join(persist).join("validacion.md"),
+            "---\nglobal: APTO\nppr_verdict: aprobado\n---\n\n# v\n",
+        )
+        .unwrap();
+        let state = json!({});
+        let inputs = json!({"persist_ref": persist});
+        assert!(super::ppr_verdict_aprobado(repo, &state, &inputs));
     }
 
     #[test]
