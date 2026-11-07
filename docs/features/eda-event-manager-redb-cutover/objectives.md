@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-event-manager-redb-cutover
 created: "2026-11-07"
 process: refactorization
@@ -8,7 +9,6 @@ pbi_ref: MAN-33
 tracker_ref: MAN-33
 historia_ref: MAN-32
 document_id: PBI-e4403517
-execution_id: "a3ab115d-9ebb-4679-8749-d3db2a216ea0"
 phase: mayeuta-stabilization
 execution_mode: BREAKING_CUTOVER
 capability_id: "eda:event-manager"
@@ -19,8 +19,8 @@ productive_role: default
 status: requisitos-estabilizados
 mayeuta_verdict: ok
 norm_ref: features-documentation-pattern@1.3.1
+execution_id: "c7d9f208-857a-411a-b5b0-5333170ecf67"
 ---
-
 # Objetivos — eda-event-manager-redb-cutover
 
 ## Misión

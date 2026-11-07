@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-event-manager-redb-cutover
 created: "2026-11-07"
 updated: "2026-11-07"
@@ -9,7 +10,6 @@ pbi_ref: MAN-33
 tracker_ref: MAN-33
 historia_ref: MAN-32
 document_id: PBI-e4403517
-execution_id: "a3ab115d-9ebb-4679-8749-d3db2a216ea0"
 execution_mode: BREAKING_CUTOVER
 capability_id: "eda:event-manager"
 contract: "eda.event_manager"
@@ -30,8 +30,8 @@ phases:
 rbac_ok: true
 scope: "Cutover breaking EventManager default=Redb — Genoma 1.1.0 + DI + inventario + retiro sddia-event-store"
 norm_ref: features-documentation-pattern@1.3.1
+execution_id: "c7d9f208-857a-411a-b5b0-5333170ecf67"
 ---
-
 # Plan / Blueprint — eda-event-manager-redb-cutover
 
 Blueprint ejecutable para **Tekton**. Entrada: `objectives.md`, `clarify.md` (L-*), `spec.md` v1.0.0.
