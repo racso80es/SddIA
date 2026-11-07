@@ -25,6 +25,9 @@ git_changes:
 - SddIA/tools/sddia-qa/
 - docs/features/eda-event-manager-redb-cutover/
 validated_base_sha: b5de29c291ed27ed59ce7a8d3513d5291c50eea5
+validated_head_sha: 769a510e91ca3441ebab8b9df5a0b734831e63ee
+validated_tree_sha: b498c566fa650df3f040ce1b8d39c29ebc19c1e5
+diff_digest: sha256:280b854bd122c6f0a86cc004459c4775eeee07b03653864eee847067824af7c6
 ---
 
 # Validación — MAN-33 (corte intermedio)
