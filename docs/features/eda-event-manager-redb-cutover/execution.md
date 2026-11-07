@@ -9,16 +9,24 @@ pbi_ref: MAN-33
 ## Verificación local (2026-11-07)
 
 ```text
-cargo check -p execute-process
-cargo check -p event-watcher -p sddia-daemon-runtime
-cargo test -p sddia-core -p sddia-event-manager-host -p sddia-infrastructure-redb-event
-cargo build -p execute-process -p event-watcher --release
+export TMPDIR=<repo>/.tmp/cargo-tmp
+unset CARGO_TARGET_DIR
+cd SddIA
+cargo build -p event-watcher -p execute-process -p sddia-qa
+cargo build --workspace
+cargo test -p sddia-core event_manager
+cargo test -p execute-process --test memory_evolution_ingest
+sddia-qa verify-tools-index
+sddia-qa verify-process-integrity
+sddia-qa verify-compiled-capsules
 ```
+
+Resultado: **ok** (workspace ~9 min; smokes verify ok). `run-iota-ci-smoke --simulate` falló en lab por `tekton.tracker-stamp` (entorno tracker); pendiente reproducir en CI.
 
 Modo datos: **cold-cut** documentado en `implementation.md`.
 
 ## Pendiente pre-merge
 
-- Migrar tools + kalma2 + lancedb_thought_repo al puerto.
+- Migrar `event-bus-audit`, `repo-retention-purger`, kalma2 + `lancedb_thought_repo` al puerto.
 - Retirar `sddia-event-store` del workspace y búsqueda residual AC-3.
 - Paridad tests publish→claim→ack en Redb tempdir (AC-4).

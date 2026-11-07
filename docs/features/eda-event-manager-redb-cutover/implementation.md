@@ -25,6 +25,7 @@ pbi_ref: MAN-33
 
 ## Gaps conocidos (T5 parcial)
 
-- `SddIA/tools/{event-bus-audit,sddia-qa,repo-retention-purger}` y `kalma2-bridge`, `lancedb_thought_repo` siguen referenciando `sddia-event-store`.
+- `SddIA/tools/{event-bus-audit,repo-retention-purger}` y `kalma2-bridge`, `lancedb_thought_repo` siguen referenciando `sddia-event-store`.
+- **`sddia-qa`:** smoke IOTA (`write_pending`) publica vía `resolve_productive_port` + `publish_ecst`; sin `SDDIA_EVENT_STORE=filesystem` en lab.
 - Crate `sddia-event-store` aún miembro del workspace hasta cierre del inventario.
 - Tests de integración `execute-process` / watcher con matriz legacy pendientes de reescritura sobre mock/Redb temporal.
