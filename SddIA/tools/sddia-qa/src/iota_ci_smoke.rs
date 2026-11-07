@@ -73,9 +73,15 @@ fn load_fixture(repo: &Path) -> Result<Value, String> {
 fn write_pending(repo: &Path, bus: &EventBusTopology, event: &Value) -> Result<String, String> {
     let mut stamped = event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    let pending = repo.join(bus.pending.trim().trim_start_matches("./"));
-    let seal = sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&pending))
-        .map_err(|err| err.to_string())?;
+    let _pending = repo.join(bus.pending.trim().trim_start_matches("./"));
+    let port = sddia_event_manager_host::resolve_productive_port(repo)?;
+    let seal = sddia_core::ports::event_manager::publish_ecst(
+        port.as_ref(),
+        repo,
+        "domain",
+        &stamped,
+    )
+    .map_err(|err| err.to_string())?;
     Ok(seal.logical_rel)
 }
 
@@ -85,7 +91,6 @@ fn route_event(repo: &Path, rel_path: &str, simulate_lab: bool) -> Result<Value,
     cmd.args(["--event-file-path", rel_path]).current_dir(repo);
     if simulate_lab {
         cmd.env("SDDIA_LAB_SIMULATE_IOTA", "1");
-        cmd.env("SDDIA_EVENT_STORE", "filesystem");
         cmd.env("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM", "1");
         cmd.env("SDDIA_LAB_MOCK_OUTBOUND", "1");
     }

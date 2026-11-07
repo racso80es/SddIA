@@ -5285,6 +5285,7 @@ version = "0.1.0"
 dependencies = [
  "sddia-core",
  "sddia-infrastructure-redb-event",
+ "tempfile",
 ]
 
 [[package]]
@@ -5396,8 +5397,9 @@ dependencies = [
  "chrono",
  "execute-process",
  "regex",
+ "sddia-core",
  "sddia-eda-catalog",
- "sddia-event-store",
+ "sddia-event-manager-host",
  "sddia-evolution-register",
  "serde",
  "serde_json",
