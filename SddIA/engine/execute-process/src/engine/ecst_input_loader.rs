@@ -106,10 +106,50 @@ pub fn load_ecst_for_handler(repo: &Path, inputs: &Value) -> Result<Value, Strin
     Ok(stored)
 }
 
+fn event_store_mode() -> Option<String> {
+    std::env::var("SDDIA_EVENT_STORE")
+        .ok()
+        .map(|s| s.trim().to_ascii_lowercase())
+        .filter(|s| !s.is_empty())
+}
+
+fn event_store_writes_pending_files() -> bool {
+    matches!(
+        event_store_mode().as_deref(),
+        Some("filesystem") | Some("dual")
+    )
+}
+
+fn verify_ecst_matches_pending_file(
+    repo: &Path,
+    event_id: &str,
+    event: &Value,
+) -> Result<(), String> {
+    let synthetic = repo
+        .join(".events/pending")
+        .join(format!("{event_id}.json"));
+    if !synthetic.is_file() {
+        return Err("ecst_not_in_bus".into());
+    }
+    let text = fs::read_to_string(&synthetic).map_err(|e| e.to_string())?;
+    let on_disk: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    if on_disk != *event {
+        return Err("ecst_mismatch".into());
+    }
+    Ok(())
+}
+
 /// Antes de efecto remoto: el ECST debe existir en bus y coincidir.
 pub fn verify_ecst_matches_bus(repo: &Path, event: &Value) -> Result<(), String> {
-    eda_port::install_productive_port(repo)?;
     let event_id = str_field(event, "event_id").ok_or("event_id ausente")?;
+    if event_store_writes_pending_files() {
+        match verify_ecst_matches_pending_file(repo, &event_id, event) {
+            Ok(()) => return Ok(()),
+            Err(e) if event_store_mode().as_deref() == Some("filesystem") => return Err(e),
+            Err(_) => {}
+        }
+    }
+    eda_port::install_productive_port(repo)?;
     let synthetic = repo
         .join(".events/pending")
         .join(format!("{event_id}.json"));
