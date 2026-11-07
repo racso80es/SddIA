@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/eda.event_manager.v1.schema.json",
   "title": "eda.event_manager",
-  "description": "Contrato aditivo EventManager v1.0.0 — I/O capsule-json-io (request/response JSON stdin/stdout). Operaciones: publish_ecst, claim_pending, record_delivery, move_to_dlq, replay_dlq, append_trace, handshake_version.",
+  "description": "Contrato EventManager v1.1.0 — I/O capsule-json-io. Ops: publish_ecst, claim_pending, record_delivery, move_to_dlq, replay_dlq, append_trace, handshake_version, get_event, list_pending, list_dlq, list_traces, purge_event.",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/request" },
@@ -22,7 +22,12 @@
             "move_to_dlq",
             "replay_dlq",
             "append_trace",
-            "handshake_version"
+            "handshake_version",
+            "get_event",
+            "list_pending",
+            "list_dlq",
+            "list_traces",
+            "purge_event"
           ]
         },
         "payload": {
@@ -144,6 +149,69 @@
                 "properties": {
                   "requested_range": { "type": "string", "minLength": 1 }
                 },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "get_event" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": ["event_id"],
+                "properties": { "event_id": { "type": "string", "minLength": 1 } },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "list_pending" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": { "limit": { "type": "integer", "minimum": 1 } },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "list_dlq" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "properties": { "limit": { "type": "integer", "minimum": 1 } },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "list_traces" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": ["trace_id"],
+                "properties": { "trace_id": { "type": "string", "minLength": 1 } },
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "operation": { "const": "purge_event" } } },
+          "then": {
+            "properties": {
+              "payload": {
+                "type": "object",
+                "required": ["event_id"],
+                "properties": { "event_id": { "type": "string", "minLength": 1 } },
                 "additionalProperties": true
               }
             }

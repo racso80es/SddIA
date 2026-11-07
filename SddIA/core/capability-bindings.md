@@ -64,14 +64,14 @@ bindings:
     provider_version: ">=1.0.0"
   - capability_id: "eda:event-manager"
     contract: "eda.event_manager"
-    contract_version: "1.0.0"
+    contract_version: "1.1.0"
     contract_schema: "eda.event_manager.v1.schema.json"
     provider: "adapter:redb-event-adapter"
-    provider_version: ">=1.0.0"
+    provider_version: ">=1.1.0"
     roles:
       default:
         provider: "adapter:redb-event-adapter"
-        provider_version: ">=1.0.0"
+        provider_version: ">=1.1.0"
       fallback:
         provider: "adapter:fs-event-adapter"
         provider_version: ">=1.0.0"

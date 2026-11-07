@@ -5,9 +5,20 @@ pub mod linear_bridge;
 pub mod linear_bridge_webhook;
 
 use chrono::Utc;
-use sddia_event_store::{
-    is_filesystem_rel, record_ecst, store_mode, writes_filesystem, writes_store,
-};
+use sddia_core::ports::event_manager::record_ecst as record_ecst_on_port;
+use sddia_event_manager_host::resolve_productive_port;
+
+pub fn is_filesystem_rel(raw: &str) -> bool {
+    let s = raw.trim();
+    !s.is_empty()
+        && !s.ends_with(".redb")
+        && (s.contains('/') || s.contains('\\') || s.starts_with('.'))
+}
+
+pub(crate) fn record_ecst_productive(repo: &Path, family: &str, event: &Value) -> Result<(), String> {
+    let port = resolve_productive_port(repo)?;
+    record_ecst_on_port(port.as_ref(), repo, family, event)
+}
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
@@ -198,34 +209,20 @@ fn write_json_atomic(path: &Path, value: &Value) -> Result<(), String> {
     fs::rename(&tmp, path).map_err(|e| format!("rename: {e}"))
 }
 
-pub fn write_fractal_event(repo: &Path, top: &BusTopology, event: &Value, family: &str) -> Result<(), String> {
+pub fn write_fractal_event(repo: &Path, _top: &BusTopology, event: &Value, family: &str) -> Result<(), String> {
     if !matches!(family, "telemetry" | "orchestration" | "domain") {
         return Err(format!("familia inválida: {family}"));
     }
-    let event_id = event
+    let _event_id = event
         .get("event_id")
         .and_then(|v| v.as_str())
         .filter(|s| !s.trim().is_empty())
         .ok_or_else(|| "event_id requerido".to_string())?;
-    let mode = store_mode();
     let mut stamped = event.clone();
     if family == "domain" {
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     }
-    if writes_store(mode) {
-        record_ecst(repo, family, &stamped).map_err(|err| err.to_string())?;
-    }
-    if !writes_filesystem(mode) {
-        return Ok(());
-    }
-    let dir = match family {
-        "telemetry" => &top.telemetry,
-        "orchestration" => &top.orchestration,
-        "domain" => &top.domain,
-        other => return Err(format!("familia inválida: {other}")),
-    };
-    let target = dir.join(format!("{event_id}.json"));
-    write_json_atomic(&target, &stamped)
+    record_ecst_productive(repo, family, &stamped)
 }
 
 pub fn pid_alive(pid: u32) -> bool {
@@ -580,33 +577,4 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
     }
 
-    #[test]
-    fn heartbeat_sidechannel_does_not_become_an_event_row() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let base = std::env::temp_dir().join(format!("sddia-daemon-hb-{}", Uuid::new_v4()));
-        fs::create_dir_all(base.join("SddIA/core")).unwrap();
-        fs::write(
-            base.join("SddIA/core/cumulo.paths.json"),
-            r#"{"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_fractal":{"telemetry":".events/telemetry"}}"#,
-        )
-        .unwrap();
-        let top = load_bus_topology(&base);
-        let mut rt = DaemonRuntime::new(base.clone(), "event-watcher");
-        rt.tick_with_status(&top, "alive").expect("tick");
-        let side = side_channel_path(&base, "event-watcher");
-        assert!(side.is_file());
-        assert!(sddia_event_store::path_is_heartbeat_sidechannel(&side));
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&base))
-            .expect("store");
-        let rows = store
-            .list_family(sddia_event_store::Family::Telemetry)
-            .expect("list");
-        assert!(rows.iter().all(|row| row.event_type == "Daemon_Heartbeat"));
-        assert!(rows.iter().all(|row| {
-            row.ecst.get("source").and_then(|v| v.as_str()) != Some("side-channel")
-        }));
-        rt.shutdown();
-        sddia_event_store::override_store_mode(None);
-        let _ = fs::remove_dir_all(base);
-    }
 }

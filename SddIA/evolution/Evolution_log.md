@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `6991f71e-d9b0-438e-9499-de6f93a4e0e7` | 2026-11-07 | MAN-33: cutover EventManagerPort Redb — host, runtime_bridge, execute-process, watcher, daemon, qa smoke; contrato 1.1.0. | CANONICO | `SddIA/evolution/6991f71e-d9b0-438e-9499-de6f93a4e0e7.md` |
 | `de0296d5-8963-4f09-ada0-5e92f7d0b808` | 2026-11-06 | accept-pr: stamp ReviewCiGreen con inputs enriquecidos (merge externo / merge_already_done). | CANONICO | `SddIA/evolution/de0296d5-8963-4f09-ada0-5e92f7d0b808.md` |
 | `429f861e-d228-4da2-8a6b-5a2c00b4a184` | 2026-11-06 | MAN-32: eda.event_manager aditivo — contrato, taxonomía, bindings, puerto sddia-core, adaptadores redb/fs/external. | CANONICO | `SddIA/evolution/429f861e-d228-4da2-8a6b-5a2c00b4a184.md` |
 | `2964deff-504d-4ea4-b380-2adc45368198` | 2026-11-06 | Gate warnings Rust: norma rust-warning-gate, RUSTFLAGS CI, .cargo/config, higiene workspace. | CANONICO | `SddIA/evolution/2964deff-504d-4ea4-b380-2adc45368198.md` |

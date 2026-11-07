@@ -281,5 +281,17 @@ pub fn lab_fetch(issue_ref: &str) -> Option<Value> {
     let mut issue = s.issues.get(issue_ref).cloned()?;
     let derived = child_refs_by_parent(issue_ref, &s.issues);
     merge_children_field(&mut issue, &derived);
+    let desc_empty = issue
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|d| d.trim().is_empty())
+        .unwrap_or(true);
+    if desc_empty {
+        let title = issue
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or(issue_ref);
+        issue["description"] = json!(format!("---\n---\n\n# {title}\n"));
+    }
     Some(issue)
 }

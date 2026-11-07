@@ -70,13 +70,8 @@ pub(crate) fn enrich_inputs_for_lifecycle_stamp(repo: &Path, inputs: &Value, sou
 /// ADU-CA7: Presented histórico en pending + processed + dead-letter;
 /// en modo store también consulta `events.redb` (Family::Domain).
 pub(crate) fn scan_presented_for_branch(repo: &Path, branch: &str) -> bool {
-    if sddia_event_store::writes_store(sddia_event_store::store_mode())
-        && tracker_pbi_meta::presented_in_store(repo, branch)
-    {
+    if tracker_pbi_meta::presented_in_store(repo, branch) {
         return true;
-    }
-    if !sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
-        return false;
     }
     for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
         let dir = repo.join(rel);
@@ -755,7 +750,7 @@ mod tests {
         let repo = tmp.path();
         let branch = "fix/eda-redb-lock";
         sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = sddia_event_store::runtime_db_path(repo);
+        let db = crate::engine::eda_port::runtime_db_path(repo);
         if let Some(parent) = db.parent() {
             fs::create_dir_all(parent).unwrap();
         }

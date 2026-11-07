@@ -1882,9 +1882,10 @@ dependencies = [
 name = "event-watcher"
 version = "0.1.0"
 dependencies = [
+ "sddia-core",
  "sddia-daemon-runtime",
  "sddia-eda-catalog",
- "sddia-event-store",
+ "sddia-event-manager-host",
  "serde_json",
 ]
 
@@ -1899,10 +1900,12 @@ dependencies = [
  "libc",
  "regex",
  "repo-retention-purger",
+ "sddia-core",
  "sddia-core-memory",
  "sddia-daemon-runtime",
  "sddia-ecosystem-health",
  "sddia-eda-catalog",
+ "sddia-event-manager-host",
  "sddia-event-store",
  "sddia-infrastructure-lancedb-evolution",
  "sddia-infrastructure-lancedb-preferences",
@@ -5248,8 +5251,9 @@ dependencies = [
  "hex",
  "hmac",
  "libc",
+ "sddia-core",
  "sddia-eda-catalog",
- "sddia-event-store",
+ "sddia-event-manager-host",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -5273,8 +5277,16 @@ dependencies = [
 name = "sddia-eda-catalog"
 version = "0.1.0"
 dependencies = [
- "sddia-event-store",
  "serde_json",
+]
+
+[[package]]
+name = "sddia-event-manager-host"
+version = "0.1.0"
+dependencies = [
+ "sddia-core",
+ "sddia-infrastructure-redb-event",
+ "tempfile",
 ]
 
 [[package]]
@@ -5386,8 +5398,9 @@ dependencies = [
  "chrono",
  "execute-process",
  "regex",
+ "sddia-core",
  "sddia-eda-catalog",
- "sddia-event-store",
+ "sddia-event-manager-host",
  "sddia-evolution-register",
  "serde",
  "serde_json",

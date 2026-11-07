@@ -5,9 +5,10 @@ use std::io::{BufRead, BufWriter, Write};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sddia_core::ports::event_manager::{
-    AppendTraceRequest, ClaimPendingRequest, EventManagerPort, HandshakeVersionRequest,
-    InMemoryEventManagerMock, MoveToDlqRequest, PublishEcstRequest, RecordDeliveryRequest,
-    ReplayDlqRequest,
+    AppendTraceRequest, ClaimPendingRequest, EventManagerPort, GetEventRequest,
+    HandshakeVersionRequest, InMemoryEventManagerMock, ListDlqRequest, ListPendingRequest,
+    ListTracesRequest, MoveToDlqRequest, PublishEcstRequest, PurgeEventRequest,
+    RecordDeliveryRequest, ReplayDlqRequest,
 };
 
 #[derive(Debug, Deserialize)]
@@ -98,6 +99,41 @@ fn main() {
             },
             "append_trace" => match serde_json::from_value::<AppendTraceRequest>(req.payload) {
                 Ok(p) => match mock.append_trace(p) {
+                    Ok(()) => ok_line(None),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "get_event" => match serde_json::from_value::<GetEventRequest>(req.payload) {
+                Ok(p) => match mock.get_event(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "list_pending" => match serde_json::from_value::<ListPendingRequest>(req.payload) {
+                Ok(p) => match mock.list_pending(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "list_dlq" => match serde_json::from_value::<ListDlqRequest>(req.payload) {
+                Ok(p) => match mock.list_dlq(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "list_traces" => match serde_json::from_value::<ListTracesRequest>(req.payload) {
+                Ok(p) => match mock.list_traces(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "purge_event" => match serde_json::from_value::<PurgeEventRequest>(req.payload) {
+                Ok(p) => match mock.purge_event(p) {
                     Ok(()) => ok_line(None),
                     Err(e) => err_line(&e.to_string()),
                 },

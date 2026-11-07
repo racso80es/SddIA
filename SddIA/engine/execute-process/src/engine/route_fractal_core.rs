@@ -13,7 +13,7 @@ use super::memory_evolution_ingest_core::ingest_domain_event_file;
 use super::radamanto_batch_core::process_telemetry_file;
 use super::route_domain_core::dispatch_subscriber;
 use super::telemetry_compliance_core::audit_telemetry_compliance;
-use sddia_event_store::{load_dispatched_event, store_mode, writes_store};
+use crate::engine::eda_port;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
@@ -259,12 +259,12 @@ fn route_fractal_event(
                 });
             }
         }
-    } else if writes_store(store_mode()) {
+    } else if true {
         let event_id = event_path
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("");
-        match load_dispatched_event(repo, event_id, &event_path) {
+        match eda_port::load_dispatched(repo, event_id, &event_path) {
             Ok(Some(v)) => v,
             Ok(None) => {
                 return json!({
