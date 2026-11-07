@@ -85,6 +85,15 @@ pub fn load_ecst_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, Strin
 
 /// Carga para handlers con tracker remoto: recarga desde bus si el inline no coincide.
 pub fn load_ecst_for_handler(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    if inputs.get("event").is_some_and(|v| v.is_object()) {
+        return load_ecst_from_inputs(repo, inputs);
+    }
+    if let Some(rel) = str_field(inputs, "event_file_path") {
+        let path = resolve_logical_path(repo, &rel);
+        if path.is_file() {
+            return load_ecst_from_inputs(repo, inputs);
+        }
+    }
     eda_port::install_productive_port(repo)?;
     let event = load_ecst_from_inputs(repo, inputs)?;
     if verify_ecst_matches_bus(repo, &event).is_ok() {

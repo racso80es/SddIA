@@ -312,6 +312,7 @@ fn lab_fetch_issue_fixture(issue_ref: &str) -> Value {
             "id": format!("issue-uuid-{issue_ref}"),
             "identifier": issue_ref,
             "title": format!("lab mock {issue_ref}"),
+            "description": format!("---\n---\n\n# lab mock {issue_ref}\n"),
             "state": state,
             "priority": 0,
             "labels": labels,
