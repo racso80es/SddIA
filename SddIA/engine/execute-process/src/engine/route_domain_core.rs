@@ -3954,12 +3954,12 @@ mod blocking_tests {
             .as_str()
             .unwrap()
             .starts_with("lab-sim-"));
-        assert!(!crate::engine::eda_port::eda_port::runtime_db_path(fs_tmp.path()).exists());
+        assert!(!crate::engine::eda_port::runtime_db_path(fs_tmp.path()).exists());
 
         sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
-        let db = crate::engine::eda_port::eda_port::runtime_db_path(repo);
+        let db = crate::engine::eda_port::runtime_db_path(repo);
         fs::create_dir_all(db.parent().unwrap()).unwrap();
         let event_id = "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee";
         {
@@ -4561,7 +4561,7 @@ mod tier_dispatch {
 #[cfg(test)]
 mod aut52_route_redb {
     use super::is_runtime_db_event_path;
-    use super::runtime_db_path;
+    use crate::engine::eda_port;
     use serde_json::json;
     use std::fs;
     use std::path::Path;

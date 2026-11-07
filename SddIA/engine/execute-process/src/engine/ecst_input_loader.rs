@@ -14,6 +14,7 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
 }
 
 fn load_from_store(repo: &Path, event_id: &str, logical_path: &Path) -> Result<Value, String> {
+    eda_port::install_productive_port(repo)?;
     eda_port::load_dispatched(repo, event_id, logical_path)?
         .ok_or_else(|| format!("event not found in store: {event_id}"))
 }
@@ -84,6 +85,7 @@ pub fn load_ecst_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, Strin
 
 /// Carga para handlers con tracker remoto: recarga desde bus si el inline no coincide.
 pub fn load_ecst_for_handler(repo: &Path, inputs: &Value) -> Result<Value, String> {
+    eda_port::install_productive_port(repo)?;
     let event = load_ecst_from_inputs(repo, inputs)?;
     if verify_ecst_matches_bus(repo, &event).is_ok() {
         return Ok(event);
@@ -97,6 +99,7 @@ pub fn load_ecst_for_handler(repo: &Path, inputs: &Value) -> Result<Value, Strin
 
 /// Antes de efecto remoto: el ECST debe existir en bus y coincidir.
 pub fn verify_ecst_matches_bus(repo: &Path, event: &Value) -> Result<(), String> {
+    eda_port::install_productive_port(repo)?;
     let event_id = str_field(event, "event_id").ok_or("event_id ausente")?;
     let synthetic = repo
         .join(".events/pending")

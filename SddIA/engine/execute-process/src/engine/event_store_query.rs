@@ -76,7 +76,7 @@ fn ok(data: Value) -> (i32, Value) {
     )
 }
 
-fn query_events(_repo: &Path, inputs: &Value) -> (i32, Value) {
+fn query_events(repo: &Path, inputs: &Value) -> (i32, Value) {
     let event_type = inputs
         .get("event_type")
         .and_then(|v| v.as_str())
@@ -88,7 +88,7 @@ fn query_events(_repo: &Path, inputs: &Value) -> (i32, Value) {
         .unwrap_or(50)
         .min(5000) as u32;
     let _family = inputs.get("family").and_then(|v| v.as_str());
-    let port = match eda_port::port_arc() {
+    let port = match eda_port::port_arc(repo) {
         Ok(p) => p,
         Err(e) => return fail(e),
     };
@@ -119,8 +119,7 @@ fn query_events(_repo: &Path, inputs: &Value) -> (i32, Value) {
 }
 
 fn inspect_dead_letter(repo: &Path) -> (i32, Value) {
-    let _ = repo;
-    let port = match eda_port::port_arc() {
+    let port = match eda_port::port_arc(repo) {
         Ok(p) => p,
         Err(e) => return fail(e),
     };
@@ -150,8 +149,7 @@ fn replay_dead_letter(repo: &Path, inputs: &Value) -> (i32, Value) {
     else {
         return fail("event_id requerido");
     };
-    let _ = repo;
-    let port = match eda_port::port_arc() {
+    let port = match eda_port::port_arc(repo) {
         Ok(p) => p,
         Err(e) => return fail(e),
     };

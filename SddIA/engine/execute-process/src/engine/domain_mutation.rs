@@ -265,7 +265,6 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
 mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
-    use std::fs;
     use uuid::Uuid;
 
     #[test]

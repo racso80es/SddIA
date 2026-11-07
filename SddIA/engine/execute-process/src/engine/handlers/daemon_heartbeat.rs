@@ -916,7 +916,7 @@ mod tests {
             !repo.join(".events/pending").join(format!("{eid}.json")).is_file(),
             "redb no deja JSON pending"
         );
-        let rows = crate::engine::eda_port::load_domain_ecsts(repo, &[]).unwrap();
+        let rows = crate::engine::eda_port::load_domain_ecsts(repo, 64).unwrap();
         assert!(rows.iter().any(|e| e["event_id"] == eid));
         sddia_event_store::override_store_mode(None);
     }

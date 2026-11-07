@@ -36,3 +36,5 @@ libc = "0.2"
 [dev-dependencies]
 tempfile = "3.10"
 sddia-daemon-runtime = { path = "../../sddia-daemon-runtime" }
+# Puente temporal: suites legacy aún no migradas a EventManagerPort (MAN-33 T5).
+sddia-event-store = { path = "../../sddia-event-store" }

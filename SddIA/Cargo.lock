@@ -1906,6 +1906,7 @@ dependencies = [
  "sddia-ecosystem-health",
  "sddia-eda-catalog",
  "sddia-event-manager-host",
+ "sddia-event-store",
  "sddia-infrastructure-lancedb-evolution",
  "sddia-infrastructure-lancedb-preferences",
  "sddia-io",

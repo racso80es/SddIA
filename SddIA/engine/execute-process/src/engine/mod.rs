@@ -131,7 +131,6 @@ pub fn run_process(
     process_name: &str,
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
-    eda_port::install_productive_port(repo)?;
     let (canonical, process_def, phases) = load_process_def(repo, process_name)?;
 
     if let Err(deny) =
@@ -363,7 +362,7 @@ pub fn run_process(
         return handlers::tracker_sync_replay::run(repo, process_inputs);
     }
 
-    if canonical == "tracker-stamp" {
+    if canonical == "tracker-stamp" || process_name == "tracker-stamp" {
         return handlers::tracker_stamp::run(repo, process_inputs);
     }
 

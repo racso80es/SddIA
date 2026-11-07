@@ -1164,7 +1164,69 @@ pub(crate) fn seal_forged_backlog_at_origin(
     Ok(())
 }
 
+fn stamp_envelope_from_event(repo: &Path, event: &Value) -> Result<OrchestratorEnvelope, String> {
+    match stamp_event(repo, event) {
+        Ok((stamped, note)) => {
+            let (delivery_status, exit_code) =
+                classify_stamp_delivery(stamped, note.as_deref(), event);
+            let ok = delivery_status == "success"
+                || (exit_code == 0 && delivery_status.starts_with("skipped"));
+            Ok(OrchestratorEnvelope {
+                success: ok,
+                status_code: exit_code,
+                data: Some(json!({
+                    "stamped": stamped,
+                    "note": note,
+                    "delivery_status": delivery_status,
+                })),
+                error: note.as_ref().filter(|n| n.starts_with("warn:")).cloned(),
+                execution_report: Some(json!({
+                    "phases": [{
+                        "phase_name": "Sello de ciclo",
+                        "status": if ok { "executed" } else if delivery_status.starts_with("skipped") { "skipped" } else { "failed" },
+                        "handler": "tracker-stamp",
+                    }]
+                })),
+                exit_code,
+            })
+        }
+        Err(warn) if warn.starts_with("warn:") => Ok(OrchestratorEnvelope {
+            success: false,
+            status_code: 1,
+            data: Some(json!({ "stamped": false, "delivery_status": "failed", "note": warn })),
+            error: Some(warn),
+            execution_report: None,
+            exit_code: 1,
+        }),
+        Err(e) => Err(e),
+    }
+}
+
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
+    if std::env::var_os("SDDIA_DEBUG_TRACKER_STAMP").is_some() {
+        eprintln!(
+            "tracker-stamp inputs keys={:?} et={:?}",
+            process_inputs
+                .as_object()
+                .map(|m| m.keys().collect::<Vec<_>>()),
+            process_inputs.pointer("/event/event_type")
+        );
+    }
+    if let Some(inline) = process_inputs.get("event").filter(|v| v.is_object()) {
+        let et = inline
+            .get("event_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if matches!(
+            et,
+            "Work_Initiated"
+                | "Validation_Started"
+                | "PullRequest_Presented"
+                | "PullRequest_Merged"
+        ) {
+            return stamp_envelope_from_event(repo, inline);
+        }
+    }
     let event = load_event(repo, process_inputs)?;
     if let Err(reason) = super::super::ecst_input_loader::verify_ecst_matches_bus(repo, &event) {
         let delivery_status = "failed-bus-mismatch".to_string();
@@ -1191,7 +1253,8 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         Ok((stamped, note)) => {
             let (delivery_status, exit_code) =
                 classify_stamp_delivery(stamped, note.as_deref(), &event);
-            let ok = delivery_status == "success";
+            let ok = delivery_status == "success"
+                || (exit_code == 0 && delivery_status.starts_with("skipped"));
             Ok(OrchestratorEnvelope {
                 success: ok,
                 status_code: exit_code,

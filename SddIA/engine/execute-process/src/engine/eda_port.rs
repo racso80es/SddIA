@@ -43,7 +43,13 @@ pub fn clear_port() {
     PORT.with(|slot| *slot.borrow_mut() = None);
 }
 
-fn with_port<R>(f: impl FnOnce(&dyn EventManagerPort) -> Result<R, String>) -> Result<R, String> {
+fn with_port<R>(
+    repo: &Path,
+    f: impl FnOnce(&dyn EventManagerPort) -> Result<R, String>,
+) -> Result<R, String> {
+    if PORT.with(|slot| slot.borrow().is_none()) {
+        install_productive_port(repo)?;
+    }
     PORT.with(|slot| {
         let port = slot
             .borrow()
@@ -54,11 +60,11 @@ fn with_port<R>(f: impl FnOnce(&dyn EventManagerPort) -> Result<R, String>) -> R
 }
 
 pub fn publish_ecst(repo: &Path, family: &str, event: &Value) -> Result<PublishSeal, String> {
-    with_port(|port| publish_ecst_on_port(port, repo, family, event))
+    with_port(repo, |port| publish_ecst_on_port(port, repo, family, event))
 }
 
 pub fn record_ecst(repo: &Path, family: &str, event: &Value) -> Result<(), String> {
-    with_port(|port| record_ecst_on_port(port, repo, family, event))
+    with_port(repo, |port| record_ecst_on_port(port, repo, family, event))
 }
 
 pub fn load_dispatched(
@@ -66,28 +72,23 @@ pub fn load_dispatched(
     event_id: &str,
     logical: &Path,
 ) -> Result<Option<Value>, String> {
-    let _ = repo;
-    with_port(|port| load_dispatched_event(port, event_id, logical))
+    with_port(repo, |port| load_dispatched_event(port, event_id, logical))
 }
 
 pub fn append_progress(repo: &Path, correlation_id: &str, frame: &Value) -> Result<u64, String> {
-    let _ = repo;
-    with_port(|port| append_progress_monotonic(port, correlation_id, frame))
+    with_port(repo, |port| append_progress_monotonic(port, correlation_id, frame))
 }
 
 pub fn load_domain_ecsts(repo: &Path, limit: u32) -> Result<Vec<Value>, String> {
-    let _ = repo;
-    with_port(|port| load_domain_ecsts_on_port(port, limit))
+    with_port(repo, |port| load_domain_ecsts_on_port(port, limit))
 }
 
 pub fn record_delivery_ack(repo: &Path, event_id: &str, delivery_id: &str) -> Result<(), String> {
-    let _ = repo;
-    with_port(|port| record_delivery_ack_on_port(port, event_id, delivery_id))
+    with_port(repo, |port| record_delivery_ack_on_port(port, event_id, delivery_id))
 }
 
 pub fn move_to_dlq(repo: &Path, event_id: &str, reason: &str) -> Result<(), String> {
-    let _ = repo;
-    with_port(|port| {
+    with_port(repo, |port| {
         port.move_to_dlq(sddia_core::ports::event_manager::MoveToDlqRequest {
             event_id: event_id.to_string(),
             reason: reason.to_string(),
@@ -97,8 +98,7 @@ pub fn move_to_dlq(repo: &Path, event_id: &str, reason: &str) -> Result<(), Stri
 }
 
 pub fn purge_event(repo: &Path, event_id: &str) -> Result<(), String> {
-    let _ = repo;
-    with_port(|port| {
+    with_port(repo, |port| {
         port.purge_event(sddia_core::ports::event_manager::PurgeEventRequest {
             event_id: event_id.to_string(),
         })
@@ -106,7 +106,10 @@ pub fn purge_event(repo: &Path, event_id: &str) -> Result<(), String> {
     })
 }
 
-pub fn port_arc() -> Result<Arc<dyn EventManagerPort>, String> {
+pub fn port_arc(repo: &Path) -> Result<Arc<dyn EventManagerPort>, String> {
+    if PORT.with(|slot| slot.borrow().is_none()) {
+        install_productive_port(repo)?;
+    }
     PORT.with(|slot| {
         slot.borrow()
             .clone()
