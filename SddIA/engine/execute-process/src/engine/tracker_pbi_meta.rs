@@ -185,10 +185,8 @@ fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {
 /// `event_id` del `PullRequest_Presented` más reciente para `branch` (pending, processed, store).
 pub fn presented_event_id_for_branch(repo: &Path, branch: &str) -> Option<String> {
     let mut best: Option<(String, String)> = None;
-    if false {
-        for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
-            presented_ids_in_dir(&repo.join(rel), branch, &mut best);
-        }
+    for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
+        presented_ids_in_dir(&repo.join(rel), branch, &mut best);
     }
     presented_ids_in_store(repo, branch, &mut best);
     best.map(|(_, id)| id)
