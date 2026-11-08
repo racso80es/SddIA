@@ -118,8 +118,7 @@ fn probe_bus_topology(repo: &Path) -> ProbeResult {
                 };
             }
         }
-        if let Err(e) = eda_port::install_productive_port(repo) {
-            // REDB-CA5: contención agotada ≠ fractura de topología.
+        if let Err(e) = eda_port::probe_productive_handshake(repo) {
             if e.contains("Database already open") || e.contains("Cannot acquire lock") {
                 return ProbeResult {
                     id: "bus.topology",

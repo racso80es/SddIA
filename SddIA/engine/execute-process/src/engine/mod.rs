@@ -133,7 +133,6 @@ pub fn run_process(
     process_name: &str,
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
-    eda_port::bootstrap_composition_root(repo)?;
     let (canonical, process_def, phases) = load_process_def(repo, process_name)?;
 
     if let Err(deny) =

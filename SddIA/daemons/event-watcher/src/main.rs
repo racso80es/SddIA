@@ -2,9 +2,9 @@ use sddia_daemon_runtime::{
     ensure_bus_dirs, find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
 };
 use sddia_core::ports::event_manager::{
-    ClaimPendingRequest, DeliveryStatus, EventManagerPort, RecordDeliveryRequest,
+    ClaimPendingRequest, DeliveryStatus, RecordDeliveryRequest,
 };
-use sddia_event_manager_host::resolve_productive_port;
+use sddia_event_manager_host::with_productive_port;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -274,7 +274,7 @@ fn tick_probes(repo: &Path, clock: &mut ProbeClock) {
 }
 
 /// Ids con entrega `pending`. No lee el ECST. Un fichero pending ya presente lo deja al barrido.
-fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook, port: Arc<dyn EventManagerPort>) {
+fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
     if let Ok(b) = book.lock() {
         if routes_block_store_claim(&b) {
             eprintln!(
@@ -285,12 +285,16 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook, port: 
         }
     }
     let mut stats = ClaimTickStats::default();
-    let claimed = match port.claim_pending(ClaimPendingRequest {
-        lease_owner: "event-watcher".into(),
-        limit: MAX_IN_FLIGHT_ROUTES as u32,
-        lease_ttl_ms: Some(30_000),
+    let claimed = match with_productive_port(repo, "claim_pending", |port| {
+        port.claim_pending(ClaimPendingRequest {
+            lease_owner: "event-watcher".into(),
+            limit: MAX_IN_FLIGHT_ROUTES as u32,
+            lease_ttl_ms: Some(30_000),
+        })
+        .map(|r| r.events)
+        .map_err(|e| e.to_string())
     }) {
-        Ok(r) => r.events,
+        Ok(events) => events,
         Err(err) => {
             stats.open_failed = 1;
             log_claim_tick("redb", stats);
@@ -320,7 +324,6 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook, port: 
         METRIC_ROUTES_CLAIMED.fetch_add(1, Ordering::Relaxed);
         let repo_c = repo.to_path_buf();
         let book_c = Arc::clone(book);
-        let port_c = Arc::clone(&port);
         let event_id_log = uuid_c.clone();
         thread::spawn(move || {
             println!(
@@ -334,11 +337,14 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook, port: 
                 METRIC_ROUTES_FAIL.fetch_add(1, Ordering::Relaxed);
                 DeliveryStatus::Nack
             };
-            let _ = port_c.record_delivery(RecordDeliveryRequest {
-                event_id: uuid_c.clone(),
-                delivery_id: uuid_c.clone(),
-                status: ack,
-                attempt: None,
+            let _ = with_productive_port(&repo_c, "record_delivery", |port| {
+                port.record_delivery(RecordDeliveryRequest {
+                    event_id: uuid_c.clone(),
+                    delivery_id: uuid_c.clone(),
+                    status: ack,
+                    attempt: None,
+                })
+                .map_err(|e| e.to_string())
             });
             if let Ok(mut b) = book_c.lock() {
                 apply_route_outcome_fractal(
@@ -354,7 +360,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook, port: 
     }
 }
 
-fn claim_store_fractal(_repo: &Path, _book: &SharedBook, _port: Arc<dyn EventManagerPort>) {}
+fn claim_store_fractal(_repo: &Path, _book: &SharedBook) {}
 
 fn invoke_route_process(repo: &Path, rel_path: &str, process_name: &str) -> Output {
     let runner = execute_process_bin(repo);
@@ -626,7 +632,6 @@ fn apply_route_outcome_fractal(
 }
 
 fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
-    let port = Arc::new(resolve_productive_port(&repo).map_err(|e| e.to_string())?);
     let top = load_bus_topology(&repo);
     ensure_bus_dirs(&top)?;
     let mut centinela = DaemonRuntime::new(repo.clone(), "event-watcher");
@@ -803,8 +808,8 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 });
             }
         }
-        claim_store_pending(&repo, &top, &book, Arc::clone(&port));
-        claim_store_fractal(&repo, &book, Arc::clone(&port));
+        claim_store_pending(&repo, &top, &book);
+        claim_store_fractal(&repo, &book);
         {
             let mut rt = shared
                 .lock()
