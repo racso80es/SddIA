@@ -1,13 +1,13 @@
 ---
+
 feature_name: man-38-redb-port-lock
 process: bug-fix
 phase: implementation
 tracker_ref: MAN-38
 persist_ref: docs/fixes/man-38-redb-port-lock
 branch_name: fix/man-38-redb-port-lock
-execution_id: "0c5d6ea9-b949-4b2e-859f-6f225504cdf3"
+execution_id: "be63c70f-633c-452e-aaf1-8ffa645fd54b"
 ---
-
 # Implementación — man-38-redb-port-lock
 
 ## Touchpoints (T1–T3)

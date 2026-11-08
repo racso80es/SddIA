@@ -1,13 +1,13 @@
 ---
+
 feature_name: man-38-redb-port-lock
 created: "2026-11-08"
 process: bug-fix
 branch_name: fix/man-38-redb-port-lock
 persist_ref: /home/racso/Proyectos/SddIA/docs/fixes/man-38-redb-port-lock
 pbi_ref: MAN-38
-execution_id: "0c5d6ea9-b949-4b2e-859f-6f225504cdf3"
+execution_id: "be63c70f-633c-452e-aaf1-8ffa645fd54b"
 ---
-
 # Objetivos — man-38-redb-port-lock
 
 ## Misión

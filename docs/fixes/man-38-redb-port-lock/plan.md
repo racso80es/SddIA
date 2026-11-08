@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-38-redb-port-lock
 created: "2026-11-08"
 process: bug-fix
@@ -13,15 +14,14 @@ phases:
     title: Auditoría Arc productivo + excepciones documentadas
   - id: T5
     title: Docs lifetime + telemetría + verificación CA
-execution_id: "0c5d6ea9-b949-4b2e-859f-6f225504cdf3"
 pbi_ref: MAN-38
 document_id: PBI-90397f23
 branch_name: fix/man-38-redb-port-lock
 persist_ref: docs/fixes/man-38-redb-port-lock
 target_executor: tekton
 status: implementation-done
+execution_id: "be63c70f-633c-452e-aaf1-8ffa645fd54b"
 ---
-
 # Plan
 
 Descomposición de implementación (no blueprint de proceso). Un commit por tarea vía `skill:git-manager`.

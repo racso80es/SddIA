@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-38-redb-port-lock
 created: "2026-11-08"
 process: bug-fix
@@ -10,15 +11,14 @@ pbi_ref: MAN-38
 document_id: PBI-90397f23
 tracker_ref: MAN-38
 historia_ref: MAN-35
-execution_id: "0c5d6ea9-b949-4b2e-859f-6f225504cdf3"
 agent: dedalo
 phase: diseno-fix
 status: design-ready
 norm_ref: features-documentation-pattern@1.3.1
 related_norma: docs/features/event-manager-port-cutover/norma-redb-exclusiva.md
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-38.jsonl"
+execution_id: "be63c70f-633c-452e-aaf1-8ffa645fd54b"
 ---
-
 # Spec — man-38-redb-port-lock (MAN-38)
 
 Entrada: `objectives.md` + PBI refinado `PBI-90397f23` / canal **MAN-38** (`historia_ref` **MAN-35**).

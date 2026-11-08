@@ -1,10 +1,11 @@
 ---
+
 feature_name: man-38-redb-port-lock
 process: bug-fix
 persist_ref: docs/fixes/man-38-redb-port-lock
 tracker_ref: MAN-38
+execution_id: "be63c70f-633c-452e-aaf1-8ffa645fd54b"
 ---
-
 # Ownership — EventManagerPort productivo (MAN-38)
 
 ## Quién abre Redb
