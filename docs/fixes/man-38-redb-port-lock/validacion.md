@@ -1,7 +1,7 @@
 ---
 feature_name: man-38-redb-port-lock
-created: "2026-11-08"
-updated: "2026-11-08T20:25:00Z"
+created: 2026-11-08
+updated: 2026-11-08T20:25:00Z
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -88,54 +88,55 @@ checks:
   branch: APTO
   git_changes: APTO
 git_changes:
-  - SddIA/sddia-event-manager-host/
-  - SddIA/engine/execute-process/
-  - SddIA/daemons/event-watcher/
-  - SddIA/sddia-daemon-runtime/
-  - SddIA/interfaces/kalma2-bridge/
-  - SddIA/tools/event-bus-audit/
-  - SddIA/tools/sddia-qa/
-  - SddIA/tools/repo-retention-purger/
-  - SddIA/infrastructure/adapters/lancedb_thought_repo/
-  - SddIA/evolution/7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038.md
-  - SddIA/evolution/Evolution_log.md
-  - docs/fixes/man-38-redb-port-lock/
+- SddIA/sddia-event-manager-host/
+- SddIA/engine/execute-process/
+- SddIA/daemons/event-watcher/
+- SddIA/sddia-daemon-runtime/
+- SddIA/interfaces/kalma2-bridge/
+- SddIA/tools/event-bus-audit/
+- SddIA/tools/sddia-qa/
+- SddIA/tools/repo-retention-purger/
+- SddIA/infrastructure/adapters/lancedb_thought_repo/
+- SddIA/evolution/7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038.md
+- SddIA/evolution/Evolution_log.md
+- docs/fixes/man-38-redb-port-lock/
 blocking_findings: []
 non_blocking_findings:
-  - DOC_CLARIFY
-  - GIT_EVIDENCE_SESSION_SHELL
-  - WSPACE_MATERIALIZED
-  - F3_TECH_GATE
-  - MERGE_ALREADY_OBSERVED
-  - ACCEPT_PR_HANDOFF
-  - REVOKED_ENTITY_ALERT_BUG_FIX
-  - REVOKED_ENTITY_ALERT_DCC
-  - REVOKED_ENTITY_ALERT_FEATURE
-  - REVOKED_ENTITY_ALERT_ENTITY_MANAGER
-  - REVOKED_ENTITY_ALERT_EVENT_CREATOR
-  - REVOKED_ENTITY_ALERT_REFACTORIZATION
+- DOC_CLARIFY
+- GIT_EVIDENCE_SESSION_SHELL
+- WSPACE_MATERIALIZED
+- F3_TECH_GATE
+- MERGE_ALREADY_OBSERVED
+- ACCEPT_PR_HANDOFF
+- REVOKED_ENTITY_ALERT_BUG_FIX
+- REVOKED_ENTITY_ALERT_DCC
+- REVOKED_ENTITY_ALERT_FEATURE
+- REVOKED_ENTITY_ALERT_ENTITY_MANAGER
+- REVOKED_ENTITY_ALERT_EVENT_CREATOR
+- REVOKED_ENTITY_ALERT_REFACTORIZATION
 situational_notes:
-  - Fase Veredicto y bloqueo · CID 82775d3f-1c3f-4335-8c3d-f11e09df5d6a · exec be63c70f-633c-452e-aaf1-8ffa645fd54b
-  - 'Evidence Bridge machine/session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)'
-  - Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (cascada + touchpoints + evolution)
-  - persist_ref inject docs/fixes/man-38-redb-port-lock · cascada bug-fix objectives/spec/plan/implementation/execution + port-lifetime.md
-  - Workspace PPR be63c70f… no materializado — WSPACE_MATERIALIZED NO_APTO no bloqueante; handoff machine presente
-  - F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — frontmatter YAML + artefactos base + evolution 7b8e9f0a-… OK
-  - F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md)
-  - F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent (rehab AUT-62)
-  - DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix
-  - 'CODE_TOUCHPOINT_PRESENT APTO — with_productive_port + open_contention (host) · eda_port scoped · event-watcher claim/ACK scoped · test with_productive_port_drops_adapter_after_op'
-  - Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO
-  - 'tracker.provider: linear · 0 hits MAN-38 / PBI-90397f23 bajo docs/todos/** · pending/ vacío · pbi_archived false'
-  - 'BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/fix/man-38-redb-port-lock @ 07fb8779… (FS Read; no gitStdout)'
-  - 'Sello diff DCC preservado (validated_* / diff_digest); head_fs 07fb8779… ≠ validated_head 883c764f… — residual no inventado'
-  - accept_pr_handoff pending — MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
+- Fase Veredicto y bloqueo · CID 82775d3f-1c3f-4335-8c3d-f11e09df5d6a · exec be63c70f-633c-452e-aaf1-8ffa645fd54b
+- 'Evidence Bridge machine/session: source=native_state · notes=idempotent-hit · TECH/GIT APTO (copia; sin stdout inventado)'
+- Shell ./sddia-run.sh --tool git-manager → Rejected; git_changes = path-assert FS (cascada + touchpoints + evolution)
+- persist_ref inject docs/fixes/man-38-redb-port-lock · cascada bug-fix objectives/spec/plan/implementation/execution + port-lifetime.md
+- Workspace PPR be63c70f… no materializado — WSPACE_MATERIALIZED NO_APTO no bloqueante; handoff machine presente
+- F2 heredado PASS_F2_DOC (Triaje documental mismo CID) — frontmatter YAML + artefactos base + evolution 7b8e9f0a-… OK
+- F3_TECH_GATE NO_APTO — Triaje técnico no materializado este CID; no bloquea (proxy TECH_FORMAL APTO + execution.md)
+- F4_RBAC_GATE APTO — .SddIA/cerbero/revoked_entities.json · pull-request-review ∉ revoked ni permanent (rehab AUT-62)
+- DOC_CLARIFY NO_APTO — clarify.md ausente; no bloqueante en cascada bug-fix
+- CODE_TOUCHPOINT_PRESENT APTO — with_productive_port + open_contention (host) · eda_port scoped · event-watcher claim/ACK scoped · test with_productive_port_drops_adapter_after_op
+- Argos 0 writes docs/todos/** esta fase → RBAC_AUTHORING_KM_POLICY APTO
+- 'tracker.provider: linear · 0 hits MAN-38 / PBI-90397f23 bajo docs/todos/** · pending/ vacío · pbi_archived false'
+- 'BRANCH_WORKTREE_SYNC APTO: .git/HEAD → refs/heads/fix/man-38-redb-port-lock @ 07fb8779… (FS Read; no gitStdout)'
+- Sello diff DCC preservado (validated_* / diff_digest); head_fs 07fb8779… ≠ validated_head 883c764f… — residual no inventado
+- accept_pr_handoff pending — MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
 validated_base_sha: ee7a54f8c88bd951b88230460e8ca0b4687282c3
-validated_head_sha: 883c764f7fec51ec43ac2c6fa9d95fce4b9f853d
-validated_tree_sha: 53d5f18dfecd1bb30dcfa21edb95bbf376bc5a09
-diff_digest: sha256:aeff2f2f1ae5f9a43768d93c26304691e15bfe313e643cc1afa8d6a3a2c0a264
-execution_id: "be63c70f-633c-452e-aaf1-8ffa645fd54b"
+validated_head_sha: 738de2e787679b3e2d9ee55105285e3c8937b65c
+validated_tree_sha: 3becc3249df2a1da1bd2f7a4149a6b6fc9e8d94b
+diff_digest: sha256:688ecc4d23c088d26f1bd07063411bc15b2965d9c44eb399b83035a23ab283bf
+execution_id: be63c70f-633c-452e-aaf1-8ffa645fd54b
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
