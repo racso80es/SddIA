@@ -25,6 +25,14 @@ agent: tekton
 - `execute-process scoped_tests`: 2 passed
 - `event-watcher`: compila; 0 tests en bin
 
-## Pendiente operador
+## Evolution
 
-- PR único + Argos/`validacion.md` sellado + `delivery-close-cycle` + Linear MAN-38 Done.
+`sddia-qa evolution-register` → `7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038`.
+
+## Cierre
+
+`delivery-close-cycle` `execution_id` `2b48330d-5d8a-4dd6-86a2-bb900e09f405`. PR https://github.com/racso80es/SddIA/pull/447. Bloqueo inicial `EVOL_MATERIAL_UNREGISTERED` (corregido evolution alta). Gate QA atestación pendiente reintento DCC.
+
+## Pendiente
+
+Argos veredicto final + Linear MAN-38 Done tras merge.

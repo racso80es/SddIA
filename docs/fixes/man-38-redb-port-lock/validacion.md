@@ -15,6 +15,7 @@ pbi_archived: false
 approval_status: pendiente_argos
 verdict: pendiente_argos
 delivery_state: in_progress
+pr_url: https://github.com/racso80es/SddIA/pull/447
 validated_base_sha: ee7a54f8c88bd951b88230460e8ca0b4687282c3
 validated_head_sha: 0224cfdbf0c08b7bd26275d8e2eba3f5b9f89f86
 validated_tree_sha: 9a08f4e82328e34726d65f73c8bf2d0088133564
