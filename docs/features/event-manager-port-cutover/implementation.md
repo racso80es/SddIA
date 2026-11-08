@@ -14,7 +14,7 @@ status: in-progress
 | Fase | Estado | Notas |
 |------|--------|-------|
 | T0 | hecho | `norma-redb-exclusiva.md` ids MAN-35 |
-| T1 | parcial | Base MAN-33 importada: contrato **1.1.0** + ops consulta; falta bump **1.2.0** y ops admin/DLT (`entity-manager`) |
+| T1 | parcial | Core **1.2.0** + defaults (`verify_inline_ecst`, `list_events`, `list_progress`); Redb DLT/list_deliveries; schema library; taxonomy/bindings vía `entity-manager` |
 | T2 | parcial | `eda_port` + `sddia-event-manager-host` desde MAN-33 |
 | T3 | hecho (núcleo) | `ecst_input_loader` verify inline; `route_domain_core` carga estricta vía puerto; sin lectura FS en route/batch/reanchor load |
 | T4–T8 | pendiente | Ver `plan.md` |

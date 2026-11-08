@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/eda.event_manager.v1.schema.json",
   "title": "eda.event_manager",
-  "description": "Contrato EventManager v1.1.0 — I/O capsule-json-io. Ops: publish_ecst, claim_pending, record_delivery, move_to_dlq, replay_dlq, append_trace, handshake_version, get_event, list_pending, list_dlq, list_traces, purge_event.",
+  "description": "Contrato EventManager v1.2.0 — I/O capsule-json-io. Ops v1.0 + consultas/admin (get_event, list_*, verify_inline_ecst, seal_dlt, list_progress, purge_event).",
   "type": "object",
   "oneOf": [
     { "$ref": "#/$defs/request" },
@@ -27,7 +27,13 @@
             "list_pending",
             "list_dlq",
             "list_traces",
-            "purge_event"
+            "purge_event",
+            "list_events",
+            "list_deliveries",
+            "seal_dlt",
+            "get_dlt_seal",
+            "list_progress",
+            "verify_inline_ecst"
           ]
         },
         "payload": {

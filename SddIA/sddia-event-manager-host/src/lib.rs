@@ -56,8 +56,8 @@ pub fn productive_factory(repo_root: &Path) -> Result<EventManagerDiFactory, Str
         DEFAULT_ROLE,
         BindingRole {
             provider: REDB_PROVIDER.into(),
-            provider_version: ">=1.1.0".into(),
-            implements_contract_version: "1.1.0".into(),
+            provider_version: ">=1.2.0".into(),
+            implements_contract_version: "1.2.0".into(),
         },
     );
     factory.register_builder(
@@ -71,7 +71,7 @@ pub fn productive_factory(repo_root: &Path) -> Result<EventManagerDiFactory, Str
     Ok(factory)
 }
 
-/// Resuelve el puerto productivo (`default`) con `version_gate` ^1.1.0.
+/// Resuelve el puerto productivo (`default`) con `version_gate` ^1.2.0.
 pub fn resolve_productive_port(repo_root: &Path) -> Result<Arc<dyn EventManagerPort>, String> {
     let factory = productive_factory(repo_root)?;
     factory

@@ -7,9 +7,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryStatus,
-    DualVersionManifest, EventManagerError, EventManagerPort, HandshakeVersionRequest,
-    HandshakeVersionResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult,
-    RecordDeliveryRequest, ReplayDlqRequest, CONTRACT_ID, CONTRACT_VERSION,
+    DualVersionManifest, EventManagerError, EventManagerPort, GetEventRequest, GetEventResult,
+    HandshakeVersionRequest, HandshakeVersionResult, ListedDlqEvent, ListDlqRequest, ListDlqResult,
+    ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult,
+    MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest,
+    ReplayDlqRequest, CONTRACT_ID, CONTRACT_VERSION,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -282,6 +284,113 @@ impl EventManagerPort for FsEventAdapter {
         };
         frames.push(req.frame);
         FsEventAdapter::write_atomic_json(&p, &frames)?;
+        Ok(())
+    }
+
+    fn get_event(&self, req: GetEventRequest) -> Result<GetEventResult, EventManagerError> {
+        let ep = self.event_path(&req.event_id);
+        if ep.is_file() {
+            let stored: StoredEvent = FsEventAdapter::read_json(&ep)?;
+            return Ok(GetEventResult {
+                event_id: stored.event_id,
+                ecst: stored.ecst,
+                trace_id: stored.trace_id,
+            });
+        }
+        let dp = self.dlq_path(&req.event_id);
+        if dp.is_file() {
+            let rec: DlqRec = FsEventAdapter::read_json(&dp)?;
+            return Ok(GetEventResult {
+                event_id: rec.event.event_id,
+                ecst: rec.event.ecst,
+                trace_id: rec.event.trace_id,
+            });
+        }
+        Err(EventManagerError::NotFound(req.event_id))
+    }
+
+    fn list_pending(
+        &self,
+        req: ListPendingRequest,
+    ) -> Result<ListPendingResult, EventManagerError> {
+        self.expire_leases()?;
+        let limit = req.limit.unwrap_or(u32::MAX) as usize;
+        let mut events = Vec::new();
+        let mut ids: Vec<String> = fs::read_dir(self.dir("events"))
+            .map_err(storage)?
+            .filter_map(|e| e.ok())
+            .filter_map(|e| {
+                e.path()
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .map(str::to_string)
+            })
+            .collect();
+        ids.sort();
+        for id in ids {
+            if events.len() >= limit {
+                break;
+            }
+            if self.lease_path(&id).is_file() {
+                continue;
+            }
+            let stored: StoredEvent = FsEventAdapter::read_json(&self.event_path(&id))?;
+            events.push(ListedPendingEvent {
+                event_id: stored.event_id,
+                ecst: stored.ecst,
+                trace_id: stored.trace_id,
+            });
+        }
+        Ok(ListPendingResult { events })
+    }
+
+    fn list_dlq(&self, req: ListDlqRequest) -> Result<ListDlqResult, EventManagerError> {
+        let limit = req.limit.unwrap_or(u32::MAX) as usize;
+        let mut events = Vec::new();
+        for ent in fs::read_dir(self.dir("dlq")).map_err(storage)?.flatten() {
+            if events.len() >= limit {
+                break;
+            }
+            let id = ent
+                .path()
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_string();
+            let rec: DlqRec = FsEventAdapter::read_json(&ent.path())?;
+            events.push(ListedDlqEvent {
+                event_id: id,
+                reason: rec.reason,
+                ecst: rec.event.ecst,
+            });
+        }
+        Ok(ListDlqResult { events })
+    }
+
+    fn list_traces(&self, req: ListTracesRequest) -> Result<ListTracesResult, EventManagerError> {
+        let p = self.dir("traces").join(format!("{}.json", req.trace_id));
+        let frames: Vec<Value> = if p.is_file() {
+            FsEventAdapter::read_json(&p)?
+        } else {
+            Vec::new()
+        };
+        Ok(ListTracesResult { frames })
+    }
+
+    fn purge_event(&self, req: PurgeEventRequest) -> Result<(), EventManagerError> {
+        let ep = self.event_path(&req.event_id);
+        let dp = self.dlq_path(&req.event_id);
+        let removed = ep.is_file() || dp.is_file();
+        if ep.is_file() {
+            fs::remove_file(&ep).map_err(storage)?;
+        }
+        if dp.is_file() {
+            fs::remove_file(&dp).map_err(storage)?;
+        }
+        let _ = fs::remove_file(self.lease_path(&req.event_id));
+        if !removed {
+            return Err(EventManagerError::NotFound(req.event_id));
+        }
         Ok(())
     }
 
