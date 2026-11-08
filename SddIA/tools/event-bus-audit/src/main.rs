@@ -1,3 +1,6 @@
+//! FS-legacy helpers retained for `#[cfg(test)]`; store path is default in release.
+#![cfg_attr(not(test), allow(dead_code, unused_variables))]
+
 use chrono::{DateTime, Utc};
 use regex::Regex;
 use sddia_io::{emit_error, emit_success, read_stdin_json};
