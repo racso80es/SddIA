@@ -5,7 +5,7 @@ process: refactorization
 phase: cierre
 pbi_ref: MAN-35
 document_id: PBI-176f9f2f
-status: ready-for-pr
+status: done
 ---
 # Implementation — MAN-35
 
@@ -25,5 +25,6 @@ status: ready-for-pr
 
 ## Cierre
 
-1. PR único → merge `main` + checks verdes.
-2. Linear MAN-35 → `state_map.done` vía delivery-close-cycle.
+- PR [#445](https://github.com/racso80es/SddIA/pull/445) mergeado en `main` (`b87494e9`).
+- Linear **MAN-35** → **Done** (`accept-pr`, `ReviewCiGreen`, exec `9e89fbb8-3bf2-4240-9685-f0b4d57c7939`).
+- Gate local: `gate-event-manager-port` OK (212 ficheros, 0 violaciones).
