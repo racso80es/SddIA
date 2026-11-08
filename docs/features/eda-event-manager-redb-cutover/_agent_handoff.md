@@ -339,3 +339,75 @@ notes: "idempotent-hit"
 - F2 heredado APTO; F3 NO_APTO no bloqueante; F4 PPR∉revoked; F5 sin `blocking_findings`.
 - `accept_pr_handoff: pending` (L-HANDOFF-F5; MERGE/`pr_url` ausentes).
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-08T05:45:59Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-08T05:47:34Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `976c68ea-7630-4f70-86b8-be44bcb4a8d5`
+- correlation_id: `c9427a48-becb-4f27-bc4a-02214fe83883`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - No bloqueantes: workspace PPR vacío, `GIT_EVIDENCE_SESSION_SHELL` NO_APTO, MERGE/`pr_url` ausentes.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO` · `delivery_state: pending_downstream_phases`)
+
+- Tocó: `docs/features/eda-event-manager-redb-cutover/validacion.md` (Triaje documental Argos / PPR).
+- R1/R2: copia Evidence Bridge `native_state` notes=`handoff-formal-scan; idempotent-hit` → TECH/GIT **APTO**; Shell `git-manager` **Rejected** (sin stdout inventado).
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; Linear MAN-33 sin fichero KM.
+- F2 cascada: objectives/clarify/spec/plan/implementation/execution + evolution `6991f71e-…` **APTO**.
+- No bloqueantes: workspace PPR vacío, `GIT_EVIDENCE_SESSION_SHELL` NO_APTO, MERGE/`pr_url` ausentes.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-08T05:48:04Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-08T05:49:24Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `976c68ea-7630-4f70-86b8-be44bcb4a8d5`
+- correlation_id: `c9427a48-becb-4f27-bc4a-02214fe83883`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `accept_pr_handoff: pending` (L-HANDOFF-F5; MERGE/`pr_url` ausentes).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Tocó: `docs/features/eda-event-manager-redb-cutover/validacion.md` (Veredicto y bloqueo Argos / PPR).
+- R1/R2: copia Evidence Bridge `native_state` notes=`idempotent-hit` → TECH/GIT **APTO**; Shell `git-manager` Rejected (sin stdout inventado).
+- R3 KM: **APTO** — 0 writes bajo `docs/todos/**`; Linear MAN-33 sin fichero KM.
+- F2 heredado APTO; F3 NO_APTO no bloqueante; F4 PPR∉revoked; F5 sin `blocking_findings`.
+- `accept_pr_handoff: pending` (L-HANDOFF-F5; MERGE/`pr_url` ausentes).
+```
