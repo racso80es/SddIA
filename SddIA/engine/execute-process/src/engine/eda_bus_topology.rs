@@ -265,6 +265,7 @@ fn resolve_witness_key(state_key: &str) -> &str {
     }
 }
 
+#[cfg(test)]
 fn list_fs_witnesses(
     repo: &Path,
     bus: &EventBusTopology,
@@ -301,7 +302,48 @@ fn list_fs_witnesses(
     paths
 }
 
-fn list_store_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
+fn list_port_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
+    use sddia_core::ports::event_manager::{
+        DeliveryStatus as PortDeliveryStatus, ListDeliveriesRequest,
+    };
+    let folder_key = resolve_witness_key(state_key);
+    let Ok(port) = eda_port::port_arc(repo) else {
+        return Vec::new();
+    };
+    let Ok(rows) = port.list_deliveries(ListDeliveriesRequest {
+        event_id: Some(event_uuid.to_string()),
+        subscriber_id: None,
+        status: None,
+        cursor: None,
+        limit: Some(10_000),
+    }) else {
+        return Vec::new();
+    };
+    let mut paths = Vec::new();
+    for row in rows.deliveries {
+        if row.event_id != event_uuid && !row.delivery_id.contains(event_uuid) {
+            continue;
+        }
+        let sub = row
+            .delivery_id
+            .strip_prefix(&format!("{event_uuid}."))
+            .or_else(|| row.delivery_id.rsplit(':').next())
+            .unwrap_or(row.delivery_id.as_str());
+        let include = match (folder_key, row.status) {
+            ("dead_letter_subscribers", PortDeliveryStatus::Nack) => true,
+            ("processed_subscribers", PortDeliveryStatus::Ack) => true,
+            _ => false,
+        };
+        if include {
+            paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
+        }
+    }
+    paths.sort();
+    paths
+}
+
+#[cfg(test)]
+fn list_store_witnesses_legacy(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
     use sddia_event_store::{DeliveryStatus, EventStore};
     let folder_key = resolve_witness_key(state_key);
     let Ok(store) = EventStore::open(eda_port::runtime_db_path(repo)) else {
@@ -329,23 +371,43 @@ fn list_store_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<P
     paths
 }
 
+#[allow(unused_variables)]
 pub fn list_witnesses(
     repo: &Path,
     bus: &EventBusTopology,
     state_key: &str,
     event_uuid: &str,
 ) -> Vec<PathBuf> {
-    let mode = sddia_event_store::store_mode();
-    let mut paths = Vec::new();
-    if sddia_event_store::writes_store(mode) {
-        paths.extend(list_store_witnesses(repo, state_key, event_uuid));
+    #[cfg(not(test))]
+    {
+        return list_port_witnesses(repo, state_key, event_uuid);
     }
-    if sddia_event_store::writes_filesystem(mode) {
-        paths.extend(list_fs_witnesses(repo, bus, state_key, event_uuid));
+    #[cfg(test)]
+    {
+        let mode = sddia_event_store::store_mode();
+        let mut paths = Vec::new();
+        if sddia_event_store::writes_filesystem(mode) {
+            paths.extend(list_fs_witnesses(repo, bus, state_key, event_uuid));
+            if !sddia_event_store::writes_store(mode) {
+                paths.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+                paths.dedup_by(|a, b| a.file_name() == b.file_name());
+                return paths;
+            }
+        }
+        if sddia_event_store::writes_store(mode) {
+            let legacy = list_store_witnesses_legacy(repo, state_key, event_uuid);
+            if !legacy.is_empty() {
+                paths.extend(legacy);
+            } else {
+                paths.extend(list_port_witnesses(repo, state_key, event_uuid));
+            }
+        } else {
+            paths.extend(list_port_witnesses(repo, state_key, event_uuid));
+        }
+        paths.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+        paths.dedup_by(|a, b| a.file_name() == b.file_name());
+        paths
     }
-    paths.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
-    paths.dedup_by(|a, b| a.file_name() == b.file_name());
-    paths
 }
 
 pub fn purge_store_event(repo: &Path, event_id: &str) {

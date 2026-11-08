@@ -36,6 +36,8 @@ pub mod domain_mutation;
 pub mod eda_bus;
 pub mod ecst_input_loader;
 pub mod eda_bus_topology;
+#[cfg(test)]
+mod eda_port_legacy;
 pub mod eda_port;
 pub mod event_store_query;
 pub mod eda_coverage;

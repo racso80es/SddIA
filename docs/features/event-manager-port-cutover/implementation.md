@@ -20,7 +20,7 @@ status: in-progress
 | T4 | hecho | DLT/verify + suite 1.2 |
 | T5 | hecho | kalma2-bridge + lancedb → host |
 | T6 | hecho | event-bus-audit + repo-retention-purger → puerto |
-| T7 | parcial | AC-9 norma; tests motor aún con `sddia_event_store` |
+| T7 | hecho (núcleo) | `eda_port` productivo solo puerto; legacy en `eda_port_legacy` + `#[cfg(test)]`; testigos por `list_deliveries` |
 | T8 | parcial | `execution.md` + `validacion.md`; CI pendiente |
 
 ## Próximo

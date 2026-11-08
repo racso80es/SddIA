@@ -295,12 +295,17 @@ pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Va
         let outcome = run_sync_chain(repo, &phase, process_name, process_def, &inputs);
         emit_di_resolved(repo, &event_id, &outcome)?;
         let _ = crate::engine::eda_port::record_delivery_ack(repo, &event_id, "capability-di-reactor");
-        if let Some(path) = path {
-            fs::remove_file(&path).ok();
-        } else if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
-            let pf = pending_dir(repo)?
-                .join(format!("{event_id}.json"));
-            fs::remove_file(pf).ok();
+        match path {
+            Some(p) => {
+                fs::remove_file(&p).ok();
+            }
+            None => {
+                #[cfg(test)]
+                if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+                    let pf = pending_dir(repo)?.join(format!("{event_id}.json"));
+                    fs::remove_file(pf).ok();
+                }
+            }
         }
         processed += 1;
         last = json!({

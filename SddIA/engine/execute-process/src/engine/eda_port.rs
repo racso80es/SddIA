@@ -2,7 +2,6 @@
 
 use std::cell::RefCell;
 use std::collections::HashSet;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -14,7 +13,6 @@ use sddia_core::ports::event_manager::{
     EventManagerPort, GetDltSealRequest, GetDltSealResult, ListDlqRequest, ListEventsRequest,
     SealDltRequest, VerifyInlineEcstRequest, PublishSeal,
 };
-use sddia_event_store::{EventStore, Family, StoreMode};
 use sddia_event_manager_host::resolve_productive_port;
 
 /// Ruta de directorio (no fichero `.redb`).
@@ -81,38 +79,27 @@ fn with_port<R>(
     })
 }
 
-fn events_family_dir(repo: &Path, family: &str) -> PathBuf {
-    repo.join(format!(".events/{}", family.trim_start_matches("./")))
-}
-
-/// Publicación: FS/dual vía gate legacy de tests; productivo Redb vía puerto.
+/// Publicación productiva vía `EventManagerPort`.
 pub fn publish_ecst(repo: &Path, family: &str, event: &Value) -> Result<PublishSeal, String> {
-    let mode = sddia_event_store::store_mode();
-    if sddia_event_store::writes_filesystem(mode) {
-        let dir = events_family_dir(repo, family);
-        let seal = sddia_event_store::publish_ecst(repo, family, event, Some(&dir))
-            .map_err(|e| e.to_string())?;
-        return Ok(PublishSeal {
-            event_id: seal.event_id,
-            target_path: seal.target_path,
-            logical_rel: seal.logical_rel,
-        });
+    #[cfg(test)]
+    {
+        use sddia_event_store::writes_filesystem;
+        if writes_filesystem(sddia_event_store::store_mode()) {
+            return crate::engine::eda_port_legacy::publish_ecst(repo, family, event);
+        }
     }
     with_port(repo, |port| publish_ecst_on_port(port, repo, family, event))
 }
 
 pub fn record_ecst(repo: &Path, family: &str, event: &Value) -> Result<(), String> {
-    let mode = sddia_event_store::store_mode();
-    if sddia_event_store::writes_filesystem(mode) && !sddia_event_store::writes_store(mode) {
-        let dir = events_family_dir(repo, family);
-        sddia_event_store::publish_ecst(repo, family, event, Some(&dir))
-            .map(|_| ())
-            .map_err(|e| e.to_string())
-    } else if sddia_event_store::writes_filesystem(mode) {
-        publish_ecst(repo, family, event).map(|_| ())
-    } else {
-        with_port(repo, |port| record_ecst_on_port(port, repo, family, event))
+    #[cfg(test)]
+    {
+        let mode = sddia_event_store::store_mode();
+        if sddia_event_store::writes_filesystem(mode) {
+            return crate::engine::eda_port_legacy::record_ecst(repo, family, event);
+        }
     }
+    with_port(repo, |port| record_ecst_on_port(port, repo, family, event))
 }
 
 pub fn load_dispatched(
@@ -120,85 +107,43 @@ pub fn load_dispatched(
     event_id: &str,
     logical: &Path,
 ) -> Result<Option<Value>, String> {
-    let mode = sddia_event_store::store_mode();
-    if mode == StoreMode::Filesystem {
-        return sddia_event_store::load_dispatched_event(repo, event_id, logical)
-            .map_err(|e| e.to_string());
+    #[cfg(test)]
+    {
+        if sddia_event_store::store_mode() == sddia_event_store::StoreMode::Filesystem {
+            return crate::engine::eda_port_legacy::load_dispatched(repo, event_id, logical);
+        }
     }
     with_port(repo, |port| load_dispatched_event(port, event_id, logical))
 }
 
-fn append_progress_leaf_fs(
-    repo: &Path,
-    correlation_id: &str,
-    frame: &Value,
-) -> Result<u64, String> {
-    use crate::engine::fractal::load_progress_dir;
-    let rel = load_progress_dir(repo).trim_start_matches("./").to_string();
-    let leaf = repo.join(&rel).join(correlation_id);
-    fs::create_dir_all(&leaf).map_err(|e| e.to_string())?;
-    let trace_id = frame
-        .get("trace_id")
-        .and_then(|v| v.as_str())
-        .filter(|s| !s.is_empty())
-        .unwrap_or("frame");
-    let path = leaf.join(format!("{trace_id}.json"));
-    fs::write(
-        &path,
-        serde_json::to_string(frame).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?;
-    let n = fs::read_dir(&leaf).map(|d| d.count()).unwrap_or(1);
-    Ok(n as u64)
-}
-
 pub fn append_progress(repo: &Path, correlation_id: &str, frame: &Value) -> Result<u64, String> {
-    let mode = sddia_event_store::store_mode();
-    if sddia_event_store::writes_store(mode) {
-        with_port(repo, |port| append_progress_monotonic(port, correlation_id, frame))
-    } else if sddia_event_store::writes_filesystem(mode) {
-        append_progress_leaf_fs(repo, correlation_id, frame)
-    } else {
-        sddia_event_store::append_progress_monotonic(repo, correlation_id, frame)
-            .map_err(|e| e.to_string())
+    #[cfg(test)]
+    {
+        let mode = sddia_event_store::store_mode();
+        if !sddia_event_store::writes_store(mode) && sddia_event_store::writes_filesystem(mode) {
+            return crate::engine::eda_port_legacy::append_progress(repo, correlation_id, frame);
+        }
     }
+    with_port(repo, |port| append_progress_monotonic(port, correlation_id, frame))
 }
 
 pub fn load_domain_ecsts(repo: &Path, limit: u32) -> Result<Vec<Value>, String> {
-    let mode = sddia_event_store::store_mode();
-    if sddia_event_store::writes_filesystem(mode) {
-        let dirs = [
-            repo.join(".events/pending"),
-            repo.join(".events/processed"),
-            repo.join(".events/dead-letter"),
-        ];
-        return sddia_event_store::load_domain_ecsts(repo, &dirs.to_vec())
-            .map_err(|e| e.to_string())
-            .map(|rows| rows.into_iter().take(limit as usize).collect());
-    }
-
-    let mut out = Vec::new();
-    let mut seen = HashSet::new();
-
-    if sddia_event_store::writes_store(mode) {
-        if let Ok(store) = EventStore::open(runtime_db_path(repo)) {
-            for row in store.list_family(Family::Domain).unwrap_or_default() {
-                let id = row
-                    .ecst
-                    .get("event_id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or(row.event_id.as_str())
-                    .to_string();
-                if seen.insert(id) {
-                    out.push(row.ecst);
-                }
-                if out.len() >= limit as usize {
-                    return Ok(out);
-                }
+    #[cfg(test)]
+    {
+        let mode = sddia_event_store::store_mode();
+        if sddia_event_store::writes_filesystem(mode) {
+            return crate::engine::eda_port_legacy::load_domain_ecsts(repo, limit);
+        }
+        if sddia_event_store::writes_store(mode) {
+            let legacy = crate::engine::eda_port_legacy::load_domain_ecsts(repo, limit)?;
+            if !legacy.is_empty() {
+                return Ok(legacy);
             }
         }
     }
 
+    let mut out = Vec::new();
+    let mut seen = HashSet::new();
     with_port(repo, |port| {
         let listed = port
             .list_events(ListEventsRequest {
@@ -221,7 +166,6 @@ pub fn load_domain_ecsts(repo: &Path, limit: u32) -> Result<Vec<Value>, String> 
         }
         Ok(())
     })?;
-
     Ok(out.into_iter().take(limit as usize).collect())
 }
 
