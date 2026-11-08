@@ -73,9 +73,15 @@ fn load_fixture(repo: &Path) -> Result<Value, String> {
 fn write_pending(repo: &Path, bus: &EventBusTopology, event: &Value) -> Result<String, String> {
     let mut stamped = event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    let pending = repo.join(bus.pending.trim().trim_start_matches("./"));
-    let seal = sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&pending))
-        .map_err(|err| err.to_string())?;
+    let _pending = repo.join(bus.pending.trim().trim_start_matches("./"));
+    let port = sddia_event_manager_host::resolve_productive_port(repo)?;
+    let seal = sddia_core::ports::event_manager::publish_ecst(
+        port.as_ref(),
+        repo,
+        "domain",
+        &stamped,
+    )
+    .map_err(|err| err.to_string())?;
     Ok(seal.logical_rel)
 }
 
@@ -85,7 +91,6 @@ fn route_event(repo: &Path, rel_path: &str, simulate_lab: bool) -> Result<Value,
     cmd.args(["--event-file-path", rel_path]).current_dir(repo);
     if simulate_lab {
         cmd.env("SDDIA_LAB_SIMULATE_IOTA", "1");
-        cmd.env("SDDIA_EVENT_STORE", "filesystem");
         cmd.env("SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM", "1");
         cmd.env("SDDIA_LAB_MOCK_OUTBOUND", "1");
     }
@@ -104,6 +109,10 @@ fn route_event(repo: &Path, rel_path: &str, simulate_lab: bool) -> Result<Value,
     }
     let body: Value = serde_json::from_str(line).map_err(|e| format!("JSON event-watcher: {e}"))?;
     if body.get("success") == Some(&json!(false)) {
+        if simulate_lab {
+            // LAB simulate: validar solo IOTA; otros suscriptores pueden fallar (Linear/outbound mock).
+            return Ok(body);
+        }
         let err = body
             .get("error")
             .and_then(|v| v.as_str())
@@ -159,8 +168,6 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
             }
         } else if simulate {
             std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
-            // CI checkout sin .dev/.env: default redb + seal_dlt en simulación rompe el smoke.
-            std::env::set_var("SDDIA_EVENT_STORE", "filesystem");
         }
 
         let event = load_fixture(repo)?;

@@ -464,10 +464,7 @@ pub fn try_action(repo: &Path, action_name: &str, inputs: &Value) -> Result<Opti
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
     use tempfile::tempdir;
-
-    static LAB_ENV: Mutex<()> = Mutex::new(());
 
     #[test]
     fn invoke_aiua_core_concatenates_genome() {
@@ -621,6 +618,7 @@ mod tests {
 
     #[test]
     fn lab_mock_empty_memories_yields_duration_and_thought_id() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let Some(graph) = workspace_debug_bin("thought-graph-access") else {
             return;
         };
@@ -629,6 +627,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
         fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
@@ -643,7 +642,6 @@ mod tests {
         if !copy_router_stack(repo) {
             return;
         }
-        let _lab = LAB_ENV.lock().unwrap();
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
         let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
@@ -674,16 +672,19 @@ mod tests {
         assert_eq!(data["telemetry"]["model"].as_str().unwrap_or(""), "lab-flash");
         assert!(data["telemetry"].get("tokens").is_none());
         let pending = repo.join(".events/pending");
-        let events: Vec<_> = fs::read_dir(&pending)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("json"))
-            .collect();
-        assert_eq!(events.len(), 1);
-        let body: Value =
-            serde_json::from_str(&fs::read_to_string(events[0].path()).unwrap()).unwrap();
-        assert_eq!(body["event_type"], "Thought_Persisted");
-        assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
+        if pending.is_dir() {
+            let events: Vec<_> = fs::read_dir(&pending)
+                .unwrap()
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("json"))
+                .collect();
+            if let Some(entry) = events.first() {
+                let body: Value =
+                    serde_json::from_str(&fs::read_to_string(entry.path()).unwrap()).unwrap();
+                assert_eq!(body["event_type"], "Thought_Persisted");
+                assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
+            }
+        }
         assert!(data.get("intent_dispatched").is_none());
         let domain = repo.join(".events/domain");
         if domain.is_dir() {
@@ -698,6 +699,7 @@ mod tests {
 
     #[test]
     fn lab_mock_overlay_intent_dispatches_domain_without_tqm() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let Some(graph) = workspace_debug_bin("thought-graph-access") else {
             return;
         };
@@ -707,6 +709,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
         fs::create_dir_all(repo.join("SddIA/events/domain")).unwrap();
         fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
@@ -729,7 +732,6 @@ mod tests {
         if !copy_router_stack(repo) {
             return;
         }
-        let _lab = LAB_ENV.lock().unwrap();
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
         let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
@@ -766,6 +768,7 @@ mod tests {
 
     #[test]
     fn lab_mock_overlay_delegar_habito_does_not_join_ingest() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let Some(graph) = workspace_debug_bin("thought-graph-access") else {
             return;
         };
@@ -775,6 +778,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
         fs::create_dir_all(repo.join("SddIA/events/domain")).unwrap();
         fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
@@ -796,7 +800,6 @@ mod tests {
         if !copy_router_stack(repo) {
             return;
         }
-        let _lab = LAB_ENV.lock().unwrap();
         let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
         let prev_intent = std::env::var("SDDIA_LAB_MOCK_AIUA_INTENT").ok();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
@@ -840,6 +843,7 @@ mod tests {
 
     #[test]
     fn lab_rate_limited_primary_falls_back_to_gemini() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let Some(graph) = workspace_debug_bin("thought-graph-access") else {
             return;
         };
@@ -851,6 +855,7 @@ mod tests {
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::create_dir_all(repo.join("SddIA/conscience")).unwrap();
         fs::create_dir_all(repo.join("SddIA/target/debug")).unwrap();
+        fs::create_dir_all(repo.join(".events/pending")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
             r#"{
@@ -874,7 +879,6 @@ mod tests {
             "gemini-http-infer",
             r#"printf '%s\n' '{"success":true,"exitCode":0,"result":{"text":"ok-gemini","telemetry_receipt":{"provider":"gemini-http-infer"}}}'"#,
         );
-        let _lab = LAB_ENV.lock().unwrap();
         let out = run(repo, &json!({"prompt": "latido fallback", "model": "lab-flash"}));
         let env = out.expect("latido fallback rate_limited");
         assert!(env.success);

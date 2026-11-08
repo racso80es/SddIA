@@ -9,6 +9,8 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `94772dd3-7612-415d-ac35-555f9a3b5213` | 2026-11-08 | MAN-35: cutover EventManagerPort 1.2 productivo + gate T8 + AC-9. | CANONICO | `SddIA/evolution/94772dd3-7612-415d-ac35-555f9a3b5213.md` |
+| `a176f9f2-8b3c-4d1e-9f70-35eda12b0c01` | 2026-11-08 | MAN-35: capability-taxonomy 1.0.11 (eda:event-manager 1.2.0) + capability-bindings 1.9.0. | CANONICO | `SddIA/evolution/a176f9f2-8b3c-4d1e-9f70-35eda12b0c01.md` |
 | `de0296d5-8963-4f09-ada0-5e92f7d0b808` | 2026-11-06 | accept-pr: stamp ReviewCiGreen con inputs enriquecidos (merge externo / merge_already_done). | CANONICO | `SddIA/evolution/de0296d5-8963-4f09-ada0-5e92f7d0b808.md` |
 | `429f861e-d228-4da2-8a6b-5a2c00b4a184` | 2026-11-06 | MAN-32: eda.event_manager aditivo — contrato, taxonomía, bindings, puerto sddia-core, adaptadores redb/fs/external. | CANONICO | `SddIA/evolution/429f861e-d228-4da2-8a6b-5a2c00b4a184.md` |
 | `2964deff-504d-4ea4-b380-2adc45368198` | 2026-11-06 | Gate warnings Rust: norma rust-warning-gate, RUSTFLAGS CI, .cargo/config, higiene workspace. | CANONICO | `SddIA/evolution/2964deff-504d-4ea4-b380-2adc45368198.md` |

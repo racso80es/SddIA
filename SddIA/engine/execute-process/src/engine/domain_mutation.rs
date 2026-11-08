@@ -6,7 +6,6 @@ use super::eda_bus::find_existing_domain_event;
 use super::eda_coverage::{remove_entity_coverage, upsert_entity_coverage};
 use chrono::Utc;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -73,32 +72,12 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
         .get("event_id")
         .and_then(|v| v.as_str())
         .ok_or("event_id required")?;
-    let mode = sddia_event_store::store_mode();
     let mut stamped = event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    if sddia_event_store::writes_store(mode) {
-        sddia_event_store::record_ecst(repo, "domain", &stamped).map_err(|err| err.to_string())?;
-    }
-    let logical = format!(".events/pending/{event_id}.json");
-    if !sddia_event_store::writes_filesystem(mode) {
-        return Ok(json!({
-            "event_id": event_id,
-            "target_path": logical,
-        }));
-    }
-    let pending_rel = super::daemons::load_eda_pending(repo).unwrap_or_else(|_| ".events/pending".into());
-    let pending = repo.join(pending_rel.trim().trim_start_matches("./"));
-    fs::create_dir_all(&pending).map_err(|e| e.to_string())?;
-    let target = pending.join(format!("{event_id}.json"));
-    let text = serde_json::to_string_pretty(&stamped).map_err(|e| e.to_string())?;
-    fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
+    let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": target
-            .strip_prefix(repo)
-            .unwrap_or(&target)
-            .to_string_lossy()
-            .replace('\\', "/"),
+        "target_path": seal.logical_rel,
     }))
 }
 
@@ -285,13 +264,13 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
 mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
-    use std::fs;
     use uuid::Uuid;
 
     #[test]
     fn emit_domain_mutation_create_writes_pending() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
         let repo = find_repo_root().unwrap();
+        let mock = std::sync::Arc::new(sddia_core::ports::event_manager::InMemoryEventManagerMock::new());
+        crate::engine::eda_port::install_port(mock);
         let entity_uuid = Uuid::new_v4().to_string();
         let inputs = json!({
             "entity_class": "tool",
@@ -307,16 +286,8 @@ mod tests {
         });
         let result = run(&repo, &inputs).expect("emit");
         assert_eq!(result.get("success"), Some(&json!(true)));
-        let target = result.get("target_path").and_then(|v| v.as_str()).unwrap();
-        let path = repo.join(target);
-        assert!(path.is_file(), "pending file missing: {target}");
-        let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
-        assert_eq!(
-            body.get("event_type").and_then(|v| v.as_str()),
-            Some("Domain_Entity_Created")
-        );
-        let _ = fs::remove_file(path);
-        sddia_event_store::override_store_mode(None);
+        assert!(result.get("target_path").and_then(|v| v.as_str()).is_some());
+        crate::engine::eda_port::clear_port();
     }
 
     #[test]

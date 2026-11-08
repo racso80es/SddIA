@@ -3,7 +3,7 @@
 use super::super::daemons::{iso_now, state_dir, write_json_atomic};
 use super::super::fractal::{load_fractal_dirs, write_fractal_event};
 use crate::envelope::OrchestratorEnvelope;
-use sddia_event_store::StoreError;
+use crate::engine::eda_port;
 use serde_json::{json, Value};
 use std::fs;
 use std::io::{Read, Write};
@@ -107,8 +107,8 @@ fn probe_bus_topology(repo: &Path) -> ProbeResult {
             };
         }
     }
-    if sddia_event_store::writes_store(sddia_event_store::store_mode()) {
-        let db = sddia_event_store::runtime_db_path(repo);
+    if true {
+        let db = crate::engine::eda_port::runtime_db_path(repo);
         if let Some(parent) = db.parent() {
             if let Err(e) = fs::create_dir_all(parent) {
                 return ProbeResult {
@@ -118,9 +118,9 @@ fn probe_bus_topology(repo: &Path) -> ProbeResult {
                 };
             }
         }
-        if let Err(e) = sddia_event_store::EventStore::open(&db) {
+        if let Err(e) = eda_port::install_productive_port(repo) {
             // REDB-CA5: contención agotada ≠ fractura de topología.
-            if matches!(e, StoreError::Locked(_)) {
+            if e.contains("Database already open") || e.contains("Cannot acquire lock") {
                 return ProbeResult {
                     id: "bus.topology",
                     ok: true,
@@ -519,9 +519,9 @@ mod tests {
     /// REDB-CA4: modo redb — emisiones de vitalidad/fractura no crean JSON en `.events/`.
     #[test]
     fn redb_ca4_vitality_and_fracture_go_to_store() {
+        let _redb = crate::engine::eda_port::test_lab::redb_eda();
         let dir = tempfile::TempDir::new().unwrap();
         let repo = dir.path();
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
         let probes = vec![ProbeResult {
             id: "cerbero.config",
             ok: false,
@@ -532,24 +532,26 @@ mod tests {
         assert!(!repo.join(".events/telemetry").exists());
         assert!(!repo.join(".events/pending").exists());
         assert!(!repo.join(".events/domain").exists());
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(repo))
-            .expect("open");
-        let tele = store
-            .list_family(sddia_event_store::Family::Telemetry)
-            .expect("tele");
+        crate::engine::eda_port::clear_port();
+        let tele_syn = repo
+            .join(".events/telemetry")
+            .join(format!("{event_id}.json"));
         assert!(
-            tele.iter().any(|r| r.event_id == event_id),
+            crate::engine::eda_port::load_dispatched(repo, &event_id, &tele_syn)
+                .expect("tele load")
+                .is_some(),
             "vitality en telemetry"
         );
-        let domain = store
-            .list_family(sddia_event_store::Family::Domain)
-            .expect("domain");
         let fracture_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let domain_syn = repo
+            .join(".events/domain")
+            .join(format!("{fracture_id}.json"));
         assert!(
-            domain.iter().any(|r| r.event_id == fracture_id),
+            crate::engine::eda_port::load_dispatched(repo, fracture_id, &domain_syn)
+                .expect("domain load")
+                .is_some(),
             "fracture en domain"
         );
-        sddia_event_store::override_store_mode(None);
     }
 
     /// REDB-CA5: Locked → ok sin fractura de topología.
@@ -582,7 +584,7 @@ mod tests {
         )
         .unwrap();
         sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = sddia_event_store::runtime_db_path(repo);
+        let db = crate::engine::eda_port::runtime_db_path(repo);
         if let Some(parent) = db.parent() {
             std::fs::create_dir_all(parent).unwrap();
         }

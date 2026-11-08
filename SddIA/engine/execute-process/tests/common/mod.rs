@@ -283,7 +283,9 @@ pub fn assert_pending_subscriber_deliveries(repo: &Path, event_type: &str, min_r
         )
         .unwrap_or_else(|e| panic!("publish {event_type}: {e}"));
         let store =
-            sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(repo))
+            sddia_event_store::EventStore::open(execute_process::engine::eda_port::runtime_db_path(
+                repo,
+            ))
                 .expect("open store");
         let pending = store.list_pending_deliveries().expect("list_pending");
         let for_event: Vec<_> = pending

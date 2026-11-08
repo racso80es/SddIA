@@ -917,6 +917,9 @@ mod tests {
 
     #[test]
     fn workspace_init_emits_work_initiated_after_phase1() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
+        let prev_skip_git = std::env::var("SDDIA_LAB_SKIP_GIT").ok();
+        let prev_skip_wi = std::env::var("SDDIA_LAB_SKIP_WORK_INITIATED").ok();
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);
@@ -932,11 +935,21 @@ mod tests {
         assert_eq!(out["work_initiated_emitted"], json!(true));
         assert_eq!(out["work_initiated"]["success"], json!(true));
         assert_eq!(out["work_initiated"]["event_type"], json!("Work_Initiated"));
-        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
+        match prev_skip_git {
+            Some(v) => std::env::set_var("SDDIA_LAB_SKIP_GIT", v),
+            None => std::env::remove_var("SDDIA_LAB_SKIP_GIT"),
+        }
+        match prev_skip_wi {
+            Some(v) => std::env::set_var("SDDIA_LAB_SKIP_WORK_INITIATED", v),
+            None => std::env::remove_var("SDDIA_LAB_SKIP_WORK_INITIATED"),
+        }
     }
 
     #[test]
     fn workspace_init_respects_lab_skip_work_initiated() {
+        let _scope = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
+        let prev_skip_git = std::env::var("SDDIA_LAB_SKIP_GIT").ok();
+        let prev_skip_wi = std::env::var("SDDIA_LAB_SKIP_WORK_INITIATED").ok();
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);
@@ -950,8 +963,14 @@ mod tests {
         let out = run(root, &inputs, "feature").expect("run ok");
         assert_eq!(out["work_initiated_emitted"], json!(true));
         assert_eq!(out["work_initiated"], json!(null));
-        std::env::remove_var("SDDIA_LAB_SKIP_GIT");
-        std::env::remove_var("SDDIA_LAB_SKIP_WORK_INITIATED");
+        match prev_skip_git {
+            Some(v) => std::env::set_var("SDDIA_LAB_SKIP_GIT", v),
+            None => std::env::remove_var("SDDIA_LAB_SKIP_GIT"),
+        }
+        match prev_skip_wi {
+            Some(v) => std::env::set_var("SDDIA_LAB_SKIP_WORK_INITIATED", v),
+            None => std::env::remove_var("SDDIA_LAB_SKIP_WORK_INITIATED"),
+        }
     }
 
     #[test]
@@ -1048,10 +1067,11 @@ mod tests {
 
     #[test]
     fn run_skips_git_when_profile_git_not_required() {
+        let _scope = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
+        let prev_skip_git = std::env::var("SDDIA_LAB_SKIP_GIT").ok();
         let td = tempfile::tempdir().unwrap();
         let root = td.path();
         write_cumulo(root);
-        // Ensure no SDDIA_LAB_SKIP_GIT interference in this process.
         std::env::remove_var("SDDIA_LAB_SKIP_GIT");
         let inputs = json!({
             "feature_name": "no-git-boot",
@@ -1072,6 +1092,10 @@ mod tests {
             .join("docs/features/no-git-boot/objectives.md")
             .is_file());
         assert_eq!(out["execution_profile"]["git_required"], json!(false));
+        match prev_skip_git {
+            Some(v) => std::env::set_var("SDDIA_LAB_SKIP_GIT", v),
+            None => std::env::remove_var("SDDIA_LAB_SKIP_GIT"),
+        }
     }
 
     #[test]

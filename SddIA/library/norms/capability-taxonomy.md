@@ -1,12 +1,12 @@
 ---
 uuid: "e9c66ec6-5b59-4aae-b9f2-91cc313fe295"
 name: "capability-taxonomy"
-version: "1.0.10"
+version: "1.0.11"
 nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:391acf0a7e0cffd8af731e4fcdc2ced4f969c2ddfc982f2602347ce8073894e1"
+hash_signature: "sha256:8cb196585a6ac806f6b1476fd65d1d3640e5d4b3effd977e4fa066eb71320c49"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"
@@ -66,8 +66,8 @@ catalog:
     description: "Ciclo de vida de un ítem de gestión. La salida auditada es el stdout de emit_v2 (success, exitCode, message, result)."
   - id: "eda:event-manager"
     contract: "eda.event_manager"
-    version: "1.0.0"
-    description: "Gestión aditiva de ciclo de vida de eventos (publish/claim/delivery/DLQ/trace) vía EventManagerPort."
+    version: "1.2.0"
+    description: "EventManagerPort 1.2 — ciclo de vida, consultas, DLT/admin y verify ECST; cutover productivo vía host Redb (MAN-35)."
 ---
 
 ## Directriz Core
@@ -96,7 +96,7 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 | `memory:pref-write` | `memory.pref_write` | 1.0.0 | Escritura preferencias usuario (store local) |
 | `memory:pref-query` | `memory.pref_query` | 1.0.0 | Consulta opt-in preferencias activas |
 | `tracker:lifecycle` | `tracker.lifecycle` | 1.0.0 | Ciclo de vida de un ítem de gestión; stdout `emit_v2` |
-| `eda:event-manager` | `eda.event_manager` | 1.0.0 | Gestión aditiva ciclo de vida eventos vía EventManagerPort |
+| `eda:event-manager` | `eda.event_manager` | 1.2.0 | EventManagerPort 1.2 cutover Redb (MAN-35) |
 
 ## Restricciones Duras
 
@@ -108,4 +108,5 @@ Alta de términos: únicamente vía mutación gobernada bajo topología feature/
 - **Rigor L-TERM:** `llm:infer` (adaptador / inferencia cruda) ≠ `llm:interact` (Mayeuta / síntesis e intención). Prohibido `provides llm:interact` en adaptadores de proveedor.
 - **Rigor tracker:** el id es `tracker:lifecycle` (`dominio:verbo`). El contrato es `tracker.lifecycle`. Prohibido el id `tracker.lifecycle`.
 - **Rigor eda:** el id es `eda:event-manager` (`dominio:verbo`). El contrato es `eda.event_manager`. Prohibido el id `eda.event_manager` en `catalog`.
-- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`; PBI-MULTI-LLM-ROUTER `llm:infer`; PBI-EDA-001 / MAN-32 `eda:event-manager`.
+- **Rigor eda 1.2:** la versión de catálogo de `eda:event-manager` es **1.2.0** y debe alinearse con `contract_version` en `capability-bindings` y `EventManagerPort` en core (MAN-35).
+- Referencia: PBI-042/043/045 features DI; H11 `inyeccion-dependencias-h11-gobernanza-lotes-notif`; PBI-MULTI-LLM-ROUTER `llm:infer`; PBI-EDA-001 / MAN-32 `eda:event-manager`; MAN-35 cutover puerto 1.2.

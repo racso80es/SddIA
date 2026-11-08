@@ -3,7 +3,7 @@
 use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic, EdBusPaths};
 use crate::{write_fractal_event, BusTopology};
 use chrono::Utc;
-use sddia_event_store::{record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store};
+use crate::record_ecst_productive;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
@@ -442,34 +442,20 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
         .filter(|s| !s.is_empty())
         .ok_or_else(|| "event_id inválido para materialización".to_string())?;
     let bus = ensure_event_bus_topology(repo)?;
-    let target = bus.pending.join(format!("{event_id}.json"));
-    let mode = store_mode();
-    if writes_filesystem(mode) && target.is_file() {
+    let _target = bus.pending.join(format!("{event_id}.json"));
+    let port = sddia_event_manager_host::resolve_productive_port(repo)?;
+    if port
+        .get_event(sddia_core::ports::event_manager::GetEventRequest {
+            event_id: event_id.to_string(),
+        })
+        .is_ok()
+    {
         return Ok(None);
-    }
-    if writes_store(mode) {
-        let db = runtime_db_path(repo);
-        if !writes_filesystem(mode) && db.is_file() {
-            let store = sddia_event_store::EventStore::open(&db).map_err(|err| err.to_string())?;
-            if store
-                .get_event(event_id)
-                .map_err(|err| err.to_string())?
-                .is_some()
-            {
-                return Ok(None);
-            }
-        }
-        let mut stamped = bus_event.clone();
-        sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-        record_ecst(repo, "domain", &stamped).map_err(|err| err.to_string())?;
-    }
-    if !writes_filesystem(mode) {
-        return Ok(Some(runtime_db_path(repo)));
     }
     let mut stamped = bus_event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    write_json_atomic(&target, &stamped)?;
-    Ok(Some(target))
+    record_ecst_productive(repo, "domain", &stamped)?;
+    Ok(Some(sddia_core::ports::event_manager::events_redb_path(repo)))
 }
 
 pub fn write_fallback_dead_letter(repo: &Path, pr: &Value, error: &str) -> Result<PathBuf, String> {
@@ -571,12 +557,9 @@ mod tests {
             }
         }
         if out.is_empty() {
-            let db = sddia_event_store::runtime_db_path(repo);
-            if db.is_file() {
-                if let Ok(store) = sddia_event_store::EventStore::open(db) {
-                    if let Ok(rows) = store.list_family(sddia_event_store::Family::Telemetry) {
-                        out.extend(rows.into_iter().map(|row| row.ecst));
-                    }
+            if let Ok(port) = sddia_event_manager_host::resolve_productive_port(repo) {
+                if let Ok(rows) = sddia_core::ports::event_manager::list_pending_ecsts(port.as_ref(), 200) {
+                    out.extend(rows);
                 }
             }
         }
@@ -691,8 +674,16 @@ mod tests {
         }));
         let bus = build_bus_event(&pre, "digest-catalog", None);
         materialize_to_bus(&base, &bus).unwrap();
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&base)).unwrap();
-        let row = store.get_event("digest-catalog").unwrap().expect("event");
+        let port = sddia_event_manager_host::resolve_productive_port(&base).unwrap();
+        let eid = bus
+            .get("event_id")
+            .and_then(|v| v.as_str())
+            .expect("event_id");
+        let row = port
+            .get_event(sddia_core::ports::event_manager::GetEventRequest {
+                event_id: eid.to_string(),
+            })
+            .expect("get_event");
         let ds = row.ecst.get("delivery_state").unwrap();
         assert_eq!(ds["tekton.tracker-stamp"], "pending");
         assert_eq!(ds["argos.pull-request-review"], "pending");

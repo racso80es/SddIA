@@ -1,5 +1,5 @@
 ---
-uuid: "528c21e8-3804-4a2a-bb26-574b3f39495c"
+uuid: "b1c2d3e4-f5a6-4b7c-8d9e-0a1b2c3d4e5f"
 name: "delivery-committed"
 version: "1.1.0"
 contract: "events-contract v1.1.0"
@@ -8,7 +8,7 @@ event_type: "Delivery_Committed"
 context: "source-control"
 capabilities:
   - "delivery_committed"
-hash_signature: "sha256:001ca841d2a114627c997b7838bf4e240983863e8eb362df2b86ea4f3cbe8eae"
+hash_signature: "sha256:cdeb988a6fadf352aa116a96757ba02599d9709b2b8213472a2df8c28bdd7840"
 ---
 
 # Event: Delivery_Committed

@@ -147,9 +147,19 @@ fn ok_envelope(recorded: bool, phases: Vec<Value>) -> OrchestratorEnvelope {
 mod tests {
     use super::*;
 
+    fn fs_lab_tempdir() -> (
+        crate::engine::eda_port::test_lab::FilesystemEdaGuard,
+        tempfile::TempDir,
+    ) {
+        (
+            crate::engine::eda_port::test_lab::filesystem_eda(),
+            tempfile::tempdir().unwrap(),
+        )
+    }
+
     #[test]
     fn gate_skips_invalid_action() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         let ev_path = repo.join("ev.json");
         fs::write(
@@ -164,7 +174,7 @@ mod tests {
 
     #[test]
     fn persist_archive_writes_proof() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(

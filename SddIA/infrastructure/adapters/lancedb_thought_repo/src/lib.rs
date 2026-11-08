@@ -242,11 +242,15 @@ fn emit_thought_persisted(
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped).map_err(|e| MemoryStoreError::Io {
         reason: e,
     })?;
-    sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(pending_dir)).map_err(|e| {
+    let port = sddia_event_manager_host::resolve_productive_port(repo).map_err(|e| {
         MemoryStoreError::Io {
-            reason: e.to_string(),
+            reason: e,
         }
     })?;
+    sddia_core::ports::event_manager::publish_ecst(port.as_ref(), repo, "pending", &stamped)
+        .map_err(|e| MemoryStoreError::Io {
+            reason: e,
+        })?;
     Ok(())
 }
 
@@ -527,9 +531,10 @@ mod tests {
 
     #[test]
     fn store_thought_emits_thought_persisted_when_bus_configured() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
         let dir = tempdir().unwrap();
-        let pending = dir.path().join("pending");
+        let pending = dir.path().join(".events/pending");
+        std::fs::create_dir_all(pending.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(dir.path().join(".SddIA/runtime")).unwrap();
         let repo = LanceDbThoughtRepo::open_with_bus(
             dir.path().join("lancedb"),
             Some(pending.clone()),
@@ -537,18 +542,17 @@ mod tests {
         .unwrap();
         let n = node("emit-me", None, fixture_vec(0.3, 0.1));
         repo.store_thought(n.clone()).unwrap();
-        let files: Vec<_> = std::fs::read_dir(&pending)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("json"))
-            .collect();
-        assert_eq!(files.len(), 1);
-        let body: serde_json::Value =
-            serde_json::from_str(&std::fs::read_to_string(files[0].path()).unwrap()).unwrap();
+        let port = sddia_event_manager_host::resolve_productive_port(dir.path()).expect("port");
+        let listed = port
+            .list_pending(sddia_core::ports::event_manager::ListPendingRequest {
+                limit: Some(10),
+            })
+            .expect("list");
+        assert_eq!(listed.events.len(), 1);
+        let body = &listed.events[0].ecst;
         assert_eq!(body["event_type"], "Thought_Persisted");
         assert_eq!(body["emitter_agent"], "lancedb-thought-repo");
         assert_eq!(body["payload"]["node_id"], n.node_id);
-        sddia_event_store::override_store_mode(None);
         assert_eq!(body["payload"]["parent_id"], "");
         assert_eq!(body["payload"]["status"], "ACTIVE");
         assert!(body["payload"].get("biological_vertex_output").is_none());

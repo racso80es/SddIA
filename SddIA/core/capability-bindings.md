@@ -2,7 +2,7 @@
 uuid: "c4a8f2e1-7b3d-4e9a-a1c6-5d8f0b2e4a71"
 id: capability-bindings
 name: capability-bindings
-version: "1.8.0"
+version: "1.9.0"
 nature: "runtime-ssot"
 scope: "agnostic"
 bindings:
@@ -64,23 +64,20 @@ bindings:
     provider_version: ">=1.0.0"
   - capability_id: "eda:event-manager"
     contract: "eda.event_manager"
-    contract_version: "1.0.0"
+    contract_version: "1.2.0"
     contract_schema: "eda.event_manager.v1.schema.json"
     provider: "adapter:redb-event-adapter"
-    provider_version: ">=1.0.0"
+    provider_version: ">=1.2.0"
     roles:
       default:
         provider: "adapter:redb-event-adapter"
-        provider_version: ">=1.0.0"
-      fallback:
-        provider: "adapter:fs-event-adapter"
-        provider_version: ">=1.0.0"
+        provider_version: ">=1.2.0"
       test:
         provider: "mock:in-memory-event-manager"
-        provider_version: ">=1.0.0"
+        provider_version: ">=1.2.0"
       "capsule:*":
         provider: "adapter:external-capsule-event-adapter"
-        provider_version: ">=1.0.0"
+        provider_version: ">=1.2.0"
         resolution: "path|uri de binario/.wasm vía config de instancia"
 ---
 
@@ -95,4 +92,4 @@ Mapa **capability → artefacto canónico** para resolución ciega (PBI-042 Hito
 - H9-D: `audit:compliance` ≠ `qa:probe` (Gobernanza vs Caos).
 - H11: `gov:rbac` → `skill:rbac-governor`; `channel:ingest` → `tool:telegram-gateway`.
 - `tracker:lifecycle` → `tool:linear-tracker-adapter`. Una sola fila. El resolver la usa cuando el provider efectivo es `linear`; con `file` no hay `di_binding` (parser del manifiesto, PBI 14).
-- `eda:event-manager` (v1.8.0): binding multi-rol aditivo (`default` redb, `fallback` fs, `test` mock, `capsule:*` puente). Prefijos `adapter:`/`mock:` locales a este bloque + `EventManagerDiFactory`; no muta `di.binding.schema.json`.
+- `eda:event-manager` (v1.9.0 / contrato **1.2.0**): `default` redb productivo, `test` mock, `capsule:*` puente externo; **sin** rol `fallback` FS en productivo (MAN-35). Prefijos `adapter:`/`mock:` + `EventManagerDiFactory`; no muta `di.binding.schema.json`.

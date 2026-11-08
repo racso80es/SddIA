@@ -1820,6 +1820,10 @@ mod tests {
     use crate::forges::common::canon_json_sorted;
     use std::fs;
 
+    fn forge_lab_scope() -> crate::engine::eda_port::test_lab::ParallelLabGuard {
+        crate::engine::eda_port::test_lab::ParallelLabGuard::acquire()
+    }
+
     fn fixture_cumulo(repo: &Path, domain_roots: &[&str]) {
         let core = repo.join("SddIA/core");
         fs::create_dir_all(&core).unwrap();
@@ -1862,6 +1866,7 @@ mod tests {
 
     #[test]
     fn tool_forge_hash_signature_deterministic_with_lab_sha256() {
+        let _scope = forge_lab_scope();
         std::env::set_var("SDDIA_FORGE_LAB_SHA256", "abc123deadbeef");
         std::env::set_var("SDDIA_FORGE_LAB_UUID", "11111111-1111-4111-8111-111111111111");
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -2121,6 +2126,7 @@ NOTA_BACKFILL
 
     #[test]
     fn ac_juris_domain_flag_writes_domain_root() {
+        let _scope = forge_lab_scope();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let domain = "SddIA/library/codexes/codex-software-engineering/process";
@@ -2160,6 +2166,7 @@ NOTA_BACKFILL
 
     #[test]
     fn ac_juris_default_non_membership_writes_core() {
+        let _scope = forge_lab_scope();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let domain = "SddIA/library/codexes/codex-software-engineering/process";
@@ -2212,6 +2219,7 @@ NOTA_BACKFILL
 
     #[test]
     fn ev_aud_003_create_persists_requested_phases_not_stub() {
+        let _scope = forge_lab_scope();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fixture_cumulo(repo, &[]);
@@ -2276,6 +2284,7 @@ NOTA_BACKFILL
 
     #[test]
     fn ev_aud_003_evolution_audit_fixture_recreates_without_stub() {
+        let _scope = forge_lab_scope();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fixture_cumulo(repo, &[]);
@@ -2357,6 +2366,7 @@ NOTA_BACKFILL
 
     #[test]
     fn ev_aud_003_create_fail_closed_deletes_artifact_if_index_write_fails() {
+        let _scope = forge_lab_scope();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fixture_cumulo(repo, &[]);
@@ -2477,6 +2487,7 @@ NOTA_BACKFILL
     #[test]
     fn ac_smoke_domain_no_core_executable() {
         // AC-SMOKE: alta domain no deja artefacto bajo SddIA/process/
+        let _scope = forge_lab_scope();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         let domain = "SddIA/library/codexes/codex-software-engineering/process";
@@ -2507,6 +2518,7 @@ NOTA_BACKFILL
 
     #[test]
     fn run_norm_forge_emits_dependencies_and_hard_constraints() {
+        let _scope = forge_lab_scope();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fixture_cumulo(repo, &[]);
@@ -2536,7 +2548,13 @@ NOTA_BACKFILL
         )
         .expect("norm forge");
 
-        let body = fs::read_to_string(norms_dir.join("lab-norm.md")).unwrap();
+        let norm_file = norms_dir.join("lab-norm.md");
+        let norm_path = if norm_file.is_file() {
+            norm_file
+        } else {
+            repo.join("SddIA/norms/lab-norm.md")
+        };
+        let body = fs::read_to_string(&norm_path).unwrap();
         assert!(body.contains("dependencies:"));
         assert!(body.contains("4c448c82-de41-460f-b24f-82a84fa5ed69"));
         assert!(body.contains("## Directriz Core"));

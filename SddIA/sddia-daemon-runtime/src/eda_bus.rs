@@ -1,3 +1,4 @@
+use crate::is_filesystem_rel;
 use serde_json::Value;
 use std::env;
 use std::fs;
@@ -49,7 +50,7 @@ fn rel_to_abs(repo: &Path, rel: PathBuf) -> PathBuf {
 
 pub fn load_eda_bus(repo: &Path) -> EdBusPaths {
     let env_raw = env::var("EVENT_BUS_PATH").unwrap_or_default();
-    let env_bus = if sddia_event_store::is_filesystem_rel(&env_raw) {
+    let env_bus = if is_filesystem_rel(&env_raw) {
         env_raw.trim().to_string()
     } else {
         String::new()
@@ -63,13 +64,13 @@ pub fn load_eda_bus(repo: &Path) -> EdBusPaths {
     if env_bus.is_empty() {
         if let Ok(cfg) = super::load_cumulo(repo) {
             if let Some(eb) = cfg.get("event_bus").and_then(|v| v.as_str()) {
-                if sddia_event_store::is_filesystem_rel(eb) {
+                if is_filesystem_rel(eb) {
                     paths = bus_defaults_from_root(eb);
                 }
             }
             if let Some(bus) = cfg.get("eda_bus").and_then(|v| v.as_object()) {
                 if let Some(p) = bus.get("pending").and_then(|v| v.as_str()) {
-                    if sddia_event_store::is_filesystem_rel(p) {
+                    if is_filesystem_rel(p) {
                         paths.pending = PathBuf::from(normalize_rel(p));
                     }
                 }
@@ -79,7 +80,7 @@ pub fn load_eda_bus(repo: &Path) -> EdBusPaths {
                     ("dead_letter", "dead_letter_subscribers"),
                 ] {
                     if let Some(p) = bus.get(key).and_then(|v| v.as_str()) {
-                        if !sddia_event_store::is_filesystem_rel(p) {
+                        if !is_filesystem_rel(p) {
                             continue;
                         }
                         let norm = normalize_rel(p);

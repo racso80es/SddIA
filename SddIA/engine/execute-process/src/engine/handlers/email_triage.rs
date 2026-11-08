@@ -922,6 +922,16 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 mod tests {
     use super::*;
 
+    fn fs_lab_tempdir() -> (
+        crate::engine::eda_port::test_lab::FilesystemEdaGuard,
+        tempfile::TempDir,
+    ) {
+        (
+            crate::engine::eda_port::test_lab::filesystem_eda(),
+            tempfile::tempdir().unwrap(),
+        )
+    }
+
     #[test]
     fn list_headers_are_deterministic_noise() {
         let payload = json!({
@@ -956,7 +966,7 @@ mod tests {
 
     #[test]
     fn emit_triaged_copies_from_subject_not_snippet() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
@@ -1196,7 +1206,7 @@ mod tests {
 
     #[test]
     fn cold_start_noreply_is_c_noreply_without_llm() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         setup_triage_repo(tmp.path());
         let env = run_received(
             tmp.path(),
@@ -1217,7 +1227,7 @@ mod tests {
 
     #[test]
     fn mute_active_closes_preference_without_llm() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         setup_triage_repo(tmp.path());
         seed_pref(
             tmp.path(),
@@ -1245,7 +1255,7 @@ mod tests {
 
     #[test]
     fn mute_hint_computrabajo_matches_domain_label() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         setup_triage_repo(tmp.path());
         let pref = UserPreference {
             preference_id: String::new(),
@@ -1288,7 +1298,7 @@ mod tests {
 
     #[test]
     fn list_headers_beat_mute() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         setup_triage_repo(tmp.path());
         seed_pref(
             tmp.path(),
@@ -1316,7 +1326,7 @@ mod tests {
 
     #[test]
     fn explicit_priority_max_exempts_noreply_wall() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         setup_triage_repo(tmp.path());
         seed_pref(
             tmp.path(),
@@ -1344,7 +1354,7 @@ mod tests {
 
     #[test]
     fn inferred_priority_max_does_not_exempt() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         setup_triage_repo(tmp.path());
         seed_pref(
             tmp.path(),
@@ -1365,7 +1375,7 @@ mod tests {
 
     #[test]
     fn proposed_priority_max_does_not_exempt() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         setup_triage_repo(tmp.path());
         seed_pref(
             tmp.path(),

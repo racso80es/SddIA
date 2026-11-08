@@ -1370,6 +1370,7 @@ mod tests {
 
     #[test]
     fn ci_job_failed_quota_emits_chronic_then_skips() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let td = ci_lab_repo();
         let repo = td.path();
         let job = "sddia-index-integrity";
@@ -1437,6 +1438,7 @@ mod tests {
 
     #[test]
     fn ci_job_failed_ca9_neg_empty_map_zero_degraded() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let td = ci_lab_repo();
         let repo = td.path();
         for (eid, crid) in [
@@ -1469,6 +1471,7 @@ mod tests {
 
     #[test]
     fn ci_job_failed_retries_emit_when_unsealed() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let td = ci_lab_repo();
         let repo = td.path();
         let job = "eda-iota-smoke-simulate";

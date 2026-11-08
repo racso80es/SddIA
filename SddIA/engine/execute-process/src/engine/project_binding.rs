@@ -398,6 +398,12 @@ fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
                 "PROJECT_CONFIG_INVALID: tracker.done_gate '{raw}' contradice provider '{provider}'"
             ));
         }
+        if raw == "both" {
+            return Err(
+                "PROJECT_CONFIG_INVALID: tracker.done_gate 'both' deprecado; usar git | linear"
+                    .into(),
+            );
+        }
     }
     Ok(())
 }

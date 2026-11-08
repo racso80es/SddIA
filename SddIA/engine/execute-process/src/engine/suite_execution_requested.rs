@@ -94,13 +94,14 @@ mod tests {
 
     #[test]
     fn emit_suite_execution_requested_writes_domain_event() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let repo = find_repo_root().unwrap();
         let inputs = json!({"suite_id": "fail-fast-lab"});
         let result = run(&repo, &inputs).expect("emit suite");
         assert_eq!(result.get("success"), Some(&json!(true)));
-        let target = result.get("target_path").and_then(|v| v.as_str()).unwrap();
-        let path = repo.join(target);
-        assert!(path.is_file(), "domain event missing: {target}");
+        let eid = result.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let path = repo.join(".events/domain").join(format!("{eid}.json"));
+        assert!(path.is_file(), "domain event missing: {}", path.display());
         let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(
             body.get("event_type").and_then(|v| v.as_str()),

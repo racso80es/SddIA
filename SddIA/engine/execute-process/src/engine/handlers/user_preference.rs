@@ -260,7 +260,7 @@ mod tests {
 
     #[test]
     fn cross_channel_activate_query_revoke_via_ingest() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = crate::engine::eda_port::test_lab::fs_lab_tempdir();
         setup_repo(tmp.path());
         let subject = "hash-juan-smoke";
 
@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn ingest_hashes_subject_hint_from_habit() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = crate::engine::eda_port::test_lab::fs_lab_tempdir();
         setup_repo(tmp.path());
         write_domain_event(
             tmp.path(),

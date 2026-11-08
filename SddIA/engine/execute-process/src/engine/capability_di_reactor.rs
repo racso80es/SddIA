@@ -79,8 +79,8 @@ pub fn emit_di_requested(
     });
     let mut stamped = event;
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    let dir = pending_dir(repo)?;
-    sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&dir))
+    let _dir = pending_dir(repo)?;
+    crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)
         .map_err(|err| err.to_string())?;
     Ok(event_id)
 }
@@ -204,45 +204,41 @@ fn emit_di_resolved(repo: &Path, request_event_id: &str, outcome: &ChainOutcome)
     });
     let mut stamped = event;
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    let dir = processed_dir(repo)?;
-    sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&dir))
+    let _dir = processed_dir(repo)?;
+    crate::engine::eda_port::publish_ecst(repo, "processed", &stamped)
         .map_err(|err| err.to_string())?;
     Ok(())
 }
 
 /// Procesa eventos `CapabilityDi_Requested` pendientes (helper test/CI).
 pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Value, String> {
-    let mode = sddia_event_store::store_mode();
     let mut batch: Vec<(Value, Option<PathBuf>)> = Vec::new();
     let mut seen = std::collections::HashSet::new();
-    if sddia_event_store::writes_store(mode) {
-        if let Ok(rows) = sddia_event_store::load_domain_ecsts(repo, &[]) {
-            for event in rows {
-                if event.get("event_type").and_then(|v| v.as_str()) != Some("CapabilityDi_Requested") {
-                    continue;
-                }
-                let event_id = event
-                    .get("event_id")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                if event_id.is_empty() || !seen.insert(event_id.clone()) {
-                    continue;
-                }
-                if sddia_event_store::delivery_terminal_in_store(
-                    repo,
-                    &event_id,
-                    "capability-di-reactor",
-                )
-                .unwrap_or(false)
-                {
-                    continue;
-                }
-                batch.push((event, None));
+    if let Ok(rows) = crate::engine::eda_port::load_domain_ecsts(repo, 500) {
+        for event in rows {
+            if event.get("event_type").and_then(|v| v.as_str()) != Some("CapabilityDi_Requested") {
+                continue;
             }
+            let event_id = event
+                .get("event_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            if event_id.is_empty() || !seen.insert(event_id.clone()) {
+                continue;
+            }
+            let terminal = event
+                .get("delivery_state")
+                .and_then(|d| d.get("capability-di-reactor"))
+                .and_then(|v| v.as_str())
+                .is_some_and(|s| matches!(s, "success" | "processed" | "skipped"));
+            if terminal {
+                continue;
+            }
+            batch.push((event, None));
         }
     }
-    if sddia_event_store::writes_filesystem(mode) {
+    if false {
         let pending = pending_dir(repo)?;
         if pending.is_dir() {
             let entries: Vec<PathBuf> = fs::read_dir(&pending)
@@ -298,17 +294,18 @@ pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Va
         });
         let outcome = run_sync_chain(repo, &phase, process_name, process_def, &inputs);
         emit_di_resolved(repo, &event_id, &outcome)?;
-        if sddia_event_store::writes_store(mode) {
-            let _ = sddia_event_store::record_witness(
-                repo,
-                &event_id,
-                "capability-di-reactor",
-                sddia_event_store::DeliveryStatus::Success,
-                &json!({}),
-            );
-        }
-        if let Some(path) = path {
-            fs::remove_file(&path).ok();
+        let _ = crate::engine::eda_port::record_delivery_ack(repo, &event_id, "capability-di-reactor");
+        match path {
+            Some(p) => {
+                fs::remove_file(&p).ok();
+            }
+            None => {
+                #[cfg(test)]
+                if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+                    let pf = pending_dir(repo)?.join(format!("{event_id}.json"));
+                    fs::remove_file(pf).ok();
+                }
+            }
         }
         processed += 1;
         last = json!({

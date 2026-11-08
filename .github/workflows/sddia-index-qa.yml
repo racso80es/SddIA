@@ -178,6 +178,26 @@ jobs:
           SddIA/target/debug/sddia-qa verify-tools-index
           SddIA/target/debug/sddia-qa verify-process-integrity
           SddIA/target/debug/sddia-qa verify-compiled-capsules
+          SddIA/target/debug/sddia-qa gate-event-manager-port --json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "SddIA -> target"
+          shared-key: native-test-em-port
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
+
+      - name: Install protoc (execute-process / lance deps)
+        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev
+
+      - name: EventManagerPort contract & gate (MAN-35)
+        working-directory: SddIA
+        run: |
+          cargo test -p sddia-core event_manager --lib
+          cargo test -p sddia-infrastructure-redb-event -p sddia-event-manager-host --lib
+          cargo test -p event-bus-audit
 
       - name: Install protoc (lance-encoding)
         if: needs.changes.outputs.lance_memory == 'true'
@@ -219,7 +239,6 @@ jobs:
           SDDIA_LAB_SIMULATE_IOTA: "1"
           SDDIA_LAB_SKIP_OUTBOUND_TELEGRAM: "1"
           SDDIA_LAB_MOCK_OUTBOUND: "1"
-          SDDIA_EVENT_STORE: filesystem
         run: |
           chmod +x SddIA/target/debug/sddia-qa SddIA/target/debug/event-watcher SddIA/target/debug/execute-process SddIA/target/debug/iota-immutable-publisher
           SddIA/target/debug/sddia-qa run-iota-ci-smoke --simulate --json

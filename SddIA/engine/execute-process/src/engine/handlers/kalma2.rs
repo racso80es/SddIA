@@ -426,6 +426,7 @@ mod tests {
 
     #[test]
     fn kalma2_classifies_fix_heuristic() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         std::env::remove_var("SDDIA_LLM_CLI_COMMAND");
         let repo = find_repo_root().expect("repo");
         let env = run(

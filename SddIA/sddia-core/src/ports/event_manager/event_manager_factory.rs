@@ -52,8 +52,8 @@ impl EventManagerDiFactory {
             "test",
             BindingRole {
                 provider: "mock:in-memory-event-manager".into(),
-                provider_version: ">=1.0.0".into(),
-                implements_contract_version: "1.0.0".into(),
+                provider_version: ">=1.2.0".into(),
+                implements_contract_version: "1.2.0".into(),
             },
         );
         f.register_builder(
@@ -95,7 +95,7 @@ mod tests {
         let port = f.resolve("test").expect("resolve test");
         let hs = port
             .handshake_version(crate::ports::event_manager::contract::HandshakeVersionRequest {
-                requested_range: "^1.0.0".into(),
+                requested_range: crate::ports::event_manager::REQUIRED_CONTRACT_RANGE.into(),
             })
             .expect("handshake");
         assert!(hs.compatible);

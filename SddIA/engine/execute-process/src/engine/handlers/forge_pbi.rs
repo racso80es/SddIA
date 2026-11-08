@@ -986,15 +986,8 @@ mod tests {
     use std::fs;
     use std::path::PathBuf;
     use crate::core::repo::find_repo_root;
-    use std::sync::{Mutex, OnceLock};
-
-    fn lab_guard() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
-    }
-
     fn with_lab<F: FnOnce()>(f: F) {
-        let _g = lab_guard();
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let repo = find_repo_root().expect("repo");
         std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
@@ -1131,7 +1124,7 @@ mod tests {
             fs::create_dir_all(hu_path.parent().unwrap()).unwrap();
             fs::write(
                 &hu_path,
-                "---\ntracker_ref: LAB-HU-1\n---\n\n# HU\n",
+                "---\ntracker_ref: OSC-HU-1\n---\n\n# HU\n",
             )
             .unwrap();
             let out = run(
@@ -1140,7 +1133,7 @@ mod tests {
                     "project_slug": slug,
                     "raw_idea": "idea lab",
                     "process": "bug-fix",
-                    "parent_ref": "LAB-HU-1",
+                    "parent_ref": "OSC-HU-1",
                 }),
             )
             .expect("run");
@@ -1191,14 +1184,14 @@ mod tests {
             let core = find_repo_root().expect("repo");
             let slug = "forge-aut50-ca2";
             register_lab_project(&core, slug, true);
-            seed_parent(&core, "LAB-HU-1");
+            seed_parent(&core, "OSC-HU-1");
             let out = run(
                 &core,
                 &json!({
                     "project_slug": slug,
                     "raw_idea": "idea lab",
                     "process": "bug-fix",
-                    "historia_ref": "LAB-HU-1",
+                    "historia_ref": "OSC-HU-1",
                 }),
             )
             .expect("run");
@@ -1353,7 +1346,7 @@ mod tests {
             let client = register_lab_project(&core, slug, true);
             let ledger_dir = client.join(".SddIA/state/forge-pbi");
             let _ = fs::remove_dir_all(&ledger_dir);
-            let parent = "LAB-PARENT-SCAN";
+            let parent = "OSC-PARENT-SCAN";
             let process = "bug-fix";
             let raw_idea = "idea scan unica";
             seed_parent(&core, parent);

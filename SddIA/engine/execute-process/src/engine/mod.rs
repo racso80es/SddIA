@@ -36,6 +36,9 @@ pub mod domain_mutation;
 pub mod eda_bus;
 pub mod ecst_input_loader;
 pub mod eda_bus_topology;
+#[cfg(test)]
+mod eda_port_legacy;
+pub mod eda_port;
 pub mod event_store_query;
 pub mod eda_coverage;
 pub mod ecst_validation;
@@ -130,6 +133,7 @@ pub fn run_process(
     process_name: &str,
     process_inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
+    eda_port::bootstrap_composition_root(repo)?;
     let (canonical, process_def, phases) = load_process_def(repo, process_name)?;
 
     if let Err(deny) =
@@ -361,7 +365,7 @@ pub fn run_process(
         return handlers::tracker_sync_replay::run(repo, process_inputs);
     }
 
-    if canonical == "tracker-stamp" {
+    if canonical == "tracker-stamp" || process_name == "tracker-stamp" {
         return handlers::tracker_stamp::run(repo, process_inputs);
     }
 

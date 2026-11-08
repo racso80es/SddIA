@@ -307,6 +307,7 @@ mod tests {
         struct Guard;
         impl Drop for Guard {
             fn drop(&mut self) {
+                crate::engine::eda_port::clear_port();
                 override_store_mode(None);
                 std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
             }
@@ -315,36 +316,27 @@ mod tests {
         override_store_mode(Some(StoreMode::Redb));
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
         let repo = find_repo_root().expect("repo");
-        let rel = {
-            materialize_pending_domain_event(
-                &repo,
-                "Tracker_Sync_Failed",
-                "test",
-                json!({
-                    "issue_ref": "AUT-99",
-                    "operation": "update_issue_state",
-                    "target_state": "todo",
-                    "attempt": 0,
-                }),
-            )
-            .expect("materialize");
-            let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&repo))
-                .expect("open");
-            let rows = store
-                .list_family(sddia_event_store::Family::Domain)
-                .expect("list");
-            let event_id = rows.last().expect("row").event_id.clone();
-            drop(store);
-            let pending = repo.join(".events/pending").join(format!("{event_id}.json"));
-            if pending.is_file() {
-                fs::remove_file(&pending).ok();
-            }
-            format!(".events/pending/{event_id}.json")
-        };
+        let rel = materialize_pending_domain_event(
+            &repo,
+            "Tracker_Sync_Failed",
+            "test",
+            json!({
+                "issue_ref": "AUT-99",
+                "operation": "update_issue_state",
+                "target_state": "todo",
+                "attempt": 0,
+            }),
+        )
+        .expect("materialize");
+        crate::engine::eda_port::clear_port();
+        let pending = repo.join(&rel);
+        if pending.is_file() {
+            fs::remove_file(&pending).ok();
+        }
         let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(&repo, &rel).expect("load");
         let mut tampered = stored.clone();
         tampered["payload"]["issue_ref"] = json!("AUT-TAMPER");
-        let env = run(
+        let err = run(
             &repo,
             &json!({
                 "event": tampered,
@@ -352,21 +344,16 @@ mod tests {
                 "project_slug": "core",
             }),
         )
-        .expect("run");
-        assert!(!env.success);
-        assert_eq!(
-            env.data
-                .as_ref()
-                .and_then(|d| d.get("delivery_status"))
-                .and_then(|v| v.as_str()),
-            Some("failed-bus-mismatch")
-        );
+        .expect_err("run");
+        assert_eq!(err, "ecst_mismatch");
     }
 
     #[test]
     fn replay_fallback_only_with_lab_mock() {
         let prev = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        let prev_iota = std::env::var("SDDIA_LAB_SIMULATE_IOTA").ok();
         std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
         let err = resolve_replay_tracker(None, "AUT-3").unwrap_err();
         assert!(err.contains("sin SDDIA_LAB_MOCK_OUTBOUND"));
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
@@ -376,6 +363,11 @@ mod tests {
             std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v);
         } else {
             std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        }
+        if let Some(v) = prev_iota {
+            std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v);
+        } else {
+            std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA");
         }
     }
 }

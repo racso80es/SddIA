@@ -8,8 +8,11 @@ use std::sync::Mutex;
 use serde_json::{json, Value};
 use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, EventManagerError, EventManagerPort,
-    HandshakeVersionRequest, HandshakeVersionResult, MoveToDlqRequest, PublishEcstRequest,
-    PublishEcstResult, RecordDeliveryRequest, ReplayDlqRequest,
+    GetDltSealRequest, GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
+    HandshakeVersionResult,
+    ListDlqRequest, ListDlqResult, ListPendingRequest, ListPendingResult, ListTracesRequest,
+    ListTracesResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
+    RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 
 struct ExternalCapsuleInner {
@@ -82,6 +85,18 @@ impl ExternalCapsuleEventAdapter {
             return Err(EventManagerError::ExternalCapsule(msg.to_string()));
         }
         Ok(v)
+    }
+
+    fn rpc_result<T: serde::de::DeserializeOwned>(
+        inner: &mut ExternalCapsuleInner,
+        operation: &str,
+        payload: Value,
+    ) -> Result<T, EventManagerError> {
+        let v = Self::rpc(inner, operation, payload)?;
+        let r = v
+            .get("result")
+            .ok_or_else(|| EventManagerError::ExternalCapsule("missing result".into()))?;
+        serde_json::from_value(r.clone()).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))
     }
 }
 
@@ -161,12 +176,65 @@ impl EventManagerPort for ExternalCapsuleEventAdapter {
         req: HandshakeVersionRequest,
     ) -> Result<HandshakeVersionResult, EventManagerError> {
         let mut g = self.inner.lock().expect("capsule lock");
-        let v = Self::rpc(
-            &mut g,
-            "handshake_version",
-            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?,
-        )?;
-        let r = v.get("result").ok_or_else(|| EventManagerError::ExternalCapsule("missing result".into()))?;
-        serde_json::from_value(r.clone()).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))
+        let payload = serde_json::to_value(&req)
+            .map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        Self::rpc_result(&mut g, "handshake_version", payload)
+    }
+
+    fn get_event(&self, req: GetEventRequest) -> Result<GetEventResult, EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        Self::rpc_result(&mut g, "get_event", payload)
+    }
+
+    fn list_pending(
+        &self,
+        req: ListPendingRequest,
+    ) -> Result<ListPendingResult, EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        Self::rpc_result(&mut g, "list_pending", payload)
+    }
+
+    fn list_dlq(&self, req: ListDlqRequest) -> Result<ListDlqResult, EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        Self::rpc_result(&mut g, "list_dlq", payload)
+    }
+
+    fn list_traces(&self, req: ListTracesRequest) -> Result<ListTracesResult, EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        Self::rpc_result(&mut g, "list_traces", payload)
+    }
+
+    fn purge_event(&self, req: PurgeEventRequest) -> Result<(), EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        let _: Value = Self::rpc_result(&mut g, "purge_event", payload)?;
+        Ok(())
+    }
+
+    fn seal_dlt(&self, req: SealDltRequest) -> Result<(), EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        let _ = Self::rpc(&mut g, "seal_dlt", payload)?;
+        Ok(())
+    }
+
+    fn get_dlt_seal(
+        &self,
+        req: GetDltSealRequest,
+    ) -> Result<GetDltSealResult, EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        Self::rpc_result(&mut g, "get_dlt_seal", payload)
     }
 }

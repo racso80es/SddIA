@@ -1164,7 +1164,69 @@ pub(crate) fn seal_forged_backlog_at_origin(
     Ok(())
 }
 
+fn stamp_envelope_from_event(repo: &Path, event: &Value) -> Result<OrchestratorEnvelope, String> {
+    match stamp_event(repo, event) {
+        Ok((stamped, note)) => {
+            let (delivery_status, exit_code) =
+                classify_stamp_delivery(stamped, note.as_deref(), event);
+            let ok = delivery_status == "success"
+                || (exit_code == 0 && delivery_status.starts_with("skipped"));
+            Ok(OrchestratorEnvelope {
+                success: ok,
+                status_code: exit_code,
+                data: Some(json!({
+                    "stamped": stamped,
+                    "note": note,
+                    "delivery_status": delivery_status,
+                })),
+                error: note.as_ref().filter(|n| n.starts_with("warn:")).cloned(),
+                execution_report: Some(json!({
+                    "phases": [{
+                        "phase_name": "Sello de ciclo",
+                        "status": if ok { "executed" } else if delivery_status.starts_with("skipped") { "skipped" } else { "failed" },
+                        "handler": "tracker-stamp",
+                    }]
+                })),
+                exit_code,
+            })
+        }
+        Err(warn) if warn.starts_with("warn:") => Ok(OrchestratorEnvelope {
+            success: false,
+            status_code: 1,
+            data: Some(json!({ "stamped": false, "delivery_status": "failed", "note": warn })),
+            error: Some(warn),
+            execution_report: None,
+            exit_code: 1,
+        }),
+        Err(e) => Err(e),
+    }
+}
+
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
+    if std::env::var_os("SDDIA_DEBUG_TRACKER_STAMP").is_some() {
+        eprintln!(
+            "tracker-stamp inputs keys={:?} et={:?}",
+            process_inputs
+                .as_object()
+                .map(|m| m.keys().collect::<Vec<_>>()),
+            process_inputs.pointer("/event/event_type")
+        );
+    }
+    if let Some(inline) = process_inputs.get("event").filter(|v| v.is_object()) {
+        let et = inline
+            .get("event_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if matches!(
+            et,
+            "Work_Initiated"
+                | "Validation_Started"
+                | "PullRequest_Presented"
+                | "PullRequest_Merged"
+        ) {
+            return stamp_envelope_from_event(repo, inline);
+        }
+    }
     let event = load_event(repo, process_inputs)?;
     if let Err(reason) = super::super::ecst_input_loader::verify_ecst_matches_bus(repo, &event) {
         let delivery_status = "failed-bus-mismatch".to_string();
@@ -1191,7 +1253,8 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
         Ok((stamped, note)) => {
             let (delivery_status, exit_code) =
                 classify_stamp_delivery(stamped, note.as_deref(), &event);
-            let ok = delivery_status == "success";
+            let ok = delivery_status == "success"
+                || (exit_code == 0 && delivery_status.starts_with("skipped"));
             Ok(OrchestratorEnvelope {
                 success: ok,
                 status_code: exit_code,
@@ -1237,15 +1300,9 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
-    use std::sync::{Mutex, OnceLock};
-
-    fn lab_guard() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
-    }
 
     fn with_lab<F: FnOnce()>(f: F) {
-        let _g = lab_guard();
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
         std::env::remove_var("LINEAR_API_TOKEN");
         f();
@@ -1310,8 +1367,11 @@ mod tests {
     #[test]
     fn no_op_without_tracker_ref() {
         let event = json!({
-            "event_type": "Work_Initiated",
-            "payload": { "branch": "feat/x" }
+            "event_type": "Delivery_Committed",
+            "payload": {
+                "delivery_mode": "trunk_direct",
+                "commit_sha": "abc",
+            }
         });
         let repo = std::path::Path::new("/tmp");
         let (stamped, note) = stamp_event(repo, &event).unwrap_or((false, None));
@@ -1330,8 +1390,13 @@ mod tests {
                     "persist_ref": "docs/features/demo",
                 }
             });
-            let (stamped, _) = stamp_event(&repo, &event).unwrap();
-            assert!(stamped);
+            let (stamped, note) = stamp_event(&repo, &event).unwrap();
+            assert!(!stamped);
+            assert!(
+                note.as_deref()
+                    .unwrap_or_default()
+                    .contains("sellado en origen")
+            );
         });
     }
 
@@ -1340,11 +1405,11 @@ mod tests {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
-                "event_type": "Work_Initiated",
+                "event_type": "Delivery_Committed",
                 "payload": {
                     "tracker_ref": "LAB-PBI-BADLABEL",
-                    "branch": "feat/x",
-                    "persist_ref": "docs/features/demo",
+                    "commit_sha": "deadbeef",
+                    "delivery_mode": "trunk_direct",
                 }
             });
             let (stamped, _) = stamp_event(&repo, &event).unwrap();
@@ -1365,7 +1430,13 @@ mod tests {
                 }
             });
             let (stamped, note) = stamp_event(&repo, &event).unwrap();
-            assert!(stamped, "note={note:?}");
+            assert!(!stamped);
+            assert!(
+                note.as_deref()
+                    .unwrap_or_default()
+                    .contains("sellado en origen"),
+                "note={note:?}"
+            );
         });
     }
 
@@ -1374,10 +1445,11 @@ mod tests {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
-                "event_type": "Work_Initiated",
+                "event_type": "Delivery_Committed",
                 "payload": {
                     "tracker_ref": "LAB-PBI-BADPARENT",
-                    "branch": "feat/x",
+                    "commit_sha": "deadbeef",
+                    "delivery_mode": "trunk_direct",
                     "expected_hu_tracker_ref": "LAB-HU-1",
                 }
             });
@@ -1508,10 +1580,11 @@ mod tests {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
-                "event_type": "Work_Initiated",
+                "event_type": "Delivery_Committed",
                 "payload": {
                     "tracker_ref": "LAB-PBI-FIXONLY",
-                    "branch": "feat/x",
+                    "commit_sha": "deadbeef",
+                    "delivery_mode": "trunk_direct",
                 }
             });
             let (stamped, _) = stamp_event(&repo, &event).unwrap();
@@ -1523,7 +1596,7 @@ mod tests {
     fn lab_cycle_work_to_merged_stamps() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
-            for (etype, extra) in [
+            for (etype, extra, expect_stamp) in [
                 (
                     "Work_Initiated",
                     json!({
@@ -1531,6 +1604,7 @@ mod tests {
                         "branch": "feat/lab",
                         "expected_hu_tracker_ref": "LAB-HU-1",
                     }),
+                    false,
                 ),
                 (
                     "PullRequest_Presented",
@@ -1539,6 +1613,7 @@ mod tests {
                         "branch": "feat/lab",
                         "pr_url": "https://github.com/o/r/pull/1",
                     }),
+                    false,
                 ),
                 (
                     "PullRequest_Merged",
@@ -1546,11 +1621,25 @@ mod tests {
                         "tracker_ref": "LAB-PBI-MERGE-LAST",
                         "merge_commit_hash": "abc123deadbeef",
                     }),
+                    false,
+                ),
+                (
+                    "Delivery_Committed",
+                    json!({
+                        "tracker_ref": "LAB-PBI-MERGE-LAST",
+                        "merge_commit_hash": "abc123deadbeef",
+                        "delivery_mode": "trunk_direct",
+                    }),
+                    true,
                 ),
             ] {
                 let event = json!({ "event_type": etype, "payload": extra });
-                let (stamped, _) = stamp_event(&repo, &event).unwrap();
-                assert!(stamped, "expected stamp for {etype}");
+                let (stamped, note) = stamp_event(&repo, &event).unwrap();
+                if expect_stamp {
+                    assert!(stamped, "expected stamp for {etype}, note={note:?}");
+                } else {
+                    assert!(!stamped, "expected no-op for {etype}");
+                }
             }
         });
     }

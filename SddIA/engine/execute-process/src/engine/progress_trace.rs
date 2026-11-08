@@ -1,9 +1,8 @@
 //! Emisión best-effort de Progress Trace Capsule (PTC) bajo `eda_fractal.progress`.
 
 use chrono::Utc;
-use sddia_event_store::{append_progress_monotonic, store_mode, writes_filesystem, writes_store};
+use crate::engine::eda_port;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -128,31 +127,7 @@ pub fn short_verdict(entry: &Value, handoff: Option<&Value>) -> Option<String> {
 }
 
 fn write_ptc_best_effort(repo: &Path, correlation_id: &str, envelope: &Value) {
-    let mode = store_mode();
-    if writes_store(mode) {
-        let _ = append_progress_monotonic(repo, correlation_id, envelope);
-    }
-    if !writes_filesystem(mode) {
-        return;
-    }
-    let progress_rel = super::fractal::load_progress_dir(repo);
-    let trace_id = envelope
-        .get("trace_id")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    if trace_id.is_empty() {
-        return;
-    }
-    let target = repo
-        .join(progress_rel)
-        .join(correlation_id)
-        .join(format!("{trace_id}.json"));
-    if let Some(parent) = target.parent() {
-        let _ = fs::create_dir_all(parent);
-    }
-    if let Ok(text) = serde_json::to_string(envelope) {
-        let _ = fs::write(&target, format!("{text}\n"));
-    }
+    let _ = eda_port::append_progress(repo, correlation_id, envelope);
 }
 
 /// Emite PTC fire-and-forget; cualquier error IO se traga (nunca falla el orquestador).
@@ -244,6 +219,7 @@ mod tests {
 
     #[test]
     fn emit_writes_under_progress_leaf_not_telemetry() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let base = std::env::temp_dir().join(format!("ptc-write-{}", Uuid::new_v4()));
         let repo = base.join("repo");
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();

@@ -1,12 +1,12 @@
 //! Utilidades bus fractal EDA (paridad subset `eda_bus_utils.py`).
 
-use super::eda_bus_topology::{safe_remove_path, subscriber_id, write_json_atomic};
+use super::eda_bus_topology::{safe_remove_path, subscriber_id};
+#[cfg(test)]
+use super::eda_bus_topology::write_json_atomic;
 use super::workspace::load_paths_config;
 use crate::core::parser::parse_frontmatter;
 use chrono::Utc;
-use sddia_event_store::{
-    delivery_status_from_label, record_witness, store_mode, writes_filesystem, writes_store,
-};
+use crate::engine::eda_port;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::fs;
@@ -130,48 +130,39 @@ pub fn load_telemetry_compliance_config(repo: &Path) -> Result<HashMap<String, S
 }
 
 pub fn stamp_fractal_delivery_state(event_path: &Path, subscriber_key: &str, status: &str) {
-    let mode = store_mode();
-    if writes_store(mode) {
-        if let (Some(repo), Some(event_id)) = (
-            repo_root_from_event(event_path),
-            event_path.file_stem().and_then(|stem| stem.to_str()),
-        ) {
-            if record_witness(
-                &repo,
-                event_id,
-                subscriber_key,
-                delivery_status_from_label(status),
-                &json!({}),
-            )
-            .is_err()
-            {
-                return;
-            }
-        } else if !writes_filesystem(mode) {
-            return;
+    if let (Some(repo), Some(event_id)) = (
+        repo_root_from_event(event_path),
+        event_path.file_stem().and_then(|stem| stem.to_str()),
+    ) {
+        let label = status.trim().to_ascii_lowercase();
+        if matches!(label.as_str(), "success" | "processed" | "skipped") {
+            let _ = eda_port::record_delivery_ack(&repo, event_id, subscriber_key);
         }
     }
-    if !writes_filesystem(mode) || !event_path.is_file() {
-        return;
-    }
-    let Ok(text) = fs::read_to_string(event_path) else {
-        return;
-    };
-    let Ok(mut body) = serde_json::from_str::<Value>(&text) else {
-        return;
-    };
-    let ds = body
-        .as_object_mut()
-        .and_then(|o| {
-            if !o.contains_key("delivery_state") {
-                o.insert("delivery_state".into(), json!({}));
-            }
-            o.get_mut("delivery_state")
-        })
-        .and_then(|v| v.as_object_mut());
-    if let Some(ds) = ds {
-        ds.insert(subscriber_key.to_string(), json!(status));
-        let _ = write_json_atomic(event_path, &body);
+    #[cfg(test)]
+    {
+        if !event_path.is_file() {
+            return;
+        }
+        let Ok(text) = fs::read_to_string(event_path) else {
+            return;
+        };
+        let Ok(mut body) = serde_json::from_str::<Value>(&text) else {
+            return;
+        };
+        let ds = body
+            .as_object_mut()
+            .and_then(|o| {
+                if !o.contains_key("delivery_state") {
+                    o.insert("delivery_state".into(), json!({}));
+                }
+                o.get_mut("delivery_state")
+            })
+            .and_then(|v| v.as_object_mut());
+        if let Some(ds) = ds {
+            ds.insert(subscriber_key.to_string(), json!(status));
+            let _ = write_json_atomic(event_path, &body);
+        }
     }
 }
 
@@ -217,7 +208,7 @@ pub fn load_fractal_dead_letter_dir(repo: &Path) -> PathBuf {
         .get("eda_fractal")
         .and_then(|f| f.get("dead_letter"))
         .and_then(|v| v.as_str())
-        .filter(|s| sddia_event_store::is_filesystem_rel(s))
+        .filter(|s| crate::engine::eda_port::is_filesystem_rel(s))
     {
         let trimmed = dl.trim().trim_start_matches("./");
         return repo.join(trimmed);
@@ -226,7 +217,7 @@ pub fn load_fractal_dead_letter_dir(repo: &Path) -> PathBuf {
         .get("eda_bus")
         .and_then(|b| b.get("dead_letter"))
         .and_then(|v| v.as_str())
-        .filter(|s| sddia_event_store::is_filesystem_rel(s))
+        .filter(|s| crate::engine::eda_port::is_filesystem_rel(s))
     {
         let trimmed = dl.trim().trim_start_matches("./");
         return repo.join(trimmed);
@@ -234,32 +225,49 @@ pub fn load_fractal_dead_letter_dir(repo: &Path) -> PathBuf {
     default
 }
 
-/// Move físico a `eda_fractal.dead_letter` (crea directorio si falta).
+/// DLQ fractal: productivo vía puerto; lab FS solo en `cfg(test)`.
 pub fn move_fractal_event_to_dead_letter(repo: &Path, event_path: &Path) -> bool {
-    if !event_path.is_file() {
+    if let Some(event_id) = event_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if eda_port::move_to_dlq(repo, event_id, "fractal-dead-letter").is_ok() {
+            return true;
+        }
+    }
+    #[cfg(not(test))]
+    {
         return false;
     }
-    let dead_letter = load_fractal_dead_letter_dir(repo);
-    if let Err(e) = fs::create_dir_all(&dead_letter) {
-        eprintln!("[fractal-dlq] mkdir {}: {e}", dead_letter.display());
-        return false;
-    }
-    let Some(name) = event_path.file_name() else {
-        return false;
-    };
-    let dest = dead_letter.join(name);
-    if dest.exists() {
-        let _ = fs::remove_file(&dest);
-    }
-    match fs::rename(event_path, &dest) {
-        Ok(()) => true,
-        Err(e) => {
-            eprintln!(
-                "[fractal-dlq] rename {} → {}: {e}",
-                event_path.display(),
-                dest.display()
-            );
-            false
+    #[cfg(test)]
+    {
+        if !event_path.is_file() {
+            return false;
+        }
+        let dead_letter = load_fractal_dead_letter_dir(repo);
+        if let Err(e) = fs::create_dir_all(&dead_letter) {
+            eprintln!("[fractal-dlq] mkdir {}: {e}", dead_letter.display());
+            return false;
+        }
+        let Some(name) = event_path.file_name() else {
+            return false;
+        };
+        let dest = dead_letter.join(name);
+        if dest.exists() {
+            let _ = fs::remove_file(&dest);
+        }
+        match fs::rename(event_path, &dest) {
+            Ok(()) => true,
+            Err(e) => {
+                eprintln!(
+                    "[fractal-dlq] rename {} → {}: {e}",
+                    event_path.display(),
+                    dest.display()
+                );
+                false
+            }
         }
     }
 }
@@ -276,6 +284,26 @@ pub fn required_subscriber_ids(registry: &Value, event_type: &str) -> Vec<String
         .unwrap_or_default()
 }
 
+fn load_fractal_ecst_body(repo: &Path, event_path: &Path) -> Option<Value> {
+    if event_path.is_file() {
+        #[cfg(test)]
+        {
+            let text = fs::read_to_string(event_path).ok()?;
+            return serde_json::from_str(&text).ok();
+        }
+        #[cfg(not(test))]
+        {
+            let _ = event_path;
+            return None;
+        }
+    }
+    let root = repo_root_from_event(event_path).unwrap_or_else(|| repo.to_path_buf());
+    let event_id = event_path.file_stem().and_then(|s| s.to_str())?;
+    eda_port::load_dispatched(&root, event_id, event_path)
+        .ok()
+        .flatten()
+}
+
 pub fn maybe_purge_fractal_telemetry_when_terminal(
     repo: &Path,
     event_path: &Path,
@@ -283,13 +311,10 @@ pub fn maybe_purge_fractal_telemetry_when_terminal(
     event_type: &str,
 ) -> bool {
     let required = required_subscriber_ids(registry, event_type);
-    if required.is_empty() || !event_path.is_file() {
+    if required.is_empty() {
         return false;
     }
-    let Ok(text) = fs::read_to_string(event_path) else {
-        return false;
-    };
-    let Ok(body) = serde_json::from_str::<Value>(&text) else {
+    let Some(body) = load_fractal_ecst_body(repo, event_path) else {
         return false;
     };
     let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
@@ -301,8 +326,16 @@ pub fn maybe_purge_fractal_telemetry_when_terminal(
             return false;
         }
     }
-    let _ = repo;
-    safe_remove_path(event_path)
+    if event_path.is_file() {
+        return safe_remove_path(event_path);
+    }
+    let root = repo_root_from_event(event_path).unwrap_or_else(|| repo.to_path_buf());
+    if let Some(event_id) = event_path.file_stem().and_then(|s| s.to_str()) {
+        if eda_port::purge_event(&root, event_id).is_ok() {
+            return true;
+        }
+    }
+    false
 }
 
 pub fn resolve_ed_telemetry_contract(repo: &Path, capsule_id: Option<&str>) -> Value {

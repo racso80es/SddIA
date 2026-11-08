@@ -605,6 +605,7 @@ mod tests {
     use uuid::Uuid;
 
     fn with_lab<F: FnOnce()>(f: F) {
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let prev = env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
         let prev_git = env::var("SDDIA_TRACKER_MARKDOWN_APPLY_SKIP_GIT").ok();
         env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
@@ -778,6 +779,7 @@ mod tests {
         struct Guard;
         impl Drop for Guard {
             fn drop(&mut self) {
+                crate::engine::eda_port::clear_port();
                 override_store_mode(None);
             }
         }
@@ -785,7 +787,7 @@ mod tests {
         override_store_mode(Some(StoreMode::Redb));
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
-            materialize_pending_domain_event(
+            let rel = materialize_pending_domain_event(
                 &repo,
                 "Tracker_Issue_Changed",
                 "test",
@@ -797,12 +799,7 @@ mod tests {
                 }),
             )
             .expect("materialize");
-            let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&repo))
-                .expect("open");
-            let rows = store.list_family(sddia_event_store::Family::Domain).expect("list");
-            let event_id = rows.last().expect("row").event_id.clone();
-            drop(store);
-            let rel = format!(".events/pending/{event_id}.json");
+            crate::engine::eda_port::clear_port();
             let pending = repo.join(&rel);
             if pending.is_file() {
                 fs::remove_file(&pending).ok();
@@ -810,7 +807,7 @@ mod tests {
             let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(&repo, &rel).expect("load");
             let mut tampered = stored.clone();
             tampered["payload"]["issue_ref"] = json!("LAB-TAMPER");
-            let env = run(
+            let err = run(
                 &repo,
                 &json!({
                     "event": tampered,
@@ -818,15 +815,8 @@ mod tests {
                     "project_slug": "core",
                 }),
             )
-            .expect("run");
-            assert!(!env.success);
-            assert_eq!(
-                env.data
-                    .as_ref()
-                    .and_then(|d| d.get("delivery_status"))
-                    .and_then(|v| v.as_str()),
-                Some("failed-bus-mismatch")
-            );
+            .expect_err("run");
+            assert_eq!(err, "ecst_mismatch");
         });
     }
 }

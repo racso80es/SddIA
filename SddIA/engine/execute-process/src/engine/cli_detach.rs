@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn emit_detach_pec_writes_orchestration_not_instance_customization() {
-        let tmp = tempfile::tempdir().expect("tmp");
+        let (_fs, tmp) = crate::engine::eda_port::test_lab::fs_lab_tempdir();
         let repo = tmp.path();
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
@@ -247,10 +247,13 @@ mod tests {
         )
         .unwrap();
         let seal = emit_detach_pec(repo, "pull-request-review", "exec-1", "corr-1").expect("pec");
-        let path = seal.get("target_path").and_then(|v| v.as_str()).unwrap();
-        assert!(path.starts_with(".events/orchestration/"), "{path}");
-        assert!(!path.contains(".SddIA/events"));
-        let raw = std::fs::read_to_string(repo.join(path)).unwrap();
+        let orch_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let path = repo
+            .join(".events/orchestration")
+            .join(format!("{orch_id}.json"));
+        assert!(path.is_file(), "orchestration PEC missing: {}", path.display());
+        assert!(!path.to_string_lossy().contains(".SddIA/events"));
+        let raw = std::fs::read_to_string(&path).unwrap();
         let ev: Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(ev["event_type"], "Process_Execution_Completed");
         assert_eq!(ev["payload"]["cycle_phase"], "awaiting_agents");

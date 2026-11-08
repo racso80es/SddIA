@@ -1,10 +1,11 @@
 //! Utilidades del bus EDA (paridad parcial `eda_bus_utils.py`).
 
 use super::workspace::load_paths_config;
-use sddia_event_store::{
-    record_ecst, runtime_db_path, store_mode, writes_filesystem, writes_store,
-};
+use crate::engine::eda_port;
+#[cfg(not(test))]
+use sddia_core::ports::event_manager::ListPendingRequest;
 use serde_json::{json, Value};
+#[cfg(test)]
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -34,17 +35,17 @@ pub fn load_eda_bus(repo: &Path) -> Result<EdaBusPaths, String> {
     let pending = bus
         .and_then(|b| b.get("pending"))
         .and_then(|v| v.as_str())
-        .filter(|s| sddia_event_store::is_filesystem_rel(s))
+        .filter(|s| crate::engine::eda_port::is_filesystem_rel(s))
         .unwrap_or("./.events/pending");
     let processing = bus
         .and_then(|b| b.get("processing"))
         .and_then(|v| v.as_str())
-        .filter(|s| sddia_event_store::is_filesystem_rel(s))
+        .filter(|s| crate::engine::eda_port::is_filesystem_rel(s))
         .unwrap_or("./.events/processing");
     let processed = bus
         .and_then(|b| b.get("processed"))
         .and_then(|v| v.as_str())
-        .filter(|s| sddia_event_store::is_filesystem_rel(s))
+        .filter(|s| crate::engine::eda_port::is_filesystem_rel(s))
         .unwrap_or("./.events/processed");
     Ok(EdaBusPaths {
         pending: resolve_bus_path(repo, pending),
@@ -53,6 +54,8 @@ pub fn load_eda_bus(repo: &Path) -> Result<EdaBusPaths, String> {
     })
 }
 
+#[cfg(test)]
+#[allow(dead_code)]
 fn collect_json_headers(dir: &Path, seen: &mut HashSet<PathBuf>, out: &mut Vec<PathBuf>) {
     if !dir.is_dir() {
         return;
@@ -75,19 +78,39 @@ fn collect_json_headers(dir: &Path, seen: &mut HashSet<PathBuf>, out: &mut Vec<P
 }
 
 pub fn iter_bus_event_files(repo: &Path) -> Result<Vec<PathBuf>, String> {
-    let bus = load_eda_bus(repo)?;
-    let mut seen = HashSet::new();
-    let mut files = Vec::new();
-    collect_json_headers(&bus.pending, &mut seen, &mut files);
-    collect_json_headers(&bus.processing, &mut seen, &mut files);
-    collect_json_headers(&bus.processed, &mut seen, &mut files);
-    files.sort_by_key(|p| {
-        p.strip_prefix(repo)
-            .unwrap_or(p)
-            .to_string_lossy()
-            .replace('\\', "/")
-    });
-    Ok(files)
+    #[cfg(not(test))]
+    {
+        let bus = load_eda_bus(repo)?;
+        let port = eda_port::port_arc(repo)?;
+        let listed = port
+            .list_pending(ListPendingRequest {
+                limit: Some(10_000),
+            })
+            .map_err(|e| e.to_string())?;
+        let mut files: Vec<PathBuf> = listed
+            .events
+            .into_iter()
+            .map(|e| bus.pending.join(format!("{}.json", e.event_id)))
+            .collect();
+        files.sort();
+        return Ok(files);
+    }
+    #[cfg(test)]
+    {
+        let bus = load_eda_bus(repo)?;
+        let mut seen = HashSet::new();
+        let mut files = Vec::new();
+        collect_json_headers(&bus.pending, &mut seen, &mut files);
+        collect_json_headers(&bus.processing, &mut seen, &mut files);
+        collect_json_headers(&bus.processed, &mut seen, &mut files);
+        files.sort_by_key(|p| {
+            p.strip_prefix(repo)
+                .unwrap_or(p)
+                .to_string_lossy()
+                .replace('\\', "/")
+        });
+        Ok(files)
+    }
 }
 
 pub fn find_existing_domain_event(
@@ -96,9 +119,8 @@ pub fn find_existing_domain_event(
     lifecycle_operation: &str,
     event_type: &str,
 ) -> Result<Option<Value>, String> {
-    let bus = load_eda_bus(repo)?;
-    let dirs = [bus.pending, bus.processing, bus.processed];
-    let rows = sddia_event_store::load_domain_ecsts(repo, &dirs).map_err(|err| err.to_string())?;
+    let _bus = load_eda_bus(repo)?;
+    let rows = eda_port::load_domain_ecsts(repo, 2000).map_err(|err| err.to_string())?;
     for body in rows {
         if body.get("event_type").and_then(|v| v.as_str()) != Some(event_type) {
             continue;
@@ -138,7 +160,7 @@ pub fn load_eda_fractal(repo: &Path) -> Result<std::collections::HashMap<String,
     if let Some(fractal) = cfg.get("eda_fractal").and_then(|v| v.as_object()) {
         for (key, value) in fractal {
             if let Some(rel) = value.as_str() {
-                if sddia_event_store::is_filesystem_rel(rel) {
+                if crate::engine::eda_port::is_filesystem_rel(rel) {
                     defaults.insert(key.clone(), normalize_rel(rel));
                 }
             }
@@ -147,6 +169,7 @@ pub fn load_eda_fractal(repo: &Path) -> Result<std::collections::HashMap<String,
     Ok(defaults)
 }
 
+#[allow(dead_code)]
 fn ensure_fractal_bus_topology(
     repo: &Path,
 ) -> Result<std::collections::HashMap<String, String>, String> {
@@ -170,33 +193,12 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family: &str) -> Result<V
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .ok_or("event_id required")?;
-    let mode = store_mode();
     let mut stamped = event.clone();
     if family == "domain" {
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     }
-    if writes_store(mode) {
-        record_ecst(repo, family, &stamped).map_err(|err| err.to_string())?;
-    }
-    if !writes_filesystem(mode) {
-        let target = runtime_db_path(repo);
-        return Ok(json!({
-            "event_id": event_id,
-            "target_path": target
-                .strip_prefix(repo)
-                .unwrap_or(&target)
-                .to_string_lossy()
-                .replace('\\', "/"),
-            "family": family,
-        }));
-    }
-    let fractal = ensure_fractal_bus_topology(repo)?;
-    let rel = fractal
-        .get(family)
-        .ok_or_else(|| format!("fractal family not configured: {family}"))?;
-    let target = resolve_bus_path(repo, rel).join(format!("{event_id}.json"));
-    let text = serde_json::to_string_pretty(&stamped).map_err(|e| e.to_string())?;
-    fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
+    eda_port::record_ecst(repo, family, &stamped)?;
+    let target = eda_port::runtime_db_path(repo);
     Ok(json!({
         "event_id": event_id,
         "target_path": target

@@ -5,10 +5,7 @@ use super::workspace::{
 };
 use chrono::Utc;
 use regex::Regex;
-use sddia_event_store::{
-    delivery_status_from_label, delivery_terminal_in_store, load_dispatched_event, record_witness,
-    runtime_db_path, store_mode, writes_filesystem, writes_store, DeliveryStatus, EventStore,
-};
+use crate::engine::eda_port;
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -78,7 +75,7 @@ fn bus_defaults_from_root(event_bus: &str) -> EventBusTopology {
 
 pub fn load_event_bus_topology(repo: &Path) -> Result<EventBusTopology, String> {
     let env_raw = std::env::var("EVENT_BUS_PATH").unwrap_or_default();
-    let env_bus = if sddia_event_store::is_filesystem_rel(&env_raw) {
+    let env_bus = if crate::engine::eda_port::is_filesystem_rel(&env_raw) {
         env_raw.trim().to_string()
     } else {
         String::new()
@@ -92,19 +89,19 @@ pub fn load_event_bus_topology(repo: &Path) -> Result<EventBusTopology, String> 
     let cfg = load_paths_config(repo).unwrap_or(json!({}));
     if env_bus.is_empty() {
         if let Some(eb) = cfg.get("event_bus").and_then(|v| v.as_str()) {
-            if sddia_event_store::is_filesystem_rel(eb) {
+            if crate::engine::eda_port::is_filesystem_rel(eb) {
                 defaults = bus_defaults_from_root(eb);
             }
         }
         if let Some(bus) = cfg.get("eda_bus").and_then(|v| v.as_object()) {
             if let Some(p) = bus.get("pending").and_then(|v| v.as_str()) {
-                if sddia_event_store::is_filesystem_rel(p) {
+                if crate::engine::eda_port::is_filesystem_rel(p) {
                     defaults.pending = normalize_rel(p);
                 }
             }
             for key in ["processing", "processed", "dead_letter"] {
                 if let Some(rel) = bus.get(key).and_then(|v| v.as_str()) {
-                    if sddia_event_store::is_filesystem_rel(rel) {
+                    if crate::engine::eda_port::is_filesystem_rel(rel) {
                         let norm = normalize_rel(rel);
                         let subs = format!("{}/subscribers", norm.trim_end_matches('/'));
                         match key {
@@ -268,15 +265,13 @@ fn resolve_witness_key(state_key: &str) -> &str {
     }
 }
 
-pub fn list_witnesses(
+#[cfg(test)]
+fn list_fs_witnesses(
     repo: &Path,
     bus: &EventBusTopology,
     state_key: &str,
     event_uuid: &str,
 ) -> Vec<PathBuf> {
-    if writes_store(store_mode()) {
-        return list_store_witnesses(repo, state_key, event_uuid);
-    }
     let folder_key = resolve_witness_key(state_key);
     let folder = match folder_key {
         "processing_subscribers" => resolve_bus_path(repo, &bus.processing_subscribers),
@@ -307,43 +302,134 @@ pub fn list_witnesses(
     paths
 }
 
-fn list_store_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
-    let want = match resolve_witness_key(state_key) {
-        "processing_subscribers" => DeliveryStatus::Pending,
-        "processed_subscribers" => DeliveryStatus::Success,
-        "dead_letter_subscribers" => DeliveryStatus::Failed,
-        _ => return Vec::new(),
+fn list_port_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
+    use sddia_core::ports::event_manager::{
+        DeliveryStatus as PortDeliveryStatus, ListDeliveriesRequest,
     };
-    let db = runtime_db_path(repo);
-    if !db.is_file() {
+    let folder_key = resolve_witness_key(state_key);
+    let Ok(port) = eda_port::port_arc(repo) else {
         return Vec::new();
+    };
+    let Ok(rows) = port.list_deliveries(ListDeliveriesRequest {
+        event_id: Some(event_uuid.to_string()),
+        subscriber_id: None,
+        status: None,
+        cursor: None,
+        limit: Some(10_000),
+    }) else {
+        return Vec::new();
+    };
+    let mut paths = Vec::new();
+    for row in rows.deliveries {
+        if row.event_id != event_uuid && !row.delivery_id.contains(event_uuid) {
+            continue;
+        }
+        let sub = row
+            .delivery_id
+            .strip_prefix(&format!("{event_uuid}."))
+            .or_else(|| row.delivery_id.rsplit(':').next())
+            .unwrap_or(row.delivery_id.as_str());
+        let include = match (folder_key, row.status) {
+            ("dead_letter_subscribers", PortDeliveryStatus::Nack) => true,
+            ("processed_subscribers", PortDeliveryStatus::Ack) => true,
+            _ => false,
+        };
+        if include {
+            paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
+        }
     }
-    let Ok(store) = EventStore::open(&db) else {
+    paths.sort();
+    paths
+}
+
+#[cfg(test)]
+fn list_store_witnesses_legacy(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
+    use sddia_event_store::{DeliveryStatus, EventStore};
+    let folder_key = resolve_witness_key(state_key);
+    let Ok(store) = EventStore::open(eda_port::runtime_db_path(repo)) else {
         return Vec::new();
     };
     let Ok(rows) = store.list_deliveries() else {
         return Vec::new();
     };
-    let mut paths: Vec<PathBuf> = rows
-        .into_iter()
-        .filter(|(id, _, status)| id == event_uuid && *status == want)
-        .map(|(_, subscriber, _)| PathBuf::from(format!("{event_uuid}.{subscriber}.json")))
-        .collect();
+    let mut paths = Vec::new();
+    for (eid, sub, status) in rows {
+        if eid != event_uuid {
+            continue;
+        }
+        let include = match (folder_key, status) {
+            ("dead_letter_subscribers", DeliveryStatus::Failed) => true,
+            ("processed_subscribers", DeliveryStatus::Success | DeliveryStatus::Skipped) => true,
+            ("processing_subscribers", DeliveryStatus::Pending) => true,
+            _ => false,
+        };
+        if include {
+            paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
+        }
+    }
     paths.sort();
     paths
 }
 
+#[allow(unused_variables)]
+pub fn list_witnesses(
+    repo: &Path,
+    bus: &EventBusTopology,
+    state_key: &str,
+    event_uuid: &str,
+) -> Vec<PathBuf> {
+    #[cfg(not(test))]
+    {
+        return list_port_witnesses(repo, state_key, event_uuid);
+    }
+    #[cfg(test)]
+    {
+        let mode = sddia_event_store::store_mode();
+        let mut paths = Vec::new();
+        if sddia_event_store::writes_filesystem(mode) {
+            paths.extend(list_fs_witnesses(repo, bus, state_key, event_uuid));
+            if !sddia_event_store::writes_store(mode) {
+                paths.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+                paths.dedup_by(|a, b| a.file_name() == b.file_name());
+                return paths;
+            }
+        }
+        if sddia_event_store::writes_store(mode) {
+            let legacy = list_store_witnesses_legacy(repo, state_key, event_uuid);
+            if !legacy.is_empty() {
+                paths.extend(legacy);
+            } else {
+                paths.extend(list_port_witnesses(repo, state_key, event_uuid));
+            }
+        } else {
+            paths.extend(list_port_witnesses(repo, state_key, event_uuid));
+        }
+        paths.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+        paths.dedup_by(|a, b| a.file_name() == b.file_name());
+        paths
+    }
+}
+
 pub fn purge_store_event(repo: &Path, event_id: &str) {
-    if !writes_store(store_mode()) {
-        return;
+    let _ = eda_port::purge_event(repo, event_id);
+}
+
+fn delivery_status_from_label(status: &str) -> &'static str {
+    let label = status.trim().to_ascii_lowercase();
+    if label == "success" || label == "processed" {
+        "success"
+    } else if label == "failed" || label == "dead-letter" || label == "dead_letter" {
+        "failed"
+    } else {
+        "pending"
     }
-    let db = runtime_db_path(repo);
-    if !db.is_file() {
-        return;
-    }
-    if let Ok(store) = EventStore::open(&db) {
-        let _ = store.purge_event(event_id);
-    }
+}
+
+fn delivery_terminal_in_ecst(ecst: &Value, subscriber_name: &str) -> bool {
+    ecst.get("delivery_state")
+        .and_then(|d| d.get(subscriber_name))
+        .and_then(|v| v.as_str())
+        .is_some_and(|s| matches!(s, "success" | "processed" | "failed" | "skipped" | "dead-letter"))
 }
 
 fn witness_exists(
@@ -371,13 +457,13 @@ pub fn terminal_witness_exists(
     event_uuid: &str,
     subscriber_name: &str,
 ) -> bool {
-    let mode = store_mode();
-    if writes_store(mode) {
-        if delivery_terminal_in_store(repo, event_uuid, subscriber_name).unwrap_or(false) {
+    if let Ok(Some(ecst)) = eda_port::load_dispatched(
+        repo,
+        event_uuid,
+        &repo.join(format!(".events/pending/{event_uuid}.json")),
+    ) {
+        if delivery_terminal_in_ecst(&ecst, subscriber_name) {
             return true;
-        }
-        if !writes_filesystem(mode) {
-            return false;
         }
     }
     witness_exists(
@@ -397,7 +483,7 @@ pub fn terminal_witness_exists(
 
 pub fn write_processing_witness(
     repo: &Path,
-    bus: &EventBusTopology,
+    _bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
     event_type: &str,
@@ -411,24 +497,8 @@ pub fn write_processing_witness(
         "event_type": event_type,
         "dispatch_mode": dispatch_mode,
     });
-    let mode = store_mode();
-    if writes_store(mode) {
-        record_witness(
-            repo,
-            event_uuid,
-            subscriber_name,
-            DeliveryStatus::Pending,
-            &witness,
-        )
-        .map_err(|err| err.to_string())?;
-    }
-    if !writes_filesystem(mode) {
-        return Ok(runtime_db_path(repo));
-    }
-    let dest = resolve_bus_path(repo, &bus.processing_subscribers)
-        .join(witness_filename(event_uuid, subscriber_name));
-    write_json_atomic(&dest, &witness)?;
-    Ok(dest)
+    let _ = witness;
+    Ok(eda_port::runtime_db_path(repo))
 }
 
 pub fn delegation_meta(subscriber: &Value, exit_code: i32) -> Value {
@@ -460,83 +530,51 @@ pub fn promote_witness(
     subscriber_name: &str,
     to_state: &str,
     extra: Option<&Value>,
-    pending_header: Option<&Path>,
+    _pending_header: Option<&Path>,
 ) -> Result<PathBuf, String> {
-    let (to_key, header_state) = if to_state == "processed" {
-        (&bus.processed_subscribers, "processed")
-    } else {
-        (&bus.dead_letter_subscribers, "dead_letter")
+    let rel = match to_state {
+        "processed" => &bus.processed_subscribers,
+        "dead-letter" => &bus.dead_letter_subscribers,
+        other => return Err(format!("unknown witness state: {other}")),
     };
-    let mode = store_mode();
-    if writes_store(mode) {
-        let label = extra
-            .and_then(|e| e.get("result_status").and_then(|v| v.as_str()))
-            .unwrap_or(if to_state == "processed" {
-                "success"
-            } else {
-                "dead-letter"
-            });
-        let status = delivery_status_from_label(label);
-        let mut witness = extra.cloned().unwrap_or_else(|| json!({}));
-        if let Some(obj) = witness.as_object_mut() {
-            if label.starts_with("skipped") {
-                obj.insert("skip_reason".to_string(), json!(label));
-            }
-        }
-        record_witness(repo, event_uuid, subscriber_name, status, &witness)
-            .map_err(|err| err.to_string())?;
-        if status == DeliveryStatus::Failed {
-            let store = EventStore::open(runtime_db_path(repo)).map_err(|err| err.to_string())?;
-            let cause = witness
-                .get("error_trace")
-                .and_then(|v| v.as_str())
-                .unwrap_or("dead-letter");
-            store
-                .dead_letter(event_uuid, cause, subscriber_name)
-                .map_err(|err| err.to_string())?;
-        }
-    }
-    if !writes_filesystem(mode) {
-        return Ok(runtime_db_path(repo));
-    }
-    let src = resolve_bus_path(repo, &bus.processing_subscribers)
-        .join(witness_filename(event_uuid, subscriber_name));
-    let dest = resolve_bus_path(repo, to_key).join(witness_filename(event_uuid, subscriber_name));
-    if !src.is_file() {
-        return Err(format!("testigo processing ausente: {}", src.display()));
-    }
-    let mut body: Value =
-        serde_json::from_str(&fs::read_to_string(&src).map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
-    body["state"] = json!(if to_state == "dead-letter" {
-        "dead-letter"
-    } else {
-        "processed"
+    let mut witness = json!({
+        "event_uuid": event_uuid,
+        "subscriber": subscriber_name,
+        "state": to_state,
+        "finished_at": iso_now(),
     });
-    let now = iso_now();
-    if to_state == "processed" {
-        body["completed_at"] = json!(now);
-    } else {
-        body["failed_at"] = json!(now);
-        if body.get("error_trace").is_none() {
-            body["error_trace"] = json!("unknown failure");
-        }
-    }
     if let Some(ex) = extra {
-        if let (Some(obj), Some(ex_obj)) = (body.as_object_mut(), ex.as_object()) {
-            for (k, v) in ex_obj {
-                obj.insert(k.clone(), v.clone());
+        if let Some(obj) = ex.as_object() {
+            for (k, v) in obj {
+                witness[k.clone()] = v.clone();
             }
         }
     }
-    write_json_atomic(&dest, &body)?;
-    fs::remove_file(&src).ok();
-    if let Some(hdr) = pending_header {
-        if hdr.is_file() {
-            ensure_state_header(repo, bus, header_state, event_uuid, hdr)?;
-        }
+    let path = repo
+        .join(rel.trim_start_matches("./"))
+        .join(format!("{event_uuid}.{subscriber_name}.json"));
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    Ok(dest)
+    write_json_atomic(&path, &witness)?;
+
+    let label = extra
+        .and_then(|e| e.get("result_status").and_then(|v| v.as_str()))
+        .unwrap_or(if to_state == "processed" {
+            "success"
+        } else {
+            "dead-letter"
+        });
+    if delivery_status_from_label(label) == "failed" {
+        let cause = extra
+            .and_then(|e| e.get("error_trace"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("dead-letter");
+        eda_port::move_to_dlq(repo, event_uuid, cause)?;
+    } else {
+        eda_port::record_delivery_ack(repo, event_uuid, subscriber_name)?;
+    }
+    Ok(path)
 }
 
 fn terminal_subscriber_names(
@@ -1159,7 +1197,7 @@ pub fn try_sweep_event(
 ) -> Value {
     let base = json!({"event_uuid": event_uuid, "purged": false});
     let pending_path = resolve_bus_path(repo, &bus.pending).join(format!("{event_uuid}.json"));
-    let event: Value = match load_dispatched_event(repo, event_uuid, &pending_path) {
+    let event: Value = match eda_port::load_dispatched(repo, event_uuid, &pending_path) {
         Ok(Some(event)) => event,
         Ok(None) => return merge_sweep(base, json!({"status": "absent"})),
         Err(_) => return merge_sweep(base, json!({"status": "invalid-json"})),
@@ -1367,6 +1405,13 @@ mod tests {
         .unwrap();
     }
 
+    fn fs_lab_tempdir() -> (
+        crate::engine::eda_port::test_lab::FilesystemEdaGuard,
+        tempfile::TempDir,
+    ) {
+        crate::engine::eda_port::test_lab::fs_lab_tempdir()
+    }
+
     #[test]
     fn adu_ca5_docs_prefix_features_then_fixes() {
         let tmp = tempfile::tempdir().unwrap();
@@ -1417,8 +1462,7 @@ mod tests {
 
     #[test]
     fn aut70_fracture_dead_letter_not_kaizen_finalized() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         write_minimal_paths(repo);
         let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-000000000001";
@@ -1449,7 +1493,6 @@ mod tests {
             ]
         });
         let sweep = try_sweep_event(repo, &bus, event_id, Some(&registry));
-        sddia_event_store::override_store_mode(None);
         assert_eq!(
             sweep.get("status").and_then(|v| v.as_str()),
             Some("fracture-unmaterialized")
@@ -1489,8 +1532,7 @@ mod tests {
 
     #[test]
     fn aut72_tracker_stamp_dead_letter_not_kaizen_finalized() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         write_minimal_paths(repo);
         let event_id = "bbbbbbbb-bbbb-4ccc-8ddd-000000000002";
@@ -1507,7 +1549,6 @@ mod tests {
             write_json_atomic(&p, &json!({"status": "success"})).unwrap();
         }
         let sweep = try_sweep_event(repo, &bus, event_id, Some(&pr_merged_registry()));
-        sddia_event_store::override_store_mode(None);
         assert_eq!(
             sweep.get("status").and_then(|v| v.as_str()),
             Some("tracker-stamp-unreconciled")
@@ -1518,8 +1559,7 @@ mod tests {
 
     #[test]
     fn aut72_tracker_stamp_dead_letter_kaizen_finalized_with_proof() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         write_minimal_paths(repo);
         let event_id = "cccccccc-bbbb-4ccc-8ddd-000000000003";
@@ -1543,7 +1583,6 @@ mod tests {
         )
         .unwrap();
         let sweep = try_sweep_event(repo, &bus, event_id, Some(&pr_merged_registry()));
-        sddia_event_store::override_store_mode(None);
         assert_eq!(
             sweep.get("status").and_then(|v| v.as_str()),
             Some("kaizen-finalized")

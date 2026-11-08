@@ -6,7 +6,7 @@ use crate::lock::{acquire_runtime_lock, LockError};
 use crate::slice_events;
 use crate::slice_misc;
 use crate::slice_target;
-use sddia_event_store::{store_mode, StoreMode};
+use sddia_event_manager_host::events_redb_path;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -124,14 +124,10 @@ pub fn build_plan(req: &PlanRequest) -> Result<Value, PlanError> {
         .map(PathBuf::from)
         .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let repo = canonical_repo_root(&start).map_err(PlanError::Jail)?;
-    let mode = store_mode();
-    let mode_name = match mode {
-        StoreMode::Redb => "redb",
-        StoreMode::Filesystem => "filesystem",
-        StoreMode::Dual => "dual",
-    };
+    let redb_active = events_redb_path(&repo).is_file();
+    let mode_name = if redb_active { "redb" } else { "filesystem-legacy" };
     let mut candidates = slice_target::enumerate(&repo).map_err(PlanError::Io)?;
-    candidates.extend(slice_events::enumerate(&repo, mode).map_err(PlanError::Io)?);
+    candidates.extend(slice_events::enumerate(&repo, redb_active).map_err(PlanError::Io)?);
     let ttl = req.older_than_hours.unwrap_or(168.0);
     candidates.extend(
         slice_misc::enumerate_scratch(&repo, ttl).map_err(PlanError::Io)?,

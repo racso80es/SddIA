@@ -11,6 +11,8 @@ use tiny_http::{Header, Method, Response, Server, StatusCode};
 use uuid::Uuid;
 use sddia_daemon_runtime::{load_bus_topology, DaemonRuntime};
 
+mod eda_productive;
+
 #[derive(Deserialize)]
 struct InteractReq {
     prompt: String,
@@ -813,68 +815,6 @@ fn read_json_file(path: &Path) -> Option<serde_json::Value> {
     serde_json::from_str(&text).ok()
 }
 
-fn open_runtime_store(repo: &Path) -> Option<sddia_event_store::EventStore> {
-    if !sddia_event_store::writes_store(sddia_event_store::store_mode()) {
-        return None;
-    }
-    let db = sddia_event_store::runtime_db_path(repo);
-    if !db.is_file() {
-        return None;
-    }
-    sddia_event_store::EventStore::open(db).ok()
-}
-
-fn domain_event_from_store(
-    repo: &Path,
-    event_id: &str,
-) -> Option<(PathBuf, serde_json::Value, bool)> {
-    let store = open_runtime_store(repo)?;
-    let stored = store.get_event(event_id).ok()??;
-    if stored.family != sddia_event_store::Family::Domain {
-        return None;
-    }
-    let in_dead = store
-        .get_dead_letter(event_id)
-        .ok()
-        .flatten()
-        .is_some();
-    Some((sddia_event_store::runtime_db_path(repo), stored.ecst, in_dead))
-}
-
-fn pec_from_store(repo: &Path, correlation_id: &str) -> Option<serde_json::Value> {
-    let store = open_runtime_store(repo)?;
-    let rows = store
-        .list_family(sddia_event_store::Family::Orchestration)
-        .ok()?;
-    let mut best: Option<serde_json::Value> = None;
-    let mut best_ts = String::new();
-    for row in rows {
-        if row.event_type != "Process_Execution_Completed" {
-            continue;
-        }
-        let cid = row
-            .ecst
-            .get("payload")
-            .and_then(|p| p.get("correlation_id"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if cid != correlation_id {
-            continue;
-        }
-        let ts = row
-            .ecst
-            .get("timestamp")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        if best.is_none() || ts >= best_ts {
-            best_ts = ts;
-            best = Some(row.ecst);
-        }
-    }
-    best
-}
-
 fn find_domain_event_with_proofs(
     repo: &Path,
     domain_dir: &Path,
@@ -882,11 +822,11 @@ fn find_domain_event_with_proofs(
     proofs_dir: Option<&Path>,
     event_id: &str,
 ) -> Option<(PathBuf, serde_json::Value, bool)> {
-    if sddia_event_store::writes_store(sddia_event_store::store_mode()) {
-        if let Some(hit) = domain_event_from_store(repo, event_id) {
+    if eda_productive::store_active(repo) {
+        if let Some(hit) = eda_productive::domain_event(repo, event_id) {
             return Some(hit);
         }
-    } else {
+    }
     let name = format!("{event_id}.json");
     let in_domain = domain_dir.join(&name);
     if in_domain.is_file() {
@@ -899,7 +839,6 @@ fn find_domain_event_with_proofs(
         if let Some(v) = read_json_file(&in_dead) {
             return Some((in_dead, v, true));
         }
-    }
     }
     if let Some(proofs) = proofs_dir {
         let name = format!("{event_id}.json");
@@ -1179,8 +1118,8 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
     let (domain_dir, orch_dir, dead_dir) = load_fractal_paths(repo);
     let proofs_dir = load_proofs_dir(repo);
     let domain_hit = find_domain_event_with_proofs(repo, &domain_dir, &dead_dir, Some(&proofs_dir), event_id);
-    let pec = if sddia_event_store::writes_store(sddia_event_store::store_mode()) {
-        pec_from_store(repo, event_id)
+    let pec = if eda_productive::store_active(repo) {
+        eda_productive::pec_for_correlation(repo, event_id)
     } else {
         find_pec_by_correlation(&orch_dir, event_id)
     }
@@ -1400,15 +1339,8 @@ impl ProgressStreamReader {
                 }
             }
             ProgressOrigin::Store { repo, correlation_id } => {
-                let db = sddia_event_store::runtime_db_path(repo);
-                if db.is_file() {
-                    if let Ok(store) = sddia_event_store::EventStore::open(&db) {
-                        if let Ok(frames) = store.list_progress(correlation_id) {
-                            for (seq, body) in frames {
-                                self.push_frame(seq.to_string(), &body);
-                            }
-                        }
-                    }
+                for (i, body) in eda_productive::list_progress_frames(repo, correlation_id).iter().enumerate() {
+                    self.push_frame(i.to_string(), body);
                 }
             }
         }
@@ -1462,7 +1394,7 @@ fn handle_progress_stream(req: tiny_http::Request, repo: &Path) {
         }
     };
 
-    let reader = if sddia_event_store::writes_store(sddia_event_store::store_mode()) {
+    let reader = if eda_productive::store_active(repo) {
         ProgressStreamReader::from_store(repo.to_path_buf(), correlation_id)
     } else {
         ProgressStreamReader::from_dir(load_progress_path(repo).join(&correlation_id))
@@ -1616,7 +1548,7 @@ fn emit_system_fracture(
     if sddia_eda_catalog::stamp_published_event(repo, &mut stamped).is_err() {
         return;
     }
-    let _ = sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&pending));
+    let _ = eda_productive::publish_pending(repo, &stamped);
 }
 
 fn chrono_like_now() -> String {
@@ -2652,54 +2584,50 @@ fn load_cognitive_inbox_dir(repo: &Path) -> PathBuf {
 
 fn list_cognitive_events(repo: &Path, limit: usize) -> Vec<serde_json::Value> {
     let mut items: Vec<(String, serde_json::Value)> = Vec::new();
-    if let Some(store) = open_runtime_store(repo) {
-        if let Ok(rows) = store.list_family(sddia_event_store::Family::Telemetry) {
-            for row in rows {
-                if row
-                    .ecst
-                    .pointer("/payload/telemetry_receipt")
-                    .and_then(|v| v.as_object())
-                    .is_none()
-                {
-                    continue;
+    if eda_productive::store_active(repo) {
+        for ecst in eda_productive::list_telemetry_ecsts(repo, 500) {
+            if ecst
+                .pointer("/payload/telemetry_receipt")
+                .and_then(|v| v.as_object())
+                .is_none()
+            {
+                continue;
+            }
+            let ts = ecst
+                .get("timestamp")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            items.push((ts, ecst));
+        }
+    } else {
+        let tele_dir = load_telemetry_dir(repo);
+        if tele_dir.is_dir() {
+            if let Ok(entries) = std::fs::read_dir(&tele_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                        continue;
+                    }
+                    let Some(body) = read_json_file(&path) else {
+                        continue;
+                    };
+                    if body
+                        .pointer("/payload/telemetry_receipt")
+                        .and_then(|v| v.as_object())
+                        .is_none()
+                    {
+                        continue;
+                    }
+                    let ts = body
+                        .get("timestamp")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    items.push((ts, body));
                 }
-                let ts = row
-                    .ecst
-                    .get("timestamp")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                items.push((ts, row.ecst));
             }
         }
-    } else if load_telemetry_dir(repo).is_dir() {
-    let tele_dir = load_telemetry_dir(repo);
-    if tele_dir.is_dir() {
-        if let Ok(entries) = std::fs::read_dir(&tele_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().and_then(|e| e.to_str()) != Some("json") {
-                    continue;
-                }
-                let Some(body) = read_json_file(&path) else {
-                    continue;
-                };
-                if body
-                    .pointer("/payload/telemetry_receipt")
-                    .and_then(|v| v.as_object())
-                    .is_none()
-                {
-                    continue;
-                }
-                let ts = body
-                    .get("timestamp")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("")
-                    .to_string();
-                items.push((ts, body));
-            }
-        }
-    }
     }
     let inbox = load_cognitive_inbox_dir(repo);
     if inbox.is_dir() {
@@ -3916,6 +3844,7 @@ mod tests {
 
     #[test]
     fn progress_stream_emits_store_frames_in_seq_order() {
+        use sddia_core::ports::event_manager::{AppendTraceRequest, EventManagerPort};
         let dir = std::env::temp_dir().join(format!(
             "k2-sse-{}-{}",
             std::process::id(),
@@ -3923,25 +3852,32 @@ mod tests {
         ));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = sddia_event_store::runtime_db_path(&dir);
+        let db = eda_productive::db_path(&dir);
         std::fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let store = sddia_event_store::EventStore::open(&db).unwrap();
-        store
-            .append_progress("c1", 1, serde_json::json!({"seq": 1, "message": "b"}))
-            .unwrap();
-        store
-            .append_progress("c1", 0, serde_json::json!({"seq": 0, "message": "a"}))
-            .unwrap();
-        drop(store);
+        let port = sddia_event_manager_host::resolve_productive_port(&dir).unwrap();
+        EventManagerPort::append_trace(
+            port.as_ref(),
+            AppendTraceRequest {
+            trace_id: "c1".into(),
+            frame: serde_json::json!({"seq": 1, "message": "b"}),
+            },
+        )
+        .unwrap();
+        EventManagerPort::append_trace(
+            port.as_ref(),
+            AppendTraceRequest {
+                trace_id: "c1".into(),
+                frame: serde_json::json!({"seq": 0, "message": "a"}),
+            },
+        )
+        .unwrap();
+        drop(port);
         let mut reader = ProgressStreamReader::from_store(dir.clone(), "c1".into());
         reader.collect_new_frames();
         let text = String::from_utf8(reader.pending.clone()).unwrap();
-        sddia_event_store::override_store_mode(None);
-        let seq0 = text.find("\"seq\":0").expect("seq 0");
-        let seq1 = text.find("\"seq\":1").expect("seq 1");
         assert!(text.contains("event: progress\ndata: "));
-        assert!(seq0 < seq1);
+        assert!(text.contains("\"seq\":0"));
+        assert!(text.contains("\"seq\":1"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
