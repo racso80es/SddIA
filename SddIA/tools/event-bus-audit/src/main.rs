@@ -779,66 +779,116 @@ fn audit_domain_delivery_signals(
     }
 }
 
+fn store_family_for_ecst(ecst: &Value) -> sddia_event_store::Family {
+    let t = ecst
+        .get("event_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if t.contains("Process_Execution") || t.starts_with("Orchestration") {
+        sddia_event_store::Family::Orchestration
+    } else if t.contains("Telemetry") || ecst.pointer("/payload/telemetry_receipt").is_some() {
+        sddia_event_store::Family::Telemetry
+    } else {
+        sddia_event_store::Family::Domain
+    }
+}
+
 fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
+    use sddia_core::ports::event_manager::{
+        DeliveryStatus as PortDeliveryStatus, ListDeliveriesRequest, ListDlqRequest,
+        ListPendingRequest,
+    };
+    use sddia_event_manager_host::{events_redb_path, resolve_productive_port};
+
     let mut state = ScanState::default();
-    let db = sddia_event_store::runtime_db_path(repo);
+    let db = events_redb_path(repo);
     if !db.is_file() {
         return state;
     }
-    let store = match sddia_event_store::EventStore::open(&db) {
-        Ok(s) => s,
+    let port = match resolve_productive_port(repo) {
+        Ok(p) => p,
         Err(err) => {
             state.anomalies.push(Anomaly {
                 kind: "store_unavailable".into(),
                 path: rel_path(repo, &db),
-                detail: err.to_string(),
+                detail: err,
             });
             return state;
         }
     };
 
     let mut domain_rows = Vec::new();
-    for (family, bucket) in [
-        (sddia_event_store::Family::Domain, "domain"),
-        (sddia_event_store::Family::Orchestration, "orchestration"),
-        (sddia_event_store::Family::Telemetry, "telemetry"),
-    ] {
-        let Ok(rows) = store.list_family(family) else {
-            continue;
+    let Ok(listed) = port.list_pending(ListPendingRequest {
+        limit: Some(10_000),
+    }) else {
+        return state;
+    };
+    let mut buckets = BTreeMap::<&str, u64>::new();
+    for e in listed.events {
+        let family = store_family_for_ecst(&e.ecst);
+        let bucket = match family {
+            sddia_event_store::Family::Orchestration => "orchestration",
+            sddia_event_store::Family::Telemetry => "telemetry",
+            _ => "domain",
         };
-        state.counts.insert(bucket.into(), rows.len() as u64);
-        for row in rows {
-            *state.counts_by_type.entry(row.event_type.clone()).or_insert(0) += 1;
-            state.event_ids.insert(row.event_id.clone());
-            if family == sddia_event_store::Family::Domain {
-                domain_rows.push(row);
-            }
+        *buckets.entry(bucket).or_insert(0) += 1;
+        let event_type = e
+            .ecst
+            .get("event_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        *state.counts_by_type.entry(event_type.clone()).or_insert(0) += 1;
+        state.event_ids.insert(e.event_id.clone());
+        let row = sddia_event_store::StoredEvent {
+            event_id: e.event_id,
+            family,
+            event_type,
+            ecst: e.ecst,
+            created_at: 0,
+        };
+        if family == sddia_event_store::Family::Domain {
+            domain_rows.push(row);
         }
     }
-    if let Ok(letters) = store.list_dead_letters() {
+    for (k, v) in buckets {
+        state.counts.insert(k.into(), v);
+    }
+
+    if let Ok(dlq) = port.list_dlq(ListDlqRequest {
+        limit: Some(10_000),
+    }) {
         state
             .counts
-            .insert("dead-letter".into(), letters.len() as u64);
-        for (_id, letter) in letters {
+            .insert("dead-letter".into(), dlq.events.len() as u64);
+        for e in dlq.events {
             *state
                 .dead_letter_errors
-                .entry(letter.cause)
+                .entry(e.reason)
                 .or_insert(0) += 1;
         }
     }
+
     let mut all_deliveries = Vec::new();
-    if let Ok(rows) = store.list_deliveries() {
+    if let Ok(rows) = port.list_deliveries(ListDeliveriesRequest {
+        limit: Some(10_000),
+        ..Default::default()
+    }) {
         let mut failed = 0u64;
         let mut pending = 0u64;
         let mut success = 0u64;
-        for (event_id, subscriber_id, status) in &rows {
-            match status {
+        for d in &rows.deliveries {
+            let mapped = match d.status {
+                PortDeliveryStatus::Ack => sddia_event_store::DeliveryStatus::Success,
+                PortDeliveryStatus::Nack => sddia_event_store::DeliveryStatus::Failed,
+            };
+            match mapped {
                 sddia_event_store::DeliveryStatus::Failed => failed += 1,
                 sddia_event_store::DeliveryStatus::Pending => pending += 1,
                 sddia_event_store::DeliveryStatus::Success => success += 1,
                 sddia_event_store::DeliveryStatus::Skipped => {}
             }
-            all_deliveries.push((event_id.clone(), subscriber_id.clone(), *status));
+            all_deliveries.push((d.event_id.clone(), d.delivery_id.clone(), mapped));
         }
         state
             .counts
@@ -858,7 +908,7 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
 
 fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusPaths), String> {
     let paths = resolve_bus_paths(repo)?;
-    if sddia_event_store::writes_store(sddia_event_store::store_mode()) {
+    if sddia_event_manager_host::events_redb_path(repo).is_file() {
         return Ok((audit_state_from_store(repo, &paths), paths));
     }
     let known_types = load_known_event_types(repo);
@@ -963,7 +1013,7 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
 
 fn write_pending_kaizen(
     repo: &Path,
-    paths: &BusPaths,
+    _paths: &BusPaths,
     review_id: &str,
     justification: &str,
     implicated: &[String],
@@ -984,19 +1034,15 @@ fn write_pending_kaizen(
         "delivery_state": {}
     });
     sddia_eda_catalog::stamp_published_event(repo, &mut event).map_err(|e| e.to_string())?;
-    let mode = sddia_event_store::store_mode();
-    if sddia_event_store::writes_store(mode) {
-        sddia_event_store::record_ecst(repo, "domain", &event).map_err(|e| e.to_string())?;
-    }
-    let target_path = if sddia_event_store::writes_filesystem(mode) {
-        fs::create_dir_all(&paths.pending).map_err(|e| e.to_string())?;
-        let target = paths.pending.join(format!("{event_id}.json"));
-        let text = serde_json::to_string_pretty(&event).map_err(|e| e.to_string())?;
-        fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
-        rel_path(repo, &target)
-    } else {
-        format!(".events/pending/{event_id}.json")
-    };
+    let port = sddia_event_manager_host::resolve_productive_port(repo).map_err(|e| e.to_string())?;
+    let seal = sddia_core::ports::event_manager::publish_ecst(
+        port.as_ref(),
+        repo,
+        "domain",
+        &event,
+    )
+    .map_err(|e| e.to_string())?;
+    let target_path = seal.logical_rel;
     Ok(json!({
         "event_id": event_id,
         "target_path": target_path

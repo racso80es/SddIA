@@ -674,8 +674,16 @@ mod tests {
         }));
         let bus = build_bus_event(&pre, "digest-catalog", None);
         materialize_to_bus(&base, &bus).unwrap();
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&base)).unwrap();
-        let row = store.get_event("digest-catalog").unwrap().expect("event");
+        let port = sddia_event_manager_host::resolve_productive_port(&base).unwrap();
+        let eid = bus
+            .get("event_id")
+            .and_then(|v| v.as_str())
+            .expect("event_id");
+        let row = port
+            .get_event(sddia_core::ports::event_manager::GetEventRequest {
+                event_id: eid.to_string(),
+            })
+            .expect("get_event");
         let ds = row.ecst.get("delivery_state").unwrap();
         assert_eq!(ds["tekton.tracker-stamp"], "pending");
         assert_eq!(ds["argos.pull-request-review"], "pending");

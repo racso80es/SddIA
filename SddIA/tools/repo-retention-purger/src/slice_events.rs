@@ -1,7 +1,8 @@
 //! Slice B — residuo JSON bajo `.events/` (solo modo `redb`).
 
 use crate::plan::PlanCandidate;
-use sddia_event_store::{runtime_db_path, EventStore, StoreMode};
+use sddia_core::ports::event_manager::ListDlqRequest;
+use sddia_event_manager_host::{events_redb_path, resolve_productive_port};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -27,21 +28,22 @@ fn rel_from_repo(repo: &Path, abs: &Path) -> Option<String> {
 }
 
 fn indexed_dead_letters(repo: &Path) -> HashSet<String> {
-    let db = runtime_db_path(repo);
+    let db = events_redb_path(repo);
     if !db.is_file() {
         return HashSet::new();
     }
-    let Ok(store) = EventStore::open(&db) else {
+    let Ok(port) = resolve_productive_port(repo) else {
         return HashSet::new();
     };
-    store
-        .list_dead_letters()
-        .map(|rows| rows.into_iter().map(|(id, _)| id).collect())
-        .unwrap_or_default()
+    port.list_dlq(ListDlqRequest {
+        limit: Some(50_000),
+    })
+    .map(|r| r.events.into_iter().map(|e| e.event_id).collect())
+    .unwrap_or_default()
 }
 
-pub fn enumerate(repo: &Path, mode: StoreMode) -> Result<Vec<PlanCandidate>, String> {
-    if !matches!(mode, StoreMode::Redb) {
+pub fn enumerate(repo: &Path, redb_active: bool) -> Result<Vec<PlanCandidate>, String> {
+    if !redb_active {
         return Ok(Vec::new());
     }
     let index = indexed_dead_letters(repo);
@@ -106,7 +108,7 @@ mod tests {
         let _ = fs::remove_dir_all(&repo);
         fs::create_dir_all(repo.join(".events/pending")).unwrap();
         fs::write(repo.join(".events/pending/e1.json"), b"{}").unwrap();
-        let c = enumerate(&repo, StoreMode::Filesystem).expect("ok");
+        let c = enumerate(&repo, false).expect("ok");
         assert!(c.is_empty());
         let _ = fs::remove_dir_all(&repo);
     }

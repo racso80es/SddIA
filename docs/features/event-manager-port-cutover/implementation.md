@@ -17,11 +17,14 @@ status: in-progress
 | T1 | parcial | Core **1.2.0** + defaults (`verify_inline_ecst`, `list_events`, `list_progress`); Redb DLT/list_deliveries; schema library; taxonomy/bindings vía `entity-manager` |
 | T2 | parcial | `eda_port` + `sddia-event-manager-host` desde MAN-33 |
 | T3 | hecho (núcleo) | `ecst_input_loader` verify inline; `route_domain_core` carga estricta vía puerto; sin lectura FS en route/batch/reanchor load |
-| T4 | hecho | `eda_port` DLT/verify; `dlt_telemetry_anchor` seal; suite 1.2 |
-| T5–T8 | en curso | Ver `plan.md` |
+| T4 | hecho | DLT/verify + suite 1.2 |
+| T5 | hecho | kalma2-bridge + lancedb → host |
+| T6 | hecho | event-bus-audit + repo-retention-purger → puerto |
+| T7 | parcial | AC-9 norma; tests motor aún con `sddia_event_store` |
+| T8 | parcial | `execution.md` + `validacion.md`; CI pendiente |
 
 ## Próximo
 
-1. T1: `forge` contrato 1.2 vía procesos oficiales + adapters.
-2. T4–T7: fractal, productores, legacy FS.
-3. T8: suite + `validacion.md`.
+1. Taxonomy/bindings 1.9.0 (`entity-manager`).
+2. PR + gate CI workspace.
+3. Linear MAN-35 → Done tras merge.

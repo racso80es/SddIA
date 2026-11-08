@@ -187,7 +187,7 @@ pub struct ListEventsResult {
     pub next_cursor: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ListDeliveriesRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event_id: Option<String>,

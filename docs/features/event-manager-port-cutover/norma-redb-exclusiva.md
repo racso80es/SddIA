@@ -36,3 +36,9 @@ execution_id: "8b39f170-38b9-4aea-961b-31c4c63512b7"
 1. Un JSON físico conflictivo bajo `.events/*` **nunca** prevalece sobre Redb.
 2. Consumidores no abren `events.redb` ni importan `sddia_event_store`.
 3. Solo el adapter productivo conoce el path físico y las tablas.
+
+## AC-9 — Retirada legacy (T7)
+
+- Prohibido `EventStore::open` en productores, audit, purger y bridges (solo tests legacy / crate `sddia-event-store`).
+- `StoreMode` / `SDDIA_EVENT_STORE` no gobiernan runtime productivo.
+- `fs_event_adapter` fuera de bindings productivos (rol `test` / lab).
