@@ -90,40 +90,9 @@ fn tracker_ref_on_objectives(repo: &Path, persist_ref: &str) -> Option<String> {
     yaml_field(&text, "tracker_ref")
 }
 
-/// Hereda `tracker_ref` del `PullRequest_Presented` de la misma rama.
-/// Mira pending, processed, dead-letter (paridad `scan_presented_for_branch`) y el store.
+/// Hereda `tracker_ref` del `PullRequest_Presented` de la misma rama (solo store).
 pub fn tracker_ref_from_presented_for_branch(repo: &Path, branch: &str) -> Option<String> {
-    if false {
-        for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
-            if let Some(tr) = tracker_ref_in_dir(&repo.join(rel), branch) {
-                return Some(tr);
-            }
-        }
-    }
     tracker_ref_in_store(repo, branch)
-}
-
-fn tracker_ref_in_dir(dir: &Path, branch: &str) -> Option<String> {
-    if !dir.is_dir() {
-        return None;
-    }
-    let entries = fs::read_dir(dir).ok()?;
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json") {
-            continue;
-        }
-        let Ok(text) = fs::read_to_string(&path) else {
-            continue;
-        };
-        let Ok(event) = serde_json::from_str::<Value>(&text) else {
-            continue;
-        };
-        if let Some(tr) = tracker_ref_of_presented(&event, branch) {
-            return Some(tr);
-        }
-    }
-    None
 }
 
 /// Presented en `Family::Domain` del store para `branch` (modo con escritura a store).
@@ -182,37 +151,11 @@ fn tracker_ref_of_presented(event: &Value, branch: &str) -> Option<String> {
         .map(str::to_string)
 }
 
-/// `event_id` del `PullRequest_Presented` más reciente para `branch` (pending, processed, store).
+/// `event_id` del `PullRequest_Presented` más reciente para `branch` (store).
 pub fn presented_event_id_for_branch(repo: &Path, branch: &str) -> Option<String> {
     let mut best: Option<(String, String)> = None;
-    for rel in [".events/pending", ".events/processed", ".events/dead-letter"] {
-        presented_ids_in_dir(&repo.join(rel), branch, &mut best);
-    }
     presented_ids_in_store(repo, branch, &mut best);
     best.map(|(_, id)| id)
-}
-
-fn presented_ids_in_dir(dir: &Path, branch: &str, best: &mut Option<(String, String)>) {
-    if !dir.is_dir() {
-        return;
-    }
-    let entries = match fs::read_dir(dir) {
-        Ok(e) => e,
-        Err(_) => return,
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json") {
-            continue;
-        }
-        let Ok(text) = fs::read_to_string(&path) else {
-            continue;
-        };
-        let Ok(event) = serde_json::from_str::<Value>(&text) else {
-            continue;
-        };
-        consider_presented_event_id(&event, branch, best);
-    }
 }
 
 fn presented_ids_in_store(repo: &Path, branch: &str, best: &mut Option<(String, String)>) {
@@ -444,16 +387,41 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
     }
 
-    #[test]
-    fn presented_in_processed_still_yields_tracker_ref() {
-        let dir = std::env::temp_dir().join(format!("pbi-proc-{}", std::process::id()));
-        let processed = dir.join(".events/processed");
-        fs::create_dir_all(&processed).unwrap();
+    fn test_repo_layout(dir: &Path) {
+        fs::create_dir_all(dir.join("SddIA/core")).unwrap();
         fs::write(
-            processed.join("presented.json"),
-            r#"{"event_type":"PullRequest_Presented","payload":{"branch":"fix/pr-merged-witness-store","tracker_ref":"MAN-23"}}"#,
+            dir.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
         )
         .unwrap();
+        fs::create_dir_all(dir.join(".SddIA/runtime")).ok();
+    }
+
+    fn record_presented_domain(dir: &Path, event: &Value) {
+        crate::engine::eda_port::clear_port();
+        let mut ev = event.clone();
+        sddia_eda_catalog::stamp_published_event(dir, &mut ev).expect("stamp");
+        crate::engine::eda_port::record_ecst(dir, "domain", &ev).expect("record");
+    }
+
+    #[test]
+    fn presented_in_store_yields_tracker_ref() {
+        let dir = std::env::temp_dir().join(format!("pbi-proc-{}", std::process::id()));
+        test_repo_layout(&dir);
+        record_presented_domain(
+            &dir,
+            &json!({
+                "event_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                "event_type": "PullRequest_Presented",
+                "timestamp": "2026-10-30T06:00:00Z",
+                "emitter_agent": "test",
+                "payload": {
+                    "branch": "fix/pr-merged-witness-store",
+                    "tracker_ref": "MAN-23"
+                },
+                "delivery_state": {},
+            }),
+        );
         assert_eq!(
             tracker_ref_from_presented_for_branch(&dir, "fix/pr-merged-witness-store").as_deref(),
             Some("MAN-23")
@@ -462,20 +430,31 @@ mod tests {
     }
 
     #[test]
-    fn presented_event_id_from_pending_json() {
+    fn presented_event_id_from_store_rows() {
         let dir = std::env::temp_dir().join(format!("pbi-pres-id-{}", std::process::id()));
-        let pending = dir.join(".events/pending");
-        fs::create_dir_all(&pending).unwrap();
-        fs::write(
-            pending.join("p1.json"),
-            r#"{"event_id":"11111111-1111-4111-8111-111111111111","event_type":"PullRequest_Presented","timestamp":"2026-10-30T06:00:00Z","payload":{"branch":"feat/x"}}"#,
-        )
-        .unwrap();
-        fs::write(
-            pending.join("p2.json"),
-            r#"{"event_id":"22222222-2222-4222-8222-222222222222","event_type":"PullRequest_Presented","timestamp":"2026-10-30T07:00:00Z","payload":{"branch":"feat/x"}}"#,
-        )
-        .unwrap();
+        test_repo_layout(&dir);
+        record_presented_domain(
+            &dir,
+            &json!({
+                "event_id": "11111111-1111-4111-8111-111111111111",
+                "event_type": "PullRequest_Presented",
+                "timestamp": "2026-10-30T06:00:00Z",
+                "emitter_agent": "test",
+                "payload": { "branch": "feat/x" },
+                "delivery_state": {},
+            }),
+        );
+        record_presented_domain(
+            &dir,
+            &json!({
+                "event_id": "22222222-2222-4222-8222-222222222222",
+                "event_type": "PullRequest_Presented",
+                "timestamp": "2026-10-30T07:00:00Z",
+                "emitter_agent": "test",
+                "payload": { "branch": "feat/x" },
+                "delivery_state": {},
+            }),
+        );
         assert_eq!(
             presented_event_id_for_branch(&dir, "feat/x").as_deref(),
             Some("22222222-2222-4222-8222-222222222222")

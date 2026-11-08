@@ -9,7 +9,7 @@ use crate::core::repo::find_repo_root;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 fn lab_guard() -> std::sync::MutexGuard<'static, ()> {
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -23,12 +23,13 @@ fn with_lab<F: FnOnce()>(f: F) {
     let repo = find_repo_root().expect("repo");
     std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
     std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
-    std::env::set_var("SDDIA_EVENT_STORE", "filesystem");
     std::env::remove_var("LINEAR_API_TOKEN");
     let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
+    let mock = Arc::new(sddia_core::ports::event_manager::InMemoryEventManagerMock::new());
+    crate::engine::eda_port::install_port(mock);
     f();
+    crate::engine::eda_port::clear_port();
     std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
-    std::env::remove_var("SDDIA_EVENT_STORE");
     let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
 }
 
@@ -93,16 +94,23 @@ fn lab_create_hu_issue(repo: &Path, title: &str) -> String {
         .to_string()
 }
 
-fn stamp(repo: &Path, event_type: &str, payload: Value) -> bool {
+fn lab_record_domain_event(repo: &Path, event_type: &str, payload: Value) -> String {
     let event_id = format!("e2e-{}", uuid::Uuid::new_v4());
-    let rel = format!(".events/pending/{event_id}.json");
-    fs::create_dir_all(repo.join(".events/pending")).ok();
-    let event = json!({
+    let mut event = json!({
         "event_id": event_id,
         "event_type": event_type,
+        "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+        "emitter_agent": "linear-e2e-lab",
         "payload": payload,
+        "delivery_state": {},
     });
-    fs::write(repo.join(&rel), serde_json::to_string(&event).unwrap()).unwrap();
+    sddia_eda_catalog::stamp_published_event(repo, &mut event).expect("stamp");
+    crate::engine::eda_port::record_ecst(repo, "domain", &event).expect("record");
+    format!(".events/pending/{event_id}.json")
+}
+
+fn stamp(repo: &Path, event_type: &str, payload: Value) -> bool {
+    let rel = lab_record_domain_event(repo, event_type, payload);
     let out = tracker_stamp::run(repo, &json!({ "event_file_path": rel }))
         .expect("tracker-stamp");
     out.data

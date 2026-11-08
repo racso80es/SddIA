@@ -216,21 +216,6 @@ pub(crate) fn is_runtime_db_event_path(repo: &Path, path: &Path) -> bool {
         .is_some_and(|n| n == "events.redb")
 }
 
-fn store_lock_error_msg(err: &str) -> bool {
-    err.contains("Database already open") || err.contains("Cannot acquire lock")
-}
-
-fn writes_filesystem_bus_env() -> bool {
-    matches!(
-        std::env::var("SDDIA_EVENT_STORE")
-            .ok()
-            .as_deref()
-            .map(str::trim)
-            .map(|s| s.to_ascii_lowercase()),
-        Some(s) if s == "filesystem" || s == "dual"
-    )
-}
-
 fn find_fracture_stored_event_id(repo: &Path, event: &Value) -> Result<Option<String>, String> {
     let path = eda_port::runtime_db_path(repo);
     if !path.is_file() {
@@ -289,23 +274,7 @@ fn write_pending_domain_event_file(
             return Ok(pending_virtual_event_path(pending_dir, &existing_id));
         }
     }
-    if writes_filesystem_bus_env() {
-        let target = pending_dir.join(format!("{event_uuid}.json"));
-        write_json_atomic(&target, &event)?;
-        return Ok(target);
-    }
-    match eda_port::record_ecst(repo, "domain", &event) {
-        Ok(()) => {}
-        Err(err) => {
-            let err_s = err.to_string();
-            if store_lock_error_msg(&err_s) {
-                let target = pending_dir.join(format!("{event_uuid}.json"));
-                write_json_atomic(&target, &event)?;
-                return Ok(target);
-            }
-            return Err(err_s);
-        }
-    }
+    eda_port::record_ecst(repo, "domain", &event)?;
     Ok(pending_virtual_event_path(pending_dir, &event_uuid))
 }
 

@@ -664,22 +664,4 @@ mod tests {
         let _ = fs::remove_dir_all(&repo);
     }
 
-    #[test]
-    fn merged_alta_filesystem_writes_json_and_skips_store() {
-        let _guard = ModeGuard;
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        let repo = temp_repo();
-        let merged = emit_pr_merged(
-            &repo,
-            &json!({
-                "source_branch": "fix/x",
-                "merge_commit_hash": "c".repeat(40),
-            }),
-        )
-        .expect("merged");
-        let id = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
-        assert!(repo.join(".events/pending").join(format!("{id}.json")).is_file());
-        assert!(!crate::engine::eda_port::runtime_db_path(&repo).is_file());
-        let _ = fs::remove_dir_all(&repo);
-    }
 }

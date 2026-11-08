@@ -1,8 +1,7 @@
-//! Carga ECST: precedencia `event` en línea → `event_id` (store) → `event_file_path` (lab).
+//! Carga ECST: precedencia `event` en línea → `event_id` (store) → `event_file_path` (id lógico).
 
 use crate::engine::eda_port;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::{Path, PathBuf};
 
 fn str_field(v: &Value, key: &str) -> Option<String> {
@@ -14,7 +13,6 @@ fn str_field(v: &Value, key: &str) -> Option<String> {
 }
 
 fn load_from_store(repo: &Path, event_id: &str, logical_path: &Path) -> Result<Value, String> {
-    eda_port::install_productive_port(repo)?;
     eda_port::load_dispatched(repo, event_id, logical_path)?
         .ok_or_else(|| format!("event not found in store: {event_id}"))
 }
@@ -29,35 +27,33 @@ fn resolve_logical_path(repo: &Path, rel: &str) -> PathBuf {
     }
 }
 
+fn event_id_from_path(path: &Path) -> Option<String> {
+    if path.extension().and_then(|e| e.to_str()) != Some("json") {
+        return None;
+    }
+    path.file_stem()
+        .and_then(|s| s.to_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
 fn load_from_event_file_path(
     repo: &Path,
     rel: &str,
     explicit_event_id: Option<&str>,
 ) -> Result<Value, String> {
     let path = resolve_logical_path(repo, rel);
-    if path.extension().and_then(|e| e.to_str()) == Some("json") && path.is_file() {
-        let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-        return serde_json::from_str(&text).map_err(|e| e.to_string());
-    }
-    if let Some(eid) = explicit_event_id.filter(|s| !s.is_empty()) {
-        return load_from_store(repo, eid, &path);
-    }
-    if path.extension().and_then(|e| e.to_str()) == Some("json") {
-        let stem = path
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .ok_or_else(|| format!("event file not found: {}", path.display()))?;
-        return load_from_store(repo, stem, &path);
-    }
-    Err(format!(
-        "event_id requerido para cargar desde store (path={})",
-        path.display()
-    ))
+    let event_id = explicit_event_id
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| event_id_from_path(&path))
+        .ok_or_else(|| format!("event_id requerido (path={})", path.display()))?;
+    load_from_store(repo, &event_id, &path)
 }
 
-/// Resuelve ruta relativa al repo y carga el ECST (FS o store).
+/// Resuelve ruta relativa al repo y carga el ECST vía store.
 pub fn load_ecst_from_rel(repo: &Path, rel: &str) -> Result<Value, String> {
     load_ecst_from_inputs(repo, &json!({ "event_file_path": rel }))
 }
@@ -88,13 +84,6 @@ pub fn load_ecst_for_handler(repo: &Path, inputs: &Value) -> Result<Value, Strin
     if inputs.get("event").is_some_and(|v| v.is_object()) {
         return load_ecst_from_inputs(repo, inputs);
     }
-    if let Some(rel) = str_field(inputs, "event_file_path") {
-        let path = resolve_logical_path(repo, &rel);
-        if path.is_file() {
-            return load_ecst_from_inputs(repo, inputs);
-        }
-    }
-    eda_port::install_productive_port(repo)?;
     let event = load_ecst_from_inputs(repo, inputs)?;
     if verify_ecst_matches_bus(repo, &event).is_ok() {
         return Ok(event);
@@ -106,50 +95,9 @@ pub fn load_ecst_for_handler(repo: &Path, inputs: &Value) -> Result<Value, Strin
     Ok(stored)
 }
 
-fn event_store_mode() -> Option<String> {
-    std::env::var("SDDIA_EVENT_STORE")
-        .ok()
-        .map(|s| s.trim().to_ascii_lowercase())
-        .filter(|s| !s.is_empty())
-}
-
-fn event_store_writes_pending_files() -> bool {
-    matches!(
-        event_store_mode().as_deref(),
-        Some("filesystem") | Some("dual")
-    )
-}
-
-fn verify_ecst_matches_pending_file(
-    repo: &Path,
-    event_id: &str,
-    event: &Value,
-) -> Result<(), String> {
-    let synthetic = repo
-        .join(".events/pending")
-        .join(format!("{event_id}.json"));
-    if !synthetic.is_file() {
-        return Err("ecst_not_in_bus".into());
-    }
-    let text = fs::read_to_string(&synthetic).map_err(|e| e.to_string())?;
-    let on_disk: Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
-    if on_disk != *event {
-        return Err("ecst_mismatch".into());
-    }
-    Ok(())
-}
-
 /// Antes de efecto remoto: el ECST debe existir en bus y coincidir.
 pub fn verify_ecst_matches_bus(repo: &Path, event: &Value) -> Result<(), String> {
     let event_id = str_field(event, "event_id").ok_or("event_id ausente")?;
-    if event_store_writes_pending_files() {
-        match verify_ecst_matches_pending_file(repo, &event_id, event) {
-            Ok(()) => return Ok(()),
-            Err(e) if event_store_mode().as_deref() == Some("filesystem") => return Err(e),
-            Err(_) => {}
-        }
-    }
-    eda_port::install_productive_port(repo)?;
     let synthetic = repo
         .join(".events/pending")
         .join(format!("{event_id}.json"));
