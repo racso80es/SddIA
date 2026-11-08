@@ -1,7 +1,13 @@
 ---
 feature_name: event-manager-port-cutover
 created: 2026-11-08
-updated: 2026-11-08T19:16:30Z
+updated: 2026-11-08T20:30:00Z
+pr_url: https://github.com/racso80es/SddIA/pull/445
+merged_pr: 445
+merge_commit: b87494e912475ca06005507692db91b1d5845612
+tracker_linear_state: Done
+accept_pr_execution_id: 9e89fbb8-3bf2-4240-9685-f0b4d57c7939
+closed: true
 process: pull-request-review
 phase: Veredicto y bloqueo
 agent: argos
@@ -153,8 +159,16 @@ situational_notes:
 
 ## Veredicto de fase
 
-**APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `F5_VERDICT_GATE: APTO`.  
-`accept_pr_handoff: false` / `pending` (`pr_url` ausente; MERGE ausente; Presented lock no sighted; L-HANDOFF-F5).
+**APTO** — `resolution: PASS_F5_VERDICT` · `verdict: aprobado` · `delivery_state: success` · `F5_VERDICT_GATE: APTO`.
+
+## Cierre tracker (post-merge)
+
+| Hecho | Evidencia |
+|-------|-----------|
+| Merge | PR #445 → `main` @ `b87494e9` |
+| Linear | **MAN-35** en **Done** (`fetch_issue`) |
+| Sello | `accept-pr` · `PullRequest_Merged` · `ReviewCiGreen` |
+| Gate T8 | `gate-event-manager-port` OK (0 violaciones) |
 
 | Gate | Delegado | Estado | Criterio |
 |------|----------|--------|----------|
