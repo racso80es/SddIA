@@ -328,7 +328,7 @@ mod tests {
                 }),
             )
             .expect("materialize");
-            let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&repo))
+            let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(&repo))
                 .expect("open");
             let rows = store
                 .list_family(sddia_event_store::Family::Domain)

@@ -8,9 +8,10 @@ use serde_json::Value;
 
 use crate::ports::event_manager::contract::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, CONTRACT_ID,
-    CONTRACT_VERSION, DeliveryStatus, HandshakeVersionRequest, HandshakeVersionResult,
-    MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, RecordDeliveryRequest,
-    ReplayDlqRequest,
+    CONTRACT_VERSION, DeliveryStatus, GetEventRequest, GetEventResult, HandshakeVersionRequest,
+    HandshakeVersionResult, ListedDlqEvent, ListDlqRequest, ListDlqResult, ListPendingRequest,
+    ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
+    PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest, ReplayDlqRequest,
 };
 use crate::ports::event_manager::error::EventManagerError;
 use crate::ports::event_manager::port::EventManagerPort;
@@ -245,6 +246,79 @@ impl EventManagerPort for InMemoryEventManagerMock {
             contract_version: CONTRACT_VERSION.to_string(),
             compatible: true,
         })
+    }
+
+    fn get_event(&self, req: GetEventRequest) -> Result<GetEventResult, EventManagerError> {
+        let g = self.inner.lock().expect("mock lock");
+        let ev = g
+            .pending
+            .get(&req.event_id)
+            .or_else(|| g.claimed.get(&req.event_id))
+            .ok_or_else(|| EventManagerError::NotFound(req.event_id.clone()))?;
+        Ok(GetEventResult {
+            event_id: ev.event_id.clone(),
+            ecst: ev.ecst.clone(),
+            trace_id: ev.trace_id.clone(),
+        })
+    }
+
+    fn list_pending(&self, req: ListPendingRequest) -> Result<ListPendingResult, EventManagerError> {
+        let g = self.inner.lock().expect("mock lock");
+        let limit = req.limit.unwrap_or(u32::MAX) as usize;
+        let mut events = Vec::new();
+        for (_, ev) in g.pending.iter().take(limit) {
+            events.push(ListedPendingEvent {
+                event_id: ev.event_id.clone(),
+                ecst: ev.ecst.clone(),
+                trace_id: ev.trace_id.clone(),
+            });
+        }
+        Ok(ListPendingResult { events })
+    }
+
+    fn list_dlq(&self, req: ListDlqRequest) -> Result<ListDlqResult, EventManagerError> {
+        let g = self.inner.lock().expect("mock lock");
+        let limit = req.limit.unwrap_or(u32::MAX) as usize;
+        let mut events = Vec::new();
+        for (id, ev) in g.dlq.iter().take(limit) {
+            events.push(ListedDlqEvent {
+                event_id: id.clone(),
+                reason: ev
+                    .dlq_reason
+                    .clone()
+                    .unwrap_or_else(|| "unknown".into()),
+                ecst: ev.ecst.clone(),
+            });
+        }
+        Ok(ListDlqResult { events })
+    }
+
+    fn list_traces(&self, req: ListTracesRequest) -> Result<ListTracesResult, EventManagerError> {
+        let g = self.inner.lock().expect("mock lock");
+        let frames = g.traces.get(&req.trace_id).cloned().unwrap_or_default();
+        Ok(ListTracesResult { frames })
+    }
+
+    fn purge_event(&self, req: PurgeEventRequest) -> Result<(), EventManagerError> {
+        let mut g = self.inner.lock().expect("mock lock");
+        let trace_id = g
+            .pending
+            .get(&req.event_id)
+            .or_else(|| g.claimed.get(&req.event_id))
+            .or_else(|| g.dlq.get(&req.event_id))
+            .and_then(|ev| ev.trace_id.clone());
+        let removed = g.pending.remove(&req.event_id).is_some()
+            || g.claimed.remove(&req.event_id).is_some()
+            || g.dlq.remove(&req.event_id).is_some();
+        if !removed {
+            return Err(EventManagerError::NotFound(req.event_id));
+        }
+        g.deliveries
+            .retain(|k, _| !k.contains(req.event_id.as_str()));
+        if let Some(tid) = trace_id {
+            g.traces.remove(&tid);
+        }
+        Ok(())
     }
 }
 

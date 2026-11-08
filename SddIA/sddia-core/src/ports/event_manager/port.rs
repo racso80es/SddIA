@@ -1,9 +1,11 @@
 //! Trait `EventManagerPort` — operaciones L-OPS 1:1.
 
 use crate::ports::event_manager::contract::{
-    AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, HandshakeVersionRequest,
-    HandshakeVersionResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult,
-    RecordDeliveryRequest, ReplayDlqRequest,
+    AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, GetEventRequest, GetEventResult,
+    HandshakeVersionRequest, HandshakeVersionResult, ListDlqRequest, ListDlqResult,
+    ListPendingRequest, ListPendingResult, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
+    PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest,
+    ReplayDlqRequest,
 };
 use crate::ports::event_manager::error::EventManagerError;
 
@@ -30,4 +32,17 @@ pub trait EventManagerPort: Send + Sync {
         &self,
         req: HandshakeVersionRequest,
     ) -> Result<HandshakeVersionResult, EventManagerError>;
+
+    fn get_event(&self, req: GetEventRequest) -> Result<GetEventResult, EventManagerError>;
+
+    fn list_pending(
+        &self,
+        req: ListPendingRequest,
+    ) -> Result<ListPendingResult, EventManagerError>;
+
+    fn list_dlq(&self, req: ListDlqRequest) -> Result<ListDlqResult, EventManagerError>;
+
+    fn list_traces(&self, req: ListTracesRequest) -> Result<ListTracesResult, EventManagerError>;
+
+    fn purge_event(&self, req: PurgeEventRequest) -> Result<(), EventManagerError>;
 }

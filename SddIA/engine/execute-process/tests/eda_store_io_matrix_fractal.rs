@@ -71,7 +71,7 @@ fn route_telemetry_loads_from_store_without_json_file() {
             StoreMode::Redb,
             event_type,
         );
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&repo))
+        let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(&repo))
             .expect("open");
         let row = store
             .list_family(sddia_event_store::Family::Telemetry)

@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// Versión de contrato que implementan los adapters built-in / mock.
-pub const CONTRACT_VERSION: &str = "1.0.0";
+pub const CONTRACT_VERSION: &str = "1.1.0";
 
-/// Rango SemVer canónico exigido por el host (`^1.0.0`).
-pub const REQUIRED_CONTRACT_RANGE: &str = "^1.0.0";
+/// Rango SemVer canónico exigido por el host (`^1.1.0`).
+pub const REQUIRED_CONTRACT_RANGE: &str = "^1.1.0";
 
 /// Identificador de contrato Genoma.
 pub const CONTRACT_ID: &str = "eda.event_manager";
@@ -93,6 +93,71 @@ pub struct HandshakeVersionResult {
     pub contract: String,
     pub contract_version: String,
     pub compatible: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GetEventRequest {
+    pub event_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GetEventResult {
+    pub event_id: String,
+    pub ecst: Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trace_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ListPendingRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ListedPendingEvent {
+    pub event_id: String,
+    pub ecst: Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trace_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ListPendingResult {
+    pub events: Vec<ListedPendingEvent>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ListDlqRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ListedDlqEvent {
+    pub event_id: String,
+    pub reason: String,
+    pub ecst: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ListDlqResult {
+    pub events: Vec<ListedDlqEvent>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ListTracesRequest {
+    pub trace_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ListTracesResult {
+    pub frames: Vec<Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PurgeEventRequest {
+    pub event_id: String,
 }
 
 /// Manifiesto dual-version de un implementador.

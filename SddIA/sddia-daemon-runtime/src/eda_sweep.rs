@@ -1,6 +1,7 @@
 use crate::eda_bus::{ensure_event_bus_topology, header_path, load_registry, EdBusPaths};
 use crate::{ensure_fractal_dirs, load_bus_topology, BusTopology};
-use sddia_event_store::load_dispatched_event;
+use sddia_core::ports::event_manager::load_dispatched_event;
+use sddia_event_manager_host::resolve_productive_port;
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
@@ -339,7 +340,8 @@ pub fn try_sweep_event(
 ) -> Result<Value, String> {
     let mut base = json!({"event_uuid": event_uuid, "purged": false});
     let pending_path = bus.pending.join(format!("{event_uuid}.json"));
-    let event: Value = match load_dispatched_event(repo, event_uuid, &pending_path) {
+    let port = resolve_productive_port(repo)?;
+    let event: Value = match load_dispatched_event(port.as_ref(), event_uuid, &pending_path) {
         Ok(Some(event)) => event,
         Ok(None) => {
             base["status"] = json!("absent");

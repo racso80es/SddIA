@@ -530,7 +530,7 @@ docs_layout:
         emit_fracture_for_denial(td.path(), &deny, &inputs).expect("fractura depositada");
 
         let store = sddia_event_store::EventStore::open(
-            sddia_event_store::runtime_db_path(td.path()),
+            crate::engine::eda_port::runtime_db_path(td.path()),
         )
         .expect("open store");
         let listed = store.list_family(Family::Domain).expect("list");

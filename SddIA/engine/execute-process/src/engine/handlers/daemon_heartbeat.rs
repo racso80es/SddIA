@@ -156,18 +156,10 @@ fn emit_system_fracture(
 fn persist_domain_event(repo: &Path, pending_rel: &str, event: &Value) -> Result<Value, String> {
     let mut stamped = event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    let dir = repo.join(pending_rel.trim().trim_start_matches("./"));
-    let seal = sddia_event_store::publish_ecst(repo, "pending", &stamped, Some(&dir))
+    let _dir = repo.join(pending_rel.trim().trim_start_matches("./"));
+    let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)
         .map_err(|err| err.to_string())?;
-    let target_path = if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
-        seal.target_path
-            .strip_prefix(repo)
-            .unwrap_or(&seal.target_path)
-            .to_string_lossy()
-            .replace('\\', "/")
-    } else {
-        seal.logical_rel
-    };
+    let target_path = seal.logical_rel;
     Ok(json!({
         "event_id": seal.event_id,
         "target_path": target_path,
@@ -924,7 +916,7 @@ mod tests {
             !repo.join(".events/pending").join(format!("{eid}.json")).is_file(),
             "redb no deja JSON pending"
         );
-        let rows = sddia_event_store::load_domain_ecsts(repo, &[]).unwrap();
+        let rows = crate::engine::eda_port::load_domain_ecsts(repo, 64).unwrap();
         assert!(rows.iter().any(|e| e["event_id"] == eid));
         sddia_event_store::override_store_mode(None);
     }

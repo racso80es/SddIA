@@ -1,10 +1,8 @@
 //! Handlers nativos de acciones EDA (D-P5.1) — sin `execute-action.py` para emit-* registradas.
 
 use super::capsules::invoke_capsule_json;
-use super::workspace::load_paths_config;
 use chrono::Utc;
 use serde_json::{json, Value};
-use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -38,40 +36,12 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
         .get("event_id")
         .and_then(|v| v.as_str())
         .ok_or("event_id required")?;
-    let mode = sddia_event_store::store_mode();
     let mut stamped = event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    if sddia_event_store::writes_store(mode) {
-        sddia_event_store::record_ecst(repo, "domain", &stamped).map_err(|err| err.to_string())?;
-    }
-    if !sddia_event_store::writes_filesystem(mode) {
-        return Ok(json!({
-            "event_id": event_id,
-            "target_path": format!(".events/pending/{event_id}.json"),
-        }));
-    }
-    let cfg = load_paths_config(repo)?;
-    let pending_rel = cfg
-        .get("eda_bus")
-        .and_then(|b| b.get("pending"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("./.events/pending");
-    let pending = if pending_rel.starts_with("./") {
-        repo.join(pending_rel.trim_start_matches("./"))
-    } else {
-        repo.join(pending_rel)
-    };
-    fs::create_dir_all(&pending).map_err(|e| e.to_string())?;
-    let target = pending.join(format!("{event_id}.json"));
-    let text = serde_json::to_string_pretty(&stamped).map_err(|e| e.to_string())?;
-    fs::write(&target, format!("{text}\n")).map_err(|e| e.to_string())?;
+    crate::engine::eda_port::record_ecst(repo, "domain", &stamped)?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": target
-            .strip_prefix(repo)
-            .unwrap_or(&target)
-            .to_string_lossy()
-            .replace('\\', "/"),
+        "target_path": format!(".events/pending/{event_id}.json"),
     }))
 }
 
@@ -637,7 +607,7 @@ mod tests {
         if file.is_file() {
             return fs::read_to_string(file).unwrap();
         }
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(repo))
+        let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(repo))
             .expect("store");
         let row = store.get_event(event_id).expect("read").expect("fila");
         serde_json::to_string(&row.ecst).unwrap()
@@ -686,7 +656,7 @@ mod tests {
         .expect("merged");
         let id = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
         assert!(!repo.join(".events/pending").join(format!("{id}.json")).is_file());
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&repo))
+        let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(&repo))
             .unwrap();
         let row = store.get_event(id).unwrap().expect("fila antes de enrutar");
         assert_eq!(row.event_type, "PullRequest_Merged");
@@ -694,22 +664,4 @@ mod tests {
         let _ = fs::remove_dir_all(&repo);
     }
 
-    #[test]
-    fn merged_alta_filesystem_writes_json_and_skips_store() {
-        let _guard = ModeGuard;
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        let repo = temp_repo();
-        let merged = emit_pr_merged(
-            &repo,
-            &json!({
-                "source_branch": "fix/x",
-                "merge_commit_hash": "c".repeat(40),
-            }),
-        )
-        .expect("merged");
-        let id = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
-        assert!(repo.join(".events/pending").join(format!("{id}.json")).is_file());
-        assert!(!sddia_event_store::runtime_db_path(&repo).is_file());
-        let _ = fs::remove_dir_all(&repo);
-    }
 }

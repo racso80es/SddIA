@@ -6,6 +6,7 @@ members = [
     "sddia-runtime-parity",
     "sddia-eda-catalog",
     "sddia-core",
+    "sddia-event-manager-host",
     "ecosystem-health",
     "sddia-daemon-runtime",
     "user-preference-core",

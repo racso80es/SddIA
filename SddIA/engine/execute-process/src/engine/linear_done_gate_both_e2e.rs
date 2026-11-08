@@ -7,7 +7,7 @@ use crate::core::repo::find_repo_root;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 const PROJECT_SLUG: &str = "lab-done-gate-both";
 const ISSUE_REF: &str = "LAB-AC21-BOTH";
@@ -24,14 +24,15 @@ fn with_lab<F: FnOnce()>(f: F) {
     let repo = find_repo_root().expect("repo");
     std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
     std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
-    std::env::set_var("SDDIA_EVENT_STORE", "filesystem");
     std::env::set_var("SDDIA_TRACKER_MARKDOWN_APPLY_SKIP_GIT", "1");
     std::env::remove_var("LINEAR_API_TOKEN");
     let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
+    let mock = Arc::new(sddia_core::ports::event_manager::InMemoryEventManagerMock::new());
+    crate::engine::eda_port::install_port(mock);
     f();
+    crate::engine::eda_port::clear_port();
     std::env::remove_var("SDDIA_TRACKER_MARKDOWN_APPLY_SKIP_GIT");
     std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
-    std::env::remove_var("SDDIA_EVENT_STORE");
     let _ = fs::remove_file(repo.join(".SddIA/lab-linear-store.json"));
 }
 
@@ -92,17 +93,20 @@ fn merge_done_lab_setup(repo: &Path, tracker_ref: &str) {
     .expect("lab update_issue_state done");
     let event_id = format!("ac21-{}", uuid::Uuid::new_v4());
     let rel = format!(".events/pending/{event_id}.json");
-    fs::create_dir_all(repo.join(".events/pending")).ok();
-    let event = json!({
+    let mut event = json!({
         "event_id": event_id,
         "event_type": "PullRequest_Merged",
+        "timestamp": chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+        "emitter_agent": "linear-e2e-lab",
         "payload": {
             "tracker_ref": tracker_ref,
             "project_slug": PROJECT_SLUG,
             "merge_commit_hash": "ac21merge00000000000000000000000000000001",
-        }
+        },
+        "delivery_state": {},
     });
-    fs::write(repo.join(&rel), serde_json::to_string(&event).unwrap()).unwrap();
+    sddia_eda_catalog::stamp_published_event(repo, &mut event).expect("stamp");
+    crate::engine::eda_port::record_ecst(repo, "domain", &event).expect("record");
     let out = tracker_stamp::run(repo, &json!({ "event_file_path": rel }))
         .expect("tracker-stamp PullRequest_Merged");
     let stamped = out

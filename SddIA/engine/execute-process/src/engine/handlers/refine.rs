@@ -250,6 +250,12 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
         target,
         super::super::tracker_lifecycle_port::LifecycleTarget::Unconfigured
     );
+    let local_snapshot = load_local_item_markdown(&bound.project_root, &rel);
+    let fetch_issue_ref = local_snapshot
+        .as_ref()
+        .and_then(|(_, fm)| fm_str(fm, "tracker_ref"))
+        .filter(|s| !s.contains('/'))
+        .unwrap_or_else(|| hu_ref.clone());
     let fetched = if local_only {
         Err(String::new())
     } else {
@@ -258,14 +264,15 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
             inputs,
             json!({
                 "operation": "fetch_issue",
-                "issue_ref": hu_ref,
+                "issue_ref": fetch_issue_ref,
                 "project_slug": bound.slug,
             }),
             PROCESS_HU,
         )
     };
     let (raw, fm) = if local_only {
-        load_local_item_markdown(&bound.project_root, &rel)
+        local_snapshot
+            .clone()
             .ok_or_else(|| format!("REFINE_NOT_FOUND: {hu_ref}"))?
     } else if let Ok(body) = &fetched {
         if let Some(desc) = body.get("description").and_then(|v| v.as_str()) {
@@ -290,7 +297,13 @@ pub fn run_hu(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, Strin
     let (_, body) = split_frontmatter(&raw)?;
     let refined_body = mayeuta_touch_body(&body);
 
-    let tracker_ref = fm_str(&fm, "tracker_ref").or_else(|| str_field(inputs, "tracker_ref"));
+    let tracker_ref = fm_str(&fm, "tracker_ref")
+        .or_else(|| {
+            local_snapshot
+                .as_ref()
+                .and_then(|(_, lfm)| fm_str(lfm, "tracker_ref"))
+        })
+        .or_else(|| str_field(inputs, "tracker_ref"));
     let create_issue_invoked = false;
 
     let refined_date = Utc::now().format("%Y-%m-%d").to_string();

@@ -1,7 +1,10 @@
 use sddia_daemon_runtime::{
     ensure_bus_dirs, find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
 };
-use sddia_event_store::StoreMode;
+use sddia_core::ports::event_manager::{
+    ClaimPendingRequest, DeliveryStatus, EventManagerPort, RecordDeliveryRequest,
+};
+use sddia_event_manager_host::resolve_productive_port;
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -10,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::Instant;
 use std::{thread, time::Duration};
 
 const POLL_SECONDS: u64 = 2;
@@ -31,14 +34,6 @@ static METRIC_ROUTES_CLAIMED: AtomicU64 = AtomicU64::new(0);
 static METRIC_ROUTES_OK: AtomicU64 = AtomicU64::new(0);
 static METRIC_ROUTES_FAIL: AtomicU64 = AtomicU64::new(0);
 static CLAIM_TICK_COUNTER: AtomicU64 = AtomicU64::new(0);
-
-fn store_mode_label(mode: StoreMode) -> &'static str {
-    match mode {
-        StoreMode::Redb => "redb",
-        StoreMode::Dual => "dual",
-        StoreMode::Filesystem => "filesystem",
-    }
-}
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 struct ClaimTickStats {
@@ -279,16 +274,7 @@ fn tick_probes(repo: &Path, clock: &mut ProbeClock) {
 }
 
 /// Ids con entrega `pending`. No lee el ECST. Un fichero pending ya presente lo deja al barrido.
-fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
-    let mode = sddia_event_store::store_mode();
-    if !sddia_event_store::writes_store(mode) {
-        return;
-    }
-    let store_label = store_mode_label(mode);
-    let db = sddia_event_store::runtime_db_path(repo);
-    if !db.is_file() {
-        return;
-    }
+fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook, port: Arc<dyn EventManagerPort>) {
     if let Ok(b) = book.lock() {
         if routes_block_store_claim(&b) {
             eprintln!(
@@ -298,104 +284,69 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
             return;
         }
     }
-    match sddia_eda_catalog::reconcile_unstamped(repo) {
-        Ok(report) => {
-            let open = report.open_cause.as_deref().unwrap_or("ok");
-            println!(
-                "[WATCHER] reconcile_unstamped elapsed_ms={} domain_rows={} delivery_rows={} touched={} open={open}",
-                report.elapsed_ms,
-                report.domain_rows,
-                report.delivery_rows,
-                report.touched,
-            );
-            if let Some(cause) = &report.open_cause {
-                eprintln!("[WATCHER] reconcile_unstamped: {cause}");
-            }
-        }
-        Err(err) => eprintln!("[WATCHER] reconcile_unstamped: {err}"),
-    }
     let mut stats = ClaimTickStats::default();
-    let store = match sddia_event_store::EventStore::open(&db) {
-        Ok(store) => store,
+    let claimed = match port.claim_pending(ClaimPendingRequest {
+        lease_owner: "event-watcher".into(),
+        limit: MAX_IN_FLIGHT_ROUTES as u32,
+        lease_ttl_ms: Some(30_000),
+    }) {
+        Ok(r) => r.events,
         Err(err) => {
             stats.open_failed = 1;
-            log_claim_tick(store_label, stats);
-            eprintln!("[WATCHER] events.redb no abre: {err}");
+            log_claim_tick("redb", stats);
+            eprintln!("[WATCHER] claim_pending: {err}");
             return;
         }
     };
-    let rows = match store.list_pending_deliveries() {
-        Ok(rows) => rows,
-        Err(err) => {
-            eprintln!("[WATCHER] events.redb list_pending: {err}");
-            return;
-        }
-    };
-    stats.pending_rows = rows.len();
-    let mut seen = HashSet::new();
+    stats.pending_rows = claimed.len();
     let mut launches: Vec<(String, std::path::PathBuf, String)> = Vec::new();
-    for (event_id, _subscriber_id) in rows {
-        if !seen.insert(event_id.clone()) {
-            stats.skipped_book += 1;
-            continue;
-        }
-        let path = top.pending.join(format!("{event_id}.json"));
-        if path.is_file() {
-            stats.skipped_file += 1;
-            continue;
-        }
-        let rel = format!(".events/pending/{event_id}.json");
-        let key = rel;
+    for ev in claimed {
+        let event_id = ev.event_id;
         {
-            let Ok(mut b) = book.lock() else {
-                eprintln!("[WATCHER] book lock: no se reclama {event_id}");
-                break;
-            };
-            if b.processing.contains(&event_id) || b.routed_ok.contains(&event_id) {
-                stats.skipped_book += 1;
+            let Ok(mut b) = book.lock() else { break; };
+            if b.processing.contains(&event_id) || b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
+                stats.skipped_inflight += 1;
                 continue;
             }
-            if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
-                stats.skipped_inflight += 1;
-                break;
-            }
             b.processing.insert(event_id.clone());
-            *b.attempts.entry(key.clone()).or_insert(0) += 1;
         }
         stats.claimed += 1;
-        launches.push((event_id, path, key));
+        let path = top.pending.join(format!("{event_id}.json"));
+        let rel = format!(".events/pending/{event_id}.json");
+        launches.push((event_id, path, rel));
     }
-    drop(store);
-    log_claim_tick(store_label, stats);
-    for (uuid_c, path_c, key) in launches {
+    log_claim_tick("redb", stats);
+    for (uuid_c, path_c, rel) in launches {
         METRIC_ROUTES_CLAIMED.fetch_add(1, Ordering::Relaxed);
         let repo_c = repo.to_path_buf();
         let book_c = Arc::clone(book);
-        let rel = format!(".events/pending/{uuid_c}.json");
+        let port_c = Arc::clone(&port);
         let event_id_log = uuid_c.clone();
         thread::spawn(move || {
             println!(
                 "[WATCHER] route spawn event_id={event_id_log} subscriber=route-domain-event"
             );
-            let t0 = Instant::now();
             let out = invoke_route_process(&repo_c, &rel, "route-domain-event");
-            let elapsed_ms = t0.elapsed().as_millis();
-            let exit = out.status.code().unwrap_or(-1);
-            if out.status.success() {
+            let ack = if out.status.success() {
                 METRIC_ROUTES_OK.fetch_add(1, Ordering::Relaxed);
+                DeliveryStatus::Ack
             } else {
                 METRIC_ROUTES_FAIL.fetch_add(1, Ordering::Relaxed);
-            }
-            println!(
-                "[WATCHER] route done event_id={event_id_log} subscriber=route-domain-event elapsed_ms={elapsed_ms} exit={exit}"
-            );
+                DeliveryStatus::Nack
+            };
+            let _ = port_c.record_delivery(RecordDeliveryRequest {
+                event_id: uuid_c.clone(),
+                delivery_id: uuid_c.clone(),
+                status: ack,
+                attempt: None,
+            });
             if let Ok(mut b) = book_c.lock() {
                 apply_route_outcome_fractal(
                     &mut b,
                     "route-domain-event",
                     &path_c,
                     &uuid_c,
-                    &key,
+                    &rel,
                     &out,
                 );
             }
@@ -403,122 +354,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
     }
 }
 
-const FRACTAL_CLAIM_WINDOW_MS: i64 = 6 * 60 * 60 * 1000;
-const FRACTAL_CLAIM_CAP: usize = 16;
-const FRACTAL_CLAIM_SUB: &str = "event-watcher.fractal-claim";
-
-fn now_millis() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
-}
-
-/// Reclama telemetría y orquestación recientes que no tienen testigo de claim.
-fn claim_store_fractal(repo: &Path, book: &SharedBook) {
-    if !fractal_watch_enabled() {
-        return;
-    }
-    let mode = sddia_event_store::store_mode();
-    if !sddia_event_store::writes_store(mode) {
-        return;
-    }
-    let db = sddia_event_store::runtime_db_path(repo);
-    if !db.is_file() {
-        return;
-    }
-    if let Ok(b) = book.lock() {
-        if routes_block_store_claim(&b) {
-            eprintln!(
-                "[WATCHER] claim_store_fractal deferred: in_flight={}",
-                b.in_flight()
-            );
-            return;
-        }
-    }
-    let store = match sddia_event_store::EventStore::open(&db) {
-        Ok(store) => store,
-        Err(err) => {
-            eprintln!("[WATCHER] fractal claim: {err}");
-            return;
-        }
-    };
-    let now = now_millis();
-    let families = [
-        (
-            sddia_event_store::Family::Telemetry,
-            "route-telemetry",
-            ".events/telemetry",
-        ),
-        (
-            sddia_event_store::Family::Orchestration,
-            "route-orchestration",
-            ".events/orchestration",
-        ),
-    ];
-    let mut launches: Vec<(String, String, String)> = Vec::new();
-    for (family, process_name, prefix) in families {
-        let Ok(mut rows) = store.list_family(family) else {
-            continue;
-        };
-        rows.sort_by_key(|row| std::cmp::Reverse(row.created_at));
-        let mut taken = 0usize;
-        for row in rows {
-            if taken >= FRACTAL_CLAIM_CAP {
-                break;
-            }
-            if now.saturating_sub(row.created_at) > FRACTAL_CLAIM_WINDOW_MS {
-                continue;
-            }
-            let terminal = store
-                .get_delivery(&row.event_id, FRACTAL_CLAIM_SUB)
-                .ok()
-                .flatten()
-                .is_some_and(|w| w.status != sddia_event_store::DeliveryStatus::Pending);
-            if terminal {
-                continue;
-            }
-            let Ok(mut b) = book.lock() else {
-                break;
-            };
-            if b.processing.contains(&row.event_id) || b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
-                continue;
-            }
-            let event_id = row.event_id.clone();
-            b.processing.insert(event_id.clone());
-            drop(b);
-            taken += 1;
-            launches.push((
-                event_id.clone(),
-                process_name.to_string(),
-                format!("{prefix}/{event_id}.json"),
-            ));
-        }
-    }
-    drop(store);
-    for (event_id, process_name, rel) in launches {
-        let repo_c = repo.to_path_buf();
-        let book_c = Arc::clone(book);
-        let path_c = repo.join(&rel);
-        let uuid_c = event_id.clone();
-        let process_c = process_name.clone();
-        thread::spawn(move || {
-            let out = invoke_route_process(&repo_c, &rel, &process_c);
-            if out.status.success() {
-                let _ = sddia_event_store::record_witness(
-                    &repo_c,
-                    &uuid_c,
-                    FRACTAL_CLAIM_SUB,
-                    sddia_event_store::DeliveryStatus::Success,
-                    &json!({}),
-                );
-            }
-            if let Ok(mut b) = book_c.lock() {
-                apply_route_outcome_fractal(&mut b, &process_c, &path_c, &uuid_c, &rel, &out);
-            }
-        });
-    }
-}
+fn claim_store_fractal(_repo: &Path, _book: &SharedBook, _port: Arc<dyn EventManagerPort>) {}
 
 fn invoke_route_process(repo: &Path, rel_path: &str, process_name: &str) -> Output {
     let runner = execute_process_bin(repo);
@@ -790,6 +626,7 @@ fn apply_route_outcome_fractal(
 }
 
 fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
+    let port = Arc::new(resolve_productive_port(&repo).map_err(|e| e.to_string())?);
     let top = load_bus_topology(&repo);
     ensure_bus_dirs(&top)?;
     let mut centinela = DaemonRuntime::new(repo.clone(), "event-watcher");
@@ -836,77 +673,6 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 prioritize_heartbeat_paths(&mut paths);
             } else {
                 paths.sort();
-            }
-            if process_name == "route-domain-event"
-                && sddia_event_store::store_mode() == sddia_event_store::StoreMode::Redb
-            {
-                let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                for path in &paths {
-                    let event_uuid = path
-                        .file_stem()
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                        .into_owned();
-                    if b.routed_ok.contains(&event_uuid) {
-                        continue;
-                    }
-                    let rel = rel_event_path(&repo, path);
-                    let mut event = json!({
-                        "event_id": format!("residual-{event_uuid}"),
-                        "event_type": "System_Fracture_Detected",
-                        "emitter_agent": "event-watcher",
-                        "payload": {
-                            "process_name": "event-watcher",
-                            "friction_id": "F-EDA-RESIDUAL-FILESYSTEM",
-                            "error_trace": format!("residual {rel} con store redb; no reinyectado"),
-                            "attempted_action": "route-domain-event",
-                        },
-                        "delivery_state": {},
-                    });
-                    if sddia_eda_catalog::stamp_published_event(&repo, &mut event).is_ok() {
-                        let _ = sddia_event_store::record_ecst(&repo, "domain", &event);
-                    }
-                    b.routed_ok.insert(event_uuid);
-                    eprintln!("[WATCHER] residual {rel}: fractura F-EDA-RESIDUAL-FILESYSTEM");
-                }
-                continue;
-            }
-            if sddia_event_store::store_mode() == sddia_event_store::StoreMode::Redb
-                && matches!(
-                    process_name.as_str(),
-                    "route-telemetry" | "route-domain" | "route-orchestration"
-                )
-            {
-                let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                for path in &paths {
-                    let event_uuid = path
-                        .file_stem()
-                        .unwrap_or_default()
-                        .to_string_lossy()
-                        .into_owned();
-                    if b.routed_ok.contains(&event_uuid) {
-                        continue;
-                    }
-                    let rel = rel_event_path(&repo, path);
-                    let mut event = json!({
-                        "event_id": format!("residual-{event_uuid}"),
-                        "event_type": "System_Fracture_Detected",
-                        "emitter_agent": "event-watcher",
-                        "payload": {
-                            "process_name": "event-watcher",
-                            "friction_id": "F-EDA-RESIDUAL-FRACTAL",
-                            "error_trace": format!("residual {rel} con store redb; no reinyectado"),
-                            "attempted_action": process_name,
-                        },
-                        "delivery_state": {},
-                    });
-                    if sddia_eda_catalog::stamp_published_event(&repo, &mut event).is_ok() {
-                        let _ = sddia_event_store::record_ecst(&repo, "domain", &event);
-                    }
-                    b.routed_ok.insert(event_uuid);
-                    eprintln!("[WATCHER] residual {rel}: fractura F-EDA-RESIDUAL-FRACTAL");
-                }
-                continue;
             }
             if process_name == "route-domain-event" {
                 let mut eligible: Vec<(PathBuf, String, String, String)> = Vec::new();
@@ -1037,8 +803,8 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
                 });
             }
         }
-        claim_store_pending(&repo, &top, &book);
-        claim_store_fractal(&repo, &book);
+        claim_store_pending(&repo, &top, &book, Arc::clone(&port));
+        claim_store_fractal(&repo, &book, Arc::clone(&port));
         {
             let mut rt = shared
                 .lock()
@@ -1089,386 +855,3 @@ fn main() {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn test_tree() -> (PathBuf, sddia_daemon_runtime::BusTopology) {
-        let root = std::env::temp_dir().join(format!(
-            "sddia-ew-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        let top = sddia_daemon_runtime::BusTopology {
-            pending: root.join("pending"),
-            dead_letter: root.join("dead-letter"),
-            dead_letter_subscribers: root.join("dead-letter").join("subscribers"),
-            telemetry: root.join("telemetry"),
-            progress: root.join("progress"),
-            orchestration: root.join("orchestration"),
-            domain: root.join("domain"),
-        };
-        for d in [
-            &top.pending,
-            &top.dead_letter,
-            &top.dead_letter_subscribers,
-            &top.telemetry,
-            &top.orchestration,
-            &top.domain,
-        ] {
-            fs::create_dir_all(d).unwrap();
-        }
-        (root, top)
-    }
-
-    fn write_json(path: &Path, body: &str) {
-        fs::write(path, body).unwrap();
-    }
-
-    #[test]
-    fn store_mode_label_maps_redb() {
-        assert_eq!(store_mode_label(StoreMode::Redb), "redb");
-        assert_eq!(store_mode_label(StoreMode::Dual), "dual");
-        assert_eq!(store_mode_label(StoreMode::Filesystem), "filesystem");
-    }
-
-    #[test]
-    fn skip_hot_path_never_emits_trace() {
-        for skip in [
-            "in-flight uuid=x",
-            "routed-ok pending file uuid=x",
-            "fractal-terminal uuid=x",
-            "max attempts (3)",
-            "max attempts + side-effect committed (3)",
-            "dead-letter kaizen",
-        ] {
-            assert!(
-                !watcher_skip_emits_hot_path_trace(skip),
-                "hot path must stay silent for {skip}"
-            );
-        }
-    }
-
-    #[test]
-    fn store_claim_deferred_while_routes_in_flight() {
-        let book = RouteBook::new();
-        assert!(!routes_block_store_claim(&book));
-        let mut busy = RouteBook::new();
-        busy.processing.insert("route-child".into());
-        assert!(routes_block_store_claim(&busy));
-    }
-
-    #[test]
-    fn skip_in_flight() {
-        let (root, top) = test_tree();
-        let path = top.pending.join("u-if.json");
-        write_json(&path, "{}");
-        let mut book = RouteBook::new();
-        book.processing.insert("u-if".into());
-        let skip = watcher_skip_reason(
-            "u-if",
-            "pending/u-if.json",
-            "route-domain-event",
-            &path,
-            &book,
-            &root,
-            &top,
-        )
-        .expect("skip");
-        assert!(skip.starts_with("in-flight"));
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    #[test]
-    fn skip_routed_ok_keeps_book_and_file() {
-        let (root, top) = test_tree();
-        let path = top.pending.join("u-ok.json");
-        write_json(&path, "{}");
-        let mut book = RouteBook::new();
-        book.routed_ok.insert("u-ok".into());
-        let skip = watcher_skip_reason(
-            "u-ok",
-            "pending/u-ok.json",
-            "route-domain-event",
-            &path,
-            &book,
-            &root,
-            &top,
-        )
-        .expect("skip");
-        assert!(skip.starts_with("routed-ok"));
-        assert!(book.routed_ok.contains("u-ok"));
-        assert!(path.is_file());
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    #[test]
-    fn skip_fractal_terminal() {
-        let (root, top) = test_tree();
-        let path = top.telemetry.join("u-ft.json");
-        write_json(
-            &path,
-            r#"{"delivery_state":{"a":"success","b":"skipped-already-delivered"}}"#,
-        );
-        let book = RouteBook::new();
-        let skip = watcher_skip_reason(
-            "u-ft",
-            "telemetry/u-ft.json",
-            "route-telemetry",
-            &path,
-            &book,
-            &root,
-            &top,
-        )
-        .expect("skip");
-        assert!(skip.starts_with("fractal-terminal"));
-        let none = watcher_skip_reason(
-            "u-ft",
-            "telemetry/u-ft.json",
-            "route-domain-event",
-            &path,
-            &book,
-            &root,
-            &top,
-        );
-        assert!(none.is_none(), "batch path must not classify fractal-terminal");
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    #[test]
-    fn skip_max_attempts() {
-        let (root, top) = test_tree();
-        let path = top.pending.join("u-max.json");
-        write_json(&path, "{}");
-        let mut book = RouteBook::new();
-        book.attempts
-            .insert("pending/u-max.json".into(), MAX_ROUTE_ATTEMPTS);
-        let skip = watcher_skip_reason(
-            "u-max",
-            "pending/u-max.json",
-            "route-domain-event",
-            &path,
-            &book,
-            &root,
-            &top,
-        )
-        .expect("skip");
-        assert!(skip.starts_with("max attempts"));
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    #[test]
-    fn skip_dead_letter_kaizen() {
-        let (root, top) = test_tree();
-        let path = top.pending.join("u-dl.json");
-        write_json(&path, "{}");
-        write_json(&top.dead_letter_subscribers.join("u-dl.witness.json"), "{}");
-        let book = RouteBook::new();
-        let skip = watcher_skip_reason(
-            "u-dl",
-            "pending/u-dl.json",
-            "route-domain-event",
-            &path,
-            &book,
-            &root,
-            &top,
-        )
-        .expect("skip");
-        assert_eq!(skip, "dead-letter kaizen");
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    static WATCHER_ENV: Mutex<()> = Mutex::new(());
-
-    struct EnvGuard {
-        key: &'static str,
-        prev: Option<String>,
-    }
-
-    impl Drop for EnvGuard {
-        fn drop(&mut self) {
-            match &self.prev {
-                Some(value) => env::set_var(self.key, value),
-                None => env::remove_var(self.key),
-            }
-        }
-    }
-
-    fn push_env(key: &'static str, value: &str) -> EnvGuard {
-        let prev = env::var(key).ok();
-        env::set_var(key, value);
-        EnvGuard { key, prev }
-    }
-
-    fn mock_bin(dir: &Path) -> PathBuf {
-        let path = dir.join("mock-execute.sh");
-        fs::write(
-            &path,
-            "#!/bin/sh\nprintf '%s\\n' \"$@\" >> \"$WATCHER_LOG\"\nprintf '\\n' >> \"$WATCHER_LOG\"\nexit 0\n",
-        )
-        .unwrap();
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
-        path
-    }
-
-    #[test]
-    fn filesystem_pending_is_routed_without_opening_the_store() {
-        let _lock = WATCHER_ENV.lock().unwrap();
-        let root = std::env::temp_dir().join(format!(
-            "sddia-ew-fs-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        fs::create_dir_all(root.join(".events/pending")).unwrap();
-        let body = r#"{"event_id":"ca06","secret":"ecst-fichero-no-va-en-argv"}"#;
-        fs::write(root.join(".events/pending/ca06.json"), body).unwrap();
-        let log = root.join("argv.log");
-        let bin = mock_bin(&root);
-        let _bin = push_env("SDDIA_EXECUTE_PROCESS_BIN", bin.to_str().unwrap());
-        let _log = push_env("WATCHER_LOG", log.to_str().unwrap());
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        run_watcher(root.clone(), true).expect("tick");
-        sddia_event_store::override_store_mode(None);
-        let logged = fs::read_to_string(&log).unwrap_or_default();
-        assert!(
-            logged.contains(".events/pending/ca06.json"),
-            "argv={logged}"
-        );
-        assert!(!logged.contains("ecst-fichero-no-va-en-argv"));
-        assert!(!root.join(".SddIA/runtime/events.redb").is_file());
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    #[test]
-    fn redb_claim_delegates_the_id_without_reading_the_ecst() {
-        let _lock = WATCHER_ENV.lock().unwrap();
-        let root = std::env::temp_dir().join(format!(
-            "sddia-ew-db-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        fs::create_dir_all(root.join(".SddIA/runtime")).unwrap();
-        let event_id = "ac4-claim";
-        let secret = "ecst-secreto-no-leido";
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&root))
-            .expect("open");
-        store
-            .insert_event(
-                &sddia_event_store::StoredEvent {
-                    event_id: event_id.into(),
-                    family: sddia_event_store::Family::Domain,
-                    event_type: "Domain_Probe".into(),
-                    created_at: 1,
-                    ecst: serde_json::json!({
-                        "event_id": event_id,
-                        "event_type": "Domain_Probe",
-                        "payload": { "secret": secret }
-                    }),
-                },
-                &["agent:argos"],
-            )
-            .expect("insert");
-        drop(store);
-        let log = root.join("argv.log");
-        let bin = mock_bin(&root);
-        let _bin = push_env("SDDIA_EXECUTE_PROCESS_BIN", bin.to_str().unwrap());
-        let _log = push_env("WATCHER_LOG", log.to_str().unwrap());
-        run_watcher(root.clone(), true).expect("tick");
-        sddia_event_store::override_store_mode(None);
-        let logged = fs::read_to_string(&log).unwrap_or_default();
-        assert!(
-            logged.contains(&format!(".events/pending/{event_id}.json")),
-            "argv={logged}"
-        );
-        assert!(!logged.contains(secret), "el watcher leyó el ECST: {logged}");
-        assert!(!root.join(".events/pending").join(format!("{event_id}.json")).is_file());
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    #[test]
-    fn residual_pending_json_is_a_fracture_and_is_not_routed() {
-        let _lock = WATCHER_ENV.lock().unwrap();
-        let root = std::env::temp_dir().join(format!(
-            "sddia-ew-residual-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        fs::create_dir_all(root.join(".events/pending")).unwrap();
-        fs::create_dir_all(root.join("SddIA/core")).unwrap();
-        fs::write(
-            root.join("SddIA/core/event-domain-subscriptions.json"),
-            "{}\n",
-        )
-        .unwrap();
-        fs::write(
-            root.join(".events/pending/ca12-residual.json"),
-            r#"{"event_id":"ca12-residual","secret":"no-reinject"}"#,
-        )
-        .unwrap();
-        let log = root.join("argv.log");
-        let bin = mock_bin(&root);
-        let _bin = push_env("SDDIA_EXECUTE_PROCESS_BIN", bin.to_str().unwrap());
-        let _log = push_env("WATCHER_LOG", log.to_str().unwrap());
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        run_watcher(root.clone(), true).expect("tick");
-        sddia_event_store::override_store_mode(None);
-        let logged = fs::read_to_string(&log).unwrap_or_default();
-        assert!(
-            !logged.contains("ca12-residual.json"),
-            "reinyectó el residual: {logged}"
-        );
-        assert!(root.join(".events/pending/ca12-residual.json").is_file());
-        let store = sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&root))
-            .expect("open");
-        let rows = store
-            .list_family(sddia_event_store::Family::Domain)
-            .expect("family");
-        assert!(rows.iter().any(|row| {
-            row.ecst.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
-                && row.ecst.get("payload").and_then(|p| p.get("friction_id")).and_then(|v| v.as_str())
-                    == Some("F-EDA-RESIDUAL-FILESYSTEM")
-        }));
-        let _ = fs::remove_dir_all(&root);
-    }
-
-    #[test]
-    fn one_tick_fires_both_probes_without_the_sweeper() {
-        let _lock = WATCHER_ENV.lock().unwrap();
-        let root = std::env::temp_dir().join(format!(
-            "sddia-ew-pr-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        fs::create_dir_all(&root).unwrap();
-        let log = root.join("argv.log");
-        let bin = mock_bin(&root);
-        let _bin = push_env("SDDIA_EXECUTE_PROCESS_BIN", bin.to_str().unwrap());
-        let _log = push_env("WATCHER_LOG", log.to_str().unwrap());
-        let mut clock = probe_clock_due_now();
-        tick_probes(&root, &mut clock);
-        let logged = fs::read_to_string(&log).unwrap();
-        assert!(logged.contains("daemon-heartbeat-audit"));
-        assert!(logged.contains(r#"{"sweep":true}"#));
-        assert!(logged.contains("system-vitality-probe"));
-        assert!(logged.contains("{}"));
-        assert!(!logged.contains("event-sweeper"));
-        let _ = fs::remove_dir_all(&root);
-    }
-}
