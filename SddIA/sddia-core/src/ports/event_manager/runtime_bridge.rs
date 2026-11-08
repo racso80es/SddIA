@@ -5,8 +5,8 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use crate::ports::event_manager::contract::{
-    AppendTraceRequest, DeliveryStatus, GetEventRequest, ListPendingRequest, PublishEcstRequest,
-    RecordDeliveryRequest,
+    AppendTraceRequest, DeliveryStatus, GetEventRequest, ListEventsRequest, ListPendingRequest,
+    PublishEcstRequest, RecordDeliveryRequest,
 };
 use crate::ports::event_manager::error::EventManagerError;
 use crate::ports::event_manager::port::EventManagerPort;
@@ -147,9 +147,17 @@ pub fn record_delivery_nack(
     .map_err(|e| e.to_string())
 }
 
-/// Lista ECST de eventos aún pendientes (audit / dominio).
+/// Lista ECST de dominio / histórico reciente (incluye eventos con lease).
 pub fn load_domain_ecsts(port: &dyn EventManagerPort, limit: u32) -> Result<Vec<Value>, String> {
-    list_pending_ecsts(port, limit)
+    let listed = port
+        .list_events(ListEventsRequest {
+            family: None,
+            event_type: None,
+            limit: Some(limit),
+            cursor: None,
+        })
+        .map_err(|e| e.to_string())?;
+    Ok(listed.events.into_iter().map(|e| e.ecst).collect())
 }
 
 pub fn list_pending_ecsts(

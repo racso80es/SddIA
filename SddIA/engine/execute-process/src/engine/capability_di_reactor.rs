@@ -205,7 +205,7 @@ fn emit_di_resolved(repo: &Path, request_event_id: &str, outcome: &ChainOutcome)
     let mut stamped = event;
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     let _dir = processed_dir(repo)?;
-    crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)
+    crate::engine::eda_port::publish_ecst(repo, "processed", &stamped)
         .map_err(|err| err.to_string())?;
     Ok(())
 }
@@ -297,6 +297,10 @@ pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Va
         let _ = crate::engine::eda_port::record_delivery_ack(repo, &event_id, "capability-di-reactor");
         if let Some(path) = path {
             fs::remove_file(&path).ok();
+        } else if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
+            let pf = pending_dir(repo)?
+                .join(format!("{event_id}.json"));
+            fs::remove_file(pf).ok();
         }
         processed += 1;
         last = json!({

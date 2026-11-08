@@ -1,17 +1,20 @@
 //! Composition local: `Arc<dyn EventManagerPort>` productivo por hilo.
 
 use std::cell::RefCell;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
     append_progress_monotonic, events_redb_path, load_dispatched_event,
-    load_domain_ecsts as load_domain_ecsts_on_port, publish_ecst as publish_ecst_on_port,
+    publish_ecst as publish_ecst_on_port,
     record_delivery_ack as record_delivery_ack_on_port, record_ecst as record_ecst_on_port,
-    EventManagerPort, GetDltSealRequest, GetDltSealResult, ListDlqRequest, SealDltRequest,
-    VerifyInlineEcstRequest, PublishSeal,
+    EventManagerPort, GetDltSealRequest, GetDltSealResult, ListDlqRequest, ListEventsRequest,
+    SealDltRequest, VerifyInlineEcstRequest, PublishSeal,
 };
+use sddia_event_store::{EventStore, Family, StoreMode};
+use sddia_event_manager_host::resolve_productive_port;
 
 /// Ruta de directorio (no fichero `.redb`).
 pub fn is_filesystem_rel(raw: &str) -> bool {
@@ -20,10 +23,10 @@ pub fn is_filesystem_rel(raw: &str) -> bool {
         && !s.ends_with(".redb")
         && (s.contains('/') || s.contains('\\') || s.starts_with('.'))
 }
-use sddia_event_manager_host::resolve_productive_port;
 
 thread_local! {
     static PORT: RefCell<Option<Arc<dyn EventManagerPort>>> = const { RefCell::new(None) };
+    static PORT_REPO: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
 }
 
 pub fn runtime_db_path(repo: &Path) -> PathBuf {
@@ -33,24 +36,41 @@ pub fn runtime_db_path(repo: &Path) -> PathBuf {
 pub fn install_productive_port(repo: &Path) -> Result<(), String> {
     let port = resolve_productive_port(repo)?;
     PORT.with(|slot| *slot.borrow_mut() = Some(port));
+    PORT_REPO.with(|slot| *slot.borrow_mut() = Some(repo.to_path_buf()));
     Ok(())
 }
 
 pub fn install_port(port: Arc<dyn EventManagerPort>) {
     PORT.with(|slot| *slot.borrow_mut() = Some(port));
+    PORT_REPO.with(|slot| *slot.borrow_mut() = None);
 }
 
 pub fn clear_port() {
     PORT.with(|slot| *slot.borrow_mut() = None);
+    PORT_REPO.with(|slot| *slot.borrow_mut() = None);
+}
+
+fn ensure_port_for_repo(repo: &Path) -> Result<(), String> {
+    let stale = PORT_REPO.with(|slot| {
+        slot.borrow()
+            .as_deref()
+            .map(|bound| bound != repo)
+            .unwrap_or(PORT.with(|p| p.borrow().is_some()))
+    });
+    if stale {
+        clear_port();
+    }
+    if PORT.with(|slot| slot.borrow().is_none()) {
+        install_productive_port(repo)?;
+    }
+    Ok(())
 }
 
 fn with_port<R>(
     repo: &Path,
     f: impl FnOnce(&dyn EventManagerPort) -> Result<R, String>,
 ) -> Result<R, String> {
-    if PORT.with(|slot| slot.borrow().is_none()) {
-        install_productive_port(repo)?;
-    }
+    ensure_port_for_repo(repo)?;
     PORT.with(|slot| {
         let port = slot
             .borrow()
@@ -60,12 +80,38 @@ fn with_port<R>(
     })
 }
 
+fn events_family_dir(repo: &Path, family: &str) -> PathBuf {
+    repo.join(format!(".events/{}", family.trim_start_matches("./")))
+}
+
+/// Publicación: FS/dual vía gate legacy de tests; productivo Redb vía puerto.
 pub fn publish_ecst(repo: &Path, family: &str, event: &Value) -> Result<PublishSeal, String> {
+    let mode = sddia_event_store::store_mode();
+    if sddia_event_store::writes_filesystem(mode) {
+        let dir = events_family_dir(repo, family);
+        let seal = sddia_event_store::publish_ecst(repo, family, event, Some(&dir))
+            .map_err(|e| e.to_string())?;
+        return Ok(PublishSeal {
+            event_id: seal.event_id,
+            target_path: seal.target_path,
+            logical_rel: seal.logical_rel,
+        });
+    }
     with_port(repo, |port| publish_ecst_on_port(port, repo, family, event))
 }
 
 pub fn record_ecst(repo: &Path, family: &str, event: &Value) -> Result<(), String> {
-    with_port(repo, |port| record_ecst_on_port(port, repo, family, event))
+    let mode = sddia_event_store::store_mode();
+    if sddia_event_store::writes_filesystem(mode) && !sddia_event_store::writes_store(mode) {
+        let dir = events_family_dir(repo, family);
+        sddia_event_store::publish_ecst(repo, family, event, Some(&dir))
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    } else if sddia_event_store::writes_filesystem(mode) {
+        publish_ecst(repo, family, event).map(|_| ())
+    } else {
+        with_port(repo, |port| record_ecst_on_port(port, repo, family, event))
+    }
 }
 
 pub fn load_dispatched(
@@ -73,15 +119,83 @@ pub fn load_dispatched(
     event_id: &str,
     logical: &Path,
 ) -> Result<Option<Value>, String> {
+    let mode = sddia_event_store::store_mode();
+    if mode == StoreMode::Filesystem {
+        return sddia_event_store::load_dispatched_event(repo, event_id, logical)
+            .map_err(|e| e.to_string());
+    }
     with_port(repo, |port| load_dispatched_event(port, event_id, logical))
 }
 
 pub fn append_progress(repo: &Path, correlation_id: &str, frame: &Value) -> Result<u64, String> {
-    with_port(repo, |port| append_progress_monotonic(port, correlation_id, frame))
+    let mode = sddia_event_store::store_mode();
+    if sddia_event_store::writes_store(mode) {
+        with_port(repo, |port| append_progress_monotonic(port, correlation_id, frame))
+    } else {
+        sddia_event_store::append_progress_monotonic(repo, correlation_id, frame)
+            .map_err(|e| e.to_string())
+    }
 }
 
 pub fn load_domain_ecsts(repo: &Path, limit: u32) -> Result<Vec<Value>, String> {
-    with_port(repo, |port| load_domain_ecsts_on_port(port, limit))
+    let mode = sddia_event_store::store_mode();
+    if sddia_event_store::writes_filesystem(mode) {
+        let dirs = [
+            repo.join(".events/pending"),
+            repo.join(".events/processed"),
+            repo.join(".events/dead-letter"),
+        ];
+        return sddia_event_store::load_domain_ecsts(repo, &dirs.to_vec())
+            .map_err(|e| e.to_string())
+            .map(|rows| rows.into_iter().take(limit as usize).collect());
+    }
+
+    let mut out = Vec::new();
+    let mut seen = HashSet::new();
+
+    if sddia_event_store::writes_store(mode) {
+        if let Ok(store) = EventStore::open(runtime_db_path(repo)) {
+            for row in store.list_family(Family::Domain).unwrap_or_default() {
+                let id = row
+                    .ecst
+                    .get("event_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(row.event_id.as_str())
+                    .to_string();
+                if seen.insert(id) {
+                    out.push(row.ecst);
+                }
+                if out.len() >= limit as usize {
+                    return Ok(out);
+                }
+            }
+        }
+    }
+
+    with_port(repo, |port| {
+        let listed = port
+            .list_events(ListEventsRequest {
+                family: None,
+                event_type: None,
+                limit: Some(limit),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        for e in listed.events {
+            let id = e
+                .ecst
+                .get("event_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or(e.event_id.as_str())
+                .to_string();
+            if seen.insert(id) {
+                out.push(e.ecst);
+            }
+        }
+        Ok(())
+    })?;
+
+    Ok(out.into_iter().take(limit as usize).collect())
 }
 
 pub fn record_delivery_ack(repo: &Path, event_id: &str, delivery_id: &str) -> Result<(), String> {
@@ -155,9 +269,7 @@ pub fn list_dlq_event_ids(repo: &Path, limit: u32) -> Result<Vec<String>, String
 }
 
 pub fn port_arc(repo: &Path) -> Result<Arc<dyn EventManagerPort>, String> {
-    if PORT.with(|slot| slot.borrow().is_none()) {
-        install_productive_port(repo)?;
-    }
+    ensure_port_for_repo(repo)?;
     PORT.with(|slot| {
         slot.borrow()
             .clone()

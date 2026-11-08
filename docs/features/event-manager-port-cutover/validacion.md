@@ -23,7 +23,7 @@ pbi_archived: false
 ## Pendiente antes de merge
 
 - `cargo test --workspace` verde en CI.
-- Tests integración `execute-process` que aún usan `sddia_event_store` (solo test harness).
+- Tests integración `execute-process`: barrido harness puerto (**~83–88** fallos lib; era 87) — puente FS/legacy en `eda_port`, `pending` en emits, `list_events` Redb.
 
 ## Criterio global
 

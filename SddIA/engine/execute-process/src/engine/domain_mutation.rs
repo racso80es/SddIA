@@ -74,11 +74,10 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
         .ok_or("event_id required")?;
     let mut stamped = event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    crate::engine::eda_port::record_ecst(repo, "domain", &stamped)?;
-    let logical = format!(".events/pending/{event_id}.json");
+    let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": logical,
+        "target_path": seal.logical_rel,
     }))
 }
 

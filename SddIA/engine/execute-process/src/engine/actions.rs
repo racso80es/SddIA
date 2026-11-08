@@ -38,10 +38,10 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
         .ok_or("event_id required")?;
     let mut stamped = event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    crate::engine::eda_port::record_ecst(repo, "domain", &stamped)?;
+    let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": format!(".events/pending/{event_id}.json"),
+        "target_path": seal.logical_rel,
     }))
 }
 
@@ -607,6 +607,14 @@ mod tests {
         if file.is_file() {
             return fs::read_to_string(file).unwrap();
         }
+        if let Ok(port) = crate::engine::eda_port::port_arc(repo) {
+            use sddia_core::ports::event_manager::GetEventRequest;
+            if let Ok(row) = port.get_event(GetEventRequest {
+                event_id: event_id.to_string(),
+            }) {
+                return serde_json::to_string(&row.ecst).unwrap();
+            }
+        }
         let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(repo))
             .expect("store");
         let row = store.get_event(event_id).expect("read").expect("fila");
@@ -656,11 +664,19 @@ mod tests {
         .expect("merged");
         let id = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
         assert!(!repo.join(".events/pending").join(format!("{id}.json")).is_file());
-        let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(&repo))
-            .unwrap();
-        let row = store.get_event(id).unwrap().expect("fila antes de enrutar");
-        assert_eq!(row.event_type, "PullRequest_Merged");
+        use sddia_core::ports::event_manager::GetEventRequest;
+        let port = crate::engine::eda_port::port_arc(&repo).unwrap();
+        let row = port
+            .get_event(GetEventRequest {
+                event_id: id.to_string(),
+            })
+            .expect("fila antes de enrutar");
+        assert_eq!(
+            row.ecst.get("event_type").and_then(|v| v.as_str()),
+            Some("PullRequest_Merged")
+        );
         assert!(row.ecst.to_string().contains("MAN-23"));
+        crate::engine::eda_port::clear_port();
         let _ = fs::remove_dir_all(&repo);
     }
 

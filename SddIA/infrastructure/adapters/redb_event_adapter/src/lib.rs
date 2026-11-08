@@ -12,9 +12,10 @@ use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryStatus,
     DualVersionManifest, EventManagerError, EventManagerPort, GetDltSealRequest, GetDltSealResult,
     GetEventRequest, GetEventResult, HandshakeVersionRequest, HandshakeVersionResult,
-    ListedDelivery, ListedDlqEvent, ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest,
-    ListDlqResult, ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest,
-    ListTracesResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
+    ListedDelivery, ListedDlqEvent, ListedEvent, ListDeliveriesRequest, ListDeliveriesResult,
+    ListDlqRequest, ListDlqResult, ListEventsRequest, ListEventsResult, ListPendingRequest,
+    ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
+    PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
     RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest, CONTRACT_ID, CONTRACT_VERSION,
 };
 use sddia_core::ports::event_manager::version_gate;
@@ -426,6 +427,34 @@ impl EventManagerPort for RedbEventAdapter {
             });
         }
         Ok(ListPendingResult { events: out })
+    }
+
+    fn list_events(&self, req: ListEventsRequest) -> Result<ListEventsResult, EventManagerError> {
+        let limit = req.limit.unwrap_or(u32::MAX) as usize;
+        let txn = self.db.begin_read().map_err(storage)?;
+        let events = txn.open_table(EVENTS).map_err(storage)?;
+        let mut out = Vec::new();
+        for item in events.iter().map_err(storage)? {
+            if out.len() >= limit {
+                break;
+            }
+            let (_, v) = item.map_err(storage)?;
+            let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
+            if let Some(et) = req.event_type.as_deref() {
+                if stored.ecst.get("event_type").and_then(|x| x.as_str()) != Some(et) {
+                    continue;
+                }
+            }
+            out.push(ListedEvent {
+                event_id: stored.event_id,
+                ecst: stored.ecst,
+                trace_id: stored.trace_id,
+            });
+        }
+        Ok(ListEventsResult {
+            events: out,
+            next_cursor: None,
+        })
     }
 
     fn list_dlq(&self, req: ListDlqRequest) -> Result<ListDlqResult, EventManagerError> {
