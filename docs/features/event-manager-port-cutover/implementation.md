@@ -17,7 +17,8 @@ status: in-progress
 | T1 | parcial | Core **1.2.0** + defaults (`verify_inline_ecst`, `list_events`, `list_progress`); Redb DLT/list_deliveries; schema library; taxonomy/bindings vía `entity-manager` |
 | T2 | parcial | `eda_port` + `sddia-event-manager-host` desde MAN-33 |
 | T3 | hecho (núcleo) | `ecst_input_loader` verify inline; `route_domain_core` carga estricta vía puerto; sin lectura FS en route/batch/reanchor load |
-| T4–T8 | pendiente | Ver `plan.md` |
+| T4 | hecho | `eda_port` DLT/verify; `dlt_telemetry_anchor` seal; suite 1.2 |
+| T5–T8 | en curso | Ver `plan.md` |
 
 ## Próximo
 

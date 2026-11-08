@@ -62,7 +62,8 @@ pub fn persist_external_dlt_seal(
     if lab_simulate_iota_enabled() {
         return Ok(());
     }
-    let _ = (repo, event_id, tx_hash, eda_port::runtime_db_path(repo));
+    let digest = tx_hash.trim();
+    eda_port::seal_dlt(repo, event_id, tx_hash, digest, "external_iota")?;
     Ok(())
 }
 

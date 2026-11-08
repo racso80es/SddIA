@@ -8,10 +8,11 @@ use serde_json::Value;
 
 use crate::ports::event_manager::contract::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, CONTRACT_ID,
-    CONTRACT_VERSION, DeliveryStatus, GetEventRequest, GetEventResult, HandshakeVersionRequest,
-    HandshakeVersionResult, ListedDlqEvent, ListDlqRequest, ListDlqResult, ListPendingRequest,
-    ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
-    PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest, ReplayDlqRequest,
+    CONTRACT_VERSION, DeliveryStatus, GetDltSealRequest, GetDltSealResult, GetEventRequest,
+    GetEventResult, HandshakeVersionRequest, HandshakeVersionResult, ListedDlqEvent, ListDlqRequest,
+    ListDlqResult, ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest,
+    ListTracesResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
+    RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 use crate::ports::event_manager::error::EventManagerError;
 use crate::ports::event_manager::port::EventManagerPort;
@@ -41,6 +42,7 @@ struct Inner {
     dlq: BTreeMap<String, StoredEvent>,
     deliveries: HashMap<String, DeliveryStatus>,
     traces: HashMap<String, Vec<Value>>,
+    dlt_seals: HashMap<String, GetDltSealResult>,
     faults: FaultInjection,
 }
 
@@ -319,6 +321,31 @@ impl EventManagerPort for InMemoryEventManagerMock {
             g.traces.remove(&tid);
         }
         Ok(())
+    }
+
+    fn seal_dlt(&self, req: SealDltRequest) -> Result<(), EventManagerError> {
+        let mut g = self.inner.lock().expect("mock lock");
+        g.dlt_seals.insert(
+            req.event_id.clone(),
+            GetDltSealResult {
+                event_id: req.event_id,
+                tx_hash: req.tx_hash,
+                digest: req.digest,
+                scope: req.scope,
+            },
+        );
+        Ok(())
+    }
+
+    fn get_dlt_seal(
+        &self,
+        req: GetDltSealRequest,
+    ) -> Result<GetDltSealResult, EventManagerError> {
+        let g = self.inner.lock().expect("mock lock");
+        g.dlt_seals
+            .get(&req.event_id)
+            .cloned()
+            .ok_or_else(|| EventManagerError::NotFound(req.event_id))
     }
 }
 

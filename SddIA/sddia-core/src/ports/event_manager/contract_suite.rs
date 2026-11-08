@@ -3,8 +3,9 @@
 use serde_json::json;
 
 use crate::ports::event_manager::contract::{
-    AppendTraceRequest, ClaimPendingRequest, DeliveryStatus, MoveToDlqRequest, PublishEcstRequest,
-    RecordDeliveryRequest, ReplayDlqRequest,
+    AppendTraceRequest, ClaimPendingRequest, DeliveryStatus, GetDltSealRequest, MoveToDlqRequest,
+    PublishEcstRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
+    VerifyInlineEcstRequest,
 };
 use crate::ports::event_manager::port::EventManagerPort;
 
@@ -16,6 +17,7 @@ pub fn run_event_manager_contract_suite(port: &dyn EventManagerPort) {
     ack_idempotent(port);
     dlq_and_replay(port);
     traces_integrity(port);
+    verify_inline_and_dlt_seal(port);
 }
 
 fn lifecycle_publish_claim_isolation(port: &dyn EventManagerPort) {
@@ -156,6 +158,35 @@ fn traces_integrity(port: &dyn EventManagerPort) {
         frame: json!({"step": 2}),
     })
     .expect("append2");
+}
+
+fn verify_inline_and_dlt_seal(port: &dyn EventManagerPort) {
+    let id = unique("inline");
+    let ecst = json!({"event_id": id, "event_type": "T", "k": 1});
+    port.publish_ecst(PublishEcstRequest {
+        event_id: id.clone(),
+        ecst: ecst.clone(),
+        trace_id: None,
+    })
+    .expect("publish inline");
+    port.verify_inline_ecst(VerifyInlineEcstRequest {
+        event_id: id.clone(),
+        ecst: ecst.clone(),
+    })
+    .expect("verify ok");
+    port.seal_dlt(SealDltRequest {
+        event_id: id.clone(),
+        tx_hash: "0xabc".into(),
+        digest: "d".into(),
+        scope: "test".into(),
+    })
+    .expect("seal");
+    let seal = port
+        .get_dlt_seal(GetDltSealRequest {
+            event_id: id.clone(),
+        })
+        .expect("get seal");
+    assert_eq!(seal.tx_hash, "0xabc");
 }
 
 fn unique(prefix: &str) -> String {
