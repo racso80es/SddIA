@@ -20,6 +20,7 @@ execution_id: "0c5d6ea9-b949-4b2e-859f-6f225504cdf3"
 | `event_store_query.rs`, `eda_bus.rs`, `eda_bus_topology.rs` | Consultas vía `with_event_port` |
 | `handlers/system_vitality.rs` | Handshake scoped en probe topología |
 | `daemons/event-watcher/src/main.rs` | Sin Arc de proceso; claim/ACK scoped en tick e hilos |
+| T4 | `sddia-daemon-runtime`, `kalma2-bridge/eda_productive`, `event-bus-audit`, `repo-retention-purger`, `sddia-qa/iota_ci_smoke`, `lancedb_thought_repo`, `actions` tests |
 
 ## Laudos
 

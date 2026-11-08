@@ -849,26 +849,15 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
         DeliveryStatus as PortDeliveryStatus, GetEventRequest, ListDeliveriesRequest,
         ListDlqRequest, ListPendingRequest,
     };
-    use sddia_event_manager_host::{events_redb_path, resolve_productive_port};
+    use sddia_event_manager_host::{events_redb_path, with_productive_port};
 
-    let mut state = ScanState::default();
     let db = events_redb_path(repo);
     if !db.is_file() {
-        return state;
+        return ScanState::default();
     }
-    let port = match resolve_productive_port(repo) {
-        Ok(p) => p,
-        Err(err) => {
-            state.anomalies.push(Anomaly {
-                kind: "store_unavailable".into(),
-                path: rel_path(repo, &db),
-                detail: err,
-            });
-            return state;
-        }
-    };
-
-    let mut domain_rows = Vec::new();
+    match with_productive_port(repo, "audit_scan", |port| {
+        let mut state = ScanState::default();
+        let mut domain_rows = Vec::new();
     let mut domain_ids = HashSet::new();
     let mut buckets = BTreeMap::<&str, u64>::new();
 
@@ -953,14 +942,26 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
         state.counts.insert(k.into(), v);
     }
 
-    audit_domain_delivery_signals(repo, &domain_rows, &all_deliveries, &mut state);
-    #[cfg(test)]
-    {
-        let fractures = collect_residual_fractures(&domain_rows);
-        audit_residual_pending_files(repo, &bus_paths.pending, &fractures, &mut state);
-    }
+        audit_domain_delivery_signals(repo, &domain_rows, &all_deliveries, &mut state);
+        #[cfg(test)]
+        {
+            let fractures = collect_residual_fractures(&domain_rows);
+            audit_residual_pending_files(repo, &bus_paths.pending, &fractures, &mut state);
+        }
 
-    state
+        Ok(state)
+    }) {
+        Ok(s) => s,
+        Err(err) => {
+            let mut state = ScanState::default();
+            state.anomalies.push(Anomaly {
+                kind: "store_unavailable".into(),
+                path: rel_path(repo, &db),
+                detail: err,
+            });
+            state
+        }
+    }
 }
 
 fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusPaths), String> {
@@ -1105,14 +1106,10 @@ fn write_pending_kaizen(
         "delivery_state": {}
     });
     sddia_eda_catalog::stamp_published_event(repo, &mut event).map_err(|e| e.to_string())?;
-    let port = sddia_event_manager_host::resolve_productive_port(repo).map_err(|e| e.to_string())?;
-    let seal = sddia_core::ports::event_manager::publish_ecst(
-        port.as_ref(),
-        repo,
-        "domain",
-        &event,
-    )
-    .map_err(|e| e.to_string())?;
+    let seal = sddia_event_manager_host::with_productive_port(repo, "emit_kaizen", |port| {
+        sddia_core::ports::event_manager::publish_ecst(port, repo, "domain", &event)
+            .map_err(|e| e.to_string())
+    })?;
     let target_path = seal.logical_rel;
     Ok(json!({
         "event_id": event_id,
@@ -1411,31 +1408,53 @@ mod tests {
         DeliveryStatus as PortDeliveryStatus, GetEventRequest, MoveToDlqRequest,
         PublishEcstRequest, RecordDeliveryRequest,
     };
-    use std::sync::Arc;
-
-    fn test_port(repo: &Path) -> Arc<dyn sddia_core::ports::event_manager::EventManagerPort> {
-        sddia_event_manager_host::resolve_productive_port(repo).expect("productive port")
-    }
-
     fn port_publish(repo: &Path, event_id: &str, ecst: Value) {
-        let port = test_port(repo);
-        port.publish_ecst(PublishEcstRequest {
-            event_id: event_id.into(),
-            ecst,
-            trace_id: None,
+        sddia_event_manager_host::with_productive_port(repo, "test_publish", |port| {
+            port.publish_ecst(PublishEcstRequest {
+                event_id: event_id.into(),
+                ecst,
+                trace_id: None,
+            })
+            .map_err(|e| e.to_string())
         })
         .expect("publish");
     }
 
     fn port_record_ack(repo: &Path, event_id: &str, subscriber_id: &str) {
-        let port = test_port(repo);
-        port.record_delivery(RecordDeliveryRequest {
-            event_id: event_id.into(),
-            delivery_id: format!("{event_id}:{subscriber_id}"),
-            status: PortDeliveryStatus::Ack,
-            attempt: None,
+        sddia_event_manager_host::with_productive_port(repo, "test_record_delivery", |port| {
+            port.record_delivery(RecordDeliveryRequest {
+                event_id: event_id.into(),
+                delivery_id: format!("{event_id}:{subscriber_id}"),
+                status: PortDeliveryStatus::Ack,
+                attempt: None,
+            })
+            .map_err(|e| e.to_string())
         })
         .expect("record_delivery");
+    }
+
+    fn port_move_to_dlq(repo: &Path, event_id: &str, reason: &str) {
+        sddia_event_manager_host::with_productive_port(repo, "test_move_dlq", |port| {
+            port.move_to_dlq(MoveToDlqRequest {
+                event_id: event_id.into(),
+                reason: reason.into(),
+            })
+            .map_err(|e| e.to_string())
+        })
+        .expect("move_to_dlq");
+    }
+
+    fn port_get_event(
+        repo: &Path,
+        event_id: &str,
+    ) -> sddia_core::ports::event_manager::GetEventResult {
+        sddia_event_manager_host::with_productive_port(repo, "test_get_event", |port| {
+            port.get_event(GetEventRequest {
+                event_id: event_id.into(),
+            })
+            .map_err(|e| e.to_string())
+        })
+        .expect("get_event")
     }
 
     #[test]
@@ -1595,12 +1614,7 @@ mod tests {
             "evt-dl",
             json!({"event_id": "evt-dl", "event_type": "Domain_Probe"}),
         );
-        test_port(&dir)
-            .move_to_dlq(MoveToDlqRequest {
-                event_id: "evt-dl".into(),
-                reason: "boom".into(),
-            })
-            .unwrap();
+        port_move_to_dlq(&dir, "evt-dl", "boom");
         let (state, _) = run_audit(&dir, 24).unwrap();
         assert_eq!(state.counts.get("dead-letter").copied(), Some(1));
         assert_eq!(state.dead_letter_errors.get("boom").copied(), Some(1));
@@ -1653,11 +1667,7 @@ mod tests {
             !dir.join(".events/pending").join(format!("{event_id}.json")).is_file(),
             "puerto no debe escribir pending FS"
         );
-        let row = test_port(&dir)
-            .get_event(GetEventRequest {
-                event_id: event_id.into(),
-            })
-            .expect("get_event");
+        let row = port_get_event(&dir, event_id);
         assert_eq!(
             row.ecst.get("event_type").and_then(|v| v.as_str()),
             Some("Kaizen_Alert_Required")

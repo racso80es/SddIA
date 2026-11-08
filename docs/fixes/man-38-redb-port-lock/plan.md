@@ -32,7 +32,7 @@ Prohibido: TODOs bajo `docs/todos/` (Cumulo / `Kaizen_Alert_Required` únicament
 | T1 | En `sddia-event-manager-host` (+ `eda_port`): `with_productive_port(repo, op_label, f)`; wrappers EDA usan scoped productivo; `install_port` mock intacto; unit CA-6 (productivo no queda en thread-local tras op). Conservar retry `SDDIA_EVENT_MANAGER_OPEN_BUDGET_MS`. | C2 | done |
 | T2 | Eliminar `bootstrap_composition_root` incondicional de `main.rs` (`run_main` / tool / action) y de `engine::run_process`. Flags EDA CLI pasan por helper scoped. | C1 | done |
 | T3 | `event-watcher`: sin Arc de larga duración; claim scoped → drop → spawn ruta sin Arc → ACK/NACK scoped. Tests integración Redb (CA-3/CA-5). | C3 | done |
-| T4 | Inventario callers `resolve_productive_port` / `port_arc` / `bootstrap_composition_root` / `install_productive_port` en daemons/tools; migrar a scoped o documentar excepción con prueba+presupuesto en persist. | C4 | done (inventario) |
+| T4 | Inventario callers `resolve_productive_port` / `port_arc` / `bootstrap_composition_root` / `install_productive_port` en daemons/tools; migrar a scoped o documentar excepción con prueba+presupuesto en persist. | C4 | done |
 | T5 | `port-lifetime.md` (ownership); telemetría contención (`process`, `operation`, `wait_ms`, `budget_ms`, `outcome`); lab CA-1/CA-2/CA-4; `implementation.md`/`execution.md`; gate CA-7 (sin reabrir MAN-35). | C5 + CA-8 | done (docs + tests unit) |
 
 ## Orden

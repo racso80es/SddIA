@@ -607,13 +607,14 @@ mod tests {
         if file.is_file() {
             return fs::read_to_string(file).unwrap();
         }
-        if let Ok(port) = crate::engine::eda_port::port_arc(repo) {
+        if let Ok(row) = crate::engine::eda_port::with_event_port(repo, "test_emitted_body", |port| {
             use sddia_core::ports::event_manager::GetEventRequest;
-            if let Ok(row) = port.get_event(GetEventRequest {
+            port.get_event(GetEventRequest {
                 event_id: event_id.to_string(),
-            }) {
-                return serde_json::to_string(&row.ecst).unwrap();
-            }
+            })
+            .map_err(|e| e.to_string())
+        }) {
+            return serde_json::to_string(&row.ecst).unwrap();
         }
         let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(repo))
             .expect("store");
@@ -665,12 +666,13 @@ mod tests {
         let id = merged.get("event_id").and_then(|v| v.as_str()).unwrap();
         assert!(!repo.join(".events/pending").join(format!("{id}.json")).is_file());
         use sddia_core::ports::event_manager::GetEventRequest;
-        let port = crate::engine::eda_port::port_arc(&repo).unwrap();
-        let row = port
-            .get_event(GetEventRequest {
+        let row = crate::engine::eda_port::with_event_port(&repo, "test_merged_get", |port| {
+            port.get_event(GetEventRequest {
                 event_id: id.to_string(),
             })
-            .expect("fila antes de enrutar");
+            .map_err(|e| e.to_string())
+        })
+        .expect("fila antes de enrutar");
         assert_eq!(
             row.ecst.get("event_type").and_then(|v| v.as_str()),
             Some("PullRequest_Merged")

@@ -3854,24 +3854,26 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let db = eda_productive::db_path(&dir);
         std::fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let port = sddia_event_manager_host::resolve_productive_port(&dir).unwrap();
-        EventManagerPort::append_trace(
-            port.as_ref(),
-            AppendTraceRequest {
-            trace_id: "c1".into(),
-            frame: serde_json::json!({"seq": 1, "message": "b"}),
-            },
-        )
+        sddia_event_manager_host::with_productive_port(&dir, "test_append_trace", |port| {
+            EventManagerPort::append_trace(
+                port,
+                AppendTraceRequest {
+                    trace_id: "c1".into(),
+                    frame: serde_json::json!({"seq": 1, "message": "b"}),
+                },
+            )
+            .map_err(|e| e.to_string())?;
+            EventManagerPort::append_trace(
+                port,
+                AppendTraceRequest {
+                    trace_id: "c1".into(),
+                    frame: serde_json::json!({"seq": 0, "message": "a"}),
+                },
+            )
+            .map_err(|e| e.to_string())?;
+            Ok(())
+        })
         .unwrap();
-        EventManagerPort::append_trace(
-            port.as_ref(),
-            AppendTraceRequest {
-                trace_id: "c1".into(),
-                frame: serde_json::json!({"seq": 0, "message": "a"}),
-            },
-        )
-        .unwrap();
-        drop(port);
         let mut reader = ProgressStreamReader::from_store(dir.clone(), "c1".into());
         reader.collect_new_frames();
         let text = String::from_utf8(reader.pending.clone()).unwrap();
