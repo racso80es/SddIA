@@ -3845,7 +3845,6 @@ mod tests {
     #[test]
     fn progress_stream_emits_store_frames_in_seq_order() {
         use sddia_core::ports::event_manager::{AppendTraceRequest, EventManagerPort};
-        use sddia_infrastructure_redb_event::RedbEventAdapter;
         let dir = std::env::temp_dir().join(format!(
             "k2-sse-{}-{}",
             std::process::id(),
@@ -3855,20 +3854,24 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let db = eda_productive::db_path(&dir);
         std::fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let adapter = RedbEventAdapter::open(&db).unwrap();
-        adapter
-            .append_trace(AppendTraceRequest {
-                trace_id: "c1".into(),
-                frame: serde_json::json!({"seq": 1, "message": "b"}),
-            })
-            .unwrap();
-        adapter
-            .append_trace(AppendTraceRequest {
+        let port = sddia_event_manager_host::resolve_productive_port(&dir).unwrap();
+        EventManagerPort::append_trace(
+            port.as_ref(),
+            AppendTraceRequest {
+            trace_id: "c1".into(),
+            frame: serde_json::json!({"seq": 1, "message": "b"}),
+            },
+        )
+        .unwrap();
+        EventManagerPort::append_trace(
+            port.as_ref(),
+            AppendTraceRequest {
                 trace_id: "c1".into(),
                 frame: serde_json::json!({"seq": 0, "message": "a"}),
-            })
-            .unwrap();
-        drop(adapter);
+            },
+        )
+        .unwrap();
+        drop(port);
         let mut reader = ProgressStreamReader::from_store(dir.clone(), "c1".into());
         reader.collect_new_frames();
         let text = String::from_utf8(reader.pending.clone()).unwrap();

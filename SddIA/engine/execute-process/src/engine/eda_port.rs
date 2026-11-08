@@ -33,10 +33,24 @@ pub fn runtime_db_path(repo: &Path) -> PathBuf {
 }
 
 pub fn install_productive_port(repo: &Path) -> Result<(), String> {
+    let bound = PORT_REPO.with(|slot| {
+        slot.borrow()
+            .as_deref()
+            .map(|p| p == repo)
+            .unwrap_or(false)
+    });
+    if bound && PORT.with(|slot| slot.borrow().is_some()) {
+        return Ok(());
+    }
     let port = resolve_productive_port(repo)?;
     PORT.with(|slot| *slot.borrow_mut() = Some(port));
     PORT_REPO.with(|slot| *slot.borrow_mut() = Some(repo.to_path_buf()));
     Ok(())
+}
+
+/// T2: arranque único del composition root productivo (`sddia-event-manager-host`).
+pub fn bootstrap_composition_root(repo: &Path) -> Result<(), String> {
+    install_productive_port(repo)
 }
 
 pub fn install_port(port: Arc<dyn EventManagerPort>) {
@@ -53,8 +67,7 @@ fn ensure_port_for_repo(repo: &Path) -> Result<(), String> {
     let stale = PORT_REPO.with(|slot| {
         slot.borrow()
             .as_deref()
-            .map(|bound| bound != repo)
-            .unwrap_or(PORT.with(|p| p.borrow().is_some()))
+            .is_some_and(|bound| bound != repo)
     });
     if stale {
         clear_port();

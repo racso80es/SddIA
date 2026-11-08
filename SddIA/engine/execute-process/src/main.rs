@@ -6,6 +6,7 @@ use execute_process::engine::capsules::{invoke_action, invoke_tool_capsule_json}
 use execute_process::engine::eda_coverage;
 use execute_process::engine::verify_process_integrity;
 use execute_process::envelope::{emit, OrchestratorEnvelope};
+use execute_process::engine::eda_port;
 use execute_process::engine::run_process;
 use execute_process::forges::materialize_by_inputs;
 use serde_json::Value;
@@ -238,6 +239,7 @@ fn parse_args() -> Result<(Option<String>, Option<String>, Option<String>, bool,
 fn run_tool_cli(tool_name: &str, prefer_native: bool, process_inputs: &Value) -> Result<i32, String> {
     let repo = find_repo_root()?;
     load_hierarchical_env(&repo)?;
+    eda_port::bootstrap_composition_root(&repo)?;
     let result = invoke_tool_capsule_json(
         &repo,
         tool_name,
@@ -254,6 +256,7 @@ fn run_tool_cli(tool_name: &str, prefer_native: bool, process_inputs: &Value) ->
 fn run_action_cli(action_name: &str, action_inputs: &Value) -> Result<(), String> {
     let repo = find_repo_root()?;
     load_hierarchical_env(&repo)?;
+    eda_port::bootstrap_composition_root(&repo)?;
     match invoke_action(&repo, action_name, action_inputs) {
         Ok(data) => {
             emit(OrchestratorEnvelope {
@@ -279,6 +282,7 @@ fn run_main() -> Result<OrchestratorEnvelope, String> {
     }
     let repo = find_repo_root()?;
     load_hierarchical_env(&repo)?;
+    eda_port::bootstrap_composition_root(&repo)?;
     if forge_mode {
         let data = materialize_by_inputs(&repo, &process_inputs)?;
         return Ok(OrchestratorEnvelope {
@@ -359,6 +363,7 @@ fn main() {
         match find_repo_root() {
             Ok(repo) => {
                 let _ = load_hierarchical_env(&repo);
+                let _ = eda_port::bootstrap_composition_root(&repo);
                 let (code, body) =
                     execute_process::engine::event_store_query::publish_cli(&repo, &inputs);
                 println!("{body}");
@@ -392,6 +397,7 @@ fn main() {
         match find_repo_root() {
             Ok(repo) => {
                 let _ = load_hierarchical_env(&repo);
+                let _ = eda_port::bootstrap_composition_root(&repo);
                 let (code, body) = execute_process::engine::event_store_query::run(&repo, flag, &inputs);
                 println!("{body}");
                 process::exit(code);

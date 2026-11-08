@@ -79,9 +79,32 @@ pub fn resolve_productive_port(repo_root: &Path) -> Result<Arc<dyn EventManagerP
         .map_err(|e| e.to_string())
 }
 
+/// Rol `test` → `InMemoryEventManagerMock` (laboratorio / unit).
+pub fn resolve_test_port() -> Result<Arc<dyn EventManagerPort>, String> {
+    EventManagerDiFactory::with_test_role_defaults()
+        .resolve("test")
+        .map_err(|e| e.to_string())
+}
+
+/// Resuelve un rol de binding (`default`, `test`, …).
+pub fn resolve_role_port(
+    repo_root: &Path,
+    role: &str,
+) -> Result<Arc<dyn EventManagerPort>, String> {
+    if role == "test" {
+        return resolve_test_port();
+    }
+    if role == DEFAULT_ROLE {
+        return resolve_productive_port(repo_root);
+    }
+    let factory = productive_factory(repo_root)?;
+    factory.resolve(role).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sddia_core::ports::event_manager::EventManagerError;
     use tempfile::tempdir;
 
     #[test]
@@ -94,5 +117,35 @@ mod tests {
             })
             .expect("handshake");
         assert!(hs.compatible);
+    }
+
+    #[test]
+    fn test_role_resolves_memory_mock() {
+        let port = resolve_test_port().expect("test port");
+        let hs = port
+            .handshake_version(sddia_core::ports::event_manager::HandshakeVersionRequest {
+                requested_range: sddia_core::ports::event_manager::REQUIRED_CONTRACT_RANGE.into(),
+            })
+            .expect("handshake");
+        assert!(hs.compatible);
+    }
+
+    #[test]
+    fn rejects_contract_below_required_range() {
+        let dir = tempdir().expect("tempdir");
+        let mut factory = productive_factory(dir.path()).expect("factory");
+        factory.register_role(
+            "legacy",
+            BindingRole {
+                provider: REDB_PROVIDER.into(),
+                provider_version: ">=1.0.0".into(),
+                implements_contract_version: "1.0.0".into(),
+            },
+        );
+        match factory.resolve("legacy") {
+            Err(EventManagerError::ContractVersionMismatch { .. }) => {}
+            Err(_) => panic!("expected ContractVersionMismatch"),
+            Ok(_) => panic!("expected version gate rejection"),
+        }
     }
 }
