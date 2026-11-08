@@ -189,6 +189,9 @@ jobs:
           add-job-id-key: "false"
           cache-workspace-crates: "true"
 
+      - name: Install protoc (execute-process / lance deps)
+        run: sudo apt-get update -o Acquire::Languages=none && sudo apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev
+
       - name: EventManagerPort contract & gate (MAN-35)
         working-directory: SddIA
         run: |
