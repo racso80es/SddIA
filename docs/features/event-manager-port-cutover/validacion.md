@@ -1,13 +1,18 @@
 ---
 feature_name: event-manager-port-cutover
-created: "2026-11-08"
+created: 2026-11-08
 process: refactorization
 pbi_ref: MAN-35
 document_id: PBI-176f9f2f
 branch: refactor/event-manager-port-cutover
 global: APTO
 pbi_archived: false
+validated_base_sha: b5de29c291ed27ed59ce7a8d3513d5291c50eea5
+validated_head_sha: 99f71349581ff087fa0ba191c49670aefad77711
+validated_tree_sha: fbebfa87aa1e6878b16e47ba2194b7d88fafd097
+diff_digest: sha256:e16dedca9e3c7d9f2e165791d205ae9ed666fecdbc9f5c5eb4a444fe456ef3cc
 ---
+
 # Validación — event-manager-port-cutover (MAN-35)
 
 ## Alcance verificado
