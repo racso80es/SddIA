@@ -45,9 +45,9 @@ evidence_bridge_notes: R1/R2 copia Runtime evidence (machine+session) source=nat
 shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 9608cc99… · exec e78170a7…
 head_commit_sha_fs: 5bc620a59bacb4769a261b3fe081e98b70522470
 validated_base_sha: b5de29c291ed27ed59ce7a8d3513d5291c50eea5
-validated_head_sha: 584a38b685cdf0f61bdf61a32825b848f8a75688
-validated_tree_sha: 006ec50b7107907cd8d918c71dc0bfa387bdd6a9
-diff_digest: sha256:113c4507e4e06cdd95e6a73ee824de5be7dbdf9062a88a41396a2742c4c8f567
+validated_head_sha: 1944ae04b72cb5360f409734b26bd4e6f26ea5d6
+validated_tree_sha: 064aa91ee0eaf23049ffdd64c604ad93a37f4289
+diff_digest: sha256:d4f3afb500f5bcad32849b58fb4abed3b338a20618efa642eb31055626f49cb8
 workspace_path_injected: .SddIA/workspaces/pull-request-review/e78170a7-e82e-4c28-9914-39f1ce8cf8ca/
 workspace_materialized: false
 pr_url: ''
