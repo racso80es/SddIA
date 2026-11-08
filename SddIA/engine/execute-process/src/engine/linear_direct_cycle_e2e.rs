@@ -9,17 +9,10 @@ use crate::core::repo::find_repo_root;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock};
-
-fn lab_guard() -> std::sync::MutexGuard<'static, ()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-}
+use std::sync::Arc;
 
 fn with_lab<F: FnOnce()>(f: F) {
-    let _g = lab_guard();
+    let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
     let repo = find_repo_root().expect("repo");
     std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
     std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");

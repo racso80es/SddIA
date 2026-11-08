@@ -304,23 +304,79 @@ pub fn port_arc(repo: &Path) -> Result<Arc<dyn EventManagerPort>, String> {
     })
 }
 
-/// Laboratorio EDA en FS: evita puerto Redb en repos temporales de test.
+/// Laboratorio EDA: mutex global + modo store para tests paralelos estables.
 #[cfg(test)]
 pub mod test_lab {
+    use std::sync::{Mutex, MutexGuard, OnceLock};
     use sddia_event_store::{override_store_mode, StoreMode};
 
-    pub struct FilesystemEdaGuard;
+    static PARALLEL_LAB: OnceLock<Mutex<()>> = OnceLock::new();
 
-    impl Drop for FilesystemEdaGuard {
+    /// Serializa tests que mutan env lab, `EventManagerPort` o `override_store_mode`.
+    pub fn parallel_lab_mutex() -> MutexGuard<'static, ()> {
+        PARALLEL_LAB
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// RAII: mutex + `clear_port` + restablecer modo store al soltar.
+    pub struct ParallelLabGuard {
+        _lock: MutexGuard<'static, ()>,
+    }
+
+    impl ParallelLabGuard {
+        pub fn acquire() -> Self {
+            let lock = parallel_lab_mutex();
+            super::clear_port();
+            Self { _lock: lock }
+        }
+    }
+
+    impl Drop for ParallelLabGuard {
         fn drop(&mut self) {
             super::clear_port();
             override_store_mode(None);
         }
     }
 
+    pub fn with_parallel_isolated<F: FnOnce()>(f: F) {
+        let _g = ParallelLabGuard::acquire();
+        f();
+    }
+
+    pub struct FilesystemEdaGuard {
+        _scope: ParallelLabGuard,
+    }
+
+    impl Drop for FilesystemEdaGuard {
+        fn drop(&mut self) {
+            override_store_mode(None);
+        }
+    }
+
+    /// Modo FS bajo mutex global (repos temporales / aserciones `.events/`).
     pub fn filesystem_eda() -> FilesystemEdaGuard {
+        let scope = ParallelLabGuard::acquire();
         override_store_mode(Some(StoreMode::Filesystem));
-        FilesystemEdaGuard
+        FilesystemEdaGuard { _scope: scope }
+    }
+
+    pub struct RedbEdaGuard {
+        _scope: ParallelLabGuard,
+    }
+
+    impl Drop for RedbEdaGuard {
+        fn drop(&mut self) {
+            override_store_mode(None);
+        }
+    }
+
+    /// Modo Redb bajo mutex global (p. ej. REDB-CA*).
+    pub fn redb_eda() -> RedbEdaGuard {
+        let scope = ParallelLabGuard::acquire();
+        override_store_mode(Some(StoreMode::Redb));
+        RedbEdaGuard { _scope: scope }
     }
 
     pub fn fs_lab_tempdir() -> (FilesystemEdaGuard, tempfile::TempDir) {

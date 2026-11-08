@@ -301,6 +301,7 @@ mod tests {
         fs::write(root.join("SddIA/target/release/demo-tool"), b"elf-release").unwrap();
         fs::write(root.join("SddIA/target/debug/demo-tool"), b"elf-debug").unwrap();
         std::env::remove_var("SDDIA_CAPSULE_ANCHOR");
+        std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
         let p = resolve_capsule_native_legacy(root, "demo-tool").unwrap();
         assert!(p.ends_with("release/demo-tool"));
     }

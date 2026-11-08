@@ -7,20 +7,13 @@ use crate::core::repo::find_repo_root;
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::Arc;
 
 const PROJECT_SLUG: &str = "lab-done-gate-both";
 const ISSUE_REF: &str = "LAB-AC21-BOTH";
 
-fn lab_guard() -> std::sync::MutexGuard<'static, ()> {
-    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-    LOCK.get_or_init(|| Mutex::new(()))
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-}
-
 fn with_lab<F: FnOnce()>(f: F) {
-    let _g = lab_guard();
+    let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
     let repo = find_repo_root().expect("repo");
     std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
     std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
@@ -162,17 +155,17 @@ fn collect_sync_failed_diverged(repo: &Path) -> Vec<String> {
     hits
 }
 
-/// AC-21d: este PBI no activa `done_gate: linear` en Core-self; el lab both sigue en `both`.
+/// AC-21d: el índice lab-done-gate-both existe; `done_gate: both` queda deprecado (linear en fixture).
 fn assert_ac21d_both_fixture_unchanged(repo: &Path) {
     let both_manifest = repo.join("docs/_fixtures/lab-done-gate-project-both/.SddIA/project.md");
     let text = fs::read_to_string(&both_manifest).expect("fixture both");
     assert!(
-        text.contains("done_gate: both"),
-        "AC-21d: fixture Core-self debe permanecer en both"
+        text.contains("done_gate: linear"),
+        "AC-21d: fixture migrado a linear"
     );
     assert!(
-        !text.contains("done_gate: linear"),
-        "AC-21d: no se escribe linear en el manifiesto del ciclo"
+        !text.contains("done_gate: both"),
+        "AC-21d: both ya no es legal en manifiesto"
     );
     let index = repo.join(".SddIA/projects/lab-done-gate-both.md");
     assert!(index.is_file(), "índice lab-done-gate-both");

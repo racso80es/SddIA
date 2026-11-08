@@ -107,7 +107,8 @@ fn lab_team_label_catalog(team_key: &str) -> &'static [&'static str] {
         "MAN" => &["Hu", "Pbi", "Fix"],
         "AUT" => &["HU", "Pbi", "Bug", "Kaizen"],
         "OSC" => &["hu", "pbi", "fix"],
-        _ => &["hu", "pbi", "other"],
+        "LAB" => &["hu", "pbi", "fix", "kaizen", "other"],
+        _ => &["hu", "pbi", "fix", "other"],
     }
 }
 

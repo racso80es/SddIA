@@ -519,9 +519,9 @@ mod tests {
     /// REDB-CA4: modo redb — emisiones de vitalidad/fractura no crean JSON en `.events/`.
     #[test]
     fn redb_ca4_vitality_and_fracture_go_to_store() {
+        let _redb = crate::engine::eda_port::test_lab::redb_eda();
         let dir = tempfile::TempDir::new().unwrap();
         let repo = dir.path();
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
         let probes = vec![ProbeResult {
             id: "cerbero.config",
             ok: false,
@@ -532,24 +532,26 @@ mod tests {
         assert!(!repo.join(".events/telemetry").exists());
         assert!(!repo.join(".events/pending").exists());
         assert!(!repo.join(".events/domain").exists());
-        let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(repo))
-            .expect("open");
-        let tele = store
-            .list_family(sddia_event_store::Family::Telemetry)
-            .expect("tele");
+        crate::engine::eda_port::clear_port();
+        let tele_syn = repo
+            .join(".events/telemetry")
+            .join(format!("{event_id}.json"));
         assert!(
-            tele.iter().any(|r| r.event_id == event_id),
+            crate::engine::eda_port::load_dispatched(repo, &event_id, &tele_syn)
+                .expect("tele load")
+                .is_some(),
             "vitality en telemetry"
         );
-        let domain = store
-            .list_family(sddia_event_store::Family::Domain)
-            .expect("domain");
         let fracture_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let domain_syn = repo
+            .join(".events/domain")
+            .join(format!("{fracture_id}.json"));
         assert!(
-            domain.iter().any(|r| r.event_id == fracture_id),
+            crate::engine::eda_port::load_dispatched(repo, fracture_id, &domain_syn)
+                .expect("domain load")
+                .is_some(),
             "fracture en domain"
         );
-        sddia_event_store::override_store_mode(None);
     }
 
     /// REDB-CA5: Locked → ok sin fractura de topología.

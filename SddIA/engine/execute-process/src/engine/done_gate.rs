@@ -178,7 +178,16 @@ pub fn check_linear_closure(
 
     let fetch = match fetch_issue(repo, &tracker_ref, "feature-pbi-archive", tc.project_id.as_deref()) {
         Ok(v) => v,
-        Err(e) => return Err(e),
+        Err(e) => {
+            let lab = std::env::var("SDDIA_LAB_MOCK_OUTBOUND")
+                .map(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes" | "on"))
+                .unwrap_or(false);
+            let unreachable = e.contains("LINEAR_NOT_FOUND") || e.contains("not found");
+            if unreachable && (matches!(_gate, DoneGate::Both) || (matches!(_gate, DoneGate::Linear) && lab)) {
+                return Ok(LinearClosure::FallbackGit { warn: e });
+            }
+            return Err(e);
+        }
     };
 
     let linear_state = fetch
@@ -206,14 +215,16 @@ mod tests {
     use tempfile::TempDir;
 
     fn with_lab<F: FnOnce()>(f: F) {
-        let prev = env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
-        env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
-        f();
-        if let Some(v) = prev {
-            env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v);
-        } else {
-            env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
-        }
+        crate::engine::eda_port::test_lab::with_parallel_isolated(|| {
+            let prev = env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+            env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+            f();
+            if let Some(v) = prev {
+                env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v);
+            } else {
+                env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+            }
+        });
     }
 
     #[test]
@@ -420,9 +431,32 @@ mod tests {
         if let Ok(g) = bx {
             assert_ne!(g, DoneGate::Linear, "D-I: barcelonaxplorer no debe ser linear");
         }
-        let both = project_binding::done_gate_for_inputs(
+        let both_fixture = project_binding::done_gate_for_inputs(
             &repo,
             &json!({ "project_slug": "lab-done-gate-both" }),
+        )
+        .expect("fixture lab-done-gate-both");
+        assert_eq!(
+            both_fixture,
+            DoneGate::Linear,
+            "fixture migrado: both → linear"
+        );
+        let td = TempDir::new().unwrap();
+        let lab = td.path();
+        fs::create_dir_all(lab.join(".SddIA/projects")).unwrap();
+        fs::write(
+            lab.join(".SddIA/projects/legacy-both.md"),
+            "---\nid: legacy-both\nproject_root: \".\"\nmanifest_ref: .SddIA/project.md\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            lab.join(".SddIA/project.md"),
+            "---\ntracker:\n  provider: linear\n  team_key: LAB\n  done_gate: both\n  state_map:\n    done: Done\n---\n",
+        )
+        .unwrap();
+        let both = project_binding::done_gate_for_inputs(
+            lab,
+            &json!({ "project_slug": "legacy-both" }),
         );
         assert!(both.is_err(), "done_gate both deja de ser legal");
         let core = project_binding::done_gate_for_inputs(&repo, &json!({ "project_slug": "core" }))

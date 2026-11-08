@@ -212,8 +212,31 @@ mod tests {
     use serde_json::json;
     use std::fs;
 
+    fn seed_lab_file_tracker(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"instance":{"projects":".SddIA/projects"}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join(".SddIA/projects")).unwrap();
+        fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
+        fs::write(
+            repo.join(".SddIA/projects/lab.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: \".\"\nmanifest_ref: .SddIA/project.md\ncodex_slug: codex-software-engineering\nstatus: active\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join(".SddIA/project.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\ngit_remote: https://example.invalid/lab.git\ntracker:\n  provider: file\ndocs_layout:\n  todos_pending: docs/todos/pending\n  todos_done: docs/todos/done\n---\n",
+        )
+        .unwrap();
+    }
+
     fn inputs() -> Value {
         json!({
+            "project_slug": "lab",
             "job_name": "sddia-index-integrity",
             "workflow_name": "sddia-index-qa",
             "failure_count": 3,
@@ -236,6 +259,7 @@ mod tests {
     fn ci_chronic_materialize_creates_and_idempotent() {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
+        seed_lab_file_tracker(repo);
         let first = run(repo, &inputs()).expect("create");
         assert_eq!(first["success"], true);
         assert_eq!(first["status"], "materialized");
@@ -257,6 +281,7 @@ mod tests {
     fn ci_chronic_materialize_idempotent_in_done() {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
+        seed_lab_file_tracker(repo);
         fs::create_dir_all(repo.join("docs/todos/done")).unwrap();
         fs::write(
             repo.join("docs/todos/done/archived.md"),

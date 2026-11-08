@@ -9,7 +9,7 @@ codex_slug: codex-software-engineering
 tracker:
   provider: linear
   team_key: LAB
-  done_gate: both
+  done_gate: linear
   state_map:
     backlog: Backlog
     todo: Todo

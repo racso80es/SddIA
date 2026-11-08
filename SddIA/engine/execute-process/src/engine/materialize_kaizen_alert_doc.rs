@@ -338,6 +338,26 @@ mod tests {
     use super::*;
     use std::fs;
 
+    fn seed_lab_file_tracker(repo: &Path) {
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"instance":{"projects":".SddIA/projects"}}"#,
+        )
+        .unwrap();
+        fs::create_dir_all(repo.join(".SddIA/projects")).unwrap();
+        fs::write(
+            repo.join(".SddIA/projects/lab.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\nproject_root: \".\"\nmanifest_ref: .SddIA/project.md\ncodex_slug: codex-software-engineering\nstatus: active\n---\n",
+        )
+        .unwrap();
+        fs::write(
+            repo.join(".SddIA/project.md"),
+            "---\nid: lab\nuuid: \"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee\"\ngit_remote: https://example.invalid/lab.git\ntracker:\n  provider: file\ndocs_layout:\n  todos_pending: docs/todos/pending\n  todos_done: docs/todos/done\n---\n",
+        )
+        .unwrap();
+    }
+
     #[test]
     fn kaizen_alert_doc_hash_deterministic_and_order_invariant() {
         let h1 = kaizen_alert_doc_hash(
@@ -361,8 +381,10 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        seed_lab_file_tracker(repo);
 
         let inputs = json!({
+            "project_slug": "lab",
             "review_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
             "alert_justification": "DIA parity gap",
             "implicated_files": ["docs/features/foo/spec.md", "README.md"],
@@ -417,18 +439,21 @@ mod tests {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fs::create_dir_all(repo.join("docs/todos/pending")).unwrap();
+        seed_lab_file_tracker(repo);
 
         let files = json!([
             ".events/pending/aaa.json",
             ".events/pending/bbb.json"
         ]);
         let first = json!({
+            "project_slug": "lab",
             "review_id": "11111111-1111-1111-1111-111111111111",
             "alert_justification": "Auditoría event-bus-audit: 86 dead-letter",
             "alert_kind": "event-bus-audit",
             "implicated_files": files,
         });
         let second = json!({
+            "project_slug": "lab",
             "review_id": "22222222-2222-2222-2222-222222222222",
             "alert_justification": "Auditoría event-bus-audit: 86 dead-letter (otra corrida)",
             "alert_kind": "event-bus-audit",

@@ -954,12 +954,8 @@ mod tests {
     use std::fs;
     use std::os::unix::fs::PermissionsExt;
     use std::path::PathBuf;
-    use std::sync::Mutex;
-
-    static ENV_TEST_LOCK: Mutex<()> = Mutex::new(());
-
-    fn env_lock() -> std::sync::MutexGuard<'static, ()> {
-        ENV_TEST_LOCK.lock().unwrap()
+    fn env_lock() -> crate::engine::eda_port::test_lab::ParallelLabGuard {
+        crate::engine::eda_port::test_lab::ParallelLabGuard::acquire()
     }
 
     fn clear_agent_env() {

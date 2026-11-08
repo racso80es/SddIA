@@ -9,7 +9,6 @@ use chrono::Utc;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::env;
-use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 
@@ -272,16 +271,22 @@ fn emit_habit(repo: &Path, args: &Value) -> Result<Value, String> {
         "payload": payload,
     });
     let out = user_preference_change_requested::run(repo, &emit_inputs)?;
-    if let Some(tp) = out.get("target_path").and_then(|v| v.as_str()) {
-        let path = if Path::new(tp).is_absolute() {
-            Path::new(tp).to_path_buf()
-        } else {
-            repo.join(tp)
-        };
-        let body: Value = serde_json::from_str(
-            &fs::read_to_string(&path).map_err(|e| format!("leer ECST hábito: {e}"))?,
-        )
-        .map_err(|e| format!("JSON ECST hábito: {e}"))?;
+    if let Some(eid) = out.get("event_id").and_then(|v| v.as_str()) {
+        let synthetic = repo
+            .join(".events/pending")
+            .join(format!("{eid}.json"));
+        let domain_path = repo.join(".events/domain").join(format!("{eid}.json"));
+        let body = super::eda_port::load_dispatched(repo, eid, &synthetic)?
+            .or_else(|| {
+                if domain_path.is_file() {
+                    std::fs::read_to_string(&domain_path)
+                        .ok()
+                        .and_then(|t| serde_json::from_str(&t).ok())
+                } else {
+                    None
+                }
+            })
+            .ok_or_else(|| format!("ECST hábito ausente: {eid}"))?;
         if body
             .get("payload")
             .and_then(|p| p.get("raw_utterance"))
@@ -459,6 +464,7 @@ mod tests {
     #[test]
     fn dispatch_habit_borra_emits_mute_without_utterance() {
         let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
+        crate::engine::eda_port::clear_port();
         let repo = find_repo_root().unwrap();
         let out = run(
             &repo,

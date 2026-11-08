@@ -428,15 +428,8 @@ mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
     use std::path::PathBuf;
-    use std::sync::{Mutex, OnceLock};
-
-    fn lab_guard() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
-    }
-
     fn with_lab<F: FnOnce()>(f: F) {
-        let _g = lab_guard();
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let repo = find_repo_root().expect("repo");
         std::env::set_var("SDDIA_REPO_ROOT", repo.to_string_lossy().as_ref());
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");

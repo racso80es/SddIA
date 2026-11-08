@@ -1983,6 +1983,14 @@ pub(crate) fn dispatch_subscriber(
     if subscriber.get("action").and_then(|v| v.as_str()).map(str::trim)
         == Some(super::notify_humanized_pr_merged::ACTION_NAME)
     {
+        if store_backed {
+            return (
+                sid,
+                "failed".into(),
+                Some("store-backed: acción nativa requiere ECST en bus FS".into()),
+                1,
+            );
+        }
         match super::notify_humanized_pr_merged::run_from_event(repo, event) {
             Ok(super::notify_humanized_pr_merged::NotifyOutcome::Sent { .. }) => {
                 return (sid, "success".into(), None, 0);
@@ -4328,16 +4336,6 @@ mod tier_dispatch {
     use serde_json::json;
     use std::fs;
     use std::path::Path;
-    use std::sync::{Mutex, OnceLock};
-
-    static TIER_DISPATCH_ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-
-    fn tier_env_lock() -> std::sync::MutexGuard<'static, ()> {
-        TIER_DISPATCH_ENV_LOCK
-            .get_or_init(|| Mutex::new(()))
-            .lock()
-            .unwrap()
-    }
 
     fn write_exec(path: &Path, body: &str) {
         fs::write(path, body).unwrap();
@@ -4357,7 +4355,7 @@ mod tier_dispatch {
 
     #[test]
     fn tier_none_does_not_spawn_and_cognitive_receives_ecst_and_workspace() {
-        let _guard = tier_env_lock();
+        let _guard = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let root = std::env::temp_dir().join(format!(
             "sddia-tier-{}-{}",
             std::process::id(),
@@ -4427,7 +4425,7 @@ mod tier_dispatch {
 
     #[test]
     fn store_backed_native_capsule_does_not_use_cognitive_runtime() {
-        let _guard = tier_env_lock();
+        let _guard = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let root = std::env::temp_dir().join(format!(
             "sddia-tier-native-{}-{}",
             std::process::id(),
@@ -4499,7 +4497,7 @@ mod tier_dispatch {
 
     #[test]
     fn aut70_native_action_err_surfaces_without_fallback() {
-        let _lock = tier_env_lock();
+        let _lock = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         let tmp = tempfile::tempdir().unwrap();
         let root = tmp.path();
         fs::create_dir_all(root.join("SddIA/core")).unwrap();

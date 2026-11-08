@@ -1300,15 +1300,9 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
-    use std::sync::{Mutex, OnceLock};
-
-    fn lab_guard() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
-    }
 
     fn with_lab<F: FnOnce()>(f: F) {
-        let _g = lab_guard();
+        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
         std::env::remove_var("LINEAR_API_TOKEN");
         f();
@@ -1373,8 +1367,11 @@ mod tests {
     #[test]
     fn no_op_without_tracker_ref() {
         let event = json!({
-            "event_type": "Work_Initiated",
-            "payload": { "branch": "feat/x" }
+            "event_type": "Delivery_Committed",
+            "payload": {
+                "delivery_mode": "trunk_direct",
+                "commit_sha": "abc",
+            }
         });
         let repo = std::path::Path::new("/tmp");
         let (stamped, note) = stamp_event(repo, &event).unwrap_or((false, None));
@@ -1393,8 +1390,13 @@ mod tests {
                     "persist_ref": "docs/features/demo",
                 }
             });
-            let (stamped, _) = stamp_event(&repo, &event).unwrap();
-            assert!(stamped);
+            let (stamped, note) = stamp_event(&repo, &event).unwrap();
+            assert!(!stamped);
+            assert!(
+                note.as_deref()
+                    .unwrap_or_default()
+                    .contains("sellado en origen")
+            );
         });
     }
 
@@ -1403,11 +1405,11 @@ mod tests {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
-                "event_type": "Work_Initiated",
+                "event_type": "Delivery_Committed",
                 "payload": {
                     "tracker_ref": "LAB-PBI-BADLABEL",
-                    "branch": "feat/x",
-                    "persist_ref": "docs/features/demo",
+                    "commit_sha": "deadbeef",
+                    "delivery_mode": "trunk_direct",
                 }
             });
             let (stamped, _) = stamp_event(&repo, &event).unwrap();
@@ -1428,7 +1430,13 @@ mod tests {
                 }
             });
             let (stamped, note) = stamp_event(&repo, &event).unwrap();
-            assert!(stamped, "note={note:?}");
+            assert!(!stamped);
+            assert!(
+                note.as_deref()
+                    .unwrap_or_default()
+                    .contains("sellado en origen"),
+                "note={note:?}"
+            );
         });
     }
 
@@ -1437,10 +1445,11 @@ mod tests {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
-                "event_type": "Work_Initiated",
+                "event_type": "Delivery_Committed",
                 "payload": {
                     "tracker_ref": "LAB-PBI-BADPARENT",
-                    "branch": "feat/x",
+                    "commit_sha": "deadbeef",
+                    "delivery_mode": "trunk_direct",
                     "expected_hu_tracker_ref": "LAB-HU-1",
                 }
             });
@@ -1571,10 +1580,11 @@ mod tests {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
             let event = json!({
-                "event_type": "Work_Initiated",
+                "event_type": "Delivery_Committed",
                 "payload": {
                     "tracker_ref": "LAB-PBI-FIXONLY",
-                    "branch": "feat/x",
+                    "commit_sha": "deadbeef",
+                    "delivery_mode": "trunk_direct",
                 }
             });
             let (stamped, _) = stamp_event(&repo, &event).unwrap();
@@ -1586,7 +1596,7 @@ mod tests {
     fn lab_cycle_work_to_merged_stamps() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
-            for (etype, extra) in [
+            for (etype, extra, expect_stamp) in [
                 (
                     "Work_Initiated",
                     json!({
@@ -1594,6 +1604,7 @@ mod tests {
                         "branch": "feat/lab",
                         "expected_hu_tracker_ref": "LAB-HU-1",
                     }),
+                    false,
                 ),
                 (
                     "PullRequest_Presented",
@@ -1602,6 +1613,7 @@ mod tests {
                         "branch": "feat/lab",
                         "pr_url": "https://github.com/o/r/pull/1",
                     }),
+                    false,
                 ),
                 (
                     "PullRequest_Merged",
@@ -1609,11 +1621,25 @@ mod tests {
                         "tracker_ref": "LAB-PBI-MERGE-LAST",
                         "merge_commit_hash": "abc123deadbeef",
                     }),
+                    false,
+                ),
+                (
+                    "Delivery_Committed",
+                    json!({
+                        "tracker_ref": "LAB-PBI-MERGE-LAST",
+                        "merge_commit_hash": "abc123deadbeef",
+                        "delivery_mode": "trunk_direct",
+                    }),
+                    true,
                 ),
             ] {
                 let event = json!({ "event_type": etype, "payload": extra });
-                let (stamped, _) = stamp_event(&repo, &event).unwrap();
-                assert!(stamped, "expected stamp for {etype}");
+                let (stamped, note) = stamp_event(&repo, &event).unwrap();
+                if expect_stamp {
+                    assert!(stamped, "expected stamp for {etype}, note={note:?}");
+                } else {
+                    assert!(!stamped, "expected no-op for {etype}");
+                }
             }
         });
     }
