@@ -17,9 +17,9 @@ verdict: pendiente_argos
 delivery_state: in_progress
 pr_url: https://github.com/racso80es/SddIA/pull/447
 validated_base_sha: ee7a54f8c88bd951b88230460e8ca0b4687282c3
-validated_head_sha: 0224cfdbf0c08b7bd26275d8e2eba3f5b9f89f86
-validated_tree_sha: 9a08f4e82328e34726d65f73c8bf2d0088133564
-diff_digest: sha256:e8cb3d6cb532192f3f613a3c52031fc2be3e0c920fd6fcb338b970a86fa4c9be
+validated_head_sha: 883c764f7fec51ec43ac2c6fa9d95fce4b9f853d
+validated_tree_sha: 53d5f18dfecd1bb30dcfa21edb95bbf376bc5a09
+diff_digest: sha256:aeff2f2f1ae5f9a43768d93c26304691e15bfe313e643cc1afa8d6a3a2c0a264
 ---
 
 # Validación — man-38-redb-port-lock (Tekton)
