@@ -79,6 +79,53 @@ pub fn resolve_productive_port(repo_root: &Path) -> Result<Arc<dyn EventManagerP
         .map_err(|e| e.to_string())
 }
 
+fn process_name_for_telemetry() -> String {
+    std::env::var("SDDIA_PROCESS_NAME")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| std::env::args().nth(0))
+        .unwrap_or_else(|| "unknown".into())
+}
+
+fn log_open_contention(op_label: &str, wait_ms: u128, budget_ms: u64, outcome: &str, err: &str) {
+    eprintln!(
+        "[event-manager-host] open_contention process={} operation={} wait_ms={} budget_ms={} outcome={} err={err}",
+        process_name_for_telemetry(),
+        op_label,
+        wait_ms,
+        budget_ms,
+        outcome,
+    );
+}
+
+/// Abre puerto productivo, ejecuta `f` y libera el adapter al salir (MAN-38).
+pub fn with_productive_port<R>(
+    repo_root: &Path,
+    op_label: &str,
+    f: impl FnOnce(&dyn EventManagerPort) -> Result<R, String>,
+) -> Result<R, String> {
+    let start = std::time::Instant::now();
+    let budget_ms = open_budget_ms();
+    match resolve_productive_port(repo_root) {
+        Ok(port) => {
+            let wait_ms = start.elapsed().as_millis();
+            if wait_ms >= 100 {
+                log_open_contention(op_label, wait_ms, budget_ms, "ok", "");
+            }
+            let out = f(port.as_ref());
+            drop(port);
+            out
+        }
+        Err(e) => {
+            let wait_ms = start.elapsed().as_millis();
+            let locked = e.contains("Database already open") || e.contains("Cannot acquire lock");
+            let outcome = if locked { "locked" } else { "error" };
+            log_open_contention(op_label, wait_ms, budget_ms, outcome, &e);
+            Err(e)
+        }
+    }
+}
+
 /// Rol `test` → `InMemoryEventManagerMock` (laboratorio / unit).
 pub fn resolve_test_port() -> Result<Arc<dyn EventManagerPort>, String> {
     EventManagerDiFactory::with_test_role_defaults()
@@ -128,6 +175,30 @@ mod tests {
             })
             .expect("handshake");
         assert!(hs.compatible);
+    }
+
+    #[test]
+    fn with_productive_port_drops_adapter_after_op() {
+        let dir = tempdir().expect("tempdir");
+        let opened = with_productive_port(dir.path(), "unit-scoped", |port| {
+            let hs = port
+                .handshake_version(sddia_core::ports::event_manager::HandshakeVersionRequest {
+                    requested_range:
+                        sddia_core::ports::event_manager::REQUIRED_CONTRACT_RANGE.into(),
+                })
+                .map_err(|e| e.to_string())?;
+            assert!(hs.compatible);
+            Ok(())
+        });
+        assert!(opened.is_ok());
+        let again = with_productive_port(dir.path(), "unit-scoped-2", |port| {
+            port.handshake_version(sddia_core::ports::event_manager::HandshakeVersionRequest {
+                requested_range: sddia_core::ports::event_manager::REQUIRED_CONTRACT_RANGE.into(),
+            })
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+        });
+        assert!(again.is_ok());
     }
 
     #[test]

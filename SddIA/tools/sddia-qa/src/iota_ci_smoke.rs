@@ -74,14 +74,10 @@ fn write_pending(repo: &Path, bus: &EventBusTopology, event: &Value) -> Result<S
     let mut stamped = event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     let _pending = repo.join(bus.pending.trim().trim_start_matches("./"));
-    let port = sddia_event_manager_host::resolve_productive_port(repo)?;
-    let seal = sddia_core::ports::event_manager::publish_ecst(
-        port.as_ref(),
-        repo,
-        "domain",
-        &stamped,
-    )
-    .map_err(|err| err.to_string())?;
+    let seal = sddia_event_manager_host::with_productive_port(repo, "iota_smoke_publish", |port| {
+        sddia_core::ports::event_manager::publish_ecst(port, repo, "domain", &stamped)
+            .map_err(|err| err.to_string())
+    })?;
     Ok(seal.logical_rel)
 }
 

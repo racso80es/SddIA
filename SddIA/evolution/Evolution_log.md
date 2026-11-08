@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038` | 2026-11-08 | MAN-38: scoped EventManagerPort; watcher claim/ACK acotado; sin cache productiva en eda_port | CANONICO | `SddIA/evolution/7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038.md` |
 | `94772dd3-7612-415d-ac35-555f9a3b5213` | 2026-11-08 | MAN-35: cutover EventManagerPort 1.2 productivo + gate T8 + AC-9. | CANONICO | `SddIA/evolution/94772dd3-7612-415d-ac35-555f9a3b5213.md` |
 | `a176f9f2-8b3c-4d1e-9f70-35eda12b0c01` | 2026-11-08 | MAN-35: capability-taxonomy 1.0.11 (eda:event-manager 1.2.0) + capability-bindings 1.9.0. | CANONICO | `SddIA/evolution/a176f9f2-8b3c-4d1e-9f70-35eda12b0c01.md` |
 | `de0296d5-8963-4f09-ada0-5e92f7d0b808` | 2026-11-06 | accept-pr: stamp ReviewCiGreen con inputs enriquecidos (merge externo / merge_already_done). | CANONICO | `SddIA/evolution/de0296d5-8963-4f09-ada0-5e92f7d0b808.md` |

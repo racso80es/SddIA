@@ -81,12 +81,12 @@ pub fn iter_bus_event_files(repo: &Path) -> Result<Vec<PathBuf>, String> {
     #[cfg(not(test))]
     {
         let bus = load_eda_bus(repo)?;
-        let port = eda_port::port_arc(repo)?;
-        let listed = port
-            .list_pending(ListPendingRequest {
+        let listed = eda_port::with_event_port(repo, "iter_bus_pending", |port| {
+            port.list_pending(ListPendingRequest {
                 limit: Some(10_000),
             })
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| e.to_string())
+        })?;
         let mut files: Vec<PathBuf> = listed
             .events
             .into_iter()

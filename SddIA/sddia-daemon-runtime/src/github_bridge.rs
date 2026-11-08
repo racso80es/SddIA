@@ -3,7 +3,7 @@
 use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic, EdBusPaths};
 use crate::{write_fractal_event, BusTopology};
 use chrono::Utc;
-use crate::record_ecst_productive;
+use sddia_core::ports::event_manager::record_ecst as record_ecst_on_port;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
@@ -441,21 +441,22 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| "event_id inválido para materialización".to_string())?;
-    let bus = ensure_event_bus_topology(repo)?;
-    let _target = bus.pending.join(format!("{event_id}.json"));
-    let port = sddia_event_manager_host::resolve_productive_port(repo)?;
-    if port
-        .get_event(sddia_core::ports::event_manager::GetEventRequest {
-            event_id: event_id.to_string(),
-        })
-        .is_ok()
-    {
-        return Ok(None);
-    }
-    let mut stamped = bus_event.clone();
-    sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-    record_ecst_productive(repo, "domain", &stamped)?;
-    Ok(Some(sddia_core::ports::event_manager::events_redb_path(repo)))
+    let _bus = ensure_event_bus_topology(repo)?;
+    let _target = _bus.pending.join(format!("{event_id}.json"));
+    sddia_event_manager_host::with_productive_port(repo, "github_materialize", |port| {
+        if port
+            .get_event(sddia_core::ports::event_manager::GetEventRequest {
+                event_id: event_id.to_string(),
+            })
+            .is_ok()
+        {
+            return Ok(None);
+        }
+        let mut stamped = bus_event.clone();
+        sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
+        record_ecst_on_port(port, repo, "domain", &stamped)?;
+        Ok(Some(sddia_core::ports::event_manager::events_redb_path(repo)))
+    })
 }
 
 pub fn write_fallback_dead_letter(repo: &Path, pr: &Value, error: &str) -> Result<PathBuf, String> {
@@ -557,11 +558,12 @@ mod tests {
             }
         }
         if out.is_empty() {
-            if let Ok(port) = sddia_event_manager_host::resolve_productive_port(repo) {
-                if let Ok(rows) = sddia_core::ports::event_manager::list_pending_ecsts(port.as_ref(), 200) {
+            let _ = sddia_event_manager_host::with_productive_port(repo, "telemetry_list", |port| {
+                if let Ok(rows) = sddia_core::ports::event_manager::list_pending_ecsts(port, 200) {
                     out.extend(rows);
                 }
-            }
+                Ok(())
+            });
         }
         out
     }
@@ -674,16 +676,17 @@ mod tests {
         }));
         let bus = build_bus_event(&pre, "digest-catalog", None);
         materialize_to_bus(&base, &bus).unwrap();
-        let port = sddia_event_manager_host::resolve_productive_port(&base).unwrap();
         let eid = bus
             .get("event_id")
             .and_then(|v| v.as_str())
             .expect("event_id");
-        let row = port
-            .get_event(sddia_core::ports::event_manager::GetEventRequest {
+        let row = sddia_event_manager_host::with_productive_port(&base, "test_get_event", |port| {
+            port.get_event(sddia_core::ports::event_manager::GetEventRequest {
                 event_id: eid.to_string(),
             })
-            .expect("get_event");
+            .map_err(|e| e.to_string())
+        })
+        .expect("get_event");
         let ds = row.ecst.get("delivery_state").unwrap();
         assert_eq!(ds["tekton.tracker-stamp"], "pending");
         assert_eq!(ds["argos.pull-request-review"], "pending");

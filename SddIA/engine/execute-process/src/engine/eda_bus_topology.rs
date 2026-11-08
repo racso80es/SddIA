@@ -307,15 +307,15 @@ fn list_port_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<Pa
         DeliveryStatus as PortDeliveryStatus, ListDeliveriesRequest,
     };
     let folder_key = resolve_witness_key(state_key);
-    let Ok(port) = eda_port::port_arc(repo) else {
-        return Vec::new();
-    };
-    let Ok(rows) = port.list_deliveries(ListDeliveriesRequest {
-        event_id: Some(event_uuid.to_string()),
-        subscriber_id: None,
-        status: None,
-        cursor: None,
-        limit: Some(10_000),
+    let Ok(rows) = eda_port::with_event_port(repo, "list_deliveries", |port| {
+        port.list_deliveries(ListDeliveriesRequest {
+            event_id: Some(event_uuid.to_string()),
+            subscriber_id: None,
+            status: None,
+            cursor: None,
+            limit: Some(10_000),
+        })
+        .map_err(|e| e.to_string())
     }) else {
         return Vec::new();
     };

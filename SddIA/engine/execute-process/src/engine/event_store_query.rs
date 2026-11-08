@@ -88,15 +88,14 @@ fn query_events(repo: &Path, inputs: &Value) -> (i32, Value) {
         .unwrap_or(50)
         .min(5000) as u32;
     let _family = inputs.get("family").and_then(|v| v.as_str());
-    let port = match eda_port::port_arc(repo) {
-        Ok(p) => p,
-        Err(e) => return fail(e),
-    };
-    let listed = match port.list_pending(ListPendingRequest {
-        limit: Some(limit),
+    let listed = match eda_port::with_event_port(repo, "query_events", |port| {
+        port.list_pending(ListPendingRequest {
+            limit: Some(limit),
+        })
+        .map_err(|e| e.to_string())
     }) {
         Ok(r) => r,
-        Err(e) => return fail(e.to_string()),
+        Err(e) => return fail(e),
     };
     let mut rows: Vec<Value> = listed
         .events
@@ -119,13 +118,12 @@ fn query_events(repo: &Path, inputs: &Value) -> (i32, Value) {
 }
 
 fn inspect_dead_letter(repo: &Path) -> (i32, Value) {
-    let port = match eda_port::port_arc(repo) {
-        Ok(p) => p,
-        Err(e) => return fail(e),
-    };
-    let listed = match port.list_dlq(ListDlqRequest { limit: Some(500) }) {
+    let listed = match eda_port::with_event_port(repo, "list_dlq", |port| {
+        port.list_dlq(ListDlqRequest { limit: Some(500) })
+            .map_err(|e| e.to_string())
+    }) {
         Ok(r) => r,
-        Err(e) => return fail(e.to_string()),
+        Err(e) => return fail(e),
     };
     let rows: Vec<Value> = listed
         .events
@@ -149,16 +147,15 @@ fn replay_dead_letter(repo: &Path, inputs: &Value) -> (i32, Value) {
     else {
         return fail("event_id requerido");
     };
-    let port = match eda_port::port_arc(repo) {
-        Ok(p) => p,
-        Err(e) => return fail(e),
-    };
-    match port.replay_dlq(ReplayDlqRequest {
-        event_id: Some(event_id.to_string()),
-        all: None,
+    match eda_port::with_event_port(repo, "replay_dlq", |port| {
+        port.replay_dlq(ReplayDlqRequest {
+            event_id: Some(event_id.to_string()),
+            all: None,
+        })
+        .map_err(|e| e.to_string())
     }) {
         Ok(()) => ok(json!({ "event_id": event_id, "replayed": true })),
-        Err(e) => fail(e.to_string()),
+        Err(e) => fail(e),
     }
 }
 

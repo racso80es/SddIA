@@ -242,15 +242,12 @@ fn emit_thought_persisted(
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped).map_err(|e| MemoryStoreError::Io {
         reason: e,
     })?;
-    let port = sddia_event_manager_host::resolve_productive_port(repo).map_err(|e| {
-        MemoryStoreError::Io {
-            reason: e,
-        }
-    })?;
-    sddia_core::ports::event_manager::publish_ecst(port.as_ref(), repo, "pending", &stamped)
-        .map_err(|e| MemoryStoreError::Io {
-            reason: e,
-        })?;
+    sddia_event_manager_host::with_productive_port(repo, "thought_publish", |port| {
+        sddia_core::ports::event_manager::publish_ecst(port, repo, "pending", &stamped)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    })
+    .map_err(|e| MemoryStoreError::Io { reason: e })?;
     Ok(())
 }
 
@@ -542,12 +539,13 @@ mod tests {
         .unwrap();
         let n = node("emit-me", None, fixture_vec(0.3, 0.1));
         repo.store_thought(n.clone()).unwrap();
-        let port = sddia_event_manager_host::resolve_productive_port(dir.path()).expect("port");
-        let listed = port
-            .list_pending(sddia_core::ports::event_manager::ListPendingRequest {
+        let listed = sddia_event_manager_host::with_productive_port(dir.path(), "test_list_pending", |port| {
+            port.list_pending(sddia_core::ports::event_manager::ListPendingRequest {
                 limit: Some(10),
             })
-            .expect("list");
+            .map_err(|e| e.to_string())
+        })
+        .expect("list");
         assert_eq!(listed.events.len(), 1);
         let body = &listed.events[0].ecst;
         assert_eq!(body["event_type"], "Thought_Persisted");

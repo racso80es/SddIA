@@ -6,7 +6,7 @@ pub mod linear_bridge_webhook;
 
 use chrono::Utc;
 use sddia_core::ports::event_manager::record_ecst as record_ecst_on_port;
-use sddia_event_manager_host::resolve_productive_port;
+use sddia_event_manager_host::with_productive_port;
 
 pub fn is_filesystem_rel(raw: &str) -> bool {
     let s = raw.trim();
@@ -16,8 +16,9 @@ pub fn is_filesystem_rel(raw: &str) -> bool {
 }
 
 pub(crate) fn record_ecst_productive(repo: &Path, family: &str, event: &Value) -> Result<(), String> {
-    let port = resolve_productive_port(repo)?;
-    record_ecst_on_port(port.as_ref(), repo, family, event)
+    with_productive_port(repo, "record_ecst", |port| {
+        record_ecst_on_port(port, repo, family, event)
+    })
 }
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
