@@ -14,7 +14,7 @@ status: in-progress
 | Fase | Estado | Notas |
 |------|--------|-------|
 | T0 | hecho | `norma-redb-exclusiva.md` ids MAN-35 |
-| T1 | parcial | Core **1.2.0** + defaults (`verify_inline_ecst`, `list_events`, `list_progress`); Redb DLT/list_deliveries; schema library; taxonomy/bindings vía `entity-manager` |
+| T1 | hecho (tax/bind) | Core **1.2.0** + defaults; Redb DLT/list_deliveries; schema library; `capability-taxonomy` **1.0.11** (`eda:event-manager` catalog **1.2.0**); bindings **1.9.0** sin fallback FS |
 | T2 | parcial | `eda_port` + `sddia-event-manager-host` desde MAN-33 |
 | T3 | hecho (núcleo) | `ecst_input_loader` verify inline; `route_domain_core` carga estricta vía puerto; sin lectura FS en route/batch/reanchor load |
 | T4 | hecho | DLT/verify + suite 1.2 |
@@ -25,6 +25,5 @@ status: in-progress
 
 ## Próximo
 
-1. Taxonomy/bindings 1.9.0 (`entity-manager`).
-2. PR + gate CI workspace.
-3. Linear MAN-35 → Done tras merge.
+1. PR + gate CI workspace.
+2. Linear MAN-35 → Done tras merge.

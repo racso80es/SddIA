@@ -18,10 +18,10 @@ pbi_archived: false
 - DLT `seal_dlt` / `get_dlt_seal` vía puerto.
 - Productores **kalma2-bridge**, **lancedb_thought_repo** publican/consultan puerto.
 - **event-bus-audit** / **repo-retention-purger** sin `EventStore::open` productivo.
+- Taxonomía **1.0.11** + bindings **1.9.0** (`eda.event_manager` **1.2.0**, sin rol `fallback` FS).
 
 ## Pendiente antes de merge
 
-- Taxonomy/bindings 1.9.0 vía `entity-manager`.
 - `cargo test --workspace` verde en CI.
 - Tests integración `execute-process` que aún usan `sddia_event_store` (solo test harness).
 

@@ -1,0 +1,25 @@
+---
+contrato_version: "1.1.2"
+id_cambio: "a176f9f2-8b3c-4d1e-9f70-35eda12b0c01"
+fecha: "2026-11-08"
+tipo_operacion: modificacion
+descripcion_breve: "MAN-35: capability-taxonomy 1.0.11 (eda:event-manager 1.2.0) + capability-bindings 1.9.0"
+hash_integrity: "sha256:8cb196585a6ac806f6b1476fd65d1d3640e5d4b3effd977e4fa066eb71320c49"
+relacionado:
+  - "MAN-35"
+  - "docs/features/event-manager-port-cutover/"
+  - "SddIA/library/norms/capability-taxonomy.md"
+  - "SddIA/library/norms/index.md"
+  - "SddIA/core/capability-bindings.md"
+document_id: MAN-35
+source_feature: event-manager-port-cutover
+---
+
+# MAN-35 — Taxonomía y bindings EventManagerPort 1.2
+
+| UUID | Artefacto |
+|------|-----------|
+| `e9c66ec6-5b59-4aae-b9f2-91cc313fe295` | `capability-taxonomy` **1.0.11**; catalog `eda:event-manager` → **1.2.0** |
+| `c4a8f2e1-7b3d-4e9a-a1c6-5d8f0b2e4a71` | `capability-bindings` **1.9.0**; `contract_version: 1.2.0`; sin rol `fallback` FS productivo |
+
+Materialización atómica de norma (catálogo YAML no preservado por `norm-creator` update). Sello EDA pendiente de ciclo `route-domain-event` en integración.
