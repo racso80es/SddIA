@@ -1,5 +1,8 @@
 ---
 
+
+
+
 feature_name: eda-event-manager-redb-cutover
 created: "2026-11-07"
 process: refactorization
@@ -19,7 +22,7 @@ productive_role: default
 status: requisitos-estabilizados
 mayeuta_verdict: ok
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "c7d9f208-857a-411a-b5b0-5333170ecf67"
+execution_id: "6b4f2856-aa17-4a58-b317-c97a6e6c9d49"
 ---
 # Objetivos — eda-event-manager-redb-cutover
 
