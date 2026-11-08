@@ -423,13 +423,39 @@ pub fn delegation_meta(subscriber: &Value, exit_code: i32) -> Value {
 
 pub fn promote_witness(
     repo: &Path,
-    _bus: &EventBusTopology,
+    bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
     to_state: &str,
     extra: Option<&Value>,
     _pending_header: Option<&Path>,
 ) -> Result<PathBuf, String> {
+    let rel = match to_state {
+        "processed" => &bus.processed_subscribers,
+        "dead-letter" => &bus.dead_letter_subscribers,
+        other => return Err(format!("unknown witness state: {other}")),
+    };
+    let mut witness = json!({
+        "event_uuid": event_uuid,
+        "subscriber": subscriber_name,
+        "state": to_state,
+        "finished_at": iso_now(),
+    });
+    if let Some(ex) = extra {
+        if let Some(obj) = ex.as_object() {
+            for (k, v) in obj {
+                witness[k.clone()] = v.clone();
+            }
+        }
+    }
+    let path = repo
+        .join(rel.trim_start_matches("./"))
+        .join(format!("{event_uuid}.{subscriber_name}.json"));
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    write_json_atomic(&path, &witness)?;
+
     let label = extra
         .and_then(|e| e.get("result_status").and_then(|v| v.as_str()))
         .unwrap_or(if to_state == "processed" {
@@ -446,7 +472,7 @@ pub fn promote_witness(
     } else {
         eda_port::record_delivery_ack(repo, event_uuid, subscriber_name)?;
     }
-    Ok(eda_port::runtime_db_path(repo))
+    Ok(path)
 }
 
 fn terminal_subscriber_names(

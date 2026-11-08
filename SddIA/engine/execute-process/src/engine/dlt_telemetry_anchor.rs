@@ -59,11 +59,8 @@ pub fn persist_external_dlt_seal(
     event_id: &str,
     tx_hash: &str,
 ) -> Result<(), String> {
-    if lab_simulate_iota_enabled() {
-        return Ok(());
-    }
     let digest = tx_hash.trim();
-    eda_port::seal_dlt(repo, event_id, tx_hash, digest, "external_iota")?;
+    eda_port::seal_dlt(repo, event_id, tx_hash, digest, "external_public_interest")?;
     Ok(())
 }
 

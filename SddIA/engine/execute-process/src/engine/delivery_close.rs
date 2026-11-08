@@ -1005,6 +1005,19 @@ mod tests {
     use super::*;
     use std::fs;
 
+    struct LabFilesystemMode;
+    impl Drop for LabFilesystemMode {
+        fn drop(&mut self) {
+            sddia_event_store::override_store_mode(None);
+            crate::engine::eda_port::clear_port();
+        }
+    }
+
+    fn lab_filesystem_eda() -> LabFilesystemMode {
+        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        LabFilesystemMode
+    }
+
     #[test]
     fn dcc_hygiene_failed_is_fail_soft_when_pr_url_present() {
         let mut entry = json!({
@@ -1118,6 +1131,7 @@ mod tests {
 
     #[test]
     fn dcc_fracture_emits_on_failed_forge_phase() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fs::create_dir_all(repo.join(".events/pending")).unwrap();
@@ -1421,6 +1435,7 @@ mod tests {
 
     #[test]
     fn dcc_non_ff_not_suppressed_outside_remote_push_phase() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fs::create_dir_all(repo.join(".events/pending")).unwrap();
@@ -1573,6 +1588,7 @@ mod tests {
 
     #[test]
     fn dcc_fracture_still_emits_on_rbac_revocation_and_evol_gate_failed() {
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = tmp.path();
         fs::create_dir_all(repo.join(".events/pending")).unwrap();
