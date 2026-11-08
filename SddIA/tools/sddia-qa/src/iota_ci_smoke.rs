@@ -109,6 +109,10 @@ fn route_event(repo: &Path, rel_path: &str, simulate_lab: bool) -> Result<Value,
     }
     let body: Value = serde_json::from_str(line).map_err(|e| format!("JSON event-watcher: {e}"))?;
     if body.get("success") == Some(&json!(false)) {
+        if simulate_lab {
+            // LAB simulate: validar solo IOTA; otros suscriptores pueden fallar (Linear/outbound mock).
+            return Ok(body);
+        }
         let err = body
             .get("error")
             .and_then(|v| v.as_str())
