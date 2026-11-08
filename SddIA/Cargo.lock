@@ -1849,7 +1849,9 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "regex",
+ "sddia-core",
  "sddia-eda-catalog",
+ "sddia-event-manager-host",
  "sddia-event-store",
  "sddia-io",
  "serde",
@@ -2951,10 +2953,12 @@ name = "kalma2-bridge"
 version = "0.1.0"
 dependencies = [
  "ctrlc",
+ "sddia-core",
  "sddia-daemon-runtime",
  "sddia-ecosystem-health",
  "sddia-eda-catalog",
- "sddia-event-store",
+ "sddia-event-manager-host",
+ "sddia-infrastructure-redb-event",
  "sddia-runtime-parity",
  "serde",
  "serde_json",
@@ -4936,7 +4940,8 @@ name = "repo-retention-purger"
 version = "1.0.0"
 dependencies = [
  "hex",
- "sddia-event-store",
+ "sddia-core",
+ "sddia-event-manager-host",
  "sddia-io",
  "serde",
  "serde_json",
@@ -5362,9 +5367,11 @@ dependencies = [
  "chrono",
  "futures",
  "lancedb",
+ "sddia-core",
  "sddia-core-memory",
  "sddia-eda-catalog",
- "sddia-event-store",
+ "sddia-event-manager-host",
+ "sddia-infrastructure-redb-event",
  "serde_json",
  "tempfile",
  "tokio",
