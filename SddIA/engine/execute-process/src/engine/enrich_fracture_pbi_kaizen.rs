@@ -841,7 +841,7 @@ mod tests {
 
     #[test]
     fn enrich_unclassified_emits_fracture_clarification_requested() {
-        let tmp = tempfile::tempdir().expect("tempdir");
+        let (_fs, tmp) = crate::engine::eda_port::test_lab::fs_lab_tempdir();
         let repo = tmp.path();
         setup_repo(repo);
         fs::create_dir_all(repo.join(".events/telemetry")).unwrap();
@@ -1009,7 +1009,7 @@ mod tests {
 
     #[test]
     fn enrich_colaps_unclassified_emits_clarification() {
-        let tmp = tempfile::tempdir().expect("tempdir");
+        let (_fs, tmp) = crate::engine::eda_port::test_lab::fs_lab_tempdir();
         let repo = tmp.path();
         setup_repo(repo);
         fs::create_dir_all(repo.join(".events/telemetry")).unwrap();

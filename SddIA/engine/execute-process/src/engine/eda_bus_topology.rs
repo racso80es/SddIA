@@ -265,15 +265,12 @@ fn resolve_witness_key(state_key: &str) -> &str {
     }
 }
 
-pub fn list_witnesses(
+fn list_fs_witnesses(
     repo: &Path,
     bus: &EventBusTopology,
     state_key: &str,
     event_uuid: &str,
 ) -> Vec<PathBuf> {
-    if true {
-        return list_store_witnesses(repo, state_key, event_uuid);
-    }
     let folder_key = resolve_witness_key(state_key);
     let folder = match folder_key {
         "processing_subscribers" => resolve_bus_path(repo, &bus.processing_subscribers),
@@ -304,8 +301,51 @@ pub fn list_witnesses(
     paths
 }
 
-fn list_store_witnesses(_repo: &Path, _state_key: &str, _event_uuid: &str) -> Vec<PathBuf> {
-    Vec::new()
+fn list_store_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<PathBuf> {
+    use sddia_event_store::{DeliveryStatus, EventStore};
+    let folder_key = resolve_witness_key(state_key);
+    let Ok(store) = EventStore::open(eda_port::runtime_db_path(repo)) else {
+        return Vec::new();
+    };
+    let Ok(rows) = store.list_deliveries() else {
+        return Vec::new();
+    };
+    let mut paths = Vec::new();
+    for (eid, sub, status) in rows {
+        if eid != event_uuid {
+            continue;
+        }
+        let include = match (folder_key, status) {
+            ("dead_letter_subscribers", DeliveryStatus::Failed) => true,
+            ("processed_subscribers", DeliveryStatus::Success | DeliveryStatus::Skipped) => true,
+            ("processing_subscribers", DeliveryStatus::Pending) => true,
+            _ => false,
+        };
+        if include {
+            paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
+        }
+    }
+    paths.sort();
+    paths
+}
+
+pub fn list_witnesses(
+    repo: &Path,
+    bus: &EventBusTopology,
+    state_key: &str,
+    event_uuid: &str,
+) -> Vec<PathBuf> {
+    let mode = sddia_event_store::store_mode();
+    let mut paths = Vec::new();
+    if sddia_event_store::writes_store(mode) {
+        paths.extend(list_store_witnesses(repo, state_key, event_uuid));
+    }
+    if sddia_event_store::writes_filesystem(mode) {
+        paths.extend(list_fs_witnesses(repo, bus, state_key, event_uuid));
+    }
+    paths.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+    paths.dedup_by(|a, b| a.file_name() == b.file_name());
+    paths
 }
 
 pub fn purge_store_event(repo: &Path, event_id: &str) {
@@ -1303,6 +1343,13 @@ mod tests {
         .unwrap();
     }
 
+    fn fs_lab_tempdir() -> (
+        crate::engine::eda_port::test_lab::FilesystemEdaGuard,
+        tempfile::TempDir,
+    ) {
+        crate::engine::eda_port::test_lab::fs_lab_tempdir()
+    }
+
     #[test]
     fn adu_ca5_docs_prefix_features_then_fixes() {
         let tmp = tempfile::tempdir().unwrap();
@@ -1353,7 +1400,7 @@ mod tests {
 
     #[test]
     fn aut70_fracture_dead_letter_not_kaizen_finalized() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         write_minimal_paths(repo);
         let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-000000000001";
@@ -1423,7 +1470,7 @@ mod tests {
 
     #[test]
     fn aut72_tracker_stamp_dead_letter_not_kaizen_finalized() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         write_minimal_paths(repo);
         let event_id = "bbbbbbbb-bbbb-4ccc-8ddd-000000000002";
@@ -1450,7 +1497,7 @@ mod tests {
 
     #[test]
     fn aut72_tracker_stamp_dead_letter_kaizen_finalized_with_proof() {
-        let tmp = tempfile::tempdir().unwrap();
+        let (_fs, tmp) = fs_lab_tempdir();
         let repo = tmp.path();
         write_minimal_paths(repo);
         let event_id = "cccccccc-bbbb-4ccc-8ddd-000000000003";

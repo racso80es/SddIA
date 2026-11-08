@@ -219,6 +219,7 @@ mod tests {
 
     #[test]
     fn emit_writes_under_progress_leaf_not_telemetry() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let base = std::env::temp_dir().join(format!("ptc-write-{}", Uuid::new_v4()));
         let repo = base.join("repo");
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();

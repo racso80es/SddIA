@@ -2,6 +2,7 @@
 
 use std::cell::RefCell;
 use std::collections::HashSet;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -127,10 +128,36 @@ pub fn load_dispatched(
     with_port(repo, |port| load_dispatched_event(port, event_id, logical))
 }
 
+fn append_progress_leaf_fs(
+    repo: &Path,
+    correlation_id: &str,
+    frame: &Value,
+) -> Result<u64, String> {
+    use crate::engine::fractal::load_progress_dir;
+    let rel = load_progress_dir(repo).trim_start_matches("./").to_string();
+    let leaf = repo.join(&rel).join(correlation_id);
+    fs::create_dir_all(&leaf).map_err(|e| e.to_string())?;
+    let trace_id = frame
+        .get("trace_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("frame");
+    let path = leaf.join(format!("{trace_id}.json"));
+    fs::write(
+        &path,
+        serde_json::to_string(frame).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
+    let n = fs::read_dir(&leaf).map(|d| d.count()).unwrap_or(1);
+    Ok(n as u64)
+}
+
 pub fn append_progress(repo: &Path, correlation_id: &str, frame: &Value) -> Result<u64, String> {
     let mode = sddia_event_store::store_mode();
     if sddia_event_store::writes_store(mode) {
         with_port(repo, |port| append_progress_monotonic(port, correlation_id, frame))
+    } else if sddia_event_store::writes_filesystem(mode) {
+        append_progress_leaf_fs(repo, correlation_id, frame)
     } else {
         sddia_event_store::append_progress_monotonic(repo, correlation_id, frame)
             .map_err(|e| e.to_string())
@@ -294,5 +321,9 @@ pub mod test_lab {
     pub fn filesystem_eda() -> FilesystemEdaGuard {
         override_store_mode(Some(StoreMode::Filesystem));
         FilesystemEdaGuard
+    }
+
+    pub fn fs_lab_tempdir() -> (FilesystemEdaGuard, tempfile::TempDir) {
+        (filesystem_eda(), tempfile::tempdir().expect("tempdir"))
     }
 }

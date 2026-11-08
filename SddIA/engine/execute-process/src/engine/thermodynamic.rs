@@ -558,7 +558,7 @@ mod tests {
 
     #[test]
     fn emit_initialized_pec_writes_orchestration() {
-        let tmp = tempfile::tempdir().expect("tmp");
+        let (_fs, tmp) = crate::engine::eda_port::test_lab::fs_lab_tempdir();
         let repo = tmp.path();
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
@@ -568,8 +568,12 @@ mod tests {
         .unwrap();
         let seal = emit_initialized_pec(repo, "feature", "11111111-1111-4111-8111-111111111111")
             .expect("pec");
-        let path = seal.get("target_path").and_then(|v| v.as_str()).unwrap();
-        let raw = std::fs::read_to_string(repo.join(path)).unwrap();
+        let orch_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
+        let path = repo
+            .join(".events/orchestration")
+            .join(format!("{orch_id}.json"));
+        assert!(path.is_file(), "orchestration PEC missing: {}", path.display());
+        let raw = std::fs::read_to_string(&path).unwrap();
         let ev: Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(ev["event_type"], "Process_Execution_Completed");
         assert_eq!(ev["payload"]["cycle_phase"], "awaiting_agents");

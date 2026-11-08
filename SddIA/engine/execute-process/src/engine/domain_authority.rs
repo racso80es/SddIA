@@ -508,11 +508,12 @@ docs_layout:
 
     #[test]
     fn emit_fracture_on_deny_materializes_system_fracture() {
-        use sddia_event_store::{override_store_mode, Family, StoreMode};
+        use sddia_event_store::{override_store_mode, StoreMode};
 
         struct Guard;
         impl Drop for Guard {
             fn drop(&mut self) {
+                crate::engine::eda_port::clear_port();
                 override_store_mode(None);
             }
         }
@@ -528,19 +529,17 @@ docs_layout:
         });
         let deny = assert_process_allowed(td.path(), "feature", &inputs).unwrap_err();
         emit_fracture_for_denial(td.path(), &deny, &inputs).expect("fractura depositada");
+        crate::engine::eda_port::clear_port();
 
-        let store = sddia_event_store::EventStore::open(
-            crate::engine::eda_port::runtime_db_path(td.path()),
-        )
-        .expect("open store");
-        let listed = store.list_family(Family::Domain).expect("list");
+        let listed = crate::engine::eda_port::load_domain_ecsts(td.path(), 32).expect("list");
         let fractures: Vec<_> = listed
             .iter()
-            .filter(|e| e.event_type == "System_Fracture_Detected")
+            .filter(|e| {
+                e.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
+            })
             .collect();
         assert_eq!(fractures.len(), 1, "deny sin fractura = colapso mudo");
         let friction = fractures[0]
-            .ecst
             .pointer("/payload/friction_id")
             .and_then(|v| v.as_str());
         assert_eq!(friction, Some(FRICTION_AUTHORITY_DENIED));

@@ -374,6 +374,7 @@ mod tests {
 
     #[test]
     fn dispatch_sdlc_writes_domain_not_pending() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let repo = find_repo_root().unwrap();
         let cid = Uuid::new_v4().to_string();
         let out = run(
@@ -390,10 +391,8 @@ mod tests {
         assert_eq!(out.get("success"), Some(&json!(true)));
         assert_eq!(out["event_id"], cid);
         assert_eq!(out["event_type"], "Aiua_Process_Requested");
-        let target = out["target_path"].as_str().unwrap();
-        assert!(target.contains(".events/domain/"), "{target}");
-        assert!(!target.contains("pending"));
-        let path = repo.join(target);
+        let path = repo.join(".events/domain").join(format!("{cid}.json"));
+        assert!(path.is_file(), "domain event missing: {}", path.display());
         let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(body["emitter_agent"], "aiua-stimulus-processing");
         assert_eq!(body["payload"]["process"], "refactorization");
@@ -459,6 +458,7 @@ mod tests {
 
     #[test]
     fn dispatch_habit_borra_emits_mute_without_utterance() {
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let repo = find_repo_root().unwrap();
         let out = run(
             &repo,
@@ -476,9 +476,9 @@ mod tests {
         assert_eq!(out.get("success"), Some(&json!(true)));
         assert_eq!(out["event_type"], "User_Preference_Change_Requested");
         assert_eq!(out["intent_dispatched"], "delegar_habito");
-        let target = out["target_path"].as_str().unwrap();
-        assert!(target.contains(".events/domain/"), "{target}");
-        let path = repo.join(target);
+        let eid = out["event_id"].as_str().expect("event_id");
+        let path = repo.join(".events/domain").join(format!("{eid}.json"));
+        assert!(path.is_file(), "domain event missing: {}", path.display());
         let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(body["event_type"], "User_Preference_Change_Requested");
         assert_eq!(
