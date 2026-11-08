@@ -276,3 +276,23 @@ pub fn port_arc(repo: &Path) -> Result<Arc<dyn EventManagerPort>, String> {
             .ok_or_else(|| "EventManagerPort no instalado".to_string())
     })
 }
+
+/// Laboratorio EDA en FS: evita puerto Redb en repos temporales de test.
+#[cfg(test)]
+pub mod test_lab {
+    use sddia_event_store::{override_store_mode, StoreMode};
+
+    pub struct FilesystemEdaGuard;
+
+    impl Drop for FilesystemEdaGuard {
+        fn drop(&mut self) {
+            super::clear_port();
+            override_store_mode(None);
+        }
+    }
+
+    pub fn filesystem_eda() -> FilesystemEdaGuard {
+        override_store_mode(Some(StoreMode::Filesystem));
+        FilesystemEdaGuard
+    }
+}

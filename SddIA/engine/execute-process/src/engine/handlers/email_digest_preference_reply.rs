@@ -286,7 +286,19 @@ mod tests {
     use super::super::user_preference;
     use user_preference_core::{canonical_subject_key_from_addr, query, QuerySpec};
 
-    fn repo_with_cumulo() -> tempfile::TempDir {
+    struct RepoFixture {
+        _eda: crate::engine::eda_port::test_lab::FilesystemEdaGuard,
+        tmp: tempfile::TempDir,
+    }
+
+    impl RepoFixture {
+        fn path(&self) -> &Path {
+            self.tmp.path()
+        }
+    }
+
+    fn repo_with_cumulo() -> RepoFixture {
+        let eda = crate::engine::eda_port::test_lab::filesystem_eda();
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
@@ -301,7 +313,7 @@ mod tests {
 }"#,
         )
         .unwrap();
-        tmp
+        RepoFixture { _eda: eda, tmp }
     }
 
     fn write_callback(repo: &Path, name: &str, callback_data: &str) -> String {
