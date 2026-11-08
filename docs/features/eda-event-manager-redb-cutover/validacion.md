@@ -123,9 +123,9 @@ situational_notes:
 - Sin validated_*/diff_digest inventados (Shell Rejected; sin gitStdout)
 execution_id: 976c68ea-7630-4f70-86b8-be44bcb4a8d5
 validated_base_sha: b5de29c291ed27ed59ce7a8d3513d5291c50eea5
-validated_head_sha: 50e11fff9a3d307d7acff3005414ed3ecf2948e8
-validated_tree_sha: 18dbf0b7ef08bdcc5826b75cd04bf63b48c85f88
-diff_digest: sha256:9caaacc91f83e74266e2e98c592229453fb84577e5b9311ebfaadf6e540d5df2
+validated_head_sha: 75436916cc68a402215b0de76271837af7155818
+validated_tree_sha: 15c7141f2e8a5f86be2f5fd7cb640ce7bcb1ee6f
+diff_digest: sha256:351f10e36d2c153cb57b2709fa7621b6ab567156db5465cda47b4c5b555d205d
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
