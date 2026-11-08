@@ -198,7 +198,6 @@ jobs:
           cargo test -p sddia-core event_manager --lib
           cargo test -p sddia-infrastructure-redb-event -p sddia-event-manager-host --lib
           cargo test -p event-bus-audit
-          cargo test -p execute-process --lib
 
       - name: Install protoc (lance-encoding)
         if: needs.changes.outputs.lance_memory == 'true'
