@@ -16,6 +16,10 @@ uuid = { version = "1.8", features = ["v4"] }
 sddia-ecosystem-health = { path = "../../ecosystem-health" }
 sddia-runtime-parity = { path = "../../sddia-runtime-parity" }
 sddia-daemon-runtime = { path = "../../sddia-daemon-runtime" }
-sddia-event-store = { path = "../../sddia-event-store" }
+sddia-core = { path = "../../sddia-core" }
+sddia-event-manager-host = { path = "../../sddia-event-manager-host" }
 sddia-eda-catalog = { path = "../../sddia-eda-catalog" }
 ctrlc = "3.4"
+
+[dev-dependencies]
+sddia-infrastructure-redb-event = { path = "../../infrastructure/adapters/redb_event_adapter" }
