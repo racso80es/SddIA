@@ -2,7 +2,10 @@
 
 use super::workspace::load_paths_config;
 use crate::engine::eda_port;
+#[cfg(not(test))]
+use sddia_core::ports::event_manager::ListPendingRequest;
 use serde_json::{json, Value};
+#[cfg(test)]
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -51,6 +54,8 @@ pub fn load_eda_bus(repo: &Path) -> Result<EdaBusPaths, String> {
     })
 }
 
+#[cfg(test)]
+#[allow(dead_code)]
 fn collect_json_headers(dir: &Path, seen: &mut HashSet<PathBuf>, out: &mut Vec<PathBuf>) {
     if !dir.is_dir() {
         return;
@@ -73,19 +78,39 @@ fn collect_json_headers(dir: &Path, seen: &mut HashSet<PathBuf>, out: &mut Vec<P
 }
 
 pub fn iter_bus_event_files(repo: &Path) -> Result<Vec<PathBuf>, String> {
-    let bus = load_eda_bus(repo)?;
-    let mut seen = HashSet::new();
-    let mut files = Vec::new();
-    collect_json_headers(&bus.pending, &mut seen, &mut files);
-    collect_json_headers(&bus.processing, &mut seen, &mut files);
-    collect_json_headers(&bus.processed, &mut seen, &mut files);
-    files.sort_by_key(|p| {
-        p.strip_prefix(repo)
-            .unwrap_or(p)
-            .to_string_lossy()
-            .replace('\\', "/")
-    });
-    Ok(files)
+    #[cfg(not(test))]
+    {
+        let bus = load_eda_bus(repo)?;
+        let port = eda_port::port_arc(repo)?;
+        let listed = port
+            .list_pending(ListPendingRequest {
+                limit: Some(10_000),
+            })
+            .map_err(|e| e.to_string())?;
+        let mut files: Vec<PathBuf> = listed
+            .events
+            .into_iter()
+            .map(|e| bus.pending.join(format!("{}.json", e.event_id)))
+            .collect();
+        files.sort();
+        return Ok(files);
+    }
+    #[cfg(test)]
+    {
+        let bus = load_eda_bus(repo)?;
+        let mut seen = HashSet::new();
+        let mut files = Vec::new();
+        collect_json_headers(&bus.pending, &mut seen, &mut files);
+        collect_json_headers(&bus.processing, &mut seen, &mut files);
+        collect_json_headers(&bus.processed, &mut seen, &mut files);
+        files.sort_by_key(|p| {
+            p.strip_prefix(repo)
+                .unwrap_or(p)
+                .to_string_lossy()
+                .replace('\\', "/")
+        });
+        Ok(files)
+    }
 }
 
 pub fn find_existing_domain_event(

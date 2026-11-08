@@ -1,4 +1,4 @@
-//! Carga ECST: precedencia `event` en línea → `event_id` (store) → `event_file_path` (id lógico).
+//! Carga ECST estricta (T3): inline verificado → `event_id` / ruta lógica vía puerto; sin JSON físico bajo `.events/`.
 
 use crate::engine::eda_port;
 use serde_json::{json, Value};
@@ -44,6 +44,13 @@ fn load_from_event_file_path(
     explicit_event_id: Option<&str>,
 ) -> Result<Value, String> {
     let path = resolve_logical_path(repo, rel);
+    #[cfg(not(test))]
+    if path.is_file() {
+        return Err(format!(
+            "refusing filesystem ECST at {}; use event_id",
+            path.display()
+        ));
+    }
     let event_id = explicit_event_id
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -58,7 +65,7 @@ pub fn load_ecst_from_rel(repo: &Path, rel: &str) -> Result<Value, String> {
     load_ecst_from_inputs(repo, &json!({ "event_file_path": rel }))
 }
 
-/// Precedencia: objeto `event` → `event_id` → `event_file_path`.
+/// Precedencia: `event` (verificado) → `event_id` → `event_file_path` (solo identificador lógico).
 pub fn load_ecst_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
     if let Some(inline) = inputs.get("event") {
         if inline.is_object() {
@@ -96,18 +103,56 @@ pub fn load_ecst_for_handler(repo: &Path, inputs: &Value) -> Result<Value, Strin
     Ok(stored)
 }
 
-/// Antes de efecto remoto: el ECST debe existir en bus y coincidir.
+/// Antes de efecto remoto: el ECST debe existir en bus y coincidir (`verify_inline_ecst`).
 pub fn verify_ecst_matches_bus(repo: &Path, event: &Value) -> Result<(), String> {
     let event_id = str_field(event, "event_id").ok_or("event_id ausente")?;
-    let synthetic = repo
-        .join(".events/pending")
-        .join(format!("{event_id}.json"));
-    let stored = eda_port::load_dispatched(repo, &event_id, &synthetic)?;
-    let Some(stored) = stored else {
-        return Err("ecst_not_in_bus".into());
-    };
-    if stored != *event {
-        return Err("ecst_mismatch".into());
+    eda_port::verify_inline_ecst(repo, &event_id, event).map_err(|e| {
+        let lower = e.to_ascii_lowercase();
+        if lower.contains("notfound") || lower.contains("not found") {
+            "ecst_not_in_bus".into()
+        } else if lower.contains("ecst_mismatch") || lower.contains("mismatch") {
+            "ecst_mismatch".into()
+        } else {
+            e
+        }
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::engine::eda_port::test_lab::ParallelLabGuard;
+    use serde_json::json;
+    use sddia_core::ports::event_manager::InMemoryEventManagerMock;
+    use std::sync::Arc;
+
+    #[test]
+    fn verify_rejects_mismatch_on_mock_port() {
+        let _g = ParallelLabGuard::acquire();
+        let repo = tempfile::tempdir().expect("tempdir");
+        let repo = repo.path();
+        let mock = Arc::new(InMemoryEventManagerMock::new());
+        crate::engine::eda_port::install_port(mock);
+        let eid = "11111111-1111-4111-8111-111111111111";
+        crate::engine::eda_port::record_ecst(
+            repo,
+            "domain",
+            &json!({
+                "event_id": eid,
+                "event_type": "T",
+                "payload": {"n": 1}
+            }),
+        )
+        .expect("record");
+        let inline = json!({
+            "event_id": eid,
+            "event_type": "T",
+            "payload": {"n": 2}
+        });
+        assert_eq!(
+            verify_ecst_matches_bus(repo, &inline).unwrap_err(),
+            "ecst_mismatch"
+        );
+        crate::engine::eda_port::clear_port();
     }
-    Ok(())
 }

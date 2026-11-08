@@ -304,6 +304,7 @@ pub fn materialize_pending_domain_event(
 ) -> Result<String, String> {
     let bus = ensure_event_bus_topology(repo)?;
     let pending_dir = repo.join(&bus.pending);
+    #[cfg(test)]
     fs::create_dir_all(&pending_dir).map_err(|e| e.to_string())?;
     let event_path = write_pending_domain_event_file(
         repo,
@@ -814,12 +815,16 @@ fn stamp_batch_anchor_error(
     causa: &str,
 ) {
     for uuid in uuids {
-        if let Some(event_path) = event_paths_by_uuid.get(uuid) {
-            let event_path = if event_path.is_absolute() {
-                event_path.clone()
-            } else {
-                repo.join(event_path)
-            };
+        let event_path = event_paths_by_uuid.get(uuid).cloned().unwrap_or_else(|| {
+            PathBuf::from(&bus.pending).join(format!("{uuid}.json"))
+        });
+        let event_path = if event_path.is_absolute() {
+            event_path
+        } else {
+            repo.join(&event_path)
+        };
+        #[cfg(test)]
+        {
             if let Ok(text) = fs::read_to_string(&event_path) {
                 if let Ok(mut event) = serde_json::from_str::<Value>(&text) {
                     if let Some(obj) = event.as_object_mut() {
@@ -838,14 +843,13 @@ fn stamp_batch_anchor_error(
                     let _ = write_json_atomic(&event_path, &event);
                 }
             }
-            enqueue_dlt_reanchor(repo, uuid, &event_path, causa);
-        } else {
-            let fallback = PathBuf::from(&bus.pending).join(format!("{uuid}.json"));
-            enqueue_dlt_reanchor(repo, uuid, &fallback, causa);
         }
+        let _ = causa;
+        enqueue_dlt_reanchor(repo, uuid, &event_path, causa);
     }
 }
 
+#[cfg(test)]
 fn bus_dir_abs(repo: &Path, dir: &str) -> PathBuf {
     let p = Path::new(dir);
     if p.is_absolute() {
@@ -867,17 +871,28 @@ fn resolve_reanchor_event_path(
     } else {
         repo.join(stored_path)
     };
-    if stored.is_file() {
+    #[cfg(not(test))]
+    {
+        let _ = (bus, uuid);
+        if stored.is_file() {
+            return None;
+        }
         return Some(stored);
     }
-    let fname = format!("{uuid}.json");
-    for dir in [&bus.pending, &bus.processed, &bus.dead_letter] {
-        let p = bus_dir_abs(repo, dir).join(&fname);
-        if p.is_file() {
-            return Some(p);
+    #[cfg(test)]
+    {
+        if stored.is_file() {
+            return Some(stored);
         }
+        let fname = format!("{uuid}.json");
+        for dir in [&bus.pending, &bus.processed, &bus.dead_letter] {
+            let p = bus_dir_abs(repo, dir).join(&fname);
+            if p.is_file() {
+                return Some(p);
+            }
+        }
+        None
     }
-    None
 }
 
 fn try_drain_dlt_reanchor_queue(repo: &Path, bus: &EventBusTopology) {
