@@ -8,10 +8,11 @@ use std::sync::Mutex;
 use serde_json::{json, Value};
 use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, EventManagerError, EventManagerPort,
-    GetEventRequest, GetEventResult, HandshakeVersionRequest, HandshakeVersionResult,
+    GetDltSealRequest, GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
+    HandshakeVersionResult,
     ListDlqRequest, ListDlqResult, ListPendingRequest, ListPendingResult, ListTracesRequest,
     ListTracesResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
-    RecordDeliveryRequest, ReplayDlqRequest,
+    RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 
 struct ExternalCapsuleInner {
@@ -217,5 +218,23 @@ impl EventManagerPort for ExternalCapsuleEventAdapter {
             serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
         let _: Value = Self::rpc_result(&mut g, "purge_event", payload)?;
         Ok(())
+    }
+
+    fn seal_dlt(&self, req: SealDltRequest) -> Result<(), EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        let _ = Self::rpc(&mut g, "seal_dlt", payload)?;
+        Ok(())
+    }
+
+    fn get_dlt_seal(
+        &self,
+        req: GetDltSealRequest,
+    ) -> Result<GetDltSealResult, EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        Self::rpc_result(&mut g, "get_dlt_seal", payload)
     }
 }

@@ -5,9 +5,9 @@ use std::io::{BufRead, BufWriter, Write};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sddia_core::ports::event_manager::{
-    AppendTraceRequest, ClaimPendingRequest, EventManagerPort, HandshakeVersionRequest,
-    InMemoryEventManagerMock, MoveToDlqRequest, PublishEcstRequest, RecordDeliveryRequest,
-    ReplayDlqRequest,
+    AppendTraceRequest, ClaimPendingRequest, EventManagerPort, GetDltSealRequest,
+    GetEventRequest, HandshakeVersionRequest, InMemoryEventManagerMock, MoveToDlqRequest,
+    PublishEcstRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 
 #[derive(Debug, Deserialize)]
@@ -99,6 +99,27 @@ fn main() {
             "append_trace" => match serde_json::from_value::<AppendTraceRequest>(req.payload) {
                 Ok(p) => match mock.append_trace(p) {
                     Ok(()) => ok_line(None),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "get_event" => match serde_json::from_value::<GetEventRequest>(req.payload) {
+                Ok(p) => match mock.get_event(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "seal_dlt" => match serde_json::from_value::<SealDltRequest>(req.payload) {
+                Ok(p) => match mock.seal_dlt(p) {
+                    Ok(()) => ok_line(None),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "get_dlt_seal" => match serde_json::from_value::<GetDltSealRequest>(req.payload) {
+                Ok(p) => match mock.get_dlt_seal(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
                     Err(e) => err_line(&e.to_string()),
                 },
                 Err(e) => err_line(&e.to_string()),

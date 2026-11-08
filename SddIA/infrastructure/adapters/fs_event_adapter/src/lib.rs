@@ -7,11 +7,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryStatus,
-    DualVersionManifest, EventManagerError, EventManagerPort, GetEventRequest, GetEventResult,
+    DualVersionManifest, EventManagerError, EventManagerPort, GetDltSealRequest, GetDltSealResult,
+    GetEventRequest, GetEventResult,
     HandshakeVersionRequest, HandshakeVersionResult, ListedDlqEvent, ListDlqRequest, ListDlqResult,
     ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult,
     MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest,
-    ReplayDlqRequest, CONTRACT_ID, CONTRACT_VERSION,
+    ReplayDlqRequest, SealDltRequest, CONTRACT_ID, CONTRACT_VERSION,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,7 +43,15 @@ impl FsEventAdapter {
     pub fn open(root: impl AsRef<Path>) -> Result<Self, EventManagerError> {
         let root = root.as_ref().to_path_buf();
         fs::create_dir_all(&root).map_err(storage)?;
-        for d in ["events", "leases", "deliveries", "dlq", "traces", "meta"] {
+        for d in [
+            "events",
+            "leases",
+            "deliveries",
+            "dlq",
+            "traces",
+            "meta",
+            "meta/dlt_seals",
+        ] {
             fs::create_dir_all(root.join(d)).map_err(storage)?;
         }
         let a = Self { root };
@@ -64,6 +73,10 @@ impl FsEventAdapter {
 
     fn dlq_path(&self, id: &str) -> PathBuf {
         self.dir("dlq").join(format!("{id}.json"))
+    }
+
+    fn dlt_seal_path(&self, id: &str) -> PathBuf {
+        self.dir("meta").join("dlt_seals").join(format!("{id}.json"))
     }
 
     fn manifest(&self) -> DualVersionManifest {
@@ -404,6 +417,27 @@ impl EventManagerPort for FsEventAdapter {
             contract_version: CONTRACT_VERSION.to_string(),
             compatible: true,
         })
+    }
+
+    fn seal_dlt(&self, req: SealDltRequest) -> Result<(), EventManagerError> {
+        let record = GetDltSealResult {
+            event_id: req.event_id.clone(),
+            tx_hash: req.tx_hash,
+            digest: req.digest,
+            scope: req.scope,
+        };
+        FsEventAdapter::write_atomic_json(&self.dlt_seal_path(&req.event_id), &record)
+    }
+
+    fn get_dlt_seal(
+        &self,
+        req: GetDltSealRequest,
+    ) -> Result<GetDltSealResult, EventManagerError> {
+        let p = self.dlt_seal_path(&req.event_id);
+        if !p.is_file() {
+            return Err(EventManagerError::NotFound(req.event_id));
+        }
+        FsEventAdapter::read_json(&p)
     }
 }
 
