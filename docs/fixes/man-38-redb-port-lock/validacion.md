@@ -131,9 +131,9 @@ situational_notes:
 - Sello diff DCC preservado (validated_* / diff_digest); head_fs 07fb8779… ≠ validated_head 883c764f… — residual no inventado
 - accept_pr_handoff pending — MERGE ausente; L-HANDOFF-F5 respetado (no true sin vía de merge)
 validated_base_sha: ee7a54f8c88bd951b88230460e8ca0b4687282c3
-validated_head_sha: 738de2e787679b3e2d9ee55105285e3c8937b65c
-validated_tree_sha: 3becc3249df2a1da1bd2f7a4149a6b6fc9e8d94b
-diff_digest: sha256:688ecc4d23c088d26f1bd07063411bc15b2965d9c44eb399b83035a23ab283bf
+validated_head_sha: 086be8da3e0966d223b87cee7f170bef95ee3f7c
+validated_tree_sha: 3a19bc32fdf5e2e42f8465d323aa94530a758b5a
+diff_digest: sha256:5dba215763f3cee349991f042bff35fc4ebb0ce09ddda7909c43d37a73661d5b
 execution_id: be63c70f-633c-452e-aaf1-8ffa645fd54b
 ---
 
