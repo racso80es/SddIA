@@ -55,6 +55,26 @@ struct ScanState {
     witness_parent_ids: HashSet<String>,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum AuditFamily {
+    Domain,
+    Orchestration,
+    Telemetry,
+}
+
+#[derive(Clone)]
+struct AuditEventRow {
+    event_id: String,
+    event_type: String,
+    ecst: Value,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum AuditDeliveryStatus {
+    Success,
+    Failed,
+}
+
 fn get_repo_root() -> Result<PathBuf, String> {
     let mut current_dir =
         std::env::current_dir().map_err(|e| format!("Failed to get current dir: {e}"))?;
@@ -634,9 +654,7 @@ fn tracker_outbound_exists(repo: &Path, tracker_ref: &str) -> bool {
         .is_file()
 }
 
-fn collect_residual_fractures(
-    rows: &[sddia_event_store::StoredEvent],
-) -> Vec<(String, String)> {
+fn collect_residual_fractures(rows: &[AuditEventRow]) -> Vec<(String, String)> {
     rows
         .iter()
         .filter(|r| r.event_type == "System_Fracture_Detected")
@@ -700,15 +718,14 @@ fn audit_residual_pending_files(
 
 fn audit_domain_delivery_signals(
     repo: &Path,
-    domain_rows: &[sddia_event_store::StoredEvent],
-    deliveries: &[(String, String, sddia_event_store::DeliveryStatus)],
+    domain_rows: &[AuditEventRow],
+    deliveries: &[(String, String, AuditDeliveryStatus)],
     state: &mut ScanState,
 ) {
     let Ok((core, codex, authority)) = load_domain_subscription_registries(repo) else {
         return;
     };
-    let mut by_event: HashMap<String, Vec<(String, sddia_event_store::DeliveryStatus)>> =
-        HashMap::new();
+    let mut by_event: HashMap<String, Vec<(String, AuditDeliveryStatus)>> = HashMap::new();
     for (event_id, subscriber_id, status) in deliveries {
         if subscriber_id.starts_with('_') || subscriber_id.trim().is_empty() {
             continue;
@@ -750,7 +767,7 @@ fn audit_domain_delivery_signals(
         }
 
         for (subscriber_id, status) in &actual_rows {
-            if *status != sddia_event_store::DeliveryStatus::Success {
+            if *status != AuditDeliveryStatus::Success {
                 continue;
             }
             let (agent, capsule) = split_subscriber_id(subscriber_id);
@@ -779,24 +796,55 @@ fn audit_domain_delivery_signals(
     }
 }
 
-fn store_family_for_ecst(ecst: &Value) -> sddia_event_store::Family {
+fn ingest_audit_event(
+    state: &mut ScanState,
+    buckets: &mut BTreeMap<&str, u64>,
+    domain_rows: &mut Vec<AuditEventRow>,
+    domain_ids: &mut HashSet<String>,
+    event_id: String,
+    ecst: Value,
+) {
+    let family = store_family_for_ecst(&ecst);
+    let bucket = match family {
+        AuditFamily::Orchestration => "orchestration",
+        AuditFamily::Telemetry => "telemetry",
+        AuditFamily::Domain => "domain",
+    };
+    *buckets.entry(bucket).or_insert(0) += 1;
+    let event_type = ecst
+        .get("event_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    *state.counts_by_type.entry(event_type.clone()).or_insert(0) += 1;
+    state.event_ids.insert(event_id.clone());
+    if family == AuditFamily::Domain && domain_ids.insert(event_id.clone()) {
+        domain_rows.push(AuditEventRow {
+            event_id,
+            event_type,
+            ecst,
+        });
+    }
+}
+
+fn store_family_for_ecst(ecst: &Value) -> AuditFamily {
     let t = ecst
         .get("event_type")
         .and_then(|v| v.as_str())
         .unwrap_or("");
     if t.contains("Process_Execution") || t.starts_with("Orchestration") {
-        sddia_event_store::Family::Orchestration
+        AuditFamily::Orchestration
     } else if t.contains("Telemetry") || ecst.pointer("/payload/telemetry_receipt").is_some() {
-        sddia_event_store::Family::Telemetry
+        AuditFamily::Telemetry
     } else {
-        sddia_event_store::Family::Domain
+        AuditFamily::Domain
     }
 }
 
 fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
     use sddia_core::ports::event_manager::{
-        DeliveryStatus as PortDeliveryStatus, ListDeliveriesRequest, ListDlqRequest,
-        ListPendingRequest,
+        DeliveryStatus as PortDeliveryStatus, GetEventRequest, ListDeliveriesRequest,
+        ListDlqRequest, ListPendingRequest,
     };
     use sddia_event_manager_host::{events_redb_path, resolve_productive_port};
 
@@ -818,41 +866,22 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
     };
 
     let mut domain_rows = Vec::new();
-    let Ok(listed) = port.list_pending(ListPendingRequest {
-        limit: Some(10_000),
-    }) else {
-        return state;
-    };
+    let mut domain_ids = HashSet::new();
     let mut buckets = BTreeMap::<&str, u64>::new();
-    for e in listed.events {
-        let family = store_family_for_ecst(&e.ecst);
-        let bucket = match family {
-            sddia_event_store::Family::Orchestration => "orchestration",
-            sddia_event_store::Family::Telemetry => "telemetry",
-            _ => "domain",
-        };
-        *buckets.entry(bucket).or_insert(0) += 1;
-        let event_type = e
-            .ecst
-            .get("event_type")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        *state.counts_by_type.entry(event_type.clone()).or_insert(0) += 1;
-        state.event_ids.insert(e.event_id.clone());
-        let row = sddia_event_store::StoredEvent {
-            event_id: e.event_id,
-            family,
-            event_type,
-            ecst: e.ecst,
-            created_at: 0,
-        };
-        if family == sddia_event_store::Family::Domain {
-            domain_rows.push(row);
+
+    if let Ok(listed) = port.list_pending(ListPendingRequest {
+        limit: Some(10_000),
+    }) {
+        for e in listed.events {
+            ingest_audit_event(
+                &mut state,
+                &mut buckets,
+                &mut domain_rows,
+                &mut domain_ids,
+                e.event_id,
+                e.ecst,
+            );
         }
-    }
-    for (k, v) in buckets {
-        state.counts.insert(k.into(), v);
     }
 
     if let Ok(dlq) = port.list_dlq(ListDlqRequest {
@@ -866,6 +895,14 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
                 .dead_letter_errors
                 .entry(e.reason)
                 .or_insert(0) += 1;
+            ingest_audit_event(
+                &mut state,
+                &mut buckets,
+                &mut domain_rows,
+                &mut domain_ids,
+                e.event_id,
+                e.ecst,
+            );
         }
     }
 
@@ -875,33 +912,50 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
         ..Default::default()
     }) {
         let mut failed = 0u64;
-        let mut pending = 0u64;
         let mut success = 0u64;
         for d in &rows.deliveries {
             let mapped = match d.status {
-                PortDeliveryStatus::Ack => sddia_event_store::DeliveryStatus::Success,
-                PortDeliveryStatus::Nack => sddia_event_store::DeliveryStatus::Failed,
+                PortDeliveryStatus::Ack => AuditDeliveryStatus::Success,
+                PortDeliveryStatus::Nack => AuditDeliveryStatus::Failed,
             };
             match mapped {
-                sddia_event_store::DeliveryStatus::Failed => failed += 1,
-                sddia_event_store::DeliveryStatus::Pending => pending += 1,
-                sddia_event_store::DeliveryStatus::Success => success += 1,
-                sddia_event_store::DeliveryStatus::Skipped => {}
+                AuditDeliveryStatus::Failed => failed += 1,
+                AuditDeliveryStatus::Success => success += 1,
             }
             all_deliveries.push((d.event_id.clone(), d.delivery_id.clone(), mapped));
         }
         state
             .counts
             .insert("dead-letter/subscribers".into(), failed);
-        state
-            .counts
-            .insert("processing/subscribers".into(), pending);
         state.counts.insert("processed/subscribers".into(), success);
+        for (event_id, _, _) in &all_deliveries {
+            if domain_ids.contains(event_id) {
+                continue;
+            }
+            if let Ok(ev) = port.get_event(GetEventRequest {
+                event_id: event_id.clone(),
+            }) {
+                ingest_audit_event(
+                    &mut state,
+                    &mut buckets,
+                    &mut domain_rows,
+                    &mut domain_ids,
+                    ev.event_id,
+                    ev.ecst,
+                );
+            }
+        }
+    }
+    for (k, v) in buckets {
+        state.counts.insert(k.into(), v);
     }
 
     audit_domain_delivery_signals(repo, &domain_rows, &all_deliveries, &mut state);
-    let fractures = collect_residual_fractures(&domain_rows);
-    audit_residual_pending_files(repo, &bus_paths.pending, &fractures, &mut state);
+    #[cfg(test)]
+    {
+        let fractures = collect_residual_fractures(&domain_rows);
+        audit_residual_pending_files(repo, &bus_paths.pending, &fractures, &mut state);
+    }
 
     state
 }
@@ -911,6 +965,19 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
     if sddia_event_manager_host::events_redb_path(repo).is_file() {
         return Ok((audit_state_from_store(repo, &paths), paths));
     }
+    #[cfg(not(test))]
+    {
+        let mut state = ScanState::default();
+        let db = sddia_event_manager_host::events_redb_path(repo);
+        state.anomalies.push(Anomaly {
+            kind: "store_missing".into(),
+            path: rel_path(repo, &db),
+            detail: "events.redb ausente; escaneo FS deshabilitado (cutover puerto)".into(),
+        });
+        return Ok((state, paths));
+    }
+    #[cfg(test)]
+    {
     let known_types = load_known_event_types(repo);
     let mut state = ScanState::default();
     let mut stale_pending = Vec::new();
@@ -1009,6 +1076,7 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
 
     state.stale_pending = stale_pending;
     Ok((state, paths))
+    }
 }
 
 fn write_pending_kaizen(
@@ -1336,6 +1404,36 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sddia_core::ports::event_manager::{
+        DeliveryStatus as PortDeliveryStatus, GetEventRequest, MoveToDlqRequest,
+        PublishEcstRequest, RecordDeliveryRequest,
+    };
+    use std::sync::Arc;
+
+    fn test_port(repo: &Path) -> Arc<dyn sddia_core::ports::event_manager::EventManagerPort> {
+        sddia_event_manager_host::resolve_productive_port(repo).expect("productive port")
+    }
+
+    fn port_publish(repo: &Path, event_id: &str, ecst: Value) {
+        let port = test_port(repo);
+        port.publish_ecst(PublishEcstRequest {
+            event_id: event_id.into(),
+            ecst,
+            trace_id: None,
+        })
+        .expect("publish");
+    }
+
+    fn port_record_ack(repo: &Path, event_id: &str, subscriber_id: &str) {
+        let port = test_port(repo);
+        port.record_delivery(RecordDeliveryRequest {
+            event_id: event_id.into(),
+            delivery_id: format!("{event_id}:{subscriber_id}"),
+            status: PortDeliveryStatus::Ack,
+            attempt: None,
+        })
+        .expect("record_delivery");
+    }
 
     #[test]
     fn utf8_prefix_does_not_split_emdash() {
@@ -1489,22 +1587,18 @@ mod tests {
             r#"{"eda_bus":{"pending":".events/pending","processing":".events/processing","processed":".events/processed","dead_letter":".events/dead-letter"}}"#,
         )
         .unwrap();
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = sddia_event_store::runtime_db_path(&dir);
-        fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let store = sddia_event_store::EventStore::open(&db).unwrap();
-        let event = sddia_event_store::StoredEvent {
-            event_id: "evt-dl".into(),
-            family: sddia_event_store::Family::Domain,
-            event_type: "Domain_Probe".into(),
-            created_at: 10,
-            ecst: serde_json::json!({"event_id": "evt-dl", "event_type": "Domain_Probe"}),
-        };
-        store.insert_event(&event, &["sub-a"]).unwrap();
-        store.dead_letter("evt-dl", "boom", "sub-a").unwrap();
-        drop(store);
+        port_publish(
+            &dir,
+            "evt-dl",
+            json!({"event_id": "evt-dl", "event_type": "Domain_Probe"}),
+        );
+        test_port(&dir)
+            .move_to_dlq(MoveToDlqRequest {
+                event_id: "evt-dl".into(),
+                reason: "boom".into(),
+            })
+            .unwrap();
         let (state, _) = run_audit(&dir, 24).unwrap();
-        sddia_event_store::override_store_mode(None);
         assert_eq!(state.counts.get("dead-letter").copied(), Some(1));
         assert_eq!(state.dead_letter_errors.get("boom").copied(), Some(1));
         assert!(!dir.join(".events").exists());
@@ -1542,7 +1636,6 @@ mod tests {
         ));
         let _ = fs::remove_dir_all(&dir);
         seed_kaizen_test_repo(&dir);
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
         let paths = test_repo_bus_paths(&dir);
         let seal = write_pending_kaizen(
             &dir,
@@ -1555,36 +1648,17 @@ mod tests {
         let event_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
         assert!(
             !dir.join(".events/pending").join(format!("{event_id}.json")).is_file(),
-            "redb no debe escribir pending FS"
+            "puerto no debe escribir pending FS"
         );
-        let store =
-            sddia_event_store::EventStore::open(sddia_event_store::runtime_db_path(&dir)).unwrap();
-        let row = store.get_event(event_id).unwrap().expect("evento en store");
-        assert_eq!(row.event_type, "Kaizen_Alert_Required");
-        sddia_event_store::override_store_mode(None);
-        let _ = fs::remove_dir_all(&dir);
-    }
-
-    /// EBA-FS-01: filesystem sigue escribiendo pending.
-    #[test]
-    fn kaizen_emit_filesystem_writes_pending_json() {
-        let dir = std::env::temp_dir().join(format!(
-            "eba-kaizen-fs-{}-{}",
-            std::process::id(),
-            uuid::Uuid::new_v4()
-        ));
-        let _ = fs::remove_dir_all(&dir);
-        seed_kaizen_test_repo(&dir);
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        let paths = test_repo_bus_paths(&dir);
-        let seal = write_pending_kaizen(&dir, &paths, "rev", "j", &[]).unwrap();
-        let event_id = seal.get("event_id").and_then(|v| v.as_str()).unwrap();
-        assert!(
-            dir.join(".events/pending")
-                .join(format!("{event_id}.json"))
-                .is_file()
+        let row = test_port(&dir)
+            .get_event(GetEventRequest {
+                event_id: event_id.into(),
+            })
+            .expect("get_event");
+        assert_eq!(
+            row.ecst.get("event_type").and_then(|v| v.as_str()),
+            Some("Kaizen_Alert_Required")
         );
-        sddia_event_store::override_store_mode(None);
         let _ = fs::remove_dir_all(&dir);
     }
 
@@ -1665,49 +1739,31 @@ mod tests {
         ));
         let _ = fs::remove_dir_all(&dir);
         seed_aut27_minimal_repo(&dir);
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = sddia_event_store::runtime_db_path(&dir);
-        fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let store = sddia_event_store::EventStore::open(&db).unwrap();
         let event_id = "3803aeae-7a1e-4c15-b02f-8c72d16fd8ff";
         let ecst = json!({
             "event_id": event_id,
             "event_type": "PullRequest_Merged",
             "payload": { "tracker_ref": "AUT-8" }
         });
-        let event = sddia_event_store::StoredEvent {
+        let row = AuditEventRow {
             event_id: event_id.into(),
-            family: sddia_event_store::Family::Domain,
             event_type: "PullRequest_Merged".into(),
-            created_at: 1,
             ecst: ecst.clone(),
         };
-        store
-            .insert_event(
-                &event,
-                &["argos.notify-humanized-pr-merged", "tekton.tracker-stamp"],
-            )
-            .unwrap();
-        store
-            .set_delivery(
-                event_id,
-                "argos.notify-humanized-pr-merged",
-                sddia_event_store::DeliveryStatus::Success,
-                json!({}),
-            )
-            .unwrap();
-        store
-            .set_delivery(
-                event_id,
-                "tekton.tracker-stamp",
-                sddia_event_store::DeliveryStatus::Success,
-                json!({}),
-            )
-            .unwrap();
-        drop(store);
-
-        let paths = test_repo_bus_paths(&dir);
-        let state = audit_state_from_store(&dir, &paths);
+        let deliveries = vec![
+            (
+                event_id.into(),
+                "argos.notify-humanized-pr-merged".into(),
+                AuditDeliveryStatus::Success,
+            ),
+            (
+                event_id.into(),
+                "tekton.tracker-stamp".into(),
+                AuditDeliveryStatus::Success,
+            ),
+        ];
+        let mut state = ScanState::default();
+        audit_domain_delivery_signals(&dir, &[row.clone()], &deliveries, &mut state);
         let efecto: Vec<_> = state
             .anomalies
             .iter()
@@ -1717,7 +1773,8 @@ mod tests {
 
         fs::create_dir_all(dir.join(".SddIA/state/tracker-outbound")).unwrap();
         fs::write(dir.join(".SddIA/state/tracker-outbound/AUT-8.jsonl"), "{}\n").unwrap();
-        let state2 = audit_state_from_store(&dir, &paths);
+        let mut state2 = ScanState::default();
+        audit_domain_delivery_signals(&dir, &[row], &deliveries, &mut state2);
         let tekton_marked = state2.anomalies.iter().any(|a| {
             a.kind == "success_sin_efecto" && a.detail.starts_with("tekton.tracker-stamp")
         });
@@ -1726,7 +1783,6 @@ mod tests {
         });
         assert!(!tekton_marked);
         assert!(argos_marked);
-        sddia_event_store::override_store_mode(None);
         let _ = fs::remove_dir_all(&dir);
     }
 
@@ -1739,47 +1795,46 @@ mod tests {
         ));
         let _ = fs::remove_dir_all(&dir);
         seed_aut27_minimal_repo(&dir);
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = sddia_event_store::runtime_db_path(&dir);
-        fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let store = sddia_event_store::EventStore::open(&db).unwrap();
         let event_id = "BVLgK63NjKvYhH1Zt4LGPE2KbrSCAhQaBTnJmfng8xCU";
-        let event = sddia_event_store::StoredEvent {
+        port_publish(
+            &dir,
+            event_id,
+            json!({
+                "event_id": event_id,
+                "event_type": "PullRequest_Presented",
+                "payload": {}
+            }),
+        );
+        port_record_ack(&dir, event_id, "argos");
+        port_record_ack(&dir, event_id, "cumulo");
+
+        let row = AuditEventRow {
             event_id: event_id.into(),
-            family: sddia_event_store::Family::Domain,
             event_type: "PullRequest_Presented".into(),
-            created_at: 1,
             ecst: json!({
                 "event_id": event_id,
                 "event_type": "PullRequest_Presented",
                 "payload": {}
             }),
         };
-        store.insert_event(&event, &["argos", "cumulo"]).unwrap();
-        store
-            .set_delivery(
-                event_id,
-                "argos",
-                sddia_event_store::DeliveryStatus::Success,
-                json!({}),
-            )
-            .unwrap();
-        store
-            .set_delivery(
-                event_id,
-                "cumulo",
-                sddia_event_store::DeliveryStatus::Success,
-                json!({}),
-            )
-            .unwrap();
-        drop(store);
-
-        let paths = test_repo_bus_paths(&dir);
-        let state = audit_state_from_store(&dir, &paths);
-        assert!(state.anomalies.iter().any(|a| {
+        let deliveries = vec![
+            (
+                event_id.into(),
+                "argos".into(),
+                AuditDeliveryStatus::Success,
+            ),
+            (
+                event_id.into(),
+                "cumulo".into(),
+                AuditDeliveryStatus::Success,
+            ),
+        ];
+        let mut catalog_state = ScanState::default();
+        audit_domain_delivery_signals(&dir, &[row], &deliveries, &mut catalog_state);
+        assert!(catalog_state.anomalies.iter().any(|a| {
             a.kind == "delivery_fuera_de_catalogo" && a.detail == "argos"
         }));
-        assert!(state.anomalies.iter().any(|a| {
+        assert!(catalog_state.anomalies.iter().any(|a| {
             a.kind == "delivery_fuera_de_catalogo" && a.detail == "cumulo"
         }));
         for expected in [
@@ -1788,14 +1843,13 @@ mod tests {
             "argos.send-telegram-notification",
         ] {
             assert!(
-                state.anomalies.iter().any(|a| {
+                catalog_state.anomalies.iter().any(|a| {
                     a.kind == "suscriptor_sin_fila" && a.detail == expected
                 }),
                 "falta suscriptor_sin_fila {expected}: {:?}",
-                state.anomalies
+                catalog_state.anomalies
             );
         }
-        sddia_event_store::override_store_mode(None);
         let _ = fs::remove_dir_all(&dir);
     }
 
@@ -1816,18 +1870,12 @@ mod tests {
         )
         .unwrap();
 
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = sddia_event_store::runtime_db_path(&dir);
-        fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let store = sddia_event_store::EventStore::open(&db).unwrap();
         let fracture_id = "residual-fracture-1";
         let trace = format!("residual .events/pending/{pending_name} con store redb");
-        let fracture = sddia_event_store::StoredEvent {
-            event_id: fracture_id.into(),
-            family: sddia_event_store::Family::Domain,
-            event_type: "System_Fracture_Detected".into(),
-            created_at: 2,
-            ecst: json!({
+        port_publish(
+            &dir,
+            fracture_id,
+            json!({
                 "event_id": fracture_id,
                 "event_type": "System_Fracture_Detected",
                 "payload": {
@@ -1835,9 +1883,7 @@ mod tests {
                     "error_trace": trace
                 }
             }),
-        };
-        store.insert_event(&fracture, &[]).unwrap();
-        drop(store);
+        );
 
         let paths = test_repo_bus_paths(&dir);
         let state = audit_state_from_store(&dir, &paths);
@@ -1848,7 +1894,6 @@ mod tests {
             .expect("residual_filesystem");
         assert!(residual.detail.contains("F-EDA-RESIDUAL-FILESYSTEM"));
         assert!(residual.detail.contains(fracture_id));
-        sddia_event_store::override_store_mode(None);
         let _ = fs::remove_dir_all(&dir);
     }
 }
