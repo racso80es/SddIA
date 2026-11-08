@@ -38,7 +38,7 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 
 Definición operativa de **Event**: *contrato inmutable de comunicación asíncrona; señal con propósito que opera bajo coreografía pura.* Toda Clase declara `event_family`: `{ telemetry, orchestration, domain }` (enum estricto en [`events-contract.md`](SddIA/events/events-contract.md)).
 
-El runtime por defecto es el store `redb` en `.SddIA/runtime/events.redb` (tablas `events`, `subscriber_delivery`, `dead_letter_index`, `progress_traces`, `dlt_audit_seals`). `SDDIA_EVENT_STORE=filesystem` o `dual` es un escape explícito. La frontera DLT es `local_only` por defecto: solo `PullRequest_Merged` y `System_Immunity_Certified` anclan en IOTA.
+El runtime productivo del bus ECST es **`EventManagerPort` ^1.2.0** con persistencia en `.SddIA/runtime/events.redb` (composition root `sddia-event-manager-host`, rol `default` → adapter Redb). Las rutas bajo `/.events/*` son **identificadores lógicos y topología de enrutamiento**, no cola ni SSOT. Los modos `SDDIA_EVENT_STORE=filesystem|dual` y `EventStore::open` desde consumidores quedan relegados al crate `sddia-event-store` y a laboratorio `#[cfg(test)]`; el gate CI `gate-event-manager-port` lo veta en código productivo (MAN-35). La frontera DLT es `local_only` por defecto: solo `PullRequest_Merged` y `System_Immunity_Certified` anclan en IOTA.
 
 | Agente | Tier | Descriptor |
 | :--- | :--- | :--- |
@@ -103,18 +103,19 @@ Coexistencia gradual (D0.2): eventos dominio legacy y flujos como `PullRequest_P
 
 ```mermaid
 flowchart LR
-  EM[Emisor] --> REDB[(events.redb)]
+  EM[Emisor] --> PORT[EventManagerPort]
+  PORT --> REDB[(events.redb)]
   REDB --> W[event-watcher]
   W --> RDE[process route-domain-event]
-  RDE --> REDB
+  RDE --> PORT
 ```
 
 | Paso | Componente | Responsabilidad |
 |------|------------|-----------------|
-| 1 | Emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | Insertan el ECST en `events` y `subscriber_delivery=pending` |
-| 2 | `event-watcher` (binario Rust) | Drena entregas `pending` del store; delega en `route-domain-event` |
-| 3 | **`route-domain-event`** | Gate ECST; fan-out; cierra `subscriber_delivery` |
-| 4 | Suscriptores | Trabajo de dominio; testigo en el store |
+| 1 | Emisores (`emit-domain-mutation`, `emit-pr-presented-event`, …) | `publish_ecst` / `record_ecst` vía puerto (sin I/O directo sobre `.events/`) |
+| 2 | `event-watcher` (binario Rust) | `claim_pending` + `record_delivery` por puerto; delega en `route-domain-event` |
+| 3 | **`route-domain-event`** | Gate ECST; fan-out; ACK/NACK/DLQ en el puerto |
+| 4 | Suscriptores | Trabajo de dominio; entregas consultables con `list_deliveries` |
 
 **Invocación manual (laboratorio):**
 

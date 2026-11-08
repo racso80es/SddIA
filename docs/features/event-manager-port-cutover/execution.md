@@ -12,25 +12,23 @@ phase: T8-cierre
 
 | Fase | Commit | Verificación |
 |------|--------|--------------|
-| T0–T3 | `18fa2048` | `cargo build -p execute-process` |
-| T1 | `1e99a3bb` | contract suite mock + Redb |
-| T4 | `2ec050ed` | DLT helpers + suite 1.2 |
-| T5 | (pendiente push) | `cargo build -p kalma2-bridge` |
-| T6 | (pendiente push) | `cargo build -p event-bus-audit` + purger |
-| T7 | (pendiente push) | productores sin `EventStore::open` |
-| T8 | (pendiente push) | tests paquetes núcleo |
+| T0–T3 | `18fa2048` … `ba60dd80` | `execute-process` motor puerto |
+| T4–T6 | `bc23aeec` | fractal_bus + event-bus-audit |
+| T7 | `ad9b200f` | `eda_port` productivo |
+| T8 | (rama) | `sddia-qa gate-event-manager-port`; CI + docs AC-9 |
 
 ## Gate CI
 
-`PENDIENTE-CI` — pendiente push PR `refactor/event-manager-port-cutover`.
+- `SddIA/target/debug/sddia-qa gate-event-manager-port --json`
+- Tests: `sddia-core` (event_manager), `sddia-infrastructure-redb-event`, `sddia-event-manager-host`, `event-bus-audit`, `execute-process --lib`
 
 ## Comandos locales (T8)
 
 ```bash
 cd SddIA
-cargo test -p sddia-core
-cargo test -p sddia-infrastructure-redb-event
-cargo test -p sddia-event-manager-host
+cargo build -p sddia-qa
+./target/debug/sddia-qa gate-event-manager-port
+cargo test -p sddia-core event_manager --lib
+cargo test -p event-bus-audit
 cargo test -p execute-process --lib
-cargo test -p kalma2-bridge progress_stream
 ```

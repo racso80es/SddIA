@@ -178,6 +178,24 @@ jobs:
           SddIA/target/debug/sddia-qa verify-tools-index
           SddIA/target/debug/sddia-qa verify-process-integrity
           SddIA/target/debug/sddia-qa verify-compiled-capsules
+          SddIA/target/debug/sddia-qa gate-event-manager-port --json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "SddIA -> target"
+          shared-key: native-test-em-port
+          add-job-id-key: "false"
+          cache-workspace-crates: "true"
+
+      - name: EventManagerPort contract & gate (MAN-35)
+        working-directory: SddIA
+        run: |
+          cargo test -p sddia-core event_manager --lib
+          cargo test -p sddia-infrastructure-redb-event -p sddia-event-manager-host --lib
+          cargo test -p event-bus-audit
+          cargo test -p execute-process --lib
 
       - name: Install protoc (lance-encoding)
         if: needs.changes.outputs.lance_memory == 'true'

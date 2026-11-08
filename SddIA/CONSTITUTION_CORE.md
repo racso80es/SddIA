@@ -30,7 +30,7 @@ Además de la Librería (§3), el genoma operativo del Core reconoce entidades d
 **Distinción ontológica innegociable:**
 
 - **Clase de Evento** (genoma): definición versionada bajo `directories.events` (`SddIA/events/`), gobernada por `events-contract.md`.
-- **Instancia de Evento** (runtime): fila del store `redb` (`.SddIA/runtime/events.redb`): tabla `events` para el ECST y tabla `subscriber_delivery` para el testigo de cada suscriptor. El modo fichero (`.events/`, padre en `pending/`, testigos en `subscribers/`) sigue vigente como transición hasta el cutover del PBI 07.
+- **Instancia de Evento** (runtime): frontera productiva **`EventManagerPort` ^1.2.0** → persistencia en `.SddIA/runtime/events.redb` vía adapter Redb (composition root `sddia-event-manager-host`). Rutas `/.events/*` son tokens lógicos de topología, no SSOT de cola. El crate `sddia-event-store` y modos `filesystem|dual` quedan limitados a laboratorio/tests; consumidores publican y consultan exclusivamente por el puerto (MAN-35).
 - **Personalización de instancia:** configuración táctica por proyecto bajo `.SddIA/events/`; **no** sustituye al bus federal.
 
 ## 4. Protocolos de Defensa y Validación

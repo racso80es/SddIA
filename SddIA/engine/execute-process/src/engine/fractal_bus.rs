@@ -1,6 +1,8 @@
 //! Utilidades bus fractal EDA (paridad subset `eda_bus_utils.py`).
 
-use super::eda_bus_topology::{safe_remove_path, subscriber_id, write_json_atomic};
+use super::eda_bus_topology::{safe_remove_path, subscriber_id};
+#[cfg(test)]
+use super::eda_bus_topology::write_json_atomic;
 use super::workspace::load_paths_config;
 use crate::core::parser::parse_frontmatter;
 use chrono::Utc;

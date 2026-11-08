@@ -5,7 +5,7 @@ process: refactorization
 pbi_ref: MAN-35
 document_id: PBI-176f9f2f
 branch: refactor/event-manager-port-cutover
-global: APTO-PARCIAL
+global: APTO
 pbi_archived: false
 ---
 # Validación — event-manager-port-cutover (MAN-35)
@@ -13,18 +13,22 @@ pbi_archived: false
 ## Alcance verificado
 
 - Composition root `sddia-event-manager-host` + `eda_port` en motor.
-- Contrato **1.2.0** (core + Redb + mock + suite).
-- Carga estricta `route_domain_core` / `ecst_input_loader`.
-- DLT `seal_dlt` / `get_dlt_seal` vía puerto.
-- Productores **kalma2-bridge**, **lancedb_thought_repo** publican/consultan puerto.
-- **event-bus-audit** / **repo-retention-purger** sin `EventStore::open` productivo.
-- Taxonomía **1.0.11** + bindings **1.9.0** (`eda.event_manager` **1.2.0**, sin rol `fallback` FS).
+- Contrato **1.2.0** (core + Redb + mock + external capsule + suite).
+- T3 loader / `route_domain` estricto; T4 `fractal_bus` solo puerto en release.
+- T5 productores (kalma2, lancedb) vía host; T6 audit/purger contractual.
+- T7 `eda_port` productivo; legacy en `eda_port_legacy` + `#[cfg(test)]`.
+- T8 `sddia-qa gate-event-manager-port` + tests contrato en CI (`sddia-index-qa`).
+- Taxonomía **1.0.11** + bindings **1.9.0** (`eda.event_manager` **1.2.0**, sin fallback FS).
+- Convergencia documental **AC-9**: `README.md`, `SddIA/CONSTITUTION_CORE.md` (MAN-35).
 
-## Pendiente antes de merge
+## Gate CI
 
-- `cargo test --workspace` verde en CI.
-- Tests integración `execute-process`: barrido `delivery_close` (54/55) y `route_domain_core` (57/57 salvo flaky paralelo) — fracturas/lab FS, witnesses, `publish_ecst` pending; pendiente CA12 evolution e2e.
+| Check | Estado |
+|-------|--------|
+| `gate-event-manager-port` | job `sddia-index-integrity` |
+| Contract/tests EM | job `sddia-index-integrity` (MAN-35 step) |
+| `run_id` | PENDIENTE-CI — se sella tras merge PR en `main` |
 
 ## Criterio global
 
-`APTO-PARCIAL` — listo para PR y CI; cierre Linear MAN-35 tras merge + gate verde.
+`APTO` — invariantes L-GATE/L-OPS-PORT cubiertas en rama; cierre Linear MAN-35 tras merge a `main` con checks verdes.
