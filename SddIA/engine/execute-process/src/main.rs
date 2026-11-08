@@ -6,7 +6,6 @@ use execute_process::engine::capsules::{invoke_action, invoke_tool_capsule_json}
 use execute_process::engine::eda_coverage;
 use execute_process::engine::verify_process_integrity;
 use execute_process::envelope::{emit, OrchestratorEnvelope};
-use execute_process::engine::eda_port;
 use execute_process::engine::run_process;
 use execute_process::forges::materialize_by_inputs;
 use serde_json::Value;
