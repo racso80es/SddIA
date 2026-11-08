@@ -8,13 +8,17 @@ branch_name: fix/man-38-redb-port-lock
 persist_ref: docs/fixes/man-38-redb-port-lock
 tracker_ref: MAN-38
 document_id: PBI-90397f23
-execution_id: "0c5d6ea9-b949-4b2e-859f-6f225504cdf3"
+execution_id: 0c5d6ea9-b949-4b2e-859f-6f225504cdf3
 source_process: bug-fix
 global: APTO
 pbi_archived: false
 approval_status: pendiente_argos
 verdict: pendiente_argos
 delivery_state: in_progress
+validated_base_sha: ee7a54f8c88bd951b88230460e8ca0b4687282c3
+validated_head_sha: 0224cfdbf0c08b7bd26275d8e2eba3f5b9f89f86
+validated_tree_sha: 9a08f4e82328e34726d65f73c8bf2d0088133564
+diff_digest: sha256:e8cb3d6cb532192f3f613a3c52031fc2be3e0c920fd6fcb338b970a86fa4c9be
 ---
 
 # Validación — man-38-redb-port-lock (Tekton)
