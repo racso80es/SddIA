@@ -166,3 +166,150 @@ execution_id: "1718099f-ca1b-44cb-8fb4-5a4dcccb98fe"
 - Actualizados: `implementation.md`, `execution.md`, `objectives.md` (T5 → `spec.md` §5 / v1.2.0); creado `validacion.md` **NO-APTO**.
 - T6 bloqueado: `run_check` → `CERBERO_DENY` (whitelist MCP vacía en `.SddIA/project.md`).
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T15:29:12Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T15:31:14Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-09T15:32:58Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `74fe273f-1c3d-446f-bcea-0e83d6829dac`
+- correlation_id: `9e231c01-5bd4-4482-9828-711cf4621d92`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream F3/F4/Veredicto pendientes.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocado: `docs/features/man-37-eda-test-pyramid/validacion.md` (Triaje documental Argos).
+- R1/R2: copia Evidence Bridge `native_state` → `TECH_FORMAL` / `GIT_EVIDENCE` **APTO** (sin stdout inventado).
+- Shell `git-manager` → Rejected; `git_changes` por path-assert FS.
+- F2: cascada objectives/clarify/spec/plan/implementation/execution + evolution `30d20d57-…` **APTO**.
+- R3 KM: 0 writes `docs/todos/**` → `RBAC_AUTHORING_KM_POLICY` **APTO**.
+- Rama FS = inject `refactor/man-37-eda-test-pyramid` @ `15d25c93…`; sellos DCC heredados.
+- Downstream F3/F4/Veredicto pendientes.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T15:32:59Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-09T15:33:18Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `d796aba5-5511-4b95-bbb4-7e44e7b9b068`
+- correlation_id: `c2d053da-7290-4104-a914-60e4b8983bbd`
+- pbi_ref: `MAN-37`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `_agent_handoff.md` no reescrito
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocado vía MCP: `docs/features/man-37-eda-test-pyramid/validacion.md`
+- Evidence Bridge: TECH/GIT **APTO** (copia `prosthesis_subprocess`); KM R3 **APTO** (0 writes `docs/todos/**`)
+- `branch` / `git_changes`: **APTO** (`refactor/man-37-eda-test-pyramid` = HEAD; porcelain MCP)
+- Cascada F2 completa; T6 smoke **NO_APTO** (CERBERO) no bloquea F2; sin inventar `cargo`/`sddia-qa` OK
+- `_agent_handoff.md` no reescrito
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T15:33:20Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-09T15:34:47Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `74fe273f-1c3d-446f-bcea-0e83d6829dac`
+- correlation_id: `9e231c01-5bd4-4482-9828-711cf4621d92`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `accept_pr_handoff: pending` (L-HANDOFF-F5; sin `pr_url`/MERGE).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Tocado: `docs/features/man-37-eda-test-pyramid/validacion.md` (fase Veredicto y bloqueo).
+- R1/R2: copia Evidence Bridge `native_state` → TECH/GIT **APTO** (sin stdout inventado).
+- F2 heredado `PASS_F2_DOC`; F4 PPR∉revoked; F3/T6 smoke **NO_APTO** no bloqueante.
+- R3 KM: 0 writes `docs/todos/**` → **APTO**; Shell git-manager Rejected.
+- `accept_pr_handoff: pending` (L-HANDOFF-F5; sin `pr_url`/MERGE).
+```
+
+## 2026-11-09T15:35:21Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `d796aba5-5511-4b95-bbb4-7e44e7b9b068`
+- correlation_id: `c2d053da-7290-4104-a914-60e4b8983bbd`
+- pbi_ref: `MAN-37`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `_agent_handoff.md` no reescrito; sin TODOs KM
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `BLOCK_F5` · `accept_pr_handoff: false`)
+
+- Tocado vía MCP: `docs/features/man-37-eda-test-pyramid/validacion.md`
+- R1/R2 copia Evidence Bridge `native_state` → TECH/GIT **APTO**; R3 KM **APTO** (0 writes `docs/todos/**`)
+- F2 DOC **APTO**; `branch` / `git_changes` **APTO** (`refactor/man-37-eda-test-pyramid`)
+- Bloqueo: T6 smoke `CERBERO_DENY` → AC-6/AC-8/F3/F5 **NO_APTO**; `.tmp/pr-body.md` marca tests `[x]` sin evidencia
+- `_agent_handoff.md` no reescrito; sin TODOs KM
+```

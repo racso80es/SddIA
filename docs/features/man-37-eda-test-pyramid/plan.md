@@ -1,4 +1,8 @@
 ---
+
+
+
+
 feature_name: man-37-eda-test-pyramid
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -28,7 +32,7 @@ rbac_ok: true
 scope: "Pirámide tests EDA — residual: inventario cerrado, adopción harness, paridad allowlist/gate, validacion"
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-37.jsonl"
-execution_id: "08a7564d-06ee-4558-8b37-9666572bcf00"
+execution_id: "74fe273f-1c3d-446f-bcea-0e83d6829dac"
 ---
 # Plan / Blueprint — man-37-eda-test-pyramid
 

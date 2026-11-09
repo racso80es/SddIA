@@ -1,4 +1,8 @@
 ---
+
+
+
+
 feature_name: man-37-eda-test-pyramid
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -9,13 +13,13 @@ pbi_ref: MAN-37
 parent_ref: MAN-35
 document_id: PBI-94396a84
 tracker_ref: MAN-37
-execution_id: "08a7564d-06ee-4558-8b37-9666572bcf00"
 agent: tekton
 phase: ejecucion
 status: inventory-closed-verify-blocked
 spec_ref: "spec.md@1.2.0"
 plan_ref: "plan.md@1.2.0"
 norm_ref: features-documentation-pattern@1.3.1
+execution_id: "74fe273f-1c3d-446f-bcea-0e83d6829dac"
 ---
 # Ejecución — man-37-eda-test-pyramid
 
