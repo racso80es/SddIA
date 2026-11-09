@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-36-event-manager-instance-config
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -10,10 +11,9 @@ pbi_ref: MAN-36
 tracker_ref: MAN-36
 document_id: PBI-0604fb3c
 agent: tekton
-execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
-status: code-delta-ca4-pending-verify
+status: t5-gates-ok-ppr-pending
+execution_id: "4e1bb38c-1e90-4216-9ed7-f68f82bd2368"
 ---
-
 # Ejecución — man-36-event-manager-instance-config
 
 ## Intentos orquestador
@@ -22,7 +22,7 @@ status: code-delta-ca4-pending-verify
 |---------|-----------|
 | Diseño `stop_after=design` | `4fc6eadd-…` — spec/plan v1.1.0 |
 | Tekton runtime | timeout histórico @ 600s |
-| Tekton IDE (esta pasada) | Delta CA-4 materializado vía MCP; T5 gates **no** corridos |
+| Tekton IDE (esta pasada) | Delta CA-4 materializado; T5 gates OK (2026-11-09) |
 
 ## Delta código (T2)
 
@@ -43,16 +43,17 @@ status: code-delta-ca4-pending-verify
 | T2 delta CA-4 | done (código) |
 | T3 Cúmulo | done (confirmado v1.12.0) |
 | T4 docs residuales | parcial — Constitución/env OK; README/gates a Argos |
-| T5 tests + gates | **blocked** — `run_check` CERBERO_DENY (sin `mcp.allowed_executables` en `.SddIA/project.md`) |
-| Argos + DCC | pendiente orquestador |
+| T5 tests + gates | done — `cargo test -p sddia-event-manager-host`; `gate-event-manager-port`; `gate-eda-unit-no-real-backend` |
+| Evolution | done — `f7687d4a-…` |
+| Argos + DCC | pendiente PPR foreground + DCC |
 
-## Evidencia pendiente (no inventar APTO)
+## Evidencia T5 (2026-11-09)
 
 ```bash
-cd SddIA && CARGO_TARGET_DIR=target cargo test -p sddia-event-manager-host --lib
-cd SddIA && CARGO_TARGET_DIR=target cargo build -p execute-process -p event-bus-audit
-SddIA/target/debug/sddia-qa gate-event-manager-port --json
-SddIA/target/debug/sddia-qa gate-eda-unit-no-real-backend --json
+cd SddIA && CARGO_TARGET_DIR=target cargo test -p sddia-event-manager-host --lib  # 15 passed
+SddIA/target/debug/sddia-qa gate-event-manager-port --json  # violation_count: 0
+SddIA/target/debug/sddia-qa gate-eda-unit-no-real-backend --json  # ok
+SddIA/target/debug/sddia-qa gate-evolution --json --range origin/main...HEAD  # tras commit evolution
 ```
 
 ## Notas
