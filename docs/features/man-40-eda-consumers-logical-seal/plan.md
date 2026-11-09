@@ -14,6 +14,7 @@
 
 
 
+
 feature_name: man-40-eda-consumers-logical-seal
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -42,7 +43,7 @@ scope: "Sello lógico PublishSeal/event_id en consumidores EDA; cero path Redb n
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-40.jsonl"
 forge_key: "bd5f4db27f549584d61e515fe85571b8fb2d5f3279161d9aa982ff2851471498"
-execution_id: "be6cdeb9-09cb-4eac-a0b6-8100846f5507"
+execution_id: "efb874c3-853e-425f-9aec-3e9a264b4103"
 ---
 # Plan / Blueprint — man-40-eda-consumers-logical-seal
 
