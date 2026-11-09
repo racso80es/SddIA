@@ -202,10 +202,25 @@ pub fn resolve_role_port(
 mod tests {
     use super::*;
     use sddia_core::ports::event_manager::EventManagerError;
+    use std::sync::Mutex;
     use tempfile::tempdir;
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn clear_em_env() {
+        for k in [
+            super::config::VAR_PROVIDER,
+            super::config::VAR_REDB_PATH,
+            super::config::VAR_FS_ROOT,
+        ] {
+            std::env::remove_var(k);
+        }
+    }
 
     #[test]
     fn default_resolves_redb_on_tempdir() {
+        let _g = ENV_LOCK.lock().unwrap();
+        clear_em_env();
         let dir = tempdir().expect("tempdir");
         let port = resolve_productive_port(dir.path()).expect("resolve");
         let hs = port
@@ -219,6 +234,8 @@ mod tests {
 
     #[test]
     fn vault_relative_redb_path_used() {
+        let _g = ENV_LOCK.lock().unwrap();
+        clear_em_env();
         let dir = tempdir().expect("tempdir");
         let root = dir.path();
         std::fs::create_dir_all(root.join(".SddIA/.dev")).unwrap();
