@@ -138,3 +138,220 @@ execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
 
 **Veredicto: ok**
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T17:43:06Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+## 2026-11-09T17:45:48Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `4e1bb38c-1e90-4216-9ed7-f68f82bd2368`
+- correlation_id: `4b3c3075-b88a-445c-9c2e-a9800b64f0b6`
+- pbi_ref: `MAN-36`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual no bloqueante: T5/F3 sin gates; cuerpo Linear ausente; sin evolution MAN-36 sighted
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Materializado vía MCP: `docs/features/man-36-event-manager-instance-config/validacion.md`
+- Evidence Bridge (copia): `TECH_FORMAL_EXECUTE_PROCESS` / `GIT_EVIDENCE_VIA_GIT_MANAGER` / `RBAC_AUTHORING_KM_POLICY` → **APTO**
+- Cascada F2 completa (objectives→execution); rama `refactor/man-36-event-manager-instance-config` @ `407c9be…`
+- `git_changes`: MCP `git_status` (docs dirty + forge-pbi untracked); sin inventar stdout shell
+- Residual no bloqueante: T5/F3 sin gates; cuerpo Linear ausente; sin evolution MAN-36 sighted
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T17:45:49Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-09T17:47:59Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `4e1bb38c-1e90-4216-9ed7-f68f82bd2368`
+- correlation_id: `4b3c3075-b88a-445c-9c2e-a9800b64f0b6`
+- pbi_ref: `MAN-36`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `accept_pr_handoff: false` — desbloqueo requiere T5 con evidencia
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `BLOCK_F3_TECH`)
+
+- Tocado vía MCP: `docs/features/man-36-event-manager-instance-config/validacion.md`
+- Evidence Bridge: `TECH_FORMAL` / `GIT_EVIDENCE` / `RBAC_AUTHORING_KM_POLICY` → **APTO** (`native_state` · idempotent-hit)
+- F2 DOC **APTO**; F3/T5 **NO_APTO** (execution honesto: tests no corridos) → bloquea F5
+- `branch` / `git_changes` **APTO** (MCP `git_status`; HEAD `407c9be…`)
+- `accept_pr_handoff: false` — desbloqueo requiere T5 con evidencia
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T17:50:14Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-09T17:52:20Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `716aba21-3983-4458-a49c-9315a538dd76`
+- correlation_id: `4b3c3075-b88a-445c-9c2e-a9800b64f0b6`
+- pbi_ref: `MAN-36`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual no bloqueante F2: tensión T5 implementation vs execution; workspace PPR vacío; cuerpo Linear ausente
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocado: `docs/features/man-36-event-manager-instance-config/validacion.md`
+- Evidence Bridge (copia): `TECH_FORMAL` / `GIT_EVIDENCE` / `RBAC_AUTHORING_KM_POLICY` → **APTO** (`native_state` · handoff-formal-scan; idempotent-hit)
+- Cascada F2 completa (objectives→execution + evolution `f7687d4a-…`); rama `refactor/man-36-event-manager-instance-config` @ `e579673c…`
+- `git_changes`: path-assert FS (Shell `git-manager` Rejected; sin stdout inventado)
+- Residual no bloqueante F2: tensión T5 implementation vs execution; workspace PPR vacío; cuerpo Linear ausente
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T17:52:20Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-09T17:54:49Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `716aba21-3983-4458-a49c-9315a538dd76`
+- correlation_id: `4b3c3075-b88a-445c-9c2e-a9800b64f0b6`
+- pbi_ref: `MAN-36`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - `accept_pr_handoff: false` — desbloqueo: alinear docs T5 + evidencia determinista
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (`global: NO_APTO` · `BLOCK_F3_TECH`)
+
+- Tocado: `docs/features/man-36-event-manager-instance-config/validacion.md`
+- Evidence Bridge: `TECH_FORMAL` / `GIT_EVIDENCE` / `RBAC_AUTHORING_KM_POLICY` → **APTO** (`native_state` · idempotent-hit)
+- F2 DOC **APTO**; F4 **APTO** (PPR∉revoked; 0 KM ilegítimo)
+- F3/T5 **NO_APTO** bloqueante: `DOC_HONESTY_T5` (implementation ≠ execution) + sin stdout cápsula T5
+- `branch` / `git_changes` **APTO** (FS path-assert; Shell git-manager Rejected)
+- `accept_pr_handoff: false` — desbloqueo: alinear docs T5 + evidencia determinista
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T17:55:11Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-09T17:57:12Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `4163f7d8-455e-45e3-9600-2ae355b99bc5`
+- correlation_id: `4b3c3075-b88a-445c-9c2e-a9800b64f0b6`
+- pbi_ref: `MAN-36`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual no bloqueante: clarify CA-4 stale; HEAD lag vs smoke; workspace PPR vacío; cuerpo Linear ausente
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocado: `docs/features/man-36-event-manager-instance-config/validacion.md`
+- Evidence Bridge (copia): `TECH_FORMAL` / `GIT_EVIDENCE` / `RBAC_AUTHORING_KM_POLICY` → **APTO** (`native_state` · handoff-formal-scan; idempotent-hit)
+- Cascada F2 completa (objectives→execution + evolution `f7687d4a-…`); `DOC_HONESTY_T5` APTO (`t5-smoke-evidence.txt`)
+- `branch` / `git_changes` **APTO** (FS path-assert; Shell git-manager Rejected — sin stdout inventado)
+- Residual no bloqueante: clarify CA-4 stale; HEAD lag vs smoke; workspace PPR vacío; cuerpo Linear ausente
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T17:57:12Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-09T17:59:24Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `4163f7d8-455e-45e3-9600-2ae355b99bc5`
+- correlation_id: `4b3c3075-b88a-445c-9c2e-a9800b64f0b6`
+- pbi_ref: `MAN-36`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `accept_pr_handoff: false` (pending · L-HANDOFF-F5; sin `pr_url`/MERGE)
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO`)
+
+- Tocado: `docs/features/man-36-event-manager-instance-config/validacion.md`
+- Evidence Bridge: `TECH_FORMAL` / `GIT_EVIDENCE` / `RBAC_AUTHORING_KM_POLICY` → **APTO** (`native_state` · idempotent-hit)
+- F2 **APTO**; F4 **APTO** (PPR∉revoked); F3 formal **NO_APTO** no bloqueante (proxy T5 smoke 15 passed + gates 0)
+- `branch` / `git_changes` **APTO** (FS path-assert; Shell git-manager Rejected)
+- `accept_pr_handoff: false` (pending · L-HANDOFF-F5; sin `pr_url`/MERGE)
+```

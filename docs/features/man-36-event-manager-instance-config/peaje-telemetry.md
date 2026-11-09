@@ -1,5 +1,8 @@
 ---
 
+
+
+
 uuid: "6eee8044-5601-42ed-b14f-57a113bffc9d"
 id: llm-interaction-audit-MAN-36
 type: audit
@@ -7,7 +10,7 @@ version: "1.0.0"
 tracker_ref: MAN-36
 process: llm-interaction-audit
 created: "2026-11-09"
-execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
+execution_id: "4163f7d8-455e-45e3-9600-2ae355b99bc5"
 ---
 # Auditoría de interacciones LLM — MAN-36
 

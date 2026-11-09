@@ -1,4 +1,7 @@
 ---
+
+
+
 feature_name: man-36-event-manager-instance-config
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -15,9 +18,9 @@ contract: "eda.event_manager"
 contract_version: "1.2.0"
 mayeuta_verdict: ok
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-36.jsonl"
 forge_key: "582d8a29c4f772596e7de259a8af20da3b0352e2f1354317c12574eadd31fa16"
+execution_id: "4163f7d8-455e-45e3-9600-2ae355b99bc5"
 ---
 # Clarificación — man-36-event-manager-instance-config
 

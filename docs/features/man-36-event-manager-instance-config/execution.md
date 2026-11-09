@@ -1,5 +1,7 @@
 ---
 
+
+
 feature_name: man-36-event-manager-instance-config
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -12,7 +14,7 @@ tracker_ref: MAN-36
 document_id: PBI-0604fb3c
 agent: tekton
 status: t5-gates-ok-ppr-pending
-execution_id: "4e1bb38c-1e90-4216-9ed7-f68f82bd2368"
+execution_id: "4163f7d8-455e-45e3-9600-2ae355b99bc5"
 ---
 # Ejecución — man-36-event-manager-instance-config
 

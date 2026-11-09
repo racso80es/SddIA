@@ -1,6 +1,7 @@
 ---
 
 
+
 feature_name: man-36-event-manager-instance-config
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -12,7 +13,7 @@ pbi_ref: MAN-36
 tracker_ref: MAN-36
 document_id: PBI-0604fb3c
 agent: tekton
-execution_id: "716aba21-3983-4458-a49c-9315a538dd76"
+execution_id: "4163f7d8-455e-45e3-9600-2ae355b99bc5"
 ---
 # Implementación — man-36-event-manager-instance-config
 
