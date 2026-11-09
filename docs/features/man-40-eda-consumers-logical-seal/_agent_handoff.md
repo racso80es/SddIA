@@ -53,3 +53,16 @@ Blueprint Dedalo v1.0.0 listo para Tekton (`status: blueprint-ready`, `rbac_ok: 
 
 **Entradas consumidas:** `objectives.md`, `clarify.md` (L-*). Evidencia viva confirma sello físico en `github_bridge::materialize_to_bus` y deuda FS/watcher/gate. No se reabrió MAN-36 ni se tocó `_agent_handoff.md`.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T21:02:26Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+formal_evidence_detail: "verify-process-integrity: OK"
+```

@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-40-eda-consumers-logical-seal
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -9,9 +10,9 @@ persist_ref: docs/features/man-40-eda-consumers-logical-seal
 pbi_ref: MAN-40
 tracker_ref: MAN-40
 document_id: PBI-1b004e99
-execution_id: "d5f40be9-1866-4813-a5b2-28a26faed56c"
 agent: tekton
 status: gates-local-ok
+execution_id: "953409f1-b3df-42d5-a8d0-69466a366e7d"
 ---
 # Ejecución — man-40-eda-consumers-logical-seal
 
