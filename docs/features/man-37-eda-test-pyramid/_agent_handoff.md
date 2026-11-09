@@ -96,3 +96,73 @@ execution_id: "1718099f-ca1b-44cb-8fb4-5a4dcccb98fe"
 - Diseño sellado: harness RAII sobre `install_port`, FaultInjection, inventario/migración/strip, taxonomía, gate unitario inverso a MAN-35.
 - Cuerpo Linear no en disco — no bloquea (L-TRACKER). `_agent_handoff.md` no reescrito.
 ```
+
+## 2026-11-09T15:16:59Z — Estabilización de alcance
+- process: `refactorization`
+- agents: `mayeuta`
+- execution_id: `08a7564d-06ee-4558-8b37-9666572bcf00`
+- correlation_id: ``
+- pbi_ref: `MAN-37`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `_agent_handoff.md` no reescrito.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Canal leído: `.SddIA/state/tracker-outbound/MAN-37.jsonl` (`PBI-94396a84`; cuerpo Linear no en disco — no bloquea).
+- Actualizados vía MCP: `docs/features/man-37-eda-test-pyramid/clarify.md`, `docs/features/man-37-eda-test-pyramid/objectives.md`.
+- Frontmatter `features-documentation-pattern@1.3.1`; fase `mayeuta-stabilization`; `execution_id` `08a7564d-…`; `spec_ref` `spec.md@1.1.0`.
+- Alcance sellado: harness RAII + FaultInjection; taxonomía; strip + gate unitario; T0–T6 / AC-1…8.
+- Evidencia viva: harness y gate presentes; residual T2/T3 vía allowlist/reclassify.
+- `_agent_handoff.md` no reescrito.
+```
+
+## 2026-11-09T15:19:49Z — Diseño de refactor
+- process: `refactorization`
+- agents: `dedalo`
+- execution_id: `08a7564d-06ee-4558-8b37-9666572bcf00`
+- correlation_id: ``
+- pbi_ref: `MAN-37`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `_agent_handoff.md` no reescrito.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok**
+
+- Materializados vía MCP: `docs/features/man-37-eda-test-pyramid/spec.md` (**v1.2.0**) y `plan.md` (**v1.2.0**).
+- Evidencia viva: harness (`eda_port::test_harness`) y gate (`gate_eda_unit_no_real_backend` + allowlist) **presentes**; §0 de v1.1.0 quedó obsoleto.
+- Blueprint residual para Tekton: cerrar inventario T1, migración T2, paridad allowlist T3/T4.P, docs T5, verificación T6 — **sin** re-forjar T0/T4.
+- PBI MAN-37 / PBI-94396a84: canal outbound leído; cuerpo Linear no en disco (**L-TRACKER**, no bloquea).
+- `_agent_handoff.md` no reescrito.
+```
+
+## 2026-11-09T15:24:06Z — Ejecución
+- process: `refactorization`
+- agents: `tekton`
+- execution_id: `08a7564d-06ee-4558-8b37-9666572bcf00`
+- correlation_id: ``
+- pbi_ref: `MAN-37`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `blocked`
+- message: - T6 bloqueado: `run_check` → `CERBERO_DENY` (whitelist MCP vacía en `.SddIA/project.md`).
+
+### Transcript (tail)
+
+```
+**Veredicto: blocked** (T6 / AC-8; forja documental residual OK)
+
+- Canal **MAN-37** / **PBI-94396a84** leído; cuerpo Linear ausente (no bloquea).
+- T0/T4 ya en árbol (harness + gate + CI); sin re-forja. T4.P paridad toml↔gate OK.
+- Inventario T1 cerrado en `docs/features/man-37-eda-test-pyramid/execution.md` (cero `pending`).
+- Actualizados: `implementation.md`, `execution.md`, `objectives.md` (T5 → `spec.md` §5 / v1.2.0); creado `validacion.md` **NO-APTO**.
+- T6 bloqueado: `run_check` → `CERBERO_DENY` (whitelist MCP vacía en `.SddIA/project.md`).
+```

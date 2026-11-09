@@ -17,7 +17,8 @@ mayeuta_verdict: ok
 phase: mayeuta-stabilization
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-37.jsonl"
-execution_id: "47b9678f-7ee1-4080-bd3e-12cf0d366069"
+execution_id: "08a7564d-06ee-4558-8b37-9666572bcf00"
+spec_ref: "spec.md@1.2.0"
 ---
 # Objetivos — man-37-eda-test-pyramid
 
@@ -35,10 +36,12 @@ Establecer la **pirámide de tests EDA**: todo test **unitario** que use eventos
 | Semilla / documento | **PBI-94396a84** (`refactorization`, `branch_pr`) |
 | Predecesor | `event-manager-port-cutover` (MAN-35) — puerto productivo + gate que omite `#[cfg(test)]` |
 | Mock existente | `InMemoryEventManagerMock` + `FaultInjection` en `sddia-core` (revalidado) |
-| Harness | **Pendiente de forja** (`EventManagerTestHarness` RAII sobre `eda_port::install_port`) |
-| Blueprint | `spec.md` v1.0.0 + `plan.md` T0…T6 en `persist_ref` |
+| Harness | **Presente** en `eda_port::test_harness` (RAII + faults canónicos); requisito **O1/AC-1** = uso canónico en unitarios EDA |
+| Gate unitario | **Presente** (`gate_eda_unit_no_real_backend` + `allowlists/eda-unit-backend.toml`); Done exige verde (**O6/AC-6**) |
+| Blueprint | `spec.md` **v1.2.0** + `plan.md` T0…T6 en `persist_ref` |
+| Taxonomía | Canónica en `spec.md` **§5** (unit / contract / integration / e2e) — **O5/AC-7** |
 | Clarificaciones | `clarify.md` (laudos L-* cerrados; veredicto **ok**) |
-| `execution_id` | `47b9678f-7ee1-4080-bd3e-12cf0d366069` |
+| `execution_id` | `08a7564d-06ee-4558-8b37-9666572bcf00` |
 
 ## Alcance (tajos T0–T6)
 
@@ -58,9 +61,9 @@ Establecer la **pirámide de tests EDA**: todo test **unitario** que use eventos
 |----|----------|-------------------|
 | **O1** | Harness RAII canónico | `EventManagerTestHarness` disponible y usado por unitarios EDA |
 | **O2** | Faults deterministas | `fail_write`, `steal_lease`, `duplicate_ack_noop` cubiertos en unitarios |
-| **O3** | Inventario cerrado | Cero unitarios EDA pendientes de migración/reclasificación |
+| **O3** | Inventario cerrado | Cero unitarios EDA pendientes de migración/reclasificación (allowlist + capa documentada = reclasificado) |
 | **O4** | Strip legacy en unitarios | Cero hits de APIs **L-STRIP** fuera de allowlist |
-| **O5** | Taxonomía documentada | Definición unit/contract/integration/e2e en `persist_ref` |
+| **O5** | Taxonomía documentada | Definición unit/contract/integration/e2e en `persist_ref` (`spec.md` §5) |
 | **O6** | Gate CI unitario | Check verde rechazando backend real en unitarios no allowlisted |
 | **O7** | Suite contractual intacta | `run_event_manager_contract_suite` (y peers) siguen en capa contract |
 | **O8** | Cierre documental | `validacion.md` APTO; Linear MAN-37 en estado done según provider |
@@ -75,12 +78,12 @@ Establecer la **pirámide de tests EDA**: todo test **unitario** que use eventos
 | **AC-4** | Redb, FS, host, CLI y cápsulas externas solo en contract/integration/e2e aislados. |
 | **AC-5** | Inventario T1 cerrado: migrados o reclasificados sin pendientes. |
 | **AC-6** | Gate CI falla ante backend real en unitarios no allowlisted. |
-| **AC-7** | Taxonomía unit/contract/integration/e2e documentada y referenciada. |
+| **AC-7** | Taxonomía unit/contract/integration/e2e documentada y referenciada (`spec.md` §5). |
 | **AC-8** | `validacion` global APTO solo tras AC-1…AC-7. |
 
 ## Fuera de alcance
 
-- Reabrir o revertir el cutover productivo MAN-35.
+- Reabrir o revertir el cutover productivo MAN-35 / composición scoped MAN-38.
 - Reintroducir modos `filesystem`/`dual` o `sddia-event-store` en runtime.
 - Reimplementar RedbEventAdapter / store desde cero.
 - Tokenizar o publicar cápsulas NFT.
@@ -94,6 +97,8 @@ Establecer la **pirámide de tests EDA**: todo test **unitario** que use eventos
 - `InMemoryEventManagerMock`, `FaultInjection`, `eda_port::install_port`/`clear_port`, `run_event_manager_contract_suite`.
 - Norma `features-documentation-pattern` v1.3.1.
 - Clarificaciones canónicas: `clarify.md` (laudos L-*).
+- Blueprint: `spec.md@1.2.0` / `plan.md` T0…T6.
+- Taxonomía operativa: `spec.md` §5.
 
 ## Ley aplicada
 
