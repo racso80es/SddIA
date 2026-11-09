@@ -398,7 +398,6 @@ mod tests {
     }
 
     fn record_presented_domain(dir: &Path, event: &Value) {
-        crate::engine::eda_port::clear_port();
         let mut ev = event.clone();
         sddia_eda_catalog::stamp_published_event(dir, &mut ev).expect("stamp");
         crate::engine::eda_port::record_ecst(dir, "domain", &ev).expect("record");
@@ -406,6 +405,7 @@ mod tests {
 
     #[test]
     fn presented_in_store_yields_tracker_ref() {
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let dir = std::env::temp_dir().join(format!("pbi-proc-{}", std::process::id()));
         test_repo_layout(&dir);
         record_presented_domain(
@@ -431,6 +431,7 @@ mod tests {
 
     #[test]
     fn presented_event_id_from_store_rows() {
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let dir = std::env::temp_dir().join(format!("pbi-pres-id-{}", std::process::id()));
         test_repo_layout(&dir);
         record_presented_domain(

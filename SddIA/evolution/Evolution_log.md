@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `30d20d57-389a-47a0-8da5-07c5015e324e` | 2026-11-09 | MAN-37: harness EDA unitarios, gate anti-backend real e index-qa CI | CANONICO | `SddIA/evolution/30d20d57-389a-47a0-8da5-07c5015e324e.md` |
 | `7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038` | 2026-11-08 | MAN-38: scoped EventManagerPort; watcher claim/ACK acotado; sin cache productiva en eda_port | CANONICO | `SddIA/evolution/7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038.md` |
 | `94772dd3-7612-415d-ac35-555f9a3b5213` | 2026-11-08 | MAN-35: cutover EventManagerPort 1.2 productivo + gate T8 + AC-9. | CANONICO | `SddIA/evolution/94772dd3-7612-415d-ac35-555f9a3b5213.md` |
 | `a176f9f2-8b3c-4d1e-9f70-35eda12b0c01` | 2026-11-08 | MAN-35: capability-taxonomy 1.0.11 (eda:event-manager 1.2.0) + capability-bindings 1.9.0. | CANONICO | `SddIA/evolution/a176f9f2-8b3c-4d1e-9f70-35eda12b0c01.md` |

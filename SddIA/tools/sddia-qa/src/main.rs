@@ -1,5 +1,6 @@
 mod gate_evolution;
 mod gate_event_manager_port;
+mod gate_eda_unit_no_real_backend;
 mod verify_hooks;
 mod eda_e2e_lab;
 mod iota_ci_smoke;
@@ -44,6 +45,7 @@ Comandos:\n\
   migrate-evolution-history manifest|apply|verify|reindex [--json] [--write PATH] [--manifest PATH] [--lote L1|L2|L3|L4] [--dry-run]\n\
   gate-evolution [--json] [--range|--all] [--if-touched] [--sync-base] [--require-synced-base]\n\
   gate-event-manager-port [--json]\n\
+  gate-eda-unit-no-real-backend [--json]\n\
   verify-hooks [--json] [--fix]\n\
   workspace-prune --empty [--json]\n\
   evolution-rehash --id <uuid> [--json] [--dry-run]\n\
@@ -203,6 +205,9 @@ fn main() {
         "gate-evolution" => gate_evolution::run_gate(&repo, rest),
         "gate-event-manager-port" => {
             gate_event_manager_port::run(&repo, has_flag(rest, "--json"))
+        }
+        "gate-eda-unit-no-real-backend" => {
+            gate_eda_unit_no_real_backend::run(&repo, has_flag(rest, "--json"))
         }
         "verify-hooks" => verify_hooks::run(
             &repo,

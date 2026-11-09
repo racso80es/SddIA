@@ -121,18 +121,13 @@ pub fn verify_ecst_matches_bus(repo: &Path, event: &Value) -> Result<(), String>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::eda_port::test_lab::ParallelLabGuard;
     use serde_json::json;
-    use sddia_core::ports::event_manager::InMemoryEventManagerMock;
-    use std::sync::Arc;
 
     #[test]
     fn verify_rejects_mismatch_on_mock_port() {
-        let _g = ParallelLabGuard::acquire();
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let repo = tempfile::tempdir().expect("tempdir");
         let repo = repo.path();
-        let mock = Arc::new(InMemoryEventManagerMock::new());
-        crate::engine::eda_port::install_port(mock);
         let eid = "11111111-1111-4111-8111-111111111111";
         crate::engine::eda_port::record_ecst(
             repo,
@@ -153,6 +148,5 @@ mod tests {
             verify_ecst_matches_bus(repo, &inline).unwrap_err(),
             "ecst_mismatch"
         );
-        crate::engine::eda_port::clear_port();
     }
 }
