@@ -93,10 +93,6 @@ fn get_repo_root() -> Result<PathBuf, String> {
     }
 }
 
-fn resolved_redb_path_for_audit(repo: &Path) -> Result<PathBuf, String> {
-    sddia_event_manager_host::resolved_redb_path(repo)
-}
-
 fn resolve_bus_paths(repo: &Path) -> Result<BusPaths, String> {
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
     let text = fs::read_to_string(&cfg_path).map_err(|e| e.to_string())?;
@@ -979,7 +975,7 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
     #[cfg(not(test))]
     {
         let mut state = ScanState::default();
-        let path = match resolved_redb_path_for_audit(repo) {
+        let path = match sddia_event_manager_host::resolved_redb_path(repo) {
             Ok(p) => rel_path(repo, &p),
             Err(_) => "(unresolved)".into(),
         };
