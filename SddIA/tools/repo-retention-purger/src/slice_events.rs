@@ -2,7 +2,7 @@
 
 use crate::plan::PlanCandidate;
 use sddia_core::ports::event_manager::ListDlqRequest;
-use sddia_event_manager_host::{events_redb_path, with_productive_port};
+use sddia_event_manager_host::{productive_store_present, with_productive_port};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -28,8 +28,7 @@ fn rel_from_repo(repo: &Path, abs: &Path) -> Option<String> {
 }
 
 fn indexed_dead_letters(repo: &Path) -> HashSet<String> {
-    let db = events_redb_path(repo);
-    if !db.is_file() {
+    if !productive_store_present(repo) {
         return HashSet::new();
     }
     with_productive_port(repo, "list_dlq_index", |port| {

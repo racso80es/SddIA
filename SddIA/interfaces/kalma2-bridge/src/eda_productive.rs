@@ -7,14 +7,10 @@ use sddia_core::ports::event_manager::{
     publish_ecst, GetEventRequest, ListDlqRequest, ListEventsRequest, ListPendingRequest,
     ListProgressRequest,
 };
-use sddia_event_manager_host::{events_redb_path, with_productive_port};
-
-pub fn db_path(repo: &Path) -> PathBuf {
-    events_redb_path(repo)
-}
+use sddia_event_manager_host::{productive_store_present, with_productive_port};
 
 pub fn store_active(repo: &Path) -> bool {
-    db_path(repo).is_file()
+    productive_store_present(repo)
 }
 
 pub fn publish_pending(repo: &Path, event: &Value) -> Result<(), String> {
@@ -37,7 +33,11 @@ pub fn domain_event(
             .list_dlq(ListDlqRequest { limit: Some(10_000) })
             .map(|r| r.events.iter().any(|e| e.event_id == event_id))
             .unwrap_or(false);
-        Ok((db_path(repo), row.ecst, in_dead))
+        Ok((
+            PathBuf::from(format!(".events/domain/{event_id}.json")),
+            row.ecst,
+            in_dead,
+        ))
     })
     .ok()
 }

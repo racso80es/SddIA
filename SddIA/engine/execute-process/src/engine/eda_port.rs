@@ -7,13 +7,13 @@ use std::sync::Arc;
 
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
-    append_progress_monotonic, events_redb_path, load_dispatched_event,
+    append_progress_monotonic, load_dispatched_event,
     publish_ecst as publish_ecst_on_port,
     record_delivery_ack as record_delivery_ack_on_port, record_ecst as record_ecst_on_port,
     EventManagerPort, GetDltSealRequest, GetDltSealResult, ListDlqRequest, ListEventsRequest,
     SealDltRequest, VerifyInlineEcstRequest, PublishSeal,
 };
-use sddia_event_manager_host::{resolve_productive_port, with_productive_port};
+use sddia_event_manager_host::{resolve_productive_port, resolved_redb_path, with_productive_port};
 
 /// Ruta de directorio (no fichero `.redb`).
 pub fn is_filesystem_rel(raw: &str) -> bool {
@@ -28,8 +28,11 @@ thread_local! {
     static PORT_REPO: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
 }
 
+/// Delegación al composition root (ruta física solo resuelta en host; MAN-36).
+/// Preferir `with_event_port` / puerto; no asumir default cableado.
 pub fn runtime_db_path(repo: &Path) -> PathBuf {
-    events_redb_path(repo)
+    resolved_redb_path(repo)
+        .unwrap_or_else(|_| repo.join(sddia_event_manager_host::DEFAULT_REDB_REL))
 }
 
 /// Mock / DI de test: persiste en thread-local sin abrir Redb.

@@ -11,7 +11,7 @@ execution:
 hash_signature: sha256:2477e5bcb6b1a8aab3282a95d2851b9f9024aa5119fa0bf0e84ed2bbda2c49ef
 jurisdiction: Aislada — Ceguera Lógica. Reclama pending (claim_store_pending) y fractal (claim_store_fractal) del store o ficheros .events/pending. En redb no enruta JSON residual (F-EDA-RESIDUAL-FILESYSTEM / F-EDA-RESIDUAL-FRACTAL). Side-channel latidos en .SddIA/daemons/state/heartbeats/ sin fila ECST. No abre el ECST en el claim.
 name: event-watcher
-source_sha256: sha256:029e21135eb70659b5cc74b4f9a6331e7f8cf72d8c90fb6e60df6abe2bfc0be0
+source_sha256: sha256:b82b7486df46bfd56c55a24f1eea22499364fa5b29a5c4a1ac4dbf0ce3610c2f
 telemetry_provided: true
 telemetry_schema:
 - uptime_seconds

@@ -2,12 +2,13 @@
 name = "sddia-event-manager-host"
 version = "0.1.0"
 edition = "2021"
-description = "Composition root: EventManagerDiFactory + adapter:redb-event-adapter (default)"
+description = "Composition root: EventManagerDiFactory + adapter:redb-event-adapter (default); bóveda soberana MAN-36"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
 sddia-core = { path = "../sddia-core" }
 sddia-infrastructure-redb-event = { path = "../infrastructure/adapters/redb_event_adapter" }
+sddia-infrastructure-fs-event = { path = "../infrastructure/adapters/fs_event_adapter" }
 
 [dev-dependencies]
 tempfile = "3.10"

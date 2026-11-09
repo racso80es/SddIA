@@ -93,6 +93,12 @@ fn get_repo_root() -> Result<PathBuf, String> {
     }
 }
 
+fn resolved_redb_path_for_audit(repo: &Path) -> PathBuf {
+    sddia_event_manager_host::resolved_redb_path(repo).unwrap_or_else(|_| {
+        repo.join(sddia_event_manager_host::DEFAULT_REDB_REL)
+    })
+}
+
 fn resolve_bus_paths(repo: &Path) -> Result<BusPaths, String> {
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
     let text = fs::read_to_string(&cfg_path).map_err(|e| e.to_string())?;
@@ -849,10 +855,12 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
         DeliveryStatus as PortDeliveryStatus, GetEventRequest, ListDeliveriesRequest,
         ListDlqRequest, ListPendingRequest,
     };
-    use sddia_event_manager_host::{events_redb_path, with_productive_port};
+    use sddia_event_manager_host::{productive_store_present, resolved_redb_path, with_productive_port};
 
-    let db = events_redb_path(repo);
-    if !db.is_file() {
+    let db = resolved_redb_path(repo).unwrap_or_else(|_| {
+        repo.join(sddia_event_manager_host::DEFAULT_REDB_REL)
+    });
+    if !productive_store_present(repo) && !db.is_file() {
         return ScanState::default();
     }
     match with_productive_port(repo, "audit_scan", |port| {
@@ -966,13 +974,13 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
 
 fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusPaths), String> {
     let paths = resolve_bus_paths(repo)?;
-    if sddia_event_manager_host::events_redb_path(repo).is_file() {
+    if sddia_event_manager_host::productive_store_present(repo) {
         return Ok((audit_state_from_store(repo, &paths), paths));
     }
     #[cfg(not(test))]
     {
         let mut state = ScanState::default();
-        let db = sddia_event_manager_host::events_redb_path(repo);
+        let db = resolved_redb_path_for_audit(repo);
         state.anomalies.push(Anomaly {
             kind: "store_missing".into(),
             path: rel_path(repo, &db),
