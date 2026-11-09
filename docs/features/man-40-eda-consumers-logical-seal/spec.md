@@ -6,6 +6,9 @@
 
 
 
+
+
+
 feature_name: man-40-eda-consumers-logical-seal
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -28,7 +31,7 @@ status: blueprint-ready
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-40.jsonl"
 forge_key: "bd5f4db27f549584d61e515fe85571b8fb2d5f3279161d9aa982ff2851471498"
-execution_id: "d0942510-6db3-412b-84e2-62de7359dd2e"
+execution_id: "0693c537-49f4-41a4-9859-069071d05e55"
 ---
 # Especificación técnica — man-40-eda-consumers-logical-seal
 
