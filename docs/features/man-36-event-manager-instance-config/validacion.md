@@ -144,8 +144,8 @@ authorization_status:
   emitter_agent: argos
   note: PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL + t5-smoke-evidence) · PPR∉revoked/permanent · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · accept_pr_handoff pending (L-HANDOFF-F5)
 validated_base_sha: de129b8d159b4db6ed55d67830bfbf6c05f75f07
-validated_head_sha: e267ebf9341d83cc34e4e1ad272f4731e766f61b
-validated_tree_sha: 3330e3c177df1b0e62747385b92c97c222dccdb2
+validated_head_sha: 1c0e601e2b945c4157f154976993741ad9bacd0e
+validated_tree_sha: 93dfb20f8a7a6c388a56ec52d711fe7ff8525fe9
 diff_digest: sha256:0b096cf3ba4e1a8de76f3bc23cac57029cbaaa0692d10622f11d6ddd6ce5b046
 ---
 
