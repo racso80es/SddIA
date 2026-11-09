@@ -1,4 +1,6 @@
 ---
+
+
 feature_name: man-36-event-manager-instance-config
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -10,9 +12,8 @@ pbi_ref: MAN-36
 tracker_ref: MAN-36
 document_id: PBI-0604fb3c
 agent: tekton
-execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
+execution_id: "716aba21-3983-4458-a49c-9315a538dd76"
 ---
-
 # Implementación — man-36-event-manager-instance-config
 
 ## T0–T1 — Bóveda y host (previos; auditados)
@@ -39,5 +40,6 @@ execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
 
 ## Verificación
 
-- Compilación/tests: **no ejecutados** en esta pasada — MCP `run_check` denegado (`project.md` sin `mcp.allowed_executables`).
+- T5 (2026-11-09): `cargo test -p sddia-event-manager-host --lib` — 15 passed; `gate-event-manager-port` — `violation_count: 0`; `gate-eda-unit-no-real-backend` — ok; `gate-evolution --range origin/main...HEAD` — ok (`f7687d4a-…`).
+- Evidencia determinista: `t5-smoke-evidence.txt` (HEAD + stdout cápsulas).
 - Grep allowlist: `DEFAULT_REDB_REL` solo en `sddia-event-manager-host` (+ comentario en `eda_port`).
