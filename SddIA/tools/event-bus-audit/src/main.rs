@@ -93,10 +93,8 @@ fn get_repo_root() -> Result<PathBuf, String> {
     }
 }
 
-fn resolved_redb_path_for_audit(repo: &Path) -> PathBuf {
-    sddia_event_manager_host::resolved_redb_path(repo).unwrap_or_else(|_| {
-        repo.join(sddia_event_manager_host::DEFAULT_REDB_REL)
-    })
+fn resolved_redb_path_for_audit(repo: &Path) -> Result<PathBuf, String> {
+    sddia_event_manager_host::resolved_redb_path(repo)
 }
 
 fn resolve_bus_paths(repo: &Path) -> Result<BusPaths, String> {
@@ -855,12 +853,9 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
         DeliveryStatus as PortDeliveryStatus, GetEventRequest, ListDeliveriesRequest,
         ListDlqRequest, ListPendingRequest,
     };
-    use sddia_event_manager_host::{productive_store_present, resolved_redb_path, with_productive_port};
+    use sddia_event_manager_host::{productive_store_present, with_productive_port};
 
-    let db = resolved_redb_path(repo).unwrap_or_else(|_| {
-        repo.join(sddia_event_manager_host::DEFAULT_REDB_REL)
-    });
-    if !productive_store_present(repo) && !db.is_file() {
+    if !productive_store_present(repo) {
         return ScanState::default();
     }
     match with_productive_port(repo, "audit_scan", |port| {
@@ -962,9 +957,13 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
         Ok(s) => s,
         Err(err) => {
             let mut state = ScanState::default();
+            let path = match sddia_event_manager_host::resolved_redb_path(repo) {
+                Ok(p) => rel_path(repo, &p),
+                Err(_) => "(unresolved)".into(),
+            };
             state.anomalies.push(Anomaly {
                 kind: "store_unavailable".into(),
-                path: rel_path(repo, &db),
+                path,
                 detail: err,
             });
             state
@@ -980,10 +979,13 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
     #[cfg(not(test))]
     {
         let mut state = ScanState::default();
-        let db = resolved_redb_path_for_audit(repo);
+        let path = match resolved_redb_path_for_audit(repo) {
+            Ok(p) => rel_path(repo, &p),
+            Err(_) => "(unresolved)".into(),
+        };
         state.anomalies.push(Anomaly {
             kind: "store_missing".into(),
-            path: rel_path(repo, &db),
+            path,
             detail: "events.redb ausente; escaneo FS deshabilitado (cutover puerto)".into(),
         });
         return Ok((state, paths));

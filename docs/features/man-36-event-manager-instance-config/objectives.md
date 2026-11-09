@@ -26,7 +26,7 @@ execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
 
 Desacoplar la **configuración física** de los backends Redb y FS del Core: cada instancia resuelve proveedor y ruta desde su bóveda; Cúmulo conserva únicamente topología/identificadores lógicos ECST. El composition root `sddia-event-manager-host` valida y construye el adaptador; los consumidores siguen viendo solo `EventManagerPort` 1.2. Tracker **MAN-36** (padre **MAN-35**, documento **PBI-0604fb3c**).
 
-**Por qué:** tras MAN-32/33/35 el puerto y el cutover Redb están asentados, pero el host sigue cableando `.SddIA/runtime/events.redb` (`events_redb_path`) y Cúmulo declara esa ruta en `event_bus` / `eda_*.store`. Esa mezcla acopla topología lógica a decisiones de despliegue y obliga a tocar código o `cumulo.paths.json` para reubicar el store.
+**Por qué:** tras MAN-32/33/35 el puerto y el cutover Redb están asentados, pero la soberanía de ubicación del store debe vivir en la bóveda de instancia — no en Cúmulo ni en paths cableados del Core. Sin ese límite, cada layout de despliegue contamina topología lógica y documentación.
 
 ## Contexto estabilizado
 
@@ -36,10 +36,10 @@ Desacoplar la **configuración física** de los backends Redb y FS del Core: cad
 | Semilla / documento | **PBI-0604fb3c** (`refactorization`, `branch_pr`; forge sellada) |
 | Predecesor | `event-manager-port-cutover` (MAN-35) — puerto 1.2 + Redb productivo |
 | Adyacente | MAN-37 (pirámide tests) — no bloqueante |
-| Deuda viva (revalidada) | `events_redb_path` cableado en host; stores físicos en `cumulo.paths.json` v1.11.1; `.dev/.env.example` aún menciona `SDDIA_EVENT_STORE` |
+| Evidencia viva (revalidada) | Host con `config.rs` (vars + precedencia + path policy); Cúmulo **v1.12.0** sin stores físicos; `.dev/.env.example` con `SDDIA_EVENT_MANAGER_*`; bridge con token lógico; residuo: `eda_port::runtime_db_path` aún expone PathBuf |
 | Bóvedas | `env_hierarchy`: global `.dev/.env`, instancia `.SddIA/.dev/.env` |
 | Clarificaciones | `clarify.md` (laudos L-* cerrados; veredicto **ok**) |
-| Continuidad | Blueprint Dedalo (`spec.md` / `plan.md`) alineado a estos objetivos |
+| Continuidad | Blueprint Dedalo + forja Tekton alineados a estos objetivos |
 | `execution_id` | `4fc6eadd-78b9-4022-8991-ed39d911e9af` |
 
 ## Alcance (tajos T0–T5)

@@ -1,6 +1,7 @@
 ---
 feature_name: man-36-event-manager-instance-config
 created: "2026-11-09"
+updated: "2026-11-09"
 process: refactorization
 phase: implementacion
 branch_name: refactor/man-36-event-manager-instance-config
@@ -14,28 +15,29 @@ execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
 
 # Implementación — man-36-event-manager-instance-config
 
-## T0–T1 — Bóveda y host
+## T0–T1 — Bóveda y host (previos; auditados)
 
-- `SddIA/sddia-event-manager-host/src/config.rs`: resolución `SDDIA_EVENT_MANAGER_*`, validación L-PATH-POLICY, precedencia SO > instancia > global.
-- `lib.rs`: factory productiva desde config; API `resolved_redb_path`, `productive_store_present`, `is_resolved_redb_path`; retirado `events_redb_path` público.
-- `.dev/.env.example`: bloque MAN-36; deprecación `SDDIA_EVENT_STORE` productivo.
+- `SddIA/sddia-event-manager-host/src/config.rs`: resolución `SDDIA_EVENT_MANAGER_*`, L-PATH-POLICY, precedencia SO > instancia > global; `DEFAULT_REDB_REL` solo aquí.
+- `lib.rs`: factory productiva; `resolved_redb_path` / `productive_store_present` / `is_resolved_redb_path`; sin `events_redb_path` público.
+- `.dev/.env.example`: bloque MAN-36; legacy `SDDIA_EVENT_STORE` marcado retirado.
 
-## T2 — Consumidores
+## T2 — Delta CA-4 (esta pasada Tekton)
 
-- `runtime_bridge.rs`: `PublishSeal` con token lógico `.events/{family}/{id}.json`.
-- `eda_port.rs`: `runtime_db_path` delega en host.
-- `github_bridge`, `event-bus-audit`, `kalma2-bridge`, `linear_bridge`, purger: sin API path cableada legacy.
+- `eda_port.rs`: retirado fallback `repo.join(DEFAULT_REDB_REL)`; `runtime_db_path` delega solo a `resolved_redb_path` (pánico determinista si la bóveda es inválida). Helpers `path_is_resolved_redb` / `store_present`.
+- `route_domain_core.rs`: detección vía `path_is_resolved_redb`; presencia store vía `store_present`.
+- `fractal.rs` / `eda_bus.rs`: `target_path` = token lógico `.events/{family}/{id}.json` (L-LOGICAL-EVENTS).
+- `system_vitality.rs`: sonda sin `create_dir_all` de ruta física; solo `probe_productive_handshake`.
+- `event-bus-audit`: cero `DEFAULT_REDB_REL`; `resolved_redb_path_for_audit` → `Result`; escaneo vía `productive_store_present` + `with_productive_port`.
 
 ## T3 — Cúmulo
 
-- `cumulo.paths.json` v1.12.0: eliminados `event_bus`, `eda_bus.store`, `eda_fractal.store`.
+- `cumulo.paths.json` v1.12.0: sin `event_bus` / `eda_*.store` físicos (confirmado).
 
 ## T4 — Documentación
 
-- `README.md`, `CONSTITUTION_CORE.md` §3.1: límite Core/instancia y bóveda.
-- Genomas tool/daemon: referencias al puerto (sin path físico en descripciones).
+- Constitución §3.1 + plantilla bóveda ya alineadas; README/gates residuales para Argos si drift.
 
-## Tests
+## Verificación
 
-- `sddia-event-manager-host`: 15 tests (precedencia, rutas, roles).
-- Compilación: `execute-process`, `sddia-daemon-runtime`, `event-bus-audit`, `kalma2-bridge`.
+- Compilación/tests: **no ejecutados** en esta pasada — MCP `run_check` denegado (`project.md` sin `mcp.allowed_executables`).
+- Grep allowlist: `DEFAULT_REDB_REL` solo en `sddia-event-manager-host` (+ comentario en `eda_port`).

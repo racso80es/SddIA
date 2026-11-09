@@ -15,7 +15,7 @@ contract: "eda.event_manager"
 contract_version: "1.2.0"
 agent: dedalo
 phase: diseno-blueprint
-version_spec: "1.0.1"
+version_spec: "1.1.0"
 status: blueprint-ready
 norm_ref: features-documentation-pattern@1.3.1
 execution_id: "4fc6eadd-78b9-4022-8991-ed39d911e9af"
@@ -27,19 +27,21 @@ forge_key: "582d8a29c4f772596e7de259a8af20da3b0352e2f1354317c12574eadd31fa16"
 Entrada: `objectives.md` + `clarify.md` (laudos L-*) + semilla **PBI-0604fb3c** / canal **MAN-36** (padre **MAN-35**).
 Contrato `eda.event_manager` **1.2.0** e invariantes MAN-35 **inalterados**; este ciclo mueve solo la soberanía de **configuración física** del backend.
 Cuerpo Linear MAN-36: **no materializado** en disco; canal outbound + semilla + laudos + AC bastan (**L-TRACKER**).
-Pasada Dedalo: revalidación post-Mayeuta (`execution_id` actual) → blueprint **v1.0.1**.
+Pasada Dedalo `execution_id` **4fc6eadd-…**: revalidación post-Mayeuta → blueprint **v1.1.0** (evidencia viva alineada; delta residual CA-4 explícito).
 
 ## 0. Evidencia viva (revalidada 2026-11-09 — execution_id actual)
 
 | Artefacto | Estado vivo | Implicación forja |
 |-----------|-------------|-------------------|
-| `SddIA/sddia-event-manager-host/src/lib.rs` | `events_redb_path(repo)` → `.SddIA/runtime/events.redb`; `productive_factory` abre esa ruta; lee `SDDIA_EVENT_MANAGER_OPEN_BUDGET_MS` | **T1:** resolver proveedor/ruta desde bóveda; validar antes de open |
-| `sddia-core/.../runtime_bridge.rs` | Segunda copia de `events_redb_path`; `PublishSeal.target_path` = ruta física Redb | **T2:** retirar path físico del puente; sello sin disco |
-| `execute-process/.../eda_port.rs` | `runtime_db_path` reexporta `events_redb_path` del core; consumidores productivos ya usan `with_productive_port` | **T2:** eliminar API productivos que asumen Redb path |
-| `SddIA/core/cumulo.paths.json` v1.11.1 | `event_bus`, `eda_bus.store`, `eda_fractal.store` = `.SddIA/runtime/events.redb`; `env_hierarchy` ya declara `.dev/.env` / `.SddIA/.dev/.env` | **T3:** quitar stores físicos; conservar tablas/ids/suscripciones |
-| `.dev/.env.example` | Documenta `SDDIA_EVENT_STORE` legacy (y comenta SSOT en Cúmulo) | **T0/T4:** migrar a `SDDIA_EVENT_MANAGER_*` |
-| Capacidad / contrato | `eda:event-manager` @ 1.2.0; roles default/test/capsule:*; sin fallback FS prod | Sin bump de ops; solo docs de soberanía de config |
-| Consumidores host | watchers/audit/daemons vía `with_productive_port` / `resolve_productive_port` | Ya no abren store directo; deben dejar de conocer path (**CA-4**) |
+| `SddIA/sddia-event-manager-host/src/config.rs` | `resolve_var` / `resolve_backend_config` / `validate_configured_path`; vars `SDDIA_EVENT_MANAGER_*`; precedencia SO>instancia>global; errores deterministas (`Empty`/`Traversal`/`EscapeRepo`/`FsNotAllowedInProd`) | **T0–T1 hechos** en árbol; no reabrir diseño de resolución |
+| `SddIA/sddia-event-manager-host/src/lib.rs` | `productive_factory` / `resolve_productive_port` / `with_productive_port` desde config; `resolved_redb_path` + `productive_store_present` + `is_resolved_redb_path`; `resolve_fs_port` solo test/migración; **sin** `events_redb_path` público | Host = composition root soberano (**L-COMPOSE**) |
+| `sddia-core/.../runtime_bridge.rs` | `PublishSeal.target_path` = token lógico `.events/{family}/{id}.json` | **T2 bridge OK** (**L-LOGICAL-EVENTS**) |
+| `execute-process/.../eda_port.rs` | Ops productivas vía `with_productive_port`; **residuo CA-4:** `runtime_db_path` aún `pub` y, si `resolved_redb_path` falla, hace fallback a `repo.join(DEFAULT_REDB_REL)` | **Delta forja:** retirar API o devolver solo `Result` del host — **prohibido** reinventar default cableado en el consumidor |
+| `SddIA/core/cumulo.paths.json` | **v1.12.0** — sin `event_bus` / `eda_*.store`; tablas/ids/suscripciones + `env_hierarchy` | **T3 hecho** (**L-CUMULO-LOGICAL** / **CA-3**) |
+| `.dev/.env.example` | Bloque MAN-36 + precedencia; legacy `SDDIA_EVENT_STORE` marcado retirado | **T0 plantilla hecha** |
+| `CONSTITUTION_CORE.md` §3.1 | Persistencia vía puerto; ubicación física = bóveda; Cúmulo lógico | **T4 Constitución hecha** (**CA-8** parcial) |
+| Capacidad / contrato | `eda:event-manager` @ 1.2.0; sin bump de ops | Sin cambio de protocolo |
+| Docs forja previas | `implementation.md` / `execution.md` (Tekton: T0–T5 narrados; cierre Argos pendiente) | Blueprint v1.1.0 orienta **cierre residual + verificación**, no reescritura ciega |
 
 ## 1. Contexto y decisión
 
@@ -52,7 +54,7 @@ Desacoplar **configuración física** (proveedor + rutas Redb/FS) del Core/Cúmu
 | Precedencia | **L-PRECEDENCE** — SO > instancia > global (**CA-6**) |
 | Variables | **L-VARS** — `SDDIA_EVENT_MANAGER_PROVIDER`, `SDDIA_EVENT_MANAGER_REDB_PATH`, `SDDIA_EVENT_MANAGER_FS_ROOT` |
 | Composición | **L-COMPOSE** — solo host/adaptador conocen físico (**CA-4**) |
-| Default Redb | **L-REDB-DEFAULT** — provider default `redb`; ruta default canónica bajo `repo_root` si no hay config |
+| Default Redb | **L-REDB-DEFAULT** — provider default `redb`; ruta default canónica bajo `repo_root` si no hay config — **decidida solo por el host** |
 | FS | **L-FS-LIMIT** — solo test/migración; raíz solo del host (**CA-2**/**CA-7**) |
 | Rutas | **L-PATH-POLICY** — relativas acotadas a `repo_root`; absolutas válidas; inválidas fallan antes de open (**CA-5**) |
 | Cúmulo | **L-CUMULO-LOGICAL** — cero stores físicos Redb/`.events` storage (**CA-3**) |
@@ -81,11 +83,11 @@ flowchart TB
 
 Reglas de capas:
 
-1. **Consumidor** → solo `EventManagerPort` (+ helpers provider-neutral sin path de disco).
+1. **Consumidor** → solo `EventManagerPort` (+ helpers provider-neutral **sin** PathBuf de store).
 2. **Host** → carga precedencia, valida rutas, elige provider, abre adaptador.
 3. **Adapter** → único conocimiento de path físico abierto.
 4. **Cúmulo** → topología/identificadores lógicos ECST, contratos, suscripciones; **nunca** ruta de store.
-5. **Prohibido** `events_redb_path` / open Redb / asumir `.SddIA/runtime/events.redb` fuera del host (salvo allowlist tests del propio host).
+5. **Prohibido** construir/asumir `.SddIA/runtime/events.redb` fuera del host (incluido fallback en `eda_port`); allowlist: tests del propio host + adaptador.
 
 ## 3. Contrato de configuración (**T0** / **L-VARS** / **L-PRECEDENCE**)
 
@@ -93,125 +95,99 @@ Reglas de capas:
 
 | Variable | Semántica | Default si ausente |
 |----------|-----------|--------------------|
-| `SDDIA_EVENT_MANAGER_PROVIDER` | `redb` \| `fs` (valores case-insensitive trim) | `redb` |
-| `SDDIA_EVENT_MANAGER_REDB_PATH` | Ruta relativa a `repo_root` o absoluta | `.SddIA/runtime/events.redb` (decidido por host) |
-| `SDDIA_EVENT_MANAGER_FS_ROOT` | Raíz del adaptador FS | *requerida* si provider=`fs`; ignorada en prod Redb |
-| `SDDIA_EVENT_MANAGER_OPEN_BUDGET_MS` | Ya existe; retención de contención de lock | `2000` |
+| `SDDIA_EVENT_MANAGER_PROVIDER` | `redb` \| `fs` (case-insensitive trim) | `redb` |
+| `SDDIA_EVENT_MANAGER_REDB_PATH` | Relativa a `repo_root` o absoluta | `.SddIA/runtime/events.redb` (**solo host**) |
+| `SDDIA_EVENT_MANAGER_FS_ROOT` | Raíz adaptador FS | *requerida* si provider/`resolve_fs_*`; ignorada en prod Redb |
+| `SDDIA_EVENT_MANAGER_OPEN_BUDGET_MS` | Contención de lock | `2000` |
 
-**Legacy:** `SDDIA_EVENT_STORE` / modos `filesystem`/`dual` **no** se rehabilitan. Plantillas y docs productivas retiran o marcan deprecado el legacy (**L-NON-GOALS**).
+**Legacy:** `SDDIA_EVENT_STORE` / `filesystem`/`dual` **no** se rehabilitan (**L-NON-GOALS**).
 
-### 3.2 Precedencia de resolución
+### 3.2 Precedencia
 
-Para cada variable del contrato:
+1. Entorno del proceso (SO) → gana.
+2. Else bóveda instancia `.SddIA/.dev/.env`.
+3. Else bóveda global `.dev/.env`.
+4. Else default §3.1.
 
-1. Si está definida en el entorno del proceso (SO / inyección runtime) → **gana**.
-2. Else si aparece en bóveda de instancia `.SddIA/.dev/.env` → usa ese valor.
-3. Else si aparece en bóveda global `.dev/.env` → usa ese valor.
-4. Else → default de la tabla §3.1.
-
-Carga de ficheros: el host (o un helper de vault **dentro del host**) puede leer las bóvedas **sin sobrescribir** claves ya presentes en el entorno del proceso. Orden de merge en ficheros: global → instancia; el entorno preexistente no se pisa.
+Merge de ficheros: global → instancia; **no** pisar claves ya presentes en el entorno del proceso.
 
 ### 3.3 Plantillas
 
-| Artefacto | Cambio |
-|-----------|--------|
-| `.dev/.env.example` | Bloque Event Manager con las tres vars + precedencia; retirar docs productivas de `SDDIA_EVENT_STORE` |
-| Guía instancia (README / sección bóveda) | Cómo fijar rutas en `.SddIA/.dev/.env` sin tocar Cúmulo |
-| **Prohibido** | Crear `.env` bajo cápsulas (`skills/`, `tools/`, `daemons/` bins) |
+| Artefacto | Estado / regla |
+|-----------|----------------|
+| `.dev/.env.example` | Presente (MAN-36); mantener bloque + precedencia |
+| Guía instancia | Override en `.SddIA/.dev/.env` sin tocar Cúmulo |
+| **Prohibido** | `.env` bajo cápsulas (`skills/`, `tools/`, `daemons/`) |
 
 ## 4. Política de rutas (**L-PATH-POLICY** / **CA-5**)
 
-Entrada: string de config + `repo_root: &Path`.
-
 | Caso | Regla |
 |------|-------|
-| Vacía / solo whitespace | **Error** antes de open |
-| Relativa | Join a `repo_root`; normalización lógica; si el resultado escapa de `repo_root` (segmentos `..` o prefix mismatch) → **Error** |
-| Absoluta | Permitida; no vacía; **sin** segmentos `..`; **no** se reescribe a relativa |
-| Provider `redb` + path OK | Crear parent dirs si hace falta; luego `RedbEventAdapter::open` |
-| Provider `fs` | Solo si rol/contexto es `test` o migración explícita; raíz validada igual; **prohibido** en `resolve_productive_port` / rol `default` |
+| Vacía / whitespace | **Error** antes de open |
+| Relativa | Join `repo_root`; normalización; escape → **Error** |
+| Absoluta | Permitida; sin segmentos `..`; **no** reescribir a relativa |
+| Provider `redb` + path OK | Parents si hace falta; luego open |
+| Provider `fs` | Solo rol `test`/`migration`/`test-fs`; **prohibido** en `resolve_productive_port` / rol `default` |
 
-Errores: mensaje determinista (`EventManagerConfigError` o `String` estable) que nombre variable + causa (`empty`, `traversal`, `fs_not_allowed_in_prod`).
+Errores estables: variable + causa (`empty`, `traversal`, `escapes repo_root`, `fs_not_allowed_in_prod`).
 
 ## 5. Composition root (**T1** / **L-COMPOSE**)
 
-### 5.1 API host (orientativa — Tekton puede renombrar idiomáticamente)
+Árbol vivo: `SddIA/sddia-event-manager-host/` (`config.rs` + `lib.rs`).
 
-Árbol: `SddIA/sddia-event-manager-host/`.
+API canónica (ya materializada; Tekton no renombra sin causa):
 
 ```text
-EventManagerBackendConfig { provider, redb_path: PathBuf, fs_root: Option<PathBuf> }
-resolve_backend_config(repo_root) -> Result<EventManagerBackendConfig, _>
-validate_configured_path(repo_root, raw) -> Result<PathBuf, _>
+EventManagerBackendConfig { provider, redb_path, fs_root }
+resolve_backend_config / resolve_productive_backend_config / resolve_fs_backend_config
+validate_configured_path
 productive_factory / resolve_productive_port / with_productive_port
-  → usan resolve_backend_config + validate; provider productivo solo redb
+resolved_redb_path / productive_store_present / is_resolved_redb_path  # solo host
+resolve_fs_port / resolve_role_port(test|migration|test-fs|default)
 ```
 
-- Sustituir `pub fn events_redb_path` **pública** por resolución interna (o marcar `#[doc(hidden)]` / eliminar export). **Ningún crate consumidor** debe importar path builder.
-- Rol `test` → mock (sin path). Rol migración/test FS → builder FS con `SDDIA_EVENT_MANAGER_FS_ROOT` validada.
-- Mantener `with_productive_port` (MAN-38 scoped open) usando la config resuelta.
+Invariante DI fuera de host+adapter:
 
-### 5.2 Invariante DI
-
-Fuera de `sddia-event-manager-host` y del crate adapter:
-
-- cero construcción de `.SddIA/runtime/events.redb`,
+- cero construcción de layout Redb por defecto,
 - cero `RedbEventAdapter::open`,
-- cero lectura de `SDDIA_EVENT_MANAGER_REDB_PATH` / `FS_ROOT` para abrir store.
+- cero lectura de vars de bóveda para abrir store.
 
-## 6. Desacoplo de consumidores y puente (**T2** / **CA-4**)
+## 6. Desacoplo de consumidores (**T2** / **CA-4**) — delta residual
 
-| Touchpoint | Cambio |
-|------------|--------|
-| `runtime_bridge::events_redb_path` | **Eliminar** o dejar de exportar; helpers no rellenan path físico |
-| `PublishSeal.target_path` | Dejar de apuntar a Redb: usar token lógico (`logical_rel`) o `PathBuf` vacío/documentado como no-disco; consumidores no abren ese campo |
-| `eda_port::runtime_db_path` | Retirar API productiva o redirigir a error/`unimplemented` en prod; tests host-only |
-| `event-watcher` / audit / purger / daemons | Siguen con `with_productive_port` / puerto; **sin** path |
-| Grep/allowlist gate | Veto a `events_redb_path`, `runtime_db_path`, open `.redb` fuera host/adapter |
+| Touchpoint | Estado | Acción restante |
+|------------|--------|-----------------|
+| `runtime_bridge` | Token lógico | Ninguna (mantener) |
+| `eda_port::runtime_db_path` | **Residuo** | Eliminar export productivo **o** convertir a `Result<PathBuf, String>` que **solo** delegue `resolved_redb_path` **sin** `unwrap_or_else(|_| repo.join(DEFAULT_REDB_REL))`. Call sites: migrar a puerto / `productive_store_present` / `is_resolved_redb_path`. |
+| watchers / audit / purger / daemons | Narrado como desacoplado en `implementation.md` | Re-grep forja: cero path builder / open `.redb` fuera allowlist |
+| Gate | Pendiente cierre Argos | Veto a `events_redb_path`, fallback `DEFAULT_REDB_REL` fuera de `sddia-event-manager-host`, open Redb fuera host/adapter |
 
-## 7. Cúmulo lógico-only (**T3** / **L-CUMULO-LOGICAL** / **CA-3**)
+## 7. Cúmulo lógico-only (**T3** / **CA-3**)
 
-En `SddIA/core/cumulo.paths.json`:
+Hecho en **v1.12.0**. Conservar: tablas ECST, suscripciones, `directories.events`, `eda_instance.*`, `env_hierarchy`. No reintroducir `event_bus` / `*.store` físicos.
 
-| Acción | Claves |
-|--------|--------|
-| **Eliminar** | `event_bus` (store físico), `eda_bus.store`, `eda_fractal.store` |
-| **Conservar** | Nombres de tabla (`events`, `subscriber_delivery`, …), `subscriptions` / telemetry / orchestration / domain subscription paths, `directories.events`, `eda_instance.*` (personalización/proofs — no store Redb), `env_hierarchy` |
-| **Bump** | `version` del JSON Cúmulo (p.ej. `1.11.1` → `1.12.0`) + descripción: topología lógica sin store path |
+## 8. Documentación (**T4** / **CA-8**)
 
-Ajustar lectores que asuman `*.store` o `event_bus` como Redb (si existen aserciones/docs/gates). `is_filesystem_rel` + defaults `.events/*` ya toleran ausencia de store físico.
+| Artefacto | Estado |
+|-----------|--------|
+| `.dev/.env.example` | Hecho |
+| `CONSTITUTION_CORE.md` §3.1 | Hecho |
+| README / contratos EDA / gates | Verificar alineación residual; completar si drift |
+| Genoma | Solo texto vía `entity-manager` si muta taxonomía; **sin** bump ops 1.2.0 |
 
-## 8. Documentación (**T4** / **CA-8** / **L-DOCS**)
-
-| Artefacto | Mensaje |
-|-----------|---------|
-| README (Core / EDA) | Límite Core/instancia; vars; precedencia; Redb default |
-| `CONSTITUTION_CORE.md` §3.1 | Persistencia vía puerto; **ubicación física** = bóveda de instancia (default histórico solo si no hay config) |
-| Contratos EDA / evolution notes | Separar topología lógica vs config física |
-| Gates / normas cutover | Alinear con veto de stores en Cúmulo |
-
-Mutaciones Genoma (si toca taxonomía/bindings solo textuales): vía `entity-manager` (**L-GENOME**). **No** bump de `contract_version` 1.2.0 por este ciclo.
-
-## 9. Pruebas (**T5** / **L-VERIFY** / **CA-6**)
+## 9. Pruebas (**T5** / **L-VERIFY**)
 
 Mantener contract suite MemoryMock / FS / Redb (MAN-35).
 
-Añadir en host (tempdir / env isolation):
+Host (ya incluye matriz en `config.rs` / `lib.rs` tests): precedencia, rutas, FS rechazado en prod, default sin vault, vault relativa, scoped open.
 
-| Caso | Esperado |
-|------|----------|
-| Solo global define `REDB_PATH` | Usa global |
-| Instancia override global | Usa instancia |
-| SO override instancia+global | Usa SO |
-| Relativa válida | Resuelve bajo `repo_root` |
-| Relativa con `..` escape | Error pre-open |
-| Absoluta válida fuera de repo | Acepta; abre ahí |
-| Vacía | Error |
-| Provider `fs` en `resolve_productive_port` | Error / rechazo |
-| Provider `fs` + rol test + `FS_ROOT` | Adapter FS con esa raíz |
-| Default sin vars | `.SddIA/runtime/events.redb` bajo temp `repo_root` |
+Cierre de verificación (Tekton/Argos):
 
-`cargo test -p sddia-event-manager-host` (+ suites afectadas) verdes. Gate arquitectónico: patterns de path cableado / `events_redb_path` fuera allowlist → fail.
+| Check | Esperado |
+|-------|----------|
+| `cargo test -p sddia-event-manager-host` | Verde |
+| Suites afectadas / gates `gate-event-manager-port`, `gate-eda-unit-no-real-backend` | Verde |
+| Grep/allowlist CA-4 | Sin `runtime_db_path` con fallback cableado; sin `events_redb_path` |
+| CA-1…CA-8 | Evidencia en `validacion.md` (no declarar APTO sin prueba) |
 
 ## 10. Criterios de aceptación (trazabilidad)
 
@@ -230,14 +206,14 @@ Añadir en host (tempdir / env isolation):
 
 | Path | Rol |
 |------|-----|
-| `SddIA/sddia-event-manager-host/src/lib.rs` (+ módulos config si se parten) | Resolución, validación, factory |
-| `SddIA/sddia-core/src/ports/event_manager/runtime_bridge.rs` | Quitar path físico / sello |
-| `SddIA/engine/execute-process/src/engine/eda_port.rs` | Retirar `runtime_db_path` productivo |
-| `SddIA/core/cumulo.paths.json` | L-CUMULO-LOGICAL |
-| `.dev/.env.example` | Plantilla L-VARS |
-| `SddIA/CONSTITUTION_CORE.md` | CA-8 |
-| README / contratos EDA / gates CI | Docs + veto |
-| `SddIA/daemons/event-watcher/**`, `tools/event-bus-audit/**`, purger | Verificar cero path |
+| `SddIA/sddia-event-manager-host/src/{config,lib}.rs` | Resolución ya viva; mantener/tests |
+| `SddIA/engine/execute-process/src/engine/eda_port.rs` | **Delta CA-4** `runtime_db_path` |
+| `SddIA/sddia-core/src/ports/event_manager/runtime_bridge.rs` | Token lógico (estable) |
+| `SddIA/core/cumulo.paths.json` | v1.12.0 lógico (estable) |
+| `.dev/.env.example` | Plantilla (estable) |
+| `SddIA/CONSTITUTION_CORE.md` | CA-8 (estable) |
+| README / contratos EDA / gates CI | Alineación residual |
+| Daemons/tools consumidores | Re-verificación cero path |
 | Tests host + contract suite | T5 |
 
 ## 12. Fuera de alcance
@@ -252,10 +228,11 @@ Añadir en host (tempdir / env isolation):
 
 | Ítem | Destino |
 |------|---------|
-| Padre MAN-35 | `docs/features/event-manager-port-cutover/` — cutover 1.2 + Redb |
+| Padre MAN-35 | `docs/features/event-manager-port-cutover/` |
 | MAN-32 / MAN-33 | Puerto, adapters, DI |
 | MAN-37 | Pirámide tests — paralelo |
 | Canal Linear | `.SddIA/state/tracker-outbound/MAN-36.jsonl` |
 | Semilla | **PBI-0604fb3c** / forge_key sellada |
 | Clarificaciones | `clarify.md` laudos L-* |
 | Objetivos | `objectives.md` O1…O8 / T0…T5 |
+| Forja previa | `implementation.md` / `execution.md` |

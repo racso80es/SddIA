@@ -13,7 +13,10 @@ use sddia_core::ports::event_manager::{
     EventManagerPort, GetDltSealRequest, GetDltSealResult, ListDlqRequest, ListEventsRequest,
     SealDltRequest, VerifyInlineEcstRequest, PublishSeal,
 };
-use sddia_event_manager_host::{resolve_productive_port, resolved_redb_path, with_productive_port};
+use sddia_event_manager_host::{
+    is_resolved_redb_path, productive_store_present, resolve_productive_port, resolved_redb_path,
+    with_productive_port,
+};
 
 /// Ruta de directorio (no fichero `.redb`).
 pub fn is_filesystem_rel(raw: &str) -> bool {
@@ -28,11 +31,23 @@ thread_local! {
     static PORT_REPO: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
 }
 
-/// Delegación al composition root (ruta física solo resuelta en host; MAN-36).
-/// Preferir `with_event_port` / puerto; no asumir default cableado.
+/// Delegación pura al composition root (MAN-36 / CA-4).
+/// Sin fallback `DEFAULT_REDB_REL` en el consumidor; el default vive solo en el host.
+/// Preferir `with_event_port` / `productive_store_present` / `is_resolved_redb_path`.
 pub fn runtime_db_path(repo: &Path) -> PathBuf {
-    resolved_redb_path(repo)
-        .unwrap_or_else(|_| repo.join(sddia_event_manager_host::DEFAULT_REDB_REL))
+    resolved_redb_path(repo).unwrap_or_else(|e| {
+        panic!("MAN-36: configuración Event Manager inválida antes de abrir backend: {e}")
+    })
+}
+
+/// ¿El candidato coincide con la Redb resuelta por el host? (detección sin cablear layout).
+pub fn path_is_resolved_redb(repo: &Path, candidate: &Path) -> bool {
+    is_resolved_redb_path(repo, candidate)
+}
+
+/// ¿Existe el store productivo en la ruta resuelta por el host?
+pub fn store_present(repo: &Path) -> bool {
+    productive_store_present(repo)
 }
 
 /// Mock / DI de test: persiste en thread-local sin abrir Redb.

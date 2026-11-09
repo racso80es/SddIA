@@ -226,7 +226,7 @@ fn pending_virtual_event_path(pending_dir: &Path, event_id: &str) -> PathBuf {
 }
 
 pub(crate) fn is_runtime_db_event_path(repo: &Path, path: &Path) -> bool {
-    if path == eda_port::runtime_db_path(repo) {
+    if eda_port::path_is_resolved_redb(repo, path) {
         return true;
     }
     path.file_name()
@@ -235,8 +235,7 @@ pub(crate) fn is_runtime_db_event_path(repo: &Path, path: &Path) -> bool {
 }
 
 fn find_fracture_stored_event_id(repo: &Path, event: &Value) -> Result<Option<String>, String> {
-    let path = eda_port::runtime_db_path(repo);
-    if !path.is_file() {
+    if !eda_port::store_present(repo) {
         return Ok(None);
     }
     let event_type = event
