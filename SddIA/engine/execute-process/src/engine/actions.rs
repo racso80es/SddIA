@@ -225,11 +225,15 @@ fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
     if let Some(corr) = str_field(inputs, "correlation_id") {
         event["correlation_id"] = json!(corr);
     }
-    let seal = write_pending_event(repo, &event)?;
+    sddia_eda_catalog::stamp_published_event(repo, &mut event)?;
+    let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &event)?;
+    // Ancla lógica post-purge: reseal/accept-pr resuelven Presented vía `.events/domain/{event_id}.json`.
+    let anchor = repo.join(format!(".events/domain/{event_id}.json"));
+    let _ = super::eda_bus_topology::write_json_atomic(&anchor, &event);
     Ok(json!({
         "success": true,
-        "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_id": json!(event_id),
+        "target_path": json!(seal.logical_rel),
         "event_type": "PullRequest_Presented",
     }))
 }
