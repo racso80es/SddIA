@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-40-eda-consumers-logical-seal
 created: 2026-11-09
 updated: 2026-11-09
@@ -9,7 +10,6 @@ persist_ref: docs/features/man-40-eda-consumers-logical-seal
 pbi_ref: MAN-40
 tracker_ref: MAN-40
 document_id: PBI-1b004e99
-execution_id: d5f40be9-1866-4813-a5b2-28a26faed56c
 global: APTO
 pbi_archived: false
 checks:
@@ -35,8 +35,8 @@ validated_base_sha: 9caa03433c8a5b9e207760d313568a1588c5957d
 validated_head_sha: 272699136634519860ff06ce0a21d80d853fc982
 validated_tree_sha: fedab16dcb2697d50b03020a7c7b5535e547313a
 diff_digest: sha256:e6c890c354e56705ff355648ad17e87832d0bc79b20b55499e19fc86df5e2993
+execution_id: "953409f1-b3df-42d5-a8d0-69466a366e7d"
 ---
-
 # Validación — man-40-eda-consumers-logical-seal
 
 ## Veredicto
