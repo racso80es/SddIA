@@ -209,6 +209,7 @@ pub fn subscriber_id(subscriber: &Value) -> String {
     sddia_eda_catalog::subscriber_id(subscriber)
 }
 
+#[cfg(test)]
 fn witness_filename(event_uuid: &str, subscriber_name: &str) -> String {
     format!("{event_uuid}.{subscriber_name}.json")
 }
@@ -432,6 +433,7 @@ fn delivery_terminal_in_ecst(ecst: &Value, subscriber_name: &str) -> bool {
         .is_some_and(|s| matches!(s, "success" | "processed" | "failed" | "skipped" | "dead-letter"))
 }
 
+#[cfg(test)]
 fn witness_exists(
     repo: &Path,
     bus: &EventBusTopology,
@@ -453,7 +455,7 @@ fn witness_exists(
 
 pub fn terminal_witness_exists(
     repo: &Path,
-    bus: &EventBusTopology,
+    _bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
 ) -> bool {
@@ -466,23 +468,30 @@ pub fn terminal_witness_exists(
             return true;
         }
     }
-    witness_exists(
-        repo,
-        bus,
-        "processed_subscribers",
-        event_uuid,
-        subscriber_name,
-    ) || witness_exists(
-        repo,
-        bus,
-        "dead_letter_subscribers",
-        event_uuid,
-        subscriber_name,
-    )
+    #[cfg(test)]
+    {
+        return witness_exists(
+            repo,
+            _bus,
+            "processed_subscribers",
+            event_uuid,
+            subscriber_name,
+        ) || witness_exists(
+            repo,
+            _bus,
+            "dead_letter_subscribers",
+            event_uuid,
+            subscriber_name,
+        );
+    }
+    #[cfg(not(test))]
+    {
+        false
+    }
 }
 
 pub fn write_processing_witness(
-    repo: &Path,
+    _repo: &Path,
     _bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
@@ -498,7 +507,9 @@ pub fn write_processing_witness(
         "dispatch_mode": dispatch_mode,
     });
     let _ = witness;
-    Ok(eda_port::runtime_db_path(repo))
+    Ok(PathBuf::from(format!(
+        ".events/processing_subscribers/{event_uuid}.{subscriber_name}.json"
+    )))
 }
 
 pub fn delegation_meta(subscriber: &Value, exit_code: i32) -> Value {

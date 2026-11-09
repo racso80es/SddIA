@@ -149,7 +149,7 @@ fn rel_event_path(repo: &Path, event_path: &Path) -> String {
 }
 
 fn fractal_watch_enabled() -> bool {
-    match env::var("SDDIA_LAB_WATCH_FRACTAL").unwrap_or_else(|_| "1".into()) {
+    match env::var("SDDIA_LAB_WATCH_FRACTAL").unwrap_or_else(|_| "0".into()) {
         ref s if matches!(s.to_ascii_lowercase().as_str(), "0" | "false" | "no") => false,
         _ => true,
     }
@@ -297,7 +297,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
         Ok(events) => events,
         Err(err) => {
             stats.open_failed = 1;
-            log_claim_tick("redb", stats);
+            log_claim_tick("port", stats);
             eprintln!("[WATCHER] claim_pending: {err}");
             return;
         }
@@ -319,7 +319,7 @@ fn claim_store_pending(repo: &Path, top: &BusTopology, book: &SharedBook) {
         let rel = format!(".events/pending/{event_id}.json");
         launches.push((event_id, path, rel));
     }
-    log_claim_tick("redb", stats);
+    log_claim_tick("port", stats);
     for (uuid_c, path_c, rel) in launches {
         METRIC_ROUTES_CLAIMED.fetch_add(1, Ordering::Relaxed);
         let repo_c = repo.to_path_buf();

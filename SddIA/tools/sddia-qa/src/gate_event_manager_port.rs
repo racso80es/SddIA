@@ -14,6 +14,13 @@ const FORBIDDEN: &[&str] = &[
     "SDDIA_EVENT_STORE",
 ];
 
+/// MAN-40: sello físico Redb fuera del host.
+const PATH_SYMBOL_FORBIDDEN: &[&str] = &[
+    "resolved_redb_path",
+    "runtime_db_path",
+    "DEFAULT_REDB_REL",
+];
+
 #[derive(Debug, Serialize)]
 struct Violation {
     path: String,
@@ -47,6 +54,17 @@ fn path_allowlisted(rel: &str) -> bool {
     if rel.ends_with("eda_port_legacy.rs")
         || rel.ends_with("gate_event_manager_port.rs")
         || rel.ends_with("gate_eda_unit_no_real_backend.rs")
+    {
+        return true;
+    }
+    if rel.starts_with("SddIA/sddia-event-manager-host/") {
+        return true;
+    }
+    if rel.ends_with("engine/execute-process/src/engine/eda_port.rs") {
+        return true;
+    }
+    if rel.ends_with("sddia-event-store/src/gate.rs")
+        || rel.starts_with("SddIA/sddia-event-store/")
     {
         return true;
     }
@@ -166,6 +184,18 @@ fn scan_file(repo: &Path, path: &Path) -> Vec<Violation> {
                     pattern: (*pat).into(),
                     snippet: line.trim().chars().take(120).collect(),
                 });
+            }
+        }
+        if !rel.starts_with("SddIA/sddia-event-manager-host/") {
+            for pat in PATH_SYMBOL_FORBIDDEN {
+                if line.contains(pat) {
+                    out.push(Violation {
+                        path: rel.clone(),
+                        line: line_no,
+                        pattern: (*pat).into(),
+                        snippet: line.trim().chars().take(120).collect(),
+                    });
+                }
             }
         }
     }

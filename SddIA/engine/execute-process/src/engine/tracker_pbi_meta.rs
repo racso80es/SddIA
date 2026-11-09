@@ -159,13 +159,39 @@ pub fn presented_event_id_for_branch(repo: &Path, branch: &str) -> Option<String
 }
 
 fn presented_ids_in_store(repo: &Path, branch: &str, best: &mut Option<(String, String)>) {
-    let Ok(rows) = crate::engine::eda_port::load_domain_ecsts(repo, 5000) else {
+    if let Ok(rows) = crate::engine::eda_port::load_domain_ecsts(repo, 5000) {
+        for ecst in rows {
+            if ecst.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
+                continue;
+            }
+            consider_presented_event_id(&ecst, branch, best);
+        }
+    }
+    for rel in [
+        ".events/domain",
+        ".events/pending",
+        ".events/processed",
+        ".events/dead-letter",
+    ] {
+        consider_presented_from_dir(&repo.join(rel), branch, best);
+    }
+}
+
+fn consider_presented_from_dir(dir: &Path, branch: &str, best: &mut Option<(String, String)>) {
+    let Ok(entries) = fs::read_dir(dir) else {
         return;
     };
-    for ecst in rows {
-        if ecst.get("event_type").and_then(|v| v.as_str()) != Some("PullRequest_Presented") {
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("json") {
             continue;
         }
+        let Ok(text) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(ecst) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
         consider_presented_event_id(&ecst, branch, best);
     }
 }

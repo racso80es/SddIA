@@ -849,11 +849,8 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
         DeliveryStatus as PortDeliveryStatus, GetEventRequest, ListDeliveriesRequest,
         ListDlqRequest, ListPendingRequest,
     };
-    use sddia_event_manager_host::{productive_store_present, with_productive_port};
+    use sddia_event_manager_host::with_productive_port;
 
-    if !productive_store_present(repo) {
-        return ScanState::default();
-    }
     match with_productive_port(repo, "audit_scan", |port| {
         let mut state = ScanState::default();
         let mut domain_rows = Vec::new();
@@ -953,13 +950,9 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
         Ok(s) => s,
         Err(err) => {
             let mut state = ScanState::default();
-            let path = match sddia_event_manager_host::resolved_redb_path(repo) {
-                Ok(p) => rel_path(repo, &p),
-                Err(_) => "(unresolved)".into(),
-            };
             state.anomalies.push(Anomaly {
                 kind: "store_unavailable".into(),
-                path,
+                path: "(event-manager-port)".into(),
                 detail: err,
             });
             state
@@ -969,20 +962,16 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
 
 fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusPaths), String> {
     let paths = resolve_bus_paths(repo)?;
-    if sddia_event_manager_host::productive_store_present(repo) {
+    if sddia_event_manager_host::with_productive_port(repo, "audit_run", |_| Ok(())).is_ok() {
         return Ok((audit_state_from_store(repo, &paths), paths));
     }
     #[cfg(not(test))]
     {
         let mut state = ScanState::default();
-        let path = match sddia_event_manager_host::resolved_redb_path(repo) {
-            Ok(p) => rel_path(repo, &p),
-            Err(_) => "(unresolved)".into(),
-        };
         state.anomalies.push(Anomaly {
-            kind: "store_missing".into(),
-            path,
-            detail: "events.redb ausente; escaneo FS deshabilitado (cutover puerto)".into(),
+            kind: "store_unavailable".into(),
+            path: "(event-manager-port)".into(),
+            detail: "Event Manager productivo no disponible; escaneo FS deshabilitado (MAN-40)".into(),
         });
         return Ok((state, paths));
     }
