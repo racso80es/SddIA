@@ -313,3 +313,77 @@ notes: "idempotent-hit"
 - Bloqueo: T6 smoke `CERBERO_DENY` → AC-6/AC-8/F3/F5 **NO_APTO**; `.tmp/pr-body.md` marca tests `[x]` sin evidencia
 - `_agent_handoff.md` no reescrito; sin TODOs KM
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T15:41:37Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-09T15:42:59Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `ceccf5b7-2243-4505-9387-ec50a3af2a04`
+- correlation_id: `f1a6838c-de0d-4ace-b545-44f48f784688`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream F3/F4/F5 pendientes.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocado: `docs/features/man-37-eda-test-pyramid/validacion.md` (Triaje documental).
+- R1/R2: copia Evidence Bridge `native_state` @ 15:41:37Z → TECH/GIT **APTO** (sin stdout inventado).
+- Shell `git-manager` → Rejected; `git_changes` por path-assert FS; HEAD FS `b67925a6…` = rama inject.
+- F2: cascada objectives/clarify/spec/plan/implementation/execution + evolution `30d20d57-…` **APTO**.
+- R3 KM: 0 writes `docs/todos/**` → **APTO**; pending vacío; Linear.
+- Residual no bloqueante: WSPACE vacío, T6 CERBERO_DENY, `clarify.spec_ref` stale.
+- Downstream F3/F4/F5 pendientes.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T15:43:00Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-09T15:44:46Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `ceccf5b7-2243-4505-9387-ec50a3af2a04`
+- correlation_id: `f1a6838c-de0d-4ace-b545-44f48f784688`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `accept_pr_handoff: pending` (L-HANDOFF-F5; sin `pr_url`/MERGE).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Tocado: `docs/features/man-37-eda-test-pyramid/validacion.md` (fase Veredicto y bloqueo).
+- R1/R2: copia Evidence Bridge `native_state` @ 15:43:00Z → TECH/GIT **APTO** (sin stdout inventado).
+- F2 heredado `PASS_F2_DOC`; F4 PPR∉revoked/permanent; F3/T6 smoke **NO_APTO** no bloqueante.
+- R3 KM: 0 writes `docs/todos/**` → **APTO**; Shell git-manager Rejected.
+- `accept_pr_handoff: pending` (L-HANDOFF-F5; sin `pr_url`/MERGE).
+```

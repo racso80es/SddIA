@@ -3,6 +3,7 @@
 
 
 
+
 feature_name: man-37-eda-test-pyramid
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -21,7 +22,7 @@ mayeuta_verdict: ok
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-37.jsonl"
 spec_ref: "spec.md@1.1.0"
-execution_id: "74fe273f-1c3d-446f-bcea-0e83d6829dac"
+execution_id: "ceccf5b7-2243-4505-9387-ec50a3af2a04"
 ---
 # Clarificación — man-37-eda-test-pyramid
 
