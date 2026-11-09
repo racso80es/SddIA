@@ -1,7 +1,7 @@
 ---
 feature_name: man-40-eda-consumers-logical-seal
-created: "2026-11-09"
-updated: "2026-11-09"
+created: 2026-11-09
+updated: 2026-11-09
 process: feature
 branch: feat/man-40-eda-consumers-logical-seal
 branch_name: feat/man-40-eda-consumers-logical-seal
@@ -9,7 +9,7 @@ persist_ref: docs/features/man-40-eda-consumers-logical-seal
 pbi_ref: MAN-40
 tracker_ref: MAN-40
 document_id: PBI-1b004e99
-execution_id: "d5f40be9-1866-4813-a5b2-28a26faed56c"
+execution_id: d5f40be9-1866-4813-a5b2-28a26faed56c
 global: APTO
 pbi_archived: false
 checks:
@@ -21,17 +21,22 @@ checks:
   CARGO_EXECUTE_PROCESS: PENDIENTE-CI
   TECH_FORMAL_EXECUTE_PROCESS: APTO
 git_changes:
-  - SddIA/sddia-daemon-runtime/src/github_bridge.rs
-  - SddIA/engine/execute-process/src/engine/eda_bus_topology.rs
-  - SddIA/engine/execute-process/src/engine/route_domain_core.rs
-  - SddIA/daemons/event-watcher/src/main.rs
-  - SddIA/tools/event-bus-audit/src/main.rs
-  - SddIA/tools/repo-retention-purger/src/plan.rs
-  - SddIA/tools/repo-retention-purger/src/slice_events.rs
-  - SddIA/interfaces/kalma2-bridge/src/eda_productive.rs
-  - SddIA/tools/sddia-qa/src/gate_event_manager_port.rs
-  - docs/features/man-40-eda-consumers-logical-seal/
+- SddIA/sddia-daemon-runtime/src/github_bridge.rs
+- SddIA/engine/execute-process/src/engine/eda_bus_topology.rs
+- SddIA/engine/execute-process/src/engine/route_domain_core.rs
+- SddIA/daemons/event-watcher/src/main.rs
+- SddIA/tools/event-bus-audit/src/main.rs
+- SddIA/tools/repo-retention-purger/src/plan.rs
+- SddIA/tools/repo-retention-purger/src/slice_events.rs
+- SddIA/interfaces/kalma2-bridge/src/eda_productive.rs
+- SddIA/tools/sddia-qa/src/gate_event_manager_port.rs
+- docs/features/man-40-eda-consumers-logical-seal/
+validated_base_sha: 9caa03433c8a5b9e207760d313568a1588c5957d
+validated_head_sha: 272699136634519860ff06ce0a21d80d853fc982
+validated_tree_sha: fedab16dcb2697d50b03020a7c7b5535e547313a
+diff_digest: sha256:e6c890c354e56705ff355648ad17e87832d0bc79b20b55499e19fc86df5e2993
 ---
+
 # Validación — man-40-eda-consumers-logical-seal
 
 ## Veredicto
