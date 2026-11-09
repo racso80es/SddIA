@@ -3,7 +3,7 @@
 use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic, EdBusPaths};
 use crate::{write_fractal_event, BusTopology};
 use chrono::Utc;
-use sddia_core::ports::event_manager::record_ecst as record_ecst_on_port;
+use sddia_core::ports::event_manager::publish_ecst as publish_ecst_on_port;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
@@ -454,10 +454,8 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
         }
         let mut stamped = bus_event.clone();
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
-        record_ecst_on_port(port, repo, "domain", &stamped)?;
-        Ok(Some(
-            sddia_event_manager_host::resolved_redb_path(repo).map_err(|e| e.to_string())?,
-        ))
+        publish_ecst_on_port(port, repo, "domain", &stamped)?;
+        Ok(Some(PathBuf::from(format!(".events/domain/{event_id}.json"))))
     })
 }
 

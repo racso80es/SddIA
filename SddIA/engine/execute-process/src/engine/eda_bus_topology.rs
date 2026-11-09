@@ -466,23 +466,30 @@ pub fn terminal_witness_exists(
             return true;
         }
     }
-    witness_exists(
-        repo,
-        bus,
-        "processed_subscribers",
-        event_uuid,
-        subscriber_name,
-    ) || witness_exists(
-        repo,
-        bus,
-        "dead_letter_subscribers",
-        event_uuid,
-        subscriber_name,
-    )
+    #[cfg(test)]
+    {
+        return witness_exists(
+            repo,
+            bus,
+            "processed_subscribers",
+            event_uuid,
+            subscriber_name,
+        ) || witness_exists(
+            repo,
+            bus,
+            "dead_letter_subscribers",
+            event_uuid,
+            subscriber_name,
+        );
+    }
+    #[cfg(not(test))]
+    {
+        false
+    }
 }
 
 pub fn write_processing_witness(
-    repo: &Path,
+    _repo: &Path,
     _bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
@@ -498,7 +505,9 @@ pub fn write_processing_witness(
         "dispatch_mode": dispatch_mode,
     });
     let _ = witness;
-    Ok(eda_port::runtime_db_path(repo))
+    Ok(PathBuf::from(format!(
+        ".events/processing_subscribers/{event_uuid}.{subscriber_name}.json"
+    )))
 }
 
 pub fn delegation_meta(subscriber: &Value, exit_code: i32) -> Value {

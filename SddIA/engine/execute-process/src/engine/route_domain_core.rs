@@ -226,12 +226,7 @@ fn pending_virtual_event_path(pending_dir: &Path, event_id: &str) -> PathBuf {
 }
 
 pub(crate) fn is_runtime_db_event_path(repo: &Path, path: &Path) -> bool {
-    if eda_port::path_is_resolved_redb(repo, path) {
-        return true;
-    }
-    path.file_name()
-        .and_then(|n| n.to_str())
-        .is_some_and(|n| n == "events.redb")
+    eda_port::path_is_resolved_redb(repo, path)
 }
 
 fn find_fracture_stored_event_id(repo: &Path, event: &Value) -> Result<Option<String>, String> {
@@ -2444,7 +2439,7 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
     }
 
     let processing_header = if from_store {
-        eda_port::runtime_db_path(repo)
+        repo.join(format!(".events/pending/{event_uuid}.json"))
     } else {
         match ensure_processing_header(repo, &bus, &event_uuid, &event_path) {
             Ok(p) => p,

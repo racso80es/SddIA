@@ -6,7 +6,7 @@ use crate::lock::{acquire_runtime_lock, LockError};
 use crate::slice_events;
 use crate::slice_misc;
 use crate::slice_target;
-use sddia_event_manager_host::productive_store_present;
+use sddia_event_manager_host::with_productive_port;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -124,7 +124,8 @@ pub fn build_plan(req: &PlanRequest) -> Result<Value, PlanError> {
         .map(PathBuf::from)
         .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
     let repo = canonical_repo_root(&start).map_err(PlanError::Jail)?;
-    let redb_active = productive_store_present(&repo);
+    let redb_active =
+        with_productive_port(&repo, "plan_store_probe", |_| Ok(())).is_ok();
     let mode_name = if redb_active { "redb" } else { "filesystem-legacy" };
     let mut candidates = slice_target::enumerate(&repo).map_err(PlanError::Io)?;
     candidates.extend(slice_events::enumerate(&repo, redb_active).map_err(PlanError::Io)?);

@@ -7,10 +7,10 @@ use sddia_core::ports::event_manager::{
     publish_ecst, GetEventRequest, ListDlqRequest, ListEventsRequest, ListPendingRequest,
     ListProgressRequest,
 };
-use sddia_event_manager_host::{productive_store_present, with_productive_port};
+use sddia_event_manager_host::with_productive_port;
 
 pub fn store_active(repo: &Path) -> bool {
-    productive_store_present(repo)
+    with_productive_port(repo, "store_active_probe", |_| Ok(())).is_ok()
 }
 
 pub fn publish_pending(repo: &Path, event: &Value) -> Result<(), String> {
