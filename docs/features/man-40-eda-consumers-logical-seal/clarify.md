@@ -1,5 +1,11 @@
 ---
 
+
+
+
+
+
+
 feature_name: man-40-eda-consumers-logical-seal
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -19,7 +25,7 @@ mayeuta_verdict: ok
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-40.jsonl"
 forge_key: "bd5f4db27f549584d61e515fe85571b8fb2d5f3279161d9aa982ff2851471498"
-execution_id: "953409f1-b3df-42d5-a8d0-69466a366e7d"
+execution_id: "d0942510-6db3-412b-84e2-62de7359dd2e"
 ---
 # Clarificación — man-40-eda-consumers-logical-seal
 
