@@ -44,7 +44,10 @@ fn path_allowlisted(rel: &str) -> bool {
     if rel.starts_with("SddIA/sddia-event-store/") {
         return true;
     }
-    if rel.ends_with("eda_port_legacy.rs") || rel.ends_with("gate_event_manager_port.rs") {
+    if rel.ends_with("eda_port_legacy.rs")
+        || rel.ends_with("gate_event_manager_port.rs")
+        || rel.ends_with("gate_eda_unit_no_real_backend.rs")
+    {
         return true;
     }
     if rel.contains("eda_store_io_matrix")
