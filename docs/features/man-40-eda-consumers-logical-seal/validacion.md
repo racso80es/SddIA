@@ -46,8 +46,8 @@ evidence_bridge_notes: R1/R2 copia Runtime evidence (machine+session) source=nat
 shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID b40373ab… · exec 48c0e0cc…
 head_commit_sha_fs: 644e809da2976e693f5aaa7b6339b9db0e5ac5ad
 validated_base_sha: 9caa03433c8a5b9e207760d313568a1588c5957d
-validated_head_sha: 27942eb129b5891c7f6e6e1313052e470c7f3e27
-validated_tree_sha: 971e7540450f398b27841ceb88a5ee370e0ec7c4
+validated_head_sha: 52969c671bf0dd4eaebcd036f672707452c655e6
+validated_tree_sha: 8bcb8ada397202533026b695a637f646128f558d
 diff_digest: sha256:2dd9d998bd3caedbc5ce5dba9d0f2f3e8d399fc6997af85187fa2a1be1dd5602
 revoked_entity_alert: delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent
 scope: PPR Veredicto y bloqueo — rama feat/man-40-eda-consumers-logical-seal (CID b40373ab… · exec 48c0e0cc… · MAN-40)
