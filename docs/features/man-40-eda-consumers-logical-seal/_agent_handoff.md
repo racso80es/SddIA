@@ -567,3 +567,77 @@ notes: "idempotent-hit"
 - F2+F4 **APTO**; F3 **NO_APTO** no bloqueante (proxy TECH_FORMAL + `execution.md`)
 - `accept_pr_handoff: pending` (L-HANDOFF-F5; sin `pr_url`/MERGE)
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T21:31:43Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-09T21:32:56Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `be6cdeb9-09cb-4eac-a0b6-8100846f5507`
+- correlation_id: `1d24f447-01e2-4624-b44a-0624e49c53e1`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Downstream F3/F4/F5 pendientes · `delivery_state: pending_downstream_phases`
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F2_DOC` · `global: APTO`)
+
+- Tocado: `docs/features/man-40-eda-consumers-logical-seal/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` (`handoff-formal-scan; idempotent-hit`) → TECH/GIT **APTO**
+- Shell `git-manager` → Rejected → `GIT_EVIDENCE_SESSION_SHELL: NO_APTO` (sin stdout inventado)
+- R3 KM: **APTO** — 0 writes `docs/todos/**`; pending vacío; Linear
+- F2 cascada objectives→execution + YAML + evolution `d858e40b-…` + touchpoints FS OK
+- HEAD FS `@ ed3620e5…`; workspace PPR `be6cdeb9…` vacío
+- Downstream F3/F4/F5 pendientes · `delivery_state: pending_downstream_phases`
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-09T21:33:27Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-09T21:34:53Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `be6cdeb9-09cb-4eac-a0b6-8100846f5507`
+- correlation_id: `1d24f447-01e2-4624-b44a-0624e49c53e1`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - `accept_pr_handoff: pending` (L-HANDOFF-F5; sin `pr_url`/MERGE)
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`PASS_F5_VERDICT` · `global: APTO` · `delivery_state: success`)
+
+- Tocado: `docs/features/man-40-eda-consumers-logical-seal/validacion.md`
+- R1/R2: copia Evidence Bridge `native_state` (`idempotent-hit`) → TECH/GIT **APTO**; Shell `git-manager` Rejected → session NO_APTO
+- R3 KM: **APTO** (0 writes `docs/todos/**`; pending vacío; linear)
+- F2+F4 **APTO**; F3 **NO_APTO** no bloqueante (proxy TECH_FORMAL + `execution.md`)
+- `accept_pr_handoff: pending` (L-HANDOFF-F5; sin `pr_url`/MERGE)
+```
