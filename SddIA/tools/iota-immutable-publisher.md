@@ -9,7 +9,7 @@ contract_ref: SddIA/tools/tools-contract.md
 domain_origin: SddIA
 implementation_path_ref: SddIA/tools/iota-immutable-publisher
 name: iota-immutable-publisher
-source_sha256: sha256:1f8d0c80fe90df526b9b7ee5d87ff8c95dbd15170a61c0c8fbecaa24f252f5cd
+source_sha256: sha256:67dd9fa0ede8419b2e7ca5efa3edd0eca16bad1fa95f41229bd5440898abf71f
 uuid: 7c8be7da-d080-4ad0-b0b0-df43be376e46
 version: 1.0.0
 ---

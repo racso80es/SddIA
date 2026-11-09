@@ -455,7 +455,9 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
         let mut stamped = bus_event.clone();
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
         record_ecst_on_port(port, repo, "domain", &stamped)?;
-        Ok(Some(sddia_core::ports::event_manager::events_redb_path(repo)))
+        Ok(Some(
+            sddia_event_manager_host::resolved_redb_path(repo).map_err(|e| e.to_string())?,
+        ))
     })
 }
 

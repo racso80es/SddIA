@@ -1,0 +1,35 @@
+# T5 smoke MAN-36 — 2026-11-09T17:55:04Z
+# head: e579673c11ce5cba5606a578a9ba7a6a22c11b58
+## cargo test -p sddia-event-manager-host --lib
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.39s
+     Running unittests src/lib.rs (target/debug/deps/sddia_event_manager_host-e73ecb8e235fafbd)
+
+running 15 tests
+test config::tests::absolute_with_parent_rejected ... ok
+test config::tests::absolute_valid_accepted ... ok
+test config::tests::default_redb_when_no_vault ... ok
+test config::tests::empty_rejected ... ok
+test config::tests::relative_path_joins_repo_root ... ok
+test config::tests::relative_traversal_rejected ... ok
+test tests::test_role_resolves_memory_mock ... ok
+test config::tests::global_used_when_instance_absent ... ok
+test tests::rejects_contract_below_required_range ... ok
+test config::tests::precedence_so_over_instance_over_global ... ok
+test config::tests::productive_rejects_fs_provider ... ok
+test tests::fs_role_opens_configured_root ... ok
+test tests::vault_relative_redb_path_used ... ok
+test tests::default_resolves_redb_on_tempdir ... ok
+test tests::with_productive_port_drops_adapter_after_op ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+## gate-event-manager-port
+{"ok":true,"scanned_files":212,"violation_count":0,"violations":[]}
+## gate-eda-unit-no-real-backend
+{"ok":true,"scanned_files":162,"violation_count":0,"violations":[]}
+## gate-evolution
+SddIA gate-evolution: modo degradado (stale). Base: origin/main. Operando sin paridad CI; el veredicto sobre material sigue activo.
+{"exitCode":0,"message":"delta cubierto","meta":{"entityId":"sddia-evolution-register","entityKind":"skill","schemaVersion":"2.0"},"result":{"base_resolution":{"age_seconds":7602,"fetch_outcome":null,"mode":"stale","ref":"origin/main","spec":"origin/main...HEAD"},"findings":[],"operation":"verdict","reason_codes":["EVOL_OK"]},"success":true}

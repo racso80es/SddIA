@@ -1,4 +1,7 @@
 //! Composition root productivo: rol `default` → `adapter:redb-event-adapter`.
+//! Configuración física desde bóveda de instancia (MAN-36).
+
+mod config;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -8,19 +11,50 @@ use sddia_core::ports::event_manager::{
 };
 use sddia_infrastructure_redb_event::RedbEventAdapter;
 
+pub use config::{
+    resolve_backend_config, resolve_fs_backend_config, resolve_productive_backend_config,
+    resolve_var, validate_configured_path, EventManagerBackendConfig, EventManagerConfigError,
+    EventManagerProvider, DEFAULT_PROVIDER, DEFAULT_REDB_REL, VAR_FS_ROOT, VAR_PROVIDER,
+    VAR_REDB_PATH,
+};
+
 const DEFAULT_ROLE: &str = "default";
 const REDB_PROVIDER: &str = "adapter:redb-event-adapter";
-
-/// Ruta canónica del store de eventos bajo la raíz del repositorio.
-pub fn events_redb_path(repo_root: &Path) -> PathBuf {
-    repo_root.join(".SddIA/runtime/events.redb")
-}
+const FS_PROVIDER: &str = "adapter:fs-event-adapter";
 
 fn open_budget_ms() -> u64 {
     std::env::var("SDDIA_EVENT_MANAGER_OPEN_BUDGET_MS")
         .ok()
         .and_then(|v| v.trim().parse().ok())
         .unwrap_or(2000)
+}
+
+/// Ruta Redb ya resuelta/validada desde bóveda (solo composition root).
+pub fn resolved_redb_path(repo_root: &Path) -> Result<PathBuf, String> {
+    resolve_productive_backend_config(repo_root)
+        .map(|c| c.redb_path)
+        .map_err(|e| e.to_string())
+}
+
+/// ¿Existe el fichero Redb en la ruta resuelta? (sin exportar el path al caller).
+pub fn productive_store_present(repo_root: &Path) -> bool {
+    resolved_redb_path(repo_root)
+        .map(|p| p.is_file())
+        .unwrap_or(false)
+}
+
+/// Compara un candidato con la ruta Redb resuelta (detección sin cablear default).
+pub fn is_resolved_redb_path(repo_root: &Path, candidate: &Path) -> bool {
+    match resolved_redb_path(repo_root) {
+        Ok(resolved) => paths_equal_lex(candidate, &resolved),
+        Err(_) => false,
+    }
+}
+
+fn paths_equal_lex(a: &Path, b: &Path) -> bool {
+    let na = a.to_string_lossy().replace('\\', "/");
+    let nb = b.to_string_lossy().replace('\\', "/");
+    na == nb
 }
 
 /// Abre `RedbEventAdapter` con reintentos acotados ante lock de base de datos.
@@ -44,9 +78,10 @@ pub fn open_redb_adapter(path: &Path) -> Result<Arc<dyn EventManagerPort>, Strin
     }
 }
 
-/// Factory con rol productivo `default` → Redb y builder registrado.
+/// Factory con rol productivo `default` → Redb desde config de bóveda.
 pub fn productive_factory(repo_root: &Path) -> Result<EventManagerDiFactory, String> {
-    let path = events_redb_path(repo_root);
+    let cfg = resolve_productive_backend_config(repo_root).map_err(|e| e.to_string())?;
+    let path = cfg.redb_path;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
@@ -77,6 +112,18 @@ pub fn resolve_productive_port(repo_root: &Path) -> Result<Arc<dyn EventManagerP
     factory
         .resolve(DEFAULT_ROLE)
         .map_err(|e| e.to_string())
+}
+
+/// Abre adaptador FS solo para test/migración (raíz desde bóveda).
+pub fn resolve_fs_port(repo_root: &Path) -> Result<Arc<dyn EventManagerPort>, String> {
+    let root = resolve_fs_backend_config(repo_root).map_err(|e| e.to_string())?;
+    if let Some(parent) = root.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let adapter = sddia_infrastructure_fs_event::FsEventAdapter::open(&root)
+        .map_err(|e| e.to_string())?;
+    let _ = FS_PROVIDER;
+    Ok(Arc::new(adapter))
 }
 
 fn process_name_for_telemetry() -> String {
@@ -141,6 +188,9 @@ pub fn resolve_role_port(
     if role == "test" {
         return resolve_test_port();
     }
+    if role == "migration" || role == "test-fs" {
+        return resolve_fs_port(repo_root);
+    }
     if role == DEFAULT_ROLE {
         return resolve_productive_port(repo_root);
     }
@@ -164,6 +214,22 @@ mod tests {
             })
             .expect("handshake");
         assert!(hs.compatible);
+        assert!(productive_store_present(dir.path()));
+    }
+
+    #[test]
+    fn vault_relative_redb_path_used() {
+        let dir = tempdir().expect("tempdir");
+        let root = dir.path();
+        std::fs::create_dir_all(root.join(".SddIA/.dev")).unwrap();
+        std::fs::write(
+            root.join(".SddIA/.dev/.env"),
+            "SDDIA_EVENT_MANAGER_REDB_PATH=custom/vault.redb\n",
+        )
+        .unwrap();
+        let port = resolve_productive_port(root).expect("resolve");
+        let _ = port;
+        assert!(root.join("custom/vault.redb").is_file());
     }
 
     #[test]
@@ -218,5 +284,25 @@ mod tests {
             Err(_) => panic!("expected ContractVersionMismatch"),
             Ok(_) => panic!("expected version gate rejection"),
         }
+    }
+
+    #[test]
+    fn fs_role_opens_configured_root() {
+        let dir = tempdir().expect("tempdir");
+        let root = dir.path();
+        std::fs::create_dir_all(root.join(".SddIA/.dev")).unwrap();
+        std::fs::write(
+            root.join(".SddIA/.dev/.env"),
+            "SDDIA_EVENT_MANAGER_FS_ROOT=fs-lab\n",
+        )
+        .unwrap();
+        let port = resolve_fs_port(root).expect("fs port");
+        let hs = port
+            .handshake_version(sddia_core::ports::event_manager::HandshakeVersionRequest {
+                requested_range: sddia_core::ports::event_manager::REQUIRED_CONTRACT_RANGE.into(),
+            })
+            .expect("handshake");
+        assert!(hs.compatible);
+        assert!(root.join("fs-lab").is_dir());
     }
 }

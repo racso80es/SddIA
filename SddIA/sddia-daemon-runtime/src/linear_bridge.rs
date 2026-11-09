@@ -290,8 +290,8 @@ pub fn materialize_pending(repo: &Path, bus_event: &Value) -> Result<PathBuf, St
     let mut stamped = bus_event.clone();
     sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     record_ecst_productive(repo, "domain", &stamped)?;
-    let _ = (bus, event_id);
-    Ok(sddia_core::ports::event_manager::events_redb_path(repo))
+    let _ = bus;
+    Ok(repo.join(format!(".events/pending/{event_id}.json")))
 }
 
 /// Procesa un lote `list_issues` (ítems ya reducidos). Devuelve rutas de eventos materializados.
@@ -351,6 +351,8 @@ pub fn assimilate_tracker_items(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sddia_core::ports::event_manager::GetEventRequest;
+
     fn tmp_repo() -> PathBuf {
         let dir = std::env::temp_dir().join(format!("linear-bridge-{}", Uuid::new_v4()));
         fs::create_dir_all(dir.join(".events/pending")).unwrap();
@@ -387,8 +389,18 @@ mod tests {
         let (paths, _) =
             assimilate_list_issues(&repo, slug, hu, pbi, &[second], Utc::now()).unwrap();
         assert_eq!(paths.len(), 1);
-        let raw = fs::read_to_string(&paths[0]).unwrap();
-        let ev: Value = serde_json::from_str(&raw).unwrap();
+        let event_id = paths[0]
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .expect("event_id desde path lógico");
+        let ev = sddia_event_manager_host::with_productive_port(&repo, "test_get_event", |port| {
+            port.get_event(GetEventRequest {
+                event_id: event_id.to_string(),
+            })
+            .map(|r| r.ecst)
+            .map_err(|e| e.to_string())
+        })
+        .expect("get_event");
         assert_eq!(ev.get("event_type"), Some(&json!("Tracker_Issue_Changed")));
         assert_eq!(
             ev.pointer("/payload/source"),

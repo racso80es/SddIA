@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `f7687d4a-f5ac-4853-8ff2-f4e0534c3d7b` | 2026-11-09 | MAN-36: bóveda soberana Event Manager — host config, Cúmulo lógico-only, CA-4 consumidores | CANONICO | `SddIA/evolution/f7687d4a-f5ac-4853-8ff2-f4e0534c3d7b.md` |
 | `30d20d57-389a-47a0-8da5-07c5015e324e` | 2026-11-09 | MAN-37: harness EDA unitarios, gate anti-backend real e index-qa CI | CANONICO | `SddIA/evolution/30d20d57-389a-47a0-8da5-07c5015e324e.md` |
 | `7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038` | 2026-11-08 | MAN-38: scoped EventManagerPort; watcher claim/ACK acotado; sin cache productiva en eda_port | CANONICO | `SddIA/evolution/7b8e9f0a-1c2d-4e3f-9a4b-5c6d7e8f9038.md` |
 | `94772dd3-7612-415d-ac35-555f9a3b5213` | 2026-11-08 | MAN-35: cutover EventManagerPort 1.2 productivo + gate T8 + AC-9. | CANONICO | `SddIA/evolution/94772dd3-7612-415d-ac35-555f9a3b5213.md` |

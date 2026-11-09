@@ -1,6 +1,6 @@
 {
-  "version": "1.11.1",
-  "description": "SSOT (Single Source of Truth) para la topología del Core SddIA Unificado",
+  "version": "1.12.0",
+  "description": "SSOT topológico Core SddIA — Event Manager: solo ids/tablas/suscripciones lógicas; ubicación física Redb/FS en bóveda de instancia (MAN-36)",
   "core": {
     "constitution": "SddIA/CONSTITUTION_CORE.md",
     "manifest": "SddIA/sddia-core.manifest.json",
@@ -86,10 +86,8 @@
     "status": ".SddIA/daemons/status",
     "state": ".SddIA/daemons/state"
   },
-  "event_bus": ".SddIA/runtime/events.redb",
   "eda_coverage": "SddIA/core/eda-coverage.json",
   "eda_bus": {
-    "store": ".SddIA/runtime/events.redb",
     "events": "events",
     "subscriber_delivery": "subscriber_delivery",
     "dead_letter_index": "dead_letter_index",
@@ -98,7 +96,6 @@
     "subscriptions": "SddIA/core/event-domain-subscriptions.json"
   },
   "eda_fractal": {
-    "store": ".SddIA/runtime/events.redb",
     "events": "events",
     "subscriber_delivery": "subscriber_delivery",
     "dead_letter_index": "dead_letter_index",

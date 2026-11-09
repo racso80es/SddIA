@@ -107,31 +107,19 @@ fn probe_bus_topology(repo: &Path) -> ProbeResult {
             };
         }
     }
-    if true {
-        let db = crate::engine::eda_port::runtime_db_path(repo);
-        if let Some(parent) = db.parent() {
-            if let Err(e) = fs::create_dir_all(parent) {
-                return ProbeResult {
-                    id: "bus.topology",
-                    ok: false,
-                    cause: format!("runtime redb: {e}"),
-                };
-            }
-        }
-        if let Err(e) = eda_port::probe_productive_handshake(repo) {
-            if e.contains("Database already open") || e.contains("Cannot acquire lock") {
-                return ProbeResult {
-                    id: "bus.topology",
-                    ok: true,
-                    cause: "store ocupado".into(),
-                };
-            }
+    if let Err(e) = eda_port::probe_productive_handshake(repo) {
+        if e.contains("Database already open") || e.contains("Cannot acquire lock") {
             return ProbeResult {
                 id: "bus.topology",
-                ok: false,
-                cause: format!("events.redb no abre: {e}"),
+                ok: true,
+                cause: "store ocupado".into(),
             };
         }
+        return ProbeResult {
+            id: "bus.topology",
+            ok: false,
+            cause: format!("events.redb no abre: {e}"),
+        };
     }
     let overlay = repo.join(".SddIA/local.paths.json");
     if overlay.is_file() {

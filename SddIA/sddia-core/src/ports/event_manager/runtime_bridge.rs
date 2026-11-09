@@ -11,14 +11,10 @@ use crate::ports::event_manager::contract::{
 use crate::ports::event_manager::error::EventManagerError;
 use crate::ports::event_manager::port::EventManagerPort;
 
-/// Ruta canónica Cúmulo del store de eventos.
-pub fn events_redb_path(repo: &Path) -> PathBuf {
-    repo.join(".SddIA/runtime/events.redb")
-}
-
 #[derive(Clone, Debug)]
 pub struct PublishSeal {
     pub event_id: String,
+    /// Token lógico de observabilidad (no ruta de disco del store Redb).
     pub target_path: PathBuf,
     pub logical_rel: String,
 }
@@ -51,7 +47,7 @@ fn trace_id_from_event(event: &Value) -> Option<String> {
 /// Publica ECST al puerto; idempotente ante duplicado.
 pub fn publish_ecst(
     port: &dyn EventManagerPort,
-    repo: &Path,
+    _repo: &Path,
     family: &str,
     event: &Value,
 ) -> Result<PublishSeal, String> {
@@ -69,7 +65,7 @@ pub fn publish_ecst(
     let logical_rel = logical_event_rel(family, &event_id);
     Ok(PublishSeal {
         event_id,
-        target_path: events_redb_path(repo),
+        target_path: PathBuf::from(&logical_rel),
         logical_rel,
     })
 }

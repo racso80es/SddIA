@@ -198,14 +198,11 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family: &str) -> Result<V
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     }
     eda_port::record_ecst(repo, family, &stamped)?;
-    let target = eda_port::runtime_db_path(repo);
+    // Token lógico (L-LOGICAL-EVENTS / CA-4); no ruta física Redb.
+    let logical = format!(".events/{family}/{event_id}.json");
     Ok(json!({
         "event_id": event_id,
-        "target_path": target
-            .strip_prefix(repo)
-            .unwrap_or(&target)
-            .to_string_lossy()
-            .replace('\\', "/"),
+        "target_path": logical,
         "family": family,
     }))
 }
