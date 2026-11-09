@@ -22,7 +22,7 @@ tracker_provider: linear
 correlation_id: 547f634e-7c18-497d-a0c5-2c0c68b84dff
 audit_event_reference: 547f634e-7c18-497d-a0c5-2c0c68b84dff
 source_process: feature
-execution_id: "d0942510-6db3-412b-84e2-62de7359dd2e"
+execution_id: d0942510-6db3-412b-84e2-62de7359dd2e
 workspace_path_injected: .SddIA/workspaces/pull-request-review/d0942510-6db3-412b-84e2-62de7359dd2e/
 workspace_materialized: false
 global: APTO
@@ -47,9 +47,9 @@ evidence_bridge_notes: R1/R2 copia Runtime evidence (machine+session) source=nat
 shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID 547f634e… · exec d0942510…
 head_commit_sha_fs: 1b8a4c56d70288438c23547372e88baf36eb1f5a
 validated_base_sha: 9caa03433c8a5b9e207760d313568a1588c5957d
-validated_head_sha: 1271e17349a43352f1a44ffc6fe74785f515905a
-validated_tree_sha: 5af51ee19acf11dbd53f98012885f8eb40fa1f89
-diff_digest: sha256:92b4f10032327de41fa9d5fb7c371ba50224fa0829d8d2e94a67a5e85e0cc206
+validated_head_sha: 296164c6ad8a71c382a91363ea9ab55584823921
+validated_tree_sha: 5bc2bafab789e847dc8d5039f3f1db6c454d2f8d
+diff_digest: sha256:e5aa1e6b1944f688bbdb4b324d51050fbc30034fa91cf89bc6227517e8a24413
 revoked_entity_alert: delivery-close-cycle / bug-fix / feature / entity-manager / event-creator / refactorization ∈ revoked — L-LATERAL; pull-request-review ∉ revoked/permanent
 scope: PPR Veredicto y bloqueo — rama feat/man-40-eda-consumers-logical-seal (CID 547f634e… · exec d0942510… · MAN-40)
 checks:
@@ -139,6 +139,7 @@ authorization_status:
   emitter_agent: argos
   note: PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL + execution.md) · PPR∉revoked/permanent · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · accept_pr_handoff pending (L-HANDOFF-F5)
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
