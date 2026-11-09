@@ -15,32 +15,38 @@ contract: "eda.event_manager"
 contract_version: "1.2.0"
 agent: dedalo
 phase: diseno-blueprint
-version_spec: "1.0.0"
+version_spec: "1.1.0"
 status: blueprint-ready
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "1718099f-ca1b-44cb-8fb4-5a4dcccb98fe"
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-37.jsonl"
+execution_id: "47b9678f-7ee1-4080-bd3e-12cf0d366069"
 ---
 # Especificación técnica — man-37-eda-test-pyramid
 
 Entrada: `objectives.md` + `clarify.md` (laudos L-*) + semilla **PBI-94396a84** / canal **MAN-37** (padre **MAN-35**).
-Predecesor: `event-manager-port-cutover` (MAN-35) — puerto productivo ya canónico; este ciclo fija la **disciplina de tests**.
-Cuerpo Linear MAN-37: **no materializado** en `.SddIA/lab-linear-store.json` (`issues: {}`); canal outbound + semilla + laudos + AC bastan (**L-TRACKER** / D4.1 clarify).
+Predecesor: `event-manager-port-cutover` (MAN-35) — puerto productivo canónico; este ciclo fija la **disciplina de tests**.
+Composición productiva viva: apertura scoped vía `sddia_event_manager_host::with_productive_port` (MAN-38) — **fuera de alcance** reabrir; solo contexto.
+Cuerpo Linear MAN-37: **no materializado** en lab-store (`issues: {}`); forge-pbi sellado solo metadatos; canal outbound + semilla + laudos + AC bastan (**L-TRACKER** / D4.1 clarify).
 
-## 0. Evidencia viva (revalidada 2026-11-09 — execution_id actual)
+## 0. Evidencia viva (revalidada 2026-11-09 — execution_id `47b9678f-7ee1-4080-bd3e-12cf0d366069`)
 
 | Artefacto | Estado vivo | Implicación forja |
 |-----------|-------------|-------------------|
-| `InMemoryEventManagerMock` | Existe en `sddia-core/.../memory_mock.rs` | Reutilizar; no reinventar |
-| `FaultInjection` | `fail_write`, `steal_lease`, `duplicate_ack_noop` | Cubrir en unitarios (**L-FAULTS** / **AC-2**) |
-| `EventManagerTestHarness` | **Ausente** | Forja **T0** |
-| `eda_port::install_port` / `clear_port` | Thread-local mock en `execute-process` | Harness RAII debe instalar/restaurar vía este canal |
+| `InMemoryEventManagerMock` | `SddIA/sddia-core/src/ports/event_manager/memory_mock.rs` | Reutilizar; no reinventar |
+| `FaultInjection` | `fail_write`, `steal_lease`, `duplicate_ack_noop` (+ `set_faults` / `with_faults`) | Cubrir en unitarios (**L-FAULTS** / **AC-2**) |
+| `EventManagerTestHarness` | **Ausente** (ni en core ni en `execute-process`) | Forja **T0** |
+| `eda_port::install_port` / `clear_port` | Thread-local mock; `with_port` prioriza mock | Harness RAII debe usar este canal |
+| Productivo scoped | `with_productive_port` / `resolve_productive_port` (host) | No cache productivo en TLS; no-goal MAN-37 |
 | `eda_port::test_lab` | `ParallelLabGuard`, `filesystem_eda`, `redb_eda` + `override_store_mode` | Residuo lab: **prohibido** en unitarios post-migración; reclasificar a integration |
-| `eda_port_legacy.rs` | `#[cfg(test)]` puente StoreMode/FS | Solo allowlist integration/legacy paths; no unitarios consumidores |
-| `run_event_manager_contract_suite` | Mock (+ peers adapters) | Capa **contract**; allowlist gate (**L-ALLOWLIST**) |
-| Gate MAN-35 `gate_event_manager_port.rs` | Veto **productivo**; **omite** bloques `#[cfg(test)]` | MAN-37 añade gate **unitario** complementario (no sustituye MAN-35) |
-| Unitarios con L-STRIP | Hits en `route_domain_core`, `eda_port`, handlers, `actions`, `tests/common`, matrices I/O, etc. | Inventario T1 → migrar/reclasificar T2–T3 |
-| `EventManagerDiFactory::with_test_role_defaults` | Rol `test` → mock | Harness puede apoyarse; no wiring ad hoc disperso (**L-HARNESS**) |
+| `eda_port` `#[cfg(test)]` bridges | Ramas StoreMode → `eda_port_legacy` en `publish_ecst`/`record_ecst`/… | Objetivo L-STRIP: unitarios no deben activar esas ramas |
+| `eda_port_legacy.rs` | Puente StoreMode/FS en test | Solo allowlist integration/legacy; no unitarios consumidores |
+| `scoped_tests` en `eda_port` | `install_port` ad hoc + `clear_port` | Migrar a harness (T2); coexistencia temporal OK en T0 |
+| `run_event_manager_contract_suite` | Mock (+ peers adapters) | Capa **contract**; allowlist (**L-ALLOWLIST**) |
+| Gate MAN-35 `gate_event_manager_port.rs` | Veto **productivo**; **omite** `#[cfg(test)]` / `#[test]` | MAN-37 añade gate **unitario** complementario |
+| Gate unitario MAN-37 | **Ausente** (`gate_eda_unit_*` no existe) | Forja **T4** |
+| Integration matrices | `execute-process/tests/` (`eda_store_io_matrix_*`, `event_store_writers`, `eda_subscriber_*`, `memory_evolution_ingest`, `common`) | Capa **integration** / allowlist (**T3**) |
+| Handlers / actions | Múltiples handlers EDA bajo `engine/handlers/` + `actions.rs` | Inventario T1 → migrate/reclassify |
+| `EventManagerDiFactory::with_test_role_defaults` | Rol `test` → mock (si presente) | Harness puede apoyarse; no wiring ad hoc (**L-HARNESS**) |
 
 ## 1. Contexto y decisión
 
@@ -80,7 +86,7 @@ flowchart TB
   CONTRACT --> REDB["RedbEventAdapter tempdir"]
   INTEG["tests/ integration\nmatrices I/O / host"] --> REDB
   INTEG --> FS["FS / StoreMode lab"]
-  E2E["CLI / cápsulas / labs"] --> HOST["composition productiva scoped"]
+  E2E["CLI / cápsulas / labs"] --> HOST["with_productive_port scoped"]
   GATEU["gate-eda-unit-no-real-backend"] -.->|veto| STRIP["sddia_event_store / EventStore::open\nStoreMode / override_store_mode / .events/*"]
 ```
 
@@ -90,6 +96,7 @@ Reglas:
 2. Fallos de bus en unitarios **solo** vía `FaultInjection` del mock.
 3. Redb, FS, host, CLI, cápsulas externas **prohibidos** en unitarios fuera de allowlist.
 4. Gate MAN-35 (productivo) permanece; gate MAN-37 escanea **código de test unitario**.
+5. No activar `filesystem_eda` / `redb_eda` / `override_store_mode` en el mismo scope que el harness unitario.
 
 ## 3. EventManagerTestHarness (**T0** / **L-HARNESS**)
 
@@ -97,9 +104,9 @@ Reglas:
 
 | Opción | Path | Rol |
 |--------|------|-----|
-| **Canónico** | `SddIA/engine/execute-process/src/engine/eda_port.rs` (submódulo `test_harness` o hermano `event_manager_test_harness.rs`) | RAII sobre `install_port` / `clear_port` ya usados por el motor |
-| Export | `pub use` desde `eda_port` / `engine` para tests del crate y reexports si otros crates del workspace comparten el lab |
-| Core | `InMemoryEventManagerMock` + `FaultInjection` permanecen en `sddia-core` |
+| **Canónico** | `SddIA/engine/execute-process/src/engine/eda_port.rs` (submódulo `test_harness`) **o** hermano `event_manager_test_harness.rs` | RAII sobre `install_port` / `clear_port` |
+| Export | `pub use` desde `eda_port` / `engine` para tests del crate | Evitar segundo TLS |
+| Core | `InMemoryEventManagerMock` + `FaultInjection` permanecen en `sddia-core` | Sin cambio semántico obligatorio |
 
 No duplicar un segundo thread-local. El harness es la **única** forma canónica de instalar el mock en unitarios.
 
@@ -109,7 +116,7 @@ No duplicar un segundo thread-local. El harness es la **única** forma canónica
 /// RAII: instala InMemoryEventManagerMock como EventManagerPort; restaura en Drop.
 pub struct EventManagerTestHarness {
     mock: Arc<InMemoryEventManagerMock>,
-    // opcional: mutex lab si el crate aún serializa tests que tocan TLS global
+    // opcional: MutexGuard lab si el crate aún serializa tests que tocan TLS global
 }
 
 impl EventManagerTestHarness {
@@ -127,9 +134,10 @@ impl Drop for EventManagerTestHarness {
 
 Invariantes:
 
-- Al entrar: `clear_port` previo + `install_port(mock)`.
-- Al salir: `clear_port`; **no** dejar `override_store_mode` activo (si el harness adquiere mutex lab, reset a `None`).
+- Al entrar: `clear_port` previo + `install_port(mock)` (y, si se usa mutex lab, adquirirlo).
+- Al salir: `clear_port`; **no** dejar `override_store_mode` activo (reset a `None` si el harness tocó lab).
 - Prohibido en unitarios: llamar `filesystem_eda` / `redb_eda` / `override_store_mode` junto al harness.
+- Preferible reutilizar `ParallelLabGuard` solo si hace falta serialización; el harness **no** debe fijar StoreMode Filesystem/Redb.
 
 ### 3.3 Guía de uso (mínima en T0; detalle T5)
 
@@ -147,11 +155,11 @@ fn publish_fail_is_deterministic() {
 
 ## 4. FaultInjection en unitarios (**T0/T2** / **L-FAULTS** / **AC-2**)
 
-| Fault | Semántica mock | Aserción unitaria mínima |
-|-------|----------------|--------------------------|
-| `fail_write` | `publish_ecst` → `EventManagerError::InjectedFault` | Consumidor propaga/mapea error; sin I/O |
-| `steal_lease` | Fuerza liberación de lease en `claim_pending` | Segundo claim / reintento ve evento; sin race FS |
-| `duplicate_ack_noop` | ACK duplicado idempotente | Segundo `record_delivery(Ack)` no falla |
+| Fault | Semántica mock (viva) | Aserción unitaria mínima |
+|-------|------------------------|--------------------------|
+| `fail_write` | `publish_ecst` → `EventManagerError::InjectedFault("fail_write")` | Consumidor propaga/mapea error; sin I/O |
+| `steal_lease` | Fuerza liberación del primer claimed → pending en `claim_pending` | Segundo claim / reintento ve evento; sin race FS |
+| `duplicate_ack_noop` | ACK duplicado idempotente en `record_delivery` | Segundo `record_delivery(Ack)` no falla |
 
 Extensiones de fault **solo** si el contrato lo exige y se documentan en este `persist_ref`.
 
@@ -162,9 +170,9 @@ Extensiones de fault **solo** si el contrato lo exige y se documentan en este `p
 | **Unit** | `#[cfg(test)]` en `src/**` de consumidores; tests lib sin I/O store | Harness + mock + FaultInjection; asserts sobre puerto/lógica | `sddia_event_store`, `EventStore::open`, `StoreMode`, `override_store_mode`, inspección `.events/*`, open `events.redb`, CLI/cápsula real |
 | **Contract** | `contract_suite.rs`; tests adapters | Suite + mock + Redb/FS/external tempdir | Mezclar asserts de lógica de negocio de consumidores |
 | **Integration** | `execute-process/tests/**`, labs host | Redb/FS efímero, `test_lab::redb_eda`/`filesystem_eda`, matrices I/O | Contar como unitario ante el gate |
-| **E2E** | labs CLI/cápsulas/workflows | Procesos reales aislados | Abrir store desde unitarios embebidos |
+| **E2E** | labs CLI/cápsulas/workflows (`sddia-qa` e2e labs) | Procesos reales aislados | Abrir store desde unitarios embebidos |
 
-Documento canónico de taxonomía: sección en este `spec.md` + resumen operativo en `plan.md`; Tekton materializa referencia cruzada en README/norma solo si el tajo T5 lo exige sin abrir Genoma innecesariamente.
+Documento canónico de taxonomía: esta sección + resumen operativo en `plan.md`; Tekton materializa referencia cruzada en README/norma solo si T5 lo exige **sin** abrir Genoma innecesariamente (**L-GENOME**).
 
 ## 6. Inventario y migración (**T1–T3** / **L-INVENTORY** / **L-STRIP**)
 
@@ -175,14 +183,16 @@ Focos con evidencia L-STRIP / backend real en tests (lista **no exhaustiva** —
 | Locus | Señales | Destino esperado |
 |-------|---------|------------------|
 | `engine/eda_port.rs` `test_lab` | `override_store_mode`, `filesystem_eda`, `redb_eda` | Integration helpers; unitarios → harness |
+| `engine/eda_port.rs` `#[cfg(test)]` bridges | StoreMode → legacy en publish/record/load/… | Unitarios no activan StoreMode; strip path unit |
+| `engine/eda_port.rs` `scoped_tests` | `install_port` ad hoc | Migrar a harness |
 | `engine/eda_port_legacy.rs` | puente StoreMode en `#[cfg(test)]` | Allowlist integration / retirar de path unitario |
-| `engine/route_domain_core.rs` `#[cfg(test)]` | `lab_filesystem_eda`, `.events/pending`, StoreMode | Migrar a mock **o** reclasificar integration |
-| `engine/actions.rs`, `handlers/*` (vitality, heartbeat, tracker_*, …) | `EventStore::open`, `override_store_mode` | Idem |
+| `engine/route_domain_core.rs` `#[cfg(test)]` | lab FS / StoreMode / `.events` (si aplica) | Migrar a mock **o** reclasificar integration |
+| `engine/actions.rs`, `handlers/*` | `EventStore::open`, `override_store_mode`, touches EDA | Idem |
 | `engine/ecst_input_loader.rs`, `domain_mutation.rs`, `delivery_close.rs`, … | install/store touches | Harness |
-| `execute-process/tests/common` + matrices (`eda_store_io_matrix_*`, `event_store_writers`, `eda_subscriber_*`, `memory_evolution_ingest`) | StoreMode / EventStore | **Integration** (allowlist) |
-| `tools/sddia-qa/gate_event_manager_port.rs` | patrones forbidden | Extender / sibling gate unitario |
+| `execute-process/tests/common` + matrices | StoreMode / EventStore / Redb | **Integration** (allowlist) |
+| `tools/sddia-qa/gate_event_manager_port.rs` | patrones forbidden productivo | Referencia; sibling gate unitario en T4 |
 | `sddia-core` ports tests | mock/suite | Unit/contract OK |
-| `sddia-event-manager-host` tests | Redb tempdir | Contract/integration allowlist |
+| `sddia-event-manager-host` tests | Redb tempdir / scoped | Contract/integration allowlist |
 
 ### 6.2 Reglas de migración (T2)
 
@@ -209,6 +219,7 @@ Fichero canónico (forja T4): p.ej. `SddIA/tools/sddia-qa/allowlists/eda-unit-ba
 2. `run_event_manager_contract_suite` y peers (`contract_suite.rs`, host contract tests).
 3. Paths `**/tests/**` integration explícitos + `eda_port_legacy.rs` **solo** mientras exista puente lab (meta: reducir).
 4. El propio gate (`gate_eda_unit_no_real_backend.rs` o nombre forja).
+5. Helpers `eda_port::test_lab` **solo** si el escáner los ve desde paths integration allowlisted (no desde unitarios de consumidores).
 
 Cualquier otra aparición de patrones L-STRIP en código unitario = **fractura de gate**.
 
@@ -218,12 +229,14 @@ Cualquier otra aparición de patrones L-STRIP en código unitario = **fractura d
 
 | Gate | Escanea | Omite |
 |------|---------|-------|
-| `gate_event_manager_port` (MAN-35) | Código **productivo** | Bloques `#[cfg(test)]` / `#[test]` |
+| `gate_event_manager_port` (MAN-35) | Código **productivo** (`productivo_lines`) | Bloques `#[cfg(test)]` / `#[test]` |
 | **Nuevo** gate unitario (MAN-37) | Código **dentro** de `#[cfg(test)]` / `#[test]` / módulos unitarios en `src/**` | Paths allowlist integration/contract/e2e |
+
+Diseño inverso al MAN-35: donde MAN-35 **salta** tests, MAN-37 **entra** en ellos.
 
 ### 8.2 Patrones veto (unitarios no allowlisted)
 
-- `sddia_event_store` / `use sddia_event_store`
+- `sddia_event_store` / `use sddia_event_store` / `sddia_event_store::`
 - `EventStore::open`
 - `StoreMode` / `override_store_mode`
 - open / path `events.redb` fuera de allowlist
@@ -234,6 +247,7 @@ Cualquier otra aparición de patrones L-STRIP en código unitario = **fractura d
 - Módulo en `sddia-qa` + subcomando CLI (paridad MAN-35).
 - Workflow CI / pre-commit que falle en violaciones.
 - CA CI → `PENDIENTE-CI` hasta `run_id` verde si aplica norma documental.
+- Tests del gate: fixture unitario con `EventStore::open` → KO; allowlisted → OK.
 
 ## 9. Criterios de aceptación (trazabilidad)
 
@@ -254,7 +268,7 @@ Cualquier otra aparición de patrones L-STRIP en código unitario = **fractura d
 |------|-----|
 | `SddIA/sddia-core/src/ports/event_manager/memory_mock.rs` | Mock + FaultInjection (sin cambio semántico obligatorio) |
 | `SddIA/sddia-core/src/ports/event_manager/contract_suite.rs` | Contract layer; allowlist |
-| `SddIA/engine/execute-process/src/engine/eda_port.rs` | `install_port` + **nuevo harness**; depurar `test_lab` de unitarios |
+| `SddIA/engine/execute-process/src/engine/eda_port.rs` | `install_port` + **nuevo harness**; depurar uso unitario de `test_lab` |
 | `SddIA/engine/execute-process/src/engine/eda_port_legacy.rs` | Contener / allowlist |
 | `SddIA/engine/execute-process/src/engine/route_domain_core.rs` + handlers / actions / … | Migración unitarios T2 |
 | `SddIA/engine/execute-process/tests/**` | Integration matrices T3 |
@@ -266,7 +280,7 @@ Cualquier otra aparición de patrones L-STRIP en código unitario = **fractura d
 
 ## 11. Fuera de alcance
 
-- Reabrir o revertir cutover productivo MAN-35.
+- Reabrir o revertir cutover productivo MAN-35 / composición scoped MAN-38.
 - Reintroducir modos `filesystem`/`dual` o `sddia-event-store` en runtime productivo.
 - Reimplementar RedbEventAdapter / store desde cero.
 - Tokenizar o publicar cápsulas NFT.
@@ -283,3 +297,4 @@ Cualquier otra aparición de patrones L-STRIP en código unitario = **fractura d
 | Capacidad / contrato | `eda:event-manager` / `eda.event_manager` 1.2 |
 | Clarificaciones | `clarify.md` L-* |
 | Objetivos / AC | `objectives.md` O1–O8 / AC-1…AC-8 |
+| Blueprint | `plan.md` T0…T6 |

@@ -1,0 +1,81 @@
+# MAN-37 / L-ALLOWLIST — paths donde backend real (store/FS/Redb) es legítimo
+# en capas contract / integration / e2e / legacy. El gate unitario omite estos paths.
+#
+# Formato: cada entrada es un sufijo o substring de path relativo al repo (separador /).
+
+version = 1
+feature = "man-37-eda-test-pyramid"
+
+# Capas integration (crate tests/) y contract suite
+path_contains = [
+  "/tests/",
+  "/tests.rs",
+  "contract_suite.rs",
+  "eda_store_io_matrix",
+  "eda_subscriber_",
+  "event_store_writers",
+  "memory_evolution_ingest",
+  "dlt_telemetry",
+]
+
+# Legacy bridge + locus lab + gates
+path_suffixes = [
+  "eda_port_legacy.rs",
+  "eda_port.rs",
+  "gate_eda_unit_no_real_backend.rs",
+  "gate_event_manager_port.rs",
+]
+
+# Crates adapters / host / store (contract + infrastructure)
+path_prefixes = [
+  "SddIA/sddia-event-store/",
+  "SddIA/infrastructure/",
+  "SddIA/sddia-event-manager-host/",
+]
+
+# Integration-in-src (T3 reclasificados; aún viven bajo #[cfg(test)] en engine).
+# Meta: preferir mover a execute-process/tests/** en ciclos posteriores.
+integration_src = [
+  "SddIA/engine/execute-process/src/engine/route_domain_core.rs",
+  "SddIA/engine/execute-process/src/engine/delivery_close.rs",
+  "SddIA/engine/execute-process/src/engine/actions.rs",
+  "SddIA/engine/execute-process/src/engine/accept_pr.rs",
+  "SddIA/engine/execute-process/src/engine/aiua_intent.rs",
+  "SddIA/engine/execute-process/src/engine/progress_trace.rs",
+  "SddIA/engine/execute-process/src/engine/suite_execution_requested.rs",
+  "SddIA/engine/execute-process/src/engine/radamanto_batch_core.rs",
+  "SddIA/engine/execute-process/src/engine/workspace_init.rs",
+  "SddIA/engine/execute-process/src/engine/thermodynamic.rs",
+  "SddIA/engine/execute-process/src/engine/cli_detach.rs",
+  "SddIA/engine/execute-process/src/engine/enrich_fracture_pbi_kaizen.rs",
+  "SddIA/engine/execute-process/src/engine/persist_pec_correlation_proof.rs",
+  "SddIA/engine/execute-process/src/engine/domain_authority.rs",
+  "SddIA/engine/execute-process/src/engine/capability_di_reactor.rs",
+  "SddIA/engine/execute-process/src/engine/eda_bus_topology.rs",
+  "SddIA/engine/execute-process/src/engine/linear_direct_cycle_e2e.rs",
+  "SddIA/engine/execute-process/src/engine/linear_done_gate_both_e2e.rs",
+  "SddIA/engine/execute-process/src/engine/handlers/system_vitality.rs",
+  "SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs",
+  "SddIA/engine/execute-process/src/engine/handlers/tracker_markdown_apply.rs",
+  "SddIA/engine/execute-process/src/engine/handlers/tracker_sync_replay.rs",
+  "SddIA/engine/execute-process/src/engine/handlers/aiua_stimulus.rs",
+  "SddIA/engine/execute-process/src/engine/handlers/kalma2",
+  "SddIA/engine/execute-process/src/engine/handlers/user_preference.rs",
+  "SddIA/engine/execute-process/src/engine/handlers/email_",
+  "SddIA/engine/execute-process/src/engine/capability_di_gate.rs",
+  "SddIA/engine/execute-process/src/engine/capability_di_output_validator.rs",
+  "SddIA/engine/execute-process/src/engine/cerbero_di_envelope.rs",
+  "SddIA/engine/execute-process/src/engine/cerbero_di_rbac.rs",
+  "SddIA/engine/execute-process/src/engine/handlers/instance_creator.rs",
+  "SddIA/engine/execute-process/src/engine/materialize_fracture_pbi.rs",
+  "SddIA/engine/execute-process/src/engine/materialize_kaizen_alert_doc.rs",
+  "SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs",
+]
+
+# E2E / tools con tests bajo src (T3)
+integration_tools_prefixes = [
+  "SddIA/interfaces/kalma2-bridge/",
+  "SddIA/tools/event-bus-audit/",
+  "SddIA/tools/repo-retention-purger/",
+  "SddIA/tools/thought-graph-access/",
+]

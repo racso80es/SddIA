@@ -179,6 +179,7 @@ jobs:
           SddIA/target/debug/sddia-qa verify-process-integrity
           SddIA/target/debug/sddia-qa verify-compiled-capsules
           SddIA/target/debug/sddia-qa gate-event-manager-port --json
+          SddIA/target/debug/sddia-qa gate-eda-unit-no-real-backend --json
 
       - uses: dtolnay/rust-toolchain@stable
 

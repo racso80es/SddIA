@@ -33,6 +33,7 @@ pub fn runtime_db_path(repo: &Path) -> PathBuf {
 }
 
 /// Mock / DI de test: persiste en thread-local sin abrir Redb.
+/// En unitarios preferir [`EventManagerTestHarness`] (MAN-37); este API queda para labs ad hoc.
 pub fn install_port(port: Arc<dyn EventManagerPort>) {
     PORT.with(|slot| *slot.borrow_mut() = Some(port));
     PORT_REPO.with(|slot| *slot.borrow_mut() = None);
@@ -281,10 +282,166 @@ pub fn port_arc(repo: &Path) -> Result<Arc<dyn EventManagerPort>, String> {
     resolve_productive_port(repo)
 }
 
+/// Harness RAII canónico para unitarios EDA (MAN-37 / L-HARNESS).
+/// Preferir sobre `install_port` ad hoc; `Drop` restaura TLS.
+#[cfg(test)]
+pub mod test_harness {
+    use super::*;
+    use super::test_lab::ParallelLabGuard;
+    use sddia_core::ports::event_manager::{
+        ClaimPendingRequest, DeliveryStatus, EventManagerError, FaultInjection,
+        InMemoryEventManagerMock, PublishEcstRequest, RecordDeliveryRequest,
+    };
+
+    /// RAII: instala `InMemoryEventManagerMock` como `EventManagerPort`; restaura en `Drop`.
+    ///
+    /// Adquiere `ParallelLabGuard` solo para serializar TLS — **no** fija StoreMode FS/Redb.
+    /// Guía: `EventManagerTestHarness::with_faults(FaultInjection { fail_write: true, ..Default::default() })`.
+    pub struct EventManagerTestHarness {
+        mock: Arc<InMemoryEventManagerMock>,
+        _lab: ParallelLabGuard,
+    }
+
+    impl EventManagerTestHarness {
+        pub fn new() -> Self {
+            let _lab = ParallelLabGuard::acquire();
+            let mock = Arc::new(InMemoryEventManagerMock::new());
+            install_port(mock.clone());
+            Self { mock, _lab }
+        }
+
+        pub fn with_faults(faults: FaultInjection) -> Self {
+            let _lab = ParallelLabGuard::acquire();
+            let mock = Arc::new(InMemoryEventManagerMock::with_faults(faults));
+            install_port(mock.clone());
+            Self { mock, _lab }
+        }
+
+        pub fn mock(&self) -> Arc<InMemoryEventManagerMock> {
+            self.mock.clone()
+        }
+
+        pub fn port(&self) -> Arc<dyn EventManagerPort> {
+            self.mock.clone()
+        }
+
+        pub fn set_faults(&self, faults: FaultInjection) {
+            self.mock.set_faults(faults);
+        }
+    }
+
+    impl Drop for EventManagerTestHarness {
+        fn drop(&mut self) {
+            clear_port();
+        }
+    }
+
+    #[test]
+    fn harness_fail_write_is_deterministic() {
+        let h = EventManagerTestHarness::with_faults(FaultInjection {
+            fail_write: true,
+            ..Default::default()
+        });
+        let err = h
+            .mock()
+            .publish_ecst(PublishEcstRequest {
+                event_id: "evt-fail-write".into(),
+                ecst: serde_json::json!({"k": 1}),
+                trace_id: None,
+            })
+            .expect_err("fail_write");
+        assert!(matches!(
+            err,
+            EventManagerError::InjectedFault(ref s) if s == "fail_write"
+        ));
+    }
+
+    #[test]
+    fn harness_steal_lease_returns_event_to_pending() {
+        let h = EventManagerTestHarness::new();
+        let id = "evt-steal".to_string();
+        h.mock()
+            .publish_ecst(PublishEcstRequest {
+                event_id: id.clone(),
+                ecst: serde_json::json!({"k": 1}),
+                trace_id: None,
+            })
+            .expect("publish");
+        let first = h
+            .mock()
+            .claim_pending(ClaimPendingRequest {
+                lease_owner: "owner-a".into(),
+                limit: 1,
+                lease_ttl_ms: Some(60_000),
+            })
+            .expect("claim a");
+        assert_eq!(first.events.len(), 1);
+        assert_eq!(first.events[0].event_id, id);
+
+        h.set_faults(FaultInjection {
+            steal_lease: true,
+            ..Default::default()
+        });
+        let second = h
+            .mock()
+            .claim_pending(ClaimPendingRequest {
+                lease_owner: "owner-b".into(),
+                limit: 1,
+                lease_ttl_ms: Some(60_000),
+            })
+            .expect("claim b after steal");
+        assert_eq!(second.events.len(), 1);
+        assert_eq!(second.events[0].event_id, id);
+        assert_eq!(second.events[0].lease_owner, "owner-b");
+    }
+
+    #[test]
+    fn harness_duplicate_ack_noop_is_idempotent() {
+        let h = EventManagerTestHarness::with_faults(FaultInjection {
+            duplicate_ack_noop: true,
+            ..Default::default()
+        });
+        let id = "evt-dup-ack".to_string();
+        h.mock()
+            .publish_ecst(PublishEcstRequest {
+                event_id: id.clone(),
+                ecst: serde_json::json!({"k": 1}),
+                trace_id: None,
+            })
+            .expect("publish");
+        h.mock()
+            .claim_pending(ClaimPendingRequest {
+                lease_owner: "owner-a".into(),
+                limit: 1,
+                lease_ttl_ms: Some(60_000),
+            })
+            .expect("claim");
+        let delivery_id = format!("del-{id}");
+        h.mock()
+            .record_delivery(RecordDeliveryRequest {
+                event_id: id.clone(),
+                delivery_id: delivery_id.clone(),
+                status: DeliveryStatus::Ack,
+                attempt: Some(1),
+            })
+            .expect("ack1");
+        h.mock()
+            .record_delivery(RecordDeliveryRequest {
+                event_id: id,
+                delivery_id,
+                status: DeliveryStatus::Ack,
+                attempt: Some(1),
+            })
+            .expect("ack2 noop");
+    }
+}
+
+#[cfg(test)]
+pub use test_harness::EventManagerTestHarness;
+
 #[cfg(test)]
 mod scoped_tests {
     use super::*;
-    use sddia_core::ports::event_manager::InMemoryEventManagerMock;
 
     #[test]
     fn productive_not_left_in_thread_local_after_op() {
@@ -303,8 +460,8 @@ mod scoped_tests {
 
     #[test]
     fn mock_stays_installed_across_ops() {
-        let mock = Arc::new(InMemoryEventManagerMock::default());
-        install_port(mock);
+        // MAN-37: harness sustituye install_port/clear_port ad hoc (L-HARNESS).
+        let _h = EventManagerTestHarness::new();
         assert!(test_mock_installed());
         with_port(Path::new("."), "mock_op", |port| {
             let hs = port
@@ -316,11 +473,11 @@ mod scoped_tests {
             Ok(())
         })
         .expect("mock op");
-        clear_port();
     }
 }
 
 /// Laboratorio EDA: mutex global + modo store para tests paralelos estables.
+/// Residuo lab (MAN-37): solo helpers **integration**; unitarios → [`EventManagerTestHarness`].
 #[cfg(test)]
 pub mod test_lab {
     use std::sync::{Mutex, MutexGuard, OnceLock};

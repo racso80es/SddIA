@@ -14,6 +14,8 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
+version_plan: "1.1.0"
+spec_ref: "spec.md@1.1.0"
 phases:
   - T0-event-manager-test-harness
   - T1-inventario-unitarios-eda
@@ -25,12 +27,12 @@ phases:
 rbac_ok: true
 scope: "Pirámide tests EDA — harness RAII, migración unitarios, gate anti-backend, taxonomía"
 norm_ref: features-documentation-pattern@1.3.1
-execution_id: "1718099f-ca1b-44cb-8fb4-5a4dcccb98fe"
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-37.jsonl"
+execution_id: "47b9678f-7ee1-4080-bd3e-12cf0d366069"
 ---
 # Plan / Blueprint — man-37-eda-test-pyramid
 
-Blueprint ejecutable para **Tekton**. Entrada: `objectives.md`, `clarify.md` (L-*), `spec.md` v1.0.0 (ids **MAN-37** / **PBI-94396a84**).
+Blueprint ejecutable para **Tekton**. Entrada: `objectives.md`, `clarify.md` (L-*), `spec.md` **v1.1.0** (ids **MAN-37** / **PBI-94396a84**).
 
 `target_executor_rbac.allowed_policies` esperadas: `ecosystem-evolution` (si hace falta), `filesystem-ops`, `source-control`, `quality-assurance`.
 
@@ -64,10 +66,10 @@ phases:
     intent: "Aislar Redb/FS/host/CLI/cápsulas en capas no-unit; matrices I/O en tests/."
     delegates_to: ["skill:filesystem-manager", "skill:shell-executor"]
   - name: "T4 Gate CI unitario"
-    intent: "Gate sddia-qa + allowlist versionada; veto backend real en unitarios; cablear CI."
+    intent: "Gate sddia-qa inverso a MAN-35 (escanea #[cfg(test)]); allowlist versionada; veto backend real; cablear CI."
     delegates_to: ["skill:filesystem-manager", "skill:shell-executor"]
   - name: "T5 Documentar taxonomía"
-    intent: "Sección canónica unit/contract/integration/e2e en persist_ref (+ refs README si aplica)."
+    intent: "Sección canónica unit/contract/integration/e2e en persist_ref (+ refs README si aplica; sin Genoma por defecto)."
     delegates_to: ["skill:filesystem-manager"]
   - name: "T6 Verificación"
     intent: "cargo test unitarios verdes sin backend real; contract suite; gate verde; validacion APTO."
@@ -80,11 +82,12 @@ phases:
 
 | # | Entregable | Detalle |
 |---|------------|---------|
-| T0.1 | Tipo `EventManagerTestHarness` | RAII: `new` / `with_faults` / `mock` / `port` / Drop → `clear_port` (**spec §3**) |
-| T0.2 | Locus | `execute-process` junto a `eda_port` (canal TLS existente) |
+| T0.1 | Tipo `EventManagerTestHarness` | RAII: `new` / `with_faults` / `mock` / `port` / `set_faults` / Drop → `clear_port` (**spec §3**) |
+| T0.2 | Locus | `execute-process` junto a `eda_port` (canal TLS existente; no segundo TLS) |
 | T0.3 | Tests canónicos FaultInjection | Tres unitarios mínimos: `fail_write`, `steal_lease`, `duplicate_ack_noop` |
 | T0.4 | Guía mínima | Comentario módulo o párrafo en `persist_ref` / doc-comment |
-| T0.5 | No regresión | `install_port` ad hoc en tests existentes puede coexistir **temporalmente** hasta T2; documentar deprecación |
+| T0.5 | No regresión | `install_port` ad hoc (`scoped_tests`) puede coexistir **temporalmente** hasta T2; documentar deprecación |
+| T0.6 | Lab mutex | Si se adquiere `ParallelLabGuard`, **no** fijar StoreMode FS/Redb; solo serializar TLS |
 
 **Salida:** O1 iniciado; base para T2. **Commit** (`git-manager`): `test(eda): añadir EventManagerTestHarness RAII con FaultInjection`.
 
@@ -97,7 +100,8 @@ phases:
 | T1.1 | Escaneo | `src/**` `#[cfg(test)]` + crates consumidores EDA; patrones L-STRIP |
 | T1.2 | Tabla machine-readable | Añadir a `execution.md` (o anexo en este plan al cerrar): path, símbolo, decisión `migrate` \| `reclassify` \| `allowlist` |
 | T1.3 | Semilla | Partir de focos en `spec.md` §6.1; **cero** filas `pending` al cierre de T2/T3 |
-| T1.4 | Alcance crates | Prioridad: `execute-process`; luego interfaces/daemons/tools que usen eventos en unitarios |
+| T1.4 | Alcance crates | Prioridad: `execute-process` (incl. `handlers/*`, `actions`, `eda_port`); luego interfaces/daemons/tools que usen eventos en unitarios |
+| T1.5 | Matrices conocidas | `tests/eda_store_io_matrix_*`, `event_store_writers`, `eda_subscriber_*`, `memory_evolution_ingest` → candidatos `reclassify`/`allowlist` integration |
 
 **Commit:** `docs(eda): inventario unitarios EDA MAN-37 (T1)`.
 
@@ -111,6 +115,7 @@ phases:
 | T2.2 | Strip | Retirar `sddia_event_store`, `EventStore::open`, `StoreMode`, `override_store_mode`, inspección `.events/*` |
 | T2.3 | Asserts | Contra mock/puerto; faults deterministas (**AC-2**) |
 | T2.4 | Deprecar wiring ad hoc | Preferir harness sobre `install_port` suelto en unitarios |
+| T2.5 | Bridges `#[cfg(test)]` | Unitarios no deben empujar StoreMode que active `eda_port_legacy` |
 
 **Commit(s):** `refactor(eda): migrar unitarios EDA a EventManagerTestHarness`.
 
@@ -123,7 +128,7 @@ phases:
 | T3.1 | Matrices I/O | Mantener en `execute-process/tests/**` como **integration** |
 | T3.2 | `test_lab::{filesystem_eda,redb_eda}` | Solo helpers integration; no unitarios |
 | T3.3 | Contract suite | Intacta; peers en allowlist (**O7**) |
-| T3.4 | E2E | CLI/cápsulas fuera de `#[cfg(test)]` unitarios |
+| T3.4 | E2E | CLI/cápsulas/`sddia-qa` labs fuera de `#[cfg(test)]` unitarios |
 
 **Commit:** `test(eda): aislar backends reales en contract/integration/e2e`.
 
@@ -133,11 +138,12 @@ phases:
 
 | # | Entregable | Detalle |
 |---|------------|---------|
-| T4.1 | Módulo `sddia-qa` | Escaneo **dentro** de bloques test (inverso a MAN-35) |
-| T4.2 | Allowlist versionada | Adapter/suite/integration/e2e + gate self (**L-ALLOWLIST**) |
+| T4.1 | Módulo `sddia-qa` | Escaneo **dentro** de bloques test (inverso a MAN-35 `productivo_lines`) |
+| T4.2 | Allowlist versionada | Adapter/suite/integration/e2e + gate self + legacy bridge (**L-ALLOWLIST**) |
 | T4.3 | Patrones | Lista `spec.md` §8.2 |
 | T4.4 | CI / hook | Job o paso que falle en violaciones; documentar `run_id` o `PENDIENTE-CI` |
 | T4.5 | Tests del gate | Fixture: unitario con `EventStore::open` → KO; allowlisted → OK |
+| T4.6 | No debilitar MAN-35 | Gate productivo intacto; nuevo gate es sibling |
 
 **Commit:** `feat(qa): gate CI anti-backend-real en unitarios EDA (MAN-37)`.
 
@@ -184,7 +190,7 @@ No declarar AC-6/AC-8 sin evidencia de gate/tests. No adelantar strip masivo sin
 
 - AC-1…AC-8 según `spec.md` / `objectives.md`.
 - Laudos L-DOMAIN, L-HARNESS, L-FAULTS, L-TAXONOMY, L-STRIP, L-ALLOWLIST, L-INVENTORY, L-GATE, L-DOCS, L-GIT, L-GENOME, L-TRACKER respetados.
-- Gate MAN-35 productivo **no** debilitado.
+- Gate MAN-35 productivo **no** debilitado; composición scoped MAN-38 **no** reabierta.
 - Sin Kaizen TODOs desde Tekton.
 - Tracker: **MAN-37** / **PBI-94396a84** / padre **MAN-35**.
 
@@ -196,5 +202,6 @@ No declarar AC-6/AC-8 sin evidencia de gate/tests. No adelantar strip masivo sin
 | Gate MAN-37 rojo masivo al día 1 | Completar T2/T3 antes de modo fail; allowlist mínima explícita |
 | Doble TLS / harness vs `install_port` ad hoc | Deprecar ad hoc en T2; un solo canal |
 | `test_lab` StoreMode contamina unitarios | Prohibir en path unit; gate veto `override_store_mode` |
+| Bridges `#[cfg(test)]` → legacy en `eda_port` | Unitarios no activan StoreMode; strip T2 |
 | Confundir contract suite con unit | Allowlist + taxonomía (**L-ALLOWLIST**) |
 | Debilitar gate MAN-35 | Gate nuevo **complementario**; no omitir productivo |

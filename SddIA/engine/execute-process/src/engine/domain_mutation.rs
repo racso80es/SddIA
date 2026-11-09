@@ -269,8 +269,7 @@ mod tests {
     #[test]
     fn emit_domain_mutation_create_writes_pending() {
         let repo = find_repo_root().unwrap();
-        let mock = std::sync::Arc::new(sddia_core::ports::event_manager::InMemoryEventManagerMock::new());
-        crate::engine::eda_port::install_port(mock);
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let entity_uuid = Uuid::new_v4().to_string();
         let inputs = json!({
             "entity_class": "tool",
@@ -287,7 +286,6 @@ mod tests {
         let result = run(&repo, &inputs).expect("emit");
         assert_eq!(result.get("success"), Some(&json!(true)));
         assert!(result.get("target_path").and_then(|v| v.as_str()).is_some());
-        crate::engine::eda_port::clear_port();
     }
 
     #[test]
