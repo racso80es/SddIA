@@ -209,6 +209,7 @@ pub fn subscriber_id(subscriber: &Value) -> String {
     sddia_eda_catalog::subscriber_id(subscriber)
 }
 
+#[cfg(test)]
 fn witness_filename(event_uuid: &str, subscriber_name: &str) -> String {
     format!("{event_uuid}.{subscriber_name}.json")
 }
@@ -432,6 +433,7 @@ fn delivery_terminal_in_ecst(ecst: &Value, subscriber_name: &str) -> bool {
         .is_some_and(|s| matches!(s, "success" | "processed" | "failed" | "skipped" | "dead-letter"))
 }
 
+#[cfg(test)]
 fn witness_exists(
     repo: &Path,
     bus: &EventBusTopology,
@@ -453,7 +455,7 @@ fn witness_exists(
 
 pub fn terminal_witness_exists(
     repo: &Path,
-    bus: &EventBusTopology,
+    _bus: &EventBusTopology,
     event_uuid: &str,
     subscriber_name: &str,
 ) -> bool {
@@ -470,13 +472,13 @@ pub fn terminal_witness_exists(
     {
         return witness_exists(
             repo,
-            bus,
+            _bus,
             "processed_subscribers",
             event_uuid,
             subscriber_name,
         ) || witness_exists(
             repo,
-            bus,
+            _bus,
             "dead_letter_subscribers",
             event_uuid,
             subscriber_name,
