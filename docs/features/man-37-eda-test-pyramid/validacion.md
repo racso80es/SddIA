@@ -45,9 +45,9 @@ evidence_bridge_notes: R1/R2 copia Runtime evidence (machine+session) source=nat
 shell_git_manager_session: Rejected — sin gitStdout físico esta invocación Argos Veredicto y bloqueo CID f1a6838c… · exec ceccf5b7…
 head_commit_sha_fs: b67925a63755d1f993874c7aa32a94e2c6dea3fc
 validated_base_sha: 8e20f347dd43b3f4de767b615c66ecf86ae9ea76
-validated_head_sha: 33594a0720f41c721309a575bc8b22913192b9da
-validated_tree_sha: 3b97c03e5e032808e1dd41ef89e9f9d5836ebf90
-diff_digest: sha256:c15d0fa1dc8b97a61eefaf89a7ee8c4f7a85d8ef811e8c23bd381fa642447782
+validated_head_sha: 9bf55eca3fa7f721e5d52e4d4dcf72cb177bcc37
+validated_tree_sha: c6677928215cb6225c29bf4372b44211d14e8860
+diff_digest: sha256:f85985a5d0b36387b790df0d5c93747f03ba918c44acfc0f57148efae7d9fa4f
 workspace_path_injected: .SddIA/workspaces/pull-request-review/ceccf5b7-2243-4505-9387-ec50a3af2a04/
 workspace_materialized: false
 pr_url: ''
@@ -132,8 +132,9 @@ situational_notes:
 - Sellos validated_*/diff_digest heredados (Veredicto no reescribe sello DCC; sin gitStdout)
 - clarify.md spec_ref aún @1.1.0 vs spec/plan @1.2.0 — residual no bloqueante (CLARIFY_SPEC_REF_STALE)
 - accept_pr_handoff pending — pr_url/MERGE ausentes; Presented lock no sighted; L-HANDOFF-F5 respetado
-execution_id: "ceccf5b7-2243-4505-9387-ec50a3af2a04"
+execution_id: ceccf5b7-2243-4505-9387-ec50a3af2a04
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
