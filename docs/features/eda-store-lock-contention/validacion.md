@@ -112,9 +112,9 @@ authorization_status:
   emitter_agent: argos
   note: PASS_FEATURE_VERIFICATION · global APTO · R1/R2 copia Evidence Bridge prosthesis_subprocess · R3 KM APTO · F2 cascada APTO · F3/CA-8 NO_APTO no bloqueante (CERBERO_DENY cargo; proxy TECH_FORMAL + path-assert) · branch/git_changes APTO
 validated_base_sha: 0fe23de243876f55a40fcd951281a79e918f6f9a
-validated_head_sha: 4cef55486df44303bf8677fee56027bf3ac22830
-validated_tree_sha: 9e93704fd0b7518e39dc941731129fd5754370da
-diff_digest: sha256:bf6d0860a26b4ebfbb42bd4aea6a685b1aef6db1ad34a9314162d31354de81c6
+validated_head_sha: f5fa06e6ee16e2c0a98d875c5412267cc7ebf89b
+validated_tree_sha: eee13b3af088127cccd44b6b940357378233c6b2
+diff_digest: sha256:50abc26df3370492deadeb7141ee4ff4bfb68950e5b23cbf9e48eef2afcde281
 ---
 
 # Validación — Verificación (Argos · feature)
