@@ -19,7 +19,7 @@ historia_ref: MAN-35
 tracker_provider: linear
 tracker_channel: .SddIA/state/tracker-outbound/MAN-42.jsonl
 correlation_id: 17d4efaf-eb59-46b7-b570-827ed8985d56
-execution_id: "4ca3514c-eb8e-4940-ba87-c0c2c7b1b98b"
+execution_id: 4ca3514c-eb8e-4940-ba87-c0c2c7b1b98b
 source_process: pull-request-review
 global: APTO
 approval_status: apto
@@ -34,7 +34,7 @@ formal_evidence_detail: 'verify-process-integrity: OK (bridge machine @ 2026-11-
 handoff_machine_file: present
 handoff_evidence_block_pre: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence (machine+session) source=native_state; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; notes=idempotent-hit; MCP git_status dirty docs persist; sin inventar stdout Shell
-shell_git_manager_session: 'MCP sddia-workspace-server git_status — gitStdout dirty bajo persist_ref; Session Runtime evidence source=native_state notes=idempotent-hit'
+shell_git_manager_session: MCP sddia-workspace-server git_status — gitStdout dirty bajo persist_ref; Session Runtime evidence source=native_state notes=idempotent-hit
 checks:
   TECH_FORMAL_EXECUTE_PROCESS: APTO
   GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
@@ -91,7 +91,12 @@ authorization_status:
   exitCode: 0
   emitter_agent: argos
   note: PASS_PPR_VEREDICTO · global APTO · R1/R2 copia Evidence Bridge native_state · R3 KM APTO · branch/git_changes APTO · blocking_findings=[]
+validated_base_sha: 0fe23de243876f55a40fcd951281a79e918f6f9a
+validated_head_sha: 4035de26b5618465365339d6408666d8fa79cdef
+validated_tree_sha: d8004666d33e04069270443c652b4d2134265aa2
+diff_digest: sha256:cb1fd028fa36f21d5f09cbc2a26e0ba02c9884a16fdd154a67edbdb3756f50b1
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
