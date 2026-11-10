@@ -1,5 +1,6 @@
 ---
 
+
 feature_name: man-39-refactorization-reentry-cli-collapse
 created: "2026-11-10"
 process: feature
@@ -25,7 +26,7 @@ rbac_ok: true
 scope: "Reentrada sin tren de forja, timeout de bóveda, aborto con envelope, peaje en dirty-gate, labels exactas del padre"
 norm_ref: features-documentation-pattern@1.3.1
 forge_key: "2e7baef71d4c29dc25c07db567099259c855c06271d36cd0ae854ba35cb5211b"
-execution_id: "454bcd99-8bbb-4cb3-8038-31cbe046ac55"
+execution_id: "2783339c-b2b3-4abb-8d80-383a87ad1005"
 ---
 # Plan / Blueprint — man-39-refactorization-reentry-cli-collapse
 

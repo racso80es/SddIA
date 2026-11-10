@@ -32,10 +32,11 @@ verdict: aprobado
 delivery_state: success
 resolution: PASS_F5_VERDICT
 pbi_archived: false
-accept_pr_handoff: false
-accept_pr_handoff_status: pending
-accept_pr_block_reason: pr_url local ausente; MERGE ausente este CID; Presented lock no sighted en .SddIA — L-HANDOFF-F5 (prohibido accept_pr_handoff true sin vía de merge)
-pr_url: ''
+accept_pr_handoff: true
+accept_pr_handoff_status: ready
+accept_pr_block_reason: ''
+pr_url: 'https://github.com/racso80es/SddIA/pull/451'
+ci_run_id: '42836533394'
 git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw
 git_evidence_source: native_state-evidence-bridge
