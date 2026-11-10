@@ -12,6 +12,7 @@ use crate::engine::agent_runtime::invoke_agent_phase;
 use crate::engine::item_lifecycle_frontmatter::{
     yaml_patch_refinement_refined, FM_REFINEMENT, REFINEMENT_PENDING,
 };
+use crate::core::store_lock_contention;
 use crate::engine::route_domain_core::materialize_pending_domain_event;
 use crate::envelope::OrchestratorEnvelope;
 use chrono::Utc;
@@ -51,27 +52,8 @@ fn emit_mayeuta_fracture(repo: &Path, detail: &str) {
     );
 }
 
-pub(crate) const STORE_LOCK_CONTENTION: &str = "STORE_LOCK_CONTENTION";
-
 fn is_store_lock_error(err: &str) -> bool {
-    err.contains("Database already open")
-        || err.contains("Cannot acquire lock")
-        || err.contains(STORE_LOCK_CONTENTION)
-}
-
-fn emit_store_lock_fracture(repo: &Path, detail: &str) {
-    let _ = materialize_pending_domain_event(
-        repo,
-        "System_Fracture_Detected",
-        PROCESS,
-        json!({
-            "detail": detail,
-            "phase": "Sellado Argos",
-            "source_process": PROCESS,
-            "error_code": STORE_LOCK_CONTENTION,
-            "friction_id": "F-REFINE-ITEM-REDB-LOCK",
-        }),
-    );
+    store_lock_contention::is_store_lock_contention_message(err)
 }
 
 fn lab_simulate_store_lock() -> bool {
@@ -571,9 +553,8 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
     } else {
         "PBI_Refined"
     };
-    let event_path = if lab_simulate_store_lock() {
-        emit_store_lock_fracture(repo, "SDDIA_LAB_SIMULATE_STORE_LOCK");
-        None
+    let (event_path, refined_event_pending) = if lab_simulate_store_lock() {
+        (None, true)
     } else {
         match emit_refined(
             repo,
@@ -582,24 +563,8 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
             &bound.slug,
             tracker_ref.as_deref(),
         ) {
-            Ok(path) => Some(path),
-            Err(e) if is_store_lock_error(&e) => {
-                emit_store_lock_fracture(repo, &e);
-                if remote {
-                    return Ok(envelope_status(
-                        &item_ref,
-                        &item_type,
-                        tracker_ref.as_deref(),
-                        &execution_id,
-                        &ws,
-                        "refined",
-                        &[],
-                        None,
-                        true,
-                    ));
-                }
-                return Err(STORE_LOCK_CONTENTION.to_string());
-            }
+            Ok(path) => (Some(path), false),
+            Err(e) if is_store_lock_error(&e) => (None, true),
             Err(e) => return Err(e),
         }
     };
@@ -613,7 +578,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
         "refined",
         &[],
         event_path,
-        lab_simulate_store_lock() && remote,
+        refined_event_pending,
     ))
 }
 
