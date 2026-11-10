@@ -188,7 +188,13 @@ fn distill_mission(raw: &str) -> String {
     }
 }
 
-fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
+fn path_in_scope(
+    path: &str,
+    persist_ref: &str,
+    pbi_ref: Option<&str>,
+    tracker_ref: Option<&str>,
+    audits_path: Option<&str>,
+) -> bool {
     let norm = path.trim_start_matches("./");
     let persist = persist_ref.trim_start_matches("./");
     if norm == persist || norm.starts_with(&format!("{}/", persist)) {
@@ -200,6 +206,13 @@ fn path_in_scope(path: &str, persist_ref: &str, pbi_ref: Option<&str>) -> bool {
     }
     if let Some(pbi) = pbi_ref {
         if norm == pbi.trim_start_matches("./") {
+            return true;
+        }
+    }
+    if let (Some(tr), Some(ap)) = (tracker_ref, audits_path) {
+        let ap = ap.trim_start_matches("./").trim_end_matches('/');
+        let audit_rel = format!("{ap}/{tr}.md");
+        if norm == audit_rel {
             return true;
         }
     }
@@ -330,6 +343,8 @@ fn dirty_paths_outside_scope(
     git_repo: &Path,
     persist_ref: &str,
     pbi_ref: Option<&str>,
+    tracker_ref: Option<&str>,
+    audits_path: Option<&str>,
 ) -> Result<Vec<String>, String> {
     if env_truthy("SDDIA_LAB_ALLOW_DIRTY") {
         return Ok(vec![]);
@@ -344,7 +359,7 @@ fn dirty_paths_outside_scope(
     let mut dirty = Vec::new();
     for line in stdout.lines() {
         if let Some(path) = git_porcelain::porcelain_path_from_line(line) {
-            if !path_in_scope(&path, persist_ref, pbi_ref) {
+            if !path_in_scope(&path, persist_ref, pbi_ref, tracker_ref, audits_path) {
                 dirty.push(path);
             }
         }
@@ -507,10 +522,24 @@ pub fn run(repo: &Path, inputs: &Value, process_name: &str) -> Result<Value, Str
         let checkout_step = checkout_work_branch(repo, git_root, &branch_name)?;
         git_steps.push(checkout_step);
 
-        let dirty = dirty_paths_outside_scope(repo, git_root, &persist_scope, pbi_ref_meta)?;
+        let audits_path = cfg
+            .get("paths")
+            .and_then(|p| p.get("auditsPath"))
+            .and_then(|v| v.as_str());
+        let tracker_ref = super::llm_interaction_audit::resolve_tracker_ref(inputs).or_else(|| {
+            super::tracker_pbi_meta::resolve_tracker_ref_for_lifecycle(repo, inputs)
+        });
+        let dirty = dirty_paths_outside_scope(
+            repo,
+            git_root,
+            &persist_scope,
+            pbi_ref_meta,
+            tracker_ref.as_deref(),
+            audits_path,
+        )?;
         if !dirty.is_empty() {
             let msg = format!(
-                "dirty-worktree: cambios fuera de persist_ref/pbi_ref: {}",
+                "dirty-worktree: cambios fuera de persist_ref/pbi_ref/tracker peaje: {}",
                 dirty.join(", ")
             );
             if let Err(restore_err) = rollback_stranded_work_branch(
@@ -1144,7 +1173,25 @@ mod tests {
         let pbi = "docs/todos/pending/[REGRESIÓN] route-domain-event — fractura sistémica (6a49e0ad310e)-R1.md";
         let line = r#" M "docs/todos/pending/[REGRESI\303\223N] route-domain-event \342\200\224 fractura sist\303\251mica (6a49e0ad310e)-R1.md""#;
         let path = git_porcelain::porcelain_path_from_line(line).expect("path");
-        assert!(path_in_scope(&path, "docs/fixes/other", Some(pbi)));
+        assert!(path_in_scope(&path, "docs/fixes/other", Some(pbi), None, None));
+    }
+
+    #[test]
+    fn path_in_scope_accepts_tracker_peaje_audit() {
+        assert!(path_in_scope(
+            "docs/audits/MAN-39.md",
+            "docs/features/x",
+            None,
+            Some("MAN-39"),
+            Some("docs/audits")
+        ));
+        assert!(!path_in_scope(
+            "docs/audits/MAN-40.md",
+            "docs/features/x",
+            None,
+            Some("MAN-39"),
+            Some("docs/audits")
+        ));
     }
 
     #[test]

@@ -63,6 +63,44 @@ fn verification_allowed_despite_barrier(
         || persist_validacion_exists(repo, inputs)
 }
 
+fn is_forge_agent_phase(phase_name: &str) -> bool {
+    matches!(
+        phase_name,
+        "Estabilización de Requisitos"
+            | "Estabilización de alcance"
+            | "Diseño de Blueprint"
+            | "Diseño del fix"
+            | "Diseño de refactor"
+            | "Ejecución"
+    )
+}
+
+fn try_skip_forge_agent_phase(
+    repo: &Path,
+    process_name: &str,
+    phase_name: &str,
+    phase: &Value,
+    inputs: &Value,
+) -> Option<Value> {
+    if !process_has_doc_cascade_delivery(process_name) || !is_forge_agent_phase(phase_name) {
+        return None;
+    }
+    if !delegates_are_only_agents(&phase_delegates(phase)) {
+        return None;
+    }
+    if !super::lifecycle_phase_action::persist_forge_artifacts_ready(repo, inputs) {
+        return None;
+    }
+    Some(json!({
+        "phase_name": phase_name,
+        "delegates_to": phase_delegates(phase),
+        "status": "skipped",
+        "skipped": true,
+        "handler": "forge-reentry-skip",
+        "reason": "forge_already_present",
+    }))
+}
+
 fn attach_lifecycle_json(entry: &mut Value, key: &str, value: Value) {
     entry[key] = value;
 }
@@ -130,6 +168,11 @@ fn barrier_from_phase_entry(
         return Some(("failed".to_string(), "workspace_init_failed"));
     }
     if !agent_only {
+        return None;
+    }
+    if status == "skipped"
+        && entry.get("reason").and_then(|v| v.as_str()) == Some("forge_already_present")
+    {
         return None;
     }
     if agent_phase_blocks_downstream(status) {
@@ -466,6 +509,11 @@ fn execute_phase_body(
     }
 
     if delegates_are_only_agents(&delegates) {
+        if let Some(skipped) =
+            try_skip_forge_agent_phase(repo, process_name, phase_name, phase, inputs)
+        {
+            return skipped;
+        }
         if let Some(skipped) =
             super::qa_profile::skip_agent_phase_entry(process_name, phase_name, inputs)
         {
@@ -1058,6 +1106,24 @@ mod tests {
             ]
         );
         assert_eq!(barrier.as_deref(), Some("failed"));
+    }
+
+    #[test]
+    fn forge_already_present_skips_barrier() {
+        let entry = json!({
+            "status": "skipped",
+            "reason": "forge_already_present",
+            "handler": "forge-reentry-skip",
+        });
+        assert!(barrier_from_phase_entry(
+            &entry,
+            true,
+            "Ejecución",
+            "feature",
+            Path::new("/tmp"),
+            &json!({}),
+        )
+        .is_none());
     }
 
     #[test]

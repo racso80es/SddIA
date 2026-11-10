@@ -104,7 +104,7 @@ fn resolve_issue_team_key(url: &str, token: &str, issue_ref: &str) -> Result<Str
 
 fn lab_team_label_catalog(team_key: &str) -> &'static [&'static str] {
     match team_key {
-        "MAN" => &["Hu", "Pbi", "Fix"],
+        "MAN" => &["Hu", "Pbi", "Fix", "Kaizen"],
         "AUT" => &["HU", "Pbi", "Bug", "Kaizen"],
         "OSC" => &["hu", "pbi", "fix"],
         "LAB" => &["hu", "pbi", "fix", "kaizen", "other"],
