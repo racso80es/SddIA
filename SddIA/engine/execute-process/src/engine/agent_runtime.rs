@@ -22,6 +22,7 @@ const ENV_TIMEOUT_EXEC: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_EJECUCION";
 const ENV_TIMEOUT_REFINE: &str = "SDDIA_AGENT_RUNTIME_TIMEOUT_SECS_REFINAMIENTO";
 const DEFAULT_TIMEOUT_SECS: u64 = 660;
 const DEFAULT_TIMEOUT_REFINE_SECS: u64 = 900;
+const MIN_EXECUTION_TIMEOUT_SECS: u64 = 2400;
 const KILL_GRACE_MS: u64 = 500;
 const DETERMINISTIC_AGENTS: &[&str] = &["cerbero", "cumulo", "radamanto"];
 
@@ -51,27 +52,40 @@ pub fn is_configured() -> bool {
         .unwrap_or(false)
 }
 
+fn parse_env_timeout_secs(key: &str) -> Option<u64> {
+    let v = std::env::var(key).ok()?;
+    let trimmed = v.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    let n = trimmed.parse::<u64>().ok()?;
+    if n == 0 {
+        None
+    } else {
+        Some(n)
+    }
+}
+
 fn resolve_timeout_secs(phase_name: &str) -> u64 {
     let phase_l = phase_name.to_lowercase();
-    if phase_l.contains("refinamiento mayeuta") {
-        if let Ok(v) = std::env::var(ENV_TIMEOUT_REFINE) {
-            if let Ok(n) = v.trim().parse::<u64>() {
-                return n;
-            }
-        }
-        return DEFAULT_TIMEOUT_REFINE_SECS;
+    let base = if phase_l.contains("refinamiento mayeuta") {
+        parse_env_timeout_secs(ENV_TIMEOUT_REFINE).unwrap_or(DEFAULT_TIMEOUT_REFINE_SECS)
+    } else if phase_l.starts_with("ejecuc") {
+        parse_env_timeout_secs(ENV_TIMEOUT_EXEC)
+            .or_else(|| parse_env_timeout_secs(ENV_TIMEOUT))
+            .unwrap_or(DEFAULT_TIMEOUT_SECS)
+    } else {
+        parse_env_timeout_secs(ENV_TIMEOUT).unwrap_or(DEFAULT_TIMEOUT_SECS)
+    };
+    if phase_l.starts_with("ejecuc") && base < MIN_EXECUTION_TIMEOUT_SECS {
+        MIN_EXECUTION_TIMEOUT_SECS
+    } else {
+        base
     }
-    if phase_l.starts_with("ejecuc") {
-        if let Ok(v) = std::env::var(ENV_TIMEOUT_EXEC) {
-            if let Ok(n) = v.trim().parse::<u64>() {
-                return n;
-            }
-        }
-    }
-    std::env::var(ENV_TIMEOUT)
-        .ok()
-        .and_then(|v| v.trim().parse().ok())
-        .unwrap_or(DEFAULT_TIMEOUT_SECS)
+}
+
+fn execution_timeout_floor_applied(phase_name: &str, resolved_secs: u64) -> bool {
+    phase_name.to_lowercase().starts_with("ejecuc") && resolved_secs >= MIN_EXECUTION_TIMEOUT_SECS
 }
 
 fn split_command(raw: &str) -> Result<Vec<String>, String> {
@@ -846,6 +860,14 @@ pub fn invoke_agent_phase(
     }
 
     let timeout_secs = resolve_timeout_secs(phase_name);
+    if execution_timeout_floor_applied(phase_name, timeout_secs) {
+        let without_floor = parse_env_timeout_secs(ENV_TIMEOUT_EXEC)
+            .or_else(|| parse_env_timeout_secs(ENV_TIMEOUT))
+            .unwrap_or(DEFAULT_TIMEOUT_SECS);
+        if without_floor < MIN_EXECUTION_TIMEOUT_SECS {
+            entry["timeout_floor_applied"] = json!(true);
+        }
+    }
     let out = match wait_child_with_timeout(child, Duration::from_secs(timeout_secs)) {
         Ok(o) => o,
         Err("agent-runtime-timeout") => {
@@ -1089,6 +1111,27 @@ mod tests {
         assert_eq!(resolve_timeout_secs("Local QA"), 180);
         std::env::remove_var(ENV_TIMEOUT);
         assert_eq!(resolve_timeout_secs("Local QA"), DEFAULT_TIMEOUT_SECS);
+    }
+
+    #[test]
+    fn execution_phase_timeout_floor_2400() {
+        let _guard = env_lock();
+        clear_agent_env();
+        std::env::remove_var(ENV_TIMEOUT_EXEC);
+        std::env::remove_var(ENV_TIMEOUT);
+        assert_eq!(resolve_timeout_secs("Ejecución"), MIN_EXECUTION_TIMEOUT_SECS);
+        std::env::set_var(ENV_TIMEOUT, "600");
+        assert_eq!(resolve_timeout_secs("Ejecución"), MIN_EXECUTION_TIMEOUT_SECS);
+        std::env::set_var(ENV_TIMEOUT, "3600");
+        assert_eq!(resolve_timeout_secs("Ejecución"), 3600);
+    }
+
+    #[test]
+    fn parse_env_timeout_secs_ignores_empty() {
+        let _guard = env_lock();
+        std::env::set_var(ENV_TIMEOUT, "   ");
+        assert_eq!(parse_env_timeout_secs(ENV_TIMEOUT), None);
+        std::env::remove_var(ENV_TIMEOUT);
     }
 
     #[test]
