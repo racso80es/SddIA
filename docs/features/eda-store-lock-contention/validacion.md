@@ -88,8 +88,13 @@ authorization_status:
   exitCode: 0
   emitter_agent: argos
   note: PASS_PPR_VEREDICTO · global APTO · R1/R2 copia Evidence Bridge native_state · R3 KM APTO · branch/git_changes APTO · blocking_findings=[]
-execution_id: "5b4a78b0-9bca-4033-b460-da44927393dd"
+execution_id: 5b4a78b0-9bca-4033-b460-da44927393dd
+validated_base_sha: 0fe23de243876f55a40fcd951281a79e918f6f9a
+validated_head_sha: acf1611092c031e86ce14094f78d852e4c49d0b0
+validated_tree_sha: fe1222499b328f0d6a1c9e1de403799ad810d684
+diff_digest: sha256:3754f16ba3e6ff385153bb23666da9c555722acc1cd5b3d0130dab13b4798208
 ---
+
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
 
 ## Veredicto de fase
