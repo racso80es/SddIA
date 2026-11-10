@@ -35,7 +35,7 @@ pbi_archived: false
 accept_pr_handoff: true
 accept_pr_handoff_status: ready
 accept_pr_block_reason: ''
-pr_url: 'https://github.com/racso80es/SddIA/pull/451'
+pr_url: https://github.com/racso80es/SddIA/pull/451
 ci_run_id: '42836533394'
 git_manager_invoked: false
 git_manager_error: cápsula no invocable en esta sesión Argos (Shell Rejected sobre ./sddia-run.sh --tool git-manager); sin stdout físico; R2 = copia Evidence Bridge native_state; sin bypass raw
@@ -134,9 +134,9 @@ authorization_status:
   emitter_agent: argos
   note: PASS_F5_VERDICT · F2+F4 APTO · F3 NO_APTO no bloqueante (proxy TECH_FORMAL + execution) · PPR∉revoked/permanent · R1/R2 copia Evidence Bridge native_state notes=idempotent-hit · Shell git-manager Rejected — sin stdout inventado · accept_pr_handoff pending (L-HANDOFF-F5)
 validated_base_sha: ff5f7493855d9464b0301474e54467670ac0eff8
-validated_head_sha: 0ff49b010444475f43dbeeaa776200388aad2261
-validated_tree_sha: 584bddfc2fb099299884f6dcabde060189df5e50
-diff_digest: sha256:634984386ae52665cf5d7108d38b8ce17a2145644d96da90c26eac955fa189bb
+validated_head_sha: cd4cba2b72b277bb48cdee4f0d392ec744587301
+validated_tree_sha: 3dc9fbc21dda31d5f0b1e1b9a55b29e991ac9c2b
+diff_digest: sha256:fed1adf70bdf73260d5b790cb2c81e9b0da9e1e06934ef5d9527ffb268e74d99
 ---
 
 # Validación — Veredicto y bloqueo (Argos · pull-request-review)
