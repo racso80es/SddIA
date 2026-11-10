@@ -449,7 +449,7 @@ fn find_prior_forge(
 }
 
 fn is_store_lock_error(err: &str) -> bool {
-    err.contains("Database already open") || err.contains("Cannot acquire lock")
+    crate::core::store_lock_contention::is_store_lock_contention_message(err)
 }
 
 /// Lab: si la cápsula nativa/WASM desfasada no selló `forge_key` en la descripción,

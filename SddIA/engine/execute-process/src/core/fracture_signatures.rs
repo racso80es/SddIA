@@ -442,6 +442,29 @@ mod tests {
     use std::fs;
 
     #[test]
+    fn f_eda_store_lock_suppress_matches_catalog() {
+        let catalog = shared_default_catalog();
+        let sig = catalog
+            .get("F-EDA-STORE-LOCK-CONTENTION")
+            .expect("catalog entry");
+        let surfaces = build_match_surfaces(
+            "route-domain-event",
+            "StoreError::Locked: Database already open",
+            "claim",
+            false,
+        );
+        let ctx = DccMatchContext {
+            process_name: "route-domain-event",
+            attempted_action: "claim",
+            status: "failed",
+            error_trace: "StoreError::Locked: Database already open",
+            report_friction_id: None,
+            report_error_code: Some("STORE_LOCK_CONTENTION"),
+        };
+        assert!(signature_matches_dcc_suppress(&catalog, sig, &ctx, &surfaces));
+    }
+
+    #[test]
     fn refined_child_requires_scope() {
         let dir = tempfile::tempdir().unwrap();
         let repo = dir.path();

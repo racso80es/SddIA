@@ -5,6 +5,7 @@ use super::workspace::{
 };
 use chrono::Utc;
 use regex::Regex;
+use crate::core::store_lock_contention;
 use crate::engine::eda_port;
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -581,7 +582,11 @@ pub fn promote_witness(
             .and_then(|e| e.get("error_trace"))
             .and_then(|v| v.as_str())
             .unwrap_or("dead-letter");
-        eda_port::move_to_dlq(repo, event_uuid, cause)?;
+        if store_lock_contention::is_store_lock_contention_message(cause) {
+            // MAN-42: contención pura → sin DLQ; entrega sigue pending para el siguiente tick.
+        } else {
+            eda_port::move_to_dlq(repo, event_uuid, cause)?;
+        }
     } else {
         eda_port::record_delivery_ack(repo, event_uuid, subscriber_name)?;
     }

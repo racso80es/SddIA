@@ -428,6 +428,27 @@
       }
     },
     {
+      "id": "F-EDA-STORE-LOCK-CONTENTION",
+      "consumers": ["dcc_suppress", "mayeuta"],
+      "match": {
+        "any": [
+          "StoreError::Locked",
+          "Database already open",
+          "Cannot acquire lock",
+          "STORE_LOCK_CONTENTION",
+          "DatabaseAlreadyOpen"
+        ]
+      },
+      "report_friction_ids": ["F-EDA-STORE-LOCK-CONTENTION"],
+      "report_error_codes": ["STORE_LOCK_CONTENTION"],
+      "fracture_policy": "suppress",
+      "diagnosis": {
+        "root_cause": "Contención transitoria del store Redb/FS; no es fractura ontológica del Core.",
+        "verdict": "process_fix",
+        "proposal": "Suppress System_Fracture_Detected, conservar delivery pending, 1 DB + N tx (MAN-42 / MAN-38 / AUT-67)."
+      }
+    },
+    {
       "id": "F-REFINE-ITEM-REDB-LOCK",
       "consumers": ["mayeuta", "cumulo"],
       "scope": {
