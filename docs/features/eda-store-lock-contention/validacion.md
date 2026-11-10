@@ -38,11 +38,11 @@ formal_execute_process: true
 formal_evidence_detail: 'verify-process-integrity: OK (bridge machine @ 2026-11-10T15:40:12Z prosthesis_subprocess) + session Runtime evidence source=prosthesis_subprocess'
 handoff_machine_file: present
 handoff_evidence_block_pre: present
-evidence_bridge_notes: 'R1/R2 copia Runtime evidence (machine+session) source=prosthesis_subprocess @ Verificación; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; git_evidence_digest=18afa998ff0c6415fea3f52f09694a52; MCP git_status materializó gitStdout dirty parcial; sin inventar stdout Shell'
+evidence_bridge_notes: R1/R2 copia Runtime evidence (machine+session) source=prosthesis_subprocess @ Verificación; TECH_FORMAL_EXECUTE_PROCESS / GIT_EVIDENCE_VIA_GIT_MANAGER APTO; git_evidence_digest=18afa998ff0c6415fea3f52f09694a52; MCP git_status materializó gitStdout dirty parcial; sin inventar stdout Shell
 shell_git_manager_session: 'MCP sddia-workspace-server git_status — gitStdout dirty: objectives.md + _agent_handoff.md; ./sddia-run.sh --tool git-manager vía run_check → CERBERO_DENY whitelist'
 head_commit_sha_fs: 8f85b14ff43adc1a95bd49b4d9a8b3dd3812a5f5
 git_evidence_digest: 18afa998ff0c6415fea3f52f09694a52
-scope: 'Feature Verificación — rama feat/eda-store-lock-contention (exec cd45182d… · MAN-42)'
+scope: Feature Verificación — rama feat/eda-store-lock-contention (exec cd45182d… · MAN-42)
 checks:
   TECH_FORMAL_EXECUTE_PROCESS: APTO
   GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
@@ -78,39 +78,43 @@ checks:
   HANDOFF_EVIDENCE_BLOCK: APTO
   PHASE_REPORTS_EJECUCION: NO_APTO
 git_changes:
-  - docs/features/eda-store-lock-contention/
-  - SddIA/core/fracture-signatures.json
-  - SddIA/engine/execute-process/src/core/store_lock_contention.rs
-  - SddIA/engine/execute-process/src/core/fracture_signatures.rs
-  - SddIA/engine/execute-process/src/core/mod.rs
-  - SddIA/engine/execute-process/src/engine/eda_bus_topology.rs
-  - SddIA/engine/execute-process/src/engine/handlers/refine_item/run.rs
-  - SddIA/engine/execute-process/src/engine/handlers/forge_pbi.rs
+- docs/features/eda-store-lock-contention/
+- SddIA/core/fracture-signatures.json
+- SddIA/engine/execute-process/src/core/store_lock_contention.rs
+- SddIA/engine/execute-process/src/core/fracture_signatures.rs
+- SddIA/engine/execute-process/src/core/mod.rs
+- SddIA/engine/execute-process/src/engine/eda_bus_topology.rs
+- SddIA/engine/execute-process/src/engine/handlers/refine_item/run.rs
+- SddIA/engine/execute-process/src/engine/handlers/forge_pbi.rs
 git_status_mcp_dirty:
-  - docs/features/eda-store-lock-contention/_agent_handoff.md
-  - docs/features/eda-store-lock-contention/objectives.md
+- docs/features/eda-store-lock-contention/_agent_handoff.md
+- docs/features/eda-store-lock-contention/objectives.md
 blocking_findings: []
 non_blocking_findings:
-  - F3_TECH_GATE
-  - CA-8
-  - GIT_EVIDENCE_SESSION_SHELL
-  - PHASE_REPORTS_EJECUCION
-  - LINEAR_BODY_ABSENT_DISK
-  - CARGO_TEST_CERBERO_DENY
+- F3_TECH_GATE
+- CA-8
+- GIT_EVIDENCE_SESSION_SHELL
+- PHASE_REPORTS_EJECUCION
+- LINEAR_BODY_ABSENT_DISK
+- CARGO_TEST_CERBERO_DENY
 situational_notes:
-  - 'Fase Verificación · exec cd45182d-1075-43f1-89d5-f2fda26a09f5 · MAN-42 · correlation_id vacío'
-  - 'Evidence Bridge machine: schema kalma2-agent-runtime-evidence/v1 · source=prosthesis_subprocess · git_manager_invoked=true · formal_execute_process=true · TECH/GIT APTO · digest 18afa998… · formal_evidence_detail=verify-process-integrity: OK @ 2026-11-10T15:40:12Z'
-  - 'Session Runtime evidence: source=prosthesis_subprocess · TECH/GIT APTO · notes=(none)'
-  - 'MCP git_status: M objectives.md + _agent_handoff.md; resto touchpoints path-assert (no dirty) — tip FS 8f85b14f…'
-  - 'run_check cargo test / ./sddia-run.sh → CERBERO_DENY whitelist — sin stdout inventado; F3/CA-8 NO_APTO no bloqueante vía proxy TECH_FORMAL + path-assert + tests en fuente'
-  - 'phase_reports.json marca Ejecución skipped (stop_after) mientras implementation/execution + código MAN-42 están presentes — PHASE_REPORTS_EJECUCION NO_APTO residual no bloqueante'
-  - 'Canal MAN-42 leído; cuerpo Linear/document_id no en forge-pbi local — L-TRACKER no bloquea'
-  - 'docs/todos/pending/ vacío · 0 hits KM MAN-42 · Argos 0 writes docs/todos/** → RBAC_AUTHORING_KM_POLICY APTO'
-  - 'F-REFINE-ITEM-REDB-LOCK entry intacta (no-goals); DEFAULT_OPEN_BUDGET_MS=10_000 sin incremento'
+- Fase Verificación · exec cd45182d-1075-43f1-89d5-f2fda26a09f5 · MAN-42 · correlation_id vacío
+- 'Evidence Bridge machine: schema kalma2-agent-runtime-evidence/v1 · source=prosthesis_subprocess · git_manager_invoked=true · formal_execute_process=true · TECH/GIT APTO · digest 18afa998… · formal_evidence_detail=verify-process-integrity: OK @ 2026-11-10T15:40:12Z'
+- 'Session Runtime evidence: source=prosthesis_subprocess · TECH/GIT APTO · notes=(none)'
+- 'MCP git_status: M objectives.md + _agent_handoff.md; resto touchpoints path-assert (no dirty) — tip FS 8f85b14f…'
+- run_check cargo test / ./sddia-run.sh → CERBERO_DENY whitelist — sin stdout inventado; F3/CA-8 NO_APTO no bloqueante vía proxy TECH_FORMAL + path-assert + tests en fuente
+- phase_reports.json marca Ejecución skipped (stop_after) mientras implementation/execution + código MAN-42 están presentes — PHASE_REPORTS_EJECUCION NO_APTO residual no bloqueante
+- Canal MAN-42 leído; cuerpo Linear/document_id no en forge-pbi local — L-TRACKER no bloquea
+- docs/todos/pending/ vacío · 0 hits KM MAN-42 · Argos 0 writes docs/todos/** → RBAC_AUTHORING_KM_POLICY APTO
+- F-REFINE-ITEM-REDB-LOCK entry intacta (no-goals); DEFAULT_OPEN_BUDGET_MS=10_000 sin incremento
 authorization_status:
   exitCode: 0
   emitter_agent: argos
   note: PASS_FEATURE_VERIFICATION · global APTO · R1/R2 copia Evidence Bridge prosthesis_subprocess · R3 KM APTO · F2 cascada APTO · F3/CA-8 NO_APTO no bloqueante (CERBERO_DENY cargo; proxy TECH_FORMAL + path-assert) · branch/git_changes APTO
+validated_base_sha: 0fe23de243876f55a40fcd951281a79e918f6f9a
+validated_head_sha: 4cef55486df44303bf8677fee56027bf3ac22830
+validated_tree_sha: 9e93704fd0b7518e39dc941731129fd5754370da
+diff_digest: sha256:bf6d0860a26b4ebfbb42bd4aea6a685b1aef6db1ad34a9314162d31354de81c6
 ---
 
 # Validación — Verificación (Argos · feature)
