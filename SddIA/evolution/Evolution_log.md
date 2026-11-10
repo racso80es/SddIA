@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `cb548aa0-57ee-4881-99c2-9d46339fc699` | 2026-11-10 | MAN-42: F-EDA-STORE-LOCK-CONTENTION suppress, refine-item sin fractura lock, promote_witness sin DLQ | CANONICO | `SddIA/evolution/cb548aa0-57ee-4881-99c2-9d46339fc699.md` |
 | `bcf50739-6e46-4a8d-9716-92883b1ebc7a` | 2026-11-10 | MAN-39: reentrada lifecycle sin tren forja; timeout floor; dirty peaje audits; label Kaizen lab MAN | CANONICO | `SddIA/evolution/bcf50739-6e46-4a8d-9716-92883b1ebc7a.md` |
 | `d858e40b-ba53-4f96-8ceb-1c61ef2f9a84` | 2026-11-09 | MAN-40: sello lógico consumidores EDA; gate veto path Redb fuera host | CANONICO | `SddIA/evolution/d858e40b-ba53-4f96-8ceb-1c61ef2f9a84.md` |
 | `f7687d4a-f5ac-4853-8ff2-f4e0534c3d7b` | 2026-11-09 | MAN-36: bóveda soberana Event Manager — host config, Cúmulo lógico-only, CA-4 consumidores | CANONICO | `SddIA/evolution/f7687d4a-f5ac-4853-8ff2-f4e0534c3d7b.md` |
