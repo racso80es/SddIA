@@ -50,3 +50,41 @@ execution_id: "cd45182d-1075-43f1-89d5-f2fda26a09f5"
 - Hueco confirmado: firma ausente en catálogo; `refine_item` aún emite `System_Fracture_Detected` — T1 silencia emisión sin reabrir `F-REFINE-ITEM-REDB-LOCK`.
 - `_agent_handoff.md` no reescrito.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-10T15:40:12Z"
+source: prosthesis_subprocess
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+git_evidence_digest: "18afa998ff0c6415fea3f52f09694a52"
+formal_evidence_detail: "verify-process-integrity: OK"
+```
+
+## 2026-11-10T15:44:13Z — Verificación
+- process: `feature`
+- agents: `argos`
+- execution_id: `cd45182d-1075-43f1-89d5-f2fda26a09f5`
+- correlation_id: ``
+- pbi_ref: `MAN-42`
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Canal MAN-42 leído; cuerpo Linear no en disco (no bloquea).
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO`)
+
+- Escrito: `docs/features/eda-store-lock-contention/validacion.md` (vía MCP).
+- R1/R2: **APTO** (copia Evidence Bridge `prosthesis_subprocess`); R3 KM: **APTO** (0 writes `docs/todos/**`).
+- `branch` / `git_changes`: **APTO** (`feat/eda-store-lock-contention` @ `8f85b14f…`; dirty MCP solo handoff/objectives).
+- CA-1…CA-7 path-assert **APTO**; CA-8/F3 **NO_APTO** no bloqueante (`cargo` CERBERO_DENY, sin inventar PASS).
+- Residual: `phase_reports` marca Ejecución `skipped` pese a forja presente.
+- Canal MAN-42 leído; cuerpo Linear no en disco (no bloquea).
+```

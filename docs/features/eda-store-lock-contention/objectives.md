@@ -1,4 +1,5 @@
 ---
+
 feature_name: eda-store-lock-contention
 created: "2026-11-10"
 updated: "2026-11-10"
