@@ -7,10 +7,16 @@ branch_name: feat/man-39-refactorization-reentry-cli-collapse
 persist_ref: docs/features/man-39-refactorization-reentry-cli-collapse
 pbi_ref: MAN-39
 tracker_ref: MAN-39
-global: NO_APTO
+global: APTO
 pbi_archived: false
 checks:
   UNIT_TESTS_MAN39: APTO
+  KA-REENTRY-1: APTO
+  KA-REENTRY-2: APTO
+  KA-REENTRY-3: PENDIENTE-CI
+  KA-REENTRY-4: APTO
+  KA-REENTRY-5: APTO
+  KA-REENTRY-6: APTO
   CI_GITHUB: PENDIENTE-CI
 git_changes:
   - SddIA/engine/execute-process/src/engine/executor.rs
