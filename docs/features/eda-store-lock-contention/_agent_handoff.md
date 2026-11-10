@@ -165,3 +165,79 @@ notes: "idempotent-hit"
 - `_agent_handoff.md` no reescrito.
 - Residual no bloqueante: docs dirty sin commit; cuerpo Linear ausente en disco.
 ```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-10T15:49:03Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "handoff-formal-scan; idempotent-hit"
+```
+
+## 2026-11-10T15:50:06Z — Triaje documental
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `5b4a78b0-9bca-4033-b460-da44927393dd`
+- correlation_id: `17d4efaf-eb59-46b7-b570-827ed8985d56`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual no bloqueante: docs dirty sin commit; cuerpo Linear ausente en disco.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO`)
+
+- Escrito: `docs/features/eda-store-lock-contention/validacion.md` (vía MCP).
+- R1/R2: **APTO** (copia Evidence Bridge `native_state`; notes `handoff-formal-scan; idempotent-hit`).
+- R3 KM: **APTO** (0 writes `docs/todos/**`; pending vacío).
+- `branch` / `git_changes`: **APTO** (`feat/eda-store-lock-contention`; dirty MCP solo docs persist + path-assert Core).
+- F2 cascada documental presente; firma `F-EDA-STORE-LOCK-CONTENTION` + helper path-assert.
+- `_agent_handoff.md` no reescrito.
+- Residual no bloqueante: docs dirty sin commit; cuerpo Linear ausente en disco.
+```
+
+### Runtime evidence (machine)
+
+```yaml
+schema: kalma2-agent-runtime-evidence/v1
+materialized_at: "2026-11-10T15:50:07Z"
+source: native_state
+git_manager_invoked: true
+formal_execute_process: true
+TECH_FORMAL_EXECUTE_PROCESS: APTO
+GIT_EVIDENCE_VIA_GIT_MANAGER: APTO
+notes: "idempotent-hit"
+```
+
+## 2026-11-10T15:51:12Z — Veredicto y bloqueo
+- process: `pull-request-review`
+- agents: `argos`
+- execution_id: `5b4a78b0-9bca-4033-b460-da44927393dd`
+- correlation_id: `17d4efaf-eb59-46b7-b570-827ed8985d56`
+- pbi_ref: ``
+- runtime: kalma2-agent-runtime-cursor
+- backend: `cli`
+- status: `executed`
+- message: - Residual no bloqueante: docs dirty sin commit; cuerpo Linear ausente en disco.
+
+### Transcript (tail)
+
+```
+**Veredicto: ok** (`global: APTO` · `PASS_PPR_VEREDICTO`)
+
+- Escrito: `docs/features/eda-store-lock-contention/validacion.md` (vía MCP).
+- R1/R2: **APTO** (copia Evidence Bridge `native_state`; notes `idempotent-hit`).
+- R3 KM: **APTO** (0 writes `docs/todos/**`; pending vacío).
+- `branch` / `git_changes`: **APTO** (`feat/eda-store-lock-contention`; dirty MCP solo docs persist).
+- Path-assert Core: firma `F-EDA-STORE-LOCK-CONTENTION` + `store_lock_contention.rs`.
+- `_agent_handoff.md` no reescrito.
+- Residual no bloqueante: docs dirty sin commit; cuerpo Linear ausente en disco.
+```

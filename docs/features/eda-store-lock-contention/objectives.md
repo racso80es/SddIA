@@ -1,6 +1,7 @@
 ---
 
 
+
 feature_name: eda-store-lock-contention
 created: "2026-11-10"
 updated: "2026-11-10"
@@ -23,7 +24,7 @@ mayeuta_verdict: ok
 phase: mayeuta-stabilization
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-42.jsonl"
-execution_id: "4ca3514c-eb8e-4940-ba87-c0c2c7b1b98b"
+execution_id: "5b4a78b0-9bca-4033-b460-da44927393dd"
 ---
 # Objetivos — eda-store-lock-contention
 

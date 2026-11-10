@@ -1,5 +1,6 @@
 ---
 
+
 feature_name: eda-store-lock-contention
 created: "2026-11-10"
 process: feature
@@ -9,7 +10,7 @@ pbi_ref: MAN-42
 items_applied:
   - T1-firma-suppress-pending
   - T2-ownership-budget
-execution_id: "4ca3514c-eb8e-4940-ba87-c0c2c7b1b98b"
+execution_id: "5b4a78b0-9bca-4033-b460-da44927393dd"
 ---
 # Ejecución — eda-store-lock-contention
 
