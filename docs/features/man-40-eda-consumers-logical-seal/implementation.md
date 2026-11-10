@@ -15,6 +15,7 @@
 
 
 
+
 feature_name: man-40-eda-consumers-logical-seal
 created: "2026-11-09"
 updated: "2026-11-09"
@@ -26,7 +27,7 @@ pbi_ref: MAN-40
 tracker_ref: MAN-40
 document_id: PBI-1b004e99
 agent: tekton
-execution_id: "efb874c3-853e-425f-9aec-3e9a264b4103"
+execution_id: "d0c1ffd7-1464-4e4d-aee4-50696c890a7b"
 ---
 # Implementación — man-40-eda-consumers-logical-seal
 
