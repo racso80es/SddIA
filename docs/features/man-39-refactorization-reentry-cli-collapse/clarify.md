@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-39-refactorization-reentry-cli-collapse
 created: "2026-11-10"
 process: feature
@@ -12,7 +13,7 @@ phase: mayeuta-stabilization
 mayeuta_verdict: ok
 norm_ref: features-documentation-pattern@1.3.1
 forge_key: "2e7baef71d4c29dc25c07db567099259c855c06271d36cd0ae854ba35cb5211b"
-execution_id: "bd841ef3-fd25-43bd-a038-a6fe2f5efc41"
+execution_id: "454bcd99-8bbb-4cb3-8038-31cbe046ac55"
 ---
 # Clarificación — man-39-refactorization-reentry-cli-collapse
 

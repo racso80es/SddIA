@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-39-refactorization-reentry-cli-collapse
 created: "2026-11-10"
 process: feature
@@ -11,7 +12,7 @@ items_applied:
 branch_name: feat/man-39-refactorization-reentry-cli-collapse
 persist_ref: docs/features/man-39-refactorization-reentry-cli-collapse
 pbi_ref: MAN-39
-execution_id: "bd841ef3-fd25-43bd-a038-a6fe2f5efc41"
+execution_id: "454bcd99-8bbb-4cb3-8038-31cbe046ac55"
 ---
 # Ejecución — man-39-refactorization-reentry-cli-collapse
 
