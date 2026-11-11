@@ -66,7 +66,7 @@ pub fn publish_ecst(
     };
     match port.publish_ecst(req) {
         Ok(_) => {}
-        Err(EventManagerError::InvalidRequest(msg)) if msg.contains("duplicate") => {}
+        Err(EventManagerError::AlreadyExists { .. }) => {}
         Err(err) => return Err(err.to_string()),
     }
     PublishSeal::from_parts(uri_family, event_id)
@@ -126,6 +126,7 @@ pub fn record_delivery_ack(
         event_id: event_id.to_string(),
         delivery_id: delivery_id.to_string(),
         status: DeliveryStatus::Ack,
+        subscriber_id: None,
         attempt: None,
     })
     .map_err(|e| e.to_string())
@@ -140,6 +141,7 @@ pub fn record_delivery_nack(
         event_id: event_id.to_string(),
         delivery_id: delivery_id.to_string(),
         status: DeliveryStatus::Nack,
+        subscriber_id: None,
         attempt: None,
     })
     .map_err(|e| e.to_string())

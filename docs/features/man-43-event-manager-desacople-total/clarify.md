@@ -21,6 +21,8 @@ tracker_channel: ".SddIA/state/tracker-outbound/MAN-43.jsonl"
 refine_workspace: ".SddIA/workspaces/refine-item/c7976303-3b56-4175-9303-415e8b187623"
 seed: continue-tekton
 execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
+rebaseline: remediation-waves-v1
+audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 ---
 # Clarificación — man-43-event-manager-desacople-total
 
@@ -59,7 +61,7 @@ Semilla de esta pasada: **`continue tekton`** — revalidar el *qué* tras bluep
 | Estado íntegro detrás del puerto; gaps 1.2 se incorporan a v2 antes de migrar consumidores | **L-6** |
 | Demolición condicionada de `sddia-event-store` / `eda_port_legacy` | **L-7** |
 | Seis hijos obligatorios (contrato, entregas/testigos, watcher/sweeper, periféricos, demolición, convergencia documental) | **L-CHILDREN** |
-| AC-1…AC-14 = Done medible del epílogo | **L-AC** |
+| AC-1…AC-14 = baseline original; AC-15…AC-19 añadidos por auditoría post-H1 = Done medible del epílogo | **L-AC** + **L-REBASELINE** |
 
 ## D2 — Laudos de estabilización (cerrados)
 
@@ -126,3 +128,30 @@ Semilla de esta pasada: **`continue tekton`** — revalidar el *qué* tras bluep
 ## D6 — Veredicto
 
 **ok** — Requisitos estabilizados y **reconfirmados** bajo semilla `continue tekton`. El *qué* permanece cerrado: `EventManagerPort`/`EventUri` v2 como única frontera; laudos **L-1…L-7**; hijos **H1…H6**; AC **1…14**; no-objetivos y riesgos de cutover documentados; sin reabrir bóveda MAN-36 ni compat v1. Blueprint Dedalo no abre vacíos. Nota explícita: auditorías desacople/legacy **no** leídas en disco esta pasada (**L-AUDIT-DISK**). Tracker **MAN-43** / documento **PBI-0f4f0f5f** / padre **MAN-40** / `execution_id` **3278ec5b-21ae-4fe0-af14-62a7e5ba0e07**.
+
+## D7 — Laudos post-H1 (auditoría 2026-11-11)
+
+La auditoría `docs/audits/man-32-lineage-man-43-remediation-20261111.md` materializa la evidencia que faltaba y detecta defectos concretos dentro del H1 parcial. Estos laudos **amplían** la ejecución; no contradicen L-1…L-7.
+
+| ID | Decisión |
+|----|----------|
+| **L-8 — Integridad exacta** | `event_id`, `subscriber_id` y `delivery_id` son identidades opacas. Purga, consulta y relación usan igualdad exacta sobre campos tipados. Prohibido `contains`, prefijos ambiguos o derivar FKs partiendo strings compuestos. |
+| **L-9 — Contrato indivisible** | El runtime no puede considerarse 2.0 mientras schema, bindings, taxonomía, índices, host y adapters declaren otra versión. El sello del PR #453 es H1 parcial, no H1 completo. |
+| **L-10 — Consulta honesta** | Un filtro declarado se aplica realmente o la operación falla explícitamente. Prohibido aceptar familia/estado/cursor y después ignorarlos. |
+| **L-11 — Terminalidad explícita** | `processed` y `dead_letter` son estados terminales consultables por puerto. Los adapters v2 deben implementar la operación; el default incompleto no acredita soporte. |
+| **L-12 — Paridad contractual** | Mock, Redb y externo ejecutan la misma suite para lifecycle, colisiones, entregas, filtros, terminales, paginación, duplicados y reapertura. |
+| **L-13 — Error tipado** | La idempotencia solo reconoce una variante estable `AlreadyExists`/equivalente. Prohibido inspeccionar texto de errores. |
+| **L-REBASELINE** | Orden de olas: O0 contención → O1 contrato → O2 estado → O3 centinelas → O4 periferia → O5 demolición → O6 convergencia. H2–H6 conservan alcance. |
+| **L-H1-HISTORICAL** | El merge #453 conserva trazabilidad como milestone H1 parcial. No se revoca ni se usa como prueba de `APTO_TOTAL`. |
+
+## D8 — Veredicto rebaselined
+
+**`ok-remediation-ready`** — alcance estabilizado en AC-1…AC-19. Estado efectivo:
+
+```yaml
+h1_historical_milestone: APTO_CONDICIONAL
+h1_complete: false
+h2_h6_complete: false
+full_feature: NO_APTO_TOTAL
+next_wave: O0
+```

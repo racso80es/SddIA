@@ -3,10 +3,12 @@
 use serde_json::json;
 
 use crate::ports::event_manager::contract::{
-    AppendTraceRequest, ClaimPendingRequest, DeliveryStatus, GetDltSealRequest, MoveToDlqRequest,
-    PublishEcstRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
+    AppendTraceRequest, ClaimPendingRequest, DeliveryStatus, GetDltSealRequest,
+    GetEventRequest, ListDeliveriesRequest, ListTracesRequest, MoveToDlqRequest, PublishEcstRequest,
+    PurgeEventRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
     VerifyInlineEcstRequest,
 };
+use crate::ports::event_manager::error::EventManagerError;
 use crate::ports::event_manager::port::EventManagerPort;
 
 /// Ejecuta la suite de conformidad al 100% sobre `port`.
@@ -18,6 +20,7 @@ pub fn run_event_manager_contract_suite(port: &dyn EventManagerPort) {
     dlq_and_replay(port);
     traces_integrity(port);
     verify_inline_and_dlt_seal(port);
+    o0_containment_integrity(port);
 }
 
 fn lifecycle_publish_claim_isolation(port: &dyn EventManagerPort) {
@@ -78,6 +81,7 @@ fn ack_idempotent(port: &dyn EventManagerPort) {
         event_id: id.clone(),
         delivery_id: delivery_id.clone(),
         status: DeliveryStatus::Ack,
+        subscriber_id: None,
         attempt: Some(1),
     })
     .expect("ack1");
@@ -86,6 +90,7 @@ fn ack_idempotent(port: &dyn EventManagerPort) {
         event_id: id.clone(),
         delivery_id,
         status: DeliveryStatus::Ack,
+        subscriber_id: None,
         attempt: Some(1),
     })
     .expect("ack2 idempotent");
@@ -187,6 +192,144 @@ fn verify_inline_and_dlt_seal(port: &dyn EventManagerPort) {
         })
         .expect("get seal");
     assert_eq!(seal.tx_hash, "0xabc");
+}
+
+fn o0_containment_integrity(port: &dyn EventManagerPort) {
+    let tag = unique("o0");
+    let abc = format!("abc-{tag}");
+    let xabcx = format!("xabcx-{tag}");
+    let trace_abc = format!("trace-abc-{tag}");
+    let trace_x = format!("xabcx-log-{tag}");
+
+    port.publish_ecst(PublishEcstRequest {
+        event_id: abc.clone(),
+        ecst: json!({"k": "abc"}),
+        trace_id: Some(trace_abc.clone()),
+    })
+    .expect("publish abc");
+    port.publish_ecst(PublishEcstRequest {
+        event_id: xabcx.clone(),
+        ecst: json!({"k": "xabcx"}),
+        trace_id: Some(trace_x.clone()),
+    })
+    .expect("publish xabcx");
+
+    port.append_trace(AppendTraceRequest {
+        trace_id: trace_x.clone(),
+        frame: json!({"step": 1}),
+    })
+    .expect("append x trace");
+
+    let dup = port.publish_ecst(PublishEcstRequest {
+        event_id: abc.clone(),
+        ecst: json!({"k": "dup"}),
+        trace_id: None,
+    });
+    assert!(
+        matches!(dup, Err(EventManagerError::AlreadyExists { .. })),
+        "duplicate publish must be AlreadyExists"
+    );
+
+    port.record_delivery(RecordDeliveryRequest {
+        event_id: abc.clone(),
+        delivery_id: format!("del-{abc}-sub"),
+        status: DeliveryStatus::Nack,
+        subscriber_id: Some("sub".into()),
+        attempt: Some(1),
+    })
+    .expect("del abc");
+    port.record_delivery(RecordDeliveryRequest {
+        event_id: xabcx.clone(),
+        delivery_id: format!("del-{xabcx}-sub"),
+        status: DeliveryStatus::Nack,
+        subscriber_id: Some("sub".into()),
+        attempt: Some(1),
+    })
+    .expect("del xabcx");
+    port.record_delivery(RecordDeliveryRequest {
+        event_id: abc.clone(),
+        delivery_id: format!("del-{abc}-sub2"),
+        status: DeliveryStatus::Nack,
+        subscriber_id: Some("sub-2".into()),
+        attempt: Some(1),
+    })
+    .expect("del abc sub2");
+
+    let listed_abc = port
+        .list_deliveries(ListDeliveriesRequest {
+            event_id: Some(abc.clone()),
+            subscriber_id: None,
+            status: None,
+            limit: None,
+            cursor: None,
+        })
+        .expect("list abc");
+    assert_eq!(
+        listed_abc.deliveries.len(),
+        2,
+        "abc must have exactly its deliveries"
+    );
+
+    let listed_x = port
+        .list_deliveries(ListDeliveriesRequest {
+            event_id: Some(xabcx.clone()),
+            subscriber_id: Some("sub".into()),
+            status: None,
+            limit: None,
+            cursor: None,
+        })
+        .expect("list xabcx");
+    assert_eq!(
+        listed_x.deliveries.len(),
+        1,
+        "xabcx filter by event_id and subscriber must be exact"
+    );
+
+    port.purge_event(PurgeEventRequest {
+        event_id: abc.clone(),
+    })
+    .expect("purge abc");
+
+    assert!(
+        port
+            .get_event(GetEventRequest {
+                event_id: xabcx.clone(),
+            })
+            .is_ok(),
+        "xabcx must survive purge of abc"
+    );
+
+    let after_abc = port
+        .list_deliveries(ListDeliveriesRequest {
+            event_id: Some(abc.clone()),
+            subscriber_id: None,
+            status: None,
+            limit: None,
+            cursor: None,
+        })
+        .expect("list abc after purge");
+    assert!(after_abc.deliveries.is_empty());
+
+    let after_x = port
+        .list_deliveries(ListDeliveriesRequest {
+            event_id: Some(xabcx.clone()),
+            subscriber_id: None,
+            status: None,
+            limit: None,
+            cursor: None,
+        })
+        .expect("list xabcx after purge");
+    assert_eq!(after_x.deliveries.len(), 1);
+
+    let frames = port
+        .list_traces(ListTracesRequest {
+            trace_id: trace_x.clone(),
+        })
+        .expect("list x trace");
+    assert!(
+        !frames.frames.is_empty(),
+        "trace xabcx-log must survive purge of abc"
+    );
 }
 
 fn unique(prefix: &str) -> String {

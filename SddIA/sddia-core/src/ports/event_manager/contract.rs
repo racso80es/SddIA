@@ -203,7 +203,33 @@ pub struct RecordDeliveryRequest {
     pub delivery_id: String,
     pub status: DeliveryStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attempt: Option<u32>,
+}
+
+/// Registro durable de entrega (MAN-43 O0): FKs explícitas; no inferir desde la clave.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct DeliveryRecord {
+    pub event_id: String,
+    pub delivery_id: String,
+    pub status: DeliveryStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attempt: Option<u32>,
+}
+
+impl DeliveryRecord {
+    pub fn from_request(req: &RecordDeliveryRequest) -> Self {
+        Self {
+            event_id: req.event_id.clone(),
+            delivery_id: req.delivery_id.clone(),
+            status: req.status,
+            subscriber_id: req.subscriber_id.clone(),
+            attempt: req.attempt,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

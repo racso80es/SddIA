@@ -12,7 +12,8 @@ use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryStatus,
     DualVersionManifest, EventManagerError, EventManagerPort, GetDltSealRequest, GetDltSealResult,
     GetEventRequest, GetEventResult, HandshakeVersionRequest, HandshakeVersionResult,
-    ListedDelivery, ListedDlqEvent, ListedEvent, ListDeliveriesRequest, ListDeliveriesResult,
+    DeliveryRecord, ListedDelivery, ListedDlqEvent, ListedEvent, ListDeliveriesRequest,
+    ListDeliveriesResult,
     ListDlqRequest, ListDlqResult, ListEventsRequest, ListEventsResult, ListPendingRequest,
     ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
     PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
@@ -45,6 +46,24 @@ struct LeaseRec {
 struct DlqRec {
     event: StoredEvent,
     reason: String,
+}
+
+#[derive(Debug, Clone)]
+enum ParsedDelivery {
+    Record(DeliveryRecord),
+    Legacy(DeliveryStatus),
+}
+
+fn parse_delivery_bytes(bytes: &[u8]) -> Result<ParsedDelivery, EventManagerError> {
+    if let Ok(rec) = serde_json::from_slice::<DeliveryRecord>(bytes) {
+        if !rec.event_id.is_empty() && !rec.delivery_id.is_empty() {
+            return Ok(ParsedDelivery::Record(rec));
+        }
+    }
+    if let Ok(status) = serde_json::from_slice::<DeliveryStatus>(bytes) {
+        return Ok(ParsedDelivery::Legacy(status));
+    }
+    Err(json_err("unrecognized delivery payload"))
 }
 
 pub struct RedbEventAdapter {
@@ -166,17 +185,11 @@ impl EventManagerPort for RedbEventAdapter {
         {
             let events = txn.open_table(EVENTS).map_err(storage)?;
             if events.get(req.event_id.as_str()).map_err(storage)?.is_some() {
-                return Err(EventManagerError::InvalidRequest(format!(
-                    "duplicate {}",
-                    req.event_id
-                )));
+                return Err(EventManagerError::already_exists("event", req.event_id.clone()));
             }
             let dlq = txn.open_table(DLQ).map_err(storage)?;
             if dlq.get(req.event_id.as_str()).map_err(storage)?.is_some() {
-                return Err(EventManagerError::InvalidRequest(format!(
-                    "duplicate in dlq {}",
-                    req.event_id
-                )));
+                return Err(EventManagerError::already_exists("event", req.event_id.clone()));
             }
             drop(dlq);
             drop(events);
@@ -247,13 +260,20 @@ impl EventManagerPort for RedbEventAdapter {
         {
             let mut deliveries = txn.open_table(DELIVERIES).map_err(storage)?;
             if let Some(prev) = deliveries.get(req.delivery_id.as_str()).map_err(storage)? {
-                let prev_status: DeliveryStatus =
-                    serde_json::from_slice(prev.value()).map_err(json_err)?;
-                if prev_status == DeliveryStatus::Ack && req.status == DeliveryStatus::Ack {
+                let ack_dup = match parse_delivery_bytes(prev.value())? {
+                    ParsedDelivery::Record(r) => {
+                        r.status == DeliveryStatus::Ack && req.status == DeliveryStatus::Ack
+                    }
+                    ParsedDelivery::Legacy(s) => {
+                        s == DeliveryStatus::Ack && req.status == DeliveryStatus::Ack
+                    }
+                };
+                if ack_dup {
                     return Ok(());
                 }
             }
-            let bytes = serde_json::to_vec(&req.status).map_err(json_err)?;
+            let record = DeliveryRecord::from_request(&req);
+            let bytes = serde_json::to_vec(&record).map_err(json_err)?;
             deliveries
                 .insert(req.delivery_id.as_str(), bytes.as_slice())
                 .map_err(storage)?;
@@ -483,6 +503,25 @@ impl EventManagerPort for RedbEventAdapter {
     }
 
     fn purge_event(&self, req: PurgeEventRequest) -> Result<(), EventManagerError> {
+        let trace_id = {
+            let txn = self.db.begin_read().map_err(storage)?;
+            let events = txn.open_table(EVENTS).map_err(storage)?;
+            if let Some(v) = events.get(req.event_id.as_str()).map_err(storage)? {
+                let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
+                stored.trace_id
+            } else if let Some(v) = txn
+                .open_table(DLQ)
+                .map_err(storage)?
+                .get(req.event_id.as_str())
+                .map_err(storage)?
+            {
+                let rec: DlqRec = serde_json::from_slice(v.value()).map_err(json_err)?;
+                rec.event.trace_id
+            } else {
+                None
+            }
+        };
+
         let txn = self.db.begin_write().map_err(storage)?;
         {
             let mut events = txn.open_table(EVENTS).map_err(storage)?;
@@ -496,17 +535,16 @@ impl EventManagerPort for RedbEventAdapter {
                 return Err(EventManagerError::NotFound(req.event_id.clone()));
             }
             let _ = leases.remove(req.event_id.as_str()).map_err(storage)?;
-            let prefix = format!("{}:", req.event_id);
+
             let delivery_keys: Vec<String> = deliveries
                 .iter()
                 .map_err(storage)?
                 .filter_map(|item| {
-                    item.ok().and_then(|(k, _)| {
+                    item.ok().and_then(|(k, v)| {
                         let key = k.value().to_string();
-                        if key.starts_with(&prefix) || key.contains(req.event_id.as_str()) {
-                            Some(key)
-                        } else {
-                            None
+                        match parse_delivery_bytes(v.value()).ok()? {
+                            ParsedDelivery::Record(r) if r.event_id == req.event_id => Some(key),
+                            ParsedDelivery::Record(_) | ParsedDelivery::Legacy(_) => None,
                         }
                     })
                 })
@@ -514,14 +552,9 @@ impl EventManagerPort for RedbEventAdapter {
             for key in delivery_keys {
                 let _ = deliveries.remove(key.as_str()).map_err(storage)?;
             }
-            let trace_keys: Vec<String> = traces
-                .iter()
-                .map_err(storage)?
-                .filter_map(|item| item.ok().map(|(k, _)| k.value().to_string()))
-                .filter(|tid| tid.contains(req.event_id.as_str()))
-                .collect();
-            for key in trace_keys {
-                let _ = traces.remove(key.as_str()).map_err(storage)?;
+
+            if let Some(tid) = trace_id.filter(|t| !t.trim().is_empty()) {
+                let _ = traces.remove(tid.as_str()).map_err(storage)?;
             }
         }
         txn.commit().map_err(storage)?;
@@ -542,31 +575,28 @@ impl EventManagerPort for RedbEventAdapter {
             }
             let (k, v) = item.map_err(storage)?;
             let delivery_id = k.value().to_string();
-            let status: DeliveryStatus = serde_json::from_slice(v.value()).map_err(json_err)?;
+            let ParsedDelivery::Record(record) = parse_delivery_bytes(v.value())? else {
+                continue;
+            };
             if let Some(ref eid) = req.event_id {
-                if !delivery_id.contains(eid.as_str()) {
+                if record.event_id != *eid {
                     continue;
                 }
             }
             if let Some(ref sub) = req.subscriber_id {
-                if !delivery_id.contains(sub.as_str()) {
+                if record.subscriber_id.as_deref() != Some(sub.as_str()) {
                     continue;
                 }
             }
             if let Some(expected) = req.status {
-                if status != expected {
+                if record.status != expected {
                     continue;
                 }
             }
-            let event_id = req
-                .event_id
-                .clone()
-                .or_else(|| delivery_id.split(':').next().map(str::to_string))
-                .unwrap_or_else(|| delivery_id.clone());
             out.push(ListedDelivery {
                 delivery_id,
-                event_id,
-                status,
+                event_id: record.event_id,
+                status: record.status,
             });
         }
         Ok(ListDeliveriesResult {

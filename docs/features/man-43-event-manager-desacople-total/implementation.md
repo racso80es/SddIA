@@ -11,10 +11,12 @@ parent_ref: MAN-40
 document_id: PBI-0f4f0f5f
 agent: tekton
 phase: ejecucion
-status: in-progress
+status: remediation-ready
 seed: continue-tekton
 norm_ref: features-documentation-pattern@1.3.1
 execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
+rebaseline: remediation-waves-v1
+audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 ---
 # Implementation — man-43-event-manager-desacople-total
 
@@ -100,4 +102,36 @@ H2 entregas/testigos FS · H3 watcher/sweeper · H4 periféricos F-1..F-4 / AC-8
 
 - Espejo FS en `emit_pr_presented` (`.events/domain/...`) **aún presente** → F-1 / H4.
 - `runtime_db_path` / `path_is_resolved_redb` aún en superficie consumidores → AC-8 / H4.
-- No se declara AC-1…AC-14 verdes sin evidencia de tests/gates.
+- No se declara AC-1…AC-19 verdes sin evidencia de tests/gates.
+
+---
+
+## Rebaseline post-auditoría — O0…O6
+
+Auditoría canónica: `docs/audits/man-32-lineage-man-43-remediation-20261111.md`.
+
+El merge #453 materializó H1 parcial. La siguiente implementación **no** comienza en H2: comienza en **O0/H1R**, porque el adapter Redb vigente selecciona entregas/trazas mediante coincidencias textuales y puede cruzar IDs opacos solapados.
+
+| Ola | Estado | Touchpoints principales |
+|-----|--------|-------------------------|
+| **O0 / H1R** | `done` (rama; sin merge) | `DeliveryRecord`, `AlreadyExists`, purga/listado exactos (Redb/FS/mock), suite `o0_containment_integrity`, cápsula dummy + puente; `cargo test` verde en los cuatro crates del plan § O0 |
+| **O1 / H1C** | `ready` | contrato, port, adapters, contract suite, schema/bindings/taxonomía |
+| **O2 / H2** | `blocked-by-O1` | `eda_bus_topology`, `fractal_bus`, entregas/testigos |
+| **O3 / H3** | `blocked-by-O2` | event-watcher, `eda_sweep` |
+| **O4 / H4** | `blocked-by-O1` | actions, Kalma2, workspace-server, GitHub bridge, superficie `eda_port` |
+| **O5 / H5** | `blocked-by-O2-O4` | store legacy, matrices, allowlists, gates |
+| **O6 / H6** | `blocked-by-O5` | README, Constitución, Cúmulo, evolution, auditorías |
+
+### Backlog técnico O0
+
+Implementado según `plan.md` § O0 / H1R (2026-11-11). Evidencia: `sddia-core` (`error`, `contract`, `memory_mock`, `runtime_bridge`, `contract_suite`), `redb_event_adapter`, `fs_event_adapter`, `external_capsule_event_adapter` (+ `capsule_dummy`). Pendiente: PR/commit y cierre documental en rama.
+
+### Backlog técnico O1
+
+1. `PublishEcstRequest` porta `EventUri`; `StoredEvent` persiste familia y estado.
+2. `list_events` aplica familia, tipo, estado, cursor y límite.
+3. `list_terminal_events` implementa processed + dead-letter en cada adapter.
+4. Contract suite cubre AC-15…AC-19 sobre mock, Redb y externo.
+5. Schema/bindings/taxonomía/índices pasan a 2.0 mediante `entity-manager`.
+
+No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

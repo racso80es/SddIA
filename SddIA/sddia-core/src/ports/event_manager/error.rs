@@ -22,6 +22,9 @@ pub enum EventManagerError {
     #[error("invalid request: {0}")]
     InvalidRequest(String),
 
+    #[error("already exists: {entity} {id}")]
+    AlreadyExists { entity: String, id: String },
+
     #[error("storage error: {0}")]
     Storage(String),
 
@@ -37,6 +40,13 @@ impl EventManagerError {
         Self::ContractVersionMismatch {
             message: message.into(),
             seed: F_DI_CONTRACT_VERSION_MISMATCH.to_string(),
+        }
+    }
+
+    pub fn already_exists(entity: impl Into<String>, id: impl Into<String>) -> Self {
+        Self::AlreadyExists {
+            entity: entity.into(),
+            id: id.into(),
         }
     }
 }

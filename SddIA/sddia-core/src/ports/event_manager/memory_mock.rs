@@ -8,11 +8,11 @@ use serde_json::Value;
 
 use crate::ports::event_manager::contract::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, CONTRACT_ID,
-    CONTRACT_VERSION, DeliveryStatus, GetDltSealRequest, GetDltSealResult, GetEventRequest,
-    GetEventResult, HandshakeVersionRequest, HandshakeVersionResult, ListDeliveriesRequest,
-    ListDeliveriesResult, ListedDelivery, ListedDlqEvent, ListDlqRequest, ListDlqResult,
-    ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult,
-    MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
+    CONTRACT_VERSION, DeliveryRecord, DeliveryStatus, GetDltSealRequest, GetDltSealResult,
+    GetEventRequest, GetEventResult, HandshakeVersionRequest, HandshakeVersionResult,
+    ListDeliveriesRequest, ListDeliveriesResult, ListedDelivery, ListedDlqEvent, ListDlqRequest,
+    ListDlqResult, ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest,
+    ListTracesResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
     RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 use crate::ports::event_manager::error::EventManagerError;
@@ -36,20 +36,13 @@ struct StoredEvent {
     dlq_reason: Option<String>,
 }
 
-#[derive(Debug, Clone)]
-struct StoredDelivery {
-    delivery_id: String,
-    event_id: String,
-    status: DeliveryStatus,
-}
-
 #[derive(Debug, Default)]
 struct Inner {
     pending: BTreeMap<String, StoredEvent>,
     claimed: BTreeMap<String, StoredEvent>,
     processed: BTreeMap<String, StoredEvent>,
     dlq: BTreeMap<String, StoredEvent>,
-    deliveries: HashMap<String, StoredDelivery>,
+    deliveries: HashMap<String, DeliveryRecord>,
     traces: HashMap<String, Vec<Value>>,
     dlt_seals: HashMap<String, GetDltSealResult>,
     faults: FaultInjection,
@@ -99,10 +92,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
             || g.processed.contains_key(&req.event_id)
             || g.dlq.contains_key(&req.event_id)
         {
-            return Err(EventManagerError::InvalidRequest(format!(
-                "duplicate event_id {}",
-                req.event_id
-            )));
+            return Err(EventManagerError::already_exists("event", req.event_id.clone()));
         }
         g.pending.insert(
             req.event_id.clone(),
@@ -183,11 +173,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
         }
         g.deliveries.insert(
             req.delivery_id.clone(),
-            StoredDelivery {
-                delivery_id: req.delivery_id.clone(),
-                event_id: req.event_id.clone(),
-                status: req.status,
-            },
+            DeliveryRecord::from_request(&req),
         );
 
         match req.status {
@@ -330,7 +316,8 @@ impl EventManagerPort for InMemoryEventManagerMock {
         if !removed {
             return Err(EventManagerError::NotFound(req.event_id));
         }
-        g.deliveries.retain(|_, d| d.event_id != req.event_id);
+        g.deliveries
+            .retain(|_, d| d.event_id != req.event_id);
         if let Some(tid) = trace_id {
             g.traces.remove(&tid);
         }
@@ -353,7 +340,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
                     }
                 }
                 if let Some(sid) = req.subscriber_id.as_deref() {
-                    if !d.delivery_id.contains(sid) {
+                    if d.subscriber_id.as_deref() != Some(sid) {
                         return false;
                     }
                 }

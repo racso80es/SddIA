@@ -14,9 +14,12 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.0.1"
+version_plan: "1.1.1"
+rebaseline: remediation-waves-v1
+audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
   - H0-precondiciones-forja
+  - O0-contencion-integridad
   - H1-contrato-eventuri-v2
   - H2-absorcion-entregas-testigos
   - H3-watcher-sweeper-puerto
@@ -35,11 +38,13 @@ execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
 
 Blueprint ejecutable para **Tekton**. Entrada: `objectives.md`, `clarify.md` (L-*), `spec.md` **v1.0.1** (ids **MAN-43** / **PBI-0f4f0f5f** / padre **MAN-40**).
 
+Rebaseline **v1.1.0**: la auditoría post-H1 añade O0, AC-15…AC-19 y convierte el H1 restante en dos olas: **H1R/O0** (integridad) y **H1C/O1** (contrato completo). El merge #453 conserva su sello histórico; no se reejecuta como si H1 estuviera vacío.
+
 Semilla **`continue tekton`** (**L-CONTINUE-TEKTON**): reconfirmación Dedalo; el *qué* no cambia; Ejecución consume este plan en solo lectura. `rbac_ok: true` intacto.
 
 `target_executor_rbac.allowed_policies` alineadas a Tekton: `ecosystem-evolution`, `filesystem-ops`, `source-control`, `system-operations`, `chaos-engineering`, `tracker-operations`.
 
-**Lectura de estado:** puerto 1.2 + bóveda MAN-36 vivos; deuda F-*/L-P*/R* por refine + `spec.md` §0; auditorías desacople/legacy **ausentes en disco** (**L-AUDIT-DISK**) — H6 rematerializa antes de AC-13. Este blueprint pide forja del desacople total v2, no reabrir MAN-36.
+**Lectura de estado:** bóveda MAN-36 viva; kernel H1 parcial en 2.0 y Genoma aún 1.2/v1; deuda F-*/L-P*/R* consolidada en `docs/audits/man-32-lineage-man-43-remediation-20261111.md`. Los paths legacy ausentes quedan supersedidos por esa auditoría; O6 reaudita antes de AC-13. Este blueprint pide forja del desacople total v2, no reabrir MAN-36.
 
 ## Viabilidad RBAC (cruzada mecánicamente)
 
@@ -63,6 +68,9 @@ phases:
   - name: "H0 Precondiciones de forja"
     intent: "Cerrar P1–P6 (inventario v1, ops v2, purga, cutover, tests) y sellar forge_key si el runtime lo exige."
     delegates_to: ["skill:filesystem-manager", "skill:shell-executor"]
+  - name: "O0 Contención de integridad"
+    intent: "Eliminar matching por substring y errores por texto; probar aislamiento de IDs antes de ampliar el puerto."
+    delegates_to: ["skill:filesystem-manager", "skill:shell-executor"]
   - name: "H1 Contrato EventManager 2.0 + EventUri"
     intent: "PublishSeal.event_uri; eliminar logical_rel/target_path; schema/bindings/taxonomía/version_gate v2; suite mock/Redb/externo; rechazo v1."
     delegates_to: ["skill:filesystem-manager", "skill:shell-executor", "action:execute-process"]
@@ -85,6 +93,22 @@ phases:
 
 ---
 
+## Rebaseline de olas
+
+| Orden | Ola | Hito | Dependencia dura | Resultado |
+|-------|-----|------|-----------------|-----------|
+| 0 | **O0 — Contención de integridad** | H1R | H0 | Persistencia segura: igualdad exacta y errores tipados |
+| 1 | **O1 — Contrato v2 íntegro** | H1C | O0 | Puerto, adapters, Genoma y suite v2 completos |
+| 2 | **O2 — Estado y testigos** | H2 | O1 | Entregas/terminales sin FS |
+| 3 | **O3 — Cutover centinelas** | H3 | O2 | Watcher/sweeper solo puerto |
+| 4 | **O4 — Periferia limpia** | H4 | O1; paralela a O2 | Productores/bridges sin FS ni paths físicos |
+| 5 | **O5 — Demolición** | H5 | O2–O4 | Legacy y allowlists eliminados |
+| 6 | **O6 — Convergencia** | H6 | O5 | AC-1…19 evidenciados y `APTO_TOTAL` |
+
+Regla de corte: ninguna ola posterior puede usar `contains(event_id)` ni matching textual de errores como deuda tolerada.
+
+---
+
 ## H0 — Precondiciones de forja (L-FORGE)
 
 | # | Entregable | Detalle |
@@ -100,22 +124,107 @@ phases:
 
 ---
 
+## O0 / H1R — Contención de integridad (primer hito pendiente)
+
+Estado: **listo para ejecutar**. H1 histórico del PR #453 permanece intacto. O1–O6 no empiezan hasta que esta ola tenga sus tests verdes.
+
+### Corte
+
+O0 corrige identidad y errores. No persiste `EventFamily`, no crea schema v2, no corta watcher/sweeper y no toca Genoma. Esas piezas siguen en O1 y se mutan vía `entity-manager`.
+
+### Defecto vivo
+
+| Adaptador | Escritura actual | Lectura/purga actual |
+|-----------|------------------|----------------------|
+| Redb | `em_deliveries[delivery_id] = DeliveryStatus` | `contains(event_id)` y `contains` sobre claves de traza |
+| FS | `{delivery_id}.json = DeliveryStatus`; purga no borra entregas ni trazas | Sin FK recuperable |
+| Mock | Guarda `event_id` y purga por igualdad | Filtro de suscriptor usa `delivery_id.contains(subscriber_id)` |
+| Bridge | — | Trata como duplicado cualquier `InvalidRequest` cuyo texto contenga `duplicate` |
+
+`RecordDeliveryRequest` no tiene `subscriber_id`, aunque `ListDeliveriesRequest` sí lo filtra. Sin ese campo persistido, el filtro no puede ser exacto.
+
+### Diseño cerrado
+
+```rust
+enum EventManagerError {
+    AlreadyExists { entity: String, id: String },
+    // variantes vigentes se conservan
+}
+
+struct DeliveryRecord {
+    event_id: String,
+    subscriber_id: Option<String>,
+    delivery_id: String,
+    status: DeliveryStatus,
+    attempt: Option<u32>,
+}
+```
+
+1. Añadir `subscriber_id: Option<String>` a `RecordDeliveryRequest` con `serde(default)`. Los callers actuales siguen compilando.
+2. Las tres implementaciones guardan `DeliveryRecord` completo. La clave física puede seguir siendo `delivery_id`; la pertenencia sale del registro.
+3. Lectura compatible mediante enum explícito: `Current(DeliveryRecord)` o `LegacyStatus(DeliveryStatus)`.
+4. Una fila legacy no tiene `event_id` fiable. `list_deliveries` la excluye de cualquier filtro de evento o suscriptor y no la reinterpreta. `purge_event` no la borra. Queda como residuo diagnosticable, nunca como coincidencia textual.
+5. `purge_event` borra entregas actuales solo cuando `record.event_id == req.event_id`.
+6. La traza se borra únicamente por la clave exacta `StoredEvent.trace_id`. Una traza cuyo identificador contenga el `event_id` permanece.
+7. Publicación duplicada devuelve `AlreadyExists`. `runtime_bridge::publish_ecst` solo absorbe esa variante; cualquier otro error se propaga.
+8. ACK repetido del mismo `delivery_id` conserva la idempotencia actual y no se convierte en error.
+
+### Secuencia
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `sddia-core/.../error.rs` | Variante `AlreadyExists`; helper de construcción |
+| 2 | `sddia-core/.../contract.rs` | `subscriber_id` opcional en `RecordDeliveryRequest` |
+| 3 | `sddia-core/.../memory_mock.rs` | Persistir suscriptor; filtro y purga por igualdad; publicar `AlreadyExists` |
+| 4 | `sddia-core/.../runtime_bridge.rs` | Match exclusivo de `AlreadyExists` |
+| 5 | `redb_event_adapter/src/lib.rs` | Valor `DeliveryRecord`, lectura versionada, purga/listado exactos |
+| 6 | `fs_event_adapter/src/lib.rs` | Mismo registro y las mismas reglas; purga también retira su entrega y su traza exacta |
+| 7 | `sddia-core/.../contract_suite.rs` | Casos de colisión compartidos por mock, Redb, FS y cápsula externa |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| Eventos `abc` y `xabcx` | Purga de `abc` conserva `xabcx`, sus entregas y su traza |
+| Entregas `abc:sub` y `xabcx:sub` | Cada filtro por `event_id` devuelve exactamente una |
+| Suscriptores `sub` y `sub-2` | El filtro no usa substring del `delivery_id` |
+| Traza `xabcx-log` | Sobrevive a la purga del evento `abc` |
+| Fila legacy con solo `DeliveryStatus` | No se asigna a ningún evento ni se elimina por purga |
+| Segunda publicación | `AlreadyExists`; el bridge la trata como idempotente |
+| `InvalidRequest("duplicate …")` | El bridge lo devuelve como error |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p sddia-core -p sddia-infrastructure-redb-event -p sddia-infrastructure-fs-event -p sddia-infrastructure-external-capsule-event
+```
+
+El verde de la suite anterior no basta: debe incluir los casos de colisión nuevos.
+
+**Commit:** `fix(eda): identidad exacta en entregas y purga (MAN-43 O0)`.
+
+**AC:** AC-15, AC-18.
+**Bloqueo:** O1–O5 no avanzan si los casos de colisión fallan.
+
+---
+
 ## H1 — Contrato EventManager 2.0 + EventUri
 
 | # | Entregable | Detalle |
 |---|------------|---------|
 | H1.1 | `EventFamily` + `EventUri` | Enum + parse/serialización/validación; rechazo familias-estado |
 | H1.2 | `PublishSeal` v2 | Solo `event_uri` (+ accessors); eliminar `logical_rel`/`target_path` |
-| H1.3 | Ops reales | `list_deliveries`, listados por familia/tipo/estado, barrido terminales; `PublishEcstRequest` con familia/URI |
+| H1.3 | Ops reales | `list_deliveries`, listados por familia/tipo/estado/cursor, barrido terminales; `PublishEcstRequest` con `EventUri` |
 | H1.4 | Constantes | `CONTRACT_VERSION=2.0.0`, `REQUIRED_CONTRACT_RANGE=^2.0.0` |
 | H1.5 | Schema/bindings/taxonomía | Genoma vía entity-manager |
 | H1.6 | `version_gate` / handshake | Rechazo explícito consumidores v1 |
-| H1.7 | Contract suite | mock + Redb + adaptador externo verdes |
-| H1.8 | Adapters host | Implementar ops nuevas sin exponer path |
+| H1.7 | Contract suite | mock + Redb + adaptador externo: lifecycle, colisiones, entregas, familia, estado, terminales, cursor, duplicado y reopen |
+| H1.8 | Adapters host | Implementar ops nuevas sin defaults incompletos ni exponer path |
+| H1.9 | Modelo persistente | `StoredEvent` conserva `EventUri` + `EventQueueState`; migración explícita de filas v1 |
 
 **Commit:** `feat(eda): EventManagerPort 2.0 + EventUri (MAN-43 H1)`.
 
-**AC:** AC-1, AC-2, AC-3.
+**AC:** AC-1, AC-2, AC-3, AC-16, AC-17, AC-19.
 
 ---
 
@@ -194,7 +303,7 @@ phases:
 |---|------------|---------|
 | H6.1 | README / Constitución / procesos / contratos | Narrativa `EventUri` + puerto v2; cero topología runtime `.events/` |
 | H6.2 | `cumulo.paths.json` | Solo IDs/tablas/suscripciones lógicas |
-| H6.3 | Auditorías | Rematerializar/recuperar paths ausentes (**L-AUDIT-DISK**); parental + legacy → `APTO_TOTAL` **solo con evidencia** |
+| H6.3 | Auditorías | Reejecutar la auditoría consolidada 20261111 sobre el resultado; parental + legacy → `APTO_TOTAL` **solo con evidencia** |
 | H6.4 | `SddIA/evolution/` | Registro cutover 2.0.0 |
 | H6.5 | Docs forja | `implementation.md` + `execution.md` |
 
@@ -207,18 +316,19 @@ phases:
 ## Orden de ejecución Tekton
 
 1. **H0** precondiciones (+ `forge_key` si aplica).
-2. **H1** contrato/URI/suite/gate versión — desbloquea el resto.
-3. **H2** entregas/testigos (fuente de estado).
-4. **H3** watcher/sweeper (cutover sin huérfano; mismo tren que deja de necesitar espejos).
-5. **H4** periféricos (parcialmente paralelizable tras H1; F-3 temprano OK).
-6. **H5** lab + demolición (tras consumidores limpios).
-7. **H6** docs/evolution/auditorías (incl. rematerializar evidencia) → handoff Argos/`validacion.md`.
+2. **O0/H1R** integridad exacta — bloquea expansión del adapter.
+3. **O1/H1C** contrato/URI/modelo/suite/Genoma — desbloquea el cutover.
+4. **O2/H2** entregas/testigos (fuente de estado).
+5. **O3/H3** watcher/sweeper (cutover sin huérfano; mismo tren que deja de necesitar espejos).
+6. **O4/H4** periféricos (paralelizable con O2 tras O1).
+7. **O5/H5** lab + demolición (tras consumidores limpios).
+8. **O6/H6** docs/evolution/auditorías → handoff Argos/`validacion.md`.
 
-No declarar AC-1…AC-14 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
+No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 
 ## Criterios de salida del blueprint
 
-- AC-1…AC-14 según `spec.md` / `objectives.md` (O1…O10).
+- AC-1…AC-19 según `spec.md` / `objectives.md`.
 - Laudos L-1…L-7, L-CHILDREN, L-SUPERSEDE-T0, L-AUDIT-GAP, L-AUDIT-DISK, L-CONTINUE-TEKTON, L-NON-GOALS, L-PROCESS, L-GIT, L-GENOME, L-TRACKER, L-FORGE respetados.
 - Inventarios F-1…F-6 / L-P* / R1…R3 **cerrados** o reducidos a higiene ops no-SSOT.
 - Tracker: **MAN-43** / documento **PBI-0f4f0f5f** / padre **MAN-40** / `execution_id` **3278ec5b-21ae-4fe0-af14-62a7e5ba0e07**.
@@ -236,3 +346,6 @@ No declarar AC-1…AC-14 sin evidencia. No seeds Kaizen desde Tekton. Git solo `
 | Reabrir MAN-36 | Diff review: cero cambios de precedencia/bóveda salvo API faltante |
 | Inventar APTO / auditorías ausentes | H6 rematerializa (**L-AUDIT-DISK**); Argos declara; Tekton solo evidencia |
 | `forge_key` ausente | H0.6 antes de código; no inventar éxito de forja |
+| IDs opacos solapados | O0: igualdad exacta + tests de colisión antes de ampliar consumidores |
+| Migración de filas v1 | Versión de registro + migrador explícito; prohibida inferencia silenciosa |
+| Defaults del trait ocultan soporte parcial | Adapters v2 implementan operaciones obligatorias; suite falla ante default incompleto |

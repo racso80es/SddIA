@@ -16,6 +16,8 @@ verdict: blocked
 seed: continue-tekton
 norm_ref: features-documentation-pattern@1.3.1
 execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
+rebaseline: remediation-waves-v1
+audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 ---
 # Execution — man-43-event-manager-desacople-total
 
@@ -58,3 +60,28 @@ execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
 - `docs/features/man-43-event-manager-desacople-total/execution.md`
 - `SddIA/sddia-core/src/ports/event_manager/*` (contrato v2)
 - Callers motor/tools/host listados en `implementation.md`
+
+## Rebaseline documental 2026-11-11
+
+Se materializó la auditoría de linaje MAN-32→MAN-43 y se ampliaron `objectives.md`, `clarify.md`, `spec.md`, `plan.md` e `implementation.md` con olas O0–O6 y AC-15…AC-19.
+
+### Evidencia nueva
+
+- Riesgo P0: purga/listado Redb por substring sobre IDs opacos.
+- Split contractual: kernel 2.0 frente a Genoma/schema 1.2/v1.
+- H1 incompleto: familia/estado no persistidos, filtros ignorados, terminales y suite insuficientes.
+- H2–H6 continúan sin ejecutar.
+
+### Estado de ejecución actualizado
+
+```yaml
+historical_merge:
+  pr: 453
+  milestone: H1_PARTIAL
+  checks: green
+feature_verdict: NO_APTO_TOTAL
+next_wave: O0
+code_changes_in_this_rebaseline: false
+```
+
+Esta pasada solo actualiza evidencia y blueprint. No modifica Genoma ni runtime, no declara AC verdes y no altera el sello histórico de `validacion.md`.
