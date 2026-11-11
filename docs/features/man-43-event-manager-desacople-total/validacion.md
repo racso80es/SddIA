@@ -1,7 +1,7 @@
 ---
 feature_name: man-43-event-manager-desacople-total
-created: "2026-11-11"
-updated: "2026-11-11T08:10:00Z"
+created: 2026-11-11
+updated: 2026-11-11T08:10:00Z
 process: feature
 phase: Verificación
 agent: argos
@@ -17,8 +17,8 @@ document_id: PBI-0f4f0f5f
 tracker_ref: MAN-43
 parent_ref: MAN-40
 tracker_provider: linear
-correlation_id: ""
-execution_id: "3278ec5b-21ae-4fe0-af14-62a7e5ba0e07"
+correlation_id: ''
+execution_id: 3278ec5b-21ae-4fe0-af14-62a7e5ba0e07
 seed: continue-tekton
 norm_ref: features-documentation-pattern@1.3.1
 global: APTO
@@ -33,11 +33,11 @@ pbi_archived: false
 git_manager_invoked: true
 git_evidence_source: mcp-git_status+evidence-bridge-prosthesis
 formal_execute_process: true
-formal_evidence_detail: "verify-process-integrity: OK (bridge machine prosthesis @ 2026-11-11T08:04:23Z notes=handoff-git-apto)"
+formal_evidence_detail: 'verify-process-integrity: OK (bridge machine prosthesis @ 2026-11-11T08:04:23Z notes=handoff-git-apto)'
 handoff_machine_file: present
 handoff_evidence_block_pre: present
-evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine prosthesis + session) TECH/GIT APTO; git_status MCP gitStdout materializado; Cerbero deniega ./sddia-run.sh y cargo; sin inventar stdout Shell"
-scope: "feature Verificación — MAN-43 EventManager desacople total (exec 3278ec5b…)"
+evidence_bridge_notes: R1/R2 copia Runtime evidence (machine prosthesis + session) TECH/GIT APTO; git_status MCP gitStdout materializado; Cerbero deniega ./sddia-run.sh y cargo; sin inventar stdout Shell
+scope: feature Verificación — MAN-43 EventManager desacople total (exec 3278ec5b…)
 checks:
   global: APTO
   branch: APTO
@@ -72,45 +72,49 @@ checks:
   DELIVERY_COMPLETE: APTO
   branch_check: APTO
 git_changes:
-  - SddIA/engine/execute-process/src/engine/actions.rs
-  - SddIA/engine/execute-process/src/engine/domain_mutation.rs
-  - SddIA/engine/execute-process/src/engine/eda_port_legacy.rs
-  - SddIA/engine/execute-process/src/engine/event_store_query.rs
-  - SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
-  - SddIA/sddia-core/src/ports/event_manager/contract.rs
-  - SddIA/sddia-core/src/ports/event_manager/event_manager_factory.rs
-  - SddIA/sddia-core/src/ports/event_manager/memory_mock.rs
-  - SddIA/sddia-core/src/ports/event_manager/mod.rs
-  - SddIA/sddia-core/src/ports/event_manager/port.rs
-  - SddIA/sddia-core/src/ports/event_manager/runtime_bridge.rs
-  - SddIA/sddia-core/src/ports/event_manager/version_gate.rs
-  - SddIA/sddia-event-manager-host/src/lib.rs
-  - SddIA/tools/event-bus-audit/src/main.rs
-  - SddIA/tools/sddia-qa/src/iota_ci_smoke.rs
-  - docs/audits/MAN-43.md
-  - docs/features/man-43-event-manager-desacople-total/
+- SddIA/engine/execute-process/src/engine/actions.rs
+- SddIA/engine/execute-process/src/engine/domain_mutation.rs
+- SddIA/engine/execute-process/src/engine/eda_port_legacy.rs
+- SddIA/engine/execute-process/src/engine/event_store_query.rs
+- SddIA/engine/execute-process/src/engine/handlers/daemon_heartbeat.rs
+- SddIA/sddia-core/src/ports/event_manager/contract.rs
+- SddIA/sddia-core/src/ports/event_manager/event_manager_factory.rs
+- SddIA/sddia-core/src/ports/event_manager/memory_mock.rs
+- SddIA/sddia-core/src/ports/event_manager/mod.rs
+- SddIA/sddia-core/src/ports/event_manager/port.rs
+- SddIA/sddia-core/src/ports/event_manager/runtime_bridge.rs
+- SddIA/sddia-core/src/ports/event_manager/version_gate.rs
+- SddIA/sddia-event-manager-host/src/lib.rs
+- SddIA/tools/event-bus-audit/src/main.rs
+- SddIA/tools/sddia-qa/src/iota_ci_smoke.rs
+- docs/audits/MAN-43.md
+- docs/features/man-43-event-manager-desacople-total/
 blocking_findings: []
 deferred_findings:
-  - H1_COMPLETE
-  - H2_H6_STARTED
-  - FORGE_KEY_PRESENT
-  - AC_1_14_GREEN
+- H1_COMPLETE
+- H2_H6_STARTED
+- FORGE_KEY_PRESENT
+- AC_1_14_GREEN
 non_blocking_findings:
-  - GIT_EVIDENCE_SESSION_SDDIA_RUN
+- GIT_EVIDENCE_SESSION_SDDIA_RUN
 situational_notes:
-  - "Fase Verificación · exec 3278ec5b-21ae-4fe0-af14-62a7e5ba0e07 · pbi MAN-43 / PBI-0f4f0f5f · seed continue-tekton"
-  - "Evidence Bridge machine prosthesis @ 2026-11-11T08:04:23Z source=prosthesis_subprocess notes=handoff-git-apto · TECH/GIT APTO (copia; sin inventar stdout)"
-  - "Bloque machine Tekton previo @ 08:04:20Z tenía TECH_FORMAL_EXECUTE_PROCESS NO_APTO (formal_execute_process false); esta aduana Argos copia el bloque prosthesis + session inject APTO"
-  - "git_status MCP (git-manager): gitStdout con M en event_manager/callers + ?? docs/audits/MAN-43.md + ?? persist_ref; sin commit"
-  - "run_check ./sddia-run.sh / cargo → CERBERO_DENY (mcp.allowed_executables vacío)"
-  - "Tekton execution.md/implementation.md verdict=blocked · H1 parcial (EventUri/PublishSeal 2.0.0) · H2–H6 no iniciados · suite/gates sin evidencia"
-  - "forge_key MAN-43 ausente bajo .SddIA/state/forge-pbi/"
-  - "docs/todos/pending/ vacío · Argos 0 writes KM → RBAC_AUTHORING_KM_POLICY APTO"
-  - "branch: .git/HEAD → refs/heads/feat/man-43-event-manager-desacople-total (= inject)"
+- Fase Verificación · exec 3278ec5b-21ae-4fe0-af14-62a7e5ba0e07 · pbi MAN-43 / PBI-0f4f0f5f · seed continue-tekton
+- Evidence Bridge machine prosthesis @ 2026-11-11T08:04:23Z source=prosthesis_subprocess notes=handoff-git-apto · TECH/GIT APTO (copia; sin inventar stdout)
+- Bloque machine Tekton previo @ 08:04:20Z tenía TECH_FORMAL_EXECUTE_PROCESS NO_APTO (formal_execute_process false); esta aduana Argos copia el bloque prosthesis + session inject APTO
+- 'git_status MCP (git-manager): gitStdout con M en event_manager/callers + ?? docs/audits/MAN-43.md + ?? persist_ref; sin commit'
+- run_check ./sddia-run.sh / cargo → CERBERO_DENY (mcp.allowed_executables vacío)
+- Tekton execution.md/implementation.md verdict=blocked · H1 parcial (EventUri/PublishSeal 2.0.0) · H2–H6 no iniciados · suite/gates sin evidencia
+- forge_key MAN-43 ausente bajo .SddIA/state/forge-pbi/
+- docs/todos/pending/ vacío · Argos 0 writes KM → RBAC_AUTHORING_KM_POLICY APTO
+- 'branch: .git/HEAD → refs/heads/feat/man-43-event-manager-desacople-total (= inject)'
 authorization_status:
   exitCode: 1
   emitter_agent: argos
-  note: "FAIL_DELIVERY_PARTIAL · global NO_APTO · R1/R2/R3 APTO · entrega Tekton blocked/parcial · sin AC verdes · sin cargo/gates · sin forge_key · sin evolution MAN-43"
+  note: FAIL_DELIVERY_PARTIAL · global NO_APTO · R1/R2/R3 APTO · entrega Tekton blocked/parcial · sin AC verdes · sin cargo/gates · sin forge_key · sin evolution MAN-43
+validated_base_sha: df89c41e6878041939c133dd17bfc5c191a0d59d
+validated_head_sha: 722b7e301373f6213b10c578c97652947b9ab1c8
+validated_tree_sha: e553085fef81cab0ca516f843e0f0a9e8a2284ae
+diff_digest: sha256:6138a2f5f1a592c40641fd1638d44a504b0e088eda091a7aa81ad7053358fb73
 ---
 
 # Validación — Verificación (Argos · feature)
