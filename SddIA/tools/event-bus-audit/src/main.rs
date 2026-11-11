@@ -1401,15 +1401,11 @@ mod tests {
     use super::*;
     use sddia_core::ports::event_manager::{
         DeliveryStatus as PortDeliveryStatus, GetEventRequest, MoveToDlqRequest,
-        PublishEcstRequest, RecordDeliveryRequest,
+        RecordDeliveryRequest, publish_request_domain,
     };
     fn port_publish(repo: &Path, event_id: &str, ecst: Value) {
         sddia_event_manager_host::with_productive_port(repo, "test_publish", |port| {
-            port.publish_ecst(PublishEcstRequest {
-                event_id: event_id.into(),
-                ecst,
-                trace_id: None,
-            })
+            port.publish_ecst(publish_request_domain(event_id, ecst, None))
             .map_err(|e| e.to_string())
         })
         .expect("publish");
@@ -1421,6 +1417,7 @@ mod tests {
                 event_id: event_id.into(),
                 delivery_id: format!("{event_id}:{subscriber_id}"),
                 status: PortDeliveryStatus::Ack,
+                subscriber_id: Some(subscriber_id.into()),
                 attempt: None,
             })
             .map_err(|e| e.to_string())

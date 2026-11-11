@@ -48,6 +48,7 @@ pub fn pec_for_correlation(repo: &Path, correlation_id: &str) -> Option<Value> {
             .list_events(ListEventsRequest {
                 family: None,
                 event_type: Some("Process_Execution_Completed".into()),
+                state: None,
                 limit: Some(500),
                 cursor: None,
             })
@@ -120,6 +121,7 @@ pub fn list_telemetry_ecsts(repo: &Path, limit: u32) -> Vec<Value> {
         port.list_events(ListEventsRequest {
             family: None,
             event_type: None,
+            state: None,
             limit: Some(limit),
             cursor: None,
         })

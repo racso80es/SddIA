@@ -7,7 +7,8 @@ use serde_json::{json, Value};
 use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, EventManagerPort, GetDltSealRequest,
     GetEventRequest, HandshakeVersionRequest, InMemoryEventManagerMock, ListDeliveriesRequest,
-    ListTracesRequest, MoveToDlqRequest, PublishEcstRequest, PurgeEventRequest,
+    ListEventsRequest, ListTerminalEventsRequest, ListTracesRequest, MoveToDlqRequest,
+    PublishEcstRequest, PurgeEventRequest,
     RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 
@@ -146,6 +147,22 @@ fn main() {
                 },
                 Err(e) => err_line(&e.to_string()),
             },
+            "list_events" => match serde_json::from_value::<ListEventsRequest>(req.payload) {
+                Ok(p) => match mock.list_events(p) {
+                    Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                    Err(e) => err_line(&e.to_string()),
+                },
+                Err(e) => err_line(&e.to_string()),
+            },
+            "list_terminal_events" => {
+                match serde_json::from_value::<ListTerminalEventsRequest>(req.payload) {
+                    Ok(p) => match mock.list_terminal_events(p) {
+                        Ok(r) => ok_line(Some(serde_json::to_value(r).unwrap())),
+                        Err(e) => err_line(&e.to_string()),
+                    },
+                    Err(e) => err_line(&e.to_string()),
+                }
+            }
             _ => err_line("unknown operation"),
         };
 

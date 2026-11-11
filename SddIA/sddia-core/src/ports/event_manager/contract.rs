@@ -6,6 +6,8 @@ use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use super::error::EventManagerError;
+
 /// Versión de contrato que implementan los adapters built-in / mock.
 pub const CONTRACT_VERSION: &str = "2.0.0";
 
@@ -78,9 +80,10 @@ impl FromStr for EventFamily {
 }
 
 /// Estados internos de cola (nunca familias URI).
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "snake_case")]
 pub enum EventQueueState {
+    #[default]
     Pending,
     Claimed,
     Processed,
@@ -157,10 +160,66 @@ impl FromStr for EventUri {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PublishEcstRequest {
+    pub event_uri: EventUri,
     pub event_id: String,
     pub ecst: Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace_id: Option<String>,
+}
+
+impl PublishEcstRequest {
+    pub fn new(event_uri: EventUri, ecst: Value, trace_id: Option<String>) -> Self {
+        let event_id = event_uri.event_id.clone();
+        Self {
+            event_uri,
+            event_id,
+            ecst,
+            trace_id,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), EventManagerError> {
+        if self.event_id != self.event_uri.event_id {
+            return Err(EventManagerError::InvalidRequest(
+                "event_id must match event_uri.event_id".into(),
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// Publicación de dominio para tests y call sites sin token de familia explícito.
+pub fn publish_request_domain(
+    event_id: impl Into<String>,
+    ecst: Value,
+    trace_id: Option<String>,
+) -> PublishEcstRequest {
+    let event_id = event_id.into();
+    PublishEcstRequest::new(
+        EventUri::new(EventFamily::Domain, event_id).expect("event_id"),
+        ecst,
+        trace_id,
+    )
+}
+
+pub fn publish_request_family(
+    family: EventFamily,
+    event_id: impl Into<String>,
+    ecst: Value,
+    trace_id: Option<String>,
+) -> PublishEcstRequest {
+    let event_id = event_id.into();
+    PublishEcstRequest::new(EventUri::new(family, event_id).expect("event_id"), ecst, trace_id)
+}
+
+/// Fila consultable para listados (familia/estado/cursor).
+#[derive(Debug, Clone)]
+pub struct IndexedEvent {
+    pub event_uri: Option<EventUri>,
+    pub event_id: String,
+    pub ecst: Value,
+    pub trace_id: Option<String>,
+    pub state: EventQueueState,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -336,6 +395,8 @@ pub struct ListEventsRequest {
     pub family: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<EventQueueState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<u32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

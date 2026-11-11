@@ -59,11 +59,12 @@ pub fn publish_ecst(
 ) -> Result<PublishSeal, String> {
     let event_id = event_token(event, "event_id")?;
     let uri_family = EventFamily::from_publish_token(family)?;
-    let req = PublishEcstRequest {
-        event_id: event_id.clone(),
-        ecst: event.clone(),
-        trace_id: trace_id_from_event(event),
-    };
+    let event_uri = EventUri::new(uri_family, event_id.clone()).map_err(|e| e.to_string())?;
+    let req = PublishEcstRequest::new(
+        event_uri,
+        event.clone(),
+        trace_id_from_event(event),
+    );
     match port.publish_ecst(req) {
         Ok(_) => {}
         Err(EventManagerError::AlreadyExists { .. }) => {}
@@ -153,6 +154,7 @@ pub fn load_domain_ecsts(port: &dyn EventManagerPort, limit: u32) -> Result<Vec<
         .list_events(ListEventsRequest {
             family: Some(EventFamily::Domain.as_str().to_string()),
             event_type: None,
+            state: None,
             limit: Some(limit),
             cursor: None,
         })

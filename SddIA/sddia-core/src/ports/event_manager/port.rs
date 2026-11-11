@@ -6,7 +6,7 @@ use crate::ports::event_manager::contract::{
     HandshakeVersionResult, ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest,
     ListDlqResult, ListEventsRequest, ListEventsResult, ListPendingRequest, ListPendingResult,
     ListProgressRequest, ListProgressResult, ListTerminalEventsRequest, ListTerminalEventsResult,
-    ListedEvent, ListTracesRequest, ListTracesResult, MoveToDlqRequest, PublishEcstRequest,
+    ListTracesRequest, ListTracesResult, MoveToDlqRequest, PublishEcstRequest,
     PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
     VerifyInlineEcstRequest,
 };
@@ -59,30 +59,7 @@ pub trait EventManagerPort: Send + Sync {
         Ok(())
     }
 
-    fn list_events(&self, req: ListEventsRequest) -> Result<ListEventsResult, EventManagerError> {
-        let limit = req.limit.unwrap_or(100);
-        let pending = self.list_pending(ListPendingRequest {
-            limit: Some(limit),
-        })?;
-        let mut events = Vec::new();
-        for e in pending.events {
-            if let Some(et) = req.event_type.as_deref() {
-                let matches = e.ecst.get("event_type").and_then(|v| v.as_str()) == Some(et);
-                if !matches {
-                    continue;
-                }
-            }
-            events.push(ListedEvent {
-                event_id: e.event_id,
-                ecst: e.ecst,
-                trace_id: e.trace_id,
-            });
-        }
-        Ok(ListEventsResult {
-            events,
-            next_cursor: None,
-        })
-    }
+    fn list_events(&self, req: ListEventsRequest) -> Result<ListEventsResult, EventManagerError>;
 
     fn list_deliveries(
         &self,
@@ -97,25 +74,7 @@ pub trait EventManagerPort: Send + Sync {
     fn list_terminal_events(
         &self,
         req: ListTerminalEventsRequest,
-    ) -> Result<ListTerminalEventsResult, EventManagerError> {
-        let limit = req.limit.unwrap_or(100);
-        let dlq = self.list_dlq(ListDlqRequest {
-            limit: Some(limit),
-        })?;
-        let events = dlq
-            .events
-            .into_iter()
-            .map(|e| ListedEvent {
-                event_id: e.event_id,
-                ecst: e.ecst,
-                trace_id: None,
-            })
-            .collect();
-        Ok(ListEventsResult {
-            events,
-            next_cursor: None,
-        })
-    }
+    ) -> Result<ListTerminalEventsResult, EventManagerError>;
 
     fn list_progress(
         &self,

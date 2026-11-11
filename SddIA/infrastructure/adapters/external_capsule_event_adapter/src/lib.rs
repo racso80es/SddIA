@@ -10,8 +10,9 @@ use sddia_core::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, EventManagerError, EventManagerPort,
     GetDltSealRequest, GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
     HandshakeVersionResult,
-    ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest, ListDlqResult, ListPendingRequest,
-    ListPendingResult, ListTracesRequest, ListTracesResult, MoveToDlqRequest, PublishEcstRequest,
+    ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest, ListDlqResult, ListEventsRequest,
+    ListEventsResult, ListPendingRequest, ListPendingResult, ListTerminalEventsRequest,
+    ListTracesRequest, ListTracesResult, MoveToDlqRequest, PublishEcstRequest,
     PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 
@@ -226,6 +227,34 @@ impl EventManagerPort for ExternalCapsuleEventAdapter {
         let payload =
             serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
         Self::rpc_result(&mut g, "list_deliveries", payload)
+    }
+
+    fn list_events(
+        &self,
+        req: ListEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        match Self::rpc_result::<ListEventsResult>(&mut g, "list_events", payload) {
+            Ok(v) => Ok(v),
+            Err(EventManagerError::ExternalCapsule(msg))
+                if msg.contains("estado de cola") || msg.contains("familia URI") =>
+            {
+                Err(EventManagerError::InvalidRequest(msg))
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    fn list_terminal_events(
+        &self,
+        req: ListTerminalEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        let mut g = self.inner.lock().expect("capsule lock");
+        let payload =
+            serde_json::to_value(&req).map_err(|e| EventManagerError::ExternalCapsule(e.to_string()))?;
+        Self::rpc_result(&mut g, "list_terminal_events", payload)
     }
 
     fn purge_event(&self, req: PurgeEventRequest) -> Result<(), EventManagerError> {

@@ -6,14 +6,16 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
+    filter_and_page_events, filter_terminal_events, indexed_from_parts, page_deliveries,
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryRecord,
-    DeliveryStatus, DualVersionManifest, EventManagerError, EventManagerPort, GetDltSealRequest,
-    GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
-    HandshakeVersionResult, ListedDelivery, ListedDlqEvent, ListDeliveriesRequest,
-    ListDeliveriesResult, ListDlqRequest, ListDlqResult, ListPendingRequest, ListPendingResult,
-    ListedPendingEvent, ListTracesRequest, ListTracesResult, MoveToDlqRequest, PublishEcstRequest,
-    PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
-    CONTRACT_ID, CONTRACT_VERSION,
+    DeliveryStatus, DualVersionManifest, EventManagerError, EventManagerPort, EventQueueState,
+    EventUri, GetDltSealRequest, GetDltSealResult, GetEventRequest, GetEventResult,
+    HandshakeVersionRequest, HandshakeVersionResult, IndexedEvent, ListedDelivery, ListedDlqEvent,
+    ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest, ListDlqResult, ListEventsRequest,
+    ListEventsResult, ListPendingRequest, ListPendingResult, ListedPendingEvent,
+    ListTerminalEventsRequest, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
+    PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest,
+    ReplayDlqRequest, SealDltRequest, CONTRACT_ID, CONTRACT_VERSION,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,6 +23,8 @@ struct StoredEvent {
     event_id: String,
     ecst: Value,
     trace_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    event_uri: Option<EventUri>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,6 +76,7 @@ impl FsEventAdapter {
             "leases",
             "deliveries",
             "dlq",
+            "processed",
             "traces",
             "meta",
             "meta/dlt_seals",
@@ -97,6 +102,68 @@ impl FsEventAdapter {
 
     fn dlq_path(&self, id: &str) -> PathBuf {
         self.dir("dlq").join(format!("{id}.json"))
+    }
+
+    fn processed_path(&self, id: &str) -> PathBuf {
+        self.dir("processed").join(format!("{id}.json"))
+    }
+
+    fn collect_indexed(&self) -> Result<Vec<IndexedEvent>, EventManagerError> {
+        self.expire_leases()?;
+        let mut rows = Vec::new();
+        for ent in fs::read_dir(self.dir("events")).map_err(storage)?.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let id = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_string();
+            let stored: StoredEvent = FsEventAdapter::read_json(&path)?;
+            let state = if self.lease_path(&id).is_file() {
+                EventQueueState::Claimed
+            } else {
+                EventQueueState::Pending
+            };
+            rows.push(indexed_from_parts(
+                stored.event_uri.clone(),
+                stored.event_id,
+                stored.ecst,
+                stored.trace_id,
+                state,
+            ));
+        }
+        for ent in fs::read_dir(self.dir("processed")).map_err(storage)?.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let stored: StoredEvent = FsEventAdapter::read_json(&path)?;
+            rows.push(indexed_from_parts(
+                stored.event_uri.clone(),
+                stored.event_id,
+                stored.ecst,
+                stored.trace_id,
+                EventQueueState::Processed,
+            ));
+        }
+        for ent in fs::read_dir(self.dir("dlq")).map_err(storage)?.flatten() {
+            let path = ent.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("json") {
+                continue;
+            }
+            let rec: DlqRec = FsEventAdapter::read_json(&path)?;
+            rows.push(indexed_from_parts(
+                rec.event.event_uri.clone(),
+                rec.event.event_id,
+                rec.event.ecst,
+                rec.event.trace_id,
+                EventQueueState::DeadLetter,
+            ));
+        }
+        Ok(rows)
     }
 
     fn dlt_seal_path(&self, id: &str) -> PathBuf {
@@ -176,10 +243,12 @@ impl EventManagerPort for FsEventAdapter {
         &self,
         req: PublishEcstRequest,
     ) -> Result<PublishEcstResult, EventManagerError> {
+        req.validate()?;
         let stored = StoredEvent {
             event_id: req.event_id.clone(),
             ecst: req.ecst,
             trace_id: req.trace_id,
+            event_uri: Some(req.event_uri.clone()),
         };
         let ep = self.event_path(&req.event_id);
         if ep.is_file() {
@@ -187,6 +256,10 @@ impl EventManagerPort for FsEventAdapter {
         }
         let dp = self.dlq_path(&req.event_id);
         if dp.is_file() {
+            return Err(EventManagerError::already_exists("event", req.event_id.clone()));
+        }
+        let pp = self.processed_path(&req.event_id);
+        if pp.is_file() {
             return Err(EventManagerError::already_exists("event", req.event_id.clone()));
         }
         FsEventAdapter::write_atomic_json(&ep, &stored)?;
@@ -261,7 +334,11 @@ impl EventManagerPort for FsEventAdapter {
         match req.status {
             DeliveryStatus::Ack => {
                 let _ = fs::remove_file(self.lease_path(&req.event_id));
-                let _ = fs::remove_file(self.event_path(&req.event_id));
+                let ep = self.event_path(&req.event_id);
+                let stored: StoredEvent = FsEventAdapter::read_json(&ep)
+                    .map_err(|_| EventManagerError::NotFound(req.event_id.clone()))?;
+                fs::remove_file(&ep).map_err(storage)?;
+                FsEventAdapter::write_atomic_json(&self.processed_path(&req.event_id), &stored)?;
             }
             DeliveryStatus::Nack => {
                 let _ = fs::remove_file(self.lease_path(&req.event_id));
@@ -330,6 +407,15 @@ impl EventManagerPort for FsEventAdapter {
         let ep = self.event_path(&req.event_id);
         if ep.is_file() {
             let stored: StoredEvent = FsEventAdapter::read_json(&ep)?;
+            return Ok(GetEventResult {
+                event_id: stored.event_id,
+                ecst: stored.ecst,
+                trace_id: stored.trace_id,
+            });
+        }
+        let pp = self.processed_path(&req.event_id);
+        if pp.is_file() {
+            let stored: StoredEvent = FsEventAdapter::read_json(&pp)?;
             return Ok(GetEventResult {
                 event_id: stored.event_id,
                 ecst: stored.ecst,
@@ -427,12 +513,16 @@ impl EventManagerPort for FsEventAdapter {
 
         let ep = self.event_path(&req.event_id);
         let dp = self.dlq_path(&req.event_id);
-        let removed = ep.is_file() || dp.is_file();
+        let pp = self.processed_path(&req.event_id);
+        let removed = ep.is_file() || dp.is_file() || pp.is_file();
         if ep.is_file() {
             fs::remove_file(&ep).map_err(storage)?;
         }
         if dp.is_file() {
             fs::remove_file(&dp).map_err(storage)?;
+        }
+        if pp.is_file() {
+            fs::remove_file(&pp).map_err(storage)?;
         }
         let _ = fs::remove_file(self.lease_path(&req.event_id));
         if !removed {
@@ -464,12 +554,8 @@ impl EventManagerPort for FsEventAdapter {
         &self,
         req: ListDeliveriesRequest,
     ) -> Result<ListDeliveriesResult, EventManagerError> {
-        let limit = req.limit.unwrap_or(u32::MAX) as usize;
         let mut deliveries = Vec::new();
         for ent in fs::read_dir(self.dir("deliveries")).map_err(storage)?.flatten() {
-            if deliveries.len() >= limit {
-                break;
-            }
             let path = ent.path();
             if path.extension().and_then(|e| e.to_str()) != Some("json") {
                 continue;
@@ -504,11 +590,21 @@ impl EventManagerPort for FsEventAdapter {
                 status: record.status,
             });
         }
-        deliveries.sort_by(|a, b| a.delivery_id.cmp(&b.delivery_id));
-        Ok(ListDeliveriesResult {
-            deliveries,
-            next_cursor: None,
-        })
+        page_deliveries(deliveries, &req)
+    }
+
+    fn list_events(
+        &self,
+        req: ListEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        filter_and_page_events(self.collect_indexed()?, &req)
+    }
+
+    fn list_terminal_events(
+        &self,
+        req: ListTerminalEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        filter_terminal_events(self.collect_indexed()?, &req)
     }
 
     fn handshake_version(

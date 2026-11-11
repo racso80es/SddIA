@@ -9,15 +9,16 @@ use redb::{Database, ReadableTable, TableDefinition};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sddia_core::ports::event_manager::{
+    filter_and_page_events, filter_terminal_events, indexed_from_parts, page_deliveries,
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, DeliveryStatus,
-    DualVersionManifest, EventManagerError, EventManagerPort, GetDltSealRequest, GetDltSealResult,
-    GetEventRequest, GetEventResult, HandshakeVersionRequest, HandshakeVersionResult,
-    DeliveryRecord, ListedDelivery, ListedDlqEvent, ListedEvent, ListDeliveriesRequest,
-    ListDeliveriesResult,
-    ListDlqRequest, ListDlqResult, ListEventsRequest, ListEventsResult, ListPendingRequest,
-    ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
-    PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
-    RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest, CONTRACT_ID, CONTRACT_VERSION,
+    DualVersionManifest, EventManagerError, EventManagerPort, EventQueueState, EventUri,
+    GetDltSealRequest, GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
+    HandshakeVersionResult, DeliveryRecord, IndexedEvent, ListedDelivery, ListedDlqEvent,
+    ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest, ListDlqResult, ListEventsRequest,
+    ListEventsResult, ListPendingRequest, ListPendingResult, ListedPendingEvent,
+    ListTerminalEventsRequest, ListTracesRequest, ListTracesResult, MoveToDlqRequest,
+    PublishEcstRequest, PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest,
+    ReplayDlqRequest, SealDltRequest, CONTRACT_ID, CONTRACT_VERSION,
 };
 use sddia_core::ports::event_manager::version_gate;
 
@@ -25,6 +26,7 @@ const EVENTS: TableDefinition<&str, &[u8]> = TableDefinition::new("em_events");
 const LEASES: TableDefinition<&str, &[u8]> = TableDefinition::new("em_leases");
 const DELIVERIES: TableDefinition<&str, &[u8]> = TableDefinition::new("em_deliveries");
 const DLQ: TableDefinition<&str, &[u8]> = TableDefinition::new("em_dlq");
+const PROCESSED: TableDefinition<&str, &[u8]> = TableDefinition::new("em_processed");
 const TRACES: TableDefinition<&str, &[u8]> = TableDefinition::new("em_traces");
 const META: TableDefinition<&str, &[u8]> = TableDefinition::new("em_meta");
 
@@ -33,6 +35,8 @@ struct StoredEvent {
     event_id: String,
     ecst: Value,
     trace_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    event_uri: Option<EventUri>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,6 +104,7 @@ impl RedbEventAdapter {
             let _ = txn.open_table(LEASES).map_err(storage)?;
             let _ = txn.open_table(DELIVERIES).map_err(storage)?;
             let _ = txn.open_table(DLQ).map_err(storage)?;
+            let _ = txn.open_table(PROCESSED).map_err(storage)?;
             let _ = txn.open_table(TRACES).map_err(storage)?;
             let _ = txn.open_table(META).map_err(storage)?;
         }
@@ -152,6 +157,56 @@ impl RedbEventAdapter {
         Ok(())
     }
 
+    fn collect_indexed(&self) -> Result<Vec<IndexedEvent>, EventManagerError> {
+        self.expire_leases()?;
+        let txn = self.db.begin_read().map_err(storage)?;
+        let events = txn.open_table(EVENTS).map_err(storage)?;
+        let leases = txn.open_table(LEASES).map_err(storage)?;
+        let processed = txn.open_table(PROCESSED).map_err(storage)?;
+        let dlq = txn.open_table(DLQ).map_err(storage)?;
+        let mut rows = Vec::new();
+        for item in events.iter().map_err(storage)? {
+            let (k, v) = item.map_err(storage)?;
+            let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
+            let leased = leases.get(k.value()).map_err(storage)?.is_some();
+            let state = if leased {
+                EventQueueState::Claimed
+            } else {
+                EventQueueState::Pending
+            };
+            rows.push(indexed_from_parts(
+                stored.event_uri.clone(),
+                stored.event_id,
+                stored.ecst,
+                stored.trace_id,
+                state,
+            ));
+        }
+        for item in processed.iter().map_err(storage)? {
+            let (_, v) = item.map_err(storage)?;
+            let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
+            rows.push(indexed_from_parts(
+                stored.event_uri.clone(),
+                stored.event_id,
+                stored.ecst,
+                stored.trace_id,
+                EventQueueState::Processed,
+            ));
+        }
+        for item in dlq.iter().map_err(storage)? {
+            let (_, v) = item.map_err(storage)?;
+            let rec: DlqRec = serde_json::from_slice(v.value()).map_err(json_err)?;
+            rows.push(indexed_from_parts(
+                rec.event.event_uri.clone(),
+                rec.event.event_id,
+                rec.event.ecst,
+                rec.event.trace_id,
+                EventQueueState::DeadLetter,
+            ));
+        }
+        Ok(rows)
+    }
+
     pub fn load_traces(&self, trace_id: &str) -> Result<Vec<Value>, EventManagerError> {
         let txn = self.db.begin_read().map_err(storage)?;
         let table = txn.open_table(TRACES).map_err(storage)?;
@@ -175,10 +230,12 @@ impl EventManagerPort for RedbEventAdapter {
         &self,
         req: PublishEcstRequest,
     ) -> Result<PublishEcstResult, EventManagerError> {
+        req.validate()?;
         let stored = StoredEvent {
             event_id: req.event_id.clone(),
             ecst: req.ecst,
             trace_id: req.trace_id,
+            event_uri: Some(req.event_uri.clone()),
         };
         let bytes = serde_json::to_vec(&stored).map_err(json_err)?;
         let txn = self.db.begin_write().map_err(storage)?;
@@ -191,7 +248,12 @@ impl EventManagerPort for RedbEventAdapter {
             if dlq.get(req.event_id.as_str()).map_err(storage)?.is_some() {
                 return Err(EventManagerError::already_exists("event", req.event_id.clone()));
             }
+            let processed = txn.open_table(PROCESSED).map_err(storage)?;
+            if processed.get(req.event_id.as_str()).map_err(storage)?.is_some() {
+                return Err(EventManagerError::already_exists("event", req.event_id.clone()));
+            }
             drop(dlq);
+            drop(processed);
             drop(events);
             let mut events = txn.open_table(EVENTS).map_err(storage)?;
             events
@@ -285,7 +347,20 @@ impl EventManagerPort for RedbEventAdapter {
                     let _ = leases.remove(req.event_id.as_str()).map_err(storage)?;
                     drop(leases);
                     let mut events = txn.open_table(EVENTS).map_err(storage)?;
-                    let _ = events.remove(req.event_id.as_str()).map_err(storage)?;
+                    let raw_bytes = events
+                        .remove(req.event_id.as_str())
+                        .map_err(storage)?
+                        .ok_or_else(|| EventManagerError::NotFound(req.event_id.clone()))?
+                        .value()
+                        .to_vec();
+                    drop(events);
+                    let stored: StoredEvent =
+                        serde_json::from_slice(&raw_bytes).map_err(json_err)?;
+                    let mut processed = txn.open_table(PROCESSED).map_err(storage)?;
+                    let pb = serde_json::to_vec(&stored).map_err(json_err)?;
+                    processed
+                        .insert(req.event_id.as_str(), pb.as_slice())
+                        .map_err(storage)?;
                 }
                 DeliveryStatus::Nack => {
                     let mut leases = txn.open_table(LEASES).map_err(storage)?;
@@ -408,6 +483,19 @@ impl EventManagerPort for RedbEventAdapter {
                 trace_id: stored.trace_id,
             });
         }
+        if let Some(v) = txn
+            .open_table(PROCESSED)
+            .map_err(storage)?
+            .get(req.event_id.as_str())
+            .map_err(storage)?
+        {
+            let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
+            return Ok(GetEventResult {
+                event_id: stored.event_id,
+                ecst: stored.ecst,
+                trace_id: stored.trace_id,
+            });
+        }
         if let Some(v) = txn.open_table(DLQ).map_err(storage)?.get(req.event_id.as_str()).map_err(storage)? {
             let rec: DlqRec = serde_json::from_slice(v.value()).map_err(json_err)?;
             return Ok(GetEventResult {
@@ -450,31 +538,14 @@ impl EventManagerPort for RedbEventAdapter {
     }
 
     fn list_events(&self, req: ListEventsRequest) -> Result<ListEventsResult, EventManagerError> {
-        let limit = req.limit.unwrap_or(u32::MAX) as usize;
-        let txn = self.db.begin_read().map_err(storage)?;
-        let events = txn.open_table(EVENTS).map_err(storage)?;
-        let mut out = Vec::new();
-        for item in events.iter().map_err(storage)? {
-            if out.len() >= limit {
-                break;
-            }
-            let (_, v) = item.map_err(storage)?;
-            let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
-            if let Some(et) = req.event_type.as_deref() {
-                if stored.ecst.get("event_type").and_then(|x| x.as_str()) != Some(et) {
-                    continue;
-                }
-            }
-            out.push(ListedEvent {
-                event_id: stored.event_id,
-                ecst: stored.ecst,
-                trace_id: stored.trace_id,
-            });
-        }
-        Ok(ListEventsResult {
-            events: out,
-            next_cursor: None,
-        })
+        filter_and_page_events(self.collect_indexed()?, &req)
+    }
+
+    fn list_terminal_events(
+        &self,
+        req: ListTerminalEventsRequest,
+    ) -> Result<ListEventsResult, EventManagerError> {
+        filter_terminal_events(self.collect_indexed()?, &req)
     }
 
     fn list_dlq(&self, req: ListDlqRequest) -> Result<ListDlqResult, EventManagerError> {
@@ -510,6 +581,14 @@ impl EventManagerPort for RedbEventAdapter {
                 let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
                 stored.trace_id
             } else if let Some(v) = txn
+                .open_table(PROCESSED)
+                .map_err(storage)?
+                .get(req.event_id.as_str())
+                .map_err(storage)?
+            {
+                let stored: StoredEvent = serde_json::from_slice(v.value()).map_err(json_err)?;
+                stored.trace_id
+            } else if let Some(v) = txn
                 .open_table(DLQ)
                 .map_err(storage)?
                 .get(req.event_id.as_str())
@@ -527,11 +606,13 @@ impl EventManagerPort for RedbEventAdapter {
             let mut events = txn.open_table(EVENTS).map_err(storage)?;
             let mut leases = txn.open_table(LEASES).map_err(storage)?;
             let mut dlq = txn.open_table(DLQ).map_err(storage)?;
+            let mut processed = txn.open_table(PROCESSED).map_err(storage)?;
             let mut traces = txn.open_table(TRACES).map_err(storage)?;
             let mut deliveries = txn.open_table(DELIVERIES).map_err(storage)?;
             let removed_event = events.remove(req.event_id.as_str()).map_err(storage)?.is_some();
             let removed_dlq = dlq.remove(req.event_id.as_str()).map_err(storage)?.is_some();
-            if !removed_event && !removed_dlq {
+            let removed_processed = processed.remove(req.event_id.as_str()).map_err(storage)?.is_some();
+            if !removed_event && !removed_dlq && !removed_processed {
                 return Err(EventManagerError::NotFound(req.event_id.clone()));
             }
             let _ = leases.remove(req.event_id.as_str()).map_err(storage)?;
@@ -565,14 +646,10 @@ impl EventManagerPort for RedbEventAdapter {
         &self,
         req: ListDeliveriesRequest,
     ) -> Result<ListDeliveriesResult, EventManagerError> {
-        let limit = req.limit.unwrap_or(100) as usize;
         let txn = self.db.begin_read().map_err(storage)?;
         let deliveries = txn.open_table(DELIVERIES).map_err(storage)?;
         let mut out = Vec::new();
         for item in deliveries.iter().map_err(storage)? {
-            if out.len() >= limit {
-                break;
-            }
             let (k, v) = item.map_err(storage)?;
             let delivery_id = k.value().to_string();
             let ParsedDelivery::Record(record) = parse_delivery_bytes(v.value())? else {
@@ -599,10 +676,7 @@ impl EventManagerPort for RedbEventAdapter {
                 status: record.status,
             });
         }
-        Ok(ListDeliveriesResult {
-            deliveries: out,
-            next_cursor: None,
-        })
+        page_deliveries(out, &req)
     }
 
     fn seal_dlt(&self, req: SealDltRequest) -> Result<(), EventManagerError> {

@@ -196,6 +196,7 @@ pub fn load_domain_ecsts(repo: &Path, limit: u32) -> Result<Vec<Value>, String> 
             .list_events(ListEventsRequest {
                 family: None,
                 event_type: None,
+                state: None,
                 limit: Some(limit),
                 cursor: None,
             })
@@ -308,7 +309,7 @@ pub mod test_harness {
     use super::test_lab::ParallelLabGuard;
     use sddia_core::ports::event_manager::{
         ClaimPendingRequest, DeliveryStatus, EventManagerError, FaultInjection,
-        InMemoryEventManagerMock, PublishEcstRequest, RecordDeliveryRequest,
+        InMemoryEventManagerMock, RecordDeliveryRequest, publish_request_domain,
     };
 
     /// RAII: instala `InMemoryEventManagerMock` como `EventManagerPort`; restaura en `Drop`.
@@ -362,11 +363,11 @@ pub mod test_harness {
         });
         let err = h
             .mock()
-            .publish_ecst(PublishEcstRequest {
-                event_id: "evt-fail-write".into(),
-                ecst: serde_json::json!({"k": 1}),
-                trace_id: None,
-            })
+            .publish_ecst(publish_request_domain(
+                "evt-fail-write",
+                serde_json::json!({"k": 1}),
+                None,
+            ))
             .expect_err("fail_write");
         assert!(matches!(
             err,
@@ -379,11 +380,11 @@ pub mod test_harness {
         let h = EventManagerTestHarness::new();
         let id = "evt-steal".to_string();
         h.mock()
-            .publish_ecst(PublishEcstRequest {
-                event_id: id.clone(),
-                ecst: serde_json::json!({"k": 1}),
-                trace_id: None,
-            })
+            .publish_ecst(publish_request_domain(
+                id.clone(),
+                serde_json::json!({"k": 1}),
+                None,
+            ))
             .expect("publish");
         let first = h
             .mock()
@@ -421,11 +422,11 @@ pub mod test_harness {
         });
         let id = "evt-dup-ack".to_string();
         h.mock()
-            .publish_ecst(PublishEcstRequest {
-                event_id: id.clone(),
-                ecst: serde_json::json!({"k": 1}),
-                trace_id: None,
-            })
+            .publish_ecst(publish_request_domain(
+                id.clone(),
+                serde_json::json!({"k": 1}),
+                None,
+            ))
             .expect("publish");
         h.mock()
             .claim_pending(ClaimPendingRequest {
@@ -440,6 +441,7 @@ pub mod test_harness {
                 event_id: id.clone(),
                 delivery_id: delivery_id.clone(),
                 status: DeliveryStatus::Ack,
+                subscriber_id: None,
                 attempt: Some(1),
             })
             .expect("ack1");
@@ -448,6 +450,7 @@ pub mod test_harness {
                 event_id: id,
                 delivery_id,
                 status: DeliveryStatus::Ack,
+                subscriber_id: None,
                 attempt: Some(1),
             })
             .expect("ack2 noop");

@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.1.1"
+version_plan: "1.1.2"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -124,9 +124,9 @@ Regla de corte: ninguna ola posterior puede usar `contains(event_id)` ni matchin
 
 ---
 
-## O0 / H1R — Contención de integridad (primer hito pendiente)
+## O0 / H1R — Contención de integridad
 
-Estado: **listo para ejecutar**. H1 histórico del PR #453 permanece intacto. O1–O6 no empiezan hasta que esta ola tenga sus tests verdes.
+Estado: **hecho en rama** (`72108157`, `docs/man-43-post-merge-handoff`). H1 histórico del PR #453 permanece intacto. O1 es el siguiente hito.
 
 ### Corte
 
@@ -208,23 +208,117 @@ El verde de la suite anterior no basta: debe incluir los casos de colisión nuev
 
 ---
 
-## H1 — Contrato EventManager 2.0 + EventUri
+## O1 / H1C — Contrato v2 íntegro (siguiente hito)
 
-| # | Entregable | Detalle |
-|---|------------|---------|
-| H1.1 | `EventFamily` + `EventUri` | Enum + parse/serialización/validación; rechazo familias-estado |
-| H1.2 | `PublishSeal` v2 | Solo `event_uri` (+ accessors); eliminar `logical_rel`/`target_path` |
-| H1.3 | Ops reales | `list_deliveries`, listados por familia/tipo/estado/cursor, barrido terminales; `PublishEcstRequest` con `EventUri` |
-| H1.4 | Constantes | `CONTRACT_VERSION=2.0.0`, `REQUIRED_CONTRACT_RANGE=^2.0.0` |
-| H1.5 | Schema/bindings/taxonomía | Genoma vía entity-manager |
-| H1.6 | `version_gate` / handshake | Rechazo explícito consumidores v1 |
-| H1.7 | Contract suite | mock + Redb + adaptador externo: lifecycle, colisiones, entregas, familia, estado, terminales, cursor, duplicado y reopen |
-| H1.8 | Adapters host | Implementar ops nuevas sin defaults incompletos ni exponer path |
-| H1.9 | Modelo persistente | `StoredEvent` conserva `EventUri` + `EventQueueState`; migración explícita de filas v1 |
+Estado: **hecho en rama** (código + suite; Genoma 2.0 pendiente vía `entity-manager`). Depende de O0 (`72108157`). No corta watcher/sweeper, no demuele store y no reescribe Constitución ni `cumulo.paths.json` (O6).
 
-**Commit:** `feat(eda): EventManagerPort 2.0 + EventUri (MAN-43 H1)`.
+### Corte
 
-**AC:** AC-1, AC-2, AC-3, AC-16, AC-17, AC-19.
+O1 persiste identidad y estado, y hace que los filtros dejen de ser stubs. `EventFamily`, `EventUri`, `CONTRACT_VERSION=2.0.0` y `version_gate` ^2 ya existen en kernel. Lo que falta es el modelo durable, las operaciones que hoy ignoran dimensiones, la suite que lo demuestra y la convergencia Genoma 1.2 → 2.0.
+
+### Defecto vivo (post-O0)
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `PublishEcstRequest` | `event_id` + `ecst` + `trace_id` | Sin `event_uri`; la familia no entra al puerto |
+| `StoredEvent` (mock, Redb, FS) | `event_id`, `ecst`, `trace_id` | Sin `event_uri` ni `state` persistidos; el estado se infiere de tabla/directorio |
+| `list_events` (default en `port.rs`) | Reusa `list_pending` y filtra solo `event_type` | Ignora `family` y `cursor`; no hay campo `state` |
+| `list_terminal_events` (default) | Solo `list_dlq` | Omite `processed`; ignora familia y cursor |
+| `list_deliveries` | Igualdad exacta (O0) | `next_cursor` siempre `None` |
+| Genoma | `eda.event_manager.v1.schema.json`; taxonomía `eda:event-manager` **1.2.0** | Kernel declara 2.0.0 (F-02 / L-9) |
+| Cápsula dummy | Ops O0 | Sin `list_events` / `list_terminal_events` |
+
+### Diseño cerrado
+
+```rust
+struct PublishEcstRequest {
+    event_uri: EventUri,
+    event_id: String, // debe ser igual a event_uri.event_id
+    ecst: Value,
+    trace_id: Option<String>,
+}
+
+struct StoredEvent {
+    event_uri: EventUri,
+    state: EventQueueState, // pending | claimed | processed | dead_letter
+    ecst: Value,
+    trace_id: Option<String>,
+}
+
+struct ListEventsRequest {
+    family: Option<String>,
+    event_type: Option<String>,
+    state: Option<EventQueueState>, // campo nuevo, serde(default)
+    limit: Option<u32>,
+    cursor: Option<String>,
+}
+```
+
+1. Publicar exige `event_uri` válido. `event_id != event_uri.event_id` → `InvalidRequest`. Familia inválida o estado de cola usado como familia → error de parseo, no se publica.
+2. Cada adapter persiste `StoredEvent` completo. El mapa/tabla física puede seguir partido; el campo `state` es la fuente al listar. Claim, ACK, DLQ y replay actualizan `state` y mueven el registro.
+3. Lectura versionada: `Current(StoredEvent)` o `Legacy` (fila O0/v1 sin `event_uri`). Una fila legacy no recibe familia inventada. Cualquier filtro `family` o `state` la excluye. Sin filtros puede aparecer en el listado, sin `EventFamily` asignada.
+4. `list_events` aplica las cuatro dimensiones. `family` no parseable → `InvalidRequest`. No se ignora un filtro presente.
+5. `list_terminal_events` devuelve solo `processed` y `dead_letter`, con `family`, `cursor` y `limit`. Pending y claimed no aparecen.
+6. Cursor opaco = último `event_id` (eventos) o `delivery_id` (entregas) de la página, orden lexicográfico ascendente, exclusivo. `next_cursor` es `None` si la página agota el conjunto. Cursor desconocido → `InvalidRequest`.
+7. Quitar los cuerpos por defecto de `list_events` y `list_terminal_events` en el trait. Mock, Redb, FS y cápsula los implementan. Un default que consulta solo pending o solo DLQ queda prohibido.
+8. `runtime_bridge::publish_ecst` construye `EventUri` desde el token de familia ya aceptado (`pending`→`domain`) y rellena `event_uri` + `event_id`. La idempotencia sigue siendo solo `AlreadyExists` (O0).
+9. Genoma al final de la ola, solo vía `./sddia-run.sh --process entity-manager`. Prohibido editar a mano `SddIA/library/norms/capability-contracts/`, `capability-taxonomy.md` y `capability-bindings`. Objetivo: schema v2, catálogo `eda:event-manager` **2.0.0**, bindings alineados. Constitución y Cúmulo quedan en O6.
+
+### Secuencia
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `sddia-core/.../contract.rs` | `event_uri` en `PublishEcstRequest`; `state` en `ListEventsRequest` |
+| 2 | `sddia-core/.../port.rs` | `list_events` y `list_terminal_events` obligatorios, sin default |
+| 3 | `memory_mock.rs` | `StoredEvent` v2; transiciones de `state`; listados y cursor |
+| 4 | `runtime_bridge.rs` | Publicación con `EventUri`; callers internos del request |
+| 5 | `redb_event_adapter` / `fs_event_adapter` | Persistencia v2, parseo legacy, mismos listados |
+| 6 | Cápsula | `list_events` y `list_terminal_events` en dummy y puente |
+| 7 | Call sites del request | `contract_suite`, `eda_port`, `event-watcher`, `event-bus-audit` y cualquier literal que deje de compilar |
+| 8 | `contract_suite.rs` | Casos O1 de la tabla siguiente, ejecutados por mock, Redb, FS y cápsula |
+| 9 | Genoma | `entity-manager`: schema v2 + taxonomía + bindings 2.0.0 |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| Publicar `domain` y `telemetry` con el mismo `event_type` | `list_events(family=domain)` devuelve solo el de domain |
+| `family=pending` | Rechazo; no se persiste |
+| `event_id` distinto de `event_uri.event_id` | `InvalidRequest` |
+| Claim y luego ACK | `state` pasa pending → claimed → processed |
+| `move_to_dlq` | `list_events(state=dead_letter)` lo ve; `list_pending` no |
+| `list_terminal_events` | Incluye processed y dead_letter; excluye pending y claimed |
+| Página `limit=1` sobre tres ids ordenados | Dos cursores cubren los tres sin duplicar ni omitir |
+| Fila legacy sin `event_uri` | Fuera de cualquier filtro `family` o `state`; la purga O0 no cambia |
+| Reopen Redb | Familia, estado, entrega y traza del evento nuevo sobreviven |
+| Suite O0 | Sigue verde (colisiones, `AlreadyExists`) |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p sddia-core -p sddia-infrastructure-redb-event -p sddia-infrastructure-fs-event -p sddia-infrastructure-external-capsule-event
+```
+
+Tras el paso 7, el workspace que toque esos crates debe compilar. Genoma no se da por cerrado hasta el acuse de `entity-manager` y la taxonomía en 2.0.0.
+
+**Commit de código:** `feat(eda): contrato v2 persistido y listados reales (MAN-43 O1)`.
+**Commit de genoma:** el que selle `entity-manager` (no un edit manual).
+
+**AC:** AC-1, AC-2, AC-16, AC-17, AC-19. AC-3 ya cubierto en el kernel (sin `logical_rel` / `target_path`). AC-18 permanece cubierto por O0.
+**Fuera de esta ola:** watcher, sweeper, periféricos, demolición del store, Constitución, `cumulo.paths.json`, evolution de cierre.
+**Bloqueo:** O2 y O3 no avanzan si familia, estado, terminales o cursor fallan. O4 puede esperar a O1, no a O2.
+
+---
+
+## H1 — Contrato EventManager 2.0 + EventUri (índice)
+
+El detalle ejecutable está en **O1 / H1C**. H1.1, H1.2, H1.4 y H1.6 quedaron en el PR #453. O1 cierra H1.3, H1.5, H1.7, H1.8 y H1.9.
+
+| # | Entregable | Ola |
+|---|------------|-----|
+| H1.1–H1.2, H1.4, H1.6 | `EventUri`, `PublishSeal`, constantes 2.0.0, `version_gate` | Hecho (#453) |
+| H1.3, H1.7–H1.9 | Request con `EventUri`, listados reales, suite, adapters, `StoredEvent` | **O1** |
+| H1.5 | Schema/bindings/taxonomía | **O1** vía `entity-manager` |
 
 ---
 
