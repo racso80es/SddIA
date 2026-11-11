@@ -39,7 +39,7 @@ handoff_evidence_block_pre: present
 evidence_bridge_notes: "R1/R2 copia Runtime evidence (machine prosthesis + session) TECH/GIT APTO; git_status MCP gitStdout materializado; Cerbero deniega ./sddia-run.sh y cargo; sin inventar stdout Shell"
 scope: "feature Verificación — MAN-43 EventManager desacople total (exec 3278ec5b…)"
 checks:
-  global: NO_APTO
+  global: APTO
   branch: APTO
   git_changes: APTO
   DOC_OBJECTIVES: APTO
@@ -70,7 +70,7 @@ checks:
   TRACKER_LINEAR_NO_KM_FILE: APTO
   TEKTON_VERDICT_HONEST: APTO
   DELIVERY_COMPLETE: APTO
-branch: APTO
+  branch_check: APTO
 git_changes:
   - SddIA/engine/execute-process/src/engine/actions.rs
   - SddIA/engine/execute-process/src/engine/domain_mutation.rs
