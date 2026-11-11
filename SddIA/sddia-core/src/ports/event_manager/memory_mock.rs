@@ -1,4 +1,4 @@
-//! Mock in-memory con fault injection (rol `test`).
+//! Mock in-memory con fault injection (rol `test`) — contrato 2.0.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Mutex;
@@ -9,9 +9,10 @@ use serde_json::Value;
 use crate::ports::event_manager::contract::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, CONTRACT_ID,
     CONTRACT_VERSION, DeliveryStatus, GetDltSealRequest, GetDltSealResult, GetEventRequest,
-    GetEventResult, HandshakeVersionRequest, HandshakeVersionResult, ListedDlqEvent, ListDlqRequest,
-    ListDlqResult, ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest,
-    ListTracesResult, MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
+    GetEventResult, HandshakeVersionRequest, HandshakeVersionResult, ListDeliveriesRequest,
+    ListDeliveriesResult, ListedDelivery, ListedDlqEvent, ListDlqRequest, ListDlqResult,
+    ListPendingRequest, ListPendingResult, ListedPendingEvent, ListTracesRequest, ListTracesResult,
+    MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
     RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
 };
 use crate::ports::event_manager::error::EventManagerError;
@@ -35,12 +36,20 @@ struct StoredEvent {
     dlq_reason: Option<String>,
 }
 
+#[derive(Debug, Clone)]
+struct StoredDelivery {
+    delivery_id: String,
+    event_id: String,
+    status: DeliveryStatus,
+}
+
 #[derive(Debug, Default)]
 struct Inner {
     pending: BTreeMap<String, StoredEvent>,
     claimed: BTreeMap<String, StoredEvent>,
+    processed: BTreeMap<String, StoredEvent>,
     dlq: BTreeMap<String, StoredEvent>,
-    deliveries: HashMap<String, DeliveryStatus>,
+    deliveries: HashMap<String, StoredDelivery>,
     traces: HashMap<String, Vec<Value>>,
     dlt_seals: HashMap<String, GetDltSealResult>,
     faults: FaultInjection,
@@ -87,6 +96,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
         }
         if g.pending.contains_key(&req.event_id)
             || g.claimed.contains_key(&req.event_id)
+            || g.processed.contains_key(&req.event_id)
             || g.dlq.contains_key(&req.event_id)
         {
             return Err(EventManagerError::InvalidRequest(format!(
@@ -118,7 +128,6 @@ impl EventManagerPort for InMemoryEventManagerMock {
         let now = Instant::now();
         let ttl = Duration::from_millis(req.lease_ttl_ms.unwrap_or(30_000));
 
-        // Expire leases → back to pending.
         let expired: Vec<String> = g
             .claimed
             .iter()
@@ -134,7 +143,6 @@ impl EventManagerPort for InMemoryEventManagerMock {
         }
 
         if g.faults.steal_lease {
-            // Force-clear first claimed lease to simulate steal path in tests.
             if let Some(id) = g.claimed.keys().next().cloned() {
                 if let Some(mut ev) = g.claimed.remove(&id) {
                     ev.lease_owner = None;
@@ -168,18 +176,25 @@ impl EventManagerPort for InMemoryEventManagerMock {
     fn record_delivery(&self, req: RecordDeliveryRequest) -> Result<(), EventManagerError> {
         let mut g = self.inner.lock().expect("mock lock");
         if let Some(prev) = g.deliveries.get(&req.delivery_id) {
-            if *prev == DeliveryStatus::Ack && req.status == DeliveryStatus::Ack {
-                // Idempotent ACK.
-                if g.faults.duplicate_ack_noop || true {
-                    return Ok(());
-                }
+            if prev.status == DeliveryStatus::Ack && req.status == DeliveryStatus::Ack {
+                let _ = g.faults.duplicate_ack_noop;
+                return Ok(());
             }
         }
-        g.deliveries.insert(req.delivery_id.clone(), req.status);
+        g.deliveries.insert(
+            req.delivery_id.clone(),
+            StoredDelivery {
+                delivery_id: req.delivery_id.clone(),
+                event_id: req.event_id.clone(),
+                status: req.status,
+            },
+        );
 
         match req.status {
             DeliveryStatus::Ack => {
-                g.claimed.remove(&req.event_id);
+                if let Some(ev) = g.claimed.remove(&req.event_id) {
+                    g.processed.insert(req.event_id.clone(), ev);
+                }
                 g.pending.remove(&req.event_id);
             }
             DeliveryStatus::Nack => {
@@ -231,10 +246,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
 
     fn append_trace(&self, req: AppendTraceRequest) -> Result<(), EventManagerError> {
         let mut g = self.inner.lock().expect("mock lock");
-        g.traces
-            .entry(req.trace_id)
-            .or_default()
-            .push(req.frame);
+        g.traces.entry(req.trace_id).or_default().push(req.frame);
         Ok(())
     }
 
@@ -256,6 +268,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
             .pending
             .get(&req.event_id)
             .or_else(|| g.claimed.get(&req.event_id))
+            .or_else(|| g.processed.get(&req.event_id))
             .ok_or_else(|| EventManagerError::NotFound(req.event_id.clone()))?;
         Ok(GetEventResult {
             event_id: ev.event_id.clone(),
@@ -307,20 +320,62 @@ impl EventManagerPort for InMemoryEventManagerMock {
             .pending
             .get(&req.event_id)
             .or_else(|| g.claimed.get(&req.event_id))
+            .or_else(|| g.processed.get(&req.event_id))
             .or_else(|| g.dlq.get(&req.event_id))
             .and_then(|ev| ev.trace_id.clone());
         let removed = g.pending.remove(&req.event_id).is_some()
             || g.claimed.remove(&req.event_id).is_some()
+            || g.processed.remove(&req.event_id).is_some()
             || g.dlq.remove(&req.event_id).is_some();
         if !removed {
             return Err(EventManagerError::NotFound(req.event_id));
         }
-        g.deliveries
-            .retain(|k, _| !k.contains(req.event_id.as_str()));
+        g.deliveries.retain(|_, d| d.event_id != req.event_id);
         if let Some(tid) = trace_id {
             g.traces.remove(&tid);
         }
         Ok(())
+    }
+
+    fn list_deliveries(
+        &self,
+        req: ListDeliveriesRequest,
+    ) -> Result<ListDeliveriesResult, EventManagerError> {
+        let g = self.inner.lock().expect("mock lock");
+        let limit = req.limit.unwrap_or(u32::MAX) as usize;
+        let mut deliveries: Vec<ListedDelivery> = g
+            .deliveries
+            .values()
+            .filter(|d| {
+                if let Some(eid) = req.event_id.as_deref() {
+                    if d.event_id != eid {
+                        return false;
+                    }
+                }
+                if let Some(sid) = req.subscriber_id.as_deref() {
+                    if !d.delivery_id.contains(sid) {
+                        return false;
+                    }
+                }
+                if let Some(st) = req.status {
+                    if d.status != st {
+                        return false;
+                    }
+                }
+                true
+            })
+            .map(|d| ListedDelivery {
+                delivery_id: d.delivery_id.clone(),
+                event_id: d.event_id.clone(),
+                status: d.status,
+            })
+            .collect();
+        deliveries.sort_by(|a, b| a.delivery_id.cmp(&b.delivery_id));
+        deliveries.truncate(limit);
+        Ok(ListDeliveriesResult {
+            deliveries,
+            next_cursor: None,
+        })
     }
 
     fn seal_dlt(&self, req: SealDltRequest) -> Result<(), EventManagerError> {

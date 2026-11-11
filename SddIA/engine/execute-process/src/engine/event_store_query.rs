@@ -32,8 +32,7 @@ pub fn publish_cli(repo: &Path, inputs: &Value) -> (i32, Value) {
     match eda_port::publish_ecst(repo, family, &event) {
         Ok(seal) => ok(json!({
             "event_id": seal.event_id,
-            "logical_rel": seal.logical_rel,
-            "target_path": seal.target_path.to_string_lossy(),
+            "event_uri": seal.event_uri.to_string(),
         })),
         Err(err) => fail(err.to_string()),
     }

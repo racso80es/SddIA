@@ -1,4 +1,4 @@
-//! Puerto aditivo `eda.event_manager` v1.0.0 (PBI-EDA-001 / MAN-32).
+//! Puerto `eda.event_manager` **2.0.0** / `EventUri` (MAN-43; supersede MAN-32/35/40 T0).
 
 mod contract;
 mod contract_suite;

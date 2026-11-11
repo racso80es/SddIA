@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `faa41d58-a120-413e-b088-35681ffb79e3` | 2026-11-11 | MAN-43 H1: EventManagerPort 2.0.0 EventUri + PublishSeal v2 (milestone) | CANONICO | `SddIA/evolution/faa41d58-a120-413e-b088-35681ffb79e3.md` |
 | `cb548aa0-57ee-4881-99c2-9d46339fc699` | 2026-11-10 | MAN-42: F-EDA-STORE-LOCK-CONTENTION suppress, refine-item sin fractura lock, promote_witness sin DLQ | CANONICO | `SddIA/evolution/cb548aa0-57ee-4881-99c2-9d46339fc699.md` |
 | `bcf50739-6e46-4a8d-9716-92883b1ebc7a` | 2026-11-10 | MAN-39: reentrada lifecycle sin tren forja; timeout floor; dirty peaje audits; label Kaizen lab MAN | CANONICO | `SddIA/evolution/bcf50739-6e46-4a8d-9716-92883b1ebc7a.md` |
 | `d858e40b-ba53-4f96-8ceb-1c61ef2f9a84` | 2026-11-09 | MAN-40: sello lógico consumidores EDA; gate veto path Redb fuera host | CANONICO | `SddIA/evolution/d858e40b-ba53-4f96-8ceb-1c61ef2f9a84.md` |

@@ -77,7 +77,7 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
     let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": seal.logical_rel,
+        "event_uri": seal.event_uri.to_string(),
     }))
 }
 
@@ -256,7 +256,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         "success": true,
         "event_type": event_type,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
     }))
 }
 
@@ -285,7 +285,7 @@ mod tests {
         });
         let result = run(&repo, &inputs).expect("emit");
         assert_eq!(result.get("success"), Some(&json!(true)));
-        assert!(result.get("target_path").and_then(|v| v.as_str()).is_some());
+        assert!(result.get("event_uri").and_then(|v| v.as_str()).is_some());
     }
 
     #[test]
