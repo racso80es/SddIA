@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-43-event-manager-desacople-total
 created: "2026-11-11"
 updated: "2026-11-11"
@@ -11,9 +12,9 @@ document_id: PBI-0f4f0f5f
 agent: tekton
 phase: ejecucion
 status: in-progress
-execution_id: "3278ec5b-21ae-4fe0-af14-62a7e5ba0e07"
 seed: continue-tekton
 norm_ref: features-documentation-pattern@1.3.1
+execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
 ---
 # Implementation — man-43-event-manager-desacople-total
 
