@@ -16,8 +16,8 @@ document_id: PBI-0f4f0f5f
 tracker_ref: MAN-43
 parent_ref: MAN-40
 tracker_provider: linear
-correlation_id: "21df17cd-1a6e-4f6c-93f0-67750af38e9f"
-execution_id: "178d5eff-cf8c-407d-addd-f02d1d7f3d30"
+correlation_id: 21df17cd-1a6e-4f6c-93f0-67750af38e9f
+execution_id: 178d5eff-cf8c-407d-addd-f02d1d7f3d30
 norm_ref: features-documentation-pattern@1.3.1
 global: APTO
 verdict: aprobado
@@ -31,7 +31,7 @@ evolution_ref: faa41d58-a120-413e-b088-35681ffb79e3
 git_manager_invoked: true
 git_evidence_source: evidence-bridge-native_state+prior-materialized-git_changes
 formal_execute_process: true
-formal_evidence_detail: "verify-process-integrity: OK (bridge machine native_state @ 2026-11-11T08:38:51Z notes=handoff-formal-scan; idempotent-hit)"
+formal_evidence_detail: 'verify-process-integrity: OK (bridge machine native_state @ 2026-11-11T08:38:51Z notes=handoff-formal-scan; idempotent-hit)'
 handoff_machine_file: present
 evidence_bridge_notes: R1/R2 copia Runtime evidence (machine native_state + session) TECH/GIT APTO; sin inventar stdout Shell; sddia-run/git-manager Shell rechazado esta pasada; git_changes = lista ya materializada en validacion/handoff previos (no stdout fresco)
 scope: pull-request-review Triaje documental — MAN-43 EventManager desacople total (exec 178d5eff…)
@@ -66,41 +66,46 @@ checks:
   PR_READY_TO_MERGE: NO_APTO
   branch_check: APTO
 git_changes:
-  - docs/features/man-43-event-manager-desacople-total/_agent_handoff.md
-  - docs/features/man-43-event-manager-desacople-total/clarify.md
-  - docs/features/man-43-event-manager-desacople-total/execution.md
-  - docs/features/man-43-event-manager-desacople-total/implementation.md
-  - docs/features/man-43-event-manager-desacople-total/objectives.md
-  - docs/features/man-43-event-manager-desacople-total/plan.md
-  - docs/features/man-43-event-manager-desacople-total/spec.md
-  - docs/features/man-43-event-manager-desacople-total/validacion.md
+- docs/features/man-43-event-manager-desacople-total/_agent_handoff.md
+- docs/features/man-43-event-manager-desacople-total/clarify.md
+- docs/features/man-43-event-manager-desacople-total/execution.md
+- docs/features/man-43-event-manager-desacople-total/implementation.md
+- docs/features/man-43-event-manager-desacople-total/objectives.md
+- docs/features/man-43-event-manager-desacople-total/plan.md
+- docs/features/man-43-event-manager-desacople-total/spec.md
+- docs/features/man-43-event-manager-desacople-total/validacion.md
 blocking_findings:
-  - DELIVERY_COMPLETE
-  - AC_1_14_GREEN
-  - H1_COMPLETE
-  - H2_H6_STARTED
-  - TECH_CARGO_SUITE
-  - TECH_GATES
-  - FORGE_KEY_PRESENT
-  - MCP_ALLOWLIST_CARGO
-  - PR_READY_TO_MERGE
+- DELIVERY_COMPLETE
+- AC_1_14_GREEN
+- H1_COMPLETE
+- H2_H6_STARTED
+- TECH_CARGO_SUITE
+- TECH_GATES
+- FORGE_KEY_PRESENT
+- MCP_ALLOWLIST_CARGO
+- PR_READY_TO_MERGE
 non_blocking_findings:
-  - GIT_EVIDENCE_SESSION_SDDIA_RUN
+- GIT_EVIDENCE_SESSION_SDDIA_RUN
 situational_notes:
-  - Fase Triaje documental · process pull-request-review · exec 178d5eff-cf8c-407d-addd-f02d1d7f3d30 · correlation 21df17cd-1a6e-4f6c-93f0-67750af38e9f · pbi MAN-43 / PBI-0f4f0f5f
-  - Evidence Bridge machine native_state @ 2026-11-11T08:38:51Z notes=handoff-formal-scan; idempotent-hit · TECH/GIT APTO (copia; sin inventar stdout)
-  - Session inject source=native_state TECH_FORMAL=APTO GIT_EVIDENCE=APTO (alineado al bloque machine)
-  - Workspace PPR 178d5eff… vacío (sin execution_report nativo); Shell ./sddia-run.sh --tool git-manager rechazado → GIT_EVIDENCE_SESSION_SDDIA_RUN NO_APTO
-  - git_changes = lista materializada previa (mismo persist_ref); no se inventa stdout fresco
-  - Tekton execution.md/implementation.md verdict=blocked · H1 parcial (EventUri/PublishSeal 2.0.0 en contract.rs) · H2–H6 no iniciados · suite/gates sin evidencia
-  - forge_key MAN-43 ausente (sin ledger en .SddIA/state/forge-pbi/ para MAN-43)
-  - docs/todos/pending/ vacío · sin KM MAN-43 · Argos 0 writes KM → RBAC_AUTHORING_KM_POLICY APTO
-  - branch: .git/HEAD → refs/heads/feat/man-43-event-manager-desacople-total (= inject)
+- Fase Triaje documental · process pull-request-review · exec 178d5eff-cf8c-407d-addd-f02d1d7f3d30 · correlation 21df17cd-1a6e-4f6c-93f0-67750af38e9f · pbi MAN-43 / PBI-0f4f0f5f
+- Evidence Bridge machine native_state @ 2026-11-11T08:38:51Z notes=handoff-formal-scan; idempotent-hit · TECH/GIT APTO (copia; sin inventar stdout)
+- Session inject source=native_state TECH_FORMAL=APTO GIT_EVIDENCE=APTO (alineado al bloque machine)
+- Workspace PPR 178d5eff… vacío (sin execution_report nativo); Shell ./sddia-run.sh --tool git-manager rechazado → GIT_EVIDENCE_SESSION_SDDIA_RUN NO_APTO
+- git_changes = lista materializada previa (mismo persist_ref); no se inventa stdout fresco
+- Tekton execution.md/implementation.md verdict=blocked · H1 parcial (EventUri/PublishSeal 2.0.0 en contract.rs) · H2–H6 no iniciados · suite/gates sin evidencia
+- forge_key MAN-43 ausente (sin ledger en .SddIA/state/forge-pbi/ para MAN-43)
+- docs/todos/pending/ vacío · sin KM MAN-43 · Argos 0 writes KM → RBAC_AUTHORING_KM_POLICY APTO
+- branch: .git/HEAD → refs/heads/feat/man-43-event-manager-desacople-total (= inject)
 authorization_status:
   exitCode: 1
   emitter_agent: argos
   note: FAIL_DELIVERY_PARTIAL · global NO_APTO · R1/R2/R3 APTO · entrega Tekton blocked/parcial · sin AC verdes · sin cargo/gates · sin forge_key · PR no merge-ready
+validated_base_sha: df89c41e6878041939c133dd17bfc5c191a0d59d
+validated_head_sha: c7f987c6874f40f3208a45722051ee793fe6e6e6
+validated_tree_sha: 2da50de28c1cc8af195900dd7f8f108d20eb596e
+diff_digest: sha256:76654709e52217a0880298c36c074d1dd6114ab93cb06a489edd4dedcbea55f3
 ---
+
 # Validación — Triaje documental (Argos · pull-request-review)
 
 ## Veredicto de fase
