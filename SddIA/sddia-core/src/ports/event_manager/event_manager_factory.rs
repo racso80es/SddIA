@@ -45,15 +45,15 @@ impl EventManagerDiFactory {
         self.roles.insert(role.into(), binding);
     }
 
-    /// Semilla mínima: rol `test` → mock in-kernel.
+    /// Semilla mínima: rol `test` → mock in-kernel (contrato 2.0.0).
     pub fn with_test_role_defaults() -> Self {
         let mut f = Self::new();
         f.register_role(
             "test",
             BindingRole {
                 provider: "mock:in-memory-event-manager".into(),
-                provider_version: ">=1.2.0".into(),
-                implements_contract_version: "1.2.0".into(),
+                provider_version: ">=2.0.0".into(),
+                implements_contract_version: "2.0.0".into(),
             },
         );
         f.register_builder(
@@ -108,8 +108,8 @@ mod tests {
             "broken",
             BindingRole {
                 provider: "mock:in-memory-event-manager".into(),
-                provider_version: ">=2.0.0".into(),
-                implements_contract_version: "2.0.0".into(),
+                provider_version: ">=1.0.0".into(),
+                implements_contract_version: "1.2.0".into(),
             },
         );
         match f.resolve("broken") {

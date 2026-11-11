@@ -7,7 +7,7 @@ mod imp {
     use std::path::{Path, PathBuf};
 
     use serde_json::Value;
-    use sddia_core::ports::event_manager::PublishSeal;
+    use sddia_core::ports::event_manager::{EventFamily, PublishSeal};
     use sddia_event_store::{EventStore, Family, StoreMode};
 
     use crate::engine::eda_port;
@@ -26,11 +26,8 @@ mod imp {
             let dir = events_family_dir(repo, family);
             let seal = sddia_event_store::publish_ecst(repo, family, event, Some(&dir))
                 .map_err(|e| e.to_string())?;
-            return Ok(PublishSeal {
-                event_id: seal.event_id,
-                target_path: seal.target_path,
-                logical_rel: seal.logical_rel,
-            });
+            let uri_family = EventFamily::from_publish_token(family)?;
+            return PublishSeal::from_parts(uri_family, seal.event_id);
         }
         Err("legacy publish_ecst requiere modo filesystem".into())
     }

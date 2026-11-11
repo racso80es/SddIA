@@ -1,22 +1,32 @@
-//! Helpers provider-neutral sobre `EventManagerPort` (sustituyen gate del store legacy).
+//! Helpers provider-neutral sobre `EventManagerPort` (MAN-43 / EventUri).
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde_json::Value;
 
 use crate::ports::event_manager::contract::{
-    AppendTraceRequest, DeliveryStatus, GetEventRequest, ListEventsRequest, ListPendingRequest,
-    PublishEcstRequest, RecordDeliveryRequest,
+    AppendTraceRequest, DeliveryStatus, EventFamily, EventUri, GetEventRequest, ListEventsRequest,
+    ListPendingRequest, PublishEcstRequest, RecordDeliveryRequest,
 };
 use crate::ports::event_manager::error::EventManagerError;
 use crate::ports::event_manager::port::EventManagerPort;
 
+/// Sello de publicación v2: identidad canónica = `EventUri` (AC-3).
 #[derive(Clone, Debug)]
 pub struct PublishSeal {
     pub event_id: String,
-    /// Token lógico de observabilidad (no ruta de disco del store Redb).
-    pub target_path: PathBuf,
-    pub logical_rel: String,
+    pub event_uri: EventUri,
+}
+
+impl PublishSeal {
+    pub fn from_parts(family: EventFamily, event_id: impl Into<String>) -> Result<Self, String> {
+        let event_id = event_id.into();
+        let event_uri = EventUri::new(family, event_id.clone())?;
+        Ok(Self {
+            event_id,
+            event_uri,
+        })
+    }
 }
 
 fn event_token(event: &Value, key: &str) -> Result<String, String> {
@@ -27,11 +37,6 @@ fn event_token(event: &Value, key: &str) -> Result<String, String> {
         .filter(|s| !s.is_empty())
         .map(str::to_string)
         .ok_or_else(|| format!("{key} vacío en ECST"))
-}
-
-fn logical_event_rel(family: &str, event_id: &str) -> String {
-    let fam = family.trim().trim_start_matches("./");
-    format!(".events/{fam}/{event_id}.json")
 }
 
 fn trace_id_from_event(event: &Value) -> Option<String> {
@@ -45,6 +50,7 @@ fn trace_id_from_event(event: &Value) -> Option<String> {
 }
 
 /// Publica ECST al puerto; idempotente ante duplicado.
+/// `family` acepta token histórico (`pending`→domain) o familia URI.
 pub fn publish_ecst(
     port: &dyn EventManagerPort,
     _repo: &Path,
@@ -52,6 +58,7 @@ pub fn publish_ecst(
     event: &Value,
 ) -> Result<PublishSeal, String> {
     let event_id = event_token(event, "event_id")?;
+    let uri_family = EventFamily::from_publish_token(family)?;
     let req = PublishEcstRequest {
         event_id: event_id.clone(),
         ecst: event.clone(),
@@ -62,12 +69,7 @@ pub fn publish_ecst(
         Err(EventManagerError::InvalidRequest(msg)) if msg.contains("duplicate") => {}
         Err(err) => return Err(err.to_string()),
     }
-    let logical_rel = logical_event_rel(family, &event_id);
-    Ok(PublishSeal {
-        event_id,
-        target_path: PathBuf::from(&logical_rel),
-        logical_rel,
-    })
+    PublishSeal::from_parts(uri_family, event_id)
 }
 
 /// Registro de dominio: alias de `publish_ecst` con familia fija.
@@ -147,7 +149,7 @@ pub fn record_delivery_nack(
 pub fn load_domain_ecsts(port: &dyn EventManagerPort, limit: u32) -> Result<Vec<Value>, String> {
     let listed = port
         .list_events(ListEventsRequest {
-            family: None,
+            family: Some(EventFamily::Domain.as_str().to_string()),
             event_type: None,
             limit: Some(limit),
             cursor: None,

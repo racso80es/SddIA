@@ -23,6 +23,37 @@ fn seed_key(entity_class: &str) -> &'static str {
     }
 }
 
+fn event_id_from_handoff(data: &Value) -> Option<String> {
+    data.get("event_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| {
+            data.get("handoff")
+                .and_then(|h| h.get("event_id"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        })
+        .or_else(|| {
+            data.get("event_uri")
+                .and_then(|v| v.as_str())
+                .and_then(|uri| uri.strip_prefix("eda://"))
+                .and_then(|rest| rest.split('/').nth(1))
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        })
+}
+
+fn pending_rel_from_handoff(data: &Value, event_id: &str) -> String {
+    data.get("handoff")
+        .and_then(|h| h.get("target_path"))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .unwrap_or_else(|| format!(".events/pending/{event_id}.json"))
+}
+
 fn create_entity(repo: &Path, entity_class: &str, entity_name: &str) -> Result<Value, String> {
     let key = seed_key(entity_class);
     let mut semantic_seed = json!({
@@ -99,15 +130,10 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
                 .unwrap_or_else(|| format!("eda-e2e-{entity_class}-{}", &Uuid::new_v4().simple().to_string()[..8]));
             entity_name = Some(name.clone());
             let create_data = create_entity(repo, entity_class, &name)?;
-            let handoff = create_data.get("handoff").cloned().unwrap_or(json!({}));
-            event_id = handoff
-                .get("event_id")
-                .and_then(|v| v.as_str())
-                .map(str::to_string);
-            rel = handoff
-                .get("target_path")
-                .and_then(|v| v.as_str())
-                .map(str::to_string);
+            event_id = event_id_from_handoff(&create_data);
+            rel = event_id
+                .as_deref()
+                .map(|id| pending_rel_from_handoff(&create_data, id));
             if rel.as_deref().unwrap_or("").is_empty() || event_id.is_none() {
                 report["success"] = false.into();
                 report["error"] = "entity-manager sin event_id".into();

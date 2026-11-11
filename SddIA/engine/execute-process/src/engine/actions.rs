@@ -41,7 +41,7 @@ fn write_pending_event(repo: &Path, event: &Value) -> Result<Value, String> {
     let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": seal.logical_rel,
+        "event_uri": seal.event_uri.to_string(),
     }))
 }
 
@@ -85,7 +85,7 @@ fn emit_work_initiated(repo: &Path, inputs: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "Work_Initiated",
     }))
 }
@@ -124,7 +124,7 @@ fn emit_validation_started(repo: &Path, inputs: &Value) -> Result<Value, String>
     Ok(json!({
         "success": true,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "Validation_Started",
     }))
 }
@@ -184,7 +184,7 @@ fn emit_tracker_sync_failed(repo: &Path, inputs: &Value) -> Result<Value, String
     Ok(json!({
         "success": true,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "Tracker_Sync_Failed",
     }))
 }
@@ -233,7 +233,7 @@ fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": json!(event_id),
-        "target_path": json!(seal.logical_rel),
+        "event_uri": json!(seal.event_uri.to_string()),
         "event_type": "PullRequest_Presented",
     }))
 }
@@ -270,7 +270,7 @@ fn emit_pr_resealed(repo: &Path, inputs: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "PullRequest_Resealed",
     }))
 }
@@ -345,7 +345,7 @@ fn emit_pr_merged(repo: &Path, inputs: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "PullRequest_Merged",
         "merge_commit_hash": merge_hash,
     }))
@@ -393,7 +393,7 @@ fn emit_pr_audited(repo: &Path, inputs: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "PullRequest_Audited",
         "audit_event_reference": audit_event_reference,
     }))

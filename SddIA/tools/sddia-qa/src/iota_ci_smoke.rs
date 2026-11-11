@@ -78,7 +78,7 @@ fn write_pending(repo: &Path, bus: &EventBusTopology, event: &Value) -> Result<S
         sddia_core::ports::event_manager::publish_ecst(port, repo, "domain", &stamped)
             .map_err(|err| err.to_string())
     })?;
-    Ok(seal.logical_rel)
+    Ok(seal.event_uri.to_string())
 }
 
 fn route_event(repo: &Path, rel_path: &str, simulate_lab: bool) -> Result<Value, String> {

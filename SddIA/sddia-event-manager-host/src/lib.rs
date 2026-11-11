@@ -91,8 +91,8 @@ pub fn productive_factory(repo_root: &Path) -> Result<EventManagerDiFactory, Str
         DEFAULT_ROLE,
         BindingRole {
             provider: REDB_PROVIDER.into(),
-            provider_version: ">=1.2.0".into(),
-            implements_contract_version: "1.2.0".into(),
+            provider_version: ">=2.0.0".into(),
+            implements_contract_version: "2.0.0".into(),
         },
     );
     factory.register_builder(

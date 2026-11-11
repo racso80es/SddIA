@@ -1105,10 +1105,10 @@ fn write_pending_kaizen(
         sddia_core::ports::event_manager::publish_ecst(port, repo, "domain", &event)
             .map_err(|e| e.to_string())
     })?;
-    let target_path = seal.logical_rel;
+    let event_uri = seal.event_uri.to_string();
     Ok(json!({
         "event_id": event_id,
-        "target_path": target_path
+        "event_uri": event_uri
     }))
 }
 
@@ -1373,7 +1373,7 @@ fn main() {
         match write_pending_kaizen(&repo, &paths, &review_id, &justification, &implicated) {
             Ok(seal) => {
                 kaizen_event_id = seal.get("event_id").and_then(|v| v.as_str()).map(str::to_string);
-                kaizen_target = seal.get("target_path").and_then(|v| v.as_str()).map(str::to_string);
+                kaizen_target = seal.get("event_uri").and_then(|v| v.as_str()).map(str::to_string);
             }
             Err(e) => {
                 emit_error(&format!("Kaizen emit failed: {e}"), 1);

@@ -1,14 +1,10 @@
 {
   "audit_log": [
-    "comment:MAN-101:nota",
-    "comment:MAN-35:lifecycle: ReviewCiGreen (accept-pr)"
+    "comment:MAN-101:nota"
   ],
   "comments": {
     "MAN-101": [
       "nota"
-    ],
-    "MAN-35": [
-      "lifecycle: ReviewCiGreen (accept-pr)"
     ]
   },
   "issues": {},

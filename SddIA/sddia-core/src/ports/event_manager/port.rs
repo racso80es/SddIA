@@ -1,13 +1,14 @@
-//! Trait `EventManagerPort` — operaciones L-OPS 1:1.
+//! Trait `EventManagerPort` — operaciones L-OPS 1:1 (contrato 2.0).
 
 use crate::ports::event_manager::contract::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, GetDltSealRequest,
     GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
     HandshakeVersionResult, ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest,
     ListDlqResult, ListEventsRequest, ListEventsResult, ListPendingRequest, ListPendingResult,
-    ListProgressRequest, ListProgressResult, ListedEvent, ListTracesRequest, ListTracesResult,
-    MoveToDlqRequest, PublishEcstRequest, PublishEcstResult, PurgeEventRequest,
-    RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest, VerifyInlineEcstRequest,
+    ListProgressRequest, ListProgressResult, ListTerminalEventsRequest, ListTerminalEventsResult,
+    ListedEvent, ListTracesRequest, ListTracesResult, MoveToDlqRequest, PublishEcstRequest,
+    PublishEcstResult, PurgeEventRequest, RecordDeliveryRequest, ReplayDlqRequest, SealDltRequest,
+    VerifyInlineEcstRequest,
 };
 use crate::ports::event_manager::error::EventManagerError;
 
@@ -66,11 +67,7 @@ pub trait EventManagerPort: Send + Sync {
         let mut events = Vec::new();
         for e in pending.events {
             if let Some(et) = req.event_type.as_deref() {
-                let matches = e
-                    .ecst
-                    .get("event_type")
-                    .and_then(|v| v.as_str())
-                    == Some(et);
+                let matches = e.ecst.get("event_type").and_then(|v| v.as_str()) == Some(et);
                 if !matches {
                     continue;
                 }
@@ -96,6 +93,30 @@ pub trait EventManagerPort: Send + Sync {
         ))
     }
 
+    /// Listado de terminales (DLQ + processed) para sweeper sin FS (L-6).
+    fn list_terminal_events(
+        &self,
+        req: ListTerminalEventsRequest,
+    ) -> Result<ListTerminalEventsResult, EventManagerError> {
+        let limit = req.limit.unwrap_or(100);
+        let dlq = self.list_dlq(ListDlqRequest {
+            limit: Some(limit),
+        })?;
+        let events = dlq
+            .events
+            .into_iter()
+            .map(|e| ListedEvent {
+                event_id: e.event_id,
+                ecst: e.ecst,
+                trace_id: None,
+            })
+            .collect();
+        Ok(ListEventsResult {
+            events,
+            next_cursor: None,
+        })
+    }
+
     fn list_progress(
         &self,
         req: ListProgressRequest,
@@ -107,9 +128,7 @@ pub trait EventManagerPort: Send + Sync {
             .ok_or_else(|| {
                 EventManagerError::InvalidRequest("trace_id or correlation_id required".into())
             })?;
-        let frames = self
-            .list_traces(ListTracesRequest { trace_id })?
-            .frames;
+        let frames = self.list_traces(ListTracesRequest { trace_id })?.frames;
         Ok(ListProgressResult { frames })
     }
 

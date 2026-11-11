@@ -159,10 +159,10 @@ fn persist_domain_event(repo: &Path, pending_rel: &str, event: &Value) -> Result
     let _dir = repo.join(pending_rel.trim().trim_start_matches("./"));
     let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &stamped)
         .map_err(|err| err.to_string())?;
-    let target_path = seal.logical_rel;
+    let event_uri = seal.event_uri.to_string();
     Ok(json!({
         "event_id": seal.event_id,
-        "target_path": target_path,
+        "event_uri": event_uri,
     }))
 }
 
