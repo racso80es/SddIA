@@ -227,6 +227,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
                     g.pending.insert(req.event_id, ev);
                 }
             }
+            DeliveryStatus::Processing => {}
         }
         Ok(())
     }
@@ -391,6 +392,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
                 delivery_id: d.delivery_id.clone(),
                 event_id: d.event_id.clone(),
                 status: d.status,
+                subscriber_id: d.subscriber_id.clone(),
             })
             .collect();
         page_deliveries(deliveries, &req)

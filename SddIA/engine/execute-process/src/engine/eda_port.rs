@@ -9,7 +9,9 @@ use serde_json::Value;
 use sddia_core::ports::event_manager::{
     append_progress_monotonic, load_dispatched_event,
     publish_ecst as publish_ecst_on_port,
-    record_delivery_ack as record_delivery_ack_on_port, record_ecst as record_ecst_on_port,
+    record_delivery_ack as record_delivery_ack_on_port,
+    record_delivery_nack as record_delivery_nack_on_port,
+    record_delivery_processing as record_delivery_processing_on_port, record_ecst as record_ecst_on_port,
     EventManagerPort, GetDltSealRequest, GetDltSealResult, ListDlqRequest, ListEventsRequest,
     SealDltRequest, VerifyInlineEcstRequest, PublishSeal,
 };
@@ -217,10 +219,50 @@ pub fn load_domain_ecsts(repo: &Path, limit: u32) -> Result<Vec<Value>, String> 
     Ok(out.into_iter().take(limit as usize).collect())
 }
 
-pub fn record_delivery_ack(repo: &Path, event_id: &str, delivery_id: &str) -> Result<(), String> {
+pub fn record_delivery_ack(repo: &Path, event_id: &str, subscriber_id: &str) -> Result<(), String> {
     with_port(repo, "record_delivery_ack", |port| {
-        record_delivery_ack_on_port(port, event_id, delivery_id)
+        record_delivery_ack_on_port(port, event_id, subscriber_id)
     })
+}
+
+pub fn record_delivery_nack(repo: &Path, event_id: &str, subscriber_id: &str) -> Result<(), String> {
+    with_port(repo, "record_delivery_nack", |port| {
+        record_delivery_nack_on_port(port, event_id, subscriber_id)
+    })
+}
+
+pub fn record_delivery_processing(
+    repo: &Path,
+    event_id: &str,
+    subscriber_id: &str,
+) -> Result<(), String> {
+    with_port(repo, "record_delivery_processing", |port| {
+        record_delivery_processing_on_port(port, event_id, subscriber_id)
+    })
+}
+
+pub fn delivery_terminal_for_subscriber(
+    repo: &Path,
+    event_id: &str,
+    subscriber_id: &str,
+) -> bool {
+    use sddia_core::ports::event_manager::{DeliveryStatus, ListDeliveriesRequest};
+    with_port(repo, "delivery_terminal_for_subscriber", |port| {
+        let rows = port
+            .list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_id.to_string()),
+                subscriber_id: Some(subscriber_id.to_string()),
+                status: None,
+                limit: Some(100),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        Ok(rows
+            .deliveries
+            .iter()
+            .any(|d| matches!(d.status, DeliveryStatus::Ack | DeliveryStatus::Nack)))
+    })
+    .unwrap_or(false)
 }
 
 pub fn move_to_dlq(repo: &Path, event_id: &str, reason: &str) -> Result<(), String> {

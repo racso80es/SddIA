@@ -342,6 +342,7 @@ impl EventManagerPort for RedbEventAdapter {
             drop(deliveries);
 
             match req.status {
+                DeliveryStatus::Processing => {}
                 DeliveryStatus::Ack => {
                     let mut leases = txn.open_table(LEASES).map_err(storage)?;
                     let _ = leases.remove(req.event_id.as_str()).map_err(storage)?;
@@ -674,6 +675,7 @@ impl EventManagerPort for RedbEventAdapter {
                 delivery_id,
                 event_id: record.event_id,
                 status: record.status,
+                subscriber_id: record.subscriber_id.clone(),
             });
         }
         page_deliveries(out, &req)

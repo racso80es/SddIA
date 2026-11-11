@@ -905,6 +905,7 @@ fn audit_state_from_store(repo: &Path, bus_paths: &BusPaths) -> ScanState {
             let mapped = match d.status {
                 PortDeliveryStatus::Ack => AuditDeliveryStatus::Success,
                 PortDeliveryStatus::Nack => AuditDeliveryStatus::Failed,
+                PortDeliveryStatus::Processing => continue,
             };
             match mapped {
                 AuditDeliveryStatus::Failed => failed += 1,

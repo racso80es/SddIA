@@ -254,6 +254,7 @@ pub struct ClaimPendingResult {
 pub enum DeliveryStatus {
     Ack,
     Nack,
+    Processing,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -437,6 +438,8 @@ pub struct ListedDelivery {
     pub delivery_id: String,
     pub event_id: String,
     pub status: DeliveryStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

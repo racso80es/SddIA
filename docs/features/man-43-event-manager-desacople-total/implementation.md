@@ -116,7 +116,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 |-----|--------|-------------------------|
 | **O0 / H1R** | `done` (rama; sin merge) | `DeliveryRecord`, `AlreadyExists`, purga/listado exactos (Redb/FS/mock), suite `o0_containment_integrity`, cápsula dummy + puente; `cargo test` verde en los cuatro crates del plan § O0 |
 | **O1 / H1C** | `done` (rama; sin merge) | `event_uri` en publish, listados reales, `em_processed` / FS `processed`, suite `o1_listing_integrity`; Genoma 2.0 **pendiente** (`entity-manager`) |
-| **O2 / H2** | `ready` | `eda_bus_topology`, `fractal_bus`, entregas/testigos |
+| **O2 / H2** | `done` (rama; sin merge) | Testigos vía entregas del puerto; `DeliveryStatus::Processing`; sin JSON de suscriptor |
 | **O3 / H3** | `blocked-by-O2` | event-watcher, `eda_sweep` |
 | **O4 / H4** | `blocked-by-O1` | actions, Kalma2, workspace-server, GitHub bridge, superficie `eda_port` |
 | **O5 / H5** | `blocked-by-O2-O4` | store legacy, matrices, allowlists, gates |
@@ -128,6 +128,10 @@ Implementado según `plan.md` § O0 / H1R (2026-11-11). Evidencia: `sddia-core` 
 
 ### Backlog técnico O1
 
-Implementado en kernel y adapters (2026-11-11): `event_query`, `PublishEcstRequest.event_uri`, `list_events`/`list_terminal_events` obligatorios, persistencia processed, paginación cursor. Pendiente cierre Genoma: schema/bindings/taxonomía **2.0.0** vía `./sddia-run.sh --process entity-manager` (no edit manual).
+Kernel y adapters en `b6a73ba2`. Genoma 2.0 sigue pendiente vía `entity-manager` y no bloquea O2.
+
+### Backlog técnico O2
+
+Secuencia, corte y casos bloqueantes en `plan.md` v1.1.3 § O2 / H2. Las cabeceras `.events/` quedan para O3. GitHub DL y `actions.rs` quedan para O4.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

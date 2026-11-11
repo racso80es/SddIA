@@ -118,16 +118,21 @@ pub fn append_progress_monotonic(
     Ok(frames + 1)
 }
 
+/// Identificador durable de entrega por suscriptor (MAN-43 O2).
+pub fn subscriber_delivery_id(event_id: &str, subscriber_id: &str) -> String {
+    format!("{event_id}:{subscriber_id}")
+}
+
 pub fn record_delivery_ack(
     port: &dyn EventManagerPort,
     event_id: &str,
-    delivery_id: &str,
+    subscriber_id: &str,
 ) -> Result<(), String> {
     port.record_delivery(RecordDeliveryRequest {
         event_id: event_id.to_string(),
-        delivery_id: delivery_id.to_string(),
+        delivery_id: subscriber_delivery_id(event_id, subscriber_id),
         status: DeliveryStatus::Ack,
-        subscriber_id: None,
+        subscriber_id: Some(subscriber_id.to_string()),
         attempt: None,
     })
     .map_err(|e| e.to_string())
@@ -136,13 +141,28 @@ pub fn record_delivery_ack(
 pub fn record_delivery_nack(
     port: &dyn EventManagerPort,
     event_id: &str,
-    delivery_id: &str,
+    subscriber_id: &str,
 ) -> Result<(), String> {
     port.record_delivery(RecordDeliveryRequest {
         event_id: event_id.to_string(),
-        delivery_id: delivery_id.to_string(),
+        delivery_id: subscriber_delivery_id(event_id, subscriber_id),
         status: DeliveryStatus::Nack,
-        subscriber_id: None,
+        subscriber_id: Some(subscriber_id.to_string()),
+        attempt: None,
+    })
+    .map_err(|e| e.to_string())
+}
+
+pub fn record_delivery_processing(
+    port: &dyn EventManagerPort,
+    event_id: &str,
+    subscriber_id: &str,
+) -> Result<(), String> {
+    port.record_delivery(RecordDeliveryRequest {
+        event_id: event_id.to_string(),
+        delivery_id: subscriber_delivery_id(event_id, subscriber_id),
+        status: DeliveryStatus::Processing,
+        subscriber_id: Some(subscriber_id.to_string()),
         attempt: None,
     })
     .map_err(|e| e.to_string())

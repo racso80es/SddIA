@@ -332,6 +332,7 @@ impl EventManagerPort for FsEventAdapter {
         FsEventAdapter::write_atomic_json(&del, &record)?;
 
         match req.status {
+            DeliveryStatus::Processing => {}
             DeliveryStatus::Ack => {
                 let _ = fs::remove_file(self.lease_path(&req.event_id));
                 let ep = self.event_path(&req.event_id);
@@ -588,6 +589,7 @@ impl EventManagerPort for FsEventAdapter {
                 delivery_id,
                 event_id: record.event_id,
                 status: record.status,
+                subscriber_id: record.subscriber_id.clone(),
             });
         }
         page_deliveries(deliveries, &req)

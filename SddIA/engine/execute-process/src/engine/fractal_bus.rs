@@ -1,8 +1,6 @@
 //! Utilidades bus fractal EDA (paridad subset `eda_bus_utils.py`).
 
 use super::eda_bus_topology::{safe_remove_path, subscriber_id};
-#[cfg(test)]
-use super::eda_bus_topology::write_json_atomic;
 use super::workspace::load_paths_config;
 use crate::core::parser::parse_frontmatter;
 use chrono::Utc;
@@ -137,31 +135,8 @@ pub fn stamp_fractal_delivery_state(event_path: &Path, subscriber_key: &str, sta
         let label = status.trim().to_ascii_lowercase();
         if matches!(label.as_str(), "success" | "processed" | "skipped") {
             let _ = eda_port::record_delivery_ack(&repo, event_id, subscriber_key);
-        }
-    }
-    #[cfg(test)]
-    {
-        if !event_path.is_file() {
-            return;
-        }
-        let Ok(text) = fs::read_to_string(event_path) else {
-            return;
-        };
-        let Ok(mut body) = serde_json::from_str::<Value>(&text) else {
-            return;
-        };
-        let ds = body
-            .as_object_mut()
-            .and_then(|o| {
-                if !o.contains_key("delivery_state") {
-                    o.insert("delivery_state".into(), json!({}));
-                }
-                o.get_mut("delivery_state")
-            })
-            .and_then(|v| v.as_object_mut());
-        if let Some(ds) = ds {
-            ds.insert(subscriber_key.to_string(), json!(status));
-            let _ = write_json_atomic(event_path, &body);
+        } else if label == "failed" {
+            let _ = eda_port::record_delivery_nack(&repo, event_id, subscriber_key);
         }
     }
 }

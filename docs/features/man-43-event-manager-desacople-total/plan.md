@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.1.2"
+version_plan: "1.1.3"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -322,20 +322,86 @@ El detalle ejecutable está en **O1 / H1C**. H1.1, H1.2, H1.4 y H1.6 quedaron en
 
 ---
 
-## H2 — Absorción de entregas y testigos
+## O2 / H2 — Estado y testigos (siguiente hito)
 
-| # | Entregable | Detalle |
-|---|------------|---------|
-| H2.1 | `eda_bus_topology` | Sin `write_json_atomic` de testigos/cabeceras; estado vía puerto |
-| H2.2 | Terminal / witnesses | Solo puerto; sin OR `is_file` |
-| H2.3 | `fractal_bus` | Sin mutación fichero residual en prod |
-| H2.4 | github DL fallback | Preferir `move_to_dlq` (puede completarse en H4) |
+Estado: **hecho en rama** (código + test `promote_witness_does_not_materialize_subscriber_json`). Depende de O1 (`b6a73ba2`). Genoma 2.0 sigue pendiente y no bloquea. Cabeceras `.events/` y watcher: O3.
 
-**Commit:** `refactor(eda): entregas/testigos detrás del puerto (MAN-43 H2)`.
+### Corte
 
-**AC:** AC-5, AC-7 (parcial hasta H3/H4).
+O2 hace que el testigo de suscriptor sea una entrega del puerto. No retira las cabeceras `.events/{pending,processing,…}`: el watcher aún descubre por directorio y cortarlas aquí lo deja huérfano (L-4). Esas copias (`ensure_state_header`, `copy_header_atomic`) salen en O3, en el mismo corte que `read_dir`.
 
-**Bloqueo:** no iniciar H3 si ops de listado/terminal de H1 no están verdes.
+### Defecto vivo
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `promote_witness` | `write_json_atomic` de `{event}.{subscriber}.json` y además ACK o `move_to_dlq` | El fichero sigue siendo evidencia; el puerto no es la única |
+| `record_delivery_ack` | El nombre de suscriptor entra como `delivery_id`; `subscriber_id` queda `None` | El filtro exacto de O0 no puede usarse |
+| `list_port_witnesses` | Acepta `delivery_id.contains(event_id)` y parte el id con `rsplit(':')` | Reabre el matching textual que O0 cerró |
+| `list_witnesses` | En test: FS **o** `sddia-event-store` **o** puerto | Doble SSOT bajo `cfg(test)` |
+| `terminal_witness_exists` | Prod: sello `delivery_state` dentro del ECST y, si no, `false`. Test: `is_file` | Prod no consulta entregas; test consulta disco |
+| `stamp_fractal_delivery_state` | Prod ya llama ACK. `cfg(test)` reescribe el JSON del evento | Mutación residual del fichero |
+| `write_processing_witness` | No escribe; devuelve una ruta lógica | El estado `processing` no existe en `DeliveryStatus` |
+
+`github` DL y el espejo de `actions.rs` quedan en O4. `eda_port_legacy` y el crate store quedan en O5: O2 deja de **consultarlos** como testigo, no los borra.
+
+### Diseño cerrado
+
+1. `record_delivery_ack` / `record_delivery_nack` reciben `subscriber_id` y lo persisten. `delivery_id` estable = `{event_id}:{subscriber_id}`. ACK repetido del mismo id sigue siendo noop (O0).
+2. `DeliveryStatus` gana `Processing`. `write_processing_witness` registra esa variante en el puerto y no crea fichero. La ruta que devuelve es un token lógico para los callers actuales; nadie hace `is_file` sobre ella como prueba de estado.
+3. `promote_witness` no llama a `write_json_atomic`. `processed` → ACK con `subscriber_id`. `dead-letter` → NACK con `subscriber_id` y, si la causa no es contención de lock (MAN-42), `move_to_dlq` como hoy. Devuelve el mismo token lógico, sin fichero.
+4. `list_witnesses` es siempre `list_port_witnesses`, también en test. Filtro: `event_id` igual y `subscriber_id` presente. ACK → processed, NACK → dead-letter, `Processing` → processing. El nombre del suscriptor sale del campo, no de un substring del `delivery_id`. Prohibido `contains`.
+5. `terminal_witness_exists` consulta solo esas entregas terminales (ACK o NACK) por `subscriber_id`. Deja de leer `delivery_state` del ECST y deja de usar `is_file`.
+6. `stamp_fractal_delivery_state` solo registra ACK/NACK en el puerto. Se elimina el bloque `cfg(test)` que reescribe el JSON.
+7. `list_fs_witnesses` y `list_store_witnesses_legacy` salen del camino de `list_witnesses`. No se borran el crate ni `eda_port_legacy` en esta ola.
+
+### Secuencia
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `sddia-core/.../contract.rs` | `DeliveryStatus::Processing` |
+| 2 | `runtime_bridge.rs` | ACK/NACK con `subscriber_id` y `delivery_id` compuesto |
+| 3 | `eda_port.rs` | Misma firma hacia el puerto |
+| 4 | `eda_bus_topology.rs` | `promote_witness` y `write_processing_witness` sin FS; listado y terminal solo por entregas |
+| 5 | `fractal_bus.rs` | Sello solo por puerto, también en test |
+| 6 | `route_domain_core.rs` y `tests/event_store_writers.rs` | Aserciones de testigo vía `list_deliveries` / `terminal_witness_exists`, no `is_file` del testigo |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `promote_witness(..., "processed")` | Existe entrega ACK con ese `subscriber_id`; no aparece `{event}.{subscriber}.json` |
+| `promote_witness(..., "dead-letter")` con causa normal | Entrega NACK y evento en DLQ; sin fichero de testigo |
+| Causa de contención de lock | Sin `move_to_dlq`; entrega no terminal de DLQ |
+| Dos suscriptores `sub` y `sub-2` | El terminal de uno no marca al otro |
+| `list_witnesses` | No llama a `read_dir` ni a `EventStore::list_deliveries` |
+| `stamp_fractal_delivery_state` | El JSON del evento no cambia; la entrega sí queda en el puerto |
+| Suite O0/O1 | Sigue verde |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p execute-process -p sddia-core --lib
+```
+
+El verde de la suite de contrato no basta: debe incluir un test de `promote_witness` sin fichero.
+
+**Commit:** `refactor(eda): testigos de suscriptor detrás del puerto (MAN-43 O2)`.
+
+**AC:** AC-7 en el plano del testigo. AC-5 queda parcial: las cabeceras `.events/` y el watcher siguen hasta O3; periféricos hasta O4.
+**Fuera de esta ola:** `ensure_*_header`, event-watcher, sweeper, `actions.rs`, Kalma2, GitHub DL, demolición del store, Genoma.
+**Bloqueo:** O3 no arranca si `promote_witness` sigue escribiendo JSON o si el terminal depende de `is_file`.
+
+---
+
+## H2 — Absorción de entregas y testigos (índice)
+
+El detalle ejecutable está en **O2 / H2**. H2.4 (GitHub DL) se ejecuta en O4.
+
+| # | Entregable | Ola |
+|---|------------|-----|
+| H2.1–H2.3 | Testigo = entrega; sin JSON de suscriptor; fractal sin mutar el fichero | **O2** |
+| Cabeceras de estado `.events/` | Se retiran con el watcher | **O3** |
+| H2.4 | `move_to_dlq` en el bridge de GitHub | **O4** |
 
 ---
 
