@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.1.3"
+version_plan: "1.1.4"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -322,9 +322,9 @@ El detalle ejecutable está en **O1 / H1C**. H1.1, H1.2, H1.4 y H1.6 quedaron en
 
 ---
 
-## O2 / H2 — Estado y testigos (siguiente hito)
+## O2 / H2 — Estado y testigos
 
-Estado: **hecho en rama** (código + test `promote_witness_does_not_materialize_subscriber_json`). Depende de O1 (`b6a73ba2`). Genoma 2.0 sigue pendiente y no bloquea. Cabeceras `.events/` y watcher: O3.
+Estado: **hecho en rama** (`de2161ed`). Depende de O1 (`b6a73ba2`). Genoma 2.0 sigue pendiente y no bloquea O3. Cabeceras `.events/` y watcher: O3.
 
 ### Corte
 
@@ -405,20 +405,90 @@ El detalle ejecutable está en **O2 / H2**. H2.4 (GitHub DL) se ejecuta en O4.
 
 ---
 
-## H3 — Watcher y sweeper sin filesystem
+## O3 / H3 — Cutover de centinelas (siguiente hito)
 
-| # | Entregable | Detalle |
-|---|------------|---------|
-| H3.1 | `event-watcher` L-P1 | Eliminar lote `read_dir`; solo `claim_pending` |
-| H3.2 | L-P2 | Cierre/DLQ sin FS |
-| H3.3 | `eda_sweep` L-P3/F-5 | Barrido solo puerto |
-| H3.4 | L-P4 | Consultas dominio vía `list_events` |
-| H3.5 | Anti doble despacho | Un enrutado por evento/tick |
-| H3.6 | Higiene L-H* | Purga vía `purge_event`; scripts ops fuera de SSOT |
+Estado: **hecho en rama** (pendiente commit). Dependencia dura O2 (`de2161ed`) cumplida: `promote_witness` ya no escribe JSON de suscriptor y `terminal_witness_exists` consulta entregas. Genoma 2.0 (O1 H1.5) y O4 no bloquean este corte. L-4: el watcher no puede quedar sin fuente; el mismo tren retira el descubrimiento por directorio y las cabeceras que solo existían para ese descubrimiento.
 
-**Commit:** `refactor(eda): watcher/sweeper 100% EventManagerPort v2 (MAN-43 H3)`.
+### Corte
 
-**AC:** AC-4, AC-5, AC-6.
+O3 hace que el ciclo de vida del evento (descubrir, enrutar, cerrar, barrer) lea y escriba solo el puerto. Desaparece el segundo descubrimiento `read_dir` del watcher (F-09) y el barrido que abre `.events/{pending,domain,orchestration,telemetry,progress}`.
+
+En el mismo corte salen `ensure_state_header`, `ensure_processing_header` y `copy_header_atomic` de `eda_bus_topology.rs`, y el borrado de cabeceras dentro de `archive_event_after_sweep` / `finalize_kaizen_terminal`. Esas copias no son SSOT desde O2; si se dejan, el sweeper sigue tratando el fichero como evidencia.
+
+No entra O4 (`actions.rs`, Kalma2, workspace-server, `github_bridge`) ni O5 (`eda_port_legacy`, crate `sddia-event-store`, allowlists). `SddIA/events/` y `.SddIA/events/` permanecen.
+
+### Defecto vivo
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `daemons/event-watcher/src/main.rs` `run_watcher` | Tras `claim_store_pending`, el bucle recorre `watch_targets` con `read_dir` y lanza `route-domain-event` por cada JSON | Doble despacho (F-09): claim y directorio compiten |
+| `claim_store_pending` | `claim_pending` correcto; luego fabrica `.events/pending/{id}.json` y `record_delivery` con `delivery_id = event_id` y sin `subscriber_id` | El enrutado exige un path; el ACK del watcher reabre el id opaco que O0/O2 cerraron |
+| `invoke_route_process` | Payload `event_file_path` | El proceso no puede arrancar si la cabecera no existe |
+| `eda_bus_topology::try_sweep_event` | Carga el ECST por puerto, pero `archive_event_after_sweep` y `finalize_kaizen_terminal` borran/copian cabeceras; `pending_tracker_sync_failed_for_ref` hace `read_dir` de pending; `processed_subscriber_names` parte el nombre `{event}.{sub}.json` | El terminal de O2 se vuelve a interpretar como fichero |
+| `sddia-daemon-runtime/src/eda_sweep.rs` | `sweep_once` lista pending por `read_dir`; `sweep_fractal_dir` lee JSON y decide purga/DLQ con `delivery_state` del cuerpo; `pec_terminal_for_correlation` y `sweep_progress_leaf` barren orchestration/progress en disco | F-5: el barrido no usa `list_terminal_events` / `list_events` / `list_progress` |
+
+`list_terminal_events` ya está en el trait y en Redb/FS/mock (O1). No hace falta ampliar el contrato antes de este corte (L-6 cubierto para el sweeper).
+
+### Diseño cerrado
+
+1. El tick del watcher de dominio es solo `claim_pending`. Se elimina el `read_dir` de `route-domain-event`. Telemetría y orquestación del mismo bucle dejan de descubrir por directorio: o salen del tick, o reclaman por `list_events` de su familia. Un `event_id` no se enruta dos veces en el mismo tick (el book de in-flight sigue, ahora keyed por id, no por path).
+2. El spawn de `route-domain-event` recibe `event_id` (y familia `domain`). Prohibido exigir que `.events/pending/{id}.json` exista. La carga sigue siendo `load_dispatched` / `get_event`.
+3. El ACK/NACK que el watcher escribe al cerrar la ruta usa `subscriber_id` del suscriptor de ruta y `delivery_id = {event_id}:{subscriber_id}` (`record_delivery` del puerto, misma forma que O2). No se usa el `event_id` pelado como `delivery_id`.
+4. `try_sweep_event` decide purga, DLQ y kaizen con entregas del puerto (`list_deliveries` / `terminal_witness_exists`) y con el ECST cargado por id. `pending_tracker_sync_failed_for_ref` busca `Tracker_Sync_Failed` vía `list_events`, igualdad de `event_type` y del ref, sin `read_dir`.
+5. `archive_event_after_sweep` y `finalize_kaizen_terminal` no copian ni borran cabeceras. El cierre terminal llama `purge_event` (o la transición de estado que el puerto ya exponga). Si queda un JSON residual en `.events/`, es higiene posterior, no condición del barrido.
+6. `sweep_once` obtiene candidatos con `list_pending` + `list_terminal_events` (y `list_events` por familia fractal). `sweep_fractal_dir` no abre ficheros. La terminalidad fractal sale de entregas ACK/NACK, no de `delivery_state` embebido. Progress: `list_progress` + TTL; `Process_Execution_Completed` se localiza con `list_events`, no leyendo `.events/orchestration`.
+7. `ensure_state_header`, `ensure_processing_header` y `copy_header_atomic` desaparecen del motor en este commit. Quien aún las llame se corta aquí, no se aplaza a O4.
+
+### Secuencia
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `daemons/event-watcher/src/main.rs` | Tick dominio = `claim_pending`; spawn por `event_id`; ACK/NACK con `subscriber_id`; sin `read_dir` de pending |
+| 2 | `engine/.../route_domain_core.rs` | `resolve_route_event_path` acepta `event_id` sin fichero |
+| 3 | `engine/.../eda_bus_topology.rs` | Sweeper y archivo sin cabeceras; tracker-sync vía `list_events`; borrar `ensure_*_header` / `copy_header_atomic` |
+| 4 | `sddia-daemon-runtime/src/eda_sweep.rs` | `sweep_once` y fractal/progress solo puerto |
+| 5 | Tests del watcher y de `try_sweep_event` | Un evento claimado no se relanza por JSON; sweep sin `.events/` presente |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| Pending solo en el puerto, directorio `.events/pending` vacío | El watcher enruta ese `event_id` una vez |
+| El mismo id ya está in-flight y además existe un JSON homónimo | Un solo spawn en el tick |
+| ACK de cierre del watcher | Entrega con `subscriber_id` de la ruta; `delivery_id` compuesto; sin JSON nuevo |
+| `try_sweep_event` con todas las entregas terminales | `purge_event`; no crea ni borra `{id}.json` como prueba |
+| `Tracker_Sync_Failed` solo en el puerto | `pending_tracker_sync_failed_for_ref` lo ve sin `read_dir` |
+| Fractal con entregas ACK y sin ficheros en `.events/domain` | El sweep lo trata como purgable |
+| Suite O0/O1/O2 | Sigue verde, incluido `promote_witness_does_not_materialize_subscriber_json` |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p execute-process --lib try_sweep
+cd SddIA && cargo test -p sddia-daemon-runtime eda_sweep
+cd SddIA && cargo test -p event-watcher
+```
+
+El verde de O2 no sustituye un test de tick sin `read_dir`.
+
+**Commit:** `refactor(eda): centinelas solo por puerto (MAN-43 O3)`.
+
+**AC:** AC-4 y AC-6 en el plano del centinela. AC-5 sigue parcial hasta O4 (periféricos).
+**Fuera de esta ola:** `actions.rs`, Kalma2, workspace-server, GitHub DL, demolición del store, Genoma 2.0, scripts de higiene ops.
+**Bloqueo:** O5 no arranca sobre el watcher si `run_watcher` sigue haciendo `read_dir` o si el sweep decide por `is_file` / `delivery_state` del JSON.
+
+---
+
+## H3 — Watcher y sweeper sin filesystem (índice)
+
+El detalle ejecutable está en **O3 / H3**.
+
+| # | Entregable | Ola |
+|---|------------|-----|
+| H3.1–H3.2 | Tick = `claim_pending`; cierre ACK/NACK con `subscriber_id`; sin `event_file_path` obligatorio | **O3** |
+| H3.3–H3.4 | `eda_sweep` y `try_sweep_event` por `list_*` / `purge_event` | **O3** |
+| H3.5 | Un enrutado por `event_id` y tick | **O3** |
+| H3.6 | Purga de residuos `.events/` como higiene, no como SSOT | **O3** (ops) / **O6** (docs) |
 
 ---
 

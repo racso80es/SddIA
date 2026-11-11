@@ -1,6 +1,6 @@
 use crate::eda_bus::{ensure_event_bus_topology, header_path, load_registry, EdBusPaths};
 use crate::{ensure_fractal_dirs, load_bus_topology, BusTopology};
-use sddia_core::ports::event_manager::load_dispatched_event;
+use sddia_core::ports::event_manager::{load_dispatched_event, ListPendingRequest};
 use sddia_event_manager_host::with_productive_port;
 use serde_json::{json, Value};
 use std::collections::HashSet;
@@ -261,21 +261,16 @@ pub fn sweep_once(repo: &Path) -> Result<SweepReport, String> {
     let registry = load_registry(&bus).ok();
     let mut report = SweepReport::default();
 
-    if bus.pending.is_dir() {
-        let mut entries: Vec<PathBuf> = fs::read_dir(&bus.pending)
-            .map_err(|e| format!("read pending: {e}"))?
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
-            .collect();
-        entries.sort();
+    let pending_ids: Vec<String> = with_productive_port(repo, "sweep_list_pending", |port| {
+        port.list_pending(ListPendingRequest {
+            limit: Some(10_000),
+        })
+        .map(|r| r.events.into_iter().map(|e| e.event_id).collect())
+        .map_err(|e| e.to_string())
+    })?;
 
-        for parent_path in entries {
-            let event_uuid = parent_path
-                .file_stem()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .into_owned();
+    for event_uuid in pending_ids {
+        {
             let result = try_sweep_event(repo, &bus, &event_uuid, registry.as_ref())?;
             match result.get("status").and_then(|v| v.as_str()) {
                 Some("purged") => report.purged.push(json!({

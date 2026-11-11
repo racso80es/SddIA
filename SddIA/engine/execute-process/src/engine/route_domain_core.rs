@@ -343,6 +343,17 @@ pub fn resolve_route_event_path(
     process_inputs: &Value,
     blocking: bool,
 ) -> Result<String, String> {
+    if let Some(id) = process_inputs
+        .get("event_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        let bus = ensure_event_bus_topology(repo)?;
+        let pending_rel = bus.pending.trim().trim_start_matches("./");
+        return Ok(format!("{pending_rel}/{id}.json"));
+    }
+
     if let Some(rel) = process_inputs
         .get("event_file_path")
         .and_then(|v| v.as_str())

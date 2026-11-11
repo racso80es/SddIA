@@ -224,33 +224,24 @@ pub fn write_json_atomic(path: &Path, payload: &Value) -> Result<(), String> {
     fs::rename(&tmp, path).map_err(|e| e.to_string())
 }
 
-fn copy_header_atomic(source: &Path, dest: &Path) -> Result<(), String> {
-    if let Some(parent) = dest.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    fs::copy(source, dest).map_err(|e| e.to_string())?;
-    Ok(())
-}
-
+/// Token lógico de cabecera; MAN-43 O3: sin copia FS (SSOT = puerto).
 pub fn ensure_state_header(
     repo: &Path,
     bus: &EventBusTopology,
     state: &str,
     event_uuid: &str,
-    source_path: &Path,
+    _source_path: &Path,
 ) -> Result<PathBuf, String> {
-    let dest = header_path_repo(repo, bus, state, event_uuid);
-    copy_header_atomic(source_path, &dest)?;
-    Ok(dest)
+    Ok(header_path_repo(repo, bus, state, event_uuid))
 }
 
 pub fn ensure_processing_header(
     repo: &Path,
     bus: &EventBusTopology,
     event_uuid: &str,
-    pending_path: &Path,
+    _pending_path: &Path,
 ) -> Result<PathBuf, String> {
-    ensure_state_header(repo, bus, "processing", event_uuid, pending_path)
+    Ok(header_path_repo(repo, bus, "processing", event_uuid))
 }
 
 fn resolve_witness_key(state_key: &str) -> &str {
@@ -848,14 +839,11 @@ fn finalize_kaizen_terminal(
     origin_topology: &str,
 ) -> Value {
     let mut counts = json!({"pending": 0, "headers": 0});
-    let dead_header = header_path_repo(repo, bus, "dead_letter", event_uuid);
-    if !dead_header.is_file() && pending_path.is_file() {
-        if ensure_state_header(repo, bus, "dead_letter", event_uuid, pending_path).is_ok() {
-            counts["headers"] = json!(1);
-        }
-    }
     if pending_path.is_file() && safe_remove_path(pending_path) {
         counts["pending"] = json!(1);
+    }
+    if eda_port::purge_event(repo, event_uuid).is_ok() {
+        counts["headers"] = json!(1);
     }
     if maybe_purge_processing_header(repo, bus, event_uuid, registry, event_type, origin_topology) {
         counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
@@ -870,39 +858,20 @@ fn archive_event_after_sweep(
     event_type: Option<&str>,
 ) -> Value {
     let mut counts = json!({"witnesses": 0, "headers": 0, "pending": 0});
-    let mut resolved_type = event_type.map(str::to_string);
-    if resolved_type.is_none() {
-        for state in ["processed", "processing"] {
-            let header = header_path_repo(repo, bus, state, event_uuid);
-            if !header.is_file() {
-                continue;
-            }
-            if let Ok(text) = fs::read_to_string(&header) {
-                if let Ok(body) = serde_json::from_str::<Value>(&text) {
-                    if let Some(et) = body.get("event_type").and_then(|v| v.as_str()) {
-                        resolved_type = Some(et.to_string());
-                        break;
-                    }
-                }
-            }
-        }
-    }
+    let _ = event_type;
     let pending = resolve_bus_path(repo, &bus.pending).join(format!("{event_uuid}.json"));
     if pending.is_file() && safe_remove_path(&pending) {
         counts["pending"] = json!(1);
     }
-    for state in ["processing", "processed"] {
+    if eda_port::purge_event(repo, event_uuid).is_ok() {
+        counts["headers"] = json!(1);
+    }
+    for state in ["processing", "processed", "dead_letter"] {
         let header = header_path_repo(repo, bus, state, event_uuid);
         if header.is_file() && safe_remove_path(&header) {
             counts["headers"] = json!(counts["headers"].as_i64().unwrap_or(0) + 1);
         }
     }
-    for path in list_witnesses(repo, bus, "processed_subscribers", event_uuid) {
-        if safe_remove_path(&path) {
-            counts["witnesses"] = json!(counts["witnesses"].as_i64().unwrap_or(0) + 1);
-        }
-    }
-    let _ = resolved_type;
     counts
 }
 
@@ -962,24 +931,13 @@ fn dead_letter_includes_tracker_stamp(dead: &[PathBuf], event_uuid: &str) -> boo
 
 fn pending_tracker_sync_failed_for_ref(
     repo: &Path,
-    bus: &EventBusTopology,
+    _bus: &EventBusTopology,
     tracker_ref: &str,
 ) -> bool {
-    let pending_dir = resolve_bus_path(repo, &bus.pending);
-    let Ok(entries) = fs::read_dir(&pending_dir) else {
+    let Ok(rows) = eda_port::load_domain_ecsts(repo, 5000) else {
         return false;
     };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("json") {
-            continue;
-        }
-        let Ok(text) = fs::read_to_string(&path) else {
-            continue;
-        };
-        let Ok(event) = serde_json::from_str::<Value>(&text) else {
-            continue;
-        };
+    for event in rows {
         if event.get("event_type").and_then(|v| v.as_str()) != Some("Tracker_Sync_Failed") {
             continue;
         }

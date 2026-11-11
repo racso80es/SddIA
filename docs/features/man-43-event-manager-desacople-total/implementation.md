@@ -117,7 +117,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O0 / H1R** | `done` (rama; sin merge) | `DeliveryRecord`, `AlreadyExists`, purga/listado exactos (Redb/FS/mock), suite `o0_containment_integrity`, cápsula dummy + puente; `cargo test` verde en los cuatro crates del plan § O0 |
 | **O1 / H1C** | `done` (rama; sin merge) | `event_uri` en publish, listados reales, `em_processed` / FS `processed`, suite `o1_listing_integrity`; Genoma 2.0 **pendiente** (`entity-manager`) |
 | **O2 / H2** | `done` (rama; sin merge) | Testigos vía entregas del puerto; `DeliveryStatus::Processing`; sin JSON de suscriptor |
-| **O3 / H3** | `blocked-by-O2` | event-watcher, `eda_sweep` |
+| **O3 / H3** | `done` (rama; sin merge) | Watcher claim-only; sweep `list_pending`; cabeceras sin copia FS |
 | **O4 / H4** | `blocked-by-O1` | actions, Kalma2, workspace-server, GitHub bridge, superficie `eda_port` |
 | **O5 / H5** | `blocked-by-O2-O4` | store legacy, matrices, allowlists, gates |
 | **O6 / H6** | `blocked-by-O5` | README, Constitución, Cúmulo, evolution, auditorías |
@@ -132,6 +132,10 @@ Kernel y adapters en `b6a73ba2`. Genoma 2.0 sigue pendiente vía `entity-manager
 
 ### Backlog técnico O2
 
-Secuencia, corte y casos bloqueantes en `plan.md` v1.1.3 § O2 / H2. Las cabeceras `.events/` quedan para O3. GitHub DL y `actions.rs` quedan para O4.
+Cerrado en `de2161ed`. Secuencia en `plan.md` § O2 / H2.
+
+### Backlog técnico O3
+
+Núcleo en rama (watcher claim-only, `event_id` en route, sweep `list_pending`, cabeceras sin copia). Residual: barrido fractal/progress en FS (`eda_sweep`), `has_dead_letter_witnesses` FS en watcher → O4/O5 u ola de higiene. Ver `plan.md` v1.1.4 § O3.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.
