@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.1.4"
+version_plan: "1.1.5"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -407,7 +407,7 @@ El detalle ejecutable está en **O2 / H2**. H2.4 (GitHub DL) se ejecuta en O4.
 
 ## O3 / H3 — Cutover de centinelas (siguiente hito)
 
-Estado: **hecho en rama** (pendiente commit). Dependencia dura O2 (`de2161ed`) cumplida: `promote_witness` ya no escribe JSON de suscriptor y `terminal_witness_exists` consulta entregas. Genoma 2.0 (O1 H1.5) y O4 no bloquean este corte. L-4: el watcher no puede quedar sin fuente; el mismo tren retira el descubrimiento por directorio y las cabeceras que solo existían para ese descubrimiento.
+Estado: **done en rama** (`f3b1da12` + O3.1). Dominio claim + `list_pending`; fractal/DL por puerto. Progress leaf: indexación de dirs residual. Dependencia dura O2 (`de2161ed`) cumplida: `promote_witness` ya no escribe JSON de suscriptor y `terminal_witness_exists` consulta entregas. Genoma 2.0 (O1 H1.5) y O4 no bloquean este corte. L-4: el watcher no puede quedar sin fuente; el mismo tren retira el descubrimiento por directorio y las cabeceras que solo existían para ese descubrimiento.
 
 ### Corte
 
@@ -475,7 +475,59 @@ El verde de O2 no sustituye un test de tick sin `read_dir`.
 
 **AC:** AC-4 y AC-6 en el plano del centinela. AC-5 sigue parcial hasta O4 (periféricos).
 **Fuera de esta ola:** `actions.rs`, Kalma2, workspace-server, GitHub DL, demolición del store, Genoma 2.0, scripts de higiene ops.
-**Bloqueo:** O5 no arranca sobre el watcher si `run_watcher` sigue haciendo `read_dir` o si el sweep decide por `is_file` / `delivery_state` del JSON.
+**Bloqueo:** O5 no arranca sobre el watcher si `run_watcher` sigue haciendo `read_dir` o si el sweep decide por `is_file` / `delivery_state` del JSON. Ese residuo es **O3.1**, no O4.
+
+---
+
+## O3.1 / H3 — Fractal, progress y DL sin disco (siguiente hito)
+
+Estado: **hecho en rama** (pendiente commit). `f3b1da12` cerró el pending de dominio. El diseño O3 puntos 1 (familias no-pending) y 6 (fractal/progress) no se cumplieron. O4 no sustituye este corte: Kalma2 y GitHub no son la fuente del sweeper.
+
+### Corte
+
+Un tick de telemetría, dominio fractal y orquestación descubre por `list_events` de esa familia, no por `read_dir`. El sweep de esas familias y de progress decide con entregas y listados del puerto. `list_witnesses` del daemon deja de abrir carpetas de suscriptor.
+
+`SddIA/events/` y `.SddIA/events/` permanecen. O4 (`actions.rs`, Kalma2, workspace-server, GitHub) y O5 (borrar store) quedan fuera.
+
+### Defecto vivo
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `event-watcher` `watch_targets` | Sigue `read_dir` de telemetry, domain y orchestration; el skip fractal lee `delivery_state` del JSON | F-09 residual fuera de pending |
+| `has_dead_letter_witnesses` | `read_dir` de `dead_letter/subscribers` con prefijo `{event_id}.` | Reabre el matching textual que O0 cerró |
+| `eda_sweep::sweep_fractal_dir` | Lee cada JSON y purga/DLQ según `delivery_state` del cuerpo | AC-6: el disco sigue siendo la prueba |
+| `pec_terminal_for_correlation` / `sweep_progress_leaf` | `read_dir` de orchestration y de hojas progress | TTL y PEC no consultan `list_events` / `list_progress` |
+| `eda_sweep::list_witnesses` | `read_dir` + `starts_with("{event_id}.")` | El motor ya lista por puerto; el daemon no |
+
+### Diseño cerrado
+
+1. El tick no-pending llama `list_events` con `family` `telemetry` | `domain` | `orchestration` y estado no terminal. Heartbeats se ordenan por `event_type == Daemon_Heartbeat` en el ECST devuelto, sin abrir el fichero. Un `event_id` ya in-flight no se relanza.
+2. `has_dead_letter_witnesses` es `list_deliveries` con `event_id` exacto y `status = Nack`. Cero prefijo de nombre.
+3. `sweep_fractal_dir` itera `list_events` de la familia. Purga si todas las entregas aplicables son ACK. DLQ si hay NACK y el resto es terminal. No lee ni renombra JSON. El cierre terminal usa `purge_event` / `move_to_dlq`.
+4. `pec_terminal_for_correlation` busca `Process_Execution_Completed` con `list_events(family=orchestration, event_type=...)` y compara `payload.correlation_id`. Progress caducado sale de `list_progress` (o del sello temporal del frame), no de `metadata` de un directorio.
+5. `list_witnesses` del daemon delega en `list_deliveries` (igual que `eda_bus_topology::list_port_witnesses`): ACK → processed, NACK → dead-letter, Processing → processing. Prohibido `starts_with` / `contains`.
+6. Tests: fractal ACK sin ficheros se purga; un JSON homónimo en `.events/domain` no dispara un segundo spawn si el id ya está in-flight; DL de un suscriptor no marca a otro.
+
+### Secuencia
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `sddia-daemon-runtime/src/eda_sweep.rs` | `list_witnesses`, `sweep_fractal_*`, progress/PEC solo puerto |
+| 2 | `daemons/event-watcher/src/main.rs` | Tick fractal por `list_events`; DL por `list_deliveries`; skip sin leer JSON |
+| 3 | Tests `eda_sweep` / watcher | Casos de la tabla anterior |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p sddia-daemon-runtime eda_sweep
+cd SddIA && cargo build -p event-watcher
+```
+
+**Commit:** `refactor(eda): sweep fractal y progress solo por puerto (MAN-43 O3.1)`.
+
+**AC:** AC-6 en fractal/progress. AC-5 sigue parcial hasta O4.
+**Fuera:** periféricos F-1…F-4, demolición del crate store, Genoma 2.0.
+**Bloqueo:** O4 puede avanzar en paralelo sobre productores; O5 no, mientras `sweep_fractal_dir` o `list_witnesses` del daemon llamen a `read_dir`.
 
 ---
 
@@ -486,7 +538,7 @@ El detalle ejecutable está en **O3 / H3**.
 | # | Entregable | Ola |
 |---|------------|-----|
 | H3.1–H3.2 | Tick = `claim_pending`; cierre ACK/NACK con `subscriber_id`; sin `event_file_path` obligatorio | **O3** |
-| H3.3–H3.4 | `eda_sweep` y `try_sweep_event` por `list_*` / `purge_event` | **O3** |
+| H3.3–H3.4 | Pending por `list_pending`; fractal/progress/DL del daemon | **O3** dominio, **O3.1** fractal |
 | H3.5 | Un enrutado por `event_id` y tick | **O3** |
 | H3.6 | Purga de residuos `.events/` como higiene, no como SSOT | **O3** (ops) / **O6** (docs) |
 

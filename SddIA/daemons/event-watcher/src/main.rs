@@ -2,7 +2,8 @@ use sddia_daemon_runtime::{
     ensure_bus_dirs, find_repo_root, load_bus_topology, BusTopology, DaemonRuntime,
 };
 use sddia_core::ports::event_manager::{
-    ClaimPendingRequest, DeliveryStatus, RecordDeliveryRequest,
+    ClaimPendingRequest, DeliveryStatus, ListDeliveriesRequest, ListEventsRequest,
+    RecordDeliveryRequest,
 };
 use sddia_event_manager_host::with_productive_port;
 use serde_json::{json, Value};
@@ -140,14 +141,6 @@ fn execute_process_bin(repo: &Path) -> PathBuf {
         .unwrap_or_else(|| repo.join("SddIA/target/debug/execute-process"))
 }
 
-fn rel_event_path(repo: &Path, event_path: &Path) -> String {
-    event_path
-        .canonicalize()
-        .ok()
-        .and_then(|p| p.strip_prefix(repo.canonicalize().ok()?).ok().map(|r| r.to_string_lossy().replace('\\', "/")))
-        .unwrap_or_else(|| event_path.to_string_lossy().replace('\\', "/"))
-}
-
 fn fractal_watch_enabled() -> bool {
     match env::var("SDDIA_LAB_WATCH_FRACTAL").unwrap_or_else(|_| "0".into()) {
         ref s if matches!(s.to_ascii_lowercase().as_str(), "0" | "false" | "no") => false,
@@ -170,47 +163,145 @@ fn watch_targets(repo: &Path, top: &sddia_daemon_runtime::BusTopology) -> Vec<(P
     targets
 }
 
-fn is_daemon_heartbeat(path: &Path) -> bool {
-    let Ok(raw) = fs::read_to_string(path) else {
-        return false;
-    };
-    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
-        return false;
-    };
-    body.get("event_type").and_then(|v| v.as_str()) == Some("Daemon_Heartbeat")
+fn has_dead_letter_witnesses(repo: &Path, _top: &sddia_daemon_runtime::BusTopology, event_uuid: &str) -> bool {
+    with_productive_port(repo, "watcher_dl_witness", |port| {
+        let rows = port
+            .list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_uuid.to_string()),
+                subscriber_id: None,
+                status: Some(DeliveryStatus::Nack),
+                limit: Some(100),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        Ok(!rows.deliveries.is_empty())
+    })
+    .unwrap_or(false)
 }
 
-/// Dentro de telemetry: HB primero (fairness bajo saturación).
-fn prioritize_heartbeat_paths(paths: &mut Vec<PathBuf>) {
-    paths.sort_by_key(|p| {
-        let hb = is_daemon_heartbeat(p);
-        // false < true en sort_by_key invertido: HB (0) antes que no-HB (1)
-        (!hb, p.to_string_lossy().to_string())
-    });
+fn fractal_process_family(process_name: &str) -> Option<&'static str> {
+    match process_name {
+        "route-telemetry" => Some("telemetry"),
+        "route-domain" => Some("domain"),
+        "route-orchestration" => Some("orchestration"),
+        _ => None,
+    }
 }
 
-fn has_dead_letter_witnesses(
+fn fractal_deliveries_all_terminal(repo: &Path, event_id: &str) -> bool {
+    with_productive_port(repo, "watcher_fractal_terminal", |port| {
+        let rows = port
+            .list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_id.to_string()),
+                subscriber_id: None,
+                status: None,
+                limit: Some(500),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())?;
+        if rows.deliveries.is_empty() {
+            return Ok(false);
+        }
+        Ok(rows.deliveries.iter().all(|d| {
+            matches!(d.status, DeliveryStatus::Ack | DeliveryStatus::Nack)
+        }))
+    })
+    .unwrap_or(false)
+}
+
+fn list_fractal_events(repo: &Path, family: &str) -> Result<Vec<(String, Value)>, String> {
+    with_productive_port(repo, "watcher_list_fractal", |port| {
+        port.list_events(ListEventsRequest {
+            family: Some(family.to_string()),
+            event_type: None,
+            state: None,
+            limit: Some(500),
+            cursor: None,
+        })
+        .map(|r| {
+            r.events
+                .into_iter()
+                .map(|e| (e.event_id, e.ecst))
+                .collect()
+        })
+        .map_err(|e| e.to_string())
+    })
+}
+
+fn tick_fractal_routes(
     repo: &Path,
-    top: &sddia_daemon_runtime::BusTopology,
-    event_uuid: &str,
-) -> bool {
-    let folder = &top.dead_letter_subscribers;
-    if !folder.is_dir() {
-        return false;
+    shared: &Arc<Mutex<DaemonRuntime>>,
+    book: &SharedBook,
+    watch_dir: &Path,
+    process_name: &str,
+    family: &str,
+) -> Result<(), String> {
+    let mut events = list_fractal_events(repo, family)?;
+    if process_name == "route-telemetry" {
+        events.sort_by_key(|(_, ecst)| {
+            let hb = ecst.get("event_type").and_then(|v| v.as_str()) == Some("Daemon_Heartbeat");
+            (
+                !hb,
+                ecst.get("event_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+            )
+        });
+    } else {
+        events.sort_by(|a, b| a.0.cmp(&b.0));
     }
-    let Ok(entries) = fs::read_dir(folder) else {
-        return false;
-    };
-    let prefix = format!("{event_uuid}.");
-    entries.filter_map(|e| e.ok()).any(|e| {
-        e.file_name()
-            .to_string_lossy()
-            .starts_with(&prefix)
-    }) || {
-        // fallback: glob pattern uuid.*.json under dead_letter if subscribers nested differently
-        let dl_root = repo.join(".events/dead-letter");
-        dl_root.join("subscribers").join(format!("{event_uuid}.json")).is_file()
+    for (event_uuid, _ecst) in events {
+        {
+            let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
+            if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
+                break;
+            }
+        }
+        let rel = format!(".events/{family}/{event_uuid}.json");
+        let key = format!(
+            "{}/{}.json",
+            watch_dir.file_name().unwrap_or_default().to_string_lossy(),
+            event_uuid
+        );
+        {
+            let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
+            if let Some(skip) = watcher_skip_reason(
+                &event_uuid,
+                &key,
+                process_name,
+                &PathBuf::from(&rel),
+                &b,
+                repo,
+                &load_bus_topology(repo),
+            ) {
+                let _ = watcher_skip_emits_hot_path_trace(&skip);
+                continue;
+            }
+        }
+        println!("[WATCHER] Puerto: {key} → {process_name} (async)");
+        if let Ok(mut rt) = shared.lock() {
+            rt.note_stimulus();
+        }
+        {
+            let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
+            b.processing.insert(event_uuid.clone());
+            *b.attempts.entry(key.clone()).or_insert(0) += 1;
+        }
+        let book_c = Arc::clone(book);
+        let repo_c = repo.to_path_buf();
+        let pname = process_name.to_string();
+        let path_c = PathBuf::from(&rel);
+        let uuid_c = event_uuid.clone();
+        let key_c = key.clone();
+        thread::spawn(move || {
+            let out = invoke_route_process(&repo_c, &rel, &pname);
+            if let Ok(mut b) = book_c.lock() {
+                apply_route_outcome_fractal(&mut b, &pname, &path_c, &uuid_c, &key_c, &out);
+            }
+        });
     }
+    Ok(())
 }
 
 fn parse_vitality_probe_seconds(raw: Option<&str>) -> u64 {
@@ -416,29 +507,6 @@ fn fractal_side_effect_committed(path: &Path) -> bool {
     })
 }
 
-fn fractal_fully_terminal(path: &Path) -> bool {
-    let Ok(raw) = fs::read_to_string(path) else {
-        return false;
-    };
-    let Ok(body) = serde_json::from_str::<Value>(&raw) else {
-        return false;
-    };
-    let Some(ds) = body.get("delivery_state").and_then(|v| v.as_object()) else {
-        return false;
-    };
-    if ds.is_empty() {
-        return false;
-    }
-    // Terminal = success|skipped*|failed. Con failed el sweeper/router mueven a DLQ (C2).
-    ds.values().all(|v| {
-        let st = v.as_str().unwrap_or("");
-        st == "success"
-            || st == "failed"
-            || st == "skipped-already-delivered"
-            || st.starts_with("skipped")
-    })
-}
-
 fn watcher_skip_reason(
     event_uuid: &str,
     key: &str,
@@ -454,7 +522,7 @@ fn watcher_skip_reason(
     if book.routed_ok.contains(event_uuid) && path.is_file() {
         return Some(format!("routed-ok pending file uuid={event_uuid}"));
     }
-    if process_name != "route-domain-event" && fractal_fully_terminal(path) {
+    if process_name != "route-domain-event" && fractal_deliveries_all_terminal(repo, event_uuid) {
         return Some(format!("fractal-terminal uuid={event_uuid}"));
     }
     if process_name == "route-domain-event" && has_dead_letter_witnesses(repo, top, event_uuid) {
@@ -581,71 +649,8 @@ fn run_watcher(repo: PathBuf, once: bool) -> Result<(), String> {
             if process_name == "route-domain-event" {
                 continue;
             }
-            if !watch_dir.is_dir() {
-                continue;
-            }
-            let Ok(entries) = fs::read_dir(watch_dir) else {
-                continue;
-            };
-            let mut paths: Vec<PathBuf> = entries
-                .filter_map(|e| e.ok())
-                .map(|e| e.path())
-                .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
-                .collect();
-            if process_name == "route-telemetry" {
-                prioritize_heartbeat_paths(&mut paths);
-            } else {
-                paths.sort();
-            }
-            for path in paths {
-                {
-                    let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                    if b.in_flight() >= MAX_IN_FLIGHT_ROUTES {
-                        break;
-                    }
-                }
-                let file_name = path.file_name().unwrap_or_default().to_string_lossy();
-                let key = format!("{}/{}", watch_dir.file_name().unwrap_or_default().to_string_lossy(), file_name);
-                let event_uuid = path.file_stem().unwrap_or_default().to_string_lossy().into_owned();
-                {
-                    let b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                    if let Some(skip) = watcher_skip_reason(
-                        &event_uuid,
-                        &key,
-                        process_name,
-                        &path,
-                        &b,
-                        &repo,
-                        &top,
-                    ) {
-                        let _ = watcher_skip_emits_hot_path_trace(&skip);
-                        continue;
-                    }
-                }
-                let rel = rel_event_path(&repo, &path);
-                println!("[WATCHER] Detectado nuevo evento: {key} → {process_name} (async)");
-                if let Ok(mut rt) = shared.lock() {
-                    rt.note_stimulus();
-                }
-                {
-                    let mut b = book.lock().map_err(|_| "route book lock poisoned".to_string())?;
-                    b.processing.insert(event_uuid.clone());
-                    *b.attempts.entry(key.clone()).or_insert(0) += 1;
-                }
-                let book_c = Arc::clone(&book);
-                let repo_c = repo.clone();
-                let pname = process_name.clone();
-                let path_c = path.clone();
-                let uuid_c = event_uuid.clone();
-                let key_c = key.clone();
-                thread::spawn(move || {
-                    let out = invoke_route_process(&repo_c, &rel, &pname);
-                    if let Ok(mut b) = book_c.lock() {
-                        apply_route_outcome_fractal(
-                            &mut b, &pname, &path_c, &uuid_c, &key_c, &out,
-                        );
-                    }
-                });
+            if let Some(family) = fractal_process_family(process_name) {
+                tick_fractal_routes(&repo, &shared, &book, watch_dir, process_name, family)?;
             }
         }
         claim_store_fractal(&repo, &book);
