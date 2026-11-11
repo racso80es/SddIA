@@ -227,9 +227,6 @@ fn emit_pr_presented(repo: &Path, inputs: &Value) -> Result<Value, String> {
     }
     sddia_eda_catalog::stamp_published_event(repo, &mut event)?;
     let seal = crate::engine::eda_port::publish_ecst(repo, "pending", &event)?;
-    // Ancla lógica post-purge: reseal/accept-pr resuelven Presented vía `.events/domain/{event_id}.json`.
-    let anchor = repo.join(format!(".events/domain/{event_id}.json"));
-    let _ = super::eda_bus_topology::write_json_atomic(&anchor, &event);
     Ok(json!({
         "success": true,
         "event_id": json!(event_id),
@@ -611,18 +608,14 @@ mod tests {
         if file.is_file() {
             return fs::read_to_string(file).unwrap();
         }
-        if let Ok(row) = crate::engine::eda_port::with_event_port(repo, "test_emitted_body", |port| {
+        let row = crate::engine::eda_port::with_event_port(repo, "test_emitted_body", |port| {
             use sddia_core::ports::event_manager::GetEventRequest;
             port.get_event(GetEventRequest {
                 event_id: event_id.to_string(),
             })
             .map_err(|e| e.to_string())
-        }) {
-            return serde_json::to_string(&row.ecst).unwrap();
-        }
-        let store = sddia_event_store::EventStore::open(crate::engine::eda_port::runtime_db_path(repo))
-            .expect("store");
-        let row = store.get_event(event_id).expect("read").expect("fila");
+        })
+        .expect("get_event");
         serde_json::to_string(&row.ecst).unwrap()
     }
 

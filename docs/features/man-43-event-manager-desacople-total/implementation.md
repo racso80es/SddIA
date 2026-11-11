@@ -100,8 +100,8 @@ H2 entregas/testigos FS · H3 watcher/sweeper · H4 periféricos F-1..F-4 / AC-8
 
 ## Notas honestas
 
-- Espejo FS en `emit_pr_presented` (`.events/domain/...`) **aún presente** → F-1 / H4.
-- `runtime_db_path` / `path_is_resolved_redb` aún en superficie consumidores → AC-8 / H4.
+- Espejo FS en `emit_pr_presented` eliminado (O4).
+- `runtime_db_path` persiste en tests acept-pr/vitality; símbolo y crate → O5.
 - No se declara AC-1…AC-19 verdes sin evidencia de tests/gates.
 
 ---
@@ -119,7 +119,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O2 / H2** | `done` (rama; sin merge) | Testigos vía entregas del puerto; `DeliveryStatus::Processing`; sin JSON de suscriptor |
 | **O3 / H3** | `done` (rama) | Dominio + fractal watcher/sweep por puerto; progress leaf aún indexa dirs |
 | **O3.1** | `done` (rama; sin merge) | `sweep_fractal_family`, `list_witnesses` puerto, watcher `list_events`, DL por Nack |
-| **O4 / H4** | `ready` (paralelo; no cierra O3.1) | actions, Kalma2, workspace-server, GitHub bridge, superficie `eda_port` |
+| **O4 / H4** | `done` (rama) | F-1…F-4; `actions` test helper sin `EventStore::open`; Kalma2 sin fallback `.events/` en dominio/telemetría/progress |
 | **O5 / H5** | `blocked-by-O2-O4` | store legacy, matrices, allowlists, gates |
 | **O6 / H6** | `blocked-by-O5` | README, Constitución, Cúmulo, evolution, auditorías |
 
@@ -137,6 +137,10 @@ Cerrado en `de2161ed`. Secuencia en `plan.md` § O2 / H2.
 
 ### Backlog técnico O3
 
-O3.1 en rama: fractal sweep/watcher y testigos DL vía puerto. Residual: `sweep_progress_leaf` aún lista directorios de correlación en disco (decisión PEC ya por `list_events`). Siguiente: **O4** periféricos.
+O3.1 en `1a4c84af`. Residual de progress (`sweep_progress_leaf`) fuera de O4.
+
+### Backlog técnico O4
+
+Cerrado en rama: ancla FS `emit_pr_presented`, fallback Kalma2 (dominio/PEC/SSE progress/telemetría cognitiva), `publish_ecst` telemetry workspace-server, DLQ puerto en fallo IOTA (`record_iota_failure_dlq`). Residual: `scan_presented_for_branch` FS en accept-pr (store primero); `sweep_progress_leaf`. Siguiente: **O5**.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

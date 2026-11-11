@@ -1,9 +1,11 @@
 //! Materialización ECST PullRequest_Presented (DEBT-K2 — sin Python).
 
-use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic, EdBusPaths};
+use crate::eda_bus::{ensure_event_bus_topology, write_json_atomic};
 use crate::{write_fractal_event, BusTopology};
 use chrono::Utc;
-use sddia_core::ports::event_manager::publish_ecst as publish_ecst_on_port;
+use sddia_core::ports::event_manager::{
+    publish_ecst as publish_ecst_on_port, MoveToDlqRequest,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
@@ -459,25 +461,30 @@ pub fn materialize_to_bus(repo: &Path, bus_event: &Value) -> Result<Option<PathB
     })
 }
 
-pub fn write_fallback_dead_letter(repo: &Path, pr: &Value, error: &str) -> Result<PathBuf, String> {
-    let bus: EdBusPaths = ensure_event_bus_topology(repo)?;
-    let stamp = Utc::now().format("%Y%m%dT%H%M%SZ");
-    let name = format!("github-bridge-{stamp}-{}.json", &Uuid::new_v4().simple().to_string()[..8]);
-    let target = bus.dead_letter.join(name);
-    let record = json!({
-        "flag": FALLBACK_FLAG,
-        "timestamp": iso_now(),
-        "source": "github-bridge-watcher",
-        "error": error,
-        "pr": {
-            "repository": pr.get("repository"),
-            "branch": pr.get("branch"),
-            "pr_url": pr.get("pr_url"),
-            "origin_agent": pr.get("origin_agent"),
-        }
-    });
-    write_json_atomic(&target, &record)?;
-    Ok(target)
+pub fn record_iota_failure_dlq(repo: &Path, pre_event: &Value, error: &str) -> Result<String, String> {
+    let event_id = Uuid::new_v4().to_string();
+    let mut ecst = pre_event.clone();
+    if let Some(obj) = ecst.as_object_mut() {
+        obj.insert("event_id".into(), json!(event_id));
+        obj.insert(
+            "delivery_state".into(),
+            json!({ "flag": FALLBACK_FLAG, "iota_error": error }),
+        );
+    }
+    if let Some(payload) = ecst.get_mut("payload").and_then(|p| p.as_object_mut()) {
+        payload.insert("flag".into(), json!(FALLBACK_FLAG));
+        payload.insert("iota_error".into(), json!(error));
+    }
+    sddia_event_manager_host::with_productive_port(repo, "github_iota_dlq", |port| {
+        sddia_eda_catalog::stamp_published_event(repo, &mut ecst)?;
+        publish_ecst_on_port(port, repo, "domain", &ecst)?;
+        port.move_to_dlq(MoveToDlqRequest {
+            event_id: event_id.clone(),
+            reason: error.to_string(),
+        })
+        .map_err(|e| e.to_string())?;
+        Ok(event_id)
+    })
 }
 
 pub fn process_pr(repo: &Path, pr: &Value, state: &mut BridgeState) -> Result<bool, String> {
@@ -495,10 +502,9 @@ pub fn process_pr(repo: &Path, pr: &Value, state: &mut BridgeState) -> Result<bo
     let pre_event = compose_pre_anchor_event(&enriched);
     let (digest, _object_id, err) = publish_with_retries(repo, &pre_event);
     let Some(digest) = digest else {
-        let dl = write_fallback_dead_letter(repo, pr, err.as_deref().unwrap_or("iota publish failed"))?;
-        if let Ok(rel) = dl.strip_prefix(repo) {
-            eprintln!("[GITHUB-BRIDGE] Fallback dead-letter: {}", rel.display());
-        }
+        let msg = err.as_deref().unwrap_or("iota publish failed");
+        let event_id = record_iota_failure_dlq(repo, &pre_event, msg)?;
+        eprintln!("[GITHUB-BRIDGE] IOTA falló; DLQ puerto event_id={event_id}");
         return Ok(false);
     };
 

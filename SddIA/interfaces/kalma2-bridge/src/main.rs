@@ -817,27 +817,14 @@ fn read_json_file(path: &Path) -> Option<serde_json::Value> {
 
 fn find_domain_event_with_proofs(
     repo: &Path,
-    domain_dir: &Path,
-    dead_dir: &Path,
+    _domain_dir: &Path,
+    _dead_dir: &Path,
     proofs_dir: Option<&Path>,
     event_id: &str,
 ) -> Option<(PathBuf, serde_json::Value, bool)> {
     if eda_productive::store_active(repo) {
         if let Some(hit) = eda_productive::domain_event(repo, event_id) {
             return Some(hit);
-        }
-    }
-    let name = format!("{event_id}.json");
-    let in_domain = domain_dir.join(&name);
-    if in_domain.is_file() {
-        if let Some(v) = read_json_file(&in_domain) {
-            return Some((in_domain, v, false));
-        }
-    }
-    let in_dead = dead_dir.join(&name);
-    if in_dead.is_file() {
-        if let Some(v) = read_json_file(&in_dead) {
-            return Some((in_dead, v, true));
         }
     }
     if let Some(proofs) = proofs_dir {
@@ -1115,15 +1102,13 @@ fn build_status_body(repo: &Path, event_id: &str) -> (u16, String) {
         );
     }
 
-    let (domain_dir, orch_dir, dead_dir) = load_fractal_paths(repo);
+    let (domain_dir, _orch_dir, dead_dir) = load_fractal_paths(repo);
     let proofs_dir = load_proofs_dir(repo);
     let domain_hit = find_domain_event_with_proofs(repo, &domain_dir, &dead_dir, Some(&proofs_dir), event_id);
-    let pec = if eda_productive::store_active(repo) {
-        eda_productive::pec_for_correlation(repo, event_id)
-    } else {
-        find_pec_by_correlation(&orch_dir, event_id)
-    }
-    .or_else(|| find_pec_proof(&proofs_dir, event_id));
+    let pec = eda_productive::store_active(repo)
+        .then(|| eda_productive::pec_for_correlation(repo, event_id))
+        .flatten()
+        .or_else(|| find_pec_proof(&proofs_dir, event_id));
 
     if domain_hit.is_none() && pec.is_none() {
         return (
@@ -1303,6 +1288,15 @@ impl ProgressStreamReader {
         })
     }
 
+    fn inactive() -> Self {
+        let mut reader = Self::new(ProgressOrigin::Store {
+            repo: PathBuf::new(),
+            correlation_id: String::new(),
+        });
+        reader.finished = true;
+        reader
+    }
+
     fn new(origin: ProgressOrigin) -> Self {
         Self {
             origin,
@@ -1397,7 +1391,7 @@ fn handle_progress_stream(req: tiny_http::Request, repo: &Path) {
     let reader = if eda_productive::store_active(repo) {
         ProgressStreamReader::from_store(repo.to_path_buf(), correlation_id)
     } else {
-        ProgressStreamReader::from_dir(load_progress_path(repo).join(&correlation_id))
+        ProgressStreamReader::inactive()
     };
     let response = Response::new(
         StatusCode(200),
@@ -2531,23 +2525,6 @@ fn handle_user_preference_change(mut req: tiny_http::Request, repo: &Path) {
     );
 }
 
-fn load_telemetry_dir(repo: &Path) -> PathBuf {
-    let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
-    let default = repo.join(".events/telemetry");
-    let Ok(text) = std::fs::read_to_string(&cfg_path) else {
-        return default;
-    };
-    let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&text) else {
-        return default;
-    };
-    cfg.get("eda_fractal")
-        .and_then(|f| f.get("telemetry"))
-        .and_then(|v| v.as_str())
-        .map(normalize_rel)
-        .map(|r| repo.join(r))
-        .unwrap_or(default)
-}
-
 fn load_radamanto_stats_path(repo: &Path) -> PathBuf {
     let cfg_path = repo.join("SddIA/core/cumulo.paths.json");
     let default = repo.join(".SddIA/radamanto/stats.json");
@@ -2599,34 +2576,6 @@ fn list_cognitive_events(repo: &Path, limit: usize) -> Vec<serde_json::Value> {
                 .unwrap_or("")
                 .to_string();
             items.push((ts, ecst));
-        }
-    } else {
-        let tele_dir = load_telemetry_dir(repo);
-        if tele_dir.is_dir() {
-            if let Ok(entries) = std::fs::read_dir(&tele_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.extension().and_then(|e| e.to_str()) != Some("json") {
-                        continue;
-                    }
-                    let Some(body) = read_json_file(&path) else {
-                        continue;
-                    };
-                    if body
-                        .pointer("/payload/telemetry_receipt")
-                        .and_then(|v| v.as_object())
-                        .is_none()
-                    {
-                        continue;
-                    }
-                    let ts = body
-                        .get("timestamp")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    items.push((ts, body));
-                }
-            }
         }
     }
     let inbox = load_cognitive_inbox_dir(repo);
@@ -3307,29 +3256,26 @@ mod tests {
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb"},"eda_fractal":{"domain":".events/domain","orchestration":".events/orchestration","dead_letter":".events/dead-letter"},"eda_instance":{"proofs":".SddIA/proofs"}}"#,
         )
         .unwrap();
-        std::fs::create_dir_all(repo.join(".events/domain")).unwrap();
-        std::fs::create_dir_all(repo.join(".events/orchestration")).unwrap();
-        std::fs::create_dir_all(repo.join(".events/dead-letter")).unwrap();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
         let eid = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-        std::fs::write(
-            repo.join(".events/domain").join(format!("{eid}.json")),
-            serde_json::json!({
-                "event_id": eid,
-                "event_type": "Email_Triaged",
-                "event_family": "domain",
-                "payload": {
-                    "message_uid": "42",
-                    "verdict": "noise",
-                    "decision_path": "deterministic",
-                    "thermodynamic_cost": {"tokens_in": 0, "tokens_out": 0, "duration_ms": 0}
-                }
-            })
-            .to_string(),
-        )
-        .unwrap();
+        let mut event = serde_json::json!({
+            "event_id": eid,
+            "event_type": "Email_Triaged",
+            "event_family": "domain",
+            "timestamp": "2026-08-18T15:00:00Z",
+            "payload": {
+                "message_uid": "42",
+                "verdict": "noise",
+                "decision_path": "deterministic",
+                "thermodynamic_cost": {"tokens_in": 0, "tokens_out": 0, "duration_ms": 0}
+            },
+            "delivery_state": {},
+        });
+        sddia_eda_catalog::stamp_published_event(&repo, &mut event).unwrap();
+        eda_productive::publish_domain(&repo, &event).unwrap();
         let (code, body) = build_status_body(&repo, eid);
         assert_eq!(code, 200);
         let v: serde_json::Value = serde_json::from_str(&body).unwrap();

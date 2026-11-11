@@ -19,6 +19,17 @@ pub fn publish_pending(repo: &Path, event: &Value) -> Result<(), String> {
     })
 }
 
+pub fn publish_domain(repo: &Path, event: &Value) -> Result<(), String> {
+    with_productive_port(repo, "publish_domain", |port| {
+        publish_ecst(port, repo, "domain", event).map(|_| ())
+    })
+}
+
+pub fn db_path(repo: &Path) -> PathBuf {
+    sddia_event_manager_host::resolved_redb_path(repo)
+        .unwrap_or_else(|_| repo.join(".SddIA/runtime/events.redb"))
+}
+
 pub fn domain_event(
     repo: &Path,
     event_id: &str,

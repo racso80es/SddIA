@@ -5433,6 +5433,9 @@ dependencies = [
 name = "sddia-workspace-server"
 version = "0.1.0"
 dependencies = [
+ "sddia-core",
+ "sddia-eda-catalog",
+ "sddia-event-manager-host",
  "serde",
  "serde_json",
  "serde_yaml",

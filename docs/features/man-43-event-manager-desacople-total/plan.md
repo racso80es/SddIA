@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.1.5"
+version_plan: "1.1.6"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -544,19 +544,95 @@ El detalle ejecutable está en **O3 / H3**.
 
 ---
 
-## H4 — Consumidores periféricos
+## O4 / H4 — Periféricos sin fallback FS (siguiente hito)
 
-| # | Entregable | Detalle |
-|---|------------|---------|
-| H4.1 | F-1 `actions` | Sin doble materialización FS |
-| H4.2 | F-2 Kalma2 | Sin fallback FS |
-| H4.3 | F-3 workspace-server telemetry | Publicación puerto `telemetry` |
-| H4.4 | F-4 github_bridge | DLQ por puerto |
-| H4.5 | AC-8 `eda_port` | Retirar `runtime_db_path` / `path_is_resolved_redb` de consumidores |
+Estado: **done (rama)**. O1 desbloqueó el puerto. O3.1 (`1a4c84af`) no es dependencia: estos productores no son el watcher. El residual `sweep_progress_leaf` (directorios de correlación) no entra aquí.
 
-**Commit:** `refactor(eda): periféricos sin fallback FS (MAN-43 H4)`.
+### Corte
 
-**AC:** AC-8, AC-9.
+Cuatro escritores dejan de materializar ECST o DLQ en `.events/`. Quien hoy abre el JSON para reseal, accept-pr o la UI de Kalma2 resuelve por `get_event` / `list_events`. `runtime_db_path` sale de los callers productivos; la función y el crate store siguen hasta O5.
+
+Fuera: Genoma 2.0, demolición de `eda_port_legacy` / `sddia-event-store`, matrices, `sweep_progress_leaf`, `SddIA/events/` y `.SddIA/events/`.
+
+### Defecto vivo
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `actions.rs` `emit_pr_presented` | `publish_ecst` y además `write_json_atomic` en `.events/domain/{id}.json` | F-1: doble SSOT; el comentario cita ese path como ancla de reseal |
+| `kalma2-bridge` `find_domain_event_with_proofs` y barridos de orchestration/progress/telemetry | Si el puerto responde, lo usa; si no, `read_dir` / `is_file` bajo `.events/` | F-2: el disco sigue siendo plan B |
+| `sddia-workspace-server` `emit_raw_execution_finished` | `fs::write` de `Raw_Execution_Finished` en `.events/telemetry` | F-3: no pasa por `publish_ecst` |
+| `github_bridge` `write_fallback_dead_letter` | JSON en `dead_letter/` cuando IOTA falla | F-4: el DLQ del puerto no ve el fallo |
+| `eda_port::runtime_db_path` | Lo abren tests y también ramas de `actions` / vitality / accept-pr | AC-8: el consumidor productivo no debe nombrar el fichero `.redb` |
+
+### Diseño cerrado
+
+1. `emit_pr_presented` publica solo por puerto (`domain` o `pending`, el que ya sella el catálogo) y devuelve `event_id` + `event_uri`. No escribe ancla. Reseal y accept-pr cargan ese id con `get_event`.
+2. Kalma2: si `store_active` es falso, la consulta devuelve vacío. Se borran las ramas `is_file` / `read_dir` de `.events/{domain,orchestration,dead-letter,progress,telemetry}`. Las pruebas `.SddIA/proofs/` no son bus EDA y se quedan.
+3. `emit_raw_execution_finished` arma el ECST y llama `publish_ecst` familia `telemetry`. `write_capsule_envelope` es artefacto de workspace, no bus: no se toca.
+4. El fallo IOTA de GitHub llama `move_to_dlq` con el ECST ya compuesto y la causa. `write_fallback_dead_letter` desaparece. El token `.events/domain/{id}.json` que devuelve `materialize_to_bus` es lógico; nadie hace `is_file` sobre él.
+5. Callers productivos de `runtime_db_path` / `EventStore::open` en `actions`, vitality y accept-pr pasan al puerto (`list_events`, `get_event`, `list_deliveries`). Tests y `eda_port_legacy` esperan a O5.
+
+### Secuencia
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `engine/.../actions.rs` | Sin ancla FS; consumidores de Presented por `event_id` |
+| 2 | `interfaces/kalma2-bridge/src/main.rs` | Sin fallback `.events/` |
+| 3 | `tools/sddia-workspace-server/src/telemetry.rs` | `publish_ecst` telemetry |
+| 4 | `sddia-daemon-runtime/src/github_bridge.rs` | DLQ por `move_to_dlq` |
+| 5 | vitality / accept-pr | Dejar de abrir `.redb` |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `emit_pr_presented` | Existe el evento en el puerto; no aparece `.events/domain/{id}.json` |
+| Kalma2 con puerto vacío y un JSON homónimo en `.events/domain` | No lo lee |
+| `Raw_Execution_Finished` | Familia `telemetry` en `list_events`; cero fichero nuevo |
+| Fallo IOTA del bridge | El evento está en `list_dlq`; cero JSON en `dead_letter/` |
+| Suite O0–O3.1 | Sigue verde |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p execute-process emit_pr
+cd SddIA && cargo test -p kalma2-bridge
+cd SddIA && cargo test -p sddia-daemon-runtime github_bridge
+cd SddIA && cargo test -p sddia-workspace-server
+```
+
+**Commit:** `refactor(eda): periféricos sin fallback FS (MAN-43 O4)`.
+
+**AC:** AC-8 en los callers productivos de este corte. AC-9 en los cuatro escritores. AC-5 deja de estar parcial en F-1…F-4; el crate store y el progress leaf no cuentan como AC-5 cerrado.
+**Fuera:** O5, Genoma, `sweep_progress_leaf`.
+**Bloqueo:** O5 no borra el store mientras `emit_pr_presented` o `write_fallback_dead_letter` sigan escribiendo JSON — **levantado en rama O4**.
+
+---
+
+## O5 / H5 — Siguiente hito (listo para ejecutar)
+
+Estado: **listo para ejecutar** tras O4 en rama.
+
+| Paso | Alcance |
+|------|---------|
+| 1 | `scan_presented_for_branch` / `visit_presented_in_store`: solo puerto; retirar barrido `.events/*` productivo |
+| 2 | Matrices `eda_subscriber_*` / `eda_store_io_*` → mock/contract suite sin `sddia-event-store` |
+| 3 | Borrar `eda_port_legacy`, `runtime_db_path`, crate `sddia-event-store` |
+| 4 | Gates allowlists + veto reintroducción `.events/` SSOT |
+| 5 | `cargo test --workspace` + clippy como evidencia H5 |
+
+**Commit esperado:** `test(eda): demolición store legacy + gates v2 (MAN-43 O5)`.
+
+---
+
+## H4 — Consumidores periféricos (índice)
+
+El detalle ejecutable está en **O4 / H4**.
+
+| # | Entregable | Ola |
+|---|------------|-----|
+| H4.1–H4.4 | actions, Kalma2, workspace-server, GitHub DL | **O4** |
+| H4.5 | Callers productivos sin `runtime_db_path` | **O4**; borrar el símbolo, **O5** |
 
 ---
 
