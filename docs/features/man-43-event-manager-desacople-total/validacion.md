@@ -1,7 +1,10 @@
 ---
 feature_name: man-43-event-manager-desacople-total
 created: 2026-11-11
-updated: 2026-11-11T09:38:00Z
+updated: 2026-11-11T15:00:00Z
+merged_pr: https://github.com/racso80es/SddIA/pull/453
+merge_commit: f60ae1d461b4a0b00e15cc85c01c0636f3ac0583
+post_merge_worktree: main
 process: pull-request-review
 phase: Triaje documental
 agent: argos
@@ -240,4 +243,10 @@ Tekton blocked/parcial; AC no verdes; sin forge_key; Shell sddia-run rechazado; 
 
 ## Alcance / siguiente paso
 
-Triaje documental **bloquea** cierre PPR/merge. Residual: allowlist MCP/`cargo`, `forge_key`, suite/gates, completar H1 (Genoma) y H2–H6 según plan. Argos **no** escribe bajo `docs/todos/`.
+**Ciclo H1 cerrado** (merge PR #453 → `main`). Residual en Linear/backlog: H2–H6, AC completos, `forge_key`, evidencia formal cargo/gates para el siguiente ciclo feature — ver `_agent_handoff.md` (entradas post-merge PPR 2026-11-11).
+
+## Post-merge (main)
+
+- Rama `feat/man-43-event-manager-desacople-total` eliminada tras `accept-pr`; worktree en `main`.
+- Auditorías Argos posteriores en `main` marcan `branch: NO_APTO` (rama ausente); **no** revocan el sello H1 del merge.
+- Handoff acumulado: triajes `pull-request-review` exec `b902f538…` / `d126ea5a…` (detached).

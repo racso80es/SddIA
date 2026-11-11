@@ -1,4 +1,5 @@
 ---
+
 feature_name: man-43-event-manager-desacople-total
 created: "2026-11-11"
 updated: "2026-11-11"
@@ -21,8 +22,8 @@ status: blueprint-ready
 norm_ref: features-documentation-pattern@1.3.1
 tracker_channel: ".SddIA/state/tracker-outbound/MAN-43.jsonl"
 refine_workspace: ".SddIA/workspaces/refine-item/c7976303-3b56-4175-9303-415e8b187623"
-execution_id: "3278ec5b-21ae-4fe0-af14-62a7e5ba0e07"
 seed: continue-tekton
+execution_id: "3654517b-c915-4e35-a965-3c7550a7b706"
 ---
 # Especificación técnica — man-43-event-manager-desacople-total
 
