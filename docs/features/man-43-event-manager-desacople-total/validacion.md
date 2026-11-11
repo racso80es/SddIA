@@ -101,8 +101,8 @@ authorization_status:
   emitter_agent: argos
   note: FAIL_DELIVERY_PARTIAL · global NO_APTO · R1/R2/R3 APTO · entrega Tekton blocked/parcial · sin AC verdes · sin cargo/gates · sin forge_key · PR no merge-ready
 validated_base_sha: df89c41e6878041939c133dd17bfc5c191a0d59d
-validated_head_sha: c7f987c6874f40f3208a45722051ee793fe6e6e6
-validated_tree_sha: 2da50de28c1cc8af195900dd7f8f108d20eb596e
+validated_head_sha: 119e1345f03aebaa96faa1c1c8888a5a9296145a
+validated_tree_sha: 3952bdc225a279659fea2d2dcd8db8ac832000dd
 diff_digest: sha256:76654709e52217a0880298c36c074d1dd6114ab93cb06a489edd4dedcbea55f3
 ---
 
