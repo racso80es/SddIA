@@ -120,8 +120,9 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O3 / H3** | `done` (rama) | Dominio + fractal watcher/sweep por puerto; progress leaf aún indexa dirs |
 | **O3.1** | `done` (rama; sin merge) | `sweep_fractal_family`, `list_witnesses` puerto, watcher `list_events`, DL por Nack |
 | **O4 / H4** | `done` (rama) | F-1…F-4; `actions` test helper sin `EventStore::open`; Kalma2 sin fallback `.events/` en dominio/telemetría/progress |
-| **O5 / H5** | `blocked-by-O2-O4` | store legacy, matrices, allowlists, gates |
-| **O6 / H6** | `blocked-by-O5` | README, Constitución, Cúmulo, evolution, auditorías |
+| **O5** | `done` (rama) | `scan_presented_for_branch`, `presented_ids_in_store`, `sweep_progress_leaf` sin disco |
+| **O5.1 / H5** | `ready` | `eda_port_legacy`, crate store, matrices, allowlists, gates (L-7) |
+| **O6 / H6** | `blocked-by-O5.1` | README, Constitución, Cúmulo, evolution, auditorías |
 
 ### Backlog técnico O0
 
@@ -141,6 +142,14 @@ O3.1 en `1a4c84af`. Residual de progress (`sweep_progress_leaf`) fuera de O4.
 
 ### Backlog técnico O4
 
-Cerrado en rama: ancla FS `emit_pr_presented`, fallback Kalma2 (dominio/PEC/SSE progress/telemetría cognitiva), `publish_ecst` telemetry workspace-server, DLQ puerto en fallo IOTA (`record_iota_failure_dlq`). Residual: `scan_presented_for_branch` FS en accept-pr (store primero); `sweep_progress_leaf`. Siguiente: **O5**.
+Cerrado en `c1700a47`. Residual de lectores (Presented por disco, progress leaf) = hilo **O5** en `plan.md` v1.1.7. La demolición del crate queda en **O5.1** (L-7).
+
+### Backlog técnico O5
+
+Cerrado en rama: Presented y `presented_event_id_for_branch` solo puerto; `sweep_progress_leaf` no-op sin `read_dir`. Siguiente: **O5.1**.
+
+### Backlog técnico O5.1
+
+Demolición L-7: matrices, borrar crate/`eda_port_legacy`/`runtime_db_path`, allowlists vacías, gates.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

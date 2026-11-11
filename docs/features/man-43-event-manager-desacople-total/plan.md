@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.1.6"
+version_plan: "1.1.8"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -544,7 +544,7 @@ El detalle ejecutable está en **O3 / H3**.
 
 ---
 
-## O4 / H4 — Periféricos sin fallback FS (siguiente hito)
+## O4 / H4 — Periféricos sin fallback FS
 
 Estado: **done (rama)**. O1 desbloqueó el puerto. O3.1 (`1a4c84af`) no es dependencia: estos productores no son el watcher. El residual `sweep_progress_leaf` (directorios de correlación) no entra aquí.
 
@@ -609,19 +609,76 @@ cd SddIA && cargo test -p sddia-workspace-server
 
 ---
 
-## O5 / H5 — Siguiente hito (listo para ejecutar)
+## O5 — Lectores residuales sin disco
 
-Estado: **listo para ejecutar** tras O4 en rama.
+Estado: **done (rama)**. O4 (`c1700a47`) levantó el bloqueo de escritores. **L-7** impide borrar `sddia-event-store` en este hilo: `execute-process` y `event-bus-audit` siguen dependiendo del crate, `eda_port` bajo `cfg(test)` aún desvía `StoreMode::Filesystem` a `eda_port_legacy`, y las matrices `eda_store_io_*` / `eda_subscriber_*` no están migradas. Eso es **O5.1**.
+
+### Corte
+
+Tres lectores productivos dejan de tratar `.events/` como fuente. El puerto ya responde `load_domain_ecsts` / `list_events` / `pec_terminal_for_correlation`. Un JSON homónimo en disco no cambia el resultado.
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `accept_pr.rs` `scan_presented_for_branch` | Si `presented_in_store` falla, `read_dir` de `.events/{pending,processed,dead-letter}` | El disco sigue siendo plan B de Presented |
+| `tracker_pbi_meta.rs` `presented_ids_in_store` | Tras el puerto, `consider_presented_from_dir` sobre domain/pending/processed/dead-letter | El `event_id` de reseal puede salir de un JSON huérfano |
+| `eda_sweep.rs` `sweep_progress_leaf` | `read_dir` de `.events/progress/{correlation}` y `remove_dir_all` si hay PEC terminal o TTL | El barrido decide por directorios; los frames viven en el puerto |
+
+Fuera de este hilo: borrar el crate, `eda_port_legacy`, `runtime_db_path`, ramas `writes_filesystem`, matrices, allowlists, Genoma 2.0, `SddIA/events/` y `.SddIA/events/`. `find_pec_by_correlation` en Kalma2 queda: ya no lo llama `build_status_body`; es helper de test.
+
+### Diseño cerrado
+
+1. `scan_presented_for_branch` devuelve solo `presented_in_store`. Desaparece el bucle `read_dir`.
+2. `presented_ids_in_store` recorre solo `load_domain_ecsts`. Desaparecen `consider_presented_from_dir` y las cuatro rutas `.events/`.
+3. `sweep_progress_leaf` no lista ni borra directorios. El PEC terminal ya se resuelve por puerto (`pec_terminal_for_correlation`). No hay operación de TTL de traces en el puerto: este hilo no la inventa. Residuos `.events/progress/` dejan de gobernar el sweep.
+4. Tests que plantan JSON y esperan que el lector lo vea se reescriben: publican por puerto, o afirman que el JSON solo en disco es invisible (`t_adu_ca7_*`, fixtures de `presented_event_id_for_branch`, `progress_sweep_purges_on_terminal_pec` si sigue exigiendo `remove_dir`).
+
+### Secuencia
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `engine/.../accept_pr.rs` | `scan_presented_for_branch` solo puerto; tests CA7/CA3 alineados |
+| 2 | `engine/.../tracker_pbi_meta.rs` | Sin `consider_presented_from_dir` |
+| 3 | `sddia-daemon-runtime/src/eda_sweep.rs` | `sweep_progress_leaf` sin `read_dir` |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| Presented solo en `.events/pending/*.json` | `scan_presented_for_branch` = false |
+| Mismo evento publicado por puerto | true, y `presented_event_id_for_branch` devuelve ese id |
+| Directorio `.events/progress/{cid}` con PEC terminal en puerto | El directorio no se borra por el leaf; el sweep no hace `read_dir` ahí |
+| Suite O2–O4 de accept-pr / tracker / sweep | Sigue verde tras reescribir fixtures de disco |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p execute-process scan_presented
+cd SddIA && cargo test -p execute-process presented_in_store
+cd SddIA && cargo test -p sddia-daemon-runtime sweep
+```
+
+**Commit:** `refactor(eda): lectores Presented y progress sin disco (MAN-43 O5)`.
+
+**AC:** AC-4 y AC-5 en estos tres lectores. AC-6 del leaf de progress. AC-10 no se declara.
+**Fuera:** O5.1 (L-7), Genoma, O6.
+**Bloqueo O5.1:** no borrar `sddia-event-store` mientras `eda_port` (`cfg(test)`) llame a `eda_port_legacy` ni mientras `execute-process` / `event-bus-audit` declaren la dependencia.
+
+---
+
+## O5.1 / H5 — Demolición (siguiente hilo)
+
+Estado: **listo para ejecutar** tras O5 en rama. **L-7** sigue vigente.
 
 | Paso | Alcance |
 |------|---------|
-| 1 | `scan_presented_for_branch` / `visit_presented_in_store`: solo puerto; retirar barrido `.events/*` productivo |
-| 2 | Matrices `eda_subscriber_*` / `eda_store_io_*` → mock/contract suite sin `sddia-event-store` |
-| 3 | Borrar `eda_port_legacy`, `runtime_db_path`, crate `sddia-event-store` |
-| 4 | Gates allowlists + veto reintroducción `.events/` SSOT |
-| 5 | `cargo test --workspace` + clippy como evidencia H5 |
+| 1 | Quitar ramas `writes_filesystem` / `StoreMode::Filesystem` de `eda_port.rs`; tests que fuerzan ese modo pasan al puerto |
+| 2 | Matrices `eda_store_io_*`, `eda_subscriber_*`, `event_store_writers` → contract suite / mock, sin `EventStore::open` |
+| 3 | Borrar `eda_port_legacy`, `runtime_db_path`, `path_is_resolved_redb` de consumidores, crate `sddia-event-store` |
+| 4 | Allowlist de `gate_event_manager_port` vacía de esas rutas; el gate falla si reaparecen |
+| 5 | `cargo test --workspace` + clippy |
 
-**Commit esperado:** `test(eda): demolición store legacy + gates v2 (MAN-43 O5)`.
+**Commit esperado:** `test(eda): demolición store legacy + gates v2 (MAN-43 O5.1)`.
+**AC:** AC-8 (símbolo borrado), AC-10, AC-11, AC-12.
 
 ---
 
