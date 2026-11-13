@@ -102,9 +102,8 @@ fn seed_telemetry_in_port(repo: &std::path::Path) {
     let mut ecst = telemetry_ecst();
     let _ = sddia_eda_catalog::stamp_published_event(repo, &mut ecst);
     fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
-    let db = sddia_event_manager_host::resolved_redb_path(repo).expect("redb path");
     execute_process::engine::eda_port::install_port(
-        sddia_event_manager_host::open_redb_adapter(&db).expect("redb adapter"),
+        sddia_event_manager_host::open_lab_redb_port(repo).expect("redb adapter"),
     );
     execute_process::engine::eda_port::record_ecst(repo, "domain", &ecst).expect("seed port");
 }

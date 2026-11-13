@@ -33,12 +33,12 @@ Jerarquía operativa: **Process** segmenta el objetivo en fases; cada fase asign
 | Ruta | Rol | Contenido |
 |------|-----|-----------|
 | **`SddIA/events/`** | Genoma (Core) | **Trinidad de Estímulos:** Clases ECST en `{telemetry,orchestration,domain}/`; contrato maestro [`events-contract.md`](SddIA/events/events-contract.md) e índice agregador [`index.md`](SddIA/events/index.md) en raíz. Códice por familia: [`telemetry/index.md`](SddIA/events/telemetry/index.md), [`orchestration/index.md`](SddIA/events/orchestration/index.md), [`domain/index.md`](SddIA/events/domain/index.md). |
-| **`/.events/`** | Runtime (bus local) | Instancias volátiles ECST: **bus fractal** (`eda_fractal`) y **pipeline dominio legacy V3+** (`eda_bus`) en coexistencia (D0.2). |
+| **`/.events/*` (tokens)** | Identificadores lógicos | Rutas de conveniencia en APIs y genoma; **no** son cola ni SSOT. El estado del bus vive en **`EventManagerPort`** y Redb (`.SddIA/runtime/events.redb` vía bóveda). |
 | **`.SddIA/events/`** | Instancia (proyecto) | Personalización por repositorio productivo (Vía C). **No** es cola del bus federal. |
 
 Definición operativa de **Event**: *contrato inmutable de comunicación asíncrona; señal con propósito que opera bajo coreografía pura.* Toda Clase declara `event_family`: `{ telemetry, orchestration, domain }` (enum estricto en [`events-contract.md`](SddIA/events/events-contract.md)).
 
-El runtime productivo del bus ECST es **`EventManagerPort` ^1.2.0** con persistencia Redb resuelta por `sddia-event-manager-host` desde bóveda (`SDDIA_EVENT_MANAGER_PROVIDER`, `SDDIA_EVENT_MANAGER_REDB_PATH`, `SDDIA_EVENT_MANAGER_FS_ROOT`; default histórico `.SddIA/runtime/events.redb` si no hay override). `cumulo.paths.json` no cablea la ruta del store (MAN-36). Las rutas bajo `/.events/*` son **identificadores lógicos y topología de enrutamiento**, no cola ni SSOT. Los modos `SDDIA_EVENT_STORE=filesystem|dual` y `EventStore::open` desde consumidores quedan relegados al crate `sddia-event-store` y a laboratorio `#[cfg(test)]`; el gate CI `gate-event-manager-port` lo veta en código productivo (MAN-35). La frontera DLT es `local_only` por defecto: solo `PullRequest_Merged` y `System_Immunity_Certified` anclan en IOTA.
+El runtime productivo del bus ECST es **`EventManagerPort` ^1.2.0** con identidad **`EventUri`** (`eda://{family}/{event_id}`), persistencia Redb resuelta solo en `sddia-event-manager-host` desde bóveda (`SDDIA_EVENT_MANAGER_*`; default `.SddIA/runtime/events.redb` si no hay override). `cumulo.paths.json` declara tablas lógicas (`eda_bus`, `eda_fractal`) y JSON de suscripciones; **no** cablea la ruta física del store (MAN-36). El crate `sddia-event-store` y modos `filesystem|dual` fueron **retirados** (MAN-43 O5.2); el gate `gate-event-manager-port` veta `sddia_event_store`, `EventStore::open` y símbolos de path Redb fuera del host (MAN-35). La frontera DLT es `local_only` por defecto: solo `PullRequest_Merged` y `System_Immunity_Certified` anclan en IOTA.
 
 | Agente | Tier | Descriptor |
 | :--- | :--- | :--- |
@@ -54,13 +54,13 @@ Programas de referencia: [Telemetría Reactiva EDA S+ Grade](docs/features/telem
 
 #### Trinidad de Estímulos
 
-| Familia | Naturaleza | Emisor autorizado | Destino runtime |
-|---------|------------|-------------------|-----------------|
-| `telemetry` | Ruido físico (Nivel 1) | CLI (Peaje Termodinámico) y centinelas catalogados en la Clase (`Daemon_Heartbeat`, `CI_Job_Failed`) | `./.events/telemetry/` |
-| `orchestration` | Línea de montaje táctica | CLI (éxito) / auditores | `./.events/orchestration/` |
-| `domain` | Verdad ontológica (Nivel 3) | Agentes Core (Cúmulo, Cerbero, Radamanto, …) | `./.events/domain/` |
+| Familia | Naturaleza | Emisor autorizado | Canal |
+|---------|------------|-------------------|--------|
+| `telemetry` | Ruido físico (Nivel 1) | CLI (Peaje Termodinámico) y centinelas catalogados en la Clase (`Daemon_Heartbeat`, `CI_Job_Failed`) | `eda://telemetry/{event_id}` vía puerto |
+| `orchestration` | Línea de montaje táctica | CLI (éxito) / auditores | `eda://orchestration/{event_id}` vía puerto |
+| `domain` | Verdad ontológica (Nivel 3) | Agentes Core (Cúmulo, Cerbero, Radamanto, …) | `eda://domain/{event_id}` vía puerto |
 
-> **Regla de oro:** no mezclar telemetría cruda con orquestación ni dominio en la misma ruta física.
+> **Regla de oro:** no mezclar telemetría cruda con orquestación ni dominio en la misma familia `EventUri`.
 
 #### Genoma fractal (`SddIA/events/`)
 
@@ -73,33 +73,23 @@ SddIA/events/
 └── domain/index.md
 ```
 
-Simetría fractal: la topología del genoma refleja la del runtime bajo `./.events/{family}/`.
+Simetría fractal: las **familias** del genoma (`telemetry`, `orchestration`, `domain`) se reflejan en `EventUri`, no en directorios de cola bajo disco.
 
-#### Bus fractal runtime (`eda_fractal`)
+#### Bus fractal (`eda_fractal`)
 
-SSOT: [`cumulo.paths.json`](SddIA/core/cumulo.paths.json) → `eda_fractal.*`. Directorio `/.events/` en `.gitignore`.
+SSOT de suscripciones: [`cumulo.paths.json`](SddIA/core/cumulo.paths.json) → `eda_fractal.*` (nombres de tabla + rutas a JSON de suscripción). Tokens legacy `/.events/{family}/` pueden aparecer en documentación o inputs; la materialización es el puerto.
 
-| Ruta | Propósito | Enrutador | Suscripciones |
-|------|-----------|-----------|---------------|
-| `./.events/telemetry/` | Alta frecuencia; purga post-consenso suscriptores | [`route-telemetry`](SddIA/process/route-telemetry.md) | [`event-telemetry-subscriptions.json`](SddIA/core/event-telemetry-subscriptions.json) |
-| `./.events/orchestration/` | Latencia mínima; línea de montaje | [`route-orchestration`](SddIA/process/route-orchestration.md) | [`event-orchestration-subscriptions.json`](SddIA/core/event-orchestration-subscriptions.json) |
-| `./.events/domain/` | Gobernanza; Cerbero / Cúmulo / procesos reactivos | [`route-domain`](SddIA/process/route-domain.md) | [`event-domain-subscriptions.json`](SddIA/core/event-domain-subscriptions.json) |
+| Familia | Propósito | Enrutador | Suscripciones |
+|---------|-----------|-----------|---------------|
+| `telemetry` | Alta frecuencia; purga post-consenso suscriptores | [`route-telemetry`](SddIA/process/route-telemetry.md) | [`event-telemetry-subscriptions.json`](SddIA/core/event-telemetry-subscriptions.json) |
+| `orchestration` | Latencia mínima; línea de montaje | [`route-orchestration`](SddIA/process/route-orchestration.md) | [`event-orchestration-subscriptions.json`](SddIA/core/event-orchestration-subscriptions.json) |
+| `domain` | Gobernanza; Cerbero / Cúmulo / procesos reactivos | [`route-domain`](SddIA/process/route-domain.md) | [`event-domain-subscriptions.json`](SddIA/core/event-domain-subscriptions.json) |
 
 Telemetría con **fan-out** (p. ej. `radamanto-batch` + `telemetry-compliance-audit`): cada consumidor sella `delivery_state`; la purga del testigo pertenece a `route-telemetry`. Tras consumo OK, Radamanto emite chispa domain `Domain_Entity_Telemetry_Captured` (suscriptor: `memory-evolution-ingest`).
 
-#### Pipeline dominio legacy (V3+)
+#### Pipeline dominio (estados lógicos)
 
-Coexistencia gradual (D0.2): eventos dominio legacy y flujos como `PullRequest_Presented` → `pull-request-review` siguen el pipeline monolítico sobre `eda_bus.*`:
-
-```
-.events/pending/                          ← entrada (padre inmutable hasta sweeper)
-.events/processing/
-.events/processing/subscribers/           ← testigos en vuelo
-.events/processed/
-.events/processed/subscribers/            ← testigos OK
-.events/dead-letter/
-.events/dead-letter/subscribers/          ← testigos KO (p. ej. ecst-gate)
-```
+Flujos como `PullRequest_Presented` → `pull-request-review` usan estados del puerto (`pending` → `processing` → `processed` / `dead-letter`) y entregas consultables con `list_deliveries`; no hay árbol JSON bajo `.events/` en productivo.
 
 ```mermaid
 flowchart LR
@@ -117,15 +107,10 @@ flowchart LR
 | 3 | **`route-domain-event`** | Gate ECST; fan-out; ACK/NACK/DLQ en el puerto |
 | 4 | Suscriptores | Trabajo de dominio; entregas consultables con `list_deliveries` |
 
-**Invocación manual (laboratorio):**
+**Invocación manual (laboratorio):** el input `event_file_path` es un **token lógico** (convención `.events/pending/<event_id>.json`); el orquestador resuelve el ECST vía puerto, no lee JSON en disco.
 
 ```bash
-# Wrapper canónico (resuelve binario nativo vía SSOT)
 ./sddia-run.sh --process route-domain-event \
-  --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
-
-# Binario nativo directo (tras cargo build -p execute-process)
-SddIA/target/debug/execute-process --process route-domain-event \
   --inputs '{"event_file_path":".events/pending/<event_id>.json"}'
 ```
 

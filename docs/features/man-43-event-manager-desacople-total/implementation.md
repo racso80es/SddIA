@@ -101,7 +101,8 @@ H2 entregas/testigos FS · H3 watcher/sweeper · H4 periféricos F-1..F-4 / AC-8
 ## Notas honestas
 
 - Espejo FS en `emit_pr_presented` eliminado (O4).
-- `runtime_db_path` / `EventStore::open` persisten en tests `src/` y matrices; crate → **O5.2**.
+- Crate `sddia-event-store` demolido en `877c1791` (O5.2). O6 documental en rama; **AC-13 abierto** (`NO_APTO_TOTAL` en `docs/audits/man-43-o6-remediation-20261113.md`).
+- Genoma `SddIA/process/` (event-bus-audit, route-domain-event) y codex library: citas legacy FS — solo inventario; refinar vía `entity-manager`.
 - No se declara AC-1…AC-19 verdes sin evidencia de tests/gates.
 
 ---
@@ -123,7 +124,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O5** | `done` (rama) | `scan_presented_for_branch`, `presented_ids_in_store`, `sweep_progress_leaf` sin disco |
 | **O5.1** | `done` (rama) | `eda_port` solo `EventManagerPort`; borrado `eda_port_legacy`; `test_lab` ampliado; ~44 unitarios migrados de lectura `.events/` |
 | **O5.2 / H5** | `done` (rama) | Crate `sddia-event-store` demolido; matrices/harness puerto; gates v2; `runtime_db_path` retirado de `eda_port` |
-| **O6 / H6** | `ready` | README, Constitución, Cúmulo, evolution, auditorías |
+| **O6 / H6** | `done (rama)` | README/Constitución convergentes; evolution `c4e8f2a1-…`; audit O6; AC-13 abierto |
 
 ### Backlog técnico O0
 
@@ -159,6 +160,6 @@ Cerrado en rama: `tests/common` + matrices pending/fractal + `event_store_writer
 
 ### Backlog técnico O6
 
-Siguiente hilo: convergencia README/Constitución/Cúmulo y auditoría `APTO_TOTAL` (`plan.md` v1.2.1 § H6).
+Cerrado en rama: README + `CONSTITUTION_CORE.md` sin `sddia-event-store`; Cúmulo sin cambio; evolution `c4e8f2a1-9b3d-4e7c-a5f6-2d3e8b9c0a1f`; re-audit `man-43-o6-remediation-20261113.md` (`NO_APTO_TOTAL`, AC-13 abierto). Residual: genomo process, F-02 contractual, defaults audit tool.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

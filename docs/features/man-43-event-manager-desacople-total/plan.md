@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.1"
+version_plan: "1.2.2"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -807,9 +807,70 @@ cd SddIA && cargo clippy --workspace -- -D warnings
 
 ---
 
-## O6 / H6 — Convergencia documental (después de O5.2)
+## O6 / H6 — Convergencia documental (siguiente hilo)
 
-Estado: **ready**. O5.2 cierra AC-10/11/12 en rama. Índice en § H6 más abajo.
+Estado: **done (rama)**. Narrativa README/Constitución + evolution + re-auditoría `docs/audits/man-43-o6-remediation-20261113.md`. AC-14 parcial; AC-13 sigue abierto (`NO_APTO_TOTAL`). Índice en § H6.
+
+### Corte
+
+Alinear la narrativa constitucional y el registro de evolución con el runtime ya cortado: `EventUri` + `EventManagerPort` ^1.2.0, persistencia solo vía host/bóveda. `APTO_TOTAL` (AC-13) se escribe **solo** si un re-audit cita evidencia de rama; si queda código productivo que trata `/.events/` como cola, el veredicto sigue `NO_APTO_TOTAL` y se abre deuda, no se maquilla.
+
+### Inventario vivo (pre-hilo)
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `README.md` raíz | Tabla `/.events/` como runtime; modos `SDDIA_EVENT_STORE` y crate `sddia-event-store` | AC-14: crate demolido en `877c1791` |
+| `SddIA/CONSTITUTION_CORE.md` | Aún cita `sddia-event-store` y `filesystem\|dual` como lab | Misma frase obsoleta |
+| `SddIA/core/cumulo.paths.json` | `eda_bus` / `eda_fractal` = **nombres de tabla** + JSON de suscripciones; sin cola `.events/` | No borrar claves: el motor y `event-bus-audit` las leen |
+| `event-bus-audit` | Defaults `.events/pending` si falta clave | Residuo de lectura; **fuera** de este hilo salvo que el re-audit lo marque bloqueante de AC-4/AC-13 |
+| `SddIA/process/`, `SddIA/events/` | Genoma | Inventario; mutación solo `entity-manager` |
+| `docs/audits/man-32-lineage-man-43-remediation-20261111.md` | `NO_APTO_TOTAL` histórico | Re-audit nuevo; no reescribir el laudo de 20261111 |
+| `validacion.md` del feature | `APTO` = milestone H1 | No promoverlo a feature completo |
+| `SddIA/evolution/` | Sin registro del cutover 2.0.0 de este ciclo | AC-14; contrato `evolution_contract` 1.1.2 (`hash_integrity` real) |
+
+### Diseño cerrado
+
+1. **Narrativa (fuera de genoma):** `README.md` y `CONSTITUTION_CORE.md`. Familia = `EventUri`; cola/estado = puerto; `/.events/*` solo como token lógico histórico, no SSOT. Quitar `sddia-event-store` y `StoreMode` filesystem/dual.
+2. **Cúmulo:** diff de lectura. Si `eda_bus`/`eda_fractal` siguen siendo IDs de tabla, **no** se toca el JSON. Un path de cola que reaparezca se documenta como deuda, no se borra en caliente.
+3. **Genoma:** grep de `sddia-event-store` y de `/.events/` como directorio de cola en `SddIA/process/` y `SddIA/events/`. Lista en `implementation.md`. Cero `Write` sobre esas rutas.
+4. **Evolution:** un `{uuid}.md` nuevo (`tipo_operacion: modificacion`, `relacionado` = MAN-43 / `877c1791` / feature) + línea en `Evolution_log.md` según `evolution_contract` 1.1.2. `hash_integrity` calculado, no placeholder.
+5. **Auditoría:** informe nuevo bajo `docs/audits/` (fecha del hilo) que relee F-1…F-6 / R1…R3 contra el árbol de `877c1791`. Veredicto `APTO_TOTAL` solo con comandos y salidas citados. Si `event-bus-audit` u otro productivo sigue materializando cola FS, veredicto `NO_APTO_TOTAL` + ítem residual (no es O7 de código en este commit).
+6. **Feature docs:** `implementation.md` (O6 done o blocked), `execution.md` si el patrón lo exige, `plan.md` estado. `validacion.md` del H1 intacto.
+
+### Secuencia
+
+| Paso | Alcance |
+|------|---------|
+| 1 | Inventario README, Constitución, Cúmulo, genoma, audit 20261111 |
+| 2 | Parche narrativo README + Constitución |
+| 3 | Evolution (UUID + log + hash) |
+| 4 | Re-audit con evidencia; veredicto explícito |
+| 5 | Cierre `implementation.md` / estado O6 |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| README o Constitución mencionan `sddia-event-store` como crate vivo | Ausente |
+| `cumulo.paths.json` pierde `subscriptions` o nombres de tabla que el runtime lee | Diff vacío en esas claves |
+| Mutación manual de `SddIA/process/` o `SddIA/events/` | Cero |
+| `APTO_TOTAL` sin citas de tests/gates | Prohibido |
+| `validacion.md` H1 reescrito a feature completo | Prohibido |
+| `hash_integrity` placeholder | Prohibido (`evolution_contract` §2) |
+
+### Verificación
+
+```bash
+rg -n "sddia-event-store|SDDIA_EVENT_STORE" README.md SddIA/CONSTITUTION_CORE.md
+rg -n "\"pending\":\\s*\"\\./\\.events" SddIA/core/cumulo.paths.json
+# evolution: frontmatter conforme a SddIA/evolution/evolution_contract.md
+```
+
+**Commit:** `docs(eda): convergencia EventManager v2 (MAN-43 O6)`.
+
+**AC:** AC-14 siempre que evolution + narrativa cierren. AC-13 solo si el re-audit es `APTO_TOTAL` con evidencia. Si no, AC-13 queda abierto y el commit lo dice.
+**Fuera:** código de `event-bus-audit`, genoma, `validacion.md` H1, borrado de `SddIA/events/` / `.SddIA/events/`.
+**Bloqueo:** no declarar feature Done ni mergear solo con docs si AC-13 sigue `NO_APTO_TOTAL`.
 
 ---
 
