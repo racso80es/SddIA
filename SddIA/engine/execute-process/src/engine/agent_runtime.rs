@@ -315,7 +315,7 @@ fn agent_names(delegates: &[Value]) -> Vec<String> {
 }
 
 fn is_deterministic_agent(name: &str) -> bool {
-    DETERMINISTIC_AGENTS.iter().any(|d| *d == name)
+    DETERMINISTIC_AGENTS.contains(&name)
 }
 
 fn is_none_tier(tier: &str) -> bool {
@@ -888,8 +888,7 @@ pub fn invoke_agent_phase(
     let line = stdout
         .lines()
         .map(str::trim)
-        .filter(|l| !l.is_empty())
-        .last()
+        .rfind(|l| !l.is_empty())
         .unwrap_or("");
 
     if line.is_empty() {

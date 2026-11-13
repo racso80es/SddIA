@@ -98,7 +98,6 @@ fn main() {
     match (has_text, has_cb) {
         (true, true) | (false, false) => {
             emit_error("text y callback_data son XOR", 1);
-            return;
         }
         (false, true) => match transmute_callback(&req) {
             Ok(ev) => {

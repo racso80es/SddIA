@@ -214,7 +214,7 @@ pub fn move_fractal_event_to_dead_letter(repo: &Path, event_path: &Path) -> bool
     }
     #[cfg(not(test))]
     {
-        return false;
+        false
     }
     #[cfg(test)]
     {

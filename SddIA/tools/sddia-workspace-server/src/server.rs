@@ -55,8 +55,8 @@ impl WorkspaceServer {
                 continue;
             }
             let response = self.handle_message(&msg)?;
-            if response.is_some() {
-                let out = serde_json::to_string(&response.unwrap()).map_err(|e| e.to_string())?;
+            if let Some(response) = response {
+                let out = serde_json::to_string(&response).map_err(|e| e.to_string())?;
                 writeln!(stdout, "{out}").map_err(|e| e.to_string())?;
                 stdout.flush().map_err(|e| e.to_string())?;
             }

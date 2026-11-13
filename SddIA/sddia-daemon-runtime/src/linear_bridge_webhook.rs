@@ -99,7 +99,7 @@ pub fn process_signed_webhook(
             &proj.slug,
             &proj.label_hu,
             &proj.label_pbi,
-            &[item.clone()],
+            std::slice::from_ref(&item),
             now,
             "webhook",
         )

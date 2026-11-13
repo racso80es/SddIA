@@ -387,7 +387,7 @@ fn accept_execute(
             bridge_live.as_deref(),
             orchestrator.as_deref(),
         )
-        .map_err(|e| AcceptSyncError::Orchestrator(e))?;
+        .map_err(AcceptSyncError::Orchestrator)?;
         if parity.get("ok").and_then(|v| v.as_bool()) != Some(true) {
             let stale: Vec<String> = parity
                 .get("stale")
@@ -845,6 +845,7 @@ fn find_domain_event_with_proofs(
     None
 }
 
+#[cfg(test)]
 fn find_pec_by_correlation(orch_dir: &Path, correlation_id: &str) -> Option<serde_json::Value> {
     let Ok(entries) = std::fs::read_dir(orch_dir) else {
         return None;
@@ -1194,7 +1195,7 @@ fn load_progress_path(repo: &Path) -> PathBuf {
         .unwrap_or(default)
 }
 
-fn query_param<'a>(url: &'a str, key: &str) -> Option<String> {
+fn query_param(url: &str, key: &str) -> Option<String> {
     url.split('?')
         .nth(1)?
         .split('&')
@@ -1207,6 +1208,7 @@ fn query_param<'a>(url: &'a str, key: &str) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
+#[cfg(test)]
 fn list_trace_files(corr_dir: &Path) -> Vec<PathBuf> {
     let Ok(entries) = std::fs::read_dir(corr_dir) else {
         return vec![];
@@ -1216,10 +1218,11 @@ fn list_trace_files(corr_dir: &Path) -> Vec<PathBuf> {
         .map(|e| e.path())
         .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
         .collect();
-    paths.sort_by(|a, b| trace_sort_key(a).cmp(&trace_sort_key(b)));
+    paths.sort_by_key(|p| trace_sort_key(p));
     paths
 }
 
+#[cfg(test)]
 fn trace_sort_key(path: &Path) -> String {
     read_json_file(path)
         .and_then(|v| v.get("timestamp").and_then(|t| t.as_str()).map(str::to_string))
@@ -1244,7 +1247,7 @@ fn pad_sse_chunk_flush(pending: &mut Vec<u8>) {
     if pending.is_empty() {
         return;
     }
-    if pending.len() >= TINY_HTTP_CHUNK + 1 && pending.len() % TINY_HTTP_CHUNK == 1 {
+    if pending.len() > TINY_HTTP_CHUNK && pending.len() % TINY_HTTP_CHUNK == 1 {
         return;
     }
     let chunks = pending.len().div_ceil(TINY_HTTP_CHUNK);
@@ -1255,7 +1258,7 @@ fn pad_sse_chunk_flush(pending: &mut Vec<u8>) {
     let need = target - pending.len();
     pending.push(b':');
     if need > 2 {
-        pending.extend(std::iter::repeat(b' ').take(need - 2));
+        pending.extend(std::iter::repeat_n(b' ', need - 2));
     }
     if need >= 2 {
         pending.push(b'\n');
@@ -1263,6 +1266,7 @@ fn pad_sse_chunk_flush(pending: &mut Vec<u8>) {
 }
 
 enum ProgressOrigin {
+    #[cfg(test)]
     Dir(PathBuf),
     Store { repo: PathBuf, correlation_id: String },
 }
@@ -1277,6 +1281,7 @@ struct ProgressStreamReader {
 }
 
 impl ProgressStreamReader {
+    #[cfg(test)]
     fn from_dir(corr_dir: PathBuf) -> Self {
         Self::new(ProgressOrigin::Dir(corr_dir))
     }
@@ -1320,6 +1325,7 @@ impl ProgressStreamReader {
 
     fn collect_new_frames(&mut self) {
         match &self.origin {
+            #[cfg(test)]
             ProgressOrigin::Dir(corr_dir) => {
                 let corr_dir = corr_dir.clone();
                 for path in list_trace_files(&corr_dir) {
@@ -2593,7 +2599,7 @@ fn list_cognitive_events(repo: &Path, limit: usize) -> Vec<serde_json::Value> {
                     .get("timestamp")
                     .and_then(|v| v.as_str())
                     .map(str::to_string)
-                    .unwrap_or_else(|| chrono_like_now());
+                    .unwrap_or_else(chrono_like_now);
                 let projected = serde_json::json!({
                     "event_type": "Cognitive_Stream_Receipt",
                     "timestamp": ts,
@@ -3130,7 +3136,7 @@ mod tests {
         let mut buf = vec![0u8; 64 * 1024];
         let n = reader.read(&mut buf).unwrap();
         assert!(started.elapsed() < Duration::from_secs(1), "replay tardó {:?}", started.elapsed());
-        assert!(n >= TINY_HTTP_CHUNK + 1, "n={n}");
+        assert!(n > TINY_HTTP_CHUNK, "n={n}");
         assert_eq!(n % TINY_HTTP_CHUNK, 1, "n={n}");
         let text = std::str::from_utf8(&buf[..n]).unwrap();
         assert!(text.contains("fase-init"), "{text}");

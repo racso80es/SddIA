@@ -104,14 +104,8 @@ fn main() {
     let allow = allowlist();
     let exe_name = Path::new(executable).file_name().and_then(|n| n.to_str()).unwrap_or("").to_lowercase();
 
-    if Path::new(executable).is_absolute() {
-        if !allow.contains(&exe_name) && !allow.contains(&executable.to_lowercase()) {
-            fail("executable is not allowlisted");
-        }
-    } else {
-        if !allow.contains(&exe_name) && !allow.contains(&executable.to_lowercase()) {
-            fail("executable is not allowlisted");
-        }
+    if !allow.contains(&exe_name) && !allow.contains(&executable.to_lowercase()) {
+        fail("executable is not allowlisted");
     }
 
     let wd = resolve_working_dir(working_directory);

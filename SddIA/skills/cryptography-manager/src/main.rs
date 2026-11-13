@@ -54,11 +54,9 @@ fn main() {
         return;
     }
 
-    if op != "GENERATE_UUID" {
-        if tt.is_none() || !valid_types.contains(&tt.unwrap()) {
-            emit_error(&format!("target_type must be one of {:?}", valid_types), 1);
-            return;
-        }
+    if op != "GENERATE_UUID" && (tt.is_none() || !valid_types.contains(&tt.unwrap())) {
+        emit_error(&format!("target_type must be one of {:?}", valid_types), 1);
+        return;
     }
 
     if op == "GENERATE_UUID" {

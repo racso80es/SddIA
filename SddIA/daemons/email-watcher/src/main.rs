@@ -306,7 +306,7 @@ fn save_last_uid(repo: &Path, mailbox: &str, last_uid: u32, identity: &str) -> R
     save_state(repo, mailbox, last_uid, identity)
 }
 
-fn header_value<'a>(headers: &'a str, name: &str) -> Option<String> {
+fn header_value(headers: &str, name: &str) -> Option<String> {
     let needle = format!("{name}:");
     let mut val = String::new();
     let mut capturing = false;
@@ -582,7 +582,7 @@ fn poll_once(
     let mailbox_max_uid = session
         .uid_search("ALL")
         .ok()
-        .and_then(|uids| uids.into_iter().max().map(|u| u as u32));
+        .and_then(|uids| uids.into_iter().max());
     let (last, reset_reason) = resolve_watermark(
         state.last_uid,
         state.imap_identity_sha256.as_deref(),

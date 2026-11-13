@@ -436,7 +436,7 @@ impl EventManagerPort for InMemoryEventManagerMock {
         g.dlt_seals
             .get(&req.event_id)
             .cloned()
-            .ok_or_else(|| EventManagerError::NotFound(req.event_id))
+            .ok_or(EventManagerError::NotFound(req.event_id))
     }
 }
 

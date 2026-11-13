@@ -436,7 +436,7 @@ fn filesystem_delete(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
     });
     std::fs::remove_file(&artifact).map_err(|e| e.to_string())?;
     if class == "daemon" {
-        let index = repo.join(&rel_dir).join("index.md");
+        let index = repo.join(rel_dir).join("index.md");
         crate::forges::common::remove_catalog_row(&index, &name)?;
         crate::forges::common::sync_daemons_index_census(&index)?;
     }

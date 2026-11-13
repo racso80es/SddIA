@@ -287,10 +287,10 @@ fn update_state(repo: &Path, req: &Value) -> Result<Value, String> {
         .unwrap_or("pending");
     let path = find_by_ref(&layout, issue_ref).ok_or_else(|| format!("no está en el bucket: {issue_ref}"))?;
     let text = fs::read_to_string(&path).map_err(|e| e.to_string())?;
-    let updated = if text.starts_with("---") {
-        if let Some(end) = text[3..].find("\n---") {
-            let head = &text[3..3 + end];
-            let rest = &text[3 + end + 4..];
+    let updated = if let Some(body) = text.strip_prefix("---") {
+        if let Some(end) = body.find("\n---") {
+            let head = &body[..end];
+            let rest = &body[end + 4..];
             if head.contains("status:") {
                 let mut lines = String::new();
                 for line in head.lines() {

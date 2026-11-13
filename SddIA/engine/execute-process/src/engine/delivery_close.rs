@@ -133,12 +133,12 @@ pub(crate) fn mark_fail_soft_if_secondary(entry: &mut Value, phase_name: &str, s
         .filter(|s| !s.is_empty())
         .is_some();
     let pushed = state.get("delivery_push").is_some();
-    if (has_pr || pushed) && is_dcc_secondary_phase(phase_name) {
-        if entry.get("status").and_then(|v| v.as_str()) == Some("failed")
-            || entry.get("status").and_then(|v| v.as_str()) == Some("blocked")
-        {
-            entry["fail_soft"] = json!(true);
-        }
+    if (has_pr || pushed)
+        && is_dcc_secondary_phase(phase_name)
+        && (entry.get("status").and_then(|v| v.as_str()) == Some("failed")
+            || entry.get("status").and_then(|v| v.as_str()) == Some("blocked"))
+    {
+        entry["fail_soft"] = json!(true);
     }
 }
 

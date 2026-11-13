@@ -128,6 +128,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O7** | `done (rama)` | `event-bus-audit` sin default `/.events/`; AC-13 abierto |
 | **O8** | `done (rama)` | Bindings 2.0.0; procesos forjados; F-02 schema abierto |
 | **O8.1** | `done (rama)` | `route-domain-event` v1.0.2 sin `fs.persist` en fases; schema v1 fuera |
+| **O9** | `done (rama)` | Gate `rustc` verde; clippy residual acotado a `execute-process` (excluido por norma); C-2 latente |
 
 ### Backlog técnico O0
 
@@ -176,5 +177,9 @@ Cerrado en rama: `capability-bindings` v1.10.0 / contrato `2.0.0`; README/Consti
 ### Backlog técnico O8.1
 
 Cerrado en rama: `entity-manager` reescribió `phases` e `inputs` de `route-domain-event` a v1.0.2 (token de puerto, sin `fs.persist`). `context` restaurado (`event-routing`, `ecosystem-evolution`). `outputs` de cabecera y `eda.event_manager.v1.schema.json` siguen fuera. AC-13 abierto.
+
+### Backlog técnico O9
+
+Cerrado en rama. **Hallazgo normativo:** `rust-warning-gate` §1 excluye Clippy; la CI usa `RUSTFLAGS=-Dwarnings` sin clippy, así que AC-12 se mide con `cargo check/build`. Partiendo de un workspace **inmedible** (`sddia-io` fallaba), se corrigieron 33 ficheros de lint mecánico. `cargo check --workspace` verde; `execute-process --lib` 816/816. Residual clippy (~85) acotado a `execute-process` y de tipo estructural (`too_many_arguments`, `needless_return` en `match`, `type_complexity`). Fallos preexistentes confirmados con `git stash`: `linear_bridge_webhook::ac13_*` y `ecosystem_health_map_absent_still_ok`. C-2 (`eda.event_manager.schema.json` inalcanzable) sigue latente: ningún proceso declara `requires_capability` de ese contrato. AC-13 abierto.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

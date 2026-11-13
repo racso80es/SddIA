@@ -144,7 +144,7 @@ fn generate_content_payload(
 
 fn timeout_secs_from(req: &Value) -> u64 {
     if let Some(ms) = req.get("timeout_ms").and_then(|v| v.as_u64()) {
-        return (ms / 1000).max(1).min(MAX_TIMEOUT_SECS);
+        return (ms / 1000).clamp(1, MAX_TIMEOUT_SECS);
     }
     timeout_secs()
 }
@@ -267,6 +267,7 @@ fn mock_result(prompt: &str, model: &str) -> Value {
     })
 }
 
+#[allow(clippy::too_many_arguments)] // composición HTTP explícita: url, auth, prompt y parámetros de generación
 fn post_generate(
     url: &str,
     api_key: Option<&str>,

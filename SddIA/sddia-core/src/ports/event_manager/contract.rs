@@ -46,7 +46,7 @@ impl EventFamily {
                     "'{raw}' es estado de cola, no familia URI (L-1)"
                 ))
             }
-            other if other.is_empty() => Err("event_family vacío".into()),
+            "" => Err("event_family vacío".into()),
             other => Err(format!("event_family inválida: {other}")),
         }
     }
@@ -60,7 +60,7 @@ impl EventFamily {
             }
             "telemetry" => Ok(Self::Telemetry),
             "orchestration" | "progress" => Ok(Self::Orchestration),
-            other if other.is_empty() => Err("publish family token vacío".into()),
+            "" => Err("publish family token vacío".into()),
             other => Err(format!("publish family token desconocido: {other}")),
         }
     }

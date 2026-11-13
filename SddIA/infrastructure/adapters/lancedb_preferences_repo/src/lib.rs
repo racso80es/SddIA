@@ -285,7 +285,7 @@ fn batches_to_prefs(batches: &[RecordBatch]) -> Result<Vec<UserPreference>, Memo
             let floats = values.as_primitive::<Float32Type>();
             let vec: Vec<f32> = (0..floats.len()).map(|j| floats.value(j)).collect();
             let value_json: Value =
-                serde_json::from_str(value.value(i)).unwrap_or_else(|_| Value::Null);
+                serde_json::from_str(value.value(i)).unwrap_or(Value::Null);
             let provenance_json: Value =
                 serde_json::from_str(provenance.value(i)).unwrap_or_else(|_| serde_json::json!({}));
             out.push(UserPreference {

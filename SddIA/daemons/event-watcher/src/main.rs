@@ -57,7 +57,7 @@ fn log_claim_tick(store_label: &str, stats: ClaimTickStats) {
         stats.open_failed,
     );
     let tick = CLAIM_TICK_COUNTER.fetch_add(1, Ordering::Relaxed) + 1;
-    if tick % CLAIM_METRICS_EVERY_N_TICKS == 0 {
+    if tick.is_multiple_of(CLAIM_METRICS_EVERY_N_TICKS) {
         println!(
             "[WATCHER] claim_metrics cumulative routes_claimed={} routes_ok={} routes_fail={}",
             METRIC_ROUTES_CLAIMED.load(Ordering::Relaxed),
@@ -142,10 +142,13 @@ fn execute_process_bin(repo: &Path) -> PathBuf {
 }
 
 fn fractal_watch_enabled() -> bool {
-    match env::var("SDDIA_LAB_WATCH_FRACTAL").unwrap_or_else(|_| "0".into()) {
-        ref s if matches!(s.to_ascii_lowercase().as_str(), "0" | "false" | "no") => false,
-        _ => true,
-    }
+    !matches!(
+        env::var("SDDIA_LAB_WATCH_FRACTAL")
+            .unwrap_or_else(|_| "0".into())
+            .to_ascii_lowercase()
+            .as_str(),
+        "0" | "false" | "no"
+    )
 }
 
 fn watch_targets(repo: &Path, top: &sddia_daemon_runtime::BusTopology) -> Vec<(PathBuf, String)> {

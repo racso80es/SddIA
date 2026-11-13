@@ -21,8 +21,8 @@ fn get_repo_root() -> Result<PathBuf, String> {
 
 fn split_cells(line: &str) -> Vec<String> {
     let line = line.trim();
-    let line = if line.starts_with('|') { &line[1..] } else { line };
-    let line = if line.ends_with('|') { &line[..line.len()-1] } else { line };
+    let line = line.strip_prefix('|').unwrap_or(line);
+    let line = line.strip_suffix('|').unwrap_or(line);
     line.split('|').map(|s| s.trim().to_string()).collect()
 }
 

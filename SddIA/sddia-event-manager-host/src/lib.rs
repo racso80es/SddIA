@@ -149,7 +149,7 @@ fn process_name_for_telemetry() -> String {
     std::env::var("SDDIA_PROCESS_NAME")
         .ok()
         .filter(|s| !s.trim().is_empty())
-        .or_else(|| std::env::args().nth(0))
+        .or_else(|| std::env::args().next())
         .unwrap_or_else(|| "unknown".into())
 }
 

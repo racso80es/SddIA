@@ -1200,6 +1200,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[allow(unused_imports)] // usado solo en algunos targets de test (Read en stubs HTTP)
     use std::io::Read;
     use std::sync::{Arc, Mutex};
     use std::thread;
@@ -1280,7 +1281,7 @@ mod tests {
         };
         let port = listen.port();
         thread::spawn(move || {
-            if let Some(mut req) = server.recv().ok() {
+            if let Ok(mut req) = server.recv() {
                 let mut body = String::new();
                 let _ = req.as_reader().read_to_string(&mut body);
                 *cap2.lock().unwrap() = body;

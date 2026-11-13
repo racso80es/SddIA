@@ -151,7 +151,7 @@ fn dispatch_mode_label() -> &'static str {
 }
 
 pub fn input_truthy(inputs: &Value, key: &str) -> bool {
-    inputs.get(key).map_or(false, |v| {
+    inputs.get(key).is_some_and(|v| {
         v.as_bool().unwrap_or_else(|| {
             v.as_str()
                 .map(|s| matches!(s.trim().to_lowercase().as_str(), "1" | "true" | "yes"))
@@ -882,7 +882,7 @@ fn resolve_reanchor_event_path(
         if stored.is_file() {
             return None;
         }
-        return Some(stored);
+        Some(stored)
     }
     #[cfg(test)]
     {
@@ -1764,10 +1764,9 @@ pub(crate) fn dispatch_subscriber(
         .and_then(|v| v.as_str())
         .map(|et| et.starts_with("Domain_Entity_"))
         == Some(true)
+        && !subscriber_applies_to_topology(subscriber, &origin_topology)
     {
-        if !subscriber_applies_to_topology(subscriber, &origin_topology) {
-            return (sid, "skipped-topology".into(), None, 0);
-        }
+        return (sid, "skipped-topology".into(), None, 0);
     }
 
     let agent_name = agent.unwrap();

@@ -34,7 +34,7 @@ fn delivery_stamp_terminal(status: &str) -> bool {
 }
 
 #[cfg(test)]
-fn fractal_delivery_state<'a>(body: &'a Value) -> Option<&'a serde_json::Map<String, Value>> {
+fn fractal_delivery_state(body: &Value) -> Option<&serde_json::Map<String, Value>> {
     body.get("delivery_state").and_then(|v| v.as_object())
 }
 
@@ -468,12 +468,12 @@ pub fn list_witnesses(repo: &Path, _bus: &EdBusPaths, state_key: &str, event_uui
         else {
             continue;
         };
-        let include = match (folder_key, row.status) {
-            ("processing_subscribers", DeliveryStatus::Processing) => true,
-            ("dead_letter_subscribers", DeliveryStatus::Nack) => true,
-            ("processed_subscribers", DeliveryStatus::Ack) => true,
-            _ => false,
-        };
+        let include = matches!(
+            (folder_key, row.status),
+            ("processing_subscribers", DeliveryStatus::Processing)
+                | ("dead_letter_subscribers", DeliveryStatus::Nack)
+                | ("processed_subscribers", DeliveryStatus::Ack)
+        );
         if include {
             paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
         }

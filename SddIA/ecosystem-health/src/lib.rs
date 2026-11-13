@@ -238,7 +238,7 @@ fn load_map_snapshot(repo: &Path, cfg: &Value) -> (Value, String) {
 fn load_heartbeat_state(repo: &Path, cfg: &Value) -> Value {
     read_json_file(&heartbeat_audit_path(repo, cfg))
         .map(|mut body| {
-            if !body.get("daemons").and_then(|v| v.as_object()).is_some() {
+            if body.get("daemons").and_then(|v| v.as_object()).is_none() {
                 body["daemons"] = json!({});
             }
             body
@@ -253,10 +253,10 @@ fn load_stats(repo: &Path, cfg: &Value) -> Value {
 fn load_revoked(repo: &Path, cfg: &Value) -> Value {
     read_json_file(&revoked_path(repo, cfg))
         .map(|mut data| {
-            if !data.get("revoked").and_then(|v| v.as_object()).is_some() {
+            if data.get("revoked").and_then(|v| v.as_object()).is_none() {
                 data["revoked"] = json!({});
             }
-            if !data.get("permanent").and_then(|v| v.as_object()).is_some() {
+            if data.get("permanent").and_then(|v| v.as_object()).is_none() {
                 data["permanent"] = json!({});
             }
             data
@@ -425,6 +425,7 @@ fn color_skill_tool(
     ("gray".into(), "no_executions".into(), thermo, false)
 }
 
+#[allow(clippy::too_many_arguments)] // fila de informe: columnas explícitas del contrato de salud
 fn make_row(
     family: &str,
     id: &str,
@@ -688,12 +689,8 @@ pub fn fuse_ecosystem_health(repo: &Path, opts: FuseOptions) -> Result<Value, St
     });
     let parity_ok = parity.get("ok").and_then(|v| v.as_bool()) == Some(true);
     response["runtime_binary_parity"] = parity.clone();
-    if !parity_ok {
-        if response.get("map_status").and_then(|v| v.as_str()) == Some("ok") {
-            response["map_status"] = json!("DEGRADED");
-        } else if map_status != "error" {
-            response["map_status"] = json!("DEGRADED");
-        }
+    if !parity_ok && map_status != "error" {
+        response["map_status"] = json!("DEGRADED");
     }
 
     if opts.persist {

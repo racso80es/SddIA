@@ -423,6 +423,7 @@ fn validate_ecst_event(
     }
 }
 
+#[allow(clippy::too_many_arguments)] // barrido por estado: repo, dir, bucket y acumuladores del censo
 fn scan_event_dir(
     repo: &Path,
     dir: &Path,
@@ -986,10 +987,20 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
             path: "(event-manager-port)".into(),
             detail: "Event Manager productivo no disponible; escaneo FS deshabilitado (MAN-40)".into(),
         });
-        return Ok((state, paths));
+        Ok((state, paths))
     }
     #[cfg(test)]
     {
+        run_audit_fs_scan(repo, paths, stale_threshold_hours)
+    }
+}
+
+#[cfg(test)]
+fn run_audit_fs_scan(
+    repo: &Path,
+    paths: BusPaths,
+    stale_threshold_hours: i64,
+) -> Result<(ScanState, BusPaths), String> {
     let known_types = load_known_event_types(repo);
     let mut state = ScanState::default();
     let mut stale_pending = Vec::new();
@@ -1088,7 +1099,6 @@ fn run_audit(repo: &Path, stale_threshold_hours: i64) -> Result<(ScanState, BusP
 
     state.stale_pending = stale_pending;
     Ok((state, paths))
-    }
 }
 
 fn write_pending_kaizen(
@@ -1705,7 +1715,7 @@ mod tests {
         );
         assert!(!dir.join(".events").exists());
         assert!(
-            state.counts.get("pending").is_some()
+            state.counts.contains_key("pending")
                 || state.anomalies.is_empty()
                 || state
                     .anomalies
@@ -1818,7 +1828,7 @@ mod tests {
             ),
         ];
         let mut state = ScanState::default();
-        audit_domain_delivery_signals(&dir, &[row.clone()], &deliveries, &mut state);
+        audit_domain_delivery_signals(&dir, std::slice::from_ref(&row), &deliveries, &mut state);
         let efecto: Vec<_> = state
             .anomalies
             .iter()

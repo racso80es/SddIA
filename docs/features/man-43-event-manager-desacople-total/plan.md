@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.5"
+version_plan: "1.2.6"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1058,6 +1058,83 @@ rg -n "fs.persist|JSON padre" SddIA/process/route-domain-event.md
 
 ---
 
+## O9 — Calidad: clippy verde y suite de workspace (siguiente hilo)
+
+Estado: **done (rama)**. Gate canónico `rustc -Dwarnings` verde; clippy con residual documentado. AC-12 parcial (clippy no es gate en `rust-warning-gate` §1).
+
+### Corte (original)
+
+`cargo clippy --workspace --all-targets -D warnings` compila y no emite hallazgos. Hoy **ni siquiera llega a medir**: `sddia-io` falla y arrastra a todo el workspace. Además, el contrato `eda.event_manager` es **inalcanzable por nombre** en el resolvedor de DI. O9 arregla lo primero (código, no genoma) y **diagnostica** lo segundo sin tocar genoma.
+
+### Resultado de la implementación (2026-11-13)
+
+**Hallazgo normativo que reencuadra el hilo:** `SddIA/norms/rust-warning-gate.md` §1 excluye explícitamente los avisos de Clippy del gate (§2 solo exige `rustc` sin warnings). La CI (`.github/workflows/sddia-index-qa.yml`) fija `RUSTFLAGS=-Dwarnings` y **no ejecuta clippy**. Por tanto AC-12 se cumple con `cargo check --workspace` / `cargo build`, no con clippy.
+
+**Corregido (33 ficheros, cambios mecánicos de lint):** `sddia-io` (`question_mark`, desbloquea la medición del workspace), `sddia-core` (`redundant_guards`, `unnecessary_lazy_evaluations`, `assertions_on_constants`), `sddia-event-manager-host` (`iter_nth_zero`), `sddia-daemon-runtime` (`match_like_matches_macro`, `cloned_ref_to_slice_refs`, lifetimes), `sddia-core-memory`, `user-preference-core`, `file-tracker-adapter`, `repo-retention-purger`, `event-bus-audit`, `sddia-workspace-server`, `event-watcher`, `linear-bridge-watcher`, `email-watcher`, `gemini-http-infer`, `telegram-gateway`, `manage-event-receipt`, `io-choke`, `markdown-table-editor`, `iota-publish-relay`, `llm-router`, `shell-executor`, `cryptography-manager`, `lancedb_preferences_repo`, `kalma2-bridge` y 8 ficheros de `execute-process`.
+
+**Verificación:**
+- `cargo check --workspace` → **verde** (gate canónico).
+- `cargo test -p execute-process --lib` → **816 passed**.
+- `cargo clippy --workspace --all-targets` → de **workspace inmedible** a residual solo en `execute-process` (~85 diagnósticos, ninguno funcional).
+
+**Residual clippy (fuera del gate, documentado):** `too_many_arguments` en `handle_subscriber`, `scan_body_residual`, `scan_event_dir`, `make_row`, `post_generate`; `needless_return` dentro de `match` en `route_fractal_core`; `type_complexity`; `unnecessary_unwrap` en `tracker_stamp`. Todos exigen refactor estructural, no parche mecánico.
+
+**Fallos preexistentes verificados con `git stash` (no causados por O9):** `linear_bridge_webhook::ac13_valid_signature_emits_webhook_source` (`NotFound`) y `ecosystem_health_map_absent_still_ok` (`DEGRADED` vs `absent`).
+
+**Incidencia de entorno:** el disco `/tmp` llegó al 100% durante el hilo (27 G de `cargo-target`). Requirió purga del caché; los 4 fallos de una ejecución intermedia fueron `StorageFull`, no de código.
+
+| # | Hallazgo | Evidencia | Tipo |
+|---|----------|-----------|------|
+| **C-1** | `sddia-io` rompe clippy con `clippy::question_mark`; bloquea el lint de todo el workspace | `sddia-io/src/outbound_lab.rs:57` — `let Some(repo) = repo else { return None; }` | Código |
+| **C-2** | El schema del contrato no coincide con el nombre que calcula el motor | Resolver/validador/gate construyen `{contract}.schema.json` → `eda.event_manager.schema.json`; en disco solo existe `eda.event_manager.v1.schema.json` | **Genoma** (sin forge) |
+| **C-3** | El schema describe contrato `v1.2.0` y su `publish_ecst` no exige `event_uri` | `$defs.publish_ecst.required` = `[event_id, ecst]` | Contenido genoma |
+| **C-4** | `capability-taxonomy.md` sigue con `eda:event-manager` **1.2.0** | `catalog.id: eda:event-manager / version: 1.2.0` | Genoma (`norm`) |
+| **C-5** | `route-domain-event.outputs` aún nombra cabeceras en disco | `parent_path`, `processing_header_path` | Genoma; el parche de fases no escribe `outputs` |
+
+**C-2 es el hallazgo grave:** si algún proceso declarase `requires_capability: contract: eda.event_manager`, el gate fallaría con `schema ausente` y el validador de salida abortaría la fase. Hoy nadie lo declara, así que es un fallo **latente**, no activo. `rg 'contract: eda.event_manager'` → cero coincidencias.
+
+### Diseño cerrado
+
+1. **C-1 (único cambio de código):** `let repo = repo?;` en `outbound_lab.rs`. Re-ejecutar clippy para descubrir si `sddia-io` ocultaba más hallazgos en crates dependientes. Iterar hasta verde **solo** con correcciones mecánicas de lint (sin refactor funcional).
+2. **C-2, C-3, C-4, C-5:** no se tocan en este hilo. `SddIA/library/norms/` es genoma protegido y **no existe creator de JSON schemas**: `norm-creator` materializa `{name}.md`, no `*.schema.json`. Abrir decisión, no improvisar `Write`.
+3. **Documentar** el desajuste de nombre en `implementation.md` y en la nota de auditoría, con la opción técnica de cada vía: renombrar el fichero a `eda.event_manager.schema.json`, o cambiar el resolvedor para leer `contract_schema` de `capability-bindings.md`. Cualquiera de las dos es un corte con su propio laudo.
+4. Verificación funcional mínima: `cargo test -p sddia-core event_manager` sigue verde.
+
+### Secuencia
+
+| Paso | Alcance |
+|------|---------|
+| 1 | Corregir C-1 y re-lanzar `cargo clippy --workspace --all-targets` |
+| 2 | Bucle corto: cada hallazgo nuevo, parche mecánico |
+| 3 | `cargo test --workspace` (registrar veredicto real, aunque quede rojo) |
+| 4 | Nota de auditoría con C-2…C-5 y su vía de forja; estado O9 |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `cargo clippy --workspace --all-targets -- -D warnings` | Cero errores **o** lista residual documentada crate por crate |
+| Escribir en `SddIA/library/` con `Write`/`StrReplace` | Cero |
+| Renombrar `eda.event_manager.v1.schema.json` sin decisión | Prohibido |
+| Cambiar comportamiento de `outbound_lab` más allá del lint | Prohibido |
+| `APTO_TOTAL` | Prohibido |
+
+### Verificación
+
+```bash
+cd SddIA && cargo clippy --workspace --all-targets -- -D warnings
+cd SddIA && cargo test -p sddia-core event_manager
+cd SddIA && cargo test --workspace
+```
+
+**Commit:** `fix(qa): clippy workspace verde + diagnóstico contrato EDA (MAN-43 O9)`.
+
+**AC:** acerca AC-12 (clippy) y AC-19 (suite). No cierra AC-13: C-2…C-5 son genoma.
+**Fuera:** schema JSON, taxonomía, `route-domain-event.outputs`, `SddIA/library/codexes/`.
+**Bloqueo de AC-13:** mientras C-2 siga abierto, el contrato `eda.event_manager` no es resoluble por el motor, así que no se puede declarar convergencia contractual completa.
+
+---
+
 ## H4 — Consumidores periféricos (índice)
 
 El detalle ejecutable está en **O4 / H4**.
@@ -1117,6 +1194,7 @@ El detalle ejecutable está en **O4 / H4**.
 9. **O7** `event-bus-audit` sin default `/.events/` (F-03 residual). AC-13 sigue abierto.
 10. **O8** bindings + narrativa a contrato `2.0.0`; procesos solo `entity-manager` (DA-5). AC-13 sigue abierto.
 11. **O8.1** frontmatter `route-domain-event` vía `process_phases` (no es el O9 de calidad).
+12. **O9** calidad: clippy verde + suite workspace; diagnóstico del schema (C-2…C-5 son genoma).
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 
