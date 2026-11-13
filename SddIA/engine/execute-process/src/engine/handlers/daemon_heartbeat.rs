@@ -860,7 +860,7 @@ mod tests {
 
     #[test]
     fn orphan_lock_dead_pid_emits_fracture_once() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
         let dir = tempfile::TempDir::new().unwrap();
         let repo = dir.path();
         std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
@@ -880,16 +880,19 @@ mod tests {
         let audit = audit_staleness(repo).unwrap();
         assert_eq!(audit.fractures.len(), 1, "{:?}", audit.fractures);
         let eid = audit.fractures[0]["event_id"].as_str().unwrap();
-        let raw = std::fs::read_to_string(repo.join(".events/pending").join(format!("{eid}.json")))
-            .unwrap();
-        assert!(raw.contains("lock huérfano"), "{raw}");
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(repo, eid);
+        let trace = body
+            .get("payload")
+            .and_then(|p| p.get("error_trace"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert!(trace.contains("lock huérfano"), "{trace}");
         let audit2 = audit_staleness(repo).unwrap();
         assert!(
             audit2.fractures.is_empty(),
             "idempotente: {:?}",
             audit2.fractures
         );
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]

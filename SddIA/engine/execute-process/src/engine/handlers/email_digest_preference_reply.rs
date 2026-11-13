@@ -317,17 +317,17 @@ mod tests {
     }
 
     fn write_callback(repo: &Path, name: &str, callback_data: &str) -> String {
-        let path = repo.join(".events/domain").join(format!("{name}.json"));
-        let event = json!({
-            "event_id": name,
-            "event_type": "TelegramCallback_Received",
-            "payload": {
+        crate::engine::eda_port::test_lab::seed_domain_ecst(
+            repo,
+            name,
+            "TelegramCallback_Received",
+            json!({
                 "callback_data": callback_data,
                 "chat_id": "1",
                 "source": "telegram"
-            }
-        });
-        fs::write(&path, serde_json::to_string(&event).unwrap()).unwrap();
+            }),
+        )
+        .expect("seed TelegramCallback_Received");
         format!(".events/domain/{name}.json")
     }
 
@@ -383,13 +383,10 @@ mod tests {
         let data = env.data.unwrap();
         assert_eq!(data["reason"], json!("ignore"));
         assert_eq!(data["preference_emitted"], json!(false));
-        let domain = tmp.path().join(".events/domain");
-        let extra: Vec<_> = fs::read_dir(&domain)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_name() != "cb3.json")
-            .collect();
-        assert!(extra.is_empty());
+        assert_eq!(
+            crate::engine::eda_port::test_lab::domain_event_types(tmp.path(), 100).len(),
+            1
+        );
     }
 
     #[test]
@@ -402,11 +399,10 @@ mod tests {
         let data = env.data.unwrap();
         assert_eq!(data["preference_emitted"], json!(true));
         let eid = data["target_event_id"].as_str().unwrap();
-        let emitted = fs::read_to_string(tmp.path().join(".events/domain").join(format!("{eid}.json")))
-            .unwrap();
+        let ev = crate::engine::eda_port::test_lab::ecst_for_event_id(tmp.path(), eid);
+        let emitted = serde_json::to_string(&ev).unwrap();
         assert!(!emitted.contains("noreply@"));
         assert!(!emitted.contains("authority"));
-        let ev: Value = serde_json::from_str(&emitted).unwrap();
         assert_eq!(ev["event_type"], json!("User_Preference_Change_Requested"));
         assert_eq!(ev["payload"]["operation"], json!("activate"));
         assert_eq!(ev["payload"]["predicate"], json!("priority"));
@@ -425,11 +421,7 @@ mod tests {
         let env = run(tmp.path(), &json!({"event_file_path": rel})).unwrap();
         assert!(env.success);
         let eid = env.data.unwrap()["target_event_id"].as_str().unwrap().to_string();
-        let ev: Value = serde_json::from_str(
-            &fs::read_to_string(tmp.path().join(".events/domain").join(format!("{eid}.json")))
-                .unwrap(),
-        )
-        .unwrap();
+        let ev = crate::engine::eda_port::test_lab::ecst_for_event_id(tmp.path(), &eid);
         assert_eq!(ev["payload"]["predicate"], json!("mute"));
         assert_eq!(ev["payload"]["value"]["muted"], json!(true));
         assert!(ev["payload"].get("priority_level").is_none());
@@ -465,19 +457,15 @@ mod tests {
         assert_eq!(hits[0].status, user_preference_core::PreferenceStatus::Active);
         assert_eq!(hits[0].value["level"], json!("max"));
 
-        let recv = repo.join(".events/domain/mail1.json");
-        fs::write(
-            &recv,
-            serde_json::to_string(&json!({
-                "event_id": "mail1",
-                "event_type": "Email_Received",
-                "payload": {
-                    "message_uid": "9",
-                    "from": "noreply@example.com",
-                    "subject": "Receipt"
-                }
-            }))
-            .unwrap(),
+        crate::engine::eda_port::test_lab::seed_domain_ecst(
+            repo,
+            "mail1",
+            "Email_Received",
+            json!({
+                "message_uid": "9",
+                "from": "noreply@example.com",
+                "subject": "Receipt"
+            }),
         )
         .unwrap();
         let triage = email_triage::run(repo, &json!({"event_file_path": ".events/domain/mail1.json"}))

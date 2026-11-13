@@ -248,13 +248,13 @@ mod tests {
 
     fn write_domain_event(tmp: &Path, event_id: &str, payload: Value) -> PathBuf {
         let path = tmp.join(".events/domain").join(format!("{event_id}.json"));
-        let event = json!({
-            "event_id": event_id,
-            "event_type": "User_Preference_Change_Requested",
-            "timestamp": "2026-08-27T12:00:00Z",
-            "payload": payload,
-        });
-        fs::write(&path, serde_json::to_string(&event).unwrap()).unwrap();
+        crate::engine::eda_port::test_lab::seed_domain_ecst(
+            tmp,
+            event_id,
+            "User_Preference_Change_Requested",
+            payload,
+        )
+        .expect("seed User_Preference_Change_Requested");
         path
     }
 

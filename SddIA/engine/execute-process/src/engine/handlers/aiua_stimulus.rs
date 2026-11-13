@@ -686,15 +686,10 @@ mod tests {
             }
         }
         assert!(data.get("intent_dispatched").is_none());
-        let domain = repo.join(".events/domain");
-        if domain.is_dir() {
-            let domain_events: Vec<_> = fs::read_dir(&domain)
-                .unwrap()
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("json"))
-                .collect();
-            assert!(domain_events.is_empty());
-        }
+        assert!(
+            crate::engine::eda_port::test_lab::domain_event_types(repo, 100).is_empty(),
+            "no domain ECST tras persistencia exclusiva"
+        );
     }
 
     #[test]
@@ -754,13 +749,9 @@ mod tests {
         assert_eq!(data["intent_dispatched"], "iniciar_feature");
         let eid = data["event_id"].as_str().unwrap();
         assert!(!eid.is_empty());
-        let domain_path = repo.join(".events/domain").join(format!("{eid}.json"));
-        assert!(domain_path.is_file());
-        let body: Value = serde_json::from_str(&fs::read_to_string(&domain_path).unwrap()).unwrap();
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(repo, eid);
         assert_eq!(body["event_type"], "Aiua_Process_Requested");
         assert_eq!(body["payload"]["process"], "feature");
-        let pending_aiua = repo.join(".events/pending").join(format!("{eid}.json"));
-        assert!(!pending_aiua.is_file());
         let report = env.execution_report.unwrap();
         let phases = report["phases"].as_array().unwrap();
         assert!(phases.iter().any(|p| p["phase_name"] == "Despacho-Motor" && p["status"] == "executed"));
@@ -825,9 +816,7 @@ mod tests {
         assert_eq!(data["intent_dispatched"], "delegar_habito");
         let eid = data["event_id"].as_str().unwrap();
         assert!(!eid.is_empty());
-        let domain_path = repo.join(".events/domain").join(format!("{eid}.json"));
-        assert!(domain_path.is_file());
-        let body: Value = serde_json::from_str(&fs::read_to_string(&domain_path).unwrap()).unwrap();
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(repo, eid);
         assert_eq!(body["event_type"], "User_Preference_Change_Requested");
         assert_eq!(body["emitter_agent"], "emit-user-preference-change-requested");
         assert_eq!(body["payload"]["predicate"], "mute");

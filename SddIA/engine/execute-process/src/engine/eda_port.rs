@@ -69,6 +69,12 @@ fn test_mock_installed() -> bool {
         && PORT_REPO.with(|slot| slot.borrow().is_none())
 }
 
+/// Laboratorio: `InMemoryEventManagerMock` activo en el hilo (sin depender de env global).
+#[cfg(test)]
+pub fn mock_port_active() -> bool {
+    test_mock_installed()
+}
+
 /// No instala puerto productivo (MAN-38). Compat: no-op.
 pub fn install_productive_port(_repo: &Path) -> Result<(), String> {
     Ok(())
@@ -126,24 +132,10 @@ fn with_port<R>(
 
 /// Publicación productiva vía `EventManagerPort`.
 pub fn publish_ecst(repo: &Path, family: &str, event: &Value) -> Result<PublishSeal, String> {
-    #[cfg(test)]
-    {
-        use sddia_event_store::writes_filesystem;
-        if writes_filesystem(sddia_event_store::store_mode()) {
-            return crate::engine::eda_port_legacy::publish_ecst(repo, family, event);
-        }
-    }
     with_port(repo, "publish_ecst", |port| publish_ecst_on_port(port, repo, family, event))
 }
 
 pub fn record_ecst(repo: &Path, family: &str, event: &Value) -> Result<(), String> {
-    #[cfg(test)]
-    {
-        let mode = sddia_event_store::store_mode();
-        if sddia_event_store::writes_filesystem(mode) {
-            return crate::engine::eda_port_legacy::record_ecst(repo, family, event);
-        }
-    }
     with_port(repo, "record_ecst", |port| record_ecst_on_port(port, repo, family, event))
 }
 
@@ -152,45 +144,18 @@ pub fn load_dispatched(
     event_id: &str,
     logical: &Path,
 ) -> Result<Option<Value>, String> {
-    #[cfg(test)]
-    {
-        if sddia_event_store::store_mode() == sddia_event_store::StoreMode::Filesystem {
-            return crate::engine::eda_port_legacy::load_dispatched(repo, event_id, logical);
-        }
-    }
     with_port(repo, "load_dispatched", |port| {
         load_dispatched_event(port, event_id, logical)
     })
 }
 
 pub fn append_progress(repo: &Path, correlation_id: &str, frame: &Value) -> Result<u64, String> {
-    #[cfg(test)]
-    {
-        let mode = sddia_event_store::store_mode();
-        if !sddia_event_store::writes_store(mode) && sddia_event_store::writes_filesystem(mode) {
-            return crate::engine::eda_port_legacy::append_progress(repo, correlation_id, frame);
-        }
-    }
     with_port(repo, "append_progress", |port| {
         append_progress_monotonic(port, correlation_id, frame)
     })
 }
 
 pub fn load_domain_ecsts(repo: &Path, limit: u32) -> Result<Vec<Value>, String> {
-    #[cfg(test)]
-    {
-        let mode = sddia_event_store::store_mode();
-        if sddia_event_store::writes_filesystem(mode) {
-            return crate::engine::eda_port_legacy::load_domain_ecsts(repo, limit);
-        }
-        if sddia_event_store::writes_store(mode) {
-            let legacy = crate::engine::eda_port_legacy::load_domain_ecsts(repo, limit)?;
-            if !legacy.is_empty() {
-                return Ok(legacy);
-            }
-        }
-    }
-
     let out = with_port(repo, "load_domain_ecsts", |port| {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
@@ -543,8 +508,11 @@ mod scoped_tests {
 /// Residuo lab (MAN-37): solo helpers **integration**; unitarios → [`EventManagerTestHarness`].
 #[cfg(test)]
 pub mod test_lab {
-    use std::sync::{Mutex, MutexGuard, OnceLock};
+    use std::path::Path;
+    use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
+    use sddia_core::ports::event_manager::{GetEventRequest, InMemoryEventManagerMock};
     use sddia_event_store::{override_store_mode, StoreMode};
+    use serde_json::Value;
 
     static PARALLEL_LAB: OnceLock<Mutex<()>> = OnceLock::new();
 
@@ -585,17 +553,102 @@ pub mod test_lab {
         _scope: ParallelLabGuard,
     }
 
-    impl Drop for FilesystemEdaGuard {
-        fn drop(&mut self) {
-            override_store_mode(None);
-        }
-    }
-
-    /// Modo FS bajo mutex global (repos temporales / aserciones `.events/`).
+    /// Mutex global + mock `EventManagerPort` (sin `StoreMode::Filesystem`).
     pub fn filesystem_eda() -> FilesystemEdaGuard {
         let scope = ParallelLabGuard::acquire();
-        override_store_mode(Some(StoreMode::Filesystem));
+        let mock = Arc::new(InMemoryEventManagerMock::new());
+        super::install_port(mock);
         FilesystemEdaGuard { _scope: scope }
+    }
+
+    pub fn ecst_for_event_id(repo: &Path, event_id: &str) -> Value {
+        super::with_event_port(repo, "lab_get_ecst", |port| {
+            port.get_event(GetEventRequest {
+                event_id: event_id.to_string(),
+            })
+            .map(|r| r.ecst)
+            .map_err(|e| e.to_string())
+        })
+        .expect("ecst_for_event_id")
+    }
+
+    pub fn event_exists(repo: &Path, event_id: &str) -> bool {
+        super::with_event_port(repo, "lab_has_event", |port| {
+            port.get_event(GetEventRequest {
+                event_id: event_id.to_string(),
+            })
+            .map(|_| true)
+            .map_err(|e| e.to_string())
+        })
+        .unwrap_or(false)
+    }
+
+    pub fn list_pending_ecsts(repo: &Path, limit: u32) -> Vec<Value> {
+        use sddia_core::ports::event_manager::ListPendingRequest;
+        super::with_event_port(repo, "lab_list_pending", |port| {
+            port.list_pending(ListPendingRequest {
+                limit: Some(limit),
+            })
+            .map(|r| r.events.into_iter().map(|e| e.ecst).collect())
+            .map_err(|e| e.to_string())
+        })
+        .expect("list_pending_ecsts")
+    }
+
+    pub fn pending_count(repo: &Path) -> usize {
+        list_pending_ecsts(repo, 10_000).len()
+    }
+
+    pub fn find_pending_by_event_type(repo: &Path, event_type: &str) -> Option<Value> {
+        list_pending_ecsts(repo, 10_000).into_iter().find(|ecst| {
+            ecst.get("event_type").and_then(|v| v.as_str()) == Some(event_type)
+        })
+    }
+
+    pub fn domain_event_types(repo: &Path, limit: u32) -> Vec<String> {
+        super::load_domain_ecsts(repo, limit)
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|e| {
+                e.get("event_type")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string)
+            })
+            .collect()
+    }
+
+    pub fn list_ecsts_by_event_type(repo: &Path, event_type: &str) -> Vec<Value> {
+        use sddia_core::ports::event_manager::ListEventsRequest;
+        super::with_event_port(repo, "lab_list_events_by_type", |port| {
+            port.list_events(ListEventsRequest {
+                family: None,
+                event_type: Some(event_type.to_string()),
+                state: None,
+                limit: Some(10_000),
+                cursor: None,
+            })
+            .map(|r| r.events.into_iter().map(|e| e.ecst).collect())
+            .map_err(|e| e.to_string())
+        })
+        .unwrap_or_default()
+    }
+
+    /// Publica ECST de dominio en el mock (ruta lógica `.events/domain/{id}.json` sin JSON físico).
+    pub fn seed_domain_ecst(
+        repo: &Path,
+        event_id: &str,
+        event_type: &str,
+        payload: Value,
+    ) -> Result<String, String> {
+        let mut event = serde_json::json!({
+            "event_id": event_id,
+            "event_type": event_type,
+            "event_family": "domain",
+            "payload": payload,
+        });
+        sddia_eda_catalog::stamp_published_event(repo, &mut event)?;
+        super::record_ecst(repo, "domain", &event)?;
+        Ok(format!(".events/domain/{event_id}.json"))
     }
 
     pub struct RedbEdaGuard {

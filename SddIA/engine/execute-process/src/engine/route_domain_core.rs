@@ -2678,17 +2678,8 @@ mod blocking_tests {
     use std::fs;
     use std::path::PathBuf;
 
-    struct LabFilesystemMode;
-    impl Drop for LabFilesystemMode {
-        fn drop(&mut self) {
-            sddia_event_store::override_store_mode(None);
-            eda_port::clear_port();
-        }
-    }
-
-    fn lab_filesystem_eda() -> LabFilesystemMode {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        LabFilesystemMode
+    fn lab_filesystem_eda() -> crate::engine::eda_port::test_lab::FilesystemEdaGuard {
+        crate::engine::eda_port::test_lab::filesystem_eda()
     }
 
     fn repo_root() -> PathBuf {
@@ -3025,18 +3016,12 @@ mod blocking_tests {
             repo,
             "iota-relay-publish-error: status=500 config-missing: IOTA_WALLET_SECRET",
         );
-        let pending = repo.join(".events/pending");
-        let mut found = false;
-        for ent in fs::read_dir(&pending).unwrap() {
-            let p = ent.unwrap().path();
-            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
-            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
-            {
-                assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
-                found = true;
-            }
-        }
-        assert!(found);
+        let body = crate::engine::eda_port::test_lab::find_pending_by_event_type(
+            repo,
+            "System_Fracture_Detected",
+        )
+        .expect("fracture pending");
+        assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
     }
 
     #[test]
@@ -3191,18 +3176,12 @@ mod blocking_tests {
             repo,
             "iota-relay-publish-error: status=500 Transaction execution failed due to issues with transaction inputs, please review the errors and try again:\n- Invalid object type",
         );
-        let pending = repo.join(".events/pending");
-        let mut found = false;
-        for ent in fs::read_dir(&pending).unwrap() {
-            let p = ent.unwrap().path();
-            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
-            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
-            {
-                assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
-                found = true;
-            }
-        }
-        assert!(found);
+        let body = crate::engine::eda_port::test_lab::find_pending_by_event_type(
+            repo,
+            "System_Fracture_Detected",
+        )
+        .expect("fracture pending");
+        assert_eq!(body["payload"]["friction_id"], "F-DLT-PUBLISH-ERROR");
     }
 
     #[test]
@@ -3217,22 +3196,16 @@ mod blocking_tests {
         )
         .unwrap();
         emit_dlt_batch_fracture(repo, "iota-relay-unreachable: Connection refused");
-        let pending = repo.join(".events/pending");
-        let mut found = false;
-        for ent in fs::read_dir(&pending).unwrap() {
-            let p = ent.unwrap().path();
-            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
-            if body.get("event_type").and_then(|v| v.as_str()) == Some("System_Fracture_Detected")
-            {
-                assert_eq!(
-                    body["payload"]["friction_id"],
-                    "F-DLT-RELAY-SIN-SUPERVISOR"
-                );
-                assert_eq!(body["payload"]["attempted_action"], "merkle-batch-preseal");
-                found = true;
-            }
-        }
-        assert!(found);
+        let body = crate::engine::eda_port::test_lab::find_pending_by_event_type(
+            repo,
+            "System_Fracture_Detected",
+        )
+        .expect("fracture pending");
+        assert_eq!(
+            body["payload"]["friction_id"],
+            "F-DLT-RELAY-SIN-SUPERVISOR"
+        );
+        assert_eq!(body["payload"]["attempted_action"], "merkle-batch-preseal");
     }
 
     #[test]
@@ -4035,14 +4008,7 @@ mod blocking_tests {
 
     #[test]
     fn promote_failure_keeps_delegation_status() {
-        struct Reset;
-        impl Drop for Reset {
-            fn drop(&mut self) {
-                sddia_event_store::override_store_mode(None);
-            }
-        }
-        let _reset = Reset;
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        let _fs = lab_filesystem_eda();
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let bus = EventBusTopology {
@@ -4081,12 +4047,24 @@ mod blocking_tests {
         );
         assert_eq!(sid, "tekton");
         assert_eq!(status, "skipped-topology");
-        let witness = repo
-            .join(".events/processed/subscribers")
-            .join(format!("{event_uuid}.tekton.json"));
-        let raw = fs::read_to_string(&witness).expect("processed witness");
-        assert!(raw.contains("skipped-topology") || raw.contains("result_status"), "{raw}");
-        assert!(raw.contains("delegation"), "{raw}");
+        use sddia_core::ports::event_manager::{DeliveryStatus, ListDeliveriesRequest};
+        let rows = crate::engine::eda_port::with_event_port(repo, "promote_witness_lab", |port| {
+            port.list_deliveries(ListDeliveriesRequest {
+                event_id: Some(event_uuid.to_string()),
+                subscriber_id: Some("tekton".into()),
+                status: None,
+                limit: Some(10),
+                cursor: None,
+            })
+            .map_err(|e| e.to_string())
+        })
+        .expect("list deliveries");
+        assert!(
+            rows.deliveries.iter().any(|d| {
+                matches!(d.status, DeliveryStatus::Ack | DeliveryStatus::Nack)
+            }),
+            "witness delivery missing"
+        );
     }
 
     #[test]

@@ -50,8 +50,7 @@ fn path_allowlisted(rel: &str) -> bool {
     {
         return true;
     }
-    if rel.ends_with("eda_port_legacy.rs")
-        || rel.ends_with("eda_port.rs")
+    if rel.ends_with("eda_port.rs")
         || rel.ends_with("gate_eda_unit_no_real_backend.rs")
         || rel.ends_with("gate_event_manager_port.rs")
         || rel.ends_with("contract_suite.rs")

@@ -1300,13 +1300,35 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
 mod tests {
     use super::*;
     use crate::core::repo::find_repo_root;
+    use std::sync::{Mutex, OnceLock};
+
+    static LAB_OUTBOUND_ENV: OnceLock<Mutex<()>> = OnceLock::new();
 
     fn with_lab<F: FnOnce()>(f: F) {
-        let _g = crate::engine::eda_port::test_lab::ParallelLabGuard::acquire();
+        let _eda = crate::engine::eda_port::test_lab::filesystem_eda();
+        let _env = LAB_OUTBOUND_ENV
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let prev_out = std::env::var("SDDIA_LAB_MOCK_OUTBOUND").ok();
+        let prev_sim = std::env::var("SDDIA_LAB_SIMULATE_IOTA").ok();
+        let prev_token = std::env::var("LINEAR_API_TOKEN").ok();
         std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", "1");
+        std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", "1");
         std::env::remove_var("LINEAR_API_TOKEN");
         f();
-        std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND");
+        match prev_token {
+            Some(v) => std::env::set_var("LINEAR_API_TOKEN", v),
+            None => std::env::remove_var("LINEAR_API_TOKEN"),
+        }
+        match prev_sim {
+            Some(v) => std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v),
+            None => std::env::remove_var("SDDIA_LAB_SIMULATE_IOTA"),
+        }
+        match prev_out {
+            Some(v) => std::env::set_var("SDDIA_LAB_MOCK_OUTBOUND", v),
+            None => std::env::remove_var("SDDIA_LAB_MOCK_OUTBOUND"),
+        }
     }
 
     fn sample_tc(with_review: bool) -> TrackerConfig {
@@ -1596,7 +1618,7 @@ mod tests {
     fn lab_cycle_work_to_merged_stamps() {
         with_lab(|| {
             let repo = find_repo_root().expect("repo");
-            for (etype, extra, expect_stamp) in [
+            for (etype, extra) in [
                 (
                     "Work_Initiated",
                     json!({
@@ -1604,7 +1626,6 @@ mod tests {
                         "branch": "feat/lab",
                         "expected_hu_tracker_ref": "LAB-HU-1",
                     }),
-                    false,
                 ),
                 (
                     "PullRequest_Presented",
@@ -1613,7 +1634,6 @@ mod tests {
                         "branch": "feat/lab",
                         "pr_url": "https://github.com/o/r/pull/1",
                     }),
-                    false,
                 ),
                 (
                     "PullRequest_Merged",
@@ -1621,26 +1641,22 @@ mod tests {
                         "tracker_ref": "LAB-PBI-MERGE-LAST",
                         "merge_commit_hash": "abc123deadbeef",
                     }),
-                    false,
-                ),
-                (
-                    "Delivery_Committed",
-                    json!({
-                        "tracker_ref": "LAB-PBI-MERGE-LAST",
-                        "merge_commit_hash": "abc123deadbeef",
-                        "delivery_mode": "trunk_direct",
-                    }),
-                    true,
                 ),
             ] {
                 let event = json!({ "event_type": etype, "payload": extra });
-                let (stamped, note) = stamp_event(&repo, &event).unwrap();
-                if expect_stamp {
-                    assert!(stamped, "expected stamp for {etype}, note={note:?}");
-                } else {
-                    assert!(!stamped, "expected no-op for {etype}");
-                }
+                let (stamped, _) = stamp_event(&repo, &event).unwrap();
+                assert!(!stamped, "expected no-op for {etype}");
             }
+            let event = json!({
+                "event_type": "Delivery_Committed",
+                "payload": {
+                    "tracker_ref": "LAB-PBI-FIXONLY",
+                    "commit_sha": "deadbeef",
+                    "delivery_mode": "trunk_direct",
+                }
+            });
+            let (stamped, note) = stamp_event(&repo, &event).unwrap();
+            assert!(stamped, "expected stamp for Delivery_Committed, note={note:?}");
         });
     }
 

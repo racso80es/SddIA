@@ -825,18 +825,11 @@ mod tests {
         assert!(content.contains("Síntesis Mayeuta"));
     }
 
-    fn list_orch_events(repo: &Path) -> Vec<String> {
-        let dir = repo.join(".events/orchestration");
-        if !dir.is_dir() {
-            return Vec::new();
-        }
-        fs::read_dir(dir)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("json"))
-            .map(|p| fs::read_to_string(p).unwrap())
-            .collect()
+    fn list_orch_events(repo: &Path) -> Vec<Value> {
+        crate::engine::eda_port::test_lab::list_ecsts_by_event_type(
+            repo,
+            "Fracture_Clarification_Requested",
+        )
     }
 
     #[test]
@@ -857,7 +850,7 @@ mod tests {
         assert_eq!(out.get("unclassified"), Some(&json!(true)));
         let files = list_orch_events(repo);
         assert_eq!(files.len(), 1);
-        let ev: Value = serde_json::from_str(&files[0]).unwrap();
+        let ev = files[0].clone();
         assert_eq!(
             ev.get("event_type").and_then(|v| v.as_str()),
             Some("Fracture_Clarification_Requested")

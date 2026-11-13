@@ -1300,25 +1300,7 @@ mod tests {
     }
 
     fn domain_event_types(repo: &Path) -> Vec<String> {
-        let dir = repo.join(".events/domain");
-        if !dir.is_dir() {
-            return Vec::new();
-        }
-        let mut types = Vec::new();
-        let mut entries: Vec<_> = fs::read_dir(&dir)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.extension().and_then(|x| x.to_str()) == Some("json"))
-            .collect();
-        entries.sort();
-        for p in entries {
-            let body: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
-            if let Some(t) = body.get("event_type").and_then(|v| v.as_str()) {
-                types.push(t.to_string());
-            }
-        }
-        types
+        crate::engine::eda_port::test_lab::domain_event_types(repo, 10_000)
     }
 
     fn read_ledger(repo: &Path) -> Value {

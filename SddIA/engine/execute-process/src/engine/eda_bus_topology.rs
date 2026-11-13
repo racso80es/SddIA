@@ -1202,6 +1202,24 @@ mod tests {
         crate::engine::eda_port::test_lab::fs_lab_tempdir()
     }
 
+    fn seed_pending_ecst(repo: &Path, event_id: &str, event_type: &str, payload: Value) {
+        let mut event = json!({
+            "event_id": event_id,
+            "event_type": event_type,
+            "payload": payload,
+        });
+        sddia_eda_catalog::stamp_published_event(repo, &mut event).unwrap();
+        crate::engine::eda_port::record_ecst(repo, "pending", &event).unwrap();
+    }
+
+    fn seed_subscriber_witness(repo: &Path, event_id: &str, subscriber: &str, success: bool) {
+        if success {
+            crate::engine::eda_port::record_delivery_ack(repo, event_id, subscriber).unwrap();
+        } else {
+            crate::engine::eda_port::record_delivery_nack(repo, event_id, subscriber).unwrap();
+        }
+    }
+
     #[test]
     fn promote_witness_does_not_materialize_subscriber_json() {
         use crate::engine::eda_port::test_harness::EventManagerTestHarness;
@@ -1292,25 +1310,21 @@ mod tests {
         write_minimal_paths(repo);
         let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-000000000001";
         let bus = ensure_event_bus_topology(repo).unwrap();
-        let pending = resolve_bus_path(repo, &bus.pending).join(format!("{event_id}.json"));
-        fs::create_dir_all(pending.parent().unwrap()).unwrap();
-        write_json_atomic(
-            &pending,
-            &json!({
-                "event_id": event_id,
-                "event_type": "System_Fracture_Detected",
-                "payload": { "origin_topology": "core" }
-            }),
-        )
-        .unwrap();
-        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
-        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
-        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
-            .join(format!("{event_id}.cumulo.materialize-fracture-pbi.json"));
-        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
-        let tele = resolve_bus_path(repo, &bus.processed_subscribers)
-            .join(format!("{event_id}.argos.send-telegram-notification.json"));
-        write_json_atomic(&tele, &json!({"status": "success"})).unwrap();
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "System_Fracture_Detected",
+            json!({ "origin_topology": "core" }),
+        );
+        seed_subscriber_witness(repo, event_id, "cumulo.materialize-fracture-pbi", false);
+        seed_subscriber_witness(repo, event_id, "argos.send-telegram-notification", true);
+        // ACK terminal puede expulsar el ECST del bucket pending; restaurar cabecera para el barrido.
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "System_Fracture_Detected",
+            json!({ "origin_topology": "core" }),
+        );
         let registry = json!({
             "System_Fracture_Detected": [
                 {"agent": "cumulo", "action": "materialize-fracture-pbi"},
@@ -1323,26 +1337,20 @@ mod tests {
             Some("fracture-unmaterialized")
         );
         assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(false));
-        assert!(pending.is_file());
+        assert!(crate::engine::eda_port::test_lab::event_exists(repo, event_id));
     }
 
-    fn write_pr_merged_pending(repo: &Path, bus: &EventBusTopology, event_id: &str, tracker_ref: &str) -> PathBuf {
-        let pending = resolve_bus_path(repo, &bus.pending).join(format!("{event_id}.json"));
-        fs::create_dir_all(pending.parent().unwrap()).unwrap();
-        write_json_atomic(
-            &pending,
-            &json!({
-                "event_id": event_id,
-                "event_type": "PullRequest_Merged",
-                "payload": {
-                    "origin_topology": "core",
-                    "tracker_ref": tracker_ref,
-                    "merge_commit_hash": "abc123"
-                }
+    fn write_pr_merged_pending(repo: &Path, _bus: &EventBusTopology, event_id: &str, tracker_ref: &str) {
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "PullRequest_Merged",
+            json!({
+                "origin_topology": "core",
+                "tracker_ref": tracker_ref,
+                "merge_commit_hash": "abc123"
             }),
-        )
-        .unwrap();
-        pending
+        );
     }
 
     fn pr_merged_registry() -> Value {
@@ -1362,24 +1370,28 @@ mod tests {
         write_minimal_paths(repo);
         let event_id = "bbbbbbbb-bbbb-4ccc-8ddd-000000000002";
         let bus = ensure_event_bus_topology(repo).unwrap();
-        let pending = write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
-        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
-        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
-        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
-            .join(format!("{event_id}.{TRACKER_STAMP_SUBSCRIBER}.json"));
-        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
+        write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
+        seed_subscriber_witness(repo, event_id, TRACKER_STAMP_SUBSCRIBER, false);
         for sub in ["cumulo.iota-immutable-publisher", "argos.notify-humanized-pr-merged"] {
-            let p = resolve_bus_path(repo, &bus.processed_subscribers)
-                .join(format!("{event_id}.{sub}.json"));
-            write_json_atomic(&p, &json!({"status": "success"})).unwrap();
+            seed_subscriber_witness(repo, event_id, sub, true);
         }
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "PullRequest_Merged",
+            json!({
+                "origin_topology": "core",
+                "tracker_ref": "AUT-72",
+                "merge_commit_hash": "abc123"
+            }),
+        );
         let sweep = try_sweep_event(repo, &bus, event_id, Some(&pr_merged_registry()));
         assert_eq!(
             sweep.get("status").and_then(|v| v.as_str()),
             Some("tracker-stamp-unreconciled")
         );
         assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(false));
-        assert!(pending.is_file());
+        assert!(crate::engine::eda_port::test_lab::event_exists(repo, event_id));
     }
 
     #[test]
@@ -1389,17 +1401,21 @@ mod tests {
         write_minimal_paths(repo);
         let event_id = "cccccccc-bbbb-4ccc-8ddd-000000000003";
         let bus = ensure_event_bus_topology(repo).unwrap();
-        let pending = write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
-        fs::create_dir_all(resolve_bus_path(repo, &bus.dead_letter_subscribers)).unwrap();
-        fs::create_dir_all(resolve_bus_path(repo, &bus.processed_subscribers)).unwrap();
-        let dead = resolve_bus_path(repo, &bus.dead_letter_subscribers)
-            .join(format!("{event_id}.{TRACKER_STAMP_SUBSCRIBER}.json"));
-        write_json_atomic(&dead, &json!({"status": "failed"})).unwrap();
+        write_pr_merged_pending(repo, &bus, event_id, "AUT-72");
+        seed_subscriber_witness(repo, event_id, TRACKER_STAMP_SUBSCRIBER, false);
         for sub in ["cumulo.iota-immutable-publisher", "argos.notify-humanized-pr-merged"] {
-            let p = resolve_bus_path(repo, &bus.processed_subscribers)
-                .join(format!("{event_id}.{sub}.json"));
-            write_json_atomic(&p, &json!({"status": "success"})).unwrap();
+            seed_subscriber_witness(repo, event_id, sub, true);
         }
+        seed_pending_ecst(
+            repo,
+            event_id,
+            "PullRequest_Merged",
+            json!({
+                "origin_topology": "core",
+                "tracker_ref": "AUT-72",
+                "merge_commit_hash": "abc123"
+            }),
+        );
         crate::engine::done_gate::write_tracker_done_proof(
             repo,
             "AUT-72",
@@ -1413,6 +1429,6 @@ mod tests {
             Some("kaizen-finalized")
         );
         assert_eq!(sweep.get("purged").and_then(|v| v.as_bool()), Some(true));
-        assert!(!pending.is_file());
+        assert!(!crate::engine::eda_port::test_lab::event_exists(repo, event_id));
     }
 }

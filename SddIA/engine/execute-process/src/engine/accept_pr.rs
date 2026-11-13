@@ -733,44 +733,33 @@ mod tests {
         assert!(!scan_presented_for_branch(repo, "other"));
     }
 
-    /// REDB-CA3: Presented solo en store + modo redb → true.
+    /// REDB-CA3: Presented solo en store (puerto) sin JSON bajo `.events/`.
     #[test]
     fn t_redb_ca3_scan_presented_from_store_only() {
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         let branch = "fix/eda-redb-lock";
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = crate::engine::eda_port::runtime_db_path(repo);
-        if let Some(parent) = db.parent() {
-            fs::create_dir_all(parent).unwrap();
-        }
-        let store = sddia_event_store::EventStore::open(&db).expect("open");
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+        )
+        .unwrap();
         let event_id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-        let ecst = json!({
+        let mut ecst = json!({
             "event_id": event_id,
             "event_type": "PullRequest_Presented",
             "payload": {"branch": branch, "tracker_ref": "AUT-16"},
         });
-        store
-            .insert_event(
-                &sddia_event_store::StoredEvent {
-                    event_id: event_id.into(),
-                    family: sddia_event_store::Family::Domain,
-                    event_type: "PullRequest_Presented".into(),
-                    created_at: 1,
-                    ecst,
-                },
-                &[],
-            )
-            .expect("insert");
-        drop(store);
+        sddia_eda_catalog::stamp_published_event(repo, &mut ecst).unwrap();
+        crate::engine::eda_port::record_ecst(repo, "domain", &ecst).unwrap();
         assert!(
             scan_presented_for_branch(repo, branch),
             "debe ver Presented solo en store"
         );
         assert!(!scan_presented_for_branch(repo, "other-branch"));
         assert!(!repo.join(".events").exists());
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]
@@ -859,27 +848,27 @@ mod tests {
 
     #[test]
     fn enrich_inputs_prefers_presented_tracker_ref() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"directories":{"documentation":"docs"}}"#,
+            r#"{"eda_bus":{"pending":".events/pending"},"directories":{"documentation":"docs"}}"#,
         )
         .unwrap();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).ok();
         let branch = "feat/lifecycle-presented-ref";
-        let processed = repo.join(".events/processed");
-        fs::create_dir_all(&processed).unwrap();
-        fs::write(
-            processed.join("p.json"),
-            serde_json::to_string(&json!({
-                "event_type": "PullRequest_Presented",
-                "payload": {"branch": branch, "tracker_ref": "MAN-PRESENTED"}
-            }))
-            .unwrap(),
-        )
-        .unwrap();
+        let mut ev = json!({
+            "event_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+            "event_type": "PullRequest_Presented",
+            "timestamp": "2026-11-11T12:00:00Z",
+            "emitter_agent": "test",
+            "payload": {"branch": branch, "tracker_ref": "MAN-PRESENTED"},
+            "delivery_state": {},
+        });
+        sddia_eda_catalog::stamp_published_event(repo, &mut ev).unwrap();
+        crate::engine::eda_port::record_ecst(repo, "domain", &ev).unwrap();
         let slug = "lifecycle-presented-ref";
         let persist = format!("docs/features/{slug}");
         fs::create_dir_all(repo.join(&persist)).unwrap();
@@ -894,7 +883,6 @@ mod tests {
             out.get("tracker_ref").and_then(|v| v.as_str()),
             Some("MAN-PRESENTED")
         );
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]

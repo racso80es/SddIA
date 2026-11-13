@@ -396,15 +396,14 @@ mod tests {
         assert_eq!(out.get("success"), Some(&json!(true)));
         assert_eq!(out["event_id"], cid);
         assert_eq!(out["event_type"], "Aiua_Process_Requested");
-        let path = repo.join(".events/domain").join(format!("{cid}.json"));
-        assert!(path.is_file(), "domain event missing: {}", path.display());
-        let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(&repo, &cid);
         assert_eq!(body["emitter_agent"], "aiua-stimulus-processing");
         assert_eq!(body["payload"]["process"], "refactorization");
         assert_eq!(body["correlation_id"], cid);
-        let _ = fs::remove_file(path);
-        let pending = repo.join(".events/pending").join(format!("{cid}.json"));
-        assert!(!pending.is_file());
+        assert_eq!(
+            body.get("event_type").and_then(|v| v.as_str()),
+            Some("Aiua_Process_Requested")
+        );
     }
 
     #[test]
@@ -464,7 +463,6 @@ mod tests {
     #[test]
     fn dispatch_habit_borra_emits_mute_without_utterance() {
         let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
-        crate::engine::eda_port::clear_port();
         let repo = find_repo_root().unwrap();
         let out = run(
             &repo,
@@ -483,9 +481,7 @@ mod tests {
         assert_eq!(out["event_type"], "User_Preference_Change_Requested");
         assert_eq!(out["intent_dispatched"], "delegar_habito");
         let eid = out["event_id"].as_str().expect("event_id");
-        let path = repo.join(".events/domain").join(format!("{eid}.json"));
-        assert!(path.is_file(), "domain event missing: {}", path.display());
-        let body: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        let body = crate::engine::eda_port::test_lab::ecst_for_event_id(&repo, eid);
         assert_eq!(body["event_type"], "User_Preference_Change_Requested");
         assert_eq!(
             body["emitter_agent"],
@@ -498,7 +494,6 @@ mod tests {
         assert!(body["payload"].get("raw_utterance").is_none());
         assert!(body["payload"].get("body").is_none());
         validate_ecst_event(&repo, &body).expect("ecst");
-        let _ = fs::remove_file(path);
     }
 
     #[test]

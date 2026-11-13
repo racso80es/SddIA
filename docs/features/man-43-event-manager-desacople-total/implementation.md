@@ -121,8 +121,9 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O3.1** | `done` (rama; sin merge) | `sweep_fractal_family`, `list_witnesses` puerto, watcher `list_events`, DL por Nack |
 | **O4 / H4** | `done` (rama) | F-1…F-4; `actions` test helper sin `EventStore::open`; Kalma2 sin fallback `.events/` en dominio/telemetría/progress |
 | **O5** | `done` (rama) | `scan_presented_for_branch`, `presented_ids_in_store`, `sweep_progress_leaf` sin disco |
-| **O5.1 / H5** | `ready` | `eda_port_legacy`, crate store, matrices, allowlists, gates (L-7) |
-| **O6 / H6** | `blocked-by-O5.1` | README, Constitución, Cúmulo, evolution, auditorías |
+| **O5.1** | `done` (rama) | `eda_port` solo `EventManagerPort`; borrado `eda_port_legacy`; `test_lab` ampliado; ~44 unitarios migrados de lectura `.events/` |
+| **O5.2 / H5** | `ready` | Crate `sddia-event-store`, matrices, `runtime_db_path`, allowlist vacía |
+| **O6 / H6** | `blocked-by-O5.2` | README, Constitución, Cúmulo, evolution, auditorías |
 
 ### Backlog técnico O0
 
@@ -150,6 +151,6 @@ Cerrado en rama: Presented y `presented_event_id_for_branch` solo puerto; `sweep
 
 ### Backlog técnico O5.1
 
-Demolición L-7: matrices, borrar crate/`eda_port_legacy`/`runtime_db_path`, allowlists vacías, gates.
+Cerrado en rama: sin `store_mode` en rutas productivas de `eda_port`; módulo `eda_port_legacy` eliminado; `filesystem_eda` = mock + `ParallelLabGuard`; helpers `pending_count`, `seed_domain_ecst`, `list_ecsts_by_event_type`, etc. Verificación: `cargo test -p execute-process --lib` (816 ok), matrices `eda_store_io_matrix_{pending,fractal}`, `cargo test -p sddia-qa gate_event_manager_port`. **O5.2** sigue con el crate y matrices `tests/`.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

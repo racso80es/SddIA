@@ -20,7 +20,6 @@ path_contains = [
 
 # Legacy bridge + locus lab + gates
 path_suffixes = [
-  "eda_port_legacy.rs",
   "eda_port.rs",
   "gate_eda_unit_no_real_backend.rs",
   "gate_event_manager_port.rs",

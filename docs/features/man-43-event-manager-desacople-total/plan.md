@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.1.8"
+version_plan: "1.1.9"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -665,20 +665,84 @@ cd SddIA && cargo test -p sddia-daemon-runtime sweep
 
 ---
 
-## O5.1 / H5 — Demolición (siguiente hilo)
+## O5.1 — `eda_port` sin modo filesystem (siguiente hilo)
 
-Estado: **listo para ejecutar** tras O5 en rama. **L-7** sigue vigente.
+Estado: **done (rama)**. Sin bypass `eda_port_legacy`; `filesystem_eda()` instala `InMemoryEventManagerMock`; unitarios `src/` asertan vía `test_lab` (`get_event`, `list_pending`, `ecst_for_event_id`, `seed_domain_ecst`). O5 (`42519135`) cerró los lectores productivos. **L-7** sigue impidiendo borrar el crate: `tests/common/mod.rs`, `eda_store_io_matrix_*`, `eda_subscriber_ecst_redb`, `event_store_writers` y `event-bus-audit` llaman `sddia_event_store` directo (`publish_ecst` / `EventStore::open` / `runtime_db_path`). Eso es **O5.2**.
+
+### Corte
+
+`eda_port` bajo `cfg(test)` desvía cinco operaciones a `eda_port_legacy` cuando `store_mode()` es filesystem (y `load_domain_ecsts` también lee el store legacy en modo redb). El laboratorio `filesystem_eda()` solo pone ese modo. El puerto productivo ya existe. Este hilo elimina el desvío y el módulo legacy.
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `eda_port.rs` `publish_ecst`, `record_ecst`, `load_dispatched`, `append_progress`, `load_domain_ecsts` | Rama `cfg(test)` → `eda_port_legacy` | Dualidad de laboratorio: el mismo API escribe JSON o Redb según un thread-local |
+| `eda_port_legacy.rs` | Puente a `sddia_event_store` + `.events/{family}` | Único caller es `eda_port` |
+| `test_lab::filesystem_eda` y copias locales (`lab_filesystem_eda`) | `override_store_mode(Filesystem)` | Sin la rama, el guard no cambia el destino y los tests que leen `.events/*.json` mienten |
+| `gate_event_manager_port` | Allowlist por sufijo `eda_port_legacy.rs` | Reintroducir el fichero no falla el gate |
+
+Fuera: borrar el crate, `runtime_db_path`, `path_is_resolved_redb`, matrices `tests/`, `event-bus-audit`, allowlist de `/tests/` y de `sddia-event-store/`, Genoma, O6.
+
+### Diseño cerrado
+
+1. Las cinco funciones de `eda_port` llaman solo a `with_port` → `EventManagerPort`. Desaparecen los bloques `cfg(test)` que consultan `store_mode` / `writes_filesystem` / `writes_store`.
+2. Se borra `eda_port_legacy.rs` y `mod eda_port_legacy` en `engine/mod.rs`.
+3. `filesystem_eda()` y cada `lab_filesystem_eda` dejan de fijar `StoreMode::Filesystem`. El guard de exclusión (`ParallelLabGuard`) se queda. Quien publique en el test usa `EventManagerTestHarness` o `record_ecst`/`publish_ecst` contra el puerto del repo temporal.
+4. Aserción que lee `.events/**/*.json` como resultado de esas cinco funciones pasa a `get_event` / `list_events`. Un JSON plantado a mano deja de contar (misma regla que O5).
+5. Tests y binarios que abren `EventStore` o llaman `sddia_event_store::publish_ecst` directo no se tocan.
+6. Allowlist: quitar el sufijo `eda_port_legacy.rs`. El resto de la allowlist espera a O5.2.
+
+### Secuencia
+
+| Paso | Archivo | Cambio |
+|------|---------|--------|
+| 1 | `engine/.../eda_port.rs` | Sin ramas legacy; `filesystem_eda` sin `StoreMode` |
+| 2 | `engine/.../eda_port_legacy.rs` + `mod.rs` | Borrar módulo |
+| 3 | Callers de `filesystem_eda` / `override_store_mode(Filesystem)` en `src/` (no `tests/`) | Harness o puerto; sin lectura de `.events/` como SSOT |
+| 4 | `tools/sddia-qa/src/gate_event_manager_port.rs` | Fuera el sufijo `eda_port_legacy.rs` |
+
+Callers `src/` conocidos: `route_domain_core`, `delivery_close`, `accept_pr`, `actions`, `daemon_heartbeat`, `workspace_init`, `progress_trace`, `suite_execution_requested`, `capability_di_reactor`, `aiua_intent`, handlers `email_*`, `aiua_stimulus`, `kalma2`, `radamanto_batch_core`.
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `publish_ecst` con `StoreMode::Filesystem` activo | El evento está en el puerto; no aparece `.events/{family}/{id}.json` por esa llamada |
+| `load_domain_ecsts` en modo redb con fila solo en `EventStore` legacy y no en el puerto | No la devuelve |
+| `rg eda_port_legacy` en `execute-process` | Cero hits |
+| Gate con un fichero nuevo `eda_port_legacy.rs` que llame `sddia_event_store::` | Violación |
+| `cargo test -p execute-process --lib` | Verde |
+| Matrices `tests/eda_store_io_*` | Siguen verdes sin editarlas |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p execute-process --lib
+cd SddIA && cargo test -p execute-process --test eda_store_io_matrix_pending --test eda_store_io_matrix_fractal
+cd SddIA && cargo test -p sddia-qa gate_event_manager_port
+```
+
+**Commit:** `refactor(eda): eda_port sin bypass filesystem (MAN-43 O5.1)`.
+
+**AC:** AC-5 en el desvío de laboratorio de `eda_port`. AC-10 no se declara: el crate sigue. AC-11 solo en el sufijo `eda_port_legacy.rs`.
+**Fuera:** O5.2, Genoma, O6.
+**Bloqueo O5.2:** no borrar `sddia-event-store` mientras `execute-process` (dev) o `event-bus-audit` lo declaren en `Cargo.toml`, ni mientras `tests/common/mod.rs` publique por el crate.
+
+---
+
+## O5.2 / H5 — Demolición del crate (bloqueada por este corte)
+
+Estado: **listo para ejecutar** tras O5.1 en rama.
 
 | Paso | Alcance |
 |------|---------|
-| 1 | Quitar ramas `writes_filesystem` / `StoreMode::Filesystem` de `eda_port.rs`; tests que fuerzan ese modo pasan al puerto |
-| 2 | Matrices `eda_store_io_*`, `eda_subscriber_*`, `event_store_writers` → contract suite / mock, sin `EventStore::open` |
-| 3 | Borrar `eda_port_legacy`, `runtime_db_path`, `path_is_resolved_redb` de consumidores, crate `sddia-event-store` |
-| 4 | Allowlist de `gate_event_manager_port` vacía de esas rutas; el gate falla si reaparecen |
+| 1 | Matrices y `event_store_writers` / `eda_subscriber_*` publican por puerto o contract suite; cero `EventStore::open` |
+| 2 | `event-bus-audit` deja la dependencia |
+| 3 | Borrar `runtime_db_path`, `path_is_resolved_redb` de consumidores y el crate |
+| 4 | Allowlist de `gate_event_manager_port` vacía de store/matrices/`/tests/` |
 | 5 | `cargo test --workspace` + clippy |
 
-**Commit esperado:** `test(eda): demolición store legacy + gates v2 (MAN-43 O5.1)`.
-**AC:** AC-8 (símbolo borrado), AC-10, AC-11, AC-12.
+**Commit esperado:** `test(eda): demolición store legacy + gates v2 (MAN-43 O5.2)`.
+**AC:** AC-8, AC-10, AC-11, AC-12.
 
 ---
 

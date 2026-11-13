@@ -442,7 +442,7 @@ mod tests {
 
     #[test]
     fn emit_work_initiated_writes_pending_without_provider_fields() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -468,7 +468,7 @@ mod tests {
 
     #[test]
     fn emit_validation_started_writes_pending() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -501,7 +501,7 @@ mod tests {
 
     #[test]
     fn pr_emits_carry_tracker_ref_when_provided() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -535,7 +535,7 @@ mod tests {
 
     #[test]
     fn emit_resealed_links_presented_event_id() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let pending = repo.join(".events/pending");
         fs::create_dir_all(&pending).ok();
@@ -583,7 +583,7 @@ mod tests {
 
     #[test]
     fn emit_tracker_sync_failed_no_secrets_in_pending() {
-        let _guard = filesystem_guard();
+        let _guard = port_harness();
         let repo = find_repo_root().unwrap();
         let out = emit_tracker_sync_failed(
             &repo,
@@ -604,10 +604,6 @@ mod tests {
     }
 
     fn emitted_body(repo: &Path, event_id: &str) -> String {
-        let file = repo.join(".events/pending").join(format!("{event_id}.json"));
-        if file.is_file() {
-            return fs::read_to_string(file).unwrap();
-        }
         let row = crate::engine::eda_port::with_event_port(repo, "test_emitted_body", |port| {
             use sddia_core::ports::event_manager::GetEventRequest;
             port.get_event(GetEventRequest {
@@ -626,9 +622,8 @@ mod tests {
         }
     }
 
-    fn filesystem_guard() -> ModeGuard {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        ModeGuard
+    fn port_harness() -> crate::engine::eda_port::EventManagerTestHarness {
+        crate::engine::eda_port::EventManagerTestHarness::new()
     }
 
     fn temp_repo() -> std::path::PathBuf {

@@ -1158,13 +1158,13 @@ mod tests {
 
     fn write_received(repo: &Path, name: &str, payload: Value) -> PathBuf {
         let path = repo.join(".events/domain").join(format!("{name}.json"));
-        let event = json!({
-            "event_id": name,
-            "event_type": "Email_Received",
-            "event_family": "domain",
-            "payload": payload,
-        });
-        fs::write(&path, serde_json::to_string(&event).unwrap()).unwrap();
+        crate::engine::eda_port::test_lab::seed_domain_ecst(
+            repo,
+            name,
+            "Email_Received",
+            payload,
+        )
+        .expect("seed Email_Received");
         path
     }
 

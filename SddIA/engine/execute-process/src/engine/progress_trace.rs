@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn emit_writes_under_progress_leaf_not_telemetry() {
-        let _fs = crate::engine::eda_port::test_lab::filesystem_eda();
+        let _h = crate::engine::eda_port::EventManagerTestHarness::new();
         let base = std::env::temp_dir().join(format!("ptc-write-{}", Uuid::new_v4()));
         let repo = base.join("repo");
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
@@ -239,11 +239,18 @@ mod tests {
             Some("feature"),
             None,
         );
-        let progress_dir = repo.join(".events/progress").join(cid);
-        assert!(progress_dir.is_dir());
-        assert!(!repo.join(".events/telemetry").join(cid).exists());
-        let count = std::fs::read_dir(&progress_dir).unwrap().count();
-        assert_eq!(count, 1);
+        use sddia_core::ports::event_manager::ListProgressRequest;
+        let frames = crate::engine::eda_port::with_event_port(&repo, "test_list_progress", |port| {
+            port.list_progress(ListProgressRequest {
+                trace_id: None,
+                correlation_id: Some(cid.to_string()),
+            })
+            .map(|r| r.frames)
+            .map_err(|e| e.to_string())
+        })
+        .expect("list_progress");
+        assert_eq!(frames.len(), 1);
+        assert!(!repo.join(".events/progress").join(cid).exists());
         let _ = std::fs::remove_dir_all(base);
     }
 
