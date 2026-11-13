@@ -126,6 +126,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O5.2 / H5** | `done` (rama) | Crate `sddia-event-store` demolido; matrices/harness puerto; gates v2; `runtime_db_path` retirado de `eda_port` |
 | **O6 / H6** | `done (rama)` | README/Constitución convergentes; evolution `c4e8f2a1-…`; audit O6; AC-13 abierto |
 | **O7** | `done (rama)` | `event-bus-audit` sin default `/.events/`; AC-13 abierto |
+| **O8** | `done (rama)` | Bindings 2.0.0; procesos forjados; F-02 schema abierto |
 
 ### Backlog técnico O0
 
@@ -166,5 +167,9 @@ Cerrado en `f9ef35d9`. F-02 y prosa de `SddIA/process/` → **O8** vía `entity-
 ### Backlog técnico O7
 
 Cerrado en rama: `cumulo_string_is_legacy_fs_dir` + `optional_queue_dir`; sin `unwrap_or(".events/…")`; tests `cumulo_table_ids_*` y `run_audit_with_core_cumulo_*`. Verificación: `cargo test -p event-bus-audit`, `gate-event-manager-port`.
+
+### Backlog técnico O8
+
+Cerrado en rama: `capability-bindings` v1.10.0 / contrato `2.0.0`; README/Constitución `^2.0.0`; `event-bus-audit` y `route-domain-event` actualizados vía `entity-manager`. Re-audit `man-43-o8-contract-20261113.md`. Residual: schema v1, frontmatter `route-domain-event` (`fs.persist`). AC-13 abierto.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

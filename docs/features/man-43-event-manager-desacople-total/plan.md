@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.3"
+version_plan: "1.2.4"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -929,7 +929,70 @@ rg -n 'unwrap_or\\("\\./\\.events' SddIA/tools/event-bus-audit/src/main.rs
 
 **AC:** acerca F-03; no cierra AC-13.
 **Fuera:** F-02 (`capability-bindings` 1.2 vs handshake 2.0), prosa de `SddIA/process/`, `APTO_TOTAL`.
-**Siguiente tras O7:** O8 contractual/genoma solo vía `entity-manager`, con re-audit nuevo.
+**Siguiente tras O7:** O8 contractual/genoma. Detalle abajo.
+
+---
+
+## O8 — Alineación contractual 2.0.0 (siguiente hilo)
+
+Estado: **done (rama)**. Bindings 2.0.0; narrativa; procesos forjados vía `entity-manager`. F-02 schema/route frontmatter residual. AC-13 abierto.
+
+### Corte
+
+Una sola versión de contrato visible: **2.0.0**. `capability-bindings.md` (no está en directorios de genoma protegido) pasa `contract_version` y `provider_version` del rol `eda:event-manager` a `2.0.0` / `>=2.0.0`. README y Constitución dejan de llamar al puerto vigente `^1.2.0` (ese número queda como hito histórico MAN-35, no como contrato actual). La prosa de `SddIA/process/event-bus-audit.md` y `route-domain-event.md` se actualiza **solo** con `./sddia-run.sh --process entity-manager`. Cero `Write` sobre `SddIA/process/`, `SddIA/events/`, `SddIA/library/`.
+
+### Inventario vivo
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `sddia-core/.../contract.rs` | `CONTRACT_VERSION` `2.0.0`, rango `^2.0.0` | SSOT de código |
+| `sddia-event-manager-host` | `implements_contract_version: 2.0.0` | Alineado |
+| `SddIA/core/capability-bindings.md` | `eda:event-manager` `contract_version: 1.2.0`, providers `>=1.2.0`, schema `eda.event_manager.v1.schema.json` | F-02 |
+| `README.md` / `CONSTITUTION_CORE.md` | Siguen diciendo puerto `^1.2.0` tras O6 | Misma fractura narrativa |
+| `event_manager_factory.rs` test `major_mismatch` | Registra `1.2.0` para demostrar rechazo | **No tocar**: es el caso negativo |
+| `SddIA/process/event-bus-audit.md` | `SDDIA_EVENT_STORE=filesystem` escanea `./.events/` | Genoma; O7 ya quitó ese default en el binario |
+| `SddIA/process/route-domain-event.md` | `event_file_path` = JSON en `.events/pending/` | Token lógico, no fichero |
+| `SddIA/library/norms/.../eda.event_manager.v1.schema.json` | Norma protegida | Fuera: otro ciclo `entity-manager` clase `norm` |
+
+### Diseño cerrado
+
+1. **Bindings:** en la fila `eda:event-manager`, `contract_version: "2.0.0"`, `provider_version: ">=2.0.0"` en default/test/capsule. Subir `version` del fichero (SemVer patch o minor). La prosa del final del archivo dice contrato **2.0.0**. El nombre del schema v1 se deja; no se reescribe la norma.
+2. **Narrativa:** sustituir la mención del puerto **vigente** `^1.2.0` por `^2.0.0` en README y Constitución. MAN-35 puede citarse como corte histórico 1.2, no como versión actual.
+3. **Procesos (DA-2 / DA-5):** una invocación `entity-manager` `lifecycle_operation: update` por proceso (`event-bus-audit`, `route-domain-event`). Cuerpo: censo por `EventManagerPort`; `event_file_path` es token lógico `eda://` / `.events/pending/<id>.json` resuelto por puerto, sin lectura de JSON en disco. Tras el JSON de acuse del CLI, **prohibido** polling de `./.events/` o del fichero. Si el proceso colapsa: Protocolo Kintsugi, no edición manual.
+4. **Re-audit corto** en `docs/audits/` (fecha del hilo): F-02 narrativo/bindings cerrado o aún abierto si `entity-manager` no materializó los procesos. Veredicto del feature sigue `NO_APTO_TOTAL` mientras el schema v1 y el codex no se hayan forjado.
+
+### Secuencia
+
+| Paso | Alcance |
+|------|---------|
+| 1 | Parche `capability-bindings.md` + README + Constitución |
+| 2 | `cargo test -p sddia-core event_manager` (el test de mismatch 1.2 debe seguir rojo al rol `broken`) |
+| 3 | Dos inyecciones `entity-manager` (fire-and-forget) |
+| 4 | Nota de audit + estado O8 en `implementation.md` |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `contract_version: "1.2.0"` en la fila `eda:event-manager` | Ausente |
+| `Write` / `StrReplace` bajo `SddIA/process/` o `SddIA/library/` | Cero |
+| Borrar el test que rechaza `implements_contract_version: 1.2.0` | Prohibido |
+| `APTO_TOTAL` | Prohibido |
+| `sleep` / polling tras acuse de `sddia-run.sh` | Prohibido (DA-5) |
+
+### Verificación
+
+```bash
+rg -n 'contract_version: \"1.2.0\"' SddIA/core/capability-bindings.md
+cd SddIA && cargo test -p sddia-core event_manager
+```
+
+**Commit (parte no genoma):** `docs(eda): contrato EventManager 2.0.0 en bindings (MAN-43 O8)`.
+
+El delta de `SddIA/process/` entra en el mismo PR solo si `entity-manager` lo materializó antes del commit. Si el acuse falla, el commit de bindings no incluye procesos y O8 queda `partial`.
+
+**AC:** F-02 en bindings y narrativa. AC-13 sigue abierto (schema v1 y códices).
+**Fuera:** `eda.event_manager.v1.schema.json`, `SddIA/library/codexes/`, `validacion.md` H1.
 
 ---
 
@@ -990,7 +1053,7 @@ El detalle ejecutable está en **O4 / H4**.
 7. **O5/H5** lab + demolición (tras consumidores limpios).
 8. **O6/H6** docs/evolution/auditorías → handoff Argos/`validacion.md`.
 9. **O7** `event-bus-audit` sin default `/.events/` (F-03 residual). AC-13 sigue abierto.
-10. **O8** (no en este corte) F-02 + prosa de procesos vía `entity-manager`.
+10. **O8** bindings + narrativa a contrato `2.0.0`; procesos solo `entity-manager` (DA-5). AC-13 sigue abierto.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 

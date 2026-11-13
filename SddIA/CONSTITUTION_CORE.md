@@ -30,7 +30,7 @@ Además de la Librería (§3), el genoma operativo del Core reconoce entidades d
 **Distinción ontológica innegociable:**
 
 - **Clase de Evento** (genoma): definición versionada bajo `directories.events` (`SddIA/events/`), gobernada por `events-contract.md`.
-- **Instancia de Evento** (runtime): frontera productiva **`EventManagerPort` ^1.2.0** con identidad **`EventUri`** → persistencia Redb resuelta solo en `sddia-event-manager-host` desde bóveda (`SDDIA_EVENT_MANAGER_*`; precedencia SO > instancia > global). `cumulo.paths.json` declara tablas lógicas y suscripciones, no rutas físicas del store (MAN-36). Tokens `/.events/*` en APIs o genoma no constituyen cola SSOT. El crate `sddia-event-store` fue retirado (MAN-43); consumidores publican y consultan exclusivamente por el puerto; `gate-event-manager-port` veta reintroducciones legacy (MAN-35).
+- **Instancia de Evento** (runtime): frontera productiva **`EventManagerPort` ^2.0.0** con identidad **`EventUri`** → persistencia Redb resuelta solo en `sddia-event-manager-host` desde bóveda (`SDDIA_EVENT_MANAGER_*`; precedencia SO > instancia > global). `cumulo.paths.json` declara tablas lógicas y suscripciones, no rutas físicas del store (MAN-36). Tokens `/.events/*` en APIs o genoma no constituyen cola SSOT. El crate `sddia-event-store` fue retirado (MAN-43); consumidores publican y consultan exclusivamente por el puerto; `gate-event-manager-port` veta reintroducciones legacy (MAN-35).
 - **Personalización de instancia:** configuración táctica por proyecto bajo `.SddIA/events/`; **no** sustituye al bus federal.
 
 ## 4. Protocolos de Defensa y Validación

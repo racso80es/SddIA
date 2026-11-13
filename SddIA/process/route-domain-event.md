@@ -3,7 +3,7 @@ context:
 - event-routing
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:265df9077cc868ce998267acfa7f5f0fca8ec54547f2a32533335f5c638758f9
+hash_signature: "sha256:265df9077cc868ce998267acfa7f5f0fca8ec54547f2a32533335f5c638758f9"
 inputs:
 - event_file_path: Ruta relativa al JSON padre en eda_bus.pending (.events/pending/)
 - event_file_paths: Lista de rutas relativas a los JSONs (opcional, habilita batching semántico)
@@ -55,15 +55,15 @@ Proceso orquestador del bus EDA local (**Ola C V3+**). Sustituye la acción hom�
 
 ## Responsabilidades
 
-1. Padre ECST **inmutable** en `pending/`.
-2. Cabecera réplica en `processing/`, `processed/`, `dead-letter/` según avance.
-3. Testigos en `{estado}/subscribers/[UUID].[subscriber_id].json`.
+1. Padre ECST **inmutable** en cola `pending` del puerto (token lógico `pending/`).
+2. Estados `processing` / `processed` / `dead-letter` y entregas consultables en el store; sin réplicas JSON en disco.
+3. Testigos vía `list_deliveries` / `record_delivery` del puerto (sin JSON bajo `subscribers/`).
 4. Fan-out **asíncrono** por suscriptor (modo sync solo en lab/regresión).
-5. Purga de `processing/[UUID].json` cuando todos los suscriptores aplicables están terminales.
+5. Promoción/purga vía sweeper sobre entregas del puerto cuando todos los suscriptores aplicables están terminales.
 
 ## Implementación física
 
-Handler laboratorio: `route_domain_event_core::route_domain_event()` invocado desde el binario `execute-process`.
+Handler: `route_domain_event_core::route_domain_event()` resuelve el ECST vía `EventManagerPort`; `event_file_path` es token lógico, no lectura de JSON en disco.
 
 Watcher: delega en `execute-process --process route-domain-event`.
 
