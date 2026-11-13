@@ -3,10 +3,10 @@ context:
 - event-routing
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:265df9077cc868ce998267acfa7f5f0fca8ec54547f2a32533335f5c638758f9"
+hash_signature: sha256:a37837b314d570dde698cae2ac20d2cec5a13f9a83236cc95b2083f3926d22aa
 inputs:
-- event_file_path: Ruta relativa al JSON padre en eda_bus.pending (.events/pending/)
-- event_file_paths: Lista de rutas relativas a los JSONs (opcional, habilita batching semántico)
+- event_file_path: Token lógico `.events/pending/<event_id>.json` resuelto por EventManagerPort, sin JSON en disco
+- event_file_paths: Lista de tokens lógicos (batch); el ECST se carga por puerto
 - cumulo_topology: Topología SSOT inyectada (opcional en laboratorio)
 minteo_maximo: null
 name: route-domain-event
@@ -16,36 +16,24 @@ outputs:
 - parent_path: ruta relativa del padre en pending/
 - processing_header_path: ruta relativa de cabecera en processing/
 phases:
-- intent: Leer pending/; validar instancia frente a Clase ECST; gate ecst-gate en dead-letter si falla.
+- intent: Resolver el ECST por EventManagerPort (token event_file_path); validar frente a la Clase; Nack/DLQ en el puerto si falla el gate.
   name: Lectura y validación ECST
-  requires_capability:
-  - contract: fs.persist
-    id: fs:persist
-    version: '>=1.0.0'
 - delegates_to:
   - agent:cumulo
   intent: Cargar event-subscriptions.json; filtrar por applies_to_origin_topology.
   name: Resolución suscripciones
-- intent: Copiar cabecera a processing/; crear testigos processing/subscribers/.
+- intent: Marcar el evento en processing y abrir entregas de suscriptor vía record_delivery en el puerto; sin copia de cabecera ni JSON en subscribers/.
   name: Materialización processing
-  requires_capability:
-  - contract: fs.persist
-    id: fs:persist
-    version: '>=1.0.0'
 - delegates_to:
   - action:execute-process
   - action:execute-action
   intent: Despachar process/action/tool por suscriptor; async por defecto (sync con SDDIA_LAB_ROUTE_SYNC=1).
   name: Fan-out suscriptores
-- intent: Mover testigos a processed/dead-letter; decorar; réplica cabecera; purge processing/.
+- intent: Cerrar entregas en processed o dead-letter del puerto (list_deliveries / record_delivery) cuando los suscriptores aplicables están terminales; sin mover JSON en disco.
   name: Promoción testigos
-  requires_capability:
-  - contract: fs.persist
-    id: fs:persist
-    version: '>=1.0.0'
 porcentaje_de_exito: null
 uuid: c8e91f2a-4b6d-4e1a-9f03-2d7e5a684b10
-version: 1.0.1
+version: 1.0.2
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.4"
+version_plan: "1.2.5"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -996,6 +996,68 @@ El delta de `SddIA/process/` entra en el mismo PR solo si `entity-manager` lo ma
 
 ---
 
+## O8.1 — Frontmatter `route-domain-event` (siguiente hilo)
+
+Estado: **done (rama)**. Frontmatter v1.0.2: inputs como token de puerto; fases sin `fs.persist`. `outputs` de cabecera y schema v1 siguen fuera. AC-13 abierto.
+
+No se llama O9: en `objectives.md` **O9** es la suite de calidad (`cargo test --workspace`), no esta ola.
+
+### Corte
+
+Una sola forja `entity-manager` → `process-creator` sobre `route-domain-event`, con `process_phases` (array no vacío) y `process_inputs`. `patch_process_phases_update` reescribe `phases`, `inputs`, `version` y `hash_signature`. Cero `Write` sobre `SddIA/process/`. Tras el acuse JSON, sin polling (DA-5).
+
+### Inventario vivo
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| Cuerpo `# route-domain-event` | Estados y testigos vía puerto (`4c848f3c`) | Hecho |
+| `inputs.event_file_path` | «JSON padre en `.events/pending/`» | Token lógico |
+| Fases 1, 3 y 5 | `fs.persist`: leer `pending/`, copiar cabecera, mover testigos | Deben nombrar el puerto |
+| `outputs.parent_path` / `processing_header_path` | Siguen diciendo rutas de cabecera | El parche de fases **no** escribe `outputs`; quedan residual menor |
+| `eda.event_manager.v1.schema.json` | Describe contrato **v1.2.0**; ningún `.rs` lo carga | **Fuera** (O8.2, clase `norm`) |
+
+### Diseño cerrado
+
+Semilla `semantic_seed`:
+
+- `process_version`: `1.0.2` (hoy `1.0.1`).
+- `process_inputs`: tres filas. `event_file_path` = token `.events/pending/<event_id>.json` resuelto por `EventManagerPort`. `event_file_paths` = lista de tokens (batch). `cumulo_topology` = opcional de laboratorio.
+- `process_phases`: las cinco fases actuales, mismos `name` y mismos `delegates_to` (`agent:cumulo`, `action:execute-process`, `action:execute-action`). Cambian los `intent` de lectura, materialización y promoción: claim/get por puerto, entregas con `record_delivery` / `list_deliveries`, sin copia de JSON ni `subscribers/*.json`. Quitar `requires_capability` `fs:persist` de esas tres fases. Fan-out y resolución de suscripciones se conservan.
+
+No reenviar el cuerpo ya forjado. No tocar el test de mismatch `1.2.0`. No declarar AC-13.
+
+### Secuencia
+
+| Paso | Alcance |
+|------|---------|
+| 1 | Una inyección `entity-manager` (`entity_class: process`, `entity_name: route-domain-event`, `lifecycle_operation: update`) |
+| 2 | Leer el `.md` resultante: `inputs` y `phases` sin «JSON padre» ni `fs.persist` |
+| 3 | Si el acuse es `success: false`: Kintsugi. No editar el fichero a mano |
+| 4 | Nota en `implementation.md`. El schema v1 no entra en el commit |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `inputs` sigue diciendo JSON en `.events/pending/` | Ausente |
+| Fases de lectura/materialización/promoción con `fs:persist` | Ausente |
+| `Write` directo en `SddIA/process/route-domain-event.md` | Cero |
+| Reescribir `eda.event_manager.v1.schema.json` | Cero |
+| `APTO_TOTAL` | Prohibido |
+
+### Verificación
+
+```bash
+rg -n "fs.persist|JSON padre" SddIA/process/route-domain-event.md
+```
+
+**Commit:** el delta lo materializa `entity-manager`. Mensaje: `docs(eda): route-domain-event sin cola FS en frontmatter (MAN-43 O8.1)`.
+
+**AC:** cierra el residual de prosa de proceso dejado en O8. AC-13 sigue abierto (schema v1, `outputs` de cabecera, códices).
+**Fuera:** norma del schema, `SddIA/library/codexes/`, fábrica Rust para parchear `outputs`.
+
+---
+
 ## H4 — Consumidores periféricos (índice)
 
 El detalle ejecutable está en **O4 / H4**.
@@ -1054,6 +1116,7 @@ El detalle ejecutable está en **O4 / H4**.
 8. **O6/H6** docs/evolution/auditorías → handoff Argos/`validacion.md`.
 9. **O7** `event-bus-audit` sin default `/.events/` (F-03 residual). AC-13 sigue abierto.
 10. **O8** bindings + narrativa a contrato `2.0.0`; procesos solo `entity-manager` (DA-5). AC-13 sigue abierto.
+11. **O8.1** frontmatter `route-domain-event` vía `process_phases` (no es el O9 de calidad).
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 

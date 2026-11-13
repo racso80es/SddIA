@@ -127,6 +127,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O6 / H6** | `done (rama)` | README/Constitución convergentes; evolution `c4e8f2a1-…`; audit O6; AC-13 abierto |
 | **O7** | `done (rama)` | `event-bus-audit` sin default `/.events/`; AC-13 abierto |
 | **O8** | `done (rama)` | Bindings 2.0.0; procesos forjados; F-02 schema abierto |
+| **O8.1** | `done (rama)` | `route-domain-event` v1.0.2 sin `fs.persist` en fases; schema v1 fuera |
 
 ### Backlog técnico O0
 
@@ -170,6 +171,10 @@ Cerrado en rama: `cumulo_string_is_legacy_fs_dir` + `optional_queue_dir`; sin `u
 
 ### Backlog técnico O8
 
-Cerrado en rama: `capability-bindings` v1.10.0 / contrato `2.0.0`; README/Constitución `^2.0.0`; `event-bus-audit` y `route-domain-event` actualizados vía `entity-manager`. Re-audit `man-43-o8-contract-20261113.md`. Residual: schema v1, frontmatter `route-domain-event` (`fs.persist`). AC-13 abierto.
+Cerrado en rama: `capability-bindings` v1.10.0 / contrato `2.0.0`; README/Constitución `^2.0.0`; `event-bus-audit` y `route-domain-event` actualizados vía `entity-manager`. Re-audit `man-43-o8-contract-20261113.md`. Residual de cabecera → **O8.1**. Schema v1 → ciclo `norm` posterior. AC-13 abierto.
+
+### Backlog técnico O8.1
+
+Cerrado en rama: `entity-manager` reescribió `phases` e `inputs` de `route-domain-event` a v1.0.2 (token de puerto, sin `fs.persist`). `context` restaurado (`event-routing`, `ecosystem-evolution`). `outputs` de cabecera y `eda.event_manager.v1.schema.json` siguen fuera. AC-13 abierto.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.
