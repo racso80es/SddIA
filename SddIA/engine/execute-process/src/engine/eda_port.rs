@@ -16,8 +16,7 @@ use sddia_core::ports::event_manager::{
     SealDltRequest, VerifyInlineEcstRequest, PublishSeal,
 };
 use sddia_event_manager_host::{
-    is_resolved_redb_path, productive_store_present, resolve_productive_port, resolved_redb_path,
-    with_productive_port,
+    productive_store_present, resolve_productive_port, with_productive_port,
 };
 
 /// Ruta de directorio (no fichero `.redb`).
@@ -31,20 +30,6 @@ pub fn is_filesystem_rel(raw: &str) -> bool {
 thread_local! {
     static PORT: RefCell<Option<Arc<dyn EventManagerPort>>> = const { RefCell::new(None) };
     static PORT_REPO: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
-}
-
-/// Delegación pura al composition root (MAN-36 / CA-4).
-/// Sin fallback `DEFAULT_REDB_REL` en el consumidor; el default vive solo en el host.
-/// Preferir `with_event_port` / `productive_store_present` / `is_resolved_redb_path`.
-pub fn runtime_db_path(repo: &Path) -> PathBuf {
-    resolved_redb_path(repo).unwrap_or_else(|e| {
-        panic!("MAN-36: configuración Event Manager inválida antes de abrir backend: {e}")
-    })
-}
-
-/// ¿El candidato coincide con la Redb resuelta por el host? (detección sin cablear layout).
-pub fn path_is_resolved_redb(repo: &Path, candidate: &Path) -> bool {
-    is_resolved_redb_path(repo, candidate)
 }
 
 /// ¿Existe el store productivo en la ruta resuelta por el host?
@@ -511,7 +496,6 @@ pub mod test_lab {
     use std::path::Path;
     use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
     use sddia_core::ports::event_manager::{GetEventRequest, InMemoryEventManagerMock};
-    use sddia_event_store::{override_store_mode, StoreMode};
     use serde_json::Value;
 
     static PARALLEL_LAB: OnceLock<Mutex<()>> = OnceLock::new();
@@ -540,7 +524,6 @@ pub mod test_lab {
     impl Drop for ParallelLabGuard {
         fn drop(&mut self) {
             super::clear_port();
-            override_store_mode(None);
         }
     }
 
@@ -655,17 +638,21 @@ pub mod test_lab {
         _scope: ParallelLabGuard,
     }
 
-    impl Drop for RedbEdaGuard {
-        fn drop(&mut self) {
-            override_store_mode(None);
+  /// Instala `RedbEventAdapter` en la ruta resuelta por el host para el repo de lab.
+    pub fn redb_eda_for(repo: &Path) -> RedbEdaGuard {
+        let scope = ParallelLabGuard::acquire();
+        super::clear_port();
+        if let Ok(port) = sddia_event_manager_host::open_lab_redb_port(repo) {
+            super::install_port(port);
         }
+        RedbEdaGuard { _scope: scope }
     }
 
-    /// Modo Redb bajo mutex global (p. ej. REDB-CA*).
+    /// Mutex global para tests Redb; el caller debe invocar [`redb_eda_for`] con el repo temporal.
     pub fn redb_eda() -> RedbEdaGuard {
-        let scope = ParallelLabGuard::acquire();
-        override_store_mode(Some(StoreMode::Redb));
-        RedbEdaGuard { _scope: scope }
+        RedbEdaGuard {
+            _scope: ParallelLabGuard::acquire(),
+        }
     }
 
     pub fn fs_lab_tempdir() -> (FilesystemEdaGuard, tempfile::TempDir) {

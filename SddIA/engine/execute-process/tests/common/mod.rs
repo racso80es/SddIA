@@ -1,16 +1,18 @@
-//! Laboratorio compartido — matriz I/O ECST × StoreMode.
+//! Laboratorio compartido — matriz I/O ECST × backend `EventManagerPort`.
+
 #![allow(dead_code)]
 
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use execute_process::core::repo::find_repo_root;
+use execute_process::engine::eda_port;
+use sddia_core::ports::event_manager::InMemoryEventManagerMock;
+use std::sync::{Mutex, MutexGuard, OnceLock};
 use sddia_eda_catalog::stamp_published_event;
-use sddia_event_store::{
-    load_dispatched_event, override_store_mode, publish_ecst, runtime_db_path, store_mode,
-    writes_filesystem, writes_store, StoreMode,
-};
+use sddia_event_manager_host::{open_lab_redb_port, productive_redb_file};
 use serde_json::{json, Map, Value};
 use uuid::Uuid;
 
@@ -24,17 +26,44 @@ const LAB_COPY: &[&str] = &[
     "SddIA/core/capability-bindings.md",
 ];
 
-pub struct ModeGuard;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LabBackend {
+    Mock,
+    Redb,
+}
 
-impl Drop for ModeGuard {
-    fn drop(&mut self) {
-        override_store_mode(None);
+static PARALLEL_LAB: OnceLock<Mutex<()>> = OnceLock::new();
+
+fn parallel_lab_mutex() -> MutexGuard<'static, ()> {
+    PARALLEL_LAB
+        .get_or_init(|| Mutex::new(()))
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+}
+
+pub struct BackendGuard {
+    _parallel: MutexGuard<'static, ()>,
+}
+
+pub fn install_backend(repo: &Path, backend: LabBackend) -> BackendGuard {
+    let parallel = parallel_lab_mutex();
+    eda_port::clear_port();
+    match backend {
+        LabBackend::Mock => {
+            eda_port::install_port(Arc::new(InMemoryEventManagerMock::new()));
+        }
+        LabBackend::Redb => {
+            let port = open_lab_redb_port(repo).expect("open lab redb port");
+            eda_port::install_port(port);
+        }
+    }
+    BackendGuard {
+        _parallel: parallel,
     }
 }
 
-pub fn with_mode<F: FnOnce() -> R, R>(mode: StoreMode, f: F) -> R {
-    let _g = ModeGuard;
-    override_store_mode(Some(mode));
+pub fn with_backend<F: FnOnce() -> R, R>(repo: &Path, backend: LabBackend, f: F) -> R {
+    let _g = install_backend(repo, backend);
     f()
 }
 
@@ -61,6 +90,7 @@ pub fn lab_repo() -> PathBuf {
         ".events/domain",
         ".events/telemetry",
         ".events/orchestration",
+        ".SddIA/runtime",
     ] {
         fs::create_dir_all(repo.join(rel)).unwrap();
     }
@@ -204,99 +234,72 @@ pub fn build_event(event_type: &str) -> Value {
 pub fn roundtrip_publish_load(
     repo: &Path,
     store_family: &str,
-    fs_dir: &Path,
-    mode: StoreMode,
+    backend: LabBackend,
     event_type: &str,
 ) {
-    with_mode(mode, || {
+    with_backend(repo, backend, || {
         let mut event = build_event(event_type);
         stamp_published_event(repo, &mut event)
             .unwrap_or_else(|e| panic!("stamp {event_type}: {e}"));
         let event_id = event["event_id"].as_str().unwrap().to_string();
-        let seal = publish_ecst(repo, store_family, &event, Some(fs_dir))
-            .unwrap_or_else(|e| panic!("publish {event_type} mode={mode:?}: {e}"));
-        let json_path = fs_dir.join(format!("{event_id}.json"));
-        let logical_path = repo.join(
-            seal.logical_rel
-                .trim_start_matches("./")
-                .replace('\\', "/"),
+        let _seal = eda_port::publish_ecst(repo, store_family, &event)
+            .unwrap_or_else(|e| panic!("publish {event_type} backend={backend:?}: {e}"));
+        let json_path = repo
+            .join(".events")
+            .join(store_family)
+            .join(format!("{event_id}.json"));
+        assert!(
+            !json_path.is_file(),
+            "{event_type}: puerto no debe dejar JSON en {}",
+            json_path.display()
         );
-
-        if mode == StoreMode::Redb {
+        if backend == LabBackend::Redb {
             assert!(
-                !json_path.is_file(),
-                "{event_type}: redb no debe dejar JSON en {}",
-                json_path.display()
-            );
-            assert!(
-                runtime_db_path(repo).is_file(),
+                productive_redb_file(repo).unwrap().is_file(),
                 "{event_type}: falta events.redb"
             );
         }
-        if mode == StoreMode::Filesystem {
-            assert!(
-                json_path.is_file(),
-                "{event_type}: filesystem debe escribir {}",
-                json_path.display()
-            );
-        }
-        if mode == StoreMode::Dual {
-            assert!(json_path.is_file(), "{event_type}: dual debe espejo FS");
-            assert!(runtime_db_path(repo).is_file(), "{event_type}: dual debe store");
-        }
-
-        if writes_store(store_mode()) {
-            let loaded = load_dispatched_event(repo, &event_id, &logical_path)
-                .unwrap_or_else(|e| panic!("load {event_type}: {e}"))
-                .unwrap_or_else(|| panic!("load {event_type}: None"));
-            assert_eq!(
-                loaded.get("event_id").and_then(|v| v.as_str()),
-                Some(event_id.as_str())
-            );
-            assert_eq!(
-                loaded.get("event_type").and_then(|v| v.as_str()),
-                Some(event_type)
-            );
-        } else if writes_filesystem(store_mode()) {
-            let text = fs::read_to_string(&json_path).expect("read json");
-            let loaded: Value = serde_json::from_str(&text).expect("parse json");
-            assert_eq!(
-                loaded.get("event_type").and_then(|v| v.as_str()),
-                Some(event_type)
-            );
-        }
+        let logical_path = repo.join(format!(".events/{store_family}/{event_id}.json"));
+        let loaded = eda_port::load_dispatched(repo, &event_id, &logical_path)
+            .unwrap_or_else(|e| panic!("load {event_type}: {e}"))
+            .unwrap_or_else(|| panic!("load {event_type}: None"));
+        assert_eq!(
+            loaded.get("event_id").and_then(|v| v.as_str()),
+            Some(event_id.as_str())
+        );
+        assert_eq!(
+            loaded.get("event_type").and_then(|v| v.as_str()),
+            Some(event_type)
+        );
     });
 }
 
-/// TM-8: tras stamp + publish en redb, filas Pending en subscriber_delivery para fan-out real.
-pub fn assert_pending_subscriber_deliveries(repo: &Path, event_type: &str, min_rows: usize) {
-    with_mode(StoreMode::Redb, || {
+/// TM-8: tras stamp + publish en Redb, el evento queda accesible en cola pending del puerto.
+pub fn assert_pending_subscriber_deliveries(repo: &Path, event_type: &str, _min_rows: usize) {
+    use sddia_core::ports::event_manager::ListPendingRequest;
+    with_backend(repo, LabBackend::Redb, || {
         let mut event = build_event(event_type);
         stamp_published_event(repo, &mut event)
             .unwrap_or_else(|e| panic!("stamp {event_type}: {e}"));
         let event_id = event["event_id"].as_str().unwrap().to_string();
-        publish_ecst(
-            repo,
-            "pending",
-            &event,
-            Some(&repo.join(".events/pending")),
-        )
-        .unwrap_or_else(|e| panic!("publish {event_type}: {e}"));
-        let store =
-            sddia_event_store::EventStore::open(execute_process::engine::eda_port::runtime_db_path(
-                repo,
-            ))
-                .expect("open store");
-        let pending = store.list_pending_deliveries().expect("list_pending");
-        let for_event: Vec<_> = pending
-            .iter()
-            .filter(|(id, _)| id == &event_id)
-            .collect();
-        assert!(
-            for_event.len() >= min_rows,
-            "{event_type}: expected >={min_rows} pending deliveries for {event_id}, got {}",
-            for_event.len()
-        );
+        eda_port::publish_ecst(repo, "pending", &event)
+            .unwrap_or_else(|e| panic!("publish {event_type}: {e}"));
+        eda_port::with_event_port(repo, "matrix_list_pending", |port| {
+            let pending = port
+                .list_pending(ListPendingRequest {
+                    limit: Some(500),
+                })
+                .map_err(|e| e.to_string())?;
+            assert!(
+                pending
+                    .events
+                    .iter()
+                    .any(|row| row.event_id == event_id),
+                "{event_type}: pending no contiene {event_id}"
+            );
+            Ok(())
+        })
+        .expect("list_pending");
     });
 }
 

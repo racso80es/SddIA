@@ -226,7 +226,7 @@ fn pending_virtual_event_path(pending_dir: &Path, event_id: &str) -> PathBuf {
 }
 
 pub(crate) fn is_runtime_db_event_path(repo: &Path, path: &Path) -> bool {
-    eda_port::path_is_resolved_redb(repo, path)
+    sddia_event_manager_host::path_matches_productive_redb(repo, path)
 }
 
 fn find_fracture_stored_event_id(repo: &Path, event: &Value) -> Result<Option<String>, String> {
@@ -2692,19 +2692,10 @@ mod blocking_tests {
 
     #[test]
     fn aut63_kaizen_idea_captured_l_a4_intentional_sink_routes() {
-        let _reset = {
-            struct R;
-            impl Drop for R {
-                fn drop(&mut self) {
-                    sddia_event_store::override_store_mode(None);
-                    eda_port::clear_port();
-                }
-            }
-            sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-            R
-        };
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = eda_port::test_lab::redb_eda_for(repo);
         fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         fs::write(
             repo.join("SddIA/core/event-domain-subscriptions.json"),
@@ -3930,51 +3921,56 @@ mod blocking_tests {
         assert!(tele_digest.starts_with("local-"), "{tele_digest}");
         assert!(!tele_digest.starts_with("lab-sim-"));
 
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Filesystem));
-        let fs_tmp = tempfile::tempdir().unwrap();
-        let mut fs_event = json!({
-            "event_id": "eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+        {
+            let _mock = lab_filesystem_eda();
+            let fs_tmp = tempfile::tempdir().unwrap();
+            let mut fs_event = json!({
+                "event_id": "eeeeeeee-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+                "event_type": "PullRequest_Merged",
+                "payload": {
+                    "source_branch": "feat/x",
+                    "target_branch": "main",
+                    "merge_commit_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "author": "racso",
+                    "security_clearance": "core"
+                },
+                "delivery_state": {}
+            });
+            let (_sid, status, err, code) =
+                dispatch_subscriber(fs_tmp.path(), &sub, &mut fs_event, false, None);
+            assert_eq!(status, "success", "{err:?}");
+            assert_eq!(code, 0);
+            assert!(fs_event["delivery_state"]["transaction_digest"]
+                .as_str()
+                .unwrap()
+                .starts_with("lab-sim-"));
+        }
+
+        let tmp = tempfile::tempdir().unwrap();
+        let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending","subscriptions":"SddIA/core/event-domain-subscriptions.json"}}"#,
+        )
+        .unwrap();
+        fs::write(repo.join("SddIA/core/event-domain-subscriptions.json"), "{}\n").unwrap();
+        fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = eda_port::test_lab::redb_eda_for(repo);
+        let event_id = "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+        let mut stored = json!({
+            "event_id": event_id,
             "event_type": "PullRequest_Merged",
             "payload": {
                 "source_branch": "feat/x",
                 "target_branch": "main",
-                "merge_commit_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "merge_commit_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "author": "racso",
                 "security_clearance": "core"
             },
-            "delivery_state": {}
         });
-        let (_sid, status, err, code) =
-            dispatch_subscriber(fs_tmp.path(), &sub, &mut fs_event, false, None);
-        assert_eq!(status, "success", "{err:?}");
-        assert_eq!(code, 0);
-        assert!(fs_event["delivery_state"]["transaction_digest"]
-            .as_str()
-            .unwrap()
-            .starts_with("lab-sim-"));
-        eda_port::clear_port();
-
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let tmp = tempfile::tempdir().unwrap();
-        let repo = tmp.path();
-        let db = crate::engine::eda_port::runtime_db_path(repo);
-        fs::create_dir_all(db.parent().unwrap()).unwrap();
-        let event_id = "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee";
-        {
-            let store = sddia_event_store::EventStore::open(&db).unwrap();
-            store
-                .insert_event(
-                    &sddia_event_store::StoredEvent {
-                        event_id: event_id.into(),
-                        family: sddia_event_store::Family::Domain,
-                        event_type: "PullRequest_Merged".into(),
-                        created_at: 10,
-                        ecst: json!({"event_id": event_id, "event_type": "PullRequest_Merged"}),
-                    },
-                    &["cumulo"],
-                )
-                .unwrap();
-        }
+        let _ = sddia_eda_catalog::stamp_published_event(repo, &mut stored);
+        eda_port::record_ecst(repo, "domain", &stored).expect("seed domain");
         let mut event = json!({
             "event_id": event_id,
             "event_type": "PullRequest_Merged",
@@ -3994,11 +3990,9 @@ mod blocking_tests {
         assert_eq!(code, 0);
         let digest = event["delivery_state"]["transaction_digest"].as_str().unwrap();
         assert!(digest.starts_with("lab-sim-"), "{digest}");
-        eda_port::clear_port();
         let seal = eda_port::get_dlt_seal(repo, event_id).expect("sello");
         assert_eq!(seal.tx_hash, digest);
         assert_eq!(seal.scope, "external_public_interest");
-        sddia_event_store::override_store_mode(None);
         eda_port::clear_port();
         match prev_sim {
             Some(v) => std::env::set_var("SDDIA_LAB_SIMULATE_IOTA", v),
@@ -4531,7 +4525,7 @@ mod tier_dispatch {
 #[cfg(test)]
 mod aut52_route_redb {
     use super::is_runtime_db_event_path;
-    use crate::engine::eda_port;
+    use sddia_event_manager_host::{productive_store_present, resolved_redb_path};
     use serde_json::json;
     use std::fs;
     use std::path::Path;
@@ -4540,9 +4534,16 @@ mod aut52_route_redb {
     fn aut52_runtime_db_path_is_detected() {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+        )
+        .unwrap();
         fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
-        let db = eda_port::runtime_db_path(repo);
+        let db = resolved_redb_path(repo).unwrap();
         fs::write(&db, b"").unwrap();
+        assert!(productive_store_present(repo));
         assert!(is_runtime_db_event_path(repo, &db));
         assert!(!is_runtime_db_event_path(
             repo,
@@ -4554,9 +4555,15 @@ mod aut52_route_redb {
     fn aut52_route_domain_batch_rejects_redb_path() {
         let tmp = tempfile::tempdir().unwrap();
         let repo = tmp.path();
+        fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+        )
+        .unwrap();
         fs::create_dir_all(repo.join(".events/pending")).unwrap();
         fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
-        let db = eda_port::runtime_db_path(repo);
+        let db = resolved_redb_path(repo).unwrap();
         fs::write(&db, b"").unwrap();
         let rel = db.strip_prefix(repo).unwrap().to_string_lossy().to_string();
         let out = super::route_domain_batch(repo, vec![rel]);

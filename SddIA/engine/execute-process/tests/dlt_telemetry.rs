@@ -40,6 +40,7 @@ fn write_min_repo(repo: &std::path::Path) {
     )
     .unwrap();
     fs::create_dir_all(repo.join(".events/domain")).unwrap();
+    fs::create_dir_all(repo.join(".SddIA/vector_store")).unwrap();
     fs::write(
         repo.join(".events/domain/telem.json"),
         r#"{
@@ -62,6 +63,15 @@ fn write_min_repo(repo: &std::path::Path) {
 }"#,
     )
     .unwrap();
+}
+
+fn seed_telemetry_in_port(repo: &std::path::Path) {
+    use std::sync::Arc;
+    use sddia_core::ports::event_manager::InMemoryEventManagerMock;
+    execute_process::engine::eda_port::install_port(Arc::new(InMemoryEventManagerMock::new()));
+    let text = fs::read_to_string(repo.join(".events/domain/telem.json")).unwrap();
+    let ecst: Value = serde_json::from_str(&text).unwrap();
+    execute_process::engine::eda_port::record_ecst(repo, "domain", &ecst).expect("seed port");
 }
 
 fn restore(key: &str, prev: Option<String>) {
@@ -88,6 +98,7 @@ fn fractal_fanout_skip_config_does_not_dead_letter() {
     let dir = tempdir().unwrap();
     let repo = dir.path();
     write_min_repo(repo);
+    seed_telemetry_in_port(repo);
 
     let out = route_domain_fractal_event(repo, ".events/domain/telem.json");
     restore("SDDIA_LAB_SIMULATE_IOTA", prev_sim);
@@ -116,6 +127,7 @@ fn fractal_fanout_simulate_persists_proof_then_purges() {
     let dir = tempdir().unwrap();
     let repo = dir.path();
     write_min_repo(repo);
+    seed_telemetry_in_port(repo);
 
     let out = route_domain_fractal_event(repo, ".events/domain/telem.json");
     restore("SDDIA_LAB_SIMULATE_IOTA", prev_sim);

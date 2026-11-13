@@ -1,12 +1,12 @@
-//! Matriz pending bus — publish_ecst + load_dispatched_event por `event_type`.
+//! Matriz pending bus — publish_ecst + load_dispatched vía EventManagerPort.
 
 mod common;
 
 use common::{
     assert_pending_subscriber_deliveries, cleanup, lab_repo, pending_bus_event_types,
-    roundtrip_publish_load, with_mode,
+    roundtrip_publish_load, with_backend, LabBackend,
 };
-use sddia_event_store::{load_domain_ecsts, StoreMode};
+use execute_process::engine::eda_port;
 
 #[test]
 fn pending_bus_matrix_redb_all_catalog_types() {
@@ -18,16 +18,10 @@ fn pending_bus_matrix_redb_all_catalog_types() {
         types.len()
     );
     for event_type in &types {
-        roundtrip_publish_load(
-            &repo,
-            "pending",
-            &repo.join(".events/pending"),
-            StoreMode::Redb,
-            event_type,
-        );
+        roundtrip_publish_load(&repo, "pending", LabBackend::Redb, event_type);
     }
-    with_mode(StoreMode::Redb, || {
-        let rows = load_domain_ecsts(&repo, &[repo.join(".events/pending")]).expect("load_domain");
+    with_backend(&repo, LabBackend::Redb, || {
+        let rows = eda_port::load_domain_ecsts(&repo, types.len() as u32).expect("load_domain");
         assert!(
             rows.len() >= types.len(),
             "store debe contener al menos {} filas, got {}",
@@ -39,22 +33,16 @@ fn pending_bus_matrix_redb_all_catalog_types() {
 }
 
 #[test]
-fn pending_bus_matrix_filesystem_all_catalog_types() {
+fn pending_bus_matrix_mock_all_catalog_types() {
     let repo = lab_repo();
     for event_type in pending_bus_event_types() {
-        roundtrip_publish_load(
-            &repo,
-            "pending",
-            &repo.join(".events/pending"),
-            StoreMode::Filesystem,
-            &event_type,
-        );
+        roundtrip_publish_load(&repo, "pending", LabBackend::Mock, &event_type);
     }
     cleanup(&repo);
 }
 
 #[test]
-fn pending_bus_matrix_dual_stratified() {
+fn pending_bus_matrix_redb_stratified_sample() {
     let repo = lab_repo();
     let sample = [
         "Domain_Entity_Created",
@@ -65,13 +53,7 @@ fn pending_bus_matrix_dual_stratified() {
         "Work_Initiated",
     ];
     for event_type in sample {
-        roundtrip_publish_load(
-            &repo,
-            "pending",
-            &repo.join(".events/pending"),
-            StoreMode::Dual,
-            event_type,
-        );
+        roundtrip_publish_load(&repo, "pending", LabBackend::Redb, event_type);
     }
     cleanup(&repo);
 }

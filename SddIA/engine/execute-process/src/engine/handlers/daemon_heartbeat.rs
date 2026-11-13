@@ -897,16 +897,17 @@ mod tests {
 
     #[test]
     fn orphan_lock_redb_does_not_write_pending_json() {
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
         let dir = tempfile::TempDir::new().unwrap();
         let repo = dir.path();
         std::fs::create_dir_all(repo.join("SddIA/daemons")).unwrap();
         std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
         std::fs::write(
             repo.join("SddIA/core/cumulo.paths.json"),
-            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"pending":"./.events/pending"}}"#,
+            r#"{"directories":{"daemons":"SddIA/daemons"},"daemons_instance":{"status":".SddIA/daemons/status","state":".SddIA/daemons/state"},"eda_bus":{"store":".SddIA/runtime/events.redb","pending":"./.events/pending"}}"#,
         )
         .unwrap();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = crate::engine::eda_port::test_lab::redb_eda_for(repo);
         std::fs::write(
             repo.join("SddIA/daemons/kalma2-bridge.md"),
             "---\nuuid: \"00000000-0000-4000-8000-000000000099\"\nname: kalma2-bridge\nexecution:\n  heartbeat_interval_seconds: 30\n---\n",
@@ -921,7 +922,6 @@ mod tests {
         );
         let rows = crate::engine::eda_port::load_domain_ecsts(repo, 64).unwrap();
         assert!(rows.iter().any(|e| e["event_id"] == eid));
-        sddia_event_store::override_store_mode(None);
     }
 
     #[test]

@@ -494,9 +494,9 @@ mod tests {
 "#,
         )
         .unwrap();
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = crate::engine::eda_port::test_lab::redb_eda_for(repo);
         let r = probe_bus_topology(repo);
-        sddia_event_store::override_store_mode(None);
         assert!(r.ok, "{}", r.cause);
         assert!(!repo.join(".events/telemetry").exists());
         assert!(!repo.join(".events/domain").exists());
@@ -506,9 +506,16 @@ mod tests {
     /// REDB-CA4: modo redb — emisiones de vitalidad/fractura no crean JSON en `.events/`.
     #[test]
     fn redb_ca4_vitality_and_fracture_go_to_store() {
-        let _redb = crate::engine::eda_port::test_lab::redb_eda();
         let dir = tempfile::TempDir::new().unwrap();
         let repo = dir.path();
+        std::fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+        std::fs::write(
+            repo.join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+        )
+        .unwrap();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = crate::engine::eda_port::test_lab::redb_eda_for(repo);
         let probes = vec![ProbeResult {
             id: "cerbero.config",
             ok: false,
@@ -570,12 +577,13 @@ mod tests {
 "#,
         )
         .unwrap();
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
-        let db = crate::engine::eda_port::runtime_db_path(repo);
-        if let Some(parent) = db.parent() {
-            std::fs::create_dir_all(parent).unwrap();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        {
+            let _redb = crate::engine::eda_port::test_lab::redb_eda_for(repo);
         }
-        let _ = sddia_event_store::EventStore::open(&db).expect("seed");
+        crate::engine::eda_port::clear_port();
+        let db = sddia_event_manager_host::resolved_redb_path(repo).unwrap();
+        assert!(db.is_file(), "falta events.redb tras seed");
         let ready = db.with_extension("ready");
         let mut holder = std::process::Command::new("python3")
             .arg("-c")
@@ -584,7 +592,7 @@ mod tests {
                  fd=os.open(sys.argv[1], os.O_RDWR)\n\
                  fcntl.flock(fd, fcntl.LOCK_EX|fcntl.LOCK_NB)\n\
                  open(sys.argv[2],'w').close()\n\
-                 time.sleep(60)\n",
+                 time.sleep(8)\n",
             )
             .arg(&db)
             .arg(&ready)
@@ -598,13 +606,12 @@ mod tests {
             assert!(std::time::Instant::now() < deadline, "sin lock");
             std::thread::sleep(std::time::Duration::from_millis(20));
         }
-        std::env::set_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS", "200");
+        std::env::set_var("SDDIA_EVENT_MANAGER_OPEN_BUDGET_MS", "200");
         let r = probe_bus_topology(repo);
-        std::env::remove_var("SDDIA_EVENT_STORE_OPEN_BUDGET_MS");
+        std::env::remove_var("SDDIA_EVENT_MANAGER_OPEN_BUDGET_MS");
         let _ = holder.kill();
         let _ = holder.wait();
         let _ = std::fs::remove_file(&ready);
-        sddia_event_store::override_store_mode(None);
         assert!(r.ok, "{}", r.cause);
         assert_eq!(r.cause, "store ocupado");
     }

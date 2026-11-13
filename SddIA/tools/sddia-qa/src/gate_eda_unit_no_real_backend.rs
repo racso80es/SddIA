@@ -44,8 +44,7 @@ fn path_allowlisted(rel: &str) -> bool {
     if rel.contains("/tests/") || rel.ends_with("/tests.rs") {
         return true;
     }
-    if rel.starts_with("SddIA/sddia-event-store/")
-        || rel.starts_with("SddIA/infrastructure/")
+    if rel.starts_with("SddIA/infrastructure/")
         || rel.starts_with("SddIA/sddia-event-manager-host/")
     {
         return true;
@@ -57,12 +56,7 @@ fn path_allowlisted(rel: &str) -> bool {
     {
         return true;
     }
-    if rel.contains("eda_store_io_matrix")
-        || rel.contains("eda_subscriber_")
-        || rel.contains("event_store_writers")
-        || rel.contains("memory_evolution_ingest")
-        || rel.contains("dlt_telemetry")
-    {
+    if rel.contains("memory_evolution_ingest") || rel.contains("dlt_telemetry") {
         return true;
     }
     // Integration-in-src (T3) — ver allowlists/eda-unit-backend.toml

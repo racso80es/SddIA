@@ -1401,8 +1401,7 @@ fn main() {
 mod tests {
     use super::*;
     use sddia_core::ports::event_manager::{
-        DeliveryStatus as PortDeliveryStatus, GetEventRequest, MoveToDlqRequest,
-        RecordDeliveryRequest, publish_request_domain,
+        GetEventRequest, MoveToDlqRequest, publish_request_domain,
     };
     fn port_publish(repo: &Path, event_id: &str, ecst: Value) {
         sddia_event_manager_host::with_productive_port(repo, "test_publish", |port| {
@@ -1410,20 +1409,6 @@ mod tests {
             .map_err(|e| e.to_string())
         })
         .expect("publish");
-    }
-
-    fn port_record_ack(repo: &Path, event_id: &str, subscriber_id: &str) {
-        sddia_event_manager_host::with_productive_port(repo, "test_record_delivery", |port| {
-            port.record_delivery(RecordDeliveryRequest {
-                event_id: event_id.into(),
-                delivery_id: format!("{event_id}:{subscriber_id}"),
-                status: PortDeliveryStatus::Ack,
-                subscriber_id: Some(subscriber_id.into()),
-                attempt: None,
-            })
-            .map_err(|e| e.to_string())
-        })
-        .expect("record_delivery");
     }
 
     fn port_move_to_dlq(repo: &Path, event_id: &str, reason: &str) {
@@ -1702,7 +1687,7 @@ mod tests {
         ));
         let _ = fs::remove_dir_all(&dir);
         seed_aut27_minimal_repo(&dir);
-        let db = sddia_event_store::runtime_db_path(&dir);
+        let db = sddia_event_manager_host::resolved_redb_path(&dir).expect("redb path");
         fs::create_dir_all(db.parent().unwrap()).unwrap();
         fs::write(&db, b"not-a-redb-database").unwrap();
         let paths = test_repo_bus_paths(&dir);
@@ -1811,8 +1796,6 @@ mod tests {
                 "payload": {}
             }),
         );
-        port_record_ack(&dir, event_id, "argos");
-        port_record_ack(&dir, event_id, "cumulo");
 
         let row = AuditEventRow {
             event_id: event_id.into(),

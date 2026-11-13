@@ -26,7 +26,7 @@ pub fn publish_domain(repo: &Path, event: &Value) -> Result<(), String> {
 }
 
 pub fn db_path(repo: &Path) -> PathBuf {
-    sddia_event_manager_host::resolved_redb_path(repo)
+    sddia_event_manager_host::productive_redb_file(repo)
         .unwrap_or_else(|_| repo.join(".SddIA/runtime/events.redb"))
 }
 

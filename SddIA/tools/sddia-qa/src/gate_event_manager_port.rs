@@ -45,12 +45,6 @@ fn rel(repo: &Path, p: &Path) -> String {
 }
 
 fn path_allowlisted(rel: &str) -> bool {
-    if rel.contains("/tests/") || rel.ends_with("/tests.rs") {
-        return true;
-    }
-    if rel.starts_with("SddIA/sddia-event-store/") {
-        return true;
-    }
     if rel.ends_with("gate_event_manager_port.rs")
         || rel.ends_with("gate_eda_unit_no_real_backend.rs")
     {
@@ -59,18 +53,7 @@ fn path_allowlisted(rel: &str) -> bool {
     if rel.starts_with("SddIA/sddia-event-manager-host/") {
         return true;
     }
-    if rel.ends_with("engine/execute-process/src/engine/eda_port.rs") {
-        return true;
-    }
-    if rel.ends_with("sddia-event-store/src/gate.rs")
-        || rel.starts_with("SddIA/sddia-event-store/")
-    {
-        return true;
-    }
-    if rel.contains("eda_store_io_matrix")
-        || rel.contains("eda_subscriber_")
-        || rel.contains("event_store_writers")
-    {
+    if rel.starts_with("SddIA/infrastructure/") {
         return true;
     }
     false

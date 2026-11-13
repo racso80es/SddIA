@@ -299,13 +299,7 @@ pub fn drain_di_reactor_once(repo: &Path, process_def: &ProcessDef) -> Result<Va
             Some(p) => {
                 fs::remove_file(&p).ok();
             }
-            None => {
-                #[cfg(test)]
-                if sddia_event_store::writes_filesystem(sddia_event_store::store_mode()) {
-                    let pf = pending_dir(repo)?.join(format!("{event_id}.json"));
-                    fs::remove_file(pf).ok();
-                }
-            }
+            None => {}
         }
         processed += 1;
         last = json!({

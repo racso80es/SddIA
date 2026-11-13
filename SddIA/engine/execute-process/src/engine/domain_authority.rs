@@ -508,21 +508,16 @@ docs_layout:
 
     #[test]
     fn emit_fracture_on_deny_materializes_system_fracture() {
-        use sddia_event_store::{override_store_mode, StoreMode};
-
-        struct Guard;
-        impl Drop for Guard {
-            fn drop(&mut self) {
-                crate::engine::eda_port::clear_port();
-                override_store_mode(None);
-            }
-        }
-        let _g = Guard;
-        override_store_mode(Some(StoreMode::Redb));
-
         let td = tempfile::tempdir().unwrap();
         write_codex(td.path(), &["feature"]);
+        fs::create_dir_all(td.path().join("SddIA/core")).unwrap();
+        fs::write(
+            td.path().join("SddIA/core/cumulo.paths.json"),
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
+        )
+        .unwrap();
         fs::create_dir_all(td.path().join(".SddIA/runtime")).unwrap();
+        let _redb = crate::engine::eda_port::test_lab::redb_eda_for(td.path());
         let inputs = json!({
             "execution_profile": { "git_required": false },
             "project_slug": "core",

@@ -101,7 +101,7 @@ H2 entregas/testigos FS · H3 watcher/sweeper · H4 periféricos F-1..F-4 / AC-8
 ## Notas honestas
 
 - Espejo FS en `emit_pr_presented` eliminado (O4).
-- `runtime_db_path` persiste en tests acept-pr/vitality; símbolo y crate → O5.
+- `runtime_db_path` / `EventStore::open` persisten en tests `src/` y matrices; crate → **O5.2**.
 - No se declara AC-1…AC-19 verdes sin evidencia de tests/gates.
 
 ---
@@ -122,8 +122,8 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O4 / H4** | `done` (rama) | F-1…F-4; `actions` test helper sin `EventStore::open`; Kalma2 sin fallback `.events/` en dominio/telemetría/progress |
 | **O5** | `done` (rama) | `scan_presented_for_branch`, `presented_ids_in_store`, `sweep_progress_leaf` sin disco |
 | **O5.1** | `done` (rama) | `eda_port` solo `EventManagerPort`; borrado `eda_port_legacy`; `test_lab` ampliado; ~44 unitarios migrados de lectura `.events/` |
-| **O5.2 / H5** | `ready` | Crate `sddia-event-store`, matrices, `runtime_db_path`, allowlist vacía |
-| **O6 / H6** | `blocked-by-O5.2` | README, Constitución, Cúmulo, evolution, auditorías |
+| **O5.2 / H5** | `done` (rama) | Crate `sddia-event-store` demolido; matrices/harness puerto; gates v2; `runtime_db_path` retirado de `eda_port` |
+| **O6 / H6** | `ready` | README, Constitución, Cúmulo, evolution, auditorías |
 
 ### Backlog técnico O0
 
@@ -151,6 +151,14 @@ Cerrado en rama: Presented y `presented_event_id_for_branch` solo puerto; `sweep
 
 ### Backlog técnico O5.1
 
-Cerrado en rama: sin `store_mode` en rutas productivas de `eda_port`; módulo `eda_port_legacy` eliminado; `filesystem_eda` = mock + `ParallelLabGuard`; helpers `pending_count`, `seed_domain_ecst`, `list_ecsts_by_event_type`, etc. Verificación: `cargo test -p execute-process --lib` (816 ok), matrices `eda_store_io_matrix_{pending,fractal}`, `cargo test -p sddia-qa gate_event_manager_port`. **O5.2** sigue con el crate y matrices `tests/`.
+Cerrado en `0d37e9d6`. Verificación: `cargo test -p execute-process --lib` (816), matrices IO, `gate_event_manager_port`.
+
+### Backlog técnico O5.2
+
+Cerrado en rama: `tests/common` + matrices pending/fractal + `event_store_writers` vía puerto; eliminados `eda_subscriber_*`; `event-bus-audit` sin dep store; `eda_port` sin `runtime_db_path`/`path_is_resolved_redb`; workspace sin `sddia-event-store/`; allowlists QA endurecidas. Verificación: `cargo build/test -p execute-process`, `gate_event_manager_port`, `event-bus-audit`.
+
+### Backlog técnico O6
+
+Siguiente hilo: convergencia README/Constitución/Cúmulo y auditoría `APTO_TOTAL` (`plan.md` v1.2.1 § H6).
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

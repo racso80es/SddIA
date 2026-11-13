@@ -1852,7 +1852,6 @@ dependencies = [
  "sddia-core",
  "sddia-eda-catalog",
  "sddia-event-manager-host",
- "sddia-event-store",
  "sddia-io",
  "serde",
  "serde_json",
@@ -1908,7 +1907,6 @@ dependencies = [
  "sddia-ecosystem-health",
  "sddia-eda-catalog",
  "sddia-event-manager-host",
- "sddia-event-store",
  "sddia-infrastructure-lancedb-evolution",
  "sddia-infrastructure-lancedb-preferences",
  "sddia-io",
@@ -5293,15 +5291,6 @@ dependencies = [
  "sddia-infrastructure-fs-event",
  "sddia-infrastructure-redb-event",
  "tempfile",
-]
-
-[[package]]
-name = "sddia-event-store"
-version = "0.1.0"
-dependencies = [
- "redb",
- "serde",
- "serde_json",
 ]
 
 [[package]]

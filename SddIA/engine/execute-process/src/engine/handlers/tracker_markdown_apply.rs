@@ -774,21 +774,22 @@ mod tests {
     #[test]
     fn run_rejects_tampered_inline_event_against_store() {
         use crate::engine::route_domain_core::materialize_pending_domain_event;
-        use sddia_event_store::{override_store_mode, StoreMode};
-
-        struct Guard;
-        impl Drop for Guard {
-            fn drop(&mut self) {
-                crate::engine::eda_port::clear_port();
-                override_store_mode(None);
-            }
-        }
-        let _g = Guard;
-        override_store_mode(Some(StoreMode::Redb));
         with_lab(|| {
-            let repo = find_repo_root().expect("repo");
+            let tmp = tempfile::tempdir().unwrap();
+            let repo = tmp.path();
+            fs::create_dir_all(repo.join("SddIA/core")).unwrap();
+            fs::write(
+                repo.join("SddIA/core/cumulo.paths.json"),
+                r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending","subscriptions":"SddIA/core/event-subscriptions.json"}}"#,
+            )
+            .unwrap();
+            fs::write(repo.join("SddIA/core/event-subscriptions.json"), "{}\n").unwrap();
+            fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+            let db = sddia_event_manager_host::resolved_redb_path(repo).unwrap();
+            let port = sddia_event_manager_host::open_redb_adapter(&db).expect("redb");
+            crate::engine::eda_port::install_port(port);
             let rel = materialize_pending_domain_event(
-                &repo,
+                repo,
                 "Tracker_Issue_Changed",
                 "test",
                 json!({
@@ -799,7 +800,6 @@ mod tests {
                 }),
             )
             .expect("materialize");
-            crate::engine::eda_port::clear_port();
             let pending = repo.join(&rel);
             if pending.is_file() {
                 fs::remove_file(&pending).ok();

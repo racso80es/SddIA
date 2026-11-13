@@ -11,9 +11,6 @@ path_contains = [
   "/tests/",
   "/tests.rs",
   "contract_suite.rs",
-  "eda_store_io_matrix",
-  "eda_subscriber_",
-  "event_store_writers",
   "memory_evolution_ingest",
   "dlt_telemetry",
 ]
@@ -27,7 +24,6 @@ path_suffixes = [
 
 # Crates adapters / host / store (contract + infrastructure)
 path_prefixes = [
-  "SddIA/sddia-event-store/",
   "SddIA/infrastructure/",
   "SddIA/sddia-event-manager-host/",
 ]

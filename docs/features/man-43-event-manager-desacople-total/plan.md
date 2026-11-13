@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.1.9"
+version_plan: "1.2.1"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -729,20 +729,87 @@ cd SddIA && cargo test -p sddia-qa gate_event_manager_port
 
 ---
 
-## O5.2 / H5 — Demolición del crate (bloqueada por este corte)
+## O5.2 / H5 — Demolición del crate (siguiente hilo)
 
-Estado: **listo para ejecutar** tras O5.1 en rama.
+Estado: **done (rama)**. Crate `sddia-event-store` eliminado del workspace; matrices y unitarios migrados a `EventManagerPort` + host; gates endurecidos (AC-10/11).
+
+### Corte
+
+Desaparece el crate `sddia-event-store`, su dependencia en workspace y toda referencia productiva o de laboratorio que abra Redb por fuera del host. Las matrices I/O dejan de probar `StoreMode::{Filesystem,Dual,Redb}` del crate y pasan a **RedbEventAdapter** + `run_event_manager_contract_suite` / harness ya usados en O5.1.
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `SddIA/Cargo.toml` | Miembro `sddia-event-store` | AC-10 |
+| `execute-process/Cargo.toml` | `sddia-event-store` path dep | Bloquea borrado del crate |
+| `event-bus-audit` | `EventStore::open` + `runtime_db_path` del crate | Consumidor fuera del host |
+| `tests/common/mod.rs` | `publish_ecst` / `StoreMode` / `EventStore::open` vía crate | SSOT de matrices pending/fractal |
+| `tests/eda_store_io_matrix_{pending,fractal}.rs` | Barrido catálogo × modos store | Cubre store legacy, no solo puerto |
+| `tests/eda_subscriber_{ecst_redb,event_push}.rs` | Insert/witness directo en store | Fuera del contrato v2 |
+| `tests/event_store_writers.rs` | `runtime_db_path` del crate | Obsoleto tras O5.1 |
+| `eda_port::runtime_db_path` / `path_is_resolved_redb` | Públicos en `eda_port.rs`; `route_domain_core` aut52 | AC-8: solo host puede nombrar `.redb` |
+| Unitarios `src/` residuales | `override_store_mode` / `EventStore::open` en `accept_pr`, `actions`, `vitality`, `route_domain_core`, handlers tracker, `domain_authority`, etc. | Siguen cableando el crate aunque el productivo ya usa puerto |
+| `eda_port::test_lab::redb_eda` | `override_store_mode(Redb)` del crate | Debe usar `RedbEventAdapter` temporal o mock |
+| `capability_di_reactor` | `#[cfg(test)]` borra `.events/pending` si `writes_filesystem` | Residuo post-O5.1 |
+| `gate_event_manager_port` + `eda-unit-backend.toml` | Allowlist `sddia-event-store/`, `/tests/`, matrices | AC-11 |
+
+Fuera: Genoma 2.0 (`entity-manager`), convergencia README/Constitución (**O6**), `SddIA/events/`, `.SddIA/events/`. `event_store_query` ya delega en `eda_port`; no reabre el crate.
+
+### Diseño cerrado
+
+1. **Nuevo laboratorio de matrices:** `execute-process/tests/common/` publica y aserta solo por `EventManagerPort` (`publish_ecst`, `list_pending`, `get_event`, entregas). Modo “Redb físico” = fichero temporal + `RedbEventAdapter::open`; modo mock = `InMemoryEventManagerMock` (paridad con `test_lab`). **Prohibido** `sddia_event_store::`.
+2. **Matrices:** conservar intención (catálogo × familias × pending/fractal) renombrando o sustituyendo escenarios FS/Dual por escenarios puerto/adapter; o fusionar en `sddia-core` contract suite + smoke Redb en `infrastructure/redb_event_adapter`.
+3. **`eda_subscriber_*` / `event_store_writers`:** migrar a puerto o eliminar si duplican contract suite O0–O1.
+4. **`event-bus-audit`:** inspección vía `sddia-event-manager-host` / `with_productive_port`; quitar dep Cargo.
+5. **`eda_port`:** eliminar `runtime_db_path` y `path_is_resolved_redb` de la superficie pública; tests AUT-52 usan `productive_store_present` / `is_resolved_redb_path` del host. `redb_eda()` sin `override_store_mode`.
+6. **Barrido `src/`:** sustituir seeds `EventStore::open` en tests por `test_lab::seed_*` o insert vía puerto; quitar `use sddia_event_store` del crate `execute-process`.
+7. **Demolición:** quitar miembro workspace, directorio `SddIA/sddia-event-store/`, entradas evolution si aplica.
+8. **Gates:** retirar allowlists de store, matrices y blanket `/tests/` en `gate_event_manager_port`; endurecer `FORBIDDEN` (el gate debe fallar si reaparece `sddia_event_store::` fuera host/adapters).
+
+### Secuencia (orden L-7)
 
 | Paso | Alcance |
 |------|---------|
-| 1 | Matrices y `event_store_writers` / `eda_subscriber_*` publican por puerto o contract suite; cero `EventStore::open` |
-| 2 | `event-bus-audit` deja la dependencia |
-| 3 | Borrar `runtime_db_path`, `path_is_resolved_redb` de consumidores y el crate |
-| 4 | Allowlist de `gate_event_manager_port` vacía de store/matrices/`/tests/` |
-| 5 | `cargo test --workspace` + clippy |
+| 1 | Reescribir `tests/common/mod.rs` + matrices pending/fractal sin crate |
+| 2 | Migrar o borrar `eda_subscriber_*`, `event_store_writers` |
+| 3 | Migrar unitarios `src/` que aún llaman `EventStore::open` / `override_store_mode` |
+| 4 | `event-bus-audit` sin dep store |
+| 5 | Quitar `runtime_db_path` / `path_is_resolved_redb` de consumidores; `capability_di_reactor` sin rama FS |
+| 6 | `Cargo.toml` workspace + deps; borrar crate |
+| 7 | Allowlists vacías + `cargo test --workspace` + clippy + gates QA |
 
-**Commit esperado:** `test(eda): demolición store legacy + gates v2 (MAN-43 O5.2)`.
-**AC:** AC-8, AC-10, AC-11, AC-12.
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `rg sddia_event_store` en `execute-process/src` | Cero (tests `src/` incluidos) |
+| `rg sddia-event-store` en `Cargo.toml` del workspace | Cero salvo commit de borrado |
+| Matrices pending/fractal | Verdes sin `StoreMode` del crate |
+| `cargo test -p sddia-core event_manager` + contract suite | Verde |
+| Gate `gate_event_manager_port` con allowlist store | Falla si alguien reintroduce `EventStore::open` en productivo |
+| `event_store_query` CLI publish/query | Sigue operativo vía puerto |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p execute-process
+cd SddIA && cargo test -p sddia-core event_manager
+cd SddIA && cargo test -p sddia-infrastructure-redb-event
+cd SddIA && cargo test -p sddia-qa gate_event_manager_port
+cd SddIA && cargo test -p event-bus-audit
+cd SddIA && cargo clippy --workspace -- -D warnings
+```
+
+**Commit:** `test(eda): demolición store legacy + gates v2 (MAN-43 O5.2)`.
+
+**AC:** AC-8 (`runtime_db_path` fuera de consumidores), AC-10, AC-11, AC-12.
+**Fuera:** O6.
+**Bloqueo:** no borrar el directorio del crate hasta paso 1–4 verdes (L-7).
+
+---
+
+## O6 / H6 — Convergencia documental (después de O5.2)
+
+Estado: **ready**. O5.2 cierra AC-10/11/12 en rama. Índice en § H6 más abajo.
 
 ---
 

@@ -615,13 +615,6 @@ mod tests {
         serde_json::to_string(&row.ecst).unwrap()
     }
 
-    struct ModeGuard;
-    impl Drop for ModeGuard {
-        fn drop(&mut self) {
-            sddia_event_store::override_store_mode(None);
-        }
-    }
-
     fn port_harness() -> crate::engine::eda_port::EventManagerTestHarness {
         crate::engine::eda_port::EventManagerTestHarness::new()
     }
@@ -635,7 +628,7 @@ mod tests {
         fs::create_dir_all(path.join("SddIA/core")).unwrap();
         fs::write(
             path.join("SddIA/core/cumulo.paths.json"),
-            r#"{"eda_bus":{"pending":".events/pending"}}"#,
+            r#"{"eda_bus":{"store":".SddIA/runtime/events.redb","pending":".events/pending"}}"#,
         )
         .unwrap();
         path
@@ -643,9 +636,9 @@ mod tests {
 
     #[test]
     fn merged_alta_inserts_store_row_before_route() {
-        let _guard = ModeGuard;
-        sddia_event_store::override_store_mode(Some(sddia_event_store::StoreMode::Redb));
         let repo = temp_repo();
+        std::fs::create_dir_all(repo.join(".SddIA/runtime")).unwrap();
+        let _redb = crate::engine::eda_port::test_lab::redb_eda_for(&repo);
         let merged = emit_pr_merged(
             &repo,
             &json!({
