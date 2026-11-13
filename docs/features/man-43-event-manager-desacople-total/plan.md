@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.2"
+version_plan: "1.2.3"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -874,6 +874,65 @@ rg -n "\"pending\":\\s*\"\\./\\.events" SddIA/core/cumulo.paths.json
 
 ---
 
+## O7 — Auditor sin cola filesystem por defecto (siguiente hilo)
+
+Estado: **done (rama)**. `resolve_bus_paths` sin defaults `/.events/`; ids de tabla ignorados. AC-13 sigue abierto.
+
+### Corte
+
+`event-bus-audit` deja de materializar rutas `/.events/{pending,processing,processed,dead-letter,telemetry,orchestration,domain}` cuando `cumulo.paths.json` no trae un path de directorio. Hoy `resolve_bus_paths` hace `unwrap_or(".events/…")` y, con las claves vigentes (`events`, `subscriber_delivery`, …), junta esos **nombres de tabla** como si fueran carpetas. El censo de eventos y entregas sale solo del puerto productivo. Un barrido de disco, si queda, exige una clave cuyo valor sea un path explícito; no hay default.
+
+### Inventario vivo
+
+| Pieza | Hoy | Hueco |
+|-------|-----|-------|
+| `tools/event-bus-audit/src/main.rs` `resolve_bus_paths` | Defaults `.events/*`; lee `eda_fractal.telemetry` que **no existe** (la clave real es suscripciones) | F-03 residual |
+| Tests del binario | `store_audit_counts_dead_letter_without_json_files` ya exige ausencia de `.events/` | Falta caso «claves = tablas → cero join a `.events/`» |
+| `SddIA/process/event-bus-audit.md` | Narrativa `SDDIA_EVENT_STORE=filesystem` | Genoma: inventario, cero `Write` |
+| `capability-bindings.md` contrato `1.2.0` | F-02 | **Fuera** (O8 / `entity-manager`) |
+
+### Diseño cerrado
+
+1. Resolver paths solo si el string de Cúmulo parece directorio (`./`, `.events/`, `.SddIA/`). Valores que son ids de tabla (`events`, `subscriber_delivery`, …) se ignoran.
+2. Quitar los `unwrap_or(".events/…")`. Sin path explícito, los campos de `BusPaths` quedan vacíos / no escaneados.
+3. El informe de dominio, DLQ y entregas sigue por `with_productive_port` (ya usado en tests). No reabrir `sddia-event-store`.
+4. Test: repo mínimo con el `cumulo.paths.json` real del Core (tablas, sin `.events/`) → `run_audit` no crea ni lee `.events/` y el censo sale del store.
+5. Cero edición de `SddIA/process/`, `SddIA/events/`, `capability-bindings.md`, `validacion.md`.
+
+### Secuencia
+
+| Paso | Alcance |
+|------|---------|
+| 1 | Separar «path de directorio» vs «id de tabla» en `resolve_bus_paths` |
+| 2 | Defaults FS eliminados; scan condicionado |
+| 3 | Test con Cúmulo real |
+| 4 | `cargo test -p event-bus-audit` + `gate-event-manager-port` |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `unwrap_or(".events/` en `event-bus-audit` | Cero |
+| Cúmulo de tablas provoca `repo.join("events")` como cola | Cero |
+| Mutación de `SddIA/process/` o bindings | Cero |
+| Declarar AC-13 / `APTO_TOTAL` | Prohibido en este hilo |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p event-bus-audit
+cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
+rg -n 'unwrap_or\\("\\./\\.events' SddIA/tools/event-bus-audit/src/main.rs
+```
+
+**Commit:** `fix(eda): event-bus-audit sin cola FS por defecto (MAN-43 O7)`.
+
+**AC:** acerca F-03; no cierra AC-13.
+**Fuera:** F-02 (`capability-bindings` 1.2 vs handshake 2.0), prosa de `SddIA/process/`, `APTO_TOTAL`.
+**Siguiente tras O7:** O8 contractual/genoma solo vía `entity-manager`, con re-audit nuevo.
+
+---
+
 ## H4 — Consumidores periféricos (índice)
 
 El detalle ejecutable está en **O4 / H4**.
@@ -930,6 +989,8 @@ El detalle ejecutable está en **O4 / H4**.
 6. **O4/H4** periféricos (paralelizable con O2 tras O1).
 7. **O5/H5** lab + demolición (tras consumidores limpios).
 8. **O6/H6** docs/evolution/auditorías → handoff Argos/`validacion.md`.
+9. **O7** `event-bus-audit` sin default `/.events/` (F-03 residual). AC-13 sigue abierto.
+10. **O8** (no en este corte) F-02 + prosa de procesos vía `entity-manager`.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 

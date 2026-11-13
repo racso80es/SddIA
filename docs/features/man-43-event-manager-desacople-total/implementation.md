@@ -125,6 +125,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O5.1** | `done` (rama) | `eda_port` solo `EventManagerPort`; borrado `eda_port_legacy`; `test_lab` ampliado; ~44 unitarios migrados de lectura `.events/` |
 | **O5.2 / H5** | `done` (rama) | Crate `sddia-event-store` demolido; matrices/harness puerto; gates v2; `runtime_db_path` retirado de `eda_port` |
 | **O6 / H6** | `done (rama)` | README/Constitución convergentes; evolution `c4e8f2a1-…`; audit O6; AC-13 abierto |
+| **O7** | `done (rama)` | `event-bus-audit` sin default `/.events/`; AC-13 abierto |
 
 ### Backlog técnico O0
 
@@ -160,6 +161,10 @@ Cerrado en rama: `tests/common` + matrices pending/fractal + `event_store_writer
 
 ### Backlog técnico O6
 
-Cerrado en rama: README + `CONSTITUTION_CORE.md` sin `sddia-event-store`; Cúmulo sin cambio; evolution `c4e8f2a1-9b3d-4e7c-a5f6-2d3e8b9c0a1f`; re-audit `man-43-o6-remediation-20261113.md` (`NO_APTO_TOTAL`, AC-13 abierto). Residual: genomo process, F-02 contractual, defaults audit tool.
+Cerrado en `f9ef35d9`. F-02 y prosa de `SddIA/process/` → **O8** vía `entity-manager`. AC-13 sigue abierto.
+
+### Backlog técnico O7
+
+Cerrado en rama: `cumulo_string_is_legacy_fs_dir` + `optional_queue_dir`; sin `unwrap_or(".events/…")`; tests `cumulo_table_ids_*` y `run_audit_with_core_cumulo_*`. Verificación: `cargo test -p event-bus-audit`, `gate-event-manager-port`.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.
