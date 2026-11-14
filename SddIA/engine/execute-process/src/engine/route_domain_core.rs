@@ -4151,7 +4151,7 @@ mod blocking_tests {
         for key in KEYS {
             let (event, payload) = catalog_success_event_and_payload(key);
             let out = assemble_domain_process_subscriber_inputs(
-                &repo,
+                repo,
                 key,
                 &event,
                 Some(&path),
@@ -4620,7 +4620,7 @@ mod aut52_route_redb {
         assert!(is_runtime_db_event_path(repo, &db));
         assert!(!is_runtime_db_event_path(
             repo,
-            &Path::new(".events/pending/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.json")
+            Path::new(".events/pending/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.json")
         ));
     }
 

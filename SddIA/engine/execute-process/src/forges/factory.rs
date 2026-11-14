@@ -427,19 +427,19 @@ fn find_process_identity_collision(
             if stem == "index" || stem == "process-contract" {
                 continue;
             }
-            if needles.iter().any(|n| *n == stem) {
+            if needles.contains(&stem) {
                 return Ok(Some(path));
             }
             let fm = parse_frontmatter(&path)?;
             if let Some(n) = fm.get("name").and_then(|v| v.as_str()) {
-                if needles.iter().any(|x| *x == n) {
+                if needles.contains(&n) {
                     return Ok(Some(path));
                 }
             }
             if let Some(aliases) = fm.get("aliases").and_then(|v| v.as_array()) {
                 for a in aliases {
                     if let Some(as_) = a.as_str() {
-                        if needles.iter().any(|x| *x == as_) {
+                        if needles.contains(&as_) {
                             return Ok(Some(path));
                         }
                     }
@@ -2602,9 +2602,19 @@ NOTA_BACKFILL
             "artefacto huérfano"
         );
 
-        let mut restore = fs::metadata(&idx).unwrap().permissions();
-        restore.set_readonly(false);
-        let _ = fs::set_permissions(&idx, restore);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut restore = fs::metadata(&idx).unwrap().permissions();
+            restore.set_mode(0o644);
+            let _ = fs::set_permissions(&idx, restore);
+        }
+        #[cfg(not(unix))]
+        {
+            let mut restore = fs::metadata(&idx).unwrap().permissions();
+            restore.set_readonly(false);
+            let _ = fs::set_permissions(&idx, restore);
+        }
         std::env::remove_var("SDDIA_FORGE_LAB_UUID");
     }
 

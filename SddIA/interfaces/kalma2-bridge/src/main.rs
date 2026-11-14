@@ -2864,6 +2864,11 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
 
+    /// Fuente productiva del binario (excluye `mod tests` y helpers `#[cfg(test)]` inline).
+    fn production_source(src: &str) -> &str {
+        src.split("mod tests {").next().unwrap_or(src)
+    }
+
     static MAYEUTA_RESOLVE_LOCK: Mutex<()> = Mutex::new(());
 
     struct MayeutaEnvGuard {
@@ -3359,7 +3364,7 @@ mod tests {
     #[test]
     fn progress_stream_route_before_static() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let dispatch = prod.split("fn dispatch").nth(1).expect("dispatch");
         let status_pos = dispatch.find("\"/api/status\"").expect("status route");
         let progress_pos = dispatch
@@ -3421,7 +3426,7 @@ mod tests {
     #[test]
     fn email_routes_exist_in_dispatch() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(prod.contains("\"/api/email-inbox\""));
         assert!(prod.contains("\"/api/email-quick-action\""));
         assert!(prod.contains("\"/api/user-preference-change\""));
@@ -3437,7 +3442,7 @@ mod tests {
     #[test]
     fn telemetry_routes_exist_in_dispatch() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(prod.contains("\"/api/telemetry/stream\""));
         assert!(prod.contains("\"/api/telemetry/cognitive\""));
         assert!(prod.contains("\"/api/system-health\""));
@@ -3466,7 +3471,7 @@ mod tests {
     #[test]
     fn sync_assets_route_exists_in_dispatch() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(
             prod.contains("\"/api/sync-assets\""),
             "dispatch debe tener la ruta /api/sync-assets"
@@ -3480,7 +3485,7 @@ mod tests {
     #[test]
     fn sync_assets_handler_is_fire_and_forget() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let handler_start = prod.find("fn handle_sync_assets").expect("handle_sync_assets");
         let handler_slice = &prod[handler_start..];
         let next_fn = handler_slice[1..].find("\nfn ").unwrap_or(handler_slice.len());
@@ -3502,7 +3507,7 @@ mod tests {
     #[test]
     fn stale_runtime_gate_409_in_production() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(prod.contains("STALE_RUNTIME_BINARY"));
         assert!(prod.contains("AcceptSyncError::StaleRuntime"));
         assert!(prod.contains("sddia_runtime_parity::assess_runtime_binary_parity"));
@@ -3521,7 +3526,7 @@ mod tests {
         // Audit estático AC-R2: producción (antes de #[cfg(test)]) sin sellado fractal.
         // Excluye el módulo de tests: include_str se autoincriminaría con este assert.
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         assert!(
             !prod.contains("write_fractal_event"),
             "bridge prod no debe llamar write_fractal_event"
@@ -3540,7 +3545,7 @@ mod tests {
     #[test]
     fn aiua_interact_route_before_static() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let dispatch = prod.split("fn dispatch").nth(1).expect("dispatch");
         let aiua_pos = dispatch
             .find("\"/api/aiua/interact\"")
@@ -3553,7 +3558,7 @@ mod tests {
     #[test]
     fn aiua_handler_never_calls_kalma2_interact() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let start = prod.find("fn handle_aiua_interact").expect("handle_aiua_interact");
         let slice = &prod[start..];
         let next = slice[1..].find("\nfn ").unwrap_or(slice.len());
@@ -3569,7 +3574,7 @@ mod tests {
     #[test]
     fn spawn_orchestrator_process_name_is_parametrized() {
         let src = include_str!("main.rs");
-        let prod = src.split("#[cfg(test)]").next().unwrap_or(src);
+        let prod = production_source(src);
         let start = prod.find("fn spawn_orchestrator").expect("spawn_orchestrator");
         let slice = &prod[start..];
         let next = slice[1..].find("\nfn ").unwrap_or(slice.len());

@@ -434,6 +434,16 @@ pub fn resolve_refined_diagnosis(
     (parent.id.clone(), d)
 }
 
+pub fn extract_evidence_lines(error_trace_norm: &str, max_lines: usize) -> Vec<String> {
+    error_trace_norm
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .take(max_lines)
+        .map(str::to_string)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -459,7 +469,7 @@ mod tests {
             report_friction_id: None,
             report_error_code: Some("STORE_LOCK_CONTENTION"),
         };
-        assert!(signature_matches_dcc_suppress(&catalog, sig, &ctx, &surfaces));
+        assert!(signature_matches_dcc_suppress(catalog, sig, &ctx, &surfaces));
     }
 
     #[test]
@@ -498,14 +508,4 @@ mod tests {
         assert_eq!(id, "CHILD");
         assert_eq!(diagnosis.root_cause, "child-root");
     }
-}
-
-pub fn extract_evidence_lines(error_trace_norm: &str, max_lines: usize) -> Vec<String> {
-    error_trace_norm
-        .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty())
-        .take(max_lines)
-        .map(str::to_string)
-        .collect()
 }

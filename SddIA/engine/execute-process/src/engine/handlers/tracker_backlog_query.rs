@@ -41,8 +41,8 @@ fn issue_kind(labels: &[Value], tc: &TrackerConfig) -> Option<&'static str> {
         .iter()
         .filter_map(|v| v.as_str())
         .collect();
-    let is_hu = names.iter().any(|n| *n == tc.label_hu.as_str());
-    let is_pbi = names.iter().any(|n| *n == tc.label_pbi.as_str());
+    let is_hu = names.contains(&tc.label_hu.as_str());
+    let is_pbi = names.contains(&tc.label_pbi.as_str());
     if is_hu && !is_pbi {
         return Some("hu");
     }

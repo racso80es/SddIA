@@ -175,8 +175,8 @@ fn audit_telemetry_compliance_inner(repo: &Path, rel_path: &str) -> Result<Value
             "missing_receipt",
             schema_list.clone(),
         )?
-    } else if let Some(ref schema) = schema_list {
-        if !receipt_satisfies_schema(receipt.unwrap(), schema) {
+    } else if let (Some(r), Some(ref schema)) = (receipt, &schema_list) {
+        if !receipt_satisfies_schema(r, schema) {
             emit_breach_if_needed(
                 repo,
                 asset_id,

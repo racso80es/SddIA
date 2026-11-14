@@ -52,10 +52,10 @@ fn load_stats(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
         .map(|mut data| {
-            if !data.get("entities").and_then(|v| v.as_object()).is_some() {
+            if data.get("entities").and_then(|v| v.as_object()).is_none() {
                 data["entities"] = json!({});
             }
-            if !data.get("cognitive").and_then(|v| v.as_object()).is_some() {
+            if data.get("cognitive").and_then(|v| v.as_object()).is_none() {
                 data["cognitive"] = default_cognitive_block();
             }
             data
@@ -374,7 +374,7 @@ fn entity_bucket<'a>(stats: &'a mut Value, entity_id: &str) -> &'a mut Value {
     let entities = stats
         .as_object_mut()
         .expect("stats object");
-    if !entities.get(entity_id).and_then(|v| v.as_object()).is_some() {
+    if entities.get(entity_id).and_then(|v| v.as_object()).is_none() {
         entities.insert(
             entity_id.to_string(),
             json!({
@@ -518,10 +518,10 @@ fn load_ci_failures(repo: &Path, cfg: &HashMap<String, Value>) -> Value {
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
         .map(|mut data| {
-            if !data.get("failures").and_then(|v| v.as_array()).is_some() {
+            if data.get("failures").and_then(|v| v.as_array()).is_none() {
                 data["failures"] = json!([]);
             }
-            if !data.get("alerts").and_then(|v| v.as_object()).is_some() {
+            if data.get("alerts").and_then(|v| v.as_object()).is_none() {
                 data["alerts"] = json!({});
             }
             data
@@ -578,7 +578,7 @@ fn ci_alert_stamped(ledger: &Value, job_name: &str) -> bool {
 }
 
 fn stamp_ci_alert(ledger: &mut Value, job_name: &str, count: i64, event_type: &str) {
-    if !ledger.get("alerts").and_then(|v| v.as_object()).is_some() {
+    if ledger.get("alerts").and_then(|v| v.as_object()).is_none() {
         ledger["alerts"] = json!({});
     }
     ledger["alerts"][job_name] = json!({

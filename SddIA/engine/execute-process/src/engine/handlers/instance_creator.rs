@@ -21,7 +21,7 @@ fn str_opt(inputs: &Value, key: &str) -> Option<String> {
 }
 
 fn truthy(inputs: &Value, key: &str) -> bool {
-    inputs.get(key).map_or(false, |v| {
+    inputs.get(key).is_some_and(|v| {
         v.as_bool().unwrap_or_else(|| {
             v.as_str()
                 .map(|s| matches!(s.trim().to_lowercase().as_str(), "1" | "true" | "yes"))

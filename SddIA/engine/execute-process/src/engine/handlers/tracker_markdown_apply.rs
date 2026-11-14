@@ -535,7 +535,7 @@ pub fn apply_tracker_issue_changed(repo: &Path, event: &Value) -> Result<ApplyOu
         .flatten()
         .map(|b| b.default_branch)
         .unwrap_or_else(|| "main".into());
-    let git = persist_git(repo, &project_slug, &default_branch, &[rel.clone()])?;
+    let git = persist_git(repo, &project_slug, &default_branch, std::slice::from_ref(&rel))?;
 
     Ok(ApplyOutcome {
         applied: true,
@@ -804,11 +804,11 @@ mod tests {
             if pending.is_file() {
                 fs::remove_file(&pending).ok();
             }
-            let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(&repo, &rel).expect("load");
+            let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(repo, &rel).expect("load");
             let mut tampered = stored.clone();
             tampered["payload"]["issue_ref"] = json!("LAB-TAMPER");
             let err = run(
-                &repo,
+                repo,
                 &json!({
                     "event": tampered,
                     "event_id": stored.get("event_id").cloned().unwrap_or(json!("")),

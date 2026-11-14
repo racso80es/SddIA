@@ -94,7 +94,7 @@ fn path_allowlisted(rel: &str) -> bool {
         "SddIA/engine/execute-process/src/engine/materialize_kaizen_alert_doc.rs",
         "SddIA/engine/execute-process/src/engine/tracker_pbi_meta.rs",
     ];
-    if INTEGRATION_SRC.iter().any(|p| rel == *p) {
+    if INTEGRATION_SRC.contains(&rel) {
         return true;
     }
     if rel.contains("/handlers/kalma2") || rel.contains("/handlers/email_") {
@@ -152,8 +152,8 @@ fn unit_test_lines(src: &str) -> Vec<(u32, String)> {
         let trimmed = lines[i].trim();
         if trimmed == "#[cfg(test)]" || trimmed.starts_with("#[cfg(test)]") {
             let end = skip_cfg_test_item(&lines, i);
-            for j in i..end {
-                out.push((j as u32 + 1, lines[j].to_string()));
+            for (j, line) in lines.iter().enumerate().take(end).skip(i) {
+                out.push((j as u32 + 1, line.to_string()));
             }
             i = end;
             continue;
@@ -168,8 +168,8 @@ fn unit_test_lines(src: &str) -> Vec<(u32, String)> {
             } else {
                 i + 1
             };
-            for k in i..end {
-                out.push((k as u32 + 1, lines[k].to_string()));
+            for (k, line) in lines.iter().enumerate().take(end).skip(i) {
+                out.push((k as u32 + 1, line.to_string()));
             }
             i = end;
             continue;

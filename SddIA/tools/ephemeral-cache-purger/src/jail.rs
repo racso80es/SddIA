@@ -407,6 +407,9 @@ pub fn path_in_allowlist(s: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    static FIXTURE_LOCK: Mutex<()> = Mutex::new(());
 
     const TEST_HASH: &str = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
@@ -415,6 +418,7 @@ mod tests {
     }
 
     fn reset_fixture() -> PathBuf {
+        let _guard = FIXTURE_LOCK.lock().expect("fixture lock");
         let root = fixture_root();
         let cargo = root.join("cargo-target");
         let _ = fs::remove_dir_all(&root);
@@ -467,10 +471,14 @@ mod tests {
 
     #[test]
     fn reject_symlink_component() {
-        let root = reset_fixture();
+        let _guard = FIXTURE_LOCK.lock().expect("fixture lock");
+        let root = fixture_root().join(format!("symlink-{}", std::process::id()));
+        let cargo = root.join("cargo-target");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&cargo).expect("mkdir fixture");
         let link = root.join("cargo-target-link");
         let _ = fs::remove_file(&link);
-        std::os::unix::fs::symlink("/etc", &link).expect("symlink");
+        std::os::unix::fs::symlink(&cargo, &link).expect("symlink");
         let err = assert_jail(&link).expect_err("symlink");
         match err {
             JailError::Security(m) => assert!(m.contains("SYMLINK")),

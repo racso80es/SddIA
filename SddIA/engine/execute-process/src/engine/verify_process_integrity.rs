@@ -85,7 +85,7 @@ pub fn verify(repo: &Path) -> Result<(), Vec<String>> {
                             .collect::<Vec<_>>()
                     })
                     .unwrap_or_default();
-                if delegates.iter().any(|d| *d == "skill:cryptography-manager") {
+                if delegates.contains(&"skill:cryptography-manager") {
                     errors.push(format!(
                         "{}: phase {i} declares skill:cryptography-manager; use action:crypto-broker per process-contract v1.2.0+",
                         md.file_name().unwrap_or_default().to_string_lossy()
@@ -124,7 +124,7 @@ pub fn verify(repo: &Path) -> Result<(), Vec<String>> {
                     .and_then(|v| v.as_array())
                     .map(|a| a.iter().filter_map(|x| x.as_str()).collect())
                     .unwrap_or_default();
-                if !delegates.iter().any(|d| *d == "action:crypto-broker") {
+                if !delegates.contains(&"action:crypto-broker") {
                     continue;
                 }
                 let pname = obj.get("name").and_then(|v| v.as_str()).unwrap_or("");

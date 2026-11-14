@@ -47,7 +47,7 @@ fn dispatch_fractal_subscriber(
                 if result.get("ok").and_then(|v| v.as_bool()) == Some(true) {
                     return (sid, "success".into(), None, 0);
                 }
-                return (
+                (
                     sid,
                     "failed".into(),
                     result
@@ -56,14 +56,14 @@ fn dispatch_fractal_subscriber(
                         .map(str::to_string)
                         .or_else(|| Some("radamanto-batch failed".into())),
                     1,
-                );
+                )
             }
             "telemetry-compliance-audit" => {
                 let result = audit_telemetry_compliance(repo, rel_path);
                 if result.get("ok").and_then(|v| v.as_bool()) == Some(true) {
                     return (sid, "success".into(), None, 0);
                 }
-                return (
+                (
                     sid,
                     "failed".into(),
                     result
@@ -72,7 +72,7 @@ fn dispatch_fractal_subscriber(
                         .map(str::to_string)
                         .or_else(|| Some("telemetry-compliance-audit failed".into())),
                     1,
-                );
+                )
             }
             "daemon-heartbeat-audit" => match super::handlers::daemon_heartbeat::audit_telemetry_file(repo, rel_path) {
                 Ok(result) if result.get("ok").and_then(|v| v.as_bool()) == Some(true) => {

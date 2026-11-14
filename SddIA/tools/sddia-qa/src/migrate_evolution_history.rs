@@ -148,10 +148,10 @@ fn yaml_seq_strings(v: &YamlValue) -> Vec<String> {
                     YamlValue::String(s) if !s.trim().is_empty() => out.push(s.trim().to_string()),
                     YamlValue::Mapping(m) => {
                         let name = m
-                            .get(&YamlValue::String("name".into()))
+                            .get(YamlValue::String("name".into()))
                             .and_then(yaml_str);
                         let uuid = m
-                            .get(&YamlValue::String("uuid".into()))
+                            .get(YamlValue::String("uuid".into()))
                             .and_then(yaml_str);
                         match (name, uuid) {
                             (Some(n), Some(u)) => out.push(format!("{u}:{n}")),
@@ -222,15 +222,16 @@ fn yaml_escape(s: &str) -> String {
         })
         || s.starts_with(['&', '*', '!', '%', '@', '`'])
         || s.contains(": ")
+        || s.contains(' ')
+        || s.contains(':')
     {
-        format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
-    } else if s.contains(' ') || s.contains(':') {
         format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
     } else {
         s.to_string()
     }
 }
 
+#[allow(clippy::too_many_arguments)] // emisión de registro evolution canónico (MAN-43 O14)
 fn emit_record(
     id: &str,
     fecha: &str,

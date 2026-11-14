@@ -95,11 +95,13 @@ pub(crate) fn classify_record(path: &Path, fname: &str) -> Value {
     let id = fm_get(&fm, &["id_cambio", "uuid"]);
     let id_ok = id.as_ref().map(|s| looks_like_uuid(s)).unwrap_or(false);
     let _id_v4 = id.as_ref().map(|s| is_uuid_v4(s)).unwrap_or(false);
-    if !id_ok && !filename_uuid {
-        classes.insert("UUID-INV".into());
-    } else if id.as_ref().map(|s| !looks_like_uuid(s)).unwrap_or(false) && !filename_uuid {
-        classes.insert("UUID-INV".into());
-    } else if !id_ok && filename_uuid && !filename_uuid_v4 {
+    let invalid_frontmatter_id = id
+        .as_ref()
+        .map(|s| !looks_like_uuid(s))
+        .unwrap_or(false);
+    if (!filename_uuid && (!id_ok || invalid_frontmatter_id))
+        || (filename_uuid && !id_ok && !filename_uuid_v4)
+    {
         classes.insert("UUID-INV".into());
     }
 
@@ -192,6 +194,8 @@ fn parse_audit_universe(audit_path: &Path) -> Result<Vec<String>, String> {
     let text = fs::read_to_string(audit_path).map_err(|e| format!("{}: {e}", audit_path.display()))?;
     let mut out = Vec::new();
     let mut seen = BTreeSet::new();
+    let date_re = Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap();
+    let md_re = Regex::new(r"`([^`]+?\.md)`").unwrap();
     for line in text.lines() {
         if !line.starts_with('|') {
             continue;
@@ -204,12 +208,11 @@ fn parse_audit_universe(audit_path: &Path) -> Result<Vec<String>, String> {
         if fecha == "Fecha" || fecha.starts_with('-') {
             continue;
         }
-        if fecha != "SIN_FECHA" && !Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap().is_match(fecha) {
+        if fecha != "SIN_FECHA" && !date_re.is_match(fecha) {
             continue;
         }
         let registro = parts[1];
-        let re = Regex::new(r"`([^`]+?\.md)`").unwrap();
-        if let Some(caps) = re.captures(registro) {
+        if let Some(caps) = md_re.captures(registro) {
             let fname = caps.get(1).unwrap().as_str().to_string();
             if seen.insert(fname.clone()) {
                 out.push(fname);

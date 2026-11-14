@@ -525,7 +525,7 @@ impl DualVersionManifest {
                 contract: CONTRACT_ID.to_string(),
                 contract_version: CONTRACT_VERSION.to_string(),
                 schema_uri: Some(
-                    "https://sddia.local/capability-contracts/eda.event_manager.v2.schema.json"
+                    "https://sddia.local/capability-contracts/eda.event_manager.v1.schema.json"
                         .to_string(),
                 ),
             },
@@ -560,6 +560,21 @@ mod tests {
         assert_eq!(
             EventFamily::from_publish_token("pending").unwrap(),
             EventFamily::Domain
+        );
+    }
+
+    #[test]
+    fn builtin_v2_schema_uri_resolves_to_catalog_schema() {
+        let m = DualVersionManifest::builtin_v2("0.1.0-lab");
+        let uri = m
+            .implements_contract
+            .schema_uri
+            .as_deref()
+            .expect("schema_uri");
+        assert!(uri.ends_with("eda.event_manager.v1.schema.json"));
+        assert_eq!(
+            m.implements_contract.contract_version,
+            CONTRACT_VERSION
         );
     }
 }

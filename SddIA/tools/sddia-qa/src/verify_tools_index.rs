@@ -42,6 +42,7 @@ fn parse_index_filenames(index_path: &Path) -> std::collections::HashSet<String>
         return std::collections::HashSet::new();
     };
     let re_backtick = Regex::new(r"`([^`]+)`").expect("regex");
+    let re_table_rule = Regex::new(r"^\|\s*[-:]+").unwrap();
     let mut in_catalog = false;
     let mut indexed = std::collections::HashSet::new();
     for line in text.lines() {
@@ -55,7 +56,7 @@ fn parse_index_filenames(index_path: &Path) -> std::collections::HashSet<String>
         if !in_catalog || !line.trim().starts_with('|') {
             continue;
         }
-        if Regex::new(r"^\|\s*[-:]+").unwrap().is_match(line) {
+        if re_table_rule.is_match(line) {
             continue;
         }
         if line.contains("Archivo fuente") || line.trim() == "| name |" {
@@ -87,7 +88,7 @@ fn parse_index_filenames(index_path: &Path) -> std::collections::HashSet<String>
 
 fn audit_legacy_tools_dirs(repo: &Path) -> Vec<String> {
     let mut errors = Vec::new();
-    fn walk(dir: &Path, repo: &Path, errors: &mut Vec<String>) {
+    fn walk(dir: &Path, _repo: &Path, errors: &mut Vec<String>) {
         let Ok(rd) = fs::read_dir(dir) else { return };
         for entry in rd.flatten() {
             let path = entry.path();
@@ -106,7 +107,7 @@ fn audit_legacy_tools_dirs(repo: &Path) -> Vec<String> {
                         }
                     }
                 }
-                walk(&path, repo, errors);
+                walk(&path, _repo, errors);
             }
         }
     }

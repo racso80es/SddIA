@@ -30,7 +30,7 @@ fn load_state(repo: &Path) -> Value {
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
         .unwrap_or(json!({"daemons": {}}));
-    if !body.get("daemons").and_then(|v| v.as_object()).is_some() {
+    if body.get("daemons").and_then(|v| v.as_object()).is_none() {
         if let Some(obj) = body.as_object_mut() {
             obj.insert("daemons".into(), json!({}));
         }
@@ -244,7 +244,7 @@ fn record_heartbeat_at(state: &mut Value, repo: &Path, payload: &Value, at: Opti
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .or_else(|| payload.get("timestamp").and_then(|v| v.as_str()))
-        .unwrap_or_else(|| "");
+        .unwrap_or("");
     let ts = if ts.is_empty() { iso_now() } else { ts.to_string() };
     let prev = entry
         .get("last_heartbeat_at")

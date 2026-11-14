@@ -339,11 +339,11 @@ mod tests {
         if pending.is_file() {
             fs::remove_file(&pending).ok();
         }
-        let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(&repo, &rel).expect("load");
+        let stored = crate::engine::ecst_input_loader::load_ecst_from_rel(repo, &rel).expect("load");
         let mut tampered = stored.clone();
         tampered["payload"]["issue_ref"] = json!("AUT-TAMPER");
         let err = run(
-            &repo,
+            repo,
             &json!({
                 "event": tampered,
                 "event_id": stored.get("event_id").cloned().unwrap_or(json!("")),

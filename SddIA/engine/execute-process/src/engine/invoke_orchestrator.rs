@@ -49,9 +49,7 @@ pub fn invoke_process(repo: &Path, process_name: &str, inputs: &Value) -> Result
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
     let line = stdout
-        .lines()
-        .filter(|l| !l.trim().is_empty())
-        .last()
+        .lines().rfind(|l| !l.trim().is_empty())
         .ok_or_else(|| {
             if stderr.trim().is_empty() {
                 format!("subproceso {process_name} sin salida")
@@ -93,7 +91,7 @@ pub fn invoke_process_full_with_env(
         .output()
         .map_err(|e| format!("spawn orquestador: {e}"))?;
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let line = stdout.lines().filter(|l| !l.trim().is_empty()).last().unwrap_or("");
+    let line = stdout.lines().rfind(|l| !l.trim().is_empty()).unwrap_or("");
     if line.is_empty() {
         return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
     }

@@ -748,7 +748,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<OrchestratorEnvelope, String> 
                     "PARENT_REF_REQUIRED".into()
                 }
             });
-            let reg_status = if tracker.invoked { "failed" } else { "failed" };
+            let reg_status = "failed";
             return Ok(OrchestratorEnvelope {
                 success: false,
                 status_code: 1,

@@ -28,7 +28,7 @@ fn load_coverage(repo: &Path) -> Result<Value, String> {
     if !data.get("coverage_matrix").map(|v| v.is_object()).unwrap_or(false) {
         data["coverage_matrix"] = json!({});
     }
-    if !data.get("version").and_then(|v| v.as_str()).is_some() {
+    if data.get("version").and_then(|v| v.as_str()).is_none() {
         data["version"] = json!("1.0.0");
     }
     Ok(data)

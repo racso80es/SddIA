@@ -350,7 +350,7 @@ fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
                     "PROJECT_CONFIG_INVALID: tracker.state_map clave desconocida '{key}'"
                 ));
             }
-            if !v.as_str().is_some_and(|s| !s.trim().is_empty()) {
+            if v.as_str().is_none_or(|s| s.trim().is_empty()) {
                 return Err(format!(
                     "PROJECT_CONFIG_INVALID: tracker.state_map.{key} vacío"
                 ));
@@ -363,7 +363,7 @@ fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
         }
         for key in ["hu", "pbi"] {
             if let Some(v) = labels.get(key) {
-                if !v.as_str().is_some_and(|s| !s.trim().is_empty()) {
+                if v.as_str().is_none_or(|s| s.trim().is_empty()) {
                     return Err(format!(
                         "PROJECT_CONFIG_INVALID: tracker.labels.{key} vacío"
                     ));
@@ -372,7 +372,7 @@ fn validate_tracker_config(fm: &YamlValue) -> Result<(), String> {
         }
         for key in TRACKER_LABEL_OPTIONAL_KEYS {
             if let Some(v) = labels.get(*key) {
-                if !v.as_str().is_some_and(|s| !s.trim().is_empty()) {
+                if v.as_str().is_none_or(|s| s.trim().is_empty()) {
                     return Err(format!(
                         "PROJECT_CONFIG_INVALID: tracker.labels.{key} vacío"
                     ));

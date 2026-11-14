@@ -235,7 +235,7 @@ fn material_prefixes_from_cfg(cfg: &Value, evo_rel: &str) -> Vec<String> {
             }
         }
     }
-    prefixes.sort_by(|a, b| b.len().cmp(&a.len()));
+    prefixes.sort_by_key(|p| std::cmp::Reverse(p.len()));
     prefixes.dedup();
     prefixes
 }
@@ -443,9 +443,7 @@ fn invoke_register(repo: &Path, request: Value) -> Result<Value, String> {
         return Err("EVOL_CUMULO: cápsula sddia-evolution-register ausente".into());
     };
     let (stdout, stderr, _code) = invoke_capsule_subprocess(repo, kind, &path, &stdin)?;
-    parse_capsule_stdout(&stdout).or_else(|e| {
-        Err(format!("{e}; stderr={}", stderr.trim()))
-    })
+    parse_capsule_stdout(&stdout).map_err(|e| format!("{e}; stderr={}", stderr.trim()))
 }
 
 fn persist(repo: &Path, evo_rel: &str, log_rel: &str, body: &Value) -> Result<(), String> {

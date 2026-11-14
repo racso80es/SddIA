@@ -1,3 +1,6 @@
+// MAN-43 O14: arity/DI de orquestación; refactor estructural → backlog post-MAN-43 (ver man-43-o14-preaudit).
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
+
 pub mod actions;
 pub mod agent_runtime;
 pub mod capsule_invoke_smoke;

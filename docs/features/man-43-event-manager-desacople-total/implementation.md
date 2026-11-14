@@ -130,6 +130,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O8.1** | `done (rama)` | `route-domain-event` v1.0.2 sin `fs.persist` en fases; schema v1 fuera |
 | **O9** | `done (rama)` | Gate `rustc` verde; clippy residual acotado a `execute-process` (excluido por norma); C-2 latente |
 | **O10** | `done (rama)` | `contract_schema` en resolver/gate/validador; C-2 cerrado; C-4 taxonomía 1.0.12 / eda 2.0.0; O9 tools/skills/daemons sellados vía entity-manager |
+| **O14** | `done (rama)` | Evolution `d0bb10b2`, F-02 `schema_uri`, clippy workspace 0 errores, `execute-process --lib` 849/0; `cargo test --workspace` residual `linear-tracker-adapter` AUT-68 (preexistente). Auditoría `man-43-o14-preaudit-20261114.md`. Siguiente: O14b/O14c |
 | **O13** | `done (rama)` | Regresión O10 (3 tests validador DI) + baseline O12 inválida; clase `capability-contract` en `entity-manager`; C-3 (schema `eda.event_manager` 2.0, paridad schema↔serde); identidad `x-sddia` de los 17 contratos |
 | **O12** | `done` | Línea base; C-4 por cauce oficial; C-5 `event_uri` + process 1.1.0; 4 fallos lib documentados |
 | **O11** | `done` | Remediación forja O10: binario canónico, guarda anti-sobrescritura, restauración 3 `.md`, delete stubs, sellos daemons/O9, `hash_refresh` taxonomía (contenido 2.0.0 heredado de O10) |
@@ -189,6 +190,10 @@ Cerrado en rama. **Hallazgo normativo:** `rust-warning-gate` §1 excluye Clippy;
 ### Backlog técnico O10
 
 Cerrado en rama: `BindingRow` + `contract_schema_file`; validador usa `contract_schema_rel`; gate lee fila de bindings; forja norm/tool/skill/daemon ampliada (`artifact_yaml/body`, `hash_refresh`, `implementation_source_git_apply`); `capability-taxonomy` **1.0.12** / catálogo **2.0.0**; O9 genoma sellado vía entity-manager. Verificación: test `core_bindings_eda_event_manager_resolves_v1_schema` (tras `cargo test -p execute-process --lib`). C-3 (schema v1.2.0) y C-5 (`route-domain-event.outputs`) siguen abiertos; AC-13 abierto.
+
+### Backlog técnico O14
+
+Cerrado en rama (`plan.md` § O14, v1.2.15). Entregado: registro evolution `d0bb10b2-7c02-4955-8637-2451c2d5eeb3` (136 rutas `relacionado`), `schema_uri` → `eda.event_manager.v1.schema.json` + test, clippy workspace sin errores, `execute-process --lib` 849/0, nota `docs/audits/man-43-o14-preaudit-20261114.md`. **Residual AC-12:** `cargo test --workspace` falla en `linear-tracker-adapter::aut68_missing_label_names_team` (preexistente en rama). `gate-evolution --range` → validar tras commit (correladores `in_diff`). Siguiente: **O14b** / **O14c**.
 
 ### Backlog técnico O13
 

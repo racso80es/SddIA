@@ -313,6 +313,12 @@ pub mod test_harness {
         _lab: ParallelLabGuard,
     }
 
+    impl Default for EventManagerTestHarness {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
     impl EventManagerTestHarness {
         pub fn new() -> Self {
             let _lab = ParallelLabGuard::acquire();

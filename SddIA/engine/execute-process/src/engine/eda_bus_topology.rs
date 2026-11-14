@@ -282,12 +282,14 @@ fn list_port_witnesses(repo: &Path, state_key: &str, event_uuid: &str) -> Vec<Pa
         else {
             continue;
         };
-        let include = match (folder_key, row.status) {
-            ("processing_subscribers", PortDeliveryStatus::Processing) => true,
-            ("dead_letter_subscribers", PortDeliveryStatus::Nack) => true,
-            ("processed_subscribers", PortDeliveryStatus::Ack) => true,
-            _ => false,
-        };
+        let include = matches!(
+            (folder_key, row.status),
+            (
+                "processing_subscribers",
+                PortDeliveryStatus::Processing
+            ) | ("dead_letter_subscribers", PortDeliveryStatus::Nack)
+                | ("processed_subscribers", PortDeliveryStatus::Ack)
+        );
         if include {
             paths.push(PathBuf::from(format!("{event_uuid}.{sub}.json")));
         }

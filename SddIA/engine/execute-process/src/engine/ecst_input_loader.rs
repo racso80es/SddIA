@@ -68,12 +68,11 @@ pub fn load_ecst_from_rel(repo: &Path, rel: &str) -> Result<Value, String> {
 /// Precedencia: `event` (verificado) → `event_id` → `event_file_path` (solo identificador lógico).
 pub fn load_ecst_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
     if let Some(inline) = inputs.get("event") {
-        if inline.is_object() {
-            if str_field(inline, "event_id").is_some() {
+        if inline.is_object()
+            && str_field(inline, "event_id").is_some() {
                 verify_ecst_matches_bus(repo, inline)?;
                 return Ok(inline.clone());
             }
-        }
     }
     if let Some(event_id) = str_field(inputs, "event_id") {
         let synthetic = repo

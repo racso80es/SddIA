@@ -79,7 +79,7 @@ fn extract_tracker_section(markdown: &str) -> String {
 }
 
 /// Gate Cerbero antes de invocar la cápsula Linear.
-fn request_inner<'a>(payload: &'a Value) -> Option<&'a Value> {
+fn request_inner(payload: &Value) -> Option<&Value> {
     payload.get("request").or(Some(payload))
 }
 

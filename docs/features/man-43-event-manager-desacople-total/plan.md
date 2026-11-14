@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.14"
+version_plan: "1.2.15"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1512,7 +1512,7 @@ Tras cada acuse JSON: verificar fichero en disco; sin polling del bus (DA-5). Co
 | 17 schemas de `capability-contracts/` | Todos con `x-sddia` válido; `uuid` únicos; hash recalculable; los 16 adoptados difieren del original **solo** en el bloque insertado |
 | Norma de Identidad Polimórfica | `.cursorrules` §2/§3 y `README.md` ya la recogen; registro de evolución del estándar en `evolution/` con referencia al laudo; sin registro no hay commit |
 | Binario `SddIA/target/debug/execute-process` más antiguo que `forges/*.rs` o `entity_manager.rs` | Prohibido invocar `entity-manager` |
-| `APTO_TOTAL` | Prohibido (reservado a O14) |
+| `APTO_TOTAL` | Prohibido (lo declara Argos en O15 sobre el dossier de O14) |
 
 ### Verificación
 
@@ -1533,8 +1533,100 @@ Auditoría: `docs/audits/man-43-o13-contract-schema-20261114.md` (**APTO_PARCIAL
 
 Desviaciones respecto al diseño, todas documentadas en la auditoría: (1) la forja vive en `forges/capability_contract.rs` (no en `factory.rs`; solo el arm está en la fábrica); (2) `event_uri` del schema es un **objeto** `{family, event_id}` (el plan decía cadena `eda://`; error mío, corregido por el tipo `EventUri`); (3) el oráculo destapó más discrepancias aditivas (`processing`, 6 ramas) incluidas en el mismo parche; (4) `domain_mutation.rs` también necesitó la clase (la lista del sello es de runtime); (5) ensayo previo en copia del repo; (6) `SDDIA_PARITY_SCHEMA` permite ensayar un parche contra una copia.
 
-**AC:** cierra C-3; repara la regresión de O10 y la baseline de O12; acerca AC-13 (todos los C-* cerrados). AC-13 solo se declara en O14.
+**AC:** cierra C-3; repara la regresión de O10 y la baseline de O12; acerca AC-13 (todos los C-* cerrados). AC-13 lo declara Argos (O15) sobre el dossier de O14.
 **Fuera:** esquemas de `result` por operación; `delete` de la clase; clippy estructural. (La migración de los 16 contratos restantes **entra** en O13 por laudo.)
+
+---
+
+## O14 — Desbloqueo pre-auditoría + dossier de evidencia AC-1…AC-19 (siguiente hilo)
+
+**Corrección de alcance.** O10–O13 decían que O14 «declara» AC-13 o escribe `APTO_TOTAL`. No es así: el plan fija «Argos declara; Tekton solo evidencia» (§ Riesgos) y el veredicto previo salió de `pull-request-review` (`validacion.md`). O14 cierra los bloqueos medidos, ejecuta la matriz de evidencia y entrega un **dossier con veredicto propuesto**. La declaración de AC-13 pertenece a O15: push + PR + `pull-request-review` (Argos), vía `delivery-close-cycle`.
+
+### Hallazgos medidos antes de planificar (2026-11-14, HEAD `6f01bfe9`)
+
+| Hallazgo | Evidencia | Afecta |
+|----------|-----------|--------|
+| `gate-evolution --range`: **123** `EVOL_MATERIAL_UNREGISTERED`. Por último commit que tocó cada ruta: O9 38, O5.2 29, O5.1 16, O10 11, O11 9, O1 6, O12 3, O2 3, O4 3, O8 2, O5 1, O6 1, O0 1. Solo H1, O6 y O13 tienen registro. Base `origin/main` **stale** (3 días). | `sddia-qa gate-evolution --range --json` | AC-14; bloquea el push (pre-push) |
+| AC-12 exige literalmente «`cargo test --workspace`, **clippy**, contract suite y gates verdes». O9 lo dio por cumplido solo con el gate `rustc` porque `rust-warning-gate` §1 excluye clippy: **contradicción entre AC y norma**, no resuelta por laudo. Residual O9: ~85 diagnósticos en `execute-process`, sin remedir desde O10–O13. O9 dijo «todos estructurales», pero `needless_return` y `unnecessary_unwrap` son mecánicos. | `man-43-o9-quality-20261113.md` | AC-12 |
+| `cargo test --workspace` completo **no tiene evidencia** en ninguna ola: O6/O9/O12/O13 midieron `-p execute-process --lib`, `event-bus-audit` y `check --workspace`. (O9: `/tmp` lleno con `StorageFull`; usar `SddIA/target` y vigilar `df`.) | auditorías O6, O9, O12, O13 | AC-12 |
+| AC-3: «ninguna API pública contiene `target_path`». Sobrevive como **token lógico** en salidas CLI: `entity-manager.outputs.target_path`, peaje termodinámico (`.events/telemetry/{id}.json`) y 15 `.md` de genoma. No hay escritura física: tras las 21 invocaciones de O13, `.events/*` tiene 0 ficheros nuevos. Ambigüedad: ¿AC-3 abarca solo los tipos Rust del puerto o también el contrato JSON de procesos y acciones? | `rg target_path SddIA/{process,actions}`; `find .events -newermt` | AC-3 |
+| `DualVersionManifest::builtin_v2.schema_uri` apunta a `eda.event_manager.v2.schema.json`, que **no existe** (el fichero es `…v1…`, `$id` v1). Resto de F-02. | `sddia-core/.../contract.rs:528` | AC-1, F-02 |
+| La matriz AC-1…AC-19 / F-01…F-12 no se ha re-ejecutado desde O6 (`NO_APTO_TOTAL`, F-03 y F-09/F-10 parciales). | `man-43-o6-remediation-20261113.md` | AC-13 |
+
+### Laudos del Vértice Biológico (2026-11-14)
+
+- **D-1 = (a).** Clippy en verde (`cargo clippy --workspace --all-targets`, cero avisos) dentro de O14. Los avisos mecánicos se corrigen; `too_many_arguments`/`type_complexity` se refactorizan o reciben `#[allow]` justificado uno a uno en la nota de cierre. AC-12 conserva su texto literal.
+- **D-2 = (b).** AC-3 abarca también el contrato JSON de procesos y acciones: `target_path` se retira (→ `event_uri`) en motor y genoma vía `entity-manager`. Va en un hilo propio, **O14b**, que se planifica aparte. Consecuencia: la matriz y el dossier (C, D) pasan a **O14c**, tras O14b; sin O14b, AC-3 no tiene evidencia y no hay veredicto propuesto posible.
+
+### Diseño
+
+**A. Base sincronizada.** `git fetch origin main` (red) y `gate-evolution --range --sync-base`. Si `origin/main` avanzó, repetir la agrupación de hallazgos sobre la base nueva antes de B1.
+
+**B1. Evolución de la rama (AC-14, desbloquea push).** Un registro consolidado `MAN-43 O0–O12 desacople total` en `SddIA/evolution/`, con una sección por ola (commit, qué cambió, auditoría) y `relacionado` generado de los hallazgos reales del gate, **sin prefijos de directorio amplios que oculten rutas** (lista exacta). Hash por `sddia-qa evolution-rehash`; fila en `Evolution_log.md`. Criterio: `gate-evolution --range` → `EVOL_OK`. Los registros existentes (H1, O6, O13) no se tocan.
+
+**B2. `schema_uri` (F-02).** `builtin_v2` apunta al fichero real (`eda.event_manager.v1.schema.json`; el nombre es estable y la versión vive en `x-sddia.version`). Test nuevo: el `schema_uri` del manifiesto resuelve a un fichero existente de `capability_contracts` cuyo `x-sddia.version` == `CONTRACT_VERSION`. Rojo antes, verde después.
+
+**B3. AC-12 (D-1 a).** Medir `cargo clippy --workspace --all-targets` y corregir por categorías (mecánicos primero). Cada `#[allow]` lleva justificación en la nota de cierre; la suite queda igual o mejor.
+
+**B4. AC-3 (D-2 b) → O14b.** Retirada de `target_path` en salidas CLI (motor, peaje termodinámico, `entity-manager`, 15 `.md` de genoma vía `entity-manager`) + test de escaneo del puerto y de los contratos de proceso. Hilo propio.
+
+**C. Matriz de evidencia.** Para cada AC-1…AC-19 y F-01…F-12: comando, resultado y log en `docs/audits/man-43-o14-*.log`. Mínimo:
+- `cargo test --workspace` (completo, entorno `SDDIA*` vacío, `SddIA/target`).
+- `cargo test -p sddia-core event_manager`; suite contractual sobre mock, Redb y externo (AC-19: `redb_event_adapter`, `fs_event_adapter`, `external_capsule_event_adapter/tests/e2e_dummy.rs`).
+- `cargo check --workspace` con `RUSTFLAGS=-Dwarnings` (gate canónico); `cargo clippy --workspace --all-targets` con cero avisos (D-1 a).
+- `gate-event-manager-port`, `gate-evolution --range`, `verify-process-integrity`, `audit-eda-coverage --scan`.
+- AC-4/AC-5: `rg` de `.events/` y de ops FS (`read_dir`, `is_file`, `fs::write`) en código productivo de los crates EDA, **excluyendo tests de forma verificable** (lista de exclusiones en el dossier, no a ojo). Hoy hay ~30 ficheros `.rs` no-test que citan `.events/`; cada uno se clasifica (productivo, comentario, `cfg(test)`, token lógico).
+- AC-6: watcher/sweeper sin `read_dir`/`is_file`/`event_file_path`.
+- AC-10/AC-11: `test ! -d SddIA/sddia-event-store`; allowlist del gate vacía.
+- Residuales O13 (`evolution_contract.md` §1, `id`/`type` del sustrato A, `dlt_threshold_ok`): fuera de los AC; se listan como deuda, no bloquean.
+
+**D. Dossier.** `docs/audits/man-43-o14-reaudit-ac13-20261114.md`: capa posterior a `man-32-lineage-…` y `man-43-o6-…` (no se reescriben), tabla AC/F con evidencia, **veredicto propuesto** (`APTO_TOTAL_PROPUESTO` solo si todos los AC tienen evidencia verde; si no, `NO_APTO_TOTAL` con lista de bloqueos) y handoff a Argos. Tekton no escribe `APTO_TOTAL` en `validacion.md` ni en auditorías parentales.
+
+### Secuencia
+
+| Paso | Alcance | Bloquea |
+|------|---------|---------|
+| 1 | A: fetch + base sincronizada | 2 |
+| 2 | B1: registro de evolución consolidado → `gate-evolution --range` `EVOL_OK` | 6 |
+| 3 | B2: test rojo → fix `schema_uri` → verde | 6 |
+| 4 | B3 (D-1 a): medir clippy, corregir por categorías, suite igual o mejor | 6 |
+| 5 | `cargo test --workspace` completo como baseline (primera evidencia de AC-12) | 6 |
+| 6 | Nota `docs/audits/man-43-o14-preaudit-20261114.md` + docs + commit | O14b |
+| — | **O14b**: retirada de `target_path` (B4, D-2 b) — se planifica aparte | O14c |
+| — | **O14c**: C + D (matriz AC-1…AC-19 / F-01…F-12 y dossier con veredicto propuesto) | O15 |
+
+Tras cada acuse JSON del CLI, sin polling (DA-5). Un fallo de proceso oficial → Kintsugi. Cualquier fallo de la matriz C **bloquea** el veredicto propuesto: no se reclasifica como «no bloqueante» (lección O12).
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `StrReplace`/`Write` sobre `SddIA/{library,skills,tools,daemons,process,actions,norms}/` | Cero (`evolution/` sí, con hash por CLI canónica) |
+| `relacionado` con prefijos amplios para silenciar el gate | Prohibido; lista exacta de rutas |
+| `gate-evolution --range` | `EVOL_OK` sobre base sincronizada |
+| `cargo test --workspace` | 0 fallos con `env \| rg '^SDDIA'` vacío |
+| Veredicto `APTO_TOTAL` escrito por Tekton | Prohibido; solo `…_PROPUESTO` + handoff |
+| `#[allow(clippy::…)]` sin justificación escrita | Prohibido; cada uno listado en la nota |
+
+### Verificación
+
+```bash
+env | rg '^SDDIA' || echo limpio
+git fetch origin main && SddIA/target/debug/sddia-qa gate-evolution --range --sync-base
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test --workspace
+cd SddIA && RUSTFLAGS=-Dwarnings CARGO_TARGET_DIR=$PWD/target cargo check --workspace
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo clippy --workspace --all-targets   # D-1 a: cero avisos
+cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
+```
+
+**Commit:** `fix(eda): evolution O0–O12 + schema_uri + clippy verde (MAN-43 O14)`.
+
+**AC:** AC-14 (evolución de rama), F-02 residual, AC-12 (clippy + workspace). **O14b:** AC-3. **O14c:** dossier AC-13. **O15:** `delivery-close-cycle` → PR → `pull-request-review` (Argos) declara.
+**Fuera:** `evolution_contract.md` §1; `id`/`type` en sustrato A; `dlt_threshold_ok`; esquemas `result` del contrato eda.
+
+### Resultado de ejecución (2026-11-14)
+
+Auditoría: `docs/audits/man-43-o14-preaudit-20261114.md` (**APTO_PARCIAL**). Evolution `d0bb10b2`; clippy workspace 0 errores; F-02 cerrado; `execute-process --lib` 849/0. Residual: `cargo test --workspace` — `linear-tracker-adapter` AUT-68 (preexistente). Próximo: O14b (`target_path`), O14c (dossier).
 
 ---
 
@@ -1601,7 +1693,9 @@ El detalle ejecutable está en **O4 / H4**.
 13. **O10** motor DI honra `contract_schema` del binding (cierra C-2 en código). C-3/C-4/C-5 siguen abiertos; C-4 pide laudo.
 14. **O11** remediación del genoma dañado por O10 (binario de forja obsoleto) + C-4 y O9 rehechos de verdad por `entity-manager`.
 15. **O12** línea base de verificación + C-4 por cauce oficial (reintento real) + C-5 (`route-domain-event.outputs`). C-3 pasa a O13, con decisión previa.
-16. **O13** repara la regresión de O10 (fixtures DI) y la baseline de O12; clase `capability-contract` en `entity-manager`; C-3 por esa vía. O14: re-auditoría AC-13.
+16. **O13** repara la regresión de O10 (fixtures DI) y la baseline de O12; clase `capability-contract` en `entity-manager`; C-3 por esa vía.
+17. **O14** desbloqueo pre-auditoría: evolución O0–O12, `schema_uri`, clippy verde (D-1 a), `cargo test --workspace`. **O14b** retirada de `target_path` (D-2 b). **O14c** matriz AC-1…AC-19 + dossier con veredicto **propuesto**.
+18. **O15** `delivery-close-cycle` → PR → `pull-request-review`: Argos declara AC-13.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 

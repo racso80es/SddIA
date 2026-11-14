@@ -137,7 +137,7 @@ pub fn run(repo: &Path, args: &[String]) -> i32 {
             if rel.as_deref().unwrap_or("").is_empty() || event_id.is_none() {
                 report["success"] = false.into();
                 report["error"] = "entity-manager sin event_id".into();
-                report["data"] = create_data.into();
+                report["data"] = create_data;
                 return Ok(());
             }
             created_entity = true;

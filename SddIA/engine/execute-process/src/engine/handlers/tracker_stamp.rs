@@ -576,7 +576,7 @@ fn stamp_todo_transition(
     source: &str,
     comment: &str,
 ) -> Result<(bool, Option<String>), String> {
-    if tc.state_map.get("todo").is_none() {
+    if !tc.state_map.contains_key("todo") {
         return Ok((false, Some("warn: state_map sin todo".into())));
     }
     let run = |f: &dyn Fn() -> Result<(), String>| -> Result<(), String> {
@@ -607,6 +607,7 @@ fn stamp_todo_transition(
     Ok((true, None))
 }
 
+#[allow(clippy::needless_late_init)] // match multi-evento: refactor → MAN-43 post-cierre
 pub(crate) fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<String>), String> {
     let event_type = str_field(event, "event_type").unwrap_or_default();
     if matches!(
@@ -666,7 +667,7 @@ pub(crate) fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<St
             Some(t) => t,
             None => return Ok((false, Some("no-op: proyecto sin tracker".into()))),
         };
-        if tc.state_map.get("cancelled").is_none() {
+        if !tc.state_map.contains_key("cancelled") {
             return Ok((false, Some("warn: state_map sin cancelled".into())));
         }
         let pbi_fetch = tool_fetch_issue(repo, &issue_ref, tc.project_id.as_deref())?;
@@ -869,7 +870,7 @@ pub(crate) fn stamp_event(repo: &Path, event: &Value) -> Result<(bool, Option<St
             stamped = true;
         }
         "Validation_Started" => {
-            if tc.state_map.get("in_validation").is_none() {
+            if !tc.state_map.contains_key("in_validation") {
                 return Ok((
                     false,
                     Some("warn: state_map sin in_validation".into()),
@@ -1494,8 +1495,7 @@ mod tests {
             let (stamped, note) = stamp_event(&repo, &event).unwrap();
             assert!(!stamped);
             assert!(
-                note.as_ref()
-                    .map(|s| s.as_str())
+                note.as_deref()
                     .unwrap_or_default()
                     .contains("origen"),
                 "note={note:?}"
@@ -1538,8 +1538,7 @@ mod tests {
             let (stamped, note) = stamp_event(&repo, &event).unwrap();
             assert!(!stamped);
             assert!(
-                note.as_ref()
-                    .map(|s| s.as_str())
+                note.as_deref()
                     .unwrap_or_default()
                     .contains("origen")
             );

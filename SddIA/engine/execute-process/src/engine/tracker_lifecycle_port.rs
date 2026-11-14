@@ -493,12 +493,9 @@ mod tests {
         let sentinel_existed = sentinel.exists();
         let mut linear_ref = String::new();
         for op in verbs {
-            let req = if op == "create_issue" {
-                verb_request(op, "")
-            } else if op == "list_issues" {
-                verb_request(op, "")
-            } else {
-                verb_request(op, &linear_ref)
+            let req = match op {
+                "create_issue" | "list_issues" => verb_request(op, ""),
+                _ => verb_request(op, &linear_ref),
             };
             let out = invoke(&core, &linear_inputs, req, "tracker-stamp").unwrap_or_else(|e| {
                 panic!("linear {op}: {e}")

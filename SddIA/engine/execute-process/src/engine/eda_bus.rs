@@ -93,7 +93,7 @@ pub fn iter_bus_event_files(repo: &Path) -> Result<Vec<PathBuf>, String> {
             .map(|e| bus.pending.join(format!("{}.json", e.event_id)))
             .collect();
         files.sort();
-        return Ok(files);
+        Ok(files)
     }
     #[cfg(test)]
     {
