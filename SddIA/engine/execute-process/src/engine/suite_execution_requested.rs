@@ -81,7 +81,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": seal.get("event_id"),
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "Suite_Execution_Requested",
     }))
 }

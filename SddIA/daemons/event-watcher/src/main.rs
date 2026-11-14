@@ -463,7 +463,7 @@ fn invoke_route_process(repo: &Path, route_input: &str, process_name: &str) -> O
     let payload = if process_name == "route-domain-event" {
         json!({ "event_id": route_input })
     } else {
-        json!({ "event_file_path": route_input })
+        json!({ "event_uri": route_input })
     }
     .to_string();
     Command::new(&runner)
@@ -546,9 +546,9 @@ fn watcher_skip_emits_hot_path_trace(_skip: &str) -> bool {
     false
 }
 
-fn run_route_cli(repo: &Path, event_file_path: &str) -> i32 {
+fn run_route_cli(repo: &Path, event_uri: &str) -> i32 {
     let runner = execute_process_bin(repo);
-    let payload = json!({ "event_file_path": event_file_path }).to_string();
+    let payload = json!({ "event_uri": event_uri }).to_string();
     let out = Command::new(&runner)
         .args(["--process", "route-domain-event", "--inputs", &payload])
         .current_dir(repo)

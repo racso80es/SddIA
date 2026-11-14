@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde_json::Value;
 
-use crate::ports::event_manager::contract::{
+use crate::ports::event_manager::{
     AppendTraceRequest, DeliveryStatus, EventFamily, EventUri, GetEventRequest, ListEventsRequest,
     ListPendingRequest, PublishEcstRequest, RecordDeliveryRequest,
 };
@@ -105,7 +105,7 @@ pub fn append_progress_monotonic(
     frame: &Value,
 ) -> Result<u64, String> {
     let frames = port
-        .list_traces(crate::ports::event_manager::contract::ListTracesRequest {
+        .list_traces(crate::ports::event_manager::ListTracesRequest {
             trace_id: correlation_id.to_string(),
         })
         .map(|r| r.frames.len() as u64)

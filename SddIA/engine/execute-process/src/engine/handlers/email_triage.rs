@@ -1201,7 +1201,7 @@ mod tests {
     fn run_received(repo: &Path, name: &str, payload: Value) -> OrchestratorEnvelope {
         let path = write_received(repo, name, payload);
         let rel = path.strip_prefix(repo).unwrap().to_string_lossy().replace('\\', "/");
-        run(repo, &json!({"event_file_path": rel})).expect("run")
+        run(repo, &json!({"event_uri": rel})).expect("run")
     }
 
     #[test]

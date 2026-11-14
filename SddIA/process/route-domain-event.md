@@ -1,13 +1,11 @@
 ---
-context:
-- event-routing
-- ecosystem-evolution
+context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:a37837b314d570dde698cae2ac20d2cec5a13f9a83236cc95b2083f3926d22aa
+hash_signature: sha256:4950244f3dd72ccabdf8deb8a72c77fb2535a6b9ef4d9369133bfe85a3f054c0
 inputs:
-- event_file_path: Token lógico `.events/pending/<event_id>.json` resuelto por EventManagerPort, sin JSON en disco
-- event_file_paths: Lista de tokens lógicos (batch); el ECST se carga por puerto
-- cumulo_topology: Topología SSOT inyectada (opcional en laboratorio)
+- 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
+- 'event_uris: Lista de tokens lógicos (batch); el ECST se carga por puerto'
+- 'cumulo_topology: Topología SSOT inyectada (opcional en laboratorio)'
 minteo_maximo: null
 name: route-domain-event
 outputs:
@@ -18,7 +16,7 @@ outputs:
 - sweep: objeto resumen de barrido del puerto
 - transaction_digest: string opcional; digest DLT cuando aplica
 phases:
-- intent: Resolver el ECST por EventManagerPort (token event_file_path); validar frente a la Clase; Nack/DLQ en el puerto si falla el gate.
+- intent: Resolver el ECST por EventManagerPort (token event_uri); validar frente a la Clase; Nack/DLQ en el puerto si falla el gate.
   name: Lectura y validación ECST
 - delegates_to:
   - agent:cumulo
@@ -35,7 +33,7 @@ phases:
   name: Promoción testigos
 porcentaje_de_exito: null
 uuid: c8e91f2a-4b6d-4e1a-9f03-2d7e5a684b10
-version: 1.1.0
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -53,7 +51,7 @@ Proceso orquestador del bus EDA local (**Ola C V3+**). Sustituye la acción hom�
 
 ## Implementación física
 
-Handler: `route_domain_event_core::route_domain_event()` resuelve el ECST vía `EventManagerPort`; `event_file_path` es token lógico, no lectura de JSON en disco.
+Handler: `route_domain_event_core::route_domain_event()` resuelve el ECST vía `EventManagerPort`; `event_uri` es token lógico, no lectura de JSON en disco.
 
 Watcher: delega en `execute-process --process route-domain-event`.
 

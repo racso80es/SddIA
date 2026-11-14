@@ -222,7 +222,7 @@ pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, 
             "operation_status": operation_status,
             "os_result": os_result,
             "orchestration_event_id": orch.get("event_id"),
-            "orchestration_event_path": orch.get("target_path"),
+            "orchestration_event_uri": orch.get("event_uri"),
         })),
         error: if success {
             None

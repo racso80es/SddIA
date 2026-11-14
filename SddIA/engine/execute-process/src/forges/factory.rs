@@ -1277,6 +1277,19 @@ pub fn run_skill_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_version": patch.version,
             }));
         }
+        if let Some(replacements) = inputs.get("artifact_yaml_replacements") {
+            let text = fs::read_to_string(&skill_path).map_err(|e| e.to_string())?;
+            let (yaml, body) = split_md_frontmatter(&text).ok_or("frontmatter ausente")?;
+            let new_yaml = apply_markdown_body_replacements(&yaml, replacements)?;
+            fs::write(&skill_path, format!("---\n{new_yaml}---\n{body}")).map_err(|e| e.to_string())?;
+            let patch = patch_hash_signature_refresh(&skill_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         if let Some(replacements) = inputs.get("markdown_body_replacements") {
             let (entity_uuid, old_hash, new_hash, version) =
                 patch_artifact_body_replacements(&skill_path, replacements)?;

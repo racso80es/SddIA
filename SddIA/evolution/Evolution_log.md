@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `bc17f9a8-b329-434e-bc7b-1b85c4555585` | 2026-11-14 | MAN-43 O14b: event_uri en contratos EDA (motor, genoma, oraculo) | CANONICO | `SddIA/evolution/bc17f9a8-b329-434e-bc7b-1b85c4555585.md` |
 | `d0bb10b2-7c02-4955-8637-2451c2d5eeb3` | 2026-11-14 | MAN-43 O14: evolution consolidada O0–O12; clippy workspace; schema_uri F-02 | CANONICO | `SddIA/evolution/d0bb10b2-7c02-4955-8637-2451c2d5eeb3.md` |
 | `35ec5355-a3c8-48be-9358-336026684320` | 2026-11-14 | MAN-43 O13: Norma de Identidad Polimórfica (Cicatriz Digital, sustrato B x-sddia); 17 contratos con identidad; eda.event_manager 2.0.0 | CANONICO | `SddIA/evolution/35ec5355-a3c8-48be-9358-336026684320.md` |
 | `c4e8f2a1-9b3d-4e7c-a5f6-2d3e8b9c0a1f` | 2026-11-13 | MAN-43 O6: narrativa EventManager v2; store legacy retirado del relato (877c1791) | CANONICO | `SddIA/evolution/c4e8f2a1-9b3d-4e7c-a5f6-2d3e8b9c0a1f.md` |

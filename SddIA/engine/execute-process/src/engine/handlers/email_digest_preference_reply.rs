@@ -63,7 +63,7 @@ fn load_event(repo: &Path, process_inputs: &Value) -> Result<Value, String> {
             .map(|s| !s.trim().is_empty())
             == Some(true)
         || process_inputs
-            .get("event_file_path")
+            .get("event_uri")
             .and_then(|v| v.as_str())
             .map(|s| !s.trim().is_empty())
             == Some(true);
@@ -75,7 +75,7 @@ fn load_event(repo: &Path, process_inputs: &Value) -> Result<Value, String> {
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .ok_or("event_file_path o callback_data requerido")?;
+        .ok_or("event_uri o callback_data requerido")?;
     Ok(json!({
         "event_id": process_inputs.get("event_id").cloned().unwrap_or(json!("")),
         "event_type": "TelegramCallback_Received",
@@ -355,7 +355,7 @@ mod tests {
     fn foreign_namespace_skips() {
         let tmp = repo_with_cumulo();
         let rel = write_callback(tmp.path(), "cb1", "other:foo");
-        let env = run(tmp.path(), &json!({"event_file_path": rel})).unwrap();
+        let env = run(tmp.path(), &json!({"event_uri": rel})).unwrap();
         assert!(env.success);
         let data = env.data.unwrap();
         assert_eq!(data["skipped"], json!(true));
@@ -368,7 +368,7 @@ mod tests {
         let tmp = repo_with_cumulo();
         seed_token(tmp.path(), "abcd1234", "noreply@shop.tld");
         let rel = write_callback(tmp.path(), "cb2", "dpref:max:ffffffff");
-        let env = run(tmp.path(), &json!({"event_file_path": rel})).unwrap();
+        let env = run(tmp.path(), &json!({"event_uri": rel})).unwrap();
         assert!(env.success);
         assert_eq!(env.data.unwrap()["reason"], json!("skipped-expired"));
     }
@@ -378,7 +378,7 @@ mod tests {
         let tmp = repo_with_cumulo();
         seed_token(tmp.path(), "abcd1234", "noreply@shop.tld");
         let rel = write_callback(tmp.path(), "cb3", "dpref:ign:abcd1234");
-        let env = run(tmp.path(), &json!({"event_file_path": rel})).unwrap();
+        let env = run(tmp.path(), &json!({"event_uri": rel})).unwrap();
         assert!(env.success);
         let data = env.data.unwrap();
         assert_eq!(data["reason"], json!("ignore"));
@@ -394,7 +394,7 @@ mod tests {
         let tmp = repo_with_cumulo();
         seed_token(tmp.path(), "abcd1234", "noreply@shop.tld");
         let rel = write_callback(tmp.path(), "cb4", "dpref:max:abcd1234");
-        let env = run(tmp.path(), &json!({"event_file_path": rel})).unwrap();
+        let env = run(tmp.path(), &json!({"event_uri": rel})).unwrap();
         assert!(env.success);
         let data = env.data.unwrap();
         assert_eq!(data["preference_emitted"], json!(true));
@@ -418,7 +418,7 @@ mod tests {
         let tmp = repo_with_cumulo();
         seed_token(tmp.path(), "abcd1234", "noreply@shop.tld");
         let rel = write_callback(tmp.path(), "cb5", "dpref:mute:abcd1234");
-        let env = run(tmp.path(), &json!({"event_file_path": rel})).unwrap();
+        let env = run(tmp.path(), &json!({"event_uri": rel})).unwrap();
         assert!(env.success);
         let eid = env.data.unwrap()["target_event_id"].as_str().unwrap().to_string();
         let ev = crate::engine::eda_port::test_lab::ecst_for_event_id(tmp.path(), &eid);
@@ -433,7 +433,7 @@ mod tests {
         let repo = tmp.path();
         seed_token(repo, "abcd1234", "noreply@example.com");
         let rel = write_callback(repo, "cb6", "dpref:max:abcd1234");
-        let env = run(repo, &json!({"event_file_path": rel})).unwrap();
+        let env = run(repo, &json!({"event_uri": rel})).unwrap();
         assert_eq!(env.data.as_ref().unwrap()["preference_emitted"], json!(true));
         let eid = env.data.as_ref().unwrap()["target_event_id"]
             .as_str()
@@ -441,7 +441,7 @@ mod tests {
             .to_string();
         let ingest = user_preference::run_ingest(
             repo,
-            &json!({"event_file_path": format!(".events/domain/{eid}.json")}),
+            &json!({"event_uri": format!(".events/domain/{eid}.json")}),
         )
         .unwrap();
         assert!(ingest.success);
@@ -468,7 +468,7 @@ mod tests {
             }),
         )
         .unwrap();
-        let triage = email_triage::run(repo, &json!({"event_file_path": ".events/domain/mail1.json"}))
+        let triage = email_triage::run(repo, &json!({"event_uri": ".events/domain/mail1.json"}))
             .unwrap();
         let phases = triage.execution_report.as_ref().unwrap()["phases"]
             .as_array()

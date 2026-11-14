@@ -36,6 +36,8 @@ pub mod tracker_item_document;
 pub mod invoke_orchestrator;
 pub mod crypto_broker;
 pub mod domain_mutation;
+#[cfg(test)]
+mod eda_event_token_hygiene;
 pub mod eda_bus;
 pub mod ecst_input_loader;
 pub mod eda_bus_topology;

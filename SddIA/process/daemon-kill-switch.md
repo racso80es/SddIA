@@ -12,10 +12,10 @@ inputs:
 minteo_maximo: null
 name: daemon-kill-switch
 outputs:
-- purge_report: Array por daemon_id con resultado kill/noop
-- stale_locks_removed: Lista de locks huérfanos eliminados
-- orchestration_event_id: UUID v4 del Process_Execution_Completed
-- orchestration_event_path: Ruta relativa en eda_fractal.orchestration
+- 'purge_report: Array por daemon_id con resultado kill/noop'
+- 'stale_locks_removed: Lista de locks huérfanos eliminados'
+- 'orchestration_event_id: UUID v4 del Process_Execution_Completed'
+- 'orchestration_event_uri: Ruta relativa en eda_fractal.orchestration'
 phases:
 - delegates_to:
   - agent:cumulo
@@ -41,7 +41,7 @@ phases:
   name: Sello orchestration
 porcentaje_de_exito: null
 uuid: b0de6585-11fc-4b3c-8b19-ad6b727d820e
-version: 1.0.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

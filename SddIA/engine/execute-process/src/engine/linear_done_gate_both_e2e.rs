@@ -100,7 +100,7 @@ fn merge_done_lab_setup(repo: &Path, tracker_ref: &str) {
     });
     sddia_eda_catalog::stamp_published_event(repo, &mut event).expect("stamp");
     crate::engine::eda_port::record_ecst(repo, "domain", &event).expect("record");
-    let out = tracker_stamp::run(repo, &json!({ "event_file_path": rel }))
+    let out = tracker_stamp::run(repo, &json!({ "event_uri": rel }))
         .expect("tracker-stamp PullRequest_Merged");
     let stamped = out
         .data

@@ -676,7 +676,7 @@ pub fn run(
         "process_name": "entity-manager",
         "handoff": handoff,
     });
-    for key in ["event_id", "target_path", "workspace_path", "execution_id"] {
+    for key in ["event_id", "event_uri", "workspace_path", "execution_id"] {
         if let Some(v) = handoff.get(key).or_else(|| state.get(key)) {
             data[key] = v.clone();
         }

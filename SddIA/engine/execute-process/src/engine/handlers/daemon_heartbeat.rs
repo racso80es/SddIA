@@ -672,7 +672,7 @@ pub fn audit_telemetry_file(repo: &Path, rel_path: &str) -> Result<Value, String
 }
 
 pub fn run(repo: &Path, process_inputs: &Value) -> Result<OrchestratorEnvelope, String> {
-    if let Some(rel) = process_inputs.get("event_file_path").and_then(|v| v.as_str()) {
+    if let Some(rel) = process_inputs.get("event_uri").and_then(|v| v.as_str()) {
         if !rel.trim().is_empty() {
             let result = audit_telemetry_file(repo, rel.trim())?;
             let ok = result.get("ok").and_then(|v| v.as_bool()) == Some(true);

@@ -1,7 +1,7 @@
 ---
 uuid: "a1086194-e19c-49b1-88e1-bd828211b3a8"
 name: "dispatch-aiua-intent"
-version: "1.1.0"
+version: "2.0.0"
 contract: "actions-contract v1.3.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -12,10 +12,10 @@ inputs:
 outputs:
   - "success": "boolean"
   - "event_id": "UUID v4"
-  - "target_path": "ruta relativa eda_fractal.domain"
+  - "event_uri": "ruta relativa eda_fractal.domain"
   - "event_type": "Aiua_Process_Requested | Suite_Execution_Requested | User_Preference_Change_Requested"
   - "intent_dispatched": "nombre del tendon"
-hash_signature: "sha256:9b717e070717cfbe31b580fcd1509fbfdf80548fcbdae1d08710674ee1ee6015"
+hash_signature: "sha256:38284631d6a1b77de0c60dfc12d905ec1e8c3bd8d1f0c0e4ad24334cd11b33c5"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

@@ -365,15 +365,15 @@ pub fn execute_accept_pr_phase(
                 if let Some(eid) = seal.get("event_id") {
                     obj.insert("event_id".into(), eid.clone());
                 }
-                if let Some(tp) = seal.get("target_path") {
-                    obj.insert("target_path".into(), tp.clone());
+                if let Some(tp) = seal.get("event_uri") {
+                    obj.insert("event_uri".into(), tp.clone());
                 }
             }
             Some(Ok(json!({
                 "status": "executed",
                 "handler": "accept-emit-merged",
                 "event_id": seal.get("event_id"),
-                "target_path": seal.get("target_path"),
+                "event_uri": seal.get("event_uri"),
                 "event_type": seal.get("event_type"),
                 "lifecycle_review_ci": lifecycle_done,
             })))

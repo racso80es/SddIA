@@ -137,7 +137,7 @@ pub fn find_existing_domain_event(
                 .unwrap_or("");
             return Ok(Some(serde_json::json!({
                 "event_id": body.get("event_id"),
-                "target_path": format!(".events/pending/{event_id}.json"),
+                "event_uri": format!("eda://domain/{event_id}"),
                 "event_type": body.get("event_type"),
             })));
         }
@@ -198,11 +198,13 @@ pub fn write_fractal_event(repo: &Path, event: &Value, family: &str) -> Result<V
         sddia_eda_catalog::stamp_published_event(repo, &mut stamped)?;
     }
     eda_port::record_ecst(repo, family, &stamped)?;
-    // Token lógico (L-LOGICAL-EVENTS / CA-4); no ruta física Redb.
-    let logical = format!(".events/{family}/{event_id}.json");
+    let uri = sddia_core::ports::event_manager::EventUri::new(
+        sddia_core::ports::event_manager::EventFamily::parse(family)?,
+        event_id,
+    )?;
     Ok(json!({
         "event_id": event_id,
-        "target_path": logical,
+        "event_uri": uri.as_canonical(),
         "family": family,
     }))
 }

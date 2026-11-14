@@ -1,5 +1,5 @@
 ---
-contract_version: "1.2.1"
+contract_version: "2.0.0"
 entity_type: "event"
 jurisdiction: "Core SddIA"
 capabilities:
@@ -95,8 +95,8 @@ flowchart TB
 ```
 
 1. Emisores registran el ECST con `record_ecst` / `materialize_pending_domain_event`: en **`redb`** solo store; en **`filesystem`** JSON en `eda_bus.pending`; en **`dual`** ambos.
-2. `event-watcher` reclama entregas **`Pending`** en store y/o detecta JSON en `pending/`; invoca `route-domain-event` con `event_file_path` lógico (`.events/pending/{event_id}.json`) aunque el fichero no exista en `redb`.
-3. `route-domain-event` carga el ECST desde fichero si existe; si no, desde store (`load_dispatched_event`). En fan-out, los suscriptores con `process`/`action`/`tool` reciben el ECST en línea (`event` + `event_id` en stdin JSON); `event_file_path` es compatibilidad lab. Valida contra la Clase catalogada.
+2. `event-watcher` reclama entregas **`Pending`** en store y/o detecta JSON en `pending/`; invoca `route-domain-event` con `event_uri` lógico (`.events/pending/{event_id}.json`) aunque el fichero no exista en `redb`.
+3. `route-domain-event` carga el ECST desde fichero si existe; si no, desde store (`load_dispatched_event`). En fan-out, los suscriptores con `process`/`action`/`tool` reciben el ECST en línea (`event` + `event_id` en stdin JSON); `event_uri` es compatibilidad lab. Valida contra la Clase catalogada.
 4. Fan-out asíncrono a suscriptores (`event-subscriptions.json`). Cada intento actualiza `subscriber_delivery` cuando el store está activo; en `filesystem`/`dual` también materializa testigos JSON bajo `processing/subscribers/`.
 5. Resultado por suscriptor: `success`, `failed` o `skipped-<motivo>` en la respuesta del router; en store se persisten como `DeliveryStatus` (`success`, `failed`, `skipped`). **Prohibido** registrar `success` cuando el handler no produjo efecto (laudo AUT-20).
 6. Idempotencia ante re-enrutado: `terminal_witness_exists` consulta entrega terminal en **`subscriber_delivery`** (modo store) **y/o** testigo en `processed_subscribers` / `dead_letter_subscribers` (modo FS).

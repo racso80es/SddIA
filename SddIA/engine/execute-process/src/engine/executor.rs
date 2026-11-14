@@ -775,7 +775,7 @@ pub fn run_generic(
         "execution_id",
         "pr_url",
         "event_id",
-        "target_path",
+        "event_uri",
         "pbi_archived_path",
         "delivery_close",
     ] {

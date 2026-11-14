@@ -164,7 +164,7 @@ fn emit_sdlc(
         "success": true,
         "event_id": event_id,
         "correlation_id": event_id,
-        "target_path": seal.get("target_path"),
+        "event_uri": seal.get("event_uri"),
         "event_type": "Aiua_Process_Requested",
         "intent_dispatched": intent_name,
     }))
@@ -299,7 +299,7 @@ fn emit_habit(repo: &Path, args: &Value) -> Result<Value, String> {
     Ok(json!({
         "success": true,
         "event_id": out.get("event_id"),
-        "target_path": out.get("target_path"),
+        "event_uri": out.get("event_uri"),
         "event_type": "User_Preference_Change_Requested",
         "intent_dispatched": HABIT_TENDON,
     }))
@@ -324,7 +324,7 @@ pub fn run(repo: &Path, inputs: &Value) -> Result<Value, String> {
         return Ok(json!({
             "success": true,
             "event_id": out.get("event_id"),
-            "target_path": out.get("target_path"),
+            "event_uri": out.get("event_uri"),
             "event_type": "Suite_Execution_Requested",
             "intent_dispatched": name,
         }));

@@ -1,7 +1,7 @@
 ---
 uuid: "d5e6f7a8-b9c0-4d1e-8f2a-3b4c5d6e7f8a"
 name: "emit-suite-execution-requested"
-version: "1.0.0"
+version: "2.0.0"
 contract: "actions-contract v1.2.0"
 context: "chaos-engineering"
 capabilities:
@@ -17,7 +17,8 @@ inputs:
 outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
-  - "target_path": "string; ruta relativa del JSON en ./.events/domain/"
+  - "event_uri": "Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})"
+hash_signature: "sha256:72d02c30bda4eb3e18d97b1db48d8fcb774dd31de9f9152db4407aa547729461"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -67,7 +68,7 @@ Escribir `{eda_fractal.domain}/<event_id>.json` vía `write_fractal_event`.
 
 ### Paso 5 — Cierre (stdout)
 
-Envelope `actions-contract` con `success`, `event_id`, `target_path`.
+Envelope `actions-contract` con `success`, `event_id`, `event_uri`.
 
 ## 3. Límites
 

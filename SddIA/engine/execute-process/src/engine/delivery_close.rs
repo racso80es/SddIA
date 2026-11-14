@@ -958,7 +958,7 @@ pub fn run(
         "execution_id",
         "pr_url",
         "event_id",
-        "target_path",
+        "event_uri",
         "closed_branch",
         "snapshot_commit_hash",
         "delivery_close",

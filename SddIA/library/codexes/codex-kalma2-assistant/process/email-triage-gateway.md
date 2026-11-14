@@ -1,10 +1,9 @@
 ---
-context:
-- external-ingest
+context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:794696a90e36910a64bc35863695b77ad8a54f0381b552dc4a0333b571a35366"
+hash_signature: sha256:794696a90e36910a64bc35863695b77ad8a54f0381b552dc4a0333b571a35366
 inputs:
-- event_file_path: Ruta de la instancia ECST Email_Received
+- 'event_uri: Ruta de la instancia ECST Email_Received'
 name: email-triage-gateway
 outputs:
 - verdict: noise | passive | actionable
@@ -36,7 +35,7 @@ phases:
 - intent: Escritura de Email_Triaged en eda_fractal.domain con veredicto y coste.
   name: Emision
 uuid: 9cb9a63a-bb86-4b97-8a75-4dac2f2cb5ce
-version: 1.1.0
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

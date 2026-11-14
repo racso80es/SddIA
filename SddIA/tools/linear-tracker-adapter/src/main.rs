@@ -1476,15 +1476,15 @@ mod tests {
                 "request": {
                     "operation": "create_issue",
                     "team_key": "AUT",
-                    "title": "kaizen en MAN",
-                    "labels": ["kaizen"],
+                    "title": "etiqueta ausente en MAN",
+                    "labels": ["other"],
                     "parent_ref": "MAN-HU-1"
                 }
             }))
             .unwrap_err();
             assert_eq!(e.code, "LINEAR_LABEL_UNKNOWN");
-            assert!(e.message.contains("MAN"));
-            assert!(e.message.contains("kaizen"));
+            assert!(e.message.contains("MAN"), "{e:?}");
+            assert!(e.message.contains("other"), "{e:?}");
             lab_state::lab_reset_store();
             env::remove_var("SDDIA_LAB_RESET_STORE");
         });

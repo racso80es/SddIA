@@ -4,9 +4,9 @@ context:
 - quality-assurance
 - ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: sha256:018ec936627329a3e963461009b23fb892bd32ba39f54d51d6cfc6d9dc58ed7f
+hash_signature: "sha256:018ec936627329a3e963461009b23fb892bd32ba39f54d51d6cfc6d9dc58ed7f"
 inputs:
-- event_file_path: Ruta relativa al JSON de telemetría en ./.events/telemetry/
+- event_uri: Ruta relativa al JSON de telemetría en ./.events/telemetry/
 minteo_maximo: null
 name: radamanto-batch
 outputs:
@@ -22,7 +22,7 @@ phases:
     version: '>=1.0.0'
 porcentaje_de_exito: null
 uuid: 2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d
-version: 1.1.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
@@ -32,7 +32,7 @@ Proceso laboratorio del agente **Radamanto**: sustituye `telemetry-batch-stub` (
 
 ```bash
 SDDIA_LAB_ROUTE_SYNC=1 ./sddia-run.sh --process radamanto-batch \
-  --inputs '{"event_file_path":".events/telemetry/<id>.json"}'
+  --inputs '{"event_uri":".events/telemetry/<id>.json"}'
 ```
 
 Con `SDDIA_LAB_ROUTE_SYNC=1`, la chispa domain se enruta de inmediato a `memory-evolution-ingest`.

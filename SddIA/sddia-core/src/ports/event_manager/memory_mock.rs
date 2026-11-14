@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::Value;
 
-use crate::ports::event_manager::contract::{
+use crate::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, ClaimedEvent, CONTRACT_ID,
     CONTRACT_VERSION, DeliveryRecord, DeliveryStatus, EventQueueState, GetDltSealRequest,
     GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
@@ -33,7 +33,7 @@ pub struct FaultInjection {
 
 #[derive(Debug, Clone)]
 struct StoredEvent {
-    event_uri: Option<crate::ports::event_manager::contract::EventUri>,
+    event_uri: Option<crate::ports::event_manager::EventUri>,
     event_id: String,
     ecst: Value,
     trace_id: Option<String>,

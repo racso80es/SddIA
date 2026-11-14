@@ -418,7 +418,6 @@ mod tests {
     }
 
     fn reset_fixture() -> PathBuf {
-        let _guard = FIXTURE_LOCK.lock().expect("fixture lock");
         let root = fixture_root();
         let cargo = root.join("cargo-target");
         let _ = fs::remove_dir_all(&root);
@@ -449,6 +448,7 @@ mod tests {
 
     #[test]
     fn simulate_does_not_delete() {
+        let _guard = FIXTURE_LOCK.lock().expect("fixture lock");
         let root = reset_fixture();
         let cargo = root.join("cargo-target");
         let plan = plan_purge(cargo.to_str().unwrap(), true, 0.0, false).expect("plan");
@@ -461,6 +461,7 @@ mod tests {
 
     #[test]
     fn purge_deletes_fixture() {
+        let _guard = FIXTURE_LOCK.lock().expect("fixture lock");
         let root = reset_fixture();
         let cargo = root.join("cargo-target");
         let plan = plan_purge(cargo.to_str().unwrap(), false, 0.0, false).expect("purge");

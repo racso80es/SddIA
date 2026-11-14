@@ -1,11 +1,9 @@
 ---
-context:
-- event-routing
-- ecosystem-evolution
+context: ecosystem-evolution
 contract: process-contract v1.4.0
 hash_signature: sha256:6f8ec16b43edf7504384110ef18f55fa373dcf97c9dac693f433799129ff8272
 inputs:
-- event_file_path: Ruta relativa al JSON en ./.events/telemetry/
+- 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
 minteo_maximo: null
 name: route-telemetry
 outputs:
@@ -22,7 +20,7 @@ phases:
     version: '>=1.0.0'
 porcentaje_de_exito: null
 uuid: b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8
-version: 1.0.1
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

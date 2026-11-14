@@ -1,51 +1,49 @@
 ---
-uuid: bd81c878-5e1c-4fe5-b204-85c9136d8bc7
-name: accept-pr
-version: 1.0.5
-contract: process-contract v1.4.0
-workspace_template: ".SddIA/workspaces/{process_name}/{execution_id}/"
 context:
 - pr-lifecycle
 - source-control
 - filesystem-ops
+contract: process-contract v1.4.0
 hash_signature: "sha256:f7a6ef21856490f3ac9b69133f948dcf54066d3a05fa7c5dc1019fdd3a289938"
 inputs:
 - source_branch: Rama feature a fusionar hacia main (validada por git-operations antes de invocar)
 - author: Autor del merge para el evento PullRequest_Merged
 - correlation_id: UUID v4 de correlación causal (Sagas)
 - cumulo_topology: Topología SSOT inyectada (paths, contratos, repository_path)
-outputs:
-- verdict: aprobado | abortado
-- merge_commit_hash: Hash de 40 caracteres hex en main tras fusión soberana
-- event_id: UUID v4 del evento emitido en pending/
-- target_path: Ruta relativa del JSON padre en eda_bus.pending (`.events/pending/`)
-- closed_branch: Rama origen eliminada (local y remoto si aplica)
-- hygiene_failure: Detalle empírico si la rama sobrevivió tras intento de delete (Fase 4)
-phases:
-- name: Auditoría Genómica
-  intent: Argos evalúa la rama origen. Si detecta fricción letal o vulnerabilidad, aborta
-    el proceso.
-  delegates_to:
-  - agent:argos
-- name: Fusión Soberana
-  intent: Hacer checkout a la rama main y ejecutar el merge de la rama origen.
-  requires_capability:
-  - id: proc:git-sync
-    contract: proc.git_sync
-    version: '>=1.0.0'
-  delegates_to:
-  - skill:git-manager
-- name: Sello Criptográfico de Fusión
-  intent: Emitir el evento inmutable PullRequest_Merged en el bus local.
-  delegates_to:
-  - action:emit-pr-merged-event
-- name: Sincronización y Limpieza
-  intent: Hacer push de main al repositorio remoto y eliminar la rama de origen tanto
-    en local como en remoto.
-  delegates_to:
-  - skill:git-manager
 minteo_maximo: null
+name: accept-pr
+outputs:
+- 'verdict: aprobado | abortado'
+- 'merge_commit_hash: Hash de 40 caracteres hex en main tras fusión soberana'
+- 'event_id: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
+- 'event_uri: Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})'
+- 'closed_branch: Rama origen eliminada (local y remoto si aplica)'
+- 'hygiene_failure: Detalle empírico si la rama sobrevivió tras intento de delete (Fase 4)'
+phases:
+- delegates_to:
+  - agent:argos
+  intent: Argos evalúa la rama origen. Si detecta fricción letal o vulnerabilidad, aborta el proceso.
+  name: Auditoría Genómica
+- delegates_to:
+  - skill:git-manager
+  intent: Hacer checkout a la rama main y ejecutar el merge de la rama origen.
+  name: Fusión Soberana
+  requires_capability:
+  - contract: proc.git_sync
+    id: proc:git-sync
+    version: '>=1.0.0'
+- delegates_to:
+  - action:emit-pr-merged-event
+  intent: Emitir el evento inmutable PullRequest_Merged en el bus local.
+  name: Sello Criptográfico de Fusión
+- delegates_to:
+  - skill:git-manager
+  intent: Hacer push de main al repositorio remoto y eliminar la rama de origen tanto en local como en remoto.
+  name: Sincronización y Limpieza
 porcentaje_de_exito: null
+uuid: bd81c878-5e1c-4fe5-b204-85c9136d8bc7
+version: 2.0.0
+workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 
 # accept-pr
@@ -76,7 +74,7 @@ Invocar **`action:emit-pr-merged-event`** con:
 | `author` | input del proceso |
 | `correlation_id` | input del proceso |
 
-`repository_path` desde `cumulo_topology`. Salidas: `success`, `event_id`, `target_path`.
+`repository_path` desde `cumulo_topology`. Salidas: `success`, `event_id`, `event_uri`.
 
 **Milestone `ReviewCiGreen` (tracker remoto, merge externo / `merge_already_done`):** antes del hito de ciclo de vida en la misma fase, el motor enriquece una copia de inputs con el mismo criterio que el sello: `tracker_ref` desde `PullRequest_Presented` de la rama, `persist_ref` inferido desde `source_branch` (`infer_persist_ref_from_branch`) y `tracker_ref` desde `{persist_ref}/objectives.md` si aún falta. Así `apply_review_ci_fail_soft` no queda en `tracker_ref ausente` cuando el merge en GitHub ya está hecho y solo faltaba contexto en los inputs mínimos del hook/post-merge.
 

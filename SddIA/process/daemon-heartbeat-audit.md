@@ -3,10 +3,10 @@ context:
 - quality-assurance
 - event-routing
 contract: process-contract v1.4.0
-hash_signature: "sha256:75a0939297864a7eb48dff64507c855ab1476bcfb697aca89ff5d7d5136e120b"
+hash_signature: sha256:75a0939297864a7eb48dff64507c855ab1476bcfb697aca89ff5d7d5136e120b
 inputs:
-- event_file_path: Opcional; ruta relativa al JSON Daemon_Heartbeat en ./.events/telemetry/
-- sweep: Opcional boolean; si true y sin event_file_path, audita staleness de todos los Centinelas con lock vivo
+- event_uri: Opcional; ruta relativa al JSON Daemon_Heartbeat en ./.events/telemetry/
+- sweep: Opcional boolean; si true y sin event_uri, audita staleness de todos los Centinelas con lock vivo
 minteo_maximo: null
 name: daemon-heartbeat-audit
 outputs:
@@ -39,7 +39,7 @@ phases:
   name: Fagocitosis residual
 porcentaje_de_exito: null
 uuid: f45bda9d-40d9-471e-82a1-b9404b5a0dfd
-version: 1.2.0
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

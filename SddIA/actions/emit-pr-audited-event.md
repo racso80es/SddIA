@@ -1,7 +1,7 @@
 ---
 uuid: "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a"
 name: "emit-pr-audited-event"
-version: "1.0.2"
+version: "2.0.0"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -19,9 +19,9 @@ inputs:
 outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
-  - "target_path": "string; ruta relativa del JSON en pending/"
+  - "event_uri": "Token lógico EventUri resuelto por EventManagerPort (eda://{family}/{event_id})"
   - "audit_event_reference": "string; referencia depositada en payload"
-hash_signature: "sha256:c5d433797305c6842af528ffa6ebf563bf1458c3fd74f4b83c34e050067f728e"
+hash_signature: "sha256:3a5f84a66f7ce1cc30aff45dc867824ba549db5f5d216cbd514f5c88e54ff1dc"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---
@@ -71,11 +71,11 @@ Gate **Cerbero** previo por `context`. Rutas vía `cumulo.paths.json`.
 
 ### Paso 4 — Persistencia
 
-Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`dual` el runtime persiste vía `write_pending_event` en `.SddIA/runtime/events.redb` (sin fichero bajo `.events/pending/` en `redb` puro). En `filesystem`, JSON en `{eda_bus.pending}/<event_id>.json` (resoluble vía `cumulo.paths.json`). El `target_path` devuelto puede ser la ruta lógica `.events/pending/<event_id>.json` aunque el fichero no exista en `redb`.
+Según `SDDIA_EVENT_STORE` (`SddIA/events/events-contract.md` §4): en `redb`/`dual` el runtime persiste vía `write_pending_event` en `.SddIA/runtime/events.redb` (sin fichero bajo `.events/pending/` en `redb` puro). En `filesystem`, JSON en `{eda_bus.pending}/<event_id>.json` (resoluble vía `cumulo.paths.json`). El `event_uri` devuelto puede ser la ruta lógica `.events/pending/<event_id>.json` aunque el fichero no exista en `redb`.
 
 ### Paso 5 — Cierre (stdout)
 
-Envelope `actions-contract` con `success`, `event_id`, `target_path`, `audit_event_reference`.
+Envelope `actions-contract` con `success`, `event_id`, `event_uri`, `audit_event_reference`.
 
 ## 3. Límites
 

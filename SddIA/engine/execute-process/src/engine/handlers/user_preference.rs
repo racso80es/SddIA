@@ -280,7 +280,7 @@ mod tests {
         );
         let activate = run_ingest(
             tmp.path(),
-            &json!({"event_file_path": ".events/domain/evt-activate-1.json"}),
+            &json!({"event_uri": ".events/domain/evt-activate-1.json"}),
         )
         .unwrap();
         assert!(activate.success);
@@ -311,7 +311,7 @@ mod tests {
         );
         let revoke = run_ingest(
             tmp.path(),
-            &json!({"event_file_path": ".events/domain/evt-revoke-1.json"}),
+            &json!({"event_uri": ".events/domain/evt-revoke-1.json"}),
         )
         .unwrap();
         assert!(revoke.success);
@@ -346,7 +346,7 @@ mod tests {
         );
         let ingest = run_ingest(
             tmp.path(),
-            &json!({"event_file_path": ".events/domain/evt-hint-1.json"}),
+            &json!({"event_uri": ".events/domain/evt-hint-1.json"}),
         )
         .unwrap();
         assert!(ingest.success);

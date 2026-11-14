@@ -1,14 +1,14 @@
 ---
 uuid: "4f0edfe0-4380-442b-962d-9e98f8ecf956"
 name: "intent-transpiler"
-version: "1.0.0"
+version: "2.0.0"
 contract: "skills-contract v1.3.0"
 context: "knowledge-management"
 capabilities:
   - "intent-structuring"
   - "ssot-path-resolution"
   - "feature-topology-gate"
-hash_signature: "sha256:3b708c27681bcbc3f525c077dac546da7f07237d0988a8b2306a52809555efb6"
+hash_signature: "sha256:3377f6c07800a17e4d4f67e8f57a1af94a0ac9025eb885fbf977cd9f3b9f32d5"
 inputs:
   - "raw_instruction": "string; texto libre del Vértice Biológico (UTF-8)"
   - "intent_hints": "array<string>; pistas opcionales: develop, fix, refactor, feature, bug-fix"
@@ -16,7 +16,7 @@ outputs:
   - "success": "boolean"
   - "exitCode": "integer"
   - "data.structured_directive": "string; instrucción condensada para Tekton/Jules"
-  - "data.target_paths": "array<string>; rutas relativas resueltas vía cumulo.paths.json"
+  - "data.event_uris": "array<string>; rutas relativas resueltas vía cumulo.paths.json"
   - "data.required_process": "string|null; feature | bug-fix | refactorization"
   - "data.persist_ref": "string|null; docs/features|fixes/{name}"
   - "error": "string; diagnóstico si success es false"

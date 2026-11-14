@@ -68,7 +68,7 @@ pub fn ingest_domain_event_file(repo: &Path, rel_path: &str) -> Value {
     }
 }
 
-/// Entrada de proceso (`event` / `event_id` / `event_file_path`); AUT-57.
+/// Entrada de proceso (`event` / `event_id` / `event_uri`); AUT-57.
 pub fn ingest_from_process_inputs(repo: &Path, inputs: &Value) -> Value {
     match ingest_from_inputs(repo, inputs) {
         Ok(v) => v,
@@ -79,7 +79,7 @@ pub fn ingest_from_process_inputs(repo: &Path, inputs: &Value) -> Value {
 fn ingest_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let body = super::ecst_input_loader::load_ecst_from_inputs(repo, inputs)?;
     let rel = inputs
-        .get("event_file_path")
+        .get("event_uri")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())

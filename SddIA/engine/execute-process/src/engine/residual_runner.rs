@@ -130,7 +130,7 @@ fn run_route_fractal_process(
     canonical: &str,
     inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
-    let rel = str_field(inputs, "event_file_path").ok_or("event_file_path requerido")?;
+    let rel = str_field(inputs, "event_uri").ok_or("event_uri requerido")?;
     let fn_name = route_fractal_fn(canonical).ok_or("route fractal desconocido")?;
     let out = invoke_route_fractal(repo, fn_name, &rel)?;
     Ok(route_handler_result(canonical, &out, &format!("{canonical}-core")))
@@ -142,7 +142,7 @@ fn run_radamanto_batch(
     phases: &[Value],
     inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
-    let rel = str_field(inputs, "event_file_path").ok_or("event_file_path requerido")?;
+    let rel = str_field(inputs, "event_uri").ok_or("event_uri requerido")?;
     let mut phase_reports = Vec::new();
     let mut ok = true;
     for phase in phases {
@@ -206,7 +206,7 @@ fn run_telemetry_compliance_audit(
     phases: &[Value],
     inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
-    let rel = str_field(inputs, "event_file_path").ok_or("event_file_path requerido")?;
+    let rel = str_field(inputs, "event_uri").ok_or("event_uri requerido")?;
     let mut phase_reports = Vec::new();
     let mut ok = true;
     for phase in phases {
@@ -272,7 +272,7 @@ fn run_telemetry_batch_stub_process(
     phases: &[Value],
     inputs: &Value,
 ) -> Result<OrchestratorEnvelope, String> {
-    let rel = str_field(inputs, "event_file_path").ok_or("event_file_path requerido")?;
+    let rel = str_field(inputs, "event_uri").ok_or("event_uri requerido")?;
     let mut phase_reports = Vec::new();
     let mut ok = true;
     for phase in phases {
@@ -1099,7 +1099,7 @@ fn run_generic(
         "execution_id",
         "pr_url",
         "event_id",
-        "target_path",
+        "event_uri",
         "merge_commit_hash",
         "closed_branch",
         "pbi_archived_path",

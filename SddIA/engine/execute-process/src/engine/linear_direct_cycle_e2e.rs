@@ -104,7 +104,7 @@ fn lab_record_domain_event(repo: &Path, event_type: &str, payload: Value) -> Str
 
 fn stamp(repo: &Path, event_type: &str, payload: Value) -> bool {
     let rel = lab_record_domain_event(repo, event_type, payload);
-    let out = tracker_stamp::run(repo, &json!({ "event_file_path": rel }))
+    let out = tracker_stamp::run(repo, &json!({ "event_uri": rel }))
         .expect("tracker-stamp");
     out.data
         .as_ref()

@@ -1,7 +1,7 @@
 ---
 uuid: "c8d9e0f1-a2b3-4c5d-8e7f-6a5b4c3d2e1f"
 name: "emit-work-initiated-event"
-version: "1.0.0"
+version: "2.0.0"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -20,10 +20,10 @@ inputs:
 outputs:
   - "success": "boolean"
   - "event_id": "string"
-  - "target_path": "string"
+  - "event_uri": "string"
+hash_signature: "sha256:346a864d98a0731ee74d877364972b072aad88fb16e8c6203c75b66a63d20099"
 minteo_maximo: null
 porcentaje_de_exito: null
-hash_signature: "sha256:be754cf0517029238eddad56296fdf8addf974f71ecdd0ed27e7fef4d01f5d5a"
 ---
 
 # Acción: emit-work-initiated-event

@@ -502,7 +502,7 @@ fn probe_route_domain(instance_root: &Path) -> Value {
     if fs::write(&path, format!("{event}\n")).is_err() {
         return json!({ "success": false, "reason": "write probe event" });
     }
-    let inputs = json!({ "event_file_path": rel, "blocking": true });
+    let inputs = json!({ "event_uri": rel, "blocking": true });
     match Command::new(&bin)
         .current_dir(instance_root)
         .args([

@@ -1,6 +1,6 @@
 //! Trait `EventManagerPort` — operaciones L-OPS 1:1 (contrato 2.0).
 
-use crate::ports::event_manager::contract::{
+use crate::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, ClaimPendingResult, GetDltSealRequest,
     GetDltSealResult, GetEventRequest, GetEventResult, HandshakeVersionRequest,
     HandshakeVersionResult, ListDeliveriesRequest, ListDeliveriesResult, ListDlqRequest,

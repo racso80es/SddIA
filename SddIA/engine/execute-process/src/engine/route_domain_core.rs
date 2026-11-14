@@ -337,7 +337,7 @@ fn validate_blocking_subscribers(
     Ok(())
 }
 
-/// Resuelve `event_file_path` desde inputs del orquestador (modo blocking / CLI hook).
+/// Resuelve `event_uri` desde inputs del orquestador (modo blocking / CLI hook).
 pub fn resolve_route_event_path(
     repo: &Path,
     process_inputs: &Value,
@@ -349,13 +349,11 @@ pub fn resolve_route_event_path(
         .map(str::trim)
         .filter(|s| !s.is_empty())
     {
-        let bus = ensure_event_bus_topology(repo)?;
-        let pending_rel = bus.pending.trim().trim_start_matches("./");
-        return Ok(format!("{pending_rel}/{id}.json"));
+        return Ok(format!("eda://domain/{id}"));
     }
 
     if let Some(rel) = process_inputs
-        .get("event_file_path")
+        .get("event_uri")
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -369,7 +367,7 @@ pub fn resolve_route_event_path(
         .and_then(|v| v.as_str())
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .ok_or("event_file_path o event_type requerido")?;
+        .ok_or("event_uri o event_type requerido")?;
 
     if blocking {
         let target = process_inputs
@@ -400,7 +398,13 @@ pub fn resolve_route_event_path(
         }
     }
 
-    materialize_pending_domain_event(repo, event_type, emitter, payload)
+    let rel = materialize_pending_domain_event(repo, event_type, emitter, payload)?;
+    let stem = std::path::Path::new(&rel)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| format!("event_id ausente en materialización: {rel}"))?;
+    Ok(format!("eda://domain/{stem}"))
 }
 
 pub fn is_local_qa_event(event: &Value) -> bool {
@@ -1550,7 +1554,7 @@ pub(crate) fn build_ecst_subscriber_inputs(
     }
     if let Some(path) = event_path {
         let rel = rel_event_path(repo, path);
-        process_inputs.insert("event_file_path".into(), json!(rel));
+        process_inputs.insert("event_uri".into(), json!(rel));
     }
     process_inputs
 }
@@ -2346,7 +2350,7 @@ fn merge_route_result_identity(
 }
 
 /// Ejecuta enrutamiento ECST/fan-out de un evento de dominio.
-pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: bool) -> Value {
+pub fn route_domain_event(repo: &Path, event_uri: &str, batch_mode_iota: bool) -> Value {
     let bus = match ensure_event_bus_topology(repo) {
         Ok(b) => b,
         Err(e) => {
@@ -2359,13 +2363,21 @@ pub fn route_domain_event(repo: &Path, event_file_path: &str, batch_mode_iota: b
         }
     };
 
-    let raw_path = PathBuf::from(event_file_path);
-    let event_path = if raw_path.is_absolute() {
-        raw_path
-    } else {
-        repo.join(&raw_path)
+    let event_path = match sddia_core::ports::event_manager::EventUri::parse(event_uri) {
+        Ok(uri) => repo.join(format!(
+            ".events/{}/{}.json",
+            uri.family.as_str(),
+            uri.event_id
+        )),
+        Err(e) => {
+            return json!({
+                "success": false,
+                "exitCode": 1,
+                "data": null,
+                "error": e,
+            });
+        }
     };
-    let event_path = event_path.canonicalize().unwrap_or(event_path);
 
     if is_runtime_db_event_path(repo, &event_path) {
         return json!({
@@ -2787,7 +2799,7 @@ mod blocking_tests {
         sddia_eda_catalog::stamp_published_event(repo, &mut body).expect("stamp");
         eda_port::publish_ecst(repo, "pending", &body).expect("publish");
         assert!(!abs.is_file());
-        let out = route_domain_event(repo, &rel, false);
+        let out = route_domain_event(repo, &format!("eda://domain/{event_id}"), false);
         assert_eq!(out.get("success"), Some(&json!(true)), "{out}");
         assert_eq!(out.get("exitCode"), Some(&json!(0)));
         let delivery = out
@@ -4166,7 +4178,7 @@ mod blocking_tests {
                 event.get("event_id").and_then(|v| v.as_str()),
                 "process={key}"
             );
-            assert!(inputs.get("event_file_path").is_some(), "process={key}");
+            assert!(inputs.get("event_uri").is_some(), "process={key}");
         }
     }
 
@@ -4257,7 +4269,7 @@ mod blocking_tests {
 }
 
 
-pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>) -> Value {
+pub fn route_domain_batch(repo: &std::path::Path, event_uris: Vec<String>) -> Value {
     let bus = match ensure_event_bus_topology(repo) {
         Ok(b) => b,
         Err(e) => return json!({ "success": false, "exitCode": 1, "error": e }),
@@ -4278,12 +4290,18 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
     let mut results = vec![];
     let mut batch_errors: Vec<String> = vec![];
 
-    for path_str in &event_file_paths {
-        let raw_path = PathBuf::from(path_str);
-        let event_path = if raw_path.is_absolute() {
-            raw_path
-        } else {
-            repo.join(&raw_path)
+    for path_str in &event_uris {
+        let event_path = match sddia_core::ports::event_manager::EventUri::parse(path_str)
+        {
+            Ok(uri) => repo.join(format!(
+                ".events/{}/{}.json",
+                uri.family.as_str(),
+                uri.event_id
+            )),
+            Err(e) => {
+                batch_errors.push(e);
+                continue;
+            }
         };
 
         if is_runtime_db_event_path(repo, &event_path) {
@@ -4357,7 +4375,7 @@ pub fn route_domain_batch(repo: &std::path::Path, event_file_paths: Vec<String>)
         &event_paths_by_uuid,
     );
 
-    for path_str in &event_file_paths {
+    for path_str in &event_uris {
         let out = route_domain_event(repo, path_str, true);
         let ok = out.get("success").and_then(|v| v.as_bool()) == Some(true)
             && out.get("exitCode").and_then(|v| v.as_i64()).unwrap_or(1) == 0;

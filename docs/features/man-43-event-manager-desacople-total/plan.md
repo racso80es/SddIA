@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.15"
+version_plan: "1.2.16"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1626,7 +1626,94 @@ cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
 
 ### Resultado de ejecución (2026-11-14)
 
-Auditoría: `docs/audits/man-43-o14-preaudit-20261114.md` (**APTO_PARCIAL**). Evolution `d0bb10b2`; clippy workspace 0 errores; F-02 cerrado; `execute-process --lib` 849/0. Residual: `cargo test --workspace` — `linear-tracker-adapter` AUT-68 (preexistente). Próximo: O14b (`target_path`), O14c (dossier).
+Auditoría: `docs/audits/man-43-o14-preaudit-20261114.md` (**APTO_PARCIAL**). Evolution `d0bb10b2`; clippy workspace 0 errores; F-02 cerrado; `execute-process --lib` 849/0. Residual: `cargo test --workspace` — `linear-tracker-adapter` AUT-68 (diagnóstico en O14b: test obsoleto frente al catálogo MAN-39, no «preexistente» sin causa). Próximo: O14b (`target_path`), O14c (dossier).
+
+---
+
+## O14b — Retirada de `target_path` / `event_file_path` de los contratos de evento (siguiente hilo)
+
+Laudo D-2 (b): AC-3 abarca el contrato JSON de procesos y acciones. Esta ola retira el token de ruta del contrato de eventos y lo sustituye por `event_uri`. Incluye el paso 0: cierre del residual AC-12 de O14.
+
+### Hallazgos medidos (2026-11-14, HEAD `c0fde1ce`)
+
+| Hallazgo | Evidencia | Afecta |
+|----------|-----------|--------|
+| **Residual AC-12 de O14 = test obsoleto, no fallo del adaptador.** `aut68_missing_label_names_team` espera `LINEAR_LABEL_UNKNOWN` para la etiqueta `kaizen` en el equipo MAN, pero el catálogo de laboratorio de MAN incluye `Kaizen` desde MAN-39 (`bcf50739`: «label Kaizen lab MAN»). Los otros 10 fallos de `linear-tracker-adapter` son `PoisonError` en cascada del mutex `TEST_ENV`. Corrige mi nota O14, que lo llamó «preexistente» sin diagnosticar la causa. | `lab_team_label_catalog` (`main.rs:106`); `-- --test-threads=1` | AC-12 |
+| `target_path` es un **token fabricado**, no una ruta: `eda_bus.rs:205` hace `format!(".events/{family}/{event_id}.json")` sobre un evento que ya está en Redb (comentario «Token lógico… no ruta física»). Cero ficheros nuevos en `.events/`. | `eda_bus.rs:203`, `fractal.rs:64` | AC-3 |
+| El token es el primer eslabón de una **tubería**: `seal.target_path` → `route-domain` con `{"event_file_path": target}` (`telemetry_compliance_core.rs:77`, `radamanto_batch_core.rs:486`). `event_file_path` es el mismo token con otro nombre (64 apariciones en 18 `.rs`; 14 `.md` de genoma, 12 procesos). Retirar solo `target_path` dejaría `event_file_path` colgando. | `rg event_file_path` | AC-3 |
+| `target_path` de **evento** (productores/consumidores): `eda_bus`, `fractal`, `domain_mutation`, `entity_manager`, `executor`, `phase_capsules`, `residual_runner`, `delivery_close`, `accept_pr`, `aiua_intent`, `suite_execution_requested`, `user_preference_change_requested`, `system_vitality`, `telemetry_compliance_core`, `radamanto_batch_core`, `governance_daemon`/`daemon_kill_switch` (`orchestration_event_path`), `sddia-qa/eda_e2e_lab` (`handoff.target_path`). Genoma: 9 `actions/emit-*`, `materialize-*`, `process/entity-manager`, `delivery-close-cycle`, `accept-pr`, `events/domain/fracture-pbi-materialized`, `skills/intent-transpiler`, `tools/event-bus-audit`. | `rg -c target_path` | AC-3 |
+| `target_path` de **fichero** (otro concepto, ruta real): `fracture_pbi.rs` (PBI en `docs/todos/…`), `materialize_*`, `enrich_fracture_pbi_kaizen` (ruta o ref del PBI), `markdown-table-editor`, `filesystem-manager` (+ norma `skill-io-filesystem-manager-frozen`), `sddia-workspace-server`, `event-bus-audit.kaizen_target_path`. No son contrato de evento. | lectura de cada uso | AC-3 |
+| El puerto (`sddia-core/ports/event_manager`, adaptadores, host) ya tiene **cero** `target_path`/`logical_rel`/`event_file_path`. El residual vive en el motor y el genoma, no en el puerto. | `rg` sobre esas rutas | AC-3 |
+| `process/route-domain-event` ya declara `event_uri` como **salida** (`eda://{family}/{event_id}`, `domain_event_uri_token`, `route_domain_core.rs:2326`); falta como **entrada**. | `route-domain-event.md`; `route_domain_core.rs:340-372` | AC-3 |
+
+### Laudos del Vértice Biológico (2026-11-14)
+
+- **E-1 = (a).** O14b retira `target_path` **y** `event_file_path` (→ `event_uri` / `event_uris`) en la misma ola.
+- **E-2 = (a).** El `target_path` de fichero real se conserva como parámetro de operaciones de fichero. Lista blanca explícita en el oráculo y en la nota: `fracture_pbi`, `materialize_*`, `enrich_fracture_pbi_kaizen` (ref/ruta del PBI), `markdown-table-editor`, `filesystem-manager` (+ norma congelada), `sddia-workspace-server`, `event-bus-audit.kaizen_target_path`. Cualquier otro uso es contrato de evento y se retira.
+
+### Diseño
+
+**Contrato sustituto.** El sello de publicación devuelve `{event_id, event_uri, family}` con `event_uri` = `EventUri::as_canonical()` (`eda://{family}/{event_id}`). Los consumidores resuelven por puerto (`get_event`), nunca por ruta. Corte duro: todos los consumidores están en el repo y se mueven en la misma ola; sin alias de transición.
+
+**0. Residual AC-12.** Test `aut68_missing_label_names_team`: usar una etiqueta ausente del catálogo de MAN (p. ej. `other`), manteniendo la intención (el mensaje nombra equipo y etiqueta). Sin tocar el catálogo. Verificar `linear-tracker-adapter` completo y `cargo test --workspace`. Los tests siguen mutando `.SddIA/lab-linear-store.json` (versionado): no se incluye en el commit.
+
+**1. Oráculo rojo.** Test `eda_event_token_hygiene` (execute-process, al estilo de `eda_contract_parity`): (i) el sello de `write_fractal_event` no contiene `target_path` y sí `event_uri`; (ii) frontmatter de procesos/acciones del contrato de eventos sin `target_path`/`event_file_path` en `inputs`/`outputs`, con lista blanca de ficheros de E-2; (iii) fuente del puerto, adaptadores y host sin los tres tokens. Rojo antes, verde después.
+
+**2. Productores.** Sello `eda_bus`/`fractal` y propagadores (`phase_capsules`, `executor`, `residual_runner`, `delivery_close`, `accept_pr`, `aiua_intent`, `suite_execution_requested`, `user_preference_change_requested`, `system_vitality`, `domain_mutation`, `entity_manager`) pasan de `target_path` a `event_uri`. `orchestration_event_path` → `orchestration_event_uri`.
+
+**3. Consumidores.** `route-domain` acepta `event_uri` (resuelve el `event_id`, carga el ECST por puerto); `telemetry_compliance_core` y `radamanto_batch_core` pasan `event_uri`. Con E-1 (a): `event_file_path`/`event_file_paths` → `event_uri`/`event_uris` en `route_domain_core`, `route_fractal_core`, `ecst_input_loader`, `residual_runner`, handlers y `event-watcher`; `eda_e2e_lab` lee `handoff.event_uri`.
+
+**4. Genoma por `entity-manager`** (DA-2; ensayo previo en copia `/tmp/o14b-lab` con `target` enlazado): `actions/emit-*`, `materialize-*`, `process/entity-manager`, `route-domain-event` y los 12 procesos con `event_file_path`, skills `compliance-auditor`/`rbac-governor`, `events/events-contract.md`, `delivery-close-cycle`, `accept-pr`. SemVer: **MAJOR** por entidad cuyo I/O cambia (precedente: contrato eda 2.0.0); índices y catálogo sincronizados por la forja.
+
+**5. Evolution.** Un registro nuevo con `relacionado` en lista exacta, rehash por `sddia-qa evolution-rehash`, `gate-evolution --range` en `EVOL_OK`.
+
+**6. Nota** `docs/audits/man-43-o14b-event-token-20261114.md` (APTO_PARCIAL/APTO según evidencia; sin `APTO_TOTAL`).
+
+### Secuencia
+
+| Paso | Alcance | Bloquea |
+|------|---------|---------|
+| 0 | Test AUT-68 + `cargo test --workspace` completo | 6 |
+| 1 | Inventario `target_path` evento vs fichero: fijar la lista blanca E-2 (hay usos ambiguos: `transit-event-payload`, `manage-event-receipt`, `enrich_fracture_pbi_kaizen` se clasifican por lectura) | 2 |
+| 2 | Oráculo `eda_event_token_hygiene` en rojo | 3 |
+| 3 | Productores + consumidores en motor (hasta verde en `--lib`) | 4 |
+| 4 | Ensayo en copia → genoma por `entity-manager` | 5 |
+| 5 | Evolution + gate | 6 |
+| 6 | Nota + docs + commit | O14c |
+
+Tras cada acuse JSON del CLI, sin polling (DA-5). Fallo de proceso oficial → Kintsugi.
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `StrReplace`/`Write` sobre `SddIA/{library,skills,tools,daemons,process,actions,norms,events}/` | Cero (solo `entity-manager`) |
+| `target_path`/`event_file_path` en contrato de evento | Cero, salvo lista blanca E-2 documentada |
+| Alias de transición (`target_path` junto a `event_uri`) | Prohibido |
+| `cargo test --workspace` y clippy | 0 fallos / 0 errores, `SDDIA*` vacío |
+| `gate-evolution --range` | `EVOL_OK` |
+| Test que pasa por haberse debilitado el assert | Prohibido; el AUT-68 conserva su intención |
+
+### Verificación
+
+```bash
+env | rg '^SDDIA' || echo limpio
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p linear-tracker-adapter
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib eda_event_token_hygiene
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test --workspace
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo clippy --workspace --all-targets
+rg -n 'target_path|event_file_path' SddIA/{process,actions,events} SddIA/engine SddIA/sddia-core   # solo lista blanca E-2
+SddIA/target/debug/sddia-qa gate-evolution --range --sync-base
+```
+
+**Commit:** `refactor(eda): event_uri sustituye target_path/event_file_path en contratos (MAN-43 O14b)`.
+
+**AC:** AC-3 (contrato JSON), AC-12 (workspace completo). **O14c:** matriz + dossier.
+**Fuera:** `target_path` de fichero (lista blanca E-2); esquemas `result` del contrato eda; refactor estructural de aridad clippy.
+
+### Resultado de ejecución (2026-11-14, rama)
+
+Auditoría: `docs/audits/man-43-o14b-event-token-20261114.md` (**APTO_PARCIAL**). Oráculo `eda_event_token_hygiene` 5/0; motor y genoma contractual migrados; `execute-process --lib` 854/0; `linear-tracker-adapter` 14/0. Residual workspace: `ephemeral-cache-purger::jail::tests::purge_deletes_fixture` (fuera del alcance token EDA). Pendiente: evolution + gate + commit único antes de O14c.
 
 ---
 
@@ -1694,7 +1781,7 @@ El detalle ejecutable está en **O4 / H4**.
 14. **O11** remediación del genoma dañado por O10 (binario de forja obsoleto) + C-4 y O9 rehechos de verdad por `entity-manager`.
 15. **O12** línea base de verificación + C-4 por cauce oficial (reintento real) + C-5 (`route-domain-event.outputs`). C-3 pasa a O13, con decisión previa.
 16. **O13** repara la regresión de O10 (fixtures DI) y la baseline de O12; clase `capability-contract` en `entity-manager`; C-3 por esa vía.
-17. **O14** desbloqueo pre-auditoría: evolución O0–O12, `schema_uri`, clippy verde (D-1 a), `cargo test --workspace`. **O14b** retirada de `target_path` (D-2 b). **O14c** matriz AC-1…AC-19 + dossier con veredicto **propuesto**.
+17. **O14** desbloqueo pre-auditoría: evolución O0–O12, `schema_uri`, clippy verde (D-1 a), `cargo test --workspace`. **O14b** retirada de `target_path`/`event_file_path` → `event_uri` (D-2 b; paso 0 cierra el residual AC-12). **O14c** matriz AC-1…AC-19 + dossier con veredicto **propuesto**.
 18. **O15** `delivery-close-cycle` → PR → `pull-request-review`: Argos declara AC-13.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.

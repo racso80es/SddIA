@@ -6,9 +6,9 @@ context:
 contract: process-contract v1.4.0
 hash_signature: sha256:0fb2e83c3658bd1e3d03dbf40fff2847f5048eca5f053fb2e45d802710ad829f
 inputs:
-- event_file_path: Ruta relativa al JSON Domain_Entity_Degraded
-- target_entity_id: Entidad degradada
-- recovery_attempt: Contador de intento
+- 'event_uri: Token lógico EventUri (eda://domain/{event_id})'
+- 'target_entity_id: Entidad degradada'
+- 'recovery_attempt: Contador de intento'
 minteo_maximo: null
 name: fix-tool-process
 outputs:
@@ -26,7 +26,7 @@ phases:
   name: Verificación estructural Argos
 porcentaje_de_exito: null
 uuid: 4c5d6e7f-8a9b-4c0d-1e2f-3a4b5c6d7e8f
-version: 1.0.1
+version: 2.0.0
 workspace_template: .SddIA/sandbox/{target_entity_id}/{recovery_attempt}/
 ---
 

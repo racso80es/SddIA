@@ -347,7 +347,7 @@ fn emit_probe_fracture(repo: &Path, probe: &ProbeResult) -> Result<Value, String
     let seal = write_fractal_event(repo, &event, &domain_dir)?;
     Ok(json!({
         "event_id": seal.get("event_id").cloned().unwrap_or(json!(event_id)),
-        "target_path": seal.get("target_path").cloned().unwrap_or(json!("")),
+        "event_uri": seal.get("event_uri").cloned().unwrap_or(json!("")),
         "probe_id": probe.id,
     }))
 }

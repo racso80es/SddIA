@@ -2,7 +2,7 @@
 
 use semver::{Version, VersionReq};
 
-use crate::ports::event_manager::contract::REQUIRED_CONTRACT_RANGE;
+use crate::ports::event_manager::REQUIRED_CONTRACT_RANGE;
 use crate::ports::event_manager::error::EventManagerError;
 
 /// Valida que `implementor_version` satisfaga `required_range` (p.ej. `^2.0.0`).

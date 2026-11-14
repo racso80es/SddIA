@@ -38,11 +38,19 @@ fn event_id_from_path(path: &Path) -> Option<String> {
         .map(str::to_string)
 }
 
-fn load_from_event_file_path(
+fn load_from_event_uri(
     repo: &Path,
     rel: &str,
     explicit_event_id: Option<&str>,
 ) -> Result<Value, String> {
+    if let Ok(uri) = sddia_core::ports::event_manager::EventUri::parse(rel) {
+        let path = repo.join(format!(
+            ".events/{}/{}.json",
+            uri.family.as_str(),
+            uri.event_id
+        ));
+        return load_from_store(repo, &uri.event_id, &path);
+    }
     let path = resolve_logical_path(repo, rel);
     #[cfg(not(test))]
     if path.is_file() {
@@ -62,10 +70,10 @@ fn load_from_event_file_path(
 
 /// Resuelve ruta relativa al repo y carga el ECST vía store.
 pub fn load_ecst_from_rel(repo: &Path, rel: &str) -> Result<Value, String> {
-    load_ecst_from_inputs(repo, &json!({ "event_file_path": rel }))
+    load_ecst_from_inputs(repo, &json!({ "event_uri": rel }))
 }
 
-/// Precedencia: `event` (verificado) → `event_id` → `event_file_path` (solo identificador lógico).
+/// Precedencia: `event` (verificado) → `event_id` → `event_uri` (solo identificador lógico).
 pub fn load_ecst_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, String> {
     if let Some(inline) = inputs.get("event") {
         if inline.is_object()
@@ -80,10 +88,10 @@ pub fn load_ecst_from_inputs(repo: &Path, inputs: &Value) -> Result<Value, Strin
             .join(format!("{event_id}.json"));
         return load_from_store(repo, &event_id, &synthetic);
     }
-    if let Some(rel) = str_field(inputs, "event_file_path") {
-        return load_from_event_file_path(repo, &rel, None);
+    if let Some(rel) = str_field(inputs, "event_uri") {
+        return load_from_event_uri(repo, &rel, None);
     }
-    Err("event, event_id o event_file_path requerido".into())
+    Err("event, event_id o event_uri requerido".into())
 }
 
 /// Carga para handlers con tracker remoto: recarga desde bus si el inline no coincide.

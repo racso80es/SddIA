@@ -1,9 +1,9 @@
 ---
 context: ecosystem-evolution
 contract: process-contract v1.4.0
-hash_signature: "sha256:fdfabc7ca44dddb2c30c6dba16fb182e30edf3f81c0caaf4a4eb2a85e8fa4132"
+hash_signature: sha256:fdfabc7ca44dddb2c30c6dba16fb182e30edf3f81c0caaf4a4eb2a85e8fa4132
 inputs:
-- event_file_path: Ruta de la instancia ECST TelegramCallback_Received
+- 'event_uri: Ruta de la instancia ECST TelegramCallback_Received'
 name: email-digest-preference-reply
 outputs:
 - success: boolean
@@ -21,7 +21,7 @@ phases:
   intent: Emitir activate max|mute vía emit-user-preference-change-requested; ign no emite.
   name: Emision-Preferencia
 uuid: c77f96ad-ad01-466e-87cf-950b1976555b
-version: 1.0.0
+version: 2.0.0
 workspace_template: .SddIA/workspaces/{process_name}/{execution_id}/
 ---
 

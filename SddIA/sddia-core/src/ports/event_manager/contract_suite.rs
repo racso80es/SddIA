@@ -2,7 +2,7 @@
 
 use serde_json::json;
 
-use crate::ports::event_manager::contract::{
+use crate::ports::event_manager::{
     AppendTraceRequest, ClaimPendingRequest, DeliveryStatus, EventFamily, EventQueueState,
     GetDltSealRequest, GetEventRequest, ListDeliveriesRequest, ListEventsRequest,
     ListTerminalEventsRequest, ListTracesRequest, MoveToDlqRequest,
