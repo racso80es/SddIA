@@ -27,7 +27,8 @@ Validación del laudo (detalle en `plan.md` § O13): incoherencias detectadas y 
 | Suite lib final (con forja, paridad, identidad) | **849 passed; 0 failed; 1 ignored** | `man-43-o13-final-exec-process-lib.log` |
 | `cargo check --workspace` | OK | `man-43-o13-check-workspace.log` |
 | `gate-event-manager-port` | OK (214 ficheros) | consola |
-| `gate-evolution` (árbol) | `EVOL_OK` | consola; `--range` tras commit |
+| `gate-evolution` (árbol) | `EVOL_OK` | consola |
+| `gate-evolution --range` (base `origin/main` **stale**, 3 días) | O13: **0 rutas O13 sin correlar** tras ampliar `relacionado` (commit `6fbbfda9`). Gate global **no verde**: 123 hallazgos `EVOL_MATERIAL_UNREGISTERED` de rutas de olas O1–O12 de la rama, previos a O13 | consola |
 
 Regresión O10 (3 tests del validador DI) y causa del 4.º fallo corregidas; `man-43-o12-baseline-20261114.md` rectificada.
 
@@ -73,3 +74,4 @@ Sin `Write`/`StrReplace` bajo `SddIA/{library,skills,tools,daemons,process,actio
 | 6 | Guardián de identidad solo corre en la suite; candidato a gate permanente en O14. |
 | 7 | `SddIA/core/eda-coverage.json` acumula estado de ejecución (contratos incluidos); fuera del commit, como en O11/O12. |
 | 8 | `result` por operación del schema eda: fuera de alcance. |
+| 9 | `gate-evolution --range`: 123 hallazgos de olas anteriores sin registro correlado; requieren registro(s) de evolución de la rama antes del push/PR (no se inventan aquí). |
