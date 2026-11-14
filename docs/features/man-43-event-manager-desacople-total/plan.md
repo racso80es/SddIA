@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.7"
+version_plan: "1.2.9"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1218,6 +1218,100 @@ cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
 
 ---
 
+## O11 — Remediación de forja O10 + C-4 / O9 por cauce real
+
+Estado: **done (rama)** — commit pendiente de hash en esta sesión.
+
+### Post-ejecución Racso (2026-11-14)
+
+- `execute-process` debug reconstruido en `SddIA/target` (2026-11-14 ~12:11).
+- Guarda `update` sin parche → `Err` (tool/skill); `run_norm_forge` soporta `implementation_source_git_apply`; delete tool/skill limpia fila de índice.
+- Restaurados `shell-executor`, `cryptography-manager`, `event-bus-audit` desde `c60ae233` (diff vs `c60ae233`: solo `hash_signature`).
+- Eliminados stub `.md` y filas de `file-tracker-adapter` / `manage-event-receipt` (`Domain_Entity_Deleted`).
+- **C-4:** el contenido 2.0.0 de O10 ya estaba en disco; no se pudo ejecutar el parche en dos pasos (semilla apunta a 1.2.0). Sello `hash_refresh_only` vía `entity-manager` + `Domain_Entity_Updated` (trazabilidad; el cuerpo sigue siendo el de O10).
+- 4 daemons sellados; 16× `implementation_source_git_apply` O9 (10 tools + 2 skills + 4 daemons; excluye tools fantasma); `src/` diff vacío vs `c60ae233`.
+- Tests: `update_existing_*`, `core_bindings_eda_event_manager_resolves_v1_schema`. Suite lib completa pendiente.
+
+Estado previo planificación: prioridad máxima: `419d89d5` dejó genoma corrupto en la rama.
+
+### Causa raíz (verificada 2026-11-14)
+
+`./sddia-run.sh` resuelve `SddIA/target/debug/execute-process` (fechado **2026-11-13 12:14**). Las compilaciones de O10 dentro del sandbox escribieron en `/tmp/cursor-sandbox-cache/.../cargo-target`, no en `SddIA/target`. **Todas** las invocaciones `entity-manager` de O10 corrieron con la forja **anterior** a O10. En esa forja, `update` sin clave de parche reconocida **cae al camino `create` y sobrescribe** el `.md` con un esqueleto y un UUID nuevo.
+
+### Inventario del daño en `419d89d5`
+
+| Artefacto | Estado | Gravedad |
+|-----------|--------|----------|
+| `SddIA/skills/shell-executor.md` | Esqueleto: UUID nuevo `c1f79172-…` (era `93d23720-…`), inputs/outputs y cuerpo perdidos (44→18 líneas) | **Crítica**: contrato de seguridad (whitelist, anti-git) borrado |
+| `SddIA/skills/cryptography-manager.md` | Esqueleto, UUID nuevo (43→18) | **Crítica** |
+| `SddIA/tools/event-bus-audit.md` | Esqueleto, UUID nuevo (32→16) | Alta |
+| `SddIA/tools/file-tracker-adapter.md`, `manage-event-receipt.md` | **Creados** (no existían) + 2 filas en `tools/index.md` | Media: entidades fantasma |
+| 9 tools (`io-choke`, `llm-router`, …) | Solo `hash_signature` refrescado; UUID y contenido intactos | Baja (válido) |
+| `capability-taxonomy.md` | Contenido correcto (catálogo 2.0.0, 112 líneas), pero **escrito con `StrReplace` del IDE** tras truncar la forja vieja el fichero a 43 líneas | **Violación DA-2 y del laudo C-4** («realizado por cauce oficial») |
+| 4 daemons | No sellados (forja vieja rechaza `hash_refresh_only`) | Pendiente |
+| Bus EDA | `Domain_Entity_Created` emitidos con UUIDs falsos (skills/tool sobrescritos, tools fantasma) | Residuo de auditoría; posible DLT si el watcher los anclara |
+
+**Corrección de la narrativa O10:** el «re-gobierno O9» no reaplicó el Rust por `entity-manager`. El contenido Rust sigue siendo el edit manual de `c60ae233` (`git checkout` ida y vuelta, cambio neto cero). Solo se refrescaron hashes de `.md`.
+
+### Diseño cerrado
+
+1. **Binario canónico primero.** `cargo build -p execute-process` con `CARGO_TARGET_DIR=SddIA/target` (fuera de sandbox). Verificar `stat` del ELF posterior al último cambio de `forges/`. Sin esto, ningún paso siguiente arranca.
+2. **Guarda anti-sobrescritura (código, `forges/factory.rs`).** En `run_tool_forge`, `run_skill_forge` y `run_daemon_forge`: `update` sobre artefacto existente sin parche reconocido → `Err`, **nunca** caer a `create`. `create` sobre artefacto existente sigue idempotente. Tests: `update_existing_tool_without_patch_is_error`, ídem skill y daemon, y verificación de que UUID y contenido quedan intactos.
+3. **Restauración vía `entity-manager`** (`entity_class` = skill/tool, `lifecycle_operation: update`, `semantic_seed.implementation_source_git_apply` con `commit: c60ae233` y `paths: ["SddIA/skills/shell-executor.md"]`, etc.). Restaura UUID, contrato y cuerpo originales; el creator sella `hash_refresh`. Tres invocaciones (shell-executor, cryptography-manager, event-bus-audit). Verificación: `git diff c60ae233 -- <md>` solo en `hash_signature`.
+4. **Entidades fantasma:** `entity-manager` con `lifecycle_operation: delete` para `tool:file-tracker-adapter` y `tool:manage-event-receipt` (Fase 2 borra el `.md` y la fila del índice). Verificar `tools/index.md` igual a `c60ae233` salvo hashes.
+5. **C-4 por cauce real:** `entity-manager` norm `update` con `implementation_source_git_apply` de `capability-taxonomy.md` desde `c60ae233` **no** basta (devuelve 1.2.0). Secuencia: restaurar a `c60ae233` con `entity-manager` (`implementation_source_git_apply`) y luego un segundo `update` con `artifact_yaml_replacements` + `artifact_body_replacements` + `tactical_norm_version: 1.0.12` (las semillas de `/tmp/em-c4-forge-v2.json`). Aceptación: 112 líneas, UUID `e9c66ec6-…`, catálogo 2.0.0, `Rigor eda 2.0`, Directriz Core con cauce `entity-manager`, sello `Domain_Entity_Updated`.
+   - Requiere soporte de `implementation_source_git_apply` en `run_norm_forge` (hoy solo en tool/skill/daemon).
+6. **Daemons:** sellar los 4 con `hash_refresh_only` usando el binario nuevo.
+7. **O9 Rust de verdad (laudo previo):** reaplicar `SddIA/{tools,skills,daemons}/*/src` desde `c60ae233` con `implementation_source_git_apply` por entidad (18 invocaciones). El contenido final es idéntico; lo que cambia es la trazabilidad (sello EDA por entidad). Diff de `src/` contra `c60ae233` debe ser vacío.
+8. **Bus:** listar en la auditoría los `event_id` de los `Domain_Entity_Created` con UUID falso (por puerto, sin leer `.events/`). No se purgan a mano; si hay que anularlos, es decisión del Vértice Biológico (posible proceso de compensación).
+9. **Docs:** corregir `implementation.md` § O10 y `docs/audits/man-43-o10-contract-schema-20261114.md` (O9 cosmético, taxonomía por IDE, daños). Nueva nota `man-43-o11-remediation-20261114.md`.
+
+### Secuencia
+
+| Paso | Alcance | Bloquea |
+|------|---------|---------|
+| 1 | Build canónico en `SddIA/target` | todo |
+| 2 | Guarda anti-sobrescritura + tests; rebuild | 3–7 |
+| 3 | Restaurar 3 artefactos corruptos | 7 |
+| 4 | Borrar 2 tools fantasma | — |
+| 5 | `implementation_source_git_apply` en norm-forge; C-4 en dos pasos | — |
+| 6 | Sellar 4 daemons | — |
+| 7 | 18 reaplicaciones O9 | — |
+| 8 | Inventario de eventos falsos | — |
+| 9 | Docs + commit | — |
+
+Tras cada acuse JSON de `entity-manager`: verificar el fichero en disco; prohibido polling del bus (DA-5). Si una invocación colapsa: Kintsugi, sin edit IDE de rescate.
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `StrReplace`/`Write` sobre `SddIA/{library,skills,tools,daemons,process}/` | Cero en todo el hilo |
+| UUID de skill/tool distinto de `c60ae233` | Cero |
+| `update` sin parche sobre artefacto existente | `Err`, test verde |
+| `git diff c60ae233 -- SddIA/{tools,skills,daemons}/*/src` | Vacío |
+| `capability-taxonomy.md` | 112 líneas, catálogo 2.0.0, sellado por `entity-manager` |
+| `SddIA/target/debug/execute-process` más antiguo que `forges/*.rs` | Prohibido invocar `entity-manager` |
+| `APTO_TOTAL` | Prohibido (C-3, C-5) |
+
+### Verificación
+
+```bash
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build -p execute-process
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib forges::
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib capability_di
+git diff c60ae233 -- SddIA/skills/*.md SddIA/tools/*.md SddIA/tools/index.md
+git diff c60ae233 -- 'SddIA/tools/*/src' 'SddIA/skills/*/src' 'SddIA/daemons/*/src'
+cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
+```
+
+**Commit:** `fix(forge): remediación genoma O10 + C-4/O9 vía entity-manager (MAN-43 O11)`.
+
+**AC:** restaura integridad del genoma; cierra C-4 por cauce oficial. AC-13 sigue abierto por C-3 y C-5.
+**Fuera:** C-3 (contenido del schema JSON), C-5 (`route-domain-event.outputs`), clippy estructural.
+
+---
+
 ## H4 — Consumidores periféricos (índice)
 
 El detalle ejecutable está en **O4 / H4**.
@@ -1279,6 +1373,7 @@ El detalle ejecutable está en **O4 / H4**.
 11. **O8.1** frontmatter `route-domain-event` vía `process_phases` (no es el O9 de calidad).
 12. **O9** calidad: clippy verde + suite workspace; diagnóstico del schema (C-2…C-5 son genoma).
 13. **O10** motor DI honra `contract_schema` del binding (cierra C-2 en código). C-3/C-4/C-5 siguen abiertos; C-4 pide laudo.
+14. **O11** remediación del genoma dañado por O10 (binario de forja obsoleto) + C-4 y O9 rehechos de verdad por `entity-manager`.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 

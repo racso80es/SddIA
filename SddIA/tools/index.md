@@ -16,8 +16,6 @@ Contrato normativo de la familia: `tools-contract.md` (no constituye una tool ca
 
 | Archivo fuente | uuid | name | version | contract | context | Capabilities |
 |----------------|------|------|---------|------------|---------|--------------|
-| `manage-event-receipt.md` | `179ab3e1-4288-4fcd-8157-4d7711cf1f7b` | manage-event-receipt | 1.0.0 | tools-contract v1.2.0 | ecosystem-evolution | `manage_event_receipt` |
-| `file-tracker-adapter.md` | `69582707-329f-4371-afa8-9f244749b666` | file-tracker-adapter | 1.0.0 | tools-contract v1.2.0 | ecosystem-evolution | `file_tracker_adapter` |
 | `repo-retention-purger.md` | `e9f12a4f-f6b1-4ad3-af03-634c8cc9707c` | repo-retention-purger | 1.0.0 | tools-contract v1.5.0 | filesystem-ops | `repo_retention_purger` |
 | `llm-router.md` | `3836c0da-ef32-419b-9a73-89afed4a93ac` | llm-router | 1.0.0 | tools-contract v1.2.0 | system-operations | `llm_router` |
 | `ephemeral-cache-purger.md` | `8929eeea-5e5b-402a-aafa-4a9b429acaec` | ephemeral-cache-purger | 1.0.0 | tools-contract v1.5.0 | filesystem-ops | `ephemeral_cache_purger` |

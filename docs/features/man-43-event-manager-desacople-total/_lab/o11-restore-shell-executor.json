@@ -1,0 +1,11 @@
+{
+  "entity_class": "skill",
+  "entity_name": "shell-executor",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "implementation_source_git_apply": {
+      "commit": "c60ae233",
+      "paths": ["SddIA/skills/shell-executor.md"]
+    }
+  }
+}

@@ -4,7 +4,7 @@ name: "linear-bridge-watcher"
 version: "1.0.0"
 contract: "daemons-contract v1.0.0"
 context: "tracker-operations"
-hash_signature: "sha256:ba49371b09a5adff652c59cfd9568720d30842a0a06848a8ae5c96f040cae98b"
+hash_signature: "sha256:fc466f60e1d59b1449fe9f568a543d3d27a803ab0ffdd61f6eb8d6551704bfaa"
 capabilities:
   - "linear-tracker-poll"
   - "eda-bus-inject"

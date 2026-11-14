@@ -1,16 +1,32 @@
 ---
-uuid: "e611a71a-2772-4c6b-b9fe-24d5528021b8"
+uuid: "31fce110-1622-489c-a816-112849e22adb"
 name: "event-bus-audit"
-version: "1.0.0"
+version: "1.2.1"
 contract: "tools-contract v1.2.0"
 domain_origin: "SddIA"
-context: "ecosystem-evolution"
+context: "quality-assurance"
 capabilities:
   - "event_bus_audit"
-hash_signature: "sha256:e51bf3aed7f104d5340b0821d999b62d728bf7b8cf96a9ae83aacd9d44bb0dd9"
+provides:
+  - id: "qa:probe"
+    contract: "qa.probe"
+    version: "1.0.0"
+outputs:
+  - "success": "boolean"
+  - "exitCode": "integer"
+  - "error": "string; diagnóstico si aplica"
+hash_signature: "sha256:db32483193eeb0ec20c8f80f2bc5b1fa5c1a901ad811efa5b902447307f0c918"
 implementation_path_ref: "SddIA/tools/event-bus-audit"
 ---
 
 # event-bus-audit
 
-Tool event-bus-audit
+Auditoría empírica del bus EDA: escaneo .events, validación ECST, informe y emisión `Kaizen_Alert_Required` **solo** si `needs_kaizen` es accionable.
+
+`needs_kaizen = circuit_alert || actionable_stale_pending_count > 0`. No dispara por volumen histórico de dead-letter, dumps no-ECST (`github-bridge` / `FALLBACK_LOCAL_SIGNATURE`), testigos huérfanos ni pending `System_Fracture_Detected` (ya materializados). Flag `emit_kaizen_alert` (default `true`) no se duplica.
+
+Emisión `Kaizen_Alert_Required`: `stamp_published_event` + `record_ecst` cuando `writes_store`; JSON en `.events/pending/` solo si `writes_filesystem` (`dual` | `filesystem`). En `redb` puro, `target_path` lógico sin fichero residual.
+
+Cubre además el cruce catálogo `SddIA/events/{family}/` ↔ registros Cúmulo (`EMPTY_SUBSCRIBERS`, `FAMILY_MISMATCH`, `ORPHAN_REGISTRY_KEY`, `PURGE_BLACKHOLE`). Umbral orchestration/blackhole → `Kaizen_Alert_Required` sin fallar el audit (`success` se mantiene).
+
+Proveedor canónico de capacidad `qa:probe` en bindings (PBI-043 H9).

@@ -6,7 +6,7 @@ nature: "tactical-norm"
 author: "tekton"
 scope: "agnostic"
 category: "architecture"
-hash_signature: "sha256:8cb196585a6ac806f6b1476fd65d1d3640e5d4b3effd977e4fa066eb71320c49"
+hash_signature: "sha256:f1af3c84125a87207e62ed65006b29d1db5525413bbb5686f9b51f24e77df601"
 catalog:
   - id: "doc:closure"
     contract: "doc.closure"

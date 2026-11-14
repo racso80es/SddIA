@@ -454,6 +454,9 @@ fn filesystem_delete(repo: &Path, inputs: &Value, state: &mut Value) -> Result<V
         let index = repo.join(rel_dir).join("index.md");
         crate::forges::common::remove_catalog_row(&index, &name)?;
         crate::forges::common::sync_daemons_index_census(&index)?;
+    } else if class == "tool" || class == "skill" {
+        let index = repo.join(rel_dir).join("index.md");
+        let _ = crate::forges::common::remove_catalog_row(&index, &name)?;
     }
     merge_handoff(state, &handoff);
     Ok(json!({

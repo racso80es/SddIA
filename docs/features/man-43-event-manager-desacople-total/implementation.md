@@ -130,6 +130,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O8.1** | `done (rama)` | `route-domain-event` v1.0.2 sin `fs.persist` en fases; schema v1 fuera |
 | **O9** | `done (rama)` | Gate `rustc` verde; clippy residual acotado a `execute-process` (excluido por norma); C-2 latente |
 | **O10** | `done (rama)` | `contract_schema` en resolver/gate/validador; C-2 cerrado; C-4 taxonomía 1.0.12 / eda 2.0.0; O9 tools/skills/daemons sellados vía entity-manager |
+| **O11** | `done` | Remediación forja O10: binario canónico, guarda anti-sobrescritura, restauración 3 `.md`, delete stubs, sellos daemons/O9, `hash_refresh` taxonomía (contenido 2.0.0 heredado de O10) |
 
 ### Backlog técnico O0
 
@@ -186,5 +187,9 @@ Cerrado en rama. **Hallazgo normativo:** `rust-warning-gate` §1 excluye Clippy;
 ### Backlog técnico O10
 
 Cerrado en rama: `BindingRow` + `contract_schema_file`; validador usa `contract_schema_rel`; gate lee fila de bindings; forja norm/tool/skill/daemon ampliada (`artifact_yaml/body`, `hash_refresh`, `implementation_source_git_apply`); `capability-taxonomy` **1.0.12** / catálogo **2.0.0**; O9 genoma sellado vía entity-manager. Verificación: test `core_bindings_eda_event_manager_resolves_v1_schema` (tras `cargo test -p execute-process --lib`). C-3 (schema v1.2.0) y C-5 (`route-domain-event.outputs`) siguen abiertos; AC-13 abierto.
+
+### Backlog técnico O11 (cerrado en rama)
+
+Ejecutado (`plan.md` § O11). **Corrige O10:** `SddIA/target/debug/execute-process` era del 2026-11-13 12:14; las invocaciones `entity-manager` de O10 usaron la forja anterior, que en `update` sin parche sobrescribe con `create`. Daño en `419d89d5`: `shell-executor.md`, `cryptography-manager.md`, `event-bus-audit.md` con esqueleto y UUID nuevo; `file-tracker-adapter.md` y `manage-event-receipt.md` creados; `capability-taxonomy.md` escrita con `StrReplace` (incumple DA-2 y el laudo C-4); daemons sin sellar; el «re-gobierno O9» solo refrescó hashes. Pasos: build canónico → guarda anti-sobrescritura → restaurar desde `c60ae233` vía `implementation_source_git_apply` → delete de fantasmas → C-4 en dos `update` → sellar daemons → 18 reaplicaciones O9 → inventario de eventos con UUID falso → docs.
 
 No se modifica el veredicto histórico de `validacion.md`: su `APTO` corresponde al milestone H1. El feature completo sigue `NO_APTO_TOTAL`.

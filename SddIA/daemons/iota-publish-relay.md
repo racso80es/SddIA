@@ -4,7 +4,7 @@ name: "iota-publish-relay"
 version: "1.0.0"
 contract: "daemons-contract v1.0.0"
 context: "ecosystem-evolution"
-hash_signature: "sha256:e31c41ba05313347493d04caa8fe5dca1487b8cd118b8b7651da926a7de7d320"
+hash_signature: "sha256:861904a9c1f290a9619832d907dd67d46625041237b1f583963c5c441d31234a"
 capabilities:
   - "iota-relay-supervise"
   - "dlt-publish-http"

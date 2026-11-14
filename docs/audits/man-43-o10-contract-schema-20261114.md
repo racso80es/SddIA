@@ -22,7 +22,7 @@ verdict: "NO_APTO_TOTAL"
 ## Evidencia C-4
 
 - `capability-taxonomy.md` v1.0.12; catálogo y cuerpo `eda:event-manager` **2.0.0**.
-- Directriz Core: mutación solo vía `entity-manager` (no edit IDE).
+- **Honestidad O10:** cuerpo aplicado con edit IDE; O11 selló `hash_refresh` vía `entity-manager` sin re-parche bifásico (ver `man-43-o11-remediation-20261114.md`).
 
 ## Residual
 
