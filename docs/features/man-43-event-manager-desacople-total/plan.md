@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.6"
+version_plan: "1.2.7"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1135,6 +1135,89 @@ cd SddIA && cargo test --workspace
 
 ---
 
+## O10 — El motor de DI honra `contract_schema` (C-2) + C-4 taxonomía 2.0.0
+
+Estado: **done (rama)**. C-2 cerrado en motor; C-4 sellado (catálogo `2.0.0`, norma de cauce `entity-manager`).
+
+### Post-laudo Racso (2026-11-14)
+
+- **C-4:** `eda:event-manager` → **2.0.0** en `capability-taxonomy.md` (v1.0.12); la Directriz Core exige mutación vía `./sddia-run.sh --process entity-manager` (prohibido edit IDE). Contenido parcheado tras fallo de `artifact_full_replacements` en tablas con `---`; sello `hash_refresh_only` vía entity-manager.
+- **O9 re-gobierno:** parches rustc en `SddIA/tools|skills|daemons/` reaplicados desde `c60ae233` y sellados con `entity-manager` (`hash_refresh_only` en `.md`; daemons con soporte `hash_refresh` en forja nativa).
+- **Forge:** `split_md_frontmatter` corregido (delimitador `---` de línea); `artifact_yaml_replacements` + `artifact_body_replacements`; `implementation_source_git_apply` para cuts Rust gobernados.
+
+### Corte
+
+C-2 se cierra en **código del motor**, sin tocar genoma. `capability-bindings.md` ya declara `contract_schema: "eda.event_manager.v1.schema.json"`, pero ningún `.rs` lee esa columna: los tres consumidores reconstruyen el nombre como `{contract}.schema.json`. O10 hace que el motor use la columna declarada y solo recurra al nombre derivado cuando la fila no la trae. `SddIA/engine/` no es genoma protegido (DA-2); `SddIA/library/` no se toca.
+
+### Inventario (verificado 2026-11-13)
+
+| Sitio | Hoy | Consecuencia |
+|-------|-----|--------------|
+| `capability_di_resolver.rs:127` `load_binding_rows` | Tupla `(contract, provider, provider_version)`; ignora `contract_schema` | La columna del binding no llega al motor |
+| `capability_di_resolver.rs:354` | `format!("{contracts_rel}/{contract}.schema.json")` → `ResolvedBinding.contract_schema_rel` | Ruta inexistente para `eda.event_manager` |
+| `capability_di_output_validator.rs:59/122` `schema_path(repo, &binding.contract)` | Recalcula el nombre e ignora `binding.contract_schema_rel` | Doble fuente de verdad del path |
+| `capability_di_gate.rs:368-373` | `contracts.join(format!("{contract_name}.schema.json"))` desde el requisito del proceso | Gate rechazaría `schema ausente` |
+| `capability_di_resolver.rs:410` | `contract_schema_ref: capability_contracts/{contract}` | Referencia lógica; fuera de alcance salvo que un test lo exija |
+
+### Diseño cerrado
+
+1. **Fila tipada:** sustituir la tupla de `load_binding_rows` por un `struct BindingRow { contract, provider, provider_version, contract_schema: Option<String> }`. Leer `contract_schema` con `yaml_str_map`.
+2. **Helper único** `pub(crate) fn contract_schema_file(contract: &str, declared: Option<&str>) -> String`: devuelve `declared` si viene y no está vacío; si no, `{contract}.schema.json`. Rechazar valores con `/`, `\` o `..` (`ConfigError`): el binding nombra un fichero dentro de `directories.capability_contracts`, no una ruta.
+3. **Resolver:** `contract_schema_rel = {contracts_rel}/{contract_schema_file(..)}`.
+4. **Validador de salida:** `schema_path` usa `binding.contract_schema_rel` (relativo a `repo`) en lugar de recomputar desde `binding.contract`. Una sola fuente del path.
+5. **Gate:** buscar la fila de bindings por `req.id` (reutilizar el loader del resolver, `pub(crate)`). Si la fila existe y su `contract` coincide con `contract_name`, usar su `contract_schema`; si no, fallback actual. El gate no inventa bindings.
+6. Sin cambios en `capability-bindings.md`, en el schema ni en la taxonomía.
+
+### Tests nuevos
+
+| Test | Afirma |
+|------|--------|
+| `resolver_honours_declared_contract_schema` | Fila con `contract_schema: x.v1.schema.json` → `contract_schema_rel` termina en `x.v1.schema.json` |
+| `resolver_falls_back_to_contract_name` | Fila sin columna → `{contract}.schema.json` (comportamiento actual intacto) |
+| `resolver_rejects_contract_schema_with_path` | `../x.json` o `a/b.json` → `ConfigError` |
+| `validator_uses_binding_contract_schema_rel` | Valida contra el path del binding aunque `{contract}.schema.json` no exista |
+| `gate_uses_binding_contract_schema` | Requisito `eda:event-manager` / `eda.event_manager` con fixture → no `schema ausente` |
+| `core_bindings_eda_event_manager_resolves_v1_schema` | Con el `capability-bindings.md` real del Core, la ruta resuelta existe en disco |
+
+Los tests existentes de `doc.closure`, `di.binding`, `memory.pref_query` deben seguir verdes sin cambiar fixtures (todos usan el fallback).
+
+### Secuencia
+
+| Paso | Alcance |
+|------|---------|
+| 1 | `BindingRow` + `contract_schema_file` + tests de resolver |
+| 2 | Validador consume `contract_schema_rel` |
+| 3 | Gate consulta bindings por `req.id` |
+| 4 | `cargo test -p execute-process --lib capability_di` y suite lib completa |
+| 5 | Nota `docs/audits/man-43-o10-contract-schema-20261113.md`; estado O10 en `plan.md` / `implementation.md` |
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| Fixture de bindings sin `contract_schema` | Mismo path que hoy |
+| `contract_schema` con separador o `..` | `ConfigError`, nunca lectura fuera de `capability_contracts` |
+| Validador y resolver con paths distintos para el mismo binding | Imposible por construcción |
+| Escribir en `SddIA/library/` o renombrar el schema | Cero |
+| `APTO_TOTAL` | Prohibido |
+
+### Verificación
+
+```bash
+cd SddIA && cargo test -p execute-process --lib capability_di
+cd SddIA && cargo test -p execute-process --lib
+cd SddIA && cargo check --workspace
+cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
+```
+
+**Commit:** `fix(di): resolver/gate/validador honran contract_schema del binding (MAN-43 O10)`.
+
+**AC:** cierra C-2 (latente). AC-13 sigue abierto por C-3 (contenido del schema en `v1.2.0`, `publish_ecst` sin `event_uri`), C-4 (taxonomía `1.2.0`) y C-5 (`route-domain-event.outputs`).
+**Fuera:** C-3, C-4, C-5; refactor clippy estructural de `execute-process`; fallos preexistentes `linear_bridge_webhook::ac13_*` y `ecosystem_health_map_absent_still_ok`.
+**Decisión pendiente del Vértice Biológico (C-4):** `capability-taxonomy.md` mantiene `eda:event-manager` en `1.2.0` y su regla «Rigor eda 1.2» exige alinear con bindings (ya `2.0.0`): contradicción viva. Es genoma `norm` y su propio texto prescribe `Write` atómico, en conflicto con DA-2. Requiere laudo antes de cualquier hilo que la toque.
+
+---
+
 ## H4 — Consumidores periféricos (índice)
 
 El detalle ejecutable está en **O4 / H4**.
@@ -1195,6 +1278,7 @@ El detalle ejecutable está en **O4 / H4**.
 10. **O8** bindings + narrativa a contrato `2.0.0`; procesos solo `entity-manager` (DA-5). AC-13 sigue abierto.
 11. **O8.1** frontmatter `route-domain-event` vía `process_phases` (no es el O9 de calidad).
 12. **O9** calidad: clippy verde + suite workspace; diagnóstico del schema (C-2…C-5 son genoma).
+13. **O10** motor DI honra `contract_schema` del binding (cierra C-2 en código). C-3/C-4/C-5 siguen abiertos; C-4 pide laudo.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 

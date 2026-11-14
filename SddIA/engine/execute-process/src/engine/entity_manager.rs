@@ -84,7 +84,12 @@ fn with_forge_seed_optionals(mut out: Value, seed: &Value) -> Value {
         for key in [
             "hash_refresh_only",
             "markdown_body_replacements",
+            "artifact_full_replacements",
+            "artifact_yaml_replacements",
+            "artifact_body_replacements",
+            "implementation_source_git_apply",
             "daemon_declaration_patch",
+            "tactical_norm_version",
         ] {
             if let Some(v) = seed.get(key) {
                 map.insert(key.into(), v.clone());
@@ -237,9 +242,8 @@ fn creator_inputs_from_entity(
             }
             merge_maps(&base, fields)
         }
-        "norm" => merge_maps(
-            &base,
-            Map::from_iter([
+        "norm" => {
+            let mut fields = Map::from_iter([
                 ("tactical_norm_name".into(), seed_field(seed, "tactical_norm_name", json!(entity_name))),
                 ("tactical_norm_version".into(), seed_field(seed, "tactical_norm_version", json!("1.0.0"))),
                 (
@@ -255,8 +259,19 @@ fn creator_inputs_from_entity(
                 ("norms_contract_version".into(), seed_field(seed, "norms_contract_version", json!("1.1.0"))),
                 ("norm_scope".into(), seed_field(seed, "norm_scope", json!("agnostic"))),
                 ("norm_category".into(), seed_field(seed, "norm_category", json!("workflow"))),
-            ]),
-        ),
+            ]);
+            for key in [
+                "artifact_full_replacements",
+                "artifact_yaml_replacements",
+                "artifact_body_replacements",
+                "markdown_body_replacements",
+            ] {
+                if let Some(v) = seed.get(key) {
+                    fields.insert(key.into(), v.clone());
+                }
+            }
+            merge_maps(&base, fields)
+        }
         "codex" => {
             let mut fields = Map::from_iter([
                 ("domain_codex_slug".into(), seed_field(seed, "domain_codex_slug", json!(entity_name))),

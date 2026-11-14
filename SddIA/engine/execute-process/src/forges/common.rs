@@ -6,6 +6,7 @@ use serde_json::{json, Map, Value};
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 pub fn required_str(inputs: &Value, key: &str) -> Result<String, String> {
     match inputs.get(key).and_then(|v| v.as_str()) {
@@ -298,16 +299,25 @@ pub fn bump_semver_patch(version: &str) -> String {
 }
 
 fn split_md_frontmatter(text: &str) -> Result<(String, String), String> {
-    let parts: Vec<&str> = text.split("---").collect();
-    if parts.len() < 3 {
-        return Err("frontmatter ausente (sin delimitadores ---)".to_string());
+    let trimmed = text.trim_start();
+    if !trimmed.starts_with("---") {
+        return Err("frontmatter ausente (sin delimitador inicial)".to_string());
     }
-    let yaml = parts[1].trim().to_string();
-    let body = parts[2..]
-        .join("---")
-        .trim_start_matches('\n')
-        .to_string();
-    Ok((yaml, body))
+    let after_open = trimmed
+        .trim_start_matches("---")
+        .trim_start_matches(['\n', '\r']);
+    let end = after_open
+        .find("\n---\n")
+        .or_else(|| after_open.find("\n---\r\n"))
+        .ok_or("cierre frontmatter ausente (línea ---)")?;
+    let yaml = after_open[..end].trim().to_string();
+    let mut body = after_open[end..].to_string();
+    if let Some(rest) = body.strip_prefix("\n---\n") {
+        body = rest.to_string();
+    } else if let Some(rest) = body.strip_prefix("\n---\r\n") {
+        body = rest.to_string();
+    }
+    Ok((yaml, body.trim_start_matches('\n').to_string()))
 }
 
 fn join_md_frontmatter(yaml: &str, body: &str) -> String {
@@ -866,6 +876,48 @@ fn canonical_artifact_hash(raw: &str) -> String {
     format!("sha256:{:x}", hasher.finalize())
 }
 
+/// Materializa ficheros de implementación Rust desde blobs de un commit (forja gobernada).
+pub fn apply_implementation_source_git_apply(repo: &Path, inputs: &Value) -> Result<(), String> {
+    let Some(spec) = inputs.get("implementation_source_git_apply") else {
+        return Ok(());
+    };
+    let commit = spec
+        .get("commit")
+        .and_then(|v| v.as_str())
+        .ok_or("implementation_source_git_apply.commit requerido")?;
+    let paths = spec
+        .get("paths")
+        .and_then(|v| v.as_array())
+        .ok_or("implementation_source_git_apply.paths requerido (array)")?;
+    for item in paths {
+        let rel = item
+            .as_str()
+            .ok_or("implementation_source_git_apply.paths[] debe ser string")?;
+        let rel = rel.trim().trim_start_matches("./");
+        if rel.is_empty() || rel.contains("..") {
+            return Err(format!("implementation path inválido: {rel}"));
+        }
+        let spec_ref = format!("{commit}:{rel}");
+        let out = Command::new("git")
+            .args(["show", &spec_ref])
+            .current_dir(repo)
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !out.status.success() {
+            return Err(format!(
+                "git show falló para {spec_ref}: {}",
+                String::from_utf8_lossy(&out.stderr)
+            ));
+        }
+        let full = repo.join(rel);
+        if let Some(parent) = full.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        fs::write(&full, &out.stdout).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 pub fn apply_markdown_body_replacements(body: &str, replacements: &Value) -> Result<String, String> {
     let Some(arr) = replacements.as_array() else {
         return Err("markdown_body_replacements debe ser array".into());
@@ -1215,6 +1267,73 @@ pub fn patch_norm_content_update(
         .map(str::to_string)
         .unwrap_or_else(|| canonical_artifact_hash(&text));
 
+    if let (Some(yaml_rep), Some(body_rep)) = (
+        inputs.get("artifact_yaml_replacements"),
+        inputs.get("artifact_body_replacements"),
+    ) {
+        let (yaml, body) = split_md_frontmatter(&text)?;
+        let mut new_yaml = apply_markdown_body_replacements(&yaml, yaml_rep)?;
+        let new_body = apply_markdown_body_replacements(&body, body_rep)?;
+        if let Some(ver) = optional_str(inputs, "tactical_norm_version") {
+            static RE_TOP_VER: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+            let re = RE_TOP_VER
+                .get_or_init(|| Regex::new(r#"(?m)^version:\s*"[^"]+"\s*$"#).expect("re"));
+            new_yaml = re
+                .replace(&new_yaml, format!("version: \"{ver}\""))
+                .to_string();
+        }
+        let new_text = join_md_frontmatter(&new_yaml, &new_body);
+        fs::write(norm_path, &new_text).map_err(|e| e.to_string())?;
+        let new_hash = patch_hash_signature_refresh(norm_path)?.new_hash;
+        update_library_norm_index_version(
+            &norm_path
+                .parent()
+                .unwrap()
+                .join("index.md"),
+            &name,
+            &new_version,
+        )?;
+        return Ok(NormContentPatchResult {
+            entity_uuid,
+            old_hash,
+            new_hash,
+            old_version: old_version.clone(),
+            new_version,
+        });
+    }
+
+    if let Some(replacements) = inputs.get("artifact_full_replacements") {
+        let (yaml, body) = split_md_frontmatter(&text)?;
+        let mut new_yaml = apply_markdown_body_replacements(&yaml, replacements)?;
+        let new_body = apply_markdown_body_replacements(&body, replacements)?;
+        if let Some(ver) = optional_str(inputs, "tactical_norm_version") {
+            static RE_TOP_VER: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+            let re = RE_TOP_VER
+                .get_or_init(|| Regex::new(r#"(?m)^version:\s*"[^"]+"\s*$"#).expect("re"));
+            new_yaml = re
+                .replace(&new_yaml, format!("version: \"{ver}\""))
+                .to_string();
+        }
+        let new_text = join_md_frontmatter(&new_yaml, &new_body);
+        fs::write(norm_path, &new_text).map_err(|e| e.to_string())?;
+        let new_hash = patch_hash_signature_refresh(norm_path)?.new_hash;
+        update_library_norm_index_version(
+            &norm_path
+                .parent()
+                .unwrap()
+                .join("index.md"),
+            &name,
+            &new_version,
+        )?;
+        return Ok(NormContentPatchResult {
+            entity_uuid,
+            old_hash,
+            new_hash,
+            old_version: old_version.clone(),
+            new_version,
+        });
+    }
+
     if let Some(replacements) = inputs.get("markdown_body_replacements") {
         let (_, _, mut new_hash, _) = patch_artifact_body_replacements(norm_path, replacements)?;
         if let Some(ver) = optional_str(inputs, "tactical_norm_version") {
@@ -1445,6 +1564,17 @@ mod tests {
         sync_daemons_index_census(&index).unwrap();
         let text = fs::read_to_string(&index).unwrap();
         assert!(text.contains("2 Centinelas catalogados (a, b)"));
+    }
+
+    #[test]
+    fn split_md_frontmatter_preserves_capability_taxonomy_catalog() {
+        let repo = crate::core::repo::find_repo_root().expect("repo");
+        let path = repo.join("SddIA/library/norms/capability-taxonomy.md");
+        let text = fs::read_to_string(&path).expect("taxonomy");
+        let (yaml, body) = split_md_frontmatter(&text).expect("split");
+        assert!(yaml.contains("catalog:"), "yaml truncado");
+        assert!(yaml.contains("eda:event-manager"));
+        assert!(body.contains("## Directriz Core"));
     }
 
     #[test]

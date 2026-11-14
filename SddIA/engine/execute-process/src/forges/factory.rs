@@ -1,7 +1,8 @@
 //! Forjas por `entity_class` (paridad `execute_process_forges.py` + skill/event en capsules).
 
 use super::common::{
-    append_row, apply_markdown_body_replacements, capability_name, dependencies_from_inputs,
+    append_row, apply_implementation_source_git_apply, apply_markdown_body_replacements,
+    capability_name, dependencies_from_inputs,
     format_dependencies_yaml, handoff_create, idempotent_forge_handoff, optional_str,
     parse_frontmatter, patch_action_content_update, merge_daemon_capabilities,
     patch_daemon_declaration,
@@ -97,6 +98,7 @@ pub fn run_tool_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
     if lifecycle == "update" && tool_path.is_file() {
+        apply_implementation_source_git_apply(repo, inputs)?;
         if inputs
             .get("hash_refresh_only")
             .and_then(|v| v.as_bool())
@@ -118,6 +120,15 @@ pub fn run_tool_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
                 "handoff_hash_signature_new": new_hash,
                 "handoff_hash_signature_old": old_hash,
                 "handoff_version": version,
+            }));
+        }
+        if inputs.get("implementation_source_git_apply").is_some() {
+            let patch = patch_hash_signature_refresh(&tool_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
             }));
         }
     }
@@ -905,6 +916,19 @@ pub fn run_norm_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
 
     if lifecycle == "update" && norm_path.is_file() {
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&norm_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         let patch = patch_norm_content_update(&norm_path, inputs)?;
         if patch.old_version != patch.new_version {
             update_library_norm_index_version(
@@ -1182,6 +1206,41 @@ pub fn run_skill_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
     let name = optional_name(inputs, "skill_name")?;
     let skill_path = repo.join("SddIA/skills").join(format!("{name}.md"));
     let lifecycle = str_field(inputs, "lifecycle_operation", "create");
+    if lifecycle == "update" && skill_path.is_file() {
+        apply_implementation_source_git_apply(repo, inputs)?;
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&skill_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+        if let Some(replacements) = inputs.get("markdown_body_replacements") {
+            let (entity_uuid, old_hash, new_hash, version) =
+                patch_artifact_body_replacements(&skill_path, replacements)?;
+            return Ok(json!({
+                "handoff_entity_uuid": entity_uuid,
+                "handoff_hash_signature_new": new_hash,
+                "handoff_hash_signature_old": old_hash,
+                "handoff_version": version,
+            }));
+        }
+        if inputs.get("implementation_source_git_apply").is_some() {
+            let patch = patch_hash_signature_refresh(&skill_path)?;
+            return Ok(json!({
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
+    }
     if lifecycle == "create" && skill_path.is_file() {
         return Err(format!("Ya existe {}", skill_path.display()));
     }
@@ -1532,6 +1591,21 @@ pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
         return Ok(skip);
     }
     if lifecycle == "update" && daemon_path.is_file() {
+        apply_implementation_source_git_apply(repo, inputs)?;
+        if inputs
+            .get("hash_refresh_only")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
+            let patch = patch_hash_signature_refresh(&daemon_path)?;
+            return Ok(json!({
+                "artifact_daemon_md": daemon_path.strip_prefix(repo).unwrap_or(&daemon_path).to_string_lossy().replace('\\', "/"),
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
+        }
         let mut patched = false;
         let mut entity_uuid = String::new();
         let mut old_hash = String::new();
@@ -1603,6 +1677,16 @@ pub fn run_daemon_forge(repo: &Path, inputs: &Value) -> Result<Value, String> {
             new_hash = r.2;
             version = r.3;
             patched = true;
+        }
+        if !patched && inputs.get("implementation_source_git_apply").is_some() {
+            let patch = patch_hash_signature_refresh(&daemon_path)?;
+            return Ok(json!({
+                "artifact_daemon_md": daemon_path.strip_prefix(repo).unwrap_or(&daemon_path).to_string_lossy().replace('\\', "/"),
+                "handoff_entity_uuid": patch.entity_uuid,
+                "handoff_hash_signature_new": patch.new_hash,
+                "handoff_hash_signature_old": patch.old_hash,
+                "handoff_version": patch.version,
+            }));
         }
         if !patched {
             return Err(

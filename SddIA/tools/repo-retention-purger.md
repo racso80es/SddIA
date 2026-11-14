@@ -7,7 +7,7 @@ domain_origin: "SddIA"
 context: "filesystem-ops"
 capabilities:
   - "repo_retention_purger"
-hash_signature: "sha256:ca69b05c4d65f4e600359c52b2e75c6db2045cf8e4029f18e273420eb64460b8"
+hash_signature: "sha256:f832d15be74fe17ed52b99c56c8aacb79dacb1088560049177d11241b1d58855"
 implementation_path_ref: "SddIA/tools/repo-retention-purger"
 ---
 

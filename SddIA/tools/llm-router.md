@@ -7,7 +7,7 @@ domain_origin: "SddIA"
 context: "system-operations"
 capabilities:
   - "llm_router"
-hash_signature: "sha256:d99a4a38ddb5de9c4c98899592e83f8dcfdb99d323720e7aaad7c7b87e3beca1"
+hash_signature: "sha256:f4627c7316153eb6741b5838e507d935b5339867c01228763be08a6fa9a6d7a9"
 implementation_path_ref: "SddIA/tools/llm-router"
 ---
 

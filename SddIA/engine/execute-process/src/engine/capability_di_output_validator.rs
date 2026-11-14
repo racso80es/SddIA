@@ -2,7 +2,6 @@
 
 use super::capability_di_resolver::ResolvedBinding;
 use super::eda_bus_topology::{load_event_bus_topology, write_json_atomic};
-use super::workspace::load_paths_config;
 use chrono::Utc;
 use jsonschema::Validator;
 use serde_json::{json, Value};
@@ -39,24 +38,9 @@ fn env_skip() -> bool {
         .unwrap_or(false)
 }
 
-fn contracts_dir(repo: &Path) -> Result<PathBuf, String> {
-    let cfg = load_paths_config(repo)?;
-    if let Some(rel) = cfg
-        .get("directories")
-        .and_then(|d| d.get("capability_contracts"))
-        .and_then(|v| v.as_str())
-    {
-        return Ok(repo.join(rel.trim().trim_end_matches('/')));
-    }
-    Ok(repo.join("SddIA/library/norms/capability-contracts"))
-}
-
-fn schema_path(repo: &Path, contract: &str) -> Result<PathBuf, OutputValidatorError> {
-    let dir = contracts_dir(repo).map_err(|e| OutputValidatorError {
-        code: OutputValidatorCode::ConfigError,
-        message: e,
-    })?;
-    let path = dir.join(format!("{contract}.schema.json"));
+fn schema_path(repo: &Path, binding: &ResolvedBinding) -> Result<PathBuf, OutputValidatorError> {
+    let rel = binding.contract_schema_rel.trim().trim_start_matches("./");
+    let path = repo.join(rel);
     if !path.is_file() {
         return Err(OutputValidatorError {
             code: OutputValidatorCode::ConfigError,
@@ -119,7 +103,7 @@ pub fn validate_output_payload(
     if env_skip() {
         return Ok(());
     }
-    let path = schema_path(repo, &binding.contract)?;
+    let path = schema_path(repo, binding)?;
     let compiled = compile_schema(&path)?;
     if let Err(e) = compiled.validate(payload) {
         return Err(OutputValidatorError {
