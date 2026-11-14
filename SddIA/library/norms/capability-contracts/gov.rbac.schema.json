@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "895e0426-7cf3-45fa-8303-0d8f13f484ff",
+    "version": "1.0.0",
+    "hash_signature": "sha256:a4b45ea2cef8b2bb6fb862ee3b7de7a9b11c5b44ada2bc7601d0fe0220b98b28"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/gov.rbac.schema.json",
   "title": "gov.rbac",

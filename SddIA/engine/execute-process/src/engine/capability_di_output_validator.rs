@@ -168,9 +168,27 @@ mod tests {
             contract: "doc.closure".into(),
             provider: "skill:filesystem-manager".into(),
             provider_md_rel: "x".into(),
-            contract_schema_rel: "x".into(),
+            contract_schema_rel: "SddIA/library/norms/capability-contracts/doc.closure.schema.json"
+                .into(),
             version: "1.0.0".into(),
         }
+    }
+
+    #[test]
+    fn contract_schema_with_non_standard_name_is_resolved_by_binding() {
+        let td = fixture_repo();
+        write_file(
+            td.path(),
+            "SddIA/library/norms/capability-contracts/doc.closure.v9.schema.json",
+            r#"{ "type": "object", "required": ["only"] }"#,
+        );
+        let mut b = binding();
+        b.contract_schema_rel =
+            "./SddIA/library/norms/capability-contracts/doc.closure.v9.schema.json".into();
+        validate_output_payload(td.path(), &b, &json!({"only": 1})).expect("usa el schema declarado");
+        let err = validate_output_payload(td.path(), &b, &json!({"exitCode": 0, "data": {}}))
+            .unwrap_err();
+        assert_eq!(err.code, OutputValidatorCode::SchemaMismatch);
     }
 
     #[test]
@@ -201,7 +219,8 @@ mod tests {
             contract: "tracker.lifecycle".into(),
             provider: "tool:linear-tracker-adapter".into(),
             provider_md_rel: "x".into(),
-            contract_schema_rel: "x".into(),
+            contract_schema_rel:
+                "SddIA/library/norms/capability-contracts/tracker.lifecycle.schema.json".into(),
             version: "1.0.0".into(),
         };
         let ok = json!({

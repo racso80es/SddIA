@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "547bebe1-d3d1-4b1b-a703-670bf79dd321",
+    "version": "1.0.0",
+    "hash_signature": "sha256:10bd19fda99388c02825b1d6b9f89e434eb344191a3b9e1e3a1a9749af20a895"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/bus.route.schema.json",
   "title": "bus.route",

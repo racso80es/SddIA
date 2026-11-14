@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "c2f0c0bd-8786-4ddc-b137-eb6473a8f47c",
+    "version": "1.0.0",
+    "hash_signature": "sha256:92c00c20f8169bd2c5dabace4c02a31eda3997e2cf9c343a6a1527ab314f55aa"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/fs.persist.schema.json",
   "title": "fs.persist",

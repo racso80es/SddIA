@@ -9,6 +9,7 @@ migration_manifest: docs/features/evolution-history-normalization/migration-mani
 
 | id_cambio | fecha | resumen | clase_formato | ruta_relativa |
 |-----------|-------|---------|---------------|---------------|
+| `35ec5355-a3c8-48be-9358-336026684320` | 2026-11-14 | MAN-43 O13: Norma de Identidad Polimórfica (Cicatriz Digital, sustrato B x-sddia); 17 contratos con identidad; eda.event_manager 2.0.0 | CANONICO | `SddIA/evolution/35ec5355-a3c8-48be-9358-336026684320.md` |
 | `c4e8f2a1-9b3d-4e7c-a5f6-2d3e8b9c0a1f` | 2026-11-13 | MAN-43 O6: narrativa EventManager v2; store legacy retirado del relato (877c1791) | CANONICO | `SddIA/evolution/c4e8f2a1-9b3d-4e7c-a5f6-2d3e8b9c0a1f.md` |
 | `faa41d58-a120-413e-b088-35681ffb79e3` | 2026-11-11 | MAN-43 H1: EventManagerPort 2.0.0 EventUri + PublishSeal v2 (milestone) | CANONICO | `SddIA/evolution/faa41d58-a120-413e-b088-35681ffb79e3.md` |
 | `cb548aa0-57ee-4881-99c2-9d46339fc699` | 2026-11-10 | MAN-42: F-EDA-STORE-LOCK-CONTENTION suppress, refine-item sin fractura lock, promote_witness sin DLQ | CANONICO | `SddIA/evolution/cb548aa0-57ee-4881-99c2-9d46339fc699.md` |

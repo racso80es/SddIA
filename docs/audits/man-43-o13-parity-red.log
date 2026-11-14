@@ -1,0 +1,62 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling execute-process v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/engine/execute-process)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.94s
+     Running unittests src/lib.rs (target/debug/deps/execute_process-e655f412a101d328)
+
+running 6 tests
+test engine::eda_contract_parity::every_trait_operation_has_a_typed_valid_request_and_a_negative_case ... ok
+test engine::eda_contract_parity::trait_has_the_nineteen_known_operations ... ok
+test engine::eda_contract_parity::schema_operation_enum_equals_trait_operations ... FAILED
+test engine::eda_contract_parity::unknown_operation_is_rejected ... ok
+test engine::eda_contract_parity::valid_typed_requests_validate_against_schema ... FAILED
+test engine::eda_contract_parity::broken_requests_are_rejected_by_schema ... FAILED
+
+failures:
+
+---- engine::eda_contract_parity::schema_operation_enum_equals_trait_operations stdout ----
+
+thread 'engine::eda_contract_parity::schema_operation_enum_equals_trait_operations' (370956) panicked at engine/execute-process/src/engine/eda_contract_parity.rs:303:5:
+faltan en schema: ["list_terminal_events"]; sobran: []
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- engine::eda_contract_parity::valid_typed_requests_validate_against_schema stdout ----
+
+thread 'engine::eda_contract_parity::valid_typed_requests_validate_against_schema' (370959) panicked at engine/execute-process/src/engine/eda_contract_parity.rs:325:5:
+peticiones válidas rechazadas:
+list_terminal_events: {"operation":"list_terminal_events","payload":{"cursor":"c","family":"orchestration","limit":10}} is not valid under any of the schemas listed in the 'oneOf' keyword
+   {"operation":"list_terminal_events","payload":{"cursor":"c","family":"orchestration","limit":10}}
+record_delivery: {"operation":"record_delivery","payload":{"attempt":1,"delivery_id":"d","event_id":"e","status":"processing","subscriber_id":"s"}} is not valid under any of the schemas listed in the 'oneOf' keyword
+   {"operation":"record_delivery","payload":{"attempt":1,"delivery_id":"d","event_id":"e","status":"processing","subscriber_id":"s"}}
+
+---- engine::eda_contract_parity::broken_requests_are_rejected_by_schema stdout ----
+
+thread 'engine::eda_contract_parity::broken_requests_are_rejected_by_schema' (370954) panicked at engine/execute-process/src/engine/eda_contract_parity.rs:338:5:
+el schema acepta peticiones fuera de contrato:
+publish_ecst: sin event_uri (identidad canónica L-1)
+publish_ecst: familia = estado de cola
+publish_ecst: event_uri con separador en event_id
+publish_ecst: event_uri en forma de cadena (EventUri no la deserializa)
+verify_inline_ecst: sin ecst
+verify_inline_ecst: sin event_id
+list_events: limit 0
+list_events: state desconocido
+list_events: family desconocida
+list_deliveries: status desconocido
+list_deliveries: limit 0
+list_progress: sin trace_id ni correlation_id
+seal_dlt: sin tx_hash
+seal_dlt: sin digest
+seal_dlt: sin scope
+get_dlt_seal: sin event_id
+
+
+failures:
+    engine::eda_contract_parity::broken_requests_are_rejected_by_schema
+    engine::eda_contract_parity::schema_operation_enum_equals_trait_operations
+    engine::eda_contract_parity::valid_typed_requests_validate_against_schema
+
+test result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 843 filtered out; finished in 0.40s
+
+error: test failed, to rerun pass `-p execute-process --lib`

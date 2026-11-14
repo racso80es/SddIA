@@ -1,0 +1,42 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/racso/Proyectos/SddIA/SddIA/tools/wasi-poc/Cargo.toml
+workspace: /home/racso/Proyectos/SddIA/SddIA/Cargo.toml
+   Compiling execute-process v0.1.0 (/home/racso/Proyectos/SddIA/SddIA/engine/execute-process)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.55s
+     Running unittests src/lib.rs (target/debug/deps/execute_process-e655f412a101d328)
+
+running 1 test
+test forges::capability_contract::tests::all_repo_capability_contracts_carry_valid_identity ... FAILED
+
+failures:
+
+---- forges::capability_contract::tests::all_repo_capability_contracts_carry_valid_identity stdout ----
+
+thread 'forges::capability_contract::tests::all_repo_capability_contracts_carry_valid_identity' (374239) panicked at engine/execute-process/src/forges/capability_contract.rs:759:9:
+identidad inválida:
+agenda.persist: sin x-sddia completo
+audit.compliance: sin x-sddia completo
+bus.route: sin x-sddia completo
+channel.ingest: sin x-sddia completo
+di.binding: sin x-sddia completo
+doc.closure: sin x-sddia completo
+eda.event_manager.v1: sin x-sddia completo
+fs.persist: sin x-sddia completo
+gov.rbac: sin x-sddia completo
+llm-registry: sin x-sddia completo
+llm.infer: sin x-sddia completo
+llm.interact: sin x-sddia completo
+memory.pref_query: sin x-sddia completo
+memory.pref_write: sin x-sddia completo
+proc.git_sync: sin x-sddia completo
+qa.probe: sin x-sddia completo
+tracker.lifecycle: sin x-sddia completo
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    forges::capability_contract::tests::all_repo_capability_contracts_carry_valid_identity
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 849 filtered out; finished in 0.31s
+
+error: test failed, to rerun pass `-p execute-process --lib`

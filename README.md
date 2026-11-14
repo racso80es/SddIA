@@ -322,10 +322,10 @@ Flags lab documentados en [inmunidad-caos-fase4](docs/features/inmunidad-caos-fa
 3. **Índice de Trazabilidad:** En dicha ubicación ha de existir un índice (`index.md`) con los items correspondientes a las implementaciones de entidades existentes. El agente Cúmulo tiene la responsabilidad de la coherencia de datos indicados por cada implementación.
 
 ## Cicatriz digital y estándar atómico
-**Toda** entidad de dominio SddIA nace con **Cicatriz Digital**: un único archivo de definición `{name}.md` que incluye:
-- Cabecera **YAML** obligatoria (contrato de la entidad).
+**Toda** entidad de dominio SddIA nace con **Cicatriz Digital**: un único archivo de definición, en el sustrato que corresponde a su clase (**Norma de Identidad Polimórfica**): `{name}.md` con cabecera YAML para entidades declarativas/orquestación (`agent`, `process`, `action`, `skill`, `tool`, `norm`, `codex`, `event`, `suite`, `daemon`) y `{name}.schema.json` con cabecera en la clave raíz `x-sddia` para las de esquema computacional (`capability-contract`). Incluye:
+- Cabecera de identidad obligatoria (**YAML** en `.md`; `"x-sddia": { "uuid", "version", "hash_signature" }` en `.schema.json`).
 - **Versión SemVer** y **UUID v4 inmutable** asignado en creación (identidad estable para trazabilidad y catálogo).
-- Cuerpo en Markdown con propósito y límites del activo.
+- Cuerpo en Markdown con propósito y límites del activo (sustrato `.md`); en `.schema.json` el propio JSON Schema es el cuerpo.
 Ese paquete es el prerequisito para integración en la **Librería SddIA** y su modelo de activo direccionable (capa NFT-ready).
 
 ## Desacoplamiento Core / instancia

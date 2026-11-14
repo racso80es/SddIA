@@ -130,6 +130,7 @@ El merge #453 materializó H1 parcial. La siguiente implementación **no** comie
 | **O8.1** | `done (rama)` | `route-domain-event` v1.0.2 sin `fs.persist` en fases; schema v1 fuera |
 | **O9** | `done (rama)` | Gate `rustc` verde; clippy residual acotado a `execute-process` (excluido por norma); C-2 latente |
 | **O10** | `done (rama)` | `contract_schema` en resolver/gate/validador; C-2 cerrado; C-4 taxonomía 1.0.12 / eda 2.0.0; O9 tools/skills/daemons sellados vía entity-manager |
+| **O13** | `done (rama)` | Regresión O10 (3 tests validador DI) + baseline O12 inválida; clase `capability-contract` en `entity-manager`; C-3 (schema `eda.event_manager` 2.0, paridad schema↔serde); identidad `x-sddia` de los 17 contratos |
 | **O12** | `done` | Línea base; C-4 por cauce oficial; C-5 `event_uri` + process 1.1.0; 4 fallos lib documentados |
 | **O11** | `done` | Remediación forja O10: binario canónico, guarda anti-sobrescritura, restauración 3 `.md`, delete stubs, sellos daemons/O9, `hash_refresh` taxonomía (contenido 2.0.0 heredado de O10) |
 
@@ -188,6 +189,10 @@ Cerrado en rama. **Hallazgo normativo:** `rust-warning-gate` §1 excluye Clippy;
 ### Backlog técnico O10
 
 Cerrado en rama: `BindingRow` + `contract_schema_file`; validador usa `contract_schema_rel`; gate lee fila de bindings; forja norm/tool/skill/daemon ampliada (`artifact_yaml/body`, `hash_refresh`, `implementation_source_git_apply`); `capability-taxonomy` **1.0.12** / catálogo **2.0.0**; O9 genoma sellado vía entity-manager. Verificación: test `core_bindings_eda_event_manager_resolves_v1_schema` (tras `cargo test -p execute-process --lib`). C-3 (schema v1.2.0) y C-5 (`route-domain-event.outputs`) siguen abiertos; AC-13 abierto.
+
+### Backlog técnico O13
+
+Cerrado en rama (`plan.md` § O13, v1.2.14; auditoría `docs/audits/man-43-o13-contract-schema-20261114.md`, APTO_PARCIAL). **Corrige O10 y O12:** los 3 tests `capability_di_output_validator` fallan por fixtures `contract_schema_rel: "x"` tras O10 (regresión mía; la suite completa no se corrió); el 4.º fallo (`tier_dispatch`) fue una variable `SDDIA_EXECUTE_PROCESS_BIN` relativa exportada en mi shell. O12 los llamó «no bloqueantes» contra su propio plan: baseline inválida. Pasos: fixtures + hermetizar test + suite limpia + corregir auditoría O12 → forja nativa `capability-contract` (RFC 6902, descriptor `{contract}.md`, directorio por Cúmulo, sin fallback a proceso) → test de paridad rojo antes/verde después → enums de clase en `emit-domain-mutation` y `entity-manager` → patch C-3 → auditoría. Identidad (laudo): opción A, bloque `x-sddia` embebido (uuid, versión de catálogo, hash del JSON canónico sin `x-sddia`); los 16 contratos restantes se adoptan en este hilo por inserción textual (diff = solo el bloque) vía `entity-manager`. Laudo: **Norma de Identidad Polimórfica** (sustrato A `{name}.md`, sustrato B `{name}.schema.json` + `x-sddia`), ya recogida en `.cursorrules` §2/§3 y `README.md`; el registro en `evolution/` documenta la evolución del estándar de Cicatriz Digital.
 
 ### Backlog técnico O12 (cerrado en rama)
 

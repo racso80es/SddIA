@@ -1920,6 +1920,7 @@ pub fn materialize_by_inputs(repo: &Path, inputs: &Value) -> Result<Value, Strin
             "skill" => run_skill_forge(repo, inputs),
             "event" => run_event_forge(repo, inputs),
             "daemon" => run_daemon_forge(repo, inputs),
+            "capability-contract" => super::capability_contract::run_capability_contract_forge(repo, inputs),
             other => Err(format!("entity_class no soportada en forja nativa: {other}")),
         };
     }

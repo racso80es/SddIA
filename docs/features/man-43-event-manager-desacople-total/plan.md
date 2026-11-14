@@ -14,7 +14,7 @@ agent_planificador: dedalo
 target_executor: tekton
 phase: diseno-blueprint
 status: blueprint-ready
-version_plan: "1.2.11"
+version_plan: "1.2.14"
 rebaseline: remediation-waves-v1
 audit_ref: docs/audits/man-32-lineage-man-43-remediation-20261111.md
 phases:
@@ -1324,6 +1324,17 @@ Estado: **done (rama)** — ver `docs/audits/man-43-o12-baseline-20261114.md`.
 - **Línea base:** 819 tests OK, 4 fallos (validator tempdir + tier_dispatch spawn); `check --workspace` OK; `gate-event-manager-port` OK.
 - Higiene: 5 semillas `_lab` inválidas eliminadas.
 
+### Corrección posterior a O12 (2026-11-14, hallada al planificar O13)
+
+O12 clasificó los 4 fallos de la suite como «no bloqueantes». Eso **contradice el plan de O12** («cualquier fallo distinto de los 2 conocidos bloquea B y C») y la auditoría `man-43-o12-baseline-20261114.md` lo repite. Diagnóstico real:
+
+| Fallo | Causa | Tipo |
+|-------|-------|------|
+| `capability_di_output_validator::ac_r8_schema_mismatch`, `ac_r8_valid_payload`, `ac_tracker_lifecycle_emit_v2_body` | O10 hizo que `schema_path` lea `binding.contract_schema_rel`; los tres tests construyen `ResolvedBinding { contract_schema_rel: "x" }` (fixture heredado). Producción sí rellena el campo (`core_bindings_eda_event_manager_resolves_v1_schema` pasa). | **Regresión mía de O10**: fixtures sin actualizar. La suite completa nunca se ejecutó en O10 (el plan O10 la exigía). |
+| `route_domain_core::tier_dispatch::store_backed_native_capsule_does_not_use_cognitive_runtime` | Mi shell tenía exportada `SDDIA_EXECUTE_PROCESS_BIN=SddIA/target/debug/execute-process` (ruta **relativa**); el test espera que la variable no exista. Con `unset`, pasa. | Artefacto de entorno, no defecto del repo; pero el test no es hermético. |
+
+Los dos fallos «conocidos» (`linear_bridge_webhook::ac13_*`, `ecosystem_health_map_absent_still_ok`) **no fallaron** en O12. El veredicto de O12 queda en **`APTO_PARCIAL` con baseline inválida** hasta que O13 re-ejecute la suite con entorno limpio.
+
 Estado previo planificación: **ready**.
 
 ### Inventario verificado (2026-11-14, sobre `303ca577`)
@@ -1400,9 +1411,130 @@ git diff HEAD -- SddIA/process/route-domain-event.md SddIA/process/index.md
 **AC:** cierra C-4 y C-5 con evidencia de rama; acerca AC-19 (suite). AC-13 sigue abierto por C-3.
 **Fuera:** C-3 (O13), clippy estructural, fallos preexistentes ya listados.
 
-### O13 (anticipo; laudo Racso 2026-11-14: opción (a), nueva clase `capability-contract`)
+### O13 — ver sección «O13» más abajo
 
-C-3: `eda.event_manager.v1.schema.json` describe «v1.2.0»; `publish_ecst` no exige `event_uri` (el puerto 2.0 lo exige y valida que coincida con `event_id`); falta la operación `list_terminal_events` (el trait tiene 20 operaciones, el schema 18); `response` solo define el envelope, no los resultados. No hay vía oficial: el schema vive en `library/` (genoma protegido) y **no existe `entity_class` para contratos JSON**. Decidido: nueva clase `capability-contract` en `entity-manager` con creator nativo (create/update) y test de paridad schema↔serde del puerto; descartado el edit IDE acotado. El nombre `…v1.schema.json` se conserva (O10 lo fijó vía `contract_schema`).
+---
+
+## O13 — Regresión O10 + clase `capability-contract` + C-3 + identidad de los 17 contratos (cerrado en rama)
+
+Estado: **ready**. Sin commit en la planificación. Laudos Racso 2026-11-14: C-3 con nueva clase `capability-contract` en `entity-manager` (no edit IDE); identidad embebida `x-sddia` (opción A) y migración de los 16 contratos restantes en este mismo hilo.
+
+### Inventario verificado (2026-11-14, sobre `047573df`)
+
+| Hallazgo | Evidencia |
+|----------|-----------|
+| 3 tests del validador DI rotos por O10 (fixture `contract_schema_rel: "x"`); 1 test no hermético (`SDDIA_EXECUTE_PROCESS_BIN`). Ver § «Corrección posterior a O12». | `capability_di_output_validator.rs:150-165,200`; `route_domain_core.rs:4521` |
+| C-3 sigue abierto: schema `eda.event_manager.v1.schema.json` con descripción «v1.2.0»; enum de 18 operaciones (el trait `EventManagerPort` expone 19 con `list_terminal_events` y `list_progress`/`seal_dlt`/`get_dlt_seal` ya presentes; falta `list_terminal_events`); rama `publish_ecst` exige `event_id`+`ecst` pero no `event_uri` (el struct `PublishEcstRequest` lo exige y valida que coincida); `response` es solo envelope. | `contract.rs:162-190`, `port.rs:74`, schema |
+| No existe clase de entidad para contratos JSON: `entity_manager.rs` fija 10 clases en `PILOT_CLASSES`, `creator_name`, `dir_by_class` y `materialize_by_inputs`; no hay `capability-contract-creator`. | `entity_manager.rs:10-66`, `factory.rs:1909` |
+| `emit-domain-mutation.inputs.entity_class` declara `process\|agent\|skill\|tool\|action\|norm\|codex\|event` (sin `suite`, `daemon`); `entity-manager.inputs.entity_class` declara 10 clases. El sello funciona con `daemon` (O11), así que el enum **no se aplica en runtime**: deriva documental ya existente. | `actions/emit-domain-mutation.md:14`, `process/entity-manager.md:5` |
+| El crate `execute-process` ya depende de `sddia-core` y `jsonschema` 0.26: el test de paridad schema↔serde cabe ahí sin dependencias nuevas. | `Cargo.toml:24,33` |
+| Vacío normativo: `.cursorrules` §2, `README.md` («Cicatriz digital y estándar atómico») y `.cursorrules` §3 solo reconocían el sustrato `{name}.md`. Los 17 schemas de `capability-contracts/` son `*.schema.json` puros, sin identidad. Resuelto por el laudo en **Norma de Identidad Polimórfica** (ver § siguiente), aplicada **antes** de ejecutar O13. | `ls capability-contracts`, `README.md:324` |
+
+### Validación del laudo (2026-11-14): coherencia y alucinaciones
+
+**Verificado y correcto:** «Cicatriz Digital» existe (`README.md:324`, `CONSTITUTION_CORE.md:50`); las 10 clases del sustrato A coinciden con `PILOT_CLASSES` de `entity_manager.rs`; `x-` es palabra clave de anotación válida en 2020-12; DA-2 y DA-5 existen con ese significado (`external-ai-constraints.md`); `.cursorrules` está fuera de los directorios de genoma de DA-2, y el hook `.cursor/hooks.json` solo guarda `docs/todos/`.
+
+**Incoherencias detectadas y resolución:**
+
+| # | Incoherencia | Resolución |
+|---|--------------|------------|
+| 1 | El laudo pide editar solo `.cursorrules`, pero el término y la regla «toda entidad = `{name}.md`» viven también en `README.md` (parámetro de restricción obligatorio, `.cursorrules` §7). Dejarlo habría hecho que la norma nueva infrinja el README (error crítico por §7). | `README.md` § «Cicatriz digital y estándar atómico» actualizado en el mismo cambio. `CONSTITUTION_CORE.md:50` no menciona `.md` («estándar de entidades del Core»): compatible, no se toca. |
+| 2 | `.cursorrules` §3 marcaba como «Entropía/Código Fósil» toda entidad sin `{name}.md`: con el laudo solo en §2, los 17 contratos seguirían siendo «fósiles» por §3. | §3 actualizado al «sustrato canónico de su clase». |
+| 3 | `{name}.schema.json` vs el plan: el fichero real es `eda.event_manager.v1.schema.json` y mi plan usaba `entity_name: eda.event_manager`. | `entity_name` = stem del fichero (ver § Identidad). |
+| 4 | §2 exige `id` (kebab-case) y `type`; el sustrato B del laudo solo lleva `uuid`, `version`, `hash_signature`, y los nombres de contrato llevan puntos (no kebab). Además, **ningún** `.md` del genoma lleva hoy `id` ni `type` (usan `name`): §2 ya era aspiracional. | Se mantienen los tres campos del laudo; `id`/`type` del sustrato B se derivan del sustrato (escrito en §2). La deuda preexistente del sustrato A (`id`/`type` ausentes) queda **fuera** de O13 y se anota. Aprovechado para completar el enum `type` de §2 con las 10 clases (antes listaba 5). |
+| 5 | «No gobernamos por excepciones» choca con `evolution_contract.md:21`, que **exceptúa** expresamente el estándar atómico para `evolution/`. | Fuera de alcance de O13; anotado como residual para el Vértice Biológico (candidato a un tercer sustrato o a una nota en la norma). No se toca. |
+| 6 | La adopción de una identidad nueva se sella como `Domain_Entity_Created` (sin hash previo). Parchear antes de adoptar emitiría `Updated` sobre algo sin nacimiento. | Orden fijado: `adopt` de `eda.event_manager.v1` y después el parche. |
+| 7 | «Valor del reinado» no existe como término en el repositorio. | Interpretado como «valor del laudo». |
+
+**Valor del laudo (auditoría):** *a favor* — elimina una excepción ad hoc y la sustituye por una regla con dos sustratos explícitos; respeta la **intención** de Cicatriz Digital (un único archivo con identidad inmutable) y no la letra del `.md`; es barata de implementar (17 inserciones de una clave) y deja el hash recalculable. *Riesgos reales* — (a) la regla vive ahora en tres sitios (`.cursorrules`, `README.md`, y SSOT de contratos): hay que mantenerlos alineados; (b) ningún escáner reconoce aún `x-sddia`: el test de identidad de los 17 (uuid únicos + hash recalculable) es el único guardián, y un edit manual de un schema rompería el hash sin que nada lo detecte hasta correr la suite → candidato a gate permanente (propuesto para O14, no se añade en O13); (c) `evolution_contract.md` sigue siendo una excepción vigente, lo que debilita el «no gobernamos por excepciones».
+
+### Decisión de identidad (laudo Racso 2026-11-14: opción A, y migrar los 16 restantes en este hilo)
+
+- **Modelo:** metadatos embebidos en cada schema, clave de nivel raíz `"x-sddia": { "uuid", "version", "hash_signature" }` (`x-` es palabra clave de anotación en JSON Schema 2020-12: no altera la validación). Un solo fichero por contrato; sin descriptor `.md`.
+- **Norma de Identidad Polimórfica (laudo Racso 2026-11-14).** No se gobierna por excepciones: se oficializa el **Polimorfismo de Sustrato de la Cicatriz Digital**, con dos sustratos canónicos en fichero único. **A:** entidades declarativas/orquestación (`agent`, `process`, `action`, `skill`, `tool`, `norm`, `codex`, `event`, `suite`, `daemon`) → `{name}.md` con YAML Frontmatter. **B:** entidades de esquema computacional (`capability-contract`) → `{name}.schema.json` con `"x-sddia": { "uuid", "version", "hash_signature" }` en la raíz. Ya aplicada en `.cursorrules` §2/§3 y `README.md` § «Cicatriz digital y estándar atómico» (antes de O13). El registro en `SddIA/evolution/` documenta esta **evolución del estándar de Cicatriz Digital** (no una excepción), con el UUID de la tarea; si se toca `evolution/`, pasa por la cápsula canónica y `gate-evolution --range` antes del push.
+- **Nombre de entidad = stem del fichero.** `{name}.schema.json` se cumple literalmente: `entity_name` = nombre del fichero sin `.schema.json` (`eda.event_manager.v1`, `doc.closure`, `llm-registry`…). Admite namespace con puntos; `id` y `type` se derivan del sustrato (§2). No se usa un parámetro `contract_schema` en la forja: el fichero es `{entity_name}.schema.json`. El binding DI sigue apuntando al fichero por `contract_schema` (O10), sin cambios.
+- **`version`** de `x-sddia` = versión del contrato en el catálogo de `capability-taxonomy.md` (p. ej. `1.0.0`; `eda.event_manager` pasa de `1.2.0` a `2.0.0` con el patch C-3). Se pasa explícita en la semilla; un test la contrasta con el catálogo.
+- **`hash_signature`** = sha256 del JSON canónico (claves ordenadas) del schema **sin** la clave `x-sddia`. Independiente del formato del fichero.
+- **Migración:** los 17 schemas de `capability-contracts/` quedan con identidad (`uuid` v4 generado por `generate_uuid`). Los 16 no tocados por C-3 reciben **solo** la clave `x-sddia`.
+- **Formato:** `serde_json` del workspace no tiene `preserve_order`: reserializar reordenaría las claves alfabéticamente y ensuciaría el diff de los 16. Por eso la operación `adopt` inserta el bloque `x-sddia` **por texto** tras la llave de apertura, dejando el resto del fichero byte a byte. Test: tras `adopt`, quitar el bloque insertado devuelve el fichero original idéntico. El único schema que se reserializa es `eda.event_manager` (patch RFC 6902): su diff textual será ruidoso una vez; la verificación es **semántica** (`canon(antes) + patch == canon(después)`, comparada con la salida del test).
+
+### Diseño cerrado
+
+**A. Corregir baseline (bloquea B y C).**
+1. Fixtures de `capability_di_output_validator.rs`: `contract_schema_rel` real (`SddIA/library/norms/capability-contracts/doc.closure.schema.json` en el fixture temporal; `…/tracker.lifecycle.schema.json` en el repo real). Añadir test: binding con `contract_schema` de nombre no estándar valida contra ese fichero.
+2. Hermetizar `store_backed_native_capsule_does_not_use_cognitive_runtime`: guardar, `remove_var("SDDIA_EXECUTE_PROCESS_BIN")` y restaurar al final.
+3. Re-ejecutar la suite completa con `env -u SDDIA_EXECUTE_PROCESS_BIN` (y comprobando `env | rg '^SDDIA'` vacío). Criterio: **0 fallos**. Si aparece cualquier otro, bloquea y se documenta.
+4. Corregir `docs/audits/man-43-o12-baseline-20261114.md` (veredicto, causas reales, reconocer que O12 incumplió su propia regla de bloqueo).
+
+**B. Clase `capability-contract` (motor).**
+- Forja nativa `run_capability_contract_forge` en `forges/factory.rs`; arm en `materialize_by_inputs`; `PILOT_CLASSES`/`creator_name`/`dir_by_class` en `entity_manager.rs`. Directorio leído de `directories.capability_contracts` (Cúmulo), no cableado. Sin proceso `*-creator`: clase **solo nativa**, sin fallback a proceso (el fallback hoy convierte un fallo nativo en `CAPABILITY_PROVIDER_*`; no debe aplicarse).
+- `create`: `schema_json` (objeto) → escribe `{entity_name}.schema.json` con `x-sddia` (uuid nuevo, versión de la semilla, hash). `adopt` (modo de `update` sin parche de contenido, exige `schema_version`): si el schema existe **sin** `x-sddia`, inserta el bloque por texto; si ya lo tiene, devuelve el handoff idempotente (no regenera `uuid`). `update`: `schema_json_patch` = **RFC 6902** (`add`/`replace`/`remove` por JSON Pointer) + `schema_version`; aplica el patch, fija `x-sddia.version`, recalcula `hash_signature`, preserva `uuid`; el patch no puede apuntar a `/x-sddia`. `update` sin patch ni `adopt` → `Err` (regla anti-sobrescritura de O11). `delete` → `Err` explícito (fuera de alcance).
+- Seguridad: `entity_name` sin `/`, `\`, `..` (misma regla que `contract_schema_file`, O10); el resultado debe ser JSON Schema válido (se compila con `jsonschema::Validator::new` antes de escribir; si no compila, no se escribe nada). Test de compilación de los **17** schemas con `x-sddia` insertado.
+- Documentación de contrato por `entity-manager`: `emit-domain-mutation.inputs.entity_class` y `entity-manager.inputs.entity_class` pasan a `process|agent|skill|tool|action|norm|codex|event|suite|daemon|capability-contract` (action update con `action_inputs`; process update con `process_inputs`). Con ello se cierra de paso la deriva `suite`/`daemon`.
+- Tests: create idempotente, `adopt` inserta y es idempotente, `adopt` byte a byte reversible, update por patch con UUID estable, update sin patch = error, patch sobre `/x-sddia` = error, schema inválido tras patch = error sin escribir, nombre con `..` = error, directorio tomado de Cúmulo (fixture con ruta distinta), `x-sddia.version` coincide con el catálogo de `capability-taxonomy.md`.
+- **Los schemas embebidos con `include_str!`** (`di.binding.schema.json` en `capability_di_reactor.rs:394` y `cerbero_di_envelope.rs:309`) cambian de bytes al adoptar: los tests que los usan deben seguir verdes (se mide en la suite).
+
+**C. C-3 por la clase nueva.**
+- Patch RFC 6902 sobre `eda.event_manager.v1.schema.json` (nombre y `$id` se conservan; O10 lo fijó vía `contract_schema`): `description` → «Contrato EventManager 2.0.0 …»; añadir `list_terminal_events` al enum y su rama `if/then` con los campos reales de `ListTerminalEventsRequest`; rama `publish_ecst`: `event_uri` requerido con patrón `^eda://(telemetry|orchestration|domain)/[^/\\]+$` y nota «`event_id` debe coincidir con `event_uri.event_id`».
+- **Oráculo = test de paridad** (`execute-process`, lib): para cada una de las 19 operaciones del trait, construir con tipos de `sddia-core` una petición mínima válida, serializarla como `{operation, payload}` y exigir que valide contra el schema; y su variante sin un campo obligatorio debe **fallar**. Además el enum del schema debe ser igual al conjunto de operaciones del trait. Si el test destapa más discrepancias, se incluyen en el mismo patch si son aditivas; si exigen decisión, se documentan y bloquean C-3.
+- Aplicación en **dos** invocaciones, en este orden: (1) `adopt` de `eda.event_manager.v1` (`schema_version: "1.2.0"`, sin hash previo → sello `Domain_Entity_Created`, que es la semántica correcta del nacimiento de la identidad); (2) `update` con `semantic_seed.schema_json_patch` y `schema_version: "2.0.0"` (hash previo presente → `Domain_Entity_Updated`). `entity_class: capability-contract`, `entity_name: eda.event_manager.v1`. Verificar: diferencia semántica == patch (+ `x-sddia`).
+- `result` por operación (esquemas de respuesta) queda **fuera**: no forma parte de lo que C-3 declaró.
+
+**C2. Adopción de los 16 restantes (laudo: no quedan como deuda).** Una invocación `entity-manager` por contrato (`entity_class: capability-contract`, `lifecycle_operation: update`, `semantic_seed.adopt: true`, `schema_version` = versión de catálogo). Contratos (`entity_name` = stem): `agenda.persist`, `audit.compliance`, `bus.route`, `channel.ingest`, `di.binding`, `doc.closure`, `fs.persist`, `gov.rbac`, `llm.infer`, `llm.interact`, `llm-registry`, `memory.pref_query`, `memory.pref_write`, `proc.git_sync`, `qa.probe`, `tracker.lifecycle`. Verificación por contrato: el diff contiene **únicamente** el bloque `x-sddia` insertado; el schema compila; `uuid` único en los 17; `hash_signature` recalculable por el test. Las semillas se generan leyendo las versiones del catálogo, no escritas a mano. `di.binding` y `llm-registry` son contratos auxiliares que **no** figuran como capacidad en el catálogo: se adoptan con `1.0.0` y quedan anotados como tales en la auditoría (el test de «versión == catálogo» los excluye explícitamente, no los salta en silencio).
+
+**D. Cierre.** Nota `docs/audits/man-43-o13-contract-schema-20261114.md` con baseline limpia, evidencia de B y C y veredicto. Tras O13 no quedan C-2…C-5 abiertos: la siguiente ola es **re-auditoría AC-13** (O14), único lugar donde puede escribirse `APTO_TOTAL`.
+
+### Secuencia
+
+| Paso | Alcance | Bloquea |
+|------|---------|---------|
+| 1 | A: fixtures + hermetizar test + suite completa en entorno limpio + corregir auditoría O12 | todo |
+| 2 | B: forja nativa + clase en `entity_manager` + tests; rebuild en `SddIA/target` | 3–5 |
+| 3 | Test de paridad (rojo contra el schema actual: debe fallar por `event_uri`/`list_terminal_events`) | 4 |
+| 4 | `entity-manager`: `emit-domain-mutation` y `entity-manager` (enum de clases) | — |
+| 5 | `entity-manager`: `adopt` de `eda.event_manager.v1` y luego patch C-3; test de paridad en verde | — |
+| 6 | C2: adopción de los 16 restantes (16 invocaciones) + test de identidad de los 17 | — |
+| 7 | Registro en `SddIA/evolution/` de la evolución del estándar de Cicatriz Digital (Norma de Identidad Polimórfica) + `gate-evolution --range` si aplica | 8 |
+| 8 | D: auditoría, docs, commit | — |
+
+Tras cada acuse JSON: verificar fichero en disco; sin polling del bus (DA-5). Colapso de un proceso oficial: Kintsugi, sin rescate por IDE. El paso 3 debe verse **rojo** antes del 5; un test que nunca falló no es oráculo.
+
+### Casos que bloquean el cierre
+
+| Caso | Resultado exigido |
+|------|-------------------|
+| `StrReplace`/`Write` sobre `SddIA/{library,skills,tools,daemons,process,actions,norms}/` | Cero en todo el hilo |
+| `env \| rg '^SDDIA'` al medir la suite | Vacío |
+| Suite `execute-process --lib` | 0 fallos; cualquier fallo bloquea (sin clasificar como «no bloqueante») |
+| Test de paridad | Rojo antes del patch, verde después |
+| Schema tras el patch | Compila con `jsonschema`; mantiene nombre y `$id` |
+| `eda.event_manager.v1.schema.json` | Diferencia semántica == patch RFC 6902 + `x-sddia` (el diff textual puede ser ruidoso por reserialización) |
+| 17 schemas de `capability-contracts/` | Todos con `x-sddia` válido; `uuid` únicos; hash recalculable; los 16 adoptados difieren del original **solo** en el bloque insertado |
+| Norma de Identidad Polimórfica | `.cursorrules` §2/§3 y `README.md` ya la recogen; registro de evolución del estándar en `evolution/` con referencia al laudo; sin registro no hay commit |
+| Binario `SddIA/target/debug/execute-process` más antiguo que `forges/*.rs` o `entity_manager.rs` | Prohibido invocar `entity-manager` |
+| `APTO_TOTAL` | Prohibido (reservado a O14) |
+
+### Verificación
+
+```bash
+env | rg '^SDDIA' || echo limpio
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo build -p execute-process
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo test -p execute-process --lib
+cd SddIA && CARGO_TARGET_DIR=$PWD/target cargo check --workspace
+cd SddIA && cargo run -q -p sddia-qa -- gate-event-manager-port
+git diff HEAD -- SddIA/library/norms/capability-contracts/
+```
+
+**Commit:** `fix(eda): capability-contract + eda.event_manager 2.0 + identidad x-sddia de 17 contratos + fixtures DI (MAN-43 O13)`.
+
+### Resultado de ejecución (2026-11-14)
+
+Auditoría: `docs/audits/man-43-o13-contract-schema-20261114.md` (**APTO_PARCIAL**). Suite lib 849/0; `check --workspace` OK; `gate-event-manager-port` OK; paridad rojo→verde; los 17 contratos con `x-sddia`.
+
+Desviaciones respecto al diseño, todas documentadas en la auditoría: (1) la forja vive en `forges/capability_contract.rs` (no en `factory.rs`; solo el arm está en la fábrica); (2) `event_uri` del schema es un **objeto** `{family, event_id}` (el plan decía cadena `eda://`; error mío, corregido por el tipo `EventUri`); (3) el oráculo destapó más discrepancias aditivas (`processing`, 6 ramas) incluidas en el mismo parche; (4) `domain_mutation.rs` también necesitó la clase (la lista del sello es de runtime); (5) ensayo previo en copia del repo; (6) `SDDIA_PARITY_SCHEMA` permite ensayar un parche contra una copia.
+
+**AC:** cierra C-3; repara la regresión de O10 y la baseline de O12; acerca AC-13 (todos los C-* cerrados). AC-13 solo se declara en O14.
+**Fuera:** esquemas de `result` por operación; `delete` de la clase; clippy estructural. (La migración de los 16 contratos restantes **entra** en O13 por laudo.)
 
 ---
 
@@ -1469,6 +1601,7 @@ El detalle ejecutable está en **O4 / H4**.
 13. **O10** motor DI honra `contract_schema` del binding (cierra C-2 en código). C-3/C-4/C-5 siguen abiertos; C-4 pide laudo.
 14. **O11** remediación del genoma dañado por O10 (binario de forja obsoleto) + C-4 y O9 rehechos de verdad por `entity-manager`.
 15. **O12** línea base de verificación + C-4 por cauce oficial (reintento real) + C-5 (`route-domain-event.outputs`). C-3 pasa a O13, con decisión previa.
+16. **O13** repara la regresión de O10 (fixtures DI) y la baseline de O12; clase `capability-contract` en `entity-manager`; C-3 por esa vía. O14: re-auditoría AC-13.
 
 No declarar AC-1…AC-19 sin evidencia. No seeds Kaizen desde Tekton. Git solo `skill:git-manager`.
 

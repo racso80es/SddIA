@@ -11,6 +11,7 @@ use uuid::Uuid;
 
 const ENTITY_CLASSES: &[&str] = &[
     "process", "agent", "skill", "tool", "action", "norm", "codex", "event", "suite", "daemon",
+    "capability-contract",
 ];
 const LIFECYCLE_OPS: &[&str] = &["create", "update", "delete"];
 

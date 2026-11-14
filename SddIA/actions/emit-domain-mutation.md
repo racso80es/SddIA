@@ -1,7 +1,7 @@
 ---
 uuid: "7e4a9c2b-1d3f-4a8e-9b6c-0f1e2d3a4b5c"
 name: "emit-domain-mutation"
-version: "1.1.0"
+version: "1.1.1"
 contract: "actions-contract v1.2.0"
 context: "ecosystem-evolution"
 capabilities:
@@ -11,7 +11,7 @@ capabilities:
   - "delegate-crypto-broker"
   - "domain-event-type-translation"
 inputs:
-  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event"
+  - "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon | capability-contract"
   - "lifecycle_operation": "string; enum: create | update | delete (no usar operation_type: colisión con git-manager)"
   - "entity_uuid": "string; UUID v4 inmutable de la entidad afectada"
   - "entity_name": "string; nombre canónico (en delete: nombre al momento del borrado)"
@@ -26,6 +26,7 @@ outputs:
   - "success": "boolean"
   - "event_id": "string; UUID v4 del evento minteado"
   - "target_path": "string; ruta relativa al workspace del JSON en pending/"
+hash_signature: "sha256:a7c1b87642b416660ed00fe8cf24c133d4ceb35b5fba59bab0324dbcab52f065"
 minteo_maximo: null
 porcentaje_de_exito: null
 ---

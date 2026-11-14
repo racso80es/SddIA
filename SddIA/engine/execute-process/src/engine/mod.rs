@@ -84,6 +84,8 @@ pub mod cli_detach;
 pub mod verify_process_integrity;
 
 #[cfg(test)]
+mod eda_contract_parity;
+#[cfg(test)]
 mod linear_direct_cycle_e2e;
 #[cfg(test)]
 mod linear_done_gate_both_e2e;

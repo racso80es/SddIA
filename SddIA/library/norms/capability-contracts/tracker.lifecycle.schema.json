@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "e8a7924e-3cfe-419c-9fc6-02315468c09e",
+    "version": "1.0.0",
+    "hash_signature": "sha256:19c356e83aab4ee8a4e1c6a761ac0505f2bce2df1221d6aee36643411965515a"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/tracker.lifecycle.schema.json",
   "title": "tracker.lifecycle",

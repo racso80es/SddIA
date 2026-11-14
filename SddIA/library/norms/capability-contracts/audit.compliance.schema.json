@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "4173d7c1-0c6b-4e82-9250-23b6b5c68554",
+    "version": "1.0.0",
+    "hash_signature": "sha256:35fee64ec8475024dad74df0ffcac386f01ed8b36b3b7c4ad1ff5ad8883a743e"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/audit.compliance.schema.json",
   "title": "audit.compliance",

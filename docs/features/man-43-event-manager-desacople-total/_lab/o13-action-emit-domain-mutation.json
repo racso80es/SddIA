@@ -1,0 +1,66 @@
+{
+  "entity_class": "action",
+  "entity_name": "emit-domain-mutation",
+  "lifecycle_operation": "update",
+  "semantic_seed": {
+    "action_name": "emit-domain-mutation",
+    "action_version": "1.1.1",
+    "action_context": "ecosystem-evolution",
+    "actions_contract_version": "1.2.0",
+    "action_inputs": [
+      {
+        "entity_class": "string; enum: process | agent | skill | tool | action | norm | codex | event | suite | daemon | capability-contract"
+      },
+      {
+        "lifecycle_operation": "string; enum: create | update | delete (no usar operation_type: colisión con git-manager)"
+      },
+      {
+        "entity_uuid": "string; UUID v4 inmutable de la entidad afectada"
+      },
+      {
+        "entity_name": "string; nombre canónico (en delete: nombre al momento del borrado)"
+      },
+      {
+        "version": "string|null; versión resultante; null permitido en delete"
+      },
+      {
+        "hash_signature_new": "string|null; sello sha256:… ; obligatorio salvo delete → null"
+      },
+      {
+        "hash_signature_old": "string|null; sello sha256:… ; obligatorio salvo create → null"
+      },
+      {
+        "changes_summary": "string; descripción breve del cambio; UTF-8; máx. 2048 caracteres"
+      },
+      {
+        "emitter_agent": "string; nombre o UUID del invocante indexado (ej. process-creator, cumulo)"
+      },
+      {
+        "origin_topology": "string; enum: core | local; topología fractal del sello (default core si ausente)"
+      },
+      {
+        "correlation_id": "string|null; opcional; UUID v4 para sagas; omitir en raíz del evento si ausente"
+      }
+    ],
+    "action_outputs": [
+      {
+        "success": "boolean"
+      },
+      {
+        "event_id": "string; UUID v4 del evento minteado"
+      },
+      {
+        "target_path": "string; ruta relativa al workspace del JSON en pending/"
+      }
+    ],
+    "action_capabilities": [
+      "domain-mutation-emission",
+      "event-bus-pending-write",
+      "delegate-filesystem-manager",
+      "delegate-crypto-broker",
+      "domain-event-type-translation"
+    ],
+    "action_body": "# Acción: emit-domain-mutation\n\n## 1. Propósito\n\nInyectar un evento de dominio **ECST** estandarizado en el bus local (`eda_bus.pending` en `cumulo.paths.json`, por defecto `.events/pending/`) cuando una entidad estructural del genoma sufre una mutación en su ciclo de vida. Es el **Sello Universal** que garantiza la consciencia EDA del sistema sobre su propio genoma.\n\nNo calcula SHA-256 de entidades, no interactúa con Git, no enruta el bus ni ancla en DLT; solo valida forma de inputs, mintea `event_id`, traduce `lifecycle_operation` → `event_type` y persiste vía cápsulas autorizadas (topología Cúmulo).\n\n## 2. Orquestación\n\nGate **Cerbero** previo por `context` de cada cápsula. Rutas vía `cumulo.paths.json`. El **Gestor de Entidad** invocante (p. ej. `*-creator`, runtime de forja) debe inyectar hashes y metadatos ya resueltos.\n\n### Paso 1 — Validación de inputs\n\n| Regla | Condición |\n| :--- | :--- |\n| Enums | `entity_class` y `lifecycle_operation` en los valores declarados en cabecera YAML |\n| `changes_summary` | Longitud ≤ 2048; UTF-8 válido |\n| `create` | `hash_signature_old` es `null`; `hash_signature_new` no nulo |\n| `update` | `hash_signature_new` y `hash_signature_old` no nulos |\n| `delete` | `hash_signature_new` es `null`; `hash_signature_old` no nulo |\n| `correlation_id` | Si presente, formato UUID v4 |\n| `origin_topology` | Si presente: `core` o `local`; default `core` en lab |\n\n- Cualquier violación: `success: false`, `exitCode: 1`, `data: null`, `error` causal. No persistir archivo.\n\n### Paso 1b — Aduana ECST (pre-`pending/`)\n\nTras ensamblar el borrador ECST (Paso 4 lógico) y **antes** de `WRITE_FILE`:\n\n1. Resolver Clase en `SddIA/events/` vía `event_type`.\n2. Validar instancia contra tablas REQUIRED / OPTIONAL / FORBIDDEN de la Clase (`ecst_validation`).\n3. Violación → `success: false`, `exitCode: 1`, sin archivo en `pending/`.\n\n### Paso 2 — Identidad del evento (`action:crypto-broker`)\n\n```json\n{\n  \"operation\": \"GENERATE_UUID\",\n  \"target_type\": \"STRING\",\n  \"target_payload\": \"\"\n}\n```\n\n- Abortar si `success` es `false` o `exitCode != 0`.\n- `event_id` ← `data.result`.\n- `timestamp` ← ISO-8601 UTC en instante de ensamblaje.\n\n### Paso 3 — Traducción `lifecycle_operation` → `event_type`\n\n| `lifecycle_operation` | `event_type` |\n| :--- | :--- |\n| `create` | `Domain_Entity_Created` |\n| `update` | `Domain_Entity_Updated` |\n| `delete` | `Domain_Entity_Deleted` |\n\n### Paso 4 — Cápsula de evento V2 (ECST)\n\nConstruir JSON UTF-8. En raíz incluir `correlation_id` **solo** si el input no es `null` ni cadena vacía.\n\n```json\n{\n  \"event_id\": \"<event_id>\",\n  \"event_type\": \"<Domain_Entity_Created|Updated|Deleted>\",\n  \"timestamp\": \"<timestamp>\",\n  \"emitter_agent\": \"<emitter_agent>\",\n  \"payload\": {\n    \"entity_class\": \"<entity_class>\",\n    \"entity_type\": \"<entity_class>\",\n    \"entity_id\": \"<entity_uuid>\",\n    \"lifecycle_operation\": \"<lifecycle_operation>\",\n    \"entity_uuid\": \"<entity_uuid>\",\n    \"entity_name\": \"<entity_name>\",\n    \"version\": \"<version|null>\",\n    \"hash_signature_new\": \"<hash_signature_new|null>\",\n    \"hash_signature_old\": \"<hash_signature_old|null>\",\n    \"changes_summary\": \"<changes_summary>\",\n    \"origin_topology\": \"<core|local>\"\n  },\n  \"delivery_state\": {}\n}\n```\n\n### Paso 5 — Persistencia (`skill:filesystem-manager`)\n\n1. Resolver `pending_dir` desde `cumulo.paths.json` → `eda_bus.pending` (fallback `.events/pending`).\n2. Invocar bootstrap de topología (`ensure_event_bus_topology`) si el orquestador lo requiere.\n3. Si falta `pending_dir`, invocar `CREATE_DIR` en esa ruta.\n4. Escribir el JSON del Paso 4:\n\n| Campo | Valor |\n| :--- | :--- |\n| `operation` | `WRITE_FILE` |\n| `target_path` | `{eda_bus.pending}/<event_id>.json` (UUID; sin prefijo semántico legado) |\n| `content` | JSON UTF-8 del Paso 4 |\n\n- Abortar si `exitCode != 0`.\n\n### Paso 6 — Cierre (stdout)\n\n```json\n{\n  \"success\": true,\n  \"exitCode\": 0,\n  \"data\": {\n    \"success\": true,\n    \"event_id\": \"<event_id>\",\n    \"target_path\": \"{eda_bus.pending}/<event_id>.json\"\n  }\n}\n```\n\nEn fallo de validación, broker o escritura: `success: false`, `exitCode: 1`, `data: null`, `error` causal. Sin logs verbosos ni salida humana redundante.\n\n## 3. Límites\n\n* Sin terminal cruda; sin `route-domain-event`, `git-manager` ni `GENERATE_SHA256` sobre la entidad.\n* `origin_topology` es **REQUIRED** en la Clase ECST `Domain_Entity_*`; el handler lab inyecta default `core` si el invocante omite el campo.\n* Tras persistir en `pending/`, el watcher aplica filtro topológico (`applies_to_origin_topology`) antes del fan-out; DLT IOTA solo para `Domain_Entity_Created` con `origin_topology=core` y umbral satisfecho (véase `entity-manager` Fase 3).\n* `context: ecosystem-evolution` está registrado en `execution-contexts.md` §2.5.\n* Los tipos `Domain_Entity_*` deben existir en `event-subscriptions.json` antes de que el fan-out tenga efecto; hasta entonces el watcher puede mover eventos a `processed/` como no-op documentado en el proceso `route-domain-event`.\n* Invocación esperada al cierre de forja o mutación física del artefacto en procesos `*-creator` (deuda de cableado en cada proceso).",
+    "orchestration_logic": "Emite eventos ECST Domain_Entity_* en pending/ tras mutación de entidades estructurales del genoma; valida hashes por lifecycle_operation; mintea event_id vía crypto-broker."
+  }
+}

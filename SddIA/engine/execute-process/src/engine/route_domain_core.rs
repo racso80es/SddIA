@@ -4511,6 +4511,10 @@ mod tier_dispatch {
         );
         let prev_cmd = std::env::var("SDDIA_AGENT_RUNTIME_COMMAND").ok();
         let prev_marker = std::env::var("SDDIA_TIER_MARKER").ok();
+        // Hermético: el test espera "orquestador no encontrado"; un binario heredado del
+        // entorno (p. ej. ruta relativa exportada por el shell) cambiaría el resultado.
+        let prev_bin = std::env::var("SDDIA_EXECUTE_PROCESS_BIN").ok();
+        std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN");
         std::env::set_var("SDDIA_AGENT_RUNTIME_COMMAND", &spawn_bin);
         std::env::set_var("SDDIA_TIER_MARKER", &marker);
 
@@ -4548,6 +4552,10 @@ mod tier_dispatch {
         match prev_marker {
             Some(v) => std::env::set_var("SDDIA_TIER_MARKER", v),
             None => std::env::remove_var("SDDIA_TIER_MARKER"),
+        }
+        match prev_bin {
+            Some(v) => std::env::set_var("SDDIA_EXECUTE_PROCESS_BIN", v),
+            None => std::env::remove_var("SDDIA_EXECUTE_PROCESS_BIN"),
         }
         let _ = fs::remove_dir_all(&root);
     }

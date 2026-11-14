@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "e8dc0ac4-c58b-4892-8142-f141d824f152",
+    "version": "1.0.0",
+    "hash_signature": "sha256:810b10d5137897bd86914f813b798a63c5ee1a9110081ffa6d79c76c30572479"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/llm.infer.schema.json",
   "title": "llm.infer",

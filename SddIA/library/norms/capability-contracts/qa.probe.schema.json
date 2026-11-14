@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "d08d3727-0fd4-416f-9e9b-8ddd3233bd24",
+    "version": "1.0.0",
+    "hash_signature": "sha256:f516b84b878dfaeb53794be042b8756385fea9fe14473f56d2d2f8f9dc322aee"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/qa.probe.schema.json",
   "title": "qa.probe",

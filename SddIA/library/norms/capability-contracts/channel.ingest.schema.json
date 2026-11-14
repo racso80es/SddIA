@@ -1,4 +1,9 @@
 {
+  "x-sddia": {
+    "uuid": "1a7193e7-1049-462f-a204-5bd86d222e45",
+    "version": "1.0.0",
+    "hash_signature": "sha256:1ca1b231f32f48ae7fedfc625a87ac2894ffc2503789b7f94e68faf8edfde753"
+  },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sddia.local/capability-contracts/channel.ingest.schema.json",
   "title": "channel.ingest",
